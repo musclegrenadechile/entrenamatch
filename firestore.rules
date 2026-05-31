@@ -1,8 +1,54 @@
 ﻿rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Users collection - users can only read/write their own document
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // Profiles - public read for discovery, only owner can write
+    match /profiles/{userId} {
+      allow read: if true; // Anyone can read profiles for matching
+      allow write: if isOwner(userId);
+    }
+
+    // Sessions
+    match /sessions/{sessionId} {
+      allow read: if true; // Public sessions are discoverable
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && 
+        (resource.data.creatorId == request.auth.uid || 
+         request.auth.uid in resource.data.participants);
+    }
+
+    // Squads
+    match /squads/{squadId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
+    }
+
+    // Session messages (subcollection)
+    match /sessions/{sessionId}/messages/{messageId} {
+      allow read: if isAuthenticated() && 
+        (request.auth.uid in get(/databases/$(database)/documents/sessions/$(sessionId)).data.participants);
+      allow create: if isAuthenticated();
+      allow update, delete: if isAuthenticated() && resource.data.senderId == request.auth.uid;
+    }
+
+    // Default deny
     match /{document=**} {
-      allow read, write: if false;  // Deny everything until we write proper rules
+      allow read, write: if false;
     }
   }
 }
