@@ -1779,7 +1779,7 @@ function App() {
                         )}
                         {(() => {
                           const sharedSquads = squads.filter(sq => 
-                            sq.members.includes('me') && sq.members.includes(profile.id)
+                            sq.members.includes(effectiveUserId) && sq.members.includes(profile.id)
                           )
                           if (sharedSquads.length > 0) {
                             return <div className="text-[10px] text-[#14b8a6] mt-0.5">Squad: {sharedSquads[0].name}</div>
@@ -2070,7 +2070,7 @@ function App() {
 
             {/* User's Squads in Profile */}
             {(() => {
-              const mySquads = squads.filter(sq => sq.members.includes('me'))
+              const mySquads = squads.filter(sq => sq.members.includes(effectiveUserId))
               if (mySquads.length === 0) return null
               return (
                 <div className="mb-4">
