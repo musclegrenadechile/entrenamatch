@@ -454,14 +454,17 @@ function App() {
     }
     try {
       const profilesRef = collection(db, 'profiles')
-      // Load up to 50 real user profiles (excluding current user will be filtered later)
-      const q = query(profilesRef, limit(50))
+      const q = query(profilesRef, limit(60))
       const snapshot = await getDocs(q)
       
       const profiles: Profile[] = []
+      const currentUid = firebaseUser?.uid
+
       snapshot.forEach((doc) => {
+        // Exclude current user from discovery
+        if (doc.id === currentUid) return
+
         const data = doc.data() as any
-        // Map Firestore profile to our Profile type (id = uid)
         if (data && data.name) {
           profiles.push({
             id: doc.id,
@@ -484,7 +487,7 @@ function App() {
         }
       })
       setRealProfiles(profiles)
-      console.log(`✅ Loaded ${profiles.length} real profiles from Firestore`)
+      console.log(`✅ Loaded ${profiles.length} real profiles from Firestore (self excluded)`)
     } catch (err) {
       console.warn('Could not load real profiles (Firestore may not have data yet):', err)
       setRealProfiles([])
