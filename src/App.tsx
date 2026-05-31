@@ -169,7 +169,12 @@ function App() {
     setShowOnboarding 
   } = useProfile()
 
-  const { squads: squadsFromHook, createSquad, joinSquad, leaveSquad } = useSquads()
+  const { 
+    squads: _squadsFromHook, 
+    createSquad: _createSquad, 
+    joinSquad: _joinSquad, 
+    leaveSquad: _leaveSquad 
+  } = useSquads()
   const [likedIds, setLikedIds] = useState<string[]>([])
   const [passedIds, setPassedIds] = useState<string[]>([])
   const [matches, setMatches] = useState<string[]>([]) // profile ids you matched with
@@ -193,8 +198,8 @@ function App() {
     filters, 
     setFilters, 
     resetFilters: resetFiltersHook, 
-    toggleTrainingType, 
-    toggleAvailability 
+    toggleTrainingType: _toggleTrainingType, 
+    toggleAvailability: _toggleAvailability 
   } = useFilters()
 
   // User GPS location
@@ -258,10 +263,8 @@ function App() {
   // Real Auth from Firebase + Demo Auth
   const { currentUser: firebaseUser, userProfile: firebaseProfile, isDemoMode } = useAuth()
   const { 
-    demoUser: demoAuthUser, 
     signInDemo, 
     signUpDemo, 
-    logoutDemo, 
     isAuthenticated: isDemoAuthenticated 
   } = useDemoAuth()
 

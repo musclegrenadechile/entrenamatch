@@ -80,24 +80,15 @@ export function calculateCompatibility(
   return Math.max(0, Math.min(100, Math.round(score)))
 }
 
-export function getTrainingStreak(reviews: any[], userId: string): number {
-  const userReviews = reviews
-    .filter((r: any) => r.reviewerId === userId)
-    .sort((a: any, b: any) => b.timestamp - a.timestamp)
-
-  if (userReviews.length === 0) return 0
-
+export function getTrainingStreak(userId: string, allReviews: Record<string, any[]>): number {
+  const profileReviews = (allReviews[userId] || []).sort((a: any, b: any) => a.timestamp - b.timestamp)
+  if (profileReviews.length === 0) return 0
+  
   let streak = 1
-  let lastDate = new Date(userReviews[0].timestamp)
-
-  for (let i = 1; i < userReviews.length; i++) {
-    const currentDate = new Date(userReviews[i].timestamp)
-    const diffDays = Math.floor(
-      (lastDate.getTime() - currentDate.getTime()) / (1000 * 3600 * 24)
-    )
-    if (diffDays <= 7) {
+  for (let i = profileReviews.length - 1; i > 0; i--) {
+    const diffDays = (profileReviews[i].timestamp - profileReviews[i-1].timestamp) / (1000 * 60 * 60 * 24)
+    if (diffDays < 30) {
       streak++
-      lastDate = currentDate
     } else {
       break
     }
@@ -105,9 +96,12 @@ export function getTrainingStreak(reviews: any[], userId: string): number {
   return streak
 }
 
-export function getAverageRating(reviews: any[], userId: string): number {
-  const userReviews = reviews.filter((r: any) => r.reviewerId === userId)
-  if (userReviews.length === 0) return 0
-  const sum = userReviews.reduce((acc: number, r: any) => acc + r.rating, 0)
-  return Math.round((sum / userReviews.length) * 10) / 10
+export function getAverageRating(userId: string, allReviews: Record<string, any[]>): { avg: number; count: number } {
+  const profileReviews = allReviews[userId] || []
+  if (profileReviews.length === 0) return { avg: 0, count: 0 }
+  const sum = profileReviews.reduce((acc: number, r: any) => acc + r.rating, 0)
+  return { 
+    avg: Math.round((sum / profileReviews.length) * 10) / 10, 
+    count: profileReviews.length 
+  }
 }
