@@ -36,6 +36,7 @@ import { useFilters } from './hooks/useFilters'
 import { useSquads } from './hooks/useSquads'
 import { AuthScreen } from './components/auth/AuthScreen'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
+import { ExploreTab } from './components/explore/ExploreTab'
 
 // ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
 // Lanzamiento inicial fuerte en Chile + presencia en LatAm y España
@@ -1443,7 +1444,7 @@ function App() {
 
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
-        {/* ===== EXPLORE / SWIPE ===== */}
+        {/* ===== EXPLORE / SWIPE (being extracted to ExploreTab) ===== */}
         {activeTab === 'explore' && (
           <div className="flex-1 flex flex-col p-4 pt-3 relative">
             <div className="flex items-baseline justify-between mb-2 px-1">
