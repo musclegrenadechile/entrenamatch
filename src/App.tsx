@@ -3475,7 +3475,9 @@ function App() {
                 <div className="w-28 border-r border-[#272b33] bg-[#121418] p-2 overflow-auto text-xs">
                   <div className="text-[#64748b] text-[10px] px-1 mb-1.5 font-medium">PARTICIPANTES</div>
                   {(sessions.find(s => s.id === showGroupChatModalFor)?.participants || []).map((pid, idx) => {
-                    const name = pid === 'me' ? (currentUser?.name || 'Tú') : (SEED_PROFILES.find(p => p.id === pid)?.name || 'Participante')
+                    const isCurrent = pid === effectiveUserId
+                    const seedUser = SEED_PROFILES.find(p => p.id === pid)
+                    const name = isCurrent ? (currentUser?.name || 'Tú') : (seedUser?.name || 'Participante')
                     return (
                       <button 
                         key={idx}
@@ -3485,7 +3487,7 @@ function App() {
                         }}
                         className="block w-full text-left px-2 py-1 hover:bg-[#1f242b] rounded text-[#cbd5e1] truncate"
                       >
-                        {name}
+                        {name}{isCurrent ? ' (tú)' : ''}
                       </button>
                     )
                   })}
@@ -3498,7 +3500,7 @@ function App() {
                       <div className="text-center text-[#64748b] mt-8 text-xs">Aún no hay mensajes en este grupo.</div>
                     ) : (
                       (sessionMessages[showGroupChatModalFor] || []).map((msg, i) => {
-                        const isMe = msg.senderId === 'me'
+                        const isMe = msg.senderId === effectiveUserId
                         const isCreator = sessions.find(s => s.id === showGroupChatModalFor)?.creatorId === msg.senderId
                         return (
                           <div key={i} className={`flex ${isMe ? 'justify-end' : ''}`}>
