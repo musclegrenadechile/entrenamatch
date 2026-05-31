@@ -1411,7 +1411,10 @@ function App() {
                     </div>
                   ))}
                   {(messages[activeChat] || []).length === 0 && (
-                    <div className="text-center text-sm text-[#64748b] mt-8">¡Empieza la conversación!</div>
+                    <div className="text-center text-sm text-[#64748b] mt-8">
+                      ¡Empieza la conversación!<br />
+                      <span className="text-xs">En Pre-Alpha los mensajes son locales y se borran al recargar.</span>
+                    </div>
                   )}
                 </div>
 
