@@ -35,6 +35,7 @@ import { useDemoAuth } from './hooks/useDemoAuth'
 import { useProfile } from './hooks/useProfile'
 import { useFilters } from './hooks/useFilters'
 import { useSwipe } from './hooks/useSwipe'
+import { useSquads } from './hooks/useSquads'
 
 // ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
 // Lanzamiento inicial fuerte en Chile + presencia en LatAm y España
@@ -257,6 +258,8 @@ function App() {
     showOnboarding, 
     setShowOnboarding 
   } = useProfile()
+
+  const { squads: squadsFromHook, createSquad, joinSquad, leaveSquad } = useSquads()
   const [likedIds, setLikedIds] = useState<string[]>([])
   const [passedIds, setPassedIds] = useState<string[]>([])
   const [matches, setMatches] = useState<string[]>([]) // profile ids you matched with
