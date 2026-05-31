@@ -1437,7 +1437,7 @@ function App() {
 
             <div className="card rounded-3xl overflow-hidden mb-4">
               <div className="relative h-52">
-                <img src={currentUser.photos[0]} className="absolute inset-0 w-full h-full object-cover" />
+                <img src={currentUser?.photos?.[0] || 'https://picsum.photos/id/1005/600/600'} className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/90">
                   <div className="text-3xl font-semibold tracking-tight">{currentUser.name}, {currentUser.age}</div>
                   <div className="text-[#14b8a6]">{currentUser.city}, {currentUser.country} • {currentUser.level}</div>
@@ -2600,7 +2600,7 @@ function App() {
                 <div className="w-28 border-r border-[#272b33] bg-[#121418] p-2 overflow-auto text-xs">
                   <div className="text-[#64748b] text-[10px] px-1 mb-1.5 font-medium">PARTICIPANTES</div>
                   {(sessions.find(s => s.id === showGroupChatModalFor)?.participants || []).map((pid, idx) => {
-                    const name = pid === 'me' ? currentUser.name : (SEED_PROFILES.find(p => p.id === pid)?.name || 'Participante')
+                    const name = pid === 'me' ? (currentUser?.name || 'Tú') : (SEED_PROFILES.find(p => p.id === pid)?.name || 'Participante')
                     return (
                       <button 
                         key={idx}
