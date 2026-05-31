@@ -33,6 +33,8 @@ import { useProfile } from './hooks/useProfile'
 import { useFilters } from './hooks/useFilters'
 import { useSquads } from './hooks/useSquads'
 import { ExploreTab } from './components/explore/ExploreTab'
+import { db, isFirebaseConfigured } from './services/firebase'
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore'
 
 // ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
 // Lanzamiento inicial fuerte en Chile + presencia en LatAm y España
@@ -267,6 +269,58 @@ function App() {
     signUpDemo, 
     isAuthenticated: isDemoAuthenticated 
   } = useDemoAuth()
+
+  // Real profiles loaded from Firestore (for multi-user Pre-Alpha)
+  const [realProfiles, setRealProfiles] = useState<Profile[]>([])
+
+  const loadRealProfiles = async () => {
+    if (!isFirebaseConfigured || !db) {
+      setRealProfiles([])
+      return
+    }
+    try {
+      const profilesRef = collection(db, 'profiles')
+      // Load up to 50 real user profiles (excluding current user will be filtered later)
+      const q = query(profilesRef, limit(50))
+      const snapshot = await getDocs(q)
+      
+      const profiles: Profile[] = []
+      snapshot.forEach((doc) => {
+        const data = doc.data() as any
+        // Map Firestore profile to our Profile type (id = uid)
+        if (data && data.name) {
+          profiles.push({
+            id: doc.id,
+            name: data.name,
+            age: data.age || 25,
+            gender: data.gender || 'hombre',
+            city: data.city || '',
+            country: data.country || 'Chile',
+            lat: data.lat || -33.0,
+            lng: data.lng || -71.0,
+            bio: data.bio || '',
+            photos: data.photos || [],
+            trainingTypes: data.trainingTypes || [],
+            goals: data.goals || [],
+            level: data.level || 'Intermedio',
+            availability: data.availability || ['Tarde'],
+            intensity: data.intensity,
+            verificationStatus: data.verificationStatus,
+          })
+        }
+      })
+      setRealProfiles(profiles)
+      console.log(`✅ Loaded ${profiles.length} real profiles from Firestore`)
+    } catch (err) {
+      console.warn('Could not load real profiles (Firestore may not have data yet):', err)
+      setRealProfiles([])
+    }
+  }
+
+  // Load real profiles on mount and when auth changes
+  useEffect(() => {
+    loadRealProfiles()
+  }, [firebaseUser?.uid])
 
   // Simulated pending verifications for demo (in real app this would come from backend)
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([
@@ -765,11 +819,24 @@ function App() {
     )
   }
 
-  // Remaining profiles (not swiped)
+  // Remaining profiles (not swiped) - Real Firestore profiles + Seed profiles (hybrid for Pre-Alpha)
   const remainingProfiles = useMemo(() => {
     const swiped = new Set([...likedIds, ...passedIds])
-    return SEED_PROFILES.filter(p => !swiped.has(p.id))
-  }, [likedIds, passedIds])
+    
+    // Combine real profiles from Firestore + hardcoded seeds
+    const allProfiles: Profile[] = [
+      ...realProfiles,
+      ...SEED_PROFILES
+    ]
+    
+    // Remove duplicates (if a real user has same id as a seed - unlikely but safe)
+    const unique = new Map<string, Profile>()
+    allProfiles.forEach(p => {
+      if (!unique.has(p.id)) unique.set(p.id, p)
+    })
+    
+    return Array.from(unique.values()).filter(p => !swiped.has(p.id))
+  }, [likedIds, passedIds, realProfiles])
 
   // Filtered deck (with distance support + blocking)
   const deck = useMemo(() => {
@@ -800,33 +867,37 @@ function App() {
   // Visible cards (top 3 for stack effect)
   const visibleCards = deck.slice(0, 3)
 
-  // Current chatting profile
-  const chatProfile = activeChat ? SEED_PROFILES.find(p => p.id === activeChat) : null
+  // Current chatting profile (supports real + seed)
+  const chatProfile = activeChat 
+    ? [...SEED_PROFILES, ...realProfiles].find(p => p.id === activeChat) 
+    : null
 
-  // Matches profiles
-  const matchProfiles = useMemo(() => 
-    SEED_PROFILES.filter(p => matches.includes(p.id)), [matches]
-  )
+  // Matches profiles (supports real profiles from Firestore + seeds)
+  const matchProfiles = useMemo(() => {
+    const all = [...SEED_PROFILES, ...realProfiles]
+    return all.filter(p => matches.includes(p.id))
+  }, [matches, realProfiles])
 
   // ==================== SWIPE LOGIC ====================
   const handleSwipe = (profileId: string, direction: 'left' | 'right') => {
-    const profile = SEED_PROFILES.find(p => p.id === profileId)
+    // Support both seed profiles and real Firestore profiles
+    const profile = [...SEED_PROFILES, ...realProfiles].find(p => p.id === profileId)
     if (!profile) return
 
     if (direction === 'right') {
       const newLiked = [...likedIds, profileId]
       saveLiked(newLiked)
 
-      // Match logic
+      const isRealProfile = !profileId.startsWith('p') && realProfiles.some(r => r.id === profileId)
       const isAutoMatch = AUTO_MATCH_IDS.includes(profileId)
       const randomMatch = Math.random() < 0.28
       const alreadyMatched = matches.includes(profileId)
 
-      if (!alreadyMatched && (isAutoMatch || randomMatch)) {
+      if (!alreadyMatched && (isAutoMatch || randomMatch || isRealProfile)) {
         const newMatches = [...matches, profileId]
         saveMatches(newMatches)
         
-        // Seed a nice first message
+        // Seed a nice first message (works for both demo and real)
         const openers = CHAT_OPENERS[profileId] || ["¡Hola! Vi tu perfil y me tinca entrenar juntos 💪"]
         const firstMsg: Message = {
           id: Date.now().toString(36),
@@ -848,9 +919,30 @@ function App() {
         // Show beautiful match modal
         setShowMatchModal(profile)
         triggerConfetti()
-        toast.success(`¡Match con ${profile.name}!`, { description: 'Tienen ganas de entrenar juntos 🔥' })
+        toast.success(`¡Match con ${profile.name}!`, { description: isRealProfile ? '¡Match real con otro usuario!' : 'Tienen ganas de entrenar juntos 🔥' })
       } else {
         toast('Like enviado', { description: `A ${profile.name} le avisaremos si hay match` })
+      }
+
+      // Real Firebase: persist the like/match for other users to see
+      if (isRealProfile && firebaseUser?.uid && db) {
+        (async () => {
+          try {
+            const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+            const matchId = [firebaseUser.uid, profileId].sort().join('_')
+            await setDoc(doc(db, 'matches', matchId), {
+              user1: firebaseUser.uid,
+              user2: profileId,
+              createdAt: serverTimestamp(),
+              status: 'active',
+              // For Pre-Alpha we auto-match so people can test chat immediately
+              autoMatchedForTesting: true
+            }, { merge: true })
+            console.log('✅ Real match written to Firestore for cross-device testing')
+          } catch (e) {
+            console.warn('Could not write real match yet:', e)
+          }
+        })()
       }
     } else {
       const newPassed = [...passedIds, profileId]

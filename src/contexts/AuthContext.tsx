@@ -27,14 +27,14 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  // Auto-enable demo mode for public GitHub Pages or when Firebase is not configured
-  const isPublicDemo = typeof window !== 'undefined' && 
-    (window.location.hostname.includes('github.io') || !isFirebaseConfigured);
+  // Only force demo mode if Firebase is truly not configured.
+  // Now that we have real config, GitHub Pages demo will use real Firebase for multi-user interaction.
+  const shouldForceDemo = typeof window !== 'undefined' && !isFirebaseConfigured;
   
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isDemoMode, setDemoMode] = useState(isPublicDemo);
+  const [isDemoMode, setDemoMode] = useState(shouldForceDemo);
 
   useEffect(() => {
     if (isDemoMode) {

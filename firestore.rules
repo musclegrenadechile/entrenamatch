@@ -37,6 +37,21 @@ service cloud.firestore {
       allow update, delete: if isAuthenticated() && resource.data.createdBy == request.auth.uid;
     }
 
+    // Matches (for real multi-user matching)
+    match /matches/{matchId} {
+      allow read: if isAuthenticated() && 
+        (request.auth.uid == resource.data.user1 || request.auth.uid == resource.data.user2);
+      allow create: if isAuthenticated();
+      allow update: if false; // matches are immutable once created
+    }
+
+    // 1:1 Messages (between two matched users)
+    match /messages/{messageId} {
+      allow read, write: if isAuthenticated() && 
+        (request.auth.uid == resource.data.from || request.auth.uid == resource.data.to);
+      allow create: if isAuthenticated();
+    }
+
     // Session messages (subcollection)
     match /sessions/{sessionId}/messages/{messageId} {
       allow read: if isAuthenticated() && 
