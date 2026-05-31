@@ -1967,7 +1967,7 @@ function App() {
                   <div className="text-[10px] text-[#14b8a6] -mt-0.5">Sincronizado con backend real</div>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <button 
                   onClick={handleLogout}
                   className="text-sm text-[#f87171] px-3 py-1.5 border border-[#3f2a2a] rounded-xl active:bg-[#1f1616]"
@@ -1975,29 +1975,28 @@ function App() {
                   Cerrar sesión
                 </button>
                 <button 
-                onClick={() => {
-                  if (!isEditingProfile && currentUser) {
-                    // Enter edit mode - populate temp state
-                    setEditBio(currentUser.bio || '')
-                    setEditAvailability([...(currentUser.availability || [])])
-                    setEditGoals([...(currentUser.goals || [])])
-                  } else if (isEditingProfile && currentUser) {
-                    // Save
-                    const updated = {
-                      ...currentUser,
-                      bio: editBio,
-                      availability: editAvailability,
-                      goals: editGoals
+                  onClick={() => {
+                    if (!isEditingProfile && currentUser) {
+                      setEditBio(currentUser.bio || '')
+                      setEditAvailability([...(currentUser.availability || [])])
+                      setEditGoals([...(currentUser.goals || [])])
+                    } else if (isEditingProfile && currentUser) {
+                      const updated = {
+                        ...currentUser,
+                        bio: editBio,
+                        availability: editAvailability,
+                        goals: editGoals
+                      }
+                      saveUserWithRealSync(updated as CurrentUser)
+                      toast.success('Perfil actualizado')
                     }
-                    saveUserWithRealSync(updated as CurrentUser)
-                    toast.success('Perfil actualizado')
-                  }
-                  setIsEditingProfile(!isEditingProfile)
-                }} 
-                className="flex items-center gap-1 text-sm text-[#14b8a6]"
-              >
-                <Edit2 size={16} /> {isEditingProfile ? 'Guardar' : 'Editar'}
-              </button>
+                    setIsEditingProfile(!isEditingProfile)
+                  }} 
+                  className="flex items-center gap-1 text-sm text-[#14b8a6]"
+                >
+                  <Edit2 size={16} /> {isEditingProfile ? 'Guardar' : 'Editar'}
+                </button>
+              </div>
             </div>
 
             {isEditingProfile && (
