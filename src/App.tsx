@@ -798,56 +798,6 @@ function App() {
     }
   }
 
-  const handleGoogleAuth = async () => {
-    setAuthLoading(true)
-    setAuthError('')
-
-    try {
-      const isLocalhost = window.location.hostname === 'localhost' || 
-                          window.location.hostname === '127.0.0.1';
-
-      const firebaseUser = await signInWithGoogle()
-
-      // On localhost we use redirect, so firebaseUser may be null here
-      if (isLocalhost) {
-        // The redirect will happen. We show a message and let the redirect result handler take over.
-        toast('Redirigiendo a Google...', { description: 'Serás redirigido de vuelta después de iniciar sesión.' })
-        return
-      }
-
-      if (firebaseUser) {
-        // Check if user already has profile (popup flow)
-        const existingProfile = await import('./services/auth').then(m => m.getUserProfile(firebaseUser.uid))
-        
-        if (!existingProfile) {
-          await createUserProfile(firebaseUser, {
-            name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || '',
-            age: 25,
-            gender: 'hombre',
-            city: '',
-            country: 'Chile',
-            bio: '',
-            photos: firebaseUser.photoURL ? [firebaseUser.photoURL] : [],
-            trainingTypes: [],
-            goals: [],
-            level: 'Intermedio',
-            intensity: 'Moderado',
-            availability: ['Tarde'],
-          })
-        }
-      }
-      
-      toast.success('Sesión iniciada con Google')
-    } catch (error: any) {
-      console.error(error)
-      setAuthError(error.message || 'Error con Google')
-    } finally {
-      setAuthLoading(false)
-    }
-  }
-
-
-
   // Moderation actions
   const reviewVerification = (userId: string, approve: boolean) => {
     // Remove from pending
