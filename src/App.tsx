@@ -272,6 +272,11 @@ function App() {
     isAuthenticated: isDemoAuthenticated 
   } = useDemoAuth()
 
+  // Real multi-user state (loaded from Firestore when using real backend)
+  const [realProfiles, setRealProfiles] = useState<Profile[]>([])
+  const [realMatches, setRealMatches] = useState<string[]>([])
+  const [realChatMessages, setRealChatMessages] = useState<any[]>([])
+
   // Real profile sync effect: when we have a real Firebase user, load their rich profile from Firestore
   useEffect(() => {
     if (!isDemoMode && firebaseUser?.uid) {
@@ -441,13 +446,6 @@ function App() {
       if (unsubscribe) unsubscribe()
     }
   }, [activeChat, firebaseUser?.uid, isDemoMode, realMatches])
-
-  // Real profiles loaded from Firestore (for multi-user Pre-Alpha)
-  const [realProfiles, setRealProfiles] = useState<Profile[]>([])
-  // Real matches loaded from Firestore (cross-device)
-  const [realMatches, setRealMatches] = useState<string[]>([])
-  // Real messages for the current active chat (from Firestore)
-  const [realChatMessages, setRealChatMessages] = useState<any[]>([])
 
   const loadRealProfiles = async () => {
     if (!isFirebaseConfigured || !db) {
