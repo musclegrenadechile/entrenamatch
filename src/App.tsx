@@ -605,6 +605,55 @@ function App() {
     }
   }, [firebaseUser?.uid, isDemoMode])
 
+  // Real-time listener for sessions (so real users see new sessions created by others instantly)
+  useEffect(() => {
+    if (isDemoMode || !firebaseUser?.uid || !db) {
+      return
+    }
+
+    let unsubscribe: (() => void) | null = null
+
+    ;(async () => {
+      try {
+        const { collection, query, onSnapshot, limit } = await import('firebase/firestore')
+        const sessionsRef = collection(db, 'sessions')
+        const q = query(sessionsRef, limit(100))
+
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          const loaded: TrainingSession[] = []
+          snapshot.forEach((doc) => {
+            const data = doc.data() as any
+            if (data && data.title) {
+              loaded.push({
+                id: doc.id,
+                creatorId: data.creatorId || '',
+                creatorName: data.creatorName || 'Usuario',
+                title: data.title,
+                description: data.description,
+                time: data.time || '',
+                location: data.location || '',
+                trainingType: data.trainingType || '',
+                maxParticipants: data.maxParticipants || 4,
+                participants: data.participants || [],
+                createdAt: (data.createdAt?.toMillis ? data.createdAt.toMillis() : data.createdAt) || Date.now(),
+              })
+            }
+          })
+          setRealSessions(loaded)
+          console.log(`📡 Real-time sessions update: ${loaded.length} sessions`)
+        }, (error) => {
+          console.warn('Real sessions listener error:', error)
+        })
+      } catch (e) {
+        console.warn('Failed to set up real sessions listener:', e)
+      }
+    })()
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [firebaseUser?.uid, isDemoMode])
+
   // Simulated pending verifications for demo (in real app this would come from backend)
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([
     {
@@ -2576,6 +2625,18 @@ function App() {
                               setSelectedSquad(null)
                               setActiveTab('sesiones')
 
+                              if (!isDemoMode && firebaseUser?.uid && db) {
+                                (async () => {
+                                  try {
+                                    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+                                    await setDoc(doc(db, 'sessions', newSession.id), {
+                                      ...newSession,
+                                      updatedAt: serverTimestamp(),
+                                    }, { merge: true })
+                                  } catch (e) {}
+                                })()
+                              }
+
                               if (!isDemoMode) {
                                 loadRealSessions()
                               }
@@ -2673,7 +2734,23 @@ function App() {
                 saveSessions(updated)
                 setShowCreateSession(false)
 
-                // For real users, refresh from Firestore so others (and self) see it across devices
+                // Write directly to Firestore for real users (more reliable cross-device)
+                if (!isDemoMode && firebaseUser?.uid && db) {
+                  (async () => {
+                    try {
+                      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+                      await setDoc(doc(db, 'sessions', newSession.id), {
+                        ...newSession,
+                        updatedAt: serverTimestamp(),
+                      }, { merge: true })
+                      console.log('✅ New session written directly to Firestore')
+                    } catch (e) {
+                      console.warn('Direct session write failed:', e)
+                    }
+                  })()
+                }
+
+                // Refresh for immediate local view
                 if (!isDemoMode) {
                   loadRealSessions()
                 }
