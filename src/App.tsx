@@ -794,6 +794,17 @@ function App() {
       setAuthError(error.message || 'Error en la autenticación')
     } finally {
       setAuthLoading(false)
+
+      // Demo mode: after successful auth, advance the UI
+      if (isDemoMode) {
+        const hasLocalProfile = localStorage.getItem('fitvina_user')
+        if (!hasLocalProfile) {
+          // New user in demo → force onboarding to create full profile
+          setShowOnboarding(true)
+        }
+        // The context will update via the 'demo-auth-changed' event,
+        // which will hide the login screen on next render.
+      }
     }
   }
 

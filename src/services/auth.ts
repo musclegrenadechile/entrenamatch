@@ -14,17 +14,20 @@ import { auth, db, isFirebaseConfigured } from './firebase';
 // ==================== DEMO MODE (GitHub Pages public demo) ====================
 const DEMO_USER_KEY = 'entrenamatch_demo_user';
 
-function getDemoUser(): any | null {
+export function getDemoUser(): any | null {
   const stored = localStorage.getItem(DEMO_USER_KEY);
   return stored ? JSON.parse(stored) : null;
 }
 
 function saveDemoUser(user: any) {
   localStorage.setItem(DEMO_USER_KEY, JSON.stringify(user));
+  // Notify listeners (used by AuthContext in demo mode)
+  window.dispatchEvent(new CustomEvent('demo-auth-changed', { detail: { user } }));
 }
 
 function clearDemoUser() {
   localStorage.removeItem(DEMO_USER_KEY);
+  window.dispatchEvent(new CustomEvent('demo-auth-changed', { detail: { user: null } }));
 }
 
 // Fake Firebase-like user object for demo

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import type { UserProfile } from '../services/auth';
-import { onAuthStateChange, getUserProfile, handleGoogleRedirectResult } from '../services/auth';
+import { onAuthStateChange, getUserProfile, handleGoogleRedirectResult, getDemoUser } from '../services/auth';
 import { isFirebaseConfigured } from '../services/firebase';
 
 interface AuthContextType {
@@ -38,19 +38,30 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     if (isDemoMode) {
-      // In demo mode (public GitHub Pages), we use pure localStorage - no real auth
+      // Demo mode: load user from localStorage immediately
       setLoading(false);
-      return;
+      const demoUser = getDemoUser();
+      setCurrentUser(demoUser);
+
+      // Listen for login/register/logout from the demo auth functions
+      const handleDemoAuthChange = (e: Event) => {
+        const detail = (e as CustomEvent).detail;
+        setCurrentUser(detail?.user ?? getDemoUser());
+      };
+      window.addEventListener('demo-auth-changed', handleDemoAuthChange as EventListener);
+
+      return () => {
+        window.removeEventListener('demo-auth-changed', handleDemoAuthChange as EventListener);
+      };
     }
 
-    // Handle Google redirect result on app load (important for localhost)
+    // Real Firebase mode
     handleGoogleRedirectResult().catch(console.error);
 
     const unsubscribe = onAuthStateChange(async (user) => {
       setCurrentUser(user);
       
       if (user) {
-        // Fetch profile from Firestore
         const profile = await getUserProfile(user.uid);
         setUserProfile(profile);
       } else {
