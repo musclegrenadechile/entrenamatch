@@ -74,12 +74,21 @@ export const handleGoogleRedirectResult = async () => {
   const { getRedirectResult } = await import('firebase/auth');
   try {
     const result = await getRedirectResult(auth);
-    if (result) {
+    if (result?.user) {
+      console.log('✅ Google redirect sign-in successful:', result.user.email);
       return result.user;
     }
     return null;
-  } catch (error) {
-    console.error('Google redirect error:', error);
+  } catch (error: any) {
+    console.error('❌ Google redirect sign-in error:', error);
+    // Show user-friendly message
+    if (error.code === 'auth/unauthorized-domain') {
+      alert('Dominio no autorizado. Por favor agrega localhost en Firebase Authentication → Settings → Authorized domains.');
+    } else if (error.code === 'auth/popup-blocked' || error.code === 'auth/redirect-cancelled-by-user') {
+      // Normal, user cancelled
+    } else {
+      alert('Error al iniciar sesión con Google: ' + (error.message || error.code));
+    }
     throw error;
   }
 };

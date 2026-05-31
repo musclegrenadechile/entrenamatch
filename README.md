@@ -22,7 +22,19 @@ La app tiene un enfoque fuerte en **Chile** para su lanzamiento inicial, pero es
 - Términos de Servicio, Política de Privacidad y Directrices de Comunidad
 - Perfiles de Chile (Santiago, Viña, Valparaíso, Concepción...) + varios países
 
-## Cómo ejecutar
+## Demo Público
+
+Puedes probar la aplicación directamente aquí (versión pública de prueba):
+
+**→ [Probar EntrenaMatch en GitHub Pages](https://musclegrenadechile.github.io/entrenamatch/)**
+
+**Notas importantes de la versión pública:**
+- Google Sign-In está **deshabilitado** temporalmente.
+- Usa email + contraseña para crear una cuenta de prueba.
+- Todos los datos se guardan solo en tu navegador (se pierden al limpiar caché o usar modo incógnito).
+- Ideal para probar swipe, squads, sesiones, chat grupal y reseñas.
+
+## Cómo ejecutar localmente
 
 ```bash
 cd fitvina
@@ -53,3 +65,33 @@ Se recomienda abrirla en tamaño móvil (DevTools → Responsive).
 **EntrenaMatch** — Entrena con alguien cerca. En cualquier parte del mundo.
 
 Hecho con ❤️ para la comunidad fitness hispanohablante.
+
+---
+
+## Despliegue en GitHub Pages (versión pública)
+
+Esta app está configurada para desplegarse fácilmente en GitHub Pages.
+
+### Pasos para desplegar:
+
+1. Asegúrate de tener el remote correcto:
+   ```bash
+   git remote -v
+   ```
+
+2. Compila la aplicación:
+   ```bash
+   npm run build
+   ```
+
+3. Sube la carpeta `dist` a la rama `gh-pages` (o usa GitHub Actions).
+
+La configuración de `vite.config.ts` ya incluye:
+```ts
+base: '/entrenamatch/',
+```
+
+Una vez desplegado, la app estará disponible en:
+`https://musclegrenadechile.github.io/entrenamatch/`
+
+> **Nota**: Para un demo público real, se recomienda usar Firebase Hosting o Vercel en el futuro (mejor rendimiento y soporte de funciones serverless).

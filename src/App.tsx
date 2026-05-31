@@ -8,8 +8,10 @@ import {
   signUpWithEmail, 
   signInWithEmail, 
   signInWithGoogle, 
-  createUserProfile 
+  createUserProfile
 } from './services/auth'
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
+import { db } from './services/firebase'
 import { useAuth } from './contexts/AuthContext'
 import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
@@ -470,7 +472,7 @@ function App() {
   const unreadNotifications = notifications.filter(n => !n.read).length
 
   // Real Auth from Firebase
-  const { currentUser: firebaseUser, isDemoMode } = useAuth()
+  const { currentUser: firebaseUser, userProfile: firebaseProfile, isDemoMode } = useAuth()
 
   // Simulated pending verifications for demo (in real app this would come from backend)
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([
@@ -1296,7 +1298,31 @@ function App() {
       legalConsents: consentRecord
     }
 
+    // Save locally (for demo mode compatibility)
     saveUser(newUserWithConsents as CurrentUser)
+
+    // If user is logged in with real Firebase, save profile to Firestore
+    if (!isDemoMode && firebaseUser) {
+      const profileData = {
+        ...newUserWithConsents,
+        uid: firebaseUser.uid,
+        updatedAt: serverTimestamp(),
+      }
+
+      // Remove the local 'id: me' field before saving to Firestore
+      const { id, ...profileWithoutLocalId } = profileData as any
+
+      const userRef = doc(db, 'users', firebaseUser.uid)
+      setDoc(userRef, profileWithoutLocalId, { merge: true })
+        .then(() => {
+          toast.success('Perfil guardado en la nube')
+        })
+        .catch((error) => {
+          console.error('Error saving profile to Firestore:', error)
+          toast.error('Error al guardar el perfil en la nube')
+        })
+    }
+
     setShowOnboarding(false)
     setOnboardingStep(0)
 
@@ -1308,6 +1334,13 @@ function App() {
       acceptsPrivacy: false,
       sharesLocation: false
     })
+
+    // If we just created a real profile, reload so the AuthContext picks it up
+    if (!isDemoMode && firebaseUser) {
+      setTimeout(() => {
+        window.location.reload()
+      }, 800)
+    }
 
     toast.success('¡Bienvenido a EntrenaMatch!', { description: 'Conecta con gente que entrena cerca de ti' })
 
@@ -1425,11 +1458,11 @@ function App() {
               </div>
 
               <button 
-                onClick={handleGoogleAuth}
-                disabled={authLoading}
-                className="w-full flex items-center justify-center gap-3 py-3.5 border border-[#272b33] rounded-2xl text-sm font-medium hover:bg-[#121418] disabled:opacity-60"
+                disabled
+                className="w-full flex items-center justify-center gap-3 py-3.5 border border-[#272b33] rounded-2xl text-sm font-medium bg-[#121418] opacity-50 cursor-not-allowed"
+                title="Google Sign-In temporalmente deshabilitado para pruebas públicas"
               >
-                <span>Continuar con Google</span>
+                <span>Continuar con Google (deshabilitado en demo público)</span>
               </button>
             </div>
           </div>
@@ -1442,8 +1475,12 @@ function App() {
     )
   }
 
-  // Old demo onboarding (only used in demo mode)
-  if (showOnboarding || (isDemoMode && !currentUser)) {
+  // Onboarding logic
+  const needsOnboarding = showOnboarding || 
+                          (isDemoMode && !currentUser) ||
+                          (!isDemoMode && firebaseUser && !firebaseProfile)
+
+  if (needsOnboarding) {
     return (
       <div className="app-container flex flex-col bg-[#0a0b0f] text-white">
         <div className="flex-1 flex flex-col p-6 pt-10">
@@ -1751,11 +1788,11 @@ function App() {
               </div>
 
               <button 
-                onClick={handleGoogleAuth}
-                disabled={authLoading}
-                className="w-full flex items-center justify-center gap-3 py-3.5 border border-[#272b33] rounded-2xl text-sm font-medium hover:bg-[#121418] disabled:opacity-60"
+                disabled
+                className="w-full flex items-center justify-center gap-3 py-3.5 border border-[#272b33] rounded-2xl text-sm font-medium bg-[#121418] opacity-50 cursor-not-allowed"
+                title="Google Sign-In temporalmente deshabilitado para pruebas públicas"
               >
-                <span>Continuar con Google</span>
+                <span>Continuar con Google (deshabilitado en demo público)</span>
               </button>
             </div>
           </div>
@@ -1770,6 +1807,12 @@ function App() {
 
   return (
     <div className="app-container flex flex-col overflow-hidden">
+      {/* Public Demo Banner */}
+      <div className="bg-yellow-500 text-black text-center py-2 text-sm font-medium z-50">
+        🚀 <strong>Public Demo</strong> — Los datos se guardan solo en tu navegador. 
+        Google Sign-In está deshabilitado temporalmente. ¡Prueba con email!
+      </div>
+
       {/* Top bar */}
       <div className="h-14 px-5 flex items-center justify-between border-b border-[#272b33] bg-[#0a0b0f] z-50">
         <div className="flex items-center gap-2.5">
