@@ -956,11 +956,13 @@ function App() {
   return (
     <div className="min-h-screen bg-[#0a0b0f] text-white flex flex-col overflow-hidden relative">
       {/* DEMO BANNER - Pre-alpha */}
-      <div className="bg-[#14b8a6] text-black text-center text-xs py-1.5 font-medium tracking-wide z-50 flex items-center justify-center gap-3 flex-wrap">
-        <span>🚀 PRE-ALPHA • Datos locales (se borran al recargar) • El match del movimiento</span>
+      <div className="bg-[#14b8a6] text-black text-center text-xs py-1.5 font-medium tracking-wide z-50 flex items-center justify-center gap-3 flex-wrap px-3">
+        <span className="font-semibold">🚀 PRE-ALPHA EN CURSO</span>
+        <span>• Datos locales (se borran al recargar)</span>
+        <span className="hidden sm:inline">• Tu feedback define el futuro</span>
         <button 
           onClick={() => { localStorage.clear(); window.location.reload(); }}
-          className="ml-2 text-[10px] bg-black text-[#14b8a6] px-2 py-0.5 rounded active:bg-white active:text-black border border-black"
+          className="ml-1 text-[10px] bg-black text-[#14b8a6] px-2 py-0.5 rounded active:bg-white active:text-black border border-black font-medium"
         >
           RESET TODO
         </button>
@@ -968,9 +970,9 @@ function App() {
           href="https://github.com/musclegrenadechile/entrenamatch/issues" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="ml-2 text-[10px] underline hover:no-underline"
+          className="ml-1 text-[10px] underline hover:no-underline font-medium"
         >
-          Dar feedback
+          Dar feedback →
         </a>
       </div>
       {/* MAIN CONTENT AREA */}
@@ -1265,12 +1267,12 @@ function App() {
             {matchProfiles.length === 0 ? (
               <div className="card p-8 rounded-3xl text-center mt-8">
                 <Heart className="mx-auto text-[#14b8a6] mb-3" size={42} />
-                <div className="font-semibold mb-1">Aún no tienes matches</div>
-                <p className="text-sm text-[#94a3b8] max-w-[280px] mx-auto">
-                  ¡Bienvenido a la Pre-Alpha! Desliza a la derecha en Explorar. 
-                  Los matches aparecen con cierta frecuencia en esta versión de prueba.
+                <div className="font-semibold mb-2">Aún no tienes matches</div>
+                <p className="text-sm text-[#94a3b8] max-w-[300px] mx-auto mb-3">
+                  ¡Bienvenido! Esta es una versión temprana. 
+                  Desliza a la derecha en <strong>Explorar</strong> para empezar a conectar.
                 </p>
-                <p className="text-xs text-[#64748b] mt-3">Tu feedback es muy valioso ❤️</p>
+                <p className="text-xs text-[#64748b]">Los matches aparecen con más frecuencia de lo que crees. ¡Sigue probando!</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
@@ -1706,16 +1708,20 @@ function App() {
 
             <div className="text-center text-[10px] text-[#475569] mt-6">EntrenaMatch • Solo para mayores de 18 años • Demo 2026</div>
 
-            {/* Pre-Alpha Testing Tips */}
-            <div className="mt-6 card rounded-3xl p-4 text-xs">
-              <div className="font-medium text-[#14b8a6] mb-2">Tips para testers de Pre-Alpha</div>
-              <ul className="space-y-1 text-[#94a3b8]">
-                <li>• Prueba deslizar mucho en Explorar (el deck ahora responde mejor)</li>
-                <li>• Edita tu perfil y verifica que los cambios se guarden</li>
-                <li>• Crea sesiones o squads y únete a los de otros</li>
-                <li>• Usa el botón RESET TODO cuando quieras empezar de cero</li>
-                <li>• Reporta cualquier cosa rara en el link "Dar feedback" del banner</li>
-              </ul>
+            {/* Cómo participar en la Pre-Alpha */}
+            <div className="mt-6 card rounded-3xl p-5 text-sm">
+              <div className="font-semibold text-[#14b8a6] mb-3 flex items-center gap-2">
+                <span>📋</span> Cómo participar en esta Pre-Alpha
+              </div>
+              <div className="text-[#cbd5e1] space-y-2 text-sm">
+                <p><strong>1. Explora y conecta</strong><br />Desliza en Explorar, haz match y chatea. Ese es el flujo principal que estamos probando.</p>
+                <p><strong>2. Prueba todo</strong><br />Crea sesiones, únete a squads, edita tu perfil, usa los filtros. Cuanto más uses, mejor.</p>
+                <p><strong>3. Sé honesto</strong><br />Si algo se siente raro, lento, confuso o roto → cuéntanos. Los bugs y las molestias son oro en esta etapa.</p>
+                <p><strong>4. Reinicia cuando quieras</strong><br />Usa el botón <strong>RESET TODO</strong> del banner superior para empezar de cero cuando lo necesites.</p>
+              </div>
+              <div className="mt-4 pt-3 border-t border-[#272b33] text-xs text-[#94a3b8]">
+                Feedback directo → <a href="https://github.com/musclegrenadechile/entrenamatch/issues" target="_blank" className="underline hover:text-[#14b8a6]">GitHub Issues</a>
+              </div>
             </div>
 
             {/* Pre-Alpha Welcome Modal */}
@@ -1728,16 +1734,27 @@ function App() {
                   onClick={e => e.stopPropagation()} 
                   className="card w-full max-w-[380px] rounded-3xl p-7 text-center"
                 >
-                  <div className="text-2xl font-semibold mb-2">¡Bienvenido a la Pre-Alpha!</div>
-                  <p className="text-sm text-[#94a3b8] mb-5">
-                    Estás probando una versión temprana de <strong>EntrenaMatch</strong>.<br />
-                    Todo es local (se borra al recargar). Tu feedback es muy importante.
+                  <div className="text-2xl font-semibold mb-2">¡Bienvenido a la Pre-Alpha de EntrenaMatch!</div>
+                  <p className="text-sm text-[#94a3b8] mb-4">
+                    Estás entre las primeras personas en probar <strong>El match del movimiento</strong>.
                   </p>
-                  <div className="text-left text-sm space-y-2 mb-6">
-                    <div>✅ Desliza en <strong>Explorar</strong> para encontrar gente</div>
-                    <div>✅ Cuando hagas match, chatea en <strong>Mensajes</strong></div>
-                    <div>✅ Usa el botón <strong>RESET TODO</strong> cuando quieras empezar de cero</div>
-                    <div>✅ Reporta bugs o ideas en GitHub (link en el banner superior)</div>
+                  <div className="bg-[#121418] rounded-2xl p-4 text-left text-sm mb-5">
+                    <div className="font-medium text-white mb-2">Qué es esta versión:</div>
+                    <ul className="space-y-1 text-[#cbd5e1]">
+                      <li>• Es una versión temprana y en desarrollo</li>
+                      <li>• Todo se guarda solo en tu navegador (se borra al recargar o hacer RESET)</li>
+                      <li>• Tu feedback real va a definir cómo sigue esto</li>
+                    </ul>
+                  </div>
+                  <div className="text-left text-sm mb-5">
+                    <div className="font-medium mb-1">Qué te pedimos:</div>
+                    <div className="text-[#94a3b8]">Prueba con curiosidad. Rompe cosas. Cuéntanos qué se siente raro, qué falta o qué te gustó. Todo sirve.</div>
+                  </div>
+                  <div className="text-left text-sm space-y-1 mb-6 text-[#cbd5e1]">
+                    <div>→ Desliza en <strong>Explorar</strong></div>
+                    <div>→ Haz match y chatea en <strong>Mensajes</strong></div>
+                    <div>→ Edita tu perfil y crea sesiones/squads</div>
+                    <div>→ Usa el botón <strong>RESET TODO</strong> cuando quieras empezar de cero</div>
                   </div>
                   <button 
                     onClick={() => {
@@ -1746,9 +1763,9 @@ function App() {
                     }} 
                     className="btn-primary w-full"
                   >
-                    Entendido, ¡empecemos!
+                    Entendido, vamos a probar
                   </button>
-                  <p className="text-[10px] text-[#64748b] mt-4">Gracias por ayudarnos a construir esto ❤️</p>
+                  <p className="text-[10px] text-[#64748b] mt-4">Gracias por ser de los primeros ❤️</p>
                 </div>
               </div>
             )}
