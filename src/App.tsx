@@ -613,7 +613,7 @@ function App() {
 
     let unsubscribe: (() => void) | null = null
 
-    ;(async () => {
+    const setupSessionListener = async () => {
       try {
         const { collection, query, onSnapshot, limit } = await import('firebase/firestore')
         const sessionsRef = collection(db, 'sessions')
@@ -645,9 +645,11 @@ function App() {
           console.warn('Real sessions listener error:', error)
         })
       } catch (e) {
-        console.warn('Failed to set up real sessions listener:', e)
+        console.warn('Failed to set up real sessions listener (non-fatal):', e)
       }
-    })()
+    }
+
+    setupSessionListener()
 
     return () => {
       if (unsubscribe) unsubscribe()
@@ -662,7 +664,7 @@ function App() {
 
     let unsubscribe: (() => void) | null = null
 
-    ;(async () => {
+    const setupGroupChatListener = async () => {
       try {
         const { collection, query, onSnapshot, orderBy } = await import('firebase/firestore')
         const messagesRef = collection(db, `sessions/${showGroupChatModalFor}/messages`)
@@ -691,9 +693,11 @@ function App() {
           console.log(`📡 Real-time group chat update for session ${showGroupChatModalFor}: ${msgs.length} messages`)
         })
       } catch (e) {
-        console.warn('Failed to set up real session group chat listener:', e)
+        console.warn('Failed to set up real session group chat listener (non-fatal):', e)
       }
-    })()
+    }
+
+    setupGroupChatListener()
 
     return () => {
       if (unsubscribe) unsubscribe()
