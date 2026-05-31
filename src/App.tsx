@@ -1478,7 +1478,7 @@ function App() {
             ) : (
               <div className="space-y-3">
                 {squads.map(squad => {
-                  const isMember = squad.members.includes('me')
+                  const isMember = squad.members.includes(effectiveUserId)
                   const spots = 4 - squad.members.length
 
                   return (
