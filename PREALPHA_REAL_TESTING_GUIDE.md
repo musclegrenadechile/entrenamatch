@@ -47,7 +47,7 @@
 - Real profiles from other users appear in Explore (alongside demo seeds). Use the "Actualizar reales" button to pull latest.
 - When you swipe right on a real profile, a like + match is written to Firestore. The other person sees it on their Matches tab (after load/refresh).
 - Real-time 1:1 chat works: messages appear on the other device (live via listeners or after refresh). "REAL" badge shown in chat header.
-- Sessions: Real sessions created by users are now persisted to Firestore and visible to other real users in the Sesiones tab (use "Actualizar" or hard refresh).
+- Sessions: Real sessions created by users are now persisted to Firestore and visible to other real users in the Sesiones tab. Use the "Actualizar sesiones reales" button or hard refresh to see latest.
 - "Sincronizado con backend real" indicator in Profile tab.
 - Logout works cleanly for real users.
 - Messages and matches survive hard refresh on both sides.
