@@ -457,8 +457,8 @@ function App() {
   const [showModerationPanel, setShowModerationPanel] = useState(false)
   const [moderationTab, setModerationTab] = useState<'reports' | 'verifications' | 'bans'>('reports')
 
-  // Auth flow state (for real Firebase auth)
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
+  // Auth flow state (default to register in public demo for easy "Crear Cuenta")
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('register')
   const [authEmail, setAuthEmail] = useState('')
   const [authPassword, setAuthPassword] = useState('')
   const [authLoading, setAuthLoading] = useState(false)
@@ -534,7 +534,9 @@ function App() {
 
     if (savedUser) {
       setCurrentUser(JSON.parse(savedUser))
-    } else {
+    } else if (!isDemoMode) {
+      // Only auto-force onboarding on mount for real Firebase mode.
+      // In public demo, we want users to go through the "Crear Cuenta" / login tabs first.
       setShowOnboarding(true)
     }
     if (savedLiked) setLikedIds(JSON.parse(savedLiked))
