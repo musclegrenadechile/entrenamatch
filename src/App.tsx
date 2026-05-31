@@ -278,6 +278,45 @@ function App() {
   const [realProfiles, setRealProfiles] = useState<Profile[]>([])
   const [realMatches, setRealMatches] = useState<string[]>([])
   const [realChatMessages, setRealChatMessages] = useState<any[]>([])
+  const [realSessions, setRealSessions] = useState<TrainingSession[]>([])
+
+  const displaySessions = (!isDemoMode && realSessions.length > 0) ? [...sessions, ...realSessions] : sessions
+
+  const loadRealSessions = async () => {
+    if (!isFirebaseConfigured || !db) {
+      setRealSessions([])
+      return
+    }
+    try {
+      const sessionsRef = collection(db, 'sessions')
+      const q = query(sessionsRef, limit(50))
+      const snapshot = await getDocs(q)
+      const loaded: TrainingSession[] = []
+      snapshot.forEach((doc) => {
+        const data = doc.data() as any
+        if (data && data.title) {
+          loaded.push({
+            id: doc.id,
+            creatorId: data.creatorId || '',
+            creatorName: data.creatorName || 'Usuario',
+            title: data.title,
+            description: data.description,
+            time: data.time || '',
+            location: data.location || '',
+            trainingType: data.trainingType || '',
+            maxParticipants: data.maxParticipants || 4,
+            participants: data.participants || [],
+            createdAt: data.createdAt || Date.now(),
+          })
+        }
+      })
+      setRealSessions(loaded)
+      console.log(`✅ Loaded ${loaded.length} real sessions from Firestore`)
+    } catch (err) {
+      console.warn('Could not load real sessions yet:', err)
+      setRealSessions([])
+    }
+  }
 
   const loadRealProfiles = async () => {
     if (!isFirebaseConfigured || !db) {
@@ -325,11 +364,13 @@ function App() {
   }
 
   // Real profile sync effect: when we have a real Firebase user, load their rich profile from Firestore
+  // and ensure we push any rich local data up if Firestore is minimal
   useEffect(() => {
     if (!isDemoMode && firebaseUser?.uid) {
       (async () => {
         try {
           const realProfile = await getUserProfile(firebaseUser.uid)
+          
           if (realProfile && realProfile.name) {
             const merged: CurrentUser = {
               ...currentUser,
@@ -350,9 +391,26 @@ function App() {
             if (merged.name) {
               saveUser(merged)
             }
+          } else if (currentUser && currentUser.name && firebaseUser?.uid) {
+            // New real user with local rich data but no Firestore profile yet → push it up immediately
+            await updateUserProfile(firebaseUser.uid, {
+              name: currentUser.name,
+              age: currentUser.age,
+              gender: currentUser.gender,
+              city: currentUser.city,
+              country: currentUser.country,
+              bio: currentUser.bio,
+              photos: currentUser.photos,
+              trainingTypes: currentUser.trainingTypes,
+              goals: currentUser.goals,
+              level: currentUser.level,
+              intensity: currentUser.intensity,
+              availability: currentUser.availability,
+            })
+            console.log('✅ Pushed initial rich profile to Firestore for new real user')
           }
         } catch (e) {
-          console.warn('Could not load real profile from Firestore yet:', e)
+          console.warn('Could not load/push real profile from Firestore yet:', e)
         }
       })()
     }
@@ -530,6 +588,13 @@ function App() {
     loadRealProfiles()
   }, [firebaseUser?.uid])
 
+  // Load real sessions for multi-user visibility when real user
+  useEffect(() => {
+    if (!isDemoMode && firebaseUser?.uid) {
+      loadRealSessions()
+    }
+  }, [firebaseUser?.uid, isDemoMode])
+
   // Simulated pending verifications for demo (in real app this would come from backend)
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([
     {
@@ -666,6 +731,28 @@ function App() {
   const saveSessions = (newSessions: TrainingSession[]) => {
     localStorage.setItem('entrenamatch_sessions', JSON.stringify(newSessions))
     setSessions(newSessions)
+
+    // Also persist to Firestore for real multi-user visibility
+    if (!isDemoMode && firebaseUser?.uid && db) {
+      (async () => {
+        try {
+          const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+          // For simplicity in Pre-Alpha, write the latest sessions the user interacts with
+          // A more complete solution would sync all, but this makes created/joined sessions visible
+          for (const s of newSessions.slice(0, 10)) { // limit writes
+            if (s.creatorId === 'me' || s.participants.includes('me')) {
+              await setDoc(doc(db, 'sessions', s.id), {
+                ...s,
+                updatedAt: serverTimestamp(),
+              }, { merge: true })
+            }
+          }
+          console.log('✅ Sessions synced to Firestore for real users')
+        } catch (e) {
+          console.warn('Failed to sync sessions to Firestore:', e)
+        }
+      })()
+    }
   }
 
   const saveReviews = (newReviews: Record<string, TrainingReview[]>) => {
@@ -1462,7 +1549,7 @@ function App() {
                 </div>
               </div>
 
-              {sessions.filter(s => !s.participants.includes('me')).length === 0 ? (
+              {displaySessions.filter(s => !s.participants.includes('me')).length === 0 ? (
                 <div className="card p-7 rounded-3xl text-center">
                   <Star className="mx-auto text-[#14b8a6] mb-3" size={36} />
                   <div className="font-semibold mb-2">No hay sesiones abiertas todavía</div>
@@ -1479,7 +1566,7 @@ function App() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {sessions
+                  {displaySessions
                     .filter(s => !s.participants.includes('me'))
                     .sort((a,b) => b.createdAt - a.createdAt)
                     .map(session => {
@@ -1573,7 +1660,7 @@ function App() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {sessions
+                  {displaySessions
                     .filter(s => s.participants.includes('me') || s.creatorId === 'me')
                     .sort((a,b) => b.createdAt - a.createdAt)
                     .map(session => {
