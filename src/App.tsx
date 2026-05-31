@@ -185,6 +185,10 @@ function App() {
   const [showMatchModal, setShowMatchModal] = useState<Profile | null>(null)
   const [showFullProfile, setShowFullProfile] = useState<Profile | null>(null)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
+  // Temporary edit state for profile (demo)
+  const [editBio, setEditBio] = useState('')
+  const [editAvailability, setEditAvailability] = useState<string[]>([])
+  const [editGoals, setEditGoals] = useState<string[]>([])
 
   // Legal pages
   type LegalPage = 'terms' | 'privacy' | 'community' | null
@@ -1436,10 +1440,61 @@ function App() {
           <div className="flex-1 overflow-auto p-4">
             <div className="flex justify-between items-center mb-4">
               <div className="text-2xl font-semibold tracking-[-1.2px]">Tu perfil</div>
-              <button onClick={() => setIsEditingProfile(!isEditingProfile)} className="flex items-center gap-1 text-sm text-[#14b8a6]">
+              <button 
+                onClick={() => {
+                  if (!isEditingProfile && currentUser) {
+                    // Enter edit mode - populate temp state
+                    setEditBio(currentUser.bio || '')
+                    setEditAvailability([...(currentUser.availability || [])])
+                    setEditGoals([...(currentUser.goals || [])])
+                  } else if (isEditingProfile && currentUser) {
+                    // Save
+                    const updated = {
+                      ...currentUser,
+                      bio: editBio,
+                      availability: editAvailability,
+                      goals: editGoals
+                    }
+                    saveUser(updated as CurrentUser)
+                    toast.success('Perfil actualizado')
+                  }
+                  setIsEditingProfile(!isEditingProfile)
+                }} 
+                className="flex items-center gap-1 text-sm text-[#14b8a6]"
+              >
                 <Edit2 size={16} /> {isEditingProfile ? 'Guardar' : 'Editar'}
               </button>
             </div>
+
+            {isEditingProfile && (
+              <div className="card rounded-3xl p-5 mb-4 text-sm space-y-4">
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-[#64748b] mb-1">Bio</div>
+                  <textarea 
+                    value={editBio} 
+                    onChange={e => setEditBio(e.target.value)} 
+                    className="w-full bg-[#121418] border border-[#272b33] rounded-2xl p-3 text-sm h-20 resize-y"
+                  />
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-[#64748b] mb-1">Disponibilidad (separado por comas)</div>
+                  <input 
+                    value={editAvailability.join(', ')} 
+                    onChange={e => setEditAvailability(e.target.value.split(',').map(s => s.trim()).filter(Boolean))} 
+                    className="w-full bg-[#121418] border border-[#272b33] rounded-2xl p-3 text-sm" 
+                  />
+                </div>
+                <div>
+                  <div className="text-xs uppercase tracking-widest text-[#64748b] mb-1">Objetivos (separado por comas)</div>
+                  <input 
+                    value={editGoals.join(', ')} 
+                    onChange={e => setEditGoals(e.target.value.split(',').map(s => s.trim()).filter(Boolean))} 
+                    className="w-full bg-[#121418] border border-[#272b33] rounded-2xl p-3 text-sm" 
+                  />
+                </div>
+                <div className="text-[10px] text-[#64748b]">Guarda para aplicar los cambios en tu perfil visible.</div>
+              </div>
+            )}
 
             <div className="card rounded-3xl overflow-hidden mb-4">
               <div className="relative h-52">
