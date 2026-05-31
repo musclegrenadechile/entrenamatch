@@ -1406,6 +1406,15 @@ function App() {
         >
           Ver guía
         </button>
+
+        {currentUser && (
+          <button 
+            onClick={handleLogout}
+            className="ml-1 text-[10px] bg-black/70 text-white px-2 py-0.5 rounded hover:bg-black border border-black/50"
+          >
+            Cerrar sesión
+          </button>
+        )}
       </div>
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
@@ -1949,7 +1958,14 @@ function App() {
                   <div className="text-[10px] text-[#14b8a6] -mt-0.5">Sincronizado con backend real</div>
                 )}
               </div>
-              <button 
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={handleLogout}
+                  className="text-sm text-[#f87171] px-3 py-1.5 border border-[#3f2a2a] rounded-xl active:bg-[#1f1616]"
+                >
+                  Cerrar sesión
+                </button>
+                <button 
                 onClick={() => {
                   if (!isEditingProfile && currentUser) {
                     // Enter edit mode - populate temp state
@@ -2006,16 +2022,26 @@ function App() {
             )}
 
             <div className="card rounded-3xl overflow-hidden mb-4">
-              <div className="relative h-52">
-                <img src={currentUser?.photos?.[0] || 'https://picsum.photos/id/1005/600/600'} className="absolute inset-0 w-full h-full object-cover" />
+              <div className="relative h-52 bg-[#111]">
+                <img 
+                  src={currentUser?.photos?.[0] || 'https://picsum.photos/id/1005/600/600'} 
+                  className="absolute inset-0 w-full h-full object-cover" 
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+                <div className="absolute inset-0 bg-black/40" /> {/* Ensure content is readable */}
                 <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/90">
                   <div className="text-3xl font-semibold tracking-tight">{currentUser?.name}, {currentUser?.age}</div>
                   <div className="text-[#14b8a6]">{currentUser?.city}, {currentUser?.country} • {currentUser?.level}</div>
                 </div>
+                {!currentUser?.photos?.length && (
+                  <div className="absolute inset-0 flex items-center justify-center text-[#94a3b8] text-sm">
+                    Sin foto de perfil
+                  </div>
+                )}
               </div>
               <div className="p-5 text-sm">
                 <div className="text-[#94a3b8] mb-1 text-xs">SOBRE TI</div>
-                <div>{currentUser?.bio}</div>
+                <div>{currentUser?.bio || 'Aún no has escrito tu bio.'}</div>
               </div>
             </div>
 
