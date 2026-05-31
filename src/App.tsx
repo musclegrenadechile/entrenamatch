@@ -1244,9 +1244,8 @@ function App() {
     <div className="min-h-screen bg-[#0a0b0f] text-white flex flex-col overflow-hidden relative">
       {/* DEMO BANNER - Pre-alpha */}
       <div className="bg-[#14b8a6] text-black text-center text-xs py-1.5 font-medium tracking-wide z-50 flex items-center justify-center gap-3 flex-wrap px-3">
-        <span className="font-semibold">🚀 PRE-ALPHA EN CURSO</span>
-        <span>• Datos locales (se borran al recargar)</span>
-        <span className="hidden sm:inline">• Tu feedback define el futuro</span>
+        <span className="font-semibold">🚀 PRE-ALPHA EN CURSO — BACKEND REAL ACTIVO</span>
+        <span className="hidden sm:inline">• Tus matches y mensajes viajan entre celulares</span>
 
         <button 
           onClick={() => { localStorage.clear(); window.location.reload(); }}
