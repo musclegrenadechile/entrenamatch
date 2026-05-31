@@ -1083,7 +1083,7 @@ function App() {
   // Matches profiles (supports real profiles from Firestore + seeds)
   const matchProfiles = useMemo(() => {
     const all = [...SEED_PROFILES, ...realProfiles]
-    // Merge local matches + real matches loaded from Firestore
+    // Merge local matches + real matches loaded from Firestore + any pending real matches from current session
     const combinedMatchIds = Array.from(new Set([...matches, ...realMatches]))
     return all.filter(p => combinedMatchIds.includes(p.id))
   }, [matches, realMatches, realProfiles])
