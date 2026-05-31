@@ -30,11 +30,9 @@ import {
   getTrainingStreak, 
   getAverageRating 
 } from './utils'
-import { useLocalStorage } from './hooks/useLocalStorage'
 import { useDemoAuth } from './hooks/useDemoAuth'
 import { useProfile } from './hooks/useProfile'
 import { useFilters } from './hooks/useFilters'
-import { useSwipe } from './hooks/useSwipe'
 import { useSquads } from './hooks/useSquads'
 
 // ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
@@ -147,95 +145,8 @@ const SEED_PROFILES: Profile[] = [
   }
 ]
 
-// These profiles will almost always match when you swipe right (simulates mutual interest)
-const AUTO_MATCH_IDS = ['p1', 'p3', 'p5', 'p6', 'p9', 'p11', 'p13']
-
-// ==================== HAVERSINE DISTANCE (km) ====================
-function getDistanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371 // Earth radius in km
-  const dLat = ((lat2 - lat1) * Math.PI) / 180
-  const dLon = ((lon2 - lon1) * Math.PI) / 180
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2)
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-  return Math.round(R * c * 10) / 10 // 1 decimal
-}
-
-// ==================== TRAINING COMPATIBILITY SCORE (Unique feature) ====================
-function calculateCompatibility(currentUser: CurrentUser, profile: Profile, userLoc: {lat:number, lng:number} | null): number {
-  let score = 0
-
-  // 1. Training Types overlap (40%)
-  const typeOverlap = currentUser.trainingTypes.filter(t => profile.trainingTypes.includes(t)).length
-  const typeScore = Math.min(typeOverlap / Math.max(currentUser.trainingTypes.length, 1), 1) * 40
-
-  // 2. Goals overlap (35%)
-  const goalOverlap = (currentUser.goals || []).filter(g => profile.goals.includes(g)).length
-  const goalScore = Math.min(goalOverlap / Math.max((currentUser.goals || []).length, 1), 1) * 35
-
-  // 3. Level compatibility (15%)
-  const levelMap: Record<string, number> = { 'Principiante': 1, 'Intermedio': 2, 'Avanzado': 3 }
-  const levelDiff = Math.abs(levelMap[currentUser.level] - levelMap[profile.level])
-  const levelScore = (levelDiff === 0 ? 15 : levelDiff === 1 ? 10 : 5)
-
-  // 4. Availability overlap (10%)
-  const availOverlap = currentUser.availability.filter(a => profile.availability.includes(a)).length
-  const availScore = Math.min(availOverlap / Math.max(currentUser.availability.length, 1), 1) * 10
-
-  score = typeScore + goalScore + levelScore + availScore
-
-  // 5. Intensity match (bonus/penalty)
-  if (currentUser.intensity && profile.intensity) {
-    if (currentUser.intensity === profile.intensity) {
-      score += 8
-    } else if (
-      (currentUser.intensity === 'Moderado' && profile.intensity !== 'Intenso') ||
-      (currentUser.intensity === 'Intenso' && profile.intensity === 'Moderado')
-    ) {
-      score += 3
-    } else {
-      score -= 5 // Big mismatch (Relajado + Intenso)
-    }
-  }
-
-  // 6. Distance bonus (if close and location available)
-  if (userLoc) {
-    const dist = getDistanceKm(userLoc.lat, userLoc.lng, profile.lat, profile.lng)
-    if (dist < 10) score += 5
-    else if (dist < 25) score += 3
-  }
-
-  return Math.round(Math.min(Math.max(score, 35), 98)) // Cap between 35-98 for realism
-}
-
-// Helper to get average rating from reviews
-function getAverageRating(profileId: string, allReviews: Record<string, TrainingReview[]>): { avg: number; count: number } {
-  const profileReviews = allReviews[profileId] || []
-  if (profileReviews.length === 0) return { avg: 0, count: 0 }
-  const sum = profileReviews.reduce((acc, r) => acc + r.rating, 0)
-  return { avg: Math.round((sum / profileReviews.length) * 10) / 10, count: profileReviews.length }
-}
-
-// Calculate streak (number of consecutive sessions) with a person
-function getTrainingStreak(profileId: string, allReviews: Record<string, TrainingReview[]>): number {
-  const profileReviews = (allReviews[profileId] || []).sort((a, b) => a.timestamp - b.timestamp)
-  if (profileReviews.length === 0) return 0
-  
-  let streak = 1
-  for (let i = profileReviews.length - 1; i > 0; i--) {
-    const diffDays = (profileReviews[i].timestamp - profileReviews[i-1].timestamp) / (1000 * 60 * 60 * 24)
-    if (diffDays < 30) { // within 30 days = consecutive
-      streak++
-    } else {
-      break
-    }
-  }
-  return streak
-}
+// Note: AUTO_MATCH_IDS, getDistanceKm, calculateCompatibility, getAverageRating and getTrainingStreak 
+// are now imported from ./constants and ./utils (refactor in progress)
 
 // Pre-written chat openers for realism
 const CHAT_OPENERS: Record<string, string[]> = {
@@ -253,7 +164,6 @@ function App() {
   // Persisted state
   const { 
     currentUser, 
-    setCurrentUser, 
     saveUser, 
     showOnboarding, 
     setShowOnboarding 
@@ -268,7 +178,6 @@ function App() {
 
   // UI state
   const [activeTab, setActiveTab] = useState<Tab>('explore')
-  const [showOnboarding, setShowOnboarding] = useState(false)
   const [onboardingStep, setOnboardingStep] = useState(0)
   const [showFilters, setShowFilters] = useState(false)
   const [showMatchModal, setShowMatchModal] = useState<Profile | null>(null)
