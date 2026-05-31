@@ -1,6 +1,6 @@
-# EntrenaMatch — El Tinder del Entrenamiento
+# EntrenaMatch — El match del movimiento
 
-**EntrenaMatch** es una aplicación estilo Tinder para conectar con personas que entrenan cerca de ti, en cualquier parte del mundo.
+**EntrenaMatch** es una plataforma para conectar con personas que entrenan cerca de ti y construir tu equipo de entrenamiento, en cualquier parte del mundo.
 
 La app tiene un enfoque fuerte en **Chile** para su lanzamiento inicial, pero está diseñada para ser completamente global.
 
@@ -14,7 +14,7 @@ La app tiene un enfoque fuerte en **Chile** para su lanzamiento inicial, pero es
 
 ## Características principales
 
-- Swipe fluido estilo Tinder (arrastre + botones)
+- Swipe fluido estilo matching (arrastre + botones)
 - Ubicación por GPS + distancia real en km entre usuarios
 - Filtros avanzados: edad, distancia, tipo de entrenamiento, disponibilidad
 - Chat después del match

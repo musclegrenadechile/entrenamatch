@@ -1362,7 +1362,7 @@ function App() {
               </div>
             </div>
             <h1 className="text-4xl font-bold tracking-tighter">EntrenaMatch</h1>
-            <p className="text-[#94a3b8] mt-2">El Tinder del entrenamiento</p>
+            <p className="text-[#94a3b8] mt-2">El match del movimiento</p>
           </div>
 
           <div className="card rounded-3xl p-6">
