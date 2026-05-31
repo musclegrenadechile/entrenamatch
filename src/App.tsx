@@ -1744,12 +1744,18 @@ function App() {
                       <div className={`message-bubble ${m.from === 'me' ? 'sent' : 'received'}`}>{m.text}</div>
                     </div>
                   ))}
-                  {(messages[activeChat] || []).length === 0 && (
+                  {((realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || []))).length === 0 && (
                     <div className="text-center text-sm text-[#64748b] mt-8">
-                      <div className="font-medium text-white mb-1">¡Acabas de hacer tu primer match en Pre-Alpha!</div>
-                      <div>Escribe algo simple para romper el hielo.</div>
-                      <div className="text-[10px] mt-1">Ejemplo: “Hola! Vi que entrenas pesas, ¿en qué gym vas?”</div>
-                      <div className="text-[10px] text-[#475569] mt-2">Los mensajes son locales en esta versión.</div>
+                      <div className="font-medium text-white mb-1">
+                        {realMatches.includes(activeChat || '') ? '¡Match real con otro tester!' : '¡Acabas de hacer tu primer match en Pre-Alpha!'}
+                      </div>
+                      <div>Escribe algo para romper el hielo.</div>
+                      {realMatches.includes(activeChat || '') && (
+                        <div className="text-[10px] mt-1 text-[#14b8a6]">Los mensajes viajan en tiempo real a su celular</div>
+                      )}
+                      {!realMatches.includes(activeChat || '') && (
+                        <div className="text-[10px] mt-1">Ejemplo: “Hola! Vi que entrenas pesas, ¿en qué gym vas?”</div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -1782,7 +1788,11 @@ function App() {
                     <input type="text" placeholder="Escribe un mensaje..." className="flex-1 bg-[#121418] border border-[#272b33] rounded-3xl px-5 py-3 text-sm outline-none" />
                     <button type="submit" className="bg-[#14b8a6] text-black w-12 rounded-3xl flex items-center justify-center"><Send size={18} /></button>
                   </form>
-                  <div className="text-center text-[10px] text-[#475569] mt-2">Los mensajes son solo para esta demo (se guardan en tu navegador)</div>
+                  <div className="text-center text-[10px] text-[#475569] mt-2">
+                    {realMatches.includes(activeChat || '') 
+                      ? 'Mensajes reales en tiempo real entre celulares' 
+                      : 'Los mensajes son locales en esta versión (demo)'}
+                  </div>
                 </div>
               </div>
             )}
