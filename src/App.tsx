@@ -949,8 +949,14 @@ function App() {
   return (
     <div className="min-h-screen bg-[#0a0b0f] text-white flex flex-col overflow-hidden relative">
       {/* DEMO BANNER - Pre-alpha */}
-      <div className="bg-[#14b8a6] text-black text-center text-xs py-1.5 font-medium tracking-wide z-50">
+      <div className="bg-[#14b8a6] text-black text-center text-xs py-1.5 font-medium tracking-wide z-50 flex items-center justify-center gap-3">
         DEMO PRE-ALPHA • Datos locales (se borran al recargar) • El match del movimiento
+        <button 
+          onClick={() => { localStorage.clear(); window.location.reload(); }}
+          className="ml-2 text-[10px] bg-black text-[#14b8a6] px-2 py-0.5 rounded active:bg-white active:text-black border border-black"
+        >
+          RESET TODO
+        </button>
       </div>
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
