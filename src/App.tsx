@@ -173,9 +173,6 @@ function App() {
     clearProfile 
   } = useProfile()
 
-  // Effective user ID for real vs demo
-  const effectiveUserId = !isDemoMode && firebaseUser?.uid ? firebaseUser.uid : 'me'
-
   const { 
     squads: _squadsFromHook, 
     createSquad: _createSquad, 
@@ -276,6 +273,9 @@ function App() {
     signUpDemo, 
     isAuthenticated: isDemoAuthenticated 
   } = useDemoAuth()
+
+  // Effective user ID for real vs demo (must be after useAuth)
+  const effectiveUserId = !isDemoMode && firebaseUser?.uid ? firebaseUser.uid : 'me'
 
   // Real multi-user state (loaded from Firestore when using real backend)
   const [realProfiles, setRealProfiles] = useState<Profile[]>([])
