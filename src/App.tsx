@@ -960,12 +960,14 @@ function App() {
         <span className="font-semibold">🚀 PRE-ALPHA EN CURSO</span>
         <span>• Datos locales (se borran al recargar)</span>
         <span className="hidden sm:inline">• Tu feedback define el futuro</span>
+
         <button 
           onClick={() => { localStorage.clear(); window.location.reload(); }}
           className="ml-1 text-[10px] bg-black text-[#14b8a6] px-2 py-0.5 rounded active:bg-white active:text-black border border-black font-medium"
         >
           RESET TODO
         </button>
+
         <a 
           href="https://github.com/musclegrenadechile/entrenamatch/issues" 
           target="_blank" 
@@ -974,6 +976,16 @@ function App() {
         >
           Dar feedback →
         </a>
+
+        <button 
+          onClick={() => {
+            localStorage.removeItem('entrenamatch_prealpha_welcome_shown')
+            setShowPreAlphaWelcome(true)
+          }}
+          className="ml-1 text-[10px] bg-black/70 text-white px-2 py-0.5 rounded hover:bg-black border border-black/50"
+        >
+          Ver guía
+        </button>
       </div>
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
@@ -1018,8 +1030,18 @@ function App() {
             {squads.length === 0 ? (
               <div className="card p-8 rounded-3xl text-center mt-8">
                 <Users className="mx-auto text-[#14b8a6] mb-3" size={42} />
-                <div className="font-semibold mb-1">No hay squads aún</div>
-                <p className="text-sm text-[#94a3b8]">Crea uno o únete a un grupo fijo de entrenamiento.</p>
+                <div className="font-semibold mb-2">Sé el primero en crear un Squad en Pre-Alpha</div>
+                <p className="text-sm text-[#94a3b8] mb-4 max-w-[280px] mx-auto">
+                  Los squads son grupos fijos de 3-4 personas para entrenar consistentemente. 
+                  Esta es una de las features que más queremos probar.
+                </p>
+                <p className="text-xs text-[#64748b] mb-4">Crea uno con foco (gym, running, calistenia...) e invita a otros testers. Cuéntanos cómo se siente el chat grupal.</p>
+                <button 
+                  onClick={() => setShowCreateSquad(true)}
+                  className="px-6 py-2.5 bg-[#14b8a6] text-black rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
+                >
+                  Crear mi primer Squad
+                </button>
               </div>
             ) : (
               <div className="space-y-3">
@@ -1106,9 +1128,19 @@ function App() {
               </div>
 
               {sessions.filter(s => !s.participants.includes('me')).length === 0 ? (
-                <div className="card p-6 rounded-3xl text-center">
-                  <p className="text-[#94a3b8] text-sm">No hay sesiones abiertas por ahora.</p>
-                  <p className="text-xs text-[#64748b] mt-1">¡Crea una tú!</p>
+                <div className="card p-7 rounded-3xl text-center">
+                  <Star className="mx-auto text-[#14b8a6] mb-3" size={36} />
+                  <div className="font-semibold mb-2">No hay sesiones abiertas todavía</div>
+                  <p className="text-sm text-[#94a3b8] mb-3 max-w-[260px] mx-auto">
+                    En Pre-Alpha queremos probar el flujo completo de sesiones grupales + chat en vivo.
+                  </p>
+                  <p className="text-xs text-[#64748b] mb-4">Sé el primero en crear una. Los testers que se unan podrán chatear contigo en el grupo.</p>
+                  <button 
+                    onClick={() => setShowCreateSession(true)}
+                    className="px-6 py-2 bg-[#14b8a6] text-black rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
+                  >
+                    Crear la primera sesión
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1190,8 +1222,19 @@ function App() {
               </div>
 
               {sessions.filter(s => s.participants.includes('me') || s.creatorId === 'me').length === 0 ? (
-                <div className="card p-6 rounded-3xl text-center">
-                  <p className="text-[#94a3b8] text-sm">Aún no te has unido ni creado ninguna sesión.</p>
+                <div className="card p-7 rounded-3xl text-center">
+                  <div className="font-semibold mb-2">Aún no tienes sesiones</div>
+                  <p className="text-sm text-[#94a3b8] mb-3 max-w-[260px] mx-auto">
+                    Crea tu primera sesión o únete a una abierta arriba. 
+                    Esta es una de las features clave que estamos testeando en Pre-Alpha.
+                  </p>
+                  <p className="text-xs text-[#64748b] mb-4">El chat grupal + reseñas después de entrenar es lo que más feedback necesitamos.</p>
+                  <button 
+                    onClick={() => setShowCreateSession(true)}
+                    className="px-5 py-2 bg-[#14b8a6] text-black rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
+                  >
+                    Crear sesión de prueba
+                  </button>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -1269,10 +1312,11 @@ function App() {
                 <Heart className="mx-auto text-[#14b8a6] mb-3" size={42} />
                 <div className="font-semibold mb-2">Aún no tienes matches</div>
                 <p className="text-sm text-[#94a3b8] max-w-[300px] mx-auto mb-3">
-                  ¡Bienvenido! Esta es una versión temprana. 
-                  Desliza a la derecha en <strong>Explorar</strong> para empezar a conectar.
+                  ¡Bienvenido a la Pre-Alpha! Desliza a la derecha en <strong>Explorar</strong>.<br />
+                  En esta versión los matches aparecen con más frecuencia de lo que parece.
                 </p>
-                <p className="text-xs text-[#64748b]">Los matches aparecen con más frecuencia de lo que crees. ¡Sigue probando!</p>
+                <p className="text-xs text-[#64748b] mb-2">Sigue probando y cuéntanos qué se siente.</p>
+                <p className="text-[10px] text-[#14b8a6]">Tu feedback es lo más valioso ahora mismo ❤️</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
@@ -1414,8 +1458,10 @@ function App() {
                   ))}
                   {(messages[activeChat] || []).length === 0 && (
                     <div className="text-center text-sm text-[#64748b] mt-8">
-                      ¡Acabas de hacer match!<br />
-                      <span className="text-xs">Escribe algo simple para romper el hielo. En esta versión los mensajes se guardan solo en tu navegador.</span>
+                      <div className="font-medium text-white mb-1">¡Acabas de hacer tu primer match en Pre-Alpha!</div>
+                      <div>Escribe algo simple para romper el hielo.</div>
+                      <div className="text-[10px] mt-1">Ejemplo: “Hola! Vi que entrenas pesas, ¿en qué gym vas?”</div>
+                      <div className="text-[10px] text-[#475569] mt-2">Los mensajes son locales en esta versión.</div>
                     </div>
                   )}
                 </div>
@@ -1734,28 +1780,35 @@ function App() {
                   onClick={e => e.stopPropagation()} 
                   className="card w-full max-w-[380px] rounded-3xl p-7 text-center"
                 >
-                  <div className="text-2xl font-semibold mb-2">¡Bienvenido a la Pre-Alpha de EntrenaMatch!</div>
+                  <div className="text-2xl font-semibold mb-2">¡Bienvenido a la Pre-Alpha!</div>
                   <p className="text-sm text-[#94a3b8] mb-4">
-                    Estás entre las primeras personas en probar <strong>El match del movimiento</strong>.
+                    Estás ayudando a construir <strong>El match del movimiento</strong> desde el día uno.
                   </p>
+
                   <div className="bg-[#121418] rounded-2xl p-4 text-left text-sm mb-5">
-                    <div className="font-medium text-white mb-2">Qué es esta versión:</div>
-                    <ul className="space-y-1 text-[#cbd5e1]">
-                      <li>• Es una versión temprana y en desarrollo</li>
-                      <li>• Todo se guarda solo en tu navegador (se borra al recargar o hacer RESET)</li>
-                      <li>• Tu feedback real va a definir cómo sigue esto</li>
+                    <div className="font-medium text-white mb-2">Esto es Pre-Alpha:</div>
+                    <ul className="space-y-1.5 text-[#cbd5e1]">
+                      <li>→ Versión temprana y en desarrollo</li>
+                      <li>→ Todo es local (se borra al recargar o hacer RESET)</li>
+                      <li>→ Tu opinión real importa mucho más que en una app terminada</li>
                     </ul>
                   </div>
+
                   <div className="text-left text-sm mb-5">
-                    <div className="font-medium mb-1">Qué te pedimos:</div>
-                    <div className="text-[#94a3b8]">Prueba con curiosidad. Rompe cosas. Cuéntanos qué se siente raro, qué falta o qué te gustó. Todo sirve.</div>
+                    <div className="font-medium text-white mb-1.5">Qué hacer ahora (esto es lo que más necesitamos probar):</div>
+                    <div className="text-[#cbd5e1] space-y-1 text-sm">
+                      <div>1. <strong>Explorar</strong> → desliza 8-10 perfiles</div>
+                      <div>2. Haz match y ve a <strong>Mensajes</strong> (usa las sugerencias que te damos)</div>
+                      <div>3. <strong>Crea 1 Squad</strong> y 1 <strong>Sesión</strong> (aunque sea de prueba)</div>
+                      <div>4. Únete a algo que otro tester creó</div>
+                    </div>
                   </div>
-                  <div className="text-left text-sm space-y-1 mb-6 text-[#cbd5e1]">
-                    <div>→ Desliza en <strong>Explorar</strong></div>
-                    <div>→ Haz match y chatea en <strong>Mensajes</strong></div>
-                    <div>→ Edita tu perfil y crea sesiones/squads</div>
-                    <div>→ Usa el botón <strong>RESET TODO</strong> cuando quieras empezar de cero</div>
+
+                  <div className="text-left text-sm mb-6">
+                    <div className="font-medium text-white mb-1">Regla de oro:</div>
+                    <div className="text-[#94a3b8]">Si algo te molesta, confunde o no funciona → cuéntanos. Los problemas son el tesoro de esta etapa.</div>
                   </div>
+
                   <button 
                     onClick={() => {
                       localStorage.setItem('entrenamatch_prealpha_welcome_shown', 'true')
@@ -1763,15 +1816,24 @@ function App() {
                     }} 
                     className="btn-primary w-full"
                   >
-                    Entendido, vamos a probar
+                    Entendido, vamos a romper cosas juntos
                   </button>
-                  <p className="text-[10px] text-[#64748b] mt-4">Gracias por ser de los primeros ❤️</p>
+
+                  <p className="text-[10px] text-[#64748b] mt-4">Gracias de verdad por estar aquí desde tan temprano ❤️</p>
                 </div>
               </div>
             )}
           </div>
         )}
       </div>
+
+      {/* Floating Pre-Alpha Help Button */}
+      <button
+        onClick={() => setShowPreAlphaWelcome(true)}
+        className="fixed bottom-20 right-4 z-[190] bg-[#14b8a6] text-black text-xs font-medium px-3 py-2 rounded-2xl shadow-lg active:scale-95 transition flex items-center gap-1.5"
+      >
+        📋 Guía Pre-Alpha
+      </button>
 
       {/* Bottom Navigation - now with Squads */}
       <div className="h-[62px] border-t border-[#272b33] bg-[#0a0b0f] grid grid-cols-6 z-50 text-[10px]">
@@ -2232,12 +2294,25 @@ function App() {
                   <img src={showMatchModal.photos[0]} className="w-20 h-20 rounded-full border-4 border-[#121418] object-cover" />
                 </div>
 
-                <div className="text-sm text-[#94a3b8] mb-6">Ambos están en {showMatchModal.city}, {showMatchModal.country}. ¡Escríbele ya!</div>
+                <div className="text-sm text-[#94a3b8] mb-4">Ambos están en {showMatchModal.city}, {showMatchModal.country}. ¡Escríbele ya!</div>
                 {userLocation && (
-                  <div className="text-[#14b8a6] text-sm font-medium -mt-4 mb-6">
+                  <div className="text-[#14b8a6] text-sm font-medium -mt-2 mb-4">
                     Están a {getDistanceKm(userLocation.lat, userLocation.lng, showMatchModal.lat, showMatchModal.lng)} km
                   </div>
                 )}
+
+                {/* Suggested openers for Pre-Alpha testers - removes "qué digo?" friction */}
+                {(() => {
+                  const openers = CHAT_OPENERS[showMatchModal.id] || ["¡Hola! Vi tu perfil y me tinca entrenar juntos 💪"];
+                  return (
+                    <div className="mb-5 text-left bg-[#121418] rounded-2xl p-3 text-xs">
+                      <div className="text-[#14b8a6] font-medium mb-1.5 text-center">Sugerencias para romper el hielo (copia y pega):</div>
+                      {openers.slice(0, 2).map((opener, idx) => (
+                        <div key={idx} className="text-[#cbd5e1] mb-1.5 last:mb-0 leading-snug">• {opener}</div>
+                      ))}
+                    </div>
+                  );
+                })()}
 
                 <div className="space-y-3">
                   <button onClick={() => closeMatchModal(true)} className="btn-primary w-full text-base">Enviar mensaje ahora</button>
