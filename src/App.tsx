@@ -1199,7 +1199,8 @@ function App() {
     if (isRealChat) {
       // Real cross-device chat
       sendRealMessage(text, activeChat)
-      // Also update local view optimistically
+
+      // Optimistic update for both local messages and realChatMessages for instant feel
       const newMsg: Message = {
         id: Date.now().toString(36) + Math.random(),
         from: 'me',
@@ -1209,6 +1210,9 @@ function App() {
       const currentChat = messages[activeChat] || []
       const updated = { ...messages, [activeChat]: [...currentChat, newMsg] }
       saveMessages(updated)
+
+      // Also update the real messages state immediately
+      setRealChatMessages(prev => [...prev, newMsg])
       return
     }
 
