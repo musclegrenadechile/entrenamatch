@@ -36,6 +36,8 @@ import { useProfile } from './hooks/useProfile'
 import { useFilters } from './hooks/useFilters'
 import { useSquads } from './hooks/useSquads'
 import { ExploreTab } from './components/explore/ExploreTab'
+import { AuthScreen } from './components/auth/AuthScreen'
+import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { db, isFirebaseConfigured } from './services/firebase'
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore'
 
@@ -169,6 +171,7 @@ function App() {
   const { 
     currentUser, 
     saveUser, 
+    showOnboarding,
     setShowOnboarding,
     clearProfile 
   } = useProfile()
@@ -202,6 +205,13 @@ function App() {
   const [showPreAlphaWelcome, setShowPreAlphaWelcome] = useState(() => {
     return !localStorage.getItem('entrenamatch_prealpha_welcome_shown')
   })
+
+  // Auth UI state (restored for account creation)
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('register')
+  const [authEmail, setAuthEmail] = useState('')
+  const [authPassword, setAuthPassword] = useState('')
+  const [authLoading, setAuthLoading] = useState(false)
+  const [authError, setAuthError] = useState('')
   // Temporary edit state for profile (demo)
   const [editBio, setEditBio] = useState('')
   const [editAvailability, setEditAvailability] = useState<string[]>([])
@@ -1434,6 +1444,43 @@ function App() {
   const resetFilters = resetFiltersHook || (() => {
     setFilters({ minAge: 20, maxAge: 40, gender: 'todos', trainingTypes: [], availability: [], maxDistanceKm: 100, onlyAvailableToday: false })
   })
+
+  // Gate for unauthenticated users and profile creation
+  if (!currentUser) {
+    return (
+      <ErrorBoundary>
+        <AuthScreen
+          authMode={authMode}
+          setAuthMode={setAuthMode}
+          authEmail={authEmail}
+          setAuthEmail={setAuthEmail}
+          authPassword={authPassword}
+          setAuthPassword={setAuthPassword}
+          authLoading={authLoading}
+          authError={authError}
+          handleEmailAuth={handleEmailAuth}
+          isDemoMode={isDemoMode}
+        />
+      </ErrorBoundary>
+    )
+  }
+
+  if (showOnboarding) {
+    return (
+      <ErrorBoundary>
+        <OnboardingFlow
+          onboardingStep={0} // simplified - internal state in component
+          setOnboardingStep={() => {}}
+          currentUser={currentUser}
+          saveUser={saveUser}
+          setShowOnboarding={setShowOnboarding}
+          requestUserLocation={requestUserLocation}
+          consents={{ is18: true, isForTraining: true, sharesLocation: true }}
+          setConsents={() => {}}
+        />
+      </ErrorBoundary>
+    )
+  }
 
   return (
     <ErrorBoundary>
