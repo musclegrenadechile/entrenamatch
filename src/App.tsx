@@ -447,7 +447,7 @@ function App() {
     const newReview: TrainingReview = {
       id: 'r' + Date.now(),
       reviewerId: 'me',
-      reviewerName: currentUser.name,
+      reviewerName: currentUser?.name || 'Anónimo',
       rating: reviewRating,
       comment: reviewComment.trim() || undefined,
       photo: reviewPhoto || undefined,
@@ -650,7 +650,7 @@ function App() {
     const newMsg: SessionMessage = {
       id: 'sm' + Date.now(),
       senderId: 'me',
-      senderName: currentUser.name,
+      senderName: currentUser?.name || 'Tú',
       text: text.trim() || '',
       timestamp: Date.now(),
       photo: photo || undefined,
@@ -1861,7 +1861,7 @@ function App() {
                               const newSession: TrainingSession = {
                                 id: 's' + Date.now(),
                                 creatorId: 'me',
-                                creatorName: currentUser!.name,
+                                creatorName: currentUser?.name || 'Tú',
                                 title: `Sesión del Squad: ${squad.name}`,
                                 time: 'Mañana 19:00',
                                 location: squad.focus === 'Running' ? 'Playa Reñaca' : 'Gym cercano',
@@ -1955,7 +1955,7 @@ function App() {
                 const newSession: TrainingSession = {
                   id: 's' + Date.now(),
                   creatorId: 'me',
-                  creatorName: currentUser!.name,
+                  creatorName: currentUser?.name || 'Tú',
                   title: (form.elements.namedItem('title') as HTMLInputElement).value,
                   time: (form.elements.namedItem('time') as HTMLInputElement).value,
                   location: (form.elements.namedItem('location') as HTMLInputElement).value,
@@ -1972,7 +1972,7 @@ function App() {
                 const creatorMsg: SessionMessage = {
                   id: 'sm_create',
                   senderId: 'me',
-                  senderName: currentUser!.name,
+                  senderName: currentUser?.name || 'Tú',
                   text: `¡Hola! Creé esta sesión para ${newSession.trainingType.toLowerCase()}. ¿Quién se anima?`,
                   timestamp: Date.now()
                 }
