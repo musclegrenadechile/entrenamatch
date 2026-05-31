@@ -15,157 +15,24 @@ import { useAuth } from './contexts/AuthContext'
 import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
 
-// ==================== TYPES ====================
-interface Profile {
-  id: string
-  name: string
-  age: number
-  gender: 'hombre' | 'mujer'
-  city: string
-  country: string
-  lat: number
-  lng: number
-  bio: string
-  photos: string[]
-  trainingTypes: string[]
-  goals: string[]
-  level: 'Principiante' | 'Intermedio' | 'Avanzado'
-  availability: string[]
-  availableToday?: boolean
-  intensity?: 'Relajado' | 'Moderado' | 'Intenso'
-  verificationStatus?: 'unverified' | 'pending' | 'verified'
-  verificationDate?: number
-  verificationDocuments?: {
-    idPhoto?: string
-    selfiePhoto?: string
-  }
-}
-
-interface Message {
-  id: string
-  from: 'me' | 'them'
-  text: string
-  timestamp: number
-}
-
-interface TrainingSession {
-  id: string
-  creatorId: string
-  creatorName: string
-  title: string
-  description?: string
-  time: string          // e.g. "Mañana 19:00"
-  location: string      // e.g. "Reñaca - Playa" or gym name
-  trainingType: string
-  maxParticipants: number
-  participants: string[] // user ids
-  createdAt: number
-}
-
-interface TrainingReview {
-  id: string
-  reviewerId: string
-  reviewerName: string
-  rating: number // 1-5
-  comment?: string
-  photo?: string // data URL
-  timestamp: number
-}
-
-interface SessionMessage {
-  id: string
-  senderId: string
-  senderName: string
-  text: string
-  timestamp: number
-  photo?: string // data URL for photo messages
-  reactions?: Record<string, string[]> // emoji -> list of user names who reacted
-}
-
-interface Squad {
-  id: string
-  name: string
-  focus: string // e.g. "Pesas", "Running", "Calistenia"
-  members: string[] // user ids (max 4)
-  createdBy: string
-  createdAt: number
-}
-
-interface Report {
-  id: string
-  reporterId: string
-  reportedUserId: string
-  reason: string
-  details?: string
-  context: 'profile' | '1v1_chat' | 'group_chat' | 'session' | 'squad'
-  contextId?: string
-  timestamp: number
-  status: 'pending' | 'reviewed' | 'resolved'
-}
-
-interface Notification {
-  id: string
-  type: 'match' | 'session_join' | 'squad_join' | 'verification' | 'group_message' | 'report'
-  title: string
-  body: string
-  timestamp: number
-  read: boolean
-  relatedId?: string // profileId, sessionId, squadId, etc.
-}
-
-interface CurrentUser extends Omit<Profile, 'id'> {
-  id: 'me'
-  availableToday?: boolean
-  verificationStatus?: 'unverified' | 'pending' | 'verified'
-  verificationDate?: number
-  verificationDocuments?: {
-    idPhoto?: string
-    selfiePhoto?: string
-  }
-  legalConsents?: {
-    acceptedAt: number
-    termsVersion: string
-    privacyVersion: string
-    communityVersion: string
-    is18: boolean
-    isForTraining: boolean
-    sharesLocation: boolean
-  }
-}
-
-type Tab = 'explore' | 'squads' | 'sesiones' | 'matches' | 'messages' | 'profile'
-
-const TRAINING_OPTIONS = [
-  'Pesas/Gym', 'Running', 'Calistenia', 'CrossFit', 'Yoga', 
-  'Funcional', 'Boxeo', 'Ciclismo', 'Natación', 'Pilates'
-]
-
-
-
-const AVAILABILITY = ['Mañana', 'Tarde', 'Noche']
-
-const TRAINING_GOALS = [
-  'Ganar músculo',
-  'Perder grasa',
-  'Aumentar fuerza',
-  'Mejorar resistencia',
-  'Rehabilitación / Lesión',
-  'Preparar competencia',
-  'Mantenerse en forma',
-  'Socializar y motivación',
-  'Movilidad y flexibilidad',
-  'Pérdida de peso'
-]
-
-const TRAINING_INTENSITIES = ['Relajado', 'Moderado', 'Intenso'] as const;
-
-// Legal document versions (important for compliance)
-const LEGAL_VERSIONS = {
-  terms: 'v1.1',
-  privacy: 'v1.1',
-  community: 'v1.0',
-  lastUpdated: '2026-05-20'
-};
+// ==================== REFACTORED IMPORTS ====================
+import type { 
+  Profile, Message, TrainingSession, TrainingReview, 
+  SessionMessage, Squad, Report, Notification, CurrentUser, Tab 
+} from './types'
+import { 
+  TRAINING_OPTIONS, AVAILABILITY, TRAINING_GOALS, 
+  TRAINING_INTENSITIES, LEGAL_VERSIONS, AUTO_MATCH_IDS 
+} from './constants'
+import { 
+  getDistanceKm, 
+  calculateCompatibility, 
+  getTrainingStreak, 
+  getAverageRating 
+} from './utils'
+import { useLocalStorage } from './hooks/useLocalStorage'
+import { useDemoAuth } from './hooks/useDemoAuth'
+import { useProfile } from './hooks/useProfile'
 
 // ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
 // Lanzamiento inicial fuerte en Chile + presencia en LatAm y España
@@ -381,7 +248,13 @@ const CHAT_OPENERS: Record<string, string[]> = {
 // ==================== MAIN APP ====================
 function App() {
   // Persisted state
-  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null)
+  const { 
+    currentUser, 
+    setCurrentUser, 
+    saveUser, 
+    showOnboarding, 
+    setShowOnboarding 
+  } = useProfile()
   const [likedIds, setLikedIds] = useState<string[]>([])
   const [passedIds, setPassedIds] = useState<string[]>([])
   const [matches, setMatches] = useState<string[]>([]) // profile ids you matched with
@@ -470,8 +343,15 @@ function App() {
 
   const unreadNotifications = notifications.filter(n => !n.read).length
 
-  // Real Auth from Firebase
+  // Real Auth from Firebase + Demo Auth
   const { currentUser: firebaseUser, userProfile: firebaseProfile, isDemoMode } = useAuth()
+  const { 
+    demoUser: demoAuthUser, 
+    signInDemo, 
+    signUpDemo, 
+    logoutDemo, 
+    isAuthenticated: isDemoAuthenticated 
+  } = useDemoAuth()
 
   // Simulated pending verifications for demo (in real app this would come from backend)
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([
@@ -626,11 +506,8 @@ function App() {
     if (savedNotifications) setNotifications(JSON.parse(savedNotifications))
   }, [])
 
-  // Save helpers
-  const saveUser = (user: CurrentUser) => {
-    localStorage.setItem('fitvina_user', JSON.stringify(user))
-    setCurrentUser(user)
-  }
+  // Save helpers - now delegated to useProfile hook
+  // (saveUser is already provided by the hook)
   const saveLiked = (ids: string[]) => { localStorage.setItem('fitvina_liked', JSON.stringify(ids)); setLikedIds(ids) }
   const savePassed = (ids: string[]) => { localStorage.setItem('fitvina_passed', JSON.stringify(ids)); setPassedIds(ids) }
   const saveMatches = (ids: string[]) => { localStorage.setItem('fitvina_matches', JSON.stringify(ids)); setMatches(ids) }
@@ -769,27 +646,38 @@ function App() {
     setAuthError('')
 
     try {
-      if (isRegister) {
-        const firebaseUser = await signUpWithEmail(authEmail, authPassword)
-        // Create basic profile in Firestore
-        await createUserProfile(firebaseUser, {
-          name: authEmail.split('@')[0],
-          age: 25,
-          gender: 'hombre',
-          city: '',
-          country: 'Chile',
-          bio: '',
-          photos: [],
-          trainingTypes: [],
-          goals: [],
-          level: 'Intermedio',
-          intensity: 'Moderado',
-          availability: ['Tarde'],
-        })
-        toast.success('Cuenta creada exitosamente')
+      if (isDemoMode) {
+        // Use the new useDemoAuth hook
+        if (isRegister) {
+          await signUpDemo(authEmail)
+          toast.success('Cuenta creada exitosamente')
+        } else {
+          await signInDemo(authEmail)
+          toast.success('Sesión iniciada')
+        }
       } else {
-        await signInWithEmail(authEmail, authPassword)
-        toast.success('Sesión iniciada')
+        // Real Firebase path
+        if (isRegister) {
+          const firebaseUser = await signUpWithEmail(authEmail, authPassword)
+          await createUserProfile(firebaseUser, {
+            name: authEmail.split('@')[0],
+            age: 25,
+            gender: 'hombre',
+            city: '',
+            country: 'Chile',
+            bio: '',
+            photos: [],
+            trainingTypes: [],
+            goals: [],
+            level: 'Intermedio',
+            intensity: 'Moderado',
+            availability: ['Tarde'],
+          })
+          toast.success('Cuenta creada exitosamente')
+        } else {
+          await signInWithEmail(authEmail, authPassword)
+          toast.success('Sesión iniciada')
+        }
       }
     } catch (error: any) {
       console.error(error)
@@ -797,15 +685,12 @@ function App() {
     } finally {
       setAuthLoading(false)
 
-      // Demo mode: after successful auth, advance the UI
+      // In demo mode, after successful auth, decide next step
       if (isDemoMode) {
         const hasLocalProfile = localStorage.getItem('fitvina_user')
         if (!hasLocalProfile) {
-          // New user in demo → force onboarding to create full profile
           setShowOnboarding(true)
         }
-        // The context will update via the 'demo-auth-changed' event,
-        // which will hide the login screen on next render.
       }
     }
   }
@@ -1350,7 +1235,7 @@ function App() {
   // ==================== RENDER ====================
 
   // Show login/register screen if no authenticated user (works for both real Firebase and public demo mode)
-  const isAuthenticated = !!firebaseUser
+  const isAuthenticated = isDemoMode ? isDemoAuthenticated : !!firebaseUser
   if (!isAuthenticated) {
     return (
       <div className="app-container flex items-center justify-center bg-[#0a0b0f] p-4">
