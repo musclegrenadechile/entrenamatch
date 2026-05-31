@@ -1843,7 +1843,12 @@ function App() {
         {activeTab === 'profile' && currentUser && (
           <div className="flex-1 overflow-auto p-4">
             <div className="flex justify-between items-center mb-4">
-              <div className="text-2xl font-semibold tracking-[-1.2px]">Tu perfil</div>
+              <div>
+                <div className="text-2xl font-semibold tracking-[-1.2px]">Tu perfil</div>
+                {!isDemoMode && (
+                  <div className="text-[10px] text-[#14b8a6] -mt-0.5">Sincronizado con backend real</div>
+                )}
+              </div>
               <button 
                 onClick={() => {
                   if (!isEditingProfile && currentUser) {
