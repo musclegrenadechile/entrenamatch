@@ -1411,6 +1411,31 @@ function App() {
                 {authLoading ? 'Cargando...' : (authMode === 'register' ? 'Crear cuenta' : 'Iniciar sesión')}
               </button>
 
+              <div className="text-center -mt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isDemoMode) {
+                      toast.info('En la versión de prueba los datos son locales al navegador.', {
+                        description: 'No hay recuperación real de contraseña. Puedes borrar todo y empezar de cero.',
+                        action: {
+                          label: 'Borrar datos y reiniciar',
+                          onClick: () => {
+                            localStorage.clear()
+                            window.location.reload()
+                          }
+                        }
+                      })
+                    } else {
+                      toast('La recuperación de contraseña estará disponible cuando conectemos Firebase real (Fase 1).')
+                    }
+                  }}
+                  className="text-xs text-[#64748b] hover:text-[#14b8a6] underline transition"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-[#272b33]"></div>
