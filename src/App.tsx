@@ -2485,7 +2485,7 @@ function App() {
               {(() => {
                 const squad = squads.find(s => s.id === selectedSquad)
                 if (!squad) return null
-                const isMember = squad.members.includes('me')
+                const isMember = squad.members.includes(effectiveUserId)
 
                 return (
                   <>
