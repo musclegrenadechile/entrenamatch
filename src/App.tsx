@@ -1134,23 +1134,32 @@ function App() {
         toast('Like enviado', { description: `A ${profile.name} le avisaremos si hay match` })
       }
 
-      // Real Firebase: persist the like/match for other users to see (cross-device)
+      // Real Firebase: persist the like + match for cross-device visibility
       if (isRealProfile && firebaseUser?.uid && db) {
         (async () => {
           try {
             const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
             const matchId = [firebaseUser.uid, profileId].sort().join('_')
+
+            // Write a like record (useful for future mutual matching logic)
+            await setDoc(doc(db, 'likes', `${firebaseUser.uid}_${profileId}`), {
+              liker: firebaseUser.uid,
+              liked: profileId,
+              createdAt: serverTimestamp(),
+            }, { merge: true })
+
+            // Write the match (current Pre-Alpha: auto-match for fast testing of real chat)
             await setDoc(doc(db, 'matches', matchId), {
               user1: firebaseUser.uid,
               user2: profileId,
               createdAt: serverTimestamp(),
               status: 'active',
-              // For Pre-Alpha testing we auto-match so real users on different phones can immediately test chat
               autoMatchedForTesting: true
             }, { merge: true })
-            console.log('✅ Real match written to Firestore (both users will see it after load/refresh)')
+
+            console.log('✅ Real like + match written to Firestore for cross-device testing')
           } catch (e) {
-            console.warn('Could not write real match yet:', e)
+            console.warn('Could not write real like/match yet:', e)
           }
         })()
       }
