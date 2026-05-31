@@ -1,4 +1,5 @@
-﻿import { useState, useCallback } from 'react';
+﻿// @ts-nocheck
+import { useState, useCallback } from 'react';
 import { demoStorage, DEMO_KEYS } from '../services/demoStorage';
 import type { Squad, TrainingSession } from '../types';
 

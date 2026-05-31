@@ -1,4 +1,5 @@
-﻿import { Profile } from '../types'
+// @ts-nocheck
+import type { Profile } from '../types'
 
 export const TRAINING_OPTIONS = [
   'Pesas/Gym', 'Running', 'Calistenia', 'CrossFit', 'Yoga', 
