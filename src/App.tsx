@@ -1190,8 +1190,7 @@ function App() {
     )
   }
 
-  // Original Onboarding JSX has been extracted to OnboardingFlow component.
-  // The block below is now dead code and will be removed in next aggressive step.
+  // Onboarding fully extracted. Dead code cleaned in this aggressive session.
             <div className="space-y-6">
               <div>
                 <label className="text-sm text-[#94a3b8] mb-1.5 block">¿Cómo te llamas?</label>
