@@ -1797,7 +1797,7 @@ function App() {
       <AnimatePresence>
         {selectedSquad && (
           <div className="absolute inset-0 z-[100] bg-black/90 flex flex-col" onClick={() => setSelectedSquad(null)}>
-            <div onClick={e => e.stopPropagation()} className="flex-1 flex flex-col max-w-[420px] mx-auto w-full bg-[#0a0b0f] mt-10 rounded-t-3xl overflow-hidden border border-[#272b33]">
+            <div onClick={e => e.stopPropagation()} className="flex-1 flex flex-col max-w-[420px] mx-auto w-full bg-[#0a0b0f] mt-[42px] rounded-t-3xl overflow-hidden border border-[#272b33]">
               {(() => {
                 const squad = squads.find(s => s.id === selectedSquad)
                 if (!squad) return null
@@ -2443,7 +2443,7 @@ function App() {
       <AnimatePresence>
         {showModerationPanel && (
           <div className="absolute inset-0 z-[140] bg-black/90 flex flex-col" onClick={() => setShowModerationPanel(false)}>
-            <div onClick={e => e.stopPropagation()} className="flex-1 bg-[#0a0b0f] max-w-[420px] mx-auto w-full mt-4 rounded-t-3xl overflow-hidden border border-[#272b33] flex flex-col">
+            <div onClick={e => e.stopPropagation()} className="flex-1 bg-[#0a0b0f] max-w-[420px] mx-auto w-full mt-[42px] rounded-t-3xl overflow-hidden border border-[#272b33] flex flex-col">
               
               {/* Header */}
               <div className="p-4 border-b border-[#272b33] bg-[#121418] flex items-center justify-between">
