@@ -2764,7 +2764,7 @@ function App() {
           <div className="absolute inset-0 z-[150] flex flex-col" onClick={() => setShowNotifications(false)}>
             <div 
               onClick={e => e.stopPropagation()} 
-              className="flex-1 bg-[#0a0b0f] max-w-[420px] mx-auto w-full mt-14 rounded-t-3xl border border-[#272b33] overflow-hidden flex flex-col"
+              className="flex-1 bg-[#0a0b0f] max-w-[420px] mx-auto w-full mt-[42px] rounded-t-3xl border border-[#272b33] overflow-hidden flex flex-col"
             >
               <div className="p-4 border-b border-[#272b33] flex justify-between items-center bg-[#121418]">
                 <div className="font-semibold">Notificaciones</div>
