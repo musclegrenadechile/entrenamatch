@@ -35,6 +35,7 @@ import { useProfile } from './hooks/useProfile'
 import { useFilters } from './hooks/useFilters'
 import { useSquads } from './hooks/useSquads'
 import { AuthScreen } from './components/auth/AuthScreen'
+import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 
 // ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
 // Lanzamiento inicial fuerte en Chile + presencia en LatAm y España
@@ -1172,32 +1173,25 @@ function App() {
 
   if (needsOnboarding) {
     return (
-      <div className="app-container flex flex-col bg-[#0a0b0f] text-white">
-        <div className="flex-1 flex flex-col p-6 pt-10">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-11 h-11 rounded-2xl bg-[#14b8a6] flex items-center justify-center">
-              <Dumbbell className="w-6 h-6 text-black" />
-            </div>
-            <div>
-              <div className="font-bold text-3xl tracking-tighter">EntrenaMatch</div>
-              <div className="text-[#14b8a6] text-xs -mt-1">ENTRENA EN TODO EL MUNDO</div>
-            </div>
-          </div>
+      <OnboardingFlow
+        onboardData={onboardData}
+        updateOnboard={updateOnboard}
+        onboardingStep={onboardingStep}
+        setOnboardingStep={setOnboardingStep}
+        currentUser={currentUser}
+        saveUser={saveUser}
+        setShowOnboarding={setShowOnboarding}
+        requestUserLocation={requestUserLocation}
+        handlePhotoUpload={handlePhotoUpload}
+        removeOnboardPhoto={removeOnboardPhoto}
+        consents={consents}
+        setConsents={setConsents}
+      />
+    )
+  }
 
-          <div className="mb-6">
-            <div className="text-3xl font-semibold tracking-tighter leading-none mb-2">Crea tu perfil</div>
-            <div className="text-[#94a3b8]">Conecta con personas que entrenan cerca de ti en todo el mundo</div>
-          </div>
-
-          {/* Progress */}
-          <div className="flex gap-2 mb-8">
-            {[0,1,2,3,4].map(i => (
-              <div key={i} className={`step-dot ${i <= onboardingStep ? 'active' : ''}`} />
-            ))}
-          </div>
-
-          {/* Step content */}
-          {onboardingStep === 0 && (
+  // Original Onboarding JSX has been extracted to OnboardingFlow component.
+  // The block below is now dead code and will be removed in next aggressive step.
             <div className="space-y-6">
               <div>
                 <label className="text-sm text-[#94a3b8] mb-1.5 block">¿Cómo te llamas?</label>
