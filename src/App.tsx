@@ -953,14 +953,22 @@ function App() {
   return (
     <div className="min-h-screen bg-[#0a0b0f] text-white flex flex-col overflow-hidden relative">
       {/* DEMO BANNER - Pre-alpha */}
-      <div className="bg-[#14b8a6] text-black text-center text-xs py-1.5 font-medium tracking-wide z-50 flex items-center justify-center gap-3">
-        DEMO PRE-ALPHA • Datos locales (se borran al recargar) • El match del movimiento
+      <div className="bg-[#14b8a6] text-black text-center text-xs py-1.5 font-medium tracking-wide z-50 flex items-center justify-center gap-3 flex-wrap">
+        <span>🚀 PRE-ALPHA • Datos locales (se borran al recargar) • El match del movimiento</span>
         <button 
           onClick={() => { localStorage.clear(); window.location.reload(); }}
           className="ml-2 text-[10px] bg-black text-[#14b8a6] px-2 py-0.5 rounded active:bg-white active:text-black border border-black"
         >
           RESET TODO
         </button>
+        <a 
+          href="https://github.com/musclegrenadechile/entrenamatch/issues" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="ml-2 text-[10px] underline hover:no-underline"
+        >
+          Dar feedback
+        </a>
       </div>
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
@@ -1255,7 +1263,11 @@ function App() {
               <div className="card p-8 rounded-3xl text-center mt-8">
                 <Heart className="mx-auto text-[#14b8a6] mb-3" size={42} />
                 <div className="font-semibold mb-1">Aún no tienes matches</div>
-                <p className="text-sm text-[#94a3b8]">Sigue deslizando a la derecha. ¡Los matches aparecen rápido!</p>
+                <p className="text-sm text-[#94a3b8] max-w-[280px] mx-auto">
+                  ¡Bienvenido a la Pre-Alpha! Desliza a la derecha en Explorar. 
+                  Los matches aparecen con cierta frecuencia en esta versión de prueba.
+                </p>
+                <p className="text-xs text-[#64748b] mt-3">Tu feedback es muy valioso ❤️</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
@@ -1500,13 +1512,13 @@ function App() {
               <div className="relative h-52">
                 <img src={currentUser?.photos?.[0] || 'https://picsum.photos/id/1005/600/600'} className="absolute inset-0 w-full h-full object-cover" />
                 <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/90">
-                  <div className="text-3xl font-semibold tracking-tight">{currentUser.name}, {currentUser.age}</div>
-                  <div className="text-[#14b8a6]">{currentUser.city}, {currentUser.country} • {currentUser.level}</div>
+                  <div className="text-3xl font-semibold tracking-tight">{currentUser?.name}, {currentUser?.age}</div>
+                  <div className="text-[#14b8a6]">{currentUser?.city}, {currentUser?.country} • {currentUser?.level}</div>
                 </div>
               </div>
               <div className="p-5 text-sm">
                 <div className="text-[#94a3b8] mb-1 text-xs">SOBRE TI</div>
-                <div>{currentUser.bio}</div>
+                <div>{currentUser?.bio}</div>
               </div>
             </div>
 

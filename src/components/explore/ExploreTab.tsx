@@ -273,7 +273,8 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
               </div>
               <div className="text-xl font-semibold mb-2">¡Se acabaron por hoy!</div>
               <p className="text-[#94a3b8] max-w-[260px] mx-auto mb-4">
-                No quedan más perfiles que cumplan tus filtros. Cambia los filtros o reinicia el deck.
+                No quedan más perfiles que cumplan tus filtros. Cambia los filtros o reinicia el deck.<br />
+                <span className="text-xs">Gracias por probar la Pre-Alpha ❤️</span>
               </p>
               <button 
                 onClick={() => { setOptimisticRemovedId(null); setDragX(0); resetDeck(); }}
