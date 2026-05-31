@@ -33,6 +33,8 @@ import {
 import { useLocalStorage } from './hooks/useLocalStorage'
 import { useDemoAuth } from './hooks/useDemoAuth'
 import { useProfile } from './hooks/useProfile'
+import { useFilters } from './hooks/useFilters'
+import { useSwipe } from './hooks/useSwipe'
 
 // ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
 // Lanzamiento inicial fuerte en Chile + presencia en LatAm y España
@@ -274,16 +276,14 @@ function App() {
   type LegalPage = 'terms' | 'privacy' | 'community' | null
   const [showLegal, setShowLegal] = useState<LegalPage>(null)
 
-  // Filters
-  const [filters, setFilters] = useState({
-    minAge: 20,
-    maxAge: 40,
-    gender: 'todos' as 'todos' | 'hombre' | 'mujer',
-    trainingTypes: [] as string[],
-    availability: [] as string[],
-    maxDistanceKm: 100, // 100 = any distance
-    onlyAvailableToday: false
-  })
+  // Filters - now powered by dedicated hook
+  const { 
+    filters, 
+    setFilters, 
+    resetFilters: resetFiltersHook, 
+    toggleTrainingType, 
+    toggleAvailability 
+  } = useFilters()
 
   // User GPS location
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
@@ -1075,9 +1075,11 @@ function App() {
         : [...f.availability, time]
     }))
   }
-  const resetFilters = () => {
+  // resetFilters is now provided by useFilters hook
+  // Keeping a fallback for compatibility during refactor
+  const resetFilters = resetFiltersHook || (() => {
     setFilters({ minAge: 20, maxAge: 40, gender: 'todos', trainingTypes: [], availability: [], maxDistanceKm: 100, onlyAvailableToday: false })
-  }
+  })
 
   // ==================== ONBOARDING ====================
   const updateOnboard = (patch: Partial<CurrentUser>) => {
