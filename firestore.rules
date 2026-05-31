@@ -1,8 +1,6 @@
-﻿rules_version = '2';
+rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Test deployment via GitHub Actions - $(date)
-    
     // Helper functions
     function isAuthenticated() {
       return request.auth != null;
