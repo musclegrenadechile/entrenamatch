@@ -188,12 +188,13 @@ function App() {
   // UI state
   const [activeTab, setActiveTab] = useState<Tab>('explore')
 
-  // Auto-refresh real sessions when entering the Sesiones tab (for better cross-device experience)
-  useEffect(() => {
-    if (activeTab === 'sesiones' && !isDemoMode) {
-      loadRealSessions()
-    }
-  }, [activeTab, isDemoMode])
+  // Auto-refresh real sessions on tab DISABLED to fix TDZ.
+  // Manual button remains.
+  // useEffect(() => {
+  //   if (activeTab === 'sesiones' && !isDemoMode) {
+  //     loadRealSessions()
+  //   }
+  // }, [activeTab, isDemoMode])
   const [showFilters, setShowFilters] = useState(false)
   const [showMatchModal, setShowMatchModal] = useState<Profile | null>(null)
   const [showFullProfile, setShowFullProfile] = useState<Profile | null>(null)
@@ -599,12 +600,13 @@ function App() {
     loadRealProfiles()
   }, [firebaseUser?.uid])
 
-  // Load real sessions for multi-user visibility when real user
-  useEffect(() => {
-    if (!isDemoMode && firebaseUser?.uid) {
-      loadRealSessions()
-    }
-  }, [firebaseUser?.uid, isDemoMode])
+  // Automatic load of real sessions DISABLED to fix TDZ crash on initialization.
+  // Users must click "Actualizar sesiones reales" button (safe path).
+  // useEffect(() => {
+  //   if (!isDemoMode && firebaseUser?.uid) {
+  //     loadRealSessions()
+  //   }
+  // }, [firebaseUser?.uid, isDemoMode])
 
   // Real-time listener for sessions DISABLED TEMPORARILY to fix TDZ crash on initialization.
   // Manual "Actualizar sesiones reales" + auto-load on tab switch still work.
