@@ -1,0 +1,179 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* FitViña - Tinder de Entrenamiento para Viña del Mar */
+:root {
+  --fit-dark: #0a0b0f;
+  --fit-card: #121418;
+  --fit-card2: #1a1d23;
+  --fit-accent: #14b8a6;
+  --fit-accent2: #f97316;
+  --fit-text: #f1f5f9;
+  --fit-muted: #94a3b8;
+  --fit-border: #272b33;
+  --fit-success: #22c55e;
+  --fit-danger: #ef4444;
+}
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--fit-dark);
+  color: var(--fit-text);
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Mobile-first phone-like container */
+.app-container {
+  min-height: 100svh;
+  max-width: 420px;
+  margin: 0 auto;
+  background: var(--fit-dark);
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--fit-border);
+}
+
+/* On desktop, nice phone frame feel */
+@media (min-width: 640px) {
+  .app-container {
+    margin: 20px auto;
+    border-radius: 40px;
+    border: 12px solid #111;
+    box-shadow: 0 25px 80px -15px rgb(0 0 0 / 0.6);
+    max-height: 820px;
+    height: calc(100svh - 40px);
+  }
+}
+
+.card {
+  background: var(--fit-card);
+  border: 1px solid var(--fit-border);
+}
+
+.swipe-card {
+  touch-action: none;
+  user-select: none;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+
+.chip {
+  background: var(--fit-card2);
+  border: 1px solid var(--fit-border);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fit-text);
+}
+
+.chip-active {
+  background: rgba(20, 184, 166, 0.15);
+  border-color: var(--fit-accent);
+  color: var(--fit-accent);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 0;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fit-muted);
+  transition: color 0.1s ease;
+}
+
+.nav-item.active {
+  color: var(--fit-accent);
+}
+
+.message-bubble {
+  max-width: 75%;
+  padding: 10px 14px;
+  border-radius: 18px;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.message-bubble.sent {
+  background: var(--fit-accent);
+  color: white;
+  border-bottom-right-radius: 6px;
+}
+
+.message-bubble.received {
+  background: var(--fit-card2);
+  border: 1px solid var(--fit-border);
+  border-bottom-left-radius: 6px;
+}
+
+/* Swipe animations helpers */
+.swipe-left {
+  transform: translateX(-120%) rotate(-15deg) !important;
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+.swipe-right {
+  transform: translateX(120%) rotate(15deg) !important;
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1) !important;
+}
+
+/* Nice buttons */
+.btn-primary {
+  background: var(--fit-accent);
+  color: white;
+  font-weight: 600;
+  padding: 14px 28px;
+  border-radius: 999px;
+  transition: all 0.15s ease;
+}
+
+.btn-primary:active {
+  transform: scale(0.985);
+  background: #0f9d8c;
+}
+
+.btn-secondary {
+  background: var(--fit-card2);
+  border: 1px solid var(--fit-border);
+  color: var(--fit-text);
+  font-weight: 600;
+  padding: 14px 28px;
+  border-radius: 999px;
+}
+
+.btn-danger {
+  background: var(--fit-danger);
+  color: white;
+  font-weight: 600;
+}
+
+.match-modal {
+  background: linear-gradient(145deg, #121418 0%, #0a0b0f 100%);
+}
+
+/* Scrollbars subtle */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: #3a3f48;
+  border-radius: 20px;
+}
+
+/* Onboarding */
+.step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--fit-border);
+}
+.step-dot.active {
+  background: var(--fit-accent);
+  width: 24px;
+  border-radius: 999px;
+}
