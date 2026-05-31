@@ -277,6 +277,51 @@ function App() {
   const [realMatches, setRealMatches] = useState<string[]>([])
   const [realChatMessages, setRealChatMessages] = useState<any[]>([])
 
+  const loadRealProfiles = async () => {
+    if (!isFirebaseConfigured || !db) {
+      setRealProfiles([])
+      return
+    }
+    try {
+      const profilesRef = collection(db, 'profiles')
+      const q = query(profilesRef, limit(60))
+      const snapshot = await getDocs(q)
+      
+      const profiles: Profile[] = []
+      const currentUid = firebaseUser?.uid
+
+      snapshot.forEach((doc) => {
+        if (doc.id === currentUid) return
+        const data = doc.data() as any
+        if (data && data.name) {
+          profiles.push({
+            id: doc.id,
+            name: data.name,
+            age: data.age || 25,
+            gender: data.gender || 'hombre',
+            city: data.city || '',
+            country: data.country || 'Chile',
+            lat: data.lat || -33.0,
+            lng: data.lng || -71.0,
+            bio: data.bio || '',
+            photos: data.photos || [],
+            trainingTypes: data.trainingTypes || [],
+            goals: data.goals || [],
+            level: data.level || 'Intermedio',
+            availability: data.availability || ['Tarde'],
+            intensity: data.intensity,
+            verificationStatus: data.verificationStatus,
+          })
+        }
+      })
+      setRealProfiles(profiles)
+      console.log(`✅ Loaded ${profiles.length} real profiles from Firestore (self excluded)`)
+    } catch (err) {
+      console.warn('Could not load real profiles (Firestore may not have data yet):', err)
+      setRealProfiles([])
+    }
+  }
+
   // Real profile sync effect: when we have a real Firebase user, load their rich profile from Firestore
   useEffect(() => {
     if (!isDemoMode && firebaseUser?.uid) {
@@ -446,53 +491,6 @@ function App() {
       if (unsubscribe) unsubscribe()
     }
   }, [activeChat, firebaseUser?.uid, isDemoMode, realMatches])
-
-  const loadRealProfiles = async () => {
-    if (!isFirebaseConfigured || !db) {
-      setRealProfiles([])
-      return
-    }
-    try {
-      const profilesRef = collection(db, 'profiles')
-      const q = query(profilesRef, limit(60))
-      const snapshot = await getDocs(q)
-      
-      const profiles: Profile[] = []
-      const currentUid = firebaseUser?.uid
-
-      snapshot.forEach((doc) => {
-        // Exclude current user from discovery
-        if (doc.id === currentUid) return
-
-        const data = doc.data() as any
-        if (data && data.name) {
-          profiles.push({
-            id: doc.id,
-            name: data.name,
-            age: data.age || 25,
-            gender: data.gender || 'hombre',
-            city: data.city || '',
-            country: data.country || 'Chile',
-            lat: data.lat || -33.0,
-            lng: data.lng || -71.0,
-            bio: data.bio || '',
-            photos: data.photos || [],
-            trainingTypes: data.trainingTypes || [],
-            goals: data.goals || [],
-            level: data.level || 'Intermedio',
-            availability: data.availability || ['Tarde'],
-            intensity: data.intensity,
-            verificationStatus: data.verificationStatus,
-          })
-        }
-      })
-      setRealProfiles(profiles)
-      console.log(`✅ Loaded ${profiles.length} real profiles from Firestore (self excluded)`)
-    } catch (err) {
-      console.warn('Could not load real profiles (Firestore may not have data yet):', err)
-      setRealProfiles([])
-    }
-  }
 
   // Load real profiles on mount and when auth changes
   useEffect(() => {
