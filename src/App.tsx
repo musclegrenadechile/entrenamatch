@@ -7,7 +7,6 @@ import {
 import { 
   signUpWithEmail, 
   signInWithEmail, 
-  signInWithGoogle, 
   createUserProfile
 } from './services/auth'
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore'
