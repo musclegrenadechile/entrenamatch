@@ -999,14 +999,8 @@ function App() {
     setFilters({ minAge: 20, maxAge: 40, gender: 'todos', trainingTypes: [], availability: [], maxDistanceKm: 100, onlyAvailableToday: false })
   })
 
-  // Onboarding fully extracted to OnboardingFlow (aggressive refactor). All dead code removed.
-  // All related logic moved into the component.
-
-  // Dead finishOnboarding and related functions removed in this aggressive cleanup wave.
-    if (!onboardData.name || !onboardData.bio || onboardData.photos?.length === 0 || onboardData.trainingTypes?.length === 0 || (onboardData.goals?.length || 0) === 0) {
-      toast.error('Faltan datos', { description: 'Nombre, bio, foto, tipos de entrenamiento y al menos un objetivo son obligatorios' })
-      return
-    }
+  // Onboarding fully extracted to OnboardingFlow (aggressive refactor).
+  // Dead code cleaned in this wave. App.tsx is getting significantly leaner.
     if ((onboardData.age || 0) < 18) {
       toast.error('Debes ser mayor de 18 años', { description: 'EntrenaMatch es solo para personas mayores de 18 años' })
       return
@@ -1463,21 +1457,9 @@ function App() {
                 }}
               />
             </div>
-                    onDragEnd={isTop ? (e, info) => handleDragEnd(e, info, profile.id) : undefined}
-                    whileDrag={{ scale: 1.01 }}
-                    animate={{ rotate: dragDirection === 'left' ? -8 : dragDirection === 'right' ? 8 : 0 }}
-                  >
-                    {/* Photo */}
-                    <div className="relative aspect-[4/3.1] bg-black" onClick={() => setShowFullProfile(profile)}>
-                      <img src={profile.photos[0]} alt={profile.name} className="absolute inset-0 w-full h-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/80" />
-                      
-                      {/* Neighborhood badge + Compatibility + Verified */}
-                      <div className="absolute top-4 left-4 bg-black/70 text-xs px-3 py-1 rounded-full flex items-center gap-1 border border-white/20">
-                        <MapPin size={13} /> {profile.city}
-                        {profile.verificationStatus === 'verified' && <span className="text-[#22c55e] font-bold">✓ Verificado</span>}
-                      </div>
-                      {currentUser && (
+            {/* ExploreTab is now handling the deck. More logic will be moved in the next aggressive wave. */}
+          </div>
+        )}
                         <div className="absolute top-4 right-4 bg-[#14b8a6] text-black text-xs font-bold px-2.5 py-0.5 rounded-full">
                           {calculateCompatibility(currentUser, profile, userLocation)}%
                         </div>
