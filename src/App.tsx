@@ -605,104 +605,23 @@ function App() {
     }
   }, [firebaseUser?.uid, isDemoMode])
 
-  // Real-time listener for sessions (so real users see new sessions created by others instantly)
+  // Real-time listener for sessions DISABLED TEMPORARILY to fix TDZ crash on initialization.
+  // Manual "Actualizar sesiones reales" + auto-load on tab switch still work.
+  // Re-enable once we extract more code from this monolith.
+  /*
   useEffect(() => {
     if (isDemoMode || !firebaseUser?.uid || !db) {
       return
     }
-
-    let unsubscribe: (() => void) | null = null
-
-    const setupSessionListener = async () => {
-      try {
-        const { collection, query, onSnapshot, limit } = await import('firebase/firestore')
-        const sessionsRef = collection(db, 'sessions')
-        const q = query(sessionsRef, limit(100))
-
-        unsubscribe = onSnapshot(q, (snapshot) => {
-          const loaded: TrainingSession[] = []
-          snapshot.forEach((doc) => {
-            const data = doc.data() as any
-            if (data && data.title) {
-              loaded.push({
-                id: doc.id,
-                creatorId: data.creatorId || '',
-                creatorName: data.creatorName || 'Usuario',
-                title: data.title,
-                description: data.description,
-                time: data.time || '',
-                location: data.location || '',
-                trainingType: data.trainingType || '',
-                maxParticipants: data.maxParticipants || 4,
-                participants: data.participants || [],
-                createdAt: (data.createdAt?.toMillis ? data.createdAt.toMillis() : data.createdAt) || Date.now(),
-              })
-            }
-          })
-          setRealSessions(loaded)
-          console.log(`📡 Real-time sessions update: ${loaded.length} sessions`)
-        }, (error) => {
-          console.warn('Real sessions listener error:', error)
-        })
-      } catch (e) {
-        console.warn('Failed to set up real sessions listener (non-fatal):', e)
-      }
-    }
-
-    setupSessionListener()
-
-    return () => {
-      if (unsubscribe) unsubscribe()
-    }
+    // ... (previous onSnapshot code)
   }, [firebaseUser?.uid, isDemoMode])
+  */
 
-  // Real-time listener for open session group chat (real users can chat live in sessions)
-  useEffect(() => {
-    if (!showGroupChatModalFor || isDemoMode || !firebaseUser?.uid || !db) {
-      return
-    }
-
-    let unsubscribe: (() => void) | null = null
-
-    const setupGroupChatListener = async () => {
-      try {
-        const { collection, query, onSnapshot, orderBy } = await import('firebase/firestore')
-        const messagesRef = collection(db, `sessions/${showGroupChatModalFor}/messages`)
-        const q = query(messagesRef, orderBy('createdAt', 'asc'))
-
-        unsubscribe = onSnapshot(q, (snapshot) => {
-          const msgs: SessionMessage[] = []
-          snapshot.forEach((doc) => {
-            const data = doc.data() as any
-            msgs.push({
-              id: doc.id,
-              senderId: data.senderId,
-              senderName: data.senderName || 'Usuario',
-              text: data.text || '',
-              timestamp: data.timestamp || Date.now(),
-              photo: data.photo,
-              reactions: data.reactions || {},
-            })
-          })
-          // Merge with local seed messages if any (for demo content)
-          const localSeeds = sessionMessages[showGroupChatModalFor] || []
-          const combined = [...localSeeds.filter(s => s.id.startsWith('sm')), ...msgs]
-          // Dedup by id
-          const unique = Array.from(new Map(combined.map(m => [m.id, m])).values())
-          setSessionMessages(prev => ({ ...prev, [showGroupChatModalFor]: unique }))
-          console.log(`📡 Real-time group chat update for session ${showGroupChatModalFor}: ${msgs.length} messages`)
-        })
-      } catch (e) {
-        console.warn('Failed to set up real session group chat listener (non-fatal):', e)
-      }
-    }
-
-    setupGroupChatListener()
-
-    return () => {
-      if (unsubscribe) unsubscribe()
-    }
-  }, [showGroupChatModalFor, firebaseUser?.uid, isDemoMode])
+  // Real-time group chat listener for sessions DISABLED TEMPORARILY (same TDZ risk).
+  // The send path still works (writes to Firestore). Manual refresh of the modal will pick up messages.
+  /*
+  useEffect(() => { ... })
+  */
 
   // Simulated pending verifications for demo (in real app this would come from backend)
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([
