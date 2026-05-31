@@ -387,6 +387,59 @@ function App() {
     }
   }
 
+  // Real-time listener for the current active real chat
+  useEffect(() => {
+    if (!activeChat || isDemoMode || !firebaseUser?.uid || !db) {
+      setRealChatMessages([])
+      return
+    }
+
+    const isRealChat = realMatches.includes(activeChat)
+    if (!isRealChat) {
+      setRealChatMessages([])
+      return
+    }
+
+    let unsubscribe: (() => void) | null = null
+
+    ;(async () => {
+      try {
+        const { collection, query, where, onSnapshot, orderBy } = await import('firebase/firestore')
+        const messagesRef = collection(db, 'messages')
+
+        // Listen for messages between me and the other user (both directions)
+        const q = query(
+          messagesRef,
+          where('from', 'in', [firebaseUser.uid, activeChat]),
+          where('to', 'in', [firebaseUser.uid, activeChat])
+        )
+
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          const msgs: any[] = []
+          snapshot.forEach((doc) => {
+            const data = doc.data() as any
+            msgs.push({
+              id: doc.id,
+              from: data.from === firebaseUser.uid ? 'me' : 'them',
+              text: data.text,
+              timestamp: data.timestamp || Date.now(),
+            })
+          })
+          // Sort by time
+          msgs.sort((a, b) => a.timestamp - b.timestamp)
+          setRealChatMessages(msgs)
+          console.log(`📨 Real-time update: ${msgs.length} messages for chat ${activeChat}`)
+        })
+      } catch (e) {
+        console.warn('Real chat listener error:', e)
+      }
+    })()
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [activeChat, firebaseUser?.uid, isDemoMode, realMatches])
+
   // Real profiles loaded from Firestore (for multi-user Pre-Alpha)
   const [realProfiles, setRealProfiles] = useState<Profile[]>([])
   // Real matches loaded from Firestore (cross-device)
@@ -1685,7 +1738,8 @@ function App() {
 
                 {/* Messages */}
                 <div className="flex-1 overflow-auto p-4 space-y-3 pb-20" id="chat-scroll">
-                  {(messages[activeChat] || []).map((m, i) => (
+                  {/* Real messages take priority when in a real cross-device chat */}
+                  {((realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || []))).map((m, i) => (
                     <div key={i} className={`flex ${m.from === 'me' ? 'justify-end' : ''}`}>
                       <div className={`message-bubble ${m.from === 'me' ? 'sent' : 'received'}`}>{m.text}</div>
                     </div>
