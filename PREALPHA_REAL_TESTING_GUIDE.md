@@ -9,7 +9,29 @@
 - You **must** do a hard refresh (Ctrl+Shift+R / Cmd+Shift+R) to see changes.
 - Look for the text "FIX 2026-04-26" in the green top banner to confirm you have the latest version (including the startup crash fix).
 
-## How to Test Real Cross-Device Interaction (2 Accounts)
+## How to Test Real Cross-Device Interaction (2+ Real Accounts) - Recommended Flow for Testers
+
+**Goal for this phase**: Real people on different phones/computers can:
+- See each other's profiles
+- Match
+- Chat 1:1 in real time
+- Create and see sessions created by others (real-time)
+- Join sessions and chat in the group in real time
+
+### Recommended Test Flow (do this with 2+ real accounts on different devices/browsers)
+
+1. **Create real accounts** on different devices (use different emails).
+2. Complete profiles (name, bio, photo, training types, goals).
+3. On Account A: Go to Explorar and look for Account B's real profile (use "Actualizar reales" if needed).
+4. Match with each other.
+5. Open 1:1 chat and exchange messages (they should appear live on the other device).
+6. From Account A: Create a new session (e.g. "Running en la costanera mañana 19:00").
+7. On Account B: Go to Sesiones tab → the new session should appear (thanks to real-time listener). No manual refresh needed if the app is open.
+8. Join the session from Account B.
+9. Open the group chat from the session.
+10. Send messages from both accounts in the group chat. They should appear live for everyone in the session.
+
+Use the "Actualizar sesiones reales" button if something doesn't appear immediately during testing.
 
 ### Prerequisites
 - Use **incognito / different browser / different phone** for Account B (so localStorage doesn't interfere).
@@ -41,7 +63,7 @@
    - Confirm the match still appears in Matches tab.
 8. **Check browser console** (F12) on the live site for errors (especially Firebase permission denied or query failures).
 
-## What "Working" Looks Like Right Now (Overnight State - as of ~2 AM pushes)
+## What "Working" Looks Like Right Now (for real cross-device testing)
 
 - Real accounts persist across refreshes and devices.
 - Real profiles from other users appear in Explore (alongside demo seeds). Use the "Actualizar reales" button to pull latest.
