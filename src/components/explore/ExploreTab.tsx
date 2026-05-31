@@ -20,7 +20,7 @@ interface ExploreTabProps {
 
 export const ExploreTab: React.FC<ExploreTabProps> = ({
   deck,
-  visibleCards,
+  visibleCards: propVisibleCards,
   userLocation,
   currentUser,
   setShowFilters,
@@ -29,8 +29,14 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
   onSwipe,
   onShowProfile,
 }) => {
-  // Local drag state for the top card (framer-motion controlled)
+  // Local drag state + optimistic removal for snappy swipe/match feel
   const [dragX, setDragX] = useState(0);
+  const [optimisticRemovedId, setOptimisticRemovedId] = useState<string | null>(null);
+
+  // Merge prop visibleCards with optimistic removal for instant visual feedback after swipe
+  const visibleCards = optimisticRemovedId
+    ? propVisibleCards.filter(p => p.id !== optimisticRemovedId)
+    : propVisibleCards;
 
   const topProfile = visibleCards[0] || null;
 
@@ -53,12 +59,15 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
     const velocity = info.velocity.x;
     if (!topProfile) return;
 
-    if (info.offset.x > threshold || velocity > 550) {
-      onSwipe('right', topProfile.id);
+    const direction = (info.offset.x > threshold || velocity > 550) ? 'right' : 
+                      (info.offset.x < -threshold || velocity < -550) ? 'left' : null;
+
+    if (direction) {
+      setOptimisticRemovedId(topProfile.id); // instant visual pop
+      onSwipe(direction, topProfile.id);
       setDragX(0);
-    } else if (info.offset.x < -threshold || velocity < -550) {
-      onSwipe('left', topProfile.id);
-      setDragX(0);
+      // Clear optimistic after parent has time to update
+      setTimeout(() => setOptimisticRemovedId(null), 400);
     } else {
       setDragX(0);
     }
@@ -66,15 +75,19 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
   const handleLike = () => {
     if (topProfile) {
+      setOptimisticRemovedId(topProfile.id);
       onSwipe('right', topProfile.id);
       setDragX(0);
+      setTimeout(() => setOptimisticRemovedId(null), 350);
     }
   };
 
   const handlePass = () => {
     if (topProfile) {
+      setOptimisticRemovedId(topProfile.id);
       onSwipe('left', topProfile.id);
       setDragX(0);
+      setTimeout(() => setOptimisticRemovedId(null), 350);
     }
   };
 
@@ -236,7 +249,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
             </button>
           )}
           <button 
-            onClick={resetDeck} 
+            onClick={() => { setOptimisticRemovedId(null); setDragX(0); resetDeck(); }} 
             className="text-xs flex items-center gap-1 text-[#94a3b8] active:text-white"
           >
             <RefreshCw size={14}/> Reiniciar
@@ -263,7 +276,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                 No quedan más perfiles que cumplan tus filtros. Cambia los filtros o reinicia el deck.
               </p>
               <button 
-                onClick={resetDeck}
+                onClick={() => { setOptimisticRemovedId(null); setDragX(0); resetDeck(); }}
                 className="px-5 py-2 bg-[#14b8a6] text-black rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
               >
                 Reiniciar deck
