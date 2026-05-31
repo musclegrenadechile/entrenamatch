@@ -185,6 +185,9 @@ function App() {
   const [showMatchModal, setShowMatchModal] = useState<Profile | null>(null)
   const [showFullProfile, setShowFullProfile] = useState<Profile | null>(null)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [showPreAlphaWelcome, setShowPreAlphaWelcome] = useState(() => {
+    return !localStorage.getItem('entrenamatch_prealpha_welcome_shown')
+  })
   // Temporary edit state for profile (demo)
   const [editBio, setEditBio] = useState('')
   const [editAvailability, setEditAvailability] = useState<string[]>([])
@@ -1699,6 +1702,41 @@ function App() {
             )}
 
             <div className="text-center text-[10px] text-[#475569] mt-6">EntrenaMatch • Solo para mayores de 18 años • Demo 2026</div>
+
+            {/* Pre-Alpha Welcome Modal */}
+            {showPreAlphaWelcome && (
+              <div className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80 p-6" onClick={() => {
+                localStorage.setItem('entrenamatch_prealpha_welcome_shown', 'true')
+                setShowPreAlphaWelcome(false)
+              }}>
+                <div 
+                  onClick={e => e.stopPropagation()} 
+                  className="card w-full max-w-[380px] rounded-3xl p-7 text-center"
+                >
+                  <div className="text-2xl font-semibold mb-2">¡Bienvenido a la Pre-Alpha!</div>
+                  <p className="text-sm text-[#94a3b8] mb-5">
+                    Estás probando una versión temprana de <strong>EntrenaMatch</strong>.<br />
+                    Todo es local (se borra al recargar). Tu feedback es muy importante.
+                  </p>
+                  <div className="text-left text-sm space-y-2 mb-6">
+                    <div>✅ Desliza en <strong>Explorar</strong> para encontrar gente</div>
+                    <div>✅ Cuando hagas match, chatea en <strong>Mensajes</strong></div>
+                    <div>✅ Usa el botón <strong>RESET TODO</strong> cuando quieras empezar de cero</div>
+                    <div>✅ Reporta bugs o ideas en GitHub (link en el banner superior)</div>
+                  </div>
+                  <button 
+                    onClick={() => {
+                      localStorage.setItem('entrenamatch_prealpha_welcome_shown', 'true')
+                      setShowPreAlphaWelcome(false)
+                    }} 
+                    className="btn-primary w-full"
+                  >
+                    Entendido, ¡empecemos!
+                  </button>
+                  <p className="text-[10px] text-[#64748b] mt-4">Gracias por ayudarnos a construir esto ❤️</p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
