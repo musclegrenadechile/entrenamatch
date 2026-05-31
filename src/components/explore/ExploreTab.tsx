@@ -56,7 +56,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         </div>
       </div>
 
-      {/* Cards Stack - real rendering logic being moved aggressively from App.tsx */}
+      {/* Cards Stack - real swipe rendering logic being moved aggressively from App.tsx (in progress) */}
       <div className="relative flex-1 flex items-center justify-center mt-1 mb-3 min-h-[460px]">
         <AnimatePresence>
           {visibleCards.length === 0 && (

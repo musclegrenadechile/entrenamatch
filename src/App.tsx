@@ -297,20 +297,8 @@ function App() {
   const [, setCurrentIndex] = useState(0)
   const [dragDirection, setDragDirection] = useState<'left' | 'right' | null>(null)
 
-  // Onboarding temp state
-  const [onboardData, setOnboardData] = useState<Partial<CurrentUser>>({
-    name: '',
-    age: 26,
-    gender: 'mujer',
-    city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528,
-    bio: '',
-    photos: [],
-    trainingTypes: [],
-    goals: [],
-    level: 'Intermedio',
-    intensity: 'Moderado',
-    availability: []
-  })
+  // Onboarding state has been moved inside OnboardingFlow component (aggressive refactor).
+  // App.tsx no longer owns this state.
 
   // Legal consents for onboarding (must all be true to finish)
   const [consents, setConsents] = useState({
@@ -1000,33 +988,7 @@ function App() {
   })
 
   // Onboarding fully extracted to OnboardingFlow (aggressive refactor).
-  // Dead code cleaned in this wave. App.tsx is getting significantly leaner.
-    if ((onboardData.age || 0) < 18) {
-      toast.error('Debes ser mayor de 18 años', { description: 'EntrenaMatch es solo para personas mayores de 18 años' })
-      return
-    }
-    const allConsents = Object.values(consents).every(v => v === true)
-    if (!allConsents) {
-      toast.error('Faltan aceptaciones', { description: 'Debes aceptar todos los consentimientos para continuar' })
-      return
-    }
-    const newUser: CurrentUser = {
-      id: 'me',
-      name: onboardData.name!,
-      age: onboardData.age!,
-      gender: onboardData.gender!,
-      city: onboardData.city || 'Viña del Mar',
-      country: onboardData.country || 'Chile',
-      lat: onboardData.lat || -33.0153,
-      lng: onboardData.lng || -71.5528,
-      bio: onboardData.bio!,
-      photos: onboardData.photos!,
-      trainingTypes: onboardData.trainingTypes!,
-      goals: onboardData.goals || [],
-      level: onboardData.level!,
-      intensity: onboardData.intensity || 'Moderado',
-      availability: onboardData.availability!.length ? onboardData.availability! : ['Tarde']
-    }
+  // Dead monolithic code removed. App.tsx is getting significantly leaner.
     // Record legal consents with versions (important for compliance)
     const consentRecord = {
       acceptedAt: Date.now(),
@@ -1043,45 +1005,8 @@ function App() {
       legalConsents: consentRecord
     }
 
-    // Save locally (for demo mode compatibility)
-    saveUser(newUserWithConsents as CurrentUser)
-
-    // If user is logged in with real Firebase, save profile to Firestore
-    if (!isDemoMode && firebaseUser) {
-      const profileData = {
-        ...newUserWithConsents,
-        uid: firebaseUser.uid,
-        updatedAt: serverTimestamp(),
-      }
-
-      // Remove the local 'id: me' field before saving to Firestore
-      const { id, ...profileWithoutLocalId } = profileData as any
-
-      const userRef = doc(db, 'users', firebaseUser.uid)
-      setDoc(userRef, profileWithoutLocalId, { merge: true })
-        .then(() => {
-          toast.success('Perfil guardado en la nube')
-        })
-        .catch((error) => {
-          console.error('Error saving profile to Firestore:', error)
-          toast.error('Error al guardar el perfil en la nube')
-        })
-    }
-
-    setShowOnboarding(false)
-    setOnboardingStep(0)
-
-    // Reset consents for next time
-    setConsents({
-      is18: false,
-      isForTraining: false,
-      acceptsTerms: false,
-      acceptsPrivacy: false,
-      sharesLocation: false
-    })
-
-    // If we just created a real profile, reload so the AuthContext picks it up
-    if (!isDemoMode && firebaseUser) {
+    // Onboarding submit logic moved to OnboardingFlow component (aggressive refactor).
+    // Dead code removed.
       setTimeout(() => {
         window.location.reload()
       }, 800)
@@ -1140,16 +1065,12 @@ function App() {
   if (needsOnboarding) {
     return (
       <OnboardingFlow
-        onboardData={onboardData}
-        updateOnboard={updateOnboard}
         onboardingStep={onboardingStep}
         setOnboardingStep={setOnboardingStep}
         currentUser={currentUser}
         saveUser={saveUser}
         setShowOnboarding={setShowOnboarding}
         requestUserLocation={requestUserLocation}
-        handlePhotoUpload={handlePhotoUpload}
-        removeOnboardPhoto={removeOnboardPhoto}
         consents={consents}
         setConsents={setConsents}
       />
