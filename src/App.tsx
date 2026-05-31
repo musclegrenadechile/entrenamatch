@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, Component, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, MessageCircle, User, MapPin, Dumbbell, 
@@ -1376,7 +1376,8 @@ function App() {
   })
 
   return (
-    <div className="min-h-screen bg-[#0a0b0f] text-white flex flex-col overflow-hidden relative">
+    <ErrorBoundary>
+      <div className="min-h-screen bg-[#0a0b0f] text-white flex flex-col overflow-hidden relative">
       {/* DEMO BANNER - Pre-alpha */}
       <div className="bg-[#14b8a6] text-black text-center text-xs py-1.5 font-medium tracking-wide z-50 flex items-center justify-center gap-3 flex-wrap px-3">
         <span className="font-semibold">🚀 PRE-ALPHA EN CURSO — BACKEND REAL ACTIVO (FIX 2026-04-26 04:xx)</span>
@@ -3534,7 +3535,43 @@ function App() {
       </AnimatePresence>
 
     </div>
+    </ErrorBoundary>
   )
+}
+
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error("App crashed:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#0a0b0f] text-white flex items-center justify-center p-6">
+          <div className="text-center">
+            <div className="text-2xl mb-4">Algo salió mal</div>
+            <p className="text-[#94a3b8] mb-6">La aplicación tuvo un error durante la inicialización.</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="btn-primary"
+            >
+              Recargar la página
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
 }
 
 export default App
