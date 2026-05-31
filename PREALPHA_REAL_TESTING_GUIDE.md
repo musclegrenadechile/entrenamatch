@@ -27,6 +27,7 @@
    - Go to **Matches**.
    - You should see Account A appear as a real match (even if you didn't swipe yet — current Pre-Alpha auto-matches for testing).
 6. **Open chat** from the match on either side.
+   - You should see a small **"REAL"** badge in the chat header (confirms this is a live cross-device conversation).
    - Send 2–3 messages from A.
    - Hard refresh on B → messages should appear.
    - Send messages from B → they should appear on A (ideally live thanks to onSnapshot).
