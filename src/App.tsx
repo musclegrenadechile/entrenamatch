@@ -1703,6 +1703,18 @@ function App() {
 
             <div className="text-center text-[10px] text-[#475569] mt-6">EntrenaMatch • Solo para mayores de 18 años • Demo 2026</div>
 
+            {/* Pre-Alpha Testing Tips */}
+            <div className="mt-6 card rounded-3xl p-4 text-xs">
+              <div className="font-medium text-[#14b8a6] mb-2">Tips para testers de Pre-Alpha</div>
+              <ul className="space-y-1 text-[#94a3b8]">
+                <li>• Prueba deslizar mucho en Explorar (el deck ahora responde mejor)</li>
+                <li>• Edita tu perfil y verifica que los cambios se guarden</li>
+                <li>• Crea sesiones o squads y únete a los de otros</li>
+                <li>• Usa el botón RESET TODO cuando quieras empezar de cero</li>
+                <li>• Reporta cualquier cosa rara en el link "Dar feedback" del banner</li>
+              </ul>
+            </div>
+
             {/* Pre-Alpha Welcome Modal */}
             {showPreAlphaWelcome && (
               <div className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80 p-6" onClick={() => {
