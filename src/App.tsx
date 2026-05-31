@@ -1016,7 +1016,7 @@ function App() {
               </div>
             </div>
 
-            {/* Cards Stack - logic being aggressively moved to ExploreTab */}
+            {/* Cards Stack - now fully powered by the rich ExploreTab (drag, verified, compat, stack) */}
             <div className="relative flex-1 flex items-center justify-center mt-1 mb-3 min-h-[460px]">
               <ExploreTab
                 deck={deck}
@@ -1025,114 +1025,18 @@ function App() {
                 filters={filters}
                 currentUser={currentUser}
                 setShowFilters={setShowFilters}
-                resetDeck={() => { saveLiked([]); savePassed([]); setCurrentIndex(0); toast('Deck reiniciado'); }}
+                resetDeck={() => { saveLiked([]); savePassed([]); toast('Deck reiniciado'); }}
                 requestUserLocation={requestUserLocation}
                 onSwipe={(direction, profileId) => {
                   if (direction === 'right') {
-                    // like logic will be fully moved in next wave
                     handleSwipe(profileId, 'right');
                   } else {
                     handleSwipe(profileId, 'left');
                   }
                 }}
+                onShowProfile={setShowFullProfile}
               />
             </div>
-            {/* ExploreTab is now in charge. More swipe logic moved in the next aggressive wave. */}
-          </div>
-        )}
-                          {profile.intensity && (
-                            <span className="text-[10px] bg-[#272b33] px-1.5 py-0.5 rounded">{profile.intensity}</span>
-                          )}
-                          {userLocation && (
-                            <span className="text-xs bg-[#14b8a6]/10 text-[#14b8a6] px-2 py-0.5 rounded-full ml-1">
-                              {getDistanceKm(userLocation.lat, userLocation.lng, profile.lat, profile.lng)} km
-                            </span>
-                          )}
-                        </div>
-                        {profile.availableToday && (
-                          <div className="inline-flex items-center gap-1 text-xs text-[#22c55e] bg-[#22c55e]/10 px-2 py-0.5 rounded-full w-fit mb-2">
-                            ● Disponible hoy
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Bio + tags */}
-                    <div className="p-5 pt-4">
-                      <p className="text-[15px] leading-snug text-[#e2e8f0] line-clamp-3 mb-4">{profile.bio}</p>
-
-                      <div className="flex flex-wrap gap-1.5 mb-4">
-                        {profile.trainingTypes.slice(0, 3).map(t => (
-                          <div key={t} className="chip text-xs px-3 py-1">{t}</div>
-                        ))}
-                      </div>
-                      {profile.goals.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-3">
-                          {profile.goals.slice(0, 2).map(g => (
-                            <div key={g} className="text-[10px] bg-[#14b8a6]/10 text-[#14b8a6] px-2 py-0.5 rounded-full">{g}</div>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-2 text-xs text-[#94a3b8]">
-                        <Clock size={14} /> Disponible: {profile.availability.join(' • ')}
-                      </div>
-                    </div>
-
-                    {/* Tap to view full */}
-                    <div onClick={() => setShowFullProfile(profile)} className="absolute bottom-4 right-4 text-[10px] bg-black/50 px-2.5 py-1 rounded-full border border-white/10">VER PERFIL</div>
-                  </motion.div>
-                )
-              })}
-            </div>
-
-            {/* Action buttons */}
-            {deck.length > 0 && (
-              <div className="flex justify-center items-center gap-5 pb-2">
-                <button onClick={swipeLeft} className="w-16 h-16 rounded-full bg-[#121418] border border-[#272b33] flex items-center justify-center active:scale-95 transition">
-                  <X size={32} className="text-[#ef4444]" />
-                </button>
-                <button onClick={swipeRight} className="w-[72px] h-[72px] rounded-full bg-[#14b8a6] flex items-center justify-center active:scale-95 transition shadow-lg shadow-[#14b8a6]/30">
-                  <Heart size={34} className="text-black" />
-                </button>
-              </div>
-            )}
-            <div className="text-center text-[11px] text-[#475569] pb-1">Desliza o usa los botones</div>
-
-            {/* Recommendations - Unique discovery feature */}
-            {userLocation && currentUser && (
-              <div className="mt-8">
-                <div className="flex items-center justify-between mb-3 px-1">
-                  <div>
-                    <div className="font-semibold">Más compatibles contigo esta semana</div>
-                    <div className="text-xs text-[#94a3b8]">Basado en objetivos, intensidad y cercanía</div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  {SEED_PROFILES
-                    .filter(p => !likedIds.includes(p.id) && !passedIds.includes(p.id))
-                    .map(p => ({ profile: p, score: calculateCompatibility(currentUser, p, userLocation) }))
-                    .sort((a, b) => b.score - a.score)
-                    .slice(0, 4)
-                    .map(({ profile, score }) => (
-                      <div 
-                        key={profile.id} 
-                        onClick={() => setShowFullProfile(profile)}
-                        className="card p-3 rounded-2xl cursor-pointer active:scale-[0.985] transition"
-                      >
-                        <div className="flex gap-3">
-                          <img src={profile.photos[0]} className="w-14 h-14 rounded-xl object-cover" />
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold truncate">{profile.name}</div>
-                            <div className="text-xs text-[#94a3b8]">{profile.city}</div>
-                            <div className="mt-1 text-[#14b8a6] text-sm font-bold">{score}% compatible</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            )}
           </div>
         )}
 
