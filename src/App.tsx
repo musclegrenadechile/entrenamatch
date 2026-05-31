@@ -1299,6 +1299,7 @@ function App() {
               }
             }}
             onShowProfile={setShowFullProfile}
+            realProfiles={realProfiles}
           />
         )}
 

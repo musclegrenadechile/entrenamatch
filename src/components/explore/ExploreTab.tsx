@@ -16,6 +16,7 @@ interface ExploreTabProps {
   requestUserLocation: () => void;
   onSwipe: (direction: 'left' | 'right', profileId: string) => void;
   onShowProfile?: (profile: Profile) => void;
+  realProfiles?: Profile[];
 }
 
 export const ExploreTab: React.FC<ExploreTabProps> = ({
@@ -28,6 +29,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
   requestUserLocation,
   onSwipe,
   onShowProfile,
+  realProfiles = [],
 }) => {
   // Local drag state + optimistic removal for snappy swipe/match feel
   const [dragX, setDragX] = useState(0);
@@ -243,6 +245,9 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           <div className="text-[10px] text-[#64748b] mt-0.5">
             Desliza a la derecha para empezar a conectar. Sé directo en tu bio.
           </div>
+          {realProfiles && realProfiles.length > 0 && (
+            <div className="text-[10px] text-[#14b8a6] mt-0.5">+ {realProfiles.length} perfiles reales de otros testers</div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {!userLocation && (
