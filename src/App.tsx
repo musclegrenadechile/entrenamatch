@@ -1337,7 +1337,7 @@ function App() {
   // ==================== RENDER ====================
 
   // Show login/register screen if no authenticated user (works for both real Firebase and public demo mode)
-  const isAuthenticated = isDemoMode ? !!currentUser : !!firebaseUser
+  const isAuthenticated = !!firebaseUser
   if (!isAuthenticated) {
     return (
       <div className="app-container flex items-center justify-center bg-[#0a0b0f] p-4">
@@ -1427,7 +1427,7 @@ function App() {
 
   // Onboarding logic
   const needsOnboarding = showOnboarding || 
-                          (isDemoMode && !currentUser) ||
+                          !firebaseUser ||
                           (!isDemoMode && firebaseUser && !firebaseProfile)
 
   if (needsOnboarding) {
