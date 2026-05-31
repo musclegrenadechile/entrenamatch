@@ -1245,7 +1245,7 @@ function App() {
     <div className="min-h-screen bg-[#0a0b0f] text-white flex flex-col overflow-hidden relative">
       {/* DEMO BANNER - Pre-alpha */}
       <div className="bg-[#14b8a6] text-black text-center text-xs py-1.5 font-medium tracking-wide z-50 flex items-center justify-center gap-3 flex-wrap px-3">
-        <span className="font-semibold">🚀 PRE-ALPHA EN CURSO — BACKEND REAL ACTIVO</span>
+        <span className="font-semibold">🚀 PRE-ALPHA EN CURSO — BACKEND REAL ACTIVO (FIX 2026-04-26 04:xx)</span>
         <span className="hidden sm:inline">• Tus matches y mensajes viajan entre celulares</span>
 
         <button 
