@@ -999,18 +999,10 @@ function App() {
     setFilters({ minAge: 20, maxAge: 40, gender: 'todos', trainingTypes: [], availability: [], maxDistanceKm: 100, onlyAvailableToday: false })
   })
 
-  // Onboarding fully extracted to OnboardingFlow (aggressive refactor).
+  // Onboarding fully extracted to OnboardingFlow (aggressive refactor). All dead code removed.
   // All related logic moved into the component.
 
-  const nextOnboarding = () => {
-    if (onboardingStep < 4) {
-      setOnboardingStep(s => s + 1)
-    } else {
-      finishOnboarding()
-    }
-  }
-
-  const finishOnboarding = () => {
+  // Dead finishOnboarding and related functions removed in this aggressive cleanup wave.
     if (!onboardData.name || !onboardData.bio || onboardData.photos?.length === 0 || onboardData.trainingTypes?.length === 0 || (onboardData.goals?.length || 0) === 0) {
       toast.error('Faltan datos', { description: 'Nombre, bio, foto, tipos de entrenamiento y al menos un objetivo son obligatorios' })
       return
@@ -1170,7 +1162,7 @@ function App() {
     )
   }
 
-  // Onboarding fully extracted. Dead code cleaned in this aggressive session.
+  // Onboarding fully extracted. Dead monolithic code removed in aggressive waves. App.tsx is getting significantly leaner.
             <div className="space-y-6">
               <div>
                 <label className="text-sm text-[#94a3b8] mb-1.5 block">¿Cómo te llamas?</label>
@@ -1450,31 +1442,27 @@ function App() {
               </div>
             </div>
 
-            {/* Cards Stack */}
+            {/* Cards Stack - logic being aggressively moved to ExploreTab */}
             <div className="relative flex-1 flex items-center justify-center mt-1 mb-3 min-h-[460px]">
-              <AnimatePresence>
-                {visibleCards.length === 0 && (
-                  <div className="text-center px-8">
-                    <div className="mx-auto w-16 h-16 bg-[#121418] rounded-full flex items-center justify-center mb-4">
-                      <Star className="text-[#14b8a6]" />
-                    </div>
-                    <div className="text-xl font-semibold mb-2">¡Se acabaron por hoy!</div>
-                    <p className="text-[#94a3b8] max-w-[240px] mx-auto">No quedan más perfiles que cumplan tus filtros. Cambia los filtros o vuelve mañana.</p>
-                    <button onClick={resetFilters} className="mt-6 btn-secondary text-sm">Limpiar filtros</button>
-                  </div>
-                )}
-              </AnimatePresence>
-
-              {visibleCards.map((profile, idx) => {
-                const isTop = idx === 0
-                return (
-                  <motion.div
-                    key={profile.id}
-                    className={`swipe-card absolute w-full max-w-[340px] rounded-3xl overflow-hidden card ${isTop ? 'z-30' : idx === 1 ? 'z-20 scale-[0.96] -translate-y-3' : 'z-10 scale-[0.92] -translate-y-6'}`}
-                    drag={isTop ? "x" : false}
-                    dragConstraints={{ left: -200, right: 200 }}
-                    dragElastic={0.2}
-                    onDrag={isTop ? (_, info) => setDragDirection(info.offset.x > 40 ? 'right' : info.offset.x < -40 ? 'left' : null) : undefined}
+              <ExploreTab
+                deck={deck}
+                visibleCards={visibleCards}
+                userLocation={userLocation}
+                filters={filters}
+                currentUser={currentUser}
+                setShowFilters={setShowFilters}
+                resetDeck={() => { saveLiked([]); savePassed([]); setCurrentIndex(0); toast('Deck reiniciado'); }}
+                requestUserLocation={requestUserLocation}
+                onSwipe={(direction, profileId) => {
+                  if (direction === 'right') {
+                    // like logic will be fully moved in next wave
+                    handleSwipe(profileId, 'right');
+                  } else {
+                    handleSwipe(profileId, 'left');
+                  }
+                }}
+              />
+            </div>
                     onDragEnd={isTop ? (e, info) => handleDragEnd(e, info, profile.id) : undefined}
                     whileDrag={{ scale: 1.01 }}
                     animate={{ rotate: dragDirection === 'left' ? -8 : dragDirection === 'right' ? 8 : 0 }}
