@@ -238,6 +238,9 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
             {deck.length} personas 
             {userLocation ? ' cerca de ti' : ' (activa GPS para ver distancias)'}
           </div>
+          <div className="text-[10px] text-[#64748b] mt-0.5 hidden sm:block">
+            Consejo: Sé directo en tu bio. La gente responde mejor cuando sabe qué buscas.
+          </div>
         </div>
         <div className="flex items-center gap-2">
           {!userLocation && (
