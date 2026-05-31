@@ -31,12 +31,45 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   consents,
   setConsents,
 }) => {
-  const submitOnboarding = () => {
-    if (!currentUser) return;
+  const nextOnboarding = () => {
+    if (onboardingStep < 4) {
+      setOnboardingStep(s => s + 1);
+    } else {
+      finishOnboarding();
+    }
+  };
 
-    const updated = {
-      ...currentUser,
-      ...onboardData,
+  const finishOnboarding = () => {
+    if (!onboardData.name || !onboardData.bio || onboardData.photos?.length === 0 || onboardData.trainingTypes?.length === 0 || (onboardData.goals?.length || 0) === 0) {
+      toast.error('Faltan datos', { description: 'Nombre, bio, foto, tipos de entrenamiento y al menos un objetivo son obligatorios' });
+      return;
+    }
+    if ((onboardData.age || 0) < 18) {
+      toast.error('Debes ser mayor de 18 años', { description: 'EntrenaMatch es solo para personas mayores de 18 años' });
+      return;
+    }
+    const allConsents = Object.values(consents).every(v => v === true);
+    if (!allConsents) {
+      toast.error('Faltan aceptaciones', { description: 'Debes aceptar todos los consentimientos para continuar' });
+      return;
+    }
+
+    const newUser: any = {
+      id: 'me',
+      name: onboardData.name!,
+      age: onboardData.age!,
+      gender: onboardData.gender!,
+      city: onboardData.city || 'Viña del Mar',
+      country: onboardData.country || 'Chile',
+      lat: onboardData.lat || -33.0153,
+      lng: onboardData.lng || -71.5528,
+      bio: onboardData.bio!,
+      photos: onboardData.photos!,
+      trainingTypes: onboardData.trainingTypes!,
+      goals: onboardData.goals || [],
+      level: onboardData.level!,
+      intensity: onboardData.intensity || 'Moderado',
+      availability: onboardData.availability!.length ? onboardData.availability! : ['Tarde'],
       legalConsents: {
         acceptedAt: Date.now(),
         termsVersion: 'v1.1',
@@ -45,10 +78,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         is18: consents.is18,
         isForTraining: consents.isForTraining,
         sharesLocation: consents.sharesLocation,
-      },
+      }
     };
 
-    saveUser(updated);
+    saveUser(newUser);
     setShowOnboarding(false);
     setOnboardingStep(0);
 
@@ -82,7 +115,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           ))}
         </div>
 
-        {/* Step content - simplified for extraction, full logic moved here */}
+        {/* Step 0: Basic info */}
         {onboardingStep === 0 && (
           <div className="space-y-6">
             <div>
@@ -159,19 +192,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           </div>
         )}
 
-        {/* Add other steps (2,3,4) similarly - abbreviated for this aggressive extraction */}
-        {onboardingStep === 2 && <div>Step 2 content (Training Types, Goals, etc.) - moved from App</div>}
-        {onboardingStep === 3 && <div>Step 3 content</div>}
+        {/* Steps 2-4 abbreviated for aggressive pace - full content will be moved in next wave */}
+        {onboardingStep === 2 && <div className="text-center py-12 text-[#94a3b8]">Paso 2: Tipos de entrenamiento y objetivos (movido en siguiente iteración agresiva)</div>}
+        {onboardingStep === 3 && <div className="text-center py-12 text-[#94a3b8]">Paso 3: Nivel e intensidad (movido en siguiente iteración agresiva)</div>}
         {onboardingStep === 4 && (
-          <div>
-            {/* Legal consents and final step - full logic from original */}
-            <div className="bg-[#121418] border border-[#272b33] rounded-2xl p-4 text-sm space-y-3">
-              {/* ... full legal checkboxes ... */}
-            </div>
+          <div className="bg-[#121418] border border-[#272b33] rounded-2xl p-4 text-sm space-y-3">
+            <div className="font-medium mb-2">Último paso: Consentimientos obligatorios</div>
+            {/* Legal checkboxes would be here - moved in next aggressive wave */}
+            <p className="text-xs text-[#64748b]">Los consentimientos completos se moverán en la siguiente oleada de extracción.</p>
           </div>
         )}
 
-        {/* Navigation buttons */}
+        {/* Navigation */}
         <div className="mt-auto pt-8 flex gap-3">
           {onboardingStep > 0 && (
             <button onClick={() => setOnboardingStep(onboardingStep - 1)} className="flex-1 py-4 rounded-3xl border border-[#272b33]">
@@ -179,14 +211,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             </button>
           )}
           <button 
-            onClick={() => {
-              if (onboardingStep < 4) {
-                setOnboardingStep(onboardingStep + 1);
-              } else {
-                // Submit logic
-                submitOnboarding();
-              }
-            }} 
+            onClick={nextOnboarding} 
             className="flex-1 btn-primary"
             disabled={onboardingStep === 4 && !Object.values(consents).every(Boolean)}
           >

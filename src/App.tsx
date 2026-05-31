@@ -999,10 +999,8 @@ function App() {
     setFilters({ minAge: 20, maxAge: 40, gender: 'todos', trainingTypes: [], availability: [], maxDistanceKm: 100, onlyAvailableToday: false })
   })
 
-  // ==================== ONBOARDING ====================
-  const updateOnboard = (patch: Partial<CurrentUser>) => {
-    setOnboardData(prev => ({ ...prev, ...patch }))
-  }
+  // Onboarding logic extracted to OnboardingFlow component (aggressive step).
+  // updateOnboard and finish logic now live in the component.
 
   const nextOnboarding = () => {
     if (onboardingStep < 4) {
