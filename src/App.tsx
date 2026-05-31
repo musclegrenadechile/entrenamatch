@@ -877,7 +877,7 @@ function App() {
       }
     }
 
-    saveUser(updated as CurrentUser)
+    saveUserWithRealSync(updated as CurrentUser)
     setShowVerificationFlow(false)
 
     // Simulate review process (in real app this would go to backend)
@@ -897,7 +897,7 @@ function App() {
             selfiePhoto: verificationSelfie || undefined,
           }
         }
-        saveUser(approved as CurrentUser)
+        saveUserWithRealSync(approved as CurrentUser)
 
         addNotification({
           type: 'verification',
