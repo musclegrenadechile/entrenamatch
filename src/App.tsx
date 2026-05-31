@@ -1541,6 +1541,14 @@ function App() {
               <div>
                 <div className="text-2xl font-semibold tracking-[-1.2px]">Sesiones</div>
                 <div className="text-[#94a3b8] text-sm">Entrenamientos grupales cerca de ti</div>
+                {!isDemoMode && (
+                  <button 
+                    onClick={() => loadRealSessions()}
+                    className="text-[10px] text-[#14b8a6] underline mt-0.5"
+                  >
+                    Actualizar sesiones reales
+                  </button>
+                )}
               </div>
               <button 
                 onClick={() => setShowCreateSession(true)}
