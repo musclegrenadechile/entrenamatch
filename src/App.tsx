@@ -654,6 +654,52 @@ function App() {
     }
   }, [firebaseUser?.uid, isDemoMode])
 
+  // Real-time listener for open session group chat (real users can chat live in sessions)
+  useEffect(() => {
+    if (!showGroupChatModalFor || isDemoMode || !firebaseUser?.uid || !db) {
+      return
+    }
+
+    let unsubscribe: (() => void) | null = null
+
+    ;(async () => {
+      try {
+        const { collection, query, onSnapshot, orderBy } = await import('firebase/firestore')
+        const messagesRef = collection(db, `sessions/${showGroupChatModalFor}/messages`)
+        const q = query(messagesRef, orderBy('createdAt', 'asc'))
+
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          const msgs: SessionMessage[] = []
+          snapshot.forEach((doc) => {
+            const data = doc.data() as any
+            msgs.push({
+              id: doc.id,
+              senderId: data.senderId,
+              senderName: data.senderName || 'Usuario',
+              text: data.text || '',
+              timestamp: data.timestamp || Date.now(),
+              photo: data.photo,
+              reactions: data.reactions || {},
+            })
+          })
+          // Merge with local seed messages if any (for demo content)
+          const localSeeds = sessionMessages[showGroupChatModalFor] || []
+          const combined = [...localSeeds.filter(s => s.id.startsWith('sm')), ...msgs]
+          // Dedup by id
+          const unique = Array.from(new Map(combined.map(m => [m.id, m])).values())
+          setSessionMessages(prev => ({ ...prev, [showGroupChatModalFor]: unique }))
+          console.log(`📡 Real-time group chat update for session ${showGroupChatModalFor}: ${msgs.length} messages`)
+        })
+      } catch (e) {
+        console.warn('Failed to set up real session group chat listener:', e)
+      }
+    })()
+
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [showGroupChatModalFor, firebaseUser?.uid, isDemoMode])
+
   // Simulated pending verifications for demo (in real app this would come from backend)
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([
     {
@@ -1060,9 +1106,11 @@ function App() {
   const sendSessionMessage = (sessionId: string, text: string, photo?: string | null) => {
     if (!currentUser || (!text.trim() && !photo)) return
 
+    const isRealSession = !isDemoMode && firebaseUser?.uid && db
+
     const newMsg: SessionMessage = {
       id: 'sm' + Date.now(),
-      senderId: 'me',
+      senderId: effectiveUserId,
       senderName: currentUser?.name || 'Tú',
       text: text.trim() || '',
       timestamp: Date.now(),
@@ -1070,23 +1118,50 @@ function App() {
       reactions: {}
     }
 
-    const current = sessionMessages[sessionId] || []
-    const updated = {
-      ...sessionMessages,
-      [sessionId]: [...current, newMsg]
+    if (isRealSession) {
+      // Real group chat - write to Firestore subcollection
+      ;(async () => {
+        try {
+          const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+          await addDoc(collection(db, `sessions/${sessionId}/messages`), {
+            senderId: effectiveUserId,
+            senderName: currentUser?.name || 'Tú',
+            text: newMsg.text,
+            timestamp: newMsg.timestamp,
+            photo: newMsg.photo,
+            createdAt: serverTimestamp(),
+          })
+          console.log('✅ Real session group message sent')
+        } catch (e) {
+          console.warn('Failed to send real session message:', e)
+          // Fallback to local
+          const current = sessionMessages[sessionId] || []
+          const updated = { ...sessionMessages, [sessionId]: [...current, newMsg] }
+          saveSessionMessages(updated)
+        }
+      })()
+
+      // Optimistic local update
+      const current = sessionMessages[sessionId] || []
+      const updated = { ...sessionMessages, [sessionId]: [...current, newMsg] }
+      saveSessionMessages(updated)
+    } else {
+      // Demo / local
+      const current = sessionMessages[sessionId] || []
+      const updated = { ...sessionMessages, [sessionId]: [...current, newMsg] }
+      saveSessionMessages(updated)
     }
 
-    saveSessionMessages(updated)
     setGroupChatPhoto(null)
 
-    // Auto scroll to bottom
+    // Auto scroll
     setTimeout(() => {
       const scrollEl = document.getElementById('group-chat-scroll')
       if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight
     }, 50)
 
-    // Simulate reply (only if it was a text message)
-    if (!photo && Math.random() > 0.6) {
+    // Simulate reply only in demo mode
+    if (!isRealSession && !photo && Math.random() > 0.6) {
       setIsTyping(true)
       setTimeout(() => {
         setIsTyping(false)
@@ -1105,7 +1180,7 @@ function App() {
           }
           const withReply = {
             ...sessionMessages,
-            [sessionId]: [...(updated[sessionId] || []), replyMsg]
+            [sessionId]: [...(sessionMessages[sessionId] || []), replyMsg]
           }
           saveSessionMessages(withReply)
           setTimeout(() => {
