@@ -213,7 +213,7 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
   if (!isFirebaseConfigured) {
     return null; // Demo uses local state only
   }
-  const userRef = doc(db, 'users', uid);
+  const userRef = doc(db, 'profiles', uid); // We use /profiles for the rich app profile
   const docSnap = await getDoc(userRef);
 
   if (docSnap.exists()) {
@@ -232,4 +232,23 @@ export const onAuthStateChange = (callback: (user: FirebaseUser | null) => void)
     return () => {}; // no-op unsubscribe
   }
   return onAuthStateChanged(auth, callback);
+};
+
+// Update or create the rich user profile in Firestore (real mode)
+export const updateUserProfile = async (uid: string, profileData: Partial<UserProfile>) => {
+  if (!isFirebaseConfigured || !db) {
+    // Demo mode - do nothing here (handled by local saveUser)
+    return profileData;
+  }
+
+  const profileRef = doc(db, 'profiles', uid);
+  
+  const payload = {
+    ...profileData,
+    uid,
+    updatedAt: serverTimestamp(),
+  };
+
+  await setDoc(profileRef, payload, { merge: true });
+  return payload;
 };

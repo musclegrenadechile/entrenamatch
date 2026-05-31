@@ -8,7 +8,9 @@ import {
 import { 
   signUpWithEmail, 
   signInWithEmail, 
-  createUserProfile
+  createUserProfile,
+  updateUserProfile,
+  getUserProfile
 } from './services/auth'
 import { useAuth } from './contexts/AuthContext'
 import confetti from 'canvas-confetti'
@@ -270,8 +272,127 @@ function App() {
     isAuthenticated: isDemoAuthenticated 
   } = useDemoAuth()
 
+  // Real profile sync effect: when we have a real Firebase user, load their rich profile from Firestore
+  useEffect(() => {
+    if (!isDemoMode && firebaseUser?.uid) {
+      (async () => {
+        try {
+          const realProfile = await getUserProfile(firebaseUser.uid)
+          if (realProfile && realProfile.name) {
+            const merged: CurrentUser = {
+              ...currentUser,
+              id: 'me' as any,
+              name: realProfile.name,
+              age: realProfile.age,
+              gender: realProfile.gender,
+              city: realProfile.city,
+              country: realProfile.country,
+              bio: realProfile.bio,
+              photos: realProfile.photos || [],
+              trainingTypes: realProfile.trainingTypes || [],
+              goals: realProfile.goals || [],
+              level: realProfile.level || 'Intermedio',
+              intensity: realProfile.intensity || 'Moderado',
+              availability: realProfile.availability || ['Tarde'],
+            }
+            if (merged.name) {
+              saveUser(merged)
+            }
+          }
+        } catch (e) {
+          console.warn('Could not load real profile from Firestore yet:', e)
+        }
+      })()
+    }
+  }, [firebaseUser?.uid, isDemoMode])
+
+  // Load real matches from Firestore for the current user (so they appear on any device)
+  useEffect(() => {
+    if (!isDemoMode && firebaseUser?.uid && db) {
+      (async () => {
+        try {
+          const { collection, query, where, getDocs } = await import('firebase/firestore')
+          const matchesRef = collection(db, 'matches')
+          // Matches where user1 or user2 is me
+          const q1 = query(matchesRef, where('user1', '==', firebaseUser.uid))
+          const q2 = query(matchesRef, where('user2', '==', firebaseUser.uid))
+          
+          const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)])
+          
+          const matchedUserIds = new Set<string>()
+          snap1.forEach(d => {
+            const data = d.data() as any
+            if (data.user2 && data.user2 !== firebaseUser.uid) matchedUserIds.add(data.user2)
+          })
+          snap2.forEach(d => {
+            const data = d.data() as any
+            if (data.user1 && data.user1 !== firebaseUser.uid) matchedUserIds.add(data.user1)
+          })
+          
+          const ids = Array.from(matchedUserIds)
+          setRealMatches(ids)
+          console.log(`✅ Loaded ${ids.length} real matches from Firestore`)
+        } catch (e) {
+          console.warn('Could not load real matches yet:', e)
+        }
+      })()
+    }
+  }, [firebaseUser?.uid, isDemoMode])
+
+  // Helper: Save user locally + persist to Firestore if we are in real mode
+  const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
+    saveUser(user) // always update local state immediately
+
+    if (!isDemoMode && firebaseUser?.uid) {
+      try {
+        await updateUserProfile(firebaseUser.uid, {
+          name: user.name,
+          age: user.age,
+          gender: user.gender,
+          city: user.city,
+          country: user.country,
+          bio: user.bio,
+          photos: user.photos,
+          trainingTypes: user.trainingTypes,
+          goals: user.goals,
+          level: user.level,
+          intensity: user.intensity,
+          availability: user.availability,
+        })
+        console.log('✅ Profile synced to Firestore (real multi-user)')
+      } catch (e) {
+        console.warn('Failed to sync profile to Firestore:', e)
+      }
+    }
+  }, [saveUser, isDemoMode, firebaseUser?.uid])
+
+  // Real message sender (writes to Firestore so the other user sees it on any device)
+  const sendRealMessage = async (text: string, toUserId: string) => {
+    if (!text.trim() || !firebaseUser?.uid || !db) return
+
+    try {
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+      const msg = {
+        from: firebaseUser.uid,
+        to: toUserId,
+        text: text.trim(),
+        timestamp: Date.now(),
+        createdAt: serverTimestamp(),
+      }
+      await addDoc(collection(db, 'messages'), msg)
+      console.log('✅ Real message sent to Firestore')
+    } catch (e) {
+      console.error('Failed to send real message:', e)
+      toast.error('No se pudo enviar el mensaje real')
+    }
+  }
+
   // Real profiles loaded from Firestore (for multi-user Pre-Alpha)
   const [realProfiles, setRealProfiles] = useState<Profile[]>([])
+  // Real matches loaded from Firestore (cross-device)
+  const [realMatches, setRealMatches] = useState<string[]>([])
+  // Real messages for the current active chat (from Firestore)
+  const [realChatMessages, setRealChatMessages] = useState<any[]>([])
 
   const loadRealProfiles = async () => {
     if (!isFirebaseConfigured || !db) {
@@ -875,8 +996,10 @@ function App() {
   // Matches profiles (supports real profiles from Firestore + seeds)
   const matchProfiles = useMemo(() => {
     const all = [...SEED_PROFILES, ...realProfiles]
-    return all.filter(p => matches.includes(p.id))
-  }, [matches, realProfiles])
+    // Merge local matches + real matches loaded from Firestore
+    const combinedMatchIds = Array.from(new Set([...matches, ...realMatches]))
+    return all.filter(p => combinedMatchIds.includes(p.id))
+  }, [matches, realMatches, realProfiles])
 
   // ==================== SWIPE LOGIC ====================
   const handleSwipe = (profileId: string, direction: 'left' | 'right') => {
@@ -975,6 +1098,25 @@ function App() {
   const sendMessage = (text: string) => {
     if (!activeChat || !text.trim()) return
 
+    const isRealChat = !isDemoMode && firebaseUser?.uid && realMatches.includes(activeChat)
+
+    if (isRealChat) {
+      // Real cross-device chat
+      sendRealMessage(text, activeChat)
+      // Also update local view optimistically
+      const newMsg: Message = {
+        id: Date.now().toString(36) + Math.random(),
+        from: 'me',
+        text: text.trim(),
+        timestamp: Date.now()
+      }
+      const currentChat = messages[activeChat] || []
+      const updated = { ...messages, [activeChat]: [...currentChat, newMsg] }
+      saveMessages(updated)
+      return
+    }
+
+    // Demo / seed chat (existing behavior)
     const newMsg: Message = {
       id: Date.now().toString(36) + Math.random(),
       from: 'me',
@@ -986,7 +1128,7 @@ function App() {
     const updated = { ...messages, [activeChat]: [...currentChat, newMsg] }
     saveMessages(updated)
 
-    // Simulate realistic reply sometimes
+    // Simulate realistic reply sometimes (only for seeds)
     setTimeout(() => {
       const profile = SEED_PROFILES.find(p => p.id === activeChat)
       if (!profile) return
@@ -1613,7 +1755,7 @@ function App() {
                       availability: editAvailability,
                       goals: editGoals
                     }
-                    saveUser(updated as CurrentUser)
+                    saveUserWithRealSync(updated as CurrentUser)
                     toast.success('Perfil actualizado')
                   }
                   setIsEditingProfile(!isEditingProfile)
@@ -1719,7 +1861,7 @@ function App() {
                 onClick={() => {
                   const newVal = !currentUser.availableToday
                   const updated = { ...currentUser, availableToday: newVal }
-                  saveUser(updated as CurrentUser)
+                  saveUserWithRealSync(updated as CurrentUser)
                   toast(newVal ? '¡Marcado como disponible hoy!' : 'Disponibilidad actualizada')
                 }}
                 className={`px-4 py-2 rounded-2xl text-sm font-medium transition ${currentUser.availableToday ? 'bg-[#14b8a6] text-black' : 'bg-[#121418] border border-[#272b33]'}`}
