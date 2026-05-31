@@ -10,7 +10,8 @@ import {
   signInWithEmail, 
   createUserProfile,
   updateUserProfile,
-  getUserProfile
+  getUserProfile,
+  logout
 } from './services/auth'
 import { useAuth } from './contexts/AuthContext'
 import confetti from 'canvas-confetti'
@@ -168,7 +169,8 @@ function App() {
   const { 
     currentUser, 
     saveUser, 
-    setShowOnboarding 
+    setShowOnboarding,
+    clearProfile 
   } = useProfile()
 
   const { 
@@ -415,6 +417,37 @@ function App() {
       }
     }
   }, [saveUser, isDemoMode, firebaseUser?.uid])
+
+  // Logout handler - works for both demo and real Firebase
+  const handleLogout = async () => {
+    try {
+      await logout()
+
+      // Clear all local state
+      if (clearProfile) clearProfile()
+      
+      setMatches([])
+      setLikedIds([])
+      setPassedIds([])
+      setMessages({})
+      setRealProfiles([])
+      setRealMatches([])
+      setRealChatMessages([])
+      setActiveChat(null)
+      setActiveTab('explore')
+      setIsEditingProfile(false)
+
+      // Clear any demo-specific data
+      try {
+        localStorage.removeItem('entrenamatch_demo_user')
+      } catch {}
+
+      toast.success('Sesión cerrada correctamente')
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error)
+      toast.error('Hubo un problema al cerrar la sesión')
+    }
+  }
 
   // Real message sender (writes to Firestore so the other user sees it on any device)
   const sendRealMessage = async (text: string, toUserId: string) => {
@@ -2022,6 +2055,13 @@ function App() {
                 </div>
               )}
             </div>
+
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 py-3 text-sm text-[#f87171] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616] mb-3"
+            >
+              Cerrar sesión
+            </button>
 
             <button 
               onClick={() => {
