@@ -1843,7 +1843,7 @@ function App() {
                   </form>
                   <div className="text-center text-[10px] text-[#475569] mt-2">
                     {realMatches.includes(activeChat || '') 
-                      ? 'Mensajes reales en tiempo real entre celulares' 
+                      ? 'Mensajes reales • se envían al celular del otro tester' 
                       : 'Los mensajes son locales en esta versión (demo)'}
                   </div>
                 </div>
