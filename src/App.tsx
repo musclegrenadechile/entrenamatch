@@ -600,13 +600,16 @@ function App() {
     loadRealProfiles()
   }, [firebaseUser?.uid])
 
-  // Automatic load of real sessions DISABLED to fix TDZ crash on initialization.
-  // Users must click "Actualizar sesiones reales" button (safe path).
-  // useEffect(() => {
-  //   if (!isDemoMode && firebaseUser?.uid) {
-  //     loadRealSessions()
-  //   }
-  // }, [firebaseUser?.uid, isDemoMode])
+  // Safe polling for real sessions (no TDZ risk)
+  useEffect(() => {
+    if (!isDemoMode && firebaseUser?.uid) {
+      const interval = setInterval(() => {
+        loadRealSessions()
+      }, 30000) // every 30 seconds when in real mode
+
+      return () => clearInterval(interval)
+    }
+  }, [isDemoMode, firebaseUser?.uid])
 
   // Real-time listener for sessions DISABLED TEMPORARILY to fix TDZ crash on initialization.
   // Manual "Actualizar sesiones reales" + auto-load on tab switch still work.
