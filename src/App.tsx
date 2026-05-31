@@ -284,7 +284,7 @@ function App() {
   // Effective user ID for real vs demo (must be after useAuth)
   const effectiveUserId = !isDemoMode && firebaseUser?.uid ? firebaseUser.uid : 'me'
 
-  // Real multi-user state (loaded from Firestore when using real backend)
+  // Real multi-user state (loaded from Firestore when using real backend) - declared early to avoid TDZ
   const [realProfiles, setRealProfiles] = useState<Profile[]>([])
   const [realMatches, setRealMatches] = useState<string[]>([])
   const [realChatMessages, setRealChatMessages] = useState<any[]>([])
