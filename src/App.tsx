@@ -2641,7 +2641,7 @@ function App() {
                               <div className="flex gap-1 mt-1 text-xs">
                                 {['👍', '🔥', '💪', '👏'].map(emoji => {
                                   const reactors = msg.reactions?.[emoji] || []
-                                  const hasReacted = reactors.includes(currentUser.name)
+                                  const hasReacted = reactors.includes(currentUser?.name || '')
                                   return (
                                     <button
                                       key={emoji}
@@ -2653,10 +2653,11 @@ function App() {
 
                                         if (!targetMsg.reactions[emoji]) targetMsg.reactions[emoji] = []
 
+                                        const safeName = currentUser?.name || 'Tú';
                                         if (hasReacted) {
-                                          targetMsg.reactions[emoji] = targetMsg.reactions[emoji].filter(n => n !== currentUser.name)
+                                          targetMsg.reactions[emoji] = targetMsg.reactions[emoji].filter(n => n !== safeName)
                                         } else {
-                                          targetMsg.reactions[emoji].push(currentUser.name)
+                                          targetMsg.reactions[emoji].push(safeName)
                                         }
 
                                         msgs[i] = targetMsg
