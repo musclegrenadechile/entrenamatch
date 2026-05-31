@@ -999,8 +999,8 @@ function App() {
     setFilters({ minAge: 20, maxAge: 40, gender: 'todos', trainingTypes: [], availability: [], maxDistanceKm: 100, onlyAvailableToday: false })
   })
 
-  // Onboarding logic extracted to OnboardingFlow component (aggressive step).
-  // updateOnboard and finish logic now live in the component.
+  // Onboarding fully extracted to OnboardingFlow (aggressive refactor).
+  // All related logic moved into the component.
 
   const nextOnboarding = () => {
     if (onboardingStep < 4) {
@@ -1115,26 +1115,7 @@ function App() {
     }, 1800)
   }
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files) return
-    const readers = Array.from(files).slice(0, 6).map(file => {
-      return new Promise<string>((resolve) => {
-        const reader = new FileReader()
-        reader.onload = () => resolve(reader.result as string)
-        reader.readAsDataURL(file)
-      })
-    })
-    Promise.all(readers).then(urls => {
-      const current = onboardData.photos || []
-      updateOnboard({ photos: [...current, ...urls].slice(0, 6) })
-    })
-  }
-
-  const removeOnboardPhoto = (index: number) => {
-    const newPhotos = (onboardData.photos || []).filter((_, i) => i !== index)
-    updateOnboard({ photos: newPhotos })
-  }
+  // Photo handlers moved into OnboardingFlow component.
 
   // ==================== EDIT PROFILE (placeholder for future) ====================
 
