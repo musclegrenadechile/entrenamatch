@@ -187,6 +187,13 @@ function App() {
 
   // UI state
   const [activeTab, setActiveTab] = useState<Tab>('explore')
+
+  // Auto-refresh real sessions when entering the Sesiones tab (for better cross-device experience)
+  useEffect(() => {
+    if (activeTab === 'sesiones' && !isDemoMode) {
+      loadRealSessions()
+    }
+  }, [activeTab, isDemoMode])
   const [showFilters, setShowFilters] = useState(false)
   const [showMatchModal, setShowMatchModal] = useState<Profile | null>(null)
   const [showFullProfile, setShowFullProfile] = useState<Profile | null>(null)
@@ -309,7 +316,7 @@ function App() {
             trainingType: data.trainingType || '',
             maxParticipants: data.maxParticipants || 4,
             participants: data.participants || [],
-            createdAt: data.createdAt || Date.now(),
+            createdAt: (data.createdAt?.toMillis ? data.createdAt.toMillis() : data.createdAt) || Date.now(),
           })
         }
       })
@@ -1617,7 +1624,7 @@ function App() {
                               onClick={() => {
                                 const updated = sessions.map(s => 
                                   s.id === session.id 
-                                    ? { ...s, participants: [...s.participants, 'me'] } 
+                                    ? { ...s, participants: [...s.participants, effectiveUserId] } 
                                     : s
                                 )
                                 saveSessions(updated)
@@ -1626,6 +1633,10 @@ function App() {
                                 const joinedSession = updated.find(s => s.id === session.id)
                                 if (joinedSession) {
                                   seedInitialSessionMessages(joinedSession)
+                                }
+
+                                if (!isDemoMode) {
+                                  loadRealSessions()
                                 }
 
                                 // Notify the creator
@@ -2564,6 +2575,10 @@ function App() {
                               saveSessions(updatedSessions)
                               setSelectedSquad(null)
                               setActiveTab('sesiones')
+
+                              if (!isDemoMode) {
+                                loadRealSessions()
+                              }
                               toast.success('Sesión creada para el Squad', { description: 'Ve a la pestaña Sesiones' })
                             }}
                             className="w-full mb-3 text-sm border border-[#14b8a6] text-[#14b8a6] py-2 rounded-2xl"
@@ -2657,6 +2672,11 @@ function App() {
                 const updated = [newSession, ...sessions]
                 saveSessions(updated)
                 setShowCreateSession(false)
+
+                // For real users, refresh from Firestore so others (and self) see it across devices
+                if (!isDemoMode) {
+                  loadRealSessions()
+                }
 
                 // Seed initial message from creator
                 const creatorMsg: SessionMessage = {
