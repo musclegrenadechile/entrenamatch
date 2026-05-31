@@ -1604,10 +1604,10 @@ function App() {
                 <Heart className="mx-auto text-[#14b8a6] mb-3" size={42} />
                 <div className="font-semibold mb-2">Aún no tienes matches</div>
                 <p className="text-sm text-[#94a3b8] max-w-[300px] mx-auto mb-3">
-                  ¡Bienvenido a la Pre-Alpha! Desliza a la derecha en <strong>Explorar</strong>.<br />
-                  En esta versión los matches aparecen con más frecuencia de lo que parece.
+                  ¡Bienvenido a la Pre-Alpha con backend real! Desliza en <strong>Explorar</strong> y conecta con testers reales.<br />
+                  Los matches y chats ahora se ven en otros celulares.
                 </p>
-                <p className="text-xs text-[#64748b] mb-2">Sigue probando y cuéntanos qué se siente.</p>
+                <p className="text-xs text-[#64748b] mb-2">Crea tu cuenta real y prueba el flujo completo.</p>
                 <p className="text-[10px] text-[#14b8a6]">Tu feedback es lo más valioso ahora mismo ❤️</p>
               </div>
             ) : (
