@@ -1690,7 +1690,12 @@ function App() {
                   <button onClick={() => setActiveChat(null)} className="p-2 -ml-2"><ArrowLeft /></button>
                   <img src={chatProfile?.photos[0]} className="w-9 h-9 rounded-xl object-cover" />
                   <div>
-                    <div className="font-semibold">{chatProfile?.name}</div>
+                    <div className="font-semibold flex items-center gap-2">
+                      {chatProfile?.name}
+                      {realMatches.includes(activeChat || '') && (
+                        <span className="text-[9px] bg-[#14b8a6] text-black px-1.5 py-0 rounded">REAL</span>
+                      )}
+                    </div>
                     <div className="text-[10px] text-[#14b8a6] -mt-0.5">{chatProfile?.city}, {chatProfile?.country} • En línea</div>
                   </div>
                   <button onClick={() => setShowFullProfile(chatProfile!)} className="ml-auto text-xs px-3 py-1 bg-[#121418] rounded-full">Ver perfil</button>
