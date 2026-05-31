@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, type ReactNode }
 import type { User as FirebaseUser } from 'firebase/auth';
 import type { UserProfile } from '../services/auth';
 import { onAuthStateChange, getUserProfile, handleGoogleRedirectResult } from '../services/auth';
+import { isFirebaseConfigured } from '../services/firebase';
 
 interface AuthContextType {
   currentUser: FirebaseUser | null;
@@ -26,14 +27,18 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+  // Auto-enable demo mode for public GitHub Pages or when Firebase is not configured
+  const isPublicDemo = typeof window !== 'undefined' && 
+    (window.location.hostname.includes('github.io') || !isFirebaseConfigured);
+  
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isDemoMode, setDemoMode] = useState(false); // Changed to false - we now have real Firebase configured
+  const [isDemoMode, setDemoMode] = useState(isPublicDemo);
 
   useEffect(() => {
     if (isDemoMode) {
-      // In demo mode, we don't listen to real auth
+      // In demo mode (public GitHub Pages), we use pure localStorage - no real auth
       setLoading(false);
       return;
     }
