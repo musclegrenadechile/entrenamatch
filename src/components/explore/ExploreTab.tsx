@@ -17,6 +17,7 @@ interface ExploreTabProps {
   onSwipe: (direction: 'left' | 'right', profileId: string) => void;
   onShowProfile?: (profile: Profile) => void;
   realProfiles?: Profile[];
+  onRefreshRealProfiles?: () => void;
 }
 
 export const ExploreTab: React.FC<ExploreTabProps> = ({
@@ -30,6 +31,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
   onSwipe,
   onShowProfile,
   realProfiles = [],
+  onRefreshRealProfiles,
 }) => {
   // Local drag state + optimistic removal for snappy swipe/match feel
   const [dragX, setDragX] = useState(0);
@@ -264,6 +266,14 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           >
             <RefreshCw size={14}/> Reiniciar
           </button>
+          {realProfiles.length > 0 && onRefreshRealProfiles && (
+            <button 
+              onClick={onRefreshRealProfiles} 
+              className="text-xs flex items-center gap-1 bg-[#14b8a6]/10 text-[#14b8a6] px-2 py-1 rounded-full active:bg-[#14b8a6] active:text-black"
+            >
+              <RefreshCw size={12}/> Actualizar reales
+            </button>
+          )}
           <button 
             onClick={() => setShowFilters(true)} 
             className="p-2 active:bg-[#121418] rounded-full"

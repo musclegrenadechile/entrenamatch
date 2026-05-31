@@ -1329,6 +1329,7 @@ function App() {
             }}
             onShowProfile={setShowFullProfile}
             realProfiles={realProfiles}
+            onRefreshRealProfiles={() => loadRealProfiles()}
           />
         )}
 
