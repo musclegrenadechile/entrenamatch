@@ -173,6 +173,9 @@ function App() {
     clearProfile 
   } = useProfile()
 
+  // Effective user ID for real vs demo
+  const effectiveUserId = !isDemoMode && firebaseUser?.uid ? firebaseUser.uid : 'me'
+
   const { 
     squads: _squadsFromHook, 
     createSquad: _createSquad, 
@@ -737,10 +740,8 @@ function App() {
       (async () => {
         try {
           const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
-          // For simplicity in Pre-Alpha, write the latest sessions the user interacts with
-          // A more complete solution would sync all, but this makes created/joined sessions visible
-          for (const s of newSessions.slice(0, 10)) { // limit writes
-            if (s.creatorId === 'me' || s.participants.includes('me')) {
+          for (const s of newSessions.slice(0, 10)) {
+            if (s.creatorId === effectiveUserId || s.participants.includes(effectiveUserId)) {
               await setDoc(doc(db, 'sessions', s.id), {
                 ...s,
                 updatedAt: serverTimestamp(),
@@ -1554,11 +1555,11 @@ function App() {
               <div className="flex items-center gap-2 mb-3">
                 <div className="text-lg font-semibold">Sesiones abiertas</div>
                 <div className="text-xs px-2 py-0.5 bg-[#272b33] rounded-full text-[#94a3b8]">
-                  {sessions.filter(s => !s.participants.includes('me')).length}
+                  {displaySessions.filter(s => !s.participants.includes(effectiveUserId)).length}
                 </div>
               </div>
 
-              {displaySessions.filter(s => !s.participants.includes('me')).length === 0 ? (
+              {displaySessions.filter(s => !s.participants.includes(effectiveUserId)).length === 0 ? (
                 <div className="card p-7 rounded-3xl text-center">
                   <Star className="mx-auto text-[#14b8a6] mb-3" size={36} />
                   <div className="font-semibold mb-2">No hay sesiones abiertas todavía</div>
@@ -1576,7 +1577,7 @@ function App() {
               ) : (
                 <div className="space-y-3">
                   {displaySessions
-                    .filter(s => !s.participants.includes('me'))
+                    .filter(s => !s.participants.includes(effectiveUserId))
                     .sort((a,b) => b.createdAt - a.createdAt)
                     .map(session => {
                       const spotsLeft = session.maxParticipants - session.participants.length
@@ -1648,11 +1649,11 @@ function App() {
               <div className="flex items-center gap-2 mb-3">
                 <div className="text-lg font-semibold">Mis sesiones</div>
                 <div className="text-xs px-2 py-0.5 bg-[#14b8a6]/20 text-[#14b8a6] rounded-full">
-                  {sessions.filter(s => s.participants.includes('me') || s.creatorId === 'me').length}
+                  {displaySessions.filter(s => s.participants.includes(effectiveUserId) || s.creatorId === effectiveUserId).length}
                 </div>
               </div>
 
-              {sessions.filter(s => s.participants.includes('me') || s.creatorId === 'me').length === 0 ? (
+              {displaySessions.filter(s => s.participants.includes(effectiveUserId) || s.creatorId === effectiveUserId).length === 0 ? (
                 <div className="card p-7 rounded-3xl text-center">
                   <div className="font-semibold mb-2">Aún no tienes sesiones</div>
                   <p className="text-sm text-[#94a3b8] mb-3 max-w-[260px] mx-auto">
@@ -1670,7 +1671,7 @@ function App() {
               ) : (
                 <div className="space-y-3">
                   {displaySessions
-                    .filter(s => s.participants.includes('me') || s.creatorId === 'me')
+                    .filter(s => s.participants.includes(effectiveUserId) || s.creatorId === effectiveUserId)
                     .sort((a,b) => b.createdAt - a.createdAt)
                     .map(session => {
                       const isCreator = session.creatorId === 'me'
@@ -2541,14 +2542,14 @@ function App() {
                               // Pre-create a session linked to this squad
                               const newSession: TrainingSession = {
                                 id: 's' + Date.now(),
-                                creatorId: 'me',
+                                creatorId: effectiveUserId,
                                 creatorName: currentUser?.name || 'Tú',
                                 title: `Sesión del Squad: ${squad.name}`,
                                 time: 'Mañana 19:00',
                                 location: squad.focus === 'Running' ? 'Playa Reñaca' : 'Gym cercano',
                                 trainingType: squad.focus,
                                 maxParticipants: Math.min(6, squad.members.length + 2),
-                                participants: [...squad.members],
+                                participants: [...squad.members.filter(m => m !== 'me'), effectiveUserId],
                                 createdAt: Date.now()
                               }
                               const updatedSessions = [newSession, ...sessions]
@@ -2635,14 +2636,14 @@ function App() {
                 const form = e.currentTarget
                 const newSession: TrainingSession = {
                   id: 's' + Date.now(),
-                  creatorId: 'me',
+                  creatorId: effectiveUserId,
                   creatorName: currentUser?.name || 'Tú',
                   title: (form.elements.namedItem('title') as HTMLInputElement).value,
                   time: (form.elements.namedItem('time') as HTMLInputElement).value,
                   location: (form.elements.namedItem('location') as HTMLInputElement).value,
                   trainingType: (form.elements.namedItem('trainingType') as HTMLSelectElement).value,
                   maxParticipants: parseInt((form.elements.namedItem('max') as HTMLInputElement).value),
-                  participants: ['me'],
+                  participants: [effectiveUserId],
                   createdAt: Date.now()
                 }
                 const updated = [newSession, ...sessions]
