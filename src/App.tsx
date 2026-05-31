@@ -405,20 +405,14 @@ function App() {
 
   // Load from localStorage on mount
   useEffect(() => {
-    const savedUser = localStorage.getItem('fitvina_user')
+    // NOTE: Profile loading is now handled by useProfile hook.
+    // The old 'fitvina_user' load has been migrated.
     const savedLiked = localStorage.getItem('fitvina_liked')
     const savedPassed = localStorage.getItem('fitvina_passed')
     const savedMatches = localStorage.getItem('fitvina_matches')
     const savedMessages = localStorage.getItem('fitvina_messages')
     const savedLocation = localStorage.getItem('entrenamatch_location')
 
-    if (savedUser) {
-      setCurrentUser(JSON.parse(savedUser))
-    } else if (!isDemoMode) {
-      // Only auto-force onboarding on mount for real Firebase mode.
-      // In public demo, we want users to go through the "Crear Cuenta" / login tabs first.
-      setShowOnboarding(true)
-    }
     if (savedLiked) setLikedIds(JSON.parse(savedLiked))
     if (savedPassed) setPassedIds(JSON.parse(savedPassed))
     if (savedMatches) setMatches(JSON.parse(savedMatches))
