@@ -4,6 +4,11 @@
 
 **Live Site**: https://musclegrenadechile.github.io/entrenamatch/
 
+**Important about deploys**:
+- After every push, GitHub Actions takes 3-8 minutes to build + deploy.
+- You **must** do a hard refresh (Ctrl+Shift+R / Cmd+Shift+R) to see changes.
+- Look for the text "FIX 2026-04-26" in the green top banner to confirm you have the latest version (including the startup crash fix).
+
 ## How to Test Real Cross-Device Interaction (2 Accounts)
 
 ### Prerequisites
