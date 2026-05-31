@@ -2086,21 +2086,21 @@ function App() {
                   </p>
 
                   <div className="bg-[#121418] rounded-2xl p-4 text-left text-sm mb-5">
-                    <div className="font-medium text-white mb-2">Esto es Pre-Alpha:</div>
+                    <div className="font-medium text-white mb-2">Esto es Pre-Alpha (Backend Real Activo):</div>
                     <ul className="space-y-1.5 text-[#cbd5e1]">
                       <li>→ Versión temprana y en desarrollo</li>
-                      <li>→ Todo es local (se borra al recargar o hacer RESET)</li>
+                      <li>→ Perfiles, matches y chat 1:1 ya son reales (se ven entre celulares distintos)</li>
                       <li>→ Tu opinión real importa mucho más que en una app terminada</li>
                     </ul>
                   </div>
 
                   <div className="text-left text-sm mb-5">
-                    <div className="font-medium text-white mb-1.5">Qué hacer ahora (esto es lo que más necesitamos probar):</div>
+                    <div className="font-medium text-white mb-1.5">Qué hacer ahora (prueba las features reales):</div>
                     <div className="text-[#cbd5e1] space-y-1 text-sm">
-                      <div>1. <strong>Explorar</strong> → desliza 8-10 perfiles</div>
-                      <div>2. Haz match y ve a <strong>Mensajes</strong> (usa las sugerencias que te damos)</div>
-                      <div>3. <strong>Crea 1 Squad</strong> y 1 <strong>Sesión</strong> (aunque sea de prueba)</div>
-                      <div>4. Únete a algo que otro tester creó</div>
+                      <div>1. <strong>Explorar</strong> → busca perfiles reales de otros testers</div>
+                      <div>2. Haz match y chatea en <strong>Mensajes</strong> (los mensajes van al otro celular)</div>
+                      <div>3. Prueba crear Squads y Sesiones (aún en desarrollo)</div>
+                      <div>4. Cuéntanos qué se siente la experiencia real</div>
                     </div>
                   </div>
 
