@@ -283,9 +283,7 @@ function App() {
     }
   ])
 
-  // Swipe state
-  const [, setCurrentIndex] = useState(0)
-  // (dragDirection removed - now inside ExploreTab)
+  // (All swipe/deck visual state fully extracted to ExploreTab)
 
   // Onboarding state has been moved inside OnboardingFlow component (aggressive refactor).
   // App.tsx no longer owns this state.
@@ -958,53 +956,24 @@ function App() {
       <div className="flex-1 overflow-hidden relative flex flex-col">
         {/* ===== EXPLORE / SWIPE (fully owned by ExploreTab) ===== */}
         {activeTab === 'explore' && (
-          <div className="flex-1 flex flex-col p-4 pt-3 relative">
-            <div className="flex items-baseline justify-between mb-2 px-1">
-              <div>
-                <div className="text-2xl font-semibold tracking-[-1.5px]">Explorar</div>
-                <div className="text-[#14b8a6] text-xs font-medium">
-                  {deck.length} personas 
-                  {userLocation ? ' cerca de ti' : ' (activa GPS para ver distancias)'}
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {!userLocation && (
-                  <button 
-                    onClick={requestUserLocation}
-                    className="text-xs flex items-center gap-1 bg-[#14b8a6]/10 text-[#14b8a6] px-2.5 py-1 rounded-full active:bg-[#14b8a6] active:text-black"
-                  >
-                    <MapPin size={12}/> Activar GPS
-                  </button>
-                )}
-                <button onClick={() => { saveLiked([]); savePassed([]); setCurrentIndex(0); toast('Deck reiniciado') }} 
-                  className="text-xs flex items-center gap-1 text-[#94a3b8] active:text-white">
-                  <RefreshCw size={14}/> Reiniciar
-                </button>
-              </div>
-            </div>
-
-            {/* Cards Stack - now fully powered by the rich ExploreTab */}
-            <div className="relative flex-1 flex items-center justify-center mt-1 mb-3 min-h-[460px]">
-              <ExploreTab
-                deck={deck}
-                visibleCards={visibleCards}
-                userLocation={userLocation}
-                filters={filters}
-                currentUser={currentUser}
-                setShowFilters={setShowFilters}
-                resetDeck={() => { saveLiked([]); savePassed([]); toast('Deck reiniciado'); }}
-                requestUserLocation={requestUserLocation}
-                onSwipe={(direction, profileId) => {
-                  if (direction === 'right') {
-                    handleSwipe(profileId, 'right');
-                  } else {
-                    handleSwipe(profileId, 'left');
-                  }
-                }}
-                onShowProfile={setShowFullProfile}
-              />
-            </div>
-          </div>
+          <ExploreTab
+            deck={deck}
+            visibleCards={visibleCards}
+            userLocation={userLocation}
+            filters={filters}
+            currentUser={currentUser}
+            setShowFilters={setShowFilters}
+            resetDeck={() => { saveLiked([]); savePassed([]); toast('Deck reiniciado'); }}
+            requestUserLocation={requestUserLocation}
+            onSwipe={(direction, profileId) => {
+              if (direction === 'right') {
+                handleSwipe(profileId, 'right');
+              } else {
+                handleSwipe(profileId, 'left');
+              }
+            }}
+            onShowProfile={setShowFullProfile}
+          />
         )}
 
         {/* ===== SQUADS (Fixed training crews) - New unique feature ===== */}
@@ -2116,7 +2085,7 @@ function App() {
                 <div className="text-3xl font-semibold tracking-tight mb-4">Tú y {showMatchModal.name} quieren entrenar juntos</div>
                 
                 <div className="flex justify-center -space-x-4 mb-6">
-                  <img src={currentUser!.photos[0]} className="w-20 h-20 rounded-full border-4 border-[#121418] object-cover z-10" />
+                  <img src={currentUser?.photos?.[0] || 'https://picsum.photos/id/1005/80/80'} className="w-20 h-20 rounded-full border-4 border-[#121418] object-cover z-10" />
                   <img src={showMatchModal.photos[0]} className="w-20 h-20 rounded-full border-4 border-[#121418] object-cover" />
                 </div>
 
