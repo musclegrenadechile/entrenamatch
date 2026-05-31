@@ -425,10 +425,12 @@ function App() {
               timestamp: data.timestamp || Date.now(),
             })
           })
-          // Sort by time
-          msgs.sort((a, b) => a.timestamp - b.timestamp)
+          // Sort by time (newest last)
+          msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
           setRealChatMessages(msgs)
           console.log(`📨 Real-time update: ${msgs.length} messages for chat ${activeChat}`)
+        }, (error) => {
+          console.warn('Real chat listener error (may need rules/index):', error)
         })
       } catch (e) {
         console.warn('Real chat listener error:', e)
