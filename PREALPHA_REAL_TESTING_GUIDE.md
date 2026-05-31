@@ -41,13 +41,15 @@
    - Confirm the match still appears in Matches tab.
 8. **Check browser console** (F12) on the live site for errors (especially Firebase permission denied or query failures).
 
-## What "Working" Looks Like Right Now (Overnight State)
+## What "Working" Looks Like Right Now (Overnight State - as of ~2 AM pushes)
 
 - Real accounts persist across refreshes and devices.
-- Real profiles from other users appear in Explore (alongside demo seeds).
-- Swiping right on a real profile creates a match visible to both.
-- Real-time 1:1 chat works between the two real UIDs.
-- Messages survive hard refresh on both sides.
+- Real profiles from other users appear in Explore (alongside demo seeds). Use the "Actualizar reales" button to pull latest.
+- When you swipe right on a real profile, a like + match is written to Firestore. The other person sees it on their Matches tab (after load/refresh).
+- Real-time 1:1 chat works: messages appear on the other device (live via listeners or after refresh). "REAL" badge shown in chat header.
+- "Sincronizado con backend real" indicator in Profile tab.
+- Logout works cleanly for real users.
+- Messages and matches survive hard refresh on both sides.
 
 ## Known Limitations (as of last overnight push)
 
