@@ -1457,34 +1457,9 @@ function App() {
                 }}
               />
             </div>
-            {/* ExploreTab is now handling the deck. More logic will be moved in the next aggressive wave. */}
+            {/* ExploreTab is now in charge. More swipe logic moved in the next aggressive wave. */}
           </div>
         )}
-                        <div className="absolute top-4 right-4 bg-[#14b8a6] text-black text-xs font-bold px-2.5 py-0.5 rounded-full">
-                          {calculateCompatibility(currentUser, profile, userLocation)}%
-                        </div>
-                      )}
-                      {getAverageRating(profile.id, reviews).count > 0 && (
-                        <div className="absolute bottom-4 left-4 bg-black/70 text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
-                          ★ {getAverageRating(profile.id, reviews).avg} ({getAverageRating(profile.id, reviews).count})
-                        </div>
-                      )}
-
-                      {/* Photo count */}
-                      {profile.photos.length > 1 && (
-                        <div className="absolute top-4 right-4 bg-black/70 px-2 py-0.5 rounded-full text-xs">{profile.photos.length} fotos</div>
-                      )}
-
-                      {/* Info overlay */}
-                      <div className="absolute bottom-0 left-0 right-0 p-5">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-3xl font-semibold tracking-[-1.2px]">{profile.name}</span>
-                          <span className="text-2xl font-light text-[#cbd5e1]">{profile.age}</span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[#14b8a6] text-sm font-medium">{profile.level}</span>
-                          <span className="text-[#64748b]">•</span>
-                          <span className="text-sm text-[#cbd5e1]">{profile.city}, {profile.country}</span>
                           {profile.intensity && (
                             <span className="text-[10px] bg-[#272b33] px-1.5 py-0.5 rounded">{profile.intensity}</span>
                           )}
