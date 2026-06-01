@@ -179,13 +179,6 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
             {compat !== null && (
               <div className="text-right">
-                <div className="text-2xl font-bold text-[#14b8a6] leading-none">{compat}</div>
-                <div className="text-[9px] text-white/70 -mt-0.5">compatibilidad</div>
-              </div>
-            )}
-
-            {compat !== null && (
-              <div className="text-right">
                 <div className="text-3xl font-bold text-[#14b8a6] leading-none">{compat}</div>
                 <div className="text-[10px] -mt-1 opacity-75">compat</div>
               </div>
@@ -241,51 +234,46 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
   return (
     <div className="flex-1 flex flex-col p-4 pt-3 relative bg-[#0a0b0f]">
-      {/* Header */}
-      <div className="flex items-baseline justify-between mb-2 px-1">
+      {/* Header - Cleaner and more premium */}
+      <div className="flex items-start justify-between mb-3 px-1">
         <div>
-          <div className="text-2xl font-semibold tracking-[-1.5px]">Explorar</div>
-          <div className="text-[#14b8a6] text-xs font-medium">
-            {deck.length} personas 
-            {userLocation ? ' cerca de ti' : ' (activa GPS para ver distancias)'}
-          </div>
-
-          {/* First-time guidance for new Pre-Alpha users */}
-          <div className="text-[10px] text-[#64748b] mt-0.5">
-            Desliza a la derecha para empezar a conectar. Sé directo en tu bio.
+          <div className="text-3xl font-semibold tracking-[-1.5px]">Explorar</div>
+          <div className="text-[#14b8a6] text-xs font-medium mt-0.5">
+            {deck.length} personas {userLocation ? 'cerca de ti' : ''}
           </div>
           {realProfiles && realProfiles.length > 0 && (
-            <div className="text-[10px] text-[#14b8a6] mt-0.5">+ {realProfiles.length} perfiles reales de otros testers</div>
+            <div className="text-[10px] text-[#14b8a6] mt-0.5 font-medium">+ {realProfiles.length} perfiles reales de testers</div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-1.5">
           {!userLocation && (
             <button 
               onClick={requestUserLocation}
-              className="text-xs flex items-center gap-1 bg-[#14b8a6]/10 text-[#14b8a6] px-2.5 py-1 rounded-full active:bg-[#14b8a6] active:text-black"
+              className="text-xs flex items-center gap-1 bg-[#14b8a6]/10 text-[#14b8a6] px-3 py-1.5 rounded-2xl active:bg-[#14b8a6] active:text-black"
             >
-              <MapPin size={12}/> Activar GPS
+              <MapPin size={13}/> GPS
             </button>
           )}
           <button 
             onClick={() => { setOptimisticRemovedId(null); setDragX(0); resetDeck(); }} 
-            className="text-xs flex items-center gap-1 text-[#94a3b8] active:text-white"
+            className="text-xs flex items-center gap-1 text-[#94a3b8] active:text-white px-3 py-1.5 rounded-2xl active:bg-[#1f242b]"
           >
-            <RefreshCw size={14}/> Reiniciar
+            <RefreshCw size={13}/> Reiniciar
           </button>
           {realProfiles.length > 0 && onRefreshRealProfiles && (
             <button 
               onClick={onRefreshRealProfiles} 
-              className="text-xs flex items-center gap-1 bg-[#14b8a6]/10 text-[#14b8a6] px-2 py-1 rounded-full active:bg-[#14b8a6] active:text-black"
+              className="text-xs flex items-center gap-1 bg-[#14b8a6]/10 text-[#14b8a6] px-3 py-1.5 rounded-2xl active:bg-[#14b8a6] active:text-black"
             >
-              <RefreshCw size={12}/> Actualizar reales
+              <RefreshCw size={13}/> Reales
             </button>
           )}
           <button 
             onClick={() => setShowFilters(true)} 
-            className="p-2 active:bg-[#121418] rounded-full"
+            className="p-2 active:bg-[#1f242b] rounded-2xl bg-[#121418] border border-[#272b33]"
           >
-            <Filter size={20} />
+            <Filter size={18} />
           </button>
         </div>
       </div>
@@ -295,20 +283,27 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         <AnimatePresence>
           {visibleCards.length === 0 && (
             <div className="text-center px-8">
-              <div className="mx-auto w-16 h-16 bg-[#121418] rounded-full flex items-center justify-center mb-4">
-                <Star className="text-[#14b8a6]" />
+              <div className="mx-auto w-14 h-14 bg-[#121418] rounded-full flex items-center justify-center mb-4">
+                <Star className="text-[#14b8a6]" size={24} />
               </div>
-              <div className="text-xl font-semibold mb-2">¡Se acabaron por hoy!</div>
-              <p className="text-[#94a3b8] max-w-[260px] mx-auto mb-4">
-                No quedan más perfiles que cumplan tus filtros. Cambia los filtros o reinicia el deck.<br />
-                <span className="text-xs">Gracias por probar la Pre-Alpha ❤️</span>
+              <div className="text-2xl font-semibold tracking-tight mb-2">¡Se acabaron por hoy!</div>
+              <p className="text-[#94a3b8] max-w-[260px] mx-auto mb-5 text-sm">
+                No quedan más perfiles que cumplan tus filtros actuales.
               </p>
-              <button 
-                onClick={() => { setOptimisticRemovedId(null); setDragX(0); resetDeck(); }}
-                className="px-5 py-2 bg-[#14b8a6] text-black rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
-              >
-                Reiniciar deck
-              </button>
+              <div className="flex gap-3 justify-center">
+                <button 
+                  onClick={() => setShowFilters(true)}
+                  className="px-5 py-2.5 border border-[#272b33] rounded-2xl text-sm active:bg-[#1f242b]"
+                >
+                  Cambiar filtros
+                </button>
+                <button 
+                  onClick={() => { setOptimisticRemovedId(null); setDragX(0); resetDeck(); }}
+                  className="px-5 py-2.5 bg-[#14b8a6] text-black rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
+                >
+                  Reiniciar deck
+                </button>
+              </div>
             </div>
           )}
 
