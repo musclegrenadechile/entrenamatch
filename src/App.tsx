@@ -694,11 +694,46 @@ function App() {
   }, [firebaseUser?.uid, isDemoMode])
   */
 
-  // Real-time group chat listener for sessions DISABLED TEMPORARILY (same TDZ risk).
-  // The send path still works (writes to Firestore). Manual refresh of the modal will pick up messages.
-  /*
-  useEffect(() => { ... })
-  */
+  // Load real group chat messages when opening the modal for a real session
+  const loadRealGroupMessages = async (sessionId: string) => {
+    if (!db || !firebaseUser?.uid) return;
+
+    try {
+      const { collection, query, orderBy, getDocs } = await import('firebase/firestore');
+      const msgsRef = collection(db, `sessions/${sessionId}/messages`);
+      const q = query(msgsRef, orderBy('createdAt', 'asc'));
+      const snap = await getDocs(q);
+
+      const loaded: SessionMessage[] = [];
+      snap.forEach(doc => {
+        const d = doc.data() as any;
+        loaded.push({
+          id: doc.id,
+          senderId: d.senderId,
+          senderName: d.senderName || 'Usuario',
+          text: d.text || '',
+          timestamp: d.timestamp || Date.now(),
+          photo: d.photo,
+          reactions: d.reactions || {}
+        });
+      });
+
+      setSessionMessages(prev => ({
+        ...prev,
+        [sessionId]: loaded
+      }));
+      console.log(`✅ Loaded ${loaded.length} real group messages for session ${sessionId}`);
+    } catch (e) {
+      console.warn('Could not load real group messages:', e);
+    }
+  };
+
+  // Auto-load real group messages when opening the modal
+  useEffect(() => {
+    if (showGroupChatModalFor && !isDemoMode && firebaseUser?.uid && db) {
+      loadRealGroupMessages(showGroupChatModalFor);
+    }
+  }, [showGroupChatModalFor, isDemoMode, firebaseUser?.uid]);
 
   // Simulated pending verifications for demo (in real app this would come from backend)
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([
@@ -3669,13 +3704,23 @@ function App() {
             >
               {/* Modal Header */}
               <div className="p-4 border-b border-[#272b33] bg-[#121418] flex items-center justify-between">
-                <div>
-                  <div className="font-semibold text-lg">
-                    {sessions.find(s => s.id === showGroupChatModalFor)?.title}
+                <div className="flex items-center gap-2">
+                  <div>
+                    <div className="font-semibold text-lg">
+                      {sessions.find(s => s.id === showGroupChatModalFor)?.title}
+                    </div>
+                    <div className="text-xs text-[#14b8a6]">
+                      Chat grupal • {sessions.find(s => s.id === showGroupChatModalFor)?.participants.length} participantes
+                    </div>
                   </div>
-                  <div className="text-xs text-[#14b8a6]">
-                    Chat grupal • {sessions.find(s => s.id === showGroupChatModalFor)?.participants.length} participantes
-                  </div>
+                  {!isDemoMode && firebaseUser?.uid && (
+                    <button 
+                      onClick={() => loadRealGroupMessages(showGroupChatModalFor)}
+                      className="text-[10px] px-2 py-1 border border-[#272b33] rounded-lg text-[#14b8a6] active:bg-[#1a1d23]"
+                    >
+                      Actualizar
+                    </button>
+                  )}
                 </div>
                 <button onClick={() => setShowGroupChatModalFor(null)} className="text-2xl leading-none text-[#94a3b8] hover:text-white">×</button>
               </div>
