@@ -176,6 +176,10 @@ function App() {
     clearProfile 
   } = useProfile()
 
+  // Used to break the "stuck on AuthScreen after successful real auth" race
+  // because firebaseUser from the hook can lag behind the successful signIn/signUp call.
+  const lastSuccessfulAuthRef = useRef(null)
+
   const { 
     squads: _squadsFromHook, 
     createSquad: _createSquad, 
@@ -955,10 +959,12 @@ function App() {
           })
           toast.success('Cuenta creada exitosamente')
           loggedInUser = fbUser
+          lastSuccessfulAuthRef.current = fbUser
         } else {
           const fbUser = await signInWithEmail(authEmail, authPassword)
           toast.success('Sesión iniciada')
           loggedInUser = fbUser
+          lastSuccessfulAuthRef.current = fbUser
         }
       }
     } catch (error: any) {
@@ -1498,7 +1504,10 @@ function App() {
   })
 
   // Gate for unauthenticated users and profile creation
-  const isAuthenticated = isDemoMode ? !!currentUser : !!firebaseUser
+  // For real mode we also consider a just-successful auth (the hook can lag)
+  const isAuthenticated = isDemoMode 
+    ? !!currentUser 
+    : !!firebaseUser || !!lastSuccessfulAuthRef.current
 
   if (!isAuthenticated) {
     return (
@@ -2133,8 +2142,37 @@ function App() {
         )}
 
         {/* ===== PROFILE ===== */}
-        {activeTab === 'profile' && currentUser && (
+        {activeTab === 'profile' && (
+          !currentUser ? (
+            <div className="p-8 text-center">
+              <p className="text-[#94a3b8]">Cargando tu perfil...</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-4 text-sm text-[#14b8a6] underline"
+              >
+                Recargar
+              </button>
+            </div>
+          ) : (
+            // Extra defensive wrapper so incomplete real profiles never look completely black/empty
+            <div className="flex-1 overflow-auto p-4">
           <div className="flex-1 overflow-auto p-4">
+            {/* Prominent call-to-action if profile is incomplete (common after registration) */}
+            {(!currentUser.bio || !currentUser.photos?.length || !currentUser.trainingTypes?.length) && (
+              <div className="mb-6 p-5 rounded-3xl bg-[#1f242b] border border-[#14b8a6]/30">
+                <div className="font-semibold text-lg mb-2">Tu perfil está incompleto</div>
+                <p className="text-sm text-[#cbd5e1] mb-4">
+                  Para que otros usuarios reales puedan verte y hacer match, completá tu nombre, fotos, tipos de entrenamiento y objetivos.
+                </p>
+                <button 
+                  onClick={() => setShowOnboarding(true)}
+                  className="btn-primary w-full"
+                >
+                  Completar mi perfil ahora
+                </button>
+              </div>
+            )}
+
             <div className="flex justify-between items-center mb-4">
               <div>
                 <div className="text-2xl font-semibold tracking-[-1.2px]">Tu perfil</div>
@@ -2231,7 +2269,10 @@ function App() {
             <div className="mb-4">
               <div className="text-xs uppercase tracking-widest text-[#64748b] mb-2 px-1">Tus entrenamientos</div>
               <div className="flex flex-wrap gap-2">
-                {currentUser.trainingTypes.map(t => <div key={t} className="chip chip-active">{t}</div>)}
+                {(currentUser.trainingTypes || []).map(t => <div key={t} className="chip chip-active">{t}</div>)}
+                {(currentUser.trainingTypes || []).length === 0 && (
+                  <span className="text-xs text-[#64748b]">Aún no agregaste tipos de entrenamiento.</span>
+                )}
               </div>
             </div>
 
@@ -2239,6 +2280,9 @@ function App() {
               <div className="text-xs uppercase tracking-widest text-[#64748b] mb-2 px-1">Tus objetivos</div>
               <div className="flex flex-wrap gap-2">
                 {(currentUser.goals || []).map(g => <div key={g} className="chip">{g}</div>)}
+                {(currentUser.goals || []).length === 0 && (
+                  <span className="text-xs text-[#64748b]">Aún no agregaste objetivos.</span>
+                )}
               </div>
             </div>
 
