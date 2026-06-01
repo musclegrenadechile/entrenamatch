@@ -997,9 +997,8 @@ function App() {
           if (profile && profile.name) {
             saveUser({ ...profile, id: 'me' } as any)
 
-            // If the profile is still very minimal (typical right after registration),
-            // force the user into the full onboarding flow to complete
-            // name, age, photos, training types, goals, etc.
+            // Force onboarding for any real user whose profile is not fully complete.
+            // This ensures new or incomplete accounts go through name, age, photos, etc.
             const needsOnboarding =
               !profile.bio ||
               !profile.photos?.length ||
@@ -1009,13 +1008,14 @@ function App() {
             if (needsOnboarding) {
               setShowOnboarding(true)
             }
+            // If profile is complete, do nothing extra — main app will show on next render
           } else {
-            // No profile found (shouldn't happen after registration, but safe fallback)
+            // No profile or no name → force creation flow
             setShowOnboarding(true)
           }
         } catch (e) {
           console.warn('Profile load after real auth failed', e)
-          setShowOnboarding(true) // fallback so user can complete their profile
+          setShowOnboarding(true) // fallback
         }
       } else if (isDemoMode && loggedInUser) {
         const hasLocalProfile = localStorage.getItem('fitvina_user')
