@@ -966,18 +966,26 @@ function App() {
       let friendlyError = 'Error en la autenticación'
 
       if (error.code === 'auth/email-already-in-use') {
-        friendlyError = 'Este email ya está registrado. Prueba iniciar sesión.'
+        friendlyError = 'Este email ya está registrado.'
+        // Auto-switch to login mode for better UX
+        setAuthMode('login')
+        // Keep the email so user doesn't have to re-type it
+        setAuthEmail(authEmail)
+        setAuthError('Este email ya está registrado. Inicia sesión con tu contraseña.')
       } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
         friendlyError = 'Email o contraseña incorrectos.'
+        setAuthError(friendlyError)
       } else if (error.code === 'auth/invalid-email') {
         friendlyError = 'El formato del email no es válido.'
+        setAuthError(friendlyError)
       } else if (error.code === 'auth/weak-password') {
         friendlyError = 'La contraseña es muy débil (mínimo 6 caracteres).'
+        setAuthError(friendlyError)
       } else if (error.message) {
-        friendlyError = error.message
+        setAuthError(error.message)
+      } else {
+        setAuthError(friendlyError)
       }
-
-      setAuthError(friendlyError)
     } finally {
       setAuthLoading(false)
 
