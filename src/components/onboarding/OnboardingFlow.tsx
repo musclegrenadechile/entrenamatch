@@ -308,7 +308,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           </div>
         )}
 
-        {/* Step 3: Level + Intensity */}
+        {/* Step 3: Level + Intensity - Attractive segmented controls */}
         {onboardingStep === 3 && (
           <div className="space-y-8">
             <div>
@@ -318,7 +318,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   <button
                     key={lvl}
                     onClick={() => updateOnboard({ level: lvl })}
-                    className={`py-4 rounded-2xl border text-sm font-medium ${onboardData.level === lvl ? 'bg-[#14b8a6] text-black border-[#14b8a6]' : 'border-[#272b33] bg-[#121418]'}`}
+                    className={`py-4 rounded-3xl border text-sm font-semibold transition-all active:scale-[0.985] ${onboardData.level === lvl ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
                   >
                     {lvl}
                   </button>
@@ -333,7 +333,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   <button
                     key={int}
                     onClick={() => updateOnboard({ intensity: int })}
-                    className={`py-4 rounded-2xl border text-sm font-medium ${onboardData.intensity === int ? 'bg-[#14b8a6] text-black border-[#14b8a6]' : 'border-[#272b33] bg-[#121418]'}`}
+                    className={`py-4 rounded-3xl border text-sm font-semibold transition-all active:scale-[0.985] ${onboardData.intensity === int ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
                   >
                     {int}
                   </button>
@@ -343,25 +343,27 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           </div>
         )}
 
-        {/* Step 4: Consents */}
+        {/* Step 4: Consents - Clean, trustworthy checkboxes */}
         {onboardingStep === 4 && (
           <div className="space-y-4">
-            <div className="text-xl font-semibold mb-2">Consentimientos obligatorios</div>
-            <p className="text-sm text-[#94a3b8] mb-4">Debes aceptar todos para crear tu perfil.</p>
+            <div>
+              <div className="text-xl font-semibold mb-1">Consentimientos obligatorios</div>
+              <p className="text-sm text-[#94a3b8]">Debes aceptar todos para crear tu perfil y usar la plataforma.</p>
+            </div>
 
             {[
               { key: 'is18', label: 'Confirmo que tengo 18 años o más' },
               { key: 'isForTraining', label: 'Estoy buscando entrenar de forma seria y respetuosa' },
               { key: 'sharesLocation', label: 'Acepto compartir mi ubicación aproximada para encontrar gente cerca' }
             ].map(item => (
-              <label key={item.key} className="flex items-start gap-3 p-4 bg-[#121418] rounded-2xl border border-[#272b33] cursor-pointer active:bg-[#1a1d23]">
+              <label key={item.key} className="flex items-start gap-3 p-4 bg-[#121418] rounded-2xl border border-[#272b33] cursor-pointer active:bg-[#1a1d23] transition-colors">
                 <input
                   type="checkbox"
                   checked={(localConsents as any)[item.key]}
                   onChange={(e) => setLocalConsents(prev => ({ ...prev, [item.key]: e.target.checked }))}
-                  className="mt-1 accent-[#14b8a6]"
+                  className="mt-1 w-4 h-4 accent-[#14b8a6]"
                 />
-                <span className="text-sm">{item.label}</span>
+                <span className="text-sm leading-snug">{item.label}</span>
               </label>
             ))}
           </div>
