@@ -251,6 +251,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           {realProfiles && realProfiles.length > 0 && (
             <div className="text-[10px] text-[#14b8a6] mt-0.5 font-medium">+ {realProfiles.length} perfiles reales de testers</div>
           )}
+          <div className="text-[9px] text-[#64748b] mt-0.5">Pre-Alpha • Lo que ves es real</div>
         </div>
 
         <div className="flex items-center gap-1.5">

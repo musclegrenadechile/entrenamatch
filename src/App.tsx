@@ -2269,106 +2269,50 @@ function App() {
           </div>
         )}
 
-        {/* ===== PROFILE (cleaned for balance) */}
+        {/* ===== PROFILE - Clean and attractive for Pre-Alpha */}
         {activeTab === 'profile' && (
-          <div className="p-4">
+          <div className="flex-1 overflow-auto p-4">
             <div className="flex justify-between items-center mb-4">
               <div>
                 <div className="text-2xl font-semibold tracking-tight">Tu perfil</div>
-                {!isDemoMode && <div className="text-[10px] text-[#14b8a6] -mt-0.5">Sincronizado</div>}
+                {!isDemoMode && (
+                  <div className="text-[10px] text-[#14b8a6] -mt-0.5 font-medium">Sincronizado con backend real</div>
+                )}
               </div>
-              <button onClick={handleLogout} className="text-xs text-[#f87171] border border-[#3f2a2a] px-3 py-1.5 rounded-2xl">
+              <button onClick={handleLogout} className="text-xs text-[#f87171] border border-[#3f2a2a] px-3 py-1.5 rounded-2xl active:bg-[#1f1616]">
                 Cambiar cuenta
               </button>
             </div>
 
+            {/* Incomplete profile CTA - Prominent */}
+            {(!currentUser.bio || !currentUser.photos?.length || !currentUser.trainingTypes?.length) && (
+              <div className="mb-6 p-5 rounded-3xl bg-[#1f242b] border border-[#14b8a6]/40">
+                <div className="font-semibold text-lg mb-1.5 text-[#14b8a6]">Tu perfil está incompleto</div>
+                <p className="text-sm text-[#cbd5e1] mb-4 leading-snug">
+                  Completa tu bio, fotos y tipos de entrenamiento para que otros usuarios reales puedan encontrarte.
+                </p>
+                <button onClick={() => setShowOnboarding(true)} className="btn-primary w-full">
+                  Completar mi perfil ahora
+                </button>
+              </div>
+            )}
+
             <div className="card p-5 mb-4">
-              <div className="text-lg font-medium">{currentUser?.name || 'Usuario'}</div>
-              <div className="text-sm text-[#94a3b8]">{currentUser?.city}</div>
+              <div className="text-xl font-semibold">{currentUser?.name || 'Usuario'}</div>
+              <div className="text-sm text-[#94a3b8] mt-0.5">{currentUser?.city}, {currentUser?.country}</div>
+              {currentUser?.bio && <p className="text-sm mt-3 text-white/90">{currentUser.bio}</p>}
             </div>
 
-            <button onClick={handleLogout} className="w-full py-3 text-sm text-[#f87171] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616]">
-              Cerrar sesión
-            </button>
+            <div className="flex gap-3">
+              <button onClick={handleLogout} className="flex-1 py-3 text-sm text-[#f87171] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616]">
+                Cerrar sesión
+              </button>
+              <button onClick={() => setShowOnboarding(true)} className="flex-1 py-3 text-sm bg-[#14b8a6] text-black rounded-2xl font-semibold active:bg-[#0f9d8c]">
+                Editar perfil
+              </button>
+            </div>
           </div>
         )}
-            <div className="p-8 text-center">
-              <p className="text-[#94a3b8] mb-2">Cargando tu perfil desde el servidor...</p>
-              <p className="text-xs text-[#64748b] mb-6">Esto puede pasar justo después de iniciar sesión con una cuenta real.</p>
-              <div className="flex flex-col gap-3 max-w-[280px] mx-auto">
-                <button 
-                  onClick={() => window.location.reload()} 
-                  className="w-full py-3 text-sm bg-[#1f242b] border border-[#272b33] rounded-2xl active:bg-[#272b33]"
-                >
-                  Recargar página
-                </button>
-                <button 
-                  onClick={handleLogout}
-                  className="w-full py-3 text-sm text-[#f87171] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616]"
-                >
-                  Cerrar sesión / Cambiar de cuenta
-                </button>
-              </div>
-              <div className="mt-8 text-[10px] text-[#475569]">
-                Si el problema persiste usa RESET TODO en el banner superior.
-              </div>
-            </div>
-          ) : (
-            <div className="flex-1 overflow-auto p-4">
-              {/* Prominent call-to-action if profile is incomplete */}
-              {(!currentUser.bio || !currentUser.photos?.length || !currentUser.trainingTypes?.length) && (
-                <div className="mb-6 p-5 rounded-3xl bg-[#1f242b] border border-[#14b8a6]/40">
-                  <div className="font-semibold text-lg mb-1.5 text-[#14b8a6]">Tu perfil está incompleto</div>
-                  <p className="text-sm text-[#cbd5e1] mb-4 leading-snug">
-                    Completa tu bio, fotos y tipos de entrenamiento para que otros usuarios reales puedan encontrarte.
-                  </p>
-                  <button 
-                    onClick={() => setShowOnboarding(true)}
-                    className="btn-primary w-full"
-                  >
-                    Completar mi perfil ahora
-                  </button>
-                </div>
-              )}
-
-              <div className="flex justify-between items-center mb-4">
-                <div>
-                  <div className="text-2xl font-semibold tracking-[-1.2px]">Tu perfil</div>
-                  {!isDemoMode && (
-                    <div className="text-[10px] text-[#14b8a6] -mt-0.5">Sincronizado con backend real</div>
-                  )}
-                </div>
-                <div className="flex items-center gap-3">
-                  <button 
-                    onClick={handleLogout}
-                    className="text-sm text-[#f87171] px-3 py-1.5 border border-[#3f2a2a] rounded-xl active:bg-[#1f1616]"
-                  >
-                    Cerrar / Cambiar cuenta
-                  </button>
-                  <button 
-                    onClick={() => {
-                      if (!isEditingProfile && currentUser) {
-                        setEditBio(currentUser.bio || '')
-                        setEditAvailability([...(currentUser.availability || [])])
-                        setEditGoals([...(currentUser.goals || [])])
-                      } else if (isEditingProfile && currentUser) {
-                        const updated = {
-                          ...currentUser,
-                          bio: editBio,
-                          availability: editAvailability,
-                          goals: editGoals
-                        }
-                        saveUserWithRealSync(updated as CurrentUser)
-                        toast.success('Perfil actualizado')
-                      }
-                      setIsEditingProfile(!isEditingProfile)
-                    }} 
-                    className="flex items-center gap-1 text-sm text-[#14b8a6]"
-                  >
-                    <Edit2 size={16} /> {isEditingProfile ? 'Guardar' : 'Editar'}
-                  </button>
-                </div>
-              </div>
 
             {isEditingProfile && (
               <div className="card rounded-3xl p-5 mb-4 text-sm space-y-4">
@@ -4074,8 +4018,7 @@ function App() {
         )}
       </AnimatePresence>
 
-      </div>
-      </div>
+    </div>
     </ErrorBoundary>
   )
 }
