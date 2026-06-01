@@ -102,6 +102,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
     const compat = getCompatibility(profile);
     const dist = getDistance(profile);
     const verified = isVerified(profile);
+    const isRealProfile = realProfiles.some(rp => rp.id === profile.id);
 
     const scale = isTop ? 1 : index === 1 ? 0.955 : 0.91;
     const yOffset = isTop ? 0 : index === 1 ? 14 : 28;
@@ -140,9 +141,14 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         {/* Gradient overlay - stronger for premium feel */}
         <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/20 to-black/90" />
 
-        {/* Top badges row */}
+        {/* Top badges row - Premium with Real tester indicator */}
         <div className="absolute top-4 left-4 right-4 flex items-start justify-between">
           <div className="flex flex-col gap-1.5">
+            {isRealProfile && (
+              <div className="inline-flex items-center gap-1 bg-white text-black text-[9px] font-bold px-2 py-0.5 rounded-full shadow">
+                REAL TESTER
+              </div>
+            )}
             {verified && (
               <div className="inline-flex items-center gap-1 bg-[#14b8a6] text-black text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
                 <CheckCircle size={12} /> VERIFICADO
@@ -187,26 +193,26 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           </div>
 
           {/* Bio */}
-          <p className="text-sm leading-snug text-white/90 line-clamp-2 mb-3 pr-2">
+          <p className="text-sm leading-snug text-white/90 line-clamp-2 mb-3 pr-2 drop-shadow">
             {profile.bio}
           </p>
 
-          {/* Chips */}
+          {/* Chips - More attractive */}
           <div className="flex flex-wrap gap-1.5 mb-2.5">
             {profile.trainingTypes.slice(0, 3).map(t => (
-              <div key={t} className="text-[11px] bg-white/15 px-3 py-0.5 rounded-full">{t}</div>
+              <div key={t} className="text-[10px] bg-white/20 backdrop-blur px-2.5 py-0.5 rounded-full font-medium">{t}</div>
             ))}
           </div>
 
           {profile.goals.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2">
               {profile.goals.slice(0, 2).map(g => (
-                <div key={g} className="text-[10px] bg-[#14b8a6]/80 text-black px-2 py-px rounded-full">{g}</div>
+                <div key={g} className="text-[9px] bg-[#14b8a6]/70 text-black px-2 py-px rounded-full font-medium">{g}</div>
               ))}
             </div>
           )}
 
-          <div className="flex items-center gap-2 text-xs text-white/70">
+          <div className="flex items-center gap-2 text-xs text-white/80 font-medium">
             <span>Disponible:</span> {profile.availability.join(' • ')}
           </div>
         </div>
