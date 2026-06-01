@@ -156,7 +156,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         </div>
 
         {/* Scrollable step content */}
-        <div className="flex-1 overflow-auto -mx-1 px-1 min-h-0">
+        <div className="flex-1 overflow-auto -mx-1 px-1 pb-8 min-h-0">
 
         {/* Step 0: Basic info */}
         {onboardingStep === 0 && (
