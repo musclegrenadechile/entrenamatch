@@ -2,6 +2,7 @@
 import React from 'react';
 import { Dumbbell, MapPin, Camera, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { TRAINING_OPTIONS, TRAINING_GOALS, TRAINING_INTENSITIES } from '../../constants';
 
 interface OnboardingFlowProps {
   onboardingStep: number;
@@ -37,6 +38,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     level: 'Intermedio',
     intensity: 'Moderado',
     availability: []
+  });
+
+  // Consents fully managed internally now (previous props were dummy)
+  const [localConsents, setLocalConsents] = React.useState({
+    is18: false,
+    isForTraining: false,
+    sharesLocation: false
   });
 
   const updateOnboard = (patch: any) => {
@@ -80,7 +88,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       toast.error('Debes ser mayor de 18 años', { description: 'EntrenaMatch es solo para personas mayores de 18 años' });
       return;
     }
-    const allConsents = Object.values(consents).every(v => v === true);
+    const allConsents = Object.values(localConsents).every(v => v === true);
     if (!allConsents) {
       toast.error('Faltan aceptaciones', { description: 'Debes aceptar todos los consentimientos para continuar' });
       return;
@@ -107,9 +115,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         termsVersion: 'v1.1',
         privacyVersion: 'v1.1',
         communityVersion: 'v1.0',
-        is18: consents.is18,
-        isForTraining: consents.isForTraining,
-        sharesLocation: consents.sharesLocation,
+        is18: localConsents.is18,
+        isForTraining: localConsents.isForTraining,
+        sharesLocation: localConsents.sharesLocation,
       }
     };
 
@@ -236,14 +244,111 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           </div>
         )}
 
-        {/* Steps 2-4 abbreviated for aggressive pace - full content will be moved in next wave */}
-        {onboardingStep === 2 && <div className="text-center py-12 text-[#94a3b8]">Paso 2: Tipos de entrenamiento y objetivos (movido en siguiente iteración agresiva)</div>}
-        {onboardingStep === 3 && <div className="text-center py-12 text-[#94a3b8]">Paso 3: Nivel e intensidad (movido en siguiente iteración agresiva)</div>}
+        {/* Step 2: Training Types + Goals */}
+        {onboardingStep === 2 && (
+          <div className="space-y-6">
+            <div>
+              <div className="text-xl font-semibold mb-2">¿Qué tipos de entrenamiento haces?</div>
+              <div className="flex flex-wrap gap-2">
+                {TRAINING_OPTIONS.map((type: string) => {
+                  const selected = (onboardData.trainingTypes || []).includes(type);
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => {
+                        const current = onboardData.trainingTypes || [];
+                        const newTypes = selected ? current.filter((t: string) => t !== type) : [...current, type];
+                        updateOnboard({ trainingTypes: newTypes });
+                      }}
+                      className={`px-4 py-2 rounded-2xl text-sm border transition ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6]' : 'border-[#272b33] bg-[#121418] hover:border-[#14b8a6]'}`}
+                    >
+                      {type}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xl font-semibold mb-2">¿Cuáles son tus objetivos principales?</div>
+              <div className="flex flex-wrap gap-2">
+                {TRAINING_GOALS.map((goal: string) => {
+                  const selected = (onboardData.goals || []).includes(goal);
+                  return (
+                    <button
+                      key={goal}
+                      onClick={() => {
+                        const current = onboardData.goals || [];
+                        const newGoals = selected ? current.filter((g: string) => g !== goal) : [...current, goal];
+                        updateOnboard({ goals: newGoals });
+                      }}
+                      className={`px-4 py-2 rounded-2xl text-sm border transition ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6]' : 'border-[#272b33] bg-[#121418] hover:border-[#14b8a6]'}`}
+                    >
+                      {goal}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 3: Level + Intensity */}
+        {onboardingStep === 3 && (
+          <div className="space-y-8">
+            <div>
+              <div className="text-xl font-semibold mb-3">¿Cuál es tu nivel actual?</div>
+              <div className="grid grid-cols-3 gap-3">
+                {['Principiante', 'Intermedio', 'Avanzado'].map(lvl => (
+                  <button
+                    key={lvl}
+                    onClick={() => updateOnboard({ level: lvl })}
+                    className={`py-4 rounded-2xl border text-sm font-medium ${onboardData.level === lvl ? 'bg-[#14b8a6] text-black border-[#14b8a6]' : 'border-[#272b33] bg-[#121418]'}`}
+                  >
+                    {lvl}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xl font-semibold mb-3">¿Qué intensidad prefieres?</div>
+              <div className="grid grid-cols-3 gap-3">
+                {TRAINING_INTENSITIES.map((int: string) => (
+                  <button
+                    key={int}
+                    onClick={() => updateOnboard({ intensity: int })}
+                    className={`py-4 rounded-2xl border text-sm font-medium ${onboardData.intensity === int ? 'bg-[#14b8a6] text-black border-[#14b8a6]' : 'border-[#272b33] bg-[#121418]'}`}
+                  >
+                    {int}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Consents */}
         {onboardingStep === 4 && (
-          <div className="bg-[#121418] border border-[#272b33] rounded-2xl p-4 text-sm space-y-3">
-            <div className="font-medium mb-2">Último paso: Consentimientos obligatorios</div>
-            {/* Legal checkboxes would be here - moved in next aggressive wave */}
-            <p className="text-xs text-[#64748b]">Los consentimientos completos se moverán en la siguiente oleada de extracción.</p>
+          <div className="space-y-4">
+            <div className="text-xl font-semibold mb-2">Consentimientos obligatorios</div>
+            <p className="text-sm text-[#94a3b8] mb-4">Debes aceptar todos para crear tu perfil.</p>
+
+            {[
+              { key: 'is18', label: 'Confirmo que tengo 18 años o más' },
+              { key: 'isForTraining', label: 'Estoy buscando entrenar de forma seria y respetuosa' },
+              { key: 'sharesLocation', label: 'Acepto compartir mi ubicación aproximada para encontrar gente cerca' }
+            ].map(item => (
+              <label key={item.key} className="flex items-start gap-3 p-4 bg-[#121418] rounded-2xl border border-[#272b33] cursor-pointer active:bg-[#1a1d23]">
+                <input
+                  type="checkbox"
+                  checked={(localConsents as any)[item.key]}
+                  onChange={(e) => setLocalConsents(prev => ({ ...prev, [item.key]: e.target.checked }))}
+                  className="mt-1 accent-[#14b8a6]"
+                />
+                <span className="text-sm">{item.label}</span>
+              </label>
+            ))}
           </div>
         )}
 
@@ -257,7 +362,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           <button 
             onClick={nextOnboarding} 
             className="flex-1 btn-primary"
-            disabled={onboardingStep === 4 && !Object.values(consents).every(Boolean)}
+            disabled={onboardingStep === 4 && !Object.values(localConsents).every(Boolean)}
           >
             {onboardingStep < 4 ? 'Continuar' : 'Completar perfil'}
           </button>

@@ -1639,7 +1639,7 @@ function App() {
           saveUser={saveUser}
           setShowOnboarding={setShowOnboarding}
           requestUserLocation={requestUserLocation}
-          consents={{ is18: true, isForTraining: true, sharesLocation: true }}
+          consents={{ is18: false, isForTraining: false, sharesLocation: false }}
           setConsents={() => {}}
         />
       </ErrorBoundary>
