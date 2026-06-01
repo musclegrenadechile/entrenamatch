@@ -33,6 +33,13 @@ body {
   position: relative;
   overflow: hidden;
   box-shadow: 0 0 0 1px var(--fit-border);
+  transition: box-shadow 0.2s ease;
+}
+
+@media (min-width: 640px) {
+  .app-container {
+    box-shadow: 0 0 0 1px var(--fit-border), 0 25px 80px -15px rgb(0 0 0 / 0.6);
+  }
 }
 
 /* On desktop, nice phone frame feel */
@@ -50,6 +57,16 @@ body {
 .card {
   background: var(--fit-card);
   border: 1px solid var(--fit-border);
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.card:hover {
+  border-color: #3a3f48;
+}
+
+.card:active {
+  transform: scale(0.995);
 }
 
 .swipe-card {
@@ -61,17 +78,24 @@ body {
 .chip {
   background: var(--fit-card2);
   border: 1px solid var(--fit-border);
-  padding: 4px 12px;
+  padding: 6px 14px;
   border-radius: 999px;
   font-size: 13px;
   font-weight: 500;
   color: var(--fit-text);
+  transition: all 0.1s ease;
+}
+
+.chip:hover {
+  border-color: #3a3f48;
+  transform: translateY(-1px);
 }
 
 .chip-active {
   background: rgba(20, 184, 166, 0.15);
   border-color: var(--fit-accent);
   color: var(--fit-accent);
+  font-weight: 600;
 }
 
 .nav-item {
@@ -128,12 +152,19 @@ body {
   font-weight: 600;
   padding: 14px 28px;
   border-radius: 999px;
-  transition: all 0.15s ease;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 6px -1px rgb(20 184 166 / 0.2);
+}
+
+.btn-primary:hover {
+  background: #0f9d8c;
+  box-shadow: 0 10px 15px -3px rgb(20 184 166 / 0.3);
 }
 
 .btn-primary:active {
   transform: scale(0.985);
-  background: #0f9d8c;
+  background: #0c7a6b;
+  box-shadow: 0 4px 6px -1px rgb(20 184 166 / 0.2);
 }
 
 .btn-secondary {
@@ -165,15 +196,17 @@ body {
   border-radius: 20px;
 }
 
-/* Onboarding */
+/* Onboarding Progress */
 .step-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
   background: var(--fit-border);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .step-dot.active {
   background: var(--fit-accent);
-  width: 24px;
+  width: 28px;
   border-radius: 999px;
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
 }

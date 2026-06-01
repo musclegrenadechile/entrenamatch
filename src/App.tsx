@@ -1684,27 +1684,29 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-[#0a0b0f] text-white flex flex-col overflow-hidden relative">
-      {/* MINIMAL TOP BAR - Only critical info + auth controls (no more visual noise) */}
-      <div className="bg-[#14b8a6] text-black z-50 flex items-center justify-between px-3 py-2 text-sm font-medium">
-        <div className="font-bold tracking-tight">🚀 PRE-ALPHA • Real</div>
+      {/* MINIMAL TOP BAR - Clean, premium, high-visibility auth controls */}
+      <div className="bg-gradient-to-r from-[#14b8a6] to-[#0f9d8c] text-black z-50 flex items-center justify-between px-4 py-2.5 text-sm font-medium shadow-md">
+        <div className="font-extrabold tracking-[-0.5px] text-base flex items-center gap-1.5">
+          🚀 <span>PRE-ALPHA</span> <span className="text-[10px] font-medium opacity-80">• Real</span>
+        </div>
 
         {(currentUser || firebaseUser) ? (
           <div className="flex items-center gap-2">
             <button 
               onClick={handleLogout}
-              className="bg-black text-white px-4 py-1.5 rounded-2xl text-sm font-semibold active:bg-white active:text-black border border-black/60"
+              className="bg-black/90 hover:bg-black text-white px-4 py-1.5 rounded-2xl text-xs font-semibold active:bg-white active:text-black border border-black/50 transition-all"
             >
               Cerrar sesión
             </button>
             <button 
               onClick={handleLogout}
-              className="bg-white text-black px-4 py-1.5 rounded-2xl text-sm font-bold active:bg-gray-200 border border-black/30 shadow-sm"
+              className="bg-white hover:bg-gray-100 text-black px-4 py-1.5 rounded-2xl text-xs font-bold active:bg-gray-200 border border-black/20 shadow-sm transition-all"
             >
               Cambiar cuenta
             </button>
           </div>
         ) : (
-          <div className="text-[10px] opacity-80">Inicia sesión para probar</div>
+          <div className="text-[10px] opacity-90 font-medium">Inicia sesión para probar</div>
         )}
       </div>
       {/* MAIN CONTENT AREA */}
@@ -2683,18 +2685,18 @@ function App() {
         Guía
       </button>
 
-      {/* SUPER VISIBLE FLOATING BUTTON - Backup logout for real users (very prominent) */}
+      {/* SUPER VISIBLE FLOATING BUTTON - Premium, high-contrast, impossible to miss */}
       {(firebaseUser || (!isDemoMode && currentUser)) && (
         <button
           onClick={handleLogout}
-          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] bg-[#ef4444] text-white text-base font-bold px-8 py-3 rounded-3xl shadow-2xl active:bg-red-700 flex items-center gap-2 border-2 border-white/80"
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] bg-[#ef4444] hover:bg-red-600 text-white text-sm font-extrabold tracking-wide px-7 py-3.5 rounded-3xl shadow-[0_10px_30px_-10px_rgb(239,68,68,0.6)] active:scale-[0.985] active:bg-red-700 flex items-center gap-2 border-[1.5px] border-white/70 transition-all"
         >
           CAMBIAR DE CUENTA / SALIR
         </button>
       )}
 
-      {/* Bottom Navigation - now with Squads */}
-      <div className="h-[62px] border-t border-[#272b33] bg-[#0a0b0f] grid grid-cols-6 z-50 text-[10px]">
+      {/* Bottom Navigation - Premium, energetic feel */}
+      <div className="h-[62px] border-t border-[#272b33] bg-[#0a0b0f]/95 backdrop-blur-sm grid grid-cols-6 z-50 text-[10px] shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.1)]">
         {[
           { id: 'explore' as Tab, label: 'Explorar', icon: Dumbbell },
           { id: 'squads' as Tab, label: 'Squads', icon: Users },
