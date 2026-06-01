@@ -214,6 +214,17 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <MapPin size={16} /> Usar mi ubicación actual (GPS)
               </button>
             </div>
+
+            {/* Bio - required field */}
+            <div>
+              <label className="text-sm text-[#94a3b8] mb-1.5 block">Cuéntanos un poco sobre ti (bio)</label>
+              <textarea 
+                value={onboardData.bio || ''} 
+                onChange={e => updateOnboard({ bio: e.target.value })}
+                className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3 h-24 resize-y text-sm"
+                placeholder="Me encanta entrenar pesas y salir a correr por la costanera los fines de semana..."
+              />
+            </div>
           </div>
         )}
 
