@@ -2735,10 +2735,30 @@ function App() {
           <div className="absolute inset-0 z-[70] flex items-end bg-black/70" onClick={() => setShowFilters(false)}>
             <motion.div initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }} transition={{ type: 'spring', bounce: 0.05 }}
               onClick={e => e.stopPropagation()} className="w-full card rounded-t-3xl p-6 pb-10">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex justify-between items-center mb-4">
                 <div className="font-semibold text-2xl tracking-tight">Filtros</div>
                 <button onClick={resetFilters} className="text-[#14b8a6] text-sm font-medium active:opacity-70">Limpiar todo</button>
               </div>
+
+              {/* Active filters summary */}
+              {(filters.trainingTypes.length > 0 || filters.availability.length > 0 || filters.gender !== 'todos' || filters.onlyAvailableToday) && (
+                <div className="mb-5 flex flex-wrap gap-1.5">
+                  {filters.trainingTypes.map(t => (
+                    <div key={t} className="text-[10px] bg-[#14b8a6]/15 text-[#14b8a6] px-2.5 py-0.5 rounded-full">{t}</div>
+                  ))}
+                  {filters.availability.map(a => (
+                    <div key={a} className="text-[10px] bg-[#14b8a6]/15 text-[#14b8a6] px-2.5 py-0.5 rounded-full">{a}</div>
+                  ))}
+                  {filters.gender !== 'todos' && (
+                    <div className="text-[10px] bg-[#14b8a6]/15 text-[#14b8a6] px-2.5 py-0.5 rounded-full">
+                      {filters.gender === 'hombre' ? 'Hombres' : 'Mujeres'}
+                    </div>
+                  )}
+                  {filters.onlyAvailableToday && (
+                    <div className="text-[10px] bg-[#22c55e]/15 text-[#22c55e] px-2.5 py-0.5 rounded-full">Disponibles hoy</div>
+                  )}
+                </div>
+              )}
 
               <div className="mb-7">
                 <div className="flex justify-between text-sm mb-3">
@@ -2839,7 +2859,9 @@ function App() {
                 </div>
               </div>
 
-              <button onClick={() => setShowFilters(false)} className="btn-primary w-full">Aplicar filtros</button>
+              <button onClick={() => setShowFilters(false)} className="btn-primary w-full shadow-lg shadow-[#14b8a6]/20">
+                Aplicar filtros
+              </button>
             </motion.div>
           </div>
         )}
