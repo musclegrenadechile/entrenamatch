@@ -255,11 +255,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           </div>
         )}
 
-        {/* Step 2: Training Types + Goals */}
+        {/* Step 2: Training Types + Goals - Attractive multi-select */}
         {onboardingStep === 2 && (
-          <div className="space-y-6">
+          <div className="space-y-7">
             <div>
-              <div className="text-xl font-semibold mb-2">¿Qué tipos de entrenamiento haces?</div>
+              <div className="text-xl font-semibold mb-3 flex items-center gap-2">
+                <Dumbbell size={20} className="text-[#14b8a6]" /> ¿Qué tipos de entrenamiento haces?
+              </div>
               <div className="flex flex-wrap gap-2">
                 {TRAINING_OPTIONS.map((type: string) => {
                   const selected = (onboardData.trainingTypes || []).includes(type);
@@ -271,17 +273,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         const newTypes = selected ? current.filter((t: string) => t !== type) : [...current, type];
                         updateOnboard({ trainingTypes: newTypes });
                       }}
-                      className={`px-4 py-2 rounded-2xl text-sm border transition ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6]' : 'border-[#272b33] bg-[#121418] hover:border-[#14b8a6]'}`}
+                      className={`px-4 py-2.5 rounded-3xl text-sm border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
                     >
                       {type}
                     </button>
                   );
                 })}
               </div>
+              <p className="text-[10px] text-[#64748b] mt-2">Selecciona al menos uno para continuar</p>
             </div>
 
             <div>
-              <div className="text-xl font-semibold mb-2">¿Cuáles son tus objetivos principales?</div>
+              <div className="text-xl font-semibold mb-3">¿Cuáles son tus objetivos principales?</div>
               <div className="flex flex-wrap gap-2">
                 {TRAINING_GOALS.map((goal: string) => {
                   const selected = (onboardData.goals || []).includes(goal);
@@ -293,13 +296,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         const newGoals = selected ? current.filter((g: string) => g !== goal) : [...current, goal];
                         updateOnboard({ goals: newGoals });
                       }}
-                      className={`px-4 py-2 rounded-2xl text-sm border transition ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6]' : 'border-[#272b33] bg-[#121418] hover:border-[#14b8a6]'}`}
+                      className={`px-4 py-2.5 rounded-3xl text-sm border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
                     >
                       {goal}
                     </button>
                   );
                 })}
               </div>
+              <p className="text-[10px] text-[#64748b] mt-2">Selecciona al menos uno para continuar</p>
             </div>
           </div>
         )}
