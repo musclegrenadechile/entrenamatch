@@ -280,7 +280,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   );
                 })}
               </div>
-              <p className="text-[10px] text-[#64748b] mt-2">Selecciona al menos uno para continuar</p>
+              {(onboardData.trainingTypes || []).length === 0 && (
+                <p className="text-xs text-[#ef4444] mt-2">Debes seleccionar al menos un tipo de entrenamiento para poder continuar</p>
+              )}
             </div>
 
             <div>
@@ -303,7 +305,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   );
                 })}
               </div>
-              <p className="text-[10px] text-[#64748b] mt-2">Selecciona al menos uno para continuar</p>
+              {(onboardData.goals || []).length === 0 && (
+                <p className="text-xs text-[#ef4444] mt-2">Debes seleccionar al menos un objetivo para poder continuar</p>
+              )}
             </div>
           </div>
         )}
