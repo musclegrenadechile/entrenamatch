@@ -2852,9 +2852,13 @@ function App() {
 
               <div className="mb-6">
                 <div className="text-sm font-medium mb-2">Me interesa</div>
-                <div className="flex gap-2">
+                <div className="flex rounded-2xl overflow-hidden border border-[#272b33]">
                   {(['todos','hombre','mujer'] as const).map(g => (
-                    <button key={g} onClick={() => setFilters(f => ({...f, gender: g}))} className={`flex-1 py-2.5 rounded-2xl text-sm border font-medium transition ${filters.gender === g ? 'bg-[#14b8a6] text-black border-[#14b8a6]' : 'border-[#272b33] bg-[#121418] active:bg-[#1a1d23]'}`}>
+                    <button 
+                      key={g} 
+                      onClick={() => setFilters(f => ({...f, gender: g}))} 
+                      className={`flex-1 py-2.5 text-sm font-medium transition ${filters.gender === g ? 'bg-[#14b8a6] text-black' : 'bg-[#121418] active:bg-[#1a1d23] text-white'}`}
+                    >
                       {g === 'todos' ? 'Todos' : g === 'hombre' ? 'Hombres' : 'Mujeres'}
                     </button>
                   ))}
