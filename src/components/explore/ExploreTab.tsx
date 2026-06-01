@@ -102,9 +102,9 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
     const dist = getDistance(profile);
     const verified = isVerified(profile);
 
-    const scale = isTop ? 1 : index === 1 ? 0.96 : 0.92;
-    const yOffset = isTop ? 0 : index === 1 ? 12 : 24;
-    const opacity = isTop ? 1 : index === 1 ? 0.85 : 0.6;
+    const scale = isTop ? 1 : index === 1 ? 0.955 : 0.91;
+    const yOffset = isTop ? 0 : index === 1 ? 14 : 28;
+    const opacity = isTop ? 1 : index === 1 ? 0.82 : 0.55;
     const z = 30 - index;
 
     return (
