@@ -210,6 +210,9 @@ function App() {
     return !localStorage.getItem('entrenamatch_prealpha_welcome_shown')
   })
 
+  // Onboarding step state (managed here so the flow actually advances)
+  const [onboardingStep, setOnboardingStepLocal] = useState(0)
+
   // Auth UI state (restored for account creation)
   const [authMode, setAuthMode] = useState<'login' | 'register'>('register')
   const [authEmail, setAuthEmail] = useState('')
@@ -1541,8 +1544,8 @@ function App() {
     return (
       <ErrorBoundary>
         <OnboardingFlow
-          onboardingStep={0}
-          setOnboardingStep={() => {}}
+          onboardingStep={onboardingStep}
+          setOnboardingStep={setOnboardingStepLocal}
           currentUser={currentUser}
           saveUser={saveUser}
           setShowOnboarding={setShowOnboarding}
