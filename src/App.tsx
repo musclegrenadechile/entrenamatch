@@ -1861,15 +1861,16 @@ function App() {
 
               {displaySessions.filter(s => !s.participants.includes(effectiveUserId)).length === 0 ? (
                 <div className="card p-7 rounded-3xl text-center">
-                  <Star className="mx-auto text-[#14b8a6] mb-3" size={36} />
+                  <div className="mx-auto w-11 h-11 rounded-full bg-[#121418] flex items-center justify-center mb-3">
+                    <Star className="text-[#14b8a6]" size={22} />
+                  </div>
                   <div className="font-semibold mb-2">No hay sesiones abiertas todavía</div>
                   <p className="text-sm text-[#94a3b8] mb-3 max-w-[260px] mx-auto">
-                    En Pre-Alpha queremos probar el flujo completo de sesiones grupales + chat en vivo.
+                    Sé el primero en crear una sesión grupal. Los demás testers podrán unirse y chatear en tiempo real.
                   </p>
-                  <p className="text-xs text-[#64748b] mb-4">Sé el primero en crear una. Los testers que se unan podrán chatear contigo en el grupo.</p>
                   <button 
                     onClick={() => setShowCreateSession(true)}
-                    className="px-6 py-2 bg-[#14b8a6] text-black rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
+                    className="px-6 py-2.5 bg-[#14b8a6] text-black rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
                   >
                     Crear la primera sesión
                   </button>
