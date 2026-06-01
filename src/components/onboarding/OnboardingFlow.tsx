@@ -370,12 +370,19 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         )}
 
         {/* Navigation */}
-        <div className="mt-auto pt-8 flex gap-3">
+        <div className="mt-auto pt-8 flex flex-col gap-3">
           {onboardingStep > 0 && (
             <button onClick={() => setOnboardingStep(onboardingStep - 1)} className="flex-1 py-4 rounded-3xl border border-[#272b33]">
               Atrás
             </button>
           )}
+
+          {onboardingStep === 2 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0) && (
+            <p className="text-center text-xs text-[#ef4444]">
+              Debes seleccionar al menos un tipo de entrenamiento y un objetivo para continuar
+            </p>
+          )}
+
           <button 
             onClick={nextOnboarding} 
             className="flex-1 btn-primary"
