@@ -924,9 +924,10 @@ function App() {
     setAuthLoading(true)
     setAuthError('')
 
+    let loggedInUser = null
+
     try {
       if (isDemoMode) {
-        // Use the new useDemoAuth hook
         if (isRegister) {
           await signUpDemo(authEmail)
           toast.success('Cuenta creada exitosamente')
@@ -934,11 +935,11 @@ function App() {
           await signInDemo(authEmail)
           toast.success('Sesión iniciada')
         }
+        loggedInUser = true // demo always "succeeds" for UI
       } else {
-        // Real Firebase path
         if (isRegister) {
-          const firebaseUser = await signUpWithEmail(authEmail, authPassword)
-          await createUserProfile(firebaseUser, {
+          const fbUser = await signUpWithEmail(authEmail, authPassword)
+          await createUserProfile(fbUser, {
             name: authEmail.split('@')[0],
             age: 25,
             gender: 'hombre',
@@ -953,19 +954,47 @@ function App() {
             availability: ['Tarde'],
           })
           toast.success('Cuenta creada exitosamente')
+          loggedInUser = fbUser
         } else {
-          await signInWithEmail(authEmail, authPassword)
+          const fbUser = await signInWithEmail(authEmail, authPassword)
           toast.success('Sesión iniciada')
+          loggedInUser = fbUser
         }
       }
     } catch (error: any) {
       console.error(error)
-      setAuthError(error.message || 'Error en la autenticación')
+      let friendlyError = 'Error en la autenticación'
+
+      if (error.code === 'auth/email-already-in-use') {
+        friendlyError = 'Este email ya está registrado. Prueba iniciar sesión.'
+      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        friendlyError = 'Email o contraseña incorrectos.'
+      } else if (error.code === 'auth/invalid-email') {
+        friendlyError = 'El formato del email no es válido.'
+      } else if (error.code === 'auth/weak-password') {
+        friendlyError = 'La contraseña es muy débil (mínimo 6 caracteres).'
+      } else if (error.message) {
+        friendlyError = error.message
+      }
+
+      setAuthError(friendlyError)
     } finally {
       setAuthLoading(false)
 
-      // In demo mode, after successful auth, decide next step
-      if (isDemoMode) {
+      // After successful real auth, ensure local profile exists so main UI opens
+      if (!isDemoMode && loggedInUser) {
+        try {
+          const profile = await getUserProfile(loggedInUser.uid)
+          if (profile && profile.name) {
+            saveUser({ ...profile, id: 'me' } as any)
+          } else {
+            // Should rarely happen after registration
+            setShowOnboarding(true)
+          }
+        } catch (e) {
+          console.warn('Profile load after auth failed', e)
+        }
+      } else if (isDemoMode && loggedInUser) {
         const hasLocalProfile = localStorage.getItem('fitvina_user')
         if (!hasLocalProfile) {
           setShowOnboarding(true)
