@@ -158,8 +158,20 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-[#94a3b8] mb-1.5 block">Edad</label>
-                <input type="number" value={onboardData.age} onChange={e => updateOnboard({ age: parseInt(e.target.value) || 25 })}
-                  className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-5 py-4 text-xl" />
+                <input 
+                  type="number" 
+                  value={onboardData.age || ''} 
+                  onChange={e => {
+                    const val = e.target.value;
+                    // Permitir campo vacío mientras se escribe, solo parsear cuando hay valor
+                    const num = val === '' ? '' : parseInt(val);
+                    updateOnboard({ age: num });
+                  }} 
+                  className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-5 py-4 text-xl" 
+                  min="18" 
+                  max="80"
+                  placeholder="Ej: 28"
+                />
               </div>
               <div>
                 <label className="text-sm text-[#94a3b8] mb-1.5 block">Género</label>
