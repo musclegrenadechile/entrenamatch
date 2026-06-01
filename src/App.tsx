@@ -3702,10 +3702,10 @@ function App() {
               animate={{ y: 0, opacity: 1 }} 
               exit={{ y: 100, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="w-full max-w-[420px] bg-[#0a0b0f] rounded-t-3xl md:rounded-3xl overflow-hidden flex flex-col h-[85vh] md:h-[620px] border border-[#272b33]"
+              className="w-full max-w-[420px] bg-[#0a0b0f] rounded-t-3xl md:rounded-3xl overflow-hidden flex flex-col h-[85vh] md:h-[620px] border border-[#272b33] shadow-2xl"
             >
-              {/* Modal Header */}
-              <div className="p-4 border-b border-[#272b33] bg-[#121418] flex items-center justify-between">
+              {/* Modal Header - Premium look */}
+              <div className="p-4 border-b border-[#272b33] bg-[#121418] flex items-center justify-between shadow-sm">
                 <div className="flex items-center gap-2">
                   <div>
                     <div className="font-semibold text-lg">
@@ -3753,9 +3753,15 @@ function App() {
 
                 {/* Messages Area */}
                 <div className="flex-1 flex flex-col">
-                  <div className="flex-1 overflow-auto p-4 space-y-3 text-sm" id="group-chat-scroll">
+                  <div className="flex-1 overflow-auto p-4 space-y-3 text-sm bg-[#0a0b0f]" id="group-chat-scroll">
                     {(sessionMessages[showGroupChatModalFor] || []).length === 0 ? (
-                      <div className="text-center text-[#64748b] mt-8 text-xs">Aún no hay mensajes en este grupo.</div>
+                      <div className="flex flex-col items-center justify-center h-full text-center text-[#64748b]">
+                        <div className="w-12 h-12 rounded-full bg-[#121418] flex items-center justify-center mb-3">
+                          💬
+                        </div>
+                        <div className="text-sm">Aún no hay mensajes</div>
+                        <div className="text-xs mt-1">Sé el primero en escribir algo</div>
+                      </div>
                     ) : (
                       (sessionMessages[showGroupChatModalFor] || []).map((msg, i) => {
                         const isMe = msg.senderId === effectiveUserId
@@ -3838,8 +3844,8 @@ function App() {
                     )}
                   </div>
 
-                  {/* Input + Photo for group chat */}
-                  <div className="p-3 border-t border-[#272b33] bg-[#0a0b0f]">
+                  {/* Input + Photo for group chat - Cleaner, more modern */}
+                  <div className="p-3 border-t border-[#272b33] bg-[#121418]">
                     {groupChatPhoto && (
                       <div className="mb-2 flex items-center gap-2">
                         <img src={groupChatPhoto} className="w-12 h-12 object-cover rounded-lg" />
@@ -3861,8 +3867,8 @@ function App() {
                         type="text" 
                         value={chatInputValue}
                         onChange={(e) => setChatInputValue(e.target.value)}
-                        placeholder="Escribe al grupo... (usa @ para mencionar)"
-                        className="flex-1 bg-[#121418] border border-[#272b33] rounded-3xl px-4 py-3 text-sm outline-none" 
+                        placeholder="Escribe al grupo..."
+                        className="flex-1 bg-[#0a0b0f] border border-[#272b33] rounded-3xl px-5 py-3 text-sm outline-none placeholder:text-[#64748b]" 
                       />
 
                       {/* Photo upload button for chat */}
