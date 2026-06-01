@@ -149,11 +149,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         </div>
 
         {/* Progress */}
-        <div className="flex gap-2 mb-8">
+        <div className="flex gap-2 mb-4">
           {[0,1,2,3,4].map(i => (
             <div key={i} className={`step-dot ${i <= onboardingStep ? 'active' : ''}`} />
           ))}
         </div>
+
+        {/* Scrollable step content */}
+        <div className="flex-1 overflow-auto -mx-1 px-1 min-h-0">
 
         {/* Step 0: Basic info */}
         {onboardingStep === 0 && (
@@ -373,8 +376,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           </div>
         )}
 
-        {/* Navigation */}
-        <div className="mt-auto pt-8 flex flex-col gap-3">
+        </div> {/* end scrollable step content */}
+
+        {/* Fixed bottom navigation */}
+        <div className="pt-4 flex flex-col gap-3 bg-[#0a0b0f]">
           {onboardingStep > 0 && (
             <button onClick={() => setOnboardingStep(onboardingStep - 1)} className="flex-1 py-4 rounded-3xl border border-[#272b33]">
               Atrás
