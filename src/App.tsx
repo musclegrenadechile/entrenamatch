@@ -972,8 +972,8 @@ function App() {
         // Keep the email so user doesn't have to re-type it
         setAuthEmail(authEmail)
         setAuthError('Este email ya está registrado. Inicia sesión con tu contraseña.')
-      } else if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        friendlyError = 'Email o contraseña incorrectos.'
+      } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+        friendlyError = 'Email o contraseña incorrectos. ¿Estás seguro que creaste la cuenta?'
         setAuthError(friendlyError)
       } else if (error.code === 'auth/invalid-email') {
         friendlyError = 'El formato del email no es válido.'
