@@ -2736,13 +2736,26 @@ function App() {
             <motion.div initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }} transition={{ type: 'spring', bounce: 0.05 }}
               onClick={e => e.stopPropagation()} className="w-full card rounded-t-3xl p-6 pb-10">
               <div className="flex justify-between items-center mb-4">
-                <div className="font-semibold text-2xl tracking-tight">Filtros</div>
+                <div className="flex items-center gap-2">
+                  <div className="font-semibold text-2xl tracking-tight">Filtros</div>
+                  {((filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0)) > 0 && (
+                    <div className="text-xs bg-[#14b8a6] text-black px-2 py-0.5 rounded-full font-bold">
+                      { (filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0) } activos
+                    </div>
+                  )}
+                </div>
                 <button onClick={resetFilters} className="text-[#14b8a6] text-sm font-medium active:opacity-70">Limpiar todo</button>
               </div>
 
               {/* Active filters summary - tappable to remove */}
+              <AnimatePresence>
               {(filters.trainingTypes.length > 0 || filters.availability.length > 0 || filters.gender !== 'todos' || filters.onlyAvailableToday) && (
-                <div className="mb-5 flex flex-wrap gap-1.5">
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-5 flex flex-wrap gap-1.5"
+                >
                   {filters.trainingTypes.map(t => (
                     <button 
                       key={t} 
@@ -2777,8 +2790,9 @@ function App() {
                       Disponibles hoy <span className="text-xs">×</span>
                     </button>
                   )}
-                </div>
+                </motion.div>
               )}
+              </AnimatePresence>
 
               <div className="mb-7">
                 <div className="flex justify-between text-sm mb-3">

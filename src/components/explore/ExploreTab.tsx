@@ -24,6 +24,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
   deck,
   visibleCards: propVisibleCards,
   userLocation,
+  filters,
   currentUser,
   setShowFilters,
   resetDeck,
@@ -271,9 +272,14 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           )}
           <button 
             onClick={() => setShowFilters(true)} 
-            className="p-2 active:bg-[#1f242b] rounded-2xl bg-[#121418] border border-[#272b33]"
+            className="relative p-2 active:bg-[#1f242b] rounded-2xl bg-[#121418] border border-[#272b33]"
           >
             <Filter size={18} />
+            {(filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0) > 0 && (
+              <div className="absolute -top-1 -right-1 bg-[#14b8a6] text-black text-[9px] font-bold min-w-[14px] h-[14px] flex items-center justify-center rounded-full px-1">
+                {(filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0)}
+              </div>
+            )}
           </button>
         </div>
       </div>
