@@ -989,18 +989,33 @@ function App() {
     } finally {
       setAuthLoading(false)
 
-      // After successful real auth, ensure local profile exists so main UI opens
+      // After successful real auth, load or create local profile and decide onboarding
       if (!isDemoMode && loggedInUser) {
         try {
           const profile = await getUserProfile(loggedInUser.uid)
+
           if (profile && profile.name) {
             saveUser({ ...profile, id: 'me' } as any)
+
+            // If the profile is still very minimal (typical right after registration),
+            // force the user into the full onboarding flow to complete
+            // name, age, photos, training types, goals, etc.
+            const needsOnboarding =
+              !profile.bio ||
+              !profile.photos?.length ||
+              !profile.trainingTypes?.length ||
+              !profile.goals?.length
+
+            if (needsOnboarding) {
+              setShowOnboarding(true)
+            }
           } else {
-            // Should rarely happen after registration
+            // No profile found (shouldn't happen after registration, but safe fallback)
             setShowOnboarding(true)
           }
         } catch (e) {
-          console.warn('Profile load after auth failed', e)
+          console.warn('Profile load after real auth failed', e)
+          setShowOnboarding(true) // fallback so user can complete their profile
         }
       } else if (isDemoMode && loggedInUser) {
         const hasLocalProfile = localStorage.getItem('fitvina_user')
