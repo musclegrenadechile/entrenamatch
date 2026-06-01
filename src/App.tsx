@@ -1858,6 +1858,7 @@ function App() {
                   {displaySessions.filter(s => !s.participants.includes(effectiveUserId)).length}
                 </div>
               </div>
+              <div className="text-[10px] text-[#64748b] -mt-2 mb-3">Pre-Alpha • Las sesiones que crees son visibles para otros testers reales</div>
 
               {displaySessions.filter(s => !s.participants.includes(effectiveUserId)).length === 0 ? (
                 <div className="card p-7 rounded-3xl text-center">
