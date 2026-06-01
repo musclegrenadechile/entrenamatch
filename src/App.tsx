@@ -2272,14 +2272,22 @@ function App() {
         {activeTab === 'profile' && (
           <div className="p-4">
             <div className="flex justify-between items-center mb-4">
-              <div className="text-2xl font-semibold">Tu perfil</div>
-              <button onClick={handleLogout} className="text-sm text-[#f87171] border border-[#3f2a2a] px-4 py-2 rounded-2xl">
-                Cerrar / Cambiar cuenta
+              <div>
+                <div className="text-2xl font-semibold tracking-tight">Tu perfil</div>
+                {!isDemoMode && <div className="text-[10px] text-[#14b8a6] -mt-0.5">Sincronizado</div>}
+              </div>
+              <button onClick={handleLogout} className="text-xs text-[#f87171] border border-[#3f2a2a] px-3 py-1.5 rounded-2xl">
+                Cambiar cuenta
               </button>
             </div>
-            <div className="card p-4 mb-4">Perfil de {currentUser?.name || 'usuario'}</div>
-            <button onClick={handleLogout} className="w-full py-3 text-sm text-[#f87171] border border-[#3f2a2a] rounded-2xl">
-              Cerrar sesión / Cambiar de cuenta
+
+            <div className="card p-5 mb-4">
+              <div className="text-lg font-medium">{currentUser?.name || 'Usuario'}</div>
+              <div className="text-sm text-[#94a3b8]">{currentUser?.city}</div>
+            </div>
+
+            <button onClick={handleLogout} className="w-full py-3 text-sm text-[#f87171] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616]">
+              Cerrar sesión
             </button>
           </div>
         )}
@@ -2308,10 +2316,10 @@ function App() {
             <div className="flex-1 overflow-auto p-4">
               {/* Prominent call-to-action if profile is incomplete */}
               {(!currentUser.bio || !currentUser.photos?.length || !currentUser.trainingTypes?.length) && (
-                <div className="mb-6 p-5 rounded-3xl bg-[#1f242b] border border-[#14b8a6]/30">
-                  <div className="font-semibold text-lg mb-2">Tu perfil está incompleto</div>
-                  <p className="text-sm text-[#cbd5e1] mb-4">
-                    Para que otros usuarios reales puedan verte y hacer match, completá tu nombre, fotos, tipos de entrenamiento y objetivos.
+                <div className="mb-6 p-5 rounded-3xl bg-[#1f242b] border border-[#14b8a6]/40">
+                  <div className="font-semibold text-lg mb-1.5 text-[#14b8a6]">Tu perfil está incompleto</div>
+                  <p className="text-sm text-[#cbd5e1] mb-4 leading-snug">
+                    Completa tu bio, fotos y tipos de entrenamiento para que otros usuarios reales puedan encontrarte.
                   </p>
                   <button 
                     onClick={() => setShowOnboarding(true)}
