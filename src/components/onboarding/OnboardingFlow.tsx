@@ -276,7 +276,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         const newTypes = selected ? current.filter((t: string) => t !== type) : [...current, type];
                         updateOnboard({ trainingTypes: newTypes });
                       }}
-                      className={`px-4 py-2.5 rounded-3xl text-sm border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
+                      className={`px-3 py-2 rounded-3xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
                     >
                       {type}
                     </button>
@@ -301,7 +301,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         const newGoals = selected ? current.filter((g: string) => g !== goal) : [...current, goal];
                         updateOnboard({ goals: newGoals });
                       }}
-                      className={`px-4 py-2.5 rounded-3xl text-sm border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
+                      className={`px-3 py-2 rounded-3xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
                     >
                       {goal}
                     </button>
