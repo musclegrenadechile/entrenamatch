@@ -231,20 +231,23 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           </div>
         )}
 
-        {/* Step 1: Photos */}
+        {/* Step 1: Photos - Attractive upload */}
         {onboardingStep === 1 && (
           <div>
             <div className="mb-4">
               <div className="text-xl font-semibold mb-1">Sube tus fotos</div>
-              <div className="text-[#94a3b8] text-sm">Máximo 6. La primera es la principal.</div>
+              <div className="text-[#94a3b8] text-sm">Máximo 6. La primera es la principal y más importante.</div>
             </div>
             <div className="grid grid-cols-3 gap-3 mb-4">
               {(onboardData.photos || []).map((photo: string, idx: number) => (
-                <div key={idx} className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#121418]">
+                <div key={idx} className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#121418] border border-[#272b33]">
                   <img src={photo} className="w-full h-full object-cover" alt="" />
-                  <button onClick={() => removeOnboardPhoto(idx)} className="absolute top-2 right-2 bg-black/70 p-1.5 rounded-full">
+                  <button onClick={() => removeOnboardPhoto(idx)} className="absolute top-2 right-2 bg-black/70 p-1.5 rounded-full active:bg-black">
                     <Trash2 size={15} />
                   </button>
+                  {idx === 0 && (
+                    <div className="absolute bottom-2 left-2 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded">Principal</div>
+                  )}
                 </div>
               ))}
               {(onboardData.photos || []).length < 6 && (
@@ -255,6 +258,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 </label>
               )}
             </div>
+            <p className="text-[10px] text-[#64748b]">Usa fotos recientes donde se te vea bien y con buena luz.</p>
           </div>
         )}
 
@@ -329,7 +333,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         {onboardingStep === 3 && (
           <div className="space-y-8">
             <div>
-              <div className="text-xl font-semibold mb-3">¿Cuál es tu nivel actual?</div>
+              <div className="text-xl font-semibold mb-3 flex items-center gap-2">
+                Nivel actual
+              </div>
               <div className="grid grid-cols-3 gap-3">
                 {['Principiante', 'Intermedio', 'Avanzado'].map(lvl => (
                   <button
@@ -344,7 +350,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             </div>
 
             <div>
-              <div className="text-xl font-semibold mb-3">¿Qué intensidad prefieres?</div>
+              <div className="text-xl font-semibold mb-3">Intensidad preferida</div>
               <div className="grid grid-cols-3 gap-3">
                 {TRAINING_INTENSITIES.map((int: string) => (
                   <button

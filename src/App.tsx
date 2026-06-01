@@ -3757,9 +3757,9 @@ function App() {
                     <div className="font-semibold text-lg">
                       {sessions.find(s => s.id === showGroupChatModalFor)?.title}
                     </div>
-                    <div className="text-xs text-[#14b8a6]">
+                    <div className="text-xs text-[#14b8a6] flex items-center gap-2">
                       Chat grupal • {sessions.find(s => s.id === showGroupChatModalFor)?.participants.length} participantes
-                      {!isDemoMode && firebaseUser?.uid && <span className="ml-1 px-1.5 py-0.5 bg-[#14b8a6] text-black rounded text-[9px] font-bold">REAL</span>}
+                      {!isDemoMode && firebaseUser?.uid && <span className="px-1.5 py-0.5 bg-[#14b8a6] text-black rounded text-[9px] font-bold">REAL</span>}
                     </div>
                   </div>
                   {!isDemoMode && firebaseUser?.uid && (
