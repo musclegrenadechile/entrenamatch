@@ -1498,7 +1498,9 @@ function App() {
   })
 
   // Gate for unauthenticated users and profile creation
-  if (!currentUser) {
+  const isAuthenticated = isDemoMode ? !!currentUser : !!firebaseUser
+
+  if (!isAuthenticated) {
     return (
       <ErrorBoundary>
         <AuthScreen
@@ -1517,11 +1519,20 @@ function App() {
     )
   }
 
-  if (showOnboarding) {
+  // For real users or demo users without full profile, show onboarding/creation flow
+  const shouldShowOnboarding = showOnboarding || 
+    (!isDemoMode && firebaseUser && currentUser && (
+      !currentUser.bio ||
+      !currentUser.photos?.length ||
+      !currentUser.trainingTypes?.length ||
+      !currentUser.goals?.length
+    ))
+
+  if (shouldShowOnboarding) {
     return (
       <ErrorBoundary>
         <OnboardingFlow
-          onboardingStep={0} // simplified - internal state in component
+          onboardingStep={0}
           setOnboardingStep={() => {}}
           currentUser={currentUser}
           saveUser={saveUser}
