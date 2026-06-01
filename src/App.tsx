@@ -2734,28 +2734,41 @@ function App() {
         {showFilters && (
           <div className="absolute inset-0 z-[70] flex items-end bg-black/70" onClick={() => setShowFilters(false)}>
             <motion.div initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }} transition={{ type: 'spring', bounce: 0.05 }}
-              onClick={e => e.stopPropagation()} className="w-full card rounded-t-3xl p-6 pb-9">
-              <div className="flex justify-between items-center mb-5">
-                <div className="font-semibold text-xl">Filtros</div>
-                <button onClick={resetFilters} className="text-[#14b8a6] text-sm">Limpiar todo</button>
+              onClick={e => e.stopPropagation()} className="w-full card rounded-t-3xl p-6 pb-10">
+              <div className="flex justify-between items-center mb-6">
+                <div className="font-semibold text-2xl tracking-tight">Filtros</div>
+                <button onClick={resetFilters} className="text-[#14b8a6] text-sm font-medium active:opacity-70">Limpiar todo</button>
               </div>
 
-              <div className="mb-6">
-                <div className="flex justify-between text-sm mb-2"><span>Edad</span> <span>{filters.minAge} - {filters.maxAge}</span></div>
-                <div className="flex gap-4 items-center">
-                  <input type="range" min="18" max="45" value={filters.minAge} onChange={e => setFilters(f => ({...f, minAge: Math.min(parseInt(e.target.value), f.maxAge - 1)}))} className="flex-1 accent-[#14b8a6]" />
-                  <input type="range" min="18" max="45" value={filters.maxAge} onChange={e => setFilters(f => ({...f, maxAge: Math.max(parseInt(e.target.value), f.minAge + 1)}))} className="flex-1 accent-[#14b8a6]" />
+              <div className="mb-7">
+                <div className="flex justify-between text-sm mb-3">
+                  <span className="font-medium">Edad</span> 
+                  <span className="font-mono text-[#14b8a6]">{filters.minAge} - {filters.maxAge}</span>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-[10px] text-[#64748b] mb-1.5">
+                      <span>Mínimo</span><span>{filters.minAge}</span>
+                    </div>
+                    <input type="range" min="18" max="45" value={filters.minAge} onChange={e => setFilters(f => ({...f, minAge: Math.min(parseInt(e.target.value), f.maxAge - 1)}))} className="w-full accent-[#14b8a6]" />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-[10px] text-[#64748b] mb-1.5">
+                      <span>Máximo</span><span>{filters.maxAge}</span>
+                    </div>
+                    <input type="range" min="18" max="45" value={filters.maxAge} onChange={e => setFilters(f => ({...f, maxAge: Math.max(parseInt(e.target.value), f.minAge + 1)}))} className="w-full accent-[#14b8a6]" />
+                  </div>
                 </div>
               </div>
 
               {/* Distance filter */}
-              <div className="mb-6">
+              <div className="mb-7">
                 <div className="flex justify-between text-sm mb-2">
-                  <span>Distancia máxima</span> 
-                  <span>
+                  <span className="font-medium">Distancia máxima</span> 
+                  <span className="text-[#14b8a6]">
                     {userLocation 
-                      ? (filters.maxDistanceKm >= 100 ? 'Cualquier distancia' : `${filters.maxDistanceKm} km`) 
-                      : 'Activa GPS para usar'}
+                      ? (filters.maxDistanceKm >= 100 ? 'Sin límite' : `${filters.maxDistanceKm} km`) 
+                      : 'GPS requerido'}
                   </span>
                 </div>
                 <input 
@@ -2769,23 +2782,21 @@ function App() {
                   disabled={!userLocation}
                 />
                 <div className="flex justify-between text-[10px] text-[#64748b] mt-1">
-                  <span>5 km</span>
-                  <span>50 km</span>
-                  <span>Cualquier</span>
+                  <span>5 km</span><span>100+ km</span>
                 </div>
                 {!userLocation && (
                   <button 
                     onClick={requestUserLocation}
-                    className="mt-2 text-xs w-full py-2 rounded-xl border border-[#14b8a6] text-[#14b8a6] active:bg-[#14b8a6] active:text-black"
+                    className="mt-3 text-xs w-full py-2.5 rounded-2xl border border-[#14b8a6] text-[#14b8a6] active:bg-[#14b8a6] active:text-black"
                   >
-                    Activar ubicación GPS para filtrar por distancia
+                    Activar GPS para usar distancia
                   </button>
                 )}
               </div>
 
-              {/* Disponible Hoy filter - Unique feature */}
-              <div className="mb-6">
-                <label className="flex items-center gap-3 cursor-pointer">
+              {/* Disponible Hoy filter */}
+              <div className="mb-7">
+                <label className="flex items-center gap-3 p-3 bg-[#121418] rounded-2xl border border-[#272b33] cursor-pointer active:bg-[#1a1d23]">
                   <input 
                     type="checkbox" 
                     checked={filters.onlyAvailableToday} 
@@ -2793,17 +2804,17 @@ function App() {
                     className="w-5 h-5 accent-[#14b8a6]"
                   />
                   <div>
-                    <div className="text-sm font-medium">Solo personas disponibles hoy</div>
-                    <div className="text-xs text-[#64748b]">Ideal para entrenar el mismo día</div>
+                    <div className="text-sm font-medium">Solo disponibles hoy</div>
+                    <div className="text-xs text-[#64748b]">Personas que pueden entrenar el mismo día</div>
                   </div>
                 </label>
               </div>
 
               <div className="mb-6">
-                <div className="text-sm mb-2">Me interesa</div>
+                <div className="text-sm font-medium mb-2">Me interesa</div>
                 <div className="flex gap-2">
                   {(['todos','hombre','mujer'] as const).map(g => (
-                    <button key={g} onClick={() => setFilters(f => ({...f, gender: g}))} className={`flex-1 py-2.5 rounded-2xl text-sm border ${filters.gender === g ? 'bg-[#14b8a6] text-black border-[#14b8a6]' : 'border-[#272b33] bg-[#121418]'}`}>
+                    <button key={g} onClick={() => setFilters(f => ({...f, gender: g}))} className={`flex-1 py-2.5 rounded-2xl text-sm border font-medium transition ${filters.gender === g ? 'bg-[#14b8a6] text-black border-[#14b8a6]' : 'border-[#272b33] bg-[#121418] active:bg-[#1a1d23]'}`}>
                       {g === 'todos' ? 'Todos' : g === 'hombre' ? 'Hombres' : 'Mujeres'}
                     </button>
                   ))}
@@ -2811,7 +2822,7 @@ function App() {
               </div>
 
               <div className="mb-6">
-                <div className="text-sm mb-2">Tipo de entrenamiento</div>
+                <div className="text-sm font-medium mb-2">Tipo de entrenamiento</div>
                 <div className="flex flex-wrap gap-2">
                   {TRAINING_OPTIONS.map(t => (
                     <button key={t} onClick={() => toggleFilterTraining(t)} className={`chip text-xs ${filters.trainingTypes.includes(t) ? 'chip-active' : ''}`}>{t}</button>
@@ -2819,8 +2830,8 @@ function App() {
                 </div>
               </div>
 
-              <div>
-                <div className="text-sm mb-2">Disponibilidad</div>
+              <div className="mb-8">
+                <div className="text-sm font-medium mb-2">Disponibilidad</div>
                 <div className="flex flex-wrap gap-2">
                   {AVAILABILITY.map(a => (
                     <button key={a} onClick={() => toggleFilterAvailability(a)} className={`chip text-xs ${filters.availability.includes(a) ? 'chip-active' : ''}`}>{a}</button>
@@ -2828,7 +2839,7 @@ function App() {
                 </div>
               </div>
 
-              <button onClick={() => setShowFilters(false)} className="btn-primary w-full mt-8">Aplicar filtros</button>
+              <button onClick={() => setShowFilters(false)} className="btn-primary w-full">Aplicar filtros</button>
             </motion.div>
           </div>
         )}
