@@ -136,8 +136,8 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           draggable={false}
         />
 
-        {/* Gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/10 to-black/85" />
+        {/* Gradient overlay - stronger for premium feel */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/20 to-black/90" />
 
         {/* Top badges row */}
         <div className="absolute top-4 left-4 right-4 flex items-start justify-between">
@@ -161,21 +161,28 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           )}
         </div>
 
-        {/* Bottom info */}
+        {/* Bottom info - Premium layout */}
         <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
-          <div className="flex items-end justify-between mb-1">
+          <div className="flex items-end justify-between mb-2">
             <div>
-              <div className="text-2xl font-semibold tracking-[-0.5px] flex items-center gap-2">
+              <div className="text-3xl font-semibold tracking-[-1px] flex items-center gap-2 drop-shadow">
                 {profile.name}, {profile.age}
-                {verified && <CheckCircle size={18} className="text-[#14b8a6] -mb-0.5" />}
+                {verified && <CheckCircle size={20} className="text-[#14b8a6] -mb-0.5" />}
               </div>
-              <div className="text-sm opacity-90 flex items-center gap-1.5">
-                {profile.city}
+              <div className="text-sm opacity-90 flex items-center gap-2 mt-0.5">
+                <span>{profile.city}</span>
                 {profile.availableToday && (
-                  <span className="text-[10px] bg-[#22c55e]/90 text-black px-2 py-px rounded-full font-medium">HOY</span>
+                  <span className="text-[10px] bg-[#22c55e] text-black px-2 py-px rounded-full font-semibold tracking-wide">DISPONIBLE HOY</span>
                 )}
               </div>
             </div>
+
+            {compat !== null && (
+              <div className="text-right">
+                <div className="text-2xl font-bold text-[#14b8a6] leading-none">{compat}</div>
+                <div className="text-[9px] text-white/70 -mt-0.5">compatibilidad</div>
+              </div>
+            )}
 
             {compat !== null && (
               <div className="text-right">
