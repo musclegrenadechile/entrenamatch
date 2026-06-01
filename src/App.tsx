@@ -2231,9 +2231,21 @@ function App() {
           </div>
         )}
 
-        {/* ===== PROFILE ===== */}
+        {/* ===== PROFILE (cleaned for balance) */}
         {activeTab === 'profile' && (
-          !currentUser ? (
+          <div className="p-4">
+            <div className="flex justify-between items-center mb-4">
+              <div className="text-2xl font-semibold">Tu perfil</div>
+              <button onClick={handleLogout} className="text-sm text-[#f87171] border border-[#3f2a2a] px-4 py-2 rounded-2xl">
+                Cerrar / Cambiar cuenta
+              </button>
+            </div>
+            <div className="card p-4 mb-4">Perfil de {currentUser?.name || 'usuario'}</div>
+            <button onClick={handleLogout} className="w-full py-3 text-sm text-[#f87171] border border-[#3f2a2a] rounded-2xl">
+              Cerrar sesión / Cambiar de cuenta
+            </button>
+          </div>
+        )}
             <div className="p-8 text-center">
               <p className="text-[#94a3b8] mb-2">Cargando tu perfil desde el servidor...</p>
               <p className="text-xs text-[#64748b] mb-6">Esto puede pasar justo después de iniciar sesión con una cuenta real.</p>
@@ -2626,7 +2638,6 @@ function App() {
                 </div>
               </div>
             )}
-        )}
       </div>
 
       {/* Small floating help (less prominent now) */}
@@ -3907,7 +3918,8 @@ function App() {
         )}
       </AnimatePresence>
 
-    </div>
+      </div>
+      </div>
     </ErrorBoundary>
   )
 }
