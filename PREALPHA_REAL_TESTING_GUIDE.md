@@ -74,11 +74,21 @@ Use the "Actualizar sesiones reales" button if something doesn't appear immediat
 - Logout works cleanly for real users.
 - Messages and matches survive hard refresh on both sides.
 
-## Known Limitations (as of last overnight push)
+## Latest Pre-Alpha Improvements (just pushed)
+
+- **Profile tab**: Complete premium redesign — large hero photo, horizontal gallery for multiple photos, stats cards, training/goals chips, "Disponible hoy" toggle, verification flow, and **multiple prominent "Cambiar cuenta / Cerrar sesión" buttons** everywhere (impossible to get trapped).
+- **Group Chat modal** (inside sessions): Much more attractive — "REAL EN VIVO" badge, improved message bubbles with timestamps, nicer reactions, premium input with photo support + live sync note.
+- **Empty states**: Attractive cards with Pre-Alpha explanations + direct CTAs in Matches, Sessions, Messages.
+- **Critical stability**: Fixed long-standing JSX leak that caused black/empty Profile screens. All rich Profile content is now properly self-contained inside the tab.
+- Sessions update button more visible. Creator delete in group chat now works cross-device.
+
+**After this push**: Hard refresh (Ctrl+Shift+R) on https://musclegrenadechile.github.io/entrenamatch/ — the Profile tab should look beautiful and you should never see a black screen or missing logout again.
+
+## Known Limitations (as of this push)
 
 - Some rich onboarding data may still be local-only until full sync is hardened.
 - You may need to hard refresh or wait 30-60s after creating the second account for the profile to appear in the other person's Explore.
-- Squads and Sessions are still mostly demo/local for now (focus was on profiles + matching + 1:1 chat).
+- Squads still mostly demo (focus remains profiles + 1:1 chat + sessions group chat).
 
 ## Reporting Issues
 
