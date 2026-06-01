@@ -3711,6 +3711,7 @@ function App() {
                     </div>
                     <div className="text-xs text-[#14b8a6]">
                       Chat grupal • {sessions.find(s => s.id === showGroupChatModalFor)?.participants.length} participantes
+                      {!isDemoMode && firebaseUser?.uid && <span className="ml-1 px-1.5 py-0.5 bg-[#14b8a6] text-black rounded text-[9px] font-bold">REAL</span>}
                     </div>
                   </div>
                   {!isDemoMode && firebaseUser?.uid && (

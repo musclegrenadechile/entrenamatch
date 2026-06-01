@@ -362,7 +362,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           <button 
             onClick={nextOnboarding} 
             className="flex-1 btn-primary"
-            disabled={onboardingStep === 4 && !Object.values(localConsents).every(Boolean)}
+            disabled={
+              (onboardingStep === 2 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0)) ||
+              (onboardingStep === 4 && !Object.values(localConsents).every(Boolean))
+            }
           >
             {onboardingStep < 4 ? 'Continuar' : 'Completar perfil'}
           </button>
