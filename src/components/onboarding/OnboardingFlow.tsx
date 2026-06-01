@@ -262,10 +262,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         {onboardingStep === 2 && (
           <div className="space-y-7">
             <div>
-              <div className="text-xl font-semibold mb-3 flex items-center gap-2">
-                <Dumbbell size={20} className="text-[#14b8a6]" /> ¿Qué tipos de entrenamiento haces?
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xl font-semibold flex items-center gap-2">
+                  <Dumbbell size={20} className="text-[#14b8a6]" /> ¿Qué tipos de entrenamiento haces?
+                </div>
+                {(onboardData.trainingTypes || []).length > 0 && (
+                  <span className="text-xs text-[#14b8a6] font-medium">{(onboardData.trainingTypes || []).length} seleccionados</span>
+                )}
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {TRAINING_OPTIONS.map((type: string) => {
                   const selected = (onboardData.trainingTypes || []).includes(type);
                   return (
@@ -276,7 +281,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         const newTypes = selected ? current.filter((t: string) => t !== type) : [...current, type];
                         updateOnboard({ trainingTypes: newTypes });
                       }}
-                      className={`px-3 py-2 rounded-3xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
+                      className={`px-3 py-1.5 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
                     >
                       {type}
                     </button>
@@ -284,13 +289,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 })}
               </div>
               {(onboardData.trainingTypes || []).length === 0 && (
-                <p className="text-xs text-[#ef4444] mt-2">Debes seleccionar al menos un tipo de entrenamiento para poder continuar</p>
+                <p className="text-xs text-[#ef4444] mt-1.5">Selecciona al menos uno para continuar</p>
               )}
             </div>
 
             <div>
-              <div className="text-xl font-semibold mb-3">¿Cuáles son tus objetivos principales?</div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xl font-semibold">¿Cuáles son tus objetivos principales?</div>
+                {(onboardData.goals || []).length > 0 && (
+                  <span className="text-xs text-[#14b8a6] font-medium">{(onboardData.goals || []).length} seleccionados</span>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-1.5">
                 {TRAINING_GOALS.map((goal: string) => {
                   const selected = (onboardData.goals || []).includes(goal);
                   return (
@@ -301,7 +311,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         const newGoals = selected ? current.filter((g: string) => g !== goal) : [...current, goal];
                         updateOnboard({ goals: newGoals });
                       }}
-                      className={`px-3 py-2 rounded-3xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
+                      className={`px-3 py-1.5 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
                     >
                       {goal}
                     </button>
@@ -309,7 +319,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 })}
               </div>
               {(onboardData.goals || []).length === 0 && (
-                <p className="text-xs text-[#ef4444] mt-2">Debes seleccionar al menos un objetivo para poder continuar</p>
+                <p className="text-xs text-[#ef4444] mt-1.5">Selecciona al menos uno para continuar</p>
               )}
             </div>
           </div>
@@ -378,29 +388,29 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
         </div> {/* end scrollable step content */}
 
-        {/* Fixed bottom navigation */}
-        <div className="pt-4 flex flex-col gap-3 bg-[#0a0b0f]">
+        {/* Fixed bottom navigation - always visible */}
+        <div className="pt-3 pb-2 flex flex-col gap-2 bg-[#0a0b0f] border-t border-[#272b33]">
           {onboardingStep > 0 && (
-            <button onClick={() => setOnboardingStep(onboardingStep - 1)} className="flex-1 py-4 rounded-3xl border border-[#272b33]">
+            <button onClick={() => setOnboardingStep(onboardingStep - 1)} className="w-full py-3 text-sm rounded-2xl border border-[#272b33] active:bg-[#1f242b]">
               Atrás
             </button>
           )}
 
           {onboardingStep === 2 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0) && (
-            <p className="text-center text-xs text-[#ef4444]">
-              Debes seleccionar al menos un tipo de entrenamiento y un objetivo para continuar
+            <p className="text-center text-[10px] text-[#ef4444] font-medium">
+              Selecciona al menos un tipo de entrenamiento y un objetivo
             </p>
           )}
 
           <button 
             onClick={nextOnboarding} 
-            className="flex-1 btn-primary"
+            className="w-full py-3.5 text-base font-semibold rounded-3xl btn-primary disabled:opacity-50"
             disabled={
               (onboardingStep === 2 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0)) ||
               (onboardingStep === 4 && !Object.values(localConsents).every(Boolean))
             }
           >
-            {onboardingStep < 4 ? 'Continuar' : 'Completar perfil'}
+            {onboardingStep < 4 ? 'Continuar' : 'Completar mi perfil'}
           </button>
         </div>
       </div>
