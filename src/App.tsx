@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect, useMemo, useCallback, Component, type ReactNode } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, Component, type ReactNode } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, MessageCircle, User, MapPin, Dumbbell, 
@@ -309,7 +309,17 @@ function App() {
   const [realChatMessages, setRealChatMessages] = useState<any[]>([])
   const [realSessions, setRealSessions] = useState<TrainingSession[]>([])
 
-  const displaySessions = (!isDemoMode && realSessions.length > 0) ? [...sessions, ...realSessions] : sessions
+  // Merge local + real sessions, deduping by id so real cross-user sessions are always visible
+  const displaySessions = (() => {
+    if (isDemoMode) return sessions
+    const all = [...sessions, ...realSessions]
+    const seen = new Set<string>()
+    return all.filter(s => {
+      if (seen.has(s.id)) return false
+      seen.add(s.id)
+      return true
+    })
+  })()
 
   const loadRealSessions = async () => {
     if (!isFirebaseConfigured || !db) {
@@ -318,7 +328,8 @@ function App() {
     }
     try {
       const sessionsRef = collection(db, 'sessions')
-      const q = query(sessionsRef, limit(50))
+      // Order by creation time desc so newest sessions appear first for everyone
+      const q = query(sessionsRef, orderBy('createdAt', 'desc'), limit(50))
       const snapshot = await getDocs(q)
       const loaded: TrainingSession[] = []
       snapshot.forEach((doc) => {
@@ -329,7 +340,7 @@ function App() {
             creatorId: data.creatorId || '',
             creatorName: data.creatorName || 'Usuario',
             title: data.title,
-            description: data.description,
+            description: data.description || '',
             time: data.time || '',
             location: data.location || '',
             trainingType: data.trainingType || '',
@@ -340,7 +351,7 @@ function App() {
         }
       })
       setRealSessions(loaded)
-      console.log(`✅ Loaded ${loaded.length} real sessions from Firestore`)
+      console.log(`✅ Loaded ${loaded.length} real sessions from Firestore (cross-user visible)`)
     } catch (err) {
       console.warn('Could not load real sessions yet:', err)
       setRealSessions([])
@@ -510,6 +521,9 @@ function App() {
     try {
       await logout()
 
+      // Critical: clear the ref that was keeping us authenticated after login
+      lastSuccessfulAuthRef.current = null
+
       // Clear all local state
       if (clearProfile) clearProfile()
       
@@ -530,6 +544,12 @@ function App() {
       } catch {}
 
       toast.success('Sesión cerrada correctamente')
+
+      // For Pre-Alpha testing: full reload guarantees we hit the AuthScreen cleanly
+      // so the user can immediately register or login with another account.
+      setTimeout(() => {
+        window.location.reload()
+      }, 600)
     } catch (error) {
       console.error('Error al cerrar sesión:', error)
       toast.error('Hubo un problema al cerrar la sesión')
@@ -616,6 +636,40 @@ function App() {
   useEffect(() => {
     loadRealProfiles()
   }, [firebaseUser?.uid])
+
+  // Rescue effect: if we have a real Firebase user but no local currentUser (hard refresh / new device / race),
+  // synthesize a minimal usable profile immediately so Profile tab + logout + CTA are never missing.
+  useEffect(() => {
+    if (!isDemoMode && firebaseUser?.uid && !currentUser) {
+      // Try to hydrate from Firestore first (non-blocking)
+      ;(async () => {
+        try {
+          const existing = await getUserProfile(firebaseUser.uid)
+          if (existing && existing.name) {
+            saveUser({ ...existing, id: 'me' } as any)
+            return
+          }
+        } catch {}
+        // Fallback to minimal skeleton (user will be forced through onboarding by the gate above)
+        const skeleton = {
+          id: 'me' as any,
+          name: firebaseUser.email?.split('@')[0] || 'Usuario',
+          age: 25,
+          gender: 'hombre' as const,
+          city: '',
+          country: 'Chile',
+          bio: '',
+          photos: [],
+          trainingTypes: [],
+          goals: [],
+          level: 'Intermedio' as const,
+          intensity: 'Moderado' as const,
+          availability: ['Tarde'],
+        }
+        saveUser(skeleton as any)
+      })()
+    }
+  }, [firebaseUser?.uid, isDemoMode, currentUser])
 
   // Safe polling for real sessions (no TDZ risk)
   useEffect(() => {
@@ -1019,12 +1073,46 @@ function App() {
             }
             // If profile is complete, do nothing extra — main app will show on next render
           } else {
-            // No profile or no name → force creation flow
+            // No profile or no name → create a minimal usable local profile immediately
+            // so the UI (including Profile tab + logout) never goes black/empty.
+            const minimalUser = {
+              id: 'me' as any,
+              name: loggedInUser.email?.split('@')[0] || 'Usuario',
+              age: 25,
+              gender: 'hombre' as const,
+              city: '',
+              country: 'Chile',
+              bio: '',
+              photos: [],
+              trainingTypes: [],
+              goals: [],
+              level: 'Intermedio' as const,
+              intensity: 'Moderado' as const,
+              availability: ['Tarde'],
+            }
+            saveUser(minimalUser as any)
             setShowOnboarding(true)
           }
         } catch (e) {
           console.warn('Profile load after real auth failed', e)
-          setShowOnboarding(true) // fallback
+          // Create minimal local profile as last resort so user is never stuck without UI
+          const fallbackUser = {
+            id: 'me' as any,
+            name: loggedInUser.email?.split('@')[0] || 'Usuario',
+            age: 25,
+            gender: 'hombre' as const,
+            city: '',
+            country: 'Chile',
+            bio: '',
+            photos: [],
+            trainingTypes: [],
+            goals: [],
+            level: 'Intermedio' as const,
+            intensity: 'Moderado' as const,
+            availability: ['Tarde'],
+          }
+          saveUser(fallbackUser as any)
+          setShowOnboarding(true)
         }
       } else if (isDemoMode && loggedInUser) {
         const hasLocalProfile = localStorage.getItem('fitvina_user')
@@ -1533,7 +1621,8 @@ function App() {
 
   // For real users or demo users without full profile, show onboarding/creation flow
   const shouldShowOnboarding = showOnboarding || 
-    (!isDemoMode && firebaseUser && currentUser && (
+    (!isDemoMode && firebaseUser && (
+      !currentUser || 
       !currentUser.bio ||
       !currentUser.photos?.length ||
       !currentUser.trainingTypes?.length ||
@@ -1560,44 +1649,27 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-[#0a0b0f] text-white flex flex-col overflow-hidden relative">
-      {/* DEMO BANNER - Pre-alpha */}
-      <div className="bg-[#14b8a6] text-black text-center text-xs py-1.5 font-medium tracking-wide z-50 flex items-center justify-center gap-3 flex-wrap px-3">
-        <span className="font-semibold">🚀 PRE-ALPHA EN CURSO — BACKEND REAL ACTIVO (FIX 2026-04-26 04:xx)</span>
-        <span className="hidden sm:inline">• Tus matches y mensajes viajan entre celulares</span>
+      {/* MINIMAL TOP BAR - Only critical info + auth controls (no more visual noise) */}
+      <div className="bg-[#14b8a6] text-black z-50 flex items-center justify-between px-3 py-2 text-sm font-medium">
+        <div className="font-bold tracking-tight">🚀 PRE-ALPHA • Real</div>
 
-        <button 
-          onClick={() => { localStorage.clear(); window.location.reload(); }}
-          className="ml-1 text-[10px] bg-black text-[#14b8a6] px-2 py-0.5 rounded active:bg-white active:text-black border border-black font-medium"
-        >
-          RESET TODO
-        </button>
-
-        <a 
-          href="https://github.com/musclegrenadechile/entrenamatch/issues" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="ml-1 text-[10px] underline hover:no-underline font-medium"
-        >
-          Dar feedback →
-        </a>
-
-        <button 
-          onClick={() => {
-            localStorage.removeItem('entrenamatch_prealpha_welcome_shown')
-            setShowPreAlphaWelcome(true)
-          }}
-          className="ml-1 text-[10px] bg-black/70 text-white px-2 py-0.5 rounded hover:bg-black border border-black/50"
-        >
-          Ver guía
-        </button>
-
-        {currentUser && (
-          <button 
-            onClick={handleLogout}
-            className="ml-1 text-[10px] bg-black/70 text-white px-2 py-0.5 rounded hover:bg-black border border-black/50"
-          >
-            Cerrar sesión
-          </button>
+        {(currentUser || firebaseUser) ? (
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={handleLogout}
+              className="bg-black text-white px-4 py-1.5 rounded-2xl text-sm font-semibold active:bg-white active:text-black border border-black/60"
+            >
+              Cerrar sesión
+            </button>
+            <button 
+              onClick={handleLogout}
+              className="bg-white text-black px-4 py-1.5 rounded-2xl text-sm font-bold active:bg-gray-200 border border-black/30 shadow-sm"
+            >
+              Cambiar cuenta
+            </button>
+          </div>
+        ) : (
+          <div className="text-[10px] opacity-80">Inicia sesión para probar</div>
         )}
       </div>
       {/* MAIN CONTENT AREA */}
@@ -1772,9 +1844,9 @@ function App() {
                     .sort((a,b) => b.createdAt - a.createdAt)
                     .map(session => {
                       const spotsLeft = session.maxParticipants - session.participants.length
-                      const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, 
-                        SEED_PROFILES.find(p => p.id === session.creatorId)?.lat || 0, 
-                        SEED_PROFILES.find(p => p.id === session.creatorId)?.lng || 0) : null
+                      const creatorProfile = SEED_PROFILES.find(p => p.id === session.creatorId)
+                      const dist = userLocation && creatorProfile ? getDistanceKm(userLocation.lat, userLocation.lng, 
+                        creatorProfile.lat || 0, creatorProfile.lng || 0) : null
 
                       return (
                         <div key={session.id} className="card rounded-3xl p-4">
@@ -1797,25 +1869,40 @@ function App() {
                             </div>
                             <button 
                               onClick={() => {
-                                const updated = sessions.map(s => 
-                                  s.id === session.id 
-                                    ? { ...s, participants: [...s.participants, effectiveUserId] } 
-                                    : s
+                                const updatedSession = {
+                                  ...session,
+                                  participants: [...(session.participants || []), effectiveUserId]
+                                }
+                                const updatedLocal = sessions.map(s => 
+                                  s.id === session.id ? updatedSession : s
                                 )
-                                saveSessions(updated)
+                                saveSessions(updatedLocal)
+
+                                // IMPORTANT: Also write join back to Firestore so other real users see updated participants
+                                if (!isDemoMode && firebaseUser?.uid && db) {
+                                  (async () => {
+                                    try {
+                                      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+                                      await setDoc(doc(db, 'sessions', session.id), {
+                                        ...updatedSession,
+                                        updatedAt: serverTimestamp(),
+                                      }, { merge: true })
+                                      console.log('✅ Join persisted to Firestore for other users')
+                                    } catch (e) {
+                                      console.warn('Failed to persist join to Firestore:', e)
+                                    }
+                                  })()
+                                }
 
                                 // Seed initial group chat messages
-                                const joinedSession = updated.find(s => s.id === session.id)
-                                if (joinedSession) {
-                                  seedInitialSessionMessages(joinedSession)
-                                }
+                                seedInitialSessionMessages(updatedSession)
 
                                 if (!isDemoMode) {
                                   loadRealSessions()
                                 }
 
-                                // Notify the creator
-                                if (session.creatorId !== 'me') {
+                                // Notify the creator (only for real users)
+                                if (session.creatorId && session.creatorId !== effectiveUserId) {
                                   addNotification({
                                     type: 'session_join',
                                     title: '¡Alguien se unió a tu sesión!',
@@ -1869,10 +1956,10 @@ function App() {
                     .filter(s => s.participants.includes(effectiveUserId) || s.creatorId === effectiveUserId)
                     .sort((a,b) => b.createdAt - a.createdAt)
                     .map(session => {
-                      const isCreator = session.creatorId === 'me'
-                      const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, 
-                        SEED_PROFILES.find(p => p.id === session.creatorId)?.lat || 0, 
-                        SEED_PROFILES.find(p => p.id === session.creatorId)?.lng || 0) : null
+                      const isCreator = session.creatorId === effectiveUserId || session.creatorId === 'me'
+                      const creatorProfileForDist = SEED_PROFILES.find(p => p.id === session.creatorId)
+                      const dist = userLocation && creatorProfileForDist ? getDistanceKm(userLocation.lat, userLocation.lng, 
+                        creatorProfileForDist.lat || 0, creatorProfileForDist.lng || 0) : null
 
                       return (
                         <div key={session.id} className="card rounded-3xl p-4 border border-[#14b8a6]/30">
@@ -2148,72 +2235,82 @@ function App() {
         {activeTab === 'profile' && (
           !currentUser ? (
             <div className="p-8 text-center">
-              <p className="text-[#94a3b8]">Cargando tu perfil...</p>
-              <button 
-                onClick={() => window.location.reload()} 
-                className="mt-4 text-sm text-[#14b8a6] underline"
-              >
-                Recargar
-              </button>
-            </div>
-          ) : (
-            // Extra defensive wrapper so incomplete real profiles never look completely black/empty
-            <div className="flex-1 overflow-auto p-4">
-          <div className="flex-1 overflow-auto p-4">
-            {/* Prominent call-to-action if profile is incomplete (common after registration) */}
-            {(!currentUser.bio || !currentUser.photos?.length || !currentUser.trainingTypes?.length) && (
-              <div className="mb-6 p-5 rounded-3xl bg-[#1f242b] border border-[#14b8a6]/30">
-                <div className="font-semibold text-lg mb-2">Tu perfil está incompleto</div>
-                <p className="text-sm text-[#cbd5e1] mb-4">
-                  Para que otros usuarios reales puedan verte y hacer match, completá tu nombre, fotos, tipos de entrenamiento y objetivos.
-                </p>
+              <p className="text-[#94a3b8] mb-2">Cargando tu perfil desde el servidor...</p>
+              <p className="text-xs text-[#64748b] mb-6">Esto puede pasar justo después de iniciar sesión con una cuenta real.</p>
+              <div className="flex flex-col gap-3 max-w-[280px] mx-auto">
                 <button 
-                  onClick={() => setShowOnboarding(true)}
-                  className="btn-primary w-full"
+                  onClick={() => window.location.reload()} 
+                  className="w-full py-3 text-sm bg-[#1f242b] border border-[#272b33] rounded-2xl active:bg-[#272b33]"
                 >
-                  Completar mi perfil ahora
+                  Recargar página
                 </button>
-              </div>
-            )}
-
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <div className="text-2xl font-semibold tracking-[-1.2px]">Tu perfil</div>
-                {!isDemoMode && (
-                  <div className="text-[10px] text-[#14b8a6] -mt-0.5">Sincronizado con backend real</div>
-                )}
-              </div>
-              <div className="flex items-center gap-3">
                 <button 
                   onClick={handleLogout}
-                  className="text-sm text-[#f87171] px-3 py-1.5 border border-[#3f2a2a] rounded-xl active:bg-[#1f1616]"
+                  className="w-full py-3 text-sm text-[#f87171] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616]"
                 >
-                  Cerrar sesión
-                </button>
-                <button 
-                  onClick={() => {
-                    if (!isEditingProfile && currentUser) {
-                      setEditBio(currentUser.bio || '')
-                      setEditAvailability([...(currentUser.availability || [])])
-                      setEditGoals([...(currentUser.goals || [])])
-                    } else if (isEditingProfile && currentUser) {
-                      const updated = {
-                        ...currentUser,
-                        bio: editBio,
-                        availability: editAvailability,
-                        goals: editGoals
-                      }
-                      saveUserWithRealSync(updated as CurrentUser)
-                      toast.success('Perfil actualizado')
-                    }
-                    setIsEditingProfile(!isEditingProfile)
-                  }} 
-                  className="flex items-center gap-1 text-sm text-[#14b8a6]"
-                >
-                  <Edit2 size={16} /> {isEditingProfile ? 'Guardar' : 'Editar'}
+                  Cerrar sesión / Cambiar de cuenta
                 </button>
               </div>
+              <div className="mt-8 text-[10px] text-[#475569]">
+                Si el problema persiste usa RESET TODO en el banner superior.
+              </div>
             </div>
+          ) : (
+            <div className="flex-1 overflow-auto p-4">
+              {/* Prominent call-to-action if profile is incomplete */}
+              {(!currentUser.bio || !currentUser.photos?.length || !currentUser.trainingTypes?.length) && (
+                <div className="mb-6 p-5 rounded-3xl bg-[#1f242b] border border-[#14b8a6]/30">
+                  <div className="font-semibold text-lg mb-2">Tu perfil está incompleto</div>
+                  <p className="text-sm text-[#cbd5e1] mb-4">
+                    Para que otros usuarios reales puedan verte y hacer match, completá tu nombre, fotos, tipos de entrenamiento y objetivos.
+                  </p>
+                  <button 
+                    onClick={() => setShowOnboarding(true)}
+                    className="btn-primary w-full"
+                  >
+                    Completar mi perfil ahora
+                  </button>
+                </div>
+              )}
+
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <div className="text-2xl font-semibold tracking-[-1.2px]">Tu perfil</div>
+                  {!isDemoMode && (
+                    <div className="text-[10px] text-[#14b8a6] -mt-0.5">Sincronizado con backend real</div>
+                  )}
+                </div>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={handleLogout}
+                    className="text-sm text-[#f87171] px-3 py-1.5 border border-[#3f2a2a] rounded-xl active:bg-[#1f1616]"
+                  >
+                    Cerrar / Cambiar cuenta
+                  </button>
+                  <button 
+                    onClick={() => {
+                      if (!isEditingProfile && currentUser) {
+                        setEditBio(currentUser.bio || '')
+                        setEditAvailability([...(currentUser.availability || [])])
+                        setEditGoals([...(currentUser.goals || [])])
+                      } else if (isEditingProfile && currentUser) {
+                        const updated = {
+                          ...currentUser,
+                          bio: editBio,
+                          availability: editAvailability,
+                          goals: editGoals
+                        }
+                        saveUserWithRealSync(updated as CurrentUser)
+                        toast.success('Perfil actualizado')
+                      }
+                      setIsEditingProfile(!isEditingProfile)
+                    }} 
+                    className="flex items-center gap-1 text-sm text-[#14b8a6]"
+                  >
+                    <Edit2 size={16} /> {isEditingProfile ? 'Guardar' : 'Editar'}
+                  </button>
+                </div>
+              </div>
 
             {isEditingProfile && (
               <div className="card rounded-3xl p-5 mb-4 text-sm space-y-4">
@@ -2422,7 +2519,7 @@ function App() {
               onClick={handleLogout}
               className="w-full flex items-center justify-center gap-2 py-3 text-sm text-[#f87171] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616] mb-3"
             >
-              Cerrar sesión
+              Cerrar sesión / Cambiar de cuenta
             </button>
 
             <button 
@@ -2529,17 +2626,26 @@ function App() {
                 </div>
               </div>
             )}
-          </div>
         )}
       </div>
 
-      {/* Floating Pre-Alpha Help Button */}
+      {/* Small floating help (less prominent now) */}
       <button
         onClick={() => setShowPreAlphaWelcome(true)}
-        className="fixed bottom-20 right-4 z-[190] bg-[#14b8a6] text-black text-xs font-medium px-3 py-2 rounded-2xl shadow-lg active:scale-95 transition flex items-center gap-1.5"
+        className="fixed bottom-4 right-4 z-[190] bg-black/70 text-white text-[10px] px-3 py-1.5 rounded-2xl opacity-70 active:opacity-100"
       >
-        📋 Guía Pre-Alpha
+        Guía
       </button>
+
+      {/* SUPER VISIBLE FLOATING BUTTON - Backup logout for real users (very prominent) */}
+      {(firebaseUser || (!isDemoMode && currentUser)) && (
+        <button
+          onClick={handleLogout}
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] bg-[#ef4444] text-white text-base font-bold px-8 py-3 rounded-3xl shadow-2xl active:bg-red-700 flex items-center gap-2 border-2 border-white/80"
+        >
+          CAMBIAR DE CUENTA / SALIR
+        </button>
+      )}
 
       {/* Bottom Navigation - now with Squads */}
       <div className="h-[62px] border-t border-[#272b33] bg-[#0a0b0f] grid grid-cols-6 z-50 text-[10px]">
@@ -2551,7 +2657,14 @@ function App() {
           { id: 'messages' as Tab, label: 'Mensajes', icon: MessageCircle },
           { id: 'profile' as Tab, label: 'Perfil', icon: User },
         ].map(({ id, label, icon: Icon }) => (
-          <button key={id} onClick={() => { setActiveTab(id); if (id !== 'messages') setActiveChat(null) }}
+          <button key={id} onClick={() => { 
+            setActiveTab(id); 
+            if (id !== 'messages') setActiveChat(null);
+            // Auto-refresh real sessions when entering the tab (cross-device visibility)
+            if (id === 'sesiones' && !isDemoMode) {
+              loadRealSessions();
+            }
+          }}
             className={`nav-item ${activeTab === id ? 'active' : ''}`}>
             <Icon size={18} />
             {label}

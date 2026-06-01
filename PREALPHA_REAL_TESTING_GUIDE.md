@@ -7,7 +7,7 @@
 **Important about deploys**:
 - After every push, GitHub Actions takes 3-8 minutes to build + deploy.
 - You **must** do a hard refresh (Ctrl+Shift+R / Cmd+Shift+R) to see changes.
-- Look for the text "FIX 2026-04-26" in the green top banner to confirm you have the latest version (including the startup crash fix).
+- Look for the text with "cambiar cuenta" or the latest FIX in the green top banner. New behavior: Logout now does a clean reload so you reliably see the login/register screen again. There is also a "Cambiar cuenta" button in the banner + a floating "Cambiar cuenta / Salir" button always visible when you are logged in with a real account. This solves the "entra altiro sin poder registrar" issue on hard refresh.
 
 ## How to Test Real Cross-Device Interaction (2+ Real Accounts) - Recommended Flow for Testers
 
