@@ -162,9 +162,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         {onboardingStep === 0 && (
           <div className="space-y-6">
             <div>
-              <label className="text-sm text-[#94a3b8] mb-1.5 block">¿Cómo te llamas?</label>
+              <label className="text-sm text-[#94a3b8] mb-1.5 block font-medium">¿Cómo te llamas?</label>
               <input value={onboardData.name} onChange={e => updateOnboard({ name: e.target.value })} 
-                className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-5 py-4 text-xl placeholder:text-[#475569]" placeholder="Tu nombre" />
+                className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-5 py-4 text-xl placeholder:text-[#475569] focus:border-[#14b8a6] focus:outline-none" placeholder="Tu nombre" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -197,17 +197,17 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               </div>
             </div>
             <div>
-              <label className="text-sm text-[#94a3b8] mb-1.5 block">¿En qué sector de Viña vives / entrenas?</label>
+              <label className="text-sm text-[#94a3b8] mb-1.5 block font-medium">¿En qué sector de Viña vives / entrenas?</label>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-[#94a3b8] mb-1 block">Ciudad</label>
                   <input value={onboardData.city || ''} onChange={e => updateOnboard({ city: e.target.value })} 
-                    className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3" placeholder="Ej: Viña del Mar" />
+                    className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3 focus:border-[#14b8a6] focus:outline-none" placeholder="Ej: Viña del Mar" />
                 </div>
                 <div>
                   <label className="text-xs text-[#94a3b8] mb-1 block">País</label>
                   <input value={onboardData.country || ''} onChange={e => updateOnboard({ country: e.target.value })} 
-                    className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3" placeholder="Ej: Chile" />
+                    className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3 focus:border-[#14b8a6] focus:outline-none" placeholder="Ej: Chile" />
                 </div>
               </div>
               <button 
@@ -220,11 +220,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
             {/* Bio - required field */}
             <div>
-              <label className="text-sm text-[#94a3b8] mb-1.5 block">Cuéntanos un poco sobre ti (bio)</label>
+              <label className="text-sm text-[#94a3b8] mb-1.5 block font-medium">Cuéntanos un poco sobre ti (bio)</label>
               <textarea 
                 value={onboardData.bio || ''} 
                 onChange={e => updateOnboard({ bio: e.target.value })}
-                className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3 h-24 resize-y text-sm"
+                className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3 h-20 resize-y text-sm focus:border-[#14b8a6] focus:outline-none"
                 placeholder="Me encanta entrenar pesas y salir a correr por la costanera los fines de semana..."
               />
             </div>
@@ -334,7 +334,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           <div className="space-y-8">
             <div>
               <div className="text-xl font-semibold mb-3 flex items-center gap-2">
-                Nivel actual
+                <Star size={20} className="text-[#14b8a6]" /> Nivel actual
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {['Principiante', 'Intermedio', 'Avanzado'].map(lvl => (

@@ -1836,7 +1836,7 @@ function App() {
                 {!isDemoMode && (
                   <button 
                     onClick={() => loadRealSessions()}
-                    className="text-[10px] text-[#14b8a6] underline mt-0.5"
+                    className="mt-1 text-xs px-3 py-1 rounded-2xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black"
                   >
                     Actualizar sesiones reales
                   </button>
@@ -1861,20 +1861,16 @@ function App() {
               <div className="text-[10px] text-[#64748b] -mt-2 mb-3">Pre-Alpha • Las sesiones que crees son visibles para otros testers reales</div>
 
               {displaySessions.filter(s => !s.participants.includes(effectiveUserId)).length === 0 ? (
-                <div className="card p-7 rounded-3xl text-center">
-                  <div className="mx-auto w-11 h-11 rounded-full bg-[#121418] flex items-center justify-center mb-3">
-                    <Star className="text-[#14b8a6]" size={22} />
+                <div className="mt-4 card p-7 rounded-3xl text-center">
+                  <div className="mx-auto w-14 h-14 rounded-2xl bg-[#121418] flex items-center justify-center mb-4">
+                    <Users className="text-[#14b8a6]" size={28} />
                   </div>
-                  <div className="font-semibold mb-2">No hay sesiones abiertas todavía</div>
-                  <p className="text-sm text-[#94a3b8] mb-3 max-w-[260px] mx-auto">
-                    Sé el primero en crear una sesión grupal. Los demás testers podrán unirse y chatear en tiempo real.
+                  <div className="font-semibold text-lg mb-2">No hay sesiones abiertas</div>
+                  <p className="text-sm text-[#94a3b8] leading-snug mb-4 max-w-[280px] mx-auto">
+                    Crea la primera sesión grupal (running, gym, etc). Otros testers reales la verán al instante y podrán unirse + chatear en el grupo.
                   </p>
-                  <button 
-                    onClick={() => setShowCreateSession(true)}
-                    className="px-6 py-2.5 bg-[#14b8a6] text-black rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
-                  >
-                    Crear la primera sesión
-                  </button>
+                  <button onClick={() => setShowCreateSession(true)} className="btn-primary px-8">Crear sesión grupal</button>
+                  <div className="text-[10px] text-[#14b8a6] mt-4">Pre-Alpha real: las sesiones se guardan en Firebase y aparecen en todos los dispositivos</div>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -2061,15 +2057,19 @@ function App() {
             <div className="text-[#94a3b8] px-1 mb-5 text-sm">Gente con la que ya conectaste en Viña</div>
 
             {matchProfiles.length === 0 ? (
-              <div className="card p-8 rounded-3xl text-center mt-8">
-                <Heart className="mx-auto text-[#14b8a6] mb-3" size={42} />
-                <div className="font-semibold mb-2">Aún no tienes matches</div>
-                <p className="text-sm text-[#94a3b8] max-w-[300px] mx-auto mb-3">
-                  ¡Bienvenido a la Pre-Alpha con backend real! Desliza en <strong>Explorar</strong> y conecta con testers reales.<br />
-                  Los matches y chats ahora se ven en otros celulares.
-                </p>
-                <p className="text-xs text-[#64748b] mb-2">Crea tu cuenta real y prueba el flujo completo.</p>
-                <p className="text-[10px] text-[#14b8a6]">Tu feedback es lo más valioso ahora mismo ❤️</p>
+              <div className="mt-10 px-4">
+                <div className="card p-8 rounded-3xl text-center">
+                  <div className="mx-auto w-16 h-16 rounded-2xl bg-[#121418] flex items-center justify-center mb-4">
+                    <Heart className="text-[#14b8a6]" size={36} />
+                  </div>
+                  <div className="font-semibold text-xl mb-2">Aún no tienes matches</div>
+                  <p className="text-sm text-[#94a3b8] leading-snug mb-4 max-w-[280px] mx-auto">
+                    Desliza a la derecha en <span className="text-white font-medium">Explorar</span> sobre perfiles reales de otros testers. 
+                    Los matches y el chat 1:1 funcionan entre dispositivos distintos gracias a Firebase.
+                  </p>
+                  <button onClick={() => setActiveTab('explore')} className="btn-primary px-8">Ir a Explorar</button>
+                  <div className="mt-5 text-[10px] text-[#14b8a6]">Pre-Alpha real • Prueba con 2 cuentas en celulares diferentes</div>
+                </div>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
@@ -2118,7 +2118,13 @@ function App() {
               // List of chats
               <div className="overflow-auto flex-1 p-4">
                 <div className="text-2xl font-semibold tracking-[-1.2px] mb-5 px-1">Mensajes</div>
-                {matchProfiles.length === 0 && <div className="text-[#94a3b8] p-4">Cuando hagas match aparecerán aquí para chatear.</div>}
+                {matchProfiles.length === 0 && (
+                  <div className="mt-8 card p-6 rounded-3xl text-center">
+                    <MessageCircle className="mx-auto text-[#14b8a6] mb-3" size={36} />
+                    <div className="font-semibold mb-1">Sin conversaciones aún</div>
+                    <p className="text-sm text-[#94a3b8]">Haz match en Explorar con testers reales. Los chats 1:1 son reales y se sincronizan entre dispositivos.</p>
+                  </div>
+                )}
                 {matchProfiles
                   .filter(p => !blockedUsers.includes(p.id))
                   .map(profile => {
@@ -2270,311 +2276,185 @@ function App() {
           </div>
         )}
 
-        {/* ===== PROFILE - Clean and attractive for Pre-Alpha */}
-        {activeTab === 'profile' && (
-          <div className="flex-1 overflow-auto p-4">
-            <div className="flex justify-between items-center mb-4">
+        {/* ===== PROFILE - Premium Pre-Alpha experience (self-contained to prevent black screens) */}
+        {activeTab === 'profile' && currentUser && (
+          <div className="flex-1 overflow-auto bg-[#0a0b0f] pb-28">
+            {/* Sticky header with escape hatches */}
+            <div className="sticky top-0 z-20 bg-[#0a0b0f]/95 backdrop-blur border-b border-[#272b33] px-4 py-3 flex items-center justify-between">
               <div>
-                <div className="text-2xl font-semibold tracking-tight">Tu perfil</div>
-                {!isDemoMode && (
-                  <div className="text-[10px] text-[#14b8a6] -mt-0.5 font-medium">Sincronizado con backend real</div>
-                )}
+                <div className="text-xl font-semibold tracking-tight">Tu perfil</div>
+                {!isDemoMode && <div className="text-[10px] text-[#14b8a6] font-medium -mt-0.5">REAL • Sincronizado con Firebase</div>}
               </div>
-              <button onClick={handleLogout} className="text-xs text-[#f87171] border border-[#3f2a2a] px-3 py-1.5 rounded-2xl active:bg-[#1f1616]">
-                Cambiar cuenta
-              </button>
-            </div>
-
-            {/* Incomplete profile CTA - Prominent */}
-            {(!currentUser.bio || !currentUser.photos?.length || !currentUser.trainingTypes?.length) && (
-              <div className="mb-6 p-5 rounded-3xl bg-[#1f242b] border border-[#14b8a6]/40">
-                <div className="font-semibold text-lg mb-1.5 text-[#14b8a6]">Tu perfil está incompleto</div>
-                <p className="text-sm text-[#cbd5e1] mb-4 leading-snug">
-                  Completa tu bio, fotos y tipos de entrenamiento para que otros usuarios reales puedan encontrarte.
-                </p>
-                <button onClick={() => setShowOnboarding(true)} className="btn-primary w-full">
-                  Completar mi perfil ahora
-                </button>
+              <div className="flex gap-2">
+                <button onClick={handleLogout} className="text-xs px-3 py-1.5 rounded-2xl border border-[#3f2a2a] text-[#f87171] active:bg-[#1f1616]">Cambiar cuenta</button>
+                <button onClick={() => setShowOnboarding(true)} className="text-xs px-3 py-1.5 rounded-2xl bg-[#14b8a6] text-black font-semibold active:bg-[#0f9d8c]">Editar</button>
               </div>
-            )}
-
-            <div className="card p-5 mb-4">
-              <div className="text-xl font-semibold">{currentUser?.name || 'Usuario'}</div>
-              <div className="text-sm text-[#94a3b8] mt-0.5">{currentUser?.city}, {currentUser?.country}</div>
-              {currentUser?.bio && <p className="text-sm mt-3 text-white/90">{currentUser.bio}</p>}
             </div>
 
-            <div className="flex gap-3">
-              <button onClick={handleLogout} className="flex-1 py-3 text-sm text-[#f87171] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616]">
-                Cerrar sesión
-              </button>
-              <button onClick={() => setShowOnboarding(true)} className="flex-1 py-3 text-sm bg-[#14b8a6] text-black rounded-2xl font-semibold active:bg-[#0f9d8c]">
-                Editar perfil
-              </button>
-            </div>
-          </div>
-        )}
-
-            {isEditingProfile && (
-              <div className="card rounded-3xl p-5 mb-4 text-sm space-y-4">
-                <div>
-                  <div className="text-xs uppercase tracking-widest text-[#64748b] mb-1">Bio</div>
-                  <textarea 
-                    value={editBio} 
-                    onChange={e => setEditBio(e.target.value)} 
-                    className="w-full bg-[#121418] border border-[#272b33] rounded-2xl p-3 text-sm h-20 resize-y"
-                  />
+            {/* Hero photo with name overlay */}
+            <div className="relative h-64 w-full overflow-hidden bg-[#111]">
+              <img 
+                src={(currentUser.photos && currentUser.photos[0]) || 'https://picsum.photos/id/1005/600/800'} 
+                className="absolute inset-0 w-full h-full object-cover" 
+                onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/50 to-black" />
+              <div className="absolute bottom-0 left-0 right-0 p-5">
+                <div className="text-3xl font-bold tracking-[-1.5px] text-white">{currentUser.name}, {currentUser.age}</div>
+                <div className="text-[#14b8a6] text-sm mt-0.5 flex items-center gap-2">
+                  <MapPin size={14} /> {currentUser.city}, {currentUser.country} • {currentUser.level} • {currentUser.intensity || 'Moderado'}
                 </div>
-                <div>
-                  <div className="text-xs uppercase tracking-widest text-[#64748b] mb-1">Disponibilidad (separado por comas)</div>
-                  <input 
-                    value={editAvailability.join(', ')} 
-                    onChange={e => setEditAvailability(e.target.value.split(',').map(s => s.trim()).filter(Boolean))} 
-                    className="w-full bg-[#121418] border border-[#272b33] rounded-2xl p-3 text-sm" 
-                  />
-                </div>
-                <div>
-                  <div className="text-xs uppercase tracking-widest text-[#64748b] mb-1">Objetivos (separado por comas)</div>
-                  <input 
-                    value={editGoals.join(', ')} 
-                    onChange={e => setEditGoals(e.target.value.split(',').map(s => s.trim()).filter(Boolean))} 
-                    className="w-full bg-[#121418] border border-[#272b33] rounded-2xl p-3 text-sm" 
-                  />
-                </div>
-                <div className="text-[10px] text-[#64748b]">Guarda para aplicar los cambios en tu perfil visible.</div>
-              </div>
-            )}
-
-            <div className="card rounded-3xl overflow-hidden mb-4">
-              <div className="relative h-52 bg-[#111]">
-                <img 
-                  src={currentUser?.photos?.[0] || 'https://picsum.photos/id/1005/600/600'} 
-                  className="absolute inset-0 w-full h-full object-cover" 
-                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                />
-                <div className="absolute inset-0 bg-black/40" /> {/* Ensure content is readable */}
-                <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black/90">
-                  <div className="text-3xl font-semibold tracking-tight">{currentUser?.name}, {currentUser?.age}</div>
-                  <div className="text-[#14b8a6]">{currentUser?.city}, {currentUser?.country} • {currentUser?.level}</div>
-                </div>
-                {!currentUser?.photos?.length && (
-                  <div className="absolute inset-0 flex items-center justify-center text-[#94a3b8] text-sm">
-                    Sin foto de perfil
-                  </div>
-                )}
-              </div>
-              <div className="p-5 text-sm">
-                <div className="text-[#94a3b8] mb-1 text-xs">SOBRE TI</div>
-                <div>{currentUser?.bio || 'Aún no has escrito tu bio.'}</div>
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <div className="text-xs uppercase tracking-widest text-[#64748b] mb-2 px-1">Tus entrenamientos</div>
-              <div className="flex flex-wrap gap-2">
-                {(currentUser.trainingTypes || []).map(t => <div key={t} className="chip chip-active">{t}</div>)}
-                {(currentUser.trainingTypes || []).length === 0 && (
-                  <span className="text-xs text-[#64748b]">Aún no agregaste tipos de entrenamiento.</span>
-                )}
-              </div>
-            </div>
-
-            <div className="mb-4">
-              <div className="text-xs uppercase tracking-widest text-[#64748b] mb-2 px-1">Tus objetivos</div>
-              <div className="flex flex-wrap gap-2">
-                {(currentUser.goals || []).map(g => <div key={g} className="chip">{g}</div>)}
-                {(currentUser.goals || []).length === 0 && (
-                  <span className="text-xs text-[#64748b]">Aún no agregaste objetivos.</span>
-                )}
-              </div>
-            </div>
-
-            {/* User's Squads in Profile */}
-            {(() => {
-              const mySquads = squads.filter(sq => sq.members.includes(effectiveUserId))
-              if (mySquads.length === 0) return null
-              return (
-                <div className="mb-4">
-                  <div className="text-xs uppercase tracking-widest text-[#64748b] mb-2 px-1">Tus Squads</div>
-                  <div className="flex flex-wrap gap-2">
-                    {mySquads.map(sq => (
-                      <div 
-                        key={sq.id} 
-                        onClick={() => { setSelectedSquad(sq.id); setActiveTab('squads') }}
-                        className="chip cursor-pointer active:bg-[#14b8a6] active:text-black"
-                      >
-                        {sq.name}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })()}
-
-            <div className="card rounded-3xl p-5 mb-4 text-sm space-y-3">
-              <div className="flex justify-between"><span className="text-[#94a3b8]">Disponibilidad</span> <span>{currentUser.availability.join(', ')}</span></div>
-              <div className="flex justify-between"><span className="text-[#94a3b8]">Ubicación</span> <span>{currentUser.city}, {currentUser.country}</span></div>
-            </div>
-
-            {/* Disponible Hoy - Unique safety + utility feature */}
-            <div className="card rounded-3xl p-4 mb-4 flex items-center justify-between">
-              <div>
-                <div className="font-medium">¿Disponible para entrenar hoy?</div>
-                <div className="text-xs text-[#94a3b8]">Aparecerás en el filtro “Solo disponibles hoy”</div>
               </div>
               <button 
-                onClick={() => {
-                  const newVal = !currentUser.availableToday
-                  const updated = { ...currentUser, availableToday: newVal }
-                  saveUserWithRealSync(updated as CurrentUser)
-                  toast(newVal ? '¡Marcado como disponible hoy!' : 'Disponibilidad actualizada')
-                }}
-                className={`px-4 py-2 rounded-2xl text-sm font-medium transition ${currentUser.availableToday ? 'bg-[#14b8a6] text-black' : 'bg-[#121418] border border-[#272b33]'}`}
+                onClick={() => setShowOnboarding(true)}
+                className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/70 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-2xl border border-white/20"
               >
-                {currentUser.availableToday ? 'Sí, disponible hoy' : 'No disponible hoy'}
+                <Edit2 size={14} /> Editar todo
               </button>
             </div>
 
-            {/* Profile Verification - Now a serious multi-step process */}
-            <div className="card rounded-3xl p-4 mb-4">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <div className="font-medium flex items-center gap-2">
-                    Verificación de identidad
-                    {currentUser.verificationStatus === 'verified' && (
-                      <span className="text-[#22c55e] font-bold">✓ Verificado</span>
-                    )}
-                    {currentUser.verificationStatus === 'pending' && (
-                      <span className="text-yellow-400 font-bold">⏳ En revisión</span>
-                    )}
+            {/* Photo gallery strip */}
+            {currentUser.photos && currentUser.photos.length > 1 && (
+              <div className="px-4 py-3 flex gap-2 overflow-x-auto bg-[#0a0b0f] border-b border-[#272b33]">
+                {currentUser.photos.map((photo: string, idx: number) => (
+                  <div key={idx} className="flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border border-[#272b33] shadow">
+                    <img src={photo} className="w-full h-full object-cover" />
                   </div>
-                  <div className="text-xs text-[#94a3b8]">
-                    {currentUser.verificationStatus === 'verified' 
-                      ? `Verificado el ${new Date(currentUser.verificationDate || 0).toLocaleDateString()}`
-                      : 'Aumenta significativamente la confianza de otros usuarios'}
-                  </div>
-                </div>
+                ))}
               </div>
+            )}
 
-              {currentUser.verificationStatus !== 'verified' && (
-                <button 
-                  onClick={() => {
-                    setShowVerificationFlow(true)
-                    setVerificationStep(1)
-                    setVerificationIdPhoto(null)
-                    setVerificationSelfie(null)
-                  }}
-                  className="w-full mt-2 bg-[#14b8a6] text-black py-2.5 rounded-2xl text-sm font-semibold"
-                >
-                  {currentUser.verificationStatus === 'pending' ? 'Ver estado de verificación' : 'Iniciar verificación de identidad'}
-                </button>
-              )}
+            {/* Incomplete CTA */}
+            {(!currentUser.bio || !currentUser.photos?.length || !currentUser.trainingTypes?.length) && (
+              <div className="mx-4 mt-4 p-4 rounded-3xl bg-[#1f242b] border border-[#14b8a6]/40">
+                <div className="text-[#14b8a6] font-semibold mb-1">Perfil incompleto</div>
+                <p className="text-sm text-[#cbd5e1] mb-3">Agrega bio, fotos y tipos de entrenamiento para aparecer en Explorar de otros usuarios reales.</p>
+                <button onClick={() => setShowOnboarding(true)} className="btn-primary w-full text-sm py-2">Completar mi perfil ahora</button>
+              </div>
+            )}
 
-              {currentUser.verificationStatus === 'verified' && (
-                <div className="mt-2 text-[10px] text-[#22c55e]">
-                  Tu perfil muestra el badge de verificado en swipe, matches y sesiones.
-                </div>
-              )}
+            {/* Bio */}
+            <div className="px-4 mt-4">
+              <div className="card p-4">
+                <div className="uppercase text-[10px] tracking-[1px] text-[#64748b] mb-1.5">Sobre mí</div>
+                <p className="text-[15px] leading-snug text-white/95">{currentUser.bio || 'Todavía no has escrito tu bio. ¡Cuéntale al mundo por qué entrenas!'}</p>
+              </div>
             </div>
 
-            {/* Real stats */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
+            {/* Stats row */}
+            <div className="px-4 mt-4 grid grid-cols-3 gap-3">
               {[
-                {label:'Matches', val: matches.length},
-                {label:'Reseñas recibidas', val: Object.values(reviews).flat().filter(r => r.reviewerId !== 'me').length},
-                {label:'Sesiones totales', val: Object.values(reviews).flat().length}
-              ].map((s,i) => (
-                <div key={i} className="card rounded-2xl p-4 text-center">
-                  <div className="text-2xl font-semibold text-[#14b8a6]">{s.val}</div>
-                  <div className="text-xs text-[#94a3b8]">{s.label}</div>
+                { label: 'Matches', value: matches?.length || 0 },
+                { label: 'Sesiones', value: squads?.length || 0 },
+                { label: 'Nivel', value: currentUser.level || '—' }
+              ].map((stat, i) => (
+                <div key={i} className="card p-3 text-center rounded-2xl">
+                  <div className="text-2xl font-semibold text-[#14b8a6]">{stat.value}</div>
+                  <div className="text-[10px] text-[#94a3b8] mt-0.5">{stat.label}</div>
                 </div>
               ))}
             </div>
 
-            <div className="card rounded-2xl p-4 mb-4 text-sm">
-              <div className="text-xs uppercase tracking-widest text-[#64748b] mb-2">Legal y seguridad</div>
-              <div className="flex flex-col gap-1 text-[#14b8a6]">
-                <button onClick={() => setShowLegal('terms')} className="text-left py-1 hover:underline">Términos de Servicio</button>
-                <button onClick={() => setShowLegal('privacy')} className="text-left py-1 hover:underline">Política de Privacidad</button>
-                <button onClick={() => setShowLegal('community')} className="text-left py-1 hover:underline">Directrices de la Comunidad ({LEGAL_VERSIONS.community})</button>
-                <button 
-                  onClick={() => setShowModerationPanel(true)} 
-                  className="text-left py-1 hover:underline text-yellow-400"
-                >
-                  Panel de Moderación (Demo)
-                </button>
+            {/* Training Types */}
+            <div className="px-4 mt-4">
+              <div className="text-xs uppercase tracking-widest text-[#64748b] mb-2 px-1">Tipos de entrenamiento</div>
+              <div className="flex flex-wrap gap-2">
+                {(currentUser.trainingTypes || []).length > 0 ? (
+                  currentUser.trainingTypes.map((t: string) => <div key={t} className="chip chip-active text-xs px-3 py-1">{t}</div>)
+                ) : <span className="text-xs text-[#64748b]">Sin tipos seleccionados</span>}
               </div>
+            </div>
 
-              {/* Legal consent history (for compliance) */}
-              {currentUser.legalConsents && (
-                <div className="mt-4 pt-4 border-t border-[#272b33] text-xs">
-                  <div className="text-[#64748b] mb-1">Consentimientos aceptados</div>
-                  <div className="text-[#cbd5e1]">
-                    {new Date(currentUser.legalConsents.acceptedAt).toLocaleDateString()} — 
-                    Términos {currentUser.legalConsents.termsVersion}, 
-                    Privacidad {currentUser.legalConsents.privacyVersion}
+            {/* Goals */}
+            <div className="px-4 mt-3">
+              <div className="text-xs uppercase tracking-widest text-[#64748b] mb-2 px-1">Objetivos</div>
+              <div className="flex flex-wrap gap-2">
+                {(currentUser.goals || []).length > 0 ? (
+                  currentUser.goals.map((g: string) => <div key={g} className="chip text-xs px-3 py-1">{g}</div>)
+                ) : <span className="text-xs text-[#64748b]">Sin objetivos aún</span>}
+              </div>
+            </div>
+
+            {/* Availability + Disponible hoy */}
+            <div className="px-4 mt-4 card p-4 space-y-3">
+              <div className="flex justify-between text-sm">
+                <span className="text-[#94a3b8]">Disponibilidad</span>
+                <span className="text-right text-white/90">{(currentUser.availability || []).join(' • ') || 'No especificada'}</span>
+              </div>
+              <div>
+                <button 
+                  onClick={() => {
+                    const newVal = !currentUser.availableToday
+                    const updated = { ...currentUser, availableToday: newVal }
+                    saveUserWithRealSync(updated as CurrentUser)
+                    toast(newVal ? '¡Marcado como disponible hoy!' : 'Disponibilidad actualizada')
+                  }}
+                  className={`w-full py-2.5 rounded-2xl text-sm font-semibold transition ${currentUser.availableToday ? 'bg-[#14b8a6] text-black' : 'bg-[#121418] border border-[#272b33] text-white'}`}
+                >
+                  {currentUser.availableToday ? '✓ Disponible para entrenar hoy' : 'No disponible hoy'}
+                </button>
+                <div className="text-[10px] text-center text-[#64748b] mt-1">Otros usuarios te verán en el filtro “Solo disponibles hoy”</div>
+              </div>
+            </div>
+
+            {/* Verification status */}
+            <div className="px-4 mt-4">
+              <div className="card p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium flex items-center gap-2 text-sm">Verificación de identidad
+                      {currentUser.verificationStatus === 'verified' && <span className="text-[#22c55e] text-xs">✓ Verificado</span>}
+                      {currentUser.verificationStatus === 'pending' && <span className="text-yellow-400 text-xs">En revisión</span>}
+                    </div>
+                    <div className="text-xs text-[#94a3b8] mt-0.5">Aumenta la confianza de otros usuarios reales</div>
                   </div>
                 </div>
-              )}
-            </div>
-
-            <button 
-              onClick={handleLogout}
-              className="w-full flex items-center justify-center gap-2 py-3 text-sm text-[#f87171] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616] mb-3"
-            >
-              Cerrar sesión / Cambiar de cuenta
-            </button>
-
-            <button 
-              onClick={() => {
-                localStorage.clear()
-                window.location.reload()
-              }} 
-              className="w-full flex items-center justify-center gap-2 py-3 text-sm text-[#ef4444] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616]"
-            >
-              <RefreshCw size={16} /> Restablecer toda la app (borrar datos)
-            </button>
-
-            {/* Blocked users management */}
-            {blockedUsers.length > 0 && (
-              <div className="mt-6">
-                <div className="text-xs uppercase tracking-widest text-[#64748b] mb-2 px-1">Usuarios bloqueados ({blockedUsers.length})</div>
-                <div className="space-y-1">
-                  {blockedUsers.map(userId => {
-                    const user = SEED_PROFILES.find(p => p.id === userId)
-                    return (
-                      <div key={userId} className="flex justify-between items-center bg-[#121418] px-3 py-2 rounded-xl text-sm">
-                        <span>{user?.name || 'Usuario'}</span>
-                        <button 
-                          onClick={() => unblockUser(userId)}
-                          className="text-xs text-[#14b8a6] hover:underline"
-                        >
-                          Desbloquear
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className="text-center text-[10px] text-[#475569] mt-6">EntrenaMatch • Solo para mayores de 18 años • Demo 2026</div>
-
-            {/* Cómo participar en la Pre-Alpha */}
-            <div className="mt-6 card rounded-3xl p-5 text-sm">
-              <div className="font-semibold text-[#14b8a6] mb-3 flex items-center gap-2">
-                <span>📋</span> Cómo participar en esta Pre-Alpha
-              </div>
-              <div className="text-[#cbd5e1] space-y-2 text-sm">
-                <p><strong>1. Explora y conecta</strong><br />Desliza en Explorar, haz match y chatea. Ese es el flujo principal que estamos probando.</p>
-                <p><strong>2. Prueba todo</strong><br />Crea sesiones, únete a squads, edita tu perfil, usa los filtros. Cuanto más uses, mejor.</p>
-                <p><strong>3. Sé honesto</strong><br />Si algo se siente raro, lento, confuso o roto → cuéntanos. Los bugs y las molestias son oro en esta etapa.</p>
-                <p><strong>4. Reinicia cuando quieras</strong><br />Usa el botón <strong>RESET TODO</strong> del banner superior para empezar de cero cuando lo necesites.</p>
-              </div>
-              <div className="mt-4 pt-3 border-t border-[#272b33] text-xs text-[#94a3b8]">
-                Feedback directo → <a href="https://github.com/musclegrenadechile/entrenamatch/issues" target="_blank" className="underline hover:text-[#14b8a6]">GitHub Issues</a>
+                {currentUser.verificationStatus !== 'verified' && (
+                  <button onClick={() => { setShowVerificationFlow(true); setVerificationStep(1); }} className="mt-3 w-full bg-[#14b8a6] text-black py-2 rounded-2xl text-sm font-semibold">
+                    {currentUser.verificationStatus === 'pending' ? 'Ver estado' : 'Iniciar verificación'}
+                  </button>
+                )}
               </div>
             </div>
+
+            {/* Legal & safety */}
+            <div className="px-4 mt-4 card p-4 text-sm">
+              <div className="text-xs uppercase tracking-widest text-[#64748b] mb-2">Legal y seguridad</div>
+              <div className="flex flex-col gap-1 text-[#14b8a6] text-sm">
+                <button onClick={() => setShowLegal('terms')} className="text-left py-0.5">Términos de Servicio</button>
+                <button onClick={() => setShowLegal('privacy')} className="text-left py-0.5">Política de Privacidad</button>
+                <button onClick={() => setShowLegal('community')} className="text-left py-0.5">Directrices de la Comunidad</button>
+              </div>
+            </div>
+
+            {/* Multiple prominent logout / escape hatches (never trapped) */}
+            <div className="px-4 mt-5 space-y-2">
+              <button onClick={handleLogout} className="w-full py-3 text-sm font-semibold text-[#f87171] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616]">
+                Cerrar sesión / Cambiar de cuenta
+              </button>
+              <button onClick={handleLogout} className="w-full py-3 text-sm font-semibold text-[#f87171] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616]">
+                Salir y volver a la pantalla de login
+              </button>
+              <button 
+                onClick={() => { localStorage.clear(); window.location.reload() }} 
+                className="w-full py-2.5 text-xs text-[#ef4444] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616]"
+              >
+                Restablecer toda la app (borrar datos locales)
+              </button>
+            </div>
+
+            {/* Pre-Alpha micro guidance */}
+            <div className="px-4 mt-6 mb-8">
+              <div className="card p-4 text-xs text-[#94a3b8] leading-snug">
+                <span className="font-semibold text-[#14b8a6]">Pre-Alpha activa:</span> Tus datos reales se sincronizan entre dispositivos vía Firebase. 
+                Usa "Cambiar cuenta" arriba o el botón rojo flotante si quieres probar con otra cuenta. ¡Gracias por testear!
+              </div>
+              <div className="text-center text-[10px] text-[#475569] mt-4">EntrenaMatch • Solo +18 • Backend real 2026</div>
+            </div>
+          </div>
+        )}
+
+            {/* DUPLICATE ORPHAN PROFILE JSX REMOVED — all rich Profile UI now lives cleanly inside the activeTab==='profile' conditional (prevents black screens, duplicate renders, and JSX imbalance) */}
 
             {/* Pre-Alpha Welcome Modal */}
             {showPreAlphaWelcome && (
@@ -3751,28 +3631,27 @@ function App() {
               onClick={e => e.stopPropagation()}
               className="w-full max-w-[420px] bg-[#0a0b0f] rounded-t-3xl md:rounded-3xl overflow-hidden flex flex-col h-[85vh] md:h-[620px] border border-[#272b33] shadow-2xl"
             >
-              {/* Modal Header - Premium look */}
-              <div className="p-4 border-b border-[#272b33] bg-[#121418] flex items-center justify-between shadow-sm">
-                <div className="flex items-center gap-2">
-                  <div>
-                    <div className="font-semibold text-lg">
-                      {sessions.find(s => s.id === showGroupChatModalFor)?.title}
-                    </div>
-                    <div className="text-xs text-[#14b8a6] flex items-center gap-2">
-                      Chat grupal • {sessions.find(s => s.id === showGroupChatModalFor)?.participants.length} participantes
-                      {!isDemoMode && firebaseUser?.uid && <span className="px-1.5 py-0.5 bg-[#14b8a6] text-black rounded text-[9px] font-bold">REAL</span>}
-                    </div>
+              {/* Modal Header - Premium Pre-Alpha */}
+              <div className="p-4 border-b border-[#272b33] bg-[#121418] flex items-center justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-lg truncate pr-2">
+                    {sessions.find(s => s.id === showGroupChatModalFor)?.title || 'Sesión grupal'}
                   </div>
-                  {!isDemoMode && firebaseUser?.uid && (
-                    <button 
-                      onClick={() => loadRealGroupMessages(showGroupChatModalFor)}
-                      className="text-[10px] px-2 py-1 border border-[#272b33] rounded-lg text-[#14b8a6] active:bg-[#1a1d23]"
-                    >
-                      Actualizar
-                    </button>
-                  )}
+                  <div className="flex items-center gap-2 text-xs mt-0.5">
+                    <span className="text-[#14b8a6]">Chat grupal</span>
+                    <span className="text-[#64748b]">•</span>
+                    <span className="text-[#cbd5e1]">{(sessions.find(s => s.id === showGroupChatModalFor)?.participants || []).length} participantes</span>
+                    {!isDemoMode && firebaseUser?.uid && (
+                      <span className="ml-1 px-1.5 py-px bg-[#14b8a6] text-black rounded text-[9px] font-extrabold tracking-wide">REAL EN VIVO</span>
+                    )}
+                  </div>
                 </div>
-                <button onClick={() => setShowGroupChatModalFor(null)} className="text-2xl leading-none text-[#94a3b8] hover:text-white">×</button>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {!isDemoMode && firebaseUser?.uid && (
+                    <button onClick={() => loadRealGroupMessages(showGroupChatModalFor)} className="text-[10px] px-2.5 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23]">Actualizar</button>
+                  )}
+                  <button onClick={() => setShowGroupChatModalFor(null)} className="text-3xl leading-none text-[#64748b] hover:text-white px-1">×</button>
+                </div>
               </div>
 
               <div className="flex flex-1 overflow-hidden">
@@ -3802,83 +3681,72 @@ function App() {
                 <div className="flex-1 flex flex-col">
                   <div className="flex-1 overflow-auto p-4 space-y-3 text-sm bg-[#0a0b0f]" id="group-chat-scroll">
                     {(sessionMessages[showGroupChatModalFor] || []).length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-full text-center text-[#64748b]">
-                        <div className="w-12 h-12 rounded-full bg-[#121418] flex items-center justify-center mb-3">
-                          💬
-                        </div>
-                        <div className="text-sm">Aún no hay mensajes</div>
-                        <div className="text-xs mt-1">Sé el primero en escribir algo</div>
+                      <div className="flex flex-col items-center justify-center h-full text-center text-[#64748b] px-6">
+                        <div className="w-14 h-14 rounded-2xl bg-[#121418] flex items-center justify-center mb-4 text-3xl">💬</div>
+                        <div className="font-medium text-white">Aún no hay mensajes en el grupo</div>
+                        <div className="text-xs mt-1.5 max-w-[240px]">Sé el primero en romper el hielo. Los mensajes son reales y se ven en todos los dispositivos del grupo.</div>
+                        {!isDemoMode && <div className="mt-3 text-[10px] text-[#14b8a6]">Pre-Alpha • Sincronización en vivo vía Firebase</div>}
                       </div>
                     ) : (
                       (sessionMessages[showGroupChatModalFor] || []).map((msg, i) => {
                         const isMe = msg.senderId === effectiveUserId
-                        const isCreator = sessions.find(s => s.id === showGroupChatModalFor)?.creatorId === msg.senderId
+                        const session = sessions.find(s => s.id === showGroupChatModalFor)
+                        const isCreator = session?.creatorId === msg.senderId
+                        const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''
                         return (
-                          <div key={i} className={`flex ${isMe ? 'justify-end' : ''}`}>
-                            <div className={`max-w-[78%] group ${isMe ? 'text-right' : ''}`}>
-                              <div className="text-[10px] text-[#64748b] mb-0.5 px-1 flex items-center gap-1 justify-end">
-                                {isCreator && <span className="text-[#14b8a6]">★</span>}
-                                {msg.senderName}
-                              </div>
-                              <div className={`px-3 py-2 rounded-2xl inline-block ${isMe ? 'bg-[#14b8a6] text-black' : 'bg-[#1f242b]'}`}>
+                          <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
+                            <div className={`max-w-[82%] ${isMe ? 'text-right' : ''}`}>
+                              {!isMe && (
+                                <div className="text-[10px] text-[#64748b] mb-0.5 px-1 flex items-center gap-1">
+                                  {isCreator && <span className="text-[#14b8a6]">★ </span>}
+                                  <span>{msg.senderName}</span>
+                                  {time && <span className="text-[#475569] ml-1">· {time}</span>}
+                                </div>
+                              )}
+                              {isMe && time && <div className="text-[10px] text-[#475569] mb-0.5 px-1 text-right">{time}</div>}
+                              <div className={`px-3.5 py-2 rounded-3xl inline-block text-[14px] leading-snug shadow ${isMe ? 'bg-[#14b8a6] text-black rounded-br-md' : 'bg-[#1f242b] text-white rounded-bl-md'}`}>
                                 {msg.text}
-                                {msg.photo && <img src={msg.photo} className="mt-2 max-w-[180px] rounded-lg" />}
+                                {msg.photo && <img src={msg.photo} className="mt-2 max-w-[200px] rounded-xl border border-white/10" />}
                               </div>
 
-                              {/* Reactions */}
-                              <div className="flex gap-1 mt-1 text-xs">
+                              {/* Reactions row */}
+                              <div className="flex gap-1 mt-1 text-xs justify-end">
                                 {['👍', '🔥', '💪', '👏'].map(emoji => {
                                   const reactors = msg.reactions?.[emoji] || []
                                   const hasReacted = reactors.includes(currentUser?.name || '')
                                   return (
-                                    <button
-                                      key={emoji}
-                                      onClick={() => {
-                                        const updated = { ...sessionMessages }
-                                        const msgs = updated[showGroupChatModalFor] || []
-                                        const targetMsg = { ...msgs[i] }
-                                        targetMsg.reactions = { ...(targetMsg.reactions || {}) }
-
-                                        if (!targetMsg.reactions[emoji]) targetMsg.reactions[emoji] = []
-
-                                        const safeName = currentUser?.name || 'Tú';
-                                        if (hasReacted) {
-                                          targetMsg.reactions[emoji] = targetMsg.reactions[emoji].filter(n => n !== safeName)
-                                        } else {
-                                          targetMsg.reactions[emoji].push(safeName)
-                                        }
-
-                                        msgs[i] = targetMsg
-                                        saveSessionMessages(updated)
-                                      }}
-                                      className={`px-1.5 py-0.5 rounded ${hasReacted ? 'bg-[#14b8a6]/30' : 'hover:bg-[#1f242b]'}`}
-                                    >
+                                    <button key={emoji} onClick={() => {
+                                      const updated = { ...sessionMessages }
+                                      const msgs = updated[showGroupChatModalFor] || []
+                                      const targetMsg = { ...msgs[i] }
+                                      targetMsg.reactions = { ...(targetMsg.reactions || {}) }
+                                      if (!targetMsg.reactions[emoji]) targetMsg.reactions[emoji] = []
+                                      const safeName = currentUser?.name || 'Tú'
+                                      targetMsg.reactions[emoji] = hasReacted 
+                                        ? targetMsg.reactions[emoji].filter(n => n !== safeName)
+                                        : [...targetMsg.reactions[emoji], safeName]
+                                      msgs[i] = targetMsg
+                                      saveSessionMessages(updated)
+                                    }} className={`px-1.5 py-px rounded ${hasReacted ? 'bg-[#14b8a6]/30 text-[#14b8a6]' : 'hover:bg-[#1f242b] text-[#94a3b8]'}`}>
                                       {emoji}{reactors.length > 0 ? ` ${reactors.length}` : ''}
                                     </button>
                                   )
                                 })}
-                              </div>
-
-                              {/* Delete button - only for creator */}
-                              {sessions.find(s => s.id === showGroupChatModalFor)?.creatorId === 'me' && (
-                                <button 
-                                  onClick={() => {
+                                {/* Delete only for session creator - fixed to use effectiveUserId for cross-device */}
+                                {(session?.creatorId === effectiveUserId || session?.creatorId === 'me') && (
+                                  <button onClick={() => {
                                     const updated = { ...sessionMessages }
                                     updated[showGroupChatModalFor] = updated[showGroupChatModalFor].filter((_, idx) => idx !== i)
                                     saveSessionMessages(updated)
-                                  }}
-                                  className="text-[10px] text-[#ef4444] opacity-0 group-hover:opacity-100 ml-2"
-                                >
-                                  eliminar
-                                </button>
-                              )}
+                                  }} className="text-[10px] text-[#ef4444] opacity-0 group-hover:opacity-100 ml-2">eliminar</button>
+                                )}
+                              </div>
                             </div>
                           </div>
                         )
                       })
                     )}
 
-                    {/* Typing indicator */}
                     {isTyping && (
                       <div className="flex items-center gap-2 text-[#94a3b8] text-xs px-2 mt-1">
                         <div className="flex gap-1">
@@ -3891,12 +3759,13 @@ function App() {
                     )}
                   </div>
 
-                  {/* Input + Photo for group chat - Cleaner, more modern */}
+                  {/* Input area - Premium modern */}
                   <div className="p-3 border-t border-[#272b33] bg-[#121418]">
                     {groupChatPhoto && (
-                      <div className="mb-2 flex items-center gap-2">
-                        <img src={groupChatPhoto} className="w-12 h-12 object-cover rounded-lg" />
-                        <button onClick={() => setGroupChatPhoto(null)} className="text-xs text-red-400">Quitar foto</button>
+                      <div className="mb-2 flex items-center gap-2 bg-[#0a0b0f] p-2 rounded-2xl border border-[#272b33]">
+                        <img src={groupChatPhoto} className="w-10 h-10 object-cover rounded-xl" />
+                        <div className="flex-1 text-xs text-[#94a3b8]">Foto lista para enviar</div>
+                        <button onClick={() => setGroupChatPhoto(null)} className="text-xs px-2 py-1 text-red-400 hover:text-red-500">Quitar</button>
                       </div>
                     )}
 
@@ -3906,38 +3775,33 @@ function App() {
                         if ((chatInputValue.trim() || groupChatPhoto) && showGroupChatModalFor) {
                           sendSessionMessage(showGroupChatModalFor, chatInputValue, groupChatPhoto)
                           setChatInputValue('')
+                          setGroupChatPhoto(null)
                         }
                       }}
-                      className="flex gap-2"
+                      className="flex gap-2 items-center"
                     >
                       <input 
                         type="text" 
                         value={chatInputValue}
                         onChange={(e) => setChatInputValue(e.target.value)}
-                        placeholder="Escribe al grupo..."
+                        placeholder="Mensaje para el grupo..."
                         className="flex-1 bg-[#0a0b0f] border border-[#272b33] rounded-3xl px-5 py-3 text-sm outline-none placeholder:text-[#64748b]" 
                       />
 
-                      {/* Photo upload button for chat */}
-                      <label className="cursor-pointer flex items-center justify-center bg-[#121418] border border-[#272b33] px-3 rounded-3xl text-sm hover:bg-[#1f242b]">
-                        📷
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          className="hidden" 
-                          onChange={(e) => {
-                            const file = e.target.files?.[0]
-                            if (file) {
-                              const reader = new FileReader()
-                              reader.onload = () => setGroupChatPhoto(reader.result as string)
-                              reader.readAsDataURL(file)
-                            }
-                          }}
-                        />
+                      <label className="cursor-pointer flex items-center justify-center w-11 h-11 bg-[#121418] border border-[#272b33] rounded-3xl text-lg hover:bg-[#1f242b] active:scale-95 transition">📷
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            const reader = new FileReader()
+                            reader.onload = () => setGroupChatPhoto(reader.result as string)
+                            reader.readAsDataURL(file)
+                          }
+                        }} />
                       </label>
 
-                      <button type="submit" className="bg-[#14b8a6] text-black px-5 rounded-3xl font-medium text-sm">Enviar</button>
+                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto} className="bg-[#14b8a6] disabled:bg-[#272b33] disabled:text-[#64748b] text-black px-6 rounded-3xl font-semibold text-sm h-11 active:bg-[#0f9d8c] transition">Enviar</button>
                     </form>
+                    <div className="text-center text-[9px] text-[#475569] mt-1.5">Los mensajes se sincronizan en tiempo real entre todos los participantes</div>
                   </div>
                 </div>
               </div>
