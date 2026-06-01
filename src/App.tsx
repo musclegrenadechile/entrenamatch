@@ -2740,22 +2740,42 @@ function App() {
                 <button onClick={resetFilters} className="text-[#14b8a6] text-sm font-medium active:opacity-70">Limpiar todo</button>
               </div>
 
-              {/* Active filters summary */}
+              {/* Active filters summary - tappable to remove */}
               {(filters.trainingTypes.length > 0 || filters.availability.length > 0 || filters.gender !== 'todos' || filters.onlyAvailableToday) && (
                 <div className="mb-5 flex flex-wrap gap-1.5">
                   {filters.trainingTypes.map(t => (
-                    <div key={t} className="text-[10px] bg-[#14b8a6]/15 text-[#14b8a6] px-2.5 py-0.5 rounded-full">{t}</div>
+                    <button 
+                      key={t} 
+                      onClick={() => toggleFilterTraining(t)}
+                      className="text-[10px] bg-[#14b8a6]/15 text-[#14b8a6] px-2.5 py-0.5 rounded-full active:bg-[#14b8a6]/30 flex items-center gap-1"
+                    >
+                      {t} <span className="text-xs">×</span>
+                    </button>
                   ))}
                   {filters.availability.map(a => (
-                    <div key={a} className="text-[10px] bg-[#14b8a6]/15 text-[#14b8a6] px-2.5 py-0.5 rounded-full">{a}</div>
+                    <button 
+                      key={a} 
+                      onClick={() => toggleFilterAvailability(a)}
+                      className="text-[10px] bg-[#14b8a6]/15 text-[#14b8a6] px-2.5 py-0.5 rounded-full active:bg-[#14b8a6]/30 flex items-center gap-1"
+                    >
+                      {a} <span className="text-xs">×</span>
+                    </button>
                   ))}
                   {filters.gender !== 'todos' && (
-                    <div className="text-[10px] bg-[#14b8a6]/15 text-[#14b8a6] px-2.5 py-0.5 rounded-full">
-                      {filters.gender === 'hombre' ? 'Hombres' : 'Mujeres'}
-                    </div>
+                    <button 
+                      onClick={() => setFilters(f => ({...f, gender: 'todos'}))}
+                      className="text-[10px] bg-[#14b8a6]/15 text-[#14b8a6] px-2.5 py-0.5 rounded-full active:bg-[#14b8a6]/30 flex items-center gap-1"
+                    >
+                      {filters.gender === 'hombre' ? 'Hombres' : 'Mujeres'} <span className="text-xs">×</span>
+                    </button>
                   )}
                   {filters.onlyAvailableToday && (
-                    <div className="text-[10px] bg-[#22c55e]/15 text-[#22c55e] px-2.5 py-0.5 rounded-full">Disponibles hoy</div>
+                    <button 
+                      onClick={() => setFilters(f => ({...f, onlyAvailableToday: false}))}
+                      className="text-[10px] bg-[#22c55e]/15 text-[#22c55e] px-2.5 py-0.5 rounded-full active:bg-[#22c55e]/30 flex items-center gap-1"
+                    >
+                      Disponibles hoy <span className="text-xs">×</span>
+                    </button>
                   )}
                 </div>
               )}
@@ -2842,19 +2862,41 @@ function App() {
               </div>
 
               <div className="mb-6">
-                <div className="text-sm font-medium mb-2">Tipo de entrenamiento</div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium">Tipo de entrenamiento</div>
+                  {filters.trainingTypes.length > 0 && (
+                    <div className="text-[10px] text-[#14b8a6]">{filters.trainingTypes.length} seleccionados</div>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {TRAINING_OPTIONS.map(t => (
-                    <button key={t} onClick={() => toggleFilterTraining(t)} className={`chip text-xs ${filters.trainingTypes.includes(t) ? 'chip-active' : ''}`}>{t}</button>
+                    <button 
+                      key={t} 
+                      onClick={() => toggleFilterTraining(t)} 
+                      className={`chip text-xs ${filters.trainingTypes.includes(t) ? 'chip-active' : ''}`}
+                    >
+                      {t}
+                    </button>
                   ))}
                 </div>
               </div>
 
               <div className="mb-8">
-                <div className="text-sm font-medium mb-2">Disponibilidad</div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-sm font-medium">Disponibilidad</div>
+                  {filters.availability.length > 0 && (
+                    <div className="text-[10px] text-[#14b8a6]">{filters.availability.length} seleccionadas</div>
+                  )}
+                </div>
                 <div className="flex flex-wrap gap-2">
                   {AVAILABILITY.map(a => (
-                    <button key={a} onClick={() => toggleFilterAvailability(a)} className={`chip text-xs ${filters.availability.includes(a) ? 'chip-active' : ''}`}>{a}</button>
+                    <button 
+                      key={a} 
+                      onClick={() => toggleFilterAvailability(a)} 
+                      className={`chip text-xs ${filters.availability.includes(a) ? 'chip-active' : ''}`}
+                    >
+                      {a}
+                    </button>
                   ))}
                 </div>
               </div>
