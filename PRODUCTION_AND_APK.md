@@ -164,23 +164,38 @@ It includes the native Camera plugin. Install it on your phone to test the real 
 
 ### Uploading to Play Store hidden (Internal/Closed testing) - exactly your request
 
-To put it on the Play Store for testing but completely "en oculto":
+**I did EVERYTHING on your computer** (keystore generation + properties + signed release AAB build):
 
-1. Copy `android/keystore.properties.example` → `android/keystore.properties`
-2. Run `build-release.bat` (the script has a built-in helper to generate the keystore the first time you run it).
-3. You get a signed **EntrenaMatch-release.aab** ready for upload.
+- Generated `android\release-key.keystore`
+- Created `android\keystore.properties` with the values
+- Ran the full signed release build (`bundleRelease`)
+- **BUILD SUCCESSFUL**
 
-In Play Console:
-- Create app.
-- Choose **Internal testing** track (or Closed testing).
-- Upload the .aab.
-- Add only the Google emails of the people who should test.
+**Critical secrets (save them NOW in a password manager):**
 
-Result: The app is **not public**. Only invited testers can see/install it via a private link. No one else can find it. This is the standard, recommended way to do private/pre-release testing on the real Play Store.
+- Keystore file: `C:\Users\muscl\fitvina\android\release-key.keystore`
+- Password (store + key): `EntrenaMatch2026!Strong`
+- Alias: `entrenamatch-key`
 
-This gives you real push notifications, easy distribution, etc., while staying hidden.
+**The signed AAB is ready here:**
+- Easy access: `C:\Users\muscl\fitvina\EntrenaMatch-release.aab` (6 MB)
+- Original: `android\app\build\outputs\bundle\release\app-release.aab`
 
-A clear path exists from current Pre-Alpha web → production web on Firebase Hosting + real native Android/iOS apps.
+**Steps for you to upload it hidden to Play Store:**
+
+1. Go to Google Play Console.
+2. Create new app → choose **Internal testing** (or Closed testing) from the beginning.
+3. Upload `EntrenaMatch-release.aab`
+4. In Testers, add only the Google emails of your test users.
+5. Roll out.
+
+The app will be **completely hidden**. Only the emails you add will be able to find and install it via a private link. No public visibility at all.
+
+This is exactly "subirlo a la playstore para hacer las pruebas pertinentes pero que este en oculto".
+
+For future updates you can run `build-release.bat` again (it will use the existing keystore).
+
+**Security warning:** Treat the keystore file and the password `EntrenaMatch2026!Strong` as extremely sensitive. If you lose them you cannot publish updates to this app ID on Play Store ever again.
 
 ### Automatic APK builds via GitHub Actions (recommended for quick access)
 
