@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continue (real 1:1 msg delivery fixed via match listeners+polling+manual reload so real accounts receive; lastSync header real-only; distance+REAL recs; session form bug; declutter). Pushed 5bb9c6c. **PHASE 0 SIGN-OFF READY** (continua).
+Last updated: Phase 0 continue (fixed like/match permissions error by adding /likes rule and tightening matches create; real 1:1 delivery; Explore polish; session form bug). Pushed fcbb811. **PHASE 0 SIGN-OFF READY** (continua). Note: after this, deploy rules: firebase deploy --only firestore:rules (or via CI if secret set).
