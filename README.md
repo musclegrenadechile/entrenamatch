@@ -34,6 +34,25 @@ Puedes probar la aplicación directamente aquí (versión pública de prueba):
 - Todos los datos se guardan solo en tu navegador (se pierden al limpiar caché o usar modo incógnito).
 - Ideal para probar swipe, squads, sesiones, chat grupal y reseñas.
 
+## Pre-Alpha Real (Backend Firebase activo — para testers)
+La versión en GitHub Pages ahora soporta **cuentas reales multi-usuario** con Firebase Auth + Firestore (sobrevive hard refresh y funciona cross-device).
+
+- Crea cuenta real con email.
+- Completa onboarding (incluye cámara nativa si usas la APK).
+- Perfiles reales visibles en Explorar para otros testers.
+- Matches, chat 1:1 y sesiones + chat grupal reales.
+- Escape hatches siempre visibles (barra superior teal + "Cambiar cuenta" en Perfil).
+- Feedback estructurado de beta en tu Perfil (con historial).
+
+**Guías clave para esta fase:**
+- [BETA_TESTERS_GUIDE.md](BETA_TESTERS_GUIDE.md) — cómo instalar desde Play Internal/Closed (oculto), cómo reportar.
+- [PLAY_STORE_ASSETS.md](PLAY_STORE_ASSETS.md) — textos listos + prompts para subir AAB firmado a testing oculto.
+- [PREALPHA_REAL_TESTING_GUIDE.md](PREALPHA_REAL_TESTING_GUIDE.md) — flujo de prueba cross-device.
+- APK builds automáticos en cada push (GitHub Releases tag `android-prealpha` o Actions artifacts).
+- AAB firmado listo para Play Console Internal testing (no se publica).
+
+**Importante:** Después de cada `git push` haz hard refresh (Ctrl+Shift+R). La app está en Pre-Alpha oculta para pruebas con grupo cerrado.
+
 ## Cómo ejecutar localmente
 
 ```bash
@@ -58,7 +77,8 @@ Se recomienda abrirla en tamaño móvil (DevTools → Responsive).
 
 - React + TypeScript + Vite
 - Tailwind CSS + Framer Motion
-- Todo funciona offline (localStorage) — ideal para demo
+- Firebase Auth + Firestore para modo real multi-usuario (además de demo localStorage)
+- Dual mode: demo público + Pre-Alpha real backend (cuentas persisten cross-device)
 
 ---
 

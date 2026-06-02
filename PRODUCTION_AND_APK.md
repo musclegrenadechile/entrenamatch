@@ -134,7 +134,7 @@ Todo lo que preparamos (keystore, AAB firmado, scripts) está listo para este fl
 
 **Web Pre-Alpha (very advanced):**
 - Real Firebase backend fully working (email auth, rich onboarding with photos/training/goals, real profiles visible to others, matching, 1:1 chat, sessions + group chat).
-- Excellent UX polish, empty states, real badges, loading feedback, escape hatches everywhere.
+- Excellent UX polish, empty states, real badges, loading feedback, clean escape hatches (global top bar + Profile header, no blocking center red buttons).
 - Deployed on GitHub Pages (https://musclegrenadechile.github.io/entrenamatch/).
 
 **Native Android (Capacitor - major progress):**
