@@ -284,7 +284,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
               disabled={isRefreshingReals}
               className="text-xs flex items-center gap-1 bg-[#14b8a6] text-black px-3 py-1.5 rounded-2xl font-semibold active:bg-[#0f9d8c] disabled:opacity-60"
             >
-              <RefreshCw size={13} className={isRefreshingReals ? 'animate-spin' : ''}/> {isRefreshingReals ? 'Actualizando...' : 'Actualizar reales'}
+              <RefreshCw size={13} className={isRefreshingReals ? 'animate-spin' : ''}/> {isRefreshingReals ? '...' : 'Actualizar reales'}
             </button>
           )}
           <button 
