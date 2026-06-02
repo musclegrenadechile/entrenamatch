@@ -78,7 +78,7 @@ Everything must work after hard refresh + on different physical devices (not jus
 
 **Sign-off for Phase 0**: After all above (including recent: session creator admin/close/expel/leave with ADMIN badges, floating "Reportar problema" everywhere, stronger real-mode empty states, Firebase Hosting note in-app, extra Play screenshots, full guide updates), the app + AAB + listing copy + guides are ready for the user to upload the AAB to Play Console Internal testing track (hidden). Then move to Phase 1 (invite 5-10 real beta testers, structured feedback collection, triage, promote to Closed if good).
 
-**Current status (this continuation)**: Phase 0 core is solid (profile save + chat real-time with onSnapshot/bg polls/refresh btns/lastSync + chat header refresh/report buttons in 1:1 and group + loading spinners; 30 fake profiles added (Reñaca/Viña/Concón, gender specific, real images); empty states polished; welcome modal updated; previous fixes). Pushes ongoing (latest eaaa651). Hard refresh + test. Ready for sign-off.
+**Current status (this continuation)**: Phase 0 core is solid (profile save + chat real-time with onSnapshot/bg polls/refresh btns/lastSync + chat header refresh/report buttons in 1:1 and group + loading spinners; 30 fake profiles added (Reñaca/Viña/Concón, gender specific, real images); empty states polished; welcome modal updated; previous fixes). Pushes ongoing (latest b62f285). Hard refresh + test. Ready for sign-off.
 
 ## Phase 1 (after Phase 0 sign-off)
 - Upload signed AAB to Internal testing (hidden).
