@@ -78,7 +78,7 @@ Everything must work after hard refresh + on different physical devices (not jus
 
 **Sign-off for Phase 0**: After all above (including recent: session creator admin/close/expel/leave with ADMIN badges, floating "Reportar problema" everywhere, stronger real-mode empty states, Firebase Hosting note in-app, extra Play screenshots, full guide updates), the app + AAB + listing copy + guides are ready for the user to upload the AAB to Play Console Internal testing track (hidden). Then move to Phase 1 (invite 5-10 real beta testers, structured feedback collection, triage, promote to Closed if good).
 
-**Current status (this continuation)**: Phase 0 core is solid (profile save fully persists + self-reload on Sincronizar; 1:1 has onSnapshot push + 30s bg poll all matches + 8s active + manual 'Actualizar chats reales' btn in Mensajes tab; group has onSnapshot+8s; added chat refresh btn; previous fixes). Pushes ongoing (latest e541e19). Hard refresh to test. Ready for sign-off.
+**Current status (this continuation)**: Phase 0 core is solid (profile save fully persists + self-reload on Sincronizar; 1:1 has onSnapshot push + 30s bg poll all matches + 8s active + manual 'Actualizar chats reales' btn in Mensajes tab; group has onSnapshot+8s; lastSync updates on chat loads; empty states mention real-time; previous fixes). Pushes ongoing. Hard refresh to test. Ready for sign-off + hidden upload.
 
 ## Phase 1 (after Phase 0 sign-off)
 - Upload signed AAB to Internal testing (hidden).
@@ -112,4 +112,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continuation (profile + chat real-time solid with onSnapshot/bg polls/refresh btns; Sincronizar now reloads self profile; previous fixes). Pushes done. Ready for sign-off + hidden upload.
+Last updated: Phase 0 continuation (added lastSync to chat loads, improved empty states for real-time, profile/chat polish). Pushes ongoing. Ready for sign-off.

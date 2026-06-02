@@ -685,6 +685,7 @@ function App() {
         return updated;
       });
       console.log(`✅ Loaded ${msgs.length} real 1:1 messages for ${otherUserId}`);
+      setLastSync(new Date());
       return msgs;
     } catch (e) {
       console.warn('Could not load real chat messages (check rules):', e);
@@ -922,6 +923,7 @@ function App() {
         [sessionId]: loaded
       }));
       console.log(`✅ Loaded ${loaded.length} real group messages for session ${sessionId}`);
+      setLastSync(new Date());
     } catch (e) {
       console.warn('Could not load real group messages:', e);
     }
@@ -2622,7 +2624,7 @@ function App() {
                   <div className="mt-8 card p-6 rounded-3xl text-center">
                     <MessageCircle className="mx-auto text-[#14b8a6] mb-3" size={36} />
                     <div className="font-semibold mb-1">Sin conversaciones aún</div>
-                    <p className="text-sm text-[#94a3b8]">Haz match en Explorar con testers reales. Los chats 1:1 son reales y se sincronizan entre dispositivos.</p>
+                    <p className="text-sm text-[#94a3b8]">Haz match en Explorar con testers reales. Los chats 1:1 son reales y se sincronizan en vivo (onSnapshot + polls background) entre dispositivos. Usa "Actualizar chats reales" si no ves actualizaciones.</p>
                   </div>
                 )}
                 {matchProfiles
