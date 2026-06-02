@@ -2608,9 +2608,8 @@ function App() {
                   <div className="font-semibold mb-2">Aún no tienes sesiones</div>
                   <p className="text-sm text-[#94a3b8] mb-3 max-w-[260px] mx-auto">
                     { !isDemoMode ? 'Crea tu primera sesión real o únete a una abierta arriba. ¡Otros testers la verán en sus dispositivos!' : 'Crea tu primera sesión o únete a una abierta arriba.' }
-                    Esta es una de las features clave que estamos testeando en Pre-Alpha.
                   </p>
-                  <p className="text-xs text-[#64748b] mb-4">El chat grupal + reseñas después de entrenar es lo que más feedback necesitamos.</p>
+                  <p className="text-xs text-[#64748b] mb-4">Únete o crea para probar el chat grupal real-time.</p>
                   <button 
                     onClick={() => setShowCreateSession(true)}
                     className="px-5 py-2 bg-[#14b8a6] text-black rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
@@ -2952,7 +2951,7 @@ function App() {
                   {((realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || []))).length === 0 && (
                     <div className="text-center text-sm text-[#64748b] mt-8">
                       <div className="font-medium text-white mb-1">
-                        {realMatches.includes(activeChat || '') ? '¡Match real con otro tester!' : '¡Acabas de hacer tu primer match en Pre-Alpha!'}
+                        {realMatches.includes(activeChat || '') || (activeChat || '').startsWith('p') ? '¡Match real con otro tester!' : '¡Primer match!'}
                       </div>
                       <div>Escribe algo para romper el hielo.</div>
                       {realMatches.includes(activeChat || '') && (
@@ -4275,7 +4274,7 @@ function App() {
                 Bloquear
               </button>
             </div>
-            <div className="p-2 text-center text-[9px] text-[#64748b]">Pre-Alpha • Perfiles reales se sincronizan entre dispositivos</div>
+            <div className="p-2 text-center text-[9px] text-[#64748b]">Perfiles reales se sincronizan entre dispositivos</div>
           </div>
         )}
       </AnimatePresence>
