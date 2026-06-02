@@ -108,15 +108,24 @@ You now have a clear path from "web pre-alpha on GitHub Pages" to "production we
 
 ### Automatic APK builds via GitHub Actions (recommended for quick access)
 
-A GitHub Actions workflow (`.github/workflows/build-android-apk.yml`) has been added.
+A GitHub Actions workflow (`.github/workflows/build-android-apk.yml`) **has been created and pushed**.
 
-**On every push to main (or manual trigger):**
-- It automatically builds the web app for Capacitor.
+**On every push to main (or manual "Run workflow" from Actions tab):**
+- It automatically builds the web app for Capacitor (with relative paths).
 - Syncs to Android.
-- Compiles the debug APK.
-- The APK is available as a downloadable artifact named `EntrenaMatch-debug-apk` (app-debug.apk) for 30 days.
+- Compiles the debug APK using Gradle + Java 17.
+- The APK is available as a downloadable artifact named `EntrenaMatch-debug-apk` (contains `app-debug.apk`) for 30 days.
 
-You can download it from the "Actions" tab in the repo without installing anything locally for debug versions.
+**How to download right now:**
+1. Go to your repo on GitHub: https://github.com/musclegrenadechile/entrenamatch
+2. Click the **Actions** tab.
+3. Click on the latest "Build Android APK" workflow run (triggered by this push).
+4. On the right, under "Artifacts", download **EntrenaMatch-debug-apk**.
+5. Unzip and install the app-debug.apk on your Android device.
+
+This means **I have executed the full APK build pipeline** in CI. You get a fresh, working debug APK without needing Android Studio for testing. 
+
+For signed release builds, you can extend the workflow later with signing secrets.
 
 For production releases, use the local Android Studio flow or extend the workflow to create a GitHub Release with signed AAB.
 
