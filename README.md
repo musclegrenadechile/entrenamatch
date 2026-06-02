@@ -95,3 +95,18 @@ Una vez desplegado, la app estará disponible en:
 `https://musclegrenadechile.github.io/entrenamatch/`
 
 > **Nota**: Para un demo público real, se recomienda usar Firebase Hosting o Vercel en el futuro (mejor rendimiento y soporte de funciones serverless).
+
+## Production & Mobile (Android APK)
+
+See [PRODUCTION_AND_APK.md](./PRODUCTION_AND_APK.md) for:
+- Where to host for real Tinder/Badoo-like scale and reliability (Firebase Hosting recommended, with path to custom backend later).
+- Full instructions + setup already done to generate a real Android .apk / .aab using **Capacitor** (no big rewrite of the React web app).
+
+Quick start for APK:
+```bash
+npm run android:build
+npx cap open android
+```
+(then Build APK in Android Studio)
+
+All the infrastructure for moving off GitHub Pages and having a native Android app is now in the repo.
