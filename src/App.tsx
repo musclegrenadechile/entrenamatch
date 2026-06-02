@@ -3459,47 +3459,9 @@ function App() {
             )}
       </div>
 
-      {/* Small floating help (less prominent now) */}
-      <button
-        onClick={() => setShowPreAlphaWelcome(true)}
-        className="fixed bottom-4 right-4 z-[190] bg-black/70 text-white text-[10px] px-3 py-1.5 rounded-2xl opacity-70 active:opacity-100"
-      >
-        Guía
-      </button>
-
-      {/* Floating mini "Reportar problema" for quick beta feedback from any screen (Phase 0 polish) */}
-      <button
-        onClick={async () => {
-          const issue = prompt('¿Qué problema o sugerencia quieres reportar? (se guarda como feedback privado)')
-          if (!issue || !issue.trim()) return
-          if (!firebaseUser?.uid && !currentUser) {
-            toast('Inicia sesión para reportar')
-            return
-          }
-          try {
-            if (db) {
-              const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
-              await addDoc(collection(db, 'betaFeedback'), {
-                userId: firebaseUser?.uid || 'demo',
-                type: 'other',
-                rating: 3,
-                text: issue.trim(),
-                platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
-                appVersion: '0.1.0-prealpha',
-                context: 'floating-report',
-                createdAt: serverTimestamp(),
-              })
-            }
-            toast.success('¡Gracias! Reporte enviado (revisa tu Perfil > Feedback para ver historial)')
-          } catch (e) {
-            toast.error('No se pudo enviar el reporte')
-          }
-        }}
-        className="fixed bottom-4 right-20 z-[190] bg-red-500/80 text-white text-[10px] px-2.5 py-1.5 rounded-2xl opacity-80 active:opacity-100 flex items-center gap-1"
-        title="Reportar problema rápido"
-      >
-        ⚠️ Reportar
-      </button>
+      {/* Floating Guía and Reportar removed per request (clutter at bottom, interferes with profile selection in Explore). 
+         Report/feedback still available in Profile tab (structured form + history), chat headers, and legal links.
+         Welcome guide modal can still be triggered if needed via other means or first-load. */}
 
       {/* Bottom Navigation - Premium, energetic feel */}
       <div className="h-[62px] border-t border-[#272b33] bg-[#0a0b0f]/95 backdrop-blur-sm grid grid-cols-6 z-50 text-[10px] shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.1)]">

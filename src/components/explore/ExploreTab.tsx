@@ -358,9 +358,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           </button>
         </div>
       )}
-      {deck.length > 0 && (
-        <div className="text-center text-[11px] text-[#475569] pb-2">Desliza o usa los botones</div>
-      )}
+      {/* "Desliza o usa los botones" guide text removed - was cluttering the profile choice / swipe area */}
 
       {/* Recommendations - Más compatibles (unique discovery) */}
       {userLocation && currentUser && deck.length > 0 && (
