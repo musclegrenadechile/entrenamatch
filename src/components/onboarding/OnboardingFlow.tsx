@@ -26,18 +26,39 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   setConsents,
 }) => {
   // Internal state (moved from App.tsx for better encapsulation)
-  const [onboardData, setOnboardData] = React.useState<any>({
-    name: '',
-    age: 26,
-    gender: 'mujer',
-    city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528,
-    bio: '',
-    photos: [],
-    trainingTypes: [],
-    goals: [],
-    level: 'Intermedio',
-    intensity: 'Moderado',
-    availability: []
+  // Seed from existing currentUser (for edit flow or returning incomplete profiles) so user doesn't re-type everything
+  const [onboardData, setOnboardData] = React.useState<any>(() => {
+    if (currentUser && currentUser.name) {
+      return {
+        name: currentUser.name || '',
+        age: currentUser.age || 26,
+        gender: currentUser.gender || 'mujer',
+        city: currentUser.city || 'Viña del Mar',
+        country: currentUser.country || 'Chile',
+        lat: currentUser.lat || -33.0153,
+        lng: currentUser.lng || -71.5528,
+        bio: currentUser.bio || '',
+        photos: currentUser.photos || [],
+        trainingTypes: currentUser.trainingTypes || [],
+        goals: currentUser.goals || [],
+        level: currentUser.level || 'Intermedio',
+        intensity: currentUser.intensity || 'Moderado',
+        availability: currentUser.availability || []
+      }
+    }
+    return {
+      name: '',
+      age: 26,
+      gender: 'mujer',
+      city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528,
+      bio: '',
+      photos: [],
+      trainingTypes: [],
+      goals: [],
+      level: 'Intermedio',
+      intensity: 'Moderado',
+      availability: []
+    }
   });
 
   // Consents fully managed internally now (previous props were dummy)
