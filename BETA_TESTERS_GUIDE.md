@@ -27,10 +27,12 @@ Usa los 30 perfiles fake (Reñaca / Viña del Mar / Concón, hombres y mujeres) 
 2. Abre Mensajes → verás el chat en la lista.
 3. Abre el chat 1:1.
 4. Desde cuenta B (otro browser/incognito o teléfono): envía un mensaje.
-5. En cuenta A: la lista de Mensajes debe actualizarse en vivo (sin tocar "Actualizar"), y si el chat está abierto, el mensaje aparece + auto-scroll al fondo.
-6. Repite para chat de sesión: crea sesión como creador (A), únete como B, abre chat grupal en ambos, envía desde uno, verifica que el otro lo recibe en vivo + auto-scroll + badge ADMIN solo para creador.
-7. Si no ves actualización inmediata: usa "Actualizar chats reales", o hard refresh (Ctrl+Shift+R), o el botón "Actualizar" del header del chat. Los listeners bg + active cubren la mayoría de casos.
-8. Reporta con el botón "Reportar" del header del chat o el formulario de Perfil si algo falla.
+5. En cuenta A: la lista de Mensajes debe actualizarse en vivo (sin tocar "Actualizar"), y si el chat está abierto, el mensaje aparece + auto-scroll al fondo. (Los envíos a fakes se persisten en servidor para tu historial.)
+6. Repite para chat de sesión: crea sesión como creador (A), únete como B (ahora el join hace await del write a participants antes de abrir el chat para evitar errores de permisos), abre chat grupal en ambos, envía desde uno, verifica que el otro lo recibe en vivo (bg listeners + onSnapshot cuando abierto + auto-scroll) + preview del último msg aparece instant en la lista de sesiones (via sessions onSnapshot + lastMessage update) + badge ADMIN solo para creador.
+7. Hard refresh en A o B: el historial de mensajes del grupo y los previews deben cargarse desde Firestore (no local-only).
+8. Si no ves actualización inmediata: usa "Actualizar sesiones reales" o "Actualizar" en el header del chat grupal (con spinner). Los bg listeners para tus sesiones + active onSnapshot cubren live receive. Asegúrate de estar unido (participante).
+9. Reporta con el botón "Reportar" del header del chat o el formulario de Perfil si algo falla.
+Nota post-push: si ves errores de permisos en group msgs, el owner debe hacer `firebase deploy --only firestore:rules` (las rules se relajaron para reads en subcolección para UX instant en beta).
 
 ## Cómo dar feedback (muy importante)
 
