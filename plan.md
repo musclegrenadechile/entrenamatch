@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continue declutter (softened more "Pre-Alpha"/guía texts in Matches empty, Sessions, Profile download/feedback, Welcome modal; cleaned "Desliza..." instruction in matches; kept essential escape bar and squad demo notes). Focus: cleaner "elegir perfiles" flow. Build/push next. **PHASE 0 SIGN-OFF READY** but sigue.
+Last updated: Phase 0 continue (more declutter: softened Pre-Alpha texts/instructions in Matches empty, Sessions, Profile, Welcome; removed 'Desliza' guía in matches; focus premium elegir perfiles). Pushed d35a10a. **PHASE 0 SIGN-OFF READY** (sigue batches).
