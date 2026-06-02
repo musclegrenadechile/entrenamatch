@@ -76,11 +76,10 @@ Use the "Actualizar sesiones reales" button if something doesn't appear immediat
 
 ## Latest Pre-Alpha Improvements (just pushed)
 
-- **Profile tab**: Complete premium redesign — large hero photo, horizontal gallery for multiple photos, stats cards, training/goals chips, "Disponible hoy" toggle, verification flow, and **multiple prominent "Cambiar cuenta / Cerrar sesión" buttons** everywhere (impossible to get trapped).
-- **Group Chat modal** (inside sessions): Much more attractive — "REAL EN VIVO" badge, improved message bubbles with timestamps, nicer reactions, premium input with photo support + live sync note.
-- **Empty states**: Attractive cards with Pre-Alpha explanations + direct CTAs in Matches, Sessions, Messages.
-- **Critical stability**: Fixed long-standing JSX leak that caused black/empty Profile screens. All rich Profile content is now properly self-contained inside the tab.
-- Sessions update button more visible. Creator delete in group chat now works cross-device.
+- **ExploreTab**: Stronger "Actualizar reales" button (now teal + prominent), live loading spinner + success toast when pulling fresh tester profiles from Firebase. Critical for seeing other users' profiles instantly on different devices.
+- **Onboarding step 2**: Added "Seleccionar todos" + "Limpiar" quick actions on training types and goals. Makes finishing the profile creation much faster (addresses previous friction where users struggled to select and advance).
+- **Profile + Group Chat + empty states** from previous cycle still live.
+- **Reviewed for "el error"**: Full tsc --noEmit + production build clean (no new JSX/TS/runtime compile issues). Onboarding text encoding verified correct (no mojibake). Added async handling + loading states around real profile/session refresh to reduce "no actualiza" perception. Multiple escape hatches remain rock solid.
 
 **After this push**: Hard refresh (Ctrl+Shift+R) on https://musclegrenadechile.github.io/entrenamatch/ — the Profile tab should look beautiful and you should never see a black screen or missing logout again.
 
