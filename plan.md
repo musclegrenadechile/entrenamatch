@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continue (lastSync 'hace Xs' in Explore header; distance in recs; REAL badges; title 'reales primero'; empties enhanced; drag hint gone; premium declutter for elegir perfiles). Pushed 9cc558f. **PHASE 0 SIGN-OFF READY** (continua).
+Last updated: Phase 0 continue (fixed "form is not defined" crash in session creation training type chips by using state; added lastSync to Explore header, distance+REAL badges to recs; premium declutter for elegir perfiles). Pushed abf0bc5. **PHASE 0 SIGN-OFF READY** (continua).
