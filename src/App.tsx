@@ -3225,14 +3225,13 @@ function App() {
               </div>
             </div>
 
-            {/* Pre-Alpha micro guidance */}
+            {/* Micro guidance - kept minimal, no heavy Pre-Alpha branding to avoid clutter in profile view */}
             <div className="px-4 mt-6 mb-8">
               <div className="card p-4 text-xs text-[#94a3b8] leading-snug">
-                <span className="font-semibold text-[#14b8a6]">Pre-Alpha activa:</span> Tus datos reales se sincronizan entre dispositivos vía Firebase. 
-                Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado de tu Perfil. ¡Gracias por testear!
-                <div className="mt-1 text-[10px] text-[#64748b]">Firebase Hosting preparado para producción (mejor PWA + futuro push). Ver PRODUCTION_AND_APK.md</div>
+                Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
+                <div className="mt-1 text-[10px] text-[#64748b]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#475569] mt-4">EntrenaMatch v0.1.0-prealpha • Solo +18 • Backend real 2026</div>
+              <div className="text-center text-[10px] text-[#475569] mt-4">v0.1.0-prealpha • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
