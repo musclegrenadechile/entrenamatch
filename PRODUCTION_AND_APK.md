@@ -193,6 +193,8 @@ It includes the native Camera plugin. Install it on your phone to test the real 
 
 The app will be **completely hidden**. Only the emails you add will be able to find and install it via a private link. No public visibility at all.
 
+Hay una guía dedicada para tus beta testers en `BETA_TESTERS_GUIDE.md` (compártela con ellos).
+
 This is exactly "subirlo a la playstore para hacer las pruebas pertinentes pero que este en oculto".
 
 For future updates you can run `build-release.bat` again (it will use the existing keystore).
