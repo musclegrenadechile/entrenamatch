@@ -9,6 +9,7 @@
 3. Crea una cuenta real con email (o Google si disponible).
 4. Completa el onboarding con datos reales (foto, entrenamiento, objetivos). Esto es clave para las pruebas.
 5. Explora, haz match, chatea y crea o únete a una sesión.
+**Importante después de actualizaciones:** Siempre haz hard refresh (Ctrl+Shift+R en web, o fuerza cierre + reopen en APK) para cargar el nuevo código. De lo contrario puedes ver errores antiguos como "Unsupported field value: undefined (photo)" al enviar mensajes en sesiones de grupo.
 
 ## Qué probar (flujo ideal)
 

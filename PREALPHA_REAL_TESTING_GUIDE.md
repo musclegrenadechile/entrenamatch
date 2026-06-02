@@ -6,7 +6,7 @@
 
 **Important about deploys**:
 - After every push, GitHub Actions takes 3-8 minutes to build + deploy.
-- You **must** do a hard refresh (Ctrl+Shift+R / Cmd+Shift+R) to see changes.
+- You **must** do a hard refresh (Ctrl+Shift+R / Cmd+Shift+R) to see changes. This is critical for fixing bugs like the "undefined photo" Firestore error when sending group session messages (old bundle keeps the bug).
 - Look for the text with "cambiar cuenta" or the latest FIX in the teal top PRE-ALPHA bar. New behavior: Logout now does a clean reload so you reliably see the login/register screen again. There is a "Cambiar cuenta" button in the global top bar (always visible on every tab) + another small one in the sticky header of your Perfil. The big red center buttons and floating red logout were removed because they blocked content/scroll in Profile (cleaner UX now, but still impossible to get trapped). This solves the "entra altiro sin poder registrar" issue on hard refresh.
 
 ## How to Test Real Cross-Device Interaction (2+ Real Accounts) - Recommended Flow for Testers
