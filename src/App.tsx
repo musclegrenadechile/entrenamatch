@@ -2603,8 +2603,21 @@ function App() {
             {!activeChat ? (
               // List of chats
               <div className="overflow-auto flex-1 p-4">
-                <div className="text-2xl font-semibold tracking-[-1.2px] mb-1 px-1">Mensajes</div>
-                <div className="text-[#94a3b8] text-xs px-1 mb-4">Chats 1:1 reales se sincronizan en vivo entre dispositivos</div>
+                <div className="flex items-center justify-between mb-1 px-1">
+                  <div className="text-2xl font-semibold tracking-[-1.2px]">Mensajes</div>
+                  {!isDemoMode && (
+                    <button onClick={async () => {
+                      if (realMatches.length > 0) {
+                        for (const id of realMatches) {
+                          await loadRealChatMessages(id);
+                        }
+                        setLastSync(new Date());
+                        toast.success('Chats reales actualizados');
+                      }
+                    }} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black">Actualizar chats reales</button>
+                  )}
+                </div>
+                <div className="text-[#94a3b8] text-xs px-1 mb-4">Chats 1:1 reales se sincronizan en vivo entre dispositivos (onSnapshot + polls)</div>
                 {matchProfiles.length === 0 && (
                   <div className="mt-8 card p-6 rounded-3xl text-center">
                     <MessageCircle className="mx-auto text-[#14b8a6] mb-3" size={36} />
