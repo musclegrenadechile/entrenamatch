@@ -1,6 +1,6 @@
 // @ts-nocheck
 import React from 'react';
-import { Dumbbell, MapPin, Camera as CameraIcon, Trash2, Star } from 'lucide-react';
+import { Dumbbell, MapPin, Camera, Trash2, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { TRAINING_OPTIONS, TRAINING_GOALS, TRAINING_INTENSITIES } from '../../constants';
 
