@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continue (fixed form undefined in session training chips via state; added lastSync/distance/REAL to Explore recs; cleaned 'de prueba' text; premium declutter for elegir perfiles). Pushed da3d7fb. **PHASE 0 SIGN-OFF READY** (continua).
+Last updated: Phase 0 continue (fixed form crash in sessions; lastSync in Explore header (clean, no dup); distance+REAL badges in recs; declutter; premium elegir perfiles). Pushed e08645c. **PHASE 0 SIGN-OFF READY** (continua).
