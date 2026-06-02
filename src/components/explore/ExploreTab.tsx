@@ -230,12 +230,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           VER PERFIL
         </button>
 
-        {/* Subtle drag hint on top card */}
-        {isTop && (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-white/40 text-[10px] pointer-events-none select-none">
-            Desliza
-          </div>
-        )}
+        {/* No text hint - clean for premium profile choosing (swipe or use buttons below) */}
       </motion.div>
     );
   };
@@ -312,7 +307,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
               <div className="text-2xl font-semibold tracking-tight mb-2">¡Se acabaron los perfiles por ahora!</div>
               <p className="text-[#94a3b8] max-w-[280px] mx-auto mb-5 text-sm">
                 No hay más perfiles que coincidan con tus filtros actuales. <br />
-                <span className="text-[11px] text-[#64748b]">Con backend real esto es normal en beta — ¡prueba cambiando filtros o actualizando!</span>
+                <span className="text-[11px] text-[#64748b]">¡Prueba cambiando filtros o actualizando reales!</span>
               </p>
               <div className="flex gap-3 justify-center">
                 <button 

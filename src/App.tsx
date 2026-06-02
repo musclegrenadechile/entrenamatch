@@ -2734,8 +2734,8 @@ function App() {
                   </div>
                   <div className="font-semibold text-xl mb-2">Aún no tienes matches</div>
                   <p className="text-sm text-[#94a3b8] leading-snug mb-4 max-w-[280px] mx-auto">
-                    Ve a <span className="text-white font-medium">Explorar</span> y desliza a la derecha sobre perfiles que te interesen. 
-                    Los matches y chats 1:1 se sincronizan entre dispositivos con Firebase.
+                    Ve a <span className="text-white font-medium">Explorar</span> para encontrar y conectar con perfiles reales. 
+                    Matches y chats funcionan cross-device vía Firebase.
                   </p>
                   <button onClick={() => setActiveTab('explore')} className="btn-primary px-8">Ir a Explorar</button>
                 </div>
@@ -2818,7 +2818,7 @@ function App() {
                   <div className="mt-8 card p-6 rounded-3xl text-center">
                     <MessageCircle className="mx-auto text-[#14b8a6] mb-3" size={36} />
                     <div className="font-semibold mb-1">Sin conversaciones aún</div>
-                    <p className="text-sm text-[#94a3b8]">Haz match en Explorar con testers reales. Los chats 1:1 son reales y se sincronizan en vivo (onSnapshot + polls background) entre dispositivos. Usa "Actualizar chats reales" si no ves actualizaciones. Los mensajes de otros testers aparecerán aquí tras match.</p>
+                    <p className="text-sm text-[#94a3b8]">Haz match en Explorar con testers reales. Chats 1:1 reales y en vivo cross-device. Usa "Actualizar chats reales" si no ves updates.</p>
                   </div>
                 )}
                 {matchProfiles
