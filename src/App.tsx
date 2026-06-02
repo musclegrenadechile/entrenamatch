@@ -2790,7 +2790,8 @@ function App() {
         {showCreateSquad && (
           <div className="absolute inset-0 z-[95] flex items-end bg-black/70" onClick={() => setShowCreateSquad(false)}>
             <div onClick={e => e.stopPropagation()} className="w-full card rounded-t-3xl p-6 pb-8">
-              <div className="font-semibold text-xl mb-4">Crear un Squad</div>
+              <div className="font-semibold text-xl mb-1">Crear un Squad</div>
+              <div className="text-[10px] text-[#14b8a6] mb-3">Pre-Alpha: funcionalidad en desarrollo (principalmente para probar UI)</div>
               <form onSubmit={(e) => {
                 e.preventDefault()
                 const form = e.currentTarget
@@ -2805,12 +2806,12 @@ function App() {
                 const updated = [newSquad, ...squads]
                 saveSquads(updated)
                 setShowCreateSquad(false)
-                toast.success('Squad creado')
+                toast.success('Squad creado (demo)')
               }}>
                 <input name="name" placeholder="Nombre del Squad (ej: Beasts de Viña)" required className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3 mb-3" />
                 <input name="focus" placeholder="Enfoque (Pesas, Running, Calistenia...)" required className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3 mb-4" />
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => setShowCreateSquad(false)} className="flex-1 btn-secondary">Cancelar</button>
+                  <button type="button" onClick={() => setShowCreateSquad(false)} className="flex-1 py-3 rounded-2xl border border-[#272b33] active:bg-[#1f242b]">Cancelar</button>
                   <button type="submit" className="flex-1 btn-primary">Crear Squad</button>
                 </div>
               </form>
