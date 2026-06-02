@@ -2624,7 +2624,7 @@ function App() {
                   <div className="mt-8 card p-6 rounded-3xl text-center">
                     <MessageCircle className="mx-auto text-[#14b8a6] mb-3" size={36} />
                     <div className="font-semibold mb-1">Sin conversaciones aún</div>
-                    <p className="text-sm text-[#94a3b8]">Haz match en Explorar con testers reales. Los chats 1:1 son reales y se sincronizan en vivo (onSnapshot + polls background) entre dispositivos. Usa "Actualizar chats reales" si no ves actualizaciones.</p>
+                    <p className="text-sm text-[#94a3b8]">Haz match en Explorar con testers reales. Los chats 1:1 son reales y se sincronizan en vivo (onSnapshot + polls background) entre dispositivos. Usa "Actualizar chats reales" si no ves actualizaciones. Los mensajes de otros testers aparecerán aquí tras match.</p>
                   </div>
                 )}
                 {matchProfiles
