@@ -2672,6 +2672,9 @@ function App() {
                   </div>
                   <button onClick={() => setShowFullProfile(chatProfile!)} className="ml-auto text-xs px-3 py-1 bg-[#121418] rounded-full">Ver perfil</button>
                   <a href="/entrenamatch/privacy.html" target="_blank" className="text-[10px] text-[#64748b] underline ml-1">Privacidad</a>
+                  {!isDemoMode && (
+                    <button onClick={async () => { if (activeChat) { await loadRealChatMessages(activeChat); setLastSync(new Date()); toast.success('Chat actualizado'); } }} className="text-[10px] px-2 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23]">Actualizar</button>
+                  )}
                 </div>
 
                 {/* Safety in 1:1 chat */}
@@ -4473,6 +4476,25 @@ function App() {
                     ) : null
                   })()}
                   <a href="/entrenamatch/privacy.html" target="_blank" className="text-[10px] text-[#64748b] underline">Privacidad</a>
+                  <button onClick={async () => {
+                    const issue = prompt('¿Qué problema o sugerencia en esta sesión?');
+                    if (issue && showGroupChatModalFor && db) {
+                      try {
+                        const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                        await addDoc(collection(db, 'betaFeedback'), {
+                          userId: firebaseUser?.uid || 'demo',
+                          type: 'other',
+                          rating: 3,
+                          text: `Sesión ${showGroupChatModalFor}: ${issue.trim()}`,
+                          platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
+                          appVersion: '0.1.0-prealpha',
+                          context: 'group-chat',
+                          createdAt: serverTimestamp(),
+                        });
+                        toast.success('Reporte enviado (ver en Perfil > Feedback)');
+                      } catch {}
+                    }
+                  }} className="text-[10px] text-red-400 underline">Reportar</button>
                   <button onClick={() => setShowGroupChatModalFor(null)} className="text-3xl leading-none text-[#64748b] hover:text-white px-1">×</button>
                 </div>
               </div>
