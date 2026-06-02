@@ -1,15 +1,15 @@
 {
-  "name": "EntrenaMatch — El match del movimiento",
+  "name": "EntrenaMatch – El match del movimiento",
   "short_name": "EntrenaMatch",
   "description": "Conecta con personas que entrenan cerca de ti en todo el mundo. Solo para mayores de 18 años. Lanzamiento inicial en Chile.",
-  "start_url": "/",
+  "start_url": "/entrenamatch/",
   "display": "standalone",
   "background_color": "#0a0b0f",
   "theme_color": "#0a0b0f",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/favicon.svg",
+      "src": "/entrenamatch/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml"
     }

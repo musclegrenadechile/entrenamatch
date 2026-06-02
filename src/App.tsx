@@ -1097,18 +1097,20 @@ function App() {
           if (profile && profile.name) {
             saveUser({ ...profile, id: 'me' } as any)
 
-            // Force onboarding for any real user whose profile is not fully complete.
-            // This ensures new or incomplete accounts go through name, age, photos, etc.
-            const needsOnboarding =
-              !profile.bio ||
-              !profile.photos?.length ||
-              !profile.trainingTypes?.length ||
-              !profile.goals?.length
-
-            if (needsOnboarding) {
-              setShowOnboarding(true)
+            // Only force full onboarding immediately for brand new registrations.
+            // For returning logins (even with incomplete profile), load what exists and let user enter the app.
+            // They can complete via the Profile tab "Completar mi perfil" CTA (prevents trapping users in creation loop on every visit).
+            if (isRegister) {
+              const needsOnboarding =
+                !profile.bio ||
+                !profile.photos?.length ||
+                !profile.trainingTypes?.length ||
+                !profile.goals?.length
+              if (needsOnboarding) {
+                setShowOnboarding(true)
+              }
             }
-            // If profile is complete, do nothing extra — main app will show on next render
+            // If complete or login, main app shows (Profile will prompt if incomplete)
           } else {
             // No profile or no name → create a minimal usable local profile immediately
             // so the UI (including Profile tab + logout) never goes black/empty.
@@ -1658,13 +1660,7 @@ function App() {
 
   // For real users or demo users without full profile, show onboarding/creation flow
   const shouldShowOnboarding = showOnboarding || 
-    (!isDemoMode && firebaseUser && (
-      !currentUser || 
-      !currentUser.bio ||
-      !currentUser.photos?.length ||
-      !currentUser.trainingTypes?.length ||
-      !currentUser.goals?.length
-    ))
+    (!isDemoMode && firebaseUser && (!currentUser || !currentUser.name ))
 
   if (shouldShowOnboarding) {
     return (
