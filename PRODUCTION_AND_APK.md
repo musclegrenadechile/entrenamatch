@@ -162,6 +162,24 @@ The APK is at:
 
 It includes the native Camera plugin. Install it on your phone to test the real native experience.
 
+### Uploading to Play Store hidden (Internal/Closed testing) - exactly your request
+
+To put it on the Play Store for testing but completely "en oculto":
+
+1. Copy `android/keystore.properties.example` → `android/keystore.properties`
+2. Run `build-release.bat` (the script has a built-in helper to generate the keystore the first time you run it).
+3. You get a signed **EntrenaMatch-release.aab** ready for upload.
+
+In Play Console:
+- Create app.
+- Choose **Internal testing** track (or Closed testing).
+- Upload the .aab.
+- Add only the Google emails of the people who should test.
+
+Result: The app is **not public**. Only invited testers can see/install it via a private link. No one else can find it. This is the standard, recommended way to do private/pre-release testing on the real Play Store.
+
+This gives you real push notifications, easy distribution, etc., while staying hidden.
+
 A clear path exists from current Pre-Alpha web → production web on Firebase Hosting + real native Android/iOS apps.
 
 ### Automatic APK builds via GitHub Actions (recommended for quick access)
