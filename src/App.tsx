@@ -4746,7 +4746,7 @@ function App() {
                         <div className="w-14 h-14 rounded-2xl bg-[#121418] flex items-center justify-center mb-4 text-3xl">💬</div>
                         <div className="font-medium text-white">Aún no hay mensajes en el grupo</div>
                         <div className="text-xs mt-1.5 max-w-[240px]">Sé el primero en romper el hielo. { !isDemoMode ? 'Los mensajes son reales (creador puede expulsar/administrar) y se ven en todos los dispositivos.' : 'Los mensajes se ven en todos los dispositivos del grupo.' }</div>
-                        {!isDemoMode && <div className="mt-3 text-[10px] text-[#14b8a6]">Pre-Alpha • Sincronización en vivo vía Firebase</div>}
+                        {!isDemoMode && <div className="mt-3 text-[10px] text-[#14b8a6]">Sincronización en vivo vía Firebase</div>}
                       </div>
                     ) : (
                       (sessionMessages[showGroupChatModalFor] || []).map((msg, i) => {
