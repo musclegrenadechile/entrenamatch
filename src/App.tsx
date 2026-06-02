@@ -1583,12 +1583,11 @@ function App() {
             createdAt: serverTimestamp(),
           })
           console.log('✅ Real session group message sent')
+          // Force reload to sync the authoritative server list (prevents optimistic message from disappearing before snapshot arrives)
+          loadRealGroupMessages(sessionId)
         } catch (e) {
           console.warn('Failed to send real session message:', e)
-          // Fallback to local
-          const current = sessionMessages[sessionId] || []
-          const updated = { ...sessionMessages, [sessionId]: [...current, newMsg] }
-          saveSessionMessages(updated)
+          // Optimistic update already added it locally; other users won't see it until sync. No duplicate add.
         }
       })()
 
@@ -1641,6 +1640,29 @@ function App() {
         }
       }, 1400)
     }
+  }
+
+  // Helper to render message text with clickable links (for long URLs like affiliate/supplement links in training chats)
+  const renderMessageText = (text: string) => {
+    if (!text) return null
+    const urlRegex = /(https?:\/\/[^\s]+)/g
+    const parts = text.split(urlRegex)
+    return parts.map((part, index) => {
+      if (urlRegex.test(part)) {
+        return (
+          <a 
+            key={index} 
+            href={part} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="underline text-[#14b8a6] break-all hover:text-[#0f9d8c]"
+          >
+            {part}
+          </a>
+        )
+      }
+      return <span key={index}>{part}</span>
+    })
   }
 
   // Seed some initial messages when user joins a session for the first time (contextual by type)
@@ -2605,8 +2627,8 @@ function App() {
                       <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
                         <div className={`max-w-[82%] ${isMe ? 'text-right' : ''}`}>
                           {time && <div className="text-[9px] text-[#475569] mb-0.5 px-1">{time}</div>}
-                          <div className={`px-3.5 py-2 rounded-3xl text-[14px] leading-snug ${isMe ? 'bg-[#14b8a6] text-black rounded-br-md' : 'bg-[#1f242b] text-white rounded-bl-md'}`}>
-                            {m.text}
+                          <div className={`px-3.5 py-2 rounded-3xl text-[14px] leading-snug break-words overflow-hidden ${isMe ? 'bg-[#14b8a6] text-black rounded-br-md' : 'bg-[#1f242b] text-white rounded-bl-md'}`}>
+                            {renderMessageText(m.text)}
                           </div>
                         </div>
                       </div>
@@ -4397,8 +4419,8 @@ function App() {
                                 </div>
                               )}
                               {isMe && time && <div className="text-[10px] text-[#475569] mb-0.5 px-1 text-right">{time}</div>}
-                              <div className={`px-3.5 py-2 rounded-3xl inline-block text-[14px] leading-snug shadow ${isMe ? 'bg-[#14b8a6] text-black rounded-br-md' : 'bg-[#1f242b] text-white rounded-bl-md'}`}>
-                                {msg.text}
+                              <div className={`px-3.5 py-2 rounded-3xl inline-block text-[14px] leading-snug shadow break-words overflow-hidden ${isMe ? 'bg-[#14b8a6] text-black rounded-br-md' : 'bg-[#1f242b] text-white rounded-bl-md'}`}>
+                                {renderMessageText(msg.text)}
                                 {msg.photo && <img src={msg.photo} className="mt-2 max-w-[200px] rounded-xl border border-white/10" />}
                               </div>
 
