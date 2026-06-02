@@ -25,6 +25,13 @@ import type {
 import { 
   TRAINING_OPTIONS, AVAILABILITY, LEGAL_VERSIONS, AUTO_MATCH_IDS 
 } from './constants'
+
+// Capacitor Camera (dynamic, only present in native APK builds)
+let CapacitorCamera: any = null
+try {
+  import('@capacitor/camera').then(mod => { CapacitorCamera = mod.Camera })
+} catch (e) {}
+
 import { 
   getDistanceKm, 
   calculateCompatibility, 
@@ -323,6 +330,16 @@ function App() {
     })
   })()
 
+  // Beta Feedback enhanced (Phase 0 - structured + history)
+  const [feedbackType, setFeedbackType] = useState<'bug' | 'idea' | 'ux' | 'other'>('idea')
+  const [feedbackRating, setFeedbackRating] = useState(5)
+  const [feedbackText, setFeedbackText] = useState('')
+  const [myFeedbacks, setMyFeedbacks] = useState<any[]>([])
+  const [loadingMyFeedbacks, setLoadingMyFeedbacks] = useState(false)
+
+  // Simple last sync time for polish in Explore/Sessions/Profile
+  const [lastSync, setLastSync] = useState<Date | null>(null)
+
   const loadRealSessions = async () => {
     if (!isFirebaseConfigured || !db) {
       setRealSessions([])
@@ -353,10 +370,44 @@ function App() {
         }
       })
       setRealSessions(loaded)
+      const now = new Date()
+      setLastSync(now)
       console.log(`✅ Loaded ${loaded.length} real sessions from Firestore (cross-user visible)`)
     } catch (err) {
       console.warn('Could not load real sessions yet:', err)
       setRealSessions([])
+    }
+  }
+
+  // Enhanced beta feedback loader (Phase 0) - shows tester their own past submissions
+  const loadMyFeedbacks = async () => {
+    if (!isFirebaseConfigured || !db || !firebaseUser?.uid) {
+      setMyFeedbacks([])
+      return
+    }
+    setLoadingMyFeedbacks(true)
+    try {
+      const fbRef = collection(db, 'betaFeedback')
+      const q = query(fbRef, where('userId', '==', firebaseUser.uid), orderBy('createdAt', 'desc'), limit(8))
+      const snap = await getDocs(q)
+      const list: any[] = []
+      snap.forEach((d) => {
+        const data = d.data() as any
+        list.push({
+          id: d.id,
+          type: data.type || 'idea',
+          rating: data.rating || 0,
+          text: data.text || '',
+          createdAt: data.createdAt?.toMillis ? data.createdAt.toMillis() : (data.createdAt || Date.now()),
+          platform: data.platform || 'web',
+        })
+      })
+      setMyFeedbacks(list)
+    } catch (e) {
+      // Rules may not allow listing yet or index missing; fail soft
+      setMyFeedbacks([])
+    } finally {
+      setLoadingMyFeedbacks(false)
     }
   }
 
@@ -398,6 +449,8 @@ function App() {
         }
       })
       setRealProfiles(profiles)
+      const now = new Date()
+      setLastSync(now)
       console.log(`✅ Loaded ${profiles.length} real profiles from Firestore (self excluded)`)
     } catch (err) {
       console.warn('Could not load real profiles (Firestore may not have data yet):', err)
@@ -695,6 +748,13 @@ function App() {
     // ... (previous onSnapshot code)
   }, [firebaseUser?.uid, isDemoMode])
   */
+
+  // Load my previous beta feedbacks when viewing Profile (real users only)
+  useEffect(() => {
+    if (activeTab === 'profile' && !isDemoMode && firebaseUser?.uid) {
+      loadMyFeedbacks()
+    }
+  }, [activeTab, isDemoMode, firebaseUser?.uid])
 
   // Load real group chat messages when opening the modal for a real session
   const loadRealGroupMessages = async (sessionId: string) => {
@@ -1711,6 +1771,10 @@ function App() {
       <div className="flex-1 overflow-hidden relative flex flex-col">
         {/* ===== EXPLORE / SWIPE (fully owned by ExploreTab) ===== */}
         {activeTab === 'explore' && (
+          <>
+            {!isDemoMode && lastSync && (
+              <div className="px-4 pt-1 text-[10px] text-[#64748b] text-right">Sincronizado hace {Math.max(0, Math.floor((Date.now() - lastSync.getTime()) / 1000))}s • usa "Actualizar reales"</div>
+            )}
           <ExploreTab
             deck={deck}
             visibleCards={visibleCards}
@@ -1731,6 +1795,7 @@ function App() {
             realProfiles={realProfiles}
             onRefreshRealProfiles={async () => { await loadRealProfiles(); }}
           />
+          </>
         )}
 
         {/* ===== SQUADS (Fixed training crews) - New unique feature ===== */}
@@ -1832,16 +1897,19 @@ function App() {
                 <div className="text-2xl font-semibold tracking-[-1.2px]">Sesiones</div>
                 <div className="text-[#94a3b8] text-sm">Entrenamientos grupales cerca de ti</div>
                 {!isDemoMode && (
-                  <button 
-                    onClick={async () => {
-                      setIsLoadingSessions(true)
-                      try { await loadRealSessions() } finally { setIsLoadingSessions(false) }
-                    }}
-                    disabled={isLoadingSessions}
-                    className="mt-1 text-xs px-3 py-1 rounded-2xl bg-[#14b8a6] text-black font-semibold active:bg-[#0f9d8c] disabled:opacity-60"
-                  >
-                    {isLoadingSessions ? 'Actualizando...' : 'Actualizar sesiones reales'}
-                  </button>
+                  <div className="flex items-center gap-2 mt-1">
+                    <button 
+                      onClick={async () => {
+                        setIsLoadingSessions(true)
+                        try { await loadRealSessions() } finally { setIsLoadingSessions(false) }
+                      }}
+                      disabled={isLoadingSessions}
+                      className="text-xs px-3 py-1 rounded-2xl bg-[#14b8a6] text-black font-semibold active:bg-[#0f9d8c] disabled:opacity-60"
+                    >
+                      {isLoadingSessions ? 'Actualizando...' : 'Actualizar sesiones reales'}
+                    </button>
+                    {lastSync && <span className="text-[10px] text-[#64748b]">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
+                  </div>
                 )}
               </div>
               <button 
@@ -2201,6 +2269,7 @@ function App() {
                     <div className="text-[10px] text-[#14b8a6] -mt-0.5">{chatProfile?.city}, {chatProfile?.country} • En línea</div>
                   </div>
                   <button onClick={() => setShowFullProfile(chatProfile!)} className="ml-auto text-xs px-3 py-1 bg-[#121418] rounded-full">Ver perfil</button>
+                  <a href="/entrenamatch/privacy.html" target="_blank" className="text-[10px] text-[#64748b] underline ml-1">Privacidad</a>
                 </div>
 
                 {/* Safety in 1:1 chat */}
@@ -2328,7 +2397,7 @@ function App() {
                   {!isDemoMode && <div className="text-[10px] text-[#14b8a6] font-medium -mt-0.5">REAL • Sincronizado con Firebase</div>}
                 </div>
                 {!isDemoMode && (
-                  <button onClick={async () => { await loadRealProfiles(); await loadRealSessions(); toast.success('Datos reales sincronizados') }} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black">Sincronizar</button>
+                  <button onClick={async () => { await loadRealProfiles(); await loadRealSessions(); await loadMyFeedbacks(); setLastSync(new Date()); toast.success('Datos reales sincronizados') }} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black">Sincronizar</button>
                 )}
               </div>
               <div className="flex gap-2">
@@ -2367,6 +2436,38 @@ function App() {
                     <img src={photo} className="w-full h-full object-cover" />
                   </div>
                 ))}
+              </div>
+            )}
+
+            {/* Quick native camera add (APK only) - Phase 0 deeper integration */}
+            {CapacitorCamera && (
+              <div className="px-4 pt-3">
+                <button
+                  onClick={async () => {
+                    try {
+                      const photo = await CapacitorCamera.getPhoto({ quality: 80, allowEditing: false, resultType: 'base64' })
+                      if (photo?.base64String) {
+                        const dataUrl = `data:image/jpeg;base64,${photo.base64String}`
+                        const newPhotos = [...(currentUser.photos || []), dataUrl].slice(0, 6)
+                        const updated = { ...currentUser, photos: newPhotos }
+                        // Save locally + to Firestore if real
+                        saveUser(updated as any)
+                        if (!isDemoMode && firebaseUser?.uid && db) {
+                          const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+                          await setDoc(doc(db, 'profiles', firebaseUser.uid), { photos: newPhotos, updatedAt: serverTimestamp() }, { merge: true })
+                        }
+                        toast.success('Foto agregada con cámara')
+                        setLastSync(new Date())
+                      }
+                    } catch (e) {
+                      toast('No se pudo usar la cámara (permisos o cancelado)')
+                    }
+                  }}
+                  className="w-full py-2 rounded-2xl border border-[#14b8a6] text-[#14b8a6] text-sm flex items-center justify-center gap-2 active:bg-[#14b8a6]/10"
+                >
+                  <span>📷</span> Agregar foto con cámara del teléfono
+                </button>
+                <div className="text-center text-[10px] text-[#64748b] mt-1">Disponible en la app nativa (APK)</div>
               </div>
             )}
 
@@ -2497,7 +2598,7 @@ function App() {
                 <span className="font-semibold text-[#14b8a6]">Pre-Alpha activa:</span> Tus datos reales se sincronizan entre dispositivos vía Firebase. 
                 Usa "Cambiar cuenta" arriba o el botón rojo flotante si quieres probar con otra cuenta. ¡Gracias por testear!
               </div>
-              <div className="text-center text-[10px] text-[#475569] mt-4">EntrenaMatch • Solo +18 • Backend real 2026</div>
+              <div className="text-center text-[10px] text-[#475569] mt-4">EntrenaMatch v0.1.0-prealpha • Solo +18 • Backend real 2026</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -2526,38 +2627,130 @@ function App() {
               </div>
             </div>
 
-            {/* Beta Feedback (simple but valuable for Phase 0) */}
+            {/* Beta Feedback ENHANCED (Phase 0 - structured, with history) */}
             <div className="px-4 mt-2 mb-8">
               <div className="card p-4">
-                <div className="font-medium mb-2 text-sm">Feedback de Beta</div>
-                <textarea id="beta-feedback" className="w-full bg-[#121418] border border-[#272b33] rounded-2xl p-3 text-sm h-20 resize-y" placeholder="¿Qué te gustó? ¿Qué no funciona bien? ¿Ideas para mejorar?"></textarea>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="font-semibold text-sm">Feedback de Beta</div>
+                  <div className="text-[10px] px-2 py-0.5 rounded-full bg-[#14b8a6]/10 text-[#14b8a6]">Privado</div>
+                </div>
+                <p className="text-[11px] text-[#94a3b8] mb-3">Tu opinión define la Pre-Alpha. Todo se guarda en Firebase y lo leemos.</p>
+
+                {/* Type segmented */}
+                <div className="mb-3">
+                  <div className="text-[10px] uppercase tracking-widest text-[#64748b] mb-1">Tipo</div>
+                  <div className="flex gap-1.5 flex-wrap">
+                    {[
+                      { v: 'bug', l: '🐞 Bug' },
+                      { v: 'idea', l: '💡 Idea' },
+                      { v: 'ux', l: '🎨 UX / Diseño' },
+                      { v: 'other', l: '📝 Otro' },
+                    ].map(opt => (
+                      <button
+                        key={opt.v}
+                        onClick={() => setFeedbackType(opt.v as any)}
+                        className={`px-3 py-1 text-xs rounded-2xl border transition ${feedbackType === opt.v ? 'bg-[#14b8a6] text-black border-[#14b8a6]' : 'border-[#272b33] text-[#cbd5e1] active:bg-[#121418]'}`}
+                      >
+                        {opt.l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Star rating */}
+                <div className="mb-3">
+                  <div className="text-[10px] uppercase tracking-widest text-[#64748b] mb-1">¿Qué tan bien funciona para ti? (1-5)</div>
+                  <div className="flex gap-2">
+                    {[1,2,3,4,5].map(r => (
+                      <button
+                        key={r}
+                        onClick={() => setFeedbackRating(r)}
+                        className={`p-1 rounded-xl ${feedbackRating >= r ? 'text-[#facc15]' : 'text-[#475569]'}`}
+                        aria-label={`${r} estrellas`}
+                      >
+                        <Star size={22} fill={feedbackRating >= r ? 'currentColor' : 'none'} />
+                      </button>
+                    ))}
+                    <span className="ml-1 text-sm text-[#94a3b8] self-center">{feedbackRating}/5</span>
+                  </div>
+                </div>
+
+                {/* Text */}
+                <textarea 
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  className="w-full bg-[#121418] border border-[#272b33] rounded-2xl p-3 text-sm h-20 resize-y" 
+                  placeholder="Cuéntanos qué pasó, qué te gustó, qué duele o qué mejorarías..."
+                />
+
+                {/* APK screenshot note */}
+                <div className="text-[10px] text-[#64748b] mt-1 mb-2">
+                  En la APK nativa puedes adjuntar capturas al reportar por el mismo canal de invitación.
+                </div>
+
                 <button 
-                  onClick={() => {
-                    const textarea = document.getElementById('beta-feedback') as HTMLTextAreaElement;
-                    if (textarea && textarea.value.trim() && firebaseUser?.uid && db) {
-                      // Save to Firestore (collection 'betaFeedback')
-                      import('firebase/firestore').then(({ collection, addDoc, serverTimestamp }) => {
-                        addDoc(collection(db, 'betaFeedback'), {
-                          userId: firebaseUser.uid,
-                          text: textarea.value.trim(),
-                          createdAt: serverTimestamp(),
-                          platform: 'web' // or detect
-                        }).then(() => {
-                          toast.success('¡Gracias por tu feedback!');
-                          textarea.value = '';
-                        }).catch(() => toast.error('No se pudo enviar (revisa conexión)'));
-                      });
-                    } else if (!firebaseUser) {
-                      toast('Inicia sesión para enviar feedback');
-                    } else {
-                      toast('Escribe algo antes de enviar');
+                  onClick={async () => {
+                    const text = feedbackText.trim()
+                    if (!text) { toast('Escribe algo antes de enviar'); return }
+                    if (!firebaseUser?.uid || !db) { toast('Inicia sesión para enviar feedback'); return }
+
+                    const platform = (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web'
+                    const appVersion = '0.1.0-prealpha'
+
+                    try {
+                      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+                      await addDoc(collection(db, 'betaFeedback'), {
+                        userId: firebaseUser.uid,
+                        type: feedbackType,
+                        rating: feedbackRating,
+                        text,
+                        platform,
+                        appVersion,
+                        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+                        createdAt: serverTimestamp(),
+                      })
+                      toast.success('¡Gracias! Feedback guardado.')
+                      setFeedbackText('')
+                      setFeedbackType('idea')
+                      setFeedbackRating(5)
+                      setLastSync(new Date())
+                      await loadMyFeedbacks()
+                    } catch (e) {
+                      toast.error('No se pudo enviar (revisa conexión o permisos)')
                     }
                   }}
-                  className="mt-2 w-full py-2 rounded-2xl bg-[#14b8a6] text-black text-sm font-semibold active:bg-[#0f9d8c]"
+                  className="mt-1 w-full py-2.5 rounded-2xl bg-[#14b8a6] text-black text-sm font-semibold active:bg-[#0f9d8c]"
                 >
-                  Enviar feedback (se guarda de forma privada)
+                  Enviar feedback estructurado
                 </button>
-                <div className="text-[10px] text-[#64748b] mt-1 text-center">Tu opinión ayuda a mejorar la app para todos los beta testers.</div>
+                <div className="text-[10px] text-[#64748b] mt-1 text-center">Se guarda privado • Lo revisamos para la beta</div>
+
+                {/* My previous feedbacks list */}
+                {(myFeedbacks.length > 0 || loadingMyFeedbacks) && (
+                  <div className="mt-4 pt-3 border-t border-[#272b33]">
+                    <div className="text-[10px] uppercase tracking-widest text-[#64748b] mb-2 flex items-center justify-between">
+                      <span>Mis feedbacks anteriores</span>
+                      {loadingMyFeedbacks && <span className="text-[#14b8a6]">cargando…</span>}
+                    </div>
+                    {myFeedbacks.length === 0 && !loadingMyFeedbacks && (
+                      <div className="text-xs text-[#64748b]">Aún no has enviado ninguno. ¡El primero cuenta mucho!</div>
+                    )}
+                    <div className="space-y-2 max-h-44 overflow-auto pr-1">
+                      {myFeedbacks.map((fb, i) => (
+                        <div key={fb.id || i} className="bg-[#121418] rounded-2xl p-2.5 text-xs border border-[#272b33]">
+                          <div className="flex items-center gap-2 text-[#94a3b8]">
+                            <span className="font-medium text-white/90">{fb.type === 'bug' ? '🐞 Bug' : fb.type === 'idea' ? '💡 Idea' : fb.type === 'ux' ? '🎨 UX' : '📝 Otro'}</span>
+                            <span>·</span>
+                            <span>{'★'.repeat(Math.max(1, Math.min(5, fb.rating || 0)))}</span>
+                            <span className="ml-auto text-[#64748b]">{new Date(fb.createdAt).toLocaleDateString('es-CL', {month:'short', day:'numeric'})}</span>
+                          </div>
+                          <div className="mt-1 text-[#cbd5e1] leading-snug line-clamp-2">{fb.text}</div>
+                          <div className="mt-0.5 text-[#64748b] text-[10px]">{fb.platform}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -3187,6 +3380,9 @@ function App() {
                 </div>
 
                 <div className="mt-2 mb-3 text-[10px] text-[#14b8a6] text-center">Pre-Alpha: otros testers reales la verán y podrán unirse al instante</div>
+                <div className="text-[10px] text-center text-[#64748b] mb-2">
+                  Al publicar aceptas nuestros <a href="/entrenamatch/terms.html" target="_blank" className="underline">Términos</a>.
+                </div>
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setShowCreateSession(false)} className="flex-1 py-3 rounded-2xl border border-[#272b33] active:bg-[#1f242b]">Cancelar</button>
                   <button type="submit" className="flex-1 btn-primary">Publicar sesión</button>
@@ -3808,6 +4004,7 @@ function App() {
                   {!isDemoMode && firebaseUser?.uid && (
                     <button onClick={() => loadRealGroupMessages(showGroupChatModalFor)} className="text-[10px] px-2.5 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23]">Actualizar</button>
                   )}
+                  <a href="/entrenamatch/privacy.html" target="_blank" className="text-[10px] text-[#64748b] underline">Privacidad</a>
                   <button onClick={() => setShowGroupChatModalFor(null)} className="text-3xl leading-none text-[#64748b] hover:text-white px-1">×</button>
                 </div>
               </div>

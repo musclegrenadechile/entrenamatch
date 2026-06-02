@@ -119,4 +119,17 @@ When reporting, please note:
 
 **This guide exists because the user asked for explicit testing and verification on the live GitHub deployment.**
 
-Run this full flow after every significant overnight push. Document results in commit messages or this file.
+Run this full flow after every significant overnight push. Document results in commit messages or this file.## Phase 0 Continuation (sigamos con el phase 0) - Latest landed
+- **Beta Feedback completely upgraded**: Structured type (Bug/Idea/UX/Otro) + star rating + controlled form + rich metadata (platform, version, UA) saved to Firestore. After send: auto-loads and shows your previous feedbacks list with date/type/rating snippet. APK note for screenshots included.
+- **Legal links everywhere**: Clickable in AuthScreen footer, strengthened in onboarding consents, added in create-session modal + 1:1 chat header + group chat header. Direct /privacy.html + /terms.html links (work on GH Pages subpath).
+- **Native camera in Profile**: Quick "Agregar foto con cámara del teléfono" button appears only in APK builds (dynamic Capacitor), directly appends to your profile photos + persists to Firestore. Complements the existing one inside full Edit (Onboarding).
+- **Version visible**: v0.1.0-prealpha in package + android (code 3) + footers in Profile + AuthScreen.
+- **Sync polish**: lastSync timestamp + "hace Xs" indicators next to refresh buttons in Sesiones and a banner in Explore. Sincronizar in Profile also reloads your feedbacks.
+- **Docs & assets ready for hidden Play Store**:
+  - BETA_TESTERS_GUIDE expanded with exact Internal testing + Closed testing (Google Group) install steps from Play Store.
+  - New PLAY_STORE_ASSETS.md with short/full desc, What's new, privacy URL, feature graphic prompt + generated example in assets/play-store/, 8 phone screenshot prompts/captions ready to generate/upload.
+  - PRODUCTION_AND_APK updated with Firebase Hosting CI activation notes.
+- Build verified clean (tsc + vite). plan.md updated with checkboxes.
+- Next: push → hard refresh on https://musclegrenadechile.github.io/entrenamatch/ + CI will produce fresh APK artifact + Release.
+
+**Recordatorio**: Después de cada push espera 3-8 min para deploy GH Pages. Usa Ctrl+Shift+R. Para APK nativa: descarga del tag android-prealpha en Releases o Actions artifacts.

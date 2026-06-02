@@ -134,8 +134,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
         </div>
 
         <p className="text-center text-xs text-[#64748b] mt-6">
-          Al continuar aceptas nuestros Términos y Política de Privacidad
+          Al continuar aceptas nuestros{' '}
+          <a href="/entrenamatch/terms.html" target="_blank" className="underline hover:text-[#14b8a6]">Términos</a>{' '}
+          y{' '}
+          <a href="/entrenamatch/privacy.html" target="_blank" className="underline hover:text-[#14b8a6]">Política de Privacidad</a>
         </p>
+        <p className="text-center text-[10px] text-[#475569] mt-1">v0.1.0-prealpha</p>
       </div>
     </div>
   );

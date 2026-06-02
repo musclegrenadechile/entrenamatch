@@ -146,8 +146,10 @@ Todo lo que preparamos (keystore, AAB firmado, scripts) está listo para este fl
 
 **Hosting for "real" production (Tinder/Badoo level):**
 - firebase.json configured for Firebase Hosting.
-- Run `npm run deploy` (after firebase login) to move off GitHub Pages.
-- Firebase Hosting + Cloud Functions is the recommended path for push notifications, better PWA, custom domain, and scaling while keeping the current backend.
+- Run `npm run deploy` (after `firebase login`) to move off GitHub Pages (manual).
+- CI: `.github/workflows/firebase-deploy.yml` is ready — when you add the `FIREBASE_SERVICE_ACCOUNT` secret (Google Cloud service account JSON for the project "entrenamatch") in GitHub repo settings, every push to main will auto-deploy hosting + rules + indexes.
+- Recommended hosting URL after setup: https://entrenamatch.web.app (or your custom domain). Update links in guides once live.
+- Firebase Hosting + Cloud Functions is the recommended path for push notifications (FCM), better PWA, custom domain, and scaling while keeping the current backend.
 
 **Easy ways to get the latest APK (updated live):**
 - GitHub Releases: https://github.com/musclegrenadechile/entrenamatch/releases/tag/android-prealpha (recommended - always has the latest)
