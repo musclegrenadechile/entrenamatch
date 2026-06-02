@@ -2621,7 +2621,7 @@ function App() {
                     onClick={() => setShowCreateSession(true)}
                     className="px-5 py-2 bg-[#14b8a6] text-black rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
                   >
-                    Crear sesión de prueba
+                    Crear sesión
                   </button>
                 </div>
               ) : (
