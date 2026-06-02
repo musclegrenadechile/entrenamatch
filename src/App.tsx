@@ -2738,7 +2738,7 @@ function App() {
                     Los matches y el chat 1:1 funcionan entre dispositivos distintos gracias a Firebase.
                   </p>
                   <button onClick={() => setActiveTab('explore')} className="btn-primary px-8">Ir a Explorar</button>
-                  <div className="mt-5 text-[10px] text-[#14b8a6]">Pre-Alpha real • Prueba con 2 cuentas en celulares diferentes</div>
+                  <div className="mt-5 text-[10px] text-[#14b8a6]">Prueba con 2 cuentas en celulares diferentes</div>
                 </div>
               </div>
             ) : (
