@@ -30,6 +30,9 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   return (
     <div className="app-container flex items-center justify-center bg-[#0a0b0f] p-4">
       <div className="w-full max-w-md">
+        <div className="text-center mb-4">
+          <div className="inline-block text-[10px] bg-[#14b8a6] text-black px-3 py-0.5 rounded-full font-bold mb-2">PRE-ALPHA • Backend real activo</div>
+        </div>
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
             <div className="w-16 h-16 rounded-2xl bg-[#14b8a6] flex items-center justify-center">
