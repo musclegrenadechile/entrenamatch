@@ -739,6 +739,42 @@ function App() {
     return () => clearInterval(interval);
   }, [realMatches, isDemoMode, firebaseUser?.uid]);
 
+  // Real-time onSnapshot for 1:1 using safe separate == queries (triggers live update on changes, then load for data)
+  // This makes chat truly real-time when open, without complex 'in' that may need indexes.
+  useEffect(() => {
+    if (!activeChat || isDemoMode || !firebaseUser?.uid || !db) {
+      return;
+    }
+    const isRealChat = realMatches.includes(activeChat);
+    if (!isRealChat) {
+      return;
+    }
+    let unsub1: (() => void) | null = null;
+    let unsub2: (() => void) | null = null;
+    (async () => {
+      try {
+        const { collection, query, where, onSnapshot, orderBy } = await import('firebase/firestore');
+        const messagesRef = collection(db, 'messages');
+        const q1 = query(messagesRef, where('from', '==', firebaseUser.uid), where('to', '==', activeChat), orderBy('createdAt', 'asc'));
+        const q2 = query(messagesRef, where('from', '==', activeChat), where('to', '==', firebaseUser.uid), orderBy('createdAt', 'asc'));
+        const handler = () => {
+          // On any change, force a fresh load to update both local messages and realChatMessages
+          loadRealChatMessages(activeChat).then(msgs => {
+            if (msgs) setRealChatMessages(msgs);
+          });
+        };
+        unsub1 = onSnapshot(q1, handler, (err) => console.warn('1:1 q1 listener error:', err));
+        unsub2 = onSnapshot(q2, handler, (err) => console.warn('1:1 q2 listener error:', err));
+      } catch (e) {
+        console.warn('1:1 onSnapshot setup error (falling back to poll):', e);
+      }
+    })();
+    return () => {
+      if (unsub1) unsub1();
+      if (unsub2) unsub2();
+    };
+  }, [activeChat, isDemoMode, firebaseUser?.uid, realMatches, db]);
+
   // Optional real-time onSnapshot for 1:1 (may require Firestore composite index on messages).
   // Currently disabled in favor of reliable poll + load above to guarantee cross-device updates.
   /*
@@ -2748,7 +2784,41 @@ function App() {
                   {!isDemoMode && <div className="text-[10px] text-[#14b8a6] font-medium -mt-0.5">REAL • Sincronizado con Firebase</div>}
                 </div>
                 {!isDemoMode && (
-                  <button onClick={async () => { await loadRealProfiles(); await loadRealSessions(); await loadMyFeedbacks(); setLastSync(new Date()); toast.success('Datos reales sincronizados') }} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black">Sincronizar</button>
+                  <button onClick={async () => { 
+                    await loadRealProfiles(); 
+                    await loadRealSessions(); 
+                    await loadMyFeedbacks(); 
+                    // Also force reload self profile from Firestore to ensure latest after edits
+                    if (firebaseUser?.uid) {
+                      try {
+                        const rp = await getUserProfile(firebaseUser.uid);
+                        if (rp && rp.name) {
+                          const merged: CurrentUser = {
+                            ...currentUser,
+                            id: 'me' as any,
+                            name: rp.name,
+                            age: rp.age,
+                            gender: rp.gender,
+                            city: rp.city,
+                            country: rp.country,
+                            bio: rp.bio,
+                            photos: rp.photos || [],
+                            trainingTypes: rp.trainingTypes || [],
+                            goals: rp.goals || [],
+                            level: rp.level || 'Intermedio',
+                            intensity: rp.intensity || 'Moderado',
+                            availability: rp.availability || ['Tarde'],
+                            lat: rp.lat || currentUser?.lat || -33.0153,
+                            lng: rp.lng || currentUser?.lng || -71.5528,
+                            legalConsents: rp.legalConsents || currentUser?.legalConsents,
+                          };
+                          saveUser(merged);
+                        }
+                      } catch {}
+                    }
+                    setLastSync(new Date()); 
+                    toast.success('Datos reales sincronizados') 
+                  }} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black">Sincronizar</button>
                 )}
               </div>
               <div className="flex gap-2">
