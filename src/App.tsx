@@ -1836,7 +1836,7 @@ function App() {
                 {!isDemoMode && (
                   <button 
                     onClick={() => loadRealSessions()}
-                    className="mt-1 text-xs px-3 py-1 rounded-2xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black"
+                    className="mt-1 text-xs px-3 py-1 rounded-2xl bg-[#14b8a6] text-black font-semibold active:bg-[#0f9d8c]"
                   >
                     Actualizar sesiones reales
                   </button>
