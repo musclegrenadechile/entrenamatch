@@ -249,7 +249,9 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           {realProfiles && realProfiles.length > 0 && (
             <div className="text-[10px] text-[#14b8a6] mt-0.5 font-bold">+ {realProfiles.length} perfiles reales de testers (¡sincronizados!)</div>
           )}
-          <div className="text-[9px] text-[#64748b] mt-0.5 opacity-60 flex items-center gap-1">Backend real • cross-device {lastSync && <span className="text-[#14b8a6]">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}</div>
+          {lastSync && (
+            <div className="text-[9px] text-[#64748b] mt-0.5 opacity-60 flex items-center gap-1">Backend real • cross-device <span className="text-[#14b8a6]">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span></div>
+          )}
         </div>
 
         <div className="flex items-center gap-1.5">
