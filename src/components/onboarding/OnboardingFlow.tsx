@@ -1,8 +1,15 @@
 // @ts-nocheck
 import React from 'react';
-import { Dumbbell, MapPin, Camera, Trash2, Star } from 'lucide-react';
+import { Dumbbell, MapPin, Camera as CameraIcon, Trash2, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { TRAINING_OPTIONS, TRAINING_GOALS, TRAINING_INTENSITIES } from '../../constants';
+
+// Capacitor Camera (only used on native)
+let CapacitorCamera: any = null;
+try {
+  // Dynamic so web build doesn't break
+  import('@capacitor/camera').then(mod => { CapacitorCamera = mod.Camera; });
+} catch (e) {}
 
 interface OnboardingFlowProps {
   onboardingStep: number;
@@ -91,6 +98,32 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const removeOnboardPhoto = (index: number) => {
     const newPhotos = (onboardData.photos || []).filter((_: any, i: number) => i !== index);
     updateOnboard({ photos: newPhotos });
+  };
+
+  // Native camera support (Capacitor)
+  const takeNativePhoto = async () => {
+    if (!CapacitorCamera) {
+      toast('Cámara nativa no disponible en esta versión web');
+      return;
+    }
+    try {
+      const photo = await CapacitorCamera.getPhoto({
+        quality: 85,
+        allowEditing: false,
+        resultType: 'base64', // easy to turn into data URL
+      });
+      if (photo && photo.base64String) {
+        const dataUrl = `data:image/jpeg;base64,${photo.base64String}`;
+        const current = onboardData.photos || [];
+        if (current.length < 6) {
+          updateOnboard({ photos: [...current, dataUrl] });
+        } else {
+          toast('Máximo 6 fotos');
+        }
+      }
+    } catch (err) {
+      toast('No se pudo tomar la foto (permiso o cancelación)');
+    }
   };
   const nextOnboarding = () => {
     if (onboardingStep < 4) {
@@ -278,6 +311,17 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
                 </label>
               )}
+              {/* Native camera (shows only when running as real APK via Capacitor) */}
+              {(onboardData.photos || []).length < 6 && CapacitorCamera && (
+                <button
+                  type="button"
+                  onClick={takeNativePhoto}
+                  className="aspect-[4/3] border-2 border-[#14b8a6] text-[#14b8a6] rounded-2xl flex flex-col items-center justify-center text-xs active:bg-[#14b8a6]/10"
+                >
+                  <Camera className="mb-1" />
+                  Cámara del teléfono
+                </button>
+              )}
             </div>
             <p className="text-[10px] text-[#64748b]">Usa fotos recientes donde se te vea bien y con buena luz.</p>
           </div>
@@ -418,6 +462,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <span className="text-sm leading-snug">{item.label}</span>
               </label>
             ))}
+            <p className="text-[10px] text-[#64748b] mt-2">
+              Al continuar aceptas nuestra <a href="/entrenamatch/privacy.html" target="_blank" className="underline">Política de Privacidad</a> y <a href="/entrenamatch/terms.html" target="_blank" className="underline">Términos de Servicio</a>.
+            </p>
           </div>
         )}
 

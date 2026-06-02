@@ -2470,6 +2470,8 @@ function App() {
                 <button onClick={() => setShowLegal('terms')} className="text-left py-0.5">Términos de Servicio</button>
                 <button onClick={() => setShowLegal('privacy')} className="text-left py-0.5">Política de Privacidad</button>
                 <button onClick={() => setShowLegal('community')} className="text-left py-0.5">Directrices de la Comunidad</button>
+                <a href="/entrenamatch/privacy.html" target="_blank" className="text-left py-0.5 hover:underline">Ver Política de Privacidad completa →</a>
+                <a href="/entrenamatch/terms.html" target="_blank" className="text-left py-0.5 hover:underline">Ver Términos de Servicio completos →</a>
               </div>
             </div>
 
@@ -2521,6 +2523,41 @@ function App() {
                 <div className="text-[10px] text-center text-[#64748b] mt-2">
                   También disponible automáticamente en GitHub Actions → Artifacts
                 </div>
+              </div>
+            </div>
+
+            {/* Beta Feedback (simple but valuable for Phase 0) */}
+            <div className="px-4 mt-2 mb-8">
+              <div className="card p-4">
+                <div className="font-medium mb-2 text-sm">Feedback de Beta</div>
+                <textarea id="beta-feedback" className="w-full bg-[#121418] border border-[#272b33] rounded-2xl p-3 text-sm h-20 resize-y" placeholder="¿Qué te gustó? ¿Qué no funciona bien? ¿Ideas para mejorar?"></textarea>
+                <button 
+                  onClick={() => {
+                    const textarea = document.getElementById('beta-feedback') as HTMLTextAreaElement;
+                    if (textarea && textarea.value.trim() && firebaseUser?.uid && db) {
+                      // Save to Firestore (collection 'betaFeedback')
+                      import('firebase/firestore').then(({ collection, addDoc, serverTimestamp }) => {
+                        addDoc(collection(db, 'betaFeedback'), {
+                          userId: firebaseUser.uid,
+                          text: textarea.value.trim(),
+                          createdAt: serverTimestamp(),
+                          platform: 'web' // or detect
+                        }).then(() => {
+                          toast.success('¡Gracias por tu feedback!');
+                          textarea.value = '';
+                        }).catch(() => toast.error('No se pudo enviar (revisa conexión)'));
+                      });
+                    } else if (!firebaseUser) {
+                      toast('Inicia sesión para enviar feedback');
+                    } else {
+                      toast('Escribe algo antes de enviar');
+                    }
+                  }}
+                  className="mt-2 w-full py-2 rounded-2xl bg-[#14b8a6] text-black text-sm font-semibold active:bg-[#0f9d8c]"
+                >
+                  Enviar feedback (se guarda de forma privada)
+                </button>
+                <div className="text-[10px] text-[#64748b] mt-1 text-center">Tu opinión ayuda a mejorar la app para todos los beta testers.</div>
               </div>
             </div>
           </div>

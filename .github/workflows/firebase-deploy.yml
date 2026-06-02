@@ -22,8 +22,8 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      - name: Deploy Firestore Rules & Indexes
-        run: firebase deploy --only firestore:rules,firestore:indexes --non-interactive --project entrenamatch
+      - name: Deploy Firestore Rules & Indexes + Hosting
+        run: firebase deploy --only firestore:rules,firestore:indexes,hosting --non-interactive --project entrenamatch
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
 
