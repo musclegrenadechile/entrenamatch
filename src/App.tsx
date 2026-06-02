@@ -776,54 +776,7 @@ function App() {
     };
   }, [activeChat, isDemoMode, firebaseUser?.uid, realMatches, db]);
 
-  // Optional real-time onSnapshot for 1:1 (may require Firestore composite index on messages).
-  // Currently disabled in favor of reliable poll + load above to guarantee cross-device updates.
-  /*
-  useEffect(() => {
-    if (!activeChat || isDemoMode || !firebaseUser?.uid || !db) {
-      setRealChatMessages([])
-      return
-    }
-    const isRealChat = realMatches.includes(activeChat)
-    if (!isRealChat) {
-      setRealChatMessages([])
-      return
-    }
-    let unsubscribe: (() => void) | null = null
-    ;(async () => {
-      try {
-        const { collection, query, where, onSnapshot, orderBy } = await import('firebase/firestore')
-        const messagesRef = collection(db, 'messages')
-        const q = query(
-          messagesRef,
-          where('from', 'in', [firebaseUser.uid, activeChat]),
-          where('to', 'in', [firebaseUser.uid, activeChat]),
-          orderBy('createdAt', 'asc')  // may need index
-        )
-        unsubscribe = onSnapshot(q, (snapshot) => {
-          const msgs: any[] = []
-          snapshot.forEach((doc) => {
-            const data = doc.data() as any
-            msgs.push({
-              id: doc.id,
-              from: data.from === firebaseUser.uid ? 'me' : 'them',
-              text: data.text,
-              timestamp: data.timestamp || Date.now(),
-            })
-          })
-          msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
-          setRealChatMessages(msgs)
-          console.log(`📨 Real-time update: ${msgs.length} messages for chat ${activeChat}`)
-        }, (error) => {
-          console.warn('Real chat listener error (may need rules/index):', error)
-        })
-      } catch (e) {
-        console.warn('Real chat listener error:', e)
-      }
-    })()
-    return () => { if (unsubscribe) unsubscribe() }
-  }, [activeChat, firebaseUser?.uid, isDemoMode, realMatches])
-  */
+  // Note: Real-time 1:1 chat uses onSnapshot (safe queries) + polling + background for cross-device live updates.
 
   // Load real profiles on mount and when auth changes
   useEffect(() => {
@@ -2675,6 +2628,25 @@ function App() {
                   {!isDemoMode && (
                     <button onClick={async () => { if (activeChat) { await loadRealChatMessages(activeChat); setLastSync(new Date()); toast.success('Chat actualizado'); } }} className="text-[10px] px-2 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23]">Actualizar</button>
                   )}
+                  <button onClick={async () => {
+                    const issue = prompt('¿Qué problema o sugerencia en este chat?');
+                    if (issue && activeChat && db) {
+                      try {
+                        const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                        await addDoc(collection(db, 'betaFeedback'), {
+                          userId: firebaseUser?.uid || 'demo',
+                          type: 'other',
+                          rating: 3,
+                          text: `Chat 1:1 con ${activeChat}: ${issue.trim()}`,
+                          platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
+                          appVersion: '0.1.0-prealpha',
+                          context: '1v1-chat',
+                          createdAt: serverTimestamp(),
+                        });
+                        toast.success('Reporte enviado (ver en Perfil > Feedback)');
+                      } catch {}
+                    }
+                  }} className="text-[10px] text-red-400 underline ml-1">Reportar</button>
                 </div>
 
                 {/* Safety in 1:1 chat */}
