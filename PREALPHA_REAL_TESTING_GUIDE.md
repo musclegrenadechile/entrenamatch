@@ -87,6 +87,7 @@ Use the "Actualizar sesiones reales" button if something doesn't appear immediat
 - Squads: Cards improved with better badges, "Abrir chat del squad" clearer. Header notes it's demo.
 - Loading states: "Actualizar sesiones reales" and Matches "Actualizar reales" now show feedback ("Actualizando..."). Consistent across real data refreshes.
 - Profile tab: Added "Sincronizar" button in sticky header to pull latest real profiles + sessions for testing.
+- Squad detail view: Added "(demo Pre-Alpha)" clarity note in header.
 - All real cross-device flows (matches, sessions, chat) keep getting stronger indicators and feedback.
 - Explore empty state: stronger note about real backend and "actualizando reales".
 
