@@ -91,42 +91,44 @@ For a signed release APK/AAB (for Play Store):
 - Same web codebase (you edit in React/Vite, `cap sync` brings changes)
 - Can still have the web version (PWA) at the same time
 
-### Uploading to Play Store for hidden testing (Internal/Closed track)
+### Para Beta Testers (sin que se publique públicamente) - exactamente lo que preguntas
 
-**Perfect for your use case** ("subirlo a la Play Store pero que esté en oculto"):
+**Sí, se puede usar perfectamente para beta testers manteniendo la app 100% oculta.**
 
-1. **Prepare a signed release AAB** (recommended format):
-   - Run `build-release.bat` (or `npm run build:release:win`)
-   - It will produce `EntrenaMatch-release.aab` (or app-release.aab)
-   - **Important**: First time you must create a keystore (the script gives the keytool command) and fill `android/keystore.properties` (copy from .example, never commit the real one).
+Google Play tiene tracks diseñados exactamente para esto:
 
-2. **Google Play Console** (one-time $25 fee for developer account):
-   - Go to https://play.google.com/console
-   - Create new app (choose "Internal testing" or "Closed testing" track from the start).
-   - Fill basic info (title, short description, etc. — can be placeholder since hidden).
-   - Go to **Testing** > **Internal testing** (or Closed).
-   - Upload the .aab file.
-   - Add testers: list of email addresses (Google accounts). Only they will see the app in Play Store when they click the invitation link.
-   - The app stays completely hidden from public searches and "Everyone".
+- **Internal testing**: El más oculto posible. Solo agregas emails manuales. Ideal para grupos pequeños. La app **no aparece en búsquedas** y solo se accede por link privado.
 
-3. **After upload**:
-   - Google may do a quick review (for internal it's usually fast or skipped).
-   - Share the "Share link" or "Opt-in link" with your testers.
-   - Testers install via Play Store (no sideloading needed after first time).
+- **Closed testing** (recomendado para beta): Aún completamente invisible al público. Puedes usar un Google Group para manejar fácilmente decenas o cientos de beta testers. Los testers la instalan desde Play Store de forma normal.
 
-**Advantages of hidden Play Store testing**:
-- Real push notifications work (FCM).
-- Easy updates for testers.
-- No public visibility at all.
-- You can promote to closed alpha later when ready.
+Mientras esté solo en Internal o Closed testing, **la app nunca entra en producción** y no se publica. Tú controlas todo.
 
-We have prepared the signing config in the project so you only need to provide your keystore once.
+### Cómo hacerlo con lo que ya tenemos:
 
-**Important security**:
-- Keep your keystore file and passwords VERY safe. Losing them means you can't update the app later.
-- Consider enabling Google Play App Signing (recommended — Google manages the key).
+1. Usa el AAB firmado que generé:
+   - `C:\Users\muscl\fitvina\EntrenaMatch-release.aab`
 
-Run the release build script, then upload the AAB to Internal testing. That's the fastest way to have "real" hidden Play Store testing.
+2. En Play Console:
+   - Crea la app.
+   - Ve directo a **Testing → Internal testing** o **Closed testing**.
+   - Sube el `.aab`.
+   - Agrega testers:
+     - Internal: emails uno por uno.
+     - Closed: crea un Google Group y agrégalo (mucho más fácil de manejar muchos testers).
+   - Rollout.
+
+**Resultado**:
+- La app **no se publica**.
+- Nadie puede encontrarla buscando.
+- Solo tus beta testers invitados pueden instalarla y recibir actualizaciones a través de Play Store (experiencia muy real, con notificaciones push funcionando bien).
+
+Esto es exactamente "para beta testers, la idea es que no se publique".
+
+Cuando estés listo para abrir más, puedes promover el mismo app a Open testing o Production desde el panel sin tener que subir nada nuevo.
+
+**Tip**: Empieza con Internal testing para validar con muy pocas personas, y luego pasa a Closed testing cuando tengas más beta testers.
+
+Todo lo que preparamos (keystore, AAB firmado, scripts) está listo para este flujo de pruebas ocultas.
 
 ## Current Status of App Creation (updated live)
 
