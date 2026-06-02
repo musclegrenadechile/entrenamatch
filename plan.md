@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continue (recommendations title 'reales primero'; softened sessions empty, enhanced Explore empty with update; drag hint removed, declutters for premium elegir perfiles). Pushed fbedbae. **PHASE 0 SIGN-OFF READY** (continua).
+Last updated: Phase 0 continue (added REAL badges to recs; title 'reales primero'; enhanced empties; drag hint removed; premium declutter for elegir perfiles). Pushed 32d2276. **PHASE 0 SIGN-OFF READY** (continua).
