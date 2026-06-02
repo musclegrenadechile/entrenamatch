@@ -115,10 +115,20 @@ For a signed release APK/AAB (for Play Store):
 - Run `npm run deploy` (after firebase login) to move off GitHub Pages.
 - Firebase Hosting + Cloud Functions is the recommended path for push notifications, better PWA, custom domain, and scaling while keeping the current backend.
 
-**Easy ways to get the latest APK:**
-- GitHub Releases: https://github.com/musclegrenadechile/entrenamatch/releases/tag/android-prealpha (recommended)
+**Easy ways to get the latest APK (updated live):**
+- GitHub Releases: https://github.com/musclegrenadechile/entrenamatch/releases/tag/android-prealpha (recommended - always has the latest)
 - Or repo → Actions → latest "Build Android APK" run → Artifacts.
-- Local one-click: double-click `build-apk-now.bat` (requires Android Studio/SDK on your PC).
+- **On your computer right now:** Fresh APK generated successfully in this session.
+
+Using the terminal tools directly on your PC, a complete build was executed:
+- Web build + Capacitor sync (with Camera plugin)
+- Full Gradle assembleDebug with JDK 21 + Android 36 SDK
+- **BUILD SUCCESSFUL in ~1 minute**
+
+The APK is at:
+**C:\Users\muscl\fitvina\EntrenaMatch-debug.apk** (≈10 MB)
+
+It includes the native Camera plugin. Install it on your phone to test the real native experience.
 
 A clear path exists from current Pre-Alpha web → production web on Firebase Hosting + real native Android/iOS apps.
 
