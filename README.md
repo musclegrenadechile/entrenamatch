@@ -42,7 +42,7 @@ Puedes probar la aplicación directamente aquí (versión pública de prueba):
 - Perfiles reales visibles en Explorar para otros testers (+ 30 perfiles fake realistas de Reñaca/Viña del Mar/Concón con fotos, género balanceado para pruebas de interacción inmediata).
 - Matches, chat 1:1 y sesiones + chat grupal **en tiempo real** (bg onSnapshot + active listeners + polling; "si alguien envía un mensaje uno lo reciba" en lista y vista abierta + auto-scroll al fondo).
 - Sesiones con rol admin para el creador (cerrar + expulsar participantes con badge ADMIN; los demás solo pueden salir).
-- Escape hatches siempre visibles (barra superior teal PRE-ALPHA v0.1.0-prealpha + "Cambiar cuenta" en Perfil).
+- Escape hatches siempre visibles (barra superior teal PRE-ALPHA v0.1.0-prealpha + "Cambiar cuenta" en Perfil). UI limpia en Explorar (sin botones flotantes rojos/guía ni instrucciones que molesten al elegir perfiles/swipe).
 - Feedback estructurado de beta en tu Perfil (categoría + estrellas + historial visible).
 - Versión visible en barra superior y footer de Perfil.
 
