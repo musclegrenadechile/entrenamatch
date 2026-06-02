@@ -914,6 +914,15 @@ function App() {
     return () => clearInterval(interval);
   }, [showGroupChatModalFor, isDemoMode, firebaseUser?.uid, db]);
 
+  // Defensive: if self was expelled from current group session (by admin), auto-close the modal
+  useEffect(() => {
+    if (!showGroupChatModalFor) return;
+    const currentSess = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor);
+    if (currentSess && !currentSess.participants?.includes(effectiveUserId)) {
+      setTimeout(() => setShowGroupChatModalFor(null), 50);
+    }
+  }, [showGroupChatModalFor, displaySessions, sessions, effectiveUserId]);
+
   // Simulated pending verifications for demo (in real app this would come from backend)
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([
     {
