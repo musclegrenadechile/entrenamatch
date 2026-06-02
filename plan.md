@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continue (lastSync header only in real mode; distance+REAL in recs; fixed session form bug; declutter for premium elegir perfiles). Pushed cb46e5f. **PHASE 0 SIGN-OFF READY** (continua).
+Last updated: Phase 0 continue (real 1:1 msg delivery fixed via match listeners+polling+manual reload so real accounts receive; lastSync header real-only; distance+REAL recs; session form bug; declutter). Pushed 5bb9c6c. **PHASE 0 SIGN-OFF READY** (continua).
