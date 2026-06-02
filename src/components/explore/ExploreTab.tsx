@@ -387,7 +387,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
               .map(p => ({ profile: p, score: getCompatibility(p) || 50, isReal: realProfiles.some(r => r.id === p.id) }))
               .sort((a, b) => (b.isReal ? 1 : 0) - (a.isReal ? 1 : 0) || (b.score || 0) - (a.score || 0))
               .slice(0, 4)
-              .map(({ profile, score }) => (
+              .map(({ profile, score, isReal }) => (
                 <div 
                   key={profile.id}
                   onClick={() => onShowProfile?.(profile)}
@@ -395,7 +395,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                 >
                   <img src={profile.photos[0]} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" alt="" />
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm truncate">{profile.name}</div>
+                    <div className="font-medium text-sm truncate flex items-center gap-1">{profile.name} {isReal && <span className="text-[8px] bg-[#14b8a6] text-black px-1 rounded">REAL</span>}</div>
                     <div className="text-xs text-[#94a3b8] truncate">{profile.city}</div>
                     <div className="text-[#14b8a6] text-sm font-bold mt-0.5">{score}%</div>
                   </div>
