@@ -15,7 +15,7 @@ interface OnboardingFlowProps {
   onboardingStep: number;
   setOnboardingStep: (step: number) => void;
   currentUser: any;
-  saveUser: (user: any) => void;
+  saveUser: (user: any) => void; // can be sync local or async saveUserWithRealSync
   setShowOnboarding: (show: boolean) => void;
   requestUserLocation: () => void;
   consents: any;
@@ -69,15 +69,27 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   });
 
   // Consents fully managed internally now (previous props were dummy)
-  const [localConsents, setLocalConsents] = React.useState({
-    is18: false,
-    isForTraining: false,
-    sharesLocation: false
+  // For edit mode, pre-fill from existing legalConsents so user doesn't have to re-tap to save changes
+  const [localConsents, setLocalConsents] = React.useState(() => {
+    if (currentUser && currentUser.legalConsents) {
+      return {
+        is18: !!currentUser.legalConsents.is18,
+        isForTraining: !!currentUser.legalConsents.isForTraining,
+        sharesLocation: !!currentUser.legalConsents.sharesLocation,
+      };
+    }
+    return {
+      is18: false,
+      isForTraining: false,
+      sharesLocation: false
+    };
   });
 
   const updateOnboard = (patch: any) => {
     setOnboardData((prev: any) => ({ ...prev, ...patch }));
   };
+
+  const isEditingProfile = !!(currentUser && currentUser.name);
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -129,11 +141,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     if (onboardingStep < 4) {
       setOnboardingStep(s => s + 1);
     } else {
-      finishOnboarding();
+      finishOnboarding(); // async but fire-and-forget is fine (it handles its own errors)
     }
   };
 
-  const finishOnboarding = () => {
+  const finishOnboarding = async () => {
     if (!onboardData.name || !onboardData.bio || onboardData.photos?.length === 0 || onboardData.trainingTypes?.length === 0 || (onboardData.goals?.length || 0) === 0) {
       toast.error('Faltan datos', { description: 'Nombre, bio, foto, tipos de entrenamiento y al menos un objetivo son obligatorios' });
       return;
@@ -148,7 +160,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       return;
     }
 
+    // Preserve any extra fields the user may have (e.g. verificationStatus) when editing
     const newUser: any = {
+      ...(currentUser || {}),
       id: 'me',
       name: onboardData.name!,
       age: onboardData.age!,
@@ -175,13 +189,22 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       }
     };
 
-    saveUser(newUser);
-    setShowOnboarding(false);
-    setOnboardingStep(0);
+    try {
+      // saveUser may be async (saveUserWithRealSync writes to Firestore for real users)
+      await Promise.resolve(saveUser(newUser));
+      setShowOnboarding(false);
+      setOnboardingStep(0);
 
-    toast.success('¡Perfil creado!', { 
-      description: 'Bienvenido a EntrenaMatch. ¡Explora y encuentra tu compañero de entrenamiento!' 
-    });
+      toast.success(isEditingProfile ? '¡Perfil actualizado!' : '¡Perfil creado!', { 
+        description: isEditingProfile 
+          ? 'Los cambios se guardaron y sincronizaron con el backend real.' 
+          : 'Bienvenido a EntrenaMatch. ¡Explora y encuentra tu compañero de entrenamiento!' 
+      });
+    } catch (err) {
+      console.error('Error guardando perfil en onboarding:', err);
+      toast.error('No se pudo guardar el perfil', { description: 'Revisa tu conexión e intenta de nuevo.' });
+      // Do not close the flow on error so user can retry
+    }
   };
 
   return (
@@ -198,7 +221,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         </div>
 
         <div className="mb-6">
-          <div className="text-3xl font-semibold tracking-tighter leading-none mb-2">Crea tu perfil</div>
+          <div className="text-3xl font-semibold tracking-tighter leading-none mb-2">
+            {isEditingProfile ? 'Edita tu perfil' : 'Crea tu perfil'}
+          </div>
           <div className="text-[#94a3b8]">Conecta con personas que entrenan cerca de ti en todo el mundo</div>
         </div>
 
@@ -444,7 +469,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           <div className="space-y-4">
             <div>
               <div className="text-xl font-semibold mb-1">Consentimientos obligatorios</div>
-              <p className="text-sm text-[#94a3b8]">Debes aceptar todos para crear tu perfil y usar la plataforma.</p>
+              <p className="text-sm text-[#94a3b8]">{isEditingProfile ? 'Confirma que sigues de acuerdo para guardar los cambios.' : 'Debes aceptar todos para crear tu perfil y usar la plataforma.'}</p>
             </div>
 
             {[

@@ -1729,7 +1729,7 @@ function App() {
           onboardingStep={onboardingStep}
           setOnboardingStep={setOnboardingStepLocal}
           currentUser={currentUser}
-          saveUser={saveUser}
+          saveUser={saveUserWithRealSync}
           setShowOnboarding={setShowOnboarding}
           requestUserLocation={requestUserLocation}
           consents={{ is18: false, isForTraining: false, sharesLocation: false }}
@@ -2450,12 +2450,8 @@ function App() {
                         const dataUrl = `data:image/jpeg;base64,${photo.base64String}`
                         const newPhotos = [...(currentUser.photos || []), dataUrl].slice(0, 6)
                         const updated = { ...currentUser, photos: newPhotos }
-                        // Save locally + to Firestore if real
-                        saveUser(updated as any)
-                        if (!isDemoMode && firebaseUser?.uid && db) {
-                          const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
-                          await setDoc(doc(db, 'profiles', firebaseUser.uid), { photos: newPhotos, updatedAt: serverTimestamp() }, { merge: true })
-                        }
+                        // Use the real-sync saver (handles local + Firestore for real users)
+                        saveUserWithRealSync(updated as any)
                         toast.success('Foto agregada con cámara')
                         setLastSync(new Date())
                       }
