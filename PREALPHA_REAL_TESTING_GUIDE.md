@@ -82,7 +82,8 @@ Use the "Actualizar sesiones reales" button if something doesn't appear immediat
 - **Filters modal (Explore)**: Now has live "X perfiles que verás" count at top, prettier consistent chips for training/availability (with counters), "Ver X resultados" CTA button. Filters are live so you see the impact instantly.
 - **Create Session flow**: Training type now nice tap chips instead of ugly select. Auto-opens the group chat right after you join or create. Added REAL badges on session cards for real-user created ones.
 - **1:1 Chat**: Bubbles now match the premium group chat style (better rounding, timestamps). Quick proposals and real-match notes remain strong.
-- Star crash from Onboarding step 3 fully resolved in previous push.
+- Squad create: small polish + clear "en desarrollo" note.
+- Star crash from Onboarding step 3 fully resolved in previous push. Hard refresh recommended.
 
 **After this push**: Hard refresh (Ctrl+Shift+R) on https://musclegrenadechile.github.io/entrenamatch/ — the Profile tab should look beautiful and you should never see a black screen or missing logout again.
 
