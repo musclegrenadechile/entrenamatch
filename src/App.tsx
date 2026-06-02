@@ -3216,9 +3216,10 @@ function App() {
                     <div className="font-medium text-white mb-1.5">Qué hacer ahora (prueba las features reales):</div>
                     <div className="text-[#cbd5e1] space-y-1 text-sm">
                       <div>1. <strong>Explorar</strong> → busca perfiles reales de otros testers</div>
-                      <div>2. Haz match y chatea en <strong>Mensajes</strong> (los mensajes van al otro celular)</div>
-                      <div>3. Prueba crear Squads y Sesiones (aún en desarrollo)</div>
-                      <div>4. Cuéntanos qué se siente la experiencia real</div>
+                      <div>2. Haz match y chatea en <strong>Mensajes</strong> (los mensajes van al otro celular, actualizaciones en vivo)</div>
+                      <div>3. Prueba crear Sesiones (chat grupal real-time; como creador puedes cerrar/expulsar)</div>
+                      <div>4. Edita tu perfil (cambios se guardan en backend real)</div>
+                      <div>5. Cuéntanos qué se siente (usa botones Reportar o Feedback)</div>
                     </div>
                   </div>
 
