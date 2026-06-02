@@ -78,7 +78,7 @@ Everything must work after hard refresh + on different physical devices (not jus
 
 **Sign-off for Phase 0**: After all above (including recent: session creator admin/close/expel/leave with ADMIN badges, floating "Reportar problema" everywhere, stronger real-mode empty states, Firebase Hosting note in-app, extra Play screenshots, full guide updates), the app + AAB + listing copy + guides are ready for the user to upload the AAB to Play Console Internal testing track (hidden). Then move to Phase 1 (invite 5-10 real beta testers, structured feedback collection, triage, promote to Closed if good).
 
-**Current status (this continuation)**: Phase 0 core is solid for hidden beta. Frequent pushes made. User to hard-refresh + test full flows (esp. sessions as admin + real chat + clean Profile).
+**Current status (this continuation)**: Phase 0 core is solid for hidden beta (session admin/creator roles fully working with close/expel/leave + defensive auto-close, floating reportar button global, stronger real empty states, hosting note in-app, extra screenshots generated+committed, guides+plan updated). Frequent pushes made (latest aefa33e). User to hard-refresh (Ctrl+Shift+R) + test APK. All checklist items advanced; ready for sign-off + upload AAB to Internal testing (hidden).
 
 ## Phase 1 (after Phase 0 sign-off)
 - Upload signed AAB to Internal testing (hidden).
