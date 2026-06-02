@@ -15,7 +15,7 @@
 
 - Onboarding completo (fotos con cámara nativa si estás en APK).
 - Ver perfiles reales de otros testers (ahora + 30 perfiles fake con imágenes reales de Reñaca/Viña/Concón, género específico para poblar la lista y permitir pruebas de interacción sin esperar muchos usuarios reales).
-- Match + chat 1:1 en tiempo real: si alguien envía un mensaje, el receptor lo ve automáticamente en la lista de Mensajes (bg onSnapshot por cada match) y dentro del chat abierto (onSnapshot + poll 8s + auto-scroll al fondo al llegar mensaje nuevo). Usa los fakes (p16-p45) para simular matches y probar "si alguien envía uno lo reciba".
+- Match + chat 1:1 en tiempo real: nuevos matches se descubren vía onSnapshot + 30s poll + manual "Actualizar chats reales" (que ahora recarga matches primero). Una vez en realMatches, bg listeners + active onSnapshot hacen que el receptor vea el mensaje instant en lista y chat (con auto-scroll). Si no aparece, usa Actualizar (recarga matches). Los mensajes se guardan en Firestore y sobreviven refresh.
 - Crear una sesión (ej: "Running costanera 19:00") y que otro tester la vea y se una. Como creador tienes rol de administrador: botón "Cerrar sesión" en Mis sesiones, y en el chat grupal puedes expulsar (✕ en la lista de participantes) + badge ADMIN. Los demás pueden "Salir". Prueba expulsar y que el otro vea que ya no está.
 - Chat grupal dentro de la sesión (live via onSnapshot subcollection + poll cuando el modal está abierto; auto-scroll al fondo).
 - Perfil propio + botón "Sincronizar" (ahora recarga también tu propio perfil desde backend para verificar guardado) + feedback estructurado.
