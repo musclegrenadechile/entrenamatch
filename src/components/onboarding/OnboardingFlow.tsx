@@ -292,6 +292,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   );
                 })}
               </div>
+              <div className="flex gap-2 mt-1.5">
+                <button onClick={() => updateOnboard({ trainingTypes: TRAINING_OPTIONS })} className="text-[10px] text-[#14b8a6] underline">Seleccionar todos</button>
+                <button onClick={() => updateOnboard({ trainingTypes: [] })} className="text-[10px] text-[#64748b] underline">Limpiar</button>
+              </div>
               {(onboardData.trainingTypes || []).length === 0 && (
                 <p className="text-xs text-[#ef4444] mt-1.5">Selecciona al menos uno para continuar</p>
               )}
@@ -321,6 +325,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     </button>
                   );
                 })}
+              </div>
+              <div className="flex gap-2 mt-1.5">
+                <button onClick={() => updateOnboard({ goals: TRAINING_GOALS })} className="text-[10px] text-[#14b8a6] underline">Seleccionar todos</button>
+                <button onClick={() => updateOnboard({ goals: [] })} className="text-[10px] text-[#64748b] underline">Limpiar</button>
               </div>
               {(onboardData.goals || []).length === 0 && (
                 <p className="text-xs text-[#ef4444] mt-1.5">Selecciona al menos uno para continuar</p>
