@@ -91,10 +91,42 @@ For a signed release APK/AAB (for Play Store):
 - Same web codebase (you edit in React/Vite, `cap sync` brings changes)
 - Can still have the web version (PWA) at the same time
 
-### Next recommended steps for "real" mobile experience:
-- Add Capacitor Camera plugin for better photo taking in onboarding
-- Set up Firebase Cloud Messaging for real push notifications ("someone liked you", "new message in session")
-- Test on real Android device
+### Uploading to Play Store for hidden testing (Internal/Closed track)
+
+**Perfect for your use case** ("subirlo a la Play Store pero que esté en oculto"):
+
+1. **Prepare a signed release AAB** (recommended format):
+   - Run `build-release.bat` (or `npm run build:release:win`)
+   - It will produce `EntrenaMatch-release.aab` (or app-release.aab)
+   - **Important**: First time you must create a keystore (the script gives the keytool command) and fill `android/keystore.properties` (copy from .example, never commit the real one).
+
+2. **Google Play Console** (one-time $25 fee for developer account):
+   - Go to https://play.google.com/console
+   - Create new app (choose "Internal testing" or "Closed testing" track from the start).
+   - Fill basic info (title, short description, etc. — can be placeholder since hidden).
+   - Go to **Testing** > **Internal testing** (or Closed).
+   - Upload the .aab file.
+   - Add testers: list of email addresses (Google accounts). Only they will see the app in Play Store when they click the invitation link.
+   - The app stays completely hidden from public searches and "Everyone".
+
+3. **After upload**:
+   - Google may do a quick review (for internal it's usually fast or skipped).
+   - Share the "Share link" or "Opt-in link" with your testers.
+   - Testers install via Play Store (no sideloading needed after first time).
+
+**Advantages of hidden Play Store testing**:
+- Real push notifications work (FCM).
+- Easy updates for testers.
+- No public visibility at all.
+- You can promote to closed alpha later when ready.
+
+We have prepared the signing config in the project so you only need to provide your keystore once.
+
+**Important security**:
+- Keep your keystore file and passwords VERY safe. Losing them means you can't update the app later.
+- Consider enabling Google Play App Signing (recommended — Google manages the key).
+
+Run the release build script, then upload the AAB to Internal testing. That's the fastest way to have "real" hidden Play Store testing.
 
 ## Current Status of App Creation (updated live)
 
