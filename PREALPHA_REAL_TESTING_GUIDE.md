@@ -92,6 +92,8 @@ Use the "Actualizar sesiones reales" button if something doesn't appear immediat
 - All real cross-device flows (matches, sessions, chat) keep getting stronger indicators and feedback.
 - Explore empty state: stronger note about real backend and "actualizando reales".
 - AuthScreen: Prominent PRE-ALPHA • Backend real activo banner at top for immediate tester context on login/register.
+- Fixed: Manifest icon path now correct /entrenamatch/favicon.svg (was causing browser "resource isn't valid image" for PWA icon).
+- Fixed: No more forcing full profile creation/onboarding every time for users with existing accounts (relaxed gate to basic name; login loads partial profile and enters app; use Profile "Completar mi perfil" to finish if needed. Prevents the "always jumps to creation" issue).
 
 **After this push**: Hard refresh (Ctrl+Shift+R) on https://musclegrenadechile.github.io/entrenamatch/ — the Profile tab should look beautiful and you should never see a black screen or missing logout again.
 
