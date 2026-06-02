@@ -3754,7 +3754,7 @@ function App() {
                     <div className="p-4 border-b border-[#272b33] flex justify-between items-center bg-[#121418]">
                       <div>
                         <div className="font-bold text-xl">{squad.name}</div>
-                        <div className="text-[#14b8a6] text-sm">{squad.focus} • {squad.members.length}/4 miembros <span className="text-[9px] text-[#64748b]">(demo Pre-Alpha)</span></div>
+                        <div className="text-[#14b8a6] text-sm">{squad.focus} • {squad.members.length}/4 miembros <span className="text-[9px] text-[#64748b]">(demo)</span></div>
                       </div>
                       <button onClick={() => setSelectedSquad(null)} className="text-2xl text-[#94a3b8]">×</button>
                     </div>
