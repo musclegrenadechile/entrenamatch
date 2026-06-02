@@ -57,7 +57,7 @@ Use the "Actualizar sesiones reales" button if something doesn't appear immediat
    - You should see a small **"REAL"** badge in the chat header (confirms this is a live cross-device conversation).
    - Send 2–3 messages from A.
    - Hard refresh on B → messages should appear.
-   - Send messages from B → they should appear on A (ideally live thanks to onSnapshot).
+   - Send messages from B → they should appear on A (live via onSnapshot for group + reliable 8s polling + load for 1:1 when the chat/modal is open on the receiving device; optimistic UI on sender side).
 7. **Hard refresh both sides**:
    - Confirm message history persists.
    - Confirm the match still appears in Matches tab.
@@ -68,7 +68,7 @@ Use the "Actualizar sesiones reales" button if something doesn't appear immediat
 - Real accounts persist across refreshes and devices.
 - Real profiles from other users appear in Explore (alongside demo seeds). Use the "Actualizar reales" button to pull latest.
 - When you swipe right on a real profile, a like + match is written to Firestore. The other person sees it on their Matches tab (after load/refresh).
-- Real-time 1:1 chat works: messages appear on the other device (live via listeners or after refresh). "REAL" badge shown in chat header.
+- Real-time 1:1 chat works: messages appear on the other device (live via onSnapshot/poll when chat open + optimistic on send). "REAL" badge shown in chat header. Group chat inside sessions also live-updates when modal open.
 - Sessions: Real-time! Sessions created by real users on one device now appear live for other real users on different devices thanks to onSnapshot listener. Create a session on one phone → it should show up on another without manual refresh.
 - "Sincronizado con backend real" indicator in Profile tab.
 - Logout works cleanly for real users (top bar + Profile header + subtle link at bottom of Perfil).
