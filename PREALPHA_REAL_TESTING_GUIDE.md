@@ -86,6 +86,7 @@ Use the "Actualizar sesiones reales" button if something doesn't appear immediat
 - Full profile modal (from swipe): REAL TESTER badge, auto "Abrir chat" if already matched instead of swipe buttons, bottom Pre-Alpha note.
 - Squads: Cards improved with better badges, "Abrir chat del squad" clearer. Header notes it's demo.
 - Loading states: "Actualizar sesiones reales" and Matches "Actualizar reales" now show feedback ("Actualizando..."). Consistent across real data refreshes.
+- Profile tab: Added "Sincronizar" button in sticky header to pull latest real profiles + sessions for testing.
 - All real cross-device flows (matches, sessions, chat) keep getting stronger indicators and feedback.
 - Explore empty state: stronger note about real backend and "actualizando reales".
 
