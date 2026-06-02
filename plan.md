@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continue (further soften demo/Pre-Alpha labels; prioritize real profiles in 'Más compatibles' recommendations to improve real profile choosing in Explore; ongoing premium declutter). Pushed 6822d75. **PHASE 0 SIGN-OFF READY** (sigue con todo).
+Last updated: Phase 0 continue (removed 'Desliza' hint from swipe cards + softened empty states/messages texts for ultra-clean premium 'elegir perfiles' in Explore; more declutter). Pushed 08c59c5. **PHASE 0 SIGN-OFF READY** (continua).
