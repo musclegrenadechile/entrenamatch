@@ -568,38 +568,71 @@ function App() {
     }
   }, [firebaseUser?.uid, isDemoMode])
 
+  // Reusable load for real matches (called on login, periodically, and on manual refresh)
+  const loadRealMatches = async () => {
+    if (!isDemoMode && firebaseUser?.uid && db) {
+      try {
+        const { collection, query, where, getDocs } = await import('firebase/firestore')
+        const matchesRef = collection(db, 'matches')
+        const q1 = query(matchesRef, where('user1', '==', firebaseUser.uid))
+        const q2 = query(matchesRef, where('user2', '==', firebaseUser.uid))
+        
+        const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)])
+        
+        const matchedUserIds = new Set<string>()
+        snap1.forEach(d => {
+          const data = d.data() as any
+          if (data.user2 && data.user2 !== firebaseUser.uid) matchedUserIds.add(data.user2)
+        })
+        snap2.forEach(d => {
+          const data = d.data() as any
+          if (data.user1 && data.user1 !== firebaseUser.uid) matchedUserIds.add(data.user1)
+        })
+        
+        const ids = Array.from(matchedUserIds)
+        setRealMatches(ids)
+        console.log(`✅ Loaded ${ids.length} real matches from Firestore`)
+      } catch (e) {
+        console.warn('Could not load real matches yet:', e)
+      }
+    }
+  }
+
   // Load real matches from Firestore for the current user (so they appear on any device)
   useEffect(() => {
-    if (!isDemoMode && firebaseUser?.uid && db) {
-      (async () => {
-        try {
-          const { collection, query, where, getDocs } = await import('firebase/firestore')
-          const matchesRef = collection(db, 'matches')
-          // Matches where user1 or user2 is me
-          const q1 = query(matchesRef, where('user1', '==', firebaseUser.uid))
-          const q2 = query(matchesRef, where('user2', '==', firebaseUser.uid))
-          
-          const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)])
-          
-          const matchedUserIds = new Set<string>()
-          snap1.forEach(d => {
-            const data = d.data() as any
-            if (data.user2 && data.user2 !== firebaseUser.uid) matchedUserIds.add(data.user2)
-          })
-          snap2.forEach(d => {
-            const data = d.data() as any
-            if (data.user1 && data.user1 !== firebaseUser.uid) matchedUserIds.add(data.user1)
-          })
-          
-          const ids = Array.from(matchedUserIds)
-          setRealMatches(ids)
-          console.log(`✅ Loaded ${ids.length} real matches from Firestore`)
-        } catch (e) {
-          console.warn('Could not load real matches yet:', e)
-        }
-      })()
-    }
+    loadRealMatches()
   }, [firebaseUser?.uid, isDemoMode])
+
+  // Safe polling for real matches (so new likes/matches from others appear without full reload)
+  useEffect(() => {
+    if (!isDemoMode && firebaseUser?.uid) {
+      const interval = setInterval(() => {
+        loadRealMatches()
+      }, 30000)
+      return () => clearInterval(interval)
+    }
+  }, [isDemoMode, firebaseUser?.uid])
+
+  // Real-time onSnapshot for matches (new matches from other users' likes appear instantly, no 30s wait)
+  useEffect(() => {
+    if (isDemoMode || !firebaseUser?.uid || !db) return;
+    let unsubs: (() => void)[] = [];
+    (async () => {
+      try {
+        const { collection, query, where, onSnapshot } = await import('firebase/firestore');
+        const matchesRef = collection(db, 'matches');
+        const q1 = query(matchesRef, where('user1', '==', firebaseUser.uid));
+        const q2 = query(matchesRef, where('user2', '==', firebaseUser.uid));
+        const reloadMatches = () => loadRealMatches();
+        const u1 = onSnapshot(q1, reloadMatches, (e) => console.warn('matches listener q1', e));
+        const u2 = onSnapshot(q2, reloadMatches, (e) => console.warn('matches listener q2', e));
+        unsubs = [u1, u2];
+      } catch (e) {
+        console.warn('matches onSnapshot setup error', e);
+      }
+    })();
+    return () => { unsubs.forEach(u => u()); };
+  }, [isDemoMode, firebaseUser?.uid, db]);
 
   // Helper: Save user locally + persist to Firestore if we are in real mode
   const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
@@ -2355,7 +2388,6 @@ function App() {
             onRefreshRealProfiles={async () => { await loadRealProfiles(); }}
             lastSync={lastSync}
           />
-          </>
         )}
 
         {/* ===== SQUADS (Fixed training crews) - New unique feature ===== */}
@@ -2800,17 +2832,16 @@ function App() {
                   <div className="text-2xl font-semibold tracking-[-1.2px]">Mensajes</div>
                   {!isDemoMode && (
                     <button onClick={async () => {
-                      if (realMatches.length > 0) {
-                        setIsLoadingChats(true);
-                        try {
-                          for (const id of realMatches) {
-                            await loadRealChatMessages(id);
-                          }
-                          setLastSync(new Date());
-                          toast.success('Chats reales actualizados');
-                        } finally {
-                          setIsLoadingChats(false);
+                      setIsLoadingChats(true);
+                      try {
+                        await loadRealMatches(); // discover any new matches first
+                        for (const id of realMatches) {
+                          await loadRealChatMessages(id);
                         }
+                        setLastSync(new Date());
+                        toast.success('Chats reales actualizados');
+                      } finally {
+                        setIsLoadingChats(false);
                       }
                     }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar chats reales'}</button>
                   )}
