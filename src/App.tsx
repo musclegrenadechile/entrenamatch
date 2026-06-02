@@ -1867,12 +1867,12 @@ function App() {
                   <div className="mx-auto w-14 h-14 rounded-2xl bg-[#121418] flex items-center justify-center mb-4">
                     <Users className="text-[#14b8a6]" size={28} />
                   </div>
-                  <div className="font-semibold text-lg mb-2">No hay sesiones abiertas</div>
+                  <div className="font-semibold text-lg mb-2">No hay sesiones abiertas todavía</div>
                   <p className="text-sm text-[#94a3b8] leading-snug mb-4 max-w-[280px] mx-auto">
-                    Crea la primera sesión grupal (running, gym, etc). Otros testers reales la verán al instante y podrán unirse + chatear en el grupo.
+                    Sé el primero en crear una. Otros testers reales la verán al instante (gracias a Firebase) y podrán unirse para chatear en grupo antes o después del entrenamiento.
                   </p>
-                  <button onClick={() => setShowCreateSession(true)} className="btn-primary px-8">Crear sesión grupal</button>
-                  <div className="text-[10px] text-[#14b8a6] mt-4">Pre-Alpha real: las sesiones se guardan en Firebase y aparecen en todos los dispositivos</div>
+                  <button onClick={() => setShowCreateSession(true)} className="btn-primary px-8">Crear la primera sesión</button>
+                  <div className="text-[10px] text-[#14b8a6] mt-3">Beta real: las sesiones son visibles cross-device y el chat grupal funciona en vivo</div>
                 </div>
               ) : (
                 <div className="space-y-3">
