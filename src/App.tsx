@@ -244,6 +244,7 @@ function App() {
   // Training Sessions (unique feature)
   const [sessions, setSessions] = useState<TrainingSession[]>([])
   const [showCreateSession, setShowCreateSession] = useState(false)
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false)
 
   // Reviews for "Entrenamos Juntos" (unique trust system)
   const [reviews, setReviews] = useState<Record<string, TrainingReview[]>>({}) // key = matchId (profile id)
@@ -1741,7 +1742,7 @@ function App() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-2xl font-semibold tracking-[-1.2px]">Tus Squads</div>
-                <div className="text-[#94a3b8] text-sm">Grupos fijos de 3-4 personas para entrenar consistentemente</div>
+                <div className="text-[#94a3b8] text-sm">Grupos fijos • Pre-Alpha (demo por ahora)</div>
               </div>
               <button 
                 onClick={() => setShowCreateSquad(true)}
@@ -1777,7 +1778,7 @@ function App() {
                     <div key={squad.id} className="card rounded-3xl p-4 active:bg-[#1a1d23]" onClick={() => setSelectedSquad(squad.id)}>
                       <div className="flex justify-between">
                         <div>
-                          <div className="font-semibold text-lg">{squad.name}</div>
+                          <div className="font-semibold text-lg flex items-center gap-2">{squad.name} <span className="text-[10px] bg-[#14b8a6]/10 text-[#14b8a6] px-1.5 py-0.5 rounded-full">Squad</span></div>
                           <div className="text-sm text-[#14b8a6]">{squad.focus}</div>
                         </div>
                         <div className="text-right text-xs">
@@ -1811,9 +1812,9 @@ function App() {
                               e.stopPropagation()
                               setSelectedSquad(squad.id)
                             }}
-                            className="text-xs border border-[#14b8a6] text-[#14b8a6] px-3 py-1 rounded-xl"
+                            className="text-xs border border-[#14b8a6] text-[#14b8a6] px-3 py-1.5 rounded-2xl font-medium"
                           >
-                            Ver Squad + Chat
+                            Abrir chat del squad
                           </button>
                         )}
                       </div>
@@ -1835,10 +1836,14 @@ function App() {
                 <div className="text-[#94a3b8] text-sm">Entrenamientos grupales cerca de ti</div>
                 {!isDemoMode && (
                   <button 
-                    onClick={() => loadRealSessions()}
-                    className="mt-1 text-xs px-3 py-1 rounded-2xl bg-[#14b8a6] text-black font-semibold active:bg-[#0f9d8c]"
+                    onClick={async () => {
+                      setIsLoadingSessions(true)
+                      try { await loadRealSessions() } finally { setIsLoadingSessions(false) }
+                    }}
+                    disabled={isLoadingSessions}
+                    className="mt-1 text-xs px-3 py-1 rounded-2xl bg-[#14b8a6] text-black font-semibold active:bg-[#0f9d8c] disabled:opacity-60"
                   >
-                    Actualizar sesiones reales
+                    {isLoadingSessions ? 'Actualizando...' : 'Actualizar sesiones reales'}
                   </button>
                 )}
               </div>
@@ -2057,8 +2062,16 @@ function App() {
         {/* ===== MATCHES ===== */}
         {activeTab === 'matches' && (
           <div className="flex-1 overflow-auto p-4">
-            <div className="text-2xl font-semibold tracking-[-1.2px] mb-1 px-1">Tus matches</div>
-            <div className="text-[#94a3b8] px-1 mb-5 text-sm">Gente con la que ya conectaste en Viña</div>
+            <div className="flex items-center justify-between mb-1 px-1">
+              <div>
+                <div className="text-2xl font-semibold tracking-[-1.2px]">Tus matches</div>
+                <div className="text-[#94a3b8] text-sm">Conexiones reales + demo</div>
+              </div>
+              {!isDemoMode && (
+                <button onClick={() => { loadRealProfiles(); /* realMatches update via listeners */ }} className="text-xs px-3 py-1 rounded-2xl bg-[#14b8a6] text-black font-semibold active:bg-[#0f9d8c]">Actualizar reales</button>
+              )}
+            </div>
+            <div className="text-[#94a3b8] px-1 mb-4 text-xs">Los matches con testers reales aparecen aquí al instante entre dispositivos</div>
 
             {matchProfiles.length === 0 ? (
               <div className="mt-10 px-4">
@@ -2080,9 +2093,17 @@ function App() {
                 {matchProfiles
                   .filter(p => !blockedUsers.includes(p.id))
                   .map(profile => (
-                  <div key={profile.id} onClick={() => openChat(profile.id)} className="card rounded-3xl overflow-hidden active:opacity-80 cursor-pointer">
+                  <div key={profile.id} onClick={() => openChat(profile.id)} className="card rounded-3xl overflow-hidden active:opacity-80 cursor-pointer relative">
                     <div className="relative">
                       <img src={profile.photos[0]} className="w-full aspect-square object-cover" />
+                      <div className="absolute top-2 right-2 flex gap-1">
+                        {realProfiles.some(rp => rp.id === profile.id) && (
+                          <div className="text-[9px] bg-[#14b8a6] text-black px-1.5 py-0.5 rounded-full font-bold">REAL</div>
+                        )}
+                        {profile.verificationStatus === 'verified' && (
+                          <div className="text-[9px] bg-[#22c55e] text-black px-1 py-0.5 rounded-full">✓</div>
+                        )}
+                      </div>
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 p-3">
                         <div className="font-semibold">{profile.name}, {profile.age}</div>
                         <div className="text-xs text-[#14b8a6]">{profile.city}, {profile.country}</div>
@@ -2106,7 +2127,7 @@ function App() {
                       </div>
                     </div>
                     <div className="p-3 text-xs text-[#94a3b8] flex items-center gap-1">
-                      <MessageCircle size={14} /> Chatear
+                      <MessageCircle size={14} /> Abrir chat
                     </div>
                   </div>
                 ))}
@@ -3216,7 +3237,7 @@ function App() {
           <div className="absolute inset-0 z-[90] bg-[#0a0b0f] flex flex-col" onClick={() => setShowFullProfile(null)}>
             <div className="p-4 flex items-center justify-between border-b border-[#272b33]">
               <button onClick={() => setShowFullProfile(null)}><ArrowLeft /></button>
-              <div className="font-medium">Perfil completo</div>
+              <div className="font-medium flex items-center gap-2">Perfil completo {realProfiles.some(rp => rp.id === showFullProfile.id) && <span className="text-[10px] bg-[#14b8a6] text-black px-1.5 py-0.5 rounded-full font-bold">REAL TESTER</span>}</div>
               <div />
             </div>
             <div className="overflow-auto flex-1">
@@ -3302,8 +3323,14 @@ function App() {
               </div>
             </div>
             <div className="p-4 border-t border-[#272b33] flex gap-3">
-              <button onClick={() => { setShowFullProfile(null); handleSwipe(showFullProfile.id, 'left') }} className="flex-1 btn-secondary">Pasar</button>
-              <button onClick={() => { setShowFullProfile(null); handleSwipe(showFullProfile.id, 'right') }} className="flex-1 btn-primary">Me interesa</button>
+              {matches.includes(showFullProfile.id) || realMatches.includes(showFullProfile.id) ? (
+                <button onClick={() => { setShowFullProfile(null); openChat(showFullProfile.id) }} className="flex-1 btn-primary">Abrir chat con {showFullProfile.name.split(' ')[0]}</button>
+              ) : (
+                <>
+                  <button onClick={() => { setShowFullProfile(null); handleSwipe(showFullProfile.id, 'left') }} className="flex-1 btn-secondary">Pasar</button>
+                  <button onClick={() => { setShowFullProfile(null); handleSwipe(showFullProfile.id, 'right') }} className="flex-1 btn-primary">Me interesa</button>
+                </>
+              )}
             </div>
 
             {/* Safety actions - Critical for launch */}
@@ -3332,6 +3359,7 @@ function App() {
                 Bloquear
               </button>
             </div>
+            <div className="p-2 text-center text-[9px] text-[#64748b]">Pre-Alpha • Perfiles reales se sincronizan entre dispositivos</div>
           </div>
         )}
       </AnimatePresence>
