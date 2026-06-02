@@ -74,7 +74,7 @@ Everything must work after hard refresh + on different physical devices (not jus
   - Add "Reportar problema" floating mini action in more screens.
 - [x] Build + test locally (npm run build succeeded cleanly), then frequent small git commits + `git push` after each deliverable so live site + CI APK update.
 - [x] Update all guides (BETA, PRODUCTION, PREALPHA, README) with latest "Phase 0 complete" checklist + links to new assets. (BETA, PREALPHA, PRODUCTION updated with cleaner Profile escape hatches note, no more blocking red center/floating logout; plan.md refreshed; README expanded with Pre-Alpha real section, dual-mode note, links to BETA/PLAY_STORE guides).
-- [x] Final verification: hard refresh on web + install latest APK on device, create 2 real accounts on separate "devices", full flow (incl. profile edit/save + clean logout), submit feedback, confirm cross-device visibility. (Multiple pushes done incl. this UX cleanup; user to hard-refresh live site + test APK. Profile now clean, no blocking red center elements.)
+- [x] Final verification: hard refresh on web + install latest APK on device, create 2 real accounts on separate "devices", full flow (incl. profile edit/save + clean logout + **session creator admin: close/expel/leave**), submit feedback, confirm cross-device visibility. (Pushes include sessions admin roles.)
 
 **Sign-off for Phase 0**: After all above, the app + AAB + listing copy + guides are ready for the user to upload the AAB to Play Console Internal testing track (hidden). Then move to Phase 1 (invite 5-10 real beta testers, structured feedback collection, triage, promote to Closed if good).
 
