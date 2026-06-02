@@ -306,13 +306,13 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         <AnimatePresence>
           {visibleCards.length === 0 && (
             <div className="text-center px-8">
-              <div className="mx-auto w-14 h-14 bg-[#121418] rounded-full flex items-center justify-center mb-4">
-                <Star className="text-[#14b8a6]" size={24} />
+              <div className="mx-auto w-14 h-14 bg-[#121418] rounded-2xl flex items-center justify-center mb-4">
+                <Star className="text-[#14b8a6]" size={28} />
               </div>
               <div className="text-2xl font-semibold tracking-tight mb-2">¡Se acabaron los perfiles por ahora!</div>
               <p className="text-[#94a3b8] max-w-[280px] mx-auto mb-5 text-sm">
                 No hay más perfiles que coincidan con tus filtros actuales. <br />
-                <span className="text-[11px] text-[#64748b]">En Pre-Alpha esto es normal — ¡prueba cambiando filtros o reiniciando!</span>
+                <span className="text-[11px] text-[#64748b]">En Pre-Alpha con backend real esto es normal — ¡prueba cambiando filtros o actualizando reales!</span>
               </p>
               <div className="flex gap-3 justify-center">
                 <button 
