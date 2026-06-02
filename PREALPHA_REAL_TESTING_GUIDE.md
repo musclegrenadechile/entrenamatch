@@ -91,6 +91,7 @@ Use the "Actualizar sesiones reales" button if something doesn't appear immediat
 - Messages header: Added real sync note for 1:1 chats.
 - All real cross-device flows (matches, sessions, chat) keep getting stronger indicators and feedback.
 - Explore empty state: stronger note about real backend and "actualizando reales".
+- AuthScreen: Prominent PRE-ALPHA • Backend real activo banner at top for immediate tester context on login/register.
 
 **After this push**: Hard refresh (Ctrl+Shift+R) on https://musclegrenadechile.github.io/entrenamatch/ — the Profile tab should look beautiful and you should never see a black screen or missing logout again.
 
