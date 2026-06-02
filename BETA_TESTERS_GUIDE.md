@@ -20,6 +20,7 @@
 - Chat grupal dentro de la sesión (live via onSnapshot subcollection + poll cuando el modal está abierto; auto-scroll al fondo).
 - Perfil propio + botón "Sincronizar" (ahora recarga también tu propio perfil desde backend para verificar guardado) + feedback estructurado.
 - Chats 1:1 y grupal en sesiones con actualizaciones en tiempo real (onSnapshot push cuando abierto + polls background para todos tus matches/sesiones). Usa "Actualizar" (con spinner) en headers de chat, "Actualizar chats reales" (con spinner) en lista, o "Sincronizar" en perfil (recarga self profile). LastSync se actualiza en vivo cuando llegan mensajes. Botones "Reportar" en headers de 1:1 y grupal para feedback rápido (guarda en betaFeedback). Auto-scroll automático al último mensaje.
+- UI más limpia: botones flotantes rojos "Reportar" y "Guía" en la parte inferior fueron removidos (molestaban al elegir perfiles en Explorar/swipe). El feedback estructurado sigue en tu Perfil (baja hasta el final). La guía de bienvenida ya no tiene trigger flotante persistente.
 
 ## Protocolo específico para probar mensajería en tiempo real (chats 1:1 y sesiones)
 Usa los 30 perfiles fake (Reñaca / Viña del Mar / Concón, hombres y mujeres) + 1-2 cuentas reales en dispositivos/navegadores diferentes:

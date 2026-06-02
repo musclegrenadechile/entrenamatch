@@ -252,7 +252,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           {realProfiles && realProfiles.length > 0 && (
             <div className="text-[10px] text-[#14b8a6] mt-0.5 font-bold">+ {realProfiles.length} perfiles reales de testers (¡sincronizados!)</div>
           )}
-          <div className="text-[9px] text-[#64748b] mt-0.5">Pre-Alpha • Backend real activo • Lo que ves es real entre dispositivos</div>
+          <div className="text-[9px] text-[#64748b] mt-0.5 opacity-60">Backend real • cross-device</div>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -312,7 +312,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
               <div className="text-2xl font-semibold tracking-tight mb-2">¡Se acabaron los perfiles por ahora!</div>
               <p className="text-[#94a3b8] max-w-[280px] mx-auto mb-5 text-sm">
                 No hay más perfiles que coincidan con tus filtros actuales. <br />
-                <span className="text-[11px] text-[#64748b]">En Pre-Alpha con backend real esto es normal — ¡prueba cambiando filtros o actualizando reales!</span>
+                <span className="text-[11px] text-[#64748b]">Con backend real esto es normal en beta — ¡prueba cambiando filtros o actualizando!</span>
               </p>
               <div className="flex gap-3 justify-center">
                 <button 
