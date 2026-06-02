@@ -14,9 +14,9 @@
 
 - Onboarding completo (fotos con cámara nativa si estás en APK).
 - Ver perfiles reales de otros testers.
-- Match + chat 1:1 (debe sentirse en tiempo real).
+- Match + chat 1:1 (se actualiza en ~8s cuando tienes el chat abierto; se siente en tiempo real gracias a polling + optimistic).
 - Crear una sesión (ej: "Running costanera 19:00") y que otro tester la vea y se una.
-- Chat grupal dentro de la sesión.
+- Chat grupal dentro de la sesión (live via onSnapshot + poll cuando el modal está abierto).
 - Perfil propio + botón "Sincronizar" + feedback.
 
 ## Cómo dar feedback (muy importante)
