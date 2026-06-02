@@ -3567,9 +3567,9 @@ function App() {
                           ) : (
                             (sessionMessages[squad.id] || []).map((msg, i) => (
                               <div key={i} className={`flex ${msg.senderId === 'me' ? 'justify-end' : ''}`}>
-                                <div className={`max-w-[75%] px-3 py-1.5 rounded-2xl ${msg.senderId === 'me' ? 'bg-[#14b8a6] text-black' : 'bg-[#1f242b]'}`}>
+                                <div className={`max-w-[75%] px-3 py-1.5 rounded-2xl break-words overflow-hidden ${msg.senderId === 'me' ? 'bg-[#14b8a6] text-black' : 'bg-[#1f242b]'}`}>
                                   <div className="text-[10px] opacity-70">{msg.senderName}</div>
-                                  {msg.text}
+                                  {renderMessageText(msg.text)}
                                 </div>
                               </div>
                             ))
