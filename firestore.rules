@@ -53,9 +53,10 @@ service cloud.firestore {
     }
 
     // Session messages (subcollection)
+    // Read allowed for any authenticated (pre-alpha: sessions are discoverable, join to participate; relaxes timing on participants update for instant UX)
+    // In production would be stricter: only participants or creator.
     match /sessions/{sessionId}/messages/{messageId} {
-      allow read: if isAuthenticated() && 
-        (request.auth.uid in get(/databases/$(database)/documents/sessions/$(sessionId)).data.participants);
+      allow read: if isAuthenticated();
       allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated() && resource.data.senderId == request.auth.uid;
     }

@@ -218,6 +218,7 @@ function App() {
   const lastSuccessfulAuthRef = useRef(null)
   const chatScrollRef = useRef<HTMLDivElement>(null)
   const groupChatScrollRef = useRef<HTMLDivElement>(null)
+  const groupMessageUnsubsRef = useRef<Record<string, () => void>>({})
 
   const { 
     squads: _squadsFromHook, 
@@ -362,6 +363,15 @@ function App() {
       return true
     })
   })()
+
+  // Stable key for "my sessions" to setup bg message listeners only when the set of sessions I participate in changes
+  const myGroupSessionIdsKey = useMemo(() => {
+    const ids = displaySessions
+      .filter(s => (s.participants || []).includes(effectiveUserId) || s.creatorId === effectiveUserId)
+      .map(s => s.id)
+      .sort();
+    return ids.join(',');
+  }, [displaySessions, effectiveUserId]);
 
   // Beta Feedback enhanced (Phase 0 - structured + history)
   const [feedbackType, setFeedbackType] = useState<'bug' | 'idea' | 'ux' | 'other'>('idea')
@@ -1088,6 +1098,75 @@ function App() {
       setTimeout(() => setShowGroupChatModalFor(null), 50);
     }
   }, [showGroupChatModalFor, displaySessions, sessions, effectiveUserId]);
+
+  // Background onSnapshot listeners for messages of ALL sessions the current real user participates in.
+  // This makes group chat updates "instant" even if the modal is not open (state is kept fresh).
+  // When you open the chat, latest messages are already in sessionMessages. Combined with sessions listener for previews.
+  // Only for real mode; small number of sessions in beta so multiple listeners are fine.
+  useEffect(() => {
+    if (isDemoMode || !firebaseUser?.uid || !db) {
+      return;
+    }
+    const myIds = myGroupSessionIdsKey ? myGroupSessionIdsKey.split(',').filter(Boolean) : [];
+
+    // Cleanup listeners for sessions we are no longer part of
+    Object.keys(groupMessageUnsubsRef.current).forEach((id) => {
+      if (!myIds.includes(id)) {
+        try { groupMessageUnsubsRef.current[id]?.(); } catch {}
+        delete groupMessageUnsubsRef.current[id];
+      }
+    });
+
+    myIds.forEach((sessionId) => {
+      if (groupMessageUnsubsRef.current[sessionId]) return; // already have active listener
+
+      (async () => {
+        try {
+          const { collection, query, orderBy, onSnapshot } = await import('firebase/firestore');
+          const msgsRef = collection(db, `sessions/${sessionId}/messages`);
+          const q = query(msgsRef, orderBy('createdAt', 'asc'));
+
+          const unsub = onSnapshot(q, (snapshot) => {
+            const loaded: SessionMessage[] = [];
+            snapshot.forEach((doc) => {
+              const d = doc.data() as any;
+              loaded.push({
+                id: doc.id,
+                senderId: d.senderId,
+                senderName: d.senderName || 'Usuario',
+                text: d.text || '',
+                timestamp: d.timestamp || Date.now(),
+                photo: d.photo,
+                reactions: d.reactions || {},
+              });
+            });
+            setSessionMessages((prev) => ({
+              ...prev,
+              [sessionId]: loaded,
+            }));
+            setLastSync(new Date());
+            console.log(`📨 BG live group msg for ${sessionId}: ${loaded.length} msgs`);
+          }, (err) => {
+            console.warn(`BG group chat listener error for session ${sessionId} (rules/participants):`, err);
+          });
+
+          groupMessageUnsubsRef.current[sessionId] = unsub;
+        } catch (e) {
+          console.warn('BG group messages onSnapshot setup error for', sessionId, e);
+        }
+      })();
+    });
+  }, [myGroupSessionIdsKey, isDemoMode, firebaseUser?.uid, db]);
+
+  // Global cleanup of bg group message listeners on unmount / mode change
+  useEffect(() => {
+    return () => {
+      Object.values(groupMessageUnsubsRef.current).forEach((u) => {
+        try { u(); } catch {}
+      });
+      groupMessageUnsubsRef.current = {};
+    };
+  }, []);
 
   // Simulated pending verifications for demo (in real app this would come from backend)
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([
@@ -2458,7 +2537,7 @@ function App() {
                               )}
                             </div>
                             <button 
-                              onClick={() => {
+                              onClick={async () => {
                                 const updatedSession = {
                                   ...session,
                                   participants: [...(session.participants || []), effectiveUserId]
@@ -2470,21 +2549,19 @@ function App() {
 
                                 // IMPORTANT: Also write join back to Firestore so other real users see updated participants
                                 if (!isDemoMode && firebaseUser?.uid && db) {
-                                  (async () => {
-                                    try {
-                                      const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
-                                      await setDoc(doc(db, 'sessions', session.id), {
-                                        ...updatedSession,
-                                        updatedAt: serverTimestamp(),
-                                      }, { merge: true })
-                                      console.log('✅ Join persisted to Firestore for other users')
-                                    } catch (e) {
-                                      console.warn('Failed to persist join to Firestore:', e)
-                                    }
-                                  })()
+                                  try {
+                                    const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+                                    await setDoc(doc(db, 'sessions', session.id), {
+                                      ...updatedSession,
+                                      updatedAt: serverTimestamp(),
+                                    }, { merge: true })
+                                    console.log('✅ Join persisted to Firestore for other users')
+                                  } catch (e) {
+                                    console.warn('Failed to persist join to Firestore:', e)
+                                  }
                                 }
 
-                                // Seed initial group chat messages
+                                // Seed initial group chat messages (skipped in real mode - comes from server)
                                 seedInitialSessionMessages(updatedSession)
 
                                 if (!isDemoMode) {
@@ -2502,7 +2579,7 @@ function App() {
                                 }
 
                                 toast.success('¡Te uniste!', { description: 'Abriendo chat grupal...' })
-                                setTimeout(() => setShowGroupChatModalFor(session.id), 350)
+                                setShowGroupChatModalFor(session.id)
                               }}
                               disabled={spotsLeft <= 0}
                               className="bg-[#14b8a6] text-black px-5 py-1.5 rounded-2xl text-sm font-medium disabled:opacity-50"
