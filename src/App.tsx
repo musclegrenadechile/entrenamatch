@@ -2572,27 +2572,11 @@ function App() {
               </div>
             </div>
 
-            {/* Multiple prominent logout / escape hatches (never trapped) */}
-            <div className="px-4 mt-5 space-y-2">
-              <button onClick={handleLogout} className="w-full py-3 text-sm font-semibold text-[#f87171] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616]">
-                Cerrar sesión / Cambiar de cuenta
-              </button>
-              <button onClick={handleLogout} className="w-full py-3 text-sm font-semibold text-[#f87171] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616]">
-                Salir y volver a la pantalla de login
-              </button>
-              <button 
-                onClick={() => { localStorage.clear(); window.location.reload() }} 
-                className="w-full py-2.5 text-xs text-[#ef4444] border border-[#3f2a2a] rounded-2xl active:bg-[#1f1616]"
-              >
-                Restablecer toda la app (borrar datos locales)
-              </button>
-            </div>
-
             {/* Pre-Alpha micro guidance */}
             <div className="px-4 mt-6 mb-8">
               <div className="card p-4 text-xs text-[#94a3b8] leading-snug">
                 <span className="font-semibold text-[#14b8a6]">Pre-Alpha activa:</span> Tus datos reales se sincronizan entre dispositivos vía Firebase. 
-                Usa "Cambiar cuenta" arriba o el botón rojo flotante si quieres probar con otra cuenta. ¡Gracias por testear!
+                Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado de tu Perfil. ¡Gracias por testear!
               </div>
               <div className="text-center text-[10px] text-[#475569] mt-4">EntrenaMatch v0.1.0-prealpha • Solo +18 • Backend real 2026</div>
             </div>
@@ -2749,6 +2733,16 @@ function App() {
                 )}
               </div>
             </div>
+
+            {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
+            <div className="px-4 pb-8 pt-2 text-center">
+              <button 
+                onClick={handleLogout} 
+                className="text-xs text-[#64748b] active:text-[#f87171] underline"
+              >
+                Cerrar sesión / Cambiar de cuenta
+              </button>
+            </div>
           </div>
         )}
 
@@ -2816,16 +2810,6 @@ function App() {
       >
         Guía
       </button>
-
-      {/* SUPER VISIBLE FLOATING BUTTON - Premium, high-contrast, impossible to miss */}
-      {(firebaseUser || (!isDemoMode && currentUser)) && (
-        <button
-          onClick={handleLogout}
-          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] bg-[#ef4444] hover:bg-red-600 text-white text-sm font-extrabold tracking-wide px-7 py-3.5 rounded-3xl shadow-[0_10px_30px_-10px_rgb(239,68,68,0.6)] active:scale-[0.985] active:bg-red-700 flex items-center gap-2 border-[1.5px] border-white/70 transition-all"
-        >
-          CAMBIAR DE CUENTA / SALIR
-        </button>
-      )}
 
       {/* Bottom Navigation - Premium, energetic feel */}
       <div className="h-[62px] border-t border-[#272b33] bg-[#0a0b0f]/95 backdrop-blur-sm grid grid-cols-6 z-50 text-[10px] shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.1)]">

@@ -7,7 +7,7 @@
 **Important about deploys**:
 - After every push, GitHub Actions takes 3-8 minutes to build + deploy.
 - You **must** do a hard refresh (Ctrl+Shift+R / Cmd+Shift+R) to see changes.
-- Look for the text with "cambiar cuenta" or the latest FIX in the green top banner. New behavior: Logout now does a clean reload so you reliably see the login/register screen again. There is also a "Cambiar cuenta" button in the banner + a floating "Cambiar cuenta / Salir" button always visible when you are logged in with a real account. This solves the "entra altiro sin poder registrar" issue on hard refresh.
+- Look for the text with "cambiar cuenta" or the latest FIX in the teal top PRE-ALPHA bar. New behavior: Logout now does a clean reload so you reliably see the login/register screen again. There is a "Cambiar cuenta" button in the global top bar (always visible on every tab) + another small one in the sticky header of your Perfil. The big red center buttons and floating red logout were removed because they blocked content/scroll in Profile (cleaner UX now, but still impossible to get trapped). This solves the "entra altiro sin poder registrar" issue on hard refresh.
 
 ## How to Test Real Cross-Device Interaction (2+ Real Accounts) - Recommended Flow for Testers
 
@@ -71,7 +71,7 @@ Use the "Actualizar sesiones reales" button if something doesn't appear immediat
 - Real-time 1:1 chat works: messages appear on the other device (live via listeners or after refresh). "REAL" badge shown in chat header.
 - Sessions: Real-time! Sessions created by real users on one device now appear live for other real users on different devices thanks to onSnapshot listener. Create a session on one phone → it should show up on another without manual refresh.
 - "Sincronizado con backend real" indicator in Profile tab.
-- Logout works cleanly for real users.
+- Logout works cleanly for real users (top bar + Profile header + subtle link at bottom of Perfil).
 - Messages and matches survive hard refresh on both sides.
 
 ## Latest Pre-Alpha Improvements (just pushed - after Star crash fix)
@@ -97,7 +97,7 @@ Use the "Actualizar sesiones reales" button if something doesn't appear immediat
 - New: Full production path ready. Firebase Hosting config added + Capacitor + Android platform fully set up. You can now generate a real .apk. See new PRODUCTION_AND_APK.md for exact steps and recommendations (hosting + "Tinder-like" scale + APK).
 - Fixed: No more forcing full profile creation/onboarding every time for users with existing accounts (relaxed gate to basic name; login loads partial profile and enters app; use Profile "Completar mi perfil" to finish if needed. Prevents the "always jumps to creation" issue).
 
-**After this push**: Hard refresh (Ctrl+Shift+R) on https://musclegrenadechile.github.io/entrenamatch/ — the Profile tab should look beautiful and you should never see a black screen or missing logout again.
+**After this push**: Hard refresh (Ctrl+Shift+R) on https://musclegrenadechile.github.io/entrenamatch/ — the Profile tab should look beautiful (no more big red center logout buttons blocking the content) and you should never see a black screen or missing logout again (always visible in top bar).
 
 ## Known Limitations (as of this push)
 

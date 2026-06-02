@@ -66,7 +66,7 @@
 
 - "No veo perfiles reales" → Usa "Actualizar reales".
 - "No se actualiza la sesión" → Botón "Actualizar sesiones reales".
-- Login que salta a creación → Cierra sesión completamente con el botón rojo flotante o "Cambiar cuenta".
+- Login que salta a creación → Cierra sesión completamente con "Cambiar cuenta" (barra superior teal PRE-ALPHA o encabezado de tu Perfil).
 
 ## Privacidad
 
@@ -78,6 +78,6 @@ Cualquier duda, avísanos.
 
 ## Notas para testers que usan la APK de Play Store (Internal/Closed)
 - La experiencia es idéntica a la web pero con cámara nativa real (botón "Cámara del teléfono" aparece en creación de perfil y en "Tu perfil" para agregar fotos rápido).
-- Usa "Sincronizar" en tu Perfil y "Actualizar reales" en Explorar/Sesiones frecuentemente durante las pruebas.
+- Usa "Sincronizar" en tu Perfil y "Actualizar reales" en Explorar/Sesiones frecuentemente durante las pruebas. El Perfil ahora está más limpio (sin botones rojos grandes en el centro que bloqueaban el scroll).
 - El formulario de Feedback mejorado en Perfil es la forma principal de reportar (estructura + historial visible para ti).
 - Reporta también por el canal privado (WhatsApp/grupo) si quieres adjuntar capturas o hablar en vivo.

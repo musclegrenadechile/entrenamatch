@@ -38,7 +38,7 @@ Everything must work after hard refresh + on different physical devices (not jus
 - [x] CI: GitHub Actions for web GH Pages + android-prealpha APK build + attach to Release.
 - [x] Firebase Hosting config (firebase.json) + dedicated workflow (requires secret for full auto).
 - [x] BETA_TESTERS_GUIDE.md initial + PREALPHA + PRODUCTION docs.
-- [x] Escape hatches prominent (logout + cambiar cuenta always visible, clean reload).
+- [x] Escape hatches: always visible via global top PRE-ALPHA bar ("Cerrar sesión"/"Cambiar cuenta") + Profile sticky header + subtle bottom link in Profile. Removed the intrusive big red center block + floating red "CAMBIAR DE CUENTA / SALIR" button that blocked content/UX in Profile (user request). Still impossible to get trapped.
 - [x] Version in android build.gradle = 0.1.0-prealpha (code 2).
 - [x] Star crash + other runtime fixes, onboarding step 2 chips improved with counters + quick actions.
 
@@ -73,7 +73,7 @@ Everything must work after hard refresh + on different physical devices (not jus
   - Ensure onSnapshot or polling covers sessions + profiles reliably (keep the 30s fallback).
   - Add "Reportar problema" floating mini action in more screens.
 - [x] Build + test locally (npm run build succeeded cleanly), then frequent small git commits + `git push` after each deliverable so live site + CI APK update.
-- [ ] Update all guides (BETA, PRODUCTION, PREALPHA, README) with latest "Phase 0 complete" checklist + links to new assets. (partial - BETA + PRODUCTION done)
+- [ ] Update all guides (BETA, PRODUCTION, PREALPHA, README) with latest "Phase 0 complete" checklist + links to new assets. (partial - BETA + PRODUCTION done; now also reflecting cleaner escape hatches in Profile)
 - [ ] Final verification: hard refresh on web + install latest APK on device, create 2 real accounts on separate "devices", full flow, submit feedback, confirm it appears in Firestore.
 
 **Sign-off for Phase 0**: After all above, the app + AAB + listing copy + guides are ready for the user to upload the AAB to Play Console Internal testing track (hidden). Then move to Phase 1 (invite 5-10 real beta testers, structured feedback collection, triage, promote to Closed if good).
