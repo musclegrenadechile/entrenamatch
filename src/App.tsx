@@ -2387,6 +2387,7 @@ function App() {
                       {isLoadingSessions ? 'Actualizando...' : 'Actualizar sesiones reales'}
                     </button>
                     {lastSync && <span className="text-[10px] text-[#64748b]">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
+                    <span className="text-[9px] px-1.5 py-px bg-[#14b8a6]/10 text-[#14b8a6] rounded-full">en vivo</span>
                   </div>
                 )}
               </div>
