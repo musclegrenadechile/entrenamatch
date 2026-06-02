@@ -245,6 +245,7 @@ function App() {
   const [sessions, setSessions] = useState<TrainingSession[]>([])
   const [showCreateSession, setShowCreateSession] = useState(false)
   const [isLoadingSessions, setIsLoadingSessions] = useState(false)
+  const [isLoadingMatches, setIsLoadingMatches] = useState(false)
 
   // Reviews for "Entrenamos Juntos" (unique trust system)
   const [reviews, setReviews] = useState<Record<string, TrainingReview[]>>({}) // key = matchId (profile id)
@@ -2068,7 +2069,16 @@ function App() {
                 <div className="text-[#94a3b8] text-sm">Conexiones reales + demo</div>
               </div>
               {!isDemoMode && (
-                <button onClick={() => { loadRealProfiles(); /* realMatches update via listeners */ }} className="text-xs px-3 py-1 rounded-2xl bg-[#14b8a6] text-black font-semibold active:bg-[#0f9d8c]">Actualizar reales</button>
+                <button 
+                  onClick={async () => {
+                    setIsLoadingMatches(true)
+                    try { await loadRealProfiles() } finally { setIsLoadingMatches(false) }
+                  }} 
+                  disabled={isLoadingMatches}
+                  className="text-xs px-3 py-1 rounded-2xl bg-[#14b8a6] text-black font-semibold active:bg-[#0f9d8c] disabled:opacity-60"
+                >
+                  {isLoadingMatches ? '...' : 'Actualizar reales'}
+                </button>
               )}
             </div>
             <div className="text-[#94a3b8] px-1 mb-4 text-xs">Los matches con testers reales aparecen aquí al instante entre dispositivos</div>
