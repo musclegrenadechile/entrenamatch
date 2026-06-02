@@ -82,9 +82,11 @@ Use the "Actualizar sesiones reales" button if something doesn't appear immediat
 - **Filters modal (Explore)**: Now has live "X perfiles que verás" count at top, prettier consistent chips for training/availability (with counters), "Ver X resultados" CTA button. Filters are live so you see the impact instantly.
 - **Create Session flow**: Training type now nice tap chips instead of ugly select. Auto-opens the group chat right after you join or create. Added REAL badges on session cards for real-user created ones.
 - **1:1 Chat**: Bubbles now match the premium group chat style (better rounding, timestamps). Quick proposals and real-match notes remain strong.
-- Squad create: small polish + clear "en desarrollo" note.
-- Sessions tab: "Actualizar sesiones reales" button now prominent teal like in Explore for easy cross-device testing.
-- Star crash from Onboarding step 3 fully resolved. Hard refresh after every push.
+- Matches tab: Cards now show REAL badges for real testers, header has quick "Actualizar reales". Smart empty states.
+- Full profile modal (from swipe): REAL TESTER badge, auto "Abrir chat" if already matched instead of swipe buttons, bottom Pre-Alpha note.
+- Squads: Cards improved with better badges, "Abrir chat del squad" clearer. Header notes it's demo.
+- Loading states: "Actualizar sesiones reales" now shows "Actualizando..." spinner state.
+- All real cross-device flows (matches, sessions, chat) keep getting stronger indicators and feedback.
 
 **After this push**: Hard refresh (Ctrl+Shift+R) on https://musclegrenadechile.github.io/entrenamatch/ — the Profile tab should look beautiful and you should never see a black screen or missing logout again.
 
