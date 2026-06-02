@@ -43,28 +43,47 @@ For true Tinder-scale (millions of users, advanced ML matching, heavy moderation
 
 We added **Capacitor** (the standard way to turn a web app into real iOS/Android without rewriting everything).
 
+A convenience `build-apk.bat` script was also added for Windows users.
+
 ### How to generate the APK right now:
 
-1. Make sure you have **Android Studio** installed (https://developer.android.com/studio)
+**For Windows users (easiest):**
+Double-click the `build-apk.bat` file we created in the project root (after installing Android Studio and setting up environment variables).
 
-2. Build & prepare Android project:
+It will:
+1. Build the web with correct paths for native.
+2. Sync to the Android project.
+3. Run Gradle to produce the APK.
+
+**Manual steps (any OS):**
+
+1. Make sure you have **Android Studio** installed (https://developer.android.com/studio). During install, make sure the Android SDK and build tools are selected.
+
+2. (Important) Set environment variables if needed:
+   - JAVA_HOME pointing to your JDK (included with Android Studio).
+   - ANDROID_HOME to the SDK folder (usually `%LOCALAPPDATA%\Android\Sdk` on Windows).
+
+3. Build & prepare Android project:
    ```
    npm run android:build
    ```
 
-3. Open in Android Studio:
+4. Open the native project in Android Studio:
    ```
    npx cap open android
    ```
 
-4. In Android Studio:
-   - Wait for Gradle sync
-   - Menu: Build → Build Bundle(s) / APK(s) → Build APK(s)
-   - The debug APK will be in `android/app/build/outputs/apk/debug/`
+5. In Android Studio:
+   - Let it finish Gradle sync (first time can take a while).
+   - Go to menu: **Build → Build Bundle(s) / APK(s) → Build APK(s)**
+   - The debug APK will be generated at:
+     `android/app/build/outputs/apk/debug/app-debug.apk`
 
-For release (Play Store):
-- Generate signed AAB (Android App Bundle) — Android Studio has a wizard.
-- Use `npm run android:build` before signing.
+You can then transfer the APK to your Android phone and install it (enable "Unknown sources" or use ADB).
+
+For a signed release APK/AAB (for Play Store):
+- Use Android Studio's **Build → Generate Signed Bundle / APK** wizard.
+- Always run `npm run android:build` first so the latest web code is included.
 
 ### What you get with Capacitor:
 - Real `.apk` / `.aab` that installs like any app
