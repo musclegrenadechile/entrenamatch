@@ -2152,7 +2152,8 @@ function App() {
             {!activeChat ? (
               // List of chats
               <div className="overflow-auto flex-1 p-4">
-                <div className="text-2xl font-semibold tracking-[-1.2px] mb-5 px-1">Mensajes</div>
+                <div className="text-2xl font-semibold tracking-[-1.2px] mb-1 px-1">Mensajes</div>
+                <div className="text-[#94a3b8] text-xs px-1 mb-4">Chats 1:1 reales se sincronizan en vivo entre dispositivos</div>
                 {matchProfiles.length === 0 && (
                   <div className="mt-8 card p-6 rounded-3xl text-center">
                     <MessageCircle className="mx-auto text-[#14b8a6] mb-3" size={36} />
