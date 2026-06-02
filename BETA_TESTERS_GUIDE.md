@@ -33,7 +33,7 @@ Usa los 30 perfiles fake (Reñaca / Viña del Mar / Concón, hombres y mujeres) 
 7. Hard refresh en A o B: el historial de mensajes del grupo y los previews deben cargarse desde Firestore (no local-only).
 8. Si no ves actualización inmediata: usa "Actualizar sesiones reales" o "Actualizar" en el header del chat grupal (con spinner). Los bg listeners para tus sesiones + active onSnapshot cubren live receive. Asegúrate de estar unido (participante).
 9. Reporta con el botón "Reportar" del header del chat o el formulario de Perfil si algo falla.
-Nota post-push: si ves errores de permisos en group msgs, el owner debe hacer `firebase deploy --only firestore:rules` (las rules se relajaron para reads en subcolección para UX instant en beta).
+Nota post-push: si ves errores de permisos (como "Missing or insufficient permissions" al dar like/match o en group msgs), el owner debe hacer `firebase deploy --only firestore:rules` (las rules se actualizaron para permitir writes a likes/matches por el liker y reads apropiados). Hard refresh después.
 
 ## Cómo dar feedback (muy importante)
 
