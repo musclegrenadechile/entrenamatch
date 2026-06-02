@@ -1900,6 +1900,9 @@ function App() {
                           <div className="mt-3 flex items-center justify-between text-sm">
                             <div className="text-[#94a3b8]">
                               Creado por <span className="text-white">{session.creatorName}</span>
+                              {!isDemoMode && session.creatorId && session.creatorId !== 'me' && (
+                                <span className="ml-1.5 text-[9px] px-1.5 py-px bg-[#14b8a6] text-black rounded-full align-middle">REAL</span>
+                              )}
                               <div className="text-[10px] mt-0.5">{session.participants.length} / {session.maxParticipants} personas</div>
                             </div>
                             <button 
@@ -1946,7 +1949,8 @@ function App() {
                                   })
                                 }
 
-                                toast.success('¡Te uniste a la sesión!', { description: 'Ve a "Mis sesiones" para chatear con el grupo' })
+                                toast.success('¡Te uniste!', { description: 'Abriendo chat grupal...' })
+                                setTimeout(() => setShowGroupChatModalFor(session.id), 350)
                               }}
                               disabled={spotsLeft <= 0}
                               className="bg-[#14b8a6] text-black px-5 py-1.5 rounded-2xl text-sm font-medium disabled:opacity-50"
@@ -2216,11 +2220,20 @@ function App() {
                 {/* Messages */}
                 <div className="flex-1 overflow-auto p-4 space-y-3 pb-20" id="chat-scroll">
                   {/* Real messages take priority when in a real cross-device chat */}
-                  {((realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || []))).map((m, i) => (
-                    <div key={i} className={`flex ${m.from === 'me' ? 'justify-end' : ''}`}>
-                      <div className={`message-bubble ${m.from === 'me' ? 'sent' : 'received'}`}>{m.text}</div>
-                    </div>
-                  ))}
+                  {((realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || []))).map((m, i) => {
+                    const isMe = m.from === 'me'
+                    const time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''
+                    return (
+                      <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
+                        <div className={`max-w-[82%] ${isMe ? 'text-right' : ''}`}>
+                          {time && <div className="text-[9px] text-[#475569] mb-0.5 px-1">{time}</div>}
+                          <div className={`px-3.5 py-2 rounded-3xl text-[14px] leading-snug ${isMe ? 'bg-[#14b8a6] text-black rounded-br-md' : 'bg-[#1f242b] text-white rounded-bl-md'}`}>
+                            {m.text}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
                   {((realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || []))).length === 0 && (
                     <div className="text-center text-sm text-[#64748b] mt-8">
                       <div className="font-medium text-white mb-1">
@@ -2560,7 +2573,7 @@ function App() {
           <div className="absolute inset-0 z-[70] flex items-end bg-black/70" onClick={() => setShowFilters(false)}>
             <motion.div initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }} transition={{ type: 'spring', bounce: 0.05 }}
               onClick={e => e.stopPropagation()} className="w-full card rounded-t-3xl p-6 pb-10">
-              <div className="flex justify-between items-center mb-4">
+              <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-2">
                   <div className="font-semibold text-2xl tracking-tight">Filtros</div>
                   {((filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0)) > 0 && (
@@ -2569,7 +2582,13 @@ function App() {
                     </div>
                   )}
                 </div>
-                <button onClick={resetFilters} className="text-[#14b8a6] text-sm font-medium active:opacity-70">Limpiar todo</button>
+                <button onClick={resetFilters} className="text-[#14b8a6] text-sm font-semibold active:opacity-70">Limpiar todo</button>
+              </div>
+
+              {/* Live results count - very useful for Pre-Alpha */}
+              <div className="mb-4 px-3 py-2 bg-[#121418] rounded-2xl text-sm flex items-center justify-between border border-[#272b33]">
+                <span className="text-[#94a3b8]">Perfiles que verás en Explorar</span>
+                <span className="font-bold text-[#14b8a6] text-lg tabular-nums">{deck.length}</span>
               </div>
 
               {/* Active filters summary - tappable to remove */}
@@ -2706,47 +2725,61 @@ function App() {
 
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium">Tipo de entrenamiento</div>
-                  {filters.trainingTypes.length > 0 && (
-                    <div className="text-[10px] text-[#14b8a6]">{filters.trainingTypes.length} seleccionados</div>
-                  )}
+                  <div className="text-sm font-medium flex items-center gap-2">
+                    Tipo de entrenamiento
+                    {filters.trainingTypes.length > 0 && (
+                      <span className="text-[10px] bg-[#14b8a6]/10 text-[#14b8a6] px-1.5 py-0.5 rounded-full font-medium">{filters.trainingTypes.length} seleccionados</span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {TRAINING_OPTIONS.map(t => (
-                    <button 
-                      key={t} 
-                      onClick={() => toggleFilterTraining(t)} 
-                      className={`chip text-xs ${filters.trainingTypes.includes(t) ? 'chip-active' : ''}`}
-                    >
-                      {t}
-                    </button>
-                  ))}
+                <div className="flex flex-wrap gap-1.5">
+                  {TRAINING_OPTIONS.map(t => {
+                    const selected = filters.trainingTypes.includes(t);
+                    return (
+                      <button 
+                        key={t} 
+                        onClick={() => toggleFilterTraining(t)} 
+                        className={`px-3 py-1 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] font-medium' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] text-white/90'}`}
+                      >
+                        {t}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
               <div className="mb-8">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium">Disponibilidad</div>
-                  {filters.availability.length > 0 && (
-                    <div className="text-[10px] text-[#14b8a6]">{filters.availability.length} seleccionadas</div>
-                  )}
+                  <div className="text-sm font-medium flex items-center gap-2">
+                    Disponibilidad
+                    {filters.availability.length > 0 && (
+                      <span className="text-[10px] bg-[#14b8a6]/10 text-[#14b8a6] px-1.5 py-0.5 rounded-full font-medium">{filters.availability.length} seleccionadas</span>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {AVAILABILITY.map(a => (
-                    <button 
-                      key={a} 
-                      onClick={() => toggleFilterAvailability(a)} 
-                      className={`chip text-xs ${filters.availability.includes(a) ? 'chip-active' : ''}`}
-                    >
-                      {a}
-                    </button>
-                  ))}
+                <div className="flex flex-wrap gap-1.5">
+                  {AVAILABILITY.map(a => {
+                    const selected = filters.availability.includes(a);
+                    return (
+                      <button 
+                        key={a} 
+                        onClick={() => toggleFilterAvailability(a)} 
+                        className={`px-3 py-1 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] font-medium' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] text-white/90'}`}
+                      >
+                        {a}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <button onClick={() => setShowFilters(false)} className="btn-primary w-full shadow-lg shadow-[#14b8a6]/20">
-                Aplicar filtros
+              <button 
+                onClick={() => setShowFilters(false)} 
+                className="btn-primary w-full shadow-lg shadow-[#14b8a6]/20 flex items-center justify-center gap-2 text-base"
+              >
+                Ver {deck.length} resultados <span className="text-lg leading-none">→</span>
               </button>
+              <div className="text-center text-[10px] text-[#64748b] mt-2">Los filtros se aplican al instante</div>
             </motion.div>
           </div>
         )}
@@ -2967,6 +3000,8 @@ function App() {
               <form onSubmit={(e) => {
                 e.preventDefault()
                 const form = e.currentTarget
+                // trainingType is now from a hidden input we control with chips, or fallback to select if needed
+                const trainingTypeEl = form.elements.namedItem('trainingType') as HTMLInputElement
                 const newSession: TrainingSession = {
                   id: 's' + Date.now(),
                   creatorId: effectiveUserId,
@@ -2974,7 +3009,7 @@ function App() {
                   title: (form.elements.namedItem('title') as HTMLInputElement).value,
                   time: (form.elements.namedItem('time') as HTMLInputElement).value,
                   location: (form.elements.namedItem('location') as HTMLInputElement).value,
-                  trainingType: (form.elements.namedItem('trainingType') as HTMLSelectElement).value,
+                  trainingType: trainingTypeEl ? trainingTypeEl.value : (form.elements.namedItem('trainingTypeSelect') as HTMLSelectElement)?.value || 'Pesas/Gym',
                   maxParticipants: parseInt((form.elements.namedItem('max') as HTMLInputElement).value),
                   participants: [effectiveUserId],
                   createdAt: Date.now()
@@ -3021,23 +3056,42 @@ function App() {
                 toast.success('Sesión creada', { description: 'Ya puedes chatear con quienes se unan' })
               }}>
                 <div className="space-y-4">
-                  <input name="title" placeholder="Título de la sesión (ej: Pesas en el gym)" required className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3" />
+                  <input name="title" placeholder="Título (ej: Running costanera + mate)" required className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3" />
                   
                   <div className="grid grid-cols-2 gap-3">
-                    <input name="time" placeholder="Horario (Mañana 19:00)" required className="bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3" />
-                    <input name="location" placeholder="Lugar (Reñaca Playa)" required className="bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3" />
+                    <input name="time" placeholder="Horario (19:00)" required className="bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3" />
+                    <input name="location" placeholder="Lugar (Reñaca)" required className="bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3" />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <select name="trainingType" required className="bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3">
-                      {TRAINING_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                    </select>
-                    <input name="max" type="number" min="2" max="12" defaultValue="4" required className="bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3" />
+                  <div>
+                    <div className="text-xs text-[#64748b] mb-1.5">Tipo de entrenamiento</div>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {TRAINING_OPTIONS.map(t => (
+                        <button 
+                          type="button"
+                          key={t}
+                          onClick={() => {
+                            const hidden = (form.elements.namedItem('trainingType') as HTMLInputElement)
+                            if (hidden) hidden.value = t
+                          }}
+                          className="px-3 py-1 text-xs rounded-2xl border border-[#272b33] bg-[#121418] hover:border-[#3a3f48] active:bg-[#1a1d23]"
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                    <input type="hidden" name="trainingType" defaultValue="Pesas/Gym" />
+                  </div>
+
+                  <div>
+                    <div className="text-xs text-[#64748b] mb-1">Máximo participantes</div>
+                    <input name="max" type="number" min="2" max="12" defaultValue="5" required className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3" />
                   </div>
                 </div>
 
-                <div className="flex gap-3 mt-6">
-                  <button type="button" onClick={() => setShowCreateSession(false)} className="flex-1 btn-secondary">Cancelar</button>
+                <div className="mt-2 mb-3 text-[10px] text-[#14b8a6] text-center">Pre-Alpha: otros testers reales la verán y podrán unirse al instante</div>
+                <div className="flex gap-3">
+                  <button type="button" onClick={() => setShowCreateSession(false)} className="flex-1 py-3 rounded-2xl border border-[#272b33] active:bg-[#1f242b]">Cancelar</button>
                   <button type="submit" className="flex-1 btn-primary">Publicar sesión</button>
                 </div>
               </form>
