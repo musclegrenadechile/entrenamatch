@@ -1559,14 +1559,16 @@ function App() {
 
     const isRealSession = !isDemoMode && firebaseUser?.uid && db
 
-    const newMsg: SessionMessage = {
+    const newMsg: any = {
       id: 'sm' + Date.now(),
       senderId: effectiveUserId,
       senderName: currentUser?.name || 'Tú',
       text: text.trim() || '',
       timestamp: Date.now(),
-      photo: photo || undefined,
       reactions: {}
+    }
+    if (photo) {
+      newMsg.photo = photo
     }
 
     if (isRealSession) {
@@ -1574,14 +1576,17 @@ function App() {
       ;(async () => {
         try {
           const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
-          await addDoc(collection(db, `sessions/${sessionId}/messages`), {
+          const msgData: any = {
             senderId: effectiveUserId,
             senderName: currentUser?.name || 'Tú',
             text: newMsg.text,
             timestamp: newMsg.timestamp,
-            photo: newMsg.photo,
             createdAt: serverTimestamp(),
-          })
+          }
+          if (newMsg.photo) {
+            msgData.photo = newMsg.photo
+          }
+          await addDoc(collection(db, `sessions/${sessionId}/messages`), msgData)
           console.log('✅ Real session group message sent')
           // Force reload to sync the authoritative server list (prevents optimistic message from disappearing before snapshot arrives)
           loadRealGroupMessages(sessionId)
