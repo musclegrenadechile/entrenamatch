@@ -113,4 +113,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 instant+persisted group msgs (await join write before open to fix rules timing; bg onSnapshot for my sessions msgs so updates even modal closed + fresh history; relaxed sub read rule; last* update + sessions listener for instant list preview; server load on open/refresh for full interaction record). Pushed 01c8c68 + rules note. After push: deploy rules (firebase deploy --only firestore:rules) for best results. Test send -> instant list preview + chat view on other side, survives refresh. **PHASE 0 SIGN-OFF READY**
+Last updated: Phase 0 instant+persisted group msgs + UI cleanup (removed floating red ⚠️ Reportar at bottom + Guía button + "Desliza o usa los botones" swipe instruction that cluttered profile choosing/Explore). Feedback still accessible in Profile form + headers. Cleaner for swiping/choosing profiles. Pushed 5b71add. **PHASE 0 SIGN-OFF READY**
