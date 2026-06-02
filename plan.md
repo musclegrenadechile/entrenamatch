@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continue (further soften demo/Pre-Alpha labels in squads/matches/squad UI for premium elegir perfiles + interaction; ongoing declutter). Pushed 64cf4e8. **PHASE 0 SIGN-OFF READY** (sigue con todo).
+Last updated: Phase 0 continue (further soften demo/Pre-Alpha labels; prioritize real profiles in 'Más compatibles' recommendations to improve real profile choosing in Explore; ongoing premium declutter). Pushed 6822d75. **PHASE 0 SIGN-OFF READY** (sigue con todo).
