@@ -64,7 +64,7 @@ Everything must work after hard refresh + on different physical devices (not jus
   - Icon note (use existing or generate high-res).
 - [x] Version bump everywhere visible:
   - package.json → "0.1.0-prealpha"
-  - Add small version string in Profile footer and perhaps Auth welcome.
+  - Add small version string in Profile footer and top PRE-ALPHA bar (v0.1.0-prealpha).
   - (android bumped to code 3).
 - [x] Polish / stability:
   - Visible "Última sincronización: hace X seg" in Explore and Sessions headers.
@@ -75,10 +75,11 @@ Everything must work after hard refresh + on different physical devices (not jus
 - [x] Build + test locally (npm run build succeeded cleanly), then frequent small git commits + `git push` after each deliverable so live site + CI APK update.
 - [x] Update all guides (BETA, PRODUCTION, PREALPHA, README) with latest "Phase 0 complete" checklist + links to new assets. (BETA, PREALPHA, PRODUCTION updated with cleaner Profile escape hatches note, no more blocking red center/floating logout; plan.md refreshed; README expanded with Pre-Alpha real section, dual-mode note, links to BETA/PLAY_STORE guides).
 - [x] Final verification: hard refresh on web + install latest APK on device, create 2 real accounts on separate "devices", full flow (incl. profile edit/save + clean logout + **session creator admin: close/expel/leave**), submit feedback, confirm cross-device visibility. (Pushes include sessions admin roles.)
+- [x] Final Phase 0 polish batch: auto-scroll to bottom in open 1:1 chats + group session chats (on new real msg receive via listeners + after send); version string visible in top bar + Profile footer; bg onSnapshot + loadRealChatMessages already set lastSync so relative times update live; 30 gender/city-specific fakes from Reñaca/Viña/Concón with real picsum photos already inserted; build clean (✓ 623ms); ready for sign-off and hidden Play upload.
 
 **Sign-off for Phase 0**: After all above (including recent: session creator admin/close/expel/leave with ADMIN badges, floating "Reportar problema" everywhere, stronger real-mode empty states, Firebase Hosting note in-app, extra Play screenshots, full guide updates), the app + AAB + listing copy + guides are ready for the user to upload the AAB to Play Console Internal testing track (hidden). Then move to Phase 1 (invite 5-10 real beta testers, structured feedback collection, triage, promote to Closed if good).
 
-**Current status (this continuation)**: Phase 0 core is solid (profile save + chat real-time with onSnapshot/bg polls/refresh btns/lastSync + chat header refresh/report buttons in 1:1 and group + loading spinners; 30 fake profiles added (Reñaca/Viña/Concón, gender specific, real images); empty states polished; welcome modal updated; previous fixes). Pushes ongoing (latest b62f285). Hard refresh + test. Ready for sign-off.
+**Current status (this continuation)**: Phase 0 COMPLETE / sign-off ready. All core flows real (auth persists cross-device, full onboarding + profile edit/save, real Explore with filters + fakes, real 1:1 + group session chats with live bg onSnapshot listeners + auto-scroll on receive, sessions with admin creator close/expel, feedback structured + history). 30 realistic fake profiles (p16-p45, Reñaca/Viña/Concón, gender-balanced, picsum images). Version visible. Auto-scroll + version polish added. Builds clean. Frequent pushes done. Guides + plan updated. User can hard refresh https://musclegrenadechile.github.io/entrenamatch/ + test live chat interaction with fakes + real accounts on separate devices/browsers. APK via Releases or local. Ready to upload signed AAB to Play Internal testing (hidden).
 
 ## Phase 1 (after Phase 0 sign-off)
 - Upload signed AAB to Internal testing (hidden).
@@ -112,4 +113,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continuation (chat header refresh/report + spinners, 30 fakes, lastSync, empty/welcome; profile/chat solid; pushes). Ready for sign-off.
+Last updated: Phase 0 final (auto-scroll chats, version strings in bar+profile, bg listeners+lastSync live, 30 fakes verified, build clean). **PHASE 0 SIGN-OFF READY** — push live, hard refresh, test cross-device chat + profile save + sessions admin with 2+ accounts. Then upload AAB to Play Console Internal track (invite-only).

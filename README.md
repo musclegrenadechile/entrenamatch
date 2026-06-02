@@ -35,23 +35,25 @@ Puedes probar la aplicación directamente aquí (versión pública de prueba):
 - Ideal para probar swipe, squads, sesiones, chat grupal y reseñas.
 
 ## Pre-Alpha Real (Backend Firebase activo — para testers)
-La versión en GitHub Pages ahora soporta **cuentas reales multi-usuario** con Firebase Auth + Firestore (sobrevive hard refresh y funciona cross-device).
+**Phase 0 sign-off ready.** La versión en GitHub Pages soporta **cuentas reales multi-usuario** con Firebase Auth + Firestore (sobrevive hard refresh y funciona cross-device).
 
 - Crea cuenta real con email.
 - Completa onboarding (incluye cámara nativa si usas la APK).
-- Perfiles reales visibles en Explorar para otros testers.
-- Matches, chat 1:1 y sesiones + chat grupal reales.
-- Escape hatches siempre visibles (barra superior teal + "Cambiar cuenta" en Perfil).
-- Feedback estructurado de beta en tu Perfil (con historial).
+- Perfiles reales visibles en Explorar para otros testers (+ 30 perfiles fake realistas de Reñaca/Viña del Mar/Concón con fotos, género balanceado para pruebas de interacción inmediata).
+- Matches, chat 1:1 y sesiones + chat grupal **en tiempo real** (bg onSnapshot + active listeners + polling; "si alguien envía un mensaje uno lo reciba" en lista y vista abierta + auto-scroll al fondo).
+- Sesiones con rol admin para el creador (cerrar + expulsar participantes con badge ADMIN; los demás solo pueden salir).
+- Escape hatches siempre visibles (barra superior teal PRE-ALPHA v0.1.0-prealpha + "Cambiar cuenta" en Perfil).
+- Feedback estructurado de beta en tu Perfil (categoría + estrellas + historial visible).
+- Versión visible en barra superior y footer de Perfil.
 
 **Guías clave para esta fase:**
-- [BETA_TESTERS_GUIDE.md](BETA_TESTERS_GUIDE.md) — cómo instalar desde Play Internal/Closed (oculto), cómo reportar.
+- [BETA_TESTERS_GUIDE.md](BETA_TESTERS_GUIDE.md) — cómo instalar desde Play Internal/Closed (oculto), cómo reportar, **protocolo exacto para probar chats en tiempo real con fakes**.
 - [PLAY_STORE_ASSETS.md](PLAY_STORE_ASSETS.md) — textos listos + prompts para subir AAB firmado a testing oculto.
 - [PREALPHA_REAL_TESTING_GUIDE.md](PREALPHA_REAL_TESTING_GUIDE.md) — flujo de prueba cross-device.
 - APK builds automáticos en cada push (GitHub Releases tag `android-prealpha` o Actions artifacts).
 - AAB firmado listo para Play Console Internal testing (no se publica).
 
-**Importante:** Después de cada `git push` haz hard refresh (Ctrl+Shift+R). La app está en Pre-Alpha oculta para pruebas con grupo cerrado.
+**Importante:** Después de cada `git push` haz hard refresh (Ctrl+Shift+R). La app está en Pre-Alpha oculta para pruebas con grupo cerrado. Usa los fakes + 2 cuentas reales en dispositivos distintos para validar "chat en vivo".
 
 ## Cómo ejecutar localmente
 

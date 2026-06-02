@@ -11,12 +11,12 @@
 
 ## How to Test Real Cross-Device Interaction (2+ Real Accounts) - Recommended Flow for Testers
 
-**Goal for this phase**: Real people on different phones/computers can:
-- See each other's profiles
+**Goal for this phase (Phase 0 sign-off)**: Real people on different phones/computers can:
+- See each other's profiles (real + 30 fakes Reñaca/Viña/Concón gender-specific)
 - Match
-- Chat 1:1 in real time
+- Chat 1:1 in real time (bg onSnapshot updates the Mensajes list preview instantly; open chat receives + auto-scrolls to bottom)
 - Create and see sessions created by others (real-time)
-- Join sessions and chat in the group in real time
+- Join sessions and chat in the group in real time (creator is admin: close + expel with ADMIN badge)
 
 ### Recommended Test Flow (do this with 2+ real accounts on different devices/browsers)
 
@@ -24,18 +24,19 @@
 2. Complete profiles (name, bio, photo, training types, goals).
 3. On Account A: Go to Explorar and look for Account B's real profile (use "Actualizar reales" if needed).
 4. Match with each other.
-5. Open 1:1 chat and exchange messages (they should appear live on the other device).
-6. From Account A: Create a new session (e.g. "Running en la costanera mañana 19:00"). As creator you are admin: in "Mis sesiones" you see "Cerrar sesión" button, and inside group chat you can expel people (✕ icons in sidebar).
+5. Open 1:1 chat and exchange messages (they should appear live on the other device in the list + inside chat with auto-scroll to newest; use fakes p16+ to populate fast for solo testing of receive).
+6. From Account A: Create a new session (e.g. "Running en la costanera mañana 19:00"). As creator you are admin: in "Mis sesiones" you see "Cerrar sesión" button, and inside group chat you can expel people (✕ icons in sidebar) + ADMIN badge.
 7. On Account B: Go to Sesiones tab → the new session should appear (thanks to polling + load). No manual refresh needed if the app is open.
 8. Join the session from Account B. Non-creators can "Salir" from their "Mis sesiones".
 9. Open the group chat from the session. Creator sees ADMIN badge + expel controls.
-10. Send messages from both accounts in the group chat. They should appear live for everyone in the session.
+10. Send messages from both accounts in the group chat. They should appear live for everyone in the session (auto-scroll + onSnapshot).
 
-Use the "Actualizar sesiones reales" button if something doesn't appear immediately during testing.
+Use the "Actualizar sesiones reales" / "Actualizar chats reales" (with spinners) + "Sincronizar" in Profile if something doesn't appear immediately. Last sync time ("hace Xs") shows freshness. Auto-scroll is active on chat receive.
 
 ### Prerequisites
 - Use **incognito / different browser / different phone** for Account B (so localStorage doesn't interfere).
-- Hard refresh (Ctrl + Shift + R or Cmd + Shift + R) after every major step.
+- Hard refresh (Ctrl + Shift + R or Cmd + Shift + R) after every major step and after every push/deploy. Always verify you see v0.1.0-prealpha in the teal top bar.
+- For fast chat interaction testing without waiting for many real users: match with the 30 seeded fakes (Reñaca/Viña/Concón) from Explorar.
 
 ### Step-by-Step Test (Do This After Every Major Push)
 

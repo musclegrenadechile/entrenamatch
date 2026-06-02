@@ -14,12 +14,23 @@
 ## Qué probar (flujo ideal)
 
 - Onboarding completo (fotos con cámara nativa si estás en APK).
-- Ver perfiles reales de otros testers (ahora + 30 perfiles fake con imágenes reales de Reñaca/Viña/Concón, género específico para poblar la lista).
-- Match + chat 1:1 (se actualiza en ~8s cuando tienes el chat abierto; se siente en tiempo real gracias a polling + optimistic).
+- Ver perfiles reales de otros testers (ahora + 30 perfiles fake con imágenes reales de Reñaca/Viña/Concón, género específico para poblar la lista y permitir pruebas de interacción sin esperar muchos usuarios reales).
+- Match + chat 1:1 en tiempo real: si alguien envía un mensaje, el receptor lo ve automáticamente en la lista de Mensajes (bg onSnapshot por cada match) y dentro del chat abierto (onSnapshot + poll 8s + auto-scroll al fondo al llegar mensaje nuevo). Usa los fakes (p16-p45) para simular matches y probar "si alguien envía uno lo reciba".
 - Crear una sesión (ej: "Running costanera 19:00") y que otro tester la vea y se una. Como creador tienes rol de administrador: botón "Cerrar sesión" en Mis sesiones, y en el chat grupal puedes expulsar (✕ en la lista de participantes) + badge ADMIN. Los demás pueden "Salir". Prueba expulsar y que el otro vea que ya no está.
-- Chat grupal dentro de la sesión (live via onSnapshot + poll cuando el modal está abierto).
+- Chat grupal dentro de la sesión (live via onSnapshot subcollection + poll cuando el modal está abierto; auto-scroll al fondo).
 - Perfil propio + botón "Sincronizar" (ahora recarga también tu propio perfil desde backend para verificar guardado) + feedback estructurado.
-- Chats 1:1 y grupal en sesiones con actualizaciones en tiempo real (onSnapshot push cuando abierto + polls background para todos tus matches/sesiones). Usa "Actualizar" (con spinner) en headers de chat, "Actualizar chats reales" (con spinner) en lista, o "Sincronizar" en perfil (recarga self profile). LastSync se actualiza. Botones "Reportar" en headers de 1:1 y grupal para feedback rápido (guarda en betaFeedback).
+- Chats 1:1 y grupal en sesiones con actualizaciones en tiempo real (onSnapshot push cuando abierto + polls background para todos tus matches/sesiones). Usa "Actualizar" (con spinner) en headers de chat, "Actualizar chats reales" (con spinner) en lista, o "Sincronizar" en perfil (recarga self profile). LastSync se actualiza en vivo cuando llegan mensajes. Botones "Reportar" en headers de 1:1 y grupal para feedback rápido (guarda en betaFeedback). Auto-scroll automático al último mensaje.
+
+## Protocolo específico para probar mensajería en tiempo real (chats 1:1 y sesiones)
+Usa los 30 perfiles fake (Reñaca / Viña del Mar / Concón, hombres y mujeres) + 1-2 cuentas reales en dispositivos/navegadores diferentes:
+1. Con cuenta A (real o fake vía match): ve a Explorar, haz match con un fake (o con cuenta B).
+2. Abre Mensajes → verás el chat en la lista.
+3. Abre el chat 1:1.
+4. Desde cuenta B (otro browser/incognito o teléfono): envía un mensaje.
+5. En cuenta A: la lista de Mensajes debe actualizarse en vivo (sin tocar "Actualizar"), y si el chat está abierto, el mensaje aparece + auto-scroll al fondo.
+6. Repite para chat de sesión: crea sesión como creador (A), únete como B, abre chat grupal en ambos, envía desde uno, verifica que el otro lo recibe en vivo + auto-scroll + badge ADMIN solo para creador.
+7. Si no ves actualización inmediata: usa "Actualizar chats reales", o hard refresh (Ctrl+Shift+R), o el botón "Actualizar" del header del chat. Los listeners bg + active cubren la mayoría de casos.
+8. Reporta con el botón "Reportar" del header del chat o el formulario de Perfil si algo falla.
 
 ## Cómo dar feedback (muy importante)
 
@@ -70,6 +81,8 @@
 - "No veo perfiles reales" → Usa "Actualizar reales".
 - "No se actualiza la sesión" → Botón "Actualizar sesiones reales".
 - Login que salta a creación → Cierra sesión completamente con "Cambiar cuenta" (barra superior teal PRE-ALPHA o encabezado de tu Perfil).
+- "Los mensajes no llegan en tiempo real" → Asegúrate de estar en la misma red o prueba con fakes primero. Usa "Actualizar chats reales", verifica que ambos tengan el chat abierto o usen el botón. Hard refresh después de deploy. Los bg listeners + 30s polls + onSnapshot activo cubren live receive. Reporta si persiste.
+- Chat no hace scroll al final al recibir → Verifica versión (v0.1.0-prealpha con auto-scroll incluido). Hard refresh.
 
 ## Privacidad
 

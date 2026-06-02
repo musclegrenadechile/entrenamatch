@@ -216,6 +216,8 @@ function App() {
   // Used to break the "stuck on AuthScreen after successful real auth" race
   // because firebaseUser from the hook can lag behind the successful signIn/signUp call.
   const lastSuccessfulAuthRef = useRef(null)
+  const chatScrollRef = useRef<HTMLDivElement>(null)
+  const groupChatScrollRef = useRef<HTMLDivElement>(null)
 
   const { 
     squads: _squadsFromHook, 
@@ -835,6 +837,40 @@ function App() {
   }, [activeChat, isDemoMode, firebaseUser?.uid, realMatches, db]);
 
   // Note: Real-time 1:1 chat uses onSnapshot (safe queries) + polling + background for cross-device live updates.
+
+  // Auto-scroll chat to bottom when new messages arrive (1:1 real or demo) or chat opens
+  useEffect(() => {
+    const scrollToBottom = () => {
+      const el = chatScrollRef.current
+      if (el) {
+        // Use rAF + small timeout for reliability after render
+        requestAnimationFrame(() => {
+          el.scrollTop = el.scrollHeight
+        })
+      }
+    }
+    scrollToBottom()
+    // Also scroll shortly after (for image loads / dynamic content)
+    const t = setTimeout(scrollToBottom, 120)
+    return () => clearTimeout(t)
+  }, [activeChat, realChatMessages.length, (messages[activeChat || ''] || []).length])
+
+  // Auto-scroll group/session chat to bottom on new messages
+  useEffect(() => {
+    const scrollToBottom = () => {
+      const el = groupChatScrollRef.current
+      if (el) {
+        requestAnimationFrame(() => {
+          el.scrollTop = el.scrollHeight
+        })
+      }
+    }
+    if (showGroupChatModalFor) {
+      scrollToBottom()
+      const t = setTimeout(scrollToBottom, 120)
+      return () => clearTimeout(t)
+    }
+  }, [showGroupChatModalFor, sessionMessages[showGroupChatModalFor || '']?.length])
 
   // Load real profiles on mount and when auth changes
   useEffect(() => {
@@ -2128,7 +2164,7 @@ function App() {
       {/* MINIMAL TOP BAR - Clean, premium, high-visibility auth controls */}
       <div className="bg-gradient-to-r from-[#14b8a6] to-[#0f9d8c] text-black z-50 flex items-center justify-between px-4 py-2.5 text-sm font-medium shadow-md">
         <div className="font-extrabold tracking-[-0.5px] text-base flex items-center gap-1.5">
-          🚀 <span>PRE-ALPHA</span> <span className="text-[10px] font-medium opacity-80">• Real backend activo</span>
+          🚀 <span>PRE-ALPHA</span> <span className="text-[10px] font-medium opacity-80">• Real backend activo</span> <span className="text-[10px] font-mono opacity-60 ml-1">v0.1.0-prealpha</span>
         </div>
 
         {(currentUser || firebaseUser) ? (
@@ -2755,7 +2791,7 @@ function App() {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-auto p-4 space-y-3 pb-20" id="chat-scroll">
+                <div ref={chatScrollRef} className="flex-1 overflow-auto p-4 space-y-3 pb-20" id="chat-scroll">
                   {/* Real messages take priority when in a real cross-device chat */}
                   {((realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || []))).map((m, i) => {
                     const isMe = m.from === 'me'
@@ -3211,6 +3247,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
+              <div className="text-[10px] text-[#475569] mb-1">v0.1.0-prealpha • Phase 0 real</div>
               <button 
                 onClick={handleLogout} 
                 className="text-xs text-[#64748b] active:text-[#f87171] underline"
@@ -4585,7 +4622,7 @@ function App() {
 
                 {/* Messages Area */}
                 <div className="flex-1 flex flex-col">
-                  <div className="flex-1 overflow-auto p-4 space-y-3 text-sm bg-[#0a0b0f]" id="group-chat-scroll">
+                  <div ref={groupChatScrollRef} className="flex-1 overflow-auto p-4 space-y-3 text-sm bg-[#0a0b0f]" id="group-chat-scroll">
                     {(sessionMessages[showGroupChatModalFor] || []).length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full text-center text-[#64748b] px-6">
                         <div className="w-14 h-14 rounded-2xl bg-[#121418] flex items-center justify-center mb-4 text-3xl">💬</div>
