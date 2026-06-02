@@ -1592,6 +1592,8 @@ function App() {
           loadRealGroupMessages(sessionId)
         } catch (e) {
           console.warn('Failed to send real session message:', e)
+          // Show user-friendly error
+          toast.error('Error al enviar mensaje real', { description: 'No se pudo guardar en el servidor (posible problema de red o permisos). El mensaje se ve solo para ti por ahora.' })
           // Optimistic update already added it locally; other users won't see it until sync. No duplicate add.
         }
       })()
