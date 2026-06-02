@@ -396,7 +396,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                   <img src={profile.photos[0]} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" alt="" />
                   <div className="min-w-0 flex-1">
                     <div className="font-medium text-sm truncate flex items-center gap-1">{profile.name} {isReal && <span className="text-[8px] bg-[#14b8a6] text-black px-1 rounded">REAL</span>}</div>
-                    <div className="text-xs text-[#94a3b8] truncate">{profile.city}</div>
+                    <div className="text-xs text-[#94a3b8] truncate flex justify-between"><span>{profile.city}</span> {userLocation && <span className="text-[#64748b]">{getDistance(profile)} km</span>}</div>
                     <div className="text-[#14b8a6] text-sm font-bold mt-0.5">{score}%</div>
                   </div>
                 </div>
