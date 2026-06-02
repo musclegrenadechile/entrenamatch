@@ -2325,9 +2325,14 @@ function App() {
           <div className="flex-1 overflow-auto bg-[#0a0b0f] pb-28">
             {/* Sticky header with escape hatches */}
             <div className="sticky top-0 z-20 bg-[#0a0b0f]/95 backdrop-blur border-b border-[#272b33] px-4 py-3 flex items-center justify-between">
-              <div>
-                <div className="text-xl font-semibold tracking-tight">Tu perfil</div>
-                {!isDemoMode && <div className="text-[10px] text-[#14b8a6] font-medium -mt-0.5">REAL • Sincronizado con Firebase</div>}
+              <div className="flex items-center gap-2">
+                <div>
+                  <div className="text-xl font-semibold tracking-tight">Tu perfil</div>
+                  {!isDemoMode && <div className="text-[10px] text-[#14b8a6] font-medium -mt-0.5">REAL • Sincronizado con Firebase</div>}
+                </div>
+                {!isDemoMode && (
+                  <button onClick={async () => { await loadRealProfiles(); await loadRealSessions(); toast.success('Datos reales sincronizados') }} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black">Sincronizar</button>
+                )}
               </div>
               <div className="flex gap-2">
                 <button onClick={handleLogout} className="text-xs px-3 py-1.5 rounded-2xl border border-[#3f2a2a] text-[#f87171] active:bg-[#1f1616]">Cambiar cuenta</button>
