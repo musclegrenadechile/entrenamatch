@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 instant+persisted group msgs + ongoing UI declutter for premium profile selection (removed floating red Reportar + Guía + swipe "Desliza..." instruction; subtler Explore header; removed "Pre-Alpha real" label from matches empty to avoid demo feel when viewing/choosing). Feedback remains in Profile. Multiple small pushes (e30e530). **PHASE 0 SIGN-OFF READY** but sigue as requested.
+Last updated: Phase 0 instant+persisted + UI declutter for choosing profiles (removed floatings + swipe instruction; subtler Explore + empty matches + Profile micro guidance texts to reduce demo noise while choosing/ managing profiles). Feedback in Profile. Pushed d2a3318. **PHASE 0 SIGN-OFF READY** (sigue per request - more polish batches).
