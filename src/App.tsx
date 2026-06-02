@@ -2334,10 +2334,6 @@ function App() {
       <div className="flex-1 overflow-hidden relative flex flex-col">
         {/* ===== EXPLORE / SWIPE (fully owned by ExploreTab) ===== */}
         {activeTab === 'explore' && (
-          <>
-            {!isDemoMode && lastSync && (
-              <div className="px-4 pt-1 text-[10px] text-[#64748b] text-right">Sincronizado hace {Math.max(0, Math.floor((Date.now() - lastSync.getTime()) / 1000))}s • usa "Actualizar reales"</div>
-            )}
           <ExploreTab
             deck={deck}
             visibleCards={visibleCards}
