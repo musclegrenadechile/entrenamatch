@@ -1339,6 +1339,135 @@ function App() {
     }
   }
 
+  // === Session admin controls (for creator) - Phase 0 enhancement ===
+  const closeSession = async (sessionId: string) => {
+    const allSessions = [...sessions, ...realSessions]
+    const session = allSessions.find(s => s.id === sessionId)
+    if (!session) return
+
+    const isCreator = session.creatorId === effectiveUserId || session.creatorId === 'me'
+    if (!isCreator) {
+      toast.error('Solo el creador puede cerrar la sesión')
+      return
+    }
+    if (!confirm('¿Cerrar esta sesión? Se eliminará para todos los participantes y el chat grupal.')) return
+
+    // Remove from local demo state
+    const updatedLocal = sessions.filter(s => s.id !== sessionId)
+    saveSessions(updatedLocal)
+
+    // Real: delete from Firestore
+    if (!isDemoMode && firebaseUser?.uid && db) {
+      try {
+        const { doc, deleteDoc } = await import('firebase/firestore')
+        await deleteDoc(doc(db, 'sessions', sessionId))
+        // Note: subcollection messages stay but are orphaned (fine for pre-alpha)
+        console.log('✅ Session closed by creator')
+      } catch (e) {
+        console.warn('Failed to delete session from Firestore:', e)
+      }
+    }
+
+    // Close modal if open
+    if (showGroupChatModalFor === sessionId) {
+      setShowGroupChatModalFor(null)
+    }
+
+    toast.success('Sesión cerrada', { description: 'Ya no aparecerá para nadie' })
+
+    if (!isDemoMode) {
+      loadRealSessions()
+    }
+  }
+
+  const expelFromSession = async (sessionId: string, participantIdToExpel: string) => {
+    const allSessions = [...sessions, ...realSessions]
+    const session = allSessions.find(s => s.id === sessionId)
+    if (!session) return
+
+    const isCreator = session.creatorId === effectiveUserId || session.creatorId === 'me'
+    if (!isCreator) {
+      toast.error('Solo el administrador de la sesión puede expulsar')
+      return
+    }
+    if (participantIdToExpel === effectiveUserId) {
+      toast('No puedes expulsarte a ti mismo')
+      return
+    }
+
+    const nameToExpel = SEED_PROFILES.find(p => p.id === participantIdToExpel)?.name || 'el participante'
+    if (!confirm(`¿Expulsar a ${nameToExpel} de la sesión?`)) return
+
+    const newParticipants = (session.participants || []).filter(p => p !== participantIdToExpel)
+    const updatedSession = { ...session, participants: newParticipants }
+
+    // Update local
+    const updatedLocal = sessions.map(s => s.id === sessionId ? updatedSession : s)
+    saveSessions(updatedLocal)
+
+    // Real: persist participants update (only creator should do this)
+    if (!isDemoMode && firebaseUser?.uid && db) {
+      try {
+        const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+        await setDoc(doc(db, 'sessions', sessionId), {
+          participants: newParticipants,
+          updatedAt: serverTimestamp(),
+        }, { merge: true })
+        console.log('✅ Participant expelled, persisted to Firestore')
+      } catch (e) {
+        console.warn('Failed to persist expel:', e)
+      }
+    }
+
+    // If the group chat modal is open for this session, refresh the view
+    if (showGroupChatModalFor === sessionId) {
+      // Update in-memory session list for the modal header count etc.
+      loadRealGroupMessages(sessionId)
+    }
+
+    toast.success('Expulsado', { description: `${nameToExpel} ya no está en la sesión` })
+
+    if (!isDemoMode) {
+      loadRealSessions()
+    }
+  }
+
+  const leaveSession = async (sessionId: string) => {
+    const allSessions = [...sessions, ...realSessions]
+    const session = allSessions.find(s => s.id === sessionId)
+    if (!session) return
+
+    const isCreator = session.creatorId === effectiveUserId || session.creatorId === 'me'
+    if (isCreator) {
+      toast('El creador no puede salir; usa Cerrar sesión')
+      return
+    }
+
+    const newParticipants = (session.participants || []).filter(p => p !== effectiveUserId)
+    const updatedSession = { ...session, participants: newParticipants }
+
+    const updatedLocal = sessions.map(s => s.id === sessionId ? updatedSession : s)
+    saveSessions(updatedLocal)
+
+    if (!isDemoMode && firebaseUser?.uid && db) {
+      try {
+        const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+        await setDoc(doc(db, 'sessions', sessionId), {
+          participants: newParticipants,
+          updatedAt: serverTimestamp(),
+        }, { merge: true })
+      } catch (e) { console.warn(e) }
+    }
+
+    if (showGroupChatModalFor === sessionId) {
+      setShowGroupChatModalFor(null)
+    }
+
+    toast('Saliste de la sesión')
+
+    if (!isDemoMode) loadRealSessions()
+  }
+
   // Moderation actions
   const reviewVerification = (userId: string, approve: boolean) => {
     // Remove from pending
@@ -2220,13 +2349,30 @@ function App() {
                                 Abrir chat grupal
                               </button>
 
-                              {!isCreator && (
+                              {isCreator && (
                                 <button 
-                                  onClick={() => setShowReviewModalFor(session.creatorId)}
-                                  className="text-xs border border-[#14b8a6] text-[#14b8a6] px-3 py-1 rounded-xl"
+                                  onClick={() => closeSession(session.id)}
+                                  className="text-xs bg-red-500/10 text-red-400 px-2 py-1 rounded-xl active:bg-red-500/20"
                                 >
-                                  Marcar entrenado
+                                  Cerrar sesión
                                 </button>
+                              )}
+
+                              {!isCreator && (
+                                <>
+                                  <button 
+                                    onClick={() => leaveSession(session.id)}
+                                    className="text-xs border border-[#272b33] px-2 py-1 rounded-xl active:bg-[#1f242b]"
+                                  >
+                                    Salir
+                                  </button>
+                                  <button 
+                                    onClick={() => setShowReviewModalFor(session.creatorId)}
+                                    className="text-xs border border-[#14b8a6] text-[#14b8a6] px-3 py-1 rounded-xl"
+                                  >
+                                    Marcar entrenado
+                                  </button>
+                                </>
                               )}
                             </div>
                           </div>
@@ -4091,7 +4237,12 @@ function App() {
                   <div className="flex items-center gap-2 text-xs mt-0.5">
                     <span className="text-[#14b8a6]">Chat grupal</span>
                     <span className="text-[#64748b]">•</span>
-                    <span className="text-[#cbd5e1]">{(sessions.find(s => s.id === showGroupChatModalFor)?.participants || []).length} participantes</span>
+                    <span className="text-[#cbd5e1]">{(sessions.find(s => s.id === showGroupChatModalFor)?.participants || displaySessions.find(s => s.id === showGroupChatModalFor)?.participants || []).length} participantes</span>
+                    {(() => {
+                      const cs = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
+                      const isC = cs?.creatorId === effectiveUserId || cs?.creatorId === 'me'
+                      return isC ? <span className="ml-1 px-1 py-px bg-red-500/20 text-red-400 rounded text-[9px] font-bold">ADMIN</span> : null
+                    })()}
                     {!isDemoMode && firebaseUser?.uid && (
                       <span className="ml-1 px-1.5 py-px bg-[#14b8a6] text-black rounded text-[9px] font-extrabold tracking-wide">REAL EN VIVO</span>
                     )}
@@ -4101,6 +4252,18 @@ function App() {
                   {!isDemoMode && firebaseUser?.uid && (
                     <button onClick={() => loadRealGroupMessages(showGroupChatModalFor)} className="text-[10px] px-2.5 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23]">Actualizar</button>
                   )}
+                  {(() => {
+                    const cs = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
+                    const isC = cs?.creatorId === effectiveUserId || cs?.creatorId === 'me'
+                    return isC && showGroupChatModalFor ? (
+                      <button 
+                        onClick={() => closeSession(showGroupChatModalFor)} 
+                        className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 rounded-xl active:bg-red-500/20"
+                      >
+                        Cerrar
+                      </button>
+                    ) : null
+                  })()}
                   <a href="/entrenamatch/privacy.html" target="_blank" className="text-[10px] text-[#64748b] underline">Privacidad</a>
                   <button onClick={() => setShowGroupChatModalFor(null)} className="text-3xl leading-none text-[#64748b] hover:text-white px-1">×</button>
                 </div>
@@ -4110,23 +4273,48 @@ function App() {
                 {/* Participants Sidebar */}
                 <div className="w-28 border-r border-[#272b33] bg-[#121418] p-2 overflow-auto text-xs">
                   <div className="text-[#64748b] text-[10px] px-1 mb-1.5 font-medium">PARTICIPANTES</div>
-                  {(sessions.find(s => s.id === showGroupChatModalFor)?.participants || []).map((pid, idx) => {
-                    const isCurrent = pid === effectiveUserId
-                    const seedUser = SEED_PROFILES.find(p => p.id === pid)
-                    const name = isCurrent ? (currentUser?.name || 'Tú') : (seedUser?.name || 'Participante')
-                    return (
-                      <button 
-                        key={idx}
-                        onClick={() => {
-                          const mention = `@${name.split(' ')[0]} `
-                          setChatInputValue(prev => prev + mention)
-                        }}
-                        className="block w-full text-left px-2 py-1 hover:bg-[#1f242b] rounded text-[#cbd5e1] truncate"
-                      >
-                        {name}{isCurrent ? ' (tú)' : ''}
-                      </button>
-                    )
-                  })}
+                  {(() => {
+                    const currentSess = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
+                    const isThisCreator = currentSess?.creatorId === effectiveUserId || currentSess?.creatorId === 'me'
+                    const parts = currentSess?.participants || (sessions.find(s => s.id === showGroupChatModalFor)?.participants || [])
+                    return parts.map((pid, idx) => {
+                      const isCurrent = pid === effectiveUserId
+                      const seedUser = SEED_PROFILES.find(p => p.id === pid)
+                      const name = isCurrent ? (currentUser?.name || 'Tú') : (seedUser?.name || 'Participante')
+                      return (
+                        <button 
+                          key={idx}
+                          onClick={() => {
+                            const mention = `@${name.split(' ')[0]} `
+                            setChatInputValue(prev => prev + mention)
+                          }}
+                          className="block w-full text-left px-2 py-1 hover:bg-[#1f242b] rounded text-[#cbd5e1] truncate flex items-center justify-between"
+                        >
+                          <span>{name}{isCurrent ? ' (tú)' : ''}</span>
+                          {isThisCreator && !isCurrent && (
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (showGroupChatModalFor) expelFromSession(showGroupChatModalFor, pid)
+                              }}
+                              className="ml-1 text-red-400 hover:text-red-500 text-[11px] px-0.5"
+                              title="Expulsar (solo tú como admin)"
+                            >
+                              ✕
+                            </span>
+                          )}
+                        </button>
+                      )
+                    })
+                  })()}
+                  {(() => {
+                    const currentSess = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
+                    const isThisCreator = currentSess?.creatorId === effectiveUserId || currentSess?.creatorId === 'me'
+                    if (isThisCreator) {
+                      return <div className="text-[9px] text-[#14b8a6] mt-2 px-1">Eres admin • toca ✕ para expulsar</div>
+                    }
+                    return null
+                  })()}
                 </div>
 
                 {/* Messages Area */}

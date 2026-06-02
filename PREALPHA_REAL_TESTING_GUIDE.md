@@ -25,10 +25,10 @@
 3. On Account A: Go to Explorar and look for Account B's real profile (use "Actualizar reales" if needed).
 4. Match with each other.
 5. Open 1:1 chat and exchange messages (they should appear live on the other device).
-6. From Account A: Create a new session (e.g. "Running en la costanera mañana 19:00").
-7. On Account B: Go to Sesiones tab → the new session should appear (thanks to real-time listener). No manual refresh needed if the app is open.
-8. Join the session from Account B.
-9. Open the group chat from the session.
+6. From Account A: Create a new session (e.g. "Running en la costanera mañana 19:00"). As creator you are admin: in "Mis sesiones" you see "Cerrar sesión" button, and inside group chat you can expel people (✕ icons in sidebar).
+7. On Account B: Go to Sesiones tab → the new session should appear (thanks to polling + load). No manual refresh needed if the app is open.
+8. Join the session from Account B. Non-creators can "Salir" from their "Mis sesiones".
+9. Open the group chat from the session. Creator sees ADMIN badge + expel controls.
 10. Send messages from both accounts in the group chat. They should appear live for everyone in the session.
 
 Use the "Actualizar sesiones reales" button if something doesn't appear immediately during testing.

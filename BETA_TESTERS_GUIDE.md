@@ -15,7 +15,7 @@
 - Onboarding completo (fotos con cámara nativa si estás en APK).
 - Ver perfiles reales de otros testers.
 - Match + chat 1:1 (se actualiza en ~8s cuando tienes el chat abierto; se siente en tiempo real gracias a polling + optimistic).
-- Crear una sesión (ej: "Running costanera 19:00") y que otro tester la vea y se una.
+- Crear una sesión (ej: "Running costanera 19:00") y que otro tester la vea y se una. Como creador tienes rol de administrador: botón "Cerrar sesión" en Mis sesiones, y en el chat grupal puedes expulsar (✕ en la lista de participantes) + badge ADMIN. Los demás pueden "Salir".
 - Chat grupal dentro de la sesión (live via onSnapshot + poll cuando el modal está abierto).
 - Perfil propio + botón "Sincronizar" + feedback.
 
