@@ -482,6 +482,9 @@ function App() {
               level: realProfile.level || 'Intermedio',
               intensity: realProfile.intensity || 'Moderado',
               availability: realProfile.availability || ['Tarde'],
+              lat: realProfile.lat || currentUser?.lat || -33.0153,
+              lng: realProfile.lng || currentUser?.lng || -71.5528,
+              legalConsents: realProfile.legalConsents || currentUser?.legalConsents,
             }
             if (merged.name) {
               saveUser(merged)
@@ -501,6 +504,9 @@ function App() {
               level: currentUser.level,
               intensity: currentUser.intensity,
               availability: currentUser.availability,
+              lat: currentUser.lat,
+              lng: currentUser.lng,
+              legalConsents: currentUser.legalConsents,
             })
             console.log('✅ Pushed initial rich profile to Firestore for new real user')
           }
@@ -550,7 +556,7 @@ function App() {
 
     if (!isDemoMode && firebaseUser?.uid) {
       try {
-        await updateUserProfile(firebaseUser.uid, {
+        const profileUpdate: any = {
           name: user.name,
           age: user.age,
           gender: user.gender,
@@ -563,7 +569,13 @@ function App() {
           level: user.level,
           intensity: user.intensity,
           availability: user.availability,
-        })
+          lat: user.lat,
+          lng: user.lng,
+        };
+        if (user.legalConsents) {
+          profileUpdate.legalConsents = user.legalConsents;
+        }
+        await updateUserProfile(firebaseUser.uid, profileUpdate)
         console.log('✅ Profile synced to Firestore (real multi-user)')
       } catch (e) {
         console.warn('Failed to sync profile to Firestore:', e)
@@ -666,10 +678,17 @@ function App() {
         });
       });
       msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-      setRealChatMessages(msgs);
+      // Always update local messages state for this chat (for persistence and list previews)
+      setMessages(prev => {
+        const updated = { ...prev, [otherUserId]: msgs };
+        localStorage.setItem('fitvina_messages', JSON.stringify(updated));
+        return updated;
+      });
       console.log(`✅ Loaded ${msgs.length} real 1:1 messages for ${otherUserId}`);
+      return msgs;
     } catch (e) {
       console.warn('Could not load real chat messages (check rules):', e);
+      return null;
     }
   };
 
@@ -688,15 +707,37 @@ function App() {
     }
 
     // Load immediately when opening a real chat
-    loadRealChatMessages(activeChat)
+    loadRealChatMessages(activeChat).then(msgs => {
+      if (msgs) setRealChatMessages(msgs);
+    });
 
     // Safe polling for live updates (every 8s while chat is open) - feels real-time for pre-alpha
-    const interval = setInterval(() => {
-      loadRealChatMessages(activeChat)
-    }, 8000)
+    const interval = setInterval(async () => {
+      const msgs = await loadRealChatMessages(activeChat);
+      if (msgs) setRealChatMessages(msgs);
+    }, 8000);
 
-    return () => clearInterval(interval)
+    return () => clearInterval(interval);
   }, [activeChat, isDemoMode, firebaseUser?.uid, realMatches, db])  // db included to re-init if available
+
+  // Background load real chat histories for ALL real matches on login (so history is available instantly when opening any chat)
+  useEffect(() => {
+    if (isDemoMode || !firebaseUser?.uid || realMatches.length === 0) return;
+    realMatches.forEach(async (id) => {
+      await loadRealChatMessages(id);  // populates local messages state only
+    });
+  }, [realMatches, isDemoMode, firebaseUser?.uid]);
+
+  // Background polling for all real matches every 30s (updates local message history for "real time" feel even if chats not open)
+  useEffect(() => {
+    if (isDemoMode || !firebaseUser?.uid || realMatches.length === 0) return;
+    const interval = setInterval(() => {
+      realMatches.forEach(id => {
+        loadRealChatMessages(id);  // updates local messages for that chat
+      });
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [realMatches, isDemoMode, firebaseUser?.uid]);
 
   // Optional real-time onSnapshot for 1:1 (may require Firestore composite index on messages).
   // Currently disabled in favor of reliable poll + load above to guarantee cross-device updates.
