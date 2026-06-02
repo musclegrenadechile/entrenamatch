@@ -106,6 +106,20 @@ For a signed release APK/AAB (for Play Store):
 
 You now have a clear path from "web pre-alpha on GitHub Pages" to "production web on Firebase Hosting + real Android app".
 
-Run `npm run android:build && npx cap open android` after installing Android Studio to get your first APK.
+### Automatic APK builds via GitHub Actions (recommended for quick access)
+
+A GitHub Actions workflow (`.github/workflows/build-android-apk.yml`) has been added.
+
+**On every push to main (or manual trigger):**
+- It automatically builds the web app for Capacitor.
+- Syncs to Android.
+- Compiles the debug APK.
+- The APK is available as a downloadable artifact named `EntrenaMatch-debug-apk` (app-debug.apk) for 30 days.
+
+You can download it from the "Actions" tab in the repo without installing anything locally for debug versions.
+
+For production releases, use the local Android Studio flow or extend the workflow to create a GitHub Release with signed AAB.
+
+Run `npm run android:build && npx cap open android` after installing Android Studio when you want to test locally or customize the native side.
 
 For any specific part (push notifications setup, Camera plugin, custom domain, etc.), just say the word and we continue.
