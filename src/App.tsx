@@ -2486,7 +2486,7 @@ function App() {
                   {displaySessions.filter(s => !s.participants.includes(effectiveUserId)).length}
                 </div>
               </div>
-              <div className="text-[10px] text-[#64748b] -mt-2 mb-3">Pre-Alpha • Las sesiones que crees son visibles para otros testers reales</div>
+              <div className="text-[10px] text-[#64748b] -mt-2 mb-3">Las sesiones que crees son visibles para otros testers reales</div>
 
               {displaySessions.filter(s => !s.participants.includes(effectiveUserId)).length === 0 ? (
                 <div className="mt-4 card p-7 rounded-3xl text-center">
@@ -2734,11 +2734,10 @@ function App() {
                   </div>
                   <div className="font-semibold text-xl mb-2">Aún no tienes matches</div>
                   <p className="text-sm text-[#94a3b8] leading-snug mb-4 max-w-[280px] mx-auto">
-                    Desliza a la derecha en <span className="text-white font-medium">Explorar</span> sobre perfiles reales de otros testers. 
-                    Los matches y el chat 1:1 funcionan entre dispositivos distintos gracias a Firebase.
+                    Ve a <span className="text-white font-medium">Explorar</span> y desliza a la derecha sobre perfiles que te interesen. 
+                    Los matches y chats 1:1 se sincronizan entre dispositivos con Firebase.
                   </p>
                   <button onClick={() => setActiveTab('explore')} className="btn-primary px-8">Ir a Explorar</button>
-                  <div className="mt-5 text-[10px] text-[#14b8a6]">Prueba con 2 cuentas en celulares diferentes</div>
                 </div>
               </div>
             ) : (
@@ -3240,12 +3239,12 @@ function App() {
                 <div className="flex items-center gap-3 mb-3">
                   <div className="text-2xl">📱</div>
                   <div>
-                    <div className="font-semibold text-[#14b8a6]">App Móvil Android (Pre-Alpha)</div>
+                    <div className="font-semibold text-[#14b8a6]">App Móvil Android</div>
                     <div className="text-xs text-[#94a3b8]">Experiencia nativa con notificaciones y mejor cámara</div>
                   </div>
                 </div>
                 <div className="text-sm text-[#cbd5e1] mb-4">
-                  Descarga la versión nativa de EntrenaMatch para pruebas. Incluye todas las funciones reales (perfiles, matches, chats, sesiones) y se actualiza automáticamente. Próximamente disponible también vía Play Store en modo beta cerrado (solo para testers invitados).
+                  Descarga la versión nativa de EntrenaMatch para pruebas. Incluye todas las funciones reales (perfiles, matches, chats, sesiones) y se actualiza automáticamente. Próximamente disponible vía Play Store en modo beta cerrado (solo para testers invitados).
                 </div>
                 <a 
                   href="https://github.com/musclegrenadechile/entrenamatch/releases/tag/android-prealpha" 
@@ -3267,7 +3266,7 @@ function App() {
                   <div className="font-semibold text-sm">Feedback de Beta</div>
                   <div className="text-[10px] px-2 py-0.5 rounded-full bg-[#14b8a6]/10 text-[#14b8a6]">Privado</div>
                 </div>
-                <p className="text-[11px] text-[#94a3b8] mb-3">Tu opinión define la Pre-Alpha. Todo se guarda en Firebase y lo leemos.</p>
+                <p className="text-[11px] text-[#94a3b8] mb-3">Tu opinión define la app. Todo se guarda en Firebase y lo leemos.</p>
 
                 {/* Type segmented */}
                 <div className="mb-3">
@@ -3412,13 +3411,13 @@ function App() {
                   onClick={e => e.stopPropagation()} 
                   className="card w-full max-w-[380px] rounded-3xl p-7 text-center"
                 >
-                  <div className="text-2xl font-semibold mb-2">¡Bienvenido a la Pre-Alpha!</div>
+                  <div className="text-2xl font-semibold mb-2">¡Bienvenido!</div>
                   <p className="text-sm text-[#94a3b8] mb-4">
                     Estás ayudando a construir <strong>El match del movimiento</strong> desde el día uno.
                   </p>
 
                   <div className="bg-[#121418] rounded-2xl p-4 text-left text-sm mb-5">
-                    <div className="font-medium text-white mb-2">Esto es Pre-Alpha (Backend Real Activo):</div>
+                    <div className="font-medium text-white mb-2">Backend real activo (datos sincronizados cross-device):</div>
                     <ul className="space-y-1.5 text-[#cbd5e1]">
                       <li>→ Versión temprana y en desarrollo</li>
                       <li>→ Perfiles, matches y chat 1:1 ya son reales (se ven entre celulares distintos)</li>
@@ -4025,7 +4024,7 @@ function App() {
                   </div>
                 </div>
 
-                <div className="mt-2 mb-3 text-[10px] text-[#14b8a6] text-center">Pre-Alpha: otros testers reales la verán y podrán unirse al instante</div>
+                <div className="mt-2 mb-3 text-[10px] text-[#14b8a6] text-center">Otros testers reales la verán y podrán unirse al instante</div>
                 <div className="text-[10px] text-center text-[#64748b] mb-2">
                   Al publicar aceptas nuestros <a href="/entrenamatch/terms.html" target="_blank" className="underline">Términos</a>.
                 </div>
