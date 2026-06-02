@@ -284,7 +284,13 @@ function App() {
   // Training Sessions (unique feature)
   const [sessions, setSessions] = useState<TrainingSession[]>([])
   const [showCreateSession, setShowCreateSession] = useState(false)
+  const [selectedTrainingType, setSelectedTrainingType] = useState('Pesas/Gym')
   const [isLoadingSessions, setIsLoadingSessions] = useState(false)
+
+  const closeCreateSession = () => {
+    setShowCreateSession(false)
+    setSelectedTrainingType('Pesas/Gym')
+  }
   const [isLoadingMatches, setIsLoadingMatches] = useState(false)
   const [isLoadingChats, setIsLoadingChats] = useState(false)
 
@@ -3913,7 +3919,7 @@ function App() {
       {/* CREATE SESSION MODAL - Unique feature */}
       <AnimatePresence>
         {showCreateSession && (
-          <div className="absolute inset-0 z-[95] flex items-end bg-black/70" onClick={() => setShowCreateSession(false)}>
+          <div className="absolute inset-0 z-[95] flex items-end bg-black/70" onClick={closeCreateSession}>
             <div onClick={e => e.stopPropagation()} className="w-full card rounded-t-3xl p-6 pb-8">
               <div className="font-semibold text-xl mb-4">Crear sesión de entrenamiento</div>
               
@@ -3921,7 +3927,6 @@ function App() {
                 e.preventDefault()
                 const form = e.currentTarget
                 // trainingType is now from a hidden input we control with chips, or fallback to select if needed
-                const trainingTypeEl = form.elements.namedItem('trainingType') as HTMLInputElement
                 const newSession: TrainingSession = {
                   id: 's' + Date.now(),
                   creatorId: effectiveUserId,
@@ -3929,14 +3934,14 @@ function App() {
                   title: (form.elements.namedItem('title') as HTMLInputElement).value,
                   time: (form.elements.namedItem('time') as HTMLInputElement).value,
                   location: (form.elements.namedItem('location') as HTMLInputElement).value,
-                  trainingType: trainingTypeEl ? trainingTypeEl.value : (form.elements.namedItem('trainingTypeSelect') as HTMLSelectElement)?.value || 'Pesas/Gym',
+                  trainingType: selectedTrainingType,
                   maxParticipants: parseInt((form.elements.namedItem('max') as HTMLInputElement).value),
                   participants: [effectiveUserId],
                   createdAt: Date.now()
                 }
                 const updated = [newSession, ...sessions]
                 saveSessions(updated)
-                setShowCreateSession(false)
+                closeCreateSession()
 
                 // Write directly to Firestore for real users (more reliable cross-device)
                 if (!isDemoMode && firebaseUser?.uid && db) {
@@ -4005,17 +4010,14 @@ function App() {
                         <button 
                           type="button"
                           key={t}
-                          onClick={() => {
-                            const hidden = (form.elements.namedItem('trainingType') as HTMLInputElement)
-                            if (hidden) hidden.value = t
-                          }}
-                          className="px-3 py-1 text-xs rounded-2xl border border-[#272b33] bg-[#121418] hover:border-[#3a3f48] active:bg-[#1a1d23]"
+                          onClick={() => setSelectedTrainingType(t)}
+                          className={`px-3 py-1 text-xs rounded-2xl border active:bg-[#1a1d23] ${selectedTrainingType === t ? 'border-[#14b8a6] bg-[#14b8a6]/10 text-[#14b8a6]' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48]'}`}
                         >
                           {t}
                         </button>
                       ))}
                     </div>
-                    <input type="hidden" name="trainingType" defaultValue="Pesas/Gym" />
+                    <input type="hidden" name="trainingType" value={selectedTrainingType} />
                   </div>
 
                   <div>
@@ -4029,7 +4031,7 @@ function App() {
                   Al publicar aceptas nuestros <a href="/entrenamatch/terms.html" target="_blank" className="underline">Términos</a>.
                 </div>
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => setShowCreateSession(false)} className="flex-1 py-3 rounded-2xl border border-[#272b33] active:bg-[#1f242b]">Cancelar</button>
+                  <button type="button" onClick={closeCreateSession} className="flex-1 py-3 rounded-2xl border border-[#272b33] active:bg-[#1f242b]">Cancelar</button>
                   <button type="submit" className="flex-1 btn-primary">Publicar sesión</button>
                 </div>
               </form>
