@@ -1356,6 +1356,9 @@ function App() {
     const updatedLocal = sessions.filter(s => s.id !== sessionId)
     saveSessions(updatedLocal)
 
+    // Also clean from realSessions state immediately for UI
+    setRealSessions(prev => prev.filter(s => s.id !== sessionId))
+
     // Real: delete from Firestore
     if (!isDemoMode && firebaseUser?.uid && db) {
       try {
@@ -1405,6 +1408,9 @@ function App() {
     const updatedLocal = sessions.map(s => s.id === sessionId ? updatedSession : s)
     saveSessions(updatedLocal)
 
+    // Also update in realSessions for immediate UI reflection on real users
+    setRealSessions(prev => prev.map(s => s.id === sessionId ? updatedSession : s))
+
     // Real: persist participants update (only creator should do this)
     if (!isDemoMode && firebaseUser?.uid && db) {
       try {
@@ -1448,6 +1454,9 @@ function App() {
 
     const updatedLocal = sessions.map(s => s.id === sessionId ? updatedSession : s)
     saveSessions(updatedLocal)
+
+    // Also update realSessions state immediately
+    setRealSessions(prev => prev.map(s => s.id === sessionId ? updatedSession : s))
 
     if (!isDemoMode && firebaseUser?.uid && db) {
       try {
@@ -2183,7 +2192,7 @@ function App() {
                   </div>
                   <div className="font-semibold text-lg mb-2">No hay sesiones abiertas todavía</div>
                   <p className="text-sm text-[#94a3b8] leading-snug mb-4 max-w-[280px] mx-auto">
-                    Sé el primero en crear una. Otros testers reales la verán al instante (gracias a Firebase) y podrán unirse para chatear en grupo antes o después del entrenamiento.
+                    { !isDemoMode ? 'Aún no hay otros testers reales con sesiones activas. ¡Sé el primero en crear una!' : 'Sé el primero en crear una.' } Otros testers reales la verán al instante (gracias a Firebase) y podrán unirse para chatear en grupo.
                   </p>
                   <button onClick={() => setShowCreateSession(true)} className="btn-primary px-8">Crear la primera sesión</button>
                   <div className="text-[10px] text-[#14b8a6] mt-3">Beta real: las sesiones son visibles cross-device y el chat grupal funciona en vivo</div>
@@ -2294,7 +2303,7 @@ function App() {
                 <div className="card p-7 rounded-3xl text-center">
                   <div className="font-semibold mb-2">Aún no tienes sesiones</div>
                   <p className="text-sm text-[#94a3b8] mb-3 max-w-[260px] mx-auto">
-                    Crea tu primera sesión o únete a una abierta arriba. 
+                    { !isDemoMode ? 'Crea tu primera sesión real o únete a una abierta arriba. ¡Otros testers la verán en sus dispositivos!' : 'Crea tu primera sesión o únete a una abierta arriba.' }
                     Esta es una de las features clave que estamos testeando en Pre-Alpha.
                   </p>
                   <p className="text-xs text-[#64748b] mb-4">El chat grupal + reseñas después de entrenar es lo que más feedback necesitamos.</p>
@@ -2840,6 +2849,7 @@ function App() {
               <div className="card p-4 text-xs text-[#94a3b8] leading-snug">
                 <span className="font-semibold text-[#14b8a6]">Pre-Alpha activa:</span> Tus datos reales se sincronizan entre dispositivos vía Firebase. 
                 Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado de tu Perfil. ¡Gracias por testear!
+                <div className="mt-1 text-[10px] text-[#64748b]">Firebase Hosting preparado para producción (mejor PWA + futuro push). Ver PRODUCTION_AND_APK.md</div>
               </div>
               <div className="text-center text-[10px] text-[#475569] mt-4">EntrenaMatch v0.1.0-prealpha • Solo +18 • Backend real 2026</div>
             </div>
@@ -3072,6 +3082,40 @@ function App() {
         className="fixed bottom-4 right-4 z-[190] bg-black/70 text-white text-[10px] px-3 py-1.5 rounded-2xl opacity-70 active:opacity-100"
       >
         Guía
+      </button>
+
+      {/* Floating mini "Reportar problema" for quick beta feedback from any screen (Phase 0 polish) */}
+      <button
+        onClick={async () => {
+          const issue = prompt('¿Qué problema o sugerencia quieres reportar? (se guarda como feedback privado)')
+          if (!issue || !issue.trim()) return
+          if (!firebaseUser?.uid && !currentUser) {
+            toast('Inicia sesión para reportar')
+            return
+          }
+          try {
+            if (db) {
+              const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+              await addDoc(collection(db, 'betaFeedback'), {
+                userId: firebaseUser?.uid || 'demo',
+                type: 'other',
+                rating: 3,
+                text: issue.trim(),
+                platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
+                appVersion: '0.1.0-prealpha',
+                context: 'floating-report',
+                createdAt: serverTimestamp(),
+              })
+            }
+            toast.success('¡Gracias! Reporte enviado (revisa tu Perfil > Feedback para ver historial)')
+          } catch (e) {
+            toast.error('No se pudo enviar el reporte')
+          }
+        }}
+        className="fixed bottom-4 right-20 z-[190] bg-red-500/80 text-white text-[10px] px-2.5 py-1.5 rounded-2xl opacity-80 active:opacity-100 flex items-center gap-1"
+        title="Reportar problema rápido"
+      >
+        ⚠️ Reportar
       </button>
 
       {/* Bottom Navigation - Premium, energetic feel */}
@@ -4324,7 +4368,7 @@ function App() {
                       <div className="flex flex-col items-center justify-center h-full text-center text-[#64748b] px-6">
                         <div className="w-14 h-14 rounded-2xl bg-[#121418] flex items-center justify-center mb-4 text-3xl">💬</div>
                         <div className="font-medium text-white">Aún no hay mensajes en el grupo</div>
-                        <div className="text-xs mt-1.5 max-w-[240px]">Sé el primero en romper el hielo. Los mensajes son reales y se ven en todos los dispositivos del grupo.</div>
+                        <div className="text-xs mt-1.5 max-w-[240px]">Sé el primero en romper el hielo. { !isDemoMode ? 'Los mensajes son reales (creador puede expulsar/administrar) y se ven en todos los dispositivos.' : 'Los mensajes se ven en todos los dispositivos del grupo.' }</div>
                         {!isDemoMode && <div className="mt-3 text-[10px] text-[#14b8a6]">Pre-Alpha • Sincronización en vivo vía Firebase</div>}
                       </div>
                     ) : (

@@ -63,7 +63,7 @@ Prompt for generation (use any design tool or Imagine):
 "Modern dark fitness social app hero banner, deep charcoal + vibrant teal accents (#14b8a6), athletic man and woman high-fiving outdoors at golden hour in a coastal running path, subtle map + dumbbell + chat bubbles icons floating elegantly, bold modern sans title 'EntrenaMatch' in white, tagline 'El match del movimiento' smaller below, premium minimalist sports aesthetic, high contrast, cinematic lighting, no text overflow, space for Play Store overlay"
 
 (Generate 1024x500 PNG/JPG and upload to Play Console graphic assets.)
-Reference generated example available in repo at: assets/play-store/feature-graphic.jpg (use as base or regenerate with your preferred style).
+Reference generated examples available in repo at: assets/play-store/ (feature-graphic.jpg + screenshot-explore.jpg, screenshot-chat.jpg etc. Use or regenerate with your preferred style for Play Console).
 
 ### High-res icon (512x512, adaptive icon ready)
 Use existing public favicon or generate:

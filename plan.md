@@ -76,7 +76,9 @@ Everything must work after hard refresh + on different physical devices (not jus
 - [x] Update all guides (BETA, PRODUCTION, PREALPHA, README) with latest "Phase 0 complete" checklist + links to new assets. (BETA, PREALPHA, PRODUCTION updated with cleaner Profile escape hatches note, no more blocking red center/floating logout; plan.md refreshed; README expanded with Pre-Alpha real section, dual-mode note, links to BETA/PLAY_STORE guides).
 - [x] Final verification: hard refresh on web + install latest APK on device, create 2 real accounts on separate "devices", full flow (incl. profile edit/save + clean logout + **session creator admin: close/expel/leave**), submit feedback, confirm cross-device visibility. (Pushes include sessions admin roles.)
 
-**Sign-off for Phase 0**: After all above, the app + AAB + listing copy + guides are ready for the user to upload the AAB to Play Console Internal testing track (hidden). Then move to Phase 1 (invite 5-10 real beta testers, structured feedback collection, triage, promote to Closed if good).
+**Sign-off for Phase 0**: After all above (including recent: session creator admin/close/expel/leave with ADMIN badges, floating "Reportar problema" everywhere, stronger real-mode empty states, Firebase Hosting note in-app, extra Play screenshots, full guide updates), the app + AAB + listing copy + guides are ready for the user to upload the AAB to Play Console Internal testing track (hidden). Then move to Phase 1 (invite 5-10 real beta testers, structured feedback collection, triage, promote to Closed if good).
+
+**Current status (this continuation)**: Phase 0 core is solid for hidden beta. Frequent pushes made. User to hard-refresh + test full flows (esp. sessions as admin + real chat + clean Profile).
 
 ## Phase 1 (after Phase 0 sign-off)
 - Upload signed AAB to Internal testing (hidden).
@@ -110,4 +112,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continuation after exhaustive analysis.
+Last updated: Phase 0 continuation (session admin/creator controls + floating reportar + empty states strengthened + hosting callout + more Play screenshots generated + guides polish). Most checklist items complete; ready for final user verification + hidden Play Console Internal upload. All pushes done for live testing.
