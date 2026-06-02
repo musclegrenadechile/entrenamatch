@@ -632,7 +632,49 @@ function App() {
     }
   }
 
-  // Real-time listener for the current active real chat
+  // Load real 1:1 chat messages (two queries to avoid complex 'in' index issues)
+  const loadRealChatMessages = async (otherUserId: string) => {
+    if (!db || !firebaseUser?.uid) return;
+    try {
+      const { collection, query, where, getDocs } = await import('firebase/firestore');
+      const messagesRef = collection(db, 'messages');
+
+      // Query 1: from me to other
+      const q1 = query(messagesRef, where('from', '==', firebaseUser.uid), where('to', '==', otherUserId));
+      // Query 2: from other to me
+      const q2 = query(messagesRef, where('from', '==', otherUserId), where('to', '==', firebaseUser.uid));
+
+      const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+
+      const msgs: any[] = [];
+      snap1.forEach((doc) => {
+        const data = doc.data() as any;
+        msgs.push({
+          id: doc.id,
+          from: 'me',
+          text: data.text,
+          timestamp: data.timestamp || Date.now(),
+        });
+      });
+      snap2.forEach((doc) => {
+        const data = doc.data() as any;
+        msgs.push({
+          id: doc.id,
+          from: 'them',
+          text: data.text,
+          timestamp: data.timestamp || Date.now(),
+        });
+      });
+      msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      setRealChatMessages(msgs);
+      console.log(`✅ Loaded ${msgs.length} real 1:1 messages for ${otherUserId}`);
+    } catch (e) {
+      console.warn('Could not load real chat messages (check rules):', e);
+    }
+  };
+
+  // Reliable 1:1 real chat: load on open + safe polling (avoids index/rules issues with complex 'in' queries)
+  // The previous onSnapshot is kept commented below as optional enhancement.
   useEffect(() => {
     if (!activeChat || isDemoMode || !firebaseUser?.uid || !db) {
       setRealChatMessages([])
@@ -645,20 +687,41 @@ function App() {
       return
     }
 
-    let unsubscribe: (() => void) | null = null
+    // Load immediately when opening a real chat
+    loadRealChatMessages(activeChat)
 
+    // Safe polling for live updates (every 8s while chat is open) - feels real-time for pre-alpha
+    const interval = setInterval(() => {
+      loadRealChatMessages(activeChat)
+    }, 8000)
+
+    return () => clearInterval(interval)
+  }, [activeChat, isDemoMode, firebaseUser?.uid, realMatches, db])  // db included to re-init if available
+
+  // Optional real-time onSnapshot for 1:1 (may require Firestore composite index on messages).
+  // Currently disabled in favor of reliable poll + load above to guarantee cross-device updates.
+  /*
+  useEffect(() => {
+    if (!activeChat || isDemoMode || !firebaseUser?.uid || !db) {
+      setRealChatMessages([])
+      return
+    }
+    const isRealChat = realMatches.includes(activeChat)
+    if (!isRealChat) {
+      setRealChatMessages([])
+      return
+    }
+    let unsubscribe: (() => void) | null = null
     ;(async () => {
       try {
         const { collection, query, where, onSnapshot, orderBy } = await import('firebase/firestore')
         const messagesRef = collection(db, 'messages')
-
-        // Listen for messages between me and the other user (both directions)
         const q = query(
           messagesRef,
           where('from', 'in', [firebaseUser.uid, activeChat]),
-          where('to', 'in', [firebaseUser.uid, activeChat])
+          where('to', 'in', [firebaseUser.uid, activeChat]),
+          orderBy('createdAt', 'asc')  // may need index
         )
-
         unsubscribe = onSnapshot(q, (snapshot) => {
           const msgs: any[] = []
           snapshot.forEach((doc) => {
@@ -670,7 +733,6 @@ function App() {
               timestamp: data.timestamp || Date.now(),
             })
           })
-          // Sort by time (newest last)
           msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
           setRealChatMessages(msgs)
           console.log(`📨 Real-time update: ${msgs.length} messages for chat ${activeChat}`)
@@ -681,11 +743,9 @@ function App() {
         console.warn('Real chat listener error:', e)
       }
     })()
-
-    return () => {
-      if (unsubscribe) unsubscribe()
-    }
+    return () => { if (unsubscribe) unsubscribe() }
   }, [activeChat, firebaseUser?.uid, isDemoMode, realMatches])
+  */
 
   // Load real profiles on mount and when auth changes
   useEffect(() => {
@@ -796,6 +856,63 @@ function App() {
       loadRealGroupMessages(showGroupChatModalFor);
     }
   }, [showGroupChatModalFor, isDemoMode, firebaseUser?.uid]);
+
+  // Real-time onSnapshot for group chat when modal open (subcollection under session)
+  useEffect(() => {
+    if (!showGroupChatModalFor || isDemoMode || !firebaseUser?.uid || !db) {
+      return;
+    }
+
+    let unsubscribe: (() => void) | null = null;
+
+    (async () => {
+      try {
+        const { collection, query, orderBy, onSnapshot } = await import('firebase/firestore');
+        const msgsRef = collection(db, `sessions/${showGroupChatModalFor}/messages`);
+        const q = query(msgsRef, orderBy('createdAt', 'asc'));
+
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          const loaded: SessionMessage[] = [];
+          snapshot.forEach(doc => {
+            const d = doc.data() as any;
+            loaded.push({
+              id: doc.id,
+              senderId: d.senderId,
+              senderName: d.senderName || 'Usuario',
+              text: d.text || '',
+              timestamp: d.timestamp || Date.now(),
+              photo: d.photo,
+              reactions: d.reactions || {}
+            });
+          });
+          setSessionMessages(prev => ({
+            ...prev,
+            [showGroupChatModalFor]: loaded
+          }));
+          console.log(`📨 Live group update: ${loaded.length} msgs for session ${showGroupChatModalFor}`);
+        }, (err) => {
+          console.warn('Group chat live listener error (check rules/participants):', err);
+        });
+      } catch (e) {
+        console.warn('Group chat onSnapshot setup error:', e);
+      }
+    })();
+
+    return () => {
+      if (unsubscribe) unsubscribe();
+    };
+  }, [showGroupChatModalFor, isDemoMode, firebaseUser?.uid, db]);
+
+  // Safe polling fallback for group messages (8s) while modal open - guarantees updates even if listener has rules/index hiccup
+  useEffect(() => {
+    if (!showGroupChatModalFor || isDemoMode || !firebaseUser?.uid || !db) return;
+
+    const interval = setInterval(() => {
+      loadRealGroupMessages(showGroupChatModalFor);
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [showGroupChatModalFor, isDemoMode, firebaseUser?.uid, db]);
 
   // Simulated pending verifications for demo (in real app this would come from backend)
   const [pendingVerifications, setPendingVerifications] = useState<any[]>([
