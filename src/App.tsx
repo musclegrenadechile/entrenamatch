@@ -253,6 +253,7 @@ function App() {
   const [showCreateSession, setShowCreateSession] = useState(false)
   const [isLoadingSessions, setIsLoadingSessions] = useState(false)
   const [isLoadingMatches, setIsLoadingMatches] = useState(false)
+  const [isLoadingChats, setIsLoadingChats] = useState(false)
 
   // Reviews for "Entrenamos Juntos" (unique trust system)
   const [reviews, setReviews] = useState<Record<string, TrainingReview[]>>({}) // key = matchId (profile id)
@@ -2563,13 +2564,18 @@ function App() {
                   {!isDemoMode && (
                     <button onClick={async () => {
                       if (realMatches.length > 0) {
-                        for (const id of realMatches) {
-                          await loadRealChatMessages(id);
+                        setIsLoadingChats(true);
+                        try {
+                          for (const id of realMatches) {
+                            await loadRealChatMessages(id);
+                          }
+                          setLastSync(new Date());
+                          toast.success('Chats reales actualizados');
+                        } finally {
+                          setIsLoadingChats(false);
                         }
-                        setLastSync(new Date());
-                        toast.success('Chats reales actualizados');
                       }
-                    }} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black">Actualizar chats reales</button>
+                    }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar chats reales'}</button>
                   )}
                 </div>
                 <div className="text-[#94a3b8] text-xs px-1 mb-4">Chats 1:1 reales se sincronizan en vivo entre dispositivos (onSnapshot + polls)</div>
@@ -2626,7 +2632,7 @@ function App() {
                   <button onClick={() => setShowFullProfile(chatProfile!)} className="ml-auto text-xs px-3 py-1 bg-[#121418] rounded-full">Ver perfil</button>
                   <a href="/entrenamatch/privacy.html" target="_blank" className="text-[10px] text-[#64748b] underline ml-1">Privacidad</a>
                   {!isDemoMode && (
-                    <button onClick={async () => { if (activeChat) { await loadRealChatMessages(activeChat); setLastSync(new Date()); toast.success('Chat actualizado'); } }} className="text-[10px] px-2 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23]">Actualizar</button>
+                    <button onClick={async () => { if (activeChat) { setIsLoadingChats(true); try { await loadRealChatMessages(activeChat); setLastSync(new Date()); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } } }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23] disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar'}</button>
                   )}
                   <button onClick={async () => {
                     const issue = prompt('¿Qué problema o sugerencia en este chat?');
@@ -4434,7 +4440,7 @@ function App() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {!isDemoMode && firebaseUser?.uid && (
-                    <button onClick={() => loadRealGroupMessages(showGroupChatModalFor)} className="text-[10px] px-2.5 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23]">Actualizar</button>
+                    <button onClick={async () => { setIsLoadingChats(true); try { await loadRealGroupMessages(showGroupChatModalFor); setLastSync(new Date()); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } }} disabled={isLoadingChats} className="text-[10px] px-2.5 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23] disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar'}</button>
                   )}
                   {(() => {
                     const cs = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
