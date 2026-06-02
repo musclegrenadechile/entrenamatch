@@ -322,6 +322,23 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                 >
                   Reiniciar deck
                 </button>
+                {realProfiles.length > 0 && onRefreshRealProfiles && (
+                  <button 
+                    onClick={async () => {
+                      setIsRefreshingReals(true);
+                      try {
+                        await onRefreshRealProfiles();
+                        toast.success('Perfiles reales actualizados');
+                      } finally {
+                        setIsRefreshingReals(false);
+                      }
+                    }} 
+                    disabled={isRefreshingReals}
+                    className="px-5 py-2.5 border border-[#14b8a6] text-[#14b8a6] rounded-2xl text-sm active:bg-[#14b8a6] active:text-black disabled:opacity-60"
+                  >
+                    {isRefreshingReals ? 'Actualizando...' : 'Actualizar reales'}
+                  </button>
+                )}
               </div>
             </div>
           )}
