@@ -3710,7 +3710,7 @@ function App() {
           <div className="absolute inset-0 z-[95] flex items-end bg-black/70" onClick={() => setShowCreateSquad(false)}>
             <div onClick={e => e.stopPropagation()} className="w-full card rounded-t-3xl p-6 pb-8">
               <div className="font-semibold text-xl mb-1">Crear un Squad</div>
-              <div className="text-[10px] text-[#14b8a6] mb-3">Pre-Alpha: funcionalidad en desarrollo (principalmente para probar UI)</div>
+              <div className="text-[10px] text-[#14b8a6] mb-3">Funcionalidad en desarrollo (principalmente para probar UI)</div>
               <form onSubmit={(e) => {
                 e.preventDefault()
                 const form = e.currentTarget
