@@ -1731,7 +1731,7 @@ function App() {
             }}
             onShowProfile={setShowFullProfile}
             realProfiles={realProfiles}
-            onRefreshRealProfiles={() => loadRealProfiles()}
+            onRefreshRealProfiles={async () => { await loadRealProfiles(); }}
           />
         )}
 

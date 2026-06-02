@@ -37,6 +37,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
   // Local drag state + optimistic removal for snappy swipe/match feel
   const [dragX, setDragX] = useState(0);
   const [optimisticRemovedId, setOptimisticRemovedId] = useState<string | null>(null);
+  const [isRefreshingReals, setIsRefreshingReals] = useState(false);
 
   // Merge prop visibleCards with optimistic removal for instant visual feedback after swipe
   const visibleCards = optimisticRemovedId
@@ -145,8 +146,8 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         <div className="absolute top-4 left-4 right-4 flex items-start justify-between">
           <div className="flex flex-col gap-1.5">
             {isRealProfile && (
-              <div className="inline-flex items-center gap-1 bg-white text-black text-[9px] font-bold px-2 py-0.5 rounded-full shadow">
-                REAL TESTER
+              <div className="inline-flex items-center gap-1 bg-gradient-to-r from-[#14b8a6] to-[#0f9d8c] text-black text-[9px] font-extrabold px-2.5 py-0.5 rounded-full shadow ring-1 ring-white/70">
+                ★ REAL TESTER
               </div>
             )}
             {verified && (
@@ -249,9 +250,9 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
             {deck.length} personas {userLocation ? 'cerca de ti' : ''}
           </div>
           {realProfiles && realProfiles.length > 0 && (
-            <div className="text-[10px] text-[#14b8a6] mt-0.5 font-medium">+ {realProfiles.length} perfiles reales de testers</div>
+            <div className="text-[10px] text-[#14b8a6] mt-0.5 font-bold">+ {realProfiles.length} perfiles reales de testers (¡sincronizados!)</div>
           )}
-          <div className="text-[9px] text-[#64748b] mt-0.5">Pre-Alpha • Lo que ves es real</div>
+          <div className="text-[9px] text-[#64748b] mt-0.5">Pre-Alpha • Backend real activo • Lo que ves es real entre dispositivos</div>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -271,10 +272,19 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           </button>
           {realProfiles.length > 0 && onRefreshRealProfiles && (
             <button 
-              onClick={onRefreshRealProfiles} 
-              className="text-xs flex items-center gap-1 bg-[#14b8a6]/10 text-[#14b8a6] px-3 py-1.5 rounded-2xl active:bg-[#14b8a6] active:text-black"
+              onClick={async () => {
+                setIsRefreshingReals(true);
+                try {
+                  await onRefreshRealProfiles();
+                  toast.success('Perfiles reales actualizados');
+                } finally {
+                  setIsRefreshingReals(false);
+                }
+              }} 
+              disabled={isRefreshingReals}
+              className="text-xs flex items-center gap-1 bg-[#14b8a6] text-black px-3 py-1.5 rounded-2xl font-semibold active:bg-[#0f9d8c] disabled:opacity-60"
             >
-              <RefreshCw size={13}/> Reales
+              <RefreshCw size={13} className={isRefreshingReals ? 'animate-spin' : ''}/> {isRefreshingReals ? 'Actualizando...' : 'Actualizar reales'}
             </button>
           )}
           <button 
