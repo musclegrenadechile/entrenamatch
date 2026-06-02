@@ -2497,6 +2497,32 @@ function App() {
               </div>
               <div className="text-center text-[10px] text-[#475569] mt-4">EntrenaMatch • Solo +18 • Backend real 2026</div>
             </div>
+
+            {/* Mobile App Download - Prominent for Pre-Alpha testers */}
+            <div className="px-4 mt-2 mb-8">
+              <div className="card p-5 rounded-3xl border border-[#14b8a6]/30 bg-[#0f1419]">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="text-2xl">📱</div>
+                  <div>
+                    <div className="font-semibold text-[#14b8a6]">App Móvil Android (Pre-Alpha)</div>
+                    <div className="text-xs text-[#94a3b8]">Experiencia nativa con notificaciones y mejor cámara</div>
+                  </div>
+                </div>
+                <div className="text-sm text-[#cbd5e1] mb-4">
+                  Descarga la versión nativa de EntrenaMatch. Incluye todas las funciones reales (perfiles, matches, chats, sesiones) y se actualiza automáticamente con cada mejora.
+                </div>
+                <a 
+                  href="https://github.com/musclegrenadechile/entrenamatch/releases/tag/android-prealpha" 
+                  target="_blank"
+                  className="btn-primary w-full block text-center text-sm py-2.5"
+                >
+                  Descargar APK más reciente (Gratis)
+                </a>
+                <div className="text-[10px] text-center text-[#64748b] mt-2">
+                  También disponible automáticamente en GitHub Actions → Artifacts
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

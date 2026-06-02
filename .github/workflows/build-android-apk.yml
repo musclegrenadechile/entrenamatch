@@ -5,6 +5,9 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+permissions:
+  contents: write   # needed for creating releases
+
 jobs:
   build-apk:
     runs-on: ubuntu-latest
@@ -31,7 +34,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21'
 
       - name: Cache Gradle and Android SDK
         uses: actions/cache@v4
@@ -50,9 +53,33 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace
 
-      - name: Upload APK artifact
+      - name: Upload APK artifact (for quick download)
         uses: actions/upload-artifact@v4
         with:
           name: EntrenaMatch-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
+
+      - name: Create/Update Pre-Alpha Android Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-prealpha
+          name: "Pre-Alpha Android APK (latest)"
+          body: |
+            **EntrenaMatch Pre-Alpha Android App**
+
+            This is an automatically built debug APK from the latest main branch.
+
+            - Install on Android (enable unknown sources)
+            - Includes latest features from the web Pre-Alpha (real Firebase backend, profiles, matches, 1:1 + group chat, sessions)
+            - Built with Capacitor for native experience
+
+            **Download the APK below** (app-debug.apk)
+
+            For the web version: https://musclegrenadechile.github.io/entrenamatch/
+
+            Report issues on GitHub.
+          draft: false
+          prerelease: true
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+          token: ${{ secrets.GITHUB_TOKEN }}

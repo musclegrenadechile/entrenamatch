@@ -96,15 +96,31 @@ For a signed release APK/AAB (for Play Store):
 - Set up Firebase Cloud Messaging for real push notifications ("someone liked you", "new message in session")
 - Test on real Android device
 
-## Summary of what was executed in this session
-- firebase.json now includes proper Hosting config
-- package.json has `deploy`, `android:build`, cap commands
-- Capacitor installed + `android` platform added + synced
-- `vite.config.ts` now supports `CAPACITOR=1` for correct asset paths in native builds (relative base)
-- capacitor.config.ts created
-- All changes committed and pushed
+## Current Status of App Creation (updated live)
 
-You now have a clear path from "web pre-alpha on GitHub Pages" to "production web on Firebase Hosting + real Android app".
+**Web Pre-Alpha (very advanced):**
+- Real Firebase backend fully working (email auth, rich onboarding with photos/training/goals, real profiles visible to others, matching, 1:1 chat, sessions + group chat).
+- Excellent UX polish, empty states, real badges, loading feedback, escape hatches everywhere.
+- Deployed on GitHub Pages (https://musclegrenadechile.github.io/entrenamatch/).
+
+**Native Android (Capacitor - major progress):**
+- Full native project ready (`android/` folder).
+- @capacitor/camera plugin installed and synced → native camera for better photo experience in future builds.
+- APK successfully generated on your computer (EntrenaMatch-debug.apk in root).
+- **GitHub Actions now fully automates APK builds** on every push and creates/updates an easy GitHub Release (tag: android-prealpha) with the APK attached.
+- Visible "App Móvil Android (Pre-Alpha)" card added inside the Profile tab of the web app with direct download link.
+
+**Hosting for "real" production (Tinder/Badoo level):**
+- firebase.json configured for Firebase Hosting.
+- Run `npm run deploy` (after firebase login) to move off GitHub Pages.
+- Firebase Hosting + Cloud Functions is the recommended path for push notifications, better PWA, custom domain, and scaling while keeping the current backend.
+
+**Easy ways to get the latest APK:**
+- GitHub Releases: https://github.com/musclegrenadechile/entrenamatch/releases/tag/android-prealpha (recommended)
+- Or repo → Actions → latest "Build Android APK" run → Artifacts.
+- Local one-click: double-click `build-apk-now.bat` (requires Android Studio/SDK on your PC).
+
+A clear path exists from current Pre-Alpha web → production web on Firebase Hosting + real native Android/iOS apps.
 
 ### Automatic APK builds via GitHub Actions (recommended for quick access)
 
