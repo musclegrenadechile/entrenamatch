@@ -372,8 +372,8 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           <div className="grid grid-cols-2 gap-2.5">
             {deck
               .slice(0, 6)
-              .map(p => ({ profile: p, score: getCompatibility(p) || 50 }))
-              .sort((a, b) => (b.score || 0) - (a.score || 0))
+              .map(p => ({ profile: p, score: getCompatibility(p) || 50, isReal: realProfiles.some(r => r.id === p.id) }))
+              .sort((a, b) => (b.isReal ? 1 : 0) - (a.isReal ? 1 : 0) || (b.score || 0) - (a.score || 0))
               .slice(0, 4)
               .map(({ profile, score }) => (
                 <div 
