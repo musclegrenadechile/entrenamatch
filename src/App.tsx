@@ -2509,7 +2509,7 @@ function App() {
                   </div>
                 </div>
                 <div className="text-sm text-[#cbd5e1] mb-4">
-                  Descarga la versión nativa de EntrenaMatch. Incluye todas las funciones reales (perfiles, matches, chats, sesiones) y se actualiza automáticamente con cada mejora.
+                  Descarga la versión nativa de EntrenaMatch para pruebas. Incluye todas las funciones reales (perfiles, matches, chats, sesiones) y se actualiza automáticamente. Próximamente disponible también vía Play Store en modo beta cerrado (solo para testers invitados).
                 </div>
                 <a 
                   href="https://github.com/musclegrenadechile/entrenamatch/releases/tag/android-prealpha" 
