@@ -74,12 +74,15 @@ Use the "Actualizar sesiones reales" button if something doesn't appear immediat
 - Logout works cleanly for real users.
 - Messages and matches survive hard refresh on both sides.
 
-## Latest Pre-Alpha Improvements (just pushed)
+## Latest Pre-Alpha Improvements (just pushed - after Star crash fix)
 
 - **ExploreTab**: Stronger "Actualizar reales" button (now teal + prominent), live loading spinner + success toast when pulling fresh tester profiles from Firebase. Critical for seeing other users' profiles instantly on different devices.
 - **Onboarding step 2**: Added "Seleccionar todos" + "Limpiar" quick actions on training types and goals. Makes finishing the profile creation much faster (addresses previous friction where users struggled to select and advance).
 - **Profile + Group Chat + empty states** from previous cycle still live.
-- **Reviewed for "el error"**: The exact error `ReferenceError: Star is not defined` + "App crashed" was caused by OnboardingFlow.tsx using `<Star />` (in Paso 3 "Nivel actual") without importing it from lucide-react. Fixed + pushed. This crashed the whole app (via ErrorBoundary) precisely when users reached step 3 of onboarding. All builds now clean. Hard refresh after this deploy.
+- **Filters modal (Explore)**: Now has live "X perfiles que verás" count at top, prettier consistent chips for training/availability (with counters), "Ver X resultados" CTA button. Filters are live so you see the impact instantly.
+- **Create Session flow**: Training type now nice tap chips instead of ugly select. Auto-opens the group chat right after you join or create. Added REAL badges on session cards for real-user created ones.
+- **1:1 Chat**: Bubbles now match the premium group chat style (better rounding, timestamps). Quick proposals and real-match notes remain strong.
+- Star crash from Onboarding step 3 fully resolved in previous push.
 
 **After this push**: Hard refresh (Ctrl+Shift+R) on https://musclegrenadechile.github.io/entrenamatch/ — the Profile tab should look beautiful and you should never see a black screen or missing logout again.
 
