@@ -2361,7 +2361,7 @@ function App() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-2xl font-semibold tracking-[-1.2px]">Tus Squads</div>
-                <div className="text-[#94a3b8] text-sm">Grupos fijos • Pre-Alpha (demo por ahora)</div>
+                <div className="text-[#94a3b8] text-sm">Grupos fijos (próximamente real)</div>
               </div>
               <button 
                 onClick={() => setShowCreateSquad(true)}
@@ -2374,7 +2374,7 @@ function App() {
             {squads.length === 0 ? (
               <div className="card p-8 rounded-3xl text-center mt-8">
                 <Users className="mx-auto text-[#14b8a6] mb-3" size={42} />
-                <div className="font-semibold mb-2">Sé el primero en crear un Squad en Pre-Alpha</div>
+                <div className="font-semibold mb-2">Sé el primero en crear un Squad</div>
                 <p className="text-sm text-[#94a3b8] mb-4 max-w-[280px] mx-auto">
                   Los squads son grupos fijos de 3-4 personas para entrenar consistentemente. 
                   Esta es una de las features que más queremos probar.
@@ -2709,7 +2709,7 @@ function App() {
             <div className="flex items-center justify-between mb-1 px-1">
               <div>
                 <div className="text-2xl font-semibold tracking-[-1.2px]">Tus matches</div>
-                <div className="text-[#94a3b8] text-sm">Conexiones reales + demo</div>
+                <div className="text-[#94a3b8] text-sm">Conexiones reales</div>
               </div>
               {!isDemoMode && (
                 <button 
@@ -3725,7 +3725,7 @@ function App() {
                 const updated = [newSquad, ...squads]
                 saveSquads(updated)
                 setShowCreateSquad(false)
-                toast.success('Squad creado (demo)')
+                toast.success('Squad creado')
               }}>
                 <input name="name" placeholder="Nombre del Squad (ej: Beasts de Viña)" required className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3 mb-3" />
                 <input name="focus" placeholder="Enfoque (Pesas, Running, Calistenia...)" required className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3 mb-4" />
