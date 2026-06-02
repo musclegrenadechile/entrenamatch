@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // Force correct subpath for GitHub Pages deployment under /entrenamatch/
-  base: process.env.GITHUB_PAGES === 'true' ? '/entrenamatch/' : '/entrenamatch/',
+  // GitHub Pages: /entrenamatch/
+  // Capacitor / native Android APK: relative '' so assets load inside WebView
+  base: process.env.CAPACITOR ? '' : '/entrenamatch/',
 })

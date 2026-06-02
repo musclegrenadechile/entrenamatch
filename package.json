@@ -7,9 +7,17 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "firebase deploy --only hosting",
+    "build:web": "tsc -b && vite build",
+    "cap:sync": "npx cap sync",
+    "cap:open:android": "npx cap open android",
+    "android:build": "cross-env CAPACITOR=1 npm run build:web && npm run cap:sync && echo \"Ready for APK: npx cap open android (requires Android Studio)\""
   },
   "dependencies": {
+    "@capacitor/android": "^8.3.4",
+    "@capacitor/cli": "^8.3.4",
+    "@capacitor/core": "^8.3.4",
     "canvas-confetti": "^1.9.4",
     "firebase": "^12.14.0",
     "framer-motion": "^12.40.0",
@@ -26,6 +34,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
     "autoprefixer": "^10.5.0",
+    "cross-env": "^10.1.0",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
