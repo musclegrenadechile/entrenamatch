@@ -399,6 +399,8 @@ function App() {
             maxParticipants: data.maxParticipants || 4,
             participants: data.participants || [],
             createdAt: (data.createdAt?.toMillis ? data.createdAt.toMillis() : data.createdAt) || Date.now(),
+            lastMessagePreview: data.lastMessagePreview || undefined,
+            lastMessageAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : data.lastMessageAt,
           })
         }
       })
@@ -734,7 +736,7 @@ function App() {
       return
     }
 
-    const isRealChat = realMatches.includes(activeChat)
+    const isRealChat = !isDemoMode && firebaseUser?.uid && (realMatches.includes(activeChat) || activeChat?.startsWith('p'))
     if (!isRealChat) {
       setRealChatMessages([])
       return
@@ -922,17 +924,55 @@ function App() {
     }
   }, [isDemoMode, firebaseUser?.uid])
 
-  // Real-time listener for sessions DISABLED TEMPORARILY to fix TDZ crash on initialization.
-  // Manual "Actualizar sesiones reales" + auto-load on tab switch still work.
-  // Re-enable once we extract more code from this monolith.
-  /*
+  // Real-time onSnapshot for sessions list (new sessions, joins, expels, closes appear instantly cross-device)
+  // This makes sessions fully "live" and automated on the server (no more waiting 30s or manual refresh for others' actions).
   useEffect(() => {
     if (isDemoMode || !firebaseUser?.uid || !db) {
       return
     }
-    // ... (previous onSnapshot code)
-  }, [firebaseUser?.uid, isDemoMode])
-  */
+    let unsubscribe: (() => void) | null = null
+    ;(async () => {
+      try {
+        const { collection, query, orderBy, limit, onSnapshot } = await import('firebase/firestore')
+        const sessionsRef = collection(db, 'sessions')
+        // Use same query as loadRealSessions for consistency (newest first)
+        const q = query(sessionsRef, orderBy('createdAt', 'desc'), limit(50))
+        unsubscribe = onSnapshot(q, (snapshot) => {
+          const loaded: TrainingSession[] = []
+          snapshot.forEach((doc) => {
+            const data = doc.data() as any
+            if (data && data.title) {
+              loaded.push({
+                id: doc.id,
+                creatorId: data.creatorId || '',
+                creatorName: data.creatorName || 'Usuario',
+                title: data.title,
+                description: data.description || '',
+                time: data.time || '',
+                location: data.location || '',
+                trainingType: data.trainingType || '',
+                maxParticipants: data.maxParticipants || 4,
+                participants: data.participants || [],
+                createdAt: (data.createdAt?.toMillis ? data.createdAt.toMillis() : data.createdAt) || Date.now(),
+                lastMessagePreview: data.lastMessagePreview || undefined,
+                lastMessageAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : data.lastMessageAt,
+              })
+            }
+          })
+          setRealSessions(loaded)
+          setLastSync(new Date())
+          console.log(`📡 Live sessions update: ${loaded.length} sessions from Firestore`)
+        }, (err) => {
+          console.warn('Sessions live listener error (may need index or rules):', err)
+        })
+      } catch (e) {
+        console.warn('Sessions onSnapshot setup error (falling back to poll):', e)
+      }
+    })()
+    return () => {
+      if (unsubscribe) unsubscribe()
+    }
+  }, [isDemoMode, firebaseUser?.uid, db])
 
   // Load my previous beta feedbacks when viewing Profile (real users only)
   useEffect(() => {
@@ -1096,9 +1136,9 @@ function App() {
       setUserLocation(JSON.parse(savedLocation))
     }
     const savedSessions = localStorage.getItem('entrenamatch_sessions')
-    if (savedSessions) {
+    if (savedSessions && isDemoMode) {
       setSessions(JSON.parse(savedSessions))
-    } else {
+    } else if (isDemoMode) {
       // Seed a few example sessions for demo
       const seedSessions: TrainingSession[] = [
         {
@@ -1134,7 +1174,8 @@ function App() {
     if (savedReviews) setReviews(JSON.parse(savedReviews))
 
     const savedSessionMessages = localStorage.getItem('entrenamatch_session_messages')
-    if (savedSessionMessages) {
+    if (savedSessionMessages && isDemoMode) {
+      // Only restore local session messages in demo mode. In real mode, group chat messages come live from Firestore subcollections.
       setSessionMessages(JSON.parse(savedSessionMessages))
     }
 
@@ -1183,10 +1224,12 @@ function App() {
   const saveMessages = (msgs: Record<string, Message[]>) => { localStorage.setItem('fitvina_messages', JSON.stringify(msgs)); setMessages(msgs) }
 
   const saveSessions = (newSessions: TrainingSession[]) => {
-    localStorage.setItem('entrenamatch_sessions', JSON.stringify(newSessions))
+    if (isDemoMode) {
+      localStorage.setItem('entrenamatch_sessions', JSON.stringify(newSessions))
+    }
     setSessions(newSessions)
 
-    // Also persist to Firestore for real multi-user visibility
+    // Also persist to Firestore for real multi-user visibility (primary for real mode)
     if (!isDemoMode && firebaseUser?.uid && db) {
       (async () => {
         try {
@@ -1213,7 +1256,11 @@ function App() {
   }
 
   const saveSessionMessages = (newMessages: Record<string, SessionMessage[]>) => {
-    localStorage.setItem('entrenamatch_session_messages', JSON.stringify(newMessages))
+    // In real mode, Firestore subcollections are the source of truth for group messages (cross-device).
+    // Only persist to localStorage in demo mode to avoid stale browser-only data.
+    if (isDemoMode) {
+      localStorage.setItem('entrenamatch_session_messages', JSON.stringify(newMessages))
+    }
     setSessionMessages(newMessages)
   }
 
@@ -1714,6 +1761,17 @@ function App() {
           }
           await addDoc(collection(db, `sessions/${sessionId}/messages`), msgData)
           console.log('✅ Real session group message sent')
+
+          // Update parent session doc with last activity so the sessions list shows live preview + updates via listener
+          try {
+            const { doc, setDoc, serverTimestamp: ts } = await import('firebase/firestore')
+            await setDoc(doc(db, 'sessions', sessionId), {
+              lastMessagePreview: newMsg.text ? newMsg.text.substring(0, 80) : (photo ? '[foto]' : ''),
+              lastMessageAt: ts(),
+              updatedAt: ts(),
+            }, { merge: true })
+          } catch (e) { /* non critical */ }
+
           // Force reload to sync the authoritative server list (prevents optimistic message from disappearing before snapshot arrives)
           loadRealGroupMessages(sessionId)
         } catch (e) {
@@ -1801,6 +1859,7 @@ function App() {
   // Seed some initial messages when user joins a session for the first time (contextual by type)
   const seedInitialSessionMessages = (session: TrainingSession) => {
     if (sessionMessages[session.id]?.length > 0) return
+    if (!isDemoMode) return // In real mode, messages come from Firestore subcollection (no fake local seeds)
 
     const type = session.trainingType.toLowerCase()
     let messages: SessionMessage[] = []
@@ -2019,7 +2078,7 @@ function App() {
   const sendMessage = (text: string) => {
     if (!activeChat || !text.trim()) return
 
-    const isRealChat = !isDemoMode && firebaseUser?.uid && realMatches.includes(activeChat)
+    const isRealChat = !isDemoMode && firebaseUser?.uid && (realMatches.includes(activeChat) || activeChat?.startsWith('p'))
 
     if (isRealChat) {
       // Real cross-device chat
@@ -2393,6 +2452,9 @@ function App() {
                                 <span className="ml-1.5 text-[9px] px-1.5 py-px bg-[#14b8a6] text-black rounded-full align-middle">REAL</span>
                               )}
                               <div className="text-[10px] mt-0.5">{session.participants.length} / {session.maxParticipants} personas</div>
+                              {session.lastMessagePreview && (
+                                <div className="text-[10px] text-[#64748b] mt-0.5 truncate max-w-[160px]">💬 {session.lastMessagePreview}</div>
+                              )}
                             </div>
                             <button 
                               onClick={() => {
@@ -2499,6 +2561,9 @@ function App() {
                               </div>
                               <div className="text-sm text-[#14b8a6]">{session.trainingType} • {session.time}</div>
                               <div className="text-sm text-[#94a3b8]">{session.location}</div>
+                              {session.lastMessagePreview && (
+                                <div className="text-[10px] text-[#64748b] mt-0.5 truncate max-w-[180px]">💬 {session.lastMessagePreview}</div>
+                              )}
                             </div>
                             <div className="text-right text-xs">
                               {dist && <div className="text-[#64748b]">{dist} km</div>}
@@ -2852,8 +2917,8 @@ function App() {
                     <button type="submit" className="bg-[#14b8a6] text-black w-12 rounded-3xl flex items-center justify-center"><Send size={18} /></button>
                   </form>
                   <div className="text-center text-[10px] text-[#475569] mt-2">
-                    {realMatches.includes(activeChat || '') 
-                      ? 'Mensajes reales • se envían al celular del otro tester' 
+                    {!isDemoMode 
+                      ? 'Mensajes reales • se envían al servidor (visibles cross-device para usuarios reales)' 
                       : 'Los mensajes son locales en esta versión (demo)'}
                   </div>
                 </div>
@@ -3845,6 +3910,21 @@ function App() {
                         updatedAt: serverTimestamp(),
                       }, { merge: true })
                       console.log('✅ New session written directly to Firestore')
+
+                      // Also write the creator welcome message to the messages subcollection so joiners see it on server
+                      try {
+                        const { collection, addDoc, serverTimestamp: ts } = await import('firebase/firestore')
+                        await addDoc(collection(db, `sessions/${newSession.id}/messages`), {
+                          senderId: effectiveUserId,
+                          senderName: currentUser?.name || 'Tú',
+                          text: `¡Hola! Creé esta sesión para ${newSession.trainingType.toLowerCase()}. ¿Quién se anima?`,
+                          timestamp: Date.now(),
+                          createdAt: ts(),
+                        })
+                        console.log('✅ Creator welcome message written to session subcollection')
+                      } catch (e) {
+                        console.warn('Could not seed welcome message to subcollection:', e)
+                      }
                     } catch (e) {
                       console.warn('Direct session write failed:', e)
                     }

@@ -113,4 +113,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 final (auto-scroll chats, version strings in bar+profile, bg listeners+lastSync live, 30 fakes verified, build clean). **PHASE 0 SIGN-OFF READY** — push live, hard refresh, test cross-device chat + profile save + sessions admin with 2+ accounts. Then upload AAB to Play Console Internal track (invite-only).
+Last updated: Phase 0 final (auto-scroll chats, version strings in bar+profile, bg listeners+lastSync live, 30 fakes verified, build clean). **PHASE 0 SIGN-OFF READY** (commit 5b65aee). Push live, hard refresh (Ctrl+Shift+R), test cross-device chat interaction ("si alguien envía uno lo reciba" via fakes + real accts) + profile save + sessions admin. Then upload AAB to Play Console Internal track (invite-only).
