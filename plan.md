@@ -78,7 +78,7 @@ Everything must work after hard refresh + on different physical devices (not jus
 
 **Sign-off for Phase 0**: After all above (including recent: session creator admin/close/expel/leave with ADMIN badges, floating "Reportar problema" everywhere, stronger real-mode empty states, Firebase Hosting note in-app, extra Play screenshots, full guide updates), the app + AAB + listing copy + guides are ready for the user to upload the AAB to Play Console Internal testing track (hidden). Then move to Phase 1 (invite 5-10 real beta testers, structured feedback collection, triage, promote to Closed if good).
 
-**Current status (this continuation)**: Phase 0 core is solid (profile save now fully persists lat/lng/legalConsents + self-reload on Sincronizar; 1:1 chat now has onSnapshot push + background 30s poll for all matches + 8s active for true real-time; group already had; previous fixes for Camera, photo undefined, URL rendering, session admin, floating report, empty states, etc.). Frequent pushes (latest 57e0ce9). Hard refresh required for users. Ready for sign-off + hidden Play upload.
+**Current status (this continuation)**: Phase 0 core is solid (profile save fully persists + self-reload on Sincronizar; 1:1 has onSnapshot push + 30s bg poll all matches + 8s active + manual 'Actualizar chats reales' btn in Mensajes tab; group has onSnapshot+8s; added chat refresh btn; previous fixes). Pushes ongoing (latest e541e19). Hard refresh to test. Ready for sign-off.
 
 ## Phase 1 (after Phase 0 sign-off)
 - Upload signed AAB to Internal testing (hidden).
@@ -112,4 +112,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continuation (profile full persistence + self reload on sync; 1:1 real-time with onSnapshot push + background polls for all matches; group real-time; Camera fix; previous photo/URL/session admin/etc.). All items advanced, ready for sign-off.
+Last updated: Phase 0 continuation (profile + chat real-time solid with onSnapshot/bg polls/refresh btns; Sincronizar now reloads self profile; previous fixes). Pushes done. Ready for sign-off + hidden upload.
