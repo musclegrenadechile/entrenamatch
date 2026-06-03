@@ -59,18 +59,36 @@ body {
 .card {
   background: var(--fit-card);
   border: 1px solid var(--fit-border);
-  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.15), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), 
+              border-color 0.2s ease;
+  border-radius: 20px;
 }
 
 .card:hover {
-  border-color: #FF671F;
-  box-shadow: 0 12px 20px -4px rgb(255 103 31 / 0.18), 0 6px 10px -3px rgb(255 103 31 / 0.22);
-  transform: translateY(-2px);
+  border-color: var(--fit-accent);
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.2), 
+              0 8px 10px -6px rgb(255 103 31 / 0.15),
+              0 0 0 1px rgba(255, 103, 31, 0.1);
+  transform: translateY(-3px);
 }
 
 .card:active {
   transform: scale(0.985);
+  transition-duration: 0.1s;
+}
+
+/* Premium glass / elevated cards for modals, profile hero */
+.card-glass {
+  background: rgba(28, 28, 32, 0.85);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 8px 32px rgb(0 0 0 / 0.3);
+}
+
+.card-elevated {
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.5);
 }
 
 .swipe-card {
@@ -82,45 +100,75 @@ body {
 .chip {
   background: var(--fit-card2);
   border: 1px solid var(--fit-border);
-  padding: 6px 14px;
+  padding: 6px 16px;
   border-radius: 999px;
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--fit-text);
-  transition: all 0.1s ease;
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: -0.1px;
 }
 
 .chip:hover {
-  border-color: #3a3f48;
+  border-color: #4a4f58;
   transform: translateY(-1px);
+  background: #2a2a30;
 }
 
 .chip-active {
-  background: rgba(255, 103, 31, 0.15);
+  background: linear-gradient(135deg, rgba(255, 103, 31, 0.18), rgba(255, 79, 121, 0.1));
   border-color: var(--fit-accent);
   color: var(--fit-accent);
-  font-weight: 600;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(255, 103, 31, 0.15);
+}
+
+.chip-health {
+  background: rgba(0, 196, 180, 0.12);
+  border-color: var(--fit-health);
+  color: var(--fit-health);
 }
 
 .nav-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 8px 0;
-  font-size: 11px;
-  font-weight: 500;
+  gap: 1px;
+  padding: 10px 12px;
+  font-size: 10px;
+  font-weight: 600;
   color: var(--fit-muted);
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: 12px;
+  position: relative;
 }
 
 .nav-item.active {
   color: var(--fit-accent);
-  font-weight: 600;
+  font-weight: 700;
+}
+
+.nav-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: var(--fit-accent);
+  border-radius: 50%;
+  box-shadow: 0 0 6px var(--fit-accent);
 }
 
 .nav-item:active {
-  transform: scale(0.95);
+  transform: scale(0.92);
+}
+
+.bottom-nav {
+  background: rgba(13, 13, 16, 0.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--fit-border);
 }
 
 .message-bubble {
@@ -157,25 +205,33 @@ body {
 
 /* Nice buttons */
 .btn-primary {
-  background: var(--fit-accent);
+  background: linear-gradient(135deg, var(--fit-accent), #E55A1A);
   color: white;
-  font-weight: 600;
-  padding: 14px 28px;
+  font-weight: 700;
+  padding: 14px 32px;
   border-radius: 999px;
-  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 6px -1px rgb(255 103 31 / 0.2);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px -2px rgb(255 103 31 / 0.35), 0 2px 4px -1px rgb(0 0 0 / 0.1);
+  letter-spacing: -0.2px;
 }
 
 .btn-primary:hover {
-  background: #E55A1A;
-  box-shadow: 0 14px 20px -4px rgb(255 103 31 / 0.38), 0 0 0 3px rgba(255, 79, 121, 0.25);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #E55A1A, #CC4F17);
+  box-shadow: 0 10px 25px -5px rgb(255 103 31 / 0.45), 0 0 0 1px rgba(255, 103, 31, 0.2);
+  transform: translateY(-2px) scale(1.01);
 }
 
 .btn-primary:active {
-  transform: scale(0.97);
-  background: linear-gradient(135deg, #CC4F17, #E55A1A);
-  box-shadow: 0 4px 6px -1px rgb(255 103 31 / 0.25);
+  transform: scale(0.96);
+  box-shadow: 0 2px 4px -1px rgb(255 103 31 / 0.2);
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none;
+  transform: none;
 }
 
 .btn-primary:disabled {
@@ -269,21 +325,43 @@ input[type="range"]::-moz-range-thumb {
 
 /* Vibrant live / en-vivo indicators - Dunkin energy pulse */
 .live-pill {
-  background: rgba(255, 103, 31, 0.13);
-  color: #FF671F;
+  background: rgba(255, 103, 31, 0.15);
+  color: var(--fit-accent);
   font-size: 9px;
-  padding: 1px 7px;
+  padding: 2px 9px;
   border-radius: 999px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
   animation: live-pulse 2.2s ease-in-out infinite;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
+  border: 1px solid rgba(255, 103, 31, 0.25);
 }
 @keyframes live-pulse {
   0%, 100% { opacity: 0.95; }
-  50% { opacity: 0.65; }
+  50% { opacity: 0.6; box-shadow: 0 0 4px rgba(255, 103, 31, 0.4); }
+}
+
+/* Stat pills for profile / matches */
+.stat-pill {
+  background: var(--fit-card2);
+  border: 1px solid var(--fit-border);
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-number {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--fit-text);
+  font-feature-settings: "tnum";
 }
 
 /* Sonner toast action buttons pop with our palette */
@@ -298,4 +376,28 @@ input[type="range"]::-moz-range-thumb {
 [data-sonner-toast] [data-button]:hover {
   background: #E55A1A !important;
   transform: scale(0.985);
+}
+
+/* Premium section headers */
+.section-header {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -1.1px;
+  line-height: 1.05;
+}
+
+/* Subtle depth for lists and grids */
+.list-item {
+  transition: background 0.1s ease, transform 0.1s ease;
+}
+.list-item:active {
+  background: #25252A;
+  transform: scale(0.995);
+}
+
+/* Improved modal content */
+.modal-content {
+  background: linear-gradient(145deg, #1C1C20 0%, #0D0D10 100%);
+  border: 1px solid var(--fit-border);
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.6);
 }

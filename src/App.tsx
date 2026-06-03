@@ -2852,15 +2852,16 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-[#0D0D10] text-white flex flex-col overflow-hidden relative">
-      {/* MINIMAL TOP BAR - Clean, premium, high-visibility auth controls */}
-      <div className="bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black z-50 flex items-center justify-between px-4 py-2 text-xs font-medium shadow-md">
-        <div className="font-semibold tracking-[-0.3px] flex items-center gap-1.5">
-          Real backend <span className="opacity-70 text-[#FF4F79]">• v0.1.0-prealpha</span>
+      <div className="min-h-screen bg-[#0D0D10] text-white flex flex-col overflow-hidden relative app-container">
+      {/* MINIMAL TOP BAR - Premium subtle (visual aesthetics upgrade) */}
+      <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-1.5 text-[10px] font-medium">
+        <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
+          <span className="live-pill !py-0 !px-2 !text-[8px] !bg-[#FF671F]/10 !border-0">PRE-ALPHA</span>
+          <span className="text-white/90">Real backend • v0.1.0-prealpha</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
-            className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full border border-black/30 active:bg-black/20 disabled:opacity-60"
+            className="ml-1 text-[9px] px-2 py-0.5 rounded-full bg-[#FF671F]/10 text-[#FF671F] active:bg-[#FF671F]/20 disabled:opacity-60 border border-[#FF671F]/20"
             title="Refrescar perfiles, matches y sesiones reales ahora"
           >
             {isLoadingMatches ? '...' : 'Actualizar todo'}
@@ -2969,7 +2970,7 @@ function App() {
           <div className="flex-1 overflow-auto p-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <div className="text-2xl font-semibold tracking-[-1.2px]">Tus Squads</div>
+                <div className="section-header">Tus Squads</div>
                 <div className="text-[#9CA3AF] text-sm">Grupos fijos (próximamente real)</div>
               </div>
               <button 
@@ -3060,7 +3061,7 @@ function App() {
             {/* Header */}
             <div className="flex items-center justify-between">
               <div>
-                <div className="text-2xl font-semibold tracking-[-1.2px]">Sesiones</div>
+                <div className="section-header">Sesiones</div>
                 <div className="text-[#9CA3AF] text-sm">Entrenamientos grupales cerca de ti</div>
                 {!isDemoMode && (
                   <div className="flex items-center gap-2 mt-1">
@@ -3321,7 +3322,7 @@ function App() {
           <div className="flex-1 overflow-auto p-4">
             <div className="flex items-center justify-between mb-1 px-1">
               <div>
-                <div className="text-2xl font-semibold tracking-[-1.2px]">Tus matches</div>
+                <div className="section-header">Tus matches</div>
                 <div className="text-[#9CA3AF] text-sm">Conexiones reales <span className="live-pill text-[8px]">en vivo</span></div>
               </div>
               {!isDemoMode && (
@@ -3366,7 +3367,7 @@ function App() {
                 {matchProfiles
                   .filter(p => !blockedUsers.includes(p.id))
                   .map(profile => (
-                  <div key={profile.id} onClick={() => openChat(profile.id)} className="card rounded-3xl overflow-hidden active:opacity-80 cursor-pointer relative">
+                  <div key={profile.id} onClick={() => openChat(profile.id)} className="card rounded-3xl overflow-hidden active:opacity-80 cursor-pointer relative ring-1 ring-white/5">
                     <div className="relative">
                       <img src={profile.photos[0]} className="w-full aspect-square object-cover" />
                       <div className="absolute top-2 right-2 flex gap-1">
@@ -3417,7 +3418,7 @@ function App() {
               <div className="overflow-auto flex-1 p-4">
                 <div className="flex items-center justify-between mb-1 px-1">
                   <div className="flex items-center gap-2">
-                    <div className="text-2xl font-semibold tracking-[-1.2px]">Mensajes</div>
+                    <div className="section-header">Mensajes</div>
                     <span className="live-pill">● en vivo</span>
                   </div>
                   {!isDemoMode && (
@@ -4127,8 +4128,8 @@ function App() {
          Report/feedback still available in Profile tab (structured form + history), chat headers, and legal links.
          Welcome guide modal can still be triggered if needed via other means or first-load. */}
 
-      {/* Bottom Navigation - Premium, energetic feel */}
-      <div className="h-[62px] border-t border-[#2F2F35] bg-[#0D0D10]/95 backdrop-blur-sm grid grid-cols-6 z-50 text-[10px] shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.1)]">
+      {/* Bottom Navigation - Premium, energetic feel (polished aesthetics) */}
+      <div className="bottom-nav h-[62px] grid grid-cols-6 z-50 text-[10px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_20px_-6px_rgb(0,0,0,0.4)]">
         {[
           { id: 'explore' as Tab, label: 'Explorar', icon: Dumbbell },
           { id: 'squads' as Tab, label: 'Squads', icon: Users },
@@ -4140,21 +4141,18 @@ function App() {
           <button key={id} onClick={() => { 
             setActiveTab(id); 
             if (id !== 'messages') setActiveChat(null);
-            // Auto-refresh real sessions when entering the tab (cross-device visibility)
             if (id === 'sesiones' && !isDemoMode) {
               loadRealSessions();
             }
-            // clear unreads when landing on the tab (user saw the list)
             if (id === 'messages') setChatUnreads({});
             if (id === 'sesiones') setSessionUnreads({});
-            // PWA hint on social tabs (messages/sesiones = high intent to use as app)
             if (id === 'messages' || id === 'sesiones') bumpPwaEngagement();
           }}
-            className={`nav-item ${activeTab === id ? 'active' : ''} relative`}>
-            <Icon size={18} />
-            {label}
+            className={`nav-item ${activeTab === id ? 'active' : ''} relative flex-1`}>
+            <Icon size={20} />
+            <span className="mt-0.5">{label}</span>
             {badge && badge > 0 && (
-              <span className="absolute top-1 right-2 min-w-[14px] h-[14px] px-1 text-[9px] font-bold rounded-full bg-[#FF4F79] text-black flex items-center justify-center">
+              <span className="absolute -top-0.5 right-3 min-w-[15px] h-[15px] px-1.5 text-[9px] font-extrabold rounded-full bg-[#FF4F79] text-black flex items-center justify-center ring-1 ring-black/30">
                 {badge > 9 ? '9+' : badge}
               </span>
             )}

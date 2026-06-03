@@ -147,7 +147,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
     return (
       <motion.div
         key={profile.id}
-        className="absolute w-full max-w-[340px] aspect-[3/4] bg-white rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing"
+        className="absolute w-full max-w-[340px] aspect-[3/4] bg-white rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing swipe-card ring-1 ring-white/10"
         style={{ zIndex: z }}
         initial={false}
         animate={{
@@ -173,8 +173,9 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           draggable={false}
         />
 
-        {/* Gradient overlay - stronger for premium feel */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/20 to-black/90" />
+        {/* Gradient overlay - premium cinematic for fitness app */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/95" />
+        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 to-transparent" />
 
         {/* Top badges row - Premium with Real tester indicator */}
         <div className="absolute top-4 left-4 right-4 flex items-start justify-between">
@@ -297,9 +298,14 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
       {/* Header - Cleaner and more premium */}
       <div className="flex items-start justify-between mb-3 px-1">
         <div>
-          <div className="text-3xl font-semibold tracking-[-1.5px]">Explorar</div>
-          <div className="text-[#FF671F] text-xs font-medium mt-0.5">
-            {deck.length} disponibles ahora {userLocation ? 'cerca de ti' : ''} · ordenados por compatibilidad
+          <div className="section-header text-3xl">Explorar</div>
+          <div className="flex items-center gap-2 mt-1">
+            <div className="text-[#FF671F] text-xs font-semibold">
+              {deck.length} disponibles ahora {userLocation ? 'cerca de ti' : ''} · ordenados por compat
+            </div>
+            {lastSync && (
+              <div className="text-[9px] text-[#9CA3AF] bg-[#1C1C20] px-1.5 py-px rounded">sync hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</div>
+            )}
           </div>
           {realProfiles && realProfiles.length > 0 && (
             <div className="text-[10px] text-[#FF671F] mt-0.5 font-medium flex items-center gap-1">+ {realProfiles.length} perfiles reales de testers <span className="live-pill text-[8px]">en vivo</span></div>

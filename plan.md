@@ -103,6 +103,15 @@ Everything must work after hard refresh + on different physical devices (not jus
   - Live 30s "hace Xs" tick for all sync/relative timestamps.
   - Matches empty state copy + quick actions improved.
   - Consistent loading spinners.
+- [x] **Visual aesthetics major upgrade**: 
+  - Enhanced design system in index.css: deeper premium card shadows + hover glows + glass variants, stronger .btn-primary with gradient + lift, improved .chip + .nav-item with active pill indicator + safe-area, new .stat-pill .section-header .modal-content .list-item, better live-pill, subtle teal accents balanced with orange.
+  - Bottom nav: blur + safe-area, refined badges, larger icons, active dot.
+  - Top PRE-ALPHA bar made subtle dark premium (less intrusive).
+  - App container now uses .app-container for nice desktop phone-frame.
+  - Consistent section-header typography across tabs.
+  - Explore swipe cards: .swipe-card + extra vignette gradient for cinematic premium photo treatment + ring.
+  - Matches cards subtle ring.
+  - More use of custom classes for consistency.
 - Add FIREBASE_SERVICE_ACCOUNT secret to GitHub for full auto Firebase Hosting deploys on every push (recommended over GH Pages for PWA + future FCM).
 
 ## Later Phases (high level)
