@@ -3854,7 +3854,7 @@ function App() {
                   const spots = 4 - squad.members.length
 
                   return (
-                    <div key={squad.id} className="card session-card rounded-3xl p-4 active:bg-[#25252A] border border-[#FF671F]/20" onClick={() => setSelectedSquad(squad.id)}>
+                    <div key={squad.id} className="card card-glass session-card rounded-3xl p-4 active:bg-[#25252A] border border-[#FF671F]/20" onClick={() => setSelectedSquad(squad.id)}>
                       <div className="flex justify-between">
                         <div>
                           <div className="font-semibold text-lg flex items-center gap-2 tracking-tight">{squad.name} <span className="text-[9px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded font-medium">SQUAD</span></div>
@@ -3974,7 +3974,7 @@ function App() {
                         creatorProfile.lat || 0, creatorProfile.lng || 0) : null
 
                       return (
-                        <div key={session.id} className="card session-card rounded-3xl p-4">
+                        <div key={session.id} className="card card-glass session-card rounded-3xl p-4">
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="font-semibold text-lg tracking-tight">{session.title}</div>
@@ -4096,7 +4096,7 @@ function App() {
                         creatorProfileForDist.lat || 0, creatorProfileForDist.lng || 0) : null
 
                       return (
-                        <div key={session.id} className="card session-card rounded-3xl p-4 border border-[#FF4F79]/50 ring-1 ring-inset ring-[#FF4F79]/10">
+                        <div key={session.id} className="card card-glass session-card rounded-3xl p-4 border border-[#FF4F79]/50 ring-1 ring-inset ring-[#FF4F79]/10">
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="font-semibold text-lg flex items-center gap-2 tracking-tight">
