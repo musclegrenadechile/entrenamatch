@@ -54,6 +54,7 @@ Puedes probar la aplicación directamente aquí (versión pública de prueba):
 - AAB firmado listo para Play Console Internal testing (no se publica).
 
 **Importante:** Después de cada `git push` haz hard refresh (Ctrl+Shift+R). La app está en Pre-Alpha oculta para pruebas con grupo cerrado. Usa los fakes + 2 cuentas reales en dispositivos distintos para validar "chat en vivo".
+- Ver INFORME_PROBLEMA_COMUNICACION_USUARIOS_REALES.md en el repo para el análisis completo y honesto de por qué antes no se podía comunicar entre usuarios reales (causas: matches no reactivos, closures en Actualizar, reglas de likes faltantes, etc.) y cómo se resolvió en Phase 0.
 
 ## Cómo ejecutar localmente
 
