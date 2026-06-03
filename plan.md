@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continue (fixed undefined lastMessagePreview in session join/save with sanitize; lastSync in Mensajes; cleaned demo notes; robust real comms + report). Pushed 08305cf. **PHASE 0 SIGN-OFF READY** (continua). Note: deploy rules: firebase deploy --only firestore:rules.
+Last updated: Phase 0 (added precise Windows/PowerShell npx instructions + test protocol for `firebase deploy --only firestore:rules` to BETA_TESTERS_GUIDE.md; committed+push 745b3a6). CI now deploys rules+hosting on this push. User asked specifically "dime que tenemos que hacer con el firebase deploy --only firestore :rules". After user runs + hard refresh + 2-account session join/group msg test, continue Phase 0 polish if "sigue". **PHASE 0 SIGN-OFF READY** (continua).
