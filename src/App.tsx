@@ -2734,12 +2734,12 @@ function App() {
             {/* Bell for notifications (wires to existing panel; now populated by real incoming 1:1 + group msgs) */}
             <button
               onClick={() => setShowNotifications(true)}
-              className="relative p-1.5 rounded-xl bg-black/70 active:bg-black text-white"
+              className={`relative p-1.5 rounded-xl bg-black/70 active:bg-black text-white transition-all ${ (unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 ? 'ring-1 ring-[#FF4F79]/70' : '' }`}
               aria-label="Notificaciones"
             >
               <Bell size={16} />
               {(unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] px-0.5 text-[9px] font-bold rounded-full bg-[#ef4444] text-white flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] px-0.5 text-[9px] font-bold rounded-full bg-[#FF4F79] text-black flex items-center justify-center">
                   {Math.min(9, unreadNotifications + totalChatUnreads + totalSessionUnreads)}
                 </span>
               )}
