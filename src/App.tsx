@@ -2940,7 +2940,10 @@ function App() {
               // List of chats
               <div className="overflow-auto flex-1 p-4">
                 <div className="flex items-center justify-between mb-1 px-1">
-                  <div className="text-2xl font-semibold tracking-[-1.2px]">Mensajes</div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-2xl font-semibold tracking-[-1.2px]">Mensajes</div>
+                    <span className="text-[9px] px-1.5 py-px bg-[#14b8a6]/10 text-[#14b8a6] rounded-full">en vivo</span>
+                  </div>
                   {!isDemoMode && (
                     <button onClick={async () => {
                       setIsLoadingChats(true);
