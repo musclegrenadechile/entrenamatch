@@ -1213,20 +1213,22 @@ function App() {
   // Note: Real-time 1:1 chat uses onSnapshot (safe queries) + polling + background for cross-device live updates.
 
   // Auto-scroll chat to bottom when new messages arrive (1:1 real or demo) or chat opens
+  // Robust for opening from perfiles/matches list + real async load + mobile
   useEffect(() => {
     const scrollToBottom = () => {
       const el = chatScrollRef.current
       if (el) {
-        // Use rAF + small timeout for reliability after render
-        requestAnimationFrame(() => {
-          el.scrollTop = el.scrollHeight
-        })
+        // Multiple rAF + timeouts to handle render, images, layout, keyboard
+        const doScroll = () => { el.scrollTop = el.scrollHeight }
+        requestAnimationFrame(doScroll)
+        requestAnimationFrame(() => requestAnimationFrame(doScroll))
+        setTimeout(doScroll, 50)
+        setTimeout(doScroll, 150)
+        setTimeout(doScroll, 350)
       }
     }
     scrollToBottom()
-    // Also scroll shortly after (for image loads / dynamic content)
-    const t = setTimeout(scrollToBottom, 120)
-    return () => clearTimeout(t)
+    return () => {}
   }, [activeChat, realChatMessages.length, (messages[activeChat || ''] || []).length])
 
   // Auto-scroll group/session chat to bottom on new messages
@@ -2707,6 +2709,17 @@ function App() {
     setActiveTab('messages')
     // mark as read when opening the conversation
     setChatUnreads(prev => { const c = { ...prev }; c[profileId] = 0; return c })
+
+    // Extra guarantee scroll to bottom (latest msgs) when opening from perfiles list
+    setTimeout(() => {
+      const el = chatScrollRef.current
+      if (el) {
+        el.scrollTop = el.scrollHeight
+      }
+      // also try the id
+      const byId = document.getElementById('chat-scroll')
+      if (byId) byId.scrollTop = byId.scrollHeight
+    }, 180)
   }
 
   const sendMessage = (text: string) => {
@@ -3415,8 +3428,34 @@ function App() {
         {activeTab === 'messages' && (
           <div className="flex-1 flex flex-col">
             {!activeChat ? (
-              // List of chats
-              <div className="overflow-auto flex-1 p-4">
+              // List of chats (perfiles) - scrollable with sticky header so you can scroll down to all profiles
+              <div className="overflow-auto flex-1 p-4 min-h-0">
+                <div className="sticky top-0 bg-[#0D0D10] z-10 pb-2 -mx-4 px-4">
+                  <div className="flex items-center justify-between mb-1 px-1">
+                    <div className="flex items-center gap-2">
+                      <div className="section-header">Mensajes</div>
+                      <span className="live-pill">● en vivo</span>
+                    </div>
+                    {!isDemoMode && (
+                      <button onClick={async () => {
+                        setIsLoadingChats(true);
+                        try {
+                          const currentMatches = await loadRealMatches(); // discover any new matches first
+                          for (const id of currentMatches) {
+                            await loadRealChatMessages(id);
+                          }
+                          setLastSync(new Date());
+                          setChatUnreads({}); // all "read" after manual full sync
+                          toast.success('Chats reales actualizados');
+                        } finally {
+                          setIsLoadingChats(false);
+                        }
+                      }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 rounded-xl border border-[#FF671F]/50 text-[#FF671F] active:bg-[#FF671F] active:text-black disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar chats reales'}</button>
+                    )}
+                    {lastSync && <span className="text-[10px] text-[#9CA3AF] ml-2">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
+                  </div>
+                  <div className="text-[#9CA3AF] text-xs px-1 mb-3">Mensajes 1:1 reales • en vivo cross-device • notificaciones toast + navegador cuando llega un mensaje</div>
+                </div>
                 <div className="flex items-center justify-between mb-1 px-1">
                   <div className="flex items-center gap-2">
                     <div className="section-header">Mensajes</div>
@@ -3570,8 +3609,8 @@ function App() {
                   </button>
                 </div>
 
-                {/* Messages */}
-                <div ref={chatScrollRef} className="flex-1 overflow-auto p-4 space-y-3 pb-20" id="chat-scroll">
+                {/* Messages - robust scroll container */}
+                <div ref={chatScrollRef} className="flex-1 overflow-auto p-4 space-y-3 pb-20 min-h-0" id="chat-scroll">
                   {/* Real messages take priority when in a real cross-device chat */}
                   {((realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || []))).map((m, i) => {
                     const isMe = m.from === 'me'

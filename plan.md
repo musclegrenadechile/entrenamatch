@@ -121,6 +121,11 @@ Everything must work after hard refresh + on different physical devices (not jus
   - Verification: cleaner layout with badges.
   - Feedback: accent icon, glass history cards, better spacing/form.
   - Overall: more icons, visual hierarchy, use of new CSS primitives.
+- [x] **Messaging scroll fix** ("scroll de mensajeria" + "no bajan a los perfiles"):
+  - Chat list (perfiles/matches in Mensajes tab): header made sticky (stays visible while you scroll down the list of profiles/chats). Added min-h-0 and proper flex for reliable scrolling to bottom of the list.
+  - Auto-scroll to bottom (latest messages) when opening a chat from the profiles list improved: more aggressive rAF + multiple timeouts (50/150/350ms), explicit setTimeout in openChat, min-h-0 on container, also tries by id.
+  - Same robust pattern for when new real messages arrive or after send (via state length deps + load after send).
+  - This ensures the view "baja" to the bottom (recent messages) reliably when tapping a profile/chat.
 - Add FIREBASE_SERVICE_ACCOUNT secret to GitHub for full auto Firebase Hosting deploys on every push (recommended over GH Pages for PWA + future FCM).
 
 ## Later Phases (high level)
