@@ -21,7 +21,8 @@ import { toast } from 'sonner'
 // ==================== REFACTORED IMPORTS ====================
 import type { 
   Profile, Message, TrainingSession, TrainingReview, 
-  SessionMessage, Squad, Report, Notification, CurrentUser, Tab 
+  SessionMessage, Squad, Report, Notification, CurrentUser, Tab,
+  ProfilePost
 } from './types'
 import { 
   TRAINING_OPTIONS, AVAILABILITY, LEGAL_VERSIONS, AUTO_MATCH_IDS 
@@ -439,6 +440,11 @@ function App() {
 
   // Squads feature (fixed small training groups)
   const [squads, setSquads] = useState<Squad[]>([])
+
+  // Profile Muro / Wall posts - makes profiles feel alive (like FB wall)
+  const [profilePosts, setProfilePosts] = useState<Record<string, ProfilePost[]>>({}) // userId -> posts array
+  const [muroComposerText, setMuroComposerText] = useState('')
+  const [muroComposerPhoto, setMuroComposerPhoto] = useState<string | null>(null)
   const [showCreateSquad, setShowCreateSquad] = useState(false)
   const [selectedSquad, setSelectedSquad] = useState<string | null>(null) // for detail view
 
@@ -891,6 +897,20 @@ function App() {
       return () => clearTimeout(t)
     }
   }, [isDemoMode, firebaseUser?.uid])
+
+  // Auto-load own muro when entering profile tab (demo + real)
+  useEffect(() => {
+    if (activeTab === 'profile' && effectiveUserId) {
+      loadProfilePosts(effectiveUserId)
+    }
+  }, [activeTab, effectiveUserId])
+
+  // Auto load muro when opening full profile of someone else
+  useEffect(() => {
+    if (showFullProfile) {
+      loadProfilePosts(showFullProfile.id)
+    }
+  }, [showFullProfile])
 
   // Logout handler - works for both demo and real Firebase
   const handleLogout = async () => {
@@ -1702,6 +1722,12 @@ function App() {
       localStorage.setItem('entrenamatch_squads', JSON.stringify(seedSquads))
     }
 
+    // Load profile muro posts (demo/local)
+    const savedPosts = localStorage.getItem('entrenamatch_profile_posts')
+    if (savedPosts) {
+      setProfilePosts(JSON.parse(savedPosts))
+    }
+
     const savedBlocked = localStorage.getItem('entrenamatch_blocked')
     if (savedBlocked) setBlockedUsers(JSON.parse(savedBlocked))
 
@@ -1799,6 +1825,155 @@ function App() {
   const saveSquads = (newSquads: Squad[]) => {
     localStorage.setItem('entrenamatch_squads', JSON.stringify(newSquads))
     setSquads(newSquads)
+  }
+
+  const saveProfilePosts = (posts: Record<string, ProfilePost[]>) => {
+    localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(posts))
+    setProfilePosts(posts)
+  }
+
+  // Muro / Profile Posts helpers (demo + real Firestore)
+  const loadProfilePosts = async (userId: string) => {
+    if (isDemoMode || !db) {
+      return profilePosts[userId] || []
+    }
+    try {
+      const { collection, query, where, orderBy, getDocs, limit } = await import('firebase/firestore')
+      const q = query(
+        collection(db, 'profilePosts'),
+        where('userId', '==', userId),
+        orderBy('timestamp', 'desc'),
+        limit(10)
+      )
+      const snap = await getDocs(q)
+      const posts: ProfilePost[] = []
+      snap.forEach((doc) => {
+        const d = doc.data() as any
+        posts.push({
+          id: doc.id,
+          userId: d.userId,
+          text: d.text || '',
+          photo: d.photo,
+          timestamp: d.timestamp || Date.now(),
+          likes: d.likes || [],
+          comments: d.comments || []
+        })
+      })
+      setProfilePosts((prev) => ({ ...prev, [userId]: posts }))
+      return posts
+    } catch (e) {
+      console.warn('loadProfilePosts error', e)
+      return profilePosts[userId] || []
+    }
+  }
+
+  const createProfilePost = async (text: string, photo: string | null = null) => {
+    if (!text.trim()) return
+    const post: ProfilePost = {
+      id: 'post' + Date.now(),
+      userId: effectiveUserId,
+      text: text.trim(),
+      photo: photo || undefined,
+      timestamp: Date.now(),
+      likes: [],
+      comments: []
+    }
+    if (!isDemoMode && firebaseUser?.uid && db) {
+      try {
+        const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+        const ref = await addDoc(collection(db, 'profilePosts'), {
+          ...post,
+          createdAt: serverTimestamp()
+        })
+        post.id = ref.id
+        const current = profilePosts[effectiveUserId] || []
+        const updated = { ...profilePosts, [effectiveUserId]: [post, ...current].slice(0, 10) }
+        setProfilePosts(updated)
+      } catch (e) {
+        console.warn('create post fs', e)
+        // fallback local
+        const current = profilePosts[effectiveUserId] || []
+        const updated = { ...profilePosts, [effectiveUserId]: [post, ...current].slice(0, 10) }
+        saveProfilePosts(updated)
+      }
+    } else {
+      const current = profilePosts[effectiveUserId] || []
+      const updated = { ...profilePosts, [effectiveUserId]: [post, ...current].slice(0, 10) }
+      saveProfilePosts(updated)
+    }
+    toast.success('Publicado en tu muro')
+  }
+
+  const likeProfilePost = async (postId: string, postUserId: string) => {
+    const posts = profilePosts[postUserId] || []
+    const idx = posts.findIndex((p) => p.id === postId)
+    if (idx < 0) return
+    const post = posts[idx]
+    const hasLiked = post.likes.includes(effectiveUserId)
+    const newLikes = hasLiked
+      ? post.likes.filter((id) => id !== effectiveUserId)
+      : [...post.likes, effectiveUserId]
+    const updatedPost = { ...post, likes: newLikes }
+    const newPosts = [...posts]
+    newPosts[idx] = updatedPost
+    if (!isDemoMode && db) {
+      try {
+        const { doc, updateDoc } = await import('firebase/firestore')
+        await updateDoc(doc(db, 'profilePosts', postId), { likes: newLikes })
+        setProfilePosts((prev) => ({ ...prev, [postUserId]: newPosts }))
+      } catch (e) {
+        console.warn(e)
+      }
+    } else {
+      const updated = { ...profilePosts, [postUserId]: newPosts }
+      saveProfilePosts(updated)
+    }
+    if (!hasLiked && postUserId !== effectiveUserId) {
+      addNotification({
+        type: 'message',
+        title: '¡Like en tu muro!',
+        body: `${currentUser?.name || 'Alguien'} le gustó tu publicación`,
+        relatedId: postUserId
+      })
+    }
+  }
+
+  const addCommentToPost = async (postId: string, postUserId: string, text: string) => {
+    if (!text.trim()) return
+    const comment = {
+      id: 'c' + Date.now(),
+      userId: effectiveUserId,
+      userName: currentUser?.name || 'Tú',
+      text: text.trim(),
+      timestamp: Date.now()
+    }
+    const posts = profilePosts[postUserId] || []
+    const idx = posts.findIndex((p) => p.id === postId)
+    if (idx < 0) return
+    const post = posts[idx]
+    const updatedPost = { ...post, comments: [...post.comments, comment] }
+    const newPosts = [...posts]
+    newPosts[idx] = updatedPost
+    if (!isDemoMode && db) {
+      try {
+        const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
+        await updateDoc(doc(db, 'profilePosts', postId), { comments: arrayUnion(comment) })
+        setProfilePosts((prev) => ({ ...prev, [postUserId]: newPosts }))
+      } catch (e) {
+        console.warn(e)
+      }
+    } else {
+      const updated = { ...profilePosts, [postUserId]: newPosts }
+      saveProfilePosts(updated)
+    }
+    if (postUserId !== effectiveUserId) {
+      addNotification({
+        type: 'message',
+        title: 'Comentario en tu muro',
+        body: `${currentUser?.name || 'Alguien'}: ${text.substring(0, 60)}`,
+        relatedId: postUserId
+      })
+    }
   }
 
   const saveBlockedUsers = (newBlocked: string[]) => {
@@ -3863,12 +4038,13 @@ function App() {
               )}
             </div>
 
-            {/* Photo gallery strip */}
-            {currentUser.photos && currentUser.photos.length > 1 && (
+            {/* Photo gallery strip - always show if any extra, to "ver" the added photos */}
+            {currentUser.photos && currentUser.photos.length > 0 && (
               <div className="px-4 py-3 flex gap-2 overflow-x-auto bg-[#0D0D10] border-b border-[#2F2F35]">
                 {currentUser.photos.map((photo: string, idx: number) => (
-                  <div key={idx} className="flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border border-[#2F2F35] shadow">
+                  <div key={idx} className={`relative flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border ${idx === 0 ? 'border-[#FF671F] ring-1 ring-[#FF671F]/30' : 'border-[#2F2F35]'} shadow`}>
                     <img src={photo} className="w-full h-full object-cover" />
+                    {idx === 0 && <div className="absolute bottom-0 left-0 right-0 text-[8px] bg-[#FF671F] text-black px-1 text-center rounded-b">principal</div>}
                   </div>
                 ))}
               </div>
@@ -3978,6 +4154,101 @@ function App() {
                 </button>
                 <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Otros usuarios te verán en el filtro “Solo disponibles hoy”</div>
               </div>
+            </div>
+
+            {/* MURO / WALL - makes profile feel alive (FB-style posts + interactions) */}
+            <div className="px-4 mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs uppercase tracking-widest text-[#9CA3AF]">Muro</div>
+                <button onClick={() => loadProfilePosts(effectiveUserId)} className="text-[10px] text-[#FF671F]">Actualizar</button>
+              </div>
+
+              {/* Composer - only for own profile */}
+              <div className="card p-3 mb-3">
+                <textarea 
+                  value={muroComposerText}
+                  onChange={e => setMuroComposerText(e.target.value)}
+                  placeholder="¿Qué tal tu entreno? Comparte en tu muro..."
+                  className="form-input w-full h-16 text-sm mb-2"
+                />
+                {muroComposerPhoto && (
+                  <div className="mb-2 flex items-center gap-2">
+                    <img src={muroComposerPhoto} className="w-12 h-12 rounded object-cover" />
+                    <button onClick={() => setMuroComposerPhoto(null)} className="text-xs text-red-400">Quitar foto</button>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button 
+                    onClick={async () => {
+                      // Quick camera or file for post photo
+                      if (typeof window !== 'undefined' && (window as any).Capacitor && CapacitorCamera) {
+                        try {
+                          const p = await CapacitorCamera.getPhoto({ quality: 70, allowEditing: false, resultType: 'base64' })
+                          if (p?.base64String) setMuroComposerPhoto(`data:image/jpeg;base64,${p.base64String}`)
+                        } catch {}
+                      } else {
+                        // fallback: simple prompt for demo url or ignore
+                        const url = prompt('URL de foto (o deja vacío):')
+                        if (url) setMuroComposerPhoto(url)
+                      }
+                    }}
+                    className="text-xs px-3 py-1.5 border border-[#2F2F35] rounded-2xl active:bg-[#25252A]"
+                  >
+                    📷 Foto
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      if (!muroComposerText.trim()) { toast('Escribe algo'); return }
+                      await createProfilePost(muroComposerText, muroComposerPhoto)
+                      setMuroComposerText('')
+                      setMuroComposerPhoto(null)
+                    }}
+                    className="flex-1 btn-primary text-sm py-1.5"
+                    disabled={!muroComposerText.trim()}
+                  >
+                    Publicar en muro
+                  </button>
+                </div>
+              </div>
+
+              {/* Posts list */}
+              {(profilePosts[effectiveUserId] || []).length > 0 ? (
+                (profilePosts[effectiveUserId] || []).map(post => (
+                  <div key={post.id} className="card p-3 mb-3">
+                    <div className="text-sm leading-snug">{post.text}</div>
+                    {post.photo && <img src={post.photo} className="mt-2 rounded-xl max-h-48 w-full object-cover" />}
+                    <div className="flex items-center justify-between mt-2 text-xs text-[#9CA3AF]">
+                      <div>{new Date(post.timestamp).toLocaleDateString('es-CL', {month:'short', day:'numeric'})} · {new Date(post.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
+                      <div className="flex gap-3">
+                        <button 
+                          onClick={() => likeProfilePost(post.id, effectiveUserId)}
+                          className="flex items-center gap-1 active:text-[#FF671F]"
+                        >
+                          ❤️ {post.likes.length}
+                        </button>
+                        <button 
+                          onClick={() => {
+                            const txt = prompt('Comentario:')
+                            if (txt) addCommentToPost(post.id, effectiveUserId, txt)
+                          }}
+                          className="flex items-center gap-1 active:text-[#FF671F]"
+                        >
+                          💬 {post.comments.length}
+                        </button>
+                      </div>
+                    </div>
+                    {post.comments.length > 0 && (
+                      <div className="mt-2 pl-2 border-l border-[#2F2F35] text-xs space-y-1 text-[#9CA3AF]">
+                        {post.comments.slice(-2).map(c => (
+                          <div key={c.id}><span className="text-white/80">{c.userName}:</span> {c.text}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-xs text-[#9CA3AF] mb-3">Tu muro está vacío. Publica algo para que otros vean tu progreso y entrenos.</div>
+              )}
             </div>
 
             {/* Verification status - visual upgrade */}
@@ -4974,6 +5245,14 @@ function App() {
             <div className="overflow-auto flex-1">
               <div className="relative">
                 <img src={showFullProfile.photos[0]} className="w-full aspect-square object-cover" />
+                {/* Small additional photos strip in full profile too */}
+                {showFullProfile.photos.length > 1 && (
+                  <div className="absolute bottom-16 right-2 flex gap-1 overflow-x-auto max-w-[120px]">
+                    {showFullProfile.photos.slice(1, 4).map((p, i) => (
+                      <img key={i} src={p} className="w-8 h-8 rounded object-cover border border-white/50" />
+                    ))}
+                  </div>
+                )}
                 <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black">
                   <div className="text-4xl font-semibold tracking-[-1.5px]">{showFullProfile.name}, {showFullProfile.age}</div>
                   <div className="flex gap-2 mt-1 text-[#FF671F]">
@@ -5024,6 +5303,28 @@ function App() {
                 <div>
                   <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-2">OBJETIVOS</div>
                   <div className="flex flex-wrap gap-2">{showFullProfile.goals.map(g => <div key={g} className="chip chip-active">{g}</div>)}</div>
+                </div>
+
+                {/* Muro for viewed profile - read only + like/comment (makes profiles alive) */}
+                <div className="mt-3">
+                  <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-1 flex justify-between">
+                    <span>MURO</span>
+                    <button onClick={() => loadProfilePosts(showFullProfile.id)} className="text-[#FF671F]">Cargar</button>
+                  </div>
+                  {(profilePosts[showFullProfile.id] || []).length > 0 ? (
+                    (profilePosts[showFullProfile.id] || []).slice(0, 3).map((post) => (
+                      <div key={post.id} className="card p-2 mb-1 text-xs">
+                        <div className="line-clamp-2">{post.text}</div>
+                        {post.photo && <img src={post.photo} className="mt-1 rounded max-h-20" />}
+                        <div className="flex gap-3 mt-1 text-[#9CA3AF]">
+                          <span onClick={() => likeProfilePost(post.id, showFullProfile.id)}>❤️ {post.likes.length}</span>
+                          <span onClick={() => { const t = prompt('Comentar:'); if (t) addCommentToPost(post.id, showFullProfile.id, t) }}>💬 {post.comments.length}</span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-[10px] text-[#9CA3AF]">Sin posts en el muro aún.</div>
+                  )}
                 </div>
 
                 {/* Squads membership - Polished feature */}

@@ -117,3 +117,19 @@ export interface CurrentUser extends Omit<Profile, 'id'> {
 }
 
 export type Tab = 'explore' | 'squads' | 'sesiones' | 'matches' | 'messages' | 'profile'
+
+export interface ProfilePost {
+  id: string
+  userId: string
+  text: string
+  photo?: string
+  timestamp: number
+  likes: string[] // list of userIds who liked
+  comments: Array<{
+    id: string
+    userId: string
+    userName: string
+    text: string
+    timestamp: number
+  }>
+}

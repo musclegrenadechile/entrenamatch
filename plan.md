@@ -164,6 +164,15 @@ Everything must work after hard refresh + on different physical devices (not jus
   - Extra belt: dedup by relatedId + type + recent time inside addNotification itself (prevents any stray duplicate entries).
   - On logout also clear the seen storage.
   - Marking read in panel now sticks (persisted), and no new duplicates will be created for already-seen messages.
+- [x] Profile "vivo" + muro (FB wall style) + fix extra photos visibility:
+  - Extra photos in profile gallery now always visible (changed condition, added "principal" label, small strip in full profile too for others).
+  - Added full Muro feature to profiles: composer (text + photo via camera/file), list of posts with timestamp, like toggle (notifies owner), comments (prompt + list last, notifies owner).
+  - Works for own Profile tab (composer + load) and others' Full Profile view (read-only + interact).
+  - Real mode: 'profilePosts' collection in Firestore + load/create/like/comment helpers (arrayUnion for comments).
+  - Demo: localStorage via saveProfilePosts.
+  - Auto load on tab profile and on open full profile.
+  - Makes profiles feel alive with user-generated content and interactions (likes/comments visible to all).
+  - Notifications for like/comment on your posts.
 - [x] Notifications panel polish (diseño + UX):
   - Added type icons (💬 ❤️ 👥 🏋️ 🔔), relative timestamps (getRelativeTime), better layout with avatar on right if present.
   - Unread indicator as small dot + highlighted bg.
