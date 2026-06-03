@@ -4629,7 +4629,7 @@ function App() {
           <div className="absolute inset-0 z-[90] bg-[#0D0D10] flex flex-col" onClick={() => setShowFullProfile(null)}>
             <div className="p-4 flex items-center justify-between border-b border-[#2F2F35]">
               <button onClick={() => setShowFullProfile(null)}><ArrowLeft /></button>
-              <div className="font-medium flex items-center gap-2">Perfil completo {realProfiles.some(rp => rp.id === showFullProfile.id) && <span className="text-[10px] bg-[#FF671F] text-black px-1.5 py-0.5 rounded-full font-bold">REAL TESTER</span>}</div>
+              <div className="font-medium flex items-center gap-2">Perfil completo {realProfiles.some(rp => rp.id === showFullProfile.id) && <span className="text-[10px] bg-[#FF4F79] text-black px-1.5 py-0.5 rounded-full font-bold">REAL TESTER</span>}</div>
               <div />
             </div>
             <div className="overflow-auto flex-1">
