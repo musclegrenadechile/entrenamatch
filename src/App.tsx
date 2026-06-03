@@ -234,6 +234,7 @@ function App() {
   const lastSuccessfulAuthRef = useRef(null)
   const chatScrollRef = useRef<HTMLDivElement>(null)
   const groupChatScrollRef = useRef<HTMLDivElement>(null)
+  const groupChatInputRef = useRef<HTMLInputElement>(null)
   const groupMessageUnsubsRef = useRef<Record<string, () => void>>({})
   const realChatUnsubsRef = useRef<Record<string, () => void>>({})
   const currentActiveChatRef = useRef<string | null>(null)
@@ -5382,6 +5383,7 @@ function App() {
                               if (!isSelf) {
                                 const mention = `@${nm} `
                                 setChatInputValue(prev => (prev.trim() ? prev.trimEnd() + ' ' : '') + mention)
+                                setTimeout(() => groupChatInputRef.current?.focus(), 0)
                               }
                             }}
                             className={`px-1.5 py-0.5 bg-[#25252A] rounded text-[#cbd5e1] whitespace-nowrap active:bg-[#FF671F] active:text-black transition ${isSelf ? 'opacity-60' : 'hover:bg-[#FF671F]/10'}`}
@@ -5501,6 +5503,7 @@ function App() {
                       className="flex gap-2 items-center"
                     >
                       <input 
+                        ref={groupChatInputRef}
                         type="text" 
                         value={chatInputValue}
                         onChange={(e) => setChatInputValue(e.target.value)}
