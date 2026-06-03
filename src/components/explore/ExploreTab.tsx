@@ -247,10 +247,12 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
             {deck.length} personas {userLocation ? 'cerca de ti' : ''}
           </div>
           {realProfiles && realProfiles.length > 0 && (
-            <div className="text-[10px] text-[#14b8a6] mt-0.5 font-bold">+ {realProfiles.length} perfiles reales de testers (¡sincronizados!)</div>
+            <div className="text-[10px] text-[#14b8a6] mt-0.5 font-medium">+ {realProfiles.length} perfiles reales de testers sincronizados</div>
           )}
           {lastSync && (
-            <div className="text-[9px] text-[#64748b] mt-0.5 opacity-60 flex items-center gap-1">Backend real • cross-device <span className="text-[#14b8a6]">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span></div>
+            <div className="text-[9px] text-[#64748b] mt-0.5 flex items-center gap-1">
+              <span className="text-[#14b8a6]/80">en vivo</span> · hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s
+            </div>
           )}
         </div>
 
@@ -308,9 +310,9 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
               <div className="mx-auto w-14 h-14 bg-[#121418] rounded-2xl flex items-center justify-center mb-4">
                 <Star className="text-[#14b8a6]" size={28} />
               </div>
-              <div className="text-2xl font-semibold tracking-tight mb-2">¡Se acabaron los perfiles por ahora!</div>
+              <div className="text-2xl font-semibold tracking-tight mb-2">No hay más perfiles</div>
               <p className="text-[#94a3b8] max-w-[280px] mx-auto mb-5 text-sm">
-                No hay más perfiles que coincidan con tus filtros actuales.
+                Ajusta los filtros o actualiza los perfiles reales para ver más opciones.
               </p>
               <div className="flex gap-3 justify-center">
                 <button 
