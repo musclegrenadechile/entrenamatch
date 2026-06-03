@@ -126,6 +126,7 @@ Everything must work after hard refresh + on different physical devices (not jus
   - Auto-scroll to bottom (latest messages) when opening a chat from the profiles list improved: more aggressive rAF + multiple timeouts (50/150/350ms), explicit setTimeout in openChat, min-h-0 on container, also tries by id.
   - Same robust pattern for when new real messages arrive or after send (via state length deps + load after send).
   - This ensures the view "baja" to the bottom (recent messages) reliably when tapping a profile/chat.
+  - Duplicate "Mensajes / en vivo / Actualizar chats reales" header removed (leftover from previous edits). Now only one sticky header in the list view.
 - [x] **PWA home screen install fix + banner visibility + exhaustive visual review**:
   - Manifest/scope/start_url/icons fixed previously (now /entrenamatch/).
   - Banner not appearing on mobile (shows on desktop): 
@@ -134,6 +135,13 @@ Everything must work after hard refresh + on different physical devices (not jus
     - Early force show (3s) + 5s timeout + eager logic still active.
     - Banner shows contextual guidance if no native prompt.
   - Exhaustive design review: full scan of all UI (explore, messages list+sticky+chat, matches, sesiones, profile hero/stats/feedback, onboarding, auth, top/bottom nav, banners, modals, cards, flex layouts, scrolls, z-indexes, mobile safe areas, contrast, spacing, hard-coded vs design system). Fixed mobile banner visibility + top bar button. No other major visual errors (previous polishes covered most). After deploy on celular: tap the top bar "📱 Instalar" to force it, use browser menu for Add to Home Screen. Reinstall icon if needed.
+- [x] Duplicate "Mensajes" header in list view cleaned up.
+- [x] Notifications on celular + clear download in Profile:
+  - Web notifs on mobile browser limited (permission + PWA install needed, tab must allow bg). For reliable push on phone: use native APK (has Capacitor PushNotifications setup, requests perm on login for real users).
+  - Enhanced APK card in Profile: text now stresses "notificaciones push reales en tu celular (mejor que web PWA)", clear instructions for beta install.
+  - PWA install option in Profile now always visible for web (no prompt conditional), clicking forces banner (which is now sticky + has guidance).
+  - Top bar has persistent 📱 button for easy access on mobile.
+  - If the PWA "Instalar" banner/prompt doesn't install when pressed (common on some mobile browsers due to criteria or subpath), use the prominent "Descargar APK más reciente" link in Profile → GitHub Releases (or CI artifacts for latest debug APK). Install APK enables full native notifs + camera.
 - Add FIREBASE_SERVICE_ACCOUNT secret to GitHub for full auto Firebase Hosting deploys on every push (recommended over GH Pages for PWA + future FCM).
 
 ## Later Phases (high level)

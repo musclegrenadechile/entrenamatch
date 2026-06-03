@@ -3490,30 +3490,7 @@ function App() {
                   </div>
                   <div className="text-[#9CA3AF] text-xs px-1 mb-3">Mensajes 1:1 reales • en vivo cross-device • notificaciones toast + navegador cuando llega un mensaje</div>
                 </div>
-                <div className="flex items-center justify-between mb-1 px-1">
-                  <div className="flex items-center gap-2">
-                    <div className="section-header">Mensajes</div>
-                    <span className="live-pill">● en vivo</span>
-                  </div>
-                  {!isDemoMode && (
-                    <button onClick={async () => {
-                      setIsLoadingChats(true);
-                      try {
-                        const currentMatches = await loadRealMatches(); // discover any new matches first
-                        for (const id of currentMatches) {
-                          await loadRealChatMessages(id);
-                        }
-                        setLastSync(new Date());
-                        setChatUnreads({}); // all "read" after manual full sync
-                        toast.success('Chats reales actualizados');
-                      } finally {
-                        setIsLoadingChats(false);
-                      }
-                    }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 rounded-xl border border-[#FF671F]/50 text-[#FF671F] active:bg-[#FF671F] active:text-black disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar chats reales'}</button>
-                  )}
-                  {lastSync && <span className="text-[10px] text-[#9CA3AF] ml-2">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
-                </div>
-                <div className="text-[#9CA3AF] text-xs px-1 mb-4">Mensajes 1:1 reales • en vivo cross-device • notificaciones toast + navegador cuando llega mensaje</div>
+
                 {matchProfiles.length === 0 && (
                   <div className="mt-8 card p-6 rounded-3xl text-center">
                     <MessageCircle className="mx-auto text-[#FF671F] mb-3" size={36} />
@@ -3987,7 +3964,7 @@ function App() {
                   </div>
                 </div>
                 <div className="text-sm text-[#F8F8F8] mb-4">
-                  Descarga la versión nativa de EntrenaMatch para pruebas. Incluye todas las funciones reales (perfiles, matches, chats, sesiones) y se actualiza automáticamente. Próximamente disponible vía Play Store en modo beta cerrado (solo para testers invitados).
+                  Descarga la versión nativa de EntrenaMatch (APK) para tener <strong>notificaciones push reales en tu celular</strong> (mejor que web PWA), cámara nativa y experiencia completa offline. Se actualiza vía GitHub Releases. Para pruebas beta, instala el APK (activa "orígenes desconocidos").
                 </div>
                 <a 
                   href="https://github.com/musclegrenadechile/entrenamatch/releases/tag/android-prealpha" 
@@ -4141,16 +4118,19 @@ function App() {
               </div>
             )}
 
-            {/* Manual PWA install entry (web only, when prompt available) - attractive orange/pink */}
-            {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor === 'undefined' && deferredInstallPrompt && (
-              <div className="px-4 pb-3">
+            {/* PWA / App install options - always offer for web, with clear APK for native notifications on phone */}
+            {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor === 'undefined' && (
+              <div className="px-4 pb-3 space-y-2">
                 <button
-                  onClick={() => setShowPwaInstall(true)}
-                  className="w-full text-xs py-2 rounded-2xl border border-[#FF671F]/40 bg-[#FF671F]/5 text-[#FF671F] active:bg-[#FF671F] active:text-black flex items-center justify-center gap-1.5"
+                  onClick={() => { 
+                    localStorage.removeItem('entrenamatch_pwa_dismissed'); 
+                    setShowPwaInstall(true); 
+                  }}
+                  className="w-full text-xs py-2.5 rounded-2xl border border-[#FF671F]/40 bg-[#FF671F]/5 text-[#FF671F] active:bg-[#FF671F] active:text-black flex items-center justify-center gap-1.5 font-semibold"
                 >
-                  <Download size={14} /> Instalar EntrenaMatch como app (acceso rápido + notifs)
+                  <Download size={14} /> Instalar como PWA (acceso rápido + notifs web)
                 </button>
-                <div className="text-[9px] text-center text-[#9CA3AF] mt-0.5">Funciona genial en Chrome/Android. Se siente como la APK.</div>
+                <div className="text-[9px] text-center text-[#9CA3AF]">O usa el botón 📱 Instalar de la barra superior.</div>
               </div>
             )}
 
