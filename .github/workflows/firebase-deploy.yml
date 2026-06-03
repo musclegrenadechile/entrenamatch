@@ -11,7 +11,22 @@ jobs:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for Firebase Hosting (root base /)
+        run: |
+          rm -rf dist
+          npm run build -- --base=/
 
       - name: Authenticate to Google Cloud
         id: auth
