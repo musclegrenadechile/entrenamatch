@@ -4580,7 +4580,7 @@ function App() {
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
               onClick={e => e.stopPropagation()} className="match-modal rounded-3xl max-w-[340px] w-full overflow-hidden border border-[#2F2F35]">
               <div className="p-8 text-center">
-                <div className="text-[#FF671F] font-semibold tracking-[3px] text-sm mb-1">¡ES UN MATCH!</div>
+                <div className="text-[#FF4F79] font-semibold tracking-[3px] text-sm mb-1">¡ES UN MATCH!</div>
                 <div className="text-3xl font-semibold tracking-tight mb-4">Tú y {showMatchModal.name} quieren entrenar juntos</div>
                 
                 <div className="flex justify-center -space-x-4 mb-6">

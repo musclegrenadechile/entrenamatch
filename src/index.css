@@ -198,6 +198,7 @@ body {
 
 .match-modal {
   background: linear-gradient(145deg, #1C1C20 0%, #0D0D10 100%);
+  border-color: #FF671F;
 }
 
 /* Scrollbars subtle */
