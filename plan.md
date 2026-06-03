@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 (continua - more premium polish for elegir perfiles: added lastSync to recommendations header; previous calmer texts, empty states, 'en vivo' consistency, filters declutter, lastSync everywhere. Builds/pushes (3e6058c). **PHASE 0 SIGN-OFF READY** (continua).
+Last updated: Phase 0 (continua - more premium polish for elegir perfiles: added inline lastSync next to Actualizar in Explore header + recs; previous lastSyncs, calmer texts, empty states, filters declutter. Builds/pushes (18e6543). **PHASE 0 SIGN-OFF READY** (continua).
