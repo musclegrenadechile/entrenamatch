@@ -169,8 +169,8 @@ Last updated: Major design refresh (Dunkin' orange #FF671F primary for energetic
 - Enriched toasts: avatar img gets orange border, fallback initial now gradient orange-pink + ring; global sonner action button forced to fit-accent orange (Ver buttons pop).
 - Privacy/terms.html: h1/h2 orange, links pink (coherent with new theme, no old teal).
 - Also fixed a couple more "en vivo" spans to use live-pill (lastSync line etc).
-- Verified exhaustively: all 3 exact CI commands (npm run build -- --base=/entrenamatch/, --base=/, CAPACITOR=1 npm run build:web) run locally clean, capacitor-plugins chunk ONLY appears in CAP build, tsc-b no errors, no @capacitor resolve leaks in pure web.
-- Committed + pushed (autonomous). GitHub Pages will have the more vibrant hovers, pulsing live badges, gradient messages, stronger match celebration.
+- Verified exhaustively: all 3 exact CI commands (npm run build -- --base=/entrenamatch/, --base=/, CAPACITOR=1 npm run build:web) run locally clean, capacitor-plugins chunk ONLY appears in CAP build, tsc-b no errors, no @capacitor resolve leaks in pure web. Re-verified after extra badge work.
+- Committed + pushed (autonomous, multiple times "sin parar"). GitHub Pages will have the more vibrant hovers, pulsing live badges, gradient messages, stronger match celebration, pink live badges on bell + bottom nav.
 - Next user action: hard refresh https://musclegrenadechile.github.io/entrenamatch/ , test swipes/matches/chats/sessions with 2 accounts (one hidden for toasts), re-trigger "Build Android APK" workflow for fresh signed APK with the design.
 
 **Sigue el ciclo sin parar. Todo subido a github.**
