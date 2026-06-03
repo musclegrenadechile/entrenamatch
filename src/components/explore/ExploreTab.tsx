@@ -388,7 +388,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         <div className="mt-4 mb-2">
           <div className="flex items-center justify-between mb-2.5 px-1">
             <div>
-              <div className="font-semibold text-sm">Más compatibles (reales primero)</div>
+              <div className="font-semibold text-sm flex items-center gap-1">Más compatibles (reales primero) <span className="text-[8px] px-1 py-px bg-[#14b8a6]/10 text-[#14b8a6] rounded">en vivo</span></div>
               {lastSync && <span className="text-[9px] text-[#64748b] ml-1">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
             </div>
           </div>
