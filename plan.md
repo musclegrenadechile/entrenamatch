@@ -275,6 +275,20 @@ Last updated: Major design refresh (Dunkin' orange #FF671F primary for energetic
 
 Sigue el ciclo. Hard refresh the live site to see the new install banner (after 25s+ or after a like/match), the why-reasons under compat %, and the top "Actualizar todo". Re-run APK workflow for native too.
 
+**Muro spectacular continuation (after save bug fix)**:
+- Posts now beautifully animated with framer-motion (spring enter on publish, smooth exit on delete).
+- Like button: heart pops with scale animation on toggle.
+- Clickable comment previews open a full rich "Comentarios en el muro" modal: scrollable thread (all comments, oldest first, nice avatar-like + times), live updating when you comment, composer stuck at bottom with Enter support.
+- Quick inline 💬 still works for fast comments under the post.
+- Own muro header now shows live stats: 📝 N posts • ❤️ likes received • 💬 comments received.
+- Empty state upgraded to inviting card with icon + "Publicar mi primer post" CTA that focuses the composer textarea.
+- Refrescar consistency, more cursor/ active feedback on comment areas.
+- Same love applied to other's muro in full profile view (animations + tappable threads open same modal).
+- Result: the muro feels premium, alive, interactive and "espectacular" — true FB-style community heartbeat in the profile.
+- Pushed + CI triggered.
+
+Next ideas (if continue): teaser latest 1 post in swipe/match cards, post options menu (edit?), pinned posts, global recent activity feed tab, more glass + micro interactions, delete confirm with undo.
+
 **Critical muro cross-profile fix + attractiveness (user report: "al abrir el perfil de una cuenta A a una B, no ve lo que publico la cuenta A en su muro" + index error + "mejorar todo de lo que se ha hecho en profile, muro, etc para que sea atractivo")**:
 - Fixed root cause in loadProfilePosts: removed orderBy('timestamp','desc') from the where(userId) query (this was triggering the exact composite index error in prod bundle). Now uses where+limit(30) only + reliable client .sort((a,b)=>b.timestamp-a.timestamp) + .slice(0,10). Works for any viewer immediately (A opens B sees B's posts).
 - Also normalized comments on load (defensive id/userName for legacy data) + demo mode now also ensures sorted newest first.
