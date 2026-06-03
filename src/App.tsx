@@ -3556,8 +3556,11 @@ function App() {
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {liveTrainingNow.slice(0, 4).map(user => (
-                <div key={user.id} onClick={() => setShowFullProfile(user)} className="min-w-[120px] card p-1.5 text-[10px] cursor-pointer border border-[#22c55e]/50 active:scale-95">
-                  <div className="font-medium truncate">{user.name}</div>
+                <div key={user.id} onClick={() => setShowFullProfile(user)} className="min-w-[120px] card p-1.5 text-[10px] cursor-pointer border border-[#22c55e]/50 active:scale-95 relative">
+                  <div className="flex justify-between">
+                    <div className="font-medium truncate">{user.name}</div>
+                    <div className="w-2 h-2 bg-[#22c55e] rounded-full animate-pulse flex-shrink-0 mt-0.5"></div>
+                  </div>
                   <div className="text-[#9CA3AF]">{user.distance.toFixed(1)}km · {user.trainingTypes?.[0] || 'Entreno'}</div>
                   <div className="text-[#22c55e] text-[9px]">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m</div>
                   <button onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); }} className="mt-0.5 text-[9px] bg-[#22c55e] text-black px-1.5 py-0.5 rounded font-medium">Unirme ya</button>
