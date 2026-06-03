@@ -4043,11 +4043,12 @@ function App() {
                   <div className="bg-[#1C1C20] rounded-2xl p-4 text-left text-sm mb-5">
                     <div className="font-medium text-white mb-2">Lo que verás (ya real y en vivo):</div>
                     <ul className="space-y-1.5 text-[#cbd5e1]">
-                      <li>→ Explora perfiles reales con "disponibles ahora", recs "reales primero", badges en vivo y lastSync</li>
+                      <li>→ Explora perfiles reales con "disponibles ahora", recs "reales primero" + motivos de compat, badges en vivo y lastSync</li>
                       <li>→ Matches y chats 1:1 / grupal en sesiones (cross-device real-time)</li>
                       <li>→ Crea y únete a sesiones con chat grupal (tú administras como creador)</li>
                       <li>→ Tu feedback (en Perfil) da forma a lo que viene</li>
                       <li>→ Nuevo diseño naranja/rosa atractivo (energía Dunkin' + diversión social)</li>
+                      <li>→ Banner para instalar como app (PWA) + botón "Actualizar todo" en la barra superior</li>
                     </ul>
                   </div>
 
