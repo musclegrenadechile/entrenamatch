@@ -288,6 +288,9 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
               <RefreshCw size={13} className={isRefreshingReals ? 'animate-spin' : ''}/> {isRefreshingReals ? '...' : 'Actualizar reales'}
             </button>
           )}
+          {lastSync && (
+            <span className="text-[9px] text-[#64748b] ml-1">hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>
+          )}
           <button 
             onClick={() => setShowFilters(true)} 
             className="relative p-2 active:bg-[#1f242b] rounded-2xl bg-[#121418] border border-[#272b33]"
