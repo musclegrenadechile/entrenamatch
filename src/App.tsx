@@ -343,6 +343,8 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('explore')
   const [isLoadingFeed, setIsLoadingFeed] = useState(false)
   const [feedShowPinnedOnly, setFeedShowPinnedOnly] = useState(false)
+  const [feedSearch, setFeedSearch] = useState('')
+  const [feedOnlyReal, setFeedOnlyReal] = useState(false)
 
   // Auto-refresh real sessions on tab DISABLED to fix TDZ.
   // Manual button remains.
@@ -3555,7 +3557,20 @@ function App() {
                     <span className="live-pill text-[8px]">EN VIVO</span>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                  <input 
+                    type="text" 
+                    value={feedSearch} 
+                    onChange={e => setFeedSearch(e.target.value)}
+                    placeholder="Buscar posts o usuarios..."
+                    className="form-input text-[10px] py-1 px-2 w-32"
+                  />
+                  <button 
+                    onClick={() => setFeedOnlyReal(!feedOnlyReal)}
+                    className={`text-[10px] px-2 py-0.5 rounded-full border ${feedOnlyReal ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#FF671F]/30 text-[#FF671F]'} active:bg-[#FF671F]/10`}
+                  >
+                    {feedOnlyReal ? '★ Solo reales' : 'REAL'}
+                  </button>
                   <button 
                     onClick={() => setFeedShowPinnedOnly(!feedShowPinnedOnly)}
                     className={`text-[10px] px-2 py-0.5 rounded-full border ${feedShowPinnedOnly ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#FF671F]/30 text-[#FF671F]'} active:bg-[#FF671F]/10`}
@@ -3589,6 +3604,14 @@ function App() {
                   return b.timestamp - a.timestamp;
                 });
               if (feedShowPinnedOnly) feedPosts = feedPosts.filter((p: any) => p.pinned);
+              if (feedOnlyReal) feedPosts = feedPosts.filter((p: any) => realProfiles.some(rp => rp.id === p.ownerId));
+              if (feedSearch.trim()) {
+                const q = feedSearch.toLowerCase().trim();
+                feedPosts = feedPosts.filter((p: any) => {
+                  const owner = realProfiles.find(r => r.id === p.ownerId) || { name: '' };
+                  return (p.text || '').toLowerCase().includes(q) || (owner.name || '').toLowerCase().includes(q);
+                });
+              }
               feedPosts = feedPosts.slice(0, 30); // increased for "load more" feel
 
               if (feedPosts.length === 0) {
@@ -3607,7 +3630,7 @@ function App() {
 
               return (
                 <>
-                  <div className="text-xs text-[#9CA3AF] mb-3 px-1">{feedPosts.length} posts recientes de la comunidad</div>
+                  <div className="text-xs text-[#9CA3AF] mb-3 px-1">{feedPosts.length} posts {feedSearch || feedOnlyReal || feedShowPinnedOnly ? 'filtrados' : 'recientes'} de la comunidad</div>
                   {feedPosts.map((post: any) => {
                     const ownerProfile = realProfiles.find(r => r.id === post.ownerId);
                     const owner = ownerProfile || { name: 'Compañero', id: post.ownerId, photos: [] };
