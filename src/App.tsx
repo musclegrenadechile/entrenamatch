@@ -2447,7 +2447,7 @@ function App() {
     <ErrorBoundary>
       <div className="min-h-screen bg-[#0a0b0f] text-white flex flex-col overflow-hidden relative">
       {/* MINIMAL TOP BAR - Clean, premium, high-visibility auth controls */}
-      <div className="bg-gradient-to-r from-[#14b8a6] to-[#0f9d8c] text-black z-50 flex items-center justify-between px-4 py-1.5 text-xs font-medium shadow-md">
+      <div className="bg-gradient-to-r from-[#14b8a6] to-[#0f9d8c] text-black z-50 flex items-center justify-between px-4 py-2 text-xs font-medium shadow-md">
         <div className="font-semibold tracking-[-0.3px] flex items-center gap-1.5">
           Real backend <span className="opacity-70">• v0.1.0-prealpha</span>
         </div>
