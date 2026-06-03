@@ -2447,9 +2447,9 @@ function App() {
     <ErrorBoundary>
       <div className="min-h-screen bg-[#0a0b0f] text-white flex flex-col overflow-hidden relative">
       {/* MINIMAL TOP BAR - Clean, premium, high-visibility auth controls */}
-      <div className="bg-gradient-to-r from-[#14b8a6] to-[#0f9d8c] text-black z-50 flex items-center justify-between px-4 py-2.5 text-sm font-medium shadow-md">
-        <div className="font-extrabold tracking-[-0.5px] text-base flex items-center gap-1.5">
-          🚀 <span>PRE-ALPHA</span> <span className="text-[10px] font-medium opacity-80">• Real backend activo</span> <span className="text-[10px] font-mono opacity-60 ml-1">v0.1.0-prealpha</span>
+      <div className="bg-gradient-to-r from-[#14b8a6] to-[#0f9d8c] text-black z-50 flex items-center justify-between px-4 py-1.5 text-xs font-medium shadow-md">
+        <div className="font-semibold tracking-[-0.3px] flex items-center gap-1.5">
+          Real backend <span className="opacity-70">• v0.1.0-prealpha</span>
         </div>
 
         {(currentUser || firebaseUser) ? (
@@ -2879,8 +2879,7 @@ function App() {
                   </div>
                   <div className="font-semibold text-xl mb-2">Aún no tienes matches</div>
                   <p className="text-sm text-[#94a3b8] leading-snug mb-4 max-w-[280px] mx-auto">
-                    Ve a <span className="text-white font-medium">Explorar</span> para encontrar y conectar con perfiles reales. 
-                    Matches y chats funcionan cross-device vía Firebase.
+                    Ve a Explorar para ver perfiles reales y hacer match. Chats y sesiones en vivo cross-device.
                   </p>
                   <button onClick={() => setActiveTab('explore')} className="btn-primary px-8">Ir a Explorar</button>
                 </div>
@@ -2966,7 +2965,7 @@ function App() {
                   <div className="mt-8 card p-6 rounded-3xl text-center">
                     <MessageCircle className="mx-auto text-[#14b8a6] mb-3" size={36} />
                     <div className="font-semibold mb-1">Sin conversaciones aún</div>
-                    <p className="text-sm text-[#94a3b8]">Haz match en Explorar con otros testers reales. Los mensajes se envían y reciben en tiempo real entre dispositivos.</p>
+                    <p className="text-sm text-[#94a3b8]">Haz match en Explorar. Los mensajes reales llegan en vivo cross-device.</p>
                   </div>
                 )}
                 {matchProfiles
@@ -3270,9 +3269,9 @@ function App() {
             {/* Incomplete CTA */}
             {(!currentUser.bio || !currentUser.photos?.length || !currentUser.trainingTypes?.length) && (
               <div className="mx-4 mt-4 p-4 rounded-3xl bg-[#1f242b] border border-[#14b8a6]/40">
-                <div className="text-[#14b8a6] font-semibold mb-1">Perfil incompleto</div>
-                <p className="text-sm text-[#cbd5e1] mb-3">Agrega bio, fotos y tipos de entrenamiento para aparecer en Explorar de otros usuarios reales.</p>
-                <button onClick={() => setShowOnboarding(true)} className="btn-primary w-full text-sm py-2">Completar mi perfil ahora</button>
+                <div className="text-[#14b8a6] font-semibold mb-1">Completa tu perfil</div>
+                <p className="text-sm text-[#cbd5e1] mb-3">Agrega bio, fotos y entrenamiento para que otros testers reales te vean en Explorar.</p>
+                <button onClick={() => setShowOnboarding(true)} className="btn-primary w-full text-sm py-2">Completar ahora</button>
               </div>
             )}
 
@@ -3652,9 +3651,9 @@ function App() {
                 <button onClick={resetFilters} className="text-[#14b8a6] text-sm font-semibold active:opacity-70">Limpiar todo</button>
               </div>
 
-              {/* Live results count for filters - helps when choosing profiles in Explorar */}
+              {/* Live results count for filters - premium, clean indicator while choosing profiles */}
               <div className="mb-4 px-3 py-2 bg-[#121418] rounded-2xl text-sm flex items-center justify-between border border-[#272b33]">
-                <span className="text-[#94a3b8]">Perfiles que verás en Explorar</span>
+                <span className="text-[#94a3b8]">Disponibles ahora</span>
                 <span className="font-bold text-[#14b8a6] text-lg tabular-nums">{deck.length}</span>
               </div>
 
