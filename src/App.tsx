@@ -3858,7 +3858,6 @@ function App() {
               >
                 Ver {deck.length} resultados <span className="text-lg leading-none">→</span>
               </button>
-              <div className="text-center text-[10px] text-[#64748b] mt-2">Los filtros se aplican al instante</div>
             </motion.div>
           </div>
         )}
