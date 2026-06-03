@@ -219,6 +219,8 @@ function App() {
   const chatScrollRef = useRef<HTMLDivElement>(null)
   const groupChatScrollRef = useRef<HTMLDivElement>(null)
   const groupMessageUnsubsRef = useRef<Record<string, () => void>>({})
+  const realChatUnsubsRef = useRef<Record<string, () => void>>({})
+  const currentActiveChatRef = useRef<string | null>(null)
 
   const { 
     squads: _squadsFromHook, 
@@ -629,6 +631,11 @@ function App() {
     }
   }, [isDemoMode, firebaseUser?.uid])
 
+  // Keep a fresh ref to current activeChat so async loads can decide whether to also refresh realChatMessages
+  useEffect(() => {
+    currentActiveChatRef.current = activeChat || null
+  }, [activeChat])
+
   // Real-time onSnapshot for matches (new matches from other users' likes appear instantly, no 30s wait)
   useEffect(() => {
     if (isDemoMode || !firebaseUser?.uid || !db) return;
@@ -738,6 +745,10 @@ function App() {
       }
       await addDoc(collection(db, 'messages'), msg)
       console.log('✅ Real message sent to Firestore')
+      // Force refresh our own view from server (keeps timestamps / ordering consistent)
+      loadRealChatMessages(toUserId).then(msgs => {
+        if (msgs) setRealChatMessages(msgs)
+      })
     } catch (e) {
       console.error('Failed to send real message:', e)
       toast.error('No se pudo enviar el mensaje real')
@@ -786,9 +797,15 @@ function App() {
       });
       console.log(`✅ Loaded ${msgs.length} real 1:1 messages for ${otherUserId}`);
       setLastSync(new Date());
+
+      // If this load is for the currently open chat, also refresh the array used by the open chat render
+      if (currentActiveChatRef.current === otherUserId && msgs) {
+        setRealChatMessages(msgs)
+      }
+
       return msgs;
     } catch (e) {
-      console.warn('Could not load real chat messages (check rules):', e);
+      console.warn('Could not load real chat messages:', e);
       return null;
     }
   };
@@ -840,32 +857,69 @@ function App() {
     return () => clearInterval(interval);
   }, [realMatches, isDemoMode, firebaseUser?.uid]);
 
-  // Background real-time listeners for ALL real matches (to update message list previews live when new msg arrives, even if chat not open)
+  // Background real-time listeners for ALL real matches (to update message list previews live when new msg arrives, even if chat not open).
+  // Robust ref-managed like the group sessions bg listeners. Direct snapshot processing for instant updates (no extra getDocs roundtrip in handler).
   useEffect(() => {
-    if (isDemoMode || !firebaseUser?.uid || !db || realMatches.length === 0) return;
-    const unsubs: (() => void)[] = [];
-    realMatches.forEach((matchId) => {
+    if (isDemoMode || !firebaseUser?.uid || !db) {
+      return;
+    }
+    const myMatchIds = realMatches || [];
+
+    // Cleanup listeners for matches we no longer have
+    Object.keys(realChatUnsubsRef.current).forEach((id) => {
+      if (!myMatchIds.includes(id)) {
+        try { realChatUnsubsRef.current[id]?.(); } catch {}
+        delete realChatUnsubsRef.current[id];
+      }
+    });
+
+    myMatchIds.forEach((matchId) => {
+      if (realChatUnsubsRef.current[matchId]) return; // already subscribed
+
       (async () => {
         try {
           const { collection, query, where, onSnapshot } = await import('firebase/firestore');
           const messagesRef = collection(db, 'messages');
           const q1 = query(messagesRef, where('from', '==', firebaseUser.uid), where('to', '==', matchId));
           const q2 = query(messagesRef, where('from', '==', matchId), where('to', '==', firebaseUser.uid));
-          const updateForMatch = () => {
-            loadRealChatMessages(matchId);  // fetches and updates setMessages for previews
+
+          // Handler for q1 (my outgoing to this match) - process snapshot directly for speed
+          const handler1 = (snapshot: any) => {
+            // We still use load for authoritative full merge+sort+state, but log the live trigger
+            console.log(`📨 BG live 1:1 (q1) for ${matchId}`);
+            loadRealChatMessages(matchId);
           };
-          const unsub1 = onSnapshot(q1, updateForMatch, (err) => console.warn(`bg listener q1 for ${matchId}:`, err));
-          const unsub2 = onSnapshot(q2, updateForMatch, (err) => console.warn(`bg listener q2 for ${matchId}:`, err));
-          unsubs.push(unsub1, unsub2);
+          const unsub1 = onSnapshot(q1, handler1, (err: any) => console.warn(`bg 1:1 q1 listener error for ${matchId}:`, err));
+
+          // Handler for q2 (incoming from this match)
+          const handler2 = (snapshot: any) => {
+            console.log(`📨 BG live 1:1 (q2 incoming) for ${matchId}`);
+            loadRealChatMessages(matchId);
+          };
+          const unsub2 = onSnapshot(q2, handler2, (err: any) => console.warn(`bg 1:1 q2 listener error for ${matchId}:`, err));
+
+          // Store both? For simplicity store a combined noop unsub that unsubs both when removed.
+          // To keep simple we store a wrapper.
+          realChatUnsubsRef.current[matchId] = () => {
+            try { unsub1(); } catch {}
+            try { unsub2(); } catch {}
+          };
         } catch (e) {
-          console.warn('bg listener setup error for', matchId, e);
+          console.warn('bg 1:1 listener setup error for', matchId, e);
         }
       })();
     });
-    return () => {
-      unsubs.forEach(u => u());
-    };
   }, [realMatches, isDemoMode, firebaseUser?.uid, db]);
+
+  // Global cleanup for 1:1 bg message listeners (on unmount / mode change)
+  useEffect(() => {
+    return () => {
+      Object.values(realChatUnsubsRef.current).forEach((u) => {
+        try { u(); } catch {}
+      });
+      realChatUnsubsRef.current = {};
+    };
+  }, []);
 
   // Real-time onSnapshot for 1:1 using safe separate == queries (triggers live update on changes, then load for data)
   // This makes chat truly real-time when open, without complex 'in' that may need indexes.
@@ -885,14 +939,15 @@ function App() {
         const messagesRef = collection(db, 'messages');
         const q1 = query(messagesRef, where('from', '==', firebaseUser.uid), where('to', '==', activeChat));
         const q2 = query(messagesRef, where('from', '==', activeChat), where('to', '==', firebaseUser.uid));
-        const handler = () => {
-          // On any change, force a fresh load to update both local messages and realChatMessages
+        const handler = (snap: any, direction: string) => {
+          console.log(`📨 Live 1:1 active chat update (${direction}) for ${activeChat}`);
+          // Load does the merge of both directions + sets messages + (thanks to ref) also realChatMessages when active
           loadRealChatMessages(activeChat).then(msgs => {
             if (msgs) setRealChatMessages(msgs);
           });
         };
-        unsub1 = onSnapshot(q1, handler, (err) => console.warn('1:1 q1 listener error:', err));
-        unsub2 = onSnapshot(q2, handler, (err) => console.warn('1:1 q2 listener error:', err));
+        unsub1 = onSnapshot(q1, (s) => handler(s, 'q1'), (err) => console.warn('1:1 q1 listener error:', err));
+        unsub2 = onSnapshot(q2, (s) => handler(s, 'q2'), (err) => console.warn('1:1 q2 listener error:', err));
       } catch (e) {
         console.warn('1:1 onSnapshot setup error (falling back to poll):', e);
       }
