@@ -295,26 +295,21 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
   return (
     <div className="flex-1 flex flex-col p-4 pt-3 relative bg-[#0D0D10]">
-      {/* Header - Cleaner and more premium */}
-      <div className="flex items-start justify-between mb-3 px-1">
+      {/* Header - Cleaner and more premium, tight spacing */}
+      <div className="flex items-start justify-between mb-1.5 px-1">
         <div>
           <div className="section-header text-3xl">Explorar</div>
-          <div className="flex items-center gap-2 mt-1">
-            <div className="text-[#FF671F] text-xs font-semibold">
+          <div className="mt-0.5 text-xs leading-tight">
+            <span className="text-[#FF671F] font-semibold">
               {deck.length} disponibles ahora {userLocation ? 'cerca de ti' : ''} · ordenados por compat
-            </div>
+            </span>
             {lastSync && (
-              <div className="text-[9px] text-[#9CA3AF] bg-[#1C1C20] px-1.5 py-px rounded">sync hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</div>
+              <span className="ml-2 text-[9px] text-[#9CA3AF] bg-[#1C1C20] px-1.5 py-px rounded align-middle">sync hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>
+            )}
+            {realProfiles && realProfiles.length > 0 && (
+              <span className="ml-2 text-[10px] text-[#FF671F] font-medium align-middle">+ {realProfiles.length} reales <span className="live-pill text-[8px]">en vivo</span></span>
             )}
           </div>
-          {realProfiles && realProfiles.length > 0 && (
-            <div className="text-[10px] text-[#FF671F] mt-0.5 font-medium flex items-center gap-1">+ {realProfiles.length} perfiles reales de testers <span className="live-pill text-[8px]">en vivo</span></div>
-          )}
-          {lastSync && (
-            <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex items-center gap-1">
-              <span className="live-pill text-[8px]">en vivo</span> · hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s
-            </div>
-          )}
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -349,9 +344,6 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
               >
                 <RefreshCw size={13} className={isRefreshingReals ? 'animate-spin' : ''}/> {isRefreshingReals ? '...' : 'Actualizar reales'}
               </button>
-              {lastSync && (
-                <span className="text-[9px] text-[#9CA3AF] ml-1">hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>
-              )}
             </>
           )}
           <button 
@@ -369,7 +361,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
       </div>
 
       {/* Cards Stack Area */}
-      <div className="relative flex-1 flex items-center justify-center mt-1 mb-3 min-h-[460px]">
+      <div className="relative flex-1 flex items-center justify-center mt-0.5 mb-2 min-h-[460px]">
         <AnimatePresence>
           {visibleCards.length === 0 && (
             <div className="text-center px-6">

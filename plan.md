@@ -127,6 +127,7 @@ Everything must work after hard refresh + on different physical devices (not jus
   - Squads: cards refreshed with session-card + consistent buttons.
   - Group chat modal: header uses section-header + REAL/ADMIN badges, mobile participants bar polished, bubbles now use .message-bubble CSS (matches 1:1 sent/received style), input area refined.
   - Overall: stronger premium consistent fitness social app aesthetic (gradients, spacing, hovers, mobile touch).
+- [x] Explore header visual fix: "X disponibles ahora · ordenados por compat + sync + +N reales" had stacked mt-0.5 creating large ugly vertical space. Consolidated into one tight sub-line (mt-0.5 on wrapper, inline ml-2 badges, leading-tight). Reduced header container mb-1.5, cards mt-0.5. Removed duplicate lastSync. Much denser, premium, no wasted space.
 - [x] **Messaging scroll fix** ("scroll de mensajeria" + "no bajan a los perfiles"):
   - Chat list (perfiles/matches in Mensajes tab): header made sticky (stays visible while you scroll down the list of profiles/chats). Added min-h-0 and proper flex for reliable scrolling to bottom of the list.
   - Auto-scroll to bottom (latest messages) when opening a chat from the profiles list improved: more aggressive rAF + multiple timeouts (50/150/350ms), explicit setTimeout in openChat, min-h-0 on container, also tries by id.
