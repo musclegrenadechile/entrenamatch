@@ -64,6 +64,22 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
     return profile.verificationStatus === 'verified' || ['p1', 'p2', 'p4', 'p6'].includes(profile.id);
   };
 
+  // Small breakdown for "why this profile" in recs (makes the % feel less magic, builds trust)
+  const getCompatReasons = (profile: Profile): string[] => {
+    if (!currentUser) return [];
+    const reasons: string[] = [];
+    const typeOverlap = (currentUser.trainingTypes || []).filter((t: string) => (profile.trainingTypes || []).includes(t)).length;
+    if (typeOverlap > 0) reasons.push('Entrenamiento coincide');
+    const goalOverlap = (currentUser.goals || []).filter((g: string) => (profile.goals || []).includes(g)).length;
+    if (goalOverlap > 0) reasons.push('Objetivos parecidos');
+    if (userLocation) {
+      const d = getDistance(profile);
+      if (d !== null && d <= 12) reasons.push('Muy cerca');
+    }
+    if (currentUser.level && profile.level && currentUser.level === profile.level) reasons.push('Mismo nivel');
+    return reasons.slice(0, 2);
+  };
+
   const handleDragEnd = (_: any, info: any) => {
     const threshold = 110;
     const velocity = info.velocity.x;
@@ -193,6 +209,10 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
               <div className="text-right">
                 <div className="text-3xl font-bold text-[#FF671F] leading-none">{compat}</div>
                 <div className="text-[10px] -mt-1 opacity-75">compat</div>
+                {(() => {
+                  const rs = getCompatReasons(profile);
+                  return rs.length ? <div className="text-[8px] text-[#FF671F]/80 mt-0.5">{rs[0]}</div> : null;
+                })()}
               </div>
             )}
           </div>
@@ -421,6 +441,16 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                     )}
                     <div className="text-xs text-[#9CA3AF] truncate flex justify-between"><span>{profile.city}</span> {userLocation && <span className="text-[#9CA3AF]">{getDistance(profile)} km</span>}</div>
                     <div className="text-[#FF671F] text-sm font-bold mt-0.5">{score}%</div>
+                    {(() => {
+                      const reasons = getCompatReasons(profile);
+                      return reasons.length > 0 ? (
+                        <div className="flex flex-wrap gap-1 mt-0.5">
+                          {reasons.map((r, idx) => (
+                            <span key={idx} className="text-[8px] px-1.5 py-px rounded bg-[#FF671F]/10 text-[#FF671F]">{r}</span>
+                          ))}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
                 </div>
               ))}

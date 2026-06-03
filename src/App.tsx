@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useCallback, useRef, Component, type Reac
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, MessageCircle, User, MapPin, Dumbbell, 
-  Edit2, RefreshCw, ArrowLeft, Send, Star, Plus, Users, Bell 
+  Edit2, RefreshCw, ArrowLeft, Send, Star, Plus, Users, Bell, Download 
 } from 'lucide-react'
 import { 
   signUpWithEmail, 
@@ -254,6 +254,68 @@ function App() {
     localStorage.setItem('entrenamatch_session_unreads', JSON.stringify(sessionUnreads))
   }, [sessionUnreads])
 
+  // PWA install prompt wiring (beforeinstallprompt + nice banner after engagement)
+  useEffect(() => {
+    const handler = (e: any) => {
+      e.preventDefault()
+      setDeferredInstallPrompt(e)
+      // Show banner only if not previously dismissed and after some engagement
+      if (!localStorage.getItem('entrenamatch_pwa_dismissed')) {
+        // Delay a bit so it doesn't interrupt first onboarding/explore
+        setTimeout(() => {
+          if (!localStorage.getItem('entrenamatch_pwa_dismissed')) {
+            setShowPwaInstall(true)
+          }
+        }, 28000) // ~28s after load, or earlier on interaction
+      }
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+
+    // Also listen for successful install
+    const installedHandler = () => {
+      setShowPwaInstall(false)
+      setDeferredInstallPrompt(null)
+      localStorage.setItem('entrenamatch_pwa_dismissed', '1')
+      toast.success('¡App instalada!', { description: 'Ya puedes abrir EntrenaMatch desde tu pantalla de inicio como una app real.' })
+    }
+    window.addEventListener('appinstalled', installedHandler)
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler)
+      window.removeEventListener('appinstalled', installedHandler)
+    }
+  }, [])
+
+  // Boost visibility of install banner on meaningful interaction (swipe or tab change to social)
+  const bumpPwaEngagement = () => {
+    if (!pwaInstallDismissed && deferredInstallPrompt && !showPwaInstall) {
+      setShowPwaInstall(true)
+    }
+  }
+
+  const handleInstallPwa = async () => {
+    if (!deferredInstallPrompt) return
+    try {
+      deferredInstallPrompt.prompt()
+      const { outcome } = await deferredInstallPrompt.userChoice
+      if (outcome === 'accepted') {
+        localStorage.setItem('entrenamatch_pwa_dismissed', '1')
+        setShowPwaInstall(false)
+        toast.success('¡Gracias! La app se está instalando.')
+      } else {
+        setShowPwaInstall(false)
+      }
+      setDeferredInstallPrompt(null)
+    } catch (e) {
+      setShowPwaInstall(false)
+    }
+  }
+
+  const dismissPwaInstall = () => {
+    localStorage.setItem('entrenamatch_pwa_dismissed', '1')
+    setShowPwaInstall(false)
+  }
+
   const { 
     squads: _squadsFromHook, 
     createSquad: _createSquad, 
@@ -385,6 +447,11 @@ function App() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
 
+  // PWA install prompt (attractive banner for web testers on mobile - uses Dunkin palette)
+  const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<any>(null)
+  const [showPwaInstall, setShowPwaInstall] = useState(false)
+  const [pwaInstallDismissed] = useState(() => !!localStorage.getItem('entrenamatch_pwa_dismissed'))
+
   const unreadNotifications = notifications.filter(n => !n.read).length
   const totalChatUnreads = Object.values(chatUnreads).reduce((sum, n) => sum + (n || 0), 0)
   const totalSessionUnreads = Object.values(sessionUnreads).reduce((sum, n) => sum + (n || 0), 0)
@@ -488,6 +555,24 @@ function App() {
     } catch (err) {
       console.warn('Could not load real sessions yet:', err)
       setRealSessions([])
+    }
+  }
+
+  // Global "Actualizar todo" for testers - forces fresh real data + updates lastSync everywhere (makes "en vivo" feel stronger)
+  const refreshAllReal = async () => {
+    if (isDemoMode) { toast('Actualizando (demo)...'); return; }
+    setIsLoadingMatches(true)
+    try {
+      await Promise.all([
+        loadRealProfiles(),
+        loadRealMatches(),
+        loadRealSessions()
+      ])
+      const now = new Date()
+      setLastSync(now)
+      toast.success('Datos reales actualizados', { description: 'Perfiles, matches y sesiones en vivo refrescados.' })
+    } finally {
+      setIsLoadingMatches(false)
     }
   }
 
@@ -2509,6 +2594,8 @@ function App() {
           relatedId: profileId
         })
 
+        bumpPwaEngagement() // PWA hint after positive engagement (match)
+
         // Show beautiful match modal
         setShowMatchModal(profile)
         triggerConfetti()
@@ -2727,6 +2814,14 @@ function App() {
       <div className="bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black z-50 flex items-center justify-between px-4 py-2 text-xs font-medium shadow-md">
         <div className="font-semibold tracking-[-0.3px] flex items-center gap-1.5">
           Real backend <span className="opacity-70 text-[#FF4F79]">• v0.1.0-prealpha</span>
+          <button 
+            onClick={refreshAllReal} 
+            disabled={isLoadingMatches}
+            className="ml-1 text-[9px] px-1.5 py-0.5 rounded-full border border-black/30 active:bg-black/20 disabled:opacity-60"
+            title="Refrescar perfiles, matches y sesiones reales ahora"
+          >
+            {isLoadingMatches ? '...' : 'Actualizar todo'}
+          </button>
         </div>
 
         {(currentUser || firebaseUser) ? (
@@ -2761,6 +2856,40 @@ function App() {
           <div className="text-[10px] opacity-90 font-medium">Inicia sesión para probar</div>
         )}
       </div>
+
+      {/* PWA INSTALL BANNER - attractive, non-nagging, Dunkin energy colors. Shows after engagement or ~28s on capable browsers */}
+      <AnimatePresence>
+        {showPwaInstall && deferredInstallPrompt && !pwaInstallDismissed && (
+          <motion.div 
+            initial={{ opacity: 0, y: -8 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -8 }}
+            className="bg-[#1C1C20] border-b border-[#FF671F]/40 px-3 py-2 text-xs flex items-center gap-2 z-40 flex-shrink-0"
+          >
+            <div className="flex items-center gap-1.5 text-[#FF671F]">
+              <Download size={15} />
+              <span className="font-medium hidden xs:inline">App lista</span>
+            </div>
+            <div className="flex-1 text-[#cbd5e1] leading-tight pr-1">
+              Instálala para abrir rápido desde tu pantalla de inicio + notificaciones nativas.
+            </div>
+            <button 
+              onClick={handleInstallPwa} 
+              className="px-3.5 py-1 bg-[#FF671F] text-black rounded-2xl font-semibold text-[11px] active:bg-[#E55A1A] active:scale-[0.985] transition whitespace-nowrap"
+            >
+              Instalar
+            </button>
+            <button 
+              onClick={dismissPwaInstall} 
+              className="text-[#9CA3AF] hover:text-white px-1.5 text-base leading-none"
+              aria-label="Cerrar"
+            >
+              ×
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
         {/* ===== EXPLORE / SWIPE (fully owned by ExploreTab) ===== */}
@@ -3863,6 +3992,19 @@ function App() {
               </div>
             )}
 
+            {/* Manual PWA install entry (web only, when prompt available) - attractive orange/pink */}
+            {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor === 'undefined' && deferredInstallPrompt && (
+              <div className="px-4 pb-3">
+                <button
+                  onClick={() => setShowPwaInstall(true)}
+                  className="w-full text-xs py-2 rounded-2xl border border-[#FF671F]/40 bg-[#FF671F]/5 text-[#FF671F] active:bg-[#FF671F] active:text-black flex items-center justify-center gap-1.5"
+                >
+                  <Download size={14} /> Instalar EntrenaMatch como app (acceso rápido + notifs)
+                </button>
+                <div className="text-[9px] text-center text-[#9CA3AF] mt-0.5">Funciona genial en Chrome/Android. Se siente como la APK.</div>
+              </div>
+            )}
+
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
               <div className="text-[10px] text-[#6B7280] mb-1">v0.1.0-prealpha • Phase 0 real</div>
@@ -3956,6 +4098,8 @@ function App() {
             // clear unreads when landing on the tab (user saw the list)
             if (id === 'messages') setChatUnreads({});
             if (id === 'sesiones') setSessionUnreads({});
+            // PWA hint on social tabs (messages/sesiones = high intent to use as app)
+            if (id === 'messages' || id === 'sesiones') bumpPwaEngagement();
           }}
             className={`nav-item ${activeTab === id ? 'active' : ''} relative`}>
             <Icon size={18} />
