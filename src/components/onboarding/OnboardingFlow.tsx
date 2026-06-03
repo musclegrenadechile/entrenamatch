@@ -210,15 +210,15 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   };
 
   return (
-    <div className="app-container flex flex-col bg-[#0a0b0f] text-white">
+    <div className="app-container flex flex-col bg-[#0D0D10] text-white">
       <div className="flex-1 flex flex-col p-6 pt-10">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-11 h-11 rounded-2xl bg-[#14b8a6] flex items-center justify-center">
+          <div className="w-11 h-11 rounded-2xl bg-[#FF671F] flex items-center justify-center">
             <Dumbbell className="w-6 h-6 text-black" />
           </div>
           <div>
             <div className="font-bold text-3xl tracking-tighter">EntrenaMatch</div>
-            <div className="text-[#14b8a6] text-xs -mt-1">ENTRENA EN TODO EL MUNDO</div>
+            <div className="text-[#FF671F] text-xs -mt-1">ENTRENA EN TODO EL MUNDO</div>
           </div>
         </div>
 
@@ -226,7 +226,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           <div className="text-3xl font-semibold tracking-tighter leading-none mb-2">
             {isEditingProfile ? 'Edita tu perfil' : 'Crea tu perfil'}
           </div>
-          <div className="text-[#94a3b8]">Conecta con personas que entrenan cerca de ti en todo el mundo</div>
+          <div className="text-[#9CA3AF]">Conecta con personas que entrenan cerca de ti en todo el mundo</div>
         </div>
 
         {/* Progress */}
@@ -243,13 +243,13 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         {onboardingStep === 0 && (
           <div className="space-y-6">
             <div>
-              <label className="text-sm text-[#94a3b8] mb-1.5 block font-medium">¿Cómo te llamas?</label>
+              <label className="text-sm text-[#9CA3AF] mb-1.5 block font-medium">¿Cómo te llamas?</label>
               <input value={onboardData.name} onChange={e => updateOnboard({ name: e.target.value })} 
-                className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-5 py-4 text-xl placeholder:text-[#475569] focus:border-[#14b8a6] focus:outline-none" placeholder="Tu nombre" />
+                className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-5 py-4 text-xl placeholder:text-[#475569] focus:border-[#FF671F] focus:outline-none" placeholder="Tu nombre" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-[#94a3b8] mb-1.5 block">Edad</label>
+                <label className="text-sm text-[#9CA3AF] mb-1.5 block">Edad</label>
                 <input 
                   type="number" 
                   value={onboardData.age || ''} 
@@ -259,18 +259,18 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     const num = val === '' ? '' : parseInt(val);
                     updateOnboard({ age: num });
                   }} 
-                  className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-5 py-4 text-xl" 
+                  className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-5 py-4 text-xl" 
                   min="18" 
                   max="80"
                   placeholder="Ej: 28"
                 />
               </div>
               <div>
-                <label className="text-sm text-[#94a3b8] mb-1.5 block">Género</label>
+                <label className="text-sm text-[#9CA3AF] mb-1.5 block">Género</label>
                 <div className="flex gap-2">
                   {(['mujer','hombre'] as const).map(g => (
                     <button key={g} onClick={() => updateOnboard({ gender: g })}
-                      className={`flex-1 py-4 rounded-2xl border text-sm font-medium ${onboardData.gender === g ? 'bg-[#14b8a6] text-black border-[#14b8a6]' : 'border-[#272b33] bg-[#121418]'}`}>
+                      className={`flex-1 py-4 rounded-2xl border text-sm font-medium ${onboardData.gender === g ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#2F2F35] bg-[#1C1C20]'}`}>
                       {g === 'mujer' ? 'Mujer' : 'Hombre'}
                     </button>
                   ))}
@@ -278,22 +278,22 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               </div>
             </div>
             <div>
-              <label className="text-sm text-[#94a3b8] mb-1.5 block font-medium">¿En qué sector de Viña vives / entrenas?</label>
+              <label className="text-sm text-[#9CA3AF] mb-1.5 block font-medium">¿En qué sector de Viña vives / entrenas?</label>
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs text-[#94a3b8] mb-1 block">Ciudad</label>
+                  <label className="text-xs text-[#9CA3AF] mb-1 block">Ciudad</label>
                   <input value={onboardData.city || ''} onChange={e => updateOnboard({ city: e.target.value })} 
-                    className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3 focus:border-[#14b8a6] focus:outline-none" placeholder="Ej: Viña del Mar" />
+                    className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3 focus:border-[#FF671F] focus:outline-none" placeholder="Ej: Viña del Mar" />
                 </div>
                 <div>
-                  <label className="text-xs text-[#94a3b8] mb-1 block">País</label>
+                  <label className="text-xs text-[#9CA3AF] mb-1 block">País</label>
                   <input value={onboardData.country || ''} onChange={e => updateOnboard({ country: e.target.value })} 
-                    className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3 focus:border-[#14b8a6] focus:outline-none" placeholder="Ej: Chile" />
+                    className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3 focus:border-[#FF671F] focus:outline-none" placeholder="Ej: Chile" />
                 </div>
               </div>
               <button 
                 onClick={requestUserLocation}
-                className="mt-3 w-full text-sm flex items-center justify-center gap-2 py-2.5 rounded-2xl border border-[#14b8a6] text-[#14b8a6] active:bg-[#14b8a6] active:text-black"
+                className="mt-3 w-full text-sm flex items-center justify-center gap-2 py-2.5 rounded-2xl border border-[#FF671F] text-[#FF671F] active:bg-[#FF671F] active:text-black"
               >
                 <MapPin size={16} /> Usar mi ubicación actual (GPS)
               </button>
@@ -301,11 +301,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
             {/* Bio - required field */}
             <div>
-              <label className="text-sm text-[#94a3b8] mb-1.5 block font-medium">Cuéntanos un poco sobre ti (bio)</label>
+              <label className="text-sm text-[#9CA3AF] mb-1.5 block font-medium">Cuéntanos un poco sobre ti (bio)</label>
               <textarea 
                 value={onboardData.bio || ''} 
                 onChange={e => updateOnboard({ bio: e.target.value })}
-                className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3 h-20 resize-y text-sm focus:border-[#14b8a6] focus:outline-none"
+                className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3 h-20 resize-y text-sm focus:border-[#FF671F] focus:outline-none"
                 placeholder="Me encanta entrenar pesas y salir a correr por la costanera los fines de semana..."
               />
             </div>
@@ -317,11 +317,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           <div>
             <div className="mb-4">
               <div className="text-xl font-semibold mb-1">Sube tus fotos</div>
-              <div className="text-[#94a3b8] text-sm">Máximo 6. La primera es la principal y más importante.</div>
+              <div className="text-[#9CA3AF] text-sm">Máximo 6. La primera es la principal y más importante.</div>
             </div>
             <div className="grid grid-cols-3 gap-3 mb-4">
               {(onboardData.photos || []).map((photo: string, idx: number) => (
-                <div key={idx} className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#121418] border border-[#272b33]">
+                <div key={idx} className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#1C1C20] border border-[#2F2F35]">
                   <img src={photo} className="w-full h-full object-cover" alt="" />
                   <button onClick={() => removeOnboardPhoto(idx)} className="absolute top-2 right-2 bg-black/70 p-1.5 rounded-full active:bg-black">
                     <Trash2 size={15} />
@@ -332,9 +332,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 </div>
               ))}
               {(onboardData.photos || []).length < 6 && (
-                <label className="aspect-[4/3] border-2 border-dashed border-[#272b33] rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-[#121418] active:bg-[#1a1d23]">
-                  <Camera className="mb-2 text-[#14b8a6]" />
-                  <span className="text-xs text-[#94a3b8]">Agregar foto</span>
+                <label className="aspect-[4/3] border-2 border-dashed border-[#2F2F35] rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-[#1C1C20] active:bg-[#25252A]">
+                  <Camera className="mb-2 text-[#FF671F]" />
+                  <span className="text-xs text-[#9CA3AF]">Agregar foto</span>
                   <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
                 </label>
               )}
@@ -343,14 +343,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <button
                   type="button"
                   onClick={takeNativePhoto}
-                  className="aspect-[4/3] border-2 border-[#14b8a6] text-[#14b8a6] rounded-2xl flex flex-col items-center justify-center text-xs active:bg-[#14b8a6]/10"
+                  className="aspect-[4/3] border-2 border-[#FF671F] text-[#FF671F] rounded-2xl flex flex-col items-center justify-center text-xs active:bg-[#FF671F]/10"
                 >
                   <Camera className="mb-1" />
                   Cámara del teléfono
                 </button>
               )}
             </div>
-            <p className="text-[10px] text-[#64748b]">Usa fotos recientes donde se te vea bien y con buena luz.</p>
+            <p className="text-[10px] text-[#9CA3AF]">Usa fotos recientes donde se te vea bien y con buena luz.</p>
           </div>
         )}
 
@@ -360,10 +360,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             <div>
               <div className="flex items-center justify-between mb-2">
                 <div className="text-xl font-semibold flex items-center gap-2">
-                  <Dumbbell size={20} className="text-[#14b8a6]" /> ¿Qué tipos de entrenamiento haces?
+                  <Dumbbell size={20} className="text-[#FF671F]" /> ¿Qué tipos de entrenamiento haces?
                 </div>
                 {(onboardData.trainingTypes || []).length > 0 && (
-                  <span className="text-xs text-[#14b8a6] font-medium">{(onboardData.trainingTypes || []).length} seleccionados</span>
+                  <span className="text-xs text-[#FF671F] font-medium">{(onboardData.trainingTypes || []).length} seleccionados</span>
                 )}
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -377,7 +377,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         const newTypes = selected ? current.filter((t: string) => t !== type) : [...current, type];
                         updateOnboard({ trainingTypes: newTypes });
                       }}
-                      className={`px-3 py-1.5 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
+                      className={`px-3 py-1.5 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3A3A3F] hover:bg-[#25252A]'}`}
                     >
                       {type}
                     </button>
@@ -385,8 +385,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 })}
               </div>
               <div className="flex gap-2 mt-1.5">
-                <button onClick={() => updateOnboard({ trainingTypes: TRAINING_OPTIONS })} className="text-[10px] text-[#14b8a6] underline">Seleccionar todos</button>
-                <button onClick={() => updateOnboard({ trainingTypes: [] })} className="text-[10px] text-[#64748b] underline">Limpiar</button>
+                <button onClick={() => updateOnboard({ trainingTypes: TRAINING_OPTIONS })} className="text-[10px] text-[#FF671F] underline">Seleccionar todos</button>
+                <button onClick={() => updateOnboard({ trainingTypes: [] })} className="text-[10px] text-[#9CA3AF] underline">Limpiar</button>
               </div>
               {(onboardData.trainingTypes || []).length === 0 && (
                 <p className="text-xs text-[#ef4444] mt-1.5">Selecciona al menos uno para continuar</p>
@@ -397,7 +397,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="flex items-center justify-between mb-2">
                 <div className="text-xl font-semibold">¿Cuáles son tus objetivos principales?</div>
                 {(onboardData.goals || []).length > 0 && (
-                  <span className="text-xs text-[#14b8a6] font-medium">{(onboardData.goals || []).length} seleccionados</span>
+                  <span className="text-xs text-[#FF671F] font-medium">{(onboardData.goals || []).length} seleccionados</span>
                 )}
               </div>
               <div className="flex flex-wrap gap-1.5">
@@ -411,7 +411,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         const newGoals = selected ? current.filter((g: string) => g !== goal) : [...current, goal];
                         updateOnboard({ goals: newGoals });
                       }}
-                      className={`px-3 py-1.5 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
+                      className={`px-3 py-1.5 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3A3A3F] hover:bg-[#25252A]'}`}
                     >
                       {goal}
                     </button>
@@ -419,8 +419,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 })}
               </div>
               <div className="flex gap-2 mt-1.5">
-                <button onClick={() => updateOnboard({ goals: TRAINING_GOALS })} className="text-[10px] text-[#14b8a6] underline">Seleccionar todos</button>
-                <button onClick={() => updateOnboard({ goals: [] })} className="text-[10px] text-[#64748b] underline">Limpiar</button>
+                <button onClick={() => updateOnboard({ goals: TRAINING_GOALS })} className="text-[10px] text-[#FF671F] underline">Seleccionar todos</button>
+                <button onClick={() => updateOnboard({ goals: [] })} className="text-[10px] text-[#9CA3AF] underline">Limpiar</button>
               </div>
               {(onboardData.goals || []).length === 0 && (
                 <p className="text-xs text-[#ef4444] mt-1.5">Selecciona al menos uno para continuar</p>
@@ -434,14 +434,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           <div className="space-y-8">
             <div>
               <div className="text-xl font-semibold mb-3 flex items-center gap-2">
-                <Star size={20} className="text-[#14b8a6]" /> Nivel actual
+                <Star size={20} className="text-[#FF671F]" /> Nivel actual
               </div>
               <div className="grid grid-cols-3 gap-3">
                 {['Principiante', 'Intermedio', 'Avanzado'].map(lvl => (
                   <button
                     key={lvl}
                     onClick={() => updateOnboard({ level: lvl })}
-                    className={`py-4 rounded-3xl border text-sm font-semibold transition-all active:scale-[0.985] ${onboardData.level === lvl ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
+                    className={`py-4 rounded-3xl border text-sm font-semibold transition-all active:scale-[0.985] ${onboardData.level === lvl ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3A3A3F] hover:bg-[#25252A]'}`}
                   >
                     {lvl}
                   </button>
@@ -456,7 +456,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                   <button
                     key={int}
                     onClick={() => updateOnboard({ intensity: int })}
-                    className={`py-4 rounded-3xl border text-sm font-semibold transition-all active:scale-[0.985] ${onboardData.intensity === int ? 'bg-[#14b8a6] text-black border-[#14b8a6] shadow-sm' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] hover:bg-[#1a1d23]'}`}
+                    className={`py-4 rounded-3xl border text-sm font-semibold transition-all active:scale-[0.985] ${onboardData.intensity === int ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3A3A3F] hover:bg-[#25252A]'}`}
                   >
                     {int}
                   </button>
@@ -471,7 +471,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           <div className="space-y-4">
             <div>
               <div className="text-xl font-semibold mb-1">Consentimientos obligatorios</div>
-              <p className="text-sm text-[#94a3b8]">{isEditingProfile ? 'Confirma que sigues de acuerdo para guardar los cambios.' : 'Debes aceptar todos para crear tu perfil y usar la plataforma.'}</p>
+              <p className="text-sm text-[#9CA3AF]">{isEditingProfile ? 'Confirma que sigues de acuerdo para guardar los cambios.' : 'Debes aceptar todos para crear tu perfil y usar la plataforma.'}</p>
             </div>
 
             {[
@@ -479,17 +479,17 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               { key: 'isForTraining', label: 'Estoy buscando entrenar de forma seria y respetuosa' },
               { key: 'sharesLocation', label: 'Acepto compartir mi ubicación aproximada para encontrar gente cerca' }
             ].map(item => (
-              <label key={item.key} className="flex items-start gap-3 p-4 bg-[#121418] rounded-2xl border border-[#272b33] cursor-pointer active:bg-[#1a1d23] transition-colors">
+              <label key={item.key} className="flex items-start gap-3 p-4 bg-[#1C1C20] rounded-2xl border border-[#2F2F35] cursor-pointer active:bg-[#25252A] transition-colors">
                 <input
                   type="checkbox"
                   checked={(localConsents as any)[item.key]}
                   onChange={(e) => setLocalConsents(prev => ({ ...prev, [item.key]: e.target.checked }))}
-                  className="mt-1 w-4 h-4 accent-[#14b8a6]"
+                  className="mt-1 w-4 h-4 accent-[#FF671F]"
                 />
                 <span className="text-sm leading-snug">{item.label}</span>
               </label>
             ))}
-            <p className="text-[10px] text-[#64748b] mt-2">
+            <p className="text-[10px] text-[#9CA3AF] mt-2">
               Al continuar aceptas nuestra <a href="/entrenamatch/privacy.html" target="_blank" className="underline">Política de Privacidad</a> y <a href="/entrenamatch/terms.html" target="_blank" className="underline">Términos de Servicio</a>.
             </p>
           </div>
@@ -498,9 +498,9 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         </div> {/* end scrollable step content */}
 
         {/* Fixed bottom navigation - always visible */}
-        <div className="pt-3 pb-2 flex flex-col gap-2 bg-[#0a0b0f] border-t border-[#272b33]">
+        <div className="pt-3 pb-2 flex flex-col gap-2 bg-[#0D0D10] border-t border-[#2F2F35]">
           {onboardingStep > 0 && (
-            <button onClick={() => setOnboardingStep(onboardingStep - 1)} className="w-full py-3 text-sm rounded-2xl border border-[#272b33] active:bg-[#1f242b]">
+            <button onClick={() => setOnboardingStep(onboardingStep - 1)} className="w-full py-3 text-sm rounded-2xl border border-[#2F2F35] active:bg-[#1f242b]">
               Atrás
             </button>
           )}

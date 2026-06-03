@@ -28,23 +28,23 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   isDemoMode,
 }) => {
   return (
-    <div className="app-container flex items-center justify-center bg-[#0a0b0f] p-4">
+    <div className="app-container flex items-center justify-center bg-[#0D0D10] p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-4">
-          <div className="inline-block text-[10px] bg-[#14b8a6] text-black px-3 py-0.5 rounded-full font-bold mb-2">PRE-ALPHA • Backend real activo</div>
+          <div className="inline-block text-[10px] bg-[#FF671F] text-black px-3 py-0.5 rounded-full font-bold mb-2">PRE-ALPHA • Backend real activo</div>
         </div>
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 rounded-2xl bg-[#14b8a6] flex items-center justify-center">
+            <div className="w-16 h-16 rounded-2xl bg-[#FF671F] flex items-center justify-center">
               <Dumbbell className="w-9 h-9 text-black" />
             </div>
           </div>
           <h1 className="text-4xl font-bold tracking-tighter">EntrenaMatch</h1>
-          <p className="text-[#94a3b8] mt-2">El match del movimiento</p>
+          <p className="text-[#9CA3AF] mt-2">El match del movimiento</p>
         </div>
 
         <div className="card rounded-3xl p-6">
-          <div className="flex mb-6 bg-[#121418] rounded-2xl p-1">
+          <div className="flex mb-6 bg-[#1C1C20] rounded-2xl p-1">
             <button 
               onClick={() => { setAuthMode('login'); /* clear error if needed */ }}
               className={`flex-1 py-2 rounded-xl text-sm font-medium transition ${authMode === 'login' ? 'bg-[#1f242b]' : ''}`}
@@ -71,14 +71,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
               placeholder="Correo electrónico" 
               value={authEmail}
               onChange={(e) => setAuthEmail(e.target.value)}
-              className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-5 py-3.5 text-sm"
+              className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-5 py-3.5 text-sm"
             />
             <input 
               type="password" 
               placeholder="Contraseña" 
               value={authPassword}
               onChange={(e) => setAuthPassword(e.target.value)}
-              className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-5 py-3.5 text-sm"
+              className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-5 py-3.5 text-sm"
             />
 
             <button 
@@ -108,7 +108,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
                     toast('La recuperación de contraseña estará disponible cuando conectemos Firebase real (Fase 1).');
                   }
                 }}
-                className="text-xs text-[#64748b] hover:text-[#14b8a6] underline transition"
+                className="text-xs text-[#9CA3AF] hover:text-[#FF671F] underline transition"
               >
                 ¿Olvidaste tu contraseña?
               </button>
@@ -116,16 +116,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
 
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-[#272b33]"></div>
+                <div className="w-full border-t border-[#2F2F35]"></div>
               </div>
               <div className="relative flex justify-center text-xs">
-                <span className="bg-[#0a0b0f] px-3 text-[#64748b]">o</span>
+                <span className="bg-[#0D0D10] px-3 text-[#9CA3AF]">o</span>
               </div>
             </div>
 
             <button 
               disabled
-              className="w-full flex items-center justify-center gap-3 py-3.5 border border-[#272b33] rounded-2xl text-sm font-medium bg-[#121418] opacity-50 cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-3 py-3.5 border border-[#2F2F35] rounded-2xl text-sm font-medium bg-[#1C1C20] opacity-50 cursor-not-allowed"
               title="Google Sign-In temporalmente deshabilitado para pruebas públicas"
             >
               <span>Continuar con Google (deshabilitado en demo público)</span>
@@ -133,13 +133,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           </div>
         </div>
 
-        <p className="text-center text-xs text-[#64748b] mt-6">
+        <p className="text-center text-xs text-[#9CA3AF] mt-6">
           Al continuar aceptas nuestros{' '}
-          <a href="/entrenamatch/terms.html" target="_blank" className="underline hover:text-[#14b8a6]">Términos</a>{' '}
+          <a href="/entrenamatch/terms.html" target="_blank" className="underline hover:text-[#FF671F]">Términos</a>{' '}
           y{' '}
-          <a href="/entrenamatch/privacy.html" target="_blank" className="underline hover:text-[#14b8a6]">Política de Privacidad</a>
+          <a href="/entrenamatch/privacy.html" target="_blank" className="underline hover:text-[#FF671F]">Política de Privacidad</a>
         </p>
-        <p className="text-center text-[10px] text-[#475569] mt-1">v0.1.0-prealpha</p>
+        <p className="text-center text-[10px] text-[#6B7280] mt-1">v0.1.0-prealpha</p>
       </div>
     </div>
   );

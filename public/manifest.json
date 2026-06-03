@@ -4,8 +4,8 @@
   "description": "Conecta con personas que entrenan cerca de ti en todo el mundo. Solo para mayores de 18 años. Lanzamiento inicial en Chile.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0a0b0f",
-  "theme_color": "#0a0b0f",
+  "background_color": "#0D0D10",
+  "theme_color": "#FF671F",
   "orientation": "portrait",
   "icons": [
     {

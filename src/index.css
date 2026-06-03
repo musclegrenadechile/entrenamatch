@@ -4,16 +4,18 @@
 
 /* FitViña - Tinder de Entrenamiento para Viña del Mar */
 :root {
-  --fit-dark: #0a0b0f;
-  --fit-card: #121418;
-  --fit-card2: #1a1d23;
-  --fit-accent: #14b8a6;
-  --fit-accent2: #f97316;
-  --fit-text: #f1f5f9;
-  --fit-muted: #94a3b8;
-  --fit-border: #272b33;
-  --fit-success: #22c55e;
-  --fit-danger: #ef4444;
+  --fit-dark: #0D0D10;
+  --fit-card: #1C1C20;
+  --fit-card2: #25252A;
+  --fit-accent: #FF671F; /* Dunkin' orange - energetic, calls to action */
+  --fit-accent2: #FF4F79; /* vibrant pink - fun & social */
+  --fit-health: #00C4B4; /* healthy contrast */
+  --fit-text: #F8F8F8;
+  --fit-muted: #9CA3AF;
+  --fit-border: #2F2F35;
+  --fit-success: #10B981;
+  --fit-danger: #EF4444;
+  --fit-highlight: #FBBF24;
 }
 
 body {
@@ -92,7 +94,7 @@ body {
 }
 
 .chip-active {
-  background: rgba(20, 184, 166, 0.15);
+  background: rgba(255, 103, 31, 0.15);
   border-color: var(--fit-accent);
   color: var(--fit-accent);
   font-weight: 600;
@@ -158,18 +160,18 @@ body {
   padding: 14px 28px;
   border-radius: 999px;
   transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 6px -1px rgb(20 184 166 / 0.2);
+  box-shadow: 0 4px 6px -1px rgb(255 103 31 / 0.2);
 }
 
 .btn-primary:hover {
-  background: #0f9d8c;
-  box-shadow: 0 10px 15px -3px rgb(20 184 166 / 0.3);
+  background: #E55A1A;
+  box-shadow: 0 10px 15px -3px rgb(255 103 31 / 0.3);
 }
 
 .btn-primary:active {
   transform: scale(0.985);
-  background: #0c7a6b;
-  box-shadow: 0 4px 6px -1px rgb(20 184 166 / 0.2);
+  background: #CC4F17;
+  box-shadow: 0 4px 6px -1px rgb(255 103 31 / 0.2);
 }
 
 .btn-primary:disabled {
@@ -195,7 +197,7 @@ body {
 }
 
 .match-modal {
-  background: linear-gradient(145deg, #121418 0%, #0a0b0f 100%);
+  background: linear-gradient(145deg, #1C1C20 0%, #0D0D10 100%);
 }
 
 /* Scrollbars subtle */
@@ -212,7 +214,7 @@ body {
 input[type="range"] {
   -webkit-appearance: none;
   height: 6px;
-  background: #272b33;
+  background: var(--fit-border);
   border-radius: 999px;
   outline: none;
 }
@@ -221,8 +223,8 @@ input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   height: 18px;
   width: 18px;
-  background: #14b8a6;
-  border: 3px solid #0a0b0f;
+  background: var(--fit-accent);
+  border: 3px solid #0D0D10;
   border-radius: 50%;
   cursor: pointer;
   box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
@@ -236,8 +238,8 @@ input[type="range"]::-webkit-slider-thumb:active {
 input[type="range"]::-moz-range-thumb {
   height: 18px;
   width: 18px;
-  background: #14b8a6;
-  border: 3px solid #0a0b0f;
+  background: var(--fit-accent);
+  border: 3px solid #0D0D10;
   border-radius: 50%;
   cursor: pointer;
   box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
@@ -256,5 +258,5 @@ input[type="range"]::-moz-range-thumb {
   background: var(--fit-accent);
   width: 28px;
   border-radius: 999px;
-  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.2);
+  box-shadow: 0 0 0 3px rgba(255, 103, 31, 0.2);
 }

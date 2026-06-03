@@ -1702,10 +1702,10 @@ function App() {
       <img 
         src={photoUrl} 
         alt={name} 
-        className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-[#272b33]" 
+        className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-[#2F2F35]" 
       />
     ) : (
-      <div className="w-8 h-8 rounded-full bg-[#14b8a6] text-black flex items-center justify-center text-xs font-bold flex-shrink-0">
+      <div className="w-8 h-8 rounded-full bg-[#FF671F] text-black flex items-center justify-center text-xs font-bold flex-shrink-0">
         {name.charAt(0).toUpperCase()}
       </div>
     )
@@ -1717,7 +1717,7 @@ function App() {
           {avatarEl}
           <div className="flex-1 min-w-0">
             <div className="text-sm text-[#cbd5e1] truncate leading-tight">{short}</div>
-            <div className="text-[10px] text-[#64748b] mt-0.5">
+            <div className="text-[10px] text-[#9CA3AF] mt-0.5">
               {isGroup ? 'Chat grupal • En vivo' : 'Mensaje 1:1 • En vivo'}
             </div>
           </div>
@@ -2328,7 +2328,7 @@ function App() {
             href={part} 
             target="_blank" 
             rel="noopener noreferrer" 
-            className="underline text-[#14b8a6] break-all hover:text-[#0f9d8c]"
+            className="underline text-[#FF671F] break-all hover:text-[#E55A1A]"
           >
             {part}
           </a>
@@ -2717,9 +2717,9 @@ function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-[#0a0b0f] text-white flex flex-col overflow-hidden relative">
+      <div className="min-h-screen bg-[#0D0D10] text-white flex flex-col overflow-hidden relative">
       {/* MINIMAL TOP BAR - Clean, premium, high-visibility auth controls */}
-      <div className="bg-gradient-to-r from-[#14b8a6] to-[#0f9d8c] text-black z-50 flex items-center justify-between px-4 py-2 text-xs font-medium shadow-md">
+      <div className="bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black z-50 flex items-center justify-between px-4 py-2 text-xs font-medium shadow-md">
         <div className="font-semibold tracking-[-0.3px] flex items-center gap-1.5">
           Real backend <span className="opacity-70">• v0.1.0-prealpha</span>
         </div>
@@ -2793,11 +2793,11 @@ function App() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="text-2xl font-semibold tracking-[-1.2px]">Tus Squads</div>
-                <div className="text-[#94a3b8] text-sm">Grupos fijos (próximamente real)</div>
+                <div className="text-[#9CA3AF] text-sm">Grupos fijos (próximamente real)</div>
               </div>
               <button 
                 onClick={() => setShowCreateSquad(true)}
-                className="flex items-center gap-2 bg-[#14b8a6] text-black px-4 py-2 rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
+                className="flex items-center gap-2 bg-[#FF671F] text-black px-4 py-2 rounded-2xl text-sm font-semibold active:bg-[#E55A1A]"
               >
                 <Plus size={16} /> Crear Squad
               </button>
@@ -2805,16 +2805,16 @@ function App() {
 
             {squads.length === 0 ? (
               <div className="card p-8 rounded-3xl text-center mt-8">
-                <Users className="mx-auto text-[#14b8a6] mb-3" size={42} />
+                <Users className="mx-auto text-[#FF671F] mb-3" size={42} />
                 <div className="font-semibold mb-2">Sé el primero en crear un Squad</div>
-                <p className="text-sm text-[#94a3b8] mb-4 max-w-[280px] mx-auto">
+                <p className="text-sm text-[#9CA3AF] mb-4 max-w-[280px] mx-auto">
                   Los squads son grupos fijos de 3-4 personas para entrenar consistentemente. 
                   Esta es una de las features que más queremos probar.
                 </p>
-                <p className="text-xs text-[#64748b] mb-4">Crea uno con foco (gym, running, calistenia...) e invita a otros testers. Cuéntanos cómo se siente el chat grupal.</p>
+                <p className="text-xs text-[#9CA3AF] mb-4">Crea uno con foco (gym, running, calistenia...) e invita a otros testers. Cuéntanos cómo se siente el chat grupal.</p>
                 <button 
                   onClick={() => setShowCreateSquad(true)}
-                  className="px-6 py-2.5 bg-[#14b8a6] text-black rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
+                  className="px-6 py-2.5 bg-[#FF671F] text-black rounded-2xl text-sm font-semibold active:bg-[#E55A1A]"
                 >
                   Crear mi primer Squad
                 </button>
@@ -2826,11 +2826,11 @@ function App() {
                   const spots = 4 - squad.members.length
 
                   return (
-                    <div key={squad.id} className="card rounded-3xl p-4 active:bg-[#1a1d23]" onClick={() => setSelectedSquad(squad.id)}>
+                    <div key={squad.id} className="card rounded-3xl p-4 active:bg-[#25252A]" onClick={() => setSelectedSquad(squad.id)}>
                       <div className="flex justify-between">
                         <div>
-                          <div className="font-semibold text-lg flex items-center gap-2">{squad.name} <span className="text-[10px] bg-[#14b8a6]/10 text-[#14b8a6] px-1.5 py-0.5 rounded-full">Squad</span></div>
-                          <div className="text-sm text-[#14b8a6]">{squad.focus}</div>
+                          <div className="font-semibold text-lg flex items-center gap-2">{squad.name} <span className="text-[10px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded-full">Squad</span></div>
+                          <div className="text-sm text-[#FF671F]">{squad.focus}</div>
                         </div>
                         <div className="text-right text-xs">
                           <div>{squad.members.length}/4 miembros</div>
@@ -2839,7 +2839,7 @@ function App() {
                       </div>
 
                       <div className="mt-3 flex justify-between items-center text-sm">
-                        <div className="text-[#94a3b8] text-xs">
+                        <div className="text-[#9CA3AF] text-xs">
                           Creado por {SEED_PROFILES.find(p => p.id === squad.createdBy)?.name || 'alguien'}
                         </div>
                         {!isMember && spots > 0 && (
@@ -2852,7 +2852,7 @@ function App() {
                               saveSquads(updated)
                               toast.success('¡Te uniste al Squad!')
                             }}
-                            className="bg-[#14b8a6] text-black text-xs px-4 py-1.5 rounded-2xl font-medium"
+                            className="bg-[#FF671F] text-black text-xs px-4 py-1.5 rounded-2xl font-medium"
                           >
                             Unirme
                           </button>
@@ -2863,7 +2863,7 @@ function App() {
                               e.stopPropagation()
                               setSelectedSquad(squad.id)
                             }}
-                            className="text-xs border border-[#14b8a6] text-[#14b8a6] px-3 py-1.5 rounded-2xl font-medium"
+                            className="text-xs border border-[#FF671F] text-[#FF671F] px-3 py-1.5 rounded-2xl font-medium"
                           >
                             Abrir chat del squad
                           </button>
@@ -2884,7 +2884,7 @@ function App() {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-2xl font-semibold tracking-[-1.2px]">Sesiones</div>
-                <div className="text-[#94a3b8] text-sm">Entrenamientos grupales cerca de ti</div>
+                <div className="text-[#9CA3AF] text-sm">Entrenamientos grupales cerca de ti</div>
                 {!isDemoMode && (
                   <div className="flex items-center gap-2 mt-1">
                     <button 
@@ -2893,18 +2893,18 @@ function App() {
                         try { await loadRealSessions() } finally { setIsLoadingSessions(false) }
                       }}
                       disabled={isLoadingSessions}
-                      className="text-xs px-3 py-1 rounded-2xl bg-[#14b8a6] text-black font-semibold active:bg-[#0f9d8c] disabled:opacity-60"
+                      className="text-xs px-3 py-1 rounded-2xl bg-[#FF671F] text-black font-semibold active:bg-[#E55A1A] disabled:opacity-60"
                     >
                       {isLoadingSessions ? 'Actualizando...' : 'Actualizar sesiones reales'}
                     </button>
-                    {lastSync && <span className="text-[10px] text-[#64748b]">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
-                    <span className="text-[9px] px-1.5 py-px bg-[#14b8a6]/10 text-[#14b8a6] rounded-full">en vivo</span>
+                    {lastSync && <span className="text-[10px] text-[#9CA3AF]">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
+                    <span className="text-[9px] px-1.5 py-px bg-[#FF671F]/10 text-[#FF671F] rounded-full">en vivo</span>
                   </div>
                 )}
               </div>
               <button 
                 onClick={() => setShowCreateSession(true)}
-                className="flex items-center gap-2 bg-[#14b8a6] text-black px-4 py-2 rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
+                className="flex items-center gap-2 bg-[#FF671F] text-black px-4 py-2 rounded-2xl text-sm font-semibold active:bg-[#E55A1A]"
               >
                 <Plus size={16} /> Crear
               </button>
@@ -2914,24 +2914,24 @@ function App() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <div className="text-lg font-semibold">Sesiones abiertas</div>
-                <div className="text-xs px-2 py-0.5 bg-[#272b33] rounded-full text-[#94a3b8]">
+                <div className="text-xs px-2 py-0.5 bg-[#2F2F35] rounded-full text-[#9CA3AF]">
                   {displaySessions.filter(s => !s.participants.includes(effectiveUserId)).length}
                 </div>
               </div>
-              <div className="text-[10px] text-[#64748b] -mt-2 mb-3">Sesiones visibles para testers reales • chat grupal en vivo</div>
+              <div className="text-[10px] text-[#9CA3AF] -mt-2 mb-3">Sesiones visibles para testers reales • chat grupal en vivo</div>
 
               {displaySessions.filter(s => !s.participants.includes(effectiveUserId)).length === 0 ? (
                 <div className="mt-4 card p-7 rounded-3xl text-center">
-                  <div className="mx-auto w-14 h-14 rounded-2xl bg-[#121418] flex items-center justify-center mb-4">
-                    <Users className="text-[#14b8a6]" size={28} />
+                  <div className="mx-auto w-14 h-14 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-4">
+                    <Users className="text-[#FF671F]" size={28} />
                   </div>
                   <div className="font-semibold text-lg mb-2">No hay sesiones abiertas todavía</div>
-                  <p className="text-sm text-[#94a3b8] leading-snug mb-4 max-w-[280px] mx-auto">
+                  <p className="text-sm text-[#9CA3AF] leading-snug mb-4 max-w-[280px] mx-auto">
                     { !isDemoMode ? 'Aún no hay sesiones activas de otros testers. ¡Sé el primero!' : 'Sé el primero en crear una.' } Se ven en vivo para todos y el chat grupal funciona cross-device.
                   </p>
                   <button onClick={() => setShowCreateSession(true)} className="btn-primary px-8">Crear la primera sesión</button>
                   {lastSync && (
-                    <div className="text-[10px] text-[#64748b] mt-2">Última sync real: hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</div>
+                    <div className="text-[10px] text-[#9CA3AF] mt-2">Última sync real: hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</div>
                   )}
                 </div>
               ) : (
@@ -2950,24 +2950,24 @@ function App() {
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="font-semibold text-lg">{session.title}</div>
-                              <div className="text-sm text-[#14b8a6]">{session.trainingType} • {session.time}</div>
-                              <div className="text-sm text-[#94a3b8] mt-0.5">{session.location}</div>
+                              <div className="text-sm text-[#FF671F]">{session.trainingType} • {session.time}</div>
+                              <div className="text-sm text-[#9CA3AF] mt-0.5">{session.location}</div>
                             </div>
                             <div className="text-right text-xs">
                               <div className="text-[#22c55e] font-medium">{spotsLeft} cupos</div>
-                              {dist && <div className="text-[#64748b]">{dist} km</div>}
+                              {dist && <div className="text-[#9CA3AF]">{dist} km</div>}
                             </div>
                           </div>
 
                           <div className="mt-3 flex items-center justify-between text-sm">
-                            <div className="text-[#94a3b8]">
+                            <div className="text-[#9CA3AF]">
                               Creado por <span className="text-white">{session.creatorName}</span>
                               {!isDemoMode && session.creatorId && session.creatorId !== 'me' && (
-                                <span className="ml-1.5 text-[9px] px-1.5 py-px bg-[#14b8a6] text-black rounded-full align-middle">REAL</span>
+                                <span className="ml-1.5 text-[9px] px-1.5 py-px bg-[#FF671F] text-black rounded-full align-middle">REAL</span>
                               )}
                               <div className="text-[10px] mt-0.5">{session.participants.length} / {session.maxParticipants} personas</div>
                               {session.lastMessagePreview && (
-                                <div className="text-[10px] text-[#64748b] mt-0.5 truncate max-w-[160px]">💬 {session.lastMessagePreview}</div>
+                                <div className="text-[10px] text-[#9CA3AF] mt-0.5 truncate max-w-[160px]">💬 {session.lastMessagePreview}</div>
                               )}
                             </div>
                             <button 
@@ -3019,7 +3019,7 @@ function App() {
                                 setShowGroupChatModalFor(session.id)
                               }}
                               disabled={spotsLeft <= 0}
-                              className="bg-[#14b8a6] text-black px-5 py-1.5 rounded-2xl text-sm font-medium disabled:opacity-50"
+                              className="bg-[#FF671F] text-black px-5 py-1.5 rounded-2xl text-sm font-medium disabled:opacity-50"
                             >
                               Unirme
                             </button>
@@ -3035,7 +3035,7 @@ function App() {
             <div>
               <div className="flex items-center gap-2 mb-3">
                 <div className="text-lg font-semibold">Mis sesiones</div>
-                <div className="text-xs px-2 py-0.5 bg-[#14b8a6]/20 text-[#14b8a6] rounded-full">
+                <div className="text-xs px-2 py-0.5 bg-[#FF671F]/20 text-[#FF671F] rounded-full">
                   {displaySessions.filter(s => s.participants.includes(effectiveUserId) || s.creatorId === effectiveUserId).length}
                 </div>
               </div>
@@ -3043,13 +3043,13 @@ function App() {
               {displaySessions.filter(s => s.participants.includes(effectiveUserId) || s.creatorId === effectiveUserId).length === 0 ? (
                 <div className="card p-7 rounded-3xl text-center">
                   <div className="font-semibold mb-2">Aún no tienes sesiones</div>
-                  <p className="text-sm text-[#94a3b8] mb-3 max-w-[260px] mx-auto">
+                  <p className="text-sm text-[#9CA3AF] mb-3 max-w-[260px] mx-auto">
                     { !isDemoMode ? 'Crea tu primera sesión real o únete a una abierta arriba. ¡Otros testers la verán en sus dispositivos!' : 'Crea tu primera sesión o únete a una abierta arriba.' }
                   </p>
-                  <p className="text-xs text-[#64748b] mb-4">Únete o crea para probar el chat grupal real-time.</p>
+                  <p className="text-xs text-[#9CA3AF] mb-4">Únete o crea para probar el chat grupal real-time.</p>
                   <button 
                     onClick={() => setShowCreateSession(true)}
-                    className="px-5 py-2 bg-[#14b8a6] text-black rounded-2xl text-sm font-semibold active:bg-[#0f9d8c]"
+                    className="px-5 py-2 bg-[#FF671F] text-black rounded-2xl text-sm font-semibold active:bg-[#E55A1A]"
                   >
                     Crear sesión
                   </button>
@@ -3066,27 +3066,27 @@ function App() {
                         creatorProfileForDist.lat || 0, creatorProfileForDist.lng || 0) : null
 
                       return (
-                        <div key={session.id} className="card rounded-3xl p-4 border border-[#14b8a6]/30">
+                        <div key={session.id} className="card rounded-3xl p-4 border border-[#FF671F]/30">
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="font-semibold text-lg flex items-center gap-2">
                                 {session.title}
-                                {isCreator && <span className="text-[10px] bg-[#14b8a6] text-black px-2 py-0.5 rounded">Creada por ti</span>}
+                                {isCreator && <span className="text-[10px] bg-[#FF671F] text-black px-2 py-0.5 rounded">Creada por ti</span>}
                               </div>
-                              <div className="text-sm text-[#14b8a6]">{session.trainingType} • {session.time}</div>
-                              <div className="text-sm text-[#94a3b8]">{session.location}</div>
+                              <div className="text-sm text-[#FF671F]">{session.trainingType} • {session.time}</div>
+                              <div className="text-sm text-[#9CA3AF]">{session.location}</div>
                               {session.lastMessagePreview && (
-                                <div className="text-[10px] text-[#64748b] mt-0.5 truncate max-w-[180px]">💬 {session.lastMessagePreview}</div>
+                                <div className="text-[10px] text-[#9CA3AF] mt-0.5 truncate max-w-[180px]">💬 {session.lastMessagePreview}</div>
                               )}
                             </div>
                             <div className="text-right text-xs">
-                              {dist && <div className="text-[#64748b]">{dist} km</div>}
+                              {dist && <div className="text-[#9CA3AF]">{dist} km</div>}
                               <div className="text-[#22c55e] mt-0.5">{session.participants.length} / {session.maxParticipants}</div>
                             </div>
                           </div>
 
                           <div className="mt-3 flex items-center justify-between">
-                            <div className="text-xs text-[#94a3b8]">
+                            <div className="text-xs text-[#9CA3AF]">
                               Participantes: {session.participants.length}
                             </div>
                             
@@ -3096,7 +3096,7 @@ function App() {
                                   setShowGroupChatModalFor(session.id)
                                   setChatInputValue('')
                                 }}
-                                className="text-xs bg-[#14b8a6] text-black px-4 py-1.5 rounded-2xl font-medium"
+                                className="text-xs bg-[#FF671F] text-black px-4 py-1.5 rounded-2xl font-medium"
                               >
                                 Abrir chat grupal
                               </button>
@@ -3114,13 +3114,13 @@ function App() {
                                 <>
                                   <button 
                                     onClick={() => leaveSession(session.id)}
-                                    className="text-xs border border-[#272b33] px-2 py-1 rounded-xl active:bg-[#1f242b]"
+                                    className="text-xs border border-[#2F2F35] px-2 py-1 rounded-xl active:bg-[#25252A]"
                                   >
                                     Salir
                                   </button>
                                   <button 
                                     onClick={() => setShowReviewModalFor(session.creatorId)}
-                                    className="text-xs border border-[#14b8a6] text-[#14b8a6] px-3 py-1 rounded-xl"
+                                    className="text-xs border border-[#FF671F] text-[#FF671F] px-3 py-1 rounded-xl"
                                   >
                                     Marcar entrenado
                                   </button>
@@ -3145,7 +3145,7 @@ function App() {
             <div className="flex items-center justify-between mb-1 px-1">
               <div>
                 <div className="text-2xl font-semibold tracking-[-1.2px]">Tus matches</div>
-                <div className="text-[#94a3b8] text-sm">Conexiones reales <span className="text-[8px] px-1 py-px bg-[#14b8a6]/10 text-[#14b8a6] rounded">en vivo</span></div>
+                <div className="text-[#9CA3AF] text-sm">Conexiones reales <span className="text-[8px] px-1 py-px bg-[#FF671F]/10 text-[#FF671F] rounded">en vivo</span></div>
               </div>
               {!isDemoMode && (
                 <button 
@@ -3154,28 +3154,28 @@ function App() {
                     try { await loadRealProfiles() } finally { setIsLoadingMatches(false) }
                   }} 
                   disabled={isLoadingMatches}
-                  className="text-xs px-3 py-1 rounded-2xl bg-[#14b8a6] text-black font-semibold active:bg-[#0f9d8c] disabled:opacity-60"
+                  className="text-xs px-3 py-1 rounded-2xl bg-[#FF671F] text-black font-semibold active:bg-[#E55A1A] disabled:opacity-60"
                 >
                   {isLoadingMatches ? '...' : 'Actualizar reales'}
                 </button>
               )}
-              {lastSync && <span className="text-[10px] text-[#64748b] ml-2">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
+              {lastSync && <span className="text-[10px] text-[#9CA3AF] ml-2">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
             </div>
-            <div className="text-[#94a3b8] px-1 mb-4 text-xs">Matches reales • en vivo cross-device</div>
+            <div className="text-[#9CA3AF] px-1 mb-4 text-xs">Matches reales • en vivo cross-device</div>
 
             {matchProfiles.length === 0 ? (
               <div className="mt-10 px-4">
                 <div className="card p-8 rounded-3xl text-center">
-                  <div className="mx-auto w-16 h-16 rounded-2xl bg-[#121418] flex items-center justify-center mb-4">
-                    <Heart className="text-[#14b8a6]" size={36} />
+                  <div className="mx-auto w-16 h-16 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-4">
+                    <Heart className="text-[#FF671F]" size={36} />
                   </div>
                   <div className="font-semibold text-xl mb-2">Aún no tienes matches</div>
-                  <p className="text-sm text-[#94a3b8] leading-snug mb-4 max-w-[280px] mx-auto">
+                  <p className="text-sm text-[#9CA3AF] leading-snug mb-4 max-w-[280px] mx-auto">
                     Ve a Explorar para perfiles reales. Chats y sesiones en vivo cross-device.
                   </p>
                   <button onClick={() => setActiveTab('explore')} className="btn-primary px-8">Ir a Explorar</button>
                   {lastSync && (
-                    <div className="text-[10px] text-[#64748b] mt-2">Última sync real: hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</div>
+                    <div className="text-[10px] text-[#9CA3AF] mt-2">Última sync real: hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</div>
                   )}
                 </div>
               </div>
@@ -3189,7 +3189,7 @@ function App() {
                       <img src={profile.photos[0]} className="w-full aspect-square object-cover" />
                       <div className="absolute top-2 right-2 flex gap-1">
                         {realProfiles.some(rp => rp.id === profile.id) && (
-                          <div className="text-[9px] bg-[#14b8a6] text-black px-1.5 py-0.5 rounded-full font-bold">REAL</div>
+                          <div className="text-[9px] bg-[#FF671F] text-black px-1.5 py-0.5 rounded-full font-bold">REAL</div>
                         )}
                         {profile.verificationStatus === 'verified' && (
                           <div className="text-[9px] bg-[#22c55e] text-black px-1 py-0.5 rounded-full">✓</div>
@@ -3197,9 +3197,9 @@ function App() {
                       </div>
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 p-3">
                         <div className="font-semibold">{profile.name}, {profile.age}</div>
-                        <div className="text-xs text-[#14b8a6]">{profile.city}, {profile.country}</div>
+                        <div className="text-xs text-[#FF671F]">{profile.city}, {profile.country}</div>
                         {userLocation && (
-                          <div className="text-[10px] text-[#14b8a6]/80 mt-0.5">
+                          <div className="text-[10px] text-[#FF671F]/80 mt-0.5">
                             {getDistanceKm(userLocation.lat, userLocation.lng, profile.lat, profile.lng)} km
                           </div>
                         )}
@@ -3211,13 +3211,13 @@ function App() {
                             sq.members.includes(effectiveUserId) && sq.members.includes(profile.id)
                           )
                           if (sharedSquads.length > 0) {
-                            return <div className="text-[10px] text-[#14b8a6] mt-0.5">Squad: {sharedSquads[0].name}</div>
+                            return <div className="text-[10px] text-[#FF671F] mt-0.5">Squad: {sharedSquads[0].name}</div>
                           }
                           return null
                         })()}
                       </div>
                     </div>
-                    <div className="p-3 text-xs text-[#94a3b8] flex items-center gap-1">
+                    <div className="p-3 text-xs text-[#9CA3AF] flex items-center gap-1">
                       <MessageCircle size={14} /> Abrir chat
                     </div>
                   </div>
@@ -3236,7 +3236,7 @@ function App() {
                 <div className="flex items-center justify-between mb-1 px-1">
                   <div className="flex items-center gap-2">
                     <div className="text-2xl font-semibold tracking-[-1.2px]">Mensajes</div>
-                    <span className="text-[9px] px-1.5 py-px bg-[#14b8a6]/10 text-[#14b8a6] rounded-full">en vivo</span>
+                    <span className="text-[9px] px-1.5 py-px bg-[#FF671F]/10 text-[#FF671F] rounded-full">en vivo</span>
                   </div>
                   {!isDemoMode && (
                     <button onClick={async () => {
@@ -3252,16 +3252,16 @@ function App() {
                       } finally {
                         setIsLoadingChats(false);
                       }
-                    }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar chats reales'}</button>
+                    }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 rounded-xl border border-[#FF671F]/50 text-[#FF671F] active:bg-[#FF671F] active:text-black disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar chats reales'}</button>
                   )}
-                  {lastSync && <span className="text-[10px] text-[#64748b] ml-2">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
+                  {lastSync && <span className="text-[10px] text-[#9CA3AF] ml-2">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
                 </div>
-                <div className="text-[#94a3b8] text-xs px-1 mb-4">Mensajes 1:1 reales • en vivo cross-device • notificaciones toast + navegador cuando llega mensaje</div>
+                <div className="text-[#9CA3AF] text-xs px-1 mb-4">Mensajes 1:1 reales • en vivo cross-device • notificaciones toast + navegador cuando llega mensaje</div>
                 {matchProfiles.length === 0 && (
                   <div className="mt-8 card p-6 rounded-3xl text-center">
-                    <MessageCircle className="mx-auto text-[#14b8a6] mb-3" size={36} />
+                    <MessageCircle className="mx-auto text-[#FF671F] mb-3" size={36} />
                     <div className="font-semibold mb-1">Sin conversaciones aún</div>
-                    <p className="text-sm text-[#94a3b8]">Los matches reales aparecen aquí. Chats en vivo cross-device. Recibirás notificación (toast + campana) cuando llegue un mensaje.</p>
+                    <p className="text-sm text-[#9CA3AF]">Los matches reales aparecen aquí. Chats en vivo cross-device. Recibirás notificación (toast + campana) cuando llegue un mensaje.</p>
                   </div>
                 )}
                 {matchProfiles
@@ -3272,24 +3272,24 @@ function App() {
                   const unread = chatUnreads[profile.id] || 0
                   return (
                     <div key={profile.id} onClick={() => { setActiveChat(profile.id); setChatUnreads(prev => { const c = { ...prev }; c[profile.id] = 0; return c }) }} 
-                      className="flex items-center gap-4 card p-4 rounded-3xl mb-3 active:bg-[#1a1d23]">
+                      className="flex items-center gap-4 card p-4 rounded-3xl mb-3 active:bg-[#25252A]">
                       <img src={profile.photos[0]} className="w-14 h-14 rounded-2xl object-cover flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <div className="flex justify-between items-baseline">
                           <span className="font-semibold">{profile.name}</span>
-                          <span className="text-xs text-[#64748b]">{profile.city}</span>
+                          <span className="text-xs text-[#9CA3AF]">{profile.city}</span>
                         </div>
                         {userLocation && (
-                          <div className="text-[10px] text-[#14b8a6] mt-0.5">
+                          <div className="text-[10px] text-[#FF671F] mt-0.5">
                             {getDistanceKm(userLocation.lat, userLocation.lng, profile.lat, profile.lng)} km de ti
                           </div>
                         )}
                         <div className="flex items-center gap-2 mt-0.5">
-                          <div className="text-sm text-[#94a3b8] truncate flex-1">
+                          <div className="text-sm text-[#9CA3AF] truncate flex-1">
                             {last ? last.text : 'Match nuevo — di hola'}
                           </div>
                           {last && last.timestamp && (
-                            <span className="text-[10px] text-[#64748b] flex-shrink-0">{getRelativeTime(last.timestamp)}</span>
+                            <span className="text-[10px] text-[#9CA3AF] flex-shrink-0">{getRelativeTime(last.timestamp)}</span>
                           )}
                           {unread > 0 && (
                             <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 text-[10px] font-bold rounded-full bg-[#ef4444] text-white">
@@ -3306,22 +3306,22 @@ function App() {
               // Chat view
               <div className="flex-1 flex flex-col">
                 {/* Chat header */}
-                <div className="h-14 px-4 flex items-center gap-3 border-b border-[#272b33] bg-[#0a0b0f] z-10">
+                <div className="h-14 px-4 flex items-center gap-3 border-b border-[#2F2F35] bg-[#0D0D10] z-10">
                   <button onClick={() => setActiveChat(null)} className="p-2 -ml-2"><ArrowLeft /></button>
                   <img src={chatProfile?.photos[0]} className="w-9 h-9 rounded-xl object-cover" />
                   <div>
                     <div className="font-semibold flex items-center gap-2">
                       {chatProfile?.name}
                       {realMatches.includes(activeChat || '') && (
-                        <span className="text-[9px] bg-[#14b8a6] text-black px-1.5 py-0 rounded">REAL</span>
+                        <span className="text-[9px] bg-[#FF671F] text-black px-1.5 py-0 rounded">REAL</span>
                       )}
                     </div>
-                    <div className="text-[10px] text-[#14b8a6] -mt-0.5">{chatProfile?.city}, {chatProfile?.country} • En línea</div>
+                    <div className="text-[10px] text-[#FF671F] -mt-0.5">{chatProfile?.city}, {chatProfile?.country} • En línea</div>
                   </div>
-                  <button onClick={() => setShowFullProfile(chatProfile!)} className="ml-auto text-xs px-3 py-1 bg-[#121418] rounded-full">Ver perfil</button>
-                  <a href="/entrenamatch/privacy.html" target="_blank" className="text-[10px] text-[#64748b] underline ml-1">Privacidad</a>
+                  <button onClick={() => setShowFullProfile(chatProfile!)} className="ml-auto text-xs px-3 py-1 bg-[#1C1C20] rounded-full">Ver perfil</button>
+                  <a href="/entrenamatch/privacy.html" target="_blank" className="text-[10px] text-[#9CA3AF] underline ml-1">Privacidad</a>
                   {!isDemoMode && (
-                    <button onClick={async () => { if (activeChat) { setIsLoadingChats(true); try { await loadRealChatMessages(activeChat); setLastSync(new Date()); setChatUnreads(prev => { const c = { ...prev }; if (activeChat) c[activeChat] = 0; return c }); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } } }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23] disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar'}</button>
+                    <button onClick={async () => { if (activeChat) { setIsLoadingChats(true); try { await loadRealChatMessages(activeChat); setLastSync(new Date()); setChatUnreads(prev => { const c = { ...prev }; if (activeChat) c[activeChat] = 0; return c }); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } } }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 border border-[#2F2F35] rounded-xl text-[#FF671F] active:bg-[#25252A] disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar'}</button>
                   )}
                   <button onClick={async () => {
                     const issue = prompt('¿Qué problema o sugerencia en este chat?');
@@ -3371,7 +3371,7 @@ function App() {
                 </div>
 
                 {/* Entrenamos Juntos - Enhanced with reviews */}
-                <div className="px-4 py-2 bg-[#121418] border-b border-[#272b33] text-center">
+                <div className="px-4 py-2 bg-[#1C1C20] border-b border-[#2F2F35] text-center">
                   <button 
                     onClick={() => {
                       if (activeChat) {
@@ -3380,7 +3380,7 @@ function App() {
                         setReviewComment('')
                       }
                     }}
-                    className="text-xs bg-[#14b8a6]/10 text-[#14b8a6] px-3 py-1 rounded-full hover:bg-[#14b8a6] hover:text-black transition"
+                    className="text-xs bg-[#FF671F]/10 text-[#FF671F] px-3 py-1 rounded-full hover:bg-[#FF671F] hover:text-black transition"
                   >
                     ★ Marcamos que entrenamos juntos (dejar reseña)
                   </button>
@@ -3395,8 +3395,8 @@ function App() {
                     return (
                       <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
                         <div className={`max-w-[82%] ${isMe ? 'text-right' : ''}`}>
-                          {time && <div className="text-[9px] text-[#475569] mb-0.5 px-1">{time}</div>}
-                          <div className={`px-3.5 py-2 rounded-3xl text-[14px] leading-snug break-words overflow-hidden ${isMe ? 'bg-[#14b8a6] text-black rounded-br-md' : 'bg-[#1f242b] text-white rounded-bl-md'}`}>
+                          {time && <div className="text-[9px] text-[#6B7280] mb-0.5 px-1">{time}</div>}
+                          <div className={`px-3.5 py-2 rounded-3xl text-[14px] leading-snug break-words overflow-hidden ${isMe ? 'bg-[#FF671F] text-black rounded-br-md' : 'bg-[#25252A] text-white rounded-bl-md'}`}>
                             {renderMessageText(m.text)}
                           </div>
                         </div>
@@ -3404,13 +3404,13 @@ function App() {
                     )
                   })}
                   {((realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || []))).length === 0 && (
-                    <div className="text-center text-sm text-[#64748b] mt-8">
+                    <div className="text-center text-sm text-[#9CA3AF] mt-8">
                       <div className="font-medium text-white mb-1">
                         {realMatches.includes(activeChat || '') || (activeChat || '').startsWith('p') ? '¡Match real con otro tester!' : '¡Primer match!'}
                       </div>
                       <div>Escribe algo para romper el hielo.</div>
                       {realMatches.includes(activeChat || '') && (
-                        <div className="text-[10px] mt-1 text-[#14b8a6]">Los mensajes viajan en tiempo real a su celular</div>
+                        <div className="text-[10px] mt-1 text-[#FF671F]">Los mensajes viajan en tiempo real a su celular</div>
                       )}
                       {!realMatches.includes(activeChat || '') && (
                         <div className="text-[10px] mt-1">Ejemplo: “Hola! Vi que entrenas pesas, ¿en qué gym vas?”</div>
@@ -3420,8 +3420,8 @@ function App() {
                 </div>
 
                 {/* Quick Training Proposals - Unique feature */}
-                <div className="px-3 pt-2 border-t border-[#272b33] bg-[#0a0b0f]">
-                  <div className="text-[10px] text-[#64748b] mb-1.5 px-1">Propuestas rápidas:</div>
+                <div className="px-3 pt-2 border-t border-[#2F2F35] bg-[#0D0D10]">
+                  <div className="text-[10px] text-[#9CA3AF] mb-1.5 px-1">Propuestas rápidas:</div>
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {[
                       '¿Vamos a correr el sábado?',
@@ -3433,7 +3433,7 @@ function App() {
                       <button
                         key={i}
                         onClick={() => sendMessage(proposal)}
-                        className="text-xs bg-[#121418] hover:bg-[#1f242b] border border-[#272b33] px-3 py-1 rounded-full text-[#cbd5e1] active:bg-[#14b8a6] active:text-black"
+                        className="text-xs bg-[#1C1C20] hover:bg-[#25252A] border border-[#2F2F35] px-3 py-1 rounded-full text-[#cbd5e1] active:bg-[#FF671F] active:text-black"
                       >
                         {proposal}
                       </button>
@@ -3442,12 +3442,12 @@ function App() {
                 </div>
 
                 {/* Input */}
-                <div className="p-3 border-t border-[#272b33] bg-[#0a0b0f]">
+                <div className="p-3 border-t border-[#2F2F35] bg-[#0D0D10]">
                   <form onSubmit={(e) => { e.preventDefault(); const input = (e.currentTarget.elements[0] as HTMLInputElement); sendMessage(input.value); input.value = '' }} className="flex gap-2">
-                    <input type="text" placeholder="Escribe un mensaje..." className="flex-1 bg-[#121418] border border-[#272b33] rounded-3xl px-5 py-3 text-sm outline-none" />
-                    <button type="submit" className="bg-[#14b8a6] text-black w-12 rounded-3xl flex items-center justify-center"><Send size={18} /></button>
+                    <input type="text" placeholder="Escribe un mensaje..." className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none" />
+                    <button type="submit" className="bg-[#FF671F] text-black w-12 rounded-3xl flex items-center justify-center"><Send size={18} /></button>
                   </form>
-                  <div className="text-center text-[10px] text-[#475569] mt-2">
+                  <div className="text-center text-[10px] text-[#6B7280] mt-2">
                     {!isDemoMode 
                       ? 'Mensajes reales • se envían al servidor (visibles cross-device para usuarios reales)' 
                       : 'Los mensajes son locales en esta versión (demo)'}
@@ -3460,13 +3460,13 @@ function App() {
 
         {/* ===== PROFILE - Premium Pre-Alpha experience (self-contained to prevent black screens) */}
         {activeTab === 'profile' && currentUser && (
-          <div className="flex-1 overflow-auto bg-[#0a0b0f] pb-28">
+          <div className="flex-1 overflow-auto bg-[#0D0D10] pb-28">
             {/* Sticky header with escape hatches */}
-            <div className="sticky top-0 z-20 bg-[#0a0b0f]/95 backdrop-blur border-b border-[#272b33] px-4 py-3 flex items-center justify-between">
+            <div className="sticky top-0 z-20 bg-[#0D0D10]/95 backdrop-blur border-b border-[#2F2F35] px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div>
                   <div className="text-xl font-semibold tracking-tight">Tu perfil</div>
-                  {!isDemoMode && <div className="text-[10px] text-[#14b8a6] font-medium -mt-0.5">REAL • Sincronizado con Firebase</div>}
+                  {!isDemoMode && <div className="text-[10px] text-[#FF671F] font-medium -mt-0.5">REAL • Sincronizado con Firebase</div>}
                 </div>
                 {!isDemoMode && (
                   <button onClick={async () => { 
@@ -3508,13 +3508,13 @@ function App() {
                     } finally {
                       setIsSyncingProfile(false);
                     }
-                  }} disabled={isSyncingProfile} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black disabled:opacity-60">{isSyncingProfile ? '...' : 'Sincronizar'}</button>
+                  }} disabled={isSyncingProfile} className="text-[10px] px-2 py-1 rounded-xl border border-[#FF671F]/50 text-[#FF671F] active:bg-[#FF671F] active:text-black disabled:opacity-60">{isSyncingProfile ? '...' : 'Sincronizar'}</button>
                 )}
-                {lastSync && <span className="text-[10px] text-[#64748b] ml-1">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
+                {lastSync && <span className="text-[10px] text-[#9CA3AF] ml-1">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
               </div>
               <div className="flex gap-2">
                 <button onClick={handleLogout} className="text-xs px-3 py-1.5 rounded-2xl border border-[#3f2a2a] text-[#f87171] active:bg-[#1f1616]">Cambiar cuenta</button>
-                <button onClick={() => setShowOnboarding(true)} className="text-xs px-3 py-1.5 rounded-2xl bg-[#14b8a6] text-black font-semibold active:bg-[#0f9d8c]">Editar</button>
+                <button onClick={() => setShowOnboarding(true)} className="text-xs px-3 py-1.5 rounded-2xl bg-[#FF671F] text-black font-semibold active:bg-[#E55A1A]">Editar</button>
               </div>
             </div>
 
@@ -3528,7 +3528,7 @@ function App() {
               <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/50 to-black" />
               <div className="absolute bottom-0 left-0 right-0 p-5">
                 <div className="text-3xl font-bold tracking-[-1.5px] text-white">{currentUser.name}, {currentUser.age}</div>
-                <div className="text-[#14b8a6] text-sm mt-0.5 flex items-center gap-2">
+                <div className="text-[#FF671F] text-sm mt-0.5 flex items-center gap-2">
                   <MapPin size={14} /> {currentUser.city}, {currentUser.country} • {currentUser.level} • {currentUser.intensity || 'Moderado'}
                 </div>
               </div>
@@ -3542,9 +3542,9 @@ function App() {
 
             {/* Photo gallery strip */}
             {currentUser.photos && currentUser.photos.length > 1 && (
-              <div className="px-4 py-3 flex gap-2 overflow-x-auto bg-[#0a0b0f] border-b border-[#272b33]">
+              <div className="px-4 py-3 flex gap-2 overflow-x-auto bg-[#0D0D10] border-b border-[#2F2F35]">
                 {currentUser.photos.map((photo: string, idx: number) => (
-                  <div key={idx} className="flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border border-[#272b33] shadow">
+                  <div key={idx} className="flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border border-[#2F2F35] shadow">
                     <img src={photo} className="w-full h-full object-cover" />
                   </div>
                 ))}
@@ -3571,18 +3571,18 @@ function App() {
                       toast('No se pudo usar la cámara (permisos o cancelado)')
                     }
                   }}
-                  className="w-full py-2 rounded-2xl border border-[#14b8a6] text-[#14b8a6] text-sm flex items-center justify-center gap-2 active:bg-[#14b8a6]/10"
+                  className="w-full py-2 rounded-2xl border border-[#FF671F] text-[#FF671F] text-sm flex items-center justify-center gap-2 active:bg-[#FF671F]/10"
                 >
                   <span>📷</span> Agregar foto con cámara del teléfono
                 </button>
-                <div className="text-center text-[10px] text-[#64748b] mt-1">Disponible en la app nativa (APK)</div>
+                <div className="text-center text-[10px] text-[#9CA3AF] mt-1">Disponible en la app nativa (APK)</div>
               </div>
             )}
 
             {/* Incomplete CTA */}
             {(!currentUser.bio || !currentUser.photos?.length || !currentUser.trainingTypes?.length) && (
-              <div className="mx-4 mt-4 p-4 rounded-3xl bg-[#1f242b] border border-[#14b8a6]/40">
-                <div className="text-[#14b8a6] font-semibold mb-1">Completa tu perfil</div>
+              <div className="mx-4 mt-4 p-4 rounded-3xl bg-[#25252A] border border-[#FF671F]/40">
+                <div className="text-[#FF671F] font-semibold mb-1">Completa tu perfil</div>
                 <p className="text-sm text-[#cbd5e1] mb-3">Agrega bio, fotos y entrenamiento para que otros testers reales te vean en Explorar.</p>
                 <button onClick={() => setShowOnboarding(true)} className="btn-primary w-full text-sm py-2">Completar ahora</button>
               </div>
@@ -3591,7 +3591,7 @@ function App() {
             {/* Bio */}
             <div className="px-4 mt-4">
               <div className="card p-4">
-                <div className="uppercase text-[10px] tracking-[1px] text-[#64748b] mb-1.5">Sobre mí</div>
+                <div className="uppercase text-[10px] tracking-[1px] text-[#9CA3AF] mb-1.5">Sobre mí</div>
                 <p className="text-[15px] leading-snug text-white/95">{currentUser.bio || 'Todavía no has escrito tu bio. ¡Cuéntale al mundo por qué entrenas!'}</p>
               </div>
             </div>
@@ -3604,36 +3604,36 @@ function App() {
                 { label: 'Nivel', value: currentUser.level || '—' }
               ].map((stat, i) => (
                 <div key={i} className="card p-3 text-center rounded-2xl">
-                  <div className="text-2xl font-semibold text-[#14b8a6]">{stat.value}</div>
-                  <div className="text-[10px] text-[#94a3b8] mt-0.5">{stat.label}</div>
+                  <div className="text-2xl font-semibold text-[#FF671F]">{stat.value}</div>
+                  <div className="text-[10px] text-[#9CA3AF] mt-0.5">{stat.label}</div>
                 </div>
               ))}
             </div>
 
             {/* Training Types */}
             <div className="px-4 mt-4">
-              <div className="text-xs uppercase tracking-widest text-[#64748b] mb-2 px-1">Tipos de entrenamiento</div>
+              <div className="text-xs uppercase tracking-widest text-[#9CA3AF] mb-2 px-1">Tipos de entrenamiento</div>
               <div className="flex flex-wrap gap-2">
                 {(currentUser.trainingTypes || []).length > 0 ? (
                   currentUser.trainingTypes.map((t: string) => <div key={t} className="chip chip-active text-xs px-3 py-1">{t}</div>)
-                ) : <span className="text-xs text-[#64748b]">Sin tipos seleccionados</span>}
+                ) : <span className="text-xs text-[#9CA3AF]">Sin tipos seleccionados</span>}
               </div>
             </div>
 
             {/* Goals */}
             <div className="px-4 mt-3">
-              <div className="text-xs uppercase tracking-widest text-[#64748b] mb-2 px-1">Objetivos</div>
+              <div className="text-xs uppercase tracking-widest text-[#9CA3AF] mb-2 px-1">Objetivos</div>
               <div className="flex flex-wrap gap-2">
                 {(currentUser.goals || []).length > 0 ? (
                   currentUser.goals.map((g: string) => <div key={g} className="chip text-xs px-3 py-1">{g}</div>)
-                ) : <span className="text-xs text-[#64748b]">Sin objetivos aún</span>}
+                ) : <span className="text-xs text-[#9CA3AF]">Sin objetivos aún</span>}
               </div>
             </div>
 
             {/* Availability + Disponible hoy */}
             <div className="px-4 mt-4 card p-4 space-y-3">
               <div className="flex justify-between text-sm">
-                <span className="text-[#94a3b8]">Disponibilidad</span>
+                <span className="text-[#9CA3AF]">Disponibilidad</span>
                 <span className="text-right text-white/90">{(currentUser.availability || []).join(' • ') || 'No especificada'}</span>
               </div>
               <div>
@@ -3644,11 +3644,11 @@ function App() {
                     saveUserWithRealSync(updated as CurrentUser)
                     toast(newVal ? '¡Marcado como disponible hoy!' : 'Disponibilidad actualizada')
                   }}
-                  className={`w-full py-2.5 rounded-2xl text-sm font-semibold transition ${currentUser.availableToday ? 'bg-[#14b8a6] text-black' : 'bg-[#121418] border border-[#272b33] text-white'}`}
+                  className={`w-full py-2.5 rounded-2xl text-sm font-semibold transition ${currentUser.availableToday ? 'bg-[#FF671F] text-black' : 'bg-[#1C1C20] border border-[#2F2F35] text-white'}`}
                 >
                   {currentUser.availableToday ? '✓ Disponible para entrenar hoy' : 'No disponible hoy'}
                 </button>
-                <div className="text-[10px] text-center text-[#64748b] mt-1">Otros usuarios te verán en el filtro “Solo disponibles hoy”</div>
+                <div className="text-[10px] text-center text-[#9CA3AF] mt-1">Otros usuarios te verán en el filtro “Solo disponibles hoy”</div>
               </div>
             </div>
 
@@ -3661,11 +3661,11 @@ function App() {
                       {currentUser.verificationStatus === 'verified' && <span className="text-[#22c55e] text-xs">✓ Verificado</span>}
                       {currentUser.verificationStatus === 'pending' && <span className="text-yellow-400 text-xs">En revisión</span>}
                     </div>
-                    <div className="text-xs text-[#94a3b8] mt-0.5">Aumenta la confianza de otros usuarios reales</div>
+                    <div className="text-xs text-[#9CA3AF] mt-0.5">Aumenta la confianza de otros usuarios reales</div>
                   </div>
                 </div>
                 {currentUser.verificationStatus !== 'verified' && (
-                  <button onClick={() => { setShowVerificationFlow(true); setVerificationStep(1); }} className="mt-3 w-full bg-[#14b8a6] text-black py-2 rounded-2xl text-sm font-semibold">
+                  <button onClick={() => { setShowVerificationFlow(true); setVerificationStep(1); }} className="mt-3 w-full bg-[#FF671F] text-black py-2 rounded-2xl text-sm font-semibold">
                     {currentUser.verificationStatus === 'pending' ? 'Ver estado' : 'Iniciar verificación'}
                   </button>
                 )}
@@ -3674,8 +3674,8 @@ function App() {
 
             {/* Legal & safety */}
             <div className="px-4 mt-4 card p-4 text-sm">
-              <div className="text-xs uppercase tracking-widest text-[#64748b] mb-2">Legal y seguridad</div>
-              <div className="flex flex-col gap-1 text-[#14b8a6] text-sm">
+              <div className="text-xs uppercase tracking-widest text-[#9CA3AF] mb-2">Legal y seguridad</div>
+              <div className="flex flex-col gap-1 text-[#FF671F] text-sm">
                 <button onClick={() => setShowLegal('terms')} className="text-left py-0.5">Términos de Servicio</button>
                 <button onClick={() => setShowLegal('privacy')} className="text-left py-0.5">Política de Privacidad</button>
                 <button onClick={() => setShowLegal('community')} className="text-left py-0.5">Directrices de la Comunidad</button>
@@ -3686,21 +3686,21 @@ function App() {
 
             {/* Micro guidance - kept minimal, no heavy Pre-Alpha branding to avoid clutter in profile view */}
             <div className="px-4 mt-6 mb-8">
-              <div className="card p-4 text-xs text-[#94a3b8] leading-snug">
+              <div className="card p-4 text-xs text-[#9CA3AF] leading-snug">
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
-                <div className="mt-1 text-[10px] text-[#64748b]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
+                <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#475569] mt-4">v0.1.0-prealpha • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.0-prealpha • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
             <div className="px-4 mt-2 mb-8">
-              <div className="card p-5 rounded-3xl border border-[#14b8a6]/30 bg-[#0f1419]">
+              <div className="card p-5 rounded-3xl border border-[#FF671F]/30 bg-[#0f1419]">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="text-2xl">📱</div>
                   <div>
-                    <div className="font-semibold text-[#14b8a6]">App Móvil Android</div>
-                    <div className="text-xs text-[#94a3b8]">Experiencia nativa con notificaciones y mejor cámara</div>
+                    <div className="font-semibold text-[#FF671F]">App Móvil Android</div>
+                    <div className="text-xs text-[#9CA3AF]">Experiencia nativa con notificaciones y mejor cámara</div>
                   </div>
                 </div>
                 <div className="text-sm text-[#cbd5e1] mb-4">
@@ -3713,7 +3713,7 @@ function App() {
                 >
                   Descargar APK más reciente (Gratis)
                 </a>
-                <div className="text-[10px] text-center text-[#64748b] mt-2">
+                <div className="text-[10px] text-center text-[#9CA3AF] mt-2">
                   También disponible automáticamente en GitHub Actions → Artifacts
                 </div>
               </div>
@@ -3724,13 +3724,13 @@ function App() {
               <div className="card p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="font-semibold text-sm">Feedback de Beta</div>
-                  <div className="text-[10px] px-2 py-0.5 rounded-full bg-[#14b8a6]/10 text-[#14b8a6]">Privado</div>
+                  <div className="text-[10px] px-2 py-0.5 rounded-full bg-[#FF671F]/10 text-[#FF671F]">Privado</div>
                 </div>
-                <p className="text-[11px] text-[#94a3b8] mb-3">Tu opinión define la app. Todo se guarda en Firebase y lo leemos.</p>
+                <p className="text-[11px] text-[#9CA3AF] mb-3">Tu opinión define la app. Todo se guarda en Firebase y lo leemos.</p>
 
                 {/* Type segmented */}
                 <div className="mb-3">
-                  <div className="text-[10px] uppercase tracking-widest text-[#64748b] mb-1">Tipo</div>
+                  <div className="text-[10px] uppercase tracking-widest text-[#9CA3AF] mb-1">Tipo</div>
                   <div className="flex gap-1.5 flex-wrap">
                     {[
                       { v: 'bug', l: '🐞 Bug' },
@@ -3741,7 +3741,7 @@ function App() {
                       <button
                         key={opt.v}
                         onClick={() => setFeedbackType(opt.v as any)}
-                        className={`px-3 py-1 text-xs rounded-2xl border transition ${feedbackType === opt.v ? 'bg-[#14b8a6] text-black border-[#14b8a6]' : 'border-[#272b33] text-[#cbd5e1] active:bg-[#121418]'}`}
+                        className={`px-3 py-1 text-xs rounded-2xl border transition ${feedbackType === opt.v ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#2F2F35] text-[#cbd5e1] active:bg-[#1C1C20]'}`}
                       >
                         {opt.l}
                       </button>
@@ -3751,19 +3751,19 @@ function App() {
 
                 {/* Star rating */}
                 <div className="mb-3">
-                  <div className="text-[10px] uppercase tracking-widest text-[#64748b] mb-1">¿Qué tan bien funciona para ti? (1-5)</div>
+                  <div className="text-[10px] uppercase tracking-widest text-[#9CA3AF] mb-1">¿Qué tan bien funciona para ti? (1-5)</div>
                   <div className="flex gap-2">
                     {[1,2,3,4,5].map(r => (
                       <button
                         key={r}
                         onClick={() => setFeedbackRating(r)}
-                        className={`p-1 rounded-xl ${feedbackRating >= r ? 'text-[#facc15]' : 'text-[#475569]'}`}
+                        className={`p-1 rounded-xl ${feedbackRating >= r ? 'text-[#facc15]' : 'text-[#6B7280]'}`}
                         aria-label={`${r} estrellas`}
                       >
                         <Star size={22} fill={feedbackRating >= r ? 'currentColor' : 'none'} />
                       </button>
                     ))}
-                    <span className="ml-1 text-sm text-[#94a3b8] self-center">{feedbackRating}/5</span>
+                    <span className="ml-1 text-sm text-[#9CA3AF] self-center">{feedbackRating}/5</span>
                   </div>
                 </div>
 
@@ -3771,12 +3771,12 @@ function App() {
                 <textarea 
                   value={feedbackText}
                   onChange={(e) => setFeedbackText(e.target.value)}
-                  className="w-full bg-[#121418] border border-[#272b33] rounded-2xl p-3 text-sm h-20 resize-y" 
+                  className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl p-3 text-sm h-20 resize-y" 
                   placeholder="Cuéntanos qué pasó, qué te gustó, qué duele o qué mejorarías..."
                 />
 
                 {/* APK screenshot note */}
-                <div className="text-[10px] text-[#64748b] mt-1 mb-2">
+                <div className="text-[10px] text-[#9CA3AF] mt-1 mb-2">
                   En la APK nativa puedes adjuntar capturas al reportar por el mismo canal de invitación.
                 </div>
 
@@ -3811,33 +3811,33 @@ function App() {
                       toast.error('No se pudo enviar (revisa conexión o permisos)')
                     }
                   }}
-                  className="mt-1 w-full py-2.5 rounded-2xl bg-[#14b8a6] text-black text-sm font-semibold active:bg-[#0f9d8c]"
+                  className="mt-1 w-full py-2.5 rounded-2xl bg-[#FF671F] text-black text-sm font-semibold active:bg-[#E55A1A]"
                 >
                   Enviar feedback estructurado
                 </button>
-                <div className="text-[10px] text-[#64748b] mt-1 text-center">Se guarda privado • Lo revisamos para la beta</div>
+                <div className="text-[10px] text-[#9CA3AF] mt-1 text-center">Se guarda privado • Lo revisamos para la beta</div>
 
                 {/* My previous feedbacks list */}
                 {(myFeedbacks.length > 0 || loadingMyFeedbacks) && (
-                  <div className="mt-4 pt-3 border-t border-[#272b33]">
-                    <div className="text-[10px] uppercase tracking-widest text-[#64748b] mb-2 flex items-center justify-between">
+                  <div className="mt-4 pt-3 border-t border-[#2F2F35]">
+                    <div className="text-[10px] uppercase tracking-widest text-[#9CA3AF] mb-2 flex items-center justify-between">
                       <span>Mis feedbacks anteriores</span>
-                      {loadingMyFeedbacks && <span className="text-[#14b8a6]">cargando…</span>}
+                      {loadingMyFeedbacks && <span className="text-[#FF671F]">cargando…</span>}
                     </div>
                     {myFeedbacks.length === 0 && !loadingMyFeedbacks && (
-                      <div className="text-xs text-[#64748b]">Aún no has enviado ninguno. ¡El primero cuenta mucho!</div>
+                      <div className="text-xs text-[#9CA3AF]">Aún no has enviado ninguno. ¡El primero cuenta mucho!</div>
                     )}
                     <div className="space-y-2 max-h-44 overflow-auto pr-1">
                       {myFeedbacks.map((fb, i) => (
-                        <div key={fb.id || i} className="bg-[#121418] rounded-2xl p-2.5 text-xs border border-[#272b33]">
-                          <div className="flex items-center gap-2 text-[#94a3b8]">
+                        <div key={fb.id || i} className="bg-[#1C1C20] rounded-2xl p-2.5 text-xs border border-[#2F2F35]">
+                          <div className="flex items-center gap-2 text-[#9CA3AF]">
                             <span className="font-medium text-white/90">{fb.type === 'bug' ? '🐞 Bug' : fb.type === 'idea' ? '💡 Idea' : fb.type === 'ux' ? '🎨 UX' : '📝 Otro'}</span>
                             <span>·</span>
                             <span>{'★'.repeat(Math.max(1, Math.min(5, fb.rating || 0)))}</span>
-                            <span className="ml-auto text-[#64748b]">{new Date(fb.createdAt).toLocaleDateString('es-CL', {month:'short', day:'numeric'})}</span>
+                            <span className="ml-auto text-[#9CA3AF]">{new Date(fb.createdAt).toLocaleDateString('es-CL', {month:'short', day:'numeric'})}</span>
                           </div>
                           <div className="mt-1 text-[#cbd5e1] leading-snug line-clamp-2">{fb.text}</div>
-                          <div className="mt-0.5 text-[#64748b] text-[10px]">{fb.platform}</div>
+                          <div className="mt-0.5 text-[#9CA3AF] text-[10px]">{fb.platform}</div>
                         </div>
                       ))}
                     </div>
@@ -3851,7 +3851,7 @@ function App() {
               <div className="px-4 pb-2">
                 <button
                   onClick={() => { requestWebNotificationPermission(); toast('Solicitando permiso de notificaciones del navegador...') }}
-                  className="w-full text-xs py-2 rounded-2xl border border-[#272b33] text-[#14b8a6] active:bg-[#121418]"
+                  className="w-full text-xs py-2 rounded-2xl border border-[#2F2F35] text-[#FF671F] active:bg-[#1C1C20]"
                 >
                   🔔 Activar/renovar notificaciones del navegador (para mensajes en segundo plano)
                 </button>
@@ -3860,15 +3860,15 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#475569] mb-1">v0.1.0-prealpha • Phase 0 real</div>
-              <div className="text-[10px] text-[#64748b] mb-1 flex justify-center gap-2">
-                <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#14b8a6]">Privacidad</a>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.0-prealpha • Phase 0 real</div>
+              <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
+                <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>
-                <a href="/entrenamatch/terms.html" target="_blank" className="underline active:text-[#14b8a6]">Términos</a>
+                <a href="/entrenamatch/terms.html" target="_blank" className="underline active:text-[#FF671F]">Términos</a>
               </div>
               <button 
                 onClick={handleLogout} 
-                className="text-xs text-[#64748b] active:text-[#f87171] underline"
+                className="text-xs text-[#9CA3AF] active:text-[#f87171] underline"
               >
                 Cerrar sesión / Cambiar de cuenta
               </button>
@@ -3889,11 +3889,11 @@ function App() {
                   className="card w-full max-w-[380px] rounded-3xl p-7 text-center"
                 >
                   <div className="text-2xl font-semibold mb-2">¡Bienvenido al prealpha!</div>
-                  <p className="text-sm text-[#94a3b8] mb-4">
+                  <p className="text-sm text-[#9CA3AF] mb-4">
                     Estás entre los primeros en probar <strong>El match del movimiento</strong> con perfiles reales.
                   </p>
 
-                  <div className="bg-[#121418] rounded-2xl p-4 text-left text-sm mb-5">
+                  <div className="bg-[#1C1C20] rounded-2xl p-4 text-left text-sm mb-5">
                     <div className="font-medium text-white mb-2">Lo que verás (ya real y en vivo):</div>
                     <ul className="space-y-1.5 text-[#cbd5e1]">
                       <li>→ Explora perfiles reales con "disponibles ahora", recs "reales primero", badges en vivo y lastSync</li>
@@ -3905,10 +3905,10 @@ function App() {
 
                   <div className="text-left text-sm mb-5">
                     <div className="font-medium text-white mb-1.5">Regla de oro para estos primeros testers:</div>
-                    <div className="text-[#94a3b8]">Si algo te molesta, no funciona o te encanta → cuéntanos en el formulario de Feedback en Perfil. Los problemas (y las alegrías) de los primeros usuarios reales son oro.</div>
+                    <div className="text-[#9CA3AF]">Si algo te molesta, no funciona o te encanta → cuéntanos en el formulario de Feedback en Perfil. Los problemas (y las alegrías) de los primeros usuarios reales son oro.</div>
                   </div>
 
-                  <div className="text-[10px] text-[#64748b] mb-4">Privacidad y Términos actualizados y enlazados en tu Perfil.</div>
+                  <div className="text-[10px] text-[#9CA3AF] mb-4">Privacidad y Términos actualizados y enlazados en tu Perfil.</div>
 
                   <button 
                     onClick={() => {
@@ -3920,7 +3920,7 @@ function App() {
                     Entendido — ¡a elegir perfiles reales!
                   </button>
 
-                  <p className="text-[10px] text-[#64748b] mt-4">Gracias de verdad por ser de los primeros ❤️</p>
+                  <p className="text-[10px] text-[#9CA3AF] mt-4">Gracias de verdad por ser de los primeros ❤️</p>
                 </div>
               </div>
             )}
@@ -3931,7 +3931,7 @@ function App() {
          Welcome guide modal can still be triggered if needed via other means or first-load. */}
 
       {/* Bottom Navigation - Premium, energetic feel */}
-      <div className="h-[62px] border-t border-[#272b33] bg-[#0a0b0f]/95 backdrop-blur-sm grid grid-cols-6 z-50 text-[10px] shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.1)]">
+      <div className="h-[62px] border-t border-[#2F2F35] bg-[#0D0D10]/95 backdrop-blur-sm grid grid-cols-6 z-50 text-[10px] shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.1)]">
         {[
           { id: 'explore' as Tab, label: 'Explorar', icon: Dumbbell },
           { id: 'squads' as Tab, label: 'Squads', icon: Users },
@@ -3973,18 +3973,18 @@ function App() {
                 <div className="flex items-center gap-2">
                   <div className="font-semibold text-2xl tracking-tight">Filtros</div>
                   {((filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0)) > 0 && (
-                    <div className="text-xs bg-[#14b8a6] text-black px-2 py-0.5 rounded-full font-bold">
+                    <div className="text-xs bg-[#FF671F] text-black px-2 py-0.5 rounded-full font-bold">
                       { (filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0) } activos
                     </div>
                   )}
                 </div>
-                <button onClick={resetFilters} className="text-[#14b8a6] text-sm font-semibold active:opacity-70">Limpiar todo</button>
+                <button onClick={resetFilters} className="text-[#FF671F] text-sm font-semibold active:opacity-70">Limpiar todo</button>
               </div>
 
               {/* Live results count for filters - premium, clean indicator while choosing profiles */}
-              <div className="mb-4 px-3 py-2 bg-[#121418] rounded-2xl text-sm flex items-center justify-between border border-[#272b33]">
-                <span className="text-[#94a3b8]">Disponibles ahora</span>
-                <span className="font-bold text-[#14b8a6] text-lg tabular-nums">{deck.length}</span>
+              <div className="mb-4 px-3 py-2 bg-[#1C1C20] rounded-2xl text-sm flex items-center justify-between border border-[#2F2F35]">
+                <span className="text-[#9CA3AF]">Disponibles ahora</span>
+                <span className="font-bold text-[#FF671F] text-lg tabular-nums">{deck.length}</span>
               </div>
 
               {/* Active filters summary - tappable to remove */}
@@ -4000,7 +4000,7 @@ function App() {
                     <button 
                       key={t} 
                       onClick={() => toggleFilterTraining(t)}
-                      className="text-[10px] bg-[#14b8a6]/15 text-[#14b8a6] px-2.5 py-0.5 rounded-full active:bg-[#14b8a6]/30 flex items-center gap-1"
+                      className="text-[10px] bg-[#FF671F]/15 text-[#FF671F] px-2.5 py-0.5 rounded-full active:bg-[#FF671F]/30 flex items-center gap-1"
                     >
                       {t} <span className="text-xs">×</span>
                     </button>
@@ -4009,7 +4009,7 @@ function App() {
                     <button 
                       key={a} 
                       onClick={() => toggleFilterAvailability(a)}
-                      className="text-[10px] bg-[#14b8a6]/15 text-[#14b8a6] px-2.5 py-0.5 rounded-full active:bg-[#14b8a6]/30 flex items-center gap-1"
+                      className="text-[10px] bg-[#FF671F]/15 text-[#FF671F] px-2.5 py-0.5 rounded-full active:bg-[#FF671F]/30 flex items-center gap-1"
                     >
                       {a} <span className="text-xs">×</span>
                     </button>
@@ -4017,7 +4017,7 @@ function App() {
                   {filters.gender !== 'todos' && (
                     <button 
                       onClick={() => setFilters(f => ({...f, gender: 'todos'}))}
-                      className="text-[10px] bg-[#14b8a6]/15 text-[#14b8a6] px-2.5 py-0.5 rounded-full active:bg-[#14b8a6]/30 flex items-center gap-1"
+                      className="text-[10px] bg-[#FF671F]/15 text-[#FF671F] px-2.5 py-0.5 rounded-full active:bg-[#FF671F]/30 flex items-center gap-1"
                     >
                       {filters.gender === 'hombre' ? 'Hombres' : 'Mujeres'} <span className="text-xs">×</span>
                     </button>
@@ -4037,20 +4037,20 @@ function App() {
               <div className="mb-7">
                 <div className="flex justify-between text-sm mb-3">
                   <span className="font-medium">Edad</span> 
-                  <span className="font-mono text-[#14b8a6]">{filters.minAge} - {filters.maxAge}</span>
+                  <span className="font-mono text-[#FF671F]">{filters.minAge} - {filters.maxAge}</span>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <div className="flex justify-between text-[10px] text-[#64748b] mb-1.5">
+                    <div className="flex justify-between text-[10px] text-[#9CA3AF] mb-1.5">
                       <span>Mínimo</span><span>{filters.minAge}</span>
                     </div>
-                    <input type="range" min="18" max="45" value={filters.minAge} onChange={e => setFilters(f => ({...f, minAge: Math.min(parseInt(e.target.value), f.maxAge - 1)}))} className="w-full accent-[#14b8a6]" />
+                    <input type="range" min="18" max="45" value={filters.minAge} onChange={e => setFilters(f => ({...f, minAge: Math.min(parseInt(e.target.value), f.maxAge - 1)}))} className="w-full accent-[#FF671F]" />
                   </div>
                   <div>
-                    <div className="flex justify-between text-[10px] text-[#64748b] mb-1.5">
+                    <div className="flex justify-between text-[10px] text-[#9CA3AF] mb-1.5">
                       <span>Máximo</span><span>{filters.maxAge}</span>
                     </div>
-                    <input type="range" min="18" max="45" value={filters.maxAge} onChange={e => setFilters(f => ({...f, maxAge: Math.max(parseInt(e.target.value), f.minAge + 1)}))} className="w-full accent-[#14b8a6]" />
+                    <input type="range" min="18" max="45" value={filters.maxAge} onChange={e => setFilters(f => ({...f, maxAge: Math.max(parseInt(e.target.value), f.minAge + 1)}))} className="w-full accent-[#FF671F]" />
                   </div>
                 </div>
               </div>
@@ -4059,7 +4059,7 @@ function App() {
               <div className="mb-7">
                 <div className="flex justify-between text-sm mb-2">
                   <span className="font-medium">Distancia máxima</span> 
-                  <span className="text-[#14b8a6]">
+                  <span className="text-[#FF671F]">
                     {userLocation 
                       ? (filters.maxDistanceKm >= 100 ? 'Sin límite' : `${filters.maxDistanceKm} km`) 
                       : 'GPS requerido'}
@@ -4072,16 +4072,16 @@ function App() {
                   step="5"
                   value={filters.maxDistanceKm} 
                   onChange={e => setFilters(f => ({...f, maxDistanceKm: parseInt(e.target.value)}))} 
-                  className="w-full accent-[#14b8a6]" 
+                  className="w-full accent-[#FF671F]" 
                   disabled={!userLocation}
                 />
-                <div className="flex justify-between text-[10px] text-[#64748b] mt-1">
+                <div className="flex justify-between text-[10px] text-[#9CA3AF] mt-1">
                   <span>5 km</span><span>100+ km</span>
                 </div>
                 {!userLocation && (
                   <button 
                     onClick={requestUserLocation}
-                    className="mt-3 text-xs w-full py-2.5 rounded-2xl border border-[#14b8a6] text-[#14b8a6] active:bg-[#14b8a6] active:text-black"
+                    className="mt-3 text-xs w-full py-2.5 rounded-2xl border border-[#FF671F] text-[#FF671F] active:bg-[#FF671F] active:text-black"
                   >
                     Activar GPS para usar distancia
                   </button>
@@ -4090,28 +4090,28 @@ function App() {
 
               {/* Disponible Hoy filter */}
               <div className="mb-7">
-                <label className="flex items-center gap-3 p-3 bg-[#121418] rounded-2xl border border-[#272b33] cursor-pointer active:bg-[#1a1d23]">
+                <label className="flex items-center gap-3 p-3 bg-[#1C1C20] rounded-2xl border border-[#2F2F35] cursor-pointer active:bg-[#25252A]">
                   <input 
                     type="checkbox" 
                     checked={filters.onlyAvailableToday} 
                     onChange={e => setFilters(f => ({...f, onlyAvailableToday: e.target.checked}))}
-                    className="w-5 h-5 accent-[#14b8a6]"
+                    className="w-5 h-5 accent-[#FF671F]"
                   />
                   <div>
                     <div className="text-sm font-medium">Solo disponibles hoy</div>
-                    <div className="text-xs text-[#64748b]">Personas que pueden entrenar el mismo día</div>
+                    <div className="text-xs text-[#9CA3AF]">Personas que pueden entrenar el mismo día</div>
                   </div>
                 </label>
               </div>
 
               <div className="mb-6">
                 <div className="text-sm font-medium mb-2">Me interesa</div>
-                <div className="flex rounded-2xl overflow-hidden border border-[#272b33]">
+                <div className="flex rounded-2xl overflow-hidden border border-[#2F2F35]">
                   {(['todos','hombre','mujer'] as const).map(g => (
                     <button 
                       key={g} 
                       onClick={() => setFilters(f => ({...f, gender: g}))} 
-                      className={`flex-1 py-2.5 text-sm font-medium transition ${filters.gender === g ? 'bg-[#14b8a6] text-black' : 'bg-[#121418] active:bg-[#1a1d23] text-white'}`}
+                      className={`flex-1 py-2.5 text-sm font-medium transition ${filters.gender === g ? 'bg-[#FF671F] text-black' : 'bg-[#1C1C20] active:bg-[#25252A] text-white'}`}
                     >
                       {g === 'todos' ? 'Todos' : g === 'hombre' ? 'Hombres' : 'Mujeres'}
                     </button>
@@ -4124,7 +4124,7 @@ function App() {
                   <div className="text-sm font-medium flex items-center gap-2">
                     Tipo de entrenamiento
                     {filters.trainingTypes.length > 0 && (
-                      <span className="text-[10px] bg-[#14b8a6]/10 text-[#14b8a6] px-1.5 py-0.5 rounded-full font-medium">{filters.trainingTypes.length} seleccionados</span>
+                      <span className="text-[10px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded-full font-medium">{filters.trainingTypes.length} seleccionados</span>
                     )}
                   </div>
                 </div>
@@ -4135,7 +4135,7 @@ function App() {
                       <button 
                         key={t} 
                         onClick={() => toggleFilterTraining(t)} 
-                        className={`px-3 py-1 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] font-medium' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] text-white/90'}`}
+                        className={`px-3 py-1 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#FF671F] text-black border-[#FF671F] font-medium' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3a3f48] text-white/90'}`}
                       >
                         {t}
                       </button>
@@ -4149,7 +4149,7 @@ function App() {
                   <div className="text-sm font-medium flex items-center gap-2">
                     Disponibilidad
                     {filters.availability.length > 0 && (
-                      <span className="text-[10px] bg-[#14b8a6]/10 text-[#14b8a6] px-1.5 py-0.5 rounded-full font-medium">{filters.availability.length} seleccionadas</span>
+                      <span className="text-[10px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded-full font-medium">{filters.availability.length} seleccionadas</span>
                     )}
                   </div>
                 </div>
@@ -4160,7 +4160,7 @@ function App() {
                       <button 
                         key={a} 
                         onClick={() => toggleFilterAvailability(a)} 
-                        className={`px-3 py-1 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#14b8a6] text-black border-[#14b8a6] font-medium' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48] text-white/90'}`}
+                        className={`px-3 py-1 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#FF671F] text-black border-[#FF671F] font-medium' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3a3f48] text-white/90'}`}
                       >
                         {a}
                       </button>
@@ -4171,7 +4171,7 @@ function App() {
 
               <button 
                 onClick={() => setShowFilters(false)} 
-                className="btn-primary w-full shadow-lg shadow-[#14b8a6]/20 flex items-center justify-center gap-2 text-base"
+                className="btn-primary w-full shadow-lg shadow-[#FF671F]/20 flex items-center justify-center gap-2 text-base"
               >
                 Ver {deck.length} disponibles <span className="text-lg leading-none">→</span>
               </button>
@@ -4202,10 +4202,10 @@ function App() {
                 setShowCreateSquad(false)
                 toast.success('Squad creado')
               }}>
-                <input name="name" placeholder="Nombre del Squad (ej: Beasts de Viña)" required className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3 mb-3" />
-                <input name="focus" placeholder="Enfoque (Pesas, Running, Calistenia...)" required className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3 mb-4" />
+                <input name="name" placeholder="Nombre del Squad (ej: Beasts de Viña)" required className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3 mb-3" />
+                <input name="focus" placeholder="Enfoque (Pesas, Running, Calistenia...)" required className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3 mb-4" />
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => setShowCreateSquad(false)} className="flex-1 py-3 rounded-2xl border border-[#272b33] active:bg-[#1f242b]">Cancelar</button>
+                  <button type="button" onClick={() => setShowCreateSquad(false)} className="flex-1 py-3 rounded-2xl border border-[#2F2F35] active:bg-[#25252A]">Cancelar</button>
                   <button type="submit" className="flex-1 btn-primary">Crear Squad</button>
                 </div>
               </form>
@@ -4218,7 +4218,7 @@ function App() {
       <AnimatePresence>
         {selectedSquad && (
           <div className="absolute inset-0 z-[100] bg-black/90 flex flex-col" onClick={() => setSelectedSquad(null)}>
-            <div onClick={e => e.stopPropagation()} className="flex-1 flex flex-col max-w-[420px] mx-auto w-full bg-[#0a0b0f] mt-[42px] rounded-t-3xl overflow-hidden border border-[#272b33]">
+            <div onClick={e => e.stopPropagation()} className="flex-1 flex flex-col max-w-[420px] mx-auto w-full bg-[#0D0D10] mt-[42px] rounded-t-3xl overflow-hidden border border-[#2F2F35]">
               {(() => {
                 const squad = squads.find(s => s.id === selectedSquad)
                 if (!squad) return null
@@ -4226,16 +4226,16 @@ function App() {
 
                 return (
                   <>
-                    <div className="p-4 border-b border-[#272b33] flex justify-between items-center bg-[#121418]">
+                    <div className="p-4 border-b border-[#2F2F35] flex justify-between items-center bg-[#1C1C20]">
                       <div>
                         <div className="font-bold text-xl">{squad.name}</div>
-                        <div className="text-[#14b8a6] text-sm">{squad.focus} • {squad.members.length}/4 miembros</div>
+                        <div className="text-[#FF671F] text-sm">{squad.focus} • {squad.members.length}/4 miembros</div>
                       </div>
-                      <button onClick={() => setSelectedSquad(null)} className="text-2xl text-[#94a3b8]">×</button>
+                      <button onClick={() => setSelectedSquad(null)} className="text-2xl text-[#9CA3AF]">×</button>
                     </div>
 
                     <div className="p-4">
-                      <div className="text-sm text-[#94a3b8] mb-2">Miembros</div>
+                      <div className="text-sm text-[#9CA3AF] mb-2">Miembros</div>
                       <div className="flex flex-wrap gap-2 mb-4">
                         {squad.members.map(mid => {
                           const memberProfile = SEED_PROFILES.find(p => p.id === mid)
@@ -4244,7 +4244,7 @@ function App() {
                           return (
                             <div 
                               key={mid} 
-                              className="chip text-xs cursor-pointer active:bg-[#14b8a6] active:text-black"
+                              className="chip text-xs cursor-pointer active:bg-[#FF671F] active:text-black"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 if (memberProfile) {
@@ -4261,7 +4261,7 @@ function App() {
                           )
                         })}
                         {squad.members.length < 4 && isMember && (
-                          <div className="text-xs text-[#64748b] px-3 py-1">Espacio disponible</div>
+                          <div className="text-xs text-[#9CA3AF] px-3 py-1">Espacio disponible</div>
                         )}
                       </div>
 
@@ -4319,7 +4319,7 @@ function App() {
                               }
                               toast.success('Sesión creada para el Squad', { description: 'Ve a la pestaña Sesiones' })
                             }}
-                            className="w-full mb-3 text-sm border border-[#14b8a6] text-[#14b8a6] py-2 rounded-2xl"
+                            className="w-full mb-3 text-sm border border-[#FF671F] text-[#FF671F] py-2 rounded-2xl"
                           >
                             Crear Sesión del Squad
                           </button>
@@ -4346,15 +4346,15 @@ function App() {
                     </div>
 
                     {isMember && (
-                      <div className="flex-1 flex flex-col border-t border-[#272b33]">
-                        <div className="p-3 text-sm font-medium text-[#14b8a6] border-b border-[#272b33]">Chat del Squad</div>
+                      <div className="flex-1 flex flex-col border-t border-[#2F2F35]">
+                        <div className="p-3 text-sm font-medium text-[#FF671F] border-b border-[#2F2F35]">Chat del Squad</div>
                         <div className="flex-1 overflow-auto p-4 space-y-2 text-sm" id="squad-chat-scroll">
                           {(sessionMessages[squad.id] || []).length === 0 ? (
-                            <div className="text-[#64748b] text-center text-xs mt-6">Aún no hay mensajes. ¡Empieza la coordinación!</div>
+                            <div className="text-[#9CA3AF] text-center text-xs mt-6">Aún no hay mensajes. ¡Empieza la coordinación!</div>
                           ) : (
                             (sessionMessages[squad.id] || []).map((msg, i) => (
                               <div key={i} className={`flex ${msg.senderId === 'me' ? 'justify-end' : ''}`}>
-                                <div className={`max-w-[75%] px-3 py-1.5 rounded-2xl break-words overflow-hidden ${msg.senderId === 'me' ? 'bg-[#14b8a6] text-black' : 'bg-[#1f242b]'}`}>
+                                <div className={`max-w-[75%] px-3 py-1.5 rounded-2xl break-words overflow-hidden ${msg.senderId === 'me' ? 'bg-[#FF671F] text-black' : 'bg-[#25252A]'}`}>
                                   <div className="text-[10px] opacity-70">{msg.senderName}</div>
                                   {renderMessageText(msg.text)}
                                 </div>
@@ -4362,7 +4362,7 @@ function App() {
                             ))
                           )}
                         </div>
-                        <div className="p-3 border-t border-[#272b33]">
+                        <div className="p-3 border-t border-[#2F2F35]">
                           <form onSubmit={(e) => {
                             e.preventDefault()
                             const input = (e.currentTarget.elements[0] as HTMLInputElement)
@@ -4371,8 +4371,8 @@ function App() {
                               input.value = ''
                             }
                           }} className="flex gap-2">
-                            <input type="text" placeholder="Mensaje al squad..." className="flex-1 bg-[#121418] border border-[#272b33] rounded-3xl px-4 py-2 text-sm" />
-                            <button type="submit" className="bg-[#14b8a6] text-black px-4 rounded-3xl text-sm">Enviar</button>
+                            <input type="text" placeholder="Mensaje al squad..." className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-4 py-2 text-sm" />
+                            <button type="submit" className="bg-[#FF671F] text-black px-4 rounded-3xl text-sm">Enviar</button>
                           </form>
                         </div>
                       </div>
@@ -4465,22 +4465,22 @@ function App() {
                 toast.success('Sesión creada', { description: 'Ya puedes chatear con quienes se unan' })
               }}>
                 <div className="space-y-4">
-                  <input name="title" placeholder="Título (ej: Running costanera + mate)" required className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3" />
+                  <input name="title" placeholder="Título (ej: Running costanera + mate)" required className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3" />
                   
                   <div className="grid grid-cols-2 gap-3">
-                    <input name="time" placeholder="Horario (19:00)" required className="bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3" />
-                    <input name="location" placeholder="Lugar (Reñaca)" required className="bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3" />
+                    <input name="time" placeholder="Horario (19:00)" required className="bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3" />
+                    <input name="location" placeholder="Lugar (Reñaca)" required className="bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3" />
                   </div>
 
                   <div>
-                    <div className="text-xs text-[#64748b] mb-1.5">Tipo de entrenamiento</div>
+                    <div className="text-xs text-[#9CA3AF] mb-1.5">Tipo de entrenamiento</div>
                     <div className="flex flex-wrap gap-1.5 mb-2">
                       {TRAINING_OPTIONS.map(t => (
                         <button 
                           type="button"
                           key={t}
                           onClick={() => setSelectedTrainingType(t)}
-                          className={`px-3 py-1 text-xs rounded-2xl border active:bg-[#1a1d23] ${selectedTrainingType === t ? 'border-[#14b8a6] bg-[#14b8a6]/10 text-[#14b8a6]' : 'border-[#272b33] bg-[#121418] hover:border-[#3a3f48]'}`}
+                          className={`px-3 py-1 text-xs rounded-2xl border active:bg-[#25252A] ${selectedTrainingType === t ? 'border-[#FF671F] bg-[#FF671F]/10 text-[#FF671F]' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3a3f48]'}`}
                         >
                           {t}
                         </button>
@@ -4490,17 +4490,17 @@ function App() {
                   </div>
 
                   <div>
-                    <div className="text-xs text-[#64748b] mb-1">Máximo participantes</div>
-                    <input name="max" type="number" min="2" max="12" defaultValue="5" required className="w-full bg-[#121418] border border-[#272b33] rounded-2xl px-4 py-3" />
+                    <div className="text-xs text-[#9CA3AF] mb-1">Máximo participantes</div>
+                    <input name="max" type="number" min="2" max="12" defaultValue="5" required className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3" />
                   </div>
                 </div>
 
-                <div className="mt-2 mb-3 text-[10px] text-[#14b8a6] text-center">Otros testers reales la verán y podrán unirse al instante</div>
-                <div className="text-[10px] text-center text-[#64748b] mb-2">
+                <div className="mt-2 mb-3 text-[10px] text-[#FF671F] text-center">Otros testers reales la verán y podrán unirse al instante</div>
+                <div className="text-[10px] text-center text-[#9CA3AF] mb-2">
                   Al publicar aceptas nuestros <a href="/entrenamatch/terms.html" target="_blank" className="underline">Términos</a>.
                 </div>
                 <div className="flex gap-3">
-                  <button type="button" onClick={closeCreateSession} className="flex-1 py-3 rounded-2xl border border-[#272b33] active:bg-[#1f242b]">Cancelar</button>
+                  <button type="button" onClick={closeCreateSession} className="flex-1 py-3 rounded-2xl border border-[#2F2F35] active:bg-[#25252A]">Cancelar</button>
                   <button type="submit" className="flex-1 btn-primary">Publicar sesión</button>
                 </div>
               </form>
@@ -4516,7 +4516,7 @@ function App() {
             <div onClick={e => e.stopPropagation()} className="card w-full max-w-[340px] rounded-3xl p-6">
               <div className="text-center mb-4">
                 <div className="text-2xl font-semibold">¿Cómo fue entrenar con {SEED_PROFILES.find(p => p.id === showReviewModalFor)?.name}?</div>
-                <div className="text-sm text-[#94a3b8] mt-1">Tu reseña ayuda a otros a confiar</div>
+                <div className="text-sm text-[#9CA3AF] mt-1">Tu reseña ayuda a otros a confiar</div>
               </div>
 
               {/* Stars */}
@@ -4532,12 +4532,12 @@ function App() {
                 value={reviewComment}
                 onChange={e => setReviewComment(e.target.value)}
                 placeholder="Comentario opcional (qué tal fue el entrenamiento...)"
-                className="w-full bg-[#121418] border border-[#272b33] rounded-2xl p-4 text-sm h-24 resize-none mb-4"
+                className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl p-4 text-sm h-24 resize-none mb-4"
               />
 
               {/* Photo upload for the session - Unique feature */}
               <div className="mb-4">
-                <label className="text-xs text-[#94a3b8] mb-1 block">Foto de la sesión (opcional)</label>
+                <label className="text-xs text-[#9CA3AF] mb-1 block">Foto de la sesión (opcional)</label>
                 <input 
                   type="file" 
                   accept="image/*" 
@@ -4553,7 +4553,7 @@ function App() {
                 />
                 {reviewPhoto && (
                   <div className="mt-2 relative w-24 h-24">
-                    <img src={reviewPhoto} className="w-24 h-24 object-cover rounded-xl border border-[#272b33]" alt="Preview" />
+                    <img src={reviewPhoto} className="w-24 h-24 object-cover rounded-xl border border-[#2F2F35]" alt="Preview" />
                     <button 
                       onClick={() => setReviewPhoto(null)}
                       className="absolute -top-1 -right-1 bg-black text-white text-xs w-5 h-5 rounded-full flex items-center justify-center"
@@ -4578,19 +4578,19 @@ function App() {
         {showMatchModal && (
           <div className="absolute inset-0 z-[80] flex items-center justify-center bg-black/90 p-6" onClick={() => closeMatchModal()}>
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              onClick={e => e.stopPropagation()} className="match-modal rounded-3xl max-w-[340px] w-full overflow-hidden border border-[#272b33]">
+              onClick={e => e.stopPropagation()} className="match-modal rounded-3xl max-w-[340px] w-full overflow-hidden border border-[#2F2F35]">
               <div className="p-8 text-center">
-                <div className="text-[#14b8a6] font-semibold tracking-[3px] text-sm mb-1">¡ES UN MATCH!</div>
+                <div className="text-[#FF671F] font-semibold tracking-[3px] text-sm mb-1">¡ES UN MATCH!</div>
                 <div className="text-3xl font-semibold tracking-tight mb-4">Tú y {showMatchModal.name} quieren entrenar juntos</div>
                 
                 <div className="flex justify-center -space-x-4 mb-6">
-                  <img src={currentUser?.photos?.[0] || 'https://picsum.photos/id/1005/80/80'} className="w-20 h-20 rounded-full border-4 border-[#121418] object-cover z-10" />
-                  <img src={showMatchModal.photos[0]} className="w-20 h-20 rounded-full border-4 border-[#121418] object-cover" />
+                  <img src={currentUser?.photos?.[0] || 'https://picsum.photos/id/1005/80/80'} className="w-20 h-20 rounded-full border-4 border-[#1C1C20] object-cover z-10" />
+                  <img src={showMatchModal.photos[0]} className="w-20 h-20 rounded-full border-4 border-[#1C1C20] object-cover" />
                 </div>
 
-                <div className="text-sm text-[#94a3b8] mb-4">Ambos están en {showMatchModal.city}, {showMatchModal.country}. ¡Escríbele ya!</div>
+                <div className="text-sm text-[#9CA3AF] mb-4">Ambos están en {showMatchModal.city}, {showMatchModal.country}. ¡Escríbele ya!</div>
                 {userLocation && (
-                  <div className="text-[#14b8a6] text-sm font-medium -mt-2 mb-4">
+                  <div className="text-[#FF671F] text-sm font-medium -mt-2 mb-4">
                     Están a {getDistanceKm(userLocation.lat, userLocation.lng, showMatchModal.lat, showMatchModal.lng)} km
                   </div>
                 )}
@@ -4599,8 +4599,8 @@ function App() {
                 {(() => {
                   const openers = CHAT_OPENERS[showMatchModal.id] || ["¡Hola! Vi tu perfil y me tinca entrenar juntos 💪"];
                   return (
-                    <div className="mb-5 text-left bg-[#121418] rounded-2xl p-3 text-xs">
-                      <div className="text-[#14b8a6] font-medium mb-1.5 text-center">Sugerencias para romper el hielo (copia y pega):</div>
+                    <div className="mb-5 text-left bg-[#1C1C20] rounded-2xl p-3 text-xs">
+                      <div className="text-[#FF671F] font-medium mb-1.5 text-center">Sugerencias para romper el hielo (copia y pega):</div>
                       {openers.slice(0, 2).map((opener, idx) => (
                         <div key={idx} className="text-[#cbd5e1] mb-1.5 last:mb-0 leading-snug">• {opener}</div>
                       ))}
@@ -4610,7 +4610,7 @@ function App() {
 
                 <div className="space-y-3">
                   <button onClick={() => closeMatchModal(true)} className="btn-primary w-full text-base">Enviar mensaje ahora</button>
-                  <button onClick={() => closeMatchModal(false)} className="w-full py-3 text-sm text-[#94a3b8]">Seguir explorando</button>
+                  <button onClick={() => closeMatchModal(false)} className="w-full py-3 text-sm text-[#9CA3AF]">Seguir explorando</button>
                 </div>
               </div>
             </motion.div>
@@ -4621,10 +4621,10 @@ function App() {
       {/* FULL PROFILE VIEW */}
       <AnimatePresence>
         {showFullProfile && (
-          <div className="absolute inset-0 z-[90] bg-[#0a0b0f] flex flex-col" onClick={() => setShowFullProfile(null)}>
-            <div className="p-4 flex items-center justify-between border-b border-[#272b33]">
+          <div className="absolute inset-0 z-[90] bg-[#0D0D10] flex flex-col" onClick={() => setShowFullProfile(null)}>
+            <div className="p-4 flex items-center justify-between border-b border-[#2F2F35]">
               <button onClick={() => setShowFullProfile(null)}><ArrowLeft /></button>
-              <div className="font-medium flex items-center gap-2">Perfil completo {realProfiles.some(rp => rp.id === showFullProfile.id) && <span className="text-[10px] bg-[#14b8a6] text-black px-1.5 py-0.5 rounded-full font-bold">REAL TESTER</span>}</div>
+              <div className="font-medium flex items-center gap-2">Perfil completo {realProfiles.some(rp => rp.id === showFullProfile.id) && <span className="text-[10px] bg-[#FF671F] text-black px-1.5 py-0.5 rounded-full font-bold">REAL TESTER</span>}</div>
               <div />
             </div>
             <div className="overflow-auto flex-1">
@@ -4632,17 +4632,17 @@ function App() {
                 <img src={showFullProfile.photos[0]} className="w-full aspect-square object-cover" />
                 <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black">
                   <div className="text-4xl font-semibold tracking-[-1.5px]">{showFullProfile.name}, {showFullProfile.age}</div>
-                  <div className="flex gap-2 mt-1 text-[#14b8a6]">
+                  <div className="flex gap-2 mt-1 text-[#FF671F]">
                     <MapPin size={18} /> {showFullProfile.city}, {showFullProfile.country}
                     {showFullProfile.verificationStatus === 'verified' && <span className="text-[#22c55e] text-sm">✓ Verificado</span>}
                   </div>
                   {userLocation && (
-                    <div className="mt-1 text-sm text-[#14b8a6] font-medium">
+                    <div className="mt-1 text-sm text-[#FF671F] font-medium">
                       A {getDistanceKm(userLocation.lat, userLocation.lng, showFullProfile.lat, showFullProfile.lng)} km de ti
                     </div>
                   )}
                   {currentUser && (
-                    <div className="mt-2 inline-block bg-[#14b8a6] text-black px-3 py-1 rounded-full text-sm font-bold">
+                    <div className="mt-2 inline-block bg-[#FF671F] text-black px-3 py-1 rounded-full text-sm font-bold">
                       {calculateCompatibility(currentUser, showFullProfile, userLocation)}% compatible para entrenar juntos
                     </div>
                   )}
@@ -4658,10 +4658,10 @@ function App() {
                   {/* Photos from past sessions */}
                   {reviews[showFullProfile.id]?.some(r => r.photo) && (
                     <div className="mt-3">
-                      <div className="text-xs text-[#64748b] mb-1">Sesiones juntos</div>
+                      <div className="text-xs text-[#9CA3AF] mb-1">Sesiones juntos</div>
                       <div className="flex gap-2 overflow-x-auto pb-2">
                         {reviews[showFullProfile.id]?.filter(r => r.photo).map((r, idx) => (
-                          <img key={idx} src={r.photo} className="w-16 h-16 object-cover rounded-xl flex-shrink-0 border border-[#272b33]" />
+                          <img key={idx} src={r.photo} className="w-16 h-16 object-cover rounded-xl flex-shrink-0 border border-[#2F2F35]" />
                         ))}
                       </div>
                     </div>
@@ -4670,15 +4670,15 @@ function App() {
               </div>
               <div className="p-5 space-y-6">
                 <div>
-                  <div className="uppercase text-xs tracking-widest text-[#64748b] mb-1.5">BIOGRAFÍA</div>
+                  <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-1.5">BIOGRAFÍA</div>
                   <p className="leading-snug">{showFullProfile.bio}</p>
                 </div>
                 <div>
-                  <div className="uppercase text-xs tracking-widest text-[#64748b] mb-2">ENTRENA</div>
+                  <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-2">ENTRENA</div>
                   <div className="flex flex-wrap gap-2">{showFullProfile.trainingTypes.map(t => <div key={t} className="chip">{t}</div>)}</div>
                 </div>
                 <div>
-                  <div className="uppercase text-xs tracking-widest text-[#64748b] mb-2">OBJETIVOS</div>
+                  <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-2">OBJETIVOS</div>
                   <div className="flex flex-wrap gap-2">{showFullProfile.goals.map(g => <div key={g} className="chip chip-active">{g}</div>)}</div>
                 </div>
 
@@ -4688,13 +4688,13 @@ function App() {
                   if (userSquads.length === 0) return null
                   return (
                     <div>
-                      <div className="uppercase text-xs tracking-widest text-[#64748b] mb-2">SQUADS</div>
+                      <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-2">SQUADS</div>
                       <div className="flex flex-wrap gap-2">
                         {userSquads.map(sq => (
                           <div 
                             key={sq.id} 
                             onClick={() => { setSelectedSquad(sq.id); setActiveTab('squads') }}
-                            className="chip cursor-pointer hover:bg-[#14b8a6] hover:text-black active:scale-95 transition"
+                            className="chip cursor-pointer hover:bg-[#FF671F] hover:text-black active:scale-95 transition"
                           >
                             {sq.name}
                           </div>
@@ -4704,12 +4704,12 @@ function App() {
                   )
                 })()}
                 <div className="grid grid-cols-2 gap-x-4 text-sm">
-                  <div><span className="text-[#64748b]">Nivel</span><br />{showFullProfile.level}</div>
-                  <div><span className="text-[#64748b]">Disponible</span><br />{showFullProfile.availability.join(', ')}</div>
+                  <div><span className="text-[#9CA3AF]">Nivel</span><br />{showFullProfile.level}</div>
+                  <div><span className="text-[#9CA3AF]">Disponible</span><br />{showFullProfile.availability.join(', ')}</div>
                 </div>
               </div>
             </div>
-            <div className="p-4 border-t border-[#272b33] flex gap-3">
+            <div className="p-4 border-t border-[#2F2F35] flex gap-3">
               {matches.includes(showFullProfile.id) || realMatches.includes(showFullProfile.id) ? (
                 <button onClick={() => { setShowFullProfile(null); openChat(showFullProfile.id) }} className="flex-1 btn-primary">Abrir chat con {showFullProfile.name.split(' ')[0]}</button>
               ) : (
@@ -4721,7 +4721,7 @@ function App() {
             </div>
 
             {/* Safety actions - Critical for launch */}
-            <div className="p-4 border-t border-[#272b33] flex gap-3 text-sm">
+            <div className="p-4 border-t border-[#2F2F35] flex gap-3 text-sm">
               <button 
                 onClick={() => {
                   const reason = prompt('¿Por qué quieres reportar a esta persona? (acoso, perfil falso, comportamiento inadecuado, etc.)')
@@ -4746,7 +4746,7 @@ function App() {
                 Bloquear
               </button>
             </div>
-            <div className="p-2 text-center text-[9px] text-[#64748b]">Perfiles reales se sincronizan entre dispositivos</div>
+            <div className="p-2 text-center text-[9px] text-[#9CA3AF]">Perfiles reales se sincronizan entre dispositivos</div>
           </div>
         )}
       </AnimatePresence>
@@ -4754,8 +4754,8 @@ function App() {
       {/* LEGAL PAGES */}
       <AnimatePresence>
         {showLegal && (
-          <div className="absolute inset-0 z-[100] bg-[#0a0b0f] flex flex-col">
-            <div className="h-14 px-4 flex items-center gap-3 border-b border-[#272b33] bg-[#0a0b0f]">
+          <div className="absolute inset-0 z-[100] bg-[#0D0D10] flex flex-col">
+            <div className="h-14 px-4 flex items-center gap-3 border-b border-[#2F2F35] bg-[#0D0D10]">
               <button onClick={() => setShowLegal(null)}><ArrowLeft /></button>
               <div className="font-semibold">
                 {showLegal === 'terms' && 'Términos de Servicio'}
@@ -4804,8 +4804,8 @@ function App() {
                 </>
               )}
             </div>
-            <div className="p-4 border-t border-[#272b33]">
-              <div className="text-[10px] text-[#64748b] text-center mb-3">
+            <div className="p-4 border-t border-[#2F2F35]">
+              <div className="text-[10px] text-[#9CA3AF] text-center mb-3">
                 Versión {showLegal === 'terms' ? LEGAL_VERSIONS.terms : 
                          showLegal === 'privacy' ? LEGAL_VERSIONS.privacy : 
                          LEGAL_VERSIONS.community} • Última actualización: {LEGAL_VERSIONS.lastUpdated}
@@ -4822,12 +4822,12 @@ function App() {
           <div className="absolute inset-0 z-[130] flex items-end bg-black/80" onClick={() => setShowVerificationFlow(false)}>
             <div 
               onClick={e => e.stopPropagation()} 
-              className="w-full bg-[#0a0b0f] rounded-t-3xl p-6 max-h-[90vh] overflow-auto"
+              className="w-full bg-[#0D0D10] rounded-t-3xl p-6 max-h-[90vh] overflow-auto"
             >
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <div className="font-bold text-2xl">Verificación de identidad</div>
-                  <div className="text-sm text-[#94a3b8]">Paso {verificationStep} de 3</div>
+                  <div className="text-sm text-[#9CA3AF]">Paso {verificationStep} de 3</div>
                 </div>
                 <button onClick={() => setShowVerificationFlow(false)} className="text-2xl">×</button>
               </div>
@@ -4839,7 +4839,7 @@ function App() {
                     <p className="text-[#cbd5e1] mb-4">
                       Para generar confianza en la comunidad, necesitamos verificar que eres una persona real que entrena.
                     </p>
-                    <div className="bg-[#121418] p-4 rounded-2xl text-sm space-y-2">
+                    <div className="bg-[#1C1C20] p-4 rounded-2xl text-sm space-y-2">
                       <div>✓ Nombre: <span className="font-medium">{currentUser.name}</span></div>
                       <div>✓ Edad: <span className="font-medium">{currentUser.age} años</span></div>
                       <div>✓ Ubicación: <span className="font-medium">{currentUser.city}, {currentUser.country}</span></div>
@@ -4859,14 +4859,14 @@ function App() {
                 <div>
                   <div className="mb-4">
                     <div className="font-semibold mb-2">Paso 2: Documento de identidad</div>
-                    <p className="text-sm text-[#94a3b8] mb-4">Sube una foto de tu cédula, pasaporte o licencia (solo el frente).</p>
+                    <p className="text-sm text-[#9CA3AF] mb-4">Sube una foto de tu cédula, pasaporte o licencia (solo el frente).</p>
                   </div>
 
                   {!verificationIdPhoto ? (
-                    <label className="block border-2 border-dashed border-[#272b33] rounded-3xl p-8 text-center cursor-pointer mb-6">
+                    <label className="block border-2 border-dashed border-[#2F2F35] rounded-3xl p-8 text-center cursor-pointer mb-6">
                       <div className="text-4xl mb-2">🪪</div>
                       <div className="font-medium">Subir documento</div>
-                      <div className="text-xs text-[#64748b]">JPG o PNG</div>
+                      <div className="text-xs text-[#9CA3AF]">JPG o PNG</div>
                       <input 
                         type="file" 
                         accept="image/*" 
@@ -4906,11 +4906,11 @@ function App() {
                 <div>
                   <div className="mb-4">
                     <div className="font-semibold mb-2">Paso 3: Selfie de verificación</div>
-                    <p className="text-sm text-[#94a3b8] mb-4">Tómate una selfie sosteniendo tu documento (o solo tu rostro).</p>
+                    <p className="text-sm text-[#9CA3AF] mb-4">Tómate una selfie sosteniendo tu documento (o solo tu rostro).</p>
                   </div>
 
                   {!verificationSelfie ? (
-                    <label className="block border-2 border-dashed border-[#272b33] rounded-3xl p-8 text-center cursor-pointer mb-6">
+                    <label className="block border-2 border-dashed border-[#2F2F35] rounded-3xl p-8 text-center cursor-pointer mb-6">
                       <div className="text-4xl mb-2">🤳</div>
                       <div className="font-medium">Subir selfie</div>
                       <input 
@@ -4944,7 +4944,7 @@ function App() {
                       Enviar para verificación
                     </button>
                   </div>
-                  <p className="text-[10px] text-center text-[#64748b] mt-3">Tus documentos se revisarán de forma segura.</p>
+                  <p className="text-[10px] text-center text-[#9CA3AF] mt-3">Tus documentos se revisarán de forma segura.</p>
                 </div>
               )}
             </div>
@@ -4956,19 +4956,19 @@ function App() {
       <AnimatePresence>
         {showModerationPanel && (
           <div className="absolute inset-0 z-[140] bg-black/90 flex flex-col" onClick={() => setShowModerationPanel(false)}>
-            <div onClick={e => e.stopPropagation()} className="flex-1 bg-[#0a0b0f] max-w-[420px] mx-auto w-full mt-[42px] rounded-t-3xl overflow-hidden border border-[#272b33] flex flex-col">
+            <div onClick={e => e.stopPropagation()} className="flex-1 bg-[#0D0D10] max-w-[420px] mx-auto w-full mt-[42px] rounded-t-3xl overflow-hidden border border-[#2F2F35] flex flex-col">
               
               {/* Header */}
-              <div className="p-4 border-b border-[#272b33] bg-[#121418] flex items-center justify-between">
+              <div className="p-4 border-b border-[#2F2F35] bg-[#1C1C20] flex items-center justify-between">
                 <div>
                   <div className="font-bold text-xl">Panel de Moderación</div>
-                  <div className="text-xs text-[#94a3b8]">Simulado para preparación de lanzamiento</div>
+                  <div className="text-xs text-[#9CA3AF]">Simulado para preparación de lanzamiento</div>
                 </div>
                 <button onClick={() => setShowModerationPanel(false)} className="text-2xl">×</button>
               </div>
 
               {/* Tabs */}
-              <div className="flex border-b border-[#272b33] bg-[#121418]">
+              <div className="flex border-b border-[#2F2F35] bg-[#1C1C20]">
                 {[
                   { key: 'reports', label: 'Reportes' },
                   { key: 'verifications', label: 'Verificaciones' },
@@ -4977,7 +4977,7 @@ function App() {
                   <button
                     key={tab.key}
                     onClick={() => setModerationTab(tab.key as any)}
-                    className={`flex-1 py-3 text-sm font-medium ${moderationTab === tab.key ? 'text-[#14b8a6] border-b-2 border-[#14b8a6]' : 'text-[#94a3b8]'}`}
+                    className={`flex-1 py-3 text-sm font-medium ${moderationTab === tab.key ? 'text-[#FF671F] border-b-2 border-[#FF671F]' : 'text-[#9CA3AF]'}`}
                   >
                     {tab.label}
                   </button>
@@ -4989,9 +4989,9 @@ function App() {
                 {/* Reports Tab */}
                 {moderationTab === 'reports' && (
                   <div>
-                    <div className="text-sm text-[#94a3b8] mb-3">Reportes enviados por ti ({reports.length})</div>
+                    <div className="text-sm text-[#9CA3AF] mb-3">Reportes enviados por ti ({reports.length})</div>
                     {reports.length === 0 ? (
-                      <div className="text-center text-[#64748b] py-8 text-sm">Aún no has realizado reportes.</div>
+                      <div className="text-center text-[#9CA3AF] py-8 text-sm">Aún no has realizado reportes.</div>
                     ) : (
                       reports.slice().reverse().map(report => {
                         const reported = SEED_PROFILES.find(p => p.id === report.reportedUserId)
@@ -5000,10 +5000,10 @@ function App() {
                             <div className="flex justify-between">
                               <div>
                                 <div>Reportado: <span className="font-semibold">{reported?.name}</span></div>
-                                <div className="text-xs text-[#94a3b8]">Motivo: {report.reason}</div>
+                                <div className="text-xs text-[#9CA3AF]">Motivo: {report.reason}</div>
                                 {report.details && <div className="text-xs mt-1">"{report.details}"</div>}
                               </div>
-                              <div className="text-[10px] text-[#64748b] text-right">
+                              <div className="text-[10px] text-[#9CA3AF] text-right">
                                 {new Date(report.timestamp).toLocaleDateString()}<br />
                                 {report.status}
                               </div>
@@ -5018,21 +5018,21 @@ function App() {
                 {/* Verifications Tab */}
                 {moderationTab === 'verifications' && (
                   <div>
-                    <div className="text-sm text-[#94a3b8] mb-3">Verificaciones pendientes ({pendingVerifications.length})</div>
+                    <div className="text-sm text-[#9CA3AF] mb-3">Verificaciones pendientes ({pendingVerifications.length})</div>
                     {pendingVerifications.length === 0 ? (
-                      <div className="text-center text-[#64748b] py-8 text-sm">No hay verificaciones pendientes.</div>
+                      <div className="text-center text-[#9CA3AF] py-8 text-sm">No hay verificaciones pendientes.</div>
                     ) : (
                       pendingVerifications.map((v, index) => (
                         <div key={index} className="card p-4 mb-4 rounded-2xl">
                           <div className="font-semibold mb-1">{v.name}, {v.age} • {v.city}</div>
                           <div className="flex gap-2 mb-3">
                             <div>
-                              <div className="text-[10px] text-[#64748b]">Documento</div>
-                              <img src={v.idPhoto} className="w-20 h-14 object-cover rounded border border-[#272b33]" />
+                              <div className="text-[10px] text-[#9CA3AF]">Documento</div>
+                              <img src={v.idPhoto} className="w-20 h-14 object-cover rounded border border-[#2F2F35]" />
                             </div>
                             <div>
-                              <div className="text-[10px] text-[#64748b]">Selfie</div>
-                              <img src={v.selfiePhoto} className="w-14 h-14 object-cover rounded border border-[#272b33]" />
+                              <div className="text-[10px] text-[#9CA3AF]">Selfie</div>
+                              <img src={v.selfiePhoto} className="w-14 h-14 object-cover rounded border border-[#2F2F35]" />
                             </div>
                           </div>
                           <div className="flex gap-2">
@@ -5058,9 +5058,9 @@ function App() {
                 {/* Bans Tab */}
                 {moderationTab === 'bans' && (
                   <div>
-                    <div className="text-sm text-[#94a3b8] mb-3">Usuarios baneados ({blockedUsers.length})</div>
+                    <div className="text-sm text-[#9CA3AF] mb-3">Usuarios baneados ({blockedUsers.length})</div>
                     {blockedUsers.length === 0 ? (
-                      <div className="text-center text-[#64748b] py-8 text-sm">No hay usuarios baneados.</div>
+                      <div className="text-center text-[#9CA3AF] py-8 text-sm">No hay usuarios baneados.</div>
                     ) : (
                       blockedUsers.map(userId => {
                         const user = SEED_PROFILES.find(p => p.id === userId)
@@ -5069,7 +5069,7 @@ function App() {
                             <span>{user?.name || 'Usuario desconocido'}</span>
                             <button 
                               onClick={() => unblockUser(userId)}
-                              className="text-xs text-[#14b8a6]"
+                              className="text-xs text-[#FF671F]"
                             >
                               Desbanear
                             </button>
@@ -5082,7 +5082,7 @@ function App() {
 
               </div>
 
-              <div className="p-4 border-t border-[#272b33] text-[10px] text-[#64748b] text-center">
+              <div className="p-4 border-t border-[#2F2F35] text-[10px] text-[#9CA3AF] text-center">
                 Este panel es solo para demostración de preparación de lanzamiento.
               </div>
             </div>
@@ -5099,17 +5099,17 @@ function App() {
               animate={{ y: 0, opacity: 1 }} 
               exit={{ y: 100, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="w-full max-w-[420px] bg-[#0a0b0f] rounded-t-3xl md:rounded-3xl overflow-hidden flex flex-col h-[85vh] md:h-[620px] border border-[#272b33] shadow-2xl"
+              className="w-full max-w-[420px] bg-[#0D0D10] rounded-t-3xl md:rounded-3xl overflow-hidden flex flex-col h-[85vh] md:h-[620px] border border-[#2F2F35] shadow-2xl"
             >
               {/* Modal Header - Premium Pre-Alpha */}
-              <div className="p-4 border-b border-[#272b33] bg-[#121418] flex items-center justify-between">
+              <div className="p-4 border-b border-[#2F2F35] bg-[#1C1C20] flex items-center justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-lg truncate pr-2">
                     {sessions.find(s => s.id === showGroupChatModalFor)?.title || 'Sesión grupal'}
                   </div>
                   <div className="flex items-center gap-2 text-xs mt-0.5">
-                    <span className="text-[#14b8a6]">Chat grupal</span>
-                    <span className="text-[#64748b]">•</span>
+                    <span className="text-[#FF671F]">Chat grupal</span>
+                    <span className="text-[#9CA3AF]">•</span>
                     <span className="text-[#cbd5e1]">{(sessions.find(s => s.id === showGroupChatModalFor)?.participants || displaySessions.find(s => s.id === showGroupChatModalFor)?.participants || []).length} participantes</span>
                     {(() => {
                       const cs = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
@@ -5117,13 +5117,13 @@ function App() {
                       return isC ? <span className="ml-1 px-1 py-px bg-red-500/20 text-red-400 rounded text-[9px] font-bold">ADMIN</span> : null
                     })()}
                     {!isDemoMode && firebaseUser?.uid && (
-                      <span className="ml-1 px-1.5 py-px bg-[#14b8a6] text-black rounded text-[9px] font-extrabold tracking-wide">REAL EN VIVO</span>
+                      <span className="ml-1 px-1.5 py-px bg-[#FF671F] text-black rounded text-[9px] font-extrabold tracking-wide">REAL EN VIVO</span>
                     )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {!isDemoMode && firebaseUser?.uid && (
-                    <button onClick={async () => { setIsLoadingChats(true); try { await loadRealGroupMessages(showGroupChatModalFor); setLastSync(new Date()); setSessionUnreads(prev => { const c = { ...prev }; if (showGroupChatModalFor) c[showGroupChatModalFor] = 0; return c }); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } }} disabled={isLoadingChats} className="text-[10px] px-2.5 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23] disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar'}</button>
+                    <button onClick={async () => { setIsLoadingChats(true); try { await loadRealGroupMessages(showGroupChatModalFor); setLastSync(new Date()); setSessionUnreads(prev => { const c = { ...prev }; if (showGroupChatModalFor) c[showGroupChatModalFor] = 0; return c }); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } }} disabled={isLoadingChats} className="text-[10px] px-2.5 py-1 border border-[#2F2F35] rounded-xl text-[#FF671F] active:bg-[#25252A] disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar'}</button>
                   )}
                   {(() => {
                     const cs = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
@@ -5137,7 +5137,7 @@ function App() {
                       </button>
                     ) : null
                   })()}
-                  <a href="/entrenamatch/privacy.html" target="_blank" className="text-[10px] text-[#64748b] underline">Privacidad</a>
+                  <a href="/entrenamatch/privacy.html" target="_blank" className="text-[10px] text-[#9CA3AF] underline">Privacidad</a>
                   <button onClick={async () => {
                     const issue = prompt('¿Qué problema o sugerencia en esta sesión?');
                     if (issue && showGroupChatModalFor && db) {
@@ -5157,14 +5157,14 @@ function App() {
                       } catch {}
                     }
                   }} className="text-[10px] text-red-400 underline">Reportar</button>
-                  <button onClick={() => setShowGroupChatModalFor(null)} className="text-3xl leading-none text-[#64748b] hover:text-white px-1">×</button>
+                  <button onClick={() => setShowGroupChatModalFor(null)} className="text-3xl leading-none text-[#9CA3AF] hover:text-white px-1">×</button>
                 </div>
               </div>
 
               <div className="flex flex-1 overflow-hidden">
                 {/* Participants Sidebar */}
-                <div className="w-28 border-r border-[#272b33] bg-[#121418] p-2 overflow-auto text-xs">
-                  <div className="text-[#64748b] text-[10px] px-1 mb-1.5 font-medium">PARTICIPANTES</div>
+                <div className="w-28 border-r border-[#2F2F35] bg-[#1C1C20] p-2 overflow-auto text-xs">
+                  <div className="text-[#9CA3AF] text-[10px] px-1 mb-1.5 font-medium">PARTICIPANTES</div>
                   {(() => {
                     const currentSess = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
                     const isThisCreator = currentSess?.creatorId === effectiveUserId || currentSess?.creatorId === 'me'
@@ -5180,7 +5180,7 @@ function App() {
                             const mention = `@${name.split(' ')[0]} `
                             setChatInputValue(prev => prev + mention)
                           }}
-                          className="block w-full text-left px-2 py-1 hover:bg-[#1f242b] rounded text-[#cbd5e1] truncate flex items-center justify-between"
+                          className="block w-full text-left px-2 py-1 hover:bg-[#25252A] rounded text-[#cbd5e1] truncate flex items-center justify-between"
                         >
                           <span>{name}{isCurrent ? ' (tú)' : ''}</span>
                           {isThisCreator && !isCurrent && (
@@ -5203,7 +5203,7 @@ function App() {
                     const currentSess = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
                     const isThisCreator = currentSess?.creatorId === effectiveUserId || currentSess?.creatorId === 'me'
                     if (isThisCreator) {
-                      return <div className="text-[9px] text-[#14b8a6] mt-2 px-1">Eres admin • toca ✕ para expulsar</div>
+                      return <div className="text-[9px] text-[#FF671F] mt-2 px-1">Eres admin • toca ✕ para expulsar</div>
                     }
                     return null
                   })()}
@@ -5211,13 +5211,13 @@ function App() {
 
                 {/* Messages Area */}
                 <div className="flex-1 flex flex-col">
-                  <div ref={groupChatScrollRef} className="flex-1 overflow-auto p-4 space-y-3 text-sm bg-[#0a0b0f]" id="group-chat-scroll">
+                  <div ref={groupChatScrollRef} className="flex-1 overflow-auto p-4 space-y-3 text-sm bg-[#0D0D10]" id="group-chat-scroll">
                     {(sessionMessages[showGroupChatModalFor] || []).length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-full text-center text-[#64748b] px-6">
-                        <div className="w-14 h-14 rounded-2xl bg-[#121418] flex items-center justify-center mb-4 text-3xl">💬</div>
+                      <div className="flex flex-col items-center justify-center h-full text-center text-[#9CA3AF] px-6">
+                        <div className="w-14 h-14 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-4 text-3xl">💬</div>
                         <div className="font-medium text-white">Aún no hay mensajes en el grupo</div>
                         <div className="text-xs mt-1.5 max-w-[240px]">Sé el primero en romper el hielo. { !isDemoMode ? 'Los mensajes son reales (creador puede expulsar/administrar) y se ven en todos los dispositivos.' : 'Los mensajes se ven en todos los dispositivos del grupo.' }</div>
-                        {!isDemoMode && <div className="mt-3 text-[10px] text-[#14b8a6]">Sincronización en vivo vía Firebase</div>}
+                        {!isDemoMode && <div className="mt-3 text-[10px] text-[#FF671F]">Sincronización en vivo vía Firebase</div>}
                       </div>
                     ) : (
                       (sessionMessages[showGroupChatModalFor] || []).map((msg, i) => {
@@ -5229,14 +5229,14 @@ function App() {
                           <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
                             <div className={`max-w-[82%] ${isMe ? 'text-right' : ''}`}>
                               {!isMe && (
-                                <div className="text-[10px] text-[#64748b] mb-0.5 px-1 flex items-center gap-1">
-                                  {isCreator && <span className="text-[#14b8a6]">★ </span>}
+                                <div className="text-[10px] text-[#9CA3AF] mb-0.5 px-1 flex items-center gap-1">
+                                  {isCreator && <span className="text-[#FF671F]">★ </span>}
                                   <span>{msg.senderName}</span>
-                                  {time && <span className="text-[#475569] ml-1">· {time}</span>}
+                                  {time && <span className="text-[#6B7280] ml-1">· {time}</span>}
                                 </div>
                               )}
-                              {isMe && time && <div className="text-[10px] text-[#475569] mb-0.5 px-1 text-right">{time}</div>}
-                              <div className={`px-3.5 py-2 rounded-3xl inline-block text-[14px] leading-snug shadow break-words overflow-hidden ${isMe ? 'bg-[#14b8a6] text-black rounded-br-md' : 'bg-[#1f242b] text-white rounded-bl-md'}`}>
+                              {isMe && time && <div className="text-[10px] text-[#6B7280] mb-0.5 px-1 text-right">{time}</div>}
+                              <div className={`px-3.5 py-2 rounded-3xl inline-block text-[14px] leading-snug shadow break-words overflow-hidden ${isMe ? 'bg-[#FF671F] text-black rounded-br-md' : 'bg-[#25252A] text-white rounded-bl-md'}`}>
                                 {renderMessageText(msg.text)}
                                 {msg.photo && <img src={msg.photo} className="mt-2 max-w-[200px] rounded-xl border border-white/10" />}
                               </div>
@@ -5259,7 +5259,7 @@ function App() {
                                         : [...targetMsg.reactions[emoji], safeName]
                                       msgs[i] = targetMsg
                                       saveSessionMessages(updated)
-                                    }} className={`px-1.5 py-px rounded ${hasReacted ? 'bg-[#14b8a6]/30 text-[#14b8a6]' : 'hover:bg-[#1f242b] text-[#94a3b8]'}`}>
+                                    }} className={`px-1.5 py-px rounded ${hasReacted ? 'bg-[#FF671F]/30 text-[#FF671F]' : 'hover:bg-[#25252A] text-[#9CA3AF]'}`}>
                                       {emoji}{reactors.length > 0 ? ` ${reactors.length}` : ''}
                                     </button>
                                   )
@@ -5280,11 +5280,11 @@ function App() {
                     )}
 
                     {isTyping && (
-                      <div className="flex items-center gap-2 text-[#94a3b8] text-xs px-2 mt-1">
+                      <div className="flex items-center gap-2 text-[#9CA3AF] text-xs px-2 mt-1">
                         <div className="flex gap-1">
-                          <div className="w-1.5 h-1.5 bg-[#94a3b8] rounded-full animate-bounce"></div>
-                          <div className="w-1.5 h-1.5 bg-[#94a3b8] rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
-                          <div className="w-1.5 h-1.5 bg-[#94a3b8] rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
+                          <div className="w-1.5 h-1.5 bg-[#9CA3AF] rounded-full animate-bounce"></div>
+                          <div className="w-1.5 h-1.5 bg-[#9CA3AF] rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
+                          <div className="w-1.5 h-1.5 bg-[#9CA3AF] rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
                         </div>
                         <span>Alguien está escribiendo...</span>
                       </div>
@@ -5292,11 +5292,11 @@ function App() {
                   </div>
 
                   {/* Input area - Premium modern */}
-                  <div className="p-3 border-t border-[#272b33] bg-[#121418]">
+                  <div className="p-3 border-t border-[#2F2F35] bg-[#1C1C20]">
                     {groupChatPhoto && (
-                      <div className="mb-2 flex items-center gap-2 bg-[#0a0b0f] p-2 rounded-2xl border border-[#272b33]">
+                      <div className="mb-2 flex items-center gap-2 bg-[#0D0D10] p-2 rounded-2xl border border-[#2F2F35]">
                         <img src={groupChatPhoto} className="w-10 h-10 object-cover rounded-xl" />
-                        <div className="flex-1 text-xs text-[#94a3b8]">Foto lista para enviar</div>
+                        <div className="flex-1 text-xs text-[#9CA3AF]">Foto lista para enviar</div>
                         <button onClick={() => setGroupChatPhoto(null)} className="text-xs px-2 py-1 text-red-400 hover:text-red-500">Quitar</button>
                       </div>
                     )}
@@ -5317,10 +5317,10 @@ function App() {
                         value={chatInputValue}
                         onChange={(e) => setChatInputValue(e.target.value)}
                         placeholder="Mensaje para el grupo..."
-                        className="flex-1 bg-[#0a0b0f] border border-[#272b33] rounded-3xl px-5 py-3 text-sm outline-none placeholder:text-[#64748b]" 
+                        className="flex-1 bg-[#0D0D10] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none placeholder:text-[#9CA3AF]" 
                       />
 
-                      <label className="cursor-pointer flex items-center justify-center w-11 h-11 bg-[#121418] border border-[#272b33] rounded-3xl text-lg hover:bg-[#1f242b] active:scale-95 transition">📷
+                      <label className="cursor-pointer flex items-center justify-center w-11 h-11 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl text-lg hover:bg-[#25252A] active:scale-95 transition">📷
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                           const file = e.target.files?.[0]
                           if (file) {
@@ -5331,9 +5331,9 @@ function App() {
                         }} />
                       </label>
 
-                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto} className="bg-[#14b8a6] disabled:bg-[#272b33] disabled:text-[#64748b] text-black px-6 rounded-3xl font-semibold text-sm h-11 active:bg-[#0f9d8c] transition">Enviar</button>
+                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto} className="bg-[#FF671F] disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black px-6 rounded-3xl font-semibold text-sm h-11 active:bg-[#E55A1A] transition">Enviar</button>
                     </form>
-                    <div className="text-center text-[9px] text-[#475569] mt-1.5">Los mensajes se sincronizan en tiempo real entre todos los participantes</div>
+                    <div className="text-center text-[9px] text-[#6B7280] mt-1.5">Los mensajes se sincronizan en tiempo real entre todos los participantes</div>
                   </div>
                 </div>
               </div>
@@ -5348,9 +5348,9 @@ function App() {
           <div className="absolute inset-0 z-[150] flex flex-col" onClick={() => setShowNotifications(false)}>
             <div 
               onClick={e => e.stopPropagation()} 
-              className="flex-1 bg-[#0a0b0f] max-w-[420px] mx-auto w-full mt-[42px] rounded-t-3xl border border-[#272b33] overflow-hidden flex flex-col"
+              className="flex-1 bg-[#0D0D10] max-w-[420px] mx-auto w-full mt-[42px] rounded-t-3xl border border-[#2F2F35] overflow-hidden flex flex-col"
             >
-              <div className="p-4 border-b border-[#272b33] flex justify-between items-center bg-[#121418]">
+              <div className="p-4 border-b border-[#2F2F35] flex justify-between items-center bg-[#1C1C20]">
                 <div className="font-semibold">Notificaciones { (unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 ? `(${unreadNotifications + totalChatUnreads + totalSessionUnreads} nuevas)` : '' }</div>
                 {notifications.length > 0 && (
                   <button 
@@ -5358,7 +5358,7 @@ function App() {
                       const allRead = notifications.map(n => ({...n, read: true}))
                       saveNotifications(allRead)
                     }}
-                    className="text-xs text-[#14b8a6]"
+                    className="text-xs text-[#FF671F]"
                   >
                     Marcar todo como leído
                   </button>
@@ -5367,14 +5367,14 @@ function App() {
 
               <div className="flex-1 overflow-auto">
                 {notifications.length === 0 ? (
-                  <div className="p-8 text-center text-[#94a3b8]">
+                  <div className="p-8 text-center text-[#9CA3AF]">
                     No tienes notificaciones aún.
                   </div>
                 ) : (
                   notifications.map(notif => (
                     <div 
                       key={notif.id} 
-                      className={`p-4 border-b border-[#272b33] ${!notif.read ? 'bg-[#121418]' : ''}`}
+                      className={`p-4 border-b border-[#2F2F35] ${!notif.read ? 'bg-[#1C1C20]' : ''}`}
                       onClick={() => {
                         const updated = notifications.map(n => 
                           n.id === notif.id ? {...n, read: true} : n
@@ -5415,12 +5415,12 @@ function App() {
                     >
                       <div className="flex justify-between">
                         <div className="font-medium text-sm">{notif.title}</div>
-                        <div className="text-[10px] text-[#64748b]">
+                        <div className="text-[10px] text-[#9CA3AF]">
                           {new Date(notif.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                         </div>
                       </div>
                       <div className="text-sm text-[#cbd5e1] mt-0.5">{notif.body}</div>
-                      {!notif.read && <div className="w-2 h-2 bg-[#14b8a6] rounded-full mt-2"></div>}
+                      {!notif.read && <div className="w-2 h-2 bg-[#FF671F] rounded-full mt-2"></div>}
                     </div>
                   ))
                 )}
@@ -5452,10 +5452,10 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-[#0a0b0f] text-white flex items-center justify-center p-6">
+        <div className="min-h-screen bg-[#0D0D10] text-white flex items-center justify-center p-6">
           <div className="text-center">
             <div className="text-2xl mb-4">Algo salió mal</div>
-            <p className="text-[#94a3b8] mb-6">La aplicación tuvo un error durante la inicialización.</p>
+            <p className="text-[#9CA3AF] mb-6">La aplicación tuvo un error durante la inicialización.</p>
             <button 
               onClick={() => window.location.reload()} 
               className="btn-primary"
