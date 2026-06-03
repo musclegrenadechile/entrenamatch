@@ -2857,7 +2857,7 @@ function App() {
             <div className="flex items-center justify-between mb-1 px-1">
               <div>
                 <div className="text-2xl font-semibold tracking-[-1.2px]">Tus matches</div>
-                <div className="text-[#94a3b8] text-sm">Conexiones reales</div>
+                <div className="text-[#94a3b8] text-sm">Conexiones reales <span className="text-[8px] px-1 py-px bg-[#14b8a6]/10 text-[#14b8a6] rounded">en vivo</span></div>
               </div>
               {!isDemoMode && (
                 <button 
