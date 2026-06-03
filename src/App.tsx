@@ -948,6 +948,16 @@ function App() {
     }
   }, [activeTab])
 
+  // Live refresh for "Entrenando Ahora" to keep real-time urgency (every 60s in explore)
+  useEffect(() => {
+    if (activeTab === 'explore' && !isDemoMode) {
+      const id = setInterval(() => {
+        loadRealProfiles().catch(() => {});
+      }, 60000);
+      return () => clearInterval(id);
+    }
+  }, [activeTab, isDemoMode])
+
   // Clear comment UI when leaving profile tab
   useEffect(() => {
     if (activeTab !== 'profile') {
