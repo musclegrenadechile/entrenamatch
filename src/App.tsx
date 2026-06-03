@@ -3052,15 +3052,15 @@ function App() {
                   const spots = 4 - squad.members.length
 
                   return (
-                    <div key={squad.id} className="card rounded-3xl p-4 active:bg-[#25252A]" onClick={() => setSelectedSquad(squad.id)}>
+                    <div key={squad.id} className="card session-card rounded-3xl p-4 active:bg-[#25252A] border border-[#FF671F]/20" onClick={() => setSelectedSquad(squad.id)}>
                       <div className="flex justify-between">
                         <div>
-                          <div className="font-semibold text-lg flex items-center gap-2">{squad.name} <span className="text-[10px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded-full">Squad</span></div>
-                          <div className="text-sm text-[#FF671F]">{squad.focus}</div>
+                          <div className="font-semibold text-lg flex items-center gap-2 tracking-tight">{squad.name} <span className="text-[9px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded font-medium">SQUAD</span></div>
+                          <div className="text-sm text-[#FF671F] font-medium mt-0.5">{squad.focus}</div>
                         </div>
                         <div className="text-right text-xs">
-                          <div>{squad.members.length}/4 miembros</div>
-                          {!isMember && spots > 0 && <div className="text-[#22c55e]">Espacios disponibles</div>}
+                          <div className="text-[#22c55e] font-medium">{squad.members.length}/4</div>
+                          {!isMember && spots > 0 && <div className="text-[#9CA3AF] mt-0.5">cupos</div>}
                         </div>
                       </div>
 
@@ -3078,7 +3078,7 @@ function App() {
                               saveSquads(updated)
                               toast.success('¡Te uniste al Squad!')
                             }}
-                            className="bg-[#FF671F] text-black text-xs px-4 py-1.5 rounded-2xl font-medium"
+                            className="bg-[#FF671F] text-black text-xs px-4 py-1.5 rounded-2xl font-medium active:bg-[#E55A1A]"
                           >
                             Unirme
                           </button>
@@ -3089,9 +3089,9 @@ function App() {
                               e.stopPropagation()
                               setSelectedSquad(squad.id)
                             }}
-                            className="text-xs border border-[#FF671F] text-[#FF671F] px-3 py-1.5 rounded-2xl font-medium"
+                            className="text-xs border border-[#FF671F] text-[#FF671F] px-3 py-1.5 rounded-2xl font-medium active:bg-[#FF671F] active:text-black"
                           >
-                            Abrir chat del squad
+                            Abrir chat
                           </button>
                         )}
                       </div>
@@ -3172,22 +3172,24 @@ function App() {
                         creatorProfile.lat || 0, creatorProfile.lng || 0) : null
 
                       return (
-                        <div key={session.id} className="card rounded-3xl p-4">
+                        <div key={session.id} className="card session-card rounded-3xl p-4">
                           <div className="flex justify-between items-start">
                             <div>
-                              <div className="font-semibold text-lg">{session.title}</div>
-                              <div className="text-sm text-[#FF671F]">{session.trainingType} • {session.time}</div>
-                              <div className="text-sm text-[#9CA3AF] mt-0.5">{session.location}</div>
+                              <div className="font-semibold text-lg tracking-tight">{session.title}</div>
+                              <div className="text-sm text-[#FF671F] font-medium mt-0.5">{session.trainingType} • {session.time}</div>
+                              <div className="text-sm text-[#9CA3AF] mt-0.5 flex items-center gap-1">
+                                <MapPin size={13} /> {session.location}
+                              </div>
                             </div>
                             <div className="text-right text-xs">
-                              <div className="text-[#22c55e] font-medium">{spotsLeft} cupos</div>
-                              {dist && <div className="text-[#9CA3AF]">{dist} km</div>}
+                              <div className="text-[#22c55e] font-semibold">{spotsLeft} cupos</div>
+                              {dist && <div className="text-[#9CA3AF] mt-0.5">{dist} km</div>}
                             </div>
                           </div>
 
                           <div className="mt-3 flex items-center justify-between text-sm">
                             <div className="text-[#9CA3AF]">
-                              Creado por <span className="text-white">{session.creatorName}</span>
+                              Creado por <span className="text-white font-medium">{session.creatorName}</span>
                               {!isDemoMode && session.creatorId && session.creatorId !== 'me' && (
                                 <span className="ml-1.5 text-[9px] px-1.5 py-px bg-[#FF671F] text-black rounded-full align-middle">REAL</span>
                               )}
@@ -3292,22 +3294,24 @@ function App() {
                         creatorProfileForDist.lat || 0, creatorProfileForDist.lng || 0) : null
 
                       return (
-                        <div key={session.id} className="card rounded-3xl p-4 border border-[#FF4F79]/50 ring-1 ring-inset ring-[#FF4F79]/10">
+                        <div key={session.id} className="card session-card rounded-3xl p-4 border border-[#FF4F79]/50 ring-1 ring-inset ring-[#FF4F79]/10">
                           <div className="flex justify-between items-start">
                             <div>
-                              <div className="font-semibold text-lg flex items-center gap-2">
+                              <div className="font-semibold text-lg flex items-center gap-2 tracking-tight">
                                 {session.title}
-                                {isCreator && <span className="text-[10px] bg-[#FF671F] text-black px-2 py-0.5 rounded">Creada por ti</span>}
+                                {isCreator && <span className="text-[9px] bg-[#FF671F] text-black px-2 py-0.5 rounded font-medium">TUYA</span>}
                               </div>
-                              <div className="text-sm text-[#FF671F]">{session.trainingType} • {session.time}</div>
-                              <div className="text-sm text-[#9CA3AF]">{session.location}</div>
+                              <div className="text-sm text-[#FF671F] font-medium mt-0.5">{session.trainingType} • {session.time}</div>
+                              <div className="text-sm text-[#9CA3AF] mt-0.5 flex items-center gap-1">
+                                <MapPin size={13} /> {session.location}
+                              </div>
                               {session.lastMessagePreview && (
                                 <div className="text-[10px] text-[#9CA3AF] mt-0.5 truncate max-w-[180px]">💬 {session.lastMessagePreview}</div>
                               )}
                             </div>
                             <div className="text-right text-xs">
                               {dist && <div className="text-[#9CA3AF]">{dist} km</div>}
-                              <div className="text-[#22c55e] mt-0.5">{session.participants.length} / {session.maxParticipants}</div>
+                              <div className="text-[#22c55e] mt-0.5 font-medium">{session.participants.length} / {session.maxParticipants}</div>
                             </div>
                           </div>
 
@@ -4742,11 +4746,11 @@ function App() {
                 toast.success('Sesión creada', { description: 'Ya puedes chatear con quienes se unan' })
               }}>
                 <div className="space-y-4">
-                  <input name="title" placeholder="Título (ej: Running costanera + mate)" required className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3" />
+                  <input name="title" placeholder="Título (ej: Running costanera + mate)" required className="form-input w-full" />
                   
                   <div className="grid grid-cols-2 gap-3">
-                    <input name="time" placeholder="Horario (19:00)" required className="bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3" />
-                    <input name="location" placeholder="Lugar (Reñaca)" required className="bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3" />
+                    <input name="time" placeholder="Horario (19:00)" required className="form-input" />
+                    <input name="location" placeholder="Lugar (Reñaca)" required className="form-input" />
                   </div>
 
                   <div>
@@ -4768,7 +4772,7 @@ function App() {
 
                   <div>
                     <div className="text-xs text-[#9CA3AF] mb-1">Máximo participantes</div>
-                    <input name="max" type="number" min="2" max="12" defaultValue="5" required className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3" />
+                    <input name="max" type="number" min="2" max="12" defaultValue="5" required className="form-input w-full" />
                   </div>
                 </div>
 
@@ -5378,23 +5382,23 @@ function App() {
               onClick={e => e.stopPropagation()}
               className="w-full max-w-[420px] bg-[#0D0D10] rounded-t-3xl md:rounded-3xl overflow-hidden flex flex-col h-[85dvh] md:h-[620px] max-h-[85dvh] border border-[#2F2F35] shadow-2xl"
             >
-              {/* Modal Header - Premium Pre-Alpha */}
+              {/* Modal Header - Premium */}
               <div className="p-4 border-b border-[#2F2F35] bg-[#1C1C20] flex items-center justify-between">
                 <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-lg truncate pr-2">
+                  <div className="section-header text-lg truncate pr-2 tracking-tight">
                     {sessions.find(s => s.id === showGroupChatModalFor)?.title || 'Sesión grupal'}
                   </div>
-                  <div className="flex items-center gap-2 text-xs mt-0.5">
-                    <span className="text-[#FF671F]">Chat grupal</span>
+                  <div className="flex items-center gap-2 text-xs mt-1">
+                    <span className="text-[#FF671F] font-medium">Chat grupal en vivo</span>
                     <span className="text-[#9CA3AF]">•</span>
                     <span className="text-[#cbd5e1]">{(sessions.find(s => s.id === showGroupChatModalFor)?.participants || displaySessions.find(s => s.id === showGroupChatModalFor)?.participants || []).length} participantes</span>
                     {(() => {
                       const cs = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
                       const isC = cs?.creatorId === effectiveUserId || cs?.creatorId === 'me'
-                      return isC ? <span className="ml-1 px-1 py-px bg-red-500/20 text-red-400 rounded text-[9px] font-bold">ADMIN</span> : null
+                      return isC ? <span className="ml-1 px-1.5 py-px bg-red-500/20 text-red-400 rounded text-[9px] font-bold">ADMIN</span> : null
                     })()}
                     {!isDemoMode && firebaseUser?.uid && (
-                      <span className="ml-1 px-1.5 py-px bg-[#FF671F] text-black rounded text-[9px] font-extrabold tracking-wide">REAL EN VIVO</span>
+                      <span className="ml-1 px-1.5 py-px bg-[#FF671F] text-black rounded text-[9px] font-extrabold tracking-wide">REAL</span>
                     )}
                   </div>
                 </div>
@@ -5491,13 +5495,13 @@ function App() {
 
                 {/* Messages Area */}
                 <div className="flex-1 flex flex-col min-h-0">
-                  {/* Compact participants bar for mobile (full chat width now that sidebar is hidden on phones) */}
-                  <div className="md:hidden px-3 py-1.5 border-b border-[#2F2F35] bg-[#1C1C20] text-[10px] flex items-center gap-1 overflow-x-auto text-[#9CA3AF]">
-                    <span className="font-medium text-[#FF671F] mr-1 flex-shrink-0">Participantes:</span>
+                  {/* Compact participants bar for mobile - polished */}
+                  <div className="md:hidden px-3 py-1.5 border-b border-[#2F2F35] bg-[#1C1C20] text-[10px] flex items-center gap-1.5 overflow-x-auto text-[#9CA3AF]">
+                    <span className="font-semibold text-[#FF671F] mr-1 flex-shrink-0 tracking-wide">PARTICIPANTES</span>
                     {(() => {
                       const currentSess = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
                       const parts = currentSess?.participants || []
-                      return parts.slice(0, 5).map((pid, idx) => {
+                      return parts.slice(0, 6).map((pid, idx) => {
                         const seed = SEED_PROFILES.find(p => p.id === pid)
                         const isSelf = pid === effectiveUserId
                         const nm = isSelf ? 'Tú' : (seed?.name?.split(' ')[0] || 'P')
@@ -5510,13 +5514,12 @@ function App() {
                                 setChatInputValue(prev => (prev.trim() ? prev.trimEnd() + ' ' : '') + mention)
                                 setTimeout(() => {
                                   groupChatInputRef.current?.focus()
-                                  // Scroll chat to bottom so user sees context while typing the message after mention (mobile UX)
                                   const scrollEl = document.getElementById('group-chat-scroll')
                                   if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight
                                 }, 0)
                               }
                             }}
-                            className={`px-1.5 py-0.5 bg-[#25252A] rounded text-[#cbd5e1] whitespace-nowrap active:bg-[#FF671F] active:text-black transition ${isSelf ? 'opacity-60' : 'hover:bg-[#FF671F]/10'}`}
+                            className={`px-2 py-0.5 bg-[#25252A] rounded-lg text-[#cbd5e1] whitespace-nowrap active:bg-[#FF671F] active:text-black transition text-xs font-medium ${isSelf ? 'opacity-60' : 'hover:bg-[#FF671F]/10'}`}
                             disabled={isSelf}
                           >
                             {nm}
@@ -5527,11 +5530,11 @@ function App() {
                     {(() => {
                       const currentSess = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
                       const parts = currentSess?.participants || []
-                      return parts.length > 5 ? <span className="text-[#FF671F] flex-shrink-0">+{parts.length-5}</span> : null
+                      return parts.length > 6 ? <span className="text-[#FF671F] flex-shrink-0 text-xs">+{parts.length-6}</span> : null
                     })()}
                   </div>
 
-                  <div ref={groupChatScrollRef} className="flex-1 overflow-auto p-2.5 sm:p-4 space-y-3 text-sm bg-[#0D0D10] w-full" id="group-chat-scroll">
+                  <div ref={groupChatScrollRef} className="flex-1 overflow-auto p-3 sm:p-4 space-y-2 text-sm bg-[#0D0D10] w-full" id="group-chat-scroll">
                     {(sessionMessages[showGroupChatModalFor] || []).length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full text-center text-[#9CA3AF] px-6">
                         <div className="w-14 h-14 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-4 text-3xl">💬</div>
@@ -5556,7 +5559,7 @@ function App() {
                                 </div>
                               )}
                               {isMe && time && <div className="text-[10px] text-[#6B7280] mb-0.5 px-1 text-right">{time}</div>}
-                              <div className={`px-3.5 py-2 rounded-3xl inline-block text-[14px] leading-snug shadow break-words overflow-hidden ${isMe ? 'bg-[#FF671F] text-black rounded-br-md' : 'bg-[#25252A] text-white rounded-bl-md'}`}>
+                              <div className={`message-bubble inline-block ${isMe ? 'sent' : 'received'}`}>
                                 {renderMessageText(msg.text)}
                                 {msg.photo && <img src={msg.photo} className="mt-2 max-w-[200px] rounded-xl border border-white/10" />}
                               </div>
@@ -5639,10 +5642,10 @@ function App() {
                         onChange={(e) => setChatInputValue(e.target.value)}
                         placeholder="Mensaje al grupo..."
                         enterKeyHint="send"
-                        className="flex-1 bg-[#0D0D10] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none placeholder:text-[#9CA3AF] min-w-0" 
+                        className="flex-1 bg-[#0D0D10] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none placeholder:text-[#9CA3AF] min-w-0 focus:border-[#FF671F]/50" 
                       />
 
-                      <label className="cursor-pointer flex items-center justify-center w-11 h-11 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl text-lg hover:bg-[#25252A] active:scale-95 transition">📷
+                      <label className="cursor-pointer flex items-center justify-center w-11 h-11 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl text-xl hover:bg-[#25252A] active:bg-[#FF671F]/10 active:text-[#FF671F] active:scale-95 transition">📷
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                           const file = e.target.files?.[0]
                           if (file) {
@@ -5653,7 +5656,7 @@ function App() {
                         }} />
                       </label>
 
-                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto} className="bg-[#FF671F] disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black px-3 rounded-3xl font-semibold h-11 w-11 flex items-center justify-center active:bg-[#E55A1A] transition" aria-label="Enviar">
+                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto} className="bg-[#FF671F] disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black px-3 rounded-3xl font-semibold h-11 w-11 flex items-center justify-center active:bg-[#E55A1A] active:scale-95 transition" aria-label="Enviar">
                         <Send size={18} />
                       </button>
                     </form>

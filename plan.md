@@ -121,6 +121,12 @@ Everything must work after hard refresh + on different physical devices (not jus
   - Verification: cleaner layout with badges.
   - Feedback: accent icon, glass history cards, better spacing/form.
   - Overall: more icons, visual hierarchy, use of new CSS primitives.
+- [x] **Continued visual design polish (diseño visual round)**:
+  - Added .form-input (nice focus with accent) + .session-card (hover lift/shadow) to index.css.
+  - Sessions tab: cards now use session-card, added MapPin icons, tighter tracking, improved "Mis sesiones" distinction, create modal form uses form-input + better trainingType chips.
+  - Squads: cards refreshed with session-card + consistent buttons.
+  - Group chat modal: header uses section-header + REAL/ADMIN badges, mobile participants bar polished, bubbles now use .message-bubble CSS (matches 1:1 sent/received style), input area refined.
+  - Overall: stronger premium consistent fitness social app aesthetic (gradients, spacing, hovers, mobile touch).
 - [x] **Messaging scroll fix** ("scroll de mensajeria" + "no bajan a los perfiles"):
   - Chat list (perfiles/matches in Mensajes tab): header made sticky (stays visible while you scroll down the list of profiles/chats). Added min-h-0 and proper flex for reliable scrolling to bottom of the list.
   - Auto-scroll to bottom (latest messages) when opening a chat from the profiles list improved: more aggressive rAF + multiple timeouts (50/150/350ms), explicit setTimeout in openChat, min-h-0 on container, also tries by id.
