@@ -5279,7 +5279,9 @@ function App() {
                 {/* Scrollable thread */}
                 <div className="max-h-[52vh] overflow-y-auto p-4 space-y-3 text-sm bg-[#161618]">
                   {livePost.text && (
-                    <div className="text-xs text-[#9CA3AF] mb-2 italic border-l-2 border-[#FF671F]/40 pl-2">"{livePost.text.length > 120 ? livePost.text.slice(0,120) + '...' : livePost.text}"</div>
+                    <div className="text-xs text-[#9CA3AF] mb-2 italic border-l-2 border-[#FF671F]/40 pl-2">
+                      {livePost.pinned && '📌 '}"{livePost.text.length > 120 ? livePost.text.slice(0,120) + '...' : livePost.text}"
+                    </div>
                   )}
                   {comments.length > 0 ? (
                     comments.map((c: any) => (
