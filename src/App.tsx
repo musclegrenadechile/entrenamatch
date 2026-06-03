@@ -1889,7 +1889,13 @@ function App() {
       // Always return newest-first (client sort; works regardless of index)
       posts.sort((a, b) => b.timestamp - a.timestamp)
       const limited = posts.slice(0, 10)
-      setProfilePosts((prev) => ({ ...prev, [userId]: limited }))
+      setProfilePosts((prev) => {
+        const newState = { ...prev, [userId]: limited }
+        // Cache server results to localStorage so real users see their (and others') posts immediately on reload/mount
+        // before or if the tab-load effect hasn't fired yet. Load always wins as source of truth for real.
+        try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+        return newState
+      })
       return limited
     } catch (e) {
       console.warn('loadProfilePosts error', e)
@@ -1912,25 +1918,49 @@ function App() {
     if (!isDemoMode && firebaseUser?.uid && db) {
       try {
         const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
-        const ref = await addDoc(collection(db, 'profilePosts'), {
-          ...post,
-          createdAt: serverTimestamp()
-        })
+        // Build clean payload: never send undefined fields (Firestore SDK rejects them)
+        const data: any = {
+          userId: post.userId,
+          text: post.text,
+          timestamp: post.timestamp,
+          likes: post.likes || [],
+          comments: post.comments || []
+        }
+        if (post.photo) {
+          data.photo = post.photo
+        }
+        data.createdAt = serverTimestamp()
+        const ref = await addDoc(collection(db, 'profilePosts'), data)
         post.id = ref.id
-        const current = profilePosts[effectiveUserId] || []
-        const updated = { ...profilePosts, [effectiveUserId]: [post, ...current].slice(0, 10) }
-        setProfilePosts(updated)
+        // Use functional update to avoid any stale closure on profilePosts
+        setProfilePosts((prev) => {
+          const current = prev[effectiveUserId] || []
+          const newList = [post, ...current].slice(0, 10)
+          const newState = { ...prev, [effectiveUserId]: newList }
+          // Persist to localStorage as cache so posts survive refresh even before next loadProfilePosts
+          try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+          return newState
+        })
       } catch (e) {
         console.warn('create post fs', e)
-        // fallback local
-        const current = profilePosts[effectiveUserId] || []
-        const updated = { ...profilePosts, [effectiveUserId]: [post, ...current].slice(0, 10) }
-        saveProfilePosts(updated)
+        // fallback local (still save to LS so it "saves" visibly for the user)
+        setProfilePosts((prev) => {
+          const current = prev[effectiveUserId] || []
+          const newList = [post, ...current].slice(0, 10)
+          const newState = { ...prev, [effectiveUserId]: newList }
+          try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+          return newState
+        })
       }
     } else {
-      const current = profilePosts[effectiveUserId] || []
-      const updated = { ...profilePosts, [effectiveUserId]: [post, ...current].slice(0, 10) }
-      saveProfilePosts(updated)
+      // demo or no db: persist via helper (updates LS + state)
+      setProfilePosts((prev) => {
+        const current = prev[effectiveUserId] || []
+        const newList = [post, ...current].slice(0, 10)
+        const newState = { ...prev, [effectiveUserId]: newList }
+        try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+        return newState
+      })
     }
     toast.success('Publicado en tu muro')
   }
@@ -1951,7 +1981,11 @@ function App() {
       try {
         const { doc, updateDoc } = await import('firebase/firestore')
         await updateDoc(doc(db, 'profilePosts', postId), { likes: newLikes })
-        setProfilePosts((prev) => ({ ...prev, [postUserId]: newPosts }))
+        setProfilePosts((prev) => {
+          const newState = { ...prev, [postUserId]: newPosts }
+          try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+          return newState
+        })
       } catch (e) {
         console.warn(e)
       }
@@ -1989,7 +2023,11 @@ function App() {
       try {
         const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
         await updateDoc(doc(db, 'profilePosts', postId), { comments: arrayUnion(comment) })
-        setProfilePosts((prev) => ({ ...prev, [postUserId]: newPosts }))
+        setProfilePosts((prev) => {
+          const newState = { ...prev, [postUserId]: newPosts }
+          try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+          return newState
+        })
       } catch (e) {
         console.warn(e)
       }
@@ -2017,8 +2055,9 @@ function App() {
       } catch (e) { console.warn(e) }
     }
     const current = profilePosts[postUserId] || []
-    const updated = { ...profilePosts, [postUserId]: current.filter(p => p.id !== postId) }
-    saveProfilePosts(updated)
+    const newList = current.filter(p => p.id !== postId)
+    const updated = { ...profilePosts, [postUserId]: newList }
+    saveProfilePosts(updated)  // delete uses save (LS + state)
     toast.success('Publicación eliminada')
   }
 
