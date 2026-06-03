@@ -251,4 +251,35 @@ Run `npm run android:build && npx cap open android` after installing Android Stu
 
 This enables real engagement for the Chile 5-10 testers (new match alerts etc.).
 
-For any specific part (full server push example, Camera plugin completion, custom domain, AAB test protocol, etc.), just say the word and we continue.
+## Switch to Firebase Hosting (recommended for beta iteration)
+
+Currently using GitHub Pages. Firebase config is ready.
+
+Run (after `firebase login` if not done):
+```bash
+npm run deploy
+```
+Or directly `npx firebase-tools deploy --only hosting --project entrenamatch`
+
+This gives better PWA support, faster deploys during testing, and easy path to custom domain later.
+
+Update any hardcoded GH links if needed (privacy etc point to GH for now, fine for beta).
+
+## Google Play Upload Steps (after assets ready)
+
+1. Go to Play Console (account ready).
+2. Create app "EntrenaMatch", internal test track.
+3. Upload the signed AAB.
+4. Fill listing with assets from assets/play-store/ (use polished screenshots, icon, feature graphic, descriptions).
+5. Set privacy policy to the hosted one.
+6. Content rating questionnaire (18+ for social/dating elements).
+7. Add testers emails for the Chile group.
+8. Publish to internal test.
+9. Share the opt-in link with testers.
+10. They install, see the welcome modal, use the polished app, give feedback via form in Profile.
+
+For updates: rebuild AAB, upload new version.
+
+See BETA_TESTERS_GUIDE.md for tester protocol and AAB test steps before inviting.
+
+For any specific part (full server push example, more assets, iOS, etc.), just say the word and we continue.
