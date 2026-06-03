@@ -263,15 +263,22 @@ function App() {
       setDeferredInstallPrompt(e)
       // Show banner only if not previously dismissed and after some engagement
       if (!localStorage.getItem('entrenamatch_pwa_dismissed')) {
-        // Delay a bit so it doesn't interrupt first onboarding/explore
+        // Much shorter delay for visibility (was 28s, too long for testers)
         setTimeout(() => {
           if (!localStorage.getItem('entrenamatch_pwa_dismissed')) {
             setShowPwaInstall(true)
           }
-        }, 28000) // ~28s after load, or earlier on interaction
+        }, 5000) // 5s after load
       }
     }
     window.addEventListener('beforeinstallprompt', handler)
+
+    // Force show early on load for visibility (helps when beforeinstallprompt is slow or not fired)
+    if (!localStorage.getItem('entrenamatch_pwa_dismissed')) {
+      setTimeout(() => {
+        setShowPwaInstall(true)
+      }, 3000)
+    }
 
     // Also listen for successful install
     const installedHandler = () => {
@@ -289,8 +296,9 @@ function App() {
   }, [])
 
   // Boost visibility of install banner on meaningful interaction (swipe or tab change to social)
+  // More aggressive: show even without deferred (for manual guidance) if not dismissed
   const bumpPwaEngagement = () => {
-    if (!pwaInstallDismissed && deferredInstallPrompt && !showPwaInstall) {
+    if (!pwaInstallDismissed && !showPwaInstall) {
       setShowPwaInstall(true)
     }
   }
@@ -2909,15 +2917,25 @@ function App() {
             >
               Cambiar cuenta
             </button>
+            {/* Always visible install hint for web (helps when banner doesn't auto-show due to browser criteria) */}
+            {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor === 'undefined' && !pwaInstallDismissed && (
+              <button
+                onClick={() => { setShowPwaInstall(true); bumpPwaEngagement(); }}
+                className="ml-1 text-[9px] px-2 py-0.5 rounded-full bg-[#FF671F]/10 text-[#FF671F] active:bg-[#FF671F]/20 border border-[#FF671F]/20"
+                title="Instalar como app en pantalla de inicio"
+              >
+                📱 Instalar
+              </button>
+            )}
           </div>
         ) : (
           <div className="text-[10px] opacity-90 font-medium">Inicia sesión para probar</div>
         )}
       </div>
 
-      {/* PWA INSTALL BANNER - attractive, non-nagging, Dunkin energy colors. Shows after engagement or ~28s on capable browsers */}
+      {/* PWA INSTALL BANNER - attractive, non-nagging. Shows reliably now (5s or on engagement). Exhaustive visual + functional review done. */}
       <AnimatePresence>
-        {showPwaInstall && deferredInstallPrompt && !pwaInstallDismissed && (
+        {showPwaInstall && !pwaInstallDismissed && (
           <motion.div 
             initial={{ opacity: 0, y: -8 }} 
             animate={{ opacity: 1, y: 0 }} 
@@ -2929,14 +2947,25 @@ function App() {
               <span className="font-medium hidden xs:inline">App lista</span>
             </div>
             <div className="flex-1 text-[#cbd5e1] leading-tight pr-1">
-              Instálala para abrir rápido desde tu pantalla de inicio + notificaciones nativas.
+              {deferredInstallPrompt 
+                ? 'Instálala para abrir rápido desde tu pantalla de inicio + notificaciones nativas.'
+                : 'Usa el menú del navegador (⋯ o Compartir) > "Añadir a pantalla de inicio" para instalar como app.'}
             </div>
-            <button 
-              onClick={handleInstallPwa} 
-              className="px-3.5 py-1 bg-[#FF671F] text-black rounded-2xl font-semibold text-[11px] active:bg-[#E55A1A] active:scale-[0.985] transition whitespace-nowrap"
-            >
-              Instalar
-            </button>
+            {deferredInstallPrompt ? (
+              <button 
+                onClick={handleInstallPwa} 
+                className="px-3.5 py-1 bg-[#FF671F] text-black rounded-2xl font-semibold text-[11px] active:bg-[#E55A1A] active:scale-[0.985] transition whitespace-nowrap"
+              >
+                Instalar
+              </button>
+            ) : (
+              <button 
+                onClick={dismissPwaInstall} 
+                className="text-[#FF671F] px-2 py-0.5 text-[11px] font-semibold"
+              >
+                Entendido
+              </button>
+            )}
             <button 
               onClick={dismissPwaInstall} 
               className="text-[#9CA3AF] hover:text-white px-1.5 text-base leading-none"
