@@ -5367,20 +5367,35 @@ function App() {
                 <div className="flex-1 flex flex-col min-h-0">
                   {/* Compact participants bar for mobile (full chat width now that sidebar is hidden on phones) */}
                   <div className="md:hidden px-3 py-1.5 border-b border-[#2F2F35] bg-[#1C1C20] text-[10px] flex items-center gap-1 overflow-x-auto text-[#9CA3AF]">
-                    <span className="font-medium text-[#FF671F] mr-1">Participantes:</span>
+                    <span className="font-medium text-[#FF671F] mr-1 flex-shrink-0">Participantes:</span>
                     {(() => {
                       const currentSess = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
                       const parts = currentSess?.participants || []
                       return parts.slice(0, 5).map((pid, idx) => {
                         const seed = SEED_PROFILES.find(p => p.id === pid)
-                        const nm = pid === effectiveUserId ? 'Tú' : (seed?.name?.split(' ')[0] || 'P')
-                        return <span key={idx} className="px-1.5 py-0.5 bg-[#25252A] rounded text-[#cbd5e1] whitespace-nowrap">{nm}</span>
+                        const isSelf = pid === effectiveUserId
+                        const nm = isSelf ? 'Tú' : (seed?.name?.split(' ')[0] || 'P')
+                        return (
+                          <button
+                            key={idx}
+                            onClick={() => {
+                              if (!isSelf) {
+                                const mention = `@${nm} `
+                                setChatInputValue(prev => (prev.trim() ? prev.trimEnd() + ' ' : '') + mention)
+                              }
+                            }}
+                            className={`px-1.5 py-0.5 bg-[#25252A] rounded text-[#cbd5e1] whitespace-nowrap active:bg-[#FF671F] active:text-black transition ${isSelf ? 'opacity-60' : 'hover:bg-[#FF671F]/10'}`}
+                            disabled={isSelf}
+                          >
+                            {nm}
+                          </button>
+                        )
                       })
                     })()}
                     {(() => {
                       const currentSess = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
                       const parts = currentSess?.participants || []
-                      return parts.length > 5 ? <span className="text-[#FF671F]">+{parts.length-5}</span> : null
+                      return parts.length > 5 ? <span className="text-[#FF671F] flex-shrink-0">+{parts.length-5}</span> : null
                     })()}
                   </div>
 
