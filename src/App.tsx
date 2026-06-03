@@ -3072,6 +3072,20 @@ function App() {
     return Array.from(unique.values()).filter(p => !swiped.has(p.id))
   }, [likedIds, passedIds, realProfiles])
 
+  // LIVE TRAINING NOW - the killer innovative feature. Real-time who is training right now near you. Green live indicator. Creates urgency, no fitness app does this well.
+  const liveTrainingNow = useMemo(() => {
+    if (!realProfiles.length) return [];
+    const now = Date.now();
+    return realProfiles
+      .filter(p => p.trainingNow && p.trainingNowSince && (now - p.trainingNowSince < 3 * 60 * 60 * 1000)) // auto expire after 3h
+      .map(p => {
+        const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng) : 999;
+        return { ...p, distance: dist };
+      })
+      .filter(p => p.distance < 15) // near, 15km
+      .sort((a, b) => a.distance - b.distance);
+  }, [realProfiles, userLocation]);
+
   // Filtered deck (with distance support + blocking)
   // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
   const deck = useMemo(() => {
@@ -3095,6 +3109,7 @@ function App() {
         if (dist > filters.maxDistanceKm) return false
       }
       if (filters.onlyAvailableToday && !p.availableToday) return false
+      if (filters.onlyLiveTraining && !p.trainingNow) return false
       return true
     })
 
@@ -3361,7 +3376,7 @@ function App() {
   // resetFilters is now provided by useFilters hook
   // Keeping a fallback for compatibility during refactor
   const resetFilters = resetFiltersHook || (() => {
-    setFilters({ minAge: 20, maxAge: 40, gender: 'todos', trainingTypes: [], availability: [], maxDistanceKm: 100, onlyAvailableToday: false })
+    setFilters({ minAge: 20, maxAge: 40, gender: 'todos', trainingTypes: [], availability: [], maxDistanceKm: 100, onlyAvailableToday: false, onlyLiveTraining: false })
   })
 
   // Gate for unauthenticated users and profile creation
@@ -3523,6 +3538,32 @@ function App() {
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
         {/* ===== EXPLORE / SWIPE (fully owned by ExploreTab) ===== */}
+        {activeTab === 'explore' && liveTrainingNow.length > 0 && (
+          <div className="px-4 py-2 bg-[#0D0D10] border-b border-[#22c55e]/30">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="live-pill bg-[#22c55e] text-black">🟢 EN VIVO AHORA</div>
+              <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti</div>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {liveTrainingNow.slice(0, 4).map(user => (
+                <div key={user.id} onClick={() => setShowFullProfile(user)} className="min-w-[120px] card p-1.5 text-[10px] cursor-pointer border border-[#22c55e]/50 active:scale-95">
+                  <div className="font-medium truncate">{user.name}</div>
+                  <div className="text-[#9CA3AF]">{user.distance.toFixed(1)}km · {user.trainingTypes?.[0] || 'Entreno'}</div>
+                  <div className="text-[#22c55e] text-[9px]">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m</div>
+                  <button onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); }} className="mt-0.5 text-[9px] bg-[#22c55e] text-black px-1.5 py-0.5 rounded font-medium">Unirme ya</button>
+                </div>
+              ))}
+            </div>
+            <div className="text-[9px] text-[#9CA3AF]">¡Toca para ver perfil o únete rápido! Urgencia real-time.</div>
+          </div>
+        )}
+
+        {activeTab === 'explore' && liveTrainingNow.length === 0 && (
+          <div className="px-4 py-1 text-[10px] text-[#9CA3AF] bg-[#0D0D10] border-b border-[#2F2F35]">
+            Sé el primero en "Entrenando Ahora" cerca de ti — marca en tu Perfil. ¡Genera urgencia!
+          </div>
+        )}
+
         {activeTab === 'explore' && (
           <ExploreTab
             deck={deck}
@@ -4671,6 +4712,24 @@ function App() {
               </div>
             </div>
 
+            {/* Entrenando Ahora - KILLER FEATURE real-time, live green indicator near you. Generates urgency, no other fitness app has it this well. */}
+            <div className="px-4 mt-2 card p-4 space-y-3">
+              <div>
+                <button 
+                  onClick={() => {
+                    const newVal = !currentUser.trainingNow
+                    const updated = { ...currentUser, trainingNow: newVal, trainingNowSince: newVal ? Date.now() : undefined }
+                    saveUserWithRealSync(updated as CurrentUser)
+                    toast(newVal ? '🟢 ¡Entrenando ahora en vivo! La gente cerca te verá' : 'Entrenamiento finalizado')
+                  }}
+                  className={`w-full py-3 rounded-2xl text-sm font-semibold transition flex items-center justify-center gap-2 ${currentUser.trainingNow ? 'bg-[#22c55e] text-black' : 'bg-[#1C1C20] border border-[#2F2F35] text-white'}`}
+                >
+                  {currentUser.trainingNow ? '🟢 Entrenando ahora (EN VIVO)' : 'Marcar como entrenando ahora'}
+                </button>
+                <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Aparecerás en "Entrenando Ahora" para usuarios cerca. ¡Urgencia real-time, abre la app más!</div>
+              </div>
+            </div>
+
             {/* MURO / WALL - attractive FB-style feed to make profile feel alive */}
             <div className="px-4 mt-4">
               <div className="flex items-center justify-between mb-2 px-1">
@@ -5385,9 +5444,9 @@ function App() {
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-2">
                   <div className="font-semibold text-2xl tracking-tight">Filtros</div>
-                  {((filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0)) > 0 && (
+                  {((filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0) + (filters.onlyLiveTraining ? 1 : 0)) > 0 && (
                     <div className="text-xs bg-[#FF671F] text-black px-2 py-0.5 rounded-full font-bold">
-                      { (filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0) } activos
+                      { (filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0) + (filters.onlyLiveTraining ? 1 : 0) } activos
                     </div>
                   )}
                 </div>
@@ -5402,7 +5461,7 @@ function App() {
 
               {/* Active filters summary - tappable to remove */}
               <AnimatePresence>
-              {(filters.trainingTypes.length > 0 || filters.availability.length > 0 || filters.gender !== 'todos' || filters.onlyAvailableToday) && (
+              {(filters.trainingTypes.length > 0 || filters.availability.length > 0 || filters.gender !== 'todos' || filters.onlyAvailableToday || filters.onlyLiveTraining) && (
                 <motion.div 
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
@@ -5441,6 +5500,14 @@ function App() {
                       className="text-[10px] bg-[#22c55e]/15 text-[#22c55e] px-2.5 py-0.5 rounded-full active:bg-[#22c55e]/30 flex items-center gap-1"
                     >
                       Disponibles hoy <span className="text-xs">×</span>
+                    </button>
+                  )}
+                  {filters.onlyLiveTraining && (
+                    <button 
+                      onClick={() => setFilters(f => ({...f, onlyLiveTraining: false}))}
+                      className="text-[10px] bg-[#22c55e]/15 text-[#22c55e] px-2.5 py-0.5 rounded-full active:bg-[#22c55e]/30 flex items-center gap-1"
+                    >
+                      Entrenando ahora <span className="text-xs">×</span>
                     </button>
                   )}
                 </motion.div>
@@ -5513,6 +5580,20 @@ function App() {
                   <div>
                     <div className="text-sm font-medium">Solo disponibles hoy</div>
                     <div className="text-xs text-[#9CA3AF]">Personas que pueden entrenar el mismo día</div>
+                  </div>
+                </label>
+
+                {/* Live Training Now - the innovative killer feature */}
+                <label className="flex items-center gap-3 p-3 bg-[#1C1C20] rounded-2xl border border-[#22c55e]/50 cursor-pointer active:bg-[#25252A] mt-2">
+                  <input 
+                    type="checkbox" 
+                    checked={filters.onlyLiveTraining} 
+                    onChange={e => setFilters(f => ({...f, onlyLiveTraining: e.target.checked}))}
+                    className="w-5 h-5 accent-[#22c55e]"
+                  />
+                  <div>
+                    <div className="text-sm font-medium flex items-center gap-1">Solo entrenando ahora <span className="live-pill bg-[#22c55e] text-black text-[8px]">🟢 EN VIVO</span></div>
+                    <div className="text-xs text-[#9CA3AF]">¡Quién está entrenando en este preciso momento cerca! Urgencia real.</div>
                   </div>
                 </label>
               </div>

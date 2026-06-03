@@ -99,6 +99,8 @@ export interface Notification {
 export interface CurrentUser extends Omit<Profile, 'id'> {
   id: 'me'
   availableToday?: boolean
+  trainingNow?: boolean
+  trainingNowSince?: number
   verificationStatus?: 'unverified' | 'pending' | 'verified'
   verificationDate?: number
   verificationDocuments?: {
