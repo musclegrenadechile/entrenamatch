@@ -112,6 +112,15 @@ Everything must work after hard refresh + on different physical devices (not jus
   - Explore swipe cards: .swipe-card + extra vignette gradient for cinematic premium photo treatment + ring.
   - Matches cards subtle ring.
   - More use of custom classes for consistency.
+- [x] **Profile tab visual polish** (continued aesthetics):
+  - Sticky header: section-header, live-pill REAL badge, icon sync button with spin, gradient edit button.
+  - Hero: taller, stronger cinematic multi-layer gradients, verification badge overlay, intensity as .chip-health, quick camera/edit buttons with glass.
+  - Stats: 3-col with icons (Heart/Star/Dumbbell), .stat-number colored, better spacing.
+  - Training/Goals: icons in headers, .chip-health for goals, better tracking.
+  - Availability: nicer toggle (green when available, Clock icon).
+  - Verification: cleaner layout with badges.
+  - Feedback: accent icon, glass history cards, better spacing/form.
+  - Overall: more icons, visual hierarchy, use of new CSS primitives.
 - Add FIREBASE_SERVICE_ACCOUNT secret to GitHub for full auto Firebase Hosting deploys on every push (recommended over GH Pages for PWA + future FCM).
 
 ## Later Phases (high level)

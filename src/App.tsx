@@ -3,7 +3,8 @@ import { useState, useEffect, useMemo, useCallback, useRef, Component, type Reac
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, MessageCircle, User, MapPin, Dumbbell, 
-  Edit2, RefreshCw, ArrowLeft, Send, Star, Plus, Users, Bell, Download 
+  Edit2, RefreshCw, ArrowLeft, Send, Star, Plus, Users, Bell, Download,
+  Clock, Camera
 } from 'lucide-react'
 import { 
   signUpWithEmail, 
@@ -3644,12 +3645,12 @@ function App() {
         {/* ===== PROFILE - Premium Pre-Alpha experience (self-contained to prevent black screens) */}
         {activeTab === 'profile' && currentUser && (
           <div className="flex-1 overflow-auto bg-[#0D0D10] pb-28">
-            {/* Sticky header with escape hatches */}
-            <div className="sticky top-0 z-20 bg-[#0D0D10]/95 backdrop-blur border-b border-[#2F2F35] px-4 py-3 flex items-center justify-between">
+            {/* Sticky header with escape hatches - polished aesthetics */}
+            <div className="sticky top-0 z-20 bg-[#0D0D10]/95 backdrop-blur-xl border-b border-[#2F2F35] px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div>
-                  <div className="text-xl font-semibold tracking-tight">Tu perfil</div>
-                  {!isDemoMode && <div className="text-[10px] text-[#FF671F] font-medium -mt-0.5">REAL • Sincronizado con Firebase</div>}
+                  <div className="section-header text-xl">Tu perfil</div>
+                  {!isDemoMode && <div className="live-pill !text-[8px] !py-0.5 !mt-0.5">REAL • Firebase</div>}
                 </div>
                 {!isDemoMode && (
                   <button onClick={async () => { 
@@ -3658,7 +3659,6 @@ function App() {
                       await loadRealProfiles(); 
                       await loadRealSessions(); 
                       await loadMyFeedbacks(); 
-                      // Also force reload self profile from Firestore to ensure latest after edits
                       if (firebaseUser?.uid) {
                         try {
                           const rp = await getUserProfile(firebaseUser.uid);
@@ -3691,36 +3691,59 @@ function App() {
                     } finally {
                       setIsSyncingProfile(false);
                     }
-                  }} disabled={isSyncingProfile} className="text-[10px] px-2 py-1 rounded-xl border border-[#FF671F]/50 text-[#FF671F] active:bg-[#FF671F] active:text-black disabled:opacity-60">{isSyncingProfile ? '...' : 'Sincronizar'}</button>
+                  }} disabled={isSyncingProfile} className="text-[10px] px-2.5 py-1 rounded-xl border border-[#FF671F]/40 text-[#FF671F] active:bg-[#FF671F]/10 disabled:opacity-60 flex items-center gap-1">
+                    <RefreshCw size={12} className={isSyncingProfile ? 'animate-spin' : ''} /> {isSyncingProfile ? 'Sync...' : 'Sincronizar'}
+                  </button>
                 )}
-                {lastSync && <span className="text-[10px] text-[#9CA3AF] ml-1">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
+                {lastSync && <span className="text-[9px] text-[#9CA3AF] ml-1">hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
               </div>
               <div className="flex gap-2">
-                <button onClick={handleLogout} className="text-xs px-3 py-1.5 rounded-2xl border border-[#3f2a2a] text-[#f87171] active:bg-[#1f1616]">Cambiar cuenta</button>
-                <button onClick={() => setShowOnboarding(true)} className="text-xs px-3 py-1.5 rounded-2xl bg-[#FF671F] text-black font-semibold active:bg-[#E55A1A]">Editar</button>
+                <button onClick={handleLogout} className="text-[10px] px-3 py-1 rounded-2xl border border-[#3f2a2a] text-[#f87171] active:bg-[#1f1616] active:text-white">Cambiar cuenta</button>
+                <button onClick={() => setShowOnboarding(true)} className="text-[10px] px-3 py-1 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black font-semibold active:opacity-90 flex items-center gap-1"><Edit2 size={13} /> Editar</button>
               </div>
             </div>
 
-            {/* Hero photo with name overlay */}
-            <div className="relative h-64 w-full overflow-hidden bg-[#111]">
+            {/* Hero photo with name overlay - premium visual treatment */}
+            <div className="relative h-72 w-full overflow-hidden bg-[#111]">
               <img 
                 src={(currentUser.photos && currentUser.photos[0]) || 'https://picsum.photos/id/1005/600/800'} 
                 className="absolute inset-0 w-full h-full object-cover" 
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
               />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/50 to-black" />
+              {/* Enhanced cinematic gradients */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/90" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              
               <div className="absolute bottom-0 left-0 right-0 p-5">
-                <div className="text-3xl font-bold tracking-[-1.5px] text-white">{currentUser.name}, {currentUser.age}</div>
-                <div className="text-[#FF671F] text-sm mt-0.5 flex items-center gap-2">
-                  <MapPin size={14} /> {currentUser.city}, {currentUser.country} • {currentUser.level} • {currentUser.intensity || 'Moderado'}
+                <div className="flex items-end gap-2">
+                  <div className="text-3xl font-bold tracking-[-1.8px] text-white drop-shadow">{currentUser.name}, {currentUser.age}</div>
+                  {currentUser.verificationStatus === 'verified' && (
+                    <div className="mb-1 px-2 py-0.5 bg-[#22c55e] text-black text-[9px] font-bold rounded-full flex items-center gap-0.5">✓ VERIFICADO</div>
+                  )}
+                </div>
+                <div className="text-[#FF671F] text-sm mt-1 flex items-center gap-2 font-medium">
+                  <MapPin size={15} /> {currentUser.city}, {currentUser.country}
+                  <span className="text-white/60">•</span> 
+                  <span className="text-white/90">{currentUser.level}</span>
+                  <span className="text-white/60">•</span> 
+                  <span className="chip-health text-[10px] px-2 py-0.5 !font-semibold">{currentUser.intensity || 'Moderado'}</span>
                 </div>
               </div>
+
+              {/* Quick edit overlay */}
               <button 
                 onClick={() => setShowOnboarding(true)}
-                className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/70 hover:bg-black/80 text-white text-xs px-3 py-1.5 rounded-2xl border border-white/20"
+                className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/60 hover:bg-black/80 active:bg-black text-white text-xs px-3.5 py-2 rounded-2xl border border-white/30 backdrop-blur"
               >
-                <Edit2 size={14} /> Editar todo
+                <Edit2 size={14} /> Editar foto y datos
               </button>
+
+              {/* Camera quick add badge if native */}
+              {typeof window !== 'undefined' && (window as any).Capacitor && CapacitorCamera && (
+                <button onClick={async () => { /* reuse the camera logic below if possible, or trigger onboarding */ setShowOnboarding(true); }} className="absolute top-4 left-4 text-xs bg-black/60 px-2.5 py-1 rounded-2xl border border-white/20 flex items-center gap-1 text-white">
+                  <Camera size={13} /> Cámara
+                </button>
+              )}
             </div>
 
             {/* Photo gallery strip */}
@@ -3779,45 +3802,50 @@ function App() {
               </div>
             </div>
 
-            {/* Stats row */}
+            {/* Stats row - premium visual cards */}
             <div className="px-4 mt-4 grid grid-cols-3 gap-3">
               {[
-                { label: 'Matches', value: matches?.length || 0 },
-                { label: 'Sesiones', value: squads?.length || 0 },
-                { label: 'Nivel', value: currentUser.level || '—' }
+                { label: 'Matches', value: matches?.length || 0, icon: Heart, color: '#FF671F' },
+                { label: 'Sesiones', value: squads?.length || 0, icon: Star, color: '#00C4B4' },
+                { label: 'Nivel', value: currentUser.level || '—', icon: Dumbbell, color: '#FF4F79' }
               ].map((stat, i) => (
-                <div key={i} className="card p-3 text-center rounded-2xl">
-                  <div className="text-2xl font-semibold text-[#FF671F]">{stat.value}</div>
-                  <div className="text-[10px] text-[#9CA3AF] mt-0.5">{stat.label}</div>
+                <div key={i} className="card p-4 text-center rounded-2xl flex flex-col items-center justify-center">
+                  <stat.icon size={18} className="mb-1" style={{ color: stat.color }} />
+                  <div className="stat-number" style={{ color: stat.color }}>{stat.value}</div>
+                  <div className="text-[10px] text-[#9CA3AF] mt-0.5 font-medium tracking-widest">{stat.label}</div>
                 </div>
               ))}
             </div>
 
-            {/* Training Types */}
-            <div className="px-4 mt-4">
-              <div className="text-xs uppercase tracking-widest text-[#9CA3AF] mb-2 px-1">Tipos de entrenamiento</div>
+            {/* Training Types - visual polish */}
+            <div className="px-4 mt-5">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-[1.5px] text-[#9CA3AF] mb-2 px-1">
+                <Dumbbell size={13} /> Tipos de entrenamiento
+              </div>
               <div className="flex flex-wrap gap-2">
                 {(currentUser.trainingTypes || []).length > 0 ? (
-                  currentUser.trainingTypes.map((t: string) => <div key={t} className="chip chip-active text-xs px-3 py-1">{t}</div>)
+                  currentUser.trainingTypes.map((t: string) => <div key={t} className="chip chip-active text-xs px-3.5 py-1.5">{t}</div>)
                 ) : <span className="text-xs text-[#9CA3AF]">Sin tipos seleccionados</span>}
               </div>
             </div>
 
             {/* Goals */}
-            <div className="px-4 mt-3">
-              <div className="text-xs uppercase tracking-widest text-[#9CA3AF] mb-2 px-1">Objetivos</div>
+            <div className="px-4 mt-4">
+              <div className="flex items-center gap-2 text-xs uppercase tracking-[1.5px] text-[#9CA3AF] mb-2 px-1">
+                <Star size={13} /> Objetivos
+              </div>
               <div className="flex flex-wrap gap-2">
                 {(currentUser.goals || []).length > 0 ? (
-                  currentUser.goals.map((g: string) => <div key={g} className="chip text-xs px-3 py-1">{g}</div>)
+                  currentUser.goals.map((g: string) => <div key={g} className="chip chip-health text-xs px-3.5 py-1.5">{g}</div>)
                 ) : <span className="text-xs text-[#9CA3AF]">Sin objetivos aún</span>}
               </div>
             </div>
 
-            {/* Availability + Disponible hoy */}
+            {/* Availability + Disponible hoy - nicer toggle visual */}
             <div className="px-4 mt-4 card p-4 space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-[#9CA3AF]">Disponibilidad</span>
-                <span className="text-right text-white/90">{(currentUser.availability || []).join(' • ') || 'No especificada'}</span>
+              <div className="flex justify-between text-sm items-center">
+                <span className="text-[#9CA3AF] flex items-center gap-1.5"><Clock size={14} /> Disponibilidad</span>
+                <span className="text-right text-white/90 text-xs">{(currentUser.availability || []).join(' • ') || 'No especificada'}</span>
               </div>
               <div>
                 <button 
@@ -3827,29 +3855,28 @@ function App() {
                     saveUserWithRealSync(updated as CurrentUser)
                     toast(newVal ? '¡Marcado como disponible hoy!' : 'Disponibilidad actualizada')
                   }}
-                  className={`w-full py-2.5 rounded-2xl text-sm font-semibold transition ${currentUser.availableToday ? 'bg-[#FF671F] text-black' : 'bg-[#1C1C20] border border-[#2F2F35] text-white'}`}
+                  className={`w-full py-3 rounded-2xl text-sm font-semibold transition flex items-center justify-center gap-2 ${currentUser.availableToday ? 'bg-[#10B981] text-black' : 'bg-[#1C1C20] border border-[#2F2F35] text-white'}`}
                 >
-                  {currentUser.availableToday ? '✓ Disponible para entrenar hoy' : 'No disponible hoy'}
+                  {currentUser.availableToday ? '✓ Disponible para entrenar hoy' : 'Marcar como disponible hoy'}
                 </button>
-                <div className="text-[10px] text-center text-[#9CA3AF] mt-1">Otros usuarios te verán en el filtro “Solo disponibles hoy”</div>
+                <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Otros usuarios te verán en el filtro “Solo disponibles hoy”</div>
               </div>
             </div>
 
-            {/* Verification status */}
+            {/* Verification status - visual upgrade */}
             <div className="px-4 mt-4">
-              <div className="card p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium flex items-center gap-2 text-sm">Verificación de identidad
-                      {currentUser.verificationStatus === 'verified' && <span className="text-[#22c55e] text-xs">✓ Verificado</span>}
-                      {currentUser.verificationStatus === 'pending' && <span className="text-yellow-400 text-xs">En revisión</span>}
-                    </div>
-                    <div className="text-xs text-[#9CA3AF] mt-0.5">Aumenta la confianza de otros usuarios reales</div>
+              <div className="card p-4 flex items-center gap-3">
+                <div className="flex-1">
+                  <div className="font-medium flex items-center gap-2 text-sm">
+                    Verificación de identidad
+                    {currentUser.verificationStatus === 'verified' && <span className="chip-health text-[10px] px-2 py-0 !font-bold">✓ VERIFICADO</span>}
+                    {currentUser.verificationStatus === 'pending' && <span className="text-[#facc15] text-xs font-medium">EN REVISIÓN</span>}
                   </div>
+                  <div className="text-xs text-[#9CA3AF] mt-0.5">Aumenta la confianza de otros usuarios reales</div>
                 </div>
                 {currentUser.verificationStatus !== 'verified' && (
-                  <button onClick={() => { setShowVerificationFlow(true); setVerificationStep(1); }} className="mt-3 w-full bg-[#FF671F] text-black py-2 rounded-2xl text-sm font-semibold">
-                    {currentUser.verificationStatus === 'pending' ? 'Ver estado' : 'Iniciar verificación'}
+                  <button onClick={() => { setShowVerificationFlow(true); setVerificationStep(1); }} className="shrink-0 text-xs px-4 py-2 bg-[#FF671F] text-black rounded-2xl font-semibold active:bg-[#E55A1A]">
+                    {currentUser.verificationStatus === 'pending' ? 'Ver estado' : 'Verificar'}
                   </button>
                 )}
               </div>
@@ -3902,14 +3929,14 @@ function App() {
               </div>
             </div>
 
-            {/* Beta Feedback ENHANCED (Phase 0 - structured, with history) */}
+            {/* Beta Feedback ENHANCED (Phase 0 - structured, with history) - visual polish */}
             <div className="px-4 mt-2 mb-8">
-              <div className="card p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="font-semibold text-sm">Feedback de Beta</div>
-                  <div className="text-[10px] px-2 py-0.5 rounded-full bg-[#FF671F]/10 text-[#FF671F]">Privado</div>
+              <div className="card p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="font-semibold text-sm flex items-center gap-2"><Star size={15} className="text-[#FF671F]" /> Feedback de Beta</div>
+                  <div className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#FF671F]/10 text-[#FF671F] border border-[#FF671F]/20">Privado</div>
                 </div>
-                <p className="text-[11px] text-[#9CA3AF] mb-3">Tu opinión define la app. Todo se guarda en Firebase y lo leemos.</p>
+                <p className="text-[11px] text-[#9CA3AF] mb-4">Tu opinión define la app. Todo se guarda en Firebase y lo leemos.</p>
 
                 {/* Type segmented */}
                 <div className="mb-3">
@@ -4012,15 +4039,15 @@ function App() {
                     )}
                     <div className="space-y-2 max-h-44 overflow-auto pr-1">
                       {myFeedbacks.map((fb, i) => (
-                        <div key={fb.id || i} className="bg-[#1C1C20] rounded-2xl p-2.5 text-xs border border-[#2F2F35]">
+                        <div key={fb.id || i} className="bg-[#1C1C20] rounded-2xl p-3 text-xs border border-[#2F2F35] card-glass">
                           <div className="flex items-center gap-2 text-[#9CA3AF]">
                             <span className="font-medium text-white/90">{fb.type === 'bug' ? '🐞 Bug' : fb.type === 'idea' ? '💡 Idea' : fb.type === 'ux' ? '🎨 UX' : '📝 Otro'}</span>
                             <span>·</span>
-                            <span>{'★'.repeat(Math.max(1, Math.min(5, fb.rating || 0)))}</span>
-                            <span className="ml-auto text-[#9CA3AF]">{new Date(fb.createdAt).toLocaleDateString('es-CL', {month:'short', day:'numeric'})}</span>
+                            <span className="text-[#facc15]">{ '★'.repeat(Math.max(1, Math.min(5, fb.rating || 0))) }</span>
+                            <span className="ml-auto text-[#9CA3AF] text-[10px]">{new Date(fb.createdAt).toLocaleDateString('es-CL', {month:'short', day:'numeric'})}</span>
                           </div>
-                          <div className="mt-1 text-[#cbd5e1] leading-snug line-clamp-2">{fb.text}</div>
-                          <div className="mt-0.5 text-[#9CA3AF] text-[10px]">{fb.platform}</div>
+                          <div className="mt-1.5 text-[#cbd5e1] leading-snug line-clamp-2 text-[11px]">{fb.text}</div>
+                          <div className="mt-1 text-[#9CA3AF] text-[9px] flex items-center gap-1">📱 {fb.platform}</div>
                         </div>
                       ))}
                     </div>
