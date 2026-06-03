@@ -3677,6 +3677,7 @@ function App() {
                           </div>
                           <div className="text-[10px] text-[#9CA3AF]">· {getRelativeTime(post.timestamp)}</div>
                           {post.pinned && <span className="text-[8px] text-[#FF671F]">fijado</span>}
+                          {Date.now() - post.timestamp < 3600000 && <span className="text-[8px] bg-[#22c55e] text-black px-1 rounded">nuevo</span>}
                         </div>
 
                         <div className="text-sm leading-relaxed mb-2">{post.text}</div>
