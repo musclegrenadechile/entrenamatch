@@ -756,7 +756,11 @@ function App() {
           // Listen for notifications while app is open
           PushNotifications.addListener('pushNotificationReceived', (notification: any) => {
             console.log('Push received while open:', notification)
-            toast.info(notification.title || 'Nueva notificación', { description: notification.body || 'Revisa la app' })
+            toast.info(notification.title || 'Nueva notificación', { 
+              description: notification.body || 'Revisa la app',
+              className: 'bg-[#1C1C20] border-[#FF671F] text-white',
+              duration: 5000
+            })
           })
 
           // Listen for action (tap on notification)
