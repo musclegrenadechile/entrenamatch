@@ -3537,7 +3537,7 @@ function App() {
                 <button onClick={resetFilters} className="text-[#14b8a6] text-sm font-semibold active:opacity-70">Limpiar todo</button>
               </div>
 
-              {/* Live results count - very useful for Pre-Alpha */}
+              {/* Live results count for filters - helps when choosing profiles in Explorar */}
               <div className="mb-4 px-3 py-2 bg-[#121418] rounded-2xl text-sm flex items-center justify-between border border-[#272b33]">
                 <span className="text-[#94a3b8]">Perfiles que verás en Explorar</span>
                 <span className="font-bold text-[#14b8a6] text-lg tabular-nums">{deck.length}</span>
