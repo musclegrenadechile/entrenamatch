@@ -206,6 +206,7 @@ Como Google account verification pendiente, avanzamos full en la versión web: h
   - Badge rojo numérico en tab inferior "Mensajes" (1:1) y "Sesiones" (grupales).
   - En la lista de Mensajes, cada fila muestra pill rojo con conteo de no leídos.
   - Si la pestaña está oculta (cambiaste de tab del browser o minimizaste) + diste permiso de notificaciones del navegador: aparece notificación nativa del SO (con icono + click lleva al chat).
+  - El panel de Notificaciones (campana) ahora muestra avatar del remitente para mensajes.
 - Permiso se pide automáticamente al loguearte con cuenta real en web (o botón manual en Perfil: "🔔 Activar/renovar notificaciones del navegador").
 - Funciona cross-tab / cross-browser (hard refresh después de push). No requiere "Actualizar chats reales" para recibir la alerta (los listeners bg la detectan).
 
@@ -218,7 +219,7 @@ Como Google account verification pendiente, avanzamos full en la versión web: h
 6. Click "Ver" o abre el chat → conteos se ponen en 0.
 7. Repite enviando desde B mientras A está en Sesiones o tab oculta.
 8. Para grupos: Cuenta A crea sesión → B se une → A envía en group chat mientras B tiene modal cerrado o tab oculta → notif debe llegar (toast + badge en Sesiones + browser si hidden).
-9. Hard refresh en B → unreads se resetean (esperado, son de sesión actual); historial de mensajes persiste; nuevos envíos post-refresh siguen notificando.
+9. Hard refresh en B → unreads now persist across refreshes (localStorage); timestamps (e.g. "5m", "2h") appear next to last message previews in the chat list; toast notifications now enriched with sender avatar (photo or initial) + full message preview + "En vivo" context; historial de mensajes persiste; nuevos envíos post-refresh siguen notificando con toast + badge + browser notif (if permitted + tab hidden).
 10. Bonus: usa el botón en Perfil para re-solicitar permiso del navegador si no diste "allow" la primera vez. Revisa el panel de Notificaciones (campana) para ver historial de "Mensaje de X".
 
 Si no ves toast/badge: verifica que estés en modo real (no "version demo"), hard refresh, revisa consola (busca "📨 Live 1:1" o "BG live group"). Si browser notif no aparece aunque permiso granted: la pestaña debe estar realmente oculta (no solo otro tab de la app).
@@ -226,3 +227,20 @@ Si no ves toast/badge: verifica que estés en modo real (no "version demo"), har
 Esto hace que "si alguien envía un mensaje uno lo reciba" sea obvio sin estar mirando la lista.
 
 **Web first ahora:** Todo lo anterior es 100% en la URL pública de GH Pages. APK sigue build en CI pero deprioritizado hasta verify de Google. Usa la web para tests diarios con los 5-10 de Chile.
+
+## Update de Diseño (nueva atracción visual)
+Hicimos una revisión exhaustiva del diseño: el tema anterior con teal #14b8a6 era funcional pero "pobre" visualmente y poco atractivo psicológicamente. 
+
+**Nueva paleta Dunkin' Energy:**
+- Primario: Naranja vibrante #FF671F (estilo Dunkin' Donuts - evoca energía, motivación, acción inmediata, "hambre" de entrenar y conectar. Psicológicamente atrae y estimula).
+- Secundario: Rosa vibrante #FF4F79 (diversión, social, el "match" juguetón).
+- Acento salud: Teal #00C4B4 (vitalidad, confianza).
+- Darks actualizados a #0D0D10 / #1C1C20 / #25252A para premium moderno.
+- Textos y borders ajustados para mejor contraste y legibilidad.
+- Actualizado en Tailwind, index.css (vars + hardcodes), App.tsx, componentes (Explore, Onboarding, Auth), manifest, index.html (theme-color), favicon.svg (colores a naranja/rosa).
+
+Resultado: App mucho más atractiva, energética y que invita a los testers a usarla y quedarse. Hard refresh para ver el nuevo look naranja/rosa en botones, badges, headers, chips, etc. ¡Diseño que atrae!
+
+Gracias de verdad! Tu feedback va a definir cómo evoluciona la app (incluyendo más polish visual).
+
+Cualquier duda, avísanos.
