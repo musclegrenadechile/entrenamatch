@@ -2726,7 +2726,7 @@ function App() {
       {/* MINIMAL TOP BAR - Clean, premium, high-visibility auth controls */}
       <div className="bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black z-50 flex items-center justify-between px-4 py-2 text-xs font-medium shadow-md">
         <div className="font-semibold tracking-[-0.3px] flex items-center gap-1.5">
-          Real backend <span className="opacity-70">• v0.1.0-prealpha</span>
+          Real backend <span className="opacity-70 text-[#FF4F79]">• v0.1.0-prealpha</span>
         </div>
 
         {(currentUser || firebaseUser) ? (
