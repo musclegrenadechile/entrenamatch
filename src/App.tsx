@@ -780,8 +780,6 @@ function App() {
 
       const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
 
-      console.log(`  [loadRealChatMessages] for ${otherUserId}: snap1=${snap1.size}, snap2=${snap2.size}`);
-
       const msgs: any[] = [];
       snap1.forEach((doc) => {
         const data = doc.data() as any;
@@ -802,7 +800,6 @@ function App() {
         });
       });
       msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-      console.log(`  [loadRealChatMessages] after map+sort for ${otherUserId}: ${msgs.length} msgs`);
       // Always update local messages state for this chat (for persistence and list previews)
       setMessages(prev => {
         const updated = { ...prev, [otherUserId]: msgs };
@@ -827,7 +824,6 @@ function App() {
   // Reliable 1:1 real chat: load on open + safe polling (avoids index/rules issues with complex 'in' queries)
   // The previous onSnapshot is kept commented below as optional enhancement.
   useEffect(() => {
-    console.log(`[ActiveChat 1:1 poll effect] activeChat=${activeChat}, isDemo=${isDemoMode}, realMatches includes? ${realMatches.includes(activeChat || '')}`);
     if (!activeChat || isDemoMode || !firebaseUser?.uid || !db) {
       setRealChatMessages([])
       return
@@ -845,7 +841,7 @@ function App() {
     if (!realMatches.includes(activeChat) && realProfiles.some(r => r.id === activeChat)) {
       const newReal = [...realMatches, activeChat]
       setRealMatches(newReal)
-      console.log(`[real chat bootstrap] ${activeChat} is real profile but not in realMatches yet → adding + ensuring match doc`)
+      console.log(`[real chat] bootstrapped real match for ${activeChat}`)
       loadRealMatches() // re-query to confirm and trigger any bg effects cleanly
       if (db && firebaseUser?.uid) {
         (async () => {
@@ -869,13 +865,11 @@ function App() {
 
     // Load immediately when opening a real chat
     loadRealChatMessages(activeChat).then(msgs => {
-      console.log(`[Active 1:1 open load] loaded ${msgs?.length ?? 0} for ${activeChat}`);
       if (msgs) setRealChatMessages(msgs);
     });
 
     // Safe polling for live updates (every 8s while chat is open) - feels real-time for pre-alpha
     const interval = setInterval(async () => {
-      console.log(`[Active 1:1 poll 8s] running for open chat ${activeChat}`);
       const msgs = await loadRealChatMessages(activeChat);
       if (msgs) setRealChatMessages(msgs);
     }, 8000);
@@ -895,7 +889,6 @@ function App() {
   useEffect(() => {
     if (isDemoMode || !firebaseUser?.uid || realMatches.length === 0) return;
     const interval = setInterval(() => {
-      console.log(`[BG 30s poll] loading messages for ${realMatches.length} real matches`);
       realMatches.forEach(id => {
         loadRealChatMessages(id);  // updates local messages for that chat
       });
@@ -911,8 +904,6 @@ function App() {
     }
     const myMatchIds = realMatches || [];
 
-    console.log('🔄 [BG 1:1 listeners effect] running. current realMatches:', myMatchIds);
-
     // Cleanup listeners for matches we no longer have
     Object.keys(realChatUnsubsRef.current).forEach((id) => {
       if (!myMatchIds.includes(id)) {
@@ -922,7 +913,6 @@ function App() {
     });
 
     myMatchIds.forEach((matchId) => {
-      console.log(`   [BG 1:1] considering matchId=${matchId}, alreadySubscribed=${!!realChatUnsubsRef.current[matchId]}`);
       if (realChatUnsubsRef.current[matchId]) return; // already subscribed
 
       (async () => {
@@ -932,29 +922,24 @@ function App() {
           const q1 = query(messagesRef, where('from', '==', firebaseUser.uid), where('to', '==', matchId));
           const q2 = query(messagesRef, where('from', '==', matchId), where('to', '==', firebaseUser.uid));
 
-          console.log(`   [BG 1:1] attaching onSnapshot listeners for matchId=${matchId} (myUid=${firebaseUser.uid})`);
-
-          // Handler for q1 (my outgoing to this match) - process snapshot directly for speed
+          // Handler for q1 (my outgoing to this match)
           const handler1 = (snapshot: any) => {
-            console.log(`📨 BG live 1:1 (q1) for ${matchId} - snap.size=${snapshot?.size ?? '?'}`);
+            console.log(`📨 Live 1:1 update (bg) for ${matchId}`);
             loadRealChatMessages(matchId);
           };
           const unsub1 = onSnapshot(q1, handler1, (err: any) => console.warn(`bg 1:1 q1 listener error for ${matchId}:`, err));
 
           // Handler for q2 (incoming from this match)
           const handler2 = (snapshot: any) => {
-            console.log(`📨 BG live 1:1 (q2 incoming) for ${matchId} - snap.size=${snapshot?.size ?? '?'}`);
+            console.log(`📨 Live 1:1 update (bg) for ${matchId}`);
             loadRealChatMessages(matchId);
           };
           const unsub2 = onSnapshot(q2, handler2, (err: any) => console.warn(`bg 1:1 q2 listener error for ${matchId}:`, err));
 
-          // Store both? For simplicity store a combined noop unsub that unsubs both when removed.
-          // To keep simple we store a wrapper.
           realChatUnsubsRef.current[matchId] = () => {
             try { unsub1(); } catch {}
             try { unsub2(); } catch {}
           };
-          console.log(`   [BG 1:1] ✅ subscribed listeners for ${matchId}`);
         } catch (e) {
           console.warn('bg 1:1 listener setup error for', matchId, e);
         }
@@ -979,7 +964,6 @@ function App() {
       return;
     }
     const isRealChat = isRealChatId(activeChat);
-    console.log(`🔄 [Active 1:1 listener effect] activeChat=${activeChat}, isRealChat=${isRealChat}, realMatches=`, realMatches);
     if (!isRealChat) {
       return;
     }
@@ -991,9 +975,8 @@ function App() {
         const messagesRef = collection(db, 'messages');
         const q1 = query(messagesRef, where('from', '==', firebaseUser.uid), where('to', '==', activeChat));
         const q2 = query(messagesRef, where('from', '==', activeChat), where('to', '==', firebaseUser.uid));
-        console.log(`   [Active 1:1] attaching onSnapshot for activeChat=${activeChat}`);
         const handler = (snap: any, direction: string) => {
-          console.log(`📨 Live 1:1 active chat update (${direction}) for ${activeChat} - snap.size=${snap?.size ?? '?'}`);
+          console.log(`📨 Live 1:1 update (active chat)`);
           // Load does the merge of both directions + sets messages + (thanks to ref) also realChatMessages when active
           loadRealChatMessages(activeChat).then(msgs => {
             if (msgs) setRealChatMessages(msgs);
@@ -2325,7 +2308,6 @@ function App() {
     const isRealChat = isRealChatId(activeChat)
 
     if (isRealChat) {
-      console.log(`[sendMessage] REAL 1:1 send to activeChat=${activeChat} (my uid=${firebaseUser?.uid})`);
       // Real cross-device chat
       sendRealMessage(text, activeChat)
 
@@ -2964,12 +2946,9 @@ function App() {
                     <button onClick={async () => {
                       setIsLoadingChats(true);
                       try {
-                        console.log('[Actualizar chats reales] button pressed');
                         const currentMatches = await loadRealMatches(); // discover any new matches first
-                        console.log('[Actualizar] after loadRealMatches, ids:', currentMatches);
                         for (const id of currentMatches) {
-                          const res = await loadRealChatMessages(id);
-                          console.log('[Actualizar] loaded for', id, 'count:', res?.length);
+                          await loadRealChatMessages(id);
                         }
                         setLastSync(new Date());
                         toast.success('Chats reales actualizados');
