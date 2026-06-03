@@ -1230,11 +1230,19 @@ function App() {
           el.scrollTop = el.scrollHeight
         })
       }
+      // Extra for mobile keyboard/layout shifts
+      const scrollEl = document.getElementById('group-chat-scroll')
+      if (scrollEl) {
+        requestAnimationFrame(() => {
+          scrollEl.scrollTop = scrollEl.scrollHeight
+        })
+      }
     }
     if (showGroupChatModalFor) {
       scrollToBottom()
       const t = setTimeout(scrollToBottom, 120)
-      return () => clearTimeout(t)
+      const t2 = setTimeout(scrollToBottom, 300) // for mobile render/keyboard settle
+      return () => { clearTimeout(t); clearTimeout(t2) }
     }
   }, [showGroupChatModalFor, sessionMessages[showGroupChatModalFor || '']?.length])
 
@@ -2368,11 +2376,16 @@ function App() {
 
     setGroupChatPhoto(null)
 
-    // Auto scroll
-    setTimeout(() => {
+    // Auto scroll - robust for mobile (after send, keyboard may shift layout)
+    const doScroll = () => {
       const scrollEl = document.getElementById('group-chat-scroll')
       if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight
-    }, 50)
+      const el = groupChatScrollRef.current
+      if (el) el.scrollTop = el.scrollHeight
+    }
+    requestAnimationFrame(doScroll)
+    setTimeout(doScroll, 50)
+    setTimeout(doScroll, 200)
 
     // Simulate reply only in demo mode
     if (!isRealSession && !photo && Math.random() > 0.6) {
@@ -5383,7 +5396,12 @@ function App() {
                               if (!isSelf) {
                                 const mention = `@${nm} `
                                 setChatInputValue(prev => (prev.trim() ? prev.trimEnd() + ' ' : '') + mention)
-                                setTimeout(() => groupChatInputRef.current?.focus(), 0)
+                                setTimeout(() => {
+                                  groupChatInputRef.current?.focus()
+                                  // Scroll chat to bottom so user sees context while typing the message after mention (mobile UX)
+                                  const scrollEl = document.getElementById('group-chat-scroll')
+                                  if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight
+                                }, 0)
                               }
                             }}
                             className={`px-1.5 py-0.5 bg-[#25252A] rounded text-[#cbd5e1] whitespace-nowrap active:bg-[#FF671F] active:text-black transition ${isSelf ? 'opacity-60' : 'hover:bg-[#FF671F]/10'}`}
