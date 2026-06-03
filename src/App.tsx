@@ -348,6 +348,7 @@ function App() {
   const [feedOnlyLive, setFeedOnlyLive] = useState(false)
   const [feedMaxProfiles, setFeedMaxProfiles] = useState(15)
   const [feedDisplayLimit, setFeedDisplayLimit] = useState(10)
+  const [showLiveModal, setShowLiveModal] = useState(false)
 
   // Auto-refresh real sessions on tab DISABLED to fix TDZ.
   // Manual button remains.
@@ -3590,7 +3591,10 @@ function App() {
             ) : (
               <div className="text-[10px] text-[#9CA3AF]">Sé el primero en "Entrenando Ahora" cerca de ti — marca en tu Perfil. ¡Genera urgencia y abre la app más!</div>
             )}
-            <div className="text-[9px] text-[#9CA3AF] mt-0.5">¡Urgencia real! Toca para ver o únete antes de que se vayan. Nadie lo tiene tan bien.</div>
+            <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between">
+              <span>¡Urgencia real! Toca para ver o únete antes de que se vayan. Nadie lo tiene tan bien.</span>
+              <button onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline">Ver todos →</button>
+            </div>
           </div>
         )}
 
@@ -3623,6 +3627,31 @@ function App() {
             lastSync={lastSync}
             profilePosts={profilePosts}
           />
+        )}
+
+        {/* FULL LIVE MODAL - spectacular full list of live training near you. Makes the feature the star, urgency, join all. */}
+        {showLiveModal && (
+          <div className="absolute inset-0 z-[95] bg-[#0D0D10] flex flex-col" onClick={() => setShowLiveModal(false)}>
+            <div className="p-4 flex items-center justify-between border-b border-[#2F2F35]">
+              <button onClick={() => setShowLiveModal(false)}><ArrowLeft /></button>
+              <div className="font-medium">Entrenando Ahora cerca ({liveTrainingNow.length})</div>
+              <div />
+            </div>
+            <div className="overflow-auto flex-1 p-4">
+              {liveTrainingNow.length > 0 ? liveTrainingNow.map(user => (
+                <div key={user.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(user); }} className="card card-glass p-3 mb-2 flex gap-3 cursor-pointer active:scale-95">
+                  {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-12 h-12 rounded-xl object-cover" />}
+                  <div className="flex-1">
+                    <div className="font-semibold">{user.name} · {user.distance.toFixed(1)}km</div>
+                    <div className="text-[#9CA3AF] text-sm">{user.trainingTypes?.join(', ') || 'Entreno'}</div>
+                    <div className="text-[#22c55e] text-xs">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m {user.seVaEnMin > 0 ? `· se va en ${user.seVaEnMin}m` : ''}</div>
+                  </div>
+                  <button onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); toast.success('¡Unido al live!'); }} className="self-center text-xs bg-[#22c55e] text-black px-3 py-1 rounded">Unirme</button>
+                </div>
+              )) : <div className="text-center text-[#9CA3AF]">Nadie live cerca ahora. ¡Sé el primero!</div>}
+            </div>
+            <div className="p-4 text-center text-xs text-[#9CA3AF]">Toca para perfil o únete. ¡Abre la app seguido por la urgencia!</div>
+          </div>
         )}
 
         {/* ===== GLOBAL FEED TAB - Muro Comunitario (per plan: global recent activity feed) ===== */}
