@@ -3210,6 +3210,7 @@ function App() {
                     }
                   }} disabled={isSyncingProfile} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black disabled:opacity-60">{isSyncingProfile ? '...' : 'Sincronizar'}</button>
                 )}
+                {lastSync && <span className="text-[10px] text-[#64748b] ml-1">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
               </div>
               <div className="flex gap-2">
                 <button onClick={handleLogout} className="text-xs px-3 py-1.5 rounded-2xl border border-[#3f2a2a] text-[#f87171] active:bg-[#1f1616]">Cambiar cuenta</button>
