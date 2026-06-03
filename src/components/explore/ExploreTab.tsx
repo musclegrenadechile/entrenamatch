@@ -272,24 +272,26 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
             <RefreshCw size={13}/> Reiniciar
           </button>
           {realProfiles.length > 0 && onRefreshRealProfiles && (
-            <button 
-              onClick={async () => {
-                setIsRefreshingReals(true);
-                try {
-                  await onRefreshRealProfiles();
-                  toast.success('Perfiles reales actualizados');
-                } finally {
-                  setIsRefreshingReals(false);
-                }
-              }} 
-              disabled={isRefreshingReals}
-              className="text-xs flex items-center gap-1 bg-[#14b8a6] text-black px-3 py-1.5 rounded-2xl font-semibold active:bg-[#0f9d8c] disabled:opacity-60"
-            >
-              <RefreshCw size={13} className={isRefreshingReals ? 'animate-spin' : ''}/> {isRefreshingReals ? '...' : 'Actualizar reales'}
-            </button>
-          )}
-          {lastSync && (
-            <span className="text-[9px] text-[#64748b] ml-1">hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>
+            <>
+              <button 
+                onClick={async () => {
+                  setIsRefreshingReals(true);
+                  try {
+                    await onRefreshRealProfiles();
+                    toast.success('Perfiles reales actualizados');
+                  } finally {
+                    setIsRefreshingReals(false);
+                  }
+                }} 
+                disabled={isRefreshingReals}
+                className="text-xs flex items-center gap-1 bg-[#14b8a6] text-black px-3 py-1.5 rounded-2xl font-semibold active:bg-[#0f9d8c] disabled:opacity-60"
+              >
+                <RefreshCw size={13} className={isRefreshingReals ? 'animate-spin' : ''}/> {isRefreshingReals ? '...' : 'Actualizar reales'}
+              </button>
+              {lastSync && (
+                <span className="text-[9px] text-[#64748b] ml-1">hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>
+              )}
+            </>
           )}
           <button 
             onClick={() => setShowFilters(true)} 
