@@ -5250,7 +5250,7 @@ function App() {
               animate={{ y: 0, opacity: 1 }} 
               exit={{ y: 100, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="w-full max-w-[420px] bg-[#0D0D10] rounded-t-3xl md:rounded-3xl overflow-hidden flex flex-col h-[85vh] md:h-[620px] border border-[#2F2F35] shadow-2xl"
+              className="w-full max-w-[420px] bg-[#0D0D10] rounded-t-3xl md:rounded-3xl overflow-hidden flex flex-col h-[85dvh] md:h-[620px] max-h-[85dvh] border border-[#2F2F35] shadow-2xl"
             >
               {/* Modal Header - Premium Pre-Alpha */}
               <div className="p-4 border-b border-[#2F2F35] bg-[#1C1C20] flex items-center justify-between">
@@ -5272,9 +5272,11 @@ function App() {
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
+                <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
                   {!isDemoMode && firebaseUser?.uid && (
-                    <button onClick={async () => { setIsLoadingChats(true); try { await loadRealGroupMessages(showGroupChatModalFor); setLastSync(new Date()); setSessionUnreads(prev => { const c = { ...prev }; if (showGroupChatModalFor) c[showGroupChatModalFor] = 0; return c }); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } }} disabled={isLoadingChats} className="text-[10px] px-2.5 py-1 border border-[#2F2F35] rounded-xl text-[#FF671F] active:bg-[#25252A] disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar'}</button>
+                    <button onClick={async () => { setIsLoadingChats(true); try { await loadRealGroupMessages(showGroupChatModalFor); setLastSync(new Date()); setSessionUnreads(prev => { const c = { ...prev }; if (showGroupChatModalFor) c[showGroupChatModalFor] = 0; return c }); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } }} disabled={isLoadingChats} className="text-[9px] md:text-[10px] px-1.5 md:px-2.5 py-0.5 md:py-1 border border-[#2F2F35] rounded-xl text-[#FF671F] active:bg-[#25252A] disabled:opacity-60" title="Actualizar">
+                      {isLoadingChats ? '...' : <RefreshCw size={14} />}
+                    </button>
                   )}
                   {(() => {
                     const cs = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
@@ -5282,13 +5284,14 @@ function App() {
                     return isC && showGroupChatModalFor ? (
                       <button 
                         onClick={() => closeSession(showGroupChatModalFor)} 
-                        className="text-[10px] px-2 py-1 bg-red-500/10 text-red-400 rounded-xl active:bg-red-500/20"
+                        className="text-[9px] md:text-[10px] px-1.5 md:px-2 py-0.5 md:py-1 bg-red-500/10 text-red-400 rounded-xl active:bg-red-500/20"
+                        title="Cerrar sesión (admin)"
                       >
                         Cerrar
                       </button>
                     ) : null
                   })()}
-                  <a href="/entrenamatch/privacy.html" target="_blank" className="text-[10px] text-[#9CA3AF] underline">Privacidad</a>
+                  <a href="/entrenamatch/privacy.html" target="_blank" className="text-[9px] md:text-[10px] text-[#9CA3AF] underline">Privacidad</a>
                   <button onClick={async () => {
                     const issue = prompt('¿Qué problema o sugerencia en esta sesión?');
                     if (issue && showGroupChatModalFor && db) {
@@ -5361,7 +5364,7 @@ function App() {
                 </div>
 
                 {/* Messages Area */}
-                <div className="flex-1 flex flex-col">
+                <div className="flex-1 flex flex-col min-h-0">
                   {/* Compact participants bar for mobile (full chat width now that sidebar is hidden on phones) */}
                   <div className="md:hidden px-3 py-1.5 border-b border-[#2F2F35] bg-[#1C1C20] text-[10px] flex items-center gap-1 overflow-x-auto text-[#9CA3AF]">
                     <span className="font-medium text-[#FF671F] mr-1">Participantes:</span>
@@ -5381,7 +5384,7 @@ function App() {
                     })()}
                   </div>
 
-                  <div ref={groupChatScrollRef} className="flex-1 overflow-auto p-3 sm:p-4 space-y-3 text-sm bg-[#0D0D10]" id="group-chat-scroll">
+                  <div ref={groupChatScrollRef} className="flex-1 overflow-auto p-2.5 sm:p-4 space-y-3 text-sm bg-[#0D0D10] w-full" id="group-chat-scroll">
                     {(sessionMessages[showGroupChatModalFor] || []).length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full text-center text-[#9CA3AF] px-6">
                         <div className="w-14 h-14 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-4 text-3xl">💬</div>
@@ -5397,9 +5400,9 @@ function App() {
                         const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''
                         return (
                           <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
-                            <div className={`max-w-[78%] sm:max-w-[82%] ${isMe ? 'text-right' : ''}`}>
+                            <div className={`max-w-[85%] sm:max-w-[78%] ${isMe ? 'text-right' : ''} w-full`}>
                               {!isMe && (
-                                <div className="text-[10px] text-[#9CA3AF] mb-0.5 px-1 flex items-center gap-1">
+                                <div className="text-[9px] text-[#9CA3AF] mb-0.5 px-0.5 flex items-center gap-1 leading-tight">
                                   {isCreator && <span className="text-[#FF671F]">★ </span>}
                                   <span>{msg.senderName}</span>
                                   {time && <span className="text-[#6B7280] ml-1">· {time}</span>}
@@ -5462,7 +5465,7 @@ function App() {
                   </div>
 
                   {/* Input area - Premium modern */}
-                  <div className="p-3 border-t border-[#2F2F35] bg-[#1C1C20]">
+                  <div className="p-3 border-t border-[#2F2F35] bg-[#1C1C20] pb-[env(safe-area-inset-bottom)]">
                     {groupChatPhoto && (
                       <div className="mb-2 flex items-center gap-2 bg-[#0D0D10] p-2 rounded-2xl border border-[#2F2F35]">
                         <img src={groupChatPhoto} className="w-10 h-10 object-cover rounded-xl" />
@@ -5486,8 +5489,8 @@ function App() {
                         type="text" 
                         value={chatInputValue}
                         onChange={(e) => setChatInputValue(e.target.value)}
-                        placeholder="Mensaje para el grupo..."
-                        className="flex-1 bg-[#0D0D10] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none placeholder:text-[#9CA3AF]" 
+                        placeholder="Mensaje al grupo..."
+                        className="flex-1 bg-[#0D0D10] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none placeholder:text-[#9CA3AF] min-w-0" 
                       />
 
                       <label className="cursor-pointer flex items-center justify-center w-11 h-11 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl text-lg hover:bg-[#25252A] active:scale-95 transition">📷
@@ -5501,7 +5504,9 @@ function App() {
                         }} />
                       </label>
 
-                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto} className="bg-[#FF671F] disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black px-6 rounded-3xl font-semibold text-sm h-11 active:bg-[#E55A1A] transition">Enviar</button>
+                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto} className="bg-[#FF671F] disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black px-3 rounded-3xl font-semibold h-11 w-11 flex items-center justify-center active:bg-[#E55A1A] transition" aria-label="Enviar">
+                        <Send size={18} />
+                      </button>
                     </form>
                     <div className="text-center text-[9px] text-[#6B7280] mt-1.5">Los mensajes se sincronizan en tiempo real entre todos los participantes</div>
                   </div>
