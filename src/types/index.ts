@@ -116,7 +116,7 @@ export interface CurrentUser extends Omit<Profile, 'id'> {
   }
 }
 
-export type Tab = 'explore' | 'squads' | 'sesiones' | 'matches' | 'messages' | 'profile'
+export type Tab = 'explore' | 'feed' | 'squads' | 'sesiones' | 'matches' | 'messages' | 'profile'
 
 export interface ProfilePost {
   id: string

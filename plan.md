@@ -300,12 +300,13 @@ Next ideas (if continue): post options menu (edit?), pinned posts, global recent
 - Delete own comments: × in previews and full modal for your comments, removes from FS/array.
 - More glass/motion: whileHover scale on post cards in own and full profile views.
 - Global community activity teaser: in your muro section, shows 2 latest posts from other loaded users (with like/comment counts), click for quick info. Makes app feel like living movement.
+- **NEW Global Feed Tab**: Added 'feed' tab (with Activity icon in bottom nav, grid-cols-7). Loads recent posts from community real profiles on tab enter + Refrescar. Beautiful list of cards showing owner (clickable to profile), post content, likes/comments with full interactions (like, comment via existing logic, open full comments modal). Empty state polished. Uses existing profilePosts cache + loadGlobalFeed. Makes the app have a true global muro feed per plan.
 - Delete own comments: × in previews and full modal for your comments, removes from FS/array.
 - More glass/motion: whileHover scale on post cards in own and full profile views.
 - Cleaned remaining report prompts to use confirm + default (no more ugly prompts).
 - Builds + pushed. 
 
-Muro + diseños now even more espectacular with edit, undo, comment delete, global teaser feed, enhanced cards, less prompts. Continuing the plan.
+Muro + diseños now even more espectacular with full global feed tab, edit, undo, comment delete, enhanced cards, less prompts. Continuing the plan.
 
 This advances the "muro + diseños espectaculares" significantly. Test: own profile add/delete photos (multiple), go to Explore (teasers should appear on real profiles after sync), go to Matches (teasers on matched people).
 

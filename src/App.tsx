@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, MessageCircle, User, MapPin, Dumbbell, 
   Edit2, RefreshCw, ArrowLeft, Send, Star, Plus, Users, Bell, Download,
-  Clock, Camera
+  Clock, Camera, Activity
 } from 'lucide-react'
 import { 
   signUpWithEmail, 
@@ -341,6 +341,7 @@ function App() {
 
   // UI state
   const [activeTab, setActiveTab] = useState<Tab>('explore')
+  const [isLoadingFeed, setIsLoadingFeed] = useState(false)
 
   // Auto-refresh real sessions on tab DISABLED to fix TDZ.
   // Manual button remains.
@@ -932,6 +933,13 @@ function App() {
       setCommentDraft('')
     }
   }, [showFullProfile])
+
+  // Auto-load global feed when entering the new Feed tab
+  useEffect(() => {
+    if (activeTab === 'feed' && !isDemoMode) {
+      loadGlobalFeed()
+    }
+  }, [activeTab])
 
   // Clear comment UI when leaving profile tab
   useEffect(() => {
@@ -1915,6 +1923,22 @@ function App() {
       console.warn('loadProfilePosts error', e)
       const posts = (profilePosts[userId] || []).slice().sort((a, b) => b.timestamp - a.timestamp)
       return posts
+    }
+  }
+
+  // Global feed loader for the new 'feed' tab - loads recent muro posts from community
+  const loadGlobalFeed = async () => {
+    if (isDemoMode || !realProfiles.length) return;
+    setIsLoadingFeed(true);
+    try {
+      // Load for up to 15 recent real profiles to keep it fast
+      const toLoad = realProfiles.slice(0, 15);
+      for (const p of toLoad) {
+        await loadProfilePosts(p.id);
+      }
+      setLastSync(new Date());
+    } finally {
+      setIsLoadingFeed(false);
     }
   }
 
@@ -3492,6 +3516,90 @@ function App() {
             lastSync={lastSync}
             profilePosts={profilePosts}
           />
+        )}
+
+        {/* ===== GLOBAL FEED TAB - Muro Comunitario (per plan: global recent activity feed) ===== */}
+        {activeTab === 'feed' && (
+          <div className="flex-1 overflow-auto p-4">
+            <div className="flex items-center justify-between mb-2 px-1">
+              <div>
+                <div className="section-header">Feed Global</div>
+                <div className="text-[#9CA3AF] text-sm">Muro de la comunidad • el match del movimiento</div>
+              </div>
+              <button 
+                onClick={loadGlobalFeed} 
+                disabled={isLoadingFeed}
+                className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10"
+              >
+                {isLoadingFeed ? '...' : 'Refrescar'}
+              </button>
+            </div>
+
+            {(() => {
+              // Collect and sort recent posts from all loaded users (exclude self)
+              const feedPosts = Object.entries(profilePosts)
+                .filter(([uid]) => uid !== effectiveUserId)
+                .flatMap(([uid, posts]) => (posts || []).map((p: any) => ({ ...p, ownerId: uid })))
+                .sort((a: any, b: any) => b.timestamp - a.timestamp)
+                .slice(0, 20);
+
+              if (feedPosts.length === 0) {
+                return (
+                  <div className="card p-8 rounded-3xl text-center mt-8">
+                    <Activity className="mx-auto text-[#FF671F] mb-3" size={42} />
+                    <div className="font-semibold text-xl mb-2">Aún no hay actividad en el feed</div>
+                    <p className="text-sm text-[#9CA3AF] mb-4">Publica en tu muro o espera a que la comunidad comparta entrenos. ¡Los posts de testers reales aparecerán aquí en vivo!</p>
+                    <button onClick={() => setActiveTab('profile')} className="btn-primary px-6">Ir a tu Muro</button>
+                  </div>
+                );
+              }
+
+              return feedPosts.map((post: any) => {
+                const owner = realProfiles.find(r => r.id === post.ownerId) || { name: 'Compañero', id: post.ownerId };
+                const liked = post.likes.includes(effectiveUserId);
+                return (
+                  <motion.div 
+                    key={post.id} 
+                    className="card card-glass p-4 mb-3 border-[#2F2F35]/80"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    whileHover={{ scale: 1.01 }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="text-xs text-[#FF671F] font-medium" onClick={() => setShowFullProfile(owner as any)} style={{cursor: 'pointer'}}>
+                        {owner.name}
+                      </div>
+                      <div className="text-[10px] text-[#9CA3AF]">· {getRelativeTime(post.timestamp)}</div>
+                      {realProfiles.some(rp => rp.id === post.ownerId) && <span className="text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>}
+                    </div>
+                    <div className="text-sm leading-relaxed mb-2">{post.text}</div>
+                    {post.photo && <img src={post.photo} className="w-full rounded-2xl max-h-48 object-cover mb-3 border border-[#2F2F35]" />}
+                    <div className="flex items-center gap-4 text-sm">
+                      <button 
+                        onClick={() => likeProfilePost(post.id, post.ownerId)}
+                        className={`flex items-center gap-1 transition ${liked ? 'text-[#FF671F]' : 'text-[#9CA3AF] hover:text-[#FF671F]'}`}
+                      >
+                        <motion.span animate={{ scale: liked ? [1, 1.3, 1] : 1 }} transition={{duration: 0.2}}>{liked ? '❤️' : '🤍'}</motion.span> 
+                        <span className="font-medium">{post.likes.length}</span>
+                      </button>
+                      <button 
+                        onClick={() => startComment(post.id, post.ownerId, (owner as any).name)}
+                        className="flex items-center gap-1 text-[#9CA3AF] hover:text-[#FF671F]"
+                      >
+                        💬 <span className="font-medium">{post.comments.length}</span>
+                      </button>
+                      <button onClick={() => setShowFullProfile(owner as any)} className="ml-auto text-[10px] text-[#FF671F] active:underline">Ver perfil</button>
+                    </div>
+                    {post.comments.length > 0 && (
+                      <div onClick={() => openFullComments(post.id, post.ownerId, (owner as any).name)} className="mt-2 pt-2 border-t border-[#2F2F35] text-xs text-[#9CA3AF] cursor-pointer">
+                        {post.comments.slice(-2).map((c: any) => <div key={c.id}><span className="text-white/70">{c.userName}:</span> {c.text}</div>)}
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              });
+            })()}
+          </div>
         )}
 
         {/* ===== SQUADS (Fixed training crews) - New unique feature ===== */}
@@ -5075,9 +5183,10 @@ function App() {
          Welcome guide modal can still be triggered if needed via other means or first-load. */}
 
       {/* Bottom Navigation - Premium, energetic feel (polished aesthetics) */}
-      <div className="bottom-nav h-[62px] grid grid-cols-6 z-50 text-[10px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_20px_-6px_rgb(0,0,0,0.4)]">
+      <div className="bottom-nav h-[62px] grid grid-cols-7 z-50 text-[10px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_20px_-6px_rgb(0,0,0,0.4)]">
         {[
           { id: 'explore' as Tab, label: 'Explorar', icon: Dumbbell },
+          { id: 'feed' as Tab, label: 'Feed', icon: Activity },
           { id: 'squads' as Tab, label: 'Squads', icon: Users },
           { id: 'sesiones' as Tab, label: 'Sesiones', icon: Star, badge: totalSessionUnreads },
           { id: 'matches' as Tab, label: 'Matches', icon: Heart },
