@@ -4817,6 +4817,7 @@ function App() {
                     {myPosts.some((p: any) => p.pinned) && <span>📌 {myPosts.filter((p: any) => p.pinned).length}</span>}
                     <span>❤️ {likes}</span>
                     <span>💬 {comms}</span>
+                    {currentUser.trainingNow && <span className="text-[#22c55e]">🟢 Live</span>}
                     <span className="text-[#FF671F]/60">· comunidad interactúa</span>
                   </div>
                 )
