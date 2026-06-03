@@ -65,7 +65,7 @@ Las reglas viven en el servidor de Firebase (no viajan con el bundle de la web n
 
 5. Deploy **solo las rules** (esto es rápido y seguro, no toca hosting ni nada más):
    ```powershell
-   npx firebase-tools deploy --only firestore:rules --project entrenamatch
+   npx firebase-tools deploy --only firestore:rules,firestore:indexes --project entrenamatch
    ```
 
 6. Verifica que termine con éxito. Deberías ver algo parecido a:
