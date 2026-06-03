@@ -27,9 +27,6 @@ jobs:
       - name: Build web for Capacitor (relative base)
         run: CAPACITOR=1 npm run build:web
 
-      - name: Sync Capacitor Android
-        run: npx cap sync android
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -57,13 +54,20 @@ jobs:
             unzip -q cmdline-tools.zip
             mv cmdline-tools latest || true
             rm -f cmdline-tools.zip
+            chmod +x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" || true
           fi
-          yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null 2>&1 || true
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" \
+          SDKMANAGER="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          yes | $SDKMANAGER --sdk_root=$ANDROID_HOME --licenses >/dev/null 2>&1 || true
+          $SDKMANAGER --sdk_root=$ANDROID_HOME \
             "platform-tools" \
             "platforms;android-36" \
             "build-tools;36.0.0"
         shell: bash
+
+      - name: Sync Capacitor Android
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+        run: npx cap sync android
 
       - name: Build Debug APK
         env:
