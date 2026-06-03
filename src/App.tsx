@@ -4051,23 +4051,26 @@ function App() {
                   {!isDemoMode && (
                     <button onClick={async () => { if (activeChat) { setIsLoadingChats(true); try { await loadRealChatMessages(activeChat); setLastSync(new Date()); setChatUnreads(prev => { const c = { ...prev }; if (activeChat) c[activeChat] = 0; return c }); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } } }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 border border-[#2F2F35] rounded-xl text-[#FF671F] active:bg-[#25252A] disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar'}</button>
                   )}
-                  <button onClick={async () => {
-                    const issue = prompt('¿Qué problema o sugerencia en este chat?');
-                    if (issue && activeChat && db) {
-                      try {
-                        const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-                        await addDoc(collection(db, 'betaFeedback'), {
-                          userId: firebaseUser?.uid || 'demo',
-                          type: 'other',
-                          rating: 3,
-                          text: `Chat 1:1 con ${activeChat}: ${issue.trim()}`,
-                          platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
-                          appVersion: '0.1.0-prealpha',
-                          context: '1v1-chat',
-                          createdAt: serverTimestamp(),
-                        });
-                        toast.success('Reporte enviado (ver en Perfil > Feedback)');
-                      } catch {}
+                  <button onClick={() => {
+                    if (confirm('¿Reportar problema en este chat?')) {
+                      if (activeChat && db) {
+                        (async () => {
+                          try {
+                            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                            await addDoc(collection(db, 'betaFeedback'), {
+                              userId: firebaseUser?.uid || 'demo',
+                              type: 'other',
+                              rating: 3,
+                              text: `Chat 1:1 con ${activeChat}: Problema reportado por usuario`,
+                              platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
+                              appVersion: '0.1.0-prealpha',
+                              context: '1v1-chat',
+                              createdAt: serverTimestamp(),
+                            });
+                            toast.success('Reporte enviado (ver en Perfil > Feedback)');
+                          } catch {}
+                        })();
+                      }
                     }
                   }} className="text-[10px] text-red-400 underline ml-1">Reportar</button>
                 </div>
@@ -4076,9 +4079,8 @@ function App() {
                 <div className="flex justify-end gap-2 px-4 py-1 bg-[#0f1115] text-xs">
                   <button 
                     onClick={() => {
-                      const reason = prompt('Motivo del reporte:')
-                      if (reason && activeChat) {
-                        reportUser(activeChat, reason, undefined, '1v1_chat', activeChat)
+                      if (confirm('¿Reportar este chat/perfil por comportamiento inadecuado?')) {
+                        reportUser(activeChat, 'Comportamiento inadecuado', undefined, '1v1_chat', activeChat)
                       }
                     }}
                     className="text-red-400 hover:underline"
@@ -6370,23 +6372,26 @@ function App() {
                     ) : null
                   })()}
                   <a href="/entrenamatch/privacy.html" target="_blank" className="text-[9px] md:text-[10px] text-[#9CA3AF] underline">Privacidad</a>
-                  <button onClick={async () => {
-                    const issue = prompt('¿Qué problema o sugerencia en esta sesión?');
-                    if (issue && showGroupChatModalFor && db) {
-                      try {
-                        const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-                        await addDoc(collection(db, 'betaFeedback'), {
-                          userId: firebaseUser?.uid || 'demo',
-                          type: 'other',
-                          rating: 3,
-                          text: `Sesión ${showGroupChatModalFor}: ${issue.trim()}`,
-                          platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
-                          appVersion: '0.1.0-prealpha',
-                          context: 'group-chat',
-                          createdAt: serverTimestamp(),
-                        });
-                        toast.success('Reporte enviado (ver en Perfil > Feedback)');
-                      } catch {}
+                  <button onClick={() => {
+                    if (confirm('¿Reportar problema en esta sesión?')) {
+                      if (showGroupChatModalFor && db) {
+                        (async () => {
+                          try {
+                            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                            await addDoc(collection(db, 'betaFeedback'), {
+                              userId: firebaseUser?.uid || 'demo',
+                              type: 'other',
+                              rating: 3,
+                              text: `Sesión ${showGroupChatModalFor}: Problema reportado por usuario`,
+                              platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
+                              appVersion: '0.1.0-prealpha',
+                              context: 'group-chat',
+                              createdAt: serverTimestamp(),
+                            });
+                            toast.success('Reporte enviado (ver en Perfil > Feedback)');
+                          } catch {}
+                        })();
+                      }
                     }
                   }} className="text-[10px] text-red-400 underline">Reportar</button>
                   <button onClick={() => setShowGroupChatModalFor(null)} className="text-3xl leading-none text-[#9CA3AF] hover:text-white px-1">×</button>
