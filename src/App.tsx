@@ -3700,7 +3700,7 @@ function App() {
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
             <div className="px-4 mt-2 mb-8">
-              <div className="card p-5 rounded-3xl border border-[#FF671F]/30 bg-[#0f1419]">
+              <div className="card p-5 rounded-3xl border border-[#FF671F]/30 bg-[#1C1C20]">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="text-2xl">📱</div>
                   <div>
@@ -3708,7 +3708,7 @@ function App() {
                     <div className="text-xs text-[#9CA3AF]">Experiencia nativa con notificaciones y mejor cámara</div>
                   </div>
                 </div>
-                <div className="text-sm text-[#cbd5e1] mb-4">
+                <div className="text-sm text-[#F8F8F8] mb-4">
                   Descarga la versión nativa de EntrenaMatch para pruebas. Incluye todas las funciones reales (perfiles, matches, chats, sesiones) y se actualiza automáticamente. Próximamente disponible vía Play Store en modo beta cerrado (solo para testers invitados).
                 </div>
                 <a 
