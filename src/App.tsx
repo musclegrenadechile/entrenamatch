@@ -3561,7 +3561,10 @@ function App() {
               {liveTrainingNow.slice(0, 4).map(user => (
                 <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className="min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border border-[#22c55e]/60 active:scale-95 relative overflow-hidden" whileHover={{ scale: 1.03 }} initial={{ opacity: 0.9, y: 5 }} animate={{ opacity: 1, y: 0 }}>
                   <div className="flex justify-between items-start mb-1">
-                    <div className="font-semibold truncate text-white">{user.name}</div>
+                    <div className="flex items-center gap-1">
+                      {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-4 h-4 rounded-full object-cover border border-[#22c55e]/30" />}
+                      <div className="font-semibold truncate text-white">{user.name}</div>
+                    </div>
                     <div className="w-2.5 h-2.5 bg-[#22c55e] rounded-full animate-pulse flex-shrink-0 ring-1 ring-[#22c55e]/50"></div>
                   </div>
                   <div className="text-[#9CA3AF] text-[9px] mb-0.5">{user.distance.toFixed(1)}km · {user.trainingTypes?.[0] || 'Entreno'}</div>
