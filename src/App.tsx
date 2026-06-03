@@ -3673,6 +3673,7 @@ function App() {
                           <div className="text-xs text-[#FF671F] font-medium flex-1">
                             {owner.name}
                             {ownerProfile && ownerProfile.city && <span className="text-[#9CA3AF] ml-1">· {ownerProfile.city}</span>}
+                            {ownerProfile && ownerProfile.level && <span className="text-[8px] text-[#FF671F]/70 ml-1">{ownerProfile.level}</span>}
                             {ownerProfile && realProfiles.some(rp => rp.id === post.ownerId) && <span className="ml-1 text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>}
                           </div>
                           <div className="text-[10px] text-[#9CA3AF]">· {getRelativeTime(post.timestamp)}</div>
