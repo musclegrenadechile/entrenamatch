@@ -5459,7 +5459,7 @@ function App() {
               {/* Live results count for filters - premium, clean indicator while choosing profiles */}
               <div className="mb-4 px-3 py-2 bg-[#1C1C20] rounded-2xl text-sm flex items-center justify-between border border-[#2F2F35]">
                 <span className="text-[#9CA3AF]">Disponibles ahora</span>
-                <span className="font-bold text-[#FF671F] text-lg tabular-nums">{deck.length}</span>
+                <span className="font-bold text-[#FF671F] text-lg tabular-nums">{deck.length}{liveTrainingNow.length > 0 ? ` + ${liveTrainingNow.length} en vivo` : ''}</span>
               </div>
 
               {/* Active filters summary - tappable to remove */}
