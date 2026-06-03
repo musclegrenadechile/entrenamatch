@@ -38,7 +38,7 @@ Usa los 30 perfiles fake (Reñaca / Viña del Mar / Concón, hombres y mujeres) 
 9. Reporta con el botón "Reportar" del header del chat o el formulario de Perfil si algo falla.
 Nota post-push: si ves errores de permisos (como "Missing or insufficient permissions" al dar like/match o en group msgs), el owner debe hacer `firebase deploy --only firestore:rules` (las rules se actualizaron para permitir writes a likes/matches por el liker y reads apropiados para group chat). Hard refresh después.
 
-**1:1 messaging fully working (2025-04)**: Sesiones + group + 1:1 real entre cuentas live y cross-device. UI declutter + premium polish para elegir perfiles ('en vivo' in 'Tus matches', 'Ver X disponibles', 'en vivo' in recs, 'disponibles ahora', inline lastSync, softer empty texts, calmer texts, empty states with sync, filters cleaned, spinners, lastSyncs). lastSync "hace Xs" + Actualizar visibles. Hard refresh después de pushes.
+**1:1 messaging fully working (2025-04)**: Sesiones + group + 1:1 real entre cuentas live y cross-device. UI declutter + premium polish para elegir perfiles ('en vivo' badge to real profiles count in Explore header, 'en vivo' in 'Tus matches', 'Ver X disponibles', 'en vivo' in recs, 'disponibles ahora', inline lastSync, softer empty texts, calmer texts, empty states with sync, filters cleaned, spinners, lastSyncs). lastSync "hace Xs" + Actualizar visibles. Hard refresh después de pushes.
 
 ### Pasos exactos para hacer `firebase deploy --only firestore:rules` en Windows (PowerShell)
 

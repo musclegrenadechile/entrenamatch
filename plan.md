@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 (continua - more premium polish for elegir perfiles: softened remaining instructional texts in Matches/messages empties, 'en vivo' in 'Tus matches' header, 'Ver X disponibles', 'en vivo' in recs, 'disponibles ahora', inline lastSync, calmer texts, empty states, filters declutter, spinners. Builds/pushes (e5f9b2f). **PHASE 0 SIGN-OFF READY** (continua).
+Last updated: Phase 0 (continua - more premium polish for elegir perfiles: 'en vivo' badge to real profiles count in Explore header, 'en vivo' in 'Tus matches', 'Ver X disponibles', 'en vivo' in recs, 'disponibles ahora', inline lastSync, calmer texts, empty states, filters declutter, spinners, lastSyncs. Builds/pushes (9b71fbc). **PHASE 0 SIGN-OFF READY** (continua).
