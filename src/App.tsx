@@ -3456,7 +3456,7 @@ function App() {
             {isLoadingMatches ? '...' : 'Actualizar todo'}
           </button>
           {liveTrainingNow.length > 0 && (
-            <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold animate-pulse">🟢 {liveTrainingNow.length} LIVE</span>
+            <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}>🟢 {liveTrainingNow.length} LIVE</span>
           )}
         </div>
 
@@ -3559,7 +3559,7 @@ function App() {
         {activeTab === 'explore' && (
           <div className="px-4 py-2 bg-[#0D0D10] border-b border-[#22c55e]/30">
             <div className="flex items-center gap-2 mb-1">
-              <div className="live-pill bg-[#22c55e] text-black">🟢 EN VIVO AHORA</div>
+              <div className="live-pill green">🟢 EN VIVO AHORA</div>
               <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡urgencia!' : ''}</div>
             </div>
             {liveTrainingNow.length > 0 ? (
@@ -3571,7 +3571,7 @@ function App() {
                         {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-4 h-4 rounded-full object-cover border border-[#22c55e]/30" />}
                         <div className="font-semibold truncate text-white">{user.name}</div>
                       </div>
-                      <div className="w-2.5 h-2.5 bg-[#22c55e] rounded-full animate-pulse flex-shrink-0 ring-1 ring-[#22c55e]/50"></div>
+                      <div className="w-2.5 h-2.5 bg-[#22c55e] rounded-full flex-shrink-0 ring-1 ring-[#22c55e]/50" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}></div>
                     </div>
                     <div className="text-[#9CA3AF] text-[9px] mb-0.5">{user.distance.toFixed(1)}km · {user.trainingTypes?.[0] || 'Entreno'}</div>
                     <div className="flex items-center gap-1 text-[#22c55e] text-[9px] mb-1">
@@ -5482,7 +5482,7 @@ function App() {
               </span>
             )}
             {id === 'explore' && liveTrainingNow.length > 0 && (
-              <span className="absolute -top-0.5 right-1 w-3 h-3 bg-[#22c55e] rounded-full animate-pulse ring-1 ring-black/30"></span>
+              <span className="absolute -top-0.5 right-1 w-3 h-3 bg-[#22c55e] rounded-full animate-pulse ring-1 ring-black/30" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}></span>
             )}
           </button>
         ))}
