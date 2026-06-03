@@ -5526,6 +5526,7 @@ function App() {
                         value={chatInputValue}
                         onChange={(e) => setChatInputValue(e.target.value)}
                         placeholder="Mensaje al grupo..."
+                        enterKeyHint="send"
                         className="flex-1 bg-[#0D0D10] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none placeholder:text-[#9CA3AF] min-w-0" 
                       />
 
