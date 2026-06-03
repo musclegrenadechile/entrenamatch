@@ -1748,7 +1748,8 @@ function App() {
       type: 'message',
       title,
       body: short,
-      relatedId: chatId
+      relatedId: chatId,
+      photoUrl: photoUrl
     })
     // Browser Notification if page hidden and permission granted (web only)
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.visibilityState !== 'visible') {
@@ -5417,14 +5418,21 @@ function App() {
                         }
                       }}
                     >
-                      <div className="flex justify-between">
-                        <div className="font-medium text-sm">{notif.title}</div>
-                        <div className="text-[10px] text-[#9CA3AF]">
-                          {new Date(notif.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                      <div className="flex items-start gap-3">
+                        {notif.photoUrl && (
+                          <img src={notif.photoUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-[#2F2F35]" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex justify-between">
+                            <div className="font-medium text-sm truncate">{notif.title}</div>
+                            <div className="text-[10px] text-[#9CA3AF] flex-shrink-0 ml-2">
+                              {new Date(notif.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                            </div>
+                          </div>
+                          <div className="text-sm text-[#cbd5e1] mt-0.5 truncate">{notif.body}</div>
+                          {!notif.read && <div className="w-2 h-2 bg-[#FF671F] rounded-full mt-2"></div>}
                         </div>
                       </div>
-                      <div className="text-sm text-[#cbd5e1] mt-0.5">{notif.body}</div>
-                      {!notif.read && <div className="w-2 h-2 bg-[#FF671F] rounded-full mt-2"></div>}
                     </div>
                   ))
                 )}

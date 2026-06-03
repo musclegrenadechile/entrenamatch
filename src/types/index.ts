@@ -93,6 +93,7 @@ export interface Notification {
   timestamp: number
   read: boolean
   relatedId?: string
+  photoUrl?: string
 }
 
 export interface CurrentUser extends Omit<Profile, 'id'> {
