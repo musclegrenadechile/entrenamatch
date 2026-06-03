@@ -27,7 +27,7 @@ jobs:
         run: npm ci
 
       - name: Ensure Capacitor native plugins are installed (fix resolution in CI)
-        run: npm install @capacitor/push-notifications@8.1.1 @capacitor/camera@8.2.0 --no-save
+        run: npm install --no-package-lock --prefer-offline=false @capacitor/push-notifications@8.1.1 @capacitor/camera@8.2.0 --no-save
 
       - name: Clean build artifacts (avoid stale Vite/Rolldown cache)
         run: rm -rf node_modules/.vite dist
