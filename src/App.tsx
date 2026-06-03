@@ -2848,6 +2848,7 @@ function App() {
                       }
                     }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar chats reales'}</button>
                   )}
+                  {lastSync && <span className="text-[10px] text-[#64748b] ml-2">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
                 </div>
                 <div className="text-[#94a3b8] text-xs px-1 mb-4">Chats 1:1 reales se sincronizan en vivo entre dispositivos (onSnapshot + polls)</div>
                 {matchProfiles.length === 0 && (
