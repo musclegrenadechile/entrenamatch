@@ -35,3 +35,12 @@ keystore.properties
 *.keystore
 *.jks
 release-key.*
+
+# Release artifacts, large binaries & temp build scripts (Phase 1 clean repo)
+*.aab
+*.apk
+EntrenaMatch-*.aab
+temp-*.bat
+build-*.log
+*.log
+
