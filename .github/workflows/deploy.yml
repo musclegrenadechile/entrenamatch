@@ -30,9 +30,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Clean build artifacts (avoid stale Vite/Rolldown cache)
+        run: rm -rf node_modules/.vite dist
+
       - name: Build
         run: |
-          rm -rf dist
           npm run build -- --base=/entrenamatch/
 
       - name: Setup Pages
