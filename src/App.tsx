@@ -3700,7 +3700,7 @@ function App() {
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
             <div className="px-4 mt-2 mb-8">
-              <div className="card p-5 rounded-3xl border border-[#FF671F]/30 bg-[#1C1C20]">
+              <div className="card p-5 rounded-3xl border border-[#FF4F79]/30 bg-[#1C1C20]">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="text-2xl">📱</div>
                   <div>
