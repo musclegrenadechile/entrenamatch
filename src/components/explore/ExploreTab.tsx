@@ -96,14 +96,15 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
     return reasons.slice(0, 2);
   };
 
-  // Spectacular: get short latest muro post for teaser (only if already loaded in state)
+  // Spectacular: get short latest muro post for teaser (prefer pinned, only if loaded)
   const getMuroTeaser = (profileId: string): string | null => {
     const posts = profilePosts[profileId] || []
     if (!posts.length) return null
-    const latest = posts[0] // newest first from our load logic
+    const pinned = posts.find((p: any) => p.pinned)
+    const latest = pinned || posts[0]
     let text = latest.text || ''
     if (text.length > 55) text = text.slice(0, 52) + '...'
-    return latest.photo ? `📷 ${text}` : text
+    return (latest.photo ? '📷 ' : (pinned ? '📌 ' : '')) + text
   }
 
   const handleDragEnd = (_: any, info: any) => {

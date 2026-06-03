@@ -4141,10 +4141,11 @@ function App() {
                         {(() => {
                           const posts = profilePosts[profile.id] || []
                           if (posts.length === 0) return null
-                          const latest = posts[0]
+                          const pinned = posts.find((p: any) => p.pinned)
+                          const latest = pinned || posts[0]
                           let t = latest.text || ''
                           if (t.length > 48) t = t.slice(0, 45) + '...'
-                          return <div className="text-[10px] text-[#FF671F]/90 mt-0.5 line-clamp-1">📝 {t}</div>
+                          return <div className="text-[10px] text-[#FF671F]/90 mt-0.5 line-clamp-1">{pinned ? '📌' : '📝'} {t}</div>
                         })()}
                       </div>
                     </div>
