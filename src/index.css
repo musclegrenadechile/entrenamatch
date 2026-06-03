@@ -65,11 +65,12 @@ body {
 
 .card:hover {
   border-color: #FF671F;
-  box-shadow: 0 4px 6px -1px rgb(255 103 31 / 0.1), 0 2px 4px -2px rgb(255 103 31 / 0.1);
+  box-shadow: 0 12px 20px -4px rgb(255 103 31 / 0.18), 0 6px 10px -3px rgb(255 103 31 / 0.22);
+  transform: translateY(-2px);
 }
 
 .card:active {
-  transform: scale(0.995);
+  transform: scale(0.985);
 }
 
 .swipe-card {
@@ -131,9 +132,10 @@ body {
 }
 
 .message-bubble.sent {
-  background: var(--fit-accent);
+  background: linear-gradient(135deg, #FF671F, #FF4F79);
   color: white;
   border-bottom-right-radius: 6px;
+  box-shadow: 0 2px 8px rgba(255, 103, 31, 0.3);
 }
 
 .message-bubble.received {
@@ -166,13 +168,14 @@ body {
 
 .btn-primary:hover {
   background: #E55A1A;
-  box-shadow: 0 10px 15px -3px rgb(255 103 31 / 0.3);
+  box-shadow: 0 14px 20px -4px rgb(255 103 31 / 0.38), 0 0 0 3px rgba(255, 79, 121, 0.25);
+  transform: translateY(-1px);
 }
 
 .btn-primary:active {
-  transform: scale(0.985);
-  background: #CC4F17;
-  box-shadow: 0 4px 6px -1px rgb(255 103 31 / 0.2);
+  transform: scale(0.97);
+  background: linear-gradient(135deg, #CC4F17, #E55A1A);
+  box-shadow: 0 4px 6px -1px rgb(255 103 31 / 0.25);
 }
 
 .btn-primary:disabled {
@@ -200,6 +203,7 @@ body {
 .match-modal {
   background: linear-gradient(145deg, #1C1C20 0%, #0D0D10 100%);
   border-color: #FF671F;
+  box-shadow: 0 0 0 1px rgba(255, 79, 121, 0.35), 0 25px 50px -12px rgb(0 0 0 / 0.6);
 }
 
 /* Scrollbars subtle */
@@ -261,4 +265,37 @@ input[type="range"]::-moz-range-thumb {
   width: 28px;
   border-radius: 999px;
   box-shadow: 0 0 0 3px rgba(255, 103, 31, 0.2);
+}
+
+/* Vibrant live / en-vivo indicators - Dunkin energy pulse */
+.live-pill {
+  background: rgba(255, 103, 31, 0.13);
+  color: #FF671F;
+  font-size: 9px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  animation: live-pulse 2.2s ease-in-out infinite;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+@keyframes live-pulse {
+  0%, 100% { opacity: 0.95; }
+  50% { opacity: 0.65; }
+}
+
+/* Sonner toast action buttons pop with our palette */
+[data-sonner-toast] [data-button] {
+  background: #FF671F !important;
+  color: #000 !important;
+  border-radius: 999px !important;
+  font-weight: 600 !important;
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+}
+[data-sonner-toast] [data-button]:hover {
+  background: #E55A1A !important;
+  transform: scale(0.985);
 }

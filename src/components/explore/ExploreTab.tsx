@@ -249,11 +249,11 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
             {deck.length} disponibles ahora {userLocation ? 'cerca de ti' : ''}
           </div>
           {realProfiles && realProfiles.length > 0 && (
-            <div className="text-[10px] text-[#FF671F] mt-0.5 font-medium flex items-center gap-1">+ {realProfiles.length} perfiles reales de testers <span className="text-[8px] px-1 py-px bg-[#FF671F]/10 text-[#FF671F] rounded">en vivo</span></div>
+            <div className="text-[10px] text-[#FF671F] mt-0.5 font-medium flex items-center gap-1">+ {realProfiles.length} perfiles reales de testers <span className="live-pill text-[8px]">en vivo</span></div>
           )}
           {lastSync && (
             <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex items-center gap-1">
-              <span className="text-[#FF671F]/80">en vivo</span> · hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s
+              <span className="live-pill text-[8px]">en vivo</span> · hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s
             </div>
           )}
         </div>
@@ -392,7 +392,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         <div className="mt-4 mb-2">
           <div className="flex items-center justify-between mb-2.5 px-1">
             <div>
-              <div className="font-semibold text-sm flex items-center gap-1">Más compatibles (reales primero) <span className="text-[8px] px-1 py-px bg-[#FF671F]/10 text-[#FF671F] rounded">en vivo</span></div>
+              <div className="font-semibold text-sm flex items-center gap-1">Más compatibles (reales primero) <span className="live-pill text-[8px]">en vivo</span></div>
               {lastSync && <span className="text-[9px] text-[#9CA3AF] ml-1">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
             </div>
           </div>

@@ -1706,10 +1706,10 @@ function App() {
       <img 
         src={photoUrl} 
         alt={name} 
-        className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-[#2F2F35]" 
+        className="w-8 h-8 rounded-full object-cover flex-shrink-0 border-2 border-[#FF671F]/70" 
       />
     ) : (
-      <div className="w-8 h-8 rounded-full bg-[#FF671F] text-black flex items-center justify-center text-xs font-bold flex-shrink-0">
+      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FF671F] to-[#FF4F79] text-black flex items-center justify-center text-xs font-bold flex-shrink-0 ring-1 ring-white/30">
         {name.charAt(0).toUpperCase()}
       </div>
     )
@@ -2903,7 +2903,7 @@ function App() {
                       {isLoadingSessions ? 'Actualizando...' : 'Actualizar sesiones reales'}
                     </button>
                     {lastSync && <span className="text-[10px] text-[#9CA3AF]">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
-                    <span className="text-[9px] px-1.5 py-px bg-[#FF671F]/10 text-[#FF671F] rounded-full">en vivo</span>
+                    <span className="live-pill">● en vivo</span>
                   </div>
                 )}
               </div>
@@ -3071,7 +3071,7 @@ function App() {
                         creatorProfileForDist.lat || 0, creatorProfileForDist.lng || 0) : null
 
                       return (
-                        <div key={session.id} className="card rounded-3xl p-4 border border-[#FF671F]/30">
+                        <div key={session.id} className="card rounded-3xl p-4 border border-[#FF4F79]/50 ring-1 ring-inset ring-[#FF4F79]/10">
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="font-semibold text-lg flex items-center gap-2">
@@ -3150,7 +3150,7 @@ function App() {
             <div className="flex items-center justify-between mb-1 px-1">
               <div>
                 <div className="text-2xl font-semibold tracking-[-1.2px]">Tus matches</div>
-                <div className="text-[#9CA3AF] text-sm">Conexiones reales <span className="text-[8px] px-1 py-px bg-[#FF671F]/10 text-[#FF671F] rounded">en vivo</span></div>
+                <div className="text-[#9CA3AF] text-sm">Conexiones reales <span className="live-pill text-[8px]">en vivo</span></div>
               </div>
               {!isDemoMode && (
                 <button 
@@ -3241,7 +3241,7 @@ function App() {
                 <div className="flex items-center justify-between mb-1 px-1">
                   <div className="flex items-center gap-2">
                     <div className="text-2xl font-semibold tracking-[-1.2px]">Mensajes</div>
-                    <span className="text-[9px] px-1.5 py-px bg-[#FF671F]/10 text-[#FF671F] rounded-full">en vivo</span>
+                    <span className="live-pill">● en vivo</span>
                   </div>
                   {!isDemoMode && (
                     <button onClick={async () => {
