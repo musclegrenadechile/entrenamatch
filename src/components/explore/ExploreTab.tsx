@@ -20,6 +20,7 @@ interface ExploreTabProps {
   realProfiles?: Profile[];
   onRefreshRealProfiles?: () => void;
   lastSync?: Date | null;
+  profilePosts?: Record<string, any[]>; // for spectacular muro teaser on cards
 }
 
 export const ExploreTab: React.FC<ExploreTabProps> = ({
@@ -37,6 +38,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
   realProfiles = [],
   onRefreshRealProfiles,
   lastSync,
+  profilePosts = {},
 }) => {
   // Local drag state + optimistic removal for snappy swipe/match feel
   const [dragX, setDragX] = useState(0);
@@ -93,6 +95,16 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
     return reasons.slice(0, 2);
   };
+
+  // Spectacular: get short latest muro post for teaser (only if already loaded in state)
+  const getMuroTeaser = (profileId: string): string | null => {
+    const posts = profilePosts[profileId] || []
+    if (!posts.length) return null
+    const latest = posts[0] // newest first from our load logic
+    let text = latest.text || ''
+    if (text.length > 55) text = text.slice(0, 52) + '...'
+    return latest.photo ? `📷 ${text}` : text
+  }
 
   const handleDragEnd = (_: any, info: any) => {
     const threshold = 110;
@@ -267,6 +279,20 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
               ))}
             </div>
           )}
+
+          {/* Spectacular muro teaser - makes profiles feel alive while swiping */}
+          {(() => {
+            const teaser = getMuroTeaser(profile.id)
+            if (!teaser) return null
+            return (
+              <div 
+                onClick={(e) => { e.stopPropagation(); onShowProfile?.(profile) }}
+                className="mb-2 px-2 py-1 bg-black/40 backdrop-blur rounded-xl text-[10px] text-white/90 line-clamp-1 border border-white/10 cursor-pointer active:bg-black/60 flex items-center gap-1"
+              >
+                <span>📝</span> <span className="truncate">{teaser}</span>
+              </div>
+            )
+          })()}
 
           <div className="flex items-center gap-2 text-xs text-white/80 font-medium">
             <span>Disponible:</span> {profile.availability.join(' • ')}

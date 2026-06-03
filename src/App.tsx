@@ -583,7 +583,7 @@ function App() {
       setRealSessions(loaded)
       const now = new Date()
       setLastSync(now)
-      console.log(`✅ Loaded ${loaded.length} real sessions from Firestore (cross-user visible)`)
+      // console.log removed for production cleanliness (spammy on refresh)
     } catch (err) {
       console.warn('Could not load real sessions yet:', err)
       setRealSessions([])
@@ -680,7 +680,9 @@ function App() {
       setRealProfiles(profiles)
       const now = new Date()
       setLastSync(now)
-      console.log(`✅ Loaded ${profiles.length} real profiles from Firestore (self excluded)`)
+      // Spectacular: preload muro teasers for first few so cards show latest posts immediately
+      profiles.slice(0, 5).forEach(p => { loadProfilePosts(p.id).catch(() => {}) })
+      // console.log removed for cleaner prod (was spammy on every refresh)
     } catch (err) {
       console.warn('Could not load real profiles (Firestore may not have data yet):', err)
       setRealProfiles([])
@@ -769,7 +771,9 @@ function App() {
         
         const ids = Array.from(matchedUserIds)
         setRealMatches(ids)
-        console.log(`✅ Loaded ${ids.length} real matches from Firestore`, ids)
+        // Preload muro teasers for spectacular cards in Matches tab
+        ids.slice(0, 6).forEach(id => { loadProfilePosts(id).catch(()=>{}) })
+        // console.log removed
         return ids;
       } catch (e) {
         console.warn('Could not load real matches yet:', e)
@@ -846,7 +850,7 @@ function App() {
           profileUpdate.legalConsents = user.legalConsents;
         }
         await updateUserProfile(firebaseUser.uid, profileUpdate)
-        console.log('✅ Profile synced to Firestore (real multi-user)')
+        // console.log removed (debug)
       } catch (e) {
         console.warn('Failed to sync profile to Firestore:', e)
       }
@@ -2065,6 +2069,22 @@ function App() {
     const updated = { ...profilePosts, [postUserId]: newList }
     saveProfilePosts(updated)  // delete uses save (LS + state)
     toast.success('Publicación eliminada')
+  }
+
+  // Delete extra profile photo from strip (spectacular profile polish - user can curate their gallery)
+  const deleteExtraPhoto = async (indexToRemove: number) => {
+    if (!currentUser?.photos || currentUser.photos.length === 0) return
+    if (currentUser.photos.length === 1) {
+      toast.error('Debes mantener al menos una foto principal en tu perfil')
+      return
+    }
+    if (!confirm('¿Eliminar esta foto de tu perfil?')) return
+
+    const newPhotos = currentUser.photos.filter((_, i) => i !== indexToRemove)
+    const updated = { ...currentUser, photos: newPhotos }
+    await saveUserWithRealSync(updated as CurrentUser)
+    setLastSync(new Date())
+    toast.success('Foto eliminada')
   }
 
   // Attractive inline comment composer (no more prompt dialogs on muro)
@@ -3376,6 +3396,7 @@ function App() {
             realProfiles={realProfiles}
             onRefreshRealProfiles={async () => { await loadRealProfiles(); setLastSync(new Date()); }}
             lastSync={lastSync}
+            profilePosts={profilePosts}
           />
         )}
 
@@ -3816,6 +3837,15 @@ function App() {
                           }
                           return null
                         })()}
+                        {/* Spectacular muro teaser on match cards */}
+                        {(() => {
+                          const posts = profilePosts[profile.id] || []
+                          if (posts.length === 0) return null
+                          const latest = posts[0]
+                          let t = latest.text || ''
+                          if (t.length > 48) t = t.slice(0, 45) + '...'
+                          return <div className="text-[10px] text-[#FF671F]/90 mt-0.5 line-clamp-1">📝 {t}</div>
+                        })()}
                       </div>
                     </div>
                     <div className="p-3 text-xs text-[#9CA3AF] flex items-center gap-1">
@@ -4166,13 +4196,21 @@ function App() {
               )}
             </div>
 
-            {/* Photo gallery strip - always show if any extra, to "ver" the added photos */}
+            {/* Photo gallery strip - always show if any extra, with delete (spectacular profile curation) */}
             {currentUser.photos && currentUser.photos.length > 0 && (
               <div className="px-4 py-3 flex gap-2 overflow-x-auto bg-[#0D0D10] border-b border-[#2F2F35]">
                 {currentUser.photos.map((photo: string, idx: number) => (
-                  <div key={idx} className={`relative flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border ${idx === 0 ? 'border-[#FF671F] ring-1 ring-[#FF671F]/30' : 'border-[#2F2F35]'} shadow`}>
+                  <div key={idx} className={`relative flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border ${idx === 0 ? 'border-[#FF671F] ring-1 ring-[#FF671F]/30' : 'border-[#2F2F35]'} shadow group`}>
                     <img src={photo} className="w-full h-full object-cover" />
                     {idx === 0 && <div className="absolute bottom-0 left-0 right-0 text-[8px] bg-[#FF671F] text-black px-1 text-center rounded-b">principal</div>}
+                    {/* Delete button - always visible on mobile for usability, nice on desktop */}
+                    <button
+                      onClick={() => deleteExtraPhoto(idx)}
+                      className="absolute top-1 right-1 bg-red-500/90 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center opacity-80 group-hover:opacity-100 active:scale-90 shadow"
+                      title="Eliminar foto"
+                    >
+                      ×
+                    </button>
                   </div>
                 ))}
               </div>
@@ -4347,7 +4385,8 @@ function App() {
                           if (p?.base64String) setMuroComposerPhoto(`data:image/jpeg;base64,${p.base64String}`)
                         } catch (e) { toast('No se pudo agregar foto') }
                       } else {
-                        const url = prompt('Pega URL de imagen (demo):')
+                        // Demo fallback for web (non-native) - prompt is quick pre-alpha tool
+                        const url = prompt('Pega URL de imagen (solo para pruebas web):')
                         if (url) setMuroComposerPhoto(url)
                       }
                     }}
