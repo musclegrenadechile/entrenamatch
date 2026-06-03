@@ -1904,6 +1904,7 @@ function App() {
           photo: d.photo,
           timestamp: d.timestamp || Date.now(),
           likes: d.likes || [],
+          pinned: !!d.pinned,
           comments: rawComments.map((c: any) => ({
             id: c.id || ('c' + Date.now() + Math.random().toString(36).slice(2)),
             userId: c.userId || '',
@@ -3673,6 +3674,7 @@ function App() {
                             {ownerProfile && realProfiles.some(rp => rp.id === post.ownerId) && <span className="ml-1 text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>}
                           </div>
                           <div className="text-[10px] text-[#9CA3AF]">· {getRelativeTime(post.timestamp)}</div>
+                          {post.pinned && <span className="text-[8px] text-[#FF671F]">fijado</span>}
                         </div>
 
                         <div className="text-sm leading-relaxed mb-2">{post.text}</div>
