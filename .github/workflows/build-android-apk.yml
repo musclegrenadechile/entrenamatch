@@ -11,6 +11,8 @@ permissions:
 jobs:
   build-apk:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -65,13 +67,9 @@ jobs:
         shell: bash
 
       - name: Sync Capacitor Android
-        env:
-          ANDROID_HOME: /usr/local/lib/android/sdk
         run: npx cap sync android
 
       - name: Build Debug APK
-        env:
-          ANDROID_HOME: /usr/local/lib/android/sdk
         run: |
           cd android
           chmod +x gradlew
