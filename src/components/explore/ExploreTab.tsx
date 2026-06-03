@@ -310,8 +310,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
               </div>
               <div className="text-2xl font-semibold tracking-tight mb-2">¡Se acabaron los perfiles por ahora!</div>
               <p className="text-[#94a3b8] max-w-[280px] mx-auto mb-5 text-sm">
-                No hay más perfiles que coincidan con tus filtros actuales. <br />
-                <span className="text-[11px] text-[#64748b]">¡Prueba cambiando filtros o actualizando reales!</span>
+                No hay más perfiles que coincidan con tus filtros actuales.
               </p>
               <div className="flex gap-3 justify-center">
                 <button 
@@ -344,6 +343,9 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                   </button>
                 )}
               </div>
+              {lastSync && (
+                <div className="text-[10px] text-[#64748b] mt-3">Última sync real: hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</div>
+              )}
             </div>
           )}
 

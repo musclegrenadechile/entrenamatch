@@ -414,6 +414,7 @@ function App() {
 
   // Simple last sync time for polish in Explore/Sessions/Profile
   const [lastSync, setLastSync] = useState<Date | null>(null)
+  const [isSyncingProfile, setIsSyncingProfile] = useState(false)
 
   const loadRealSessions = async () => {
     if (!isFirebaseConfigured || !db) {
@@ -2629,7 +2630,7 @@ function App() {
                   {displaySessions.filter(s => !s.participants.includes(effectiveUserId)).length}
                 </div>
               </div>
-              <div className="text-[10px] text-[#64748b] -mt-2 mb-3">Las sesiones que crees son visibles para otros testers reales</div>
+              <div className="text-[10px] text-[#64748b] -mt-2 mb-3">Sesiones visibles para testers reales • chat grupal en vivo</div>
 
               {displaySessions.filter(s => !s.participants.includes(effectiveUserId)).length === 0 ? (
                 <div className="mt-4 card p-7 rounded-3xl text-center">
@@ -2638,9 +2639,12 @@ function App() {
                   </div>
                   <div className="font-semibold text-lg mb-2">No hay sesiones abiertas todavía</div>
                   <p className="text-sm text-[#94a3b8] leading-snug mb-4 max-w-[280px] mx-auto">
-                    { !isDemoMode ? 'Aún no hay otros testers reales con sesiones activas. ¡Sé el primero en crear una!' : 'Sé el primero en crear una.' } Otros testers reales la verán al instante (gracias a Firebase) y podrán unirse para chatear en grupo.
+                    { !isDemoMode ? 'Aún no hay sesiones activas de otros testers. ¡Sé el primero!' : 'Sé el primero en crear una.' } Se ven en vivo para todos y el chat grupal funciona cross-device.
                   </p>
                   <button onClick={() => setShowCreateSession(true)} className="btn-primary px-8">Crear la primera sesión</button>
+                  {lastSync && (
+                    <div className="text-[10px] text-[#64748b] mt-2">Última sync real: hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -3162,40 +3166,45 @@ function App() {
                 </div>
                 {!isDemoMode && (
                   <button onClick={async () => { 
-                    await loadRealProfiles(); 
-                    await loadRealSessions(); 
-                    await loadMyFeedbacks(); 
-                    // Also force reload self profile from Firestore to ensure latest after edits
-                    if (firebaseUser?.uid) {
-                      try {
-                        const rp = await getUserProfile(firebaseUser.uid);
-                        if (rp && rp.name) {
-                          const merged: CurrentUser = {
-                            ...currentUser,
-                            id: 'me' as any,
-                            name: rp.name,
-                            age: rp.age,
-                            gender: rp.gender,
-                            city: rp.city,
-                            country: rp.country,
-                            bio: rp.bio,
-                            photos: rp.photos || [],
-                            trainingTypes: rp.trainingTypes || [],
-                            goals: rp.goals || [],
-                            level: rp.level || 'Intermedio',
-                            intensity: rp.intensity || 'Moderado',
-                            availability: rp.availability || ['Tarde'],
-                            lat: rp.lat || currentUser?.lat || -33.0153,
-                            lng: rp.lng || currentUser?.lng || -71.5528,
-                            legalConsents: rp.legalConsents || currentUser?.legalConsents,
-                          };
-                          saveUser(merged);
-                        }
-                      } catch {}
+                    setIsSyncingProfile(true);
+                    try {
+                      await loadRealProfiles(); 
+                      await loadRealSessions(); 
+                      await loadMyFeedbacks(); 
+                      // Also force reload self profile from Firestore to ensure latest after edits
+                      if (firebaseUser?.uid) {
+                        try {
+                          const rp = await getUserProfile(firebaseUser.uid);
+                          if (rp && rp.name) {
+                            const merged: CurrentUser = {
+                              ...currentUser,
+                              id: 'me' as any,
+                              name: rp.name,
+                              age: rp.age,
+                              gender: rp.gender,
+                              city: rp.city,
+                              country: rp.country,
+                              bio: rp.bio,
+                              photos: rp.photos || [],
+                              trainingTypes: rp.trainingTypes || [],
+                              goals: rp.goals || [],
+                              level: rp.level || 'Intermedio',
+                              intensity: rp.intensity || 'Moderado',
+                              availability: rp.availability || ['Tarde'],
+                              lat: rp.lat || currentUser?.lat || -33.0153,
+                              lng: rp.lng || currentUser?.lng || -71.5528,
+                              legalConsents: rp.legalConsents || currentUser?.legalConsents,
+                            };
+                            saveUser(merged);
+                          }
+                        } catch {}
+                      }
+                      setLastSync(new Date()); 
+                      toast.success('Datos reales sincronizados') 
+                    } finally {
+                      setIsSyncingProfile(false);
                     }
-                    setLastSync(new Date()); 
-                    toast.success('Datos reales sincronizados') 
-                  }} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black">Sincronizar</button>
+                  }} disabled={isSyncingProfile} className="text-[10px] px-2 py-1 rounded-xl border border-[#14b8a6]/50 text-[#14b8a6] active:bg-[#14b8a6] active:text-black disabled:opacity-60">{isSyncingProfile ? '...' : 'Sincronizar'}</button>
                 )}
               </div>
               <div className="flex gap-2">
