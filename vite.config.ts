@@ -26,4 +26,10 @@ export default defineConfig({
   optimizeDeps: {
     include: ['@capacitor/camera', '@capacitor/push-notifications'],
   },
+
+  build: {
+    // Suppress the large chunk warning (the app is intentionally not code-split much for simplicity in pre-alpha).
+    // The previous "Build failed" was always the resolve error, not this warning.
+    chunkSizeWarningLimit: 2000,
+  },
 })
