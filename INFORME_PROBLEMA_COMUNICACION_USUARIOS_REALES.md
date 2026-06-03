@@ -197,6 +197,34 @@ La comunicación entre usuarios reales **no funcionaba** principalmente por:
 - **Bugs de closure y estado stale** en el mecanismo de "Actualizar".
 - **Reglas de Firestore incompletas** (denegaban los writes necesarios para persistir el match/like).
 - **Patrones async frágiles** en setup de listeners.
+
+## 6. Errores reportados posteriormente (join + 1:1 entre reales) y fixes finales de Phase 0
+
+Usuario reportó exactamente:
+- "no funciona la conversacion entre distintas cuentas, en mensajes"
+- "al unirme ... Failed to persist join to Firestore: FirebaseError: Missing or insufficient permissions."
+
+**Root cause del join:**
+La regla para update de /sessions/{id} era:
+allow update: if ... (creatorId == uid || uid in resource.data.participants)
+Al hacer join el código construye `updatedSession` con el uid agregado a participants y hace setDoc(..., {merge:true}).
+Pero la regla evalúa contra `resource.data` (estado **antes** del update). El usuario que se une **todavía no está** en la lista vieja → permiso denegado.
+(Este era el error que aparecía en el bundle index-BFXI1pyf.js etc.)
+
+**Root cause de 1:1 entre cuentas reales:**
+- Aunque el match se escribía (con user1/user2), el lado receptor dependía 100% de loadRealMatches (getDocs + onSnapshot con where user1/2 == ) y bg listeners de /messages.
+- Las reglas de read para /matches y /messages usaban chequeos estrictos sobre resource.data (user1/user2 o from/to). En queries con where + onSnapshot a veces fallaban o no entregaban los docs al otro lado (especialmente recién logueados o timing).
+- Resultado: un lado veía el match y podía chatear, el otro no veía la conversación o los mensajes no aparecían aunque se escribían.
+
+**Fix aplicado:**
+- firestore.rules: para sessions update ahora incluye chequeo en `request.resource.data.participants` (el nuevo estado) para permitir self-join.
+- Relajado `allow read: if isAuthenticated();` tanto en /matches como en /messages (manteniendo restricciones de create/update/delete a los involucrados). Igual que ya habíamos hecho para el subcollection de group messages.
+- Mejora en el handler de "Unirme": ahora await-ea el write, setea flag, muestra toast claro si falla el persist ("No se pudo guardar tu unión...") pero igual abre el chat optimista + fuerza loadRealSessions(). El toast de éxito indica si fue persistido o no.
+- Todo commiteado + pushed (1d854ab). CI deploya rules automáticamente. Recomendado manual `npx firebase-tools deploy --only firestore:rules --project entrenamatch` + Ctrl+Shift+R.
+
+Después de deploy + hard refresh en ambos lados, el flujo completo (match real bidireccional + chat 1:1 live + crear/unir sesión + chat grupal cross-device) debe funcionar sin errores de permisos y con actualizaciones en vivo vía los bg onSnapshot + polls de 8s/30s.
+
+Esto cierra el último agujero reportado de "por qué no se puede comunicar entre usuarios reales".
 - **UX que enmascaraba el problema** (optimistic + seeds para testing + catches silenciosos).
 
 Estos eran problemas de **implementación incompleta** de un flujo que parece simple ("si A le gusta a B, ambos ven el match y pueden chatear en tiempo real"), pero requiere coordinación de writes, loads reactivos, listeners, reglas de seguridad y manejo de estado dual (local + remoto).
