@@ -2641,7 +2641,6 @@ function App() {
                     { !isDemoMode ? 'Aún no hay otros testers reales con sesiones activas. ¡Sé el primero en crear una!' : 'Sé el primero en crear una.' } Otros testers reales la verán al instante (gracias a Firebase) y podrán unirse para chatear en grupo.
                   </p>
                   <button onClick={() => setShowCreateSession(true)} className="btn-primary px-8">Crear la primera sesión</button>
-                  <div className="text-[10px] text-[#14b8a6] mt-3">Beta real: las sesiones son visibles cross-device y el chat grupal funciona en vivo</div>
                 </div>
               ) : (
                 <div className="space-y-3">
