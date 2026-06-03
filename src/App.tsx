@@ -2871,6 +2871,7 @@ function App() {
                   {isLoadingMatches ? '...' : 'Actualizar reales'}
                 </button>
               )}
+              {lastSync && <span className="text-[10px] text-[#64748b] ml-2">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
             </div>
             <div className="text-[#94a3b8] px-1 mb-4 text-xs">Los matches con testers reales aparecen aquí al instante entre dispositivos</div>
 
@@ -2885,6 +2886,9 @@ function App() {
                     Ve a Explorar para ver perfiles reales y hacer match. Chats y sesiones en vivo cross-device.
                   </p>
                   <button onClick={() => setActiveTab('explore')} className="btn-primary px-8">Ir a Explorar</button>
+                  {lastSync && (
+                    <div className="text-[10px] text-[#64748b] mt-2">Última sync real: hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</div>
+                  )}
                 </div>
               </div>
             ) : (
