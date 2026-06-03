@@ -346,6 +346,7 @@ function App() {
   const [feedSearch, setFeedSearch] = useState('')
   const [feedOnlyReal, setFeedOnlyReal] = useState(false)
   const [feedMaxProfiles, setFeedMaxProfiles] = useState(15)
+  const [feedDisplayLimit, setFeedDisplayLimit] = useState(10)
 
   // Auto-refresh real sessions on tab DISABLED to fix TDZ.
   // Manual button remains.
@@ -942,6 +943,7 @@ function App() {
   useEffect(() => {
     if (activeTab === 'feed' && !isDemoMode) {
       setFeedMaxProfiles(15);
+      setFeedDisplayLimit(10);
       loadGlobalFeed()
     }
   }, [activeTab])
@@ -3585,7 +3587,7 @@ function App() {
                     {feedShowPinnedOnly ? '★ Solo fijados' : '📌 Fijados'}
                   </button>
                   <button 
-                    onClick={() => { setFeedMaxProfiles(15); loadGlobalFeed(); if (!isDemoMode) loadRealProfiles(); }} 
+                    onClick={() => { setFeedMaxProfiles(15); setFeedDisplayLimit(10); loadGlobalFeed(); if (!isDemoMode) loadRealProfiles(); }} 
                     disabled={isLoadingFeed}
                     className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10"
                   >
@@ -3619,7 +3621,7 @@ function App() {
                   return (p.text || '').toLowerCase().includes(q) || (owner.name || '').toLowerCase().includes(q);
                 });
               }
-              feedPosts = feedPosts.slice(0, 30); // increased for "load more" feel
+              feedPosts = feedPosts.slice(0, feedDisplayLimit);
 
               if (feedPosts.length === 0) {
                 return (
@@ -3731,9 +3733,9 @@ function App() {
                     );
                   })}
 
-                  {realProfiles.length > feedMaxProfiles && (
+                  {feedPosts.length < allCommunityPosts.length && (
                     <div className="text-center mt-2">
-                      <button onClick={() => loadGlobalFeed(true)} className="text-xs text-[#FF671F] underline active:opacity-70">Cargar más de la comunidad</button>
+                      <button onClick={() => setFeedDisplayLimit(feedDisplayLimit + 10)} className="text-xs text-[#FF671F] underline active:opacity-70">Cargar más posts</button>
                     </div>
                   )}
                 </>
@@ -4704,15 +4706,19 @@ function App() {
                 const pinned = myPosts.filter((p: any) => p.pinned);
                 if (pinned.length === 0) return null;
                 return (
-                  <div className="px-1 mb-2">
-                    <div className="text-[9px] text-[#FF671F] mb-1 flex justify-between">
-                      <span>📌 Tus posts fijados ({pinned.length}) (aparecen primero en feed global)</span>
-                      <button onClick={() => setActiveTab('feed')} className="underline">ver en feed →</button>
+                  <div className="px-1 mb-3">
+                    <div className="text-[9px] text-[#FF671F] mb-1 flex justify-between items-center">
+                      <span>📌 Tus posts fijados ({pinned.length}) — aparecen primero en el feed global</span>
+                      <button onClick={() => setActiveTab('feed')} className="text-xs underline active:text-white">ver todo en feed →</button>
                     </div>
-                    {pinned.slice(0,2).map((p: any) => (
-                      <div key={p.id} onClick={() => setActiveTab('feed')} className="text-[10px] text-[#9CA3AF] truncate cursor-pointer active:text-[#FF671F]">• {p.text}</div>
-                    ))}
-                    {pinned.length > 2 && <div className="text-[9px] text-[#FF671F]/70">+{pinned.length-2} más...</div>}
+                    <div className="card card-glass p-2 text-xs space-y-1">
+                      {pinned.slice(0,3).map((p: any) => (
+                        <div key={p.id} onClick={() => setActiveTab('feed')} className="truncate cursor-pointer hover:text-[#FF671F] active:text-[#FF671F] flex gap-1">
+                          <span>📌</span> <span>{p.text}</span>
+                        </div>
+                      ))}
+                      {pinned.length > 3 && <div className="text-[#FF671F]/70">+{pinned.length-3} más...</div>}
+                    </div>
                   </div>
                 );
               })()}
@@ -4792,7 +4798,7 @@ function App() {
                         exit={{ opacity: 0, y: -12, scale: 0.97, height: 0, marginBottom: 0 }}
                         whileHover={{ scale: 1.01, y: -2 }}
                         transition={{ type: 'spring', bounce: 0.12, duration: 0.28 }}
-                        className="card card-glass p-4 mb-3 border-[#2F2F35]/80"
+                        className={`card card-glass p-4 mb-3 border-[#2F2F35]/80 ${post.pinned ? 'ring-1 ring-[#FF671F]/50' : ''}`}
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-1 text-[10px] text-[#9CA3AF]" title={new Date(post.timestamp).toLocaleString('es-CL')}>
