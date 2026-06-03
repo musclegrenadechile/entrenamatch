@@ -2599,6 +2599,7 @@ function App() {
                                 saveSessions(updatedLocal)
 
                                 // IMPORTANT: Also write join back to Firestore so other real users see updated participants
+                                let joinPersisted = true
                                 if (!isDemoMode && firebaseUser?.uid && db) {
                                   try {
                                     const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
@@ -2608,7 +2609,9 @@ function App() {
                                     }), { merge: true })
                                     console.log('✅ Join persisted to Firestore for other users')
                                   } catch (e) {
+                                    joinPersisted = false
                                     console.warn('Failed to persist join to Firestore:', e)
+                                    toast.error('No se pudo guardar tu unión en el servidor', { description: 'El chat se abre igual (optimista). Usa "Actualizar sesiones reales" si no ves cambios.' })
                                   }
                                 }
 
@@ -2629,7 +2632,7 @@ function App() {
                                   })
                                 }
 
-                                toast.success('¡Te uniste!', { description: 'Abriendo chat grupal...' })
+                                toast.success('¡Te uniste!', { description: joinPersisted ? 'Abriendo chat grupal...' : 'Abriendo (puede tardar en sincronizar para otros)' })
                                 setShowGroupChatModalFor(session.id)
                               }}
                               disabled={spotsLeft <= 0}
