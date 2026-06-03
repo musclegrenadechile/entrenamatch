@@ -386,6 +386,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           <div className="flex items-center justify-between mb-2.5 px-1">
             <div>
               <div className="font-semibold text-sm">Más compatibles (reales primero)</div>
+              {lastSync && <span className="text-[9px] text-[#64748b] ml-1">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2.5">
