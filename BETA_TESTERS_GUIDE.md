@@ -170,6 +170,18 @@ Reporta resultados (bugs, frictions, lo que encantó del polish "elegir perfiles
 
 Usa el AAB firmado actual (no debug). Hard refresh no aplica en APK (reinstala si hay update).
 
+## Assets para Play Store (usar los generados/polished)
+
+Ver assets/play-store/ASSETS.md para specs completas, icon-512.jpg generado, screenshot-explore-polished.jpg y screenshot-chat-polished.jpg usando el UI actual pulido (disponibles ahora, en vivo, recs reales, lastSync, cards limpias).
+
+Instrucciones allí para resize icons y usar screenshots (auténticos del polish reciente).
+
+Esto hace que el listing se vea premium para los testers reales.
+
+## Privacidad
+
+Tus datos (perfil, ubicación aproximada, chats de sesiones) se usan solo para el matching y coordinación dentro de la beta. Ver política completa en la app o en /privacy.html.
+
 ## Privacidad
 
 Tus datos (perfil, ubicación aproximada, chats de sesiones) se usan solo para el matching y coordinación dentro de la beta. Ver política completa en la app o en /privacy.html.
