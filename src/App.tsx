@@ -291,6 +291,19 @@ function App() {
     setShowCreateSession(false)
     setSelectedTrainingType('Pesas/Gym')
   }
+
+  // Helper to remove undefined fields before Firestore writes (Firestore rejects undefined values in data)
+  const sanitizeForFirestore = (obj) => {
+    if (!obj || typeof obj !== 'object') return obj;
+    const clean = {};
+    Object.keys(obj).forEach(key => {
+      if (obj[key] !== undefined) {
+        clean[key] = obj[key];
+      }
+    });
+    return clean;
+  }
+
   const [isLoadingMatches, setIsLoadingMatches] = useState(false)
   const [isLoadingChats, setIsLoadingChats] = useState(false)
 
@@ -1357,10 +1370,10 @@ function App() {
           const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
           for (const s of newSessions.slice(0, 10)) {
             if (s.creatorId === effectiveUserId || s.participants.includes(effectiveUserId)) {
-              await setDoc(doc(db, 'sessions', s.id), {
+              await setDoc(doc(db, 'sessions', s.id), sanitizeForFirestore({
                 ...s,
                 updatedAt: serverTimestamp(),
-              }, { merge: true })
+              }), { merge: true })
             }
           }
           console.log('✅ Sessions synced to Firestore for real users')
@@ -2589,10 +2602,10 @@ function App() {
                                 if (!isDemoMode && firebaseUser?.uid && db) {
                                   try {
                                     const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
-                                    await setDoc(doc(db, 'sessions', session.id), {
+                                    await setDoc(doc(db, 'sessions', session.id), sanitizeForFirestore({
                                       ...updatedSession,
                                       updatedAt: serverTimestamp(),
-                                    }, { merge: true })
+                                    }), { merge: true })
                                     console.log('✅ Join persisted to Firestore for other users')
                                   } catch (e) {
                                     console.warn('Failed to persist join to Firestore:', e)
@@ -3867,10 +3880,10 @@ function App() {
                                 (async () => {
                                   try {
                                     const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
-                                    await setDoc(doc(db, 'sessions', newSession.id), {
+                                    await setDoc(doc(db, 'sessions', newSession.id), sanitizeForFirestore({
                                       ...newSession,
                                       updatedAt: serverTimestamp(),
-                                    }, { merge: true })
+                                    }), { merge: true })
                                   } catch (e) {}
                                 })()
                               }
@@ -3978,10 +3991,10 @@ function App() {
                   (async () => {
                     try {
                       const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
-                      await setDoc(doc(db, 'sessions', newSession.id), {
+                      await setDoc(doc(db, 'sessions', newSession.id), sanitizeForFirestore({
                         ...newSession,
                         updatedAt: serverTimestamp(),
-                      }, { merge: true })
+                      }), { merge: true })
                       console.log('✅ New session written directly to Firestore')
 
                       // Also write the creator welcome message to the messages subcollection so joiners see it on server
