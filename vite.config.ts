@@ -31,5 +31,15 @@ export default defineConfig({
     // Suppress the large chunk warning (the app is intentionally not code-split much for simplicity in pre-alpha).
     // The previous "Build failed" was always the resolve error, not this warning.
     chunkSizeWarningLimit: 2000,
+
+    rollupOptions: {
+      // In web builds (no CAPACITOR env), externalize the native Capacitor plugins.
+      // This prevents the bundler from trying to resolve and bundle them (which can fail in CI
+      // for pure web deploys). The usage is runtime-guarded anyway.
+      // In CAPACITOR builds, we bundle them normally so the dynamic load works at runtime in the app.
+      external: !process.env.CAPACITOR
+        ? ['@capacitor/camera', '@capacitor/push-notifications']
+        : [],
+    },
   },
 })
