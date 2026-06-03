@@ -29,6 +29,11 @@ jobs:
       - name: Ensure Capacitor native plugins are installed (fix resolution in CI)
         run: npm install --no-package-lock --prefer-offline=false @capacitor/push-notifications@8.1.1 @capacitor/camera@8.2.0 --no-save
 
+      - name: Verify plugins installed
+        run: |
+          ls node_modules/@capacitor/push-notifications/dist/esm/index.js || echo "push not found"
+          ls node_modules/@capacitor/camera/dist/esm/index.js || echo "camera not found"
+
       - name: Clean build artifacts (avoid stale Vite/Rolldown cache)
         run: rm -rf node_modules/.vite dist
 
