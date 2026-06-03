@@ -1709,7 +1709,16 @@ function App() {
     if (savedReports) setReports(JSON.parse(savedReports))
 
     const savedNotifications = localStorage.getItem('entrenamatch_notifications')
-    if (savedNotifications) setNotifications(JSON.parse(savedNotifications))
+    if (savedNotifications) {
+      let loaded = JSON.parse(savedNotifications)
+      // Auto-clean old read notifications to keep panel tidy (keep recent read + all unread)
+      const now = Date.now()
+      loaded = loaded.filter((n: any) => !n.read || (now - (n.timestamp || 0)) < 1000*60*60*24*7 ) // keep unread + last 7 days read
+      setNotifications(loaded.slice(0, 30))
+      if (loaded.length !== JSON.parse(savedNotifications).length) {
+        localStorage.setItem('entrenamatch_notifications', JSON.stringify(loaded))
+      }
+    }
 
     // Restore persistent seen message IDs so we don't re-notify old messages after reload
     const savedSeenChat = localStorage.getItem('entrenamatch_seen_chat_msgs')
@@ -4537,8 +4546,8 @@ function App() {
                 setShowCreateSquad(false)
                 toast.success('Squad creado')
               }}>
-                <input name="name" placeholder="Nombre del Squad (ej: Beasts de Viña)" required className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3 mb-3" />
-                <input name="focus" placeholder="Enfoque (Pesas, Running, Calistenia...)" required className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3 mb-4" />
+                <input name="name" placeholder="Nombre del Squad (ej: Beasts de Viña)" required className="form-input w-full mb-3" />
+                <input name="focus" placeholder="Enfoque (Pesas, Running, Calistenia...)" required className="form-input w-full mb-4" />
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setShowCreateSquad(false)} className="flex-1 py-3 rounded-2xl border border-[#2F2F35] active:bg-[#25252A]">Cancelar</button>
                   <button type="submit" className="flex-1 btn-primary">Crear Squad</button>
@@ -4867,7 +4876,7 @@ function App() {
                 value={reviewComment}
                 onChange={e => setReviewComment(e.target.value)}
                 placeholder="Comentario opcional (qué tal fue el entrenamiento...)"
-                className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl p-4 text-sm h-24 resize-none mb-4"
+                className="form-input w-full h-24 resize-none mb-4"
               />
 
               {/* Photo upload for the session - Unique feature */}
@@ -5732,17 +5741,38 @@ function App() {
               className="flex-1 bg-[#0D0D10] max-w-[420px] mx-auto w-full mt-[42px] rounded-t-3xl border border-[#2F2F35] overflow-hidden flex flex-col"
             >
               <div className="p-4 border-b border-[#2F2F35] flex justify-between items-center bg-[#1C1C20]">
-                <div className="font-semibold">Notificaciones { (unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 ? `(${unreadNotifications + totalChatUnreads + totalSessionUnreads} nuevas)` : '' }</div>
+                <div className="section-header text-base flex items-center gap-2">
+                  Notificaciones 
+                  { (unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FF671F] text-black font-bold">
+                      {unreadNotifications + totalChatUnreads + totalSessionUnreads} nuevas
+                    </span>
+                  )}
+                </div>
                 {notifications.length > 0 && (
-                  <button 
-                    onClick={() => {
-                      const allRead = notifications.map(n => ({...n, read: true}))
-                      saveNotifications(allRead)
-                    }}
-                    className="text-xs text-[#FF4F79]"
-                  >
-                    Marcar todo como leído
-                  </button>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => {
+                        const hasRead = notifications.some(n => n.read)
+                        if (hasRead) {
+                          const cleaned = notifications.filter(n => !n.read)
+                          saveNotifications(cleaned)
+                        }
+                      }}
+                      className="text-xs text-[#9CA3AF] active:text-white"
+                    >
+                      Limpiar leídas
+                    </button>
+                    <button 
+                      onClick={() => {
+                        const allRead = notifications.map(n => ({...n, read: true}))
+                        saveNotifications(allRead)
+                      }}
+                      className="text-xs text-[#FF671F] font-medium"
+                    >
+                      Marcar todo leído
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -5752,65 +5782,67 @@ function App() {
                     No tienes notificaciones aún.
                   </div>
                 ) : (
-                  notifications.map(notif => (
-                    <div 
-                      key={notif.id} 
-                      className={`p-4 border-b border-[#2F2F35] ${!notif.read ? 'bg-[#1C1C20]' : ''}`}
-                      onClick={() => {
-                        const updated = notifications.map(n => 
-                          n.id === notif.id ? {...n, read: true} : n
-                        )
-                        saveNotifications(updated)
+                  notifications.map(notif => {
+                    const typeIcon = notif.type === 'message' ? '💬' : notif.type === 'match' ? '❤️' : notif.type === 'session_join' ? '👥' : notif.type === 'squad_join' ? '🏋️' : '🔔'
+                    const time = notif.timestamp ? getRelativeTime(notif.timestamp) : ''
+                    return (
+                      <div 
+                        key={notif.id} 
+                        className={`p-4 border-b border-[#2F2F35] flex items-start gap-3 active:bg-[#1C1C20] cursor-pointer ${!notif.read ? 'bg-[#1C1C20]' : ''}`}
+                        onClick={() => {
+                          const updated = notifications.map(n => 
+                            n.id === notif.id ? {...n, read: true} : n
+                          )
+                          saveNotifications(updated)
 
-                        // Navigate based on type
-                        if (notif.type === 'match' && notif.relatedId) {
-                          setShowNotifications(false)
-                          setActiveTab('messages')
-                          setActiveChat(notif.relatedId)
-                          setChatUnreads(prev => { const c = { ...prev }; if (notif.relatedId) c[notif.relatedId] = 0; return c })
-                        }
-                        if (notif.type === 'message' && notif.relatedId) {
-                          setShowNotifications(false)
-                          // let trigger's action or here decide group vs 1:1 — simple heuristic: if looks like session id
-                          const isLikelyGroup = (notif.relatedId || '').startsWith('s')
-                          if (isLikelyGroup) {
-                            setActiveTab('sesiones')
-                            setShowGroupChatModalFor(notif.relatedId)
-                            setSessionUnreads(prev => { const c = { ...prev }; if (notif.relatedId) c[notif.relatedId] = 0; return c })
-                          } else {
+                          // Navigate based on type
+                          if (notif.type === 'match' && notif.relatedId) {
+                            setShowNotifications(false)
                             setActiveTab('messages')
                             setActiveChat(notif.relatedId)
                             setChatUnreads(prev => { const c = { ...prev }; if (notif.relatedId) c[notif.relatedId] = 0; return c })
                           }
-                        }
-                        if (notif.type === 'session_join' && notif.relatedId) {
-                          setShowNotifications(false)
-                          setActiveTab('sesiones')
-                        }
-                        if (notif.type === 'squad_join' && notif.relatedId) {
-                          setShowNotifications(false)
-                          setActiveTab('squads')
-                          setSelectedSquad(notif.relatedId)
-                        }
-                      }}
-                    >
-                      <div className="flex items-start gap-3">
-                        {notif.photoUrl && (
-                          <img src={notif.photoUrl} alt="" className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-[#2F2F35]" />
-                        )}
+                          if (notif.type === 'message' && notif.relatedId) {
+                            setShowNotifications(false)
+                            const isLikelyGroup = (notif.relatedId || '').startsWith('s')
+                            if (isLikelyGroup) {
+                              setActiveTab('sesiones')
+                              setShowGroupChatModalFor(notif.relatedId)
+                              setSessionUnreads(prev => { const c = { ...prev }; if (notif.relatedId) c[notif.relatedId] = 0; return c })
+                            } else {
+                              setActiveTab('messages')
+                              setActiveChat(notif.relatedId)
+                              setChatUnreads(prev => { const c = { ...prev }; if (notif.relatedId) c[notif.relatedId] = 0; return c })
+                            }
+                          }
+                          if (notif.type === 'session_join' && notif.relatedId) {
+                            setShowNotifications(false)
+                            setActiveTab('sesiones')
+                          }
+                          if (notif.type === 'squad_join' && notif.relatedId) {
+                            setShowNotifications(false)
+                            setActiveTab('squads')
+                            setSelectedSquad(notif.relatedId)
+                          }
+                        }}
+                      >
+                        <div className="text-xl mt-0.5 flex-shrink-0">{typeIcon}</div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex justify-between">
-                            <div className="font-medium text-sm truncate">{notif.title}</div>
-                            <div className="text-[10px] text-[#9CA3AF] flex-shrink-0 ml-2">
-                              {new Date(notif.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                            </div>
+                          <div className="flex justify-between items-baseline">
+                            <div className="font-medium text-sm truncate pr-2">{notif.title}</div>
+                            <div className="text-[10px] text-[#9CA3AF] flex-shrink-0">{time}</div>
                           </div>
-                          <div className="text-sm text-[#cbd5e1] mt-0.5 truncate">{notif.body}</div>
-                          {!notif.read && <div className="w-2 h-2 bg-[#FF671F] rounded-full mt-2"></div>}
+                          <div className="text-sm text-[#cbd5e1] mt-0.5 line-clamp-2">{notif.body}</div>
+                          {!notif.read && (
+                            <div className="mt-1.5 inline-block w-1.5 h-1.5 bg-[#FF671F] rounded-full"></div>
+                          )}
                         </div>
+                        {notif.photoUrl && (
+                          <img src={notif.photoUrl} alt="" className="w-9 h-9 rounded-xl object-cover flex-shrink-0 border border-[#2F2F35]" />
+                        )}
                       </div>
-                    </div>
-                  ))
+                    )
+                  })
                 )}
               </div>
             </div>

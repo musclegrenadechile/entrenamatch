@@ -164,6 +164,13 @@ Everything must work after hard refresh + on different physical devices (not jus
   - Extra belt: dedup by relatedId + type + recent time inside addNotification itself (prevents any stray duplicate entries).
   - On logout also clear the seen storage.
   - Marking read in panel now sticks (persisted), and no new duplicates will be created for already-seen messages.
+- [x] Notifications panel polish (diseño + UX):
+  - Added type icons (💬 ❤️ 👥 🏋️ 🔔), relative timestamps (getRelativeTime), better layout with avatar on right if present.
+  - Unread indicator as small dot + highlighted bg.
+  - Header uses section-header, added "Limpiar leídas" (removes read entries) + improved "Marcar todo".
+  - Auto-clean old read notifs on load (keep unread + recent 7 days read).
+  - Panel container refined.
+  - Continues visual consistency with design system.
 - Add FIREBASE_SERVICE_ACCOUNT secret to GitHub for full auto Firebase Hosting deploys on every push (recommended over GH Pages for PWA + future FCM).
 
 ## Later Phases (high level)
