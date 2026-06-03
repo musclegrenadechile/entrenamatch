@@ -3086,10 +3086,9 @@ function App() {
 
   // LIVE TRAINING NOW - the killer innovative feature. Real-time who is training right now near you. Green live indicator. Creates urgency, no fitness app does this well.
   const liveTrainingNow = useMemo(() => {
-    if (!realProfiles.length) return [];
     const now = Date.now();
     const ASSUMED_SESSION_MS = 90 * 60 * 1000; // 90 min typical session
-    return realProfiles
+    let lives = realProfiles
       .filter(p => p.trainingNow && p.trainingNowSince && (now - p.trainingNowSince < 3 * 60 * 60 * 1000)) // auto expire after 3h
       .map(p => {
         const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng) : 999;
@@ -3099,7 +3098,12 @@ function App() {
       })
       .filter(p => p.distance < 15) // near, 15km
       .sort((a, b) => a.distance - b.distance);
-  }, [realProfiles, userLocation]);
+    if (isDemoMode && lives.length === 0) {
+      // Demo fakes for the killer feature to shine
+      lives = SEED_PROFILES.slice(0, 3).map((p, i) => ({ ...p, trainingNow: true, trainingNowSince: now - (i+1)*10*60000, distance: 1 + i*2, seVaEnMin: 40 - i*10 }));
+    }
+    return lives;
+  }, [realProfiles, userLocation, isDemoMode]);
 
   // Filtered deck (with distance support + blocking)
   // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
