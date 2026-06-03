@@ -2917,11 +2917,16 @@ function App() {
             >
               Cambiar cuenta
             </button>
-            {/* Always visible install hint for web (helps when banner doesn't auto-show due to browser criteria) */}
-            {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor === 'undefined' && !pwaInstallDismissed && (
+            {/* Always visible install button for web (mobile often needs manual trigger or extra engagement; discoverable in top bar) */}
+            {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor === 'undefined' && (
               <button
-                onClick={() => { setShowPwaInstall(true); bumpPwaEngagement(); }}
-                className="ml-1 text-[9px] px-2 py-0.5 rounded-full bg-[#FF671F]/10 text-[#FF671F] active:bg-[#FF671F]/20 border border-[#FF671F]/20"
+                onClick={() => { 
+                  // Clear dismissed temporarily so banner can show
+                  localStorage.removeItem('entrenamatch_pwa_dismissed');
+                  setShowPwaInstall(true); 
+                  bumpPwaEngagement(); 
+                }}
+                className="ml-1 text-[9px] px-2 py-0.5 rounded-full bg-[#FF671F]/10 text-[#FF671F] active:bg-[#FF671F]/20 border border-[#FF671F]/20 flex-shrink-0"
                 title="Instalar como app en pantalla de inicio"
               >
                 📱 Instalar
@@ -2940,7 +2945,7 @@ function App() {
             initial={{ opacity: 0, y: -8 }} 
             animate={{ opacity: 1, y: 0 }} 
             exit={{ opacity: 0, y: -8 }}
-            className="bg-[#1C1C20] border-b border-[#FF671F]/40 px-3 py-2 text-xs flex items-center gap-2 z-40 flex-shrink-0"
+            className="sticky top-0 bg-[#1C1C20] border-b border-[#FF671F]/40 px-3 py-2 text-xs flex items-center gap-2 z-50 flex-shrink-0"
           >
             <div className="flex items-center gap-1.5 text-[#FF671F]">
               <Download size={15} />
