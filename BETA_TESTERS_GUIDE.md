@@ -242,6 +242,20 @@ Hicimos una revisión exhaustiva del diseño: el tema anterior con teal #14b8a6 
 
 Resultado: App mucho más atractiva, energética y que invita a los testers a usarla y quedarse. Hard refresh para ver el nuevo look naranja/rosa en botones, badges, headers, chips, etc. ¡Diseño que atrae!
 
+**Polish adicional continuado (sin parar, user: "sigue con lo que estas haciendo sin parar")**:
+- Cards: hover ahora con glow naranja más grande + levantamiento (translateY) + active más "pegajoso".
+- Botones primarios: hover con anillo rosa (fit-accent2) + lift, active con gradiente y escala más marcada.
+- Match celebration modal: sombra rosa + glow para que "¡ES UN MATCH!" explote visualmente.
+- Sesiones reales: borde/rosa ring más marcado (diferencia social inmediata).
+- Badges "en vivo": ahora usan .live-pill con animación de pulso suave (2.2s) en todo el app — se siente vivo.
+- Burbujas de chat enviadas: gradiente naranja→rosa + sombra (más juguetón y energético al chatear).
+- Toasts de llegada de mensaje: avatar con borde naranja, fallback con gradiente rosa/naranja, botones "Ver" ahora naranjos vibrantes vía estilo global.
+- Legal (privacy/terms): links y headings actualizados a naranja/rosa para coherencia total de marca.
+- Todos los "en vivo" y lastSync actualizados a la clase con pulso.
+- Builds: se re-verificaron las 3 variantes exactas que usa CI (incluyendo el CAPACITOR=1 que antes fallaba en capacitor-plugins loader). Todo limpio, chunk de plugins solo en build nativo.
+
+Hard refresh para ver el pulso de los en vivo, los hovers que "brillan" naranja, los mensajes con gradiente, el match más "celebración". Todo esto subido a github + verificado localmente antes del push.
+
 Gracias de verdad! Tu feedback va a definir cómo evoluciona la app (incluyendo más polish visual).
 
 Cualquier duda, avísanos.

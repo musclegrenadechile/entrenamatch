@@ -157,4 +157,20 @@ Continue Phase 0: web polish + tester comms/docs. Push after every UX batch. Use
 - Next polish ideas (web): PWA install banner, more prominent "Add to home" hint, last message time in list (added), typing indicators (future), richer notif settings toggle.
 - [x] Enriched message toasts: sender avatar (photo or fallback initial) + message + "En vivo" context label directly in sonner toast description (JSX). Done in this continuation.
 
-Last updated: Major design refresh (Dunkin' orange #FF671F primary for energetic attraction + pink #FF4F79 accents; exhaustive audit of all Tailwind/CSS/inline colors in App.tsx, components, index.css, manifest, html; updated to modern motivating fitness palette while keeping dark premium feel). CI fixes for all builds (explicit plugin install in APK, cleans, external safety, placeholder loader, @ts-nocheck). Notifications panel now shows avatars for messages. Additional polish (card hovers orange glow, top bar pink accent, promo border pink, mobile promo bg, REAL TESTER badge pink). APK workflow has verify step for plugins. All pushed. **Sigue el ciclo, autonomous.**
+Last updated: Major design refresh (Dunkin' orange #FF671F primary for energetic attraction + pink #FF4F79 accents; exhaustive audit of all Tailwind/CSS/inline colors in App.tsx, components, index.css, manifest, html; updated to modern motivating fitness palette while keeping dark premium feel). CI fixes for all builds (explicit plugin install in APK, cleans, external safety, placeholder loader, @ts-nocheck). Notifications panel now shows avatars for messages. Additional polish (card hovers orange glow, top bar pink accent, promo border pink, mobile promo bg, REAL TESTER badge pink). APK workflow has verify step for plugins. All pushed.
+
+**Continuation (user: "sigue con lo que estas haciendo sin parar")**:
+- Stronger .card:hover: bigger orange glow + lift (translateY -2px) + active scale more aggressive.
+- .btn-primary: hover now lifts + adds pink ring glow (fit-accent2), active uses orange-pink gradient + tighter scale.
+- .match-modal: added pink ring glow + deeper shadow for celebration pop.
+- Real sessions cards: pink border/ring emphasis (social energy).
+- New .live-pill CSS: animated subtle pulse (2.2s) on all "● en vivo" indicators across App + Explore for live feeling.
+- Chat sent bubbles: now orange-to-pink gradient + shadow (more fun when messaging matches).
+- Enriched toasts: avatar img gets orange border, fallback initial now gradient orange-pink + ring; global sonner action button forced to fit-accent orange (Ver buttons pop).
+- Privacy/terms.html: h1/h2 orange, links pink (coherent with new theme, no old teal).
+- Also fixed a couple more "en vivo" spans to use live-pill (lastSync line etc).
+- Verified exhaustively: all 3 exact CI commands (npm run build -- --base=/entrenamatch/, --base=/, CAPACITOR=1 npm run build:web) run locally clean, capacitor-plugins chunk ONLY appears in CAP build, tsc-b no errors, no @capacitor resolve leaks in pure web.
+- Committed + pushed (autonomous). GitHub Pages will have the more vibrant hovers, pulsing live badges, gradient messages, stronger match celebration.
+- Next user action: hard refresh https://musclegrenadechile.github.io/entrenamatch/ , test swipes/matches/chats/sessions with 2 accounts (one hidden for toasts), re-trigger "Build Android APK" workflow for fresh signed APK with the design.
+
+**Sigue el ciclo sin parar. Todo subido a github.**

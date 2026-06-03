@@ -7,7 +7,7 @@
 **Important about deploys**:
 - After every push, GitHub Actions takes 3-8 minutes to build + deploy.
 - You **must** do a hard refresh (Ctrl+Shift+R / Cmd+Shift+R) to see changes. This is critical for fixing bugs like the "undefined photo" Firestore error when sending group session messages (old bundle keeps the bug).
-- Look for the text with "cambiar cuenta" or the latest FIX in the teal top PRE-ALPHA bar. New behavior: Logout now does a clean reload so you reliably see the login/register screen again. There is a "Cambiar cuenta" button in the global top bar (always visible on every tab) + another small one in the sticky header of your Perfil. The big red center buttons and floating red logout were removed because they blocked content/scroll in Profile (cleaner UX now, but still impossible to get trapped). This solves the "entra altiro sin poder registrar" issue on hard refresh.
+- Look for the text with "cambiar cuenta" or the latest FIX in the vibrant orange top PRE-ALPHA bar (Dunkin energy). New behavior: Logout now does a clean reload so you reliably see the login/register screen again. There is a "Cambiar cuenta" button in the global top bar (always visible on every tab) + another small one in the sticky header of your Perfil. The big red center buttons and floating red logout were removed because they blocked content/scroll in Profile (cleaner UX now, but still impossible to get trapped). This solves the "entra altiro sin poder registrar" issue on hard refresh.
 
 ## How to Test Real Cross-Device Interaction (2+ Real Accounts) - Recommended Flow for Testers
 
@@ -35,7 +35,7 @@ Use the "Actualizar sesiones reales" / "Actualizar chats reales" (with spinners)
 
 ### Prerequisites
 - Use **incognito / different browser / different phone** for Account B (so localStorage doesn't interfere).
-- Hard refresh (Ctrl + Shift + R or Cmd + Shift + R) after every major step and after every push/deploy. Always verify you see v0.1.0-prealpha in the teal top bar.
+- Hard refresh (Ctrl + Shift + R or Cmd + Shift + R) after every major step and after every push/deploy. Always verify you see v0.1.0-prealpha in the vibrant orange top bar (Dunkin energy).
 - For fast chat interaction testing without waiting for many real users: match with the 30 seeded fakes (Reñaca/Viña/Concón) from Explorar.
 
 ### Step-by-Step Test (Do This After Every Major Push)
@@ -77,7 +77,7 @@ Use the "Actualizar sesiones reales" / "Actualizar chats reales" (with spinners)
 
 ## Latest Pre-Alpha Improvements (just pushed - after Star crash fix)
 
-- **ExploreTab**: Stronger "Actualizar reales" button (now teal + prominent), live loading spinner + success toast when pulling fresh tester profiles from Firebase. Critical for seeing other users' profiles instantly on different devices.
+- **ExploreTab**: Stronger "Actualizar reales" button (now orange + prominent), live loading spinner + success toast when pulling fresh tester profiles from Firebase. Critical for seeing other users' profiles instantly on different devices.
 - **Onboarding step 2**: Added "Seleccionar todos" + "Limpiar" quick actions on training types and goals. Makes finishing the profile creation much faster (addresses previous friction where users struggled to select and advance).
 - **Profile + Group Chat + empty states** from previous cycle still live.
 - **Filters modal (Explore)**: Now has live "X perfiles que verás" count at top, prettier consistent chips for training/availability (with counters), "Ver X resultados" CTA button. Filters are live so you see the impact instantly.
