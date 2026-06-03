@@ -287,7 +287,20 @@ Sigue el ciclo. Hard refresh the live site to see the new install banner (after 
 - Result: the muro feels premium, alive, interactive and "espectacular" — true FB-style community heartbeat in the profile.
 - Pushed + CI triggered.
 
-Next ideas (if continue): teaser latest 1 post in swipe/match cards, post options menu (edit?), pinned posts, global recent activity feed tab, more glass + micro interactions, delete confirm with undo.
+Next ideas (if continue): post options menu (edit?), pinned posts, global recent activity feed tab, more glass + micro interactions on posts, better delete confirm with undo toast.
+
+**Batch 1 polish done (user: "Sigamos con el 1")**:
+- Delete extra photos from own profile strip: × button on every thumb (confirm dialog), removes from array + saveUserWithRealSync (real FS + local), guards at least 1 photo, toast. Works beautifully for curating gallery.
+- Spectacular muro teasers: 
+  - In Explore swipe cards (stack): small glass bar "📝 texto..." or with camera icon if has photo, tappable to open full profile. Preloads for top 5 on loadRealProfiles.
+  - In Matches grid cards: inline "📝 latest text" in the info area.
+  - Makes browsing profiles feel alive (you see what the person posted recently without opening full profile).
+- Preload logic for teasers on real loads.
+- Cleaned several spammy "✅ Loaded" console.logs (kept warns).
+- Improved the demo photo URL prompt message in muro composer.
+- Builds + pushed. CI updating GH Pages + APK.
+
+This advances the "muro + diseños espectaculares" significantly. Test: own profile add/delete photos (multiple), go to Explore (teasers should appear on real profiles after sync), go to Matches (teasers on matched people).
 
 **Critical muro cross-profile fix + attractiveness (user report: "al abrir el perfil de una cuenta A a una B, no ve lo que publico la cuenta A en su muro" + index error + "mejorar todo de lo que se ha hecho en profile, muro, etc para que sea atractivo")**:
 - Fixed root cause in loadProfilePosts: removed orderBy('timestamp','desc') from the where(userId) query (this was triggering the exact composite index error in prod bundle). Now uses where+limit(30) only + reliable client .sort((a,b)=>b.timestamp-a.timestamp) + .slice(0,10). Works for any viewer immediately (A opens B sees B's posts).
