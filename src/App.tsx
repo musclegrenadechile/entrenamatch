@@ -4806,6 +4806,7 @@ function App() {
                           <div className="flex items-center gap-1 text-[10px] text-[#9CA3AF]" title={new Date(post.timestamp).toLocaleString('es-CL')}>
                             {getRelativeTime(post.timestamp)}
                             {post.pinned && <span className="text-[#FF671F]">📌</span>}
+                            {Date.now() - post.timestamp < 3600000 && <span className="text-[8px] bg-[#22c55e] text-black px-1 rounded">nuevo</span>}
                           </div>
                           {isOwn && (
                             <div className="flex gap-1">
