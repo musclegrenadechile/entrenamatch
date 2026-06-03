@@ -36,7 +36,58 @@ Usa los 30 perfiles fake (Reñaca / Viña del Mar / Concón, hombres y mujeres) 
 7. Hard refresh en A o B: el historial de mensajes del grupo y los previews deben cargarse desde Firestore (no local-only).
 8. Si no ves actualización inmediata: usa "Actualizar sesiones reales" o "Actualizar" en el header del chat grupal (con spinner). Los bg listeners para tus sesiones + active onSnapshot cubren live receive. Asegúrate de estar unido (participante).
 9. Reporta con el botón "Reportar" del header del chat o el formulario de Perfil si algo falla.
-Nota post-push: si ves errores de permisos (como "Missing or insufficient permissions" al dar like/match o en group msgs), el owner debe hacer `firebase deploy --only firestore:rules` (las rules se actualizaron para permitir writes a likes/matches por el liker y reads apropiados). Hard refresh después.
+Nota post-push: si ves errores de permisos (como "Missing or insufficient permissions" al dar like/match o en group msgs), el owner debe hacer `firebase deploy --only firestore:rules` (las rules se actualizaron para permitir writes a likes/matches por el liker y reads apropiados para group chat). Hard refresh después.
+
+### Pasos exactos para hacer `firebase deploy --only firestore:rules` en Windows (PowerShell)
+
+Las reglas viven en el servidor de Firebase (no viajan con el bundle de la web ni la APK). El GitHub Action las deploya automáticamente en cada push a main (usa el secret del service account), pero si sigues viendo errores de permisos después de un push, fuerza el deploy manual así:
+
+1. Abre **PowerShell** (puedes usar la normal, no hace falta "como administrador").
+
+2. Navega al proyecto:
+   ```powershell
+   cd "C:\Users\muscl\fitvina"
+   ```
+
+3. Si al usar npm te aparece "ejecución de scripts está deshabilitada", ejecuta esto una sola vez en esa ventana:
+   ```powershell
+   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+   ```
+
+4. Haz login (solo la primera vez o si el token expiró). Esto abre el navegador:
+   ```powershell
+   npx firebase-tools login
+   ```
+   - Inicia sesión con la cuenta Google que tiene rol Owner/Editor en el proyecto Firebase **entrenamatch**.
+   - Autoriza Firebase CLI cuando te lo pida.
+
+5. Deploy **solo las rules** (esto es rápido y seguro, no toca hosting ni nada más):
+   ```powershell
+   npx firebase-tools deploy --only firestore:rules --project entrenamatch
+   ```
+
+6. Verifica que termine con éxito. Deberías ver algo parecido a:
+   ```
+   ✔  firestore: released rules firestore.rules to (default)
+   ✔  firestore: released indexes firestore.indexes.json to (default)
+   ```
+   (o "Deploy complete!" / "✔  Deploy complete!")
+
+7. **Después del deploy**:
+   - Ve al sitio web: https://musclegrenadechile.github.io/entrenamatch/
+   - Haz **hard refresh** (Ctrl + Shift + R) en todos los navegadores donde estés probando.
+   - Si pruebas con APK: las rules son server-side, así que con el web ya puedes validar el fix de permisos (la APK se beneficiará igual una vez las rules estén live).
+
+8. Prueba inmediatamente el flujo de sesiones:
+   - Cuenta A (creador real) → crea sesión.
+   - Cuenta B (otro dispositivo/browser) → únete con "Unirme".
+   - Abre chat grupal en ambos.
+   - Envía mensajes de un lado → deben llegar en vivo al otro (sin "Could not load real group messages" ni errores de permisos).
+   - Hard refresh en uno de los dos → el historial debe cargar desde Firestore.
+
+Si el comando dice que no tienes permisos en Firebase, asegúrate de estar logueado con la cuenta correcta del proyecto "entrenamatch" y pídele al owner que te agregue como Editor.
+
+También puedes ir a GitHub (repo musclegrenadechile/entrenamatch) → pestaña **Actions** → último run de "Deploy to Firebase" y ver los logs del paso "Deploy Firestore Rules & Indexes + Hosting" para confirmar que el CI ya lo hizo. Si falló, el manual con npx lo resuelve.
 
 ## Cómo dar feedback (muy importante)
 
