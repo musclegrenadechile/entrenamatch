@@ -5312,9 +5312,9 @@ function App() {
                 </div>
               </div>
 
-              <div className="flex flex-1 overflow-hidden">
-                {/* Participants Sidebar */}
-                <div className="w-28 border-r border-[#2F2F35] bg-[#1C1C20] p-2 overflow-auto text-xs">
+              <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
+                {/* Participants Sidebar - hidden on mobile to give full width to chat messages and input (prevents "pushed right" cramped layout on phones) */}
+                <div className="hidden md:block w-28 border-r border-[#2F2F35] bg-[#1C1C20] p-2 overflow-auto text-xs">
                   <div className="text-[#9CA3AF] text-[10px] px-1 mb-1.5 font-medium">PARTICIPANTES</div>
                   {(() => {
                     const currentSess = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
@@ -5362,7 +5362,26 @@ function App() {
 
                 {/* Messages Area */}
                 <div className="flex-1 flex flex-col">
-                  <div ref={groupChatScrollRef} className="flex-1 overflow-auto p-4 space-y-3 text-sm bg-[#0D0D10]" id="group-chat-scroll">
+                  {/* Compact participants bar for mobile (full chat width now that sidebar is hidden on phones) */}
+                  <div className="md:hidden px-3 py-1.5 border-b border-[#2F2F35] bg-[#1C1C20] text-[10px] flex items-center gap-1 overflow-x-auto text-[#9CA3AF]">
+                    <span className="font-medium text-[#FF671F] mr-1">Participantes:</span>
+                    {(() => {
+                      const currentSess = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
+                      const parts = currentSess?.participants || []
+                      return parts.slice(0, 5).map((pid, idx) => {
+                        const seed = SEED_PROFILES.find(p => p.id === pid)
+                        const nm = pid === effectiveUserId ? 'Tú' : (seed?.name?.split(' ')[0] || 'P')
+                        return <span key={idx} className="px-1.5 py-0.5 bg-[#25252A] rounded text-[#cbd5e1] whitespace-nowrap">{nm}</span>
+                      })
+                    })()}
+                    {(() => {
+                      const currentSess = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
+                      const parts = currentSess?.participants || []
+                      return parts.length > 5 ? <span className="text-[#FF671F]">+{parts.length-5}</span> : null
+                    })()}
+                  </div>
+
+                  <div ref={groupChatScrollRef} className="flex-1 overflow-auto p-3 sm:p-4 space-y-3 text-sm bg-[#0D0D10]" id="group-chat-scroll">
                     {(sessionMessages[showGroupChatModalFor] || []).length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full text-center text-[#9CA3AF] px-6">
                         <div className="w-14 h-14 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-4 text-3xl">💬</div>
@@ -5378,7 +5397,7 @@ function App() {
                         const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''
                         return (
                           <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
-                            <div className={`max-w-[82%] ${isMe ? 'text-right' : ''}`}>
+                            <div className={`max-w-[78%] sm:max-w-[82%] ${isMe ? 'text-right' : ''}`}>
                               {!isMe && (
                                 <div className="text-[10px] text-[#9CA3AF] mb-0.5 px-1 flex items-center gap-1">
                                   {isCreator && <span className="text-[#FF671F]">★ </span>}
@@ -5392,8 +5411,8 @@ function App() {
                                 {msg.photo && <img src={msg.photo} className="mt-2 max-w-[200px] rounded-xl border border-white/10" />}
                               </div>
 
-                              {/* Reactions row */}
-                              <div className="flex gap-1 mt-1 text-xs justify-end">
+                              {/* Reactions row - align with bubble side */}
+                              <div className={`flex gap-1 mt-1 text-xs ${isMe ? 'justify-end' : 'justify-start'}`}>
                                 {['👍', '🔥', '💪', '👏'].map(emoji => {
                                   const reactors = msg.reactions?.[emoji] || []
                                   const hasReacted = reactors.includes(currentUser?.name || '')
@@ -5415,13 +5434,13 @@ function App() {
                                     </button>
                                   )
                                 })}
-                                {/* Delete only for session creator - fixed to use effectiveUserId for cross-device */}
+                                {/* Delete only for session creator - fixed to use effectiveUserId for cross-device. More visible on mobile touch */}
                                 {(session?.creatorId === effectiveUserId || session?.creatorId === 'me') && (
                                   <button onClick={() => {
                                     const updated = { ...sessionMessages }
                                     updated[showGroupChatModalFor] = updated[showGroupChatModalFor].filter((_, idx) => idx !== i)
                                     saveSessionMessages(updated)
-                                  }} className="text-[10px] text-[#ef4444] opacity-0 group-hover:opacity-100 ml-2">eliminar</button>
+                                  }} className="text-[10px] text-[#ef4444] opacity-70 md:opacity-0 group-hover:opacity-100 ml-2 active:opacity-100">eliminar</button>
                                 )}
                               </div>
                             </div>
