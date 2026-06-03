@@ -244,7 +244,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         <div>
           <div className="text-3xl font-semibold tracking-[-1.5px]">Explorar</div>
           <div className="text-[#14b8a6] text-xs font-medium mt-0.5">
-            {deck.length} personas {userLocation ? 'cerca de ti' : ''}
+            {deck.length} disponibles ahora {userLocation ? 'cerca de ti' : ''}
           </div>
           {realProfiles && realProfiles.length > 0 && (
             <div className="text-[10px] text-[#14b8a6] mt-0.5 font-medium">+ {realProfiles.length} perfiles reales de testers sincronizados</div>
