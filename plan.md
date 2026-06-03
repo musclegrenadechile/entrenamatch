@@ -80,17 +80,22 @@ Everything must work after hard refresh + on different physical devices (not jus
 
 **Sign-off for Phase 0**: After all above (including recent: session creator admin/close/expel/leave with ADMIN badges, floating "Reportar problema" everywhere, stronger real-mode empty states, Firebase Hosting note in-app, extra Play screenshots, full guide updates), the app + AAB + listing copy + guides are ready for the user to upload the AAB to Play Console Internal testing track (hidden). Then move to Phase 1 (invite 5-10 real beta testers, structured feedback collection, triage, promote to Closed if good).
 
-**Current status (this continuation)**: Phase 0 COMPLETE / sign-off ready. All core flows real (auth persists cross-device, full onboarding + profile edit/save, real Explore with filters + fakes, real 1:1 + group session chats with live bg onSnapshot listeners + auto-scroll on receive, sessions with admin creator close/expel, feedback structured + history). 30 realistic fake profiles (p16-p45, Reñaca/Viña/Concón, gender-balanced, picsum images). Version visible. Auto-scroll + version polish added. Builds clean. Frequent pushes done. Guides + plan updated. User can hard refresh https://musclegrenadechile.github.io/entrenamatch/ + test live chat interaction with fakes + real accounts on separate devices/browsers. APK via Releases or local. Ready to upload signed AAB to Play Internal testing (hidden).
+**Current status (this continuation)**: Phase 0 COMPLETE / sign-off ready. **Phase 1 started**: pushed to GitHub (060db40) + CI triggered for full server update on GH Pages (the main "servidor"). All core flows real (auth persists cross-device, full onboarding + profile edit/save, real Explore with filters + fakes, real 1:1 + group session chats with live bg onSnapshot listeners + auto-scroll on receive + recent mobile UX polish for celular, sessions with admin creator close/expel, feedback structured + history). 30 realistic fake profiles (p16-p45, Reñaca/Viña/Concón, gender-balanced, picsum images). Version visible. Auto-scroll + version polish + Play assets added. Builds clean. Frequent pushes + CI (GH Pages / APK / Firebase) active. Guides + plan updated with Phase 1 checkboxes. User can hard refresh https://musclegrenadechile.github.io/entrenamatch/ after pushes. APK via Releases (android-prealpha) or local AAB. Ready to upload signed AAB to Play Internal testing (hidden) + invite first testers.
 
 ## Phase 1 (after Phase 0 sign-off)
-- Upload signed AAB to Internal testing (hidden).
+- [x] **Pushed to GitHub + triggered server deploys** (this session): Latest mobile group chat UX polish (enterKeyHint, robust auto-scroll, @mention tap on mobile, compact header, etc.) + BETA_TESTERS_GUIDE update + polished Play Store assets (icon-512.jpg + screenshot-*-polished.jpg) + .gitignore hardening for binaries. Commit 060db40. `git push origin main` succeeded. This fires:
+  - Deploy to GitHub Pages → updates the live **servidor https://musclegrenadechile.github.io/entrenamatch/** (hard refresh Ctrl+Shift+R after ~2-5 min for testers).
+  - Build Android APK → new debug APK artifact + updates "android-prealpha" GitHub Release (testers can download latest).
+  - Deploy to Firebase (if FIREBASE_SERVICE_ACCOUNT secret is configured in repo Settings → will auto-deploy hosting + rules/indexes).
+- Upload signed AAB to Internal testing (hidden). (Local file ready: EntrenaMatch-release.aab + keystore in android/. Use build-release.bat for future.)
 - Invite initial testers via emails/Google Group.
-- In-app + external feedback loop active.
+- In-app + external feedback loop active (form + betaFeedback collection).
 - Monitor Firestore betaFeedback collection.
 - Fix critical bugs from real usage.
 - Prepare Closed testing track.
-- Add basic push notifications scaffolding (FCM via Capacitor plugin) if time.
+- Add basic push notifications scaffolding (FCM via Capacitor plugin) if time. (Client side wired; needs google-services.json in android/app/ + server-side senders.)
 - More polish on matching quality, session UX.
+- Add FIREBASE_SERVICE_ACCOUNT secret to GitHub for full auto Firebase Hosting deploys on every push (recommended over GH Pages for PWA + future FCM).
 
 ## Later Phases (high level)
 - Phase 2: Open testing or small production, moderation tools, anti-abuse, richer matching (location + compatibility score).
@@ -114,7 +119,7 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 web focus continuation (Google acct verification pending for Play → deprioritize APK, advance https://musclegrenadechile.github.io/entrenamatch/ exclusively). Exhaustive analysis performed (GH code + live via fetch + all prior Phase0 polish + listeners + docs + plan). Current state: full real cross-device 1:1+group with bg onSnapshot + polls + bootstrap + sanitize + relaxed pre-alpha rules; Explore premium with real-first recs/filters/distance/REAL/lastSync/"disponibles ahora"/report; legal full; feedback structured+history; lastSync/"en vivo" everywhere; no demo leakage for real; sessions admin; escape always; 30 fakes Chile coastal. Gaps addressed now: no message arrival alerts (only silent preview refresh). 
+Last updated: Phase 1 kickoff - pushed latest (mobile chat UX + Play polished assets + gitignore) to GitHub main (060db40), triggered all CI deploys to servidor GH Pages + APK releases. Plan + BETA guide updated. Review of remote (GH repo 481+ commits history, active Actions for Pages/APK/Firebase on every main push, full docs in repo). Local vs remote in sync for code; working tree clean for tracked files. Phase 0 complete + first Phase 1 deliverable (upload to github/servidor) done. Next: user uploads AAB to Play Internal (hidden), add secret for Firebase auto, invite testers. 
 
 **Web message arrival notifications implemented (user request example + "ir mejorando todo")**:
 - Bg 1:1 listeners (q2 incoming) + group bg listeners use docChanges() + seen*Id refs to detect *new added from other* after initial population (prevents spam on first load).
