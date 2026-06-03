@@ -6081,7 +6081,10 @@ function App() {
                 <div className="mt-4">
                   <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-2 flex justify-between items-center px-1">
                     <span>MURO DE {showFullProfile.name.toUpperCase()}</span>
-                    <button onClick={() => loadProfilePosts(showFullProfile.id)} className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10">Refrescar</button>
+                    <div className="flex gap-1">
+                      <button onClick={() => setActiveTab('feed')} className="text-[9px] text-[#FF671F] underline active:opacity-70">Ver feed global</button>
+                      <button onClick={() => loadProfilePosts(showFullProfile.id)} className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10">Refrescar</button>
+                    </div>
                   </div>
                   <AnimatePresence>
                     {(profilePosts[showFullProfile.id] || []).length > 0 ? (
