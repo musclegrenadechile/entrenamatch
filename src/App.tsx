@@ -3086,11 +3086,14 @@ function App() {
   const liveTrainingNow = useMemo(() => {
     if (!realProfiles.length) return [];
     const now = Date.now();
+    const ASSUMED_SESSION_MS = 90 * 60 * 1000; // 90 min typical session
     return realProfiles
       .filter(p => p.trainingNow && p.trainingNowSince && (now - p.trainingNowSince < 3 * 60 * 60 * 1000)) // auto expire after 3h
       .map(p => {
         const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng) : 999;
-        return { ...p, distance: dist };
+        const seVaEnMs = (p.trainingNowSince + ASSUMED_SESSION_MS) - now;
+        const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 0;
+        return { ...p, distance: dist, seVaEnMin };
       })
       .filter(p => p.distance < 15) // near, 15km
       .sort((a, b) => a.distance - b.distance);
@@ -3556,18 +3559,26 @@ function App() {
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {liveTrainingNow.slice(0, 4).map(user => (
-                <div key={user.id} onClick={() => setShowFullProfile(user)} className="min-w-[120px] card p-1.5 text-[10px] cursor-pointer border border-[#22c55e]/50 active:scale-95 relative">
-                  <div className="flex justify-between">
-                    <div className="font-medium truncate">{user.name}</div>
-                    <div className="w-2 h-2 bg-[#22c55e] rounded-full animate-pulse flex-shrink-0 mt-0.5"></div>
+                <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className="min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border border-[#22c55e]/60 active:scale-95 relative overflow-hidden" whileHover={{ scale: 1.03 }} initial={{ opacity: 0.9, y: 5 }} animate={{ opacity: 1, y: 0 }}>
+                  <div className="flex justify-between items-start mb-1">
+                    <div className="font-semibold truncate text-white">{user.name}</div>
+                    <div className="w-2.5 h-2.5 bg-[#22c55e] rounded-full animate-pulse flex-shrink-0 ring-1 ring-[#22c55e]/50"></div>
                   </div>
-                  <div className="text-[#9CA3AF]">{user.distance.toFixed(1)}km · {user.trainingTypes?.[0] || 'Entreno'}</div>
-                  <div className="text-[#22c55e] text-[9px]">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m</div>
-                  <button onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); }} className="mt-0.5 text-[9px] bg-[#22c55e] text-black px-1.5 py-0.5 rounded font-medium">Unirme ya</button>
-                </div>
+                  <div className="text-[#9CA3AF] text-[9px] mb-0.5">{user.distance.toFixed(1)}km · {user.trainingTypes?.[0] || 'Entreno'}</div>
+                  <div className="flex items-center gap-1 text-[#22c55e] text-[9px] mb-1">
+                    <span>En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m</span>
+                    {user.seVaEnMin > 0 && <span className="text-orange-400">· se va en {user.seVaEnMin}m</span>}
+                  </div>
+                  <button 
+                    onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); toast.success('¡Unido! Revisa Matches o Chat'); }} 
+                    className="w-full text-[9px] bg-[#22c55e] text-black py-1 rounded font-semibold active:bg-[#16a34a] transition"
+                  >
+                    Unirme ya 🔥
+                  </button>
+                </motion.div>
               ))}
             </div>
-            <div className="text-[9px] text-[#9CA3AF]">¡Toca para ver perfil o únete rápido! Urgencia real-time.</div>
+            <div className="text-[9px] text-[#9CA3AF] mt-0.5">¡Urgencia real! Toca para ver o únete antes de que se vayan.</div>
           </div>
         )}
 
@@ -3729,6 +3740,7 @@ function App() {
                             {ownerProfile && ownerProfile.city && <span className="text-[#9CA3AF] ml-1">· {ownerProfile.city}</span>}
                             {ownerProfile && ownerProfile.level && <span className="text-[8px] text-[#FF671F]/70 ml-1">{ownerProfile.level}</span>}
                             {ownerProfile && realProfiles.some(rp => rp.id === post.ownerId) && <span className="ml-1 text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>}
+                            {ownerProfile?.trainingNow && <span className="live-pill bg-[#22c55e] text-black text-[8px] ml-1">🟢 LIVE</span>}
                           </div>
                           <div className="text-[10px] text-[#9CA3AF]">· {getRelativeTime(post.timestamp)}</div>
                           {post.pinned && <span className="text-[8px] text-[#FF671F]">fijado</span>}
@@ -5421,14 +5433,14 @@ function App() {
       {/* Bottom Navigation - Premium, energetic feel (polished aesthetics) */}
       <div className="bottom-nav h-[62px] grid grid-cols-7 z-50 text-[9px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_20px_-6px_rgb(0,0,0,0.4)]">
         {[
-          { id: 'explore' as Tab, label: 'Explorar', icon: Dumbbell },
+          { id: 'explore' as Tab, label: 'Explorar', icon: Dumbbell, live: liveTrainingNow.length > 0 },
           { id: 'feed' as Tab, label: 'Feed', icon: Activity },
           { id: 'squads' as Tab, label: 'Squads', icon: Users },
           { id: 'sesiones' as Tab, label: 'Sesiones', icon: Star, badge: totalSessionUnreads },
           { id: 'matches' as Tab, label: 'Matches', icon: Heart },
           { id: 'messages' as Tab, label: 'Mensajes', icon: MessageCircle, badge: totalChatUnreads },
           { id: 'profile' as Tab, label: 'Perfil', icon: User },
-        ].map(({ id, label, icon: Icon, badge }) => (
+        ].map(({ id, label, icon: Icon, badge, live }) => (
           <button key={id} onClick={() => { 
             setActiveTab(id); 
             if (id !== 'messages') setActiveChat(null);
@@ -5446,6 +5458,9 @@ function App() {
               <span className="absolute -top-0.5 right-3 min-w-[15px] h-[15px] px-1.5 text-[9px] font-extrabold rounded-full bg-[#FF4F79] text-black flex items-center justify-center ring-1 ring-black/30">
                 {badge > 9 ? '9+' : badge}
               </span>
+            )}
+            {id === 'explore' && liveTrainingNow.length > 0 && (
+              <span className="absolute -top-0.5 right-1 w-3 h-3 bg-[#22c55e] rounded-full animate-pulse ring-1 ring-black/30"></span>
             )}
           </button>
         ))}
@@ -6158,6 +6173,15 @@ function App() {
                     <div className="mt-1 text-sm text-[#FF671F] font-medium">
                       A {getDistanceKm(userLocation.lat, userLocation.lng, showFullProfile.lat, showFullProfile.lng)} km de ti
                     </div>
+                  )}
+                  {showFullProfile.trainingNow && showFullProfile.trainingNowSince && (
+                    <>
+                      <div className="mt-2 inline-flex items-center gap-2 bg-[#22c55e] text-black px-3 py-1 rounded-full text-sm font-bold">
+                        🟢 ENTRENANDO AHORA • en vivo hace {Math.floor((Date.now() - showFullProfile.trainingNowSince)/60000)}m
+                        {showFullProfile.trainingNowSince && <span className="text-xs">· se va pronto</span>}
+                      </div>
+                      <button onClick={() => { handleSwipe(showFullProfile.id, 'right'); setShowFullProfile(null); toast.success('¡Unido al live!'); }} className="mt-1 w-full py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-bold active:bg-[#16a34a]">Unirme ahora al entrenamiento 🔥</button>
+                    </>
                   )}
                   {currentUser && (
                     <div className="mt-2 inline-block bg-[#FF671F] text-black px-3 py-1 rounded-full text-sm font-bold">
