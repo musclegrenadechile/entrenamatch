@@ -2240,6 +2240,30 @@ function App() {
     setEditDraft('')
   }
 
+  // Pin/unpin own post - spectacular for global feed (pinned appear first)
+  const togglePinPost = async (postId: string, postUserId: string, currentPinned: boolean = false) => {
+    if (postUserId !== effectiveUserId) return;
+    const newPinned = !currentPinned;
+
+    // Update local
+    setProfilePosts((prev) => {
+      const posts = prev[postUserId] || [];
+      const updatedPosts = posts.map(p => p.id === postId ? { ...p, pinned: newPinned } : p);
+      const newState = { ...prev, [postUserId]: updatedPosts };
+      try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+      return newState;
+    });
+
+    if (!isDemoMode && db) {
+      try {
+        const { doc, updateDoc } = await import('firebase/firestore');
+        await updateDoc(doc(db, 'profilePosts', postId), { pinned: newPinned });
+      } catch (e) { console.warn('pin post fs', e); }
+    }
+
+    toast.success(newPinned ? 'Post fijado en el feed' : 'Post des-fijado');
+  }
+
   const saveBlockedUsers = (newBlocked: string[]) => {
     localStorage.setItem('entrenamatch_blocked', JSON.stringify(newBlocked))
     setBlockedUsers(newBlocked)
@@ -3552,7 +3576,11 @@ function App() {
                 .flatMap(([uid, posts]) => (posts || []).map((p: any) => ({ ...p, ownerId: uid })));
 
               const feedPosts = [...allCommunityPosts]
-                .sort((a: any, b: any) => b.timestamp - a.timestamp)
+                .sort((a: any, b: any) => {
+                  if (b.pinned && !a.pinned) return 1;
+                  if (a.pinned && !b.pinned) return -1;
+                  return b.timestamp - a.timestamp;
+                })
                 .slice(0, 30); // increased for "load more" feel
 
               if (feedPosts.length === 0) {
@@ -3618,12 +3646,21 @@ function App() {
                           </button>
 
                           {isOwnPost && (
-                            <button 
-                              onClick={() => deleteProfilePost(post.id, post.ownerId)}
-                              className="text-red-400 text-xs ml-1 active:text-red-500"
-                            >
-                              🗑
-                            </button>
+                            <>
+                              <button 
+                                onClick={() => togglePinPost(post.id, post.ownerId, post.pinned)}
+                                className={`text-xs ml-1 ${post.pinned ? 'text-[#FF671F]' : 'text-[#9CA3AF] active:text-[#FF671F]'}`}
+                                title={post.pinned ? 'Desfijar' : 'Fijar en feed'}
+                              >
+                                📌
+                              </button>
+                              <button 
+                                onClick={() => deleteProfilePost(post.id, post.ownerId)}
+                                className="text-red-400 text-xs ml-1 active:text-red-500"
+                              >
+                                🗑
+                              </button>
+                            </>
                           )}
 
                           <button onClick={() => setShowFullProfile(owner as any)} className="ml-auto text-[10px] text-[#FF671F] active:underline">Ver perfil completo</button>
@@ -4684,11 +4721,19 @@ function App() {
                         className="card card-glass p-4 mb-3 border-[#2F2F35]/80"
                       >
                         <div className="flex justify-between items-start mb-2">
-                          <div className="text-[10px] text-[#9CA3AF]" title={new Date(post.timestamp).toLocaleString('es-CL')}>
+                          <div className="flex items-center gap-1 text-[10px] text-[#9CA3AF]" title={new Date(post.timestamp).toLocaleString('es-CL')}>
                             {getRelativeTime(post.timestamp)}
+                            {post.pinned && <span className="text-[#FF671F]">📌</span>}
                           </div>
                           {isOwn && (
                             <div className="flex gap-1">
+                              <button 
+                                onClick={() => togglePinPost(post.id, effectiveUserId, post.pinned)}
+                                className={`text-xs px-1 ${post.pinned ? 'text-[#FF671F]' : 'text-[#9CA3AF] active:text-[#FF671F]'}`}
+                                title={post.pinned ? 'Desfijar del feed' : 'Fijar en el feed global'}
+                              >
+                                📌
+                              </button>
                               <button 
                                 onClick={() => startEditPost(post.id, effectiveUserId, post.text)}
                                 className="text-[#9CA3AF] text-xs px-1 active:text-[#FF671F]"

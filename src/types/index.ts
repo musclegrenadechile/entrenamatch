@@ -124,6 +124,7 @@ export interface ProfilePost {
   text: string
   photo?: string
   timestamp: number
+  pinned?: boolean
   likes: string[] // list of userIds who liked
   comments: Array<{
     id: string
