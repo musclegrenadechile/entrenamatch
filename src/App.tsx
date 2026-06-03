@@ -4221,12 +4221,15 @@ function App() {
                 {matchProfiles
                   .filter(p => !blockedUsers.includes(p.id))
                   .map(profile => (
-                  <div key={profile.id} onClick={() => openChat(profile.id)} className="card rounded-3xl overflow-hidden active:opacity-80 cursor-pointer relative ring-1 ring-white/5">
+                  <div key={profile.id} onClick={() => openChat(profile.id)} className="card card-glass rounded-3xl overflow-hidden active:opacity-80 cursor-pointer relative ring-1 ring-white/5" style={{transition: 'transform 0.2s'}}>
                     <div className="relative">
                       <img src={profile.photos[0]} className="w-full aspect-square object-cover" />
                       <div className="absolute top-2 right-2 flex gap-1">
                         {realProfiles.some(rp => rp.id === profile.id) && (
                           <div className="text-[9px] bg-[#FF671F] text-black px-1.5 py-0.5 rounded-full font-bold">REAL</div>
+                        )}
+                        {profile.trainingNow && (
+                          <div className="text-[9px] bg-[#22c55e] text-black px-1.5 py-0.5 rounded-full font-bold">🟢 LIVE</div>
                         )}
                         {profile.verificationStatus === 'verified' && (
                           <div className="text-[9px] bg-[#22c55e] text-black px-1 py-0.5 rounded-full">✓</div>
