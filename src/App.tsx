@@ -1990,7 +1990,7 @@ function App() {
           return newState
         })
       } catch (e) {
-        console.warn('create post fs', e)
+        // console.warn('create post fs', e)
         // fallback local (still save to LS so it "saves" visibly for the user)
         setProfilePosts((prev) => {
           const current = prev[effectiveUserId] || []
