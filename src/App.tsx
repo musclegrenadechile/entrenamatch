@@ -6067,7 +6067,7 @@ function App() {
                           transition={{ duration: 0.2 }}
                           className="card card-glass p-3 mb-2 border-[#2F2F35]/80"
                         >
-                          <div className="text-sm leading-snug mb-1.5">{post.text}</div>
+                          <div className="text-sm leading-snug mb-1.5">{post.pinned ? '📌 ' : ''}{post.text}</div>
                           {post.photo && <img src={post.photo} className="rounded-xl max-h-40 w-full object-cover mb-2 border border-[#2F2F35]" />}
                           <div className="flex items-center gap-4 text-xs text-[#9CA3AF]">
                             <span title={new Date(post.timestamp).toLocaleString('es-CL')}>{getRelativeTime(post.timestamp)}</span>
