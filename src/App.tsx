@@ -26,20 +26,26 @@ import {
   TRAINING_OPTIONS, AVAILABILITY, LEGAL_VERSIONS, AUTO_MATCH_IDS 
 } from './constants'
 
-// Capacitor native plugins - static imports so Vite/Rolldown always resolves them
-// in both web and CAPACITOR builds (packages are in dependencies and installed via npm ci).
-// Usage is guarded at runtime to only activate when running inside a real Capacitor native app.
-import { Camera as CameraPlugin } from '@capacitor/camera'
-import { PushNotifications as PushNotificationsPlugin } from '@capacitor/push-notifications'
-
+// Capacitor plugins are loaded via a separate module that is only analyzed in CAPACITOR builds.
+// This prevents Vite/Rolldown from ever trying to resolve @capacitor/* packages during pure web builds
+// (Firebase --base=/ , GH Pages, dev server) → eliminates the "failed to resolve import" errors.
 let CapacitorCamera: any = null
 let PushNotifications: any = null
 
-// Only assign if we are actually running in a Capacitor context (native app).
-// In pure web builds (GH Pages, Firebase Hosting, dev server) the objects exist but we don't use the native methods.
+if (__CAPACITOR_BUILD__) {
+  // Only in CAPACITOR builds: use variable specifier so the target module is discovered,
+  // its static imports are processed, and the plugin code gets bundled.
+  const capPlugins = './capacitor-plugins'
+  import(capPlugins).then(m => {
+    CapacitorCamera = m.Camera
+    PushNotifications = m.PushNotifications
+  })
+}
+
+// Fallback runtime guard (in case the async load hasn't completed yet when code runs).
+// In web builds the vars stay null forever, which is correct.
 if (typeof window !== 'undefined' && (window as any).Capacitor) {
-  CapacitorCamera = CameraPlugin
-  PushNotifications = PushNotificationsPlugin
+  // The values will be set by the import above shortly after module eval.
 }
 
 import { 

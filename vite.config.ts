@@ -8,10 +8,19 @@ export default defineConfig({
   // Capacitor / native Android APK: relative '' so assets load inside WebView
   base: process.env.CAPACITOR ? '' : '/entrenamatch/',
 
-  // The Capacitor plugins are now statically imported.
-  // We include them in optimizeDeps to ensure reliable resolution in all CI builds
-  // (prevents any transient "failed to resolve" issues with Rolldown in the APK workflow).
+  define: {
+    // Used by App.tsx and OnboardingFlow to decide whether to load the capacitor-plugins module.
+    __CAPACITOR_BUILD__: JSON.stringify(!!process.env.CAPACITOR),
+  },
+
+  // Force Vite to know about the Capacitor plugins and the loader module.
+  // This helps both dev and the production CAPACITOR build to properly resolve/bundle them.
   optimizeDeps: {
-    include: ['@capacitor/camera', '@capacitor/push-notifications'],
+    include: [
+      '@capacitor/camera',
+      '@capacitor/push-notifications',
+      // the loader is only for cap builds but including it doesn't hurt
+      './src/capacitor-plugins',
+    ],
   },
 })
