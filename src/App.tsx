@@ -3555,7 +3555,7 @@ function App() {
           <div className="px-4 py-2 bg-[#0D0D10] border-b border-[#22c55e]/30">
             <div className="flex items-center gap-2 mb-1">
               <div className="live-pill bg-[#22c55e] text-black">🟢 EN VIVO AHORA</div>
-              <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti</div>
+              <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· urgencia!' : ''}</div>
             </div>
             <div className="flex gap-2 overflow-x-auto pb-1">
               {liveTrainingNow.slice(0, 4).map(user => (
