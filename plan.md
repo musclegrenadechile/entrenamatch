@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 (continua - polish: stronger real empty states with lastSync in Explore/Sessions; cleaned more instructional texts; loading spinner on Profile 'Sincronizar' for refresh consistency; declutter for elegir perfiles. Builds/pushes (ff9ac68). **PHASE 0 SIGN-OFF READY** (continua).
+Last updated: Phase 0 (continua - polish: stronger real empty states + lastSync in Explore/Sessions/Matches; cleaned instructional texts; spinner on Profile Sincronizar; declutter for elegir perfiles; lastSync in Matches header/empty. Builds/pushes (a276927). **PHASE 0 SIGN-OFF READY** (continua).
