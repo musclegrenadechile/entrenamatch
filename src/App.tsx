@@ -3743,7 +3743,6 @@ function App() {
           <div className="absolute inset-0 z-[95] flex items-end bg-black/70" onClick={() => setShowCreateSquad(false)}>
             <div onClick={e => e.stopPropagation()} className="w-full card rounded-t-3xl p-6 pb-8">
               <div className="font-semibold text-xl mb-1">Crear un Squad</div>
-              <div className="text-[10px] text-[#14b8a6] mb-3">Funcionalidad en desarrollo (principalmente para probar UI)</div>
               <form onSubmit={(e) => {
                 e.preventDefault()
                 const form = e.currentTarget
@@ -3787,7 +3786,7 @@ function App() {
                     <div className="p-4 border-b border-[#272b33] flex justify-between items-center bg-[#121418]">
                       <div>
                         <div className="font-bold text-xl">{squad.name}</div>
-                        <div className="text-[#14b8a6] text-sm">{squad.focus} • {squad.members.length}/4 miembros <span className="text-[9px] text-[#64748b]">(demo)</span></div>
+                        <div className="text-[#14b8a6] text-sm">{squad.focus} • {squad.members.length}/4 miembros</div>
                       </div>
                       <button onClick={() => setSelectedSquad(null)} className="text-2xl text-[#94a3b8]">×</button>
                     </div>
