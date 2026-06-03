@@ -207,6 +207,7 @@ Como Google account verification pendiente, avanzamos full en la versión web: h
   - En la lista de Mensajes, cada fila muestra pill rojo con conteo de no leídos.
   - Si la pestaña está oculta (cambiaste de tab del browser o minimizaste) + diste permiso de notificaciones del navegador: aparece notificación nativa del SO (con icono + click lleva al chat).
   - El panel de Notificaciones (campana) ahora muestra avatar del remitente para mensajes.
+  - Diseño actualizado con naranja Dunkin' #FF671F como color principal (energía, motivación) + rosa para diversión, con hovers en cards con glow naranja para más atractivo visual.
 - Permiso se pide automáticamente al loguearte con cuenta real en web (o botón manual en Perfil: "🔔 Activar/renovar notificaciones del navegador").
 - Funciona cross-tab / cross-browser (hard refresh después de push). No requiere "Actualizar chats reales" para recibir la alerta (los listeners bg la detectan).
 
