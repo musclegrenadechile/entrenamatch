@@ -128,9 +128,12 @@ Everything must work after hard refresh + on different physical devices (not jus
   - This ensures the view "baja" to the bottom (recent messages) reliably when tapping a profile/chat.
 - [x] **PWA home screen install fix + banner visibility + exhaustive visual review**:
   - Manifest/scope/start_url/icons fixed previously (now /entrenamatch/).
-  - Banner not appearing: reduced timeout to 5s, added early setShow on load (3s), made bump/setShow more eager (show banner even without deferred prompt for guidance text). Added persistent "📱 Instalar" button in top bar (always visible for web, non-dismissed users) as fallback/discoverability.
-  - Banner JSX updated: shows helpful text when no native prompt ("use browser menu"), "Entendido" button.
-  - Exhaustive design review performed (grep for styles, layout, recent edits like messaging sticky list, profile hero, cards, nav, z-index, contrast, padding for bottom nav/banner, hard-coded vs vars, overflow, responsive). No critical visual errors; applied minor consistency polish (section-header, icons, buttons). Build clean. Re-install PWA recommended after deploy.
+  - Banner not appearing on mobile (shows on desktop): 
+    - Banner made `sticky top-0 z-50` for mobile visibility (doesn't get lost in viewport).
+    - Top bar "📱 Instalar" button now ALWAYS visible for web (no dismissed check), click clears dismissed flag + forces banner show.
+    - Early force show (3s) + 5s timeout + eager logic still active.
+    - Banner shows contextual guidance if no native prompt.
+  - Exhaustive design review: full scan of all UI (explore, messages list+sticky+chat, matches, sesiones, profile hero/stats/feedback, onboarding, auth, top/bottom nav, banners, modals, cards, flex layouts, scrolls, z-indexes, mobile safe areas, contrast, spacing, hard-coded vs design system). Fixed mobile banner visibility + top bar button. No other major visual errors (previous polishes covered most). After deploy on celular: tap the top bar "📱 Instalar" to force it, use browser menu for Add to Home Screen. Reinstall icon if needed.
 - Add FIREBASE_SERVICE_ACCOUNT secret to GitHub for full auto Firebase Hosting deploys on every push (recommended over GH Pages for PWA + future FCM).
 
 ## Later Phases (high level)
