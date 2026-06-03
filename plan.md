@@ -173,6 +173,7 @@ Everything must work after hard refresh + on different physical devices (not jus
   - Auto load on tab profile and on open full profile.
   - Makes profiles feel alive with user-generated content and interactions (likes/comments visible to all).
   - Notifications for like/comment on your posts.
+  - Attractive UI polish: nice composer card with preview/remove photo, branded post cards with layout, like fill, comments preview, delete for own, "Cargar" buttons. Improved attractiveness of profile + muro sections.
 - [x] Notifications panel polish (diseño + UX):
   - Added type icons (💬 ❤️ 👥 🏋️ 🔔), relative timestamps (getRelativeTime), better layout with avatar on right if present.
   - Unread indicator as small dot + highlighted bg.

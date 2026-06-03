@@ -84,6 +84,23 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Profile Posts / Muro (wall) - makes profiles alive like FB wall
+    // Public read so anyone can see posts when viewing a profile (pre-alpha discovery)
+    // Create only by owner
+    // Update: owner or anyone for likes/comments (pre-alpha relaxed for interactions; client controls what fields)
+    // Delete only by owner
+    match /profilePosts/{postId} {
+      allow read: if true;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && (
+        // Owner full control
+        resource.data.userId == request.auth.uid ||
+        // Anyone can participate in likes/comments (e.g. add to arrays)
+        true
+      );
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

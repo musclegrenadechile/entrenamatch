@@ -1976,6 +1976,21 @@ function App() {
     }
   }
 
+  const deleteProfilePost = async (postId: string, postUserId: string) => {
+    if (postUserId !== effectiveUserId) return;
+    if (!confirm('¿Eliminar esta publicación del muro?')) return;
+    if (!isDemoMode && db) {
+      try {
+        const { doc, deleteDoc } = await import('firebase/firestore')
+        await deleteDoc(doc(db, 'profilePosts', postId))
+      } catch (e) { console.warn(e) }
+    }
+    const current = profilePosts[postUserId] || []
+    const updated = { ...profilePosts, [postUserId]: current.filter(p => p.id !== postId) }
+    saveProfilePosts(updated)
+    toast.success('Publicación eliminada')
+  }
+
   const saveBlockedUsers = (newBlocked: string[]) => {
     localStorage.setItem('entrenamatch_blocked', JSON.stringify(newBlocked))
     setBlockedUsers(newBlocked)
@@ -4156,98 +4171,132 @@ function App() {
               </div>
             </div>
 
-            {/* MURO / WALL - makes profile feel alive (FB-style posts + interactions) */}
+            {/* MURO / WALL - attractive FB-style feed to make profile feel alive */}
             <div className="px-4 mt-4">
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-xs uppercase tracking-widest text-[#9CA3AF]">Muro</div>
-                <button onClick={() => loadProfilePosts(effectiveUserId)} className="text-[10px] text-[#FF671F]">Actualizar</button>
+              <div className="flex items-center justify-between mb-2 px-1">
+                <div className="text-xs uppercase tracking-[1px] text-[#9CA3AF]">Muro</div>
+                <button 
+                  onClick={() => loadProfilePosts(effectiveUserId)} 
+                  className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10"
+                >
+                  Actualizar
+                </button>
               </div>
 
-              {/* Composer - only for own profile */}
-              <div className="card p-3 mb-3">
+              {/* Attractive composer */}
+              <div className="card p-4 mb-4">
+                <div className="text-sm font-medium text-[#FF671F] mb-2 flex items-center gap-2">
+                  <span>📝</span> Publica en tu muro
+                </div>
                 <textarea 
                   value={muroComposerText}
                   onChange={e => setMuroComposerText(e.target.value)}
-                  placeholder="¿Qué tal tu entreno? Comparte en tu muro..."
-                  className="form-input w-full h-16 text-sm mb-2"
+                  placeholder="¿Qué tal tu último entreno? Motiva a la comunidad..."
+                  className="form-input w-full h-20 text-sm mb-3 resize-y"
+                  maxLength={280}
                 />
                 {muroComposerPhoto && (
-                  <div className="mb-2 flex items-center gap-2">
-                    <img src={muroComposerPhoto} className="w-12 h-12 rounded object-cover" />
-                    <button onClick={() => setMuroComposerPhoto(null)} className="text-xs text-red-400">Quitar foto</button>
+                  <div className="mb-3 relative inline-block">
+                    <img src={muroComposerPhoto} className="max-h-24 rounded-2xl border border-[#2F2F35] object-cover" />
+                    <button 
+                      onClick={() => setMuroComposerPhoto(null)} 
+                      className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center"
+                    >
+                      ×
+                    </button>
                   </div>
                 )}
                 <div className="flex gap-2">
                   <button 
                     onClick={async () => {
-                      // Quick camera or file for post photo
                       if (typeof window !== 'undefined' && (window as any).Capacitor && CapacitorCamera) {
                         try {
                           const p = await CapacitorCamera.getPhoto({ quality: 70, allowEditing: false, resultType: 'base64' })
                           if (p?.base64String) setMuroComposerPhoto(`data:image/jpeg;base64,${p.base64String}`)
-                        } catch {}
+                        } catch (e) { toast('No se pudo agregar foto') }
                       } else {
-                        // fallback: simple prompt for demo url or ignore
-                        const url = prompt('URL de foto (o deja vacío):')
+                        const url = prompt('Pega URL de imagen (demo):')
                         if (url) setMuroComposerPhoto(url)
                       }
                     }}
-                    className="text-xs px-3 py-1.5 border border-[#2F2F35] rounded-2xl active:bg-[#25252A]"
+                    className="flex-1 py-2 text-sm border border-[#2F2F35] rounded-2xl active:bg-[#25252A] flex items-center justify-center gap-1"
                   >
-                    📷 Foto
+                    📷 Añadir foto
                   </button>
                   <button 
                     onClick={async () => {
-                      if (!muroComposerText.trim()) { toast('Escribe algo'); return }
+                      if (!muroComposerText.trim()) return
                       await createProfilePost(muroComposerText, muroComposerPhoto)
                       setMuroComposerText('')
                       setMuroComposerPhoto(null)
                     }}
-                    className="flex-1 btn-primary text-sm py-1.5"
                     disabled={!muroComposerText.trim()}
+                    className="flex-1 btn-primary text-sm py-2 disabled:opacity-50"
                   >
-                    Publicar en muro
+                    Publicar
                   </button>
                 </div>
+                <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Visible en tu perfil y para quien vea tu perfil completo</div>
               </div>
 
-              {/* Posts list */}
+              {/* Posts feed - attractive cards */}
               {(profilePosts[effectiveUserId] || []).length > 0 ? (
-                (profilePosts[effectiveUserId] || []).map(post => (
-                  <div key={post.id} className="card p-3 mb-3">
-                    <div className="text-sm leading-snug">{post.text}</div>
-                    {post.photo && <img src={post.photo} className="mt-2 rounded-xl max-h-48 w-full object-cover" />}
-                    <div className="flex items-center justify-between mt-2 text-xs text-[#9CA3AF]">
-                      <div>{new Date(post.timestamp).toLocaleDateString('es-CL', {month:'short', day:'numeric'})} · {new Date(post.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</div>
-                      <div className="flex gap-3">
+                (profilePosts[effectiveUserId] || []).map(post => {
+                  const isOwn = true
+                  const liked = post.likes.includes(effectiveUserId)
+                  return (
+                    <div key={post.id} className="card p-4 mb-3">
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="text-[10px] text-[#9CA3AF]">
+                          {new Date(post.timestamp).toLocaleDateString('es-CL', { weekday: 'short', month: 'short', day: 'numeric' })} · {new Date(post.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                        </div>
+                        {isOwn && (
+                          <button 
+                            onClick={() => deleteProfilePost(post.id, effectiveUserId)}
+                            className="text-red-400 text-xs px-1 active:text-red-500"
+                            title="Eliminar post"
+                          >
+                            🗑
+                          </button>
+                        )}
+                      </div>
+                      <div className="text-sm leading-relaxed mb-2">{post.text}</div>
+                      {post.photo && (
+                        <img src={post.photo} className="w-full rounded-2xl max-h-56 object-cover mb-3 border border-[#2F2F35]" />
+                      )}
+                      <div className="flex items-center gap-4 text-sm">
                         <button 
                           onClick={() => likeProfilePost(post.id, effectiveUserId)}
-                          className="flex items-center gap-1 active:text-[#FF671F]"
+                          className={`flex items-center gap-1 transition ${liked ? 'text-[#FF671F]' : 'text-[#9CA3AF] hover:text-[#FF671F]'}`}
                         >
-                          ❤️ {post.likes.length}
+                          {liked ? '❤️' : '🤍'} <span className="font-medium">{post.likes.length}</span>
                         </button>
                         <button 
                           onClick={() => {
-                            const txt = prompt('Comentario:')
+                            const txt = prompt('Comentar en el muro:')
                             if (txt) addCommentToPost(post.id, effectiveUserId, txt)
                           }}
-                          className="flex items-center gap-1 active:text-[#FF671F]"
+                          className="flex items-center gap-1 text-[#9CA3AF] hover:text-[#FF671F]"
                         >
-                          💬 {post.comments.length}
+                          💬 <span className="font-medium">{post.comments.length}</span>
                         </button>
                       </div>
+                      {post.comments.length > 0 && (
+                        <div className="mt-2 pt-2 border-t border-[#2F2F35] text-xs text-[#9CA3AF] space-y-1">
+                          {post.comments.slice(-3).map(c => (
+                            <div key={c.id} className="flex gap-1.5">
+                              <span className="font-medium text-white/80">{c.userName}:</span> 
+                              <span className="truncate">{c.text}</span>
+                            </div>
+                          ))}
+                          {post.comments.length > 3 && <div className="text-[#FF671F]/70">+{post.comments.length-3} más...</div>}
+                        </div>
+                      )}
                     </div>
-                    {post.comments.length > 0 && (
-                      <div className="mt-2 pl-2 border-l border-[#2F2F35] text-xs space-y-1 text-[#9CA3AF]">
-                        {post.comments.slice(-2).map(c => (
-                          <div key={c.id}><span className="text-white/80">{c.userName}:</span> {c.text}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))
+                  )
+                })
               ) : (
-                <div className="text-xs text-[#9CA3AF] mb-3">Tu muro está vacío. Publica algo para que otros vean tu progreso y entrenos.</div>
+                <div className="text-xs text-[#9CA3AF] mb-3 italic">Tu muro está vacío. Publica algo para que la comunidad vea tu progreso y entrenos diarios.</div>
               )}
             </div>
 
@@ -5305,25 +5354,31 @@ function App() {
                   <div className="flex flex-wrap gap-2">{showFullProfile.goals.map(g => <div key={g} className="chip chip-active">{g}</div>)}</div>
                 </div>
 
-                {/* Muro for viewed profile - read only + like/comment (makes profiles alive) */}
-                <div className="mt-3">
-                  <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-1 flex justify-between">
+                {/* Muro for viewed profile - attractive read-only feed */}
+                <div className="mt-4">
+                  <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-2 flex justify-between items-center px-1">
                     <span>MURO</span>
-                    <button onClick={() => loadProfilePosts(showFullProfile.id)} className="text-[#FF671F]">Cargar</button>
+                    <button onClick={() => loadProfilePosts(showFullProfile.id)} className="text-[10px] text-[#FF671F] active:underline">Cargar</button>
                   </div>
                   {(profilePosts[showFullProfile.id] || []).length > 0 ? (
-                    (profilePosts[showFullProfile.id] || []).slice(0, 3).map((post) => (
-                      <div key={post.id} className="card p-2 mb-1 text-xs">
-                        <div className="line-clamp-2">{post.text}</div>
-                        {post.photo && <img src={post.photo} className="mt-1 rounded max-h-20" />}
-                        <div className="flex gap-3 mt-1 text-[#9CA3AF]">
-                          <span onClick={() => likeProfilePost(post.id, showFullProfile.id)}>❤️ {post.likes.length}</span>
-                          <span onClick={() => { const t = prompt('Comentar:'); if (t) addCommentToPost(post.id, showFullProfile.id, t) }}>💬 {post.comments.length}</span>
+                    (profilePosts[showFullProfile.id] || []).slice(0, 4).map((post) => (
+                      <div key={post.id} className="card p-3 mb-2">
+                        <div className="text-sm leading-snug mb-1.5">{post.text}</div>
+                        {post.photo && <img src={post.photo} className="rounded-xl max-h-40 w-full object-cover mb-2 border border-[#2F2F35]" />}
+                        <div className="flex items-center gap-4 text-xs text-[#9CA3AF]">
+                          <span>{new Date(post.timestamp).toLocaleDateString('es-CL', {month:'short', day:'numeric'})}</span>
+                          <span onClick={() => likeProfilePost(post.id, showFullProfile.id)} className="cursor-pointer active:text-[#FF671F]">❤️ {post.likes.length}</span>
+                          <span onClick={() => { const t = prompt('Comentar en el muro de ' + showFullProfile.name + ':'); if (t) addCommentToPost(post.id, showFullProfile.id, t) }} className="cursor-pointer active:text-[#FF671F]">💬 {post.comments.length}</span>
                         </div>
+                        {post.comments.length > 0 && (
+                          <div className="mt-1.5 text-[11px] text-[#9CA3AF] pl-1 border-l border-[#2F2F35]">
+                            {post.comments.slice(-2).map(c => <div key={c.id}><span className="text-white/70">{c.userName}:</span> {c.text}</div>)}
+                          </div>
+                        )}
                       </div>
                     ))
                   ) : (
-                    <div className="text-[10px] text-[#9CA3AF]">Sin posts en el muro aún.</div>
+                    <div className="text-xs text-[#9CA3AF] italic">Este perfil aún no tiene publicaciones en el muro.</div>
                   )}
                 </div>
 
