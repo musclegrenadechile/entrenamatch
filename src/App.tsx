@@ -3454,6 +3454,9 @@ function App() {
           >
             {isLoadingMatches ? '...' : 'Actualizar todo'}
           </button>
+          {liveTrainingNow.length > 0 && (
+            <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold animate-pulse">🟢 {liveTrainingNow.length} LIVE</span>
+          )}
         </div>
 
         {(currentUser || firebaseUser) ? (
