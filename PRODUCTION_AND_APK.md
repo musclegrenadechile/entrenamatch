@@ -236,4 +236,19 @@ For production releases, use the local Android Studio flow or extend the workflo
 
 Run `npm run android:build && npx cap open android` after installing Android Studio when you want to test locally or customize the native side.
 
-For any specific part (push notifications setup, Camera plugin, custom domain, etc.), just say the word and we continue.
+## Current Push Notifications Setup (Client-side, for real testers cohort)
+
+**@capacitor/push-notifications is installed and wired in the web code (App.tsx).**
+
+- On real native build (after adding google-services.json): requests permission, registers for FCM, logs the token (for manual/server testing), shows toast on received notification while app open, handles tap action.
+- This fulfills the "must for first cohort" requirement.
+- **To complete for full native push in AAB:**
+  1. Add your google-services.json (from Firebase Console > Project > Android app) to `android/app/google-services.json`.
+  2. Rebuild the signed AAB (use build-release.bat or Android Studio).
+  3. Server-side: Use Firebase Admin SDK or Cloud Functions to send notifications on events (new match, new message in 1:1 or session, someone joined your session). Token is logged on registration for the uid.
+- See src/App.tsx for the useEffect setup (only for !isDemoMode real users).
+- Test: Install AAB on device, login real, grant notification permission, check logcat for token.
+
+This enables real engagement for the Chile 5-10 testers (new match alerts etc.).
+
+For any specific part (full server push example, Camera plugin completion, custom domain, AAB test protocol, etc.), just say the word and we continue.
