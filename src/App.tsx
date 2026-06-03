@@ -3636,7 +3636,10 @@ function App() {
 
               return (
                 <>
-                  <div className="text-xs text-[#9CA3AF] mb-3 px-1">{feedPosts.length} posts {feedSearch || feedOnlyReal || feedShowPinnedOnly ? 'filtrados' : 'recientes'} de la comunidad</div>
+                  <div className="flex items-center justify-between text-xs text-[#9CA3AF] mb-3 px-1">
+                    <span>{feedPosts.length} posts {feedSearch || feedOnlyReal || feedShowPinnedOnly ? 'filtrados' : 'recientes'} de la comunidad</span>
+                    {(feedSearch || feedOnlyReal || feedShowPinnedOnly) && <button onClick={() => { setFeedSearch(''); setFeedOnlyReal(false); setFeedShowPinnedOnly(false); }} className="text-[#FF671F] underline">limpiar filtros</button>}
+                  </div>
                   {feedPosts.map((post: any) => {
                     const ownerProfile = realProfiles.find(r => r.id === post.ownerId);
                     const owner = ownerProfile || { name: 'Compañero', id: post.ownerId, photos: [] };
@@ -4917,38 +4920,16 @@ function App() {
                 )}
               </AnimatePresence>
 
-              {/* Global community muro activity teaser - makes the app feel like a living movement */}
-              {(() => {
-                const otherPosts = Object.entries(profilePosts)
-                  .filter(([uid]) => uid !== effectiveUserId)
-                  .flatMap(([uid, posts]) => (posts || []).map(p => ({...p, ownerId: uid})))
-                  .sort((a, b) => b.timestamp - a.timestamp)
-                  .slice(0, 2);
-                if (otherPosts.length === 0) return null;
-                return (
-                  <div className="mt-4 px-1">
-                    <div className="text-[10px] uppercase tracking-widest text-[#9CA3AF] mb-1.5">Actividad reciente de la comunidad</div>
-                    {otherPosts.map(p => (
-                      <div 
-                        key={p.id} 
-                        onClick={() => {
-                          // open the owner's full profile if possible, or just toast
-                          const ownerProfile = realProfiles.find(r => r.id === p.ownerId) || {id: p.ownerId, name: 'Usuario'};
-                          // for simplicity, if we have showFullProfile logic, but to avoid, just show teaser
-                          toast(`Post de ${ (ownerProfile as any).name || 'alguien' }: ${p.text.substring(0,40)}...`);
-                        }}
-                        className="card card-glass p-2 mb-1.5 text-xs flex gap-2 cursor-pointer active:scale-[0.99]"
-                      >
-                        <div className="text-[#FF671F]">📝</div>
-                        <div className="flex-1 min-w-0">
-                          <span className="text-[#9CA3AF] truncate">{p.text}</span>
-                          <div className="text-[9px] text-[#FF671F]/60 mt-0.5">❤️ {p.likes?.length || 0} · 💬 {p.comments?.length || 0}</div>
-                        </div>
-                      </div>
-                    ))}
+              {/* Prominent link to global feed - makes the app feel like a living movement */}
+              <div className="mt-3 px-1">
+                <button onClick={() => setActiveTab('feed')} className="w-full text-left card card-glass p-3 text-sm flex items-center justify-between active:scale-[0.99]">
+                  <div>
+                    <div className="text-[#FF671F] font-medium">Explora el Feed Global →</div>
+                    <div className="text-[10px] text-[#9CA3AF]">Muro completo de la comunidad, posts fijados y más</div>
                   </div>
-                );
-              })()}
+                  <span className="text-[#FF671F]">→</span>
+                </button>
+              </div>
             </div>
 
             {/* Verification status - visual upgrade */}
