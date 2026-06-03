@@ -26,17 +26,13 @@ import {
   TRAINING_OPTIONS, AVAILABILITY, LEGAL_VERSIONS, AUTO_MATCH_IDS 
 } from './constants'
 
-// Capacitor Camera (dynamic, only present in native APK builds)
-let CapacitorCamera: any = null
-try {
-  import('@capacitor/camera').then(mod => { CapacitorCamera = mod.Camera })
-} catch (e) {}
+// Capacitor native plugins - static imports so Vite/Rolldown can always resolve them
+// during both web and Capacitor (APK) builds. Usage is still guarded for web-only runtime.
+import { Camera } from '@capacitor/camera'
+import { PushNotifications as PushNotificationsPlugin } from '@capacitor/push-notifications'
 
-// Capacitor Push Notifications (dynamic for native)
-let PushNotifications: any = null
-try {
-  import('@capacitor/push-notifications').then(mod => { PushNotifications = mod.PushNotifications })
-} catch (e) {}
+let CapacitorCamera: any = Camera
+let PushNotifications: any = PushNotificationsPlugin
 
 import { 
   getDistanceKm, 
@@ -3485,7 +3481,7 @@ function App() {
             )}
 
             {/* Quick native camera add (APK only) - Phase 0 deeper integration */}
-            {CapacitorCamera && (
+            {typeof window !== 'undefined' && (window as any).Capacitor && CapacitorCamera && (
               <div className="px-4 pt-3">
                 <button
                   onClick={async () => {

@@ -4,12 +4,9 @@ import { Dumbbell, MapPin, Camera, Trash2, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { TRAINING_OPTIONS, TRAINING_GOALS, TRAINING_INTENSITIES } from '../../constants';
 
-// Capacitor Camera (only used on native)
-let CapacitorCamera: any = null;
-try {
-  // Dynamic so web build doesn't break
-  import('@capacitor/camera').then(mod => { CapacitorCamera = mod.Camera; });
-} catch (e) {}
+// Capacitor Camera - static import for reliable resolution in all Vite builds (web + Capacitor/APK)
+import { Camera as CapacitorCameraModule } from '@capacitor/camera';
+let CapacitorCamera: any = CapacitorCameraModule;
 
 interface OnboardingFlowProps {
   onboardingStep: number;
@@ -114,7 +111,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   // Native camera support (Capacitor)
   const takeNativePhoto = async () => {
-    if (!CapacitorCamera) {
+    if (!CapacitorCamera || typeof window === 'undefined' || !(window as any).Capacitor) {
       toast('Cámara nativa no disponible en esta versión web');
       return;
     }
@@ -337,7 +334,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 </label>
               )}
               {/* Native camera (shows only when running as real APK via Capacitor) */}
-              {(onboardData.photos || []).length < 6 && CapacitorCamera && (
+              {(onboardData.photos || []).length < 6 && typeof window !== 'undefined' && (window as any).Capacitor && CapacitorCamera && (
                 <button
                   type="button"
                   onClick={takeNativePhoto}
