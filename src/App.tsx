@@ -3895,7 +3895,7 @@ function App() {
                 >
                   <div className="text-2xl font-semibold mb-2">¡Bienvenido al prealpha!</div>
                   <p className="text-sm text-[#9CA3AF] mb-4">
-                    Estás entre los primeros en probar <strong>El match del movimiento</strong> con perfiles reales.
+                    Estás entre los primeros en probar <strong>El match del movimiento</strong> con perfiles reales. <span className="text-[#FF671F]">¡Nuevo diseño con energía naranja estilo Dunkin' para que te atrape!</span>
                   </p>
 
                   <div className="bg-[#1C1C20] rounded-2xl p-4 text-left text-sm mb-5">
@@ -3905,6 +3905,7 @@ function App() {
                       <li>→ Matches y chats 1:1 / grupal en sesiones (cross-device real-time)</li>
                       <li>→ Crea y únete a sesiones con chat grupal (tú administras como creador)</li>
                       <li>→ Tu feedback (en Perfil) da forma a lo que viene</li>
+                      <li>→ Nuevo diseño naranja/rosa atractivo (energía Dunkin' + diversión social)</li>
                     </ul>
                   </div>
 
