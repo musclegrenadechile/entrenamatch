@@ -118,6 +118,32 @@ When reporting, please note:
 
 ---
 
+## Update: Message arrival notifications (web focus continuation, June 2026)
+Since Google verification pending, we are advancing exclusively the web at https://musclegrenadechile.github.io/entrenamatch/ .
+
+**New in this build:**
+- Real incoming messages (1:1 or group) now trigger:
+  - In-app toast with sender + text + "Ver" action (opens the chat and clears badge).
+  - Red numeric badges on bottom "Mensajes" tab and per-chat rows in the list.
+  - Bell (🔔) in top teal bar shows combined unread (panel + chats + sessions).
+  - If you granted browser notifications and the page/tab is hidden: native OS notification pops (click focuses + navigates).
+- Auto-asks on real login (web). Manual button also in Perfil.
+- Works after hard refresh, across tabs/browsers (the bg listeners catch additions instantly).
+
+**Quick test (2 real accounts, different tabs or browsers):**
+1. Hard refresh both after push.
+2. A matches B (or fake) and opens chat.
+3. B goes to Explore or hides the tab / switches browser tab.
+4. A sends "hola notif test".
+5. B should see toast + badges + (optionally) browser popup.
+6. Click Ver → opens chat, badge gone.
+7. Repeat for a group session: create, join, send while other not viewing the modal.
+8. Verify after refresh on receiver: old messages there, new arrivals still notify.
+
+Update your test protocol with the notif steps from BETA_TESTERS_GUIDE.md. Report any missing toast/badge or permission issues via the in-app feedback form (Perfil).
+
+Sigue mejorando la web. Hard refresh y avísanos cómo se siente con los testers.
+
 **This guide exists because the user asked for explicit testing and verification on the live GitHub deployment.**
 
 Run this full flow after every significant overnight push. Document results in commit messages or this file.## Phase 0 Continuation (sigamos con el phase 0) - Latest landed

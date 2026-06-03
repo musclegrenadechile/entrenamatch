@@ -87,7 +87,7 @@ export interface Report {
 
 export interface Notification {
   id: string
-  type: 'match' | 'session_join' | 'squad_join' | 'verification' | 'group_message' | 'report'
+  type: 'match' | 'session_join' | 'squad_join' | 'verification' | 'group_message' | 'report' | 'message'
   title: string
   body: string
   timestamp: number

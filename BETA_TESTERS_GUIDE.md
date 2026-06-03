@@ -195,3 +195,34 @@ Cualquier duda, avísanos.
 - Usa "Sincronizar" en tu Perfil y "Actualizar reales" en Explorar/Sesiones frecuentemente durante las pruebas. El Perfil ahora está más limpio (sin botones rojos grandes en el centro que bloqueaban el scroll).
 - El formulario de Feedback mejorado en Perfil es la forma principal de reportar (estructura + historial visible para ti).
 - Reporta también por el canal privado (WhatsApp/grupo) si quieres adjuntar capturas o hablar en vivo.
+
+## Nuevas: Probar notificaciones cuando llega un mensaje (web GH Pages — prioridad actual)
+Como Google account verification pendiente, avanzamos full en la versión web: https://musclegrenadechile.github.io/entrenamatch/
+
+**Qué implementado:**
+- Cuando otro tester (real o vía fake) te envía mensaje 1:1 o en sesión grupal en la que participas: 
+  - Toast in-app (sonner) con preview + botón "Ver" que abre el chat exacto y marca leído.
+  - Se agrega a la campana (🔔) del header superior (badge con totales).
+  - Badge rojo numérico en tab inferior "Mensajes" (1:1) y "Sesiones" (grupales).
+  - En la lista de Mensajes, cada fila muestra pill rojo con conteo de no leídos.
+  - Si la pestaña está oculta (cambiaste de tab del browser o minimizaste) + diste permiso de notificaciones del navegador: aparece notificación nativa del SO (con icono + click lleva al chat).
+- Permiso se pide automáticamente al loguearte con cuenta real en web (o botón manual en Perfil: "🔔 Activar/renovar notificaciones del navegador").
+- Funciona cross-tab / cross-browser (hard refresh después de push). No requiere "Actualizar chats reales" para recibir la alerta (los listeners bg la detectan).
+
+**Cómo probar notificaciones (protocolo actualizado para web):**
+1. Abre la web en 2 "dispositivos" o pestañas/navegadores distintos (o 1 real + 1 incognito). Hard refresh (Ctrl+Shift+R) en ambos después de cada push.
+2. Cuenta A: loguea/crea perfil real → ve a Explorar → haz match con un fake (o con B).
+3. Cuenta B: asegúrate de estar en otra pantalla (Explorar, Perfil o incluso oculta la pestaña del browser).
+4. Cuenta A envía mensaje 1:1.
+5. En B: debe aparecer toast arriba, badge en campana + tab Mensajes, fila del chat con pill rojo, preview actualizado en vivo. Si diste permiso y B tab oculta: notif del navegador debe saltar.
+6. Click "Ver" o abre el chat → conteos se ponen en 0.
+7. Repite enviando desde B mientras A está en Sesiones o tab oculta.
+8. Para grupos: Cuenta A crea sesión → B se une → A envía en group chat mientras B tiene modal cerrado o tab oculta → notif debe llegar (toast + badge en Sesiones + browser si hidden).
+9. Hard refresh en B → unreads se resetean (esperado, son de sesión actual); historial de mensajes persiste; nuevos envíos post-refresh siguen notificando.
+10. Bonus: usa el botón en Perfil para re-solicitar permiso del navegador si no diste "allow" la primera vez. Revisa el panel de Notificaciones (campana) para ver historial de "Mensaje de X".
+
+Si no ves toast/badge: verifica que estés en modo real (no "version demo"), hard refresh, revisa consola (busca "📨 Live 1:1" o "BG live group"). Si browser notif no aparece aunque permiso granted: la pestaña debe estar realmente oculta (no solo otro tab de la app).
+
+Esto hace que "si alguien envía un mensaje uno lo reciba" sea obvio sin estar mirando la lista.
+
+**Web first ahora:** Todo lo anterior es 100% en la URL pública de GH Pages. APK sigue build en CI pero deprioritizado hasta verify de Google. Usa la web para tests diarios con los 5-10 de Chile.

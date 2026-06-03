@@ -3,7 +3,7 @@ import { useState, useEffect, useMemo, useCallback, useRef, Component, type Reac
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, MessageCircle, User, MapPin, Dumbbell, 
-  Edit2, RefreshCw, ArrowLeft, Send, Star, Plus, Users 
+  Edit2, RefreshCw, ArrowLeft, Send, Star, Plus, Users, Bell 
 } from 'lucide-react'
 import { 
   signUpWithEmail, 
@@ -227,6 +227,12 @@ function App() {
   const groupMessageUnsubsRef = useRef<Record<string, () => void>>({})
   const realChatUnsubsRef = useRef<Record<string, () => void>>({})
   const currentActiveChatRef = useRef<string | null>(null)
+  // For deduping message arrival notifications (only notify on 'added' after initial snapshot per chat/session)
+  const seenChatMsgIdsRef = useRef<Record<string, Set<string>>>({})
+  const seenGroupMsgIdsRef = useRef<Record<string, Set<string>>>({})
+  // Per-chat and per-session unread counts for badges + list dots (local, cleared on open)
+  const [chatUnreads, setChatUnreads] = useState<Record<string, number>>({})
+  const [sessionUnreads, setSessionUnreads] = useState<Record<string, number>>({})
 
   const { 
     squads: _squadsFromHook, 
@@ -360,6 +366,8 @@ function App() {
   const [showNotifications, setShowNotifications] = useState(false)
 
   const unreadNotifications = notifications.filter(n => !n.read).length
+  const totalChatUnreads = Object.values(chatUnreads).reduce((sum, n) => sum + (n || 0), 0)
+  const totalSessionUnreads = Object.values(sessionUnreads).reduce((sum, n) => sum + (n || 0), 0)
 
   // Real Auth from Firebase + Demo Auth
   const { currentUser: firebaseUser, userProfile: firebaseProfile, isDemoMode } = useAuth()
@@ -749,6 +757,15 @@ function App() {
     }
   }, [isDemoMode, firebaseUser?.uid])
 
+  // On real Firebase login (web), request Notification permission once so bg message alerts work when tab hidden
+  useEffect(() => {
+    if (!isDemoMode && firebaseUser?.uid) {
+      // slight delay so UI settles
+      const t = setTimeout(() => { requestWebNotificationPermission() }, 1200)
+      return () => clearTimeout(t)
+    }
+  }, [isDemoMode, firebaseUser?.uid])
+
   // Logout handler - works for both demo and real Firebase
   const handleLogout = async () => {
     try {
@@ -759,6 +776,10 @@ function App() {
 
       // Clear all local state
       if (clearProfile) clearProfile()
+      setChatUnreads({})
+      setSessionUnreads({})
+      seenChatMsgIdsRef.current = {}
+      seenGroupMsgIdsRef.current = {}
       
       setMatches([])
       setLikedIds([])
@@ -808,6 +829,8 @@ function App() {
       loadRealChatMessages(toUserId).then(msgs => {
         if (msgs) setRealChatMessages(msgs)
       })
+      // replying counts as reading it
+      setChatUnreads(prev => { const c = { ...prev }; c[toUserId] = 0; return c })
     } catch (e) {
       console.error('Failed to send real message:', e)
       toast.error('No se pudo enviar el mensaje real')
@@ -860,6 +883,7 @@ function App() {
       // If this load is for the currently open chat, also refresh the array used by the open chat render
       if (currentActiveChatRef.current === otherUserId && msgs) {
         setRealChatMessages(msgs)
+        setChatUnreads(prev => { const c = { ...prev }; c[otherUserId] = 0; return c })
       }
 
       return msgs;
@@ -969,17 +993,44 @@ function App() {
           const q1 = query(messagesRef, where('from', '==', firebaseUser.uid), where('to', '==', matchId));
           const q2 = query(messagesRef, where('from', '==', matchId), where('to', '==', firebaseUser.uid));
 
-          // Handler for q1 (my outgoing to this match)
+          // Handler for q1 (my outgoing) — update state but do not notify self
           const handler1 = (snapshot: any) => {
             console.log(`📨 Live 1:1 update (bg) for ${matchId}`);
             loadRealChatMessages(matchId);
+            // mark any new ids as seen so future incoming are detected
+            if (snapshot.docChanges) {
+              snapshot.docChanges().forEach((ch: any) => { if (ch.type === 'added') { if (!seenChatMsgIdsRef.current[matchId]) seenChatMsgIdsRef.current[matchId] = new Set(); seenChatMsgIdsRef.current[matchId].add(ch.doc.id); } });
+            }
           };
           const unsub1 = onSnapshot(q1, handler1, (err: any) => console.warn(`bg 1:1 q1 listener error for ${matchId}:`, err));
 
-          // Handler for q2 (incoming from this match)
+          // Handler for q2 (possible incoming from match) — detect *new added* from them after initial, then notify
           const handler2 = (snapshot: any) => {
             console.log(`📨 Live 1:1 update (bg) for ${matchId}`);
+            const changes = snapshot.docChanges ? snapshot.docChanges() : [];
+            const newlyAddedIncoming: any[] = [];
+            changes.forEach((ch: any) => {
+              if (ch.type === 'added') {
+                const d = ch.doc.data() as any;
+                // only from the other side
+                if (d.from === matchId) {
+                  newlyAddedIncoming.push({ id: ch.doc.id, text: d.text || '', photo: d.photo });
+                }
+                if (!seenChatMsgIdsRef.current[matchId]) seenChatMsgIdsRef.current[matchId] = new Set();
+                seenChatMsgIdsRef.current[matchId].add(ch.doc.id);
+              }
+            });
             loadRealChatMessages(matchId);
+            // If there were new incoming msgs and this is not the first snapshot for the chat, fire notif (only if not currently viewing this chat)
+            if (newlyAddedIncoming.length > 0 && seenChatMsgIdsRef.current[matchId] && seenChatMsgIdsRef.current[matchId].size > newlyAddedIncoming.length) {
+              // not the very first population
+              if (currentActiveChatRef.current !== matchId) {
+                const prof = (realProfiles || []).find((p: any) => p.id === matchId) || SEED_PROFILES.find((p: any) => p.id === matchId);
+                const senderName = prof?.name || 'Usuario';
+                const firstNew = newlyAddedIncoming[0];
+                triggerMessageArrivalNotification(matchId, senderName, firstNew.text, false, firstNew.photo || prof?.photos?.[0]);
+              }
+            }
           };
           const unsub2 = onSnapshot(q2, handler2, (err: any) => console.warn(`bg 1:1 q2 listener error for ${matchId}:`, err));
 
@@ -992,7 +1043,7 @@ function App() {
         }
       })();
     });
-  }, [realMatches, isDemoMode, firebaseUser?.uid, db]);
+  }, [realMatches, isDemoMode, firebaseUser?.uid, db, realProfiles]);
 
   // Global cleanup for 1:1 bg message listeners (on unmount / mode change)
   useEffect(() => {
@@ -1214,6 +1265,9 @@ function App() {
       }));
       console.log(`✅ Loaded ${loaded.length} real group messages for session ${sessionId}`);
       setLastSync(new Date());
+      if (showGroupChatModalFor === sessionId) {
+        setSessionUnreads(prev => { const c = { ...prev }; c[sessionId] = 0; return c })
+      }
     } catch (e) {
       console.warn('Could not load real group messages:', e);
     }
@@ -1321,6 +1375,18 @@ function App() {
 
           const unsub = onSnapshot(q, (snapshot) => {
             const loaded: SessionMessage[] = [];
+            const newlyAddedFromOthers: any[] = [];
+            const changes = snapshot.docChanges ? snapshot.docChanges() : [];
+            changes.forEach((ch: any) => {
+              if (ch.type === 'added') {
+                const d = ch.doc.data() as any;
+                if (d.senderId && d.senderId !== firebaseUser.uid && d.senderId !== effectiveUserId) {
+                  newlyAddedFromOthers.push({ id: ch.doc.id, text: d.text || '', senderName: d.senderName || 'Participante', photo: d.photo });
+                }
+                if (!seenGroupMsgIdsRef.current[sessionId]) seenGroupMsgIdsRef.current[sessionId] = new Set();
+                seenGroupMsgIdsRef.current[sessionId].add(ch.doc.id);
+              }
+            });
             snapshot.forEach((doc) => {
               const d = doc.data() as any;
               loaded.push({
@@ -1338,7 +1404,19 @@ function App() {
               [sessionId]: loaded,
             }));
             setLastSync(new Date());
+            if (showGroupChatModalFor === sessionId) {
+              setSessionUnreads(prev => { const c = { ...prev }; c[sessionId] = 0; return c })
+            }
             console.log(`📨 BG live group msg for ${sessionId}: ${loaded.length} msgs`);
+            // Notify only for newly added from others, and only if not first population + modal not open for this session
+            if (newlyAddedFromOthers.length > 0 && seenGroupMsgIdsRef.current[sessionId] && seenGroupMsgIdsRef.current[sessionId].size > newlyAddedFromOthers.length) {
+              if (showGroupChatModalFor !== sessionId) {
+                const first = newlyAddedFromOthers[0];
+                const sess = (realSessions || []).find((s: any) => s.id === sessionId) || displaySessions.find((s: any) => s.id === sessionId);
+                const sname = first.senderName || (sess ? (sess.creatorName || 'Alguien') : 'Participante');
+                triggerMessageArrivalNotification(sessionId, sname, first.text, true, first.photo);
+              }
+            }
           }, (err) => {
             console.warn(`BG group chat listener error for session ${sessionId} (rules/participants):`, err);
           });
@@ -1349,7 +1427,7 @@ function App() {
         }
       })();
     });
-  }, [myGroupSessionIdsKey, isDemoMode, firebaseUser?.uid, db]);
+  }, [myGroupSessionIdsKey, isDemoMode, firebaseUser?.uid, db, showGroupChatModalFor]);
 
   // Global cleanup of bg group message listeners on unmount / mode change
   useEffect(() => {
@@ -1566,6 +1644,84 @@ function App() {
     }
     const updated = [newNotif, ...notifications].slice(0, 50) // keep last 50
     saveNotifications(updated)
+  }
+
+  // Request browser Notification permission for web (real users). Safe no-op on native or denied.
+  const requestWebNotificationPermission = async () => {
+    if (typeof window === 'undefined' || !('Notification' in window)) return
+    // Skip if running in Capacitor native (use plugin instead)
+    const isNative = typeof (window as any).Capacitor !== 'undefined'
+    if (isNative) return
+    if (Notification.permission === 'default') {
+      try {
+        const perm = await Notification.requestPermission()
+        if (perm === 'granted') {
+          toast.success('Notificaciones web activadas', { description: 'Te avisaremos de mensajes nuevos aunque la pestaña esté oculta' })
+        }
+      } catch (e) {
+        console.warn('Web Notification permission request failed', e)
+      }
+    }
+  }
+
+  // Central helper: show in-app toast + central notif + browser notif (if hidden) + bump unread for a message arrival.
+  // Safe to call from bg listeners. name = display name of sender, chatId for 1:1 or sessionId for group.
+  const triggerMessageArrivalNotification = (chatId: string, name: string, text: string, isGroup: boolean, photoUrl?: string) => {
+    const short = (text || (photoUrl ? '[foto]' : 'Nuevo mensaje')).substring(0, 80)
+    const title = isGroup ? `${name} en sesión` : `Mensaje de ${name}`
+    // In-app toast with action to open the right chat
+    toast.info(title, {
+      description: short,
+      action: {
+        label: 'Ver',
+        onClick: () => {
+          if (isGroup) {
+            setActiveTab('sesiones')
+            setShowGroupChatModalFor(chatId)
+            setSessionUnreads(prev => { const c = { ...prev }; c[chatId] = 0; return c })
+          } else {
+            setActiveTab('messages')
+            setActiveChat(chatId)
+            setChatUnreads(prev => { const c = { ...prev }; c[chatId] = 0; return c })
+          }
+        }
+      }
+    })
+    // Feed the existing notifications panel
+    addNotification({
+      type: 'message',
+      title,
+      body: short,
+      relatedId: chatId
+    })
+    // Browser Notification if page hidden and permission granted (web only)
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.visibilityState !== 'visible') {
+      try {
+        const n = new Notification(title + ' — EntrenaMatch', {
+          body: short,
+          icon: photoUrl || '/entrenamatch/favicon.svg',
+          tag: 'entrenamatch-msg-' + chatId // collapse duplicates
+        })
+        n.onclick = () => {
+          window.focus()
+          if (isGroup) {
+            setActiveTab('sesiones')
+            setShowGroupChatModalFor(chatId)
+          } else {
+            setActiveTab('messages')
+            setActiveChat(chatId)
+          }
+        }
+      } catch (e) {
+        console.warn('Browser Notification failed', e)
+      }
+    }
+    // Bump local unread counters (for tab + row badges)
+    if (isGroup) {
+      setSessionUnreads(prev => ({ ...prev, [chatId]: (prev[chatId] || 0) + 1 }))
+    } else {
+      setChatUnreads(prev => ({ ...prev, [chatId]: (prev[chatId] || 0) + 1 }))
+    }
   }
 
   const submitTrainingReview = (profileId: string) => {
@@ -2046,6 +2202,8 @@ function App() {
 
           // Force reload to sync the authoritative server list (prevents optimistic message from disappearing before snapshot arrives)
           loadRealGroupMessages(sessionId)
+          // sending counts as reading
+          setSessionUnreads(prev => { const c = { ...prev }; c[sessionId] = 0; return c })
         } catch (e) {
           console.warn('Failed to send real session message:', e)
           // Show user-friendly error
@@ -2347,6 +2505,8 @@ function App() {
   const openChat = (profileId: string) => {
     setActiveChat(profileId)
     setActiveTab('messages')
+    // mark as read when opening the conversation
+    setChatUnreads(prev => { const c = { ...prev }; c[profileId] = 0; return c })
   }
 
   const sendMessage = (text: string) => {
@@ -2502,6 +2662,19 @@ function App() {
 
         {(currentUser || firebaseUser) ? (
           <div className="flex items-center gap-2">
+            {/* Bell for notifications (wires to existing panel; now populated by real incoming 1:1 + group msgs) */}
+            <button
+              onClick={() => setShowNotifications(true)}
+              className="relative p-1.5 rounded-xl bg-black/70 active:bg-black text-white"
+              aria-label="Notificaciones"
+            >
+              <Bell size={16} />
+              {(unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] px-0.5 text-[9px] font-bold rounded-full bg-[#ef4444] text-white flex items-center justify-center">
+                  {Math.min(9, unreadNotifications + totalChatUnreads + totalSessionUnreads)}
+                </span>
+              )}
+            </button>
             <button 
               onClick={handleLogout}
               className="bg-black/90 hover:bg-black text-white px-4 py-1.5 rounded-2xl text-xs font-semibold active:bg-white active:text-black border border-black/50 transition-all"
@@ -3010,6 +3183,7 @@ function App() {
                           await loadRealChatMessages(id);
                         }
                         setLastSync(new Date());
+                        setChatUnreads({}); // all "read" after manual full sync
                         toast.success('Chats reales actualizados');
                       } finally {
                         setIsLoadingChats(false);
@@ -3018,12 +3192,12 @@ function App() {
                   )}
                   {lastSync && <span className="text-[10px] text-[#64748b] ml-2">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
                 </div>
-                <div className="text-[#94a3b8] text-xs px-1 mb-4">Mensajes 1:1 reales • en vivo cross-device</div>
+                <div className="text-[#94a3b8] text-xs px-1 mb-4">Mensajes 1:1 reales • en vivo cross-device • notificaciones toast + navegador cuando llega mensaje</div>
                 {matchProfiles.length === 0 && (
                   <div className="mt-8 card p-6 rounded-3xl text-center">
                     <MessageCircle className="mx-auto text-[#14b8a6] mb-3" size={36} />
                     <div className="font-semibold mb-1">Sin conversaciones aún</div>
-                    <p className="text-sm text-[#94a3b8]">Los matches reales aparecen aquí. Chats en vivo cross-device.</p>
+                    <p className="text-sm text-[#94a3b8]">Los matches reales aparecen aquí. Chats en vivo cross-device. Recibirás notificación (toast + campana) cuando llegue un mensaje.</p>
                   </div>
                 )}
                 {matchProfiles
@@ -3031,8 +3205,9 @@ function App() {
                   .map(profile => {
                   const chatMsgs = messages[profile.id] || []
                   const last = chatMsgs[chatMsgs.length - 1]
+                  const unread = chatUnreads[profile.id] || 0
                   return (
-                    <div key={profile.id} onClick={() => setActiveChat(profile.id)} 
+                    <div key={profile.id} onClick={() => { setActiveChat(profile.id); setChatUnreads(prev => { const c = { ...prev }; c[profile.id] = 0; return c }) }} 
                       className="flex items-center gap-4 card p-4 rounded-3xl mb-3 active:bg-[#1a1d23]">
                       <img src={profile.photos[0]} className="w-14 h-14 rounded-2xl object-cover flex-shrink-0" />
                       <div className="min-w-0 flex-1">
@@ -3045,8 +3220,15 @@ function App() {
                             {getDistanceKm(userLocation.lat, userLocation.lng, profile.lat, profile.lng)} km de ti
                           </div>
                         )}
-                        <div className="text-sm text-[#94a3b8] truncate mt-0.5">
-                          {last ? last.text : 'Match nuevo — di hola'}
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <div className="text-sm text-[#94a3b8] truncate flex-1">
+                            {last ? last.text : 'Match nuevo — di hola'}
+                          </div>
+                          {unread > 0 && (
+                            <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 text-[10px] font-bold rounded-full bg-[#ef4444] text-white">
+                              {unread > 9 ? '9+' : unread}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -3072,7 +3254,7 @@ function App() {
                   <button onClick={() => setShowFullProfile(chatProfile!)} className="ml-auto text-xs px-3 py-1 bg-[#121418] rounded-full">Ver perfil</button>
                   <a href="/entrenamatch/privacy.html" target="_blank" className="text-[10px] text-[#64748b] underline ml-1">Privacidad</a>
                   {!isDemoMode && (
-                    <button onClick={async () => { if (activeChat) { setIsLoadingChats(true); try { await loadRealChatMessages(activeChat); setLastSync(new Date()); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } } }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23] disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar'}</button>
+                    <button onClick={async () => { if (activeChat) { setIsLoadingChats(true); try { await loadRealChatMessages(activeChat); setLastSync(new Date()); setChatUnreads(prev => { const c = { ...prev }; if (activeChat) c[activeChat] = 0; return c }); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } } }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23] disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar'}</button>
                   )}
                   <button onClick={async () => {
                     const issue = prompt('¿Qué problema o sugerencia en este chat?');
@@ -3597,6 +3779,18 @@ function App() {
               </div>
             </div>
 
+            {/* Web notification quick control (only real web users; native uses Capacitor plugin) */}
+            {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor === 'undefined' && (
+              <div className="px-4 pb-2">
+                <button
+                  onClick={() => { requestWebNotificationPermission(); toast('Solicitando permiso de notificaciones del navegador...') }}
+                  className="w-full text-xs py-2 rounded-2xl border border-[#272b33] text-[#14b8a6] active:bg-[#121418]"
+                >
+                  🔔 Activar/renovar notificaciones del navegador (para mensajes en segundo plano)
+                </button>
+              </div>
+            )}
+
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
               <div className="text-[10px] text-[#475569] mb-1">v0.1.0-prealpha • Phase 0 real</div>
@@ -3674,11 +3868,11 @@ function App() {
         {[
           { id: 'explore' as Tab, label: 'Explorar', icon: Dumbbell },
           { id: 'squads' as Tab, label: 'Squads', icon: Users },
-          { id: 'sesiones' as Tab, label: 'Sesiones', icon: Star },
+          { id: 'sesiones' as Tab, label: 'Sesiones', icon: Star, badge: totalSessionUnreads },
           { id: 'matches' as Tab, label: 'Matches', icon: Heart },
-          { id: 'messages' as Tab, label: 'Mensajes', icon: MessageCircle },
+          { id: 'messages' as Tab, label: 'Mensajes', icon: MessageCircle, badge: totalChatUnreads },
           { id: 'profile' as Tab, label: 'Perfil', icon: User },
-        ].map(({ id, label, icon: Icon }) => (
+        ].map(({ id, label, icon: Icon, badge }) => (
           <button key={id} onClick={() => { 
             setActiveTab(id); 
             if (id !== 'messages') setActiveChat(null);
@@ -3686,10 +3880,18 @@ function App() {
             if (id === 'sesiones' && !isDemoMode) {
               loadRealSessions();
             }
+            // clear unreads when landing on the tab (user saw the list)
+            if (id === 'messages') setChatUnreads({});
+            if (id === 'sesiones') setSessionUnreads({});
           }}
-            className={`nav-item ${activeTab === id ? 'active' : ''}`}>
+            className={`nav-item ${activeTab === id ? 'active' : ''} relative`}>
             <Icon size={18} />
             {label}
+            {badge && badge > 0 && (
+              <span className="absolute top-1 right-2 min-w-[14px] h-[14px] px-1 text-[9px] font-bold rounded-full bg-[#ef4444] text-white flex items-center justify-center">
+                {badge > 9 ? '9+' : badge}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -4854,7 +5056,7 @@ function App() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   {!isDemoMode && firebaseUser?.uid && (
-                    <button onClick={async () => { setIsLoadingChats(true); try { await loadRealGroupMessages(showGroupChatModalFor); setLastSync(new Date()); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } }} disabled={isLoadingChats} className="text-[10px] px-2.5 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23] disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar'}</button>
+                    <button onClick={async () => { setIsLoadingChats(true); try { await loadRealGroupMessages(showGroupChatModalFor); setLastSync(new Date()); setSessionUnreads(prev => { const c = { ...prev }; if (showGroupChatModalFor) c[showGroupChatModalFor] = 0; return c }); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } }} disabled={isLoadingChats} className="text-[10px] px-2.5 py-1 border border-[#272b33] rounded-xl text-[#14b8a6] active:bg-[#1a1d23] disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar'}</button>
                   )}
                   {(() => {
                     const cs = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
@@ -5082,7 +5284,7 @@ function App() {
               className="flex-1 bg-[#0a0b0f] max-w-[420px] mx-auto w-full mt-[42px] rounded-t-3xl border border-[#272b33] overflow-hidden flex flex-col"
             >
               <div className="p-4 border-b border-[#272b33] flex justify-between items-center bg-[#121418]">
-                <div className="font-semibold">Notificaciones</div>
+                <div className="font-semibold">Notificaciones { (unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 ? `(${unreadNotifications + totalChatUnreads + totalSessionUnreads} nuevas)` : '' }</div>
                 {notifications.length > 0 && (
                   <button 
                     onClick={() => {
@@ -5117,6 +5319,21 @@ function App() {
                           setShowNotifications(false)
                           setActiveTab('messages')
                           setActiveChat(notif.relatedId)
+                          setChatUnreads(prev => { const c = { ...prev }; if (notif.relatedId) c[notif.relatedId] = 0; return c })
+                        }
+                        if (notif.type === 'message' && notif.relatedId) {
+                          setShowNotifications(false)
+                          // let trigger's action or here decide group vs 1:1 — simple heuristic: if looks like session id
+                          const isLikelyGroup = (notif.relatedId || '').startsWith('s')
+                          if (isLikelyGroup) {
+                            setActiveTab('sesiones')
+                            setShowGroupChatModalFor(notif.relatedId)
+                            setSessionUnreads(prev => { const c = { ...prev }; if (notif.relatedId) c[notif.relatedId] = 0; return c })
+                          } else {
+                            setActiveTab('messages')
+                            setActiveChat(notif.relatedId)
+                            setChatUnreads(prev => { const c = { ...prev }; if (notif.relatedId) c[notif.relatedId] = 0; return c })
+                          }
                         }
                         if (notif.type === 'session_join' && notif.relatedId) {
                           setShowNotifications(false)

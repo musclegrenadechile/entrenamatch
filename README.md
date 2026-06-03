@@ -40,7 +40,7 @@ Puedes probar la aplicación directamente aquí (versión pública de prueba):
 - Crea cuenta real con email.
 - Completa onboarding (incluye cámara nativa si usas la APK).
 - Perfiles reales visibles en Explorar para otros testers (+ 30 perfiles fake realistas de Reñaca/Viña del Mar/Concón con fotos, género balanceado para pruebas de interacción inmediata).
-- Matches, chat 1:1 y sesiones + chat grupal **en tiempo real** (bg onSnapshot + active listeners + polling; "si alguien envía un mensaje uno lo reciba" en lista y vista abierta + auto-scroll al fondo).
+- Matches, chat 1:1 y sesiones + chat grupal **en tiempo real** (bg onSnapshot + active listeners + polling; "si alguien envía un mensaje uno lo reciba" en lista y vista abierta + auto-scroll al fondo). **Nuevo:** notificaciones toast + badge en tab/campana + notif del navegador (web) cuando llega mensaje mientras estás en otra pestaña o la app oculta.
 - Sesiones con rol admin para el creador (cerrar + expulsar participantes con badge ADMIN; los demás solo pueden salir).
 - Escape hatches siempre visibles (barra superior teal PRE-ALPHA v0.1.0-prealpha + "Cambiar cuenta" en Perfil). UI limpia en Explorar (sin botones flotantes rojos/guía ni instrucciones que molesten al elegir perfiles/swipe).
 - Feedback estructurado de beta en tu Perfil (categoría + estrellas + historial visible).
