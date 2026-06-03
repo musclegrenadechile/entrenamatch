@@ -454,6 +454,10 @@ function App() {
   const [showCreateSquad, setShowCreateSquad] = useState(false)
   const [selectedSquad, setSelectedSquad] = useState<string | null>(null) // for detail view
 
+  // Editing own post in muro (spectacular: inline edit without ugly prompts)
+  const [editingPost, setEditingPost] = useState<{postId: string; postUserId: string; text: string} | null>(null)
+  const [editDraft, setEditDraft] = useState('')
+
   // Ref for focusing composer from empty state CTA
   const muroComposerRef = useRef<HTMLTextAreaElement>(null)
 
@@ -2065,10 +2069,34 @@ function App() {
       } catch (e) { console.warn(e) }
     }
     const current = profilePosts[postUserId] || []
+    const postToDelete = current.find(p => p.id === postId)
     const newList = current.filter(p => p.id !== postId)
     const updated = { ...profilePosts, [postUserId]: newList }
     saveProfilePosts(updated)  // delete uses save (LS + state)
-    toast.success('Publicación eliminada')
+
+    // Spectacular UX: undo toast for delete
+    toast.success('Publicación eliminada', {
+      description: 'Toca Deshacer para recuperar',
+      action: {
+        label: 'Deshacer',
+        onClick: () => {
+          if (postToDelete) {
+            const restored = { ...profilePosts, [postUserId]: [postToDelete, ...newList].slice(0,10) }
+            saveProfilePosts(restored)
+            // re-add to FS if real
+            if (!isDemoMode && db) {
+              (async () => {
+                try {
+                  const { doc, setDoc } = await import('firebase/firestore')
+                  await setDoc(doc(db, 'profilePosts', postId), postToDelete)
+                } catch(e){}
+              })()
+            }
+            toast.success('Publicación recuperada')
+          }
+        }
+      }
+    })
   }
 
   // Delete extra profile photo from strip (spectacular profile polish - user can curate their gallery)
@@ -2122,6 +2150,41 @@ function App() {
   const closeFullComments = () => {
     setViewingPostComments(null)
     setModalCommentDraft('')
+  }
+
+  // Edit own muro post (inline for spectacular UX, no prompt)
+  const startEditPost = (postId: string, postUserId: string, currentText: string) => {
+    if (postUserId !== effectiveUserId) return
+    setEditingPost({ postId, postUserId, text: currentText })
+    setEditDraft(currentText)
+  }
+  const saveEditPost = async () => {
+    if (!editingPost || !editDraft.trim()) return
+    const { postId, postUserId } = editingPost
+    const newText = editDraft.trim()
+
+    // Update local state
+    setProfilePosts((prev) => {
+      const posts = prev[postUserId] || []
+      const updatedPosts = posts.map(p => p.id === postId ? { ...p, text: newText } : p)
+      const newState = { ...prev, [postUserId]: updatedPosts }
+      try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+      return newState
+    })
+
+    if (!isDemoMode && db) {
+      try {
+        const { doc, updateDoc } = await import('firebase/firestore')
+        await updateDoc(doc(db, 'profilePosts', postId), { text: newText })
+      } catch (e) { console.warn('edit post fs', e) }
+    }
+    setEditingPost(null)
+    setEditDraft('')
+    toast.success('Publicación editada')
+  }
+  const cancelEditPost = () => {
+    setEditingPost(null)
+    setEditDraft('')
   }
 
   const saveBlockedUsers = (newBlocked: string[]) => {
@@ -3390,8 +3453,10 @@ function App() {
             }}
             onShowProfile={setShowFullProfile}
             onReport={(id) => {
-              const reason = prompt('¿Por qué reportas este perfil? (acoso, perfil falso, comportamiento inadecuado, etc.)');
-              if (reason) reportUser(id, reason, undefined, 'explore_rec', id);
+              // Polished: quick confirm instead of prompt for pre-alpha safety
+              if (confirm('¿Reportar este perfil por comportamiento inadecuado o spam?')) {
+                reportUser(id, 'Comportamiento inadecuado', undefined, 'explore_rec', id);
+              }
             }}
             realProfiles={realProfiles}
             onRefreshRealProfiles={async () => { await loadRealProfiles(); setLastSync(new Date()); }}
@@ -4430,16 +4495,40 @@ function App() {
                             {getRelativeTime(post.timestamp)}
                           </div>
                           {isOwn && (
-                            <button 
-                              onClick={() => deleteProfilePost(post.id, effectiveUserId)}
-                              className="text-red-400 text-xs px-1 active:text-red-500"
-                              title="Eliminar post"
-                            >
-                              🗑
-                            </button>
+                            <div className="flex gap-1">
+                              <button 
+                                onClick={() => startEditPost(post.id, effectiveUserId, post.text)}
+                                className="text-[#9CA3AF] text-xs px-1 active:text-[#FF671F]"
+                                title="Editar post"
+                              >
+                                ✏️
+                              </button>
+                              <button 
+                                onClick={() => deleteProfilePost(post.id, effectiveUserId)}
+                                className="text-red-400 text-xs px-1 active:text-red-500"
+                                title="Eliminar post"
+                              >
+                                🗑
+                              </button>
+                            </div>
                           )}
                         </div>
-                        <div className="text-sm leading-relaxed mb-2">{post.text}</div>
+                        {editingPost?.postId === post.id ? (
+                          <div className="mb-2">
+                            <textarea 
+                              value={editDraft}
+                              onChange={e => setEditDraft(e.target.value)}
+                              className="form-input w-full h-16 text-sm resize-y mb-1"
+                              maxLength={280}
+                            />
+                            <div className="flex gap-2 justify-end">
+                              <button onClick={cancelEditPost} className="text-xs px-3 py-1 text-[#9CA3AF] active:text-white">Cancelar</button>
+                              <button onClick={saveEditPost} disabled={!editDraft.trim()} className="text-xs px-3 py-1 btn-primary disabled:opacity-50">Guardar</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-sm leading-relaxed mb-2">{post.text}</div>
+                        )}
                         {post.photo && (
                           <img src={post.photo} className="w-full rounded-2xl max-h-56 object-cover mb-3 border border-[#2F2F35]" />
                         )}
@@ -4488,7 +4577,7 @@ function App() {
                               onChange={e => setCommentDraft(e.target.value)}
                               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment() } }}
                               placeholder="Escribe un comentario..."
-                              className="flex-1 bg-[#1A1A1E] border border-[#2F2F35] rounded-2xl px-3 py-1.5 text-sm focus:outline-none focus:border-[#FF671F]"
+                              className="flex-1 form-input text-sm py-1.5"
                               maxLength={200}
                             />
                             <button 
@@ -4833,9 +4922,18 @@ function App() {
               >
                 {/* Modal header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-[#2F2F35] bg-[#161618]">
-                  <div>
-                    <div className="text-sm font-semibold">Comentarios en el muro</div>
-                    <div className="text-[10px] text-[#9CA3AF] truncate max-w-[260px]">{viewingPostComments.ownerName ? `de ${viewingPostComments.ownerName}` : ''}</div>
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <div className="text-sm font-semibold">Comentarios en el muro</div>
+                      <div className="text-[10px] text-[#9CA3AF] truncate max-w-[260px]">{viewingPostComments.ownerName ? `de ${viewingPostComments.ownerName}` : ''}</div>
+                    </div>
+                    {/* Like the post from comments modal - spectacular interaction */}
+                    <button 
+                      onClick={() => likeProfilePost(viewingPostComments.postId, viewingPostComments.postUserId)}
+                      className="text-sm flex items-center gap-1 text-[#9CA3AF] active:text-[#FF671F] px-2 py-0.5 rounded hover:bg-[#FF671F]/10"
+                    >
+                      ❤️ <span className="text-xs">{(livePost.likes || []).length}</span>
+                    </button>
                   </div>
                   <button onClick={closeFullComments} className="text-xl px-2 text-[#9CA3AF] active:text-white">×</button>
                 </div>
@@ -4871,7 +4969,7 @@ function App() {
                     onChange={e => setModalCommentDraft(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitModalComment() } }}
                     placeholder={viewingPostComments.ownerName ? `Comentar en el muro de ${viewingPostComments.ownerName}...` : 'Escribe un comentario...'}
-                    className="flex-1 bg-[#161618] border border-[#2F2F35] rounded-2xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF671F]"
+                    className="flex-1 form-input text-sm py-2"
                     maxLength={200}
                   />
                   <button 
@@ -5761,9 +5859,8 @@ function App() {
             <div className="p-4 border-t border-[#2F2F35] flex gap-3 text-sm">
               <button 
                 onClick={() => {
-                  const reason = prompt('¿Por qué quieres reportar a esta persona? (acoso, perfil falso, comportamiento inadecuado, etc.)')
-                  if (reason) {
-                    reportUser(showFullProfile.id, reason, undefined, 'profile')
+                  if (confirm('¿Reportar a esta persona por comportamiento inadecuado o spam?')) {
+                    reportUser(showFullProfile.id, 'Comportamiento inadecuado', undefined, 'profile')
                     setShowFullProfile(null)
                   }
                 }}
