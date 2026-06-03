@@ -5236,7 +5236,7 @@ function App() {
          Welcome guide modal can still be triggered if needed via other means or first-load. */}
 
       {/* Bottom Navigation - Premium, energetic feel (polished aesthetics) */}
-      <div className="bottom-nav h-[62px] grid grid-cols-7 z-50 text-[10px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_20px_-6px_rgb(0,0,0,0.4)]">
+      <div className="bottom-nav h-[62px] grid grid-cols-7 z-50 text-[9px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_20px_-6px_rgb(0,0,0,0.4)]">
         {[
           { id: 'explore' as Tab, label: 'Explorar', icon: Dumbbell },
           { id: 'feed' as Tab, label: 'Feed', icon: Activity },
