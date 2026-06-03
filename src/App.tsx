@@ -841,7 +841,6 @@ function App() {
     if (!realMatches.includes(activeChat) && realProfiles.some(r => r.id === activeChat)) {
       const newReal = [...realMatches, activeChat]
       setRealMatches(newReal)
-      console.log(`[real chat] bootstrapped real match for ${activeChat}`)
       loadRealMatches() // re-query to confirm and trigger any bg effects cleanly
       if (db && firebaseUser?.uid) {
         (async () => {
