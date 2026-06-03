@@ -2958,12 +2958,12 @@ function App() {
                   )}
                   {lastSync && <span className="text-[10px] text-[#64748b] ml-2">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
                 </div>
-                <div className="text-[#94a3b8] text-xs px-1 mb-4">Chats 1:1 reales se sincronizan en vivo entre dispositivos (onSnapshot + polls)</div>
+                <div className="text-[#94a3b8] text-xs px-1 mb-4">Mensajes 1:1 reales • en vivo cross-device</div>
                 {matchProfiles.length === 0 && (
                   <div className="mt-8 card p-6 rounded-3xl text-center">
                     <MessageCircle className="mx-auto text-[#14b8a6] mb-3" size={36} />
                     <div className="font-semibold mb-1">Sin conversaciones aún</div>
-                    <p className="text-sm text-[#94a3b8]">Haz match en Explorar con testers reales. Chats 1:1 reales y en vivo cross-device. Usa "Actualizar chats reales" si no ves updates.</p>
+                    <p className="text-sm text-[#94a3b8]">Haz match en Explorar con otros testers reales. Los mensajes se envían y reciben en tiempo real entre dispositivos.</p>
                   </div>
                 )}
                 {matchProfiles
