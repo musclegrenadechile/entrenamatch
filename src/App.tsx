@@ -345,6 +345,7 @@ function App() {
   const [feedShowPinnedOnly, setFeedShowPinnedOnly] = useState(false)
   const [feedSearch, setFeedSearch] = useState('')
   const [feedOnlyReal, setFeedOnlyReal] = useState(false)
+  const [feedOnlyLive, setFeedOnlyLive] = useState(false)
   const [feedMaxProfiles, setFeedMaxProfiles] = useState(15)
   const [feedDisplayLimit, setFeedDisplayLimit] = useState(10)
 
@@ -3554,43 +3555,42 @@ function App() {
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
         {/* ===== EXPLORE / SWIPE (fully owned by ExploreTab) ===== */}
-        {activeTab === 'explore' && liveTrainingNow.length > 0 && (
+        {/* LIVE TRAINING BANNER - always visible, the star feature for urgency and retention. Green pulsing, se va en, mini photos, quick join. Makes app addictive. */}
+        {activeTab === 'explore' && (
           <div className="px-4 py-2 bg-[#0D0D10] border-b border-[#22c55e]/30">
             <div className="flex items-center gap-2 mb-1">
               <div className="live-pill bg-[#22c55e] text-black">🟢 EN VIVO AHORA</div>
-              <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· urgencia!' : ''}</div>
+              <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡urgencia!' : ''}</div>
             </div>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {liveTrainingNow.slice(0, 4).map(user => (
-                <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className="min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border border-[#22c55e]/60 active:scale-95 relative overflow-hidden" whileHover={{ scale: 1.03 }} initial={{ opacity: 0.9, y: 5 }} animate={{ opacity: 1, y: 0 }}>
-                  <div className="flex justify-between items-start mb-1">
-                    <div className="flex items-center gap-1">
-                      {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-4 h-4 rounded-full object-cover border border-[#22c55e]/30" />}
-                      <div className="font-semibold truncate text-white">{user.name}</div>
+            {liveTrainingNow.length > 0 ? (
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {liveTrainingNow.slice(0, 4).map(user => (
+                  <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className="min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border border-[#22c55e]/60 active:scale-95 relative overflow-hidden" whileHover={{ scale: 1.03 }} initial={{ opacity: 0.9, y: 5 }} animate={{ opacity: 1, y: 0 }}>
+                    <div className="flex justify-between items-start mb-1">
+                      <div className="flex items-center gap-1">
+                        {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-4 h-4 rounded-full object-cover border border-[#22c55e]/30" />}
+                        <div className="font-semibold truncate text-white">{user.name}</div>
+                      </div>
+                      <div className="w-2.5 h-2.5 bg-[#22c55e] rounded-full animate-pulse flex-shrink-0 ring-1 ring-[#22c55e]/50"></div>
                     </div>
-                    <div className="w-2.5 h-2.5 bg-[#22c55e] rounded-full animate-pulse flex-shrink-0 ring-1 ring-[#22c55e]/50"></div>
-                  </div>
-                  <div className="text-[#9CA3AF] text-[9px] mb-0.5">{user.distance.toFixed(1)}km · {user.trainingTypes?.[0] || 'Entreno'}</div>
-                  <div className="flex items-center gap-1 text-[#22c55e] text-[9px] mb-1">
-                    <span>En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m</span>
-                    {user.seVaEnMin > 0 && <span className="text-orange-400">· se va en {user.seVaEnMin}m</span>}
-                  </div>
-                  <button 
-                    onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); toast.success('¡Unido! Revisa Matches o Chat'); }} 
-                    className="w-full text-[9px] bg-[#22c55e] text-black py-1 rounded font-semibold active:bg-[#16a34a] transition"
-                  >
-                    Unirme ya 🔥
-                  </button>
-                </motion.div>
-              ))}
-            </div>
-            <div className="text-[9px] text-[#9CA3AF] mt-0.5">¡Urgencia real! Toca para ver o únete antes de que se vayan.</div>
-          </div>
-        )}
-
-        {activeTab === 'explore' && liveTrainingNow.length === 0 && (
-          <div className="px-4 py-1 text-[10px] text-[#9CA3AF] bg-[#0D0D10] border-b border-[#2F2F35]">
-            Sé el primero en "Entrenando Ahora" cerca de ti — marca en tu Perfil. ¡Genera urgencia!
+                    <div className="text-[#9CA3AF] text-[9px] mb-0.5">{user.distance.toFixed(1)}km · {user.trainingTypes?.[0] || 'Entreno'}</div>
+                    <div className="flex items-center gap-1 text-[#22c55e] text-[9px] mb-1">
+                      <span>En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m</span>
+                      {user.seVaEnMin > 0 && <span className="text-orange-400">· se va en {user.seVaEnMin}m</span>}
+                    </div>
+                    <button 
+                      onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); toast.success('¡Unido! Revisa Matches o Chat'); }} 
+                      className="w-full text-[9px] bg-[#22c55e] text-black py-1 rounded font-semibold active:bg-[#16a34a] transition"
+                    >
+                      Unirme ya 🔥
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-[10px] text-[#9CA3AF]">Sé el primero en "Entrenando Ahora" cerca de ti — marca en tu Perfil. ¡Genera urgencia y abre la app más!</div>
+            )}
+            <div className="text-[9px] text-[#9CA3AF] mt-0.5">¡Urgencia real! Toca para ver o únete antes de que se vayan. Nadie lo tiene tan bien.</div>
           </div>
         )}
 
@@ -3652,6 +3652,12 @@ function App() {
                     {feedOnlyReal ? '★ Solo reales' : 'REAL'}
                   </button>
                   <button 
+                    onClick={() => setFeedOnlyLive(!feedOnlyLive)}
+                    className={`text-[10px] px-2 py-0.5 rounded-full border ${feedOnlyLive ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'border-[#22c55e]/30 text-[#22c55e]'} active:bg-[#22c55e]/10`}
+                  >
+                    {feedOnlyLive ? '🟢 Solo live' : '🟢 Live'}
+                  </button>
+                  <button 
                     onClick={() => setFeedShowPinnedOnly(!feedShowPinnedOnly)}
                     className={`text-[10px] px-2 py-0.5 rounded-full border ${feedShowPinnedOnly ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#FF671F]/30 text-[#FF671F]'} active:bg-[#FF671F]/10`}
                   >
@@ -3685,6 +3691,7 @@ function App() {
                 });
               if (feedShowPinnedOnly) feedPosts = feedPosts.filter((p: any) => p.pinned);
               if (feedOnlyReal) feedPosts = feedPosts.filter((p: any) => realProfiles.some(rp => rp.id === p.ownerId));
+              if (feedOnlyLive) feedPosts = feedPosts.filter((p: any) => realProfiles.some(rp => rp.id === p.ownerId && rp.trainingNow));
               if (feedSearch.trim()) {
                 const q = feedSearch.toLowerCase().trim();
                 feedPosts = feedPosts.filter((p: any) => {
@@ -3711,12 +3718,12 @@ function App() {
               return (
                 <>
                   <div className="flex items-center justify-between text-xs text-[#9CA3AF] mb-3 px-1">
-                    <span>{feedPosts.length} posts {feedSearch || feedOnlyReal || feedShowPinnedOnly ? 'filtrados' : 'recientes'} de la comunidad</span>
-                    {(feedSearch || feedOnlyReal || feedShowPinnedOnly) && <button onClick={() => { setFeedSearch(''); setFeedOnlyReal(false); setFeedShowPinnedOnly(false); }} className="text-[#FF671F] underline">limpiar filtros</button>}
+                    <span>{feedPosts.length} posts {feedSearch || feedOnlyReal || feedShowPinnedOnly || feedOnlyLive ? 'filtrados' : 'recientes'} de la comunidad</span>
+                    {(feedSearch || feedOnlyReal || feedShowPinnedOnly || feedOnlyLive) && <button onClick={() => { setFeedSearch(''); setFeedOnlyReal(false); setFeedShowPinnedOnly(false); setFeedOnlyLive(false); }} className="text-[#FF671F] underline">limpiar filtros</button>}
                   </div>
                   {(() => {
                     const pinnedInFeed = allCommunityPosts.filter((p: any) => p.pinned);
-                    if (pinnedInFeed.length > 0 && !feedShowPinnedOnly && !feedSearch && !feedOnlyReal) {
+                    if (pinnedInFeed.length > 0 && !feedShowPinnedOnly && !feedSearch && !feedOnlyReal && !feedOnlyLive) {
                       return <div className="text-[9px] text-[#FF671F] mb-2 px-1">📌 {pinnedInFeed.length} posts fijados destacados arriba</div>;
                     }
                     return null;
