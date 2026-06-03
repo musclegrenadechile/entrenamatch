@@ -4,13 +4,13 @@ import { Dumbbell, MapPin, Camera, Trash2, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { TRAINING_OPTIONS, TRAINING_GOALS, TRAINING_INTENSITIES } from '../../constants';
 
-// Capacitor Camera loaded via dynamic import (conditional on build type, same as in App.tsx)
-let CapacitorCamera: any = null;
+// Capacitor Camera - static import (see App.tsx for explanation)
+import { Camera as CameraPlugin } from '@capacitor/camera'
 
-if (__CAPACITOR_BUILD__) {
-  import('@capacitor/camera').then(mod => { CapacitorCamera = mod.Camera }).catch(() => {})
-} else {
-  import(/* @vite-ignore */ '@capacitor/camera').then(mod => { CapacitorCamera = mod.Camera }).catch(() => {})
+let CapacitorCamera: any = null
+
+if (typeof window !== 'undefined' && (window as any).Capacitor) {
+  CapacitorCamera = CameraPlugin
 }
 
 interface OnboardingFlowProps {

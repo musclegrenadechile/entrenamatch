@@ -26,21 +26,20 @@ import {
   TRAINING_OPTIONS, AVAILABILITY, LEGAL_VERSIONS, AUTO_MATCH_IDS 
 } from './constants'
 
-// Capacitor native plugins loaded via dynamic import.
-// We use a build-time constant (__CAPACITOR_BUILD__) so:
-// - CAPACITOR builds (APK): normal dynamic import → Vite resolves the package and emits the code (runtime works via rewritten chunk)
-// - Web builds (Firebase Hosting / GH Pages): dynamic import with @vite-ignore → no build-time resolution error, native code not bundled
+// Capacitor native plugins - static imports so Vite/Rolldown always resolves them
+// in both web and CAPACITOR builds (packages are in dependencies and installed via npm ci).
+// Usage is guarded at runtime to only activate when running inside a real Capacitor native app.
+import { Camera as CameraPlugin } from '@capacitor/camera'
+import { PushNotifications as PushNotificationsPlugin } from '@capacitor/push-notifications'
+
 let CapacitorCamera: any = null
 let PushNotifications: any = null
 
-if (__CAPACITOR_BUILD__) {
-  // Native build: let Vite see and process the import for bundling + chunk emission
-  import('@capacitor/camera').then(mod => { CapacitorCamera = mod.Camera }).catch(() => {})
-  import('@capacitor/push-notifications').then(mod => { PushNotifications = mod.PushNotifications }).catch(() => {})
-} else {
-  // Web build: ignore at build time to avoid "failed to resolve" in pure web CI builds
-  import(/* @vite-ignore */ '@capacitor/camera').then(mod => { CapacitorCamera = mod.Camera }).catch(() => {})
-  import(/* @vite-ignore */ '@capacitor/push-notifications').then(mod => { PushNotifications = mod.PushNotifications }).catch(() => {})
+// Only assign if we are actually running in a Capacitor context (native app).
+// In pure web builds (GH Pages, Firebase Hosting, dev server) the objects exist but we don't use the native methods.
+if (typeof window !== 'undefined' && (window as any).Capacitor) {
+  CapacitorCamera = CameraPlugin
+  PushNotifications = PushNotificationsPlugin
 }
 
 import { 
