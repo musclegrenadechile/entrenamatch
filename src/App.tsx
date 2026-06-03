@@ -592,10 +592,13 @@ function App() {
         const ids = Array.from(matchedUserIds)
         setRealMatches(ids)
         console.log(`✅ Loaded ${ids.length} real matches from Firestore`)
+        return ids;
       } catch (e) {
         console.warn('Could not load real matches yet:', e)
+        return [];
       }
     }
+    return [];
   }
 
   // Load real matches from Firestore for the current user (so they appear on any device)
@@ -2834,8 +2837,8 @@ function App() {
                     <button onClick={async () => {
                       setIsLoadingChats(true);
                       try {
-                        await loadRealMatches(); // discover any new matches first
-                        for (const id of realMatches) {
+                        const currentMatches = await loadRealMatches(); // discover any new matches first
+                        for (const id of currentMatches) {
                           await loadRealChatMessages(id);
                         }
                         setLastSync(new Date());
