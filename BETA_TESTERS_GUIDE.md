@@ -38,6 +38,8 @@ Usa los 30 perfiles fake (Reñaca / Viña del Mar / Concón, hombres y mujeres) 
 9. Reporta con el botón "Reportar" del header del chat o el formulario de Perfil si algo falla.
 Nota post-push: si ves errores de permisos (como "Missing or insufficient permissions" al dar like/match o en group msgs), el owner debe hacer `firebase deploy --only firestore:rules` (las rules se actualizaron para permitir writes a likes/matches por el liker y reads apropiados para group chat). Hard refresh después.
 
+**Último fix de rules (2025-04)**: Se corrigió específicamente el update de /sessions para permitir "Unirme" (self-join: ahora chequea también request.resource.data.participants para que puedas agregarte aunque no estés todavía en la versión anterior del doc). También se relajó read en /matches y /messages a "cualquier autenticado" en pre-alpha para que los matches y conversaciones 1:1 aparezcan y funcionen confiablemente entre cuentas reales distintas (antes el otro lado a veces no veía el match o no cargaba los mensajes por reglas en queries). El CI deploya rules + el deploy.yml hace build fresco en cada push.
+
 ### Pasos exactos para hacer `firebase deploy --only firestore:rules` en Windows (PowerShell)
 
 Las reglas viven en el servidor de Firebase (no viajan con el bundle de la web ni la APK). El GitHub Action las deploya automáticamente en cada push a main (usa el secret del service account), pero si sigues viendo errores de permisos después de un push, fuerza el deploy manual así:
