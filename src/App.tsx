@@ -2873,7 +2873,7 @@ function App() {
               )}
               {lastSync && <span className="text-[10px] text-[#64748b] ml-2">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
             </div>
-            <div className="text-[#94a3b8] px-1 mb-4 text-xs">Los matches con testers reales aparecen aquí al instante entre dispositivos</div>
+            <div className="text-[#94a3b8] px-1 mb-4 text-xs">Matches reales • en vivo cross-device</div>
 
             {matchProfiles.length === 0 ? (
               <div className="mt-10 px-4">
@@ -3856,7 +3856,7 @@ function App() {
                 onClick={() => setShowFilters(false)} 
                 className="btn-primary w-full shadow-lg shadow-[#14b8a6]/20 flex items-center justify-center gap-2 text-base"
               >
-                Ver {deck.length} resultados <span className="text-lg leading-none">→</span>
+                Ver {deck.length} disponibles <span className="text-lg leading-none">→</span>
               </button>
             </motion.div>
           </div>
