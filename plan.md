@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 (✅ 1:1 real messaging between matches FULLY WORKING per user "Uff todo resuelto :D que bueno funciona la mensajeria entre match"). Key: isRealChatId helper + bootstrap on open chat (add to realMatches + write match doc) + force load after swipe. Cleaned debug logs, kept useful "📨 Live 1:1" confirmations. Build + pushes. Sessions + 1:1 + group all live cross-device for real users. **PHASE 0 SIGN-OFF READY** (continua).
+Last updated: Phase 0 (sigamos con la phase 0 - continued declutter batch for "elegir perfiles": softer top bar (no emoji/PRE-ALPHA shout), premium "Disponibles ahora" count banner, softer empty states + profile incomplete card text in explore/matches flow. Kept lastSync "hace Xs", live badges, real-first recs. Build + push bd6d685. User confirmed 1:1 messaging works. **PHASE 0 SIGN-OFF READY** (continua).

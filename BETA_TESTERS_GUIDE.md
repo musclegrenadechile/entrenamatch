@@ -38,7 +38,7 @@ Usa los 30 perfiles fake (Reñaca / Viña del Mar / Concón, hombres y mujeres) 
 9. Reporta con el botón "Reportar" del header del chat o el formulario de Perfil si algo falla.
 Nota post-push: si ves errores de permisos (como "Missing or insufficient permissions" al dar like/match o en group msgs), el owner debe hacer `firebase deploy --only firestore:rules` (las rules se actualizaron para permitir writes a likes/matches por el liker y reads apropiados para group chat). Hard refresh después.
 
-**1:1 messaging fully working (2025-04)**: Sesiones + group chat live funcionan perfecto. Para 1:1 real entre cuentas: se amplió la lógica isRealChat para cubrir perfiles reales conocidos (no solo realMatches), bootstrap de match doc + agregar a realMatches al abrir chat real (soluciona el caso del lado pasivo o pre-discovery donde realMatches estaba vacío), force load después de swipe. Ahora enviar/recibir entre matches reales persiste en Firestore, listeners bg + active + polls de 8s/30s + "Actualizar chats reales" actualizan live en el otro dispositivo. Quedan logs útiles "📨 Live 1:1 update" para confirmar que llega en tiempo real. Hard refresh después de cada push.
+**1:1 messaging fully working (2025-04)**: Sesiones + group + 1:1 real entre cuentas live y cross-device. Bootstrap + isRealChatId helper asegura que siempre se active el backend real al abrir chat. UI declutter continuado para elegir perfiles (top bar más suave, banners y empty states premium/soft). Hard refresh después de pushes. Usa "Actualizar reales" / "Actualizar chats reales" + lastSync "hace Xs".
 
 ### Pasos exactos para hacer `firebase deploy --only firestore:rules` en Windows (PowerShell)
 
