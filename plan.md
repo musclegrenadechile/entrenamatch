@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continue (removed squad demo notes for cleaner UI; real 1:1 delivery; Explore lastSync/distance/REAL; session fixes; declutter for premium elegir perfiles). Pushed 3294105. **PHASE 0 SIGN-OFF READY** (continua). Note: deploy rules if needed.
+Last updated: Phase 0 continue (cleaned filters live count comment; removed squad demo notes; real 1:1 delivery; Explore lastSync/distance/REAL; session fixes; declutter for premium elegir perfiles). Pushed 51e739f. **PHASE 0 SIGN-OFF READY** (continua). Note: deploy rules if needed.
