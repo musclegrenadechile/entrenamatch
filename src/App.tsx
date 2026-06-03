@@ -3608,7 +3608,7 @@ function App() {
                     return (
                       <motion.div 
                         key={post.id} 
-                        className="card card-glass p-4 mb-3 border-[#2F2F35]/80"
+                        className={`card card-glass p-4 mb-3 border-[#2F2F35]/80 ${post.pinned ? 'ring-1 ring-[#FF671F]/50' : ''}`}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         whileHover={{ scale: 1.01, y: -1 }}
@@ -4707,7 +4707,7 @@ function App() {
               {/* Posts feed - spectacular animated cards with full thread modal */}
               <AnimatePresence>
                 {(profilePosts[effectiveUserId] || []).length > 0 ? (
-                  (profilePosts[effectiveUserId] || []).map(post => {
+                  [...(profilePosts[effectiveUserId] || [])].sort((a,b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.timestamp - a.timestamp).map(post => {
                     const isOwn = true
                     const liked = post.likes.includes(effectiveUserId)
                     return (
