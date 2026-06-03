@@ -4652,7 +4652,10 @@ function App() {
             {/* MURO / WALL - attractive FB-style feed to make profile feel alive */}
             <div className="px-4 mt-4">
               <div className="flex items-center justify-between mb-2 px-1">
-                <div className="text-xs uppercase tracking-[1px] text-[#9CA3AF]">Muro</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-xs uppercase tracking-[1px] text-[#9CA3AF]">Muro</div>
+                  <button onClick={() => setActiveTab('feed')} className="text-[9px] text-[#FF671F] underline active:opacity-70">Ver feed global →</button>
+                </div>
                 <button 
                   onClick={() => loadProfilePosts(effectiveUserId)} 
                   className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10"
