@@ -382,7 +382,6 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           <div className="flex items-center justify-between mb-2.5 px-1">
             <div>
               <div className="font-semibold text-sm">Más compatibles (reales primero)</div>
-              <div className="text-[10px] text-[#94a3b8]">Basado en tus objetivos + cercanía</div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2.5">
