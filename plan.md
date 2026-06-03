@@ -297,9 +297,12 @@ Next ideas (if continue): post options menu (edit?), pinned posts, global recent
 - Like the post directly from the full comments modal (❤️ count in header, live).
 - Cleaned more prompts: report flows now use confirm() + sensible default reason (pre-alpha safety, no ugly text prompt).
 - Visual consistency: inline/modal comment inputs now use .form-input class (unified with design system, better focus ring etc).
+- Delete own comments: × in previews and full modal for your comments, removes from FS/array.
+- More glass/motion: whileHover scale on post cards in own and full profile views.
+- Global community activity teaser: in your muro section, shows 2 latest posts from other loaded users (with like/comment counts), click for quick info. Makes app feel like living movement.
 - Builds + pushed. 
 
-Muro feels even more complete and spectacular: create/read/like/comment/edit/delete/undo + full thread modal + teasers everywhere. Designs polished with less prompts, consistent inputs.
+Muro + diseños now even more espectacular with edit, undo, comment delete, global teaser feed, enhanced cards. Continuing the plan.
 
 This advances the "muro + diseños espectaculares" significantly. Test: own profile add/delete photos (multiple), go to Explore (teasers should appear on real profiles after sync), go to Matches (teasers on matched people).
 

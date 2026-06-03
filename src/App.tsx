@@ -743,7 +743,7 @@ function App() {
               lng: currentUser.lng,
               legalConsents: currentUser.legalConsents,
             })
-            console.log('✅ Pushed initial rich profile to Firestore for new real user')
+            // console.log removed (debug)
           }
         } catch (e) {
           console.warn('Could not load/push real profile from Firestore yet:', e)
@@ -1001,7 +1001,7 @@ function App() {
         createdAt: serverTimestamp(),
       }
       await addDoc(collection(db, 'messages'), msg)
-      console.log('✅ Real message sent to Firestore from', firebaseUser.uid, 'to', toUserId)
+      // console.log removed (debug)
       // Force refresh our own view from server (keeps timestamps / ordering consistent)
       loadRealChatMessages(toUserId).then(msgs => {
         if (msgs) setRealChatMessages(msgs)
@@ -2150,6 +2150,35 @@ function App() {
   const closeFullComments = () => {
     setViewingPostComments(null)
     setModalCommentDraft('')
+  }
+
+  // Delete own comment from post (polish for spectacular muro)
+  const deleteCommentFromPost = async (postId: string, postUserId: string, commentId: string) => {
+    if (!confirm('¿Eliminar tu comentario?')) return;
+    const posts = profilePosts[postUserId] || [];
+    const pIdx = posts.findIndex(p => p.id === postId);
+    if (pIdx < 0) return;
+    const post = posts[pIdx];
+    const newComments = post.comments.filter((c: any) => c.id !== commentId);
+    const updatedPost = { ...post, comments: newComments };
+    const newPosts = [...posts];
+    newPosts[pIdx] = updatedPost;
+
+    if (!isDemoMode && db) {
+      try {
+        const { doc, updateDoc } = await import('firebase/firestore');
+        await updateDoc(doc(db, 'profilePosts', postId), { comments: newComments });
+        setProfilePosts((prev) => {
+          const newState = { ...prev, [postUserId]: newPosts };
+          try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+          return newState;
+        });
+      } catch (e) { console.warn(e); }
+    } else {
+      const updated = { ...profilePosts, [postUserId]: newPosts };
+      saveProfilePosts(updated);
+    }
+    toast.success('Comentario eliminado');
   }
 
   // Edit own muro post (inline for spectacular UX, no prompt)
@@ -4487,6 +4516,7 @@ function App() {
                         initial={{ opacity: 0, y: 16, scale: 0.985 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -12, scale: 0.97, height: 0, marginBottom: 0 }}
+                        whileHover={{ scale: 1.01, y: -2 }}
                         transition={{ type: 'spring', bounce: 0.12, duration: 0.28 }}
                         className="card card-glass p-4 mb-3 border-[#2F2F35]/80"
                       >
@@ -4560,9 +4590,18 @@ function App() {
                             title="Ver todos los comentarios"
                           >
                             {post.comments.slice(-3).map(c => (
-                              <div key={c.id} className="flex gap-1.5">
+                              <div key={c.id} className="flex gap-1.5 items-start">
                                 <span className="font-medium text-white/80">{c.userName}:</span> 
                                 <span className="truncate">{c.text}</span>
+                                {c.userId === effectiveUserId && (
+                                  <button 
+                                    onClick={(e) => { e.stopPropagation(); deleteCommentFromPost(post.id, effectiveUserId, c.id); }}
+                                    className="ml-1 text-red-400 text-[10px] active:text-red-500"
+                                    title="Eliminar comentario"
+                                  >
+                                    ×
+                                  </button>
+                                )}
                               </div>
                             ))}
                             {post.comments.length > 3 && <div className="text-[#FF671F]/70">+{post.comments.length-3} más... (toca para ver hilo completo)</div>}
@@ -4611,6 +4650,39 @@ function App() {
                   </motion.div>
                 )}
               </AnimatePresence>
+
+              {/* Global community muro activity teaser - makes the app feel like a living movement */}
+              {(() => {
+                const otherPosts = Object.entries(profilePosts)
+                  .filter(([uid]) => uid !== effectiveUserId)
+                  .flatMap(([uid, posts]) => (posts || []).map(p => ({...p, ownerId: uid})))
+                  .sort((a, b) => b.timestamp - a.timestamp)
+                  .slice(0, 2);
+                if (otherPosts.length === 0) return null;
+                return (
+                  <div className="mt-4 px-1">
+                    <div className="text-[10px] uppercase tracking-widest text-[#9CA3AF] mb-1.5">Actividad reciente de la comunidad</div>
+                    {otherPosts.map(p => (
+                      <div 
+                        key={p.id} 
+                        onClick={() => {
+                          // open the owner's full profile if possible, or just toast
+                          const ownerProfile = realProfiles.find(r => r.id === p.ownerId) || {id: p.ownerId, name: 'Usuario'};
+                          // for simplicity, if we have showFullProfile logic, but to avoid, just show teaser
+                          toast(`Post de ${ (ownerProfile as any).name || 'alguien' }: ${p.text.substring(0,40)}...`);
+                        }}
+                        className="card card-glass p-2 mb-1.5 text-xs flex gap-2 cursor-pointer active:scale-[0.99]"
+                      >
+                        <div className="text-[#FF671F]">📝</div>
+                        <div className="flex-1 min-w-0">
+                          <span className="text-[#9CA3AF] truncate">{p.text}</span>
+                          <div className="text-[9px] text-[#FF671F]/60 mt-0.5">❤️ {p.likes?.length || 0} · 💬 {p.comments?.length || 0}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Verification status - visual upgrade */}
@@ -4951,6 +5023,15 @@ function App() {
                           <div className="flex items-baseline gap-1.5">
                             <span className="font-medium text-white/90 text-sm">{c.userName}</span>
                             <span className="text-[10px] text-[#9CA3AF]">{getRelativeTime(c.timestamp)}</span>
+                            {c.userId === effectiveUserId && (
+                              <button 
+                                onClick={() => deleteCommentFromPost(viewingPostComments.postId, viewingPostComments.postUserId, c.id)}
+                                className="ml-auto text-red-400 text-[10px] active:text-red-500"
+                                title="Eliminar comentario"
+                              >
+                                ×
+                              </button>
+                            )}
                           </div>
                           <div className="text-[#E5E7EB] leading-snug break-words">{c.text}</div>
                         </div>
@@ -5764,6 +5845,7 @@ function App() {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
+                          whileHover={{ scale: 1.01 }}
                           transition={{ duration: 0.2 }}
                           className="card card-glass p-3 mb-2 border-[#2F2F35]/80"
                         >
@@ -5780,7 +5862,20 @@ function App() {
                               className="mt-1.5 text-[11px] text-[#9CA3AF] pl-1 border-l border-[#2F2F35] cursor-pointer active:bg-[#1A1A1E]/40 rounded"
                               title="Ver hilo completo de comentarios"
                             >
-                              {post.comments.slice(-2).map(c => <div key={c.id}><span className="text-white/70">{c.userName}:</span> {c.text}</div>)}
+                              {post.comments.slice(-2).map(c => (
+                                <div key={c.id} className="flex gap-1 items-start">
+                                  <span className="text-white/70">{c.userName}:</span> {c.text}
+                                  {c.userId === effectiveUserId && (
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); deleteCommentFromPost(post.id, showFullProfile.id, c.id); }}
+                                      className="ml-1 text-red-400 text-[10px] active:text-red-500"
+                                      title="Eliminar comentario"
+                                    >
+                                      ×
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
                               {post.comments.length > 2 && <div className="text-[#FF671F]/70 mt-0.5">+{post.comments.length-2} más... toca para ver todo</div>}
                             </div>
                           )}
