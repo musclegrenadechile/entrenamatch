@@ -342,6 +342,7 @@ function App() {
   // UI state
   const [activeTab, setActiveTab] = useState<Tab>('explore')
   const [isLoadingFeed, setIsLoadingFeed] = useState(false)
+  const [feedShowPinnedOnly, setFeedShowPinnedOnly] = useState(false)
 
   // Auto-refresh real sessions on tab DISABLED to fix TDZ.
   // Manual button remains.
@@ -3556,7 +3557,13 @@ function App() {
                 </div>
                 <div className="flex gap-2">
                   <button 
-                    onClick={() => { loadGlobalFeed(); /* also refresh profiles for new users */ if (!isDemoMode) loadRealProfiles(); }} 
+                    onClick={() => setFeedShowPinnedOnly(!feedShowPinnedOnly)}
+                    className={`text-[10px] px-2 py-0.5 rounded-full border ${feedShowPinnedOnly ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#FF671F]/30 text-[#FF671F]'} active:bg-[#FF671F]/10`}
+                  >
+                    {feedShowPinnedOnly ? '★ Solo fijados' : '📌 Fijados'}
+                  </button>
+                  <button 
+                    onClick={() => { loadGlobalFeed(); if (!isDemoMode) loadRealProfiles(); }} 
                     disabled={isLoadingFeed}
                     className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10"
                   >
@@ -3575,13 +3582,14 @@ function App() {
                 .filter(([uid]) => uid !== effectiveUserId)
                 .flatMap(([uid, posts]) => (posts || []).map((p: any) => ({ ...p, ownerId: uid })));
 
-              const feedPosts = [...allCommunityPosts]
+              let feedPosts = [...allCommunityPosts]
                 .sort((a: any, b: any) => {
                   if (b.pinned && !a.pinned) return 1;
                   if (a.pinned && !b.pinned) return -1;
                   return b.timestamp - a.timestamp;
-                })
-                .slice(0, 30); // increased for "load more" feel
+                });
+              if (feedShowPinnedOnly) feedPosts = feedPosts.filter((p: any) => p.pinned);
+              feedPosts = feedPosts.slice(0, 30); // increased for "load more" feel
 
               if (feedPosts.length === 0) {
                 return (
