@@ -4384,7 +4384,7 @@ function App() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -12, scale: 0.97, height: 0, marginBottom: 0 }}
                         transition={{ type: 'spring', bounce: 0.12, duration: 0.28 }}
-                        className="card p-4 mb-3"
+                        className="card card-glass p-4 mb-3 border-[#2F2F35]/80"
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="text-[10px] text-[#9CA3AF]" title={new Date(post.timestamp).toLocaleString('es-CL')}>
@@ -5628,7 +5628,7 @@ function App() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.2 }}
-                          className="card p-3 mb-2"
+                          className="card card-glass p-3 mb-2 border-[#2F2F35]/80"
                         >
                           <div className="text-sm leading-snug mb-1.5">{post.text}</div>
                           {post.photo && <img src={post.photo} className="rounded-xl max-h-40 w-full object-cover mb-2 border border-[#2F2F35]" />}
