@@ -126,6 +126,7 @@ Everything must work after hard refresh + on different physical devices (not jus
   - Auto-scroll to bottom (latest messages) when opening a chat from the profiles list improved: more aggressive rAF + multiple timeouts (50/150/350ms), explicit setTimeout in openChat, min-h-0 on container, also tries by id.
   - Same robust pattern for when new real messages arrive or after send (via state length deps + load after send).
   - This ensures the view "baja" to the bottom (recent messages) reliably when tapping a profile/chat.
+- [x] **PWA home screen install fix**: When installing the web app (Add to Home Screen / PWA banner) and tapping the icon from pantalla de inicio, it was opening a github web page instead of the app. Root cause: manifest start_url and scope were "/" (root of github.io) instead of the subpath /entrenamatch/. Fixed in public/manifest.json (start_url + scope + icons). Added PNG icon, iOS apple meta tags in index.html. After next deploy, users must remove old home screen icon and re-install the PWA (via banner or browser menu) to get the correct standalone launch. Now it should open the real EntrenaMatch app.
 - Add FIREBASE_SERVICE_ACCOUNT secret to GitHub for full auto Firebase Hosting deploys on every push (recommended over GH Pages for PWA + future FCM).
 
 ## Later Phases (high level)
