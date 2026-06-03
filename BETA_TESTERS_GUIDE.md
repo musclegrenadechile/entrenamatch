@@ -143,6 +143,33 @@ También puedes ir a GitHub (repo musclegrenadechile/entrenamatch) → pestaña 
 - "Los mensajes no llegan en tiempo real" → Asegúrate de estar en la misma red o prueba con fakes primero. Usa "Actualizar chats reales", verifica que ambos tengan el chat abierto o usen el botón. Hard refresh después de deploy. Los bg listeners + 30s polls + onSnapshot activo cubren live receive. Reporta si persiste.
 - Chat no hace scroll al final al recibir → Verifica versión (v0.1.0-prealpha con auto-scroll incluido). Hard refresh.
 
+## Protocolo de prueba del AAB firmado con cuentas reales (antes de subir a Play Internal)
+
+**Importante:** Antes de invitar a los 5-10 testers chilenos, el equipo debe validar el AAB actual en dispositivo real con al menos 2 cuentas reales (emails diferentes).
+
+Pasos exactos (en 1-2 dispositivos Android):
+1. Instala el AAB firmado actual (EntrenaMatch-release.aab) en el dispositivo (usa `adb install` o descarga desde GitHub Release si hay artifact, o transfiere el archivo).
+2. Habilita "instalar de fuentes desconocidas".
+3. Cuenta A: Abre la app → crea cuenta email real → completa onboarding full (incluye foto con cámara si disponible en nativo, chips de entrenamiento, consents).
+4. Verifica en Explorar: ves "X disponibles ahora cerca de ti", contador de perfiles reales con "en vivo", lastSync "hace Xs", recs "Más compatibles (reales primero)" con en vivo y lastSync, cards con REAL, distancia, compat, bio, chips. "Actualizar reales" funciona y actualiza lastSync.
+5. Swipe right a un perfil real (o usa el recs "Me interesa").
+6. Cuenta B (otro dispositivo o logout/cambiar cuenta): Haz lo mismo, swipe right al perfil de A (o el recíproco).
+7. Verifica match mutuo en vivo (aparece en "Tus matches" con en vivo badge, lastSync).
+8. Abre chat 1:1: envía mensajes de A a B → B recibe en vivo (toast o update sin "Actualizar", "en vivo" visible, auto-scroll si implementado). Verifica lastSync actualiza. Hard refresh en B → historial persiste.
+9. Cuenta A: Crea una sesión (elige tipo, lugar, hora, max participants).
+10. Cuenta B: Ve la sesión en "Explorar sesiones" (con "en vivo", preview), presiona "Unirme" → participants se actualiza, abre chat grupal sin error.
+11. En chat grupal: envía mensajes de A → B recibe live (con "en vivo", lastSync en lista y header, preview en lista de sesiones). Creador (A) ve controles de admin (expel si hay otro, close).
+12. Hard refresh en ambos → todo persiste (perfil, match, chats 1:1 y grupal, participants, lastSync).
+13. Prueba "Sincronizar" en Profile de A y B → lastSync actualiza, datos reales recargan.
+14. Prueba feedback: envía uno desde Profile → aparece en historial.
+15. Prueba reportar: desde recs o full profile de un test, reporta (prompt) → se guarda en betaFeedback.
+16. Cierra sesión completamente ("Cambiar cuenta" o logout) → re-login → todo persiste desde Firebase.
+17. Nota cualquier bug nativo (camera quality, keyboard, safe area, performance, notificaciones si push está en el build).
+
+Reporta resultados (bugs, frictions, lo que encantó del polish "elegir perfiles"). Si todo fluye con el UI actual (disponibles ahora, en vivo, lastSync, recs reales), estamos listos para subir a Internal y agregar los testers chilenos.
+
+Usa el AAB firmado actual (no debug). Hard refresh no aplica en APK (reinstala si hay update).
+
 ## Privacidad
 
 Tus datos (perfil, ubicación aproximada, chats de sesiones) se usan solo para el matching y coordinación dentro de la beta. Ver política completa en la app o en /privacy.html.
