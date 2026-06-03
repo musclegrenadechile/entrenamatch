@@ -239,6 +239,16 @@ function App() {
   const [chatUnreads, setChatUnreads] = useState<Record<string, number>>({})
   const [sessionUnreads, setSessionUnreads] = useState<Record<string, number>>({})
 
+  // Persist chat unreads across refreshes (for better "new message" experience)
+  useEffect(() => {
+    localStorage.setItem('entrenamatch_chat_unreads', JSON.stringify(chatUnreads))
+  }, [chatUnreads])
+
+  // Same for session group unreads
+  useEffect(() => {
+    localStorage.setItem('entrenamatch_session_unreads', JSON.stringify(sessionUnreads))
+  }, [sessionUnreads])
+
   const { 
     squads: _squadsFromHook, 
     createSquad: _createSquad, 
@@ -1569,6 +1579,12 @@ function App() {
 
     const savedNotifications = localStorage.getItem('entrenamatch_notifications')
     if (savedNotifications) setNotifications(JSON.parse(savedNotifications))
+
+    const savedChatUnreads = localStorage.getItem('entrenamatch_chat_unreads')
+    if (savedChatUnreads) setChatUnreads(JSON.parse(savedChatUnreads))
+
+    const savedSessionUnreads = localStorage.getItem('entrenamatch_session_unreads')
+    if (savedSessionUnreads) setSessionUnreads(JSON.parse(savedSessionUnreads))
   }, [])
 
   // Save helpers - now delegated to useProfile hook
@@ -1577,6 +1593,7 @@ function App() {
   const savePassed = (ids: string[]) => { localStorage.setItem('fitvina_passed', JSON.stringify(ids)); setPassedIds(ids) }
   const saveMatches = (ids: string[]) => { localStorage.setItem('fitvina_matches', JSON.stringify(ids)); setMatches(ids) }
   const saveMessages = (msgs: Record<string, Message[]>) => { localStorage.setItem('fitvina_messages', JSON.stringify(msgs)); setMessages(msgs) }
+  const saveChatUnreads = (unreads: Record<string, number>) => { localStorage.setItem('entrenamatch_chat_unreads', JSON.stringify(unreads)); setChatUnreads(unreads) }
 
   const saveSessions = (newSessions: TrainingSession[]) => {
     if (isDemoMode) {
@@ -2407,6 +2424,18 @@ function App() {
     return all.filter(p => combinedMatchIds.includes(p.id))
   }, [matches, realMatches, realProfiles])
 
+  // Small relative time for message previews (e.g. "5m", "2h", "ahora")
+  const getRelativeTime = (ts?: number) => {
+    if (!ts) return ''
+    const diff = Date.now() - ts
+    if (diff < 60000) return 'ahora'
+    const mins = Math.floor(diff / 60000)
+    if (mins < 60) return `${mins}m`
+    const hrs = Math.floor(mins / 60)
+    if (hrs < 24) return `${hrs}h`
+    return new Date(ts).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
+  }
+
   // ==================== SWIPE LOGIC ====================
   const handleSwipe = (profileId: string, direction: 'left' | 'right') => {
     // Support both seed profiles and real Firestore profiles
@@ -3229,6 +3258,9 @@ function App() {
                           <div className="text-sm text-[#94a3b8] truncate flex-1">
                             {last ? last.text : 'Match nuevo — di hola'}
                           </div>
+                          {last && last.timestamp && (
+                            <span className="text-[10px] text-[#64748b] flex-shrink-0">{getRelativeTime(last.timestamp)}</span>
+                          )}
                           {unread > 0 && (
                             <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 text-[10px] font-bold rounded-full bg-[#ef4444] text-white">
                               {unread > 9 ? '9+' : unread}
