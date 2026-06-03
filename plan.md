@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 (sigamos con la phase 0 - full declutter/polish for elegir perfiles: softer top bar, premium banners/empties/profile card, removed beta text, cleaned recs subtitle in Explore; lastSync on real refresh; top padding; BETA/plan updates. Multiple builds/pushes (1ae8f16). Messaging solid per user. **PHASE 0 SIGN-OFF READY** (continua).
+Last updated: Phase 0 (continua - polish: stronger real empty states with lastSync in Explore/Sessions; cleaned more instructional texts; loading spinner on Profile 'Sincronizar' for refresh consistency; declutter for elegir perfiles. Builds/pushes (ff9ac68). **PHASE 0 SIGN-OFF READY** (continua).
