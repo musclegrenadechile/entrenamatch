@@ -126,7 +126,11 @@ Everything must work after hard refresh + on different physical devices (not jus
   - Auto-scroll to bottom (latest messages) when opening a chat from the profiles list improved: more aggressive rAF + multiple timeouts (50/150/350ms), explicit setTimeout in openChat, min-h-0 on container, also tries by id.
   - Same robust pattern for when new real messages arrive or after send (via state length deps + load after send).
   - This ensures the view "baja" to the bottom (recent messages) reliably when tapping a profile/chat.
-- [x] **PWA home screen install fix**: When installing the web app (Add to Home Screen / PWA banner) and tapping the icon from pantalla de inicio, it was opening a github web page instead of the app. Root cause: manifest start_url and scope were "/" (root of github.io) instead of the subpath /entrenamatch/. Fixed in public/manifest.json (start_url + scope + icons). Added PNG icon, iOS apple meta tags in index.html. After next deploy, users must remove old home screen icon and re-install the PWA (via banner or browser menu) to get the correct standalone launch. Now it should open the real EntrenaMatch app.
+- [x] **PWA home screen install fix + banner visibility + exhaustive visual review**:
+  - Manifest/scope/start_url/icons fixed previously (now /entrenamatch/).
+  - Banner not appearing: reduced timeout to 5s, added early setShow on load (3s), made bump/setShow more eager (show banner even without deferred prompt for guidance text). Added persistent "📱 Instalar" button in top bar (always visible for web, non-dismissed users) as fallback/discoverability.
+  - Banner JSX updated: shows helpful text when no native prompt ("use browser menu"), "Entendido" button.
+  - Exhaustive design review performed (grep for styles, layout, recent edits like messaging sticky list, profile hero, cards, nav, z-index, contrast, padding for bottom nav/banner, hard-coded vs vars, overflow, responsive). No critical visual errors; applied minor consistency polish (section-header, icons, buttons). Build clean. Re-install PWA recommended after deploy.
 - Add FIREBASE_SERVICE_ACCOUNT secret to GitHub for full auto Firebase Hosting deploys on every push (recommended over GH Pages for PWA + future FCM).
 
 ## Later Phases (high level)
