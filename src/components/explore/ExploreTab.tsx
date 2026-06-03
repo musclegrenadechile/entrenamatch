@@ -247,7 +247,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
             {deck.length} disponibles ahora {userLocation ? 'cerca de ti' : ''}
           </div>
           {realProfiles && realProfiles.length > 0 && (
-            <div className="text-[10px] text-[#14b8a6] mt-0.5 font-medium">+ {realProfiles.length} perfiles reales de testers sincronizados</div>
+            <div className="text-[10px] text-[#14b8a6] mt-0.5 font-medium flex items-center gap-1">+ {realProfiles.length} perfiles reales de testers <span className="text-[8px] px-1 py-px bg-[#14b8a6]/10 text-[#14b8a6] rounded">en vivo</span></div>
           )}
           {lastSync && (
             <div className="text-[9px] text-[#64748b] mt-0.5 flex items-center gap-1">
