@@ -3521,27 +3521,39 @@ function App() {
         {/* ===== GLOBAL FEED TAB - Muro Comunitario (per plan: global recent activity feed) ===== */}
         {activeTab === 'feed' && (
           <div className="flex-1 overflow-auto p-4">
-            <div className="flex items-center justify-between mb-2 px-1">
-              <div>
-                <div className="section-header">Feed Global</div>
-                <div className="text-[#9CA3AF] text-sm">Muro de la comunidad • el match del movimiento</div>
+            <div className="sticky top-0 bg-[#0D0D10] z-10 -mx-4 px-4 pb-2">
+              <div className="flex items-center justify-between mb-2 px-1">
+                <div>
+                  <div className="section-header">Feed Global</div>
+                  <div className="text-[#9CA3AF] text-sm flex items-center gap-1">
+                    Muro de la comunidad • el match del movimiento
+                    <span className="live-pill text-[8px]">EN VIVO</span>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button 
+                    onClick={() => { loadGlobalFeed(); /* also refresh profiles for new users */ if (!isDemoMode) loadRealProfiles(); }} 
+                    disabled={isLoadingFeed}
+                    className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10"
+                  >
+                    {isLoadingFeed ? '...' : 'Refrescar'}
+                  </button>
+                  <button onClick={() => setActiveTab('profile')} className="text-[10px] px-2 py-0.5 rounded-full bg-[#FF671F] text-black active:bg-[#E55A1A]">
+                    Publicar
+                  </button>
+                </div>
               </div>
-              <button 
-                onClick={loadGlobalFeed} 
-                disabled={isLoadingFeed}
-                className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10"
-              >
-                {isLoadingFeed ? '...' : 'Refrescar'}
-              </button>
             </div>
 
             {(() => {
               // Collect and sort recent posts from all loaded users (exclude self)
-              const feedPosts = Object.entries(profilePosts)
+              const allCommunityPosts = Object.entries(profilePosts)
                 .filter(([uid]) => uid !== effectiveUserId)
-                .flatMap(([uid, posts]) => (posts || []).map((p: any) => ({ ...p, ownerId: uid })))
+                .flatMap(([uid, posts]) => (posts || []).map((p: any) => ({ ...p, ownerId: uid })));
+
+              const feedPosts = [...allCommunityPosts]
                 .sort((a: any, b: any) => b.timestamp - a.timestamp)
-                .slice(0, 20);
+                .slice(0, 30); // increased for "load more" feel
 
               if (feedPosts.length === 0) {
                 return (
@@ -3549,55 +3561,96 @@ function App() {
                     <Activity className="mx-auto text-[#FF671F] mb-3" size={42} />
                     <div className="font-semibold text-xl mb-2">Aún no hay actividad en el feed</div>
                     <p className="text-sm text-[#9CA3AF] mb-4">Publica en tu muro o espera a que la comunidad comparta entrenos. ¡Los posts de testers reales aparecerán aquí en vivo!</p>
-                    <button onClick={() => setActiveTab('profile')} className="btn-primary px-6">Ir a tu Muro</button>
+                    <div className="flex gap-2 justify-center">
+                      <button onClick={() => setActiveTab('profile')} className="btn-primary px-6">Ir a tu Muro</button>
+                      {!isDemoMode && <button onClick={loadGlobalFeed} className="px-4 py-2 border border-[#FF671F]/60 text-[#FF671F] rounded-2xl text-sm">Cargar comunidad</button>}
+                    </div>
                   </div>
                 );
               }
 
-              return feedPosts.map((post: any) => {
-                const owner = realProfiles.find(r => r.id === post.ownerId) || { name: 'Compañero', id: post.ownerId };
-                const liked = post.likes.includes(effectiveUserId);
-                return (
-                  <motion.div 
-                    key={post.id} 
-                    className="card card-glass p-4 mb-3 border-[#2F2F35]/80"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    whileHover={{ scale: 1.01 }}
-                  >
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="text-xs text-[#FF671F] font-medium" onClick={() => setShowFullProfile(owner as any)} style={{cursor: 'pointer'}}>
-                        {owner.name}
-                      </div>
-                      <div className="text-[10px] text-[#9CA3AF]">· {getRelativeTime(post.timestamp)}</div>
-                      {realProfiles.some(rp => rp.id === post.ownerId) && <span className="text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>}
-                    </div>
-                    <div className="text-sm leading-relaxed mb-2">{post.text}</div>
-                    {post.photo && <img src={post.photo} className="w-full rounded-2xl max-h-48 object-cover mb-3 border border-[#2F2F35]" />}
-                    <div className="flex items-center gap-4 text-sm">
-                      <button 
-                        onClick={() => likeProfilePost(post.id, post.ownerId)}
-                        className={`flex items-center gap-1 transition ${liked ? 'text-[#FF671F]' : 'text-[#9CA3AF] hover:text-[#FF671F]'}`}
+              return (
+                <>
+                  <div className="text-xs text-[#9CA3AF] mb-3 px-1">{feedPosts.length} posts recientes de la comunidad</div>
+                  {feedPosts.map((post: any) => {
+                    const ownerProfile = realProfiles.find(r => r.id === post.ownerId);
+                    const owner = ownerProfile || { name: 'Compañero', id: post.ownerId, photos: [] };
+                    const liked = post.likes.includes(effectiveUserId);
+                    const isOwnPost = post.ownerId === effectiveUserId;
+                    return (
+                      <motion.div 
+                        key={post.id} 
+                        className="card card-glass p-4 mb-3 border-[#2F2F35]/80"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        whileHover={{ scale: 1.01, y: -1 }}
                       >
-                        <motion.span animate={{ scale: liked ? [1, 1.3, 1] : 1 }} transition={{duration: 0.2}}>{liked ? '❤️' : '🤍'}</motion.span> 
-                        <span className="font-medium">{post.likes.length}</span>
-                      </button>
-                      <button 
-                        onClick={() => startComment(post.id, post.ownerId, (owner as any).name)}
-                        className="flex items-center gap-1 text-[#9CA3AF] hover:text-[#FF671F]"
-                      >
-                        💬 <span className="font-medium">{post.comments.length}</span>
-                      </button>
-                      <button onClick={() => setShowFullProfile(owner as any)} className="ml-auto text-[10px] text-[#FF671F] active:underline">Ver perfil</button>
+                        {/* Owner header with photo */}
+                        <div className="flex items-center gap-2 mb-2" onClick={() => setShowFullProfile(owner as any)} style={{cursor: 'pointer'}}>
+                          {owner.photos && owner.photos[0] ? (
+                            <img src={owner.photos[0]} className="w-6 h-6 rounded-full object-cover border border-[#2F2F35]" />
+                          ) : (
+                            <div className="w-6 h-6 rounded-full bg-[#2F2F35] flex items-center justify-center text-[8px]">👤</div>
+                          )}
+                          <div className="text-xs text-[#FF671F] font-medium flex-1">
+                            {owner.name}
+                            {ownerProfile && realProfiles.some(rp => rp.id === post.ownerId) && <span className="ml-1 text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>}
+                          </div>
+                          <div className="text-[10px] text-[#9CA3AF]">· {getRelativeTime(post.timestamp)}</div>
+                        </div>
+
+                        <div className="text-sm leading-relaxed mb-2">{post.text}</div>
+                        {post.photo && <img src={post.photo} className="w-full rounded-2xl max-h-52 object-cover mb-3 border border-[#2F2F35]" />}
+
+                        <div className="flex items-center gap-4 text-sm">
+                          <button 
+                            onClick={() => likeProfilePost(post.id, post.ownerId)}
+                            className={`flex items-center gap-1 transition ${liked ? 'text-[#FF671F]' : 'text-[#9CA3AF] hover:text-[#FF671F]'}`}
+                          >
+                            <motion.span animate={{ scale: liked ? [1, 1.35, 1] : 1 }} transition={{duration: 0.22}}>{liked ? '❤️' : '🤍'}</motion.span> 
+                            <span className="font-medium">{post.likes.length}</span>
+                          </button>
+                          <button 
+                            onClick={() => startComment(post.id, post.ownerId, owner.name)}
+                            className="flex items-center gap-1 text-[#9CA3AF] hover:text-[#FF671F]"
+                          >
+                            💬 <span className="font-medium">{post.comments.length}</span>
+                          </button>
+
+                          {isOwnPost && (
+                            <button 
+                              onClick={() => deleteProfilePost(post.id, post.ownerId)}
+                              className="text-red-400 text-xs ml-1 active:text-red-500"
+                            >
+                              🗑
+                            </button>
+                          )}
+
+                          <button onClick={() => setShowFullProfile(owner as any)} className="ml-auto text-[10px] text-[#FF671F] active:underline">Ver perfil completo</button>
+                        </div>
+
+                        {post.comments.length > 0 && (
+                          <div onClick={() => openFullComments(post.id, post.ownerId, owner.name)} className="mt-2 pt-2 border-t border-[#2F2F35] text-xs text-[#9CA3AF] cursor-pointer space-y-0.5">
+                            {post.comments.slice(-2).map((c: any) => (
+                              <div key={c.id} className="flex gap-1.5">
+                                <span className="font-medium text-white/80">{c.userName}:</span> 
+                                <span className="truncate">{c.text}</span>
+                              </div>
+                            ))}
+                            {post.comments.length > 2 && <div className="text-[#FF671F]/70">+{post.comments.length-2} más...</div>}
+                          </div>
+                        )}
+                      </motion.div>
+                    );
+                  })}
+
+                  {allCommunityPosts.length > 30 && (
+                    <div className="text-center mt-2">
+                      <button onClick={loadGlobalFeed} className="text-xs text-[#FF671F] underline active:opacity-70">Cargar más de la comunidad</button>
                     </div>
-                    {post.comments.length > 0 && (
-                      <div onClick={() => openFullComments(post.id, post.ownerId, (owner as any).name)} className="mt-2 pt-2 border-t border-[#2F2F35] text-xs text-[#9CA3AF] cursor-pointer">
-                        {post.comments.slice(-2).map((c: any) => <div key={c.id}><span className="text-white/70">{c.userName}:</span> {c.text}</div>)}
-                      </div>
-                    )}
-                  </motion.div>
-                );
-              });
+                  )}
+                </>
+              );
             })()}
           </div>
         )}
