@@ -3675,6 +3675,11 @@ function App() {
                   </button>
                 </div>
               </div>
+              {liveTrainingNow.length > 0 && (
+                <div className="text-[10px] text-[#22c55e] mb-1 px-1 flex items-center gap-1">
+                  🟢 {liveTrainingNow.length} live ahora cerca — <button onClick={() => setActiveTab('explore')} className="underline">ver en Explore para unirte →</button>
+                </div>
+              )}
             </div>
 
             {(() => {
@@ -4771,6 +4776,7 @@ function App() {
                   {currentUser.trainingNow ? '🟢 Entrenando ahora (EN VIVO)' : 'Marcar como entrenando ahora'}
                 </button>
                 <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Aparecerás en "Entrenando Ahora" para usuarios cerca. ¡Urgencia real-time, abre la app más!</div>
+                <button onClick={() => setActiveTab('explore')} className="mt-2 w-full text-xs text-[#22c55e] underline active:opacity-70">Ver quién está live cerca ahora →</button>
               </div>
             </div>
 
