@@ -3202,7 +3202,7 @@ function App() {
                       </div>
                       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 p-3">
                         <div className="font-semibold">{profile.name}, {profile.age}</div>
-                        <div className="text-xs text-[#FF671F]">{profile.city}, {profile.country}</div>
+                        <div className="text-xs text-[#FF4F79]">{profile.city}, {profile.country}</div>
                         {userLocation && (
                           <div className="text-[10px] text-[#FF671F]/80 mt-0.5">
                             {getDistanceKm(userLocation.lat, userLocation.lng, profile.lat, profile.lng)} km
@@ -5075,7 +5075,7 @@ function App() {
                             <span>{user?.name || 'Usuario desconocido'}</span>
                             <button 
                               onClick={() => unblockUser(userId)}
-                              className="text-xs text-[#FF671F]"
+                              className="text-xs text-[#FF4F79]"
                             >
                               Desbanear
                             </button>
@@ -5364,7 +5364,7 @@ function App() {
                       const allRead = notifications.map(n => ({...n, read: true}))
                       saveNotifications(allRead)
                     }}
-                    className="text-xs text-[#FF671F]"
+                    className="text-xs text-[#FF4F79]"
                   >
                     Marcar todo como leído
                   </button>
