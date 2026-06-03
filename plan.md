@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continue (cleaned filters live count comment; removed squad demo notes; real 1:1 delivery; Explore lastSync/distance/REAL; session fixes; declutter for premium elegir perfiles). Pushed 51e739f. **PHASE 0 SIGN-OFF READY** (continua). Note: deploy rules if needed.
+Last updated: Phase 0 continue (INFORME added with full root cause analysis of why real users couldn't communicate: match discovery not reactive, stale closure in Actualizar, missing likes rules + permissions, async listener races, etc. + all prior fixes applied). See new INFORME_PROBLEMA_COMUNICACION_USUARIOS_REALES.md. Pushed. **PHASE 0 SIGN-OFF READY** (continua). Note: deploy rules if needed.
