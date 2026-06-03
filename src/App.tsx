@@ -4680,6 +4680,21 @@ function App() {
                 )
               })()}
 
+              {/* Pinned posts highlight - spectacular for personal muro */}
+              {(() => {
+                const myPosts = profilePosts[effectiveUserId] || [];
+                const pinned = myPosts.filter((p: any) => p.pinned);
+                if (pinned.length === 0) return null;
+                return (
+                  <div className="px-1 mb-2">
+                    <div className="text-[9px] text-[#FF671F] mb-1">📌 Tus posts fijados (aparecen primero en feed global)</div>
+                    {pinned.slice(0,2).map((p: any) => (
+                      <div key={p.id} onClick={() => { /* could scroll but simple */ }} className="text-[10px] text-[#9CA3AF] truncate cursor-pointer">• {p.text}</div>
+                    ))}
+                  </div>
+                );
+              })()}
+
               {/* Attractive composer */}
               <div className="card p-4 mb-4">
                 <div className="text-sm font-medium text-[#FF671F] mb-2 flex items-center gap-2">
