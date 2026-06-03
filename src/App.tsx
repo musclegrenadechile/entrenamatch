@@ -445,6 +445,9 @@ function App() {
   const [profilePosts, setProfilePosts] = useState<Record<string, ProfilePost[]>>({}) // userId -> posts array
   const [muroComposerText, setMuroComposerText] = useState('')
   const [muroComposerPhoto, setMuroComposerPhoto] = useState<string | null>(null)
+  // Inline comment composer for attractive muro (replaces ugly prompt() for both own + viewed profiles)
+  const [activeComment, setActiveComment] = useState<{postId: string; postUserId: string; ownerName?: string} | null>(null)
+  const [commentDraft, setCommentDraft] = useState('')
   const [showCreateSquad, setShowCreateSquad] = useState(false)
   const [selectedSquad, setSelectedSquad] = useState<string | null>(null) // for detail view
 
@@ -909,8 +912,20 @@ function App() {
   useEffect(() => {
     if (showFullProfile) {
       loadProfilePosts(showFullProfile.id)
+    } else {
+      // clean comment composer when closing full profile view
+      setActiveComment(null)
+      setCommentDraft('')
     }
   }, [showFullProfile])
+
+  // Clear comment UI when leaving profile tab
+  useEffect(() => {
+    if (activeTab !== 'profile') {
+      setActiveComment(null)
+      setCommentDraft('')
+    }
+  }, [activeTab])
 
   // Logout handler - works for both demo and real Firebase
   const handleLogout = async () => {
@@ -1835,20 +1850,26 @@ function App() {
   // Muro / Profile Posts helpers (demo + real Firestore)
   const loadProfilePosts = async (userId: string) => {
     if (isDemoMode || !db) {
-      return profilePosts[userId] || []
+      const posts = (profilePosts[userId] || []).slice().sort((a, b) => b.timestamp - a.timestamp)
+      return posts
     }
     try {
-      const { collection, query, where, orderBy, getDocs, limit } = await import('firebase/firestore')
+      // NOTE: Query uses only `where` (no orderBy) to avoid requiring a composite index immediately.
+      // Client-side sort by timestamp desc ensures newest first for any viewer (A viewing B's muro).
+      // Composite index (userId ASC + timestamp DESC) is defined in firestore.indexes.json and can be deployed with:
+      //   firebase deploy --only firestore:indexes   (or via CI firebase-deploy.yml when secret configured)
+      // This makes cross-profile muro loads work right now without waiting for index build.
+      const { collection, query, where, getDocs, limit } = await import('firebase/firestore')
       const q = query(
         collection(db, 'profilePosts'),
         where('userId', '==', userId),
-        orderBy('timestamp', 'desc'),
-        limit(10)
+        limit(30)
       )
       const snap = await getDocs(q)
       const posts: ProfilePost[] = []
       snap.forEach((doc) => {
         const d = doc.data() as any
+        const rawComments = d.comments || []
         posts.push({
           id: doc.id,
           userId: d.userId,
@@ -1856,14 +1877,24 @@ function App() {
           photo: d.photo,
           timestamp: d.timestamp || Date.now(),
           likes: d.likes || [],
-          comments: d.comments || []
+          comments: rawComments.map((c: any) => ({
+            id: c.id || ('c' + Date.now() + Math.random().toString(36).slice(2)),
+            userId: c.userId || '',
+            userName: c.userName || 'Usuario',
+            text: c.text || '',
+            timestamp: c.timestamp || Date.now()
+          }))
         })
       })
-      setProfilePosts((prev) => ({ ...prev, [userId]: posts }))
-      return posts
+      // Always return newest-first (client sort; works regardless of index)
+      posts.sort((a, b) => b.timestamp - a.timestamp)
+      const limited = posts.slice(0, 10)
+      setProfilePosts((prev) => ({ ...prev, [userId]: limited }))
+      return limited
     } catch (e) {
       console.warn('loadProfilePosts error', e)
-      return profilePosts[userId] || []
+      const posts = (profilePosts[userId] || []).slice().sort((a, b) => b.timestamp - a.timestamp)
+      return posts
     }
   }
 
@@ -1989,6 +2020,22 @@ function App() {
     const updated = { ...profilePosts, [postUserId]: current.filter(p => p.id !== postId) }
     saveProfilePosts(updated)
     toast.success('Publicación eliminada')
+  }
+
+  // Attractive inline comment composer (no more prompt dialogs on muro)
+  const startComment = (postId: string, postUserId: string, ownerName?: string) => {
+    setActiveComment({ postId, postUserId, ownerName })
+    setCommentDraft('')
+  }
+  const submitComment = async () => {
+    if (!activeComment || !commentDraft.trim()) return
+    await addCommentToPost(activeComment.postId, activeComment.postUserId, commentDraft)
+    setActiveComment(null)
+    setCommentDraft('')
+  }
+  const cancelComment = () => {
+    setActiveComment(null)
+    setCommentDraft('')
   }
 
   const saveBlockedUsers = (newBlocked: string[]) => {
@@ -4195,6 +4242,9 @@ function App() {
                   className="form-input w-full h-20 text-sm mb-3 resize-y"
                   maxLength={280}
                 />
+                <div className="text-[10px] text-right text-[#9CA3AF] -mt-2 mb-2 pr-1">
+                  {muroComposerText.length}/280
+                </div>
                 {muroComposerPhoto && (
                   <div className="mb-3 relative inline-block">
                     <img src={muroComposerPhoto} className="max-h-24 rounded-2xl border border-[#2F2F35] object-cover" />
@@ -4247,8 +4297,8 @@ function App() {
                   return (
                     <div key={post.id} className="card p-4 mb-3">
                       <div className="flex justify-between items-start mb-2">
-                        <div className="text-[10px] text-[#9CA3AF]">
-                          {new Date(post.timestamp).toLocaleDateString('es-CL', { weekday: 'short', month: 'short', day: 'numeric' })} · {new Date(post.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}
+                        <div className="text-[10px] text-[#9CA3AF]" title={new Date(post.timestamp).toLocaleString('es-CL')}>
+                          {getRelativeTime(post.timestamp)}
                         </div>
                         {isOwn && (
                           <button 
@@ -4272,10 +4322,7 @@ function App() {
                           {liked ? '❤️' : '🤍'} <span className="font-medium">{post.likes.length}</span>
                         </button>
                         <button 
-                          onClick={() => {
-                            const txt = prompt('Comentar en el muro:')
-                            if (txt) addCommentToPost(post.id, effectiveUserId, txt)
-                          }}
+                          onClick={() => startComment(post.id, effectiveUserId)}
                           className="flex items-center gap-1 text-[#9CA3AF] hover:text-[#FF671F]"
                         >
                           💬 <span className="font-medium">{post.comments.length}</span>
@@ -4290,6 +4337,28 @@ function App() {
                             </div>
                           ))}
                           {post.comments.length > 3 && <div className="text-[#FF671F]/70">+{post.comments.length-3} más...</div>}
+                        </div>
+                      )}
+                      {/* Inline attractive comment box - appears only for this post when commenting */}
+                      {activeComment?.postId === post.id && (
+                        <div className="mt-2 pt-2 border-t border-[#2F2F35] flex items-center gap-2">
+                          <input 
+                            type="text" 
+                            value={commentDraft} 
+                            onChange={e => setCommentDraft(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment() } }}
+                            placeholder="Escribe un comentario..."
+                            className="flex-1 bg-[#1A1A1E] border border-[#2F2F35] rounded-2xl px-3 py-1.5 text-sm focus:outline-none focus:border-[#FF671F]"
+                            maxLength={200}
+                          />
+                          <button 
+                            onClick={submitComment} 
+                            disabled={!commentDraft.trim()} 
+                            className="text-[#FF671F] text-sm font-medium px-3 disabled:opacity-40 active:scale-95"
+                          >
+                            Enviar
+                          </button>
+                          <button onClick={cancelComment} className="text-[#9CA3AF] text-xs px-1">✕</button>
                         </div>
                       )}
                     </div>
@@ -5354,31 +5423,56 @@ function App() {
                   <div className="flex flex-wrap gap-2">{showFullProfile.goals.map(g => <div key={g} className="chip chip-active">{g}</div>)}</div>
                 </div>
 
-                {/* Muro for viewed profile - attractive read-only feed */}
+                {/* Muro for viewed profile - attractive read-only feed with interactions (now loads reliably for other accounts) */}
                 <div className="mt-4">
                   <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-2 flex justify-between items-center px-1">
-                    <span>MURO</span>
-                    <button onClick={() => loadProfilePosts(showFullProfile.id)} className="text-[10px] text-[#FF671F] active:underline">Cargar</button>
+                    <span>MURO DE {showFullProfile.name.toUpperCase()}</span>
+                    <button onClick={() => loadProfilePosts(showFullProfile.id)} className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10">Refrescar</button>
                   </div>
                   {(profilePosts[showFullProfile.id] || []).length > 0 ? (
-                    (profilePosts[showFullProfile.id] || []).slice(0, 4).map((post) => (
+                    (profilePosts[showFullProfile.id] || []).slice(0, 6).map((post) => (
                       <div key={post.id} className="card p-3 mb-2">
                         <div className="text-sm leading-snug mb-1.5">{post.text}</div>
                         {post.photo && <img src={post.photo} className="rounded-xl max-h-40 w-full object-cover mb-2 border border-[#2F2F35]" />}
                         <div className="flex items-center gap-4 text-xs text-[#9CA3AF]">
-                          <span>{new Date(post.timestamp).toLocaleDateString('es-CL', {month:'short', day:'numeric'})}</span>
+                          <span title={new Date(post.timestamp).toLocaleString('es-CL')}>{getRelativeTime(post.timestamp)}</span>
                           <span onClick={() => likeProfilePost(post.id, showFullProfile.id)} className="cursor-pointer active:text-[#FF671F]">❤️ {post.likes.length}</span>
-                          <span onClick={() => { const t = prompt('Comentar en el muro de ' + showFullProfile.name + ':'); if (t) addCommentToPost(post.id, showFullProfile.id, t) }} className="cursor-pointer active:text-[#FF671F]">💬 {post.comments.length}</span>
+                          <span onClick={() => startComment(post.id, showFullProfile.id, showFullProfile.name)} className="cursor-pointer active:text-[#FF671F]">💬 {post.comments.length}</span>
                         </div>
                         {post.comments.length > 0 && (
                           <div className="mt-1.5 text-[11px] text-[#9CA3AF] pl-1 border-l border-[#2F2F35]">
                             {post.comments.slice(-2).map(c => <div key={c.id}><span className="text-white/70">{c.userName}:</span> {c.text}</div>)}
                           </div>
                         )}
+                        {/* Inline comment input for viewed profile too */}
+                        {activeComment?.postId === post.id && (
+                          <div className="mt-2 pt-2 border-t border-[#2F2F35] flex items-center gap-2">
+                            <input 
+                              type="text" 
+                              value={commentDraft} 
+                              onChange={e => setCommentDraft(e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment() } }}
+                              placeholder={`Comentar en el muro de ${showFullProfile.name}...`}
+                              className="flex-1 bg-[#1A1A1E] border border-[#2F2F35] rounded-2xl px-3 py-1.5 text-sm focus:outline-none focus:border-[#FF671F]"
+                              maxLength={200}
+                            />
+                            <button 
+                              onClick={submitComment} 
+                              disabled={!commentDraft.trim()} 
+                              className="text-[#FF671F] text-sm font-medium px-3 disabled:opacity-40 active:scale-95"
+                            >
+                              Enviar
+                            </button>
+                            <button onClick={cancelComment} className="text-[#9CA3AF] text-xs px-1">✕</button>
+                          </div>
+                        )}
                       </div>
                     ))
                   ) : (
-                    <div className="text-xs text-[#9CA3AF] italic">Este perfil aún no tiene publicaciones en el muro.</div>
+                    <div className="text-xs text-[#9CA3AF] italic">Este perfil aún no tiene publicaciones en el muro. ¡Anímalo a publicar!</div>
+                  )}
+                  {(profilePosts[showFullProfile.id] || []).length > 6 && (
+                    <div className="text-[10px] text-[#FF671F]/70 text-center mt-1">Mostrando los 6 más recientes — usa Refrescar para actualizar</div>
                   )}
                 </div>
 

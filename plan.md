@@ -274,3 +274,22 @@ Last updated: Major design refresh (Dunkin' orange #FF671F primary for energetic
 - Pushed multiple times autonomously.
 
 Sigue el ciclo. Hard refresh the live site to see the new install banner (after 25s+ or after a like/match), the why-reasons under compat %, and the top "Actualizar todo". Re-run APK workflow for native too.
+
+**Critical muro cross-profile fix + attractiveness (user report: "al abrir el perfil de una cuenta A a una B, no ve lo que publico la cuenta A en su muro" + index error + "mejorar todo de lo que se ha hecho en profile, muro, etc para que sea atractivo")**:
+- Fixed root cause in loadProfilePosts: removed orderBy('timestamp','desc') from the where(userId) query (this was triggering the exact composite index error in prod bundle). Now uses where+limit(30) only + reliable client .sort((a,b)=>b.timestamp-a.timestamp) + .slice(0,10). Works for any viewer immediately (A opens B sees B's posts).
+- Also normalized comments on load (defensive id/userName for legacy data) + demo mode now also ensures sorted newest first.
+- firestore.indexes.json already defined the needed index (userId + timestamp desc); now deployed live via `firebase deploy --only firestore:rules,firestore:indexes` (rules also refreshed). Index build may take minutes in background but code no longer blocks on it.
+- Attractive muro improvements (no more prompt() popups which kill the vibe):
+  - Added inline comment composer (nice input + Enviar + ✕ + Enter to send + 200 char limit) that appears right under the post's like/comment bar when you tap 💬. Works for own posts AND when viewing someone else's full profile. State auto-clears on close profile / tab switch.
+  - Replaced all prompt dialogs for comments in both Profile tab and full-profile view.
+  - Switched post timestamps to getRelativeTime (e.g. "hace 3m", "hace 2h") with full date on title= for live social feel; updated both own feed and other's muro.
+  - Improved header in other's muro: "MURO DE {NAME}" + "Refrescar" pill button instead of plain "Cargar".
+  - Increased slice limit to 6 recent posts when viewing others + note if more.
+  - Better empty state copy for other's muro.
+  - Composer already had 280 limit + now shows live counter "{n}/280" below textarea.
+  - "Actualizar" renamed "Refrescar" in own muro too for consistency.
+- Deployed rules + indexes to Firebase (entrenamatch project) successfully.
+- This makes the muro truly bidirectional and alive: publish on A, B opens A's full profile → sees posts, likes/comments with notifs to A, optimistic local updates, reload/Refrescar gets latest from FS.
+- Next for attractiveness (pending): delete post with framer exit anim, photo strip delete buttons, teaser 1-2 latest posts in match/swipe cards, "feed global" tab or section, more glass/motion on post cards, ability to expand full comments list.
+
+All changes in src/App.tsx + plan.md + deployed FS. Now build + push to trigger full CI to GH Pages (servidor) + APK + Firebase. Testers: hard refresh after deploy (~3-8min).

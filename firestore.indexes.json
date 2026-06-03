@@ -7,6 +7,14 @@
         { "fieldPath": "from", "order": "ASCENDING" },
         { "fieldPath": "to", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "profilePosts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "timestamp", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []
