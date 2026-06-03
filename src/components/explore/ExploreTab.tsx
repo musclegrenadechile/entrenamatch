@@ -16,6 +16,7 @@ interface ExploreTabProps {
   requestUserLocation: () => void;
   onSwipe: (direction: 'left' | 'right', profileId: string) => void;
   onShowProfile?: (profile: Profile) => void;
+  onReport?: (profileId: string) => void;
   realProfiles?: Profile[];
   onRefreshRealProfiles?: () => void;
   lastSync?: Date | null;
@@ -32,6 +33,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
   requestUserLocation,
   onSwipe,
   onShowProfile,
+  onReport,
   realProfiles = [],
   onRefreshRealProfiles,
   lastSync,
@@ -409,6 +411,14 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                   <img src={profile.photos[0]} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" alt="" />
                   <div className="min-w-0 flex-1">
                     <div className="font-medium text-sm truncate flex items-center gap-1">{profile.name} {isReal && <span className="text-[8px] bg-[#14b8a6] text-black px-1 rounded">REAL</span>}</div>
+                    {onReport && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onReport(profile.id); }}
+                        className="text-[8px] text-red-400 underline ml-1 active:text-red-600"
+                      >
+                        Reportar
+                      </button>
+                    )}
                     <div className="text-xs text-[#94a3b8] truncate flex justify-between"><span>{profile.city}</span> {userLocation && <span className="text-[#64748b]">{getDistance(profile)} km</span>}</div>
                     <div className="text-[#14b8a6] text-sm font-bold mt-0.5">{score}%</div>
                   </div>

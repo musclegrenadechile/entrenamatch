@@ -2540,6 +2540,10 @@ function App() {
               }
             }}
             onShowProfile={setShowFullProfile}
+            onReport={(id) => {
+              const reason = prompt('¿Por qué reportas este perfil? (acoso, perfil falso, comportamiento inadecuado, etc.)');
+              if (reason) reportUser(id, reason, undefined, 'explore_rec', id);
+            }}
             realProfiles={realProfiles}
             onRefreshRealProfiles={async () => { await loadRealProfiles(); setLastSync(new Date()); }}
             lastSync={lastSync}
