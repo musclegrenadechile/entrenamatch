@@ -227,6 +227,27 @@ Después de deploy + hard refresh en ambos lados, el flujo completo (match real 
 Esto cierra el último agujero reportado de "por qué no se puede comunicar entre usuarios reales".
 - **UX que enmascaraba el problema** (optimistic + seeds para testing + catches silenciosos).
 
+**Actualización final (después de que sesiones funcionaron pero 1:1 seguía sin entregar mensajes live):**
+
+Usuario: "Fabuloso! funciono lo de las sesiones!. problema resuelto el de sesiones, ahora hay que resolver lo de los chats, ya que cuando un usuario envia un mensaje, el otro del otro dispositivo no le llega."
+
+**Causa raíz específica de 1:1 delivery (incluso con rules relajadas):**
+- Los bg listeners para /messages (por cada realMatch) usaban un patrón frágil: forEach + (async () => { ... onSnapshot ... unsubs.push })() con array local. El cleanup cerraba sobre el array antes de que los async pushes ocurrieran → listeners no se desuscribían bien, o se duplicaban, o no quedaban activos de forma confiable cuando realMatches cambiaba.
+- El listener "cuando el chat está abierto" (activeChat) actualizaba realChatMessages, pero el render del chat abierto priorizaba `realChatMessages.length > 0 ? realChatMessages : messages[...]`. Los bg listeners (30s poll + onSnapshot bg) solo llamaban loadRealChatMessages que actualizaba el estado `messages` (para previews de la lista de chats) pero **no** tocaba realChatMessages. Si el listener active no disparaba por alguna razón de timing/setup, el receptor veía el mensaje en consola/Firestore pero no en la UI del chat abierto.
+- No había "current active ref" para que loads bg supieran que debían refrescar también la vista abierta.
+- Falta de logs visibles tipo los de group ("📨 Live ...") hacía difícil confirmar si el snapshot llegaba.
+
+**Fix aplicado en este paso:**
+- Agregados `realChatUnsubsRef` y `currentActiveChatRef` (sync effect).
+- Refactor completo del effect bg de listeners 1:1: ahora sigue exactamente el patrón probado de group bg (limpieza de stale matches, skip si ya suscripto para ese matchId, store en ref, cleanup global en unmount).
+- `loadRealChatMessages` ahora: después de setMessages, si currentActiveChatRef === otherUserId entonces también setRealChatMessages. Cualquier trigger (bg listener, poll 30s, "Actualizar chats reales", active listener) ahora actualiza la vista del chat abierto.
+- Los handlers de onSnapshot (tanto bg como el dedicado active) ahora loguean `📨 Live 1:1 (q1/q2) ...` o `📨 Live 1:1 active chat update ...` apenas llega el snapshot (para que en consola se vea inmediatamente si el mecanismo de "si alguien envia uno lo reciba" está vivo).
+- En sendRealMessage: tras addDoc exitoso se fuerza loadRealChatMessages + setRealChatMessages en el emisor.
+- El effect del chat abierto también fortalecido con logs.
+- Build limpio + push. CI actualiza el bundle.
+
+Con esto + hard refresh después del deploy de rules+web, el receptor debe recibir el mensaje en la lista de Mensajes (preview) y dentro del chat abierto en tiempo real (o con el poll de 8s como fallback), sin necesidad de tocar botones, igual que el chat grupal de sesiones.
+
 Estos eran problemas de **implementación incompleta** de un flujo que parece simple ("si A le gusta a B, ambos ven el match y pueden chatear en tiempo real"), pero requiere coordinación de writes, loads reactivos, listeners, reglas de seguridad y manejo de estado dual (local + remoto).
 
 Los fixes aplicados en las iteraciones de Phase 0 (listeners, polling, rules, actualizaciones de manual refresh, declutter) resuelven la mayoría. El sistema ahora **debería permitir** comunicación real entre usuarios reales una vez deployadas las rules y con hard refresh.
