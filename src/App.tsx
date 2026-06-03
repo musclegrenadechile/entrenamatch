@@ -6103,7 +6103,7 @@ function App() {
                   </div>
                   <AnimatePresence>
                     {(profilePosts[showFullProfile.id] || []).length > 0 ? (
-                      (profilePosts[showFullProfile.id] || []).slice(0, 6).map((post) => (
+                      [...(profilePosts[showFullProfile.id] || [])].sort((a,b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.timestamp - a.timestamp).slice(0, 6).map((post) => (
                         <motion.div
                           key={post.id}
                           initial={{ opacity: 0, y: 10 }}
