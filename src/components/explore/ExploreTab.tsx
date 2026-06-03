@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, RefreshCw, MapPin, Star, CheckCircle, X, Heart } from 'lucide-react';
+import { Filter, RefreshCw, MapPin, CheckCircle, X, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Profile, CurrentUser } from '../../types';
 import { calculateCompatibility, getDistanceKm } from '../../utils';
@@ -177,11 +177,19 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/95" />
         <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 to-transparent" />
 
+        {/* Unique: Dynamic swipe feedback overlay (green for like/train, red for pass) */}
+        {isTop && Math.abs(dragX) > 20 && (
+          <div 
+            className={`absolute inset-0 rounded-3xl transition-opacity ${dragX > 0 ? 'bg-[#22c55e]/20' : 'bg-red-500/20'}`}
+            style={{ opacity: Math.min(Math.abs(dragX) / 150, 0.6) }}
+          />
+        )}
+
         {/* Top badges row - Premium with Real tester indicator */}
         <div className="absolute top-4 left-4 right-4 flex items-start justify-between">
           <div className="flex flex-col gap-1.5">
             {isRealProfile && (
-              <div className="inline-flex items-center gap-1 bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black text-[9px] font-extrabold px-2.5 py-0.5 rounded-full shadow ring-1 ring-white/70">
+              <div className="inline-flex items-center gap-1 bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black text-[9px] font-extrabold px-2.5 py-0.5 rounded-full shadow ring-1 ring-white/70 animate-pulse">
                 ★ REAL TESTER
               </div>
             )}
@@ -222,17 +230,20 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
 
             {compat !== null && (
               <div className="text-right">
-                <div className="text-3xl font-bold text-[#FF671F] leading-none">{compat}</div>
-                <div className="text-[10px] -mt-1 opacity-75">compat</div>
-                {(() => {
-                  const rs = getCompatReasons(profile);
-                  if (!rs.length) return null;
-                  return (
-                    <div className="text-[8px] text-[#FF671F]/80 mt-0.5 leading-none">
-                      {rs.join(' · ')}
-                    </div>
-                  );
-                })()}
+                {/* Unique: Compatibility as "match energy" with visual bar */}
+                <div className="flex items-end justify-end gap-1">
+                  <div className="text-4xl font-black text-[#FF671F] leading-none tracking-[-2px]">{compat}</div>
+                  <div className="text-[9px] text-[#FF671F]/70 font-bold mb-0.5">MATCH</div>
+                </div>
+                <div className="h-1 w-12 bg-white/20 rounded-full overflow-hidden mt-0.5 ml-auto">
+                  <div 
+                    className="h-full bg-gradient-to-r from-[#FF671F] to-[#E55A1A] transition-all" 
+                    style={{ width: `${compat}%` }} 
+                  />
+                </div>
+                <div className="text-[8px] text-[#FF671F]/70 mt-0.5 leading-none font-medium">
+                  {getCompatReasons(profile).join(' · ')}
+                </div>
               </div>
             )}
           </div>
@@ -299,16 +310,17 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
       <div className="flex items-start justify-between mb-1.5 px-1">
         <div>
           <div className="section-header text-3xl">Explorar</div>
-          <div className="mt-0.5 text-xs leading-tight">
+          <div className="mt-0.5 flex items-center gap-x-2 text-xs leading-tight flex-wrap">
             <span className="text-[#FF671F] font-semibold">
               {deck.length} disponibles ahora {userLocation ? 'cerca de ti' : ''} · ordenados por compat
             </span>
             {lastSync && (
-              <span className="ml-2 text-[9px] text-[#9CA3AF] bg-[#1C1C20] px-1.5 py-px rounded align-middle">sync hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>
+              <span className="text-[9px] text-[#9CA3AF] bg-[#1C1C20] px-1.5 py-px rounded">sync hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>
             )}
             {realProfiles && realProfiles.length > 0 && (
-              <span className="ml-2 text-[10px] text-[#FF671F] font-medium align-middle">+ {realProfiles.length} reales <span className="live-pill text-[8px]">en vivo</span></span>
+              <span className="text-[10px] text-[#FF671F] font-medium">+ {realProfiles.length} reales <span className="live-pill text-[8px]">en vivo</span></span>
             )}
+            <span className="text-[10px] text-[#FF671F]/70">• el match del movimiento</span>
           </div>
         </div>
 
@@ -365,14 +377,14 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         <AnimatePresence>
           {visibleCards.length === 0 && (
             <div className="text-center px-6">
-              <div className="mx-auto w-14 h-14 bg-[#1C1C20] rounded-2xl flex items-center justify-center mb-4">
-                <Star className="text-[#FF671F]" size={28} />
+              <div className="mx-auto w-16 h-16 bg-[#1C1C20] rounded-3xl flex items-center justify-center mb-4 ring-1 ring-[#FF671F]/20">
+                <div className="text-4xl">🏋️</div>
               </div>
-              <div className="text-2xl font-semibold tracking-tight mb-1">No hay perfiles que coincidan</div>
+              <div className="text-2xl font-semibold tracking-tight mb-1">¡No más perfiles por hoy!</div>
               <p className="text-[#9CA3AF] max-w-[300px] mx-auto mb-4 text-sm">
                 {realProfiles.length > 0 
-                  ? 'Los filtros actuales limitan los resultados. Relaja distancia, tipos de entrenamiento o actualiza perfiles reales.'
-                  : 'Aún no hay perfiles reales cargados. Actualiza o prueba en modo demo.'}
+                  ? 'Ajusta filtros o crea una sesión para que otros te encuentren. ¡El match del movimiento sigue!'
+                  : 'Aún no hay perfiles reales. ¡Sé el primero en crear una sesión!'}
               </p>
 
               {/* Active filters summary for better UX */}
@@ -443,22 +455,24 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         </AnimatePresence>
       </div>
 
-      {/* Action Buttons */}
+      {/* Action Buttons - Unique EntrenaMatch style */}
       {deck.length > 0 && topProfile && (
-        <div className="flex justify-center items-center gap-5 pb-3">
+        <div className="flex justify-center items-center gap-6 pb-2">
           <button 
             onClick={handlePass}
-            className="w-16 h-16 rounded-full bg-[#1C1C20] border border-[#2F2F35] flex items-center justify-center active:scale-95 transition shadow-inner"
+            className="group w-14 h-14 rounded-full bg-[#1C1C20] border border-[#2F2F35] flex flex-col items-center justify-center active:scale-90 transition-all shadow-inner hover:border-red-500/50"
             aria-label="Pasar"
           >
-            <X size={34} className="text-[#ef4444]" />
+            <X size={28} className="text-red-400 group-active:text-red-500" />
+            <span className="text-[8px] text-red-400/70 -mt-0.5 tracking-widest">PASAR</span>
           </button>
           <button 
             onClick={handleLike}
-            className="w-[74px] h-[74px] rounded-full bg-[#FF671F] flex items-center justify-center active:scale-95 transition shadow-lg shadow-[#FF671F]/40"
-            aria-label="Me gusta"
+            className="group w-20 h-20 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex flex-col items-center justify-center active:scale-90 transition-all shadow-xl shadow-[#FF671F]/50 ring-1 ring-white/20"
+            aria-label="Entrenar juntos"
           >
-            <Heart size={36} className="text-black" />
+            <Heart size={32} className="text-black" />
+            <span className="text-[9px] text-black/80 -mt-1 font-bold tracking-[1px]">ENTRENAR</span>
           </button>
         </div>
       )}
