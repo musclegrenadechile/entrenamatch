@@ -51,12 +51,36 @@ Prompt example for mock: "Android phone screenshot of EntrenaMatch app, Explore 
 - Privacy policy URL: https://musclegrenadechile.github.io/entrenamatch/privacy.html (or Firebase hosted).
 - High-res icon 512x512 for store.
 
-## Instructions
-- Replace icons in res/mipmap-* with resized versions of the generated icon (use Android Studio or online resizer).
-- For screenshots: Run the app in emulator or device, navigate the polished flows, take screenshots, or use the prompts above with image tools to mock if needed.
-- Update the store listing in Play Console with these + the descriptions.
-- The polished UI (post 2026 polish wave) makes great authentic screenshots showing "elige perfiles reales en vivo".
+## Generated Assets (use these)
+- icon-512.jpg : High quality app icon (from image gen, modern teal fitness theme).
+- feature-graphic.jpg : Existing or update with prompt.
+- screenshot-explore-polished.jpg : Realistic Explore screen showing current polished UI (disponibles ahora, en vivo, real recs, cards).
+- screenshot-chat-polished.jpg : Live chat example with en vivo.
+- screenshot-explore.jpg, screenshot-chat.jpg : Older placeholders, replace with polished ones.
 
-This supports the Tier 1 launch for real testers.
+## Instructions for Play Store / Android
+1. For icons: Resize icon-512.jpg to the mipmap densities (48/72/96/144/192 px) using any image tool or Android Studio Image Asset. Replace ic_launcher.png, ic_launcher_round.png, ic_launcher_foreground.png in all mipmap-* folders. Also update adaptive icon if needed.
+2. For feature graphic: Use or edit feature-graphic.jpg to 1024x500.
+3. For screenshots: Use the -polished.jpg as base (they show the actual current app UI with all recent polish: "disponibles ahora", en vivo badges, lastSync, real-first recs, clean cards, live chat). Crop/add phone bezel in editor if desired for store (Google accepts with/without). Need at least 2, up to 8. Make sure they highlight real profiles, live indicators, sessions.
+4. Descriptions: Use in Play Console:
+   - Short: "El match del movimiento. Elige perfiles reales cerca de ti, chatea en vivo y coordina sesiones de entrenamiento. Solo +18."
+   - Full: "EntrenaMatch te conecta con personas que entrenan de verdad cerca de ti. Explora perfiles reales con filtros en vivo, recomendaciones 'reales primero', compatibilidad y distancia. Haz match, chatea 1:1 o en grupo dentro de sesiones de entrenamiento que tú creas o a las que te unes. Todo cross-device y real-time. Pre-alpha: únete a la beta oculta y ayuda a construir la mejor comunidad fitness de Chile y LatAm. Solo mayores de 18."
+5. Update Play Console: Upload assets, set privacy policy URL to https://musclegrenadechile.github.io/entrenamatch/privacy.html (or your hosted), contact email, category Health & Fitness or Social, content rating 18+.
+6. The polished UI from recent Phase 0 work (en vivo everywhere, lastSync, disponibles ahora, real recs, decluttered empties) is ready for great screenshots that show the premium "elige perfiles reales" experience.
 
-See PRODUCTION_AND_APK.md for full build/upload steps.
+This completes the visual assets part of Tier 1 for hidden beta launch to real testers.
+
+See the main plan for full checklist. Update screenshots after any final polish.
+
+## Next for you (user)
+- Resize and replace icons in android res.
+- Use polished screenshots.
+- Add google-services.json for push (from your Firebase project, package name com.entrenamatch or whatever set).
+- Rebuild signed AAB.
+- Test on device per the protocol in BETA_TESTERS_GUIDE.md.
+- Upload to Play Internal, add your 5-10 Chile testers.
+- Share the welcome from the app.
+
+Everything code-side for launch is ready (legal, push client, welcome, safety report in elegir flow, UI polish).
+
+Pushes done. Hard refresh or rebuild to test.
