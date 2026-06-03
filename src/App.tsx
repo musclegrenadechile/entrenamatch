@@ -3961,7 +3961,7 @@ function App() {
             <Icon size={18} />
             {label}
             {badge && badge > 0 && (
-              <span className="absolute top-1 right-2 min-w-[14px] h-[14px] px-1 text-[9px] font-bold rounded-full bg-[#ef4444] text-white flex items-center justify-center">
+              <span className="absolute top-1 right-2 min-w-[14px] h-[14px] px-1 text-[9px] font-bold rounded-full bg-[#FF4F79] text-black flex items-center justify-center">
                 {badge > 9 ? '9+' : badge}
               </span>
             )}
