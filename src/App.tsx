@@ -3640,6 +3640,13 @@ function App() {
                     <span>{feedPosts.length} posts {feedSearch || feedOnlyReal || feedShowPinnedOnly ? 'filtrados' : 'recientes'} de la comunidad</span>
                     {(feedSearch || feedOnlyReal || feedShowPinnedOnly) && <button onClick={() => { setFeedSearch(''); setFeedOnlyReal(false); setFeedShowPinnedOnly(false); }} className="text-[#FF671F] underline">limpiar filtros</button>}
                   </div>
+                  {(() => {
+                    const pinnedInFeed = allCommunityPosts.filter((p: any) => p.pinned);
+                    if (pinnedInFeed.length > 0 && !feedShowPinnedOnly && !feedSearch && !feedOnlyReal) {
+                      return <div className="text-[9px] text-[#FF671F] mb-2 px-1">📌 {pinnedInFeed.length} posts fijados destacados arriba</div>;
+                    }
+                    return null;
+                  })()}
                   {feedPosts.map((post: any) => {
                     const ownerProfile = realProfiles.find(r => r.id === post.ownerId);
                     const owner = ownerProfile || { name: 'Compañero', id: post.ownerId, photos: [] };
@@ -4696,10 +4703,14 @@ function App() {
                 if (pinned.length === 0) return null;
                 return (
                   <div className="px-1 mb-2">
-                    <div className="text-[9px] text-[#FF671F] mb-1">📌 Tus posts fijados (aparecen primero en feed global)</div>
+                    <div className="text-[9px] text-[#FF671F] mb-1 flex justify-between">
+                      <span>📌 Tus posts fijados (aparecen primero en feed global)</span>
+                      <button onClick={() => setActiveTab('feed')} className="underline">ver en feed →</button>
+                    </div>
                     {pinned.slice(0,2).map((p: any) => (
-                      <div key={p.id} onClick={() => { /* could scroll but simple */ }} className="text-[10px] text-[#9CA3AF] truncate cursor-pointer">• {p.text}</div>
+                      <div key={p.id} onClick={() => setActiveTab('feed')} className="text-[10px] text-[#9CA3AF] truncate cursor-pointer active:text-[#FF671F]">• {p.text}</div>
                     ))}
+                    {pinned.length > 2 && <div className="text-[9px] text-[#FF671F]/70">+{pinned.length-2} más...</div>}
                   </div>
                 );
               })()}
