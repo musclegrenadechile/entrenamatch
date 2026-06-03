@@ -4,9 +4,14 @@ import { Dumbbell, MapPin, Camera, Trash2, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { TRAINING_OPTIONS, TRAINING_GOALS, TRAINING_INTENSITIES } from '../../constants';
 
-// Capacitor Camera - static import for reliable resolution in all Vite builds (web + Capacitor/APK)
-import { Camera as CapacitorCameraModule } from '@capacitor/camera';
-let CapacitorCamera: any = CapacitorCameraModule;
+// Capacitor Camera loaded via dynamic import (conditional on build type, same as in App.tsx)
+let CapacitorCamera: any = null;
+
+if (__CAPACITOR_BUILD__) {
+  import('@capacitor/camera').then(mod => { CapacitorCamera = mod.Camera }).catch(() => {})
+} else {
+  import(/* @vite-ignore */ '@capacitor/camera').then(mod => { CapacitorCamera = mod.Camera }).catch(() => {})
+}
 
 interface OnboardingFlowProps {
   onboardingStep: number;
