@@ -17,9 +17,6 @@ export default defineConfig({
     CAPACITOR_PLUGINS_LOADER: JSON.stringify(
       process.env.CAPACITOR ? './capacitor-plugins.ts' : 'data:application/javascript,export default {};'
     ),
-    CAPACITOR_PLUGINS_LOADER_ONBOARD: JSON.stringify(
-      process.env.CAPACITOR ? '../capacitor-plugins.ts' : 'data:application/javascript,export default {};'
-    ),
   },
 
   // Force Vite to know about the Capacitor plugins (for CAPACITOR builds).
