@@ -156,6 +156,14 @@ Everything must work after hard refresh + on different physical devices (not jus
   - PWA install option in Profile now always visible for web (no prompt conditional), clicking forces banner (which is now sticky + has guidance).
   - Top bar has persistent 📱 button for easy access on mobile.
   - If the PWA "Instalar" banner/prompt doesn't install when pressed (common on some mobile browsers due to criteria or subpath), use the prominent "Descargar APK más reciente" link in Profile → GitHub Releases (or CI artifacts for latest debug APK). Install APK enables full native notifs + camera.
+- [x] Core notification repeat bug fixed (toasts + panel entries for same message kept repeating forever, even after "marcar como leídas"):
+  - Seen message ID sets (for deduping listener "added" events) were only in-memory refs → reset on every reload/re-subscribe → historical messages re-triggered addNotification + toast on every load.
+  - Made seen IDs persistent (load from localStorage on mount into refs, persistSeen() after every .add).
+  - Fixed collection logic in both 1:1 and group onSnapshot: capture preSize, only push to newly if !wasSeen (filter duplicates before marking seen).
+  - Notify only if newly.length > 0 && preSize > 0 (skip treating full current snapshot as "new" on first load after reload).
+  - Extra belt: dedup by relatedId + type + recent time inside addNotification itself (prevents any stray duplicate entries).
+  - On logout also clear the seen storage.
+  - Marking read in panel now sticks (persisted), and no new duplicates will be created for already-seen messages.
 - Add FIREBASE_SERVICE_ACCOUNT secret to GitHub for full auto Firebase Hosting deploys on every push (recommended over GH Pages for PWA + future FCM).
 
 ## Later Phases (high level)

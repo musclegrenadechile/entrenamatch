@@ -906,6 +906,8 @@ function App() {
       setSessionUnreads({})
       seenChatMsgIdsRef.current = {}
       seenGroupMsgIdsRef.current = {}
+      localStorage.removeItem('entrenamatch_seen_chat_msgs')
+      localStorage.removeItem('entrenamatch_seen_group_msgs')
       
       setMatches([])
       setLikedIds([])
@@ -1126,6 +1128,7 @@ function App() {
             // mark any new ids as seen so future incoming are detected
             if (snapshot.docChanges) {
               snapshot.docChanges().forEach((ch: any) => { if (ch.type === 'added') { if (!seenChatMsgIdsRef.current[matchId]) seenChatMsgIdsRef.current[matchId] = new Set(); seenChatMsgIdsRef.current[matchId].add(ch.doc.id); } });
+            persistSeen();
             }
           };
           const unsub1 = onSnapshot(q1, handler1, (err: any) => console.warn(`bg 1:1 q1 listener error for ${matchId}:`, err));
@@ -1134,22 +1137,25 @@ function App() {
           const handler2 = (snapshot: any) => {
             console.log(`📨 Live 1:1 update (bg) for ${matchId}`);
             const changes = snapshot.docChanges ? snapshot.docChanges() : [];
+            const preSize = seenChatMsgIdsRef.current[matchId] ? seenChatMsgIdsRef.current[matchId].size : 0;
             const newlyAddedIncoming: any[] = [];
             changes.forEach((ch: any) => {
               if (ch.type === 'added') {
                 const d = ch.doc.data() as any;
-                // only from the other side
-                if (d.from === matchId) {
-                  newlyAddedIncoming.push({ id: ch.doc.id, text: d.text || '', photo: d.photo });
-                }
+                const msgId = ch.doc.id;
                 if (!seenChatMsgIdsRef.current[matchId]) seenChatMsgIdsRef.current[matchId] = new Set();
-                seenChatMsgIdsRef.current[matchId].add(ch.doc.id);
+                const wasSeen = seenChatMsgIdsRef.current[matchId].has(msgId);
+                seenChatMsgIdsRef.current[matchId].add(msgId);
+                persistSeen();
+                // only from the other side AND not previously seen
+                if (d.from === matchId && !wasSeen) {
+                  newlyAddedIncoming.push({ id: msgId, text: d.text || '', photo: d.photo });
+                }
               }
             });
             loadRealChatMessages(matchId);
-            // If there were new incoming msgs and this is not the first snapshot for the chat, fire notif (only if not currently viewing this chat)
-            if (newlyAddedIncoming.length > 0 && seenChatMsgIdsRef.current[matchId] && seenChatMsgIdsRef.current[matchId].size > newlyAddedIncoming.length) {
-              // not the very first population
+            // Fire notif only for truly new unseen. On first population for this chat (preSize==0), treat as historical -> no notify.
+            if (newlyAddedIncoming.length > 0 && preSize > 0) {
               if (currentActiveChatRef.current !== matchId) {
                 const prof = (realProfiles || []).find((p: any) => p.id === matchId) || SEED_PROFILES.find((p: any) => p.id === matchId);
                 const senderName = prof?.name || 'Usuario';
@@ -1510,17 +1516,21 @@ function App() {
           const q = query(msgsRef, orderBy('createdAt', 'asc'));
 
           const unsub = onSnapshot(q, (snapshot) => {
+            const preSize = seenGroupMsgIdsRef.current[sessionId] ? seenGroupMsgIdsRef.current[sessionId].size : 0;
             const loaded: SessionMessage[] = [];
             const newlyAddedFromOthers: any[] = [];
             const changes = snapshot.docChanges ? snapshot.docChanges() : [];
             changes.forEach((ch: any) => {
               if (ch.type === 'added') {
                 const d = ch.doc.data() as any;
-                if (d.senderId && d.senderId !== firebaseUser.uid && d.senderId !== effectiveUserId) {
-                  newlyAddedFromOthers.push({ id: ch.doc.id, text: d.text || '', senderName: d.senderName || 'Participante', photo: d.photo });
-                }
+                const msgId = ch.doc.id;
                 if (!seenGroupMsgIdsRef.current[sessionId]) seenGroupMsgIdsRef.current[sessionId] = new Set();
-                seenGroupMsgIdsRef.current[sessionId].add(ch.doc.id);
+                const wasSeen = seenGroupMsgIdsRef.current[sessionId].has(msgId);
+                seenGroupMsgIdsRef.current[sessionId].add(msgId);
+                persistSeen();
+                if (d.senderId && d.senderId !== firebaseUser.uid && d.senderId !== effectiveUserId && !wasSeen) {
+                  newlyAddedFromOthers.push({ id: msgId, text: d.text || '', senderName: d.senderName || 'Participante', photo: d.photo });
+                }
               }
             });
             snapshot.forEach((doc) => {
@@ -1544,8 +1554,8 @@ function App() {
               setSessionUnreads(prev => { const c = { ...prev }; c[sessionId] = 0; return c })
             }
             console.log(`📨 BG live group msg for ${sessionId}: ${loaded.length} msgs`);
-            // Notify only for newly added from others, and only if not first population + modal not open for this session
-            if (newlyAddedFromOthers.length > 0 && seenGroupMsgIdsRef.current[sessionId] && seenGroupMsgIdsRef.current[sessionId].size > newlyAddedFromOthers.length) {
+            // Notify only for truly new unseen from others. Skip on first population for this listener (preSize==0 means historical).
+            if (newlyAddedFromOthers.length > 0 && preSize > 0) {
               if (showGroupChatModalFor !== sessionId) {
                 const first = newlyAddedFromOthers[0];
                 const sess = (realSessions || []).find((s: any) => s.id === sessionId) || displaySessions.find((s: any) => s.id === sessionId);
@@ -1701,6 +1711,26 @@ function App() {
     const savedNotifications = localStorage.getItem('entrenamatch_notifications')
     if (savedNotifications) setNotifications(JSON.parse(savedNotifications))
 
+    // Restore persistent seen message IDs so we don't re-notify old messages after reload
+    const savedSeenChat = localStorage.getItem('entrenamatch_seen_chat_msgs')
+    if (savedSeenChat) {
+      try {
+        const parsed = JSON.parse(savedSeenChat)
+        Object.keys(parsed).forEach(k => {
+          seenChatMsgIdsRef.current[k] = new Set(parsed[k])
+        })
+      } catch {}
+    }
+    const savedSeenGroup = localStorage.getItem('entrenamatch_seen_group_msgs')
+    if (savedSeenGroup) {
+      try {
+        const parsed = JSON.parse(savedSeenGroup)
+        Object.keys(parsed).forEach(k => {
+          seenGroupMsgIdsRef.current[k] = new Set(parsed[k])
+        })
+      } catch {}
+    }
+
     const savedChatUnreads = localStorage.getItem('entrenamatch_chat_unreads')
     if (savedChatUnreads) setChatUnreads(JSON.parse(savedChatUnreads))
 
@@ -1777,8 +1807,32 @@ function App() {
     setNotifications(newNotifications)
   }
 
+  const persistSeen = () => {
+    try {
+      const chatObj: Record<string, string[]> = {}
+      Object.keys(seenChatMsgIdsRef.current).forEach(k => {
+        chatObj[k] = Array.from(seenChatMsgIdsRef.current[k])
+      })
+      localStorage.setItem('entrenamatch_seen_chat_msgs', JSON.stringify(chatObj))
+
+      const groupObj: Record<string, string[]> = {}
+      Object.keys(seenGroupMsgIdsRef.current).forEach(k => {
+        groupObj[k] = Array.from(seenGroupMsgIdsRef.current[k])
+      })
+      localStorage.setItem('entrenamatch_seen_group_msgs', JSON.stringify(groupObj))
+    } catch {}
+  }
+
   // Add a new notification
   const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+    // Simple dedup: don't add duplicate recent notification for same relatedId + type (prevents repeats on reloads/listener glitches)
+    const isDuplicate = notifications.some(n => 
+      n.relatedId === notification.relatedId && 
+      n.type === notification.type && 
+      (Date.now() - (n.timestamp || 0)) < 1000 * 60 * 5 // within last 5 min
+    );
+    if (isDuplicate) return;
+
     const newNotif: Notification = {
       ...notification,
       id: 'notif' + Date.now(),
