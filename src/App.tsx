@@ -448,8 +448,14 @@ function App() {
   // Inline comment composer for attractive muro (replaces ugly prompt() for both own + viewed profiles)
   const [activeComment, setActiveComment] = useState<{postId: string; postUserId: string; ownerName?: string} | null>(null)
   const [commentDraft, setCommentDraft] = useState('')
+  // Full spectacular comments modal for muro threads (tap preview to open rich view)
+  const [viewingPostComments, setViewingPostComments] = useState<{postId: string; postUserId: string; ownerName?: string} | null>(null)
+  const [modalCommentDraft, setModalCommentDraft] = useState('')
   const [showCreateSquad, setShowCreateSquad] = useState(false)
   const [selectedSquad, setSelectedSquad] = useState<string | null>(null) // for detail view
+
+  // Ref for focusing composer from empty state CTA
+  const muroComposerRef = useRef<HTMLTextAreaElement>(null)
 
   // Safety & Moderation (critical for launch)
   const [blockedUsers, setBlockedUsers] = useState<string[]>([])
@@ -2075,6 +2081,27 @@ function App() {
   const cancelComment = () => {
     setActiveComment(null)
     setCommentDraft('')
+  }
+
+  // Open rich full-comments modal (spectacular thread view)
+  const openFullComments = (postId: string, postUserId: string, ownerName?: string) => {
+    setViewingPostComments({ postId, postUserId, ownerName })
+    setModalCommentDraft('')
+    // close any inline to avoid overlap
+    setActiveComment(null)
+    setCommentDraft('')
+  }
+
+  const submitModalComment = async () => {
+    if (!viewingPostComments || !modalCommentDraft.trim()) return
+    await addCommentToPost(viewingPostComments.postId, viewingPostComments.postUserId, modalCommentDraft)
+    setModalCommentDraft('')
+    // modal will auto-refresh via global profilePosts
+  }
+
+  const closeFullComments = () => {
+    setViewingPostComments(null)
+    setModalCommentDraft('')
   }
 
   const saveBlockedUsers = (newBlocked: string[]) => {
@@ -4265,9 +4292,24 @@ function App() {
                   onClick={() => loadProfilePosts(effectiveUserId)} 
                   className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10"
                 >
-                  Actualizar
+                  Refrescar
                 </button>
               </div>
+              {/* Live engagement stats - makes the muro feel alive and spectacular */}
+              {(() => {
+                const myPosts = profilePosts[effectiveUserId] || []
+                if (myPosts.length === 0) return null
+                const likes = myPosts.reduce((s, p) => s + (p.likes?.length || 0), 0)
+                const comms = myPosts.reduce((s, p) => s + (p.comments?.length || 0), 0)
+                return (
+                  <div className="flex gap-3 text-[10px] px-1 mb-2 text-[#9CA3AF]">
+                    <span>📝 {myPosts.length}</span>
+                    <span>❤️ {likes}</span>
+                    <span>💬 {comms}</span>
+                    <span className="text-[#FF671F]/60">· comunidad interactúa</span>
+                  </div>
+                )
+              })()}
 
               {/* Attractive composer */}
               <div className="card p-4 mb-4">
@@ -4275,6 +4317,7 @@ function App() {
                   <span>📝</span> Publica en tu muro
                 </div>
                 <textarea 
+                  ref={muroComposerRef}
                   value={muroComposerText}
                   onChange={e => setMuroComposerText(e.target.value)}
                   placeholder="¿Qué tal tu último entreno? Motiva a la comunidad..."
@@ -4328,84 +4371,118 @@ function App() {
                 <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Visible en tu perfil y para quien vea tu perfil completo</div>
               </div>
 
-              {/* Posts feed - attractive cards */}
-              {(profilePosts[effectiveUserId] || []).length > 0 ? (
-                (profilePosts[effectiveUserId] || []).map(post => {
-                  const isOwn = true
-                  const liked = post.likes.includes(effectiveUserId)
-                  return (
-                    <div key={post.id} className="card p-4 mb-3">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="text-[10px] text-[#9CA3AF]" title={new Date(post.timestamp).toLocaleString('es-CL')}>
-                          {getRelativeTime(post.timestamp)}
+              {/* Posts feed - spectacular animated cards with full thread modal */}
+              <AnimatePresence>
+                {(profilePosts[effectiveUserId] || []).length > 0 ? (
+                  (profilePosts[effectiveUserId] || []).map(post => {
+                    const isOwn = true
+                    const liked = post.likes.includes(effectiveUserId)
+                    return (
+                      <motion.div
+                        key={post.id}
+                        initial={{ opacity: 0, y: 16, scale: 0.985 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -12, scale: 0.97, height: 0, marginBottom: 0 }}
+                        transition={{ type: 'spring', bounce: 0.12, duration: 0.28 }}
+                        className="card p-4 mb-3"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <div className="text-[10px] text-[#9CA3AF]" title={new Date(post.timestamp).toLocaleString('es-CL')}>
+                            {getRelativeTime(post.timestamp)}
+                          </div>
+                          {isOwn && (
+                            <button 
+                              onClick={() => deleteProfilePost(post.id, effectiveUserId)}
+                              className="text-red-400 text-xs px-1 active:text-red-500"
+                              title="Eliminar post"
+                            >
+                              🗑
+                            </button>
+                          )}
                         </div>
-                        {isOwn && (
-                          <button 
-                            onClick={() => deleteProfilePost(post.id, effectiveUserId)}
-                            className="text-red-400 text-xs px-1 active:text-red-500"
-                            title="Eliminar post"
-                          >
-                            🗑
-                          </button>
+                        <div className="text-sm leading-relaxed mb-2">{post.text}</div>
+                        {post.photo && (
+                          <img src={post.photo} className="w-full rounded-2xl max-h-56 object-cover mb-3 border border-[#2F2F35]" />
                         )}
-                      </div>
-                      <div className="text-sm leading-relaxed mb-2">{post.text}</div>
-                      {post.photo && (
-                        <img src={post.photo} className="w-full rounded-2xl max-h-56 object-cover mb-3 border border-[#2F2F35]" />
-                      )}
-                      <div className="flex items-center gap-4 text-sm">
-                        <button 
-                          onClick={() => likeProfilePost(post.id, effectiveUserId)}
-                          className={`flex items-center gap-1 transition ${liked ? 'text-[#FF671F]' : 'text-[#9CA3AF] hover:text-[#FF671F]'}`}
-                        >
-                          {liked ? '❤️' : '🤍'} <span className="font-medium">{post.likes.length}</span>
-                        </button>
-                        <button 
-                          onClick={() => startComment(post.id, effectiveUserId)}
-                          className="flex items-center gap-1 text-[#9CA3AF] hover:text-[#FF671F]"
-                        >
-                          💬 <span className="font-medium">{post.comments.length}</span>
-                        </button>
-                      </div>
-                      {post.comments.length > 0 && (
-                        <div className="mt-2 pt-2 border-t border-[#2F2F35] text-xs text-[#9CA3AF] space-y-1">
-                          {post.comments.slice(-3).map(c => (
-                            <div key={c.id} className="flex gap-1.5">
-                              <span className="font-medium text-white/80">{c.userName}:</span> 
-                              <span className="truncate">{c.text}</span>
-                            </div>
-                          ))}
-                          {post.comments.length > 3 && <div className="text-[#FF671F]/70">+{post.comments.length-3} más...</div>}
-                        </div>
-                      )}
-                      {/* Inline attractive comment box - appears only for this post when commenting */}
-                      {activeComment?.postId === post.id && (
-                        <div className="mt-2 pt-2 border-t border-[#2F2F35] flex items-center gap-2">
-                          <input 
-                            type="text" 
-                            value={commentDraft} 
-                            onChange={e => setCommentDraft(e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment() } }}
-                            placeholder="Escribe un comentario..."
-                            className="flex-1 bg-[#1A1A1E] border border-[#2F2F35] rounded-2xl px-3 py-1.5 text-sm focus:outline-none focus:border-[#FF671F]"
-                            maxLength={200}
-                          />
+                        <div className="flex items-center gap-4 text-sm">
                           <button 
-                            onClick={submitComment} 
-                            disabled={!commentDraft.trim()} 
-                            className="text-[#FF671F] text-sm font-medium px-3 disabled:opacity-40 active:scale-95"
+                            onClick={() => likeProfilePost(post.id, effectiveUserId)}
+                            className={`flex items-center gap-1 transition ${liked ? 'text-[#FF671F]' : 'text-[#9CA3AF] hover:text-[#FF671F]'}`}
                           >
-                            Enviar
+                            <motion.span
+                              key={liked ? 'l' + post.likes.length : 'u'}
+                              animate={{ scale: liked ? [1, 1.35, 1] : 1 }}
+                              transition={{ duration: 0.22, ease: 'easeOut' }}
+                            >
+                              {liked ? '❤️' : '🤍'}
+                            </motion.span>
+                            <span className="font-medium">{post.likes.length}</span>
                           </button>
-                          <button onClick={cancelComment} className="text-[#9CA3AF] text-xs px-1">✕</button>
+                          <button 
+                            onClick={() => startComment(post.id, effectiveUserId)}
+                            className="flex items-center gap-1 text-[#9CA3AF] hover:text-[#FF671F]"
+                          >
+                            💬 <span className="font-medium">{post.comments.length}</span>
+                          </button>
                         </div>
-                      )}
-                    </div>
-                  )
-                })
-              ) : (
-                <div className="text-xs text-[#9CA3AF] mb-3 italic">Tu muro está vacío. Publica algo para que la comunidad vea tu progreso y entrenos diarios.</div>
-              )}
+                        {post.comments.length > 0 && (
+                          <div 
+                            onClick={() => openFullComments(post.id, effectiveUserId)}
+                            className="mt-2 pt-2 border-t border-[#2F2F35] text-xs text-[#9CA3AF] space-y-1 cursor-pointer active:bg-[#1A1A1E]/40 rounded px-1 -mx-1 py-0.5"
+                            title="Ver todos los comentarios"
+                          >
+                            {post.comments.slice(-3).map(c => (
+                              <div key={c.id} className="flex gap-1.5">
+                                <span className="font-medium text-white/80">{c.userName}:</span> 
+                                <span className="truncate">{c.text}</span>
+                              </div>
+                            ))}
+                            {post.comments.length > 3 && <div className="text-[#FF671F]/70">+{post.comments.length-3} más... (toca para ver hilo completo)</div>}
+                          </div>
+                        )}
+                        {/* Inline attractive comment box */}
+                        {activeComment?.postId === post.id && (
+                          <div className="mt-2 pt-2 border-t border-[#2F2F35] flex items-center gap-2">
+                            <input 
+                              type="text" 
+                              value={commentDraft} 
+                              onChange={e => setCommentDraft(e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment() } }}
+                              placeholder="Escribe un comentario..."
+                              className="flex-1 bg-[#1A1A1E] border border-[#2F2F35] rounded-2xl px-3 py-1.5 text-sm focus:outline-none focus:border-[#FF671F]"
+                              maxLength={200}
+                            />
+                            <button 
+                              onClick={submitComment} 
+                              disabled={!commentDraft.trim()} 
+                              className="text-[#FF671F] text-sm font-medium px-3 disabled:opacity-40 active:scale-95"
+                            >
+                              Enviar
+                            </button>
+                            <button onClick={cancelComment} className="text-[#9CA3AF] text-xs px-1">✕</button>
+                          </div>
+                        )}
+                      </motion.div>
+                    )
+                  })
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="card p-6 text-center mb-3 border border-dashed border-[#2F2F35]"
+                  >
+                    <div className="text-3xl mb-2">📝</div>
+                    <div className="font-medium mb-1 text-sm">Tu muro está vacío</div>
+                    <div className="text-xs text-[#9CA3AF] mb-3 leading-snug">Publica entrenos, logros o motivación. La comunidad podrá ver, dar like y comentar en tu perfil.</div>
+                    <button 
+                      onClick={() => muroComposerRef.current?.focus()}
+                      className="btn-primary text-sm py-1.5 px-5"
+                    >
+                      Publicar mi primer post
+                    </button>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Verification status - visual upgrade */}
@@ -4698,6 +4775,80 @@ function App() {
               </div>
             )}
       </div>
+
+      {/* Spectacular full comments modal for muro - rich thread view with live updates */}
+      <AnimatePresence>
+        {viewingPostComments && (() => {
+          const postsForUser = profilePosts[viewingPostComments.postUserId] || []
+          const livePost = postsForUser.find(p => p.id === viewingPostComments.postId) || { id: viewingPostComments.postId, text: '', comments: [], likes: [] } as any
+          const comments = (livePost.comments || []).slice().sort((a: any, b: any) => a.timestamp - b.timestamp) // oldest first for thread feel
+          return (
+            <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/80" onClick={closeFullComments}>
+              <motion.div
+                initial={{ y: 100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 80, opacity: 0 }}
+                transition={{ type: 'spring', bounce: 0.05, duration: 0.25 }}
+                onClick={e => e.stopPropagation()}
+                className="w-full max-w-[420px] bg-[#1C1C20] rounded-t-3xl border border-[#2F2F35] shadow-2xl overflow-hidden"
+              >
+                {/* Modal header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-[#2F2F35] bg-[#161618]">
+                  <div>
+                    <div className="text-sm font-semibold">Comentarios en el muro</div>
+                    <div className="text-[10px] text-[#9CA3AF] truncate max-w-[260px]">{viewingPostComments.ownerName ? `de ${viewingPostComments.ownerName}` : ''}</div>
+                  </div>
+                  <button onClick={closeFullComments} className="text-xl px-2 text-[#9CA3AF] active:text-white">×</button>
+                </div>
+
+                {/* Scrollable thread */}
+                <div className="max-h-[52vh] overflow-y-auto p-4 space-y-3 text-sm bg-[#161618]">
+                  {livePost.text && (
+                    <div className="text-xs text-[#9CA3AF] mb-2 italic border-l-2 border-[#FF671F]/40 pl-2">"{livePost.text.length > 120 ? livePost.text.slice(0,120) + '...' : livePost.text}"</div>
+                  )}
+                  {comments.length > 0 ? (
+                    comments.map((c: any) => (
+                      <div key={c.id} className="flex gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-[#2F2F35] flex-shrink-0 text-[10px] flex items-center justify-center mt-0.5">👤</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="font-medium text-white/90 text-sm">{c.userName}</span>
+                            <span className="text-[10px] text-[#9CA3AF]">{getRelativeTime(c.timestamp)}</span>
+                          </div>
+                          <div className="text-[#E5E7EB] leading-snug break-words">{c.text}</div>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center text-xs text-[#9CA3AF] py-4">Sé el primero en comentar este post.</div>
+                  )}
+                </div>
+
+                {/* Composer at bottom of modal */}
+                <div className="p-3 border-t border-[#2F2F35] bg-[#1C1C20] flex items-center gap-2">
+                  <input 
+                    type="text" 
+                    value={modalCommentDraft} 
+                    onChange={e => setModalCommentDraft(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitModalComment() } }}
+                    placeholder={viewingPostComments.ownerName ? `Comentar en el muro de ${viewingPostComments.ownerName}...` : 'Escribe un comentario...'}
+                    className="flex-1 bg-[#161618] border border-[#2F2F35] rounded-2xl px-3 py-2 text-sm focus:outline-none focus:border-[#FF671F]"
+                    maxLength={200}
+                  />
+                  <button 
+                    onClick={submitModalComment} 
+                    disabled={!modalCommentDraft.trim()} 
+                    className="btn-primary text-sm py-2 px-4 disabled:opacity-50"
+                  >
+                    Enviar
+                  </button>
+                </div>
+                <div className="h-[env(safe-area-inset-bottom)]" />
+              </motion.div>
+            </div>
+          )
+        })()}
+      </AnimatePresence>
 
       {/* Floating Guía and Reportar removed per request (clutter at bottom, interferes with profile selection in Explore). 
          Report/feedback still available in Profile tab (structured form + history), chat headers, and legal links.
@@ -5468,48 +5619,62 @@ function App() {
                     <span>MURO DE {showFullProfile.name.toUpperCase()}</span>
                     <button onClick={() => loadProfilePosts(showFullProfile.id)} className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10">Refrescar</button>
                   </div>
-                  {(profilePosts[showFullProfile.id] || []).length > 0 ? (
-                    (profilePosts[showFullProfile.id] || []).slice(0, 6).map((post) => (
-                      <div key={post.id} className="card p-3 mb-2">
-                        <div className="text-sm leading-snug mb-1.5">{post.text}</div>
-                        {post.photo && <img src={post.photo} className="rounded-xl max-h-40 w-full object-cover mb-2 border border-[#2F2F35]" />}
-                        <div className="flex items-center gap-4 text-xs text-[#9CA3AF]">
-                          <span title={new Date(post.timestamp).toLocaleString('es-CL')}>{getRelativeTime(post.timestamp)}</span>
-                          <span onClick={() => likeProfilePost(post.id, showFullProfile.id)} className="cursor-pointer active:text-[#FF671F]">❤️ {post.likes.length}</span>
-                          <span onClick={() => startComment(post.id, showFullProfile.id, showFullProfile.name)} className="cursor-pointer active:text-[#FF671F]">💬 {post.comments.length}</span>
-                        </div>
-                        {post.comments.length > 0 && (
-                          <div className="mt-1.5 text-[11px] text-[#9CA3AF] pl-1 border-l border-[#2F2F35]">
-                            {post.comments.slice(-2).map(c => <div key={c.id}><span className="text-white/70">{c.userName}:</span> {c.text}</div>)}
+                  <AnimatePresence>
+                    {(profilePosts[showFullProfile.id] || []).length > 0 ? (
+                      (profilePosts[showFullProfile.id] || []).slice(0, 6).map((post) => (
+                        <motion.div
+                          key={post.id}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="card p-3 mb-2"
+                        >
+                          <div className="text-sm leading-snug mb-1.5">{post.text}</div>
+                          {post.photo && <img src={post.photo} className="rounded-xl max-h-40 w-full object-cover mb-2 border border-[#2F2F35]" />}
+                          <div className="flex items-center gap-4 text-xs text-[#9CA3AF]">
+                            <span title={new Date(post.timestamp).toLocaleString('es-CL')}>{getRelativeTime(post.timestamp)}</span>
+                            <span onClick={() => likeProfilePost(post.id, showFullProfile.id)} className="cursor-pointer active:text-[#FF671F]">❤️ {post.likes.length}</span>
+                            <span onClick={() => startComment(post.id, showFullProfile.id, showFullProfile.name)} className="cursor-pointer active:text-[#FF671F]">💬 {post.comments.length}</span>
                           </div>
-                        )}
-                        {/* Inline comment input for viewed profile too */}
-                        {activeComment?.postId === post.id && (
-                          <div className="mt-2 pt-2 border-t border-[#2F2F35] flex items-center gap-2">
-                            <input 
-                              type="text" 
-                              value={commentDraft} 
-                              onChange={e => setCommentDraft(e.target.value)}
-                              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment() } }}
-                              placeholder={`Comentar en el muro de ${showFullProfile.name}...`}
-                              className="flex-1 bg-[#1A1A1E] border border-[#2F2F35] rounded-2xl px-3 py-1.5 text-sm focus:outline-none focus:border-[#FF671F]"
-                              maxLength={200}
-                            />
-                            <button 
-                              onClick={submitComment} 
-                              disabled={!commentDraft.trim()} 
-                              className="text-[#FF671F] text-sm font-medium px-3 disabled:opacity-40 active:scale-95"
+                          {post.comments.length > 0 && (
+                            <div 
+                              onClick={() => openFullComments(post.id, showFullProfile.id, showFullProfile.name)}
+                              className="mt-1.5 text-[11px] text-[#9CA3AF] pl-1 border-l border-[#2F2F35] cursor-pointer active:bg-[#1A1A1E]/40 rounded"
+                              title="Ver hilo completo de comentarios"
                             >
-                              Enviar
-                            </button>
-                            <button onClick={cancelComment} className="text-[#9CA3AF] text-xs px-1">✕</button>
-                          </div>
-                        )}
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-xs text-[#9CA3AF] italic">Este perfil aún no tiene publicaciones en el muro. ¡Anímalo a publicar!</div>
-                  )}
+                              {post.comments.slice(-2).map(c => <div key={c.id}><span className="text-white/70">{c.userName}:</span> {c.text}</div>)}
+                              {post.comments.length > 2 && <div className="text-[#FF671F]/70 mt-0.5">+{post.comments.length-2} más... toca para ver todo</div>}
+                            </div>
+                          )}
+                          {/* Inline comment input for viewed profile too */}
+                          {activeComment?.postId === post.id && (
+                            <div className="mt-2 pt-2 border-t border-[#2F2F35] flex items-center gap-2">
+                              <input 
+                                type="text" 
+                                value={commentDraft} 
+                                onChange={e => setCommentDraft(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment() } }}
+                                placeholder={`Comentar en el muro de ${showFullProfile.name}...`}
+                                className="flex-1 bg-[#1A1A1E] border border-[#2F2F35] rounded-2xl px-3 py-1.5 text-sm focus:outline-none focus:border-[#FF671F]"
+                                maxLength={200}
+                              />
+                              <button 
+                                onClick={submitComment} 
+                                disabled={!commentDraft.trim()} 
+                                className="text-[#FF671F] text-sm font-medium px-3 disabled:opacity-40 active:scale-95"
+                              >
+                                Enviar
+                              </button>
+                              <button onClick={cancelComment} className="text-[#9CA3AF] text-xs px-1">✕</button>
+                            </div>
+                          )}
+                        </motion.div>
+                      ))
+                    ) : (
+                      <div className="text-xs text-[#9CA3AF] italic">Este perfil aún no tiene publicaciones en el muro. ¡Anímalo a publicar!</div>
+                    )}
+                  </AnimatePresence>
                   {(profilePosts[showFullProfile.id] || []).length > 6 && (
                     <div className="text-[10px] text-[#FF671F]/70 text-center mt-1">Mostrando los 6 más recientes — usa Refrescar para actualizar</div>
                   )}
