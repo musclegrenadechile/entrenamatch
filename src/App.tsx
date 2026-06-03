@@ -33,12 +33,12 @@ let CapacitorCamera: any = null
 let PushNotifications: any = null
 
 if (__CAPACITOR_BUILD__) {
-  // Only in CAPACITOR builds: use variable specifier so the target module is discovered,
-  // its static imports are processed, and the plugin code gets bundled.
-  const capPlugins = './capacitor-plugins'
-  import(capPlugins).then(m => {
-    CapacitorCamera = m.Camera
-    PushNotifications = m.PushNotifications
+  // The specifier is a define placeholder replaced at build time with the real path only for CAP builds.
+  // Web builds get a dummy data URL, so no loader module is ever analyzed/resolved in web builds.
+  import(CAPACITOR_PLUGINS_LOADER).then(() => {
+    const plugins = (typeof window !== 'undefined' && (window as any).__CAPACITOR_PLUGINS__) || {}
+    CapacitorCamera = plugins.Camera || null
+    PushNotifications = plugins.PushNotifications || null
   })
 }
 

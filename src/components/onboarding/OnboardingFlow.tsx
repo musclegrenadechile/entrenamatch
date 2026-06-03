@@ -4,19 +4,13 @@ import { Dumbbell, MapPin, Camera, Trash2, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { TRAINING_OPTIONS, TRAINING_GOALS, TRAINING_INTENSITIES } from '../../constants';
 
-// Capacitor Camera is loaded via the shared capacitor-plugins module (only in CAPACITOR builds).
-// See App.tsx for the full explanation of why we do it this way.
+// Camera is provided by the loader loaded from App.tsx in CAP builds (via global side effect).
+// No direct dynamic import here to avoid module graph issues in bundler analysis.
 let CapacitorCamera: any = null
 
-if (__CAPACITOR_BUILD__) {
-  const capPlugins = '../capacitor-plugins'
-  import(capPlugins).then(m => {
-    CapacitorCamera = m.Camera
-  })
-}
-
 if (typeof window !== 'undefined' && (window as any).Capacitor) {
-  // values will be populated by the dynamic import above
+  const plugins = (window as any).__CAPACITOR_PLUGINS__ || {}
+  CapacitorCamera = plugins.Camera || null
 }
 
 interface OnboardingFlowProps {

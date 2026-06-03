@@ -9,18 +9,21 @@ export default defineConfig({
   base: process.env.CAPACITOR ? '' : '/entrenamatch/',
 
   define: {
-    // Used by App.tsx and OnboardingFlow to decide whether to load the capacitor-plugins module.
+    // Used to decide at build time whether to load the real loader or a dummy.
     __CAPACITOR_BUILD__: JSON.stringify(!!process.env.CAPACITOR),
+    // Placeholder for dynamic import specifier of the loader module.
+    // Replaced at build time so that web builds never see the real './capacitor-plugins' string
+    // in an import() context, preventing analysis of its static @capacitor imports.
+    CAPACITOR_PLUGINS_LOADER: JSON.stringify(
+      process.env.CAPACITOR ? './capacitor-plugins.ts' : 'data:application/javascript,export default {};'
+    ),
+    CAPACITOR_PLUGINS_LOADER_ONBOARD: JSON.stringify(
+      process.env.CAPACITOR ? '../capacitor-plugins.ts' : 'data:application/javascript,export default {};'
+    ),
   },
 
-  // Force Vite to know about the Capacitor plugins and the loader module.
-  // This helps both dev and the production CAPACITOR build to properly resolve/bundle them.
+  // Force Vite to know about the Capacitor plugins (for CAPACITOR builds).
   optimizeDeps: {
-    include: [
-      '@capacitor/camera',
-      '@capacitor/push-notifications',
-      // the loader is only for cap builds but including it doesn't hurt
-      './src/capacitor-plugins',
-    ],
+    include: ['@capacitor/camera', '@capacitor/push-notifications'],
   },
 })

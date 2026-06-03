@@ -7,4 +7,10 @@
 import { Camera } from '@capacitor/camera'
 import { PushNotifications } from '@capacitor/push-notifications'
 
+// Side-effect: make available via global so components can pick it up after dynamic load.
+// This avoids direct export issues in conditional loading.
+if (typeof window !== 'undefined') {
+  (window as any).__CAPACITOR_PLUGINS__ = { Camera, PushNotifications }
+}
+
 export { Camera, PushNotifications }
