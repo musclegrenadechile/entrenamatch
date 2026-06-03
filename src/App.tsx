@@ -1691,9 +1691,33 @@ function App() {
   const triggerMessageArrivalNotification = (chatId: string, name: string, text: string, isGroup: boolean, photoUrl?: string) => {
     const short = (text || (photoUrl ? '[foto]' : 'Nuevo mensaje')).substring(0, 80)
     const title = isGroup ? `${name} en sesión` : `Mensaje de ${name}`
-    // In-app toast with action to open the right chat
+
+    // Rich avatar + context for in-app toast (enriched for better UX)
+    const avatarEl = photoUrl ? (
+      <img 
+        src={photoUrl} 
+        alt={name} 
+        className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-[#272b33]" 
+      />
+    ) : (
+      <div className="w-8 h-8 rounded-full bg-[#14b8a6] text-black flex items-center justify-center text-xs font-bold flex-shrink-0">
+        {name.charAt(0).toUpperCase()}
+      </div>
+    )
+
+    // In-app toast with action to open the right chat + avatar + more context
     toast.info(title, {
-      description: short,
+      description: (
+        <div className="flex items-start gap-2 mt-0.5">
+          {avatarEl}
+          <div className="flex-1 min-w-0">
+            <div className="text-sm text-[#cbd5e1] truncate leading-tight">{short}</div>
+            <div className="text-[10px] text-[#64748b] mt-0.5">
+              {isGroup ? 'Chat grupal • En vivo' : 'Mensaje 1:1 • En vivo'}
+            </div>
+          </div>
+        </div>
+      ),
       action: {
         label: 'Ver',
         onClick: () => {
@@ -1707,7 +1731,8 @@ function App() {
             setChatUnreads(prev => { const c = { ...prev }; c[chatId] = 0; return c })
           }
         }
-      }
+      },
+      duration: 6000
     })
     // Feed the existing notifications panel
     addNotification({
