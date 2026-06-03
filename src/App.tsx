@@ -2883,7 +2883,7 @@ function App() {
                   </div>
                   <div className="font-semibold text-xl mb-2">Aún no tienes matches</div>
                   <p className="text-sm text-[#94a3b8] leading-snug mb-4 max-w-[280px] mx-auto">
-                    Ve a Explorar para ver perfiles reales y hacer match. Chats y sesiones en vivo cross-device.
+                    Ve a Explorar para perfiles reales. Chats y sesiones en vivo cross-device.
                   </p>
                   <button onClick={() => setActiveTab('explore')} className="btn-primary px-8">Ir a Explorar</button>
                   {lastSync && (
@@ -2972,7 +2972,7 @@ function App() {
                   <div className="mt-8 card p-6 rounded-3xl text-center">
                     <MessageCircle className="mx-auto text-[#14b8a6] mb-3" size={36} />
                     <div className="font-semibold mb-1">Sin conversaciones aún</div>
-                    <p className="text-sm text-[#94a3b8]">Haz match en Explorar. Los mensajes reales llegan en vivo cross-device.</p>
+                    <p className="text-sm text-[#94a3b8]">Los matches reales aparecen aquí. Chats en vivo cross-device.</p>
                   </div>
                 )}
                 {matchProfiles
