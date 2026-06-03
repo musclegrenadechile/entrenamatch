@@ -3682,6 +3682,17 @@ function App() {
               )}
             </div>
 
+            {liveTrainingNow.length > 0 && (
+              <div className="mb-3">
+                <div className="text-[9px] text-[#22c55e] mb-1 px-1">🟢 Live ahora en la comunidad</div>
+                <div className="flex gap-1 overflow-x-auto pb-1">
+                  {liveTrainingNow.slice(0,3).map(u => (
+                    <div key={u.id} onClick={() => setActiveTab('explore')} className="text-[9px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-0.5 rounded-full border border-[#22c55e]/30 cursor-pointer active:bg-[#22c55e]/20">{u.name} ({u.distance.toFixed(0)}km)</div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {(() => {
               // Collect and sort recent posts from all loaded users (exclude self)
               const allCommunityPosts = Object.entries(profilePosts)
