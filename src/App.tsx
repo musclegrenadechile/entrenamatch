@@ -4721,6 +4721,9 @@ function App() {
                     const updated = { ...currentUser, trainingNow: newVal, trainingNowSince: newVal ? Date.now() : undefined }
                     saveUserWithRealSync(updated as CurrentUser)
                     toast(newVal ? '🟢 ¡Entrenando ahora en vivo! La gente cerca te verá' : 'Entrenamiento finalizado')
+                    if (newVal) {
+                      createProfilePost('¡Entrenando ahora cerca! ¿Quién se une? 🏋️', null).catch(() => {})
+                    }
                   }}
                   className={`w-full py-3 rounded-2xl text-sm font-semibold transition flex items-center justify-center gap-2 ${currentUser.trainingNow ? 'bg-[#22c55e] text-black' : 'bg-[#1C1C20] border border-[#2F2F35] text-white'}`}
                 >
