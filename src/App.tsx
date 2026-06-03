@@ -4645,6 +4645,7 @@ function App() {
                 return (
                   <div className="flex gap-3 text-[10px] px-1 mb-2 text-[#9CA3AF]">
                     <span>📝 {myPosts.length}</span>
+                    {myPosts.some((p: any) => p.pinned) && <span>📌 {myPosts.filter((p: any) => p.pinned).length}</span>}
                     <span>❤️ {likes}</span>
                     <span>💬 {comms}</span>
                     <span className="text-[#FF671F]/60">· comunidad interactúa</span>
