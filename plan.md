@@ -128,6 +128,15 @@ Last updated: Phase 0 web focus continuation (Google acct verification pending f
 
 Other web polish this batch: added web notif quick action in Profile; extended notif panel header + navigation for 'message' type; updated plan + will sync guides.
 
+**Latest advancements (post CI fixes - "sigamos avanzando")**:
+- Fixed dual hosting base paths: index.html now uses %BASE_URL% for favicon/manifest (Vite replaces), public/manifest.json updated to relative/root-friendly for Firebase Hosting at / while keeping GH Pages /entrenamatch/ working.
+- UX polish in Mensajes: relative timestamps (ahora/5m/2h/...) next to last message preview in the chat list.
+- Unread counts for 1:1 chats and sessions now persist to localStorage (survive hard refresh / different tabs; loaded on mount + auto-saved via useEffect).
+- Build/CI: conditional dynamic imports + __CAPACITOR_BUILD__ define + @vite-ignore solved the Rolldown resolve errors for native plugins in web (--base=/ Firebase) vs native builds. Clean builds for both.
+- All pushed, builds verified locally.
+
+Continue focusing on web tester experience: real-time everything, polished "elegir perfiles", easy feedback, live signals. Next could include richer notif toasts with avatars, better recs scoring, PWA install prompt, etc. Hard refresh the URL after pushes.
+
 **Analysis highlights for prealpha real testers (web primary now)**:
 - GH Pages auto on push (3-8min, base /entrenamatch/). Live = latest main build.
 - Tester protocol unchanged: 2+ real email accounts, different browsers or incognito + physical devices if possible; after push do Ctrl+Shift+R (or hard on mobile PWA); create profiles, explore real+ fakes, swipe to match, send msg while other has tab on Explore or hidden or other chat; verify toast+badge+panel+preview update+ (if granted) browser notif pops even if hidden; reply; check persist after refresh; join/create sessions, group chat live, admin close/expel; use report + feedback form (visible in Perfil); check legal links.
@@ -145,6 +154,7 @@ Continue Phase 0: web polish + tester comms/docs. Push after every UX batch. Use
 - [x] Update plan + will update BETA_TESTERS_GUIDE + PREALPHA + README with web priority + notif test steps.
 - [x] Build + commit + git push.
 - [ ] User: test with real accounts on GH Pages (hard refresh), confirm notif flow, report back; continue "sigue".
-- Next polish ideas (web): PWA install banner, more prominent "Add to home" hint, last message time in list, typing indicators (future), richer notif settings toggle.
+- Next polish ideas (web): PWA install banner, more prominent "Add to home" hint, last message time in list (added), typing indicators (future), richer notif settings toggle.
+- [x] Enriched message toasts: sender avatar (photo or fallback initial) + message + "En vivo" context label directly in sonner toast description (JSX). Done in this continuation.
 
-Last updated: Phase 0 web-advance (notifs for messages as requested + analysis + small profile polish). Google Play account still verifying → full focus on https://musclegrenadechile.github.io/entrenamatch/ improvements + tester prep on web. All changes pushed. **Sigue el ciclo, autonomous.**
+Last updated: Major design refresh (Dunkin' orange #FF671F primary for energetic attraction + pink #FF4F79 accents; exhaustive audit of all Tailwind/CSS/inline colors in App.tsx, components, index.css, manifest, html; updated to modern motivating fitness palette while keeping dark premium feel). CI fixes for all builds (explicit plugin install in APK, cleans, external safety, placeholder loader, @ts-nocheck). Notifications panel now shows avatars for messages. All pushed. **Sigue el ciclo, autonomous.**
