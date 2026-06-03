@@ -289,16 +289,17 @@ Sigue el ciclo. Hard refresh the live site to see the new install banner (after 
 
 Next ideas (if continue): post options menu (edit?), pinned posts, global recent activity feed tab, more glass + micro interactions on posts, better delete confirm with undo toast.
 
-**Batch 1 polish done (user: "Sigamos con el 1")**:
-- Delete extra photos from own profile strip: × button on every thumb (confirm dialog), removes from array + saveUserWithRealSync (real FS + local), guards at least 1 photo, toast. Works beautifully for curating gallery.
-- Spectacular muro teasers: 
-  - In Explore swipe cards (stack): small glass bar "📝 texto..." or with camera icon if has photo, tappable to open full profile. Preloads for top 5 on loadRealProfiles.
-  - In Matches grid cards: inline "📝 latest text" in the info area.
-  - Makes browsing profiles feel alive (you see what the person posted recently without opening full profile).
-- Preload logic for teasers on real loads.
-- Cleaned several spammy "✅ Loaded" console.logs (kept warns).
-- Improved the demo photo URL prompt message in muro composer.
-- Builds + pushed. CI updating GH Pages + APK.
+**Batch 1 + continue polish done (user: "sigamos")**:
+- [from batch1] Delete extra photos... (as above)
+- [from batch1] Spectacular muro teasers... (as above)
+- Added inline EDIT for own posts: ✏️ button next to 🗑, switches text to textarea (280 limit), save/cancel, updates local + FS for real, no prompts.
+- Undo for post delete: toast with "Deshacer" action that restores to state + FS.
+- Like the post directly from the full comments modal (❤️ count in header, live).
+- Cleaned more prompts: report flows now use confirm() + sensible default reason (pre-alpha safety, no ugly text prompt).
+- Visual consistency: inline/modal comment inputs now use .form-input class (unified with design system, better focus ring etc).
+- Builds + pushed. 
+
+Muro feels even more complete and spectacular: create/read/like/comment/edit/delete/undo + full thread modal + teasers everywhere. Designs polished with less prompts, consistent inputs.
 
 This advances the "muro + diseños espectaculares" significantly. Test: own profile add/delete photos (multiple), go to Explore (teasers should appear on real profiles after sync), go to Matches (teasers on matched people).
 
