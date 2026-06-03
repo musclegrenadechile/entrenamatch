@@ -518,6 +518,13 @@ function App() {
   const [lastSync, setLastSync] = useState<Date | null>(null)
   const [isSyncingProfile, setIsSyncingProfile] = useState(false)
 
+  // Live tick for "hace Xs" relative times (polish: updates empty states, headers, sync indicators without manual refresh)
+  const [timeTick, setTimeTick] = useState(0)
+  useEffect(() => {
+    const id = setInterval(() => setTimeTick(t => t + 1), 30000) // every 30s
+    return () => clearInterval(id)
+  }, [])
+
   const loadRealSessions = async () => {
     if (!isFirebaseConfigured || !db) {
       setRealSessions([])
@@ -2517,8 +2524,9 @@ function App() {
   }, [likedIds, passedIds, realProfiles])
 
   // Filtered deck (with distance support + blocking)
+  // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
   const deck = useMemo(() => {
-    return remainingProfiles.filter(p => {
+    const filtered = remainingProfiles.filter(p => {
       // Block filter (critical safety)
       if (blockedUsers.includes(p.id)) return false
 
@@ -2540,7 +2548,28 @@ function App() {
       if (filters.onlyAvailableToday && !p.availableToday) return false
       return true
     })
-  }, [remainingProfiles, filters, userLocation, blockedUsers])
+
+    // Sort: highest compatibility first, then closest distance, slight boost for verified/real
+    if (currentUser) {
+      return [...filtered].sort((a, b) => {
+        const ca = calculateCompatibility(currentUser, a, userLocation)
+        const cb = calculateCompatibility(currentUser, b, userLocation)
+        if (cb !== ca) return cb - ca
+
+        if (userLocation) {
+          const da = getDistanceKm(userLocation.lat, userLocation.lng, a.lat, a.lng)
+          const db = getDistanceKm(userLocation.lat, userLocation.lng, b.lat, b.lng)
+          if (da !== db) return da - db
+        }
+
+        // Verified / real tester slight priority
+        const va = (a.verificationStatus === 'verified' || !a.id.startsWith('p')) ? 1 : 0
+        const vb = (b.verificationStatus === 'verified' || !b.id.startsWith('p')) ? 1 : 0
+        return vb - va
+      })
+    }
+    return filtered
+  }, [remainingProfiles, filters, userLocation, blockedUsers, currentUser])
 
   // Visible cards (top 3 for stack effect)
   const visibleCards = deck.slice(0, 3)
@@ -3318,10 +3347,15 @@ function App() {
                     <Heart className="text-[#FF671F]" size={36} />
                   </div>
                   <div className="font-semibold text-xl mb-2">Aún no tienes matches</div>
-                  <p className="text-sm text-[#9CA3AF] leading-snug mb-4 max-w-[280px] mx-auto">
-                    Ve a Explorar para perfiles reales. Chats y sesiones en vivo cross-device.
+                  <p className="text-sm text-[#9CA3AF] leading-snug mb-4 max-w-[300px] mx-auto">
+                    ¡Sigue explorando! Los matches con testers reales aparecen aquí al instante (cross-device). Prueba swipiar perfiles cercanos o con entrenamientos en común.
                   </p>
-                  <button onClick={() => setActiveTab('explore')} className="btn-primary px-8">Ir a Explorar</button>
+                  <div className="flex gap-2 justify-center">
+                    <button onClick={() => setActiveTab('explore')} className="btn-primary px-6">Ir a Explorar</button>
+                    {!isDemoMode && (
+                      <button onClick={async () => { setIsLoadingMatches(true); try { await loadRealProfiles(); await loadRealMatches(); } finally { setIsLoadingMatches(false); } }} className="px-4 py-2 border border-[#FF671F]/60 text-[#FF671F] rounded-2xl text-sm">Actualizar</button>
+                    )}
+                  </div>
                   {lastSync && (
                     <div className="text-[10px] text-[#9CA3AF] mt-2">Última sync real: hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</div>
                   )}

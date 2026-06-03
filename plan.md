@@ -94,7 +94,15 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Fix critical bugs from real usage.
 - Prepare Closed testing track.
 - Add basic push notifications scaffolding (FCM via Capacitor plugin) if time. (Client side wired; needs google-services.json in android/app/ + server-side senders.)
-- More polish on matching quality, session UX.
+- [x] More polish on matching quality, session UX (and empty states etc.): 
+  - calculateCompatibility improved (positive close-distance bonus + verification bonus).
+  - Deck now auto-sorts by highest compat + closest first (best matches appear at top of swipe).
+  - Explore empty state enhanced (contextual, shows active filters, richer reasons like "Misma intensidad / Verificado", spinner on refresh, "Relajar filtros").
+  - Compat reasons richer + displayed as joined chips.
+  - Report action on Explore cards for safety.
+  - Live 30s "hace Xs" tick for all sync/relative timestamps.
+  - Matches empty state copy + quick actions improved.
+  - Consistent loading spinners.
 - Add FIREBASE_SERVICE_ACCOUNT secret to GitHub for full auto Firebase Hosting deploys on every push (recommended over GH Pages for PWA + future FCM).
 
 ## Later Phases (high level)

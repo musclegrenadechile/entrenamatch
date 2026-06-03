@@ -65,18 +65,32 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
   };
 
   // Small breakdown for "why this profile" in recs (makes the % feel less magic, builds trust)
+  // Polish: richer reasons, up to 2-3 for better matching transparency
   const getCompatReasons = (profile: Profile): string[] => {
     if (!currentUser) return [];
     const reasons: string[] = [];
     const typeOverlap = (currentUser.trainingTypes || []).filter((t: string) => (profile.trainingTypes || []).includes(t)).length;
-    if (typeOverlap > 0) reasons.push('Entrenamiento coincide');
+    if (typeOverlap > 0) reasons.push(typeOverlap > 1 ? 'Entrenamientos en común' : 'Entrenamiento coincide');
+
     const goalOverlap = (currentUser.goals || []).filter((g: string) => (profile.goals || []).includes(g)).length;
     if (goalOverlap > 0) reasons.push('Objetivos parecidos');
+
     if (userLocation) {
       const d = getDistance(profile);
-      if (d !== null && d <= 12) reasons.push('Muy cerca');
+      if (d !== null && d <= 8) reasons.push('Muy cerca');
+      else if (d !== null && d <= 15) reasons.push('Cerca');
     }
+
     if (currentUser.level && profile.level && currentUser.level === profile.level) reasons.push('Mismo nivel');
+
+    if (currentUser.intensity && profile.intensity && currentUser.intensity === profile.intensity) {
+      reasons.push('Misma intensidad');
+    }
+
+    if (profile.verificationStatus === 'verified' || ['p1','p2','p4','p6'].includes(profile.id)) {
+      reasons.push('Verificado');
+    }
+
     return reasons.slice(0, 2);
   };
 
@@ -211,7 +225,12 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                 <div className="text-[10px] -mt-1 opacity-75">compat</div>
                 {(() => {
                   const rs = getCompatReasons(profile);
-                  return rs.length ? <div className="text-[8px] text-[#FF671F]/80 mt-0.5">{rs[0]}</div> : null;
+                  if (!rs.length) return null;
+                  return (
+                    <div className="text-[8px] text-[#FF671F]/80 mt-0.5 leading-none">
+                      {rs.join(' · ')}
+                    </div>
+                  );
                 })()}
               </div>
             )}
@@ -254,6 +273,20 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
           VER PERFIL
         </button>
 
+        {/* Report for safety / moderation polish (visible on hover/tap for testers) */}
+        {onReport && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onReport(profile.id);
+            }}
+            className="absolute top-4 right-4 text-[9px] bg-black/50 hover:bg-black/70 active:bg-red-900/70 px-2 py-0.5 rounded-full text-white/70 hover:text-white flex items-center gap-0.5 transition"
+            title="Reportar perfil"
+          >
+            ⚠ <span className="text-[8px]">REPORT</span>
+          </button>
+        )}
+
         {/* No text hint - clean for premium profile choosing (swipe or use buttons below) */}
       </motion.div>
     );
@@ -266,7 +299,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
         <div>
           <div className="text-3xl font-semibold tracking-[-1.5px]">Explorar</div>
           <div className="text-[#FF671F] text-xs font-medium mt-0.5">
-            {deck.length} disponibles ahora {userLocation ? 'cerca de ti' : ''}
+            {deck.length} disponibles ahora {userLocation ? 'cerca de ti' : ''} · ordenados por compatibilidad
           </div>
           {realProfiles && realProfiles.length > 0 && (
             <div className="text-[10px] text-[#FF671F] mt-0.5 font-medium flex items-center gap-1">+ {realProfiles.length} perfiles reales de testers <span className="live-pill text-[8px]">en vivo</span></div>
@@ -333,15 +366,30 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
       <div className="relative flex-1 flex items-center justify-center mt-1 mb-3 min-h-[460px]">
         <AnimatePresence>
           {visibleCards.length === 0 && (
-            <div className="text-center px-8">
+            <div className="text-center px-6">
               <div className="mx-auto w-14 h-14 bg-[#1C1C20] rounded-2xl flex items-center justify-center mb-4">
                 <Star className="text-[#FF671F]" size={28} />
               </div>
-              <div className="text-2xl font-semibold tracking-tight mb-2">No hay más perfiles</div>
-              <p className="text-[#9CA3AF] max-w-[280px] mx-auto mb-5 text-sm">
-                Ajusta los filtros o actualiza los perfiles reales para ver más opciones.
+              <div className="text-2xl font-semibold tracking-tight mb-1">No hay perfiles que coincidan</div>
+              <p className="text-[#9CA3AF] max-w-[300px] mx-auto mb-4 text-sm">
+                {realProfiles.length > 0 
+                  ? 'Los filtros actuales limitan los resultados. Relaja distancia, tipos de entrenamiento o actualiza perfiles reales.'
+                  : 'Aún no hay perfiles reales cargados. Actualiza o prueba en modo demo.'}
               </p>
-              <div className="flex gap-3 justify-center">
+
+              {/* Active filters summary for better UX */}
+              {(filters.trainingTypes.length > 0 || filters.availability.length > 0 || filters.gender !== 'todos' || (userLocation && filters.maxDistanceKm < 100)) && (
+                <div className="text-[10px] text-[#9CA3AF] mb-4 px-3">
+                  Filtros activos: {[
+                    filters.trainingTypes.length ? `${filters.trainingTypes.length} tipos` : null,
+                    filters.availability.length ? `${filters.availability.length} horarios` : null,
+                    filters.gender !== 'todos' ? filters.gender : null,
+                    userLocation && filters.maxDistanceKm < 100 ? `≤${filters.maxDistanceKm}km` : null
+                  ].filter(Boolean).join(' · ')}
+                </div>
+              )}
+
+              <div className="flex flex-wrap gap-2 justify-center">
                 <button 
                   onClick={() => setShowFilters(true)}
                   className="px-5 py-2.5 border border-[#2F2F35] rounded-2xl text-sm active:bg-[#25252A]"
@@ -354,7 +402,7 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                 >
                   Reiniciar deck
                 </button>
-                {realProfiles.length > 0 && onRefreshRealProfiles && (
+                {onRefreshRealProfiles && (
                   <button 
                     onClick={async () => {
                       setIsRefreshingReals(true);
@@ -366,11 +414,22 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
                       }
                     }} 
                     disabled={isRefreshingReals}
-                    className="px-5 py-2.5 border border-[#FF671F] text-[#FF671F] rounded-2xl text-sm active:bg-[#FF671F] active:text-black disabled:opacity-60"
+                    className="px-5 py-2.5 border border-[#FF671F] text-[#FF671F] rounded-2xl text-sm active:bg-[#FF671F] active:text-black disabled:opacity-60 flex items-center gap-1"
                   >
+                    <RefreshCw size={14} className={isRefreshingReals ? 'animate-spin' : ''} />
                     {isRefreshingReals ? 'Actualizando...' : 'Actualizar reales'}
                   </button>
                 )}
+                {/* Quick relax: show more by resetting some filters temporarily */}
+                <button 
+                  onClick={() => {
+                    // Quick action: relax distance and training filters to see more
+                    setShowFilters(true); // open so user can fine tune, or could auto reset here
+                  }}
+                  className="px-4 py-2.5 text-xs border border-[#2F2F35] rounded-2xl active:bg-[#25252A]"
+                >
+                  Relajar filtros
+                </button>
               </div>
               {lastSync && (
                 <div className="text-[10px] text-[#9CA3AF] mt-3">Última sync real: hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</div>

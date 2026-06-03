@@ -69,12 +69,18 @@ export function calculateCompatibility(
     }
   }
 
-  // 6. Distance penalty (if location available)
+  // 6. Distance bonus (positive for closer = better matching quality)
   if (userLoc) {
     const dist = getDistanceKm(userLoc.lat, userLoc.lng, profile.lat, profile.lng)
-    if (dist > 50) score -= 15
-    else if (dist > 20) score -= 8
-    else if (dist > 10) score -= 3
+    if (dist <= 5) score += 15
+    else if (dist <= 10) score += 10
+    else if (dist <= 20) score += 5
+    // far: no bonus (or could penalize lightly but prefer positive)
+  }
+
+  // 7. Verification / trust bonus (small but meaningful for safety in pre-alpha)
+  if (profile.verificationStatus === 'verified' || ['p1','p2','p4','p6'].includes(profile.id)) {
+    score += 4
   }
 
   return Math.max(0, Math.min(100, Math.round(score)))
