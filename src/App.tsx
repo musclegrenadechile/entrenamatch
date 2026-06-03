@@ -371,6 +371,17 @@ function App() {
   const [realProfiles, setRealProfiles] = useState<Profile[]>([])
   const [realMatches, setRealMatches] = useState<string[]>([])
   const [realChatMessages, setRealChatMessages] = useState<any[]>([])
+
+  // Helper: treat a chatId as "real cross-device" if it's in our discovered realMatches,
+  // or if it's a known real user profile (non-seed pXX). This ensures send/load/listeners activate
+  // even if the match doc hasn't been discovered in realMatches yet on this device (e.g. passive side
+  // of a swipe, or list entry came from local 'matches' state).
+  const isRealChatId = (chatId: string | null): boolean => {
+    if (!chatId || isDemoMode || !firebaseUser?.uid) return false
+    if (chatId.startsWith('p')) return true // seeds use real backend when in real auth mode
+    const isKnownRealProfile = realProfiles.some(r => r.id === chatId)
+    return realMatches.includes(chatId) || isKnownRealProfile
+  }
   const [realSessions, setRealSessions] = useState<TrainingSession[]>([])
 
   // Merge local + real sessions, deduping by id so real cross-user sessions are always visible
@@ -822,10 +833,38 @@ function App() {
       return
     }
 
-    const isRealChat = !isDemoMode && firebaseUser?.uid && (realMatches.includes(activeChat) || activeChat?.startsWith('p'))
+    const isRealChat = isRealChatId(activeChat)
     if (!isRealChat) {
       setRealChatMessages([])
       return
+    }
+
+    // Bootstrap for real user chats: if the chatId is a known real profile (from realProfiles) but not yet
+    // in realMatches (common for the "swiped" side until discovery, or if list entry came only from local matches),
+    // add it now (activates bg listeners, real path etc.) and write the match doc (helps the other side discover too).
+    if (!realMatches.includes(activeChat) && realProfiles.some(r => r.id === activeChat)) {
+      const newReal = [...realMatches, activeChat]
+      setRealMatches(newReal)
+      console.log(`[real chat bootstrap] ${activeChat} is real profile but not in realMatches yet → adding + ensuring match doc`)
+      loadRealMatches() // re-query to confirm and trigger any bg effects cleanly
+      if (db && firebaseUser?.uid) {
+        (async () => {
+          try {
+            const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+            const matchId = [firebaseUser.uid, activeChat].sort().join('_')
+            await setDoc(doc(db, 'matches', matchId), {
+              user1: firebaseUser.uid,
+              user2: activeChat,
+              createdAt: serverTimestamp(),
+              status: 'active',
+              autoMatchedForTesting: true
+            }, { merge: true })
+            console.log('✅ Match doc bootstrapped for', activeChat)
+          } catch (e) {
+            console.warn('Failed to bootstrap match doc for real chat', e)
+          }
+        })()
+      }
     }
 
     // Load immediately when opening a real chat
@@ -939,8 +978,8 @@ function App() {
     if (!activeChat || isDemoMode || !firebaseUser?.uid || !db) {
       return;
     }
-    const isRealChat = realMatches.includes(activeChat);
-    console.log(`🔄 [Active 1:1 listener effect] activeChat=${activeChat}, realMatches includes it? ${isRealChat}, realMatches=`, realMatches);
+    const isRealChat = isRealChatId(activeChat);
+    console.log(`🔄 [Active 1:1 listener effect] activeChat=${activeChat}, isRealChat=${isRealChat}, realMatches=`, realMatches);
     if (!isRealChat) {
       return;
     }
@@ -2245,6 +2284,8 @@ function App() {
             }, { merge: true })
 
             console.log('✅ Real like + match written to Firestore for cross-device testing')
+            // Immediately load so this device also has it in realMatches (for isRealChat, bg listeners etc.)
+            loadRealMatches()
           } catch (e) {
             console.warn('Could not write real like/match yet:', e)
           }
@@ -2281,7 +2322,7 @@ function App() {
   const sendMessage = (text: string) => {
     if (!activeChat || !text.trim()) return
 
-    const isRealChat = !isDemoMode && firebaseUser?.uid && (realMatches.includes(activeChat) || activeChat?.startsWith('p'))
+    const isRealChat = isRealChatId(activeChat)
 
     if (isRealChat) {
       console.log(`[sendMessage] REAL 1:1 send to activeChat=${activeChat} (my uid=${firebaseUser?.uid})`);
