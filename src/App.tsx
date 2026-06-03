@@ -345,6 +345,7 @@ function App() {
   const [feedShowPinnedOnly, setFeedShowPinnedOnly] = useState(false)
   const [feedSearch, setFeedSearch] = useState('')
   const [feedOnlyReal, setFeedOnlyReal] = useState(false)
+  const [feedMaxProfiles, setFeedMaxProfiles] = useState(15)
 
   // Auto-refresh real sessions on tab DISABLED to fix TDZ.
   // Manual button remains.
@@ -940,6 +941,7 @@ function App() {
   // Auto-load global feed when entering the new Feed tab
   useEffect(() => {
     if (activeTab === 'feed' && !isDemoMode) {
+      setFeedMaxProfiles(15);
       loadGlobalFeed()
     }
   }, [activeTab])
@@ -1930,12 +1932,14 @@ function App() {
   }
 
   // Global feed loader for the new 'feed' tab - loads recent muro posts from community
-  const loadGlobalFeed = async () => {
+  const loadGlobalFeed = async (more: boolean = false) => {
     if (isDemoMode || !realProfiles.length) return;
     setIsLoadingFeed(true);
     try {
-      // Load for up to 15 recent real profiles to keep it fast
-      const toLoad = realProfiles.slice(0, 15);
+      const max = more ? Math.min(feedMaxProfiles + 10, realProfiles.length) : feedMaxProfiles;
+      if (more) setFeedMaxProfiles(max);
+      // Load for up to max recent real profiles to keep it fast
+      const toLoad = realProfiles.slice(0, max);
       for (const p of toLoad) {
         await loadProfilePosts(p.id);
       }
@@ -1953,6 +1957,7 @@ function App() {
       text: text.trim(),
       photo: photo || undefined,
       timestamp: Date.now(),
+      pinned: false,
       likes: [],
       comments: []
     }
@@ -1965,7 +1970,8 @@ function App() {
           text: post.text,
           timestamp: post.timestamp,
           likes: post.likes || [],
-          comments: post.comments || []
+          comments: post.comments || [],
+          pinned: false
         }
         if (post.photo) {
           data.photo = post.photo
@@ -3578,7 +3584,7 @@ function App() {
                     {feedShowPinnedOnly ? '★ Solo fijados' : '📌 Fijados'}
                   </button>
                   <button 
-                    onClick={() => { loadGlobalFeed(); if (!isDemoMode) loadRealProfiles(); }} 
+                    onClick={() => { setFeedMaxProfiles(15); loadGlobalFeed(); if (!isDemoMode) loadRealProfiles(); }} 
                     disabled={isLoadingFeed}
                     className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10"
                   >
@@ -3622,7 +3628,7 @@ function App() {
                     <p className="text-sm text-[#9CA3AF] mb-4">Publica en tu muro o espera a que la comunidad comparta entrenos. ¡Los posts de testers reales aparecerán aquí en vivo!</p>
                     <div className="flex gap-2 justify-center">
                       <button onClick={() => setActiveTab('profile')} className="btn-primary px-6">Ir a tu Muro</button>
-                      {!isDemoMode && <button onClick={loadGlobalFeed} className="px-4 py-2 border border-[#FF671F]/60 text-[#FF671F] rounded-2xl text-sm">Cargar comunidad</button>}
+                      {!isDemoMode && <button onClick={() => { setFeedMaxProfiles(15); loadGlobalFeed(); }} className="px-4 py-2 border border-[#FF671F]/60 text-[#FF671F] rounded-2xl text-sm">Cargar comunidad</button>}
                     </div>
                   </div>
                 );
@@ -3713,9 +3719,9 @@ function App() {
                     );
                   })}
 
-                  {allCommunityPosts.length > 30 && (
+                  {realProfiles.length > feedMaxProfiles && (
                     <div className="text-center mt-2">
-                      <button onClick={loadGlobalFeed} className="text-xs text-[#FF671F] underline active:opacity-70">Cargar más de la comunidad</button>
+                      <button onClick={() => loadGlobalFeed(true)} className="text-xs text-[#FF671F] underline active:opacity-70">Cargar más de la comunidad</button>
                     </div>
                   )}
                 </>
