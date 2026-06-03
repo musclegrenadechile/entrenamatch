@@ -32,6 +32,12 @@ try {
   import('@capacitor/camera').then(mod => { CapacitorCamera = mod.Camera })
 } catch (e) {}
 
+// Capacitor Push Notifications (dynamic for native)
+let PushNotifications: any = null
+try {
+  import('@capacitor/push-notifications').then(mod => { PushNotifications = mod.PushNotifications })
+} catch (e) {}
+
 import { 
   getDistanceKm, 
   calculateCompatibility, 
@@ -701,6 +707,47 @@ function App() {
       }
     }
   }, [saveUser, isDemoMode, firebaseUser?.uid])
+
+  // Native push notifications setup (only for real users in native APK)
+  useEffect(() => {
+    if (isDemoMode || !firebaseUser?.uid || !PushNotifications) return
+
+    (async () => {
+      try {
+        const perm = await PushNotifications.requestPermissions()
+        if (perm.receive === 'granted') {
+          await PushNotifications.register()
+          console.log('✅ Push notifications registered for real user')
+
+          // Listen for registration (get the token to send from server later)
+          PushNotifications.addListener('registration', (token: any) => {
+            console.log('Push registration token (send this to server for this uid):', token.value)
+            // For prealpha beta: store or log so we can manually test notifications
+          })
+
+          // Listen for notifications while app is open
+          PushNotifications.addListener('pushNotificationReceived', (notification: any) => {
+            console.log('Push received while open:', notification)
+            toast.info(notification.title || 'Nueva notificación', { description: notification.body || 'Revisa la app' })
+          })
+
+          // Listen for action (tap on notification)
+          PushNotifications.addListener('pushNotificationActionPerformed', (action: any) => {
+            console.log('Push action performed (user tapped):', action)
+            // Could navigate to relevant tab (chat/session) in future
+          })
+        } else {
+          console.log('Push permission not granted')
+        }
+      } catch (e) {
+        console.warn('Push setup failed (google-services.json may be missing on this build):', e)
+      }
+    })()
+
+    return () => {
+      // Clean listeners if needed (plugin handles in most cases)
+    }
+  }, [isDemoMode, firebaseUser?.uid])
 
   // Logout handler - works for both demo and real Firebase
   const handleLogout = async () => {
