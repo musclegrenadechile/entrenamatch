@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 (sigamos con la phase 0 - declutter + polish batch: softer top bar, cleaner banners/empty states/incomplete card for elegir perfiles; lastSync now refreshes on "Actualizar reales" in Explore. Multiple builds/pushes. 1:1 real chat confirmed working by user. **PHASE 0 SIGN-OFF READY** (continua).
+Last updated: Phase 0 (sigamos con la phase 0 - declutter + polish batch: softer top bar, premium "Disponibles ahora" + empty states + incomplete card for elegir perfiles; lastSync on real refresh in Explore; layout tweak. Builds/pushes (9693710). 1:1 messaging confirmed working. **PHASE 0 SIGN-OFF READY** (continua).
