@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 (continua - polish: stronger real empty states + lastSync in Explore/Sessions/Matches/Profile; cleaned instructional texts; spinner on Profile Sincronizar; declutter for elegir perfiles. Builds/pushes (76f3075). **PHASE 0 SIGN-OFF READY** (continua).
+Last updated: Phase 0 (continua - more premium polish for elegir perfiles: ExploreTab calmer real profiles text (no !), refined empty state, lastSync header consistent with 'en vivo' badges; previous lastSync/spinners/declutter across flows. Builds/pushes (081e3c6). **PHASE 0 SIGN-OFF READY** (continua).
