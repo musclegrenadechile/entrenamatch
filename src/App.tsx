@@ -4706,7 +4706,7 @@ function App() {
                 return (
                   <div className="px-1 mb-2">
                     <div className="text-[9px] text-[#FF671F] mb-1 flex justify-between">
-                      <span>📌 Tus posts fijados (aparecen primero en feed global)</span>
+                      <span>📌 Tus posts fijados ({pinned.length}) (aparecen primero en feed global)</span>
                       <button onClick={() => setActiveTab('feed')} className="underline">ver en feed →</button>
                     </div>
                     {pinned.slice(0,2).map((p: any) => (
