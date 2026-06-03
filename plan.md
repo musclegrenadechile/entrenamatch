@@ -114,4 +114,4 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
 
-Last updated: Phase 0 continue (INFORME real added explaining why real users couldn't communicate: non-reactive matches, stale closure in Actualizar, missing likes rules, races; fixed closure so updates discover messages; more UI declutter/squad notes cleaned; real 1:1 now robust). Pushed ecc805d + report. **PHASE 0 SIGN-OFF READY** (continua). Note: deploy rules if needed.
+Last updated: Phase 0 continue (INFORME real report + fixed stale closure in Actualizar + lastSync 'hace Xs' in Mensajes header + squad/filters cleanup; robust real 1:1 delivery; premium elegir perfiles). Pushed 3a1fc12. **PHASE 0 SIGN-OFF READY** (continua). Note: deploy rules if needed.
