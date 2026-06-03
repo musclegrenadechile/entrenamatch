@@ -3576,35 +3576,27 @@ function App() {
                   onClick={e => e.stopPropagation()} 
                   className="card w-full max-w-[380px] rounded-3xl p-7 text-center"
                 >
-                  <div className="text-2xl font-semibold mb-2">¡Bienvenido!</div>
+                  <div className="text-2xl font-semibold mb-2">¡Bienvenido al prealpha!</div>
                   <p className="text-sm text-[#94a3b8] mb-4">
-                    Estás ayudando a construir <strong>El match del movimiento</strong> desde el día uno.
+                    Estás entre los primeros en probar <strong>El match del movimiento</strong> con perfiles reales.
                   </p>
 
                   <div className="bg-[#121418] rounded-2xl p-4 text-left text-sm mb-5">
-                    <div className="font-medium text-white mb-2">Backend real activo (datos sincronizados cross-device):</div>
+                    <div className="font-medium text-white mb-2">Lo que verás (ya real y en vivo):</div>
                     <ul className="space-y-1.5 text-[#cbd5e1]">
-                      <li>→ Versión temprana y en desarrollo</li>
-                      <li>→ Perfiles, matches y chat 1:1 ya son reales (se ven entre celulares distintos)</li>
-                      <li>→ Tu opinión real importa mucho más que en una app terminada</li>
+                      <li>→ Explora perfiles reales con "disponibles ahora", recs "reales primero", badges en vivo y lastSync</li>
+                      <li>→ Matches y chats 1:1 / grupal en sesiones (cross-device real-time)</li>
+                      <li>→ Crea y únete a sesiones con chat grupal (tú administras como creador)</li>
+                      <li>→ Tu feedback (en Perfil) da forma a lo que viene</li>
                     </ul>
                   </div>
 
                   <div className="text-left text-sm mb-5">
-                    <div className="font-medium text-white mb-1.5">Prueba las features reales:</div>
-                    <div className="text-[#cbd5e1] space-y-1 text-sm">
-                      <div>• <strong>Explorar</strong> y elige perfiles reales</div>
-                      <div>• Match y chatea en <strong>Mensajes</strong> (1:1 real-time cross-device)</div>
-                      <div>• Crea Sesiones con chat grupal (creador puede administrar)</div>
-                      <div>• Edita perfil (guarda en backend real)</div>
-                      <div>• Feedback en Perfil</div>
-                    </div>
+                    <div className="font-medium text-white mb-1.5">Regla de oro para estos primeros testers:</div>
+                    <div className="text-[#94a3b8]">Si algo te molesta, no funciona o te encanta → cuéntanos en el formulario de Feedback en Perfil. Los problemas (y las alegrías) de los primeros usuarios reales son oro.</div>
                   </div>
 
-                  <div className="text-left text-sm mb-6">
-                    <div className="font-medium text-white mb-1">Regla de oro:</div>
-                    <div className="text-[#94a3b8]">Si algo te molesta, confunde o no funciona → cuéntanos. Los problemas son el tesoro de esta etapa.</div>
-                  </div>
+                  <div className="text-[10px] text-[#64748b] mb-4">Privacidad y Términos actualizados y enlazados en tu Perfil.</div>
 
                   <button 
                     onClick={() => {
@@ -3613,10 +3605,10 @@ function App() {
                     }} 
                     className="btn-primary w-full"
                   >
-                    Entendido, vamos a romper cosas juntos
+                    Entendido — ¡a elegir perfiles reales!
                   </button>
 
-                  <p className="text-[10px] text-[#64748b] mt-4">Gracias de verdad por estar aquí desde tan temprano ❤️</p>
+                  <p className="text-[10px] text-[#64748b] mt-4">Gracias de verdad por ser de los primeros ❤️</p>
                 </div>
               </div>
             )}
