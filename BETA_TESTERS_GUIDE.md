@@ -258,4 +258,12 @@ Hard refresh para ver el pulso de los en vivo, los hovers que "brillan" naranja,
 
 Gracias de verdad! Tu feedback va a definir cómo evoluciona la app (incluyendo más polish visual).
 
+**Lo nuevo en esta tanda (sigue trabajando):**
+- Banner "Instalar app": aparece solo después de que interactúas un poco (match o vas a Mensajes/Sesiones) o ~28 segundos. Naranja/rosa, limpio, con botón Instalar que usa el prompt nativo del navegador. En Perfil también hay botón manual. Una vez instalado se siente como la APK (icono en home, launch directo).
+- En "Más compatibles" y en la tarjeta grande de swipe: ahora ves por qué el % (píldoras chiquititas: "Entrenamiento coincide", "Muy cerca", "Objetivos parecidos", "Mismo nivel"). Más transparente y confiable.
+- Botón "Actualizar todo" siempre visible en la barra superior naranja. Fuerza recarga de perfiles reales + matches + sesiones + actualiza los "hace Xs". Úsalo si quieres forzar sincronía cross-device (aunque los listeners ya traen casi todo en vivo).
+- Todo verificado en los 3 builds otra vez + subido.
+
+Hard refresh y prueba el banner de instalar, los motivos de compat y el botón global de refresco.
+
 Cualquier duda, avísanos.

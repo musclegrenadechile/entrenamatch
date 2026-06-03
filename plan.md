@@ -174,3 +174,12 @@ Last updated: Major design refresh (Dunkin' orange #FF671F primary for energetic
 - Next user action: hard refresh https://musclegrenadechile.github.io/entrenamatch/ , test swipes/matches/chats/sessions with 2 accounts (one hidden for toasts), re-trigger "Build Android APK" workflow for fresh signed APK with the design.
 
 **Sigue el ciclo sin parar. Todo subido a github.**
+
+**Latest continuation (user "sigue trabajando")**:
+- PWA install banner: beautiful compact bar (orange/pink Dunkin) that auto-appears ~28s after load or on positive engagement (match or enter messages/sesiones). Uses native beforeinstallprompt. Dismiss once, manual trigger button in Perfil > "Instalar EntrenaMatch como app". Success toast + appinstalled listener. Makes web feel like a real installed app (quick launch + better notif potential). All styled to new palette, non-intrusive.
+- Explore recs transparency: "Más compatibles" and main swipe card now show tiny orange pills under % with real reasons ("Entrenamiento coincide", "Objetivos parecidos", "Muy cerca", "Mismo nivel"). Uses lightweight getCompatReasons. Builds trust in the algo ("why am I seeing this person?").
+- Global live booster: "Actualizar todo" button right in the orange top bar (always visible). Forces loadRealProfiles + loadRealMatches + loadRealSessions + bumps lastSync. Testers have one tap to force cross-device fresh state (complements the listeners).
+- Builds: all 3 commands re-run clean after changes (including CAP chunk verification).
+- Pushed multiple times autonomously.
+
+Sigue el ciclo. Hard refresh the live site to see the new install banner (after 25s+ or after a like/match), the why-reasons under compat %, and the top "Actualizar todo". Re-run APK workflow for native too.
