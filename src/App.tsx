@@ -259,13 +259,6 @@ function App() {
     localStorage.setItem('entrenamatch_session_unreads', JSON.stringify(sessionUnreads))
   }, [sessionUnreads])
 
-  // Persist seen live users so new-live urgency notifs don't repeat on every reload/hard refresh
-  useEffect(() => {
-    try {
-      localStorage.setItem('entrenamatch_seen_live_users', JSON.stringify(Array.from(seenLiveUserIdsRef.current)))
-    } catch {}
-  }, [ /* manual trigger below */ ])
-
   // PWA install prompt wiring (beforeinstallprompt + nice banner after engagement)
   useEffect(() => {
     const handler = (e: any) => {
@@ -979,42 +972,6 @@ function App() {
       return () => clearInterval(id);
     }
   }, [activeTab, isDemoMode])
-
-  // Real-time urgency notifications for NEW live trainers nearby (the killer retention hook). Fires in-app notif + toast when fresh lives appear (after load/refresh).
-  // Uses seen ref + dedup inside addNotification. Only after initial population to avoid first-load spam. Works in demo too for showcase.
-  useEffect(() => {
-    if (!liveTrainingNow || liveTrainingNow.length === 0) return
-    const currentLiveIds = liveTrainingNow.map(u => u.id)
-    let addedNew = false
-    liveTrainingNow.forEach((liveUser: any) => {
-      if (!seenLiveUserIdsRef.current.has(liveUser.id)) {
-        seenLiveUserIdsRef.current.add(liveUser.id)
-        addedNew = true
-        // Guard: only notify "new live nearby" if we've already seen at least one before (skip pure first load)
-        if (seenLiveUserIdsRef.current.size > 1) {
-          addNotification({
-            type: 'session_join', // reuse closest type for "join live training" urgency
-            title: '🟢 ¡Entrenando ahora cerca!',
-            body: `${liveUser.name} está en vivo a ${(liveUser.distance || 0).toFixed(1)}km. ¡Únete ya antes de que se vaya!`,
-            relatedId: liveUser.id,
-            photoUrl: liveUser.photos?.[0],
-          })
-          toast(`🟢 ${liveUser.name} entrenando ahora cerca`, {
-            description: `A ${(liveUser.distance || 0).toFixed(1)}km · se va en ~${liveUser.seVaEnMin || 40}m — ¡Ver perfil!`,
-            action: {
-              label: 'Ver',
-              onClick: () => setShowFullProfile(liveUser as any)
-            }
-          })
-        }
-      }
-    })
-    if (addedNew) {
-      try {
-        localStorage.setItem('entrenamatch_seen_live_users', JSON.stringify(Array.from(seenLiveUserIdsRef.current)))
-      } catch {}
-    }
-  }, [liveTrainingNow, addNotification])
 
   // Clear comment UI when leaving profile tab
   useEffect(() => {
@@ -3170,6 +3127,43 @@ function App() {
     }
     return lives;
   }, [realProfiles, userLocation, isDemoMode]);
+
+  // Real-time urgency notifications for NEW live trainers nearby (the killer retention hook).
+  // Placed HERE (after liveTrainingNow declaration) to avoid TDZ "Cannot access before initialization" on app start.
+  // Fires in-app notif + toast when fresh lives appear (on loadRealProfiles refresh or 60s interval).
+  // Uses seen ref + dedup inside addNotification. Guard skips pure first-load spam. Demo + real parity.
+  useEffect(() => {
+    if (!liveTrainingNow || liveTrainingNow.length === 0) return
+    let addedNew = false
+    liveTrainingNow.forEach((liveUser: any) => {
+      if (!seenLiveUserIdsRef.current.has(liveUser.id)) {
+        seenLiveUserIdsRef.current.add(liveUser.id)
+        addedNew = true
+        // Guard: only notify if we've already seen at least one before (skip init spam)
+        if (seenLiveUserIdsRef.current.size > 1) {
+          addNotification({
+            type: 'session_join',
+            title: '🟢 ¡Entrenando ahora cerca!',
+            body: `${liveUser.name} está en vivo a ${(liveUser.distance || 0).toFixed(1)}km. ¡Únete ya antes de que se vaya!`,
+            relatedId: liveUser.id,
+            photoUrl: liveUser.photos?.[0],
+          })
+          toast(`🟢 ${liveUser.name} entrenando ahora cerca`, {
+            description: `A ${(liveUser.distance || 0).toFixed(1)}km · se va en ~${liveUser.seVaEnMin || 40}m — ¡Ver perfil!`,
+            action: {
+              label: 'Ver',
+              onClick: () => setShowFullProfile(liveUser as any)
+            }
+          })
+        }
+      }
+    })
+    if (addedNew) {
+      try {
+        localStorage.setItem('entrenamatch_seen_live_users', JSON.stringify(Array.from(seenLiveUserIdsRef.current)))
+      } catch {}
+    }
+  }, [liveTrainingNow, addNotification])
 
   // Filtered deck (with distance support + blocking)
   // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
