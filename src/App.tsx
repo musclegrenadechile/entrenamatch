@@ -4151,20 +4151,20 @@ function App() {
               </div>
             )}
 
-            {/* Simple visual "map" row: mini avatars + pulsing dots sorted by distance (emoji radar feel, FOMO visual) */}
+            {/* Simple visual "map" row: mini avatars + pulsing dots sorted by distance (emoji radar feel, FOMO visual) - enhanced */}
             {liveTrainingNow.length > 1 && (
               <div className="px-4 py-2 border-b border-[#2F2F35]/50 bg-black/30">
-                <div className="text-[8px] text-[#9CA3AF] mb-1">Cerca de ti (ordenado por distancia)</div>
+                <div className="text-[8px] text-[#9CA3AF] mb-1">Cerca de ti (radar ordenado por distancia)</div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {[...liveTrainingNow].sort((a,b)=> (a.distance||0)-(b.distance||0)).map((u, idx) => (
-                    <div key={u.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(u); }} className="flex flex-col items-center text-center cursor-pointer active:opacity-80">
+                    <motion.div key={u.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(u); }} whileHover={{scale:1.1}} whileTap={{scale:0.9}} className="flex flex-col items-center text-center cursor-pointer active:opacity-80">
                       <div className="relative">
-                        {u.photos?.[0] ? <img src={u.photos[0]} className="w-8 h-8 rounded-full object-cover border border-[#22c55e]/50" /> : <div className="w-8 h-8 rounded-full bg-[#22c55e]/20 flex items-center justify-center text-[10px]">{u.name[0]}</div>}
-                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#22c55e] rounded-full ring-1 ring-black" style={{animation: u.seVaEnMin < 10 ? 'live-pulse-green-urgent 1.2s ease-in-out infinite' : 'live-pulse-green 1.6s ease-in-out infinite'}}></div>
+                        {u.photos?.[0] ? <img src={u.photos[0]} className="w-9 h-9 rounded-full object-cover border-2 border-[#22c55e]/60" /> : <div className="w-9 h-9 rounded-full bg-[#22c55e]/20 flex items-center justify-center text-[10px] border border-[#22c55e]/30">{u.name[0]}</div>}
+                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#22c55e] rounded-full ring-2 ring-black" style={{animation: u.seVaEnMin < 10 ? 'live-pulse-green-urgent 1.1s ease-in-out infinite' : 'live-pulse-green 1.8s ease-in-out infinite'}}></div>
                       </div>
-                      <div className="text-[8px] mt-0.5 text-white truncate max-w-[42px]">{u.name.split(' ')[0]}</div>
+                      <div className="text-[8px] mt-0.5 text-white truncate max-w-[48px] font-medium">{u.name.split(' ')[0]}</div>
                       <div className="text-[7px] text-[#22c55e]">{(u.distance||0).toFixed(0)}km {u.joinCount > 0 ? `+${u.joinCount}🔥` : ''}</div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
