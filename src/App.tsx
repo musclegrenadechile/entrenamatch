@@ -4096,7 +4096,9 @@ function App() {
                 ))}
               </div>
             ) : (
-              <div className="text-[10px] text-[#9CA3AF]">Sé el primero en "Entrenando Ahora" cerca de ti — marca en tu Perfil. ¡Genera urgencia y abre la app más!</div>
+              <div className="card card-glass p-3 text-center border border-[#22c55e]/20">
+                <div className="text-[10px] text-[#9CA3AF]">🏋️ Sé el primero en "Entrenando Ahora" cerca de ti — marca el toggle <span className="text-[#22c55e] font-medium">"Entrenando ahora (EN VIVO)"</span> en tu Perfil. ¡Genera urgencia real y la gente querrá unirse!</div>
+              </div>
             )}
             <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between items-center">
               <span>¡Urgencia real! Toca para ver o únete antes de que se vayan. Nadie lo tiene tan bien.</span>
@@ -4217,7 +4219,14 @@ function App() {
                       <button onClick={(e) => { e.stopPropagation(); setShowLiveModal(false); openChat(user.id); if (!matches.includes(user.id) && !realMatches.includes(user.id)) handleSwipe(user.id, 'right'); }} className="text-[9px] border border-[#22c55e]/60 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10 hover:bg-[#22c55e]/5">Chatear ya</button>
                     </div>
                   </div>
-                )) : <div className="text-center text-[#9CA3AF]">Sin resultados. ¡Sé el primero!</div>
+                )) : (
+                  <div className="card card-glass p-6 text-center border border-[#22c55e]/30">
+                    <div className="text-3xl mb-2">🏋️</div>
+                    <div className="font-semibold text-white mb-1">¡Aún no hay nadie entrenando cerca!</div>
+                    <div className="text-sm text-[#9CA3AF] mb-3">Sé el primero en "Entrenando Ahora". Marca el toggle en tu Perfil y la gente cerca te verá en el radar + banner. ¡Genera urgencia real y abre la app más seguido!</div>
+                    <button onClick={() => { setShowLiveModal(false); setActiveTab('profile'); }} className="text-xs px-4 py-1.5 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90">Ir a Perfil a activar →</button>
+                  </div>
+                )
               })()}
             </div>
             <div className="p-3 border-t border-[#2F2F35] bg-[#0D0D10]">
@@ -4632,13 +4641,13 @@ function App() {
               <div className="text-[10px] text-[#9CA3AF] -mt-2 mb-3">Sesiones visibles para testers reales • chat grupal en vivo</div>
 
               {displaySessions.filter(s => !s.participants.includes(effectiveUserId)).length === 0 ? (
-                <div className="mt-4 card p-7 rounded-3xl text-center">
+                <div className="mt-4 card card-glass p-7 rounded-3xl text-center border border-[#FF671F]/20">
                   <div className="mx-auto w-14 h-14 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-4">
                     <Users className="text-[#FF671F]" size={28} />
                   </div>
                   <div className="font-semibold text-lg mb-2">No hay sesiones abiertas todavía</div>
                   <p className="text-sm text-[#9CA3AF] leading-snug mb-4 max-w-[280px] mx-auto">
-                    { !isDemoMode ? 'Aún no hay sesiones activas de otros testers. ¡Sé el primero!' : 'Sé el primero en crear una.' } Se ven en vivo para todos y el chat grupal funciona cross-device.
+                    { !isDemoMode ? 'Aún no hay sesiones activas de otros testers. ¡Sé el primero!' : 'Sé el primero en crear una.' } Se ven en vivo para todos y el chat grupal funciona cross-device. ¡Crea y abre la app para que otros se unan!
                   </p>
                   <button onClick={() => setShowCreateSession(true)} className="btn-primary px-8">Crear la primera sesión</button>
                   {lastSync && (
@@ -4657,7 +4666,7 @@ function App() {
                         creatorProfile.lat || 0, creatorProfile.lng || 0) : null
 
                       return (
-                        <div key={session.id} className={`card card-glass session-card rounded-3xl p-4 ${liveTrainingNow.some(u => u.id === session.creatorId) ? 'border-[#22c55e]/60 ring-1 ring-[#22c55e]/20' : ''}`}>
+                        <motion.div key={session.id} whileHover={{ scale: 1.01, y: -1 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }} className={`card card-glass session-card rounded-3xl p-4 ${liveTrainingNow.some(u => u.id === session.creatorId) ? 'border-[#22c55e]/60 ring-1 ring-[#22c55e]/20' : ''} hover:border-[#FF671F]/20 transition-all`}>
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="font-semibold text-lg tracking-tight">{session.title}</div>
@@ -4740,7 +4749,7 @@ function App() {
                               Unirme
                             </button>
                           </div>
-                        </div>
+                        </motion.div>
                       )
                     })}
                 </div>
@@ -4757,15 +4766,16 @@ function App() {
               </div>
 
               {displaySessions.filter(s => s.participants.includes(effectiveUserId) || s.creatorId === effectiveUserId).length === 0 ? (
-                <div className="card p-7 rounded-3xl text-center">
-                  <div className="font-semibold mb-2">Aún no tienes sesiones</div>
-                  <p className="text-sm text-[#9CA3AF] mb-3 max-w-[260px] mx-auto">
-                    { !isDemoMode ? 'Crea tu primera sesión real o únete a una abierta arriba. ¡Otros testers la verán en sus dispositivos!' : 'Crea tu primera sesión o únete a una abierta arriba.' }
+                <div className="card card-glass p-7 rounded-3xl text-center border border-[#FF671F]/20">
+                  <div className="text-2xl mb-2">📅</div>
+                  <div className="font-semibold mb-1">Aún no tienes sesiones</div>
+                  <p className="text-sm text-[#9CA3AF] mb-2 max-w-[260px] mx-auto">
+                    { !isDemoMode ? 'Crea tu primera sesión real o únete a una abierta arriba. ¡Otros testers la verán cross-device!' : 'Crea tu primera sesión o únete a una abierta arriba.' }
                   </p>
-                  <p className="text-xs text-[#9CA3AF] mb-4">Únete o crea para probar el chat grupal real-time.</p>
+                  <p className="text-xs text-[#9CA3AF] mb-3">Chat grupal real-time + notifs cuando se unan.</p>
                   <button 
                     onClick={() => setShowCreateSession(true)}
-                    className="px-5 py-2 bg-[#FF671F] text-black rounded-2xl text-sm font-semibold active:bg-[#E55A1A]"
+                    className="px-5 py-2 bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black rounded-2xl text-sm font-semibold active:brightness-90"
                   >
                     Crear sesión
                   </button>
@@ -4782,7 +4792,7 @@ function App() {
                         creatorProfileForDist.lat || 0, creatorProfileForDist.lng || 0) : null
 
                       return (
-                        <div key={session.id} className={`card card-glass session-card rounded-3xl p-4 border border-[#FF4F79]/50 ring-1 ring-inset ring-[#FF4F79]/10 ${liveTrainingNow.some(u => u.id === session.creatorId) ? 'border-[#22c55e]/60 ring-1 ring-[#22c55e]/20' : ''}`}>
+                        <motion.div key={session.id} whileHover={{ scale: 1.01, y: -1 }} transition={{ type: 'spring', stiffness: 260, damping: 20 }} className={`card card-glass session-card rounded-3xl p-4 border border-[#FF4F79]/50 ring-1 ring-inset ring-[#FF4F79]/10 ${liveTrainingNow.some(u => u.id === session.creatorId) ? 'border-[#22c55e]/60 ring-1 ring-[#22c55e]/20' : ''} hover:border-[#FF671F]/20 transition-all`}>
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="font-semibold text-lg flex items-center gap-2 tracking-tight">
@@ -4849,7 +4859,7 @@ function App() {
                           </div>
 
                           {/* Chat moved to modal - button above opens it */}
-                        </div>
+                        </motion.div>
                       )
                     })}
                 </div>
@@ -5395,6 +5405,9 @@ function App() {
                       ¡Ver ahora! 
                       <div className="w-1.5 h-1.5 bg-[#22c55e] rounded-full" style={{animation: 'live-pulse-green 1.5s ease-in-out infinite'}}></div>
                     </div>
+                  )}
+                  {stat.isLive && liveTrainingNow.length === 0 && (
+                    <div className="text-[8px] text-[#9CA3AF] mt-0.5">¡Sé el primero! Marca en Perfil</div>
                   )}
                 </div>
               ))}

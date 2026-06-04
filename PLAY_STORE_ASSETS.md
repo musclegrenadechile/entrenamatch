@@ -9,7 +9,7 @@
 - Browser notif: handlers seguros.
 - Manifest mejorado.
 - **Nuevo**: toggles de preferencias (mensajes/live/muro) en Perfil.
-- **Mejorado**: muro teasers (1-2 posts); live visuals (glass/motion/glows/pulses/gradients, banner grid + glow + progress, radar sweep + circles + stagger, profile stats/banner glow + progress, sessions/matches/feed badges + glow/ring + mini progress, modal progress + radar anim/hover/stagger + sweep). Full UI visual review (hovers, empty states, consistency).
+- **Mejorado**: muro teasers (1-2 posts); live visuals (glass/motion/glows/pulses/gradients, banner grid + glow + progress, radar sweep + circles + stagger + lines for map feel, profile stats/banner glow + progress, sessions/matches/feed badges + glow/ring + mini progress, modal progress + radar anim/hover/stagger + sweep). Full UI visual review (hovers, empty states, consistency). Matches cards live ring/glow. Muro feed posts framer exit anim for deletes. Top bar live count with glow/ring.
 - Incluye killer live, muro espectacular, integrity, onboarding preview, etc.
 Listo para re-subir a closed track como mejora continua.
 

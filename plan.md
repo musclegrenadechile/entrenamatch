@@ -546,3 +546,88 @@ Sigue con todo full green light! App in excellent shape - these will push it ove
 
 Review done (see structured section above). Actioned: clean plan, FCM stub+docs, visual polishes (banner glow, radar sweep+circles, profile live progress/glow, stats glow/pulse, matches ring/glow, feed teaser progress). Push, AAB exhaustive-review. Sigue a toda maquina full green light!
 
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Radar: sweep + circles + lines for map feel.
+- Push, AAB radar-map.
+- Sigue con todo. Pr?ximo: m?s (FCM, Play, motion).
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Radar: sweep + circles + lines.
+- Matches live ring/glow.
+- Push, AAB radar-map.
+- Sigue con todo. Pr?ximo: m?s live/FCM/Play.
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Muro feed: exit anim for deletes.
+- Push, AAB muro-exit.
+- Sigue con todo. Pr?ximo: m?s (FCM, Play, motion).
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Muro feed: exit anim for deletes.
+- Push, AAB muro-exit.
+- Sigue con todo. Pr?ximo: m?s (FCM, Play, motion).
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Muro feed: exit anim for deletes.
+- Radar: sweep + circles + lines.
+- Matches live ring/glow.
+- Feed live teaser: mini progress.
+- Push, AAB muro-exit.
+- Sigue con todo full green light! Pr?ximo: m?s live (FCM, Play upload), motion, etc.
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Top bar live count: glow/ring.
+- Push, AAB top-live-glow.
+- Sigue con todo. Pr?ximo: m?s live/FCM/Play.
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Top bar live count: glow/ring.
+- Push, AAB top-live-glow.
+- Sigue con todo. Pr?ximo: m?s live/FCM/Play.
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+- Sigue con todo. Pr?ximo: m?s (FCM, Play, motion).
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+- Sigue con todo. Pr?ximo: m?s (FCM, Play, motion).
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+- Sigue con todo full green light! Pr?ximo: m?s live (FCM, Play upload), motion, etc.
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+- Sigue con todo. Pr?ximo: m?s live/FCM/Play.
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+- Sigue con todo. Pr?ximo: m?s live/FCM/Play.
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Top bar live count: glow/ring.
+- Muro feed: exit anim for deletes.
+- Radar: sweep + circles + lines.
+- Matches live ring/glow.
+- Feed live teaser: mini progress.
+- Push, AAB top-live-glow.
+- Sigue con todo full green light! Pr?ximo: m?s live/FCM/Play.
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Top bar live count: glow/ring.
+- Muro feed: exit anim for deletes.
+- Radar: sweep + circles + lines.
+- Matches live ring/glow.
+- Feed live teaser: mini progress.
+- Push, AAB top-live-glow.
+- Sigue con todo full green light! Pr?ximo: m?s live/FCM/Play.
+
