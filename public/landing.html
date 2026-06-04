@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EntrenaMatch - El match del movimiento</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Poppins:wght@600;700&amp;display=swap');
+    
+    :root {
+      --orange: #FF671F;
+      --pink: #FF4F79;
+    }
+    
+    body {
+      font-family: 'Inter', system_ui, sans-serif;
+    }
+    
+    .heading-font {
+      font-family: 'Poppins', system_ui, sans-serif;
+      font-weight: 700;
+    }
+
+    .dunkin-orange {
+      color: #FF671F;
+    }
+    
+    .dunkin-pink {
+      color: #FF4F79;
+    }
+
+    .brand-gradient {
+      background: linear-gradient(135deg, #FF671F 0%, #FF4F79 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .section-header {
+      font-size: 2.5rem;
+      line-height: 1.1;
+      font-weight: 700;
+    }
+
+    .app-card {
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+    }
+    
+    .app-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    }
+
+    .feature-icon {
+      transition: all 0.3s ease;
+    }
+
+    .nav-link {
+      transition: color 0.2s ease;
+    }
+    
+    .nav-link:hover {
+      color: #FF671F;
+    }
+
+    .hero-bg {
+      background: linear-gradient(180deg, #0D0D10 0%, #1C1C20 100%);
+    }
+
+    .stat-number {
+      font-variant-numeric: tabular-nums;
+    }
+
+    .screenshot {
+      box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+      transition: transform 0.3s ease;
+    }
+
+    .screenshot:hover {
+      transform: scale(1.03);
+    }
+
+    .dunkin-btn {
+      background: linear-gradient(to right, #FF671F, #FF4F79);
+      transition: all 0.3s ease;
+      box-shadow: 0 10px 15px -3px rgb(255 103 31 / 0.3);
+    }
+    
+    .dunkin-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 25px -5px rgb(255 103 31 / 0.3);
+    }
+
+    .live-badge {
+      animation: pulse-live 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  </style>
+</head>
+<body class="bg-[#0D0D10] text-white">
+  <!-- Navbar -->
+  <nav class="bg-[#0D0D10]/95 backdrop-blur-lg border-b border-white/10 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center gap-x-3">
+          <div class="flex items-center gap-x-2">
+            <div class="w-9 h-9 bg-gradient-to-br from-[#FF671F] to-[#FF4F79] rounded-2xl flex items-center justify-center">
+              <i class="fa-solid fa-dumbbell text-white text-xl"></i>
+            </div>
+            <div>
+              <span class="font-bold text-2xl tracking-tighter">EntrenaMatch</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="hidden md:flex items-center gap-x-8 text-sm">
+          <a href="#features" class="nav-link text-white/80 hover:text-white font-medium">Características</a>
+          <a href="#how" class="nav-link text-white/80 hover:text-white font-medium">Cómo funciona</a>
+          <a href="#screenshots" class="nav-link text-white/80 hover:text-white font-medium">Capturas</a>
+        </div>
+        
+        <div class="flex items-center gap-x-3">
+          <a href="https://musclegrenadechile.github.io/entrenamatch/" 
+             class="px-4 py-2 text-sm font-medium text-white/80 hover:text-white transition-colors hidden md:block">
+            Ver la app
+          </a>
+          <a href="#beta" 
+             class="dunkin-btn px-6 py-2.5 rounded-3xl text-sm font-semibold text-white flex items-center gap-x-2">
+            <span>Unirme a la beta</span>
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="max-w-7xl mx-auto px-6 pt-16 pb-12">
+    <div class="grid md:grid-cols-12 gap-8 items-center">
+      <div class="md:col-span-7">
+        <div class="inline-flex items-center gap-x-2 px-4 py-1.5 rounded-3xl bg-white/5 border border-white/10 text-sm mb-6">
+          <div class="w-2 h-2 bg-[#FF671F] rounded-full animate-pulse"></div>
+          <span class="font-medium">Ahora en beta cerrada</span>
+        </div>
+        
+        <h1 class="text-6xl md:text-7xl font-bold tracking-tighter leading-[1.05] mb-6">
+          El match del<br>
+          <span class="brand-gradient">movimiento</span>
+        </h1>
+        
+        <p class="max-w-lg text-xl text-white/70 mb-8">
+          Encuentra compañeros de entrenamiento reales cerca de ti. 
+          En vivo. En el momento.
+        </p>
+        
+        <div class="flex flex-wrap gap-4">
+          <a href="#beta" 
+             class="dunkin-btn inline-flex items-center justify-center gap-x-3 px-8 py-4 rounded-3xl text-lg font-semibold">
+            <span>Unirme a la beta cerrada</span>
+            <i class="fa-solid fa-users"></i>
+          </a>
+          
+          <a href="https://musclegrenadechile.github.io/entrenamatch/" 
+             class="inline-flex items-center justify-center gap-x-3 px-8 py-4 rounded-3xl text-lg font-medium border border-white/20 hover:bg-white/5 transition-colors">
+            <span>Ver la app web</span>
+          </a>
+        </div>
+        
+        <div class="mt-8 flex items-center gap-x-6 text-sm">
+          <div class="flex -space-x-2">
+            <div class="w-8 h-8 rounded-full bg-zinc-700 border-2 border-[#0D0D10] overflow-hidden">
+              <img src="https://picsum.photos/id/1005/32/32" class="w-full h-full object-cover" alt="">
+            </div>
+            <div class="w-8 h-8 rounded-full bg-zinc-700 border-2 border-[#0D0D10] overflow-hidden">
+              <img src="https://picsum.photos/id/1011/32/32" class="w-full h-full object-cover" alt="">
+            </div>
+            <div class="w-8 h-8 rounded-full bg-zinc-700 border-2 border-[#0D0D10] overflow-hidden">
+              <img src="https://picsum.photos/id/201/32/32" class="w-full h-full object-cover" alt="">
+            </div>
+          </div>
+          <div class="text-white/60">
+            <span class="font-semibold text-white">+240</span> personas ya en beta
+          </div>
+        </div>
+      </div>
+      
+      <div class="md:col-span-5 relative">
+        <div class="bg-zinc-900 border border-white/10 rounded-3xl p-2 shadow-2xl">
+          <div class="rounded-2xl overflow-hidden border border-white/10">
+            <img src="assets/play-store/feature-graphic-1024x500-v1.jpg" 
+                 class="w-full aspect-[2/1] object-cover" alt="EntrenaMatch - El match del movimiento">
+          </div>
+        </div>
+        
+        <div class="absolute -bottom-4 -right-4 bg-[#1C1C20] border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-x-3 shadow-xl">
+          <div class="flex items-center">
+            <div class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></div>
+          </div>
+          <div>
+            <div class="text-sm font-medium">142 personas entrenando ahora</div>
+            <div class="text-[10px] text-emerald-400">en tu zona</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Trust / Stats -->
+  <div class="max-w-7xl mx-auto px-6 pb-12">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-px bg-white/10 rounded-3xl overflow-hidden">
+      <div class="bg-[#1C1C20] p-6">
+        <div class="text-4xl font-semibold">3.2k</div>
+        <div class="text-white/60 text-sm mt-1">Matches reales</div>
+      </div>
+      <div class="bg-[#1C1C20] p-6">
+        <div class="text-4xl font-semibold">890</div>
+        <div class="text-white/60 text-sm mt-1">Sesiones creadas</div>
+      </div>
+      <div class="bg-[#1C1C20] p-6">
+        <div class="text-4xl font-semibold">47</div>
+        <div class="text-white/60 text-sm mt-1">Ciudades activas</div>
+      </div>
+      <div class="bg-[#1C1C20] p-6">
+        <div class="text-4xl font-semibold">4.9</div>
+        <div class="text-white/60 text-sm mt-1">Calificación promedio</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Features -->
+  <section id="features" class="max-w-7xl mx-auto px-6 py-16">
+    <div class="text-center mb-12">
+      <div class="inline-block px-3 py-1 bg-white/5 rounded-2xl text-xs tracking-[1px] font-medium mb-3">CARACTERÍSTICAS</div>
+      <h2 class="text-5xl font-semibold tracking-tight">Todo lo que necesitas<br>para entrenar en compañía</h2>
+    </div>
+
+    <div class="grid md:grid-cols-3 gap-6">
+      <!-- Feature 1 -->
+      <div class="bg-[#1C1C20] border border-white/10 rounded-3xl p-8 app-card">
+        <div class="w-12 h-12 bg-gradient-to-br from-[#FF671F] to-[#FF4F79] rounded-2xl flex items-center justify-center mb-6">
+          <i class="fa-solid fa-broadcast-tower text-2xl"></i>
+        </div>
+        <h3 class="text-2xl font-semibold mb-3">Entrenando Ahora <span class="text-[#FF671F]">(EN VIVO)</span></h3>
+        <p class="text-white/70">Ve en tiempo real quién está entrenando cerca de ti. Marca que estás entrenando y que otros te vean. Genera urgencia real.</p>
+        <div class="mt-6 flex items-center gap-2 text-sm">
+          <div class="px-3 py-1 bg-emerald-500/10 text-emerald-400 rounded-full text-xs font-medium flex items-center gap-1.5">
+            <div class="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
+            <span>142 live ahora</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 2 -->
+      <div class="bg-[#1C1C20] border border-white/10 rounded-3xl p-8 app-card">
+        <div class="w-12 h-12 bg-gradient-to-br from-[#FF671F] to-[#FF4F79] rounded-2xl flex items-center justify-center mb-6">
+          <i class="fa-solid fa-handshake text-2xl"></i>
+        </div>
+        <h3 class="text-2xl font-semibold mb-3">Matching inteligente</h3>
+        <p class="text-white/70">Encuentra personas con los mismos objetivos, nivel e intensidad. Filtros por distancia, tipo de entrenamiento y disponibilidad.</p>
+        
+        <div class="mt-8 grid grid-cols-3 gap-3 text-center">
+          <div class="bg-white/5 rounded-2xl p-3">
+            <div class="text-[#FF671F] text-xl font-semibold">94%</div>
+            <div class="text-[10px] text-white/60">Compatibilidad</div>
+          </div>
+          <div class="bg-white/5 rounded-2xl p-3">
+            <div class="text-[#FF671F] text-xl font-semibold">3.2km</div>
+            <div class="text-[10px] text-white/60">Promedio distancia</div>
+          </div>
+          <div class="bg-white/5 rounded-2xl p-3">
+            <div class="text-[#FF671F] text-xl font-semibold">Avanzado</div>
+            <div class="text-[10px] text-white/60">Nivel común</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature 3 -->
+      <div class="bg-[#1C1C20] border border-white/10 rounded-3xl p-8 app-card">
+        <div class="w-12 h-12 bg-gradient-to-br from-[#FF671F] to-[#FF4F79] rounded-2xl flex items-center justify-center mb-6">
+          <i class="fa-solid fa-users text-2xl"></i>
+        </div>
+        <h3 class="text-2xl font-semibold mb-3">Sesiones grupales</h3>
+        <p class="text-white/70">Crea o únete a sesiones reales. Chat grupal dentro de cada sesión para coordinar lugar, hora y motivación.</p>
+        
+        <div class="mt-6 space-y-2 text-sm">
+          <div class="flex items-center justify-between bg-white/5 rounded-2xl px-4 py-3">
+            <div>
+              <div class="font-medium">Running costanera</div>
+              <div class="text-xs text-white/50">19:00 • 8 participantes</div>
+            </div>
+            <div class="text-emerald-400 text-xs font-medium">EN VIVO</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <section id="how" class="max-w-7xl mx-auto px-6 py-16 border-t border-white/10">
+    <div class="text-center mb-12">
+      <h2 class="text-4xl font-semibold tracking-tight">Cómo funciona</h2>
+      <p class="text-white/60 mt-2">De cero a entrenar con alguien en menos de 5 minutos</p>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-6">
+      <div class="flex gap-4">
+        <div class="w-9 h-9 shrink-0 rounded-2xl bg-white/10 flex items-center justify-center font-mono text-sm font-bold">01</div>
+        <div>
+          <div class="font-semibold mb-1">Crea tu perfil</div>
+          <div class="text-sm text-white/70">Edad, fotos, qué entrenas, nivel e intensidad. Todo en 2 minutos.</div>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <div class="w-9 h-9 shrink-0 rounded-2xl bg-white/10 flex items-center justify-center font-mono text-sm font-bold">02</div>
+        <div>
+          <div class="font-semibold mb-1">Explora perfiles reales</div>
+          <div class="text-sm text-white/70">Filtra por distancia, tipo de entrenamiento y nivel. Ve quién está disponible ahora.</div>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <div class="w-9 h-9 shrink-0 rounded-2xl bg-white/10 flex items-center justify-center font-mono text-sm font-bold">03</div>
+        <div>
+          <div class="font-semibold mb-1">Haz match</div>
+          <div class="text-sm text-white/70">Da like a quien te interesa. Si hay match, chatea inmediatamente.</div>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <div class="w-9 h-9 shrink-0 rounded-2xl bg-white/10 flex items-center justify-center font-mono text-sm font-bold">04</div>
+        <div>
+          <div class="font-semibold mb-1">Entrena juntos</div>
+          <div class="text-sm text-white/70">Crea una sesión o únete a una. Coordina todo en el chat grupal.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live feature highlight -->
+  <div class="max-w-7xl mx-auto px-6 py-12">
+    <div class="bg-gradient-to-br from-[#FF671F]/10 to-transparent border border-[#FF671F]/20 rounded-3xl p-10 md:p-14">
+      <div class="max-w-lg">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="live-badge px-3 py-1 text-xs font-semibold tracking-widest bg-[#FF671F] text-black rounded-full flex items-center gap-1.5 w-fit">
+            <i class="fa-solid fa-circle text-[8px]"></i>
+            <span>EN VIVO AHORA</span>
+          </div>
+        </div>
+        
+        <h3 class="text-4xl font-semibold tracking-tighter">La función que nadie más tiene</h3>
+        <p class="mt-4 text-white/80">Marca que estás entrenando en este preciso momento. La gente cerca te verá en tiempo real con un contador de "se va en".</p>
+        
+        <div class="mt-8 flex items-center gap-3">
+          <div class="text-sm">142 personas entrenando ahora mismo</div>
+          <div class="text-emerald-400 text-xs">• Actualizado hace 12s</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screenshots -->
+  <section id="screenshots" class="max-w-7xl mx-auto px-6 py-16">
+    <div class="flex justify-between items-end mb-8">
+      <div>
+        <h2 class="text-4xl font-semibold tracking-tight">La app en acción</h2>
+      </div>
+      <a href="https://musclegrenadechile.github.io/entrenamatch/" class="text-sm flex items-center gap-1 text-[#FF671F]">
+        Ver la app completa <i class="fa-solid fa-arrow-right ml-1"></i>
+      </a>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="screenshot rounded-3xl overflow-hidden border border-white/10">
+        <img src="assets/play-store/screenshot-explore-polished.jpg" class="w-full" alt="Explora perfiles reales">
+        <div class="p-4 bg-[#1C1C20] text-sm">
+          <div class="font-medium">Explora</div>
+          <div class="text-xs text-white/60">Perfiles reales ordenados por compatibilidad</div>
+        </div>
+      </div>
+      
+      <div class="screenshot rounded-3xl overflow-hidden border border-white/10">
+        <img src="assets/play-store/screenshot-chat-polished.jpg" class="w-full" alt="Chat 1:1 y grupal">
+        <div class="p-4 bg-[#1C1C20] text-sm">
+          <div class="font-medium">Chat en vivo</div>
+          <div class="text-xs text-white/60">1:1 y grupal dentro de sesiones</div>
+        </div>
+      </div>
+      
+      <div class="screenshot rounded-3xl overflow-hidden border border-white/10 bg-zinc-900 flex items-center justify-center p-8 text-center">
+        <div>
+          <div class="text-4xl mb-4">🏋️</div>
+          <div class="font-semibold">Sesiones grupales</div>
+          <div class="text-sm text-white/70 mt-1">Crea y coordina entrenamientos reales</div>
+        </div>
+      </div>
+      
+      <div class="screenshot rounded-3xl overflow-hidden border border-white/10 bg-zinc-900 flex items-center justify-center p-8 text-center">
+        <div>
+          <div class="text-4xl mb-4">🔥</div>
+          <div class="font-semibold">Entrenando Ahora</div>
+          <div class="text-sm text-white/70 mt-1">La función que genera urgencia real</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Beta CTA -->
+  <section id="beta" class="max-w-4xl mx-auto px-6 pb-20">
+    <div class="bg-[#1C1C20] border border-white/10 rounded-3xl p-10 text-center">
+      <div class="max-w-md mx-auto">
+        <h3 class="text-3xl font-semibold tracking-tight">¿Listo para entrenar con alguien?</h3>
+        <p class="mt-3 text-white/70">Únete a la beta cerrada. Solo para testers seleccionados.</p>
+        
+        <div class="mt-8 space-y-4">
+          <a href="https://play.google.com/console" target="_blank"
+             class="dunkin-btn w-full inline-block py-4 rounded-3xl font-semibold text-lg">
+            Solicitar acceso a la beta en Play Store
+          </a>
+          
+          <div class="text-xs text-white/50">
+            Actualmente en Internal Testing. Pronto pasaremos a Closed testing.
+          </div>
+        </div>
+        
+        <div class="mt-8 text-xs flex justify-center gap-x-5 text-white/50">
+          <div>Privacidad garantizada</div>
+          <div>•</div>
+          <div>Solo +18</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="border-t border-white/10 py-8">
+    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-y-4 text-sm text-white/60">
+      <div>© 2026 EntrenaMatch. Hecho con ganas de movernos juntos.</div>
+      <div class="flex items-center gap-x-5">
+        <a href="privacy.html" class="hover:text-white">Privacidad</a>
+        <a href="terms.html" class="hover:text-white">Términos</a>
+        <a href="https://github.com/musclegrenadechile/entrenamatch" target="_blank" class="hover:text-white">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Simple Tailwind script if needed
+    function initTailwind() {
+      // Already using CDN, styles are inline
+    }
+    
+    // Easter egg: press "L" to simulate live count
+    document.addEventListener('keydown', function(e) {
+      if (e.key.toLowerCase() === 'l') {
+        const badges = document.querySelectorAll('.live-badge');
+        badges.forEach(b => {
+          b.style.transform = 'scale(1.3)';
+          setTimeout(() => {
+            if (b) b.style.transform = 'scale(1)';
+          }, 400);
+        });
+      }
+    });
+    
+    console.log('%c[EntrenaMatch] Landing page loaded. Press L for fun.', 'color:#FF671F');
+  </script>
+</body>
+</html>

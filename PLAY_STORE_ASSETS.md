@@ -10,7 +10,21 @@
 
 **Privacy Policy URL** (must be public and hosted):
 - https://musclegrenadechile.github.io/entrenamatch/privacy.html
-- (Future: https://entrenamatch.web.app/privacy.html when Firebase Hosting primary)
+
+**Account Deletion URL** (required by Google for Data Safety):
+- https://musclegrenadechile.github.io/entrenamatch/privacy.html#eliminacion-de-cuenta
+
+**Website URL** (for Play Console - official landing page):
+- https://musclegrenadechile.github.io/entrenamatch/landing.html
+
+This is the new dedicated website/landing page created for the Google Play submission. It showcases the app, features (including the unique "Entrenando Ahora" live feature), screenshots using the official graphics, and has a clear call-to-action for the closed beta.
+
+**Use this exact URL in the Play Console "Website" field**:
+https://musclegrenadechile.github.io/entrenamatch/landing.html
+
+The page is a complete, beautiful, mobile-friendly landing page (self-contained HTML + Tailwind via CDN + Font Awesome). It is the official website for EntrenaMatch, with hero, features (including the killer "Entrenando Ahora" live), how it works, screenshots using your official graphics, and beta CTA.
+
+**To make it live**: After you push the changes, run the usual build/deploy (the GitHub Pages CI will include public/landing.html). The URL above will work immediately for the Play Console submission.
 
 ---
 
@@ -58,16 +72,50 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 
 ## Graphics requirements & prompts
 
-### Feature graphic (1024 × 500 px, required)
-Prompt for generation (use any design tool or Imagine):
-"Modern dark fitness social app hero banner, deep charcoal + vibrant teal accents (#14b8a6), athletic man and woman high-fiving outdoors at golden hour in a coastal running path, subtle map + dumbbell + chat bubbles icons floating elegantly, bold modern sans title 'EntrenaMatch' in white, tagline 'El match del movimiento' smaller below, premium minimalist sports aesthetic, high contrast, cinematic lighting, no text overflow, space for Play Store overlay"
+### Feature graphic (1024 × 500 px, required - exact Google spec)
+Use these new files (Dunkin style, "ENTRENAMATCH" text, no donut/food):
+- feature-graphic-1024x500-v1.jpg
+- feature-graphic-1024x500-v2.jpg
+- feature-graphic-1024x500-v3.jpg
 
-(Generate 1024x500 PNG/JPG and upload to Play Console graphic assets.)
-Reference generated examples available in repo at: assets/play-store/ (feature-graphic.jpg + screenshot-explore.jpg, screenshot-chat.jpg etc. Use or regenerate with your preferred style for Play Console).
+These were generated specifically at the correct 1024x500 resolution for Play Store feature graphic. They follow the branding strategy: vibrant Dunkin orange/pink on dark, energetic fitness people, bold text, unique "spark/match" energy vibe for EntrenaMatch.
+
+Prompts used (copy for regeneration if needed):
+"Google Play Store feature graphic exactly 1024x500 pixels for EntrenaMatch fitness social app. Dunkin style: vibrant orange #FF671F and hot pink #FF4F79 accents on deep dark premium background. Diverse attractive athletic people high-fiving and connecting outdoors at golden hour in a modern urban/coastal setting. Large bold white text "ENTRENAMATCH" at the top in rounded energetic font. Smaller tagline below "El match del movimiento". High energy, fun, premium sports social app aesthetic. Cinematic lighting, high contrast, modern playful like Dunkin but fitness themed. No donut or food elements. Clean composition with good margins. Professional marketing banner style, high resolution."
+
+(These are under 1MB each, PNG/JPEG compatible.)
+Reference generated examples available in repo at: assets/play-store/ 
+
+**Recommended new files (Dunkin style with "ENTRENAMATCH" text, NO donut - orange #FF671F + pink #FF4F79 on dark):**
+- High-res icon: icon-512-dunkin-brand-v1.jpg to v4.jpg (new batch focused on unique branding)
+
+**Branding & Advertising Strategy for EntrenaMatch Icon**
+
+Core Idea: "El Spark del Movimiento" – the icon is the visual soul of the brand.
+- Unique hook: A stylized dumbbell that "ignites" or "connects" with an energy spark/flame (representing the "Live" Entrenando Ahora feature and the instant match energy).
+- This makes it instantly ownable: Not generic fitness (no plain dumbbell), not food (no donut), but energetic social fitness with Dunkin fun + urgency.
+- The text "ENTRENAMATCH" is bold, rounded, prominent – like Dunkin' but modern fitness.
+
+Advertising Strategy:
+- **Hero Visual**: The icon with pulsing live effect (green spark when "live" mode).
+- **Tagline**: "Encuentra tu match. Entrena en vivo."
+- **Campaign Pillars**:
+  1. FOMO Live: "Hay X personas entrenando ahora cerca de ti" – use real-time counters + the icon pulsing.
+  2. Before/After Match: Lonely workout (gray) → Connected training (orange/pink explosion with the icon).
+  3. Community Spark: User stories "Encendí mi entrenamiento gracias a EntrenaMatch".
+- **Placement**: App icon, feature graphic, social ads, gym stickers, event merch. The icon should work as a standalone brand mark (like Nike swoosh + wordmark).
+
+Use these new icons as the foundation for all branding. They are designed to be unique, memorable, and scalable.
+
+Use the existing polished screenshots (screenshot-explore-polished.jpg and screenshot-chat-polished.jpg) as they show real UI. Regenerate more if needed with the prompts below to better match the current Dunkin color scheme.
 
 ### High-res icon (512x512, adaptive icon ready)
-Use existing public favicon or generate:
-"Minimalist bold teal dumbbell icon inside rounded square, dark background (#0a0b0f), modern flat + slight 3d, high contrast, EntrenaMatch brand"
+Use the new Dunkin-style files (with "ENTRENAMATCH" text, no donut):
+- icon-512-dunkin-text-no-donut.jpg (recommended)
+- icon-512-dunkin-text-no-donut-v2.jpg (alternative)
+
+Prompts used (for regeneration):
+"Modern energetic app icon 512x512 for EntrenaMatch fitness social app in Dunkin style: vibrant orange #FF671F and hot pink #FF4F79 on deep dark background, bold rounded sans-serif text "ENTRENAMATCH" prominently displayed, integrated with a clean stylized dumbbell or abstract connection/match symbol (NO donut or food elements), high contrast, fun and bold like Dunkin branding but fitness themed, clean vector style, premium quality, no thin lines, perfectly square, readable at small sizes, professional yet playful fitness branding"
 
 ### Screenshots (phone — use 1080x1920 or 1440x2560 portrait, 2-8 required, up to 8)
 Recommended order for Play Console:
@@ -121,4 +169,44 @@ Mantén siempre "Oculto" / no listado.
 
 ---
 
-**Última actualización**: Phase 0 — lista para subir a Play Console en oculto.
+**Última actualización**: 2026-06-04 — lista para Internal Testing (beta cerrada)
+
+---
+
+## Textos listos para copiar y pegar en Play Console
+
+### App name
+EntrenaMatch
+
+### Short description (80 caracteres)
+El match del movimiento. Encuentra compañeros de entrenamiento reales cerca de ti.
+
+### Full description
+EntrenaMatch es la app para encontrar gente real con quien entrenar: running, gym, calistenia, hiking, crossfit y más.
+
+Crea tu perfil en minutos (edad, bio, fotos, tipos de entrenamiento, objetivos, nivel e intensidad). Explora perfiles reales de otros usuarios que buscan lo mismo que tú. Haz match, chatea 1:1 y crea o únete a sesiones grupales de entrenamiento. El chat grupal dentro de cada sesión te permite coordinar el día, hora y lugar con todos los participantes.
+
+Características actuales en Pre-Alpha (backend real):
+• Onboarding completo con cámara nativa en Android (APK)
+• Perfiles visibles entre testers en diferentes dispositivos
+• Matches y chat 1:1 en tiempo real
+• Crea sesiones (ej: "Running costanera 19:00") y únete a las de otros
+• Chat grupal dentro de las sesiones
+• Filtros por tipo de entrenamiento, nivel, disponibilidad y distancia
+• Sincronización real con Firebase (sobrevive hard refresh y cambio de dispositivo)
+• Botones prominentes de "Cambiar cuenta / Cerrar sesión" en todo momento
+
+Esta es una versión Pre-Alpha oculta para pruebas con un grupo cerrado de beta testers. Todo es real: tus matches, chats y sesiones se ven entre celulares distintos.
+
+Solo para mayores de 18. Sé respetuoso, entrena en serio y reporta cualquier problema con el formulario de feedback dentro de la app (Perfil → Beta Feedback).
+
+Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a construir El match del movimiento!
+
+### What's new (para la release)
+• Backend real Firebase activo: perfiles, matches y chats 1:1 cross-device
+• Sesiones + chat grupal real (crea y únete, visible para otros testers)
+• Onboarding mejorado con bio obligatoria + cámara nativa (APK)
+• Feedback estructurado de beta (tipo + estrellas + historial de tus envíos)
+• Múltiples escapes de cuenta siempre visibles + sincronización manual
+• Legal completo (privacidad + términos) accesible desde login, onboarding, chats y perfil
+• Versión nativa Android lista para Internal/Closed testing
