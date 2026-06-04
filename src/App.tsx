@@ -4153,7 +4153,7 @@ function App() {
             {liveTrainingNow.length > 0 && <span className="ml-1 text-[8px] text-[#22c55e]">+{liveTrainingNow.length} live</span>}
           </button>
           {liveTrainingNow.length > 0 && (
-            <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}>🟢 {liveTrainingNow.length} LIVE {currentUser?.trainingNow && currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}</span>
+            <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}>🟢 {liveTrainingNow.length} LIVE {currentUser?.trainingNow && currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}{syncPartnerId ? ' 🔄SYNC' : ''}</span>
           )}
         </div>
 

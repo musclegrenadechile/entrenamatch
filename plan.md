@@ -983,3 +983,16 @@ Sigue con todo: EntrenaSync es la feature disruptiva top (ahora con refrescar pa
 
 Próximo deploy web reflejará fixes. ¡A toda máquina!
 
+
+## Sigue con todo (post "listo el error fue solucionado")
+
+- Badge "?? En Sync ahora" añadido a las cards de live teaser en el banner de explore (visible si el usuario live tiene trainingSyncWith activo). Hace la feature más discoverable.
+
+- Build y push clean.
+
+- Docs actualizados con nota del fix de errores.
+
+Sigue con todo full: EntrenaSync cada vez más integrado y disruptivo. Android: cuando coloques el google-services.json correcto (para com.entrenamatch.app), yo genero el AAB actualizado con todo + fix crash.
+
+¡Error solucionado, seguimos a toda máquina!
+
