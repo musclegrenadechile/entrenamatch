@@ -365,6 +365,8 @@ function App() {
   const [showFeedPostModal, setShowFeedPostModal] = useState(false)
   const [feedPostText, setFeedPostText] = useState('')
   const [feedPostPhoto, setFeedPostPhoto] = useState<string | null>(null)
+  const [feedPhotoUploading, setFeedPhotoUploading] = useState(false)
+  const [feedPhotoUploadProgress, setFeedPhotoUploadProgress] = useState(0)
   // DISRUPTIVE EntrenaSync (v0.2.0 killer): shared real-time synced training - turns live presence into "training together" experience (completely unique vs market async buddies)
   const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
   const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
@@ -517,6 +519,8 @@ function App() {
   const [profilePosts, setProfilePosts] = useState<Record<string, ProfilePost[]>>({}) // userId -> posts array
   const [muroComposerText, setMuroComposerText] = useState('')
   const [muroComposerPhoto, setMuroComposerPhoto] = useState<string | null>(null)
+  const [muroPhotoUploading, setMuroPhotoUploading] = useState(false)
+  const [muroPhotoUploadProgress, setMuroPhotoUploadProgress] = useState(0)
   // Inline comment composer for attractive muro (replaces ugly prompt() for both own + viewed profiles)
   const [activeComment, setActiveComment] = useState<{postId: string; postUserId: string; ownerName?: string} | null>(null)
   const [commentDraft, setCommentDraft] = useState('')
@@ -541,14 +545,44 @@ function App() {
   const handleMuroPhotoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = (event) => {
-      if (event.target?.result) {
-        setMuroComposerPhoto(event.target.result as string)
+    // For web: upload immediately with progress for great UX (no giant base64 lingering)
+    if (!isDemoMode && storage) {
+      setMuroPhotoUploading(true)
+      setMuroPhotoUploadProgress(0)
+      ;(async () => {
+        try {
+          const { ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage')
+          const path = `posts/${effectiveUserId}/composer-${Date.now()}.jpg`
+          const storageRef = ref(storage, path)
+          const uploadTask = uploadBytesResumable(storageRef, file)
+          uploadTask.on('state_changed', 
+            (snap) => {
+              const prog = (snap.bytesTransferred / snap.totalBytes) * 100
+              setMuroPhotoUploadProgress(Math.round(prog))
+            },
+            (err) => { console.warn(err); setMuroPhotoUploading(false) },
+            async () => {
+              const url = await getDownloadURL(uploadTask.snapshot.ref)
+              setMuroComposerPhoto(url)
+              setMuroPhotoUploading(false)
+              setMuroPhotoUploadProgress(0)
+            }
+          )
+        } catch (e) {
+          // fallback to dataURL if storage fails
+          const reader = new FileReader()
+          reader.onload = (ev) => setMuroComposerPhoto(ev.target?.result as string)
+          reader.readAsDataURL(file)
+          setMuroPhotoUploading(false)
+        }
+      })()
+    } else {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        if (event.target?.result) setMuroComposerPhoto(event.target.result as string)
       }
+      reader.readAsDataURL(file)
     }
-    reader.readAsDataURL(file)
-    // reset input so same file can be selected again if needed
     e.target.value = ''
   }
 
@@ -4536,8 +4570,11 @@ function App() {
                 ))}
               </div>
             ) : (
-              <div className="card card-glass p-3 text-center border border-[#22c55e]/20">
-                <div className="text-[10px] text-[#9CA3AF]">🏋️ Sé el primero en "Entrenando Ahora" cerca de ti — marca el toggle <span className="text-[#22c55e] font-medium">"Entrenando ahora (EN VIVO)"</span> en tu Perfil. ¡Genera urgencia real y la gente querrá unirse!</div>
+              <div className="card card-glass p-6 text-center border border-[#22c55e]/30">
+                <div className="text-4xl mb-2">🏋️‍♂️</div>
+                <div className="font-semibold mb-1">Nadie entrenando cerca todavía</div>
+                <div className="text-sm text-[#9CA3AF] mb-4">Sé el primero en activar "Entrenando Ahora (EN VIVO)" en tu Perfil. ¡Aparecerás en el radar y la gente querrá unirse o sync contigo!</div>
+                <button onClick={() => setActiveTab('profile')} className="text-xs px-4 py-1.5 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90">Ir a Perfil y activar live →</button>
               </div>
             )}
             <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between items-center">
@@ -4674,7 +4711,7 @@ function App() {
                   <div className="card card-glass p-6 text-center border border-[#22c55e]/30">
                     <div className="text-3xl mb-2">🏋️</div>
                     <div className="font-semibold text-white mb-1">¡Aún no hay nadie entrenando cerca!</div>
-                    <div className="text-sm text-[#9CA3AF] mb-3">Sé el primero en "Entrenando Ahora". Marca el toggle en tu Perfil y la gente cerca te verá en el radar + banner. ¡Genera urgencia real y abre la app más seguido!</div>
+                    <div className="text-sm text-[#9CA3AF] mb-3">Sé el primero en activar "Entrenando Ahora (EN VIVO)" en tu Perfil. ¡Aparecerás en el radar y la gente querrá unirse o sync contigo!</div>
                     <button onClick={() => { setShowLiveModal(false); setActiveTab('profile'); }} className="text-xs px-4 py-1.5 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90">Ir a Perfil a activar →</button>
                   </div>
                 )
@@ -5029,7 +5066,16 @@ function App() {
                 autoFocus
               />
 
-              {feedPostPhoto && (
+              {feedPhotoUploading && (
+                <div className="mb-3">
+                  <div className="text-[10px] text-[#9CA3AF] mb-1">Subiendo foto al Feed...</div>
+                  <div className="w-full h-2 bg-[#2F2F35] rounded-full overflow-hidden">
+                    <div className="h-2 bg-gradient-to-r from-[#FF671F] to-[#FF4F79] transition-all" style={{ width: `${feedPhotoUploadProgress}%` }} />
+                  </div>
+                  <div className="text-[9px] text-right text-[#FF671F]">{feedPhotoUploadProgress}%</div>
+                </div>
+              )}
+              {feedPostPhoto && !feedPhotoUploading && (
                 <div className="mb-3">
                   <div className="text-[10px] text-[#9CA3AF] mb-1">Foto del entreno</div>
                   <div className="relative inline-block">
@@ -5054,18 +5100,30 @@ function App() {
                           const photo = await CapacitorCamera.getPhoto({
                             quality: 80,
                             allowEditing: true,
-                            resultType: 'uri',
-                            source: 'CAMERA'
+                            resultType: 'base64'
                           });
-                          if (photo?.path || photo?.webPath) {
-                            setFeedPostPhoto(photo.webPath || photo.path);
+                          if (photo?.base64String) {
+                            const dataUrl = `data:image/jpeg;base64,${photo.base64String}`;
+                            if (!isDemoMode && storage) {
+                              setFeedPhotoUploading(true);
+                              setFeedPhotoUploadProgress(0);
+                              const { ref, uploadString, getDownloadURL } = await import('firebase/storage');
+                              const path = `posts/${effectiveUserId}/feed-${Date.now()}.jpg`;
+                              const storageRef = ref(storage, path);
+                              const snap = await uploadString(storageRef, dataUrl, 'data_url');
+                              const url = await getDownloadURL(snap.ref);
+                              setFeedPostPhoto(url);
+                              setFeedPhotoUploading(false);
+                            } else {
+                              setFeedPostPhoto(dataUrl);
+                            }
                           }
                         } catch (e) {
                           toast('No se pudo agregar foto');
+                          setFeedPhotoUploading(false);
                         }
                       })();
                     } else {
-                      // Web: attractive file picker instead of URL prompt
                       feedPhotoInputRef.current?.click();
                     }
                   }}
@@ -6379,7 +6437,16 @@ function App() {
                 <div className="text-[10px] text-right text-[#9CA3AF] -mt-2 mb-2 pr-1">
                   {muroComposerText.length}/280
                 </div>
-                {muroComposerPhoto && (
+                {muroPhotoUploading && (
+                  <div className="mb-3">
+                    <div className="text-[10px] text-[#9CA3AF] mb-1">Subiendo foto...</div>
+                    <div className="w-full h-2 bg-[#2F2F35] rounded-full overflow-hidden">
+                      <div className="h-2 bg-gradient-to-r from-[#FF671F] to-[#FF4F79] transition-all" style={{ width: `${muroPhotoUploadProgress}%` }} />
+                    </div>
+                    <div className="text-[9px] text-right text-[#FF671F]">{muroPhotoUploadProgress}%</div>
+                  </div>
+                )}
+                {muroComposerPhoto && !muroPhotoUploading && (
                   <div className="mb-3">
                     <div className="text-[10px] text-[#9CA3AF] mb-1">Foto del entreno</div>
                     <div className="relative inline-block">
@@ -6398,12 +6465,30 @@ function App() {
                   <button 
                     onClick={() => {
                       if (typeof window !== 'undefined' && (window as any).Capacitor && CapacitorCamera) {
-                        // Native: use camera (already attractive)
+                        // Native camera + immediate Storage upload with progress for pro UX
                         (async () => {
                           try {
                             const p = await CapacitorCamera.getPhoto({ quality: 70, allowEditing: true, resultType: 'base64' })
-                            if (p?.base64String) setMuroComposerPhoto(`data:image/jpeg;base64,${p.base64String}`)
-                          } catch (e) { toast('No se pudo agregar foto') }
+                            if (p?.base64String) {
+                              const dataUrl = `data:image/jpeg;base64,${p.base64String}`
+                              if (!isDemoMode && storage) {
+                                setMuroPhotoUploading(true)
+                                setMuroPhotoUploadProgress(0)
+                                const { ref, uploadString, getDownloadURL } = await import('firebase/storage')
+                                const path = `posts/${effectiveUserId}/composer-${Date.now()}.jpg`
+                                const storageRef = ref(storage, path)
+                                const snap = await uploadString(storageRef, dataUrl, 'data_url')
+                                const url = await getDownloadURL(snap.ref)
+                                setMuroComposerPhoto(url)
+                                setMuroPhotoUploading(false)
+                              } else {
+                                setMuroComposerPhoto(dataUrl)
+                              }
+                            }
+                          } catch (e) { 
+                            toast('No se pudo agregar foto')
+                            setMuroPhotoUploading(false)
+                          }
                         })()
                       } else {
                         // Web: use nice file picker (much more attractive than prompt URL)
