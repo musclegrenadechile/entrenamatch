@@ -363,9 +363,12 @@ function App() {
   // DISRUPTIVE EntrenaSync (v0.2.0 killer): shared real-time synced training - turns live presence into "training together" experience (completely unique vs market async buddies)
   const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
   const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
-  const [syncActions, setSyncActions] = useState<any[]>([]) // {id, emoji, userId, ts, label}
+  const [syncActions, setSyncActions] = useState<any[]>([]) // {id, emoji, userId, at, label}
+  const [syncVibe, setSyncVibe] = useState(0) // 0-100 shared energy built by actions + rating (the unique "together" feeling)
   // For end-of-sync rating (disruptive accountability loop)
   const [pendingSyncRating, setPendingSyncRating] = useState<{partnerId: string, partnerName: string, minutes: number} | null>(null)
+  // Community proof for the unique feature
+  const [activeSyncCount, setActiveSyncCount] = useState(0)
   // Live modal local UI: search + sort for better discovery in the full list (killer feature polish)
   const [liveModalSearch, setLiveModalSearch] = useState('')
   const [liveModalSort, setLiveModalSort] = useState<'distance' | 'urgency' | 'hot'>('distance')
@@ -674,9 +677,24 @@ function App() {
             .sort((a: any, b: any) => (b.at || 0) - (a.at || 0))
             .slice(0, 10)
           setSyncActions(recent)
+
+          // Unique magic: if the latest action came from the partner, give strong in-app feedback
+          const latest = recent[0]
+          if (latest && latest.userId !== effectiveUserId) {
+            // Prominent toast so you feel your partner "with you" even if not looking at the panel
+            toast(`${latest.emoji} ${latest.label}`, {
+              description: `${realProfiles.find(p => p.id === syncPartnerId)?.name || 'Tu compañero'} lo hizo ahora`,
+              duration: 2200,
+            })
+            // Small global pulse feel (we can enhance with a state later)
+            triggerHaptic('light')
+          }
         }
         if (data.startedAt) {
           setSyncStartedAt(data.startedAt)
+        }
+        if (typeof data.vibe === 'number') {
+          setSyncVibe(Math.max(0, Math.min(100, data.vibe)))
         }
       }
     }, (err) => {
@@ -687,6 +705,30 @@ function App() {
       try { unsub() } catch {}
     }
   }, [syncPartnerId, effectiveUserId, db, isDemoMode, isFirebaseConfigured])
+
+  const loadActiveSyncCount = async () => {
+    if (!isFirebaseConfigured || !db) {
+      setActiveSyncCount(0)
+      return
+    }
+    try {
+      const ref = collection(db, 'syncSessions')
+      // Simple broad query (prealpha) - we filter client side for "active"
+      const snap = await getDocs(query(ref, limit(100)))
+      const now = Date.now()
+      let count = 0
+      snap.forEach(d => {
+        const data = d.data() as any
+        const started = data.startedAt || 0
+        const ended = data.endedAt || 0
+        const isActive = !ended && (now - started < 3 * 60 * 60 * 1000) // active if no end and <3h
+        if (isActive) count++
+      })
+      setActiveSyncCount(count)
+    } catch (e) {
+      // non-fatal
+    }
+  }
 
   const loadRealSessions = async () => {
     if (!isFirebaseConfigured || !db) {
@@ -737,7 +779,8 @@ function App() {
       await Promise.all([
         loadRealProfiles(),
         loadRealMatches(),
-        loadRealSessions()
+        loadRealSessions(),
+        loadActiveSyncCount()
       ])
       if (currentUser?.trainingNow) {
         await loadProfilePosts(effectiveUserId)
@@ -1271,6 +1314,7 @@ function App() {
           // force sync mirror for EntrenaSync actions/timer
           loadRealProfiles().catch(() => {})
         }
+        loadActiveSyncCount().catch(() => {})
       }, 60000);
       return () => clearInterval(id);
     }
@@ -2471,12 +2515,15 @@ function App() {
         const uids = [effectiveUserId, partnerId].sort()
         const sessionId = `sync_${uids[0]}_${uids[1]}`
         const sessionRef = doc(db, 'syncSessions', sessionId)
+        const baseVibe = 12 // starting "together" energy
         await setDoc(sessionRef, {
           participants: [effectiveUserId, partnerId],
           startedAt: now,
           actions: [],
+          vibe: baseVibe,
           updatedAt: now,
         }, { merge: true })
+        setSyncVibe(baseVibe)
       } catch (e) { console.warn('sync persist failed', e) }
     }
     // Auto post to muro for both
@@ -2497,12 +2544,20 @@ function App() {
     setSyncPartnerId(null)
     setSyncStartedAt(null)
     setSyncActions([])
+    setSyncVibe(0)
     // Clear FS
     if (!isDemoMode && db && firebaseUser) {
       try {
         const { doc, updateDoc } = await import('firebase/firestore')
         await updateDoc(doc(db, 'profiles', effectiveUserId), { trainingSyncWith: null, syncStartedAt: null, syncActions: [], syncStreak: newSyncStreak })
         if (oldPartner) await updateDoc(doc(db, 'profiles', oldPartner), { trainingSyncWith: null, syncStartedAt: null })
+        // Mark session ended for active count queries
+        try {
+          const { doc: doc2, updateDoc: upd2 } = await import('firebase/firestore')
+          const uids = [effectiveUserId, oldPartner].sort()
+          const sid = `sync_${uids[0]}_${uids[1]}`
+          await upd2(doc2(db, 'syncSessions', sid), { endedAt: Date.now() })
+        } catch {}
       } catch (e) {}
     }
     createProfilePost(`Sync terminado con ${partnerName} - ${minutes}min juntos`, null).catch(() => {})
@@ -2533,6 +2588,18 @@ function App() {
       if (!isDemoMode && firebaseUser?.uid) {
         try { await updateUserProfile(firebaseUser.uid, { syncStreak: newStreak }) } catch {}
       }
+      // Big vibe boost on good rating — makes the ending feel special and unique
+      if (!isDemoMode && db && syncPartnerId) {
+        try {
+          const { doc, updateDoc } = await import('firebase/firestore')
+          const uids = [effectiveUserId, syncPartnerId].sort()
+          const sessionId = `sync_${uids[0]}_${uids[1]}`
+          const bonus = Math.min(30, rating * 6 + Math.floor(minutes / 3))
+          const finalVibe = Math.min(100, (syncVibe || 50) + bonus)
+          await updateDoc(doc(db, 'syncSessions', sessionId), { vibe: finalVibe })
+          setSyncVibe(finalVibe)
+        } catch {}
+      }
     }
     toast.success(`Sync con ${partnerName} calificado ${rating}/5`, { description: '¡Gracias! Ayuda a mejorar el matching.' })
     setPendingSyncRating(null)
@@ -2560,10 +2627,13 @@ function App() {
         const uids = [effectiveUserId, syncPartnerId].sort()
         const sessionId = `sync_${uids[0]}_${uids[1]}`
         const actionForSession = { emoji, label, userId: effectiveUserId, at: Date.now() }
+        const newVibe = Math.min(100, (syncVibe || 0) + 8) // each action builds the shared "vibe"
         await updateDoc(doc(db, 'syncSessions', sessionId), {
           actions: arrayUnion(actionForSession),
+          vibe: newVibe,
           updatedAt: Date.now(),
         })
+        setSyncVibe(newVibe)
       } catch (e) { console.warn('instant syncSession action failed (mirror will catch on next poll)', e) }
     }
 
@@ -4229,7 +4299,7 @@ function App() {
             {liveTrainingNow.length > 0 && <span className="ml-1 text-[8px] text-[#22c55e]">+{liveTrainingNow.length} live</span>}
           </button>
           {liveTrainingNow.length > 0 && (
-            <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}>🟢 {liveTrainingNow.length} LIVE {currentUser?.trainingNow && currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}{syncPartnerId ? ' 🔄SYNC' : ''}</span>
+            <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}>🟢 {liveTrainingNow.length} LIVE {currentUser?.trainingNow && currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}{syncPartnerId ? ' 🔄SYNC' : ''}{activeSyncCount > 0 ? ` · 🔄${activeSyncCount} PARES EN SYNC` : ''}</span>
           )}
         </div>
 
@@ -4334,7 +4404,7 @@ function App() {
             <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10"></div>
             <div className="flex items-center gap-2 mb-1 relative z-10">
               <div className="live-pill green">🟢 EN VIVO AHORA</div>
-              <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡urgencia!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}</div>
+              <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡urgencia!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}{activeSyncCount > 0 ? ` · 🔄 ${activeSyncCount} pares sincronizados ahora (único)` : ''}</div>
             </div>
             {liveTrainingNow.length > 0 ? (
               <div className="flex gap-2 overflow-x-auto pb-1">
@@ -4705,7 +4775,7 @@ function App() {
                     return (
                       <motion.div 
                         key={post.id} 
-                        className={`card card-glass p-4 mb-3 border-[#2F2F35]/70 ${post.pinned ? 'ring-2 ring-[#FF671F]/70 shadow-xl shadow-[#FF671F]/10' : ''} hover:border-[#FF671F]/40 overflow-hidden transition-all`}
+                        className={`card card-glass p-4 mb-3 border-[#2F2F35]/70 ${post.pinned ? 'ring-2 ring-[#FF671F]/70 shadow-xl shadow-[#FF671F]/10' : ''} ${ (post.text || '').toLowerCase().includes('sincronizado') || (post.text || '').includes('con ') && (post.text || '').includes('🔥') ? 'ring-1 ring-[#22c55e]/60' : '' } hover:border-[#FF671F]/40 overflow-hidden transition-all`}
                         initial={{ opacity: 0, y: 16, scale: 0.985 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.98, height: 0, marginBottom: 0 }}
@@ -4726,6 +4796,7 @@ function App() {
                             {ownerProfile && realProfiles.some(rp => rp.id === post.ownerId) && <span className="text-[8px] bg-[#FF671F] text-black px-1.5 rounded font-bold">REAL</span>}
                             {ownerProfile?.trainingNow && <span className="live-pill bg-[#22c55e] text-black text-[8px] ml-0.5">🟢 LIVE {ownerProfile.liveStreak ? `🔥${ownerProfile.liveStreak}d` : ''}</span>}
                             {ownerProfile?.trainingSyncWith && <span className="text-[8px] px-1.5 py-px rounded-full bg-[#22c55e]/10 text-[#22c55e] font-bold ml-0.5">🔄 SYNC</span>}
+                            {(post.text || '').toLowerCase().includes('sincronizado') && <span className="text-[8px] bg-[#22c55e] text-black px-1.5 py-px rounded-full font-bold ml-0.5">🔄 SYNC SESSION</span>}
                             {(post.text || '').toLowerCase().includes('me uno al live') && <span className="text-[8px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-1.5 py-px rounded-full font-bold shadow">🔥 JOIN</span>}
                           </div>
                           <div className="text-[9px] text-[#9CA3AF] tabular-nums">{getRelativeTime(post.timestamp)}</div>
@@ -5938,6 +6009,22 @@ function App() {
                   </div>
                   <div className="text-xs text-white/95 relative z-10">Sincronizado con <span className="font-bold text-white">{realProfiles.find(p=>p.id===syncPartnerId)?.name || 'compañero'}</span></div>
                   <div className="text-2xl font-mono text-[#22c55e] mt-0.5 tracking-tighter relative z-10">{syncStartedAt ? Math.floor((Date.now()-syncStartedAt)/60000) : 0}<span className="text-xs align-super">min</span> juntos</div>
+
+                  {/* THE UNIQUE MAGIC: Shared Vibe / Energy Meter — builds live with every action + rating. Nobody else has this paired real-time accountability visual. */}
+                  <div className="mt-2 relative z-10">
+                    <div className="flex items-center justify-between text-[9px] mb-0.5">
+                      <span className="text-[#22c55e]/80 font-medium">Energía compartida</span>
+                      <span className="font-mono text-[#22c55e]">{syncVibe}<span className="text-[8px]">%</span> 🔥</span>
+                    </div>
+                    <div className="h-2.5 bg-black/40 rounded-full overflow-hidden border border-[#22c55e]/30">
+                      <div 
+                        className="h-full bg-gradient-to-r from-[#FF671F] via-[#FF4F79] to-[#22c55e] transition-all duration-500" 
+                        style={{ width: `${Math.max(6, syncVibe)}%` }}
+                      />
+                    </div>
+                    {syncVibe > 70 && <div className="text-[8px] text-center text-[#22c55e] mt-0.5">¡Fuego compartido! Esto es lo que nadie más tiene.</div>}
+                  </div>
+
                   <div className="flex gap-1 mt-2 flex-wrap relative z-10">
                     {[
                       {e:'💪', l:'Buena forma'},
@@ -5951,15 +6038,19 @@ function App() {
                   {syncActions.length > 0 && (
                     <div className="text-[9px] text-[#22c55e]/90 mt-1.5 bg-black/30 p-1.5 rounded relative z-10 max-h-[68px] overflow-auto">
                       <div className="text-[#22c55e]/70 mb-0.5">Acciones compartidas ({syncActions.length}):</div>
-                      {syncActions.slice(0, 6).map((a: any, i: number) => (
-                        <div key={i} className="flex items-center gap-1 py-0.5">
-                          <span>{a.emoji} {a.label}</span>
-                          <span className="text-[#22c55e]/50 text-[7px] ml-auto">{a.at ? Math.max(0, Math.floor((Date.now() - a.at)/60000)) : ''}m</span>
-                        </div>
-                      ))}
+                      {syncActions.slice(0, 6).map((a: any, i: number) => {
+                        const isMe = a.userId === effectiveUserId
+                        const who = isMe ? 'Tú' : (realProfiles.find(p => p.id === syncPartnerId)?.name?.split(' ')[0] || 'Compa')
+                        return (
+                          <div key={i} className="flex items-center gap-1 py-0.5">
+                            <span className={isMe ? 'text-white' : 'text-[#22c55e]'}>{who}: {a.emoji} {a.label}</span>
+                            <span className="text-[#22c55e]/50 text-[7px] ml-auto">{a.at ? Math.max(0, Math.floor((Date.now() - a.at)/60000)) : ''}m</span>
+                          </div>
+                        )
+                      })}
                     </div>
                   )}
-                  <div className="text-[8px] text-center text-[#22c55e]/60 mt-1 relative z-10">¡Acciones instantáneas (dedicated collection) + se postean en ambos muros!</div>
+                  <div className="text-[8px] text-center text-[#22c55e]/60 mt-1 relative z-10">Acciones instantáneas + energía compartida que crece en vivo. Esto nadie más lo tiene.</div>
                 </div>
               )}
 

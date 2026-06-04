@@ -1037,3 +1037,16 @@ Sigue con todo: feature cada vez mï¿½s expuesta y atractiva. Error solucionado. 
 - "Sigue con todo": el killer disruptivo ahora se siente real-time de verdad. Listo para que el usuario ponga el json correcto y hagamos el AAB final con todo esto dentro.
 
 Sigue con todo a toda maquina.
+
+## "Que esta app se sienta algo unico que nadie lo ha visto" — amp up the magic
+
+- **Shared Vibe/Energy Meter** (the star differentiator): persisted `vibe` (0-100) in the syncSessions doc. +8 per action, big bonus on high rating (up to 30+). Beautiful gradient progress bar in the Profile Sync panel with "¡Fuego compartido!" callout when >70%. Builds the "we are doing this together" feeling visually and persistently.
+- **Partner action toasts + haptic**: when the onSnapshot sees a new action from the *other* person, fires a prominent sonner toast ("?? Buena forma — Tu compañero lo hizo ahora") + light haptic. You *feel* the accountability even if not staring at the panel.
+- **Active Syncs counter (FOMO + social proof)**: `loadActiveSyncCount()` queries syncSessions for currently active pairs (no endedAt + <3h). Shown in the top LIVE badge ("?? X PARES EN SYNC") and in the Live modal header. Makes the unique feature visible at the highest UI level: "other people are experiencing this thing nobody else offers".
+- **Special treatment for Sync posts in Feed**: sync-originated posts (start + actions) get a green ring + "?? SYNC SESSION" badge in the global muro. They stand out as premium shared moments.
+- **Richer attributed history in panel**: each entry now says "Tú: ?? Buena forma" or "Compa: ?? Serie lista" with relative time. Attribution makes it personal and alive.
+- End sync now writes `endedAt` so active count is accurate.
+- Listener, start, doSyncAction, rating, end all wired to vibe + the above.
+- Builds clean, pushed. This layer on top of instant dedicated collection + previous Feed 2.0 / radar / live makes the whole experience feel like nothing on the market.
+
+Sigue con todo — la app ahora grita "única".
