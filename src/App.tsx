@@ -652,7 +652,7 @@ function App() {
         setSyncActions([])
       }
     }
-  }, [realProfiles, currentUser?.trainingSyncWith, currentUser?.trainingNow, effectiveUserId, syncActions.length])
+  }, [realProfiles, currentUser?.trainingSyncWith, currentUser?.trainingNow, effectiveUserId])
 
   const loadRealSessions = async () => {
     if (!isFirebaseConfigured || !db) {
