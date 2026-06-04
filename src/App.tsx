@@ -687,7 +687,17 @@ function App() {
     try { return localStorage.getItem('entrenamatch_show_map') === '1' } catch { return false }
   })
   const [mapNearOnly, setMapNearOnly] = useState(false) // simple filter for map UX
+  const [selectedMapZone, setSelectedMapZone] = useState<string | null>(null) // interactive zone filter for "sigue con todo el mapa"
   const liveMapRef = useRef<HTMLDivElement>(null)
+
+  // Zone colors shared for map markers and interactive legend (sigue con todo el mapa)
+  const mapZoneColors: Record<string, string> = {
+    'Viña del Mar': '#22c55e',
+    'Santiago': '#FF671F',
+    'Valparaíso': '#3b82f6',
+    'Concon': '#a855f7',
+    default: '#eab308'
+  }
   const mapInstanceRef = useRef<any>(null)
   const markersRef = useRef<any[]>([])
   const syncLinesRef = useRef<any[]>([]) // for light tethers between active sync pairs on the live map
@@ -4422,18 +4432,13 @@ function App() {
     if (mapNearOnly && userLocation) {
       liveUsers = liveUsers.filter(u => (u.distance || 999) < 10) // near me only filter (10km)
     }
-
-    const zoneColors: Record<string, string> = {
-      'Viña del Mar': '#22c55e',
-      'Santiago': '#FF671F',
-      'Valparaíso': '#3b82f6',
-      'Concon': '#a855f7',
-      default: '#eab308'
+    if (selectedMapZone) {
+      liveUsers = liveUsers.filter(u => u.city === selectedMapZone)
     }
 
     liveUsers.forEach(user => {
       try {
-        const color = zoneColors[user.city] || zoneColors.default
+        const color = mapZoneColors[user.city] || mapZoneColors.default
         const shortName = (user.name || '?').split(' ')[0]
 
         // Premium personal marker: photo if available, else nice initials badge + name label.
@@ -4585,7 +4590,7 @@ function App() {
       }
       markersRef.current = []
     }
-  }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly])
+  }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone])
 
   // Filtered deck (with distance support + blocking)
   // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
@@ -5022,7 +5027,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-1.5 text-[10px] font-medium">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0 !px-2 !text-[8px] !bg-[#FF671F]/10 !border-0">PRE-ALPHA</span>
-          <span className="text-white/90">Real backend • v0.1.21-geo-crash-fix</span>
+          <span className="text-white/90">Real backend • v0.1.22-mapa-todo</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -5257,12 +5262,25 @@ function App() {
                     Centrar
                   </button>
 
-                  {/* Small zone legend (top left, subtle) */}
+                  {/* Small zone legend (top left, subtle) - now interactive: click to filter map to zone (sigue con todo el mapa) */}
                   <div className="absolute top-2 left-2 text-[7px] bg-black/70 text-white/90 px-1.5 py-0.5 rounded flex flex-col gap-0.5 leading-none z-30" style={{fontSize:'7.5px'}}>
-                    <div><span style="color:#22c55e">●</span> Viña</div>
-                    <div><span style="color:#FF671F">●</span> Stgo</div>
-                    <div><span style="color:#3b82f6">●</span> Valpo</div>
-                    <div><span style="color:#a855f7">●</span> Concón</div>
+                    {['Viña del Mar', 'Santiago', 'Valparaíso', 'Concon'].map(city => {
+                      const col = mapZoneColors[city] || mapZoneColors.default
+                      const isActive = selectedMapZone === city
+                      return (
+                        <div 
+                          key={city} 
+                          onClick={() => setSelectedMapZone(isActive ? null : city)}
+                          className={`cursor-pointer flex items-center gap-1 ${isActive ? 'font-bold underline' : 'hover:opacity-80'}`}
+                          style={{color: col}}
+                        >
+                          ● {city.split(' ')[0]}
+                        </div>
+                      )
+                    })}
+                    {selectedMapZone && (
+                      <div onClick={() => setSelectedMapZone(null)} className="text-[6px] text-white/60 mt-0.5 cursor-pointer">✕ todas</div>
+                    )}
                   </div>
 
                   {/* GPS prompt overlay (only when map visible but no location yet) */}
@@ -5297,7 +5315,8 @@ function App() {
                   Marcadores con foto o iniciales. Click en punto = perfil completo. Tamaño = joins (FOMO). 
                   <span className="text-[#FF671F]">Líneas discontinuas</span> = pares en Sync ahora (toque disruptivo).
                   <span className="text-[#22c55e]/60">•</span> 
-                  <span className="text-[#3b82f6]">●</span> = tú (con radio 10km)
+                  <span className="text-[#3b82f6]">●</span> = tú (con radio 10km).
+                  Legend interactivo: toca zona para filtrar mapa.
                 </div>
               )}
             </div>
@@ -7880,7 +7899,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.21-geo-crash-fix • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.22-mapa-todo • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8107,7 +8126,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.21-geo-crash-fix • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.22-mapa-todo • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>

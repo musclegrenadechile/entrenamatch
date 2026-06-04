@@ -4,7 +4,11 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 26 / 0.1.21-geo-crash-fix. **MAPA FIJO + GEO CRASH FIX + TOQUES DISRUPTIVOS**: 
+**Current version for this upload**: versionCode 27 / 0.1.22-mapa-todo. **MAPA MEJORADO CON TODO + INTERACTIVO**: 
+- Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). 
+- Fixes previos: pressable, tethers para sync pairs, geo seguro, personal markers con pulso, radar sweep, self + radio, centrar, filtro cerca, popups con join/perfil.
+- Sigue con todo: más polish visual, interactive, unique para live training map por zonas.
+- Builds listos.
 - Mapa: ahora responde a presión (fixes z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toque: tethers para sync pairs.
 - Geo: al activar GPS/live ya no crashea ni pantalla negra. Guard anti-concurrent, fallback accuracy, guard currentUser.
