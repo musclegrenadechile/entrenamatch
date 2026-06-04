@@ -1248,3 +1248,19 @@ Sigue con todo — the app now has a much stronger "publicar" experience as part o
 The UX now feels complete, polished, and uniquely EntrenaMatch: fast publish with photos, magical sync joins, urgent live discovery, beautiful muro. No dead ends or friction in core flows.
 
 Sigue con todo - next focus? (more realtime, perf, new disruptive twist, Play assets, etc.)
+
+## Sigue con todo - More UX giant polish
+
+- Added feedPublishing state and "Publicando..." loading in feed modal button for snappy publish feedback.
+- Added muroPublishing state for profile muro publish button.
+- Added skeleton loading for feed posts when isLoadingFeed.
+- Wrapped feed computation comment for future memo.
+- More optimistic + highlight for new posts.
+- Removed more ugly confirms.
+- Photo progress in both places, Storage upload, instant publish feel.
+- Enhanced empty states and loading.
+- Builds clean, pushed.
+
+The UX now feels fast, beautiful, unique (sync is the star), with great publish/photo/live flows. No more poor visuals or jank.
+
+Sigue con todo - keep the momentum!

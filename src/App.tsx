@@ -369,6 +369,7 @@ function App() {
   const [feedPhotoUploadProgress, setFeedPhotoUploadProgress] = useState(0)
   // For delightful "just published" highlight in feed/muro lists (no giant re-render, just temp visual cue)
   const [recentlyPublishedPostId, setRecentlyPublishedPostId] = useState<string | null>(null)
+  const [feedPublishing, setFeedPublishing] = useState(false)
   // DISRUPTIVE EntrenaSync (v0.2.0 killer): shared real-time synced training - turns live presence into "training together" experience (completely unique vs market async buddies)
   const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
   const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
@@ -523,6 +524,7 @@ function App() {
   const [muroComposerPhoto, setMuroComposerPhoto] = useState<string | null>(null)
   const [muroPhotoUploading, setMuroPhotoUploading] = useState(false)
   const [muroPhotoUploadProgress, setMuroPhotoUploadProgress] = useState(0)
+  const [muroPublishing, setMuroPublishing] = useState(false)
   // Inline comment composer for attractive muro (replaces ugly prompt() for both own + viewed profiles)
   const [activeComment, setActiveComment] = useState<{postId: string; postUserId: string; ownerName?: string} | null>(null)
   const [commentDraft, setCommentDraft] = useState('')
@@ -4863,6 +4865,7 @@ function App() {
 
             {(() => {
               // Collect and sort recent posts from all loaded users (exclude self)
+              // Memoized in practice via the IIFE but could be useMemo for bigger perf if needed
               const allCommunityPosts = Object.entries(profilePosts)
                 .filter(([uid]) => uid !== effectiveUserId)
                 .flatMap(([uid, posts]) => (posts || []).map((p: any) => ({ ...p, ownerId: uid })));
@@ -4885,6 +4888,19 @@ function App() {
               }
               feedPosts = feedPosts.slice(0, feedDisplayLimit);
 
+              if (isLoadingFeed && feedPosts.length === 0) {
+                return (
+                  <div className="space-y-3 mt-4">
+                    {[1,2,3].map(i => (
+                      <div key={i} className="card card-glass p-4 mb-3 rounded-2xl animate-pulse">
+                        <div className="h-4 bg-[#2F2F35] rounded w-1/3 mb-2"></div>
+                        <div className="h-3 bg-[#2F2F35] rounded w-2/3 mb-1"></div>
+                        <div className="h-3 bg-[#2F2F35] rounded w-1/2"></div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
               if (feedPosts.length === 0) {
                 return (
                   <div className="card card-glass p-10 rounded-3xl text-center mt-6 border border-[#FF671F]/20">
@@ -5150,26 +5166,29 @@ function App() {
                     if (!feedPostText.trim()) return;
                     const text = feedPostText.trim();
                     const photo = feedPostPhoto;
-                    // Close first for snappy feel
-                    setShowFeedPostModal(false);
-                    setFeedPostText('');
-                    setFeedPostPhoto(null);
+                    setFeedPublishing(true);
                     try {
                       await createProfilePost(text, photo);
+                      setShowFeedPostModal(false);
+                      setFeedPostText('');
+                      setFeedPostPhoto(null);
+                      setFeedPublishing(false);
                       toast.success('¡Publicado en el Feed!', { 
                         description: 'Tu post ya está visible para toda la comunidad. ¡Gracias por aportar!' 
                       });
-                      // Immediately refresh the feed list so the new post appears at the top (user sees the result without leaving the feed)
-                      loadGlobalFeed();
+                      // The createProfilePost already does optimistic update to profilePosts, so feed list updates instantly.
+                      // Call load for other users' posts if needed, but keep it light.
+                      if (activeTab === 'feed') loadGlobalFeed().catch(() => {});
                       try { confetti({ particleCount: 100, spread: 65, origin: { y: 0.7 } }); } catch {}
                     } catch (e) {
+                      setFeedPublishing(false);
                       toast.error('Error al publicar');
                     }
                   }}
-                  disabled={!feedPostText.trim()}
-                  className="flex-1 btn-primary text-sm py-2.5 disabled:opacity-60"
+                  disabled={!feedPostText.trim() || feedPublishing}
+                  className="flex-1 btn-primary text-sm py-2.5 disabled:opacity-60 flex items-center justify-center gap-2"
                 >
-                  Publicar en el Feed
+                  {feedPublishing ? 'Publicando...' : 'Publicar en el Feed'}
                 </button>
               </div>
 
@@ -6516,14 +6535,20 @@ function App() {
                   <button 
                     onClick={async () => {
                       if (!muroComposerText.trim()) return
-                      await createProfilePost(muroComposerText, muroComposerPhoto)
-                      setMuroComposerText('')
-                      setMuroComposerPhoto(null)
+                      setMuroPublishing(true)
+                      try {
+                        await createProfilePost(muroComposerText, muroComposerPhoto)
+                        setMuroComposerText('')
+                        setMuroComposerPhoto(null)
+                        setMuroPublishing(false)
+                      } catch (e) {
+                        setMuroPublishing(false)
+                      }
                     }}
-                    disabled={!muroComposerText.trim()}
-                    className="flex-1 btn-primary text-sm py-2 disabled:opacity-50"
+                    disabled={!muroComposerText.trim() || muroPublishing}
+                    className="flex-1 btn-primary text-sm py-2 disabled:opacity-50 flex items-center justify-center gap-2"
                   >
-                    Publicar
+                    {muroPublishing ? 'Publicando...' : 'Publicar'}
                   </button>
                 </div>
                 <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Visible en tu perfil y para quien vea tu perfil completo</div>
