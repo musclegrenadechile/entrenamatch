@@ -6,6 +6,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
+  sendPasswordResetEmail,
   type User as FirebaseUser
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
@@ -260,4 +261,17 @@ export const updateUserProfile = async (uid: string, profileData: Partial<UserPr
 
   await setDoc(profileRef, payload, { merge: true });
   return payload;
+};
+
+// Password recovery - uses Firebase's built-in secure flow
+// Sends email with reset link (user must have created account with email+password)
+export const sendPasswordReset = async (email: string) => {
+  if (!isFirebaseConfigured || !auth) {
+    throw new Error('La recuperación de contraseña no está disponible en el modo demo público (datos locales). En la app real (APK o closed testing) funciona con tu email registrado.');
+  }
+  if (!email || !email.includes('@')) {
+    throw new Error('Por favor ingresa un correo electrónico válido.');
+  }
+  await sendPasswordResetEmail(auth, email.trim().toLowerCase());
+  // Firebase will send the email. We just confirm.
 };

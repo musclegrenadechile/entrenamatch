@@ -593,3 +593,11 @@ This is the build to upload to Closed track. Full "sigue con todo" — more uniq
 - **Shared Energy Field** en la Arena: una banda visual entre los dos avatares que se intensifica, se desenfoca y emite glow según el vibe combinado. Es la UI de 'dos cuerpos, un solo sistema'.
 - **Ritual Ripples en el Mapa**: Los momentos épicos en Arena envían ondas de energía al mapa. Otros ven cómo un ritual legendario se propaga por la ciudad. Esto es el 'nunca antes visto' a escala urbana.
 - Prueba: Haz un sync alto en Arena con el mapa abierto. Verás las ondas. Con otra cuenta en la misma zona, sentirás que 'algo grande está pasando ahí'. Esto es la capa que convierte la app en un ecosistema vivo de esfuerzo humano sincronizado.
+
+**NUEVO — RECUPERACIÓN DE CONTRASEÑA (v0.1.28-recuperacion-cuenta, code 33)**:
+- El botón "¿Olvidaste tu contraseña?" en el login ahora es funcional para cuentas reales.
+- Llama a Firebase sendPasswordResetEmail: el usuario recibe un email oficial (con branding de Firebase o customizable después) para elegir nueva contraseña.
+- En modo demo (la web en GitHub Pages) sigue mostrando el mensaje de que es solo para la app real.
+- Mejora UX: usa el email que ya escribió el usuario en el formulario, muestra toast claro de éxito + recordatorio de spam, cambia automáticamente a modo "Iniciar sesión".
+- Prueba: Crea una cuenta real (en APK o con dominio autorizado), luego haz logout, ve a login, pon el email y toca "¿Olvidaste tu contraseña?". Deberías recibir el email y poder resetear.
+- Esto era el último agujero grande de "puedo crear cuenta pero si la pierdo estoy jodido".

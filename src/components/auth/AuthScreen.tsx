@@ -12,6 +12,7 @@ interface AuthScreenProps {
   authLoading: boolean;
   authError: string;
   handleEmailAuth: (isRegister: boolean) => void;
+  handleForgotPassword?: (email: string) => void;
   isDemoMode: boolean;
   triggerHaptic?: (style?: 'light' | 'medium' | 'heavy' | 'success') => void;
 }
@@ -26,6 +27,7 @@ export const AuthScreen = ({
   authLoading,
   authError,
   handleEmailAuth,
+  handleForgotPassword,
   isDemoMode,
   triggerHaptic = () => {},
 }: AuthScreenProps) => {
@@ -212,21 +214,25 @@ export const AuthScreen = ({
             <div className="text-center">
               <button
                 type="button"
+                disabled={authLoading}
                 onClick={() => {
                   triggerHaptic('light');
-                  if (isDemoMode) {
+                  if (handleForgotPassword) {
+                    // Use the email the user has already typed (best UX)
+                    handleForgotPassword(authEmail);
+                  } else if (isDemoMode) {
                     toast.info('En la versión de prueba los datos son locales al navegador.', {
-                      description: 'No hay recuperación real de contraseña. Puedes borrar todo y empezar de cero.',
+                      description: 'Recuperación real solo funciona en la app nativa (Android) con cuentas reales de Firebase.',
                       action: {
                         label: 'Borrar datos y reiniciar',
                         onClick: () => { localStorage.clear(); window.location.reload(); }
                       }
                     });
                   } else {
-                    toast('La recuperación estará disponible en la versión completa.');
+                    toast('Función de recuperación no disponible.');
                   }
                 }}
-                className="text-xs text-[#9CA3AF] hover:text-[#FF671F] underline transition"
+                className="text-xs text-[#9CA3AF] hover:text-[#FF671F] underline transition disabled:opacity-50"
               >
                 ¿Olvidaste tu contraseña?
               </button>
@@ -271,7 +277,7 @@ export const AuthScreen = ({
           <br />Solo +18 • Entrenamiento serio • Pre-alpha real
         </p>
 
-        <p className="text-center text-[10px] text-[#6B7280]/60 mt-1 tracking-wider">v0.1.27-ritual-invention</p>
+        <p className="text-center text-[10px] text-[#6B7280]/60 mt-1 tracking-wider">v0.1.28-recuperacion-cuenta</p>
       </div>
     </div>
   );

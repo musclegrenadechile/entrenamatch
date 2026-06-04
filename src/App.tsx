@@ -22,7 +22,8 @@ import {
   createUserProfile,
   updateUserProfile,
   getUserProfile,
-  logout
+  logout,
+  sendPasswordReset
 } from './services/auth'
 import { storage } from './services/firebase'
 import { useAuth } from './contexts/AuthContext'
@@ -3843,6 +3844,43 @@ function App() {
     }
   }
 
+  // Real password recovery using Firebase
+  // This enables the "¿Olvidaste tu contraseña?" button to actually work for real accounts.
+  // In demo mode (public web) it will show a clear message that recovery only works in the real app.
+  const handleForgotPassword = async (email: string) => {
+    if (!email || !email.includes('@')) {
+      setAuthError('Ingresa un correo electrónico válido para recuperar tu contraseña')
+      return
+    }
+
+    setAuthLoading(true)
+    setAuthError('')
+
+    try {
+      await sendPasswordReset(email)
+      toast.success('¡Email de recuperación enviado!', {
+        description: `Revisa tu bandeja en ${email} (incluyendo carpeta de spam). El enlace expira en 1 hora.`
+      })
+      // UX nicety: switch to login mode after requesting reset
+      if (authMode === 'register') {
+        setAuthMode('login')
+      }
+    } catch (error: any) {
+      console.error('Password reset failed', error)
+      let friendly = 'No pudimos enviar el correo de recuperación en este momento.'
+      if (error.message) {
+        friendly = error.message
+      } else if (error.code === 'auth/user-not-found') {
+        friendly = 'No hay ninguna cuenta registrada con ese correo electrónico.'
+      } else if (error.code === 'auth/too-many-requests') {
+        friendly = 'Demasiados intentos. Espera unos minutos antes de volver a intentar.'
+      }
+      setAuthError(friendly)
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
   // === Session admin controls (for creator) - Phase 0 enhancement ===
   const closeSession = async (sessionId: string) => {
     const allSessions = [...sessions, ...realSessions]
@@ -5077,6 +5115,7 @@ function App() {
           authLoading={authLoading}
           authError={authError}
           handleEmailAuth={handleEmailAuth}
+          handleForgotPassword={handleForgotPassword}
           isDemoMode={isDemoMode}
           triggerHaptic={triggerHaptic}
         />
@@ -5112,7 +5151,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
-          <span className="text-white/90 text-[11px]">Real backend • v0.1.27-ritual-invention</span>
+          <span className="text-white/90 text-[11px]">Real backend • v0.1.28-recuperacion-cuenta</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -8048,7 +8087,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.27-ritual-invention • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.28-recuperacion-cuenta • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8275,7 +8314,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.27-ritual-invention • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.28-recuperacion-cuenta • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>

@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.27-ritual-invention",
+  "version": "0.1.28-recuperacion-cuenta",
   "type": "module",
   "scripts": {
     "dev": "vite",

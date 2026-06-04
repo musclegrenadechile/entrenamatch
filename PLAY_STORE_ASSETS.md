@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 32 / 0.1.27-ritual-invention. **RITUAL INVENTION LAYER**: Energy Field en Arena + Ritual Ripples que propagan la energía de tus syncs al mapa de toda la ciudad. Esto es la creación de una nueva categoría. 
+**Current version for this upload**: versionCode 33 / 0.1.28-recuperacion-cuenta. **RECUPERACIÓN DE CONTRASEÑA REAL**: El botón "¿Olvidaste tu contraseña?" ahora envía email de reset vía Firebase para cuentas reales. 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -149,11 +149,18 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 
 ## What's new (for this Pre-Alpha release, short & punchy)
 
-**READY FOR PLAY CLOSED UPLOAD (v0.1.27-ritual-invention code 32)**
-- Fresh signed AAB: `EntrenaMatch-v0.1.27-ritual-invention-code32-20260604-1950.aab` (7.2 MB) + `EntrenaMatch-release.aab`
-- Fresh debug APK for device: `EntrenaMatch-debug-ritual-invention-0.1.27-20260604-1950.apk` (10 MB) + `EntrenaMatch-debug.apk`
+**READY FOR PLAY CLOSED UPLOAD (v0.1.28-recuperacion-cuenta code 33)**
+- Fresh signed AAB: `EntrenaMatch-v0.1.28-recuperacion-cuenta-code33-20260604-1958.aab` (7.2 MB) + `EntrenaMatch-release.aab`
+- Fresh debug APK for device: `EntrenaMatch-debug-recuperacion-cuenta-0.1.28-20260604-1958.apk` (10 MB) + `EntrenaMatch-debug.apk`
 - Web: pushed to main → GH Pages will have the new bundle (hard refresh after Actions finish).
 - Copy the short "What's new" below directly into Play Console when uploading the AAB to closed track.
+
+**v0.1.28-recuperacion-cuenta (code 33) — RECUPERACIÓN DE CONTRASEÑA FUNCIONAL**
+• El botón "¿Olvidaste tu contraseña?" en la pantalla de login ahora funciona de verdad para cuentas reales.
+• Usa Firebase Auth sendPasswordResetEmail: el usuario recibe un email oficial de Firebase con un enlace seguro para crear nueva contraseña.
+• En modo demo (web pública) muestra mensaje claro de que solo funciona en la app real (APK).
+• UX mejorada: usa el email que ya escribió el usuario, muestra toast de éxito con recordatorio de spam, cambia a modo login automáticamente.
+• Esto cierra el loop de "puedo crear cuenta pero si la olvido estoy atrapado".
 
 **v0.1.27-ritual-invention (code 32) — CREACIÓN DE CATEGORÍA: RITUAL RIPPLES + SHARED ENERGY FIELD**
 • **Arena Energy Field**: Entre los dos avatares ahora existe un "campo de energía compartida" visual que se intensifica, se desenfoca y brilla según el vibe combinado. No es decoración. Es la representación física de dos sistemas nerviosos fusionados temporalmente.
@@ -188,12 +195,12 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • AAB + debug APK frescos listos (ver nombres abajo). Build limpia + pipeline completo.
 • Todo el pipeline: web GH Pages, Android AAB/debug, docs actualizados. Sigue con todo ritmo.
 
-**Short "What's new" (copy-paste to Play Console for v0.1.27 code 32):**
-Ritual Invention: Energy Field visual entre los dos atletas en Arena que crece y brilla con tu vibe compartida (la UI de dos cuerpos convertidos en uno). Ritual Ripples: cuando logras un pico épico, la energía se propaga como ondas al mapa para que toda la ciudad vea que un ritual legendario está ocurriendo. Esto no es social fitness. Es la invención de una nueva forma de estar juntos físicamente en tiempo real. (code 32)
+**Short "What's new" (copy-paste to Play Console for v0.1.28 code 33):**
+Recuperación de contraseña real: el botón "¿Olvidaste tu contraseña?" ahora funciona. Envía email oficial de Firebase para que el usuario pueda crear una nueva contraseña de forma segura. Cierra el problema de "creé cuenta pero si la olvido no puedo entrar". Funciona en la app nativa para todas las cuentas email+password. (code 33)
 
 **Artifacts for this version:**
-- AAB (Play): EntrenaMatch-v0.1.26-login-espectacular-code31-20260604-1946.aab (y EntrenaMatch-release.aab)
-- Debug APK (pruebas adb): EntrenaMatch-debug-login-espectacular-0.1.26-20260604-1946.apk (y EntrenaMatch-debug.apk)
+- AAB (Play): EntrenaMatch-v0.1.28-recuperacion-cuenta-code33-20260604-1958.aab (y EntrenaMatch-release.aab)
+- Debug APK (pruebas adb): EntrenaMatch-debug-recuperacion-cuenta-0.1.28-20260604-1958.apk (y EntrenaMatch-debug.apk)
 - Web: push a main → https://musclegrenadechile.github.io/entrenamatch/ (hard refresh tras CI)
 
 **v0.1.23-visual-polish (versionCode 28) — REVISIÓN COMPLETA ESTÉTICA VISUAL + UX (app preciosa)**
