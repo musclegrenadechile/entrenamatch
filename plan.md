@@ -849,3 +849,23 @@ Sigue a todo ritmo. ¿Quieres que implemente el core completo ahora (UI + FS + ló
 
 Sigue con todo: la feature disruptiva está seedada y visible. Con json listo, build como parte de la update top.
 
+
+## Continua con EntrenaSync (user: "Wow esta fabulosa! sigue con todo con entrenasync")
+
+Avances a todo ritmo:
+- Real-time mirror: useEffect on realProfiles + currentUser.trainingSyncWith pulls partner's syncActions and state (set if longer or partner cleared).
+- Full FS persist: syncActions, syncStreak, trainingSyncWith, syncStartedAt now in loadRealProfiles merge, self profile load, saveUserWithRealSync, pushProfile, start/end/doSyncAction writes.
+- UI mejorada: timer grande actualizando, historial de acciones con labels, panel con glows/gradientes/radial más top, nota "acciones se comparten en vivo".
+- Stats: syncStreak en la grid de stats del profile + +1 automático en endSync + display en la sección de live streak.
+- Auto restore: al cargar perfil real, si tiene trainingSyncWith setea los states locales.
+- Limpieza: si partner termina, mirror lo detecta y limpia self.
+- Acciones del self se guardan en profile del partner verá en su refresh.
+- Optimizado + posts automáticos a muro para proof instant.
+- Web build + commit + push.
+
+EntrenaSync ahora es persistente, cross-device (on refresh/Actualizar), con stats y UI premium. Sigue siendo el diferenciador disruptivo único: sesiones de entrenamiento sincronizadas reales con accountability y FOMO.
+
+Sigue con todo full: más polish (rating al terminar sync que boostea streaks de ambos, mostrar en modal live y feed, dedicated collection para acciones instant sin depender de profile load, badges "En Sync ahora").
+
+Con el json de google-services, rebuild AAB y sube la update con EntrenaSync como estrella.
+
