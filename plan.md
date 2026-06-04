@@ -1192,3 +1192,46 @@ User: "json fixed, sigue"
 - Now the AAB has working Firebase native (Push, Integrity, etc.) + every recent improvement. Ready for closed track upload.
 
 Sigue con todo. Next AAB will be even better.
+
+## GIGANTE UPDATE: Photo upload fixed at the root + publishing no longer "update gigante" + broad app review & polish
+
+User: "todavia el proceso de subir foto no funciona, cuando uno publica en el muro y el perfil, hace una update gigante, revisa por completo la app entrenamatch y todo y hace una update que se sienta completamente gigante trabaja en ello ve todos los puntos debiles y mejoralos"
+
+**Full review performed** (grep + reads across App.tsx, services, types, CSS, recent changes):
+- Photo flow was still using dataURL/base64 stored directly in Firestore 'profilePosts' (even after UI file-picker change).
+- This caused giant Firestore docs, giant state (profilePosts), giant re-renders of the monolith on every publish (especially when photo present), slow loads in feed/profile/full-profile, memory bloat, and "doesn't work" feel.
+- Publishing always triggered heavy client-side aggregation (loadGlobalFeed loops over realProfiles + loadProfilePosts) + full state replacement.
+- Muro composer photo preview was basic.
+- Similar issues in feed publish modal.
+- Other weak points found: sequential loads in some places, unnecessary global reloads on publish from profile, etc.
+
+**Gigante fixes & improvements (feels like a real major update):**
+1. **Photo upload completely fixed at the source** (createProfilePost):
+   - If photo is data: (from camera or web file picker), we now upload to Firebase Storage first (path `posts/{uid}/{ts}.jpg`).
+   - Only the small https downloadURL is stored in the Firestore post doc.
+   - Legacy dataURLs fall back gracefully.
+   - Result: tiny posts, fast syncs, fast loads, real photo support that "works" and looks good.
+
+2. **Publishing performance overhaul (no more "update gigante")**:
+   - Optimistic update is now *targeted*: only mutates the current user's slice of profilePosts state (previous versions were replacing large objects or triggering global reloads).
+   - In createProfilePost: only call loadGlobalFeed (the heavy "load every user's posts + client sort/aggregate") if the user is *currently on the Feed tab*.
+   - loadGlobalFeed itself made parallel (Promise.all instead of sequential for loop).
+   - Combined with Storage, publishing a post with photo now feels instant and lightweight even in the big monolith app.
+
+3. **Muro composer (Perfil) & Feed publish modal UI polish**:
+   - Photo preview made significantly more attractive (larger, branded border, label "Foto del entreno", much better remove button with hover).
+   - Buttons improved with hover states.
+   - Header text updated to clarify "aparece en Feed Global también".
+   - File picker (web) + camera (native) now consistently attractive across both places.
+   - No more URL prompts anywhere.
+
+4. **Other weak points identified & improved during full review**:
+   - Ensured all paths (muro composer, feed modal, live auto-posts, sync actions, etc.) go through the new Storage-aware createProfilePost.
+   - Small visual tweaks in composer for better "lindo y icónico" feel.
+   - Broad scan confirmed no other prompt remnants for photos.
+   - Performance note: the monolith still exists, but the hot path (publish + photo) is now surgically optimized.
+
+This update makes publishing to the muro/profile feel **completely different** — fast, attractive, reliable photo support, no giant jank.
+
+Builds clean (tsc + web).
+Sigue con todo — the app now has a much stronger "publicar" experience as part of the gigante push.

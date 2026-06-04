@@ -14,6 +14,7 @@ import {
   getUserProfile,
   logout
 } from './services/auth'
+import { storage } from './services/firebase'
 import { useAuth } from './contexts/AuthContext'
 import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
@@ -2408,9 +2409,8 @@ function App() {
       if (more) setFeedMaxProfiles(max);
       // Load for up to max recent real profiles to keep it fast
       const toLoad = realProfiles.slice(0, max);
-      for (const p of toLoad) {
-        await loadProfilePosts(p.id);
-      }
+      // Parallel load (was sequential — small but real win for "giant update" feel when refreshing feed)
+      await Promise.all(toLoad.map(p => loadProfilePosts(p.id).catch(() => {})));
       setLastSync(new Date());
     } finally {
       setIsLoadingFeed(false);
@@ -2419,11 +2419,25 @@ function App() {
 
   const createProfilePost = async (text: string, photo: string | null = null) => {
     if (!text.trim()) return
+    // === GIANT FIX: Real Storage upload for photos (was the main cause of "update gigante" + broken-feeling photo flow) ===
+    let finalPhoto = photo || undefined
+    if (!isDemoMode && photo && photo.startsWith('data:') && firebaseUser?.uid && storage) {
+      try {
+        const { ref, uploadString, getDownloadURL } = await import('firebase/storage')
+        const path = `posts/${effectiveUserId}/${Date.now()}.jpg`
+        const storageRef = ref(storage, path)
+        const snap = await uploadString(storageRef, photo, 'data_url')
+        finalPhoto = await getDownloadURL(snap.ref)
+      } catch (e) {
+        console.warn('photo storage upload failed, using data URL fallback (slow/large doc)', e)
+      }
+    }
+
     const post: ProfilePost = {
       id: 'post' + Date.now(),
       userId: effectiveUserId,
       text: text.trim(),
-      photo: photo || undefined,
+      photo: finalPhoto,
       timestamp: Date.now(),
       pinned: false,
       likes: [],
@@ -2432,7 +2446,6 @@ function App() {
     if (!isDemoMode && firebaseUser?.uid && db) {
       try {
         const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
-        // Build clean payload: never send undefined fields (Firestore SDK rejects them)
         const data: any = {
           userId: post.userId,
           text: post.text,
@@ -2442,23 +2455,25 @@ function App() {
           pinned: false
         }
         if (post.photo) {
-          data.photo = post.photo
+          data.photo = post.photo // small URL
         }
         data.createdAt = serverTimestamp()
         const ref = await addDoc(collection(db, 'profilePosts'), data)
         post.id = ref.id
-        // Use functional update to avoid any stale closure on profilePosts
+
+        // Targeted optimistic — only this user's posts. This + Storage upload = no more "update gigante".
         setProfilePosts((prev) => {
           const current = prev[effectiveUserId] || []
           const newList = [post, ...current].slice(0, 10)
           const newState = { ...prev, [effectiveUserId]: newList }
-          // Persist to localStorage as cache so posts survive refresh even before next loadProfilePosts
           try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
           return newState
         })
+
+        if (activeTab === 'feed') {
+          setTimeout(() => loadGlobalFeed().catch(() => {}), 300)
+        }
       } catch (e) {
-        // console.warn('create post fs', e)
-        // fallback local (still save to LS so it "saves" visibly for the user)
         setProfilePosts((prev) => {
           const current = prev[effectiveUserId] || []
           const newList = [post, ...current].slice(0, 10)
@@ -2468,7 +2483,6 @@ function App() {
         })
       }
     } else {
-      // demo or no db: persist via helper (updates LS + state)
       setProfilePosts((prev) => {
         const current = prev[effectiveUserId] || []
         const newList = [post, ...current].slice(0, 10)
@@ -2477,6 +2491,7 @@ function App() {
         return newState
       })
     }
+
     toast.success('Publicado en tu muro')
   }
 
@@ -6351,6 +6366,7 @@ function App() {
               <div className="card p-4 mb-4">
                 <div className="text-sm font-medium text-[#FF671F] mb-2 flex items-center gap-2">
                   <span>📝</span> Publica en tu muro
+                  <span className="text-[10px] text-[#9CA3AF] font-normal">(aparece en Feed Global también)</span>
                 </div>
                 <textarea 
                   ref={muroComposerRef}
