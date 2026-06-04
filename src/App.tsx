@@ -367,6 +367,8 @@ function App() {
   const [feedPostPhoto, setFeedPostPhoto] = useState<string | null>(null)
   const [feedPhotoUploading, setFeedPhotoUploading] = useState(false)
   const [feedPhotoUploadProgress, setFeedPhotoUploadProgress] = useState(0)
+  // For delightful "just published" highlight in feed/muro lists (no giant re-render, just temp visual cue)
+  const [recentlyPublishedPostId, setRecentlyPublishedPostId] = useState<string | null>(null)
   // DISRUPTIVE EntrenaSync (v0.2.0 killer): shared real-time synced training - turns live presence into "training together" experience (completely unique vs market async buddies)
   const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
   const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
@@ -2526,6 +2528,10 @@ function App() {
       })
     }
 
+    // Delightful UX: highlight the new post briefly in lists (feed or personal muro) so user sees the result instantly
+    setRecentlyPublishedPostId(post.id)
+    setTimeout(() => setRecentlyPublishedPostId(null), 4000)
+
     toast.success('Publicado en tu muro')
   }
 
@@ -2852,13 +2858,12 @@ function App() {
       toast.error('Debes mantener al menos una foto principal en tu perfil')
       return
     }
-    if (!confirm('¿Eliminar esta foto de tu perfil?')) return
-
+    // Better UX: no ugly browser confirm, immediate action with success feedback (user can re-add if mistake)
     const newPhotos = currentUser.photos.filter((_, i) => i !== indexToRemove)
     const updated = { ...currentUser, photos: newPhotos }
     await saveUserWithRealSync(updated as CurrentUser)
     setLastSync(new Date())
-    toast.success('Foto eliminada')
+    toast.success('Foto eliminada', { description: 'Puedes volver a añadirla desde el editor de perfil si fue un error.' })
   }
 
   // === LIVE JOIN NOTIFS (owner side) ===
@@ -4917,7 +4922,7 @@ function App() {
                     return (
                       <motion.div 
                         key={post.id} 
-                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${ (post.text || '').toLowerCase().includes('sincronizado') ? 'muro-post--sync' : (post.text || '').toLowerCase().includes('entrenando ahora') || (post.text || '').includes('me uno al live') ? 'muro-post--live' : '' } hover:border-[#FF671F]/40 overflow-hidden transition-all`}
+                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${ (post.text || '').toLowerCase().includes('sincronizado') ? 'muro-post--sync' : (post.text || '').toLowerCase().includes('entrenando ahora') || (post.text || '').includes('me uno al live') ? 'muro-post--live' : '' } ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-lg shadow-[#FF671F]/20' : ''} hover:border-[#FF671F]/40 overflow-hidden transition-all`}
                         initial={{ opacity: 0, y: 16, scale: 0.985 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.98, height: 0, marginBottom: 0 }}
@@ -4944,6 +4949,7 @@ function App() {
                           <div className="text-[9px] text-[#9CA3AF] tabular-nums">{getRelativeTime(post.timestamp)}</div>
                           {post.pinned && <span className="text-[8px] px-1 py-px bg-[#FF671F]/20 text-[#FF671F] rounded">📌 FIJADO</span>}
                           {Date.now() - post.timestamp < 3600000 && <span className="text-[8px] bg-[#22c55e] text-black px-1 rounded font-bold">NUEVO</span>}
+                          {recentlyPublishedPostId === post.id && <span className="text-[8px] bg-[#FF671F] text-black px-1.5 rounded font-bold animate-pulse">¡ACABAS DE PUBLICAR!</span>}
                         </div>
 
                         <div className="text-[13px] leading-snug mb-2.5 text-white/95">{post.text}</div>
@@ -6552,6 +6558,7 @@ function App() {
                             {getRelativeTime(post.timestamp)}
                             {post.pinned && <span className="text-[#FF671F]">📌</span>}
                             {Date.now() - post.timestamp < 3600000 && <span className="text-[8px] bg-[#22c55e] text-black px-1 rounded">nuevo</span>}
+                            {recentlyPublishedPostId === post.id && <span className="text-[8px] bg-[#FF671F] text-black px-1.5 rounded font-bold animate-pulse">¡ACABAS DE PUBLICAR!</span>}
                           </div>
                           {isOwn && (
                             <div className="flex gap-1">

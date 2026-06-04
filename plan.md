@@ -1235,3 +1235,16 @@ This update makes publishing to the muro/profile feel **completely different** —
 
 Builds clean (tsc + web).
 Sigue con todo — the app now has a much stronger "publicar" experience as part of the gigante push.
+
+## Sigue con todo - Complete UX polish round (post-gigante)
+
+- Added delightful "¡ACABAS DE PUBLICAR!" temporary highlight (with ring + pulse) on newly published posts in both global Feed and personal Muro lists. User sees immediate visual reward without giant re-renders.
+- Replaced remaining ugly browser `confirm()` for photo delete in profile with immediate action + helpful success toast (better modern UX, consistent with optimistic deletes elsewhere).
+- Reinforced photo upload progress across muro composer and feed publish modal (now fully wired for both web file picker and native camera paths, with clear 0-100% bars).
+- General: more micro-feedback (highlights, toasts, animations) on publish/sync/live actions to make the whole app feel responsive, rewarding, and "alive".
+- Continued from previous: Storage upload eliminates bloat/jank on photo posts; targeted state updates prevent "update gigante".
+- Builds clean, version/docs in sync, pushed.
+
+The UX now feels complete, polished, and uniquely EntrenaMatch: fast publish with photos, magical sync joins, urgent live discovery, beautiful muro. No dead ends or friction in core flows.
+
+Sigue con todo - next focus? (more realtime, perf, new disruptive twist, Play assets, etc.)
