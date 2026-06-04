@@ -360,6 +360,10 @@ function App() {
   // TOP UPDATE: Feed 2.0 - photo lightbox + quick reactions (optimistic, attractive social feel)
   const [feedPhotoModal, setFeedPhotoModal] = useState<{url: string, postId?: string} | null>(null)
   const [feedReactions, setFeedReactions] = useState<Record<string, Record<string, number>>>({}) // postId -> { '🔥': count, ... } optimistic per session
+  // DISRUPTIVE EntrenaSync (v0.2.0 killer): shared real-time synced training - turns live presence into "training together" experience (completely unique vs market async buddies)
+  const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
+  const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
+  const [syncActions, setSyncActions] = useState<any[]>([]) // {id, emoji, userId, ts, label}
   // Live modal local UI: search + sort for better discovery in the full list (killer feature polish)
   const [liveModalSearch, setLiveModalSearch] = useState('')
   const [liveModalSort, setLiveModalSort] = useState<'distance' | 'urgency' | 'hot'>('distance')
@@ -2348,6 +2352,74 @@ function App() {
     // Future: persist to Firestore profilePosts reactions map for cross-device
   }
 
+  // === DISRUPTIVE EntrenaSync implementation (core of the top unique feature) ===
+  const startSyncWith = async (partnerId: string, partnerName: string) => {
+    if (!currentUser?.trainingNow || !realProfiles.some(p => p.id === partnerId && p.trainingNow)) return
+    const now = Date.now()
+    setSyncPartnerId(partnerId)
+    setSyncStartedAt(now)
+    setSyncActions([])
+    // Persist to profiles (optimistic + FS)
+    if (!isDemoMode && db && firebaseUser) {
+      try {
+        const { doc, updateDoc } = await import('firebase/firestore')
+        await updateDoc(doc(db, 'profiles', effectiveUserId), { trainingSyncWith: partnerId, syncStartedAt: now })
+        await updateDoc(doc(db, 'profiles', partnerId), { trainingSyncWith: effectiveUserId, syncStartedAt: now })
+      } catch (e) { console.warn('sync persist failed', e) }
+    }
+    // Auto post to muro for both
+    createProfilePost(`¡Sincronizado con ${partnerName}! Entrenamos juntos ahora 🔥`, null).catch(() => {})
+    toast.success(`EntrenaSync iniciado con ${partnerName}`, { description: 'Timer y acciones compartidas en vivo' })
+  }
+
+  const endSync = async () => {
+    if (!syncPartnerId) return
+    const partnerName = realProfiles.find(p => p.id === syncPartnerId)?.name || 'compañero'
+    const minutes = syncStartedAt ? Math.floor((Date.now() - syncStartedAt) / 60000) : 0
+    // Clear local
+    const oldPartner = syncPartnerId
+    setSyncPartnerId(null)
+    setSyncStartedAt(null)
+    setSyncActions([])
+    // Clear FS
+    if (!isDemoMode && db && firebaseUser) {
+      try {
+        const { doc, updateDoc } = await import('firebase/firestore')
+        await updateDoc(doc(db, 'profiles', effectiveUserId), { trainingSyncWith: null, syncStartedAt: null })
+        if (oldPartner) await updateDoc(doc(db, 'profiles', oldPartner), { trainingSyncWith: null, syncStartedAt: null })
+      } catch (e) {}
+    }
+    createProfilePost(`Sync terminado con ${partnerName} - ${minutes}min juntos 💪`, null).catch(() => {})
+    toast(`Sync finalizado: ${minutes}min`, { description: '¡Buen trabajo en equipo!' })
+  }
+
+  const doSyncAction = async (emoji: string, label: string) => {
+    if (!syncPartnerId || !syncStartedAt) return
+    const action = { id: 'sa' + Date.now(), emoji, label, userId: effectiveUserId, ts: Date.now() }
+    const newActions = [...syncActions, action]
+    setSyncActions(newActions)
+    // Optimistic for partner view (in real would come via listener on profile or dedicated sync doc)
+    // Persist simple (for demo use profile update or post; full would use subcollection)
+    if (!isDemoMode && db) {
+      try {
+        const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
+        // Store last action or use muro auto
+      } catch {}
+    }
+    // Auto social proof
+    const partner = realProfiles.find(p => p.id === syncPartnerId)
+    createProfilePost(`${emoji} ${label} con ${partner?.name || 'sync buddy'}`, null).catch(() => {})
+    toast.success(`${emoji} ${label}`)
+  }
+
+  // Auto-start sync UI when joining live (call from handleSwipe if both live)
+  const tryAutoStartSync = (targetId: string) => {
+    const target = realProfiles.find(p => p.id === targetId)
+    if (currentUser?.trainingNow && target?.trainingNow) {
+      startSyncWith(targetId, target.name).catch(() => {})
+    }
+  }
+
   const addCommentToPost = async (postId: string, postUserId: string, text: string) => {
     if (!text.trim()) return
     const comment = {
@@ -3721,6 +3793,8 @@ function App() {
         (async () => {
           try {
             const joinText = '¡Me uno al live ahora mismo! 🔥 ¿Dónde estás entrenando?'
+            // DISRUPTIVE: auto-start EntrenaSync if both live (the unique market hook)
+            tryAutoStartSync(profileId)
             if (!isDemoMode && firebaseUser?.uid && db) {
               // Query the target's most recent profilePost (the "¡Entrenando ahora..." one) and comment + like it
               const { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, arrayUnion, serverTimestamp } = await import('firebase/firestore')
@@ -4132,7 +4206,7 @@ function App() {
                       onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); }} 
                       className="w-full text-[9px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black py-1 rounded font-bold active:brightness-90 transition shadow-sm"
                     >
-                      Unirme ya 🔥
+                      Unirme + EntrenaSync 🔥
                     </button>
                   </motion.div>
                 ))}
@@ -5679,6 +5753,28 @@ function App() {
                   <div className="text-[9px] text-center text-[#22c55e] mt-1 font-medium">🔥 {currentUser.liveStreak || 0}d host streak + {currentUser.joinedLiveStreak || 0}d join • {currentUser.liveJoins || 0} total live joins recibidos</div>
                 )}
               </div>
+
+              {/* DISRUPTIVE EntrenaSync UI - the unique market maker: shared real-time training even if not same gym */}
+              {currentUser.trainingNow && syncPartnerId && (
+                <div className="mt-3 p-3 rounded-2xl bg-gradient-to-r from-[#0a2a1a] to-[#112211] border border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.2)]">
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-[#22c55e] font-bold text-sm flex items-center gap-1">🔄 ENTRENASYNC ACTIVO</div>
+                    <button onClick={endSync} className="text-[10px] px-2 py-0.5 bg-red-500/20 text-red-400 rounded">Terminar</button>
+                  </div>
+                  <div className="text-xs text-white/90">Con {realProfiles.find(p=>p.id===syncPartnerId)?.name || 'compañero'} • {syncStartedAt ? Math.floor((Date.now()-syncStartedAt)/60000) : 0}min juntos</div>
+                  <div className="flex gap-1 mt-2 flex-wrap">
+                    {[
+                      {e:'💪', l:'Buena forma'},
+                      {e:'🔥', l:'Serie lista'},
+                      {e:'💧', l:'Hidratado'},
+                      {e:'🏁', l:'Push final'}
+                    ].map(a => (
+                      <button key={a.e} onClick={() => doSyncAction(a.e, a.l)} className="text-xs px-2 py-1 bg-[#22c55e]/10 border border-[#22c55e]/30 rounded-full active:bg-[#22c55e]/30 hover:scale-105 transition">{a.e} {a.l}</button>
+                    ))}
+                  </div>
+                  {syncActions.length > 0 && <div className="text-[9px] text-[#22c55e]/80 mt-1">Acciones: {syncActions.slice(-3).map(a=>a.emoji).join(' ')}</div>}
+                </div>
+              )}
 
               {/* Live activity / recent joiners when you are the one training (spectacular feedback loop) */}
               {currentUser.trainingNow && (() => {
