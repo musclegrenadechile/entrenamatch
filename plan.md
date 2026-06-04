@@ -390,3 +390,12 @@ The live feature keeps getting stronger as the unique killer: real joins visible
 Sigue con todo a todo ritmo full green light! :D
 
 Live + muro now feel incredibly alive with streaks, hot zones, visible joins everywhere, activity feedback. Continue the ritmo. Hard refresh + test streaks (toggle live multiple days in demo by changing date? or just count), hot if >5, badges.
+
+**Sigue con todo (user "sigue con todo")**:
+- Joined streaks + liveJoins: logic when joining live (compute consecutive participation streak, increment count, save), hosting also boosts joinedStreak. Synced in all real paths. Displays: muro stats with joins + joined d, header badge (host + join), live cards streak info, profile 5-col stats now has Live joins column, full profile etc.
+- Modal hot sort: added 'hot' mode sorting by joinCount desc (cycles in button Dist/Urg/Hot).
+- Profile stats grid now 5 cols with dedicated Live joins stat.
+- Builds x3 + push (b6af14b) + plan.
+Sigue con todo a todo ritmo full green light! :D
+
+Live retention maxed: streaks for host/join, hot sorting by activity, stats visible, real cross device. Muro has the joins. Next batch more? Hard refresh after deploy.
