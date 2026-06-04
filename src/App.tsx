@@ -689,6 +689,7 @@ function App() {
   const liveMapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<any>(null)
   const markersRef = useRef<any[]>([])
+  const syncLinesRef = useRef<any[]>([]) // for light tethers between active sync pairs on the live map
   const startSyncRef = useRef<((partnerId: string, partnerName: string) => any) | null>(null)
   const showFullProfileRef = useRef<((profile: any) => void) | null>(null)
 
@@ -701,6 +702,7 @@ function App() {
         mapInstanceRef.current = null
       }
       markersRef.current = []
+      syncLinesRef.current = []
     }
   }, [])
 
@@ -2947,6 +2949,47 @@ function App() {
           updatedAt: Date.now(),
         })
         setSyncVibe(newVibe)
+
+        // PEQUEÑO TOQUE DISRUPTIVO: auto-captura de "momento de alta vibe" cuando cruza 80.
+        // Agrega acción especial ⚡ al timeline (visible en replay y social proof).
+        // Si está en APK nativa, ofrece captura de foto rápida para inmortalizar el pico de energía.
+        if (newVibe >= 80 && (syncVibe || 0) < 80) {
+          const highAction = { 
+            id: 'hv' + Date.now(), 
+            emoji: '⚡', 
+            label: '¡Alta energía compartida!', 
+            userId: effectiveUserId, 
+            at: Date.now() 
+          }
+          setSyncActions(prev => [highAction, ...prev].slice(0, 30))
+          toast.success('⚡ ¡Vibe alta alcanzada!', { description: 'Momento épico registrado en el ritual y replay' })
+          triggerHaptic('medium')
+
+          // Oferta auto de foto si en native (no fuerza cámara, solo invita)
+          if (Capacitor.isNativePlatform() && CapacitorCamera) {
+            setTimeout(() => {
+              toast('📸 ¿Capturar el pico de alta vibe?', {
+                action: {
+                  label: 'Capturar',
+                  onClick: async () => {
+                    try {
+                      const photo = await CapacitorCamera.getPhoto({ quality: 70, allowEditing: true, resultType: 'base64' })
+                      const dataUrl = `data:image/jpeg;base64,${photo.base64String}`
+                      const path = `posts/${effectiveUserId}/arena-high-${Date.now()}.jpg`
+                      const storageRef = ref(storage, path)
+                      const snap = await uploadString(storageRef, dataUrl, 'data_url')
+                      const url = await getDownloadURL(snap.ref)
+                      const photoAction = { id: 'sa' + Date.now(), emoji: '📸', label: 'Alta vibe capturada', userId: effectiveUserId, at: Date.now(), photoUrl: url }
+                      setSyncActions(prev => [photoAction, ...prev].slice(0, 30))
+                      await createProfilePost('⚡ Momento de alta energía en Arena', url)
+                      toast.success('📸 Alta vibe inmortalizada')
+                    } catch (e) { toast('Captura cancelada') }
+                  }
+                }
+              })
+            }, 800)
+          }
+        }
       } catch (e) { console.warn('instant syncSession action failed (mirror will catch on next poll)', e) }
     }
 
@@ -4285,6 +4328,8 @@ function App() {
         try { mapInstanceRef.current.remove() } catch {}
         mapInstanceRef.current = null
       }
+      syncLinesRef.current.forEach(l => { try { mapInstanceRef.current && mapInstanceRef.current.removeLayer(l) } catch {} })
+      syncLinesRef.current = []
       return
     }
 
@@ -4431,6 +4476,31 @@ function App() {
       } catch {}
     }
 
+    // PEQUEÑO TOQUE DISRUPTIVO: líneas tether ligeras entre pares que están en EntrenaSync ahora mismo.
+    // Visible solo en el mapa en vivo, dashed naranja-verde sutil, con popup "Sync en vivo".
+    // Hace que el mapa muestre no solo "quién está live" sino "quién está conectado en ritual".
+    syncLinesRef.current.forEach(l => { try { mapInstanceRef.current.removeLayer(l) } catch {} })
+    syncLinesRef.current = []
+    liveUsers.forEach(user => {
+      if (user.trainingSyncWith) {
+        const partner = liveUsers.find(u => u.id === user.trainingSyncWith)
+        if (partner && partner.lat && partner.lng) {
+          const line = L.polyline(
+            [[user.lat, user.lng], [partner.lat, partner.lng]],
+            {
+              color: '#FF671F',
+              weight: 2,
+              opacity: 0.55,
+              dashArray: '4, 6',
+              lineJoin: 'round'
+            }
+          ).addTo(mapInstanceRef.current)
+          line.bindPopup(`<strong>🔄 Sync en vivo</strong><br/>${user.name} ↔ ${partner.name}<br/><span style="font-size:10px">Ritual compartido ahora</span>`)
+          syncLinesRef.current.push(line)
+        }
+      }
+    })
+
     if (markersRef.current.length > 0) {
       const group = L.featureGroup(markersRef.current)
       mapInstanceRef.current.fitBounds(group.getBounds().pad(0.22))
@@ -4446,6 +4516,9 @@ function App() {
         // also clean area circle if we added one
         const area = (markersRef.current as any)._areaCircle
         if (area) { try { mapInstanceRef.current.removeLayer(area) } catch {} ; (markersRef.current as any)._areaCircle = null }
+        // clean sync tethers
+        syncLinesRef.current.forEach(l => { try { mapInstanceRef.current.removeLayer(l) } catch {} })
+        syncLinesRef.current = []
       }
       markersRef.current = []
     }
@@ -5158,7 +5231,8 @@ function App() {
               )}
               {showLiveMap && (
                 <div className="mt-1 text-[8px] text-[#9CA3AF] px-1 flex items-center gap-2">
-                  Marcadores con foto o iniciales. Click en punto = perfil completo. Tamaño = joins (FOMO). Actualiza en vivo.
+                  Marcadores con foto o iniciales. Click en punto = perfil completo. Tamaño = joins (FOMO). 
+                  <span className="text-[#FF671F]">Líneas discontinuas</span> = pares en Sync ahora (toque disruptivo).
                   <span className="text-[#22c55e]/60">•</span> 
                   <span className="text-[#3b82f6]">●</span> = tú (con radio 10km)
                 </div>
@@ -7135,7 +7209,7 @@ function App() {
                     {/* CENTRAL VIBE ORB — the soul of the unique experience. Reacts to shared energy. Both people see the exact same pulse. */}
                     <div className="relative z-10 flex flex-col items-center">
                       <div 
-                        className={`energy-orb ${syncVibe > 65 ? 'high' : ''}`}
+                        className={`energy-orb ${syncVibe > 80 ? 'high' : ''}`}
                         style={{ 
                           transform: `scale(${0.82 + (syncVibe/100)*0.32})`,
                           filter: syncVibe > 70 ? 'hue-rotate(20deg) saturate(1.2)' : 'none',
@@ -7270,7 +7344,7 @@ function App() {
                     <button onClick={() => setShowSyncArena(false)} className="text-[10px] px-3 py-1 rounded-full bg-white/5 text-white/70 border border-white/10 active:bg-white/10">Cerrar arena</button>
                   </div>
 
-                  <div className="text-center text-[7.5px] text-[#22c55e]/45 mt-1.5">Cada acción + combo + vibe se comparte en tiempo real. Al terminar se escribe un recuerdo hermoso en los dos muros. Esto es único en el mundo.</div>
+                  <div className="text-center text-[7.5px] text-[#22c55e]/45 mt-1.5">Cada acción + combo + vibe se comparte en tiempo real. Cuando vibe &gt;80 se auto-captura "⚡ Alta energía" en el ritual y replay. Esto es único en el mundo.</div>
                 </div>
               )}
 

@@ -4,7 +4,12 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 23 / 0.1.18-perfil-vivo. **PERFIL AÚN MÁS VIVO + MAPA/ARENA POLISH**: 
+**Current version for this upload**: versionCode 23 / 0.1.18-perfil-vivo. **TOQUES DISRUPTIVOS + PERFIL VIVO + MAPA/ARENA**: 
+- Mapa: tether lines ligeras entre pares en Sync actual (toque único: ves "quién está ritual conectado").
+- Arena: auto-captura ⚡ cuando vibe >80 (acción en timeline + oferta foto en native).
+- Perfil: bonds stats en vivo (bonus en Vibe Score si legends live), galería drag reorder, vibe history visual bars.
+- Continuación polish mapa (pulso, radar), Arena (replay fotos, orb dinámico).
+- App más única y preciosa. Builds listos.
 - Perfil: Vibe Score "en vivo" con bonus si tus Sync Legends están live (+pulse), badges EN VIVO en Legends + Re-sync CTA por bond.
 - Galería con drag nativo + flechas para reordenar (primera=principal, persiste FS).
 - Historial visual de Vibe con 5 barras animadas de fuentes (streaks/bonds/live).
