@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.14-live-map",
+  "version": "0.1.15-login-fix",
   "type": "module",
   "scripts": {
     "dev": "vite",

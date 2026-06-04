@@ -4220,6 +4220,90 @@ function App() {
     }
   }, [liveTrainingNow, addNotification])
 
+  // Real-time Live Map effect (Leaflet zones) — MOVED HERE (after liveTrainingNow useMemo + urgency effect, BEFORE auth guards).
+  // This is CRITICAL to fix React error #310 "Rendered more hooks than during the previous render" on login.
+  // All use* hooks must execute on EVERY render (same count + order), before any early-return like if(!isAuthenticated) return <AuthScreen/>.
+  // Pre-login render stops at guard → only hooks declared before guard run.
+  // Post-login (and post-onboarding) must not introduce "new" hook calls.
+  // Previously the useEffect lived after the two guards → count mismatch exactly "al hacer login".
+  // Also satisfies TDZ: liveTrainingNow is declared (useMemo) before this useEffect statement references it in the deps array.
+  useEffect(() => {
+    if (!showLiveMap || !liveMapRef.current) return
+
+    if (!mapInstanceRef.current) {
+      mapInstanceRef.current = L.map(liveMapRef.current, {
+        zoomControl: true,
+        attributionControl: false
+      }).setView([-33.0, -71.5], 10)
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+      }).addTo(mapInstanceRef.current)
+    }
+
+    markersRef.current.forEach(m => mapInstanceRef.current.removeLayer(m))
+    markersRef.current = []
+
+    const liveUsers = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow)
+
+    const zoneColors: Record<string, string> = {
+      'Viña del Mar': '#22c55e',
+      'Santiago': '#FF671F',
+      'Valparaíso': '#3b82f6',
+      'Concon': '#a855f7',
+      default: '#eab308'
+    }
+
+    liveUsers.forEach(user => {
+      const color = zoneColors[user.city] || zoneColors.default
+      const marker = L.circleMarker([user.lat, user.lng], {
+        radius: 8 + Math.min((user.joinCount || 0) * 0.5, 6),
+        fillColor: color,
+        color: '#fff',
+        weight: 2,
+        fillOpacity: 0.85
+      }).addTo(mapInstanceRef.current)
+
+      const popupContent = `
+        <div style="min-width:160px">
+          <strong>${user.name}</strong><br/>
+          <span style="color:#22c55e">🟢 En vivo</span> • ${user.seVaEnMin || '?'} min aprox<br/>
+          ${userLocation ? `${user.distance.toFixed(1)} km de ti` : ''}<br/>
+          <button id="join-${user.id}" style="margin-top:6px;padding:4px 10px;background:#22c55e;color:black;border:none;border-radius:6px;font-size:12px">Unirme a su vibe →</button>
+        </div>
+      `
+      marker.bindPopup(popupContent)
+
+      marker.on('popupopen', () => {
+        setTimeout(() => {
+          const btn = document.getElementById(`join-${user.id}`)
+          if (btn) {
+            btn.onclick = () => {
+              mapInstanceRef.current.closePopup()
+              if (user.trainingNow) {
+                startSyncWith(user.id, user.name).catch(() => {})
+              }
+            }
+          }
+        }, 50)
+      })
+
+      markersRef.current.push(marker)
+    })
+
+    if (liveUsers.length > 0) {
+      const group = L.featureGroup(markersRef.current)
+      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.2))
+    }
+
+    return () => {
+      if (!showLiveMap && mapInstanceRef.current) {
+        markersRef.current.forEach(m => mapInstanceRef.current.removeLayer(m))
+        markersRef.current = []
+      }
+    }
+  }, [showLiveMap, liveTrainingNow, userLocation])
+
   // Filtered deck (with distance support + blocking)
   // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
   const deck = useMemo(() => {
@@ -4648,85 +4732,6 @@ function App() {
     )
   }
 
-  // Real-time Live Map effect - placed VERY LATE in source (after liveTrainingNow, startSyncWith, requestUserLocation etc.)
-  // This prevents TDZ when evaluating the deps array [showLiveMap, liveTrainingNow, ...] during render.
-  useEffect(() => {
-    if (!showLiveMap || !liveMapRef.current) return
-
-    if (!mapInstanceRef.current) {
-      mapInstanceRef.current = L.map(liveMapRef.current, {
-        zoomControl: true,
-        attributionControl: false
-      }).setView([-33.0, -71.5], 10)
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-      }).addTo(mapInstanceRef.current)
-    }
-
-    markersRef.current.forEach(m => mapInstanceRef.current.removeLayer(m))
-    markersRef.current = []
-
-    const liveUsers = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow)
-
-    const zoneColors: Record<string, string> = {
-      'Viña del Mar': '#22c55e',
-      'Santiago': '#FF671F',
-      'Valparaíso': '#3b82f6',
-      'Concon': '#a855f7',
-      default: '#eab308'
-    }
-
-    liveUsers.forEach(user => {
-      const color = zoneColors[user.city] || zoneColors.default
-      const marker = L.circleMarker([user.lat, user.lng], {
-        radius: 8 + Math.min((user.joinCount || 0) * 0.5, 6),
-        fillColor: color,
-        color: '#fff',
-        weight: 2,
-        fillOpacity: 0.85
-      }).addTo(mapInstanceRef.current)
-
-      const popupContent = `
-        <div style="min-width:160px">
-          <strong>${user.name}</strong><br/>
-          <span style="color:#22c55e">🟢 En vivo</span> • ${user.seVaEnMin || '?'} min aprox<br/>
-          ${userLocation ? `${user.distance.toFixed(1)} km de ti` : ''}<br/>
-          <button id="join-${user.id}" style="margin-top:6px;padding:4px 10px;background:#22c55e;color:black;border:none;border-radius:6px;font-size:12px">Unirme a su vibe →</button>
-        </div>
-      `
-      marker.bindPopup(popupContent)
-
-      marker.on('popupopen', () => {
-        setTimeout(() => {
-          const btn = document.getElementById(`join-${user.id}`)
-          if (btn) {
-            btn.onclick = () => {
-              mapInstanceRef.current.closePopup()
-              if (user.trainingNow) {
-                startSyncWith(user.id, user.name).catch(() => {})
-              }
-            }
-          }
-        }, 50)
-      })
-
-      markersRef.current.push(marker)
-    })
-
-    if (liveUsers.length > 0) {
-      const group = L.featureGroup(markersRef.current)
-      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.2))
-    }
-
-    return () => {
-      if (!showLiveMap && mapInstanceRef.current) {
-        markersRef.current.forEach(m => mapInstanceRef.current.removeLayer(m))
-        markersRef.current = []
-      }
-    }
-  }, [showLiveMap, liveTrainingNow, userLocation])
-
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-[#0D0D10] text-white flex flex-col overflow-hidden relative app-container">
@@ -4734,7 +4739,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-1.5 text-[10px] font-medium">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0 !px-2 !text-[8px] !bg-[#FF671F]/10 !border-0">PRE-ALPHA</span>
-          <span className="text-white/90">Real backend • v0.1.11-arena</span>
+          <span className="text-white/90">Real backend • v0.1.15-login-fix</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -7460,7 +7465,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.11-arena • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.15-login-fix • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -7687,7 +7692,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.11-arena • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.15-login-fix • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>

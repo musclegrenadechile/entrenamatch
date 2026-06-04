@@ -4,7 +4,14 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 19 / 0.1.14-live-map. **REAL-TIME MAP + GEO + TDZ FIX + ALL POLISH**: 
+**Current version for this upload**: versionCode 20 / 0.1.15-login-fix. **FIX CRÍTICO REACT #310 EN LOGIN + MAPA EN SU LUGAR**: 
+- FIX DEFINITIVO para "Minified React error #310" (useEffect count mismatch) que aparecía **al hacer login** en web (GH Pages) y afectaba también WebView de Android. Causa raíz: el useEffect del mapa (Leaflet live zones) estaba declarado en el código fuente DESPUÉS de los early returns condicionales `if (!isAuthenticated) return <AuthScreen/>` y `if (shouldShowOnboarding) return <OnboardingFlow/>`. En renders pre-login se ejecutaban N hooks y se retornaba temprano; post-login se saltaban los returns y se ejecutaba 1 hook extra (el useEffect del mapa) → React detecta "more hooks than previous render".
+- Solución: movido el useEffect del mapa a posición estable ANTES de cualquier guardia (después de liveTrainingNow useMemo y su efecto de urgencia, pero antes del `isAuthenticated` check). Todos los hooks ahora se llaman siempre en el mismo orden y conteo sin importar el estado de auth/onboarding.
+- Esto también corrige el orden de declaración para evitar TDZ en el array de dependencias.
+- Mapa por zonas + GPS real + todo lo anterior se mantiene intacto.
+- Actualizado versionCode/Name, package, strings visibles y docs. Build web limpia (tsc + vite OK).
+- Recordatorio: para que el login con Google funcione en https://musclegrenadechile.github.io/entrenamatch/ (además de este fix), DEBES agregar el dominio en Firebase Console > Authentication > Settings > Authorized domains: agrega `musclegrenadechile.github.io` (y localhost para dev). El warning "current domain is not authorized for OAuth" es de Firebase, no de la app.
+- Para Android: el mismo fix via nuevo AAB (usa build-aab-now.bat después de sync). Versión lista para closed track.
 - Fix definitivo: app ahora abre sin error en Android (crash "Default Firebase / Play Integrity NPE" al restaurar sesión arreglado completamente; validado en dispositivo real S26 Ultra vía adb logcat + reinstall).
 - Feed: filtros horizontales (REAL / 🟢 Live / 📌 Fijados) ahora se deslizan perfectamente con snap, touch, fade hint y texto "desliza →".
 - Live strip en feed más atractiva con snap y hints de Arena.
@@ -92,6 +99,14 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 ---
 
 ## What's new (for this Pre-Alpha release, short & punchy)
+**v0.1.15-login-fix (versionCode 20) — FIX CRÍTICO #310 EN LOGIN (hook order) + MAPA ESTABILIZADO**
+• FIX REACT #310 "Rendered more hooks..." que crasheaba justo al hacer login (tanto en web GH Pages bundle como en la app Android dentro de WebView). Error aparecía como "Uncaught Error: Minified React error #310" apuntando a useEffect en App.
+• Causa: useEffect del "mapa de personas entrenando en tiempo real por zonas" (Leaflet) se había movido tarde en el archivo (después de los guards de AuthScreen y OnboardingFlow) durante el fix anterior de TDZ. Los guards retornan temprano en renders no-autenticados → conteo de hooks inconsistente al transicionar a logueado.
+• Fix: reordenamiento correcto de hooks. Ahora TODOS los useState/useEffect/useMemo/useRef se declaran incondicionalmente al inicio del componente, antes de cualquier `if (!isAuthenticated) return <Auth.../>`. El bloque del mapa ahora vive establemente después de liveTrainingNow (para no TDZ en deps) pero MUCHO antes de los guards.
+• Mapa, GPS, Arena, feed, muro, geo, perfiles etc. 100% funcionales. Build verificada (tsc limpio + vite build OK, nuevo hash bundle).
+• Actualización lista para web (CI GH Pages) y para subir nuevo AAB a closed track.
+• (Separado pero recordatorio persistente): para Google Sign-In en web, autoriza el dominio en Firebase Auth settings (ver BETA_TESTERS_GUIDE).
+
 **v0.1.14-live-map (versionCode 19) — REAL-TIME MAP + GEO + TDZ FIX + POLISH**
 • FIX CRÍTICO: la app ahora abre sin generar error en Android (crash en inicio por Play Integrity / Firebase resuelto tras diagnóstico en dispositivo real con adb; ya no NPE al restaurar sesión).
 • Feed mejorado: encabezados y filtros horizontales (Live / Fijados / Reales) ahora se mueven fluidamente con scroll snap, touch optimizado y hint visual "desliza".
