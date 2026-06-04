@@ -2444,9 +2444,8 @@ function App() {
         if (oldPartner) await updateDoc(doc(db, 'profiles', oldPartner), { trainingSyncWith: null, syncStartedAt: null })
       } catch (e) {}
     }
-    createProfilePost(`Sync terminado con ${partnerName} - ${minutes}min juntos 💪`, null).catch(() => {})
+    createProfilePost(`Sync terminado con ${partnerName} - ${minutes}min juntos`, null).catch(() => {})
     if (minutes > 5) {
-      // Trigger rating for accountability
       setPendingSyncRating({ partnerId: oldPartner, partnerName, minutes })
     } else {
       toast(`Sync finalizado: ${minutes}min`, { description: '¡Buen trabajo en equipo! +1 sync streak' })
@@ -2456,23 +2455,22 @@ function App() {
   const submitSyncRating = async (rating: number) => {
     if (!pendingSyncRating) return
     const { partnerId, partnerName, minutes } = pendingSyncRating
-    // Store rating (simple, could be in a syncSessions collection later)
     if (!isDemoMode && db && firebaseUser) {
       try {
         const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
-        // Record on self profile for history
         await updateDoc(doc(db, 'profiles', effectiveUserId), { 
           syncRatings: arrayUnion({ partnerId, rating, minutes, ts: Date.now() }) 
         })
       } catch (e) {}
     }
-    // Boost both streaks slightly for good rating
     if (rating >= 4) {
       const boost = Math.min(2, Math.floor(minutes / 10))
       const newStreak = ((currentUser as any).syncStreak || 0) + boost
-      // Would ideally update partner too, but for now self + note
       const updated = { ...currentUser, syncStreak: newStreak }
       saveUser(updated as any)
+      if (!isDemoMode && firebaseUser?.uid) {
+        try { await updateUserProfile(firebaseUser.uid, { syncStreak: newStreak }) } catch {}
+      }
     }
     toast.success(`Sync con ${partnerName} calificado ${rating}/5`, { description: '¡Gracias! Ayuda a mejorar el matching.' })
     setPendingSyncRating(null)
@@ -4346,10 +4344,6 @@ function App() {
               <button onClick={() => { setShowLiveModal(false); setLiveModalSearch(''); setLiveModalSort('distance'); }}><ArrowLeft /></button>
               <div className="font-medium flex items-center gap-2">Entrenando Ahora cerca ({liveTrainingNow.length}) {liveTrainingNow.some(u => u.seVaEnMin > 0) && <span className="text-orange-400 text-xs">¡urgencia!</span>} {liveTrainingNow.length > 5 && <span className="text-[#22c55e] text-xs">🔥 HOT</span>}</div>
               <div />
-            </div>
-            {currentUser?.trainingNow && liveTrainingNow.length > 0 && (
-              <div className="px-4 py-1 text-[10px] bg-[#22c55e]/10 text-[#22c55e] text-center">💡 Si te unes a alguien que también está live, ¡inicias EntrenaSync automático con timer y acciones compartidas!</div>
-            )}
             </div>
 
             {/* Controls: search + sort for discovery */}
@@ -7331,23 +7325,6 @@ function App() {
         )}
       </AnimatePresence>
 
-      {/* EntrenaSync end rating - disruptive accountability */}
-      {pendingSyncRating && (
-        <div className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4" onClick={() => setPendingSyncRating(null)}>
-          <div className="bg-[#1C1C20] rounded-3xl p-6 max-w-sm w-full text-center border border-[#22c55e]/30" onClick={e => e.stopPropagation()}>
-            <div className="text-4xl mb-2">🤝</div>
-            <div className="font-bold text-xl mb-1">¿Cómo fue el EntrenaSync con {pendingSyncRating.partnerName}?</div>
-            <div className="text-sm text-[#9CA3AF] mb-4">{pendingSyncRating.minutes} minutos juntos • Tu feedback ayuda al matching</div>
-            <div className="flex justify-center gap-2 mb-4">
-              {[1,2,3,4,5].map(r => (
-                <button key={r} onClick={() => submitSyncRating(r)} className="text-2xl p-2 active:scale-90 transition">{'⭐'.repeat(r)}</button>
-              ))}
-            </div>
-            <button onClick={() => setPendingSyncRating(null)} className="text-xs text-[#9CA3AF]">Saltar por ahora</button>
-          </div>
-        </div>
-      )}
-
       {/* FULL PROFILE VIEW */}
       <AnimatePresence>
         {showFullProfile && (
@@ -8353,6 +8330,23 @@ function App() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* EntrenaSync end rating - disruptive accountability */}
+      {pendingSyncRating && (
+        <div className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4" onClick={() => setPendingSyncRating(null)}>
+          <div className="bg-[#1C1C20] rounded-3xl p-6 max-w-sm w-full text-center border border-[#22c55e]/30" onClick={e => e.stopPropagation()}>
+            <div className="text-4xl mb-2">HANDSHAKE</div>
+            <div className="font-bold text-xl mb-1">How was the EntrenaSync with {pendingSyncRating.partnerName}?</div>
+            <div className="text-sm text-[#9CA3AF] mb-4">{pendingSyncRating.minutes} minutes together - Your feedback helps matching</div>
+            <div className="flex justify-center gap-2 mb-4">
+              {[1,2,3,4,5].map(r => (
+                <button key={r} onClick={() => submitSyncRating(r)} className="text-2xl p-2 active:scale-90 transition">{'*'.repeat(r)}</button>
+              ))}
+            </div>
+            <button onClick={() => setPendingSyncRating(null)} className="text-xs text-[#9CA3AF]">Skip for now</button>
+          </div>
+        </div>
+      )}
 
     </div>
     </ErrorBoundary>
