@@ -4830,7 +4830,7 @@ function App() {
                       disabled={isLoadingFeed}
                       className="text-[9px] px-2.5 py-1 rounded-2xl border border-[#FF671F]/40 text-[#FF671F] active:bg-[#FF671F]/10 active:scale-95 flex-shrink-0 snap-start"
                     >
-                      {isLoadingFeed ? '...' : '↻ Actualizar'}
+                      {isLoadingFeed ? 'Cargando...' : '↻ Actualizar'}
                     </button>
                   </div>
                 </div>
