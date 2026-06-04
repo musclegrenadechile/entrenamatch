@@ -4910,15 +4910,19 @@ function App() {
                           }
                           return null
                         })()}
-                        {/* Spectacular muro teaser on match cards */}
+                        {/* Spectacular muro teaser (1-2 latest) on match cards - improved progressive polish */}
                         {(() => {
                           const posts = profilePosts[profile.id] || []
                           if (posts.length === 0) return null
-                          const pinned = posts.find((p: any) => p.pinned)
-                          const latest = pinned || posts[0]
-                          let t = latest.text || ''
-                          if (t.length > 48) t = t.slice(0, 45) + '...'
-                          return <div className="text-[10px] text-[#FF671F]/90 mt-0.5 line-clamp-1">{pinned ? '📌' : '📝'} {t}</div>
+                          const sorted = [...posts].sort((a: any, b: any) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.timestamp - a.timestamp)
+                          const top = sorted.slice(0, 2)
+                          const str = top.map((p: any) => {
+                            let t = (p.text || '').trim()
+                            if (t.length > 35) t = t.slice(0, 32) + '...'
+                            const pre = p.photo ? '📷' : (p.pinned ? '📌' : '📝')
+                            return `${pre} ${t}`
+                          }).join(' • ')
+                          return <div className="text-[9px] text-[#FF671F]/90 mt-0.5 line-clamp-2 leading-tight">{str}</div>
                         })()}
                       </div>
                     </div>

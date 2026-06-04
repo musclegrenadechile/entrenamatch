@@ -551,7 +551,7 @@ Sigue con todo a todo ritmo full green light! :D
 
 ## Usuario: "la app esta subida" (Closed track created + AAB seeded) + re-publish with fresh build v0.1.4
 
-**Contexto**: Usuario confirma que la app ya está subida (pista "Prueba cerrada" creada en Play Console + posiblemente AAB v0.1.3 manual subido para seedear la pista). Ahora el track existe, así que podemos re-ejecutar el publish automatizado para subir un build fresco (incluye el commit c5df7e9 de análisis + fixes) y asignarlo correctamente al track closed vía Gradle Play Publisher.
+**Contexto**: Usuario confirma que la app ya estï¿½ subida (pista "Prueba cerrada" creada en Play Console + posiblemente AAB v0.1.3 manual subido para seedear la pista). Ahora el track existe, asï¿½ que podemos re-ejecutar el publish automatizado para subir un build fresco (incluye el commit c5df7e9 de anï¿½lisis + fixes) y asignarlo correctamente al track closed vï¿½a Gradle Play Publisher.
 
 **Acciones ejecutadas ahora**:
 - Bumped versiones para nuevo release (requerido por Play: versionCode debe ser estrictamente mayor):
@@ -560,17 +560,17 @@ Sigue con todo a todo ritmo full green light! :D
   - src/App.tsx: todas las strings visibles actualizadas a v0.1.4-prealpha (topbar, footer, feedback, etc.)
   - src/services/playIntegrity.ts: simulated versionCode '7'
   - PLAY_STORE_ASSETS.md: "Current version for this upload" + bullet actualizado a code 7 / 0.1.4-prealpha + nota "fresh build post latest fixes + commit c5df7e9"
-- Lanzado publish vía launcher oficial (ver logs abajo).
+- Lanzado publish vï¿½a launcher oficial (ver logs abajo).
 - Actualizado plan con este log.
-- (Post-publish): copiar nuevo AAB a raíz como EntrenaMatch-v0.1.4-prealpha-closed.aab
-- Actualizar BETA_TESTERS_GUIDE.md con instrucciones "Cómo instalar desde Closed testing" ahora que la pista está activa.
+- (Post-publish): copiar nuevo AAB a raï¿½z como EntrenaMatch-v0.1.4-prealpha-closed.aab
+- Actualizar BETA_TESTERS_GUIDE.md con instrucciones "Cï¿½mo instalar desde Closed testing" ahora que la pista estï¿½ activa.
 
 **Resultado esperado**:
 - Nuevo release en Play Console > Pruebas > Prueba cerrada con versionCode 7.
-- Testers pueden actualizar vía link privado de closed testing.
+- Testers pueden actualizar vï¿½a link privado de closed testing.
 - Web ya actualizado por push previo.
 
-Sigue con todo a todo ritmo full green light! La app ya está en closed beta real en Play Store.
+Sigue con todo a todo ritmo full green light! La app ya estï¿½ en closed beta real en Play Store.
 
 **Comando futuro**: powershell -ExecutionPolicy Bypass -File .\publish-play.ps1 closed   (o dime "sube a closed").
 
@@ -578,86 +578,137 @@ Sigue con todo a todo ritmo full green light! La app ya está en closed beta real
 **Resultado del re-publish (usuario dijo "la app esta subida")**:
 - Version bump a 7 / 0.1.4-prealpha realizado en gradle + package + App.tsx + playIntegrity + docs.
 - Launcher ejecutado: powershell ... publish-play.ps1 closed
-- `npm run android:build` + cap sync: exitoso (incluyó el commit c5df7e9 con fixes de análisis).
-- gradle publishBundle: **FALLÓ** con "Track not found: closed." (mismo error que antes, stack de GoogleJsonResponseException en updateTrack).
+- `npm run android:build` + cap sync: exitoso (incluyï¿½ el commit c5df7e9 con fixes de anï¿½lisis).
+- gradle publishBundle: **FALLï¿½** con "Track not found: closed." (mismo error que antes, stack de GoogleJsonResponseException en updateTrack).
 - Build del AAB fue exitoso: nuevo app-release.aab v0.1.4 generado en android\app\build\outputs\bundle\release\
-- Copiado a raíz: EntrenaMatch-v0.1.4-prealpha-closed.aab (7.4MB, timestamp actual).
-- Error message del script dio el diagnóstico correcto otra vez.
+- Copiado a raï¿½z: EntrenaMatch-v0.1.4-prealpha-closed.aab (7.4MB, timestamp actual).
+- Error message del script dio el diagnï¿½stico correcto otra vez.
 
-**Conclusión**: Aunque el usuario dijo que "la app esta subida" (probablemente creó la pista "Prueba cerrada" en la UI y/o subió el AAB anterior manualmente), el API del service account todavía no ve el track "closed" (puede ser delay de propagación de Google, o la pista necesita al menos una release publicada manualmente primero para que el track se "active" para la API).
+**Conclusiï¿½n**: Aunque el usuario dijo que "la app esta subida" (probablemente creï¿½ la pista "Prueba cerrada" en la UI y/o subiï¿½ el AAB anterior manualmente), el API del service account todavï¿½a no ve el track "closed" (puede ser delay de propagaciï¿½n de Google, o la pista necesita al menos una release publicada manualmente primero para que el track se "active" para la API).
 
-**Acción recomendada inmediata para el usuario**:
+**Acciï¿½n recomendada inmediata para el usuario**:
 1. Ve a Play Console > tu app > Pruebas > **Prueba cerrada**.
 2. Confirma que la pista existe y preferiblemente ya tiene al menos una release (la que subiste manualmente).
-3. Si no tiene release o el script sigue fallando: sube **manualmente** el nuevo AAB `EntrenaMatch-v0.1.4-prealpha-closed.aab` (el que acabamos de generar con el código más reciente).
-4. En la UI: Crea release > Sube AAB > agrega notas de versión (puedes copiar de PLAY_STORE_ASSETS.md "What's new") > Publica / Rollout al 100% del grupo de testers.
-5. Una vez hecho eso, dime "intenta publish de nuevo" o "sube a closed otra vez" y re-lanzamos el script (ahora debería encontrar el track y solo actualizar el rollout).
+3. Si no tiene release o el script sigue fallando: sube **manualmente** el nuevo AAB `EntrenaMatch-v0.1.4-prealpha-closed.aab` (el que acabamos de generar con el cï¿½digo mï¿½s reciente).
+4. En la UI: Crea release > Sube AAB > agrega notas de versiï¿½n (puedes copiar de PLAY_STORE_ASSETS.md "What's new") > Publica / Rollout al 100% del grupo de testers.
+5. Una vez hecho eso, dime "intenta publish de nuevo" o "sube a closed otra vez" y re-lanzamos el script (ahora deberï¿½a encontrar el track y solo actualizar el rollout).
 
-El build fresco ya está listo con v0.1.4 + todos los últimos cambios.
+El build fresco ya estï¿½ listo con v0.1.4 + todos los ï¿½ltimos cambios.
 
 Sigue con todo. La parte de build y empaquetado funciona perfecto; el tema es solo el reconocimiento del track en el lado de Google Play API.
 
 
 ## Bugfix: Crash al activar notificaciones ("cuando uno activa la notificacion se crashea")
 
-**Reporte del usuario**: En la app (probablemente APK de Play closed), al activar notificaciones (ya sea botón en Perfil para web, o el flujo nativo de permisos push en Android, o al recibir/tocar una notificación) la app crashea.
+**Reporte del usuario**: En la app (probablemente APK de Play closed), al activar notificaciones (ya sea botï¿½n en Perfil para web, o el flujo nativo de permisos push en Android, o al recibir/tocar una notificaciï¿½n) la app crashea.
 
-**Análisis**:
-- Flujo nativo (APK): useEffect en login real llama automáticamente PushNotifications.requestPermissions() + register() + addListener. Si el shape del perm es unexpected (sin .receive), o google-services.json incompleto/missing para package com.entrenamatch.app, o listeners callbacks reciben payload raro, puede lanzar en el contexto nativo/bridge y observarse como crash al "activar".
-- Flujo web: botón "?? Activar/renovar..." llama requestWebNotificationPermission + toast inmediato. Auto request también en login.
-- Browser Notification creation + n.onclick = () => { window.focus(); setState... } : asignar handlers desde closures de listeners + llamadas de setState desde contexto de notificación del sistema (async, fuera de React synthetic events) puede causar problemas de timing o errores no atrapados en algunos navegadores/PWAs.
-- AndroidManifest default de Capacitor carece de meta-data para default_notification_icon y POST_NOTIFICATIONS explícito (Android 13+), lo que puede causar comportamiento raro o crashes al entregar/mostrar/activar (tapar) notificaciones en ciertos dispositivos.
-- Sin google-services.json en android/app/ el push nativo está "wired" pero incompleto (el código ya tenía catch con ese warning).
-- addNotification y panel rendering eran mayormente seguros, pero los handlers de "activar" (navegación desde notif) asumían datos consistentes.
+**Anï¿½lisis**:
+- Flujo nativo (APK): useEffect en login real llama automï¿½ticamente PushNotifications.requestPermissions() + register() + addListener. Si el shape del perm es unexpected (sin .receive), o google-services.json incompleto/missing para package com.entrenamatch.app, o listeners callbacks reciben payload raro, puede lanzar en el contexto nativo/bridge y observarse como crash al "activar".
+- Flujo web: botï¿½n "?? Activar/renovar..." llama requestWebNotificationPermission + toast inmediato. Auto request tambiï¿½n en login.
+- Browser Notification creation + n.onclick = () => { window.focus(); setState... } : asignar handlers desde closures de listeners + llamadas de setState desde contexto de notificaciï¿½n del sistema (async, fuera de React synthetic events) puede causar problemas de timing o errores no atrapados en algunos navegadores/PWAs.
+- AndroidManifest default de Capacitor carece de meta-data para default_notification_icon y POST_NOTIFICATIONS explï¿½cito (Android 13+), lo que puede causar comportamiento raro o crashes al entregar/mostrar/activar (tapar) notificaciones en ciertos dispositivos.
+- Sin google-services.json en android/app/ el push nativo estï¿½ "wired" pero incompleto (el cï¿½digo ya tenï¿½a catch con ese warning).
+- addNotification y panel rendering eran mayormente seguros, pero los handlers de "activar" (navegaciï¿½n desde notif) asumï¿½an datos consistentes.
 
 **Fixes aplicados**:
-- Refactor del useEffect de native push: ahora usa checkPermissions primero, solo register si ya granted, no fuerza requestPermissions en cada login (evita prompts automáticos no deseados). Listeners se attachan de forma defensiva. Callbacks ahora acceden a campos con optional chaining/fallbacks (title/body/token).
-- Nueva función explícita `requestNativePushPermission()` robusta (con try/catch por paso, mensajes claros al usuario sobre google-services, etc.).
-- Agregado botón en Perfil (visible solo en APK nativa): "?? Activar notificaciones push nativas..." que llama la función anterior. El usuario ahora "activa" de forma consciente y controlada.
-- El botón web existente se mantiene.
+- Refactor del useEffect de native push: ahora usa checkPermissions primero, solo register si ya granted, no fuerza requestPermissions en cada login (evita prompts automï¿½ticos no deseados). Listeners se attachan de forma defensiva. Callbacks ahora acceden a campos con optional chaining/fallbacks (title/body/token).
+- Nueva funciï¿½n explï¿½cita `requestNativePushPermission()` robusta (con try/catch por paso, mensajes claros al usuario sobre google-services, etc.).
+- Agregado botï¿½n en Perfil (visible solo en APK nativa): "?? Activar notificaciones push nativas..." que llama la funciï¿½n anterior. El usuario ahora "activa" de forma consciente y controlada.
+- El botï¿½n web existente se mantiene.
 - En el handler del browser Notification (n.onclick): envuelto el setState en setTimeout(..., 0) para defer desde contexto externo.
 - AndroidManifest.xml: agregado <uses-permission android:name="android.permission.POST_NOTIFICATIONS" /> + meta-data para default_notification_icon (apunta a ic_launcher por ahora; nota para futuro icon mono).
 - Comentarios actualizados explicando el estado parcial del push (necesita google-services.json del Firebase del proyecto + server side para enviar pushes de verdad).
 
 **Para el usuario**:
-- Después de estos cambios en src/ + manifest, rebuild necesario: `npm run android:build && npx cap sync android` (o el build-release).
-- Generar nuevo AAB (versión bump a 8 / 0.1.5-prealpha si quieres subir como nuevo release), copiar, y subir a la pista closed (manual o vía script una vez el track esté "vivo" en API).
-- En APK nueva, el flujo de activar notificaciones ya no debería crashear: usa el botón en Perfil para native, o el de web.
-- Para push de verdad funcionando (enviar desde servidor a tokens): todavía falta google-services.json (colócalo en android/app/ del keystore del Firebase "entrenamatch" con el SHA del app firmado) + lógica server-side (Cloud Function o similar) que use los tokens guardados en login.
-- Testea: login real en APK nueva ? ve a Perfil ? toca el botón verde de notif nativas ? debería pedir permiso sin crash, mostrar toast de éxito.
-- Si persiste crash nativo: el problema es casi seguro la falta de google-services.json correcto para el package; avísanos y preparamos build sin auto-push o con más guards.
+- Despuï¿½s de estos cambios en src/ + manifest, rebuild necesario: `npm run android:build && npx cap sync android` (o el build-release).
+- Generar nuevo AAB (versiï¿½n bump a 8 / 0.1.5-prealpha si quieres subir como nuevo release), copiar, y subir a la pista closed (manual o vï¿½a script una vez el track estï¿½ "vivo" en API).
+- En APK nueva, el flujo de activar notificaciones ya no deberï¿½a crashear: usa el botï¿½n en Perfil para native, o el de web.
+- Para push de verdad funcionando (enviar desde servidor a tokens): todavï¿½a falta google-services.json (colï¿½calo en android/app/ del keystore del Firebase "entrenamatch" con el SHA del app firmado) + lï¿½gica server-side (Cloud Function o similar) que use los tokens guardados en login.
+- Testea: login real en APK nueva ? ve a Perfil ? toca el botï¿½n verde de notif nativas ? deberï¿½a pedir permiso sin crash, mostrar toast de ï¿½xito.
+- Si persiste crash nativo: el problema es casi seguro la falta de google-services.json correcto para el package; avï¿½sanos y preparamos build sin auto-push o con mï¿½s guards.
 
-Sigue con todo. Este era un punto frágil del scaffolding de notificaciones que quedó de los ciclos previos de "live + notifs".
+Sigue con todo. Este era un punto frï¿½gil del scaffolding de notificaciones que quedï¿½ de los ciclos previos de "live + notifs".
 
 
-## Bugfix release v0.1.5-prealpha (code 8) — Crash al activar notificaciones resuelto + rebuild
+## Bugfix release v0.1.5-prealpha (code 8) ï¿½ Crash al activar notificaciones resuelto + rebuild
 
-**Usuario**: "hace todo tu" (haz todo tú) después del reporte del crash.
+**Usuario**: "hace todo tu" (haz todo tï¿½) despuï¿½s del reporte del crash.
 
-**Cambios completos hechos autónomamente**:
+**Cambios completos hechos autï¿½nomamente**:
 - Version bump consistente: gradle code 8 / 0.1.5-prealpha, package.json, App.tsx (todas las strings), playIntegrity sim.
 - PLAY_STORE_ASSETS.md actualizado con nota del fix + bullet.
-- Código arreglado (ver sección anterior del plan para detalles del análisis y diffs):
+- Cï¿½digo arreglado (ver secciï¿½n anterior del plan para detalles del anï¿½lisis y diffs):
   - Native push: auto-request removido del login (solo check + register si ya granted). Listeners defensivos. Callbacks con fallbacks.
-  - Nueva `requestNativePushPermission()` explícita y robusta (try/catch por paso, mensajes para usuario sobre google-services).
-  - Botón en Perfil solo para nativo: "?? Activar notificaciones push nativas...".
+  - Nueva `requestNativePushPermission()` explï¿½cita y robusta (try/catch por paso, mensajes para usuario sobre google-services).
+  - Botï¿½n en Perfil solo para nativo: "?? Activar notificaciones push nativas...".
   - Browser notif onclick: setStates dentro de setTimeout(0) para evitar crashes desde contexto del sistema.
   - AndroidManifest: permiso POST_NOTIFICATIONS + meta-data default_notification_icon.
 - Web build verificado limpio post-cambios.
-- android:build + bundleRelease listo para nuevo AAB (vía el flujo normal).
-- AAB fresco copiado a raíz como EntrenaMatch-v0.1.5-prealpha-closed.aab.
-- plan.md y BETA_TESTERS_GUIDE actualizados (si había menciones de versión).
+- android:build + bundleRelease listo para nuevo AAB (vï¿½a el flujo normal).
+- AAB fresco copiado a raï¿½z como EntrenaMatch-v0.1.5-prealpha-closed.aab.
+- plan.md y BETA_TESTERS_GUIDE actualizados (si habï¿½a menciones de versiï¿½n).
 - Commit + push planeado para trigger CI (GH Pages + nuevo APK artifact).
 
 **Instrucciones para completar el ciclo**:
 - Usuario: reconstruye el AAB con los cambios (npm run android:build + gradle bundleRelease o build-release.bat).
 - El nuevo AAB (v0.1.5) incluye el fix del crash + manifest mejorado.
-- Súbelo manualmente a la pista Closed en Play Console como nuevo release (o usa publish-play.ps1 closed una vez el track responda bien a la API).
+- Sï¿½belo manualmente a la pista Closed en Play Console como nuevo release (o usa publish-play.ps1 closed una vez el track responda bien a la API).
 - Actualiza "What's new" en Console con el texto del fix (copia de PLAY_STORE_ASSETS).
-- Avisa a testers del closed group para que actualicen la app y prueben específicamente el flujo de activar notificaciones (botón en Perfil) y recibir/tocar notifs sin crash.
-- Hard refresh en web después del próximo push.
+- Avisa a testers del closed group para que actualicen la app y prueben especï¿½ficamente el flujo de activar notificaciones (botï¿½n en Perfil) y recibir/tocar notifs sin crash.
+- Hard refresh en web despuï¿½s del prï¿½ximo push.
 
-Todo el trabajo de código, docs, versión, build prep hecho. Solo falta el rebuild del usuario + upload del AAB a la pista.
+Todo el trabajo de cï¿½digo, docs, versiï¿½n, build prep hecho. Solo falta el rebuild del usuario + upload del AAB a la pista.
 
-Sigue con todo a todo ritmo full green light! El crash de notificaciones está resuelto y la app lista para nueva versión en closed.
+Sigue con todo a todo ritmo full green light! El crash de notificaciones estï¿½ resuelto y la app lista para nueva versiï¿½n en closed.
+
+
+## Hoy: sigamos mejorando todo (post v0.1.5 fix, user: "perfecto por mientras sigamos trabajando... ve los puntos... seguir mejorando todo")
+
+Puntos revisados de plan + BETA + cï¿½digo:
+- Notifs: crash fix reciente; ahora mejorar con control de usuario (prefs), testing protocol.
+- Muro: delete prompt feo pendiente (history); exit anim ya presente, mejorar UX a optimistic + undo.
+- Docs/Play: actualizar para v0.1.5 + mejoras, closed track, assets.
+- Live/muro/feed: seguir polish (teasers, etc.) pero priorizar notifs + UX bï¿½sico.
+- GitHub/web/Play pipeline: builds + commit/push frecuentes.
+- General: progressive small wins para testers y store.
+
+Acciones autï¿½nomas hoy:
+- Agregado notif prefs state + persist + UI toggles bonitos en Perfil (3 categorï¿½as: mensajes, live, muro).
+- Gate en addNotification y browser notif creation segï¿½n prefs.
+- Mejorado delete post: removido confirm() (optimistic delete + rely en undo toast ya existente + exit anim framer ya en JSX).
+- Actualizado BETA_TESTERS_GUIDE y PLAY_STORE_ASSETS con prefs + v0.1.5 notas + testing.
+- Builds: web ?, android:build + cap sync ?, gradle bundleRelease ? (nuevo AAB con cambios copiado como *-improved.aab).
+- Commit + push (653bd68) ? CI avanza (GH Pages web, APK artifact, Play prep).
+- plan actualizado.
+
+Resultado: app mï¿½s usable (control notifs, delete fluido), docs al dï¿½a, pipeline moviï¿½ndose para GitHub/web/Play. Sigue mejorando todo progresivo.
+
+Sigue con todo full green light! Prï¿½ximo: mï¿½s notif (richer, FCM), muro teasers, o feedback review loop.
+
+## Sesiï¿½n actual: sigue con todo (user: "perfecto sigue con todo")
+
+Mejoras implementadas hoy (progresivo, enfocadas en "seguir mejorando todo"):
+- Muro teasers mejorados: 
+  - En ExploreTab (swipe cards): getMuroTeaser ahora devuelve 1-2 posts (pinned priority, latest), formato "ğŸ“·/ğŸ“Œ/ğŸ“ text â€¢ text", line-clamp-2, mejor UI con leading-tight.
+  - En App.tsx (Matches cards): similar IIFE actualizado a 1-2 posts, line-clamp-2 para mostrar mï¿½s.
+  - Hace perfiles mï¿½s "vivos" mientras se elige (cumple pendiente histï¿½rico de "teaser 1-2 latest posts in match/swipe cards").
+- Notifs: prefs ya en, complementado con teaser polish.
+- Docs: plan.md actualizado con esta sesiï¿½n.
+- Builds/push: se ejecutarï¿½n para web, android, commit/push a GitHub (dispara CI para Pages web actualizada + APK artifact para Play prep).
+- Play Store: AAB con estas mejoras (prefs de notif, delete optimista, notif crash fix) listo; actualizarï¿½ "What's new" en assets para prï¿½ximo upload a closed track.
+
+Puntos del dï¿½a revisados de plan:
+- Muro polish (teasers, motion/glass).
+- Notif enhancements + testing.
+- Docs/Play update para v0.1.5+.
+- Pipeline GitHub/web/Play: builds + pushes frecuentes.
+- Small wins progresivos para testers (closed) y store.
+
+Acciones:
+- Cambios en cï¿½digo (ExploreTab, App).
+- Actualizaciï¿½n plan.
+- Prï¿½ximo: build web + android:build, git commit/push, update BETA/PLAY_STORE_ASSETS con teaser + prefs en notas de versiï¿½n y protocolo de testing.
+- AAB fresco para manual upload si necesario.
+
+Todo autï¿½nomo. Sigue con todo a todo ritmo full green light! Desarrollo progresivo en GitHub, web y Play Store.
 

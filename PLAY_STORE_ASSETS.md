@@ -4,11 +4,12 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 8 / 0.1.5-prealpha (bugfix + mejoras progresivas: crash al activar notificaciones resuelto + prefs de notif.
+**Current version for this upload**: versionCode 8 / 0.1.5-prealpha (bugfix + mejoras progresivas: crash al activar notificaciones resuelto + prefs de notif + muro teasers.
 - Native push: explícito vía botón en Perfil, defensivo.
 - Browser notif: handlers seguros.
 - Manifest mejorado.
 - **Nuevo**: toggles de preferencias (mensajes/live/muro) en Perfil.
+- **Mejorado**: muro teasers en Explore/Matches (1-2 posts latest/pinned, más vivo).
 - Incluye killer live, muro espectacular, integrity, onboarding preview, etc.
 Listo para re-subir a closed track como mejora continua.
 

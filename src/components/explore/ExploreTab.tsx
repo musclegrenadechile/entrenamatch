@@ -96,15 +96,18 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
     return reasons.slice(0, 2);
   };
 
-  // Spectacular: get short latest muro post for teaser (prefer pinned, only if loaded)
+  // Spectacular: get 1-2 latest muro posts for teaser (prefer pinned, makes profiles feel alive - progressive improvement)
   const getMuroTeaser = (profileId: string): string | null => {
     const posts = profilePosts[profileId] || []
     if (!posts.length) return null
-    const pinned = posts.find((p: any) => p.pinned)
-    const latest = pinned || posts[0]
-    let text = latest.text || ''
-    if (text.length > 55) text = text.slice(0, 52) + '...'
-    return (latest.photo ? '📷 ' : (pinned ? '📌 ' : '')) + text
+    const sorted = [...posts].sort((a: any, b: any) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.timestamp - a.timestamp)
+    const top = sorted.slice(0, 2)
+    return top.map((p: any) => {
+      let t = (p.text || '').trim()
+      if (t.length > 40) t = t.slice(0, 37) + '...'
+      const prefix = p.photo ? '📷' : (p.pinned ? '📌' : '📝')
+      return `${prefix} ${t}`
+    }).join(' • ')
   }
 
   const handleDragEnd = (_: any, info: any) => {
@@ -281,16 +284,16 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
             </div>
           )}
 
-          {/* Spectacular muro teaser - makes profiles feel alive while swiping */}
+          {/* Spectacular muro teaser (1-2 latest posts) - makes profiles feel alive while swiping - improved for progressive dev */}
           {(() => {
             const teaser = getMuroTeaser(profile.id)
             if (!teaser) return null
             return (
               <div 
                 onClick={(e) => { e.stopPropagation(); onShowProfile?.(profile) }}
-                className="mb-2 px-2 py-1 bg-black/40 backdrop-blur rounded-xl text-[10px] text-white/90 line-clamp-1 border border-white/10 cursor-pointer active:bg-black/60 flex items-center gap-1"
+                className="mb-2 px-2 py-1 bg-black/40 backdrop-blur rounded-xl text-[9px] text-white/90 line-clamp-2 border border-white/10 cursor-pointer active:bg-black/60 flex items-start gap-1"
               >
-                <span>📝</span> <span className="truncate">{teaser}</span>
+                <span className="mt-0.5">📝</span> <span className="leading-tight">{teaser}</span>
               </div>
             )
           })()}
