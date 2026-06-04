@@ -245,6 +245,8 @@ function App() {
   const seenGroupMsgIdsRef = useRef<Record<string, Set<string>>>({})
   // For live training urgency notifs: track seen live users so we only notify on *new* nearby lives (prevents spam on refresh)
   const seenLiveUserIdsRef = useRef<Set<string>>(new Set())
+  // For "someone joined my live" notifs: dedup incoming comments/likes on the live posts we created when trainingNow
+  const seenLiveJoinInteractionIdsRef = useRef<Set<string>>(new Set())
   // Per-chat and per-session unread counts for badges + list dots (local, cleared on open)
   const [chatUnreads, setChatUnreads] = useState<Record<string, number>>({})
   const [sessionUnreads, setSessionUnreads] = useState<Record<string, number>>({})
@@ -617,6 +619,10 @@ function App() {
         loadRealMatches(),
         loadRealSessions()
       ])
+      if (currentUser?.trainingNow) {
+        await loadProfilePosts(effectiveUserId)
+        processIncomingLiveJoins()
+      }
       const now = new Date()
       setLastSync(now)
       toast.success('Datos reales actualizados', { description: 'Perfiles, matches y sesiones en vivo refrescados.' })
@@ -964,14 +970,27 @@ function App() {
   }, [activeTab])
 
   // Live refresh for "Entrenando Ahora" to keep real-time urgency (every 60s in explore)
+  // Also reloads *own* profilePosts when we are the one training live, so processIncomingLiveJoins can detect new join comments/likes from others in near real-time.
   useEffect(() => {
     if (activeTab === 'explore' && !isDemoMode) {
       const id = setInterval(() => {
         loadRealProfiles().catch(() => {});
+        if (currentUser?.trainingNow) {
+          loadProfilePosts(effectiveUserId).then(() => processIncomingLiveJoins()).catch(() => {})
+        }
       }, 60000);
       return () => clearInterval(id);
     }
-  }, [activeTab, isDemoMode])
+  }, [activeTab, isDemoMode, currentUser?.trainingNow])
+
+  // Extra: when we are the one training live (any tab), poll our own muro posts every 45s so we catch "joins" (new comments on our live post) promptly and processIncomingLiveJoins fires the notif/toast.
+  useEffect(() => {
+    if (!currentUser?.trainingNow) return
+    const id = setInterval(() => {
+      loadProfilePosts(effectiveUserId).then(() => processIncomingLiveJoins()).catch(() => {})
+    }, 45000)
+    return () => clearInterval(id)
+  }, [currentUser?.trainingNow])
 
   // Clear comment UI when leaving profile tab
   useEffect(() => {
@@ -996,9 +1015,11 @@ function App() {
       seenChatMsgIdsRef.current = {}
       seenGroupMsgIdsRef.current = {}
       seenLiveUserIdsRef.current = new Set()
+      seenLiveJoinInteractionIdsRef.current = new Set()
       localStorage.removeItem('entrenamatch_seen_chat_msgs')
       localStorage.removeItem('entrenamatch_seen_group_msgs')
       localStorage.removeItem('entrenamatch_seen_live_users')
+      localStorage.removeItem('entrenamatch_seen_live_joins')
       
       setMatches([])
       setLikedIds([])
@@ -1844,6 +1865,14 @@ function App() {
         seenLiveUserIdsRef.current = new Set(arr)
       } catch {}
     }
+    // Restore seen live join interactions (comments/likes on our live posts) so we don't renotify old joins on reload
+    const savedSeenLiveJoins = localStorage.getItem('entrenamatch_seen_live_joins')
+    if (savedSeenLiveJoins) {
+      try {
+        const arr = JSON.parse(savedSeenLiveJoins)
+        seenLiveJoinInteractionIdsRef.current = new Set(arr)
+      } catch {}
+    }
 
     const savedChatUnreads = localStorage.getItem('entrenamatch_chat_unreads')
     if (savedChatUnreads) setChatUnreads(JSON.parse(savedChatUnreads))
@@ -2185,6 +2214,84 @@ function App() {
     setLastSync(new Date())
     toast.success('Foto eliminada')
   }
+
+  // === LIVE JOIN NOTIFS (owner side) ===
+  // Called after loading own profilePosts (or updates). Scans live "Entrenando ahora" posts for *new* comments/likes
+  // from other people. Fires special urgency notif + toast so the live trainer knows people are joining in real time.
+  // Deduped with seenLiveJoinInteractionIdsRef + persisted to LS. Works for both demo (after auto-comment on join) and real (FS comments written by joiners).
+  const processIncomingLiveJoins = () => {
+    if (!currentUser?.trainingNow) return
+    const myId = effectiveUserId
+    const myPosts = profilePosts[myId] || []
+    if (myPosts.length === 0) return
+
+    // Find posts that look like live announcements (the ones we auto-create on toggle)
+    const livePosts = myPosts.filter((p: any) => {
+      const t = (p.text || '').toLowerCase()
+      return t.includes('entrenando ahora') || t.includes('live') || t.includes('entreno ahora')
+    })
+
+    let newJoinDetected = false
+    livePosts.forEach((post: any) => {
+      // New comments on the live post
+      ;(post.comments || []).forEach((c: any) => {
+        if (c.userId && c.userId !== myId && !seenLiveJoinInteractionIdsRef.current.has(c.id)) {
+          seenLiveJoinInteractionIdsRef.current.add(c.id)
+          newJoinDetected = true
+          addNotification({
+            type: 'session_join',
+            title: '🔥 ¡Alguien se unió a tu live!',
+            body: `${c.userName || 'Un compañero'} se unió a tu entrenamiento en vivo`,
+            relatedId: c.userId,
+            photoUrl: undefined
+          })
+          toast(`🔥 ${c.userName || 'Alguien'} se unió a tu live`, {
+            description: '¡Abre tu muro o chatea con ellos!',
+            action: {
+              label: 'Ver perfil',
+              onClick: () => {
+                // Try to open the joiner's profile if we have them loaded
+                const joiner = [...realProfiles, ...SEED_PROFILES].find(p => p.id === c.userId)
+                if (joiner) setShowFullProfile(joiner as any)
+                else setActiveTab('feed')
+              }
+            }
+          })
+        }
+      })
+
+      // Also treat new likes on the live post as joins (if not self)
+      ;(post.likes || []).forEach((likerId: string) => {
+        const likeKey = `${post.id}_like_${likerId}`
+        if (likerId !== myId && !seenLiveJoinInteractionIdsRef.current.has(likeKey)) {
+          seenLiveJoinInteractionIdsRef.current.add(likeKey)
+          newJoinDetected = true
+          const likerProfile = [...realProfiles, ...SEED_PROFILES].find(p => p.id === likerId)
+          const likerName = likerProfile?.name || 'Un compañero'
+          addNotification({
+            type: 'session_join',
+            title: '❤️ ¡Like en tu post live!',
+            body: `${likerName} le dio like a tu "Entrenando ahora"`,
+            relatedId: likerId
+          })
+          toast(`❤️ ${likerName} se sumó a tu live`, { description: '¡Tu post en vivo está generando movimiento!' })
+        }
+      })
+    })
+
+    if (newJoinDetected) {
+      try {
+        localStorage.setItem('entrenamatch_seen_live_joins', JSON.stringify(Array.from(seenLiveJoinInteractionIdsRef.current)))
+      } catch {}
+    }
+  }
+
+  // Call the processor whenever own posts update while live (catches real joins via FS comments)
+  useEffect(() => {
+    if (currentUser?.trainingNow) {
+      processIncomingLiveJoins()
+    }
+  }, [profilePosts, currentUser?.trainingNow])
 
   // Attractive inline comment composer (no more prompt dialogs on muro)
   const startComment = (postId: string, postUserId: string, ownerName?: string) => {
@@ -3321,6 +3428,57 @@ function App() {
           }
         })()
       }
+
+      // === KILLER LIVE FEATURE: "someone joined my live" flow ===
+      // When swiping right (Unirme) on a person who is trainingNow, auto-interact with their live muro post.
+      // This makes the post "alive" with real join comments (visible in their muro + feed teasers).
+      // For real: direct FS arrayUnion on their latest profilePost so cross-device owners see the join in thread.
+      // Owner will get notified via our processor (below) when they load/refresh their posts.
+      if (profile.trainingNow) {
+        (async () => {
+          try {
+            const joinText = '¡Me uno al live ahora mismo! 🔥 ¿Dónde estás entrenando?'
+            if (!isDemoMode && firebaseUser?.uid && db) {
+              // Query the target's most recent profilePost (the "¡Entrenando ahora..." one) and comment + like it
+              const { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, arrayUnion, serverTimestamp } = await import('firebase/firestore')
+              const postsCol = collection(db, 'profilePosts')
+              const q = query(postsCol, where('userId', '==', profileId), orderBy('timestamp', 'desc'), limit(1))
+              const snap = await getDocs(q)
+              if (!snap.empty) {
+                const postRef = doc(db, 'profilePosts', snap.docs[0].id)
+                const joinComment = {
+                  id: 'lj' + Date.now(),
+                  userId: firebaseUser.uid,
+                  userName: currentUser?.name || 'Un compañero live',
+                  text: joinText,
+                  timestamp: Date.now()
+                }
+                await updateDoc(postRef, {
+                  comments: arrayUnion(joinComment),
+                  // bump a virtual 'liveJoins' count or just likes for visibility
+                  likes: arrayUnion(firebaseUser.uid)
+                })
+              }
+            } else {
+              // Demo: ensure posts loaded then use the existing spectacular comment/like (updates local + LS)
+              await loadProfilePosts(profileId)
+              const theirPosts = profilePosts[profileId] || []
+              const livePost = theirPosts.find((p: any) => (p.text || '').toLowerCase().includes('entrenando ahora')) || theirPosts[0]
+              if (livePost) {
+                await addCommentToPost(livePost.id, profileId, joinText)
+                await likeProfilePost(livePost.id, profileId)
+              }
+            }
+          } catch (e) {
+            console.warn('live join post auto-interact failed (non fatal)', e)
+          }
+        })()
+
+        // Immediate UX feedback for the joiner (the "Unirme ya" action)
+        toast.success(`¡Unido al live de ${profile.name}!`, {
+          description: 'Dejé un comentario en su muro en vivo — ¡ellos lo verán!'
+        })
+      }
     } else {
       const newPassed = [...passedIds, profileId]
       savePassed(newPassed)
@@ -3645,7 +3803,7 @@ function App() {
                       {user.seVaEnMin > 0 && <span className={`text-orange-400 ${user.seVaEnMin < 20 ? 'font-bold text-red-400 animate-pulse' : ''}`}>{user.seVaEnMin < 15 ? '· se va pronto' : '· se va en'} {user.seVaEnMin}m {user.seVaEnMin < 10 ? '¡ya!' : ''}</span>}
                     </div>
                     <button 
-                      onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); toast.success('¡Unido! Revisa Matches o Chat'); }} 
+                      onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); /* live-specific polished toast + muro comment happens inside handleSwipe */ }} 
                       className="w-full text-[9px] bg-[#22c55e] text-black py-1 rounded font-semibold active:bg-[#16a34a] transition"
                     >
                       Unirme ya 🔥
@@ -3761,14 +3919,58 @@ function App() {
                       <div className="text-[#22c55e] text-xs">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m {user.seVaEnMin > 0 ? (user.seVaEnMin < 15 ? `· se va pronto en ${user.seVaEnMin}m 🔥` : `· se va en ${user.seVaEnMin}m`) : ''}</div>
                     </div>
                     <div className="flex flex-col gap-1 self-center">
-                      <button onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); toast.success('¡Unido al live!'); }} className="text-[10px] bg-[#22c55e] text-black px-3 py-1 rounded">Unirme</button>
-                      <button onClick={(e) => { e.stopPropagation(); setShowLiveModal(false); openChat(user.id); /* auto-like for chat access */ if (!matches.includes(user.id) && !realMatches.includes(user.id)) handleSwipe(user.id, 'right'); }} className="text-[9px] border border-[#22c55e]/50 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10">Chatear ya</button>
+                      <button onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); /* polished live-join toast + muro comment inside handleSwipe */ }} className="text-[10px] bg-[#22c55e] text-black px-3 py-1 rounded">Unirme</button>
+                      <button onClick={(e) => { e.stopPropagation(); setShowLiveModal(false); openChat(user.id); if (!matches.includes(user.id) && !realMatches.includes(user.id)) handleSwipe(user.id, 'right'); }} className="text-[9px] border border-[#22c55e]/50 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10">Chatear ya</button>
                     </div>
                   </div>
                 )) : <div className="text-center text-[#9CA3AF]">Sin resultados. ¡Sé el primero!</div>
               })()}
             </div>
-            <div className="p-4 text-center text-xs text-[#9CA3AF]">Toca card → perfil. Unirme = like instant. Chatear abre Mensajes. ¡La urgencia hace que abras seguido!</div>
+            <div className="p-3 border-t border-[#2F2F35] bg-[#0D0D10]">
+              <div className="text-center text-xs text-[#9CA3AF] mb-2">Toca card → perfil. Unirme = like + auto-comment en su muro live. ¡La urgencia hace que abras seguido!</div>
+              {liveTrainingNow.length >= 2 && (
+                <button
+                  onClick={() => {
+                    setShowLiveModal(false)
+                    // Quick group session polish: create an optimistic session with the current live people + self
+                    const liveNames = liveTrainingNow.slice(0, 4).map(u => u.name.split(' ')[0]).join(', ')
+                    const newGroupSession: TrainingSession = {
+                      id: 'livegroup' + Date.now(),
+                      creatorId: effectiveUserId,
+                      creatorName: currentUser?.name || 'Tú',
+                      title: `Live training ya — ${liveNames}`,
+                      description: '¡Armado desde el live cerca! Todos los que estaban entrenando ahora.',
+                      time: 'Ahora',
+                      location: currentUser?.city || 'Cerca de ti',
+                      trainingType: liveTrainingNow[0]?.trainingTypes?.[0] || 'Mixto',
+                      maxParticipants: Math.min(8, liveTrainingNow.length + 2),
+                      participants: [effectiveUserId, ...liveTrainingNow.map(u => u.id)],
+                      createdAt: Date.now()
+                    }
+                    // Local + demo
+                    const updatedSessions = [newGroupSession, ...(sessions || [])]
+                    saveSessions ? saveSessions(updatedSessions) : setSessions?.(updatedSessions) // fallback if hook
+                    // Real write attempt
+                    if (!isDemoMode && firebaseUser?.uid && db) {
+                      (async () => {
+                        try {
+                          const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+                          await addDoc(collection(db, 'sessions'), {
+                            ...newGroupSession,
+                            createdAt: serverTimestamp()
+                          })
+                        } catch {}
+                      })()
+                    }
+                    setActiveTab('sesiones')
+                    toast.success('¡Sesión grupal creada!', { description: `Con ${liveTrainingNow.length} live cerca. Ve a Sesiones para chatear en grupo.` })
+                  }}
+                  className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black font-bold text-sm active:scale-[0.985]"
+                >
+                  🔥 Armar sesión grupal con estos {liveTrainingNow.length} live ahora
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -6375,7 +6577,7 @@ function App() {
                         🟢 ENTRENANDO AHORA • en vivo hace {Math.floor((Date.now() - showFullProfile.trainingNowSince)/60000)}m
                         {showFullProfile.trainingNowSince && <span className="text-xs">· se va pronto</span>}
                       </div>
-                      <button onClick={() => { handleSwipe(showFullProfile.id, 'right'); setShowFullProfile(null); toast.success('¡Unido al live!'); }} className="mt-1 w-full py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-bold active:bg-[#16a34a]">Unirme ahora al entrenamiento 🔥</button>
+                      <button onClick={() => { handleSwipe(showFullProfile.id, 'right'); setShowFullProfile(null); /* live join toast + auto muro comment handled inside handleSwipe for consistency */ }} className="mt-1 w-full py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-bold active:bg-[#16a34a]">Unirme ahora al entrenamiento 🔥</button>
                     </>
                   )}
                   {currentUser && (
