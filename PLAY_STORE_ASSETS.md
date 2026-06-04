@@ -9,7 +9,7 @@
 - Browser notif: handlers seguros.
 - Manifest mejorado.
 - **Nuevo**: toggles de preferencias (mensajes/live/muro) en Perfil.
-- **Mejorado**: muro teasers en Explore/Matches (1-2 posts latest/pinned, más vivo); live visuals premium (glass cards, motion, urgent pulses, gradients, grid bg en banner + barra progreso "se va en", chat bubbles atractivos, sessions badges LIVE + glow borders, feed teasers mejorados con hover, modal progress + radar anim/hover/stagger).
+- **Mejorado**: muro teasers en Explore/Matches (1-2 posts latest/pinned, más vivo); live visuals premium (glass cards, motion, urgent pulses, gradients, grid bg en banner + barra progreso "se va en", chat bubbles atractivos, sessions badges LIVE + glow borders, feed teasers mejorados con hover, modal progress + radar anim/hover/stagger + sweep anim, profile stats/banner polish).
 - Incluye killer live, muro espectacular, integrity, onboarding preview, etc.
 Listo para re-subir a closed track como mejora continua.
 

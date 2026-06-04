@@ -872,3 +872,30 @@ Mejoras live + dise?o:
 - Push, AAB sigue.
 - Sigue con todo. Pr?ximo: m?s (FCM, Play, etc.).
 
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Radar stagger, feed hover, sessions glow.
+- Push, AAB sigue-todo.
+- Sigue con todo. Pr?ximo: m?s live/FCM/Play.
+
+
+## Continuaci?n "sigue puliendo con todo" (user "sigue puliendo con todo")
+
+Mejoras live + dise?o:
+- Radar: sweep anim CSS + container.
+- Full profile live banner: mini progress bar.
+- Profile stats: enhanced live card with pulse dot, ring glow.
+- Push, AAB pulido.
+- Sigue puliendo con todo full green light! Pr?ximo: m?s (FCM, Play upload, chat/muro motion, full review).
+
+
+## Continuaci?n "sigue puliendo con todo" (user "sigue puliendo con todo")
+
+Mejoras live + dise?o:
+- Radar: CSS sweep anim + container.
+- Full profile live: progress bar.
+- Profile stats live card: pulse dot + ring glow.
+- Push, AAB pulido.
+- Sigue puliendo con todo. Pr?ximo: m?s (FCM, Play upload, etc.).
+
