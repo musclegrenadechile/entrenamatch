@@ -35,6 +35,7 @@ import {
 let CapacitorCamera: any = null
 let PushNotifications: any = null
 let PlayIntegrityNative: any = null
+let GeolocationNative: any = null
 
 if (__CAPACITOR_BUILD__) {
   // The specifier is a define placeholder replaced at build time with the real path only for CAP builds.
@@ -44,6 +45,7 @@ if (__CAPACITOR_BUILD__) {
     CapacitorCamera = plugins.Camera || null
     PushNotifications = plugins.PushNotifications || null
     PlayIntegrityNative = plugins.PlayIntegrity || null
+    GeolocationNative = plugins.Geolocation || null
   })
 }
 
@@ -1411,11 +1413,17 @@ function App() {
     }
   }, [])
 
-  // On real Firebase login (web), request Notification permission once so bg message alerts work when tab hidden
+  // On real Firebase login, request Notification + REAL GPS for realistic distances/"vivo cerca"
   useEffect(() => {
     if (!isDemoMode && firebaseUser?.uid) {
       // slight delay so UI settles
-      const t = setTimeout(() => { requestWebNotificationPermission() }, 1200)
+      const t = setTimeout(() => { 
+        requestWebNotificationPermission()
+        // Auto-request real location for realism if not set (user can deny)
+        if (!userLocation) {
+          requestUserLocation().catch(() => {})
+        }
+      }, 1500)
       return () => clearTimeout(t)
     }
   }, [isDemoMode, firebaseUser?.uid])
@@ -4022,25 +4030,45 @@ function App() {
     saveSessionMessages(updated)
   }
 
-  // Request user GPS location
-  const requestUserLocation = () => {
-    if (!navigator.geolocation) {
-      toast.error('Tu navegador no soporta geolocalización')
-      return
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const loc = { lat: position.coords.latitude, lng: position.coords.longitude }
+  // Request REAL user GPS location (native Capacitor first for APK realism, fallback to browser)
+  const requestUserLocation = async () => {
+    try {
+      let loc: { lat: number; lng: number } | null = null
+
+      if (GeolocationNative && Capacitor.isNativePlatform()) {
+        // Real device GPS via Capacitor (proper permissions on Android)
+        const perm = await GeolocationNative.requestPermissions()
+        if (perm?.location !== 'granted' && perm?.coarseLocation !== 'granted') {
+          toast.error('Permiso de ubicación denegado', { description: 'Actívalo en Ajustes del teléfono para distancias reales' })
+          return
+        }
+        const position = await GeolocationNative.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 })
+        loc = { lat: position.coords.latitude, lng: position.coords.longitude }
+      } else if (navigator.geolocation) {
+        // Web / fallback
+        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
+        })
+        loc = { lat: position.coords.latitude, lng: position.coords.longitude }
+      } else {
+        toast.error('Geolocalización no soportada')
+        return
+      }
+
+      if (loc) {
         setUserLocation(loc)
         localStorage.setItem('entrenamatch_location', JSON.stringify(loc))
-        toast.success('Ubicación activada', { description: 'Ahora verás la distancia real a cada persona' })
-      },
-      (error) => {
-        console.warn('Geolocation error:', error)
-        toast.error('No pudimos obtener tu ubicación', { description: 'Puedes seguir usando la app con distancias aproximadas' })
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    )
+
+        // Update current user's profile with REAL location for realism (sync to Firestore too)
+        const updated = { ...currentUser, lat: loc.lat, lng: loc.lng }
+        saveUserWithRealSync(updated as CurrentUser)
+
+        toast.success('Ubicación real activada', { description: 'Distancias y "vivo cerca" usan tu GPS real ahora' })
+      }
+    } catch (e: any) {
+      console.warn('Real geolocation failed:', e)
+      toast.error('No pudimos obtener ubicación real', { description: 'Permisos o GPS apagado. Usando fallback.' })
+    }
   }
 
   // Remaining profiles (not swiped) - Real Firestore profiles + Seed profiles (hybrid for Pre-Alpha)
@@ -6584,8 +6612,12 @@ function App() {
             <div className="px-4 mt-2 card p-4 space-y-3">
               <div>
                 <button 
-                  onClick={() => {
+                  onClick={async () => {
                     const newVal = !currentUser.trainingNow
+                    if (newVal) {
+                      // For REALISM: request actual GPS when going live
+                      await requestUserLocation()
+                    }
                     if (newVal && !isDemoMode && PlayIntegrityNative) {
                       const current = getLastIntegrityResult() || lastIntegrity;
                       if (!hasPositiveIntegrity(current)) {
@@ -7800,10 +7832,13 @@ function App() {
                 {!userLocation && (
                   <button 
                     onClick={requestUserLocation}
-                    className="mt-3 text-xs w-full py-2.5 rounded-2xl border border-[#FF671F] text-[#FF671F] active:bg-[#FF671F] active:text-black"
+                    className="mt-3 text-xs w-full py-2.5 rounded-2xl border border-[#22c55e] text-[#22c55e] active:bg-[#22c55e] active:text-black font-semibold"
                   >
-                    Activar GPS para usar distancia
+                    📍 Usar ubicación real del teléfono (GPS)
                   </button>
+                )}
+                {userLocation && (
+                  <div className="mt-1 text-[9px] text-[#22c55e] text-center">✓ Usando GPS real • distancias precisas</div>
                 )}
               </div>
 
