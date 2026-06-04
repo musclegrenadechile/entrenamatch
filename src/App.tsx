@@ -375,6 +375,24 @@ function App() {
   //     loadRealSessions()
   //   }
   // }, [activeTab, isDemoMode])
+
+  // EntrenaSync real-time mirror: when in sync, pull partner's latest syncActions and state from realProfiles (via periodic load or on change)
+  useEffect(() => {
+    if (currentUser?.trainingSyncWith && currentUser.trainingNow) {
+      const partner = realProfiles.find(p => p.id === currentUser.trainingSyncWith)
+      if (partner && partner.trainingSyncWith === effectiveUserId) {
+        if (partner.syncStartedAt) setSyncStartedAt(partner.syncStartedAt)
+        if (partner.syncActions && partner.syncActions.length > syncActions.length) {
+          setSyncActions(partner.syncActions)
+        }
+      } else if (partner && !partner.trainingSyncWith) {
+        // partner ended sync
+        setSyncPartnerId(null)
+        setSyncStartedAt(null)
+        setSyncActions([])
+      }
+    }
+  }, [realProfiles, currentUser?.trainingSyncWith, currentUser?.trainingNow])
   const [showFilters, setShowFilters] = useState(false)
   const [showMatchModal, setShowMatchModal] = useState<Profile | null>(null)
   const [showFullProfile, setShowFullProfile] = useState<Profile | null>(null)
@@ -858,9 +876,20 @@ function App() {
               lastLiveDate: realProfile.lastLiveDate != null ? realProfile.lastLiveDate : undefined,
               liveJoins: realProfile.liveJoins != null ? realProfile.liveJoins : undefined,
               joinedLiveStreak: realProfile.joinedLiveStreak != null ? realProfile.joinedLiveStreak : undefined,
+              trainingSyncWith: realProfile.trainingSyncWith,
+              syncStartedAt: realProfile.syncStartedAt != null ? realProfile.syncStartedAt : undefined,
+              syncActions: realProfile.syncActions || [],
+              syncStreak: realProfile.syncStreak != null ? realProfile.syncStreak : undefined,
+              syncStreak: realProfile.syncStreak != null ? realProfile.syncStreak : undefined,
             }
             if (merged.name) {
               saveUser(merged)
+              // Mirror sync state from self profile
+              if (merged.trainingSyncWith) {
+                setSyncPartnerId(merged.trainingSyncWith)
+                setSyncStartedAt(merged.syncStartedAt || null)
+                setSyncActions(merged.syncActions || [])
+              }
             }
           } else if (currentUser && currentUser.name && firebaseUser?.uid) {
             // New real user with local rich data but no Firestore profile yet → push it up immediately
@@ -881,6 +910,8 @@ function App() {
               lng: currentUser.lng,
               legalConsents: currentUser.legalConsents,
               trainingNow: currentUser.trainingNow,
+              trainingSyncWith: currentUser.trainingSyncWith,
+              syncStartedAt: currentUser.syncStartedAt,
             };
             if (currentUser.trainingNow) {
               if (currentUser.trainingNowSince !== undefined) {
@@ -1033,6 +1064,18 @@ function App() {
         if (user.legalConsents) {
           profileUpdate.legalConsents = user.legalConsents;
         }
+        if (user.trainingSyncWith !== undefined) {
+          profileUpdate.trainingSyncWith = user.trainingSyncWith;
+        }
+        if (user.syncStartedAt !== undefined) {
+          profileUpdate.syncStartedAt = user.syncStartedAt;
+        }
+        if (user.syncActions !== undefined) {
+          profileUpdate.syncActions = user.syncActions.slice(-10); // keep last 10 for prealpha
+        }
+        if (user.syncStreak !== undefined) {
+          profileUpdate.syncStreak = user.syncStreak;
+        }
         await updateUserProfile(firebaseUser.uid, profileUpdate)
         // console.log removed (debug)
       } catch (e) {
@@ -1184,10 +1227,14 @@ function App() {
         if (currentUser?.trainingNow) {
           loadProfilePosts(effectiveUserId).then(() => processIncomingLiveJoins()).catch(() => {})
         }
+        if (currentUser?.trainingSyncWith) {
+          // force sync mirror for EntrenaSync actions/timer
+          loadRealProfiles().catch(() => {})
+        }
       }, 60000);
       return () => clearInterval(id);
     }
-  }, [activeTab, isDemoMode, currentUser?.trainingNow])
+  }, [activeTab, isDemoMode, currentUser?.trainingNow, currentUser?.trainingSyncWith])
 
   // Extra: when we are the one training live (any tab), poll our own muro posts every 45s so we catch "joins" (new comments on our live post) promptly and processIncomingLiveJoins fires the notif/toast.
   useEffect(() => {
@@ -2359,12 +2406,14 @@ function App() {
     setSyncPartnerId(partnerId)
     setSyncStartedAt(now)
     setSyncActions([])
+    const updated = { ...currentUser, trainingSyncWith: partnerId, syncStartedAt: now, syncActions: [] }
+    saveUser(updated as any)
     // Persist to profiles (optimistic + FS)
     if (!isDemoMode && db && firebaseUser) {
       try {
         const { doc, updateDoc } = await import('firebase/firestore')
-        await updateDoc(doc(db, 'profiles', effectiveUserId), { trainingSyncWith: partnerId, syncStartedAt: now })
-        await updateDoc(doc(db, 'profiles', partnerId), { trainingSyncWith: effectiveUserId, syncStartedAt: now })
+        await updateDoc(doc(db, 'profiles', effectiveUserId), { trainingSyncWith: partnerId, syncStartedAt: now, syncActions: [] })
+        await updateDoc(doc(db, 'profiles', partnerId), { trainingSyncWith: effectiveUserId, syncStartedAt: now, syncActions: [] })
       } catch (e) { console.warn('sync persist failed', e) }
     }
     // Auto post to muro for both
@@ -2378,6 +2427,10 @@ function App() {
     const minutes = syncStartedAt ? Math.floor((Date.now() - syncStartedAt) / 60000) : 0
     // Clear local
     const oldPartner = syncPartnerId
+    // Boost syncStreak
+    const newSyncStreak = ((currentUser as any).syncStreak || 0) + 1
+    const updated = { ...currentUser, trainingSyncWith: null, syncStartedAt: null, syncActions: [], syncStreak: newSyncStreak } as any
+    saveUser(updated)
     setSyncPartnerId(null)
     setSyncStartedAt(null)
     setSyncActions([])
@@ -2385,12 +2438,12 @@ function App() {
     if (!isDemoMode && db && firebaseUser) {
       try {
         const { doc, updateDoc } = await import('firebase/firestore')
-        await updateDoc(doc(db, 'profiles', effectiveUserId), { trainingSyncWith: null, syncStartedAt: null })
+        await updateDoc(doc(db, 'profiles', effectiveUserId), { trainingSyncWith: null, syncStartedAt: null, syncActions: [], syncStreak: newSyncStreak })
         if (oldPartner) await updateDoc(doc(db, 'profiles', oldPartner), { trainingSyncWith: null, syncStartedAt: null })
       } catch (e) {}
     }
     createProfilePost(`Sync terminado con ${partnerName} - ${minutes}min juntos 💪`, null).catch(() => {})
-    toast(`Sync finalizado: ${minutes}min`, { description: '¡Buen trabajo en equipo!' })
+    toast(`Sync finalizado: ${minutes}min`, { description: '¡Buen trabajo en equipo! +1 sync streak' })
   }
 
   const doSyncAction = async (emoji: string, label: string) => {
@@ -2398,13 +2451,13 @@ function App() {
     const action = { id: 'sa' + Date.now(), emoji, label, userId: effectiveUserId, ts: Date.now() }
     const newActions = [...syncActions, action]
     setSyncActions(newActions)
-    // Optimistic for partner view (in real would come via listener on profile or dedicated sync doc)
-    // Persist simple (for demo use profile update or post; full would use subcollection)
-    if (!isDemoMode && db) {
+    // Update currentUser so save picks it for FS sync (partner will mirror via realProfiles)
+    const updatedUser = { ...currentUser, syncActions: newActions }
+    saveUser(updatedUser as any)
+    if (!isDemoMode && firebaseUser?.uid) {
       try {
-        const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
-        // Store last action or use muro auto
-      } catch {}
+        await updateUserProfile(firebaseUser.uid, { syncActions: newActions.slice(-10) })
+      } catch (e) { console.warn('sync action persist failed', e) }
     }
     // Auto social proof
     const partner = realProfiles.find(p => p.id === syncPartnerId)
@@ -5557,7 +5610,8 @@ function App() {
                 { label: 'Sesiones', value: squads?.length || 0, icon: Star, color: '#00C4B4' },
                 { label: 'Nivel', value: currentUser.level || '—', icon: Dumbbell, color: '#FF4F79' },
                 { label: 'Live cerca', value: liveTrainingNow.length, icon: Zap, color: '#22c55e', isLive: true },
-                { label: 'Live joins', value: currentUser.liveJoins || 0, icon: Zap, color: '#22c55e' }
+                { label: 'Live joins', value: currentUser.liveJoins || 0, icon: Zap, color: '#22c55e' },
+                { label: 'Syncs', value: (currentUser as any).syncStreak || 0, icon: Users, color: '#22c55e' }
               ].map((stat: any, i) => (
                 <div 
                   key={i} 
@@ -5736,7 +5790,7 @@ function App() {
                       }
                       streakUpdate = { liveStreak: newStreak, lastLiveDate: Date.now(), joinedLiveStreak: (currentUser.joinedLiveStreak || 0) + (lastStr && lastStr !== todayStr ? 1 : (lastStr ? 0 : 1)) }
                     }
-                    const updated = { ...currentUser, trainingNow: newVal, trainingNowSince: newVal ? Date.now() : undefined, ...streakUpdate }
+                    const updated = { ...currentUser, trainingNow: newVal, trainingNowSince: newVal ? Date.now() : undefined, ...streakUpdate, ...( !newVal ? { trainingSyncWith: null, syncStartedAt: null } : {} ) }
                     saveUserWithRealSync(updated as CurrentUser)
                     toast(newVal ? '🟢 ¡Entrenando ahora en vivo! La gente cerca te verá' : 'Entrenamiento finalizado')
                     if (newVal) {
@@ -5756,23 +5810,30 @@ function App() {
 
               {/* DISRUPTIVE EntrenaSync UI - the unique market maker: shared real-time training even if not same gym */}
               {currentUser.trainingNow && syncPartnerId && (
-                <div className="mt-3 p-3 rounded-2xl bg-gradient-to-r from-[#0a2a1a] to-[#112211] border border-[#22c55e] shadow-[0_0_15px_rgba(34,197,94,0.2)]">
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="text-[#22c55e] font-bold text-sm flex items-center gap-1">🔄 ENTRENASYNC ACTIVO</div>
-                    <button onClick={endSync} className="text-[10px] px-2 py-0.5 bg-red-500/20 text-red-400 rounded">Terminar</button>
+                <div className="mt-3 p-3 rounded-2xl bg-gradient-to-r from-[#0a2a1a] to-[#112211] border-2 border-[#22c55e] shadow-[0_0_20px_rgba(34,197,94,0.3)] relative overflow-hidden">
+                  <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.8px,transparent_1px)] bg-[length:5px_5px] opacity-10"></div>
+                  <div className="flex items-center justify-between mb-1 relative z-10">
+                    <div className="text-[#22c55e] font-bold text-sm flex items-center gap-1">🔄 ENTRENASYNC EN VIVO</div>
+                    <button onClick={endSync} className="text-[10px] px-2 py-0.5 bg-red-500/30 text-red-300 rounded active:bg-red-500/50">Terminar Sync</button>
                   </div>
-                  <div className="text-xs text-white/90">Con {realProfiles.find(p=>p.id===syncPartnerId)?.name || 'compañero'} • {syncStartedAt ? Math.floor((Date.now()-syncStartedAt)/60000) : 0}min juntos</div>
-                  <div className="flex gap-1 mt-2 flex-wrap">
+                  <div className="text-xs text-white/95 relative z-10">Sincronizado con <span className="font-bold text-white">{realProfiles.find(p=>p.id===syncPartnerId)?.name || 'compañero'}</span></div>
+                  <div className="text-2xl font-mono text-[#22c55e] mt-0.5 tracking-tighter relative z-10">{syncStartedAt ? Math.floor((Date.now()-syncStartedAt)/60000) : 0}<span className="text-xs align-super">min</span> juntos</div>
+                  <div className="flex gap-1 mt-2 flex-wrap relative z-10">
                     {[
                       {e:'💪', l:'Buena forma'},
                       {e:'🔥', l:'Serie lista'},
                       {e:'💧', l:'Hidratado'},
                       {e:'🏁', l:'Push final'}
                     ].map(a => (
-                      <button key={a.e} onClick={() => doSyncAction(a.e, a.l)} className="text-xs px-2 py-1 bg-[#22c55e]/10 border border-[#22c55e]/30 rounded-full active:bg-[#22c55e]/30 hover:scale-105 transition">{a.e} {a.l}</button>
+                      <button key={a.e} onClick={() => doSyncAction(a.e, a.l)} className="text-xs px-2.5 py-1 bg-[#22c55e]/10 border border-[#22c55e]/40 rounded-full active:bg-[#22c55e]/40 hover:scale-105 active:scale-95 transition flex items-center gap-1 font-medium">{a.e} {a.l}</button>
                     ))}
                   </div>
-                  {syncActions.length > 0 && <div className="text-[9px] text-[#22c55e]/80 mt-1">Acciones: {syncActions.slice(-3).map(a=>a.emoji).join(' ')}</div>}
+                  {syncActions.length > 0 && (
+                    <div className="text-[9px] text-[#22c55e]/90 mt-1.5 bg-black/20 p-1 rounded relative z-10">
+                      Últimas acciones: {syncActions.slice(-3).map((a,i) => <span key={i} className="mr-1">{a.emoji} {a.label}</span>)}
+                    </div>
+                  )}
+                  <div className="text-[8px] text-center text-[#22c55e]/60 mt-1 relative z-10">¡Las acciones se comparten en vivo y se guardan en el muro!</div>
                 </div>
               )}
 
