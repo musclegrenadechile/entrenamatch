@@ -84,8 +84,9 @@ export async function requestPlayIntegrityToken(customNonce?: string): Promise<I
 
     const nonce = customNonce || generateNonce();
 
-    // The community plugin API (from docs): requestIntegrityToken({ nonce })
-    const response = await PlayIntegrity.requestIntegrityToken({ nonce });
+    // The community plugin API requires both nonce and googleCloudProjectNumber (use 0 for default associated with the app in Play).
+    // Passing it prevents NPE inside the plugin's getLong() + primitive long unbox when the key is absent.
+    const response = await PlayIntegrity.requestIntegrityToken({ nonce, googleCloudProjectNumber: 0 });
 
     const token = response?.token || response?.integrityToken; // support slight API diffs
 

@@ -565,6 +565,17 @@ function App() {
   // Ref for feed post modal photo (same attractive file picker)
   const feedPhotoInputRef = useRef<HTMLInputElement>(null)
 
+  // In-app debug logs (for phone-only crash reporting without adb/PC)
+  // Collects important events + errors. Button in Profile to copy/share.
+  const debugLogsRef = useRef<string[]>([])
+  const addDebugLog = (msg: string) => {
+    const entry = `[${new Date().toLocaleTimeString('es-CL')}] ${msg}`
+    debugLogsRef.current = [entry, ...debugLogsRef.current].slice(0, 30)
+    console.log('[EntrenaDebug]', msg)
+  }
+  // Expose for ErrorBoundary and key flows
+  ;(window as any).__addEntrenaDebugLog = addDebugLog
+
   // Attractive web file photo handler for muro composer (replaces ugly prompt)
   const handleMuroPhotoFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -1094,6 +1105,7 @@ function App() {
             }
             if (merged.name) {
               saveUser(merged)
+              addDebugLog(`Real login: ${merged.name}`)
               // Mirror sync state from self profile
               if (merged.trainingSyncWith) {
                 setSyncPartnerId(merged.trainingSyncWith)
@@ -1305,7 +1317,7 @@ function App() {
   // NOTE: We no longer auto-request permission on every login to avoid unwanted prompts/crashes during "activation".
   // Users explicitly activate via the button in Profile. This effect only sets up listeners if plugin present.
   useEffect(() => {
-    if (isDemoMode || !firebaseUser?.uid || !PushNotifications) return
+    if (isDemoMode || !firebaseUser?.uid || !PushNotifications || !isFirebaseConfigured) return
 
     (async () => {
       try {
@@ -1960,20 +1972,20 @@ function App() {
     }
   }, [activeTab, isDemoMode, firebaseUser?.uid])
 
-  // Auto-run Play Integrity check once per session on real native users (silent first time, visible result in Profile)
-  const didAutoIntegrityRef = useRef(false)
-  useEffect(() => {
-    if (!isDemoMode && firebaseUser?.uid && PlayIntegrityNative && !didAutoIntegrityRef.current) {
-      didAutoIntegrityRef.current = true
-      // Fire and forget; user sees nice UI in Profile
-      checkPlayIntegrity(false).then((res) => {
-        if (res && (res.token || res.simulatedVerdict)) {
-          // Optional: if negative in future, we could show warning or restrict some actions
-          console.log('[Play Integrity] Auto-checked on real native login:', res.token ? 'real token' : 'simulated')
-        }
-      })
-    }
-  }, [firebaseUser?.uid, isDemoMode])
+  // Auto-run disabled to keep cold launch fast and avoid unnecessary Play Integrity API calls (which can fail on sideloaded debug APKs).
+  // Users can manually verify using the 🛡️ button in Profile (the checkPlayIntegrity function + UI section remain available for testers).
+  // The live toggle still prompts to verify integrity first if PlayIntegrityNative is present.
+  // const didAutoIntegrityRef = useRef(false)
+  // useEffect(() => {
+  //   if (!isDemoMode && firebaseUser?.uid && PlayIntegrityNative && !didAutoIntegrityRef.current) {
+  //     didAutoIntegrityRef.current = true
+  //     checkPlayIntegrity(false).then((res) => {
+  //       if (res && (res.token || res.simulatedVerdict)) {
+  //         console.log('[Play Integrity] Auto-checked on real native login:', res.token ? 'real token' : 'simulated')
+  //       }
+  //     })
+  //   }
+  // }, [firebaseUser?.uid, isDemoMode])
 
   // Load real group chat messages when opening the modal for a real session
   const loadRealGroupMessages = async (sessionId: string) => {
@@ -2579,6 +2591,7 @@ function App() {
     // Delightful UX: highlight the new post briefly in lists (feed or personal muro) so user sees the result instantly
     setRecentlyPublishedPostId(post.id)
     setTimeout(() => setRecentlyPublishedPostId(null), 4000)
+    addDebugLog(`Publicado: ${post.text.slice(0,50)}${post.photo ? ' +foto' : ''}`)
 
     toast.success('Publicado en tu muro')
   }
@@ -2687,6 +2700,7 @@ function App() {
     toast.success(`EntrenaSync iniciado con ${partnerName}`, { description: 'Timer y acciones compartidas en vivo' })
     // Attractive feedback: confetti + clear joining loader (the UI will switch to profile showing the rich sync panel)
     try { confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } }) } catch {}
+    addDebugLog(`EntrenaSync started with ${partnerName}`)
     setJoiningSyncWith(null)
   }
 
@@ -2878,6 +2892,7 @@ function App() {
       ? `${emoji} ${label} x${newCombo} COMBO con ${partner?.name || 'sync buddy'} 🔥` 
       : `${emoji} ${label} con ${partner?.name || 'sync buddy'}`
     createProfilePost(proofText, null).catch(() => {})
+    addDebugLog(`Sync action: ${emoji} ${label}${newCombo>1 ? ` x${newCombo}` : ''}`)
 
     // Special toast + confetti pop for combos (the dopamine that makes it addictive and unique)
     if (newCombo >= 3) {
@@ -6263,6 +6278,29 @@ function App() {
               </div>
             </div>
 
+            {/* In-app debug logs export (phone-only crash reporting, no adb/PC needed) */}
+            <div className="px-4 mt-3">
+              <details className="card p-3 text-xs">
+                <summary className="cursor-pointer font-semibold text-[#FF671F]">🐛 Debug logs (para reportar crashes desde el celular)</summary>
+                <div className="mt-2 max-h-40 overflow-auto text-[#9CA3AF] font-mono text-[10px] bg-black/30 p-2 rounded">
+                  {debugLogsRef.current.length ? debugLogsRef.current.map((l,i) => <div key={i}>{l}</div>) : <div>Sin logs aún. Se capturan en login, sync, publish, errores...</div>}
+                </div>
+                <div className="flex gap-2 mt-2">
+                  <button onClick={() => {
+                    const txt = debugLogsRef.current.join('\n')
+                    navigator.clipboard?.writeText(txt).then(()=>toast.success('Logs copiados'))
+                  }} className="text-[10px] px-2 py-1 bg-[#25252A] rounded border border-[#FF671F]/30">Copiar al portapapeles</button>
+                  <button onClick={() => {
+                    const txt = debugLogsRef.current.join('\n')
+                    if ((navigator as any).share) (navigator as any).share({title:'EntrenaMatch debug logs', text: txt})
+                    else navigator.clipboard?.writeText(txt).then(()=>toast('Copiado (usa compartir manual)'))
+                  }} className="text-[10px] px-2 py-1 bg-[#25252A] rounded border border-[#FF671F]/30">Compartir</button>
+                  <button onClick={() => { debugLogsRef.current = []; /* force re-render via state if needed */ toast('Logs limpiados') }} className="text-[10px] px-2 py-1 bg-[#25252A] rounded border border-white/10">Limpiar</button>
+                </div>
+                <div className="text-[9px] text-[#9CA3AF]/60 mt-1">Útil para Samsung Members / bug report. Incluye login, sync actions, publishes, crashes.</div>
+              </details>
+            </div>
+
             {/* Stats row - premium visual cards + LIVE count as global killer stat in header (urgency / FOMO) */}
             <div className="px-4 mt-4 grid grid-cols-3 gap-2">
               {[
@@ -9269,6 +9307,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 
   componentDidCatch(error: Error, errorInfo: any) {
     console.error("App crashed:", error, errorInfo);
+    try {
+      ;(window as any).__addEntrenaDebugLog?.(`CRASH: ${error.message} ${errorInfo?.componentStack || ''}`)
+    } catch {}
   }
 
   render() {
