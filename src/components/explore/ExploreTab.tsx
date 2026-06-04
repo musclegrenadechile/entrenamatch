@@ -284,16 +284,16 @@ export const ExploreTab: React.FC<ExploreTabProps> = ({
             </div>
           )}
 
-          {/* Spectacular muro teaser (1-2 latest posts) - makes profiles feel alive while swiping - improved for progressive dev */}
+          {/* Spectacular muro teaser (1-2 latest posts) - makes profiles feel alive while swiping - feed attractive polish */}
           {(() => {
             const teaser = getMuroTeaser(profile.id)
             if (!teaser) return null
             return (
               <div 
                 onClick={(e) => { e.stopPropagation(); onShowProfile?.(profile) }}
-                className="mb-2 px-2 py-1 bg-black/40 backdrop-blur rounded-xl text-[9px] text-white/90 line-clamp-2 border border-white/10 cursor-pointer active:bg-black/60 flex items-start gap-1"
+                className="mb-2 px-2 py-1 bg-[#111113]/70 backdrop-blur rounded-2xl text-[9px] text-white/90 line-clamp-2 border border-[#FF671F]/20 cursor-pointer active:bg-[#FF671F]/10 flex items-start gap-1 hover:border-[#FF671F]/40 transition"
               >
-                <span className="mt-0.5">📝</span> <span className="leading-tight">{teaser}</span>
+                <span className="mt-0.5 text-[#FF671F]">📝</span> <span className="leading-tight">{teaser}</span>
               </div>
             )
           })()}
