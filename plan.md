@@ -927,3 +927,17 @@ Mejoras live + dise?o:
 - Push, AAB pulido.
 - Sigue con todo. Pr?ximo: m?s live polish (FCM, etc.), Play upload.
 
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Banner glow, radar sweep, profile live glow/progress.
+- Push, AAB pulido-continua.
+- Sigue con todo. Pr?ximo: m?s live/FCM/Play.
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Live banner glow, radar sweep, profile live glow/progress.
+- Push, AAB pulido-continua.
+- Sigue con todo. Pr?ximo: m?s live polish (FCM, etc.), Play upload con visuals.
+
