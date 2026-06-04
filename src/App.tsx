@@ -5234,7 +5234,8 @@ function App() {
                   {/* Live badge + near filter */}
                   <div className="absolute bottom-2 right-2 flex items-center gap-1 z-30">
                     <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                      🟢 {liveTrainingNow.length} en vivo • realtime
+                      🟢 {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && (u.distance||999)<10)) && (!selectedMapZone || u.city === selectedMapZone)).length} en vivo • realtime
+                      {selectedMapZone && <span className="ml-1 text-[7px] bg-white/20 px-1 rounded">filtrado: {selectedMapZone.split(' ')[0]}</span>}
                     </div>
                     <button
                       onClick={() => { try { triggerHaptic('light') } catch {}; setMapNearOnly(!mapNearOnly) }}

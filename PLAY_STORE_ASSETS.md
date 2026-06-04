@@ -5,9 +5,10 @@
 **Package name**: com.entrenamatch.app
 
 **Current version for this upload**: versionCode 27 / 0.1.22-mapa-todo. **MAPA MEJORADO CON TODO + INTERACTIVO**: 
-- Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). 
-- Fixes previos: pressable, tethers para sync pairs, geo seguro, personal markers con pulso, radar sweep, self + radio, centrar, filtro cerca, popups con join/perfil.
-- Sigue con todo: más polish visual, interactive, unique para live training map por zonas.
+- Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
+- Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
+- Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
+- Sigue con todo el mapa: más interactive y único para "personas entrenando en tiempo real por zonas".
 - Builds listos.
 - Mapa: ahora responde a presión (fixes z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toque: tethers para sync pairs.

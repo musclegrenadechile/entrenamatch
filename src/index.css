@@ -825,6 +825,13 @@ input[type="range"]::-moz-range-thumb {
 #live-map-container {
   position: relative;
 }
+
+/* Interactive map legend polish for "sigue con todo el mapa" */
+#live-map-container .zone-legend-item.active {
+  text-decoration: underline;
+  font-weight: bold;
+  opacity: 1;
+}
 #live-map-container::after {
   content: '';
   position: absolute;
