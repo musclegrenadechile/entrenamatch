@@ -3224,16 +3224,24 @@ function App() {
         const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng) : 999;
         const seVaEnMs = (p.trainingNowSince + ASSUMED_SESSION_MS) - now;
         const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 0;
-        return { ...p, distance: dist, seVaEnMin };
+        // Join count from the live post (comments + other likes) - makes "se unieron" visible everywhere for FOMO
+        let joinCount = 0;
+        const theirPosts = profilePosts[p.id] || [];
+        const livePost = theirPosts.find((post: any) => (post.text || '').toLowerCase().includes('entrenando ahora')) || theirPosts[0];
+        if (livePost) {
+          const otherLikes = (livePost.likes || []).filter((id: string) => id !== p.id).length;
+          joinCount = (livePost.comments || []).length + otherLikes;
+        }
+        return { ...p, distance: dist, seVaEnMin, joinCount };
       })
       .filter(p => p.distance < 15) // near, 15km
       .sort((a, b) => a.distance - b.distance);
     if (isDemoMode && lives.length === 0) {
       // Demo fakes for the killer feature to shine
-      lives = SEED_PROFILES.slice(0, 3).map((p, i) => ({ ...p, trainingNow: true, trainingNowSince: now - (i+1)*10*60000, distance: 1 + i*2, seVaEnMin: 40 - i*10 }));
+      lives = SEED_PROFILES.slice(0, 3).map((p, i) => ({ ...p, trainingNow: true, trainingNowSince: now - (i+1)*10*60000, distance: 1 + i*2, seVaEnMin: 40 - i*10, joinCount: 1 + i }));
     }
     return lives;
-  }, [realProfiles, userLocation, isDemoMode]);
+  }, [realProfiles, userLocation, isDemoMode, profilePosts]);
 
   // Real-time urgency notifications for NEW live trainers nearby (the killer retention hook).
   // Placed HERE (after liveTrainingNow declaration) to avoid TDZ "Cannot access before initialization" on app start.
@@ -3784,7 +3792,7 @@ function App() {
           <div className="px-4 py-2 bg-[#0D0D10] border-b border-[#22c55e]/30">
             <div className="flex items-center gap-2 mb-1">
               <div className="live-pill green">🟢 EN VIVO AHORA</div>
-              <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡urgencia!' : ''} {liveTrainingNow.length > 5 ? '· ¡Hot zone!' : ''}</div>
+              <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡urgencia!' : ''} {liveTrainingNow.length > 5 ? '· ¡Hot zone!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}</div>
             </div>
             {liveTrainingNow.length > 0 ? (
               <div className="flex gap-2 overflow-x-auto pb-1">
@@ -3802,6 +3810,9 @@ function App() {
                       <span>En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m</span>
                       {user.seVaEnMin > 0 && <span className={`text-orange-400 ${user.seVaEnMin < 20 ? 'font-bold text-red-400 animate-pulse' : ''}`}>{user.seVaEnMin < 15 ? '· se va pronto' : '· se va en'} {user.seVaEnMin}m {user.seVaEnMin < 10 ? '¡ya!' : ''}</span>}
                     </div>
+                    {user.joinCount > 0 && (
+                      <div className="text-[8px] text-[#22c55e] mb-1 font-medium">+{user.joinCount} se unieron 🔥</div>
+                    )}
                     <button 
                       onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); /* live-specific polished toast + muro comment happens inside handleSwipe */ }} 
                       className="w-full text-[9px] bg-[#22c55e] text-black py-1 rounded font-semibold active:bg-[#16a34a] transition"
@@ -3889,7 +3900,7 @@ function App() {
                         <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#22c55e] rounded-full ring-1 ring-black" style={{animation: 'live-pulse-green 1.6s ease-in-out infinite'}}></div>
                       </div>
                       <div className="text-[8px] mt-0.5 text-white truncate max-w-[42px]">{u.name.split(' ')[0]}</div>
-                      <div className="text-[7px] text-[#22c55e]">{(u.distance||0).toFixed(0)}km</div>
+                      <div className="text-[7px] text-[#22c55e]">{(u.distance||0).toFixed(0)}km {u.joinCount > 0 ? `+${u.joinCount}🔥` : ''}</div>
                     </div>
                   ))}
                 </div>
@@ -3917,6 +3928,7 @@ function App() {
                       <div className="font-semibold">{user.name} · {user.distance.toFixed(1)}km</div>
                       <div className="text-[#9CA3AF] text-sm">{user.trainingTypes?.join(', ') || 'Entreno'}</div>
                       <div className="text-[#22c55e] text-xs">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m {user.seVaEnMin > 0 ? (user.seVaEnMin < 15 ? `· se va pronto en ${user.seVaEnMin}m 🔥` : `· se va en ${user.seVaEnMin}m`) : ''}</div>
+                      {user.joinCount > 0 && <div className="text-[10px] text-[#22c55e] mt-0.5">+{user.joinCount} se unieron a este live</div>}
                     </div>
                     <div className="flex flex-col gap-1 self-center">
                       <button onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); /* polished live-join toast + muro comment inside handleSwipe */ }} className="text-[10px] bg-[#22c55e] text-black px-3 py-1 rounded">Unirme</button>
@@ -3949,7 +3961,7 @@ function App() {
                     }
                     // Local + demo
                     const updatedSessions = [newGroupSession, ...(sessions || [])]
-                    saveSessions ? saveSessions(updatedSessions) : setSessions?.(updatedSessions) // fallback if hook
+                    if (typeof saveSessions === 'function') saveSessions(updatedSessions); else setSessions(updatedSessions);
                     // Real write attempt
                     if (!isDemoMode && firebaseUser?.uid && db) {
                       (async () => {
@@ -4043,7 +4055,7 @@ function App() {
                 <div className="flex gap-1 overflow-x-auto pb-1">
                   {liveTrainingNow.slice(0,3).map(u => (
                     <motion.div key={u.id} onClick={() => setActiveTab('explore')} whileTap={{scale:0.94}} className="text-[9px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-0.5 rounded-full border border-[#22c55e]/30 cursor-pointer active:bg-[#22c55e]/20 flex items-center gap-1">
-                      {u.name} ({u.distance.toFixed(0)}km) {u.seVaEnMin < 15 && <span className="text-red-400">🔥</span>}
+                      {u.name} ({u.distance.toFixed(0)}km) {u.seVaEnMin < 15 && <span className="text-red-400">🔥</span>} {u.joinCount > 0 && <span className="text-[7px]">+{u.joinCount}</span>}
                     </motion.div>
                   ))}
                 </div>
@@ -5152,6 +5164,30 @@ function App() {
                 <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">¡Aparecerás en "Entrenando Ahora" para usuarios cerca! Urgencia real-time que hace que la gente abra la app seguido. Nadie lo tiene tan bien.</div>
                 <button onClick={() => setActiveTab('explore')} className="mt-2 w-full text-xs text-[#22c55e] underline active:opacity-70">Ver quién está live cerca ahora →</button>
               </div>
+
+              {/* Live activity / recent joiners when you are the one training (spectacular feedback loop) */}
+              {currentUser.trainingNow && (() => {
+                const myPosts = profilePosts[effectiveUserId] || [];
+                const livePost = myPosts.find((p: any) => (p.text || '').toLowerCase().includes('entrenando ahora')) || myPosts[0];
+                if (!livePost || ((livePost.comments || []).length + (livePost.likes || []).length) === 0) return null;
+                const recent = [...(livePost.comments || []), ...(livePost.likes || []).map((id: string) => ({ userId: id, userName: 'Alguien', isLike: true }))].slice(-3).reverse();
+                return (
+                  <div className="mt-3 pt-3 border-t border-[#2F2F35]">
+                    <div className="text-[9px] text-[#22c55e] mb-1 flex items-center gap-1">🔥 Actividad en tu live ahora <span className="text-[#9CA3AF]">(de tu post "Entrenando ahora")</span></div>
+                    <div className="space-y-1">
+                      {recent.map((c: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-2 text-[10px] bg-[#1C1C20] px-2 py-1 rounded" onClick={() => {
+                          const joiner = [...realProfiles, ...SEED_PROFILES].find(p => p.id === c.userId);
+                          if (joiner) setShowFullProfile(joiner as any); else setActiveTab('feed');
+                        }}>
+                          <span>{c.userName || 'Compañero'}</span> {c.isLike ? '❤️ dio like' : '💬 ' + (c.text || '').substring(0,30)}
+                          <span className="ml-auto text-[#9CA3AF] text-[8px]">toca para perfil</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* MURO / WALL - attractive FB-style feed to make profile feel alive */}
@@ -5162,7 +5198,7 @@ function App() {
                   <button onClick={() => setActiveTab('feed')} className="text-[9px] text-[#FF671F] underline active:opacity-70">Ver feed global →</button>
                 </div>
                 <button 
-                  onClick={() => loadProfilePosts(effectiveUserId)} 
+                  onClick={() => { loadProfilePosts(effectiveUserId).then(() => processIncomingLiveJoins()); }} 
                   className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10"
                 >
                   Refrescar
@@ -6576,6 +6612,12 @@ function App() {
                       <div className="mt-2 inline-flex items-center gap-2 bg-[#22c55e] text-black px-3 py-1 rounded-full text-sm font-bold">
                         🟢 ENTRENANDO AHORA • en vivo hace {Math.floor((Date.now() - showFullProfile.trainingNowSince)/60000)}m
                         {showFullProfile.trainingNowSince && <span className="text-xs">· se va pronto</span>}
+                        {(() => {
+                          const posts = profilePosts[showFullProfile.id] || [];
+                          const lp = posts.find((p: any) => (p.text || '').toLowerCase().includes('entrenando ahora')) || posts[0];
+                          const jc = lp ? (lp.comments || []).length + (lp.likes || []).filter((id: string) => id !== showFullProfile.id).length : 0;
+                          return jc > 0 ? <span className="text-xs ml-1">+{jc} unidos</span> : null;
+                        })()}
                       </div>
                       <button onClick={() => { handleSwipe(showFullProfile.id, 'right'); setShowFullProfile(null); /* live join toast + auto muro comment handled inside handleSwipe for consistency */ }} className="mt-1 w-full py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-bold active:bg-[#16a34a]">Unirme ahora al entrenamiento 🔥</button>
                     </>
