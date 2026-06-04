@@ -18,6 +18,7 @@ Make the app **genuinely usable for hidden cross-device beta testing** with real
 - **Legal pages** + feedback loop ready for Play Console review.
 - Signed AAB ready + CI for APKs.
 - **Store assets + listing text** prepared for Internal/Closed testing upload (hidden, invite-only).
+- **NEW: Full automation for Play uploads** (`publish-play.bat`, gradle track override, service acct docs) so AI/Grok can run "sube a closed" via terminal (after one-time user service acct setup + key placement). See PRODUCTION_AND_APK.md.
 
 Everything must work after hard refresh + on different physical devices (not just same browser).
 
@@ -205,6 +206,24 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Update this plan.md (mark checkboxes) + relevant .md guides on each batch.
 - Prioritize tester-visible value and "no black screens / always exit" + feedback loop.
 - Keep visual premium (Tailwind + custom card/chip/gradient styles).
+
+## Exhaustive Live Site Review (https://musclegrenadechile.github.io/entrenamatch/) - 2026-06 session (user: "onboarding es el punto clave")
+**Fetches + source analysis (auth shell, landing.html, privacy, full App.tsx 6k+, OnboardingFlow.tsx, ExploreTab.tsx, css, types, constants):**
+- **Live deployed root**: Clean auth/login (PRE-ALPHA badge, tabs login/register, email/pass, Google disabled note for public demo, terms/privacy links, v0.1.0). Good entry but friction for casual visitors.
+- **/landing.html**: Strong marketing (stats 3.2k matches, "142 live ahora", features incl killer live + "Crea tu perfil en 2 min", 4-step how it works, screenshots, beta CTA, Dunkin style). Good for Play "sitio web".
+- **Privacy + CSAE**: Compliant, deletion URL ready.
+- **App UX (current built)**: 7-tab bottom nav (explore/feed/squads/sesiones/matches/messages/profile), top pre-alpha bar w/ live count + actualizar todo + install + logout, sticky PWA banner, Explore with live banner (green pulse, urgency "se va en", mini cards, Unirme, hot), swipe deck cinematic + compat energy + muro teasers + real badges, Feed global muro spectacular, Sessions real group, Profile rich (live toggle + streaks + activity + muro composer + feedback). Killer live fully wired optimistic + FS + auto muro + owner notifs + streaks. Many prior polishes (tight headers, scrolls, empty states, glass).
+- **Onboarding (the key per user)**: 5-step (0 basic+ bio/location,1 photos native+file,2 types+goals chips,3 level+intens,4 consents). Pre-fills on edit. Validation toasts. Solid but: **dry/no excitement for live killer**, **no real-time profile preview** (user can't "see" the swipe card/live banner result until done — major drop risk), delayed validation, photo order fixed (can't promote principal easily), bio tiny no examples/counter, location GPS button doesn't update onboardData, availability defaulted never asked in flow, consents last (feels gotcha after investment), no "Rellenar ejemplo" for fast tester flow, no opt-in to live feature, no post-complete hook/celebration to "go live now", step labels minimal, no availability collection (key for explore filters), preview missing = onboarding not selling the unique value.
+
+**Prioritized improvements (full green light, "sigue con todo"):**
+1. **ONBOARDING REDESIGN (core this batch)**: Always-visible live-updating profile preview card (exact swipe/live style w/ green EN VIVO badge if opted, chips, bio, level) — user sees result instantly. "Rellenar ejemplo" button. Availability chips early in step 0. Bio + counter 180 + 4 clickable suggested examples. GPS now syncs onboardData + success UI. Photos: square aspect, "Hacer principal" buttons for reorder. Consents + prominent green "¡Quiero aparecer EN VIVO!" opt-in checkbox in final step (sells killer + defaults true for new). Clearer "Paso X de 5" + descriptive labels. Stronger copy "El Spark...", preview note everywhere. On complete: if opted, auto-sets trainingNow + streak + since so user appears in live banner immediately. Toast mentions live. 
+2. **Auth quick entry**: Big "⚡ Probar demo al instante (sin cuenta, datos de ejemplo + live)" button that sets flag, reloads, auto-creates rich prefilled demo user + forces showOnboarding (so EVERY public visitor hits the improved key flow fast, no email barrier).
+3. **Integration**: saveUserWithRealSync already handles training* fields (conditional nulls) — onboard live opt works cross real/demo. Quick demo effect safe after states.
+4. Other from review: Bottom nav still 7-col (crowded but live dot visible good); top bar subtle; live banner strong first impression post-onboard; no more "long form trap" thanks to preview + example + live sell.
+
+**This batch executed**: OnboardingFlow.tsx + App.tsx edits + build clean + plan update. Next: git push for live GH Pages update (testers Ctrl+Shift+R), then more if needed (e.g. more motion in steps, post-onboard coach marks, nav polish).
+
+**Sigue con todo a todo ritmo full green light!** User: "ya estaba revisando... sigamos con el proceso de diseño... onboarding es el punto clave". Done.
 
 Last updated: Phase 1 kickoff - pushed latest (mobile chat UX + Play polished assets + gitignore) to GitHub main (060db40), triggered all CI deploys to servidor GH Pages + APK releases. Plan + BETA guide updated. Review of remote (GH repo 481+ commits history, active Actions for Pages/APK/Firebase on every main push, full docs in repo). Local vs remote in sync for code; working tree clean for tracked files. Phase 0 complete + first Phase 1 deliverable (upload to github/servidor) done. Next: user uploads AAB to Play Internal (hidden), add secret for Firebase auto, invite testers. 
 

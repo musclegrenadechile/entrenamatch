@@ -52,7 +52,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         goals: currentUser.goals || [],
         level: currentUser.level || 'Intermedio',
         intensity: currentUser.intensity || 'Moderado',
-        availability: currentUser.availability || []
+        availability: currentUser.availability || [],
+        wantsToGoLive: false
       }
     }
     return {
@@ -66,7 +67,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       goals: [],
       level: 'Intermedio',
       intensity: 'Moderado',
-      availability: []
+      availability: [],
+      wantsToGoLive: true // default excite new users with the killer live feature
     }
   });
 
@@ -92,6 +94,93 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   };
 
   const isEditingProfile = !!(currentUser && currentUser.name);
+
+  // Live updating preview card (the key onboarding improvement - user sees exactly how they will appear in Explore + live lists)
+  const renderProfilePreview = () => {
+    const d = onboardData;
+    const hasPhoto = (d.photos || []).length > 0;
+    const mainPhoto = hasPhoto ? d.photos[0] : null;
+    const previewTraining = (d.trainingTypes || []).slice(0, 2).join(' · ') || 'Entrenamiento';
+    const previewGoals = (d.goals || []).slice(0, 1);
+    const isLive = !!d.wantsToGoLive;
+    return (
+      <div className="mb-4 rounded-3xl overflow-hidden border border-[#22c55e]/30 bg-[#111113] shadow-xl">
+        <div className="relative h-36">
+          {mainPhoto ? (
+            <img src={mainPhoto} className="absolute inset-0 w-full h-full object-cover" alt="preview" />
+          ) : (
+            <div className="absolute inset-0 bg-gradient-to-br from-[#1C1C20] to-black flex items-center justify-center">
+              <div className="text-center text-[#9CA3AF]">
+                <Dumbbell className="mx-auto mb-1 opacity-50" size={28} />
+                <div className="text-xs">Sube tu primera foto para previsualizar</div>
+              </div>
+            </div>
+          )}
+          {/* Gradient overlays like real swipe cards */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/90" />
+          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 to-transparent" />
+
+          {/* LIVE badge if opted - sells the killer feature right in preview */}
+          {isLive && (
+            <div className="absolute top-2 left-2 live-pill green text-[9px] px-2 py-0.5 flex items-center gap-1" style={{animation: 'live-pulse-green 1.8s ease-in-out infinite'}}>
+              🟢 EN VIVO AHORA
+            </div>
+          )}
+          {d.level && <div className="absolute top-2 right-2 text-[9px] px-2 py-0.5 rounded-full bg-white/90 text-black font-semibold">{d.level}</div>}
+
+          {/* Bottom info overlay */}
+          <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
+            <div className="flex items-baseline gap-2">
+              <div className="font-bold text-xl tracking-tighter">{d.name || 'Tu nombre'} <span className="text-sm font-normal text-white/70">· {d.age || 26}</span></div>
+              <div className="text-xs text-white/70 ml-auto">{d.city || 'Viña del Mar'}</div>
+            </div>
+            <div className="text-xs text-white/80 line-clamp-1 mt-0.5 pr-6">{d.bio || 'Tu bio aparecerá aquí...'}</div>
+            <div className="flex flex-wrap gap-1 mt-1.5">
+              {previewTraining && <span className="text-[9px] bg-white/25 px-1.5 py-px rounded-full">{previewTraining}</span>}
+              {previewGoals.map((g: string) => <span key={g} className="text-[8px] bg-[#FF671F]/80 text-black px-1 py-px rounded-full">{g}</span>)}
+              {d.intensity && <span className="text-[8px] bg-white/20 px-1 py-px rounded">{d.intensity}</span>}
+            </div>
+          </div>
+        </div>
+        <div className="px-3 py-1.5 text-[9px] bg-[#0D0D10] text-[#22c55e] flex items-center gap-1 border-t border-[#22c55e]/20">
+          <span>👁️ Así te verán en Explorar y en el banner EN VIVO</span>
+          {isLive && <span className="ml-auto font-bold">¡Aparecerás en el radar live al terminar!</span>}
+        </div>
+      </div>
+    );
+  };
+
+  // Quick fill example data - huge for testers / fast flow (addresses "onboarding feels long")
+  const fillExampleData = () => {
+    updateOnboard({
+      name: 'Alex Rivera',
+      age: 27,
+      gender: 'hombre',
+      city: 'Viña del Mar',
+      country: 'Chile',
+      bio: 'Entreno pesas y running por la costanera. Busco gente motivada para ir constante 4-5 veces por semana. ¡Sin excusas!',
+      trainingTypes: ['Pesas/Gym', 'Running', 'Funcional'],
+      goals: ['Ganar músculo', 'Mejorar resistencia', 'Socializar y motivación'],
+      level: 'Intermedio',
+      intensity: 'Moderado',
+      availability: ['Tarde', 'Noche'],
+      wantsToGoLive: true
+    });
+    toast.success('¡Datos de ejemplo cargados!', { description: 'Ajusta lo que quieras. La preview se actualiza en vivo.' });
+  };
+
+  const suggestedBios = [
+    'Pesas 4x por semana + correr al atardecer. Busco compañero/a constante para motivarnos.',
+    'Calistenia y yoga en los cerros. Me encanta entrenar al aire libre y tomar algo después.',
+    'CrossFit y boxeo. Nivel avanzado, busco sparring serio sin excusas.',
+    'Running y pilates. Corro por la costanera 3 veces semana, ideal para sumar kms juntos.'
+  ];
+
+  const toggleAvailability = (time: string) => {
+    const curr = onboardData.availability || [];
+    const next = curr.includes(time) ? curr.filter((t: string) => t !== time) : [...curr, time];
+    updateOnboard({ availability: next });
+  };
 
   const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -147,6 +236,24 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     }
   };
 
+  // Local GPS wrapper: syncs directly to onboardData (fixes previous disconnect) + calls parent for global
+  const handleGpsRequest = () => {
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      toast.error('Tu navegador no soporta geolocalización');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        updateOnboard({ lat: latitude, lng: longitude });
+        try { requestUserLocation && requestUserLocation(); } catch {}
+        toast.success('¡Ubicación GPS actualizada!', { description: `Usando (${latitude.toFixed(2)}, ${longitude.toFixed(2)}) para matching` });
+      },
+      () => toast.error('No pudimos obtener tu ubicación GPS. Ingresa manualmente.'),
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  };
+
   const finishOnboarding = async () => {
     if (!onboardData.name || !onboardData.bio || onboardData.photos?.length === 0 || onboardData.trainingTypes?.length === 0 || (onboardData.goals?.length || 0) === 0) {
       toast.error('Faltan datos', { description: 'Nombre, bio, foto, tipos de entrenamiento y al menos un objetivo son obligatorios' });
@@ -160,6 +267,10 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     if (!allConsents) {
       toast.error('Faltan aceptaciones', { description: 'Debes aceptar todos los consentimientos para continuar' });
       return;
+    }
+    if ((onboardData.availability || []).length === 0) {
+      // soft default instead of hard block
+      updateOnboard({ availability: ['Tarde'] });
     }
 
     // Preserve any extra fields the user may have (e.g. verificationStatus) when editing
@@ -179,7 +290,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       goals: onboardData.goals || [],
       level: onboardData.level!,
       intensity: onboardData.intensity || 'Moderado',
-      availability: onboardData.availability!.length ? onboardData.availability! : ['Tarde'],
+      availability: (onboardData.availability || []).length ? onboardData.availability : ['Tarde'],
+      // Spark the killer live feature immediately if user opted in onboarding (or default for new)
+      ...(onboardData.wantsToGoLive ? {
+        trainingNow: true,
+        trainingNowSince: Date.now(),
+        liveStreak: (currentUser?.liveStreak || 0) + 1,
+        lastLiveDate: Date.now()
+      } : {}),
       legalConsents: {
         acceptedAt: Date.now(),
         termsVersion: 'v1.1',
@@ -197,10 +315,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       setShowOnboarding(false);
       setOnboardingStep(0);
 
+      const liveDesc = onboardData.wantsToGoLive ? ' ¡Estás EN VIVO ahora — otros te verán en el banner!' : ' Activa "Entrenando ahora" en Perfil para aparecer en vivo.';
       toast.success(isEditingProfile ? '¡Perfil actualizado!' : '¡Perfil creado!', { 
         description: isEditingProfile 
           ? 'Los cambios se guardaron y sincronizaron con el backend real.' 
-          : 'Bienvenido a EntrenaMatch. ¡Explora y encuentra tu compañero de entrenamiento!' 
+          : ('Bienvenido a EntrenaMatch. ¡El Spark del Movimiento!' + liveDesc)
       });
     } catch (err) {
       console.error('Error guardando perfil en onboarding:', err);
@@ -222,19 +341,41 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           </div>
         </div>
 
-        <div className="mb-6">
-          <div className="text-3xl font-semibold tracking-tighter leading-none mb-2">
-            {isEditingProfile ? 'Edita tu perfil' : 'Crea tu perfil'}
+        <div className="mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-3xl font-semibold tracking-tighter leading-none mb-1">
+                {isEditingProfile ? 'Edita tu perfil' : 'Crea tu perfil'}
+              </div>
+              <div className="text-[#9CA3AF] text-sm">El Spark del Movimiento • Conecta + entrena en vivo cerca</div>
+            </div>
+            {!isEditingProfile && (
+              <button onClick={fillExampleData} className="text-[10px] px-3 py-1 rounded-2xl border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10">Rellenar ejemplo</button>
+            )}
           </div>
-          <div className="text-[#9CA3AF]">Conecta con personas que entrenan cerca de ti en todo el mundo</div>
         </div>
 
-        {/* Progress */}
-        <div className="flex gap-2 mb-4">
-          {[0,1,2,3,4].map(i => (
-            <div key={i} className={`step-dot ${i <= onboardingStep ? 'active' : ''}`} />
-          ))}
+        {/* Progress - clearer labels + step count */}
+        <div className="mb-3">
+          <div className="flex items-center justify-between text-xs mb-1.5 px-0.5">
+            <div className="font-medium text-[#FF671F]">Paso {onboardingStep + 1} de 5</div>
+            <div className="text-[#9CA3AF]">
+              {onboardingStep === 0 && 'Info básica + disponibilidad'}
+              {onboardingStep === 1 && 'Tus fotos (principal primero)'}
+              {onboardingStep === 2 && 'Tipos de entreno + objetivos'}
+              {onboardingStep === 3 && 'Nivel e intensidad'}
+              {onboardingStep === 4 && 'Consentimientos + preview final'}
+            </div>
+          </div>
+          <div className="flex gap-2">
+            {[0,1,2,3,4].map(i => (
+              <div key={i} className={`step-dot flex-1 ${i <= onboardingStep ? 'active' : ''}`} style={i <= onboardingStep ? {width: 'auto', minWidth: 28} : {}} />
+            ))}
+          </div>
         </div>
+
+        {/* LIVE PREVIEW - ALWAYS VISIBLE, updates in real-time as user types/selects. THIS IS THE KEY IMPROVEMENT for onboarding. */}
+        {renderProfilePreview()}
 
         {/* Scrollable step content */}
         <div className="flex-1 overflow-auto -mx-1 px-1 pb-8 min-h-0">
@@ -292,22 +433,51 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 </div>
               </div>
               <button 
-                onClick={requestUserLocation}
+                onClick={handleGpsRequest}
                 className="mt-3 w-full text-sm flex items-center justify-center gap-2 py-2.5 rounded-2xl border border-[#FF671F] text-[#FF671F] active:bg-[#FF671F] active:text-black"
               >
                 <MapPin size={16} /> Usar mi ubicación actual (GPS)
               </button>
+              {onboardData.lat && onboardData.lng && (
+                <div className="text-[10px] text-[#22c55e] mt-1 text-center">✓ GPS capturado para tu perfil</div>
+              )}
             </div>
 
-            {/* Bio - required field */}
+            {/* Bio - required field + examples + counter */}
             <div>
-              <label className="text-sm text-[#9CA3AF] mb-1.5 block font-medium">Cuéntanos un poco sobre ti (bio)</label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-sm text-[#9CA3AF] font-medium">Cuéntanos un poco sobre ti (bio) — obligatorio</label>
+                <span className="text-[10px] text-[#9CA3AF]">{(onboardData.bio || '').length}/180</span>
+              </div>
               <textarea 
                 value={onboardData.bio || ''} 
-                onChange={e => updateOnboard({ bio: e.target.value })}
-                className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3 h-20 resize-y text-sm focus:border-[#FF671F] focus:outline-none"
-                placeholder="Me encanta entrenar pesas y salir a correr por la costanera los fines de semana..."
+                onChange={e => updateOnboard({ bio: e.target.value.slice(0,180) })}
+                className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3 h-16 resize-y text-sm focus:border-[#FF671F] focus:outline-none"
+                placeholder="Ej: Pesas + correr. Busco compañero constante..."
               />
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {suggestedBios.map((b, idx) => (
+                  <button key={idx} onClick={() => updateOnboard({ bio: b })} className="text-[9px] px-2 py-0.5 rounded-full border border-[#2F2F35] bg-[#1C1C20] text-[#9CA3AF] active:bg-[#25252A] active:text-white">
+                    {b.slice(0,38)}...
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Availability - now collected in onboarding (key filter for "disponibles ahora") */}
+            <div>
+              <label className="text-sm text-[#9CA3AF] mb-1.5 block font-medium">¿Cuándo sueles estar disponible para entrenar?</label>
+              <div className="flex gap-2">
+                {['Mañana','Tarde','Noche'].map(t => {
+                  const sel = (onboardData.availability || []).includes(t);
+                  return (
+                    <button key={t} onClick={() => toggleAvailability(t)} className={`flex-1 py-2 rounded-2xl text-sm border ${sel ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#2F2F35] bg-[#1C1C20]'}`}>
+                      {t}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-[10px] text-[#9CA3AF] mt-1">Se usa para el filtro "Disponibles ahora" y matching.</p>
             </div>
           </div>
         )}
@@ -321,18 +491,26 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             </div>
             <div className="grid grid-cols-3 gap-3 mb-4">
               {(onboardData.photos || []).map((photo: string, idx: number) => (
-                <div key={idx} className="relative aspect-[4/3] rounded-2xl overflow-hidden bg-[#1C1C20] border border-[#2F2F35]">
+                <div key={idx} className="relative aspect-[3/3.2] rounded-2xl overflow-hidden bg-[#1C1C20] border border-[#2F2F35]">
                   <img src={photo} className="w-full h-full object-cover" alt="" />
                   <button onClick={() => removeOnboardPhoto(idx)} className="absolute top-2 right-2 bg-black/70 p-1.5 rounded-full active:bg-black">
                     <Trash2 size={15} />
                   </button>
                   {idx === 0 && (
-                    <div className="absolute bottom-2 left-2 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded">Principal</div>
+                    <div className="absolute bottom-2 left-2 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded">Principal (la que ven primero)</div>
+                  )}
+                  {idx > 0 && (
+                    <button onClick={() => {
+                      const photos = [...(onboardData.photos || [])];
+                      const [moved] = photos.splice(idx, 1);
+                      photos.unshift(moved);
+                      updateOnboard({ photos });
+                    }} className="absolute bottom-2 right-2 bg-black/70 text-[9px] px-1.5 py-0.5 rounded active:bg-black">Hacer principal</button>
                   )}
                 </div>
               ))}
               {(onboardData.photos || []).length < 6 && (
-                <label className="aspect-[4/3] border-2 border-dashed border-[#2F2F35] rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-[#1C1C20] active:bg-[#25252A]">
+                <label className="aspect-[3/3.2] border-2 border-dashed border-[#2F2F35] rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-[#1C1C20] active:bg-[#25252A]">
                   <Camera className="mb-2 text-[#FF671F]" />
                   <span className="text-xs text-[#9CA3AF]">Agregar foto</span>
                   <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
@@ -343,14 +521,14 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <button
                   type="button"
                   onClick={takeNativePhoto}
-                  className="aspect-[4/3] border-2 border-[#FF671F] text-[#FF671F] rounded-2xl flex flex-col items-center justify-center text-xs active:bg-[#FF671F]/10"
+                  className="aspect-[3/3.2] border-2 border-[#FF671F] text-[#FF671F] rounded-2xl flex flex-col items-center justify-center text-xs active:bg-[#FF671F]/10"
                 >
                   <Camera className="mb-1" />
                   Cámara del teléfono
                 </button>
               )}
             </div>
-            <p className="text-[10px] text-[#9CA3AF]">Usa fotos recientes donde se te vea bien y con buena luz.</p>
+            <p className="text-[10px] text-[#9CA3AF]">Usa fotos recientes con buena luz. La primera es la que aparece en swipe y live cards. Toca "Hacer principal" para reordenar.</p>
           </div>
         )}
 
@@ -466,7 +644,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           </div>
         )}
 
-        {/* Step 4: Consents - Clean, trustworthy checkboxes */}
+        {/* Step 4: Consents + LIVE OPT-IN (sells the killer "Entrenando Ahora" feature as the exciting closer) */}
         {onboardingStep === 4 && (
           <div className="space-y-4">
             <div>
@@ -489,9 +667,26 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <span className="text-sm leading-snug">{item.label}</span>
               </label>
             ))}
+
+            {/* THE KEY SELL: Opt-in to live right here in onboarding - makes the unique feature the exciting finish */}
+            <label className="flex items-start gap-3 p-4 bg-[#22c55e]/10 border border-[#22c55e]/40 rounded-2xl cursor-pointer active:bg-[#22c55e]/15">
+              <input
+                type="checkbox"
+                checked={!!onboardData.wantsToGoLive}
+                onChange={(e) => updateOnboard({ wantsToGoLive: e.target.checked })}
+                className="mt-1 w-4 h-4 accent-[#22c55e]"
+              />
+              <div className="text-sm leading-snug">
+                <span className="font-semibold text-[#22c55e]">¡Quiero aparecer EN VIVO ahora mismo!</span> <span className="text-[#9CA3AF]">(recomendado)</span><br />
+                <span className="text-xs text-[#9CA3AF]">Al terminar activaré "Entrenando ahora". La gente cerca me verá con contador de urgencia en el banner verde. ¡Es la función más fuerte de la app!</span>
+              </div>
+            </label>
+
             <p className="text-[10px] text-[#9CA3AF] mt-2">
               Al continuar aceptas nuestra <a href="/entrenamatch/privacy.html" target="_blank" className="underline">Política de Privacidad</a> y <a href="/entrenamatch/terms.html" target="_blank" className="underline">Términos de Servicio</a>.
             </p>
+
+            <div className="text-[10px] text-center text-[#22c55e] mt-1">La preview arriba muestra exactamente cómo te verán los demás (incluyendo si vas EN VIVO).</div>
           </div>
         )}
 

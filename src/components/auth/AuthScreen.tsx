@@ -130,6 +130,22 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             >
               <span>Continuar con Google (deshabilitado en demo público)</span>
             </button>
+
+            {/* Quick demo entry - lowers friction for public GH Pages visitors and beta testers reviewing the live site */}
+            <button
+              onClick={() => {
+                // Signal to parent App to create instant demo profile and skip full email + onboard (or go to light onboard)
+                // We use a custom event or parent will expose; for now use window flag + reload pattern that App listens
+                try {
+                  (window as any).__ENTRENAMATCH_QUICK_DEMO__ = true;
+                } catch {}
+                // App will detect on next render or we can toast guidance
+                window.location.reload();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3 border border-[#22c55e]/50 text-[#22c55e] rounded-2xl text-sm font-medium active:bg-[#22c55e]/10"
+            >
+              ⚡ Probar demo al instante (sin cuenta, datos de ejemplo + live)
+            </button>
           </div>
         </div>
 
@@ -139,7 +155,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
           y{' '}
           <a href="/entrenamatch/privacy.html" target="_blank" className="underline hover:text-[#FF671F]">Política de Privacidad</a>
         </p>
-        <p className="text-center text-[10px] text-[#6B7280] mt-1">v0.1.0-prealpha</p>
+        <p className="text-center text-[10px] text-[#6B7280] mt-1">v0.1.0-prealpha • Revisa el onboarding espectacular</p>
       </div>
     </div>
   );

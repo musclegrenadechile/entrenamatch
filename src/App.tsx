@@ -375,6 +375,39 @@ function App() {
   // Onboarding step state (managed here so the flow actually advances)
   const [onboardingStep, setOnboardingStepLocal] = useState(0)
 
+  // Quick demo entry from AuthScreen "⚡ Probar demo al instante" (key for public GH Pages review + lets people hit the improved onboarding fast)
+  React.useEffect(() => {
+    try {
+      if ((window as any).__ENTRENAMATCH_QUICK_DEMO__) {
+        (window as any).__ENTRENAMATCH_QUICK_DEMO__ = false;
+        const demoSeed = {
+          id: 'me' as any,
+          name: 'Demo Tester',
+          age: 28,
+          gender: 'mujer' as const,
+          city: 'Viña del Mar',
+          country: 'Chile',
+          lat: -33.0153,
+          lng: -71.5528,
+          bio: 'Demo lista para probar live + muro. Entreno pesas y running. ¡Conectemos!',
+          photos: ['https://picsum.photos/id/1011/600/800'],
+          trainingTypes: ['Pesas/Gym', 'Running'],
+          goals: ['Ganar músculo', 'Socializar y motivación'],
+          level: 'Intermedio',
+          intensity: 'Moderado',
+          availability: ['Tarde'],
+          wantsToGoLive: true
+        };
+        saveUser(demoSeed as any);
+        setTimeout(() => {
+          setShowOnboarding(true);
+          setOnboardingStepLocal(0);
+        }, 80);
+        toast.success('Demo rápido activado', { description: 'Preview en vivo + opt-in EN VIVO en el paso final. ¡La clave de la app!' });
+      }
+    } catch (e) { console.warn('quick demo', e); }
+  }, [saveUser, setShowOnboarding]); // deps safe
+
   // Auth UI state (restored for account creation)
   const [authMode, setAuthMode] = useState<'login' | 'register'>('register')
   const [authEmail, setAuthEmail] = useState('')
