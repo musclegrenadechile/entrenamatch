@@ -408,3 +408,19 @@ Live retention maxed: streaks for host/join, hot sorting by activity, stats visi
 - Test: turn live on/off in real account (no more sync error on finish). 
 
 Sigue con todo! Hard refresh to get fix.
+
+**Sigue con todo continuation (user "sigue con todo")**:
+- Optimistic joinCount bump: after real FS write for join comment, immediately patch local profilePosts[target] so liveTrainingNow (and all banners/modal/cards) update joinCount right away (no wait for poll).
+- Topbar PRE-ALPHA bar: the 🟢 X LIVE pill now appends 🔥Xd streak if *you* are currently hosting live.
+- Bottom nav Explorar: the green pulsing dot now renders small streak number (capped) inside if you are live hosting.
+- Matches cards: the 🟢 LIVE badge in top-right now includes 🔥Xd streak for the live matched person.
+- Feed global cards: owner LIVE pill now includes streak for live owners.
+- Urgent visuals: new @keyframes live-pulse-green-urgent (bigger scale + red glow). Applied to live dots in explore horizontal cards and modal radar map when seVaEnMin <10m.
+- Profile live toggle section: when trainingNow, added big line "🔥 Xd host streak + Yd join • Z total live joins recibidos" right under the "ver live cerca" link.
+- Header stats streak badge: updated to handle both host + join streaks.
+- Builds x3 clean (new hashes), committed + pushed (49c63fb), plan updated with full notes.
+Sigue con todo a todo ritmo full green light! :D
+
+Live feature is absolutely the strongest point now — streaks on every surface, optimistic real-time activity counts, urgent pulsing visuals, deep muro/feed integration. The app feels alive when people are training. Hard refresh the servidor after deploy. Test: join a live (watch count jump live in your view and others), host live (see your streak in topbar + nav dot), urgent <10m red pulse, profile stats line when live. 
+
+Next? More of the same or specific (e.g. join as group quick session from live card, streaks persist better, PWA notifs for live, etc.)? Dime y seguimos sin parar.
