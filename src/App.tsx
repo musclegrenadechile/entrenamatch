@@ -4419,6 +4419,7 @@ function App() {
                         </div>
                       )}
                       {user.joinCount > 0 && <div className="text-[10px] text-[#22c55e] mt-0.5 font-medium">+{user.joinCount} se unieron a este live</div>}
+                      {user.trainingSyncWith && <div className="text-[8px] text-[#22c55e] mt-0.5">🔄 En Sync ahora</div>}
                     </div>
                     <div className="flex flex-col gap-1 self-center">
                       <button onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); }} className="text-[10px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-3 py-1 rounded font-semibold active:brightness-90">Unirme</button>

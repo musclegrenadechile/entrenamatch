@@ -996,3 +996,12 @@ Sigue con todo full: EntrenaSync cada vez más integrado y disruptivo. Android: c
 
 ¡Error solucionado, seguimos a toda máquina!
 
+
+## Sigue con todo - badge en top bar
+
+- Añadido '??SYNC' al contador LIVE del top bar cuando syncPartnerId activo (visibilidad global de la feature).
+
+- Builds, pushes, docs al día.
+
+Sigue con todo: EntrenaSync cada vez más "top" y disruptiva. Error solucionado. Android listo para el json.
+
