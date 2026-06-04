@@ -650,13 +650,15 @@ input[type="range"]::-moz-range-thumb {
   position: absolute;
   left: 50%;
   top: 42%;
-  width: 42%;
-  height: 3px;
-  background: linear-gradient(90deg, transparent, #22c55e, #FF671F, transparent);
+  width: 46%;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, #22c55e, #FF671F, #22c55e, transparent);
+  background-size: 200% 100%;
   transform: translateX(-50%);
-  opacity: 0.65;
-  animation: tether-flow 2.4s linear infinite;
-  box-shadow: 0 0 8px rgba(34,197,94,0.6);
+  opacity: 0.75;
+  animation: tether-flow 1.8s linear infinite;
+  box-shadow: 0 0 14px rgba(34,197,94,0.7), 0 0 22px rgba(255,103,31,0.3);
+  border-radius: 2px;
 }
 @keyframes tether-flow {
   0% { background-position: 200% 0; }

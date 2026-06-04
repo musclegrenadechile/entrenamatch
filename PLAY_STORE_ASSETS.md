@@ -4,7 +4,12 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 20 / 0.1.15-login-fix. **FIX CRÍTICO REACT #310 EN LOGIN + MAPA EN SU LUGAR**: 
+**Current version for this upload**: versionCode 21 / 0.1.16-mapa-preciosa. **MAPA ULTRA PRECIOSO + RADAR SWEEP + PULSO ARENA + EXHAUSTIVE POLISH**: 
+- Mapa con marcadores foto/iniciales (precioso y personal), click a perfil, filtro cerca, radio 10km, leyenda, Centrar, radar sweep animado único, persistencia, hápticos, integración.
+- Tether Arena más vibrante y glow.
+- Combo pulsa.
+- Builds + push + versión actualizada.
+- Revisión exhaustiva continua para dejar la app preciosa en todos lados (UI, motion, estados, consistencia Dunkin, realtime feel).
 - FIX DEFINITIVO para "Minified React error #310" (useEffect count mismatch) que aparecía **al hacer login** en web (GH Pages) y afectaba también WebView de Android. Causa raíz: el useEffect del mapa (Leaflet live zones) estaba declarado en el código fuente DESPUÉS de los early returns condicionales `if (!isAuthenticated) return <AuthScreen/>` y `if (shouldShowOnboarding) return <OnboardingFlow/>`. En renders pre-login se ejecutaban N hooks y se retornaba temprano; post-login se saltaban los returns y se ejecutaba 1 hook extra (el useEffect del mapa) → React detecta "more hooks than previous render".
 - Solución: movido el useEffect del mapa a posición estable ANTES de cualquier guardia (después de liveTrainingNow useMemo y su efecto de urgencia, pero antes del `isAuthenticated` check). Todos los hooks ahora se llaman siempre en el mismo orden y conteo sin importar el estado de auth/onboarding.
 - Esto también corrige el orden de declaración para evitar TDZ en el array de dependencias.
