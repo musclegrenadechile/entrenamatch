@@ -1429,3 +1429,6 @@ Sigue con todo a toda máquina. The app is now genuinely in a league of its own.
 Dime qué priorizar primero (ej: "agrega el form photo", "actualiza la guía con test matrix", "lanza el build AAB", "dame comandos exactos para tu Samsung USB debug") y lo ejecuto ya con control total.
 
 ¡Seguimos a toda máquina! El Arena ya es lo más único del mercado; solo falta cerrar el loop de build+test+upload para que los closed lo vean. Pégame la salida de tu `adb devices` o el bug report nuevo y seguimos.
+
+
+**Sigue con todo (post visual 0.1.23)**: v0.1.24-continua-mapa (code 29). Mapa: zone pills con counts + haptic filter, high-energy markers (joins>=3 o sync) con pulse r�pido + glow + badge, tether flow anim + hover pop, help text actualizado. Perfil: vibe bars + score bar breathe anim cuando live/live-bonds. Arena orb.high m�s intenso + faster pulse. Feed live cards FOMO glow naranja si high joins. Builds: web+cap+debug-apk versionado limpio. Docs (PLAY, BETA, landing) actualizados. Push para GH Pages + Actions. Sigue ritmo.

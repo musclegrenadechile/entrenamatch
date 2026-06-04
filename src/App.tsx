@@ -4308,6 +4308,15 @@ function App() {
     return lives;
   }, [realProfiles, userLocation, isDemoMode, profilePosts]);
 
+  // Zone live counts for interactive legend (sigue con todo el mapa + visual polish iteration)
+  const zoneLiveCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    liveTrainingNow.forEach((u: any) => {
+      if (u.city) counts[u.city] = (counts[u.city] || 0) + 1
+    })
+    return counts
+  }, [liveTrainingNow])
+
   // Feed computation lifted to top-level useMemo so hook is ALWAYS called in the same order (fixes React #310 "Rendered more hooks than during the previous render" when switching tabs).
   // The previous inline IIFE inside {activeTab==='feed' && ...} was conditionally executing the useMemo hook → violation.
   const feedComputation = useMemo(() => {
@@ -4440,33 +4449,40 @@ function App() {
       try {
         const color = mapZoneColors[user.city] || mapZoneColors.default
         const shortName = (user.name || '?').split(' ')[0]
+        const highEnergy = ((user.joinCount || 0) >= 3) || !!user.trainingSyncWith || (user.syncStreak || 0) > 2
 
         // Premium personal marker: photo if available, else nice initials badge + name label.
         // Makes the map feel alive and social (the "preciosa" part).
+        // High-energy (FOMO joins or in-Sync): stronger glow ring + faster pulse (disruptive live feel).
         let iconHtml: string
         const photo = user.photos && user.photos[0]
+        const glow = highEnergy ? `0 0 0 3px ${color}55, 0 0 10px ${color}88` : '0 0 0 2px rgba(255,255,255,0.9)'
+        const borderW = highEnergy ? '3px' : '2.5px'
+        const pulseExtra = highEnergy ? ' animation-duration:1.1s; filter: saturate(1.15) brightness(1.05);' : ''
         if (photo) {
           iconHtml = `
-            <div style="position:relative;width:34px;height:34px">
-              <div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2.5px solid ${color};box-shadow:0 0 0 2px rgba(255,255,255,0.9), 0 2px 6px rgba(0,0,0,0.4)">
+            <div style="position:relative;width:36px;height:36px">
+              <div style="width:36px;height:36px;border-radius:9999px;overflow:hidden;border:${borderW} solid ${color};box-shadow:${glow}, 0 2px 6px rgba(0,0,0,0.4);${pulseExtra}">
                 <img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='${color}';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px\\'>${shortName.slice(0,2).toUpperCase()}</div>'" />
               </div>
               <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
+              ${highEnergy ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:9999px;background:${color};box-shadow:0 0 6px ${color};border:1.5px solid #111"></div>` : ''}
             </div>`
         } else {
           const initials = shortName.slice(0, 2).toUpperCase()
           iconHtml = `
-            <div style="position:relative;width:34px;height:34px">
-              <div style="width:34px;height:34px;border-radius:9999px;background:${color};border:2.5px solid #fff;box-shadow:0 0 0 2px rgba(255,255,255,0.3),0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px">${initials}</div>
+            <div style="position:relative;width:36px;height:36px">
+              <div style="width:36px;height:36px;border-radius:9999px;background:${color};border:${borderW} solid #fff;box-shadow:${glow},0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px;${pulseExtra}">${initials}</div>
               <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
+              ${highEnergy ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:9999px;background:#fff;box-shadow:0 0 6px #fff;border:1.5px solid ${color}"></div>` : ''}
             </div>`
         }
 
         const customIcon = L.divIcon({
-          className: 'entrenamatch-marker',
+          className: `entrenamatch-marker${highEnergy ? ' high-energy' : ''}`,
           html: iconHtml,
-          iconSize: [38, 46],
-          iconAnchor: [19, 23],
+          iconSize: [40, 48],
+          iconAnchor: [20, 24],
           popupAnchor: [0, -24]
         })
 
@@ -5028,7 +5044,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
-          <span className="text-white/90 text-[11px]">Real backend • v0.1.23-visual-polish</span>
+          <span className="text-white/90 text-[11px]">Real backend • v0.1.24-continua-mapa</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -5153,7 +5169,7 @@ function App() {
             {liveTrainingNow.length > 0 ? (
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {liveTrainingNow.slice(0, 4).map(user => (
-                  <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className="min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border border-[#22c55e]/70 active:scale-95 relative overflow-hidden shadow-lg shadow-[#22c55e]/10" whileHover={{ scale: 1.04, y: -2, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(34 197 94 / 0.2)' }} whileTap={{ scale: 0.96 }} initial={{ opacity: 0.85, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+                  <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className={`min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border active:scale-95 relative overflow-hidden shadow-lg shadow-[#22c55e]/10 ${ (user.joinCount||0) >= 3 ? 'border-[#FF671F]/60 shadow-[0_0_0_1px_#FF671F] animate-[pulse_2s_ease-in-out_infinite]' : 'border-[#22c55e]/70' }`} whileHover={{ scale: 1.04, y: -2, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(34 197 94 / 0.2)' }} whileTap={{ scale: 0.96 }} initial={{ opacity: 0.85, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
                     <div className="flex justify-between items-start mb-1">
                       <div className="flex items-center gap-1">
                         {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-5 h-5 rounded-full object-cover border-2 border-[#22c55e]/60 ring-1 ring-[#22c55e]/20" />}
@@ -5230,7 +5246,7 @@ function App() {
                     className="w-full h-[340px] rounded-2xl overflow-hidden border border-[#22c55e]/30 bg-[#0a0a0c] shadow-inner"
                     style={{ zIndex: 1 }}
                   />
-                  {/* Live badge + near filter */}
+                  {/* Live badge + near filter (counts respect current filters + legend selection) */}
                   <div className="absolute bottom-2 right-2 flex items-center gap-1 z-30">
                     <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                       🟢 {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && (u.distance||999)<10)) && (!selectedMapZone || u.city === selectedMapZone)).length} en vivo • realtime
@@ -5262,24 +5278,32 @@ function App() {
                     Centrar
                   </button>
 
-                  {/* Small zone legend (top left, subtle) - now interactive: click to filter map to zone (sigue con todo el mapa) */}
-                  <div className="absolute top-2 left-2 text-[7px] bg-black/70 text-white/90 px-1.5 py-0.5 rounded flex flex-col gap-0.5 leading-none z-30" style={{fontSize:'7.5px'}}>
+                  {/* Enhanced interactive zone legend (sigue con todo el mapa): colorful live pills with counts, hover pop, active ring/glow. Makes map feel premium + alive. */}
+                  <div className="absolute top-2 left-2 z-30 flex flex-col gap-1">
                     {['Viña del Mar', 'Santiago', 'Valparaíso', 'Concon'].map(city => {
                       const col = mapZoneColors[city] || mapZoneColors.default
                       const isActive = selectedMapZone === city
+                      const cnt = zoneLiveCounts[city] || 0
                       return (
-                        <div 
-                          key={city} 
-                          onClick={() => setSelectedMapZone(isActive ? null : city)}
-                          className={`cursor-pointer flex items-center gap-1 ${isActive ? 'font-bold underline' : 'hover:opacity-80'}`}
-                          style={{color: col}}
+                        <button
+                          key={city}
+                          onClick={() => { try { triggerHaptic('light') } catch {}; setSelectedMapZone(isActive ? null : city) }}
+                          className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-medium border transition-all active:scale-[0.96] ${isActive ? 'ring-1 ring-white/70 shadow-md scale-[1.02]' : 'hover:scale-[1.03] opacity-90 hover:opacity-100'}`}
+                          style={{ 
+                            background: isActive ? `${col}22` : 'rgba(0,0,0,0.65)', 
+                            borderColor: isActive ? col : 'rgba(255,255,255,0.15)',
+                            color: col 
+                          }}
+                          title={cnt > 0 ? `${cnt} entrenando en ${city}` : `Sin live ahora en ${city}`}
                         >
-                          ● {city.split(' ')[0]}
-                        </div>
+                          <span className="inline-block w-1.5 h-1.5 rounded-full" style={{background: col}} />
+                          <span className="font-semibold tracking-[-0.2px]">{city.split(' ')[0]}</span>
+                          {cnt > 0 && <span className="ml-0.5 text-[8px] px-1 rounded bg-white/10 text-white/80 font-mono tabular-nums">{cnt}</span>}
+                        </button>
                       )
                     })}
                     {selectedMapZone && (
-                      <div onClick={() => setSelectedMapZone(null)} className="text-[6px] text-white/60 mt-0.5 cursor-pointer">✕ todas</div>
+                      <button onClick={() => { try { triggerHaptic('light') } catch {}; setSelectedMapZone(null) }} className="text-[7px] text-white/50 hover:text-white/80 px-1 py-px self-start active:opacity-70">✕ todas las zonas</button>
                     )}
                   </div>
 
@@ -5312,11 +5336,9 @@ function App() {
               )}
               {showLiveMap && (
                 <div className="mt-1 text-[8px] text-[#9CA3AF] px-1 flex items-center gap-2">
-                  Marcadores con foto o iniciales. Click en punto = perfil completo. Tamaño = joins (FOMO). 
-                  <span className="text-[#FF671F]">Líneas discontinuas</span> = pares en Sync ahora (toque disruptivo).
-                  <span className="text-[#22c55e]/60">•</span> 
-                  <span className="text-[#3b82f6]">●</span> = tú (con radio 10km).
-                  Legend interactivo: toca zona para filtrar mapa.
+                  Foto/iniciales. Pulsos más rápidos + anillo glow = alta energía (3+ joins o en Sync). 
+                  <span className="text-[#FF671F]">Líneas fluyendo</span> = pares EntrenaSync (único). 
+                  <span className="text-[#3b82f6]">●</span> = tú. Legend: toca pastilla zona para filtrar (cuenta live).
                 </div>
               )}
             </div>
@@ -6991,7 +7013,7 @@ function App() {
                       <span className="text-[#9CA3AF]">Vibe Score</span>
                       <span className="font-black text-[#FF671F] text-lg tabular-nums">{vibe}</span>
                       <div className="w-16 h-1.5 bg-white/10 rounded overflow-hidden ml-2">
-                        <div className="h-1.5 bg-gradient-to-r from-[#FF671F] to-[#FF4F79] transition-all" style={{width: `${vibe}%`}} />
+                        <div className={`h-1.5 bg-gradient-to-r from-[#FF671F] to-[#FF4F79] transition-all ${liveBondBonus > 0 || currentUser.trainingNow ? 'vibe-bar-live' : ''}`} style={{width: `${vibe}%`}} />
                       </div>
                       {liveBondBonus > 0 && <span className="ml-1 text-[8px] text-[#22c55e] animate-pulse">+{liveBondBonus} live bonds 🔥</span>}
                     </div>
@@ -7014,7 +7036,7 @@ function App() {
                     ].map((bar, i) => (
                       <div key={i} className="flex-1 flex flex-col items-center">
                         <div className="w-full bg-white/10 rounded-t overflow-hidden" style={{height: `${Math.max(4, bar.val / 2)}px`}}>
-                          <div className="h-full bg-gradient-to-t from-[#FF671F] to-[#FF4F79] transition-all duration-300" style={{height: '100%', width: '100%'}} />
+                          <div className={`h-full bg-gradient-to-t from-[#FF671F] to-[#FF4F79] transition-all duration-300 ${currentUser.trainingNow ? 'vibe-bar-live' : ''}`} style={{height: '100%', width: '100%'}} />
                         </div>
                         <div className="text-[6px] text-[#9CA3AF] mt-0.5 leading-none">{bar.label}</div>
                       </div>
@@ -7902,7 +7924,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.23-visual-polish • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.24-continua-mapa • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8129,7 +8151,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.23-visual-polish • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.24-continua-mapa • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>

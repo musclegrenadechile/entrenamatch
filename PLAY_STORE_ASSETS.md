@@ -148,7 +148,24 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 ---
 
 ## What's new (for this Pre-Alpha release, short & punchy)
-**v0.1.15-login-fix + mapa (versionCode 20) — FIX #310 LOGIN + MAPA EN VIVO PRECIOSO (fotos/iniciales, radio personal, filtros, click a perfil)**
+**v0.1.24-continua-mapa (code 29) — SIGUE CON TODO: MAPA MÁS VIVO + POLISH PRECIOSO (high-energy markers, legend con counts, tethers fluyendo, vibe breathe, orb espectacular)**
+• **Mapa ultra vivo**: pastillas de zona coloreadas con conteo live realtime (al filtrar actualiza todo). Marcadores high-energy (3+ joins o en Sync): pulso más rápido + glow anillo + badge extra. Tethers con animación de flujo (se sienten conectados). Leyenda interactiva premium con hover/active pop + haptic. Badge de conteo filtra correctamente. Ayuda actualizada. Sigue con todo el mapa.
+• Perfil más vivo: Vibe Score bar y barras de historial ahora "respiran" (animación breathe) cuando estás live o tienes live bonds activos. +12 live bonds ya tenía pulse, ahora todo el stack vibe se siente dinámico.
+• Arena: energy-orb.high más espectacular (glow naranja-rosa más intenso, pulso más rápido + saturate cuando >80 vibe).
+• Tethers mapa: animación flow + hover más grueso/brillante.
+• Feed live cards: los de alta FOMO (joins>=3) ahora tienen borde glow naranja + pulse sutil.
+• Versión 0.1.24-continua-mapa (code 29). Build limpia + APK debug fresco listo para adb.
+• Todo el pipeline: web GH Pages, Android AAB/debug, docs actualizados. Sigue con todo ritmo.
+
+**v0.1.23-visual-polish (versionCode 28) — REVISIÓN COMPLETA ESTÉTICA VISUAL + UX (app preciosa)**
+• Revisión exhaustiva de toda la estética: top bar más limpio y consistente, live pill/banner/strip/cards con lifts hovers scales glows activos, Explore/Perfiles/Feed/Muro/Arena/Mapa con hover:-translate-y-1.5 + active:scale-[0.985] + transiciones suaves + haptics en casi todos botones/acciones. 
+• Fotos de muro/feed más cinematográficas (gradientes overlays elegantes + brillo hover). Reacciones persistentes reales + FOMO joins en posts live. 
+• Perfil: hero live pulse fuerte, galería con scale en hover, vibe bars, live bonds +X animado, historial 5 barras, legends EN VIVO. 
+• Arena ritual: botones de acción con active:scale-90 + glow, tether flow, orb reacciona. Empty states más grandes y con CTA atractivos. 
+• Mapa: interactive legend hover/active, radar, tethers, centrar, near, GPS overlay. Consistencia Dunkin #FF671F/#FF4F79 en todo.
+• Geo robusto sin crash, mapa pressable, todo hooks estables. APK + web actualizados. "Sigue con todo" entregado.
+
+**Anterior (base v0.1.15-login-fix + mapa...):**
 • FIX REACT #310 en login resuelto (hook del mapa movido antes de guards de auth/onboarding). Estable y a prueba de transiciones.
 • **Mapa mejorado fuertemente** (sigue con el mapa): marcadores personales con foto real o iniciales bonitas + nombre (se siente vivo y "precioso"). Click en marcador abre perfil completo. Botón "Ver perfil" + "Unirme" en popups. Filtro "Solo cerca de mí (10km)" con toggle. Círculo de radio personal alrededor de tu posición. Leyenda de zonas. Botón Centrar. Persistencia de preferencia de mapa abierto. Hápticos en interacciones. Limpieza robusta (sin leaks). Auto GPS al abrir. Popups premium. Integración (tocar LIVE count abre mapa).
 • Todo con el mismo realtime Firestore, GPS Capacitor, sync directo a Arena.

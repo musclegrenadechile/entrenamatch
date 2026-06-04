@@ -434,6 +434,14 @@ input[type="range"]::-moz-range-thumb {
   50% { opacity: 0.65; transform: scale(1.2); box-shadow: 0 0 16px rgba(239, 68, 68, 0.95); }
 }
 
+@keyframes vibe-breathe {
+  0%, 100% { opacity: 0.95; filter: brightness(1); }
+  50% { opacity: 1; filter: brightness(1.15); }
+}
+.vibe-bar-live {
+  animation: vibe-breathe 2.2s ease-in-out infinite;
+}
+
 /* Stat pills for profile / matches */
 .stat-pill {
   background: var(--fit-card2);
@@ -650,12 +658,17 @@ input[type="range"]::-moz-range-thumb {
   position: relative;
 }
 .energy-orb.high {
-  box-shadow: 0 0 48px rgba(255,103,31,0.85), 0 0 95px rgba(255,79,121,0.5), inset 0 -12px 18px rgba(0,0,0,0.5);
-  animation: orb-pulse 1.6s ease-in-out infinite;
+  box-shadow: 0 0 58px rgba(255,103,31,0.95), 0 0 120px rgba(255,79,121,0.65), inset 0 -12px 18px rgba(0,0,0,0.5);
+  animation: orb-pulse-high 1.1s ease-in-out infinite;
+  filter: saturate(1.2) brightness(1.08);
 }
 @keyframes orb-pulse {
   0%,100% { transform: scale(1); }
   50% { transform: scale(1.035); }
+}
+@keyframes orb-pulse-high {
+  0%,100% { transform: scale(1); }
+  45% { transform: scale(1.08); }
 }
 
 .sync-tether {
@@ -827,12 +840,20 @@ input[type="range"]::-moz-range-thumb {
   border: none;
   animation: marker-live-pulse 2.5s ease-in-out infinite;
 }
+.entrenamatch-marker.high-energy {
+  animation: marker-live-pulse-high 1.15s ease-in-out infinite;
+  filter: saturate(1.1) brightness(1.03);
+}
 .entrenamatch-marker img {
   image-rendering: -webkit-optimize-contrast;
 }
 @keyframes marker-live-pulse {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.04); }
+}
+@keyframes marker-live-pulse-high {
+  0%, 100% { transform: scale(1); }
+  45% { transform: scale(1.09); }
 }
 
 /* Radar sweep effect for the live training map - makes it feel alive and "preciosa" / unique */
@@ -846,11 +867,16 @@ input[type="range"]::-moz-range-thumb {
   stroke-width: 2.5;
   stroke-opacity: 0.65;
   stroke-dasharray: 5,8;
-  transition: stroke-opacity 0.2s;
+  transition: stroke-opacity 0.2s, stroke-width 0.2s;
+  animation: tether-flow 1.6s linear infinite;
 }
 .map-sync-tether:hover {
-  stroke-opacity: 0.9;
-  stroke-width: 3;
+  stroke-opacity: 0.95;
+  stroke-width: 3.5;
+}
+@keyframes tether-flow {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -26; }
 }
 
 /* Interactive map legend polish for "sigue con todo el mapa" */

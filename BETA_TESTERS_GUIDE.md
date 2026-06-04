@@ -77,6 +77,16 @@ Uso:
   - Reacciones ahora persistentes reales en Firestore (map emoji -> userIds[], toggle, sync cross-device y reloads).
   - FOMO en posts live ("entrenando ahora"): sección "🔥 X se unieron • FOMO real" con llamado a unirse. Los joins se persisten como comments en el post del live.
 - **Global polish**: más active:scale/transitions/haptics/glows en botones y live elements, empty states mejorados con iconos motivadores, consistencia visual en toda la app. Revisión exhaustiva continua para que se sienta preciosa y única.
+
+**NUEVO (v0.1.24-continua-mapa, code 29)** — SIGUE CON TODO MAPA + VIVO:
+- Mapa: pastillas de zona ahora son botones bonitos con color + conteo live (ej. 2) que actualizan el filtro y badge. Toca para filtrar, cuenta cambia en realtime.
+- Marcadores high-energy (FOMO o ritual): pulso rápido + glow + puntito de energía. Se ven "calientes".
+- Tethers: ahora fluyen con animación dash (se sienten vivos conectados), hover más impactante.
+- Perfil: las barras de Vibe Score e historial "respiran" (breathe anim) cuando estás live o tienes bonds en vivo. +live bonds ya pulsaba.
+- Arena orb: cuando high, glow más potente naranja-rosa + pulso rápido + saturate.
+- Live cards en explore: los que tienen 3+ joins ahora glow naranja + borde FOMO.
+- Todo con builds limpios, APK debug versionado fresco (EntrenaMatch-debug-continua-mapa-0.1.24-....apk), web deploy via push.
+- Prueba especialmente: abre mapa, toca legend zonas, activa GPS, ve conteos, mira si alguien en sync aparece con tether fluyendo y marker high, activa live en perfil y observa breathe en vibe bars. Hápticos + lifts en todo.
   - Marcadores con pulso sutil (vivos).
   - Radar sweep animado premium en el contenedor.
   - Tether en Arena más vibrante y glow fuerte.
