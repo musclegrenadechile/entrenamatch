@@ -1,5 +1,15 @@
 // @ts-nocheck
 import { useState, useEffect, useMemo, useCallback, useRef, Component, type ReactNode, type ChangeEvent } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+
+// Fix Leaflet default icons for bundlers
+delete (L.Icon.Default.prototype as any)._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+})
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, MessageCircle, User, MapPin, Dumbbell, 
@@ -357,6 +367,7 @@ function App() {
   const [feedSearch, setFeedSearch] = useState('')
   const [feedOnlyReal, setFeedOnlyReal] = useState(false)
   const [feedOnlyLive, setFeedOnlyLive] = useState(false)
+  const [showLiveMap, setShowLiveMap] = useState(false)
   const [feedMaxProfiles, setFeedMaxProfiles] = useState(15)
   const [feedDisplayLimit, setFeedDisplayLimit] = useState(10)
   const [showLiveModal, setShowLiveModal] = useState(false)
@@ -1445,6 +1456,96 @@ function App() {
       setCommentDraft('')
     }
   }, [showFullProfile])
+
+  // Real-time Live Map (viable with Leaflet + real geo)
+  const liveMapRef = useRef<HTMLDivElement>(null)
+  const mapInstanceRef = useRef<any>(null)
+  const markersRef = useRef<any[]>([])
+
+  useEffect(() => {
+    if (!showLiveMap || !liveMapRef.current) return
+
+    // Init map once
+    if (!mapInstanceRef.current) {
+      mapInstanceRef.current = L.map(liveMapRef.current, {
+        zoomControl: true,
+        attributionControl: false
+      }).setView([-33.0, -71.5], 10) // Center Chile approx
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+      }).addTo(mapInstanceRef.current)
+    }
+
+    // Clear old markers
+    markersRef.current.forEach(m => mapInstanceRef.current.removeLayer(m))
+    markersRef.current = []
+
+    // Get current live users with valid coords
+    const liveUsers = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow)
+
+    // Group by approximate zone (city or rough area)
+    const zoneColors: Record<string, string> = {
+      'Viña del Mar': '#22c55e',
+      'Santiago': '#FF671F',
+      'Valparaíso': '#3b82f6',
+      'Concon': '#a855f7',
+      default: '#eab308'
+    }
+
+    liveUsers.forEach(user => {
+      const color = zoneColors[user.city] || zoneColors.default
+      const marker = L.circleMarker([user.lat, user.lng], {
+        radius: 8 + Math.min((user.joinCount || 0) * 0.5, 6),
+        fillColor: color,
+        color: '#fff',
+        weight: 2,
+        fillOpacity: 0.85
+      }).addTo(mapInstanceRef.current)
+
+      const popupContent = `
+        <div style="min-width:160px">
+          <strong>${user.name}</strong><br/>
+          <span style="color:#22c55e">🟢 En vivo</span> • ${user.seVaEnMin || '?'} min aprox<br/>
+          ${userLocation ? `${user.distance.toFixed(1)} km de ti` : ''}<br/>
+          <button id="join-${user.id}" style="margin-top:6px;padding:4px 10px;background:#22c55e;color:black;border:none;border-radius:6px;font-size:12px">Unirme a su vibe →</button>
+        </div>
+      `
+      marker.bindPopup(popupContent)
+
+      marker.on('popupopen', () => {
+        setTimeout(() => {
+          const btn = document.getElementById(`join-${user.id}`)
+          if (btn) {
+            btn.onclick = () => {
+              mapInstanceRef.current.closePopup()
+              // Trigger join flow
+              if (user.trainingNow) {
+                // Simulate or call start
+                startSyncWith(user.id, user.name).catch(() => {})
+              }
+            }
+          }
+        }, 50)
+      })
+
+      markersRef.current.push(marker)
+    })
+
+    // Fit bounds if users
+    if (liveUsers.length > 0) {
+      const group = L.featureGroup(markersRef.current)
+      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.2))
+    }
+
+    return () => {
+      // Cleanup markers when hiding map (keep instance for perf)
+      if (!showLiveMap && mapInstanceRef.current) {
+        markersRef.current.forEach(m => mapInstanceRef.current.removeLayer(m))
+        markersRef.current = []
+      }
+    }
+  }, [showLiveMap, liveTrainingNow, userLocation]) // re-render markers when data changes (real-time)
 
   // Auto-load global feed when entering the new Feed tab
   useEffect(() => {
@@ -4808,6 +4909,44 @@ function App() {
             <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between items-center">
               <span>¡Urgencia real! Toca para ver o únete antes de que se vayan. Nadie lo tiene tan bien.</span>
               <button onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline active:text-white">Ver todos live →</button>
+            </div>
+
+            {/* NEW: Real-time Map of people training live (viable with Leaflet + real geo) */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1.5 px-1">
+                <div className="text-[10px] font-semibold text-[#22c55e] flex items-center gap-1.5">
+                  🗺️ Mapa en tiempo real
+                  <span className="text-[8px] bg-[#22c55e]/20 px-1.5 rounded">BETA</span>
+                </div>
+                <button 
+                  onClick={() => setShowLiveMap(!showLiveMap)} 
+                  className={`text-xs px-3 py-1 rounded-full border transition ${showLiveMap ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
+                >
+                  {showLiveMap ? 'Ocultar mapa' : 'Ver mapa por zonas'}
+                </button>
+              </div>
+
+              {showLiveMap && (
+                <div className="relative">
+                  <div 
+                    ref={liveMapRef} 
+                    className="w-full h-[320px] rounded-2xl overflow-hidden border border-[#22c55e]/20 bg-[#0a0a0c]"
+                    style={{ zIndex: 1 }}
+                  />
+                  <div className="absolute bottom-2 right-2 text-[8px] bg-black/70 text-[#22c55e] px-2 py-0.5 rounded-full">
+                    {liveTrainingNow.length} entrenando • actualiza en vivo
+                  </div>
+                  {!userLocation && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-center p-4 rounded-2xl text-xs">
+                      Activa tu ubicación real para ver distancias precisas en el mapa
+                      <button onClick={requestUserLocation} className="ml-2 underline text-[#22c55e]">Activar GPS</button>
+                    </div>
+                  )}
+                </div>
+              )}
+              {showLiveMap && liveTrainingNow.length > 0 && (
+                <div className="mt-1 text-[8px] text-[#9CA3AF] px-1">Zonas aproximadas por ciudad. Los puntos crecen con más joins. Toca para unirte.</div>
+              )}
             </div>
           </div>
         )}
