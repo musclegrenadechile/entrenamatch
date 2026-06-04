@@ -1104,3 +1104,31 @@ El encabezado del feed ahora se ve bien y usable en horizontal.
 - Builds OK.
 
 Ahora los encabezados de nivel en perfil se ven cuadrados, alineados y visualmente correctos.
+
+## Fix: Unirse a EntrenaSync se veía pobre + spam en clicks
+
+- Problema reportado:
+  - Al presionar "Unirme" (o "Unirme + EntrenaSync ??") en teasers/live cards, la UI se veía muy pobre. "Presionas pero no lleva a ningún lado" (sin feedback visual atractivo, sin transición clara a la experiencia de sync).
+  - Si presionabas más de una vez ? spam (múltiples posts "¡Sincronizado!", múltiples toasts, múltiples llamadas).
+
+- Fixes implementados:
+  - Nuevo estado `joiningSyncWith` (string | null) para tracking de "estoy iniciando sync con este user".
+  - Botones de join ahora:
+    - Se deshabilitan mientras `joiningSyncWith === user.id`
+    - Cambian visualmente a "? Iniciando Sync..." o "? Iniciando..." (con opacity + cursor-wait) ? feedback claro de que "sí está pasando algo".
+  - Guard anti-spam en `tryAutoStartSync` y `startSyncWith`: `if (syncPartnerId || joiningSyncWith) return;`
+  - En `tryAutoStartSync` (que se llama desde handleSwipe cuando ambos están live):
+    - Setea el loader.
+    - Al éxito: `setActiveTab('profile')` ? lleva automáticamente al usuario al panel atractivo de EntrenaSync (el timer grande, vibe meter, grid de acciones con haptic, historial rico, etc. que ya pulimos antes). ¡Ahora "lleva a un lado" y es la experiencia premium!
+    - Limpia el loader después de un momento.
+  - En startSyncWith: confetti + clear loader + guard.
+  - En handleSwipe (live join path): también setea el loader para cubrir swipes directos.
+  - Toast mejorado: cuando ambos live, menciona que se inició EntrenaSync y que te lleva al panel.
+  - El panel de sync en perfil ya es atractivo (vibe meter, acciones instant, etc.), así que la navegación hace que el join se sienta gratificante.
+
+- Resultado: 
+  - Join a EntrenaSync ahora es atractivo (loading state + auto-navegación al UI rico).
+  - Cero spam (botones deshabilitados + guards).
+  - "Presionas ? feedback inmediato ? te lleva al lugar bonito donde pasa la magia del sync".
+
+Builds clean. Sigue con todo.

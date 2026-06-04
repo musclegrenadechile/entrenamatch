@@ -369,6 +369,8 @@ function App() {
   const [pendingSyncRating, setPendingSyncRating] = useState<{partnerId: string, partnerName: string, minutes: number} | null>(null)
   // Community proof for the unique feature
   const [activeSyncCount, setActiveSyncCount] = useState(0)
+  // Loading state for joining EntrenaSync (prevents spam + attractive feedback)
+  const [joiningSyncWith, setJoiningSyncWith] = useState<string | null>(null)
   // Live modal local UI: search + sort for better discovery in the full list (killer feature polish)
   const [liveModalSearch, setLiveModalSearch] = useState('')
   const [liveModalSort, setLiveModalSort] = useState<'distance' | 'urgency' | 'hot'>('distance')
@@ -2507,6 +2509,7 @@ function App() {
 
   const startSyncWith = async (partnerId: string, partnerName: string) => {
     if (!currentUser?.trainingNow || !realProfiles.some(p => p.id === partnerId && p.trainingNow)) return
+    if (syncPartnerId || joiningSyncWith === partnerId) return // anti-spam guard
     const now = Date.now()
     setSyncPartnerId(partnerId)
     setSyncStartedAt(now)
@@ -2539,6 +2542,9 @@ function App() {
     // Auto post to muro for both
     createProfilePost(`¡Sincronizado con ${partnerName}! Entrenamos juntos ahora 🔥`, null).catch(() => {})
     toast.success(`EntrenaSync iniciado con ${partnerName}`, { description: 'Timer y acciones compartidas en vivo' })
+    // Attractive feedback: confetti + clear joining loader (the UI will switch to profile showing the rich sync panel)
+    try { confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } }) } catch {}
+    setJoiningSyncWith(null)
   }
 
   const endSync = async () => {
@@ -2654,10 +2660,20 @@ function App() {
   }
 
   // Auto-start sync UI when joining live (call from handleSwipe if both live)
+  // Attractive + anti-spam: show loading on the specific join, disable multi-press, auto-nav to profile to see the beautiful sync panel
   const tryAutoStartSync = (targetId: string) => {
     const target = realProfiles.find(p => p.id === targetId)
+    if (!target) return
     if (currentUser?.trainingNow && target?.trainingNow) {
-      startSyncWith(targetId, target.name).catch(() => {})
+      if (syncPartnerId || joiningSyncWith) return // prevent spam / already in sync
+      setJoiningSyncWith(targetId)
+      startSyncWith(targetId, target.name)
+        .then(() => {
+          setActiveTab('profile') // takes user to the attractive EntrenaSync UI (timer, actions, vibe meter, etc.)
+          // brief success state on the button (if still in view)
+          setTimeout(() => setJoiningSyncWith(null), 1200)
+        })
+        .catch(() => setJoiningSyncWith(null))
     }
   }
 
@@ -4038,6 +4054,8 @@ function App() {
           try {
             const joinText = '¡Me uno al live ahora mismo! 🔥 ¿Dónde estás entrenando?'
             // DISRUPTIVE: auto-start EntrenaSync if both live (the unique market hook)
+            // set loader for attractive feedback on any join button
+            if (!joiningSyncWith) setJoiningSyncWith(profileId)
             tryAutoStartSync(profileId)
             if (!isDemoMode && firebaseUser?.uid && db) {
               // Query the target's most recent profilePost (the "¡Entrenando ahora..." one) and comment + like it
@@ -4082,8 +4100,11 @@ function App() {
         })()
 
         // Immediate UX feedback for the joiner (the "Unirme ya" action)
+        // If both were live, the tryAutoStartSync already set loader + will auto-nav to the rich attractive sync panel
         toast.success(`¡Unido al live de ${profile.name}!`, {
-          description: 'Dejé un comentario en su muro en vivo — ¡ellos lo verán!'
+          description: profile.trainingNow && currentUser?.trainingNow 
+            ? '¡EntrenaSync iniciado! Timer + acciones compartidas. Te llevamos al panel.' 
+            : 'Dejé un comentario en su muro en vivo — ¡ellos lo verán!'
         })
 
         // Update joiner's live participation stats/streaks (killer for retention - both hosting and joining count)
@@ -4449,10 +4470,15 @@ function App() {
                     {user.trainingSyncWith && <div className="text-[7px] text-[#22c55e] mb-1">🔄 En Sync ahora</div>}
                     {user.syncStreak && <div className="text-[7px] text-[#22c55e] mb-1">🔄 SyncStreak {user.syncStreak}d</div>}
                     <button 
+                      disabled={joiningSyncWith === user.id}
                       onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); }} 
-                      className="w-full text-[9px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black py-1 rounded font-bold active:brightness-90 transition shadow-sm"
+                      className={`w-full text-[9px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black py-1 rounded font-bold active:brightness-90 transition shadow-sm flex items-center justify-center gap-1 ${joiningSyncWith === user.id ? 'opacity-80 cursor-wait' : ''}`}
                     >
-                      Unirme + EntrenaSync 🔥
+                      {joiningSyncWith === user.id ? (
+                        <>⏳ Iniciando Sync...</>
+                      ) : (
+                        <>Unirme + EntrenaSync 🔥</>
+                      )}
                     </button>
                   </motion.div>
                 ))}
@@ -4582,7 +4608,13 @@ function App() {
                       {user.trainingSyncWith && <div className="text-[8px] text-[#22c55e] mt-0.5">🔄 En Sync ahora</div>}
                     </div>
                     <div className="flex flex-col gap-1 self-center">
-                      <button onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); }} className="text-[10px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-3 py-1 rounded font-semibold active:brightness-90">Unirme</button>
+                      <button 
+                        disabled={joiningSyncWith === user.id}
+                        onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); }} 
+                        className={`text-[10px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-3 py-1 rounded font-semibold active:brightness-90 flex items-center justify-center gap-1 ${joiningSyncWith === user.id ? 'opacity-80 cursor-wait' : ''}`}
+                      >
+                        {joiningSyncWith === user.id ? '⏳ Iniciando...' : 'Unirme'}
+                      </button>
                       <button onClick={(e) => { e.stopPropagation(); setShowLiveModal(false); openChat(user.id); if (!matches.includes(user.id) && !realMatches.includes(user.id)) handleSwipe(user.id, 'right'); }} className="text-[9px] border border-[#22c55e]/60 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10 hover:bg-[#22c55e]/5">Chatear ya</button>
                     </div>
                   </div>
