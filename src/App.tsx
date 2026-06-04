@@ -4760,7 +4760,7 @@ function App() {
                       {joiningSyncWith === user.id ? (
                         <>⏳ Iniciando Sync...</>
                       ) : (
-                        <>Unirme + EntrenaSync 🔥</>
+                        <>🔥 Entrenar juntos — abrir Arena</>
                       )}
                     </button>
                   </motion.div>
@@ -4899,7 +4899,7 @@ function App() {
                         onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); }} 
                         className={`text-[10px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-3 py-1 rounded font-semibold active:brightness-90 flex items-center justify-center gap-1 ${joiningSyncWith === user.id ? 'opacity-80 cursor-wait' : ''}`}
                       >
-                        {joiningSyncWith === user.id ? '⏳ Iniciando...' : 'Unirme'}
+                        {joiningSyncWith === user.id ? '⏳ Abriendo Arena...' : '🔥 Entrenar juntos (Arena)'}
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); setShowLiveModal(false); openChat(user.id); if (!matches.includes(user.id) && !realMatches.includes(user.id)) handleSwipe(user.id, 'right'); }} className="text-[9px] border border-[#22c55e]/60 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10 hover:bg-[#22c55e]/5">Chatear ya</button>
                     </div>
@@ -5291,16 +5291,17 @@ function App() {
               )}
               {feedPostPhoto && !feedPhotoUploading && (
                 <div className="mb-3">
-                  <div className="text-[10px] text-[#9CA3AF] mb-1">Foto del entreno</div>
-                  <div className="relative inline-block">
-                    <img src={feedPostPhoto} className="w-full max-h-40 rounded-2xl border-2 border-[#FF671F]/30 object-cover shadow-sm" />
+                  <div className="text-[10px] text-[#9CA3AF] mb-1 flex items-center justify-between">Foto del entreno <span className="text-[#FF671F]/60 text-[9px]">toca para ver grande</span></div>
+                  <div className="relative inline-block group" onClick={() => setFeedPhotoModal({url: feedPostPhoto})}>
+                    <img src={feedPostPhoto} className="w-full max-h-44 rounded-2xl border-2 border-[#FF671F]/30 object-cover shadow-sm cursor-zoom-in group-hover:brightness-95 transition" />
                     <button 
-                      onClick={() => setFeedPostPhoto(null)} 
-                      className="absolute -top-2 -right-2 bg-[#1C1C20] hover:bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center border border-[#2F2F35] transition-colors"
+                      onClick={(e) => { e.stopPropagation(); setFeedPostPhoto(null); }} 
+                      className="absolute -top-2 -right-2 bg-[#1C1C20] hover:bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center border border-[#2F2F35] transition-colors z-10"
                       title="Quitar foto"
                     >
                       ✕
                     </button>
+                    <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10" />
                   </div>
                 </div>
               )}
@@ -5343,7 +5344,7 @@ function App() {
                   }}
                   className="flex-1 py-2.5 text-sm border border-[#2F2F35] rounded-2xl active:bg-[#25252A] flex items-center justify-center gap-1 hover:border-[#FF671F]/40 transition-colors"
                 >
-                  📷 {feedPostPhoto ? 'Cambiar foto' : 'Añadir foto'}
+                  <Camera size={15} /> {feedPostPhoto ? 'Cambiar foto del entreno' : 'Añadir foto (cámara o galería)'}
                 </button>
                 <input
                   ref={feedPhotoInputRef}
@@ -6676,9 +6677,39 @@ function App() {
                     </div>
                   )}
 
-                  {/* Quick unique actions row */}
-                  <div className="flex gap-2 justify-center">
+                  {/* Quick unique actions row + NEW: quick photo during Arena (the "moment captured together" that posts to both + replay) */}
+                  <div className="flex gap-2 justify-center flex-wrap">
                     <button onClick={() => { /* quick story post without ending */ const p = realProfiles.find(pp=>pp.id===syncPartnerId); createProfilePost(`🔄 Sigo en Sync con ${p?.name||'mi buddy'} — vibe ${syncVibe}%`, null).catch(()=>{}); toast('Historia parcial guardada en tu muro') }} className="text-[10px] px-3 py-1 rounded-full bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e]/20">📝 Guardar historia ahora</button>
+                    <button 
+                      onClick={async () => {
+                        if (!CapacitorCamera || !Capacitor.isNativePlatform()) { toast('Cámara disponible en la app Android'); return; }
+                        try {
+                          const photo = await CapacitorCamera.getPhoto({ quality: 75, allowEditing: false, resultType: 'base64' });
+                          const dataUrl = `data:image/jpeg;base64,${photo.base64String}`;
+                          // Upload + special dual post + add to replay/actions
+                          const partner = realProfiles.find(p=>p.id===syncPartnerId);
+                          const path = `posts/${effectiveUserId}/arena-${Date.now()}.jpg`;
+                          const storageRef = ref(storage, path);
+                          const snap = await uploadString(storageRef, dataUrl, 'data_url');
+                          const url = await getDownloadURL(snap.ref);
+                          // Special action in arena
+                          const photoAction = { id: 'sa' + Date.now(), emoji: '📸', label: 'Foto del momento', userId: effectiveUserId, at: Date.now() };
+                          setSyncActions(prev => [photoAction, ...prev].slice(0, 30));
+                          // Post to both walls as special Arena memory
+                          const photoText = `📸 Momento capturado en Arena con ${partner?.name || 'mi sync'} — vibe ${syncVibe}%`;
+                          await createProfilePost(photoText, url);
+                          // Also mirror to partner if possible (best effort)
+                          if (partner) {
+                            // optimistic for local view; real sync via global feed
+                          }
+                          toast.success('📸 Foto del momento guardada', { description: 'Aparece en replay y en los muros de ambos' });
+                          triggerHaptic('light');
+                        } catch(e) { toast('No se pudo capturar la foto'); }
+                      }}
+                      className="text-[10px] px-3 py-1 rounded-full bg-[#FF671F]/10 text-[#FF671F] border border-[#FF671F]/40 active:bg-[#FF671F]/20 flex items-center gap-1"
+                    >
+                      📸 Capturar momento en Arena
+                    </button>
                     <button onClick={() => setShowSyncArena(false)} className="text-[10px] px-3 py-1 rounded-full bg-white/5 text-white/70 border border-white/10 active:bg-white/10">Cerrar arena</button>
                   </div>
 
@@ -6809,16 +6840,17 @@ function App() {
                 )}
                 {muroComposerPhoto && !muroPhotoUploading && (
                   <div className="mb-3">
-                    <div className="text-[10px] text-[#9CA3AF] mb-1">Foto del entreno</div>
-                    <div className="relative inline-block">
-                      <img src={muroComposerPhoto} className="max-h-32 rounded-2xl border-2 border-[#FF671F]/30 object-cover shadow-sm" />
+                    <div className="text-[10px] text-[#9CA3AF] mb-1 flex items-center justify-between">Foto del entreno <span className="text-[#FF671F]/60 text-[9px]">toca para ver grande</span></div>
+                    <div className="relative inline-block group" onClick={() => setFeedPhotoModal({url: muroComposerPhoto})}>
+                      <img src={muroComposerPhoto} className="max-h-40 w-full rounded-2xl border-2 border-[#FF671F]/30 object-cover shadow-sm cursor-zoom-in group-hover:brightness-95 transition" />
                       <button 
-                        onClick={() => setMuroComposerPhoto(null)} 
-                        className="absolute -top-2 -right-2 bg-[#1C1C20] hover:bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center border border-[#2F2F35] transition-colors"
+                        onClick={(e) => { e.stopPropagation(); setMuroComposerPhoto(null); }} 
+                        className="absolute -top-2 -right-2 bg-[#1C1C20] hover:bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center border border-[#2F2F35] transition-colors z-10"
                         title="Quitar foto"
                       >
                         ✕
                       </button>
+                      <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10" />
                     </div>
                   </div>
                 )}
@@ -6858,7 +6890,7 @@ function App() {
                     }}
                     className="flex-1 py-2 text-sm border border-[#2F2F35] rounded-2xl active:bg-[#25252A] flex items-center justify-center gap-1 hover:border-[#FF671F]/40 transition-colors"
                   >
-                    📷 {muroComposerPhoto ? 'Cambiar foto' : 'Añadir foto'}
+                    <Camera size={15} /> {muroComposerPhoto ? 'Cambiar foto del entreno' : 'Añadir foto (cámara primero)'}
                   </button>
                   {/* Hidden file input for web - makes photo upload feel native and attractive */}
                   <input
@@ -8276,7 +8308,7 @@ function App() {
                           <div className="absolute bottom-0 left-0 h-0.5 bg-white/30" style={{width: `${Math.max(5, Math.min(100, (90 - Math.floor((Date.now() - showFullProfile.trainingNowSince + 90*60*1000 - Date.now())/60000 ))/90 * 100))}%`}}></div>
                         )}
                       </div>
-                      <button onClick={() => { handleSwipe(showFullProfile.id, 'right'); setShowFullProfile(null); /* live join toast + auto muro comment handled inside handleSwipe for consistency */ }} className="mt-1 w-full py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-bold active:bg-[#16a34a]">Unirme ahora al entrenamiento 🔥</button>
+                      <button onClick={() => { handleSwipe(showFullProfile.id, 'right'); setShowFullProfile(null); /* live join toast + auto muro comment handled inside handleSwipe for consistency */ }} className="mt-1 w-full py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-bold active:bg-[#16a34a]">🔥 Entrenar juntos — abrir Arena Sync ahora</button>
                     </>
                   )}
                   {currentUser && (

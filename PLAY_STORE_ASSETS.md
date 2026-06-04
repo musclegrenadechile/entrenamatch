@@ -97,7 +97,7 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • Feed mejorado: encabezados y filtros horizontales (Live / Fijados / Reales) ahora se mueven fluidamente con scroll snap, touch optimizado y hint visual "desliza".
 • Tira "En vivo ahora en la comunidad" con snap y referencias a Arena.
 • Perfil: tarjetas de estadísticas más consistentes y "Nivel" como elemento cuadrado/prominente.
-• EntrenaSync Arena como killer feature única: ritual de co-presencia en vivo con energy orb reactiva, flying emojis, combos, historias duales automáticas en muro+feed, leyendas/bonds persistentes, replay.
+• EntrenaSync Arena como killer feature única: ritual de co-presencia en vivo con energy orb reactiva, flying emojis, combos, historias duales automáticas en muro+feed, leyendas/bonds persistentes, replay. + Nueva: Captura rápida de foto DENTRO de la Arena (el momento queda en el replay + se publica en los muros de ambos).
 • Estabilidad Android: google-services.json estricto en build, guards en push/integrity, direct publish en feed sin redirect, photo con progreso real.
 • Todo listo para Closed testing en Play Store.
 

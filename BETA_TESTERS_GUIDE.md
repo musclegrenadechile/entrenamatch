@@ -520,7 +520,7 @@ Update and test thoroughly. Report back.
   4. Go to Feed tab → confirm the top filters row scrolls horizontally smoothly on phone, "Live" and "Fijados" pills work, live people strip scrolls.
   5. Tap Publish in Feed → opens attractive modal, try adding photo (native camera preferred if on device), publish → should stay in Feed, show success banner, new post appears in list (no jump to profile).
   6. In Profile → stats row, check "Nivel" card looks square/prominent.
-  7. Full Arena test with 2 accounts if possible (live toggle, join, actions + flying + combos, rate, check dual muro + feed stories + legends appear).
+  7. Full Arena test with 2 accounts if possible (live toggle, join, actions + flying + combos, rate, check dual muro + feed stories + legends appear). Probar la nueva captura de foto DENTRO de la Arena (botón 📸 Capturar momento) — debe subir, agregarse al replay y publicarse en ambos muros.
   8. Optional: use 🛡️ Google Play Integrity button in Profile to test (should not crash).
 - Use Samsung Members "Informe de error" or adb logcat if anything odd. chrome://inspect for JS side if connected.
 
