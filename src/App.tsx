@@ -531,6 +531,39 @@ function App() {
 
   // Ref for focusing composer from empty state CTA
   const muroComposerRef = useRef<HTMLTextAreaElement>(null)
+  // Ref for hidden file input for attractive photo upload in muro composer (web)
+  const muroPhotoInputRef = useRef<HTMLInputElement>(null)
+  // Ref for feed post modal photo (same attractive file picker)
+  const feedPhotoInputRef = useRef<HTMLInputElement>(null)
+
+  // Attractive web file photo handler for muro composer (replaces ugly prompt)
+  const handleMuroPhotoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setMuroComposerPhoto(event.target.result as string)
+      }
+    }
+    reader.readAsDataURL(file)
+    // reset input so same file can be selected again if needed
+    e.target.value = ''
+  }
+
+  // Same for feed post modal
+  const handleFeedPhotoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setFeedPostPhoto(event.target.result as string)
+      }
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
 
   // Safety & Moderation (critical for launch)
   const [blockedUsers, setBlockedUsers] = useState<string[]>([])
@@ -4982,45 +5015,56 @@ function App() {
               />
 
               {feedPostPhoto && (
-                <div className="relative mb-3 rounded-2xl overflow-hidden border border-[#2F2F35]">
-                  <img src={feedPostPhoto} className="w-full max-h-48 object-cover" />
-                  <button 
-                    onClick={() => setFeedPostPhoto(null)} 
-                    className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-0.5 rounded"
-                  >
-                    Quitar foto
-                  </button>
+                <div className="mb-3">
+                  <div className="text-[10px] text-[#9CA3AF] mb-1">Foto del entreno</div>
+                  <div className="relative inline-block">
+                    <img src={feedPostPhoto} className="w-full max-h-40 rounded-2xl border-2 border-[#FF671F]/30 object-cover shadow-sm" />
+                    <button 
+                      onClick={() => setFeedPostPhoto(null)} 
+                      className="absolute -top-2 -right-2 bg-[#1C1C20] hover:bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center border border-[#2F2F35] transition-colors"
+                      title="Quitar foto"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               )}
 
               <div className="flex gap-2">
                 <button 
-                  onClick={async () => {
-                    // Attractive photo add, supporting native camera when available
-                    try {
-                      if (Capacitor.isNativePlatform() && CapacitorCamera) {
-                        const photo = await CapacitorCamera.getPhoto({
-                          quality: 80,
-                          allowEditing: true,
-                          resultType: 'uri',
-                          source: 'CAMERA'
-                        });
-                        if (photo?.path || photo?.webPath) {
-                          setFeedPostPhoto(photo.webPath || photo.path);
+                  onClick={() => {
+                    if (Capacitor.isNativePlatform() && CapacitorCamera) {
+                      (async () => {
+                        try {
+                          const photo = await CapacitorCamera.getPhoto({
+                            quality: 80,
+                            allowEditing: true,
+                            resultType: 'uri',
+                            source: 'CAMERA'
+                          });
+                          if (photo?.path || photo?.webPath) {
+                            setFeedPostPhoto(photo.webPath || photo.path);
+                          }
+                        } catch (e) {
+                          toast('No se pudo agregar foto');
                         }
-                      } else {
-                        const url = prompt('Pega URL de imagen (para web/demo):');
-                        if (url) setFeedPostPhoto(url);
-                      }
-                    } catch (e) {
-                      const url = prompt('Pega URL de imagen:');
-                      if (url) setFeedPostPhoto(url);
+                      })();
+                    } else {
+                      // Web: attractive file picker instead of URL prompt
+                      feedPhotoInputRef.current?.click();
                     }
                   }}
-                  className="flex-1 py-2.5 text-sm border border-[#2F2F35] rounded-2xl active:bg-[#25252A] flex items-center justify-center gap-1"
+                  className="flex-1 py-2.5 text-sm border border-[#2F2F35] rounded-2xl active:bg-[#25252A] flex items-center justify-center gap-1 hover:border-[#FF671F]/40 transition-colors"
                 >
                   📷 {feedPostPhoto ? 'Cambiar foto' : 'Añadir foto'}
                 </button>
+                <input
+                  ref={feedPhotoInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFeedPhotoFile}
+                  className="hidden"
+                />
 
                 <button 
                   onClick={async () => {
@@ -6320,34 +6364,48 @@ function App() {
                   {muroComposerText.length}/280
                 </div>
                 {muroComposerPhoto && (
-                  <div className="mb-3 relative inline-block">
-                    <img src={muroComposerPhoto} className="max-h-24 rounded-2xl border border-[#2F2F35] object-cover" />
-                    <button 
-                      onClick={() => setMuroComposerPhoto(null)} 
-                      className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center"
-                    >
-                      ×
-                    </button>
+                  <div className="mb-3">
+                    <div className="text-[10px] text-[#9CA3AF] mb-1">Foto del entreno</div>
+                    <div className="relative inline-block">
+                      <img src={muroComposerPhoto} className="max-h-32 rounded-2xl border-2 border-[#FF671F]/30 object-cover shadow-sm" />
+                      <button 
+                        onClick={() => setMuroComposerPhoto(null)} 
+                        className="absolute -top-2 -right-2 bg-[#1C1C20] hover:bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center border border-[#2F2F35] transition-colors"
+                        title="Quitar foto"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                 )}
                 <div className="flex gap-2">
                   <button 
-                    onClick={async () => {
+                    onClick={() => {
                       if (typeof window !== 'undefined' && (window as any).Capacitor && CapacitorCamera) {
-                        try {
-                          const p = await CapacitorCamera.getPhoto({ quality: 70, allowEditing: false, resultType: 'base64' })
-                          if (p?.base64String) setMuroComposerPhoto(`data:image/jpeg;base64,${p.base64String}`)
-                        } catch (e) { toast('No se pudo agregar foto') }
+                        // Native: use camera (already attractive)
+                        (async () => {
+                          try {
+                            const p = await CapacitorCamera.getPhoto({ quality: 70, allowEditing: true, resultType: 'base64' })
+                            if (p?.base64String) setMuroComposerPhoto(`data:image/jpeg;base64,${p.base64String}`)
+                          } catch (e) { toast('No se pudo agregar foto') }
+                        })()
                       } else {
-                        // Demo fallback for web (non-native) - prompt is quick pre-alpha tool
-                        const url = prompt('Pega URL de imagen (solo para pruebas web):')
-                        if (url) setMuroComposerPhoto(url)
+                        // Web: use nice file picker (much more attractive than prompt URL)
+                        muroPhotoInputRef.current?.click()
                       }
                     }}
-                    className="flex-1 py-2 text-sm border border-[#2F2F35] rounded-2xl active:bg-[#25252A] flex items-center justify-center gap-1"
+                    className="flex-1 py-2 text-sm border border-[#2F2F35] rounded-2xl active:bg-[#25252A] flex items-center justify-center gap-1 hover:border-[#FF671F]/40 transition-colors"
                   >
-                    📷 Añadir foto
+                    📷 {muroComposerPhoto ? 'Cambiar foto' : 'Añadir foto'}
                   </button>
+                  {/* Hidden file input for web - makes photo upload feel native and attractive */}
+                  <input
+                    ref={muroPhotoInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleMuroPhotoFile}
+                    className="hidden"
+                  />
                   <button 
                     onClick={async () => {
                       if (!muroComposerText.trim()) return

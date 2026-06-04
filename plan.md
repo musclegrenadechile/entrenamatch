@@ -1153,3 +1153,26 @@ Builds clean. Sigue con todo.
 - El flujo del perfil sigue igual para quien quiera postear desde allí.
 
 Builds clean. Sigue con todo.
+
+## Mejora total del flujo "Añadir foto" en Publicar en tu muro (y feed modal)
+
+- Problema: Al pulsar "?? Añadir foto" en el compositor del muro (perfil), en web/demo hacía un feo `prompt('Pega URL de imagen...')`. Se veía muy pobre, no atractivo, nada profesional. El preview era pequeño y básico. Lo mismo pasaba en el modal de publicar desde Feed.
+- Mejoras implementadas (todo el flujo ahora se siente premium):
+  - Web: en vez de prompt URL, usamos `<input type="file" accept="image/*">` oculto + botón que lo dispara. Esto abre el selector nativo de archivos del SO del usuario (mucho más atractivo, familiar y "correcto").
+  - Handler `handleMuroPhotoFile` (y equivalente para feed) que convierte el archivo seleccionado a dataURL para preview y posting inmediato (sin subir a ningún servidor extra).
+  - Preview mejorado drásticamente:
+    - Más grande (max-h-32 / 40).
+    - Borde con color de marca (#FF671F/30).
+    - Sombra sutil.
+    - Label "Foto del entreno" encima.
+    - Botón de quitar mucho más bonito (hover rojo, posicionado mejor, ícono ? más visible).
+  - Botón "?? Añadir foto" / "Cambiar foto" ahora tiene hover states y transiciones.
+  - Lógica de cámara nativa (Capacitor) se mantiene intacta y se usa cuando está disponible (con allowEditing: true para mejor UX).
+  - Se agregó ref para el input file (muroPhotoInputRef y feedPhotoInputRef).
+  - Se aplicó el mismo tratamiento al modal de publicar desde el Feed (consistencia total).
+  - El preview ahora usa dataURL del file, por lo que funciona offline en web y se ve inmediato.
+- Bonus: el char count y el layout del compositor se ven más cuidados ahora que el photo flow es pro.
+
+El "Publicar en tu muro" (y el equivalente desde Feed) ahora tiene un flujo de foto que se siente moderno, atractivo y parte de una app pulida. Nada de prompts feos.
+
+Builds clean. Sigue con todo.
