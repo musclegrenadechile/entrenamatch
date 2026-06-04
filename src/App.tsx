@@ -6619,8 +6619,8 @@ function App() {
             {currentUser.photos && currentUser.photos.length > 0 && (
               <div className="px-4 py-3 flex gap-2 overflow-x-auto bg-[#0D0D10] border-b border-[#2F2F35]">
                 {currentUser.photos.map((photo: string, idx: number) => (
-                  <div key={idx} className={`relative flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border ${idx === 0 ? 'border-[#FF671F] ring-1 ring-[#FF671F]/30' : 'border-[#2F2F35]'} shadow group`}>
-                    <img src={photo} className="w-full h-full object-cover" />
+                  <div key={idx} className={`relative flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border ${idx === 0 ? 'border-[#FF671F] ring-1 ring-[#FF671F]/30' : 'border-[#2F2F35]'} shadow group transition-all hover:scale-[1.03]`}>
+                    <img src={photo} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                     {idx === 0 && <div className="absolute bottom-0 left-0 right-0 text-[8px] bg-[#FF671F] text-black px-1 text-center rounded-b">principal</div>}
                     {/* Delete button - always visible on mobile for usability, nice on desktop */}
                     <button
