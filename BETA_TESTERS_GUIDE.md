@@ -509,7 +509,7 @@ Update and test thoroughly. Report back.
 - **Critical fix**: "genero error al abrir la app" completely resolved. Root cause was missing googleCloudProjectNumber param + unboxed Long in @capacitor-community/play-integrity plugin during auto-check on Firebase auth restore (persisted sessions). Fixed in playIntegrity.ts (always pass 0), defensive patch in plugin Java for this build, auto integrity check on login disabled (manual 🛡️ button in Profile remains). Validated live on real device R5GL13YMBJW with adb logcat (no more AndroidRuntime FATAL / NullPointer, process stays alive, plugins load cleanly including Push + Integrity).
 - Version bumped to 15 / 0.1.12-arena.
 - Feed UX polish: horizontal filters (REAL / 🟢 Live / 📌 Fijados / Actualizar) now properly scrollable with snap-x, touch-pan, side fade hint + "desliza → filtros y live" label. Live "EN VIVO AHORA EN LA COMUNIDAD" strip also snapped.
-- Profile: stats grid cards taller, "Nivel" card uses aspect-square for square look + bolder pill as requested.
+- Profile ultra vivo y atractivo: live pulsing hero + "ENTRENANDO AHORA" banner, "Mi vida de entrenamiento" summary card (streaks + legends count), Sync Legends with progress bars + LV badges + hover, recent activity feed showing who liked/commented your posts, quick ★ set main photo in gallery strip, richer live stats with pulses.
 - Arena remains the disruptive star (full ritual, flying, combos, dual stories, bonds/legends, replay, global FOMO in feed).
 - All previous giant updates retained (direct Feed publish modal + success banner + confetti instead of profile jump, Storage photo with real 0-100% progress + preview, attractive guarded Sync join, etc.).
 - AAB ready: EntrenaMatch-v0.1.12-arena-code17.aab (and EntrenaMatch-release.aab) in root. Also fresh debug APK for adb testing.
@@ -519,7 +519,7 @@ Update and test thoroughly. Report back.
   3. Login (Google or email) → no immediate crash.
   4. Go to Feed tab → confirm the top filters row scrolls horizontally smoothly on phone, "Live" and "Fijados" pills work, live people strip scrolls.
   5. Tap Publish in Feed → opens attractive modal, try adding photo (native camera preferred if on device), publish → should stay in Feed, show success banner, new post appears in list (no jump to profile).
-  6. In Profile → stats row, check "Nivel" card looks square/prominent.
+  6. In Profile: hero pulses if live, big ENTRENANDO banner, summary card with streaks/legends, recent activity list from your muro, legends with progress bars, gallery has ★ to set main photo. Make sure it feels much more vivo.
   7. Full Arena test with 2 accounts if possible (live toggle, join, actions + flying + combos, rate, check dual muro + feed stories + legends appear). Probar la nueva captura de foto DENTRO de la Arena (botón 📸 Capturar momento) — debe subir, agregarse al replay y publicarse en ambos muros.
   8. Optional: use 🛡️ Google Play Integrity button in Profile to test (should not crash).
 - Use Samsung Members "Informe de error" or adb logcat if anything odd. chrome://inspect for JS side if connected.

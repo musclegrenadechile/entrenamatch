@@ -5274,11 +5274,12 @@ function App() {
               <textarea
                 value={feedPostText}
                 onChange={e => setFeedPostText(e.target.value)}
-                placeholder="¿Qué entrenaste hoy? Comparte un logro, una foto del gym, un '¡me uno!' o motivación para la comunidad..."
+                placeholder={feedPostPhoto ? "Caption para tu foto del entreno..." : "¿Qué entrenaste hoy? Comparte un logro, una foto del gym, un '¡me uno!' o motivación para la comunidad..."}
                 className="form-input w-full h-28 text-base resize-y mb-3"
                 maxLength={280}
                 autoFocus
               />
+              {feedPostPhoto && <div className="text-[9px] text-[#FF671F]/70 -mt-2 mb-2">La foto + este texto se publican juntos</div>}
 
               {feedPhotoUploading && (
                 <div className="mb-3">
@@ -6245,6 +6246,20 @@ function App() {
                     >
                       ×
                     </button>
+                    {idx > 0 && (
+                      <button
+                        onClick={() => {
+                          const newPhotos = [currentUser.photos[idx], ...currentUser.photos.filter((_,i)=>i!==idx)];
+                          const updated = { ...currentUser, photos: newPhotos };
+                          saveUserWithRealSync(updated as any);
+                          toast('Foto principal actualizada');
+                        }}
+                        className="absolute bottom-1 left-1 bg-black/70 text-white text-[8px] px-1 rounded active:bg-[#FF671F]"
+                        title="Hacer principal"
+                      >
+                        ★
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
@@ -6376,6 +6391,40 @@ function App() {
                 )}
               </div>
             </div>
+
+            {/* NEW: Actividad reciente en tu muro - makes profile feel SUPER VIVO with real interactions */}
+            {(() => {
+              const myPosts = profilePosts[effectiveUserId] || [];
+              if (myPosts.length === 0) return null;
+              const recentInteractions: any[] = [];
+              myPosts.forEach((post: any) => {
+                (post.likes || []).forEach((uid: string) => {
+                  const prof = [...realProfiles, ...SEED_PROFILES].find(p => p.id === uid);
+                  if (prof) recentInteractions.push({ type: 'like', user: prof.name, postText: (post.text || '').substring(0,40), time: post.createdAt || Date.now() });
+                });
+                (post.comments || []).forEach((c: any) => {
+                  const prof = [...realProfiles, ...SEED_PROFILES].find(p => p.id === c.userId);
+                  if (prof) recentInteractions.push({ type: 'comment', user: prof.name, text: (c.text || '').substring(0,40), time: c.createdAt || Date.now() });
+                });
+              });
+              const sorted = recentInteractions.sort((a,b) => (b.time||0) - (a.time||0)).slice(0,5);
+              if (sorted.length === 0) return null;
+              return (
+                <div className="px-4 mt-3">
+                  <div className="text-[10px] uppercase tracking-[1px] text-[#9CA3AF] mb-1.5 flex items-center gap-1">💥 ACTIVIDAD RECIENTE EN TU MURO</div>
+                  <div className="card p-2 space-y-1 text-xs">
+                    {sorted.map((int, idx) => (
+                      <div key={idx} className="flex items-center gap-2 px-2 py-1 bg-black/20 rounded-xl active:bg-black/40" onClick={() => setActiveTab('feed')}>
+                        <span className="font-semibold text-white/90">{int.user}</span>
+                        <span className={int.type === 'like' ? 'text-[#FF4F79]' : 'text-[#22c55e]'}>{int.type === 'like' ? '❤️ dio like' : '💬 ' + int.text}</span>
+                        <span className="ml-auto text-[#9CA3AF]/60 text-[9px]">en tu post</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-[8px] text-center text-[#9CA3AF]/50 mt-1">La gente está interactuando con tu contenido — ¡sigue posteando!</div>
+                </div>
+              );
+            })()}
 
             {/* NEVER-SEEN: Sync Legends / Bonds — persistent proof of real training partnerships. MADE MORE VIVO Y ATRACTIVO */}
             {Object.keys(syncBonds).length > 0 && (
@@ -6667,11 +6716,12 @@ function App() {
                   </div>
 
                   {/* Expanded ritual action grid — bigger, more satisfying taps. 8 moves for rich vocabulary of training together. */}
-                  <div className="grid grid-cols-4 gap-1.5 mb-2 relative z-20">
+                  <div className="grid grid-cols-5 gap-1 mb-2 relative z-20">
                     {[
                       {e:'💪', l:'Buena forma'}, {e:'🔥', l:'Serie lista'}, {e:'💧', l:'Hidratado'},
                       {e:'🏁', l:'Push final'}, {e:'⚡', l:'Explosivo'}, {e:'🧘', l:'Control'},
-                      {e:'📈', l:'Más peso'}, {e:'❤️', l:'Juntos'}
+                      {e:'📈', l:'Más peso'}, {e:'❤️', l:'Juntos'},
+                      {e:'🥤', l:'Recuperación'}, {e:'🏆', l:'PR logrado'}, {e:'🤝', l:'Apoyo mutuo'}
                     ].map((a, idx) => {
                       const isActiveCombo = syncCombo >= 2 && syncActions[0]?.label === a.l
                       return (
@@ -6710,6 +6760,7 @@ function App() {
                             className="flex items-center gap-1.5 py-[1px] text-[10px]"
                           >
                             <span className={isMe ? 'text-white' : 'text-[#22c55e]'}>{who} {a.emoji} {a.label}{a.combo ? <span className="text-[#FF671F] font-black">×{a.combo}</span> : ''}</span>
+                            {a.photoUrl && <img src={a.photoUrl} className="w-5 h-5 rounded object-cover border border-white/20" />}
                             <span className="ml-auto text-[#22c55e]/40 text-[7.5px] tabular-nums">{a.at ? Math.max(0,Math.floor((Date.now()-a.at)/60000)) : 0}m</span>
                           </motion.div>
                         )
@@ -6725,25 +6776,22 @@ function App() {
                       onClick={async () => {
                         if (!CapacitorCamera || !Capacitor.isNativePlatform()) { toast('Cámara disponible en la app Android'); return; }
                         try {
-                          const photo = await CapacitorCamera.getPhoto({ quality: 75, allowEditing: false, resultType: 'base64' });
+                          const photo = await CapacitorCamera.getPhoto({ quality: 75, allowEditing: true, resultType: 'base64' });
                           const dataUrl = `data:image/jpeg;base64,${photo.base64String}`;
-                          // Upload + special dual post + add to replay/actions
                           const partner = realProfiles.find(p=>p.id===syncPartnerId);
+                          // Quick caption for the moment (makes it personal and attractive)
+                          const caption = prompt('Caption para la foto del momento (opcional):', '¡Momento épico en Arena!') || 'Momento en Arena';
                           const path = `posts/${effectiveUserId}/arena-${Date.now()}.jpg`;
                           const storageRef = ref(storage, path);
                           const snap = await uploadString(storageRef, dataUrl, 'data_url');
                           const url = await getDownloadURL(snap.ref);
-                          // Special action in arena
-                          const photoAction = { id: 'sa' + Date.now(), emoji: '📸', label: 'Foto del momento', userId: effectiveUserId, at: Date.now() };
+                          // Special action in arena (visible in timeline)
+                          const photoAction = { id: 'sa' + Date.now(), emoji: '📸', label: caption.substring(0,25), userId: effectiveUserId, at: Date.now(), photoUrl: url };
                           setSyncActions(prev => [photoAction, ...prev].slice(0, 30));
-                          // Post to both walls as special Arena memory
-                          const photoText = `📸 Momento capturado en Arena con ${partner?.name || 'mi sync'} — vibe ${syncVibe}%`;
+                          // Rich post to both walls
+                          const photoText = `📸 ${caption} — con ${partner?.name || 'mi sync buddy'} en Arena (vibe ${syncVibe}%)`;
                           await createProfilePost(photoText, url);
-                          // Also mirror to partner if possible (best effort)
-                          if (partner) {
-                            // optimistic for local view; real sync via global feed
-                          }
-                          toast.success('📸 Foto del momento guardada', { description: 'Aparece en replay y en los muros de ambos' });
+                          toast.success('📸 Momento capturado y compartido', { description: 'Foto + caption en replay y muros de ambos' });
                           triggerHaptic('light');
                         } catch(e) { toast('No se pudo capturar la foto'); }
                       }}
@@ -6863,13 +6911,14 @@ function App() {
                   ref={muroComposerRef}
                   value={muroComposerText}
                   onChange={e => setMuroComposerText(e.target.value)}
-                  placeholder="¿Qué tal tu último entreno? Motiva a la comunidad..."
+                  placeholder={muroComposerPhoto ? "Caption para la foto de tu entreno..." : "¿Qué tal tu último entreno? Motiva a la comunidad..."}
                   className="form-input w-full h-20 text-sm mb-3 resize-y"
                   maxLength={280}
                 />
                 <div className="text-[10px] text-right text-[#9CA3AF] -mt-2 mb-2 pr-1">
                   {muroComposerText.length}/280
                 </div>
+                {muroComposerPhoto && <div className="text-[9px] text-[#FF671F]/70 -mt-1 mb-2">Foto + texto se publican juntos en tu muro</div>}
                 {muroPhotoUploading && (
                   <div className="mb-3">
                     <div className="text-[10px] text-[#9CA3AF] mb-1">Subiendo foto...</div>
