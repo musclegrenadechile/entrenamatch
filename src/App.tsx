@@ -1066,6 +1066,16 @@ function App() {
         try {
           PushNotifications.addListener('registration', (token: any) => {
             console.log('Push registration token (send this to server for this uid):', token?.value || token)
+            // FCM stub: save token for this uid (for server-side sends). In real: update profile or dedicated /userTokens collection.
+            if (!isDemoMode && firebaseUser?.uid && db && token?.value) {
+              (async () => {
+                try {
+                  const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+                  await setDoc(doc(db, 'userPushTokens', firebaseUser.uid), { token: token.value, updatedAt: serverTimestamp() }, { merge: true })
+                  console.log('[FCM] Token saved for uid', firebaseUser.uid)
+                } catch (e) { console.warn('[FCM] token save failed', e) }
+              })()
+            }
           })
 
           PushNotifications.addListener('pushNotificationReceived', (notification: any) => {
