@@ -4396,6 +4396,7 @@ function App() {
                     }
                     return null;
                   })()}
+                  <AnimatePresence>
                   {feedPosts.map((post: any) => {
                     const ownerProfile = realProfiles.find(r => r.id === post.ownerId);
                     const owner = ownerProfile || { name: 'Compañero', id: post.ownerId, photos: [] };
@@ -4407,6 +4408,7 @@ function App() {
                         className={`card card-glass p-4 mb-3 border-[#2F2F35]/70 ${post.pinned ? 'ring-1 ring-[#FF671F]/60 shadow-lg shadow-[#FF671F]/5' : ''} hover:border-[#FF671F]/30 transition-all`}
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -12, scale: 0.97, height: 0, marginBottom: 0 }}
                         whileHover={{ scale: 1.015, y: -2, boxShadow: '0 15px 25px -5px rgb(0 0 0 / 0.25)' }}
                         transition={{ type: 'spring', stiffness: 280, damping: 18 }}
                       >
@@ -4483,6 +4485,7 @@ function App() {
                       </motion.div>
                     );
                   })}
+                  </AnimatePresence>
 
                   {feedPosts.length < allCommunityPosts.length && (
                     <div className="text-center mt-2">
