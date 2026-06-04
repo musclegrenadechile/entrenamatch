@@ -1,6 +1,6 @@
 # EntrenaMatch Pre-Alpha Execution Plan (Updated Phase 0 Focus)
 
-**Status**: Phase ongoing "sigue con todo a todo ritmo". **Latest**: v0.1.12-arena (code 15) prepared for Play Closed upload. Critical launch crash ("error al abrir la app") fixed + validated on real device. Feed horizontal filters + profile levels polished. Fresh signed AAB: EntrenaMatch-v0.1.12-arena-launchfix.aab ready. Listing text + beta guide updated. Arena remains the unique disruptive core. GitHub + web (GH Pages) + Play pipeline in sync. Full autonomy active.
+**Status**: Phase ongoing "sigue con todo a todo ritmo". **Latest**: v0.1.12-arena (code 16) prepared for Play Closed upload. Critical launch crash ("error al abrir la app") fixed + validated on real device. Feed horizontal filters + profile levels polished. Fresh signed AAB: EntrenaMatch-v0.1.12-arena-code16.aab ready. Listing text + beta guide updated. Arena remains the unique disruptive core. GitHub + web (GH Pages) + Play pipeline in sync. Full autonomy active.
 
 **Live web**: https://musclegrenadechile.github.io/entrenamatch/
 **Repo**: https://github.com/musclegrenadechile/entrenamatch
