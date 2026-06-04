@@ -4157,7 +4157,7 @@ function App() {
                 <div className="text-[8px] text-[#9CA3AF] mb-1">Cerca de ti (radar ordenado por distancia)</div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {[...liveTrainingNow].sort((a,b)=> (a.distance||0)-(b.distance||0)).map((u, idx) => (
-                    <motion.div key={u.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(u); }} whileHover={{scale:1.1}} whileTap={{scale:0.9}} className="flex flex-col items-center text-center cursor-pointer active:opacity-80">
+                    <motion.div key={u.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(u); }} whileHover={{scale:1.1}} whileTap={{scale:0.9}} initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} transition={{delay: idx * 0.05}} className="flex flex-col items-center text-center cursor-pointer active:opacity-80">
                       <div className="relative">
                         {u.photos?.[0] ? <img src={u.photos[0]} className="w-9 h-9 rounded-full object-cover border-2 border-[#22c55e]/60" /> : <div className="w-9 h-9 rounded-full bg-[#22c55e]/20 flex items-center justify-center text-[10px] border border-[#22c55e]/30">{u.name[0]}</div>}
                         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#22c55e] rounded-full ring-2 ring-black" style={{animation: u.seVaEnMin < 10 ? 'live-pulse-green-urgent 1.1s ease-in-out infinite' : 'live-pulse-green 1.8s ease-in-out infinite'}}></div>
@@ -4325,7 +4325,7 @@ function App() {
                 <div className="text-[9px] text-[#22c55e] mb-1 px-1">🟢 Live ahora en la comunidad {liveTrainingNow.some(u=>u.seVaEnMin<15) ? '· ¡se va pronto!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE' : ''}</div>
                 <div className="flex gap-1 overflow-x-auto pb-1">
                   {liveTrainingNow.slice(0,3).map(u => (
-                    <motion.div key={u.id} onClick={() => setActiveTab('explore')} whileHover={{scale:1.05}} whileTap={{scale:0.94}} className="text-[8px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-1 rounded-xl border border-[#22c55e]/40 cursor-pointer active:bg-[#22c55e]/20 flex items-center gap-1 min-w-[110px]">
+                    <motion.div key={u.id} onClick={() => setActiveTab('explore')} whileHover={{scale:1.08, y:-1}} whileTap={{scale:0.94}} className="text-[8px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-1 rounded-2xl border border-[#22c55e]/50 cursor-pointer active:bg-[#22c55e]/20 flex items-center gap-1 min-w-[110px] shadow-sm">
                       {u.name.split(' ')[0]} ({u.distance.toFixed(0)}km) {u.seVaEnMin < 15 && <span className="text-red-400">🔥{u.seVaEnMin}m</span>} {u.joinCount > 0 && <span className="text-[7px]">+{u.joinCount}🔥</span>}
                     </motion.div>
                   ))}
@@ -4642,7 +4642,7 @@ function App() {
                         creatorProfile.lat || 0, creatorProfile.lng || 0) : null
 
                       return (
-                        <div key={session.id} className="card card-glass session-card rounded-3xl p-4">
+                        <div key={session.id} className={`card card-glass session-card rounded-3xl p-4 ${liveTrainingNow.some(u => u.id === session.creatorId) ? 'border-[#22c55e]/60 ring-1 ring-[#22c55e]/20' : ''}`}>
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="font-semibold text-lg tracking-tight">{session.title}</div>
@@ -4767,7 +4767,7 @@ function App() {
                         creatorProfileForDist.lat || 0, creatorProfileForDist.lng || 0) : null
 
                       return (
-                        <div key={session.id} className="card card-glass session-card rounded-3xl p-4 border border-[#FF4F79]/50 ring-1 ring-inset ring-[#FF4F79]/10">
+                        <div key={session.id} className={`card card-glass session-card rounded-3xl p-4 border border-[#FF4F79]/50 ring-1 ring-inset ring-[#FF4F79]/10 ${liveTrainingNow.some(u => u.id === session.creatorId) ? 'border-[#22c55e]/60 ring-1 ring-[#22c55e]/20' : ''}`}>
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="font-semibold text-lg flex items-center gap-2 tracking-tight">

@@ -820,3 +820,48 @@ Mejoras live + dise?o:
 
 Builds + push planeados. AAB actualizado. Sigue con todo full green light! Pr?ximo: m?s polish (e.g. radar anim, FCM), Play upload destacando visuals.
 
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+Mejoras:
+- Progress bar en modal live list (consistente con banner).
+- Badges ?? LIVE en sessions cards (my sessions y all).
+- Feed live teaser: cards con hover scale, m?s info (se va, joins).
+- Push hecho, AAB final copiado.
+- Sigue con todo. Pr?ximo: m?s live (e.g. anim radar, FCM), Play upload con visuals, etc.
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Progress en modal live.
+- Radar map mejorado con motion/hover/sizes.
+- Sessions badges, feed teasers.
+- Push, AAB continua copiado.
+- Sigue con todo. Pr?ximo: m?s (FCM, Play upload, etc.).
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Radar map en modal con motion/hover/better sizes.
+- Progress en modal.
+- Sessions badges, feed teasers.
+- Push, AAB continua.
+- Sigue con todo. Pr?ximo: m?s live polish (FCM, etc.), Play upload.
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+Mejoras live + dise?o:
+- Radar map: stagger anim (delay idx*0.05) + better motion.
+- Feed live teaser: enhanced hover scale/y, shadow, rounded-2xl.
+- Sessions cards: dynamic border/ring glow if creator live (both lists).
+- Push hecho, AAB continua.
+- Sigue con todo full green light! Pr?ximo: m?s (e.g. live in more places, FCM client, Play visuals assets, full review polish).
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Radar stagger anim, feed teaser hover polish, sessions live glow borders.
+- Push, AAB.
+- Sigue con todo. Pr?ximo: m?s live (FCM, etc.), Play upload.
+
