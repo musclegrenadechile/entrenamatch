@@ -682,11 +682,15 @@ function App() {
   const [showPwaInstall, setShowPwaInstall] = useState(false)
   const [pwaInstallDismissed] = useState(() => !!localStorage.getItem('entrenamatch_pwa_dismissed'))
 
-  const [showLiveMap, setShowLiveMap] = useState(false)
+  const [showLiveMap, setShowLiveMap] = useState(() => {
+    try { return localStorage.getItem('entrenamatch_show_map') === '1' } catch { return false }
+  })
+  const [mapNearOnly, setMapNearOnly] = useState(false) // simple filter for map UX
   const liveMapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<any>(null)
   const markersRef = useRef<any[]>([])
   const startSyncRef = useRef<((partnerId: string, partnerName: string) => any) | null>(null)
+  const showFullProfileRef = useRef<((profile: any) => void) | null>(null)
 
   // Dedicated unmount cleanup for the Leaflet map to avoid memory leaks / zombie maps
   // when the app unmounts, hot-reloads, or user leaves the tab. Runs only on mount/unmount.
@@ -699,6 +703,11 @@ function App() {
       markersRef.current = []
     }
   }, [])
+
+  // Persist map open preference (nice for power users who like the radar always visible)
+  useEffect(() => {
+    try { localStorage.setItem('entrenamatch_show_map', showLiveMap ? '1' : '0') } catch {}
+  }, [showLiveMap])
 
   const unreadNotifications = notifications.filter(n => !n.read).length
   const totalChatUnreads = Object.values(chatUnreads).reduce((sum, n) => sum + (n || 0), 0)
@@ -2754,6 +2763,11 @@ function App() {
     startSyncRef.current = startSyncWith
   }, [startSyncWith])
 
+  // Same for profile modal – marker clicks and "Ver perfil" in popups can reliably open the rich profile.
+  useEffect(() => {
+    showFullProfileRef.current = setShowFullProfile
+  }, [setShowFullProfile])
+
   const endSync = async () => {
     if (!syncPartnerId) return
     const partnerName = realProfiles.find(p => p.id === syncPartnerId)?.name || 'compañero'
@@ -4284,7 +4298,10 @@ function App() {
     })
     markersRef.current = []
 
-    const liveUsers = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow)
+    let liveUsers = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow)
+    if (mapNearOnly && userLocation) {
+      liveUsers = liveUsers.filter(u => (u.distance || 999) < 10) // near me only filter (10km)
+    }
 
     const zoneColors: Record<string, string> = {
       'Viña del Mar': '#22c55e',
@@ -4296,57 +4313,115 @@ function App() {
 
     liveUsers.forEach(user => {
       const color = zoneColors[user.city] || zoneColors.default
-      const marker = L.circleMarker([user.lat, user.lng], {
-        radius: 9 + Math.min((user.joinCount || 0) * 0.7, 8), // grow more with FOMO joins
-        fillColor: color,
-        color: '#fff',
-        weight: 2,
-        fillOpacity: 0.9
-      }).addTo(mapInstanceRef.current)
+      const shortName = (user.name || '?').split(' ')[0]
+
+      // Premium personal marker: photo if available, else nice initials badge + name label.
+      // Makes the map feel alive and social (the "preciosa" part).
+      let iconHtml: string
+      const photo = user.photos && user.photos[0]
+      if (photo) {
+        iconHtml = `
+          <div style="position:relative;width:34px;height:34px">
+            <div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2.5px solid ${color};box-shadow:0 0 0 2px rgba(255,255,255,0.9), 0 2px 6px rgba(0,0,0,0.4)">
+              <img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='${color}';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px\\'>${shortName.slice(0,2).toUpperCase()}</div>'" />
+            </div>
+            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
+          </div>`
+      } else {
+        const initials = shortName.slice(0, 2).toUpperCase()
+        iconHtml = `
+          <div style="position:relative;width:34px;height:34px">
+            <div style="width:34px;height:34px;border-radius:9999px;background:${color};border:2.5px solid #fff;box-shadow:0 0 0 2px rgba(255,255,255,0.3),0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px">${initials}</div>
+            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
+          </div>`
+      }
+
+      const customIcon = L.divIcon({
+        className: 'entrenamatch-marker',
+        html: iconHtml,
+        iconSize: [38, 46],
+        iconAnchor: [19, 23],
+        popupAnchor: [0, -24]
+      })
+
+      const marker = L.marker([user.lat, user.lng], { icon: customIcon }).addTo(mapInstanceRef.current)
+
+      // Click the marker itself → open beautiful profile modal (rich view with photos, bio, live status etc)
+      marker.on('click', () => {
+        if (showFullProfileRef.current) {
+          showFullProfileRef.current(user)
+        }
+      })
 
       const popupContent = `
-        <div style="min-width:170px; font-size:13px">
-          <strong style="font-size:14px">${user.name}</strong><br/>
-          <span style="color:#22c55e">🟢 Entrenando ahora</span> • se va en ~${user.seVaEnMin || '?'} min<br/>
-          ${userLocation ? `<span style="color:#FF671F">${user.distance.toFixed(1)} km de ti</span><br/>` : ''}
-          <button id="join-${user.id}" style="margin-top:8px;padding:5px 12px;background:#22c55e;color:#000;border:none;border-radius:8px;font-size:12px;font-weight:600;width:100%">🔥 Unirme a su vibe</button>
+        <div style="min-width:180px; font-size:12.5px; line-height:1.3">
+          <strong style="font-size:14px; display:block; margin-bottom:2px">${user.name}</strong>
+          <span style="color:#22c55e; font-weight:600">🟢 Entrenando ahora</span> • ~${user.seVaEnMin || '?'} min<br/>
+          ${userLocation ? `<span style="color:#FF671F; font-weight:600">${user.distance.toFixed(1)} km de ti</span><br/>` : ''}
+          <div style="display:flex; gap:6px; margin-top:8px">
+            <button id="join-${user.id}" style="flex:1; padding:6px 8px; background:#22c55e; color:#000; border:none; border-radius:8px; font-size:11px; font-weight:700">🔥 Unirme</button>
+            <button id="profile-${user.id}" style="flex:1; padding:6px 8px; background:#333; color:#fff; border:1px solid #555; border-radius:8px; font-size:11px; font-weight:600">Ver perfil</button>
+          </div>
         </div>
       `
       marker.bindPopup(popupContent)
 
       marker.on('popupopen', () => {
         setTimeout(() => {
-          const btn = document.getElementById(`join-${user.id}`)
-          if (btn) {
-            btn.onclick = () => {
+          const joinBtn = document.getElementById(`join-${user.id}`)
+          if (joinBtn) {
+            joinBtn.onclick = () => {
               if (mapInstanceRef.current) mapInstanceRef.current.closePopup()
-              if (startSyncRef.current && user.trainingNow) {
-                startSyncRef.current(user.id, user.name)
-              }
+              try { triggerHaptic('medium') } catch {}
+              if (startSyncRef.current && user.trainingNow) startSyncRef.current(user.id, user.name)
             }
           }
-        }, 40)
+          const profBtn = document.getElementById(`profile-${user.id}`)
+          if (profBtn) {
+            profBtn.onclick = () => {
+              if (mapInstanceRef.current) mapInstanceRef.current.closePopup()
+              try { triggerHaptic('light') } catch {}
+              if (showFullProfileRef.current) showFullProfileRef.current(user)
+            }
+          }
+        }, 30)
       })
 
       markersRef.current.push(marker)
     })
 
-    // Self position marker (distinct, always useful context)
+    // Self position marker + subtle "my area" radius circle (makes map feel personal and useful)
     if (userLocation) {
-      const selfMarker = L.circleMarker([userLocation.lat, userLocation.lng], {
-        radius: 6,
-        fillColor: '#3b82f6',
-        color: '#fff',
-        weight: 2.5,
-        fillOpacity: 0.95
-      }).addTo(mapInstanceRef.current)
-      selfMarker.bindPopup('<strong>Tú</strong><br/>Tu ubicación GPS actual')
+      // Self dot
+      const selfIcon = L.divIcon({
+        className: '',
+        html: `<div style="width:14px;height:14px;background:#3b82f6;border:2.5px solid #fff;border-radius:9999px;box-shadow:0 0 0 3px rgba(59,130,246,0.3),0 2px 4px rgba(0,0,0,0.5)"></div>`,
+        iconSize: [14, 14],
+        iconAnchor: [7, 7],
+        popupAnchor: [0, -8]
+      })
+      const selfMarker = L.marker([userLocation.lat, userLocation.lng], { icon: selfIcon }).addTo(mapInstanceRef.current)
+      selfMarker.bindPopup('<strong>Tú</strong><br/>Tu ubicación actual (GPS)')
       markersRef.current.push(selfMarker)
+
+      // Soft radius circle (10km "mi zona") – visual context for "cerca"
+      try {
+        const areaCircle = L.circle([userLocation.lat, userLocation.lng], {
+          radius: 10000, // 10km
+          color: '#3b82f6',
+          weight: 1,
+          fillColor: '#3b82f6',
+          fillOpacity: 0.06,
+          opacity: 0.35
+        }).addTo(mapInstanceRef.current)
+        // store separately so we can clean it; push a wrapper or just let map destroy handle
+        ;(markersRef.current as any)._areaCircle = areaCircle
+      } catch {}
     }
 
     if (markersRef.current.length > 0) {
       const group = L.featureGroup(markersRef.current)
-      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.25))
+      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.22))
     }
 
     // Cleanup for this effect run (e.g. when liveTrainingNow or location updates while map is open).
@@ -4356,10 +4431,13 @@ function App() {
         markersRef.current.forEach(m => {
           try { mapInstanceRef.current.removeLayer(m) } catch {}
         })
+        // also clean area circle if we added one
+        const area = (markersRef.current as any)._areaCircle
+        if (area) { try { mapInstanceRef.current.removeLayer(area) } catch {} ; (markersRef.current as any)._areaCircle = null }
       }
       markersRef.current = []
     }
-  }, [showLiveMap, liveTrainingNow, userLocation])
+  }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly])
 
   // Filtered deck (with distance support + blocking)
   // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
@@ -4807,7 +4885,13 @@ function App() {
             {liveTrainingNow.length > 0 && <span className="ml-1 text-[8px] text-[#22c55e]">+{liveTrainingNow.length} live</span>}
           </button>
           {liveTrainingNow.length > 0 && (
-            <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}>🟢 {liveTrainingNow.length} LIVE {currentUser?.trainingNow && currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}{syncPartnerId ? ' 🔄SYNC' : ''}{activeSyncCount > 0 ? ` · 🔄${activeSyncCount} PARES EN SYNC` : ''}</span>
+            <button 
+              onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(true); /* keep user in current tab or explore */ }}
+              className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50 active:brightness-90 transition" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}
+              title="Ver mapa en vivo"
+            >
+              🟢 {liveTrainingNow.length} LIVE {currentUser?.trainingNow && currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}{syncPartnerId ? ' 🔄SYNC' : ''}{activeSyncCount > 0 ? ` · 🔄${activeSyncCount} PARES EN SYNC` : ''}
+            </button>
           )}
         </div>
 
@@ -4978,7 +5062,7 @@ function App() {
                   <span className="text-[8px] bg-[#22c55e]/20 px-1.5 rounded">BETA</span>
                 </div>
                 <button 
-                  onClick={() => setShowLiveMap(!showLiveMap)} 
+                  onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(!showLiveMap) }} 
                   className={`text-xs px-3 py-1 rounded-full border transition ${showLiveMap ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
                 >
                   {showLiveMap ? 'Ocultar mapa' : 'Ver mapa por zonas'}
@@ -4993,13 +5077,23 @@ function App() {
                     className="w-full h-[340px] rounded-2xl overflow-hidden border border-[#22c55e]/30 bg-[#0a0a0c] shadow-inner"
                     style={{ zIndex: 1 }}
                   />
-                  {/* Live badge */}
-                  <div className="absolute bottom-2 right-2 text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                    🟢 {liveTrainingNow.length} en vivo • realtime
+                  {/* Live badge + near filter */}
+                  <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                    <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                      🟢 {liveTrainingNow.length} en vivo • realtime
+                    </div>
+                    <button
+                      onClick={() => { try { triggerHaptic('light') } catch {}; setMapNearOnly(!mapNearOnly) }}
+                      className={`text-[8px] px-2 py-0.5 rounded-full border transition ${mapNearOnly ? 'bg-[#3b82f6] text-white border-[#3b82f6]' : 'bg-black/70 text-[#3b82f6] border-[#3b82f6]/40 hover:bg-[#3b82f6]/10'}`}
+                    >
+                      {mapNearOnly ? '✓ Cerca de mí (10km)' : 'Solo cerca de mí'}
+                    </button>
                   </div>
+
                   {/* Centrar / recenter control */}
                   <button
                     onClick={() => {
+                      try { triggerHaptic('light') } catch {}
                       const map = mapInstanceRef.current
                       if (!map) return
                       if (markersRef.current.length > 0) {
@@ -5013,6 +5107,15 @@ function App() {
                   >
                     Centrar
                   </button>
+
+                  {/* Small zone legend (top left, subtle) */}
+                  <div className="absolute top-2 left-2 text-[7px] bg-black/70 text-white/90 px-1.5 py-0.5 rounded flex flex-col gap-0.5 leading-none" style={{fontSize:'7.5px'}}>
+                    <div><span style="color:#22c55e">●</span> Viña</div>
+                    <div><span style="color:#FF671F">●</span> Stgo</div>
+                    <div><span style="color:#3b82f6">●</span> Valpo</div>
+                    <div><span style="color:#a855f7">●</span> Concón</div>
+                  </div>
+
                   {/* GPS prompt overlay (only when map visible but no location yet) */}
                   {!userLocation && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/65 text-center p-5 rounded-2xl text-xs">
@@ -5027,13 +5130,24 @@ function App() {
                       </div>
                     </div>
                   )}
+
+                  {/* Beautiful empty state when map open but no one live (after near filter) */}
+                  {showLiveMap && liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && (u.distance||999)<10))).length === 0 && userLocation && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl text-center p-4 text-xs">
+                      <div>
+                        <div className="text-2xl mb-1">🗺️</div>
+                        <div className="font-semibold">Nadie entrenando cerca ahora</div>
+                        <div className="text-[#9CA3AF] mt-0.5">Activa "Entrenando Ahora (EN VIVO)" en tu perfil para aparecer aquí. ¡Serás el centro del mapa!</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
               {showLiveMap && (
                 <div className="mt-1 text-[8px] text-[#9CA3AF] px-1 flex items-center gap-2">
-                  Zonas por ciudad (tamaño = joins). Los marcadores se actualizan en vivo desde Firestore.
+                  Marcadores con foto o iniciales. Click en punto = perfil completo. Tamaño = joins (FOMO). Actualiza en vivo.
                   <span className="text-[#22c55e]/60">•</span> 
-                  <span className="text-[#3b82f6]">●</span> = tú
+                  <span className="text-[#3b82f6]">●</span> = tú (con radio 10km)
                 </div>
               )}
             </div>

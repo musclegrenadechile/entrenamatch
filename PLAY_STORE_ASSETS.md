@@ -99,7 +99,13 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 ---
 
 ## What's new (for this Pre-Alpha release, short & punchy)
-**v0.1.15-login-fix (versionCode 20) — FIX CRÍTICO #310 EN LOGIN (hook order) + MAPA ESTABILIZADO**
+**v0.1.15-login-fix + mapa (versionCode 20) — FIX #310 LOGIN + MAPA EN VIVO PRECIOSO (fotos/iniciales, radio personal, filtros, click a perfil)**
+• FIX REACT #310 en login resuelto (hook del mapa movido antes de guards de auth/onboarding). Estable y a prueba de transiciones.
+• **Mapa mejorado fuertemente** (sigue con el mapa): marcadores personales con foto real o iniciales bonitas + nombre (se siente vivo y "precioso"). Click en marcador abre perfil completo. Botón "Ver perfil" + "Unirme" en popups. Filtro "Solo cerca de mí (10km)" con toggle. Círculo de radio personal alrededor de tu posición. Leyenda de zonas. Botón Centrar. Persistencia de preferencia de mapa abierto. Hápticos en interacciones. Limpieza robusta (sin leaks). Auto GPS al abrir. Popups premium. Integración (tocar LIVE count abre mapa).
+• Todo con el mismo realtime Firestore, GPS Capacitor, sync directo a Arena.
+• Build limpia, web + Android listos.
+
+**Anterior (base):**
 • FIX REACT #310 "Rendered more hooks..." que crasheaba justo al hacer login (tanto en web GH Pages bundle como en la app Android dentro de WebView). Error aparecía como "Uncaught Error: Minified React error #310" apuntando a useEffect en App.
 • Causa: useEffect del "mapa de personas entrenando en tiempo real por zonas" (Leaflet) se había movido tarde en el archivo (después de los guards de AuthScreen y OnboardingFlow) durante el fix anterior de TDZ. Los guards retornan temprano en renders no-autenticados → conteo de hooks inconsistente al transicionar a logueado.
 • Fix: reordenamiento correcto de hooks. Ahora TODOS los useState/useEffect/useMemo/useRef se declaran incondicionalmente al inicio del componente, antes de cualquier `if (!isAuthenticated) return <Auth.../>`. El bloque del mapa ahora vive establemente después de liveTrainingNow (para no TDZ en deps) pero MUCHO antes de los guards.

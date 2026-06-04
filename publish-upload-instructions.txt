@@ -1,18 +1,24 @@
-=== UPLOAD STATUS AT 06/04/2026 16:52:26 ===
-Automated publish attempts failed due to shell parsing errors in agent env and/or Google 403 'Version code already used' (even after bump to 16).
+﻿=== READY FOR MANUAL UPLOAD TO PLAY CLOSED (code 17) ===
 
-ACTION FOR USER TO COMPLETE 'SUBE AHORA':
-1. Open Command Prompt (cmd.exe, not PowerShell).
-2. cd /d C:\Users\muscl\fitvina
-3. publish-play.bat closed   (this may still need manual seed first)
+AAB file to upload: EntrenaMatch-v0.1.12-arena-code17.aab   (or EntrenaMatch-release.aab)
 
-RECOMMENDED: Manual upload in Play Console (often required first time per script comments):
-- Go to Play Console > Closed testing > Upload the AAB below.
-- AAB: EntrenaMatch-v0.1.12-arena-code17.aab (in root)
-- Paste the What's new text from PLAY_STORE_ASSETS.md section v0.1.12-arena (versionCode 17)
-- Roll out to testers.
+Steps:
+1. Play Console > Closed testing > Upload the AAB above.
+2. In Release notes, paste EXACTLY the text below:
 
-Once manual upload done, future updates can use the script.
+**v0.1.12-arena (versionCode 17) — LAUNCH FIX + FEED POLISH**
+• FIX CRÍTICO: la app ahora abre sin generar error en Android (crash en inicio por Play Integrity / Firebase resuelto tras diagnóstico en dispositivo real con adb; ya no NPE al restaurar sesión).
+• Feed mejorado: encabezados y filtros horizontales (Live / Fijados / Reales) ahora se mueven fluidamente con scroll snap, touch optimizado y hint visual "desliza".
+• Tira "En vivo ahora en la comunidad" con snap y referencias a Arena.
+• Perfil: tarjetas de estadísticas más consistentes y "Nivel" como elemento cuadrado/prominente.
+• EntrenaSync Arena como killer feature única: ritual de co-presencia en vivo con energy orb reactiva, flying emojis, combos, historias duales automáticas en muro+feed, leyendas/bonds persistentes, replay.
+• Estabilidad Android: google-services.json estricto en build, guards en push/integrity, direct publish en feed sin redirect, photo con progreso real.
+• Todo listo para Closed testing en Play Store.
 
-AABs ready: EntrenaMatch-v0.1.12-arena-code17.aab and EntrenaMatch-release.aab
+3. Save, review, rollout to your closed testers.
 
+After manual upload succeeds, you can try the automated script locally in a clean Command Prompt (cmd.exe):
+cd /d C:\Users\muscl\fitvina
+publish-play.bat closed
+
+All source changes committed and pushed (latest commit has code 17).

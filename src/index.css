@@ -803,3 +803,12 @@ input[type="range"]::-moz-range-thumb {
 .leaflet-popup-close-button:hover {
   color: #fff !important;
 }
+
+/* Custom personal markers on the live map (photos/initials + name labels) */
+.entrenamatch-marker {
+  background: transparent;
+  border: none;
+}
+.entrenamatch-marker img {
+  image-rendering: -webkit-optimize-contrast;
+}
