@@ -23,6 +23,8 @@
   }
   trainingNow?: boolean
   trainingNowSince?: number
+  liveStreak?: number // consecutive days hosting live training (killer retention)
+  lastLiveDate?: number
 }
 
 export interface Message {
@@ -103,6 +105,8 @@ export interface CurrentUser extends Omit<Profile, 'id'> {
   availableToday?: boolean
   trainingNow?: boolean
   trainingNowSince?: number
+  liveStreak?: number // consecutive days hosting live training (killer retention)
+  lastLiveDate?: number
   verificationStatus?: 'unverified' | 'pending' | 'verified'
   verificationDate?: number
   verificationDocuments?: {

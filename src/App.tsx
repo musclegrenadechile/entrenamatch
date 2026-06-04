@@ -699,6 +699,8 @@ function App() {
             verificationStatus: data.verificationStatus,
             trainingNow: data.trainingNow || false,
             trainingNowSince: data.trainingNowSince || undefined,
+            liveStreak: data.liveStreak,
+            lastLiveDate: data.lastLiveDate,
           })
         }
       })
@@ -743,6 +745,8 @@ function App() {
               legalConsents: realProfile.legalConsents || currentUser?.legalConsents,
               trainingNow: realProfile.trainingNow,
               trainingNowSince: realProfile.trainingNowSince,
+              liveStreak: realProfile.liveStreak,
+              lastLiveDate: realProfile.lastLiveDate,
             }
             if (merged.name) {
               saveUser(merged)
@@ -767,6 +771,8 @@ function App() {
               legalConsents: currentUser.legalConsents,
               trainingNow: currentUser.trainingNow,
               trainingNowSince: currentUser.trainingNowSince,
+              liveStreak: currentUser.liveStreak,
+              lastLiveDate: currentUser.lastLiveDate,
             })
             // console.log removed (debug)
           }
@@ -876,6 +882,8 @@ function App() {
           lng: user.lng,
           trainingNow: user.trainingNow,
           trainingNowSince: user.trainingNowSince,
+          liveStreak: user.liveStreak,
+          lastLiveDate: user.lastLiveDate,
         };
         if (user.legalConsents) {
           profileUpdate.legalConsents = user.legalConsents;
@@ -3792,7 +3800,7 @@ function App() {
           <div className="px-4 py-2 bg-[#0D0D10] border-b border-[#22c55e]/30">
             <div className="flex items-center gap-2 mb-1">
               <div className="live-pill green">🟢 EN VIVO AHORA</div>
-              <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡urgencia!' : ''} {liveTrainingNow.length > 5 ? '· ¡Hot zone!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}</div>
+              <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡urgencia!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}</div>
             </div>
             {liveTrainingNow.length > 0 ? (
               <div className="flex gap-2 overflow-x-auto pb-1">
@@ -3868,7 +3876,7 @@ function App() {
           <div className="absolute inset-0 z-[95] bg-[#0D0D10] flex flex-col" onClick={() => { setShowLiveModal(false); setLiveModalSearch(''); setLiveModalSort('distance'); }}>
             <div className="p-4 flex items-center justify-between border-b border-[#2F2F35]">
               <button onClick={() => { setShowLiveModal(false); setLiveModalSearch(''); setLiveModalSort('distance'); }}><ArrowLeft /></button>
-              <div className="font-medium flex items-center gap-2">Entrenando Ahora cerca ({liveTrainingNow.length}) {liveTrainingNow.some(u => u.seVaEnMin > 0) && <span className="text-orange-400 text-xs">¡urgencia!</span>}</div>
+              <div className="font-medium flex items-center gap-2">Entrenando Ahora cerca ({liveTrainingNow.length}) {liveTrainingNow.some(u => u.seVaEnMin > 0) && <span className="text-orange-400 text-xs">¡urgencia!</span>} {liveTrainingNow.length > 5 && <span className="text-[#22c55e] text-xs">🔥 HOT</span>}</div>
               <div />
             </div>
 
@@ -4051,7 +4059,7 @@ function App() {
 
             {liveTrainingNow.length > 0 && (
               <div className="mb-3">
-                <div className="text-[9px] text-[#22c55e] mb-1 px-1">🟢 Live ahora en la comunidad {liveTrainingNow.some(u=>u.seVaEnMin<15) ? '· ¡se va pronto!' : ''}</div>
+                <div className="text-[9px] text-[#22c55e] mb-1 px-1">🟢 Live ahora en la comunidad {liveTrainingNow.some(u=>u.seVaEnMin<15) ? '· ¡se va pronto!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE' : ''}</div>
                 <div className="flex gap-1 overflow-x-auto pb-1">
                   {liveTrainingNow.slice(0,3).map(u => (
                     <motion.div key={u.id} onClick={() => setActiveTab('explore')} whileTap={{scale:0.94}} className="text-[9px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-0.5 rounded-full border border-[#22c55e]/30 cursor-pointer active:bg-[#22c55e]/20 flex items-center gap-1">
@@ -4139,6 +4147,7 @@ function App() {
                             {ownerProfile && ownerProfile.level && <span className="text-[8px] text-[#FF671F]/70 ml-1">{ownerProfile.level}</span>}
                             {ownerProfile && realProfiles.some(rp => rp.id === post.ownerId) && <span className="ml-1 text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>}
                             {ownerProfile?.trainingNow && <span className="live-pill bg-[#22c55e] text-black text-[8px] ml-1">🟢 LIVE</span>}
+                            {(post.text || '').toLowerCase().includes('me uno al live') && <span className="text-[8px] bg-[#22c55e] text-black px-1 rounded ml-1">🔥 live join</span>}
                           </div>
                           <div className="text-[10px] text-[#9CA3AF]">· {getRelativeTime(post.timestamp)}</div>
                           {post.pinned && <span className="text-[8px] text-[#FF671F]">fijado</span>}
@@ -5098,6 +5107,13 @@ function App() {
               ))}
             </div>
 
+            {/* Live streak badge - killer retention stat, shows when active */}
+            {currentUser.liveStreak && currentUser.liveStreak > 0 && (
+              <div className="px-4 -mt-2 mb-1 text-center">
+                <span className="inline-block bg-[#22c55e]/10 text-[#22c55e] text-xs px-3 py-0.5 rounded-full font-bold">🔥 {currentUser.liveStreak}d live streak — ¡sigue así!</span>
+              </div>
+            )}
+
             {/* Training Types - visual polish */}
             <div className="px-4 mt-5">
               <div className="flex items-center gap-2 text-xs uppercase tracking-[1.5px] text-[#9CA3AF] mb-2 px-1">
@@ -5150,7 +5166,27 @@ function App() {
                 <button 
                   onClick={() => {
                     const newVal = !currentUser.trainingNow
-                    const updated = { ...currentUser, trainingNow: newVal, trainingNowSince: newVal ? Date.now() : undefined }
+                    let streakUpdate: any = {}
+                    if (newVal) {
+                      const todayStr = new Date().toDateString()
+                      const lastStr = currentUser.lastLiveDate ? new Date(currentUser.lastLiveDate).toDateString() : null
+                      let newStreak = currentUser.liveStreak || 0
+                      if (!lastStr || lastStr === todayStr) {
+                        // same day or first
+                        if (!lastStr) newStreak = 1
+                      } else {
+                        const lastDate = new Date(lastStr)
+                        const yesterday = new Date()
+                        yesterday.setDate(yesterday.getDate() - 1)
+                        if (lastDate.toDateString() === yesterday.toDateString()) {
+                          newStreak = (currentUser.liveStreak || 0) + 1
+                        } else {
+                          newStreak = 1
+                        }
+                      }
+                      streakUpdate = { liveStreak: newStreak, lastLiveDate: Date.now() }
+                    }
+                    const updated = { ...currentUser, trainingNow: newVal, trainingNowSince: newVal ? Date.now() : undefined, ...streakUpdate }
                     saveUserWithRealSync(updated as CurrentUser)
                     toast(newVal ? '🟢 ¡Entrenando ahora en vivo! La gente cerca te verá' : 'Entrenamiento finalizado')
                     if (newVal) {
@@ -5170,7 +5206,10 @@ function App() {
                 const myPosts = profilePosts[effectiveUserId] || [];
                 const livePost = myPosts.find((p: any) => (p.text || '').toLowerCase().includes('entrenando ahora')) || myPosts[0];
                 if (!livePost || ((livePost.comments || []).length + (livePost.likes || []).length) === 0) return null;
-                const recent = [...(livePost.comments || []), ...(livePost.likes || []).map((id: string) => ({ userId: id, userName: 'Alguien', isLike: true }))].slice(-3).reverse();
+                const recent = [...(livePost.comments || []), ...(livePost.likes || []).map((id: string) => {
+                  const prof = [...realProfiles, ...SEED_PROFILES].find(p => p.id === id);
+                  return { userId: id, userName: prof?.name || 'Compañero', isLike: true };
+                })].slice(-3).reverse();
                 return (
                   <div className="mt-3 pt-3 border-t border-[#2F2F35]">
                     <div className="text-[9px] text-[#22c55e] mb-1 flex items-center gap-1">🔥 Actividad en tu live ahora <span className="text-[#9CA3AF]">(de tu post "Entrenando ahora")</span></div>
@@ -5216,7 +5255,7 @@ function App() {
                     {myPosts.some((p: any) => p.pinned) && <span>📌 {myPosts.filter((p: any) => p.pinned).length}</span>}
                     <span>❤️ {likes}</span>
                     <span>💬 {comms}</span>
-                    {currentUser.trainingNow && <span className="text-[#22c55e]">🟢 Live</span>}
+                    {currentUser.trainingNow && <span className="text-[#22c55e]">🟢 Live {currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}</span>}
                     <span className="text-[#FF671F]/60">· comunidad interactúa</span>
                   </div>
                 )
@@ -6618,6 +6657,7 @@ function App() {
                           const jc = lp ? (lp.comments || []).length + (lp.likes || []).filter((id: string) => id !== showFullProfile.id).length : 0;
                           return jc > 0 ? <span className="text-xs ml-1">+{jc} unidos</span> : null;
                         })()}
+                        {showFullProfile.liveStreak && showFullProfile.liveStreak > 0 && <span className="text-xs ml-1">🔥{showFullProfile.liveStreak}d</span>}
                       </div>
                       <button onClick={() => { handleSwipe(showFullProfile.id, 'right'); setShowFullProfile(null); /* live join toast + auto muro comment handled inside handleSwipe for consistency */ }} className="mt-1 w-full py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-bold active:bg-[#16a34a]">Unirme ahora al entrenamiento 🔥</button>
                     </>
