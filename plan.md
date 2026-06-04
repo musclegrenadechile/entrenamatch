@@ -885,3 +885,18 @@ Sigue con todo: próximo - dedicated sync session doc para instant updates sin re
 
 Con json listo: build AAB v0.2 con EntrenaSync como estrella + Android fix.
 
+
+## Sigue con todo (user: "sigue con todo")
+
+Continuando full speed con EntrenaSync + todo el app:
+- Rating al final implementado + UI modal + persist + boost extra.
+- Promoción en live modal.
+- Más polish en sync panel (timer, history, disclaimer).
+- Mirror y persist robustos.
+- Web build + push.
+- Docs actualizados (BETA, PLAY, plan).
+
+Sigue con todo: más en EntrenaSync (instant updates, feed integration, explore badges), Android (esperando json para AAB con fix + feature), feed/live polish, Play assets.
+
+Todo a todo ritmo. Hard refresh web para ver cambios.
+
