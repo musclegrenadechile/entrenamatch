@@ -899,3 +899,31 @@ Mejoras live + dise?o:
 - Push, AAB pulido.
 - Sigue puliendo con todo. Pr?ximo: m?s (FCM, Play upload, etc.).
 
+
+## Continuaci?n "sigue puliendo con todo" (user "sigue puliendo con todo")
+
+- Radar sweep anim CSS.
+- Profile live banner progress.
+- Stats live card glow/pulse.
+- Push, AAB pulido.
+- Sigue puliendo con todo. Pr?ximo: m?s live/FCM/Play.
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+Mejoras live + dise?o:
+- Live banner: glow class + subtle shadow for premium visual pop.
+- Radar: sweep anim.
+- Profile live: progress + glow on banner.
+- Stats: glow/pulse.
+- Push, AAB pulido.
+- Sigue con todo. Pr?ximo: m?s live (FCM, radar sweep polish), Play upload con visuals, full review polish (chat, muro motion).
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Live banner glow + radar sweep.
+- Profile live glow + progress.
+- Push, AAB pulido.
+- Sigue con todo. Pr?ximo: m?s live polish (FCM, etc.), Play upload.
+

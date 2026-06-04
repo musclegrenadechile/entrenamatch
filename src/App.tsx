@@ -4043,7 +4043,7 @@ function App() {
         {/* ===== EXPLORE / SWIPE (fully owned by ExploreTab) ===== */}
         {/* LIVE TRAINING BANNER - ALWAYS VISIBLE, the star feature for urgency and retention. Green pulsing, se va en, mini photos, quick join. Makes app addictive. Top of explore for maximum impact. */}
         {activeTab === 'explore' && (
-          <div className="px-4 py-2 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden">
+          <div className="px-4 py-2 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden live-banner-glow">
             <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10"></div>
             <div className="flex items-center gap-2 mb-1 relative z-10">
               <div className="live-pill green">🟢 EN VIVO AHORA</div>
@@ -7045,7 +7045,7 @@ function App() {
                   )}
                   {showFullProfile.trainingNow && showFullProfile.trainingNowSince && (
                     <>
-                      <div className="mt-2 inline-flex items-center gap-2 bg-[#22c55e] text-black px-3 py-1 rounded-full text-sm font-bold relative overflow-hidden">
+                      <div className="mt-2 inline-flex items-center gap-2 bg-[#22c55e] text-black px-3 py-1 rounded-full text-sm font-bold relative overflow-hidden shadow-md shadow-[#22c55e]/30">
                         🟢 ENTRENANDO AHORA • en vivo hace {Math.floor((Date.now() - showFullProfile.trainingNowSince)/60000)}m
                         {showFullProfile.trainingNowSince && <span className="text-xs">· se va pronto</span>}
                         {(() => {
