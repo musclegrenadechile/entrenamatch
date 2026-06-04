@@ -4164,6 +4164,7 @@ function App() {
             {/* Simple visual "map" row: mini avatars + pulsing dots sorted by distance (emoji radar feel, FOMO visual) - enhanced */}
             {liveTrainingNow.length > 1 && (
               <div className="px-4 py-2 border-b border-[#2F2F35]/50 bg-black/30 radar-container">
+                <div className="radar-lines"></div>
                 <div className="text-[8px] text-[#9CA3AF] mb-1">Cerca de ti (radar ordenado por distancia)</div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {[...liveTrainingNow].sort((a,b)=> (a.distance||0)-(b.distance||0)).map((u, idx) => (
