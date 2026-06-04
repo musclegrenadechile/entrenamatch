@@ -941,3 +941,29 @@ Mejoras live + dise?o:
 - Push, AAB pulido-continua.
 - Sigue con todo. Pr?ximo: m?s live polish (FCM, etc.), Play upload con visuals.
 
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Banner glow, radar sweep, profile live glow/progress.
+- Push, AAB pulido-continua.
+- Sigue con todo. Pr?ximo: m?s live polish (FCM, etc.), Play upload con visuals.
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+Mejoras live + dise?o:
+- Live banner: glow + shadow.
+- Radar: sweep.
+- Profile live: glow + progress.
+- Stats: glow/pulse.
+- Matches cards: live ring/glow if trainingNow.
+- Push, AAB.
+- Sigue con todo full green light! Pr?ximo: m?s live (FCM, radar polish), Play upload, chat/muro motion, full review.
+
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Matches cards: live ring/glow if trainingNow.
+- Push, AAB.
+- Sigue con todo. Pr?ximo: m?s live polish (FCM, etc.), Play upload.
+

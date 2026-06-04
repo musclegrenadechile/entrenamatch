@@ -4411,7 +4411,7 @@ function App() {
                             {ownerProfile && ownerProfile.level && <span className="text-[8px] text-[#FF671F]/70 ml-1">{ownerProfile.level}</span>}
                             {ownerProfile && realProfiles.some(rp => rp.id === post.ownerId) && <span className="ml-1 text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>}
                             {ownerProfile?.trainingNow && <span className="live-pill bg-[#22c55e] text-black text-[8px] ml-1">🟢 LIVE {ownerProfile.liveStreak ? `🔥${ownerProfile.liveStreak}d` : ''}</span>}
-                            {(post.text || '').toLowerCase().includes('me uno al live') && <span className="text-[8px] bg-[#22c55e] text-black px-1 rounded ml-1">🔥 live join</span>}
+                            {(post.text || '').toLowerCase().includes('me uno al live') && <span className="text-[8px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-1.5 py-0.5 rounded-full ml-1 font-bold shadow-sm">🔥 live join</span>}
                           </div>
                           <div className="text-[10px] text-[#9CA3AF]">· {getRelativeTime(post.timestamp)}</div>
                           {post.pinned && <span className="text-[8px] text-[#FF671F]">fijado</span>}
@@ -4893,7 +4893,7 @@ function App() {
                 {matchProfiles
                   .filter(p => !blockedUsers.includes(p.id))
                   .map(profile => (
-                  <div key={profile.id} onClick={() => openChat(profile.id)} className="card card-glass rounded-3xl overflow-hidden active:opacity-80 cursor-pointer relative ring-1 ring-white/5" style={{transition: 'transform 0.2s'}}>
+                  <div key={profile.id} onClick={() => openChat(profile.id)} className={`card card-glass rounded-3xl overflow-hidden active:opacity-80 cursor-pointer relative ring-1 ring-white/5 ${profile.trainingNow ? 'ring-2 ring-[#22c55e]/60 shadow-lg shadow-[#22c55e]/10' : ''}`} style={{transition: 'transform 0.2s'}}>
                     <div className="relative">
                       <img src={profile.photos[0]} className="w-full aspect-square object-cover" />
                       <div className="absolute top-2 right-2 flex gap-1">
@@ -4901,7 +4901,7 @@ function App() {
                           <div className="text-[9px] bg-[#FF671F] text-black px-1.5 py-0.5 rounded-full font-bold">REAL</div>
                         )}
                         {profile.trainingNow && (
-                          <div className="text-[9px] bg-[#22c55e] text-black px-1.5 py-0.5 rounded-full font-bold">🟢 LIVE {profile.liveStreak ? `🔥${profile.liveStreak}d` : ''}</div>
+                          <div className="text-[9px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-1.5 py-0.5 rounded-full font-bold shadow-sm ring-1 ring-[#22c55e]/50">🟢 LIVE {profile.liveStreak ? `🔥${profile.liveStreak}d` : ''}</div>
                         )}
                         {profile.verificationStatus === 'verified' && (
                           <div className="text-[9px] bg-[#22c55e] text-black px-1 py-0.5 rounded-full">✓</div>
