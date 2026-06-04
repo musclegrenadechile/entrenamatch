@@ -4043,8 +4043,9 @@ function App() {
         {/* ===== EXPLORE / SWIPE (fully owned by ExploreTab) ===== */}
         {/* LIVE TRAINING BANNER - ALWAYS VISIBLE, the star feature for urgency and retention. Green pulsing, se va en, mini photos, quick join. Makes app addictive. Top of explore for maximum impact. */}
         {activeTab === 'explore' && (
-          <div className="px-4 py-2 bg-[#0D0D10] border-b border-[#22c55e]/30">
-            <div className="flex items-center gap-2 mb-1">
+          <div className="px-4 py-2 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10"></div>
+            <div className="flex items-center gap-2 mb-1 relative z-10">
               <div className="live-pill green">🟢 EN VIVO AHORA</div>
               <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡urgencia!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}</div>
             </div>

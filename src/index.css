@@ -193,13 +193,15 @@ body {
   background: linear-gradient(135deg, #FF671F, #FF4F79);
   color: white;
   border-bottom-right-radius: 6px;
-  box-shadow: 0 2px 8px rgba(255, 103, 31, 0.3);
+  box-shadow: 0 4px 12px rgba(255, 103, 31, 0.4);
+  border: 1px solid rgba(255,255,255,0.2);
 }
 
 .message-bubble.received {
   background: var(--fit-card2);
   border: 1px solid var(--fit-border);
   border-bottom-left-radius: 6px;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.2);
 }
 
 /* Swipe animations helpers */
