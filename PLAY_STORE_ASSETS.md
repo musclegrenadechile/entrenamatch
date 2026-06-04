@@ -98,7 +98,7 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • Tira "En vivo ahora en la comunidad" con snap y referencias a Arena.
 • Perfil mucho más vivo: hero con pulso live + banner ENTRENANDO AHORA, "Mi vida de entrenamiento" summary card, Sync Legends con barras de progreso y niveles, actividad reciente de likes/comments en muro, quick set main photo en galería, achievements visuales.
 • EntrenaSync Arena como killer feature única: ritual de co-presencia en vivo con energy orb reactiva, flying emojis, combos, historias duales automáticas en muro+feed, leyendas/bonds persistentes, replay. + Nueva: Captura rápida de foto DENTRO de la Arena (el momento queda en el replay + se publica en los muros de ambos).
-• Estabilidad Android: google-services.json estricto en build, guards en push/integrity, direct publish en feed sin redirect, photo con progreso real. + Geolocalización REAL vía Capacitor (GPS preciso en APK) para distancias y "vivo cerca" realistas. Permisos ACCESS_FINE_LOCATION declarados. Toggle live pide GPS automáticamente.
+• Estabilidad Android: google-services.json estricto en build, guards en push/integrity, direct publish en feed sin redirect, photo con progreso real. + Geolocalización REAL vía Capacitor (GPS preciso en APK) para distancias y "vivo cerca" realistas. Permisos ACCESS_FINE_LOCATION declarados. Toggle live + login + explore piden GPS automáticamente. Botón "Actualizar ubicación real" en Perfil. Arena muestra distancia real al partner. Distancias en cards, filtros, live usan coords reales de perfiles.
 • Todo listo para Closed testing en Play Store.
 
 **Previous highlights retained (Arena wave + giant UX):**

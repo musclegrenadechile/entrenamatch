@@ -512,7 +512,7 @@ Update and test thoroughly. Report back.
 - Profile ultra vivo y atractivo: live pulsing hero + "ENTRENANDO AHORA" banner, "Mi vida de entrenamiento" summary card (streaks + legends count), Sync Legends with progress bars + LV badges + hover, recent activity feed showing who liked/commented your posts, quick ★ set main photo in gallery strip, richer live stats with pulses.
 - Arena remains the disruptive star (full ritual, flying, combos, dual stories, bonds/legends, replay, global FOMO in feed).
 - All previous giant updates retained (direct Feed publish modal + success banner + confetti instead of profile jump, Storage photo with real 0-100% progress + preview, attractive guarded Sync join, etc.).
-- AAB ready: EntrenaMatch-v0.1.12-arena-code17.aab (and EntrenaMatch-release.aab) in root. Also fresh debug APK (EntrenaMatch-debug-real-geo.apk) with REAL geolocation.
+- AAB ready: EntrenaMatch-v0.1.12-arena-code17.aab (and EntrenaMatch-release.aab) in root. Also fresh debug APK (EntrenaMatch-debug-geo-continue.apk) with REAL geolocation + profile/activity polish.
 - Test focus for this build:
   1. Install the new AAB (or use debug APK via adb).
   2. Force stop + open app cold → must reach login/home without any crash or force close.
@@ -522,7 +522,7 @@ Update and test thoroughly. Report back.
   6. In Profile: hero pulses if live, big ENTRENANDO banner, summary card with streaks/legends, recent activity list from your muro, legends with progress bars, gallery has ★ to set main photo. Make sure it feels much more vivo.
   7. Full Arena test with 2 accounts if possible (live toggle, join, actions + flying + combos, rate, check dual muro + feed stories + legends appear). Probar la nueva captura de foto DENTRO de la Arena (botón 📸 Capturar momento) — debe subir, agregarse al replay y publicarse en ambos muros.
   8. Optional: use 🛡️ Google Play Integrity button in Profile to test (should not crash).
-  9. Test REAL geolocation: go to Explore or Perfil filters, tap "📍 Usar ubicación real del teléfono (GPS)". Grant permission. Should show accurate km distances to people. Toggle "Entrenando Ahora" should auto-request GPS. Live people should use real distances if they also shared. If denied, falls back gracefully.
+  9. Test REAL geolocation: go to Explore or Perfil filters, tap "📍 Usar ubicación real del teléfono (GPS)" or "Actualizar ubicación real". Grant permission. Should show accurate km distances to people (in cards, live strip, arena header). Toggle "Entrenando Ahora" auto-requests GPS and updates your profile coords in real-time. Arena shows distance to your sync partner. Live people use real distances from their profiles. Button in profile hero for manual update. If denied, falls back gracefully but "GPS requerido" shown. Check Perfil has "📍 real GPS" indicator.
 - Use Samsung Members "Informe de error" or adb logcat if anything odd. chrome://inspect for JS side if connected.
 
 This is the build to upload to Closed track. Full "sigue con todo" — more unique features coming after validation.

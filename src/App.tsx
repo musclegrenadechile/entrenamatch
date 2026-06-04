@@ -1459,6 +1459,9 @@ function App() {
   // Also reloads *own* profilePosts when we are the one training live, so processIncomingLiveJoins can detect new join comments/likes from others in near real-time.
   useEffect(() => {
     if (activeTab === 'explore' && !isDemoMode) {
+      if (!userLocation) {
+        requestUserLocation().catch(() => {});
+      }
       const id = setInterval(() => {
         loadRealProfiles().catch(() => {});
         if (currentUser?.trainingNow) {
@@ -6233,7 +6236,14 @@ function App() {
                   <span className="text-[10px] px-1.5 py-px rounded-full bg-[#FF4F79]/10 text-[#FF4F79] font-semibold">{currentUser.level}</span>
                   <span className="text-white/60">•</span> 
                   <span className="chip-health text-[10px] px-2 py-0.5 !font-semibold">{currentUser.intensity || 'Moderado'}</span>
+                  {userLocation && <span className="text-[9px] text-[#22c55e] ml-1">📍 real GPS</span>}
                 </div>
+                <button 
+                  onClick={requestUserLocation}
+                  className="mt-1 text-[9px] text-[#22c55e] underline active:opacity-70"
+                >
+                  📍 Actualizar ubicación real (GPS)
+                </button>
                 {/* NEW: Big alive live status banner in hero */}
                 {currentUser.trainingNow && (
                   <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-2xl bg-[#22c55e] text-black text-xs font-extrabold tracking-wider shadow-[0_0_20px_rgba(34,197,94,0.6)]">
@@ -6680,7 +6690,7 @@ function App() {
                   {/* Header with presence + controls */}
                   <div className="flex items-center justify-between mb-2 relative z-20">
                     <div className="flex items-center gap-2">
-                      <div className="text-[#22c55e] font-extrabold text-[13px] tracking-[0.5px] flex items-center gap-1.5">🔄 EN ARENA SYNC <span className="text-[8px] font-normal opacity-60 align-middle">EN VIVO</span></div>
+                      <div className="text-[#22c55e] font-extrabold text-[13px] tracking-[0.5px] flex items-center gap-1.5">🔄 EN ARENA SYNC <span className="text-[8px] font-normal opacity-60 align-middle">EN VIVO</span>{userLocation && realProfiles.find(p=>p.id===syncPartnerId)?.lat && <span className="text-[9px] ml-1 text-[#FF671F]">• {getDistanceKm(userLocation.lat, userLocation.lng, realProfiles.find(p=>p.id===syncPartnerId)!.lat!, realProfiles.find(p=>p.id===syncPartnerId)!.lng!).toFixed(1)}km</span>}</div>
                       {syncCombo >= 2 && <div className="text-[9px] px-1.5 py-px rounded bg-[#FF671F] text-black font-black tracking-wider">COMBO x{syncCombo}</div>}
                     </div>
                     <div className="flex items-center gap-1.5 text-[10px]">
