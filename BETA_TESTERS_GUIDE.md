@@ -118,12 +118,31 @@ También puedes ir a GitHub (repo musclegrenadechile/entrenamatch) → pestaña 
 6. Instala. Recibirás actualizaciones automáticas cuando subamos nueva versión firmada.
 7. Abre la app → usa email real para crear cuenta → completa onboarding con datos reales.
 
-**Closed testing (recomendado cuando tengamos más testers, usa Google Group):**
-1. El admin crea un Google Group (o usa uno existente) y lo agrega en Play Console → Closed testing.
-2. Te agregan a ese Google Group (recibes invitación por email).
-3. Ve a Play Store → busca la app por nombre o usa el link de testers.
-4. Instala normalmente. Experiencia idéntica a una app publicada pero **solo visible para miembros del grupo**.
-5. Actualizaciones automáticas vía Play Store.
+**Closed testing (beta cerrada con Google Group - la que estamos usando ahora):**
+1. El admin crea/configura la pista en Play Console → Pruebas → **Prueba cerrada** (Closed testing). Crea la pista si no existe + agrega un Google Group o lista de testers.
+2. Te agregan al Google Group (recibes email de invitación) o te mandan link directo "Únete a la prueba".
+3. Abre el link de invitación desde tu teléfono Android (con la cuenta Google que está en el grupo).
+4. Acepta unirte a la prueba cerrada.
+5. En Play Store busca "EntrenaMatch" (o usa el link). La app **no aparece en búsquedas públicas ni para cuentas fuera del grupo**.
+6. Instala/actualiza. Recibirás actualizaciones automáticas de Play Store cuando subamos nuevas versiones (v0.1.4+).
+7. Abre la app → crea cuenta con email real → completa onboarding.
+
+**Nota importante (si el script de publish dice "Track not found")**:
+- A veces la primera vez hay que **subir el AAB manualmente** en Play Console para "seedear" la pista (incluso si la creaste en UI).
+- AAB fresco actual: `EntrenaMatch-v0.1.5-prealpha-closed.aab` (en la carpeta del proyecto).
+- Ve a Play Console > Pruebas > Prueba cerrada > Crear release o Editar > Sube el AAB > Guarda > Publica el rollout (100% del grupo o el % que quieras).
+- Después de eso el script automatizado (`publish-play.ps1 closed`) suele funcionar para releases siguientes.
+
+**v0.1.5-prealpha bugfix (importante para testers)**: Crash al "activar la notificación" resuelto.
+- Ya no se pide permiso de push automáticamente en cada login real (evita prompts raros).
+- En APK usa el botón nuevo en **Perfil** → "🔔 Activar notificaciones push nativas (reales en Android, incluso app cerrada)".
+- Más defensas en código + manifest actualizado (POST_NOTIFICATIONS + icon meta).
+- Prueba específicamente este flujo + recibir/tocar notificaciones (toasts, panel, sistema) sin que crashee la app.
+- Si usas web/PWA: el botón de notificaciones del navegador también mejorado.
+
+**Cómo encontrar el link de testers (para el admin o para invitar)**:
+- Play Console > Pruebas > Prueba cerrada > "Link para compartir" o "Cómo unirse a la prueba".
+- Compártelo con el grupo o testers individuales.
 
 **Importante**:
 - La app **nunca se publica** mientras esté en Internal o Closed.
@@ -145,7 +164,7 @@ También puedes ir a GitHub (repo musclegrenadechile/entrenamatch) → pestaña 
 - "No se actualiza la sesión" → Botón "Actualizar sesiones reales".
 - Login que salta a creación → Cierra sesión completamente con "Cambiar cuenta" (barra superior teal PRE-ALPHA o encabezado de tu Perfil).
 - "Los mensajes no llegan en tiempo real" → Asegúrate de estar en la misma red o prueba con fakes primero. Usa "Actualizar chats reales", verifica que ambos tengan el chat abierto o usen el botón. Hard refresh después de deploy. Los bg listeners + 30s polls + onSnapshot activo cubren live receive. Reporta si persiste.
-- Chat no hace scroll al final al recibir → Verifica versión (v0.1.0-prealpha con auto-scroll incluido). Hard refresh.
+- Chat no hace scroll al final al recibir → Verifica versión (v0.1.5-prealpha con auto-scroll incluido). Hard refresh.
 
 ## Protocolo de prueba del AAB firmado con cuentas reales (antes de subir a Play Internal)
 

@@ -4,7 +4,12 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 6 / 0.1.3-prealpha (AAB with Play Integrity guard + UI (🛡️ card before live toggle), onboarding live preview, full live/muro/feed, React fixes, PWA, landing/csea for compliance. Ready for Closed after track created in Console.)
+**Current version for this upload**: versionCode 8 / 0.1.5-prealpha (bugfix release: crash al activar notificaciones arreglado. 
+- Native push: ahora explícito vía botón en Perfil (no auto en login), defensivo contra google-services faltante o shapes raros de perm.
+- Browser notif onclick: setState wrapped en setTimeout para context externo.
+- Manifest: POST_NOTIFICATIONS + default_notification_icon meta.
+- Activación controlada por usuario + toasts claros.
+Incluye todos los features previos (live, muro, integrity, onboarding, etc.). Listo para re-subir a closed track.
 
 **Category**: Health & Fitness (or Social)
 
@@ -82,7 +87,7 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • Feedback estructurado + historial
 • Múltiples escapes de cuenta + PWA install mejorado
 • Legal + CSAE + deletion URL listos y públicos
-• Versión nativa Android (AAB) lista para Closed testing (versionCode 6 / 0.1.3-prealpha)
+• Versión nativa Android (AAB) lista para Closed testing (versionCode 8 / 0.1.5-prealpha) — fix crash notificaciones + activación explícita segura.
 
 ---
 

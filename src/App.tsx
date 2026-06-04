@@ -1020,47 +1020,65 @@ function App() {
   }, [saveUser, isDemoMode, firebaseUser?.uid])
 
   // Native push notifications setup (only for real users in native APK)
+  // NOTE: We no longer auto-request permission on every login to avoid unwanted prompts/crashes during "activation".
+  // Users explicitly activate via the button in Profile. This effect only sets up listeners if plugin present.
   useEffect(() => {
     if (isDemoMode || !firebaseUser?.uid || !PushNotifications) return
 
     (async () => {
       try {
-        const perm = await PushNotifications.requestPermissions()
-        if (perm.receive === 'granted') {
-          await PushNotifications.register()
-          console.log('✅ Push notifications registered for real user')
+        // Use check first; only request if we want explicit user action (see requestNativePushPermission)
+        let perm: any = {}
+        try {
+          perm = await PushNotifications.checkPermissions()
+        } catch (checkErr) {
+          console.warn('checkPermissions not available or failed', checkErr)
+        }
+        const alreadyGranted = perm && (perm.receive === 'granted' || perm.notifications === 'granted')
 
-          // Listen for registration (get the token to send from server later)
+        if (alreadyGranted) {
+          try {
+            await PushNotifications.register()
+            console.log('✅ Push notifications registered (already permitted)')
+          } catch (regErr) {
+            console.warn('register after check failed (google-services?)', regErr)
+          }
+        } else {
+          console.log('Push permission not yet granted for native (use the button in Profile to activate)')
+        }
+
+        // Always try to attach listeners (safe if already registered; plugin de-dupes in practice)
+        try {
           PushNotifications.addListener('registration', (token: any) => {
-            console.log('Push registration token (send this to server for this uid):', token.value)
-            // For prealpha beta: store or log so we can manually test notifications
+            console.log('Push registration token (send this to server for this uid):', token?.value || token)
           })
 
-          // Listen for notifications while app is open
           PushNotifications.addListener('pushNotificationReceived', (notification: any) => {
             console.log('Push received while open:', notification)
-            toast.info(notification.title || 'Nueva notificación', { 
-              description: notification.body || 'Revisa la app',
+            const title = (notification && (notification.title || notification.notification?.title)) || 'Nueva notificación'
+            const body = (notification && (notification.body || notification.notification?.body)) || 'Revisa la app'
+            toast.info(title, { 
+              description: body,
               className: 'bg-[#1C1C20] border-[#FF671F] text-white',
               duration: 5000
             })
           })
 
-          // Listen for action (tap on notification)
           PushNotifications.addListener('pushNotificationActionPerformed', (action: any) => {
             console.log('Push action performed (user tapped):', action)
-            // Could navigate to relevant tab (chat/session) in future
+            // TODO: navigate to chat/session based on action.notification.data
+            toast('Notificación tocada', { description: 'Abriendo app...' })
           })
-        } else {
-          console.log('Push permission not granted')
+        } catch (listenerErr) {
+          console.warn('Failed to attach some push listeners', listenerErr)
         }
       } catch (e) {
-        console.warn('Push setup failed (google-services.json may be missing on this build):', e)
+        console.warn('Native push setup failed (google-services.json may be missing or misconfigured for com.entrenamatch.app):', e)
       }
     })()
 
     return () => {
-      // Clean listeners if needed (plugin handles in most cases)
+      // Listeners are long-lived; plugin usually cleans on app close
     }
   }, [isDemoMode, firebaseUser?.uid])
 
@@ -2633,6 +2651,39 @@ function App() {
     }
   }
 
+  // Explicit activation for native push (called from Profile button). Robust against missing config.
+  const requestNativePushPermission = async () => {
+    if (!PushNotifications) {
+      toast.error('Notificaciones nativas no disponibles', {
+        description: 'Esta build del APK no tiene google-services.json configurado o el plugin no cargó. Revisa la consola para detalles.'
+      })
+      return
+    }
+    try {
+      const perm = await PushNotifications.requestPermissions()
+      const receive = perm && (perm.receive || perm.notifications || '')
+      if (receive === 'granted') {
+        await PushNotifications.register()
+        toast.success('Notificaciones push nativas activadas', {
+          description: 'Ahora recibirás alertas reales en tu celular incluso con la app cerrada (mejor que web).'
+        })
+      } else if (receive === 'denied') {
+        toast('Permiso denegado', {
+          description: 'Ve a Ajustes del teléfono > Apps > EntrenaMatch > Notificaciones y actívalo manualmente.'
+        })
+      } else {
+        toast('Permiso de notificaciones solicitado', {
+          description: 'Si ves el diálogo del sistema, elige "Permitir".'
+        })
+      }
+    } catch (e: any) {
+      console.error('Native push activation error', e)
+      toast.error('Error activando notificaciones nativas', {
+        description: (e?.message || 'Revisa google-services.json y que el package sea com.entrenamatch.app') + ' — contacta al equipo para una build actualizada.'
+      })
+    }
+  }
+
   // Central helper: show in-app toast + central notif + browser notif (if hidden) + bump unread for a message arrival.
   // Safe to call from bg listeners. name = display name of sender, chatId for 1:1 or sessionId for group.
   const triggerMessageArrivalNotification = (chatId: string, name: string, text: string, isGroup: boolean, photoUrl?: string) => {
@@ -2699,13 +2750,16 @@ function App() {
         })
         n.onclick = () => {
           window.focus()
-          if (isGroup) {
-            setActiveTab('sesiones')
-            setShowGroupChatModalFor(chatId)
-          } else {
-            setActiveTab('messages')
-            setActiveChat(chatId)
-          }
+          // Defer state updates from notification click context (helps avoid timing/strict-mode issues in some browsers/PWAs)
+          setTimeout(() => {
+            if (isGroup) {
+              setActiveTab('sesiones')
+              setShowGroupChatModalFor(chatId)
+            } else {
+              setActiveTab('messages')
+              setActiveChat(chatId)
+            }
+          }, 0)
         }
       } catch (e) {
         console.warn('Browser Notification failed', e)
@@ -3854,7 +3908,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-1.5 text-[10px] font-medium">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0 !px-2 !text-[8px] !bg-[#FF671F]/10 !border-0">PRE-ALPHA</span>
-          <span className="text-white/90">Real backend • v0.1.3-prealpha</span>
+          <span className="text-white/90">Real backend • v0.1.5-prealpha</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -4966,7 +5020,7 @@ function App() {
                               rating: 3,
                               text: `Chat 1:1 con ${activeChat}: Problema reportado por usuario`,
                               platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
-                              appVersion: '0.1.3-prealpha',
+                              appVersion: '0.1.5-prealpha',
                               context: '1v1-chat',
                               createdAt: serverTimestamp(),
                             });
@@ -5806,7 +5860,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.3-prealpha • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.5-prealpha • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -5903,7 +5957,7 @@ function App() {
                     if (!firebaseUser?.uid || !db) { toast('Inicia sesión para enviar feedback'); return }
 
                     const platform = (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web'
-                    const appVersion = '0.1.3-prealpha'
+                    const appVersion = '0.1.5-prealpha'
 
                     try {
                       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
@@ -5974,6 +6028,19 @@ function App() {
               </div>
             )}
 
+            {/* Native push notification activation (only in real APK) */}
+            {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor !== 'undefined' && (
+              <div className="px-4 pb-2">
+                <button
+                  onClick={() => { requestNativePushPermission() }}
+                  className="w-full text-xs py-2.5 rounded-2xl border border-[#22c55e]/40 bg-[#22c55e]/5 text-[#22c55e] active:bg-[#22c55e] active:text-black font-semibold"
+                >
+                  🔔 Activar notificaciones push nativas (reales en Android, incluso app cerrada)
+                </button>
+                <div className="text-[9px] text-center text-[#9CA3AF] mt-1">Mejor que PWA. Requiere build con google-services.json correcto.</div>
+              </div>
+            )}
+
             {/* PWA / App install options - always offer for web, with clear APK for native notifications on phone */}
             {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor === 'undefined' && (
               <div className="px-4 pb-3 space-y-2">
@@ -5992,7 +6059,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.3-prealpha • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.5-prealpha • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>
@@ -7515,7 +7582,7 @@ function App() {
                               rating: 3,
                               text: `Sesión ${showGroupChatModalFor}: Problema reportado por usuario`,
                               platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
-                              appVersion: '0.1.3-prealpha',
+                              appVersion: '0.1.5-prealpha',
                               context: 'group-chat',
                               createdAt: serverTimestamp(),
                             });

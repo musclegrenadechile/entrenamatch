@@ -33,9 +33,17 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths"></meta-data>
         </provider>
+
+        <!-- Recommended for Firebase Cloud Messaging / push notifications (prevents icon or presentation issues when notification is activated/tapped) -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
+        <!-- For a better status bar icon on Android, replace with a white silhouette drawable in res/drawable (e.g. ic_stat_notification) in future builds -->
     </application>
 
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- For Android 13+ (API 33) runtime notification permission -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
