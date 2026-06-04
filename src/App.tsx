@@ -4557,10 +4557,11 @@ function App() {
             [[user.lat, user.lng], [partner.lat, partner.lng]],
             {
               color: '#FF671F',
-              weight: 2,
-              opacity: 0.55,
-              dashArray: '4, 6',
-              lineJoin: 'round'
+              weight: 2.5,
+              opacity: 0.65,
+              dashArray: '5, 8',
+              lineJoin: 'round',
+              className: 'map-sync-tether'
             }
           ).addTo(mapInstanceRef.current)
           line.bindPopup(`<strong>🔄 Sync en vivo</strong><br/>${user.name} ↔ ${partner.name}<br/><span style="font-size:10px">Ritual compartido ahora</span>`)

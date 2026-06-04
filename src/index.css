@@ -826,6 +826,19 @@ input[type="range"]::-moz-range-thumb {
   position: relative;
 }
 
+/* Premium style for sync pair tethers on the live map (disruptive visual: shows who is connected in ritual) */
+.map-sync-tether {
+  stroke: #FF671F;
+  stroke-width: 2.5;
+  stroke-opacity: 0.65;
+  stroke-dasharray: 5,8;
+  transition: stroke-opacity 0.2s;
+}
+.map-sync-tether:hover {
+  stroke-opacity: 0.9;
+  stroke-width: 3;
+}
+
 /* Interactive map legend polish for "sigue con todo el mapa" */
 #live-map-container .zone-legend-item.active {
   text-decoration: underline;
