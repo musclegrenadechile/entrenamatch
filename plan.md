@@ -367,3 +367,15 @@ Test:
 Sigue con todo a todo ritmo full green light! :D The live "Entrenando Ahora" is now the absolute strongest / most innovative point — real-time, urgency, FOMO, cross surfaces, notifs, visuals, stats, join+chat instant. Ninguna app fitness lo tiene implementado así.
 
 Next: more live polish if needed (e.g. notif when someone joins your live post, streaks on live, adjustable radius, map viz later) + continue muro/feed + everything per "sigue con todo". Build + push after this. Hard refresh https://musclegrenadechile.github.io/entrenamatch/ + test with 2 accounts (toggle live on one, see notif + banner + modal + stat on other).
+
+**Sigue con todo continuation (user "sigue con todo")**:
+- joinCount in liveTrainingNow (computed from profilePosts live announcement post comments + other likes) + added to memo deps.
+- Visibility polish: +X se unieron badges in explore horizontal cards, full live modal rows, full profile live banner (inline compute), feed community teaser row + header total joins sum. Radar map row also shows +joins.
+- Own profile "live activity" section (when trainingNow): shows recent joiners from your live post comments/likes (tappable to open their profile). Spectacular immediate feedback of your live impact.
+- Profile muro "Refrescar" now triggers processIncomingLiveJoins.
+- Extra 45s poll for own posts + process when you are live (any tab) for faster join detection.
+- Group session CTA made robust (direct saveSessions/setSessions).
+- 3x builds clean + pushed (c14792d). plan.md updated.
+Sigue con todo a todo ritmo full green light! :D
+
+The live feature keeps getting stronger as the unique killer: real joins visible in muro + counts everywhere + activity in your profile + instant group sessions. Keep the momentum. Hard refresh after deploy.
