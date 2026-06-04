@@ -602,7 +602,7 @@ function App() {
     }
   }
 
-  // Global "Actualizar todo" for testers - forces fresh real data + updates lastSync everywhere (makes "en vivo" feel stronger)
+  // Global "Actualizar todo" for testers - forces fresh real data + updates lastSync everywhere (makes "en vivo" feel stronger, live training, feed, etc.)
   const refreshAllReal = async () => {
     if (isDemoMode) { toast('Actualizando (demo)...'); return; }
     setIsLoadingMatches(true)
@@ -3459,6 +3459,7 @@ function App() {
             title="Refrescar perfiles, matches y sesiones reales ahora"
           >
             {isLoadingMatches ? '...' : 'Actualizar todo'}
+            {liveTrainingNow.length > 0 && <span className="ml-1 text-[8px] text-[#22c55e]">+{liveTrainingNow.length} live</span>}
           </button>
           {liveTrainingNow.length > 0 && (
             <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}>🟢 {liveTrainingNow.length} LIVE</span>
@@ -3560,7 +3561,7 @@ function App() {
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
         {/* ===== EXPLORE / SWIPE (fully owned by ExploreTab) ===== */}
-        {/* LIVE TRAINING BANNER - always visible, the star feature for urgency and retention. Green pulsing, se va en, mini photos, quick join. Makes app addictive. */}
+        {/* LIVE TRAINING BANNER - ALWAYS VISIBLE, the star feature for urgency and retention. Green pulsing, se va en, mini photos, quick join. Makes app addictive. Top of explore for maximum impact. */}
         {activeTab === 'explore' && (
           <div className="px-4 py-2 bg-[#0D0D10] border-b border-[#22c55e]/30">
             <div className="flex items-center gap-2 mb-1">
@@ -3707,6 +3708,11 @@ function App() {
                     Publicar
                   </button>
                 </div>
+                {liveTrainingNow.length > 0 && (
+                  <div className="text-[9px] text-[#22c55e] mt-1 px-1 flex items-center gap-1">
+                    🟢 {liveTrainingNow.length} live ahora — <button onClick={() => setActiveTab('explore')} className="underline">ver en Explore →</button>
+                  </div>
+                )}
               </div>
               {liveTrainingNow.length > 0 && (
                 <div className="text-[10px] text-[#22c55e] mb-1 px-1 flex items-center gap-1">
@@ -4819,7 +4825,7 @@ function App() {
                 >
                   {currentUser.trainingNow ? '🟢 Entrenando ahora (EN VIVO)' : 'Marcar como entrenando ahora'}
                 </button>
-                <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Aparecerás en "Entrenando Ahora" para usuarios cerca. ¡Urgencia real-time, abre la app más!</div>
+                <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">¡Aparecerás en "Entrenando Ahora" para usuarios cerca! Urgencia real-time que hace que la gente abra la app seguido. Nadie lo tiene tan bien.</div>
                 <button onClick={() => setActiveTab('explore')} className="mt-2 w-full text-xs text-[#22c55e] underline active:opacity-70">Ver quién está live cerca ahora →</button>
               </div>
             </div>
