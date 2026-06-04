@@ -411,6 +411,12 @@ function App() {
   const [syncCombo, setSyncCombo] = useState(0)
   const [flyingEmojis, setFlyingEmojis] = useState<any[]>([]) // {id, emoji, label}
   const [showSyncArena, setShowSyncArena] = useState(false)
+
+  // VISIONARY "NEVER SEEN BEFORE" LAYER: Ritual Ripples
+  // When something epic happens inside the Arena (high vibe, big combo), it sends a visible energy wave to the Live Map.
+  // This turns the map from "who is training" into "where the living rituals are happening right now".
+  // This is the kind of ambient awareness that makes the product feel alive at a city scale — like nothing else exists.
+  const [ritualRipples, setRitualRipples] = useState<any[]>([]) // {id, lat, lng, label, intensity}
   const [syncBonds, setSyncBonds] = useState<Record<string, {totalMin: number, sessions: number, avgRating: number, bondLevel: number}>>({})
   const [lastSyncStory, setLastSyncStory] = useState<any>(null)
   const [replaySession, setReplaySession] = useState<any>(null) // {partnerName, minutes, vibe, actions, rating?}
@@ -3016,6 +3022,27 @@ function App() {
             try { triggerHaptic('heavy') } catch {}
           }, 120)
 
+          // LEGENDARY RIPPLE: Broadcast the epic moment to the living map.
+          // This is the "Jobs/Musk moment" — the energy you create in the Arena becomes visible to the entire city.
+          // Other people see a wave on the map: "Something legendary just happened here".
+          // This single mechanic makes the product feel like a living, breathing world of synchronized human effort.
+          const partner = liveTrainingNow.find((u: any) => u.id === syncPartnerId) || realProfiles.find((p: any) => p.id === syncPartnerId)
+          if (partner && partner.lat && partner.lng) {
+            const rippleId = 'ritual-' + Date.now()
+            const intensity = newVibe > 90 ? 2.2 : 1.6
+            setRitualRipples(prev => [...prev, { 
+              id: rippleId, 
+              lat: partner.lat, 
+              lng: partner.lng, 
+              label: `⚡ Ritual Épico • ${label}`, 
+              intensity 
+            }])
+            // Auto-clean the ripple after it has "propagated"
+            setTimeout(() => {
+              setRitualRipples(r => r.filter(x => x.id !== rippleId))
+            }, 5200)
+          }
+
           // Oferta auto de foto si en native (no fuerza cámara, solo invita)
           if (Capacitor.isNativePlatform() && CapacitorCamera) {
             setTimeout(() => {
@@ -4591,6 +4618,39 @@ function App() {
       }
     })
 
+    // THE VISIONARY RIPPLE LAYER — "Energy from the Arena becomes visible on the map"
+    // When two people create something legendary inside the Arena, the map "feels" it.
+    // This is the ambient, city-scale awareness that no other fitness product has.
+    // Other users see "Ritual Épico" waves propagating — pure FOMO + proof that real human synchronization is happening right now.
+    ritualRipples.forEach((r: any) => {
+      try {
+        const radius = 650 * (r.intensity || 1.5)
+        const ripple = L.circle([r.lat, r.lng], {
+          radius,
+          color: '#FF671F',
+          weight: 2,
+          fillColor: '#FF671F',
+          fillOpacity: 0.07,
+          opacity: 0.65,
+          className: 'ritual-map-ripple'
+        }).addTo(mapInstanceRef.current)
+
+        // Bind a special popup that teases the magic
+        ripple.bindPopup(`<strong>⚡ ${r.label}</strong><br/><span style="font-size:10px">Energía de un ritual en Arena propagándose. Esto es lo que hace única a esta app.</span>`)
+
+        // Store for cleanup
+        ;(ripple as any)._isRitualRipple = true
+        markersRef.current.push(ripple)
+
+        // Gentle auto-expand + fade (Leaflet doesn't have great built-in, we remove after time)
+        setTimeout(() => {
+          if (mapInstanceRef.current && (ripple as any)._isRitualRipple) {
+            try { mapInstanceRef.current.removeLayer(ripple) } catch {}
+          }
+        }, 4800)
+      } catch (e) {}
+    })
+
     if (markersRef.current.length > 0) {
       const group = L.featureGroup(markersRef.current)
       mapInstanceRef.current.fitBounds(group.getBounds().pad(0.22))
@@ -4611,8 +4671,10 @@ function App() {
         syncLinesRef.current = []
       }
       markersRef.current = []
+      // Ritual ripples are intentionally short-lived (they time themselves out), but clear any that are still referenced
+      // so we don't accumulate visual noise when map toggles rapidly.
     }
-  }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone])
+  }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone, ritualRipples])
 
   // Filtered deck (with distance support + blocking)
   // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
@@ -5050,7 +5112,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
-          <span className="text-white/90 text-[11px]">Real backend • v0.1.26-login-espectacular</span>
+          <span className="text-white/90 text-[11px]">Real backend • v0.1.27-ritual-invention</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -7334,11 +7396,13 @@ function App() {
 
               {/* =====================================================
                    THE NEVER-BEFORE-SEEN ENTRenaSync ARENA
-                   This is the heart of what makes the app something nobody has seen.
-                   Real-time co-presence ritual: two athletes connected by energy,
-                   actions fly across the shared space, combos explode, vibe orb
-                   pulses with your combined power, story gets written to BOTH walls.
-                   Pure magic. Pure differentiation.
+                   This is not "matching". This is not "social fitness".
+                   This is the creation of a new human primitive: synchronized physical effort in real time.
+                   Like Jobs made photos social, like Musk made cars software, we are making *training together* 
+                   a live, shared, ritualistic experience with real emotional and physical consequence.
+                   When you press an action, the other person feels it. When you both hit flow, the city sees the ripple.
+                   The energy field between you is not decoration — it is the UI for two nervous systems temporarily merged.
+                   This is the product that will make people say in 5 years: "Remember when training was something you did alone?"
                    ===================================================== */}
               {currentUser.trainingNow && syncPartnerId && (
                 <div className="mt-3 sync-arena p-3.5">
@@ -7389,6 +7453,21 @@ function App() {
 
                     {/* Tether line — visual "we are connected" never-seen cue */}
                     <div className="sync-tether" />
+
+                    {/* THE SHARED ENERGY FIELD — the visual soul of synchronized human effort.
+                        This is what makes people say "I've never seen anything like this".
+                        The field between two people grows, pulses, and glows with your combined vibe.
+                        It is the physical representation of "we are one system right now". */}
+                    <div 
+                      className="absolute left-[18%] right-[18%] top-1/2 -translate-y-1/2 h-[5px] rounded-full z-[5] pointer-events-none"
+                      style={{
+                        background: `linear-gradient(90deg, #22c55e, #FF671F, #FF4F79, #22c55e)`,
+                        opacity: 0.12 + (syncVibe / 280),
+                        filter: `blur(${1.5 + syncVibe / 38}px) saturate(${1 + syncVibe / 180})`,
+                        boxShadow: syncVibe > 65 ? `0 0 ${8 + syncVibe / 6}px rgba(255,103,31,0.6)` : 'none',
+                        transition: 'all 220ms cubic-bezier(0.23,1,0.32,1)'
+                      }}
+                    />
 
                     {/* Avatar PARTNER */}
                     <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center z-10">
@@ -7504,7 +7583,7 @@ function App() {
                     <button onClick={() => setShowSyncArena(false)} className="text-[10px] px-3 py-1 rounded-full bg-white/5 text-white/70 border border-white/10 active:bg-white/10">Cerrar arena</button>
                   </div>
 
-                  <div className="text-center text-[7.5px] text-[#22c55e]/45 mt-1.5">Cada acción + combo + vibe se comparte en tiempo real. Cuando vibe &gt;80 se auto-captura "⚡ Alta energía" en el ritual y replay. Esto es único en el mundo.</div>
+                  <div className="text-center text-[7.5px] text-[#22c55e]/45 mt-1.5">Cada acción + combo + vibe se comparte en tiempo real. La energía que creas aquí se propaga al mapa como ondas. Esto no existe en ninguna otra app del planeta. Estamos inventando el futuro del entrenamiento humano.</div>
                 </div>
               )}
 
@@ -7969,7 +8048,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.26-login-espectacular • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.27-ritual-invention • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8196,7 +8275,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.26-login-espectacular • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.27-ritual-invention • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>

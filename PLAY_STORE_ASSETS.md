@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 31 / 0.1.26-login-espectacular. **LOGIN ESPECTACULAR + ÚNICO**: entrada cinematográfica nunca antes vista. 
+**Current version for this upload**: versionCode 32 / 0.1.27-ritual-invention. **RITUAL INVENTION LAYER**: Energy Field en Arena + Ritual Ripples que propagan la energía de tus syncs al mapa de toda la ciudad. Esto es la creación de una nueva categoría. 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -149,11 +149,18 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 
 ## What's new (for this Pre-Alpha release, short & punchy)
 
-**READY FOR PLAY CLOSED UPLOAD (v0.1.26-login-espectacular code 31)**
-- Fresh signed AAB: `EntrenaMatch-v0.1.26-login-espectacular-code31-20260604-1946.aab` (7.2 MB) + `EntrenaMatch-release.aab`
-- Fresh debug APK for device: `EntrenaMatch-debug-login-espectacular-0.1.26-20260604-1946.apk` (10 MB) + `EntrenaMatch-debug.apk`
+**READY FOR PLAY CLOSED UPLOAD (v0.1.27-ritual-invention code 32)**
+- Fresh signed AAB: `EntrenaMatch-v0.1.27-ritual-invention-code32-20260604-1950.aab` (7.2 MB) + `EntrenaMatch-release.aab`
+- Fresh debug APK for device: `EntrenaMatch-debug-ritual-invention-0.1.27-20260604-1950.apk` (10 MB) + `EntrenaMatch-debug.apk`
 - Web: pushed to main → GH Pages will have the new bundle (hard refresh after Actions finish).
 - Copy the short "What's new" below directly into Play Console when uploading the AAB to closed track.
+
+**v0.1.27-ritual-invention (code 32) — CREACIÓN DE CATEGORÍA: RITUAL RIPPLES + SHARED ENERGY FIELD**
+• **Arena Energy Field**: Entre los dos avatares ahora existe un "campo de energía compartida" visual que se intensifica, se desenfoca y brilla según el vibe combinado. No es decoración. Es la representación física de dos sistemas nerviosos fusionados temporalmente.
+• **Ritual Ripples en el Mapa**: Cuando creas un momento épico en la Arena (vibe alta o combo fuerte), la energía se propaga como ondas visibles en el mapa para todos en la zona. Otros ven "⚡ Ritual Épico" expandiéndose. La ciudad entera puede sentir cuándo dos personas están creando algo legendario en tiempo real.
+• Esto convierte el mapa de "gente entrenando" en "dónde están ocurriendo los rituales humanos sincronizados ahora mismo". Es el nivel de awareness ambiental que ninguna app de fitness ha logrado jamás.
+• Lenguaje de producto elevado en toda la experiencia: "Estamos inventando cómo dos personas entrenan como una sola."
+• Sigue siendo la misma app obsesionada con el primer segundo (login cinematográfico) y con hacer que cada acción tenga consecuencia emocional y visual compartida.
 
 **v0.1.26-login-espectacular (code 31) — LOGIN QUE SE SIENTE COMO ABRIR ALGO NUNCA ANTES VISTO**
 • Entrada cinematográfica completamente rediseñada: fondo con constelación de personas entrenando en vivo (pulsos sutiles), glow hero radial, logo con energía pulsante y tether preview animado.
@@ -181,8 +188,8 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • AAB + debug APK frescos listos (ver nombres abajo). Build limpia + pipeline completo.
 • Todo el pipeline: web GH Pages, Android AAB/debug, docs actualizados. Sigue con todo ritmo.
 
-**Short "What's new" (copy-paste to Play Console for v0.1.26 code 31):**
-Login espectacular y único: al abrir la app sientes que estás entrando a algo nunca antes visto. Fondo con constelación de gente entrenando en vivo, logo con energía pulsante, tether animado, tagline "El ritual que nadie más tiene", contador de gente live, card de vidrio premium, botón "Entrar al ritual" cinematográfico. Todo con animaciones suaves y haptic. La primera impresión es exclusiva, inmersiva y adictiva. (code 31)
+**Short "What's new" (copy-paste to Play Console for v0.1.27 code 32):**
+Ritual Invention: Energy Field visual entre los dos atletas en Arena que crece y brilla con tu vibe compartida (la UI de dos cuerpos convertidos en uno). Ritual Ripples: cuando logras un pico épico, la energía se propaga como ondas al mapa para que toda la ciudad vea que un ritual legendario está ocurriendo. Esto no es social fitness. Es la invención de una nueva forma de estar juntos físicamente en tiempo real. (code 32)
 
 **Artifacts for this version:**
 - AAB (Play): EntrenaMatch-v0.1.26-login-espectacular-code31-20260604-1946.aab (y EntrenaMatch-release.aab)

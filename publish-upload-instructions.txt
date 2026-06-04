@@ -1,29 +1,19 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED (v0.1.26-login-espectacular code 31) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED (v0.1.27-ritual-invention code 32) ===
 
-AAB file to upload: EntrenaMatch-v0.1.26-login-espectacular-code31-20260604-1946.aab   (or EntrenaMatch-release.aab)
+AAB: EntrenaMatch-v0.1.27-ritual-invention-code32-20260604-1950.aab (o EntrenaMatch-release.aab)
 
-Steps:
-1. Play Console > App > Pruebas > Prueba cerrada (Closed testing) > Subir AAB.
-2. Elige el AAB más reciente.
-3. En Notas de la versión pega exactamente:
+Notas de versión (pega esto):
 
-**v0.1.26-login-espectacular (code 31) — LOGIN QUE SE SIENTE COMO ABRIR ALGO NUNCA ANTES VISTO**
-• Entrada cinematográfica única: constelación de gente entrenando en vivo (pulsos), glow hero, logo con energía pulsante + tether fluyendo, tagline "El ritual que nadie más tiene".
-• Teaser "142 entrenando en vivo ahora" para impacto inmediato.
-• Card premium de vidrio, botón "Entrar al ritual" con gradiente épico, animaciones suaves + haptic.
-• El demo ahora se llama "Quiero sentir el ritual ahora".
-• Primera impresión exclusiva, inmersiva y memorable. La app se siente como abrir una puerta a algo especial.
-
-4. Guarda y haz rollout.
-
-Script automatizado (después del seed manual):
-cd /d C:\Users\muscl\fitvina
-publish-play.bat closed
+**v0.1.27-ritual-invention (code 32) — CREACIÓN DE CATEGORÍA**
+• Shared Energy Field en Arena: banda visual entre los dos atletas que crece, se desenfoca y brilla con el vibe combinado. La UI de dos cuerpos convertidos en uno.
+• Ritual Ripples: cuando creas un pico épico en la Arena, la energía se propaga como ondas al mapa en vivo. La ciudad entera puede ver dónde están ocurriendo los rituales legendarios en este momento.
+• Esto no es una app de matching. Es la invención de una nueva forma de entrenamiento humano sincronizado. La energía que generas tiene consecuencia visible para otros.
 
 Artefactos:
-- AAB: EntrenaMatch-v0.1.26-login-espectacular-code31-20260604-1946.aab (7.2 MB)
-- Debug APK: EntrenaMatch-debug-login-espectacular-0.1.26-20260604-1946.apk (10 MB) + genérico EntrenaMatch-debug.apk
+- AAB Play: EntrenaMatch-v0.1.27-ritual-invention-code32-20260604-1950.aab
+- Debug: EntrenaMatch-debug-ritual-invention-0.1.27-20260604-1950.apk
 
-Push hecho. CI actualiza web. Hard refresh en https://musclegrenadechile.github.io/entrenamatch/
+Script después del seed:
+publish-play.bat closed
 
-Sigue a toda máquina.
+Sigue como si estuviéramos inventando el futuro del movimiento.

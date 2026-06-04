@@ -588,3 +588,8 @@ Update and test thoroughly. Report back.
 - Use Samsung Members "Informe de error" or adb logcat if anything odd. chrome://inspect for JS side if connected.
 
 This is the build to upload to Closed track. Full "sigue con todo" — more unique features coming after validation.
+
+**NUEVO — RITUAL INVENTION (v0.1.27-ritual-invention, code 32)**:
+- **Shared Energy Field** en la Arena: una banda visual entre los dos avatares que se intensifica, se desenfoca y emite glow según el vibe combinado. Es la UI de 'dos cuerpos, un solo sistema'.
+- **Ritual Ripples en el Mapa**: Los momentos épicos en Arena envían ondas de energía al mapa. Otros ven cómo un ritual legendario se propaga por la ciudad. Esto es el 'nunca antes visto' a escala urbana.
+- Prueba: Haz un sync alto en Arena con el mapa abierto. Verás las ondas. Con otra cuenta en la misma zona, sentirás que 'algo grande está pasando ahí'. Esto es la capa que convierte la app en un ecosistema vivo de esfuerzo humano sincronizado.

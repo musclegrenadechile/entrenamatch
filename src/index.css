@@ -1029,3 +1029,16 @@ input[type="range"]::-moz-range-thumb {
 .live-dot {
   animation: live-pulse-green 2.2s ease-in-out infinite;
 }
+
+/* Ritual Ripples on the Live Map — the ambient "energy is happening" signal.
+   This is the layer that makes the entire city feel like one giant synchronized training ground.
+   When two people create magic in the Arena, the map lights up. Never seen in fitness before. */
+.ritual-map-ripple {
+  animation: ritual-ripple-pulse 1.8s ease-out forwards;
+  pointer-events: auto;
+}
+@keyframes ritual-ripple-pulse {
+  0% { opacity: 0.75; }
+  40% { opacity: 0.35; }
+  100% { opacity: 0.05; }
+}

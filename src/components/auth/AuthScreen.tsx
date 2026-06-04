@@ -126,7 +126,7 @@ export const AuthScreen = ({
             transition={{ delay: 0.22 }}
             className="mt-1.5 text-2xl font-semibold tracking-[-0.6px] bg-gradient-to-r from-[#FF671F] to-[#FF4F79] bg-clip-text text-transparent"
           >
-            El ritual que nadie más tiene
+            Estamos inventando cómo dos personas entrenan como una sola.
           </motion.p>
 
           <motion.p 
@@ -135,7 +135,8 @@ export const AuthScreen = ({
             transition={{ delay: 0.32 }}
             className="mt-2 text-[#9CA3AF] text-[15px] leading-snug max-w-[280px] mx-auto"
           >
-            Entra y siente a tu compañero entrenando<br />exactamente al mismo tiempo que tú.
+            Entra y siente a tu compañero entrenando<br />exactamente al mismo tiempo que tú.<br />
+            <span className="text-[#FF671F]/80 text-xs tracking-widest">ESTO NO EXISTÍA HASTA AHORA.</span>
           </motion.p>
         </div>
 
@@ -270,7 +271,7 @@ export const AuthScreen = ({
           <br />Solo +18 • Entrenamiento serio • Pre-alpha real
         </p>
 
-        <p className="text-center text-[10px] text-[#6B7280]/60 mt-1 tracking-wider">v0.1.26-login-espectacular</p>
+        <p className="text-center text-[10px] text-[#6B7280]/60 mt-1 tracking-wider">v0.1.27-ritual-invention</p>
       </div>
     </div>
   );
