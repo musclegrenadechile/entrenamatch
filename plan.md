@@ -1024,3 +1024,16 @@ Sigue con todo a toda m�quina. Error solucionado. Feature disruptiva m�s exp
 
 Sigue con todo: feature cada vez m�s expuesta y atractiva. Error solucionado. Android: cuando el json, yo hago el AAB.
 
+
+## Sigue de ahi - Sync instant + badges + haptic (dedicated collection)
+
+- Nueva coleccion `syncSessions` (doc estable por par de uids) + onSnapshot dedicado: acciones ahora instantaneas cross-device (arrayUnion + listener empuja a syncActions state sin depender de polls de perfiles).
+- loadRealProfiles ahora incluye trainingSyncWith / syncStreak para que los badges funcionen en listas.
+- Badges "?? SYNC" / "?? En Sync ahora" en Feed Global (header de posts + en la fila horizontal de live teasers).
+- Haptic: helper triggerHaptic (vibrate) llamado en start, cada doSyncAction (light), rating (success), start (medium).
+- Pulido UI Sync en Perfil: lista de historial mas rica (hasta 6 con "Xm ago"), header marca "(instant)", textos de promo actualizados.
+- Tipos actualizados (Profile + CurrentUser).
+- tsc --noEmit limpio + web build OK (built ~700ms).
+- "Sigue con todo": el killer disruptivo ahora se siente real-time de verdad. Listo para que el usuario ponga el json correcto y hagamos el AAB final con todo esto dentro.
+
+Sigue con todo a toda maquina.

@@ -27,6 +27,10 @@
   lastLiveDate?: number
   liveJoins?: number // total times joined others' live
   joinedLiveStreak?: number // consecutive days participating in live training (join or host)
+  // EntrenaSync (dedicated collection + profile pointer for discovery)
+  trainingSyncWith?: string
+  syncStreak?: number
+  syncStartedAt?: number
 }
 
 export interface Message {
@@ -111,6 +115,9 @@ export interface CurrentUser extends Omit<Profile, 'id'> {
   lastLiveDate?: number
   liveJoins?: number // total times joined others' live
   joinedLiveStreak?: number // consecutive days participating in live training (join or host)
+  trainingSyncWith?: string
+  syncStreak?: number
+  syncStartedAt?: number
   verificationStatus?: 'unverified' | 'pending' | 'verified'
   verificationDate?: number
   verificationDocuments?: {

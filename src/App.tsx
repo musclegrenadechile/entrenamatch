@@ -68,7 +68,7 @@ import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { db, isFirebaseConfigured } from './services/firebase'
 import { requestPlayIntegrityToken, hasPositiveIntegrity, getLastIntegrityResult } from './services/playIntegrity'
 import { Capacitor } from '@capacitor/core'
-import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore'
+import { collection, query, where, getDocs, orderBy, limit, doc, onSnapshot } from 'firebase/firestore'
 
 // ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
 // Lanzamiento inicial fuerte en Chile + presencia en LatAm y España
@@ -654,6 +654,40 @@ function App() {
     }
   }, [realProfiles, currentUser?.trainingSyncWith, currentUser?.trainingNow, effectiveUserId])
 
+  // === NEW: Dedicated syncSessions collection listener for INSTANT actions across devices ===
+  // When we have an active EntrenaSync (syncPartnerId), we listen to a stable doc for the pair.
+  // This gives true realtime (onSnapshot push) for doSyncAction without waiting for profile polls.
+  // We still keep trainingSyncWith pointer in profiles for discovery/badges across Feed/Explore/Live.
+  useEffect(() => {
+    if (!syncPartnerId || !effectiveUserId || !db || isDemoMode || !isFirebaseConfigured) return undefined
+
+    const uids = [effectiveUserId, syncPartnerId].sort()
+    const sessionId = `sync_${uids[0]}_${uids[1]}`
+    const sessionRef = doc(db, 'syncSessions', sessionId)
+
+    const unsub = onSnapshot(sessionRef, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data() as any
+        if (Array.isArray(data.actions)) {
+          // Keep last 10, newest first for UI
+          const recent = [...data.actions]
+            .sort((a: any, b: any) => (b.at || 0) - (a.at || 0))
+            .slice(0, 10)
+          setSyncActions(recent)
+        }
+        if (data.startedAt) {
+          setSyncStartedAt(data.startedAt)
+        }
+      }
+    }, (err) => {
+      console.warn('syncSessions onSnapshot error (non-fatal, fallback to mirror):', err)
+    })
+
+    return () => {
+      try { unsub() } catch {}
+    }
+  }, [syncPartnerId, effectiveUserId, db, isDemoMode, isFirebaseConfigured])
+
   const loadRealSessions = async () => {
     if (!isFirebaseConfigured || !db) {
       setRealSessions([])
@@ -832,6 +866,8 @@ function App() {
             lastLiveDate: data.lastLiveDate != null ? data.lastLiveDate : undefined,
             liveJoins: data.liveJoins != null ? data.liveJoins : undefined,
             joinedLiveStreak: data.joinedLiveStreak != null ? data.joinedLiveStreak : undefined,
+            trainingSyncWith: data.trainingSyncWith || undefined,
+            syncStreak: data.syncStreak != null ? data.syncStreak : undefined,
           })
         }
       })
@@ -2404,20 +2440,43 @@ function App() {
   }
 
   // === DISRUPTIVE EntrenaSync implementation (core of the top unique feature) ===
+
+  // Haptic helper (works on web + Capacitor Android webview; upgrade to @capacitor/haptics later for native ImpactStyle)
+  const triggerHaptic = (style: 'light' | 'medium' | 'success' = 'light') => {
+    try {
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        const pattern = style === 'success' ? [25, 15, 25] : style === 'medium' ? 55 : 22
+        ;(navigator as any).vibrate(pattern)
+      }
+    } catch {}
+  }
+
   const startSyncWith = async (partnerId: string, partnerName: string) => {
     if (!currentUser?.trainingNow || !realProfiles.some(p => p.id === partnerId && p.trainingNow)) return
     const now = Date.now()
     setSyncPartnerId(partnerId)
     setSyncStartedAt(now)
     setSyncActions([])
+    triggerHaptic('medium')
     const updated = { ...currentUser, trainingSyncWith: partnerId, syncStartedAt: now, syncActions: [] }
     saveUser(updated as any)
     // Persist to profiles (optimistic + FS)
     if (!isDemoMode && db && firebaseUser) {
       try {
-        const { doc, updateDoc } = await import('firebase/firestore')
+        const { doc, updateDoc, setDoc } = await import('firebase/firestore')
         await updateDoc(doc(db, 'profiles', effectiveUserId), { trainingSyncWith: partnerId, syncStartedAt: now, syncActions: [] })
         await updateDoc(doc(db, 'profiles', partnerId), { trainingSyncWith: effectiveUserId, syncStartedAt: now, syncActions: [] })
+
+        // Dedicated instant session doc (for onSnapshot actions/timer, no poll dependency)
+        const uids = [effectiveUserId, partnerId].sort()
+        const sessionId = `sync_${uids[0]}_${uids[1]}`
+        const sessionRef = doc(db, 'syncSessions', sessionId)
+        await setDoc(sessionRef, {
+          participants: [effectiveUserId, partnerId],
+          startedAt: now,
+          actions: [],
+          updatedAt: now,
+        }, { merge: true })
       } catch (e) { console.warn('sync persist failed', e) }
     }
     // Auto post to muro for both
@@ -2456,6 +2515,7 @@ function App() {
 
   const submitSyncRating = async (rating: number) => {
     if (!pendingSyncRating) return
+    triggerHaptic('success')
     const { partnerId, partnerName, minutes } = pendingSyncRating
     if (!isDemoMode && db && firebaseUser) {
       try {
@@ -2480,8 +2540,9 @@ function App() {
 
   const doSyncAction = async (emoji: string, label: string) => {
     if (!syncPartnerId || !syncStartedAt) return
-    const action = { id: 'sa' + Date.now(), emoji, label, userId: effectiveUserId, ts: Date.now() }
-    const newActions = [...syncActions, action]
+    triggerHaptic('light')
+    const action = { id: 'sa' + Date.now(), emoji, label, userId: effectiveUserId, at: Date.now() }
+    const newActions = [action, ...syncActions].slice(0, 10)
     setSyncActions(newActions)
     // Update currentUser so save picks it for FS sync (partner will mirror via realProfiles)
     const updatedUser = { ...currentUser, syncActions: newActions }
@@ -2491,6 +2552,21 @@ function App() {
         await updateUserProfile(firebaseUser.uid, { syncActions: newActions.slice(-10) })
       } catch (e) { console.warn('sync action persist failed', e) }
     }
+
+    // INSTANT: also write to dedicated syncSessions collection so partner gets it via onSnapshot immediately
+    if (!isDemoMode && db) {
+      try {
+        const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
+        const uids = [effectiveUserId, syncPartnerId].sort()
+        const sessionId = `sync_${uids[0]}_${uids[1]}`
+        const actionForSession = { emoji, label, userId: effectiveUserId, at: Date.now() }
+        await updateDoc(doc(db, 'syncSessions', sessionId), {
+          actions: arrayUnion(actionForSession),
+          updatedAt: Date.now(),
+        })
+      } catch (e) { console.warn('instant syncSession action failed (mirror will catch on next poll)', e) }
+    }
+
     // Auto social proof
     const partner = realProfiles.find(p => p.id === syncPartnerId)
     createProfilePost(`${emoji} ${label} con ${partner?.name || 'sync buddy'}`, null).catch(() => {})
@@ -4351,7 +4427,7 @@ function App() {
             </div>
 
             {currentUser?.trainingNow && liveTrainingNow.length > 0 && (
-              <div className="px-4 py-1 text-[10px] bg-[#22c55e]/10 text-[#22c55e] text-center">💡 Si te unes a alguien que también está live, ¡inicias EntrenaSync automático con timer y acciones compartidas!</div>
+              <div className="px-4 py-1 text-[10px] bg-[#22c55e]/10 text-[#22c55e] text-center">💡 Si te unes a alguien que también está live, ¡inicias EntrenaSync automático con timer + acciones instantáneas (se comparten en vivo en ambos muros)!</div>
             )}
 
             {/* Controls: search + sort for discovery */}
@@ -4560,6 +4636,7 @@ function App() {
                       <div className="font-bold flex items-center gap-1 text-white/90">{u.name.split(' ')[0]} <span className="text-[7px] text-[#9CA3AF]">{u.distance.toFixed(0)}km</span></div>
                       {u.seVaEnMin > 0 && <div className="text-[7px] text-orange-400">{u.seVaEnMin < 15 ? '🔥 se va pronto' : `se va en ${u.seVaEnMin}m`}</div>}
                       {u.joinCount > 0 && <div className="text-[7px] text-[#22c55e]/70">+{u.joinCount} se unieron</div>}
+                      {u.trainingSyncWith && <div className="text-[7px] text-[#22c55e] mt-0.5">🔄 En Sync ahora</div>}
                       {u.seVaEnMin > 0 && <div className="h-px bg-[#22c55e]/20 mt-1"><div className="h-px bg-[#22c55e]" style={{width: `${Math.max(8, Math.min(100, (90 - u.seVaEnMin)/90 * 100))}%`}}></div></div>}
                     </motion.div>
                   ))}
@@ -4648,6 +4725,7 @@ function App() {
                             {ownerProfile && ownerProfile.level && <span className="text-[8px] px-1 py-px bg-[#FF671F]/10 text-[#FF671F]/80 rounded">{ownerProfile.level}</span>}
                             {ownerProfile && realProfiles.some(rp => rp.id === post.ownerId) && <span className="text-[8px] bg-[#FF671F] text-black px-1.5 rounded font-bold">REAL</span>}
                             {ownerProfile?.trainingNow && <span className="live-pill bg-[#22c55e] text-black text-[8px] ml-0.5">🟢 LIVE {ownerProfile.liveStreak ? `🔥${ownerProfile.liveStreak}d` : ''}</span>}
+                            {ownerProfile?.trainingSyncWith && <span className="text-[8px] px-1.5 py-px rounded-full bg-[#22c55e]/10 text-[#22c55e] font-bold ml-0.5">🔄 SYNC</span>}
                             {(post.text || '').toLowerCase().includes('me uno al live') && <span className="text-[8px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-1.5 py-px rounded-full font-bold shadow">🔥 JOIN</span>}
                           </div>
                           <div className="text-[9px] text-[#9CA3AF] tabular-nums">{getRelativeTime(post.timestamp)}</div>
@@ -5852,7 +5930,7 @@ function App() {
                 <div className="mt-3 p-3 rounded-2xl bg-gradient-to-r from-[#0a2a1a] to-[#112211] border-2 border-[#22c55e] shadow-[0_0_20px_rgba(34,197,94,0.3)] relative overflow-hidden">
                   <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.8px,transparent_1px)] bg-[length:5px_5px] opacity-10"></div>
                   <div className="flex items-center justify-between mb-1 relative z-10">
-                    <div className="text-[#22c55e] font-bold text-sm flex items-center gap-1">🔄 ENTRENASYNC EN VIVO</div>
+                    <div className="text-[#22c55e] font-bold text-sm flex items-center gap-1">🔄 ENTRENASYNC EN VIVO <span className="text-[8px] font-normal opacity-70">(instant)</span></div>
                     <div className="flex gap-1">
                       <button onClick={() => loadRealProfiles().catch(()=>{})} className="text-[9px] px-1.5 py-0.5 bg-[#22c55e]/20 text-[#22c55e] rounded active:bg-[#22c55e]/40">Refrescar</button>
                       <button onClick={endSync} className="text-[10px] px-2 py-0.5 bg-red-500/30 text-red-300 rounded active:bg-red-500/50">Terminar Sync</button>
@@ -5871,11 +5949,17 @@ function App() {
                     ))}
                   </div>
                   {syncActions.length > 0 && (
-                    <div className="text-[9px] text-[#22c55e]/90 mt-1.5 bg-black/20 p-1 rounded relative z-10">
-                      Últimas acciones: {syncActions.slice(-3).map((a,i) => <span key={i} className="mr-1">{a.emoji} {a.label}</span>)}
+                    <div className="text-[9px] text-[#22c55e]/90 mt-1.5 bg-black/30 p-1.5 rounded relative z-10 max-h-[68px] overflow-auto">
+                      <div className="text-[#22c55e]/70 mb-0.5">Acciones compartidas ({syncActions.length}):</div>
+                      {syncActions.slice(0, 6).map((a: any, i: number) => (
+                        <div key={i} className="flex items-center gap-1 py-0.5">
+                          <span>{a.emoji} {a.label}</span>
+                          <span className="text-[#22c55e]/50 text-[7px] ml-auto">{a.at ? Math.max(0, Math.floor((Date.now() - a.at)/60000)) : ''}m</span>
+                        </div>
+                      ))}
                     </div>
                   )}
-                  <div className="text-[8px] text-center text-[#22c55e]/60 mt-1 relative z-10">¡Las acciones se comparten en vivo y se guardan en el muro!</div>
+                  <div className="text-[8px] text-center text-[#22c55e]/60 mt-1 relative z-10">¡Acciones instantáneas (dedicated collection) + se postean en ambos muros!</div>
                 </div>
               )}
 
