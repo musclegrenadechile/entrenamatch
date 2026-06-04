@@ -332,6 +332,28 @@ All changes in src/App.tsx + plan.md + deployed FS. Now build + push to trigger 
 
 **Hotfix (user reported on start after last push)**: "Uncaught ReferenceError: Cannot access 'z' before initialization" (minified TDZ). Root cause: the new live notif useEffect (with [liveTrainingNow, ...] in deps) was declared early in the App() body, before the `const liveTrainingNow = useMemo(...)` line. JS executes top-to-bottom → TDZ on every render/init. Fixed by moving the effect block to immediately after the liveTrainingNow memo (and removed a redundant early persist effect). Rebuilt (new hashes), committed 3c115c4, pushed. All 3 build variants clean. This was introduced in the previous "live killer stronger" batch. Hard refresh the site now.
 
+**Live killer continuation (user: "mas pulidos, notifs cuando alguien se une a tu live, todo ello")**:
+- **Notifs when someone joins your live** (the strong retention loop): 
+  - On "Unirme ya" (handleSwipe right on any trainingNow profile): automatically adds an enthusiastic comment "¡Me uno al live ahora mismo! 🔥 ..." + like to the target's latest "¡Entrenando ahora..." muro post (direct FS arrayUnion for real cross-device; uses addCommentToPost + like for demo). This makes the live post spectacularly alive with real joiner names/times visible in own muro, full profile preview, feed global teasers, etc.
+  - Owner detection (processIncomingLiveJoins): scans own live posts' comments + likes for *new* interactions (using seenLiveJoinInteractionIdsRef + LS persist like other seens, cleared on logout). Fires dedicated addNotification (type session_join, bell) + rich toast with "Ver perfil" action that opens the joiner or feed. Triggered via: useEffect on profilePosts when trainingNow, 60s+45s background polls (stronger when you are live), "Actualizar todo", profile Refrescar, and after loadProfilePosts(self).
+  - Real mode: joiner writes directly to the live post in FS → owner sees the comment in their muro thread when they sync (even on other device).
+  - Demo: same via local post update + processor catches it.
+  - Bonus: when you are live the 60s explore refresh + dedicated 45s poll for own posts keeps the "joins" flowing in near real-time without manual action.
+- **More polish "todo ello"**:
+  - Quick group session creator from full live modal: big green "🔥 Armar sesión grupal con estos X live ahora" button (only if >=2). Creates optimistic TrainingSession pre-populated with the live users as participants + self, title "Live training ya — names", writes to local + attempts real FS 'sessions' collection, navigates to Sesiones tab + celebratory toast. Makes the live list actionable beyond 1:1 unirme/chat.
+  - Toast dedup on live joins (removed duplicate '¡Unido al live!' from banner/modal/full-profile buttons; the central polished one inside handleSwipe + muro comment provides the single high-quality feedback "¡Unido al live de X! Dejé un comentario en su muro en vivo").
+  - Stronger live activity refresh when *you* are the live one (own posts polled more aggressively to surface joins fast).
+  - Live post interactions now double as "join proof" (visible likes/comments on the auto live announcement post = social proof + FOMO for viewers of that muro).
+  - All builds x2 clean + pushed (dba07a5). plan updated.
+Sigue con todo a todo ritmo full green light! :D
+
+Test: 
+- Toggle live on account A (creates the auto muro post).
+- On account B (near or demo), go to explore, tap Unirme ya on A → see the better toast, and A 's muro post should get the comment from B.
+- On A (after sync or the auto poll ~45s, or tap Actualizar todo / go to profile): should pop toast + bell notif "¡Alguien se unió a tu live!" + the comment appears in the muro thread with the joiner's name.
+- In live modal with 2+ : tap the group session button → new session in Sesiones with the live people.
+- Hard refresh after deploy to see everything.
+
 **Live killer feature continuation ("sigue con todo a todo ritmo" + "el punto mas fuerte")**:
 - Added trainingNow / trainingNowSince to Profile TS interface (was only on CurrentUser) + wired in loadRealProfiles, saveUserWithRealSync, real profile merge, updateUserProfile payloads so real cross-device live status persists and shows instantly.
 - **Real-time urgency notifications**: new seenLiveUserIdsRef (persisted to LS like chat seen) + useEffect on liveTrainingNow that detects *new* nearby live users on any refresh/loadRealProfiles (60s in explore or manual). Fires addNotification (panel + bell) + rich sonner toast with "Ver" action that opens full profile. Guard size>1 skips pure first-load spam. Clears on logout. Prepares for push. In-app urgency signal when someone starts live near you.
