@@ -3512,6 +3512,12 @@ function App() {
                   // bump a virtual 'liveJoins' count or just likes for visibility
                   likes: arrayUnion(firebaseUser.uid)
                 })
+                // Optimistic: update local profilePosts for target so liveTrainingNow joinCount updates immediately for everyone viewing
+                setProfilePosts(prev => {
+                  const targetPosts = prev[profileId] || []
+                  const updatedPosts = targetPosts.map((p: any) => p.id === postRef.id ? { ...p, comments: [...(p.comments||[]), joinComment], likes: [...(p.likes||[]), firebaseUser.uid] } : p )
+                  return { ...prev, [profileId]: updatedPosts }
+                })
               }
             } else {
               // Demo: ensure posts loaded then use the existing spectacular comment/like (updates local + LS)
@@ -3759,7 +3765,7 @@ function App() {
             {liveTrainingNow.length > 0 && <span className="ml-1 text-[8px] text-[#22c55e]">+{liveTrainingNow.length} live</span>}
           </button>
           {liveTrainingNow.length > 0 && (
-            <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}>🟢 {liveTrainingNow.length} LIVE</span>
+            <span className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}>🟢 {liveTrainingNow.length} LIVE {currentUser?.trainingNow && currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}</span>
           )}
         </div>
 
@@ -3874,7 +3880,7 @@ function App() {
                         {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-4 h-4 rounded-full object-cover border border-[#22c55e]/30" />}
                         <div className="font-semibold truncate text-white">{user.name}</div>
                       </div>
-                      <div className="w-2.5 h-2.5 bg-[#22c55e] rounded-full flex-shrink-0 ring-1 ring-[#22c55e]/50" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}></div>
+                      <div className="w-2.5 h-2.5 bg-[#22c55e] rounded-full flex-shrink-0 ring-1 ring-[#22c55e]/50" style={{animation: user.seVaEnMin < 10 ? 'live-pulse-green-urgent 1.2s ease-in-out infinite' : 'live-pulse-green 2.2s ease-in-out infinite'}}></div>
                     </div>
                     <div className="text-[#9CA3AF] text-[9px] mb-0.5">{user.distance.toFixed(1)}km · {user.trainingTypes?.[0] || 'Entreno'}</div>
                     <div className="flex items-center gap-1 text-[#22c55e] text-[9px] mb-1">
@@ -3971,7 +3977,7 @@ function App() {
                     <div key={u.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(u); }} className="flex flex-col items-center text-center cursor-pointer active:opacity-80">
                       <div className="relative">
                         {u.photos?.[0] ? <img src={u.photos[0]} className="w-8 h-8 rounded-full object-cover border border-[#22c55e]/50" /> : <div className="w-8 h-8 rounded-full bg-[#22c55e]/20 flex items-center justify-center text-[10px]">{u.name[0]}</div>}
-                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#22c55e] rounded-full ring-1 ring-black" style={{animation: 'live-pulse-green 1.6s ease-in-out infinite'}}></div>
+                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#22c55e] rounded-full ring-1 ring-black" style={{animation: u.seVaEnMin < 10 ? 'live-pulse-green-urgent 1.2s ease-in-out infinite' : 'live-pulse-green 1.6s ease-in-out infinite'}}></div>
                       </div>
                       <div className="text-[8px] mt-0.5 text-white truncate max-w-[42px]">{u.name.split(' ')[0]}</div>
                       <div className="text-[7px] text-[#22c55e]">{(u.distance||0).toFixed(0)}km {u.joinCount > 0 ? `+${u.joinCount}🔥` : ''}</div>
@@ -4214,7 +4220,7 @@ function App() {
                             {ownerProfile && ownerProfile.city && <span className="text-[#9CA3AF] ml-1">· {ownerProfile.city}</span>}
                             {ownerProfile && ownerProfile.level && <span className="text-[8px] text-[#FF671F]/70 ml-1">{ownerProfile.level}</span>}
                             {ownerProfile && realProfiles.some(rp => rp.id === post.ownerId) && <span className="ml-1 text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>}
-                            {ownerProfile?.trainingNow && <span className="live-pill bg-[#22c55e] text-black text-[8px] ml-1">🟢 LIVE</span>}
+                            {ownerProfile?.trainingNow && <span className="live-pill bg-[#22c55e] text-black text-[8px] ml-1">🟢 LIVE {ownerProfile.liveStreak ? `🔥${ownerProfile.liveStreak}d` : ''}</span>}
                             {(post.text || '').toLowerCase().includes('me uno al live') && <span className="text-[8px] bg-[#22c55e] text-black px-1 rounded ml-1">🔥 live join</span>}
                           </div>
                           <div className="text-[10px] text-[#9CA3AF]">· {getRelativeTime(post.timestamp)}</div>
@@ -4701,7 +4707,7 @@ function App() {
                           <div className="text-[9px] bg-[#FF671F] text-black px-1.5 py-0.5 rounded-full font-bold">REAL</div>
                         )}
                         {profile.trainingNow && (
-                          <div className="text-[9px] bg-[#22c55e] text-black px-1.5 py-0.5 rounded-full font-bold">🟢 LIVE</div>
+                          <div className="text-[9px] bg-[#22c55e] text-black px-1.5 py-0.5 rounded-full font-bold">🟢 LIVE {profile.liveStreak ? `🔥${profile.liveStreak}d` : ''}</div>
                         )}
                         {profile.verificationStatus === 'verified' && (
                           <div className="text-[9px] bg-[#22c55e] text-black px-1 py-0.5 rounded-full">✓</div>
@@ -5270,6 +5276,9 @@ function App() {
                 </button>
                 <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">¡Aparecerás en "Entrenando Ahora" para usuarios cerca! Urgencia real-time que hace que la gente abra la app seguido. Nadie lo tiene tan bien.</div>
                 <button onClick={() => setActiveTab('explore')} className="mt-2 w-full text-xs text-[#22c55e] underline active:opacity-70">Ver quién está live cerca ahora →</button>
+                {currentUser.trainingNow && ((currentUser.liveStreak || 0) + (currentUser.joinedLiveStreak || 0) + (currentUser.liveJoins || 0) > 0) && (
+                  <div className="text-[9px] text-center text-[#22c55e] mt-1 font-medium">🔥 {currentUser.liveStreak || 0}d host streak + {currentUser.joinedLiveStreak || 0}d join • {currentUser.liveJoins || 0} total live joins recibidos</div>
+                )}
               </div>
 
               {/* Live activity / recent joiners when you are the one training (spectacular feedback loop) */}
@@ -6004,7 +6013,9 @@ function App() {
               </span>
             )}
             {id === 'explore' && liveTrainingNow.length > 0 && (
-              <span className="absolute -top-0.5 right-1 w-3 h-3 bg-[#22c55e] rounded-full animate-pulse ring-1 ring-black/30" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}></span>
+              <span className="absolute -top-0.5 right-1 w-3 h-3 bg-[#22c55e] rounded-full animate-pulse ring-1 ring-black/30 flex items-center justify-center text-[6px] text-black font-bold" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}>
+                {currentUser?.trainingNow && currentUser.liveStreak ? Math.min(9, currentUser.liveStreak) : ''}
+              </span>
             )}
           </button>
         ))}
