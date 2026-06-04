@@ -357,6 +357,9 @@ function App() {
   const [feedMaxProfiles, setFeedMaxProfiles] = useState(15)
   const [feedDisplayLimit, setFeedDisplayLimit] = useState(10)
   const [showLiveModal, setShowLiveModal] = useState(false)
+  // TOP UPDATE: Feed 2.0 - photo lightbox + quick reactions (optimistic, attractive social feel)
+  const [feedPhotoModal, setFeedPhotoModal] = useState<{url: string, postId?: string} | null>(null)
+  const [feedReactions, setFeedReactions] = useState<Record<string, Record<string, number>>>({}) // postId -> { '🔥': count, ... } optimistic per session
   // Live modal local UI: search + sort for better discovery in the full list (killer feature polish)
   const [liveModalSearch, setLiveModalSearch] = useState('')
   const [liveModalSort, setLiveModalSort] = useState<'distance' | 'urgency' | 'hot'>('distance')
@@ -2331,6 +2334,20 @@ function App() {
     }
   }
 
+  // TOP UPDATE v0.1.7: Quick reactions on feed posts (optimistic, super attractive social boost)
+  const boostReaction = (postId: string, emoji: string) => {
+    setFeedReactions(prev => {
+      const forPost = prev[postId] || {}
+      return {
+        ...prev,
+        [postId]: { ...forPost, [emoji]: (forPost[emoji] || 0) + 1 }
+      }
+    })
+    // Fun micro feedback
+    toast.success(emoji, { duration: 600, className: 'text-lg' })
+    // Future: persist to Firestore profilePosts reactions map for cross-device
+  }
+
   const addCommentToPost = async (postId: string, postUserId: string, text: string) => {
     if (!text.trim()) return
     const comment = {
@@ -3966,7 +3983,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-1.5 text-[10px] font-medium">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0 !px-2 !text-[8px] !bg-[#FF671F]/10 !border-0">PRE-ALPHA</span>
-          <span className="text-white/90">Real backend • v0.1.6-prealpha</span>
+          <span className="text-white/90">Real backend • v0.1.7-prealpha</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -4474,9 +4491,13 @@ function App() {
 
                         <div className="text-[13px] leading-snug mb-2.5 text-white/95">{post.text}</div>
                         {post.photo && (
-                          <div className="relative mb-3 -mx-1 rounded-2xl overflow-hidden ring-1 ring-[#2F2F35]">
-                            <img src={post.photo} className="w-full max-h-[220px] object-cover transition-transform duration-300 hover:scale-[1.03]" />
-                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent" />
+                          <div 
+                            className="relative mb-3 -mx-1 rounded-2xl overflow-hidden ring-1 ring-[#2F2F35] cursor-pointer group"
+                            onClick={() => setFeedPhotoModal({ url: post.photo, postId: post.id })}
+                          >
+                            <img src={post.photo} className="w-full max-h-[240px] object-cover transition-transform duration-300 group-hover:scale-[1.04]" />
+                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/50 to-transparent" />
+                            <div className="absolute bottom-2 right-2 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded">🔍 ver foto</div>
                           </div>
                         )}
 
@@ -4516,6 +4537,23 @@ function App() {
                           <button onClick={() => setShowFullProfile(owner as any)} className="ml-auto text-[10px] text-[#FF671F] active:underline hover:text-white font-medium">Ver perfil →</button>
                         </div>
 
+                        {/* TOP UPDATE: Quick reactions - the most fun attractive part of the feed */}
+                        <div className="flex gap-1 mt-1.5 -ml-0.5">
+                          {['🔥','💪','❤️','👏'].map(emo => {
+                            const count = (feedReactions[post.id]?.[emo] || 0)
+                            return (
+                              <button 
+                                key={emo}
+                                onClick={() => boostReaction(post.id, emo)}
+                                className="text-xs px-2 py-0.5 rounded-full bg-[#1C1C20] border border-[#2F2F35] active:bg-[#25252A] hover:border-[#FF671F]/40 flex items-center gap-0.5 transition active:scale-95"
+                              >
+                                <span>{emo}</span>
+                                {count > 0 && <span className="text-[#FF671F] font-bold tabular-nums">{count}</span>}
+                              </button>
+                            )
+                          })}
+                        </div>
+
                         {post.comments.length > 0 && (
                           <div onClick={() => openFullComments(post.id, post.ownerId, owner.name)} className="mt-2.5 pt-2 border-t border-[#2F2F35]/70 text-[11px] text-[#9CA3AF] cursor-pointer bg-[#0a0a0c]/30 -mx-1 px-2 py-1 rounded-xl space-y-1">
                             {post.comments.slice(-2).map((c: any) => (
@@ -4540,6 +4578,25 @@ function App() {
                 </>
               );
             })()}
+          </div>
+        )}
+
+        {/* TOP UPDATE v0.1.7: Global beautiful photo lightbox (works from feed posts - makes the social wall feel premium and top-tier) */}
+        {feedPhotoModal && (
+          <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-3" onClick={() => setFeedPhotoModal(null)}>
+            <div className="relative w-full max-w-[96vw] max-h-[96vh] flex items-center justify-center" onClick={e => e.stopPropagation()}>
+              <img 
+                src={feedPhotoModal.url} 
+                className="max-w-full max-h-[90vh] rounded-3xl object-contain shadow-[0_0_80px_rgba(255,103,31,0.15)]" 
+              />
+              <button 
+                onClick={() => setFeedPhotoModal(null)}
+                className="absolute -top-2 -right-2 bg-[#FF671F] text-black w-10 h-10 rounded-full flex items-center justify-center text-2xl font-black shadow-lg active:scale-95"
+              >
+                ×
+              </button>
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] bg-black/70 text-white/90 px-4 py-1 rounded-full tracking-widest">TOCA FUERA PARA CERRAR • FEED POST</div>
+            </div>
           </div>
         )}
 
@@ -5125,7 +5182,7 @@ function App() {
                               rating: 3,
                               text: `Chat 1:1 con ${activeChat}: Problema reportado por usuario`,
                               platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
-                              appVersion: '0.1.6-prealpha',
+                              appVersion: '0.1.7-prealpha',
                               context: '1v1-chat',
                               createdAt: serverTimestamp(),
                             });
@@ -5973,7 +6030,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.6-prealpha • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.7-prealpha • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -6070,7 +6127,7 @@ function App() {
                     if (!firebaseUser?.uid || !db) { toast('Inicia sesión para enviar feedback'); return }
 
                     const platform = (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web'
-                    const appVersion = '0.1.6-prealpha'
+                    const appVersion = '0.1.7-prealpha'
 
                     try {
                       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
@@ -6151,6 +6208,11 @@ function App() {
                   🔔 Activar notificaciones push nativas (reales en Android, incluso app cerrada)
                 </button>
                 <div className="text-[9px] text-center text-[#9CA3AF] mt-1">Mejor que PWA. Requiere build con google-services.json correcto.</div>
+                {!PushNotifications && (
+                  <div className="mt-1.5 text-[9px] bg-red-950/50 border border-red-500/50 text-red-400 p-1.5 rounded-xl text-center">
+                    ⚠️ Esta build del APK no tiene google-services.json configurado. La app puede fallar al abrir en Android. Actualiza a v0.1.7+.
+                  </div>
+                )}
               </div>
             )}
 
@@ -6195,7 +6257,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.6-prealpha • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.7-prealpha • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>
@@ -7186,7 +7248,7 @@ function App() {
                           exit={{ opacity: 0 }}
                           whileHover={{ scale: 1.01 }}
                           transition={{ duration: 0.2 }}
-                          className="card card-glass p-3 mb-2 border-[#2F2F35]/80"
+                          className="card card-glass p-3 mb-2 border-[#2F2F35]/80 hover:border-[#FF671F]/30"
                         >
                           <div className="text-[13px] leading-snug mb-2 text-white/95">{post.pinned ? '📌 ' : ''}{post.text}</div>
                           {post.photo && (
@@ -7726,7 +7788,7 @@ function App() {
                               rating: 3,
                               text: `Sesión ${showGroupChatModalFor}: Problema reportado por usuario`,
                               platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
-                              appVersion: '0.1.6-prealpha',
+                              appVersion: '0.1.7-prealpha',
                               context: 'group-chat',
                               createdAt: serverTimestamp(),
                             });

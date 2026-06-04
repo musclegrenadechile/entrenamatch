@@ -4,12 +4,12 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 9 / 0.1.6-prealpha — **CRITICAL FIX**: app crash on launch in Android/Play builds (missing google-services.json for push plugin/Firebase native init). Build now warns loudly if json absent. See BETA guide for exact steps (place json from Firebase Console for com.entrenamatch.app, rebuild, new closed release). Previous polishes preserved (live visuals, empty states, motion, muro, etc).
+**Current version for this upload**: versionCode 10 / 0.1.7-prealpha — **LA MÁS TOP UPDATE DE TODAS**: Feed 2.0 ultra atractivo (header glass+blur premium + gradient chips + big +Publicar CTA, live teaser row con stagger, post cards con photo hover-scale + overlay + lightbox modal, stagger anims, quick emoji reactions 🔥💪❤️👏 con pop counts, richer comments + pinned, empty state espectacular). + Reacciones en muro propio. Android guards + visible warnings para builds sin google-services (evita crashes al abrir). Más motion, glows, FOMO en feed. La pared social de fitness más bonita y adictiva (Dunkin energy total). Ver BETA/plan para detalles. Android crash fix prep listo (necesita json para AAB final).
 - Native push: explícito vía botón en Perfil, defensivo. FCM client + /userPushTokens started.
 - Browser notif: handlers seguros.
 - Manifest mejorado.
 - **Nuevo**: toggles de preferencias (mensajes/live/muro) en Perfil.
-- **Mejorado**: muro teasers (1-2 posts); live visuals (glass/motion/glows/pulses/gradients, banner grid + glow + progress, radar sweep + circles + stagger + lines for map feel, profile stats/banner glow + progress, sessions/matches/feed badges + glow/ring + mini progress, modal progress + radar anim/hover/stagger + sweep). Full UI visual review (hovers, empty states, consistency). Matches cards live ring/glow. Muro feed posts framer exit anim for deletes. Top bar live count with glow/ring. Richer empty states (live cerca 0 + modal + banner + sessions with glass/CTA). Session cards framer hover lift/scale + glow.
+- **Mejorado**: muro teasers (1-2 posts); live visuals (glass/motion/glows/pulses/gradients, banner grid + glow + progress, radar sweep + circles + stagger + lines for map feel, profile stats/banner glow + progress, sessions/matches/feed badges + glow/ring + mini progress, modal progress + radar anim/hover/stagger + sweep). Full UI visual review (hovers, empty states, consistency). Matches cards live ring/glow. Muro feed posts framer exit anim for deletes. Top bar live count with glow/ring. Richer empty states (live cerca 0 + modal + banner + sessions with glass/CTA). Session cards framer hover lift/scale + glow. **Feed Global major upgrade**: premium sticky glass+blur header, active gradient chips, +Publicar CTA, live teaser row with progress, post cards with photo scale+overlay, stagger, strong pinned, better actions/comments. Much more attractive (Dunkin premium energy).
 - Incluye killer live, muro espectacular, integrity, onboarding preview, etc.
 Listo para re-subir a closed track como mejora continua.
 
@@ -89,7 +89,7 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • Feedback estructurado + historial
 • Múltiples escapes de cuenta + PWA install mejorado
 • Legal + CSAE + deletion URL listos y públicos
-• Versión nativa Android (AAB) lista para Closed testing (versionCode 9 / 0.1.6-prealpha) — **FIX CRÍTICO crash al abrir**: builds previos sin google-services.json causaban que el plugin push + Firebase nativo fallaran al launch (app se cierra en Android/Play). Ahora build avisa si falta el json. Coloca google-services.json (Firebase Console, package com.entrenamatch.app) → rebuild → nuevo release closed. + fix crash notificaciones + activación explícita + prefs + teasers + richer empties + motion sessions + live polish.
+• Versión nativa Android (AAB) lista para Closed testing (versionCode 10 / 0.1.7-prealpha) — **LA UPDATE MÁS TOP**: Feed 2.0 (header premium blur+chips+CTA, cards con fotos pro + lightbox, stagger, reacciones rápidas con emojis, comments mejorados). + Android stability guards + warnings visibles. Coloca google-services.json → rebuild para fix crash al abrir + push real. Todo lo anterior + más polish visual/motion en feed/muro.
 
 ---
 

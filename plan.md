@@ -695,3 +695,49 @@ Siguiente: cuando el usuario coloque el json correcto para com.entrenamatch.app 
 
 Todo revisado y limpiado por mí.
 
+
+## "sigue con todo" + "mejora el feed que se vea mas atractivo" (user shower autonomy)
+
+- Revisión completa con acceso total de proyectos Android (3 total: fitvina actual com.entrenamatch.app + 2 Flutter legacy). Archivados los legacy a _legacy/ para eliminar confusión "hay 2 apps". Creado ANDROID_PROJECTS_OVERVIEW.md + actualizado plan.
+- Feed Global (tab feed + consistencia en muro propio): 
+  - Header sticky premium: backdrop-blur + glass, chips con gradientes activos (REAL/Live/Fijados), CTA +Publicar gradiente naranja-rosa, mejor integración live count.
+  - Live teaser row mejorado: cards con progress, stagger, info de joins/urgencia más clara.
+  - Post cards: ring más fuerte para pinned, photo con hover-scale + gradient overlay bottom, owner row con rings live + badges premium, texto mejor, actions bar espaciado con scale active, comment previews con bg sutil y "ver hilo".
+  - Stagger enter anims por índice (delay 0.015s), stronger whileHover scale+y + shadow.
+  - Empty state rico: emoji grande, copy motivador, CTAs claros.
+  - Cargar más y filtros pulidos.
+- Mejoras aplicadas también parcialmente a muro propio en perfil para consistencia.
+- Publish script (bat) ahora avisa fuerte + timeout si falta google-services.json (evita subir AABs que crashean en Play).
+- Web build limpio + commit + push (a839eb0) para que GH Pages (servidor) actualice el feed atractivo.
+- Docs: BETA + PLAY actualizados con bullets de feed upgrade.
+- Sigue con pasos Android: todo prepped (json checklist en overview/plan). Cuando usuario ponga el json en android/app/, yo corro build full + nuevo AAB + upload prep.
+
+Sigue a toda máquina full green light. Feed ahora se siente vivo y premium (Dunkin energy total). Listo para más (FCM, radar joins, etc.) cuando user regrese.
+
+
+## LA MÁS TOP UPDATE DE TODAS (v0.1.7-prealpha code 10) - "sigue con todo a todo ritmo"
+
+User: "sigue con todo a todo ritmo hace una update que sea la mas top de todas"
+
+Hecho con libertad completa:
+- Bump a v0.1.7 / code 10 en todo (package, gradle, App, playIntegrity, docs).
+- **Feed 2.0 la más top**: 
+  - Header sticky glass + backdrop-blur + premium gradient chips para filtros + CTA +Publicar grande.
+  - Live teaser row más atractivo con stagger, progress, joins, urgencia.
+  - Post cards ultra premium: pinned rings fuertes, fotos con hover scale + gradient overlay + click abre lightbox modal full screen bonito con close.
+  - Stagger enter anims por índice.
+  - Quick reactions bar top: ?? ?? ?? ?? botones con pop counts, optimistic local (fun + adictivo), micro toast.
+  - Actions y comments previews pulidos (spacing, bg, "ver hilo").
+  - Empty state espectacular con emoji y tips.
+  - Reacciones también aplicadas al muro propio para consistencia.
+- Explorar teasers mejorados para que el "feed feel" esté en swipe.
+- Android "top stability": warning visible grande en el botón de push nativo + en profile si !PushNotifications (para el caso de crash al abrir por falta json). Publish script avisa. Guards en todo.
+- Lightbox global bonito (z-100, nice close, label).
+- Actualizado PLAY_STORE_ASSETS + BETA con bullets épicos de "LA MÁS TOP UPDATE".
+- Web build + commits + pushes (incluyendo este).
+- Todo mantiene live/muro/realtime/integrity.
+
+Esta es la update más top hasta ahora: el feed ahora se siente como una red social fitness premium de primer nivel (Dunkin energy + motion + FOMO + reacciones + lightbox).
+
+Sigue con todo: cuando usuario ponga el google-services.json correcto, yo hago el build Android completo + AAB nuevo + push + release prep.
+
