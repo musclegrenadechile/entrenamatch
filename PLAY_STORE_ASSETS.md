@@ -4,12 +4,13 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 8 / 0.1.5-prealpha (bugfix release: crash al activar notificaciones arreglado. 
-- Native push: ahora explícito vía botón en Perfil (no auto en login), defensivo contra google-services faltante o shapes raros de perm.
-- Browser notif onclick: setState wrapped en setTimeout para context externo.
-- Manifest: POST_NOTIFICATIONS + default_notification_icon meta.
-- Activación controlada por usuario + toasts claros.
-Incluye todos los features previos (live, muro, integrity, onboarding, etc.). Listo para re-subir a closed track.
+**Current version for this upload**: versionCode 8 / 0.1.5-prealpha (bugfix + mejoras progresivas: crash al activar notificaciones resuelto + prefs de notif.
+- Native push: explícito vía botón en Perfil, defensivo.
+- Browser notif: handlers seguros.
+- Manifest mejorado.
+- **Nuevo**: toggles de preferencias (mensajes/live/muro) en Perfil.
+- Incluye killer live, muro espectacular, integrity, onboarding preview, etc.
+Listo para re-subir a closed track como mejora continua.
 
 **Category**: Health & Fitness (or Social)
 

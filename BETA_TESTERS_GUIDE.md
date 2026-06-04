@@ -133,12 +133,13 @@ También puedes ir a GitHub (repo musclegrenadechile/entrenamatch) → pestaña 
 - Ve a Play Console > Pruebas > Prueba cerrada > Crear release o Editar > Sube el AAB > Guarda > Publica el rollout (100% del grupo o el % que quieras).
 - Después de eso el script automatizado (`publish-play.ps1 closed`) suele funcionar para releases siguientes.
 
-**v0.1.5-prealpha bugfix (importante para testers)**: Crash al "activar la notificación" resuelto.
+**v0.1.5-prealpha + mejoras progresivas**: Crash al "activar la notificación" resuelto + nuevas prefs.
 - Ya no se pide permiso de push automáticamente en cada login real (evita prompts raros).
 - En APK usa el botón nuevo en **Perfil** → "🔔 Activar notificaciones push nativas (reales en Android, incluso app cerrada)".
+- **Nuevo**: toggles simples de preferencias de notificaciones en Perfil (Mensajes, Live/Sesiones, Actividad muro) - control local por dispositivo.
 - Más defensas en código + manifest actualizado (POST_NOTIFICATIONS + icon meta).
-- Prueba específicamente este flujo + recibir/tocar notificaciones (toasts, panel, sistema) sin que crashee la app.
-- Si usas web/PWA: el botón de notificaciones del navegador también mejorado.
+- Prueba específicamente este flujo + recibir/tocar notificaciones (toasts, panel, sistema) sin que crashee la app. Usa los toggles para silenciar categorías.
+- Si usas web/PWA: el botón de notificaciones del navegador también mejorado + prefs aplican.
 
 **Cómo encontrar el link de testers (para el admin o para invitar)**:
 - Play Console > Pruebas > Prueba cerrada > "Link para compartir" o "Cómo unirse a la prueba".

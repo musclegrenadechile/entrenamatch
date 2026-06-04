@@ -528,6 +528,21 @@ function App() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [showNotifications, setShowNotifications] = useState(false)
 
+  // Notification preferences (local per-device for user control - progressive improvement post-crash-fix)
+  const [notifPrefs, setNotifPrefs] = useState<{messages: boolean, live: boolean, muro: boolean}>(() => {
+    try {
+      const saved = localStorage.getItem('entrenamatch_notif_prefs')
+      return saved ? JSON.parse(saved) : { messages: true, live: true, muro: true }
+    } catch {
+      return { messages: true, live: true, muro: true }
+    }
+  })
+
+  // Persist notif prefs when they change
+  useEffect(() => {
+    try { localStorage.setItem('entrenamatch_notif_prefs', JSON.stringify(notifPrefs)) } catch {}
+  }, [notifPrefs])
+
   // PWA install prompt (attractive banner for web testers on mobile - uses Dunkin palette)
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<any>(null)
   const [showPwaInstall, setShowPwaInstall] = useState(false)
@@ -2325,7 +2340,7 @@ function App() {
 
   const deleteProfilePost = async (postId: string, postUserId: string) => {
     if (postUserId !== effectiveUserId) return;
-    if (!confirm('¿Eliminar esta publicación del muro?')) return;
+    // Optimistic delete + undo (no ugly confirm - better UX, rely on spectacular undo toast)
     if (!isDemoMode && db) {
       try {
         const { doc, deleteDoc } = await import('firebase/firestore')
@@ -2336,7 +2351,7 @@ function App() {
     const postToDelete = current.find(p => p.id === postId)
     const newList = current.filter(p => p.id !== postId)
     const updated = { ...profilePosts, [postUserId]: newList }
-    saveProfilePosts(updated)  // delete uses save (LS + state)
+    saveProfilePosts(updated)  // delete uses save (LS + state) - triggers AnimatePresence exit
 
     // Spectacular UX: undo toast for delete
     toast.success('Publicación eliminada', {
@@ -2613,8 +2628,16 @@ function App() {
     } catch {}
   }
 
-  // Add a new notification
+  // Add a new notification (gated by user prefs for progressive control)
   const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
+    const type = notification.type || 'message'
+    // Gate by prefs (messages covers 1:1/group/match/muro activity; live for joins)
+    const shouldAdd = 
+      (type.includes('message') || type === 'match' || type === 'verification' || type === 'report') ? notifPrefs.messages :
+      (type === 'session_join' || type === 'squad_join') ? notifPrefs.live :
+      true
+    if (!shouldAdd) return
+
     // Simple dedup: don't add duplicate recent notification for same relatedId + type (prevents repeats on reloads/listener glitches)
     const isDuplicate = notifications.some(n => 
       n.relatedId === notification.relatedId && 
@@ -2740,8 +2763,8 @@ function App() {
       relatedId: chatId,
       photoUrl: photoUrl
     })
-    // Browser Notification if page hidden and permission granted (web only)
-    if (typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.visibilityState !== 'visible') {
+    // Browser Notification if page hidden and permission granted (web only) + user pref allows messages
+    if (notifPrefs.messages && typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.visibilityState !== 'visible') {
       try {
         const n = new Notification(title + ' — EntrenaMatch', {
           body: short,
@@ -6038,6 +6061,29 @@ function App() {
                   🔔 Activar notificaciones push nativas (reales en Android, incluso app cerrada)
                 </button>
                 <div className="text-[9px] text-center text-[#9CA3AF] mt-1">Mejor que PWA. Requiere build con google-services.json correcto.</div>
+              </div>
+            )}
+
+            {/* Notification preferences - simple local toggles (progressive UX improvement) */}
+            {!isDemoMode && (
+              <div className="px-4 pb-3">
+                <div className="text-[10px] uppercase tracking-widest text-[#9CA3AF] mb-1.5">Preferencias de notificaciones (local en este dispositivo)</div>
+                <div className="flex flex-wrap gap-2 text-xs">
+                  {[
+                    { key: 'messages' as const, label: 'Mensajes y matches', icon: '💬' },
+                    { key: 'live' as const, label: 'Live / Sesiones', icon: '🟢' },
+                    { key: 'muro' as const, label: 'Actividad en muro', icon: '📝' },
+                  ].map(p => (
+                    <button
+                      key={p.key}
+                      onClick={() => setNotifPrefs(prev => ({ ...prev, [p.key]: !prev[p.key] }))}
+                      className={`px-2.5 py-1 rounded-xl border flex items-center gap-1 transition ${notifPrefs[p.key] ? 'border-[#22c55e] bg-[#22c55e]/10 text-[#22c55e]' : 'border-[#2F2F35] text-[#9CA3AF] opacity-70'}`}
+                    >
+                      {p.icon} {p.label} {notifPrefs[p.key] ? '✓' : '○'}
+                    </button>
+                  ))}
+                </div>
+                <div className="text-[9px] text-[#9CA3AF] mt-1">Cambios se guardan localmente. Útil para silenciar temporalmente.</div>
               </div>
             )}
 
