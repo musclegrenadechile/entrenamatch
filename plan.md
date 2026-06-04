@@ -1064,3 +1064,16 @@ Sigue con todo — la app ahora grita "única".
 - Builds clean. Sigue con todo.
 
 Próximo: si persiste, considerar onSnapshot para profiles o query más inteligente para live.
+
+## Mejora icónica del Muro (experiencia visual pobre ? linda y signature)
+
+- Nueva CSS .muro-post + variantes --pinned / --live / --sync: gradientes sutiles, top accent bar temático (naranja-rosa para normal, verde para live, mix para sync), mejor glass + glows, hover premium.
+- Header del Feed Global ahora es "EL MURO" con tipografía gradiente icónica, emoji flame, tagline "donde el entreno se vuelve leyenda", stats de live + sync en vivo.
+- Post cards aplican las nuevas clases + badges más prominentes. Reacciones ahora usan .muro-reaction con pop visual + active fill + haptic en click.
+- Fotos en posts personales ahora tienen el mismo tratamiento icónico que global (overlay gradient, "ver foto del entreno", lightbox).
+- Personal muro en Perfil: header "Tu Muro — tu legado de entreno" con link al global feed, empty state espectacular con icono grande y copy motivador ("Tu muro está listo para la leyenda").
+- Reacciones en global feed con triggerHaptic para feel más satisfactorio.
+- Unificación visual entre muro personal y global feed para que se sienta "la misma experiencia icónica".
+- Builds clean. El muro ahora se ve premium, temático Dunkin-fitness, con jerarquía clara y "wow" en interacciones.
+
+Sigue con todo – muro ya no es pobre, es parte de lo único de la app.

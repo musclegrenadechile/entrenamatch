@@ -505,3 +505,87 @@ input[type="range"]::-moz-range-thumb {
   transform: translateY(-2px);
   box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(255 103 31 / 0.1);
 }
+
+/* ===== ICONIC MURO / FEED POST CARDS - more premium, beautiful, signature look ===== */
+.muro-post {
+  background: linear-gradient(145deg, rgba(28,28,32,0.95) 0%, rgba(20,20,24,0.98) 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.4), 
+              0 0 0 1px rgba(255, 103, 31, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+.muro-post::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #FF671F, #FF4F79);
+  opacity: 0.15;
+}
+.muro-post:hover {
+  border-color: rgba(255, 103, 31, 0.2);
+  box-shadow: 0 16px 40px -8px rgb(0 0 0 / 0.45), 
+              0 0 0 1px rgba(255, 103, 31, 0.12);
+  transform: translateY(-1px);
+}
+.muro-post--pinned {
+  border-color: rgba(255, 103, 31, 0.35);
+  box-shadow: 0 12px 35px -8px rgb(255 103 31 / 0.15);
+}
+.muro-post--pinned::before {
+  background: linear-gradient(90deg, #FF671F, #FF4F79);
+  opacity: 0.4;
+  height: 4px;
+}
+.muro-post--live {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+.muro-post--live::before {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  opacity: 0.35;
+}
+.muro-post--sync {
+  border-color: rgba(34, 197, 94, 0.25);
+  background: linear-gradient(145deg, rgba(10,42,26,0.6) 0%, rgba(28,28,32,0.95) 60%);
+}
+.muro-post--sync::before {
+  background: linear-gradient(90deg, #22c55e, #FF671F);
+  opacity: 0.3;
+}
+
+.muro-header {
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.muro-text {
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: #F1F1F3;
+}
+
+.muro-reaction {
+  transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 13px;
+}
+.muro-reaction.active {
+  background: rgba(255, 103, 31, 0.12);
+  border-color: #FF671F;
+  color: #FF671F;
+  transform: scale(1.05);
+}
+.muro-reaction .count {
+  transition: transform 0.2s ease, color 0.2s ease;
+}
+.muro-reaction.active .count {
+  color: #FF671F;
+  transform: scale(1.1);
+}
+
+/* Iconic empty state for muro */
+.muro-empty {
+  background: linear-gradient(145deg, rgba(28,28,32,0.6), rgba(20,20,24,0.8));
+  border: 1px dashed rgba(255, 103, 31, 0.2);
+}

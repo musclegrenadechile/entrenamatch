@@ -4647,13 +4647,20 @@ function App() {
         {/* ===== GLOBAL FEED TAB - Muro Comunitario (per plan: global recent activity feed) ===== */}
         {activeTab === 'feed' && (
           <div className="flex-1 overflow-auto p-4">
-            <div className="sticky top-0 bg-[#0D0D10]/95 backdrop-blur-md z-10 -mx-4 px-4 pb-3 border-b border-[#2F2F35]/50">
+            <div className="sticky top-0 bg-[#0D0D10]/95 backdrop-blur-md z-10 -mx-4 px-4 pb-4 border-b border-[#2F2F35]/50">
               <div className="flex items-center justify-between mb-2 px-1">
                 <div>
-                  <div className="section-header flex items-center gap-2">Feed Global <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black font-bold">EN VIVO</span></div>
-                  <div className="text-[#9CA3AF] text-sm flex items-center gap-1 mt-0.5">
-                    Muro de la comunidad • el match del movimiento
-                    {liveTrainingNow.length > 0 && <span className="text-[8px] ml-1 px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold shadow-sm">🟢 {liveTrainingNow.length} LIVE</span>}
+                  <div className="flex items-center gap-3">
+                    <div className="text-2xl">🔥</div>
+                    <div>
+                      <div className="font-bold text-xl tracking-[-0.5px] bg-gradient-to-r from-[#FF671F] via-[#FF4F79] to-[#FF671F] bg-clip-text text-transparent">EL MURO</div>
+                      <div className="text-[10px] text-[#9CA3AF] -mt-0.5">de la comunidad • donde el entreno se vuelve leyenda</div>
+                    </div>
+                  </div>
+                  <div className="text-[#9CA3AF] text-xs flex items-center gap-1.5 mt-1.5">
+                    El feed icónico de EntrenaMatch
+                    {liveTrainingNow.length > 0 && <span className="text-[8px] ml-1 px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50">🟢 {liveTrainingNow.length} LIVE AHORA</span>}
+                    {activeSyncCount > 0 && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e]/10 text-[#22c55e] font-bold">🔄 {activeSyncCount} EN SYNC</span>}
                   </div>
                 </div>
                 <div className="flex gap-1.5 items-center">
@@ -4689,11 +4696,12 @@ function App() {
                   >
                     {isLoadingFeed ? '...' : '↻'}
                   </button>
-                  <button onClick={() => setActiveTab('profile')} className="text-[9px] px-3 py-1 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black font-bold active:brightness-90 shadow-sm">
-                    + Publicar
+                  <button onClick={() => setActiveTab('profile')} className="text-[9px] px-3 py-1 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black font-bold active:brightness-90 shadow-sm flex items-center gap-1">
+                    <Plus className="w-3 h-3" /> Publicar
                   </button>
                 </div>
               </div>
+              <div className="text-[10px] text-[#9CA3AF]/70 px-1">Posts de la comunidad • reacciones rápidas • momentos que inspiran</div>
               {liveTrainingNow.length > 0 && (
                 <div className="text-[9px] text-[#22c55e] px-1 flex items-center gap-1 -mt-1">
                   🔥 {liveTrainingNow.length} personas entrenando ahora en la comunidad — <button onClick={() => setActiveTab('explore')} className="underline font-medium">Únete en Explore</button>
@@ -4788,11 +4796,11 @@ function App() {
                     return (
                       <motion.div 
                         key={post.id} 
-                        className={`card card-glass p-4 mb-3 border-[#2F2F35]/70 ${post.pinned ? 'ring-2 ring-[#FF671F]/70 shadow-xl shadow-[#FF671F]/10' : ''} ${ (post.text || '').toLowerCase().includes('sincronizado') || (post.text || '').includes('con ') && (post.text || '').includes('🔥') ? 'ring-1 ring-[#22c55e]/60' : '' } hover:border-[#FF671F]/40 overflow-hidden transition-all`}
+                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${ (post.text || '').toLowerCase().includes('sincronizado') ? 'muro-post--sync' : (post.text || '').toLowerCase().includes('entrenando ahora') || (post.text || '').includes('me uno al live') ? 'muro-post--live' : '' } hover:border-[#FF671F]/40 overflow-hidden transition-all`}
                         initial={{ opacity: 0, y: 16, scale: 0.985 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.98, height: 0, marginBottom: 0 }}
-                        whileHover={{ scale: 1.012, y: -3, boxShadow: '0 20px 30px -8px rgb(0 0 0 / 0.3)' }}
+                        whileHover={{ scale: 1.012, y: -3 }}
                         transition={{ type: 'spring', stiffness: 300, damping: 20, delay: Math.min(idx * 0.015, 0.2) }}
                       >
                         {/* Owner header with photo - premium */}
@@ -4865,18 +4873,19 @@ function App() {
                           <button onClick={() => setShowFullProfile(owner as any)} className="ml-auto text-[10px] text-[#FF671F] active:underline hover:text-white font-medium">Ver perfil →</button>
                         </div>
 
-                        {/* TOP UPDATE: Quick reactions - the most fun attractive part of the feed */}
-                        <div className="flex gap-1 mt-1.5 -ml-0.5">
+                        {/* ICONIC Quick reactions - satisfying, visual pop, part of the signature muro experience */}
+                        <div className="flex gap-1.5 mt-2 -ml-0.5">
                           {['🔥','💪','❤️','👏'].map(emo => {
                             const count = (feedReactions[post.id]?.[emo] || 0)
+                            const active = count > 0
                             return (
                               <button 
                                 key={emo}
-                                onClick={() => boostReaction(post.id, emo)}
-                                className="text-xs px-2 py-0.5 rounded-full bg-[#1C1C20] border border-[#2F2F35] active:bg-[#25252A] hover:border-[#FF671F]/40 flex items-center gap-0.5 transition active:scale-95"
+                                onClick={() => { boostReaction(post.id, emo); triggerHaptic('light'); }}
+                                className={`muro-reaction px-2.5 py-1 rounded-full border flex items-center gap-1 transition-all active:scale-90 ${active ? 'active' : 'bg-[#1C1C20] border-[#2F2F35] hover:border-[#FF671F]/40'}`}
                               >
-                                <span>{emo}</span>
-                                {count > 0 && <span className="text-[#FF671F] font-bold tabular-nums">{count}</span>}
+                                <span className="text-base">{emo}</span>
+                                {count > 0 && <span className="count text-[#FF671F] font-bold tabular-nums text-xs">{count}</span>}
                               </button>
                             )
                           })}
@@ -6214,7 +6223,15 @@ function App() {
                 <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Visible en tu perfil y para quien vea tu perfil completo</div>
               </div>
 
-              {/* Posts feed - spectacular animated cards with full thread modal */}
+              {/* Posts feed - ICONIC beautiful muro for your personal legacy */}
+              <div className="px-1 mb-2 flex items-center justify-between">
+                <div className="font-semibold text-sm flex items-center gap-2">
+                  <span>🏋️</span> 
+                  <span>Tu Muro</span>
+                  <span className="text-[10px] text-[#9CA3AF] font-normal">— tu legado de entreno</span>
+                </div>
+                <button onClick={() => setActiveTab('feed')} className="text-xs text-[#FF671F] active:underline">Ver en el Feed Global →</button>
+              </div>
               <AnimatePresence>
                 {(profilePosts[effectiveUserId] || []).length > 0 ? (
                   [...(profilePosts[effectiveUserId] || [])].sort((a,b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.timestamp - a.timestamp).map(post => {
@@ -6228,7 +6245,7 @@ function App() {
                         exit={{ opacity: 0, y: -12, scale: 0.97, height: 0, marginBottom: 0 }}
                         whileHover={{ scale: 1.01, y: -2 }}
                         transition={{ type: 'spring', bounce: 0.12, duration: 0.28 }}
-                        className={`card card-glass p-4 mb-3 border-[#2F2F35]/70 ${post.pinned ? 'ring-2 ring-[#FF671F]/70 shadow-xl shadow-[#FF671F]/10' : ''} hover:border-[#FF671F]/40 overflow-hidden transition-all`}
+                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} hover:border-[#FF671F]/40 overflow-hidden transition-all`}
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-1 text-[10px] text-[#9CA3AF]" title={new Date(post.timestamp).toLocaleString('es-CL')}>
@@ -6279,7 +6296,14 @@ function App() {
                           <div className="text-sm leading-relaxed mb-2">{post.text}</div>
                         )}
                         {post.photo && (
-                          <img src={post.photo} className="w-full rounded-2xl max-h-56 object-cover mb-3 border border-[#2F2F35]" />
+                          <div 
+                            className="relative mb-3 -mx-1 rounded-2xl overflow-hidden ring-1 ring-[#2F2F35] cursor-pointer group"
+                            onClick={() => setFeedPhotoModal({ url: post.photo, postId: post.id })}
+                          >
+                            <img src={post.photo} className="w-full max-h-[240px] object-cover transition-transform duration-300 group-hover:scale-[1.04]" />
+                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/50 to-transparent" />
+                            <div className="absolute bottom-2 right-2 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded">🔍 ver foto del entreno</div>
+                          </div>
                         )}
                         <div className="flex items-center gap-4 text-sm">
                           <button 
@@ -6355,16 +6379,16 @@ function App() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="card p-6 text-center mb-3 border border-dashed border-[#2F2F35]"
+                    className="muro-empty p-7 text-center mb-3 rounded-2xl"
                   >
-                    <div className="text-3xl mb-2">📝</div>
-                    <div className="font-medium mb-1 text-sm">Tu muro está vacío</div>
-                    <div className="text-xs text-[#9CA3AF] mb-3 leading-snug">Publica entrenos, logros o motivación. La comunidad podrá ver, dar like y comentar en tu perfil.</div>
+                    <div className="mx-auto w-12 h-12 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-3 text-3xl">🏋️</div>
+                    <div className="font-semibold mb-1.5">Tu muro está listo para la leyenda</div>
+                    <div className="text-xs text-[#9CA3AF] mb-4 max-w-[220px] mx-auto leading-snug">Cada post aquí es parte de tu historia de entreno. La comunidad lo verá en el Feed Global. Sé icónico.</div>
                     <button 
                       onClick={() => muroComposerRef.current?.focus()}
-                      className="btn-primary text-sm py-1.5 px-5"
+                      className="btn-primary text-sm py-2 px-6"
                     >
-                      Publicar mi primer post
+                      Publicar mi primer logro
                     </button>
                   </motion.div>
                 )}
