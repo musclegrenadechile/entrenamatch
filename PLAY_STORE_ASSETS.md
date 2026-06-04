@@ -4,12 +4,12 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 8 / 0.1.5-prealpha (exhaustive review + polishes: plan cleaned + structured backlog; FCM stub + token save; live visuals ultra premium).
+**Current version for this upload**: versionCode 8 / 0.1.5-prealpha (exhaustive review + polishes: plan cleaned + structured backlog; FCM stub + token save; live visuals ultra premium + richer empty states + more motion on sessions).
 - Native push: explícito vía botón en Perfil, defensivo. FCM client + /userPushTokens started.
 - Browser notif: handlers seguros.
 - Manifest mejorado.
 - **Nuevo**: toggles de preferencias (mensajes/live/muro) en Perfil.
-- **Mejorado**: muro teasers (1-2 posts); live visuals (glass/motion/glows/pulses/gradients, banner grid + glow + progress, radar sweep + circles + stagger + lines for map feel, profile stats/banner glow + progress, sessions/matches/feed badges + glow/ring + mini progress, modal progress + radar anim/hover/stagger + sweep). Full UI visual review (hovers, empty states, consistency). Matches cards live ring/glow. Muro feed posts framer exit anim for deletes. Top bar live count with glow/ring.
+- **Mejorado**: muro teasers (1-2 posts); live visuals (glass/motion/glows/pulses/gradients, banner grid + glow + progress, radar sweep + circles + stagger + lines for map feel, profile stats/banner glow + progress, sessions/matches/feed badges + glow/ring + mini progress, modal progress + radar anim/hover/stagger + sweep). Full UI visual review (hovers, empty states, consistency). Matches cards live ring/glow. Muro feed posts framer exit anim for deletes. Top bar live count with glow/ring. Richer empty states (live cerca 0 + modal + banner + sessions with glass/CTA). Session cards framer hover lift/scale + glow.
 - Incluye killer live, muro espectacular, integrity, onboarding preview, etc.
 Listo para re-subir a closed track como mejora continua.
 
@@ -89,7 +89,7 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • Feedback estructurado + historial
 • Múltiples escapes de cuenta + PWA install mejorado
 • Legal + CSAE + deletion URL listos y públicos
-• Versión nativa Android (AAB) lista para Closed testing (versionCode 8 / 0.1.5-prealpha) — fix crash notificaciones + activación explícita segura + prefs toggles + muro teasers 1-2 posts en Explore/Matches.
+• Versión nativa Android (AAB) lista para Closed testing (versionCode 8 / 0.1.5-prealpha) — fix crash notificaciones + activación explícita segura + prefs toggles + muro teasers 1-2 posts en Explore/Matches. Richer empty states + framer motion on sessions + live empty polish.
 
 ---
 

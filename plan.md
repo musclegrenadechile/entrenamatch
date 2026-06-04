@@ -631,3 +631,12 @@ Review done (see structured section above). Actioned: clean plan, FCM stub+docs,
 - Push, AAB top-live-glow.
 - Sigue con todo full green light! Pr?ximo: m?s live/FCM/Play.
 
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Richer empty states: Live cerca stat (0 case "¡Sé el primero! Marca en Perfil"), live modal empty with nice glass card + emoji + CTA button to Perfil, banner empty upgraded with glass+copy, sessions open/mis empty polished with glass/gradient CTA/icon.
+- Motion: session cards (open + mis) now motion.div with whileHover scale+y + hover border glow consistent with feed/muro.
+- Web build + cap sync + AAB copy (local -empty-states-motion.aab, gitignored).
+- Commit + push (9a45873) -> GH Pages (servidor) + CI APK.
+- Sigue con todo full! Pr?ximo: FCM full (google-services + docs + test notes), Play manual AAB upload + "What's new", more radar/anim if any, more UI scan.
+

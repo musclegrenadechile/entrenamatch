@@ -298,9 +298,10 @@ Run `npm run android:build && npx cap open android` after installing Android Stu
 - **To complete for full native push in AAB:**
   1. Add your google-services.json (from Firebase Console > Project > Android app) to `android/app/google-services.json`.
   2. Rebuild the signed AAB (use build-release.bat or Android Studio).
-  3. Server-side: Use Firebase Admin SDK or Cloud Functions to send notifications on events (new match, new message in 1:1 or session, someone joined your session). Token is logged on registration for the uid.
-- See src/App.tsx for the useEffect setup (only for !isDemoMode real users).
-- Test: Install AAB on device, login real, grant notification permission, check logcat for token.
+  3. Server-side: Use Firebase Admin SDK or Cloud Functions to send notifications on events (new match, new message in 1:1 or session, someone joined your session). Tokens are saved in Firestore collection `userPushTokens/{uid}` (with {token, platform:'android', updatedAt}) right after registration listener. Query them server-side to target users.
+- See src/App.tsx for the registration listener + setDoc to userPushTokens (FCM stub ready).
+- Test: Install AAB on device, login real, grant (or use Perfil button), check Firestore userPushTokens for the uid, then use Firebase Console (Cloud Messaging) to send test message to that exact token (or implement CF send on events). Hard refresh / update APK after placing google-services.
+- Also in BETA_TESTERS_GUIDE: login APK real → token saved → test push from Console using the doc.
 
 This enables real engagement for the Chile 5-10 testers (new match alerts etc.).
 
