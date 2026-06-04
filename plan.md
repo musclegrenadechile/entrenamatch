@@ -865,3 +865,10 @@ Mejoras live + dise?o:
 - Push, AAB.
 - Sigue con todo. Pr?ximo: m?s live (FCM, etc.), Play upload.
 
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+- Radar stagger, feed hover, sessions glow.
+- Push, AAB sigue.
+- Sigue con todo. Pr?ximo: m?s (FCM, Play, etc.).
+
