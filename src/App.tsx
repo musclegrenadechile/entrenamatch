@@ -6177,16 +6177,19 @@ function App() {
               </div>
             </div>
 
-            {/* Hero photo with name overlay - premium visual treatment */}
+            {/* Hero photo with name overlay - premium visual treatment, MORE ALIVE */}
             <div className="relative h-72 w-full overflow-hidden bg-[#111]">
               <img 
                 src={(currentUser.photos && currentUser.photos[0]) || 'https://picsum.photos/id/1005/600/800'} 
                 className="absolute inset-0 w-full h-full object-cover" 
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
               />
-              {/* Enhanced cinematic gradients */}
+              {/* Enhanced cinematic gradients + live pulse overlay if training */}
               <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/90" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              {currentUser.trainingNow && (
+                <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:3px_3px] opacity-10 animate-[live-pulse-green_2s_ease-in-out_infinite]" />
+              )}
               
               <div className="absolute bottom-0 left-0 right-0 p-5">
                 <div className="flex items-end gap-2">
@@ -6202,6 +6205,13 @@ function App() {
                   <span className="text-white/60">•</span> 
                   <span className="chip-health text-[10px] px-2 py-0.5 !font-semibold">{currentUser.intensity || 'Moderado'}</span>
                 </div>
+                {/* NEW: Big alive live status banner in hero */}
+                {currentUser.trainingNow && (
+                  <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-2xl bg-[#22c55e] text-black text-xs font-extrabold tracking-wider shadow-[0_0_20px_rgba(34,197,94,0.6)]">
+                    🔥 ENTRENANDO AHORA • {currentUser.liveStreak ? `${currentUser.liveStreak}d streak` : 'EN VIVO'} 
+                    <span className="w-2 h-2 bg-black rounded-full animate-pulse" />
+                  </div>
+                )}
               </div>
 
               {/* Quick edit overlay */}
@@ -6343,8 +6353,31 @@ function App() {
               ))}
             </div>
 
-            {/* NEVER-SEEN: Sync Legends / Bonds — persistent proof of real training partnerships.
-                High bond levels give visual status + future priority in live/explore (unique accountability capital). */}
+            {/* NEW: "Mi vida de entrenamiento" summary card - makes the whole profile feel VIVO y ATRACTIVO at a glance */}
+            <div className="px-4 mt-3">
+              <div className="card p-4 border border-[#FF671F]/20 bg-gradient-to-br from-[#1a140f] to-[#0D0D10]">
+                <div className="uppercase text-[9px] tracking-[1.5px] text-[#FF671F] mb-1">Tu vida de entrenamiento</div>
+                <div className="flex items-center justify-between text-sm">
+                  <div>
+                    <div className="text-2xl font-black text-white">{currentUser.liveStreak || 0}<span className="text-xs align-super text-[#22c55e]">d</span> + {currentUser.joinedLiveStreak || 0}<span className="text-xs align-super text-[#22c55e]">d</span></div>
+                    <div className="text-[#9CA3AF] text-xs -mt-1">streak host + join</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-[#FF671F]">{Object.keys(syncBonds).length} legends</div>
+                    <div className="text-[10px] text-[#9CA3AF]">conexiones reales</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-[#22c55e]">{(currentUser as any).syncStreak || 0}</div>
+                    <div className="text-[10px] text-[#9CA3AF]">syncs</div>
+                  </div>
+                </div>
+                {currentUser.trainingNow && (
+                  <div className="mt-2 text-[11px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-1 rounded text-center font-medium">Estás en vivo ahora — tu muro está caliente 🔥</div>
+                )}
+              </div>
+            </div>
+
+            {/* NEVER-SEEN: Sync Legends / Bonds — persistent proof of real training partnerships. MADE MORE VIVO Y ATRACTIVO */}
             {Object.keys(syncBonds).length > 0 && (
               <div className="px-4 mt-3">
                 <div className="text-[10px] uppercase tracking-[1px] text-[#9CA3AF] mb-1.5 flex items-center gap-1">🔥 TUS SYNC LEGENDS <span className="text-[8px] normal-case opacity-60">(entrenaron contigo de verdad)</span></div>
@@ -6352,20 +6385,28 @@ function App() {
                   {Object.entries(syncBonds).slice(0,4).map(([pid, b]: any) => {
                     const p = [...realProfiles, ...SEED_PROFILES].find(pp => pp.id === pid)
                     const flames = '🔥'.repeat(Math.max(1, b.bondLevel || 1))
+                    const progress = Math.min(100, Math.round(((b.totalMin || 0) / 120) * 100)) // progress to next legend (2h example)
                     return (
-                      <div key={pid} className="legend-card rounded-2xl p-2.5 text-xs flex gap-2 items-center active:scale-[0.985]" onClick={() => { const prof = p; if (prof) setShowFullProfile(prof as any); else toast('Compa no disponible ahora') }}>
-                        <div className="w-8 h-8 rounded-full bg-[#1C1C20] overflow-hidden ring-1 ring-[#FF671F]/30 flex-shrink-0">
-                          {p?.photos?.[0] ? <img src={p.photos[0]} className="w-full h-full object-cover" /> : <div className="text-center text-base pt-0.5">{(p?.name||'?')[0]}</div>}
+                      <div key={pid} className="legend-card rounded-2xl p-3 text-xs flex gap-3 items-center active:scale-[0.985] border border-[#FF671F]/20 hover:border-[#FF671F]/50 transition-all" onClick={() => { const prof = p; if (prof) setShowFullProfile(prof as any); else toast('Compa no disponible ahora') }}>
+                        <div className="w-10 h-10 rounded-full bg-[#1C1C20] overflow-hidden ring-2 ring-[#FF671F]/40 flex-shrink-0 relative">
+                          {p?.photos?.[0] ? <img src={p.photos[0]} className="w-full h-full object-cover" /> : <div className="text-center text-xl pt-1.5">{(p?.name||'?')[0]}</div>}
+                          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#22c55e] rounded-full flex items-center justify-center text-[8px] ring-1 ring-[#0D0D10]">🔄</div>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-white/95 truncate">{p?.name || 'Leyenda'}</div>
-                          <div className="text-[10px] text-[#9CA3AF]">{b.totalMin}min • {b.sessions} sesiones • {b.avgRating}★</div>
-                          <div className="legend-flame text-[11px] leading-none mt-px">{flames} Bond {b.bondLevel}</div>
+                          <div className="font-semibold text-white/95 truncate flex items-center gap-1">{p?.name || 'Leyenda'} <span className="text-[8px] text-[#FF671F] font-mono">LV{b.bondLevel}</span></div>
+                          <div className="text-[9px] text-[#9CA3AF]">{b.totalMin}min • {b.sessions} sesiones • {b.avgRating}★</div>
+                          <div className="legend-flame text-[12px] leading-none mt-0.5">{flames}</div>
+                          {/* Visual bond progress bar - makes it feel alive and goal-oriented */}
+                          <div className="mt-1 h-1 bg-white/10 rounded overflow-hidden">
+                            <div className="h-1 bg-gradient-to-r from-[#FF671F] to-[#FF4F79] transition-all" style={{width: `${progress}%`}} />
+                          </div>
+                          <div className="text-[7px] text-[#9CA3AF]/70 mt-px">Bond {b.bondLevel} • {progress}% to next</div>
                         </div>
                       </div>
                     )
                   })}
                 </div>
+                <div className="text-[8px] text-center text-[#22c55e]/60 mt-1">Re-sync para subir tu bond y desbloquear prioridad en live + explore</div>
               </div>
             )}
 
@@ -6770,21 +6811,21 @@ function App() {
                   {loadingPersonalMuro ? '...' : 'Refrescar'}
                 </button>
               </div>
-              {/* Live engagement stats - makes the muro feel alive and spectacular */}
+              {/* Live engagement stats - makes the muro feel ALIVE and spectacular */}
               {(() => {
                 const myPosts = profilePosts[effectiveUserId] || []
                 if (myPosts.length === 0) return null
                 const likes = myPosts.reduce((s, p) => s + (p.likes?.length || 0), 0)
                 const comms = myPosts.reduce((s, p) => s + (p.comments?.length || 0), 0)
                 return (
-                  <div className="flex gap-3 text-[10px] px-1 mb-2 text-[#9CA3AF]">
-                    <span>📝 {myPosts.length}</span>
-                    {myPosts.some((p: any) => p.pinned) && <span>📌 {myPosts.filter((p: any) => p.pinned).length}</span>}
-                    <span>❤️ {likes}</span>
-                    <span>💬 {comms}</span>
-                    {currentUser.trainingNow && <span className="text-[#22c55e]">🟢 Live {currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}</span>}
+                  <div className="flex gap-3 text-[10px] px-1 mb-2 text-[#9CA3AF] flex-wrap">
+                    <span>📝 {myPosts.length} posts</span>
+                    {myPosts.some((p: any) => p.pinned) && <span>📌 {myPosts.filter((p: any) => p.pinned).length} fijados</span>}
+                    <span className="text-[#FF4F79]">❤️ {likes} likes</span>
+                    <span className="text-[#22c55e]">💬 {comms} comentarios</span>
+                    {currentUser.trainingNow && <span className="text-[#22c55e] font-bold animate-pulse">🟢 ENTRENANDO AHORA {currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}</span>}
                     {(currentUser.liveJoins || 0) > 0 && <span className="text-[#22c55e]">🔥 {currentUser.liveJoins} joins {currentUser.joinedLiveStreak ? `+${currentUser.joinedLiveStreak}d` : ''}</span>}
-                    <span className="text-[#FF671F]/60">· comunidad interactúa</span>
+                    <span className="text-[#FF671F]/60">· la comunidad te ve y reacciona</span>
                   </div>
                 )
               })()}
