@@ -4153,7 +4153,7 @@ function App() {
 
             {/* Simple visual "map" row: mini avatars + pulsing dots sorted by distance (emoji radar feel, FOMO visual) - enhanced */}
             {liveTrainingNow.length > 1 && (
-              <div className="px-4 py-2 border-b border-[#2F2F35]/50 bg-black/30">
+              <div className="px-4 py-2 border-b border-[#2F2F35]/50 bg-black/30 radar-container">
                 <div className="text-[8px] text-[#9CA3AF] mb-1">Cerca de ti (radar ordenado por distancia)</div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
                   {[...liveTrainingNow].sort((a,b)=> (a.distance||0)-(b.distance||0)).map((u, idx) => (
@@ -5370,12 +5370,17 @@ function App() {
                 <div 
                   key={i} 
                   onClick={stat.isLive && liveTrainingNow.length > 0 ? () => { setActiveTab('explore'); setShowLiveModal(true); } : undefined}
-                  className={`card p-3 text-center rounded-2xl flex flex-col items-center justify-center ${stat.isLive && liveTrainingNow.length > 0 ? 'cursor-pointer active:scale-95 border border-[#22c55e]/40' : ''}`}
+                  className={`card p-3 text-center rounded-2xl flex flex-col items-center justify-center ${stat.isLive && liveTrainingNow.length > 0 ? 'cursor-pointer active:scale-95 border border-[#22c55e]/60 ring-1 ring-[#22c55e]/20 shadow-sm shadow-[#22c55e]/10' : ''} ${stat.isLive ? 'relative' : ''}`}
                 >
                   <stat.icon size={16} className="mb-0.5" style={{ color: stat.color }} />
                   <div className="stat-number text-lg" style={{ color: stat.color }}>{stat.value}</div>
                   <div className="text-[9px] text-[#9CA3AF] mt-0 font-medium tracking-widest">{stat.label}</div>
-                  {stat.isLive && liveTrainingNow.length > 0 && <div className="text-[8px] text-[#22c55e] mt-0.5">¡Ver ahora!</div>}
+                  {stat.isLive && liveTrainingNow.length > 0 && (
+                    <div className="text-[8px] text-[#22c55e] mt-0.5 flex items-center gap-1">
+                      ¡Ver ahora! 
+                      <div className="w-1.5 h-1.5 bg-[#22c55e] rounded-full" style={{animation: 'live-pulse-green 1.5s ease-in-out infinite'}}></div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -7040,7 +7045,7 @@ function App() {
                   )}
                   {showFullProfile.trainingNow && showFullProfile.trainingNowSince && (
                     <>
-                      <div className="mt-2 inline-flex items-center gap-2 bg-[#22c55e] text-black px-3 py-1 rounded-full text-sm font-bold">
+                      <div className="mt-2 inline-flex items-center gap-2 bg-[#22c55e] text-black px-3 py-1 rounded-full text-sm font-bold relative overflow-hidden">
                         🟢 ENTRENANDO AHORA • en vivo hace {Math.floor((Date.now() - showFullProfile.trainingNowSince)/60000)}m
                         {showFullProfile.trainingNowSince && <span className="text-xs">· se va pronto</span>}
                         {(() => {
@@ -7050,6 +7055,9 @@ function App() {
                           return jc > 0 ? <span className="text-xs ml-1">+{jc} unidos</span> : null;
                         })()}
                         {showFullProfile.liveStreak && showFullProfile.liveStreak > 0 && <span className="text-xs ml-1">🔥{showFullProfile.liveStreak}d</span>}
+                        {showFullProfile.trainingNowSince && (
+                          <div className="absolute bottom-0 left-0 h-0.5 bg-white/30" style={{width: `${Math.max(5, Math.min(100, (90 - Math.floor((Date.now() - showFullProfile.trainingNowSince + 90*60*1000 - Date.now())/60000 ))/90 * 100))}%`}}></div>
+                        )}
                       </div>
                       <button onClick={() => { handleSwipe(showFullProfile.id, 'right'); setShowFullProfile(null); /* live join toast + auto muro comment handled inside handleSwipe for consistency */ }} className="mt-1 w-full py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-bold active:bg-[#16a34a]">Unirme ahora al entrenamiento 🔥</button>
                     </>
