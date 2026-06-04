@@ -809,3 +809,14 @@ Builds + push planeados. Sigue con todo.
 - AAB actualizado con ?ltimos visuals (v2 copy).
 - Sigue con todo. Pr?ximo: m?s en live (progress en modal, etc.), FCM, upload a Play con nuevos visuals destacados.
 
+
+## Continuaci?n "sigue con todo" (user "sigue con todo")
+
+Mejoras live + dise?o:
+- Progress bar a?adido tambi?n a items del live modal para urgencia consistente.
+- Sessions cards: badge "?? LIVE" si el creador est? en live (para my sessions y all sessions).
+- Feed live teaser: cards mejorados con hover scale, m?s info (se va, joins), min-w para mejor look.
+- Revisi?n visual: foco en lives en todos lados (banner, modal, feed, sessions) + glass/motion/glows para atractivo m?ximo.
+
+Builds + push planeados. AAB actualizado. Sigue con todo full green light! Pr?ximo: m?s polish (e.g. radar anim, FCM), Play upload destacando visuals.
+

@@ -4194,6 +4194,11 @@ function App() {
                       <div className="text-[#9CA3AF] text-sm truncate">{user.trainingTypes?.join(', ') || 'Entreno'}</div>
                       <div className="text-[#22c55e] text-xs flex items-center gap-1 mt-0.5">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m {user.seVaEnMin > 0 ? <span className={user.seVaEnMin < 15 ? 'text-red-400 font-bold' : 'text-orange-400'}>{user.seVaEnMin < 15 ? `· se va pronto en ${user.seVaEnMin}m 🔥` : `· se va en ${user.seVaEnMin}m`}</span> : ''}
                       </div>
+                      {user.seVaEnMin > 0 && (
+                        <div className="h-1 bg-[#22c55e]/20 rounded mt-0.5 mb-1">
+                          <div className="h-1 bg-[#22c55e] rounded" style={{width: `${Math.max(5, Math.min(100, (90 - user.seVaEnMin)/90 * 100))}%`}}></div>
+                        </div>
+                      )}
                       {user.joinCount > 0 && <div className="text-[10px] text-[#22c55e] mt-0.5 font-medium">+{user.joinCount} se unieron a este live</div>}
                     </div>
                     <div className="flex flex-col gap-1 self-center">
@@ -4320,8 +4325,8 @@ function App() {
                 <div className="text-[9px] text-[#22c55e] mb-1 px-1">🟢 Live ahora en la comunidad {liveTrainingNow.some(u=>u.seVaEnMin<15) ? '· ¡se va pronto!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE' : ''}</div>
                 <div className="flex gap-1 overflow-x-auto pb-1">
                   {liveTrainingNow.slice(0,3).map(u => (
-                    <motion.div key={u.id} onClick={() => setActiveTab('explore')} whileTap={{scale:0.94}} className="text-[9px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-0.5 rounded-full border border-[#22c55e]/30 cursor-pointer active:bg-[#22c55e]/20 flex items-center gap-1">
-                      {u.name} ({u.distance.toFixed(0)}km) {u.seVaEnMin < 15 && <span className="text-red-400">🔥</span>} {u.joinCount > 0 && <span className="text-[7px]">+{u.joinCount}</span>}
+                    <motion.div key={u.id} onClick={() => setActiveTab('explore')} whileHover={{scale:1.05}} whileTap={{scale:0.94}} className="text-[8px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-1 rounded-xl border border-[#22c55e]/40 cursor-pointer active:bg-[#22c55e]/20 flex items-center gap-1 min-w-[110px]">
+                      {u.name.split(' ')[0]} ({u.distance.toFixed(0)}km) {u.seVaEnMin < 15 && <span className="text-red-400">🔥{u.seVaEnMin}m</span>} {u.joinCount > 0 && <span className="text-[7px]">+{u.joinCount}🔥</span>}
                     </motion.div>
                   ))}
                 </div>
@@ -4649,6 +4654,9 @@ function App() {
                             <div className="text-right text-xs">
                               <div className="text-[#22c55e] font-semibold">{spotsLeft} cupos</div>
                               {dist && <div className="text-[#9CA3AF] mt-0.5">{dist} km</div>}
+                              {liveTrainingNow.some(u => u.id === session.creatorId) && (
+                                <div className="mt-0.5 text-[8px] px-1 py-0.5 bg-[#22c55e] text-black rounded font-bold">🟢 LIVE</div>
+                              )}
                             </div>
                           </div>
 
@@ -4765,6 +4773,7 @@ function App() {
                               <div className="font-semibold text-lg flex items-center gap-2 tracking-tight">
                                 {session.title}
                                 {isCreator && <span className="text-[9px] bg-[#FF671F] text-black px-2 py-0.5 rounded font-medium">TUYA</span>}
+                                {liveTrainingNow.some(u => u.id === session.creatorId) && <span className="text-[8px] bg-[#22c55e] text-black px-1.5 py-0.5 rounded font-bold">🟢 LIVE</span>}
                               </div>
                               <div className="text-sm text-[#FF671F] font-medium mt-0.5">{session.trainingType} • {session.time}</div>
                               <div className="text-sm text-[#9CA3AF] mt-0.5 flex items-center gap-1">
