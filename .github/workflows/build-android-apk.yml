@@ -116,3 +116,19 @@ jobs:
           prerelease: true
           files: android/app/build/outputs/apk/debug/app-debug.apk
           token: ${{ secrets.GITHUB_TOKEN }}
+
+# TODO (future, after adding secrets): Signed release AAB + auto-publish to Play
+# Requires repo secrets:
+#   ANDROID_KEYSTORE_BASE64 (base64 of release-key.keystore)
+#   KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD
+#   PLAY_SERVICE_ACCOUNT (base64 of play-service-account.json)
+#
+# Add a job or step (on release or manual dispatch):
+# - Decode keystore + play key to files (using secrets).
+# - CAPACITOR=1 npm run build:web && npx cap sync android
+# - cd android && chmod +x gradlew
+# - ./gradlew bundleRelease  (signing via properties or env)
+# - ./gradlew publishBundle -Pplay.track=closed
+# Use google-github-actions/auth if needed for ADC.
+# See PRODUCTION_AND_APK.md "Automated Play Store publishing" for local equivalent (publish-play.bat).
+# This would allow "push -> AI-free auto to hidden Play track".

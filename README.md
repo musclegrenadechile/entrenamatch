@@ -50,8 +50,9 @@ Puedes probar la aplicación directamente aquí (versión pública de prueba):
 - [BETA_TESTERS_GUIDE.md](BETA_TESTERS_GUIDE.md) — cómo instalar desde Play Internal/Closed (oculto), cómo reportar, **protocolo exacto para probar chats en tiempo real con fakes**.
 - [PLAY_STORE_ASSETS.md](PLAY_STORE_ASSETS.md) — textos listos + prompts para subir AAB firmado a testing oculto.
 - [PREALPHA_REAL_TESTING_GUIDE.md](PREALPHA_REAL_TESTING_GUIDE.md) — flujo de prueba cross-device.
+- **NEW:** Automated Play publishing via `publish-play.bat` (or let Grok run it via terminal) — see PRODUCTION_AND_APK.md "Automated Play Store publishing". Place service account key once, then AI can "sube todo" without manual Console uploads.
 - APK builds automáticos en cada push (GitHub Releases tag `android-prealpha` o Actions artifacts).
-- AAB firmado listo para Play Console Internal testing (no se publica).
+- AAB firmado listo para Play Console Internal testing (no se publica). Use `publish-play.bat closed` for automation.
 
 **Importante:** Después de cada `git push` haz hard refresh (Ctrl+Shift+R). La app está en Pre-Alpha oculta para pruebas con grupo cerrado. Usa los fakes + 2 cuentas reales en dispositivos distintos para validar "chat en vivo".
 - Ver INFORME_PROBLEMA_COMUNICACION_USUARIOS_REALES.md en el repo para el análisis completo y honesto de por qué antes no se podía comunicar entre usuarios reales (causas: matches no reactivos, closures en Actualizar, reglas de likes faltantes, etc.) y cómo se resolvió en Phase 0.

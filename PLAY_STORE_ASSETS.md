@@ -14,6 +14,14 @@
 **Account Deletion URL** (required by Google for Data Safety):
 - https://musclegrenadechile.github.io/entrenamatch/privacy.html#eliminacion-de-cuenta
 
+**CSAE Standards URL** (Estándares contra la Explotación y Abuso Sexual Infantil - requerido por Google):
+- https://musclegrenadechile.github.io/entrenamatch/csea-standards.html
+
+**Instrucciones para Play Console:**
+Pega exactamente esta URL en el campo que te pide "URL de los estándares de seguridad" / "Incluye un vínculo a los estándares contra la explotación y abuso sexual infantil (CSAE)".
+
+La página está publicada de forma estática, pública y no editable (hospedada en GitHub Pages junto con privacy.html).
+
 **Website URL** (for Play Console - official landing page):
 - https://musclegrenadechile.github.io/entrenamatch/landing.html
 
@@ -162,10 +170,15 @@ Upload the generated screenshots in that order. Use real device frames or clean 
 ---
 
 ## Release notes for testers (internal doc)
-Sube el AAB firmado (EntrenaMatch-release.aab) a Internal testing primero.
+Use the new automation: after bumping versionCode, run `publish-play.bat closed` (or let the AI/Grok execute the publish via terminal once you place the play-service-account.json key).
+This builds the latest + uploads signed AAB via the Gradle Play Publisher plugin (no manual Console upload needed after one-time service account setup).
+
+Sube inicialmente a Internal testing (o usa el script con "internal").
 Agrega testers por email.
 Después de validar con 3-5 personas, promueve a Closed testing con Google Group para más testers sin publicar.
 Mantén siempre "Oculto" / no listado.
+
+(For manual fallback: upload the AAB from root via Play Console > Testing > Internal/Closed.)
 
 ---
 

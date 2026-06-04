@@ -6,6 +6,11 @@ echo EntrenaMatch - Build SIGNED RELEASE AAB (Play Store)
 echo For HIDDEN Internal/Closed Testing
 echo ==========================================
 
+set "MODE=%~1"
+set "TRACK=%~2"
+if "%MODE%"=="" set MODE=build
+if "%TRACK%"=="" set TRACK=closed
+
 set "JAVA_HOME=C:\Program Files\Microsoft\jdk-21.0.11.10-hotspot"
 set "ANDROID_HOME=C:\Android"
 set "PATH=%JAVA_HOME%\bin;%ANDROID_HOME%\platform-tools;%ANDROID_HOME%\cmdline-tools\latest\bin;%PATH%"
@@ -55,8 +60,15 @@ if exist "%AAB_PATH%" (
     copy /y "%AAB_PATH%" "%~dp0EntrenaMatch-release.aab" >nul 2>&1
     echo Also copied to easy location: %~dp0EntrenaMatch-release.aab
     echo.
-    echo NEXT: Upload EntrenaMatch-release.aab to Google Play Console
-    echo in the Internal testing track (completely hidden except for your tester emails).
+    if /i "%MODE%"=="publish" (
+        echo Publishing to Play track %TRACK% using publish-play.bat...
+        cd /d "%~dp0"
+        call publish-play.bat %TRACK%
+    ) else (
+        echo NEXT: Upload EntrenaMatch-release.aab to Google Play Console
+        echo in the Internal testing track (completely hidden except for your tester emails).
+        echo (Or run: build-release.bat publish closed  to auto-publish via service account)
+    )
 ) else (
     echo.
     echo Could not find AAB. Check for errors above.

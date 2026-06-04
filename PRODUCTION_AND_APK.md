@@ -203,6 +203,59 @@ For future updates you can run `build-release.bat` again (it will use the existi
 
 **Security warning:** Treat the keystore file and the password `EntrenaMatch2026!Strong` as extremely sensitive. If you lose them you cannot publish updates to this app ID on Play Store ever again.
 
+### Automated AAB publishing to Play Console (for AI/terminal "upload everything" or future CI)
+
+This fulfills the request for an option so the AI (Grok, via run_terminal_command on your machine) can handle full signed AAB builds + uploads to Play Console (Internal/Closed tracks for hidden beta) without you doing the manual upload steps each time.
+
+**The Gradle Play Publisher plugin is already configured** (in android/app/build.gradle + root build.gradle classpath). It uses the official Google Play Developer API.
+
+**One-time setup (you do this in browser via Play Console; AI cannot create accounts):**
+1. Ensure you have at least one prior release in Internal testing (you did this manually before).
+2. Play Console (for the EntrenaMatch app) > **Setup** (left menu) > **API access**.
+3. Click "Create new service account" (or link to Google Cloud Console for the linked project).
+4. In Cloud Console:
+   - Create Service Account (name e.g. "entrenamatch-publisher").
+   - Grant role "Service Account User".
+   - Create and continue.
+5. Generate key: Service Accounts list > your new acct > Keys tab > Add Key > JSON. Download the .json (e.g. entrenamatch-xxx.json).
+6. Back in Play Console > **Users and permissions**:
+   - Invite new user.
+   - Paste the service account email (ends in @...iam.gserviceaccount.com).
+   - Assign role **Release manager** (minimum for publishing to tracks; can be more restricted if desired).
+7. Copy the downloaded JSON to `android/play-service-account.json` in this project.
+   - This file is **gitignored** (see .gitignore) — NEVER commit or share it.
+   - It gives limited publish rights only (no full login, no other apps).
+
+**Security:** Treat this JSON key like the keystore + password. It allows publishing updates to *this specific app ID*. Delete/rotate it if compromised. For CI, store as base64 secret instead of file.
+
+**Usage (now AI can do it for you):**
+- Bump version first (required!): Edit `android/app/build.gradle` (versionCode += 1, e.g. 5; optionally versionName "0.1.2-prealpha"). Also update package.json if you want.
+- Then run the new script:
+  ```
+  publish-play.bat closed     # for beta cerrada (default track in config)
+  publish-play.bat internal   # for early hidden testing
+  ```
+  (Or `npm run publish:play:closed` etc.)
+- Full pipeline: ensures latest web (npm run android:build), then gradle publishBundle to the track.
+- Or via AI: after setup, just say "sube la nueva version a closed" — Grok will execute the equivalent commands here via terminal tools (full build + upload using the key you placed).
+
+The script (publish-play.bat) and enhanced build-release.bat (try `build-release.bat publish closed`) check for the key + keystore and give clear errors + reminders if missing.
+
+See the new script + updated gradle for -Pplay.track= override support.
+
+**After upload:**
+- Go to Play Console > Testing > [internal|closed] testing.
+- The new AAB/release will appear (signed with your keystore).
+- Add/roll out to testers (emails or Google Group for truly closed beta).
+- App stays 100% hidden — no search, no public page.
+- Testers get private link (as before).
+
+This reuses 100% of the existing triplet plugin/config (no new tools). For even more automation, you can later add the service account JSON + keystore secrets to GitHub repo secrets and extend the APK CI workflow to publish on tags.
+
+**Test the flow:** Bump versionCode, run the script (it will fail gracefully without the key, showing the setup reminder). Once key is placed, it will authenticate via the service account and upload.
+
+---
+
 ### Automatic APK builds via GitHub Actions (recommended for quick access)
 
 A GitHub Actions workflow (`.github/workflows/build-android-apk.yml`) **has been created and pushed**.

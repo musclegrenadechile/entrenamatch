@@ -1,7 +1,7 @@
 {
   "name": "fitvina",
   "private": true,
-  "version": "0.1.0-prealpha",
+  "version": "0.1.1-prealpha",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,9 +14,13 @@
     "cap:open:android": "npx cap open android",
     "android:build": "cross-env CAPACITOR=1 npm run build:web && npm run cap:sync && echo \"Ready for APK: npx cap open android (requires Android Studio)\"",
     "build:release": "cd android && .\\gradlew.bat bundleRelease",
-    "build:release:win": "build-release.bat"
+    "build:release:win": "build-release.bat",
+    "publish:play": "publish-play.bat",
+    "publish:play:internal": "publish-play.bat internal",
+    "publish:play:closed": "publish-play.bat closed"
   },
   "dependencies": {
+    "@capacitor-community/play-integrity": "^8.0.0",
     "@capacitor/android": "^8.3.4",
     "@capacitor/camera": "^8.2.0",
     "@capacitor/cli": "^8.3.4",

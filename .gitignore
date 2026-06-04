@@ -36,6 +36,10 @@ keystore.properties
 *.jks
 release-key.*
 
+# Google Play Service Account (for automated publishing) - NEVER COMMIT
+play-service-account.json
+*-service-account*.json
+
 # Release artifacts, large binaries & temp build scripts (Phase 1 clean repo)
 *.aab
 *.apk

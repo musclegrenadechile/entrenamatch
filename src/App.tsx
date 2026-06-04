@@ -33,6 +33,7 @@ import {
 // (Firebase --base=/ , GH Pages, dev server) → eliminates the "failed to resolve import" errors.
 let CapacitorCamera: any = null
 let PushNotifications: any = null
+let PlayIntegrityNative: any = null
 
 if (__CAPACITOR_BUILD__) {
   // The specifier is a define placeholder replaced at build time with the real path only for CAP builds.
@@ -41,6 +42,7 @@ if (__CAPACITOR_BUILD__) {
     const plugins = (typeof window !== 'undefined' && (window as any).__CAPACITOR_PLUGINS__) || {}
     CapacitorCamera = plugins.Camera || null
     PushNotifications = plugins.PushNotifications || null
+    PlayIntegrityNative = plugins.PlayIntegrity || null
   })
 }
 
@@ -64,6 +66,7 @@ import { ExploreTab } from './components/explore/ExploreTab'
 import { AuthScreen } from './components/auth/AuthScreen'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { db, isFirebaseConfigured } from './services/firebase'
+import { requestPlayIntegrityToken, hasPositiveIntegrity, getLastIntegrityResult } from './services/playIntegrity'
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore'
 
 // ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
@@ -594,6 +597,10 @@ function App() {
   const [lastSync, setLastSync] = useState<Date | null>(null)
   const [isSyncingProfile, setIsSyncingProfile] = useState(false)
 
+  // Google Play Integrity (app + device attestation). Critical for closed beta security.
+  const [integrityChecking, setIntegrityChecking] = useState(false)
+  const [lastIntegrity, setLastIntegrity] = useState<any>(null)
+
   // Live tick for "hace Xs" relative times (polish: updates empty states, headers, sync indicators without manual refresh)
   const [timeTick, setTimeTick] = useState(0)
   useEffect(() => {
@@ -661,6 +668,46 @@ function App() {
       toast.success('Datos reales actualizados', { description: 'Perfiles, matches y sesiones en vivo refrescados.' })
     } finally {
       setIsLoadingMatches(false)
+    }
+  }
+
+  // Google Play Integrity check - "trabajar con la app de google"
+  // Call this on login, before sensitive actions (live toggle, profile create, etc.)
+  // The raw token should go to a server for verification to produce the full verdict JSON you showed.
+  const checkPlayIntegrity = async (showToast = true) => {
+    setIntegrityChecking(true)
+    try {
+      const res = await requestPlayIntegrityToken()
+      setLastIntegrity(res)
+
+      if (res.token) {
+        if (showToast) {
+          toast.success('Token de integridad obtenido de Google Play', {
+            description: 'Envíalo a tu backend para verificar y obtener el JSON completo de veredictos (como el que me pasaste). Copiado en consola.'
+          })
+        }
+        console.log('%c[Play Integrity] Raw token (send this to server for full verification):', 'color:#22c55e', res.token)
+        // For convenience in testing: also log a reminder of the package that must match
+        console.log('Expected packageName in verdicts: com.entrenamatch.app')
+      } else if (res.simulatedVerdict) {
+        if (showToast) {
+          toast.success('Integridad simulada (web/demo)', {
+            description: 'En APK nativa obtendrás un token real de Google. El veredicto simulado es positivo (LICENSED + PLAY_RECOGNIZED + MEETS_DEVICE_INTEGRITY).'
+          })
+        }
+        console.log('%c[Play Integrity] Simulated positive verdict (web):', 'color:#f59e0b', res.simulatedVerdict)
+      } else {
+        if (showToast) toast.error('No se pudo obtener integridad', { description: res.error || 'Desconocido' })
+      }
+
+      return res
+    } catch (e: any) {
+      const errRes = { available: false, error: e?.message || 'Error' }
+      setLastIntegrity(errRes)
+      if (showToast) toast.error('Error verificando con Google Play')
+      return errRes
+    } finally {
+      setIntegrityChecking(false)
     }
   }
 
@@ -1567,6 +1614,21 @@ function App() {
       loadMyFeedbacks()
     }
   }, [activeTab, isDemoMode, firebaseUser?.uid])
+
+  // Auto-run Play Integrity check once per session on real native users (silent first time, visible result in Profile)
+  const didAutoIntegrityRef = useRef(false)
+  useEffect(() => {
+    if (!isDemoMode && firebaseUser?.uid && PlayIntegrityNative && !didAutoIntegrityRef.current) {
+      didAutoIntegrityRef.current = true
+      // Fire and forget; user sees nice UI in Profile
+      checkPlayIntegrity(false).then((res) => {
+        if (res && (res.token || res.simulatedVerdict)) {
+          // Optional: if negative in future, we could show warning or restrict some actions
+          console.log('[Play Integrity] Auto-checked on real native login:', res.token ? 'real token' : 'simulated')
+        }
+      })
+    }
+  }, [firebaseUser?.uid, isDemoMode])
 
   // Load real group chat messages when opening the modal for a real session
   const loadRealGroupMessages = async (sessionId: string) => {
@@ -5689,6 +5751,56 @@ function App() {
                 </a>
                 <div className="text-[10px] text-center text-[#9CA3AF] mt-2">
                   También disponible automáticamente en GitHub Actions → Artifacts
+                </div>
+              </div>
+            </div>
+
+            {/* Google Play Integrity - working with the Google app (Play Integrity API) */}
+            <div className="px-4 mt-2">
+              <div className="card p-5 border border-[#22c55e]/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="font-semibold text-sm flex items-center gap-2"><span>🛡️</span> Google Play Integrity</div>
+                  <div className="text-[9px] px-2 py-0.5 rounded-full bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/30">Android + Play Store</div>
+                </div>
+                <p className="text-xs text-[#9CA3AF] mb-3">
+                  Verifica que la app sea la oficial de Play (PLAY_RECOGNIZED), que tengas licencia válida (LICENSED) y que el dispositivo sea íntegro. 
+                  Protege contra APKs modificados, emuladores y abuso en beta cerrada.
+                </p>
+
+                <button
+                  onClick={() => checkPlayIntegrity(true)}
+                  disabled={integrityChecking}
+                  className="w-full py-2.5 rounded-2xl text-sm font-semibold bg-[#22c55e] text-black active:bg-[#16a34a] disabled:opacity-60 flex items-center justify-center gap-2"
+                >
+                  {integrityChecking ? 'Verificando con Google...' : 'Verificar integridad ahora con Google Play'}
+                </button>
+
+                {lastIntegrity && (
+                  <div className="mt-3 text-[10px] bg-[#111113] p-3 rounded-2xl border border-[#2F2F35]">
+                    {lastIntegrity.token && (
+                      <>
+                        <div className="text-[#22c55e] font-medium">✅ Token obtenido de Google</div>
+                        <div className="text-[#9CA3AF] mt-1 break-all font-mono text-[8px] max-h-12 overflow-auto">{lastIntegrity.token}</div>
+                        <div className="text-[#9CA3AF] mt-1">Cópialo y envíalo a un backend para decodificar → obtienes el JSON completo con veredictos (como el que me diste).</div>
+                      </>
+                    )}
+                    {lastIntegrity.simulatedVerdict && (
+                      <>
+                        <div className="text-amber-400 font-medium">🌐 Resultado simulado (web / PWA)</div>
+                        <div className="text-[#9CA3AF] mt-1">En la APK nativa instalada desde Play obtendrás un token real. El simulado es positivo:</div>
+                        <div className="text-[9px] mt-1 text-[#cbd5e1]">LICENSED + PLAY_RECOGNIZED + MEETS_DEVICE_INTEGRITY</div>
+                      </>
+                    )}
+                    {lastIntegrity.error && (
+                      <div className="text-red-400">Error: {lastIntegrity.error}</div>
+                    )}
+                    <button onClick={() => { console.log('Last full integrity object:', lastIntegrity); toast('Resultado completo en consola del navegador (F12)'); }} className="mt-2 text-[9px] underline text-[#FF671F]">Ver objeto completo en consola</button>
+                  </div>
+                )}
+
+                <div className="text-[9px] text-[#9CA3AF] mt-2">
+                  Package esperado: <span className="font-mono text-[#22c55e]">com.entrenamatch.app</span>. 
+                  El JSON que me pasaste usaba placeholder "com.package.name" — en la app real usamos el correcto.
                 </div>
               </div>
             </div>

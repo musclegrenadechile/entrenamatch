@@ -107,6 +107,8 @@ También puedes ir a GitHub (repo musclegrenadechile/entrenamatch) → pestaña 
 
 ## Cómo instalar la app desde Play Store (Internal o Closed testing - 100% oculta)
 
+**Note for admins:** Use the new `publish-play.bat closed` (or `internal`) script (or let Grok run the equivalent via terminal) after bumping versionCode. This automates the signed AAB build + upload using the pre-configured Gradle Play Publisher + your service account key. See PRODUCTION_AND_APK.md "Automated Play Store publishing" for setup (one-time service account in Console) and usage.
+
 **Internal testing (el más privado, recomendado para empezar con 5-10 personas):**
 1. El admin te agrega tu cuenta de Google (email) en Play Console → Testing → Internal testing → Testers.
 2. Recibes un email con link "Become a tester" o "Ser tester".

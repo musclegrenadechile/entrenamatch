@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.github.triplet.play'
 
 // Load signing properties from keystore.properties (never commit the real file)
 def keystoreProperties = new Properties()
@@ -14,8 +15,8 @@ android {
         applicationId "com.entrenamatch.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 3
-        versionName "0.1.0-prealpha"
+        versionCode 4
+        versionName "0.1.1-prealpha"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -67,4 +68,26 @@ try {
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
+
+// Google Play Publisher configuration (for automated uploads to closed beta)
+// See: https://github.com/Triple-T/gradle-play-publisher
+play {
+    // Path to the Service Account JSON key (NEVER commit this file)
+    // Supports -Pplay.serviceAccountCredentials=/path/to/key.json for flexibility
+    if (project.hasProperty('play.serviceAccountCredentials')) {
+        serviceAccountCredentials = file(project.property('play.serviceAccountCredentials'))
+    } else {
+        serviceAccountCredentials = file("play-service-account.json")
+    }
+
+    // Track configurable via -Pplay.track=internal|closed (default closed for beta cerrada)
+    // You can change to "internal" for very early testing.
+    track = project.hasProperty('play.track') ? project.property('play.track') : "closed"
+
+    // Upload as App Bundle (AAB) - required for modern Play Store
+    defaultToAppBundles = true
+
+    // Optional: set to "draft" if you want to review in Console before publishing to testers
+    // releaseStatus = project.hasProperty('play.releaseStatus') ? project.property('play.releaseStatus') : "completed"
 }
