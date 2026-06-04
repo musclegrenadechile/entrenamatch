@@ -4930,7 +4930,7 @@ function App() {
                         onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); }} 
                         className={`text-[10px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-3 py-1 rounded font-semibold active:brightness-90 flex items-center justify-center gap-1 ${joiningSyncWith === user.id ? 'opacity-80 cursor-wait' : ''}`}
                       >
-                        {joiningSyncWith === user.id ? '⏳ Abriendo Arena...' : '🔥 Entrenar juntos (Arena)'}
+                        {joiningSyncWith === user.id ? '⏳ Abriendo Arena...' : `🔥 Entrenar juntos ${userLocation && user.distance < 900 ? `(${user.distance.toFixed(0)}km)` : '(Arena)'}`}
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); setShowLiveModal(false); openChat(user.id); if (!matches.includes(user.id) && !realMatches.includes(user.id)) handleSwipe(user.id, 'right'); }} className="text-[9px] border border-[#22c55e]/60 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10 hover:bg-[#22c55e]/5">Chatear ya</button>
                     </div>
@@ -5095,7 +5095,7 @@ function App() {
                       transition={{delay: idx*0.03}}
                       className="text-[9px] bg-[#0a120f] border border-[#22c55e]/40 text-[#22c55e] px-3 py-1.5 rounded-2xl cursor-pointer active:bg-[#22c55e]/10 flex flex-col min-w-[100px] shadow-sm hover:border-[#22c55e]/70 snap-start"
                     >
-                      <div className="font-bold flex items-center gap-1 text-white/90">{u.name.split(' ')[0]} <span className="text-[7px] text-[#9CA3AF]">{userLocation && u.distance < 900 ? `${u.distance.toFixed(0)}km` : '—'}</span></div>
+                      <div className="font-bold flex items-center gap-1 text-white/90">{u.name.split(' ')[0]} <span className="text-[7px] text-[#9CA3AF]">{userLocation && u.distance < 900 ? `${u.distance.toFixed(0)}km` : '—'}</span>{userLocation && u.distance < 5 && <span className="ml-1 text-[6px] bg-[#22c55e]/20 px-1 rounded">CERCA</span>}</div>
                       {u.seVaEnMin > 0 && <div className="text-[7px] text-orange-400">{u.seVaEnMin < 15 ? '🔥 se va pronto' : `se va en ${u.seVaEnMin}m`}</div>}
                       {u.joinCount > 0 && <div className="text-[7px] text-[#22c55e]/70">+{u.joinCount} se unieron</div>}
                       {u.trainingSyncWith && <div className="text-[7px] text-[#22c55e] mt-0.5">🔄 En Sync ahora — ¡Arena!</div>}
@@ -6238,12 +6238,15 @@ function App() {
                   <span className="chip-health text-[10px] px-2 py-0.5 !font-semibold">{currentUser.intensity || 'Moderado'}</span>
                   {userLocation && <span className="text-[9px] text-[#22c55e] ml-1">📍 real GPS</span>}
                 </div>
-                <button 
-                  onClick={requestUserLocation}
-                  className="mt-1 text-[9px] text-[#22c55e] underline active:opacity-70"
-                >
-                  📍 Actualizar ubicación real (GPS)
-                </button>
+                <div className="flex items-center gap-2 mt-1">
+                  <button 
+                    onClick={requestUserLocation}
+                    className="text-[9px] text-[#22c55e] underline active:opacity-70 flex items-center gap-1"
+                  >
+                    📍 Actualizar ubicación real (GPS)
+                  </button>
+                  {userLocation && <span className="text-[8px] text-[#9CA3AF]/70">• distancias precisas activas</span>}
+                </div>
                 {/* NEW: Big alive live status banner in hero */}
                 {currentUser.trainingNow && (
                   <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-2xl bg-[#22c55e] text-black text-xs font-extrabold tracking-wider shadow-[0_0_20px_rgba(34,197,94,0.6)]">
@@ -6430,36 +6433,30 @@ function App() {
               </div>
             </div>
 
-            {/* NEW: Actividad reciente en tu muro - makes profile feel SUPER VIVO with real interactions */}
+            {/* Actividad reciente en tu muro - hace el perfil VIVO y atractivo */}
             {(() => {
               const myPosts = profilePosts[effectiveUserId] || [];
               if (myPosts.length === 0) return null;
-              const recentInteractions: any[] = [];
-              myPosts.forEach((post: any) => {
-                (post.likes || []).forEach((uid: string) => {
-                  const prof = [...realProfiles, ...SEED_PROFILES].find(p => p.id === uid);
-                  if (prof) recentInteractions.push({ type: 'like', user: prof.name, postText: (post.text || '').substring(0,40), time: post.createdAt || Date.now() });
+              const recent = [];
+              myPosts.forEach(post => {
+                (post.likes || []).slice(-3).forEach(uid => {
+                  const p = [...realProfiles, ...SEED_PROFILES].find(pp => pp.id === uid);
+                  if (p) recent.push({type: 'like', name: p.name, text: '❤️ tu post'});
                 });
-                (post.comments || []).forEach((c: any) => {
-                  const prof = [...realProfiles, ...SEED_PROFILES].find(p => p.id === c.userId);
-                  if (prof) recentInteractions.push({ type: 'comment', user: prof.name, text: (c.text || '').substring(0,40), time: c.createdAt || Date.now() });
+                (post.comments || []).slice(-3).forEach(c => {
+                  const p = [...realProfiles, ...SEED_PROFILES].find(pp => pp.id === c.userId);
+                  if (p) recent.push({type: 'comment', name: p.name, text: '💬 ' + (c.text||'').slice(0,25)});
                 });
               });
-              const sorted = recentInteractions.sort((a,b) => (b.time||0) - (a.time||0)).slice(0,5);
-              if (sorted.length === 0) return null;
+              if (recent.length === 0) return null;
+              const sorted = recent.sort(() => Math.random() - 0.5).slice(0,5); // shuffle for freshness
               return (
                 <div className="px-4 mt-3">
-                  <div className="text-[10px] uppercase tracking-[1px] text-[#9CA3AF] mb-1.5 flex items-center gap-1">💥 ACTIVIDAD RECIENTE EN TU MURO</div>
-                  <div className="card p-2 space-y-1 text-xs">
-                    {sorted.map((int, idx) => (
-                      <div key={idx} className="flex items-center gap-2 px-2 py-1 bg-black/20 rounded-xl active:bg-black/40" onClick={() => setActiveTab('feed')}>
-                        <span className="font-semibold text-white/90">{int.user}</span>
-                        <span className={int.type === 'like' ? 'text-[#FF4F79]' : 'text-[#22c55e]'}>{int.type === 'like' ? '❤️ dio like' : '💬 ' + int.text}</span>
-                        <span className="ml-auto text-[#9CA3AF]/60 text-[9px]">en tu post</span>
-                      </div>
-                    ))}
+                  <div className="text-[9px] uppercase tracking-widest text-[#9CA3AF] mb-1 flex items-center gap-1">💥 ACTIVIDAD RECIENTE EN TU MURO <span className="text-[#22c55e] text-[8px]">¡vivo!</span></div>
+                  <div className="card p-2.5 text-[10px] space-y-1 bg-gradient-to-r from-black/5 to-transparent">
+                    {sorted.map((r,i) => <div key={i} className="flex items-center gap-1.5 text-[#9CA3AF]"><span className="font-medium text-white/80">{r.name}</span> {r.text}</div>)}
                   </div>
-                  <div className="text-[8px] text-center text-[#9CA3AF]/50 mt-1">La gente está interactuando con tu contenido — ¡sigue posteando!</div>
+                  <div className="text-[8px] text-center text-[#9CA3AF]/60 mt-1">La comunidad interactúa con vos — ¡sigue posteando para más FOMO!</div>
                 </div>
               );
             })()}
