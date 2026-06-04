@@ -29,6 +29,8 @@ export default defineConfig({
     // The previous "Build failed" was always the resolve error, not this warning.
     chunkSizeWarningLimit: 2000,
 
+    // minify: false, // for debugging TDZ errors in bundle (disabled)
+
     rollupOptions: {
       // In web builds (no CAPACITOR env), externalize the native Capacitor plugins.
       // This prevents the bundler from trying to resolve and bundle them (which can fail in CI

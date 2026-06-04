@@ -378,23 +378,6 @@ function App() {
   //   }
   // }, [activeTab, isDemoMode])
 
-  // EntrenaSync real-time mirror: when in sync, pull partner's latest syncActions and state from realProfiles (via periodic load or on change)
-  useEffect(() => {
-    if (currentUser?.trainingSyncWith && currentUser.trainingNow) {
-      const partner = realProfiles.find(p => p.id === currentUser.trainingSyncWith)
-      if (partner && partner.trainingSyncWith === effectiveUserId) {
-        if (partner.syncStartedAt) setSyncStartedAt(partner.syncStartedAt)
-        if (partner.syncActions && partner.syncActions.length > syncActions.length) {
-          setSyncActions(partner.syncActions)
-        }
-      } else if (partner && !partner.trainingSyncWith) {
-        // partner ended sync
-        setSyncPartnerId(null)
-        setSyncStartedAt(null)
-        setSyncActions([])
-      }
-    }
-  }, [realProfiles, currentUser?.trainingSyncWith, currentUser?.trainingNow])
   const [showFilters, setShowFilters] = useState(false)
   const [showMatchModal, setShowMatchModal] = useState<Profile | null>(null)
   const [showFullProfile, setShowFullProfile] = useState<Profile | null>(null)
@@ -651,6 +634,25 @@ function App() {
     const id = setInterval(() => setTimeTick(t => t + 1), 30000) // every 30s
     return () => clearInterval(id)
   }, [])
+
+  // EntrenaSync real-time mirror: when in sync, pull partner's latest syncActions and state from realProfiles (via periodic load or on change)
+  // Placed here AFTER all dependent states (realProfiles, effectiveUserId, currentUser local from saveUser) to avoid TDZ or init order issues in render/bundler.
+  useEffect(() => {
+    if (currentUser?.trainingSyncWith && currentUser.trainingNow) {
+      const partner = realProfiles.find(p => p.id === currentUser.trainingSyncWith)
+      if (partner && partner.trainingSyncWith === effectiveUserId) {
+        if (partner.syncStartedAt) setSyncStartedAt(partner.syncStartedAt)
+        if (partner.syncActions && partner.syncActions.length > syncActions.length) {
+          setSyncActions(partner.syncActions)
+        }
+      } else if (partner && !partner.trainingSyncWith) {
+        // partner ended sync
+        setSyncPartnerId(null)
+        setSyncStartedAt(null)
+        setSyncActions([])
+      }
+    }
+  }, [realProfiles, currentUser?.trainingSyncWith, currentUser?.trainingNow, effectiveUserId, syncActions.length])
 
   const loadRealSessions = async () => {
     if (!isFirebaseConfigured || !db) {
