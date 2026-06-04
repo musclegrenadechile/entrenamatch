@@ -355,7 +355,7 @@ function App() {
   const [showLiveModal, setShowLiveModal] = useState(false)
   // Live modal local UI: search + sort for better discovery in the full list (killer feature polish)
   const [liveModalSearch, setLiveModalSearch] = useState('')
-  const [liveModalSort, setLiveModalSort] = useState<'distance' | 'urgency'>('distance')
+  const [liveModalSort, setLiveModalSort] = useState<'distance' | 'urgency' | 'hot'>('distance')
 
   // Auto-refresh real sessions on tab DISABLED to fix TDZ.
   // Manual button remains.
@@ -701,6 +701,8 @@ function App() {
             trainingNowSince: data.trainingNowSince || undefined,
             liveStreak: data.liveStreak,
             lastLiveDate: data.lastLiveDate,
+            liveJoins: data.liveJoins,
+            joinedLiveStreak: data.joinedLiveStreak,
           })
         }
       })
@@ -747,6 +749,8 @@ function App() {
               trainingNowSince: realProfile.trainingNowSince,
               liveStreak: realProfile.liveStreak,
               lastLiveDate: realProfile.lastLiveDate,
+              liveJoins: realProfile.liveJoins,
+              joinedLiveStreak: realProfile.joinedLiveStreak,
             }
             if (merged.name) {
               saveUser(merged)
@@ -773,6 +777,8 @@ function App() {
               trainingNowSince: currentUser.trainingNowSince,
               liveStreak: currentUser.liveStreak,
               lastLiveDate: currentUser.lastLiveDate,
+              liveJoins: currentUser.liveJoins,
+              joinedLiveStreak: currentUser.joinedLiveStreak,
             })
             // console.log removed (debug)
           }
@@ -884,6 +890,8 @@ function App() {
           trainingNowSince: user.trainingNowSince,
           liveStreak: user.liveStreak,
           lastLiveDate: user.lastLiveDate,
+          liveJoins: user.liveJoins,
+          joinedLiveStreak: user.joinedLiveStreak,
         };
         if (user.legalConsents) {
           profileUpdate.legalConsents = user.legalConsents;
@@ -3494,6 +3502,31 @@ function App() {
         toast.success(`¡Unido al live de ${profile.name}!`, {
           description: 'Dejé un comentario en su muro en vivo — ¡ellos lo verán!'
         })
+
+        // Update joiner's live participation stats/streaks (killer for retention - both hosting and joining count)
+        const todayStr = new Date().toDateString()
+        const lastPartStr = currentUser.lastLiveDate ? new Date(currentUser.lastLiveDate).toDateString() : null
+        let newJoinedStreak = currentUser.joinedLiveStreak || 0
+        let newJoinsCount = (currentUser.liveJoins || 0) + 1
+        if (!lastPartStr || lastPartStr === todayStr) {
+          // already participated today
+        } else {
+          const lastDate = new Date(lastPartStr)
+          const yesterday = new Date()
+          yesterday.setDate(yesterday.getDate() - 1)
+          if (lastDate.toDateString() === yesterday.toDateString()) {
+            newJoinedStreak = (currentUser.joinedLiveStreak || 0) + 1
+          } else {
+            newJoinedStreak = 1
+          }
+        }
+        const joinerStatsUpdate = {
+          ...currentUser,
+          liveJoins: newJoinsCount,
+          joinedLiveStreak: newJoinedStreak,
+          lastLiveDate: Date.now()
+        }
+        saveUserWithRealSync(joinerStatsUpdate as CurrentUser)
       }
     } else {
       const newPassed = [...passedIds, profileId]
@@ -3821,6 +3854,9 @@ function App() {
                     {user.joinCount > 0 && (
                       <div className="text-[8px] text-[#22c55e] mb-1 font-medium">+{user.joinCount} se unieron 🔥</div>
                     )}
+                    {(user.liveStreak || user.joinedLiveStreak) && (
+                      <div className="text-[8px] text-[#22c55e] mb-1">🔥{(user.liveStreak||0)}h +{(user.joinedLiveStreak||0)}j streak</div>
+                    )}
                     <button 
                       onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); /* live-specific polished toast + muro comment happens inside handleSwipe */ }} 
                       className="w-full text-[9px] bg-[#22c55e] text-black py-1 rounded font-semibold active:bg-[#16a34a] transition"
@@ -3890,8 +3926,8 @@ function App() {
                   placeholder="Buscar por nombre..." 
                   className="form-input flex-1 text-sm py-1.5" 
                 />
-                <button onClick={() => setLiveModalSort(liveModalSort === 'distance' ? 'urgency' : 'distance')} className="text-xs px-3 py-1 rounded-full border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10 whitespace-nowrap">
-                  {liveModalSort === 'distance' ? '📍 Dist' : '⏱ Urgencia'}
+                <button onClick={() => setLiveModalSort(liveModalSort === 'distance' ? 'urgency' : liveModalSort === 'urgency' ? 'hot' : 'distance')} className="text-xs px-3 py-1 rounded-full border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10 whitespace-nowrap">
+                  {liveModalSort === 'distance' ? '📍 Dist' : liveModalSort === 'urgency' ? '⏱ Urgencia' : '🔥 Hot'}
                 </button>
               </div>
             )}
@@ -3926,6 +3962,8 @@ function App() {
                 // sort
                 if (liveModalSort === 'urgency') {
                   list.sort((a: any, b: any) => (a.seVaEnMin || 99) - (b.seVaEnMin || 99))
+                } else if (liveModalSort === 'hot') {
+                  list.sort((a: any, b: any) => (b.joinCount || 0) - (a.joinCount || 0) || (a.distance || 999) - (b.distance || 999))
                 } else {
                   list.sort((a: any, b: any) => (a.distance || 999) - (b.distance || 999))
                 }
@@ -5087,12 +5125,13 @@ function App() {
             </div>
 
             {/* Stats row - premium visual cards + LIVE count as global killer stat in header (urgency / FOMO) */}
-            <div className="px-4 mt-4 grid grid-cols-4 gap-2">
+            <div className="px-4 mt-4 grid grid-cols-5 gap-1">
               {[
                 { label: 'Matches', value: matches?.length || 0, icon: Heart, color: '#FF671F' },
                 { label: 'Sesiones', value: squads?.length || 0, icon: Star, color: '#00C4B4' },
                 { label: 'Nivel', value: currentUser.level || '—', icon: Dumbbell, color: '#FF4F79' },
-                { label: 'Live cerca', value: liveTrainingNow.length, icon: Zap, color: '#22c55e', isLive: true }
+                { label: 'Live cerca', value: liveTrainingNow.length, icon: Zap, color: '#22c55e', isLive: true },
+                { label: 'Live joins', value: currentUser.liveJoins || 0, icon: Zap, color: '#22c55e' }
               ].map((stat: any, i) => (
                 <div 
                   key={i} 
@@ -5108,11 +5147,13 @@ function App() {
             </div>
 
             {/* Live streak badge - killer retention stat, shows when active */}
-            {currentUser.liveStreak && currentUser.liveStreak > 0 && (
+            {(currentUser.liveStreak && currentUser.liveStreak > 0) || (currentUser.joinedLiveStreak && currentUser.joinedLiveStreak > 0) ? (
               <div className="px-4 -mt-2 mb-1 text-center">
-                <span className="inline-block bg-[#22c55e]/10 text-[#22c55e] text-xs px-3 py-0.5 rounded-full font-bold">🔥 {currentUser.liveStreak}d live streak — ¡sigue así!</span>
+                <span className="inline-block bg-[#22c55e]/10 text-[#22c55e] text-xs px-3 py-0.5 rounded-full font-bold">
+                  🔥 {currentUser.liveStreak || 0}d host {currentUser.joinedLiveStreak ? `+ ${currentUser.joinedLiveStreak}d join` : ''} streak — ¡sigue así!
+                </span>
               </div>
-            )}
+            ) : null}
 
             {/* Training Types - visual polish */}
             <div className="px-4 mt-5">
@@ -5184,7 +5225,7 @@ function App() {
                           newStreak = 1
                         }
                       }
-                      streakUpdate = { liveStreak: newStreak, lastLiveDate: Date.now() }
+                      streakUpdate = { liveStreak: newStreak, lastLiveDate: Date.now(), joinedLiveStreak: (currentUser.joinedLiveStreak || 0) + (lastStr && lastStr !== todayStr ? 1 : (lastStr ? 0 : 1)) }
                     }
                     const updated = { ...currentUser, trainingNow: newVal, trainingNowSince: newVal ? Date.now() : undefined, ...streakUpdate }
                     saveUserWithRealSync(updated as CurrentUser)
@@ -5256,6 +5297,7 @@ function App() {
                     <span>❤️ {likes}</span>
                     <span>💬 {comms}</span>
                     {currentUser.trainingNow && <span className="text-[#22c55e]">🟢 Live {currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}</span>}
+                    {(currentUser.liveJoins || 0) > 0 && <span className="text-[#22c55e]">🔥 {currentUser.liveJoins} joins {currentUser.joinedLiveStreak ? `+${currentUser.joinedLiveStreak}d` : ''}</span>}
                     <span className="text-[#FF671F]/60">· comunidad interactúa</span>
                   </div>
                 )

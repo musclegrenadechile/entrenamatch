@@ -25,6 +25,8 @@
   trainingNowSince?: number
   liveStreak?: number // consecutive days hosting live training (killer retention)
   lastLiveDate?: number
+  liveJoins?: number // total times joined others' live
+  joinedLiveStreak?: number // consecutive days participating in live training (join or host)
 }
 
 export interface Message {
@@ -107,6 +109,8 @@ export interface CurrentUser extends Omit<Profile, 'id'> {
   trainingNowSince?: number
   liveStreak?: number // consecutive days hosting live training (killer retention)
   lastLiveDate?: number
+  liveJoins?: number // total times joined others' live
+  joinedLiveStreak?: number // consecutive days participating in live training (join or host)
   verificationStatus?: 'unverified' | 'pending' | 'verified'
   verificationDate?: number
   verificationDocuments?: {
