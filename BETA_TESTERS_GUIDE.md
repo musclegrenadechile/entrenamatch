@@ -100,6 +100,14 @@ Uso:
   - Popups más atractivos (mejor copy + botón join más grande y con 🔥).
   - Círculos crecen más con joins (FOMO visual).
   - startSyncRef para que los botones del popup siempre usen la versión actual de la función de sync.
+
+**NUEVO — LOGIN ESPECTACULAR (v0.1.26-login-espectacular, code 31)**:
+- La pantalla de login ahora es una experiencia cinematográfica única. Fondo con constelación animada de gente entrenando en vivo, glow radial hero, logo que pulsa con energía + tether fluyendo, tagline "El ritual que nadie más tiene".
+- Teaser de gente live ("142 entrenando en este preciso momento") para que sientas la app viva desde el primer segundo.
+- Card premium con vidrio profundo, inputs con glow naranja al focus, botón "Entrar al ritual" con gradiente fuerte y sombra épica.
+- Animaciones de entrada suaves (framer-motion), haptic en tabs y botones importantes.
+- El antiguo "demo" ahora se llama "Quiero sentir el ritual ahora" — mucho más invitador y en sintonía con la identidad.
+- Prueba abriendo la app fresca (hard refresh en web o reinstall APK): la sensación debe ser "estoy abriendo algo especial y nunca antes visto". Esto es el nuevo primer impacto premium.
   - Estilos CSS oscuros para controles y popups de Leaflet (combina perfecto con el tema Dunkin).
   - Badge "realtime", altura 340px, textos actualizados.
   - Prueba en Explore: activa "Ver mapa por zonas", deja que pida GPS, observa puntos apareciendo/desapareciendo cuando cambian "Entrenando Ahora" otros testers, toca un punto → popup con distancia → únete. Cierra/ abre el mapa varias veces. Debe sentirse vivo y premium.

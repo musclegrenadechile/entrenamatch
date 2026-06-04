@@ -1,30 +1,29 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED (v0.1.25-continua-vivo code 30) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED (v0.1.26-login-espectacular code 31) ===
 
-AAB file to upload: EntrenaMatch-v0.1.25-continua-vivo-code30-20260604-1943.aab   (or the generic EntrenaMatch-release.aab in root)
+AAB file to upload: EntrenaMatch-v0.1.26-login-espectacular-code31-20260604-1946.aab   (or EntrenaMatch-release.aab)
 
 Steps:
 1. Play Console > App > Pruebas > Prueba cerrada (Closed testing) > Subir AAB.
-2. Elige el AAB versionado más reciente.
-3. En "Notas de la versión" / Release notes, pega EXACTAMENTE:
+2. Elige el AAB más reciente.
+3. En Notas de la versión pega exactamente:
 
-**v0.1.25-continua-vivo (code 30) — SIGUE A TODA MÁQUINA SIN PARAR**
-• Perfil ultra vivo: nueva sección "Legends en vivo ahora 🔥" con re-sync instantáneo a tus bonds que están entrenando. Vibes y conexiones reales se sienten vivas.
-• Arena ritual más rico: 13 acciones (High five + ¡Vamos!), grid cols-4 para taps grandes. Cuando vibe >80: flying extras + haptic fuerte + foto más notoria.
-• Galería: drag reorder con haptic feedback (light al agarrar, medium al soltar).
-• Mapa: pastillas de zona con "heat" en conteos altos (≥3) + "Mi zona" rápido. Filtros y fit más vivos.
-• Más polish visual, hápticos y FOMO en feed/muro/reacciones.
-• Build estable (code 30). El match del movimiento cada vez más único.
+**v0.1.26-login-espectacular (code 31) — LOGIN QUE SE SIENTE COMO ABRIR ALGO NUNCA ANTES VISTO**
+• Entrada cinematográfica única: constelación de gente entrenando en vivo (pulsos), glow hero, logo con energía pulsante + tether fluyendo, tagline "El ritual que nadie más tiene".
+• Teaser "142 entrenando en vivo ahora" para impacto inmediato.
+• Card premium de vidrio, botón "Entrar al ritual" con gradiente épico, animaciones suaves + haptic.
+• El demo ahora se llama "Quiero sentir el ritual ahora".
+• Primera impresión exclusiva, inmersiva y memorable. La app se siente como abrir una puerta a algo especial.
 
-4. Guarda, revisa y rollout a closed testers.
+4. Guarda y haz rollout.
 
-Después de seed manual: usa script en cmd.exe limpio:
+Script automatizado (después del seed manual):
 cd /d C:\Users\muscl\fitvina
 publish-play.bat closed
 
 Artefactos:
-- AAB Play: EntrenaMatch-v0.1.25-continua-vivo-code30-20260604-1943.aab (7.2 MB)
-- Debug APK adb (S26 Ultra): EntrenaMatch-debug-continua-vivo-0.1.25-20260604-1943.apk (10 MB) + genérico EntrenaMatch-debug.apk
+- AAB: EntrenaMatch-v0.1.26-login-espectacular-code31-20260604-1946.aab (7.2 MB)
+- Debug APK: EntrenaMatch-debug-login-espectacular-0.1.26-20260604-1946.apk (10 MB) + genérico EntrenaMatch-debug.apk
 
-Push a GitHub hecho. CI actualiza web (https://musclegrenadechile.github.io/entrenamatch/) + artifacts. Hard refresh tras deploy.
+Push hecho. CI actualiza web. Hard refresh en https://musclegrenadechile.github.io/entrenamatch/
 
-Sigue con todo sin parar.
+Sigue a toda máquina.

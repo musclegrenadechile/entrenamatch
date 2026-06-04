@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 30 / 0.1.25-continua-vivo. **SIGUE A TODA MÁQUINA**: live legends section con re-sync instantáneo desde perfil, 13 acciones en Arena + high-vibe pop extra, gallery drag con haptic, map legend heat + "Mi zona", más polish. 
+**Current version for this upload**: versionCode 31 / 0.1.26-login-espectacular. **LOGIN ESPECTACULAR + ÚNICO**: entrada cinematográfica nunca antes vista. 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -149,11 +149,20 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 
 ## What's new (for this Pre-Alpha release, short & punchy)
 
-**READY FOR PLAY CLOSED UPLOAD (v0.1.25-continua-vivo code 30)**
-- Fresh signed AAB: `EntrenaMatch-v0.1.25-continua-vivo-code30-20260604-1943.aab` (7.2 MB) + `EntrenaMatch-release.aab`
-- Fresh debug APK for device: `EntrenaMatch-debug-continua-vivo-0.1.25-20260604-1943.apk` (10 MB) + `EntrenaMatch-debug.apk`
+**READY FOR PLAY CLOSED UPLOAD (v0.1.26-login-espectacular code 31)**
+- Fresh signed AAB: `EntrenaMatch-v0.1.26-login-espectacular-code31-20260604-1946.aab` (7.2 MB) + `EntrenaMatch-release.aab`
+- Fresh debug APK for device: `EntrenaMatch-debug-login-espectacular-0.1.26-20260604-1946.apk` (10 MB) + `EntrenaMatch-debug.apk`
 - Web: pushed to main → GH Pages will have the new bundle (hard refresh after Actions finish).
 - Copy the short "What's new" below directly into Play Console when uploading the AAB to closed track.
+
+**v0.1.26-login-espectacular (code 31) — LOGIN QUE SE SIENTE COMO ABRIR ALGO NUNCA ANTES VISTO**
+• Entrada cinematográfica completamente rediseñada: fondo con constelación de personas entrenando en vivo (pulsos sutiles), glow hero radial, logo con energía pulsante y tether preview animado.
+• Headline poderoso + tagline que posiciona la app como única: "El ritual que nadie más tiene".
+• Teaser de gente en vivo ("142 entrenando en este preciso momento") para que desde el primer segundo sientas que la app está viva.
+• Card de auth con vidrio premium, tether fluyendo sutil, tabs elegantes, inputs con glow naranja al focus, botón principal "Entrar al ritual" con gradiente y sombra épica.
+• Botón demo transformado en llamada excitante "Quiero sentir el ritual ahora".
+• Todo con motion suave de entrada (framer), haptic en interacciones clave, y una sensación de "estás abriendo una puerta a algo especial y exclusivo".
+• Mantiene toda la potencia de las features anteriores (live legends, Arena 13 acciones, etc.).
 
 **v0.1.25-continua-vivo (code 30) — SIGUE A TODA MÁQUINA SIN PARAR: live legends + re-sync, 13 Arena actions + high vibe spectacle, gallery haptic reorder, map heat + Mi zona, profile ultra vivo**
 • **Perfil ultra vivo**: Nueva sección "Legends en vivo ahora 🔥" — si alguno de tus EntrenaSync bonds está entrenando live, aparece con botón instantáneo "Re-sync". Vibes y bonds se sienten vivos y valiosos. El liveBondBonus ya respiraba, ahora ves exactamente quién de tus legends está hot.
@@ -172,12 +181,12 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • AAB + debug APK frescos listos (ver nombres abajo). Build limpia + pipeline completo.
 • Todo el pipeline: web GH Pages, Android AAB/debug, docs actualizados. Sigue con todo ritmo.
 
-**Short "What's new" (copy-paste to Play Console for v0.1.25 code 30):**
-Perfil ultra vivo: nueva sección "Legends en vivo ahora" con re-sync instantáneo a tus bonds que están entrenando. Arena con 13 acciones (High five + ¡Vamos!), grid más usable y efectos espectaculares cuando vibe >80 (múltiples flying + haptic fuerte). Galería drag con haptic feedback al reordenar. Mapa: pastillas de zona con heat en conteos altos + "Mi zona" rápido. Más polish visual, hápticos y FOMO en toda la app. El match del movimiento se siente más vivo y único que nunca. (code 30)
+**Short "What's new" (copy-paste to Play Console for v0.1.26 code 31):**
+Login espectacular y único: al abrir la app sientes que estás entrando a algo nunca antes visto. Fondo con constelación de gente entrenando en vivo, logo con energía pulsante, tether animado, tagline "El ritual que nadie más tiene", contador de gente live, card de vidrio premium, botón "Entrar al ritual" cinematográfico. Todo con animaciones suaves y haptic. La primera impresión es exclusiva, inmersiva y adictiva. (code 31)
 
 **Artifacts for this version:**
-- AAB (Play): EntrenaMatch-v0.1.24-continua-mapa-code29-20260604-1940.aab (y EntrenaMatch-release.aab)
-- Debug APK (pruebas adb): EntrenaMatch-debug-continua-mapa-0.1.24-20260604-1939.apk (y EntrenaMatch-debug.apk)
+- AAB (Play): EntrenaMatch-v0.1.26-login-espectacular-code31-20260604-1946.aab (y EntrenaMatch-release.aab)
+- Debug APK (pruebas adb): EntrenaMatch-debug-login-espectacular-0.1.26-20260604-1946.apk (y EntrenaMatch-debug.apk)
 - Web: push a main → https://musclegrenadechile.github.io/entrenamatch/ (hard refresh tras CI)
 
 **v0.1.23-visual-polish (versionCode 28) — REVISIÓN COMPLETA ESTÉTICA VISUAL + UX (app preciosa)**

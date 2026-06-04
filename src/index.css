@@ -907,3 +907,125 @@ input[type="range"]::-moz-range-thumb {
   0% { transform: translateY(-100%); }
   100% { transform: translateY(300%); }
 }
+
+/* ============================================
+   SPECTACULAR UNIQUE LOGIN / AUTH EXPERIENCE
+   "Como si estuvieras abriendo algo nunca antes visto"
+   Cinematic, ritual-like entry to the app.
+   ============================================ */
+
+.auth-screen {
+  background: #0a0a0c;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle constellation of people training "right now" in the background */
+.auth-live-constellation {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.25;
+}
+
+/* Cinematic radial glow behind the experience */
+.auth-hero-glow {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, rgba(255,103,31,0.12) 0%, rgba(255,79,121,0.06) 35%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  border-radius: 9999px;
+}
+
+/* The main glass card - feels like the entrance to the Arena */
+.auth-card {
+  background: linear-gradient(160deg, #1C1C20 0%, #111113 100%);
+  border: 1px solid rgba(255, 103, 31, 0.15);
+  box-shadow: 
+    0 30px 70px -15px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(255,255,255,0.03) inset,
+    0 10px 30px -10px rgba(255,103,31,0.1);
+  position: relative;
+  z-index: 10;
+}
+
+/* Subtle flowing tether preview (hint of the unique Arena ritual) */
+.auth-tether-preview {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #FF671F, #FF4F79, transparent);
+  opacity: 0.25;
+  z-index: 5;
+  border-radius: 999px;
+  animation: tether-flow 2.8s linear infinite;
+}
+
+@keyframes tether-flow {
+  0% { background-position: 0 0; }
+  100% { background-position: -200px 0; }
+}
+
+/* Premium segmented tabs */
+.auth-tab {
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.auth-tab.active {
+  background: #1f242b;
+  color: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* Beautiful inputs that feel special */
+.auth-input {
+  background: #161618;
+  border: 1px solid #2F2F35;
+  transition: all 0.15s ease;
+}
+.auth-input:focus {
+  border-color: #FF671F;
+  box-shadow: 0 0 0 3px rgba(255, 103, 31, 0.1);
+  outline: none;
+}
+
+/* The entry button - feels like opening the doors to something sacred */
+.auth-primary-btn {
+  background: linear-gradient(90deg, #FF671F, #FF4F79);
+  color: black;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+  box-shadow: 0 10px 25px -5px rgba(255,103,31,0.4), 0 4px 10px -2px rgba(0,0,0,0.3);
+}
+.auth-primary-btn:hover {
+  box-shadow: 0 15px 35px -5px rgba(255,103,31,0.55), 0 0 0 1px rgba(255,255,255,0.2) inset;
+}
+.auth-primary-btn:active {
+  transform: scale(0.985);
+}
+
+/* The "demo the ritual" button - exciting secondary */
+.auth-demo-btn {
+  border-color: rgba(34, 197, 94, 0.4);
+  color: #22c55e;
+  transition: all 0.2s ease;
+}
+.auth-demo-btn:hover {
+  background: rgba(34, 197, 94, 0.08);
+  border-color: #22c55e;
+}
+
+/* Live pulsing dots used in hero teaser */
+.live-dot {
+  animation: live-pulse-green 2.2s ease-in-out infinite;
+}
