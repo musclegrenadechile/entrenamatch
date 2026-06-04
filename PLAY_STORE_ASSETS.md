@@ -36,7 +36,15 @@
 - Feed/Muro: cards hover lift + active, reactions active state mejorado.
   - Reacciones persistentes reales en FS (por usuario por emoji, toggle). (v0.1.19+)
   - FOMO en posts live: "🔥 X se unieron • FOMO real" badge + CTA a unirse via live strip/mapa. Joins persistidos como comments.
-- Más haptics, transitions, glows, empty states premium, consistencia. Revisión exhaustiva para app preciosa y disruptiva. Builds listos.
+- **Estética visual completa (v0.1.23+)**: revisión exhaustiva para que sea atractivo y UX premium:
+  - Top bar más premium (padding, botones consistentes con active:scale, live pill mejorado).
+  - Cards, muro-post, live elements con hover lifts, active scales, glows, transiciones suaves.
+  - Photos en posts con look cinematográfico (gradientes, "ver foto completa", brightness).
+  - Empty states más bonitos y motivadores.
+  - Arena y botones con feedback táctil premium.
+  - Consistencia tema Dunkin, mejor tipografía y mobile experience.
+  - Más haptics y micro-interacciones para que se sienta "preciosa" y fácil de usar.
+- Builds listos.
 - Mapa: marcadores foto/iniciales con pulso vivo, radar sweep animado, filtro cerca, radio personal, leyenda, Centrar, persistencia, hápticos, integración con header LIVE, empty states premium.
 - Arena: tether más grueso y glow vibrante, orb con shift de color y glow extra en alto vibe, combo pulsa.
 - Más active:scale, transiciones, glows en live elements, empty states mejorados.

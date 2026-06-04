@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.22-mapa-todo",
+  "version": "0.1.23-visual-polish",
   "type": "module",
   "scripts": {
     "dev": "vite",

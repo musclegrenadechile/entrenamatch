@@ -5024,15 +5024,15 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-[#0D0D10] text-white flex flex-col overflow-hidden relative app-container">
-      {/* MINIMAL TOP BAR - Premium subtle (visual aesthetics upgrade) */}
-      <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-1.5 text-[10px] font-medium">
+      {/* PREMIUM TOP BAR - more attractive with better hierarchy, consistent buttons, subtle premium feel */}
+      <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
-          <span className="live-pill !py-0 !px-2 !text-[8px] !bg-[#FF671F]/10 !border-0">PRE-ALPHA</span>
-          <span className="text-white/90">Real backend • v0.1.22-mapa-todo</span>
+          <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
+          <span className="text-white/90 text-[11px]">Real backend • v0.1.23-visual-polish</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
-            className="ml-1 text-[9px] px-2 py-0.5 rounded-full bg-[#FF671F]/10 text-[#FF671F] active:bg-[#FF671F]/20 disabled:opacity-60 border border-[#FF671F]/20"
+            className="ml-1 text-[9px] px-2.5 py-1 rounded-full bg-[#FF671F]/10 text-[#FF671F] active:bg-[#FF671F]/20 disabled:opacity-60 border border-[#FF671F]/20 active:scale-[0.985] transition-all"
             title="Refrescar perfiles, matches y sesiones reales ahora"
           >
             {isLoadingMatches ? '...' : 'Actualizar todo'}
@@ -5040,8 +5040,8 @@ function App() {
           </button>
           {liveTrainingNow.length > 0 && (
             <button 
-              onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(true); /* keep user in current tab or explore */ }}
-              className="ml-1 text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50 active:brightness-90 transition" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}
+              onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(true); }}
+              className="ml-1 text-[8px] px-2 py-1 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50 active:brightness-90 active:scale-[0.985] transition" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}
               title="Ver mapa en vivo"
             >
               🟢 {liveTrainingNow.length} LIVE {currentUser?.trainingNow && currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}{syncPartnerId ? ' 🔄SYNC' : ''}{activeSyncCount > 0 ? ` · 🔄${activeSyncCount} PARES EN SYNC` : ''}
@@ -5050,42 +5050,40 @@ function App() {
         </div>
 
         {(currentUser || firebaseUser) ? (
-          <div className="flex items-center gap-2">
-            {/* Bell for notifications (wires to existing panel; now populated by real incoming 1:1 + group msgs) */}
+          <div className="flex items-center gap-1.5">
+            {/* Bell for notifications */}
             <button
               onClick={() => setShowNotifications(true)}
-              className={`relative p-1.5 rounded-xl bg-black/70 active:bg-black text-white transition-all ${ (unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 ? 'ring-1 ring-[#FF4F79]/70' : '' }`}
+              className={`relative p-1.5 rounded-xl bg-black/70 active:bg-black text-white transition-all active:scale-[0.95] ${ (unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 ? 'ring-1 ring-[#FF4F79]/70' : '' }`}
               aria-label="Notificaciones"
             >
-              <Bell size={16} />
+              <Bell size={15} />
               {(unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] px-0.5 text-[9px] font-bold rounded-full bg-[#FF4F79] text-black flex items-center justify-center">
+                <span className="absolute -top-0.5 -right-0.5 min-w-[13px] h-[13px] px-0.5 text-[8px] font-bold rounded-full bg-[#FF4F79] text-black flex items-center justify-center">
                   {Math.min(9, unreadNotifications + totalChatUnreads + totalSessionUnreads)}
                 </span>
               )}
             </button>
             <button 
               onClick={handleLogout}
-              className="bg-black/90 hover:bg-black text-white px-4 py-1.5 rounded-2xl text-xs font-semibold active:bg-white active:text-black border border-black/50 transition-all"
+              className="bg-black/90 hover:bg-black text-white px-3 py-1 rounded-2xl text-[10px] font-semibold active:bg-white active:text-black border border-black/50 active:scale-[0.985] transition-all"
             >
               Cerrar sesión
             </button>
             <button 
               onClick={handleLogout}
-              className="bg-white hover:bg-gray-100 text-black px-4 py-1.5 rounded-2xl text-xs font-bold active:bg-gray-200 border border-black/20 shadow-sm transition-all"
+              className="bg-white hover:bg-gray-100 text-black px-3 py-1 rounded-2xl text-[10px] font-bold active:bg-gray-200 border border-black/20 shadow-sm active:scale-[0.985] transition-all"
             >
               Cambiar cuenta
             </button>
-            {/* Always visible install button for web (mobile often needs manual trigger or extra engagement; discoverable in top bar) */}
             {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor === 'undefined' && (
               <button
                 onClick={() => { 
-                  // Clear dismissed temporarily so banner can show
                   localStorage.removeItem('entrenamatch_pwa_dismissed');
                   setShowPwaInstall(true); 
                   bumpPwaEngagement(); 
                 }}
-                className="ml-1 text-[9px] px-2 py-0.5 rounded-full bg-[#FF671F]/10 text-[#FF671F] active:bg-[#FF671F]/20 border border-[#FF671F]/20 flex-shrink-0"
+                className="ml-1 text-[9px] px-2 py-0.5 rounded-full bg-[#FF671F]/10 text-[#FF671F] active:bg-[#FF671F]/20 border border-[#FF671F]/20 active:scale-[0.985] flex-shrink-0"
                 title="Instalar como app en pantalla de inicio"
               >
                 📱 Instalar
@@ -5146,11 +5144,11 @@ function App() {
         {/* ===== EXPLORE / SWIPE (fully owned by ExploreTab) ===== */}
         {/* LIVE TRAINING BANNER - ALWAYS VISIBLE, the star feature for urgency and retention. Green pulsing, se va en, mini photos, quick join. Makes app addictive. Top of explore for maximum impact. */}
         {activeTab === 'explore' && (
-          <div className="px-4 py-2 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden live-banner-glow">
+          <div className="px-4 py-2.5 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden live-banner-glow">
             <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
-            <div className="flex items-center gap-2 mb-1 relative z-10">
-              <div className="live-pill green">🟢 EN VIVO AHORA</div>
-              <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡urgencia!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}{activeSyncCount > 0 ? ` · 🔄 ${activeSyncCount} pares sincronizados ahora (único)` : ''}</div>
+            <div className="flex items-center gap-2 mb-1.5 relative z-10">
+              <div className="live-pill green !px-2.5 !py-0.5 text-[9px]">🟢 EN VIVO AHORA</div>
+              <div className="text-sm font-semibold tracking-[-0.1px]">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡urgencia!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}{activeSyncCount > 0 ? ` · 🔄 ${activeSyncCount} pares sincronizados ahora (único)` : ''}</div>
             </div>
             {liveTrainingNow.length > 0 ? (
               <div className="flex gap-2 overflow-x-auto pb-1">
@@ -5197,11 +5195,11 @@ function App() {
               </div>
             ) : (
               <div className="card card-glass p-6 text-center border border-[#22c55e]/30 relative overflow-hidden">
-                <div className="text-4xl mb-2 opacity-90">🏋️‍♂️</div>
-                <div className="font-semibold mb-1">Nadie entrenando cerca todavía</div>
-                <div className="text-sm text-[#9CA3AF] mb-4">Sé el primero en activar "Entrenando Ahora (EN VIVO)" en tu Perfil.<br/>¡Aparecerás en el radar y la gente querrá unirse o sync contigo!</div>
-                <button onClick={() => setActiveTab('profile')} className="text-xs px-4 py-1.5 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90 active:scale-[0.985] transition">Ir a Perfil y activar live →</button>
-                <div className="absolute -bottom-4 -right-4 text-[60px] opacity-5">📡</div>
+                <div className="text-5xl mb-3 opacity-90">🏋️‍♂️</div>
+                <div className="font-semibold text-base mb-1.5">Nadie entrenando cerca todavía</div>
+                <div className="text-sm text-[#9CA3AF] mb-4 leading-snug">Sé el primero en activar "Entrenando Ahora (EN VIVO)" en tu Perfil.<br/>¡Aparecerás en el radar y la gente querrá unirse o sync contigo!</div>
+                <button onClick={() => setActiveTab('profile')} className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90 active:scale-[0.985] transition shadow-sm">Ir a Perfil y activar live →</button>
+                <div className="absolute -bottom-6 -right-6 text-[70px] opacity-5">📡</div>
               </div>
             )}
             <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between items-center">
@@ -5710,9 +5708,12 @@ function App() {
                             className="relative mb-3 -mx-1 rounded-2xl overflow-hidden ring-1 ring-[#2F2F35] cursor-pointer group"
                             onClick={() => setFeedPhotoModal({ url: post.photo, postId: post.id })}
                           >
-                            <img src={post.photo} className="w-full max-h-[240px] object-cover transition-transform duration-300 group-hover:scale-[1.04]" />
-                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/50 to-transparent" />
-                            <div className="absolute bottom-2 right-2 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded">🔍 ver foto</div>
+                            <img src={post.photo} className="w-full max-h-[260px] object-cover transition-transform duration-300 group-hover:scale-[1.03] brightness-[0.92]" />
+                            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+                            <div className="absolute bottom-2 right-2 text-[9px] bg-black/70 text-white/90 px-2 py-0.5 rounded-full flex items-center gap-1 border border-white/10">
+                              <span>🔍</span> <span className="font-medium tracking-tight">ver foto completa</span>
+                            </div>
+                            <div className="absolute top-2 left-2 text-[8px] bg-black/50 text-white/70 px-1.5 py-px rounded">FOTO DEL MOMENTO</div>
                           </div>
                         )}
 
@@ -7901,7 +7902,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.22-mapa-todo • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.23-visual-polish • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8128,7 +8129,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.22-mapa-todo • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.23-visual-polish • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>
