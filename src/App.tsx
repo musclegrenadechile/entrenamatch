@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { useState, useEffect, useMemo, useCallback, useRef, Component, type ReactNode, type ChangeEvent } from 'react'
-import L from 'leaflet'
+import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
 // Fix Leaflet default icons for bundlers
@@ -367,7 +367,6 @@ function App() {
   const [feedSearch, setFeedSearch] = useState('')
   const [feedOnlyReal, setFeedOnlyReal] = useState(false)
   const [feedOnlyLive, setFeedOnlyLive] = useState(false)
-  const [showLiveMap, setShowLiveMap] = useState(false)
   const [feedMaxProfiles, setFeedMaxProfiles] = useState(15)
   const [feedDisplayLimit, setFeedDisplayLimit] = useState(10)
   const [showLiveModal, setShowLiveModal] = useState(false)
@@ -683,9 +682,92 @@ function App() {
   const [showPwaInstall, setShowPwaInstall] = useState(false)
   const [pwaInstallDismissed] = useState(() => !!localStorage.getItem('entrenamatch_pwa_dismissed'))
 
+  const [showLiveMap, setShowLiveMap] = useState(false)
+  const liveMapRef = useRef<HTMLDivElement>(null)
+  const mapInstanceRef = useRef<any>(null)
+  const markersRef = useRef<any[]>([])
+
   const unreadNotifications = notifications.filter(n => !n.read).length
   const totalChatUnreads = Object.values(chatUnreads).reduce((sum, n) => sum + (n || 0), 0)
   const totalSessionUnreads = Object.values(sessionUnreads).reduce((sum, n) => sum + (n || 0), 0)
+
+  // Real-time Live Map effect (placed late to avoid TDZ on liveTrainingNow, startSyncWith etc. that are declared later)
+  useEffect(() => {
+    if (!showLiveMap || !liveMapRef.current) return
+
+    if (!mapInstanceRef.current) {
+      mapInstanceRef.current = L.map(liveMapRef.current, {
+        zoomControl: true,
+        attributionControl: false
+      }).setView([-33.0, -71.5], 10)
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+      }).addTo(mapInstanceRef.current)
+    }
+
+    markersRef.current.forEach(m => mapInstanceRef.current.removeLayer(m))
+    markersRef.current = []
+
+    const liveUsers = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow)
+
+    const zoneColors: Record<string, string> = {
+      'Viña del Mar': '#22c55e',
+      'Santiago': '#FF671F',
+      'Valparaíso': '#3b82f6',
+      'Concon': '#a855f7',
+      default: '#eab308'
+    }
+
+    liveUsers.forEach(user => {
+      const color = zoneColors[user.city] || zoneColors.default
+      const marker = L.circleMarker([user.lat, user.lng], {
+        radius: 8 + Math.min((user.joinCount || 0) * 0.5, 6),
+        fillColor: color,
+        color: '#fff',
+        weight: 2,
+        fillOpacity: 0.85
+      }).addTo(mapInstanceRef.current)
+
+      const popupContent = `
+        <div style="min-width:160px">
+          <strong>${user.name}</strong><br/>
+          <span style="color:#22c55e">🟢 En vivo</span> • ${user.seVaEnMin || '?'} min aprox<br/>
+          ${userLocation ? `${user.distance.toFixed(1)} km de ti` : ''}<br/>
+          <button id="join-${user.id}" style="margin-top:6px;padding:4px 10px;background:#22c55e;color:black;border:none;border-radius:6px;font-size:12px">Unirme a su vibe →</button>
+        </div>
+      `
+      marker.bindPopup(popupContent)
+
+      marker.on('popupopen', () => {
+        setTimeout(() => {
+          const btn = document.getElementById(`join-${user.id}`)
+          if (btn) {
+            btn.onclick = () => {
+              mapInstanceRef.current.closePopup()
+              if (user.trainingNow) {
+                startSyncWith(user.id, user.name).catch(() => {})
+              }
+            }
+          }
+        }, 50)
+      })
+
+      markersRef.current.push(marker)
+    })
+
+    if (liveUsers.length > 0) {
+      const group = L.featureGroup(markersRef.current)
+      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.2))
+    }
+
+    return () => {
+      if (!showLiveMap && mapInstanceRef.current) {
+        markersRef.current.forEach(m => mapInstanceRef.current.removeLayer(m))
+        markersRef.current = []
+      }
+    }
+  }, [showLiveMap, liveTrainingNow, userLocation])
 
   // Real Auth from Firebase + Demo Auth
   const { currentUser: firebaseUser, userProfile: firebaseProfile, isDemoMode } = useAuth()
@@ -1457,95 +1539,7 @@ function App() {
     }
   }, [showFullProfile])
 
-  // Real-time Live Map (viable with Leaflet + real geo)
-  const liveMapRef = useRef<HTMLDivElement>(null)
-  const mapInstanceRef = useRef<any>(null)
-  const markersRef = useRef<any[]>([])
 
-  useEffect(() => {
-    if (!showLiveMap || !liveMapRef.current) return
-
-    // Init map once
-    if (!mapInstanceRef.current) {
-      mapInstanceRef.current = L.map(liveMapRef.current, {
-        zoomControl: true,
-        attributionControl: false
-      }).setView([-33.0, -71.5], 10) // Center Chile approx
-
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-      }).addTo(mapInstanceRef.current)
-    }
-
-    // Clear old markers
-    markersRef.current.forEach(m => mapInstanceRef.current.removeLayer(m))
-    markersRef.current = []
-
-    // Get current live users with valid coords
-    const liveUsers = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow)
-
-    // Group by approximate zone (city or rough area)
-    const zoneColors: Record<string, string> = {
-      'Viña del Mar': '#22c55e',
-      'Santiago': '#FF671F',
-      'Valparaíso': '#3b82f6',
-      'Concon': '#a855f7',
-      default: '#eab308'
-    }
-
-    liveUsers.forEach(user => {
-      const color = zoneColors[user.city] || zoneColors.default
-      const marker = L.circleMarker([user.lat, user.lng], {
-        radius: 8 + Math.min((user.joinCount || 0) * 0.5, 6),
-        fillColor: color,
-        color: '#fff',
-        weight: 2,
-        fillOpacity: 0.85
-      }).addTo(mapInstanceRef.current)
-
-      const popupContent = `
-        <div style="min-width:160px">
-          <strong>${user.name}</strong><br/>
-          <span style="color:#22c55e">🟢 En vivo</span> • ${user.seVaEnMin || '?'} min aprox<br/>
-          ${userLocation ? `${user.distance.toFixed(1)} km de ti` : ''}<br/>
-          <button id="join-${user.id}" style="margin-top:6px;padding:4px 10px;background:#22c55e;color:black;border:none;border-radius:6px;font-size:12px">Unirme a su vibe →</button>
-        </div>
-      `
-      marker.bindPopup(popupContent)
-
-      marker.on('popupopen', () => {
-        setTimeout(() => {
-          const btn = document.getElementById(`join-${user.id}`)
-          if (btn) {
-            btn.onclick = () => {
-              mapInstanceRef.current.closePopup()
-              // Trigger join flow
-              if (user.trainingNow) {
-                // Simulate or call start
-                startSyncWith(user.id, user.name).catch(() => {})
-              }
-            }
-          }
-        }, 50)
-      })
-
-      markersRef.current.push(marker)
-    })
-
-    // Fit bounds if users
-    if (liveUsers.length > 0) {
-      const group = L.featureGroup(markersRef.current)
-      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.2))
-    }
-
-    return () => {
-      // Cleanup markers when hiding map (keep instance for perf)
-      if (!showLiveMap && mapInstanceRef.current) {
-        markersRef.current.forEach(m => mapInstanceRef.current.removeLayer(m))
-        markersRef.current = []
-      }
-    }
-  }, [showLiveMap, liveTrainingNow, userLocation]) // re-render markers when data changes (real-time)
 
   // Auto-load global feed when entering the new Feed tab
   useEffect(() => {
