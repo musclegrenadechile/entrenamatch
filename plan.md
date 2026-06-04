@@ -869,3 +869,19 @@ Sigue con todo full: más polish (rating al terminar sync que boostea streaks de 
 
 Con el json de google-services, rebuild AAB y sube la update con EntrenaSync como estrella.
 
+
+## Continua EntrenaSync (sigue con todo - post "Wow esta fabulosa")
+
+Avances full speed:
+- Añadido pendingSyncRating + submitSyncRating: al terminar sync >5min, prompt estrellas 1-5, guarda en profile, boost extra streak si >=4, toast.
+- Rating UI: modal bonito con estrellas clicables (?), "Saltar por ahora".
+- Promoción en live modal: nota "Si te unes a alguien que también está live, ¡inicias EntrenaSync automático!".
+- Mejor persist y mirror: syncActions ahora se guardan en profile del initiator y partner ve via realProfiles load (60s refresh o Actualizar).
+- UI panel mejorado con timer grande, historial labels, disclaimer.
+- Edge cases: clear si partner termina, restore al login/load profile.
+- Sigue disruptivo: ahora con loop de feedback/rating al final (mejora matching futuro), persist real, real-time en loads.
+
+Sigue con todo: próximo - dedicated sync session doc para instant updates sin refresh, mostrar sync activo en feed/live teaser/explore, más polish (anim actions, haptic stub), integrar con notifs.
+
+Con json listo: build AAB v0.2 con EntrenaSync como estrella + Android fix.
+
