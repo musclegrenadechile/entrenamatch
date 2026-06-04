@@ -812,3 +812,30 @@ input[type="range"]::-moz-range-thumb {
 .entrenamatch-marker img {
   image-rendering: -webkit-optimize-contrast;
 }
+
+/* Radar sweep effect for the live training map - makes it feel alive and "preciosa" / unique */
+#live-map-container {
+  position: relative;
+}
+#live-map-container::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(34, 197, 94, 0.15) 40%,
+    rgba(34, 197, 94, 0.25) 50%,
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: 2;
+  animation: radar-sweep 4s linear infinite;
+  border-radius: 16px;
+  opacity: 0.6;
+}
+
+@keyframes radar-sweep {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(300%); }
+}
