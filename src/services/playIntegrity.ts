@@ -39,6 +39,7 @@ function generateNonce(): string {
 
 export async function requestPlayIntegrityToken(customNonce?: string): Promise<IntegrityResult> {
   const isNative = Capacitor.isNativePlatform();
+  console.log('[Play Integrity] isNativePlatform():', isNative, 'Capacitor platform:', Capacitor.getPlatform ? Capacitor.getPlatform() : 'n/a');
 
   if (!isNative) {
     // Web / PWA / demo mode: simulate a fully positive response
@@ -56,7 +57,7 @@ export async function requestPlayIntegrityToken(customNonce?: string): Promise<I
         appRecognitionVerdict: 'PLAY_RECOGNIZED',
         packageName: 'com.entrenamatch.app',
         certificateSha256Digest: ['SIMULATED_FOR_WEB_DEMO'],
-        versionCode: '4',
+        versionCode: '6',
       },
       deviceIntegrity: {
         deviceRecognitionVerdict: ['MEETS_DEVICE_INTEGRITY'],

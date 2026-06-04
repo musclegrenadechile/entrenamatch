@@ -1,6 +1,6 @@
 # EntrenaMatch Pre-Alpha Execution Plan (Updated Phase 0 Focus)
 
-**Status**: Phase 0 in active execution. Full autonomy mode. Frequent commits/pushes required so user can Ctrl+Shift+R on GH Pages + install fresh APK.
+**Status**: Phase 1 (live killer + muro + feed spectacular + onboarding redesign complete). Play Store Closed testing prep in progress (AAB v0.1.3 code6 uploaded to edit, awaiting track creation in Console UI for full rollout). Full autonomy "sigamos con todo". Frequent commits/pushes for GH Pages "servidor" + CI APK. Local: C:\Users\muscl\fitvina (active), package now "entrenamatch".
 
 **Live web**: https://musclegrenadechile.github.io/entrenamatch/
 **Repo**: https://github.com/musclegrenadechile/entrenamatch
@@ -199,6 +199,21 @@ Everything must work after hard refresh + on different physical devices (not jus
 - Capacitor builds: use CAPACITOR=1 env for relative base in vite.
 - Keystore password: EntrenaMatch2026!Strong (NEVER commit, already .gitignore'd).
 - Every push → GH Pages updates in 3-8 min. Hard refresh required for testers.
+
+## Google Play Integration (new - June 2026)
+User provided a real Play Integrity API decoded response JSON (all positive verdicts).
+- Reviewed: requestDetails (nonce, package, timestamp), accountDetails.appLicensingVerdict="LICENSED", appIntegrity.appRecognitionVerdict="PLAY_RECOGNIZED" (with real package + cert + version), deviceIntegrity=["MEETS_DEVICE_INTEGRITY"].
+- This is exactly the structure we want for legitimate closed-beta users. Placeholders in the pasted JSON mean it was from sample code; real app uses "com.entrenamatch.app".
+- Integrated @capacitor-community/play-integrity (v8 via npm + cap sync).
+- Added src/services/playIntegrity.ts (generateNonce, requestPlayIntegrityToken, hasPositiveIntegrity, simulated positive verdict for web/demo matching the structure user gave).
+- Wired native loader in capacitor-plugins.ts and App.tsx (PlayIntegrityNative).
+- UI: new "🛡️ Google Play Integrity" card in Perfil tab with button to request token + shows result + console log of raw token (ready to forward to backend for full decode).
+- Auto-check (silent) on real native Firebase login.
+- Handler checkPlayIntegrity() ready to gate future actions (e.g. before live toggle or real profile writes).
+- On web (GH Pages demo): beautiful simulated positive response so testers see the flow.
+- Next for full security: Cloud Function (using the firebase-adminsdk key user has) that takes the token + verifies with Google and returns the exact JSON structure. Then we can enforce e.g. only PLAY_RECOGNIZED + LICENSED users can create live sessions or matches.
+
+This is "empecemos a trabajar con la app de google" — client side complete, server verification is the logical next micro-batch.
 
 ## Execution Rules (active)
 - No asking for permission mid-flow. User said "sigamos con el phase 0", "tienes autorización completa", "sigue sin parar".
@@ -443,3 +458,93 @@ Sigue con todo a todo ritmo full green light! :D
 Live feature is absolutely the strongest point now — streaks on every surface, optimistic real-time activity counts, urgent pulsing visuals, deep muro/feed integration. The app feels alive when people are training. Hard refresh the servidor after deploy. Test: join a live (watch count jump live in your view and others), host live (see your streak in topbar + nav dot), urgent <10m red pulse, profile stats line when live. 
 
 Next? More of the same or specific (e.g. join as group quick session from live card, streaks persist better, PWA notifs for live, etc.)? Dime y seguimos sin parar.
+
+## Publish to Closed (Play Store beta cerrada) - latest run after invitation
+- User: "listo te envie la invitacion" + "revisa ahora deberia estar funcionando"
+- Action: ran the delegated publish via safe launcher (publish-play.ps1 -> cmd /c publish-play.bat closed) with full env (JAVA/ANDROID set).
+- Pre-step: bumped versionCode 5→6 , versionName 0.1.2→0.1.3-prealpha in android/app/build.gradle (strict increment required).
+- Build: full android:build (web + cap sync) + gradle tasks ran clean (many UP-TO-DATE, then packageReleaseBundle + signReleaseBundle succeeded). Produced signed AAB v6 ~7MB.
+- The AAB includes all latest: Play Integrity card (🛡️) placed immediately before "Entrenando ahora (EN VIVO)" toggle in Profile, nonce input for console test + verify button, auto-detect "Nativa (APK real)" vs sim, guard in toggleTrainingNow that calls check + blocks with toast if native and no positive verdict.
+- Upload: publishReleaseBundle task started, uploaded the AAB to Google Play Android Publisher API using the service account key (entrenamatch-publisher@...).
+- Result: **No more 403 / API disabled** (the "opcion 1" enable + invite worked). Progress!
+- Failure: 404 "Track not found: closed." on the tracks/closed update (after successful bundle upload to the edit).
+  Exact: PUT .../edits/.../tracks/closed → "Track not found: closed."
+- Root cause (known): Closed testing track must be explicitly created in Play Console UI first (API can't create tracks, only publish to existing ones). Common for first publish.
+- Also copied fresh AAB to fitvina/EntrenaMatch-v0.1.3-prealpha-closed.aab for easy manual upload.
+- Script improvements (during this): removed output suppression on web build, converted publish error handling to goto labels (no parenthesized ifs to avoid any PS/Spanish cmd parser issues like "No se esperaba"), removed interactive pauses, added explicit track creation guidance in error message.
+- Launcher remains the recommended: from fitvina, powershell -ExecutionPolicy Bypass -Command ".\publish-play.ps1 closed"  (or the cmd /c form). publish-play.ps1 forces clean cmd.exe context.
+
+**Immediate next for user**:
+1. Play Console → App → Pruebas → Prueba cerrada (Closed testing).
+2. Crear / configurar la pista cerrada si no aparece. Agrega testers (tus emails de prueba o Google Group).
+3. Opcional: sube manualmente el AAB generado (EntrenaMatch-v0.1.3-prealpha-closed.aab) como primera release para "seedear" la pista.
+4. Una vez la pista "closed" existe, dime "sube a closed" o "revisa publish" y lo lanzo de nuevo → esta vez debería completar el rollout a closed beta (hidden, solo testers).
+
+El AAB v6 con la feature de integridad + guard + todo lo anterior (live/muro/onboarding) está listo para que los testers de closed lo vean en la app instalada desde Play Store. "revisa" hecho, ahora falta solo la pista en Console.
+
+Sigue con todo!
+
+## Análisis exhaustivo + trabajo hoy (user: "revisa todo y hace un analisis exhaustivo de lo que se va a trabajar hoy dia" + "sigamos con todo con el proyecto entrenamatch" + gh-pages + github + playstore)
+
+**Fecha de análisis**: Actual (post commit 254c53e React fix + local unstaged publish artifacts + integrity + onboarding).
+
+**Fuentes revisadas exhaustivamente**:
+- GitHub: https://github.com/musclegrenadechile/entrenamatch (615+ commits, main branch, Actions para GH Pages + android-prealpha APK + (posible) Firebase). Estructura: React+TS+Vite, Capacitor para Android, Tailwind+Framer, Firebase Auth/Firestore real, src/App.tsx (monolito ~7k+ LOC con tabs, live, muro, chat, etc), OnboardingFlow, ExploreTab, services (incl playIntegrity nuevo), public/ con landing/privacy/terms/csea, android/ full (gradle play plugin), assets/play-store/ (icons, feature-graphics dunkin-style, screenshots), build/release/publish .bat + .ps1, todos los .md docs.
+- Live "servidor": https://musclegrenadechile.github.io/entrenamatch/ + /landing.html (stats 3.2k matches, 142 live, features killer live + matching + sesiones, how it works 4 pasos, screenshots oficiales, CTA beta, privacy note). /privacy.html + /csea-standards.html + /terms.html (compliance listos para Play: deletion, CSAE, legal).
+- Local activo: C:\Users\muscl\fitvina (NO es flutter; los dirs entrenamatch/ y _nuevo/ y fitvina build artifacts son legacy/old Flutter attempts — ignorar para este proyecto. fitvina tiene el .git real synced con origin/main, node_modules, dist/, AABs firmados, muchos build-*.log de iteraciones previas "sigue con todo").
+- Git local: On main, up-to-date con origin antes de cambios unstaged. Unstaged: PLAY_STORE_ASSETS.md, android/app/build.gradle (v6/0.1.3), package.json, plan.md, publish-play.bat, src/App.tsx, src/services/playIntegrity.ts . Untracked: publish-play.ps1, publish-test.log.err .
+- Último commit: fix React not defined (useEffect import) + mobile-web-app-capable meta + rebuild.
+- Key docs: plan.md (historial completo de Phase 0 signoff + Phase 1 live/muro/notifs/pwa/theme/onboarding/polish "sigue sin parar"), PLAY_STORE_ASSETS.md (copy listo para paste en Console: short/full desc, what's new, graphics prompts, URLs), PRODUCTION_AND_APK.md (Capacitor setup, publish automation, tracks internal/closed), BETA_TESTERS_GUIDE.md + PREALPHA_REAL_TESTING_GUIDE.md + INFORME_PROBLEMA... + FIRESTORE_DATA_MODEL.md + Fase1_Setup_Guide.md (todos mantenidos).
+- Código: App.tsx (live "Entrenando Ahora" full: toggle, streaks host/join, joinCount optimistic, notifs on join, hot zone, radar, full modal search/sort, profile stats 5col + activity, explore banner + feed teaser, urgency seVaEn, muro auto-post + interactions; muro espectacular: posts edit/undo/delete, comments inline+modal full thread, likes pop, pinned, global feed tab con search/filters/loadmore/pinned-only/nuevo badge, owner notifs; onboarding redesign key: live preview card actualiza realtime, Rellenar ejemplo, availability chips, GPS sync+UI, photo principal reorder, consents + green "¡Quiero aparecer EN VIVO!" opt-in que auto-set trainingNow+streak; Play Integrity 🛡️ card+button+nonce+result en Perfil + auto-check silent en login nativo + guard en toggleTrainingNow que bloquea si nativo y !positive; PWA banner sticky + force; notifs toasts+panel+badges+browser; chat real listeners+auto-scroll+dedupe; sessions admin; theme Dunkin #FF671F orange + #FF4F79 pink; version strings; escape hatches; legal links; dual demo/real mode).
+- Play Store specifics: package com.entrenamatch.app (android + integrity sim), play plugin triplet in gradle + serviceAccount (en android/play-service-account.json presente), keystore via properties (local), AABs firmados listos (EntrenaMatch-v0.1.3-prealpha-closed.aab etc), publish-play.bat mejorado (cmd context, error goto, track guidance), launcher .ps1, version bumps durante publish run, assets gráficos generados (dunkin sin comida, spark flame/dumbbell, feature 1024x500, icon 512, polished screenshots), landing.html como website oficial, csea-standards.html requerido.
+- Build: web build verificado hoy ✓ (1.09s, 1M+ JS, nuevo hash, name=entrenamatch@0.1.3-prealpha). Warnings conocidos (firebase ineffective dynamic import) no bloquean. android:build previo exitoso (cap sync + gradle bundleRelease + sign + publish task upload ok).
+- Otras: ~30 fakes realistas, rules/indexes FS deployados, CI workflows en .github, .env.example, firebase.json, etc.
+
+**Estado actual del proyecto (exhaustivo)**:
+- Funcionalidad core: 100% real cross-device para testers (auth persist, onboarding full, explore real+ fakes + live + filters + compat, matches, 1:1 chat, sesiones+group chat admin close/expel, muro+feed global interactivo, live killer con streaks/joins/hot/notifs/urgency/FOMO en TODAS partes).
+- Play Store readiness: Alta. Assets/copy/URLs/landing/csea/privacy/deletion listos. AAB signed con integridad + guard de seguridad. Automatización publish lista (una vez track existe). Versión 0.1.3-prealpha code6. Internal/Closed path documentado. Nombre paquete correcto. Icon/feature/screenshots generados (algunos pulidos).
+- Bloqueador principal HOY para Play: El último run de publish subió el bundle AAB al edit de Play exitosamente (no más 403), pero falló en "tracks/closed" 404 porque la pista "Prueba cerrada" no existe aún en Console (API no la crea, hay que crearla manual en UI primero + agregar testers/Google Group). AAB copiado localmente para upload manual si se quiere "seedear".
+- GitHub Pages (servidor web): Refleja último push (pre-algunos unstaged). Después de commit+push de hoy: testers hacen hard refresh Ctrl+Shift+R para ver integrity UI (sim en web), versiones 0.1.3, name fix indirecto, etc. APK via Releases o CI.
+- Local vs remoto: Local tiene WIP de la sesión publish + fixes (no commiteado aún). Git clean en remote.
+- Legacy: Dirs flutter en ~ son intentos previos (fitvina nombre dir legacy del rename proyecto).
+
+**Qué se va a trabajar HOY (priorizado, "sigamos con todo")**:
+1. **Play Store Closed (máxima prioridad)**: 
+   - Usuario: En Play Console > tu app EntrenaMatch > Pruebas > Prueba cerrada (Closed testing) → crear/configurar la pista "closed" si no aparece (agregar lista de testers o Google Group). Opcional: subir manualmente el AAB local EntrenaMatch-v0.1.3-prealpha-closed.aab como primera release para inicializar la pista.
+   - Una vez pista existe: dime "sube a closed" / "revisa publish" / "continua play" y ejecuto publish-play launcher de nuevo (debería completar upload + rollout % a closed beta oculta). 
+   - Después: testers instalan desde Play link privado (no aparece en store público), reportan via in-app feedback. Monitorear colección betaFeedback.
+2. **Sync código + servidor**: Commit + push de los unstaged actuales (incluyen: versión/ name fix, plan log del publish attempt + análisis, PLAY_STORE_ASSETS actualizado, App integrity UI/guard + version strings, publish.bat mejoras, service small). Esto dispara CI: actualiza GH Pages (servidor), nuevo APK artifact + tag android-prealpha, (si secret) Firebase.
+3. **Fixes de consistencia hechos en este análisis**: 
+   - package.json: name "fitvina" → "entrenamatch", version → 0.1.3-prealpha (match android code6).
+   - App.tsx: todas las strings visibles v0.1.0 → v0.1.3-prealpha (topbar, footer, feedback metadata).
+   - playIntegrity.ts: sim versionCode 4→6.
+   - PLAY_STORE_ASSETS.md: current version note + what's new bullet actualizado a 0.1.3 code6 + mención guard/integrity/onboarding.
+   - plan.md: status header actualizado a Phase 1 + Play focus + local path + package name.
+   - Web build verificado limpio post-fixes (✓ 1.09s).
+4. **Pequeños polish / prep**:
+   - Actualizar plan con este análisis exhaustivo completo (hecho).
+   - Recordar: setear FIREBASE_SERVICE_ACCOUNT secret en repo Settings para auto-deploy Firebase hosting en pushes (mejor que solo GH Pages para PWA + futuro FCM/push nativo).
+   - Posible: limpiar logs publish-test.* si safe, o .gitignore más estricto para AABs/logs (ya hay hardening previo).
+   - Si se quiere: re-generar más screenshots o icons con image tools si los actuales no bastan para 8 slots en Play (actualmente ~2 pulidos + prompts listos).
+5. **Continuación "sigue con todo" (post Play track)**: 
+   - Monitorear feedback real de primeros testers closed.
+   - Más polish live/muro (ej: delete post con anim framer exit, teaser posts en swipe/matches cards, pinned global mejor, typing indicators?).
+   - Notifs push nativo full (FCM Capacitor ya wired client, falta google-services.json + server senders o Cloud Function).
+   - Preparar Fase 2: moderation, más anti-abuse, reviews post-sesión, i18n, etc.
+   - Posible: una vez closed estable, promover a open o producción pequeña.
+6. **Recordatorios operativos**: 
+   - Después de push: hard refresh en web + re-instalar APK fresh para testers.
+   - Para probar real: 2+ cuentas email en dispositivos/tabs distintos, toggle live, join, muro interact, chat mientras oculto, feedback submit, integrity check en APK.
+   - Nunca commitear keystore ni service-account real (ya .gitignored).
+
+**Acciones ejecutadas en esta sesión de análisis**:
+- Revisión completa vía tools (web_fetch raw+pages, terminal git/ls/build, read_file docs+code, grep patterns, list_dir assets/src).
+- Fixes de nombre/versión consistencia + build verify.
+- Actualización plan + assets docs con estado real + próximos.
+- (Próximo inmediato: commit + push para que "servidor" tenga los fixes + integrity visible en web sim; luego esperar user para track Play y re-publish).
+
+**Todo listo para "sigamos".** El proyecto está en excelente estado para closed beta en Play + web testers. El killer "Entrenando Ahora" + muro vivo + onboarding sin fricción + integridad Google son diferenciadores fuertes. Bloqueador es solo la creación de pista closed en Console (acción usuario 1-click).
+
+Sigue con todo a todo ritmo full green light! :D
+
+**Próximo paso recomendado para usuario**: Crear la pista closed en Play Console ya, confirmar con "listo, pista creada" o "sube a closed". Mientras, haré el commit/push de los fixes de hoy.

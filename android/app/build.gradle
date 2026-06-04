@@ -15,8 +15,8 @@ android {
         applicationId "com.entrenamatch.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 4
-        versionName "0.1.1-prealpha"
+        versionCode 6
+        versionName "0.1.3-prealpha"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -78,7 +78,7 @@ play {
     if (project.hasProperty('play.serviceAccountCredentials')) {
         serviceAccountCredentials = file(project.property('play.serviceAccountCredentials'))
     } else {
-        serviceAccountCredentials = file("play-service-account.json")
+        serviceAccountCredentials = file("../play-service-account.json")
     }
 
     // Track configurable via -Pplay.track=internal|closed (default closed for beta cerrada)

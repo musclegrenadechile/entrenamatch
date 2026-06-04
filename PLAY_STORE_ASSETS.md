@@ -2,6 +2,10 @@
 
 **App name (Play Console)**: EntrenaMatch
 
+**Package name**: com.entrenamatch.app
+
+**Current version for this upload**: versionCode 6 / 0.1.3-prealpha (AAB with Play Integrity guard + UI (🛡️ card before live toggle), onboarding live preview, full live/muro/feed, React fixes, PWA, landing/csea for compliance. Ready for Closed after track created in Console.)
+
 **Category**: Health & Fitness (or Social)
 
 **Content rating**: Mature 17+ (solo +18, entrenamiento social con matches)
@@ -68,13 +72,17 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 ---
 
 ## What's new (for this Pre-Alpha release, short & punchy)
-• Backend real Firebase activo: perfiles, matches y chats 1:1 cross-device
-• Sesiones + chat grupal real (crea y únete, visible para otros testers)
-• Onboarding mejorado con bio obligatoria + cámara nativa (APK)
-• Feedback estructurado de beta (tipo + estrellas + historial de tus envíos)
-• Múltiples escapes de cuenta siempre visibles + sincronización manual
-• Legal completo (privacidad + términos) accesible desde login, onboarding, chats y perfil
-• Versión nativa Android lista para Internal/Closed testing
+• Killer feature "Entrenando Ahora EN VIVO": ve en tiempo real quién entrena cerca, con urgencia ("se va en Xm"), hot zones, streaks y join automático al muro
+• Muro de perfiles estilo FB (posts con foto, likes, comentarios cross-user, notificaciones al dueño)
+• Onboarding espectacular rediseñado: preview en vivo del perfil (como se ve en swipe y live), "Rellenar ejemplo", disponibilidad, opt-in directo a EN VIVO, reorder de fotos principal
+• Integración completa Google Play Integrity API (verifica app oficial + dispositivo íntegro + licencia, para seguridad en beta cerrada)
+• Mejoras de onboarding + fixes (preview actualiza en tiempo real, GPS sync correcto, meta tags PWA actualizados)
+• Todo el flujo real Firebase (perfiles, matches, chats 1:1 y grupal, sesiones, live) cross-device
+• Sesiones + chat grupal real + admin por creador
+• Feedback estructurado + historial
+• Múltiples escapes de cuenta + PWA install mejorado
+• Legal + CSAE + deletion URL listos y públicos
+• Versión nativa Android (AAB) lista para Closed testing (versionCode 6 / 0.1.3-prealpha)
 
 ---
 

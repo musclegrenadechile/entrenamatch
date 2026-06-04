@@ -67,6 +67,7 @@ import { AuthScreen } from './components/auth/AuthScreen'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { db, isFirebaseConfigured } from './services/firebase'
 import { requestPlayIntegrityToken, hasPositiveIntegrity, getLastIntegrityResult } from './services/playIntegrity'
+import { Capacitor } from '@capacitor/core'
 import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore'
 
 // ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
@@ -600,6 +601,7 @@ function App() {
   // Google Play Integrity (app + device attestation). Critical for closed beta security.
   const [integrityChecking, setIntegrityChecking] = useState(false)
   const [lastIntegrity, setLastIntegrity] = useState<any>(null)
+  const [testIntegrityNonce, setTestIntegrityNonce] = useState('')
 
   // Live tick for "hace Xs" relative times (polish: updates empty states, headers, sync indicators without manual refresh)
   const [timeTick, setTimeTick] = useState(0)
@@ -677,22 +679,25 @@ function App() {
   const checkPlayIntegrity = async (showToast = true) => {
     setIntegrityChecking(true)
     try {
-      const res = await requestPlayIntegrityToken()
+      const nonce = testIntegrityNonce.trim() || undefined
+      const res = await requestPlayIntegrityToken(nonce)
       setLastIntegrity(res)
 
       if (res.token) {
         if (showToast) {
           toast.success('Token de integridad obtenido de Google Play', {
-            description: 'Envíalo a tu backend para verificar y obtener el JSON completo de veredictos (como el que me pasaste). Copiado en consola.'
+            description: nonce 
+              ? `Usando nonce de prueba de la consola. Envíalo a tu backend para obtener el veredicto completo (JSON como el que me pasaste).`
+              : 'Envíalo a tu backend para verificar y obtener el JSON completo de veredictos (como el que me pasaste). Copiado en consola.'
           })
         }
         console.log('%c[Play Integrity] Raw token (send this to server for full verification):', 'color:#22c55e', res.token)
-        // For convenience in testing: also log a reminder of the package that must match
+        if (nonce) console.log('%c[Play Integrity] Used test nonce from console:', 'color:#f59e0b', nonce)
         console.log('Expected packageName in verdicts: com.entrenamatch.app')
       } else if (res.simulatedVerdict) {
         if (showToast) {
           toast.success('Integridad simulada (web/demo)', {
-            description: 'En APK nativa obtendrás un token real de Google. El veredicto simulado es positivo (LICENSED + PLAY_RECOGNIZED + MEETS_DEVICE_INTEGRITY).'
+            description: 'En la APK nativa instalada desde Play obtendrás un token real. El simulado es positivo (LICENSED + PLAY_RECOGNIZED + MEETS_DEVICE_INTEGRITY).'
           })
         }
         console.log('%c[Play Integrity] Simulated positive verdict (web):', 'color:#f59e0b', res.simulatedVerdict)
@@ -3849,7 +3854,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-1.5 text-[10px] font-medium">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0 !px-2 !text-[8px] !bg-[#FF671F]/10 !border-0">PRE-ALPHA</span>
-          <span className="text-white/90">Real backend • v0.1.0-prealpha</span>
+          <span className="text-white/90">Real backend • v0.1.3-prealpha</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -4961,7 +4966,7 @@ function App() {
                               rating: 3,
                               text: `Chat 1:1 con ${activeChat}: Problema reportado por usuario`,
                               platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
-                              appVersion: '0.1.0-prealpha',
+                              appVersion: '0.1.3-prealpha',
                               context: '1v1-chat',
                               createdAt: serverTimestamp(),
                             });
@@ -5332,12 +5337,87 @@ function App() {
               </div>
             </div>
 
+            {/* Google Play Integrity - working with the Google app (Play Integrity API) */}
+            <div className="px-4 mt-2">
+              <div className="card p-5 border border-[#22c55e]/30">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="font-semibold text-sm flex items-center gap-2"><span>🛡️</span> Google Play Integrity</div>
+                  <div className="text-[9px] px-2 py-0.5 rounded-full bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/30">Android + Play Store</div>
+                </div>
+                <p className="text-xs text-[#9CA3AF] mb-3">
+                  Verifica app oficial (PLAY_RECOGNIZED), licencia (LICENSED) y dispositivo íntegro. 
+                  Pega aquí el nonce de tu "prueba de integridad" creada en Play Console para obtener veredictos específicos de prueba (ej. MEETS_DEVICE_INTEGRITY).
+                  La app ahora requiere integridad positiva para activar "Entrenando ahora (EN VIVO)" en builds reales.
+                </p>
+                <div className="text-[10px] text-[#9CA3AF] mb-2">
+                  Detección actual: <span className="font-mono">{Capacitor.isNativePlatform() ? 'Nativa (APK real)' : 'Web (simulado)'}</span> — debe ser Nativa en la APK instalada. (Ver logs: [Play Integrity] isNativePlatform())
+                </div>
+
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={testIntegrityNonce}
+                    onChange={(e) => setTestIntegrityNonce(e.target.value)}
+                    placeholder="Nonce de prueba de la consola (opcional, para veredictos específicos)"
+                    className="w-full form-input text-xs py-2"
+                  />
+                  <button
+                    onClick={() => checkPlayIntegrity(true)}
+                    disabled={integrityChecking}
+                    className="w-full py-2.5 rounded-2xl text-sm font-semibold bg-[#22c55e] text-black active:bg-[#16a34a] disabled:opacity-60 flex items-center justify-center gap-2"
+                  >
+                    {integrityChecking ? 'Verificando con Google...' : 'Verificar integridad ahora con Google Play'}
+                  </button>
+                  {testIntegrityNonce.trim() && (
+                    <div className="text-[9px] text-[#9CA3AF]">Usando nonce de prueba — obtendrás el veredicto específico que configuraste en la consola.</div>
+                  )}
+                </div>
+
+                {lastIntegrity && (
+                  <div className="mt-3 text-[10px] bg-[#111113] p-3 rounded-2xl border border-[#2F2F35]">
+                    {lastIntegrity.token && (
+                      <>
+                        <div className="text-[#22c55e] font-medium">✅ Token obtenido de Google</div>
+                        <div className="text-[#9CA3AF] mt-1 break-all font-mono text-[8px] max-h-12 overflow-auto">{lastIntegrity.token}</div>
+                        <div className="text-[#9CA3AF] mt-1">Cópialo y envíalo a un backend para decodificar → obtienes el JSON completo con veredictos (como el que me diste).</div>
+                      </>
+                    )}
+                    {lastIntegrity.simulatedVerdict && (
+                      <>
+                        <div className="text-amber-400 font-medium">🌐 Resultado simulado (web / PWA)</div>
+                        <div className="text-[#9CA3AF] mt-1">En la APK nativa instalada desde Play obtendrás un token real. El simulado es positivo:</div>
+                        <div className="text-[9px] mt-1 text-[#cbd5e1]">LICENSED + PLAY_RECOGNIZED + MEETS_DEVICE_INTEGRITY</div>
+                      </>
+                    )}
+                    {lastIntegrity.error && (
+                      <div className="text-red-400">Error: {lastIntegrity.error}</div>
+                    )}
+                    <button onClick={() => { console.log('Last full integrity object:', lastIntegrity); toast('Resultado completo en consola del navegador (F12)'); }} className="mt-2 text-[9px] underline text-[#FF671F]">Ver objeto completo en consola</button>
+                  </div>
+                )}
+
+                <div className="text-[9px] text-[#9CA3AF] mt-2">
+                  Package esperado: <span className="font-mono text-[#22c55e]">com.entrenamatch.app</span>. 
+                  El JSON que me pasaste usaba placeholder "com.package.name" — en la app real usamos el correcto.
+                </div>
+              </div>
+            </div>
+
             {/* Entrenando Ahora - KILLER FEATURE real-time, live green indicator near you. Generates urgency, no other fitness app has it this well. */}
             <div className="px-4 mt-2 card p-4 space-y-3">
               <div>
                 <button 
                   onClick={() => {
                     const newVal = !currentUser.trainingNow
+                    if (newVal && !isDemoMode && PlayIntegrityNative) {
+                      const current = getLastIntegrityResult() || lastIntegrity;
+                      if (!hasPositiveIntegrity(current)) {
+                        toast.error('Verifica integridad primero', { 
+                          description: 'Usa el botón 🛡️ Google Play Integrity arriba (o ingresa nonce de tu prueba) para obtener token positivo.' 
+                        });
+                        return;
+                      }
+                    }
                     let streakUpdate: any = {}
                     if (newVal) {
                       const todayStr = new Date().toDateString()
@@ -5726,7 +5806,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.0-prealpha • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.3-prealpha • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -5751,56 +5831,6 @@ function App() {
                 </a>
                 <div className="text-[10px] text-center text-[#9CA3AF] mt-2">
                   También disponible automáticamente en GitHub Actions → Artifacts
-                </div>
-              </div>
-            </div>
-
-            {/* Google Play Integrity - working with the Google app (Play Integrity API) */}
-            <div className="px-4 mt-2">
-              <div className="card p-5 border border-[#22c55e]/30">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="font-semibold text-sm flex items-center gap-2"><span>🛡️</span> Google Play Integrity</div>
-                  <div className="text-[9px] px-2 py-0.5 rounded-full bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/30">Android + Play Store</div>
-                </div>
-                <p className="text-xs text-[#9CA3AF] mb-3">
-                  Verifica que la app sea la oficial de Play (PLAY_RECOGNIZED), que tengas licencia válida (LICENSED) y que el dispositivo sea íntegro. 
-                  Protege contra APKs modificados, emuladores y abuso en beta cerrada.
-                </p>
-
-                <button
-                  onClick={() => checkPlayIntegrity(true)}
-                  disabled={integrityChecking}
-                  className="w-full py-2.5 rounded-2xl text-sm font-semibold bg-[#22c55e] text-black active:bg-[#16a34a] disabled:opacity-60 flex items-center justify-center gap-2"
-                >
-                  {integrityChecking ? 'Verificando con Google...' : 'Verificar integridad ahora con Google Play'}
-                </button>
-
-                {lastIntegrity && (
-                  <div className="mt-3 text-[10px] bg-[#111113] p-3 rounded-2xl border border-[#2F2F35]">
-                    {lastIntegrity.token && (
-                      <>
-                        <div className="text-[#22c55e] font-medium">✅ Token obtenido de Google</div>
-                        <div className="text-[#9CA3AF] mt-1 break-all font-mono text-[8px] max-h-12 overflow-auto">{lastIntegrity.token}</div>
-                        <div className="text-[#9CA3AF] mt-1">Cópialo y envíalo a un backend para decodificar → obtienes el JSON completo con veredictos (como el que me diste).</div>
-                      </>
-                    )}
-                    {lastIntegrity.simulatedVerdict && (
-                      <>
-                        <div className="text-amber-400 font-medium">🌐 Resultado simulado (web / PWA)</div>
-                        <div className="text-[#9CA3AF] mt-1">En la APK nativa instalada desde Play obtendrás un token real. El simulado es positivo:</div>
-                        <div className="text-[9px] mt-1 text-[#cbd5e1]">LICENSED + PLAY_RECOGNIZED + MEETS_DEVICE_INTEGRITY</div>
-                      </>
-                    )}
-                    {lastIntegrity.error && (
-                      <div className="text-red-400">Error: {lastIntegrity.error}</div>
-                    )}
-                    <button onClick={() => { console.log('Last full integrity object:', lastIntegrity); toast('Resultado completo en consola del navegador (F12)'); }} className="mt-2 text-[9px] underline text-[#FF671F]">Ver objeto completo en consola</button>
-                  </div>
-                )}
-
-                <div className="text-[9px] text-[#9CA3AF] mt-2">
-                  Package esperado: <span className="font-mono text-[#22c55e]">com.entrenamatch.app</span>. 
-                  El JSON que me pasaste usaba placeholder "com.package.name" — en la app real usamos el correcto.
                 </div>
               </div>
             </div>
@@ -5873,7 +5903,7 @@ function App() {
                     if (!firebaseUser?.uid || !db) { toast('Inicia sesión para enviar feedback'); return }
 
                     const platform = (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web'
-                    const appVersion = '0.1.0-prealpha'
+                    const appVersion = '0.1.3-prealpha'
 
                     try {
                       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
@@ -5962,7 +5992,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.0-prealpha • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.3-prealpha • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>
@@ -7485,7 +7515,7 @@ function App() {
                               rating: 3,
                               text: `Sesión ${showGroupChatModalFor}: Problema reportado por usuario`,
                               platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
-                              appVersion: '0.1.0-prealpha',
+                              appVersion: '0.1.3-prealpha',
                               context: 'group-chat',
                               createdAt: serverTimestamp(),
                             });
