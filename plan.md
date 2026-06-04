@@ -330,6 +330,8 @@ This advances the "muro + diseños espectaculares" significantly. Test: own prof
 
 All changes in src/App.tsx + plan.md + deployed FS. Now build + push to trigger full CI to GH Pages (servidor) + APK + Firebase. Testers: hard refresh after deploy (~3-8min).
 
+**Hotfix (user reported on start after last push)**: "Uncaught ReferenceError: Cannot access 'z' before initialization" (minified TDZ). Root cause: the new live notif useEffect (with [liveTrainingNow, ...] in deps) was declared early in the App() body, before the `const liveTrainingNow = useMemo(...)` line. JS executes top-to-bottom → TDZ on every render/init. Fixed by moving the effect block to immediately after the liveTrainingNow memo (and removed a redundant early persist effect). Rebuilt (new hashes), committed 3c115c4, pushed. All 3 build variants clean. This was introduced in the previous "live killer stronger" batch. Hard refresh the site now.
+
 **Live killer feature continuation ("sigue con todo a todo ritmo" + "el punto mas fuerte")**:
 - Added trainingNow / trainingNowSince to Profile TS interface (was only on CurrentUser) + wired in loadRealProfiles, saveUserWithRealSync, real profile merge, updateUserProfile payloads so real cross-device live status persists and shows instantly.
 - **Real-time urgency notifications**: new seenLiveUserIdsRef (persisted to LS like chat seen) + useEffect on liveTrainingNow that detects *new* nearby live users on any refresh/loadRealProfiles (60s in explore or manual). Fires addNotification (panel + bell) + rich sonner toast with "Ver" action that opens full profile. Guard size>1 skips pure first-load spam. Clears on logout. Prepares for push. In-app urgency signal when someone starts live near you.
