@@ -4874,7 +4874,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-1.5 text-[10px] font-medium">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0 !px-2 !text-[8px] !bg-[#FF671F]/10 !border-0">PRE-ALPHA</span>
-          <span className="text-white/90">Real backend • v0.1.16-mapa-preciosa</span>
+          <span className="text-white/90">Real backend • v0.1.17-continua-polish</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -5591,7 +5591,7 @@ function App() {
                               <button 
                                 key={emo}
                                 onClick={() => { boostReaction(post.id, emo); triggerHaptic('light'); }}
-                                className={`muro-reaction px-2.5 py-1 rounded-full border flex items-center gap-1 transition-all active:scale-90 ${active ? 'active' : 'bg-[#1C1C20] border-[#2F2F35] hover:border-[#FF671F]/40'}`}
+                                className={`muro-reaction px-2.5 py-1 rounded-full border flex items-center gap-1 transition-all active:scale-90 ${active ? 'bg-[#FF671F]/10 border-[#FF671F] scale-105' : 'bg-[#1C1C20] border-[#2F2F35] hover:border-[#FF671F]/40'}`}
                               >
                                 <span className="text-base">{emo}</span>
                                 {count > 0 && <span className="count text-[#FF671F] font-bold tabular-nums text-xs">{count}</span>}
@@ -6846,6 +6846,7 @@ function App() {
                             <div className="h-1 bg-gradient-to-r from-[#FF671F] to-[#FF4F79] transition-all" style={{width: `${progress}%`}} />
                           </div>
                           <div className="text-[7px] text-[#9CA3AF]/70 mt-px">Bond {b.bondLevel} • {progress}% to next</div>
+                          {p && <button onClick={(e)=>{e.stopPropagation(); tryAutoStartSync(p.id, p.name)}} className="mt-1 text-[7px] px-1 py-px bg-[#22c55e]/10 text-[#22c55e] rounded active:bg-[#22c55e]/30">🔄 Re-sync</button>}
                         </div>
                       </div>
                     )
@@ -7671,7 +7672,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.16-mapa-preciosa • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.17-continua-polish • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -7898,7 +7899,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.16-mapa-preciosa • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.17-continua-polish • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>
@@ -9834,6 +9835,7 @@ function App() {
                   >
                     <span className="text-2xl">{a.emoji}</span>
                     <span>{a.label}{a.combo ? <span className="ml-1 text-[#FF671F] font-black">x{a.combo}</span> : ''}</span>
+                    {a.photoUrl && <img src={a.photoUrl} className="w-8 h-8 rounded object-cover border border-[#22c55e]/30 ml-1" />}
                     <span className="ml-auto text-[10px] text-[#9CA3AF] tabular-nums">{idx + 1}</span>
                   </motion.div>
                 ))}

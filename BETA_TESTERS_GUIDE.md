@@ -65,7 +65,11 @@ Uso:
   - También corrige TDZ en el array de dependencias.
   - Verificado: tsc limpio + `npm run build` exitoso. El bundle nuevo (dist + futuros APKs/AABs) no debe dar #310 ni en login web ni en WebView de Android.
   - Recordatorio para Google login: aunque el #310 esté fix, el OAuth con Google en la web (musclegrenadechile.github.io) requiere que agregues manualmente el dominio en Firebase Console → Authentication → Settings → Authorized domains. Agrega `musclegrenadechile.github.io` + `localhost`. El iframe warning "domain is not authorized" es de Firebase, no bug de código. Una vez autorizado + hard refresh, Google sign-in debe fluir. (No puedo hacerlo yo, no tengo credenciales de la cuenta Firebase del proyecto).
-- **Mapa en vivo "sigue con todo" ultra pulido (precioso + único)**:
+- **Mapa en vivo "sigue con todo" ultra pulido (precioso + único)**: (v0.1.17+)
+  - Marcadores foto/iniciales con pulso vivo, radar sweep animado, filtro cerca de mí, círculo radio personal, leyenda zonas, Centrar, persistencia preferencia, hápticos, click marcador abre perfil, integración header LIVE pill, empty states premium.
+- **Arena & Bonds**: replay ahora muestra thumbnails de fotos capturadas en Arena, orb dinámico con color shift y glow en alto vibe, tether más vibrante, legends con re-sync rápido por bond.
+- **Perfil/Galería/Feed/Muro**: galería con hover lift+scale, live toggle con glow ring, feed/muro cards con hover lift + active scale, quick reactions con mejor active state (scale + bg).
+- **Global polish**: más active:scale/transitions/haptics/glows en botones y live elements, empty states mejorados con iconos motivadores, consistencia visual en toda la app. Revisión exhaustiva continua para que se sienta preciosa y única.
   - Marcadores con pulso sutil (vivos).
   - Radar sweep animado premium en el contenedor.
   - Tether en Arena más vibrante y glow fuerte.
