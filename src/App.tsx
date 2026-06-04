@@ -4382,6 +4382,16 @@ function App() {
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 18,
       }).addTo(mapInstanceRef.current)
+
+      // Ensure Leaflet knows the size after toggle (common issue with hidden containers in React/WebView)
+      setTimeout(() => {
+        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize()
+      }, 50)
+    } else {
+      // If map already exists but was toggled, invalidate to fix click/pan
+      setTimeout(() => {
+        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize()
+      }, 50)
     }
 
     // Always nuke old markers before re-adding (live list or location just changed)
@@ -4438,12 +4448,8 @@ function App() {
 
       const marker = L.marker([user.lat, user.lng], { icon: customIcon }).addTo(mapInstanceRef.current)
 
-      // Click the marker itself → open beautiful profile modal (rich view with photos, bio, live status etc)
-      marker.on('click', () => {
-        if (showFullProfileRef.current) {
-          showFullProfileRef.current(user)
-        }
-      })
+      // Note: click on marker opens the popup (by Leaflet default since bindPopup).
+      // Popup has "Ver perfil" button for profile modal. This avoids event conflict with popup.
 
       const popupContent = `
         <div style="min-width:180px; font-size:12.5px; line-height:1.3">
@@ -4476,7 +4482,7 @@ function App() {
               if (showFullProfileRef.current) showFullProfileRef.current(user)
             }
           }
-        }, 30)
+        }, 100)
       })
 
       markersRef.current.push(marker)
@@ -4994,7 +5000,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-1.5 text-[10px] font-medium">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0 !px-2 !text-[8px] !bg-[#FF671F]/10 !border-0">PRE-ALPHA</span>
-          <span className="text-white/90">Real backend • v0.1.19-feed-fomo</span>
+          <span className="text-white/90">Real backend • v0.1.20-mapa-fix</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -5113,7 +5119,7 @@ function App() {
         {/* LIVE TRAINING BANNER - ALWAYS VISIBLE, the star feature for urgency and retention. Green pulsing, se va en, mini photos, quick join. Makes app addictive. Top of explore for maximum impact. */}
         {activeTab === 'explore' && (
           <div className="px-4 py-2 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden live-banner-glow">
-            <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10"></div>
+            <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
             <div className="flex items-center gap-2 mb-1 relative z-10">
               <div className="live-pill green">🟢 EN VIVO AHORA</div>
               <div className="text-sm font-semibold">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡urgencia!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}{activeSyncCount > 0 ? ` · 🔄 ${activeSyncCount} pares sincronizados ahora (único)` : ''}</div>
@@ -5176,7 +5182,7 @@ function App() {
             </div>
 
             {/* NEW: Real-time Map of people training live (viable with Leaflet + real geo) */}
-            <div className="mt-3">
+            <div className="mt-3 relative z-10">
               <div className="flex items-center justify-between mb-1.5 px-1">
                 <div className="text-[10px] font-semibold text-[#22c55e] flex items-center gap-1.5">
                   🗺️ Mapa en tiempo real
@@ -5191,7 +5197,7 @@ function App() {
               </div>
 
               {showLiveMap && (
-                <div className="relative">
+                <div className="relative z-20">
                   <div 
                     id="live-map-container"
                     ref={liveMapRef} 
@@ -5199,7 +5205,7 @@ function App() {
                     style={{ zIndex: 1 }}
                   />
                   {/* Live badge + near filter */}
-                  <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                  <div className="absolute bottom-2 right-2 flex items-center gap-1 z-30">
                     <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                       🟢 {liveTrainingNow.length} en vivo • realtime
                     </div>
@@ -5224,13 +5230,13 @@ function App() {
                         map.setView([userLocation.lat, userLocation.lng], 13)
                       }
                     }}
-                    className="absolute top-2 right-2 text-[9px] px-2.5 py-0.5 rounded-full bg-black/70 hover:bg-black text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black transition"
+                    className="absolute top-2 right-2 text-[9px] px-2.5 py-0.5 rounded-full bg-black/70 hover:bg-black text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black transition z-30"
                   >
                     Centrar
                   </button>
 
                   {/* Small zone legend (top left, subtle) */}
-                  <div className="absolute top-2 left-2 text-[7px] bg-black/70 text-white/90 px-1.5 py-0.5 rounded flex flex-col gap-0.5 leading-none" style={{fontSize:'7.5px'}}>
+                  <div className="absolute top-2 left-2 text-[7px] bg-black/70 text-white/90 px-1.5 py-0.5 rounded flex flex-col gap-0.5 leading-none z-30" style={{fontSize:'7.5px'}}>
                     <div><span style="color:#22c55e">●</span> Viña</div>
                     <div><span style="color:#FF671F">●</span> Stgo</div>
                     <div><span style="color:#3b82f6">●</span> Valpo</div>
@@ -5239,7 +5245,7 @@ function App() {
 
                   {/* GPS prompt overlay (only when map visible but no location yet) */}
                   {!userLocation && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/65 text-center p-5 rounded-2xl text-xs">
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/65 text-center p-5 rounded-2xl text-xs z-40">
                       <div>
                         <div className="mb-1">📍 Ubicación real desactivada</div>
                         <button 
@@ -5254,7 +5260,7 @@ function App() {
 
                   {/* Beautiful empty state when map open but no one live (after near filter) */}
                   {showLiveMap && liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && (u.distance||999)<10))).length === 0 && userLocation && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl text-center p-4 text-xs">
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl text-center p-4 text-xs z-40">
                       <div>
                         <div className="text-2xl mb-1">🗺️</div>
                         <div className="font-semibold">Nadie entrenando cerca ahora</div>
@@ -7852,7 +7858,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.19-feed-fomo • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.20-mapa-fix • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8079,7 +8085,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.19-feed-fomo • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.20-mapa-fix • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>

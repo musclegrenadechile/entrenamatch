@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.19-feed-fomo",
+  "version": "0.1.20-mapa-fix",
   "type": "module",
   "scripts": {
     "dev": "vite",
