@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.20-mapa-fix",
+  "version": "0.1.21-geo-crash-fix",
   "type": "module",
   "scripts": {
     "dev": "vite",

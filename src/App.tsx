@@ -495,6 +495,7 @@ function App() {
   // User GPS location
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [_locationPermissionAsked] = useState(false)
+  const isGettingLocationRef = useRef(false) // guard against concurrent GPS requests that can crash on Android permission/GPS prompt
 
   // Training Sessions (unique feature)
   const [sessions, setSessions] = useState<TrainingSession[]>([])
@@ -4178,6 +4179,8 @@ function App() {
 
   // Request REAL user GPS location (native Capacitor first for APK realism, fallback to browser)
   const requestUserLocation = async () => {
+    if (isGettingLocationRef.current) return // prevent concurrent calls that can cause permission/GPS prompt conflicts and crashes on Android
+    isGettingLocationRef.current = true
     try {
       let loc: { lat: number; lng: number } | null = null
 
@@ -4188,7 +4191,14 @@ function App() {
           toast.error('Permiso de ubicación denegado', { description: 'Actívalo en Ajustes del teléfono para distancias reales' })
           return
         }
-        const position = await GeolocationNative.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 })
+        // Try high accuracy first, fallback to low if fails (e.g. GPS off or only coarse allowed)
+        let position
+        try {
+          position = await GeolocationNative.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 })
+        } catch (highErr) {
+          console.warn('High accuracy GPS failed, trying low accuracy:', highErr)
+          position = await GeolocationNative.getCurrentPosition({ enableHighAccuracy: false, timeout: 10000 })
+        }
         loc = { lat: position.coords.latitude, lng: position.coords.longitude }
       } else if (navigator.geolocation) {
         // Web / fallback
@@ -4205,6 +4215,12 @@ function App() {
         setUserLocation(loc)
         localStorage.setItem('entrenamatch_location', JSON.stringify(loc))
 
+        if (!currentUser) {
+          // Can happen in race during early load; still set loc for map/distances
+          toast.success('Ubicación real activada', { description: 'Distancias y "vivo cerca" usan tu GPS real ahora' })
+          return
+        }
+
         // Update current user's profile with REAL location for realism (sync to Firestore too)
         const updated = { ...currentUser, lat: loc.lat, lng: loc.lng }
         saveUserWithRealSync(updated as CurrentUser)
@@ -4214,6 +4230,8 @@ function App() {
     } catch (e: any) {
       console.warn('Real geolocation failed:', e)
       toast.error('No pudimos obtener ubicación real', { description: 'Permisos o GPS apagado. Usando fallback.' })
+    } finally {
+      isGettingLocationRef.current = false
     }
   }
 
@@ -4414,78 +4432,82 @@ function App() {
     }
 
     liveUsers.forEach(user => {
-      const color = zoneColors[user.city] || zoneColors.default
-      const shortName = (user.name || '?').split(' ')[0]
+      try {
+        const color = zoneColors[user.city] || zoneColors.default
+        const shortName = (user.name || '?').split(' ')[0]
 
-      // Premium personal marker: photo if available, else nice initials badge + name label.
-      // Makes the map feel alive and social (the "preciosa" part).
-      let iconHtml: string
-      const photo = user.photos && user.photos[0]
-      if (photo) {
-        iconHtml = `
-          <div style="position:relative;width:34px;height:34px">
-            <div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2.5px solid ${color};box-shadow:0 0 0 2px rgba(255,255,255,0.9), 0 2px 6px rgba(0,0,0,0.4)">
-              <img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='${color}';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px\\'>${shortName.slice(0,2).toUpperCase()}</div>'" />
+        // Premium personal marker: photo if available, else nice initials badge + name label.
+        // Makes the map feel alive and social (the "preciosa" part).
+        let iconHtml: string
+        const photo = user.photos && user.photos[0]
+        if (photo) {
+          iconHtml = `
+            <div style="position:relative;width:34px;height:34px">
+              <div style="width:34px;height:34px;border-radius:9999px;overflow:hidden;border:2.5px solid ${color};box-shadow:0 0 0 2px rgba(255,255,255,0.9), 0 2px 6px rgba(0,0,0,0.4)">
+                <img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='${color}';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px\\'>${shortName.slice(0,2).toUpperCase()}</div>'" />
+              </div>
+              <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
+            </div>`
+        } else {
+          const initials = shortName.slice(0, 2).toUpperCase()
+          iconHtml = `
+            <div style="position:relative;width:34px;height:34px">
+              <div style="width:34px;height:34px;border-radius:9999px;background:${color};border:2.5px solid #fff;box-shadow:0 0 0 2px rgba(255,255,255,0.3),0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px">${initials}</div>
+              <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
+            </div>`
+        }
+
+        const customIcon = L.divIcon({
+          className: 'entrenamatch-marker',
+          html: iconHtml,
+          iconSize: [38, 46],
+          iconAnchor: [19, 23],
+          popupAnchor: [0, -24]
+        })
+
+        const marker = L.marker([user.lat, user.lng], { icon: customIcon }).addTo(mapInstanceRef.current)
+
+        // Note: click on marker opens the popup (by Leaflet default since bindPopup).
+        // Popup has "Ver perfil" button for profile modal. This avoids event conflict with popup.
+
+        const popupContent = `
+          <div style="min-width:180px; font-size:12.5px; line-height:1.3">
+            <strong style="font-size:14px; display:block; margin-bottom:2px">${user.name}</strong>
+            <span style="color:#22c55e; font-weight:600">🟢 Entrenando ahora</span> • ~${user.seVaEnMin || '?'} min<br/>
+            ${userLocation ? `<span style="color:#FF671F; font-weight:600">${user.distance.toFixed(1)} km de ti</span><br/>` : ''}
+            <div style="display:flex; gap:6px; margin-top:8px">
+              <button id="join-${user.id}" style="flex:1; padding:6px 8px; background:#22c55e; color:#000; border:none; border-radius:8px; font-size:11px; font-weight:700">🔥 Unirme</button>
+              <button id="profile-${user.id}" style="flex:1; padding:6px 8px; background:#333; color:#fff; border:1px solid #555; border-radius:8px; font-size:11px; font-weight:600">Ver perfil</button>
             </div>
-            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
-          </div>`
-      } else {
-        const initials = shortName.slice(0, 2).toUpperCase()
-        iconHtml = `
-          <div style="position:relative;width:34px;height:34px">
-            <div style="width:34px;height:34px;border-radius:9999px;background:${color};border:2.5px solid #fff;box-shadow:0 0 0 2px rgba(255,255,255,0.3),0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px">${initials}</div>
-            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
-          </div>`
-      }
-
-      const customIcon = L.divIcon({
-        className: 'entrenamatch-marker',
-        html: iconHtml,
-        iconSize: [38, 46],
-        iconAnchor: [19, 23],
-        popupAnchor: [0, -24]
-      })
-
-      const marker = L.marker([user.lat, user.lng], { icon: customIcon }).addTo(mapInstanceRef.current)
-
-      // Note: click on marker opens the popup (by Leaflet default since bindPopup).
-      // Popup has "Ver perfil" button for profile modal. This avoids event conflict with popup.
-
-      const popupContent = `
-        <div style="min-width:180px; font-size:12.5px; line-height:1.3">
-          <strong style="font-size:14px; display:block; margin-bottom:2px">${user.name}</strong>
-          <span style="color:#22c55e; font-weight:600">🟢 Entrenando ahora</span> • ~${user.seVaEnMin || '?'} min<br/>
-          ${userLocation ? `<span style="color:#FF671F; font-weight:600">${user.distance.toFixed(1)} km de ti</span><br/>` : ''}
-          <div style="display:flex; gap:6px; margin-top:8px">
-            <button id="join-${user.id}" style="flex:1; padding:6px 8px; background:#22c55e; color:#000; border:none; border-radius:8px; font-size:11px; font-weight:700">🔥 Unirme</button>
-            <button id="profile-${user.id}" style="flex:1; padding:6px 8px; background:#333; color:#fff; border:1px solid #555; border-radius:8px; font-size:11px; font-weight:600">Ver perfil</button>
           </div>
-        </div>
-      `
-      marker.bindPopup(popupContent)
+        `
+        marker.bindPopup(popupContent)
 
-      marker.on('popupopen', () => {
-        setTimeout(() => {
-          const joinBtn = document.getElementById(`join-${user.id}`)
-          if (joinBtn) {
-            joinBtn.onclick = () => {
-              if (mapInstanceRef.current) mapInstanceRef.current.closePopup()
-              try { triggerHaptic('medium') } catch {}
-              if (startSyncRef.current && user.trainingNow) startSyncRef.current(user.id, user.name)
+        marker.on('popupopen', () => {
+          setTimeout(() => {
+            const joinBtn = document.getElementById(`join-${user.id}`)
+            if (joinBtn) {
+              joinBtn.onclick = () => {
+                if (mapInstanceRef.current) mapInstanceRef.current.closePopup()
+                try { triggerHaptic('medium') } catch {}
+                if (startSyncRef.current && user.trainingNow) startSyncRef.current(user.id, user.name)
+              }
             }
-          }
-          const profBtn = document.getElementById(`profile-${user.id}`)
-          if (profBtn) {
-            profBtn.onclick = () => {
-              if (mapInstanceRef.current) mapInstanceRef.current.closePopup()
-              try { triggerHaptic('light') } catch {}
-              if (showFullProfileRef.current) showFullProfileRef.current(user)
+            const profBtn = document.getElementById(`profile-${user.id}`)
+            if (profBtn) {
+              profBtn.onclick = () => {
+                if (mapInstanceRef.current) mapInstanceRef.current.closePopup()
+                try { triggerHaptic('light') } catch {}
+                if (showFullProfileRef.current) showFullProfileRef.current(user)
+              }
             }
-          }
-        }, 100)
-      })
+          }, 100)
+        })
 
-      markersRef.current.push(marker)
+        markersRef.current.push(marker)
+      } catch (markerErr) {
+        console.warn('Failed to add map marker for user', user?.id, markerErr)
+      }
     })
 
     // Self position marker + subtle "my area" radius circle (makes map feel personal and useful)
@@ -5000,7 +5022,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-1.5 text-[10px] font-medium">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0 !px-2 !text-[8px] !bg-[#FF671F]/10 !border-0">PRE-ALPHA</span>
-          <span className="text-white/90">Real backend • v0.1.20-mapa-fix</span>
+          <span className="text-white/90">Real backend • v0.1.21-geo-crash-fix</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -7858,7 +7880,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.20-mapa-fix • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.21-geo-crash-fix • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8085,7 +8107,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.20-mapa-fix • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.21-geo-crash-fix • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>
