@@ -4065,6 +4065,11 @@ function App() {
                       <span>En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m</span>
                       {user.seVaEnMin > 0 && <span className={`text-orange-400 ${user.seVaEnMin < 20 ? 'font-bold text-red-400 animate-pulse' : ''}`}>{user.seVaEnMin < 15 ? '· se va pronto' : '· se va en'} {user.seVaEnMin}m {user.seVaEnMin < 10 ? '¡ya!' : ''}</span>}
                     </div>
+                    {user.seVaEnMin > 0 && (
+                      <div className="h-1 bg-[#22c55e]/20 rounded mt-0.5 mb-1">
+                        <div className="h-1 bg-[#22c55e] rounded" style={{width: `${Math.max(5, Math.min(100, (90 - user.seVaEnMin)/90 * 100))}%`}}></div>
+                      </div>
+                    )}
                     {user.joinCount > 0 && (
                       <div className="text-[8px] text-[#22c55e] mb-1 font-medium flex items-center gap-0.5">+{user.joinCount} se unieron 🔥</div>
                     )}
