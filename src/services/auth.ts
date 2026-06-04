@@ -120,8 +120,16 @@ export const signInWithGoogle = async () => {
     // The page will redirect, so we return null here
     return null as any;
   } else {
-    const userCredential = await signInWithPopup(auth, provider);
-    return userCredential.user;
+    try {
+      const userCredential = await signInWithPopup(auth, provider);
+      return userCredential.user;
+    } catch (err: any) {
+      if (err.code === 'auth/unauthorized-domain') {
+        const domain = window.location.hostname;
+        throw new Error(`OAuth no autorizado en ${domain}. Agrega el dominio en Firebase Auth > Authorized domains.`);
+      }
+      throw err;
+    }
   }
 };
 
@@ -140,7 +148,8 @@ export const handleGoogleRedirectResult = async () => {
     console.error('❌ Google redirect sign-in error:', error);
     // Show user-friendly message
     if (error.code === 'auth/unauthorized-domain') {
-      alert('Dominio no autorizado. Por favor agrega localhost en Firebase Authentication → Settings → Authorized domains.');
+      const domain = window.location.hostname;
+      alert(`Dominio no autorizado para OAuth: ${domain}. Agrega "${domain}" (y musclegrenadechile.github.io si aplica) en Firebase Console > Authentication > Settings > Authorized domains.`);
     } else if (error.code === 'auth/popup-blocked' || error.code === 'auth/redirect-cancelled-by-user') {
       // Normal, user cancelled
     } else {

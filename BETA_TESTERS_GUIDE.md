@@ -11,6 +11,8 @@
 5. Explora, haz match, chatea y crea o únete a una sesión.
 **Importante después de actualizaciones:** Siempre haz hard refresh (Ctrl+Shift+R en web, o fuerza cierre + reopen en APK) para cargar el nuevo código. De lo contrario puedes ver errores antiguos como "Unsupported field value: undefined (photo)" al enviar mensajes en sesiones de grupo.
 
+**Prerrequisito para testers en web (GH Pages):** Si usas Google Sign-In (o cualquier OAuth), el dominio `musclegrenadechile.github.io` debe estar agregado en Firebase Console > Authentication > Settings > Authorized domains. Sin esto, popup/redirect fallarán con "domain not authorized". El owner debe agregarlo una vez (incluye subdominios si aplica). Email/password funciona sin esto.
+
 ## Qué probar (flujo ideal)
 
 - Onboarding completo (fotos con cámara nativa si estás en APK).
