@@ -504,7 +504,7 @@ Cualquier duda, avísanos.
 
 Update and test thoroughly. Report back.
 
-## New closed testing build (v0.1.12-arena / versionCode 16) — launch crash fixed + feed polish edition
+## New closed testing build (v0.1.12-arena / versionCode 17) — launch crash fixed + feed polish edition
 
 - **Critical fix**: "genero error al abrir la app" completely resolved. Root cause was missing googleCloudProjectNumber param + unboxed Long in @capacitor-community/play-integrity plugin during auto-check on Firebase auth restore (persisted sessions). Fixed in playIntegrity.ts (always pass 0), defensive patch in plugin Java for this build, auto integrity check on login disabled (manual 🛡️ button in Profile remains). Validated live on real device R5GL13YMBJW with adb logcat (no more AndroidRuntime FATAL / NullPointer, process stays alive, plugins load cleanly including Push + Integrity).
 - Version bumped to 15 / 0.1.12-arena.
@@ -512,7 +512,7 @@ Update and test thoroughly. Report back.
 - Profile: stats grid cards taller, "Nivel" card uses aspect-square for square look + bolder pill as requested.
 - Arena remains the disruptive star (full ritual, flying, combos, dual stories, bonds/legends, replay, global FOMO in feed).
 - All previous giant updates retained (direct Feed publish modal + success banner + confetti instead of profile jump, Storage photo with real 0-100% progress + preview, attractive guarded Sync join, etc.).
-- AAB ready: EntrenaMatch-v0.1.12-arena-code16.aab (and EntrenaMatch-release.aab) in root. Also fresh debug APK for adb testing.
+- AAB ready: EntrenaMatch-v0.1.12-arena-code17.aab (and EntrenaMatch-release.aab) in root. Also fresh debug APK for adb testing.
 - Test focus for this build:
   1. Install the new AAB (or use debug APK via adb).
   2. Force stop + open app cold → must reach login/home without any crash or force close.

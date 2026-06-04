@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 16 / 0.1.12-arena. **CRITICAL LAUNCH FIX + FEED + PROFILE POLISH + ARENA AS STAR**: 
+**Current version for this upload**: versionCode 17 / 0.1.12-arena. **CRITICAL LAUNCH FIX + FEED + PROFILE POLISH + ARENA AS STAR**: 
 - Fix definitivo: app ahora abre sin error en Android (crash "Default Firebase / Play Integrity NPE" al restaurar sesión arreglado completamente; validado en dispositivo real S26 Ultra vía adb logcat + reinstall).
 - Feed: filtros horizontales (REAL / 🟢 Live / 📌 Fijados) ahora se deslizan perfectamente con snap, touch, fade hint y texto "desliza →".
 - Live strip en feed más atractiva con snap y hints de Arena.
@@ -92,7 +92,7 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 ---
 
 ## What's new (for this Pre-Alpha release, short & punchy)
-**v0.1.12-arena (versionCode 16) — LAUNCH FIX + FEED POLISH**
+**v0.1.12-arena (versionCode 17) — LAUNCH FIX + FEED POLISH**
 • FIX CRÍTICO: la app ahora abre sin generar error en Android (crash en inicio por Play Integrity / Firebase resuelto tras diagnóstico en dispositivo real con adb; ya no NPE al restaurar sesión).
 • Feed mejorado: encabezados y filtros horizontales (Live / Fijados / Reales) ahora se mueven fluidamente con scroll snap, touch optimizado y hint visual "desliza".
 • Tira "En vivo ahora en la comunidad" con snap y referencias a Arena.

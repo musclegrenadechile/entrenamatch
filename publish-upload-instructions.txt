@@ -1,0 +1,18 @@
+=== UPLOAD STATUS AT 06/04/2026 16:52:26 ===
+Automated publish attempts failed due to shell parsing errors in agent env and/or Google 403 'Version code already used' (even after bump to 16).
+
+ACTION FOR USER TO COMPLETE 'SUBE AHORA':
+1. Open Command Prompt (cmd.exe, not PowerShell).
+2. cd /d C:\Users\muscl\fitvina
+3. publish-play.bat closed   (this may still need manual seed first)
+
+RECOMMENDED: Manual upload in Play Console (often required first time per script comments):
+- Go to Play Console > Closed testing > Upload the AAB below.
+- AAB: EntrenaMatch-v0.1.12-arena-code17.aab (in root)
+- Paste the What's new text from PLAY_STORE_ASSETS.md section v0.1.12-arena (versionCode 17)
+- Roll out to testers.
+
+Once manual upload done, future updates can use the script.
+
+AABs ready: EntrenaMatch-v0.1.12-arena-code17.aab and EntrenaMatch-release.aab
+
