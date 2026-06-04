@@ -1132,3 +1132,24 @@ Ahora los encabezados de nivel en perfil se ven cuadrados, alineados y visualmen
   - "Presionas ? feedback inmediato ? te lleva al lugar bonito donde pasa la magia del sync".
 
 Builds clean. Sigue con todo.
+
+## Mejora: Publicar desde el Feed ya no decepciona (no redirige directo al perfil)
+
+- Problema: El botón "+ Publicar" en el encabezado del Feed Global (y en el empty state) hacía `setActiveTab('profile')`. El usuario esperaba contribuir al muro comunitario y de repente era lanzado al perfil personal. Se sentía pobre, abrupto y "no lleva a ningún lado" en el contexto del feed.
+- Solución atractiva:
+  - Nuevo modal dedicado `showFeedPostModal` (glass, centrado, con los colores icónicos del app).
+  - Título claro: "Publicar en el Feed Global" + subtítulo "Tu post aparecerá en el muro de la comunidad en vivo".
+  - Textarea grande con placeholder motivador de comunidad.
+  - Soporte de foto: botón "?? Añadir foto" que usa la cámara nativa de Capacitor cuando está disponible (o prompt URL en web/demo). Preview con botón de quitar.
+  - Botones: "Añadir foto" + "Publicar en el Feed" (gradiente, disabled si vacío).
+  - Al publicar:
+    - Cierra el modal inmediatamente (snappy).
+    - Llama a `createProfilePost` (el mismo que usa el perfil, así todo consistente).
+    - Toast de éxito bonito: "¡Publicado en el Feed!" con descripción de visibilidad comunitaria.
+    - `loadGlobalFeed()` inmediato ? el nuevo post aparece en la lista del feed sin salir de la pestaña.
+    - Pequeño confetti para celebrar (ya usado en otros momentos felices).
+  - También actualizado el botón del empty state del feed para abrir el mismo modal (texto cambiado a "Publicar en el Feed").
+- Resultado: El usuario se queda en el contexto del Feed, publica directamente a la comunidad, ve el resultado al instante. Se siente fluido y premium, no decepcionante.
+- El flujo del perfil sigue igual para quien quiera postear desde allí.
+
+Builds clean. Sigue con todo.

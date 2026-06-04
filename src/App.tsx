@@ -360,6 +360,10 @@ function App() {
   // TOP UPDATE: Feed 2.0 - photo lightbox + quick reactions (optimistic, attractive social feel)
   const [feedPhotoModal, setFeedPhotoModal] = useState<{url: string, postId?: string} | null>(null)
   const [feedReactions, setFeedReactions] = useState<Record<string, Record<string, number>>>({}) // postId -> { '🔥': count, ... } optimistic per session
+  // Attractive direct publish from Feed (no disappointing redirect to profile)
+  const [showFeedPostModal, setShowFeedPostModal] = useState(false)
+  const [feedPostText, setFeedPostText] = useState('')
+  const [feedPostPhoto, setFeedPostPhoto] = useState<string | null>(null)
   // DISRUPTIVE EntrenaSync (v0.2.0 killer): shared real-time synced training - turns live presence into "training together" experience (completely unique vs market async buddies)
   const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
   const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
@@ -4704,7 +4708,7 @@ function App() {
                       placeholder="Buscar posts..."
                       className="form-input text-xs py-1 px-3 flex-1 min-w-[80px] rounded-2xl"
                     />
-                    <button onClick={() => setActiveTab('profile')} className="text-[9px] px-3 py-1 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black font-bold active:brightness-90 shadow-sm flex items-center gap-1 flex-shrink-0">
+                    <button onClick={() => setShowFeedPostModal(true)} className="text-[9px] px-3 py-1 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black font-bold active:brightness-90 shadow-sm flex items-center gap-1 flex-shrink-0">
                       <Plus className="w-3 h-3" /> Publicar
                     </button>
                   </div>
@@ -4798,7 +4802,7 @@ function App() {
                     <div className="font-bold text-2xl mb-2 tracking-tight">El feed está despertando</div>
                     <p className="text-sm text-[#9CA3AF] max-w-[280px] mx-auto mb-5">Sé el primero en publicar un entreno, una foto o un "¡me uno!". Los posts de la comunidad real aparecen aquí en vivo con likes, comentarios y urgencia.</p>
                     <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                      <button onClick={() => setActiveTab('profile')} className="btn-primary px-8 py-2.5 text-sm">Publicar en mi muro</button>
+                      <button onClick={() => setShowFeedPostModal(true)} className="btn-primary px-8 py-2.5 text-sm">Publicar en el Feed</button>
                       {!isDemoMode && <button onClick={() => { setFeedMaxProfiles(15); loadGlobalFeed(); }} className="px-6 py-2.5 border border-[#FF671F]/50 text-[#FF671F] rounded-2xl text-sm active:bg-[#FF671F]/10">Cargar más comunidad</button>}
                     </div>
                     <div className="text-[10px] text-[#9CA3AF]/60 mt-4">Tip: Fija tus posts para que destaquen en el feed global</div>
@@ -4947,6 +4951,107 @@ function App() {
                 </>
               );
             })()}
+          </div>
+        )}
+
+        {/* ATTRACTIVE DIRECT POST MODAL FROM FEED - no more disappointing jump to profile. User stays in feed context, posts, sees it appear immediately. */}
+        {activeTab === 'feed' && showFeedPostModal && (
+          <div className="absolute inset-0 z-[95] bg-black/80 flex items-end md:items-center justify-center p-0 md:p-6" onClick={() => setShowFeedPostModal(false)}>
+            <div 
+              className="w-full md:w-[480px] card-glass rounded-t-3xl md:rounded-3xl p-5 md:p-6 text-white"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="text-2xl">🔥</div>
+                  <div>
+                    <div className="font-bold text-lg">Publicar en el Feed Global</div>
+                    <div className="text-xs text-[#9CA3AF]">Tu post aparecerá en el muro de la comunidad en vivo</div>
+                  </div>
+                </div>
+                <button onClick={() => { setShowFeedPostModal(false); setFeedPostText(''); setFeedPostPhoto(null); }} className="text-[#9CA3AF] text-xl">✕</button>
+              </div>
+
+              <textarea
+                value={feedPostText}
+                onChange={e => setFeedPostText(e.target.value)}
+                placeholder="¿Qué entrenaste hoy? Comparte un logro, una foto del gym, un '¡me uno!' o motivación para la comunidad..."
+                className="form-input w-full h-28 text-base resize-y mb-3"
+                maxLength={280}
+                autoFocus
+              />
+
+              {feedPostPhoto && (
+                <div className="relative mb-3 rounded-2xl overflow-hidden border border-[#2F2F35]">
+                  <img src={feedPostPhoto} className="w-full max-h-48 object-cover" />
+                  <button 
+                    onClick={() => setFeedPostPhoto(null)} 
+                    className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-0.5 rounded"
+                  >
+                    Quitar foto
+                  </button>
+                </div>
+              )}
+
+              <div className="flex gap-2">
+                <button 
+                  onClick={async () => {
+                    // Attractive photo add, supporting native camera when available
+                    try {
+                      if (Capacitor.isNativePlatform() && CapacitorCamera) {
+                        const photo = await CapacitorCamera.getPhoto({
+                          quality: 80,
+                          allowEditing: true,
+                          resultType: 'uri',
+                          source: 'CAMERA'
+                        });
+                        if (photo?.path || photo?.webPath) {
+                          setFeedPostPhoto(photo.webPath || photo.path);
+                        }
+                      } else {
+                        const url = prompt('Pega URL de imagen (para web/demo):');
+                        if (url) setFeedPostPhoto(url);
+                      }
+                    } catch (e) {
+                      const url = prompt('Pega URL de imagen:');
+                      if (url) setFeedPostPhoto(url);
+                    }
+                  }}
+                  className="flex-1 py-2.5 text-sm border border-[#2F2F35] rounded-2xl active:bg-[#25252A] flex items-center justify-center gap-1"
+                >
+                  📷 {feedPostPhoto ? 'Cambiar foto' : 'Añadir foto'}
+                </button>
+
+                <button 
+                  onClick={async () => {
+                    if (!feedPostText.trim()) return;
+                    const text = feedPostText.trim();
+                    const photo = feedPostPhoto;
+                    // Close first for snappy feel
+                    setShowFeedPostModal(false);
+                    setFeedPostText('');
+                    setFeedPostPhoto(null);
+                    try {
+                      await createProfilePost(text, photo);
+                      toast.success('¡Publicado en el Feed!', { 
+                        description: 'Tu post ya está visible para toda la comunidad. ¡Gracias por aportar!' 
+                      });
+                      // Immediately refresh the feed list so the new post appears at the top (user sees the result without leaving the feed)
+                      loadGlobalFeed();
+                      try { confetti({ particleCount: 100, spread: 65, origin: { y: 0.7 } }); } catch {}
+                    } catch (e) {
+                      toast.error('Error al publicar');
+                    }
+                  }}
+                  disabled={!feedPostText.trim()}
+                  className="flex-1 btn-primary text-sm py-2.5 disabled:opacity-60"
+                >
+                  Publicar en el Feed
+                </button>
+              </div>
+
+              <div className="text-[10px] text-center text-[#9CA3AF] mt-3">Los posts son visibles para todos • reacciones y comentarios en vivo</div>
+            </div>
           </div>
         )}
 
