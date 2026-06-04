@@ -19,6 +19,8 @@
 - Arena: replay con thumbnails de fotos capturadas, orb dinámico (color/glow por vibe), tether vibrante.
 - Perfil: galería hover lift, live toggle glow, legends con re-sync rápido.
 - Feed/Muro: cards hover lift + active, reactions active state mejorado.
+  - Reacciones persistentes reales en FS (por usuario por emoji, toggle).
+  - FOMO en posts live: "🔥 X se unieron • FOMO real" badge + CTA a unirse via live strip/mapa. Joins persistidos como comments.
 - Más haptics, transitions, glows, empty states premium, consistencia. Revisión exhaustiva para app preciosa y disruptiva. Builds listos.
 - Mapa: marcadores foto/iniciales con pulso vivo, radar sweep animado, filtro cerca, radio personal, leyenda, Centrar, persistencia, hápticos, integración con header LIVE, empty states premium.
 - Arena: tether más grueso y glow vibrante, orb con shift de color y glow extra en alto vibe, combo pulsa.

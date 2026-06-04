@@ -71,6 +71,8 @@ Uso:
 - **Arena & Bonds**: replay ahora muestra thumbnails de fotos capturadas en Arena, orb dinámico con color shift y glow en alto vibe, tether más vibrante, legends con re-sync rápido por bond.
   - **Toque disruptivo extra**: cuando vibe cruza 80 se auto-registra acción "⚡ Alta energía compartida" en el timeline (visible en replay). En APK nativa, ofrece captura de foto rápida para el pico.
 - **Perfil/Galería/Feed/Muro**: galería con hover lift+scale, live toggle con glow ring, feed/muro cards con hover lift + active scale, quick reactions con mejor active state (scale + bg).
+  - Reacciones ahora persistentes reales en Firestore (map emoji -> userIds[], toggle, sync cross-device y reloads).
+  - FOMO en posts live ("entrenando ahora"): sección "🔥 X se unieron • FOMO real" con llamado a unirse. Los joins se persisten como comments en el post del live.
 - **Global polish**: más active:scale/transitions/haptics/glows en botones y live elements, empty states mejorados con iconos motivadores, consistencia visual en toda la app. Revisión exhaustiva continua para que se sienta preciosa y única.
   - Marcadores con pulso sutil (vivos).
   - Radar sweep animado premium en el contenedor.

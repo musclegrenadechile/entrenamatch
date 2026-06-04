@@ -2523,6 +2523,7 @@ function App() {
           timestamp: d.timestamp || Date.now(),
           likes: d.likes || [],
           pinned: !!d.pinned,
+          reactions: d.reactions || {},
           comments: rawComments.map((c: any) => ({
             id: c.id || ('c' + Date.now() + Math.random().toString(36).slice(2)),
             userId: c.userId || '',
@@ -2591,7 +2592,8 @@ function App() {
       timestamp: Date.now(),
       pinned: false,
       likes: [],
-      comments: []
+      comments: [],
+      reactions: {}
     }
     if (!isDemoMode && firebaseUser?.uid && db) {
       try {
@@ -2602,6 +2604,7 @@ function App() {
           timestamp: post.timestamp,
           likes: post.likes || [],
           comments: post.comments || [],
+          reactions: post.reactions || {},
           pinned: false
         }
         if (post.photo) {
@@ -2689,17 +2692,49 @@ function App() {
   }
 
   // TOP UPDATE v0.1.7: Quick reactions on feed posts (optimistic, super attractive social boost)
-  const boostReaction = (postId: string, emoji: string) => {
-    setFeedReactions(prev => {
+  const boostReaction = async (postId: string, emoji: string, postOwnerId: string) => {
+    if (!postOwnerId) postOwnerId = effectiveUserId // fallback
+
+    const posts = profilePosts[postOwnerId] || []
+    const idx = posts.findIndex((p) => p.id === postId)
+    if (idx < 0) return
+
+    const post = posts[idx]
+    const currentReactors = (post.reactions && post.reactions[emoji]) || []
+    const hasReacted = currentReactors.includes(effectiveUserId)
+    const newReactors = hasReacted
+      ? currentReactors.filter((id) => id !== effectiveUserId)
+      : [...currentReactors, effectiveUserId]
+    const newReactions = { ...(post.reactions || {}), [emoji]: newReactors }
+
+    const updatedPost = { ...post, reactions: newReactions }
+    const newPosts = [...posts]
+    newPosts[idx] = updatedPost
+
+    // optimistic update for muro/feed
+    setProfilePosts((prev) => ({ ...prev, [postOwnerId]: newPosts }))
+
+    // sync the local feedReactions count for immediate UI (used in feed rendering)
+    setFeedReactions((prev) => {
       const forPost = prev[postId] || {}
       return {
         ...prev,
-        [postId]: { ...forPost, [emoji]: (forPost[emoji] || 0) + 1 }
+        [postId]: { ...forPost, [emoji]: newReactors.length }
       }
     })
+
     // Fun micro feedback
     toast.success(emoji, { duration: 600, className: 'text-lg' })
-    // Future: persist to Firestore profilePosts reactions map for cross-device
+    triggerHaptic('light')
+
+    if (!isDemoMode && db) {
+      try {
+        const { doc, updateDoc } = await import('firebase/firestore')
+        await updateDoc(doc(db, 'profilePosts', postId), { reactions: newReactions })
+      } catch (e) {
+        console.warn('reaction persist failed, will sync on next load', e)
+      }
+    }
   }
 
   // === DISRUPTIVE EntrenaSync implementation (core of the top unique feature) ===
@@ -5671,12 +5706,13 @@ function App() {
                         {/* ICONIC Quick reactions - satisfying, visual pop, part of the signature muro experience */}
                         <div className="flex gap-1.5 mt-2 -ml-0.5">
                           {['🔥','💪','❤️','👏'].map(emo => {
-                            const count = (feedReactions[post.id]?.[emo] || 0)
-                            const active = count > 0
+                            const postReactors = post.reactions?.[emo] || []
+                            const count = postReactors.length || (feedReactions[post.id]?.[emo] || 0)
+                            const active = postReactors.includes(effectiveUserId) || ((feedReactions[post.id]?.[emo] || 0) > 0)
                             return (
                               <button 
                                 key={emo}
-                                onClick={() => { boostReaction(post.id, emo); triggerHaptic('light'); }}
+                                onClick={() => { boostReaction(post.id, emo, post.ownerId || post.userId); triggerHaptic('light'); }}
                                 className={`muro-reaction px-2.5 py-1 rounded-full border flex items-center gap-1 transition-all active:scale-90 ${active ? 'bg-[#FF671F]/10 border-[#FF671F] scale-105' : 'bg-[#1C1C20] border-[#2F2F35] hover:border-[#FF671F]/40'}`}
                               >
                                 <span className="text-base">{emo}</span>
@@ -5685,6 +5721,13 @@ function App() {
                             )
                           })}
                         </div>
+
+                        {(post.text || '').toLowerCase().includes('entrenando ahora') && post.comments.length > 0 && (
+                          <div className="mt-1.5 text-[9px] bg-[#22c55e]/5 text-[#22c55e] px-2 py-0.5 rounded flex items-center gap-1 font-medium">
+                            🔥 {post.comments.length} se unieron • FOMO real
+                            <span className="text-[8px] opacity-70">¡Únete en el strip live o mapa!</span>
+                          </div>
+                        )}
 
                         {post.comments.length > 0 && (
                           <div onClick={() => openFullComments(post.id, post.ownerId, owner.name)} className="mt-2.5 pt-2 border-t border-[#2F2F35]/70 text-[11px] text-[#9CA3AF] cursor-pointer bg-[#0a0a0c]/30 -mx-1 px-2 py-1 rounded-xl space-y-1">
