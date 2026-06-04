@@ -4663,50 +4663,50 @@ function App() {
                     {activeSyncCount > 0 && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e]/10 text-[#22c55e] font-bold">🔄 {activeSyncCount} EN SYNC</span>}
                   </div>
                 </div>
-                <div className="flex gap-1.5 items-center">
-                  <input 
-                    type="text" 
-                    value={feedSearch} 
-                    onChange={e => setFeedSearch(e.target.value)}
-                    placeholder="Buscar..."
-                    className="form-input text-xs py-1 px-3 w-28 rounded-2xl"
-                  />
-                  <button 
-                    onClick={() => setFeedOnlyReal(!feedOnlyReal)}
-                    className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 ${feedOnlyReal ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#FF671F]/40 text-[#FF671F] hover:bg-[#FF671F]/10'}`}
-                  >
-                    {feedOnlyReal ? '★ Reales' : 'REAL'}
-                  </button>
-                  <button 
-                    onClick={() => setFeedOnlyLive(!feedOnlyLive)}
-                    className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 ${feedOnlyLive ? 'bg-[#22c55e] text-black border-[#22c55e] shadow-sm' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
-                  >
-                    {feedOnlyLive ? '🟢 Live' : '🟢 Live'}
-                  </button>
-                  <button 
-                    onClick={() => setFeedShowPinnedOnly(!feedShowPinnedOnly)}
-                    className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 ${feedShowPinnedOnly ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#FF671F]/40 text-[#FF671F] hover:bg-[#FF671F]/10'}`}
-                  >
-                    {feedShowPinnedOnly ? '📌 Fijados' : '📌 Fijados'}
-                  </button>
-                  <button 
-                    onClick={() => { setFeedMaxProfiles(15); setFeedDisplayLimit(10); loadGlobalFeed(); if (!isDemoMode) loadRealProfiles(); }} 
-                    disabled={isLoadingFeed}
-                    className="text-[9px] px-2.5 py-1 rounded-2xl border border-[#FF671F]/40 text-[#FF671F] active:bg-[#FF671F]/10 active:scale-95"
-                  >
-                    {isLoadingFeed ? '...' : '↻'}
-                  </button>
-                  <button onClick={() => setActiveTab('profile')} className="text-[9px] px-3 py-1 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black font-bold active:brightness-90 shadow-sm flex items-center gap-1">
-                    <Plus className="w-3 h-3" /> Publicar
-                  </button>
+                <div className="mt-2">
+                  <div className="flex gap-2 items-center mb-1.5">
+                    <input 
+                      type="text" 
+                      value={feedSearch} 
+                      onChange={e => setFeedSearch(e.target.value)}
+                      placeholder="Buscar posts..."
+                      className="form-input text-xs py-1 px-3 flex-1 min-w-[80px] rounded-2xl"
+                    />
+                    <button onClick={() => setActiveTab('profile')} className="text-[9px] px-3 py-1 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black font-bold active:brightness-90 shadow-sm flex items-center gap-1 flex-shrink-0">
+                      <Plus className="w-3 h-3" /> Publicar
+                    </button>
+                  </div>
+
+                  {/* FILTERS - ahora scroll horizontal para que "live" y "fijados" se puedan mover bien visualmente en pantallas chicas */}
+                  <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory">
+                    <button 
+                      onClick={() => setFeedOnlyReal(!feedOnlyReal)}
+                      className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 flex-shrink-0 snap-start ${feedOnlyReal ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#FF671F]/40 text-[#FF671F] hover:bg-[#FF671F]/10'}`}
+                    >
+                      {feedOnlyReal ? '★ Reales' : 'REAL'}
+                    </button>
+                    <button 
+                      onClick={() => setFeedOnlyLive(!feedOnlyLive)}
+                      className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 flex-shrink-0 snap-start ${feedOnlyLive ? 'bg-[#22c55e] text-black border-[#22c55e] shadow-sm' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
+                    >
+                      {feedOnlyLive ? '🟢 Live' : '🟢 Live'}
+                    </button>
+                    <button 
+                      onClick={() => setFeedShowPinnedOnly(!feedShowPinnedOnly)}
+                      className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 flex-shrink-0 snap-start ${feedShowPinnedOnly ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#FF671F]/40 text-[#FF671F] hover:bg-[#FF671F]/10'}`}
+                    >
+                      {feedShowPinnedOnly ? '📌 Fijados' : '📌 Fijados'}
+                    </button>
+                    <button 
+                      onClick={() => { setFeedMaxProfiles(15); setFeedDisplayLimit(10); loadGlobalFeed(); if (!isDemoMode) loadRealProfiles(); }} 
+                      disabled={isLoadingFeed}
+                      className="text-[9px] px-2.5 py-1 rounded-2xl border border-[#FF671F]/40 text-[#FF671F] active:bg-[#FF671F]/10 active:scale-95 flex-shrink-0 snap-start"
+                    >
+                      {isLoadingFeed ? '...' : '↻ Actualizar'}
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div className="text-[10px] text-[#9CA3AF]/70 px-1">Posts de la comunidad • reacciones rápidas • momentos que inspiran</div>
-              {liveTrainingNow.length > 0 && (
-                <div className="text-[9px] text-[#22c55e] px-1 flex items-center gap-1 -mt-1">
-                  🔥 {liveTrainingNow.length} personas entrenando ahora en la comunidad — <button onClick={() => setActiveTab('explore')} className="underline font-medium">Únete en Explore</button>
-                </div>
-              )}
             </div>
 
             {liveTrainingNow.length > 0 && (

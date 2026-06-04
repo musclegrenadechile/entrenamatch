@@ -1077,3 +1077,16 @@ Próximo: si persiste, considerar onSnapshot para profiles o query más inteligent
 - Builds clean. El muro ahora se ve premium, temático Dunkin-fitness, con jerarquía clara y "wow" en interacciones.
 
 Sigue con todo – muro ya no es pobre, es parte de lo único de la app.
+
+## Fix visual header Feed Global (muro)
+
+- El problema: los botones de filtros "Live" y "Fijados" (y REAL + refresh) estaban en un flex row sin scroll horizontal dentro del encabezado sticky. En móvil o pantallas angostas se aplastaban, no se podían mover horizontalmente, se veía pobre y roto visualmente.
+- Solución: 
+  - Reestructuré el encabezado: título icónico arriba, luego fila con search + CTA Publicar.
+  - Los toggles de filtros (REAL / Live / Fijados / Actualizar) ahora en un contenedor dedicado con `overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory`, cada botón con `flex-shrink-0 snap-start`.
+  - Ahora se puede deslizar horizontalmente los filtros "live fijados" de forma natural y linda, como chips scrolleables (patrón moderno y mobile-friendly).
+  - Limpié texto redundante del encabezado viejo para que no haya clutter.
+- Mantiene el look premium del "EL MURO" que agregamos antes.
+- Builds clean (tsc + web). 
+
+El encabezado del feed ahora se ve bien y usable en horizontal.
