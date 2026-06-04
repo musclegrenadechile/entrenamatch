@@ -9,7 +9,7 @@
 - Browser notif: handlers seguros.
 - Manifest mejorado.
 - **Nuevo**: toggles de preferencias (mensajes/live/muro) en Perfil.
-- **Mejorado**: muro teasers en Explore/Matches (1-2 posts latest/pinned, más vivo).
+- **Mejorado**: muro teasers en Explore/Matches (1-2 posts latest/pinned, más vivo); live visuals premium (glass cards, motion, urgent pulses, gradients, grid bg en banner + barra progreso "se va en", chat bubbles atractivos).
 - Incluye killer live, muro espectacular, integrity, onboarding preview, etc.
 Listo para re-subir a closed track como mejora continua.
 
@@ -89,7 +89,7 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • Feedback estructurado + historial
 • Múltiples escapes de cuenta + PWA install mejorado
 • Legal + CSAE + deletion URL listos y públicos
-• Versión nativa Android (AAB) lista para Closed testing (versionCode 8 / 0.1.5-prealpha) — fix crash notificaciones + activación explícita segura.
+• Versión nativa Android (AAB) lista para Closed testing (versionCode 8 / 0.1.5-prealpha) — fix crash notificaciones + activación explícita segura + prefs toggles + muro teasers 1-2 posts en Explore/Matches.
 
 ---
 
