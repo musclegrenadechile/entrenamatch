@@ -65,6 +65,18 @@ Uso:
   - También corrige TDZ en el array de dependencias.
   - Verificado: tsc limpio + `npm run build` exitoso. El bundle nuevo (dist + futuros APKs/AABs) no debe dar #310 ni en login web ni en WebView de Android.
   - Recordatorio para Google login: aunque el #310 esté fix, el OAuth con Google en la web (musclegrenadechile.github.io) requiere que agregues manualmente el dominio en Firebase Console → Authentication → Settings → Authorized domains. Agrega `musclegrenadechile.github.io` + `localhost`. El iframe warning "domain is not authorized" es de Firebase, no bug de código. Una vez autorizado + hard refresh, Google sign-in debe fluir. (No puedo hacerlo yo, no tengo credenciales de la cuenta Firebase del proyecto).
+- **Mapa en vivo "sigue con el mapa" (mejoras grandes)**:
+  - Marcador azul "Tú" aparece cuando GPS está activo (con popup propio).
+  - Al abrir el mapa por primera vez pide GPS automáticamente (si no lo tienes).
+  - Limpieza real del mapa (destroy de instancia + markers) al ocultar + useEffect dedicado de unmount → cero fugas de memoria, toggle instantáneo y estable incluso en WebView Android.
+  - Botón overlay "Centrar" (reajusta a todos los puntos o a ti).
+  - Popups más atractivos (mejor copy + botón join más grande y con 🔥).
+  - Círculos crecen más con joins (FOMO visual).
+  - startSyncRef para que los botones del popup siempre usen la versión actual de la función de sync.
+  - Estilos CSS oscuros para controles y popups de Leaflet (combina perfecto con el tema Dunkin).
+  - Badge "realtime", altura 340px, textos actualizados.
+  - Prueba en Explore: activa "Ver mapa por zonas", deja que pida GPS, observa puntos apareciendo/desapareciendo cuando cambian "Entrenando Ahora" otros testers, toca un punto → popup con distancia → únete. Cierra/ abre el mapa varias veces. Debe sentirse vivo y premium.
+
 - **El crash de login en la APK de Play** suele aparecer en los logs como algo de Firebase ("Default FirebaseApp is not initialized", error en google-services) o init de plugins (push/integrity). El informe del celular te dará el stack trace exacto.
 - Usa siempre la **versión debug local** (EntrenaMatch-debug.apk) para testing cuando puedas (tiene `webContentsDebuggingEnabled: true` y los fixes más recientes). La de Play closed puede ser un build viejo.
 - Si el crash es intermitente, reproduce varias veces seguidas antes de generar el bug report.

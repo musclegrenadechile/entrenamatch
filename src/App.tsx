@@ -686,6 +686,19 @@ function App() {
   const liveMapRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<any>(null)
   const markersRef = useRef<any[]>([])
+  const startSyncRef = useRef<((partnerId: string, partnerName: string) => any) | null>(null)
+
+  // Dedicated unmount cleanup for the Leaflet map to avoid memory leaks / zombie maps
+  // when the app unmounts, hot-reloads, or user leaves the tab. Runs only on mount/unmount.
+  useEffect(() => {
+    return () => {
+      if (mapInstanceRef.current) {
+        try { mapInstanceRef.current.remove() } catch {}
+        mapInstanceRef.current = null
+      }
+      markersRef.current = []
+    }
+  }, [])
 
   const unreadNotifications = notifications.filter(n => !n.read).length
   const totalChatUnreads = Object.values(chatUnreads).reduce((sum, n) => sum + (n || 0), 0)
@@ -2734,6 +2747,13 @@ function App() {
     setJoiningSyncWith(null)
   }
 
+  // Keep startSyncRef always pointing to the freshest startSyncWith implementation.
+  // This lets the Leaflet popup buttons (plain DOM onclicks created in the map effect)
+  // call the current version that has up-to-date closures (currentUser, realProfiles, joining guard etc).
+  useEffect(() => {
+    startSyncRef.current = startSyncWith
+  }, [startSyncWith])
+
   const endSync = async () => {
     if (!syncPartnerId) return
     const partnerName = realProfiles.find(p => p.id === syncPartnerId)?.name || 'compañero'
@@ -4228,7 +4248,24 @@ function App() {
   // Previously the useEffect lived after the two guards → count mismatch exactly "al hacer login".
   // Also satisfies TDZ: liveTrainingNow is declared (useMemo) before this useEffect statement references it in the deps array.
   useEffect(() => {
-    if (!showLiveMap || !liveMapRef.current) return
+    // If map is not supposed to be visible (or container not ready), aggressively clean up
+    // any previous map instance + markers. This fixes leaks and the old conditional cleanup bug.
+    if (!showLiveMap || !liveMapRef.current) {
+      if (mapInstanceRef.current) {
+        markersRef.current.forEach(m => {
+          try { mapInstanceRef.current.removeLayer(m) } catch {}
+        })
+        markersRef.current = []
+        try { mapInstanceRef.current.remove() } catch {}
+        mapInstanceRef.current = null
+      }
+      return
+    }
+
+    // Auto-request real GPS the first time the map is opened (great UX for distances + self marker)
+    if (!userLocation) {
+      requestUserLocation().catch(() => {})
+    }
 
     if (!mapInstanceRef.current) {
       mapInstanceRef.current = L.map(liveMapRef.current, {
@@ -4241,7 +4278,10 @@ function App() {
       }).addTo(mapInstanceRef.current)
     }
 
-    markersRef.current.forEach(m => mapInstanceRef.current.removeLayer(m))
+    // Always nuke old markers before re-adding (live list or location just changed)
+    markersRef.current.forEach(m => {
+      try { mapInstanceRef.current.removeLayer(m) } catch {}
+    })
     markersRef.current = []
 
     const liveUsers = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow)
@@ -4257,19 +4297,19 @@ function App() {
     liveUsers.forEach(user => {
       const color = zoneColors[user.city] || zoneColors.default
       const marker = L.circleMarker([user.lat, user.lng], {
-        radius: 8 + Math.min((user.joinCount || 0) * 0.5, 6),
+        radius: 9 + Math.min((user.joinCount || 0) * 0.7, 8), // grow more with FOMO joins
         fillColor: color,
         color: '#fff',
         weight: 2,
-        fillOpacity: 0.85
+        fillOpacity: 0.9
       }).addTo(mapInstanceRef.current)
 
       const popupContent = `
-        <div style="min-width:160px">
-          <strong>${user.name}</strong><br/>
-          <span style="color:#22c55e">🟢 En vivo</span> • ${user.seVaEnMin || '?'} min aprox<br/>
-          ${userLocation ? `${user.distance.toFixed(1)} km de ti` : ''}<br/>
-          <button id="join-${user.id}" style="margin-top:6px;padding:4px 10px;background:#22c55e;color:black;border:none;border-radius:6px;font-size:12px">Unirme a su vibe →</button>
+        <div style="min-width:170px; font-size:13px">
+          <strong style="font-size:14px">${user.name}</strong><br/>
+          <span style="color:#22c55e">🟢 Entrenando ahora</span> • se va en ~${user.seVaEnMin || '?'} min<br/>
+          ${userLocation ? `<span style="color:#FF671F">${user.distance.toFixed(1)} km de ti</span><br/>` : ''}
+          <button id="join-${user.id}" style="margin-top:8px;padding:5px 12px;background:#22c55e;color:#000;border:none;border-radius:8px;font-size:12px;font-weight:600;width:100%">🔥 Unirme a su vibe</button>
         </div>
       `
       marker.bindPopup(popupContent)
@@ -4279,28 +4319,45 @@ function App() {
           const btn = document.getElementById(`join-${user.id}`)
           if (btn) {
             btn.onclick = () => {
-              mapInstanceRef.current.closePopup()
-              if (user.trainingNow) {
-                startSyncWith(user.id, user.name).catch(() => {})
+              if (mapInstanceRef.current) mapInstanceRef.current.closePopup()
+              if (startSyncRef.current && user.trainingNow) {
+                startSyncRef.current(user.id, user.name)
               }
             }
           }
-        }, 50)
+        }, 40)
       })
 
       markersRef.current.push(marker)
     })
 
-    if (liveUsers.length > 0) {
-      const group = L.featureGroup(markersRef.current)
-      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.2))
+    // Self position marker (distinct, always useful context)
+    if (userLocation) {
+      const selfMarker = L.circleMarker([userLocation.lat, userLocation.lng], {
+        radius: 6,
+        fillColor: '#3b82f6',
+        color: '#fff',
+        weight: 2.5,
+        fillOpacity: 0.95
+      }).addTo(mapInstanceRef.current)
+      selfMarker.bindPopup('<strong>Tú</strong><br/>Tu ubicación GPS actual')
+      markersRef.current.push(selfMarker)
     }
 
+    if (markersRef.current.length > 0) {
+      const group = L.featureGroup(markersRef.current)
+      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.25))
+    }
+
+    // Cleanup for this effect run (e.g. when liveTrainingNow or location updates while map is open).
+    // We clear markers but keep the map instance alive (cheap updates).
     return () => {
-      if (!showLiveMap && mapInstanceRef.current) {
-        markersRef.current.forEach(m => mapInstanceRef.current.removeLayer(m))
-        markersRef.current = []
+      if (mapInstanceRef.current) {
+        markersRef.current.forEach(m => {
+          try { mapInstanceRef.current.removeLayer(m) } catch {}
+        })
       }
+      markersRef.current = []
     }
   }, [showLiveMap, liveTrainingNow, userLocation])
 
@@ -4931,23 +4988,53 @@ function App() {
               {showLiveMap && (
                 <div className="relative">
                   <div 
+                    id="live-map-container"
                     ref={liveMapRef} 
-                    className="w-full h-[320px] rounded-2xl overflow-hidden border border-[#22c55e]/20 bg-[#0a0a0c]"
+                    className="w-full h-[340px] rounded-2xl overflow-hidden border border-[#22c55e]/30 bg-[#0a0a0c] shadow-inner"
                     style={{ zIndex: 1 }}
                   />
-                  <div className="absolute bottom-2 right-2 text-[8px] bg-black/70 text-[#22c55e] px-2 py-0.5 rounded-full">
-                    {liveTrainingNow.length} entrenando • actualiza en vivo
+                  {/* Live badge */}
+                  <div className="absolute bottom-2 right-2 text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+                    🟢 {liveTrainingNow.length} en vivo • realtime
                   </div>
+                  {/* Centrar / recenter control */}
+                  <button
+                    onClick={() => {
+                      const map = mapInstanceRef.current
+                      if (!map) return
+                      if (markersRef.current.length > 0) {
+                        const group = L.featureGroup(markersRef.current)
+                        map.fitBounds(group.getBounds().pad(0.2))
+                      } else if (userLocation) {
+                        map.setView([userLocation.lat, userLocation.lng], 13)
+                      }
+                    }}
+                    className="absolute top-2 right-2 text-[9px] px-2.5 py-0.5 rounded-full bg-black/70 hover:bg-black text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black transition"
+                  >
+                    Centrar
+                  </button>
+                  {/* GPS prompt overlay (only when map visible but no location yet) */}
                   {!userLocation && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/60 text-center p-4 rounded-2xl text-xs">
-                      Activa tu ubicación real para ver distancias precisas en el mapa
-                      <button onClick={requestUserLocation} className="ml-2 underline text-[#22c55e]">Activar GPS</button>
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/65 text-center p-5 rounded-2xl text-xs">
+                      <div>
+                        <div className="mb-1">📍 Ubicación real desactivada</div>
+                        <button 
+                          onClick={requestUserLocation} 
+                          className="px-3 py-1 rounded-full bg-[#22c55e] text-black text-[10px] font-semibold active:brightness-90"
+                        >
+                          Activar GPS para ver distancias + tú en el mapa
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
               )}
-              {showLiveMap && liveTrainingNow.length > 0 && (
-                <div className="mt-1 text-[8px] text-[#9CA3AF] px-1">Zonas aproximadas por ciudad. Los puntos crecen con más joins. Toca para unirte.</div>
+              {showLiveMap && (
+                <div className="mt-1 text-[8px] text-[#9CA3AF] px-1 flex items-center gap-2">
+                  Zonas por ciudad (tamaño = joins). Los marcadores se actualizan en vivo desde Firestore.
+                  <span className="text-[#22c55e]/60">•</span> 
+                  <span className="text-[#3b82f6]">●</span> = tú
+                </div>
               )}
             </div>
           </div>
