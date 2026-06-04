@@ -5006,33 +5006,38 @@ function App() {
                     </div>
                   )}
 
-                  {/* FILTERS - ahora scroll horizontal para que "live" y "fijados" se puedan mover bien visualmente en pantallas chicas */}
-                  <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory">
-                    <button 
-                      onClick={() => setFeedOnlyReal(!feedOnlyReal)}
-                      className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 flex-shrink-0 snap-start ${feedOnlyReal ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#FF671F]/40 text-[#FF671F] hover:bg-[#FF671F]/10'}`}
-                    >
-                      {feedOnlyReal ? '★ Reales' : 'REAL'}
-                    </button>
-                    <button 
-                      onClick={() => setFeedOnlyLive(!feedOnlyLive)}
-                      className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 flex-shrink-0 snap-start ${feedOnlyLive ? 'bg-[#22c55e] text-black border-[#22c55e] shadow-sm' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
-                    >
-                      {feedOnlyLive ? '🟢 Live' : '🟢 Live'}
-                    </button>
-                    <button 
-                      onClick={() => setFeedShowPinnedOnly(!feedShowPinnedOnly)}
-                      className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 flex-shrink-0 snap-start ${feedShowPinnedOnly ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#FF671F]/40 text-[#FF671F] hover:bg-[#FF671F]/10'}`}
-                    >
-                      {feedShowPinnedOnly ? '📌 Fijados' : '📌 Fijados'}
-                    </button>
-                    <button 
-                      onClick={() => { setFeedMaxProfiles(15); setFeedDisplayLimit(10); loadGlobalFeed(); if (!isDemoMode) loadRealProfiles(); }} 
-                      disabled={isLoadingFeed}
-                      className="text-[9px] px-2.5 py-1 rounded-2xl border border-[#FF671F]/40 text-[#FF671F] active:bg-[#FF671F]/10 active:scale-95 flex-shrink-0 snap-start"
-                    >
-                      {isLoadingFeed ? 'Cargando...' : '↻ Actualizar'}
-                    </button>
+                  {/* FILTERS - horizontal scroll premium: "live fijados" now slide beautifully. Fade hints + snap for muscle memory on small screens. */}
+                  <div className="relative -mx-1 px-1">
+                    <div className="flex gap-1.5 overflow-x-auto pb-1 snap-x snap-mandatory touch-pan-x scrollbar-hide">
+                      <button 
+                        onClick={() => setFeedOnlyReal(!feedOnlyReal)}
+                        className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 flex-shrink-0 snap-start ${feedOnlyReal ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#FF671F]/40 text-[#FF671F] hover:bg-[#FF671F]/10'}`}
+                      >
+                        {feedOnlyReal ? '★ Reales' : 'REAL'}
+                      </button>
+                      <button 
+                        onClick={() => setFeedOnlyLive(!feedOnlyLive)}
+                        className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 flex-shrink-0 snap-start ${feedOnlyLive ? 'bg-[#22c55e] text-black border-[#22c55e] shadow-sm' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
+                      >
+                        {feedOnlyLive ? '🟢 Live' : '🟢 Live'}
+                      </button>
+                      <button 
+                        onClick={() => setFeedShowPinnedOnly(!feedShowPinnedOnly)}
+                        className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 flex-shrink-0 snap-start ${feedShowPinnedOnly ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#FF671F]/40 text-[#FF671F] hover:bg-[#FF671F]/10'}`}
+                      >
+                        {feedShowPinnedOnly ? '📌 Fijados' : '📌 Fijados'}
+                      </button>
+                      <button 
+                        onClick={() => { setFeedMaxProfiles(15); setFeedDisplayLimit(10); loadGlobalFeed(); if (!isDemoMode) loadRealProfiles(); }} 
+                        disabled={isLoadingFeed}
+                        className="text-[9px] px-2.5 py-1 rounded-2xl border border-[#FF671F]/40 text-[#FF671F] active:bg-[#FF671F]/10 active:scale-95 flex-shrink-0 snap-start"
+                      >
+                        {isLoadingFeed ? 'Cargando...' : '↻ Actualizar'}
+                      </button>
+                    </div>
+                    {/* subtle scroll hint for first-time users */}
+                    <div className="absolute right-0 top-0 bottom-1 w-6 bg-gradient-to-l from-[#0D0D10] to-transparent pointer-events-none rounded-r" />
+                    <div className="text-[7px] text-[#9CA3AF]/60 mt-0.5 px-1">desliza → filtros y live</div>
                   </div>
                 </div>
               </div>
@@ -5047,23 +5052,24 @@ function App() {
             {liveTrainingNow.length > 0 && (
               <div className="mb-4 -mx-1">
                 <div className="text-[8px] uppercase tracking-[1px] text-[#22c55e]/80 mb-1.5 px-2 font-bold flex items-center gap-1">🔥 EN VIVO AHORA EN LA COMUNIDAD {liveTrainingNow.length > 5 && <span className="text-red-400">HOT ZONE</span>}</div>
-                <div className="flex gap-2 overflow-x-auto pb-2 px-1">
+                <div className="flex gap-2 overflow-x-auto pb-2 px-1 snap-x snap-mandatory">
                   {liveTrainingNow.slice(0,4).map((u, idx) => (
                     <motion.div 
                       key={u.id} 
-                      onClick={() => setActiveTab('explore')} 
+                      onClick={() => { setActiveTab('explore'); /* extra: if user is live, could auto-offer sync but keep simple for now */ }} 
                       whileHover={{scale:1.03, y:-2}} 
                       whileTap={{scale:0.97}} 
                       initial={{opacity:0, x:10}}
                       animate={{opacity:1, x:0}}
                       transition={{delay: idx*0.03}}
-                      className="text-[9px] bg-[#0a120f] border border-[#22c55e]/40 text-[#22c55e] px-3 py-1.5 rounded-2xl cursor-pointer active:bg-[#22c55e]/10 flex flex-col min-w-[92px] shadow-sm hover:border-[#22c55e]/70"
+                      className="text-[9px] bg-[#0a120f] border border-[#22c55e]/40 text-[#22c55e] px-3 py-1.5 rounded-2xl cursor-pointer active:bg-[#22c55e]/10 flex flex-col min-w-[100px] shadow-sm hover:border-[#22c55e]/70 snap-start"
                     >
                       <div className="font-bold flex items-center gap-1 text-white/90">{u.name.split(' ')[0]} <span className="text-[7px] text-[#9CA3AF]">{userLocation && u.distance < 900 ? `${u.distance.toFixed(0)}km` : '—'}</span></div>
                       {u.seVaEnMin > 0 && <div className="text-[7px] text-orange-400">{u.seVaEnMin < 15 ? '🔥 se va pronto' : `se va en ${u.seVaEnMin}m`}</div>}
                       {u.joinCount > 0 && <div className="text-[7px] text-[#22c55e]/70">+{u.joinCount} se unieron</div>}
-                      {u.trainingSyncWith && <div className="text-[7px] text-[#22c55e] mt-0.5">🔄 En Sync ahora</div>}
+                      {u.trainingSyncWith && <div className="text-[7px] text-[#22c55e] mt-0.5">🔄 En Sync ahora — ¡Arena!</div>}
                       {u.seVaEnMin > 0 && <div className="h-px bg-[#22c55e]/20 mt-1"><div className="h-px bg-[#22c55e]" style={{width: `${Math.max(8, Math.min(100, (90 - u.seVaEnMin)/90 * 100))}%`}}></div></div>}
+                      <div className="text-[6.5px] mt-1 text-[#22c55e]/70">Toca → ver en Explore</div>
                     </motion.div>
                   ))}
                 </div>
@@ -6306,7 +6312,7 @@ function App() {
               {[
                 { label: 'Matches', value: matches?.length || 0, icon: Heart, color: '#FF671F' },
                 { label: 'Sesiones', value: squads?.length || 0, icon: Star, color: '#00C4B4' },
-                { label: 'Nivel', value: currentUser.level || '—', icon: Dumbbell, color: '#FF4F79', isText: true },
+                { label: 'Nivel', value: currentUser.level || '—', icon: Dumbbell, color: '#FF4F79', isText: true, isSquare: true },
                 { label: 'Live cerca', value: liveTrainingNow.length, icon: Zap, color: '#22c55e', isLive: true },
                 { label: 'Live joins', value: currentUser.liveJoins || 0, icon: Zap, color: '#22c55e' },
                 { label: 'Syncs', value: (currentUser as any).syncStreak || 0, icon: Users, color: '#22c55e' }
@@ -6314,23 +6320,23 @@ function App() {
                 <div 
                   key={i} 
                   onClick={stat.isLive && liveTrainingNow.length > 0 ? () => { setActiveTab('explore'); setShowLiveModal(true); } : undefined}
-                  className={`card p-2 text-center rounded-2xl flex flex-col items-center justify-center min-h-[68px] ${stat.isLive && liveTrainingNow.length > 0 ? 'cursor-pointer active:scale-95 border border-[#22c55e]/60 ring-1 ring-[#22c55e]/20 shadow-sm shadow-[#22c55e]/10' : ''} ${stat.isLive ? 'relative' : ''}`}
+                  className={`card p-2 text-center rounded-2xl flex flex-col items-center justify-center min-h-[72px] ${stat.isSquare ? 'aspect-square' : ''} ${stat.isLive && liveTrainingNow.length > 0 ? 'cursor-pointer active:scale-95 border border-[#22c55e]/60 ring-1 ring-[#22c55e]/20 shadow-sm shadow-[#22c55e]/10' : ''} ${stat.isLive ? 'relative' : ''}`}
                 >
                   <stat.icon size={14} className="mb-0.5" style={{ color: stat.color }} />
                   {stat.isText ? (
-                    <div className="text-[10px] font-semibold px-1 py-0.5 rounded bg-white/10" style={{ color: stat.color }}>{stat.value}</div>
+                    <div className="text-[11px] font-bold px-2 py-0.5 rounded-lg bg-white/10 border border-white/10" style={{ color: stat.color }}>{stat.value}</div>
                   ) : (
-                    <div className="stat-number text-base leading-none" style={{ color: stat.color }}>{stat.value}</div>
+                    <div className="stat-number text-lg leading-none font-semibold" style={{ color: stat.color }}>{stat.value}</div>
                   )}
-                  <div className="text-[8px] text-[#9CA3AF] mt-0.5 font-medium tracking-widest">{stat.label}</div>
+                  <div className="text-[7.5px] text-[#9CA3AF] mt-0.5 font-medium tracking-[0.5px]">{stat.label}</div>
                   {stat.isLive && liveTrainingNow.length > 0 && (
-                    <div className="text-[7px] text-[#22c55e] mt-0.5 flex items-center gap-1">
+                    <div className="text-[6.5px] text-[#22c55e] mt-0.5 flex items-center gap-1">
                       ¡Ver ahora! 
                       <div className="w-1 h-1 bg-[#22c55e] rounded-full" style={{animation: 'live-pulse-green 1.5s ease-in-out infinite'}}></div>
                     </div>
                   )}
                   {stat.isLive && liveTrainingNow.length === 0 && (
-                    <div className="text-[7px] text-[#9CA3AF] mt-0.5">¡Sé el primero!</div>
+                    <div className="text-[6.5px] text-[#9CA3AF] mt-0.5">¡Sé el primero!</div>
                   )}
                 </div>
               ))}

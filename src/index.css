@@ -717,6 +717,15 @@ input[type="range"]::-moz-range-thumb {
 }
 .story-timeline::-webkit-scrollbar { height: 3px; }
 
+/* Hide scrollbars on horizontal pill/filter bars while keeping touch scroll (premium mobile feel) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 .sync-story-post {
   background: linear-gradient(160deg, rgba(10,42,26,0.7), rgba(28,28,32,0.95));
   border-left: 4px solid #22c55e;
