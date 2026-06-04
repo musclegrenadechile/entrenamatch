@@ -25,6 +25,43 @@
 - Al unirse a sesión: ahora sanitiza datos para evitar undefined en setDoc. Desplegar rules para permisos en load group messages.
 - Ver INFORME_PROBLEMA_COMUNICACION_USUARIOS_REALES.md para análisis detallado de por qué antes no se podía comunicar entre usuarios reales (causas: descubrimiento de matches no reactivo, closures stale en Actualizar, reglas de likes faltantes, races en listeners) y fixes aplicados.
 
+## Protocolo para probar lo ÚNICO y disruptivo: EntrenaSync Arena (la razón por la que nadie ha visto algo igual)
+
+Esta es la feature que hace que la app sea completamente diferente a todo lo que existe. "Presencia en vivo" → "entrenamos juntos en tiempo real aunque estemos en gyms distintos" con memoria compartida que vive en los dos muros para siempre.
+
+**Flujo de prueba con 2 cuentas (A y B) en dispositivos o navegadores diferentes (hard refresh después de cada push):**
+
+1. Cuenta A: Perfil → activa "Entrenando ahora (EN VIVO)". Debe aparecer en Explore/Live modal/feed teaser de B.
+2. Cuenta B (live también): ve a Explore o Live modal, toca "Unirme + EntrenaSync 🔥" en la card de A.
+   - Debe deshabilitar el botón + mostrar "⏳ Iniciando..." (anti-spam).
+   - Automáticamente te lleva a Perfil + abre la **Arena completa**.
+3. En la Arena (ambos deben ver **exactamente lo mismo en ~1s** gracias al listener dedicado):
+   - Dos avatares (fotos o iniciales) con anillos de color + línea "tether" animada conectándolos (sensación de "estamos juntos").
+   - Orbe central de Energía que crece y pulsa más fuerte cuanto más alto el % VIBE.
+   - Timer grande dentro del orbe.
+   - Toca acciones (💪 Buena forma, ⚡ Explosivo, etc). 
+     - El emoji **vuela** hacia el orbe (efecto visual idéntico en los dos teléfonos).
+     - Si repites la misma acción 2-3 veces seguidas → aparece **COMBO xN**, gana más vibe, post especial en muro, confetti + haptic más fuerte.
+   - El historial de "RITUAL EN VIVO" se construye en tiempo real (stagger pop).
+4. Toca "REPLAY" → abre modal que reproduce la secuencia de acciones con animación escalonada. Desde ahí puedes "Re-Sync".
+5. Toca "📝 Guardar historia ahora" → debe crear un post bonito en tu muro.
+6. Uno de los dos toca "TERMINAR". Si >5min sale el rating con ★ bonitas.
+   - Califica 5★ → boost de streak + se genera automáticamente un post **"ENTRENASYNC LEGENDARIO"** largo y hermoso que aparece **en los MUROS DE LOS DOS** + en el Feed global.
+   - Ambos deben ver el post idéntico en su muro personal y en Feed.
+7. En Perfil de cada uno: debe aparecer la sección "TUS SYNC LEGENDS" con la tarjeta del compañero (minutos totales, sesiones, ★ promedio, llamas de Bond level).
+8. Ve a Explore/Live: la persona con la que hiciste sync debe tener prioridad visual ("En Sync ahora" o más arriba en la lista por el boost de leyenda).
+9. En Feed header: si hay pares activos en Arena, deben aparecer los nombres + %vibe como prueba social global ("🔄 X pares en arena ahora").
+
+**Lo que hace esto único (para que lo sientas y reportes):**
+- Nadie más convierte "entrenar cerca" en un ritual compartido con energía visible, combos, recuerdos permanentes escritos en ambos perfiles, y estatus de "leyenda de sync".
+- La sensación de "mi compa está haciendo lo mismo que yo justo ahora y lo veo volar en mi pantalla" es adictiva y nunca se había visto en apps de gym social.
+
+Reporta TODO: ¿las moscas de emoji se ven en ambos? ¿el orbe escala en los dos lados? ¿el post de historia aparece en los dos muros? ¿el Bond level sube? ¿se siente premium y mágico?
+
+Sigue con todo — esta es la update que marca la diferencia real en el mercado.
+
+---
+
 ## Protocolo específico para probar mensajería en tiempo real (chats 1:1 y sesiones)
 Usa los 30 perfiles fake (Reñaca / Viña del Mar / Concón, hombres y mujeres) + 1-2 cuentas reales en dispositivos/navegadores diferentes:
 1. Con cuenta A (real o fake vía match): ve a Explorar, haz match con un fake (o con cuenta B).

@@ -57,7 +57,7 @@ export async function requestPlayIntegrityToken(customNonce?: string): Promise<I
         appRecognitionVerdict: 'PLAY_RECOGNIZED',
         packageName: 'com.entrenamatch.app',
         certificateSha256Digest: ['SIMULATED_FOR_WEB_DEMO'],
-        versionCode: '13',
+        versionCode: '14',
       },
       deviceIntegrity: {
         deviceRecognitionVerdict: ['MEETS_DEVICE_INTEGRITY'],
