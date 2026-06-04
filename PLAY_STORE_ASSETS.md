@@ -4,7 +4,12 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 25 / 0.1.20-mapa-fix. **MAPA FIJO + TOQUES DISRUPTIVOS + PERFIL VIVO + ARENA**: 
+**Current version for this upload**: versionCode 26 / 0.1.21-geo-crash-fix. **MAPA FIJO + GEO CRASH FIX + TOQUES DISRUPTIVOS**: 
+- Mapa: ahora responde a presión (fixes z, pointer-events, invalidateSize, timeouts, touch-action).
+- Toque: tethers para sync pairs.
+- Geo: al activar GPS/live ya no crashea ni pantalla negra. Guard anti-concurrent, fallback accuracy, guard currentUser.
+- Perfil/Arena polish previo.
+- Builds listos.
 - Mapa: ahora sí funciona al presionarlo (toggle, panning, taps en markers, botones Centrar/filtro, popups). Fixes de z-index, pointer-events, invalidateSize, touch-action, timeouts.
 - Toque disruptivo: tether lines entre pares en sync.
 - Perfil: bonds en vivo, galería drag, vibe history.
