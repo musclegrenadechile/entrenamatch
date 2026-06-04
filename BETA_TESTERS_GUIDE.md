@@ -13,6 +13,65 @@
 
 **Prerrequisito para testers en web (GH Pages):** Si usas Google Sign-In (o cualquier OAuth), el dominio `musclegrenadechile.github.io` debe estar agregado en Firebase Console > Authentication > Settings > Authorized domains. Sin esto, popup/redirect fallarán con "domain not authorized". El owner debe agregarlo una vez (incluye subdominios si aplica). Email/password funciona sin esto.
 
+## Cómo obtener informes de errores y logs DIRECTAMENTE DESDE EL CELULAR (sin PC ni adb)
+
+Sí, es totalmente posible y muy útil para testers que no siempre tienen la PC a mano. El celular puede generar **informes de errores completos** que incluyen logcat (los mismos logs que verías con `adb logcat`), stack traces de crashes nativos (el de login en la APK de Play), errores de WebView/JS (como el #310 de React), etc.
+
+### Método 1: Samsung Members (el mejor y más completo para tu S26 Ultra / Galaxy)
+Samsung preinstala esta app y es excelente para reportes detallados.
+
+1. Abre la app **Samsung Members**.
+2. Ve a **"Enviar comentarios"** (o "Get help" → "Enviar informe de error").
+3. Elige **"Informe de error"** o "Error report".
+4. Describe brevemente el problema (ej: "Crash al iniciar sesión en APK de Play closed testing" o "Error React #310 en Feed").
+5. **Reproduce el crash ahora mismo**:
+   - Cierra la app completamente.
+   - Ábrela desde Play Store (la versión closed testing).
+   - Intenta iniciar sesión (el crash que reportas) o ve al Feed.
+6. Envía el informe.
+7. Te genera un **número de caso** y puedes descargar el informe completo (un ZIP con logs detallados, logcat alrededor del crash, dumps del sistema, etc.).
+
+Súbelo a Drive y pásame el link (o pégame las líneas clave con "entrenamatch", "AndroidRuntime", "FATAL", "chromium", "Firebase"). Esto captura **exactamente** lo que necesitamos para diagnosticar.
+
+### Método 2: Informe de errores integrado de Android (funciona en cualquier teléfono)
+1. Activa Opciones de desarrollador si no las tienes:
+   - Ajustes → Acerca del teléfono → toca **7 veces** en "Número de compilación".
+2. Ve a **Opciones de desarrollador**.
+3. Busca y usa **"Tomar informe de errores"**, **"Bug report"** o **"Informe de errores"** (suele estar bajo "Depuración").
+4. **Reproduce el crash** (login o Feed).
+5. Activa inmediatamente el informe.
+6. El teléfono tarda 30-90 segundos en generarlo (ZIP o archivo de texto). Se guarda en Descargas o te da opción de compartir directamente (Drive, email, etc.).
+
+Este incluye logcat completo del sistema + tu app en el momento exacto del crash.
+
+### Método 3: Apps de Logcat desde Play Store (ver logs "en vivo" en el celular)
+Instala una de estas (busca "logcat" en Play Store):
+- **MatLog** (la más recomendada, ligera y clara).
+- **aLogcat** o **Logcat Reader**.
+- **CatLog**.
+
+Uso:
+1. Abre la app de logcat.
+2. Filtra por paquete: `com.entrenamatch.app` o por texto `entrenamatch`.
+3. Reproduce el crash (login).
+4. La app muestra los logs en tiempo real. Puedes copiar, exportar a archivo o compartir.
+
+**Nota**: En Android moderno sin root solo ves logs "públicos" o de tu propia app. Para crashes completos, combina con el Método 1 o 2 (el bug report del sistema da acceso total a logcat).
+
+### Consejos y próximos pasos
+- **El error #310 de React en el Feed ya está arreglado** en el código actual. Estaba causado por un `useMemo` (`feedComputation`) dentro de un IIFE que *solo* se ejecutaba cuando `activeTab === 'feed'`. Eso hacía que el conteo de hooks de React cambiara al cambiar de pestaña → React error #310. Lo moví a un `useMemo` a nivel superior del componente (siempre se llama en el mismo orden, estable). Cualquier build nuevo (debug APK o AAB) ya no lo tiene.
+- **El crash de login en la APK de Play** suele aparecer en los logs como algo de Firebase ("Default FirebaseApp is not initialized", error en google-services) o init de plugins (push/integrity). El informe del celular te dará el stack trace exacto.
+- Usa siempre la **versión debug local** (EntrenaMatch-debug.apk) para testing cuando puedas (tiene `webContentsDebuggingEnabled: true` y los fixes más recientes). La de Play closed puede ser un build viejo.
+- Si el crash es intermitente, reproduce varias veces seguidas antes de generar el bug report.
+
+**Acción inmediata**: Genera un bug report **ahora mismo** (Método 1 o 2) reproduciendo el login que crashea, compártelo (Drive/email) y pégame el link o el texto clave aquí. Lo reviso y te digo la causa raíz + fix exacto.
+
+**Dentro de la app (agregado en esta sesión)**: Botón "🐛 Debug logs (para reportar crashes desde el celular)" en Perfil (collapsible con últimos 30 eventos: login, sync actions, publishes, crashes). Botones para copiar al portapapeles o compartir (usa navigator.share/clipboard, funciona en web y APK). Se alimenta automáticamente de flujos clave + ErrorBoundary.
+
+Si quieres que agregue **Firebase Crashlytics** (reporte automático de crashes nativos a la consola de Firebase, incluso para testers de Play closed) o el "form photo" rápido dentro de Arena (cámara durante sync + foto pequeña en el replay/story para ambos), solo di "sí, agrégalo" y lo hago en minutos (actualizo código + guía).
+
+¡Con esto los testers pueden debuggear sin depender de la PC todo el tiempo! Pégame el primer informe y arrancamos.
+
 ## Cómo ver crashes, logs y errores en tiempo real desde tu computadora (debugging APK)
 
 Cuando la app crashea en el dispositivo (especialmente la versión de Play Store closed testing), lo más importante es ver los logs **en vivo** desde la PC mientras reproduces el crash (login, feed, etc.).
@@ -444,3 +503,25 @@ Cualquier duda, avísanos.
 - Push/Integrity should work properly now (no launch crash).
 
 Update and test thoroughly. Report back.
+
+## New closed testing build (v0.1.12-arena / versionCode 15) — launch crash fixed + feed polish edition
+
+- **Critical fix**: "genero error al abrir la app" completely resolved. Root cause was missing googleCloudProjectNumber param + unboxed Long in @capacitor-community/play-integrity plugin during auto-check on Firebase auth restore (persisted sessions). Fixed in playIntegrity.ts (always pass 0), defensive patch in plugin Java for this build, auto integrity check on login disabled (manual 🛡️ button in Profile remains). Validated live on real device R5GL13YMBJW with adb logcat (no more AndroidRuntime FATAL / NullPointer, process stays alive, plugins load cleanly including Push + Integrity).
+- Version bumped to 15 / 0.1.12-arena.
+- Feed UX polish: horizontal filters (REAL / 🟢 Live / 📌 Fijados / Actualizar) now properly scrollable with snap-x, touch-pan, side fade hint + "desliza → filtros y live" label. Live "EN VIVO AHORA EN LA COMUNIDAD" strip also snapped.
+- Profile: stats grid cards taller, "Nivel" card uses aspect-square for square look + bolder pill as requested.
+- Arena remains the disruptive star (full ritual, flying, combos, dual stories, bonds/legends, replay, global FOMO in feed).
+- All previous giant updates retained (direct Feed publish modal + success banner + confetti instead of profile jump, Storage photo with real 0-100% progress + preview, attractive guarded Sync join, etc.).
+- AAB ready: EntrenaMatch-v0.1.12-arena-launchfix.aab (and EntrenaMatch-release.aab) in root. Also fresh debug APK for adb testing.
+- Test focus for this build:
+  1. Install the new AAB (or use debug APK via adb).
+  2. Force stop + open app cold → must reach login/home without any crash or force close.
+  3. Login (Google or email) → no immediate crash.
+  4. Go to Feed tab → confirm the top filters row scrolls horizontally smoothly on phone, "Live" and "Fijados" pills work, live people strip scrolls.
+  5. Tap Publish in Feed → opens attractive modal, try adding photo (native camera preferred if on device), publish → should stay in Feed, show success banner, new post appears in list (no jump to profile).
+  6. In Profile → stats row, check "Nivel" card looks square/prominent.
+  7. Full Arena test with 2 accounts if possible (live toggle, join, actions + flying + combos, rate, check dual muro + feed stories + legends appear).
+  8. Optional: use 🛡️ Google Play Integrity button in Profile to test (should not crash).
+- Use Samsung Members "Informe de error" or adb logcat if anything odd. chrome://inspect for JS side if connected.
+
+This is the build to upload to Closed track. Full "sigue con todo" — more unique features coming after validation.

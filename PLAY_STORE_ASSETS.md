@@ -4,7 +4,14 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 14 / 0.1.11-arena (debug APKs validated on real device R5GL13YMBJW). **LAUNCH CRASH FIXED + FEED POLISH + ARENA UNIQUE**: "genero error al abrir la app" (NPE in Play Integrity plugin on auth restore) fully diagnosed via adb logcat on connected S26 Ultra, fixed at source (correct param + defensive java + disabled auto on launch), committed, pushed, rebuilt, adb installed. Device now opens clean. + Polish: horizontal feed filters now scroll with snap + fade hint + "desliza", live strip improved, profile level cards more square/prominent in stats grid. Full "sigue con todo" autonomy continues.
+**Current version for this upload**: versionCode 15 / 0.1.12-arena. **CRITICAL LAUNCH FIX + FEED + PROFILE POLISH + ARENA AS STAR**: 
+- Fix definitivo: app ahora abre sin error en Android (crash "Default Firebase / Play Integrity NPE" al restaurar sesión arreglado completamente; validado en dispositivo real S26 Ultra vía adb logcat + reinstall).
+- Feed: filtros horizontales (REAL / 🟢 Live / 📌 Fijados) ahora se deslizan perfectamente con snap, touch, fade hint y texto "desliza →".
+- Live strip en feed más atractiva con snap y hints de Arena.
+- Perfil: stats grid con tarjetas más altas y "Nivel" como card cuadrada/aspect + pill destacado.
+- Arena EntrenaSync como feature única/disruptiva (ritual co-presence en vivo, energy orb reactiva, flying actions, combos x2-x5, dual muro+feed stories automáticos, Sync Legends/Bonds persistentes, replay).
+- Todo con guards de estabilidad, google-services estricto, push explícito, photo Storage con progreso, direct feed publish modal (sin redirect decepcionante).
+Preparado para Closed Testing track. AAB firmado listo para subir.
 
 **EntrenaSync Arena (the soul of uniqueness)**: Immersive co-presence ritual that no fitness or social app has. Dual avatars + animated energy tether (you are literally "connected"), central reactive Energy Orb that scales/pulses/hues with shared vibe (both phones see identical state via dedicated realtime syncSessions listener). Flying emoji waves on every action (the "we moved together" visual magic). 8 ritual actions in big satisfying grid. Live combo multipliers (x2-x5) with special posts + confetti. Auto-generated rich "Session Story" post (timeline + vibe + rating) published to BOTH users' muros + feed at end — permanent shared memory that nobody else creates. Persistent Sync Bonds/Legends (flame levels, total minutes together, re-sync CTA) displayed in beautiful grid in Perfil. Global FOMO (active pair names + vibe% in feed header, priority in live discovery for legends, "En Sync ahora" everywhere). Replay modal with staggered action playback + quick re-sync. Arena opens automatically on join. All with premium Dunkin glass + motion.
 
@@ -85,6 +92,16 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 ---
 
 ## What's new (for this Pre-Alpha release, short & punchy)
+**v0.1.12-arena (versionCode 15) — LAUNCH FIX + FEED POLISH**
+• FIX CRÍTICO: la app ahora abre sin generar error en Android (crash en inicio por Play Integrity / Firebase resuelto tras diagnóstico en dispositivo real con adb; ya no NPE al restaurar sesión).
+• Feed mejorado: encabezados y filtros horizontales (Live / Fijados / Reales) ahora se mueven fluidamente con scroll snap, touch optimizado y hint visual "desliza".
+• Tira "En vivo ahora en la comunidad" con snap y referencias a Arena.
+• Perfil: tarjetas de estadísticas más consistentes y "Nivel" como elemento cuadrado/prominente.
+• EntrenaSync Arena como killer feature única: ritual de co-presencia en vivo con energy orb reactiva, flying emojis, combos, historias duales automáticas en muro+feed, leyendas/bonds persistentes, replay.
+• Estabilidad Android: google-services.json estricto en build, guards en push/integrity, direct publish en feed sin redirect, photo con progreso real.
+• Todo listo para Closed testing en Play Store.
+
+**Previous highlights retained (Arena wave + giant UX):**
 • Killer feature "Entrenando Ahora EN VIVO": ve en tiempo real quién entrena cerca, con urgencia ("se va en Xm"), hot zones, streaks y join automático al muro
 • Muro de perfiles estilo FB (posts con foto, likes, comentarios cross-user, notificaciones al dueño)
 • Onboarding espectacular rediseñado: preview en vivo del perfil (como se ve en swipe y live), "Rellenar ejemplo", disponibilidad, opt-in directo a EN VIVO, reorder de fotos principal
