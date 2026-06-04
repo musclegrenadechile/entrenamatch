@@ -15,8 +15,8 @@ android {
         applicationId "com.entrenamatch.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 10
-        versionName "0.1.7-prealpha"
+        versionCode 12
+        versionName "0.1.9-prealpha"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -62,9 +62,17 @@ dependencies {
 apply from: 'capacitor.build.gradle'
 
 def servicesJSON = file('google-services.json')
+def expectedPkg = "com.entrenamatch.app"
 if (servicesJSON.exists() && servicesJSON.length() > 0) {
-    logger.lifecycle("google-services.json found — applying com.google.gms.google-services plugin for FCM / Push")
-    apply plugin: 'com.google.gms.google-services'
+    def jsonText = servicesJSON.text
+    def hasMatch = jsonText.contains('"package_name": "' + expectedPkg + '"') || jsonText.contains('"package_name":"' + expectedPkg + '"')
+    if (hasMatch) {
+        logger.lifecycle("google-services.json found and CONTAINS MATCHING package ${expectedPkg} — applying com.google.gms.google-services plugin for FCM / Push / Integrity")
+        apply plugin: 'com.google.gms.google-services'
+    } else {
+        logger.error("google-services.json found BUT NO MATCHING CLIENT for package '${expectedPkg}' (the placed json from your path only has com.muscle.* entries). Firebase native init (FCM push, Play Integrity) WILL FAIL — APP MAY CRASH ON LAUNCH or push/verify broken. ACTION: In Firebase Console (project entrenamatch) add/edit Android app with EXACT package com.entrenamatch.app, download fresh google-services.json, overwrite android/app/google-services.json, then rebuild. FAILING BUILD NOW to prevent broken AAB.")
+        throw new GradleException("No matching client for ${expectedPkg} in google-services.json from the path you indicated. Fix json (add the app in Firebase Console) and retry build.")
+    }
 } else {
     logger.warn("google-services.json NOT FOUND or empty in android/app/. Push notifications (FCM) and some Google services will NOT work in the native APK/AAB. Place the file from Firebase Console (package com.entrenamatch.app) and rebuild.")
 }
