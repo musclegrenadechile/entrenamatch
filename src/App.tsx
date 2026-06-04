@@ -5031,7 +5031,7 @@ function App() {
             {(() => {
               // Collect and sort recent posts from all loaded users (exclude self)
               // useMemo to avoid recompute on every render - helps "update gigante" feel
-              const feedComputation = React.useMemo(() => {
+              const feedComputation = useMemo(() => {
                 const allCommunityPosts = Object.entries(profilePosts)
                   .filter(([uid]) => uid !== effectiveUserId)
                   .flatMap(([uid, posts]) => (posts || []).map((p: any) => ({ ...p, ownerId: uid })));
