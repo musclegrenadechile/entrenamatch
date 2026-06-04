@@ -399,3 +399,12 @@ Live + muro now feel incredibly alive with streaks, hot zones, visible joins eve
 Sigue con todo a todo ritmo full green light! :D
 
 Live retention maxed: streaks for host/join, hot sorting by activity, stats visible, real cross device. Muro has the joins. Next batch more? Hard refresh after deploy.
+
+**Fix (user report)**: Error "Failed to sync profile to Firestore: ... Unsupported field value: undefined (in field trainingNowSince)" when finishing a live.
+- Happened in saveUserWithRealSync (and new-user push) because toggle sets trainingNowSince: undefined when off, and it was unconditionally added to profileUpdate sent to updateUserProfile (Firestore SDK rejects undefined).
+- Fixed by conditional: if (trainingNow) { if(defined) set } else { set null } (null clears the field in FS).
+- Also normalized reads (null -> undefined) in loadRealProfiles and realProfile merge.
+- Rebuilt + pushed (a68ab16). New bundle on GH Pages.
+- Test: turn live on/off in real account (no more sync error on finish). 
+
+Sigue con todo! Hard refresh to get fix.
