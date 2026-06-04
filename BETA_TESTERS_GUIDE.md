@@ -13,6 +13,97 @@
 
 **Prerrequisito para testers en web (GH Pages):** Si usas Google Sign-In (o cualquier OAuth), el dominio `musclegrenadechile.github.io` debe estar agregado en Firebase Console > Authentication > Settings > Authorized domains. Sin esto, popup/redirect fallarán con "domain not authorized". El owner debe agregarlo una vez (incluye subdominios si aplica). Email/password funciona sin esto.
 
+## Cómo ver crashes, logs y errores en tiempo real desde tu computadora (debugging APK)
+
+Cuando la app crashea en el dispositivo (especialmente la versión de Play Store closed testing), lo más importante es ver los logs **en vivo** desde la PC mientras reproduces el crash (login, feed, etc.).
+
+### 1. Preparación en el teléfono (una sola vez)
+- Ve a **Ajustes > Acerca del teléfono** → toca 7 veces en "Número de compilación" (activa Opciones de desarrollador).
+- Vuelve a Ajustes → **Opciones de desarrollador**:
+  - Activa **Depuración USB**.
+  - (Opcional pero útil) Activa "Depuración USB (configuración de seguridad)" si aparece.
+- Conecta el teléfono por USB al computador.
+- En el teléfono aparecerá un popup "Permitir depuración USB" → marca "Permitir siempre desde esta computadora" y Aceptar.
+
+### 2. Instalar ADB (Android Debug Bridge) en la PC
+- Descarga "platform-tools" de Google: https://developer.android.com/tools/releases/platform-tools
+- Descomprime y agrega la carpeta al PATH (o usa la ruta completa).
+- Abre PowerShell y prueba:
+  ```powershell
+  adb version
+  ```
+- Con el teléfono conectado:
+  ```powershell
+  adb devices
+  ```
+  Debe aparecer tu dispositivo (si pide autorización en el teléfono, acepta).
+
+### 3. Ver logs nativos + crashes en tiempo real (lo más importante para crashes de APK)
+Abre PowerShell y ejecuta (mientras reproduces el crash en la app):
+
+```powershell
+# Ver TODO en tiempo real (filtra lo más útil)
+adb logcat | Select-String -Pattern "entrenamatch|AndroidRuntime|FATAL|Caused by|chromium|WebView|Firebase|Capacitor|com.entrenamatch.app"
+
+# O solo crashes fatales (recomendado primero)
+adb logcat | Select-String -Pattern "AndroidRuntime|FATAL EXCEPTION"
+
+# Versión más limpia con timestamp
+adb logcat -v time | Select-String -Pattern "entrenamatch|fatal|crash|exception|webview"
+```
+
+- Reproduce el crash (ej: abre la app desde Play, inicia sesión).
+- En la consola verás inmediatamente los errores (FATAL EXCEPTION, stack trace nativo de Java, mensajes de Firebase, errores del WebView, etc.).
+- Para guardar en archivo (útil para mandarme):
+  ```powershell
+  adb logcat -v time > crash-log.txt
+  ```
+  Luego reproduce el crash y para con Ctrl+C. Abre crash-log.txt.
+
+**Tip**: Para filtrar solo de esta app:
+```powershell
+$pid = adb shell pidof com.entrenamatch.app
+adb logcat --pid=$pid | Select-String -Pattern "fatal|error|exception|crash"
+```
+
+### 4. Ver errores de JavaScript / React (el #310, uncaught errors, console.log de la app) en tiempo real con Chrome DevTools (¡imprescindible!)
+Esto te permite inspeccionar el WebView como si fuera una página web normal.
+
+1. En `capacitor.config.ts` ya está activado `webContentsDebuggingEnabled: true` (lo activé para que funcione incluso en builds de release/pre-alpha).
+2. Reconstruye la APK/AAB con los cambios:
+   - Corre `build-apk-now.bat` o `npm run android:build`
+3. Instala la nueva versión en el teléfono (puedes usar `adb install` con el debug APK, o sube a Play y actualiza desde ahí).
+4. En el teléfono asegúrate que USB debugging esté activado.
+5. En la **PC** abre **Chrome** y ve a:
+   ```
+   chrome://inspect/#devices
+   ```
+6. Tu teléfono debe aparecer. Debajo del WebView de "EntrenaMatch" (o com.entrenamatch.app) haz clic en **"inspect"**.
+7. Se abre DevTools completo:
+   - Pestaña **Console**: aquí ves TODOS los `console.log`, `console.error`, React errors (#310, "React is not defined", etc.), warnings.
+   - Puedes ver el stack real (no minificado si usas la versión con sourcemaps).
+   - Network, Elements, Application (localStorage, etc.).
+   - ¡Es en vivo! Mientras usas la app en el teléfono, los logs aparecen aquí.
+
+Esto es lo mejor para los crashes de tipo React/JS que ves en el feed.
+
+### 5. Consejos extras
+- Si el crash es inmediato al abrir (antes de login), los logs de "Default FirebaseApp is not initialized" o google-services suelen aparecer en logcat con "FirebaseInitProvider".
+- Para builds de Play Store (release firmado), logcat y chrome://inspect siguen funcionando perfectamente mientras USB debugging esté activado.
+- Si quieres wireless (sin cable): 
+  ```powershell
+  adb tcpip 5555
+  adb connect TU_IP_DEL_TELEFONO:5555
+  ```
+  (mira la IP en Ajustes > WiFi del teléfono).
+- Si ves muchos logs, filtra más: `adb logcat | findstr /i "com.entrenamatch"`
+
+Con esto puedes iterar rápido: reproduce crash → ves el error exacto en la consola de la PC → arreglamos en código → rebuild → pruebas otra vez.
+
+Si después de esto sigues teniendo un crash específico, copia el log completo (o screenshot del chrome://inspect Console) y pégamelo que lo analizo.
+
+¡Ahora puedes testear la app de verdad desde la comodidad de la PC!
+
 ## Qué probar (flujo ideal)
 
 - Onboarding completo (fotos con cámara nativa si estás en APK).
