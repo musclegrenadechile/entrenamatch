@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import type { UserProfile } from '../services/auth';
 import { onAuthStateChange, getUserProfile, handleGoogleRedirectResult, getDemoUser } from '../services/auth';
@@ -26,7 +26,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   // Only force demo mode if Firebase is truly not configured.
   // Now that we have real config, GitHub Pages demo will use real Firebase for multi-user interaction.
   const shouldForceDemo = typeof window !== 'undefined' && !isFirebaseConfigured;

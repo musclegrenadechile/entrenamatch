@@ -1,4 +1,3 @@
-﻿import React from 'react';
 import { toast } from 'sonner';
 import { Dumbbell } from 'lucide-react';
 
@@ -15,7 +14,7 @@ interface AuthScreenProps {
   isDemoMode: boolean;
 }
 
-export const AuthScreen: React.FC<AuthScreenProps> = ({
+export const AuthScreen = ({
   authMode,
   setAuthMode,
   authEmail,
@@ -26,7 +25,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
   authError,
   handleEmailAuth,
   isDemoMode,
-}) => {
+}: AuthScreenProps) => {
   return (
     <div className="app-container flex items-center justify-center bg-[#0D0D10] p-4">
       <div className="w-full max-w-md">

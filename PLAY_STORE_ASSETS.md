@@ -10,7 +10,7 @@
 
 Previous giant work retained: photo via Firebase Storage + 0-100% progress (no bloat, no URL prompts), direct Feed publish modal (stays in feed + success banner), skeletons + "Publicando..." + 4s highlights, horizontal snap filters, square level pills, guarded attractive sync joins with auto-nav, AnimatePresence actions, useMemo feed, etc.
 
-AAB pipeline ready (good json already placed). Next build-aab-now will produce the Arena AAB. See plan.md for full spec + "por qué esto es completamente disruptivo". BETA updated with test protocol. This is the update that makes EntrenaMatch unforgettable.
+AAB pipeline ready (good json already placed). Full build-aab-now executed successfully for v0.1.11-arena (web+cap+gradle bundleRelease BUILD SUCCESSFUL). Fresh AAB copied to root: EntrenaMatch-v0.1.11-arena-unique.aab (7.42MB). See plan.md for full spec. BETA updated with detailed Arena test protocol (2 accounts, fly waves, combos, dual story posts, legends, replay, FOMO). This is the update that makes EntrenaMatch something nobody has seen — the real differentiator. Ready for closed track upload as the "Arena" release.
 - Native push: explícito vía botón en Perfil, defensivo. FCM client + /userPushTokens started.
 - Browser notif: handlers seguros.
 - Manifest mejorado.

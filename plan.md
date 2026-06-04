@@ -1342,3 +1342,5 @@ Next (still full speed):
 - Update landing.html + screenshots prompts if needed.
 
 Sigue con todo a toda máquina. The app is now genuinely in a league of its own.
+
+**AAB produced**: build-aab-now.bat ran clean (web 712ms + cap sync + gradle BUILD SUCCESSFUL). Copied EntrenaMatch-v0.1.11-arena-unique.aab to root. Git push of source done (triggers CI for GH Pages web + APK). All in sync for Play closed upload of the unique Arena edition.

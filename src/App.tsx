@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState, useEffect, useMemo, useCallback, useRef, Component, type ReactNode } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, Component, type ReactNode, type ChangeEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, MessageCircle, User, MapPin, Dumbbell, 
@@ -566,7 +566,7 @@ function App() {
   const feedPhotoInputRef = useRef<HTMLInputElement>(null)
 
   // Attractive web file photo handler for muro composer (replaces ugly prompt)
-  const handleMuroPhotoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMuroPhotoFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     // For web: upload immediately with progress for great UX (no giant base64 lingering)
@@ -611,7 +611,7 @@ function App() {
   }
 
   // Same for feed post modal
-  const handleFeedPhotoFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFeedPhotoFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()

@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, type ChangeEvent } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import { Dumbbell, MapPin, Camera, Trash2, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { TRAINING_OPTIONS, TRAINING_GOALS, TRAINING_INTENSITIES } from '../../constants';
@@ -24,7 +24,7 @@ interface OnboardingFlowProps {
   setConsents: (consents: any) => void;
 }
 
-export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
+export const OnboardingFlow = ({
   onboardingStep,
   setOnboardingStep,
   currentUser,
