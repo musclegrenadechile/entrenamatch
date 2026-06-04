@@ -3639,7 +3639,7 @@ function App() {
           <div className="absolute inset-0 z-[95] bg-[#0D0D10] flex flex-col" onClick={() => setShowLiveModal(false)}>
             <div className="p-4 flex items-center justify-between border-b border-[#2F2F35]">
               <button onClick={() => setShowLiveModal(false)}><ArrowLeft /></button>
-              <div className="font-medium">Entrenando Ahora cerca ({liveTrainingNow.length})</div>
+              <div className="font-medium flex items-center gap-2">Entrenando Ahora cerca ({liveTrainingNow.length}) {liveTrainingNow.some(u => u.seVaEnMin > 0) && <span className="text-orange-400 text-xs">¡urgencia!</span>}</div>
               <div />
             </div>
             <div className="overflow-auto flex-1 p-4">
