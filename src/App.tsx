@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, MessageCircle, User, MapPin, Dumbbell, 
   Edit2, RefreshCw, ArrowLeft, Send, Star, Plus, Users, Bell, Download,
-  Clock, Camera, Activity
+  Clock, Camera, Activity, Zap
 } from 'lucide-react'
 import { 
   signUpWithEmail, 
@@ -243,6 +243,8 @@ function App() {
   // For deduping message arrival notifications (only notify on 'added' after initial snapshot per chat/session)
   const seenChatMsgIdsRef = useRef<Record<string, Set<string>>>({})
   const seenGroupMsgIdsRef = useRef<Record<string, Set<string>>>({})
+  // For live training urgency notifs: track seen live users so we only notify on *new* nearby lives (prevents spam on refresh)
+  const seenLiveUserIdsRef = useRef<Set<string>>(new Set())
   // Per-chat and per-session unread counts for badges + list dots (local, cleared on open)
   const [chatUnreads, setChatUnreads] = useState<Record<string, number>>({})
   const [sessionUnreads, setSessionUnreads] = useState<Record<string, number>>({})
@@ -256,6 +258,13 @@ function App() {
   useEffect(() => {
     localStorage.setItem('entrenamatch_session_unreads', JSON.stringify(sessionUnreads))
   }, [sessionUnreads])
+
+  // Persist seen live users so new-live urgency notifs don't repeat on every reload/hard refresh
+  useEffect(() => {
+    try {
+      localStorage.setItem('entrenamatch_seen_live_users', JSON.stringify(Array.from(seenLiveUserIdsRef.current)))
+    } catch {}
+  }, [ /* manual trigger below */ ])
 
   // PWA install prompt wiring (beforeinstallprompt + nice banner after engagement)
   useEffect(() => {
@@ -349,6 +358,9 @@ function App() {
   const [feedMaxProfiles, setFeedMaxProfiles] = useState(15)
   const [feedDisplayLimit, setFeedDisplayLimit] = useState(10)
   const [showLiveModal, setShowLiveModal] = useState(false)
+  // Live modal local UI: search + sort for better discovery in the full list (killer feature polish)
+  const [liveModalSearch, setLiveModalSearch] = useState('')
+  const [liveModalSort, setLiveModalSort] = useState<'distance' | 'urgency'>('distance')
 
   // Auto-refresh real sessions on tab DISABLED to fix TDZ.
   // Manual button remains.
@@ -686,6 +698,8 @@ function App() {
             availability: data.availability || ['Tarde'],
             intensity: data.intensity,
             verificationStatus: data.verificationStatus,
+            trainingNow: data.trainingNow || false,
+            trainingNowSince: data.trainingNowSince || undefined,
           })
         }
       })
@@ -728,6 +742,8 @@ function App() {
               lat: realProfile.lat || currentUser?.lat || -33.0153,
               lng: realProfile.lng || currentUser?.lng || -71.5528,
               legalConsents: realProfile.legalConsents || currentUser?.legalConsents,
+              trainingNow: realProfile.trainingNow,
+              trainingNowSince: realProfile.trainingNowSince,
             }
             if (merged.name) {
               saveUser(merged)
@@ -750,6 +766,8 @@ function App() {
               lat: currentUser.lat,
               lng: currentUser.lng,
               legalConsents: currentUser.legalConsents,
+              trainingNow: currentUser.trainingNow,
+              trainingNowSince: currentUser.trainingNowSince,
             })
             // console.log removed (debug)
           }
@@ -857,6 +875,8 @@ function App() {
           availability: user.availability,
           lat: user.lat,
           lng: user.lng,
+          trainingNow: user.trainingNow,
+          trainingNowSince: user.trainingNowSince,
         };
         if (user.legalConsents) {
           profileUpdate.legalConsents = user.legalConsents;
@@ -960,6 +980,42 @@ function App() {
     }
   }, [activeTab, isDemoMode])
 
+  // Real-time urgency notifications for NEW live trainers nearby (the killer retention hook). Fires in-app notif + toast when fresh lives appear (after load/refresh).
+  // Uses seen ref + dedup inside addNotification. Only after initial population to avoid first-load spam. Works in demo too for showcase.
+  useEffect(() => {
+    if (!liveTrainingNow || liveTrainingNow.length === 0) return
+    const currentLiveIds = liveTrainingNow.map(u => u.id)
+    let addedNew = false
+    liveTrainingNow.forEach((liveUser: any) => {
+      if (!seenLiveUserIdsRef.current.has(liveUser.id)) {
+        seenLiveUserIdsRef.current.add(liveUser.id)
+        addedNew = true
+        // Guard: only notify "new live nearby" if we've already seen at least one before (skip pure first load)
+        if (seenLiveUserIdsRef.current.size > 1) {
+          addNotification({
+            type: 'session_join', // reuse closest type for "join live training" urgency
+            title: '🟢 ¡Entrenando ahora cerca!',
+            body: `${liveUser.name} está en vivo a ${(liveUser.distance || 0).toFixed(1)}km. ¡Únete ya antes de que se vaya!`,
+            relatedId: liveUser.id,
+            photoUrl: liveUser.photos?.[0],
+          })
+          toast(`🟢 ${liveUser.name} entrenando ahora cerca`, {
+            description: `A ${(liveUser.distance || 0).toFixed(1)}km · se va en ~${liveUser.seVaEnMin || 40}m — ¡Ver perfil!`,
+            action: {
+              label: 'Ver',
+              onClick: () => setShowFullProfile(liveUser as any)
+            }
+          })
+        }
+      }
+    })
+    if (addedNew) {
+      try {
+        localStorage.setItem('entrenamatch_seen_live_users', JSON.stringify(Array.from(seenLiveUserIdsRef.current)))
+      } catch {}
+    }
+  }, [liveTrainingNow, addNotification])
+
   // Clear comment UI when leaving profile tab
   useEffect(() => {
     if (activeTab !== 'profile') {
@@ -982,8 +1038,10 @@ function App() {
       setSessionUnreads({})
       seenChatMsgIdsRef.current = {}
       seenGroupMsgIdsRef.current = {}
+      seenLiveUserIdsRef.current = new Set()
       localStorage.removeItem('entrenamatch_seen_chat_msgs')
       localStorage.removeItem('entrenamatch_seen_group_msgs')
+      localStorage.removeItem('entrenamatch_seen_live_users')
       
       setMatches([])
       setLikedIds([])
@@ -1819,6 +1877,14 @@ function App() {
         Object.keys(parsed).forEach(k => {
           seenGroupMsgIdsRef.current[k] = new Set(parsed[k])
         })
+      } catch {}
+    }
+    // Restore seen live users (so we don't spam "new live" notifs for the same people every app open)
+    const savedSeenLive = localStorage.getItem('entrenamatch_seen_live_users')
+    if (savedSeenLive) {
+      try {
+        const arr = JSON.parse(savedSeenLive)
+        seenLiveUserIdsRef.current = new Set(arr)
       } catch {}
     }
 
@@ -3571,7 +3637,7 @@ function App() {
             {liveTrainingNow.length > 0 ? (
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {liveTrainingNow.slice(0, 4).map(user => (
-                  <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className="min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border border-[#22c55e]/60 active:scale-95 relative overflow-hidden" whileHover={{ scale: 1.03 }} initial={{ opacity: 0.9, y: 5 }} animate={{ opacity: 1, y: 0 }}>
+                  <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className="min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border border-[#22c55e]/60 active:scale-95 relative overflow-hidden" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} initial={{ opacity: 0.9, y: 5 }} animate={{ opacity: 1, y: 0 }}>
                     <div className="flex justify-between items-start mb-1">
                       <div className="flex items-center gap-1">
                         {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-4 h-4 rounded-full object-cover border border-[#22c55e]/30" />}
@@ -3582,7 +3648,7 @@ function App() {
                     <div className="text-[#9CA3AF] text-[9px] mb-0.5">{user.distance.toFixed(1)}km · {user.trainingTypes?.[0] || 'Entreno'}</div>
                     <div className="flex items-center gap-1 text-[#22c55e] text-[9px] mb-1">
                       <span>En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m</span>
-                      {user.seVaEnMin > 0 && <span className={`text-orange-400 ${user.seVaEnMin < 20 ? 'font-bold animate-pulse' : ''}`}>· se va en {user.seVaEnMin}m</span>}
+                      {user.seVaEnMin > 0 && <span className={`text-orange-400 ${user.seVaEnMin < 20 ? 'font-bold text-red-400 animate-pulse' : ''}`}>{user.seVaEnMin < 15 ? '· se va pronto' : '· se va en'} {user.seVaEnMin}m {user.seVaEnMin < 10 ? '¡ya!' : ''}</span>}
                     </div>
                     <button 
                       onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); toast.success('¡Unido! Revisa Matches o Chat'); }} 
@@ -3596,9 +3662,9 @@ function App() {
             ) : (
               <div className="text-[10px] text-[#9CA3AF]">Sé el primero en "Entrenando Ahora" cerca de ti — marca en tu Perfil. ¡Genera urgencia y abre la app más!</div>
             )}
-            <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between">
+            <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between items-center">
               <span>¡Urgencia real! Toca para ver o únete antes de que se vayan. Nadie lo tiene tan bien.</span>
-              <button onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline">Ver todos →</button>
+              <button onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline active:text-white">Ver todos live →</button>
             </div>
           </div>
         )}
@@ -3634,28 +3700,81 @@ function App() {
           />
         )}
 
-        {/* FULL LIVE MODAL - spectacular full list of live training near you. Makes the feature the star, urgency, join all. */}
+        {/* FULL LIVE MODAL - spectacular full list of live training near you. Enhanced with search, sort by dist/urgency, quick chat, simple visual "map" row (dots sorted by dist). Makes the killer feature even stronger. */}
         {showLiveModal && (
-          <div className="absolute inset-0 z-[95] bg-[#0D0D10] flex flex-col" onClick={() => setShowLiveModal(false)}>
+          <div className="absolute inset-0 z-[95] bg-[#0D0D10] flex flex-col" onClick={() => { setShowLiveModal(false); setLiveModalSearch(''); setLiveModalSort('distance'); }}>
             <div className="p-4 flex items-center justify-between border-b border-[#2F2F35]">
-              <button onClick={() => setShowLiveModal(false)}><ArrowLeft /></button>
+              <button onClick={() => { setShowLiveModal(false); setLiveModalSearch(''); setLiveModalSort('distance'); }}><ArrowLeft /></button>
               <div className="font-medium flex items-center gap-2">Entrenando Ahora cerca ({liveTrainingNow.length}) {liveTrainingNow.some(u => u.seVaEnMin > 0) && <span className="text-orange-400 text-xs">¡urgencia!</span>}</div>
               <div />
             </div>
-            <div className="overflow-auto flex-1 p-4">
-              {liveTrainingNow.length > 0 ? liveTrainingNow.map(user => (
-                <div key={user.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(user); }} className="card card-glass p-3 mb-2 flex gap-3 cursor-pointer active:scale-95">
-                  {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-12 h-12 rounded-xl object-cover" />}
-                  <div className="flex-1">
-                    <div className="font-semibold">{user.name} · {user.distance.toFixed(1)}km</div>
-                    <div className="text-[#9CA3AF] text-sm">{user.trainingTypes?.join(', ') || 'Entreno'}</div>
-                    <div className="text-[#22c55e] text-xs">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m {user.seVaEnMin > 0 ? `· se va en ${user.seVaEnMin}m` : ''}</div>
-                  </div>
-                  <button onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); toast.success('¡Unido al live!'); }} className="self-center text-xs bg-[#22c55e] text-black px-3 py-1 rounded">Unirme</button>
+
+            {/* Controls: search + sort for discovery */}
+            {liveTrainingNow.length > 0 && (
+              <div className="px-4 pt-3 pb-2 border-b border-[#2F2F35]/60 flex gap-2 items-center bg-[#0D0D10]">
+                <input 
+                  type="text" 
+                  value={liveModalSearch} 
+                  onChange={e => setLiveModalSearch(e.target.value)} 
+                  placeholder="Buscar por nombre..." 
+                  className="form-input flex-1 text-sm py-1.5" 
+                />
+                <button onClick={() => setLiveModalSort(liveModalSort === 'distance' ? 'urgency' : 'distance')} className="text-xs px-3 py-1 rounded-full border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10 whitespace-nowrap">
+                  {liveModalSort === 'distance' ? '📍 Dist' : '⏱ Urgencia'}
+                </button>
+              </div>
+            )}
+
+            {/* Simple visual "map" row: mini avatars + pulsing dots sorted by distance (emoji radar feel, FOMO visual) */}
+            {liveTrainingNow.length > 1 && (
+              <div className="px-4 py-2 border-b border-[#2F2F35]/50 bg-black/30">
+                <div className="text-[8px] text-[#9CA3AF] mb-1">Cerca de ti (ordenado por distancia)</div>
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {[...liveTrainingNow].sort((a,b)=> (a.distance||0)-(b.distance||0)).map((u, idx) => (
+                    <div key={u.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(u); }} className="flex flex-col items-center text-center cursor-pointer active:opacity-80">
+                      <div className="relative">
+                        {u.photos?.[0] ? <img src={u.photos[0]} className="w-8 h-8 rounded-full object-cover border border-[#22c55e]/50" /> : <div className="w-8 h-8 rounded-full bg-[#22c55e]/20 flex items-center justify-center text-[10px]">{u.name[0]}</div>}
+                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-[#22c55e] rounded-full ring-1 ring-black" style={{animation: 'live-pulse-green 1.6s ease-in-out infinite'}}></div>
+                      </div>
+                      <div className="text-[8px] mt-0.5 text-white truncate max-w-[42px]">{u.name.split(' ')[0]}</div>
+                      <div className="text-[7px] text-[#22c55e]">{(u.distance||0).toFixed(0)}km</div>
+                    </div>
+                  ))}
                 </div>
-              )) : <div className="text-center text-[#9CA3AF]">Nadie live cerca ahora. ¡Sé el primero!</div>}
+              </div>
+            )}
+
+            <div className="overflow-auto flex-1 p-4">
+              {(() => {
+                let list = [...liveTrainingNow]
+                // search
+                if (liveModalSearch.trim()) {
+                  const q = liveModalSearch.toLowerCase().trim()
+                  list = list.filter(u => (u.name || '').toLowerCase().includes(q) || (u.trainingTypes||[]).join(' ').toLowerCase().includes(q))
+                }
+                // sort
+                if (liveModalSort === 'urgency') {
+                  list.sort((a: any, b: any) => (a.seVaEnMin || 99) - (b.seVaEnMin || 99))
+                } else {
+                  list.sort((a: any, b: any) => (a.distance || 999) - (b.distance || 999))
+                }
+                return list.length > 0 ? list.map(user => (
+                  <div key={user.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(user); }} className="card card-glass p-3 mb-2 flex gap-3 cursor-pointer active:scale-95">
+                    {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-12 h-12 rounded-xl object-cover" />}
+                    <div className="flex-1">
+                      <div className="font-semibold">{user.name} · {user.distance.toFixed(1)}km</div>
+                      <div className="text-[#9CA3AF] text-sm">{user.trainingTypes?.join(', ') || 'Entreno'}</div>
+                      <div className="text-[#22c55e] text-xs">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m {user.seVaEnMin > 0 ? (user.seVaEnMin < 15 ? `· se va pronto en ${user.seVaEnMin}m 🔥` : `· se va en ${user.seVaEnMin}m`) : ''}</div>
+                    </div>
+                    <div className="flex flex-col gap-1 self-center">
+                      <button onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); toast.success('¡Unido al live!'); }} className="text-[10px] bg-[#22c55e] text-black px-3 py-1 rounded">Unirme</button>
+                      <button onClick={(e) => { e.stopPropagation(); setShowLiveModal(false); openChat(user.id); /* auto-like for chat access */ if (!matches.includes(user.id) && !realMatches.includes(user.id)) handleSwipe(user.id, 'right'); }} className="text-[9px] border border-[#22c55e]/50 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10">Chatear ya</button>
+                    </div>
+                  </div>
+                )) : <div className="text-center text-[#9CA3AF]">Sin resultados. ¡Sé el primero!</div>
+              })()}
             </div>
-            <div className="p-4 text-center text-xs text-[#9CA3AF]">Toca para perfil o únete. ¡Abre la app seguido por la urgencia!</div>
+            <div className="p-4 text-center text-xs text-[#9CA3AF]">Toca card → perfil. Unirme = like instant. Chatear abre Mensajes. ¡La urgencia hace que abras seguido!</div>
           </div>
         )}
 
@@ -3669,6 +3788,7 @@ function App() {
                   <div className="text-[#9CA3AF] text-sm flex items-center gap-1">
                     Muro de la comunidad • el match del movimiento
                     <span className="live-pill text-[8px]">EN VIVO</span>
+                    {liveTrainingNow.length > 0 && <span className="text-[8px] text-[#22c55e]">🟢 {liveTrainingNow.length} live</span>}
                   </div>
                 </div>
                 <div className="flex gap-2 items-center">
@@ -3723,10 +3843,12 @@ function App() {
 
             {liveTrainingNow.length > 0 && (
               <div className="mb-3">
-                <div className="text-[9px] text-[#22c55e] mb-1 px-1">🟢 Live ahora en la comunidad</div>
+                <div className="text-[9px] text-[#22c55e] mb-1 px-1">🟢 Live ahora en la comunidad {liveTrainingNow.some(u=>u.seVaEnMin<15) ? '· ¡se va pronto!' : ''}</div>
                 <div className="flex gap-1 overflow-x-auto pb-1">
                   {liveTrainingNow.slice(0,3).map(u => (
-                    <div key={u.id} onClick={() => setActiveTab('explore')} className="text-[9px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-0.5 rounded-full border border-[#22c55e]/30 cursor-pointer active:bg-[#22c55e]/20">{u.name} ({u.distance.toFixed(0)}km)</div>
+                    <motion.div key={u.id} onClick={() => setActiveTab('explore')} whileTap={{scale:0.94}} className="text-[9px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-0.5 rounded-full border border-[#22c55e]/30 cursor-pointer active:bg-[#22c55e]/20 flex items-center gap-1">
+                      {u.name} ({u.distance.toFixed(0)}km) {u.seVaEnMin < 15 && <span className="text-red-400">🔥</span>}
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -4747,17 +4869,23 @@ function App() {
               </div>
             </div>
 
-            {/* Stats row - premium visual cards */}
-            <div className="px-4 mt-4 grid grid-cols-3 gap-3">
+            {/* Stats row - premium visual cards + LIVE count as global killer stat in header (urgency / FOMO) */}
+            <div className="px-4 mt-4 grid grid-cols-4 gap-2">
               {[
                 { label: 'Matches', value: matches?.length || 0, icon: Heart, color: '#FF671F' },
                 { label: 'Sesiones', value: squads?.length || 0, icon: Star, color: '#00C4B4' },
-                { label: 'Nivel', value: currentUser.level || '—', icon: Dumbbell, color: '#FF4F79' }
-              ].map((stat, i) => (
-                <div key={i} className="card p-4 text-center rounded-2xl flex flex-col items-center justify-center">
-                  <stat.icon size={18} className="mb-1" style={{ color: stat.color }} />
-                  <div className="stat-number" style={{ color: stat.color }}>{stat.value}</div>
-                  <div className="text-[10px] text-[#9CA3AF] mt-0.5 font-medium tracking-widest">{stat.label}</div>
+                { label: 'Nivel', value: currentUser.level || '—', icon: Dumbbell, color: '#FF4F79' },
+                { label: 'Live cerca', value: liveTrainingNow.length, icon: Zap, color: '#22c55e', isLive: true }
+              ].map((stat: any, i) => (
+                <div 
+                  key={i} 
+                  onClick={stat.isLive && liveTrainingNow.length > 0 ? () => { setActiveTab('explore'); setShowLiveModal(true); } : undefined}
+                  className={`card p-3 text-center rounded-2xl flex flex-col items-center justify-center ${stat.isLive && liveTrainingNow.length > 0 ? 'cursor-pointer active:scale-95 border border-[#22c55e]/40' : ''}`}
+                >
+                  <stat.icon size={16} className="mb-0.5" style={{ color: stat.color }} />
+                  <div className="stat-number text-lg" style={{ color: stat.color }}>{stat.value}</div>
+                  <div className="text-[9px] text-[#9CA3AF] mt-0 font-medium tracking-widest">{stat.label}</div>
+                  {stat.isLive && liveTrainingNow.length > 0 && <div className="text-[8px] text-[#22c55e] mt-0.5">¡Ver ahora!</div>}
                 </div>
               ))}
             </div>

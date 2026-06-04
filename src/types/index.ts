@@ -21,6 +21,8 @@
     idPhoto?: string
     selfiePhoto?: string
   }
+  trainingNow?: boolean
+  trainingNowSince?: number
 }
 
 export interface Message {
