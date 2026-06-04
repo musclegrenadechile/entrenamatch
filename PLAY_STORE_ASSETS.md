@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 27 / 0.1.22-mapa-todo. **MAPA MEJORADO CON TODO + INTERACTIVO**: 
+**Current version for this upload**: versionCode 29 / 0.1.24-continua-mapa. **SIGUE CON TODO MAPA + VIVO PRECIOSO**: high-energy markers, leyenda con conteos + "Mi zona", tethers fluyendo, vibe bars breathe, orb espectacular, FOMO cards. 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -148,14 +148,29 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 ---
 
 ## What's new (for this Pre-Alpha release, short & punchy)
-**v0.1.24-continua-mapa (code 29) — SIGUE CON TODO: MAPA MÁS VIVO + POLISH PRECIOSO (high-energy markers, legend con counts, tethers fluyendo, vibe breathe, orb espectacular)**
-• **Mapa ultra vivo**: pastillas de zona coloreadas con conteo live realtime (al filtrar actualiza todo). Marcadores high-energy (3+ joins o en Sync): pulso más rápido + glow anillo + badge extra. Tethers con animación de flujo (se sienten conectados). Leyenda interactiva premium con hover/active pop + haptic. Badge de conteo filtra correctamente. Ayuda actualizada. Sigue con todo el mapa.
+
+**READY FOR PLAY CLOSED UPLOAD (v0.1.24-continua-mapa code 29)**
+- Fresh signed AAB: `EntrenaMatch-v0.1.24-continua-mapa-code29-20260604-1940.aab` (7.2 MB) + `EntrenaMatch-release.aab`
+- Fresh debug APK for device: `EntrenaMatch-debug-continua-mapa-0.1.24-20260604-1939.apk` (10 MB) + `EntrenaMatch-debug.apk`
+- Web: pushed to main → GH Pages will have the new bundle (hard refresh after Actions finish).
+- Copy the short "What's new" below directly into Play Console when uploading the AAB to closed track.
+
+**v0.1.24-continua-mapa (code 29) — SIGUE CON TODO: MAPA MÁS VIVO + POLISH PRECIOSO (high-energy markers, legend con counts + "Mi zona", tethers fluyendo, vibe breathe, orb espectacular)**
+• **Mapa ultra vivo**: pastillas de zona coloreadas con conteo live realtime (al filtrar actualiza todo). Botón rápido "📍 Mi zona" (usa tu ciudad del perfil para filtrar al instante). Marcadores high-energy (3+ joins o en Sync): pulso más rápido + glow anillo + badge extra. Tethers con animación de flujo (se sienten conectados). Leyenda interactiva premium con hover/active pop + haptic. Badge de conteo filtra correctamente. Ayuda actualizada. Sigue con todo el mapa.
 • Perfil más vivo: Vibe Score bar y barras de historial ahora "respiran" (animación breathe) cuando estás live o tienes live bonds activos. +12 live bonds ya tenía pulse, ahora todo el stack vibe se siente dinámico.
 • Arena: energy-orb.high más espectacular (glow naranja-rosa más intenso, pulso más rápido + saturate cuando >80 vibe).
 • Tethers mapa: animación flow + hover más grueso/brillante.
 • Feed live cards: los de alta FOMO (joins>=3) ahora tienen borde glow naranja + pulse sutil.
-• Versión 0.1.24-continua-mapa (code 29). Build limpia + APK debug fresco listo para adb.
+• AAB + debug APK frescos listos (ver nombres abajo). Build limpia + pipeline completo.
 • Todo el pipeline: web GH Pages, Android AAB/debug, docs actualizados. Sigue con todo ritmo.
+
+**Short "What's new" (copy-paste to Play Console for v0.1.24 code 29):**
+Mapa más vivo y precioso: pastillas de zona con conteos live en tiempo real + botón "Mi zona" (filtro personal instantáneo). Marcadores high-energy con pulso rápido y glow cuando hay FOMO (3+ se unieron) o parejas en EntrenaSync. Tethers entre Sync ahora fluyen con animación. Perfil: barras de Vibe Score e historial "respiran" cuando estás en vivo o tus legends están activos. Orb de la Arena más espectacular en alta energía. Tarjetas live con glow FOMO. Mejoras visuales y hápticas en todo. Real-time map por zonas aún más único y atractivo. Build estable (code 29).
+
+**Artifacts for this version:**
+- AAB (Play): EntrenaMatch-v0.1.24-continua-mapa-code29-20260604-1940.aab (y EntrenaMatch-release.aab)
+- Debug APK (pruebas adb): EntrenaMatch-debug-continua-mapa-0.1.24-20260604-1939.apk (y EntrenaMatch-debug.apk)
+- Web: push a main → https://musclegrenadechile.github.io/entrenamatch/ (hard refresh tras CI)
 
 **v0.1.23-visual-polish (versionCode 28) — REVISIÓN COMPLETA ESTÉTICA VISUAL + UX (app preciosa)**
 • Revisión exhaustiva de toda la estética: top bar más limpio y consistente, live pill/banner/strip/cards con lifts hovers scales glows activos, Explore/Perfiles/Feed/Muro/Arena/Mapa con hover:-translate-y-1.5 + active:scale-[0.985] + transiciones suaves + haptics en casi todos botones/acciones. 

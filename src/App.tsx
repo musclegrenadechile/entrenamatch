@@ -5278,7 +5278,7 @@ function App() {
                     Centrar
                   </button>
 
-                  {/* Enhanced interactive zone legend (sigue con todo el mapa): colorful live pills with counts, hover pop, active ring/glow. Makes map feel premium + alive. */}
+                  {/* Enhanced interactive zone legend (sigue con todo el mapa): colorful live pills with counts, hover pop, active ring/glow + "Mi zona" quick filter. Makes map feel premium + alive. */}
                   <div className="absolute top-2 left-2 z-30 flex flex-col gap-1">
                     {['Viña del Mar', 'Santiago', 'Valparaíso', 'Concon'].map(city => {
                       const col = mapZoneColors[city] || mapZoneColors.default
@@ -5302,6 +5302,19 @@ function App() {
                         </button>
                       )
                     })}
+                    {/* Quick "Mi zona" button using your profile city (or location) for instant personal filter */}
+                    {currentUser?.city && ['Viña del Mar', 'Santiago', 'Valparaíso', 'Concon'].includes(currentUser.city) && (
+                      <button
+                        onClick={() => {
+                          try { triggerHaptic('medium') } catch {}
+                          const myZone = currentUser.city
+                          setSelectedMapZone(selectedMapZone === myZone ? null : myZone)
+                        }}
+                        className={`text-[8px] px-2 py-0.5 rounded-full border self-start transition-all active:scale-[0.96] ${selectedMapZone === currentUser.city ? 'bg-[#3b82f6] text-white border-[#3b82f6]' : 'bg-black/70 text-[#3b82f6] border-[#3b82f6]/40 hover:bg-[#3b82f6]/10'}`}
+                      >
+                        📍 Mi zona
+                      </button>
+                    )}
                     {selectedMapZone && (
                       <button onClick={() => { try { triggerHaptic('light') } catch {}; setSelectedMapZone(null) }} className="text-[7px] text-white/50 hover:text-white/80 px-1 py-px self-start active:opacity-70">✕ todas las zonas</button>
                     )}
@@ -5336,9 +5349,9 @@ function App() {
               )}
               {showLiveMap && (
                 <div className="mt-1 text-[8px] text-[#9CA3AF] px-1 flex items-center gap-2">
-                  Foto/iniciales. Pulsos más rápidos + anillo glow = alta energía (3+ joins o en Sync). 
+                  Foto/iniciales. Pulsos rápidos + glow = alta energía (3+ joins o en Sync). 
                   <span className="text-[#FF671F]">Líneas fluyendo</span> = pares EntrenaSync (único). 
-                  <span className="text-[#3b82f6]">●</span> = tú. Legend: toca pastilla zona para filtrar (cuenta live).
+                  <span className="text-[#3b82f6]">●</span> = tú. Legend: toca pastilla (cuenta live) o "📍 Mi zona" para filtrar personal.
                 </div>
               )}
             </div>
