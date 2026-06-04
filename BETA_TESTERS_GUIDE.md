@@ -303,3 +303,14 @@ Gracias de verdad! Tu feedback va a definir cómo evoluciona la app (incluyendo 
 Hard refresh y prueba el banner de instalar, los motivos de compat y el botón global de refresco.
 
 Cualquier duda, avísanos.
+
+## New closed testing build (v0.1.10-prealpha / code 13) — json fixed edition
+
+- google-services.json with exact package com.entrenamatch.app placed + copied.
+- Full pipeline succeeded: google-services check now passes with "CONTAINS MATCHING package".
+- Includes every recent fix/polish: EntrenaSync join is now attractive + no spam, Publish directly from Feed with nice modal (no profile redirect), muro "Añadir foto" now uses proper file picker + great preview (no URL prompt), live people visibility fixed, profile nivel headers now square chips, feed filter bar scrolls horizontally, many muro visual upgrades, etc.
+- AAB: EntrenaMatch-v0.1.10-prealpha-json-fixed-full-fixes.aab (in root).
+- Test protocol: install, login (real), toggle live → should appear in lists for others (with location or without), join live of another live user → button shows loading, auto goes to Profile with the rich EntrenaSync panel (timer + vibe meter + actions), no spam on repeated taps, publish from Feed tab opens nice modal and post appears immediately in Feed list, photo upload in muro is now nice file selection with preview.
+- Push/Integrity should work properly now (no launch crash).
+
+Update and test thoroughly. Report back.

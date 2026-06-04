@@ -1176,3 +1176,19 @@ Builds clean. Sigue con todo.
 El "Publicar en tu muro" (y el equivalente desde Feed) ahora tiene un flujo de foto que se siente moderno, atractivo y parte de una app pulida. Nada de prompts feos.
 
 Builds clean. Sigue con todo.
+
+## json fixed — full release pipeline executed (v0.1.10 / code 13)
+
+User: "json fixed, sigue"
+- Verified new correct google-services.json (with com.entrenamatch.app) was in Downloads\google-services (3).json (newest).
+- Copied to android\app\google-services.json .
+- Bumped versions: build.gradle 13/0.1.10-prealpha, package.json, App.tsx strings, playIntegrity.ts.
+- Re-ran full android:build (CAPACITOR=1) + gradle clean bundleRelease using the working env from publish scripts / build-aab-now.bat.
+- build.gradle strict matcher now correctly logs "google-services.json found and CONTAINS MATCHING package com.entrenamatch.app — applying...".
+- Fresh AAB produced successfully (no more "No matching client" failure).
+- Copied to root as EntrenaMatch-v0.1.10-prealpha-json-fixed-full-fixes.aab .
+- Updated PLAY_STORE_ASSETS.md, plan.md, BETA_TESTERS_GUIDE.md with new version + "What's new" covering: EntrenaSync join UX, direct Feed publish modal, muro photo overhaul, live visibility, nivel headers, feed filter scroll, all previous unique/polish work.
+- Commit + push done.
+- Now the AAB has working Firebase native (Push, Integrity, etc.) + every recent improvement. Ready for closed track upload.
+
+Sigue con todo. Next AAB will be even better.

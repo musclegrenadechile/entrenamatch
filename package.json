@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.9-prealpha",
+  "version": "0.1.10-prealpha",
   "type": "module",
   "scripts": {
     "dev": "vite",
