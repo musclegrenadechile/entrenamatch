@@ -4305,74 +4305,79 @@ function App() {
         {/* ===== GLOBAL FEED TAB - Muro Comunitario (per plan: global recent activity feed) ===== */}
         {activeTab === 'feed' && (
           <div className="flex-1 overflow-auto p-4">
-            <div className="sticky top-0 bg-[#0D0D10] z-10 -mx-4 px-4 pb-2">
+            <div className="sticky top-0 bg-[#0D0D10]/95 backdrop-blur-md z-10 -mx-4 px-4 pb-3 border-b border-[#2F2F35]/50">
               <div className="flex items-center justify-between mb-2 px-1">
                 <div>
-                  <div className="section-header">Feed Global</div>
-                  <div className="text-[#9CA3AF] text-sm flex items-center gap-1">
+                  <div className="section-header flex items-center gap-2">Feed Global <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black font-bold">EN VIVO</span></div>
+                  <div className="text-[#9CA3AF] text-sm flex items-center gap-1 mt-0.5">
                     Muro de la comunidad • el match del movimiento
-                    <span className="live-pill text-[8px]">EN VIVO</span>
-                    {liveTrainingNow.length > 0 && <span className="text-[8px] text-[#22c55e]">🟢 {liveTrainingNow.length} live</span>}
+                    {liveTrainingNow.length > 0 && <span className="text-[8px] ml-1 px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold shadow-sm">🟢 {liveTrainingNow.length} LIVE</span>}
                   </div>
                 </div>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-1.5 items-center">
                   <input 
                     type="text" 
                     value={feedSearch} 
                     onChange={e => setFeedSearch(e.target.value)}
-                    placeholder="Buscar posts o usuarios..."
-                    className="form-input text-[10px] py-1 px-2 w-32"
+                    placeholder="Buscar..."
+                    className="form-input text-xs py-1 px-3 w-28 rounded-2xl"
                   />
                   <button 
                     onClick={() => setFeedOnlyReal(!feedOnlyReal)}
-                    className={`text-[10px] px-2 py-0.5 rounded-full border ${feedOnlyReal ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#FF671F]/30 text-[#FF671F]'} active:bg-[#FF671F]/10`}
+                    className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 ${feedOnlyReal ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#FF671F]/40 text-[#FF671F] hover:bg-[#FF671F]/10'}`}
                   >
-                    {feedOnlyReal ? '★ Solo reales' : 'REAL'}
+                    {feedOnlyReal ? '★ Reales' : 'REAL'}
                   </button>
                   <button 
                     onClick={() => setFeedOnlyLive(!feedOnlyLive)}
-                    className={`text-[10px] px-2 py-0.5 rounded-full border ${feedOnlyLive ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'border-[#22c55e]/30 text-[#22c55e]'} active:bg-[#22c55e]/10`}
+                    className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 ${feedOnlyLive ? 'bg-[#22c55e] text-black border-[#22c55e] shadow-sm' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
                   >
-                    {feedOnlyLive ? '🟢 Solo live' : '🟢 Live'}
+                    {feedOnlyLive ? '🟢 Live' : '🟢 Live'}
                   </button>
                   <button 
                     onClick={() => setFeedShowPinnedOnly(!feedShowPinnedOnly)}
-                    className={`text-[10px] px-2 py-0.5 rounded-full border ${feedShowPinnedOnly ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#FF671F]/30 text-[#FF671F]'} active:bg-[#FF671F]/10`}
+                    className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 ${feedShowPinnedOnly ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#FF671F]/40 text-[#FF671F] hover:bg-[#FF671F]/10'}`}
                   >
-                    {feedShowPinnedOnly ? '★ Solo fijados' : '📌 Fijados'}
+                    {feedShowPinnedOnly ? '📌 Fijados' : '📌 Fijados'}
                   </button>
                   <button 
                     onClick={() => { setFeedMaxProfiles(15); setFeedDisplayLimit(10); loadGlobalFeed(); if (!isDemoMode) loadRealProfiles(); }} 
                     disabled={isLoadingFeed}
-                    className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10"
+                    className="text-[9px] px-2.5 py-1 rounded-2xl border border-[#FF671F]/40 text-[#FF671F] active:bg-[#FF671F]/10 active:scale-95"
                   >
-                    {isLoadingFeed ? '...' : 'Refrescar'}
+                    {isLoadingFeed ? '...' : '↻'}
                   </button>
-                  <button onClick={() => setActiveTab('profile')} className="text-[10px] px-2 py-0.5 rounded-full bg-[#FF671F] text-black active:bg-[#E55A1A]">
-                    Publicar
+                  <button onClick={() => setActiveTab('profile')} className="text-[9px] px-3 py-1 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black font-bold active:brightness-90 shadow-sm">
+                    + Publicar
                   </button>
                 </div>
-                {liveTrainingNow.length > 0 && (
-                  <div className="text-[9px] text-[#22c55e] mt-1 px-1 flex items-center gap-1">
-                    🟢 {liveTrainingNow.length} live ahora — <button onClick={() => setActiveTab('explore')} className="underline">ver en Explore →</button>
-                  </div>
-                )}
               </div>
               {liveTrainingNow.length > 0 && (
-                <div className="text-[10px] text-[#22c55e] mb-1 px-1 flex items-center gap-1">
-                  🟢 {liveTrainingNow.length} live ahora cerca — <button onClick={() => setActiveTab('explore')} className="underline">ver en Explore para unirte →</button>
+                <div className="text-[9px] text-[#22c55e] px-1 flex items-center gap-1 -mt-1">
+                  🔥 {liveTrainingNow.length} personas entrenando ahora en la comunidad — <button onClick={() => setActiveTab('explore')} className="underline font-medium">Únete en Explore</button>
                 </div>
               )}
             </div>
 
             {liveTrainingNow.length > 0 && (
-              <div className="mb-3">
-                <div className="text-[9px] text-[#22c55e] mb-1 px-1">🟢 Live ahora en la comunidad {liveTrainingNow.some(u=>u.seVaEnMin<15) ? '· ¡se va pronto!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE' : ''}</div>
-                <div className="flex gap-1 overflow-x-auto pb-1">
-                  {liveTrainingNow.slice(0,3).map(u => (
-                    <motion.div key={u.id} onClick={() => setActiveTab('explore')} whileHover={{scale:1.08, y:-1}} whileTap={{scale:0.94}} className="text-[8px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-1 rounded-2xl border border-[#22c55e]/50 cursor-pointer active:bg-[#22c55e]/20 flex items-center gap-1 min-w-[110px] shadow-sm">
-                      {u.name.split(' ')[0]} ({u.distance.toFixed(0)}km) {u.seVaEnMin < 15 && <span className="text-red-400">🔥{u.seVaEnMin}m</span>} {u.joinCount > 0 && <span className="text-[7px]">+{u.joinCount}🔥</span>}
-                      {u.seVaEnMin > 0 && <div className="h-0.5 bg-[#22c55e]/30 w-8 mt-0.5"><div className="h-0.5 bg-[#22c55e]" style={{width: `${Math.max(10, Math.min(100, (90 - u.seVaEnMin)/90 * 100))}%`}}></div></div>}
+              <div className="mb-4 -mx-1">
+                <div className="text-[8px] uppercase tracking-[1px] text-[#22c55e]/80 mb-1.5 px-2 font-bold flex items-center gap-1">🔥 EN VIVO AHORA EN LA COMUNIDAD {liveTrainingNow.length > 5 && <span className="text-red-400">HOT ZONE</span>}</div>
+                <div className="flex gap-2 overflow-x-auto pb-2 px-1">
+                  {liveTrainingNow.slice(0,4).map((u, idx) => (
+                    <motion.div 
+                      key={u.id} 
+                      onClick={() => setActiveTab('explore')} 
+                      whileHover={{scale:1.03, y:-2}} 
+                      whileTap={{scale:0.97}} 
+                      initial={{opacity:0, x:10}}
+                      animate={{opacity:1, x:0}}
+                      transition={{delay: idx*0.03}}
+                      className="text-[9px] bg-[#0a120f] border border-[#22c55e]/40 text-[#22c55e] px-3 py-1.5 rounded-2xl cursor-pointer active:bg-[#22c55e]/10 flex flex-col min-w-[92px] shadow-sm hover:border-[#22c55e]/70"
+                    >
+                      <div className="font-bold flex items-center gap-1 text-white/90">{u.name.split(' ')[0]} <span className="text-[7px] text-[#9CA3AF]">{u.distance.toFixed(0)}km</span></div>
+                      {u.seVaEnMin > 0 && <div className="text-[7px] text-orange-400">{u.seVaEnMin < 15 ? '🔥 se va pronto' : `se va en ${u.seVaEnMin}m`}</div>}
+                      {u.joinCount > 0 && <div className="text-[7px] text-[#22c55e]/70">+{u.joinCount} se unieron</div>}
+                      {u.seVaEnMin > 0 && <div className="h-px bg-[#22c55e]/20 mt-1"><div className="h-px bg-[#22c55e]" style={{width: `${Math.max(8, Math.min(100, (90 - u.seVaEnMin)/90 * 100))}%`}}></div></div>}
                     </motion.div>
                   ))}
                 </div>
@@ -4405,23 +4410,24 @@ function App() {
 
               if (feedPosts.length === 0) {
                 return (
-                  <div className="card p-8 rounded-3xl text-center mt-8">
-                    <Activity className="mx-auto text-[#FF671F] mb-3" size={42} />
-                    <div className="font-semibold text-xl mb-2">Aún no hay actividad en el feed</div>
-                    <p className="text-sm text-[#9CA3AF] mb-4">Publica en tu muro o espera a que la comunidad comparta entrenos. ¡Los posts de testers reales aparecerán aquí en vivo!</p>
-                    <div className="flex gap-2 justify-center">
-                      <button onClick={() => setActiveTab('profile')} className="btn-primary px-6">Ir a tu Muro</button>
-                      {!isDemoMode && <button onClick={() => { setFeedMaxProfiles(15); loadGlobalFeed(); }} className="px-4 py-2 border border-[#FF671F]/60 text-[#FF671F] rounded-2xl text-sm">Cargar comunidad</button>}
+                  <div className="card card-glass p-10 rounded-3xl text-center mt-6 border border-[#FF671F]/20">
+                    <div className="text-5xl mb-4">🏋️‍♂️</div>
+                    <div className="font-bold text-2xl mb-2 tracking-tight">El feed está despertando</div>
+                    <p className="text-sm text-[#9CA3AF] max-w-[280px] mx-auto mb-5">Sé el primero en publicar un entreno, una foto o un "¡me uno!". Los posts de la comunidad real aparecen aquí en vivo con likes, comentarios y urgencia.</p>
+                    <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                      <button onClick={() => setActiveTab('profile')} className="btn-primary px-8 py-2.5 text-sm">Publicar en mi muro</button>
+                      {!isDemoMode && <button onClick={() => { setFeedMaxProfiles(15); loadGlobalFeed(); }} className="px-6 py-2.5 border border-[#FF671F]/50 text-[#FF671F] rounded-2xl text-sm active:bg-[#FF671F]/10">Cargar más comunidad</button>}
                     </div>
+                    <div className="text-[10px] text-[#9CA3AF]/60 mt-4">Tip: Fija tus posts para que destaquen en el feed global</div>
                   </div>
                 );
               }
 
               return (
                 <>
-                  <div className="flex items-center justify-between text-xs text-[#9CA3AF] mb-3 px-1">
-                    <span>{feedPosts.length} posts {feedSearch || feedOnlyReal || feedShowPinnedOnly || feedOnlyLive ? 'filtrados' : 'recientes'} de la comunidad</span>
-                    {(feedSearch || feedOnlyReal || feedShowPinnedOnly || feedOnlyLive) && <button onClick={() => { setFeedSearch(''); setFeedOnlyReal(false); setFeedShowPinnedOnly(false); setFeedOnlyLive(false); }} className="text-[#FF671F] underline">limpiar filtros</button>}
+                  <div className="flex items-center justify-between text-[10px] text-[#9CA3AF] mb-2 px-1 font-medium">
+                    <span>{feedPosts.length} posts de la comunidad {feedSearch || feedOnlyReal || feedShowPinnedOnly || feedOnlyLive ? '· filtrados' : '· recientes'}</span>
+                    {(feedSearch || feedOnlyReal || feedShowPinnedOnly || feedOnlyLive) && <button onClick={() => { setFeedSearch(''); setFeedOnlyReal(false); setFeedShowPinnedOnly(false); setFeedOnlyLive(false); }} className="text-[#FF671F] underline active:text-white">limpiar</button>}
                   </div>
                   {(() => {
                     const pinnedInFeed = allCommunityPosts.filter((p: any) => p.pinned);
@@ -4431,7 +4437,7 @@ function App() {
                     return null;
                   })()}
                   <AnimatePresence>
-                  {feedPosts.map((post: any) => {
+                  {feedPosts.map((post: any, idx: number) => {
                     const ownerProfile = realProfiles.find(r => r.id === post.ownerId);
                     const owner = ownerProfile || { name: 'Compañero', id: post.ownerId, photos: [] };
                     const liked = post.likes.includes(effectiveUserId);
@@ -4439,81 +4445,86 @@ function App() {
                     return (
                       <motion.div 
                         key={post.id} 
-                        className={`card card-glass p-4 mb-3 border-[#2F2F35]/70 ${post.pinned ? 'ring-1 ring-[#FF671F]/60 shadow-lg shadow-[#FF671F]/5' : ''} hover:border-[#FF671F]/30 transition-all`}
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -12, scale: 0.97, height: 0, marginBottom: 0 }}
-                        whileHover={{ scale: 1.015, y: -2, boxShadow: '0 15px 25px -5px rgb(0 0 0 / 0.25)' }}
-                        transition={{ type: 'spring', stiffness: 280, damping: 18 }}
+                        className={`card card-glass p-4 mb-3 border-[#2F2F35]/70 ${post.pinned ? 'ring-2 ring-[#FF671F]/70 shadow-xl shadow-[#FF671F]/10' : ''} hover:border-[#FF671F]/40 overflow-hidden transition-all`}
+                        initial={{ opacity: 0, y: 16, scale: 0.985 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.98, height: 0, marginBottom: 0 }}
+                        whileHover={{ scale: 1.012, y: -3, boxShadow: '0 20px 30px -8px rgb(0 0 0 / 0.3)' }}
+                        transition={{ type: 'spring', stiffness: 300, damping: 20, delay: Math.min(idx * 0.015, 0.2) }}
                       >
-                        {/* Owner header with photo */}
-                        <div className="flex items-center gap-2 mb-2" onClick={() => setShowFullProfile(owner as any)} style={{cursor: 'pointer'}}>
+                        {/* Owner header with photo - premium */}
+                        <div className="flex items-center gap-2.5 mb-2.5" onClick={() => setShowFullProfile(owner as any)} style={{cursor: 'pointer'}}>
                           {owner.photos && owner.photos[0] ? (
-                            <img src={owner.photos[0]} className="w-6 h-6 rounded-full object-cover border border-[#2F2F35]" />
+                            <img src={owner.photos[0]} className={`w-7 h-7 rounded-full object-cover border-2 ${ownerProfile?.trainingNow ? 'border-[#22c55e] ring-1 ring-[#22c55e]/30' : 'border-[#2F2F35]'}`} />
                           ) : (
-                            <div className="w-6 h-6 rounded-full bg-[#2F2F35] flex items-center justify-center text-[8px]">👤</div>
+                            <div className="w-7 h-7 rounded-full bg-[#2F2F35] flex items-center justify-center text-[10px] ring-1 ring-inset ring-[#FF671F]/20">👤</div>
                           )}
-                          <div className="text-xs text-[#FF671F] font-medium flex-1">
+                          <div className="text-sm text-[#FF671F] font-semibold flex-1 flex items-center gap-1.5">
                             {owner.name}
-                            {ownerProfile && ownerProfile.city && <span className="text-[#9CA3AF] ml-1">· {ownerProfile.city}</span>}
-                            {ownerProfile && ownerProfile.level && <span className="text-[8px] text-[#FF671F]/70 ml-1">{ownerProfile.level}</span>}
-                            {ownerProfile && realProfiles.some(rp => rp.id === post.ownerId) && <span className="ml-1 text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>}
-                            {ownerProfile?.trainingNow && <span className="live-pill bg-[#22c55e] text-black text-[8px] ml-1">🟢 LIVE {ownerProfile.liveStreak ? `🔥${ownerProfile.liveStreak}d` : ''}</span>}
-                            {(post.text || '').toLowerCase().includes('me uno al live') && <span className="text-[8px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-1.5 py-0.5 rounded-full ml-1 font-bold shadow-sm">🔥 live join</span>}
+                            {ownerProfile && ownerProfile.city && <span className="text-[#9CA3AF] text-[10px] font-normal">· {ownerProfile.city}</span>}
+                            {ownerProfile && ownerProfile.level && <span className="text-[8px] px-1 py-px bg-[#FF671F]/10 text-[#FF671F]/80 rounded">{ownerProfile.level}</span>}
+                            {ownerProfile && realProfiles.some(rp => rp.id === post.ownerId) && <span className="text-[8px] bg-[#FF671F] text-black px-1.5 rounded font-bold">REAL</span>}
+                            {ownerProfile?.trainingNow && <span className="live-pill bg-[#22c55e] text-black text-[8px] ml-0.5">🟢 LIVE {ownerProfile.liveStreak ? `🔥${ownerProfile.liveStreak}d` : ''}</span>}
+                            {(post.text || '').toLowerCase().includes('me uno al live') && <span className="text-[8px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-1.5 py-px rounded-full font-bold shadow">🔥 JOIN</span>}
                           </div>
-                          <div className="text-[10px] text-[#9CA3AF]">· {getRelativeTime(post.timestamp)}</div>
-                          {post.pinned && <span className="text-[8px] text-[#FF671F]">fijado</span>}
-                          {Date.now() - post.timestamp < 3600000 && <span className="text-[8px] bg-[#22c55e] text-black px-1 rounded">nuevo</span>}
+                          <div className="text-[9px] text-[#9CA3AF] tabular-nums">{getRelativeTime(post.timestamp)}</div>
+                          {post.pinned && <span className="text-[8px] px-1 py-px bg-[#FF671F]/20 text-[#FF671F] rounded">📌 FIJADO</span>}
+                          {Date.now() - post.timestamp < 3600000 && <span className="text-[8px] bg-[#22c55e] text-black px-1 rounded font-bold">NUEVO</span>}
                         </div>
 
-                        <div className="text-sm leading-relaxed mb-2">{post.text}</div>
-                        {post.photo && <img src={post.photo} className="w-full rounded-2xl max-h-52 object-cover mb-3 border border-[#2F2F35]" />}
+                        <div className="text-[13px] leading-snug mb-2.5 text-white/95">{post.text}</div>
+                        {post.photo && (
+                          <div className="relative mb-3 -mx-1 rounded-2xl overflow-hidden ring-1 ring-[#2F2F35]">
+                            <img src={post.photo} className="w-full max-h-[220px] object-cover transition-transform duration-300 hover:scale-[1.03]" />
+                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent" />
+                          </div>
+                        )}
 
-                        <div className="flex items-center gap-4 text-sm">
+                        <div className="flex items-center gap-3 text-sm pt-1">
                           <button 
                             onClick={() => likeProfilePost(post.id, post.ownerId)}
-                            className={`flex items-center gap-1 transition ${liked ? 'text-[#FF671F]' : 'text-[#9CA3AF] hover:text-[#FF671F]'}`}
+                            className={`flex items-center gap-1.5 transition active:scale-95 ${liked ? 'text-[#FF671F]' : 'text-[#9CA3AF] hover:text-[#FF671F]'}`}
                           >
-                            <motion.span animate={{ scale: liked ? [1, 1.35, 1] : 1 }} transition={{duration: 0.22}}>{liked ? '❤️' : '🤍'}</motion.span> 
-                            <span className="font-medium">{post.likes.length}</span>
+                            <motion.span animate={{ scale: liked ? [1, 1.4, 1] : 1 }} transition={{duration: 0.2}} className="text-base">{liked ? '❤️' : '🤍'}</motion.span> 
+                            <span className="font-semibold tabular-nums">{post.likes.length}</span>
                           </button>
                           <button 
                             onClick={() => startComment(post.id, post.ownerId, owner.name)}
-                            className="flex items-center gap-1 text-[#9CA3AF] hover:text-[#FF671F]"
+                            className="flex items-center gap-1.5 text-[#9CA3AF] hover:text-[#FF671F] active:scale-95"
                           >
-                            💬 <span className="font-medium">{post.comments.length}</span>
+                            💬 <span className="font-semibold tabular-nums">{post.comments.length}</span>
                           </button>
 
                           {isOwnPost && (
                             <>
                               <button 
                                 onClick={() => togglePinPost(post.id, post.ownerId, post.pinned)}
-                                className={`text-xs ml-1 ${post.pinned ? 'text-[#FF671F]' : 'text-[#9CA3AF] active:text-[#FF671F]'}`}
-                                title={post.pinned ? 'Desfijar' : 'Fijar en feed'}
+                                className={`text-xs ml-0.5 px-1 py-0.5 rounded active:scale-95 ${post.pinned ? 'text-[#FF671F]' : 'text-[#9CA3AF] active:text-[#FF671F]'}`}
+                                title={post.pinned ? 'Desfijar del feed' : 'Fijar en feed global'}
                               >
                                 📌
                               </button>
                               <button 
                                 onClick={() => deleteProfilePost(post.id, post.ownerId)}
-                                className="text-red-400 text-xs ml-1 active:text-red-500"
+                                className="text-red-400 text-xs ml-0.5 px-1 py-0.5 active:text-red-500 active:scale-95"
                               >
                                 🗑
                               </button>
                             </>
                           )}
 
-                          <button onClick={() => setShowFullProfile(owner as any)} className="ml-auto text-[10px] text-[#FF671F] active:underline">Ver perfil completo</button>
+                          <button onClick={() => setShowFullProfile(owner as any)} className="ml-auto text-[10px] text-[#FF671F] active:underline hover:text-white font-medium">Ver perfil →</button>
                         </div>
 
                         {post.comments.length > 0 && (
-                          <div onClick={() => openFullComments(post.id, post.ownerId, owner.name)} className="mt-2 pt-2 border-t border-[#2F2F35] text-xs text-[#9CA3AF] cursor-pointer space-y-0.5">
+                          <div onClick={() => openFullComments(post.id, post.ownerId, owner.name)} className="mt-2.5 pt-2 border-t border-[#2F2F35]/70 text-[11px] text-[#9CA3AF] cursor-pointer bg-[#0a0a0c]/30 -mx-1 px-2 py-1 rounded-xl space-y-1">
                             {post.comments.slice(-2).map((c: any) => (
-                              <div key={c.id} className="flex gap-1.5">
-                                <span className="font-medium text-white/80">{c.userName}:</span> 
-                                <span className="truncate">{c.text}</span>
+                              <div key={c.id} className="flex gap-1.5 items-start">
+                                <span className="font-semibold text-white/90 text-[10px] mt-px">{c.userName}</span> 
+                                <span className="truncate text-[10px] text-white/70">{c.text}</span>
                               </div>
                             ))}
-                            {post.comments.length > 2 && <div className="text-[#FF671F]/70">+{post.comments.length-2} más...</div>}
+                            {post.comments.length > 2 && <div className="text-[#FF671F] text-[9px] font-medium pl-0.5">+{post.comments.length-2} comentarios más • ver hilo</div>}
                           </div>
                         )}
                       </motion.div>
@@ -4522,8 +4533,8 @@ function App() {
                   </AnimatePresence>
 
                   {feedPosts.length < allCommunityPosts.length && (
-                    <div className="text-center mt-2">
-                      <button onClick={() => setFeedDisplayLimit(feedDisplayLimit + 10)} className="text-xs text-[#FF671F] underline active:opacity-70">Cargar más posts</button>
+                    <div className="text-center mt-3">
+                      <button onClick={() => setFeedDisplayLimit(feedDisplayLimit + 10)} className="text-xs px-4 py-1.5 rounded-2xl border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10 active:scale-95">Cargar más posts de la comunidad →</button>
                     </div>
                   )}
                 </>
@@ -5771,7 +5782,7 @@ function App() {
                         exit={{ opacity: 0, y: -12, scale: 0.97, height: 0, marginBottom: 0 }}
                         whileHover={{ scale: 1.01, y: -2 }}
                         transition={{ type: 'spring', bounce: 0.12, duration: 0.28 }}
-                        className={`card card-glass p-4 mb-3 border-[#2F2F35]/70 ${post.pinned ? 'ring-1 ring-[#FF671F]/60 shadow-lg shadow-[#FF671F]/5' : ''} hover:border-[#FF671F]/30 transition-all`}
+                        className={`card card-glass p-4 mb-3 border-[#2F2F35]/70 ${post.pinned ? 'ring-2 ring-[#FF671F]/70 shadow-xl shadow-[#FF671F]/10' : ''} hover:border-[#FF671F]/40 overflow-hidden transition-all`}
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-1 text-[10px] text-[#9CA3AF]" title={new Date(post.timestamp).toLocaleString('es-CL')}>
@@ -7177,8 +7188,13 @@ function App() {
                           transition={{ duration: 0.2 }}
                           className="card card-glass p-3 mb-2 border-[#2F2F35]/80"
                         >
-                          <div className="text-sm leading-snug mb-1.5">{post.pinned ? '📌 ' : ''}{post.text}</div>
-                          {post.photo && <img src={post.photo} className="rounded-xl max-h-40 w-full object-cover mb-2 border border-[#2F2F35]" />}
+                          <div className="text-[13px] leading-snug mb-2 text-white/95">{post.pinned ? '📌 ' : ''}{post.text}</div>
+                          {post.photo && (
+                            <div className="relative mb-3 -mx-1 rounded-2xl overflow-hidden ring-1 ring-[#2F2F35]">
+                              <img src={post.photo} className="w-full max-h-[200px] object-cover transition-transform hover:scale-[1.02]" />
+                              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/30 to-transparent" />
+                            </div>
+                          )}
                           <div className="flex items-center gap-4 text-xs text-[#9CA3AF]">
                             <span title={new Date(post.timestamp).toLocaleString('es-CL')}>{getRelativeTime(post.timestamp)}</span>
                             <span onClick={() => likeProfilePost(post.id, showFullProfile.id)} className="cursor-pointer active:text-[#FF671F]">❤️ {post.likes.length}</span>

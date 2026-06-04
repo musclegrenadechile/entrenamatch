@@ -31,6 +31,14 @@ if not exist "android\keystore.properties" goto :missing_keystore
 
 if not exist "android\play-service-account.json" goto :missing_key
 
+if not exist "android\app\google-services.json" (
+  echo [WARN] android\app\google-services.json NOT FOUND.
+  echo This build will likely produce an APK/AAB that crashes on launch for Android users (Firebase/push init fails).
+  echo See ANDROID_PROJECTS_OVERVIEW.md and plan.md for exact steps to get the json for package com.entrenamatch.app.
+  echo Continuing anyway... but you should place the file and rebuild before uploading to Play.
+  timeout /t 4 >nul
+)
+
 goto :prereqs_ok
 
 :missing_keystore
