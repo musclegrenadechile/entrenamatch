@@ -1107,6 +1107,31 @@ function App() {
     }
   }, [isDemoMode, firebaseUser?.uid])
 
+  // Diagnostic: on native builds, loudly warn (and optionally surface UI) if the push plugin didn't load.
+  // This almost always means the AAB was built without android/app/google-services.json present.
+  useEffect(() => {
+    const isNative = Capacitor.isNativePlatform()
+    if (isNative) {
+      // Give the async loader a moment (it's a local import, usually instant)
+      const t = setTimeout(() => {
+        if (!PushNotifications) {
+          console.error('⚠️ NATIVE BUILD PROBLEM: PushNotifications plugin not loaded. This AAB was almost certainly built WITHOUT google-services.json in android/app/. The app may crash or push will be broken. Rebuild after placing the json from Firebase Console (package: com.entrenamatch.app).')
+          // Surface a non-fatal toast once so testers know the build they have is bad
+          try {
+            // Only if we have a toast lib in scope; safe no-op otherwise
+            // @ts-ignore
+            if (typeof toast !== 'undefined') {
+              toast.error('Build de Android incompleto', { description: 'Falta google-services.json — notificaciones y posiblemente el inicio pueden fallar. Pide una build actualizada.' })
+            }
+          } catch {}
+        } else {
+          console.log('✅ PushNotifications plugin loaded on native — google-services.json was present at build time.')
+        }
+      }, 800)
+      return () => clearTimeout(t)
+    }
+  }, [])
+
   // On real Firebase login (web), request Notification permission once so bg message alerts work when tab hidden
   useEffect(() => {
     if (!isDemoMode && firebaseUser?.uid) {
@@ -3941,7 +3966,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-1.5 text-[10px] font-medium">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0 !px-2 !text-[8px] !bg-[#FF671F]/10 !border-0">PRE-ALPHA</span>
-          <span className="text-white/90">Real backend • v0.1.5-prealpha</span>
+          <span className="text-white/90">Real backend • v0.1.6-prealpha</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -5089,7 +5114,7 @@ function App() {
                               rating: 3,
                               text: `Chat 1:1 con ${activeChat}: Problema reportado por usuario`,
                               platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
-                              appVersion: '0.1.5-prealpha',
+                              appVersion: '0.1.6-prealpha',
                               context: '1v1-chat',
                               createdAt: serverTimestamp(),
                             });
@@ -5937,7 +5962,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.5-prealpha • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.6-prealpha • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -6034,7 +6059,7 @@ function App() {
                     if (!firebaseUser?.uid || !db) { toast('Inicia sesión para enviar feedback'); return }
 
                     const platform = (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web'
-                    const appVersion = '0.1.5-prealpha'
+                    const appVersion = '0.1.6-prealpha'
 
                     try {
                       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
@@ -6159,7 +6184,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.5-prealpha • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.6-prealpha • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>
@@ -7685,7 +7710,7 @@ function App() {
                               rating: 3,
                               text: `Sesión ${showGroupChatModalFor}: Problema reportado por usuario`,
                               platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
-                              appVersion: '0.1.5-prealpha',
+                              appVersion: '0.1.6-prealpha',
                               context: 'group-chat',
                               createdAt: serverTimestamp(),
                             });

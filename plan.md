@@ -640,3 +640,40 @@ Review done (see structured section above). Actioned: clean plan, FCM stub+docs,
 - Commit + push (9a45873) -> GH Pages (servidor) + CI APK.
 - Sigue con todo full! Pr?ximo: FCM full (google-services + docs + test notes), Play manual AAB upload + "What's new", more radar/anim if any, more UI scan.
 
+
+## Diagnóstico crash al abrir app en Android (Play Store AAB descargada)
+
+Causa raíz identificada:
+- Falta `android/app/google-services.json` al momento de hacer los builds de release (AABs v0.1.5 y previos).
+- En android/app/build.gradle había un try/catch + `if (servicesJSON.text)` que **silenciosamente** saltaba `apply plugin: 'com.google.gms.google-services'`.
+- El plugin `@capacitor/push-notifications` (y su dependencia interna firebase-messaging) requiere que el google-services plugin procese el json durante el build para inicializar correctamente FirebaseApp nativo con el package `com.entrenamatch.app`, senderId, etc.
+- Al lanzar la app en dispositivo (WebView + Capacitor Bridge + plugins nativos), la init de Firebase falla con excepción nativa (típico: "Default FirebaseApp is not initialized", o crash en FirebaseInitProvider / Messaging service) ? la app "falla" / se cierra justo al abrir (antes o durante la primera pantalla). No llega a mostrar UI o crashea el proceso Android.
+- Los builds web / debug locales a veces "funcionan" porque el plugin JS no siempre fuerza la init nativa hasta register(), pero en release Play + full plugin load + signed AAB el crash es consistente al cold start.
+- El fix anterior de "crash al activar notif" solo cubría el flujo explícito del botón; no el startup del plugin mismo.
+
+Evidencia:
+- `ls android/app/google-services.json` ? MISSING
+- El conditional en build.gradle saltaba y logueaba solo a info level.
+- AABs generados y subidos sin el json (ver logs publish previos: "google-services.json not found...").
+- capacitor-plugins.ts importa estáticamente el push plugin en builds CAP.
+- Manifest tiene los meta de FCM, pero sin el plugin de gradle no se generan los recursos/config.
+
+Pasos para arreglar YA:
+1. En Firebase Console (proyecto entrenamatch): Project settings ? General ? Tus apps ? Agregar app Android con package **com.entrenamatch.app**. Descarga google-services.json.
+2. Colócalo en `android/app/google-services.json` (junto al build.gradle del app).
+3. (Opcional pero recomendado) En la misma pantalla de la app Android en Firebase, agrega el SHA-1 del release keystore (para Integrity + cualquier Google sign-in futuro).
+4. Reconstruye: `npm run android:build` (web+sync) + gradle bundleRelease (usa publish-play.ps1 o el build:release).
+   - Ahora el gradle debe loguear "google-services.json found — applying..." (mejoré el check para que sea .exists() + length + lifecycle/warn claro).
+5. Copia el nuevo AAB (versionCode 9 / 0.1.6-prealpha), súbelo como **nuevo release** en la pista Prueba cerrada de Play Console.
+6. Testers deben actualizar desde Play (o uninstall/reinstall con el link de la prueba).
+
+Mejoras de código hechas en esta sesión:
+- build.gradle: detección robusta + warnings claros en build si falta el json.
+- Bumps a 0.1.6-prealpha / code 9 para el fix build.
+- Diagnóstico runtime en App.tsx (useEffect) que loguea ERROR + intenta toast si en native y !PushNotifications cargado (para builds futuros rotos).
+- Actualizaciones en PLAY/BETA/plan con el diagnóstico exacto.
+
+Una vez el usuario coloque el json, puedo correr los comandos de build + push + nueva copia de AAB aquí.
+
+Sigue con todo — este era el blocker para que los testers de closed pudieran abrir la app.
+

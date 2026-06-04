@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 8 / 0.1.5-prealpha (exhaustive review + polishes: plan cleaned + structured backlog; FCM stub + token save; live visuals ultra premium + richer empty states + more motion on sessions).
+**Current version for this upload**: versionCode 9 / 0.1.6-prealpha — **CRITICAL FIX**: app crash on launch in Android/Play builds (missing google-services.json for push plugin/Firebase native init). Build now warns loudly if json absent. See BETA guide for exact steps (place json from Firebase Console for com.entrenamatch.app, rebuild, new closed release). Previous polishes preserved (live visuals, empty states, motion, muro, etc).
 - Native push: explícito vía botón en Perfil, defensivo. FCM client + /userPushTokens started.
 - Browser notif: handlers seguros.
 - Manifest mejorado.
@@ -89,7 +89,7 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • Feedback estructurado + historial
 • Múltiples escapes de cuenta + PWA install mejorado
 • Legal + CSAE + deletion URL listos y públicos
-• Versión nativa Android (AAB) lista para Closed testing (versionCode 8 / 0.1.5-prealpha) — fix crash notificaciones + activación explícita segura + prefs toggles + muro teasers 1-2 posts en Explore/Matches. Richer empty states + framer motion on sessions + live empty polish.
+• Versión nativa Android (AAB) lista para Closed testing (versionCode 9 / 0.1.6-prealpha) — **FIX CRÍTICO crash al abrir**: builds previos sin google-services.json causaban que el plugin push + Firebase nativo fallaran al launch (app se cierra en Android/Play). Ahora build avisa si falta el json. Coloca google-services.json (Firebase Console, package com.entrenamatch.app) → rebuild → nuevo release closed. + fix crash notificaciones + activación explícita + prefs + teasers + richer empties + motion sessions + live polish.
 
 ---
 
