@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React from 'react';
+import React, { useState, type ChangeEvent } from 'react';
 import { Dumbbell, MapPin, Camera, Trash2, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { TRAINING_OPTIONS, TRAINING_GOALS, TRAINING_INTENSITIES } from '../../constants';
@@ -36,7 +36,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 }) => {
   // Internal state (moved from App.tsx for better encapsulation)
   // Seed from existing currentUser (for edit flow or returning incomplete profiles) so user doesn't re-type everything
-  const [onboardData, setOnboardData] = React.useState<any>(() => {
+  const [onboardData, setOnboardData] = useState<any>(() => {
     if (currentUser && currentUser.name) {
       return {
         name: currentUser.name || '',
@@ -74,7 +74,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   // Consents fully managed internally now (previous props were dummy)
   // For edit mode, pre-fill from existing legalConsents so user doesn't have to re-tap to save changes
-  const [localConsents, setLocalConsents] = React.useState(() => {
+  const [localConsents, setLocalConsents] = useState(() => {
     if (currentUser && currentUser.legalConsents) {
       return {
         is18: !!currentUser.legalConsents.is18,
@@ -182,7 +182,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     updateOnboard({ availability: next });
   };
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
     const readers = Array.from(files).slice(0, 6).map(file => {

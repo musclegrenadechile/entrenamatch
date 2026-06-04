@@ -379,7 +379,7 @@ function App() {
   const [onboardingStep, setOnboardingStepLocal] = useState(0)
 
   // Quick demo entry from AuthScreen "⚡ Probar demo al instante" (key for public GH Pages review + lets people hit the improved onboarding fast)
-  React.useEffect(() => {
+  useEffect(() => {
     try {
       if ((window as any).__ENTRENAMATCH_QUICK_DEMO__) {
         (window as any).__ENTRENAMATCH_QUICK_DEMO__ = false;
