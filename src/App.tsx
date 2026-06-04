@@ -698,11 +698,11 @@ function App() {
             intensity: data.intensity,
             verificationStatus: data.verificationStatus,
             trainingNow: data.trainingNow || false,
-            trainingNowSince: data.trainingNowSince || undefined,
-            liveStreak: data.liveStreak,
-            lastLiveDate: data.lastLiveDate,
-            liveJoins: data.liveJoins,
-            joinedLiveStreak: data.joinedLiveStreak,
+            trainingNowSince: data.trainingNowSince != null ? data.trainingNowSince : undefined,
+            liveStreak: data.liveStreak != null ? data.liveStreak : undefined,
+            lastLiveDate: data.lastLiveDate != null ? data.lastLiveDate : undefined,
+            liveJoins: data.liveJoins != null ? data.liveJoins : undefined,
+            joinedLiveStreak: data.joinedLiveStreak != null ? data.joinedLiveStreak : undefined,
           })
         }
       })
@@ -746,18 +746,18 @@ function App() {
               lng: realProfile.lng || currentUser?.lng || -71.5528,
               legalConsents: realProfile.legalConsents || currentUser?.legalConsents,
               trainingNow: realProfile.trainingNow,
-              trainingNowSince: realProfile.trainingNowSince,
-              liveStreak: realProfile.liveStreak,
-              lastLiveDate: realProfile.lastLiveDate,
-              liveJoins: realProfile.liveJoins,
-              joinedLiveStreak: realProfile.joinedLiveStreak,
+              trainingNowSince: realProfile.trainingNowSince != null ? realProfile.trainingNowSince : undefined,
+              liveStreak: realProfile.liveStreak != null ? realProfile.liveStreak : undefined,
+              lastLiveDate: realProfile.lastLiveDate != null ? realProfile.lastLiveDate : undefined,
+              liveJoins: realProfile.liveJoins != null ? realProfile.liveJoins : undefined,
+              joinedLiveStreak: realProfile.joinedLiveStreak != null ? realProfile.joinedLiveStreak : undefined,
             }
             if (merged.name) {
               saveUser(merged)
             }
           } else if (currentUser && currentUser.name && firebaseUser?.uid) {
             // New real user with local rich data but no Firestore profile yet → push it up immediately
-            await updateUserProfile(firebaseUser.uid, {
+            const pushProfile: any = {
               name: currentUser.name,
               age: currentUser.age,
               gender: currentUser.gender,
@@ -774,12 +774,27 @@ function App() {
               lng: currentUser.lng,
               legalConsents: currentUser.legalConsents,
               trainingNow: currentUser.trainingNow,
-              trainingNowSince: currentUser.trainingNowSince,
-              liveStreak: currentUser.liveStreak,
-              lastLiveDate: currentUser.lastLiveDate,
-              liveJoins: currentUser.liveJoins,
-              joinedLiveStreak: currentUser.joinedLiveStreak,
-            })
+            };
+            if (currentUser.trainingNow) {
+              if (currentUser.trainingNowSince !== undefined) {
+                pushProfile.trainingNowSince = currentUser.trainingNowSince;
+              }
+            } else {
+              pushProfile.trainingNowSince = null;
+            }
+            if (currentUser.liveStreak !== undefined) {
+              pushProfile.liveStreak = currentUser.liveStreak;
+            }
+            if (currentUser.lastLiveDate !== undefined) {
+              pushProfile.lastLiveDate = currentUser.lastLiveDate;
+            }
+            if (currentUser.liveJoins !== undefined) {
+              pushProfile.liveJoins = currentUser.liveJoins;
+            }
+            if (currentUser.joinedLiveStreak !== undefined) {
+              pushProfile.joinedLiveStreak = currentUser.joinedLiveStreak;
+            }
+            await updateUserProfile(firebaseUser.uid, pushProfile)
             // console.log removed (debug)
           }
         } catch (e) {
@@ -887,12 +902,27 @@ function App() {
           lat: user.lat,
           lng: user.lng,
           trainingNow: user.trainingNow,
-          trainingNowSince: user.trainingNowSince,
-          liveStreak: user.liveStreak,
-          lastLiveDate: user.lastLiveDate,
-          liveJoins: user.liveJoins,
-          joinedLiveStreak: user.joinedLiveStreak,
         };
+        if (user.trainingNow) {
+          if (user.trainingNowSince !== undefined) {
+            profileUpdate.trainingNowSince = user.trainingNowSince;
+          }
+        } else {
+          // explicitly clear when finishing live, to avoid undefined error in Firestore
+          profileUpdate.trainingNowSince = null;
+        }
+        if (user.liveStreak !== undefined) {
+          profileUpdate.liveStreak = user.liveStreak;
+        }
+        if (user.lastLiveDate !== undefined) {
+          profileUpdate.lastLiveDate = user.lastLiveDate;
+        }
+        if (user.liveJoins !== undefined) {
+          profileUpdate.liveJoins = user.liveJoins;
+        }
+        if (user.joinedLiveStreak !== undefined) {
+          profileUpdate.joinedLiveStreak = user.joinedLiveStreak;
+        }
         if (user.legalConsents) {
           profileUpdate.legalConsents = user.legalConsents;
         }
