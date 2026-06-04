@@ -370,6 +370,7 @@ function App() {
   // For delightful "just published" highlight in feed/muro lists (no giant re-render, just temp visual cue)
   const [recentlyPublishedPostId, setRecentlyPublishedPostId] = useState<string | null>(null)
   const [feedPublishing, setFeedPublishing] = useState(false)
+  const [showFeedPublishSuccess, setShowFeedPublishSuccess] = useState(false)
   // DISRUPTIVE EntrenaSync (v0.2.0 killer): shared real-time synced training - turns live presence into "training together" experience (completely unique vs market async buddies)
   const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
   const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
@@ -875,9 +876,17 @@ function App() {
         await loadProfilePosts(effectiveUserId)
         processIncomingLiveJoins()
       }
+      if (activeTab === 'feed') {
+        await loadGlobalFeed()
+      }
+      // Refresh personal muro if in profile
+      if (activeTab === 'profile') {
+        setLoadingPersonalMuro(true)
+        await loadProfilePosts(effectiveUserId).finally(() => setLoadingPersonalMuro(false))
+      }
       const now = new Date()
       setLastSync(now)
-      toast.success('Datos reales actualizados', { description: 'Perfiles, matches y sesiones en vivo refrescados.' })
+      toast.success('Datos reales actualizados', { description: 'Perfiles, matches, sesiones, syncs y feed refrescados.' })
     } finally {
       setIsLoadingMatches(false)
     }
@@ -4838,6 +4847,12 @@ function App() {
               </div>
             </div>
 
+            {showFeedPublishSuccess && (
+              <div className="mb-3 mx-1 p-3 bg-[#22c55e]/10 border border-[#22c55e]/30 rounded-2xl text-center text-[#22c55e] text-sm font-medium flex items-center justify-center gap-2">
+                🎉 ¡Tu post se publicó en el Feed! Aparece arriba en la lista.
+              </div>
+            )}
+
             {liveTrainingNow.length > 0 && (
               <div className="mb-4 -mx-1">
                 <div className="text-[8px] uppercase tracking-[1px] text-[#22c55e]/80 mb-1.5 px-2 font-bold flex items-center gap-1">🔥 EN VIVO AHORA EN LA COMUNIDAD {liveTrainingNow.length > 5 && <span className="text-red-400">HOT ZONE</span>}</div>
@@ -5174,11 +5189,11 @@ function App() {
                       setFeedPostText('');
                       setFeedPostPhoto(null);
                       setFeedPublishing(false);
+                      setShowFeedPublishSuccess(true);
+                      setTimeout(() => setShowFeedPublishSuccess(false), 4000);
                       toast.success('¡Publicado en el Feed!', { 
                         description: 'Tu post ya está visible para toda la comunidad. ¡Gracias por aportar!' 
                       });
-                      // The createProfilePost already does optimistic update to profilePosts, so feed list updates instantly.
-                      // Call load for other users' posts if needed, but keep it light.
                       if (activeTab === 'feed') loadGlobalFeed().catch(() => {});
                       try { confetti({ particleCount: 100, spread: 65, origin: { y: 0.7 } }); } catch {}
                     } catch (e) {

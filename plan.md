@@ -1291,3 +1291,12 @@ Sigue con todo - what is next to make it even better?
 The app UX is getting more and more "se siente completamente gigante" - delightful, fast, iconic, and the EntrenaSync + live + muro combo is the star that nobody else has.
 
 Sigue con todo!
+
+## Sigue con todo - onboarding highlight for unique EntrenaSync + more polish
+
+- Added explicit teaser in onboarding preview: "? Únete a lives para iniciar EntrenaSync único" to build excitement for the disruptive feature from day 1.
+- Continued: skeletons, animations in sync actions, publishing loading states, publish success banner in feed, photo progress, optimistic + highlights.
+- All to make the full experience feel unique, fast, attractive, and "nadie lo tiene".
+- Builds clean. Pushed.
+
+Sigue con todo - momentum total. Next batch?

@@ -96,6 +96,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const isEditingProfile = !!(currentUser && currentUser.name);
 
   // Live updating preview card (the key onboarding improvement - user sees exactly how they will appear in Explore + live lists)
+  // Enhanced to preview the unique EntrenaSync and live features to build excitement from day 1
   const renderProfilePreview = () => {
     const d = onboardData;
     const hasPhoto = (d.photos || []).length > 0;
@@ -145,6 +146,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         <div className="px-3 py-1.5 text-[9px] bg-[#0D0D10] text-[#22c55e] flex items-center gap-1 border-t border-[#22c55e]/20">
           <span>👁️ Así te verán en Explorar y en el banner EN VIVO</span>
           {isLive && <span className="ml-auto font-bold">¡Aparecerás en el radar live al terminar!</span>}
+          <span className="ml-auto text-[8px] text-[#FF671F]">✨ Únete a lives para iniciar EntrenaSync único</span>
         </div>
       </div>
     );
