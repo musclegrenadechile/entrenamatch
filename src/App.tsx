@@ -638,6 +638,16 @@ function App() {
     return () => clearInterval(id)
   }, [])
 
+  // Global poller for real profiles (so live trainingNow status propagates to everyone even if not in Explore tab)
+  // This ensures that when someone toggles "entrenando en vivo", others will see them appear in lists within ~45s without manual refresh.
+  useEffect(() => {
+    if (isDemoMode) return;
+    const id = setInterval(() => {
+      loadRealProfiles().catch(() => {});
+    }, 45000);
+    return () => clearInterval(id);
+  }, [isDemoMode]);
+
   // EntrenaSync real-time mirror: when in sync, pull partner's latest syncActions and state from realProfiles (via periodic load or on change)
   // Placed here AFTER all dependent states (realProfiles, effectiveUserId, currentUser local from saveUser) to avoid TDZ or init order issues in render/bundler.
   useEffect(() => {
@@ -876,7 +886,7 @@ function App() {
     }
     try {
       const profilesRef = collection(db, 'profiles')
-      const q = query(profilesRef, limit(60))
+      const q = query(profilesRef, orderBy('updatedAt', 'desc'), limit(150)) // order by recent updates so people who just toggled live are likely in the results
       const snapshot = await getDocs(q)
       
       const profiles: Profile[] = []
@@ -3812,8 +3822,11 @@ function App() {
         }
         return { ...p, distance: dist, seVaEnMin, joinCount };
       })
-      .filter(p => p.distance < 15) // near, 15km
-      .sort((a, b) => a.distance - b.distance);
+      .filter(p => !userLocation || p.distance < 15) // near only if we have location; otherwise show all live (so feature works even without GPS)
+      .sort((a, b) => {
+        if (userLocation) return a.distance - b.distance;
+        return (b.trainingNowSince || 0) - (a.trainingNowSince || 0); // most recent live first if no location
+      });
     if (isDemoMode && lives.length === 0) {
       // Demo fakes for the killer feature to shine
       lives = SEED_PROFILES.slice(0, 3).map((p, i) => ({ ...p, trainingNow: true, trainingNowSince: now - (i+1)*10*60000, distance: 1 + i*2, seVaEnMin: 40 - i*10, joinCount: 1 + i }));
@@ -4417,7 +4430,7 @@ function App() {
                       </div>
                       <div className="w-3 h-3 bg-[#22c55e] rounded-full flex-shrink-0 ring-2 ring-[#22c55e]/40" style={{animation: user.seVaEnMin < 10 ? 'live-pulse-green-urgent 1.1s ease-in-out infinite' : 'live-pulse-green 2.0s ease-in-out infinite'}}></div>
                     </div>
-                    <div className="text-[#9CA3AF] text-[9px] mb-0.5 flex items-center gap-1">{user.distance.toFixed(1)}km <span className="text-[#22c55e]/70">·</span> {user.trainingTypes?.[0] || 'Entreno'}</div>
+                    <div className="text-[#9CA3AF] text-[9px] mb-0.5 flex items-center gap-1">{userLocation && user.distance < 900 ? `${user.distance.toFixed(1)}km` : '— km'} <span className="text-[#22c55e]/70">·</span> {user.trainingTypes?.[0] || 'Entreno'}</div>
                     <div className="flex items-center gap-1 text-[#22c55e] text-[9px] mb-1">
                       <span>En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m</span>
                       {user.seVaEnMin > 0 && <span className={`text-orange-400 ${user.seVaEnMin < 20 ? 'font-bold text-red-400 animate-pulse' : ''}`}>{user.seVaEnMin < 15 ? '· se va pronto' : '· se va en'} {user.seVaEnMin}m {user.seVaEnMin < 10 ? '¡ya!' : ''}</span>}
@@ -4556,7 +4569,7 @@ function App() {
                   <div key={user.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(user); }} className="card card-glass p-3 mb-2 flex gap-3 cursor-pointer active:scale-95 border border-[#22c55e]/50 hover:border-[#22c55e]/80 transition-all group">
                     {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-12 h-12 rounded-xl object-cover border-2 border-[#22c55e]/40 group-hover:border-[#22c55e]/70 transition" />}
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold flex items-center gap-1.5 text-white">{user.name} <span className="text-[#9CA3AF] text-xs font-normal">· {user.distance.toFixed(1)}km</span></div>
+                      <div className="font-semibold flex items-center gap-1.5 text-white">{user.name} <span className="text-[#9CA3AF] text-xs font-normal">· {userLocation && user.distance < 900 ? `${user.distance.toFixed(1)}km` : '— km'}</span></div>
                       <div className="text-[#9CA3AF] text-sm truncate">{user.trainingTypes?.join(', ') || 'Entreno'}</div>
                       <div className="text-[#22c55e] text-xs flex items-center gap-1 mt-0.5">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m {user.seVaEnMin > 0 ? <span className={user.seVaEnMin < 15 ? 'text-red-400 font-bold' : 'text-orange-400'}>{user.seVaEnMin < 15 ? `· se va pronto en ${user.seVaEnMin}m 🔥` : `· se va en ${user.seVaEnMin}m`}</span> : ''}
                       </div>
@@ -4703,7 +4716,7 @@ function App() {
                       transition={{delay: idx*0.03}}
                       className="text-[9px] bg-[#0a120f] border border-[#22c55e]/40 text-[#22c55e] px-3 py-1.5 rounded-2xl cursor-pointer active:bg-[#22c55e]/10 flex flex-col min-w-[92px] shadow-sm hover:border-[#22c55e]/70"
                     >
-                      <div className="font-bold flex items-center gap-1 text-white/90">{u.name.split(' ')[0]} <span className="text-[7px] text-[#9CA3AF]">{u.distance.toFixed(0)}km</span></div>
+                      <div className="font-bold flex items-center gap-1 text-white/90">{u.name.split(' ')[0]} <span className="text-[7px] text-[#9CA3AF]">{userLocation && u.distance < 900 ? `${u.distance.toFixed(0)}km` : '—'}</span></div>
                       {u.seVaEnMin > 0 && <div className="text-[7px] text-orange-400">{u.seVaEnMin < 15 ? '🔥 se va pronto' : `se va en ${u.seVaEnMin}m`}</div>}
                       {u.joinCount > 0 && <div className="text-[7px] text-[#22c55e]/70">+{u.joinCount} se unieron</div>}
                       {u.trainingSyncWith && <div className="text-[7px] text-[#22c55e] mt-0.5">🔄 En Sync ahora</div>}
@@ -5980,6 +5993,8 @@ function App() {
                     }
                     const updated = { ...currentUser, trainingNow: newVal, trainingNowSince: newVal ? Date.now() : undefined, ...streakUpdate, ...( !newVal ? { trainingSyncWith: null, syncStartedAt: null } : {} ) }
                     saveUserWithRealSync(updated as CurrentUser)
+                    // Immediately refresh real profiles so the toggler sees current live people, and the poller will propagate to others soon
+                    loadRealProfiles().catch(() => {})
                     toast(newVal ? '🟢 ¡Entrenando ahora en vivo! La gente cerca te verá' : 'Entrenamiento finalizado')
                     if (newVal) {
                       createProfilePost('¡Entrenando ahora cerca! ¿Quién se une? 🏋️', null).catch(() => {})

@@ -1050,3 +1050,17 @@ Sigue con todo a toda maquina.
 - Builds clean, pushed. This layer on top of instant dedicated collection + previous Feed 2.0 / radar / live makes the whole experience feel like nothing on the market.
 
 Sigue con todo — la app ahora grita "única".
+
+## Fix: personas "entrenando en vivo" no se veían (bug report)
+
+- Causa principal: liveTrainingNow filtraba estrictamente distance <15km, y si !userLocation dist=999 => siempre vacío. También limit(60) sin orderBy + polling solo en explore tab hacía que actualizaciones de toggle no se propagaran bien.
+- Fixes:
+  - liveTrainingNow ahora incluye todos los trainingNow si no hay userLocation (solo filtra distancia cuando hay GPS). Sort por más reciente si no hay loc.
+  - Añadido poller global de loadRealProfiles cada 45s (independiente de tab) para que toggles de live se vean rápido en Feed/Live/Explore.
+  - En toggle a live=true: fuerza loadRealProfiles() inmediato para el que activa.
+  - Subido limit a 150 + orderBy('updatedAt', 'desc') para que perfiles recién actualizados (live toggle) tengan más probabilidad de aparecer en los snapshots.
+  - Arreglados displays de distance en teasers/cards para que no muestren "999km" cuando no hay ubicación (muestran "— km").
+  - Esto hace que "Marcar como entrenando ahora" realmente haga que la persona aparezca en las listas de otros usuarios (después del próximo poll o refresh).
+- Builds clean. Sigue con todo.
+
+Próximo: si persiste, considerar onSnapshot para profiles o query más inteligente para live.
