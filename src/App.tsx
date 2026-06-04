@@ -4327,6 +4327,7 @@ function App() {
                   {liveTrainingNow.slice(0,3).map(u => (
                     <motion.div key={u.id} onClick={() => setActiveTab('explore')} whileHover={{scale:1.08, y:-1}} whileTap={{scale:0.94}} className="text-[8px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-1 rounded-2xl border border-[#22c55e]/50 cursor-pointer active:bg-[#22c55e]/20 flex items-center gap-1 min-w-[110px] shadow-sm">
                       {u.name.split(' ')[0]} ({u.distance.toFixed(0)}km) {u.seVaEnMin < 15 && <span className="text-red-400">🔥{u.seVaEnMin}m</span>} {u.joinCount > 0 && <span className="text-[7px]">+{u.joinCount}🔥</span>}
+                      {u.seVaEnMin > 0 && <div className="h-0.5 bg-[#22c55e]/30 w-8 mt-0.5"><div className="h-0.5 bg-[#22c55e]" style={{width: `${Math.max(10, Math.min(100, (90 - u.seVaEnMin)/90 * 100))}%`}}></div></div>}
                     </motion.div>
                   ))}
                 </div>
