@@ -88,6 +88,13 @@ Uso:
   - Badge "realtime", altura 340px, textos actualizados.
   - Prueba en Explore: activa "Ver mapa por zonas", deja que pida GPS, observa puntos apareciendo/desapareciendo cuando cambian "Entrenando Ahora" otros testers, toca un punto → popup con distancia → únete. Cierra/ abre el mapa varias veces. Debe sentirse vivo y premium.
 
+- **Perfil aún más vivo** (v0.1.18-perfil-vivo): 
+  - Stats de bonds EN VIVO: Vibe Score suma bonus automático + pulse si tus Sync Legends están live ahora ("+X live bonds 🔥").
+  - En cada Legend: badge "EN VIVO" si el compa está live + botón Re-sync directo.
+  - Galería: drag nativo (arrastra las fotos para reordenar; la primera siempre es principal) + flechas ←→ como fallback. Todo persiste en Firestore real.
+  - Historial visual de Vibe: 5 barras animadas "en vivo" (Host/Join/Bonds/Live+/Actual) que reflejan streaks, bonds y si hay legends live en este momento.
+  Prueba: con 2 cuentas que tienen bond, activa live en una, abre Perfil de la otra → score sube en vivo con anim, aparece badge EN VIVO, reordena galería arrastrando o con flechas.
+
 - **El crash de login en la APK de Play** suele aparecer en los logs como algo de Firebase ("Default FirebaseApp is not initialized", error en google-services) o init de plugins (push/integrity). El informe del celular te dará el stack trace exacto.
 - Usa siempre la **versión debug local** (EntrenaMatch-debug.apk) para testing cuando puedas (tiene `webContentsDebuggingEnabled: true` y los fixes más recientes). La de Play closed puede ser un build viejo.
 - Si el crash es intermitente, reproduce varias veces seguidas antes de generar el bug report.

@@ -4,7 +4,12 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 22 / 0.1.17-continua-polish. **MAPA + ARENA + PERFIL + FEED/MURO PRECIOSO + EXHAUSTIVE POLISH**: 
+**Current version for this upload**: versionCode 23 / 0.1.18-perfil-vivo. **PERFIL AÚN MÁS VIVO + MAPA/ARENA POLISH**: 
+- Perfil: Vibe Score "en vivo" con bonus si tus Sync Legends están live (+pulse), badges EN VIVO en Legends + Re-sync CTA por bond.
+- Galería con drag nativo + flechas para reordenar (primera=principal, persiste FS).
+- Historial visual de Vibe con 5 barras animadas de fuentes (streaks/bonds/live).
+- Continuación de polish en mapa (pulso markers, radar), Arena (replay con fotos del momento, orb/tether dinámico).
+- Más consistencia visual, haptics, lifts, glows en toda la app. Revisión exhaustiva para que se sienta preciosa y única.
 - Mapa: foto/iniciales markers con pulso, radar sweep, filtro cerca, radio 10km, etc.
 - Arena: replay con thumbnails de fotos capturadas, orb dinámico (color/glow por vibe), tether vibrante.
 - Perfil: galería hover lift, live toggle glow, legends con re-sync rápido.

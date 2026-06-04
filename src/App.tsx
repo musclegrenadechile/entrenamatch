@@ -3083,6 +3083,18 @@ function App() {
     toast.success('Foto eliminada', { description: 'Puedes volver a añadirla desde el editor de perfil si fue un error.' })
   }
 
+  // Drag reorder for gallery - makes profile curation powerful and "vivo". Works with native drag (desktop + modern mobile).
+  const reorderGallery = (fromIndex: number, toIndex: number) => {
+    if (!currentUser?.photos || fromIndex === toIndex) return
+    const photos = [...currentUser.photos]
+    const [moved] = photos.splice(fromIndex, 1)
+    photos.splice(toIndex, 0, moved)
+    const updated = { ...currentUser, photos }
+    saveUserWithRealSync(updated as any)
+    setLastSync(new Date())
+    toast('Galería reordenada', { description: 'El orden se guarda en tu perfil real' })
+  }
+
   // === LIVE JOIN NOTIFS (owner side) ===
   // Called after loading own profilePosts (or updates). Scans live "Entrenando ahora" posts for *new* comments/likes
   // from other people. Fires special urgency notif + toast so the live trainer knows people are joining in real time.
@@ -4874,7 +4886,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-1.5 text-[10px] font-medium">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0 !px-2 !text-[8px] !bg-[#FF671F]/10 !border-0">PRE-ALPHA</span>
-          <span className="text-white/90">Real backend • v0.1.17-continua-polish</span>
+          <span className="text-white/90">Real backend • v0.1.18-perfil-vivo</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -6619,7 +6631,17 @@ function App() {
             {currentUser.photos && currentUser.photos.length > 0 && (
               <div className="px-4 py-3 flex gap-2 overflow-x-auto bg-[#0D0D10] border-b border-[#2F2F35]">
                 {currentUser.photos.map((photo: string, idx: number) => (
-                  <div key={idx} className={`relative flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border ${idx === 0 ? 'border-[#FF671F] ring-1 ring-[#FF671F]/30' : 'border-[#2F2F35]'} shadow group transition-all hover:scale-[1.03]`}>
+                  <div 
+                    key={idx} 
+                    draggable
+                    onDragStart={(e) => e.dataTransfer.setData('text/plain', idx.toString())}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      const from = parseInt(e.dataTransfer.getData('text/plain'))
+                      if (!isNaN(from) && from !== idx) reorderGallery(from, idx)
+                    }}
+                    className={`relative flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border ${idx === 0 ? 'border-[#FF671F] ring-1 ring-[#FF671F]/30' : 'border-[#2F2F35]'} shadow group transition-all hover:scale-[1.03] cursor-grab active:cursor-grabbing`}
+                  >
                     <img src={photo} className="w-full h-full object-cover transition-transform group-hover:scale-110" />
                     {idx === 0 && <div className="absolute bottom-0 left-0 right-0 text-[8px] bg-[#FF671F] text-black px-1 text-center rounded-b">principal</div>}
                     {/* Delete button - always visible on mobile for usability, nice on desktop */}
@@ -6643,6 +6665,17 @@ function App() {
                       >
                         ★
                       </button>
+                    )}
+                    {/* Drag + arrows for reorder (makes galería vivo y curatable) */}
+                    {currentUser.photos.length > 1 && (
+                      <div className="absolute bottom-1 right-1 flex gap-0.5">
+                        {idx > 0 && (
+                          <button onClick={() => reorderGallery(idx, idx-1)} className="bg-black/70 text-white text-[7px] px-0.5 rounded active:bg-[#22c55e]" title="Mover izquierda">←</button>
+                        )}
+                        {idx < currentUser.photos.length-1 && (
+                          <button onClick={() => reorderGallery(idx, idx+1)} className="bg-black/70 text-white text-[7px] px-0.5 rounded active:bg-[#22c55e]" title="Mover derecha">→</button>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}
@@ -6773,24 +6806,54 @@ function App() {
                 {currentUser.trainingNow && (
                   <div className="mt-2 text-[11px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-1 rounded text-center font-medium">Estás en vivo ahora — tu muro está caliente 🔥</div>
                 )}
-                {/* NEW: Personal Vibe Score - composite from streaks + bonds + live activity for "alive" feel */}
+                {/* NEW: Personal Vibe Score - composite from streaks + bonds + live activity for "alive" feel. Now truly VIVO: bonuses if your bond partners are live right now. */}
                 {(() => {
+                  const liveBondBonus = Object.keys(syncBonds).reduce((acc, pid) => {
+                    const partnerLive = liveTrainingNow.some(u => u.id === pid && u.trainingNow);
+                    return acc + (partnerLive ? 12 : 0);
+                  }, 0);
                   const vibe = Math.min(100, Math.round(
                     ((currentUser.liveStreak || 0) * 5) + 
                     ((currentUser.joinedLiveStreak || 0) * 3) + 
                     (Object.keys(syncBonds).length * 8) + 
-                    ((currentUser.liveJoins || 0) * 0.5)
+                    ((currentUser.liveJoins || 0) * 0.5) +
+                    liveBondBonus
                   ));
                   return (
                     <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between text-xs">
                       <span className="text-[#9CA3AF]">Vibe Score</span>
                       <span className="font-black text-[#FF671F] text-lg tabular-nums">{vibe}</span>
                       <div className="w-16 h-1.5 bg-white/10 rounded overflow-hidden ml-2">
-                        <div className="h-1.5 bg-gradient-to-r from-[#FF671F] to-[#FF4F79]" style={{width: `${vibe}%`}} />
+                        <div className="h-1.5 bg-gradient-to-r from-[#FF671F] to-[#FF4F79] transition-all" style={{width: `${vibe}%`}} />
                       </div>
+                      {liveBondBonus > 0 && <span className="ml-1 text-[8px] text-[#22c55e] animate-pulse">+{liveBondBonus} live bonds 🔥</span>}
                     </div>
                   );
                 })()}
+
+                {/* Vibe History Visual - makes "stats de bonds en vivo" tangible and pretty. Simple bar sparkline of recent vibe sources. */}
+                <div className="mt-2 pt-1.5 border-t border-white/10">
+                  <div className="text-[8px] text-[#9CA3AF] mb-1 flex items-center justify-between">
+                    <span>Historial Vibe (fuentes recientes)</span>
+                    <span className="text-[#FF671F]/70">en vivo</span>
+                  </div>
+                  <div className="flex items-end gap-1 h-6">
+                    {[
+                      { label: 'Host', val: Math.min(100, (currentUser.liveStreak || 0) * 8) },
+                      { label: 'Join', val: Math.min(100, (currentUser.joinedLiveStreak || 0) * 12) },
+                      { label: 'Bonds', val: Math.min(100, Object.keys(syncBonds).length * 15) },
+                      { label: 'Live+', val: Math.min(100, (currentUser.liveJoins || 0) * 4) },
+                      { label: 'Actual', val: Math.min(100, liveTrainingNow.some(u => Object.keys(syncBonds).includes(u.id)) ? 90 : 40) }
+                    ].map((bar, i) => (
+                      <div key={i} className="flex-1 flex flex-col items-center">
+                        <div className="w-full bg-white/10 rounded-t overflow-hidden" style={{height: `${Math.max(4, bar.val / 2)}px`}}>
+                          <div className="h-full bg-gradient-to-t from-[#FF671F] to-[#FF4F79] transition-all duration-300" style={{height: '100%', width: '100%'}} />
+                        </div>
+                        <div className="text-[6px] text-[#9CA3AF] mt-0.5 leading-none">{bar.label}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -6838,7 +6901,7 @@ function App() {
                           <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#22c55e] rounded-full flex items-center justify-center text-[8px] ring-1 ring-[#0D0D10]">🔄</div>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-white/95 truncate flex items-center gap-1">{p?.name || 'Leyenda'} <span className="text-[8px] text-[#FF671F] font-mono">LV{b.bondLevel}</span></div>
+                          <div className="font-semibold text-white/95 truncate flex items-center gap-1">{p?.name || 'Leyenda'} <span className="text-[8px] text-[#FF671F] font-mono">LV{b.bondLevel}</span>{liveTrainingNow.some(u => u.id === pid && u.trainingNow) && <span className="ml-1 text-[7px] px-1 bg-[#22c55e] text-black rounded font-bold animate-pulse">EN VIVO</span>}</div>
                           <div className="text-[9px] text-[#9CA3AF]">{b.totalMin}min • {b.sessions} sesiones • {b.avgRating}★</div>
                           <div className="legend-flame text-[12px] leading-none mt-0.5">{flames}</div>
                           {/* Visual bond progress bar - makes it feel alive and goal-oriented */}
@@ -7672,7 +7735,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.17-continua-polish • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.18-perfil-vivo • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -7899,7 +7962,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.17-continua-polish • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.18-perfil-vivo • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>

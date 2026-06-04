@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.17-continua-polish",
+  "version": "0.1.18-perfil-vivo",
   "type": "module",
   "scripts": {
     "dev": "vite",
