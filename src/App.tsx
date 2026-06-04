@@ -4051,28 +4051,28 @@ function App() {
             {liveTrainingNow.length > 0 ? (
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {liveTrainingNow.slice(0, 4).map(user => (
-                  <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className="min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border border-[#22c55e]/60 active:scale-95 relative overflow-hidden" whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.96 }} initial={{ opacity: 0.9, y: 5 }} animate={{ opacity: 1, y: 0 }}>
+                  <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className="min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border border-[#22c55e]/70 active:scale-95 relative overflow-hidden shadow-lg shadow-[#22c55e]/10" whileHover={{ scale: 1.04, y: -2, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(34 197 94 / 0.2)' }} whileTap={{ scale: 0.96 }} initial={{ opacity: 0.85, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
                     <div className="flex justify-between items-start mb-1">
                       <div className="flex items-center gap-1">
-                        {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-4 h-4 rounded-full object-cover border border-[#22c55e]/30" />}
-                        <div className="font-semibold truncate text-white">{user.name}</div>
+                        {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-5 h-5 rounded-full object-cover border-2 border-[#22c55e]/60 ring-1 ring-[#22c55e]/20" />}
+                        <div className="font-semibold truncate text-white drop-shadow-sm">{user.name}</div>
                       </div>
-                      <div className="w-2.5 h-2.5 bg-[#22c55e] rounded-full flex-shrink-0 ring-1 ring-[#22c55e]/50" style={{animation: user.seVaEnMin < 10 ? 'live-pulse-green-urgent 1.2s ease-in-out infinite' : 'live-pulse-green 2.2s ease-in-out infinite'}}></div>
+                      <div className="w-3 h-3 bg-[#22c55e] rounded-full flex-shrink-0 ring-2 ring-[#22c55e]/40" style={{animation: user.seVaEnMin < 10 ? 'live-pulse-green-urgent 1.1s ease-in-out infinite' : 'live-pulse-green 2.0s ease-in-out infinite'}}></div>
                     </div>
-                    <div className="text-[#9CA3AF] text-[9px] mb-0.5">{user.distance.toFixed(1)}km · {user.trainingTypes?.[0] || 'Entreno'}</div>
+                    <div className="text-[#9CA3AF] text-[9px] mb-0.5 flex items-center gap-1">{user.distance.toFixed(1)}km <span className="text-[#22c55e]/70">·</span> {user.trainingTypes?.[0] || 'Entreno'}</div>
                     <div className="flex items-center gap-1 text-[#22c55e] text-[9px] mb-1">
                       <span>En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m</span>
                       {user.seVaEnMin > 0 && <span className={`text-orange-400 ${user.seVaEnMin < 20 ? 'font-bold text-red-400 animate-pulse' : ''}`}>{user.seVaEnMin < 15 ? '· se va pronto' : '· se va en'} {user.seVaEnMin}m {user.seVaEnMin < 10 ? '¡ya!' : ''}</span>}
                     </div>
                     {user.joinCount > 0 && (
-                      <div className="text-[8px] text-[#22c55e] mb-1 font-medium">+{user.joinCount} se unieron 🔥</div>
+                      <div className="text-[8px] text-[#22c55e] mb-1 font-medium flex items-center gap-0.5">+{user.joinCount} se unieron 🔥</div>
                     )}
                     {(user.liveStreak || user.joinedLiveStreak) && (
                       <div className="text-[8px] text-[#22c55e] mb-1">🔥{(user.liveStreak||0)}h +{(user.joinedLiveStreak||0)}j streak</div>
                     )}
                     <button 
-                      onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); /* live-specific polished toast + muro comment happens inside handleSwipe */ }} 
-                      className="w-full text-[9px] bg-[#22c55e] text-black py-1 rounded font-semibold active:bg-[#16a34a] transition"
+                      onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); }} 
+                      className="w-full text-[9px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black py-1 rounded font-bold active:brightness-90 transition shadow-sm"
                     >
                       Unirme ya 🔥
                     </button>
@@ -4181,17 +4181,18 @@ function App() {
                   list.sort((a: any, b: any) => (a.distance || 999) - (b.distance || 999))
                 }
                 return list.length > 0 ? list.map(user => (
-                  <div key={user.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(user); }} className="card card-glass p-3 mb-2 flex gap-3 cursor-pointer active:scale-95">
-                    {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-12 h-12 rounded-xl object-cover" />}
-                    <div className="flex-1">
-                      <div className="font-semibold">{user.name} · {user.distance.toFixed(1)}km</div>
-                      <div className="text-[#9CA3AF] text-sm">{user.trainingTypes?.join(', ') || 'Entreno'}</div>
-                      <div className="text-[#22c55e] text-xs">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m {user.seVaEnMin > 0 ? (user.seVaEnMin < 15 ? `· se va pronto en ${user.seVaEnMin}m 🔥` : `· se va en ${user.seVaEnMin}m`) : ''}</div>
-                      {user.joinCount > 0 && <div className="text-[10px] text-[#22c55e] mt-0.5">+{user.joinCount} se unieron a este live</div>}
+                  <div key={user.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(user); }} className="card card-glass p-3 mb-2 flex gap-3 cursor-pointer active:scale-95 border border-[#22c55e]/50 hover:border-[#22c55e]/80 transition-all group">
+                    {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-12 h-12 rounded-xl object-cover border-2 border-[#22c55e]/40 group-hover:border-[#22c55e]/70 transition" />}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold flex items-center gap-1.5 text-white">{user.name} <span className="text-[#9CA3AF] text-xs font-normal">· {user.distance.toFixed(1)}km</span></div>
+                      <div className="text-[#9CA3AF] text-sm truncate">{user.trainingTypes?.join(', ') || 'Entreno'}</div>
+                      <div className="text-[#22c55e] text-xs flex items-center gap-1 mt-0.5">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m {user.seVaEnMin > 0 ? <span className={user.seVaEnMin < 15 ? 'text-red-400 font-bold' : 'text-orange-400'}>{user.seVaEnMin < 15 ? `· se va pronto en ${user.seVaEnMin}m 🔥` : `· se va en ${user.seVaEnMin}m`}</span> : ''}
+                      </div>
+                      {user.joinCount > 0 && <div className="text-[10px] text-[#22c55e] mt-0.5 font-medium">+{user.joinCount} se unieron a este live</div>}
                     </div>
                     <div className="flex flex-col gap-1 self-center">
-                      <button onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); /* polished live-join toast + muro comment inside handleSwipe */ }} className="text-[10px] bg-[#22c55e] text-black px-3 py-1 rounded">Unirme</button>
-                      <button onClick={(e) => { e.stopPropagation(); setShowLiveModal(false); openChat(user.id); if (!matches.includes(user.id) && !realMatches.includes(user.id)) handleSwipe(user.id, 'right'); }} className="text-[9px] border border-[#22c55e]/50 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10">Chatear ya</button>
+                      <button onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); }} className="text-[10px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-3 py-1 rounded font-semibold active:brightness-90">Unirme</button>
+                      <button onClick={(e) => { e.stopPropagation(); setShowLiveModal(false); openChat(user.id); if (!matches.includes(user.id) && !realMatches.includes(user.id)) handleSwipe(user.id, 'right'); }} className="text-[9px] border border-[#22c55e]/60 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10 hover:bg-[#22c55e]/5">Chatear ya</button>
                     </div>
                   </div>
                 )) : <div className="text-center text-[#9CA3AF]">Sin resultados. ¡Sé el primero!</div>
@@ -4380,10 +4381,11 @@ function App() {
                     return (
                       <motion.div 
                         key={post.id} 
-                        className={`card card-glass p-4 mb-3 border-[#2F2F35]/80 ${post.pinned ? 'ring-1 ring-[#FF671F]/50' : ''}`}
-                        initial={{ opacity: 0, y: 10 }}
+                        className={`card card-glass p-4 mb-3 border-[#2F2F35]/70 ${post.pinned ? 'ring-1 ring-[#FF671F]/60 shadow-lg shadow-[#FF671F]/5' : ''} hover:border-[#FF671F]/30 transition-all`}
+                        initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
-                        whileHover={{ scale: 1.01, y: -1 }}
+                        whileHover={{ scale: 1.015, y: -2, boxShadow: '0 15px 25px -5px rgb(0 0 0 / 0.25)' }}
+                        transition={{ type: 'spring', stiffness: 280, damping: 18 }}
                       >
                         {/* Owner header with photo */}
                         <div className="flex items-center gap-2 mb-2" onClick={() => setShowFullProfile(owner as any)} style={{cursor: 'pointer'}}>
@@ -5526,9 +5528,9 @@ function App() {
                       createProfilePost('¡Entrenando ahora cerca! ¿Quién se une? 🏋️', null).catch(() => {})
                     }
                   }}
-                  className={`w-full py-3 rounded-2xl text-sm font-semibold transition flex items-center justify-center gap-2 ${currentUser.trainingNow ? 'bg-[#22c55e] text-black' : 'bg-[#1C1C20] border border-[#2F2F35] text-white'}`}
+                  className={`w-full py-3 rounded-2xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm ${currentUser.trainingNow ? 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black' : 'bg-[#1C1C20] border border-[#2F2F35] text-white hover:border-[#22c55e]/50 active:bg-[#25252A]'}`}
                 >
-                  {currentUser.trainingNow ? '🟢 Entrenando ahora (EN VIVO)' : 'Marcar como entrenando ahora'}
+                  {currentUser.trainingNow ? '🟢 Entrenando ahora (EN VIVO) — ¡Estás generando urgencia!' : 'Marcar como entrenando ahora'}
                 </button>
                 <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">¡Aparecerás en "Entrenando Ahora" para usuarios cerca! Urgencia real-time que hace que la gente abra la app seguido. Nadie lo tiene tan bien.</div>
                 <button onClick={() => setActiveTab('explore')} className="mt-2 w-full text-xs text-[#22c55e] underline active:opacity-70">Ver quién está live cerca ahora →</button>
@@ -5551,12 +5553,12 @@ function App() {
                     <div className="text-[9px] text-[#22c55e] mb-1 flex items-center gap-1">🔥 Actividad en tu live ahora <span className="text-[#9CA3AF]">(de tu post "Entrenando ahora")</span></div>
                     <div className="space-y-1">
                       {recent.map((c: any, idx: number) => (
-                        <div key={idx} className="flex items-center gap-2 text-[10px] bg-[#1C1C20] px-2 py-1 rounded" onClick={() => {
+                        <div key={idx} className="flex items-center gap-2 text-[10px] bg-[#1C1C20] px-2 py-1 rounded-xl border border-[#22c55e]/10 hover:border-[#22c55e]/40 transition cursor-pointer active:bg-[#25252A]" onClick={() => {
                           const joiner = [...realProfiles, ...SEED_PROFILES].find(p => p.id === c.userId);
                           if (joiner) setShowFullProfile(joiner as any); else setActiveTab('feed');
                         }}>
-                          <span>{c.userName || 'Compañero'}</span> {c.isLike ? '❤️ dio like' : '💬 ' + (c.text || '').substring(0,30)}
-                          <span className="ml-auto text-[#9CA3AF] text-[8px]">toca para perfil</span>
+                          <span className="font-medium text-white/95">{c.userName || 'Compañero'}</span> <span className="text-[#22c55e]">{c.isLike ? '❤️ dio like' : '💬 ' + (c.text || '').substring(0,28)}</span>
+                          <span className="ml-auto text-[#9CA3AF] text-[8px]">ver →</span>
                         </div>
                       ))}
                     </div>
@@ -5696,7 +5698,7 @@ function App() {
                         exit={{ opacity: 0, y: -12, scale: 0.97, height: 0, marginBottom: 0 }}
                         whileHover={{ scale: 1.01, y: -2 }}
                         transition={{ type: 'spring', bounce: 0.12, duration: 0.28 }}
-                        className={`card card-glass p-4 mb-3 border-[#2F2F35]/80 ${post.pinned ? 'ring-1 ring-[#FF671F]/50' : ''}`}
+                        className={`card card-glass p-4 mb-3 border-[#2F2F35]/70 ${post.pinned ? 'ring-1 ring-[#FF671F]/60 shadow-lg shadow-[#FF671F]/5' : ''} hover:border-[#FF671F]/30 transition-all`}
                       >
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-1 text-[10px] text-[#9CA3AF]" title={new Date(post.timestamp).toLocaleString('es-CL')}>

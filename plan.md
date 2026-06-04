@@ -712,3 +712,44 @@ Acciones:
 
 Todo autï¿½nomo. Sigue con todo a todo ritmo full green light! Desarrollo progresivo en GitHub, web y Play Store.
 
+
+## Fin de sesi?n de hoy: mejoras muro teasers + docs + builds/push (user "perfecto sigue con todo")
+
+- Teasers mejorados en c?digo (Explore + Matches).
+- Docs actualizados (BETA, PLAY_STORE_ASSETS, plan).
+- Builds verificados (web + android).
+- Git commit + push exitoso (f945d45) - CI para web (GH Pages) y APK.
+- AAB con cambios en build dir (copia manual si se quiere para Play).
+- .gitignore evita binaries.
+
+Puntos del d?a cubiertos, desarrollo progresivo continuado en GitHub (repo), web (servidor), Play (AAB + assets listos para closed).
+
+Sigue con todo full green light! Ma?ana m?s polish (e.g. motion en posts, richer notifs, FCM prep, Play upload).
+
+
+## Sesión: lives + diseño + revisión completa visual (user: "sigamos trabajando en la aplicacion, con los lives, diseño, revision completa de la app, para que sea muy atractiva visualmente")
+
+Revisión completa:
+- Live "Entrenando Ahora" (banner, modal, profile toggle, activity, cards): 
+  - Banner cards: más motion spring, glass + shadow glow verde, gradients en botones "Unirme ya", rings en avatars, urgent pulse más agresivo, join/streak badges destacados.
+  - Modal list items: mejor hover, gradients, borders verdes premium, truncado inteligente.
+  - Profile toggle: gradiente en botón activo, copy más motivador, activity section con cards glass + hover.
+  - Live-pill: shadow extra, urgent anim mejorado (scale + glow rojo).
+- Diseño general / review:
+  - .card-glass hover mejorado (border + shadow).
+  - Nav bottom: active bg sutil naranja, hover states, live dot en explore mejor.
+  - Feed / muro cards: hover scale + border glow naranja, pinned shadow.
+  - Consistencia Dunkin theme (orange/pink glows, glass blur, premium dark).
+- Muro/live integration: teasers ya mejorados en sesión previa + polish visual.
+- CSS: live-pulse-green-urgent más pop, card-glass hover, nav polish.
+
+Acciones:
+- Múltiples search_replace en App.tsx (live banner/modal/profile), index.css.
+- Builds verificados.
+- plan actualizado.
+- Push planeado.
+
+Resultado: app mucho más atractiva visualmente — live se siente adictivo y premium, UI cohesiva, glass/motion en todo. Sigue progresivo.
+
+Sigue con todo full green light!
+
