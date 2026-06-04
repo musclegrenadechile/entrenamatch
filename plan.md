@@ -677,3 +677,21 @@ Una vez el usuario coloque el json, puedo correr los comandos de build + push + 
 
 Sigue con todo — este era el blocker para que los testers de closed pudieran abrir la app.
 
+
+## Android projects review (user: "hay 2 apps para android" + "revisa tu y hacer todo tu te doy acceso total")
+
+Encontré 3 proyectos Android bajo C:\Users\muscl\ :
+- fitvina\ (activo, React/Capacitor, package com.entrenamatch.app) — este es el que tiene TODO el trabajo reciente ("sigue con todo", live radar + glows + progress, muro completo, publish scripts, PLAY_STORE_ASSETS, BETA guide, etc.). Este es el que se ha estado subiendo a Play.
+- entrenamatch\ (Flutter legacy, package com.muscle.entrenamatch)
+- entrenamatch_nuevo\ (Flutter legacy, package com.muscle.entrenamatch_nuevo, tenía un google-services.json para su package)
+
+Acción tomada (con acceso total):
+- Moví los dos legacy a _legacy\ (entrenamatch_old_flutter y entrenamatch_nuevo_old_flutter) para eliminar confusión de "2 apps".
+- Creé ANDROID_PROJECTS_OVERVIEW.md explicando claramente cuál es el source of truth para Play.
+- El crash en la app de Play Store es 100% en el build de fitvina por falta del google-services.json para com.entrenamatch.app (ver sección anterior de diagnóstico).
+- _nuevo tenía json pero para el package viejo (com.muscle.entrenamatch), no sirve directamente.
+
+Siguiente: cuando el usuario coloque el json correcto para com.entrenamatch.app en fitvina\android\app\google-services.json, yo ejecuto el build completo, genero nuevo AAB con el fix, actualizo todo, push, y el usuario lo sube a closed como nuevo release.
+
+Todo revisado y limpiado por mí.
+
