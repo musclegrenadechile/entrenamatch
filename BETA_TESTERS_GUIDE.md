@@ -66,6 +66,13 @@ Uso:
   - Verificado: tsc limpio + `npm run build` exitoso. El bundle nuevo (dist + futuros APKs/AABs) no debe dar #310 ni en login web ni en WebView de Android.
   - Recordatorio para Google login: aunque el #310 esté fix, el OAuth con Google en la web (musclegrenadechile.github.io) requiere que agregues manualmente el dominio en Firebase Console → Authentication → Settings → Authorized domains. Agrega `musclegrenadechile.github.io` + `localhost`. El iframe warning "domain is not authorized" es de Firebase, no bug de código. Una vez autorizado + hard refresh, Google sign-in debe fluir. (No puedo hacerlo yo, no tengo credenciales de la cuenta Firebase del proyecto).
 - **Mapa en vivo "sigue con todo" ultra pulido (precioso + único)**:
+  - Marcadores con pulso sutil (vivos).
+  - Radar sweep animado premium en el contenedor.
+  - Tether en Arena más vibrante y glow fuerte.
+  - Orb dinámico con color shift y glow extra en alto vibe.
+  - Empty states mejorados con iconos y copy motivador.
+  - Más active:scale y transiciones en botones live y mapa.
+  - Prueba el radar, los marcadores pulsando, el tether fluyendo, y cómo el mapa se siente parte integral del "entrenando ahora".
   - Marcador azul "Tú" aparece cuando GPS está activo (con popup propio).
   - Al abrir el mapa por primera vez pide GPS automáticamente (si no lo tienes).
   - Limpieza real del mapa (destroy de instancia + markers) al ocultar + useEffect dedicado de unmount → cero fugas de memoria, toggle instantáneo y estable incluso en WebView Android.

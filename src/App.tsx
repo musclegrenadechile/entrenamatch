@@ -5042,11 +5042,12 @@ function App() {
                 ))}
               </div>
             ) : (
-              <div className="card card-glass p-6 text-center border border-[#22c55e]/30">
-                <div className="text-4xl mb-2">🏋️‍♂️</div>
+              <div className="card card-glass p-6 text-center border border-[#22c55e]/30 relative overflow-hidden">
+                <div className="text-4xl mb-2 opacity-90">🏋️‍♂️</div>
                 <div className="font-semibold mb-1">Nadie entrenando cerca todavía</div>
-                <div className="text-sm text-[#9CA3AF] mb-4">Sé el primero en activar "Entrenando Ahora (EN VIVO)" en tu Perfil. ¡Aparecerás en el radar y la gente querrá unirse o sync contigo!</div>
-                <button onClick={() => setActiveTab('profile')} className="text-xs px-4 py-1.5 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90">Ir a Perfil y activar live →</button>
+                <div className="text-sm text-[#9CA3AF] mb-4">Sé el primero en activar "Entrenando Ahora (EN VIVO)" en tu Perfil.<br/>¡Aparecerás en el radar y la gente querrá unirse o sync contigo!</div>
+                <button onClick={() => setActiveTab('profile')} className="text-xs px-4 py-1.5 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90 active:scale-[0.985] transition">Ir a Perfil y activar live →</button>
+                <div className="absolute -bottom-4 -right-4 text-[60px] opacity-5">📡</div>
               </div>
             )}
             <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between items-center">
@@ -7071,7 +7072,11 @@ function App() {
                     <div className="relative z-10 flex flex-col items-center">
                       <div 
                         className={`energy-orb ${syncVibe > 65 ? 'high' : ''}`}
-                        style={{ transform: `scale(${0.82 + (syncVibe/100)*0.32})` }}
+                        style={{ 
+                          transform: `scale(${0.82 + (syncVibe/100)*0.32})`,
+                          filter: syncVibe > 70 ? 'hue-rotate(20deg) saturate(1.2)' : 'none',
+                          boxShadow: syncVibe > 80 ? '0 0 55px rgba(255,103,31,0.95), 0 0 110px rgba(255,79,121,0.6), inset 0 -12px 18px rgba(0,0,0,0.5)' : undefined
+                        }}
                       >
                         <div className="absolute inset-0 rounded-full flex items-center justify-center">
                           <div className="text-center">

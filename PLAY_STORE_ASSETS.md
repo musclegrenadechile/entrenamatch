@@ -4,7 +4,11 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 21 / 0.1.16-mapa-preciosa. **MAPA ULTRA PRECIOSO + RADAR SWEEP + PULSO ARENA + EXHAUSTIVE POLISH**: 
+**Current version for this upload**: versionCode 21 / 0.1.16-mapa-preciosa. **MAPA ULTRA PRECIOSO + RADAR SWEEP + ARENA TETHER + EXHAUSTIVE POLISH**: 
+- Mapa: marcadores foto/iniciales con pulso vivo, radar sweep animado, filtro cerca, radio personal, leyenda, Centrar, persistencia, hápticos, integración con header LIVE, empty states premium.
+- Arena: tether más grueso y glow vibrante, orb con shift de color y glow extra en alto vibe, combo pulsa.
+- Más active:scale, transiciones, glows en live elements, empty states mejorados.
+- Revisión exhaustiva continua para dejar toda la app preciosa (UI, motion, consistencia, realtime feel). Builds limpios.
 - Mapa con marcadores foto/iniciales (precioso y personal), click a perfil, filtro cerca, radio 10km, leyenda, Centrar, radar sweep animado único, persistencia, hápticos, integración.
 - Tether Arena más vibrante y glow.
 - Combo pulsa.

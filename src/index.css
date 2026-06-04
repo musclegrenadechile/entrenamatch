@@ -810,9 +810,14 @@ input[type="range"]::-moz-range-thumb {
 .entrenamatch-marker {
   background: transparent;
   border: none;
+  animation: marker-live-pulse 2.5s ease-in-out infinite;
 }
 .entrenamatch-marker img {
   image-rendering: -webkit-optimize-contrast;
+}
+@keyframes marker-live-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
 }
 
 /* Radar sweep effect for the live training map - makes it feel alive and "preciosa" / unique */
