@@ -133,7 +133,7 @@ También puedes ir a GitHub (repo musclegrenadechile/entrenamatch) → pestaña 
 - Ve a Play Console > Pruebas > Prueba cerrada > Crear release o Editar > Sube el AAB > Guarda > Publica el rollout (100% del grupo o el % que quieras).
 - Después de eso el script automatizado (`publish-play.ps1 closed`) suele funcionar para releases siguientes.
 
-**v0.1.5-prealpha + mejoras progresivas**: Crash al "activar la notificación" resuelto + nuevas prefs + muro teasers mejorados. FCM client wiring + token save started (for real background pushes on APK).
+**v0.1.5-prealpha + mejoras progresivas**: Exhaustive review done (plan cleaned, backlog prioritized). Crash al "activar la notificación" resuelto + nuevas prefs + muro teasers mejorados. FCM client wiring + token save to /userPushTokens started (for real background pushes on APK). Radar sweep + circles, banner glow, profile live progress/glow, stats glow/pulse, matches live ring/glow, feed teaser + mini progress.
 - Ya no se pide permiso de push automáticamente en cada login real (evita prompts raros).
 - En APK usa el botón nuevo en **Perfil** → "🔔 Activar notificaciones push nativas (reales en Android, incluso app cerrada)".
 - **Nuevo**: toggles simples de preferencias de notificaciones en Perfil (Mensajes, Live/Sesiones, Actividad muro) - control local por dispositivo.

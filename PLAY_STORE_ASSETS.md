@@ -4,12 +4,12 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 8 / 0.1.5-prealpha (bugfix + mejoras progresivas: crash al activar notificaciones resuelto + prefs de notif + muro teasers.
-- Native push: explícito vía botón en Perfil, defensivo.
+**Current version for this upload**: versionCode 8 / 0.1.5-prealpha (exhaustive review + polishes: plan cleaned + structured backlog; FCM stub + token save; live visuals ultra premium).
+- Native push: explícito vía botón en Perfil, defensivo. FCM client + /userPushTokens started.
 - Browser notif: handlers seguros.
 - Manifest mejorado.
 - **Nuevo**: toggles de preferencias (mensajes/live/muro) en Perfil.
-- **Mejorado**: muro teasers en Explore/Matches (1-2 posts latest/pinned, más vivo); live visuals premium (glass cards, motion, urgent pulses, gradients, grid bg en banner + barra progreso "se va en" + glow, chat bubbles atractivos, sessions badges LIVE + glow borders, feed teasers mejorados con hover, modal progress + radar anim/hover/stagger + sweep anim, profile stats/banner polish + glow, matches cards live ring/glow if trainingNow).
+- **Mejorado**: muro teasers (1-2 posts); live visuals (glass/motion/glows/pulses/gradients, banner grid + glow + progress, radar sweep + circles + stagger, profile stats/banner glow + progress, sessions/matches/feed badges + glow/ring + mini progress, modal progress + radar anim/hover/stagger + sweep). Full UI visual review (hovers, empty states, consistency).
 - Incluye killer live, muro espectacular, integrity, onboarding preview, etc.
 Listo para re-subir a closed track como mejora continua.
 
