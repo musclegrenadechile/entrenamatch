@@ -4881,28 +4881,33 @@ function App() {
 
             {(() => {
               // Collect and sort recent posts from all loaded users (exclude self)
-              // Memoized in practice via the IIFE but could be useMemo for bigger perf if needed
-              const allCommunityPosts = Object.entries(profilePosts)
-                .filter(([uid]) => uid !== effectiveUserId)
-                .flatMap(([uid, posts]) => (posts || []).map((p: any) => ({ ...p, ownerId: uid })));
+              // useMemo to avoid recompute on every render - helps "update gigante" feel
+              const feedComputation = React.useMemo(() => {
+                const allCommunityPosts = Object.entries(profilePosts)
+                  .filter(([uid]) => uid !== effectiveUserId)
+                  .flatMap(([uid, posts]) => (posts || []).map((p: any) => ({ ...p, ownerId: uid })));
 
-              let feedPosts = [...allCommunityPosts]
-                .sort((a: any, b: any) => {
-                  if (b.pinned && !a.pinned) return 1;
-                  if (a.pinned && !b.pinned) return -1;
-                  return b.timestamp - a.timestamp;
-                });
-              if (feedShowPinnedOnly) feedPosts = feedPosts.filter((p: any) => p.pinned);
-              if (feedOnlyReal) feedPosts = feedPosts.filter((p: any) => realProfiles.some(rp => rp.id === p.ownerId));
-              if (feedOnlyLive) feedPosts = feedPosts.filter((p: any) => realProfiles.some(rp => rp.id === p.ownerId && rp.trainingNow));
-              if (feedSearch.trim()) {
-                const q = feedSearch.toLowerCase().trim();
-                feedPosts = feedPosts.filter((p: any) => {
-                  const owner = realProfiles.find(r => r.id === p.ownerId) || { name: '' };
-                  return (p.text || '').toLowerCase().includes(q) || (owner.name || '').toLowerCase().includes(q);
-                });
-              }
-              feedPosts = feedPosts.slice(0, feedDisplayLimit);
+                let feedPosts = [...allCommunityPosts]
+                  .sort((a: any, b: any) => {
+                    if (b.pinned && !a.pinned) return 1;
+                    if (a.pinned && !b.pinned) return -1;
+                    return b.timestamp - a.timestamp;
+                  });
+                if (feedShowPinnedOnly) feedPosts = feedPosts.filter((p: any) => p.pinned);
+                if (feedOnlyReal) feedPosts = feedPosts.filter((p: any) => realProfiles.some(rp => rp.id === p.ownerId));
+                if (feedOnlyLive) feedPosts = feedPosts.filter((p: any) => realProfiles.some(rp => rp.id === p.ownerId && rp.trainingNow));
+                if (feedSearch.trim()) {
+                  const q = feedSearch.toLowerCase().trim();
+                  feedPosts = feedPosts.filter((p: any) => {
+                    const owner = realProfiles.find(r => r.id === p.ownerId) || { name: '' };
+                    return (p.text || '').toLowerCase().includes(q) || (owner.name || '').toLowerCase().includes(q);
+                  });
+                }
+                feedPosts = feedPosts.slice(0, feedDisplayLimit);
+                return { feedPosts, allCommunityPosts };
+              }, [profilePosts, feedShowPinnedOnly, feedOnlyReal, feedOnlyLive, feedSearch, feedDisplayLimit, realProfiles, effectiveUserId]);
+
+              const { feedPosts, allCommunityPosts } = feedComputation;
 
               if (isLoadingFeed && feedPosts.length === 0) {
                 return (

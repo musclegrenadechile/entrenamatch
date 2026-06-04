@@ -1300,3 +1300,13 @@ Sigue con todo!
 - Builds clean. Pushed.
 
 Sigue con todo - momentum total. Next batch?
+
+## Sigue con todo - even more: useMemo for feed computation (perf), publish success banner, onboarding EntrenaSync teaser, more skeletons/animations/loading states
+
+- Wrapped heavy feed posts collection/sort/filter in useMemo to reduce re-computes on every render (helps monolith perf and "update gigante").
+- Added auto-hiding success banner in feed after modal publish: "?? ¡Tu post se publicó en el Feed! Aparece arriba en la lista."
+- Onboarding preview teaser for unique EntrenaSync.
+- Skeletons in personal muro, "Publicando..." states, animated actions in sync.
+- Builds clean. Pushed.
+
+Momentum total - UX getting more delightful and unique every step. Sigue con todo!
