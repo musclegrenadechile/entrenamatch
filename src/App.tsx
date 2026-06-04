@@ -525,6 +525,7 @@ function App() {
   const [muroPhotoUploading, setMuroPhotoUploading] = useState(false)
   const [muroPhotoUploadProgress, setMuroPhotoUploadProgress] = useState(0)
   const [muroPublishing, setMuroPublishing] = useState(false)
+  const [loadingPersonalMuro, setLoadingPersonalMuro] = useState(false)
   // Inline comment composer for attractive muro (replaces ugly prompt() for both own + viewed profiles)
   const [activeComment, setActiveComment] = useState<{postId: string; postUserId: string; ownerName?: string} | null>(null)
   const [commentDraft, setCommentDraft] = useState('')
@@ -6345,16 +6346,25 @@ function App() {
                   {syncActions.length > 0 && (
                     <div className="text-[9px] text-[#22c55e]/90 mt-1.5 bg-black/30 p-1.5 rounded relative z-10 max-h-[68px] overflow-auto">
                       <div className="text-[#22c55e]/70 mb-0.5">Acciones compartidas ({syncActions.length}):</div>
+                      <AnimatePresence>
                       {syncActions.slice(0, 6).map((a: any, i: number) => {
                         const isMe = a.userId === effectiveUserId
                         const who = isMe ? 'Tú' : (realProfiles.find(p => p.id === syncPartnerId)?.name?.split(' ')[0] || 'Compa')
                         return (
-                          <div key={i} className="flex items-center gap-1 py-0.5">
+                          <motion.div 
+                            key={a.id || i} 
+                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex items-center gap-1 py-0.5"
+                          >
                             <span className={isMe ? 'text-white' : 'text-[#22c55e]'}>{who}: {a.emoji} {a.label}</span>
                             <span className="text-[#22c55e]/50 text-[7px] ml-auto">{a.at ? Math.max(0, Math.floor((Date.now() - a.at)/60000)) : ''}m</span>
-                          </div>
+                          </motion.div>
                         )
                       })}
+                      </AnimatePresence>
                     </div>
                   )}
                   <div className="text-[8px] text-center text-[#22c55e]/60 mt-1 relative z-10">Acciones instantáneas + energía compartida que crece en vivo. Esto nadie más lo tiene.</div>
@@ -6397,10 +6407,14 @@ function App() {
                   <button onClick={() => setActiveTab('feed')} className="text-[9px] text-[#FF671F] underline active:opacity-70">Ver feed global →</button>
                 </div>
                 <button 
-                  onClick={() => { loadProfilePosts(effectiveUserId).then(() => processIncomingLiveJoins()); }} 
-                  className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10"
+                  disabled={loadingPersonalMuro}
+                  onClick={() => { 
+                    setLoadingPersonalMuro(true);
+                    loadProfilePosts(effectiveUserId).then(() => processIncomingLiveJoins()).finally(() => setLoadingPersonalMuro(false)); 
+                  }} 
+                  className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10 disabled:opacity-50"
                 >
-                  Refrescar
+                  {loadingPersonalMuro ? '...' : 'Refrescar'}
                 </button>
               </div>
               {/* Live engagement stats - makes the muro feel alive and spectacular */}
@@ -6564,7 +6578,17 @@ function App() {
                 <button onClick={() => setActiveTab('feed')} className="text-xs text-[#FF671F] active:underline">Ver en el Feed Global →</button>
               </div>
               <AnimatePresence>
-                {(profilePosts[effectiveUserId] || []).length > 0 ? (
+                {loadingPersonalMuro && (profilePosts[effectiveUserId] || []).length === 0 ? (
+                  <div className="space-y-3">
+                    {[1,2].map(i => (
+                      <div key={i} className="muro-post p-4 mb-3 rounded-2xl animate-pulse">
+                        <div className="h-3 bg-[#2F2F35] rounded w-1/4 mb-2"></div>
+                        <div className="h-4 bg-[#2F2F35] rounded w-full mb-1"></div>
+                        <div className="h-4 bg-[#2F2F35] rounded w-3/4"></div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (profilePosts[effectiveUserId] || []).length > 0 ? (
                   [...(profilePosts[effectiveUserId] || [])].sort((a,b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.timestamp - a.timestamp).map(post => {
                     const isOwn = true
                     const liked = post.likes.includes(effectiveUserId)

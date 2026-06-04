@@ -1264,3 +1264,30 @@ Sigue con todo - next focus? (more realtime, perf, new disruptive twist, Play as
 The UX now feels fast, beautiful, unique (sync is the star), with great publish/photo/live flows. No more poor visuals or jank.
 
 Sigue con todo - keep the momentum!
+
+## Sigue con todo - even more complete UX (extra polish round)
+
+- Loading states everywhere: skeletons for feed posts when loading, "Cargando..." in refresh, publishing "Publicando..." in buttons for both feed modal and muro composer.
+- Instant visual rewards: "¡ACABAS DE PUBLICAR!" highlight with ring/pulse on new posts in lists.
+- Optimistic everywhere + targeted updates = no giant re-renders on publish/photo.
+- Photo progress bars in both places, Storage for clean small URLs.
+- Better empty states with CTAs.
+- All flows (publish, photo, sync join, live) now feel attractive, fast, unique and delightful.
+- Builds, pushed.
+
+The user experience is now completely improved: from discovering live, joining to magical sync, publishing with nice photo to seeing it highlighted instantly. No poor visuals, no jank, no spam, no dead ends. Feels like a top unique app.
+
+Sigue con todo - what is next to make it even better?
+
+## Sigue con todo - additional UX wins (skeletons, animations, publishing polish)
+
+- Added loading skeleton for personal muro posts when refreshing (no more blank while loading).
+- Enhanced EntrenaSync actions list with framer AnimatePresence pop-in animations for new actions (feels more alive and instant).
+- Publishing buttons now show "Publicando..." state during submit.
+- Refined feed refresh button text to "Cargar..." during load.
+- Continued momentum on making every interaction feel premium and unique: more motion in sync (the killer feature), better perceived performance with skeletons, instant visual rewards on publish.
+- Builds clean. Pushed.
+
+The app UX is getting more and more "se siente completamente gigante" - delightful, fast, iconic, and the EntrenaSync + live + muro combo is the star that nobody else has.
+
+Sigue con todo!
