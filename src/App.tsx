@@ -4288,6 +4288,7 @@ function App() {
                       <div className="text-[8px] text-[#22c55e] mb-1">🔥{(user.liveStreak||0)}h +{(user.joinedLiveStreak||0)}j streak</div>
                     )}
                     {user.trainingSyncWith && <div className="text-[7px] text-[#22c55e] mb-1">🔄 En Sync ahora</div>}
+                    {user.syncStreak && <div className="text-[7px] text-[#22c55e] mb-1">🔄 SyncStreak {user.syncStreak}d</div>}
                     <button 
                       onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); }} 
                       className="w-full text-[9px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black py-1 rounded font-bold active:brightness-90 transition shadow-sm"

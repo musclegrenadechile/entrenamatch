@@ -1005,3 +1005,12 @@ Sigue con todo full: EntrenaSync cada vez más integrado y disruptivo. Android: c
 
 Sigue con todo: EntrenaSync cada vez más "top" y disruptiva. Error solucionado. Android listo para el json.
 
+
+## Sigue con todo - badge también en modal live
+
+- Añadido badge "?? En Sync ahora" también a las cards individuales en el full live modal (consistencia y visibilidad).
+
+- Builds, pushes, plan actualizado.
+
+Sigue con todo a toda máquina. Error solucionado. Feature disruptiva más expuesta. Android: pendiente json para AAB.
+
