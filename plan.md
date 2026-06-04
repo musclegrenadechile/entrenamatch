@@ -1090,3 +1090,17 @@ Sigue con todo – muro ya no es pobre, es parte de lo único de la app.
 - Builds clean (tsc + web). 
 
 El encabezado del feed ahora se ve bien y usable en horizontal.
+
+## Fix visual "encabezados de nivel" en Perfil
+
+- Problema: En el perfil, el "Nivel" (Intermedio/Avanzado/etc) en la línea de info del hero se veía como texto plano feo. En el grid de stats (6 items en grid-cols-5) la última fila quedaba con 1 item, los cards no eran cuadrados/uniformes, y el valor de "Nivel" (palabra larga) se veía mal estirado en el "stat-number" grande (a diferencia de los números).
+- Fixes:
+  - Grid de stats cambiado a grid-cols-3 gap-2 + min-h-[68px] en cada card ? 2 filas perfectas de 3, más "cuadrados" y alineados visualmente.
+  - Para el stat de Nivel: usamos isText y render como pequeño badge/pill redondeado `text-[10px] px-1 py-0.5 rounded bg-white/10` en vez de estirar el número.
+  - En el hero del perfil: level ahora es un chip cuadrado/redondeado consistente: `text-[10px] px-1.5 py-px rounded-full bg-[#FF4F79]/10 text-[#FF4F79] font-semibold`
+  - En el modal de full profile: el "Nivel" ahora también es un badge pill idéntico al hero.
+  - Ajustes menores de padding y tamaños para que los encabezados/labels de nivel queden bonitos y square.
+- Consistencia con otros chips (como intensity, live badges).
+- Builds OK.
+
+Ahora los encabezados de nivel en perfil se ven cuadrados, alineados y visualmente correctos.

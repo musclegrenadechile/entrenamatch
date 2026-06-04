@@ -5726,7 +5726,7 @@ function App() {
                 <div className="text-[#FF671F] text-sm mt-1 flex items-center gap-2 font-medium">
                   <MapPin size={15} /> {currentUser.city}, {currentUser.country}
                   <span className="text-white/60">•</span> 
-                  <span className="text-white/90">{currentUser.level}</span>
+                  <span className="text-[10px] px-1.5 py-px rounded-full bg-[#FF4F79]/10 text-[#FF4F79] font-semibold">{currentUser.level}</span>
                   <span className="text-white/60">•</span> 
                   <span className="chip-health text-[10px] px-2 py-0.5 !font-semibold">{currentUser.intensity || 'Moderado'}</span>
                 </div>
@@ -5814,11 +5814,11 @@ function App() {
             </div>
 
             {/* Stats row - premium visual cards + LIVE count as global killer stat in header (urgency / FOMO) */}
-            <div className="px-4 mt-4 grid grid-cols-5 gap-1">
+            <div className="px-4 mt-4 grid grid-cols-3 gap-2">
               {[
                 { label: 'Matches', value: matches?.length || 0, icon: Heart, color: '#FF671F' },
                 { label: 'Sesiones', value: squads?.length || 0, icon: Star, color: '#00C4B4' },
-                { label: 'Nivel', value: currentUser.level || '—', icon: Dumbbell, color: '#FF4F79' },
+                { label: 'Nivel', value: currentUser.level || '—', icon: Dumbbell, color: '#FF4F79', isText: true },
                 { label: 'Live cerca', value: liveTrainingNow.length, icon: Zap, color: '#22c55e', isLive: true },
                 { label: 'Live joins', value: currentUser.liveJoins || 0, icon: Zap, color: '#22c55e' },
                 { label: 'Syncs', value: (currentUser as any).syncStreak || 0, icon: Users, color: '#22c55e' }
@@ -5826,19 +5826,23 @@ function App() {
                 <div 
                   key={i} 
                   onClick={stat.isLive && liveTrainingNow.length > 0 ? () => { setActiveTab('explore'); setShowLiveModal(true); } : undefined}
-                  className={`card p-3 text-center rounded-2xl flex flex-col items-center justify-center ${stat.isLive && liveTrainingNow.length > 0 ? 'cursor-pointer active:scale-95 border border-[#22c55e]/60 ring-1 ring-[#22c55e]/20 shadow-sm shadow-[#22c55e]/10' : ''} ${stat.isLive ? 'relative' : ''}`}
+                  className={`card p-2 text-center rounded-2xl flex flex-col items-center justify-center min-h-[68px] ${stat.isLive && liveTrainingNow.length > 0 ? 'cursor-pointer active:scale-95 border border-[#22c55e]/60 ring-1 ring-[#22c55e]/20 shadow-sm shadow-[#22c55e]/10' : ''} ${stat.isLive ? 'relative' : ''}`}
                 >
-                  <stat.icon size={16} className="mb-0.5" style={{ color: stat.color }} />
-                  <div className="stat-number text-lg" style={{ color: stat.color }}>{stat.value}</div>
-                  <div className="text-[9px] text-[#9CA3AF] mt-0 font-medium tracking-widest">{stat.label}</div>
+                  <stat.icon size={14} className="mb-0.5" style={{ color: stat.color }} />
+                  {stat.isText ? (
+                    <div className="text-[10px] font-semibold px-1 py-0.5 rounded bg-white/10" style={{ color: stat.color }}>{stat.value}</div>
+                  ) : (
+                    <div className="stat-number text-base leading-none" style={{ color: stat.color }}>{stat.value}</div>
+                  )}
+                  <div className="text-[8px] text-[#9CA3AF] mt-0.5 font-medium tracking-widest">{stat.label}</div>
                   {stat.isLive && liveTrainingNow.length > 0 && (
-                    <div className="text-[8px] text-[#22c55e] mt-0.5 flex items-center gap-1">
+                    <div className="text-[7px] text-[#22c55e] mt-0.5 flex items-center gap-1">
                       ¡Ver ahora! 
-                      <div className="w-1.5 h-1.5 bg-[#22c55e] rounded-full" style={{animation: 'live-pulse-green 1.5s ease-in-out infinite'}}></div>
+                      <div className="w-1 h-1 bg-[#22c55e] rounded-full" style={{animation: 'live-pulse-green 1.5s ease-in-out infinite'}}></div>
                     </div>
                   )}
                   {stat.isLive && liveTrainingNow.length === 0 && (
-                    <div className="text-[8px] text-[#9CA3AF] mt-0.5">¡Sé el primero! Marca en Perfil</div>
+                    <div className="text-[7px] text-[#9CA3AF] mt-0.5">¡Sé el primero!</div>
                   )}
                 </div>
               ))}
@@ -7753,7 +7757,10 @@ function App() {
                   )
                 })()}
                 <div className="grid grid-cols-2 gap-x-4 text-sm">
-                  <div><span className="text-[#9CA3AF]">Nivel</span><br />{showFullProfile.level}</div>
+                  <div>
+                    <span className="text-[#9CA3AF] text-[10px]">Nivel</span><br />
+                    <span className="text-[11px] px-1.5 py-px rounded-full bg-[#FF4F79]/10 text-[#FF4F79] font-semibold inline-block mt-0.5">{showFullProfile.level}</span>
+                  </div>
                   <div><span className="text-[#9CA3AF]">Disponible</span><br />{showFullProfile.availability.join(', ')}</div>
                 </div>
               </div>
