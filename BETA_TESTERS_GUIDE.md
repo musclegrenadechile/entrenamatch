@@ -78,15 +78,14 @@ Uso:
   - FOMO en posts live ("entrenando ahora"): sección "🔥 X se unieron • FOMO real" con llamado a unirse. Los joins se persisten como comments en el post del live.
 - **Global polish**: más active:scale/transitions/haptics/glows en botones y live elements, empty states mejorados con iconos motivadores, consistencia visual en toda la app. Revisión exhaustiva continua para que se sienta preciosa y única.
 
-**NUEVO (v0.1.24-continua-mapa, code 29)** — SIGUE CON TODO MAPA + VIVO:
-- Mapa: pastillas de zona ahora son botones bonitos con color + conteo live (ej. 2) que actualizan el filtro y badge. Toca para filtrar, cuenta cambia en realtime. Nuevo botón rápido "📍 Mi zona" (filtra a tu ciudad del perfil al instante).
-- Marcadores high-energy (FOMO o ritual): pulso rápido + glow + puntito de energía. Se ven "calientes".
-- Tethers: ahora fluyen con animación dash (se sienten vivos conectados), hover más impactante.
-- Perfil: las barras de Vibe Score e historial "respiran" (breathe anim) cuando estás live o tienes bonds en vivo. +live bonds ya pulsaba.
-- Arena orb: cuando high, glow más potente naranja-rosa + pulso rápido + saturate.
-- Live cards en explore: los que tienen 3+ joins ahora glow naranja + borde FOMO.
-- Builds: APK debug fresco `EntrenaMatch-debug-continua-mapa-0.1.24-20260604-1939.apk` (y genérico), AAB `EntrenaMatch-v0.1.24-continua-mapa-code29-20260604-1940.aab` (y release). Web via push + CI.
-- Prueba especialmente: abre mapa, toca legend zonas o "Mi zona", activa GPS, ve conteos, mira si alguien en sync aparece con tether fluyendo y marker high, activa live en perfil y observa breathe en vibe bars. Hápticos + lifts en todo.
+**NUEVO (v0.1.25-continua-vivo, code 30) — SIGUE A TODA MÁQUINA SIN PARAR**:
+- **Perfil ultra vivo**: sección "Legends en vivo ahora 🔥" — lista tus bonds que están entrenando live con botón "Re-sync" directo. Si un legend se pone live, lo ves y puedes saltar al ritual al instante. Esto hace que los bonds tengan valor real y FOMO.
+- Arena: ahora 13 acciones (agregadas 🙌 High five y 🔥 ¡Vamos!). Grid en 4 columnas para taps más grandes y placenteros. Cuando vibe cruza 80: flying emojis extra + haptic heavy + el toast de foto más notorio. Ritual más rico y espectacular.
+- Galería: drag reorder ahora con haptic (light al agarrar, medium al soltar). Se siente táctil y premium.
+- Mapa: conteos en las pastillas de zona "hacen heat" (se agrandan y bold cuando hay 3+ live en esa zona). "Mi zona" + fit al filtrar más evidente.
+- Reacciones en muro y feed muestran conteos visibles (ya lo hacían, pero más FOMO con los joins live).
+- Builds frescos: debug APK `EntrenaMatch-debug-continua-vivo-0.1.25-20260604-1943.apk`, AAB `EntrenaMatch-v0.1.25-continua-vivo-code30-20260604-1943.aab`. Web actualizado vía push.
+- Prueba clave: ve a tu perfil, activa live en uno de tus bonds (o simula), vuelve a tu perfil y mira la sección de legends en vivo + re-sync. En Arena prueba las nuevas acciones y el pop de alta vibe. En mapa filtra por zona y ve el heat en conteos. Todo con más haptic y vida.
   - Marcadores con pulso sutil (vivos).
   - Radar sweep animado premium en el contenedor.
   - Tether en Arena más vibrante y glow fuerte.

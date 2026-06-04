@@ -1,32 +1,30 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED (v0.1.24-continua-mapa code 29) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED (v0.1.25-continua-vivo code 30) ===
 
-AAB file to upload: EntrenaMatch-v0.1.24-continua-mapa-code29-20260604-1940.aab   (or the generic EntrenaMatch-release.aab in root)
+AAB file to upload: EntrenaMatch-v0.1.25-continua-vivo-code30-20260604-1943.aab   (or the generic EntrenaMatch-release.aab in root)
 
 Steps:
 1. Play Console > App > Pruebas > Prueba cerrada (Closed testing) > Subir AAB.
-2. Selecciona el AAB versionado más reciente.
-3. En "Notas de la versión" (Release notes), pega EXACTAMENTE este texto corto:
+2. Elige el AAB versionado más reciente.
+3. En "Notas de la versión" / Release notes, pega EXACTAMENTE:
 
-**v0.1.24-continua-mapa (code 29) — SIGUE CON TODO: MAPA MÁS VIVO + POLISH PRECIOSO**
-• Mapa ultra vivo: pastillas de zona con conteos live realtime + botón rápido "📍 Mi zona" (filtro personal por tu ciudad). 
-• Marcadores high-energy con pulso rápido + glow cuando hay FOMO (3+ joins) o parejas en EntrenaSync ahora. 
-• Tethers entre Sync fluyen con animación (se sienten conectados).
-• Perfil: barras Vibe Score e historial "respiran" cuando estás live o tus legends están activos.
-• Orb de Arena más espectacular en alta energía. Tarjetas live con glow FOMO.
-• Mejoras visuales, hápticas y de atractivo en toda la app. Real-time map por zonas más único y precioso.
-• Build estable + pipeline completo (web + Android).
+**v0.1.25-continua-vivo (code 30) — SIGUE A TODA MÁQUINA SIN PARAR**
+• Perfil ultra vivo: nueva sección "Legends en vivo ahora 🔥" con re-sync instantáneo a tus bonds que están entrenando. Vibes y conexiones reales se sienten vivas.
+• Arena ritual más rico: 13 acciones (High five + ¡Vamos!), grid cols-4 para taps grandes. Cuando vibe >80: flying extras + haptic fuerte + foto más notoria.
+• Galería: drag reorder con haptic feedback (light al agarrar, medium al soltar).
+• Mapa: pastillas de zona con "heat" en conteos altos (≥3) + "Mi zona" rápido. Filtros y fit más vivos.
+• Más polish visual, hápticos y FOMO en feed/muro/reacciones.
+• Build estable (code 30). El match del movimiento cada vez más único.
 
-4. Guarda, revisa y haz rollout a tus closed testers (versión oculta por invitación).
+4. Guarda, revisa y rollout a closed testers.
 
-Después de que la primera subida manual "seedea" la pista closed exitosamente, puedes usar el script automatizado en cmd.exe limpio:
+Después de seed manual: usa script en cmd.exe limpio:
 cd /d C:\Users\muscl\fitvina
 publish-play.bat closed
 
-Artefactos listos en la raíz:
-- AAB para Play: EntrenaMatch-v0.1.24-continua-mapa-code29-20260604-1940.aab (7.2 MB)
-- APK debug para probar en tu Samsung S26 Ultra vía adb: EntrenaMatch-debug-continua-mapa-0.1.24-20260604-1939.apk (10 MB)  — también el genérico EntrenaMatch-debug.apk siempre es el latest.
+Artefactos:
+- AAB Play: EntrenaMatch-v0.1.25-continua-vivo-code30-20260604-1943.aab (7.2 MB)
+- Debug APK adb (S26 Ultra): EntrenaMatch-debug-continua-vivo-0.1.25-20260604-1943.apk (10 MB) + genérico EntrenaMatch-debug.apk
 
-Todo source commit + push a GitHub. CI dispara deploy web (GH Pages) + android-prealpha. 
-Hard refresh (Ctrl+Shift+R) en https://musclegrenadechile.github.io/entrenamatch/ después de que Actions termine.
+Push a GitHub hecho. CI actualiza web (https://musclegrenadechile.github.io/entrenamatch/) + artifacts. Hard refresh tras deploy.
 
-Sigue con todo.
+Sigue con todo sin parar.

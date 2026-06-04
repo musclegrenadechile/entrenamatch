@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.24-continua-mapa",
+  "version": "0.1.25-continua-vivo",
   "type": "module",
   "scripts": {
     "dev": "vite",

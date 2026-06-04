@@ -3010,6 +3010,11 @@ function App() {
           setSyncActions(prev => [highAction, ...prev].slice(0, 30))
           toast.success('⚡ ¡Vibe alta alcanzada!', { description: 'Momento épico registrado en el ritual y replay' })
           triggerHaptic('medium')
+          // Extra visual pop + multiple flying for high vibe (makes the peak feel spectacular and unique)
+          setTimeout(() => {
+            setFlyingEmojis(prev => [...prev.slice(-2), { id: 'fly-high' + Date.now(), emoji: '⚡', label: 'Alta!' }])
+            try { triggerHaptic('heavy') } catch {}
+          }, 120)
 
           // Oferta auto de foto si en native (no fuerza cámara, solo invita)
           if (Capacitor.isNativePlatform() && CapacitorCamera) {
@@ -5044,7 +5049,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
-          <span className="text-white/90 text-[11px]">Real backend • v0.1.24-continua-mapa</span>
+          <span className="text-white/90 text-[11px]">Real backend • v0.1.25-continua-vivo</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -5298,7 +5303,7 @@ function App() {
                         >
                           <span className="inline-block w-1.5 h-1.5 rounded-full" style={{background: col}} />
                           <span className="font-semibold tracking-[-0.2px]">{city.split(' ')[0]}</span>
-                          {cnt > 0 && <span className="ml-0.5 text-[8px] px-1 rounded bg-white/10 text-white/80 font-mono tabular-nums">{cnt}</span>}
+                          {cnt > 0 && <span className={`ml-0.5 text-[8px] px-1 rounded bg-white/10 text-white/80 font-mono tabular-nums ${cnt >= 3 ? 'scale-110 font-bold text-white' : ''}`}>{cnt}</span>}
                         </button>
                       )
                     })}
@@ -6836,11 +6841,14 @@ function App() {
                   <div 
                     key={idx} 
                     draggable
-                    onDragStart={(e) => e.dataTransfer.setData('text/plain', idx.toString())}
+                    onDragStart={(e) => { try { triggerHaptic('light') } catch {}; e.dataTransfer.setData('text/plain', idx.toString()) }}
                     onDragOver={(e) => e.preventDefault()}
                     onDrop={(e) => {
                       const from = parseInt(e.dataTransfer.getData('text/plain'))
-                      if (!isNaN(from) && from !== idx) reorderGallery(from, idx)
+                      if (!isNaN(from) && from !== idx) {
+                        reorderGallery(from, idx)
+                        try { triggerHaptic('medium') } catch {}
+                      }
                     }}
                     className={`relative flex-shrink-0 w-20 h-20 rounded-2xl overflow-hidden border ${idx === 0 ? 'border-[#FF671F] ring-1 ring-[#FF671F]/30' : 'border-[#2F2F35]'} shadow group transition-all hover:scale-[1.03] cursor-grab active:cursor-grabbing`}
                   >
@@ -7032,6 +7040,28 @@ function App() {
                     </div>
                   );
                 })()}
+
+                {/* ULTRA VIVO: Live bonds right now - if any of your EntrenaSync legends are training live, show them with instant re-sync CTA. Makes bonds feel alive and valuable. */}
+                {Object.keys(syncBonds).length > 0 && (
+                  <div className="mt-2 pt-2 border-t border-white/10">
+                    <div className="text-[8px] uppercase tracking-[1px] text-[#FF671F]/80 mb-1">Legends en vivo ahora 🔥</div>
+                    <div className="flex flex-wrap gap-1">
+                      {liveTrainingNow.filter((u: any) => Object.keys(syncBonds).includes(u.id)).slice(0, 3).map((liveBond: any) => (
+                        <button
+                          key={liveBond.id}
+                          onClick={() => { try { triggerHaptic('medium') } catch {}; startSyncWith(liveBond.id, liveBond.name || liveBond.nombre) }}
+                          className="text-[8px] px-2 py-0.5 bg-[#FF671F]/10 hover:bg-[#FF671F]/20 text-[#FF671F] rounded-full active:scale-[0.95] transition flex items-center gap-1 border border-[#FF671F]/30"
+                        >
+                          <span className="font-medium">{(liveBond.name || liveBond.nombre || '?').split(' ')[0]}</span>
+                          <span className="text-[7px] opacity-80">🔄 Re-sync</span>
+                        </button>
+                      ))}
+                      {liveTrainingNow.filter((u: any) => Object.keys(syncBonds).includes(u.id)).length === 0 && (
+                        <span className="text-[8px] text-[#9CA3AF]/70">Ninguno de tus legends está entrenando ahora</span>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Vibe History Visual - makes "stats de bonds en vivo" tangible and pretty. Simple bar sparkline of recent vibe sources. */}
                 <div className="mt-2 pt-1.5 border-t border-white/10">
@@ -7385,13 +7415,14 @@ function App() {
                     </AnimatePresence>
                   </div>
 
-                  {/* Expanded ritual action grid — bigger, more satisfying taps. 8 moves for rich vocabulary of training together. */}
-                  <div className="grid grid-cols-5 gap-1 mb-2 relative z-20">
+                  {/* Expanded ritual action grid — bigger, more satisfying taps. 13 moves for rich vocabulary of training together. Unique co-presence language. */}
+                  <div className="grid grid-cols-4 gap-1.5 mb-2 relative z-20">
                     {[
                       {e:'💪', l:'Buena forma'}, {e:'🔥', l:'Serie lista'}, {e:'💧', l:'Hidratado'},
                       {e:'🏁', l:'Push final'}, {e:'⚡', l:'Explosivo'}, {e:'🧘', l:'Control'},
                       {e:'📈', l:'Más peso'}, {e:'❤️', l:'Juntos'},
-                      {e:'🥤', l:'Recuperación'}, {e:'🏆', l:'PR logrado'}, {e:'🤝', l:'Apoyo mutuo'}
+                      {e:'🥤', l:'Recuperación'}, {e:'🏆', l:'PR logrado'}, {e:'🤝', l:'Apoyo mutuo'},
+                      {e:'🙌', l:'High five'}, {e:'🔥', l:'¡Vamos!'}
                     ].map((a, idx) => {
                       const isActiveCombo = syncCombo >= 2 && syncActions[0]?.label === a.l
                       return (
@@ -7937,7 +7968,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.24-continua-mapa • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.25-continua-vivo • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8164,7 +8195,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.24-continua-mapa • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.25-continua-vivo • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>

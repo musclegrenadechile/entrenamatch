@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 29 / 0.1.24-continua-mapa. **SIGUE CON TODO MAPA + VIVO PRECIOSO**: high-energy markers, leyenda con conteos + "Mi zona", tethers fluyendo, vibe bars breathe, orb espectacular, FOMO cards. 
+**Current version for this upload**: versionCode 30 / 0.1.25-continua-vivo. **SIGUE A TODA MÁQUINA**: live legends section con re-sync instantáneo desde perfil, 13 acciones en Arena + high-vibe pop extra, gallery drag con haptic, map legend heat + "Mi zona", más polish. 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -149,11 +149,19 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 
 ## What's new (for this Pre-Alpha release, short & punchy)
 
-**READY FOR PLAY CLOSED UPLOAD (v0.1.24-continua-mapa code 29)**
-- Fresh signed AAB: `EntrenaMatch-v0.1.24-continua-mapa-code29-20260604-1940.aab` (7.2 MB) + `EntrenaMatch-release.aab`
-- Fresh debug APK for device: `EntrenaMatch-debug-continua-mapa-0.1.24-20260604-1939.apk` (10 MB) + `EntrenaMatch-debug.apk`
+**READY FOR PLAY CLOSED UPLOAD (v0.1.25-continua-vivo code 30)**
+- Fresh signed AAB: `EntrenaMatch-v0.1.25-continua-vivo-code30-20260604-1943.aab` (7.2 MB) + `EntrenaMatch-release.aab`
+- Fresh debug APK for device: `EntrenaMatch-debug-continua-vivo-0.1.25-20260604-1943.apk` (10 MB) + `EntrenaMatch-debug.apk`
 - Web: pushed to main → GH Pages will have the new bundle (hard refresh after Actions finish).
 - Copy the short "What's new" below directly into Play Console when uploading the AAB to closed track.
+
+**v0.1.25-continua-vivo (code 30) — SIGUE A TODA MÁQUINA SIN PARAR: live legends + re-sync, 13 Arena actions + high vibe spectacle, gallery haptic reorder, map heat + Mi zona, profile ultra vivo**
+• **Perfil ultra vivo**: Nueva sección "Legends en vivo ahora 🔥" — si alguno de tus EntrenaSync bonds está entrenando live, aparece con botón instantáneo "Re-sync". Vibes y bonds se sienten vivos y valiosos. El liveBondBonus ya respiraba, ahora ves exactamente quién de tus legends está hot.
+• **Arena ritual más rico**: 13 acciones (agregadas 🙌 High five y 🔥 ¡Vamos!). Grid cols-4 para taps más grandes y satisfactorios en teléfono. Cuando cruzas 80 vibe: pop visual extra con flying ⚡ múltiples + haptic heavy + oferta foto más notoria. El ritual se siente único y adictivo.
+• **Galería con haptic**: Drag-to-reorder ahora dispara haptic light al empezar y medium al soltar + ya guardaba real. Curation del perfil más táctil y premium.
+• **Mapa**: Conteos en pastillas de zona ahora "heat" (más grandes y bold cuando ≥3 live). "Mi zona" ya presente. Efecto de filtro + fitBounds más notorio.
+• Reacciones en muro/feed ya muestran conteos visibles para FOMO. Todo con builds limpios, más haptics y polish.
+• Artefactos frescos + pipeline completo (web, APK debug, AAB signed). Sigue sin parar.
 
 **v0.1.24-continua-mapa (code 29) — SIGUE CON TODO: MAPA MÁS VIVO + POLISH PRECIOSO (high-energy markers, legend con counts + "Mi zona", tethers fluyendo, vibe breathe, orb espectacular)**
 • **Mapa ultra vivo**: pastillas de zona coloreadas con conteo live realtime (al filtrar actualiza todo). Botón rápido "📍 Mi zona" (usa tu ciudad del perfil para filtrar al instante). Marcadores high-energy (3+ joins o en Sync): pulso más rápido + glow anillo + badge extra. Tethers con animación de flujo (se sienten conectados). Leyenda interactiva premium con hover/active pop + haptic. Badge de conteo filtra correctamente. Ayuda actualizada. Sigue con todo el mapa.
@@ -164,8 +172,8 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • AAB + debug APK frescos listos (ver nombres abajo). Build limpia + pipeline completo.
 • Todo el pipeline: web GH Pages, Android AAB/debug, docs actualizados. Sigue con todo ritmo.
 
-**Short "What's new" (copy-paste to Play Console for v0.1.24 code 29):**
-Mapa más vivo y precioso: pastillas de zona con conteos live en tiempo real + botón "Mi zona" (filtro personal instantáneo). Marcadores high-energy con pulso rápido y glow cuando hay FOMO (3+ se unieron) o parejas en EntrenaSync. Tethers entre Sync ahora fluyen con animación. Perfil: barras de Vibe Score e historial "respiran" cuando estás en vivo o tus legends están activos. Orb de la Arena más espectacular en alta energía. Tarjetas live con glow FOMO. Mejoras visuales y hápticas en todo. Real-time map por zonas aún más único y atractivo. Build estable (code 29).
+**Short "What's new" (copy-paste to Play Console for v0.1.25 code 30):**
+Perfil ultra vivo: nueva sección "Legends en vivo ahora" con re-sync instantáneo a tus bonds que están entrenando. Arena con 13 acciones (High five + ¡Vamos!), grid más usable y efectos espectaculares cuando vibe >80 (múltiples flying + haptic fuerte). Galería drag con haptic feedback al reordenar. Mapa: pastillas de zona con heat en conteos altos + "Mi zona" rápido. Más polish visual, hápticos y FOMO en toda la app. El match del movimiento se siente más vivo y único que nunca. (code 30)
 
 **Artifacts for this version:**
 - AAB (Play): EntrenaMatch-v0.1.24-continua-mapa-code29-20260604-1940.aab (y EntrenaMatch-release.aab)

@@ -1432,3 +1432,5 @@ Dime quÃ© priorizar primero (ej: "agrega el form photo", "actualiza la guÃ­a con
 
 
 **Sigue con todo (post visual 0.1.23)**: v0.1.24-continua-mapa (code 29). Mapa: zone pills con counts + haptic filter, high-energy markers (joins>=3 o sync) con pulse rápido + glow + badge, tether flow anim + hover pop, help text actualizado. Perfil: vibe bars + score bar breathe anim cuando live/live-bonds. Arena orb.high más intenso + faster pulse. Feed live cards FOMO glow naranja si high joins. Builds: web+cap+debug-apk versionado limpio. Docs (PLAY, BETA, landing) actualizados. Push para GH Pages + Actions. Sigue ritmo.
+
+**Sigue a toda máquina sin parar (user request)**: v0.1.25-continua-vivo (code 30). Perfil: sección live legends con re-sync CTA desde bonds (hace que las conexiones tengan valor tangible y FOMO). Arena: 13 acciones (cols-4 grid + 2 nuevas), high-vibe pop con extra flying + heavy haptic. Galería drag + haptic light/medium. Mapa: heat en conteos de leyenda (scale bold si >=3), Mi zona ya integrado. Rebuilds completos + docs + push. Sigue sin parar mejorando todo.
