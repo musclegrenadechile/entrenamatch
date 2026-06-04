@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 18 / 0.1.13-geo-arena. **REAL GEOLOC + LAUNCH FIX + FEED + PROFILE + ARENA**: 
+**Current version for this upload**: versionCode 19 / 0.1.14-live-map. **REAL-TIME MAP + GEO + ALL POLISH**: 
 - Fix definitivo: app ahora abre sin error en Android (crash "Default Firebase / Play Integrity NPE" al restaurar sesión arreglado completamente; validado en dispositivo real S26 Ultra vía adb logcat + reinstall).
 - Feed: filtros horizontales (REAL / 🟢 Live / 📌 Fijados) ahora se deslizan perfectamente con snap, touch, fade hint y texto "desliza →".
 - Live strip en feed más atractiva con snap y hints de Arena.
@@ -98,7 +98,7 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • Tira "En vivo ahora en la comunidad" con snap y referencias a Arena.
 • Perfil ultra vivo y atractivo: hero con pulso live + banner ENTRENANDO AHORA + indicador GPS real + botón actualizar ubicación, "Mi vida de entrenamiento" summary, legends con progreso + levels, recent activity feed from likes/comments, gallery quick main photo + reorder, richer live stats, Vibe Score + Logros row. Muro del perfil completamente rediseñado: cards premium con gradientes animados, fotos cinematográficas, reacciones y comentarios más atractivos, empty state épico, pinned destacados. Real geo powers distances everywhere.
 • EntrenaSync Arena como killer feature única: ritual de co-presencia en vivo con energy orb reactiva, flying emojis, combos, historias duales automáticas en muro+feed, leyendas/bonds persistentes, replay. + Nueva: Captura rápida de foto DENTRO de la Arena (el momento queda en el replay + se publica en los muros de ambos).
-• Estabilidad Android: google-services.json estricto en build, guards en push/integrity, direct publish en feed sin redirect, photo con progreso real. + Geolocalización REAL vía Capacitor (GPS preciso en APK) para distancias y "vivo cerca" realistas. Permisos ACCESS_FINE_LOCATION declarados. Toggle live + login + explore piden GPS automáticamente. Botón "Actualizar ubicación real" en Perfil. Arena muestra distancia real al partner. Distancias en cards, filtros, live usan coords reales de perfiles.
+• Estabilidad Android: google-services.json estricto en build, guards en push/integrity, direct publish en feed sin redirect, photo con progreso real. + Geolocalización REAL vía Capacitor (GPS preciso en APK) para distancias y "vivo cerca" realistas. Permisos ACCESS_FINE_LOCATION declarados. Toggle live + login + explore piden GPS automáticamente. Botón "Actualizar ubicación real" en Perfil. Arena muestra distancia real al partner. Distancias en cards, filtros, live usan coords reales de perfiles. + Mapa en tiempo real de personas entrenando (Leaflet + geo real): pines por zonas (Viña, Santiago, etc.), tamaño por joins, actualiza en vivo desde Firestore, popups con join + distancia, solo usuarios live recientes.
 • Todo listo para Closed testing en Play Store.
 
 **Previous highlights retained (Arena wave + giant UX):**
