@@ -513,6 +513,8 @@ Update and test thoroughly. Report back.
 - Arena remains the disruptive star (full ritual, flying, combos, dual stories, bonds/legends, replay, global FOMO in feed).
 - All previous giant updates retained (direct Feed publish modal + success banner + confetti instead of profile jump, Storage photo with real 0-100% progress + preview, attractive guarded Sync join, etc.).
 - AAB ready: EntrenaMatch-v0.1.14-live-map.aab (and EntrenaMatch-release.aab) in root. Also fresh debug APK (EntrenaMatch-debug-map-tdz-fix.apk) with the live map + the TDZ fix (useEffect + refs moved after liveTrainingNow/startSyncWith so the deps array evaluates after those consts are initialized). This eliminates the "Cannot access 'G' before initialization" crash on the GH Pages web version. The map now loads without error and updates in real time from Firestore live users. Toggle "Mapa en tiempo real" / "Ver mapa por zonas" in Explore. Works best with real GPS enabled.
+
+**IMPORTANT - Web / GH Pages only:** The repeated "domain is not authorized for OAuth operations" warning (blocks Google login) is because musclegrenadechile.github.io is missing from Firebase Auth authorized domains. Go to https://console.firebase.google.com/project/entrenamatch/authentication/settings → Authorized domains → Add domain → type exactly `musclegrenadechile.github.io` (and `localhost` for local). This is a manual one-time step in the Firebase console. Code/AI cannot perform it. After adding + hard refresh the site, the OAuth error goes away and signInWithPopup works.
 - Test focus for this build:
   1. Install the new AAB (or use debug APK via adb).
   2. Force stop + open app cold → must reach login/home without any crash or force close.
