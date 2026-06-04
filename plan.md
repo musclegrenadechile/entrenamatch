@@ -379,3 +379,14 @@ Next: more live polish if needed (e.g. notif when someone joins your live post, 
 Sigue con todo a todo ritmo full green light! :D
 
 The live feature keeps getting stronger as the unique killer: real joins visible in muro + counts everywhere + activity in your profile + instant group sessions. Keep the momentum. Hard refresh after deploy.
+
+**Sigue con todo (user "Sigue con todo")**:
+- Live streaks (hosting consecutive days): full logic on toggle (yesterday check, reset), persisted real (types + load/save/merge for self + other profiles), displays in muro "🟢 Live 🔥Xd", streak badge under stats "🔥 Xd live streak — ¡sigue así!", full profile live banner, etc. Killer habit builder.
+- Hot zones more prominent: "🔥 HOT ZONE!" in explore banner (with joins total), modal header, feed teaser.
+- Feed integration: live join comments ("me uno al live") get "🔥 live join" badge in global feed (next to LIVE/REAL/nuevo).
+- Profile header: streak badge when active. Streak shown for others in full profile.
+- All real sync for streak fields.
+- 3x builds clean, pushed (91fedf4). plan updated.
+Sigue con todo a todo ritmo full green light! :D
+
+Live + muro now feel incredibly alive with streaks, hot zones, visible joins everywhere, activity feedback. Continue the ritmo. Hard refresh + test streaks (toggle live multiple days in demo by changing date? or just count), hot if >5, badges.
