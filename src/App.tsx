@@ -3582,7 +3582,7 @@ function App() {
                     <div className="text-[#9CA3AF] text-[9px] mb-0.5">{user.distance.toFixed(1)}km · {user.trainingTypes?.[0] || 'Entreno'}</div>
                     <div className="flex items-center gap-1 text-[#22c55e] text-[9px] mb-1">
                       <span>En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m</span>
-                      {user.seVaEnMin > 0 && <span className="text-orange-400">· se va en {user.seVaEnMin}m</span>}
+                      {user.seVaEnMin > 0 && <span className={`text-orange-400 ${user.seVaEnMin < 20 ? 'font-bold animate-pulse' : ''}`}>· se va en {user.seVaEnMin}m</span>}
                     </div>
                     <button 
                       onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); toast.success('¡Unido! Revisa Matches o Chat'); }} 
