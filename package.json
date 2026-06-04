@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.12-arena",
+  "version": "0.1.13-geo-arena",
   "type": "module",
   "scripts": {
     "dev": "vite",
