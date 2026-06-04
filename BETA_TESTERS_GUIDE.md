@@ -512,7 +512,7 @@ Update and test thoroughly. Report back.
 - Profile ultra vivo y atractivo: live pulsing hero + "ENTRENANDO AHORA" banner + real GPS indicator + "📍 Actualizar ubicación real" button, "Mi vida de entrenamiento" summary with Vibe Score, legends with progress bars + LV badges, recent activity feed from muro likes/comments, gallery quick ★ main photo + reorder, richer live stats, Logros achievements row. Muro del perfil completamente rediseñado con cards premium, gradientes animados, fotos grandes cinematográficas, reacciones mejoradas, comentarios más atractivos, empty state épico y pinned destacados. Real geo makes distances accurate everywhere.
 - Arena remains the disruptive star (full ritual, flying, combos, dual stories, bonds/legends, replay, global FOMO in feed).
 - All previous giant updates retained (direct Feed publish modal + success banner + confetti instead of profile jump, Storage photo with real 0-100% progress + preview, attractive guarded Sync join, etc.).
-- AAB ready: EntrenaMatch-v0.1.13-geo-arena.aab (and EntrenaMatch-release.aab) in root. Also fresh debug APK (EntrenaMatch-debug-muro-polish.apk) with strong muro visual redesign + all previous.
+- AAB ready: EntrenaMatch-v0.1.13-geo-arena.aab (and EntrenaMatch-release.aab) in root. Also fresh debug APK (EntrenaMatch-debug-muro-strong.apk) with strong visual redesign of personal muro (premium cards, animated gradients, cinematic photos, better reactions/comments, epic empty state) + all previous polishes.
 - Test focus for this build:
   1. Install the new AAB (or use debug APK via adb).
   2. Force stop + open app cold → must reach login/home without any crash or force close.
