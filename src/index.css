@@ -508,35 +508,49 @@ input[type="range"]::-moz-range-thumb {
 
 /* ===== ICONIC MURO / FEED POST CARDS - more premium, beautiful, signature look ===== */
 .muro-post {
-  background: linear-gradient(145deg, rgba(28,28,32,0.95) 0%, rgba(20,20,24,0.98) 100%);
-  border: 1px solid rgba(255,255,255,0.06);
-  box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.4), 
-              0 0 0 1px rgba(255, 103, 31, 0.06);
+  background: linear-gradient(160deg, rgba(28,28,32,0.98) 0%, rgba(18,18,22,0.99) 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: 0 8px 25px -8px rgb(0 0 0 / 0.5), 
+              0 0 0 1px rgba(255, 103, 31, 0.08),
+              inset 0 1px 0 rgba(255,255,255,0.04);
   position: relative;
   overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
 }
 .muro-post::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 3px;
-  background: linear-gradient(90deg, #FF671F, #FF4F79);
-  opacity: 0.15;
+  height: 4px;
+  background: linear-gradient(90deg, #FF671F, #FF4F79, #FF671F);
+  background-size: 200% 100%;
+  opacity: 0.25;
+  animation: gradient-shift 4s ease infinite;
+}
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 200% 50%; }
+  100% { background-position: 0% 50%; }
 }
 .muro-post:hover {
-  border-color: rgba(255, 103, 31, 0.2);
-  box-shadow: 0 16px 40px -8px rgb(0 0 0 / 0.45), 
-              0 0 0 1px rgba(255, 103, 31, 0.12);
-  transform: translateY(-1px);
+  border-color: rgba(255, 103, 31, 0.25);
+  box-shadow: 0 20px 45px -10px rgb(0 0 0 / 0.6), 
+              0 0 0 1px rgba(255, 103, 31, 0.2);
+  transform: translateY(-3px);
+}
+.muro-post:active {
+  transform: scale(0.995);
 }
 .muro-post--pinned {
-  border-color: rgba(255, 103, 31, 0.35);
-  box-shadow: 0 12px 35px -8px rgb(255 103 31 / 0.15);
+  border-color: rgba(255, 103, 31, 0.45);
+  box-shadow: 0 14px 40px -8px rgb(255 103 31 / 0.25), 0 0 0 1px rgba(255, 103, 31, 0.15);
+  background: linear-gradient(160deg, rgba(40,25,15,0.95) 0%, rgba(28,28,32,0.98) 100%);
 }
 .muro-post--pinned::before {
-  background: linear-gradient(90deg, #FF671F, #FF4F79);
-  opacity: 0.4;
-  height: 4px;
+  background: linear-gradient(90deg, #FF671F, #FF4F79, #FF671F);
+  opacity: 0.6;
+  height: 5px;
+  animation: gradient-shift 3s ease infinite;
 }
 .muro-post--live {
   border-color: rgba(34, 197, 94, 0.3);
@@ -561,9 +575,10 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .muro-text {
-  font-size: 14.5px;
-  line-height: 1.45;
+  font-size: 15px;
+  line-height: 1.5;
   color: #F1F1F3;
+  font-feature-settings: "tnum";
 }
 
 .muro-reaction {
@@ -734,16 +749,19 @@ input[type="range"]::-moz-range-thumb {
 /* Special legendary treatment for auto-generated EntrenaSync story posts in feed/muro - makes the unique shared memories stand out */
 .muro-post--sync-story {
   border-color: #22c55e;
-  background: linear-gradient(145deg, rgba(10,42,26,0.85), rgba(20,20,24,0.98));
-  box-shadow: 0 10px 30px -10px rgba(34,197,94,0.3), 0 0 0 1px rgba(34,197,94,0.2);
+  background: linear-gradient(160deg, rgba(10,42,26,0.92), rgba(18,18,22,0.99));
+  box-shadow: 0 12px 35px -8px rgba(34,197,94,0.35), 0 0 0 1px rgba(34,197,94,0.25), inset 0 0 60px rgba(34,197,94,0.08);
   position: relative;
 }
 .muro-post--sync-story::before {
-  background: linear-gradient(90deg, #22c55e, #FF671F, #22c55e);
-  opacity: 0.55;
-  height: 5px;
+  background: linear-gradient(90deg, #22c55e, #FF671F, #22c55e, #22c55e);
+  background-size: 300% 100%;
+  opacity: 0.7;
+  height: 6px;
+  animation: gradient-shift 5s ease infinite;
 }
 .muro-post--sync-story .muro-text {
   font-weight: 500;
   white-space: pre-line;
+  font-size: 15px;
 }

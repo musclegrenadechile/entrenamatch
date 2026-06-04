@@ -6430,6 +6430,24 @@ function App() {
                 {currentUser.trainingNow && (
                   <div className="mt-2 text-[11px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-1 rounded text-center font-medium">Estás en vivo ahora — tu muro está caliente 🔥</div>
                 )}
+                {/* NEW: Personal Vibe Score - composite from streaks + bonds + live activity for "alive" feel */}
+                {(() => {
+                  const vibe = Math.min(100, Math.round(
+                    ((currentUser.liveStreak || 0) * 5) + 
+                    ((currentUser.joinedLiveStreak || 0) * 3) + 
+                    (Object.keys(syncBonds).length * 8) + 
+                    ((currentUser.liveJoins || 0) * 0.5)
+                  ));
+                  return (
+                    <div className="mt-2 pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+                      <span className="text-[#9CA3AF]">Vibe Score</span>
+                      <span className="font-black text-[#FF671F] text-lg tabular-nums">{vibe}</span>
+                      <div className="w-16 h-1.5 bg-white/10 rounded overflow-hidden ml-2">
+                        <div className="h-1.5 bg-gradient-to-r from-[#FF671F] to-[#FF4F79]" style={{width: `${vibe}%`}} />
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -6940,11 +6958,11 @@ function App() {
                 );
               })()}
 
-              {/* Attractive composer */}
-              <div className="card p-4 mb-4">
-                <div className="text-sm font-medium text-[#FF671F] mb-2 flex items-center gap-2">
-                  <span>📝</span> Publica en tu muro
-                  <span className="text-[10px] text-[#9CA3AF] font-normal">(aparece en Feed Global también)</span>
+              {/* Attractive composer - premium journal style */}
+              <div className="card p-5 mb-4 border border-[#FF671F]/10 bg-gradient-to-b from-[#1C1C20] to-[#0D0D10]">
+                <div className="text-sm font-semibold text-[#FF671F] mb-3 flex items-center gap-2">
+                  <span>✍️</span> Escribe en tu muro
+                  <span className="text-[10px] text-[#9CA3AF] font-normal tracking-normal">— se comparte también en el Feed Global</span>
                 </div>
                 <textarea 
                   ref={muroComposerRef}
@@ -7052,13 +7070,15 @@ function App() {
               </div>
 
               {/* Posts feed - ICONIC beautiful muro for your personal legacy */}
-              <div className="px-1 mb-2 flex items-center justify-between">
-                <div className="font-semibold text-sm flex items-center gap-2">
-                  <span>🏋️</span> 
-                  <span>Tu Muro</span>
-                  <span className="text-[10px] text-[#9CA3AF] font-normal">— tu legado de entreno</span>
+              <div className="px-1 mb-3 flex items-center justify-between">
+                <div>
+                  <div className="font-semibold text-base flex items-center gap-2">
+                    <span>🏋️</span> 
+                    <span>Tu Muro Personal</span>
+                  </div>
+                  <div className="text-[10px] text-[#9CA3AF] -mt-0.5">Tu legado de entreno • visible en Feed Global</div>
                 </div>
-                <button onClick={() => setActiveTab('feed')} className="text-xs text-[#FF671F] active:underline">Ver en el Feed Global →</button>
+                <button onClick={() => setActiveTab('feed')} className="text-xs px-3 py-1 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10">Ver en Feed →</button>
               </div>
               <AnimatePresence>
                 {loadingPersonalMuro && (profilePosts[effectiveUserId] || []).length === 0 ? (
@@ -7085,32 +7105,32 @@ function App() {
                         transition={{ type: 'spring', bounce: 0.12, duration: 0.28 }}
                         className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${post.isSyncStory || (post.text || '').includes('ENTRENASYNC LEGENDARIO') ? 'muro-post--sync-story' : ''} hover:border-[#FF671F]/40 overflow-hidden transition-all`}
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <div className="flex items-center gap-1 text-[10px] text-[#9CA3AF]" title={new Date(post.timestamp).toLocaleString('es-CL')}>
-                            {getRelativeTime(post.timestamp)}
-                            {post.pinned && <span className="text-[#FF671F]">📌</span>}
-                            {Date.now() - post.timestamp < 3600000 && <span className="text-[8px] bg-[#22c55e] text-black px-1 rounded">nuevo</span>}
-                            {recentlyPublishedPostId === post.id && <span className="text-[8px] bg-[#FF671F] text-black px-1.5 rounded font-bold animate-pulse">¡ACABAS DE PUBLICAR!</span>}
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex items-center gap-2 text-[10px]">
+                            <span className="text-[#9CA3AF]" title={new Date(post.timestamp).toLocaleString('es-CL')}>{getRelativeTime(post.timestamp)}</span>
+                            {post.pinned && <span className="px-1.5 py-px text-[9px] rounded bg-[#FF671F] text-black font-bold tracking-wider">📌 DESTACADO</span>}
+                            {Date.now() - post.timestamp < 3600000 && <span className="px-1.5 py-px text-[9px] rounded bg-[#22c55e] text-black font-bold">NUEVO</span>}
+                            {recentlyPublishedPostId === post.id && <span className="px-1.5 py-px text-[9px] rounded bg-[#FF671F] text-black font-bold animate-pulse">¡ACABAS DE PUBLICAR!</span>}
                           </div>
                           {isOwn && (
-                            <div className="flex gap-1">
+                            <div className="flex gap-2 text-[11px]">
                               <button 
                                 onClick={() => togglePinPost(post.id, effectiveUserId, post.pinned)}
-                                className={`text-xs px-1 ${post.pinned ? 'text-[#FF671F]' : 'text-[#9CA3AF] active:text-[#FF671F]'}`}
+                                className={`px-2 py-0.5 rounded transition ${post.pinned ? 'bg-[#FF671F] text-black' : 'text-[#9CA3AF] hover:text-[#FF671F] active:bg-[#2F2F35]'}`}
                                 title={post.pinned ? 'Desfijar del feed' : 'Fijar en el feed global'}
                               >
-                                📌
+                                {post.pinned ? '★' : '☆'}
                               </button>
                               <button 
                                 onClick={() => startEditPost(post.id, effectiveUserId, post.text)}
-                                className="text-[#9CA3AF] text-xs px-1 active:text-[#FF671F]"
+                                className="text-[#9CA3AF] hover:text-[#FF671F] active:text-[#FF671F]"
                                 title="Editar post"
                               >
                                 ✏️
                               </button>
                               <button 
                                 onClick={() => deleteProfilePost(post.id, effectiveUserId)}
-                                className="text-red-400 text-xs px-1 active:text-red-500"
+                                className="text-red-400 hover:text-red-500 active:text-red-600"
                                 title="Eliminar post"
                               >
                                 🗑
@@ -7119,74 +7139,88 @@ function App() {
                           )}
                         </div>
                         {editingPost?.postId === post.id ? (
-                          <div className="mb-2">
+                          <div className="mb-3">
                             <textarea 
                               value={editDraft}
                               onChange={e => setEditDraft(e.target.value)}
-                              className="form-input w-full h-16 text-sm resize-y mb-1"
+                              className="form-input w-full h-20 text-sm resize-y mb-2 border-[#FF671F]/30"
                               maxLength={280}
                             />
                             <div className="flex gap-2 justify-end">
-                              <button onClick={cancelEditPost} className="text-xs px-3 py-1 text-[#9CA3AF] active:text-white">Cancelar</button>
-                              <button onClick={saveEditPost} disabled={!editDraft.trim()} className="text-xs px-3 py-1 btn-primary disabled:opacity-50">Guardar</button>
+                              <button onClick={cancelEditPost} className="text-xs px-4 py-1.5 rounded-xl text-[#9CA3AF] hover:bg-[#2F2F35] active:bg-[#1C1C20]">Cancelar</button>
+                              <button onClick={saveEditPost} disabled={!editDraft.trim()} className="text-xs px-4 py-1.5 rounded-xl btn-primary disabled:opacity-50">Guardar cambios</button>
                             </div>
                           </div>
                         ) : (
-                          <div className="text-sm leading-relaxed mb-2">{post.text}</div>
+                          <div className="muro-text mb-3 text-[15px] leading-snug tracking-[-0.1px] text-[#F1F1F3]">{post.text}</div>
                         )}
                         {post.photo && (
                           <div 
-                            className="relative mb-3 -mx-1 rounded-2xl overflow-hidden ring-1 ring-[#2F2F35] cursor-pointer group"
+                            className="relative mb-4 -mx-1 rounded-3xl overflow-hidden ring-1 ring-inset ring-[#FF671F]/10 cursor-pointer group shadow-inner"
                             onClick={() => setFeedPhotoModal({ url: post.photo, postId: post.id })}
                           >
-                            <img src={post.photo} className="w-full max-h-[240px] object-cover transition-transform duration-300 group-hover:scale-[1.04]" />
-                            <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/50 to-transparent" />
-                            <div className="absolute bottom-2 right-2 text-[10px] bg-black/60 text-white px-1.5 py-0.5 rounded">🔍 ver foto del entreno</div>
+                            <img src={post.photo} className="w-full max-h-[280px] object-cover transition-all duration-500 group-hover:scale-[1.03] group-hover:brightness-105" />
+                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/40" />
+                            <div className="absolute bottom-3 right-3 text-[10px] bg-black/70 backdrop-blur text-white px-2.5 py-1 rounded-2xl flex items-center gap-1 border border-white/10">
+                              <span>📷</span> <span className="font-medium">Ver foto completa</span>
+                            </div>
+                            {post.pinned && <div className="absolute top-3 left-3 text-[10px] bg-[#FF671F] text-black px-2 py-0.5 rounded-full font-bold tracking-wider">DESTACADA</div>}
                           </div>
                         )}
-                        <div className="flex items-center gap-4 text-sm">
-                          <button 
-                            onClick={() => likeProfilePost(post.id, effectiveUserId)}
-                            className={`flex items-center gap-1 transition ${liked ? 'text-[#FF671F]' : 'text-[#9CA3AF] hover:text-[#FF671F]'}`}
-                          >
-                            <motion.span
-                              key={liked ? 'l' + post.likes.length : 'u'}
-                              animate={{ scale: liked ? [1, 1.35, 1] : 1 }}
-                              transition={{ duration: 0.22, ease: 'easeOut' }}
+                        <div className="flex items-center justify-between pt-2 border-t border-[#2F2F35]">
+                          <div className="flex items-center gap-4 text-sm">
+                            <button 
+                              onClick={() => likeProfilePost(post.id, effectiveUserId)}
+                              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-2xl transition-all active:scale-95 ${liked ? 'bg-[#FF671F]/15 text-[#FF671F] border border-[#FF671F]/30' : 'text-[#9CA3AF] hover:bg-[#1C1C20] hover:text-[#FF671F] border border-transparent'}`}
                             >
-                              {liked ? '❤️' : '🤍'}
-                            </motion.span>
-                            <span className="font-medium">{post.likes.length}</span>
-                          </button>
-                          <button 
-                            onClick={() => startComment(post.id, effectiveUserId)}
-                            className="flex items-center gap-1 text-[#9CA3AF] hover:text-[#FF671F]"
-                          >
-                            💬 <span className="font-medium">{post.comments.length}</span>
-                          </button>
+                              <motion.span
+                                key={liked ? 'l' + post.likes.length : 'u'}
+                                animate={{ scale: liked ? [1, 1.4, 1] : 1 }}
+                                transition={{ duration: 0.2 }}
+                              >
+                                {liked ? '❤️' : '🤍'}
+                              </motion.span>
+                              <span className="font-semibold tabular-nums">{post.likes.length}</span>
+                              {post.likes.length > 0 && <span className="text-[10px] opacity-60">likes</span>}
+                            </button>
+                            <button 
+                              onClick={() => startComment(post.id, effectiveUserId)}
+                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-[#9CA3AF] hover:bg-[#1C1C20] hover:text-[#FF671F] border border-transparent active:scale-95"
+                            >
+                              💬 <span className="font-semibold tabular-nums">{post.comments.length}</span>
+                              <span className="text-[10px] opacity-60">comentarios</span>
+                            </button>
+                          </div>
+                          <div className="text-[10px] text-[#9CA3AF]/60">Toca para hilo completo</div>
                         </div>
                         {post.comments.length > 0 && (
                           <div 
                             onClick={() => openFullComments(post.id, effectiveUserId)}
-                            className="mt-2 pt-2 border-t border-[#2F2F35] text-xs text-[#9CA3AF] space-y-1 cursor-pointer active:bg-[#1A1A1E]/40 rounded px-1 -mx-1 py-0.5"
+                            className="mt-3 pt-3 border-t border-[#2F2F35] text-xs cursor-pointer group"
                             title="Ver todos los comentarios"
                           >
-                            {post.comments.slice(-3).map(c => (
-                              <div key={c.id} className="flex gap-1.5 items-start">
-                                <span className="font-medium text-white/80">{c.userName}:</span> 
-                                <span className="truncate">{c.text}</span>
-                                {c.userId === effectiveUserId && (
-                                  <button 
-                                    onClick={(e) => { e.stopPropagation(); deleteCommentFromPost(post.id, effectiveUserId, c.id); }}
-                                    className="ml-1 text-red-400 text-[10px] active:text-red-500"
-                                    title="Eliminar comentario"
-                                  >
-                                    ×
-                                  </button>
-                                )}
-                              </div>
-                            ))}
-                            {post.comments.length > 3 && <div className="text-[#FF671F]/70">+{post.comments.length-3} más... (toca para ver hilo completo)</div>}
+                            <div className="text-[#9CA3AF] mb-1.5 flex items-center justify-between text-[10px]">
+                              <span>Comentarios recientes</span>
+                              <span className="text-[#FF671F] group-hover:underline">Ver hilo →</span>
+                            </div>
+                            <div className="space-y-1.5">
+                              {post.comments.slice(-3).map(c => (
+                                <div key={c.id} className="flex gap-2 items-start bg-[#1A1A1E]/60 rounded-xl px-2.5 py-1.5">
+                                  <span className="font-semibold text-white/90 shrink-0">{c.userName}:</span> 
+                                  <span className="text-[#9CA3AF] truncate">{c.text}</span>
+                                  {c.userId === effectiveUserId && (
+                                    <button 
+                                      onClick={(e) => { e.stopPropagation(); deleteCommentFromPost(post.id, effectiveUserId, c.id); }}
+                                      className="ml-auto text-red-400 text-[11px] hover:text-red-500 active:scale-90"
+                                      title="Eliminar comentario"
+                                    >
+                                      ×
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                            {post.comments.length > 3 && <div className="text-[#FF671F]/70 text-[10px] mt-1 pl-1">+{post.comments.length-3} comentarios más</div>}
                           </div>
                         )}
                         {/* Inline attractive comment box */}
@@ -7218,17 +7252,25 @@ function App() {
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="muro-empty p-7 text-center mb-3 rounded-2xl"
+                    className="muro-empty p-8 text-center mb-3 rounded-3xl border border-[#FF671F]/10"
                   >
-                    <div className="mx-auto w-12 h-12 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-3 text-3xl">🏋️</div>
-                    <div className="font-semibold mb-1.5">Tu muro está listo para la leyenda</div>
-                    <div className="text-xs text-[#9CA3AF] mb-4 max-w-[220px] mx-auto leading-snug">Cada post aquí es parte de tu historia de entreno. La comunidad lo verá en el Feed Global. Sé icónico.</div>
-                    <button 
-                      onClick={() => muroComposerRef.current?.focus()}
-                      className="btn-primary text-sm py-2 px-6"
-                    >
-                      Publicar mi primer logro
-                    </button>
+                    <div className="mx-auto w-16 h-16 rounded-3xl bg-gradient-to-br from-[#FF671F]/10 to-[#FF4F79]/10 flex items-center justify-center mb-4 text-4xl">📜</div>
+                    <div className="font-bold text-lg mb-2 tracking-tight">Tu muro personal — tu legado de fierro</div>
+                    <div className="text-sm text-[#9CA3AF] mb-5 max-w-[260px] mx-auto">Aquí queda grabada tu historia de entreno. Cada post, foto y logro se comparte también en el Feed Global. Haz que sea épico.</div>
+                    <div className="flex flex-col gap-2 max-w-[220px] mx-auto">
+                      <button 
+                        onClick={() => muroComposerRef.current?.focus()}
+                        className="btn-primary text-sm py-3 rounded-2xl font-semibold"
+                      >
+                        Publicar mi primer post
+                      </button>
+                      <button 
+                        onClick={() => { /* focus photo */ const el = document.querySelector('button[aria-label*="Añadir foto"]') as HTMLButtonElement; el?.click(); }}
+                        className="text-xs py-2 text-[#FF671F] border border-[#FF671F]/30 rounded-2xl active:bg-[#FF671F]/5"
+                      >
+                        O sube una foto de tu último entreno
+                      </button>
+                    </div>
                   </motion.div>
                 )}
               </AnimatePresence>
