@@ -6627,7 +6627,7 @@ function App() {
               )}
             </div>
 
-            {/* Photo gallery strip - always show if any extra, with delete (spectacular profile curation) */}
+            {/* Photo gallery strip - drag to reorder (nativo), flechas fallback. Primera siempre principal. ¡Perfil curation VIVO! */}
             {currentUser.photos && currentUser.photos.length > 0 && (
               <div className="px-4 py-3 flex gap-2 overflow-x-auto bg-[#0D0D10] border-b border-[#2F2F35]">
                 {currentUser.photos.map((photo: string, idx: number) => (
