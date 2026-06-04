@@ -4348,6 +4348,10 @@ function App() {
               <div />
             </div>
 
+            {currentUser?.trainingNow && liveTrainingNow.length > 0 && (
+              <div className="px-4 py-1 text-[10px] bg-[#22c55e]/10 text-[#22c55e] text-center">💡 Si te unes a alguien que también está live, ¡inicias EntrenaSync automático con timer y acciones compartidas!</div>
+            )}
+
             {/* Controls: search + sort for discovery */}
             {liveTrainingNow.length > 0 && (
               <div className="px-4 pt-3 pb-2 border-b border-[#2F2F35]/60 flex gap-2 items-center bg-[#0D0D10]">
@@ -5846,7 +5850,10 @@ function App() {
                   <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.8px,transparent_1px)] bg-[length:5px_5px] opacity-10"></div>
                   <div className="flex items-center justify-between mb-1 relative z-10">
                     <div className="text-[#22c55e] font-bold text-sm flex items-center gap-1">🔄 ENTRENASYNC EN VIVO</div>
-                    <button onClick={endSync} className="text-[10px] px-2 py-0.5 bg-red-500/30 text-red-300 rounded active:bg-red-500/50">Terminar Sync</button>
+                    <div className="flex gap-1">
+                      <button onClick={() => loadRealProfiles().catch(()=>{})} className="text-[9px] px-1.5 py-0.5 bg-[#22c55e]/20 text-[#22c55e] rounded active:bg-[#22c55e]/40">Refrescar</button>
+                      <button onClick={endSync} className="text-[10px] px-2 py-0.5 bg-red-500/30 text-red-300 rounded active:bg-red-500/50">Terminar Sync</button>
+                    </div>
                   </div>
                   <div className="text-xs text-white/95 relative z-10">Sincronizado con <span className="font-bold text-white">{realProfiles.find(p=>p.id===syncPartnerId)?.name || 'compañero'}</span></div>
                   <div className="text-2xl font-mono text-[#22c55e] mt-0.5 tracking-tighter relative z-10">{syncStartedAt ? Math.floor((Date.now()-syncStartedAt)/60000) : 0}<span className="text-xs align-super">min</span> juntos</div>
@@ -8333,6 +8340,8 @@ function App() {
         )}
       </AnimatePresence>
 
+    </div>
+
       {/* EntrenaSync end rating - disruptive accountability */}
       {pendingSyncRating && (
         <div className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4" onClick={() => setPendingSyncRating(null)}>
@@ -8350,7 +8359,6 @@ function App() {
         </div>
       )}
 
-    </div>
     </ErrorBoundary>
   )
 }
