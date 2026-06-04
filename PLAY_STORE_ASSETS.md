@@ -4,7 +4,12 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 23 / 0.1.18-perfil-vivo. **TOQUES DISRUPTIVOS + PERFIL VIVO + MAPA/ARENA**: 
+**Current version for this upload**: versionCode 25 / 0.1.20-mapa-fix. **MAPA FIJO + TOQUES DISRUPTIVOS + PERFIL VIVO + ARENA**: 
+- Mapa: ahora sí funciona al presionarlo (toggle, panning, taps en markers, botones Centrar/filtro, popups). Fixes de z-index, pointer-events, invalidateSize, touch-action, timeouts.
+- Toque disruptivo: tether lines entre pares en sync.
+- Perfil: bonds en vivo, galería drag, vibe history.
+- Arena: auto captura vibe alta.
+- Builds listos.
 - Mapa: tether lines ligeras entre pares en Sync actual (toque único: ves "quién está ritual conectado").
 - Arena: auto-captura ⚡ cuando vibe >80 (acción en timeline + oferta foto en native).
 - Perfil: bonds stats en vivo (bonus en Vibe Score si legends live), galería drag reorder, vibe history visual bars.
