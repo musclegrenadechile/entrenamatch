@@ -1957,7 +1957,7 @@ function App() {
         const visibleLevel = visLevel
         return { ...p, distance: dist, seVaEnMin, joinCount, isLegend, bondInfo: bond, visibleLevel, trainingNowSince: since };
       })
-      .filter(p => !userLocation || p.distance < 15) // near only if we have location; otherwise show all live (so feature works even without GPS)
+      .filter(p => !userLocation || p.distance < 10) // near only if we have location; otherwise show all live (so feature works even without GPS). Consistent "cerca" threshold with mapNearOnly (10km) and empty states.
       .sort((a, b) => {
         // NEVER-SEEN: active sync pairs + high sync legends bubble to the top of live discovery (social proof + bond capital)
         const aSync = (a as any).trainingSyncWith ? 100 : 0;
