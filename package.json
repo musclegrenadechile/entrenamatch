@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.73-map-dev-draggable-address",
+  "version": "0.1.74-map-gympulse-attract-premium",
   "type": "module",
   "scripts": {
     "dev": "vite",

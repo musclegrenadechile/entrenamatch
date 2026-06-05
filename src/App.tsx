@@ -1570,10 +1570,10 @@ function App() {
     setIsPlacingPartner(false)
     setShowAddPartnerForm(true)
     setShowManagePartners(false)
-    // Fly map to it so dev sees exactly where it is and can fine-tune
+    // Fly map to it (cinematic) so dev sees exactly where it is and can fine-tune
     setTimeout(() => {
       if (mapInstanceRef.current && p.lat && p.lng) {
-        mapInstanceRef.current.setView([p.lat, p.lng], Math.max(mapInstanceRef.current.getZoom() || 13, 15))
+        mapInstanceRef.current.flyTo([p.lat, p.lng], Math.max(mapInstanceRef.current.getZoom() || 13, 15), { duration: 0.8, easeLinearity: 0.28 })
       }
     }, 80)
   }
@@ -1654,6 +1654,8 @@ function App() {
   // Refs for dev map placement UX (click-to-place partner without leaving map view). Always current even inside leaflet handlers.
   const isPlacingPartnerRef = useRef(false)
   const showAddPartnerFormRef = useRef(false)
+  // For attractive "map heartbeats" — when live activity increases we spawn subtle expanding rings so the GymPulse feels alive
+  const prevLiveCountRef = useRef(0)
 
   // Load partner locations: seeds (for immediate demo) + real Firestore (so devs can add persistent partners via the in-app tool).
   // This makes the "devs put businesses on the map" easy and real-time visible to all users in the GymPulse (mapa en tiempo real).
@@ -6016,6 +6018,41 @@ function App() {
         liveUsers = liveUsers.filter(u => u.isLegend)
       }
 
+      // Attractive "heartbeat" of the GymPulse: when more people go live, the map gently "pulses" with expanding rings
+      // so it feels like a living, breathing social organism (not a static list of dots).
+      const currentLive = liveUsers.length
+      const prevLive = prevLiveCountRef.current
+      if (currentLive > prevLive && mapInstanceRef.current && currentLive > 0) {
+        // Spawn 1-2 elegant faint rings at random high-signal live positions (or user if none)
+        const candidates = liveUsers.length > 0 ? liveUsers : (userLocation ? [{lat: userLocation.lat, lng: userLocation.lng}] : [])
+        for (let i = 0; i < Math.min(2, candidates.length); i++) {
+          const pos = candidates[Math.floor(Math.random() * candidates.length)]
+          try {
+            const beat = L.circle([pos.lat, pos.lng], {
+              radius: 420 + (currentLive * 18),
+              color: '#22c55e',
+              weight: 1.5,
+              fillColor: '#22c55e',
+              fillOpacity: 0.035,
+              opacity: 0.28,
+              className: 'map-heartbeat-ring'
+            }).addTo(mapInstanceRef.current)
+            ;(beat as any)._isHeartbeat = true
+            markersRef.current.push(beat)
+            setTimeout(() => {
+              if (mapInstanceRef.current && (beat as any)._isHeartbeat) {
+                try { mapInstanceRef.current.removeLayer(beat) } catch {}
+              }
+            }, 1650)
+          } catch {}
+        }
+        // Subtle global toast-less signal that the pulse is growing (only if big jump)
+        if (currentLive - prevLive >= 2) {
+          try { triggerHaptic('light') } catch {}
+        }
+      }
+      prevLiveCountRef.current = currentLive
+
       liveUsers.forEach(user => {
       try {
         const color = mapZoneColors[user.city] || mapZoneColors.default
@@ -6089,17 +6126,37 @@ function App() {
         // Popup has "Ver perfil" button for profile modal. This avoids event conflict with popup.
 
         const popupContent = `
-          <div style="min-width:180px; font-size:12.5px; line-height:1.3">
-            <strong style="font-size:14px; display:block; margin-bottom:2px">${user.name}</strong>
-            <span style="color:#22c55e; font-weight:600">🟢 Entrenando ahora</span> • ~${user.seVaEnMin || '?'} min<br/>
-            ${userLocation ? `<span style="color:#FF671F; font-weight:600">${user.distance.toFixed(1)} km de ti</span><br/>` : ''}
-            <div style="display:flex; gap:6px; margin-top:8px">
-              <button id="join-${user.id}" style="flex:1; padding:6px 8px; background:#22c55e; color:#000; border:none; border-radius:8px; font-size:11px; font-weight:700">🔥 Unirme</button>
-              <button id="profile-${user.id}" style="flex:1; padding:6px 8px; background:#333; color:#fff; border:1px solid #555; border-radius:8px; font-size:11px; font-weight:600">Ver perfil</button>
+          <div style="min-width:185px; font-size:12.5px; line-height:1.25">
+            <strong style="font-size:14px; display:block; margin-bottom:1px; color:#fff">${user.name}</strong>
+            <span style="color:#22c55e; font-weight:700">🟢 Entrenando ahora</span> • ~${user.seVaEnMin || '?'} min en el GymPulse<br/>
+            ${userLocation ? `<span style="color:#FF671F; font-weight:700">${user.distance.toFixed(1)} km de ti</span><br/>` : ''}
+            <div style="display:flex; gap:6px; margin-top:7px">
+              <button id="join-${user.id}" style="flex:1; padding:7px 8px; background:#22c55e; color:#000; border:none; border-radius:9px; font-size:11px; font-weight:800; box-shadow:0 1px 3px rgba(0,0,0,0.3)">🔥 Unirme a entrenar</button>
+              <button id="profile-${user.id}" style="flex:1; padding:7px 8px; background:#1f1f23; color:#ddd; border:1px solid #444; border-radius:9px; font-size:11px; font-weight:600">Ver perfil</button>
             </div>
           </div>
         `
         marker.bindPopup(popupContent)
+
+        // Attractive micro-interaction: clicking any live athlete on the GymPulse spawns a beautiful expanding ring
+        // Makes every tap feel premium and "the map reacts to you".
+        marker.on('click', () => {
+          try { triggerHaptic('light') } catch {}
+          if (!mapInstanceRef.current) return
+          const ll = marker.getLatLng()
+          const ring = L.circle([ll.lat, ll.lng], {
+            radius: 160,
+            color: '#22c55e',
+            weight: 2.2,
+            fillColor: '#22c55e',
+            fillOpacity: 0.05,
+            opacity: 0.5,
+            className: 'temp-click-ring'
+          }).addTo(mapInstanceRef.current)
+          setTimeout(() => {
+            if (mapInstanceRef.current) { try { mapInstanceRef.current.removeLayer(ring) } catch {} }
+          }, 820)
+        })
 
         marker.on('popupopen', () => {
           setTimeout(() => {
@@ -6147,33 +6204,36 @@ function App() {
           }).length
 
           let partnerHtml: string
+          const isHub = nearby >= 2
+          const hubClass = isHub ? ' partner-hub-strong' : ''
+          const hubAura = isHub ? `box-shadow:0 0 0 7px #FFD70022, 0 0 0 14px #FF671F11, 0 4px 12px rgba(0,0,0,0.55);` : ''
           if (logo) {
-            // Attractive logo-based marker with gold ring, shadow, PARTNER badge + optional activity badge
+            // Much more attractive: when it's a real hub (multiple GymPartners training near), it gets stronger glow + pulse
             const activityBadge = nearby > 0 ? `<div style="position:absolute;top:-2px;right:-2px;background:#22c55e;color:#000;font-size:8px;font-weight:900;padding:0 3px;border-radius:999px;border:1px solid #111;line-height:1;">${nearby}</div>` : ''
             partnerHtml = `
-              <div style="position:relative;width:44px;height:44px">
-                <div style="width:44px;height:44px;border-radius:9999px;overflow:hidden;border:3px solid #FFD700;box-shadow:0 0 0 4px #FF671F33, 0 3px 8px rgba(0,0,0,0.6);">
+              <div style="position:relative;width:${isHub ? 48 : 44}px;height:${isHub ? 48 : 44}px${isHub ? ' z-index:2' : ''}">
+                <div style="width:${isHub ? 48 : 44}px;height:${isHub ? 48 : 44}px;border-radius:9999px;overflow:hidden;border:${isHub ? '4px' : '3px'} solid #FFD700;${hubAura}">
                   <img src="${logo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(#FF671F,#E55A1A)';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-size:20px\\'>${fallbackIcon}</div>'" />
                 </div>
-                <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 5px;border-radius:4px;border:1.5px solid #FFD700;white-space:nowrap;letter-spacing:0.5px">PARTNER</div>
+                <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 5px;border-radius:4px;border:1.5px solid #FFD700;white-space:nowrap;letter-spacing:0.5px">PARTNER${isHub ? ' • HUB' : ''}</div>
                 ${activityBadge}
               </div>`
           } else {
             const activityBadge = nearby > 0 ? `<div style="position:absolute;top:-2px;right:-2px;background:#22c55e;color:#000;font-size:8px;font-weight:900;padding:0 3px;border-radius:999px;border:1px solid #111;line-height:1;">${nearby}</div>` : ''
             partnerHtml = `
-              <div style="position:relative;width:40px;height:40px">
-                <div style="width:40px;height:40px;border-radius:9999px;background:linear-gradient(#FF671F,#E55A1A);border:3px solid #FFD700;box-shadow:0 0 0 3px #FF671F33,0 2px 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;line-height:1;">
+              <div style="position:relative;width:${isHub ? 44 : 40}px;height:${isHub ? 44 : 40}px">
+                <div style="width:${isHub ? 44 : 40}px;height:${isHub ? 44 : 40}px;border-radius:9999px;background:linear-gradient(#FF671F,#E55A1A);border:${isHub ? '4px' : '3px'} solid #FFD700;${hubAura}display:flex;align-items:center;justify-content:center;color:white;font-size:18px;line-height:1;">
                   ${fallbackIcon}
                 </div>
-                <div style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 4px;border-radius:3px;border:1px solid #FFD700;white-space:nowrap">PARTNER</div>
+                <div style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 4px;border-radius:3px;border:1px solid #FFD700;white-space:nowrap">PARTNER${isHub ? ' • HUB' : ''}</div>
                 ${activityBadge}
               </div>`
           }
           const pIcon = L.divIcon({
-            className: 'entrenamatch-partner-marker',
+            className: `entrenamatch-partner-marker${isHub ? ' partner-hub-strong' : ''}`,
             html: partnerHtml,
-            iconSize: logo ? [44, 44] : [40, 40],
-            iconAnchor: logo ? [22, 22] : [20, 20],
+            iconSize: logo ? (isHub ? [48,48] : [44,44]) : (isHub ? [44,44] : [40,40]),
+            iconAnchor: logo ? (isHub ? [24,24] : [22,22]) : (isHub ? [22,22] : [20,20]),
             popupAnchor: [0, -22]
           })
           // Draggable ONLY for devs: "sea mas facil mover un local" directly on the GymPulse map
@@ -6183,20 +6243,34 @@ function App() {
           }).addTo(mapInstanceRef.current)
 
           const pPopup = `
-            <div style="min-width:160px;font-size:12px">
-              <strong style="color:#FF671F">${p.name}</strong><br/>
+            <div style="min-width:170px;font-size:12.5px;line-height:1.25">
+              <strong style="color:#FF671F;font-size:13px">${p.name}</strong><br/>
               <span style="font-size:10px;color:#9CA3AF">${p.address || ''}</span><br/>
-              <span style="color:#22c55e;font-weight:600">🏋️ Socio oficial del GymPulse (mapa en tiempo real)</span><br/>
-              ${nearby > 0 ? `<span style="font-size:10px">👥 ${nearby} GymPartners entrenando cerca ahora</span><br/>` : ''}
-              <div style="margin-top:6px;font-size:10px;color:#666">${isDeveloper ? 'Arrastra el pin (dev) para moverlo • ' : ''}Toca para centrar</div>
+              <span style="color:#22c55e;font-weight:700">🏋️ Socio oficial del GymPulse</span><br/>
+              ${nearby > 0 ? `<span style="font-size:10.5px;color:#FFD700;font-weight:600">👥 ${nearby} GymPartners entrenando aquí ahora — ¡es un hub vivo!</span><br/>` : ''}
+              <div style="margin-top:5px;font-size:9.5px;color:#666">${isDeveloper ? 'Arrastra el pin (dev) • ' : ''}Toca para centrar en el local</div>
             </div>`
           pMarker.bindPopup(pPopup)
 
-          // Click to center on partner (nice UX for "ver el local")
+          // Click to center on partner — cinematic flyTo makes "visiting a hub" feel premium
           pMarker.on('click', () => {
             try { triggerHaptic('light') } catch {}
             const map = mapInstanceRef.current
-            if (map) map.setView([p.lat, p.lng], 15)
+            if (map) map.flyTo([p.lat, p.lng], 15, { duration: 0.75, easeLinearity: 0.3 })
+
+            // Premium tap feedback ring — every interaction on the living map feels expensive
+            if (map) {
+              const ring = L.circle([p.lat, p.lng], {
+                radius: 210,
+                color: '#FFD700',
+                weight: 2,
+                fillColor: '#FFD700',
+                fillOpacity: 0.04,
+                opacity: 0.55,
+                className: 'temp-click-ring'
+              }).addTo(map)
+              setTimeout(() => { try { map.removeLayer(ring) } catch {} }, 820)
+            }
           })
 
           // DEV SUPERPOWER: drag the partner pin on the map → instant update + persist + realtime for everyone
@@ -6217,9 +6291,9 @@ function App() {
                 }
                 try { triggerHaptic('success') } catch {}
                 toast.success('Local movido en el mapa', { description: `${p.name} → ${newLat.toFixed(4)}, ${newLng.toFixed(4)} (visible para todos en tiempo real)` })
-                // keep the view on the new spot
+                // keep the view on the new spot — smooth fly feels luxurious
                 if (mapInstanceRef.current) {
-                  mapInstanceRef.current.setView([newLat, newLng], Math.max(mapInstanceRef.current.getZoom() || 13, 14))
+                  mapInstanceRef.current.flyTo([newLat, newLng], Math.max(mapInstanceRef.current.getZoom() || 13, 14), { duration: 0.7 })
                 }
               } catch (dragErr) {
                 console.warn('partner dragend persist failed', dragErr)
@@ -6233,6 +6307,22 @@ function App() {
           }
 
           markersRef.current.push(pMarker)
+
+          // When this partner location is a real hub (2+ GymPartners live near), give it a beautiful soft gold aura field
+          // Makes important social places feel magnetic on the GymPulse.
+          if (isHub && mapInstanceRef.current) {
+            try {
+              const aura = L.circle([p.lat, p.lng], {
+                radius: 360,
+                color: '#FFD700',
+                weight: 0,
+                fillColor: '#FFD700',
+                fillOpacity: 0.032,
+                className: 'partner-hub-aura'
+              }).addTo(mapInstanceRef.current)
+              markersRef.current.push(aura)
+            } catch {}
+          }
         } catch (e) { console.warn('partner marker', e) }
       })
     }
@@ -7116,7 +7206,19 @@ function App() {
               </div>
 
               {showLiveMap && (
-                <div className="relative z-20">
+                <motion.div 
+                  className="relative z-20"
+                  initial={{ opacity: 0, y: 6, scale: 0.985 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                >
+                  {/* Premium floating "El Pulso está vivo" header — makes the map feel like the beating heart of the whole social experience */}
+                  <div className="map-floating-pulse absolute top-2 left-2 z-40 px-3 py-1 rounded-2xl text-[10px] font-semibold text-[#22c55e] flex items-center gap-2 shadow-lg border border-[#22c55e]/20">
+                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
+                    EL GYMPULSE GLOBAL
+                    <span className="text-[#22c55e]/70 font-mono text-[9px] tabular-nums">• {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow).length} EN VIVO AHORA</span>
+                  </div>
+
                   <div 
                     id="live-map-container"
                     ref={liveMapRef} 
@@ -7165,14 +7267,14 @@ function App() {
                       const map = mapInstanceRef.current
                       if (!map) return
                       if (selfMarkerRef.current) {
-                        // Center on self but preserve current zoom (don't fight user's zoom choice)
                         const currentZoom = map.getZoom() || 13
-                        map.setView(selfMarkerRef.current.getLatLng(), currentZoom)
+                        // Cinematic fly — much more attractive than instant setView
+                        map.flyTo(selfMarkerRef.current.getLatLng(), currentZoom, { duration: 0.85, easeLinearity: 0.28 })
                       } else if (markersRef.current.length > 0) {
                         const group = L.featureGroup(markersRef.current)
-                        map.fitBounds(group.getBounds().pad(0.2))
+                        map.flyToBounds(group.getBounds().pad(0.2), { duration: 0.9, easeLinearity: 0.25 })
                       } else if (userLocation) {
-                        map.setView([userLocation.lat, userLocation.lng], 13)
+                        map.flyTo([userLocation.lat, userLocation.lng], 13, { duration: 0.8 })
                       }
                     }}
                     className="absolute top-2 right-2 text-[9px] px-2.5 py-0.5 rounded-full bg-black/70 hover:bg-black text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black transition z-30"
@@ -7218,7 +7320,7 @@ function App() {
                         <button
                           key={city}
                           onClick={() => { try { triggerHaptic('light') } catch {}; setSelectedMapZone(isActive ? null : city) }}
-                          className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-medium border transition-all active:scale-[0.96] ${isActive ? 'ring-1 ring-white/70 shadow-md scale-[1.02]' : 'hover:scale-[1.03] opacity-90 hover:opacity-100'}`}
+                          className={`map-zone-pill flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-medium border transition-all active:scale-[0.96] ${isActive ? 'ring-1 ring-white/70 shadow-md scale-[1.02] active' : 'hover:scale-[1.03] opacity-90 hover:opacity-100'}`}
                           style={{ 
                             background: isActive ? `${col}22` : 'rgba(0,0,0,0.65)', 
                             borderColor: isActive ? col : 'rgba(255,255,255,0.15)',
@@ -7620,7 +7722,7 @@ function App() {
                       </div>
                     </div>
                   )}
-                </div>
+                </motion.div>
               )}
               {showLiveMap && (
                 <div className="mt-1 text-[8px] text-[#9CA3AF] px-1 flex items-center gap-2">

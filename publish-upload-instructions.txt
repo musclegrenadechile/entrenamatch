@@ -1,4 +1,30 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.73-map-dev-draggable-address code 77) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.74-map-gympulse-attract-premium code 78) ===
+
+MAPA EN TIEMPO REAL (GYMPULSE) HECHO MUCHO MÁS ATRACTIVO — el corazón visual y social de EntrenaMatch ahora se siente premium, vivo y magnético.
+
+Mejoras clave de atractivo (para todos los usuarios, no solo devs):
+- Entrada cinematográfica: el contenedor del mapa entra con motion suave (scale + fade premium) cuando lo abres.
+- Movimiento flyTo en vez de setView en Centrar, clicks en personas, clicks en partners, drag de pins dev: el mapa "vuela" de forma elegante y cara (duración + easeLinearity bonito).
+- "El GymPulse Global" floating header premium dentro del mapa (con live count animado) — sientes que estás mirando el pulso real de la red.
+- Heartbeats automáticos: cada vez que sube el número de gente live, el mapa genera 1-2 anillos de expansión sutiles (map-heartbeat-ring) en posiciones de actividad. El GymPulse "respira" y se siente orgánico.
+- Click ripple en cualquier marcador (live o partner): al tocar, sale un anillo de expansión temporal elegante (temp-click-ring) + haptic. Cada interacción responde visualmente.
+- Partners como Hubs reales:
+  - Cuando nearby >=2, el pin crece, pulsa más fuerte (partner-hub-strong), dice "PARTNER • HUB", sombra gold más intensa.
+  - Se dibuja un aura suave dorada detrás (partner-hub-aura) que respira.
+  - Popup mejorado: "¡es un hub vivo!", lenguaje que hace que los locales se sientan importantes en la red social.
+- Marcadores de gente live más lujosos: mejor glow, saturación y brillo en high-energy / legend / high NP. Sombras drop más profundas.
+- Tethers (líneas de EntrenaSync) más premium: stroke más grueso, glow gold fuerte en legend bonds, animación de flujo más rápida y visible.
+- Popups de live athletes más bonitos y con copy "en el GymPulse".
+- Zone pills usan glass + hover premium + active ring.
+- Radar sweep + vignette en el contenedor del mapa más sutil y elegante.
+- Todo respeta el branding Dunkin #FF671F / gold + glassmorphism + haptics en cada micro (tap, toggle, fly).
+
+El mapa ahora no es solo "dónde hay gente live": es el pulso social vivo de la primera red social real del fitness. Se siente inevitable abrirlo.
+
++ web build, AAB + debug APK listos. Git push + instructions actualizado.
+Test en S26: abre el mapa varias veces (ver entrada suave), toca gente y partners (ver ripples + flyTo suave), espera a que entre más gente live (ver heartbeats), ve un partner con 2+ gente cerca (ver HUB + aura + pulse + texto mejorado). Cambia filtros "Mi Red" y zonas. Todo debe sentirse caro y vivo.
+
+Sigue con todo.
 
 PULIDO MAPA EN TIEMPO REAL PARA DESARROLLADORES (facilitar mover/poner locales partner correctamente con dirección + movible):
 - Formulario +Partner ahora tiene:

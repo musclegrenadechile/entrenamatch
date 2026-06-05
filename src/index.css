@@ -1408,3 +1408,151 @@ input[type="range"]::-moz-range-thumb {
   50% { transform: scale(1.6); }
   100% { transform: scale(1); }
 }
+
+/* =====================================================
+   PREMIUM MAP ATTRACTIVENESS — "El GymPulse se siente vivo y caro"
+   Much more attractive live map experience for the first real fitness social network.
+   Glassy, glowing, breathing, cinematic movement, hubs that feel important.
+   ===================================================== */
+
+/* Heartbeat rings — subtle city-scale "the pulse just grew" moments */
+.map-heartbeat-ring {
+  animation: map-heartbeat-expand 1.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  pointer-events: none;
+}
+@keyframes map-heartbeat-expand {
+  0% { opacity: 0.32; transform: scale(0.6); }
+  40% { opacity: 0.18; }
+  100% { opacity: 0; transform: scale(1.85); }
+}
+
+/* Stronger, more luxurious live user markers */
+.entrenamatch-marker {
+  background: transparent;
+  border: none;
+  animation: marker-live-pulse 2.5s ease-in-out infinite;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.35));
+}
+.entrenamatch-marker.high-energy {
+  animation: marker-live-pulse-high 1.1s ease-in-out infinite;
+  filter: saturate(1.18) brightness(1.06) drop-shadow(0 2px 8px rgba(0,0,0,0.4));
+}
+.entrenamatch-marker.legend-marker {
+  filter: drop-shadow(0 0 8px #FFD70055) drop-shadow(0 1px 4px rgba(0,0,0,0.5));
+}
+.entrenamatch-marker.high-np {
+  filter: drop-shadow(0 0 7px #FFD70066) saturate(1.25);
+}
+
+/* Partner hubs feel like real important places in the social graph */
+.entrenamatch-partner-marker {
+  transition: transform 0.2s cubic-bezier(0.22,1,0.36,1);
+}
+.entrenamatch-partner-marker:hover {
+  transform: scale(1.04);
+}
+
+/* When a partner location is a real hub (multiple people training near it) */
+.partner-hub-strong {
+  animation: partner-hub-strong-pulse 2.1s ease-in-out infinite;
+}
+@keyframes partner-hub-strong-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.035); }
+}
+
+/* Ultra premium tethers — layered glow + flow */
+.map-sync-tether {
+  stroke: #FF671F;
+  stroke-width: 2.8;
+  stroke-opacity: 0.72;
+  stroke-dasharray: 4,9;
+  transition: stroke 0.2s, stroke-width 0.2s, stroke-opacity 0.2s;
+  animation: tether-flow-premium 1.45s linear infinite;
+}
+.map-sync-tether.legend-tether {
+  stroke: #FFD700;
+  stroke-opacity: 0.92;
+  stroke-width: 4.2;
+  filter: drop-shadow(0 0 3px #FFD70088);
+}
+.map-sync-tether.legend-tether.network-tether-boost {
+  stroke-width: 6;
+  filter: drop-shadow(0 0 7px #FFD700);
+}
+@keyframes tether-flow-premium {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -28; }
+}
+
+/* Beautiful expanding ring when you tap/click any marker (makes interaction feel expensive) */
+.temp-click-ring {
+  animation: temp-click-ring-expand 820ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  pointer-events: none;
+}
+@keyframes temp-click-ring-expand {
+  0% { opacity: 0.55; transform: scale(0.3); }
+  35% { opacity: 0.22; }
+  100% { opacity: 0; transform: scale(2.4); }
+}
+
+/* Floating premium stats bar inside the map (top) */
+.map-floating-pulse {
+  background: linear-gradient(180deg, rgba(10,10,12,0.92), rgba(10,10,12,0.78));
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,215,0,0.18);
+  box-shadow: 0 4px 18px -2px rgba(0,0,0,0.6);
+  font-feature-settings: "tnum";
+}
+
+/* Zone pills — more glass, alive, attractive */
+.map-zone-pill {
+  transition: all 0.15s cubic-bezier(0.22,1,0.36,1);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.map-zone-pill:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0,0,0,0.35);
+}
+.map-zone-pill.active {
+  box-shadow: 0 0 0 1.5px currentColor, 0 4px 12px rgba(0,0,0,0.4);
+  transform: scale(1.02);
+}
+
+/* Extra luxury on the map container itself */
+#live-map-container {
+  box-shadow: 
+    0 0 0 1px rgba(255,255,255,0.06) inset,
+    0 8px 32px -6px rgba(0,0,0,0.75),
+    0 0 0 1px rgba(34,197,94,0.12);
+  transition: box-shadow 0.3s ease;
+}
+#live-map-container:active {
+  box-shadow: 
+    0 0 0 1px rgba(255,255,255,0.09) inset,
+    0 4px 18px -2px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(34,197,94,0.2);
+}
+
+/* Make the radar sweep even more subtle and premium */
+#live-map-container::after {
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(34, 197, 94, 0.08) 35%,
+    rgba(34, 197, 94, 0.18) 52%,
+    transparent 68%
+  );
+  opacity: 0.45;
+  animation: radar-sweep 5.5s linear infinite;
+}
+
+/* Soft permanent aura under real partner hubs — makes them feel like important social centers */
+.partner-hub-aura {
+  pointer-events: none;
+  animation: partner-aura-breathe 4.2s ease-in-out infinite;
+}
+@keyframes partner-aura-breathe {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
