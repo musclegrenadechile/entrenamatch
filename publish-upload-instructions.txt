@@ -1,12 +1,12 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.42-network-power-glow code 46) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.43-network-notifs-badges code 47) ===
 
 AAB principal para subir:
-EntrenaMatch-v0.1.42-network-power-glow-code46-20260604-2240.aab
+EntrenaMatch-v0.1.43-network-notifs-badges-code47-20260604-2253.aab
 (o usa EntrenaMatch-release.aab que es copia del mismo después del build)
 
 **Copia esto exacto en "Notas de la versión" / "What's new" en Play Console (Closed track):**
 
-**v0.1.42-network-power-glow (code 46) — PRIMERA RED SOCIAL REAL DEL FITNESS: TU RED DE ENTRENASYNC AHORA DA PODER VISUAL Y PRIORIDAD EN EL PULSO GLOBAL**
+**v0.1.43-network-notifs-badges (code 47) — CONTINÚA SIN PARAR: NOTIFICACIONES DE TU RED + BADGES ROJOS DORADOS EN TODO EL DESCUBRIMIENTO (primera red social real del fitness)**
 
 • Tu Red de EntrenaSync (el grafo de alianzas de alto rendimiento) es ahora el activo central: Network Power te hace más fuerte, visible y con prioridad real en la plataforma.
 • El Pulso Global (mapa) se potencia brutalmente para tu red: activa "Mi Red (Network Power)" y tus socios de sync aparecen con HALO DORADO PULSANTE extra, tamaño hasta ~2x más grande, tethers de conexión más gruesos y con glow — tu grafo literalmente domina visualmente el mapa cuando filtras por él.
