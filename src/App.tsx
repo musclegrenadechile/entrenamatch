@@ -3670,6 +3670,24 @@ function App() {
     toast.success('Publicado en tu muro')
   }
 
+  // Shared helper: upload data: URL photo to Storage for profile photos (onboarding + gallery).
+  // Returns https URL or original (demo/fallback). Fixes bloat in Firestore profile docs.
+  const uploadProfilePhotoIfNeeded = async (dataUrl: string): Promise<string> => {
+    if (!dataUrl || !dataUrl.startsWith('data:') || isDemoMode || !firebaseUser?.uid || !storage) {
+      return dataUrl;
+    }
+    try {
+      const { ref, uploadString, getDownloadURL } = await import('firebase/storage');
+      const path = `profiles/${effectiveUserId}/${Date.now()}.jpg`;
+      const storageRef = ref(storage, path);
+      const snap = await uploadString(storageRef, dataUrl, 'data_url');
+      return await getDownloadURL(snap.ref);
+    } catch (e) {
+      console.warn('profile photo storage upload failed, fallback to data URL (may bloat doc)', e);
+      return dataUrl;
+    }
+  };
+
   const likeProfilePost = async (postId: string, postUserId: string) => {
     const posts = profilePosts[postUserId] || []
     const idx = posts.findIndex((p) => p.id === postId)
@@ -6363,6 +6381,7 @@ function App() {
           consents={{ is18: false, isForTraining: false, sharesLocation: false }}
           setConsents={() => {}}
           triggerHaptic={triggerHaptic}
+          uploadPhotoIfNeeded={uploadProfilePhotoIfNeeded}
         />
       </ErrorBoundary>
     )
@@ -8507,7 +8526,8 @@ function App() {
                       const photo = await CapacitorCamera.getPhoto({ quality: 80, allowEditing: true, resultType: 'base64' })
                       if (photo?.base64String) {
                         const dataUrl = `data:image/jpeg;base64,${photo.base64String}`
-                        const newPhotos = [...(currentUser.photos || []), dataUrl].slice(0, 6)
+                        const finalUrl = await uploadProfilePhotoIfNeeded(dataUrl)
+                        const newPhotos = [...(currentUser.photos || []), finalUrl].slice(0, 6)
                         const updated = { ...currentUser, photos: newPhotos }
                         // Use the real-sync saver (handles local + Firestore for real users)
                         saveUserWithRealSync(updated as any)
@@ -8526,21 +8546,21 @@ function App() {
               </div>
             )}
 
-            {/* Motivator: Build your performance network */}
+            {/* Motivator: Build your performance network - remastered unique & attractive */}
             {(!currentUser.photos?.length || (currentUser.photos?.length || 0) < 3 || !currentUser.bio || (profilePosts[effectiveUserId] || []).filter((p:any)=>p.photo).length === 0) && (
-              <div className="mx-4 mt-4 p-4 rounded-3xl bg-gradient-to-b from-[#1a160f] to-[#25252A] border border-[#FFD700]/30">
-                <div className="flex items-center gap-2 text-[#FFD700] font-semibold mb-1">
-                  <span>✨</span> Construye tu red de rendimiento
+              <div className="mx-4 mt-4 p-5 rounded-3xl bg-gradient-to-br from-[#1a160f] via-[#25252A] to-[#1a160f] border border-[#FFD700]/40 shadow-inner">
+                <div className="flex items-center gap-2 text-[#FFD700] font-bold mb-1.5 text-sm tracking-wide">
+                  <span>⭐</span> CONSTRUYE TU LEGADO EN EL PULSO
                 </div>
-                <p className="text-sm text-[#f5e8c7] mb-2">Tu galería y EntrenaSyncs son tu capital en la red. Hazlos visibles para que otros vean tu progreso real y quieran sincronizarse contigo.</p>
-                <div className="text-[10px] space-y-0.5 mb-3 text-[#9CA3AF]">
-                  {!currentUser.photos?.length && <div>• Sube fotos de tus sesiones (muestra tu presencia)</div>}
-                  {(currentUser.photos?.length || 0) < 3 && <div>• Agrega al menos 3 fotos a tu galería de entrenamiento</div>}
-                  {!currentUser.bio && <div>• Escribe una bio que muestre tu enfoque de rendimiento</div>}
-                  {(profilePosts[effectiveUserId] || []).filter((p:any)=>p.photo).length === 0 && <div>• Publica 1 foto de una sesión de EntrenaSync (progreso compartido)</div>}
+                <p className="text-sm text-[#f5e8c7] mb-3 leading-snug">Tu galería y tus EntrenaSyncs son tu capital único. Hazlos visibles: otros verán tu progreso real y querrán sincronizarse para multiplicar poder.</p>
+                <div className="text-[10px] space-y-0.5 mb-4 text-[#9CA3AF]">
+                  {!currentUser.photos?.length && <div>• Sube tu primera foto de sesión (tu presencia en el mapa)</div>}
+                  {(currentUser.photos?.length || 0) < 3 && <div>• 3+ fotos = galería de rendimiento que inspira</div>}
+                  {!currentUser.bio && <div>• Bio con propósito = matches de alto valor</div>}
+                  {(profilePosts[effectiveUserId] || []).filter((p:any)=>p.photo).length === 0 && <div>• Publica 1 foto de Sync compartido (tu primer ripple)</div>}
                 </div>
-                <button onClick={() => { setActiveTab('profile'); setTimeout(()=> muroComposerRef.current?.focus(), 60); }} className="w-full py-2 text-sm rounded-2xl bg-[#FFD700] text-black font-bold active:brightness-90">Construir mi red ahora</button>
-                <button onClick={() => setShowOnboarding(true)} className="mt-1.5 w-full text-[10px] text-[#9CA3AF] underline">Editar perfil completo</button>
+                <button onClick={() => { setActiveTab('profile'); setTimeout(()=> muroComposerRef.current?.focus(), 60); }} className="w-full py-2.5 text-sm rounded-2xl bg-[#FFD700] text-black font-extrabold active:brightness-90 tracking-wide">CONSTRUIR MI RED DE RENDIMIENTO AHORA</button>
+                <button onClick={() => setShowOnboarding(true)} className="mt-2 w-full text-[10px] text-[#9CA3AF] underline active:text-[#FF671F]">Editar perfil completo (ritual visual)</button>
               </div>
             )}
 
@@ -8549,6 +8569,19 @@ function App() {
               <div className="card p-4">
                 <div className="uppercase text-[10px] tracking-[1px] text-[#9CA3AF] mb-1.5">Sobre mí</div>
                 <p className="text-[15px] leading-snug text-white/95">{currentUser.bio || 'Todavía no has escrito tu bio. ¡Cuéntale al mundo por qué entrenas!'}</p>
+              </div>
+            </div>
+
+            {/* Unique attractive "Tu Poder en la Red" - remastered visual for profile creation/view */}
+            <div className="px-4 mt-3">
+              <div className="card p-3 bg-gradient-to-r from-[#1a160f] to-[#25252A] border border-[#FFD700]/20">
+                <div className="text-[10px] uppercase tracking-[1px] text-[#FFD700] mb-1">Tu Poder en la Red</div>
+                <div className="flex items-baseline gap-4 text-sm">
+                  <div><span className="font-mono text-lg font-bold text-[#FFD700]">{networkStats?.networkPower || 0}</span> <span className="text-[9px] text-[#9CA3AF]">Network Power</span></div>
+                  <div><span className="font-mono text-lg font-bold text-[#22c55e]">{Object.keys(syncBonds || {}).length}</span> <span className="text-[9px] text-[#9CA3AF]">Bonds</span></div>
+                  <div><span className="font-mono text-lg font-bold text-[#FF671F]">{currentUser?.liveStreak || 0}</span> <span className="text-[9px] text-[#9CA3AF]">Live Streak</span></div>
+                </div>
+                <div className="text-[8px] text-[#9CA3AF] mt-1">Entrenar juntos multiplica tu peso en el Pulso. Tu primer Sync lo activa.</div>
               </div>
             </div>
 

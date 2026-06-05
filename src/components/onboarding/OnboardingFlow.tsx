@@ -24,6 +24,7 @@ interface OnboardingFlowProps {
   consents: any;
   setConsents: (consents: any) => void;
   triggerHaptic?: (style?: 'light' | 'medium' | 'success') => void;
+  uploadPhotoIfNeeded?: (dataUrl: string) => Promise<string>;
 }
 
 export const OnboardingFlow = ({
@@ -36,6 +37,7 @@ export const OnboardingFlow = ({
   consents,
   setConsents,
   triggerHaptic = () => { try { navigator.vibrate && navigator.vibrate(20) } catch {} },
+  uploadPhotoIfNeeded,
 }) => {
   // Internal state (moved from App.tsx for better encapsulation)
   // Seed from existing currentUser (for edit flow or returning incomplete profiles) so user doesn't re-type everything
@@ -56,7 +58,7 @@ export const OnboardingFlow = ({
         level: currentUser.level || 'Intermedio',
         intensity: currentUser.intensity || 'Moderado',
         availability: currentUser.availability || [],
-        wantsToGoLive: false
+        wantsToGoLive: !!currentUser?.trainingNow
       }
     }
     return {
@@ -91,6 +93,12 @@ export const OnboardingFlow = ({
       sharesLocation: false
     };
   });
+
+  // Helper to process photos (upload if data: in real mode) - makes creation safe and attractive (no bloat)
+  const processPhotos = async (photos: string[]): Promise<string[]> => {
+    if (!uploadPhotoIfNeeded) return photos;
+    return Promise.all(photos.map(p => uploadPhotoIfNeeded(p)));
+  };
 
   const updateOnboard = (patch: any) => {
     setOnboardData((prev: any) => ({ ...prev, ...patch }));
@@ -147,10 +155,16 @@ export const OnboardingFlow = ({
           </div>
         </div>
         <div className="px-3 py-1.5 text-[9px] bg-[#0D0D10] text-[#22c55e] flex items-center gap-1 border-t border-[#22c55e]/20">
-          <span>👁️ Así te verán en Explorar y en el radar vivo</span>
-          {isLive && <span className="ml-auto font-bold">¡Aparecerás en el mapa al terminar!</span>}
-          <span className="ml-auto text-[8px] text-[#FF671F]">⚡ Crea ripples • Bonds con peso real • Momentos que otros presenciarán</span>
+          <span>👁️ Tu presencia en el Pulso y swipes</span>
+          {isLive && <span className="ml-auto font-bold">¡VERDE EN EL MAPA AL TERMINAR!</span>}
+          <span className="ml-auto text-[8px] text-[#FF671F]">⚡ Red con peso • ripples visibles • syncs que se sienten</span>
         </div>
+        {/* Unique ritual mock: small live map simulation for excitement - makes the first Live feel inevitable */}
+        {isLive && (
+          <div className="mx-3 -mt-1 mb-1 px-2 py-1 bg-[#0a120f] border border-[#22c55e]/20 rounded-b-2xl text-[7px] text-[#22c55e] flex items-center gap-1">
+            <span>🗺️</span> <span>Pulso simulado: tú + 4 cerca • tether dorado listo • primer match en 20s</span>
+          </div>
+        )}
       </div>
     );
   };
@@ -169,7 +183,12 @@ export const OnboardingFlow = ({
       level: 'Intermedio',
       intensity: 'Moderado',
       availability: ['Tarde', 'Noche'],
-      wantsToGoLive: true
+      wantsToGoLive: true,
+      photos: [ // unique demo photos for attractive preview
+        'https://picsum.photos/id/1011/600/800',
+        'https://picsum.photos/id/1005/600/800',
+        'https://picsum.photos/id/201/600/800'
+      ]
     });
     toast.success('¡Datos de ejemplo cargados!', { description: 'Ajusta lo que quieras. La preview se actualiza en vivo.' });
   };
@@ -187,7 +206,7 @@ export const OnboardingFlow = ({
     updateOnboard({ availability: next });
   };
 
-  const handlePhotoUpload = (e: ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
     const readers = Array.from(files).slice(0, 6).map(file => {
@@ -197,10 +216,14 @@ export const OnboardingFlow = ({
         reader.readAsDataURL(file);
       });
     });
-    Promise.all(readers).then(urls => {
-      const current = onboardData.photos || [];
-      updateOnboard({ photos: [...current, ...urls].slice(0, 6) });
-    });
+    const urls = await Promise.all(readers);
+    let finalUrls = urls;
+    if (uploadPhotoIfNeeded) {
+      finalUrls = await Promise.all(urls.map(u => uploadPhotoIfNeeded(u)));
+    }
+    const current = onboardData.photos || [];
+    updateOnboard({ photos: [...current, ...finalUrls].slice(0, 6) });
+    try { triggerHaptic('light') } catch {}
   };
 
   const removeOnboardPhoto = (index: number) => {
@@ -218,13 +241,18 @@ export const OnboardingFlow = ({
       const photo = await CapacitorCamera.getPhoto({
         quality: 85,
         allowEditing: false,
-        resultType: 'base64', // easy to turn into data URL
+        resultType: 'base64',
       });
       if (photo && photo.base64String) {
         const dataUrl = `data:image/jpeg;base64,${photo.base64String}`;
+        let final = dataUrl;
+        if (uploadPhotoIfNeeded) {
+          final = await uploadPhotoIfNeeded(dataUrl);
+        }
         const current = onboardData.photos || [];
         if (current.length < 6) {
-          updateOnboard({ photos: [...current, dataUrl] });
+          updateOnboard({ photos: [...current, final] });
+          try { triggerHaptic('light') } catch {}
         } else {
           toast('Máximo 6 fotos');
         }
@@ -279,6 +307,12 @@ export const OnboardingFlow = ({
       updateOnboard({ availability: ['Tarde'] });
     }
 
+    // Process photos (upload data: to Storage if real mode) before save - fixes errors with large base64 in Firestore profiles.
+    let finalPhotos = onboardData.photos || [];
+    if (uploadPhotoIfNeeded && finalPhotos.some((p: string) => p && p.startsWith('data:'))) {
+      finalPhotos = await Promise.all(finalPhotos.map((p: string) => uploadPhotoIfNeeded(p)));
+    }
+
     // Preserve any extra fields the user may have (e.g. verificationStatus) when editing
     const newUser: any = {
       ...(currentUser || {}),
@@ -291,7 +325,7 @@ export const OnboardingFlow = ({
       lat: onboardData.lat || -33.0153,
       lng: onboardData.lng || -71.5528,
       bio: onboardData.bio!,
-      photos: onboardData.photos!,
+      photos: finalPhotos,
       trainingTypes: onboardData.trainingTypes!,
       goals: onboardData.goals || [],
       level: onboardData.level!,
@@ -343,27 +377,27 @@ export const OnboardingFlow = ({
   return (
     <div className="app-container flex flex-col bg-[#0D0D10] text-white">
       <div className="flex-1 flex flex-col p-6 pt-10">
-        <div className="flex items-center gap-3 mb-5">
+        <div className="flex items-center gap-3 mb-4">
           <motion.div 
-            animate={{ scale: [1, 1.05, 1], boxShadow: ['0 0 0 0 rgba(255,103,31,0.3)', '0 0 0 12px rgba(255,103,31,0.1)', '0 0 0 0 rgba(255,103,31,0.3)'] }}
-            transition={{ duration: 2.5, repeat: Infinity }}
-            className="w-11 h-11 rounded-2xl bg-[#FF671F] flex items-center justify-center"
+            animate={{ scale: [1, 1.08, 1], boxShadow: ['0 0 0 0 rgba(255,103,31,0.4)', '0 0 0 16px rgba(255,103,31,0.15)', '0 0 0 0 rgba(255,103,31,0.4)'] }}
+            transition={{ duration: 2.2, repeat: Infinity }}
+            className="w-12 h-12 rounded-2xl bg-[#FF671F] flex items-center justify-center ring-1 ring-[#FF671F]/30"
           >
-            <Dumbbell className="w-6 h-6 text-black" />
+            <Dumbbell className="w-7 h-7 text-black" />
           </motion.div>
           <div>
-            <div className="font-bold text-3xl tracking-tighter">EntrenaMatch</div>
-            <div className="text-[#FF671F] text-xs -mt-1 tracking-[2px]">INICIACIÓN EN 60 SEGUNDOS</div>
+            <div className="font-bold text-3xl tracking-[-1.5px]">ENTRENAMATCH</div>
+            <div className="text-[#FF671F] text-[10px] -mt-0.5 tracking-[2.5px] font-medium">RITUAL DE INICIACIÓN • EL PULSO TE ESPERA</div>
           </div>
         </div>
 
         <div className="mb-3">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-3xl font-semibold tracking-tighter leading-none mb-0.5">
-                {isEditingProfile ? 'Edita tu perfil' : 'Iniciación Express'}
+              <div className="text-3xl font-semibold tracking-[-1.2px] leading-none mb-0.5">
+                {isEditingProfile ? 'Edita tu presencia en el Círculo' : 'Iniciación al Ritual'}
               </div>
-              <div className="text-[#9CA3AF] text-sm">Entiende el Pulso + EntrenaSync + Red. <span className="font-bold text-[#FF671F]">Primer Live o match en &lt;90s</span>.</div>
+              <div className="text-[#9CA3AF] text-sm">Crea tu perfil único • activa tu primer Pulso • primer match en &lt;90s. <span className="font-bold text-[#FF671F]">Único en el fitness.</span></div>
             </div>
             {!isEditingProfile && (
               <button onClick={fillExampleData} className="text-[10px] px-3 py-1.5 rounded-2xl border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10 font-medium">Rellenar ejemplo</button>
@@ -376,10 +410,10 @@ export const OnboardingFlow = ({
           <div className="flex items-center justify-between text-xs mb-1.5 px-0.5">
             <div className="font-medium text-[#FF671F]">Paso {onboardingStep + 1} de 4 • {Math.round((onboardingStep+1)/4 * 100)}% listo</div>
             <div className="text-[#9CA3AF]">
-              {onboardingStep === 0 && 'Presencia'}
-              {onboardingStep === 1 && 'Entrenamiento'}
-              {onboardingStep === 2 && 'El Ritual (Live)'}
-              {onboardingStep === 3 && 'Entrar al Pulso'}
+              {onboardingStep === 0 && 'Tu Presencia'}
+              {onboardingStep === 1 && 'Tu Esencia'}
+              {onboardingStep === 2 && 'El Pulso Vivo'}
+              {onboardingStep === 3 && 'Los Votos'}
             </div>
           </div>
           <div className="flex gap-2">
@@ -399,7 +433,7 @@ export const OnboardingFlow = ({
         {onboardingStep === 0 && (
           <div className="space-y-5">
             <div>
-              <div className="text-xl font-semibold mb-1 tracking-tight">Tu nombre en el Círculo</div>
+              <div className="text-xl font-semibold mb-1 tracking-tight">Tu nombre en el Círculo de Rendimiento</div>
               <input 
                 type="text" 
                 value={onboardData.name} 
@@ -416,13 +450,14 @@ export const OnboardingFlow = ({
                 <div className="text-[10px] text-[#FF671F]">Cámara recomendada</div>
               </div>
               <div className="grid grid-cols-3 gap-2">
-                {(onboardData.photos || []).slice(0,3).map((photo: string, idx: number) => (
+                {(onboardData.photos || []).slice(0,6).map((photo: string, idx: number) => (
                   <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-[#FF671F]/40 ring-1 ring-[#FF671F]/10">
                     <img src={photo} className="w-full h-full object-cover" alt="" />
                     <button onClick={() => { removeOnboardPhoto(idx); try { triggerHaptic('light') } catch {} }} className="absolute top-1 right-1 bg-black/80 text-white p-1 rounded-full text-xs leading-none">×</button>
+                    {idx === 0 && <div className="absolute bottom-0 left-0 right-0 text-[7px] bg-[#FF671F] text-black text-center">principal</div>}
                   </div>
                 ))}
-                {(onboardData.photos || []).length < 1 && (
+                {(onboardData.photos || []).length < 6 && (
                   <>
                     <button onClick={() => { try { triggerHaptic('medium') } catch {}; takeNativePhoto() }} className="aspect-square border-2 border-[#FF671F] rounded-2xl flex flex-col items-center justify-center text-[#FF671F] text-xs font-medium active:bg-[#FF671F]/10 active:scale-[0.985]">
                       <Camera size={26} className="mb-1" />
@@ -436,7 +471,7 @@ export const OnboardingFlow = ({
                   </>
                 )}
               </div>
-              <p className="text-[10px] text-[#9CA3AF] mt-1.5">Cara clara. Esta foto te representa en el mapa Pulso y en todos los swipes.</p>
+              <p className="text-[10px] text-[#9CA3AF] mt-1.5">Hasta 6 fotos • la primera es tu presencia principal en el Pulso y swipes. Arrastra en Perfil para reordenar.</p>
             </div>
 
             {/* Bio quick */}
@@ -457,7 +492,7 @@ export const OnboardingFlow = ({
         {onboardingStep === 1 && (
           <div className="space-y-6">
             <div>
-              <div className="text-xl font-semibold mb-2 tracking-tight">¿Qué entrenas? (1-3)</div>
+              <div className="text-xl font-semibold mb-2 tracking-tight">¿Qué rituales de movimiento practicas? (elige 1-3)</div>
               <div className="flex flex-wrap gap-2">
                 {TRAINING_OPTIONS.map((type: string) => {
                   const selected = (onboardData.trainingTypes || []).includes(type);
@@ -477,7 +512,7 @@ export const OnboardingFlow = ({
             </div>
 
             <div>
-              <div className="text-xl font-semibold mb-2 tracking-tight">Tu objetivo principal</div>
+              <div className="text-xl font-semibold mb-2 tracking-tight">Tu propósito principal en el Círculo</div>
               <div className="flex flex-wrap gap-2">
                 {TRAINING_GOALS.map((goal: string) => {
                   const selected = (onboardData.goals || []).includes(goal);
@@ -500,8 +535,8 @@ export const OnboardingFlow = ({
         {onboardingStep === 2 && (
           <div className="space-y-5">
             <div className="rounded-3xl bg-gradient-to-br from-[#0f1a14] to-[#111113] border border-[#22c55e]/30 p-5">
-              <div className="uppercase tracking-[1.5px] text-[10px] text-[#22c55e] font-semibold mb-1">LA FUNCIÓN QUE NADIE MÁS TIENE</div>
-              <div className="text-lg font-semibold leading-tight mb-3">EntrenaSync + Pulso del Mapa = tu Red cobra vida real</div>
+              <div className="uppercase tracking-[1.5px] text-[10px] text-[#22c55e] font-semibold mb-1">LA MAGIA QUE NADIE MÁS TIENE</div>
+              <div className="text-lg font-semibold leading-tight mb-3">EntrenaSync + Pulso del Mapa = tu Red cobra vida real y medible</div>
               
               <div className="space-y-3 text-sm">
                 <div className="flex gap-3"><span className="text-[#22c55e] mt-0.5">1</span><span><span className="font-semibold">Marca "Entrenando Ahora"</span> → apareces en el mapa con urgencia (verde pulsante). Otros cerca te ven en tiempo real.</span></div>
@@ -512,7 +547,7 @@ export const OnboardingFlow = ({
             </div>
 
             <div className="text-center pt-1">
-              <div className="text-base font-semibold mb-2 text-[#22c55e]">¿Quieres sentirlo YA con tu primer Live?</div>
+              <div className="text-base font-semibold mb-2 text-[#22c55e]">¿Activas tu primer Pulso Vivo ahora? (el corazón de lo único)</div>
               <button 
                 onClick={() => { 
                   const next = !onboardData.wantsToGoLive;
@@ -534,14 +569,14 @@ export const OnboardingFlow = ({
         {onboardingStep === 3 && (
           <div className="space-y-4">
             <div>
-              <div className="text-xl font-semibold mb-1.5">Últimos 3 votos rápidos</div>
-              <div className="text-xs text-[#9CA3AF]">Obligatorios para entrar al ritual.</div>
+              <div className="text-xl font-semibold mb-1.5">Los 3 Votos del Círculo</div>
+              <div className="text-xs text-[#9CA3AF]">Sella tu entrada al primer ritual donde el esfuerzo se comparte.</div>
             </div>
 
             {[
-              { key: 'is18', label: 'Soy mayor de 18 y entreno con respeto' },
-              { key: 'isForTraining', label: 'Entreno en serio y con motivación real' },
-              { key: 'sharesLocation', label: 'Quiero aparecer en el mapa vivo para sincronizarme' }
+              { key: 'is18', label: 'Juro ser mayor de 18 y entrenar con respeto al Círculo' },
+              { key: 'isForTraining', label: 'Juro entrenar en serio y con motivación real para mi Red' },
+              { key: 'sharesLocation', label: 'Juro aparecer en el Pulso vivo para sincronizarme con otros' }
             ].map(item => (
               <label key={item.key} onClick={() => { 
                 const next = ! (localConsents as any)[item.key]; 
@@ -554,8 +589,8 @@ export const OnboardingFlow = ({
             ))}
 
             <div className="mt-3 rounded-2xl bg-[#22c55e]/10 border border-[#22c55e]/50 p-4">
-              <div className="font-bold text-[#22c55e] text-sm mb-1">AL TERMINAR:</div>
-              <div className="text-sm leading-snug">Si activaste Live → verás el banner verde inmediatamente.<br/>Ve a <span className="font-semibold">Explorar</span>, toca cualquier card cerca y da ❤️ like. Tu primer chat + match en &lt;20s.<br/>Luego abre el chat y toca "Iniciar EntrenaSync".</div>
+              <div className="font-bold text-[#22c55e] text-sm mb-1">AL SELLAR LOS VOTOS:</div>
+              <div className="text-sm leading-snug">Si activaste Live → tu punto verde pulsa en el mapa al instante. <span className="font-semibold">Explora</span> → ❤️ en el primero que veas cerca = chat + match en &lt;20s. Abre chat → "Iniciar EntrenaSync" y siente el tether.</div>
             </div>
 
             <div className="text-[10px] text-center text-[#9CA3AF] pt-1">Tus datos se guardan en el backend real. Puedes editar todo después desde Perfil.</div>
@@ -586,9 +621,9 @@ export const OnboardingFlow = ({
               (onboardingStep === 3 && !Object.values(localConsents).every(Boolean))
             }
           >
-            {onboardingStep < 3 ? 'Continuar' : '¡COMPLETAR INICIACIÓN + IR A MI PRIMER LIVE / MATCH!'}
+            {onboardingStep < 3 ? 'Continuar el Ritual' : '¡SELLAR LOS VOTOS + ENTRAR AL PULSO VIVO!'}
           </button>
-          <div className="text-center text-[9px] text-[#9CA3AF]">60-90 segundos desde que empezaste. Tu primer ritual te espera.</div>
+          <div className="text-center text-[9px] text-[#9CA3AF]">Tu perfil único en el Círculo • primer Pulso en &lt;90s. Hazlo real.</div>
         </div>
       </div>
     </div>

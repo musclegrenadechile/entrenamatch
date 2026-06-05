@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.58-tdz-memos-hoisted-early",
+  "version": "0.1.59-tdz-isDemo-hoist",
   "type": "module",
   "scripts": {
     "dev": "vite",

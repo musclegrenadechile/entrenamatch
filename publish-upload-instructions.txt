@@ -1,4 +1,6 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.58-tdz-memos-hoisted-early code 62) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.59-tdz-isDemo-hoist code 63) ===
+
+Additional TDZ fix: hoisted the useAuth() and useDemoAuth() calls (providing isDemoMode, firebaseUser) right after useProfile at the top of App(). This ensures they are declared before any early effects that have isDemoMode in their dependency arrays (e.g. the daily "offline" effect that runs on open). The dep array evaluation during render was previously hitting the uninitialized 'isDemoMode' binding (likely the 'z' in the minified TDZ error). Removed the duplicate late destructure. This, combined with all previous hoists of dailyPulse, discovery memos (live, deck, feed etc.), should finally kill the "Cannot access before initialization" on app open. Rebuild clean.
 
 Further TDZ hardening: moved the core "discovery / pulse" useMemos (remainingProfiles, liveTrainingNow, zoneLiveCounts, feedComputation) to right after the real multi-user state section (~1462, after displaySessions / myGroupSessionIdsKey). This declares them "as early as possible" after their direct data dependencies (realProfiles ~1425, effectiveUserId, etc.). All dependent effects (urgency notifs, map, deck, match, feed tab, etc.) and JSX are after this new position. Combined with previous very-early dailyPulse hoist + ref, this should eliminate the last "Cannot access 'z' before initialization" on open. The minified 'z' was likely one of zone/feed/live in the discovery layer. Rebuild AAB clean.
 
