@@ -3644,21 +3644,25 @@ function App() {
       </div>
     )
 
-    // In-app toast with action to open the right chat + avatar + more context
-    toast.info(title, {
+    // Enhanced attractive in-app toast for messages (more visual pop, especially for legends)
+    const isLegendMsg = !isGroup && !!syncBonds[chatId]
+    const toastTitle = isLegendMsg ? `⭐ Mensaje de tu Leyenda ${name}` : title
+    const toastClass = isLegendMsg ? 'legend-message-toast' : ''
+    toast.info(toastTitle, {
       description: (
-        <div className="flex items-start gap-2 mt-0.5">
+        <div className={`flex items-start gap-3 mt-1 ${isLegendMsg ? 'legend-toast-content' : ''}`}>
           {avatarEl}
           <div className="flex-1 min-w-0">
-            <div className="text-sm text-[#cbd5e1] truncate leading-tight">{short}</div>
-            <div className="text-[10px] text-[#9CA3AF] mt-0.5">
-              {isGroup ? 'Chat grupal • En vivo' : 'Mensaje 1:1 • En vivo'}
+            <div className="text-sm text-[#cbd5e1] truncate leading-tight font-medium">{short}</div>
+            <div className="text-[10px] text-[#9CA3AF] mt-1 flex items-center gap-1.5">
+              {isGroup ? '👥 Chat grupal • En vivo' : '💬 Mensaje 1:1 • En vivo'}
+              {isLegendMsg && <span className="px-1.5 py-0 rounded bg-[#FFD700] text-black text-[9px] font-bold">⭐ LEYENDA</span>}
             </div>
           </div>
         </div>
       ),
       action: {
-        label: 'Ver',
+        label: isLegendMsg ? 'Responder a Leyenda' : 'Ver',
         onClick: () => {
           if (isGroup) {
             setActiveTab('sesiones')
@@ -3671,7 +3675,8 @@ function App() {
           }
         }
       },
-      duration: 6000
+      duration: 8000,
+      className: toastClass
     })
     // Feed the existing notifications panel
     addNotification({
@@ -5377,7 +5382,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
-          <span className="text-white/90 text-[11px]">Real backend • v0.1.35-achievements-chats</span>
+          <span className="text-white/90 text-[11px]">Real backend • v0.1.36-notif-polish</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -5408,7 +5413,7 @@ function App() {
             >
               <Bell size={15} />
               {(unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[13px] h-[13px] px-0.5 text-[8px] font-bold rounded-full bg-[#FF4F79] text-black flex items-center justify-center">
+                <span className={`absolute -top-0.5 -right-0.5 min-w-[14px] h-[14px] px-0.5 text-[8px] font-bold rounded-full flex items-center justify-center ${unreadNotifications > 0 ? 'bg-[#FF4F79] text-black animate-pulse' : 'bg-[#FF671F] text-black'}`}>
                   {Math.min(9, unreadNotifications + totalChatUnreads + totalSessionUnreads)}
                 </span>
               )}
@@ -8392,7 +8397,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.35-achievements-chats • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.36-notif-polish • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8619,7 +8624,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.35-achievements-chats • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.36-notif-polish • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>
@@ -10406,7 +10411,7 @@ function App() {
                 <div className="section-header text-base flex items-center gap-2">
                   Notificaciones 
                   { (unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FF671F] text-black font-bold">
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FF671F] text-black font-bold animate-pulse">
                       {unreadNotifications + totalChatUnreads + totalSessionUnreads} nuevas
                     </span>
                   )}
@@ -10445,12 +10450,13 @@ function App() {
                   </div>
                 ) : (
                   notifications.map(notif => {
-                    const typeIcon = notif.type === 'message' ? '💬' : notif.type === 'match' ? '❤️' : notif.type === 'session_join' ? '👥' : notif.type === 'squad_join' ? '🏋️' : '🔔'
+                    const isLegendNotif = notif.type === 'message' && notif.relatedId && !!syncBonds[notif.relatedId]
+                    const typeIcon = notif.type === 'message' ? (isLegendNotif ? '⭐' : '💬') : notif.type === 'match' ? '❤️' : notif.type === 'session_join' ? '👥' : notif.type === 'squad_join' ? '🏋️' : '🔔'
                     const time = notif.timestamp ? getRelativeTime(notif.timestamp) : ''
                     return (
                       <div 
                         key={notif.id} 
-                        className={`p-4 border-b border-[#2F2F35] flex items-start gap-3 active:bg-[#1C1C20] cursor-pointer ${!notif.read ? 'bg-[#1C1C20]' : ''}`}
+                        className={`p-4 border-b border-[#2F2F35] flex items-start gap-3 active:bg-[#1C1C20] cursor-pointer ${!notif.read ? 'bg-[#1C1C20]' : ''} ${isLegendNotif ? 'legend-notif border-l-4 border-[#FFD700] bg-[#1a160f]' : ''}`}
                         onClick={() => {
                           const updated = notifications.map(n => 
                             n.id === notif.id ? {...n, read: true} : n
@@ -10498,6 +10504,7 @@ function App() {
                           {!notif.read && (
                             <div className="mt-1.5 inline-block w-1.5 h-1.5 bg-[#FF671F] rounded-full"></div>
                           )}
+                          {isLegendNotif && <div className="mt-1 text-[9px] text-[#FFD700] font-bold">⭐ De tu Leyenda</div>}
                         </div>
                         {notif.photoUrl && (
                           <img src={notif.photoUrl} alt="" className="w-9 h-9 rounded-xl object-cover flex-shrink-0 border border-[#2F2F35]" />

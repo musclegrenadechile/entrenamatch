@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 40 / 0.1.35-achievements-chats. **CHATS + MURO MÁS VIVO**: Chats con quick shares de logros para legends. Muro personal como archivo épico de achievements con contadores, templates rápidos y feel de "tu lugar para postear logros". 
+**Current version for this upload**: versionCode 41 / 0.1.36-notif-polish. **NOTIFICACIONES DE MENSAJES MÁS ATRACTIVAS**: Toasts y panel visualmente premium, gold para legends, mejor UX. 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -149,11 +149,18 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 
 ## What's new (for this Pre-Alpha release, short & punchy)
 
-**READY FOR PLAY CLOSED UPLOAD (v0.1.35-achievements-chats code 40)**
-- Fresh signed AAB: `EntrenaMatch-v0.1.35-achievements-chats-code40-20260604-2023.aab` (7.2 MB) + `EntrenaMatch-release.aab`
-- Fresh debug APK for device: `EntrenaMatch-debug-achievements-chats-0.1.35-20260604-2023.apk` (10 MB) + `EntrenaMatch-debug.apk`
+**READY FOR PLAY CLOSED UPLOAD (v0.1.36-notif-polish code 41)**
+- Fresh signed AAB: `EntrenaMatch-v0.1.36-notif-polish-code41-20260604-2027.aab` (7.2 MB) + `EntrenaMatch-release.aab`
+- Fresh debug APK for device: `EntrenaMatch-debug-notif-polish-0.1.36-20260604-2026.apk` (10 MB) + `EntrenaMatch-debug.apk`
 - Web: pushed to main → GH Pages will have the new bundle (hard refresh after Actions finish).
 - Copy the short "What's new" below directly into Play Console when uploading the AAB to closed track.
+
+**v0.1.36-notif-polish (code 41) — NOTIFICACIONES DE MENSAJES VISUALMENTE ATRACTIVAS**
+• Toasts de llegada de mensajes ahora premium: layout más rico con avatar grande, contexto "En vivo", badge "⭐ LEYENDA" dorado si viene de un bond legendario.
+• Panel de notificaciones: items de mensajes con fondo especial gold para legends, borde izquierdo destacado, icono ⭐, texto "De tu Leyenda".
+• Badge del bell pulsa cuando hay notifs no leídas (especialmente mensajes).
+• CSS dedicado para legend-message-toast con glow dorado, glass y sombras atractivas.
+• Todo se ve más "vivo" y premium, diferenciando mensajes de legends (que ahora tienen peso en chats y muro).
 
 **v0.1.35-achievements-chats (code 40) — CHATS VIVOS + MURO COMO TU LUGAR DE LOGROS**
 • Chats 1:1 con legends ahora muestran badge "⭐ TU LEYENDA • LVx" y botones rápidos para compartir logros ("Compartir nuestro último Sync Legendario", "Postear mi eco", etc.) — al enviar en chat también se publica automáticamente en tu muro como achievement.
@@ -247,8 +254,8 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • AAB + debug APK frescos listos (ver nombres abajo). Build limpia + pipeline completo.
 • Todo el pipeline: web GH Pages, Android AAB/debug, docs actualizados. Sigue con todo ritmo.
 
-**Short "What's new" (copy-paste to Play Console for v0.1.35 code 40):**
-Chats más vivos con legends: badge "TU LEYENDA", quick buttons para compartir logros directamente a chat + muro (auto-post achievement). Muro personal como "Mi Muro de Leyendas": contadores de logros (bonds, syncs legendarios, ecos), templates rápidos para postear hitos, copy motivacional como tu santuario personal de mitología. (code 40)
+**Short "What's new" (copy-paste to Play Console for v0.1.36 code 41):**
+Notificaciones de mensajes mucho más atractivas: toasts con diseño premium + gold glow para legends (badge "⭐ LEYENDA"), panel con items destacados (borde gold, "De tu Leyenda"), badge del bell con pulse. Se ven vivas, diferenciadas y parte del mundo de mitología de la app. (code 41)
 
 **Artifacts for this version:**
 - AAB (Play): EntrenaMatch-v0.1.28-recuperacion-cuenta-code33-20260604-1958.aab (y EntrenaMatch-release.aab)

@@ -654,3 +654,11 @@ This is the build to upload to Closed track. Full "sigue con todo" — more uniq
 - Muro personal (Tu Muro de Leyendas) ahora se siente como TU santuario de achievements: contadores arriba (LEGENDS FORJADAS, SYNC LEGENDARIOS, ECOS RECLAMADOS), templates rápidos para postear logros, copy 'Este es TU lugar. Publica tus logros... Tu muro es tu mitología personal'.
 - El muro se siente vivo y motivador — tu archivo personal de la mitología que estás construyendo.
 - Prueba: Abre chat con un legend. Usa quick button. Ve cómo aparece en tu muro con contadores. Publica logro directo desde muro usando templates.
+
+**NUEVO — NOTIFICACIONES DE MENSAJES ATRACTIVAS (v0.1.36-notif-polish, code 41)**:
+- Toasts de llegada de mensajes rediseñados: más visuales con layout rico (avatar grande + contexto), glow dorado y badge '⭐ LEYENDA' si viene de un bond legendario. Duración más larga (8s).
+- Panel de notificaciones: items de mensajes con borde izquierdo gold + fondo especial para legends, icono ⭐, texto destacado 'De tu Leyenda'.
+- Badge del bell ahora pulsa (animate-pulse) cuando hay notifs (especialmente mensajes no leídos).
+- CSS premium para toasts Sonner (glass, sombras, bordes redondeados, botones atractivos).
+- Todo se siente parte del mundo vivo de la app: las notifs de legends destacan como algo especial y motivador.
+- Prueba: Recibe un mensaje de un legend (o simula). Ver toast atractivo + abre panel, ver el item dorado. Se ve mucho más premium y 'vivo'.

@@ -1087,6 +1087,37 @@ input[type="range"]::-moz-range-thumb {
   50% { transform: scale(1.12); }
 }
 
+/* Enhanced attractive message notifications */
+.legend-message-toast {
+  border: 2px solid #FFD700 !important;
+  background: linear-gradient(145deg, #1a160f, #1C1C20) !important;
+  box-shadow: 0 12px 35px -5px rgba(255, 215, 0, 0.35), 0 0 0 1px rgba(255,215,0,0.25) !important;
+}
+.legend-toast-content {
+  border-left: 3px solid #FFD700;
+  padding-left: 8px;
+}
+
+/* Sonner toast visual upgrade for all message arrivals */
+[data-sonner-toaster] [data-sonner-toast] {
+  border-radius: 18px !important;
+  border: 1px solid rgba(255,103,31,0.25) !important;
+  box-shadow: 0 10px 30px -8px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,103,31,0.1) inset !important;
+  padding: 14px 16px !important;
+}
+[data-sonner-toaster] [data-sonner-toast] [data-title] {
+  font-weight: 700 !important;
+  letter-spacing: -0.2px !important;
+}
+[data-sonner-toaster] [data-sonner-toast] button {
+  background: #FF671F !important;
+  color: black !important;
+  font-weight: 600 !important;
+  border-radius: 999px !important;
+  padding: 4px 12px !important;
+  font-size: 11px !important;
+}
+
 /* Enhanced Ritual Ripples with "physics" - energy flowing towards other users on the map.
    This makes the map feel like a living ecosystem where high-vibe moments in Arena send real waves across the city. */
 .ritual-wave-line {
