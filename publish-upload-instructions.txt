@@ -1,20 +1,17 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.48-voice-notes-spectacular-profile code 52) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.49-voice-audio-fix-storage-rules code 53) ===
 
-AAB: EntrenaMatch-v0.1.48-voice-notes-spectacular-profile-code52-20260604-2323.aab + EntrenaMatch-release.aab
+AAB: EntrenaMatch-v0.1.49-voice-audio-fix-storage-rules-code53-20260604-2328.aab + EntrenaMatch-release.aab
 
-**What's new (copia esto):**
+**What's new:**
 
-**v0.1.48-voice-notes-spectacular-profile (code 52) — SIGUE CON TODO: Notas de voz en mensajes + Perfil espectacular + Feed único (la primera red social real del fitness)**
+**v0.1.49 (code 53) — FIX: Notas de voz ahora se envían y reproducen correctamente cross-device**
 
-• NOTAS DE VOZ en mensajes (1:1 real/demo + group chats de sesiones): grabación con mic (timer, auto-stop 60s, UI pulsing), preview/cancel, upload a Storage, envío como mensaje especial. Playback con ?? + duración en las burbujas. Único y motivador: comparte energía post-sync, tips de entrenamiento, voz real con tu red de rendimiento.
+- Los formularios de chat ahora usan el path central sendVoiceNote que hace upload a Storage para URLs https reales (antes pasaban blob: URLs locales que no funcionaban para otros usuarios).
+- storage.rules actualizado para permitir /chat-voice/{chatId}/** (lectura/escritura para auth).
+- Mapeos de carga de mensajes 1:1 y grupo incluyen los campos de voz.
+- Después de subir este AAB: npx firebase deploy --only storage --project entrenamatch para activar las rules.
 
-• PERFIL ESPECTACULAR: barra visual de poder (gradient) en TU RED DE ENTRENASYNC que escala con tu Network Power. El grafo se siente tangible y premium.
-
-• FEED ÚNICO: posts de tu red ahora destacan con borde dorado especial 'muro-post--red'. Contenido de tu grafo de alto rendimiento se reconoce al instante.
-
-Acumula con leaderboard, perks NP en mapa, FCM background para red, prioridad en swipe, etc. Todo hace que EntrenaMatch sea la categoría.
-
-Sigue sin parar. Sube el AAB.
+Las notas de voz (motivación, tips post-sync) ahora viajan de verdad en tu Red de EntrenaSync.
 Sube el AAB fresco. Sigue con todo.
 
 (Previous version notes below for reference if needed, but use the v0.1.44 block above for this upload.)
