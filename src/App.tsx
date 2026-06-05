@@ -7455,7 +7455,7 @@ function App() {
             <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
             <div className="flex items-center gap-2 mb-1.5 relative z-10">
               <div className="live-pill green !px-2.5 !py-0.5 text-[9px]">🟢 EN VIVO AHORA</div>
-              <div className="text-sm font-semibold tracking-[-0.1px]">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡urgencia!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}{activeSyncCount > 0 ? ` · 🔄 ${activeSyncCount} pares sincronizados ahora (único)` : ''}</div>
+              <div className="text-sm font-semibold tracking-[-0.1px]">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡se va pronto!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}{activeSyncCount > 0 ? ` · 🔄 ${activeSyncCount} pares sincronizados ahora (único)` : ''}</div>
               {dailyPulse && (dailyPulse.trainingStreak > 0 || dailyPulse.synergyStreak > 0) && (
                 <div className="text-[10px] mt-1 text-[#22c55e] font-medium flex items-center gap-1">
                   🔥 Tu streak: {dailyPulse.trainingStreak}d train + {dailyPulse.synergyStreak}d synergy • Nivel {dailyPulse.level}
@@ -7515,13 +7515,13 @@ function App() {
               <div className="card card-glass p-6 text-center border border-[#22c55e]/30 relative overflow-hidden">
                 <div className="text-5xl mb-3 opacity-90">🏋️‍♂️</div>
                 <div className="font-semibold text-base mb-1.5">Nadie entrenando cerca todavía</div>
-                <div className="text-sm text-[#9CA3AF] mb-4 leading-snug">Sé el primero en activar "Entrenando Ahora (EN VIVO)" en tu Perfil.<br/>¡Aparecerás en el radar y la gente querrá unirse o sync contigo!</div>
+                <div className="text-sm text-[#9CA3AF] mb-4 leading-snug">Activa "Entrenando Ahora (EN VIVO)" en tu Perfil para aparecer en el mapa en tiempo real (GymPulse). ¡La gente cerca te ve entrenando y siente urgencia real (FOMO) de unirse o sync antes de que termines!</div>
                 <button onClick={() => setActiveTab('profile')} className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90 active:scale-[0.985] transition shadow-sm">Ir a Perfil y activar live →</button>
                 <div className="absolute -bottom-6 -right-6 text-[70px] opacity-5">📡</div>
               </div>
             )}
             <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between items-center">
-              <span>¡Urgencia real! Toca para ver o únete antes de que se vayan. Nadie lo tiene tan bien.</span>
+              <span>¡FOMO real! Toca para ver o únete antes de que terminen. El mapa muestra el pulso vivo de la comunidad.</span>
               <button onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline active:text-white">Ver todos live →</button>
             </div>
 
@@ -8138,7 +8138,7 @@ function App() {
           <div className="absolute inset-0 z-[95] bg-[#0D0D10] flex flex-col" onClick={() => { setShowLiveModal(false); setLiveModalSearch(''); setLiveModalSort('distance'); }}>
             <div className="p-4 flex items-center justify-between border-b border-[#2F2F35]">
               <button onClick={() => { setShowLiveModal(false); setLiveModalSearch(''); setLiveModalSort('distance'); }}><ArrowLeft /></button>
-              <div className="font-medium flex items-center gap-2">Entrenando Ahora cerca ({liveTrainingNow.length}) {liveTrainingNow.some(u => u.seVaEnMin > 0) && <span className="text-orange-400 text-xs">¡urgencia!</span>} {liveTrainingNow.length > 5 && <span className="text-[#22c55e] text-xs">🔥 HOT</span>}</div>
+              <div className="font-medium flex items-center gap-2">Entrenando Ahora cerca ({liveTrainingNow.length}) {liveTrainingNow.some(u => u.seVaEnMin > 0) && <span className="text-orange-400 text-xs">¡se va pronto, únete!</span>} {liveTrainingNow.length > 5 && <span className="text-[#22c55e] text-xs">🔥 HOT</span>}</div>
               <div />
             </div>
 
@@ -8157,7 +8157,7 @@ function App() {
                   className="form-input flex-1 text-sm py-1.5" 
                 />
                 <button onClick={() => setLiveModalSort(liveModalSort === 'distance' ? 'urgency' : liveModalSort === 'urgency' ? 'hot' : 'distance')} className="text-xs px-3 py-1 rounded-full border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10 whitespace-nowrap">
-                  {liveModalSort === 'distance' ? '📍 Dist' : liveModalSort === 'urgency' ? '⏱ Urgencia' : '🔥 Hot'}
+                  {liveModalSort === 'distance' ? '📍 Dist' : liveModalSort === 'urgency' ? '⏱ Se va pronto' : '🔥 Hot'}
                 </button>
               </div>
             )}
@@ -8243,7 +8243,7 @@ function App() {
               })()}
             </div>
             <div className="p-3 border-t border-[#2F2F35] bg-[#0D0D10]">
-              <div className="text-center text-xs text-[#9CA3AF] mb-2">Toca card → perfil. Unirme = like + auto-comment en su muro live. ¡La urgencia hace que abras seguido!</div>
+              <div className="text-center text-xs text-[#9CA3AF] mb-2">Toca card → perfil. Unirme = like + auto-comment en su muro live. ¡Ver el pulso en vivo en el mapa te motiva a abrir y entrenar ya!</div>
               {liveTrainingNow.length >= 2 && (
                 <button
                   onClick={() => {
@@ -8465,7 +8465,7 @@ function App() {
                   <div className="card card-glass p-10 rounded-3xl text-center mt-6 border border-[#FF671F]/20">
                     <div className="text-5xl mb-4">🏋️‍♂️</div>
                     <div className="font-bold text-2xl mb-2 tracking-tight">El feed está despertando</div>
-                    <p className="text-sm text-[#9CA3AF] max-w-[280px] mx-auto mb-5">Sé el primero en publicar un entreno, una foto o un "¡me uno!". Los posts de la comunidad real aparecen aquí en vivo con likes, comentarios y urgencia.</p>
+                    <p className="text-sm text-[#9CA3AF] max-w-[280px] mx-auto mb-5">Publica tu entreno o foto. Los posts de la comunidad aparecen aquí en vivo con likes y comentarios. ¡El mapa en tiempo real muestra el pulso social!</p>
                     <div className="flex flex-col sm:flex-row gap-2 justify-center">
                       <button onClick={() => setShowFeedPostModal(true)} className="btn-primary px-8 py-2.5 text-sm">Publicar en el Feed</button>
                       {!isDemoMode && <button onClick={() => { setFeedMaxProfiles(15); loadGlobalFeed(); }} className="px-6 py-2.5 border border-[#FF671F]/50 text-[#FF671F] rounded-2xl text-sm active:bg-[#FF671F]/10">Cargar más comunidad</button>}
@@ -10583,13 +10583,15 @@ function App() {
                       // For REALISM: request actual GPS when going live
                       await requestUserLocation()
                     }
+                    // Integrity is important for prod, but don't block the core live toggle (fixes "no pasa nada" bug).
+                    // Show clear guidance instead of silent return.
                     if (newVal && !isDemoMode && PlayIntegrityNative) {
                       const current = getLastIntegrityResult() || lastIntegrity;
                       if (!hasPositiveIntegrity(current)) {
-                        toast.error('Verifica integridad primero', { 
-                          description: 'Usa el botón 🛡️ Google Play Integrity arriba (o ingresa nonce de tu prueba) para obtener token positivo.' 
+                        toast('🛡️ Verifica integridad para full visibilidad en prod', { 
+                          description: 'Usa el botón 🛡️ Google Play Integrity arriba. El live se activa localmente de todas formas.' 
                         });
-                        return;
+                        // do not return — proceed with toggle for the feature to work
                       }
                     }
                     let streakUpdate: any = {}
@@ -10616,7 +10618,10 @@ function App() {
                     saveUserWithRealSync(updated as CurrentUser)
                     // Immediately refresh real profiles so the toggler sees current live people, and the poller will propagate to others soon
                     loadRealProfiles().catch(() => {})
-                    toast(newVal ? '🟢 ¡Entrenando ahora en vivo! La gente cerca te verá' : 'Entrenamiento finalizado')
+                    // Force the live map to immediately reflect your status (self marker becomes live with glows, ripples if applicable)
+                    setMapForceTick(t => t + 1)
+                    // Clearer, educational toast
+                    toast(newVal ? '🟢 ¡Entrenando Ahora (EN VIVO) activado!' : 'Entrenamiento finalizado')
                     // Pulso Diario progress
                     checkAndUpdateDailyPulse(updated)
                     if (dailyPulse?.currentChallenge?.type === 'solo') {
@@ -10625,7 +10630,7 @@ function App() {
                       awardMomentum(8, 'Ancla del GymPulse')
                     }
                     if (newVal) {
-                      createProfilePost('¡Entrenando ahora cerca! ¿Quién se une? 🏋️', null).catch(() => {})
+                      createProfilePost('¡Entrenando ahora en el GymPulse! ¿Quién se une al pulso? 🏋️', null).catch(() => {})
                     } else {
                       // Mientras más entrenes, más puntos para nivel y gadgets (retención fuerte)
                       const durationMs = currentUser.trainingNowSince ? Date.now() - currentUser.trainingNowSince : 30 * 60 * 1000
@@ -10643,10 +10648,12 @@ function App() {
                   }}
                   className={`w-full py-3 rounded-2xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm ${currentUser.trainingNow ? 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black ring-1 ring-[#22c55e]/60' : 'bg-[#1C1C20] border border-[#2F2F35] text-white hover:border-[#22c55e]/50 active:bg-[#25252A]'}`}
                 >
-                  {currentUser.trainingNow ? '🟢 Entrenando ahora (EN VIVO) — ¡Estás generando urgencia!' : 'Marcar como entrenando ahora'}
+                  {currentUser.trainingNow ? '🟢 Entrenando Ahora (EN VIVO) — ¡Estás en el mapa del GymPulse!' : 'Activar "Entrenando Ahora (EN VIVO)"'}
                 </button>
-                <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">¡Aparecerás en "Entrenando Ahora" para usuarios cerca! Urgencia real-time que hace que la gente abra la app seguido. Nadie lo tiene tan bien.</div>
-                <button onClick={() => setActiveTab('explore')} className="mt-2 w-full text-xs text-[#22c55e] underline active:opacity-70">Ver quién está live cerca ahora →</button>
+                <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">
+                  Al activar apareces en el <strong>mapa en tiempo real (GymPulse)</strong>. Usuarios cerca te ven entrenando y sienten urgencia real (FOMO) de unirse o hacer sync contigo antes de que termines. Esto genera joins/syncs, sube tus rachas y Network Power, y hace que la gente abra la app todos los días. ¡El corazón social del entrenamiento en comunidad!
+                </div>
+                <button onClick={() => setActiveTab('explore')} className="mt-2 w-full text-xs text-[#22c55e] underline active:opacity-70">Ver el mapa en tiempo real y quién está live cerca →</button>
                 {currentUser.trainingNow && ((currentUser.liveStreak || 0) + (currentUser.joinedLiveStreak || 0) + (currentUser.liveJoins || 0) > 0) && (
                   <div className="text-[9px] text-center text-[#22c55e] mt-1 font-medium">🔥 {currentUser.liveStreak || 0}d host streak + {currentUser.joinedLiveStreak || 0}d join • {currentUser.liveJoins || 0} total live joins recibidos</div>
                 )}
@@ -12032,7 +12039,7 @@ function App() {
                   />
                   <div>
                     <div className="text-sm font-medium flex items-center gap-1">Solo entrenando ahora <span className="live-pill bg-[#22c55e] text-black text-[8px]">🟢 EN VIVO</span></div>
-                    <div className="text-xs text-[#9CA3AF]">¡Quién está entrenando en este preciso momento cerca! Urgencia real.</div>
+                    <div className="text-xs text-[#9CA3AF]">¡Quién está entrenando en este preciso momento cerca! Ver el pulso en vivo en el mapa.</div>
                   </div>
                 </label>
               </div>

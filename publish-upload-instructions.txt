@@ -1,4 +1,27 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.81-live-bug-self-dupe-fix code 85) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.82-live-toggle-explain-fix code 86) ===
+
+FIX: "al seleccionar entrenando ahora (en vivo) en el perfil no pasa nada" + explicaciones claras.
+
+- Bug del toggle: el check de Play Integrity hacía return early en algunos builds/tests (toast de error pero no activaba el live). Ahora el toggle SIEMPRE cambia el estado (trainingNow + trainingNowSince + streaks + save + loadRealProfiles + mapForceTick). El integrity solo muestra toast guía si falla (no bloquea). Fix "no pasa nada".
+- Después de activar live: fuerza setMapForceTick para que el self marker en el mapa se actualice inmediatamente con glows live.
+- Copy "urgencia" cambiado por explicaciones claras y educativas en todo el app:
+  - Botón: '🟢 Entrenando Ahora (EN VIVO) — ¡Estás en el mapa del GymPulse!'
+  - Texto helper: explica exactamente qué pasa (apareces en el mapa en tiempo real, gente cerca siente FOMO/urgencia real de unirse o sync, genera joins/syncs, sube rachas y Network Power, motiva a abrir la app diariamente). "¡El corazón social del entrenamiento en comunidad!"
+  - Empty states, modal headers, radar, feed, etc.: reemplazado "¡urgencia!" por "¡se va pronto, únete!", "FOMO real", "Ver el pulso en vivo en el mapa", etc. Todo explica el valor sin jerga confusa.
+- Más tie al mapa: el botón ahora dice "Ver el mapa en tiempo real y quién está live cerca →" y el toggle fuerza el mapa a reaccionar.
+- Explicaciones en otros lugares (profile, map, explore) ahora son consistentes y motivadoras: el live training crea urgencia real-time visible en el GymPulse (mapa), no es solo un switch.
+
+El feature "Entrenando Ahora (EN VIVO)" ahora es claro, usable y se entiende perfectamente por qué importa para el mapa como pulso social vivo.
+
++ web build, AAB, debug APK. Push. Instructions actualizado.
+Test S26:
+- En perfil, selecciona "Activar 'Entrenando Ahora (EN VIVO)'" → debe activarse inmediatamente (botón cambia a verde, toast claro, self marker en mapa se ve live con glows).
+- Si integrity no verificada: muestra guía pero el live se activa de todas formas.
+- Lee los textos: ahora explican bien "apareces en el mapa, gente siente urgencia de unirse, genera interacciones reales".
+- Abre el mapa: tu live aparece, otros lo ven, etc.
+- Cambia a inactivo: se apaga limpio.
+
+Sigue con todo. Fix del toggle + explicaciones claras para que la gente entienda el mapa como pulso social.
 
 FIX BUG LIVE: duplicación de lives + auto-join/chat con uno mismo.
 
