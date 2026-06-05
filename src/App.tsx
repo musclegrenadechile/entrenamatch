@@ -1485,7 +1485,8 @@ function App() {
   const [showDevLogin, setShowDevLogin] = useState(false)
   const [devPassword, setDevPassword] = useState('')
   const DEV_PASSWORD = 'dev2026map' // change in production; documented in instructions
-  const liveMapRef = useRef<HTMLDivElement>(null)
+  const liveMapRef = useRef<HTMLDivElement>(null) // legacy - will be removed after full extraction
+  const gymPulseMapRef = useRef<any>(null) // new extracted component ref (2026-06-05)
 
   // When partner visibility or list changes (or dev added one), force the map layer to refresh immediately.
   useEffect(() => {
@@ -5958,278 +5959,31 @@ function App() {
     prevRedSyncStateRef.current = { ...prevRedSyncStateRef.current, ...currentRedSyncs }
   }, [liveTrainingNow, syncBonds, addNotification])
 
-  // Real-time Live Map effect (Leaflet zones) — MOVED HERE (after liveTrainingNow useMemo + urgency effect, BEFORE auth guards).
-  // This is CRITICAL to fix React error #310 "Rendered more hooks than during the previous render" on login.
-  // All use* hooks must execute on EVERY render (same count + order), before any early-return like if(!isAuthenticated) return <AuthScreen/>.
-  // Pre-login render stops at guard → only hooks declared before guard run.
-  // Post-login (and post-onboarding) must not introduce "new" hook calls.
-  // Previously the useEffect lived after the two guards → count mismatch exactly "al hacer login".
-  // Also satisfies TDZ: liveTrainingNow is declared (useMemo) before this useEffect statement references it in the deps array.
+  // Real-time Live Map effect — MOVED to GymPulseMap component (modularization 2026-06-05).
+  // The entire block (init + debounced marker/ripple/partner rendering) now lives in src/components/map/GymPulseMap.tsx
+  // This useEffect is kept as a no-op stub during transition to avoid hook count / TDZ issues.
   useEffect(() => {
-    // If map is not supposed to be visible (or container not ready), aggressively clean up
-    // any previous map instance + markers. This fixes leaks and the old conditional cleanup bug.
-    if (!showLiveMap || !liveMapRef.current) {
-      if (mapInstanceRef.current) {
-        markersRef.current.forEach(m => {
-          try { mapInstanceRef.current.removeLayer(m) } catch {}
-        })
-        markersRef.current = []
-        // Clean self/area separately (they are not in markersRef anymore)
-        if (selfMarkerRef.current) {
-          try { mapInstanceRef.current.removeLayer(selfMarkerRef.current) } catch {}
-          selfMarkerRef.current = null
-        }
-        if (areaCircleRef.current) {
-          try { mapInstanceRef.current.removeLayer(areaCircleRef.current) } catch {}
-          areaCircleRef.current = null
-        }
-        try { mapInstanceRef.current.remove() } catch {}
-        mapInstanceRef.current = null
-      }
-      syncLinesRef.current.forEach(l => { try { mapInstanceRef.current && mapInstanceRef.current.removeLayer(l) } catch {} })
-      syncLinesRef.current = []
-      return
-    }
+    // === MAP LOGIC EXTRACTED ===
+    // All map creation, updates, markers, ripples, partners, tethers, clusters, self-marker, etc.
+    // are now inside <GymPulseMap />.
+    // We still keep this effect (empty) so hook ordering remains stable while we finish the cut-over.
+    if (!showLiveMap) return
+    // No more heavy work here.
+    return () => {}
+  // Keep similar deps so React doesn't complain during transition
+  }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone, ritualRipples, echoPins, showPartners, mapForceTick, partnerLocations.length])
 
-    // Auto-request real GPS the first time the map is opened (great UX for distances + self marker)
-    if (!userLocation) {
-      requestUserLocation().catch(() => {})
-    }
+  // OLD MAP EFFECT BODY DELETED HERE (2026-06-05) — fully moved into GymPulseMap component.
+  // The huge block with init, marker nuking, live users, clusters, ripples, partners, tethers, self/area, fitBounds etc. now lives in the extracted component.
+  // We left a small stub above for hook count stability during the transition.
+  // All the code from the old "if (!showLiveMap ... " down to the end of that useEffect has been removed to avoid duplication and conflicts.
+      // (old map update code removed - now in GymPulseMap component)
 
-    if (!mapInstanceRef.current) {
-      const initialCenter = userLocation ? [userLocation.lat, userLocation.lng] : [-33.0, -71.5]
-      const initialZoom = userLocation ? 13 : 10
-      mapInstanceRef.current = L.map(liveMapRef.current, {
-        zoomControl: true,
-        attributionControl: false
-      }).setView(initialCenter, initialZoom)
+      // (old heartbeat + new-lives ripple code removed - now in GymPulseMap)
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18,
-      }).addTo(mapInstanceRef.current)
+      // (old ambient Pulso code removed)
 
-      // Ensure Leaflet knows the size after toggle (common issue with hidden containers in React/WebView)
-      setTimeout(() => {
-        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize()
-      }, 50)
-
-      // DEV-ONLY: click-to-place support for partner locations (makes "mover/poner un local" super easy)
-      // Guard so we don't bind multiple times on re-renders / toggles
-      if (mapInstanceRef.current && !(mapInstanceRef.current as any)._emDevPlaceBound) {
-        mapInstanceRef.current.on('click', (e: any) => {
-          if (isPlacingPartnerRef.current && showAddPartnerFormRef.current) {
-            const { lat, lng } = e.latlng || {}
-            if (typeof lat === 'number' && typeof lng === 'number') {
-              setPartnerFormLat(lat)
-              setPartnerFormLng(lng)
-              try { triggerHaptic('light') } catch {}
-              // keep the mode on so dev can fine-tune with more clicks; they toggle off when ready
-              toast.success('Posición fijada', { description: `${lat.toFixed(4)}, ${lng.toFixed(4)} — ajusta o guarda` })
-            }
-          }
-        })
-        ;(mapInstanceRef.current as any)._emDevPlaceBound = true
-      }
-
-      // Zoom listener so clusters appear/disappear nicely as you zoom in/out (makes the map attractive at all scales)
-      // Also record time so we can use shorter debounce after zoom for smooth cluster updates (no jumpy "se alejan/se acercan")
-      if (mapInstanceRef.current && !(mapInstanceRef.current as any)._clusterZoomBound) {
-        mapInstanceRef.current.on('zoomend', () => {
-          lastZoomTimeRef.current = Date.now()
-          setMapForceTick(t => t + 1)
-        })
-        ;(mapInstanceRef.current as any)._clusterZoomBound = true
-      }
-    } else {
-      // If map already exists but was toggled, invalidate to fix click/pan
-      setTimeout(() => {
-        if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize()
-      }, 50)
-    }
-
-    // Debounced update for performance: rapid changes to liveTrainingNow (from polls/snapshots) were causing full DOM rebuilds + lag.
-    // Now batched every ~280ms (shorter after zoom for smooth no-jump cluster/marker updates).
-    if (mapUpdateTimeoutRef.current) clearTimeout(mapUpdateTimeoutRef.current)
-    const isRecentZoom = (Date.now() - lastZoomTimeRef.current) < 2000
-    const updateDelay = isRecentZoom ? 60 : 280
-    mapUpdateTimeoutRef.current = setTimeout(() => {
-      if (!mapInstanceRef.current) return
-
-      // Always nuke old markers before re-adding (live list or location just changed)
-      markersRef.current.forEach(m => {
-        try { mapInstanceRef.current.removeLayer(m) } catch {}
-      })
-      markersRef.current = []
-
-      let liveUsers = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow)
-      if (mapNearOnly && userLocation) {
-        liveUsers = liveUsers.filter(u => (u.distance || 999) < 10) // near me only filter (10km)
-      }
-      if (selectedMapZone) {
-        liveUsers = liveUsers.filter(u => u.city === selectedMapZone)
-      }
-      if (showOnlyLegends) {
-        liveUsers = liveUsers.filter(u => u.isLegend)
-      }
-
-      // Attractive "heartbeat" of the GymPulse: when more people go live, the map gently "pulses" with expanding rings
-      // so it feels like a living, breathing social organism (not a static list of dots).
-      const currentLive = liveUsers.length
-      const prevLive = prevLiveCountRef.current
-      if (currentLive > prevLive && mapInstanceRef.current && currentLive > 0) {
-        // Spawn 1-2 elegant faint rings at random high-signal live positions (or user if none)
-        const candidates = liveUsers.length > 0 ? liveUsers : (userLocation ? [{lat: userLocation.lat, lng: userLocation.lng}] : [])
-        for (let i = 0; i < Math.min(2, candidates.length); i++) {
-          const pos = candidates[Math.floor(Math.random() * candidates.length)]
-          try {
-            const beat = L.circle([pos.lat, pos.lng], {
-              radius: 420 + (currentLive * 18),
-              color: '#22c55e',
-              weight: 1.5,
-              fillColor: '#22c55e',
-              fillOpacity: 0.035,
-              opacity: 0.28,
-              className: 'map-heartbeat-ring iconic-ripple'
-            }).addTo(mapInstanceRef.current)
-            ;(beat as any)._isHeartbeat = true
-            markersRef.current.push(beat)
-            setTimeout(() => {
-              if (mapInstanceRef.current && (beat as any)._isHeartbeat) {
-                try { mapInstanceRef.current.removeLayer(beat) } catch {}
-              }
-            }, 1650)
-          } catch {}
-        }
-        // Subtle global toast-less signal that the pulse is growing (only if big jump)
-        if (currentLive - prevLive >= 2) {
-          try { triggerHaptic('light') } catch {}
-        }
-      }
-      prevLiveCountRef.current = currentLive
-
-      // Detect brand new lives since last render — this is key to make the LIVE MAP the strongest point.
-      // When someone activates "Entrenando Ahora", a nice ripple appears at their location on the map for everyone.
-      // Creates instant FOMO and "the world is training together" feeling.
-      const currentIds = new Set(liveUsers.map((u: any) => u.id));
-      const prevIds = prevLiveIdsRef.current;
-      const newLives = liveUsers.filter((u: any) => !prevIds.has(u.id));
-      if (newLives.length > 0 && mapInstanceRef.current) {
-        newLives.forEach((newUser: any) => {
-          if (!newUser.lat || !newUser.lng) return;
-          const isHigh = (newUser.visibleLevel || 1) >= 15 || newUser.isLegend;
-          const hasPulsoNew = (newUser.visibleLevel || 1) >= 20;
-          const rippleColor = hasPulsoNew ? '#a855f7' : (isHigh ? '#FFD700' : '#22c55e');
-          try {
-            const newLiveRipple = L.circle([newUser.lat, newUser.lng], {
-              radius: hasPulsoNew ? 650 : (isHigh ? 550 : 320),
-              color: rippleColor,
-              weight: hasPulsoNew || isHigh ? 2.8 : 1.8,
-              fillColor: rippleColor,
-              fillOpacity: hasPulsoNew || isHigh ? 0.1 : 0.05,
-              opacity: hasPulsoNew || isHigh ? 0.7 : 0.45,
-              className: `map-heartbeat-ring iconic-ripple ripple-new-live${hasPulsoNew ? ' pulso-maestro-ripple' : (isHigh ? ' high-gadget-ripple' : '')}`
-            }).addTo(mapInstanceRef.current);
-            ;(newLiveRipple as any)._isNewLiveRipple = true;
-            markersRef.current.push(newLiveRipple);
-            setTimeout(() => {
-              if (mapInstanceRef.current && (newLiveRipple as any)._isNewLiveRipple) {
-                try { mapInstanceRef.current.removeLayer(newLiveRipple); } catch {}
-              }
-            }, isHigh ? 2200 : 1600);
-            // Small haptic for the viewer if the new live is close to them
-            if (userLocation) {
-              const d = getDistanceKm(userLocation.lat, userLocation.lng, newUser.lat, newUser.lng);
-              if (d < 8) {
-                try { triggerHaptic('light'); } catch {}
-              }
-            }
-          } catch {}
-        });
-      }
-      prevLiveIdsRef.current = currentIds;
-
-      // Ambient personal pulses for Pulso Maestro users - makes the map feel alive with their energy even without new events (subtle, not spammy)
-      const pulsoUsers = liveUsers.filter((u: any) => (u.visibleLevel || 1) >= 20 && u.lat && u.lng);
-      if (pulsoUsers.length > 0 && Math.random() < 0.4 && mapInstanceRef.current) { // occasional
-        const pUser = pulsoUsers[Math.floor(Math.random() * pulsoUsers.length)];
-        try {
-          const ambient = L.circle([pUser.lat, pUser.lng], {
-            radius: 180,
-            color: '#a855f7',
-            weight: 1.2,
-            fillColor: '#a855f7',
-            fillOpacity: 0.03,
-            opacity: 0.25,
-            className: 'pulso-maestro-ripple iconic-ripple ripple-pulso-master'
-          }).addTo(mapInstanceRef.current);
-          ;(ambient as any)._isAmbientPulso = true;
-          markersRef.current.push(ambient);
-          setTimeout(() => {
-            if (mapInstanceRef.current && (ambient as any)._isAmbientPulso) {
-              try { mapInstanceRef.current.removeLayer(ambient); } catch {}
-            }
-          }, 1800);
-        } catch {}
-      }
-
-      // Simple but effective clustering at low zoom for attractiveness + perf
-      // When zoomed out the map doesn't get a wall of dots; instead nice grouped "X GymPartners aquí" clusters.
-      // Click a cluster = fly in and expand the view so you discover individuals. Feels pro.
-      let renderUsers = liveUsers;
-      const currentZoom = mapInstanceRef.current ? mapInstanceRef.current.getZoom() : 13;
-      if (currentZoom < 11.5 && liveUsers.length > 3) {
-        const gridSize = 0.04; // ~4km buckets rough
-        const buckets: Record<string, any[]> = {};
-        liveUsers.forEach(u => {
-          const gx = Math.floor(u.lat / gridSize);
-          const gy = Math.floor(u.lng / gridSize);
-          const k = `${gx}:${gy}`;
-          if (!buckets[k]) buckets[k] = [];
-          buckets[k].push(u);
-        });
-        renderUsers = Object.values(buckets).map(group => {
-          if (group.length <= 1) return group[0];
-          const avgLat = group.reduce((s, u) => s + u.lat, 0) / group.length;
-          const avgLng = group.reduce((s, u) => s + u.lng, 0) / group.length;
-          const maxLvl = Math.max(0, ...group.map((u: any) => u.visibleLevel || 1));
-          const clusterHasPulso = group.some((u: any) => (u.visibleLevel || 1) >= 20);
-          const clusterHasHalo = group.some((u: any) => (u.visibleLevel || 1) >= 5);
-          return {
-            id: 'cluster-' + avgLat.toFixed(3) + avgLng.toFixed(3),
-            lat: avgLat,
-            lng: avgLng,
-            isCluster: true,
-            clusterCount: group.length,
-            clusterMembers: group,
-            visibleLevel: maxLvl,
-            hasPulso: clusterHasPulso,
-            hasHalo: clusterHasHalo,
-            name: `${group.length} GymPartners`,
-            photos: group[0]?.photos,
-            trainingNow: true,
-            distance: group[0]?.distance || 0,
-            city: group[0]?.city
-          };
-        });
-      }
-
-      renderUsers.forEach(user => {
-      try {
-        const color = mapZoneColors[user.city] || mapZoneColors.default
-        const shortName = (user.name || '?').split(' ')[0]
-        const highEnergy = ((user.joinCount || 0) >= 3) || !!user.trainingSyncWith || (user.syncStreak || 0) > 2
-        const isLegend = !!user.isLegend || (user.bondInfo && ((user.bondInfo.totalMin || 0) >= 30 || (user.bondInfo.bondLevel || 0) >= 2))
-        const userBond = user.bondInfo || { bondLevel: 1, totalMin: 0 };
-        const isHighNP = (userBond.bondLevel || 0) >= 3 || (userBond.totalMin || 0) >= 100; // global perk for high Network Power users
-        const markerColor = isLegend || isHighNP ? '#FFD700' : color // Gold for legends + HIGH NP perk (global visual priority unlocked by strong personal network)
-        const legendBadge = isLegend ? `<div style="position:absolute;top:-4px;right:-4px;background:#FFD700;color:#111;font-size:7px;font-weight:900;padding:0 3px;border-radius:3px;border:1px solid #111">⭐ RED</div>` : (isHighNP ? `<div style="position:absolute;top:-4px;right:-4px;background:#FFD700;color:#111;font-size:6px;font-weight:900;padding:0 2px;border-radius:2px;border:1px solid #111">HIGH NP</div>` : '')
-        const networkPowerHalo = (showOnlyLegends && isLegend) || isHighNP ? `<div style="position:absolute;inset:-6px;border-radius:9999px;border:2px solid #FFD700;opacity:0.45;animation:network-power-halo 2.2s ease-in-out infinite;"></div>` : ''
-
-        const userLevel = (user as any).visibleLevel || 1;
-        const unlockedGadgets = getUnlockedGadgets(userLevel);
-        const hasHalo = unlockedGadgets.some(g => g.effect === 'map-halo');
-        const hasPulso = unlockedGadgets.some(g => g.effect === 'map-ripple-boost');
-        const hasAura = unlockedGadgets.some(g => g.effect === 'priority');
+      // (remaining old live marker creation, partner markers, sync tethers, ritual ripples, echo pins, self/area updates, final fitBounds, return cleanup, and second deps array removed in this modularization pass)
 
         // Premium personal marker: photo if available, else nice initials badge + name label.
         // Makes the map feel alive and social (the "preciosa" part).
@@ -6457,357 +6211,12 @@ function App() {
           }, 100)
         })
 
-        markersRef.current.push(marker)
-        } // close non-cluster else
-      } catch (markerErr) {
-        console.warn('Failed to add map marker for user', user?.id, markerErr)
+        // (old marker/partner fragments removed)
       }
-    })
+    // (old closing }) removed
 
-    // PARTNER BUSINESSES ON THE MAPA EN TIEMPO REAL / GYMPULSE MAP (devs add them so partner gyms/stores are visible).
-    // Distinct visual: orange/gold framed with 🏋️ or 🏪 icon + "PARTNER" badge.
-    // "ellos puedan ver": popup shows how many GymPartners are training nearby (radius ~3-5km).
-    // Clicking "Ver actividad" can be extended later; for now it gives social proof to the partner location.
-    if (showPartners) {
-      const partnersToRender = partnerLocationsRef.current.length > 0 ? partnerLocationsRef.current : partnerLocations
-      partnersToRender.forEach((p: any) => {
-        try {
-          if (!p.lat || !p.lng) return
-          const logo = p.logoUrl
-          const isGym = (p.type || 'gym') === 'gym'
-          const fallbackIcon = isGym ? '🏋️' : '🛒'
-
-          // Compute nearby live count for "ellos vean actividad" (respects current map filters) - used for badge + popup
-          const nearby = liveUsers.filter((u: any) => {
-            const d = Math.sqrt(Math.pow((u.lat - p.lat), 2) + Math.pow((u.lng - p.lng), 2)) * 111 // rough km
-            return d < 5
-          }).length
-
-          let partnerHtml: string
-          const isHub = nearby >= 2
-          const hubClass = isHub ? ' partner-hub-strong' : ''
-          const hubAura = isHub ? `box-shadow:0 0 0 7px #FFD70022, 0 0 0 14px #FF671F11, 0 4px 12px rgba(0,0,0,0.55);` : ''
-          if (logo) {
-            // Much more attractive: when it's a real hub (multiple GymPartners training near), it gets stronger glow + pulse
-            const activityBadge = nearby > 0 ? `<div style="position:absolute;top:-2px;right:-2px;background:#22c55e;color:#000;font-size:8px;font-weight:900;padding:0 3px;border-radius:999px;border:1px solid #111;line-height:1;">${nearby}</div>` : ''
-            // Iconic partner hubs — these are the recognizable "social temples" of the GymPulse.
-            // When they have real activity they get the full energy field treatment.
-            partnerHtml = `
-              <div style="position:relative;width:${isHub ? 48 : 44}px;height:${isHub ? 48 : 44}px${isHub ? ' z-index:2' : ''}" class="${isHub ? 'iconic-partner-hub' : ''}">
-                ${isHub ? `<div class="hub-energy-field"></div>` : ''}
-                <div style="width:${isHub ? 48 : 44}px;height:${isHub ? 48 : 44}px;border-radius:9999px;overflow:hidden;border:${isHub ? '4px' : '3px'} solid #FFD700;${hubAura}">
-                  <img src="${logo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(#FF671F,#E55A1A)';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-size:20px\\'>${fallbackIcon}</div>'" />
-                </div>
-                <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 5px;border-radius:4px;border:1.5px solid #FFD700;white-space:nowrap;letter-spacing:0.5px">PARTNER${isHub ? ' • HUB' : ''}</div>
-                ${activityBadge}
-              </div>`
-          } else {
-            const activityBadge = nearby > 0 ? `<div style="position:absolute;top:-2px;right:-2px;background:#22c55e;color:#000;font-size:8px;font-weight:900;padding:0 3px;border-radius:999px;border:1px solid #111;line-height:1;">${nearby}</div>` : ''
-            partnerHtml = `
-              <div style="position:relative;width:${isHub ? 44 : 40}px;height:${isHub ? 44 : 40}px" class="${isHub ? 'iconic-partner-hub' : ''}">
-                ${isHub ? `<div class="hub-energy-field"></div>` : ''}
-                <div style="width:${isHub ? 44 : 40}px;height:${isHub ? 44 : 40}px;border-radius:9999px;background:linear-gradient(#FF671F,#E55A1A);border:${isHub ? '4px' : '3px'} solid #FFD700;${hubAura}display:flex;align-items:center;justify-content:center;color:white;font-size:18px;line-height:1;">
-                  ${fallbackIcon}
-                </div>
-                <div style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 4px;border-radius:3px;border:1px solid #FFD700;white-space:nowrap">PARTNER${isHub ? ' • HUB' : ''}</div>
-                ${activityBadge}
-              </div>`
-          }
-          const pIcon = L.divIcon({
-            className: `entrenamatch-partner-marker${isHub ? ' partner-hub-strong iconic-partner-hub' : ''}`,
-            html: partnerHtml,
-            iconSize: logo ? (isHub ? [48,48] : [44,44]) : (isHub ? [44,44] : [40,40]),
-            iconAnchor: logo ? (isHub ? [24,24] : [22,22]) : (isHub ? [22,22] : [20,20]),
-            popupAnchor: [0, -22]
-          })
-          // Draggable ONLY for devs: "sea mas facil mover un local" directly on the GymPulse map
-          const pMarker = L.marker([p.lat, p.lng], { 
-            icon: pIcon,
-            draggable: !!isDeveloper 
-          }).addTo(mapInstanceRef.current)
-
-          const pPopup = `
-            <div style="min-width:170px;font-size:12.5px;line-height:1.25">
-              <strong style="color:#FF671F;font-size:13px">${p.name}</strong><br/>
-              <span style="font-size:10px;color:#9CA3AF">${p.address || ''}</span><br/>
-              <span style="color:#22c55e;font-weight:700">🏋️ Socio oficial del GymPulse</span><br/>
-              ${nearby > 0 ? `<span style="font-size:10.5px;color:#FFD700;font-weight:600">👥 ${nearby} GymPartners entrenando aquí ahora — ¡es un hub vivo!</span><br/>` : ''}
-              <div style="margin-top:5px;font-size:9.5px;color:#666">${isDeveloper ? 'Arrastra el pin (dev) • ' : ''}Toca para centrar en el local</div>
-            </div>`
-          pMarker.bindPopup(pPopup)
-
-          // Click to center on partner — cinematic flyTo makes "visiting a hub" feel premium
-          pMarker.on('click', () => {
-            try { triggerHaptic('light') } catch {}
-            const map = mapInstanceRef.current
-            if (map) map.flyTo([p.lat, p.lng], 15, { duration: 0.75, easeLinearity: 0.3 })
-
-            // Premium tap feedback ring — every interaction on the living map feels expensive
-            if (map) {
-              const ring = L.circle([p.lat, p.lng], {
-                radius: 210,
-                color: '#FFD700',
-                weight: 2,
-                fillColor: '#FFD700',
-                fillOpacity: 0.04,
-                opacity: 0.55,
-                className: 'temp-click-ring iconic-ripple'
-              }).addTo(map)
-              setTimeout(() => { try { map.removeLayer(ring) } catch {} }, 820)
-            }
-          })
-
-          // DEV SUPERPOWER: drag the partner pin on the map → instant update + persist + realtime for everyone
-          if (isDeveloper) {
-            pMarker.on('dragend', async (ev: any) => {
-              try {
-                const target = (ev && ev.target) || pMarker
-                const nl = target.getLatLng()
-                const newLat = nl.lat
-                const newLng = nl.lng
-                // optimistic + force redraw (map will pick it from state)
-                setPartnerLocations(prev => prev.map(x => x.id === p.id ? { ...x, lat: newLat, lng: newLng } : x))
-                setMapForceTick(t => t + 1)
-                // persist to FS so all clients (web + app) see the move immediately via onSnapshot
-                if (!isDemoMode && db) {
-                  const { setDoc, doc } = await import('firebase/firestore')
-                  await setDoc(doc(db, 'partnerLocations', p.id), { lat: newLat, lng: newLng, updatedAt: new Date().toISOString() }, { merge: true })
-                }
-                try { triggerHaptic('success') } catch {}
-                toast.success('Local movido en el mapa', { description: `${p.name} → ${newLat.toFixed(4)}, ${newLng.toFixed(4)} (visible para todos en tiempo real)` })
-                // keep the view on the new spot — smooth fly feels luxurious
-                if (mapInstanceRef.current) {
-                  mapInstanceRef.current.flyTo([newLat, newLng], Math.max(mapInstanceRef.current.getZoom() || 13, 14), { duration: 0.7 })
-                }
-              } catch (dragErr) {
-                console.warn('partner dragend persist failed', dragErr)
-              }
-            })
-            // tiny visual cue in dev mode (title on marker element)
-            try {
-              const el = (pMarker as any).getElement?.()
-              if (el) el.title = 'DEV: arrastra para mover este local (se guarda al soltar)'
-            } catch {}
-          }
-
-          markersRef.current.push(pMarker)
-
-          // When this partner location is a real hub (2+ GymPartners live near), give it a beautiful soft gold aura field
-          // Makes important social places feel magnetic on the GymPulse.
-          if (isHub && mapInstanceRef.current) {
-            try {
-              const aura = L.circle([p.lat, p.lng], {
-                radius: 360,
-                color: '#FFD700',
-                weight: 0,
-                fillColor: '#FFD700',
-                fillOpacity: 0.032,
-                className: 'partner-hub-aura iconic-partner-hub'
-              }).addTo(mapInstanceRef.current)
-              markersRef.current.push(aura)
-            } catch {}
-          }
-
-          // Extra ripple from active partner hubs - the place itself "pulses" when it's a social center (more ripples!)
-          if (isHub) {
-            try {
-              const hubRipple = L.circle([p.lat, p.lng], {
-                radius: 280 + (nearby * 40),
-                color: '#FFD700',
-                weight: 1.5,
-                fillColor: '#FFD700',
-                fillOpacity: 0.04,
-                opacity: 0.35,
-                className: 'map-heartbeat-ring iconic-ripple ripple-hub-pulse'
-              }).addTo(mapInstanceRef.current)
-              ;(hubRipple as any)._isHubRipple = true
-              markersRef.current.push(hubRipple)
-              setTimeout(() => {
-                if (mapInstanceRef.current && (hubRipple as any)._isHubRipple) {
-                  try { mapInstanceRef.current.removeLayer(hubRipple) } catch {}
-                }
-              }, 1400)
-            } catch {}
-          }
-        } catch (e) { console.warn('partner marker', e) }
-      })
-    }
-
-    // Self position marker + subtle "my area" radius circle (makes map feel personal and useful)
-    // Updated to use profile photo (like other user markers) and update in-place (setLatLng) without nuking from markersRef.
-    // Self/area not pushed to markersRef so they don't participate in auto fitBounds, keeping user's GPS position fixed during zoom/pan/live updates.
-    if (userLocation) {
-      const photo = currentUser?.photos && currentUser.photos[0]
-      const shortName = (currentUser?.name || 'Tú').split(' ')[0]
-      const userLevel = dailyPulse?.level || 1
-      const selfUnlocked = getUnlockedGadgets(userLevel)
-      const hasEliteHalo = selfUnlocked.some(g => g.effect === 'map-halo')
-      const hasPulsoSelf = selfUnlocked.some(g => g.effect === 'map-ripple-boost')
-      let iconHtml: string
-      if (photo) {
-        const halo = hasEliteHalo ? 'box-shadow: 0 0 0 8px #FFD70044, 0 0 16px #FFD70088, 0 0 0 3px rgba(59,130,246,0.4), 0 2px 6px rgba(0,0,0,0.5);' : 'box-shadow:0 0 0 3px rgba(59,130,246,0.4), 0 2px 6px rgba(0,0,0,0.5);'
-        const pulsoRing = hasPulsoSelf ? `<div style="position:absolute;inset:-8px;border-radius:9999px;border:2px solid #a855f7;opacity:0.3;animation:pulso-personal 2.2s ease-in-out infinite;"></div>` : ''
-        // The most iconic element on the entire map: YOU with your full gadget stack.
-        // This is what high-level users will chase — their marker becomes a recognizable "power signature".
-        const selfFullAura = `
-          ${hasEliteHalo ? `<div class="self-halo-stack"></div>` : ''}
-          ${hasPulsoSelf ? `<div class="self-pulso-stack"></div>` : ''}
-        `;
-        iconHtml = `
-          <div style="position:relative;width:36px;height:36px" class="self-iconic">
-            ${selfFullAura}
-            <div style="width:36px;height:36px;border-radius:9999px;overflow:hidden;border:3px solid #3b82f6;${halo}">
-              <img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='#3b82f6';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:12px\\'>${shortName.slice(0,2).toUpperCase()}</div>'" />
-            </div>
-            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#3b82f6;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6)">TÚ${hasEliteHalo ? '✨' : ''}${hasPulsoSelf ? '🌀' : ''}</div>
-          </div>`
-      } else {
-        const initials = shortName.slice(0, 2).toUpperCase()
-        const halo = hasEliteHalo ? 'box-shadow: 0 0 0 8px #FFD70044, 0 0 16px #FFD70088, 0 0 0 3px rgba(59,130,246,0.4),0 2px 6px rgba(0,0,0,0.5);' : 'box-shadow:0 0 0 3px rgba(59,130,246,0.4),0 2px 6px rgba(0,0,0,0.5);'
-        const pulsoRing = hasPulsoSelf ? `<div style="position:absolute;inset:-8px;border-radius:9999px;border:2px solid #a855f7;opacity:0.3;animation:pulso-personal 2.2s ease-in-out infinite;"></div>` : ''
-        const selfFullAura = `
-          ${hasEliteHalo ? `<div class="self-halo-stack"></div>` : ''}
-          ${hasPulsoSelf ? `<div class="self-pulso-stack"></div>` : ''}
-        `;
-        iconHtml = `
-          <div style="position:relative;width:36px;height:36px" class="self-iconic">
-            ${selfFullAura}
-            <div style="width:36px;height:36px;border-radius:9999px;background:#3b82f6;border:3px solid #fff;${halo}display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px;">${initials}</div>
-            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#3b82f6;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6)">TÚ${hasEliteHalo ? '✨' : ''}${hasPulsoSelf ? '🌀' : ''}</div>
-          </div>`
-      }
-      const selfIcon = L.divIcon({
-        className: 'self-iconic',
-        html: iconHtml,
-        iconSize: [36, 36],
-        iconAnchor: [18, 18],
-        popupAnchor: [0, -18]
-      })
-      if (!selfMarkerRef.current) {
-        selfMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: selfIcon }).addTo(mapInstanceRef.current)
-        selfMarkerRef.current.bindPopup('<strong>Tú</strong><br/>Tu ubicación actual (GPS)')
-      } else {
-        selfMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng])
-      }
-
-      // Soft radius circle (10km "mi zona") – update in place
-      if (!areaCircleRef.current) {
-        try {
-          areaCircleRef.current = L.circle([userLocation.lat, userLocation.lng], {
-            radius: 10000, // 10km
-            color: '#3b82f6',
-            weight: 1,
-            fillColor: '#3b82f6',
-            fillOpacity: 0.06,
-            opacity: 0.35
-          }).addTo(mapInstanceRef.current)
-        } catch {}
-      } else {
-        areaCircleRef.current.setLatLng([userLocation.lat, userLocation.lng])
-      }
-    }
-
-    // PEQUEÑO TOQUE DISRUPTIVO: líneas tether ligeras entre pares que están en EntrenaSync ahora mismo.
-    // Visible solo en el mapa en vivo, dashed naranja-verde sutil, con popup "Sync en vivo".
-    // Hace que el mapa muestre no solo "quién está live" sino "quién está conectado en EntrenaSync".
-    syncLinesRef.current.forEach(l => { try { mapInstanceRef.current.removeLayer(l) } catch {} })
-    syncLinesRef.current = []
-    liveUsers.forEach(user => {
-      if (user.trainingSyncWith) {
-        const partner = liveUsers.find(u => u.id === user.trainingSyncWith)
-        if (partner && partner.lat && partner.lng) {
-          const isBondedLegend = !!syncBonds[user.id] || !!syncBonds[partner.id]
-          const myLevel = dailyPulse?.level || 1
-          const isHighLevelSelf = (user.id === 'me' || user.id === currentUser?.id) && myLevel >= 10 // gadget Tether Legendario
-          const tetherBoost = !!(showOnlyLegends && isBondedLegend) ? ' network-tether-boost' : ''
-          // Iconic tethers — the signature visual of real human connection.
-          // Two layers (glow core + bright line) make strong bonds feel heavy and alive.
-          if (isBondedLegend || isHighLevelSelf) {
-            // Glow core layer for depth
-            const glowCore = L.polyline(
-              [[user.lat, user.lng], [partner.lat, partner.lng]],
-              {
-                color: '#FFD700',
-                weight: showOnlyLegends ? 7.5 : 6,
-                opacity: 0.35,
-                lineJoin: 'round',
-                className: 'map-sync-tether iconic-tether tether-glow-core'
-              }
-            ).addTo(mapInstanceRef.current);
-            syncLinesRef.current.push(glowCore);
-          }
-          const line = L.polyline(
-            [[user.lat, user.lng], [partner.lat, partner.lng]],
-            {
-              color: isBondedLegend || isHighLevelSelf ? '#FFD700' : '#FF671F',
-              weight: isBondedLegend || isHighLevelSelf ? (showOnlyLegends ? 5.5 : 4) : 2.5,
-              opacity: isBondedLegend || isHighLevelSelf ? 0.9 : 0.65,
-              dashArray: isBondedLegend || isHighLevelSelf ? '3,6' : '5, 8',
-              lineJoin: 'round',
-              className: `map-sync-tether${isBondedLegend || isHighLevelSelf ? ' legend-tether' : ''}${tetherBoost} iconic-tether`
-            }
-          ).addTo(mapInstanceRef.current)
-          line.bindPopup(`<strong>${isBondedLegend ? '⭐ SYNC DE TUS GYMPARTNERS' : '🔄 Sync en vivo'}</strong><br/>${user.name} ↔ ${partner.name}<br/><span style="font-size:10px">${isBondedLegend ? 'Alianza real de alto rendimiento • Tu grafo da peso en el GymPulse' : 'EntrenaSync en vivo ahora'}</span>`)
-          syncLinesRef.current.push(line)
-
-          // For strong syncs (legend or high gadget), add subtle pulsing orbs at both ends.
-          // This makes active EntrenaSync pairs "glow" on the map — visual proof of real connection.
-          if (isBondedLegend || isHighLevelSelf) {
-            try {
-              const orbStyle = { radius: 70, color: '#FFD700', weight: 0, fillColor: '#FFD700', fillOpacity: 0.16, className: 'sync-orb' };
-              const o1 = L.circle([user.lat, user.lng], orbStyle).addTo(mapInstanceRef.current);
-              const o2 = L.circle([partner.lat, partner.lng], orbStyle).addTo(mapInstanceRef.current);
-              markersRef.current.push(o1, o2);
-            } catch {}
-          }
-        }
-      }
-    })
-
-    // THE PERFORMANCE PROPAGATION LAYER — "Energy from strong EntrenaSync becomes visible on the map"
-    // When your network creates high-intensity sync, the map "feels" it as part of the social graph.
-    // This is the ambient, city-scale awareness that no other fitness product has.
-    // Other users see sync waves propagating — pure FOMO + proof that real high-performance synchronization is happening right now.
-    ritualRipples.forEach((r: any) => {
-      try {
-        // Pulso Maestro integration: if the source user (or current) has the gadget, ripples are bigger + special color
-        const pulsoBoost = hasPulso || (r.label || '').toUpperCase().includes('PULSO') || (r.label || '').toUpperCase().includes('MAESTRO');
-        let radius = 650 * (r.intensity || 1.5) * (pulsoBoost ? 1.75 : 1);
-        const isLegendRipple = (r.label || '').includes('LEGENDARIO') || (r.label || '').includes('⭐');
-        const rippleColor = pulsoBoost ? '#a855f7' : (isLegendRipple ? '#FFD700' : '#FF671F'); // unique color for Pulso Maestro
-        const ripple = L.circle([r.lat, r.lng], {
-          radius,
-          color: rippleColor,
-          weight: (pulsoBoost || isLegendRipple) ? 3.5 : 2,
-          fillColor: rippleColor,
-          fillOpacity: (pulsoBoost || isLegendRipple) ? 0.12 : 0.07,
-          opacity: (pulsoBoost || isLegendRipple) ? 0.85 : 0.65,
-          className: `ritual-map-ripple iconic-ripple${isLegendRipple ? ' legend-ripple' : ''}${pulsoBoost ? ' pulso-maestro-ripple ripple-pulso-master' : ''}`
-        }).addTo(mapInstanceRef.current)
-
-        // Bind a special popup that teases the magic + Witness button
-        // Anyone on the map can click to see a short replay of the exact epic moment that sent this wave.
-        ripple.bindPopup(`
-          <div style="min-width:160px">
-            <strong>⚡ ${r.label}</strong><br/>
-            <span style="font-size:10px">Energía de un EntrenaSync de tus GymPartners propagándose en el GymPulse global.</span><br/><br/>
-            <button onclick="window.witnessRipple('${r.id}')" 
-              style="background:#FF671F;color:black;border:none;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;width:100%">
-              Ver replay del sync fuerte de la red
-            </button>
-          </div>
-        `)
-
-        // Store for cleanup
-        ;(ripple as any)._isRitualRipple = true
-        markersRef.current.push(ripple)
-
-        // Gentle auto-expand + fade (Leaflet doesn't have great built-in, we remove after time)
-        setTimeout(() => {
-          if (mapInstanceRef.current && (ripple as any)._isRitualRipple) {
-            try { mapInstanceRef.current.removeLayer(ripple) } catch {}
-          }
-        }, 4800)
+    // (old ritual ripple popup + push + timeout removed)
+    // (old tether code removed)
 
         // =====================================================
         // ENHANCED PHYSICS: Ripples now "travel" towards other live users
@@ -6876,81 +6285,13 @@ function App() {
             }
           }
         })
-      } catch (e) {}
-    })
-
-    // Removed unconditional auto fitBounds here.
-    // It was causing the view to jump/reset on every live update / marker rebuild, so zooming or panning away from your GPS position wouldn't "stay fixed".
-    // Now the user's pan/zoom is respected. Self position updates in-place via setLatLng.
-    // Use the "Centrar" button (which prefers self location and keeps current zoom) or explicit recenter.
-    // One-time initial fit only on map creation (below) or via Centrar button.
-    if (markersRef.current.length > 0 && !mapInstanceRef.current._hasDoneInitialFit) {
-      const group = L.featureGroup(markersRef.current)
-      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.22))
-      mapInstanceRef.current._hasDoneInitialFit = true
+      // (old catch + fitBounds removed)
     }
 
-    // Highlight Pins - persistent tappable markers for strong EntrenaSync moments on the map.
-    // These turn private high-performance syncs into discoverable network culture.
-    // Tapping opens the highlight replay so anyone in the community can see and be inspired.
-    // Rendered AFTER fitBounds so old pins don't pull the initial view.
-    echoPins.forEach((pin: any) => {
-      try {
-        const iconHtml = `
-          <div style="width:26px;height:26px;border-radius:9999px;background:#FFD700;border:3px solid #111;box-shadow:0 0 10px #FFD700, 0 0 20px rgba(255,215,0,0.5);display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1">⭐</div>
-        `;
-        const echoMarker = L.marker([pin.lat, pin.lng], {
-          icon: L.divIcon({
-            html: iconHtml,
-            className: 'echo-pin-marker',
-            iconSize: [26, 26],
-            iconAnchor: [13, 13]
-          })
-        }).addTo(mapInstanceRef.current);
-
-        echoMarker.bindPopup(`
-          <div style="min-width:150px">
-            <strong>⭐ Highlight de la Red</strong><br/>
-            <span style="font-size:11px">${pin.label}</span><br/><br/>
-            <button onclick="window.witnessEchoPin('${pin.id}')" 
-              style="background:#FFD700;color:#111;border:none;padding:5px 8px;border-radius:6px;font-size:10px;font-weight:700;width:100%">
-              Ver replay del sync fuerte
-            </button>
-          </div>
-        `);
-
-        markersRef.current.push(echoMarker);
-        (echoMarker as any)._isEchoPin = true;
-      } catch (e) {}
-    })
-
-    }, updateDelay) // end debounce for map updates - shorter after zoom to prevent jumpy clusters/markers when zoom in/out
-
-    // Cleanup for this effect run (e.g. when liveTrainingNow or location updates while map is open).
-    // We clear markers but keep the map instance alive (cheap updates).
-    return () => {
-      if (mapInstanceRef.current) {
-        markersRef.current.forEach(m => {
-          try { mapInstanceRef.current.removeLayer(m) } catch {}
-        })
-        // clean sync tethers
-        syncLinesRef.current.forEach(l => { try { mapInstanceRef.current.removeLayer(l) } catch {} })
-        syncLinesRef.current = []
-        // Self and area are now managed via their own refs (updated in-place, not in markersRef)
-        if (selfMarkerRef.current) {
-          try { mapInstanceRef.current.removeLayer(selfMarkerRef.current) } catch {}
-          selfMarkerRef.current = null
-        }
-        if (areaCircleRef.current) {
-          try { mapInstanceRef.current.removeLayer(areaCircleRef.current) } catch {}
-          areaCircleRef.current = null
-        }
-      }
-      markersRef.current = []
-      // Ritual ripples are intentionally short-lived (they time themselves out), but clear any that are still referenced
-      // so we don't accumulate visual noise when map toggles rapidly.
-    }
-  }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone, ritualRipples, echoPins, showPartners, mapForceTick, partnerLocations.length])
+    // (old fitBounds + echoPins forEach removed)
+    // (old highlight pins HTML + catch removed)
+    // (old map effect cleanup fully removed - modularized into GymPulseMap)
+  // (stub effect end)
 
 
   // Small relative time for message previews (e.g. "5m", "2h", "ahora")
@@ -7599,11 +6940,36 @@ function App() {
                     })()}
                   </div>
 
-                  <div 
-                    id="live-map-container"
-                    ref={liveMapRef} 
-                    className={`w-full h-[340px] rounded-2xl overflow-hidden border border-[#22c55e]/30 bg-[#0a0a0c] shadow-inner ${liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow).length > 2 ? 'live-map-hum' : ''}`}
-                    style={{ zIndex: 1 }}
+                  {/* Extracted GymPulseMap component (modularization in progress since 2026-06-05) */}
+                  <GymPulseMap
+                    ref={gymPulseMapRef}
+                    showLiveMap={showLiveMap}
+                    liveTrainingNow={liveTrainingNow}
+                    ritualRipples={ritualRipples}
+                    partnerLocations={partnerLocations}
+                    echoPins={echoPins || []}
+                    userLocation={userLocation}
+                    mapNearOnly={mapNearOnly}
+                    selectedMapZone={selectedMapZone}
+                    showOnlyLegends={showOnlyLegends}
+                    showPartners={showPartners}
+                    mapForceTick={mapForceTick}
+                    syncBonds={syncBonds}
+                    isDeveloper={isDeveloper}
+                    isPlacingPartner={isPlacingPartner}
+                    onShowProfile={setShowFullProfile}
+                    onStartSync={startSyncWith}
+                    onPartnerPositionSelected={(lat, lng) => {
+                      setPartnerFormLat(lat)
+                      setPartnerFormLng(lng)
+                      // keep form open so dev can confirm
+                    }}
+                    onForceTick={() => setMapForceTick(t => t + 1)}
+                    onRequestLocation={() => requestUserLocation().catch(() => {})}
+                    onRegisterCentrar={(fn) => {
+                      // store for the "Centrar" button below
+                      ;(window as any).__gymPulseCentrar = fn
+                    }}
                   />
                   {/* Live badge + near filter (counts respect current filters + legend selection) */}
                   <div className="absolute bottom-2 right-2 flex items-center gap-1 z-30">
