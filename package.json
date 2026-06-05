@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.72-levels-gadgets-retention",
+  "version": "0.1.73-map-dev-draggable-address",
   "type": "module",
   "scripts": {
     "dev": "vite",

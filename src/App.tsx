@@ -1463,9 +1463,17 @@ function App() {
   const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null)
   const [partnerFormName, setPartnerFormName] = useState('')
   const [partnerFormType, setPartnerFormType] = useState<'gym' | 'store' | 'studio'>('gym')
+  const [partnerFormLat, setPartnerFormLat] = useState(-33.02)
+  const [partnerFormLng, setPartnerFormLng] = useState(-71.55)
+  const [partnerFormAddress, setPartnerFormAddress] = useState('')
   const [partnerLogoFile, setPartnerLogoFile] = useState<File | null>(null)
   const [partnerLogoPreview, setPartnerLogoPreview] = useState<string | null>(null)
+  const [isPlacingPartner, setIsPlacingPartner] = useState(false) // for click-to-place in dev form
   const [mapForceTick, setMapForceTick] = useState(0) // tiny trigger so map re-renders when toggling partners layer
+
+  // Keep refs in sync for leaflet click handlers (closed over values would be stale)
+  useEffect(() => { isPlacingPartnerRef.current = isPlacingPartner }, [isPlacingPartner])
+  useEffect(() => { showAddPartnerFormRef.current = showAddPartnerForm }, [showAddPartnerForm])
   // Developer gate for partner management (only devs can add/edit partner locations on the map)
   const [isDeveloper, setIsDeveloper] = useState(() => {
     try { return localStorage.getItem('entrenamatch_dev_mode') === '1' } catch { return false }
@@ -1524,8 +1532,24 @@ function App() {
     setPartnerFormType('gym')
     setPartnerLogoFile(null)
     setPartnerLogoPreview(null)
+    setPartnerFormAddress('')
+    // default to current map center so "ponerlo correctamente" is instant
+    const map = mapInstanceRef.current
+    if (map) {
+      const c = map.getCenter()
+      setPartnerFormLat(c.lat)
+      setPartnerFormLng(c.lng)
+    } else if (userLocation) {
+      setPartnerFormLat(userLocation.lat)
+      setPartnerFormLng(userLocation.lng)
+    } else {
+      setPartnerFormLat(-33.02)
+      setPartnerFormLng(-71.55)
+    }
+    setIsPlacingPartner(false)
     setShowAddPartnerForm(true)
     setShowManagePartners(false)
+    setTimeout(() => { try { triggerHaptic('light') } catch {} }, 30)
   }
 
   const openManagePartners = () => {
@@ -1540,8 +1564,18 @@ function App() {
     setPartnerFormType((p.type as any) || 'gym')
     setPartnerLogoFile(null)
     setPartnerLogoPreview(p.logoUrl || null)
+    setPartnerFormLat(p.lat ?? -33.02)
+    setPartnerFormLng(p.lng ?? -71.55)
+    setPartnerFormAddress(p.address || '')
+    setIsPlacingPartner(false)
     setShowAddPartnerForm(true)
     setShowManagePartners(false)
+    // Fly map to it so dev sees exactly where it is and can fine-tune
+    setTimeout(() => {
+      if (mapInstanceRef.current && p.lat && p.lng) {
+        mapInstanceRef.current.setView([p.lat, p.lng], Math.max(mapInstanceRef.current.getZoom() || 13, 15))
+      }
+    }, 80)
   }
 
   const cancelPartnerForm = () => {
@@ -1552,6 +1586,10 @@ function App() {
       URL.revokeObjectURL(partnerLogoPreview)
     }
     setPartnerLogoPreview(null)
+    setPartnerFormAddress('')
+    setIsPlacingPartner(false)
+    setPartnerFormLat(-33.02)
+    setPartnerFormLng(-71.55)
   }
 
   const handlePartnerLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1613,6 +1651,9 @@ function App() {
   // and are not included in auto fitBounds. This keeps the view fixed on user's location during zoom/pan and live updates.
   const selfMarkerRef = useRef<any>(null)
   const areaCircleRef = useRef<any>(null)
+  // Refs for dev map placement UX (click-to-place partner without leaving map view). Always current even inside leaflet handlers.
+  const isPlacingPartnerRef = useRef(false)
+  const showAddPartnerFormRef = useRef(false)
 
   // Load partner locations: seeds (for immediate demo) + real Firestore (so devs can add persistent partners via the in-app tool).
   // This makes the "devs put businesses on the map" easy and real-time visible to all users in the GymPulse (mapa en tiempo real).
@@ -5927,6 +5968,24 @@ function App() {
       setTimeout(() => {
         if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize()
       }, 50)
+
+      // DEV-ONLY: click-to-place support for partner locations (makes "mover/poner un local" super easy)
+      // Guard so we don't bind multiple times on re-renders / toggles
+      if (mapInstanceRef.current && !(mapInstanceRef.current as any)._emDevPlaceBound) {
+        mapInstanceRef.current.on('click', (e: any) => {
+          if (isPlacingPartnerRef.current && showAddPartnerFormRef.current) {
+            const { lat, lng } = e.latlng || {}
+            if (typeof lat === 'number' && typeof lng === 'number') {
+              setPartnerFormLat(lat)
+              setPartnerFormLng(lng)
+              try { triggerHaptic('light') } catch {}
+              // keep the mode on so dev can fine-tune with more clicks; they toggle off when ready
+              toast.success('Posición fijada', { description: `${lat.toFixed(4)}, ${lng.toFixed(4)} — ajusta o guarda` })
+            }
+          }
+        })
+        ;(mapInstanceRef.current as any)._emDevPlaceBound = true
+      }
     } else {
       // If map already exists but was toggled, invalidate to fix click/pan
       setTimeout(() => {
@@ -6117,7 +6176,11 @@ function App() {
             iconAnchor: logo ? [22, 22] : [20, 20],
             popupAnchor: [0, -22]
           })
-          const pMarker = L.marker([p.lat, p.lng], { icon: pIcon }).addTo(mapInstanceRef.current)
+          // Draggable ONLY for devs: "sea mas facil mover un local" directly on the GymPulse map
+          const pMarker = L.marker([p.lat, p.lng], { 
+            icon: pIcon,
+            draggable: !!isDeveloper 
+          }).addTo(mapInstanceRef.current)
 
           const pPopup = `
             <div style="min-width:160px;font-size:12px">
@@ -6125,7 +6188,7 @@ function App() {
               <span style="font-size:10px;color:#9CA3AF">${p.address || ''}</span><br/>
               <span style="color:#22c55e;font-weight:600">🏋️ Socio oficial del GymPulse (mapa en tiempo real)</span><br/>
               ${nearby > 0 ? `<span style="font-size:10px">👥 ${nearby} GymPartners entrenando cerca ahora</span><br/>` : ''}
-              <div style="margin-top:6px;font-size:10px;color:#666">Toca para centrar en este local</div>
+              <div style="margin-top:6px;font-size:10px;color:#666">${isDeveloper ? 'Arrastra el pin (dev) para moverlo • ' : ''}Toca para centrar</div>
             </div>`
           pMarker.bindPopup(pPopup)
 
@@ -6135,6 +6198,39 @@ function App() {
             const map = mapInstanceRef.current
             if (map) map.setView([p.lat, p.lng], 15)
           })
+
+          // DEV SUPERPOWER: drag the partner pin on the map → instant update + persist + realtime for everyone
+          if (isDeveloper) {
+            pMarker.on('dragend', async (ev: any) => {
+              try {
+                const target = (ev && ev.target) || pMarker
+                const nl = target.getLatLng()
+                const newLat = nl.lat
+                const newLng = nl.lng
+                // optimistic + force redraw (map will pick it from state)
+                setPartnerLocations(prev => prev.map(x => x.id === p.id ? { ...x, lat: newLat, lng: newLng } : x))
+                setMapForceTick(t => t + 1)
+                // persist to FS so all clients (web + app) see the move immediately via onSnapshot
+                if (!isDemoMode && db) {
+                  const { setDoc, doc } = await import('firebase/firestore')
+                  await setDoc(doc(db, 'partnerLocations', p.id), { lat: newLat, lng: newLng, updatedAt: new Date().toISOString() }, { merge: true })
+                }
+                try { triggerHaptic('success') } catch {}
+                toast.success('Local movido en el mapa', { description: `${p.name} → ${newLat.toFixed(4)}, ${newLng.toFixed(4)} (visible para todos en tiempo real)` })
+                // keep the view on the new spot
+                if (mapInstanceRef.current) {
+                  mapInstanceRef.current.setView([newLat, newLng], Math.max(mapInstanceRef.current.getZoom() || 13, 14))
+                }
+              } catch (dragErr) {
+                console.warn('partner dragend persist failed', dragErr)
+              }
+            })
+            // tiny visual cue in dev mode (title on marker element)
+            try {
+              const el = (pMarker as any).getElement?.()
+              if (el) el.title = 'DEV: arrastra para mover este local (se guarda al soltar)'
+            } catch {}
+          }
 
           markersRef.current.push(pMarker)
         } catch (e) { console.warn('partner marker', e) }
@@ -7058,6 +7154,9 @@ function App() {
                   {showOnlyLegends && (
                     <div className="text-[7px] text-[#FFD700] px-1 mt-0.5">Tu Network Power activa — tus GymPartners destacan en el GymPulse</div>
                   )}
+                  {isDeveloper && showPartners && (
+                    <div className="text-[7px] text-[#FFD700]/80 px-1 mt-0.5">DEV: arrastra los pins dorados de PARTNERS para moverlos • "Poner aquí" o click-mapa en el formulario = colocación precisa con dirección</div>
+                  )}
 
                   {/* Centrar / recenter control - prefers self GPS location and keeps current zoom level so user stays "fijo donde estoy" */}
                   <button
@@ -7191,6 +7290,89 @@ function App() {
                           <option value="studio">Studio / Otro</option>
                         </select>
 
+                        {/* Address + precise lat/lng — makes "ponerlo correctamente con direccion" trivial for devs */}
+                        <div>
+                          <div className="text-[9px] text-[#9CA3AF] mb-0.5">Dirección / referencia (se muestra en popup del mapa)</div>
+                          <input 
+                            value={partnerFormAddress} 
+                            onChange={(e) => setPartnerFormAddress(e.target.value)} 
+                            placeholder="Ej: Av. Libertad 1234, Viña del Mar • cerca del mall" 
+                            className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded px-3 py-1 text-white text-xs outline-none focus:border-[#FF671F]" 
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <div className="text-[9px] text-[#9CA3AF] mb-0.5">Latitud</div>
+                            <input 
+                              type="number" step="0.0001" 
+                              value={partnerFormLat} 
+                              onChange={(e) => setPartnerFormLat(parseFloat(e.target.value) || -33.02)} 
+                              className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded px-2 py-1 text-white text-xs font-mono" 
+                            />
+                          </div>
+                          <div>
+                            <div className="text-[9px] text-[#9CA3AF] mb-0.5">Longitud</div>
+                            <input 
+                              type="number" step="0.0001" 
+                              value={partnerFormLng} 
+                              onChange={(e) => setPartnerFormLng(parseFloat(e.target.value) || -71.55)} 
+                              className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded px-2 py-1 text-white text-xs font-mono" 
+                            />
+                          </div>
+                        </div>
+                        {/* Quick actions to make moving/placing frictionless for devs */}
+                        <div className="flex flex-wrap gap-1">
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const map = mapInstanceRef.current
+                              if (map) {
+                                const c = map.getCenter()
+                                setPartnerFormLat(c.lat)
+                                setPartnerFormLng(c.lng)
+                                try { triggerHaptic('light') } catch {}
+                                toast('Centro del mapa copiado', { description: 'Ajusta manualmente o guarda' })
+                              }
+                            }} 
+                            className="text-[9px] px-2 py-0.5 rounded border border-[#FFD700]/40 text-[#FFD700] active:bg-[#FFD700]/10"
+                          >
+                            📍 Usar centro del mapa
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              if (userLocation) {
+                                setPartnerFormLat(userLocation.lat)
+                                setPartnerFormLng(userLocation.lng)
+                                try { triggerHaptic('light') } catch {}
+                                toast('Tu GPS copiado al partner')
+                              } else {
+                                toast.error('GPS no disponible aún')
+                              }
+                            }} 
+                            className="text-[9px] px-2 py-0.5 rounded border border-[#FFD700]/40 text-[#FFD700] active:bg-[#FFD700]/10"
+                          >
+                            📌 Usar mi ubicación
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const next = !isPlacingPartner
+                              setIsPlacingPartner(next)
+                              if (next) {
+                                toast.info('MODO COLOCAR: toca el mapa donde quieres el local', { description: 'Puedes tocar varias veces para ajustar' })
+                                try { triggerHaptic('medium') } catch {}
+                              }
+                            }} 
+                            className={`text-[9px] px-2 py-0.5 rounded border ${isPlacingPartner ? 'bg-[#FF671F] text-white border-[#FF671F]' : 'border-[#FFD700]/40 text-[#FFD700] active:bg-[#FFD700]/10'}`}
+                          >
+                            {isPlacingPartner ? '✋ CANCELAR CLICK-MAPA' : '👆 COLOCAR TOCANDO MAPA'}
+                          </button>
+                        </div>
+                        {isPlacingPartner && (
+                          <div className="text-[9px] text-[#FF671F] bg-black/40 px-2 py-0.5 rounded">Toca cualquier punto del mapa en tiempo real → lat/lng del formulario se actualizan al instante.</div>
+                        )}
+
                         {/* Logo upload - attractive preview */}
                         <div>
                           <div className="text-[10px] text-[#9CA3AF] mb-1">Logo del negocio (recomendado 200x200+)</div>
@@ -7243,14 +7425,10 @@ function App() {
                           try { triggerHaptic('medium') } catch {}
                           const name = partnerFormName.trim() || 'Partner Gym'
                           const type = partnerFormType
-                          const map = mapInstanceRef.current
-                          let lat = userLocation?.lat || -33.02
-                          let lng = userLocation?.lng || -71.55
-                          if (map) {
-                            const c = map.getCenter()
-                            lat = c.lat
-                            lng = c.lng
-                          }
+                          // Use the controlled form values (dev can tweak manually, use buttons, or click on map)
+                          let lat = partnerFormLat
+                          let lng = partnerFormLng
+                          const address = partnerFormAddress.trim() || (editingPartnerId ? (partnerLocations.find(pp=>pp.id===editingPartnerId)?.address || 'Actualizado por devs') : 'Agregado por devs')
                           const pid = editingPartnerId || ('partner-' + Date.now())
                           let logoUrl: string | undefined = editingPartnerId ? partnerLocations.find(pp => pp.id === editingPartnerId)?.logoUrl : undefined
                           if (partnerLogoFile) {
@@ -7262,7 +7440,7 @@ function App() {
                             lat,
                             lng,
                             type,
-                            address: editingPartnerId ? (partnerLocations.find(pp=>pp.id===editingPartnerId)?.address || 'Actualizado por devs') : 'Agregado por devs',
+                            address,
                             addedAt: editingPartnerId ? undefined : new Date().toISOString(),
                             updatedAt: new Date().toISOString(),
                             logoUrl
@@ -7291,11 +7469,12 @@ function App() {
                           if (partnerLogoPreview && partnerLogoPreview.startsWith('blob:')) URL.revokeObjectURL(partnerLogoPreview)
                           setPartnerLogoFile(null)
                           setPartnerLogoPreview(null)
+                          setIsPlacingPartner(false)
                           setShowAddPartnerForm(false)
                           setEditingPartnerId(null)
                           setMapForceTick(t => t + 1)
                           toast.success(editingPartnerId ? 'Partner actualizado' : 'Partner agregado', { description: 'Aparecerá en el mapa en tiempo real para todos los usuarios' })
-                          // recenter
+                          // recenter on the (possibly new) position
                           setTimeout(() => {
                             if (mapInstanceRef.current) mapInstanceRef.current.setView([lat, lng], 14)
                           }, 150)
@@ -7363,17 +7542,54 @@ function App() {
                         <div id="manage-partner-list">
                           {partnerLocations.length === 0 && <div className="text-[#9CA3AF] text-xs py-2">No partners yet. Usa + Partner para agregar.</div>}
                           {partnerLocations.map((p: any) => (
-                            <div key={p.id} data-name={p.name} className="flex items-center gap-2 border-b border-white/10 py-2 last:border-0">
+                            <div key={p.id} data-name={p.name} className="flex items-center gap-1 border-b border-white/10 py-2 last:border-0">
                               {p.logoUrl ? (
                                 <img src={p.logoUrl} className="w-9 h-9 rounded-full object-cover border border-[#FFD700]/50 flex-shrink-0" />
                               ) : (
                                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center text-lg text-white flex-shrink-0">📍</div>
                               )}
                               <div className="flex-1 min-w-0">
-                                <div className="font-semibold truncate">{p.name}</div>
-                                <div className="text-[10px] text-[#9CA3AF] truncate">{p.address || p.type} • {p.lat?.toFixed(3)},{p.lng?.toFixed(3)}</div>
+                                <div className="font-semibold truncate text-sm">{p.name}</div>
+                                <div className="text-[9px] text-[#9CA3AF] truncate">{p.address || p.type} • {p.lat?.toFixed(3)},{p.lng?.toFixed(3)}</div>
                               </div>
-                              <button onClick={() => startEditPartner(p)} className="text-xs px-2 py-0.5 border border-[#FFD700]/50 rounded text-[#FFD700] active:bg-[#FFD700]/10">Edit</button>
+                              <button onClick={() => startEditPartner(p)} className="text-[9px] px-1.5 py-0.5 border border-[#FFD700]/50 rounded text-[#FFD700] active:bg-[#FFD700]/10" title="Editar nombre, logo, dirección, coords">Edit</button>
+                              {/* Instant move tools — core of "facil mover un local" for devs */}
+                              <button 
+                                onClick={() => {
+                                  if (mapInstanceRef.current && p.lat && p.lng) {
+                                    mapInstanceRef.current.setView([p.lat, p.lng], Math.max(mapInstanceRef.current.getZoom()||13, 15))
+                                  }
+                                  try { triggerHaptic('light') } catch {}
+                                }} 
+                                className="text-[9px] px-1.5 py-0.5 border border-[#3b82f6]/50 rounded text-[#3b82f6] active:bg-[#3b82f6]/10" 
+                                title="Centrar el mapa en este local (para ver o preparar move)"
+                              >
+                                Centrar
+                              </button>
+                              <button 
+                                onClick={async () => {
+                                  // Move this partner to whatever the map is currently centered on — super fast iteration for placement
+                                  const map = mapInstanceRef.current
+                                  if (!map) { toast.error('Mapa no disponible'); return }
+                                  const c = map.getCenter()
+                                  const newLat = c.lat, newLng = c.lng
+                                  setPartnerLocations(prev => prev.map(x => x.id === p.id ? { ...x, lat: newLat, lng: newLng } : x))
+                                  setMapForceTick(t => t + 1)
+                                  if (!isDemoMode && db) {
+                                    try {
+                                      const { setDoc, doc } = await import('firebase/firestore')
+                                      await setDoc(doc(db, 'partnerLocations', p.id), { lat: newLat, lng: newLng, updatedAt: new Date().toISOString() }, { merge: true })
+                                    } catch (e) { console.warn(e) }
+                                  }
+                                  map.setView([newLat, newLng], Math.max(map.getZoom() || 13, 14))
+                                  try { triggerHaptic('success') } catch {}
+                                  toast.success('Movido al centro', { description: `${p.name} actualizado en tiempo real` })
+                                }} 
+                                className="text-[9px] px-1.5 py-0.5 border border-[#22c55e]/50 rounded text-[#22c55e] active:bg-[#22c55e]/10" 
+                                title="Poner este local exactamente donde está centrado el mapa ahora (guarda al instante)"
+                              >
+                                Poner aquí
+                              </button>
                               <button onClick={async () => {
                                 if (!confirm(`Eliminar ${p.name}?`)) return
                                 if (!isDemoMode && db) {
@@ -7384,12 +7600,12 @@ function App() {
                                 }
                                 setPartnerLocations(prev => prev.filter(pp => pp.id !== p.id))
                                 try { triggerHaptic('light') } catch {}
-                              }} className="text-xs px-2 py-0.5 border border-red-500/50 rounded text-red-400 active:bg-red-500/10">Del</button>
+                              }} className="text-[9px] px-1.5 py-0.5 border border-red-500/50 rounded text-red-400 active:bg-red-500/10">Del</button>
                             </div>
                           ))}
                         </div>
                         <button onClick={openAddPartner} className="mt-3 w-full py-1.5 text-sm bg-[#FFD700] text-black rounded-xl font-bold">+ Agregar nuevo Partner</button>
-                        <div className="text-[9px] text-center text-[#666] mt-1">Los cambios se sincronizan en tiempo real vía Firestore.</div>
+                        <div className="text-[9px] text-center text-[#666] mt-1">Drag del pin en el mapa (solo devs) = mover instantáneo. "Poner aquí" o "COLOCAR TOCANDO MAPA" para precisión. Todo realtime.</div>
                       </div>
                     </div>
                   )}

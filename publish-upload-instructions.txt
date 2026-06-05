@@ -1,4 +1,34 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.72-levels-gadgets-retention code 76) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.73-map-dev-draggable-address code 77) ===
+
+PULIDO MAPA EN TIEMPO REAL PARA DESARROLLADORES (facilitar mover/poner locales partner correctamente con dirección + movible):
+- Formulario +Partner ahora tiene:
+  - Campo "Dirección / referencia" (se guarda en partnerLocations.address y aparece en el popup del pin).
+  - Inputs editables de Latitud y Longitud (precisión manual).
+  - Botones rápidos: "📍 Usar centro del mapa", "📌 Usar mi ubicación", "👆 COLOCAR TOCANDO MAPA" (toggle).
+- Cuando "COLOCAR TOCANDO MAPA" activo: cada click en el mapa actualiza lat/lng del formulario al instante (con haptic + toast). Se puede tocar varias veces para afinar antes de guardar.
+- Al abrir + Partner o Edit: pre-carga coords del centro actual del mapa (o del partner editado) + vuela el mapa al sitio para contexto visual.
+- Guardar usa SIEMPRE los valores del form (no fuerza map center).
+- Marcadores de PARTNER ahora son DRAGGABLE cuando estás en DEV ON:
+  - Solo devs ven los pins movibles.
+  - Al soltar el pin (dragend): actualiza state optimista + setDoc merge a Firestore (lat/lng + updatedAt) + forceTick + toast éxito "Local movido en el mapa" + recentra vista.
+  - Popup del pin menciona "Arrastra el pin (dev) para moverlo".
+  - Cambios aparecen en tiempo real para TODOS los usuarios (web + app) vía onSnapshot + mapForceTick.
+- Manage Partners (dev):
+  - Botón "Centrar": vuela el mapa al local para inspeccionar.
+  - Botón "Poner aquí": instantaneamente mueve ESE partner al centro actual del mapa (optimistic + FS persist + recenter). Ideal para ajustar posición sin abrir form.
+  - Edit sigue abriendo form pre-cargado (con lat/lng/address) + vuela al sitio.
+  - Del sigue funcionando.
+  - Hint al final: "Drag del pin... o click-mapa... Todo realtime."
+- UI dev hints: cuando DEV ON + Partners on, aparece línea "DEV: arrastra los pins dorados de PARTNERS para moverlos • "Poner aquí" o click-mapa..."
+- Todo gated 100% a isDeveloper (localStorage 'entrenamatch_dev_mode' + password dev2026map). No afecta usuarios normales.
+- Direcciones ya existían en seeds, ahora editables y visibles en todos los popups de partners.
+
+Esto cumple "para los desarrolladores, sea mas facil mover un local o ponerlo correctamente con direccion que sea movible etc". Se puede iterar colocación de gyms/stores/studios en segundos y ver el impacto en el GymPulse inmediatamente.
+
+AAB + debug listos. Git push + web. Instructions actualizado.
+Test en S26: login dev (password), abre mapa, +Partner → pon nombre + dirección + usa centro/click/GPS, guarda, ve pin nuevo con dirección en popup + activity count. Luego desde Manage usa "Poner aquí" o "Centrar", o directamente arrastra el pin dorado en el mapa y suelta → comprueba que se actualiza en vivo (pide a otro tester o usa web GH pages en paralelo), y que el doc en FS tiene la nueva lat/lng/address.
+
+Sigue con todo.
 
 SISTEMA DE NIVELES + GADGETS EXCLUSIVOS para retención (mientras más entrenes / hagas streaks / voces / bonds / pulses / lives, más XP y desbloqueos).
 
