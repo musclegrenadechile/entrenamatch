@@ -1476,6 +1476,11 @@ function App() {
   const [mapForceTick, setMapForceTick] = useState(0) // tiny trigger so map re-renders when toggling partners layer
   const [isTogglingLive, setIsTogglingLive] = useState(false) // prevent double-tap and show loading on the live toggle button (fixes stuck click)
 
+  // Dedicated source of truth for currently live users coming from a where('trainingNow'==true) listener.
+  // This guarantees that people who activated "Entrenando Ahora" appear for others on the GymPulse even if their
+  // profile doc is not among the top-N most recently updatedAt (many other writes can push long-running lives out of a simple recent query).
+  const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
+
   // Keep refs in sync for leaflet click handlers (closed over values would be stale)
   useEffect(() => { isPlacingPartnerRef.current = isPlacingPartner }, [isPlacingPartner])
   useEffect(() => { showAddPartnerFormRef.current = showAddPartnerForm }, [showAddPartnerForm])
@@ -1822,17 +1827,44 @@ function App() {
     return Array.from(unique.values()).filter(p => !swiped.has(p.id))
   }, [likedIds, passedIds, realProfiles])
 
+  // Helper to safely turn Firestore Timestamp | number | string | null into ms since epoch number.
+  // Prevents (now - Timestamp) producing NaN which would drop live users from GymPulse lists.
+  const normalizeTrainingSince = (val: any): number | undefined => {
+    if (val == null) return undefined
+    if (typeof val === 'number') return val
+    if (val && typeof val.toMillis === 'function') return val.toMillis()
+    if (val && typeof val.seconds === 'number') {
+      return val.seconds * 1000 + Math.floor((val.nanoseconds || 0) / 1000000)
+    }
+    const n = Number(val)
+    return isFinite(n) ? n : undefined
+  }
+
   // LIVE TRAINING NOW - the killer innovative feature. Real-time who is training right now near you. Green live indicator. Creates urgency, no fitness app does this well.
   // Hoisted early after its data deps (realProfiles at ~1425, etc.) and before any effects/JSX that use it in deps or bodies.
   const liveTrainingNow = useMemo(() => {
     const now = Date.now();
     const ASSUMED_SESSION_MS = 90 * 60 * 1000; // 90 min typical session
-    let lives = realProfiles
+
+    // Start from general realProfiles (recent updated profiles) + the dedicated live listener results.
+    // The dedicated where('trainingNow'==true) guarantees long-running or "not recently updated" live people are still visible to others.
+    const baseProfiles = [...realProfiles, ...liveUsersFromDedicated]
+    const byId = new Map<string, any>()
+    baseProfiles.forEach(p => {
+      if (!byId.has(p.id)) byId.set(p.id, p)
+    })
+    const candidateLives = Array.from(byId.values())
+
+    let lives = candidateLives
       .filter(p => !blockedUsers.includes(p.id))
-      .filter(p => p.trainingNow && p.trainingNowSince && (now - p.trainingNowSince < 3 * 60 * 60 * 1000)) // auto expire after 3h
+      .filter(p => {
+        const since = normalizeTrainingSince(p.trainingNowSince)
+        return p.trainingNow && since != null && (now - since < 3 * 60 * 60 * 1000)
+      })
       .map(p => {
+        const since = normalizeTrainingSince(p.trainingNowSince) || now
         const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng) : 999;
-        const seVaEnMs = (p.trainingNowSince + ASSUMED_SESSION_MS) - now;
+        const seVaEnMs = (since + ASSUMED_SESSION_MS) - now;
         const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 0;
         // Join count from the live post (comments + other likes) - makes "se unieron" visible everywhere for FOMO
         let joinCount = 0;
@@ -1846,7 +1878,7 @@ function App() {
         const isLegend = !!bond && ((bond.totalMin || 0) >= 30 || (bond.bondLevel || 0) >= 2);
         // Attach approximate level for gadget visuals on map (self + demo have real dailyPulse; others fall back to bond strength or 1)
         const visibleLevel = (p.id === 'me' || p.id === currentUser?.id) ? (dailyPulse?.level || 1) : (isLegend ? Math.max(10, Math.floor((bond?.totalMin || 0) / 8) + 5) : 3);
-        return { ...p, distance: dist, seVaEnMin, joinCount, isLegend, bondInfo: bond, visibleLevel };
+        return { ...p, distance: dist, seVaEnMin, joinCount, isLegend, bondInfo: bond, visibleLevel, trainingNowSince: since };
       })
       .filter(p => !userLocation || p.distance < 15) // near only if we have location; otherwise show all live (so feature works even without GPS)
       .sort((a, b) => {
@@ -1863,7 +1895,9 @@ function App() {
         }
         if (aSync !== bSync) return bSync - aSync;
         if (aLegend !== bLegend) return bLegend - aLegend;
-        return (b.trainingNowSince || 0) - (a.trainingNowSince || 0);
+        const bSince = (b.trainingNowSince as any) || 0;
+        const aSince = (a.trainingNowSince as any) || 0;
+        return bSince - aSince;
       });
     if (isDemoMode && lives.length === 0) {
       // Demo fakes for the killer feature to shine
@@ -1872,13 +1906,16 @@ function App() {
     // Exceptional onboarding: immediately surface the new user's own live if they opted in during the 60s flow.
     // This way the banner + map + explore show "you are live" right after finishing, even before any FS roundtrip.
     // NOTE: we still add the 'me' entry internally for own awareness, but we filter self out below so public lists/map never include self (fixes self-join, self-chat, duplication).
-    if (currentUser && currentUser.trainingNow && currentUser.trainingNowSince && (now - currentUser.trainingNowSince < 3 * 60 * 60 * 1000)) {
-      const already = lives.some((l: any) => l.id === 'me' || l.id === currentUser.id)
-      if (!already) {
-        const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, currentUser.lat || -33.0153, currentUser.lng || -71.5528) : 0.3
-        const seVaEnMs = (currentUser.trainingNowSince + ASSUMED_SESSION_MS) - now
-        const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 55
-        lives = [{ ...currentUser, id: 'me', distance: dist, seVaEnMin, joinCount: 0, isLegend: false, bondInfo: null, visibleLevel: (dailyPulse?.level || 1) }, ...lives]
+    if (currentUser && currentUser.trainingNow) {
+      const selfSince = normalizeTrainingSince(currentUser.trainingNowSince) || now
+      if (selfSince && (now - selfSince < 3 * 60 * 60 * 1000)) {
+        const already = lives.some((l: any) => l.id === 'me' || l.id === currentUser.id)
+        if (!already) {
+          const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, currentUser.lat || -33.0153, currentUser.lng || -71.5528) : 0.3
+          const seVaEnMs = (selfSince + ASSUMED_SESSION_MS) - now
+          const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 55
+          lives = [{ ...currentUser, id: 'me', distance: dist, seVaEnMin, joinCount: 0, isLegend: false, bondInfo: null, visibleLevel: (dailyPulse?.level || 1), trainingNowSince: selfSince }, ...lives]
+        }
       }
     }
 
@@ -1900,7 +1937,7 @@ function App() {
     });
 
     return lives;
-  }, [realProfiles, userLocation, isDemoMode, profilePosts, currentUser]);
+  }, [realProfiles, userLocation, isDemoMode, profilePosts, currentUser, liveUsersFromDedicated]);
 
   // Zone live counts for interactive legend (sigue con todo el mapa + visual polish iteration)
   const zoneLiveCounts = useMemo(() => {
@@ -2078,7 +2115,7 @@ function App() {
       try {
         const { collection, onSnapshot, query, orderBy, limit } = await import('firebase/firestore');
         const profilesRef = collection(db, 'profiles');
-        const q = query(profilesRef, orderBy('updatedAt', 'desc'), limit(150));
+        const q = query(profilesRef, orderBy('updatedAt', 'desc'), limit(300));
 
         unsub = onSnapshot(q, (snapshot) => {
           const profiles: Profile[] = [];
@@ -2107,7 +2144,7 @@ function App() {
                 intensity: data.intensity,
                 verificationStatus: data.verificationStatus,
                 trainingNow: data.trainingNow || false,
-                trainingNowSince: data.trainingNowSince != null ? data.trainingNowSince : undefined,
+                trainingNowSince: normalizeTrainingSince(data.trainingNowSince),
                 liveStreak: data.liveStreak != null ? data.liveStreak : undefined,
                 lastLiveDate: data.lastLiveDate != null ? data.lastLiveDate : undefined,
                 liveJoins: data.liveJoins != null ? data.liveJoins : undefined,
@@ -2132,6 +2169,73 @@ function App() {
 
     return () => { if (unsub) unsub(); };
   }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, blockedUsers]); // blockedUsers to re-filter if changes
+
+  // DEDICATED REALTIME LISTENER FOR LIVE USERS ONLY (where trainingNow == true).
+  // This is the key fix so that "Entrenando Ahora" always propagates to other clients' GymPulse maps
+  // reliably, even if the user has been live for a long time and other profile writes have made their
+  // updatedAt fall out of a simple "top 150 recent" query.
+  useEffect(() => {
+    if (isDemoMode || !db || !isFirebaseConfigured) return undefined
+
+    let unsubLive: any = null
+    ;(async () => {
+      try {
+        const { collection, onSnapshot, query, where, limit: fsLimit } = await import('firebase/firestore')
+        const profilesRef = collection(db, 'profiles')
+        // We intentionally do NOT orderBy here; the where gives us exactly the current lives.
+        // Limit high enough for pre-alpha / small city.
+        const q = query(profilesRef, where('trainingNow', '==', true), fsLimit(100))
+
+        unsubLive = onSnapshot(q, (snapshot) => {
+          const liveOnes: any[] = []
+          const currentUid = firebaseUser?.uid
+
+          snapshot.forEach((doc) => {
+            if (doc.id === currentUid) return
+            if (blockedUsers.includes(doc.id)) return
+            const data = doc.data() as any
+            if (data && data.name) {
+              liveOnes.push({
+                id: doc.id,
+                name: data.name,
+                age: data.age || 25,
+                gender: data.gender || 'hombre',
+                city: data.city || '',
+                country: data.country || 'Chile',
+                lat: data.lat || -33.0,
+                lng: data.lng || -71.0,
+                bio: data.bio || '',
+                photos: data.photos || [],
+                trainingTypes: data.trainingTypes || [],
+                goals: data.goals || [],
+                level: data.level || 'Intermedio',
+                availability: data.availability || ['Tarde'],
+                intensity: data.intensity,
+                verificationStatus: data.verificationStatus,
+                trainingNow: true, // we know from the where
+                trainingNowSince: normalizeTrainingSince(data.trainingNowSince),
+                liveStreak: data.liveStreak != null ? data.liveStreak : undefined,
+                lastLiveDate: data.lastLiveDate != null ? data.lastLiveDate : undefined,
+                liveJoins: data.liveJoins != null ? data.liveJoins : undefined,
+                joinedLiveStreak: data.joinedLiveStreak != null ? data.joinedLiveStreak : undefined,
+                trainingSyncWith: data.trainingSyncWith || undefined,
+                syncStreak: data.syncStreak != null ? data.syncStreak : undefined,
+                syncBonds: data.syncBonds || {},
+                retentionLevel: data.retentionLevel || 1,
+              })
+            }
+          })
+          setLiveUsersFromDedicated(liveOnes)
+        }, (err) => {
+          console.warn('live-only onSnapshot error', err)
+        })
+      } catch (e) {
+        console.warn('Failed to setup dedicated live listener', e)
+      }
+    })()
+
+    return () => { if (unsubLive) unsubLive(); }
+  }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, blockedUsers])
 
   // EntrenaSync real-time mirror: when in sync, pull partner's latest syncActions and state from realProfiles (via periodic load or on change)
   // Placed here AFTER all dependent states (realProfiles, effectiveUserId, currentUser local from saveUser) to avoid TDZ or init order issues in render/bundler.
@@ -2389,7 +2493,7 @@ function App() {
     }
     try {
       const profilesRef = collection(db, 'profiles')
-      const q = query(profilesRef, orderBy('updatedAt', 'desc'), limit(150)) // order by recent updates so people who just toggled live are likely in the results
+      const q = query(profilesRef, orderBy('updatedAt', 'desc'), limit(300)) // order by recent updates so people who just toggled live are likely in the results; 300 for safety on live visibility
       const snapshot = await getDocs(q)
       
       const profiles: Profile[] = []
@@ -2418,7 +2522,7 @@ function App() {
             intensity: data.intensity,
             verificationStatus: data.verificationStatus,
             trainingNow: data.trainingNow || false,
-            trainingNowSince: data.trainingNowSince != null ? data.trainingNowSince : undefined,
+            trainingNowSince: normalizeTrainingSince(data.trainingNowSince),
             liveStreak: data.liveStreak != null ? data.liveStreak : undefined,
             lastLiveDate: data.lastLiveDate != null ? data.lastLiveDate : undefined,
             liveJoins: data.liveJoins != null ? data.liveJoins : undefined,
@@ -9802,7 +9906,7 @@ function App() {
                         try {
                           const realP = await getUserProfile(firebaseUser.uid);
                           if (realP) {
-                            const merged = { ...currentUser, trainingNow: realP.trainingNow, trainingNowSince: realP.trainingNowSince };
+                            const merged = { ...currentUser, trainingNow: realP.trainingNow, trainingNowSince: normalizeTrainingSince(realP.trainingNowSince) };
                             saveUser(merged as any); // this will flip button back if needed
                           }
                         } catch {}
@@ -9814,7 +9918,7 @@ function App() {
                   disabled={isTogglingLive}
                   className={`w-full py-3 rounded-2xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm ${isTogglingLive ? 'opacity-70 cursor-wait' : ''} ${currentUser.trainingNow ? 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black ring-1 ring-[#22c55e]/60' : 'bg-[#1C1C20] border border-[#2F2F35] text-white hover:border-[#22c55e]/50 active:bg-[#25252A]'}`}
                 >
-                  {isTogglingLive ? (currentUser.trainingNow ? 'Desactivando...' : 'Activando en el GymPulse...') : (currentUser.trainingNow ? '🟢 Entrenando Ahora (EN VIVO) — ¡Estás en el mapa del GymPulse!' : 'Activar "Entrenando Ahora (EN VIVO)"')}
+                  {isTogglingLive ? 'Sincronizando en el GymPulse...' : (currentUser.trainingNow ? '🟢 Entrenando Ahora (EN VIVO) — ¡Estás en el mapa del GymPulse!' : 'Activar "Entrenando Ahora (EN VIVO)"')}
                 </button>
                 <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">
                   Al activar apareces en el <strong>mapa en tiempo real (GymPulse)</strong>. Usuarios cerca te ven entrenando y sienten urgencia real (FOMO) de unirse o hacer sync contigo antes de que termines. Esto genera joins/syncs, sube tus rachas y Network Power, y hace que la gente abra la app todos los días. ¡El corazón social del entrenamiento en comunidad!
