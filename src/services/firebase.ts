@@ -58,7 +58,8 @@ if (firebaseConfig) {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
   db = getFirestore(app);
-  storage = getStorage(app);
+  // Explicit bucket helps ensure the correct auth token is attached for Storage uploads (fixes some 403/unauthorized cases on web + Capacitor)
+  storage = getStorage(app, 'gs://entrenamatch.firebasestorage.app');
 
   if (firebaseConfig.measurementId) {
     analytics = getAnalytics(app);

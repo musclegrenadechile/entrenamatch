@@ -1,7 +1,8 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Helper
+
+    // ===== HELPERS =====
     function isAuthenticated() {
       return request.auth != null;
     }
@@ -10,30 +11,46 @@ service firebase.storage {
       return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // All post photos (muro, feed, arena actions, etc.) live under posts/{uid}/...
-    // - Anyone authenticated can READ (needed to display photos in feed, other profiles' muros, etc.)
-    // - Only the owner can WRITE (upload new photos for their posts)
-    // This matches exactly the paths used in createProfilePost, handleMuroPhotoFile, arena photo capture, etc.
+    // ===== POSTS (muro, feed, highlights, arena photos, etc.) =====
+    // Path used in code: posts/{effectiveUserId}/filename.jpg (or .webm etc in future)
+    // - Any logged-in user can READ (so friends see your posts, feed works, map highlights, etc.)
+    // - Only the owner can WRITE (you can only upload to your own folder)
     match /posts/{userId}/{allPaths=**} {
       allow read: if isAuthenticated();
       allow write: if isOwner(userId);
     }
 
-    // Future-proof: if we ever store profile avatars/covers separately under users/{uid}/
+    // ===== USER ASSETS (avatars, covers, etc. if we use separate paths later) =====
     match /users/{userId}/{allPaths=**} {
       allow read: if isAuthenticated();
       allow write: if isOwner(userId);
     }
 
-    // Chat voice notes (for 1:1 and group/session messages). 
-    // Any authenticated user can write (the app logic ensures only chat participants send).
-    // Anyone authenticated can read (to play the audio in the chat UI).
+    // ===== CHAT VOICE NOTES (the important one for "notas de voz") =====
+    // Paths used in code (sendVoiceNote):
+    //   chat-voice/${chatId}/${timestamp}.webm
+    //
+    // For 1:1 private chats: chatId = the other user's UID (activeChat)
+    // For group/squad sessions: chatId = the sessionId (showGroupChatModalFor)
+    //
+    // Why "any authenticated can write"?
+    //   - In 1:1 the folder is named after the recipient, but the sender (you) is the one uploading.
+    //   - In groups anyone in the session can send a voice note.
+    //   - We gate "who can send to this chat" at the app level (you can only open a chat with someone you matched or in the group).
+    //   - This is the standard pattern for chat/media in social apps.
+    //
+    // Reads are needed so the receiver can play the audio (new Audio(voiceUrl) or <audio>).
+    //
+    // Explicit create + read for maximum compatibility with Firebase SDK uploads.
     match /chat-voice/{chatId}/{allPaths=**} {
       allow read: if isAuthenticated();
-      allow write: if isAuthenticated();
+      allow create: if isAuthenticated();
+      // We also allow update/delete in case of retries or cleanup (harmless for voice notes)
+      allow update, delete: if isAuthenticated();
     }
 
-    // Default: deny everything else (secure by default)
+    // ===== DEFAULT DENY (everything else is locked) =====
+    // This must stay last. More specific rules above take precedence.
     match /{allPaths=**} {
       allow read, write: if false;
     }

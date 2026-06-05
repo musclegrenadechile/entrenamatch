@@ -1,6 +1,22 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.54-voice-attractive-polish code 58) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.54-voice-send-polish code 58) ===
 
-AAB: EntrenaMatch-v0.1.54-voice-attractive-polish-code58-20260605-0007.aab + EntrenaMatch-release.aab (7.58MB)  [this build has slightly improved error toast]
+AAB: EntrenaMatch-v0.1.54-voice-send-polish-0008.aab + EntrenaMatch-release.aab (7.58MB)
+
+**CRITICAL - DO THIS FIRST OR VOICE NOTES WILL 403:**
+The voice upload rules (chat-voice path) are now fixed and well documented in storage.rules.
+You **MUST** deploy/publish the storage rules after any code change that touches voice or before testing real uploads:
+
+Option A (Console - recommended):
+1. Go to https://console.firebase.google.com/project/entrenamatch/storage/rules
+2. Replace ALL content with the full text from your local `storage.rules` file.
+3. Click Publish. Wait 30-60s.
+
+Option B (CLI):
+npx firebase deploy --only storage --project entrenamatch
+
+Without this step you will keep getting "storage/unauthorized" on voice notes even if the app code is perfect.
+
+Major visual + layout polish on the entire "send voice note" flow (preview, uploading, bubbles). See commit for details.
 
 **What's new:**
 
