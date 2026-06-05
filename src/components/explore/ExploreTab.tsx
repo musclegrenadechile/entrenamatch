@@ -22,6 +22,8 @@ interface ExploreTabProps {
   onRefreshRealProfiles?: () => void;
   lastSync?: Date | null;
   profilePosts?: Record<string, any[]>; // for spectacular muro teaser on cards
+  syncBonds?: Record<string, { totalMin: number; sessions: number; avgRating: number; bondLevel: number }>;
+  networkPower?: number;
 }
 
 export const ExploreTab = ({
@@ -40,6 +42,8 @@ export const ExploreTab = ({
   onRefreshRealProfiles,
   lastSync,
   profilePosts = {},
+  syncBonds = {},
+  networkPower = 0,
 }) => {
   // Local drag state + optimistic removal for snappy swipe/match feel
   const [dragX, setDragX] = useState(0);
@@ -55,7 +59,9 @@ export const ExploreTab = ({
 
   const getCompatibility = (profile: Profile): number | null => {
     if (!currentUser || !userLocation) return null;
-    return Math.round(calculateCompatibility(currentUser as any, profile, userLocation));
+    const base = calculateCompatibility(currentUser as any, profile, userLocation);
+    const boost = getNetworkBoost(profile);
+    return Math.min(99, Math.round(base + boost)); // Network Power makes the % higher on card for your red
   };
 
   const getDistance = (profile: Profile): number | null => {
@@ -66,6 +72,10 @@ export const ExploreTab = ({
   const isVerified = (profile: Profile): boolean => {
     return profile.verificationStatus === 'verified' || ['p1', 'p2', 'p4', 'p6'].includes(profile.id);
   };
+
+  const isNetwork = (profile: Profile): boolean => !!syncBonds[profile.id];
+  const getBondLevel = (profile: Profile): number => syncBonds[profile.id]?.bondLevel || 1;
+  const getNetworkBoost = (profile: Profile): number => isNetwork(profile) ? Math.floor(getBondLevel(profile) * 8) : 0; // visual +% for the card
 
   // Small breakdown for "why this profile" in recs (makes the % feel less magic, builds trust)
   // Polish: richer reasons, up to 2-3 for better matching transparency
@@ -92,6 +102,10 @@ export const ExploreTab = ({
 
     if (profile.verificationStatus === 'verified' || ['p1','p2','p4','p6'].includes(profile.id)) {
       reasons.push('Verificado');
+    }
+
+    if (isNetwork(profile)) {
+      reasons.unshift('Tu red • Network Power');
     }
 
     return reasons.slice(0, 2);
@@ -236,6 +250,9 @@ export const ExploreTab = ({
               <div className="text-3xl font-semibold tracking-[-1px] flex items-center gap-2 drop-shadow">
                 {profile.name}, {profile.age}
                 {verified && <CheckCircle size={20} className="text-[#FF671F] -mb-0.5" />}
+                {isNetwork(profile) && (
+                  <span className="text-[10px] bg-[#FFD700] text-black px-1.5 py-0.5 rounded-full font-black tracking-[0.5px] ml-1 align-middle">⭐ RED LV{getBondLevel(profile)} +{getNetworkBoost(profile)}% NP</span>
+                )}
               </div>
               <div className="text-sm opacity-90 flex items-center gap-2 mt-0.5">
                 <span>{profile.city}</span>
@@ -520,11 +537,22 @@ export const ExploreTab = ({
           </div>
           <div className="grid grid-cols-2 gap-2.5">
             {deck
-              .slice(0, 6)
-              .map(p => ({ profile: p, score: getCompatibility(p) || 50, isReal: realProfiles.some(r => r.id === p.id) }))
-              .sort((a, b) => (b.isReal ? 1 : 0) - (a.isReal ? 1 : 0) || (b.score || 0) - (a.score || 0))
+              .slice(0, 8)
+              .map(p => ({ 
+                profile: p, 
+                score: getCompatibility(p) || 50, 
+                isReal: realProfiles.some(r => r.id === p.id),
+                isNet: !!syncBonds[p.id],
+                bond: syncBonds[p.id]?.bondLevel || 0
+              }))
+              .sort((a, b) => {
+                if (a.isNet && !b.isNet) return -1;
+                if (!a.isNet && b.isNet) return 1;
+                if (a.isNet && b.isNet) return b.bond - a.bond;
+                return (b.isReal ? 1 : 0) - (a.isReal ? 1 : 0) || (b.score || 0) - (a.score || 0);
+              })
               .slice(0, 4)
-              .map(({ profile, score, isReal }) => (
+              .map(({ profile, score, isReal, isNet, bond }) => (
                 <div 
                   key={profile.id}
                   onClick={() => onShowProfile?.(profile)}
@@ -532,7 +560,7 @@ export const ExploreTab = ({
                 >
                   <img src={profile.photos[0]} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" alt="" />
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm truncate flex items-center gap-1">{profile.name} {isReal && <span className="text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>}</div>
+                    <div className="font-medium text-sm truncate flex items-center gap-1">{profile.name} {isReal && <span className="text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>} {isNet && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED LV{bond}</span>}</div>
                     {onReport && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onReport(profile.id); }}

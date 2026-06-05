@@ -5067,10 +5067,23 @@ function App() {
     })
 
     // Sort: highest compatibility first, then closest distance, slight boost for verified/real
+    // NETWORK POWER PRIORITY: members of your Red de EntrenaSync bubble to the absolute top of the deck.
+    // This makes the social graph have real recommendation power — training with someone gives you visibility and priority with them and their circle over time.
     if (currentUser) {
       return [...filtered].sort((a, b) => {
-        const ca = calculateCompatibility(currentUser, a, userLocation)
-        const cb = calculateCompatibility(currentUser, b, userLocation)
+        const isNetA = !!syncBonds[a.id]
+        const isNetB = !!syncBonds[b.id]
+        if (isNetA && !isNetB) return -1
+        if (!isNetA && isNetB) return 1
+        // Within network, higher bondLevel first (stronger alliances rise)
+        if (isNetA && isNetB) {
+          const la = syncBonds[a.id]?.bondLevel || 1
+          const lb = syncBonds[b.id]?.bondLevel || 1
+          if (lb !== la) return lb - la
+        }
+
+        const ca = calculateCompatibility(currentUser, a, userLocation) + (isNetA ? 75 : 0) // massive Network Power boost to compat score
+        const cb = calculateCompatibility(currentUser, b, userLocation) + (isNetB ? 75 : 0)
         if (cb !== ca) return cb - ca
 
         if (userLocation) {
@@ -5125,6 +5138,14 @@ function App() {
     if (direction === 'right') {
       const newLiked = [...likedIds, profileId]
       saveLiked(newLiked)
+
+      // Network Power priority in action: swiping right on your red gives immediate feedback that the graph is strengthening
+      if (syncBonds[profileId]) {
+        const bond = syncBonds[profileId]
+        toast.success(`⭐ Tu red • ${profile.name}`, {
+          description: `LV${bond.bondLevel || 1} • Network Power reforzado. Re-sync pronto para +rendimiento compartido y más visibilidad.`
+        })
+      }
 
       const isRealProfile = !profileId.startsWith('p') && realProfiles.some(r => r.id === profileId)
       const isAutoMatch = AUTO_MATCH_IDS.includes(profileId)
@@ -5835,6 +5856,8 @@ function App() {
             onRefreshRealProfiles={async () => { await loadRealProfiles(); setLastSync(new Date()); }}
             lastSync={lastSync}
             profilePosts={profilePosts}
+            syncBonds={syncBonds}
+            networkPower={networkPower}
           />
         )}
 
@@ -7726,8 +7749,17 @@ function App() {
                   </div>
                 )}
                 <div className="text-center mt-1 text-[7px] text-[#FFD700]/60">Tu red de EntrenaSync es tu capital más valioso. Cuanto más sincronizas, más fuerte te haces — y más te ven los demás.</div>
-                <div className="text-center mt-1">
+                <div className="text-center mt-1 flex gap-2 justify-center">
                   <button onClick={() => setActiveTab('explore')} className="text-[8px] px-2 py-0.5 bg-[#22c55e]/10 text-[#22c55e] rounded active:bg-[#22c55e]/20">Explora más socios para expandir tu red →</button>
+                  <button 
+                    onClick={() => {
+                      const msg = `🔥 Entreno en EntrenaMatch con mi red. Syncs reales dan +Network Power, prioridad en el pulso y resultados que se propagan. ¿Entrenamos juntos? https://musclegrenadechile.github.io/entrenamatch/`;
+                      navigator.clipboard?.writeText(msg).then(() => toast.success('Mensaje copiado', { description: 'Comparte con tu red para invitarlos a construir el grafo de alto rendimiento.' })).catch(() => toast('Invita a tu red abriendo el app con ellos.'));
+                    }}
+                    className="text-[8px] px-2 py-0.5 bg-[#FFD700]/20 text-[#FFD700] rounded active:bg-[#FFD700]/30 font-medium"
+                  >
+                    Invitar a tu red (copiar link)
+                  </button>
                 </div>
               </div>
             )}

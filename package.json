@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.43-network-notifs-badges",
+  "version": "0.1.44-network-priority-invite",
   "type": "module",
   "scripts": {
     "dev": "vite",
