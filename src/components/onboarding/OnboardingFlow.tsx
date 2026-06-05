@@ -39,6 +39,7 @@ export const OnboardingFlow = ({
   triggerHaptic = () => { try { navigator.vibrate && navigator.vibrate(20) } catch {} },
   uploadPhotoIfNeeded,
 }) => {
+  const isEditMode = !!currentUser && !!currentUser.name;
   // Internal state (moved from App.tsx for better encapsulation)
   // Seed from existing currentUser (for edit flow or returning incomplete profiles) so user doesn't re-type everything
   const [onboardData, setOnboardData] = useState<any>(() => {
@@ -409,7 +410,7 @@ export const OnboardingFlow = ({
           <div className="flex items-center justify-between">
             <div>
               <div className="text-4xl font-black tracking-[-1.5px] leading-none mb-1 text-white">
-                {isEditingProfile ? 'REMASTERIZA TU PRESENCIA' : 'CREA TU RITUAL'}
+                {isEditMode ? 'REMASTERIZA TU PRESENCIA' : 'CREA TU RITUAL'}
               </div>
               <div className="text-[#9CA3AF] text-base max-w-md">Tu perfil no es un formulario. Es tu entrada a la red de GymPartners donde el entrenamiento se vuelve legendario. Único. Con peso real en el GymPulse.</div>
             </div>
@@ -419,12 +420,12 @@ export const OnboardingFlow = ({
         {/* Epic Ritual Progress - Visual path, not boring dots */}
         <div className="mb-4">
           <div className="flex items-center justify-between text-xs mb-2 px-1">
-            <div className="font-mono text-[#FF671F] tracking-[2px]">RITUAL {onboardingStep + 1} / 4 • {Math.round((onboardingStep+1)/4 * 100)}% EN EL PULSO</div>
+            <div className="font-mono text-[#FF671F] tracking-[2px]">{isEditMode ? 'EDIT' : 'RITUAL'} {onboardingStep + 1} / 4 • {Math.round((onboardingStep+1)/4 * 100)}% EN EL PULSO</div>
             <div className="text-[#9CA3AF] text-[10px] font-medium">
-              {onboardingStep === 0 && 'PRESENCIA EN EL CÍRCULO'}
+              {onboardingStep === 0 && (isEditMode ? 'PRESENCIA' : 'PRESENCIA EN EL CÍRCULO')}
               {onboardingStep === 1 && 'TU ESENCIA DE RENDIMIENTO'}
               {onboardingStep === 2 && 'EL PULSO VIVO (LA MAGIA)'}
-              {onboardingStep === 3 && 'LOS VOTOS • ENTRA AL RITUAL'}
+              {onboardingStep === 3 && (isEditMode ? 'GUARDAR CAMBIOS' : 'LOS VOTOS • ENTRA AL RITUAL')}
             </div>
           </div>
           <div className="h-1.5 bg-[#1C1C20] rounded-full overflow-hidden flex">

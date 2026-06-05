@@ -1078,6 +1078,7 @@ function App() {
   const [showMatchModal, setShowMatchModal] = useState<Profile | null>(null)
   const [showFullProfile, setShowFullProfile] = useState<Profile | null>(null)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
+  const [isEditingBio, setIsEditingBio] = useState(false)
   const [showPreAlphaWelcome, setShowPreAlphaWelcome] = useState(() => {
     return !localStorage.getItem('entrenamatch_prealpha_welcome_shown')
   })
@@ -9356,10 +9357,12 @@ function App() {
               <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/50 to-black/95" />
               <div className="absolute inset-0 border-b-2 border-[#FF671F]/20" />
 
-              {/* Top status bar - unique */}
+              {/* Top status bar - unique + quick live action */}
               <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start text-xs">
-                {currentUser.trainingNow && (
-                  <div className="bg-[#22c55e] text-black font-black px-3 py-1 rounded-2xl tracking-widest shadow-[0_0_15px_rgba(34,197,94,0.5)]">🟢 EN GYMPULSE VIVO • {currentUser.liveStreak || 0}D</div>
+                {currentUser.trainingNow ? (
+                  <div className="bg-[#22c55e] text-black font-black px-3 py-1 rounded-2xl tracking-widest shadow-[0_0_15px_rgba(34,197,94,0.5)] flex items-center gap-2">🟢 EN GYMPULSE VIVO • {currentUser.liveStreak || 0}D <button onClick={async () => { /* quick deactivate from hero */ try{ const u={...currentUser,trainingNow:false,trainingNowSince:undefined,trainingSyncWith:null,syncStartedAt:null}; await saveUserWithRealSync(u as any); setMapForceTick(t=>t+1); toast('Live terminado'); }catch(e){} }} className="text-[9px] px-1.5 py-0 bg-black/30 rounded">Terminar</button></div>
+                ) : (
+                  <button onClick={() => { /* quick activate */ setActiveTab('profile'); /* the main activate is lower, but hint */ toast('Activa "Entrenando Ahora" más abajo en el perfil'); }} className="bg-white/10 text-white/70 px-2 py-0.5 rounded text-[10px]">Activar GymPulse</button>
                 )}
                 <div className="text-right font-mono text-white/50 tracking-widest">{currentUser.level} • {currentUser.intensity}</div>
               </div>
@@ -9500,11 +9503,35 @@ function App() {
               </div>
             )}
 
-            {/* Bio */}
+            {/* Bio - with quick inline edit for fast tweaks (bypasses full wizard) */}
             <div className="px-4 mt-4">
               <div className="card p-4">
-                <div className="uppercase text-[10px] tracking-[1px] text-[#9CA3AF] mb-1.5">Sobre mí</div>
-                <p className="text-[15px] leading-snug text-white/95">{currentUser.bio || 'Todavía no has escrito tu bio. ¡Cuéntale al mundo por qué entrenas!'}</p>
+                <div className="flex justify-between items-center mb-1.5">
+                  <div className="uppercase text-[10px] tracking-[1px] text-[#9CA3AF]">Sobre mí</div>
+                  <button onClick={() => setShowOnboarding(true)} className="text-[9px] text-[#FF671F] underline">Editar completo</button>
+                </div>
+                {isEditingBio ? (
+                  <textarea 
+                    defaultValue={currentUser.bio || ''} 
+                    className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded p-2 text-sm" 
+                    rows={3}
+                    onBlur={(e) => { 
+                      const newBio = e.target.value.trim(); 
+                      if (newBio !== (currentUser.bio||'')) { 
+                        const u = {...currentUser, bio: newBio}; 
+                        saveUserWithRealSync(u as any); 
+                        toast('Bio actualizada'); 
+                      } 
+                      setIsEditingBio(false); 
+                    }}
+                    autoFocus 
+                  />
+                ) : (
+                  <div onClick={() => setIsEditingBio(true)} className="text-[15px] leading-snug text-white/95 cursor-pointer active:opacity-80">
+                    {currentUser.bio || 'Toca para escribir tu bio (por qué entrenas, qué buscas en la red)...'}
+                    <span className="ml-2 text-[9px] text-[#FF671F]">✎</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -9522,6 +9549,29 @@ function App() {
                   <div className="mt-1 text-[8px] text-[#FFD700]">Gadgets: {getUnlockedGadgets(dailyPulse.level || 1).map(g => g.icon).join(' ')}</div>
                 )}
                 <div className="text-[8px] text-[#9CA3AF] mt-1">Entrenar juntos multiplica tu peso en el GymPulse. Tu primer Sync lo activa.</div>
+                {/* Quick Momentum actions surfaced right in "Tu Poder" for instant gratification (full details + more spends in the Daily Pulse section below) */}
+                {dailyPulse && (dailyPulse.momentum || 0) >= 20 && (
+                  <div className="mt-2 flex gap-1 text-[8px]">
+                    {(dailyPulse.momentum || 0) >= 30 && (
+                      <button onClick={() => {
+                        const t = getTodayStr();
+                        const ap = { ...dailyPulse, pulseAmplifiedDate: t, momentum: (dailyPulse.momentum || 0) - 30 };
+                        setDailyPulse(ap);
+                        saveUserWithRealSync({ ...(currentUser as any), pulseAmplifiedDate: t, momentumPoints: ap.momentum } as any);
+                        toast.success('Pulso amplificado 24h');
+                      }} className="flex-1 py-1 rounded bg-purple-500/20 text-purple-300 active:bg-purple-500/30">📡 Amplificar 30M</button>
+                    )}
+                    {(dailyPulse.momentum || 0) >= 50 && (
+                      <button onClick={() => {
+                        const t = getTodayStr();
+                        const pp = { ...dailyPulse, streakProtectedDate: t, momentum: (dailyPulse.momentum || 0) - 50 };
+                        setDailyPulse(pp);
+                        saveUserWithRealSync({ ...(currentUser as any), streakProtectedDate: t, momentumPoints: pp.momentum } as any);
+                        toast.success('Racha protegida hoy');
+                      }} className="flex-1 py-1 rounded bg-yellow-500/20 text-yellow-300 active:bg-yellow-500/30">🛡️ Proteger 50M</button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
