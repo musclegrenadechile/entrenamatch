@@ -1473,6 +1473,7 @@ function App() {
   const [partnerLogoFile, setPartnerLogoFile] = useState<File | null>(null)
   const [partnerLogoPreview, setPartnerLogoPreview] = useState<string | null>(null)
   const [isPlacingPartner, setIsPlacingPartner] = useState(false) // for click-to-place in dev form
+  const [isQuickAddPartner, setIsQuickAddPartner] = useState(false) // extra dev mode: click map = instantly create minimal tienda/partner (no form)
   const [mapForceTick, setMapForceTick] = useState(0) // tiny trigger so map re-renders when toggling partners layer
   const [isTogglingLive, setIsTogglingLive] = useState(false) // prevent double-tap and show loading on the live toggle button (fixes stuck click)
 
@@ -1487,6 +1488,7 @@ function App() {
 
   // Keep refs in sync for leaflet click handlers (closed over values would be stale)
   useEffect(() => { isPlacingPartnerRef.current = isPlacingPartner }, [isPlacingPartner])
+  useEffect(() => { isQuickAddPartnerRef.current = isQuickAddPartner }, [isQuickAddPartner])
   useEffect(() => { showAddPartnerFormRef.current = showAddPartnerForm }, [showAddPartnerForm])
   // Developer gate for partner management (only devs can add/edit partner locations on the map)
   const [isDeveloper, setIsDeveloper] = useState(() => {
@@ -1683,6 +1685,7 @@ function App() {
   const areaCircleRef = useRef<any>(null)
   // Refs for dev map placement UX (click-to-place partner without leaving map view). Always current even inside leaflet handlers.
   const isPlacingPartnerRef = useRef(false)
+  const isQuickAddPartnerRef = useRef(false)
   const showAddPartnerFormRef = useRef(false)
   // For attractive "map heartbeats" — when live activity increases we spawn subtle expanding rings so the GymPulse feels alive
   const prevLiveCountRef = useRef(0)
@@ -6864,10 +6867,68 @@ function App() {
                     selfIsLive={!!currentUser?.trainingNow}
                     onShowProfile={setShowFullProfile}
                     onStartSync={startSyncWith}
-                    onPartnerPositionSelected={(lat, lng) => {
+                    onPartnerPositionSelected={async (lat, lng) => {
+                      if (isQuickAddPartnerRef.current && isDeveloper) {
+                        // Quick add mode: create minimal partner immediately on map click (great for rapid dev iteration)
+                        const pid = 'partner-' + Date.now()
+                        const minimal = {
+                          id: pid,
+                          name: 'Nueva Tienda ' + new Date().toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit'}),
+                          lat, lng,
+                          type: 'gym',
+                          address: 'Agregada rápido por dev',
+                          addedAt: new Date().toISOString(),
+                          updatedAt: new Date().toISOString(),
+                          logoUrl: undefined
+                        }
+                        setPartnerLocations(prev => [...prev, minimal])
+                        setMapForceTick(t => t + 1)
+                        if (!isDemoMode && db) {
+                          try {
+                            const { setDoc, doc } = await import('firebase/firestore')
+                            await setDoc(doc(db, 'partnerLocations', pid), minimal)
+                          } catch (e) { console.warn('quick add fs', e) }
+                        }
+                        toast.success('Tienda agregada rápido', { description: `${lat.toFixed(4)}, ${lng.toFixed(4)} — usa Manage para editar` })
+                        // turn off quick mode after one add
+                        setIsQuickAddPartner(false)
+                        return
+                      }
                       setPartnerFormLat(lat)
                       setPartnerFormLng(lng)
                       // keep form open so dev can confirm
+                    }}
+                    onPartnerMoved={async (id: string, lat: number, lng: number) => {
+                      // Dev drag-to-move partner/tienda on map
+                      setPartnerLocations(prev => prev.map(x => x.id === id ? { ...x, lat, lng } : x))
+                      setMapForceTick(t => t + 1)
+                      if (!isDemoMode && db) {
+                        try {
+                          const { setDoc, doc } = await import('firebase/firestore')
+                          await setDoc(doc(db, 'partnerLocations', id), { lat, lng, updatedAt: new Date().toISOString() }, { merge: true })
+                          toast.success('Tienda movida', { description: 'Posición actualizada en el mapa para todos' })
+                        } catch (e) {
+                          console.warn('partner drag fs', e)
+                          toast.error('No se pudo guardar el movimiento en FS')
+                        }
+                      }
+                    }}
+                    onPartnerDelete={async (id: string) => {
+                      // Dev delete from map popup
+                      const p = partnerLocations.find((pp: any) => pp.id === id)
+                      if (!p || !confirm(`Eliminar ${p.name || 'esta tienda'}?`)) return
+                      if (!isDemoMode && db) {
+                        try {
+                          const { deleteDoc, doc } = await import('firebase/firestore')
+                          await deleteDoc(doc(db, 'partnerLocations', id))
+                        } catch (e) {
+                          console.warn('partner delete from map fs', e)
+                          try { import('sonner').then(m => m.toast.error('No se pudo borrar en FS (revisa reglas)')) } catch {}
+                        }
+                      }
+                      setPartnerLocations(prev => prev.filter(pp => pp.id !== id))
+                      setMapForceTick(t => t + 1)
+                      try { triggerHaptic('light') } catch {}
                     }}
                     onForceTick={() => setMapForceTick(t => t + 1)}
                     onRequestLocation={() => requestUserLocation().catch(() => {})}
@@ -6908,7 +6969,7 @@ function App() {
                     <div className="text-[7px] text-[#FFD700] px-1 mt-0.5">Tu Network Power activa — tus GymPartners destacan en el GymPulse</div>
                   )}
                   {isDeveloper && showPartners && (
-                    <div className="text-[7px] text-[#FFD700]/80 px-1 mt-0.5">DEV: arrastra los pins dorados de PARTNERS para moverlos • "Poner aquí" o click-mapa en el formulario = colocación precisa con dirección</div>
+                    <div className="text-[7px] text-[#FFD700]/80 px-1 mt-0.5">DEV: arrastra pins PARTNERS para mover • +Add rápido (click mapa crea tienda) • Manage para borrar/editar • popups tienen 🗑️ Borrar</div>
                   )}
 
                   {/* Centrar / recenter control - prefers self GPS location and keeps current zoom level so user stays "fijo donde estoy" */}
@@ -6949,6 +7010,21 @@ function App() {
                         title="Gestionar partners existentes (editar logos, eliminar)"
                       >
                         Manage
+                      </button>
+                      <button
+                        onClick={() => {
+                          const next = !isQuickAddPartner
+                          setIsQuickAddPartner(next)
+                          if (next) {
+                            toast('Modo ADD RÁPIDO activado', { description: 'Click en el mapa = crea tienda mínima al instante. Click de nuevo para desactivar.' })
+                          } else {
+                            toast('Modo add rápido OFF')
+                          }
+                        }}
+                        className={`absolute top-2 right-[170px] text-[8px] px-2 py-0.5 rounded-full font-bold border active:scale-95 z-30 ${isQuickAddPartner ? 'bg-red-500 text-white border-red-500' : 'bg-[#FFD700]/70 text-black border-[#FFD700]'}`}
+                        title="Modo agregar rápido: click en mapa crea tienda/partner mínima sin formulario (ideal para devs)"
+                      >
+                        {isQuickAddPartner ? '✕ Add rápido' : '+ Add rápido'}
                       </button>
                     </>
                   ) : (
@@ -7380,7 +7456,77 @@ function App() {
                           ))}
                         </div>
                         <button onClick={openAddPartner} className="mt-3 w-full py-1.5 text-sm bg-[#FFD700] text-black rounded-xl font-bold">+ Agregar nuevo Partner</button>
-                        <div className="text-[9px] text-center text-[#666] mt-1">Drag del pin en el mapa (solo devs) = mover instantáneo. "Poner aquí" o "COLOCAR TOCANDO MAPA" para precisión. Todo realtime.</div>
+
+                        {/* Extra dev superpowers for rapid testing / content creation on the map */}
+                        <div className="mt-2 grid grid-cols-3 gap-1 text-[9px]">
+                          <button 
+                            onClick={() => {
+                              if (!confirm('¿BORRAR TODAS las tiendas/partners? Esto es solo para devs y es permanente en FS.')) return
+                              ;(async () => {
+                                for (const p of partnerLocations) {
+                                  if (!isDemoMode && db) {
+                                    try { const { deleteDoc, doc } = await import('firebase/firestore'); await deleteDoc(doc(db, 'partnerLocations', p.id)) } catch {}
+                                  }
+                                }
+                                setPartnerLocations([])
+                                setMapForceTick(t => t + 1)
+                                toast('Todas las tiendas borradas')
+                              })()
+                            }}
+                            className="py-1 bg-red-900/60 text-red-300 rounded border border-red-500/40 active:bg-red-800"
+                          >
+                            🗑️ Borrar TODAS
+                          </button>
+                          <button 
+                            onClick={() => {
+                              const data = JSON.stringify(partnerLocations, null, 2)
+                              const blob = new Blob([data], {type: 'application/json'})
+                              const url = URL.createObjectURL(blob)
+                              const a = document.createElement('a')
+                              a.href = url
+                              a.download = 'entrenamatch-partners.json'
+                              a.click()
+                              URL.revokeObjectURL(url)
+                              toast.success('Partners exportados')
+                            }}
+                            className="py-1 bg-[#1C1C20] text-[#9CA3AF] rounded border border-white/20 active:bg-[#25252A]"
+                          >
+                            📤 Export JSON
+                          </button>
+                          <label className="py-1 bg-[#1C1C20] text-[#9CA3AF] rounded border border-white/20 active:bg-[#25252A] text-center cursor-pointer">
+                            📥 Import JSON
+                            <input type="file" accept=".json" className="hidden" onChange={async (e) => {
+                              const file = e.target.files?.[0]
+                              if (!file) return
+                              try {
+                                const text = await file.text()
+                                const imported = JSON.parse(text)
+                                if (!Array.isArray(imported)) throw new Error('Formato inválido')
+                                for (const p of imported) {
+                                  if (!p.id || !p.name || typeof p.lat !== 'number') continue
+                                  if (!isDemoMode && db) {
+                                    try {
+                                      const { setDoc, doc } = await import('firebase/firestore')
+                                      await setDoc(doc(db, 'partnerLocations', p.id), { ...p, updatedAt: new Date().toISOString() }, { merge: true })
+                                    } catch {}
+                                  }
+                                  // merge into local
+                                  setPartnerLocations(prev => {
+                                    const exists = prev.some(x => x.id === p.id)
+                                    if (exists) return prev.map(x => x.id === p.id ? { ...x, ...p } : x)
+                                    return [...prev, p]
+                                  })
+                                }
+                                setMapForceTick(t => t + 1)
+                                toast.success(`${imported.length} partners importados`)
+                              } catch (err) {
+                                toast.error('Error importando JSON')
+                              }
+                              e.target.value = '' // reset input
+                            }} />
+                          </label>
+                        </div>
+                        <div className="text-[9px] text-center text-[#666] mt-1">Drag del pin en el mapa (solo devs) = mover instantáneo. "Poner aquí" o "COLOCAR TOCANDO MAPA" para precisión. Todo realtime. +Add rápido = click = crear ya.</div>
                       </div>
                     </div>
                   )}

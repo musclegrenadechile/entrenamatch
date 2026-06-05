@@ -58,6 +58,8 @@ export interface GymPulseMapProps {
   onShowProfile?: (p: any) => void
   onStartSync?: (id: string, name: string) => void
   onPartnerPositionSelected?: (lat: number, lng: number) => void
+  onPartnerMoved?: (id: string, lat: number, lng: number) => void
+  onPartnerDelete?: (id: string) => void
   onForceTick?: () => void
   onRequestLocation?: () => void
 
@@ -105,6 +107,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     onShowProfile,
     onStartSync,
     onPartnerPositionSelected,
+    onPartnerMoved,
+    onPartnerDelete,
     onForceTick,
     onRequestLocation,
     onRegisterCentrar,
@@ -394,7 +398,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         } catch (e) {}
       })
 
-      // Basic partner markers (logos if present)
+      // Partner markers (logos if present). Enhanced for devs: draggable + dev actions in popup.
       if (showPartners) {
         partnerLocationsRef.current.forEach((p: any) => {
           if (!p.lat || !p.lng) return
@@ -405,9 +409,30 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
           try {
             const pm = L.marker([p.lat, p.lng], {
-              icon: L.divIcon({ html, className: 'partner-marker', iconSize: [32, 32], iconAnchor: [16, 16] })
+              icon: L.divIcon({ html, className: 'partner-marker', iconSize: [32, 32], iconAnchor: [16, 16] }),
+              draggable: !!isDeveloper  // devs can drag to reposition stores/tiendas instantly
             }).addTo(mapInstanceRef.current)
-            pm.bindPopup(`<strong>${p.name}</strong><br/><span style="font-size:10px">${p.type || 'Partner'}</span>`)
+
+            // Basic popup, enriched for devs with action buttons (using window helpers for simplicity)
+            let popupContent = `<strong>${p.name}</strong><br/><span style="font-size:10px">${p.type || 'Partner'} • ${p.address || ''}</span>`
+            if (isDeveloper) {
+              popupContent += `<br/><small style="color:#FFD700">DEV MODE</small><br/>`
+              popupContent += `<button onclick="window.devEditPartner && window.devEditPartner('${p.id}')" style="font-size:10px;margin-right:4px">✏️ Edit</button>`
+              popupContent += `<button onclick="window.devDeletePartner && window.devDeletePartner('${p.id}')" style="font-size:10px;color:#f55">🗑️ Borrar tienda</button>`
+            }
+            pm.bindPopup(popupContent)
+
+            // Drag support for devs - calls parent to persist move (to state + FS)
+            if (isDeveloper) {
+              pm.on('dragend', () => {
+                const pos = pm.getLatLng()
+                if (onPartnerMoved) {
+                  onPartnerMoved(p.id, pos.lat, pos.lng)
+                }
+                try { /* haptic */ } catch {}
+              })
+            }
+
             markersRef.current.push(pm)
           } catch {}
         })
@@ -440,10 +465,11 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   }, [
     showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone,
     ritualRipples, echoPins, showPartners, mapForceTick, partnerLocations.length,
-    showOnlyLegends, syncBonds, isDeveloper, selfIsLive, onShowProfile, onStartSync, onPartnerPositionSelected, onForceTick, onRequestLocation
+    showOnlyLegends, syncBonds, isDeveloper, selfIsLive, onShowProfile, onStartSync, onPartnerPositionSelected, onPartnerMoved, onPartnerDelete, onForceTick, onRequestLocation
   ])
 
   // Global window helpers for popups (quick bridge until we use React portals or better event system)
+  // Also dev helpers for partner management from map popups
   useEffect(() => {
     ;(window as any).startSyncFromMap = (id: string, name: string) => {
       onStartSync && onStartSync(id, name)
@@ -452,11 +478,21 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       // TODO: wire to parent witness modal
       console.log('witness echo', id)
     }
+    ;(window as any).devDeletePartner = (id: string) => {
+      if (onPartnerDelete) onPartnerDelete(id)
+    }
+    ;(window as any).devEditPartner = (id: string) => {
+      // For now, parent can handle via manage or we can add callback later
+      console.log('dev edit requested for', id)
+      // Could expose a onPartnerEdit callback in future
+    }
     return () => {
       delete (window as any).startSyncFromMap
       delete (window as any).witnessEchoPin
+      delete (window as any).devDeletePartner
+      delete (window as any).devEditPartner
     }
-  }, [onStartSync])
+  }, [onStartSync, onPartnerDelete])
 
   return (
     <div
