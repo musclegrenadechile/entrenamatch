@@ -1568,6 +1568,16 @@ function App() {
     setMapForceTick(t => t + 1)
   }, [showPartners, partnerLocations.length, showLiveMap])
 
+  // Ensure Leaflet recalcs size when the map is toggled or we switch tabs (prevents "map se pierde", wrong center, or blank after layout change).
+  useEffect(() => {
+    if (showLiveMap && gymPulseMapRef.current) {
+      const t = setTimeout(() => {
+        try { gymPulseMapRef.current?.invalidateSize?.() } catch {}
+      }, 120)
+      return () => clearTimeout(t)
+    }
+  }, [showLiveMap, activeTab])
+
   // Developer login for gated partner management (only devs can add/edit locals on the GymPulse map)
   const loginAsDeveloper = () => {
     if (devPassword === DEV_PASSWORD) {

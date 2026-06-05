@@ -259,11 +259,14 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       const initialCenter = userLocation ? [userLocation.lat, userLocation.lng] : [-33.0, -71.5]
       const initialZoom = userLocation ? 13 : 10
       mapInstanceRef.current = L.map(mapContainerRef.current, {
-        zoomControl: true,
+        zoomControl: false, // we place it bottomright to free top-right for our Centrar + dev tools (prevents "dev no se ve" overlap)
         attributionControl: false
       }).setView(initialCenter, initialZoom)
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(mapInstanceRef.current)
+
+      // Move zoom control to bottom right so our overlays (Centrar top-right, dev toolbar) are not covered
+      L.control.zoom({ position: 'bottomright' }).addTo(mapInstanceRef.current)
 
       setTimeout(() => { if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize() }, 50)
 
@@ -613,24 +616,52 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         } catch {}
       })
 
-      // Initial fit (once)
-      if (markersRef.current.length > 0 && !(mapInstanceRef.current as any)._hasDoneInitialFit) {
+      // Initial / relevant fit — now always tries to include SELF (user) + current visible markers.
+      // This fixes "el mapa no queda fijo / al hacer zoomout/zoomin se pierde".
+      // Previously only fitted lives (markersRef) excluding self, and only once ever → view would drift or lose
+      // the user's position + activity when zooming or on filter changes.
+      const shouldFit = markersRef.current.length > 0 || !!selfMarkerRef.current || !!userLocation;
+
+      // When user applies strong filters (nearOnly, specific zone, only legends), reset the flag so we re-fit
+      // the *relevant subset* + self. This makes the map "feel fixed" to what you're looking at after zoom/filter.
+      const filterActive = mapNearOnly || !!selectedMapZone || showOnlyLegends;
+      if (filterActive) {
+        ;(mapInstanceRef.current as any)._hasDoneInitialFit = false;
+      }
+
+      if (shouldFit && !(mapInstanceRef.current as any)._hasDoneInitialFit) {
         try {
-          const group = L.featureGroup(markersRef.current)
-          mapInstanceRef.current.fitBounds(group.getBounds().pad(0.15))
-          ;(mapInstanceRef.current as any)._hasDoneInitialFit = true
+          const group = L.featureGroup(markersRef.current);
+          let bounds = group.getBounds && group.getBounds().isValid() ? group.getBounds() : null;
+
+          // Always extend with self so "TÚ" stays in the fitted view
+          if (selfMarkerRef.current) {
+            const s = selfMarkerRef.current.getLatLng();
+            bounds = bounds ? bounds.extend(s) : L.latLngBounds(s, s);
+          } else if (userLocation) {
+            const s = [userLocation.lat, userLocation.lng] as [number, number];
+            bounds = bounds ? bounds.extend(s) : L.latLngBounds(s, s);
+          }
+
+          if (bounds && bounds.isValid()) {
+            mapInstanceRef.current.fitBounds(bounds.pad(0.18));
+            ;(mapInstanceRef.current as any)._hasDoneInitialFit = true;
+          }
         } catch {}
       }
     }, updateDelay)
 
-    // Return cleanup for this effect invocation
+    // Return cleanup for this effect invocation.
+    // IMPORTANT: only clean transient layers (lives, partners, ripples, tethers, echoes).
+    // Do NOT remove selfMarkerRef / areaCircleRef here — they are long-lived for the map instance lifetime
+    // and updated in-place. Removing them on every liveTrainingNow / filter change causes "map se pierde"
+    // flicker and view instability during realtime + zoom.
     return () => {
       if (mapInstanceRef.current) {
         markersRef.current.forEach(m => { try { mapInstanceRef.current.removeLayer(m) } catch {} })
         syncLinesRef.current.forEach(l => { try { mapInstanceRef.current.removeLayer(l) } catch {} })
         syncLinesRef.current = []
-        if (selfMarkerRef.current) { try { mapInstanceRef.current.removeLayer(selfMarkerRef.current) } catch {}; selfMarkerRef.current = null }
-        if (areaCircleRef.current) { try { mapInstanceRef.current.removeLayer(areaCircleRef.current) } catch {}; areaCircleRef.current = null }
+        // self and area intentionally left alone (cleaned only in the !showLiveMap aggressive path or map destroy)
       }
       markersRef.current = []
     }
@@ -689,6 +720,40 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     })
     return counts
   }, [liveTrainingNow])
+
+  // Keep map crisp on container size changes (tab switch, keyboard, parent layout, orientation).
+  // Prevents "map se pierde" / black/blank / wrong zoom after resize.
+  useEffect(() => {
+    const el = mapContainerRef.current
+    if (!el || !mapInstanceRef.current) return
+    let ro: ResizeObserver | null = null
+    try {
+      ro = new ResizeObserver(() => {
+        if (mapInstanceRef.current) {
+          try { mapInstanceRef.current.invalidateSize() } catch {}
+        }
+      })
+      ro.observe(el)
+    } catch {}
+    return () => { try { ro && ro.disconnect() } catch {} }
+  }, [showLiveMap]) // re-attach when map (re)appears
+
+  // When strong filters change, reset the "initial fit done" flag so the next debounced update will
+  // re-fitBounds to the *currently visible* lives + self. This makes the map feel "fijo" (anchored)
+  // to what the user selected after they zoom or pan.
+  const prevFiltersRef = useRef({ mapNearOnly, selectedMapZone, showOnlyLegends })
+  useEffect(() => {
+    const prev = prevFiltersRef.current
+    const changed = prev.mapNearOnly !== mapNearOnly ||
+                    prev.selectedMapZone !== selectedMapZone ||
+                    prev.showOnlyLegends !== showOnlyLegends
+    if (changed && mapInstanceRef.current) {
+      ;(mapInstanceRef.current as any)._hasDoneInitialFit = false
+      // nudge the update so it re-computes + fits promptly
+      if (onForceTick) onForceTick()
+    }
+    prevFiltersRef.current = { mapNearOnly, selectedMapZone, showOnlyLegends }
+  }, [mapNearOnly, selectedMapZone, showOnlyLegends, onForceTick])
 
   const zoneColors: Record<string, string> = {
     'Viña del Mar': '#22c55e',
@@ -817,34 +882,35 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         Centrar
       </button>
 
-      {/* Dev quick actions (inside the map widget) - compact to avoid overflow on mobile viewport (GH Pages live) */}
+      {/* Dev quick actions (inside the map widget) - compact + high z so they are always visible (was hidden behind zoom control or too small).
+          Zoom control moved to bottomright in map init. */}
       {isDeveloper && (
-        <div className="absolute top-9 right-2 flex flex-col gap-0.5 z-30">
+        <div className="absolute top-9 right-2 flex flex-col gap-0.5 z-[100]">
           <div className="flex gap-1 justify-end">
             <button
               onClick={() => onOpenAddPartner && onOpenAddPartner()}
-              className="text-[7px] px-1.5 py-0.5 rounded-full bg-[#FFD700] text-black font-bold border border-[#FFD700] active:scale-95"
+              className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#FFD700] text-black font-bold border border-[#FFD700] active:scale-95"
               title="Agregar local partner con logo (solo devs)"
             >
               +P
             </button>
             <button
               onClick={() => onOpenManagePartners && onOpenManagePartners()}
-              className="text-[7px] px-1.5 py-0.5 rounded-full bg-[#FFD700]/80 text-black font-bold border border-[#FFD700] active:scale-95"
+              className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#FFD700]/80 text-black font-bold border border-[#FFD700] active:scale-95"
               title="Gestionar partners existentes"
             >
               M
             </button>
             <button
               onClick={() => onToggleQuickAdd && onToggleQuickAdd(!isQuickAddPartner)}
-              className={`text-[7px] px-1.5 py-0.5 rounded-full font-bold border active:scale-95 ${isQuickAddPartner ? 'bg-red-500 text-white border-red-500' : 'bg-[#FFD700]/70 text-black border-[#FFD700]'}`}
+              className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold border active:scale-95 ${isQuickAddPartner ? 'bg-red-500 text-white border-red-500' : 'bg-[#FFD700]/70 text-black border-[#FFD700]'}`}
               title="Modo agregar rápido: click en mapa crea tienda mínima"
             >
               {isQuickAddPartner ? '✕' : '+Ráp'}
             </button>
             <button
               onClick={() => onAddPartnerAtCurrentCenter && onAddPartnerAtCurrentCenter()}
-              className="text-[7px] px-1.5 py-0.5 rounded-full bg-[#FFD700]/60 text-black font-bold border border-[#FFD700] active:scale-95"
+              className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#FFD700]/60 text-black font-bold border border-[#FFD700] active:scale-95"
               title="Agregar partner directamente en el centro actual del mapa (rápido para devs)"
             >
               @C
@@ -853,14 +919,14 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           <div className="flex gap-1 justify-end">
             <button
               onClick={() => onReloadPartners && onReloadPartners()}
-              className="text-[7px] px-1.5 py-0.5 rounded-full bg-black/70 text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black"
+              className="text-[8px] px-1.5 py-0.5 rounded-full bg-black/70 text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black"
               title="Forzar refresh de partners y mapa"
             >
               ↻
             </button>
             <button
               onClick={() => onSpawnTestLives && onSpawnTestLives(3)}
-              className="text-[7px] px-1.5 py-0.5 rounded-full bg-purple-600/80 text-white font-bold border border-purple-400 active:scale-95"
+              className="text-[8px] px-1.5 py-0.5 rounded-full bg-purple-600/80 text-white font-bold border border-purple-400 active:scale-95"
               title="Spawnea 3 vidas de test cerca de ti (solo visibles en este mapa para probar GymPulse sin otras cuentas)"
             >
               🧪+3
@@ -868,7 +934,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
             {(devTestCount || 0) > 0 && (
               <button
                 onClick={() => onClearDevTestLives && onClearDevTestLives()}
-                className="text-[7px] px-1.5 py-0.5 rounded-full bg-red-900/70 text-red-200 border border-red-500/50 active:bg-red-800"
+                className="text-[8px] px-1.5 py-0.5 rounded-full bg-red-900/70 text-red-200 border border-red-500/50 active:bg-red-800"
                 title="Quitar las vidas de test"
               >
                 🧹
