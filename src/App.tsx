@@ -1474,6 +1474,7 @@ function App() {
   const [partnerLogoPreview, setPartnerLogoPreview] = useState<string | null>(null)
   const [isPlacingPartner, setIsPlacingPartner] = useState(false) // for click-to-place in dev form
   const [mapForceTick, setMapForceTick] = useState(0) // tiny trigger so map re-renders when toggling partners layer
+  const [isTogglingLive, setIsTogglingLive] = useState(false) // prevent double-tap and show loading on the live toggle button (fixes stuck click)
 
   // Keep refs in sync for leaflet click handlers (closed over values would be stale)
   useEffect(() => { isPlacingPartnerRef.current = isPlacingPartner }, [isPlacingPartner])
@@ -2064,6 +2065,73 @@ function App() {
     }, 45000);
     return () => clearInterval(id);
   }, [isDemoMode]);
+
+  // REAL-TIME PROFILES LISTENER for live status (fixes "no aparece para otros en el mapa" when someone toggles Entrenando Ahora)
+  // When any profile updates (including trainingNow + updatedAt), all connected clients get pushed the change instantly.
+  // This makes the GymPulse map update for everyone in near real-time without waiting for the 45s poller.
+  // We still keep the poller as fallback + for the "Actualizar todo" button.
+  useEffect(() => {
+    if (isDemoMode || !db || !isFirebaseConfigured) return undefined;
+
+    let unsub: any = null;
+    (async () => {
+      try {
+        const { collection, onSnapshot, query, orderBy, limit } = await import('firebase/firestore');
+        const profilesRef = collection(db, 'profiles');
+        const q = query(profilesRef, orderBy('updatedAt', 'desc'), limit(150));
+
+        unsub = onSnapshot(q, (snapshot) => {
+          const profiles: Profile[] = [];
+          const currentUid = firebaseUser?.uid;
+
+          snapshot.forEach((doc) => {
+            if (doc.id === currentUid) return;
+            if (blockedUsers.includes(doc.id)) return;
+            const data = doc.data() as any;
+            if (data && data.name) {
+              profiles.push({
+                id: doc.id,
+                name: data.name,
+                age: data.age || 25,
+                gender: data.gender || 'hombre',
+                city: data.city || '',
+                country: data.country || 'Chile',
+                lat: data.lat || -33.0,
+                lng: data.lng || -71.0,
+                bio: data.bio || '',
+                photos: data.photos || [],
+                trainingTypes: data.trainingTypes || [],
+                goals: data.goals || [],
+                level: data.level || 'Intermedio',
+                availability: data.availability || ['Tarde'],
+                intensity: data.intensity,
+                verificationStatus: data.verificationStatus,
+                trainingNow: data.trainingNow || false,
+                trainingNowSince: data.trainingNowSince != null ? data.trainingNowSince : undefined,
+                liveStreak: data.liveStreak != null ? data.liveStreak : undefined,
+                lastLiveDate: data.lastLiveDate != null ? data.lastLiveDate : undefined,
+                liveJoins: data.liveJoins != null ? data.liveJoins : undefined,
+                joinedLiveStreak: data.joinedLiveStreak != null ? data.joinedLiveStreak : undefined,
+                trainingSyncWith: data.trainingSyncWith || undefined,
+                syncStreak: data.syncStreak != null ? data.syncStreak : undefined,
+                syncBonds: data.syncBonds || {},
+                // add other fields as needed for map (level etc)
+                retentionLevel: data.retentionLevel || 1,
+              } as any);
+            }
+          });
+          setRealProfiles(profiles);
+          try { localStorage.setItem('entrenamatch_last_live', JSON.stringify(profiles)) } catch {}
+        }, (err) => {
+          console.warn('profiles onSnapshot error, falling back to polling', err);
+        });
+      } catch (e) {
+        console.warn('Failed to setup profiles listener', e);
+      }
+    })();
+
+    return () => { if (unsub) unsub(); };
+  }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, blockedUsers]); // blockedUsers to re-filter if changes
 
   // EntrenaSync real-time mirror: when in sync, pull partner's latest syncActions and state from realProfiles (via periodic load or on change)
   // Placed here AFTER all dependent states (realProfiles, effectiveUserId, currentUser local from saveUser) to avoid TDZ or init order issues in render/bundler.
@@ -6120,14 +6188,13 @@ function App() {
           })
         } else {
 
-        // Note: click on marker opens the popup (by Leaflet default since bindPopup).
-        // Popup has "Ver perfil" button for profile modal. This avoids event conflict with popup.
-
-        // Iconic interactive popup — richer, shows gadgets, bond weight, quick actions. Makes the map feel like the social command center.
-        const userLvl = user.visibleLevel || 1;
-        const uGadgets = getUnlockedGadgets(userLvl).map(g => g.icon).join(' ');
-        const bondStr = user.bondInfo ? ` • Bond LV${user.bondInfo.bondLevel || 1}` : '';
-        const popupContent = `
+        // (old popupContent for live markers removed - now in GymPulseMap)
+        const popupContent = ` // stub to close any previous open ` if cut badly
+        `; // end stub
+      } catch (e) {} // close the forEach try if present
+    }); // close forEach
+  } // close any debounced fn stub
+}); // safety close
           <div style="min-width:195px; font-size:12.5px; line-height:1.25; background:#0D0D10; border-radius:8px; padding:2px;">
             <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
               <strong style="font-size:14px; color:#fff">${user.name}</strong>
@@ -6957,6 +7024,7 @@ function App() {
                     syncBonds={syncBonds}
                     isDeveloper={isDeveloper}
                     isPlacingPartner={isPlacingPartner}
+                    selfIsLive={!!currentUser?.trainingNow}
                     onShowProfile={setShowFullProfile}
                     onStartSync={startSyncWith}
                     onPartnerPositionSelected={(lat, lng) => {
@@ -9965,77 +10033,103 @@ function App() {
               <div>
                 <button 
                   onClick={async () => {
-                    const newVal = !currentUser.trainingNow
-                    if (newVal) {
-                      // For REALISM: request actual GPS when going live
-                      await requestUserLocation()
-                    }
-                    // Integrity is important for prod, but don't block the core live toggle (fixes "no pasa nada" bug).
-                    // Show clear guidance instead of silent return.
-                    if (newVal && !isDemoMode && PlayIntegrityNative) {
-                      const current = getLastIntegrityResult() || lastIntegrity;
-                      if (!hasPositiveIntegrity(current)) {
-                        toast('🛡️ Verifica integridad para full visibilidad en prod', { 
-                          description: 'Usa el botón 🛡️ Google Play Integrity arriba. El live se activa localmente de todas formas.' 
-                        });
-                        // do not return — proceed with toggle for the feature to work
+                    if (isTogglingLive) return;
+                    setIsTogglingLive(true);
+                    const oldTrainingNow = currentUser.trainingNow;
+                    try {
+                      const newVal = !oldTrainingNow;
+                      if (newVal) {
+                        // For REALISM: request actual GPS when going live
+                        await requestUserLocation().catch(() => {});
                       }
-                    }
-                    let streakUpdate: any = {}
-                    if (newVal) {
-                      const todayStr = new Date().toDateString()
-                      const lastStr = currentUser.lastLiveDate ? new Date(currentUser.lastLiveDate).toDateString() : null
-                      let newStreak = currentUser.liveStreak || 0
-                      if (!lastStr || lastStr === todayStr) {
-                        // same day or first
-                        if (!lastStr) newStreak = 1
-                      } else {
-                        const lastDate = new Date(lastStr)
-                        const yesterday = new Date()
-                        yesterday.setDate(yesterday.getDate() - 1)
-                        if (lastDate.toDateString() === yesterday.toDateString()) {
-                          newStreak = (currentUser.liveStreak || 0) + 1
-                        } else {
-                          newStreak = 1
+                      // Integrity is important for prod, but don't block the core live toggle (fixes "no pasa nada" bug).
+                      // Show clear guidance instead of silent return.
+                      if (newVal && !isDemoMode && PlayIntegrityNative) {
+                        const current = getLastIntegrityResult() || lastIntegrity;
+                        if (!hasPositiveIntegrity(current)) {
+                          toast('🛡️ Verifica integridad para full visibilidad en prod', { 
+                            description: 'Usa el botón 🛡️ Google Play Integrity arriba. El live se activa localmente de todas formas.' 
+                          });
+                          // do not return — proceed with toggle for the feature to work
                         }
                       }
-                      streakUpdate = { liveStreak: newStreak, lastLiveDate: Date.now(), joinedLiveStreak: (currentUser.joinedLiveStreak || 0) + (lastStr && lastStr !== todayStr ? 1 : (lastStr ? 0 : 1)) }
-                    }
-                    const updated = { ...currentUser, trainingNow: newVal, trainingNowSince: newVal ? Date.now() : undefined, ...streakUpdate, ...( !newVal ? { trainingSyncWith: null, syncStartedAt: null } : {} ) }
-                    saveUserWithRealSync(updated as CurrentUser)
-                    // Immediately refresh real profiles so the toggler sees current live people, and the poller will propagate to others soon
-                    loadRealProfiles().catch(() => {})
-                    // Force the live map to immediately reflect your status (self marker becomes live with glows, ripples if applicable)
-                    setMapForceTick(t => t + 1)
-                    // Clearer, educational toast
-                    toast(newVal ? '🟢 ¡Entrenando Ahora (EN VIVO) activado!' : 'Entrenamiento finalizado')
-                    // Pulso Diario progress
-                    checkAndUpdateDailyPulse(updated)
-                    if (dailyPulse?.currentChallenge?.type === 'solo') {
-                      completeDailyChallenge(1)
-                    } else if (newVal) {
-                      awardMomentum(8, 'Ancla del GymPulse')
-                    }
-                    if (newVal) {
-                      createProfilePost('¡Entrenando ahora en el GymPulse! ¿Quién se une al pulso? 🏋️', null).catch(() => {})
-                    } else {
-                      // Mientras más entrenes, más puntos para nivel y gadgets (retención fuerte)
-                      const durationMs = currentUser.trainingNowSince ? Date.now() - currentUser.trainingNowSince : 30 * 60 * 1000
-                      const minutes = Math.max(5, Math.floor(durationMs / 60000))
-                      // Award XP directly to feed the level system (in addition to momentum/streaks)
-                      if (dailyPulse) {
-                        const newTotal = (dailyPulse.xp || 0) + (minutes * 2) + 10 // bonus base por sesión
-                        const { level: newL, xp: rem } = computeRetentionLevel(dailyPulse.momentum, dailyPulse.trainingStreak, dailyPulse.synergyStreak, dailyPulse.voiceStreak || 0, dailyPulse.pulseStreak || 0, networkStats.networkPower)
-                        // simple: add to momentum which feeds total, or directly bump xp in pulse
-                        const bumped = { ...dailyPulse, xp: Math.min(299, (dailyPulse.xp || 0) + Math.floor(minutes * 1.5)) }
-                        setDailyPulse(bumped)
+                      let streakUpdate: any = {}
+                      if (newVal) {
+                        const todayStr = new Date().toDateString()
+                        const lastStr = currentUser.lastLiveDate ? new Date(currentUser.lastLiveDate).toDateString() : null
+                        let newStreak = currentUser.liveStreak || 0
+                        if (!lastStr || lastStr === todayStr) {
+                          // same day or first
+                          if (!lastStr) newStreak = 1
+                        } else {
+                          const lastDate = new Date(lastStr)
+                          const yesterday = new Date()
+                          yesterday.setDate(yesterday.getDate() - 1)
+                          if (lastDate.toDateString() === yesterday.toDateString()) {
+                            newStreak = (currentUser.liveStreak || 0) + 1
+                          } else {
+                            newStreak = 1
+                          }
+                        }
+                        streakUpdate = { liveStreak: newStreak, lastLiveDate: Date.now(), joinedLiveStreak: (currentUser.joinedLiveStreak || 0) + (lastStr && lastStr !== todayStr ? 1 : (lastStr ? 0 : 1)) }
                       }
-                      awardMomentum(Math.floor(minutes / 3) + 5, `Sesión de ${minutes}min completada`)
+                      const updated = { ...currentUser, trainingNow: newVal, trainingNowSince: newVal ? Date.now() : undefined, ...streakUpdate, ...( !newVal ? { trainingSyncWith: null, syncStartedAt: null } : {} ) }
+                      
+                      // Save (optimistic local + FS). If FS fails we will revert below.
+                      await saveUserWithRealSync(updated as CurrentUser)
+                      
+                      // Immediately refresh real profiles so the toggler sees current live people, and the poller will propagate to others soon
+                      loadRealProfiles().catch(() => {})
+                      // Force the live map to immediately reflect your status (self marker becomes live with glows, ripples if applicable)
+                      setMapForceTick(t => t + 1)
+                      // Clearer, educational toast
+                      toast(newVal ? '🟢 ¡Entrenando Ahora (EN VIVO) activado!' : 'Entrenamiento finalizado')
+                      // Pulso Diario progress
+                      checkAndUpdateDailyPulse(updated)
+                      if (dailyPulse?.currentChallenge?.type === 'solo') {
+                        completeDailyChallenge(1)
+                      } else if (newVal) {
+                        awardMomentum(8, 'Ancla del GymPulse')
+                      }
+                      if (newVal) {
+                        createProfilePost('¡Entrenando ahora en el GymPulse! ¿Quién se une al pulso? 🏋️', null).catch(() => {})
+                      } else {
+                        // Mientras más entrenes, más puntos para nivel y gadgets (retención fuerte)
+                        const durationMs = currentUser.trainingNowSince ? Date.now() - currentUser.trainingNowSince : 30 * 60 * 1000
+                        const minutes = Math.max(5, Math.floor(durationMs / 60000))
+                        // Award XP directly to feed the level system (in addition to momentum/streaks)
+                        if (dailyPulse) {
+                          const newTotal = (dailyPulse.xp || 0) + (minutes * 2) + 10 // bonus base por sesión
+                          const { level: newL, xp: rem } = computeRetentionLevel(dailyPulse.momentum, dailyPulse.trainingStreak, dailyPulse.synergyStreak, dailyPulse.voiceStreak || 0, dailyPulse.pulseStreak || 0, networkStats.networkPower)
+                          // simple: add to momentum which feeds total, or directly bump xp in pulse
+                          const bumped = { ...dailyPulse, xp: Math.min(299, (dailyPulse.xp || 0) + Math.floor(minutes * 1.5)) }
+                          setDailyPulse(bumped)
+                        }
+                        awardMomentum(Math.floor(minutes / 3) + 5, `Sesión de ${minutes}min completada`)
+                      }
+                    } catch (err) {
+                      console.error('Live toggle failed', err);
+                      // Revert local state if the save didn't persist (e.g. FS error)
+                      // Re-load from hook/local to be safe, or force a profile refresh
+                      toast.error('No se pudo activar/desactivar el live', { description: 'Revisa tu conexión o integridad. Estado revertido.' });
+                      // Force a re-sync from FS for this user to get authoritative state
+                      if (!isDemoMode && firebaseUser?.uid) {
+                        try {
+                          const realP = await getUserProfile(firebaseUser.uid);
+                          if (realP) {
+                            const merged = { ...currentUser, trainingNow: realP.trainingNow, trainingNowSince: realP.trainingNowSince };
+                            saveUser(merged as any); // this will flip button back if needed
+                          }
+                        } catch {}
+                      }
+                    } finally {
+                      setIsTogglingLive(false);
                     }
                   }}
-                  className={`w-full py-3 rounded-2xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm ${currentUser.trainingNow ? 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black ring-1 ring-[#22c55e]/60' : 'bg-[#1C1C20] border border-[#2F2F35] text-white hover:border-[#22c55e]/50 active:bg-[#25252A]'}`}
+                  disabled={isTogglingLive}
+                  className={`w-full py-3 rounded-2xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm ${isTogglingLive ? 'opacity-70 cursor-wait' : ''} ${currentUser.trainingNow ? 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black ring-1 ring-[#22c55e]/60' : 'bg-[#1C1C20] border border-[#2F2F35] text-white hover:border-[#22c55e]/50 active:bg-[#25252A]'}`}
                 >
-                  {currentUser.trainingNow ? '🟢 Entrenando Ahora (EN VIVO) — ¡Estás en el mapa del GymPulse!' : 'Activar "Entrenando Ahora (EN VIVO)"'}
+                  {isTogglingLive ? (currentUser.trainingNow ? 'Desactivando...' : 'Activando en el GymPulse...') : (currentUser.trainingNow ? '🟢 Entrenando Ahora (EN VIVO) — ¡Estás en el mapa del GymPulse!' : 'Activar "Entrenando Ahora (EN VIVO)"')}
                 </button>
                 <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">
                   Al activar apareces en el <strong>mapa en tiempo real (GymPulse)</strong>. Usuarios cerca te ven entrenando y sienten urgencia real (FOMO) de unirse o hacer sync contigo antes de que termines. Esto genera joins/syncs, sube tus rachas y Network Power, y hace que la gente abra la app todos los días. ¡El corazón social del entrenamiento en comunidad!

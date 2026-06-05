@@ -52,6 +52,7 @@ export interface GymPulseMapProps {
   syncBonds: Record<string, any>
   isDeveloper?: boolean
   isPlacingPartner?: boolean
+  selfIsLive?: boolean // so we can style the self marker with live pulse/glow when the user has activated "Entrenando Ahora"
 
   // Callbacks
   onShowProfile?: (p: any) => void
@@ -100,6 +101,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     syncBonds,
     isDeveloper = false,
     isPlacingPartner = false,
+    selfIsLive = false,
     onShowProfile,
     onStartSync,
     onPartnerPositionSelected,
@@ -326,9 +328,12 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
       // Self marker (in-place update, not in markersRef)
       if (userLocation) {
+        const isLive = !!selfIsLive;
+        const liveClass = isLive ? ' live-self' : '';
+        const liveBorder = isLive ? 'box-shadow:0 0 0 4px #22c55e55, 0 0 0 8px rgba(34,197,94,0.25); animation: live-pulse-green 2s ease-in-out infinite;' : 'box-shadow:0 0 0 3px rgba(34,197,94,0.3);';
         const selfIcon = L.divIcon({
-          html: `<div style="width:28px;height:28px;border-radius:9999px;overflow:hidden;border:3px solid #22c55e;box-shadow:0 0 0 3px rgba(34,197,94,0.3);"><img src="${userLocation.photo || ''}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#22c55e';this.innerHTML='<div style=font-size:10px;color:white;display:flex;align-items:center;justify-content:center;height:100%>TÚ</div>'"/></div>`,
-          className: '', iconSize: [28, 28], iconAnchor: [14, 14]
+          html: `<div style="width:28px;height:28px;border-radius:9999px;overflow:hidden;border:3px solid ${isLive ? '#22c55e' : '#22c55e'};${liveBorder}"><img src="${userLocation.photo || ''}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#22c55e';this.innerHTML='<div style=font-size:10px;color:white;display:flex;align-items:center;justify-content:center;height:100%>TÚ</div>'"/></div>`,
+          className: `self-marker${liveClass}`, iconSize: [28, 28], iconAnchor: [14, 14]
         })
         if (!selfMarkerRef.current) {
           selfMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: selfIcon }).addTo(mapInstanceRef.current)
@@ -418,7 +423,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   }, [
     showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone,
     ritualRipples, echoPins, showPartners, mapForceTick, partnerLocations.length,
-    showOnlyLegends, syncBonds, isDeveloper, onShowProfile, onStartSync, onPartnerPositionSelected, onForceTick, onRequestLocation
+    showOnlyLegends, syncBonds, isDeveloper, selfIsLive, onShowProfile, onStartSync, onPartnerPositionSelected, onForceTick, onRequestLocation
   ])
 
   // Global window helpers for popups (quick bridge until we use React portals or better event system)
