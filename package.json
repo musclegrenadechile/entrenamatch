@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.75-map-ripples-clusters-gadgets",
+  "version": "0.1.76-live-map-strongest-point",
   "type": "module",
   "scripts": {
     "dev": "vite",

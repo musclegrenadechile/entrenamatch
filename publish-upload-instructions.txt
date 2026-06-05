@@ -1,4 +1,21 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.75-map-ripples-clusters-gadgets code 79) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.76-live-map-strongest-point code 80) ===
+
+LIVE MAP (MAPA EN TIEMPO REAL / GYMPULSE) — NUESTRO PUNTO MÁS FUERTE. Seguimos puliéndolo fuerte porque es el corazón social y visual de EntrenaMatch.
+
+Nuevas mejoras para que el live map sea imbatible:
+- **Ripples dinámicos por "nuevo live"**: Cuando alguien activa "Entrenando Ahora", aparece un ripple atractivo en su posición en el mapa para TODOS los que lo tienen abierto. FOMO instantáneo + sensación de que el mundo está entrenando junto. Si el nuevo live es de alto nivel/gadget, el ripple es más grande y dorado.
+- **Clusters mejorados con gadgets**: En zoom out, los grupos muestran badges de gadgets (🌀 Pulso, ✨ Halo) según el nivel promedio del grupo. Los clusters de alto rendimiento brillan más y tienen label "GYM PARTNERS • PULSO".
+- **Orbs en tethers de EntrenaSync fuertes**: Para syncs legendarios o con gadget Tether, aparecen pequeños orbs pulsantes en los extremos de la línea dorada. Hace que las conexiones reales "brillen" en el mapa.
+- **Header del mapa más vivo**: Ahora muestra también "X EN SYNC" cuando hay pares activos. El "EL GYMPULSE GLOBAL" se siente como un dashboard del pulso colectivo.
+- Refuerzo de Pulso Maestro y otros gadgets ya en markers + ripples (más grande, color único).
+- Todo sigue siendo ultra performante (debounce + cleanup), realtime via onSnapshot + mapForceTick, y respeta el GPS self fijo + zoom del usuario.
+
+El live map ahora es el lugar donde sientes de verdad las 5 mecánicas: ves a la gente entrenando, ves las conexiones (tethers), ves el impacto (ripples que se propagan), ves los hubs (partners con actividad), y tu propio progreso (gadgets que te hacen destacar).
+
++ web build (dist), AAB y debug APK listos. Git push. Instructions actualizado.
+Test en S26: abre el mapa, activa tu "Entrenando Ahora" (deberías ver ripple propio), pide a otro tester que active live cerca o lejos (verás su ripple aparecer en tiempo real). Zoom out/in (clusters con gadgets). Inicia un Sync (ver orbs + tether fuerte). Observa el header con conteo de syncs. Debe sentirse como el feature estrella, vivo y adictivo.
+
+Sigue con todo. El live map es nuestro punto más fuerte — sigamos haciéndolo legendario.
 
 CONTINUACIÓN DEL MAPA MÁS ATRACTIVO: +ripples, clusters en zoom out, integración profunda de gadgets en markers.
 

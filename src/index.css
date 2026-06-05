@@ -1574,3 +1574,23 @@ input[type="range"]::-moz-range-thumb {
 .cluster-marker:hover {
   filter: drop-shadow(0 3px 10px rgba(0,0,0,0.5));
 }
+
+/* Dynamic new-live ripple + high gadget personal pulse — makes the live map feel like the strongest real-time feature */
+.high-gadget-ripple {
+  animation: high-gadget-pulse 2.8s ease-out forwards;
+}
+@keyframes high-gadget-pulse {
+  0% { opacity: 0.7; }
+  40% { opacity: 0.35; }
+  100% { opacity: 0.05; }
+}
+
+/* Subtle orbs at ends of strong EntrenaSync tethers on the map */
+.sync-orb {
+  animation: sync-orb-pulse 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes sync-orb-pulse {
+  0%, 100% { fill-opacity: 0.12; }
+  50% { fill-opacity: 0.28; }
+}

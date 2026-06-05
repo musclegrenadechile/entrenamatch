@@ -1656,6 +1656,7 @@ function App() {
   const showAddPartnerFormRef = useRef(false)
   // For attractive "map heartbeats" — when live activity increases we spawn subtle expanding rings so the GymPulse feels alive
   const prevLiveCountRef = useRef(0)
+  const prevLiveIdsRef = useRef<Set<string>>(new Set()) // to detect brand new lives and spawn "someone just started" ripples on the map (makes it the strongest real-time social pulse)
 
   // Load partner locations: seeds (for immediate demo) + real Firestore (so devs can add persistent partners via the in-app tool).
   // This makes the "devs put businesses on the map" easy and real-time visible to all users in the GymPulse (mapa en tiempo real).
@@ -6063,6 +6064,45 @@ function App() {
       }
       prevLiveCountRef.current = currentLive
 
+      // Detect brand new lives since last render — this is key to make the LIVE MAP the strongest point.
+      // When someone activates "Entrenando Ahora", a nice ripple appears at their location on the map for everyone.
+      // Creates instant FOMO and "the world is training together" feeling.
+      const currentIds = new Set(liveUsers.map((u: any) => u.id));
+      const prevIds = prevLiveIdsRef.current;
+      const newLives = liveUsers.filter((u: any) => !prevIds.has(u.id));
+      if (newLives.length > 0 && mapInstanceRef.current) {
+        newLives.forEach((newUser: any) => {
+          if (!newUser.lat || !newUser.lng) return;
+          const isHigh = (newUser.visibleLevel || 1) >= 15 || newUser.isLegend;
+          try {
+            const newLiveRipple = L.circle([newUser.lat, newUser.lng], {
+              radius: isHigh ? 550 : 320,
+              color: isHigh ? '#FFD700' : '#22c55e',
+              weight: isHigh ? 2.5 : 1.8,
+              fillColor: isHigh ? '#FFD700' : '#22c55e',
+              fillOpacity: isHigh ? 0.08 : 0.05,
+              opacity: isHigh ? 0.6 : 0.45,
+              className: `map-heartbeat-ring${isHigh ? ' high-gadget-ripple' : ''}`
+            }).addTo(mapInstanceRef.current);
+            ;(newLiveRipple as any)._isNewLiveRipple = true;
+            markersRef.current.push(newLiveRipple);
+            setTimeout(() => {
+              if (mapInstanceRef.current && (newLiveRipple as any)._isNewLiveRipple) {
+                try { mapInstanceRef.current.removeLayer(newLiveRipple); } catch {}
+              }
+            }, isHigh ? 2200 : 1600);
+            // Small haptic for the viewer if the new live is close to them
+            if (userLocation) {
+              const d = getDistanceKm(userLocation.lat, userLocation.lng, newUser.lat, newUser.lng);
+              if (d < 8) {
+                try { triggerHaptic('light'); } catch {}
+              }
+            }
+          } catch {}
+        });
+      }
+      prevLiveIdsRef.current = currentIds;
+
       // Simple but effective clustering at low zoom for attractiveness + perf
       // When zoomed out the map doesn't get a wall of dots; instead nice grouped "X GymPartners aquí" clusters.
       // Click a cluster = fly in and expand the view so you discover individuals. Feels pro.
@@ -6130,12 +6170,18 @@ function App() {
 
         if ((user as any).isCluster) {
           const c = user as any;
+          const clLevel = c.visibleLevel || 5;
+          const clHasPulso = clLevel >= 20;
+          const clHasHalo = clLevel >= 5;
+          const clGlow = clHasPulso ? '0 0 0 8px #a855f733, 0 0 0 14px #FFD70011' : (clHasHalo ? '0 0 0 6px #FFD70022' : '0 0 0 5px #FF671F22');
+          const clBorder = clHasPulso ? '#a855f7' : '#FFD700';
+          const clIcon = clHasPulso ? '🌀' : (clHasHalo ? '✨' : '');
           iconHtml = `
-            <div style="position:relative;width:44px;height:44px">
-              <div style="width:44px;height:44px;border-radius:9999px;background:linear-gradient(#111,#1a1a1f);border:3px solid #FFD700;box-shadow:0 0 0 5px #FF671F22,0 4px 14px rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:15px;line-height:1;">
-                ${c.clusterCount}
+            <div style="position:relative;width:46px;height:46px">
+              <div style="width:46px;height:46px;border-radius:9999px;background:linear-gradient(#111,#1a1a1f);border:3.5px solid ${clBorder};box-shadow:${clGlow},0 4px 14px rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:16px;line-height:1;">
+                ${c.clusterCount}${clIcon ? `<span style="font-size:11px;margin-left:2px">${clIcon}</span>` : ''}
               </div>
-              <div style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 5px;border-radius:4px;border:1px solid #FFD700;white-space:nowrap;letter-spacing:0.5px">GYM PARTNERS</div>
+              <div style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 5px;border-radius:4px;border:1px solid #FFD700;white-space:nowrap;letter-spacing:0.5px">GYM PARTNERS${clHasPulso ? ' • PULSO' : ''}</div>
             </div>`;
         } else if (photo) {
           // Add gadget badges for Halo / Aura / Pulso on the photo marker
@@ -6522,6 +6568,17 @@ function App() {
           ).addTo(mapInstanceRef.current)
           line.bindPopup(`<strong>${isBondedLegend ? '⭐ SYNC DE TUS GYMPARTNERS' : '🔄 Sync en vivo'}</strong><br/>${user.name} ↔ ${partner.name}<br/><span style="font-size:10px">${isBondedLegend ? 'Alianza real de alto rendimiento • Tu grafo da peso en el GymPulse' : 'EntrenaSync en vivo ahora'}</span>`)
           syncLinesRef.current.push(line)
+
+          // For strong syncs (legend or high gadget), add subtle pulsing orbs at both ends.
+          // This makes active EntrenaSync pairs "glow" on the map — visual proof of real connection.
+          if (isBondedLegend || isHighLevelSelf) {
+            try {
+              const orbStyle = { radius: 70, color: '#FFD700', weight: 0, fillColor: '#FFD700', fillOpacity: 0.16, className: 'sync-orb' };
+              const o1 = L.circle([user.lat, user.lng], orbStyle).addTo(mapInstanceRef.current);
+              const o2 = L.circle([partner.lat, partner.lng], orbStyle).addTo(mapInstanceRef.current);
+              markersRef.current.push(o1, o2);
+            } catch {}
+          }
         }
       }
     })
@@ -7330,7 +7387,11 @@ function App() {
                   <div className="map-floating-pulse absolute top-2 left-2 z-40 px-3 py-1 rounded-2xl text-[10px] font-semibold text-[#22c55e] flex items-center gap-2 shadow-lg border border-[#22c55e]/20">
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
                     EL GYMPULSE GLOBAL
-                    <span className="text-[#22c55e]/70 font-mono text-[9px] tabular-nums">• {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow).length} EN VIVO AHORA</span>
+                    <span className="text-[#22c55e]/70 font-mono text-[9px] tabular-nums">• {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow).length} EN VIVO</span>
+                    {(() => {
+                      const activeSyncs = liveTrainingNow.filter((u: any) => u.trainingSyncWith).length / 2; // pairs
+                      return activeSyncs > 0 ? <span className="text-[#FFD700] font-bold text-[9px]">• {Math.floor(activeSyncs)} EN SYNC</span> : null;
+                    })()}
                   </div>
 
                   <div 
