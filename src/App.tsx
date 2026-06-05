@@ -2235,6 +2235,8 @@ function App() {
           try { localStorage.setItem('entrenamatch_last_live', JSON.stringify(profiles)) } catch {}
         }, (err) => {
           console.warn('profiles onSnapshot error, falling back to polling', err);
+          import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
+          loadRealProfiles().catch(() => {})
         });
       } catch (e) {
         console.warn('Failed to setup profiles listener', e);
@@ -2302,6 +2304,10 @@ function App() {
           setLiveUsersFromDedicated(liveOnes)
         }, (err) => {
           console.warn('live-only onSnapshot error', err)
+          // Attempt recovery: re-enable network (helps after WebChannel death)
+          import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
+          // Fallback: reload profiles so at least poll + general listener keep things somewhat fresh
+          loadRealProfiles().catch(() => {})
         })
       } catch (e) {
         console.warn('Failed to setup dedicated live listener', e)
@@ -2408,6 +2414,7 @@ function App() {
       }
     }, (err) => {
       console.warn('syncSessions onSnapshot error (non-fatal, fallback to mirror):', err)
+      import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
     })
 
     return () => {
@@ -3452,7 +3459,7 @@ function App() {
             persistSeen();
             }
           };
-          const unsub1 = onSnapshot(q1, handler1, (err: any) => console.warn(`bg 1:1 q1 listener error for ${matchId}:`, err));
+          const unsub1 = onSnapshot(q1, handler1, (err: any) => { console.warn(`bg 1:1 q1 listener error for ${matchId}:`, err); import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(()=>{}); });
 
           // Handler for q2 (possible incoming from match) — detect *new added* from them after initial, then notify
           const handler2 = (snapshot: any) => {
@@ -3485,7 +3492,7 @@ function App() {
               }
             }
           };
-          const unsub2 = onSnapshot(q2, handler2, (err: any) => console.warn(`bg 1:1 q2 listener error for ${matchId}:`, err));
+          const unsub2 = onSnapshot(q2, handler2, (err: any) => { console.warn(`bg 1:1 q2 listener error for ${matchId}:`, err); import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(()=>{}); });
 
           realChatUnsubsRef.current[matchId] = () => {
             try { unsub1(); } catch {}
@@ -3533,8 +3540,8 @@ function App() {
             if (msgs) setRealChatMessages(msgs);
           });
         };
-        unsub1 = onSnapshot(q1, (s) => handler(s, 'q1'), (err) => console.warn('1:1 q1 listener error:', err));
-        unsub2 = onSnapshot(q2, (s) => handler(s, 'q2'), (err) => console.warn('1:1 q2 listener error:', err));
+        unsub1 = onSnapshot(q1, (s) => handler(s, 'q1'), (err) => { console.warn('1:1 q1 listener error:', err); import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(()=>{}); });
+        unsub2 = onSnapshot(q2, (s) => handler(s, 'q2'), (err) => { console.warn('1:1 q2 listener error:', err); import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(()=>{}); });
       } catch (e) {
         console.warn('1:1 onSnapshot setup error (falling back to poll):', e);
       }
@@ -3907,11 +3914,13 @@ function App() {
             }
           }, (err) => {
             console.warn(`BG group chat listener error for session ${sessionId} (rules/participants):`, err);
+            import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
           });
 
           groupMessageUnsubsRef.current[sessionId] = unsub;
         } catch (e) {
           console.warn('BG group messages onSnapshot setup error for', sessionId, e);
+          import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
         }
       })();
     });
@@ -4481,6 +4490,8 @@ function App() {
         }, { merge: true })
         setSyncVibe(baseVibe)
       } catch (e) { console.warn('sync persist failed', e) }
+      // Recover listeners after starting sync (ensures onSnapshot for actions works reliably)
+      import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
     }
     // Auto post to muro for both
     createProfilePost(`¡Sincronizado con ${partnerName}! Entrenamos juntos ahora 🔥`, null).catch(() => {})
@@ -10076,6 +10087,8 @@ function App() {
                       loadRealProfiles().catch(() => {})
                       // Force the live map to immediately reflect your status (self marker becomes live with glows, ripples if applicable)
                       setMapForceTick(t => t + 1)
+                      // Help recover any dead Listen streams after the write (network can be in bad state)
+                      import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
                       // Clearer, educational toast
                       toast(newVal ? '🟢 ¡Entrenando Ahora (EN VIVO) activado!' : 'Entrenamiento finalizado')
                       // Pulso Diario progress
