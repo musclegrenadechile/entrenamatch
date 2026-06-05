@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.50-voice-send-ux-improved",
+  "version": "0.1.51-voice-blob-fix",
   "type": "module",
   "scripts": {
     "dev": "vite",

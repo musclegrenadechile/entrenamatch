@@ -438,43 +438,36 @@ function App() {
   const sendVoiceNote = async (chatId: string, isGroup = false) => {
     if (!pendingVoice) return
 
-    const { blob, duration, url } = pendingVoice
+    const { blob, duration, url: previewUrl } = pendingVoice
     setIsUploadingVoice(true)
 
     try {
-      // Upload to Firebase Storage for persistent https URL (like photos)
-      let voiceUrl = url // fallback data url if storage fails
-      if (!isDemoMode && firebaseUser?.uid && db) {
-        try {
-          const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage')
-          const { storage } = await import('./services/firebase')
-          const storageRef = ref(storage, `chat-voice/${chatId}/${Date.now()}.webm`)
-          const snap = await uploadBytes(storageRef, blob)
-          voiceUrl = await getDownloadURL(snap.ref)
-        } catch (uploadErr) {
-          console.warn('Voice storage upload failed, using local blob url (will work for this session)', uploadErr)
-        }
-      }
+      let voiceUrl: string
 
-      const voiceMsg = {
-        id: Date.now().toString(36) + Math.random(),
-        text: '',
-        voiceUrl,
-        voiceDuration: duration,
-        timestamp: Date.now()
+      if (isDemoMode) {
+        // Demo/local only: blob URL is acceptable (ephemeral)
+        voiceUrl = previewUrl
+      } else {
+        // Real Firebase (web GH Pages or native APK): always upload to get a permanent https URL.
+        // Never send blob: URLs for persisted messages — they cause ERR_FILE_NOT_FOUND on reload or for other users.
+        if (!firebaseUser?.uid || !storage) {
+          throw new Error('Firebase Storage no disponible')
+        }
+        const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage')
+        const storageRef = ref(storage, `chat-voice/${chatId}/${Date.now()}.webm`)
+        const snap = await uploadBytes(storageRef, blob)
+        voiceUrl = await getDownloadURL(snap.ref)
       }
 
       const voiceDescriptor = { voiceUrl, voiceDuration: duration }
 
       if (isGroup && showGroupChatModalFor) {
-        // send to group - sendSessionMessage will handle optimistic + Firestore
         sendSessionMessage(showGroupChatModalFor, '', null, voiceDescriptor)
       } else if (activeChat) {
-        // 1:1 - sendMessage handles real/demo, optimistic, etc.
         sendMessage('', voiceDescriptor)
       }
 
-      // cleanup
+      // Revoke the local preview blob only after we have a safe permanent URL in the message
       if (voicePreviewUrlRef.current) {
         URL.revokeObjectURL(voicePreviewUrlRef.current)
         voicePreviewUrlRef.current = null
@@ -484,9 +477,16 @@ function App() {
       toast.success('Nota de voz enviada', { description: `${duration}s • compártela con tu red de rendimiento` })
     } catch (e) {
       console.error('Send voice error', e)
-      toast.error('Error enviando nota de voz')
+      const isReal = !isDemoMode
+      toast.error('Error enviando nota de voz', { 
+        description: isReal 
+          ? 'No se pudo subir el audio a la nube. Asegúrate de que las storage rules estén deployadas y que estés autenticado.' 
+          : 'Error local al procesar el audio.'
+      })
       setIsUploadingVoice(false)
+      // Do NOT clear pendingVoice on error, so user can retry or cancel
     }
+  }
   }
 
   // Extend sendSessionMessage to support voice (update call sites later)
