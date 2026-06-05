@@ -1,17 +1,18 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.49-voice-audio-fix-storage-rules code 53) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.50-voice-send-ux-improved code 54) ===
 
-AAB: EntrenaMatch-v0.1.49-voice-audio-fix-storage-rules-code53-20260604-2328.aab + EntrenaMatch-release.aab
+AAB: EntrenaMatch-v0.1.50-voice-send-ux-improved-code54-20260604-2331.aab + EntrenaMatch-release.aab
 
 **What's new:**
 
-**v0.1.49 (code 53) — FIX: Notas de voz ahora se envían y reproducen correctamente cross-device**
+**v0.1.50 (code 54) — MEJORA UX: Envío de notas de voz como mensajes**
 
-- Los formularios de chat ahora usan el path central sendVoiceNote que hace upload a Storage para URLs https reales (antes pasaban blob: URLs locales que no funcionaban para otros usuarios).
-- storage.rules actualizado para permitir /chat-voice/{chatId}/** (lectura/escritura para auth).
-- Mapeos de carga de mensajes 1:1 y grupo incluyen los campos de voz.
-- Después de subir este AAB: npx firebase deploy --only storage --project entrenamatch para activar las rules.
+- Grabación con timer visible y botón pulsing.
+- Preview reproducible con <audio controls> antes de enviar (¡escucha lo que grabaste!).
+- Feedback durante upload: "Subiendo nota de voz...".
+- Reproductores en chat (enviados y recibidos) ahora con controles nativos completos + duración (progreso, seek, etc.).
+- Flujo claro y confiable en 1:1 y chats de grupo.
 
-Las notas de voz (motivación, tips post-sync) ahora viajan de verdad en tu Red de EntrenaSync.
+Las notas de voz ahora se sienten parte de una experiencia premium de mensajería social para fitness.
 Sube el AAB fresco. Sigue con todo.
 
 (Previous version notes below for reference if needed, but use the v0.1.44 block above for this upload.)
