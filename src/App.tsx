@@ -1647,9 +1647,11 @@ function App() {
     setIsPlacingPartner(false)
     setShowAddPartnerForm(true)
     setShowManagePartners(false)
-    // Fly map to it (cinematic) so dev sees exactly where it is and can fine-tune
+    // Center map on it using the new GymPulseMap handle (or legacy fallback) so dev sees exactly where it is
     setTimeout(() => {
-      if (mapInstanceRef.current && p.lat && p.lng) {
+      if (gymPulseMapRef.current && p.lat && p.lng) {
+        try { gymPulseMapRef.current.centerOn(p.lat, p.lng, 15) } catch {}
+      } else if (mapInstanceRef.current && p.lat && p.lng) {
         mapInstanceRef.current.flyTo([p.lat, p.lng], Math.max(mapInstanceRef.current.getZoom() || 13, 15), { duration: 0.8, easeLinearity: 0.28 })
       }
     }, 80)
@@ -7011,10 +7013,29 @@ function App() {
                         }
                       }
                     }}
-                    onPartnerEdit={(id: string) => {
+                    onPartnerEdit={useCallback((id: string) => {
                       const p = (partnerLocationsRef.current || partnerLocations).find((pp: any) => pp.id === id)
-                      if (p) startEditPartner(p)
-                    }}
+                      if (p) {
+                        // Make sure we are in the right view to see the edit form (which overlays the map)
+                        if (activeTab !== 'explore') setActiveTab('explore')
+                        if (!showLiveMap) setShowLiveMap(true)
+                        startEditPartner(p)
+                      } else {
+                        console.warn('dev edit: partner not found in current list for id', id)
+                        // Fallback: still open edit form with the id so dev can fix
+                        setEditingPartnerId(id)
+                        setPartnerFormName('Partner ' + id.slice(-6))
+                        setPartnerFormType('gym')
+                        setPartnerFormLat(-33.02)
+                        setPartnerFormLng(-71.55)
+                        setPartnerFormAddress('')
+                        setPartnerLogoFile(null)
+                        setPartnerLogoPreview(null)
+                        setIsPlacingPartner(false)
+                        setShowAddPartnerForm(true)
+                        setShowManagePartners(false)
+                      }
+                    }, [partnerLocations, activeTab, showLiveMap, startEditPartner])}
                     onPartnerDelete={async (id: string) => {
                       // Dev delete from map popup
                       const p = (partnerLocationsRef.current || partnerLocations).find((pp: any) => pp.id === id)
