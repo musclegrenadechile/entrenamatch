@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 42 / 0.1.37-arena-real. **ARENA PULIDA CON PROPÓSITO REAL**: Clarificada su función como motor de mitología y legado. Más feedback visible de impacto (ritual impact, bond progress, ripples/echoes). 
+**Current version for this upload**: versionCode 43 / 0.1.38-feed-muro-fixes. **BUG HUNT EXHAUSTIVO FEED + MURO + ECOs**: Own posts (publish + claim echo) ahora visibles inmediatamente en feed tab (default view) + "⭐ ECOS DE LEYENDA" strip (antes se filtraban por self-exclude). Quick reactions 🔥💪❤️👏 también en muro personal (antes solo feed). Guards defensivos .length en todos los posts (feed/muro/full profile). Sort, filtros Live/Fijados/Reales, labels ECO/TÚ, recentlyPublished, counters, classes muro-post--echo, createProfilePost, map echoPins reactivity, etc. revisados y robustecidos. Arena + ripples + witness + claim siguen intactos. 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -149,11 +149,20 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 
 ## What's new (for this Pre-Alpha release, short & punchy)
 
-**READY FOR PLAY CLOSED UPLOAD (v0.1.37-arena-real code 42)**
-- Fresh signed AAB: `EntrenaMatch-v0.1.37-arena-real-code42-20260604-2031.aab` (7.2 MB) + `EntrenaMatch-release.aab`
-- Fresh debug APK for device: `EntrenaMatch-debug-arena-real-0.1.37-20260604-2030.apk` (10 MB) + `EntrenaMatch-debug.apk`
-- Web: pushed to main → GH Pages will have the new bundle (hard refresh after Actions finish).
-- Copy the short "What's new" below directly into Play Console when uploading the AAB to closed track.
+**READY FOR PLAY CLOSED UPLOAD (v0.1.38-feed-muro-fixes code 43)**
+- Fresh debug APK for device test (adb): `EntrenaMatch-debug-feed-muro-fixes-0.1.38-....apk` (will be generated post-build) + previous arena one.
+- Web + GH Pages updated with fixes.
+- Copy the short "What's new" below directly into Play Console when uploading new AAB to closed track.
+
+**v0.1.38-feed-muro-fixes (code 43) — BUG HUNT FEED/MURO/ECOS + VISIBILIDAD PROPIA**
+- Fix crítico: al "Publicar en el Feed" o "⭐ Reclamar como Echo" (desde witness/ripple), tu post ahora aparece arriba en la lista del feed tab (default "recientes") + en el strip dorado "⭐ ECOS DE LEYENDA". Antes el filtro uid !== self los ocultaba para ti (aunque comunidad los veía).
+- Tus posts recientes (hasta 3) se mezclan + re-sort (leyenda/echo/pinned/tiempo) solo en vista sin filtros. "Solo Live / Reales / Fijados" siguen siendo descubrimiento puro de otros.
+- Quick reactions (🔥💪❤️👏) ahora también en tu Muro Personal (antes solo en feed) → muro se siente más vivo y consistente.
+- Badges "TÚ" en posts propios dentro del feed (antes caían como "Compañero").
+- Conteo "X posts visibles (comunidad + tus recientes)" en default.
+- Guards defensivos en todos lados: (post.likes || []).length , (post.comments || []).length para prevenir crashes si datos legacy o race.
+- Revisión exhaustiva: feedComputation (sort estabilidad, deps, echoesSource), render de posts (class --echo, labels oro, FOMO, reactions), muro personal (counters LEGENDS/SYNC/ECOS en vivo desde profilePosts+syncBonds, templates, edit/pin), createProfilePost (echo text paths), map (echoPins después de fitBounds + deps), claim from witness, recentlyPublished highlight, etc. Todo limpio, tsc + build OK.
+- Sin breakage a Arena, ripples, witness, claim, geo, map tethers, notifs gold, ceremony, realtime.
 
 **v0.1.37-arena-real (code 42) — ARENA PULIDA: AHORA SE NOTA QUE REALMENTE SIRVE**
 • Propósito clarificado en código y UI: La Arena es el motor que convierte esfuerzo aislado en **ritual sincronizado con legado visible** (bonds con peso real, ripples que otros presencian, ecos que se reclaman como mitología comunitaria, tu muro como archivo de logros).

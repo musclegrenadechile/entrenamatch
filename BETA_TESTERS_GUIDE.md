@@ -672,3 +672,20 @@ This is the build to upload to Closed track. Full "sigue con todo" — more uniq
 - En 'Tu vida de entrenamiento' ahora cuentas 'Rituales Arena' como stat real.
 - Hint final actualizado: 'Esto sirve de verdad: convierte esfuerzo aislado en legado compartido que otros respetan y quieren repetir'.
 - Prueba fuerte: Entra a Arena con un legend. Haz combos. Sube vibe. Observa el Impact bar, los toasts de bond/ripple, el field que se pone más dramático. Termina el ritual. Ve cómo tu muro y el feed global se llenan de ecos. Ahora se siente que la Arena *realmente sirve* para construir algo más grande que un simple match.
+
+**NUEVO - BUG HUNT EXHAUSTIVO FEED + MURO + ECOS (v0.1.38-feed-muro-fixes, code 43)**:
+- Fix: Publicar en Feed (desde modal en tab feed) o Reclamar como Echo (desde witness de ripple/pin en mapa) → tu post AHORA aparece visible para ti en la lista del feed (arriba por timestamp + prioridad echo/leyenda) y en el strip horizontal "⭐ ECOS DE LEYENDA — la mitología crece". Antes quedaban ocultos solo para el autor (filtro comunidad).
+- En vista default (sin Solo Live/Reales/Fijados) se mezclan tus 3 posts más recientes + comunidad, se re-ordena. Filtros discovery mantienen pureza.
+- Badge "TÚ" (gold) en tus posts dentro del feed tab.
+- Quick reactions (4 emojis) ahora también renderizan y funcionan en "Tu Muro Personal" (antes solo feed) → más vivo, reacciones optimistas + persist.
+- Conteo arriba del feed: "X posts visibles (comunidad + tus recientes)" en default.
+- Todos los .length de likes/comments con guards (|| []) para zero-crash en datos raros o races.
+- Revisión completa de paths: feedComputation (incl echoesSource), render posts feed (className --echo, labels, owner para self, isOwnPost), muro personal (counters calc live, list con echo/sync classes + badges, composer), claim echo (createProfilePost con texto especial), map echoPins (orden + deps + popup), recentlyPublished ring, etc.
+- Prueba específica:
+  1. Ve a Feed tab → toca "Publicar" → escribe + foto (usa cámara) → Publicar. Espera banner success + confetti. Baja un poco: TU post debe aparecer con badge "TÚ" + "¡ACABAS DE PUBLICAR!" + ring naranja. (Si tenías filtros activos, limpia primero).
+  2. En Arena con alguien, sube vibe alto (>80 o legend), termina ritual alto rating. Ve toast impacto. Ve a mapa (si ripple legend): toca pin oro o "ver replay", en witness modal toca "⭐ Reclamar como Echo". Cierra. Ve a Feed: tu echo debe estar en el strip dorado "ECOS DE LEYENDA" y en lista con label 👁️ ECO + texto "Eco de un Ritual Legendario".
+  3. En Perfil → Tu Muro Personal: publica usando templates o foto. Reacciona con emojis en tus posts y de otros (en feed también). Verifica que contadores (LEGENDS FORJADAS / SYNC LEGENDARIOS / ECOS RECLAMADOS) suben en vivo cuando reclamas o terminas rituals.
+  4. "Solo Fijados", "🟢 Live", "REAL": verifica que no muestran tus posts propios a menos que califiquen (pinned sí para fijados).
+  5. Hard refresh web + adb install fresh APK. Todo realtime (likes/reactions de otros aparecen en tus listas).
+- Si algo raro en list order o missing post propio: export debug logs desde perfil (botón 🐞) y reporta.
+- Esto cierra el loop de "publicar en feed decepciona" + "mitología no se ve para quien la crea". Ahora se siente inevitablemente grande y vivo.

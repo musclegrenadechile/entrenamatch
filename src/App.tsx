@@ -4507,33 +4507,41 @@ function App() {
       .filter(([uid]) => uid !== effectiveUserId)
       .flatMap(([uid, posts]) => (posts || []).map((p: any) => ({ ...p, ownerId: uid })));
 
-    let feedPosts = [...allCommunityPosts]
-      .sort((a: any, b: any) => {
-        const aIsLegend = !!syncBonds[a.ownerId];
-        const bIsLegend = !!syncBonds[b.ownerId];
-        if (bIsLegend && !aIsLegend) return -1; // Legends have real weight in global feed
-        if (aIsLegend && !bIsLegend) return 1;
-        const aIsEcho = (a.text || '').includes('Fui testigo') || (a.text || '').includes('RITUAL LEGENDARIO') || (a.text || '').includes('Echo');
-        const bIsEcho = (b.text || '').includes('Fui testigo') || (b.text || '').includes('RITUAL LEGENDARIO') || (b.text || '').includes('Echo');
-        if (bIsEcho && !aIsEcho) return -1; // Echoes (witnessed legends) rise to the top - living mythology
-        if (aIsEcho && !bIsEcho) return 1;
-        if (b.pinned && !a.pinned) return 1;
-        if (a.pinned && !b.pinned) return -1;
-        return b.timestamp - a.timestamp;
-      });
+    // Include a few of your own recent posts (from muro or "Publicar en el Feed") into the visible feed list.
+    // This fixes the "I published but don't see my post in the feed tab" disappointment.
+    // Own posts only mixed in default view; filters (Live/Reales/Fijados) stay pure community discovery.
+    // echoesSource always includes own so "⭐ ECOS DE LEYENDA" strip shows your claimed echoes immediately.
+    const myPostsRaw = (profilePosts[effectiveUserId] || []).map((p: any) => ({ ...p, ownerId: effectiveUserId, isMine: true }));
+    let feedPosts = [...allCommunityPosts, ...myPostsRaw];
+
+    feedPosts = feedPosts.sort((a: any, b: any) => {
+      const aIsLegend = !!syncBonds[a.ownerId];
+      const bIsLegend = !!syncBonds[b.ownerId];
+      if (bIsLegend && !aIsLegend) return -1; // Legends have real weight in global feed
+      if (aIsLegend && !bIsLegend) return 1;
+      const aIsEcho = (a.text || '').includes('Fui testigo') || (a.text || '').includes('RITUAL LEGENDARIO') || (a.text || '').includes('Echo');
+      const bIsEcho = (b.text || '').includes('Fui testigo') || (b.text || '').includes('RITUAL LEGENDARIO') || (b.text || '').includes('Echo');
+      if (bIsEcho && !aIsEcho) return -1; // Echoes (witnessed legends) rise to the top - living mythology
+      if (aIsEcho && !bIsEcho) return 1;
+      if (b.pinned && !a.pinned) return 1;
+      if (a.pinned && !b.pinned) return -1;
+      return b.timestamp - a.timestamp;
+    });
+
+    const hasActiveFilter = feedShowPinnedOnly || feedOnlyReal || feedOnlyLive || !!feedSearch.trim();
     if (feedShowPinnedOnly) feedPosts = feedPosts.filter((p: any) => p.pinned);
-    if (feedOnlyReal) feedPosts = feedPosts.filter((p: any) => realProfiles.some(rp => rp.id === p.ownerId));
-    if (feedOnlyLive) feedPosts = feedPosts.filter((p: any) => realProfiles.some(rp => rp.id === p.ownerId && rp.trainingNow));
+    if (feedOnlyReal) feedPosts = feedPosts.filter((p: any) => p.isMine || realProfiles.some(rp => rp.id === p.ownerId));
+    if (feedOnlyLive) feedPosts = feedPosts.filter((p: any) => !p.isMine && realProfiles.some(rp => rp.id === p.ownerId && rp.trainingNow));
     if (feedSearch.trim()) {
       const q = feedSearch.toLowerCase().trim();
       feedPosts = feedPosts.filter((p: any) => {
-        const owner = realProfiles.find(r => r.id === p.ownerId) || { name: '' };
-        return (p.text || '').toLowerCase().includes(q) || (owner.name || '').toLowerCase().includes(q);
+        const ownerName = p.isMine ? (currentUser?.name || '') : ((realProfiles.find(r => r.id === p.ownerId) || { name: '' }).name);
+        return (p.text || '').toLowerCase().includes(q) || (ownerName || '').toLowerCase().includes(q);
       });
     }
     feedPosts = feedPosts.slice(0, feedDisplayLimit);
-    return { feedPosts, allCommunityPosts };
-  }, [profilePosts, feedShowPinnedOnly, feedOnlyReal, feedOnlyLive, feedSearch, feedDisplayLimit, realProfiles, effectiveUserId]);
+    return { feedPosts, allCommunityPosts, echoesSource: [...allCommunityPosts, ...myPostsRaw], hasActiveFilter };
+  }, [profilePosts, feedShowPinnedOnly, feedOnlyReal, feedOnlyLive, feedSearch, feedDisplayLimit, realProfiles, effectiveUserId, syncBonds, currentUser]);
 
   // Real-time urgency notifications for NEW live trainers nearby (the killer retention hook).
   // Placed HERE (after liveTrainingNow declaration) to avoid TDZ "Cannot access before initialization" on app start.
@@ -4898,9 +4906,15 @@ function App() {
       } catch (e) {}
     })
 
+    if (markersRef.current.length > 0) {
+      const group = L.featureGroup(markersRef.current)
+      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.22))
+    }
+
     // Echo Pins - persistent tappable markers for legendary witnessed moments on the map.
     // These turn private high-vibe syncs into discoverable community mythology.
     // Tapping opens the witness modal so anyone can "be part of the story".
+    // Rendered AFTER fitBounds so old echoes don't pull the initial view.
     echoPins.forEach((pin: any) => {
       try {
         const iconHtml = `
@@ -4930,11 +4944,6 @@ function App() {
         (echoMarker as any)._isEchoPin = true;
       } catch (e) {}
     })
-
-    if (markersRef.current.length > 0) {
-      const group = L.featureGroup(markersRef.current)
-      mapInstanceRef.current.fitBounds(group.getBounds().pad(0.22))
-    }
 
     // Cleanup for this effect run (e.g. when liveTrainingNow or location updates while map is open).
     // We clear markers but keep the map instance alive (cheap updates).
@@ -6010,17 +6019,18 @@ function App() {
 
             {/* Living Echoes strip - makes the mythology visible and aspirational in the first tab the user sees */}
             {(() => {
-              const { feedPosts } = feedComputation;
-              const recentEchoes = feedPosts.filter((p: any) => (p.text || '').includes('Fui testigo') || (p.text || '').includes('RITUAL LEGENDARIO')).slice(0, 3);
+              const { echoesSource } = feedComputation;
+              const src = echoesSource || [];
+              const recentEchoes = [...src].filter((p: any) => (p.text || '').includes('Fui testigo') || (p.text || '').includes('RITUAL LEGENDARIO')).sort((a,b)=>b.timestamp-a.timestamp).slice(0, 3);
               if (recentEchoes.length === 0) return null;
               return (
                 <div className="mb-4 -mx-1">
                   <div className="text-[8px] uppercase tracking-[1px] text-[#FFD700]/80 mb-1.5 px-2 font-bold flex items-center gap-1">⭐ ECOS DE LEYENDA — la mitología crece</div>
                   <div className="flex gap-2 overflow-x-auto pb-2 px-1">
-                    {recentEchoes.map((e: any, idx: number) => (
-                      <div key={idx} onClick={() => setActiveTab('feed')} className="min-w-[140px] card p-2 text-[9px] border border-[#FFD700]/40 bg-[#1a160f] cursor-pointer active:scale-95">
+                    {recentEchoes.map((e: any) => (
+                      <div key={e.id} className="min-w-[140px] card p-2 text-[9px] border border-[#FFD700]/40 bg-[#1a160f]">
                         <div className="line-clamp-3 text-[#f5e8c7]">{(e.text || '').substring(0, 120)}...</div>
-                        <div className="text-[7px] text-[#FFD700]/70 mt-1">Toca para ver en el feed</div>
+                        <div className="text-[7px] text-[#FFD700]/70 mt-1">Echo en el feed global</div>
                       </div>
                     ))}
                   </div>
@@ -6030,7 +6040,7 @@ function App() {
 
             {(() => {
               // Use the top-level feedComputation (hook always called at top of component)
-              const { feedPosts, allCommunityPosts } = feedComputation;
+              const { feedPosts, allCommunityPosts, hasActiveFilter } = feedComputation;
 
               if (isLoadingFeed && feedPosts.length === 0) {
                 return (
@@ -6063,7 +6073,7 @@ function App() {
               return (
                 <>
                   <div className="flex items-center justify-between text-[10px] text-[#9CA3AF] mb-2 px-1 font-medium">
-                    <span>{feedPosts.length} posts de la comunidad {feedSearch || feedOnlyReal || feedShowPinnedOnly || feedOnlyLive ? '· filtrados' : '· recientes'}</span>
+                    <span>{feedPosts.length} posts {hasActiveFilter ? 'de la comunidad · filtrados' : 'visibles (comunidad + tus recientes)'} </span>
                     {(feedSearch || feedOnlyReal || feedShowPinnedOnly || feedOnlyLive) && <button onClick={() => { setFeedSearch(''); setFeedOnlyReal(false); setFeedShowPinnedOnly(false); setFeedOnlyLive(false); }} className="text-[#FF671F] underline active:text-white">limpiar</button>}
                   </div>
                   {(() => {
@@ -6075,10 +6085,11 @@ function App() {
                   })()}
                   <AnimatePresence>
                   {feedPosts.map((post: any, idx: number) => {
-                    const ownerProfile = realProfiles.find(r => r.id === post.ownerId);
-                    const owner = ownerProfile || { name: 'Compañero', id: post.ownerId, photos: [] };
-                    const liked = post.likes.includes(effectiveUserId);
-                    const isOwnPost = post.ownerId === effectiveUserId;
+                    const isMine = !!(post.isMine || post.ownerId === effectiveUserId);
+                    const ownerProfile = isMine ? (currentUser as any) : realProfiles.find(r => r.id === post.ownerId);
+                    const owner = ownerProfile || { name: currentUser?.name || 'Tú', id: post.ownerId, photos: (currentUser as any)?.photos || [] };
+                    const liked = (post.likes || []).includes(effectiveUserId);
+                    const isOwnPost = post.ownerId === effectiveUserId || isMine;
                     return (
                       <motion.div 
                         key={post.id} 
@@ -6100,7 +6111,8 @@ function App() {
                             {owner.name}
                             {ownerProfile && ownerProfile.city && <span className="text-[#9CA3AF] text-[10px] font-normal">· {ownerProfile.city}</span>}
                             {ownerProfile && ownerProfile.level && <span className="text-[8px] px-1 py-px bg-[#FF671F]/10 text-[#FF671F]/80 rounded">{ownerProfile.level}</span>}
-                            {ownerProfile && realProfiles.some(rp => rp.id === post.ownerId) && <span className="text-[8px] bg-[#FF671F] text-black px-1.5 rounded font-bold">REAL</span>}
+                            {isMine && <span className="text-[8px] bg-[#FFD700] text-black px-1.5 rounded font-bold">TÚ</span>}
+                            {ownerProfile && !isMine && realProfiles.some(rp => rp.id === post.ownerId) && <span className="text-[8px] bg-[#FF671F] text-black px-1.5 rounded font-bold">REAL</span>}
                             {ownerProfile?.trainingNow && <span className="live-pill bg-[#22c55e] text-black text-[8px] ml-0.5">🟢 LIVE {ownerProfile.liveStreak ? `🔥${ownerProfile.liveStreak}d` : ''}</span>}
                             {ownerProfile?.trainingSyncWith && <span className="text-[8px] px-1.5 py-px rounded-full bg-[#22c55e]/10 text-[#22c55e] font-bold ml-0.5">🔄 SYNC</span>}
                             {(post.text || '').toLowerCase().includes('sincronizado') && <span className="text-[8px] bg-[#22c55e] text-black px-1.5 py-px rounded-full font-bold ml-0.5">🔄 SYNC SESSION</span>}
@@ -6110,9 +6122,15 @@ function App() {
                           {post.pinned && <span className="text-[8px] px-1 py-px bg-[#FF671F]/20 text-[#FF671F] rounded">📌 FIJADO</span>}
                           {Date.now() - post.timestamp < 3600000 && <span className="text-[8px] bg-[#22c55e] text-black px-1 rounded font-bold">NUEVO</span>}
                           {recentlyPublishedPostId === post.id && <span className="text-[8px] bg-[#FF671F] text-black px-1.5 rounded font-bold animate-pulse">¡ACABAS DE PUBLICAR!</span>}
+                          {(post.text || '').includes('Fui testigo') || (post.text || '').includes('RITUAL LEGENDARIO') || (post.text || '').includes('Echo') ? <span className="text-[8px] bg-[#FFD700] text-black px-1 rounded font-bold">👁️ ECO</span> : null}
                         </div>
 
-                        <div className="text-[13px] leading-snug mb-2.5 text-white/95">{post.text}</div>
+                        <div className="text-[13px] leading-snug mb-2.5 text-white/95">
+                          {(post.text || '').includes('Fui testigo') || (post.text || '').includes('RITUAL LEGENDARIO') || (post.text || '').includes('Echo') ? (
+                            <span className="text-[#FFD700] font-semibold">👁️ Eco de un Ritual Legendario</span>
+                          ) : null}
+                          <div>{post.text}</div>
+                        </div>
                         {post.photo && (
                           <div 
                             className="relative mb-3 -mx-1 rounded-2xl overflow-hidden ring-1 ring-[#2F2F35] cursor-pointer group"
@@ -6133,13 +6151,13 @@ function App() {
                             className={`flex items-center gap-1.5 transition active:scale-95 ${liked ? 'text-[#FF671F]' : 'text-[#9CA3AF] hover:text-[#FF671F]'}`}
                           >
                             <motion.span animate={{ scale: liked ? [1, 1.4, 1] : 1 }} transition={{duration: 0.2}} className="text-base">{liked ? '❤️' : '🤍'}</motion.span> 
-                            <span className="font-semibold tabular-nums">{post.likes.length}</span>
+                            <span className="font-semibold tabular-nums">{(post.likes || []).length}</span>
                           </button>
                           <button 
                             onClick={() => startComment(post.id, post.ownerId, owner.name)}
                             className="flex items-center gap-1.5 text-[#9CA3AF] hover:text-[#FF671F] active:scale-95"
                           >
-                            💬 <span className="font-semibold tabular-nums">{post.comments.length}</span>
+                            💬 <span className="font-semibold tabular-nums">{(post.comments || []).length}</span>
                           </button>
 
                           {isOwnPost && (
@@ -6182,22 +6200,22 @@ function App() {
                           })}
                         </div>
 
-                        {(post.text || '').toLowerCase().includes('entrenando ahora') && post.comments.length > 0 && (
+                        {(post.text || '').toLowerCase().includes('entrenando ahora') && (post.comments || []).length > 0 && (
                           <div className="mt-1.5 text-[9px] bg-[#22c55e]/5 text-[#22c55e] px-2 py-0.5 rounded flex items-center gap-1 font-medium">
-                            🔥 {post.comments.length} se unieron • FOMO real
+                            🔥 {(post.comments || []).length} se unieron • FOMO real
                             <span className="text-[8px] opacity-70">¡Únete en el strip live o mapa!</span>
                           </div>
                         )}
 
-                        {post.comments.length > 0 && (
+                        {(post.comments || []).length > 0 && (
                           <div onClick={() => openFullComments(post.id, post.ownerId, owner.name)} className="mt-2.5 pt-2 border-t border-[#2F2F35]/70 text-[11px] text-[#9CA3AF] cursor-pointer bg-[#0a0a0c]/30 -mx-1 px-2 py-1 rounded-xl space-y-1">
-                            {post.comments.slice(-2).map((c: any) => (
+                            {(post.comments || []).slice(-2).map((c: any) => (
                               <div key={c.id} className="flex gap-1.5 items-start">
                                 <span className="font-semibold text-white/90 text-[10px] mt-px">{c.userName}</span> 
                                 <span className="truncate text-[10px] text-white/70">{c.text}</span>
                               </div>
                             ))}
-                            {post.comments.length > 2 && <div className="text-[#FF671F] text-[9px] font-medium pl-0.5">+{post.comments.length-2} comentarios más • ver hilo</div>}
+                            {(post.comments || []).length > 2 && <div className="text-[#FF671F] text-[9px] font-medium pl-0.5">+{(post.comments || []).length-2} comentarios más • ver hilo</div>}
                           </div>
                         )}
                       </motion.div>
@@ -8212,7 +8230,7 @@ function App() {
                         exit={{ opacity: 0, y: -12, scale: 0.97, height: 0, marginBottom: 0 }}
                         whileHover={{ scale: 1.01, y: -2 }}
                         transition={{ type: 'spring', bounce: 0.12, duration: 0.28 }}
-                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${post.isSyncStory || (post.text || '').includes('ENTRENASYNC LEGENDARIO') ? 'muro-post--sync-story' : ''} hover:border-[#FF671F]/40 overflow-hidden transition-all`}
+                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${post.isSyncStory || (post.text || '').includes('ENTRENASYNC LEGENDARIO') ? 'muro-post--sync-story' : (post.text || '').includes('Fui testigo') || (post.text || '').includes('Echo') || (post.text || '').includes('RITUAL LEGENDARIO') ? 'muro-post--echo' : '' } ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-lg shadow-[#FF671F]/20' : ''} hover:border-[#FF671F]/40 hover:-translate-y-0.5 overflow-hidden transition-all active:scale-[0.995]`}
                       >
                         <div className="flex justify-between items-start mb-3">
                           <div className="flex items-center gap-2 text-[10px]">
@@ -8220,6 +8238,7 @@ function App() {
                             {post.pinned && <span className="px-1.5 py-px text-[9px] rounded bg-[#FF671F] text-black font-bold tracking-wider">📌 DESTACADO</span>}
                             {Date.now() - post.timestamp < 3600000 && <span className="px-1.5 py-px text-[9px] rounded bg-[#22c55e] text-black font-bold">NUEVO</span>}
                             {recentlyPublishedPostId === post.id && <span className="px-1.5 py-px text-[9px] rounded bg-[#FF671F] text-black font-bold animate-pulse">¡ACABAS DE PUBLICAR!</span>}
+                            {(post.text || '').includes('Fui testigo') || (post.text || '').includes('RITUAL LEGENDARIO') || (post.text || '').includes('Echo') ? <span className="px-1.5 py-px text-[9px] rounded bg-[#FFD700] text-black font-bold">👁️ ECO</span> : null}
                           </div>
                           {isOwn && (
                             <div className="flex gap-2 text-[11px]">
@@ -8261,7 +8280,12 @@ function App() {
                             </div>
                           </div>
                         ) : (
-                          <div className="muro-text mb-3 text-[15px] leading-snug tracking-[-0.1px] text-[#F1F1F3]">{post.text}</div>
+                          <div className="muro-text mb-3 text-[15px] leading-snug tracking-[-0.1px] text-[#F1F1F3]">
+                            {(post.text || '').includes('Fui testigo') || (post.text || '').includes('RITUAL LEGENDARIO') || (post.text || '').includes('Echo') ? (
+                              <span className="text-[#FFD700] font-semibold">👁️ Eco de un Ritual Legendario</span>
+                            ) : null}
+                            <div>{post.text}</div>
+                          </div>
                         )}
                         {post.photo && (
                           <div 
@@ -8289,18 +8313,36 @@ function App() {
                               >
                                 {liked ? '❤️' : '🤍'}
                               </motion.span>
-                              <span className="font-semibold tabular-nums">{post.likes.length}</span>
-                              {post.likes.length > 0 && <span className="text-[10px] opacity-60">likes</span>}
+                              <span className="font-semibold tabular-nums">{(post.likes || []).length}</span>
+                              {(post.likes || []).length > 0 && <span className="text-[10px] opacity-60">likes</span>}
                             </button>
                             <button 
                               onClick={() => startComment(post.id, effectiveUserId)}
                               className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl text-[#9CA3AF] hover:bg-[#1C1C20] hover:text-[#FF671F] border border-transparent active:scale-95"
                             >
-                              💬 <span className="font-semibold tabular-nums">{post.comments.length}</span>
+                              💬 <span className="font-semibold tabular-nums">{(post.comments || []).length}</span>
                               <span className="text-[10px] opacity-60">comentarios</span>
                             </button>
                           </div>
                           <div className="text-[10px] text-[#9CA3AF]/60">Toca para hilo completo</div>
+                        </div>
+                        {/* Quick reactions also in personal muro for consistency and "vivo" feel (reuses same optimistic + persist) */}
+                        <div className="flex gap-1.5 mt-2 -ml-0.5">
+                          {['🔥','💪','❤️','👏'].map(emo => {
+                            const postReactors = (post.reactions?.[emo]) || [];
+                            const count = postReactors.length || (feedReactions[post.id]?.[emo] || 0);
+                            const active = postReactors.includes(effectiveUserId) || ((feedReactions[post.id]?.[emo] || 0) > 0);
+                            return (
+                              <button
+                                key={emo}
+                                onClick={() => { boostReaction(post.id, emo, effectiveUserId); triggerHaptic('light'); }}
+                                className={`muro-reaction px-2.5 py-1 rounded-full border flex items-center gap-1 transition-all active:scale-90 ${active ? 'bg-[#FF671F]/10 border-[#FF671F] scale-105' : 'bg-[#1C1C20] border-[#2F2F35] hover:border-[#FF671F]/40'}`}
+                              >
+                                <span className="text-base">{emo}</span>
+                                {count > 0 && <span className="count text-[#FF671F] font-bold tabular-nums text-xs">{count}</span>}
+                              </button>
+                            );
+                          })}
                         </div>
                         {post.comments.length > 0 && (
                           <div 
@@ -8329,7 +8371,7 @@ function App() {
                                 </div>
                               ))}
                             </div>
-                            {post.comments.length > 3 && <div className="text-[#FF671F]/70 text-[10px] mt-1 pl-1">+{post.comments.length-3} comentarios más</div>}
+                            {(post.comments || []).length > 3 && <div className="text-[#FF671F]/70 text-[10px] mt-1 pl-1">+{(post.comments || []).length-3} comentarios más</div>}
                           </div>
                         )}
                         {/* Inline attractive comment box */}
@@ -9656,7 +9698,13 @@ function App() {
                           transition={{ duration: 0.2 }}
                           className="card card-glass p-3 mb-2 border-[#2F2F35]/80 hover:border-[#FF671F]/30"
                         >
-                          <div className="text-[13px] leading-snug mb-2 text-white/95">{post.pinned ? '📌 ' : ''}{post.text}</div>
+                          <div className="text-[13px] leading-snug mb-2 text-white/95">
+                            {post.pinned ? '📌 ' : ''}
+                            {(post.text || '').includes('Fui testigo') || (post.text || '').includes('RITUAL LEGENDARIO') || (post.text || '').includes('Echo') ? (
+                              <span className="text-[#FFD700] font-semibold">👁️ Eco de un Ritual Legendario</span>
+                            ) : null}
+                            <div>{post.text}</div>
+                          </div>
                           {post.photo && (
                             <div className="relative mb-3 -mx-1 rounded-2xl overflow-hidden ring-1 ring-[#2F2F35]">
                               <img src={post.photo} className="w-full max-h-[200px] object-cover transition-transform hover:scale-[1.02]" />
@@ -9665,8 +9713,8 @@ function App() {
                           )}
                           <div className="flex items-center gap-4 text-xs text-[#9CA3AF]">
                             <span title={new Date(post.timestamp).toLocaleString('es-CL')}>{getRelativeTime(post.timestamp)}</span>
-                            <span onClick={() => likeProfilePost(post.id, showFullProfile.id)} className="cursor-pointer active:text-[#FF671F]">❤️ {post.likes.length}</span>
-                            <span onClick={() => startComment(post.id, showFullProfile.id, showFullProfile.name)} className="cursor-pointer active:text-[#FF671F]">💬 {post.comments.length}</span>
+                            <span onClick={() => likeProfilePost(post.id, showFullProfile.id)} className="cursor-pointer active:text-[#FF671F]">❤️ {(post.likes || []).length}</span>
+                            <span onClick={() => startComment(post.id, showFullProfile.id, showFullProfile.name)} className="cursor-pointer active:text-[#FF671F]">💬 {(post.comments || []).length}</span>
                           </div>
                           {post.comments.length > 0 && (
                             <div 
@@ -9688,7 +9736,7 @@ function App() {
                                   )}
                                 </div>
                               ))}
-                              {post.comments.length > 2 && <div className="text-[#FF671F]/70 mt-0.5">+{post.comments.length-2} más... toca para ver todo</div>}
+                              {(post.comments || []).length > 2 && <div className="text-[#FF671F]/70 mt-0.5">+{(post.comments || []).length-2} más... toca para ver todo</div>}
                             </div>
                           )}
                           {/* Inline comment input for viewed profile too */}
