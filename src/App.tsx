@@ -494,9 +494,10 @@ function App() {
     } catch (e) {
       console.error('Send voice error', e)
       const isReal = !isDemoMode
+      const uid = firebaseUser?.uid || 'sin-uid'
       toast.error('Error enviando nota de voz', { 
         description: isReal 
-          ? 'No se pudo subir el audio a la nube. Asegúrate de que las storage rules estén deployadas y que estés autenticado.' 
+          ? `No se pudo subir el audio (uid: ${uid}). Asegúrate de que las storage rules estén deployadas (firebase deploy --only storage) y que estés autenticado con cuenta real.` 
           : 'Error local al procesar el audio.'
       })
       setIsUploadingVoice(false)
