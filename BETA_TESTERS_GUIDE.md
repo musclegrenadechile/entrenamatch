@@ -615,3 +615,11 @@ This is the build to upload to Closed track. Full "sigue con todo" — more uniq
 - También accesible desde las notificaciones personales cuando una onda te alcanza.
 - Esto permite que cualquiera en la comunidad sea "testigo" de los rituales legendarios que acaban de propagarse. Convierte lo privado en patrimonio cultural compartido.
 - Prueba: Genera un alto vibe en Arena (con alguien), ve al mapa con otra cuenta cercana. Toca la onda → Witness. Siente la magia de presenciar un momento que "apenas pasó".
+
+**NUEVO — BONDS/LEGENDS CON PESO REAL (v0.1.31-legend-weight, code 36)**:
+- Mapa: tus Legends tienen marcadores dorados premium (badge ⭐ LEGEND, glow gold, pulso especial), tethers entre bonds live son dorados y más gruesos con animación glow.
+- Nuevo filtro 'Solo Legends' junto a 'Cerca de mí'.
+- Ripples de bonds se marcan como '⭐ RITUAL LEGENDARIO' con ondas doradas más potentes.
+- Feed global: posts de tus Legends suben con prioridad (tienen peso real en el orden de la comunidad).
+- Cultivar bonds ahora tiene recompensa visible: más visibilidad en mapa y feed, tethers especiales, ripples legendarios.
+- Prueba: Haz sync con alguien hasta acumular bond decente, luego ve el mapa cuando ambos estén live: tether dorado. Filtra 'Solo Legends'. Publica algo: sube más arriba en feed.

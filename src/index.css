@@ -1043,6 +1043,15 @@ input[type="range"]::-moz-range-thumb {
   100% { opacity: 0.05; }
 }
 
+.ritual-map-ripple.legend-ripple {
+  animation: legend-ripple-pulse 2.2s ease-out forwards;
+}
+@keyframes legend-ripple-pulse {
+  0% { opacity: 0.9; }
+  50% { opacity: 0.5; }
+  100% { opacity: 0.1; }
+}
+
 /* Enhanced Ritual Ripples with "physics" - energy flowing towards other users on the map.
    This makes the map feel like a living ecosystem where high-vibe moments in Arena send real waves across the city. */
 .ritual-wave-line {
@@ -1059,6 +1068,28 @@ input[type="range"]::-moz-range-thumb {
 @keyframes ritual-wave-flow {
   0% { stroke-dashoffset: 0; }
   100% { stroke-dashoffset: -40; }
+}
+
+/* Legend markers on map - real weight for bonds/legends */
+.entrenamatch-marker.legend-marker {
+  filter: drop-shadow(0 0 8px #FFD700);
+}
+.entrenamatch-marker.legend-marker img,
+.entrenamatch-marker.legend-marker > div {
+  border-color: #FFD700 !important;
+  box-shadow: 0 0 0 3px #FFD70055, 0 0 12px #FFD70088 !important;
+}
+
+/* Legend tethers on map - bonded pairs have golden persistent weight */
+.map-sync-tether.legend-tether {
+  stroke: #FFD700;
+  stroke-width: 4;
+  stroke-opacity: 0.85;
+  animation: legend-tether-glow 2s ease-in-out infinite;
+}
+@keyframes legend-tether-glow {
+  0%, 100% { stroke-opacity: 0.85; }
+  50% { stroke-opacity: 1; }
 }
 
 /* Small pulse at the "receiving" user when a wave arrives */

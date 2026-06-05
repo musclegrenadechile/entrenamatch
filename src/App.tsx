@@ -696,6 +696,7 @@ function App() {
   })
   const [mapNearOnly, setMapNearOnly] = useState(false) // simple filter for map UX
   const [selectedMapZone, setSelectedMapZone] = useState<string | null>(null) // interactive zone filter for "sigue con todo el mapa"
+  const [showOnlyLegends, setShowOnlyLegends] = useState(false) // real weight for bonds/legends on map
   const liveMapRef = useRef<HTMLDivElement>(null)
 
   // Zone colors shared for map markers and interactive legend (sigue con todo el mapa)
@@ -3049,19 +3050,20 @@ function App() {
           const partner = liveTrainingNow.find((u: any) => u.id === syncPartnerId) || realProfiles.find((p: any) => p.id === syncPartnerId)
           if (partner && partner.lat && partner.lng) {
             const rippleId = 'ritual-' + Date.now()
-            const intensity = newVibe > 90 ? 2.2 : 1.6
+            const isLegendRipple = !!partner.isLegend || (syncBonds[partner.id] && ((syncBonds[partner.id].totalMin || 0) >= 30 || (syncBonds[partner.id].bondLevel || 0) >= 2))
+            const intensity = isLegendRipple ? 2.8 : (newVibe > 90 ? 2.2 : 1.6)
             setRitualRipples(prev => [...prev, { 
               id: rippleId, 
               lat: partner.lat, 
               lng: partner.lng, 
-              label: `⚡ Ritual Épico • ${label}`, 
+              label: isLegendRipple ? `⭐ RITUAL LEGENDARIO • ${label}` : `⚡ Ritual Épico • ${label}`, 
               intensity,
               witnessData: {
                 actions: syncActions.slice(0, 6).map((a: any) => ({...a})),
                 vibe: newVibe,
                 partnerName: partner.name || partner.nombre || 'Compañero de ritual',
                 photoUrl: syncActions.find((a:any) => a.photoUrl)?.photoUrl || null,
-                label: `⚡ ${label}`,
+                label: isLegendRipple ? `⭐ ${label}` : `⚡ ${label}`,
                 timestamp: Date.now(),
                 minutes: syncStartedAt ? Math.floor((Date.now() - syncStartedAt)/60000) : 0
               }
@@ -4400,7 +4402,9 @@ function App() {
           const otherLikes = (livePost.likes || []).filter((id: string) => id !== p.id).length;
           joinCount = (livePost.comments || []).length + otherLikes;
         }
-        return { ...p, distance: dist, seVaEnMin, joinCount };
+        const bond = syncBonds[p.id];
+        const isLegend = !!bond && ((bond.totalMin || 0) >= 30 || (bond.bondLevel || 0) >= 2);
+        return { ...p, distance: dist, seVaEnMin, joinCount, isLegend, bondInfo: bond };
       })
       .filter(p => !userLocation || p.distance < 15) // near only if we have location; otherwise show all live (so feature works even without GPS)
       .sort((a, b) => {
@@ -4444,6 +4448,10 @@ function App() {
 
     let feedPosts = [...allCommunityPosts]
       .sort((a: any, b: any) => {
+        const aIsLegend = !!syncBonds[a.ownerId];
+        const bIsLegend = !!syncBonds[b.ownerId];
+        if (bIsLegend && !aIsLegend) return -1; // Legends have real weight in global feed
+        if (aIsLegend && !bIsLegend) return 1;
         if (b.pinned && !a.pinned) return 1;
         if (a.pinned && !b.pinned) return -1;
         return b.timestamp - a.timestamp;
@@ -4562,42 +4570,50 @@ function App() {
     if (selectedMapZone) {
       liveUsers = liveUsers.filter(u => u.city === selectedMapZone)
     }
+    if (showOnlyLegends) {
+      liveUsers = liveUsers.filter(u => u.isLegend)
+    }
 
     liveUsers.forEach(user => {
       try {
         const color = mapZoneColors[user.city] || mapZoneColors.default
         const shortName = (user.name || '?').split(' ')[0]
         const highEnergy = ((user.joinCount || 0) >= 3) || !!user.trainingSyncWith || (user.syncStreak || 0) > 2
+        const isLegend = !!user.isLegend || (user.bondInfo && ((user.bondInfo.totalMin || 0) >= 30 || (user.bondInfo.bondLevel || 0) >= 2))
+        const markerColor = isLegend ? '#FFD700' : color // Gold for legends - real weight on map
+        const legendBadge = isLegend ? `<div style="position:absolute;top:-4px;right:-4px;background:#FFD700;color:#111;font-size:7px;font-weight:900;padding:0 3px;border-radius:3px;border:1px solid #111">⭐ LEGEND</div>` : ''
 
         // Premium personal marker: photo if available, else nice initials badge + name label.
         // Makes the map feel alive and social (the "preciosa" part).
         // High-energy (FOMO joins or in-Sync): stronger glow ring + faster pulse (disruptive live feel).
         let iconHtml: string
         const photo = user.photos && user.photos[0]
-        const glow = highEnergy ? `0 0 0 3px ${color}55, 0 0 10px ${color}88` : '0 0 0 2px rgba(255,255,255,0.9)'
-        const borderW = highEnergy ? '3px' : '2.5px'
-        const pulseExtra = highEnergy ? ' animation-duration:1.1s; filter: saturate(1.15) brightness(1.05);' : ''
+        const glow = highEnergy ? `0 0 0 3px ${markerColor}55, 0 0 10px ${markerColor}88` : '0 0 0 2px rgba(255,255,255,0.9)'
+        const borderW = isLegend ? '4px' : (highEnergy ? '3px' : '2.5px')
+        const pulseExtra = highEnergy ? ' animation-duration:1.1s; filter: saturate(1.15) brightness(1.05);' : (isLegend ? ' animation-duration:1.8s; filter: saturate(1.3) brightness(1.1);' : '')
         if (photo) {
           iconHtml = `
             <div style="position:relative;width:36px;height:36px">
-              <div style="width:36px;height:36px;border-radius:9999px;overflow:hidden;border:${borderW} solid ${color};box-shadow:${glow}, 0 2px 6px rgba(0,0,0,0.4);${pulseExtra}">
-                <img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='${color}';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px\\'>${shortName.slice(0,2).toUpperCase()}</div>'" />
+              <div style="width:36px;height:36px;border-radius:9999px;overflow:hidden;border:${borderW} solid ${markerColor};box-shadow:${glow}, 0 2px 6px rgba(0,0,0,0.4);${pulseExtra}">
+                <img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='${markerColor}';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px\\'>${shortName.slice(0,2).toUpperCase()}</div>'" />
               </div>
               <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
-              ${highEnergy ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:9999px;background:${color};box-shadow:0 0 6px ${color};border:1.5px solid #111"></div>` : ''}
+              ${highEnergy ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:9999px;background:${markerColor};box-shadow:0 0 6px ${markerColor};border:1.5px solid #111"></div>` : ''}
+              ${legendBadge}
             </div>`
         } else {
           const initials = shortName.slice(0, 2).toUpperCase()
           iconHtml = `
             <div style="position:relative;width:36px;height:36px">
-              <div style="width:36px;height:36px;border-radius:9999px;background:${color};border:${borderW} solid #fff;box-shadow:${glow},0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px;${pulseExtra}">${initials}</div>
+              <div style="width:36px;height:36px;border-radius:9999px;background:${markerColor};border:${borderW} solid #fff;box-shadow:${glow},0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px;${pulseExtra}">${initials}</div>
               <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
-              ${highEnergy ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:9999px;background:#fff;box-shadow:0 0 6px #fff;border:1.5px solid ${color}"></div>` : ''}
+              ${highEnergy ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:9999px;background:#fff;box-shadow:0 0 6px #fff;border:1.5px solid ${markerColor}"></div>` : ''}
+              ${legendBadge}
             </div>`
         }
 
         const customIcon = L.divIcon({
-          className: `entrenamatch-marker${highEnergy ? ' high-energy' : ''}`,
+          className: `entrenamatch-marker${highEnergy ? ' high-energy' : ''}${isLegend ? ' legend-marker' : ''}`,
           html: iconHtml,
           iconSize: [40, 48],
           iconAnchor: [20, 24],
@@ -4687,18 +4703,19 @@ function App() {
       if (user.trainingSyncWith) {
         const partner = liveUsers.find(u => u.id === user.trainingSyncWith)
         if (partner && partner.lat && partner.lng) {
+          const isBondedLegend = !!syncBonds[user.id] || !!syncBonds[partner.id]
           const line = L.polyline(
             [[user.lat, user.lng], [partner.lat, partner.lng]],
             {
-              color: '#FF671F',
-              weight: 2.5,
-              opacity: 0.65,
-              dashArray: '5, 8',
+              color: isBondedLegend ? '#FFD700' : '#FF671F',
+              weight: isBondedLegend ? 4 : 2.5,
+              opacity: isBondedLegend ? 0.85 : 0.65,
+              dashArray: isBondedLegend ? '3,6' : '5, 8',
               lineJoin: 'round',
-              className: 'map-sync-tether'
+              className: `map-sync-tether${isBondedLegend ? ' legend-tether' : ''}`
             }
           ).addTo(mapInstanceRef.current)
-          line.bindPopup(`<strong>🔄 Sync en vivo</strong><br/>${user.name} ↔ ${partner.name}<br/><span style="font-size:10px">Ritual compartido ahora</span>`)
+          line.bindPopup(`<strong>${isBondedLegend ? '⭐ SYNC LEGENDARIO' : '🔄 Sync en vivo'}</strong><br/>${user.name} ↔ ${partner.name}<br/><span style="font-size:10px">${isBondedLegend ? 'Bonds reales con historia • Peso en el mapa' : 'Ritual compartido ahora'}</span>`)
           syncLinesRef.current.push(line)
         }
       }
@@ -4711,14 +4728,15 @@ function App() {
     ritualRipples.forEach((r: any) => {
       try {
         const radius = 650 * (r.intensity || 1.5)
+        const isLegendRipple = (r.label || '').includes('LEGENDARIO') || (r.label || '').includes('⭐')
         const ripple = L.circle([r.lat, r.lng], {
           radius,
-          color: '#FF671F',
-          weight: 2,
-          fillColor: '#FF671F',
-          fillOpacity: 0.07,
-          opacity: 0.65,
-          className: 'ritual-map-ripple'
+          color: isLegendRipple ? '#FFD700' : '#FF671F',
+          weight: isLegendRipple ? 3 : 2,
+          fillColor: isLegendRipple ? '#FFD700' : '#FF671F',
+          fillOpacity: isLegendRipple ? 0.1 : 0.07,
+          opacity: isLegendRipple ? 0.8 : 0.65,
+          className: `ritual-map-ripple${isLegendRipple ? ' legend-ripple' : ''}`
         }).addTo(mapInstanceRef.current)
 
         // Bind a special popup that teases the magic + Witness button
@@ -5277,7 +5295,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
-          <span className="text-white/90 text-[11px]">Real backend • v0.1.30-witness-mode</span>
+          <span className="text-white/90 text-[11px]">Real backend • v0.1.31-legend-weight</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -5482,7 +5500,7 @@ function App() {
                   {/* Live badge + near filter (counts respect current filters + legend selection) */}
                   <div className="absolute bottom-2 right-2 flex items-center gap-1 z-30">
                     <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                      🟢 {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && (u.distance||999)<10)) && (!selectedMapZone || u.city === selectedMapZone)).length} en vivo • realtime
+                      🟢 {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && (u.distance||999)<10)) && (!selectedMapZone || u.city === selectedMapZone) && (!showOnlyLegends || u.isLegend)).length} en vivo • realtime
                       {selectedMapZone && <span className="ml-1 text-[7px] bg-white/20 px-1 rounded">filtrado: {selectedMapZone.split(' ')[0]}</span>}
                     </div>
                     <button
@@ -5490,6 +5508,12 @@ function App() {
                       className={`text-[8px] px-2 py-0.5 rounded-full border transition ${mapNearOnly ? 'bg-[#3b82f6] text-white border-[#3b82f6]' : 'bg-black/70 text-[#3b82f6] border-[#3b82f6]/40 hover:bg-[#3b82f6]/10'}`}
                     >
                       {mapNearOnly ? '✓ Cerca de mí (10km)' : 'Solo cerca de mí'}
+                    </button>
+                    <button
+                      onClick={() => { try { triggerHaptic('light') } catch {}; setShowOnlyLegends(!showOnlyLegends) }}
+                      className={`text-[8px] px-2 py-0.5 rounded-full border transition ${showOnlyLegends ? 'bg-[#FFD700] text-black border-[#FFD700]' : 'bg-black/70 text-[#FFD700] border-[#FFD700]/40 hover:bg-[#FFD700]/10'}`}
+                    >
+                      {showOnlyLegends ? '✓ Mis Legends' : 'Solo Legends'}
                     </button>
                   </div>
 
@@ -8213,7 +8237,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.30-witness-mode • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.31-legend-weight • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8440,7 +8464,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.30-witness-mode • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.31-legend-weight • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>

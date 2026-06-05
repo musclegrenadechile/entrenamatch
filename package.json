@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.30-witness-mode",
+  "version": "0.1.31-legend-weight",
   "type": "module",
   "scripts": {
     "dev": "vite",
