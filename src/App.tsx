@@ -391,6 +391,7 @@ function App() {
       currentRecordingTimeRef.current = 0
       recordingStartTimeRef.current = Date.now()
       setPendingVoice(null)
+      try { triggerHaptic('medium') } catch {}
 
       // timer
       recordingTimerRef.current = setInterval(() => {
@@ -426,6 +427,7 @@ function App() {
       clearInterval(recordingTimerRef.current)
       recordingTimerRef.current = null
     }
+    try { triggerHaptic('light') } catch {}
     // reset happens in onstop
   }
 
@@ -487,6 +489,7 @@ function App() {
       }
       setPendingVoice(null)
       setIsUploadingVoice(false)
+      try { triggerHaptic('success') } catch {}
       toast.success('Nota de voz enviada', { description: `${duration}s • compártela con tu red de rendimiento` })
     } catch (e) {
       console.error('Send voice error', e)
@@ -754,7 +757,6 @@ function App() {
   const voicePreviewUrlRef = useRef<string | null>(null)
   const currentRecordingTimeRef = useRef(0)
   const recordingStartTimeRef = useRef(0)
-  const currentRecordingTimeRef = useRef(0)
 
   // For attractive voice message playback animation
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null)
@@ -7501,46 +7503,47 @@ function App() {
                           {time && <div className="text-[9px] text-[#6B7280] mb-0.5 px-1">{time}</div>}
                           <div className={`px-3.5 py-2 rounded-3xl text-[14px] leading-snug break-words overflow-hidden ${isMe ? 'bg-[#FF671F] text-black rounded-br-md' : 'bg-[#25252A] text-white rounded-bl-md'}`}>
                             {m.voiceUrl && !m.voiceUrl.startsWith('blob:') ? (
-                              <div className={`flex items-center gap-2 min-w-[200px] p-1 rounded-2xl ${isMe ? 'bg-[#FF671F]/90' : 'bg-[#25252A]'} shadow-inner`}>
+                              <div className={`voice-bubble ${isMe ? 'sent' : 'received'}`}>
                                 <button 
                                   onClick={() => {
                                     if (playingVoiceId === m.id) {
                                       setPlayingVoiceId(null);
-                                      // stop any playing if needed, but new Audio each time
                                     } else {
                                       setPlayingVoiceId(m.id);
+                                      const dur = m.voiceDuration || 5;
                                       const audio = new Audio(m.voiceUrl);
-                                      audio.onended = () => setPlayingVoiceId(null);
-                                      audio.play().catch((e) => {
-                                        console.warn('audio play error', e);
-                                        setPlayingVoiceId(null);
-                                      });
-                                      // auto stop animation after duration
-                                      setTimeout(() => setPlayingVoiceId(null), (m.voiceDuration || 5) * 1000 + 200);
+                                      audio.onended = () => { setPlayingVoiceId(null); };
+                                      audio.play().catch((e) => { console.warn('audio play error', e); setPlayingVoiceId(null); });
+                                      // safety timeout
+                                      setTimeout(() => setPlayingVoiceId(null), dur * 1000 + 280);
                                     }
                                   }}
-                                  className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xl transition-all active:scale-95 ${isMe ? 'bg-black/30 text-white' : 'bg-[#FF671F]/20 text-[#FF671F]'} ${playingVoiceId === m.id ? 'scale-110' : ''}`}
+                                  className={`voice-play-btn ${playingVoiceId === m.id ? 'playing' : ''}`}
                                   title="Reproducir nota de voz"
                                 >
                                   {playingVoiceId === m.id ? '⏸' : '▶️'}
                                 </button>
-                                {/* Attractive simple waveform - animated when playing */}
-                                <div className="flex items-center gap-0.5 flex-1 h-5 mx-1">
-                                  {[3,5,4,6,3,5,4].map((h, idx) => (
+                                <div className="voice-wave-container">
+                                  <div className={`voice-wave ${playingVoiceId === m.id ? 'playing' : ''}`}>
+                                    {[3,5,7,4,8,5,6,3,7,4,5].map((h, idx) => (
+                                      <div 
+                                        key={idx} 
+                                        className="voice-bar" 
+                                        style={{ 
+                                          height: `${h * 1.35}px`, 
+                                          animationDelay: `${(idx % 6) * -180}ms` 
+                                        }} 
+                                      />
+                                    ))}
+                                  </div>
+                                  {playingVoiceId === m.id && (
                                     <div 
-                                      key={idx} 
-                                      className={`w-1 bg-current rounded-full transition-all ${playingVoiceId === m.id ? 'animate-pulse' : ''}`}
-                                      style={{ 
-                                        height: `${h * 2}px`,
-                                        animationDelay: `${idx * 80}ms`,
-                                        opacity: playingVoiceId === m.id ? 1 : 0.7
-                                      }}
+                                      className="voice-progress" 
+                                      style={{ width: '100%', animation: `voice-progress ${m.voiceDuration || 5}s linear forwards` }} 
                                     />
-                                  ))}
+                                  )}
                                 </div>
-                                <span className={`text-[10px] font-mono whitespace-nowrap ${isMe ? 'text-black/80' : 'text-white/70'}`}>
-                                  🎙️ {m.voiceDuration || '?'}s
-                                </span>
+                                <span className="voice-duration">🎙️ {m.voiceDuration || '?'}s</span>
                               </div>
                             ) : m.voiceUrl && m.voiceUrl.startsWith('blob:') ? (
                               <span className="text-[10px] text-red-400">Nota de voz no disponible en esta sesión</span>
@@ -7613,21 +7616,16 @@ function App() {
                   }} className="flex gap-2 items-center">
                     <input type="text" placeholder="Escribe un mensaje o graba voz..." className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none" />
                     
-                    {/* Attractive voice recording & preview for 1:1 */}
+                    {/* Attractive voice recording & preview for 1:1 — premium energy share */}
                     {isRecordingVoice ? (
-                      <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-3xl px-3 py-1">
-                        <div className="flex items-center gap-1">
-                          <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
-                          <span className="text-red-400 text-xs font-bold">GRABANDO</span>
+                      <div className="voice-recording">
+                        <div className="dot" />
+                        <span className="text-red-400 text-[10px] font-bold tracking-wide">GRABANDO</span>
+                        <span className="timer">{recordingTime}s<span className="opacity-60">/60</span></span>
+                        <div className="flex gap-0.5 items-end h-[13px] ml-0.5">
+                          {[3,5,4,7,3,6,4].map((h,i) => <div key={i} className="w-[2px] bg-red-400 rounded" style={{height: h}} />)}
                         </div>
-                        <div className="text-red-400 font-mono text-sm">{recordingTime}s / 60s</div>
-                        {/* Simple animated waveform bars during record */}
-                        <div className="flex gap-0.5 items-end h-4">
-                          {[2,4,3,5,2,4].map((h,i) => (
-                            <div key={i} className="w-0.5 bg-red-500 rounded animate-pulse" style={{height: `${h*2}px`, animationDelay: `${i*60}ms`}} />
-                          ))}
-                        </div>
-                        <button onClick={stopVoiceRecording} className="ml-1 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full active:bg-red-600">Detener</button>
+                        <button onClick={stopVoiceRecording} className="ml-1 px-2.5 py-px text-[10px] bg-red-500 text-white rounded-full active:bg-red-600 font-semibold">PARAR</button>
                       </div>
                     ) : (
                       <button 
@@ -7640,45 +7638,43 @@ function App() {
                       </button>
                     )}
                     {pendingVoice && !isUploadingVoice && (
-                      <div className="ml-1 flex items-center gap-1 bg-[#0D0D10] border border-[#FF671F]/30 rounded-2xl p-1">
+                      <div className="voice-preview ml-0.5">
                         <button 
-                          onClick={() => {
-                            const audio = new Audio(pendingVoice.url);
-                            audio.play().catch(() => {});
-                          }}
-                          className="w-8 h-8 rounded-full bg-[#FF671F]/20 flex items-center justify-center text-[#FF671F] active:bg-[#FF671F]/40"
-                          title="Escuchar preview"
+                          onClick={() => { const a = new Audio(pendingVoice.url); a.play().catch(()=>{}); }}
+                          className="w-9 h-9 rounded-full bg-[#FF671F]/15 flex items-center justify-center text-[#FF671F] active:bg-[#FF671F]/30 text-lg flex-shrink-0"
+                          title="Escuchar antes de enviar"
                         >
                           ▶️
                         </button>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-[9px] text-[#FF671F] font-medium">Nota de voz lista</div>
-                          <div className="text-[10px] text-[#9CA3AF]">{pendingVoice.duration}s</div>
+                        <div className="voice-wave-container" style={{height:'16px'}}>
+                          <div className="voice-wave">
+                            {[3,5,4,7,3,6,4,5].map((h,i) => <div key={i} className="voice-bar" style={{height: h}} />)}
+                          </div>
                         </div>
-                        <button 
-                          type="button" 
-                          onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} 
-                          className="text-[9px] px-2 py-0.5 text-red-400 hover:text-red-500"
-                        >
-                          ✕
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            // trigger send via the form submit logic
-                            const form = document.querySelector('form'); // rough, but works for now
-                            if (form) form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-                          }}
-                          className="text-[9px] px-2 py-0.5 bg-[#FF671F] text-black rounded-full font-bold active:bg-[#E55A1A]"
-                        >
-                          Enviar
-                        </button>
+                        <div className="meta">
+                          <div className="title">Nota lista</div>
+                          <div className="sub">{pendingVoice.duration}s • tu red</div>
+                        </div>
+                        <div className="actions">
+                          <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-[9px] px-1.5 py-0.5 text-red-400 hover:text-red-500">✕</button>
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              if (activeChat && pendingVoice) {
+                                sendVoiceNote(activeChat, false)
+                              }
+                            }}
+                            className="text-[9px] px-2.5 py-0.5 bg-[#FF671F] text-black rounded-full font-extrabold active:bg-[#E55A1A] shadow"
+                          >
+                            ENVIAR
+                          </button>
+                        </div>
                       </div>
                     )}
                     {isUploadingVoice && (
                       <div className="ml-2 flex items-center gap-1 text-[#FF671F] text-xs">
                         <div className="w-2 h-2 bg-[#FF671F] rounded-full animate-pulse" />
-                        Subiendo voz...
+                        Subiendo a la red...
                       </div>
                     )}
 
@@ -11064,44 +11060,36 @@ function App() {
                                 {renderMessageText(msg.text)}
                                 {msg.photo && <img src={msg.photo} className="mt-2 max-w-[200px] rounded-xl border border-white/10" />}
                                 {msg.voiceUrl && !msg.voiceUrl.startsWith('blob:') ? (
-                                  <div className={`mt-1 flex items-center gap-2 p-1 rounded-2xl min-w-[180px] ${isMe ? 'bg-[#FF671F]/90' : 'bg-[#25252A]'}`}>
+                                  <div className={`voice-bubble mt-1 ${isMe ? 'sent' : 'received'}`}>
                                     <button 
                                       onClick={() => {
                                         if (playingVoiceId === msg.id) {
                                           setPlayingVoiceId(null);
                                         } else {
                                           setPlayingVoiceId(msg.id);
+                                          const dur = msg.voiceDuration || 5;
                                           const audio = new Audio(msg.voiceUrl);
                                           audio.onended = () => setPlayingVoiceId(null);
-                                          audio.play().catch((e) => {
-                                            console.warn('audio play error', e);
-                                            setPlayingVoiceId(null);
-                                          });
-                                          setTimeout(() => setPlayingVoiceId(null), (msg.voiceDuration || 5) * 1000 + 200);
+                                          audio.play().catch((e) => { console.warn('audio play error', e); setPlayingVoiceId(null); });
+                                          setTimeout(() => setPlayingVoiceId(null), dur * 1000 + 280);
                                         }
                                       }}
-                                      className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all active:scale-95 ${isMe ? 'bg-black/30 text-white' : 'bg-[#FF671F]/20 text-[#FF671F]'} ${playingVoiceId === msg.id ? 'scale-110' : ''}`}
+                                      className={`voice-play-btn ${playingVoiceId === msg.id ? 'playing' : ''}`}
                                       title="Reproducir nota de voz"
                                     >
                                       {playingVoiceId === msg.id ? '⏸' : '▶️'}
                                     </button>
-                                    {/* Attractive waveform bars */}
-                                    <div className="flex items-center gap-0.5 flex-1 h-4">
-                                      {[3,5,4,6,3,5,4].map((h, idx) => (
-                                        <div 
-                                          key={idx} 
-                                          className={`w-0.5 bg-current rounded-full transition-all ${playingVoiceId === msg.id ? 'animate-pulse' : ''}`}
-                                          style={{ 
-                                            height: `${h * 1.8}px`,
-                                            animationDelay: `${idx * 70}ms`,
-                                            opacity: playingVoiceId === msg.id ? 1 : 0.6
-                                          }}
-                                        />
-                                      ))}
+                                    <div className="voice-wave-container">
+                                      <div className={`voice-wave ${playingVoiceId === msg.id ? 'playing' : ''}`}>
+                                        {[3,5,7,4,8,5,6,3,7,4,5].map((h, idx) => (
+                                          <div key={idx} className="voice-bar" style={{ height: `${h * 1.35}px`, animationDelay: `${(idx % 6) * -180}ms` }} />
+                                        ))}
+                                      </div>
+                                      {playingVoiceId === msg.id && (
+                                        <div className="voice-progress" style={{ width: '100%', animation: `voice-progress ${msg.voiceDuration || 5}s linear forwards` }} />
+                                      )}
                                     </div>
-                                    <span className={`text-[9px] font-mono whitespace-nowrap ${isMe ? 'text-black/80' : 'text-white/70'}`}>
-                                      🎙️ {msg.voiceDuration || '?'}s
-                                    </span>
+                                    <span className="voice-duration">🎙️ {msg.voiceDuration || '?'}s</span>
                                   </div>
                                 ) : msg.voiceUrl && msg.voiceUrl.startsWith('blob:') ? (
                                   <span className="text-[10px] text-red-400">Nota de voz no disponible en esta sesión</span>
@@ -11168,37 +11156,36 @@ function App() {
                       </div>
                     )}
                     {pendingVoice && !isUploadingVoice && (
-                      <div className="mb-2 bg-[#0D0D10] border border-[#FF671F]/40 rounded-2xl p-2 flex items-center gap-2">
+                      <div className="voice-preview mb-2">
                         <button 
-                          onClick={() => {
-                            const audio = new Audio(pendingVoice.url);
-                            audio.play().catch(() => {});
-                          }}
-                          className="w-9 h-9 rounded-full bg-[#FF671F]/20 flex items-center justify-center text-[#FF671F] active:bg-[#FF671F]/40 text-xl flex-shrink-0"
-                          title="Escuchar preview"
+                          onClick={() => { const a = new Audio(pendingVoice.url); a.play().catch(()=>{}); }}
+                          className="w-9 h-9 rounded-full bg-[#FF671F]/15 flex items-center justify-center text-[#FF671F] active:bg-[#FF671F]/30 text-lg flex-shrink-0"
+                          title="Escuchar antes de enviar al grupo"
                         >
                           ▶️
                         </button>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-medium text-[#FF671F]">🎙️ Nota de voz lista para enviar</div>
-                          <div className="text-[10px] text-[#9CA3AF]">{pendingVoice.duration}s de energía para tu red</div>
+                        <div className="voice-wave-container" style={{height:'16px'}}>
+                          <div className="voice-wave">
+                            {[3,5,4,7,3,6,4,5].map((h,i) => <div key={i} className="voice-bar" style={{height: h}} />)}
+                          </div>
                         </div>
-                        <button 
-                          onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} 
-                          className="text-xs px-2 py-1 text-red-400 hover:text-red-500 border border-red-400/30 rounded"
-                        >
-                          Descartar
-                        </button>
-                        <button 
-                          onClick={() => {
-                            // dispatch submit to send the voice
-                            const form = document.querySelector('#group-chat-form');
-                            if (form) form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
-                          }}
-                          className="text-xs px-3 py-1 bg-[#FF671F] text-black rounded-full font-bold active:bg-[#E55A1A]"
-                        >
-                          Enviar voz
-                        </button>
+                        <div className="meta">
+                          <div className="title">🎙️ Lista para el grupo</div>
+                          <div className="sub">{pendingVoice.duration}s de energía para tu red</div>
+                        </div>
+                        <div className="actions">
+                          <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-[9px] px-1.5 py-0.5 text-red-400 hover:text-red-500">✕</button>
+                          <button 
+                            onClick={() => {
+                              if (showGroupChatModalFor && pendingVoice) {
+                                sendVoiceNote(showGroupChatModalFor, true)
+                              }
+                            }}
+                            className="text-[9px] px-2.5 py-0.5 bg-[#FF671F] text-black rounded-full font-extrabold active:bg-[#E55A1A] shadow"
+                          >
+                            ENVIAR VOZ
+                          </button>
+                        </div>
                       </div>
                     )}
                     {isUploadingVoice && (
@@ -11209,7 +11196,6 @@ function App() {
                     )}
 
                     <form 
-                      id="group-chat-form"
                       onSubmit={(e) => {
                         e.preventDefault()
                         if ((chatInputValue.trim() || groupChatPhoto || pendingVoice) && showGroupChatModalFor) {
@@ -11246,25 +11232,23 @@ function App() {
                         }} />
                       </label>
 
-                      {/* Attractive recording state for group */}
+                      {/* Attractive recording state for group — epic voice to the squad */}
                       {isRecordingVoice ? (
-                        <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/40 rounded-3xl px-3 py-1 text-sm">
-                          <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                            <span className="text-red-400 text-xs font-bold">GRABANDO</span>
+                        <div className="voice-recording">
+                          <div className="dot" />
+                          <span className="text-red-400 text-[10px] font-bold tracking-wide">GRABANDO</span>
+                          <span className="timer">{recordingTime}s<span className="opacity-60">/60</span></span>
+                          <div className="flex gap-0.5 items-end h-[13px] ml-0.5">
+                            {[3,5,4,7,3,6].map((h,i) => <div key={i} className="w-[2px] bg-red-400 rounded" style={{height: h}} />)}
                           </div>
-                          <span className="text-red-400 font-mono text-xs">{recordingTime}s / 60s</span>
-                          <div className="flex gap-0.5 items-end h-3 ml-1">
-                            {[2,4,3,5,2].map((h,i) => <div key={i} className="w-0.5 bg-red-500 rounded animate-pulse" style={{height: h}} />)}
-                          </div>
-                          <button onClick={stopVoiceRecording} className="ml-1 text-xs px-2 py-0.5 bg-red-500 text-white rounded-full">Parar</button>
+                          <button onClick={stopVoiceRecording} className="ml-1 px-2 py-px text-[10px] bg-red-500 text-white rounded-full font-semibold active:bg-red-600">PARAR</button>
                         </div>
                       ) : (
                         <button 
                           type="button"
                           onClick={startVoiceRecording}
                           className="w-11 h-11 rounded-3xl flex items-center justify-center transition active:scale-95 bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A]"
-                          title="Grabar nota de voz"
+                          title="Grabar nota de voz para el grupo"
                         >
                           🎙️
                         </button>

@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.51-voice-blob-fix",
+  "version": "0.1.54-voice-attractive-polish",
   "type": "module",
   "scripts": {
     "dev": "vite",

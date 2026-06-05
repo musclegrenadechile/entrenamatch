@@ -1,18 +1,26 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.53-voice-blob-play-fix code 57) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.54-voice-attractive-polish code 58) ===
 
-AAB: EntrenaMatch-v0.1.53-voice-blob-play-fix-code57-20260604-2348.aab + EntrenaMatch-release.aab
+AAB: EntrenaMatch-v0.1.54-voice-attractive-polish-code58-20260605-0004.aab + EntrenaMatch-release.aab (7.58MB)
 
 **What's new:**
 
-**v0.1.53 (code 57) � FIX: Elimina errores ERR_FILE_NOT_FOUND al reproducir notas de voz**
+**v0.1.54 (code 58) — Pulido visual atractivo para envíos de audio / notas de voz**
 
-- En los renders de burbujas de voz (1:1 y grupo): guard contra blob: URLs (de mensajes antiguos o uploads fallidos).
-  Si voiceUrl empieza con 'blob:', en vez de intentar cargar (causando el error en consola), muestra:
-  "Nota de voz no disponible en esta sesi�n"
-- Futuros mensajes usar�n siempre https de Storage (gracias a l�gica estricta en sendVoiceNote).
-- Duraci�n y play ahora funcionan para mensajes nuevos.
+- Burbujas de voz premium con clases dedicadas (.voice-bubble sent/received con gradiente naranja Dunkin para enviadas, oscuro con borde para recibidas).
+- Waveform animado realista: 11 barras con heights orgánicos tipo audio real + keyframes "voice-bar-dance" que se activan solo al reproducir (animDelay staggered).
+- Progress scrubber animado abajo de la wave (voice-progress) que llena en el tiempo exacto de la nota (usa la duración real).
+- Botón play/pause circular con ring glow al reproducir, escala active, colores brand (naranja en recibidas, dark en enviadas).
+- Duración siempre visible en mono badge elegante.
+- Durante grabación: pill "GRABANDO" con dot pulsante + barras de nivel + timer grande XXs/60 + botón PARAR prominente. Haptic medium al iniciar.
+- Preview antes de enviar: card "voice-preview" con borde naranja, mini waveform estática, título "Nota lista / Lista para el grupo", sub "X s de energía para tu red", botón ▶️ preview + ENVIAR grande naranja + ✕ descartar. Haptic success al enviar.
+- Envío directo desde preview (sin hack form dispatch frágil).
+- Haptics en start/stop/send (medium / light / success) vía triggerHaptic ya existente.
+- Duplicado pulido consistente en chat 1:1 y chat de grupo/sesión.
+- Fix previo de re-declaración de currentRecordingTimeRef que rompía builds.
+- Versión lista para Play + GitHub + GH Pages.
 
-Despu�s de este AAB + deploy de storage rules, las notas de voz se env�an, muestran segundos, y se reproducen sin errores.
-Sube el AAB fresco. Sigue con todo.
+Las notas de voz ahora se sienten premium, motivadoras y 100% on-brand para la primera red social seria de fitness sincronizado. "Comparte tu energía con la red".
 
-(Previous version notes below for reference if needed, but use the v0.1.44 block above for this upload.)
+Sigue con todo. Sube este AAB. 
+
+(Older notes kept below for ref.)
