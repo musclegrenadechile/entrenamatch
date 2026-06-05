@@ -7287,7 +7287,7 @@ function App() {
 
                   {/* DEV PARTNER FORM - attractive, with logo upload. Gated by developer login. Supports add + edit with logo for negocios. */}
                   {showAddPartnerForm && isDeveloper && (
-                    <div className="absolute bottom-1 left-1 right-1 z-[70] bg-[#0D0D10] border-2 border-[#FFD700] rounded-2xl p-3 text-xs shadow-2xl max-h-[220px] overflow-auto">
+                    <div className="absolute bottom-1 left-1 right-1 z-[5000] bg-[#0D0D10] border-2 border-[#FFD700] rounded-2xl p-3 text-xs shadow-2xl max-h-[220px] overflow-auto">
                       <div className="font-bold text-[#FFD700] mb-2 flex justify-between items-center">
                         {editingPartnerId ? 'Editar Partner (devs)' : 'Agregar Partner + Logo (devs)'} — visible en mapa en tiempo real
                         <button onClick={cancelPartnerForm} className="text-white/60 hover:text-white px-1">✕</button>
@@ -7533,7 +7533,7 @@ function App() {
 
                   {/* DEV LOGIN MODAL - password gate so ONLY developers can add/edit partner locals + logos */}
                   {showDevLogin && (
-                    <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/70 p-4" onClick={() => setShowDevLogin(false)}>
+                    <div className="absolute inset-0 z-[6000] flex items-center justify-center bg-black/70 p-4" onClick={() => setShowDevLogin(false)}>
                       <div onClick={e => e.stopPropagation()} className="bg-[#0D0D10] border-2 border-[#FFD700] rounded-2xl p-4 w-full max-w-[320px] text-sm">
                         <div className="font-black text-[#FFD700] mb-1">Developer Login</div>
                         <div className="text-[#9CA3AF] text-xs mb-3">Acceso exclusivo para agregar y editar partners (locales) con logos en el mapa en tiempo real.</div>
@@ -7556,7 +7556,7 @@ function App() {
 
                   {/* MANAGE PARTNERS MODAL (dev only) - improved with search, stats, logo previews, better UX */}
                   {showManagePartners && isDeveloper && (
-                    <div className="absolute inset-0 z-[55] flex items-end justify-center bg-black/60 p-3" onClick={() => setShowManagePartners(false)}>
+                    <div className="absolute inset-0 z-[5500] flex items-end justify-center bg-black/60 p-3" onClick={() => setShowManagePartners(false)}>
                       <div onClick={e=>e.stopPropagation()} className="bg-[#0D0D10] border border-[#FFD700] rounded-t-2xl w-full max-w-[420px] max-h-[75vh] overflow-auto p-3 text-sm">
                         <div className="flex justify-between items-center mb-2 sticky top-0 bg-[#0D0D10] pb-1">
                           <div>

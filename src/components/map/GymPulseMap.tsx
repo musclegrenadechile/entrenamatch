@@ -780,10 +780,10 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   }
 
   return (
-    <div className="relative w-full" style={{ zIndex: 1 }}>
+    <div className="relative w-full" style={{ zIndex: 10 }}> {/* higher stacking context so custom controls can reliably sit above Leaflet */}
       {/* Floating "El Pulso está vivo" header — now owned by the component */}
       <div
-        className="map-floating-pulse absolute top-2 left-2 z-40 px-3 py-1 rounded-2xl text-[10px] font-semibold text-[#22c55e] flex items-center gap-2 shadow-lg border border-[#22c55e]/20 cursor-pointer active:scale-[0.985] transition"
+        className="map-floating-pulse absolute top-2 left-2 z-[2000] px-3 py-1 rounded-2xl text-[10px] font-semibold text-[#22c55e] flex items-center gap-2 shadow-lg border border-[#22c55e]/20 cursor-pointer active:scale-[0.985] transition"
         onClick={() => {
           try { /* haptic if available */ } catch {}
           const active = (liveTrainingNow || []).filter((u: any) => u.lat && u.lng && u.trainingNow)
@@ -823,7 +823,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       />
 
       {/* Bottom-right filter cluster (self-contained) */}
-      <div className="absolute bottom-2 right-2 flex items-center gap-1 z-30">
+      <div className="absolute bottom-2 right-2 flex items-center gap-1 z-[2000]">
         <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
           🟢 {(liveTrainingNow || []).filter((u: any) => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && ((u.distance||999)<10))) && (!selectedMapZone || u.city === selectedMapZone) && (!showOnlyLegends || u.isLegend)).length} en vivo
           {showPartners && partnerLocations.length > 0 && <span className="ml-1 text-[7px] bg-[#FF671F] text-black px-1 rounded font-bold">{partnerLocations.length} PARTNERS</span>}
@@ -853,7 +853,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       </div>
 
       {/* Top-left interactive zone legend - positioned below the floating header to avoid overlap */}
-      <div className="absolute top-9 left-2 z-30 flex flex-col gap-1">
+      <div className="absolute top-9 left-2 z-[2000] flex flex-col gap-1">
         {['Viña del Mar', 'Santiago', 'Valparaíso', 'Concon'].map(city => {
           const col = zoneColors[city] || zoneColors.default
           const isActive = selectedMapZone === city
@@ -893,7 +893,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
             }
           } catch {}
         }}
-        className="absolute top-2 right-2 text-[9px] px-2.5 py-0.5 rounded-full bg-black/70 hover:bg-black text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black transition z-30"
+        className="absolute top-2 right-2 text-[9px] px-2.5 py-0.5 rounded-full bg-black/70 hover:bg-black text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black transition z-[2000]"
       >
         Centrar
       </button>
@@ -901,7 +901,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       {/* Dev quick actions (inside the map widget) - compact + high z so they are always visible (was hidden behind zoom control or too small).
           Zoom control moved to bottomright in map init. */}
       {isDeveloper && (
-        <div className="absolute top-9 right-2 flex flex-col gap-0.5 z-[100]">
+        <div className="absolute top-9 right-2 flex flex-col gap-0.5 z-[3000]">
           <div className="flex gap-1 justify-end">
             <button
               onClick={() => onOpenAddPartner && onOpenAddPartner()}
@@ -962,7 +962,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
       {/* GPS prompt overlay */}
       {!userLocation && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/65 text-center p-5 rounded-2xl text-xs z-40">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/65 text-center p-5 rounded-2xl text-xs z-[4000]">
           <div>
             <div className="mb-1">📍 Ubicación real desactivada</div>
             <button 
