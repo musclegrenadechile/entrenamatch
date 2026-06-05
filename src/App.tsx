@@ -2977,7 +2977,8 @@ function App() {
     if (minutes >= 3 && (replaySession || syncActions.length > 1)) {
       const actionsForStory = (replaySession?.actions || syncActions).slice(0, 6)
       const actionSummary = actionsForStory.map((a: any) => `${a.emoji} ${a.label}${a.combo ? `x${a.combo}` : ''}`).join(' · ')
-      const storyText = `🔄 ENTRENASYNC COMPLETADO\n${minutes} min sincronizados con ${partnerName}\nSync Score final: ${syncVibe || 70}% • Calificación: ${rating}★\nAcciones clave: ${actionSummary}\n\nEntrenamos en sync real-time y subimos nuestro rendimiento. Esta alianza ya genera +${Math.floor(minutes * 1.2)} min de alto rendimiento compartido. Queda en nuestra red para siempre. #EntrenaSync`
+      const isNet = !!syncBonds[partnerId]
+      const storyText = `🔄 ENTRENASYNC COMPLETADO\n${minutes} min sincronizados con ${partnerName}\nSync Score final: ${syncVibe || 70}% • Calificación: ${rating}★\nAcciones clave: ${actionSummary}\n\nEntrenamos en sync real-time y subimos nuestro rendimiento. ${isNet ? `Esta fue una sesión de RED — Network Power activado. Tu grafo gana +${Math.floor(minutes / 3)} de fuerza y visibilidad global.` : `Esta alianza ya genera +${Math.floor(minutes * 1.2)} min de alto rendimiento compartido.`} Queda en nuestra red para siempre. #EntrenaSync`
       // Post to self (visible in my muro + feed)
       createProfilePost(storyText, null).catch(() => {})
       // Also post directly for the partner so BOTH get the beautiful shared story in their muro (true co-presence even after session ends)
@@ -7710,6 +7711,7 @@ function App() {
                       <div className="text-[9px] text-[#22c55e]">
                         {Object.keys(syncBonds).length} socios • {totalMin}min sincronizados • {totalSessions} sesiones • Impacto colectivo en tu rendimiento: +{estimatedImpact}%
                       </div>
+                      <div className="mt-1 text-[8px] text-[#FFD700]/80">Tu red esta semana: ~{Math.floor(totalMin / 4)} min de alto rendimiento compartido • Esto genera ondas que otros ven en el pulso global.</div>
                     </div>
                   )
                 })()}
@@ -7959,7 +7961,7 @@ function App() {
                   {/* Header with presence + controls + clear "this ritual matters" impact */}
                   <div className="flex items-center justify-between mb-2 relative z-20">
                     <div className="flex items-center gap-2">
-                      <div className="text-[#22c55e] font-extrabold text-[13px] tracking-[0.5px] flex items-center gap-1.5">🔄 EN ARENA SYNC <span className="text-[8px] font-normal opacity-60 align-middle">EN VIVO</span>{userLocation && realProfiles.find(p=>p.id===syncPartnerId)?.lat && <span className="text-[9px] ml-1 text-[#FF671F]">• {getDistanceKm(userLocation.lat, userLocation.lng, realProfiles.find(p=>p.id===syncPartnerId)!.lat!, realProfiles.find(p=>p.id===syncPartnerId)!.lng!).toFixed(1)}km</span>}</div>
+                      <div className="text-[#22c55e] font-extrabold text-[13px] tracking-[0.5px] flex items-center gap-1.5">🔄 EN ARENA SYNC <span className="text-[8px] font-normal opacity-60 align-middle">EN VIVO</span>{!!syncBonds[syncPartnerId] && <span className="ml-1 text-[8px] bg-[#FFD700] text-black px-1 rounded font-black">RED POWER</span>}{userLocation && realProfiles.find(p=>p.id===syncPartnerId)?.lat && <span className="text-[9px] ml-1 text-[#FF671F]">• {getDistanceKm(userLocation.lat, userLocation.lng, realProfiles.find(p=>p.id===syncPartnerId)!.lat!, realProfiles.find(p=>p.id===syncPartnerId)!.lng!).toFixed(1)}km</span>}</div>
                       {syncCombo >= 2 && <div className={`text-[9px] px-1.5 py-px rounded bg-[#FF671F] text-black font-black tracking-wider ${syncCombo >= 4 ? 'animate-pulse' : ''}`}>COMBO x{syncCombo}</div>}
                     </div>
                     <div className="flex items-center gap-1.5 text-[10px]">
@@ -7991,7 +7993,7 @@ function App() {
                     {/* CENTRAL VIBE ORB — the soul of the unique experience. Reacts to shared energy. Both people see the exact same pulse. */}
                     <div className="relative z-10 flex flex-col items-center">
                       <div 
-                        className={`energy-orb ${syncVibe > 80 ? 'high' : ''}`}
+                        className={`energy-orb ${syncVibe > 80 ? 'high' : ''} ${!!syncBonds[syncPartnerId] ? 'network-boosted' : ''}`}
                         style={{ 
                           transform: `scale(${0.82 + (syncVibe/100)*0.32})`,
                           filter: syncVibe > 70 ? 'hue-rotate(20deg) saturate(1.2)' : 'none',
@@ -8007,7 +8009,7 @@ function App() {
                       </div>
                       <div className="mt-1 text-[10px] font-mono text-[#22c55e] tracking-[2px] flex items-center gap-1">
                         VIBE <span className="font-black text-lg tabular-nums">{syncVibe}</span><span className="text-[8px] opacity-70">%</span>
-                        {!!syncBonds[syncPartnerId] && <span className="ml-1 text-[7px] bg-[#FFD700]/20 text-[#FFD700] px-1 rounded">+ NETWORK POWER</span>}
+                        {!!syncBonds[syncPartnerId] && <span className="ml-1 text-[7px] bg-[#FFD700] text-black px-1 rounded font-black">NETWORK SYNC x1.5 POWER</span>}
                       </div>
                     </div>
 
