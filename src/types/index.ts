@@ -38,6 +38,8 @@ export interface Message {
   from: 'me' | 'them'
   text: string
   timestamp: number
+  voiceUrl?: string
+  voiceDuration?: number
 }
 
 export interface TrainingSession {
@@ -71,6 +73,8 @@ export interface SessionMessage {
   text: string
   timestamp: number
   photo?: string
+  voiceUrl?: string
+  voiceDuration?: number
   reactions?: Record<string, string[]>
 }
 

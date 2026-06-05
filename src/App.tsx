@@ -352,6 +352,156 @@ function App() {
     setShowPwaInstall(false)
   }
 
+  // === VOICE NOTES: Spectacular UX for messages in the fitness social network ===
+  // Record short voice memos (up to 60s) to share training tips, motivation, post-sync notes.
+  // Works on web + Capacitor native (mic permission handled by browser/OS).
+  const startVoiceRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mediaRecorder = new MediaRecorder(stream)
+      mediaRecorderRef.current = mediaRecorder
+      audioChunksRef.current = []
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data)
+      }
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
+        const url = URL.createObjectURL(blob)
+        const duration = recordingTime
+        setPendingVoice({ blob, duration, url })
+        // cleanup stream
+        stream.getTracks().forEach(track => track.stop())
+        if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current)
+        voicePreviewUrlRef.current = url
+        if (recordingTimerRef.current) {
+          clearInterval(recordingTimerRef.current)
+          recordingTimerRef.current = null
+        }
+        setIsRecordingVoice(false)
+        setRecordingTime(0)
+      }
+
+      mediaRecorder.start()
+      setIsRecordingVoice(true)
+      setRecordingTime(0)
+      setPendingVoice(null)
+
+      // timer
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingTime(prev => {
+          const next = prev + 1
+          if (next >= 60) {
+            // auto stop at 60s
+            stopVoiceRecording()
+            return 60
+          }
+          return next
+        })
+      }, 1000)
+
+      toast('🎙️ Grabando nota de voz', { description: 'Habla claro. Máx 60s. Toca detener para enviar.' })
+    } catch (err) {
+      console.error('Mic error', err)
+      toast.error('No se pudo acceder al micrófono', { description: 'Revisa permisos del navegador o app.' })
+    }
+  }
+
+  const stopVoiceRecording = () => {
+    if (mediaRecorderRef.current && isRecordingVoice) {
+      mediaRecorderRef.current.stop()
+    }
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current)
+      recordingTimerRef.current = null
+    }
+  }
+
+  const cancelVoiceRecording = () => {
+    if (mediaRecorderRef.current && isRecordingVoice) {
+      mediaRecorderRef.current.stop()
+    }
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current)
+      recordingTimerRef.current = null
+    }
+    setIsRecordingVoice(false)
+    setRecordingTime(0)
+    if (voicePreviewUrlRef.current) {
+      URL.revokeObjectURL(voicePreviewUrlRef.current)
+      voicePreviewUrlRef.current = null
+    }
+    setPendingVoice(null)
+  }
+
+  const sendVoiceNote = async (chatId: string, isGroup = false) => {
+    if (!pendingVoice) return
+
+    const { blob, duration, url } = pendingVoice
+
+    try {
+      // Upload to Firebase Storage for persistent https URL (like photos)
+      let voiceUrl = url // fallback data url if storage fails
+      if (!isDemoMode && firebaseUser?.uid && db) {
+        try {
+          const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage')
+          const { storage } = await import('./services/firebase')
+          const storageRef = ref(storage, `chat-voice/${chatId}/${Date.now()}.webm`)
+          const snap = await uploadBytes(storageRef, blob)
+          voiceUrl = await getDownloadURL(snap.ref)
+        } catch (uploadErr) {
+          console.warn('Voice storage upload failed, using local blob url (will work for this session)', uploadErr)
+        }
+      }
+
+      const voiceMsg = {
+        id: Date.now().toString(36) + Math.random(),
+        text: '',
+        voiceUrl,
+        voiceDuration: duration,
+        timestamp: Date.now()
+      }
+
+      if (isGroup && showGroupChatModalFor) {
+        // send to group
+        sendSessionMessage(showGroupChatModalFor, '', null, voiceMsg as any)
+      } else if (activeChat) {
+        // 1:1
+        const isReal = isRealChatId(activeChat)
+        if (isReal) {
+          await sendRealMessage('', activeChat, voiceMsg as any) // extend sendRealMessage later if needed
+        }
+        const newMsg: Message = {
+          id: voiceMsg.id,
+          from: 'me',
+          text: '',
+          timestamp: voiceMsg.timestamp,
+          voiceUrl: voiceMsg.voiceUrl,
+          voiceDuration: voiceMsg.voiceDuration
+        }
+        const current = messages[activeChat] || []
+        const updated = { ...messages, [activeChat]: [...current, newMsg] }
+        saveMessages(updated)
+        if (isReal) setRealChatMessages(prev => [...prev, newMsg])
+      }
+
+      // cleanup
+      if (voicePreviewUrlRef.current) {
+        URL.revokeObjectURL(voicePreviewUrlRef.current)
+        voicePreviewUrlRef.current = null
+      }
+      setPendingVoice(null)
+      toast.success('Nota de voz enviada', { description: `${duration}s • compártela con tu red de rendimiento` })
+    } catch (e) {
+      console.error('Send voice error', e)
+      toast.error('Error enviando nota de voz')
+    }
+  }
+
+  // Extend sendSessionMessage to support voice (update call sites later)
+  // (existing function at ~4328, we'll patch it below)
+
   const { 
     squads: _squadsFromHook, 
     createSquad: _createSquad, 
@@ -590,6 +740,15 @@ function App() {
   const [chatInputValue, setChatInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [groupChatPhoto, setGroupChatPhoto] = useState<string | null>(null) // for sending photo messages
+
+  // Voice notes recording (for 1:1 and group chats) - spectacular UX for fitness social
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false)
+  const [recordingTime, setRecordingTime] = useState(0)
+  const [pendingVoice, setPendingVoice] = useState<{blob: Blob, duration: number, url: string} | null>(null)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioChunksRef = useRef<Blob[]>([])
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const voicePreviewUrlRef = useRef<string | null>(null)
 
   // Squads feature (fixed small training groups)
   const [squads, setSquads] = useState<Squad[]>([])
@@ -1719,17 +1878,21 @@ function App() {
   }
 
   // Real message sender (writes to Firestore so the other user sees it on any device)
-  const sendRealMessage = async (text: string, toUserId: string) => {
-    if (!text.trim() || !firebaseUser?.uid || !db) return
+  const sendRealMessage = async (text: string, toUserId: string, voice?: {voiceUrl: string, voiceDuration: number} | null) => {
+    if ((!text.trim() && !voice) || !firebaseUser?.uid || !db) return
 
     try {
       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
-      const msg = {
+      const msg: any = {
         from: firebaseUser.uid,
         to: toUserId,
-        text: text.trim(),
+        text: text.trim() || '',
         timestamp: Date.now(),
         createdAt: serverTimestamp(),
+      }
+      if (voice) {
+        msg.voiceUrl = voice.voiceUrl
+        msg.voiceDuration = voice.voiceDuration
       }
       await addDoc(collection(db, 'messages'), msg)
       // console.log removed (debug)
@@ -4325,8 +4488,8 @@ function App() {
   }
 
   // Send message to a session group chat (supports text + optional photo)
-  const sendSessionMessage = (sessionId: string, text: string, photo?: string | null) => {
-    if (!currentUser || (!text.trim() && !photo)) return
+  const sendSessionMessage = (sessionId: string, text: string, photo?: string | null, voice?: {voiceUrl: string, voiceDuration: number} | null) => {
+    if (!currentUser || (!text.trim() && !photo && !voice)) return
 
     const isRealSession = !isDemoMode && firebaseUser?.uid && db
 
@@ -4340,6 +4503,10 @@ function App() {
     }
     if (photo) {
       newMsg.photo = photo
+    }
+    if (voice) {
+      newMsg.voiceUrl = voice.voiceUrl
+      newMsg.voiceDuration = voice.voiceDuration
     }
 
     if (isRealSession) {
@@ -4357,6 +4524,10 @@ function App() {
           if (newMsg.photo) {
             msgData.photo = newMsg.photo
           }
+          if (newMsg.voiceUrl) {
+            msgData.voiceUrl = newMsg.voiceUrl
+            msgData.voiceDuration = newMsg.voiceDuration
+          }
           await addDoc(collection(db, `sessions/${sessionId}/messages`), msgData)
           console.log('✅ Real session group message sent')
 
@@ -4364,7 +4535,7 @@ function App() {
           try {
             const { doc, setDoc, serverTimestamp: ts } = await import('firebase/firestore')
             await setDoc(doc(db, 'sessions', sessionId), {
-              lastMessagePreview: newMsg.text ? newMsg.text.substring(0, 80) : (photo ? '[foto]' : ''),
+              lastMessagePreview: newMsg.text ? newMsg.text.substring(0, 80) : (photo ? '[foto]' : (voice ? `[nota de voz ${voice.voiceDuration || 0}s]` : '')),
               lastMessageAt: ts(),
               updatedAt: ts(),
             }, { merge: true })
@@ -5463,21 +5634,22 @@ function App() {
     }, 180)
   }
 
-  const sendMessage = (text: string) => {
-    if (!activeChat || !text.trim()) return
+  const sendMessage = (text: string, voice?: {voiceUrl: string, voiceDuration: number} | null) => {
+    if (!activeChat || (!text.trim() && !voice)) return
 
     const isRealChat = isRealChatId(activeChat)
 
     if (isRealChat) {
       // Real cross-device chat
-      sendRealMessage(text, activeChat)
+      sendRealMessage(text || '', activeChat, voice)
 
       // Optimistic update for both local messages and realChatMessages for instant feel
       const newMsg: Message = {
         id: Date.now().toString(36) + Math.random(),
         from: 'me',
-        text: text.trim(),
-        timestamp: Date.now()
+        text: text.trim() || '',
+        timestamp: Date.now(),
+        ...(voice ? { voiceUrl: voice.voiceUrl, voiceDuration: voice.voiceDuration } : {})
       }
       const currentChat = messages[activeChat] || []
       const updated = { ...messages, [activeChat]: [...currentChat, newMsg] }
@@ -5492,8 +5664,9 @@ function App() {
     const newMsg: Message = {
       id: Date.now().toString(36) + Math.random(),
       from: 'me',
-      text: text.trim(),
-      timestamp: Date.now()
+      text: text.trim() || '',
+      timestamp: Date.now(),
+      ...(voice ? { voiceUrl: voice.voiceUrl, voiceDuration: voice.voiceDuration } : {})
     }
 
     const currentChat = messages[activeChat] || []
@@ -6344,7 +6517,7 @@ function App() {
                     return (
                       <motion.div 
                         key={post.id} 
-                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${post.isSyncStory || (post.text || '').includes('ENTRENASYNC COMPLETADO') ? 'muro-post--sync-story' : (post.text || '').toLowerCase().includes('sincronizado') ? 'muro-post--sync' : (post.text || '').toLowerCase().includes('entrenando ahora') || (post.text || '').includes('me uno al live') ? 'muro-post--live' : (post.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (post.text || '').includes('Destacado de Sesión Sync') ? 'muro-post--echo' : '' } ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-lg shadow-[#FF671F]/20' : ''} hover:border-[#FF671F]/40 hover:-translate-y-0.5 overflow-hidden transition-all active:scale-[0.995]`}
+                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${post.isSyncStory || (post.text || '').includes('ENTRENASYNC COMPLETADO') ? 'muro-post--sync-story' : (post.text || '').toLowerCase().includes('sincronizado') ? 'muro-post--sync' : (post.text || '').toLowerCase().includes('entrenando ahora') || (post.text || '').includes('me uno al live') ? 'muro-post--live' : (post.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (post.text || '').includes('Destacado de Sesión Sync') ? 'muro-post--echo' : '' } ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-lg shadow-[#FF671F]/20' : ''} ${post.ownerId && syncBonds[post.ownerId] ? 'muro-post--red border-[#FFD700]/50' : ''} hover:border-[#FF671F]/40 hover:-translate-y-0.5 overflow-hidden transition-all active:scale-[0.995]`}
                         initial={{ opacity: 0, y: 16, scale: 0.985 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.98, height: 0, marginBottom: 0 }}
@@ -7308,7 +7481,26 @@ function App() {
                         <div className={`max-w-[82%] ${isMe ? 'text-right' : ''}`}>
                           {time && <div className="text-[9px] text-[#6B7280] mb-0.5 px-1">{time}</div>}
                           <div className={`px-3.5 py-2 rounded-3xl text-[14px] leading-snug break-words overflow-hidden ${isMe ? 'bg-[#FF671F] text-black rounded-br-md' : 'bg-[#25252A] text-white rounded-bl-md'}`}>
-                            {renderMessageText(m.text)}
+                            {m.voiceUrl ? (
+                              <div className="flex items-center gap-2">
+                                <button 
+                                  onClick={() => {
+                                    const audio = new Audio(m.voiceUrl)
+                                    audio.play().catch(() => {})
+                                  }}
+                                  className="w-8 h-8 rounded-full bg-black/30 flex items-center justify-center active:scale-95"
+                                  title="Reproducir nota de voz"
+                                >
+                                  ▶️
+                                </button>
+                                <div className="flex-1">
+                                  <div className="text-[11px] opacity-80">Nota de voz • {m.voiceDuration || '?'}s</div>
+                                  <div className="h-1 bg-black/20 rounded mt-1">
+                                    <div className="h-1 bg-current rounded w-0" style={{width: '100%'}} /> {/* simple progress placeholder */}
+                                  </div>
+                                </div>
+                              </div>
+                            ) : renderMessageText(m.text)}
                           </div>
                         </div>
                       </div>
@@ -7364,9 +7556,34 @@ function App() {
                       ))}
                     </div>
                   )}
-                  <form onSubmit={(e) => { e.preventDefault(); const input = (e.currentTarget.elements[0] as HTMLInputElement); sendMessage(input.value); input.value = '' }} className="flex gap-2">
-                    <input type="text" placeholder="Escribe un mensaje..." className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none" />
-                    <button type="submit" className="bg-[#FF671F] text-black w-12 rounded-3xl flex items-center justify-center"><Send size={18} /></button>
+                  <form onSubmit={(e) => { 
+                    e.preventDefault(); 
+                    const input = (e.currentTarget.elements[0] as HTMLInputElement); 
+                    if (pendingVoice) {
+                      sendMessage('', {voiceUrl: pendingVoice.url, voiceDuration: pendingVoice.duration})
+                      if (voicePreviewUrlRef.current) { URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null }
+                      setPendingVoice(null)
+                    } else if (input.value.trim()) {
+                      sendMessage(input.value); 
+                    }
+                    input.value = '' 
+                  }} className="flex gap-2 items-center">
+                    <input type="text" placeholder="Escribe un mensaje o graba voz..." className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none" />
+                    
+                    {/* Voice note mic for 1:1 - spectacular for sharing training motivation */}
+                    <button 
+                      type="button"
+                      onClick={isRecordingVoice ? stopVoiceRecording : startVoiceRecording}
+                      className={`w-10 h-10 rounded-3xl flex items-center justify-center transition active:scale-95 ${isRecordingVoice ? 'bg-red-500 text-white animate-pulse' : 'bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A]'}`}
+                      title={isRecordingVoice ? 'Detener grabación' : 'Grabar nota de voz'}
+                    >
+                      {isRecordingVoice ? '⏹' : '🎙️'}
+                    </button>
+                    {pendingVoice && (
+                      <button type="button" onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-[10px] px-2 py-1 text-red-400">Cancelar voz</button>
+                    )}
+
+                    <button type="submit" disabled={!chatInputValue.trim() && !pendingVoice} className="bg-[#FF671F] disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black w-12 rounded-3xl flex items-center justify-center"><Send size={18} /></button>
                   </form>
                   <div className="text-center text-[10px] text-[#6B7280] mt-2">
                     {!isDemoMode 
@@ -7814,6 +8031,10 @@ function App() {
             {Object.keys(syncBonds).length > 0 && (
               <div className="px-4 mt-3">
                 <div className="text-[10px] uppercase tracking-[1px] text-[#9CA3AF] mb-1.5 flex items-center gap-1">🔥 TU RED DE ENTRENASYNC <span className="text-[8px] normal-case opacity-60">(tu grafo de rendimiento sincronizado — alianzas que generan resultados reales y estatus en la comunidad)</span></div>
+                {/* Spectacular visual power meter for profile */}
+                <div className="mb-3 h-2 bg-[#1C1C20] rounded-full overflow-hidden border border-[#FFD700]/20">
+                  <div className="h-2 bg-gradient-to-r from-[#FFD700] via-[#FF671F] to-[#22c55e] transition-all" style={{width: `${Math.min(100, Math.max(5, networkStats.networkPower))}%`}} />
+                </div>
                 {/* Network summary — epic social graph value. This is what makes EntrenaMatch the first real fitness social network: your sync alliances are a visible, compounding performance asset. */}
                 <div className="mb-2 px-0.5">
                   <div className="text-[11px] font-bold text-[#FFD700] mb-0.5">Network Power: {networkStats.networkPower} — tu red de sync te hace más fuerte, más consistente y más visible</div>
@@ -8596,7 +8817,7 @@ function App() {
                         exit={{ opacity: 0, y: -12, scale: 0.97, height: 0, marginBottom: 0 }}
                         whileHover={{ scale: 1.01, y: -2 }}
                         transition={{ type: 'spring', bounce: 0.12, duration: 0.28 }}
-                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${post.isSyncStory || (post.text || '').includes('ENTRENASYNC COMPLETADO') ? 'muro-post--sync-story' : (post.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (post.text || '').includes('Destacado de Sesión Sync') ? 'muro-post--echo' : '' } ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-lg shadow-[#FF671F]/20' : ''} hover:border-[#FF671F]/40 hover:-translate-y-0.5 overflow-hidden transition-all active:scale-[0.995]`}
+                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${post.isSyncStory || (post.text || '').includes('ENTRENASYNC COMPLETADO') ? 'muro-post--sync-story' : (post.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (post.text || '').includes('Destacado de Sesión Sync') ? 'muro-post--echo' : '' } ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-lg shadow-[#FF671F]/20' : ''} ${post.ownerId && syncBonds[post.ownerId] ? 'muro-post--red border-[#FFD700]/50' : ''} hover:border-[#FF671F]/40 hover:-translate-y-0.5 overflow-hidden transition-all active:scale-[0.995]`}
                       >
                         <div className="flex justify-between items-start mb-3">
                           <div className="flex items-center gap-2 text-[10px]">
@@ -10743,6 +10964,17 @@ function App() {
                               <div className={`message-bubble inline-block ${isMe ? 'sent' : 'received'}`}>
                                 {renderMessageText(msg.text)}
                                 {msg.photo && <img src={msg.photo} className="mt-2 max-w-[200px] rounded-xl border border-white/10" />}
+                                {msg.voiceUrl && (
+                                  <div className="mt-1 flex items-center gap-2 text-sm">
+                                    <button 
+                                      onClick={() => { const a = new Audio(msg.voiceUrl); a.play().catch(()=>{}) }}
+                                      className="px-2 py-0.5 bg-white/10 rounded active:bg-white/20"
+                                    >
+                                      ▶️ {msg.voiceDuration || '?'}s
+                                    </button>
+                                    <span className="text-[10px] opacity-70">Nota de voz</span>
+                                  </div>
+                                )}
                               </div>
 
                               {/* Reactions row - align with bubble side */}
@@ -10804,12 +11036,26 @@ function App() {
                         <button onClick={() => setGroupChatPhoto(null)} className="text-xs px-2 py-1 text-red-400 hover:text-red-500">Quitar</button>
                       </div>
                     )}
+                    {pendingVoice && (
+                      <div className="mb-2 flex items-center gap-2 bg-[#0D0D10] p-2 rounded-2xl border border-[#2F2F35]">
+                        <div className="w-10 h-10 bg-[#FF671F]/20 rounded-xl flex items-center justify-center text-lg">🎙️</div>
+                        <div className="flex-1 text-xs text-[#9CA3AF]">Nota de voz lista • {pendingVoice.duration}s</div>
+                        <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-xs px-2 py-1 text-red-400 hover:text-red-500">Quitar</button>
+                      </div>
+                    )}
 
                     <form 
                       onSubmit={(e) => {
                         e.preventDefault()
-                        if ((chatInputValue.trim() || groupChatPhoto) && showGroupChatModalFor) {
-                          sendSessionMessage(showGroupChatModalFor, chatInputValue, groupChatPhoto)
+                        if ((chatInputValue.trim() || groupChatPhoto || pendingVoice) && showGroupChatModalFor) {
+                          if (pendingVoice) {
+                            sendSessionMessage(showGroupChatModalFor, '', null, { voiceUrl: pendingVoice.url, voiceDuration: pendingVoice.duration })
+                            // cleanup pending
+                            if (voicePreviewUrlRef.current) { URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null }
+                            setPendingVoice(null)
+                          } else {
+                            sendSessionMessage(showGroupChatModalFor, chatInputValue, groupChatPhoto)
+                          }
                           setChatInputValue('')
                           setGroupChatPhoto(null)
                         }
@@ -10837,7 +11083,18 @@ function App() {
                         }} />
                       </label>
 
-                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto} className="bg-[#FF671F] disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black px-3 rounded-3xl font-semibold h-11 w-11 flex items-center justify-center active:bg-[#E55A1A] active:scale-95 transition" aria-label="Enviar">
+                      {/* Mic for voice notes in group - unique social feature */}
+                      <button 
+                        type="button"
+                        onClick={isRecordingVoice ? stopVoiceRecording : startVoiceRecording}
+                        className={`w-11 h-11 rounded-3xl flex items-center justify-center transition active:scale-95 ${isRecordingVoice ? 'bg-red-500 text-white animate-pulse' : 'bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A]'}`}
+                        title={isRecordingVoice ? 'Detener' : 'Grabar voz'}
+                      >
+                        {isRecordingVoice ? '⏹' : '🎙️'}
+                      </button>
+                      {pendingVoice && <span className="text-[10px] text-[#FF671F] self-center">Voz lista</span>}
+
+                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto && !pendingVoice} className="bg-[#FF671F] disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black px-3 rounded-3xl font-semibold h-11 w-11 flex items-center justify-center active:bg-[#E55A1A] active:scale-95 transition" aria-label="Enviar">
                         <Send size={18} />
                       </button>
                     </form>
