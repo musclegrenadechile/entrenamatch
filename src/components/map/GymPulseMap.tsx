@@ -22,7 +22,7 @@
  * Next iterations can move even more (the partner listener, some filter state, the "Centrar" button logic).
  */
 
-import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
+import { useEffect, useRef, useImperativeHandle, forwardRef, useMemo } from 'react'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { toast } from 'sonner'
@@ -53,7 +53,19 @@ export interface GymPulseMapProps {
   isDeveloper?: boolean
   isPlacingPartner?: boolean
   isQuickAddPartner?: boolean
-  selfIsLive?: boolean // so we can style the self marker with live pulse/glow when the user has activated "Entrenando Ahora"
+  selfIsLive?: boolean
+
+  // Filter controls (moved inside for self-contained widget)
+  onMapNearOnlyChange?: (v: boolean) => void
+  onSelectedMapZoneChange?: (z: string | null) => void
+  onShowOnlyLegendsChange?: (v: boolean) => void
+  onShowPartnersChange?: (v: boolean) => void
+
+  // Dev actions
+  onOpenAddPartner?: () => void
+  onOpenManagePartners?: () => void
+  onToggleQuickAdd?: (next: boolean) => void
+  onLogoutDeveloper?: () => void
 
   // Callbacks
   onShowProfile?: (p: any) => void
@@ -65,7 +77,6 @@ export interface GymPulseMapProps {
   onForceTick?: () => void
   onRequestLocation?: () => void
 
-  // For centrar button from parent
   onRegisterCentrar?: (fn: () => void) => void
 }
 
@@ -109,6 +120,17 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     isPlacingPartner = false,
     isQuickAddPartner = false,
     selfIsLive = false,
+
+    // New internal control props
+    onMapNearOnlyChange,
+    onSelectedMapZoneChange,
+    onShowOnlyLegendsChange,
+    onShowPartnersChange,
+    onOpenAddPartner,
+    onOpenManagePartners,
+    onToggleQuickAdd,
+    onLogoutDeveloper,
+
     onShowProfile,
     onStartSync,
     onPartnerPositionSelected,
@@ -495,8 +517,82 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         })
       }
 
-      // TODO: full port of ritualRipples (waves + lines), sync tethers between bonded live users, echo pins, cluster popups with "expand", fitBounds on first load, etc.
-      // The visual fidelity is high in the original; we can copy the exact blocks for ripples/tethers in the next pass.
+      // === Ritual Ripples (performance waves from completed EntrenaSync) ===
+      // These are the "the community felt that" visual layer.
+      (ritualRipples || []).forEach((r: any) => {
+        if (!r.lat || !r.lng) return
+        try {
+          const intensity = r.intensity || 1.6
+          const rad = 420 * intensity
+          const c = L.circle([r.lat, r.lng], {
+            radius: rad,
+            color: '#a855f7',
+            weight: 2.2,
+            fillColor: '#a855f7',
+            fillOpacity: 0.09,
+            opacity: 0.65,
+            className: 'iconic-ripple ritual-ripple'
+          }).addTo(mapInstanceRef.current)
+          ;(c as any)._isRitualRipple = true
+          markersRef.current.push(c)
+
+          // subtle second ring for stronger ripples
+          if (intensity > 2) {
+            const c2 = L.circle([r.lat, r.lng], {
+              radius: rad * 1.35,
+              color: '#c084fc',
+              weight: 1.5,
+              fillOpacity: 0,
+              opacity: 0.4,
+              className: 'iconic-ripple ritual-ripple'
+            }).addTo(mapInstanceRef.current)
+            ;(c2 as any)._isRitualRipple = true
+            markersRef.current.push(c2)
+          }
+        } catch {}
+      })
+
+      // === Sync Tethers (visual connection between people currently in EntrenaSync) ===
+      // Golden lines showing who is bonded right now (high signal social graph on the map).
+      syncLinesRef.current.forEach(l => { try { mapInstanceRef.current.removeLayer(l) } catch {} })
+      syncLinesRef.current = []
+
+      Object.entries(syncBonds || {}).forEach(([uid, bond]: [string, any]) => {
+        if (!bond || !bond.partnerLat || !bond.partnerLng) return
+        const u = (liveTrainingNow || []).find((x: any) => x.id === uid)
+        if (!u || !u.lat || !u.lng) return
+        try {
+          const isStrong = (bond.bondLevel || 0) >= 2 || (bond.totalMin || 0) >= 20
+          const line = L.polyline(
+            [[u.lat, u.lng], [bond.partnerLat, bond.partnerLng]],
+            {
+              color: isStrong ? '#FFD700' : '#f4c95f',
+              weight: isStrong ? 3.5 : 2.2,
+              opacity: isStrong ? 0.75 : 0.55,
+              className: `sync-tether ${isStrong ? 'strong-tether' : ''}`
+            }
+          ).addTo(mapInstanceRef.current)
+          syncLinesRef.current.push(line)
+        } catch {}
+      })
+
+      // Echo pins (persistent highlights from legend syncs) - basic version
+      ;(echoPins || []).forEach((pin: any) => {
+        if (!pin.lat || !pin.lng) return
+        try {
+          const pinMarker = L.marker([pin.lat, pin.lng], {
+            icon: L.divIcon({
+              html: `<div style="width:18px;height:18px;border-radius:9999px;background:#FFD700;border:2px solid #111;box-shadow:0 0 0 3px rgba(234,179,8,0.4);display:flex;align-items:center;justify-content:center;font-size:9px;">⭐</div>`,
+              className: 'echo-pin',
+              iconSize: [18, 18],
+              iconAnchor: [9, 9]
+            })
+          }).addTo(mapInstanceRef.current)
+          ;(pinMarker as any)._isEchoPin = true
+          markersRef.current.push(pinMarker)
+          pinMarker.bindPopup(`<div style="font-size:11px">Highlight de la red<br/><strong>${pin.label || 'Sync legendario'}</strong></div>`)
+        } catch {}
+      })
 
       // Initial fit (once)
       if (markersRef.current.length > 0 && !(mapInstanceRef.current as any)._hasDoneInitialFit) {
@@ -549,13 +645,181 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     }
   }, [onStartSync, onPartnerDelete, onPartnerEdit])
 
+  // Small local computation for the zone legend (self contained)
+  const zoneLiveCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    ;(liveTrainingNow || []).forEach((u: any) => {
+      if (u.city && u.lat && u.lng && u.trainingNow) {
+        counts[u.city] = (counts[u.city] || 0) + 1
+      }
+    })
+    return counts
+  }, [liveTrainingNow])
+
+  const zoneColors: Record<string, string> = {
+    'Viña del Mar': '#22c55e',
+    'Santiago': '#FF671F',
+    'Valparaíso': '#3b82f6',
+    'Concon': '#a855f7',
+    default: '#eab308'
+  }
+
   return (
-    <div
-      ref={mapContainerRef}
-      className="w-full h-[340px] rounded-2xl overflow-hidden border border-[#22c55e]/25 bg-[#0a0a0c] shadow-[0_0_0_1px_rgba(34,197,94,0.12),0_10px_40px_-12px_rgba(0,0,0,0.7)]"
-      id="live-map-container"
-      style={{ zIndex: 1 }}
-    />
+    <div className="relative w-full" style={{ zIndex: 1 }}>
+      {/* Floating "El Pulso está vivo" header — now owned by the component */}
+      <div
+        className="map-floating-pulse absolute top-2 left-2 z-40 px-3 py-1 rounded-2xl text-[10px] font-semibold text-[#22c55e] flex items-center gap-2 shadow-lg border border-[#22c55e]/20 cursor-pointer active:scale-[0.985] transition"
+        onClick={() => {
+          try { /* haptic if available */ } catch {}
+          const active = (liveTrainingNow || []).filter((u: any) => u.lat && u.lng && u.trainingNow)
+          if (active.length === 0) return
+          const hottest = active.reduce((best: any, u: any) => {
+            const score = (u.joinCount || 0) + ((u.visibleLevel || 1) * 0.5) + (u.trainingSyncWith ? 5 : 0)
+            const bestScore = (best.joinCount || 0) + ((best.visibleLevel || 1) * 0.5) + (best.trainingSyncWith ? 5 : 0)
+            return score > bestScore ? u : best
+          }, active[0])
+          if (hottest) {
+            // use our own flyTo
+            ;(ref as any)?.current?.flyTo?.(hottest.lat, hottest.lng, 14) || (window as any).__gymPulseCentrar?.()
+          }
+        }}
+        title="Click para volar al punto más caliente del GymPulse"
+      >
+        <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
+        EL GYMPULSE GLOBAL
+        <span className="text-[#22c55e]/70 font-mono text-[9px] tabular-nums">
+          • {(liveTrainingNow || []).filter((u: any) => u.lat && u.lng && u.trainingNow).length} EN VIVO
+        </span>
+        {(() => {
+          const activeSyncs = (liveTrainingNow || []).filter((u: any) => u.trainingSyncWith).length / 2
+          return activeSyncs > 0 ? <span className="text-[#FFD700] font-bold text-[9px]">• {Math.floor(activeSyncs)} EN SYNC</span> : null
+        })()}
+      </div>
+
+      {/* The actual Leaflet container */}
+      <div
+        ref={mapContainerRef}
+        className="w-full h-[340px] rounded-2xl overflow-hidden border border-[#22c55e]/25 bg-[#0a0a0c] shadow-[0_0_0_1px_rgba(34,197,94,0.12),0_10px_40px_-12px_rgba(0,0,0,0.7)]"
+        id="live-map-container"
+      />
+
+      {/* Bottom-right filter cluster (self-contained) */}
+      <div className="absolute bottom-2 right-2 flex items-center gap-1 z-30">
+        <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
+          🟢 {(liveTrainingNow || []).filter((u: any) => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && ((u.distance||999)<10))) && (!selectedMapZone || u.city === selectedMapZone) && (!showOnlyLegends || u.isLegend)).length} en vivo
+          {showPartners && partnerLocations.length > 0 && <span className="ml-1 text-[7px] bg-[#FF671F] text-black px-1 rounded font-bold">{partnerLocations.length} PARTNERS</span>}
+          {isDeveloper && <span className="ml-1 text-[7px] bg-[#FFD700] text-black px-1 rounded font-extrabold cursor-pointer active:opacity-70" onClick={onLogoutDeveloper} title="Tap to logout dev mode">DEV ON</span>}
+        </div>
+
+        <button
+          onClick={() => onMapNearOnlyChange && onMapNearOnlyChange(!mapNearOnly)}
+          className={`text-[8px] px-2 py-0.5 rounded-full border transition ${mapNearOnly ? 'bg-[#3b82f6] text-white border-[#3b82f6]' : 'bg-black/70 text-[#3b82f6] border-[#3b82f6]/40 hover:bg-[#3b82f6]/10'}`}
+        >
+          {mapNearOnly ? '✓ Cerca de mí (10km)' : 'Solo cerca de mí'}
+        </button>
+
+        <button
+          onClick={() => onShowOnlyLegendsChange && onShowOnlyLegendsChange(!showOnlyLegends)}
+          className={`text-[8px] px-2 py-0.5 rounded-full border transition ${showOnlyLegends ? 'bg-[#FFD700] text-black border-[#FFD700]' : 'bg-black/70 text-[#FFD700] border-[#FFD700]/40 hover:bg-[#FFD700]/10'}`}
+        >
+          {showOnlyLegends ? '✓ Mi Red (Network Power)' : 'Solo Mi Red de Alto Rendimiento'}
+        </button>
+
+        <button
+          onClick={() => onShowPartnersChange && onShowPartnersChange(!showPartners)}
+          className={`text-[8px] px-2 py-0.5 rounded-full border transition ${showPartners ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'bg-black/70 text-[#FF671F] border-[#FF671F]/40 hover:bg-[#FF671F]/10'}`}
+        >
+          {showPartners ? '✓ Partners (mapa)' : 'Mostrar Partners'}
+        </button>
+      </div>
+
+      {/* Top-left interactive zone legend */}
+      <div className="absolute top-2 left-2 z-30 flex flex-col gap-1">
+        {['Viña del Mar', 'Santiago', 'Valparaíso', 'Concon'].map(city => {
+          const col = zoneColors[city] || zoneColors.default
+          const isActive = selectedMapZone === city
+          const cnt = zoneLiveCounts[city] || 0
+          return (
+            <button
+              key={city}
+              onClick={() => onSelectedMapZoneChange && onSelectedMapZoneChange(isActive ? null : city)}
+              className={`map-zone-pill flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-medium border transition-all active:scale-[0.96] ${isActive ? 'ring-1 ring-white/70 shadow-md scale-[1.02] active' : 'hover:scale-[1.03] opacity-90 hover:opacity-100'}`}
+              style={{ 
+                background: isActive ? `${col}22` : 'rgba(0,0,0,0.65)', 
+                borderColor: isActive ? col : 'rgba(255,255,255,0.15)',
+                color: col 
+              }}
+              title={cnt > 0 ? `${cnt} entrenando en ${city}` : `Sin live ahora en ${city}`}
+            >
+              <span className="inline-block w-1.5 h-1.5 rounded-full" style={{background: col}} />
+              <span className="font-semibold tracking-[-0.2px]">{city.split(' ')[0]}</span>
+              {cnt > 0 && <span className={`ml-0.5 text-[8px] px-1 rounded bg-white/10 text-white/80 font-mono tabular-nums ${cnt >= 3 ? 'scale-110 font-bold text-white' : ''}`}>{cnt}</span>}
+            </button>
+          )
+        })}
+
+        {/* Mi zona quick filter */}
+        {/* Note: "currentUser city" is not passed; parent can still drive selectedMapZone */}
+      </div>
+
+      {/* Centrar button (uses our imperative handle) */}
+      <button
+        onClick={() => {
+          try {
+            if ((ref as any).current?.flyToSelf) {
+              (ref as any).current.flyToSelf()
+            } else if (onRegisterCentrar) {
+              // fallback registered from parent
+            }
+          } catch {}
+        }}
+        className="absolute top-2 right-2 text-[9px] px-2.5 py-0.5 rounded-full bg-black/70 hover:bg-black text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black transition z-30"
+      >
+        Centrar
+      </button>
+
+      {/* Dev quick actions (inside the map widget) */}
+      {isDeveloper && (
+        <>
+          <button
+            onClick={() => onOpenAddPartner && onOpenAddPartner()}
+            className="absolute top-2 right-20 text-[8px] px-2 py-0.5 rounded-full bg-[#FFD700] text-black font-bold border border-[#FFD700] active:scale-95 z-30"
+            title="Agregar local partner con logo (solo devs)"
+          >
+            + Partner
+          </button>
+          <button
+            onClick={() => onOpenManagePartners && onOpenManagePartners()}
+            className="absolute top-2 right-36 text-[8px] px-2 py-0.5 rounded-full bg-[#FFD700]/80 text-black font-bold border border-[#FFD700] active:scale-95 z-30"
+            title="Gestionar partners existentes"
+          >
+            Manage
+          </button>
+          <button
+            onClick={() => onToggleQuickAdd && onToggleQuickAdd(!isQuickAddPartner)}
+            className={`absolute top-2 right-[170px] text-[8px] px-2 py-0.5 rounded-full font-bold border active:scale-95 z-30 ${isQuickAddPartner ? 'bg-red-500 text-white border-red-500' : 'bg-[#FFD700]/70 text-black border-[#FFD700]'}`}
+            title="Modo agregar rápido: click en mapa crea tienda mínima"
+          >
+            {isQuickAddPartner ? '✕ Add rápido' : '+ Add rápido'}
+          </button>
+        </>
+      )}
+
+      {/* GPS prompt overlay */}
+      {!userLocation && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/65 text-center p-5 rounded-2xl text-xs z-40">
+          <div>
+            <div className="mb-1">📍 Ubicación real desactivada</div>
+            <button 
+              onClick={() => onRequestLocation && onRequestLocation()}
+              className="px-3 py-1 rounded-full bg-[#22c55e] text-black text-[10px] font-semibold active:brightness-90"
+            >
+              Activar GPS para ver distancias + tú en el mapa
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 })
 

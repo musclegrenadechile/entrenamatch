@@ -2972,7 +2972,54 @@ function App() {
         if (user.pulseAmplifiedDate !== undefined) {
           profileUpdate.pulseAmplifiedDate = user.pulseAmplifiedDate;
         }
-        await updateUserProfile(firebaseUser.uid, profileUpdate)
+        if (user.momentumPoints !== undefined) {
+          profileUpdate.momentumPoints = user.momentumPoints;
+        }
+        if (user.retentionLevel !== undefined) {
+          profileUpdate.retentionLevel = user.retentionLevel;
+        }
+        if (user.retentionXp !== undefined) {
+          profileUpdate.retentionXp = user.retentionXp;
+        }
+        if (user.lastDailyPulseDate !== undefined) {
+          profileUpdate.lastDailyPulseDate = user.lastDailyPulseDate;
+        }
+        if (user.currentDailyChallenge !== undefined) {
+          profileUpdate.currentDailyChallenge = user.currentDailyChallenge;
+        }
+
+        // Resilient write with one retry + network reset for the exact class of internal SDK crashes
+        // ("mutations" undefined, b815 Unexpected state) that surface after transport errors.
+        // The pre-reset in live toggles + this makes terminate/start (and all momentum/reward writes) stable.
+        let lastErr: any = null;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            await updateUserProfile(firebaseUser.uid, profileUpdate);
+            lastErr = null;
+            break;
+          } catch (writeErr: any) {
+            lastErr = writeErr;
+            const msg = String(writeErr?.message || writeErr || '');
+            const looksLikeInternal = msg.includes('mutations') || msg.includes('b815') || msg.includes('INTERNAL ASSERTION') || msg.includes('Unexpected state');
+            console.warn(`[saveUserWithRealSync] write attempt ${attempt + 1} failed${looksLikeInternal ? ' (internal pipeline)' : ''}`, writeErr);
+            if (attempt === 0 && looksLikeInternal) {
+              try {
+                const fb = await import('./services/firebase');
+                await fb.disableFirestoreNetwork?.();
+                await new Promise(r => setTimeout(r, 140));
+                await fb.enableFirestoreNetwork?.();
+                await new Promise(r => setTimeout(r, 90));
+              } catch (resetErr) {
+                console.warn('retry-reset failed', resetErr);
+              }
+              continue;
+            }
+            break;
+          }
+        }
+        if (lastErr) {
+          throw lastErr;
+        }
         // console.log removed (debug)
       } catch (e) {
         console.warn('Failed to sync profile to Firestore:', e)
@@ -6901,9 +6948,9 @@ function App() {
               <button onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline active:text-white">Ver todos live →</button>
             </div>
 
-            {/* THE LIVING PULSE: Real-time map of synchronized training activity — the social layer of the first fitness network. 
-                Shows where high-signal co-training is happening right now.
-                TODO (2026-06-05): mover toda esta sección de render + useEffects pesados a <GymPulseMap /> (ver src/components/map/GymPulseMap.tsx)
+            {/* Map area - primer paso de modularización pulido.
+                La mayoría del chrome (header flotante, filtros, leyenda de zonas, centrar, botones dev) ahora vive dentro de <GymPulseMap />.
+                El padre mantiene el toggle + el form pesado de partners (por ahora).
             */}
             <div className="mt-3 relative z-10">
               <div className="flex items-center justify-between mb-1.5 px-1">
@@ -6911,7 +6958,6 @@ function App() {
                   🗺️ Mapa en tiempo real • El GymPulse Global (Partners + GymPartners en vivo)
                   <span className="text-[8px] bg-[#22c55e]/20 px-1.5 rounded">LA RED EN VIVO</span>
                   {networkStats.numPartners > 0 && <span className="text-[7px] bg-[#FFD700]/90 text-black px-1 rounded font-bold">TU RED: {networkStats.numPartners} • NP {networkStats.networkPower}</span>}
-                  <span className="text-[7px] ml-1 bg-[#22c55e]/10 px-1 rounded">Redes activas hoy: {Math.max(1, Math.floor(liveTrainingNow.length / 2))} • +{liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} joins en la red</span>
                 </div>
                 <button 
                   onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(!showLiveMap) }} 
@@ -6922,44 +6968,7 @@ function App() {
               </div>
 
               {showLiveMap && (
-                <motion.div 
-                  className="relative z-20"
-                  initial={{ opacity: 0, y: 6, scale: 0.985 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  {/* Premium floating "El Pulso está vivo" header — makes the map feel like the beating heart of the whole social experience */}
-                  <div 
-                    className="map-floating-pulse absolute top-2 left-2 z-40 px-3 py-1 rounded-2xl text-[10px] font-semibold text-[#22c55e] flex items-center gap-2 shadow-lg border border-[#22c55e]/20 cursor-pointer active:scale-[0.985] transition"
-                    onClick={() => {
-                      try { triggerHaptic('light') } catch {}
-                      // Use the extracted GymPulseMap imperative handle (the old mapInstanceRef is dead after modularization)
-                      const active = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow);
-                      if (active.length === 0 || !gymPulseMapRef.current) return;
-                      const hottest = active.reduce((best, u) => {
-                        const score = (u.joinCount || 0) + ((u.visibleLevel || 1) * 0.5) + (u.trainingSyncWith ? 5 : 0);
-                        const bestScore = (best.joinCount || 0) + ((best.visibleLevel || 1) * 0.5) + (best.trainingSyncWith ? 5 : 0);
-                        return score > bestScore ? u : best;
-                      }, active[0]);
-                      try { gymPulseMapRef.current.flyTo(hottest.lat, hottest.lng, 14) } catch {}
-                    }}
-                    title="Click to fly to the hottest activity spot on the GymPulse"
-                  >
-                    <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
-                    EL GYMPULSE GLOBAL
-                    <span className="text-[#22c55e]/70 font-mono text-[9px] tabular-nums">• {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow).length} EN VIVO</span>
-                    {(() => {
-                      const activeSyncs = liveTrainingNow.filter((u: any) => u.trainingSyncWith).length / 2; // pairs
-                      return activeSyncs > 0 ? <span className="text-[#FFD700] font-bold text-[9px]">• {Math.floor(activeSyncs)} EN SYNC</span> : null;
-                    })()}
-                    {(() => {
-                      const activity = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow).reduce((s: number, u: any) => s + ((u.joinCount || 0) + (u.trainingSyncWith ? 3 : 0)), 0);
-                      const strength = Math.min(99, Math.floor(activity / 1.5) + 10);
-                      return <span className="text-[8px] bg-[#22c55e]/20 px-1 rounded font-mono tabular-nums">⚡{strength}</span>;
-                    })()}
-                  </div>
-
-                  {/* Extracted GymPulseMap component (modularization in progress since 2026-06-05) */}
+                <div className="relative">
                   <GymPulseMap
                     ref={gymPulseMapRef}
                     showLiveMap={showLiveMap}
@@ -6978,6 +6987,17 @@ function App() {
                     isPlacingPartner={isPlacingPartner}
                     isQuickAddPartner={isQuickAddPartner}
                     selfIsLive={!!currentUser?.trainingNow}
+
+                    // New control callbacks (widget now manages its own filter/legend/dev buttons)
+                    onMapNearOnlyChange={setMapNearOnly}
+                    onSelectedMapZoneChange={setSelectedMapZone}
+                    onShowOnlyLegendsChange={setShowOnlyLegends}
+                    onShowPartnersChange={(v) => { setShowPartners(v); setMapForceTick(t => t + 1) }}
+                    onOpenAddPartner={openAddPartner}
+                    onOpenManagePartners={openManagePartners}
+                    onToggleQuickAdd={(next) => { setIsQuickAddPartner(next); if (next) toast('Modo ADD RÁPIDO activado'); else toast('Modo add rápido OFF') }}
+                    onLogoutDeveloper={logoutDeveloper}
+
                     onShowProfile={setShowFullProfile}
                     onStartSync={startSyncWith}
                     onPartnerPositionSelected={async (lat, lng) => {
@@ -7057,166 +7077,11 @@ function App() {
                       ;(window as any).__gymPulseCentrar = fn
                     }}
                   />
-                  {/* Live badge + near filter (counts respect current filters + legend selection) */}
-                  <div className="absolute bottom-2 right-2 flex items-center gap-1 z-30">
-                    <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                      🟢 {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && (u.distance||999)<10)) && (!selectedMapZone || u.city === selectedMapZone) && (!showOnlyLegends || u.isLegend)).length} en vivo • realtime {showOnlyLegends ? ' (tu red)' : ''}
-                      {showPartners && partnerLocations.length > 0 && <span className="ml-1 text-[7px] bg-[#FF671F] text-black px-1 rounded font-bold">{partnerLocations.length} PARTNERS</span>}
-                      {isDeveloper && <span className="ml-1 text-[7px] bg-[#FFD700] text-black px-1 rounded font-extrabold cursor-pointer active:opacity-70" onClick={logoutDeveloper} title="Tap to logout dev mode">DEV ON</span>}
-                      {networkStats.numPartners > 0 && <span className="ml-1 text-[6px] bg-[#FFD700] text-black px-0.5 rounded font-bold">NP {networkStats.networkPower}</span>}
-                      {selectedMapZone && <span className="ml-1 text-[7px] bg-white/20 px-1 rounded">filtrado: {selectedMapZone.split(' ')[0]}</span>}
-                    </div>
-                    <button
-                      onClick={() => { try { triggerHaptic('light') } catch {}; setMapNearOnly(!mapNearOnly) }}
-                      className={`text-[8px] px-2 py-0.5 rounded-full border transition ${mapNearOnly ? 'bg-[#3b82f6] text-white border-[#3b82f6]' : 'bg-black/70 text-[#3b82f6] border-[#3b82f6]/40 hover:bg-[#3b82f6]/10'}`}
-                    >
-                      {mapNearOnly ? '✓ Cerca de mí (10km)' : 'Solo cerca de mí'}
-                    </button>
-                    <button
-                      onClick={() => { try { triggerHaptic('light') } catch {}; setShowOnlyLegends(!showOnlyLegends) }}
-                      className={`text-[8px] px-2 py-0.5 rounded-full border transition ${showOnlyLegends ? 'bg-[#FFD700] text-black border-[#FFD700]' : 'bg-black/70 text-[#FFD700] border-[#FFD700]/40 hover:bg-[#FFD700]/10'}`}
-                    >
-                      {showOnlyLegends ? '✓ Mi Red (Network Power)' : 'Solo Mi Red de Alto Rendimiento'}
-                    </button>
-                    <button
-                      onClick={() => { try { triggerHaptic('light') } catch {}; setShowPartners(!showPartners); setMapForceTick(t => t+1) }}
-                      className={`text-[8px] px-2 py-0.5 rounded-full border transition ${showPartners ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'bg-black/70 text-[#FF671F] border-[#FF671F]/40 hover:bg-[#FF671F]/10'}`}
-                    >
-                      {showPartners ? '✓ Partners (mapa)' : 'Mostrar Partners'}
-                    </button>
-                  </div>
                   {showOnlyLegends && (
                     <div className="text-[7px] text-[#FFD700] px-1 mt-0.5">Tu Network Power activa — tus GymPartners destacan en el GymPulse</div>
                   )}
                   {isDeveloper && showPartners && (
                     <div className="text-[7px] text-[#FFD700]/80 px-1 mt-0.5">DEV: arrastra pins PARTNERS para mover • +Add rápido (click mapa crea tienda) • Manage para borrar/editar • popups tienen 🗑️ Borrar</div>
-                  )}
-
-                  {/* Centrar / recenter control - prefers self GPS location and keeps current zoom level so user stays "fijo donde estoy" */}
-                  <button
-                    onClick={() => {
-                      try { triggerHaptic('light') } catch {}
-                      // Prefer the live extracted component handle (old mapInstanceRef / selfMarkerRef / markersRef are stale post-extraction)
-                      if (gymPulseMapRef.current) {
-                        try {
-                          gymPulseMapRef.current.flyToSelf()
-                          return
-                        } catch {}
-                      }
-                      // Fallbacks (may be limited until full port)
-                      const map = mapInstanceRef.current
-                      if (map && selfMarkerRef.current) {
-                        const currentZoom = map.getZoom() || 13
-                        map.flyTo(selfMarkerRef.current.getLatLng(), currentZoom, { duration: 0.85, easeLinearity: 0.28 })
-                      } else if (userLocation && map) {
-                        map.flyTo([userLocation.lat, userLocation.lng], 13, { duration: 0.8 })
-                      } else if ((window as any).__gymPulseCentrar) {
-                        ;(window as any).__gymPulseCentrar()
-                      }
-                    }}
-                    className="absolute top-2 right-2 text-[9px] px-2.5 py-0.5 rounded-full bg-black/70 hover:bg-black text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black transition z-30"
-                  >
-                    Centrar
-                  </button>
-
-                  {/* DEV TOOL: gated behind developer login. Only devs can add/edit partner locations + logos on the mapa en tiempo real. */}
-                  {isDeveloper ? (
-                    <>
-                      <button
-                        onClick={openAddPartner}
-                        className="absolute top-2 right-20 text-[8px] px-2 py-0.5 rounded-full bg-[#FFD700] text-black font-bold border border-[#FFD700] active:scale-95 z-30"
-                        title="Agregar local partner con logo (solo devs)"
-                      >
-                        + Partner
-                      </button>
-                      <button
-                        onClick={openManagePartners}
-                        className="absolute top-2 right-36 text-[8px] px-2 py-0.5 rounded-full bg-[#FFD700]/80 text-black font-bold border border-[#FFD700] active:scale-95 z-30"
-                        title="Gestionar partners existentes (editar logos, eliminar)"
-                      >
-                        Manage
-                      </button>
-                      <button
-                        onClick={() => {
-                          const next = !isQuickAddPartner
-                          setIsQuickAddPartner(next)
-                          if (next) {
-                            toast('Modo ADD RÁPIDO activado', { description: 'Click en el mapa = crea tienda mínima al instante. Click de nuevo para desactivar.' })
-                          } else {
-                            toast('Modo add rápido OFF')
-                          }
-                        }}
-                        className={`absolute top-2 right-[170px] text-[8px] px-2 py-0.5 rounded-full font-bold border active:scale-95 z-30 ${isQuickAddPartner ? 'bg-red-500 text-white border-red-500' : 'bg-[#FFD700]/70 text-black border-[#FFD700]'}`}
-                        title="Modo agregar rápido: click en mapa crea tienda/partner mínima sin formulario (ideal para devs)"
-                      >
-                        {isQuickAddPartner ? '✕ Add rápido' : '+ Add rápido'}
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={openDevLogin}
-                      className="absolute top-2 right-20 text-[8px] px-2 py-0.5 rounded-full bg-black/70 text-[#FFD700] border border-[#FFD700]/50 active:bg-[#FFD700]/10 z-30"
-                      title="Login de desarrollador para agregar/editar partners en el mapa"
-                    >
-                      🔐 Dev
-                    </button>
-                  )}
-
-                  {/* Enhanced interactive zone legend (sigue con todo el mapa): colorful live pills with counts, hover pop, active ring/glow + "Mi zona" quick filter. Makes map feel premium + alive. */}
-                  <div className="absolute top-2 left-2 z-30 flex flex-col gap-1">
-                    {['Viña del Mar', 'Santiago', 'Valparaíso', 'Concon'].map(city => {
-                      const col = mapZoneColors[city] || mapZoneColors.default
-                      const isActive = selectedMapZone === city
-                      const cnt = zoneLiveCounts[city] || 0
-                      return (
-                        <button
-                          key={city}
-                          onClick={() => { try { triggerHaptic('light') } catch {}; setSelectedMapZone(isActive ? null : city) }}
-                          className={`map-zone-pill flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-medium border transition-all active:scale-[0.96] ${isActive ? 'ring-1 ring-white/70 shadow-md scale-[1.02] active' : 'hover:scale-[1.03] opacity-90 hover:opacity-100'}`}
-                          style={{ 
-                            background: isActive ? `${col}22` : 'rgba(0,0,0,0.65)', 
-                            borderColor: isActive ? col : 'rgba(255,255,255,0.15)',
-                            color: col 
-                          }}
-                          title={cnt > 0 ? `${cnt} entrenando en ${city}` : `Sin live ahora en ${city}`}
-                        >
-                          <span className="inline-block w-1.5 h-1.5 rounded-full" style={{background: col}} />
-                          <span className="font-semibold tracking-[-0.2px]">{city.split(' ')[0]}</span>
-                          {cnt > 0 && <span className={`ml-0.5 text-[8px] px-1 rounded bg-white/10 text-white/80 font-mono tabular-nums ${cnt >= 3 ? 'scale-110 font-bold text-white' : ''}`}>{cnt}</span>}
-                        </button>
-                      )
-                    })}
-                    {/* Quick "Mi zona" button using your profile city (or location) for instant personal filter */}
-                    {currentUser?.city && ['Viña del Mar', 'Santiago', 'Valparaíso', 'Concon'].includes(currentUser.city) && (
-                      <button
-                        onClick={() => {
-                          try { triggerHaptic('medium') } catch {}
-                          const myZone = currentUser.city
-                          setSelectedMapZone(selectedMapZone === myZone ? null : myZone)
-                        }}
-                        className={`text-[8px] px-2 py-0.5 rounded-full border self-start transition-all active:scale-[0.96] ${selectedMapZone === currentUser.city ? 'bg-[#3b82f6] text-white border-[#3b82f6]' : 'bg-black/70 text-[#3b82f6] border-[#3b82f6]/40 hover:bg-[#3b82f6]/10'}`}
-                      >
-                        📍 Mi zona
-                      </button>
-                    )}
-                    {selectedMapZone && (
-                      <button onClick={() => { try { triggerHaptic('light') } catch {}; setSelectedMapZone(null) }} className="text-[7px] text-white/50 hover:text-white/80 px-1 py-px self-start active:opacity-70">✕ todas las zonas</button>
-                    )}
-                  </div>
-
-                  {/* GPS prompt overlay (only when map visible but no location yet) */}
-                  {!userLocation && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/65 text-center p-5 rounded-2xl text-xs z-40">
-                      <div>
-                        <div className="mb-1">📍 Ubicación real desactivada</div>
-                        <button 
-                          onClick={requestUserLocation} 
-                          className="px-3 py-1 rounded-full bg-[#22c55e] text-black text-[10px] font-semibold active:brightness-90"
-                        >
-                          Activar GPS para ver distancias + tú en el mapa
-                        </button>
-                      </div>
-                    </div>
                   )}
 
                   {/* DEV PARTNER FORM - attractive, with logo upload. Gated by developer login. Supports add + edit with logo for negocios. */}
@@ -7678,13 +7543,6 @@ function App() {
                       </div>
                     </div>
                   )}
-                </motion.div>
-              )}
-              {showLiveMap && (
-                <div className="mt-1 text-[8px] text-[#9CA3AF] px-1 flex items-center gap-2">
-                  Foto/iniciales. GymPulses rápidos + glow = alta energía (3+ joins o en Sync). 
-                  <span className="text-[#FF671F]">Líneas fluyendo</span> = pares EntrenaSync (único). 
-                  <span className="text-[#3b82f6]">●</span> = tú. Legend: toca pastilla (cuenta live) o "📍 Mi zona" para filtrar personal.
                 </div>
               )}
             </div>
@@ -10092,24 +9950,61 @@ function App() {
                         setIsTogglingLive(true);
                         const oldTrainingNow = currentUser.trainingNow;
                         try {
-                          const newVal = false; // explicit deactivate
-                          const updated = { ...currentUser, trainingNow: newVal, trainingNowSince: undefined, trainingSyncWith: null, syncStartedAt: null }
-                          
-                          await saveUserWithRealSync(updated as CurrentUser)
-                          
-                          loadRealProfiles().catch(() => {})
-                          setMapForceTick(t => t + 1)
-                          import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
-                          
-                          toast('Entrenamiento finalizado')
-                          checkAndUpdateDailyPulse(updated)
-                          const durationMs = currentUser.trainingNowSince ? Date.now() - currentUser.trainingNowSince : 30 * 60 * 1000
-                          const minutes = Math.max(5, Math.floor(durationMs / 60000))
-                          if (dailyPulse) {
-                            const bumped = { ...dailyPulse, xp: Math.min(299, (dailyPulse.xp || 0) + Math.floor(minutes * 1.5)) }
-                            setDailyPulse(bumped)
+                          // CRITICAL: Hard network reset before the live-clear write.
+                          // Previous Listen/Write transport errors (404, WebChannel errored) can leave the Firestore
+                          // client's internal write pipeline (mutations batch) in "undefined" / b815 unexpected state.
+                          // This reset (disable + delay + enable) recreates streams cleanly and prevents the
+                          // "Cannot read properties of undefined (reading 'mutations')" + INTERNAL ASSERTION on terminate.
+                          // Applies to both web preview and Capacitor Android WebView.
+                          try {
+                            const fb = await import('./services/firebase');
+                            await fb.disableFirestoreNetwork?.();
+                            await new Promise(r => setTimeout(r, 110));
+                            await fb.enableFirestoreNetwork?.();
+                            await new Promise(r => setTimeout(r, 70));
+                          } catch (resetErr) {
+                            console.warn('pre-stop network reset non-fatal', resetErr);
                           }
-                          awardMomentum(Math.floor(minutes / 3) + 5, `Sesión de ${minutes}min completada`)
+
+                          const newVal = false; // explicit deactivate
+                          // Compute session finish bonus (duration + momentum + xp) and bake into the SAME payload
+                          // so we do ONE write instead of 1 (clear) + check (possible daily) + award (mom) = 3 rapid writes.
+                          // Multiple writes in a row after flaky network is the trigger for the assertion crash.
+                          const durationMs = currentUser.trainingNowSince ? Date.now() - currentUser.trainingNowSince : 30 * 60 * 1000;
+                          const minutes = Math.max(5, Math.floor(durationMs / 60000));
+                          const momentumBonus = Math.floor(minutes / 3) + 5;
+                          const xpBonus = Math.floor(minutes * 1.5);
+                          const currentMom = (dailyPulse?.momentum ?? (currentUser as any).momentumPoints ?? 0);
+                          const currentXp = (dailyPulse?.xp ?? (currentUser as any).retentionXp ?? 0);
+                          const newMom = currentMom + momentumBonus;
+                          const newXp = Math.min(299, currentXp + xpBonus);
+
+                          const updated = {
+                            ...currentUser,
+                            trainingNow: newVal,
+                            trainingNowSince: undefined,
+                            trainingSyncWith: null,
+                            syncStartedAt: null,
+                            momentumPoints: newMom,
+                            retentionXp: newXp
+                          } as CurrentUser;
+
+                          // Optimistic local daily for instant UI feedback (profile banner etc)
+                          if (dailyPulse) {
+                            setDailyPulse({ ...dailyPulse, momentum: newMom, xp: newXp });
+                          }
+
+                          await saveUserWithRealSync(updated);
+
+                          loadRealProfiles().catch(() => {});
+                          setMapForceTick(t => t + 1);
+                          import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {});
+
+                          toast('Entrenamiento finalizado', { description: `+${momentumBonus} Momentum (${minutes}min)` });
+
+                          // Intentionally do NOT call checkAndUpdateDailyPulse or awardMomentum here.
+                          // We already credited everything in the single robust write above.
+                          // This keeps write pressure minimal on the critical terminate path.
                         } catch (err) {
                           console.error('Live deactivate failed', err);
                           toast.error('No se pudo desactivar el live', { description: 'Revisa tu conexión. Estado revertido.' });
@@ -10143,6 +10038,17 @@ function App() {
                       setIsTogglingLive(true);
                       const oldTrainingNow = currentUser.trainingNow;
                       try {
+                        // Same pre-write reset as terminate path: ensures clean Firestore write pipeline
+                        // so start live doesn't hit the mutations/b815 assertion after prior transport issues.
+                        try {
+                          const fb = await import('./services/firebase');
+                          await fb.disableFirestoreNetwork?.();
+                          await new Promise(r => setTimeout(r, 110));
+                          await fb.enableFirestoreNetwork?.();
+                          await new Promise(r => setTimeout(r, 70));
+                        } catch (resetErr) {
+                          console.warn('pre-start network reset non-fatal', resetErr);
+                        }
                         const newVal = !oldTrainingNow;
                         if (newVal) {
                           await requestUserLocation().catch(() => {});
