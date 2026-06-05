@@ -543,239 +543,6 @@ function App() {
     leaveSquad: _leaveSquad 
   } = useSquads()
 
-  // =====================================================
-  // PULSO DIARIO DE LA RED - Core logic (innovative retention)
-  // =====================================================
-  const getTodayStr = () => new Date().toISOString().slice(0, 10)
-
-  const generateDailyChallenge = (user: any, bonds: any, liveNow: any[], networkPower: number) => {
-    const bondCount = Object.keys(bonds || {}).length
-    const hasLiveRed = liveNow.some((u: any) => (bonds || {})[u.id])
-    const today = getTodayStr()
-    const seed = (user?.id || 'u') + today // deterministic per user/day
-
-    // Innovative 3-layer challenges that tie directly to the Red graph + map + sync
-    const options = [
-      {
-        id: 'anchor-' + seed,
-        type: 'solo',
-        title: 'Ancla Personal',
-        description: 'Entrena 20+ minutos hoy (solo o con quien quieras). Construye tu base.',
-        target: 20,
-        progress: 0,
-        reward: 25,
-        icon: '🔥',
-        actionLabel: 'Marcar como entrenando'
-      },
-      {
-        id: 'bond-' + seed,
-        type: 'bond',
-        title: 'Activación de Bond',
-        description: bondCount > 0 
-          ? `Sincronízate o envía nota de voz a uno de tus ${bondCount} socios de Red hoy.` 
-          : 'Conecta con alguien nuevo o completa un Sync. Fortalece tu grafo.',
-        target: 1,
-        progress: 0,
-        reward: 40,
-        icon: '🔗',
-        actionLabel: bondCount > 0 ? 'Ir a tu Red' : 'Explorar'
-      },
-      {
-        id: 'ripple-' + seed,
-        type: 'network',
-        title: 'Ripple de Red',
-        description: hasLiveRed 
-          ? 'Completa tu sesión y publica un post o voz que impulse el Pulso visible en el mapa para tu Red.' 
-          : 'Entrena y deja un "Pulso" (post o voz) que sea visto por tu Red. +Impacto colectivo.',
-        target: 1,
-        progress: 0,
-        reward: 55,
-        icon: '🌊',
-        actionLabel: 'Completar y publicar Pulso'
-      }
-    ]
-
-    // Personalize choice: prefer bond if you have Red, ripple if high power or live partners
-    let chosen = options[0]
-    if (bondCount >= 1 && networkPower > 10) chosen = options[1]
-    if (hasLiveRed || networkPower > 25) chosen = options[2]
-
-    return { ...chosen, expires: today + 'T23:59:59' }
-  }
-
-  const checkAndUpdateDailyPulse = (forceUser?: any) => {
-    const u = forceUser || currentUser
-    if (!u) return
-
-    const today = getTodayStr()
-    const last = dailyPulse?.lastDate || (u as any).lastDailyPulseDate || null
-    const currentStreak = dailyPulse?.trainingStreak || (u as any).dailyTrainingStreak || 0
-    const currentSynergy = dailyPulse?.synergyStreak || (u as any).dailySynergyStreak || 0
-    const mom = dailyPulse?.momentum || (u as any).momentumPoints || 0
-    const longTrain = dailyPulse?.longestTraining || (u as any).longestDailyTraining || 0
-    const longSyn = dailyPulse?.longestSynergy || (u as any).longestDailySynergy || 0
-
-    let newStreak = currentStreak
-    let newSynergy = currentSynergy
-    let newLongTrain = longTrain
-    let newLongSyn = longSyn
-
-    if (last !== today) {
-      // New day
-      if (last) {
-        const lastD = new Date(last)
-        const yest = new Date()
-        yest.setDate(yest.getDate() - 1)
-        if (lastD.toDateString() === yest.toDateString()) {
-          newStreak = currentStreak + 1
-          // synergy only increments on actual activity days (handled elsewhere)
-        } else {
-          newStreak = 1
-        }
-      } else {
-        newStreak = 1
-      }
-
-      // Generate fresh challenge for the day
-      const challenge = generateDailyChallenge(u, syncBonds, liveTrainingNow, networkStats.networkPower)
-
-      const newPulse = {
-        trainingStreak: newStreak,
-        synergyStreak: newSynergy,
-        momentum: mom,
-        lastDate: today,
-        currentChallenge: challenge,
-        longestTraining: Math.max(newLongTrain, newStreak),
-        longestSynergy: newLongSyn
-      }
-
-      setDailyPulse(newPulse)
-
-      // Persist key fields
-      const update: any = {
-        dailyTrainingStreak: newStreak,
-        dailySynergyStreak: newSynergy,
-        momentumPoints: mom,
-        lastDailyPulseDate: today,
-        currentDailyChallenge: challenge
-      }
-      saveUserWithRealSync({ ...u, ...update } as any)
-
-      // Strong hook: toast + in-app notif on new day
-      toast.success('¡Nuevo Pulso Diario de la Red!', {
-        description: `${challenge.icon} ${challenge.title} • +${challenge.reward} Momentum`
-      })
-
-      // Add to in-app notifications
-      const notif = {
-        id: 'pulse-' + today,
-        type: 'daily_pulse',
-        title: 'Pulso Diario listo',
-        body: `${challenge.icon} ${challenge.title} — completalo hoy para tu Red`,
-        timestamp: Date.now(),
-        read: false,
-        data: { challengeId: challenge.id }
-      }
-      setNotifications(prev => [notif, ...prev].slice(0, 50))
-    } else if (!dailyPulse) {
-      // Same day, hydrate from user
-      const existingChallenge = (u as any).currentDailyChallenge
-      setDailyPulse({
-        trainingStreak: currentStreak,
-        synergyStreak: currentSynergy,
-        momentum: mom,
-        lastDate: last,
-        currentChallenge: existingChallenge || generateDailyChallenge(u, syncBonds, liveTrainingNow, networkStats.networkPower),
-        longestTraining: longTrain,
-        longestSynergy: longSyn
-      })
-    }
-  }
-
-  // Call on mount and when key data changes (live, bonds)
-  useEffect(() => {
-    if (currentUser) {
-      // slight delay so other data (bonds, live) is ready for personalization
-      const t = setTimeout(() => checkAndUpdateDailyPulse(), 400)
-      return () => clearTimeout(t)
-    }
-  }, [currentUser?.id, Object.keys(syncBonds).length])
-
-  // Also expose a way to manually refresh (e.g. pull to refresh feel)
-  const refreshDailyPulse = () => checkAndUpdateDailyPulse()
-
-  const completeDailyChallenge = async (progressInc = 1) => {
-    if (!dailyPulse || !dailyPulse.currentChallenge) return
-
-    const ch = { ...dailyPulse.currentChallenge }
-    ch.progress = Math.min(ch.target, (ch.progress || 0) + progressInc)
-
-    const justCompleted = ch.progress >= ch.target && !ch.completed
-
-    const newMomentum = dailyPulse.momentum + (justCompleted ? ch.reward : 5)
-
-    const updatedPulse = {
-      ...dailyPulse,
-      momentum: newMomentum,
-      currentChallenge: { ...ch, completed: justCompleted ? true : ch.completed }
-    }
-
-    setDailyPulse(updatedPulse)
-
-    // Persist
-    const u = currentUser as any
-    const update: any = {
-      momentumPoints: newMomentum,
-      currentDailyChallenge: updatedPulse.currentChallenge,
-      dailyTrainingStreak: updatedPulse.trainingStreak,
-      dailySynergyStreak: updatedPulse.synergyStreak
-    }
-    saveUserWithRealSync({ ...u, ...update } as any)
-
-    if (justCompleted) {
-      try { triggerHaptic('success') } catch {}
-      toast.success(`¡Pulso completado! +${ch.reward} Momentum`, {
-        description: `${ch.icon} ${ch.title} • Tu Red se fortalece`
-      })
-
-      // Create attractive post in muro + feed (special type)
-      const postText = `✅ Completé mi Pulso Diario: ${ch.title}. ${ch.description} — Momentum para la Red 🔥`
-      try {
-        await createProfilePost(postText, null, 'dailyPulse')
-      } catch (e) { /* non fatal */ }
-
-      // If it was a bond/ripple type, try to give small bonus to a partner
-      if (ch.type === 'bond' || ch.type === 'network') {
-        const partnerId = Object.keys(syncBonds || {})[0]
-        if (partnerId) {
-          // Optimistic small vibe share
-          const bonus = Math.floor(ch.reward / 2)
-          toast(`+${bonus} Momentum compartido con tu Red`, { description: 'El impacto se multiplica' })
-        }
-      }
-
-      // Update synergy streak if this was a meaningful activity day
-      if (updatedPulse.synergyStreak < updatedPulse.trainingStreak) {
-        const newSyn = updatedPulse.synergyStreak + 1
-        const synUpdate = { ...updatedPulse, synergyStreak: newSyn }
-        setDailyPulse(synUpdate)
-        saveUserWithRealSync({ ...(currentUser as any), dailySynergyStreak: newSyn } as any)
-      }
-    } else {
-      toast(`+${progressInc} progreso en el Pulso`)
-    }
-  }
-
-  // Helper to award momentum from other actions (e.g. voice send, sync complete)
-  const awardMomentum = (amount: number, reason: string) => {
-    if (!dailyPulse) return
-    const newM = (dailyPulse.momentum || 0) + amount
-    const up = { ...dailyPulse, momentum: newM }
-    setDailyPulse(up)
-    saveUserWithRealSync({ ...(currentUser as any), momentumPoints: newM } as any)
-    toast(`+${amount} Momentum`, { description: reason })
-  }
-
   const [likedIds, setLikedIds] = useState<string[]>([])
   const [passedIds, setPassedIds] = useState<string[]>([])
   const [matches, setMatches] = useState<string[]>([]) // profile ids you matched with
@@ -869,6 +636,222 @@ function App() {
     return { networkPower, totalMin, totalSessions, estimatedImpact, numPartners }
   }, [syncBonds])
   const [replaySession, setReplaySession] = useState<any>(null) // {partnerName, minutes, vibe, actions, rating?}
+
+  // =====================================================
+  // PULSO DIARIO DE LA RED - Core logic (innovative retention)
+  // Placed here AFTER syncBonds + networkStats + dailyPulse state to avoid TDZ.
+  // =====================================================
+  const getTodayStr = () => new Date().toISOString().slice(0, 10)
+
+  const generateDailyChallenge = (user: any, bonds: any, liveNow: any[], networkPower: number) => {
+    const bondCount = Object.keys(bonds || {}).length
+    const hasLiveRed = liveNow.some((u: any) => (bonds || {})[u.id])
+    const today = getTodayStr()
+    const seed = (user?.id || 'u') + today // deterministic per user/day
+
+    const options = [
+      {
+        id: 'anchor-' + seed,
+        type: 'solo',
+        title: 'Ancla Personal',
+        description: 'Entrena 20+ minutos hoy (solo o con quien quieras). Construye tu base.',
+        target: 20,
+        progress: 0,
+        reward: 25,
+        icon: '🔥',
+        actionLabel: 'Marcar como entrenando'
+      },
+      {
+        id: 'bond-' + seed,
+        type: 'bond',
+        title: 'Activación de Bond',
+        description: bondCount > 0 
+          ? `Sincronízate o envía nota de voz a uno de tus ${bondCount} socios de Red hoy.` 
+          : 'Conecta con alguien nuevo o completa un Sync. Fortalece tu grafo.',
+        target: 1,
+        progress: 0,
+        reward: 40,
+        icon: '🔗',
+        actionLabel: bondCount > 0 ? 'Ir a tu Red' : 'Explorar'
+      },
+      {
+        id: 'ripple-' + seed,
+        type: 'network',
+        title: 'Ripple de Red',
+        description: hasLiveRed 
+          ? 'Completa tu sesión y publica un post o voz que impulse el Pulso visible en el mapa para tu Red.' 
+          : 'Entrena y deja un "Pulso" (post o voz) que sea visto por tu Red. +Impacto colectivo.',
+        target: 1,
+        progress: 0,
+        reward: 55,
+        icon: '🌊',
+        actionLabel: 'Completar y publicar Pulso'
+      }
+    ]
+
+    let chosen = options[0]
+    if (bondCount >= 1 && networkPower > 10) chosen = options[1]
+    if (hasLiveRed || networkPower > 25) chosen = options[2]
+
+    return { ...chosen, expires: today + 'T23:59:59' }
+  }
+
+  const checkAndUpdateDailyPulse = (forceUser?: any) => {
+    const u = forceUser || currentUser
+    if (!u) return
+
+    const today = getTodayStr()
+    const last = dailyPulse?.lastDate || (u as any).lastDailyPulseDate || null
+    const currentStreak = dailyPulse?.trainingStreak || (u as any).dailyTrainingStreak || 0
+    const currentSynergy = dailyPulse?.synergyStreak || (u as any).dailySynergyStreak || 0
+    const mom = dailyPulse?.momentum || (u as any).momentumPoints || 0
+    const longTrain = dailyPulse?.longestTraining || (u as any).longestDailyTraining || 0
+    const longSyn = dailyPulse?.longestSynergy || (u as any).longestDailySynergy || 0
+
+    let newStreak = currentStreak
+    let newSynergy = currentSynergy
+    let newLongTrain = longTrain
+    let newLongSyn = longSyn
+
+    if (last !== today) {
+      if (last) {
+        const lastD = new Date(last)
+        const yest = new Date()
+        yest.setDate(yest.getDate() - 1)
+        if (lastD.toDateString() === yest.toDateString()) {
+          newStreak = currentStreak + 1
+        } else {
+          newStreak = 1
+        }
+      } else {
+        newStreak = 1
+      }
+
+      const challenge = generateDailyChallenge(u, syncBonds, liveTrainingNow, networkStats.networkPower)
+
+      const newPulse = {
+        trainingStreak: newStreak,
+        synergyStreak: newSynergy,
+        momentum: mom,
+        lastDate: today,
+        currentChallenge: challenge,
+        longestTraining: Math.max(newLongTrain, newStreak),
+        longestSynergy: newLongSyn
+      }
+
+      setDailyPulse(newPulse)
+
+      const update: any = {
+        dailyTrainingStreak: newStreak,
+        dailySynergyStreak: newSynergy,
+        momentumPoints: mom,
+        lastDailyPulseDate: today,
+        currentDailyChallenge: challenge
+      }
+      saveUserWithRealSync({ ...u, ...update } as any)
+
+      toast.success('¡Nuevo Pulso Diario de la Red!', {
+        description: `${challenge.icon} ${challenge.title} • +${challenge.reward} Momentum`
+      })
+
+      const notif = {
+        id: 'pulse-' + today,
+        type: 'daily_pulse',
+        title: 'Pulso Diario listo',
+        body: `${challenge.icon} ${challenge.title} — completalo hoy para tu Red`,
+        timestamp: Date.now(),
+        read: false,
+        data: { challengeId: challenge.id }
+      }
+      setNotifications(prev => [notif, ...prev].slice(0, 50))
+    } else if (!dailyPulse) {
+      const existingChallenge = (u as any).currentDailyChallenge
+      setDailyPulse({
+        trainingStreak: currentStreak,
+        synergyStreak: currentSynergy,
+        momentum: mom,
+        lastDate: last,
+        currentChallenge: existingChallenge || generateDailyChallenge(u, syncBonds, liveTrainingNow, networkStats.networkPower),
+        longestTraining: longTrain,
+        longestSynergy: longSyn
+      })
+    }
+  }
+
+  useEffect(() => {
+    if (currentUser) {
+      const t = setTimeout(() => checkAndUpdateDailyPulse(), 400)
+      return () => clearTimeout(t)
+    }
+  }, [currentUser?.id, Object.keys(syncBonds).length])
+
+  const refreshDailyPulse = () => checkAndUpdateDailyPulse()
+
+  const completeDailyChallenge = async (progressInc = 1) => {
+    if (!dailyPulse || !dailyPulse.currentChallenge) return
+
+    const ch = { ...dailyPulse.currentChallenge }
+    ch.progress = Math.min(ch.target, (ch.progress || 0) + progressInc)
+
+    const justCompleted = ch.progress >= ch.target && !ch.completed
+
+    const newMomentum = dailyPulse.momentum + (justCompleted ? ch.reward : 5)
+
+    const updatedPulse = {
+      ...dailyPulse,
+      momentum: newMomentum,
+      currentChallenge: { ...ch, completed: justCompleted ? true : ch.completed }
+    }
+
+    setDailyPulse(updatedPulse)
+
+    const u = currentUser as any
+    const update: any = {
+      momentumPoints: newMomentum,
+      currentDailyChallenge: updatedPulse.currentChallenge,
+      dailyTrainingStreak: updatedPulse.trainingStreak,
+      dailySynergyStreak: updatedPulse.synergyStreak
+    }
+    saveUserWithRealSync({ ...u, ...update } as any)
+
+    if (justCompleted) {
+      try { triggerHaptic('success') } catch {}
+      toast.success(`¡Pulso completado! +${ch.reward} Momentum`, {
+        description: `${ch.icon} ${ch.title} • Tu Red se fortalece`
+      })
+
+      const postText = `✅ Completé mi Pulso Diario: ${ch.title}. ${ch.description} — Momentum para la Red 🔥`
+      try {
+        await createProfilePost(postText, null, 'dailyPulse')
+      } catch (e) { /* non fatal */ }
+
+      if (ch.type === 'bond' || ch.type === 'network') {
+        const partnerId = Object.keys(syncBonds || {})[0]
+        if (partnerId) {
+          const bonus = Math.floor(ch.reward / 2)
+          toast(`+${bonus} Momentum compartido con tu Red`, { description: 'El impacto se multiplica' })
+        }
+      }
+
+      if (updatedPulse.synergyStreak < updatedPulse.trainingStreak) {
+        const newSyn = updatedPulse.synergyStreak + 1
+        const synUpdate = { ...updatedPulse, synergyStreak: newSyn }
+        setDailyPulse(synUpdate)
+        saveUserWithRealSync({ ...(currentUser as any), dailySynergyStreak: newSyn } as any)
+      }
+    } else {
+      toast(`+${progressInc} progreso en el Pulso`)
+    }
+  }
+
+  const awardMomentum = (amount: number, reason: string) => {
+    if (!dailyPulse) return
+    const newM = (dailyPulse.momentum || 0) + amount
+    const up = { ...dailyPulse, momentum: newM }
+    setDailyPulse(up)
+    saveUserWithRealSync({ ...(currentUser as any), momentumPoints: newM } as any)
+    toast(`+${amount} Momentum`, { description: reason })
+  }
   const [witnessData, setWitnessData] = useState<any>(null) // for shared session highlight replay: replay of a strong EntrenaSync (shared state, actions, vibe) that can be archived as co-authored performance memory
 
   // Shared Performance Highlights & Discovery Pins

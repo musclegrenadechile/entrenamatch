@@ -1,6 +1,6 @@
 === READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.54-voice-send-polish code 58) ===
 
-AAB: EntrenaMatch-v0.1.54-voice-rules-fix-0009.aab + EntrenaMatch-release.aab (7.58MB)
+AAB: EntrenaMatch-v0.1.55-pulso-diario-innovador-20260605.aab + EntrenaMatch-release.aab (7.58MB)
 
 **CRITICAL - DO THIS FIRST OR VOICE NOTES WILL 403:**
 The voice upload rules (chat-voice path) are now fixed and well documented in storage.rules.
@@ -36,6 +36,23 @@ Major visual + layout polish on the entire "send voice note" flow (preview, uplo
 - Versión lista para Play + GitHub + GH Pages.
 
 Las notas de voz ahora se sienten premium, motivadoras y 100% on-brand para la primera red social seria de fitness sincronizado. "Comparte tu energía con la red".
+
+**v0.1.55 — Pulso Diario de la Red (retention engine innovador y atractivo)**
+
+Sistema completo para que la gente abra la app TODOS los días con razones fuertes y significativas:
+
+• **Multi-Streaks**: Training Streak + Synergy Streak (con tu Red). Récords personales. Llamas visuales atractivas.
+• **Desafíos Diarios Personalizados** (3 tipos innovadores que refuerzan el core de la app):
+  - Ancla Personal (solo 20min)
+  - Activación de Bond (sync o voz con un socio de tu Red)
+  - Ripple de Red (acción que impacta el mapa/Pulso visible de toda tu red)
+• **Momentum** como moneda real de red: ganas por completar desafíos y acciones (voz, sync, live). 
+• **Gasta Momentum** con impacto real: "Amplificar Pulso" (tu actividad pesa más en el mapa de la Red 24h), "Ignitar socio" (ayuda de streak a un compañero).
+• Card ultra atractiva en Perfil con progreso, CTAs inteligentes, barra de Momentum, botones de gasto.
+• Hooks fuertes: toast + notif in-app al nuevo día. Integrado en toggle live, fin de sync, envío de voz (progreso automático).
+• Base para notificaciones inteligentes futuras (ya emite eventos daily_pulse).
+
+Esto hace que abrir EntrenaMatch sea un ritual diario que fortalece tu Red de EntrenaSync y tu Network Power.
 
 Sigue con todo. Sube este AAB. 
 
