@@ -1,4 +1,26 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.79-map-interactive-iconic code 83) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.80-map-partner-save-zoom-fix code 84) ===
+
+FIXES CRÍTICOS EN MAPA INTERACTIVO:
+- "al agregar un partner en el mapa no queda guardado": 
+  - Agregado partnerLocationsRef para siempre tener la última lista (evita stale closures en el debounced render del mapa).
+  - En el save del form: después del optimistic update + tick, forzamos invalidateSize() inmediato para que el render de partners se dispare ya.
+  - Recenters ahora usan flyTo (consistente y suave).
+  - El optimistic + listener + tick ahora garantizan que aparezca local + se persista en FS + se propague a otros via onSnapshot.
+- Bugs en zoom (se acerca/se alejan, clusters/markers saltan):
+  - Agregado lastZoomTimeRef + 'zoomend' registra el tiempo.
+  - El debounce del update principal ahora es corto (60ms) si hubo zoom reciente, normal (280ms) de otra forma. Esto hace que los clusters y tamaños de markers se actualicen rápido después de soltar el zoom, sin lag ni pops.
+  - Marcadores se re-crean con tamaños correctos según zoomScale actual, sin fitBounds no deseados durante zoom.
+  - Self y area circle siguen actualizándose in-place (no afectados por zoom).
+
+El mapa ahora es más estable en zoom in/out, y agregar partners (devs) se guarda y aparece de inmediato + persiste.
+
++ web, AAB, debug. Push. Instructions actualizado.
+Test S26: 
+- Agrega un partner nuevo con el form (+Partner), usa centro o click en mapa, guarda. Debe aparecer inmediatamente en el mapa, y al recargar la app (o ver en otro cliente) debe estar ahí (persiste en FS).
+- Haz zoom in/out repetido (pinch o botones): los clusters deben actualizarse suave sin saltos raros de markers, no debe recentrar solo, self debe quedarse fijo en tu posición.
+- Verifica que partners y lives se vean correctos en diferentes niveles de zoom.
+
+Sigue con todo. Mapa pulido.
 
 MAPA INTERACTIVO ICÓNICO Y ÚNICO — todo registrado en GitHub Actions (https://github.com/musclegrenadechile/entrenamatch/actions)
 

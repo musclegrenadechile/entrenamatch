@@ -1657,6 +1657,9 @@ function App() {
   // For attractive "map heartbeats" — when live activity increases we spawn subtle expanding rings so the GymPulse feels alive
   const prevLiveCountRef = useRef(0)
   const prevLiveIdsRef = useRef<Set<string>>(new Set()) // to detect brand new lives and spawn "someone just started" ripples on the map (makes it the strongest real-time social pulse)
+  const lastZoomTimeRef = useRef(0) // for zoom-aware shorter debounce to polish zoom in/out without markers jumping or clusters lagging
+  const partnerLocationsRef = useRef<any[]>([]) // latest partners always, to avoid stale closure in debounced map render (helps add-partner persistence)
+  useEffect(() => { partnerLocationsRef.current = partnerLocations }, [partnerLocations])
 
   // Load partner locations: seeds (for immediate demo) + real Firestore (so devs can add persistent partners via the in-app tool).
   // This makes the "devs put businesses on the map" easy and real-time visible to all users in the GymPulse (mapa en tiempo real).
@@ -5993,8 +5996,10 @@ function App() {
       }
 
       // Zoom listener so clusters appear/disappear nicely as you zoom in/out (makes the map attractive at all scales)
+      // Also record time so we can use shorter debounce after zoom for smooth cluster updates (no jumpy "se alejan/se acercan")
       if (mapInstanceRef.current && !(mapInstanceRef.current as any)._clusterZoomBound) {
         mapInstanceRef.current.on('zoomend', () => {
+          lastZoomTimeRef.current = Date.now()
           setMapForceTick(t => t + 1)
         })
         ;(mapInstanceRef.current as any)._clusterZoomBound = true
@@ -6007,8 +6012,10 @@ function App() {
     }
 
     // Debounced update for performance: rapid changes to liveTrainingNow (from polls/snapshots) were causing full DOM rebuilds + lag.
-    // Now batched every 300ms, and we still clean old on hide.
+    // Now batched every ~280ms (shorter after zoom for smooth no-jump cluster/marker updates).
     if (mapUpdateTimeoutRef.current) clearTimeout(mapUpdateTimeoutRef.current)
+    const isRecentZoom = (Date.now() - lastZoomTimeRef.current) < 2000
+    const updateDelay = isRecentZoom ? 60 : 280
     mapUpdateTimeoutRef.current = setTimeout(() => {
       if (!mapInstanceRef.current) return
 
@@ -6426,7 +6433,8 @@ function App() {
     // "ellos puedan ver": popup shows how many GymPartners are training nearby (radius ~3-5km).
     // Clicking "Ver actividad" can be extended later; for now it gives social proof to the partner location.
     if (showPartners) {
-      partnerLocations.forEach((p: any) => {
+      const partnersToRender = partnerLocationsRef.current.length > 0 ? partnerLocationsRef.current : partnerLocations
+      partnersToRender.forEach((p: any) => {
         try {
           if (!p.lat || !p.lng) return
           const logo = p.logoUrl
@@ -6880,7 +6888,7 @@ function App() {
       } catch (e) {}
     })
 
-    }, 300) // end debounce for map updates - prevents lag from frequent liveTrainingNow/ripples changes
+    }, updateDelay) // end debounce for map updates - shorter after zoom to prevent jumpy clusters/markers when zoom in/out
 
     // Cleanup for this effect run (e.g. when liveTrainingNow or location updates while map is open).
     // We clear markers but keep the map instance alive (cheap updates).
@@ -7908,10 +7916,16 @@ function App() {
                           setShowAddPartnerForm(false)
                           setEditingPartnerId(null)
                           setMapForceTick(t => t + 1)
-                          toast.success(editingPartnerId ? 'Partner actualizado' : 'Partner agregado', { description: 'Aparecerá en el mapa en tiempo real para todos los usuarios' })
-                          // recenter on the (possibly new) position
+                          // ensure map immediately reflects the new/updated partner (fixes "no queda guardado" visual)
                           setTimeout(() => {
-                            if (mapInstanceRef.current) mapInstanceRef.current.setView([lat, lng], 14)
+                            if (mapInstanceRef.current) {
+                              try { mapInstanceRef.current.invalidateSize() } catch {}
+                            }
+                          }, 30)
+                          toast.success(editingPartnerId ? 'Partner actualizado' : 'Partner agregado', { description: 'Aparecerá en el mapa en tiempo real para todos los usuarios' })
+                          // recenter with flyTo (consistent, smooth)
+                          setTimeout(() => {
+                            if (mapInstanceRef.current) mapInstanceRef.current.flyTo([lat, lng], 14, { duration: 0.6 })
                           }, 150)
                         }}
                         className="mt-3 w-full py-2 bg-[#FFD700] text-black font-extrabold rounded-xl active:bg-white active:scale-[0.985] transition flex items-center justify-center gap-2"
