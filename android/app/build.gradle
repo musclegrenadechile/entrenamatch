@@ -57,6 +57,12 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+
+    // Firebase Crashlytics (native crashes for Android APK/AAB).
+    // Using BOM for consistent Firebase versions.
+    // Also enables reporting from the WebView/JS layer via native bridge if wired.
+    implementation platform('com.google.firebase:firebase-bom:33.1.2')
+    implementation 'com.google.firebase:firebase-crashlytics'
 }
 
 apply from: 'capacitor.build.gradle'
@@ -76,6 +82,9 @@ if (servicesJSON.exists() && servicesJSON.length() > 0) {
 } else {
     logger.warn("google-services.json NOT FOUND or empty in android/app/. Push notifications (FCM) and some Google services will NOT work in the native APK/AAB. Place the file from Firebase Console (package com.entrenamatch.app) and rebuild.")
 }
+
+// Apply Crashlytics plugin (after google-services so it can use the config)
+apply plugin: 'com.google.firebase.crashlytics'
 
 // Google Play Publisher configuration (for automated uploads to closed beta)
 // See: https://github.com/Triple-T/gradle-play-publisher
