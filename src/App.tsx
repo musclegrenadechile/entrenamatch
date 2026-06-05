@@ -487,7 +487,6 @@ function App() {
       // Do NOT clear pendingVoice on error, so user can retry or cancel
     }
   }
-  }
 
   // Extend sendSessionMessage to support voice (update call sites later)
   // (existing function at ~4328, we'll patch it below)
