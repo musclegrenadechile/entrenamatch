@@ -3070,7 +3070,8 @@ function App() {
           const partner = liveTrainingNow.find((u: any) => u.id === syncPartnerId) || realProfiles.find((p: any) => p.id === syncPartnerId)
           if (partner && partner.lat && partner.lng) {
             const rippleId = 'ritual-' + Date.now()
-            const isLegendRipple = !!partner.isLegend || (syncBonds[partner.id] && ((syncBonds[partner.id].totalMin || 0) >= 30 || (syncBonds[partner.id].bondLevel || 0) >= 2))
+            const partnerBond = syncBonds[partner.id]
+            const isLegendRipple = !!partner.isLegend || (partnerBond && ((partnerBond.totalMin || 0) >= 30 || (partnerBond.bondLevel || 0) >= 2))
             const intensity = isLegendRipple ? 2.8 : (newVibe > 90 ? 2.2 : 1.6)
             setRitualRipples(prev => [...prev, { 
               id: rippleId, 
@@ -4937,7 +4938,7 @@ function App() {
       // Ritual ripples are intentionally short-lived (they time themselves out), but clear any that are still referenced
       // so we don't accumulate visual noise when map toggles rapidly.
     }
-  }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone, ritualRipples])
+  }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone, ritualRipples, echoPins])
 
   // Filtered deck (with distance support + blocking)
   // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
@@ -5376,7 +5377,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
-          <span className="text-white/90 text-[11px]">Real backend • v0.1.33-living-mythology</span>
+          <span className="text-white/90 text-[11px]">Real backend • v0.1.34-eco-fixes</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -5990,6 +5991,26 @@ function App() {
                 </div>
               </div>
             )}
+
+            {/* Living Echoes strip - makes the mythology visible and aspirational in the first tab the user sees */}
+            {(() => {
+              const { feedPosts } = feedComputation;
+              const recentEchoes = feedPosts.filter((p: any) => (p.text || '').includes('Fui testigo') || (p.text || '').includes('RITUAL LEGENDARIO')).slice(0, 3);
+              if (recentEchoes.length === 0) return null;
+              return (
+                <div className="mb-4 -mx-1">
+                  <div className="text-[8px] uppercase tracking-[1px] text-[#FFD700]/80 mb-1.5 px-2 font-bold flex items-center gap-1">⭐ ECOS DE LEYENDA — la mitología crece</div>
+                  <div className="flex gap-2 overflow-x-auto pb-2 px-1">
+                    {recentEchoes.map((e: any, idx: number) => (
+                      <div key={idx} onClick={() => setActiveTab('feed')} className="min-w-[140px] card p-2 text-[9px] border border-[#FFD700]/40 bg-[#1a160f] cursor-pointer active:scale-95">
+                        <div className="line-clamp-3 text-[#f5e8c7]">{(e.text || '').substring(0, 120)}...</div>
+                        <div className="text-[7px] text-[#FFD700]/70 mt-1">Toca para ver en el feed</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {(() => {
               // Use the top-level feedComputation (hook always called at top of component)
@@ -8318,7 +8339,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.33-living-mythology • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.34-eco-fixes • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8545,7 +8566,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.33-living-mythology • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.34-eco-fixes • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>

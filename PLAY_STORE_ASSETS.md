@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 38 / 0.1.33-living-mythology. **LIVING MYTHOLOGY / ECHOES**: Los momentos épicos ahora se convierten en Echoes reclamables que viven en el feed global y como pines en el mapa. La mitología crece con cada ripple. 
+**Current version for this upload**: versionCode 39 / 0.1.34-eco-fixes. **LIVING MYTHOLOGY + BUG FIXES**: Echoes system con fixes de reactividad en mapa (deps), strip de visibilidad en feed, y mejoras en detección de legends para ripples. 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -149,11 +149,19 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 
 ## What's new (for this Pre-Alpha release, short & punchy)
 
-**READY FOR PLAY CLOSED UPLOAD (v0.1.33-living-mythology code 38)**
-- Fresh signed AAB: `EntrenaMatch-v0.1.33-living-mythology-code38-20260604-2015.aab` (7.2 MB) + `EntrenaMatch-release.aab`
-- Fresh debug APK for device: `EntrenaMatch-debug-living-mythology-0.1.33-20260604-2015.apk` (10 MB) + `EntrenaMatch-debug.apk`
+**READY FOR PLAY CLOSED UPLOAD (v0.1.34-eco-fixes code 39)**
+- Fresh signed AAB: `EntrenaMatch-v0.1.34-eco-fixes-code39-20260604-2020.aab` (7.2 MB) + `EntrenaMatch-release.aab`
+- Fresh debug APK for device: `EntrenaMatch-debug-eco-fixes-0.1.34-20260604-2019.apk` (10 MB) + `EntrenaMatch-debug.apk`
 - Web: pushed to main → GH Pages will have the new bundle (hard refresh after Actions finish).
 - Copy the short "What's new" below directly into Play Console when uploading the AAB to closed track.
+
+**v0.1.34-eco-fixes (code 39) — LIVING MYTHOLOGY + FIXES DE ECOES**
+• Echoes system más robusto: 
+  - Fix de reactividad en mapa: echoPins ahora en deps del useEffect para que los pines aparezcan/desaparezcan correctamente cuando cambian.
+  - Strip "⭐ ECOS DE LEYENDA" en el feed tab para visibilidad inmediata de la mitología (usa los echo posts con prioridad).
+  - Mejora en detección isLegendRipple usando syncBonds directamente para fallback en realProfiles.
+• Echo posts y pins mantienen el peso visual y de comunidad.
+• Esto asegura que el sistema de mitología viva funcione de forma confiable en todos los flujos (mapa, feed, ripples de legends).
 
 **v0.1.33-living-mythology (code 38) — LIVING MYTHOLOGY: ECHOES Y PINS DE LEYENDA**
 • Cuando alguien reclama un Echo desde el Witness modal o desde un pin en el mapa, se crea un post especial "👁️ Fui testigo de un RITUAL LEGENDARIO" que vive en el feed global con estilo dorado y "Echo" badge.
@@ -231,8 +239,8 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • AAB + debug APK frescos listos (ver nombres abajo). Build limpia + pipeline completo.
 • Todo el pipeline: web GH Pages, Android AAB/debug, docs actualizados. Sigue con todo ritmo.
 
-**Short "What's new" (copy-paste to Play Console for v0.1.33 code 38):**
-Living Mythology: Los momentos épicos ahora se convierten en Echoes permanentes que cualquiera puede reclamar. Echo posts dorados en el feed global + Echo Pins en el mapa que se pueden tocar para presenciar y reclamar el eco. La mitología del movimiento sincronizado crece con cada ripple. "Cada ripple se convierte en un eco que la comunidad puede vivir." (code 38)
+**Short "What's new" (copy-paste to Play Console for v0.1.34 code 39):**
+Living Mythology + fixes: Echoes reclamables desde witness o Echo Pins (persistentes en mapa para legends). Posts dorados en feed con prioridad. Fixes: reactividad de echoPins (agregado a useEffect deps), strip de ecos en feed para visibilidad, mejor detección isLegend para ripples de bonds. La mitología ahora es confiable y visible. (code 39)
 
 **Artifacts for this version:**
 - AAB (Play): EntrenaMatch-v0.1.28-recuperacion-cuenta-code33-20260604-1958.aab (y EntrenaMatch-release.aab)

@@ -640,3 +640,10 @@ This is the build to upload to Closed track. Full "sigue con todo" — more uniq
 - Los Echo posts tienen estilo especial (borde y barra dorada) y suben con prioridad en el feed.
 - Esto hace que la app tenga **cultura viva**: los rituales no se pierden, se convierten en historia que inspira a otros a crear sus propios momentos.
 - Prueba: Genera un alto vibe legendario en Arena. Ve al mapa con otra cuenta. Toca el pin o la onda → Reclamar Echo. Ve cómo aparece en el feed global con el estilo dorado. ¡La mitología crece!.
+
+**NUEVO - FIXES EN ECOES (v0.1.34-eco-fixes, code 39)**:
+- Fix crítico de reactividad: echoPins agregado a las deps del useEffect del mapa, para que los pines aparezcan, desaparezcan y se actualicen correctamente (antes podían no renderizarse al cambiar el estado).
+- Agregado strip '⭐ ECOS DE LEYENDA' en el tab Feed para que la mitología sea inmediatamente visible y aspiracional (filtra los echo posts).
+- Mejora en isLegendRipple: usa directamente syncBonds para el cálculo incluso si el partner viene de realProfiles (mejor soporte para datos reales).
+- Esto hace que el sistema de Echoes sea robusto en todos los escenarios (demo, real, toggles de mapa, etc.).
+- Prueba: Genera ripple legendario, ve el pin en mapa con otra cuenta, reclámalo, verifica que aparezca en feed y que el pin se maneje bien al filtrar/actualizar mapa.
