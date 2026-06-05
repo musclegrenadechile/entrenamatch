@@ -1,4 +1,28 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.78-map-iconic-unique code 82) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.79-map-interactive-iconic code 83) ===
+
+MAPA INTERACTIVO ICÓNICO Y ÚNICO — todo registrado en GitHub Actions (https://github.com/musclegrenadechile/entrenamatch/actions)
+
+Cada push a main dispara automáticamente:
+- deploy.yml → build web + deploy a GH Pages (el mapa interactivo se ve en vivo en https://musclegrenadechile.github.io/entrenamatch/)
+- build-android-apk.yml → build debug APK + release pre-alpha (últimas interacciones del mapa incluidas)
+- firebase-deploy.yml → deploy hosting + reglas Firestore
+
+Todo el trabajo en el mapa interactivo queda registrado en los logs de Actions (builds, artifacts, deploys).
+
+Mejoras interactivas + visuales icónicas en esta iteración:
+- Header flotante "EL GYMPULSE GLOBAL" ahora es clickable: toca el ⚡strength y vuela directo al "hottest spot" (usuario con más joins + nivel + syncs). Interacción premium y útil.
+- Popups icónicos y más interactivos: muestran badges de gadgets (✨🌀👑), bond strength, botones estilizados "Unirme al Pulso" y "Ver perfil completo", copy más enfocado en el Pulso. Se sienten parte del diseño único del mapa.
+- Reacciones en el mapa: al clickear un live user cerca de un partner hub, automáticamente resalta el hub con un ring temporal + flyTo. El grafo social se siente vivo y conectado.
+- Mejora en clusters: al volar dentro de un cluster, spawnea un ripple de "energy node" para celebrar el descubrimiento.
+- CSS único: popups con glass + bordes Dunkin, header hover/active states, más animaciones signature.
+- Todo se suma a lo anterior (layered auras, ripples con firma, tethers icónicos, self como estrella, hum global, etc.).
+
+El mapa interactivo sigue siendo el punto más fuerte: visualmente icónico (nadie tiene esto), altamente interactivo (clicks tienen consecuencias visuales y útiles), y todo queda registrado en Actions en cada push.
+
++ web build (dist para Pages), AAB + debug APK. Push (dispara Actions). Instructions actualizado.
+Test S26: abre mapa, toca el header PULSO para volar al hot spot, clickea lives cerca de hubs (ver highlight), mira popups con gadgets y acciones. Zoom clusters, etc. Debe sentirse único e interactivo.
+
+Sigue con todo. Mapa interactivo icónico — registrado en Actions.
 
 MAPA VISUAL ICÓNICO Y ÚNICO — "El GymPulse se reconoce al instante como el corazón de EntrenaMatch".
 

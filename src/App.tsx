@@ -6300,6 +6300,25 @@ function App() {
             try { triggerHaptic('medium') } catch {}
             if (mapInstanceRef.current) {
               mapInstanceRef.current.flyTo([user.lat, user.lng], Math.min((mapInstanceRef.current.getZoom() || 11) + 4, 16), { duration: 0.85, easeLinearity: 0.25 })
+              // Interactive: after flying into cluster, spawn a small celebratory ripple to feel the "energy node"
+              setTimeout(() => {
+                if (mapInstanceRef.current) {
+                  try {
+                    const clusterRipple = L.circle([user.lat, user.lng], {
+                      radius: 280,
+                      color: '#FFD700',
+                      weight: 1.8,
+                      fillColor: '#FFD700',
+                      fillOpacity: 0.05,
+                      opacity: 0.5,
+                      className: 'temp-click-ring iconic-ripple'
+                    }).addTo(mapInstanceRef.current);
+                    setTimeout(() => {
+                      if (mapInstanceRef.current) { try { mapInstanceRef.current.removeLayer(clusterRipple); } catch {} }
+                    }, 1100);
+                  } catch {}
+                }
+              }, 900);
             }
           })
         } else {
@@ -6307,15 +6326,23 @@ function App() {
         // Note: click on marker opens the popup (by Leaflet default since bindPopup).
         // Popup has "Ver perfil" button for profile modal. This avoids event conflict with popup.
 
+        // Iconic interactive popup — richer, shows gadgets, bond weight, quick actions. Makes the map feel like the social command center.
+        const userLvl = user.visibleLevel || 1;
+        const uGadgets = getUnlockedGadgets(userLvl).map(g => g.icon).join(' ');
+        const bondStr = user.bondInfo ? ` • Bond LV${user.bondInfo.bondLevel || 1}` : '';
         const popupContent = `
-          <div style="min-width:185px; font-size:12.5px; line-height:1.25">
-            <strong style="font-size:14px; display:block; margin-bottom:1px; color:#fff">${user.name}</strong>
-            <span style="color:#22c55e; font-weight:700">🟢 Entrenando ahora</span> • ~${user.seVaEnMin || '?'} min en el GymPulse<br/>
+          <div style="min-width:195px; font-size:12.5px; line-height:1.25; background:#0D0D10; border-radius:8px; padding:2px;">
+            <div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;">
+              <strong style="font-size:14px; color:#fff">${user.name}</strong>
+              ${uGadgets ? `<span style="font-size:11px;">${uGadgets}</span>` : ''}
+            </div>
+            <span style="color:#22c55e; font-weight:700">🟢 Entrenando ahora</span> • ~${user.seVaEnMin || '?'} min en el GymPulse${bondStr}<br/>
             ${userLocation ? `<span style="color:#FF671F; font-weight:700">${user.distance.toFixed(1)} km de ti</span><br/>` : ''}
             <div style="display:flex; gap:6px; margin-top:7px">
-              <button id="join-${user.id}" style="flex:1; padding:7px 8px; background:#22c55e; color:#000; border:none; border-radius:9px; font-size:11px; font-weight:800; box-shadow:0 1px 3px rgba(0,0,0,0.3)">🔥 Unirme a entrenar</button>
-              <button id="profile-${user.id}" style="flex:1; padding:7px 8px; background:#1f1f23; color:#ddd; border:1px solid #444; border-radius:9px; font-size:11px; font-weight:600">Ver perfil</button>
+              <button id="join-${user.id}" style="flex:1; padding:7px 8px; background:#22c55e; color:#000; border:none; border-radius:9px; font-size:11px; font-weight:800; box-shadow:0 1px 3px rgba(0,0,0,0.3)">🔥 Unirme al Pulso</button>
+              <button id="profile-${user.id}" style="flex:1; padding:7px 8px; background:#1f1f23; color:#ddd; border:1px solid #444; border-radius:9px; font-size:11px; font-weight:600">Ver perfil completo</button>
             </div>
+            <div style="font-size:8px; color:#666; margin-top:3px; text-align:center;">Click fuera o toca para centrar</div>
           </div>
         `
         marker.bindPopup(popupContent)
@@ -6338,6 +6365,32 @@ function App() {
           setTimeout(() => {
             if (mapInstanceRef.current) { try { mapInstanceRef.current.removeLayer(ring) } catch {} }
           }, 820)
+
+          // Interactive map reaction: if this live user is near a partner hub, temporarily highlight the hub (makes the social graph feel connected)
+          if (showPartners && partnerLocations.length > 0) {
+            const nearPartner = partnerLocations.find((p: any) => {
+              if (!p.lat || !p.lng) return false;
+              const d = Math.sqrt(Math.pow((user.lat - p.lat),2) + Math.pow((user.lng - p.lng),2)) * 111;
+              return d < 4; // ~4km
+            });
+            if (nearPartner && mapInstanceRef.current) {
+              try {
+                const hubRing = L.circle([nearPartner.lat, nearPartner.lng], {
+                  radius: 420,
+                  color: '#FFD700',
+                  weight: 2.5,
+                  fillColor: '#FFD700',
+                  fillOpacity: 0.06,
+                  opacity: 0.65,
+                  className: 'temp-click-ring iconic-ripple'
+                }).addTo(mapInstanceRef.current);
+                setTimeout(() => {
+                  if (mapInstanceRef.current) { try { mapInstanceRef.current.removeLayer(hubRing); } catch {} }
+                }, 1400);
+                mapInstanceRef.current.flyTo([nearPartner.lat, nearPartner.lng], Math.max(mapInstanceRef.current.getZoom() || 13, 14), { duration: 0.6 });
+              } catch {}
+            }
+          }
         })
 
         marker.on('popupopen', () => {
@@ -7468,7 +7521,23 @@ function App() {
                   transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {/* Premium floating "El Pulso está vivo" header — makes the map feel like the beating heart of the whole social experience */}
-                  <div className="map-floating-pulse absolute top-2 left-2 z-40 px-3 py-1 rounded-2xl text-[10px] font-semibold text-[#22c55e] flex items-center gap-2 shadow-lg border border-[#22c55e]/20">
+                  <div 
+                    className="map-floating-pulse absolute top-2 left-2 z-40 px-3 py-1 rounded-2xl text-[10px] font-semibold text-[#22c55e] flex items-center gap-2 shadow-lg border border-[#22c55e]/20 cursor-pointer active:scale-[0.985] transition"
+                    onClick={() => {
+                      try { triggerHaptic('light') } catch {}
+                      if (!mapInstanceRef.current) return;
+                      // Interactive header: click the pulse strength to fly to the "hottest" spot on the GymPulse (highest activity user)
+                      const active = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow);
+                      if (active.length === 0) return;
+                      const hottest = active.reduce((best, u) => {
+                        const score = (u.joinCount || 0) + ((u.visibleLevel || 1) * 0.5) + (u.trainingSyncWith ? 5 : 0);
+                        const bestScore = (best.joinCount || 0) + ((best.visibleLevel || 1) * 0.5) + (best.trainingSyncWith ? 5 : 0);
+                        return score > bestScore ? u : best;
+                      }, active[0]);
+                      mapInstanceRef.current.flyTo([hottest.lat, hottest.lng], Math.max(mapInstanceRef.current.getZoom() || 12, 14), { duration: 0.9, easeLinearity: 0.25 });
+                    }}
+                    title="Click to fly to the hottest activity spot on the GymPulse"
+                  >
                     <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
                     EL GYMPULSE GLOBAL
                     <span className="text-[#22c55e]/70 font-mono text-[9px] tabular-nums">• {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow).length} EN VIVO</span>

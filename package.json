@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.78-map-iconic-unique",
+  "version": "0.1.79-map-interactive-iconic",
   "type": "module",
   "scripts": {
     "dev": "vite",

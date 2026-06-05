@@ -1771,3 +1771,24 @@ input[type="range"]::-moz-range-thumb {
   0%, 100% { opacity: 0.6; }
   50% { opacity: 1; }
 }
+
+/* Iconic interactive popups and header — premium glass, clear actions, memorable on the live map. */
+.map-floating-pulse:hover {
+  border-color: rgba(255,215,0,0.35);
+  box-shadow: 0 6px 22px -2px rgba(0,0,0,0.65);
+}
+.map-floating-pulse:active {
+  transform: scale(0.985);
+}
+
+/* Make Leaflet popups match the iconic style of the app (glass + Dunkin accents) */
+.leaflet-popup-content-wrapper {
+  background: #0D0D10 !important;
+  border: 1px solid #FF671F33 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 8px 25px -5px rgba(0,0,0,0.7) !important;
+}
+.leaflet-popup-tip {
+  background: #0D0D10 !important;
+  border: 1px solid #FF671F33 !important;
+}
