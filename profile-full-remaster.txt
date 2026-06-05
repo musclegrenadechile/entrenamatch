@@ -1,0 +1,19 @@
+remaster(profile creation system) to FULL premium, attractive & unique
+
+- OnboardingFlow completely remastered:
+  - Epic ritual header with motion, tracking, " LA PRIMERA RED DEL RITUAL FITNESS\.
+ - Paso 0 (Presencia): Rich gallery creator (up to 6, principal badge, make principal, camera + file attractive cards, mantra/bio with suggestions as ritual cards).
+ - Paso 1 (Esencia): Beautiful grid cards with emojis for training types + descriptions, purpose as nice selectable cards with \TU FUEGO\.
+ - Paso 2 (Pulso): Full epic aha with 01-04 visual cards, unique mock UI of live banner + tether, bigger dramatic CTA, visual \ASÍ SE VE EN EL MUNDO REAL\.
+ - Paso 3 (Votos): Solemn beautiful vow cards with descriptions, dramatic final panel + CTA.
+ - Progress as visual ritual path with labels. All copy unique/epic/ritual language. Preview remastered with NP badge, mock pulso, richer overlays.
+
+- Profile tab (mi perfil) remastered as part of creation/editing system:
+ - Hero now full epic \MI RITUAL\ with rich overlays, unique \Tu Poder\ mini-dashboard (NP + Bonds + Fotos), prominent \REMASTERIZAR MI RITUAL\ CTA.
+ - Galería de Leyendas with unique title, capital framing.
+ - \Tu Poder en la Red\ section already premium.
+ - Motivator card previously enhanced.
+
+- Consistent with prior: Storage uploads for photos, multi-photo, haptics, fast 4-step flow, ritual theme throughout.
+
+Makes profile creation feel premium, unique and \nunca visto\ for the first fitness social with real bonds/pulse/sync rituals. tsc clean. Rebuild needed.

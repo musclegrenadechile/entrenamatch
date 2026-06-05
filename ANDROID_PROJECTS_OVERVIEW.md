@@ -1,7 +1,7 @@
 ﻿# Android Projects in this workspace
 
 **Active / Source of truth for Play Store (com.entrenamatch.app):**
-- `fitvina/` (this directory)
+- `entrenamatch/` (this directory; a.k.a. the `fitvina/` checkout in older sessions — legacy folder name from the project rename; rename your local dir to `entrenamatch` so it shows up under the correct name in Grok "projects worked on", session lists, etc.)
   - React 18 + TypeScript + Vite + Capacitor
   - All current features: "Entrenando Ahora" live (radar, streaks, join, progress, glows, banner, modal), muro (posts, likes, comments, pinned, feed tab), Play Integrity, push notifications (prefs, explicit activate), real Firebase, etc.
   - Publish automation (publish-play.ps1/.bat + gradle triplet.play)
@@ -32,7 +32,7 @@ Short version: The AABs built so far from `fitvina` did not have `android/app/go
 After placing the json, the improved `android/app/build.gradle` will print a clear success message during build.
 
 **Other notes:**
-- Always build the Android release AAB from the `fitvina` directory only.
+- Always build the Android release AAB from the project directory (named `entrenamatch/` to match the git repo and app identity; avoid leaving it as the legacy `fitvina/` name).
 - Web / GH Pages is also from here (`npm run build`).
 - If you want to completely delete the _legacy after confirming, we can.
 

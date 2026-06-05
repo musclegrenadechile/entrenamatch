@@ -127,6 +127,13 @@ service cloud.firestore {
       allow create, update, delete: if isAuthenticated();
     }
 
+    // EntrenaSync realtime sessions (shared actions, state between bonded pair for the Arena)
+    // Pre-alpha relaxed: any auth can read/write the doc (the id is only known to the two participants via their profiles).
+    // Client code controls who can start/join.
+    match /syncSessions/{sessionId} {
+      allow read, write: if isAuthenticated();
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

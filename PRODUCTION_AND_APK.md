@@ -106,7 +106,7 @@ Mientras esté solo en Internal o Closed testing, **la app nunca entra en produc
 ### Cómo hacerlo con lo que ya tenemos:
 
 1. Usa el AAB firmado que generé:
-   - `C:\Users\muscl\fitvina\EntrenaMatch-release.aab`
+   - `C:\Users\muscl\entrenamatch\EntrenaMatch-release.aab`
 
 2. En Play Console:
    - Crea la app.
@@ -162,7 +162,7 @@ Using the terminal tools directly on your PC, a complete build was executed:
 - **BUILD SUCCESSFUL in ~1 minute**
 
 The APK is at:
-**C:\Users\muscl\fitvina\EntrenaMatch-debug.apk** (≈10 MB)
+**C:\Users\muscl\entrenamatch\EntrenaMatch-debug.apk** (≈10 MB)
 
 It includes the native Camera plugin. Install it on your phone to test the real native experience.
 
@@ -177,12 +177,12 @@ It includes the native Camera plugin. Install it on your phone to test the real 
 
 **Critical secrets (save them NOW in a password manager):**
 
-- Keystore file: `C:\Users\muscl\fitvina\android\release-key.keystore`
+- Keystore file: `C:\Users\muscl\entrenamatch\android\release-key.keystore`
 - Password (store + key): `EntrenaMatch2026!Strong`
 - Alias: `entrenamatch-key`
 
 **The signed AAB is ready here:**
-- Easy access: `C:\Users\muscl\fitvina\EntrenaMatch-release.aab` (6 MB)
+- Easy access: `C:\Users\muscl\entrenamatch\EntrenaMatch-release.aab` (6 MB)
 - Original: `android\app\build\outputs\bundle\release\app-release.aab`
 
 **Steps for you to upload it hidden to Play Store:**
@@ -277,7 +277,7 @@ A GitHub Actions workflow (`.github/workflows/build-android-apk.yml`) **has been
 I have already generated and copied the APK for you on your machine using the terminal tools.
 
 The file is here:
-**C:\Users\muscl\fitvina\EntrenaMatch-debug.apk** (4.4 MB)
+**C:\Users\muscl\entrenamatch\EntrenaMatch-debug.apk** (4.4 MB)
 
 You can copy it to your phone or double-click to install (enable unknown sources). This is a fully working debug build of the EntrenaMatch Android app!
 

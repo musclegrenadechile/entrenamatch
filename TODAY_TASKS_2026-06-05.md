@@ -104,6 +104,10 @@ git push
 - Podemos continuar con search/replace + guías de comandos.
 - Si sobra tiempo: más modularización (feed/chat), Crashlytics, o "What's new" para Play.
 
+**Incidente Firestore 'mutations' / b815 en terminate (fijado)**:
+Aparecían montones de "INTERNAL UNHANDLED ERROR" + "Unexpected state (ID: b815)" + "Cannot read properties of undefined (reading 'mutations')" justo al dar al botón rojo de terminar live o terminar un EntrenaSync.
+Ya agregamos resets más agresivos y mejor timed + clear de estado local de sync antes de los writes críticos. El path de "terminar entrenamiento + desactivar live" ahora debería ser mucho más estable (menos spam en consola y menos crashes internos del SDK).
+
 **Comandos útiles rápidos**:
 ```powershell
 # Build web
