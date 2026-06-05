@@ -10767,10 +10767,13 @@ function App() {
                 {muroComposerPhoto && !muroPhotoUploading && (
                   <div className="mb-3">
                     <div className="text-[9px] uppercase tracking-[1px] text-[#FFD700]/80 mb-1 flex items-center gap-1">📸 MOMENTO ICÓNICO — esto quedará en tu muro para siempre</div>
-                    <div className="relative inline-block group w-full muro-composer-iconic-preview" onClick={() => setFeedPhotoModal({url: muroComposerPhoto})}>
-                      <img src={muroComposerPhoto} className="w-full max-h-[220px] object-cover rounded-3xl border-2 border-[#FF671F]/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)] cursor-zoom-in group-hover:scale-[1.01] group-hover:brightness-110 transition-all duration-300" />
-                      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60 rounded-3xl" />
-                      <div className="absolute bottom-3 left-3 text-[10px] bg-black/70 text-[#f5e8c7] px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-white/10">Toca para ver en grande</div>
+                    <div className="muro-post-hero-media cursor-pointer group" onClick={() => setFeedPhotoModal({url: muroComposerPhoto})}>
+                      <img src={muroComposerPhoto} className="w-full object-cover" />
+                      <div className="muro-post-hero-overlay" />
+                      <div className="muro-post-hero-label">TU MOMENTO ICÓNICO</div>
+                      <div className="muro-post-hero-zoom group-hover:bg-black/80">
+                        <span>🔍</span> <span className="font-semibold">ampliar</span>
+                      </div>
                       <button 
                         onClick={(e) => { e.stopPropagation(); setMuroComposerPhoto(null); }} 
                         className="absolute -top-2 -right-2 bg-[#1C1C20] hover:bg-red-500 text-white text-xs w-7 h-7 rounded-full flex items-center justify-center border border-[#2F2F35] transition-colors z-10 shadow"
@@ -10778,12 +10781,12 @@ function App() {
                       >
                         ✕
                       </button>
-                      <div className="absolute inset-0 rounded-3xl ring-1 ring-inset ring-[#FF671F]/20" />
                     </div>
                   </div>
                 )}
                 <div className="flex gap-2">
-                  <button 
+                  <motion.button 
+                    whileTap={{ scale: 0.985 }}
                     onClick={() => {
                       if (typeof window !== 'undefined' && (window as any).Capacitor && CapacitorCamera) {
                         // Native camera + immediate Storage upload with progress for pro UX
@@ -10834,7 +10837,7 @@ function App() {
                     className="flex-1 py-2 text-sm border border-[#2F2F35] rounded-2xl active:bg-[#25252A] flex items-center justify-center gap-1 hover:border-[#FF671F]/40 transition-colors"
                   >
                     <Camera size={15} /> {muroComposerPhoto ? 'Cambiar foto icónica' : 'Capturar momento icónico (cámara primero)'}
-                  </button>
+                  </motion.button>
                   {/* Hidden file input for web - makes photo upload feel native and attractive */}
                   <input
                     ref={muroPhotoInputRef}
@@ -10843,7 +10846,8 @@ function App() {
                     onChange={handleMuroPhotoFile}
                     className="hidden"
                   />
-                  <button 
+                  <motion.button 
+                    whileTap={{ scale: 0.985 }}
                     onClick={async () => {
                       if (!muroComposerText.trim()) return
                       setMuroPublishing(true)
@@ -10860,7 +10864,7 @@ function App() {
                     className="flex-1 btn-primary text-sm py-2 disabled:opacity-50 flex items-center justify-center gap-2"
                   >
                     {muroPublishing ? 'Publicando...' : 'Publicar'}
-                  </button>
+                  </motion.button>
                 </div>
                 <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Se vuelve parte de tu red de rendimiento en EntrenaMatch • visible en tu perfil y para la comunidad</div>
               </div>
@@ -10994,16 +10998,16 @@ function App() {
                         )}
                         {post.photo && (
                           <div 
-                            className={`relative mb-4 -mx-1 rounded-3xl overflow-hidden cursor-pointer group shadow-inner muro-post-photo ${ (post.text || '').includes('icónico') || (post.text || '').includes('Leyenda') || (post.text || '').includes('pico') ? 'ring-2 ring-[#FFD700]/60' : 'ring-1 ring-inset ring-[#FF671F]/10' }`}
+                            className="muro-post-hero-media cursor-pointer group"
                             onClick={() => setFeedPhotoModal({ url: post.photo, postId: post.id })}
                           >
-                            <img src={post.photo} className="w-full max-h-[300px] object-cover transition-all duration-500 group-hover:scale-[1.015] group-hover:brightness-110" />
-                            <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/10 to-black/70 rounded-3xl" />
-                            <div className="absolute bottom-3 right-3 text-[9px] bg-black/80 text-[#f5e8c7] px-2.5 py-1 rounded-2xl flex items-center gap-1 border border-white/10 backdrop-blur-sm">
-                              <span>📸</span> <span className="font-medium tracking-tight">Ver momento completo</span>
+                            <img src={post.photo} className="w-full object-cover" />
+                            <div className="muro-post-hero-overlay" />
+                            <div className="muro-post-hero-label">MOMENTO ICÓNICO DE SYNC</div>
+                            <div className="muro-post-hero-zoom group-hover:bg-black/80">
+                              <span>🔍</span> <span className="font-semibold">ampliar</span>
                             </div>
-                            <div className="absolute top-3 left-3 text-[8px] px-1.5 py-px rounded bg-black/70 text-[#FFD700] border border-[#FFD700]/30 font-bold tracking-[1px]">MOMENTO CAPTURADO</div>
-                            {post.pinned && <div className="absolute top-3 right-3 text-[10px] bg-[#FF671F] text-black px-2 py-0.5 rounded-full font-bold tracking-wider">DESTACADA</div>}
+                            {post.pinned && <div className="absolute top-3 right-3 text-[10px] bg-[#FF671F] text-black px-2 py-0.5 rounded-full font-bold tracking-wider z-10">📌 DESTACADA</div>}
                           </div>
                         )}
                         <div className="flex items-center justify-between pt-2 border-t border-[#2F2F35]">
@@ -11039,14 +11043,30 @@ function App() {
                             const count = postReactors.length || (feedReactions[post.id]?.[emo] || 0);
                             const active = postReactors.includes(effectiveUserId) || ((feedReactions[post.id]?.[emo] || 0) > 0);
                             return (
-                              <button
+                              <motion.button
                                 key={emo}
+                                whileTap={{ scale: 0.9 }}
                                 onClick={() => { boostReaction(post.id, emo, effectiveUserId); triggerHaptic('light'); }}
-                                className={`muro-reaction px-2.5 py-1 rounded-full border flex items-center gap-1 transition-all active:scale-90 ${active ? 'bg-[#FF671F]/10 border-[#FF671F] scale-105' : 'bg-[#1C1C20] border-[#2F2F35] hover:border-[#FF671F]/40'}`}
+                                className={`muro-reaction px-2.5 py-1 rounded-full border flex items-center gap-1 transition-all ${active ? 'bg-[#FF671F]/10 border-[#FF671F] scale-105' : 'bg-[#1C1C20] border-[#2F2F35] hover:border-[#FF671F]/40'}`}
                               >
-                                <span className="text-base">{emo}</span>
-                                {count > 0 && <span className="count text-[#FF671F] font-bold tabular-nums text-xs">{count}</span>}
-                              </button>
+                                <motion.span
+                                  animate={{ scale: active ? [1, 1.3, 1] : 1 }}
+                                  transition={{ duration: 0.25 }}
+                                  className="text-base"
+                                >
+                                  {emo}
+                                </motion.span>
+                                {count > 0 && (
+                                  <motion.span 
+                                    key={count} 
+                                    initial={{ scale: 0.6, y: 3 }} 
+                                    animate={{ scale: 1, y: 0 }} 
+                                    className="count text-[#FF671F] font-bold tabular-nums text-xs"
+                                  >
+                                    {count}
+                                  </motion.span>
+                                )}
+                              </motion.button>
                             );
                           })}
                         </div>
