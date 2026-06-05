@@ -369,7 +369,7 @@ function App() {
       mediaRecorder.onstop = () => {
         const blob = new Blob(audioChunksRef.current, { type: 'audio/webm' })
         const url = URL.createObjectURL(blob)
-        const duration = recordingTime
+        const duration = Math.max(1, Math.floor((Date.now() - recordingStartTimeRef.current) / 1000))
         setPendingVoice({ blob, duration, url })
         // cleanup stream
         stream.getTracks().forEach(track => track.stop())
@@ -381,20 +381,30 @@ function App() {
         }
         setIsRecordingVoice(false)
         setRecordingTime(0)
+        currentRecordingTimeRef.current = 0
+        recordingStartTimeRef.current = 0
       }
 
       mediaRecorder.start()
       setIsRecordingVoice(true)
       setRecordingTime(0)
+      currentRecordingTimeRef.current = 0
+      recordingStartTimeRef.current = Date.now()
       setPendingVoice(null)
 
       // timer
       recordingTimerRef.current = setInterval(() => {
         setRecordingTime(prev => {
           const next = prev + 1
+          currentRecordingTimeRef.current = next
           if (next >= 60) {
             // auto stop at 60s
-            stopVoiceRecording()
+            if (mediaRecorderRef.current) mediaRecorderRef.current.stop()
+            if (recordingTimerRef.current) {
+              clearInterval(recordingTimerRef.current)
+              recordingTimerRef.current = null
+            }
+            // onstop will set pending with the ref value and reset time
             return 60
           }
           return next
@@ -416,6 +426,7 @@ function App() {
       clearInterval(recordingTimerRef.current)
       recordingTimerRef.current = null
     }
+    // reset happens in onstop
   }
 
   const cancelVoiceRecording = () => {
@@ -428,6 +439,8 @@ function App() {
     }
     setIsRecordingVoice(false)
     setRecordingTime(0)
+    currentRecordingTimeRef.current = 0
+    recordingStartTimeRef.current = 0
     if (voicePreviewUrlRef.current) {
       URL.revokeObjectURL(voicePreviewUrlRef.current)
       voicePreviewUrlRef.current = null
@@ -739,6 +752,9 @@ function App() {
   const audioChunksRef = useRef<Blob[]>([])
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const voicePreviewUrlRef = useRef<string | null>(null)
+  const currentRecordingTimeRef = useRef(0)
+  const recordingStartTimeRef = useRef(0)
+  const currentRecordingTimeRef = useRef(0)
 
   // Squads feature (fixed small training groups)
   const [squads, setSquads] = useState<Squad[]>([])
@@ -2498,6 +2514,8 @@ function App() {
                 text: d.text || '',
                 timestamp: d.timestamp || Date.now(),
                 photo: d.photo,
+                voiceUrl: d.voiceUrl,
+                voiceDuration: d.voiceDuration,
                 reactions: d.reactions || {},
               });
             });
@@ -7480,14 +7498,18 @@ function App() {
                           {time && <div className="text-[9px] text-[#6B7280] mb-0.5 px-1">{time}</div>}
                           <div className={`px-3.5 py-2 rounded-3xl text-[14px] leading-snug break-words overflow-hidden ${isMe ? 'bg-[#FF671F] text-black rounded-br-md' : 'bg-[#25252A] text-white rounded-bl-md'}`}>
                             {m.voiceUrl ? (
-                              <div className="flex items-center gap-2 min-w-[160px]">
-                                <audio 
-                                  src={m.voiceUrl} 
-                                  controls 
-                                  className="h-7 flex-1" 
-                                  style={{ maxWidth: '160px' }}
-                                />
-                                <span className="text-[10px] opacity-70 whitespace-nowrap">{m.voiceDuration || '?'}s</span>
+                              <div className="flex items-center gap-2 min-w-[180px]">
+                                <button 
+                                  onClick={() => {
+                                    const audio = new Audio(m.voiceUrl)
+                                    audio.play().catch((e) => console.warn('audio play error', e))
+                                  }}
+                                  className="flex-shrink-0 w-8 h-8 rounded-full bg-black/20 flex items-center justify-center active:bg-black/40 text-lg"
+                                  title="Reproducir nota de voz"
+                                >
+                                  ▶️
+                                </button>
+                                <span className="text-[10px] opacity-70 whitespace-nowrap font-mono">🎙️ {m.voiceDuration || '?'}s</span>
                               </div>
                             ) : renderMessageText(m.text)}
                           </div>
@@ -10978,13 +11000,17 @@ function App() {
                                 {msg.photo && <img src={msg.photo} className="mt-2 max-w-[200px] rounded-xl border border-white/10" />}
                                 {msg.voiceUrl && (
                                   <div className="mt-1 flex items-center gap-2 text-sm">
-                                    <audio 
-                                      src={msg.voiceUrl} 
-                                      controls 
-                                      className="h-7 flex-1" 
-                                      style={{ maxWidth: '160px' }}
-                                    />
-                                    <span className="text-[10px] opacity-70 whitespace-nowrap">{msg.voiceDuration || '?'}s</span>
+                                    <button 
+                                      onClick={() => {
+                                        const audio = new Audio(msg.voiceUrl)
+                                        audio.play().catch((e) => console.warn('audio play error', e))
+                                      }}
+                                      className="flex-shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center active:bg-white/20 text-lg"
+                                      title="Reproducir nota de voz"
+                                    >
+                                      ▶️
+                                    </button>
+                                    <span className="text-[10px] opacity-70 whitespace-nowrap font-mono">🎙️ {msg.voiceDuration || '?'}s</span>
                                   </div>
                                 )}
                               </div>
