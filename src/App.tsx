@@ -7497,7 +7497,7 @@ function App() {
                         <div className={`max-w-[82%] ${isMe ? 'text-right' : ''}`}>
                           {time && <div className="text-[9px] text-[#6B7280] mb-0.5 px-1">{time}</div>}
                           <div className={`px-3.5 py-2 rounded-3xl text-[14px] leading-snug break-words overflow-hidden ${isMe ? 'bg-[#FF671F] text-black rounded-br-md' : 'bg-[#25252A] text-white rounded-bl-md'}`}>
-                            {m.voiceUrl ? (
+                            {m.voiceUrl && !m.voiceUrl.startsWith('blob:') ? (
                               <div className="flex items-center gap-2 min-w-[180px]">
                                 <button 
                                   onClick={() => {
@@ -7511,6 +7511,8 @@ function App() {
                                 </button>
                                 <span className="text-[10px] opacity-70 whitespace-nowrap font-mono">🎙️ {m.voiceDuration || '?'}s</span>
                               </div>
+                            ) : m.voiceUrl && m.voiceUrl.startsWith('blob:') ? (
+                              <span className="text-[10px] text-red-400">Nota de voz no disponible en esta sesión</span>
                             ) : renderMessageText(m.text)}
                           </div>
                         </div>
@@ -10998,7 +11000,7 @@ function App() {
                               <div className={`message-bubble inline-block ${isMe ? 'sent' : 'received'}`}>
                                 {renderMessageText(msg.text)}
                                 {msg.photo && <img src={msg.photo} className="mt-2 max-w-[200px] rounded-xl border border-white/10" />}
-                                {msg.voiceUrl && (
+                                {msg.voiceUrl && !msg.voiceUrl.startsWith('blob:') ? (
                                   <div className="mt-1 flex items-center gap-2 text-sm">
                                     <button 
                                       onClick={() => {
@@ -11012,7 +11014,9 @@ function App() {
                                     </button>
                                     <span className="text-[10px] opacity-70 whitespace-nowrap font-mono">🎙️ {msg.voiceDuration || '?'}s</span>
                                   </div>
-                                )}
+                                ) : msg.voiceUrl && msg.voiceUrl.startsWith('blob:') ? (
+                                  <span className="text-[10px] text-red-400">Nota de voz no disponible en esta sesión</span>
+                                ) : null}
                               </div>
 
                               {/* Reactions row - align with bubble side */}
