@@ -9296,7 +9296,8 @@ function App() {
             <div className="sticky top-0 z-20 bg-[#0D0D10]/95 backdrop-blur-xl border-b border-[#2F2F35] px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div>
-                  <div className="section-header text-xl">Tu perfil</div>
+                  <div className="section-header text-xl">Tu legado 🔥</div>
+                  <div className="text-[10px] text-[#9CA3AF] -mt-1">Tu red de rendimiento • comparte y crece</div>
                   {!isDemoMode && <div className="live-pill !text-[8px] !py-0.5 !mt-0.5">REAL • Firebase</div>}
                 </div>
                 {!isDemoMode && (
@@ -9346,7 +9347,7 @@ function App() {
               </div>
               <div className="flex gap-2">
                 <button onClick={handleLogout} className="text-[10px] px-3 py-1 rounded-2xl border border-[#3f2a2a] text-[#f87171] active:bg-[#1f1616] active:text-white">Cambiar cuenta</button>
-                <button onClick={() => setShowOnboarding(true)} className="text-[10px] px-3 py-1 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black font-semibold active:opacity-90 flex items-center gap-1"><Edit2 size={13} /> Editar</button>
+                <button onClick={() => setShowOnboarding(true)} className="text-[10px] px-3 py-1 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black font-semibold active:opacity-90 flex items-center gap-1"><Edit2 size={13} /> Personalizar</button>
               </div>
             </div>
 
@@ -9487,6 +9488,96 @@ function App() {
                 <div className="text-center text-[9px] text-[#9CA3AF] mt-1">Cámara nativa • hasta 6 fotos • la primera es tu presencia principal en la red</div>
               </div>
             )}
+
+            {/* STORIES / HIGHLIGHTS - IG/FB style but performance-focused to encourage visual content sharing */}
+            <div className="px-4 pt-4 pb-2 bg-[#0D0D10]">
+              <div className="flex items-center justify-between mb-2 px-1">
+                <div className="text-[11px] uppercase tracking-[1.5px] text-[#FFD700] font-bold">Tus momentos de rendimiento</div>
+                <button 
+                  onClick={() => muroComposerRef.current?.focus()} 
+                  className="text-[10px] text-[#FF671F] flex items-center gap-1 active:opacity-80"
+                >
+                  + Agregar momento <span className="text-lg leading-none">→</span>
+                </button>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-3 snap-x scrollbar-hide">
+                {/* Add new highlight/story - big friendly CTA to add content */}
+                <div 
+                  onClick={() => { 
+                    try { triggerHaptic('medium') } catch {}; 
+                    muroComposerRef.current?.focus(); 
+                    setActiveTab('profile'); 
+                    toast('¡Cuéntale a tu red! +Momentum por posts con foto'); 
+                  }} 
+                  className="flex-shrink-0 w-16 h-16 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex flex-col items-center justify-center text-black text-[10px] font-black cursor-pointer active:scale-95 border-2 border-white/30 shadow-lg snap-start"
+                >
+                  <Plus size={22} />
+                  <span className="text-[8px] -mt-0.5 tracking-widest">NUEVO</span>
+                </div>
+
+                {/* Recent highlights from posts + live + syncs - makes it feel alive and social */}
+                {(() => {
+                  const myPosts = (profilePosts[effectiveUserId] || []).slice(0, 5);
+                  const items = [];
+                  // Today's live if active
+                  if (currentUser.trainingNow) {
+                    items.push({ type: 'live', label: 'LIVE hoy', emoji: '🟢', onClick: () => { setActiveTab('explore'); setShowLiveModal(true); } });
+                  }
+                  // Recent syncs or highlights
+                  myPosts.forEach((p, i) => {
+                    if (p.photo) {
+                      items.push({ 
+                        type: 'post', 
+                        label: p.text?.slice(0,12) || 'Momento', 
+                        emoji: '📸', 
+                        img: p.photo,
+                        onClick: () => setFeedPhotoModal({url: p.photo, postId: p.id}) 
+                      });
+                    } else if ((p.text || '').includes('Sync') || (p.text || '').includes('ENTRENASYNC')) {
+                      items.push({ type: 'sync', label: 'Sync', emoji: '🔄', onClick: () => setActiveTab('profile') });
+                    }
+                  });
+                  // Fallback demo highlights to encourage
+                  if (items.length < 3) {
+                    items.push({ type: 'demo', label: 'PR 100kg', emoji: '🏋️', onClick: () => muroComposerRef.current?.focus() });
+                    items.push({ type: 'demo', label: 'Sync épico', emoji: '⚡', onClick: () => muroComposerRef.current?.focus() });
+                  }
+                  return items.slice(0,6).map((item, idx) => (
+                    <div 
+                      key={idx} 
+                      onClick={item.onClick} 
+                      className="flex-shrink-0 w-16 snap-start cursor-pointer active:scale-95"
+                    >
+                      <div className={`w-16 h-16 rounded-full p-[2px] ${item.type === 'live' ? 'bg-[#22c55e] animate-pulse' : 'bg-gradient-to-br from-[#FF671F] via-[#FFD700] to-[#FF4F79]'}`}>
+                        <div className="w-full h-full rounded-full overflow-hidden bg-[#0D0D10] flex items-center justify-center text-2xl border border-white/10">
+                          {item.img ? <img src={item.img} className="w-full h-full object-cover" /> : item.emoji}
+                        </div>
+                      </div>
+                      <div className="text-center text-[8px] text-[#9CA3AF] mt-1 truncate font-medium">{item.label}</div>
+                    </div>
+                  ));
+                })()}
+              </div>
+              <div className="text-[8px] text-center text-[#9CA3AF]/60 -mt-1 mb-1">Toca para ver o crear • tus aliados ven esto en su feed</div>
+            </div>
+
+            {/* Quick friendly actions bar - more options, encourages content like IG/FB */}
+            <div className="px-4 py-2 bg-[#0D0D10] border-b border-[#2F2F35]">
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                <button onClick={() => muroComposerRef.current?.focus()} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl bg-[#FF671F] text-black font-bold active:opacity-90 flex items-center gap-1.5 shadow">
+                  <Send size={14} /> Publicar en muro
+                </button>
+                <button onClick={() => { setShowOnboarding(true); }} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-white/20 text-white active:bg-white/10 flex items-center gap-1.5">
+                  <Camera size={14} /> Agregar foto
+                </button>
+                <button onClick={() => { if (currentUser.trainingNow) { /* deactivate */ } else { /* hint activate */ setActiveTab('profile'); toast('Activa Live más abajo para aparecer en el Pulso'); } }} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10 flex items-center gap-1.5">
+                  🟢 {currentUser.trainingNow ? 'Terminar Live' : 'Ir a Live'}
+                </button>
+                <button onClick={() => setActiveTab('explore')} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-[#FFD700]/30 text-[#FFD700] active:bg-[#FFD700]/10 flex items-center gap-1.5">
+                  🔍 Buscar bonds
+                </button>
+              </div>
+            </div>
 
             {/* Motivator: Build your performance network - remastered unique & attractive */}
             {(!currentUser.photos?.length || (currentUser.photos?.length || 0) < 3 || !currentUser.bio || (profilePosts[effectiveUserId] || []).filter((p:any)=>p.photo).length === 0) && (
@@ -10705,21 +10796,22 @@ function App() {
 
               {/* Attractive composer - premium journal style */}
               <div className="card p-5 mb-4 border border-[#FF671F]/10 bg-gradient-to-b from-[#1C1C20] to-[#0D0D10]">
-                <div className="text-sm font-semibold text-[#FF671F] mb-3 flex items-center gap-2">
-                  <span>✍️</span> Registra una sesión de EntrenaSync
-                  <span className="text-[10px] text-[#9CA3AF] font-normal tracking-normal">— tu progreso y alianzas en la red</span>
+                <div className="text-sm font-semibold text-[#FF671F] mb-1 flex items-center gap-2">
+                  <span>✍️</span> ¿Qué lograste hoy en tu red?
                 </div>
+                <div className="text-[11px] text-[#9CA3AF] mb-3">Comparte tu entreno, un Sync épico o un PR. Tu red gana Momentum y tú construyes tu legado visible. ¡Posts con foto dan +5 extra!</div>
 
-                {/* Quick achievement templates - makes posting logros frictionless and celebratory */}
+                {/* Quick achievement templates - makes posting logros frictionless and celebratory (IG story style but performance) */}
                 <div className="flex flex-wrap gap-1.5 mb-3">
                   {[
-                    '🏆 Nuevo Sync Legendario con mi bond',
-                    '⭐ Reclamé un Eco de un momento épico',
-                    '🌊 Envié ripples con mi último Arena',
-                    '🔥 Pico de rendimiento >80 — sync intenso',
-                    '📈 Subí de nivel de bond con X'
+                    '🏆 PR del mes en mi bond',
+                    '💪 Entreno solo pero con mi red en mente',
+                    '🔥 Sync de 90+ vibe con @buddy',
+                    '🌟 Nuevo nivel desbloqueado hoy',
+                    '📸 Momento icónico del gym',
+                    '⚡ 3 syncs esta semana - en racha'
                   ].map((tpl, i) => (
-                    <button key={i} onClick={() => setMuroComposerText(tpl)} className="text-[10px] px-2 py-1 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10 hover:bg-[#FF671F]/5">
+                    <button key={i} onClick={() => setMuroComposerText(tpl)} className="text-[10px] px-2.5 py-1 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10 hover:bg-[#FF671F]/5">
                       {tpl}
                     </button>
                   ))}
