@@ -1,4 +1,30 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.74-map-gympulse-attract-premium code 78) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.75-map-ripples-clusters-gadgets code 79) ===
+
+CONTINUACIÓN DEL MAPA MÁS ATRACTIVO: +ripples, clusters en zoom out, integración profunda de gadgets en markers.
+
+- Clusters simples pero efectivos en zoom bajo (<11.5): los marcadores se agrupan en "X GymPartners" bonitos con icono grande. Click en cluster = flyTo + zoom in para descubrir los individuos (descubrimiento atractivo + perf).
+- Zoom-dependent: tamaño de markers escala con el zoom (más grandes al acercarte, más pequeños en overview). Clusters se activan naturalmente.
+- Integración fuerte de GADGETS en TODOS los markers del mapa:
+  - Nivel visible por usuario (self real, otros por bond/legend proxy + demo seeds).
+  - Badges en los avatares: ✨ Halo Élite (anillo gold extra), 👑 Aura de Campeón (corona), Pulso Maestro influye en ripples.
+  - Marcadores de alto nivel/gadget: glows especiales, tamaño boost, prioridad visual.
+- Más ripples / heartbeats:
+  - Heartbeats automáticos al subir live count (ya existían, ahora más frecuentes y con gadget boost).
+  - Cuando un partner es HUB (2+ cerca), spawnea ripple dorado desde el local.
+  - Pulso Maestro (lv20+): ripples del usuario son 1.75x más grandes, color único púrpura, animación especial (pulso-maestro-ripple).
+  - Ritual ripples también boosted si el emisor tiene el gadget.
+- Marcadores de clusters y normales ahora muestran gadget badges inline (✨ 👑).
+- Zoom listener fuerza re-render para que clusters aparezcan/desaparezcan fluidamente al hacer zoom.
+- Popups de clusters informativos + fly elegante.
+- CSS nuevo: .pulso-maestro-ripple, .cluster-marker, mejoras en hub-aura.
+- Todo se siente más vivo: el mapa premia el entrenamiento (subes de nivel → tus marcadores y ondas destacan más en el GymPulse de todos).
+
+El GymPulse ahora recompensa visualmente el progreso de retención de forma obvia y épica en el mapa.
+
++ web, AAB, debug APK. Push. Instructions actualizado.
+Test S26: zoom out en el mapa (ver clusters), zoom in (ver individuos + badges de gadgets), activa lives con niveles altos (ver badges ✨👑 en markers + ripples grandes si Pulso), mira un HUB partner (ripple extra + aura). 
+
+Sigue con todo.
 
 MAPA EN TIEMPO REAL (GYMPULSE) HECHO MUCHO MÁS ATRACTIVO — el corazón visual y social de EntrenaMatch ahora se siente premium, vivo y magnético.
 

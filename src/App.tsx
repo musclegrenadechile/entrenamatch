@@ -1823,7 +1823,9 @@ function App() {
         }
         const bond = syncBonds[p.id];
         const isLegend = !!bond && ((bond.totalMin || 0) >= 30 || (bond.bondLevel || 0) >= 2);
-        return { ...p, distance: dist, seVaEnMin, joinCount, isLegend, bondInfo: bond };
+        // Attach approximate level for gadget visuals on map (self + demo have real dailyPulse; others fall back to bond strength or 1)
+        const visibleLevel = (p.id === 'me' || p.id === currentUser?.id) ? (dailyPulse?.level || 1) : (isLegend ? Math.max(10, Math.floor((bond?.totalMin || 0) / 8) + 5) : 3);
+        return { ...p, distance: dist, seVaEnMin, joinCount, isLegend, bondInfo: bond, visibleLevel };
       })
       .filter(p => !userLocation || p.distance < 15) // near only if we have location; otherwise show all live (so feature works even without GPS)
       .sort((a, b) => {
@@ -1844,7 +1846,7 @@ function App() {
       });
     if (isDemoMode && lives.length === 0) {
       // Demo fakes for the killer feature to shine
-      lives = SEED_PROFILES.slice(0, 3).map((p, i) => ({ ...p, trainingNow: true, trainingNowSince: now - (i+1)*10*60000, distance: 1 + i*2, seVaEnMin: 40 - i*10, joinCount: 1 + i }));
+      lives = SEED_PROFILES.slice(0, 3).map((p, i) => ({ ...p, trainingNow: true, trainingNowSince: now - (i+1)*10*60000, distance: 1 + i*2, seVaEnMin: 40 - i*10, joinCount: 1 + i, visibleLevel: 8 + i*7 }));
     }
     // Exceptional onboarding: immediately surface the new user's own live if they opted in during the 60s flow.
     // This way the banner + map + explore show "you are live" right after finishing, even before any FS roundtrip.
@@ -1854,7 +1856,7 @@ function App() {
         const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, currentUser.lat || -33.0153, currentUser.lng || -71.5528) : 0.3
         const seVaEnMs = (currentUser.trainingNowSince + ASSUMED_SESSION_MS) - now
         const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 55
-        lives = [{ ...currentUser, id: 'me', distance: dist, seVaEnMin, joinCount: 0, isLegend: false, bondInfo: null }, ...lives]
+        lives = [{ ...currentUser, id: 'me', distance: dist, seVaEnMin, joinCount: 0, isLegend: false, bondInfo: null, visibleLevel: (dailyPulse?.level || 1) }, ...lives]
       }
     }
     return lives;
@@ -5988,6 +5990,14 @@ function App() {
         })
         ;(mapInstanceRef.current as any)._emDevPlaceBound = true
       }
+
+      // Zoom listener so clusters appear/disappear nicely as you zoom in/out (makes the map attractive at all scales)
+      if (mapInstanceRef.current && !(mapInstanceRef.current as any)._clusterZoomBound) {
+        mapInstanceRef.current.on('zoomend', () => {
+          setMapForceTick(t => t + 1)
+        })
+        ;(mapInstanceRef.current as any)._clusterZoomBound = true
+      }
     } else {
       // If map already exists but was toggled, invalidate to fix click/pan
       setTimeout(() => {
@@ -6053,7 +6063,44 @@ function App() {
       }
       prevLiveCountRef.current = currentLive
 
-      liveUsers.forEach(user => {
+      // Simple but effective clustering at low zoom for attractiveness + perf
+      // When zoomed out the map doesn't get a wall of dots; instead nice grouped "X GymPartners aquí" clusters.
+      // Click a cluster = fly in and expand the view so you discover individuals. Feels pro.
+      let renderUsers = liveUsers;
+      const currentZoom = mapInstanceRef.current ? mapInstanceRef.current.getZoom() : 13;
+      if (currentZoom < 11.5 && liveUsers.length > 3) {
+        const gridSize = 0.04; // ~4km buckets rough
+        const buckets: Record<string, any[]> = {};
+        liveUsers.forEach(u => {
+          const gx = Math.floor(u.lat / gridSize);
+          const gy = Math.floor(u.lng / gridSize);
+          const k = `${gx}:${gy}`;
+          if (!buckets[k]) buckets[k] = [];
+          buckets[k].push(u);
+        });
+        renderUsers = Object.values(buckets).map(group => {
+          if (group.length <= 1) return group[0];
+          const avgLat = group.reduce((s, u) => s + u.lat, 0) / group.length;
+          const avgLng = group.reduce((s, u) => s + u.lng, 0) / group.length;
+          const maxLvl = Math.max(0, ...group.map((u: any) => u.visibleLevel || 1));
+          return {
+            id: 'cluster-' + avgLat.toFixed(3) + avgLng.toFixed(3),
+            lat: avgLat,
+            lng: avgLng,
+            isCluster: true,
+            clusterCount: group.length,
+            clusterMembers: group,
+            visibleLevel: maxLvl,
+            name: `${group.length} GymPartners`,
+            photos: group[0]?.photos,
+            trainingNow: true,
+            distance: group[0]?.distance || 0,
+            city: group[0]?.city
+          };
+        });
+      }
+
+      renderUsers.forEach(user => {
       try {
         const color = mapZoneColors[user.city] || mapZoneColors.default
         const shortName = (user.name || '?').split(' ')[0]
@@ -6065,15 +6112,36 @@ function App() {
         const legendBadge = isLegend ? `<div style="position:absolute;top:-4px;right:-4px;background:#FFD700;color:#111;font-size:7px;font-weight:900;padding:0 3px;border-radius:3px;border:1px solid #111">⭐ RED</div>` : (isHighNP ? `<div style="position:absolute;top:-4px;right:-4px;background:#FFD700;color:#111;font-size:6px;font-weight:900;padding:0 2px;border-radius:2px;border:1px solid #111">HIGH NP</div>` : '')
         const networkPowerHalo = (showOnlyLegends && isLegend) || isHighNP ? `<div style="position:absolute;inset:-6px;border-radius:9999px;border:2px solid #FFD700;opacity:0.45;animation:network-power-halo 2.2s ease-in-out infinite;"></div>` : ''
 
+        const userLevel = (user as any).visibleLevel || 1;
+        const unlockedGadgets = getUnlockedGadgets(userLevel);
+        const hasHalo = unlockedGadgets.some(g => g.effect === 'map-halo');
+        const hasPulso = unlockedGadgets.some(g => g.effect === 'map-ripple-boost');
+        const hasAura = unlockedGadgets.some(g => g.effect === 'priority');
+
         // Premium personal marker: photo if available, else nice initials badge + name label.
         // Makes the map feel alive and social (the "preciosa" part).
         // High-energy (FOMO joins or in-Sync): stronger glow ring + faster pulse (disruptive live feel).
+        // Gadget integration: Halo adds extra gold ring, Pulso adds special pulse, Aura adds crown.
         let iconHtml: string
         const photo = user.photos && user.photos[0]
         const glow = highEnergy || isHighNP ? `0 0 0 3px ${markerColor}55, 0 0 10px ${markerColor}88` : '0 0 0 2px rgba(255,255,255,0.9)'
         const borderW = isLegend || isHighNP ? '4px' : (highEnergy ? '3px' : '2.5px')
         const pulseExtra = highEnergy || isHighNP ? ' animation-duration:1.1s; filter: saturate(1.15) brightness(1.05);' : (isLegend ? ' animation-duration:1.8s; filter: saturate(1.3) brightness(1.1);' : '')
-        if (photo) {
+
+        if ((user as any).isCluster) {
+          const c = user as any;
+          iconHtml = `
+            <div style="position:relative;width:44px;height:44px">
+              <div style="width:44px;height:44px;border-radius:9999px;background:linear-gradient(#111,#1a1a1f);border:3px solid #FFD700;box-shadow:0 0 0 5px #FF671F22,0 4px 14px rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:15px;line-height:1;">
+                ${c.clusterCount}
+              </div>
+              <div style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 5px;border-radius:4px;border:1px solid #FFD700;white-space:nowrap;letter-spacing:0.5px">GYM PARTNERS</div>
+            </div>`;
+        } else if (photo) {
+          // Add gadget badges for Halo / Aura / Pulso on the photo marker
+          let gadgetBadges = '';
+          if (hasHalo) gadgetBadges += `<div style="position:absolute;top:-3px;left:-3px;width:12px;height:12px;border-radius:999px;background:#FFD700;color:#111;font-size:8px;line-height:11px;text-align:center;border:1px solid #111">✨</div>`;
+          if (hasAura) gadgetBadges += `<div style="position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:999px;background:#FFD700;color:#111;font-size:7px;line-height:10px;text-align:center;border:1px solid #111">👑</div>`;
           iconHtml = `
             <div style="position:relative;width:36px;height:36px">
               ${networkPowerHalo}
@@ -6083,9 +6151,13 @@ function App() {
               <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
               ${highEnergy ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:9999px;background:${markerColor};box-shadow:0 0 6px ${markerColor};border:1.5px solid #111"></div>` : ''}
               ${legendBadge}
+              ${gadgetBadges}
             </div>`
         } else {
           const initials = shortName.slice(0, 2).toUpperCase()
+          let gadgetBadges = '';
+          if (hasHalo) gadgetBadges += `<div style="position:absolute;top:-3px;left:-3px;width:12px;height:12px;border-radius:999px;background:#FFD700;color:#111;font-size:8px;line-height:11px;text-align:center;border:1px solid #111">✨</div>`;
+          if (hasAura) gadgetBadges += `<div style="position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:999px;background:#FFD700;color:#111;font-size:7px;line-height:10px;text-align:center;border:1px solid #111">👑</div>`;
           iconHtml = `
             <div style="position:relative;width:36px;height:36px">
               ${networkPowerHalo}
@@ -6093,34 +6165,50 @@ function App() {
               <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
               ${highEnergy ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:9999px;background:#fff;box-shadow:0 0 6px #fff;border:1.5px solid ${markerColor}"></div>` : ''}
               ${legendBadge}
+              ${gadgetBadges}
             </div>`
         }
 
         let netSize = [40, 48];
         const isNetworkFilterActive = !!showOnlyLegends && isLegend;
+        // zoom scale makes markers more attractive: bigger when close in, smaller when overviewing
+        const zoomScale = currentZoom > 14 ? 1.18 : (currentZoom < 10 ? 0.82 : 1);
         if (isNetworkFilterActive) {
           // Network Power visual: scale size + extra glow when "Mi Red" filter active — your graph shines on the pulse
           const bond = userBond;
           const scale = 1 + (bond.bondLevel - 1) * 0.22;
-          netSize = [Math.round(42 * scale), Math.round(50 * scale)];
+          netSize = [Math.round(42 * scale * zoomScale), Math.round(50 * scale * zoomScale)];
         } else if (showOnlyLegends && isLegend) {
           const bond = userBond;
           const scale = 1 + (bond.bondLevel - 1) * 0.15;
-          netSize = [Math.round(40 * scale), Math.round(48 * scale)];
+          netSize = [Math.round(40 * scale * zoomScale), Math.round(48 * scale * zoomScale)];
         } else if (isHighNP) {
           // PERK desbloqueado por alto Network Power: high NP users get permanent visual priority on the map (larger + glow) even without filter
           const scale = 1 + ((userBond.bondLevel || 1) - 1) * 0.12 + (userBond.totalMin || 0) / 400;
-          netSize = [Math.round(40 * Math.min(1.6, scale)), Math.round(48 * Math.min(1.6, scale))];
+          netSize = [Math.round(40 * Math.min(1.6, scale) * zoomScale), Math.round(48 * Math.min(1.6, scale) * zoomScale)];
+        } else {
+          netSize = [Math.round(netSize[0] * zoomScale), Math.round(netSize[1] * zoomScale)];
         }
         const customIcon = L.divIcon({
-          className: `entrenamatch-marker${highEnergy ? ' high-energy' : ''}${isLegend ? ' legend-marker' : ''}${isNetworkFilterActive ? ' network-power-active' : ''}${isHighNP ? ' high-np' : ''}`,
+          className: `entrenamatch-marker${highEnergy ? ' high-energy' : ''}${isLegend ? ' legend-marker' : ''}${isNetworkFilterActive ? ' network-power-active' : ''}${isHighNP ? ' high-np' : ''}${(user as any).isCluster ? ' cluster-marker' : ''}`,
           html: iconHtml,
-          iconSize: netSize,
-          iconAnchor: [20, 24],
+          iconSize: (user as any).isCluster ? [46,46] : netSize,
+          iconAnchor: (user as any).isCluster ? [23,23] : [20, 24],
           popupAnchor: [0, -24]
         })
 
         const marker = L.marker([user.lat, user.lng], { icon: customIcon }).addTo(mapInstanceRef.current)
+
+        if ((user as any).isCluster) {
+          // Cluster special: no full popup, click flies in to reveal the individuals (attractive discovery)
+          marker.bindPopup(`<div style="font-size:12px"><strong>${(user as any).clusterCount} GymPartners</strong><br/>en esta zona<br/><span style="font-size:10px;color:#666">Toca para acercarte</span></div>`)
+          marker.on('click', () => {
+            try { triggerHaptic('medium') } catch {}
+            if (mapInstanceRef.current) {
+              mapInstanceRef.current.flyTo([user.lat, user.lng], Math.min((mapInstanceRef.current.getZoom() || 11) + 4, 16), { duration: 0.85, easeLinearity: 0.25 })
+            }
+          })
+        } else {
 
         // Note: click on marker opens the popup (by Leaflet default since bindPopup).
         // Popup has "Ver perfil" button for profile modal. This avoids event conflict with popup.
@@ -6180,6 +6268,7 @@ function App() {
         })
 
         markersRef.current.push(marker)
+        } // close non-cluster else
       } catch (markerErr) {
         console.warn('Failed to add map marker for user', user?.id, markerErr)
       }
@@ -6323,6 +6412,28 @@ function App() {
               markersRef.current.push(aura)
             } catch {}
           }
+
+          // Extra ripple from active partner hubs - the place itself "pulses" when it's a social center (more ripples!)
+          if (isHub) {
+            try {
+              const hubRipple = L.circle([p.lat, p.lng], {
+                radius: 280 + (nearby * 40),
+                color: '#FFD700',
+                weight: 1.5,
+                fillColor: '#FFD700',
+                fillOpacity: 0.04,
+                opacity: 0.35,
+                className: 'map-heartbeat-ring'
+              }).addTo(mapInstanceRef.current)
+              ;(hubRipple as any)._isHubRipple = true
+              markersRef.current.push(hubRipple)
+              setTimeout(() => {
+                if (mapInstanceRef.current && (hubRipple as any)._isHubRipple) {
+                  try { mapInstanceRef.current.removeLayer(hubRipple) } catch {}
+                }
+              }, 1400)
+            } catch {}
+          }
         } catch (e) { console.warn('partner marker', e) }
       })
     }
@@ -6421,16 +6532,19 @@ function App() {
     // Other users see "Ritual Épico" waves propagating — pure FOMO + proof that real human synchronization is happening right now.
     ritualRipples.forEach((r: any) => {
       try {
-        const radius = 650 * (r.intensity || 1.5)
-        const isLegendRipple = (r.label || '').includes('LEGENDARIO') || (r.label || '').includes('⭐')
+        // Pulso Maestro integration: if the source user (or current) has the gadget, ripples are bigger + special color
+        const pulsoBoost = hasPulso || (r.label || '').toUpperCase().includes('PULSO') || (r.label || '').toUpperCase().includes('MAESTRO');
+        let radius = 650 * (r.intensity || 1.5) * (pulsoBoost ? 1.75 : 1);
+        const isLegendRipple = (r.label || '').includes('LEGENDARIO') || (r.label || '').includes('⭐');
+        const rippleColor = pulsoBoost ? '#a855f7' : (isLegendRipple ? '#FFD700' : '#FF671F'); // unique color for Pulso Maestro
         const ripple = L.circle([r.lat, r.lng], {
           radius,
-          color: isLegendRipple ? '#FFD700' : '#FF671F',
-          weight: isLegendRipple ? 3 : 2,
-          fillColor: isLegendRipple ? '#FFD700' : '#FF671F',
-          fillOpacity: isLegendRipple ? 0.1 : 0.07,
-          opacity: isLegendRipple ? 0.8 : 0.65,
-          className: `ritual-map-ripple${isLegendRipple ? ' legend-ripple' : ''}` // performance wave from the network graph
+          color: rippleColor,
+          weight: (pulsoBoost || isLegendRipple) ? 3.5 : 2,
+          fillColor: rippleColor,
+          fillOpacity: (pulsoBoost || isLegendRipple) ? 0.12 : 0.07,
+          opacity: (pulsoBoost || isLegendRipple) ? 0.85 : 0.65,
+          className: `ritual-map-ripple${isLegendRipple ? ' legend-ripple' : ''}${pulsoBoost ? ' pulso-maestro-ripple' : ''}`
         }).addTo(mapInstanceRef.current)
 
         // Bind a special popup that teases the magic + Witness button

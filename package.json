@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.74-map-gympulse-attract-premium",
+  "version": "0.1.75-map-ripples-clusters-gadgets",
   "type": "module",
   "scripts": {
     "dev": "vite",

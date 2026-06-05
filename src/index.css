@@ -1556,3 +1556,21 @@ input[type="range"]::-moz-range-thumb {
   0%, 100% { opacity: 0.85; }
   50% { opacity: 1; }
 }
+
+/* Pulso Maestro special ripples - bigger, purple-ish, more epic when high level users create waves */
+.pulso-maestro-ripple {
+  animation: pulso-maestro-ripple-pulse 2.4s ease-out forwards;
+}
+@keyframes pulso-maestro-ripple-pulse {
+  0% { opacity: 0.95; transform: scale(0.7); }
+  30% { opacity: 0.55; }
+  100% { opacity: 0.08; transform: scale(1.4); }
+}
+
+/* Cluster markers on the map at low zoom - attractive grouped view */
+.cluster-marker {
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+}
+.cluster-marker:hover {
+  filter: drop-shadow(0 3px 10px rgba(0,0,0,0.5));
+}
