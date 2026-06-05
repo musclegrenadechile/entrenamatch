@@ -1,4 +1,37 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.70-partner-add-fix code 74) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.71-gps-self-marker-fix code 75) ===
+
+FIX BUGS GPS / SELF MARKER EN MAPA EN TIEMPO REAL:
+
+1. No marcaba correctamente con la foto de perfil:
+   - El self marker era un punto azul hardcodeado de 14px sin foto.
+   - Ahora usa la misma lógica que los markers de otros usuarios: si currentUser.photos[0] existe, muestra la foto circular con borde azul (#3b82f6), sombra, y label "TÚ" abajo. Fallback a iniciales + "TÚ".
+   - Tamaño 36px consistente con otros.
+
+2. Al alejar/zoom se alejaba y no quedaba fijo en tu GPS:
+   - Causa principal: dentro del debounced update de markers (que se ejecuta en cada liveTrainingNow / userLocation / force), había un `if (markersRef.current.length > 0) { map.fitBounds(group.getBounds()...) }` incondicional.
+   - Esto reseteaba la vista (zoom + center) a todos los markers (incluyendo self) en cada actualización de datos live. Cualquier pan/zoom del usuario se perdía en el siguiente tick.
+   - Self se pusheaba a markersRef y se nukaba/re-agregaba cada vez (aunque setLatLng hubiera sido mejor).
+   - Area circle también estaba atada a markersRef de forma legacy.
+
+   Fix:
+   - Self marker y areaCircle ahora en refs separados (selfMarkerRef, areaCircleRef). Se crean una vez y se actualizan in-place con .setLatLng() (y setRadius si hiciera falta). NO se pushean a markersRef.
+   - En el nuking/cleanup del update y hide/unmount: ya no se tocan self/area desde markersRef; se limpian explícitamente vía sus refs.
+   - Removido el fitBounds incondicional del update path (ahora solo one-time initial en la primera carga de markers, o vía botón "Centrar").
+   - Botón "Centrar" mejorado: si hay selfMarker, hace setView al latlng del self PERO preservando el zoom actual del mapa (map.getZoom()). No fuerza fit ni cambia nivel de zoom. Solo centra en ti.
+   - Initial map.setView en creación del mapa ya usa userLocation si disponible (zoom 13).
+   - Resultado: puedes panear y hacer zoom libremente; tu posición (con foto) se actualiza en su lugar sin resetear la vista. "Queda fijo donde estoy".
+
+- También se actualiza el self cuando userLocation cambia (el effect del mapa depende de userLocation, y el bloque if(userLocation) hace setLatLng).
+
+- Limpiezas robustas en todos los paths (hide, unmount, effect return, etc.).
+
+Todo respeta la UX del mapa (debounce, partners layer, etc.).
+
+AAB generado fresco (9.2MB+), debug actualizado.
+
+Test S26: activa GPS, abre mapa → tu marker debe mostrar tu foto de perfil (o iniciales "TÚ"). Haz zoom in/out, pan a otro lado, espera updates de live → tu posición se mantiene donde la dejaste (actualizándose en el lugar correcto). Toca "Centrar" → te lleva a ti sin cambiar el zoom actual.
+
+Sigue con todo.
 
 FIX: al agregar un partner en tiempo real (real Firebase mode) no se agregaba / no aparecía en el mapa.
 

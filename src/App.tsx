@@ -1594,6 +1594,10 @@ function App() {
   const markersRef = useRef<any[]>([])
   const syncLinesRef = useRef<any[]>([]) // for light tethers between active sync pairs on the live map
   const startSyncRef = useRef<((partnerId: string, partnerName: string) => any) | null>(null)
+  // Separate refs for self GPS marker and area circle so they update in-place without being nuked in the markersRef cleanup,
+  // and are not included in auto fitBounds. This keeps the view fixed on user's location during zoom/pan and live updates.
+  const selfMarkerRef = useRef<any>(null)
+  const areaCircleRef = useRef<any>(null)
 
   // Load partner locations: seeds (for immediate demo) + real Firestore (so devs can add persistent partners via the in-app tool).
   // This makes the "devs put businesses on the map" easy and real-time visible to all users in the GymPulse (mapa en tiempo real).
@@ -1655,6 +1659,14 @@ function App() {
       }
       markersRef.current = []
       syncLinesRef.current = []
+      if (selfMarkerRef.current) {
+        try { selfMarkerRef.current.remove() } catch {}
+        selfMarkerRef.current = null
+      }
+      if (areaCircleRef.current) {
+        try { areaCircleRef.current.remove() } catch {}
+        areaCircleRef.current = null
+      }
     }
   }, [])
 
@@ -5862,6 +5874,15 @@ function App() {
           try { mapInstanceRef.current.removeLayer(m) } catch {}
         })
         markersRef.current = []
+        // Clean self/area separately (they are not in markersRef anymore)
+        if (selfMarkerRef.current) {
+          try { mapInstanceRef.current.removeLayer(selfMarkerRef.current) } catch {}
+          selfMarkerRef.current = null
+        }
+        if (areaCircleRef.current) {
+          try { mapInstanceRef.current.removeLayer(areaCircleRef.current) } catch {}
+          areaCircleRef.current = null
+        }
         try { mapInstanceRef.current.remove() } catch {}
         mapInstanceRef.current = null
       }
@@ -5876,10 +5897,12 @@ function App() {
     }
 
     if (!mapInstanceRef.current) {
+      const initialCenter = userLocation ? [userLocation.lat, userLocation.lng] : [-33.0, -71.5]
+      const initialZoom = userLocation ? 13 : 10
       mapInstanceRef.current = L.map(liveMapRef.current, {
         zoomControl: true,
         attributionControl: false
-      }).setView([-33.0, -71.5], 10)
+      }).setView(initialCenter, initialZoom)
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 18,
@@ -6104,32 +6127,57 @@ function App() {
     }
 
     // Self position marker + subtle "my area" radius circle (makes map feel personal and useful)
+    // Updated to use profile photo (like other user markers) and update in-place (setLatLng) without nuking from markersRef.
+    // Self/area not pushed to markersRef so they don't participate in auto fitBounds, keeping user's GPS position fixed during zoom/pan/live updates.
     if (userLocation) {
-      // Self dot
+      const photo = currentUser?.photos && currentUser.photos[0]
+      const shortName = (currentUser?.name || 'Tú').split(' ')[0]
+      let iconHtml: string
+      if (photo) {
+        iconHtml = `
+          <div style="position:relative;width:36px;height:36px">
+            <div style="width:36px;height:36px;border-radius:9999px;overflow:hidden;border:3px solid #3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.4), 0 2px 6px rgba(0,0,0,0.5);">
+              <img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='#3b82f6';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:12px\\'>${shortName.slice(0,2).toUpperCase()}</div>'" />
+            </div>
+            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#3b82f6;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6)">TÚ</div>
+          </div>`
+      } else {
+        const initials = shortName.slice(0, 2).toUpperCase()
+        iconHtml = `
+          <div style="position:relative;width:36px;height:36px">
+            <div style="width:36px;height:36px;border-radius:9999px;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 0 3px rgba(59,130,246,0.4),0 2px 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px;">${initials}</div>
+            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#3b82f6;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6)">TÚ</div>
+          </div>`
+      }
       const selfIcon = L.divIcon({
         className: '',
-        html: `<div style="width:14px;height:14px;background:#3b82f6;border:2.5px solid #fff;border-radius:9999px;box-shadow:0 0 0 3px rgba(59,130,246,0.3),0 2px 4px rgba(0,0,0,0.5)"></div>`,
-        iconSize: [14, 14],
-        iconAnchor: [7, 7],
-        popupAnchor: [0, -8]
+        html: iconHtml,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
+        popupAnchor: [0, -18]
       })
-      const selfMarker = L.marker([userLocation.lat, userLocation.lng], { icon: selfIcon }).addTo(mapInstanceRef.current)
-      selfMarker.bindPopup('<strong>Tú</strong><br/>Tu ubicación actual (GPS)')
-      markersRef.current.push(selfMarker)
+      if (!selfMarkerRef.current) {
+        selfMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: selfIcon }).addTo(mapInstanceRef.current)
+        selfMarkerRef.current.bindPopup('<strong>Tú</strong><br/>Tu ubicación actual (GPS)')
+      } else {
+        selfMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng])
+      }
 
-      // Soft radius circle (10km "mi zona") – visual context for "cerca"
-      try {
-        const areaCircle = L.circle([userLocation.lat, userLocation.lng], {
-          radius: 10000, // 10km
-          color: '#3b82f6',
-          weight: 1,
-          fillColor: '#3b82f6',
-          fillOpacity: 0.06,
-          opacity: 0.35
-        }).addTo(mapInstanceRef.current)
-        // store separately so we can clean it; push a wrapper or just let map destroy handle
-        ;(markersRef.current as any)._areaCircle = areaCircle
-      } catch {}
+      // Soft radius circle (10km "mi zona") – update in place
+      if (!areaCircleRef.current) {
+        try {
+          areaCircleRef.current = L.circle([userLocation.lat, userLocation.lng], {
+            radius: 10000, // 10km
+            color: '#3b82f6',
+            weight: 1,
+            fillColor: '#3b82f6',
+            fillOpacity: 0.06,
+            opacity: 0.35
+          }).addTo(mapInstanceRef.current)
+        } catch {}
+      } else {
+        areaCircleRef.current.setLatLng([userLocation.lat, userLocation.lng])
+      }
     }
 
     // PEQUEÑO TOQUE DISRUPTIVO: líneas tether ligeras entre pares que están en EntrenaSync ahora mismo.
@@ -6272,9 +6320,15 @@ function App() {
       } catch (e) {}
     })
 
-    if (markersRef.current.length > 0) {
+    // Removed unconditional auto fitBounds here.
+    // It was causing the view to jump/reset on every live update / marker rebuild, so zooming or panning away from your GPS position wouldn't "stay fixed".
+    // Now the user's pan/zoom is respected. Self position updates in-place via setLatLng.
+    // Use the "Centrar" button (which prefers self location and keeps current zoom) or explicit recenter.
+    // One-time initial fit only on map creation (below) or via Centrar button.
+    if (markersRef.current.length > 0 && !mapInstanceRef.current._hasDoneInitialFit) {
       const group = L.featureGroup(markersRef.current)
       mapInstanceRef.current.fitBounds(group.getBounds().pad(0.22))
+      mapInstanceRef.current._hasDoneInitialFit = true
     }
 
     // Highlight Pins - persistent tappable markers for strong EntrenaSync moments on the map.
@@ -6320,12 +6374,18 @@ function App() {
         markersRef.current.forEach(m => {
           try { mapInstanceRef.current.removeLayer(m) } catch {}
         })
-        // also clean area circle if we added one
-        const area = (markersRef.current as any)._areaCircle
-        if (area) { try { mapInstanceRef.current.removeLayer(area) } catch {} ; (markersRef.current as any)._areaCircle = null }
         // clean sync tethers
         syncLinesRef.current.forEach(l => { try { mapInstanceRef.current.removeLayer(l) } catch {} })
         syncLinesRef.current = []
+        // Self and area are now managed via their own refs (updated in-place, not in markersRef)
+        if (selfMarkerRef.current) {
+          try { mapInstanceRef.current.removeLayer(selfMarkerRef.current) } catch {}
+          selfMarkerRef.current = null
+        }
+        if (areaCircleRef.current) {
+          try { mapInstanceRef.current.removeLayer(areaCircleRef.current) } catch {}
+          areaCircleRef.current = null
+        }
       }
       markersRef.current = []
       // Ritual ripples are intentionally short-lived (they time themselves out), but clear any that are still referenced
@@ -6978,13 +7038,17 @@ function App() {
                     <div className="text-[7px] text-[#FFD700] px-1 mt-0.5">Tu Network Power activa — tus GymPartners destacan en el GymPulse</div>
                   )}
 
-                  {/* Centrar / recenter control */}
+                  {/* Centrar / recenter control - prefers self GPS location and keeps current zoom level so user stays "fijo donde estoy" */}
                   <button
                     onClick={() => {
                       try { triggerHaptic('light') } catch {}
                       const map = mapInstanceRef.current
                       if (!map) return
-                      if (markersRef.current.length > 0) {
+                      if (selfMarkerRef.current) {
+                        // Center on self but preserve current zoom (don't fight user's zoom choice)
+                        const currentZoom = map.getZoom() || 13
+                        map.setView(selfMarkerRef.current.getLatLng(), currentZoom)
+                      } else if (markersRef.current.length > 0) {
                         const group = L.featureGroup(markersRef.current)
                         map.fitBounds(group.getBounds().pad(0.2))
                       } else if (userLocation) {

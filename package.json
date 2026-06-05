@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.70-partner-add-fix",
+  "version": "0.1.71-gps-self-marker-fix",
   "type": "module",
   "scripts": {
     "dev": "vite",
