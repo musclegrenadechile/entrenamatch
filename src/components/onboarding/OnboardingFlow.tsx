@@ -2,6 +2,7 @@
 import { useState, type ChangeEvent } from 'react';
 import { Dumbbell, MapPin, Camera, Trash2, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 import { TRAINING_OPTIONS, TRAINING_GOALS, TRAINING_INTENSITIES } from '../../constants';
 
 // Camera is provided by the loader loaded from App.tsx in CAP builds (via global side effect).
@@ -144,9 +145,9 @@ export const OnboardingFlow = ({
           </div>
         </div>
         <div className="px-3 py-1.5 text-[9px] bg-[#0D0D10] text-[#22c55e] flex items-center gap-1 border-t border-[#22c55e]/20">
-          <span>👁️ Así te verán en Explorar y en el banner EN VIVO</span>
-          {isLive && <span className="ml-auto font-bold">¡Aparecerás en el radar live al terminar!</span>}
-          <span className="ml-auto text-[8px] text-[#FF671F]">✨ Únete a lives para iniciar EntrenaSync único</span>
+          <span>👁️ Así te verán en Explorar y en el radar vivo</span>
+          {isLive && <span className="ml-auto font-bold">¡Aparecerás en el mapa al terminar!</span>}
+          <span className="ml-auto text-[8px] text-[#FF671F]">⚡ Crea ripples • Bonds con peso real • Momentos que otros presenciarán</span>
         </div>
       </div>
     );
@@ -318,11 +319,16 @@ export const OnboardingFlow = ({
       setOnboardingStep(0);
 
       const liveDesc = onboardData.wantsToGoLive ? ' ¡Estás EN VIVO ahora — otros te verán en el banner!' : ' Activa "Entrenando ahora" en Perfil para aparecer en vivo.';
-      toast.success(isEditingProfile ? '¡Perfil actualizado!' : '¡Perfil creado!', { 
+      toast.success(isEditingProfile ? '¡Perfil actualizado!' : '¡Has sido iniciado!', { 
         description: isEditingProfile 
           ? 'Los cambios se guardaron y sincronizaron con el backend real.' 
-          : ('Bienvenido a EntrenaMatch. ¡El Spark del Movimiento!' + liveDesc)
+          : ('Bienvenido al Círculo. Eres parte del primer ritual donde el esfuerzo se sincroniza. ' + liveDesc + ' Tus bonds tendrán peso real. Tus momentos podrán ser presenciados.')
       });
+
+      // Ceremonial touch: for new users who opt live, create a subtle "iniciación" post so their first presence is felt in the community
+      if (!isEditingProfile && onboardData.wantsToGoLive) {
+        // The save already triggers live, but we can hint at the first ripple opportunity
+      }
     } catch (err) {
       console.error('Error guardando perfil en onboarding:', err);
       toast.error('No se pudo guardar el perfil', { description: 'Revisa tu conexión e intenta de nuevo.' });
@@ -334,12 +340,16 @@ export const OnboardingFlow = ({
     <div className="app-container flex flex-col bg-[#0D0D10] text-white">
       <div className="flex-1 flex flex-col p-6 pt-10">
         <div className="flex items-center gap-3 mb-8">
-          <div className="w-11 h-11 rounded-2xl bg-[#FF671F] flex items-center justify-center">
+          <motion.div 
+            animate={{ scale: [1, 1.05, 1], boxShadow: ['0 0 0 0 rgba(255,103,31,0.3)', '0 0 0 12px rgba(255,103,31,0.1)', '0 0 0 0 rgba(255,103,31,0.3)'] }}
+            transition={{ duration: 2.5, repeat: Infinity }}
+            className="w-11 h-11 rounded-2xl bg-[#FF671F] flex items-center justify-center"
+          >
             <Dumbbell className="w-6 h-6 text-black" />
-          </div>
+          </motion.div>
           <div>
             <div className="font-bold text-3xl tracking-tighter">EntrenaMatch</div>
-            <div className="text-[#FF671F] text-xs -mt-1">ENTRENA EN TODO EL MUNDO</div>
+            <div className="text-[#FF671F] text-xs -mt-1 tracking-[2px]">LA INICIACIÓN AL RITUAL</div>
           </div>
         </div>
 
@@ -347,9 +357,9 @@ export const OnboardingFlow = ({
           <div className="flex items-center justify-between">
             <div>
               <div className="text-3xl font-semibold tracking-tighter leading-none mb-1">
-                {isEditingProfile ? 'Edita tu perfil' : 'Crea tu perfil'}
+                {isEditingProfile ? 'Edita tu Iniciación' : 'Ceremonia de Iniciación'}
               </div>
-              <div className="text-[#9CA3AF] text-sm">El Spark del Movimiento • Conecta + entrena en vivo cerca</div>
+              <div className="text-[#9CA3AF] text-sm">Estás a punto de entrar al primer ritual donde el entrenamiento se vive sincronizado. Tus bonds tendrán peso. Tus momentos serán presenciados.</div>
             </div>
             {!isEditingProfile && (
               <button onClick={fillExampleData} className="text-[10px] px-3 py-1 rounded-2xl border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10">Rellenar ejemplo</button>
@@ -357,16 +367,16 @@ export const OnboardingFlow = ({
           </div>
         </div>
 
-        {/* Progress - clearer labels + step count */}
+        {/* Progress - ritual language */}
         <div className="mb-3">
           <div className="flex items-center justify-between text-xs mb-1.5 px-0.5">
-            <div className="font-medium text-[#FF671F]">Paso {onboardingStep + 1} de 5</div>
+            <div className="font-medium text-[#FF671F]">Paso {onboardingStep + 1} de 5 • Iniciación</div>
             <div className="text-[#9CA3AF]">
-              {onboardingStep === 0 && 'Info básica + disponibilidad'}
-              {onboardingStep === 1 && 'Tus fotos (principal primero)'}
-              {onboardingStep === 2 && 'Tipos de entreno + objetivos'}
-              {onboardingStep === 3 && 'Nivel e intensidad'}
-              {onboardingStep === 4 && 'Consentimientos + preview final'}
+              {onboardingStep === 0 && 'Declara tu presencia'}
+              {onboardingStep === 1 && 'Tu imagen en el Círculo'}
+              {onboardingStep === 2 && 'Tu camino de entrenamiento'}
+              {onboardingStep === 3 && 'Tu nivel en el ritual'}
+              {onboardingStep === 4 && 'Votos y entrada al mapa vivo'}
             </div>
           </div>
           <div className="flex gap-2">
@@ -382,11 +392,11 @@ export const OnboardingFlow = ({
         {/* Scrollable step content */}
         <div className="flex-1 overflow-auto -mx-1 px-1 pb-8 min-h-0">
 
-        {/* Step 0: Basic info */}
+        {/* Paso 0: La Declaración — tu nombre entra al Círculo */}
         {onboardingStep === 0 && (
           <div className="space-y-6">
             <div>
-              <label className="text-sm text-[#9CA3AF] mb-1.5 block font-medium">¿Cómo te llamas?</label>
+              <label className="text-sm text-[#9CA3AF] mb-1.5 block font-medium">¿Cómo te llamas en el Ritual?</label>
               <input value={onboardData.name} onChange={e => updateOnboard({ name: e.target.value })} 
                 className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-5 py-4 text-xl placeholder:text-[#475569] focus:border-[#FF671F] focus:outline-none" placeholder="Tu nombre" />
             </div>
@@ -646,18 +656,18 @@ export const OnboardingFlow = ({
           </div>
         )}
 
-        {/* Step 4: Consents + LIVE OPT-IN (sells the killer "Entrenando Ahora" feature as the exciting closer) */}
+        {/* Paso 4: La Ceremonia Final — los Votos + Declaración de Presencia Viva */}
         {onboardingStep === 4 && (
           <div className="space-y-4">
             <div>
-              <div className="text-xl font-semibold mb-1">Consentimientos obligatorios</div>
+              <div className="text-xl font-semibold mb-1">Los Votos de Iniciación (obligatorios)</div>
               <p className="text-sm text-[#9CA3AF]">{isEditingProfile ? 'Confirma que sigues de acuerdo para guardar los cambios.' : 'Debes aceptar todos para crear tu perfil y usar la plataforma.'}</p>
             </div>
 
             {[
-              { key: 'is18', label: 'Confirmo que tengo 18 años o más' },
-              { key: 'isForTraining', label: 'Estoy buscando entrenar de forma seria y respetuosa' },
-              { key: 'sharesLocation', label: 'Acepto compartir mi ubicación aproximada para encontrar gente cerca' }
+              { key: 'is18', label: 'Juro que tengo 18 años o más y entro con respeto al Círculo' },
+              { key: 'isForTraining', label: 'Juro entrenar de forma seria, sincera y respetuosa con mis compañeros de ritual' },
+              { key: 'sharesLocation', label: 'Juro compartir mi presencia en el mapa vivo para que otros puedan sincronizarse conmigo' }
             ].map(item => (
               <label key={item.key} className="flex items-start gap-3 p-4 bg-[#1C1C20] rounded-2xl border border-[#2F2F35] cursor-pointer active:bg-[#25252A] transition-colors">
                 <input
@@ -716,7 +726,7 @@ export const OnboardingFlow = ({
               (onboardingStep === 4 && !Object.values(localConsents).every(Boolean))
             }
           >
-            {onboardingStep < 4 ? 'Continuar' : 'Completar mi perfil'}
+            {onboardingStep < 4 ? 'Continuar la Iniciación' : 'Completar la Ceremonia e Ingresar al Ritual'}
           </button>
         </div>
       </div>

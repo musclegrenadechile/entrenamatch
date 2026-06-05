@@ -623,3 +623,12 @@ This is the build to upload to Closed track. Full "sigue con todo" — more uniq
 - Feed global: posts de tus Legends suben con prioridad (tienen peso real en el orden de la comunidad).
 - Cultivar bonds ahora tiene recompensa visible: más visibilidad en mapa y feed, tethers especiales, ripples legendarios.
 - Prueba: Haz sync con alguien hasta acumular bond decente, luego ve el mapa cuando ambos estén live: tether dorado. Filtra 'Solo Legends'. Publica algo: sube más arriba en feed.
+
+**NUEVO — ONBOARDING COMO CEREMONIA DE INICIACIÓN (v0.1.32-ceremonia-iniciacion, code 37)**:
+- El primer minuto ahora es una **ceremonia de iniciación** al Círculo.
+- Títulos rituales: 'Iniciación • Paso X', 'Los Votos de Iniciación', 'Completar la Ceremonia e Ingresar al Ritual'.
+- Lenguaje de fundador: 'Juro entrenar de forma seria y respetuosa con mis compañeros de ritual', 'Cruzas el umbral hacia el primer ritual...', 'Tus bonds tendrán peso real. Tus momentos podrán ser presenciados'.
+- Preview en vivo actualizado con teasers directos a ripples, witness, legends y Arena.
+- Al terminar (nuevo usuario): mensaje épico '¡Has sido iniciado! Bienvenido al Círculo...'.
+- El onboarding ya no es 'llenar un formulario'. Es el momento en que sientes que estás entrando a algo único, ceremonial e irreversible.
+- Prueba: Borra datos o usa cuenta nueva. Siente cómo el flujo entero genera anticipación por el 'ritual que nadie más tiene'.

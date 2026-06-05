@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 36 / 0.1.31-legend-weight. **BONDS/LEGENDS CON PESO REAL**: Marcadores dorados, tethers legendarios en mapa, prioridad en feed global, ripples legendarios. 
+**Current version for this upload**: versionCode 37 / 0.1.32-ceremonia-iniciacion. **ONBOARDING COMO CEREMONIA DE INICIACIÓN**: Primer minuto elevado a rito de paso al Ritual. 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -149,11 +149,18 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 
 ## What's new (for this Pre-Alpha release, short & punchy)
 
-**READY FOR PLAY CLOSED UPLOAD (v0.1.31-legend-weight code 36)**
-- Fresh signed AAB: `EntrenaMatch-v0.1.31-legend-weight-code36-20260604-2008.aab` (7.2 MB) + `EntrenaMatch-release.aab`
-- Fresh debug APK for device: `EntrenaMatch-debug-legend-weight-0.1.31-20260604-2008.apk` (10 MB) + `EntrenaMatch-debug.apk`
+**READY FOR PLAY CLOSED UPLOAD (v0.1.32-ceremonia-iniciacion code 37)**
+- Fresh signed AAB: `EntrenaMatch-v0.1.32-ceremonia-iniciacion-code37-20260604-2012.aab` (7.2 MB) + `EntrenaMatch-release.aab`
+- Fresh debug APK for device: `EntrenaMatch-debug-ceremonia-iniciacion-0.1.32-20260604-2011.apk` (10 MB) + `EntrenaMatch-debug.apk`
 - Web: pushed to main → GH Pages will have the new bundle (hard refresh after Actions finish).
 - Copy the short "What's new" below directly into Play Console when uploading the AAB to closed track.
+
+**v0.1.32-ceremonia-iniciacion (code 37) — ELEVACIÓN DEL PRIMER MINUTO: ONBOARDING COMO CEREMONIA DE INICIACIÓN**
+• El flujo de onboarding ahora es una **ceremonia de iniciación** al Círculo: títulos como "Iniciación • Paso X", "Los Votos de Iniciación", "Completar la Ceremonia e Ingresar al Ritual".
+• Lenguaje épico y visionario: "Cruzas el umbral hacia el primer ritual...", "Juro entrenar de forma seria y respetuosa con mis compañeros de ritual", "Tus bonds tendrán peso real. Tus momentos podrán ser presenciados".
+• Preview en vivo actualizado con teasers directos a ripples, witness, legends y Arena.
+• Al terminar (nuevo + live): mensaje de bienvenida épico "¡Has sido iniciado! Bienvenido al Círculo...".
+• El primer minuto genera la sensación de estar entrando a algo único, ceremonial e irreversible.
 
 **v0.1.31-legend-weight (code 36) — BONDS Y LEGENDS CON PESO REAL EN MAPA Y FEED**
 • En el mapa: tus Legends tienen marcadores dorados especiales (⭐ LEGEND badge, glow gold, pulso más fuerte), tethers legendarios dorados y gruesos cuando un par de bonds están live juntos.
@@ -217,8 +224,8 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • AAB + debug APK frescos listos (ver nombres abajo). Build limpia + pipeline completo.
 • Todo el pipeline: web GH Pages, Android AAB/debug, docs actualizados. Sigue con todo ritmo.
 
-**Short "What's new" (copy-paste to Play Console for v0.1.31 code 36):**
-Bonds/Legends con peso real: marcadores dorados y badge ⭐ LEGEND en mapa, tethers legendarios dorados para pares de bonds, filtro "Solo Legends". Ripples de legends son "RITUAL LEGENDARIO" con ondas gold. En feed global los posts de tus Legends tienen prioridad de orden. Cultivar bonds ahora da visibilidad y estatus real en el ecosistema. (code 36)
+**Short "What's new" (copy-paste to Play Console for v0.1.32 code 37):**
+Onboarding como Ceremonia de Iniciación: el primer minuto es ahora un rito de paso al Círculo. Títulos rituales ("Iniciación", "Los Votos de Iniciación"), juras épicas, preview que teaser ripples/witness/legends/Arena. Botón final "Completar la Ceremonia e Ingresar al Ritual". Mensaje de bienvenida "¡Has sido iniciado!". Sensación de entrar a algo único e irreversible desde el segundo uno. (code 37)
 
 **Artifacts for this version:**
 - AAB (Play): EntrenaMatch-v0.1.28-recuperacion-cuenta-code33-20260604-1958.aab (y EntrenaMatch-release.aab)
