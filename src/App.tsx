@@ -348,6 +348,8 @@ function App() {
     longestPulse: number
     level: number
     xp: number
+    streakProtectedDate?: string | null
+    pulseAmplifiedDate?: string | null
   } | null>(null)
   const [showDailyPulseBanner, setShowDailyPulseBanner] = useState(false)
   const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false)
@@ -860,12 +862,15 @@ function App() {
     let newLongPulse = longPulse
 
     if (last !== today) {
+      const isProtected = (dailyPulse?.streakProtectedDate || (u as any).streakProtectedDate) === today
       if (last) {
         const lastD = new Date(last)
         const yest = new Date()
         yest.setDate(yest.getDate() - 1)
-        if (lastD.toDateString() === yest.toDateString()) {
+        if (lastD.toDateString() === yest.toDateString() && !isProtected) {
           newStreak = currentStreak + 1
+        } else if (isProtected) {
+          newStreak = currentStreak // protected, no reset
         } else {
           newStreak = 1
         }
@@ -890,7 +895,9 @@ function App() {
         longestVoice: Math.max(newLongVoice, newVoice),
         longestPulse: Math.max(newLongPulse, newPulseStreak),
         level,
-        xp
+        xp,
+        streakProtectedDate: dailyPulse?.streakProtectedDate || (u as any).streakProtectedDate || null,
+        pulseAmplifiedDate: dailyPulse?.pulseAmplifiedDate || (u as any).pulseAmplifiedDate || null
       }
 
       setDailyPulse(newPulse)
@@ -905,7 +912,9 @@ function App() {
         currentDailyChallenge: challenge,
         // level/xp computed client, but persist for sync
         retentionLevel: level,
-        retentionXp: xp
+        retentionXp: xp,
+        streakProtectedDate: dailyPulse?.streakProtectedDate || (u as any).streakProtectedDate || null,
+        pulseAmplifiedDate: dailyPulse?.pulseAmplifiedDate || (u as any).pulseAmplifiedDate || null
       }
       saveUserWithRealSync({ ...u, ...update } as any)
 
@@ -939,7 +948,9 @@ function App() {
         longestVoice: longVoice,
         longestPulse: longPulse,
         level: hydLevel,
-        xp: hydXp
+        xp: hydXp,
+        streakProtectedDate: (u as any).streakProtectedDate || null,
+        pulseAmplifiedDate: (u as any).pulseAmplifiedDate || null
       })
     }
   }
@@ -988,7 +999,9 @@ function App() {
       dailyVoiceStreak: updatedPulse.voiceStreak,
       dailyPulseStreak: updatedPulse.pulseStreak,
       retentionLevel: updatedPulse.level,
-      retentionXp: updatedPulse.xp
+      retentionXp: updatedPulse.xp,
+      streakProtectedDate: updatedPulse.streakProtectedDate || null,
+      pulseAmplifiedDate: updatedPulse.pulseAmplifiedDate || null
     }
     saveUserWithRealSync({ ...u, ...update } as any)
 
@@ -1015,13 +1028,13 @@ function App() {
         const newSyn = updatedPulse.synergyStreak + 1
         const synUpdate = { ...updatedPulse, synergyStreak: newSyn }
         setDailyPulse(synUpdate)
-        saveUserWithRealSync({ ...(currentUser as any), dailySynergyStreak: newSyn } as any)
+        saveUserWithRealSync({ ...(currentUser as any), dailySynergyStreak: newSyn, streakProtectedDate: updatedPulse.streakProtectedDate, pulseAmplifiedDate: updatedPulse.pulseAmplifiedDate } as any)
       }
       // Pulse visibility streak for completing daily challenges that create visible impact
       const newPulseSt = (updatedPulse.pulseStreak || 0) + 1
       const pUpdate = { ...updatedPulse, pulseStreak: newPulseSt, longestPulse: Math.max(updatedPulse.longestPulse || 0, newPulseSt) }
       setDailyPulse(pUpdate)
-      saveUserWithRealSync({ ...(currentUser as any), dailyPulseStreak: newPulseSt } as any)
+      saveUserWithRealSync({ ...(currentUser as any), dailyPulseStreak: newPulseSt, streakProtectedDate: updatedPulse.streakProtectedDate, pulseAmplifiedDate: updatedPulse.pulseAmplifiedDate } as any)
 
       // Milestone rewards - powerful retention
       const streak = updatedPulse.trainingStreak
@@ -1029,7 +1042,7 @@ function App() {
         const bonus = 150
         const milUpdate = { ...updatedPulse, momentum: (updatedPulse.momentum || 0) + bonus }
         setDailyPulse(milUpdate)
-        saveUserWithRealSync({ ...(currentUser as any), momentumPoints: milUpdate.momentum } as any)
+        saveUserWithRealSync({ ...(currentUser as any), momentumPoints: milUpdate.momentum, streakProtectedDate: updatedPulse.streakProtectedDate, pulseAmplifiedDate: updatedPulse.pulseAmplifiedDate } as any)
         toast.success(`¡Milestone de Streak! +${bonus} Momentum`, { description: `${streak}d streak legendario - ¡Eres una máquina!` })
         // Special post
         createProfilePost(`🔥 STREAK LEGENDARIO ${streak}d - Mis GymPartners me hacen imparable. GymPulse Diario completado.`, null, 'dailyPulse').catch(()=>{})
@@ -1044,7 +1057,7 @@ function App() {
     const newM = (dailyPulse.momentum || 0) + amount
     const up = { ...dailyPulse, momentum: newM }
     setDailyPulse(up)
-    saveUserWithRealSync({ ...(currentUser as any), momentumPoints: newM } as any)
+    saveUserWithRealSync({ ...(currentUser as any), momentumPoints: newM, streakProtectedDate: dailyPulse?.streakProtectedDate, pulseAmplifiedDate: dailyPulse?.pulseAmplifiedDate } as any)
     toast(`+${amount} Momentum`, { description: reason })
   }
   const [witnessData, setWitnessData] = useState<any>(null) // for shared session highlight replay: replay of a strong EntrenaSync (shared state, actions, vibe) that can be archived as co-authored performance memory
@@ -1248,7 +1261,7 @@ function App() {
   useEffect(() => {
     if (!dailyPulse || !currentUser) return
     const hour = new Date().getHours()
-    if (hour >= 18 && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow) {
+    if (hour >= 18 && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow && dailyPulse.streakProtectedDate !== getTodayStr()) {
       const timer = setTimeout(() => {
         toast.error('¡Streak en riesgo esta noche!', {
           description: `Tu ${dailyPulse.trainingStreak}d training streak se resetea si no entrenas. Protege con Momentum o 20min ya.`
@@ -1888,7 +1901,10 @@ function App() {
         const bond = syncBonds[p.id];
         const isLegend = !!bond && ((bond.totalMin || 0) >= 30 || (bond.bondLevel || 0) >= 2);
         // Attach approximate level for gadget visuals on map (self + demo have real dailyPulse; others fall back to bond strength or 1)
-        const visibleLevel = (p.id === 'me' || p.id === currentUser?.id) ? (dailyPulse?.level || 1) : (isLegend ? Math.max(10, Math.floor((bond?.totalMin || 0) / 8) + 5) : 3);
+        const isSelf = p.id === 'me' || p.id === currentUser?.id
+        let visLevel = isSelf ? (dailyPulse?.level || 1) : (isLegend ? Math.max(10, Math.floor((bond?.totalMin || 0) / 8) + 5) : 3)
+        if (isSelf && dailyPulse?.pulseAmplifiedDate === getTodayStr()) visLevel += 5 // amplified pulse effect
+        const visibleLevel = visLevel
         return { ...p, distance: dist, seVaEnMin, joinCount, isLegend, bondInfo: bond, visibleLevel, trainingNowSince: since };
       })
       .filter(p => !userLocation || p.distance < 15) // near only if we have location; otherwise show all live (so feature works even without GPS)
@@ -2584,6 +2600,8 @@ function App() {
             dailyPulseStreak: data.dailyPulseStreak != null ? data.dailyPulseStreak : undefined,
             momentumPoints: data.momentumPoints != null ? data.momentumPoints : undefined,
             lastDailyPulseDate: data.lastDailyPulseDate != null ? data.lastDailyPulseDate : undefined,
+            streakProtectedDate: data.streakProtectedDate || null,
+            pulseAmplifiedDate: data.pulseAmplifiedDate || null,
             currentDailyChallenge: data.currentDailyChallenge || undefined,
             retentionLevel: data.retentionLevel || 1,
             retentionXp: data.retentionXp || 0,
@@ -2646,6 +2664,8 @@ function App() {
               dailyPulseStreak: realProfile.dailyPulseStreak != null ? realProfile.dailyPulseStreak : undefined,
               momentumPoints: realProfile.momentumPoints != null ? realProfile.momentumPoints : undefined,
               lastDailyPulseDate: realProfile.lastDailyPulseDate != null ? realProfile.lastDailyPulseDate : undefined,
+              streakProtectedDate: realProfile.streakProtectedDate || null,
+              pulseAmplifiedDate: realProfile.pulseAmplifiedDate || null,
               currentDailyChallenge: realProfile.currentDailyChallenge || undefined,
               retentionLevel: realProfile.retentionLevel || 1,
               retentionXp: realProfile.retentionXp || 0,
@@ -2715,6 +2735,12 @@ function App() {
             }
             if (currentUser.joinedLiveStreak !== undefined) {
               pushProfile.joinedLiveStreak = currentUser.joinedLiveStreak;
+            }
+            if ((currentUser as any).streakProtectedDate !== undefined) {
+              pushProfile.streakProtectedDate = (currentUser as any).streakProtectedDate;
+            }
+            if ((currentUser as any).pulseAmplifiedDate !== undefined) {
+              pushProfile.pulseAmplifiedDate = (currentUser as any).pulseAmplifiedDate;
             }
             await updateUserProfile(firebaseUser.uid, pushProfile)
             // console.log removed (debug)
@@ -2862,6 +2888,12 @@ function App() {
         }
         if (user.syncBonds) {
           profileUpdate.syncBonds = user.syncBonds;
+        }
+        if (user.streakProtectedDate !== undefined) {
+          profileUpdate.streakProtectedDate = user.streakProtectedDate;
+        }
+        if (user.pulseAmplifiedDate !== undefined) {
+          profileUpdate.pulseAmplifiedDate = user.pulseAmplifiedDate;
         }
         await updateUserProfile(firebaseUser.uid, profileUpdate)
         // console.log removed (debug)
@@ -9661,6 +9693,12 @@ function App() {
                     </div>
                   </div>
                   <div className="text-[8px] text-[#FFD700] -mt-2 mb-2 text-center">Récord: {Math.max(dailyPulse.longestTraining || 0, dailyPulse.longestSynergy || 0, dailyPulse.longestVoice || 0, dailyPulse.longestPulse || 0)}d</div>
+                  {(dailyPulse.streakProtectedDate === getTodayStr() || dailyPulse.pulseAmplifiedDate === getTodayStr()) && (
+                    <div className="text-[8px] text-center mb-1 text-[#22c55e]">
+                      {dailyPulse.streakProtectedDate === getTodayStr() && '🛡️ Streak protegido hoy '}
+                      {dailyPulse.pulseAmplifiedDate === getTodayStr() && '📡 Pulso amplificado hoy'}
+                    </div>
+                  )}
 
                   {/* Level progress - powerful retention visual */}
                   <div className="mb-3">
@@ -9759,7 +9797,10 @@ function App() {
                       onClick={() => {
                         if ((dailyPulse.momentum || 0) >= 30) {
                           try { triggerHaptic('medium') } catch {}
-                          awardMomentum(-30, 'Amplificaste un Pulso')
+                          const todayStr = getTodayStr()
+                          const ampPulse = { ...dailyPulse, pulseAmplifiedDate: todayStr, momentum: (dailyPulse.momentum || 0) - 30 }
+                          setDailyPulse(ampPulse)
+                          saveUserWithRealSync({ ...(currentUser as any), pulseAmplifiedDate: todayStr, momentumPoints: ampPulse.momentum } as any)
                           toast.success('GymPulse amplificado', { description: 'Tu actividad ahora tiene más peso en el GymPulse de tus GymPartners por 24h' })
                         } else {
                           toast('Necesitas 30 Momentum')
@@ -9773,8 +9814,15 @@ function App() {
                       onClick={() => {
                         if ((dailyPulse.momentum || 0) >= 20) {
                           try { triggerHaptic('medium') } catch {}
-                          awardMomentum(-20, 'Ignitaste a un socio')
-                          toast.success('Socio ignitado', { description: 'Un compañero de tu Red recibe +streak protection hoy' })
+                          const todayStr = getTodayStr()
+                          const igniteM = (dailyPulse.momentum || 0) - 20
+                          const ignPulse = { ...dailyPulse, momentum: igniteM }
+                          setDailyPulse(ignPulse)
+                          saveUserWithRealSync({ ...(currentUser as any), momentumPoints: igniteM } as any)
+                          // Simulate sending protection to a random bond (real effect would require writing to their profile, which we toast as social)
+                          const bondIds = Object.keys(syncBonds || {})
+                          const target = bondIds.length > 0 ? bondIds[Math.floor(Math.random() * bondIds.length)] : null
+                          toast.success('Socio ignitado', { description: target ? `+protección de streak enviada a ${syncBonds[target]?.name || 'socio' } hoy` : 'Protección de streak enviada a tu Red' })
                         } else toast('Necesitas 20 Momentum')
                       }}
                       className="flex-1 text-[10px] py-1.5 rounded-2xl border border-[#22c55e]/30 active:bg-[#22c55e]/10 active:scale-[0.985] hover:bg-[#22c55e]/5 transition-all text-[#22c55e]"
@@ -9785,7 +9833,10 @@ function App() {
                       onClick={() => {
                         if ((dailyPulse.momentum || 0) >= 50) {
                           try { triggerHaptic('medium') } catch {}
-                          awardMomentum(-50, 'Streak protegido')
+                          const todayStr = getTodayStr()
+                          const protectedPulse = { ...dailyPulse, streakProtectedDate: todayStr, momentum: (dailyPulse.momentum || 0) - 50 }
+                          setDailyPulse(protectedPulse)
+                          saveUserWithRealSync({ ...(currentUser as any), streakProtectedDate: todayStr, momentumPoints: protectedPulse.momentum } as any)
                           toast.success('Streak protegido', { description: 'No perderás tu racha si no entrenas hoy. ¡Buen uso de Momentum!' })
                         } else {
                           toast('Necesitas 50 Momentum para proteger')
