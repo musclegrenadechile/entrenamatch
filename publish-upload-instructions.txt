@@ -1,4 +1,18 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.60-profile-creation-remaster code 64) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.61-voice-send-visible-fix code 65) ===
+
+Fix for voice notes in chat: after recording audio (stop recording), the option to send was not obvious or felt hidden/not visible.
+
+- Preview bar for pending voice now has stronger visual: thicker brand border, more padding/min-height so it stands out and isn't cramped/hidden.
+- Explicit large "ENVIAR VOZ" button with Send icon in the preview (bigger padding, no tiny text).
+- Main form send button (the prominent one next to mic) now changes to green live color + clear title tooltip "Enviar la nota de voz grabada" (or al grupo) exactly when a voice is pending. So user always sees the send action is available for the audio.
+- Input placeholder dynamically hints "Nota de voz adjunta - presiona enviar" when voice ready to send.
+- Same treatment in both 1:1 private chat and group/squad chat.
+
+Now, after "Parar" recording, the UI clearly shows the send options (in preview + main button lights up green) without anything hidden. The attractive preview (wave, play, duration from prior polish) is now paired with unmistakable, well-laid-out ("cuadrado") send affordances right in the chat input area.
+
+Rebuild clean. Continues the voice attractive work + recent profile remaster + TDZ stability.
+
+(Previous instructions for profile creation remaster and all prior still apply.)
 
 Remaster completo de la creación de perfil (OnboardingFlow + vista/edición en Perfil tab): 
 - Errores fix: fotos de perfil ahora SIEMPRE se suben a Firebase Storage (helper uploadProfilePhotoIfNeeded usado en onboarding adds + finish + cámara nativa en galería de perfil). Antes data:base64 quedaban en Firestore → bloat, lentos, errores de display/save en real mode.

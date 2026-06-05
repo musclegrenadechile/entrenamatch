@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.60-profile-creation-remaster",
+  "version": "0.1.61-voice-send-visible-fix",
   "type": "module",
   "scripts": {
     "dev": "vite",

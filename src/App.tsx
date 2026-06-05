@@ -8387,46 +8387,44 @@ function App() {
               </div>
             </div>
 
-            {/* Hero photo with name overlay - premium visual treatment, MORE ALIVE */}
-            <div className="relative h-72 w-full overflow-hidden bg-[#111]">
+            {/* HERO - FULL REMASTERED EPIC "MI RITUAL" PRESENCE - Attractive, unique, premium */}
+            <div className="relative h-80 w-full overflow-hidden bg-[#0a0a0c]">
               <img 
                 src={(currentUser.photos && currentUser.photos[0]) || 'https://picsum.photos/id/1005/600/800'} 
                 className="absolute inset-0 w-full h-full object-cover" 
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
               />
-              {/* Enhanced cinematic gradients + live pulse overlay if training */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/90" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-              {currentUser.trainingNow && (
-                <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:3px_3px] opacity-10 animate-[live-pulse-green_2s_ease-in-out_infinite]" />
-              )}
-              
-              <div className="absolute bottom-0 left-0 right-0 p-5">
-                <div className="flex items-end gap-2">
-                  <div className="text-3xl font-bold tracking-[-1.8px] text-white drop-shadow">{currentUser.name}, {currentUser.age}</div>
-                  {currentUser.verificationStatus === 'verified' && (
-                    <div className="mb-1 px-2 py-0.5 bg-[#22c55e] text-black text-[9px] font-bold rounded-full flex items-center gap-0.5">✓ VERIFICADO</div>
-                  )}
-                </div>
-                <div className="text-[#FF671F] text-sm mt-1 flex items-center gap-2 font-medium">
-                  <MapPin size={15} /> {currentUser.city}, {currentUser.country}
-                  <span className="text-white/60">•</span> 
-                  <span className="text-[10px] px-1.5 py-px rounded-full bg-[#FF4F79]/10 text-[#FF4F79] font-semibold">{currentUser.level}</span>
-                  <span className="text-white/60">•</span> 
-                  <span className="chip-health text-[10px] px-2 py-0.5 !font-semibold">{currentUser.intensity || 'Moderado'}</span>
-                  {userLocation && <span className="text-[9px] text-[#22c55e] ml-1">📍 real GPS</span>}
-                </div>
-                <div className="flex items-center gap-2 mt-1">
-                  <button 
-                    onClick={requestUserLocation}
-                    className="text-[9px] text-[#22c55e] underline active:opacity-70 flex items-center gap-1"
-                  >
-                    📍 Actualizar ubicación real (GPS)
-                  </button>
-                  {userLocation && <span className="text-[8px] text-[#9CA3AF]/70">• distancias precisas activas</span>}
-                </div>
-                {/* NEW: Big alive live status banner in hero */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/50 to-black/95" />
+              <div className="absolute inset-0 border-b-2 border-[#FF671F]/20" />
+
+              {/* Top status bar - unique */}
+              <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start text-xs">
                 {currentUser.trainingNow && (
+                  <div className="bg-[#22c55e] text-black font-black px-3 py-1 rounded-2xl tracking-widest shadow-[0_0_15px_rgba(34,197,94,0.5)]">🟢 EN PULSO VIVO • {currentUser.liveStreak || 0}D</div>
+                )}
+                <div className="text-right font-mono text-white/50 tracking-widest">{currentUser.level} • {currentUser.intensity}</div>
+              </div>
+
+              {/* Bottom hero content - rich & attractive */}
+              <div className="absolute bottom-0 left-0 right-0 p-5">
+                <div className="font-black text-4xl tracking-[-2.5px] text-white drop-shadow-lg">{currentUser.name}</div>
+                <div className="text-[#9CA3AF] text-sm tracking-wider -mt-1">{currentUser.age} • {currentUser.city}, {currentUser.country}</div>
+
+                {/* Unique "Tu Poder" mini dashboard in hero - makes profile creation feel valuable immediately */}
+                <div className="mt-3 flex gap-2 text-[10px]">
+                  <div className="bg-white/10 border border-white/20 px-2 py-1 rounded-xl font-mono"><span className="text-[#FFD700]">{networkStats?.networkPower || 0}</span> NP</div>
+                  <div className="bg-white/10 border border-white/20 px-2 py-1 rounded-xl font-mono"><span className="text-[#22c55e]">{Object.keys(syncBonds || {}).length}</span> BONDS</div>
+                  <div className="bg-white/10 border border-white/20 px-2 py-1 rounded-xl font-mono"><span className="text-[#FF671F]">{currentUser.photos?.length || 0}</span> FOTOS</div>
+                </div>
+              </div>
+
+              {/* Edit CTA - prominent for creation/editing */}
+              <button 
+                onClick={() => setShowOnboarding(true)}
+                className="absolute top-4 right-4 text-xs px-4 py-2 rounded-2xl bg-black/70 border border-white/30 text-white flex items-center gap-1.5 active:bg-black tracking-wider"
+              >
+                <Edit2 size={13} /> REMASTERIZAR MI RITUAL
+              </button>
                   <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-2xl bg-[#22c55e] text-black text-xs font-extrabold tracking-wider shadow-[0_0_20px_rgba(34,197,94,0.6)]">
                     🔥 ENTRENANDO AHORA • {currentUser.liveStreak ? `${currentUser.liveStreak}d streak` : 'EN VIVO'} 
                     <span className="w-2 h-2 bg-black rounded-full animate-pulse" />
@@ -8434,31 +8432,17 @@ function App() {
                 )}
               </div>
 
-              {/* Quick edit overlay */}
-              <button 
-                onClick={() => setShowOnboarding(true)}
-                className="absolute top-4 right-4 flex items-center gap-1.5 bg-black/60 hover:bg-black/80 active:bg-black text-white text-xs px-3.5 py-2 rounded-2xl border border-white/30 backdrop-blur"
-              >
-                <Edit2 size={14} /> Editar foto y datos
-              </button>
-
-              {/* Camera quick add badge if native */}
-              {typeof window !== 'undefined' && (window as any).Capacitor && CapacitorCamera && (
-                <button onClick={async () => { /* reuse the camera logic below if possible, or trigger onboarding */ setShowOnboarding(true); }} className="absolute top-4 left-4 text-xs bg-black/60 px-2.5 py-1 rounded-2xl border border-white/20 flex items-center gap-1 text-white">
-                  <Camera size={13} /> Cámara
-                </button>
-              )}
             </div>
 
-            {/* Photo gallery strip - drag to reorder. Primera es la principal. ¡Curation de tu red de rendimiento! */}
+            {/* GALERÍA DE LEYENDAS - Remastered attractive curation. Unique visual for profile creation/editing */}
             {currentUser.photos && currentUser.photos.length > 0 && (
               <div className="px-4 pt-3 pb-2 bg-[#0D0D10] border-b border-[#2F2F35]">
                 <div className="flex items-center justify-between mb-1.5 px-0.5">
                   <div>
-                    <span className="text-[10px] uppercase tracking-[1px] text-[#9CA3AF]">Galería de Rendimiento</span>
-                    <span className="ml-2 text-[11px] text-[#FF671F] font-semibold">{currentUser.photos.length} sesiones documentadas</span>
+                    <span className="text-[10px] uppercase tracking-[1px] text-[#FFD700]">GALERÍA DE LEYENDAS</span>
+                    <span className="ml-2 text-[11px] text-[#FF671F] font-semibold">{currentUser.photos.length} sesiones • tu capital en el Pulso</span>
                   </div>
-                  <div className="text-[8px] text-[#9CA3AF]/60">Arrastra • la 1ª es tu presencia principal</div>
+                  <div className="text-[8px] text-[#9CA3AF]/60">Arrastra • reordena • la 1ª es tu presencia</div>
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1 snap-x">
                 {currentUser.photos.map((photo: string, idx: number) => (

@@ -115,8 +115,9 @@ export const OnboardingFlow = ({
     const previewTraining = (d.trainingTypes || []).slice(0, 2).join(' · ') || 'Entrenamiento';
     const previewGoals = (d.goals || []).slice(0, 1);
     const isLive = !!d.wantsToGoLive;
+    const mockNetworkPower = Math.max(12, Math.floor(((d.trainingTypes?.length || 1) * 8) + (isLive ? 25 : 0)));
     return (
-      <div className="mb-4 rounded-3xl overflow-hidden border border-[#22c55e]/30 bg-[#111113] shadow-xl">
+      <div className="mb-5 rounded-3xl overflow-hidden border-2 border-[#22c55e]/40 bg-gradient-to-b from-[#0a0a0c] to-[#111113] shadow-2xl ring-1 ring-white/5">
         <div className="relative h-36">
           {mainPhoto ? (
             <img src={mainPhoto} className="absolute inset-0 w-full h-full object-cover" alt="preview" />
@@ -376,50 +377,66 @@ export const OnboardingFlow = ({
 
   return (
     <div className="app-container flex flex-col bg-[#0D0D10] text-white">
-      <div className="flex-1 flex flex-col p-6 pt-10">
-        <div className="flex items-center gap-3 mb-4">
+      <div className="flex-1 flex flex-col p-6 pt-8">
+        {/* Epic Remastered Header - Unique ritual vibe */}
+        <div className="flex items-center gap-4 mb-5">
           <motion.div 
-            animate={{ scale: [1, 1.08, 1], boxShadow: ['0 0 0 0 rgba(255,103,31,0.4)', '0 0 0 16px rgba(255,103,31,0.15)', '0 0 0 0 rgba(255,103,31,0.4)'] }}
-            transition={{ duration: 2.2, repeat: Infinity }}
-            className="w-12 h-12 rounded-2xl bg-[#FF671F] flex items-center justify-center ring-1 ring-[#FF671F]/30"
+            animate={{ 
+              scale: [1, 1.1, 1], 
+              rotate: [0, 5, -5, 0],
+              boxShadow: ['0 0 0 0 rgba(255,103,31,0.5)', '0 0 0 20px rgba(255,103,31,0.2)', '0 0 0 0 rgba(255,103,31,0.5)'] 
+            }}
+            transition={{ duration: 3, repeat: Infinity }}
+            className="w-14 h-14 rounded-3xl bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center ring-4 ring-[#FF671F]/20 shadow-2xl"
           >
-            <Dumbbell className="w-7 h-7 text-black" />
+            <Dumbbell className="w-8 h-8 text-black" />
           </motion.div>
-          <div>
-            <div className="font-bold text-3xl tracking-[-1.5px]">ENTRENAMATCH</div>
-            <div className="text-[#FF671F] text-[10px] -mt-0.5 tracking-[2.5px] font-medium">RITUAL DE INICIACIÓN • EL PULSO TE ESPERA</div>
+          <div className="flex-1">
+            <div className="font-black text-4xl tracking-[-2px] text-white">ENTRENAMATCH</div>
+            <div className="text-[#FF671F] text-xs tracking-[3px] font-mono -mt-1">LA PRIMERA RED DEL RITUAL FITNESS</div>
           </div>
+          {!isEditingProfile && (
+            <button 
+              onClick={fillExampleData} 
+              className="text-[9px] px-4 py-2 rounded-2xl border-2 border-[#22c55e]/50 text-[#22c55e] active:bg-[#22c55e]/10 active:border-[#22c55e] font-semibold tracking-wider"
+            >
+              ⚡ CARGAR EJEMPLO ÉPICO
+            </button>
+          )}
         </div>
 
-        <div className="mb-3">
+        <div className="mb-4">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-3xl font-semibold tracking-[-1.2px] leading-none mb-0.5">
-                {isEditingProfile ? 'Edita tu presencia en el Círculo' : 'Iniciación al Ritual'}
+              <div className="text-4xl font-black tracking-[-1.5px] leading-none mb-1 text-white">
+                {isEditingProfile ? 'REMASTERIZA TU PRESENCIA' : 'CREA TU RITUAL'}
               </div>
-              <div className="text-[#9CA3AF] text-sm">Crea tu perfil único • activa tu primer Pulso • primer match en &lt;90s. <span className="font-bold text-[#FF671F]">Único en el fitness.</span></div>
+              <div className="text-[#9CA3AF] text-base max-w-md">Tu perfil no es un formulario. Es tu entrada al Círculo donde el entrenamiento se vuelve legendario. Único. Con peso real en el Pulso.</div>
             </div>
-            {!isEditingProfile && (
-              <button onClick={fillExampleData} className="text-[10px] px-3 py-1.5 rounded-2xl border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10 font-medium">Rellenar ejemplo</button>
-            )}
           </div>
         </div>
 
-        {/* Progress - 4 steps, ~15-20s each, total <90s to first action */}
-        <div className="mb-3">
-          <div className="flex items-center justify-between text-xs mb-1.5 px-0.5">
-            <div className="font-medium text-[#FF671F]">Paso {onboardingStep + 1} de 4 • {Math.round((onboardingStep+1)/4 * 100)}% listo</div>
-            <div className="text-[#9CA3AF]">
-              {onboardingStep === 0 && 'Tu Presencia'}
-              {onboardingStep === 1 && 'Tu Esencia'}
-              {onboardingStep === 2 && 'El Pulso Vivo'}
-              {onboardingStep === 3 && 'Los Votos'}
+        {/* Epic Ritual Progress - Visual path, not boring dots */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between text-xs mb-2 px-1">
+            <div className="font-mono text-[#FF671F] tracking-[2px]">RITUAL {onboardingStep + 1} / 4 • {Math.round((onboardingStep+1)/4 * 100)}% EN EL PULSO</div>
+            <div className="text-[#9CA3AF] text-[10px] font-medium">
+              {onboardingStep === 0 && 'PRESENCIA EN EL CÍRCULO'}
+              {onboardingStep === 1 && 'TU ESENCIA DE RENDIMIENTO'}
+              {onboardingStep === 2 && 'EL PULSO VIVO (LA MAGIA)'}
+              {onboardingStep === 3 && 'LOS VOTOS • ENTRA AL RITUAL'}
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="h-1.5 bg-[#1C1C20] rounded-full overflow-hidden flex">
             {[0,1,2,3].map(i => (
-              <div key={i} className={`step-dot flex-1 ${i <= onboardingStep ? 'active' : ''}`} style={i <= onboardingStep ? {width: 'auto', minWidth: 28} : {}} />
+              <div 
+                key={i} 
+                className={`flex-1 transition-all ${i <= onboardingStep ? 'bg-gradient-to-r from-[#FF671F] to-[#22c55e]' : 'bg-[#2F2F35]'}`} 
+              />
             ))}
+          </div>
+          <div className="flex justify-between text-[8px] text-[#9CA3AF]/60 mt-1 px-0.5 font-mono tracking-widest">
+            <div>PRESENCIA</div><div>ESENCIA</div><div>PULSO</div><div>VOTOS</div>
           </div>
         </div>
 
@@ -429,201 +446,258 @@ export const OnboardingFlow = ({
         {/* Scrollable step content - 4 ultra-fast steps for <60-90s to first Live or Match. NO old/dupe JSX. */}
         <div className="flex-1 overflow-auto -mx-1 px-1 pb-8 min-h-0">
 
-        {/* Paso 0: Presencia rápida (nombre + foto + bio) — 15s */}
+        {/* PASO 0: PRESENCIA - Remastered full premium. Unique ritual entry. */}
         {onboardingStep === 0 && (
-          <div className="space-y-5">
+          <div className="space-y-6">
             <div>
-              <div className="text-xl font-semibold mb-1 tracking-tight">Tu nombre en el Círculo de Rendimiento</div>
+              <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1 font-medium">PRIMER RITUAL • TU NOMBRE EN EL CÍRCULO</div>
               <input 
                 type="text" 
                 value={onboardData.name} 
                 onChange={e => { updateOnboard({ name: e.target.value }); try { triggerHaptic('light') } catch {} }}
-                placeholder="Alex Rivera" 
-                className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3.5 text-2xl font-semibold tracking-tighter" 
+                placeholder="ALEX RIVERA • GUERRERO DEL PULSO" 
+                className="w-full bg-[#1C1C20] border-2 border-[#FF671F]/30 focus:border-[#FF671F] rounded-2xl px-5 py-4 text-2xl font-black tracking-[-1px]" 
               />
+              <div className="text-[9px] text-[#9CA3AF] mt-1">Este nombre te representa en el mapa vivo y en tu Red.</div>
             </div>
 
-            {/* Photo - camera-first for speed + native feel */}
+            {/* Photo Gallery Creator - Attractive & unique curation experience */}
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-sm text-[#9CA3AF]">Tu foto principal (obligatoria)</div>
-                <div className="text-[10px] text-[#FF671F]">Cámara recomendada</div>
+              <div className="flex justify-between items-end mb-2">
+                <div>
+                  <div className="text-sm font-semibold tracking-wider">TU GALERÍA DEL RITUAL (hasta 6)</div>
+                  <div className="text-[10px] text-[#9CA3AF]">La primera es tu presencia principal. Arrastra/reordena después en Perfil.</div>
+                </div>
+                <div className="text-[10px] text-[#FF671F] font-mono">{(onboardData.photos || []).length}/6</div>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              
+              <div className="grid grid-cols-3 gap-2.5">
                 {(onboardData.photos || []).slice(0,6).map((photo: string, idx: number) => (
-                  <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-[#FF671F]/40 ring-1 ring-[#FF671F]/10">
+                  <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-[#FF671F]/50 shadow group">
                     <img src={photo} className="w-full h-full object-cover" alt="" />
-                    <button onClick={() => { removeOnboardPhoto(idx); try { triggerHaptic('light') } catch {} }} className="absolute top-1 right-1 bg-black/80 text-white p-1 rounded-full text-xs leading-none">×</button>
-                    {idx === 0 && <div className="absolute bottom-0 left-0 right-0 text-[7px] bg-[#FF671F] text-black text-center">principal</div>}
+                    <button onClick={() => { removeOnboardPhoto(idx); try { triggerHaptic('light') } catch {} }} className="absolute top-1.5 right-1.5 bg-black/80 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center active:bg-red-500">×</button>
+                    {idx === 0 && <div className="absolute bottom-0 left-0 right-0 bg-[#FF671F] text-black text-[8px] py-0.5 text-center font-bold tracking-widest">PRESENCIA PRINCIPAL</div>}
+                    {idx > 0 && (
+                      <button onClick={() => {
+                        const photos = [...(onboardData.photos || [])];
+                        const [moved] = photos.splice(idx, 1);
+                        photos.unshift(moved);
+                        updateOnboard({ photos });
+                        try { triggerHaptic('medium') } catch {}
+                      }} className="absolute bottom-1.5 left-1.5 bg-black/70 text-[8px] px-1.5 py-0.5 rounded text-white active:bg-[#FF671F]">★ PRINCIPAL</button>
+                    )}
                   </div>
                 ))}
+                
                 {(onboardData.photos || []).length < 6 && (
-                  <>
-                    <button onClick={() => { try { triggerHaptic('medium') } catch {}; takeNativePhoto() }} className="aspect-square border-2 border-[#FF671F] rounded-2xl flex flex-col items-center justify-center text-[#FF671F] text-xs font-medium active:bg-[#FF671F]/10 active:scale-[0.985]">
-                      <Camera size={26} className="mb-1" />
-                      <span>Cámara YA</span>
+                  <div className="grid grid-rows-2 gap-2.5">
+                    <button onClick={() => { try { triggerHaptic('medium') } catch {}; takeNativePhoto() }} className="border-2 border-[#FF671F] rounded-2xl flex flex-col items-center justify-center text-[#FF671F] text-xs active:bg-[#FF671F]/10 active:scale-[0.985] transition">
+                      <Camera size={22} className="mb-1" />
+                      <span className="font-bold tracking-wider">CÁMARA DEL RITUAL</span>
+                      <span className="text-[8px] opacity-60">NATIVA • RÁPIDA</span>
                     </button>
-                    <label className="aspect-square border-2 border-dashed border-[#3A3A40] rounded-2xl flex flex-col items-center justify-center text-xs cursor-pointer active:bg-[#1C1C20]">
-                      <Camera className="mb-1 text-[#9CA3AF]" size={22} />
-                      <span className="text-[#9CA3AF]">Elegir foto</span>
-                      <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                    <label className="border-2 border-dashed border-[#FF671F]/40 rounded-2xl flex flex-col items-center justify-center text-xs cursor-pointer active:bg-[#1C1C20] text-[#9CA3AF]">
+                      <Camera size={18} className="mb-1" />
+                      <span className="font-medium">SUBIR FOTOS</span>
+                      <span className="text-[8px]">HASTA 6 • DATA URL → STORAGE</span>
+                      <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
                     </label>
-                  </>
+                  </div>
                 )}
               </div>
-              <p className="text-[10px] text-[#9CA3AF] mt-1.5">Hasta 6 fotos • la primera es tu presencia principal en el Pulso y swipes. Arrastra en Perfil para reordenar.</p>
+              <div className="text-[9px] text-[#9CA3AF] mt-1.5">Fotos reales de tus sesiones. Esto te hace único en el Pulso.</div>
             </div>
 
-            {/* Bio quick */}
+            {/* Bio + Mantra - Unique & attractive */}
             <div>
-              <div className="text-sm text-[#9CA3AF] mb-1.5">Tu bio (corta y directa)</div>
+              <div className="flex justify-between text-sm mb-1.5">
+                <div className="font-semibold tracking-wider">TU BIO DEL RITUAL + MANTRA (corta, poderosa)</div>
+                <span className="text-[#FF671F] text-xs font-mono">{(onboardData.bio || '').length}/160</span>
+              </div>
               <textarea 
                 value={onboardData.bio || ''} 
-                onChange={e => { updateOnboard({ bio: e.target.value.slice(0,140) }); try { triggerHaptic('light') } catch {} }}
-                className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3 h-14 text-sm resize-y"
-                placeholder="Pesas + running. Busco gente constante para motivarnos sin excusas."
+                onChange={e => { updateOnboard({ bio: e.target.value.slice(0,160) }); try { triggerHaptic('light') } catch {} }}
+                className="w-full bg-[#1C1C20] border-2 border-[#2F2F35] focus:border-[#FF671F] rounded-2xl px-4 py-3 text-sm h-16 resize-y"
+                placeholder="Pesas 4x + running costanera. Mantra: 'Sin excusas, con mi Red.'"
               />
-              <button onClick={() => { updateOnboard({ bio: 'Pesas 4x semana y running por la costanera. Quiero entrenar con gente seria y constante.' }); try { triggerHaptic('light') } catch {} }} className="mt-1 text-xs text-[#FF671F] underline">Usar bio de ejemplo (1 toque)</button>
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {[
+                  'Pesas 4x + running. Mantra: constancia sin excusas.',
+                  'Calistenia y yoga. Mi Red me hace imparable.',
+                  'CrossFit boxeo. Sparring serio, energía compartida.'
+                ].map((b,i) => (
+                  <button key={i} onClick={() => { updateOnboard({ bio: b }); try { triggerHaptic('light') } catch {} }} className="text-[8px] px-2 py-1 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10">{b.slice(0,42)}...</button>
+                ))}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Paso 1: Tu esencia de entrenamiento — 15s. Esto alimenta Pulso + matches reales */}
+        {/* PASO 1: ESENCIA - Full remastered beautiful cards, unique explanations */}
         {onboardingStep === 1 && (
-          <div className="space-y-6">
+          <div className="space-y-7">
             <div>
-              <div className="text-xl font-semibold mb-2 tracking-tight">¿Qué rituales de movimiento practicas? (elige 1-3)</div>
-              <div className="flex flex-wrap gap-2">
+              <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1.5">TU ESENCIA • ELIGE TUS RITUALES (1-3)</div>
+              <div className="grid grid-cols-2 gap-2">
                 {TRAINING_OPTIONS.map((type: string) => {
                   const selected = (onboardData.trainingTypes || []).includes(type);
+                  const emoji = type.includes('Pesas') ? '🏋️' : type.includes('Running') ? '🏃' : type.includes('Yoga') ? '🧘' : type.includes('Boxeo') ? '🥊' : type.includes('Calistenia') ? '💪' : '🔥';
                   return (
                     <button key={type} onClick={() => { 
                       const curr = onboardData.trainingTypes || [];
                       const next = selected ? curr.filter((t:string)=>t!==type) : [...curr, type].slice(0,3);
                       updateOnboard({ trainingTypes: next }); 
                       try { triggerHaptic('light') } catch {} 
-                    }} className={`px-4 py-2 rounded-2xl text-sm border active:scale-95 transition ${selected ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#2F2F35] bg-[#1C1C20]'}`}>
-                      {type}
+                    }} className={`p-3 rounded-2xl border-2 text-left active:scale-[0.985] transition flex gap-3 items-start ${selected ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-lg' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#FF671F]/30'}`}>
+                      <span className="text-2xl mt-0.5">{emoji}</span>
+                      <div>
+                        <div className="font-bold text-sm tracking-wider">{type}</div>
+                        <div className="text-[9px] opacity-70 mt-0.5">Apareces en el Pulso correcto + matches de alto valor</div>
+                      </div>
                     </button>
                   );
                 })}
               </div>
-              <p className="text-[10px] text-[#9CA3AF] mt-1">Apareces en el Pulso correcto y en recomendaciones precisas de la Red.</p>
             </div>
 
             <div>
-              <div className="text-xl font-semibold mb-2 tracking-tight">Tu propósito principal en el Círculo</div>
-              <div className="flex flex-wrap gap-2">
+              <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1.5">TU PROPÓSITO EN EL CÍRCULO (ELIGE EL PRINCIPAL)</div>
+              <div className="grid grid-cols-1 gap-2">
                 {TRAINING_GOALS.map((goal: string) => {
                   const selected = (onboardData.goals || []).includes(goal);
                   return (
                     <button key={goal} onClick={() => { 
                       updateOnboard({ goals: [goal] }); 
                       try { triggerHaptic('light') } catch {} 
-                    }} className={`px-4 py-2 rounded-2xl text-sm border active:scale-95 ${selected ? 'bg-[#FF671F] text-black' : 'border-[#2F2F35]'}`}>
-                      {goal}
+                    }} className={`p-3 rounded-2xl border-2 text-left active:scale-[0.985] flex justify-between items-center ${selected ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#2F2F35] bg-[#1C1C20]'}`}>
+                      <span className="font-semibold text-sm">{goal}</span>
+                      {selected && <span className="text-xs bg-black/20 px-2 py-0.5 rounded">✓ TU FUEGO</span>}
                     </button>
                   );
                 })}
               </div>
-              <div className="text-xs text-[#9CA3AF] mt-1">Usado para crear matches de alto valor y Daily Challenges que importan.</div>
+              <div className="text-[9px] text-[#9CA3AF] mt-1.5">Esto alimenta tu Pulso, matches precisos y Daily Challenges que realmente importan.</div>
             </div>
           </div>
         )}
 
-        {/* Paso 2: EL AHA MOMENT — por qué esto es diferente. Live + EntrenaSync + Red con peso real. 20s */}
+        {/* PASO 2: EL PULSO VIVO - Full remastered "Aha" with unique visuals, mock UI, epic explanation. The heart of what makes EntrenaMatch special. */}
         {onboardingStep === 2 && (
-          <div className="space-y-5">
-            <div className="rounded-3xl bg-gradient-to-br from-[#0f1a14] to-[#111113] border border-[#22c55e]/30 p-5">
-              <div className="uppercase tracking-[1.5px] text-[10px] text-[#22c55e] font-semibold mb-1">LA MAGIA QUE NADIE MÁS TIENE</div>
-              <div className="text-lg font-semibold leading-tight mb-3">EntrenaSync + Pulso del Mapa = tu Red cobra vida real y medible</div>
+          <div className="space-y-6">
+            <div className="rounded-3xl bg-[#0a120f] border-2 border-[#22c55e]/40 p-5 shadow-inner">
+              <div className="uppercase text-[#22c55e] text-[9px] tracking-[2.5px] font-bold mb-1">LA MAGIA QUE NADIE MÁS TIENE EN EL FITNESS</div>
+              <div className="text-xl font-black tracking-[-0.5px] leading-none mb-4">ENTRENASYNC + PULSO DEL MAPA<br/>= TU RED COBRA VIDA REAL, MEDIBLE Y VISIBLE</div>
               
-              <div className="space-y-3 text-sm">
-                <div className="flex gap-3"><span className="text-[#22c55e] mt-0.5">1</span><span><span className="font-semibold">Marca "Entrenando Ahora"</span> → apareces en el mapa con urgencia (verde pulsante). Otros cerca te ven en tiempo real.</span></div>
-                <div className="flex gap-3"><span className="text-[#22c55e] mt-0.5">2</span><span><span className="font-semibold">Dan like</span> → chat instantáneo. Estás a 1 toque de conectar con alguien que está sudando ahora mismo.</span></div>
-                <div className="flex gap-3"><span className="text-[#22c55e] mt-0.5">3</span><span><span className="font-semibold">Creas EntrenaSync</span> → acciones compartidas en vivo (flexiones, sprints, etc). Ambos sienten el efecto. Se crea un tether visual dorado en el mapa. + Network Power para tu Red.</span></div>
-                <div className="flex gap-3"><span className="text-[#22c55e] mt-0.5">4</span><span>Todo queda en tus muros, en el feed global y genera <span className="font-semibold text-[#FF671F]">ripples</span> que otros presencian. Entrenar juntos tiene consecuencias medibles.</span></div>
+              <div className="space-y-4 text-sm">
+                <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
+                  <div className="text-[#22c55e] text-xl font-black mt-0.5">01</div>
+                  <div><span className="font-bold">MARCA "ENTRENANDO AHORA"</span><br/><span className="text-[#9CA3AF] text-xs">Apareces en el mapa Pulso con urgencia verde. Otros cerca te ven sudando en tiempo real.</span></div>
+                </div>
+                <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
+                  <div className="text-[#22c55e] text-xl font-black mt-0.5">02</div>
+                  <div><span className="font-bold">DAN LIKE → CHAT INSTANTÁNEO</span><br/><span className="text-[#9CA3AF] text-xs">Estás a un toque de conectar con alguien que está en el mismo ritual que tú ahora.</span></div>
+                </div>
+                <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
+                  <div className="text-[#22c55e] text-xl font-black mt-0.5">03</div>
+                  <div><span className="font-bold">CREAS ENTRENASYNC</span><br/><span className="text-[#9CA3AF] text-xs">Acciones en vivo (flexiones juntos se sienten en ambos). Tether dorado en el mapa. +Network Power real para tu Red.</span></div>
+                </div>
+                <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
+                  <div className="text-[#22c55e] text-xl font-black mt-0.5">04</div>
+                  <div><span className="font-bold">TODO QUEDA EN MUROS + FEED + RIPPLES</span><br/><span className="text-[#FF671F] text-xs font-bold">Entrenar juntos tiene consecuencias que otros presencian. Esto es único.</span></div>
+                </div>
               </div>
             </div>
 
-            <div className="text-center pt-1">
-              <div className="text-base font-semibold mb-2 text-[#22c55e]">¿Activas tu primer Pulso Vivo ahora? (el corazón de lo único)</div>
+            {/* Visual mock of the magic - Unique & attractive */}
+            <div className="bg-[#0a0a0c] border border-[#22c55e]/30 rounded-2xl p-3 text-center">
+              <div className="text-[10px] text-[#22c55e] tracking-widest mb-1">ASÍ SE VE EN EL MUNDO REAL</div>
+              <div className="flex items-center justify-center gap-2 text-xs">
+                <div className="bg-[#22c55e] text-black px-2 py-0.5 rounded font-bold">🟢 TÚ EN PULSO VIVO</div>
+                <div className="text-[#FFD700]">⟷</div>
+                <div className="bg-[#FFD700] text-black px-2 py-0.5 rounded font-bold">TETHER DORADO CON TU RED</div>
+              </div>
+              <div className="text-[9px] text-[#9CA3AF] mt-1">+25 Network Power • ripples que viajan • tu primer match en &lt;30s</div>
+            </div>
+
+            <div className="text-center">
+              <div className="text-lg font-black mb-2 tracking-[-0.5px] text-[#22c55e]">¿ACTIVAS TU PRIMER PULSO VIVO AHORA?<br/><span className="text-white text-base">El corazón de lo que hace a EntrenaMatch único.</span></div>
               <button 
                 onClick={() => { 
                   const next = !onboardData.wantsToGoLive;
                   updateOnboard({ wantsToGoLive: next }); 
                   try { triggerHaptic(next ? 'success' : 'light') } catch {} 
                 }} 
-                className={`w-full py-4 rounded-3xl text-lg font-bold transition-all active:scale-[0.985] ${onboardData.wantsToGoLive ? 'bg-[#22c55e] text-black shadow-lg shadow-[#22c55e]/30' : 'border-2 border-[#22c55e] text-[#22c55e] active:bg-[#22c55e]/10'}`}
+                className={`w-full py-5 rounded-3xl text-xl font-black tracking-widest transition-all active:scale-[0.985] ${onboardData.wantsToGoLive ? 'bg-[#22c55e] text-black shadow-[0_0_30px_rgba(34,197,94,0.4)]' : 'border-2 border-[#22c55e] text-[#22c55e] active:bg-[#22c55e]/10'}`}
               >
-                {onboardData.wantsToGoLive ? '✅ SÍ — Activa mi primer LIVE al terminar' : '🚀 ACTIVAR MI PRIMER LIVE AHORA (recomendado)'}
+                {onboardData.wantsToGoLive ? '✅ SÍ, ACTIVA MI PRIMER PULSO VIVO AL TERMINAR' : '🚀 SÍ — QUIERO SENTIR EL PULSO VIVO AHORA'}
               </button>
-              <div className="text-[11px] text-[#9CA3AF] mt-2">Banner verde visible al instante. En el mapa + explore. 30 segundos después ya puedes dar tu primer like y match.</div>
+              <div className="text-[10px] text-[#9CA3AF] mt-2 max-w-xs mx-auto">Banner verde al instante. En mapa + explore. 30s después ya puedes dar tu primer like y crear tu primer Sync legendario.</div>
             </div>
-
-            <div className="text-center text-[10px] text-[#FF671F]/90">Esto no es una app de citas de gym. Es la primera red donde entrenar juntos se siente en el cuerpo de ambos al mismo tiempo.</div>
           </div>
         )}
 
-        {/* Paso 3: Votos cortos + gran CTA de acción inmediata */}
+        {/* PASO 3: LOS VOTOS - Full remastered solemn, attractive ritual ceremony. Unique and epic. */}
         {onboardingStep === 3 && (
-          <div className="space-y-4">
-            <div>
-              <div className="text-xl font-semibold mb-1.5">Los 3 Votos del Círculo</div>
-              <div className="text-xs text-[#9CA3AF]">Sella tu entrada al primer ritual donde el esfuerzo se comparte.</div>
+          <div className="space-y-5">
+            <div className="text-center">
+              <div className="uppercase tracking-[2px] text-[#FF671F] text-xs mb-1">ÚLTIMO RITUAL</div>
+              <div className="text-2xl font-black tracking-[-1px]">LOS 3 VOTOS DEL CÍRCULO</div>
+              <div className="text-[#9CA3AF] text-sm mt-1">Sella tu entrada al primer ritual donde el esfuerzo se comparte y tiene peso real.</div>
             </div>
 
             {[
-              { key: 'is18', label: 'Juro ser mayor de 18 y entrenar con respeto al Círculo' },
-              { key: 'isForTraining', label: 'Juro entrenar en serio y con motivación real para mi Red' },
-              { key: 'sharesLocation', label: 'Juro aparecer en el Pulso vivo para sincronizarme con otros' }
+              { key: 'is18', label: 'Juro ser mayor de 18 y entrenar con respeto al Círculo', desc: 'Respeto, seriedad y energía positiva siempre.' },
+              { key: 'isForTraining', label: 'Juro entrenar en serio y con motivación real para mi Red', desc: 'No excusas. Mi presencia construye la de otros.' },
+              { key: 'sharesLocation', label: 'Juro aparecer en el Pulso vivo para sincronizarme con otros', desc: 'Mi energía es visible. Mi Red me hace más fuerte.' }
             ].map(item => (
               <label key={item.key} onClick={() => { 
                 const next = ! (localConsents as any)[item.key]; 
                 setLocalConsents(prev => ({ ...prev, [item.key]: next })); 
                 try { triggerHaptic('light') } catch {} 
-              }} className="flex items-center gap-3 p-4 bg-[#1C1C20] rounded-2xl border border-[#2F2F35] cursor-pointer active:bg-[#25252A] active:scale-[0.995]">
-                <input type="checkbox" checked={(localConsents as any)[item.key]} readOnly className="w-5 h-5 accent-[#FF671F] pointer-events-none" />
-                <span className="text-sm">{item.label}</span>
+              }} className="block p-4 bg-[#1C1C20] rounded-2xl border-2 border-[#2F2F35] cursor-pointer active:bg-[#25252A] active:border-[#FF671F]/40 transition">
+                <div className="flex items-start gap-3">
+                  <input type="checkbox" checked={(localConsents as any)[item.key]} readOnly className="w-5 h-5 accent-[#FF671F] mt-0.5 pointer-events-none" />
+                  <div className="flex-1">
+                    <div className="font-bold text-sm leading-tight">{item.label}</div>
+                    <div className="text-[#9CA3AF] text-xs mt-1 leading-tight">{item.desc}</div>
+                  </div>
+                </div>
               </label>
             ))}
 
-            <div className="mt-3 rounded-2xl bg-[#22c55e]/10 border border-[#22c55e]/50 p-4">
-              <div className="font-bold text-[#22c55e] text-sm mb-1">AL SELLAR LOS VOTOS:</div>
-              <div className="text-sm leading-snug">Si activaste Live → tu punto verde pulsa en el mapa al instante. <span className="font-semibold">Explora</span> → ❤️ en el primero que veas cerca = chat + match en &lt;20s. Abre chat → "Iniciar EntrenaSync" y siente el tether.</div>
+            <div className="mt-2 p-5 rounded-3xl bg-gradient-to-br from-[#0a120f] to-[#111113] border-2 border-[#22c55e]/50 text-center">
+              <div className="text-[#22c55e] font-black text-sm tracking-widest mb-1">AL SELLAR ESTOS VOTOS</div>
+              <div className="text-sm leading-snug text-white/90">Si activaste Live → tu punto verde pulsa en el mapa al instante.<br/>Ve a <span className="font-bold text-[#FF671F]">EXPLORAR</span> → ❤️ en el primero que veas cerca = chat + match en &lt;20s.<br/>Luego abre el chat y toca <span className="font-bold">"INICIAR ENTRENASYNC"</span> y siente el tether dorado.</div>
+              <div className="text-[9px] text-[#22c55e] mt-2 tracking-wider">BIENVENIDO AL CÍRCULO. TU PRIMER RITUAL EMPIEZA AHORA.</div>
             </div>
-
-            <div className="text-[10px] text-center text-[#9CA3AF] pt-1">Tus datos se guardan en el backend real. Puedes editar todo después desde Perfil.</div>
           </div>
         )}
 
         </div> {/* end scrollable step content */}
 
-        {/* Fixed bottom navigation - always visible, haptic, speed-focused */}
-        <div className="pt-3 pb-2 flex flex-col gap-2 bg-[#0D0D10] border-t border-[#2F2F35]">
+        {/* Fixed bottom - Epic ritual navigation */}
+        <div className="pt-2 pb-3 flex flex-col gap-2 bg-[#0D0D10] border-t-2 border-[#2F2F35]">
           {onboardingStep > 0 && (
-            <button onClick={() => { try { triggerHaptic('light') } catch {}; setOnboardingStep(onboardingStep - 1) }} className="w-full py-3 text-sm rounded-2xl border border-[#2F2F35] active:bg-[#1f242b]">
-              Atrás
+            <button onClick={() => { try { triggerHaptic('light') } catch {}; setOnboardingStep(onboardingStep - 1) }} className="w-full py-2.5 text-xs uppercase tracking-[1.5px] rounded-2xl border border-[#2F2F35] active:bg-[#1f242b] text-[#9CA3AF]">
+              ← VOLVER AL RITUAL ANTERIOR
             </button>
           )}
 
           {onboardingStep === 1 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0) && (
-            <p className="text-center text-[10px] text-[#ef4444] font-medium">
-              Elige al menos un tipo de entrenamiento y un objetivo
-            </p>
+            <p className="text-center text-[9px] text-[#ef4444] font-medium tracking-wider">ELIGE AL MENOS UN RITUAL DE MOVIMIENTO Y TU FUEGO PRINCIPAL</p>
           )}
 
           <button 
             onClick={nextOnboarding} 
-            className="w-full py-3.5 text-base font-semibold rounded-3xl btn-primary disabled:opacity-50 active:scale-[0.985]"
+            className="w-full py-4 text-base font-black tracking-[1.5px] rounded-3xl btn-primary disabled:opacity-50 active:scale-[0.985] bg-gradient-to-r from-[#FF671F] to-[#E55A1A]"
             disabled={
               (onboardingStep === 1 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0)) ||
               (onboardingStep === 3 && !Object.values(localConsents).every(Boolean))
             }
           >
-            {onboardingStep < 3 ? 'Continuar el Ritual' : '¡SELLAR LOS VOTOS + ENTRAR AL PULSO VIVO!'}
+            {onboardingStep < 3 ? 'CONTINUAR EL RITUAL →' : '¡SELLAR LOS VOTOS • ENTRAR AL CÍRCULO DEL PULSO!'}
           </button>
-          <div className="text-center text-[9px] text-[#9CA3AF]">Tu perfil único en el Círculo • primer Pulso en &lt;90s. Hazlo real.</div>
+          <div className="text-center text-[8px] text-[#9CA3AF] tracking-[1px]">TU PERFIL ÚNICO EN EL CÍRCULO • PRIMER PULSO EN &lt;90s. HAZLO LEGENDARIO.</div>
         </div>
       </div>
     </div>

@@ -1,0 +1,12 @@
+fix(voice chat): make send option for recorded audio clearly visible and not hidden in 1:1 and group chats
+
+- After stop recording, pendingVoice preview now has much more prominent send UI: larger " ENVIAR VOZ\ button with Send icon, \Cancelar\ instead of tiny X, thicker border on preview for visibility.
+- Main form send button now dynamically turns green (#22c55e live color) and has explicit title when pendingVoice is present: \Enviar la nota de voz grabada\ (or to group). So even if user misses the preview button, the primary send action signals clearly that you can (and should) send the audio now.
+- Input placeholder updates to hint: \Nota de voz adjunta - presiona enviar\ when voice is ready.
+- CSS: voice-preview gets thicker border, more padding, min-height to prevent it looking hidden or cramped.
+- Consistent in both private chat and group/squad chat modals.
+- The form submit already supported sending pendingVoice (if(pendingVoice) sendVoiceNote), now the visual feedback makes the option obvious and \cuadrado\ (properly laid out/visible) as requested.
+
+This solves \no da la opción para enviarla o esta oculta y no se ve\ after recording audio. The attractive waveform preview (from previous polish) is now paired with unmistakable send affordance right in the chat input area.
+
+Rebuild required for updated bundle.
