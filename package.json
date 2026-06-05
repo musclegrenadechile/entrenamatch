@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.67-partners-collection-fix",
+  "version": "0.1.68-partners-logos-devlogin",
   "type": "module",
   "scripts": {
     "dev": "vite",

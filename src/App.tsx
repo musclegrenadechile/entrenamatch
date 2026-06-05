@@ -1444,7 +1444,20 @@ function App() {
   const [partnerLocations, setPartnerLocations] = useState<any[]>([])
   const [showPartners, setShowPartners] = useState(true)
   const [showAddPartnerForm, setShowAddPartnerForm] = useState(false)
+  const [showManagePartners, setShowManagePartners] = useState(false)
+  const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null)
+  const [partnerFormName, setPartnerFormName] = useState('')
+  const [partnerFormType, setPartnerFormType] = useState<'gym' | 'store' | 'studio'>('gym')
+  const [partnerLogoFile, setPartnerLogoFile] = useState<File | null>(null)
+  const [partnerLogoPreview, setPartnerLogoPreview] = useState<string | null>(null)
   const [mapForceTick, setMapForceTick] = useState(0) // tiny trigger so map re-renders when toggling partners layer
+  // Developer gate for partner management (only devs can add/edit partner locations on the map)
+  const [isDeveloper, setIsDeveloper] = useState(() => {
+    try { return localStorage.getItem('entrenamatch_dev_mode') === '1' } catch { return false }
+  })
+  const [showDevLogin, setShowDevLogin] = useState(false)
+  const [devPassword, setDevPassword] = useState('')
+  const DEV_PASSWORD = 'dev2026map' // change in production; documented in instructions
   const liveMapRef = useRef<HTMLDivElement>(null)
 
   // When partner visibility or list changes (or dev added one), force the map layer to refresh immediately.
@@ -1460,6 +1473,105 @@ function App() {
       }
     }, 30)
   }, [showPartners, partnerLocations.length, mapForceTick, showLiveMap])
+
+  // Developer login for gated partner management (only devs can add/edit locals on the GymPulse map)
+  const loginAsDeveloper = () => {
+    if (devPassword === DEV_PASSWORD) {
+      setIsDeveloper(true)
+      try { localStorage.setItem('entrenamatch_dev_mode', '1') } catch {}
+      setShowDevLogin(false)
+      setDevPassword('')
+      try { triggerHaptic('success') } catch {}
+      toast.success('Developer access granted', { description: 'You can now add and manage partner locations with logos' })
+    } else {
+      toast.error('Incorrect developer password')
+    }
+  }
+  const logoutDeveloper = () => {
+    setIsDeveloper(false)
+    try { localStorage.removeItem('entrenamatch_dev_mode') } catch {}
+    setShowManagePartners(false)
+    setShowAddPartnerForm(false)
+    setEditingPartnerId(null)
+    setPartnerLogoFile(null)
+    setPartnerLogoPreview(null)
+    toast('Developer mode disabled')
+  }
+  const openDevLogin = () => {
+    setShowDevLogin(true)
+    setDevPassword('')
+  }
+
+  const openAddPartner = () => {
+    if (!isDeveloper) { openDevLogin(); return }
+    setEditingPartnerId(null)
+    setPartnerFormName('Nuevo Partner Gym')
+    setPartnerFormType('gym')
+    setPartnerLogoFile(null)
+    setPartnerLogoPreview(null)
+    setShowAddPartnerForm(true)
+    setShowManagePartners(false)
+  }
+
+  const openManagePartners = () => {
+    if (!isDeveloper) { openDevLogin(); return }
+    setShowManagePartners(true)
+    setShowAddPartnerForm(false)
+  }
+
+  const startEditPartner = (p: any) => {
+    setEditingPartnerId(p.id)
+    setPartnerFormName(p.name || '')
+    setPartnerFormType((p.type as any) || 'gym')
+    setPartnerLogoFile(null)
+    setPartnerLogoPreview(p.logoUrl || null)
+    setShowAddPartnerForm(true)
+    setShowManagePartners(false)
+  }
+
+  const cancelPartnerForm = () => {
+    setShowAddPartnerForm(false)
+    setEditingPartnerId(null)
+    setPartnerLogoFile(null)
+    if (partnerLogoPreview && partnerLogoPreview.startsWith('blob:')) {
+      URL.revokeObjectURL(partnerLogoPreview)
+    }
+    setPartnerLogoPreview(null)
+  }
+
+  const handlePartnerLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setPartnerLogoFile(file)
+      if (partnerLogoPreview && partnerLogoPreview.startsWith('blob:')) URL.revokeObjectURL(partnerLogoPreview)
+      const preview = URL.createObjectURL(file)
+      setPartnerLogoPreview(preview)
+      try { triggerHaptic('light') } catch {}
+    }
+  }
+
+  const uploadPartnerLogoIfNeeded = async (file: File | null, pid: string): Promise<string | undefined> => {
+    if (!file) return undefined
+    if (isDemoMode || !storage) {
+      return URL.createObjectURL(file) // demo only
+    }
+    try {
+      const { ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage')
+      const storageRef = ref(storage, `partners/${pid}/logo-${Date.now()}`)
+      const task = uploadBytesResumable(storageRef, file)
+      await new Promise<void>((resolve, reject) => {
+        task.on('state_changed',
+          () => {}, // progress optional
+          (err) => reject(err),
+          () => resolve()
+        )
+      })
+      return await getDownloadURL(task.snapshot.ref)
+    } catch (e) {
+      console.warn('logo upload failed', e)
+      return undefined
+    }
+  }
 
   // Partner businesses (gyms, stores etc that partner with the app). Devs can add them so they appear on the mapa en tiempo real (GymPulse map).
   // "ellos puedan ver": partners get prominent placement + nearby activity indicators (users training close get associated with the partner location).
@@ -5924,21 +6036,34 @@ function App() {
       partnerLocations.forEach((p: any) => {
         try {
           if (!p.lat || !p.lng) return
+          const logo = p.logoUrl
           const isGym = (p.type || 'gym') === 'gym'
-          const iconEmoji = isGym ? '🏋️' : '🛒'
-          const partnerHtml = `
-            <div style="position:relative;width:38px;height:38px">
-              <div style="width:38px;height:38px;border-radius:9999px;background:linear-gradient(#FF671F,#E55A1A);border:3px solid #FFD700;box-shadow:0 0 0 3px #FF671F33,0 2px 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;line-height:1;">
-                ${iconEmoji}
-              </div>
-              <div style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 4px;border-radius:3px;border:1px solid #FFD700;white-space:nowrap">PARTNER</div>
-            </div>`
+          const fallbackIcon = isGym ? '🏋️' : '🛒'
+          let partnerHtml: string
+          if (logo) {
+            // Attractive logo-based marker with gold ring, shadow, PARTNER badge
+            partnerHtml = `
+              <div style="position:relative;width:44px;height:44px">
+                <div style="width:44px;height:44px;border-radius:9999px;overflow:hidden;border:3px solid #FFD700;box-shadow:0 0 0 4px #FF671F33, 0 3px 8px rgba(0,0,0,0.6);">
+                  <img src="${logo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(#FF671F,#E55A1A)';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-size:20px\\'>${fallbackIcon}</div>'" />
+                </div>
+                <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 5px;border-radius:4px;border:1.5px solid #FFD700;white-space:nowrap;letter-spacing:0.5px">PARTNER</div>
+              </div>`
+          } else {
+            partnerHtml = `
+              <div style="position:relative;width:40px;height:40px">
+                <div style="width:40px;height:40px;border-radius:9999px;background:linear-gradient(#FF671F,#E55A1A);border:3px solid #FFD700;box-shadow:0 0 0 3px #FF671F33,0 2px 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;line-height:1;">
+                  ${fallbackIcon}
+                </div>
+                <div style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 4px;border-radius:3px;border:1px solid #FFD700;white-space:nowrap">PARTNER</div>
+              </div>`
+          }
           const pIcon = L.divIcon({
             className: 'entrenamatch-partner-marker',
             html: partnerHtml,
-            iconSize: [38, 38],
-            iconAnchor: [19, 19],
-            popupAnchor: [0, -20]
+            iconSize: logo ? [44, 44] : [40, 40],
+            iconAnchor: logo ? [22, 22] : [20, 20],
+            popupAnchor: [0, -22]
           })
           const pMarker = L.marker([p.lat, p.lng], { icon: pIcon }).addTo(mapInstanceRef.current)
 
@@ -6854,17 +6979,33 @@ function App() {
                     Centrar
                   </button>
 
-                  {/* DEV TOOL: Add partner business directly on the mapa en tiempo real (GymPulse).
-                      This is the requested "posibilidad a nosotros los desarrolladores de poner en el mapa negocios que son partner".
-                      Persists to Firestore in real mode so all users see the new partner locations.
-                      "ellos puedan ver": the partner marker shows nearby live GymPartners count. */}
-                  <button
-                    onClick={() => { try { triggerHaptic('medium') } catch {}; setShowAddPartnerForm(!showAddPartnerForm) }}
-                    className="absolute top-2 right-20 text-[8px] px-2 py-0.5 rounded-full bg-[#FFD700] text-black font-bold border border-[#FFD700] active:scale-95 z-30"
-                    title="Herramienta para desarrolladores: agrega gimnasios o tiendas partner que aparecerán en el mapa para todos"
-                  >
-                    + Partner (dev)
-                  </button>
+                  {/* DEV TOOL: gated behind developer login. Only devs can add/edit partner locations + logos on the mapa en tiempo real. */}
+                  {isDeveloper ? (
+                    <>
+                      <button
+                        onClick={openAddPartner}
+                        className="absolute top-2 right-20 text-[8px] px-2 py-0.5 rounded-full bg-[#FFD700] text-black font-bold border border-[#FFD700] active:scale-95 z-30"
+                        title="Agregar local partner con logo (solo devs)"
+                      >
+                        + Partner
+                      </button>
+                      <button
+                        onClick={openManagePartners}
+                        className="absolute top-2 right-36 text-[8px] px-2 py-0.5 rounded-full bg-[#FFD700]/80 text-black font-bold border border-[#FFD700] active:scale-95 z-30"
+                        title="Gestionar partners existentes (editar logos, eliminar)"
+                      >
+                        Manage
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={openDevLogin}
+                      className="absolute top-2 right-20 text-[8px] px-2 py-0.5 rounded-full bg-black/70 text-[#FFD700] border border-[#FFD700]/50 active:bg-[#FFD700]/10 z-30"
+                      title="Login de desarrollador para agregar/editar partners en el mapa"
+                    >
+                      🔐 Dev
+                    </button>
+                  )}
 
                   {/* Enhanced interactive zone legend (sigue con todo el mapa): colorful live pills with counts, hover pop, active ring/glow + "Mi zona" quick filter. Makes map feel premium + alive. */}
                   <div className="absolute top-2 left-2 z-30 flex flex-col gap-1">
@@ -6923,29 +7064,63 @@ function App() {
                     </div>
                   )}
 
-                  {/* DEV PARTNER ADD FORM (simple, appears over map when toggled) */}
-                  {showAddPartnerForm && (
-                    <div className="absolute bottom-3 left-3 right-3 z-50 bg-[#111] border border-[#FFD700] rounded-2xl p-3 text-xs shadow-xl">
-                      <div className="font-bold text-[#FFD700] mb-1 flex justify-between">
-                        Agregar Partner (devs) — aparecerá en el mapa en tiempo real para todos
-                        <button onClick={() => setShowAddPartnerForm(false)} className="text-white/60">✕</button>
+                  {/* DEV PARTNER FORM - attractive, with logo upload. Gated by developer login. Supports add + edit with logo for negocios. */}
+                  {showAddPartnerForm && isDeveloper && (
+                    <div className="absolute bottom-3 left-3 right-3 z-50 bg-[#0D0D10] border-2 border-[#FFD700] rounded-2xl p-3 text-xs shadow-2xl">
+                      <div className="font-bold text-[#FFD700] mb-2 flex justify-between items-center">
+                        {editingPartnerId ? 'Editar Partner (devs)' : 'Agregar Partner + Logo (devs)'} — visible en mapa en tiempo real
+                        <button onClick={cancelPartnerForm} className="text-white/60 hover:text-white px-1">✕</button>
                       </div>
-                      <div className="flex gap-2 mb-2">
-                        <input id="partner-name" placeholder="Nombre del gym/tienda" className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded px-2 py-1 text-white" defaultValue="Nuevo Partner Gym" />
-                        <select id="partner-type" className="bg-[#1C1C20] border border-[#2F2F35] rounded px-2 text-white">
-                          <option value="gym">Gym / Box</option>
+
+                      <div className="space-y-2">
+                        <input 
+                          value={partnerFormName} 
+                          onChange={(e) => setPartnerFormName(e.target.value)} 
+                          placeholder="Nombre del gym / negocio" 
+                          className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded px-3 py-1.5 text-white text-sm outline-none focus:border-[#FF671F]" 
+                        />
+                        <select 
+                          value={partnerFormType} 
+                          onChange={(e) => setPartnerFormType(e.target.value as any)} 
+                          className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded px-3 py-1.5 text-white text-sm"
+                        >
+                          <option value="gym">Gym / Box / Entrenamiento</option>
                           <option value="store">Tienda / Suplementos</option>
                           <option value="studio">Studio / Otro</option>
                         </select>
+
+                        {/* Logo upload - attractive preview */}
+                        <div>
+                          <div className="text-[10px] text-[#9CA3AF] mb-1">Logo del negocio (recomendado 200x200+)</div>
+                          <div className="flex items-center gap-3">
+                            <label className="cursor-pointer flex-1">
+                              <div className="border border-dashed border-[#FF671F]/50 hover:border-[#FF671F] rounded-xl px-3 py-2 text-center text-[#FF671F] active:bg-[#FF671F]/10 transition">
+                                {partnerLogoPreview ? 'Cambiar logo' : 'Subir logo (jpg/png)'}
+                              </div>
+                              <input type="file" accept="image/*" className="hidden" onChange={handlePartnerLogoSelect} />
+                            </label>
+                            {partnerLogoPreview && (
+                              <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-[#FFD700] flex-shrink-0">
+                                <img src={partnerLogoPreview} className="w-full h-full object-cover" />
+                                <button 
+                                  onClick={() => { 
+                                    setPartnerLogoFile(null); 
+                                    if (partnerLogoPreview.startsWith('blob:')) URL.revokeObjectURL(partnerLogoPreview); 
+                                    setPartnerLogoPreview(editingPartnerId ? (partnerLocations.find(pp=>pp.id===editingPartnerId)?.logoUrl || null) : null); 
+                                  }} 
+                                  className="absolute -top-1 -right-1 bg-black/80 text-white text-[10px] w-4 h-4 rounded-full leading-none flex items-center justify-center">×</button>
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-[9px] text-[#666] mt-0.5">Se sube a Storage y se asocia al partner. Solo visible para devs.</div>
+                        </div>
                       </div>
-                      <div className="text-[10px] text-[#9CA3AF] mb-2">Ubicación: se usará el centro actual del mapa (mueve el mapa para posicionar). Se guarda en Firestore.</div>
+
                       <button
                         onClick={async () => {
                           try { triggerHaptic('medium') } catch {}
-                          const nameEl = document.getElementById('partner-name') as HTMLInputElement
-                          const typeEl = document.getElementById('partner-type') as HTMLSelectElement
-                          const name = nameEl?.value?.trim() || 'Partner Gym'
-                          const type = typeEl?.value || 'gym'
+                          const name = partnerFormName.trim() || 'Partner Gym'
+                          const type = partnerFormType
                           const map = mapInstanceRef.current
                           let lat = userLocation?.lat || -33.02
                           let lng = userLocation?.lng || -71.55
@@ -6954,33 +7129,118 @@ function App() {
                             lat = c.lat
                             lng = c.lng
                           }
-                          const newP = {
-                            id: 'partner-' + Date.now(),
+                          const pid = editingPartnerId || ('partner-' + Date.now())
+                          let logoUrl: string | undefined = editingPartnerId ? partnerLocations.find(pp => pp.id === editingPartnerId)?.logoUrl : undefined
+                          if (partnerLogoFile) {
+                            logoUrl = await uploadPartnerLogoIfNeeded(partnerLogoFile, pid)
+                          }
+                          const partnerData: any = {
+                            id: pid,
                             name,
                             lat,
                             lng,
                             type,
-                            address: 'Agregado por devs',
-                            addedAt: new Date().toISOString()
+                            address: editingPartnerId ? (partnerLocations.find(pp=>pp.id===editingPartnerId)?.address || 'Actualizado por devs') : 'Agregado por devs',
+                            addedAt: editingPartnerId ? undefined : new Date().toISOString(),
+                            updatedAt: new Date().toISOString(),
+                            logoUrl
                           }
+                          if (editingPartnerId) delete partnerData.addedAt
+
                           if (!isDemoMode && db) {
                             try {
-                              const { setDoc, doc } = await import('firebase/firestore')
-                              await setDoc(doc(db, 'partnerLocations', newP.id), newP)
+                              const { setDoc, doc, updateDoc } = await import('firebase/firestore')
+                              if (editingPartnerId) {
+                                await updateDoc(doc(db, 'partnerLocations', pid), partnerData)
+                              } else {
+                                await setDoc(doc(db, 'partnerLocations', pid), partnerData)
+                              }
                             } catch (e) { console.warn('save partner fs', e) }
                           } else {
-                            setPartnerLocations(prev => [...prev, newP])
+                            // demo / local
+                            setPartnerLocations(prev => {
+                              if (editingPartnerId) {
+                                return prev.map(pp => pp.id === pid ? { ...pp, ...partnerData } : pp)
+                              }
+                              return [...prev, partnerData]
+                            })
                           }
+                          // cleanup
+                          if (partnerLogoPreview && partnerLogoPreview.startsWith('blob:')) URL.revokeObjectURL(partnerLogoPreview)
+                          setPartnerLogoFile(null)
+                          setPartnerLogoPreview(null)
                           setShowAddPartnerForm(false)
-                          // recenter on it
+                          setEditingPartnerId(null)
+                          setMapForceTick(t => t + 1)
+                          toast.success(editingPartnerId ? 'Partner actualizado' : 'Partner agregado', { description: 'Aparecerá en el mapa en tiempo real para todos los usuarios' })
+                          // recenter
                           setTimeout(() => {
                             if (mapInstanceRef.current) mapInstanceRef.current.setView([lat, lng], 14)
-                          }, 200)
+                          }, 150)
                         }}
-                        className="w-full py-1.5 bg-[#FFD700] text-black font-extrabold rounded-xl active:bg-white"
+                        className="mt-3 w-full py-2 bg-[#FFD700] text-black font-extrabold rounded-xl active:bg-white active:scale-[0.985] transition flex items-center justify-center gap-2"
                       >
-                        AGREGAR AL GYMPULSE MAPA
+                        {editingPartnerId ? 'GUARDAR CAMBIOS + LOGO' : 'AGREGAR AL MAPA EN TIEMPO REAL'}
                       </button>
+                      <div className="text-center text-[9px] text-[#666] mt-1">Solo desarrolladores. Los logos se guardan en Storage.</div>
+                    </div>
+                  )}
+
+                  {/* DEV LOGIN MODAL - password gate so ONLY developers can add/edit partner locals + logos */}
+                  {showDevLogin && (
+                    <div className="absolute inset-0 z-[60] flex items-center justify-center bg-black/70 p-4" onClick={() => setShowDevLogin(false)}>
+                      <div onClick={e => e.stopPropagation()} className="bg-[#0D0D10] border-2 border-[#FFD700] rounded-2xl p-4 w-full max-w-[320px] text-sm">
+                        <div className="font-black text-[#FFD700] mb-1">Developer Login</div>
+                        <div className="text-[#9CA3AF] text-xs mb-3">Acceso exclusivo para agregar y editar partners (locales) con logos en el mapa en tiempo real.</div>
+                        <input 
+                          type="password" 
+                          value={devPassword} 
+                          onChange={e => setDevPassword(e.target.value)} 
+                          onKeyDown={e => { if (e.key === 'Enter') loginAsDeveloper() }} 
+                          placeholder="Password de desarrollador" 
+                          className="w-full bg-black border border-[#FFD700]/40 rounded px-3 py-2 mb-3 text-white focus:outline-none focus:border-[#FFD700]" 
+                        />
+                        <div className="flex gap-2">
+                          <button onClick={() => { setShowDevLogin(false); setDevPassword('') }} className="flex-1 py-2 rounded-xl border border-white/20 text-white/70 active:bg-white/5">Cancelar</button>
+                          <button onClick={loginAsDeveloper} className="flex-1 py-2 bg-[#FFD700] text-black font-bold rounded-xl active:bg-white">Entrar como Dev</button>
+                        </div>
+                        <div className="text-[10px] text-center text-[#666] mt-2">Cambia la contraseña en el código (DEV_PASSWORD)</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* MANAGE PARTNERS MODAL (dev only) - list, edit with logo, delete */}
+                  {showManagePartners && isDeveloper && (
+                    <div className="absolute inset-0 z-[55] flex items-end justify-center bg-black/60 p-3" onClick={() => setShowManagePartners(false)}>
+                      <div onClick={e=>e.stopPropagation()} className="bg-[#0D0D10] border border-[#FFD700] rounded-t-2xl w-full max-w-[420px] max-h-[70vh] overflow-auto p-3 text-sm">
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="font-bold text-[#FFD700]">Manage Partners (devs)</div>
+                          <button onClick={() => setShowManagePartners(false)} className="text-white/50">✕</button>
+                        </div>
+                        {partnerLocations.length === 0 && <div className="text-[#9CA3AF] text-xs py-2">No partners yet. Usa + Partner para agregar.</div>}
+                        {partnerLocations.map((p: any) => (
+                          <div key={p.id} className="flex items-center gap-2 border-b border-white/10 py-2 last:border-0">
+                            {p.logoUrl && <img src={p.logoUrl} className="w-8 h-8 rounded-full object-cover border border-[#FFD700]/50" />}
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold truncate">{p.name}</div>
+                              <div className="text-[10px] text-[#9CA3AF] truncate">{p.address || p.type}</div>
+                            </div>
+                            <button onClick={() => startEditPartner(p)} className="text-xs px-2 py-0.5 border border-[#FFD700]/50 rounded text-[#FFD700] active:bg-[#FFD700]/10">Edit</button>
+                            <button onClick={async () => {
+                              if (!confirm(`Eliminar ${p.name}?`)) return
+                              if (!isDemoMode && db) {
+                                try {
+                                  const { deleteDoc, doc } = await import('firebase/firestore')
+                                  await deleteDoc(doc(db, 'partnerLocations', p.id))
+                                } catch (e) { console.warn(e) }
+                              }
+                              setPartnerLocations(prev => prev.filter(pp => pp.id !== p.id))
+                              try { triggerHaptic('light') } catch {}
+                            }} className="text-xs px-2 py-0.5 border border-red-500/50 rounded text-red-400 active:bg-red-500/10">Del</button>
+                          </div>
+                        ))}
+                        <button onClick={openAddPartner} className="mt-3 w-full py-1.5 text-sm bg-[#FFD700] text-black rounded-xl font-bold">+ Agregar nuevo Partner</button>
+                      </div>
                     </div>
                   )}
 

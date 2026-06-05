@@ -1,4 +1,54 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.67-partners-collection-fix code 71) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.68-partners-logos-devlogin code 72) ===
+
+PULIDO MAPA + SISTEMA DE LOCALES/PARTNERS MEJORADO:
+
+- Iconos atractivos para partners en el mapa en tiempo real:
+  - Si tienen logoUrl: marcador circular con la imagen del logo, borde dorado #FFD700 fuerte, sombra, badge "PARTNER" abajo.
+  - Sin logo: fallback emoji temático (🏋️ gym / 🛒 store) con mismo estilo gold/orange glass.
+  - Tamaño y anclaje ajustados para verse premium y consistentes con los marcadores de usuarios/GymPartners.
+
+- Subida de logos de negocios:
+  - En el form de Partner (devs): input file para logo + preview circular inmediato.
+  - Al guardar: si hay archivo nuevo, se sube a Firebase Storage en `partners/{id}/logo-xxx` usando uploadBytesResumable (mismo patrón que fotos/voice).
+  - Se guarda logoUrl en el doc de partnerLocations.
+  - Soporte re-upload en edición (cambia el logo).
+  - En demo mode usa blob preview (no FS).
+  - Form mejorado: controlled React state, nombre, tipo (gym/store/studio), ubicación desde centro del mapa.
+
+- Login de desarrollador (CRÍTICO - solo devs):
+  - Botón 🔐 Dev visible en el header del mapa (cuando no estás logueado como dev).
+  - Modal de login con password (actual 'dev2026map' - cambiar en prod y documentado).
+  - Al loguear correcto: isDeveloper=true + localStorage 'entrenamatch_dev_mode'='1', haptic success, toast.
+  - Solo entonces aparecen los botones "+ Partner" y "Manage".
+  - Manage Partners: modal con lista de todos los partners actuales (con logo preview si hay), botones Edit (abre form prellenado con logo actual) y Del (confirma + borra de FS o state).
+  - Logout dev desde Manage o manual.
+  - El form de agregar/editar ahora es "Partner Editor" y muestra "Solo desarrolladores".
+  - El + Partner viejo fue reemplazado por gated buttons.
+
+- Edit/Delete completo:
+  - Manage lista scrollable.
+  - Edit: reutiliza el mismo form (con logo existente como preview, permite cambiar).
+  - Delete: borra del Firestore (o filtra en demo) + actualiza UI + force re-render mapa.
+  - Al editar sin nuevo logo se mantiene el anterior.
+
+- Seguridad recomendada:
+  - En Firebase console agrega regla para partnerLocations: read all, write solo si request.auth.uid in lista de devs o custom claim.
+  - Por ahora el gate es client-side + password (suficiente para beta cerrada + el flag local).
+  - Nunca expongas el password en código prod; usa env o remote config.
+
+- Otros polish:
+  - Form con glass/border gold, preview logo circular con X para quitar.
+  - Upload tolerante a fallos (si falla logo igual guarda el partner sin logo).
+  - Map re-render con mapForceTick cuando se agregan/editan partners.
+  - Textos consistentes con "mapa en tiempo real".
+
+Todo gated: usuarios normales ven los markers lindos con logos (si los devs los subieron), pero no pueden agregar ni editar.
+
+Builds, AAB (copiado como 0.1.68), git, instructions actualizados.
+
+Test en S26: abre mapa → toca 🔐 Dev → pon password → aparecen +Partner y Manage. Agrega uno con logo (elige foto), debe aparecer el marcador con la imagen del logo en el mapa. Edita desde Manage, cambia logo, borra. Solo devs.
+
+Sigue puliendo lo que mandes.
 
 CRASH FIX: FirebaseError "Expected first argument to collection() to be a CollectionReference, a DocumentReference or FirebaseFirestore"
 
