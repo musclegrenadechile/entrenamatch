@@ -1,15 +1,18 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.52-voice-play-duration-fix code 56) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.53-voice-blob-play-fix code 57) ===
 
-AAB: EntrenaMatch-v0.1.52-voice-play-duration-fix-code56-20260604-2344.aab + EntrenaMatch-release.aab
+AAB: EntrenaMatch-v0.1.53-voice-blob-play-fix-code57-20260604-2348.aab + EntrenaMatch-release.aab
 
 **What's new:**
 
-**v0.1.52 (code 56) — FIX: Notas de voz ahora marcan los segundos y se reproducen correctamente**
+**v0.1.53 (code 57) — FIX: Elimina errores ERR_FILE_NOT_FOUND al reproducir notas de voz**
 
-- Duración calculada con Date.now() diff (precisa, sin stale closure del state).
-- En burbujas de chat (1:1 y grupo): botón ?? explícito + '??? Xs' siempre visible.
-- Preview con controls para revisar antes de enviar.
-- Los segundos ahora se marcan y el audio se reproduce al tocar.
+- En los renders de burbujas de voz (1:1 y grupo): guard contra blob: URLs (de mensajes antiguos o uploads fallidos).
+  Si voiceUrl empieza con 'blob:', en vez de intentar cargar (causando el error en consola), muestra:
+  "Nota de voz no disponible en esta sesión"
+- Futuros mensajes usarán siempre https de Storage (gracias a lógica estricta en sendVoiceNote).
+- Duración y play ahora funcionan para mensajes nuevos.
+
+Después de este AAB + deploy de storage rules, las notas de voz se envían, muestran segundos, y se reproducen sin errores.
 Sube el AAB fresco. Sigue con todo.
 
 (Previous version notes below for reference if needed, but use the v0.1.44 block above for this upload.)
