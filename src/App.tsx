@@ -1626,13 +1626,16 @@ function App() {
             else merged.push(p)
           })
           setPartnerLocations(merged)
+          setMapForceTick(t => t + 1)
         }, (err: any) => {
           console.warn('partnerLocations listener error (using seeds only)', err)
           setPartnerLocations(base)
+          setMapForceTick(t => t + 1)
         })
       } catch (err: any) {
         console.warn('partnerLocations listener error (using seeds only)', err)
         setPartnerLocations(base)
+        setMapForceTick(t => t + 1)
       }
     })()
 
@@ -6328,7 +6331,7 @@ function App() {
       // Ritual ripples are intentionally short-lived (they time themselves out), but clear any that are still referenced
       // so we don't accumulate visual noise when map toggles rapidly.
     }
-  }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone, ritualRipples, echoPins])
+  }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone, ritualRipples, echoPins, showPartners, mapForceTick, partnerLocations.length])
 
 
   // Small relative time for message previews (e.g. "5m", "2h", "ahora")
@@ -7190,15 +7193,15 @@ function App() {
                                 await setDoc(doc(db, 'partnerLocations', pid), partnerData)
                               }
                             } catch (e) { console.warn('save partner fs', e) }
-                          } else {
-                            // demo / local
-                            setPartnerLocations(prev => {
-                              if (editingPartnerId) {
-                                return prev.map(pp => pp.id === pid ? { ...pp, ...partnerData } : pp)
-                              }
-                              return [...prev, partnerData]
-                            })
                           }
+                          // Always update local state optimistically (for both demo and real mode)
+                          // This ensures the partner appears immediately in the map even before the onSnapshot fires in real-time mode.
+                          setPartnerLocations(prev => {
+                            if (editingPartnerId) {
+                              return prev.map(pp => pp.id === pid ? { ...pp, ...partnerData } : pp)
+                            }
+                            return [...prev, partnerData]
+                          })
                           // cleanup
                           if (partnerLogoPreview && partnerLogoPreview.startsWith('blob:')) URL.revokeObjectURL(partnerLogoPreview)
                           setPartnerLogoFile(null)

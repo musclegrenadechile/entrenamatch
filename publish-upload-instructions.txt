@@ -1,4 +1,27 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.69-map-partners-polish code 73) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.70-partner-add-fix code 74) ===
+
+FIX: al agregar un partner en tiempo real (real Firebase mode) no se agregaba / no aparecía en el mapa.
+
+Root cause:
+- En modo real, el save hacía setDoc a Firestore pero NO actualizaba el estado local partnerLocations (solo confiaba en el onSnapshot listener).
+- Luego hacía setMapForceTick para forzar re-render.
+- Pero el listener es async (puede tardar), y además el big map render effect NO tenía en sus deps a showPartners / partnerLocations.length / mapForceTick (solo un pequeño effect que solo hacía invalidateSize).
+- Resultado: el nuevo partner se escribía en FS, pero el state del mapa no se actualizaba a tiempo, y el drawing de markers (que está dentro del debounced timeout del big effect) no se re-ejecutaba con los nuevos datos → "no se agrega".
+
+Fix:
+- Después del write (real o demo), SIEMPRE hacemos el setPartnerLocations optimista (igual que en demo).
+  Esto hace que el state se actualice inmediatamente, el forceTick dispare el big effect (ahora con deps correctos), y el drawing incluya el nuevo partner al instante.
+- Añadimos mapForceTick y partnerLocations.length a las deps del big map useEffect (el que hace clear + re-add de todos los markers incluyendo partners).
+- En el listener (onSnapshot), también hacemos setMapForceTick después de setPartnerLocations para asegurar re-draw cuando llega confirmación remota.
+- Con esto, agregar en real-time ahora es instantáneo y confiable (optimistic + listener para consistencia).
+
+El write a FS sigue pasando en background para sync cross-device.
+
+Versión y AAB actualizados. El fix está en el web bundle del AAB.
+
+Test: modo real (no demo), logueado como dev, agrega partner → debe aparecer inmediatamente en el mapa (incluso antes de que el snapshot confirme).
+
+Actualiza instructions con este fix.
 
 CONTINUACIÓN PULIDO MAPA + SISTEMA DE LOCALES/PARTNERS:
 
