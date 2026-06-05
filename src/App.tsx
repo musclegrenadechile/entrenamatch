@@ -648,6 +648,14 @@ function App() {
   // =====================================================
   const getTodayStr = () => new Date().toISOString().slice(0, 10)
 
+  // Retention progression: powerful levels system
+  const computeRetentionLevel = (mom: number, tStreak: number, sStreak: number, vStreak: number, pStreak: number, netPower: number) => {
+    const totalXp = mom + (tStreak * 40) + (sStreak * 70) + (vStreak * 25) + (pStreak * 35) + (netPower * 3)
+    const level = Math.floor(totalXp / 300) + 1
+    const xp = totalXp % 300
+    return { level, xp, totalXp }
+  }
+
   const generateDailyChallenge = (user: any, bonds: any, liveNow: any[], networkPower: number) => {
     const bondCount = Object.keys(bonds || {}).length
     const hasLiveRed = liveNow.some((u: any) => (bonds || {})[u.id])
@@ -658,8 +666,8 @@ function App() {
       {
         id: 'anchor-' + seed,
         type: 'solo',
-        title: 'Ancla Personal',
-        description: 'Entrena 20+ minutos hoy (solo o con quien quieras). Construye tu base.',
+        title: 'Misión: Ancla Personal',
+        description: 'Entrena 20+ minutos hoy (solo o con quien quieras). Construye tu base de retención.',
         target: 20,
         progress: 0,
         reward: 25,
@@ -669,7 +677,7 @@ function App() {
       {
         id: 'bond-' + seed,
         type: 'bond',
-        title: 'Activación de Bond',
+        title: 'Misión: Activación de Bond',
         description: bondCount > 0 
           ? `Sincronízate o envía nota de voz a uno de tus ${bondCount} socios de Red hoy.` 
           : 'Conecta con alguien nuevo o completa un Sync. Fortalece tu grafo.',
@@ -682,7 +690,7 @@ function App() {
       {
         id: 'ripple-' + seed,
         type: 'network',
-        title: 'Ripple de Red',
+        title: 'Misión: Ripple de Red',
         description: hasLiveRed 
           ? 'Completa tu sesión y publica un post o voz que impulse el Pulso visible en el mapa para tu Red.' 
           : 'Entrena y deja un "Pulso" (post o voz) que sea visto por tu Red. +Impacto colectivo.',
@@ -696,7 +704,7 @@ function App() {
       {
         id: 'voice-weak-' + seed,
         type: 'bond',
-        title: 'Voz a Bond Débil',
+        title: 'Misión: Voz a Bond Débil',
         description: bondCount > 0 ? 'Envía una nota de voz motivadora a un socio de Red con menor interacción reciente.' : 'Envía tu primera voz a la Red.',
         target: 1,
         progress: 0,
@@ -707,7 +715,7 @@ function App() {
       {
         id: 'map-ripple-' + seed,
         type: 'network',
-        title: 'Pulso en el Mapa',
+        title: 'Misión: Pulso en el Mapa',
         description: 'Completa entrenamiento y asegúrate de que tu actividad aparezca como ripple/pulso en el mapa (post + live).',
         target: 1,
         progress: 0,
@@ -771,6 +779,8 @@ function App() {
 
       const challenge = generateDailyChallenge(u, syncBonds, liveTrainingNow, networkStats.networkPower)
 
+      const { level, xp } = computeRetentionLevel(mom, newStreak, newSynergy, newVoice, newPulseStreak, networkStats.networkPower)
+
       const newPulse = {
         trainingStreak: newStreak,
         synergyStreak: newSynergy,
@@ -782,7 +792,9 @@ function App() {
         longestTraining: Math.max(newLongTrain, newStreak),
         longestSynergy: newLongSyn,
         longestVoice: Math.max(newLongVoice, newVoice),
-        longestPulse: Math.max(newLongPulse, newPulseStreak)
+        longestPulse: Math.max(newLongPulse, newPulseStreak),
+        level,
+        xp
       }
 
       setDailyPulse(newPulse)
@@ -794,7 +806,10 @@ function App() {
         dailyPulseStreak: newPulseStreak,
         momentumPoints: mom,
         lastDailyPulseDate: today,
-        currentDailyChallenge: challenge
+        currentDailyChallenge: challenge,
+        // level/xp computed client, but persist for sync
+        retentionLevel: level,
+        retentionXp: xp
       }
       saveUserWithRealSync({ ...u, ...update } as any)
 
@@ -814,6 +829,7 @@ function App() {
       setNotifications(prev => [notif, ...prev].slice(0, 50))
     } else if (!dailyPulse) {
       const existingChallenge = (u as any).currentDailyChallenge
+      const { level: hydLevel, xp: hydXp } = computeRetentionLevel(mom, currentStreak, currentSynergy, currentVoice, currentPulse, networkStats.networkPower)
       setDailyPulse({
         trainingStreak: currentStreak,
         synergyStreak: currentSynergy,
@@ -825,7 +841,9 @@ function App() {
         longestTraining: longTrain,
         longestSynergy: longSyn,
         longestVoice: longVoice,
-        longestPulse: longPulse
+        longestPulse: longPulse,
+        level: hydLevel,
+        xp: hydXp
       })
     }
   }
@@ -840,7 +858,9 @@ function App() {
 
     const justCompleted = ch.progress >= ch.target && !ch.completed
 
-    const newMomentum = dailyPulse.momentum + (justCompleted ? ch.reward : 5)
+    const prevLevel = dailyPulse.level || 1
+    const levelBonus = justCompleted ? Math.round(ch.reward * (1 + ((dailyPulse.level || 1) - 1) * 0.08)) : 5
+    const newMomentum = dailyPulse.momentum + levelBonus
 
     const updatedPulse = {
       ...dailyPulse,
@@ -848,7 +868,17 @@ function App() {
       currentChallenge: { ...ch, completed: justCompleted ? true : ch.completed }
     }
 
+    const { level: computedLevel, xp: computedXp } = computeRetentionLevel(newMomentum, updatedPulse.trainingStreak, updatedPulse.synergyStreak, updatedPulse.voiceStreak, updatedPulse.pulseStreak, networkStats.networkPower)
+    updatedPulse.level = computedLevel
+    updatedPulse.xp = computedXp
+
     setDailyPulse(updatedPulse)
+
+    if (justCompleted && computedLevel > prevLevel) {
+      try { triggerHaptic('success') } catch {}
+      toast.success(`¡Subiste a NIVEL ${computedLevel}!`, { description: 'Perk permanente: +8% Momentum en desafíos. ¡Tu retención es legendaria!' })
+      createProfilePost(`⭐ ¡NIVEL ${computedLevel} DE RETENCIÓN! Mi constancia diaria hace fuerte a toda la Red.`, null, 'dailyPulse').catch(() => {})
+    }
 
     const u = currentUser as any
     const update: any = {
@@ -857,14 +887,16 @@ function App() {
       dailyTrainingStreak: updatedPulse.trainingStreak,
       dailySynergyStreak: updatedPulse.synergyStreak,
       dailyVoiceStreak: updatedPulse.voiceStreak,
-      dailyPulseStreak: updatedPulse.pulseStreak
+      dailyPulseStreak: updatedPulse.pulseStreak,
+      retentionLevel: updatedPulse.level,
+      retentionXp: updatedPulse.xp
     }
     saveUserWithRealSync({ ...u, ...update } as any)
 
     if (justCompleted) {
       try { triggerHaptic('success') } catch {}
-      toast.success(`¡Pulso completado! +${ch.reward} Momentum`, {
-        description: `${ch.icon} ${ch.title} • Tu Red se fortalece`
+      toast.success(`¡Pulso completado! +${levelBonus} Momentum`, {
+        description: `${ch.icon} ${ch.title} • Nivel ${dailyPulse.level} • Tu Red se fortalece`
       })
 
       const postText = `✅ Completé mi Pulso Diario: ${ch.title}. ${ch.description} — Momentum para la Red 🔥`
@@ -891,6 +923,18 @@ function App() {
       const pUpdate = { ...updatedPulse, pulseStreak: newPulseSt, longestPulse: Math.max(updatedPulse.longestPulse || 0, newPulseSt) }
       setDailyPulse(pUpdate)
       saveUserWithRealSync({ ...(currentUser as any), dailyPulseStreak: newPulseSt } as any)
+
+      // Milestone rewards - powerful retention
+      const streak = updatedPulse.trainingStreak
+      if (streak > 0 && streak % 7 === 0) {
+        const bonus = 150
+        const milUpdate = { ...updatedPulse, momentum: (updatedPulse.momentum || 0) + bonus }
+        setDailyPulse(milUpdate)
+        saveUserWithRealSync({ ...(currentUser as any), momentumPoints: milUpdate.momentum } as any)
+        toast.success(`¡Milestone de Streak! +${bonus} Momentum`, { description: `${streak}d streak legendario - ¡Eres una máquina!` })
+        // Special post
+        createProfilePost(`🔥 STREAK LEGENDARIO ${streak}d - Mi Red me hace imparable. Pulso Diario completado.`, null, 'dailyPulse').catch(()=>{})
+      }
     } else {
       toast(`+${progressInc} progreso en el Pulso`)
     }
@@ -1068,6 +1112,8 @@ function App() {
     longestSynergy: number
     longestVoice: number
     longestPulse: number
+    level: number // new retention level
+    xp: number // current xp towards next level
   } | null>(null)
   const [showDailyPulseBanner, setShowDailyPulseBanner] = useState(false)
   // Offline handling for good UX (Firebase queues writes, we show banner + use last cached for map)
@@ -1710,6 +1756,8 @@ function App() {
             momentumPoints: data.momentumPoints != null ? data.momentumPoints : undefined,
             lastDailyPulseDate: data.lastDailyPulseDate != null ? data.lastDailyPulseDate : undefined,
             currentDailyChallenge: data.currentDailyChallenge || undefined,
+            retentionLevel: data.retentionLevel || 1,
+            retentionXp: data.retentionXp || 0,
             trainingSyncWith: data.trainingSyncWith || undefined,
             syncStreak: data.syncStreak != null ? data.syncStreak : undefined,
             syncBonds: data.syncBonds || {},
@@ -1770,6 +1818,8 @@ function App() {
               momentumPoints: realProfile.momentumPoints != null ? realProfile.momentumPoints : undefined,
               lastDailyPulseDate: realProfile.lastDailyPulseDate != null ? realProfile.lastDailyPulseDate : undefined,
               currentDailyChallenge: realProfile.currentDailyChallenge || undefined,
+              retentionLevel: realProfile.retentionLevel || 1,
+              retentionXp: realProfile.retentionXp || 0,
               blockedUsers: realProfile.blockedUsers || [],
               trainingSyncWith: realProfile.trainingSyncWith,
               syncStartedAt: realProfile.syncStartedAt != null ? realProfile.syncStartedAt : undefined,
@@ -6402,6 +6452,11 @@ function App() {
             <div className="flex items-center gap-2 mb-1.5 relative z-10">
               <div className="live-pill green !px-2.5 !py-0.5 text-[9px]">🟢 EN VIVO AHORA</div>
               <div className="text-sm font-semibold tracking-[-0.1px]">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡urgencia!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}{activeSyncCount > 0 ? ` · 🔄 ${activeSyncCount} pares sincronizados ahora (único)` : ''}</div>
+              {dailyPulse && (dailyPulse.trainingStreak > 0 || dailyPulse.synergyStreak > 0) && (
+                <div className="text-[10px] mt-1 text-[#22c55e] font-medium flex items-center gap-1">
+                  🔥 Tu streak: {dailyPulse.trainingStreak}d train + {dailyPulse.synergyStreak}d synergy • Nivel {dailyPulse.level}
+                </div>
+              )}
             </div>
             {liveTrainingNow.length > 0 ? (
               <div className="flex gap-2 overflow-x-auto pb-1">
@@ -8455,6 +8510,7 @@ function App() {
                 { label: 'Matches', value: matches?.length || 0, icon: Heart, color: '#FF671F' },
                 { label: 'Sesiones', value: squads?.length || 0, icon: Star, color: '#00C4B4' },
                 { label: 'Nivel', value: currentUser.level || '—', icon: Dumbbell, color: '#FF4F79', isText: true, isSquare: true },
+                { label: 'Retención', value: dailyPulse?.level || 1, icon: Zap, color: '#FFD700', isText: true, isSquare: true },
                 { label: 'Live cerca', value: liveTrainingNow.length, icon: Zap, color: '#22c55e', isLive: true },
                 { label: 'Live joins', value: currentUser.liveJoins || 0, icon: Zap, color: '#22c55e' },
                 { label: 'Syncs', value: (currentUser as any).syncStreak || 0, icon: Users, color: '#22c55e' }
@@ -8597,9 +8653,15 @@ function App() {
                       <div className="text-[#FF671F] text-[10px] font-bold tracking-[1px] uppercase">EL PULSO DE LA RED</div>
                       <div className="text-white text-xl font-black tracking-[-0.5px]">Pulso Diario</div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-3xl font-black text-[#FF671F] tabular-nums">{dailyPulse.momentum}</div>
-                      <div className="text-[9px] text-[#9CA3AF] -mt-1">MOMENTUM</div>
+                    <div className="text-right flex items-center gap-3">
+                      <div>
+                        <div className="text-xs text-[#FFD700]">NIVEL {dailyPulse.level || 1}</div>
+                        <div className="text-[10px] text-[#9CA3AF]">Retención</div>
+                      </div>
+                      <div>
+                        <div className="text-3xl font-black text-[#FF671F] tabular-nums">{dailyPulse.momentum}</div>
+                        <div className="text-[9px] text-[#9CA3AF] -mt-1">MOMENTUM</div>
+                      </div>
                     </div>
                   </div>
 
@@ -8624,13 +8686,28 @@ function App() {
                   </div>
                   <div className="text-[8px] text-[#FFD700] -mt-2 mb-2 text-center">Récord: {Math.max(dailyPulse.longestTraining || 0, dailyPulse.longestSynergy || 0, dailyPulse.longestVoice || 0, dailyPulse.longestPulse || 0)}d</div>
 
-                  {/* Current Daily Challenge - the attractive hook */}
+                  {/* Level progress - powerful retention visual */}
+                  <div className="mb-3">
+                    <div className="flex justify-between text-[8px] mb-1">
+                      <span>NIVEL {dailyPulse.level || 1}</span>
+                      <span className="tabular-nums">{dailyPulse.xp || 0}/300 XP</span>
+                    </div>
+                    <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-gradient-to-r from-[#FFD700] to-[#FF671F]" style={{width: `${((dailyPulse.xp || 0) / 300) * 100}%`}} />
+                    </div>
+                    <div className="text-[7px] text-[#9CA3AF] mt-0.5">+50 XP por milestone de streak • Desbloquea perks en nivel 5/10/15</div>
+                  </div>
+
+                  {/* Misión Diaria / Daily Challenge - more potent retention */}
                   {dailyPulse.currentChallenge && (
                     <div className="bg-[#0D0D10] border border-[#FF671F]/40 rounded-2xl p-3 mb-2">
                       <div className="flex items-start gap-3">
                         <div className="text-3xl mt-0.5">{dailyPulse.currentChallenge.icon}</div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-bold text-white text-[13px]">{dailyPulse.currentChallenge.title}</div>
+                          <div className="font-bold text-white text-[13px] flex items-center gap-2">
+                            {dailyPulse.currentChallenge.title}
+                            <span className="text-[8px] px-1.5 py-px bg-[#FF671F]/20 text-[#FF671F] rounded">MISIÓN</span>
+                          </div>
                           <div className="text-[10px] text-[#9CA3AF] leading-snug mt-0.5">{dailyPulse.currentChallenge.description}</div>
 
                           {/* Progress */}
