@@ -4584,10 +4584,32 @@ function App() {
     saveUser(updated as any)
     // Persist to profiles (optimistic + FS)
     if (!isDemoMode && db && firebaseUser) {
+      // CRITICAL: Same hard reset as terminate/start-live to prevent da08 / b815 / mutations undefined
+      // assertion when initiating sync. startSync does 3x writes in a row (self profile, partner profile,
+      // syncSessions doc) + later createProfilePost addDoc. After any prior transport error, the write
+      // pipeline is fragile; reset + routing self through the resilient saveUserWithRealSync fixes it.
       try {
+        const fb = await import('./services/firebase');
+        await fb.disableFirestoreNetwork?.();
+        await new Promise(r => setTimeout(r, 110));
+        await fb.enableFirestoreNetwork?.();
+        await new Promise(r => setTimeout(r, 70));
+      } catch (resetErr) {
+        console.warn('pre-startSync network reset non-fatal', resetErr);
+      }
+
+      try {
+        // Use resilient path for self (gets retry + reset on internal assertion). This also ensures
+        // trainingSyncWith / syncStartedAt etc. are properly included via the payload builder.
+        await saveUserWithRealSync(updated as any);
+
         const { doc, updateDoc, setDoc } = await import('firebase/firestore')
-        await updateDoc(doc(db, 'profiles', effectiveUserId), { trainingSyncWith: partnerId, syncStartedAt: now, syncActions: [] })
-        await updateDoc(doc(db, 'profiles', partnerId), { trainingSyncWith: effectiveUserId, syncStartedAt: now, syncActions: [] })
+        // Partner side (so they see you requested sync) — best effort, wrapped
+        try {
+          await updateDoc(doc(db, 'profiles', partnerId), { trainingSyncWith: effectiveUserId, syncStartedAt: now, syncActions: [] });
+        } catch (partnerErr) {
+          console.warn('partner sync update failed (non-fatal for starter)', partnerErr);
+        }
 
         // Dedicated instant session doc (for onSnapshot actions/timer, no poll dependency)
         const uids = [effectiveUserId, partnerId].sort()
@@ -4603,10 +4625,11 @@ function App() {
         }, { merge: true })
         setSyncVibe(baseVibe)
       } catch (e) { console.warn('sync persist failed', e) }
+
       // Recover listeners after starting sync (ensures onSnapshot for actions works reliably)
       import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
     }
-    // Auto post to muro for both
+    // Auto post to muro for both (createProfilePost has its own small reset before addDoc)
     createProfilePost(`¡Sincronizado con ${partnerName}! Entrenamos juntos ahora 🔥`, null).catch(() => {})
     toast.success(`EntrenaSync iniciado con ${partnerName}`, { description: 'Estado compartido en vivo + acciones conjuntas. Esto genera resultados reales.' })
     // Attractive feedback: confetti + clear joining loader (the UI will switch to profile showing the rich sync panel)
