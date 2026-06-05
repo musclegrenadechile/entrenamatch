@@ -49,6 +49,18 @@ service firebase.storage {
       allow update, delete: if isAuthenticated();
     }
 
+    // ===== PARTNER LOGOS (for gyms/stores/studios added by devs to the live map / GymPulse) =====
+    // Path used in code (uploadPartnerLogoIfNeeded + partner marker rendering):
+    //   partners/${pid}/logo-${timestamp}
+    //
+    // - Any authenticated user can READ (so the logos show on the public live map for everyone).
+    // - Authenticated write (the client-side isDeveloper gate prevents non-devs from uploading; rules are permissive here for simplicity).
+    // This fixes the bug where adding a partner with logo would upload fail (default deny), so logoUrl never set, and marker always showed fallback emoji instead of the logo img.
+    match /partners/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
     // ===== DEFAULT DENY (everything else is locked) =====
     // This must stay last. More specific rules above take precedence.
     match /{allPaths=**} {

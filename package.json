@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.82-live-toggle-explain-fix",
+  "version": "0.1.83-partner-logo-map-fix",
   "type": "module",
   "scripts": {
     "dev": "vite",

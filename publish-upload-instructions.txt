@@ -1,4 +1,38 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.82-live-toggle-explain-fix code 86) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.83-partner-logo-map-fix code 87) ===
+
+FIX: al añadir un gympartner (partner location) con logo, el logo no aparecía en el mapa (solo el fallback emoji).
+
+Causa raíz: las storage.rules no tenían regla para /partners/** (logos subidos por devs).
+- Caía al default DENY (read/write: false).
+- uploadPartnerLogoIfNeeded fallaba en catch (console.warn), devolvía undefined.
+- logoUrl nunca se seteaba en partnerData ni en el doc de Firestore.
+- En el render de markers (partnerHtml if (logo)), siempre iba al else con emoji.
+- El partner aparecía (gracias al optimistic + tick + listener), pero sin logo.
+
+Solución:
+- Agregada regla específica en storage.rules (antes del default deny):
+  match /partners/{allPaths=**} {
+    allow read: if isAuthenticated();  // para que los logos se vean en el mapa público para todos
+    allow write: if isAuthenticated(); // gateado en cliente por isDeveloper
+  }
+- Esto permite el upload (getDownloadURL https válido) y el fetch del <img src=logoUrl> en el divIcon del marker.
+- El resto del flujo (form -> upload await -> logoUrl en partnerData -> setDoc con logoUrl -> optimistic setPartnerLocations con logoUrl -> tick -> render usa if(logo) <img> ) ya estaba correcto.
+- En render: el onerror fallback sigue ahí por robustez (si el url falla por otra razón, muestra emoji).
+
+Ahora, cuando se añade partner + se sube logo (file o cámara), el logo aparece en el marker dorado en el mapa en tiempo real (con activity badge, hub effects, etc.).
+
+Nota: después de este cambio, deploy las rules: firebase deploy --only storage (o desde console).
+
++ web build, AAB, debug. Push (registra en Actions). Instructions actualizado.
+Test S26 (como dev):
+- En el mapa, activa dev mode si no.
+- + Partner: pon nombre, elige tipo, sube logo (elige archivo o usa cámara si nativo).
+- Guarda (AGREGAR AL MAPA EN TIEMPO REAL).
+- El marker debe aparecer con la IMAGEN del logo (no el emoji fallback), borde dorado, PARTNER badge, y si hay lives cerca activity count.
+- Recarga o mira en web GH Pages: debe persistir con logo (viene del doc FS + storage url).
+- Edita un partner existente y cambia logo: debe actualizarse con nuevo logo.
+
+Sigue con todo. Fix específico del logo en partners del mapa (parte del live map icónico).
 
 FIX: "al seleccionar entrenando ahora (en vivo) en el perfil no pasa nada" + explicaciones claras.
 
