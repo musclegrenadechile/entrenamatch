@@ -52,6 +52,7 @@ export interface GymPulseMapProps {
   syncBonds: Record<string, any>
   isDeveloper?: boolean
   isPlacingPartner?: boolean
+  isQuickAddPartner?: boolean
   selfIsLive?: boolean // so we can style the self marker with live pulse/glow when the user has activated "Entrenando Ahora"
 
   // Callbacks
@@ -60,6 +61,7 @@ export interface GymPulseMapProps {
   onPartnerPositionSelected?: (lat: number, lng: number) => void
   onPartnerMoved?: (id: string, lat: number, lng: number) => void
   onPartnerDelete?: (id: string) => void
+  onPartnerEdit?: (id: string) => void
   onForceTick?: () => void
   onRequestLocation?: () => void
 
@@ -103,12 +105,14 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     syncBonds,
     isDeveloper = false,
     isPlacingPartner = false,
+    isQuickAddPartner = false,
     selfIsLive = false,
     onShowProfile,
     onStartSync,
     onPartnerPositionSelected,
     onPartnerMoved,
     onPartnerDelete,
+    onPartnerEdit,
     onForceTick,
     onRequestLocation,
     onRegisterCentrar,
@@ -126,11 +130,13 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   const partnerLocationsRef = useRef<any[]>([])
   const mapUpdateTimeoutRef = useRef<any>(null)
   const isPlacingPartnerRef = useRef(false)
+  const isQuickAddPartnerRef = useRef(false)
   const showAddPartnerFormRef = useRef(false)
 
   // Keep latest values in refs for closures inside Leaflet handlers / debounced updates
   useEffect(() => { partnerLocationsRef.current = partnerLocations }, [partnerLocations])
   useEffect(() => { isPlacingPartnerRef.current = isPlacingPartner }, [isPlacingPartner])
+  useEffect(() => { isQuickAddPartnerRef.current = isQuickAddPartner }, [isQuickAddPartner])
 
   // Expose imperative handle for parent (centrar, invalidate, etc.)
   useImperativeHandle(ref, () => ({
@@ -205,12 +211,15 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       // Dev click-to-place
       if (mapInstanceRef.current && !(mapInstanceRef.current as any)._emDevPlaceBound) {
         mapInstanceRef.current.on('click', (e: any) => {
-          if (isPlacingPartnerRef.current && onPartnerPositionSelected) {
+          const shouldTrigger = isPlacingPartnerRef.current || isQuickAddPartnerRef.current
+          if (shouldTrigger && onPartnerPositionSelected) {
             const { lat, lng } = e.latlng || {}
             if (typeof lat === 'number' && typeof lng === 'number') {
               onPartnerPositionSelected(lat, lng)
               try { /* haptic if available */ } catch {}
-              toast.success('Posición fijada', { description: `${lat.toFixed(4)}, ${lng.toFixed(4)} — ajusta o guarda` })
+              if (isPlacingPartnerRef.current) {
+                toast.success('Posición fijada', { description: `${lat.toFixed(4)}, ${lng.toFixed(4)} — ajusta o guarda` })
+              }
             }
           }
         })
@@ -377,6 +386,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
             </div>
             ${liveBadge}
             ${timeBadge}
+            <div style="position:absolute;inset:-3px;border-radius:9999px;border:1.5px solid #22c55e;opacity:0.4;animation:live-pulse-green 1.8s ease-in-out infinite;"></div>
           </div>`
         try {
           const marker = L.marker([u.lat, u.lng], {
@@ -402,7 +412,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       if (showPartners) {
         partnerLocationsRef.current.forEach((p: any) => {
           if (!p.lat || !p.lng) return
-          const logo = p.logo || ''
+          const logo = p.logoUrl || p.logo || ''
           const html = logo
             ? `<div style="width:32px;height:32px;border-radius:9999px;overflow:hidden;border:2px solid #FFD700;box-shadow:0 0 8px #FFD70044;"><img src="${logo}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='<div style=width:32px;height:32px;background:#222;border:2px solid #FFD700;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#FFD700>🏋️</div>'" /></div>`
             : `<div style="width:28px;height:28px;background:#222;border:2px solid #FFD700;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#FFD700">🏋️</div>`
@@ -410,7 +420,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           try {
             const pm = L.marker([p.lat, p.lng], {
               icon: L.divIcon({ html, className: 'partner-marker', iconSize: [32, 32], iconAnchor: [16, 16] }),
-              draggable: !!isDeveloper  // devs can drag to reposition stores/tiendas instantly
+              draggable: !!isDeveloper,  // devs can drag to reposition stores/tiendas instantly
+              title: isDeveloper ? 'DEV: drag to move, tap for actions' : p.name
             }).addTo(mapInstanceRef.current)
 
             // Basic popup, enriched for devs with action buttons (using window helpers for simplicity)
@@ -465,7 +476,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   }, [
     showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone,
     ritualRipples, echoPins, showPartners, mapForceTick, partnerLocations.length,
-    showOnlyLegends, syncBonds, isDeveloper, selfIsLive, onShowProfile, onStartSync, onPartnerPositionSelected, onPartnerMoved, onPartnerDelete, onForceTick, onRequestLocation
+    showOnlyLegends, syncBonds, isDeveloper, selfIsLive, onShowProfile, onStartSync, onPartnerPositionSelected, onPartnerMoved, onPartnerDelete, onPartnerEdit, onForceTick, onRequestLocation, isQuickAddPartner
   ])
 
   // Global window helpers for popups (quick bridge until we use React portals or better event system)
@@ -482,9 +493,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       if (onPartnerDelete) onPartnerDelete(id)
     }
     ;(window as any).devEditPartner = (id: string) => {
-      // For now, parent can handle via manage or we can add callback later
-      console.log('dev edit requested for', id)
-      // Could expose a onPartnerEdit callback in future
+      if (onPartnerEdit) onPartnerEdit(id)
     }
     return () => {
       delete (window as any).startSyncFromMap
@@ -492,7 +501,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       delete (window as any).devDeletePartner
       delete (window as any).devEditPartner
     }
-  }, [onStartSync, onPartnerDelete])
+  }, [onStartSync, onPartnerDelete, onPartnerEdit])
 
   return (
     <div

@@ -1632,7 +1632,7 @@ function App() {
     // Critical for 403: Storage rules require request.auth != null. The dev password only gates the UI form client-side.
     // Real Firebase sign-in (Google/email via the app's auth) is mandatory for the upload to succeed with the isAuthenticated() rule.
     if (!firebaseUser?.uid) {
-      try { import('sonner').then(m => m.toast.error('Para subir logo de partner necesitas estar sign-in con Firebase Auth (botón de Google o email en la app). El password dev solo muestra el formulario de devs, no otorga token de Storage. El partner se guardará sin logo.')) } catch {}
+      try { toast.error('Para subir logo de partner necesitas estar sign-in con Firebase Auth (botón de Google o email en la app). El password dev solo muestra el formulario de devs, no otorga token de Storage. El partner se guardará sin logo.') } catch {}
       console.warn('partner logo upload skipped: no firebaseUser (no auth token for storage rules)')
       return undefined
     }
@@ -6864,6 +6864,7 @@ function App() {
                     syncBonds={syncBonds}
                     isDeveloper={isDeveloper}
                     isPlacingPartner={isPlacingPartner}
+                    isQuickAddPartner={isQuickAddPartner}
                     selfIsLive={!!currentUser?.trainingNow}
                     onShowProfile={setShowFullProfile}
                     onStartSync={startSyncWith}
@@ -6892,6 +6893,8 @@ function App() {
                         toast.success('Tienda agregada rápido', { description: `${lat.toFixed(4)}, ${lng.toFixed(4)} — usa Manage para editar` })
                         // turn off quick mode after one add
                         setIsQuickAddPartner(false)
+                        // Auto open edit for the new one so dev can immediately set name/logo etc.
+                        setTimeout(() => startEditPartner(minimal), 50)
                         return
                       }
                       setPartnerFormLat(lat)
@@ -6913,9 +6916,13 @@ function App() {
                         }
                       }
                     }}
+                    onPartnerEdit={(id: string) => {
+                      const p = (partnerLocationsRef.current || partnerLocations).find((pp: any) => pp.id === id)
+                      if (p) startEditPartner(p)
+                    }}
                     onPartnerDelete={async (id: string) => {
                       // Dev delete from map popup
-                      const p = partnerLocations.find((pp: any) => pp.id === id)
+                      const p = (partnerLocationsRef.current || partnerLocations).find((pp: any) => pp.id === id)
                       if (!p || !confirm(`Eliminar ${p.name || 'esta tienda'}?`)) return
                       if (!isDemoMode && db) {
                         try {
@@ -6923,7 +6930,7 @@ function App() {
                           await deleteDoc(doc(db, 'partnerLocations', id))
                         } catch (e) {
                           console.warn('partner delete from map fs', e)
-                          try { import('sonner').then(m => m.toast.error('No se pudo borrar en FS (revisa reglas)')) } catch {}
+                          try { toast.error('No se pudo borrar en FS (revisa reglas)') } catch {}
                         }
                       }
                       setPartnerLocations(prev => prev.filter(pp => pp.id !== id))
@@ -7290,9 +7297,9 @@ function App() {
                             } catch (e) { 
                               console.warn('save partner fs', e) 
                               try {
-                                import('sonner').then(m => m.toast.error('Error guardando partner en Firestore (permisos)', { 
+                                toast.error('Error guardando partner en Firestore (permisos)', { 
                                   description: 'Deploy las firestore.rules nuevas. Asegúrate de estar logueado con Google/email (Firebase Auth real). El logo se subió bien. Se mostró localmente.' 
-                                }))
+                                })
                               } catch {}
                             }
                           }
@@ -7426,7 +7433,7 @@ function App() {
                                       await setDoc(doc(db, 'partnerLocations', p.id), { lat: newLat, lng: newLng, updatedAt: new Date().toISOString() }, { merge: true })
                                     } catch (e) { 
                                       console.warn('partner move fs', e) 
-                                      try { import('sonner').then(m => m.toast.error('No se pudo mover en FS (revisa reglas)')) } catch {} 
+                                      try { toast.error('No se pudo mover en FS (revisa reglas)') } catch {} 
                                     }
                                   }
                                   map.setView([newLat, newLng], Math.max(map.getZoom() || 13, 14))
@@ -7446,7 +7453,7 @@ function App() {
                                     await deleteDoc(doc(db, 'partnerLocations', p.id))
                                   } catch (e) { 
                                     console.warn('partner delete fs', e) 
-                                    try { import('sonner').then(m => m.toast.error('No se pudo borrar en FS (revisa reglas)')) } catch {} 
+                                    try { toast.error('No se pudo borrar en FS (revisa reglas)') } catch {} 
                                   }
                                 }
                                 setPartnerLocations(prev => prev.filter(pp => pp.id !== p.id))
