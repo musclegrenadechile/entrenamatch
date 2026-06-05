@@ -1,15 +1,18 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.47-network-leaderboard-perks code 51) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.48-voice-notes-spectacular-profile code 52) ===
 
-AAB: EntrenaMatch-v0.1.47-network-leaderboard-perks-code51-20260604-2313.aab + EntrenaMatch-release.aab
+AAB: EntrenaMatch-v0.1.48-voice-notes-spectacular-profile-code52-20260604-2323.aab + EntrenaMatch-release.aab
 
 **What's new (copia esto):**
 
-**v0.1.47-network-leaderboard-perks (code 51) — SIGUE SOLO CON LO DE MAYOR IMPACTO: Leaderboard de Redes + Perks concretos por alto Network Power + cuantificación global (primera red social real del fitness)**
+**v0.1.48-voice-notes-spectacular-profile (code 52) — SIGUE CON TODO: Notas de voz en mensajes + Perfil espectacular + Feed único (la primera red social real del fitness)**
 
-• LEADERBOARD '?? TOP REDES (Network Power global)' en Explore: top 4 por NP (avg bond * sesiones), con #socios, min total sincronizados, partner top e impacto % colectivo en la red. Tappable a perfil. El grafo social ahora es visible, competitivo y con estatus real.
-• PERKS DESBLOQUEADOS POR ALTO NP (global): en el Pulso (mapa) cualquier usuario con bondLevel>=3 o >=100 min total en su red personal aparece más grande, con halo dorado, color gold y badge 'HIGH NP' — prioridad visual permanente sin necesidad de filtro 'Mi Red'.
-• MÁS CUANTIFICACIÓN GLOBAL: banner del Pulso ahora 'Redes activas hoy: N • +X joins en la red'. En leaderboard '+Y% impacto colectivo'.
-• Todo refuerza que tu Red de EntrenaSync = capital que te da prioridad, visibilidad y poder medible en la plataforma entera.
+• NOTAS DE VOZ en mensajes (1:1 real/demo + group chats de sesiones): grabación con mic (timer, auto-stop 60s, UI pulsing), preview/cancel, upload a Storage, envío como mensaje especial. Playback con ?? + duración en las burbujas. Único y motivador: comparte energía post-sync, tips de entrenamiento, voz real con tu red de rendimiento.
+
+• PERFIL ESPECTACULAR: barra visual de poder (gradient) en TU RED DE ENTRENASYNC que escala con tu Network Power. El grafo se siente tangible y premium.
+
+• FEED ÚNICO: posts de tu red ahora destacan con borde dorado especial 'muro-post--red'. Contenido de tu grafo de alto rendimiento se reconoce al instante.
+
+Acumula con leaderboard, perks NP en mapa, FCM background para red, prioridad en swipe, etc. Todo hace que EntrenaMatch sea la categoría.
 
 Sigue sin parar. Sube el AAB.
 Sube el AAB fresco. Sigue con todo.
