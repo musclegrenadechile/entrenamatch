@@ -1,18 +1,20 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.50-voice-send-ux-improved code 54) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.51-voice-blob-fix code 55) ===
 
-AAB: EntrenaMatch-v0.1.50-voice-send-ux-improved-code54-20260604-2331.aab + EntrenaMatch-release.aab
+AAB: EntrenaMatch-v0.1.51-voice-blob-fix-code55-20260604-2335.aab + EntrenaMatch-release.aab
 
-**What's new:**
+**What's new (copia esto):**
 
-**v0.1.50 (code 54) — MEJORA UX: Envío de notas de voz como mensajes**
+**v0.1.51 (code 55) — FIX: Notas de voz ya no fallan con blob ERR_FILE_NOT_FOUND**
 
-- Grabación con timer visible y botón pulsing.
-- Preview reproducible con <audio controls> antes de enviar (¡escucha lo que grabaste!).
-- Feedback durante upload: "Subiendo nota de voz...".
-- Reproductores en chat (enviados y recibidos) ahora con controles nativos completos + duración (progreso, seek, etc.).
-- Flujo claro y confiable en 1:1 y chats de grupo.
+- Ahora en modo real (web GH Pages + APK), sendVoiceNote **exige** upload exitoso a Storage para obtener URL https permanente antes de enviar el mensaje de audio.
+- Si el upload falla (ej. rules no deployadas), aborta el envío, muestra toast útil ("No se pudo subir el audio a la nube..."), mantiene el pending para reintentar. Nunca persiste URLs blob: (que causan FILE_NOT_FOUND al reproducir después de revoke, reload o para otros usuarios).
+- Preview local sigue usando blob temporal (correcto para que escuches antes de enviar).
+- Los mensajes en la DB ahora siempre tienen voiceUrl https real.
 
-Las notas de voz ahora se sienten parte de una experiencia premium de mensajería social para fitness.
+IMPORTANTE: después de subir el AAB, deploya las rules:
+npx firebase deploy --only storage --project entrenamatch
+
+Ahora los audios se envían y reproducen correctamente cross-device.
 Sube el AAB fresco. Sigue con todo.
 
 (Previous version notes below for reference if needed, but use the v0.1.44 block above for this upload.)
