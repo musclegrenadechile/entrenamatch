@@ -1567,6 +1567,15 @@ input[type="range"]::-moz-range-thumb {
   100% { opacity: 0.08; transform: scale(1.4); }
 }
 
+/* Persistent personal Pulso ring for Pulso Maestro users on the live map - makes high level users feel special and the map more alive */
+.pulso-personal {
+  animation: pulso-personal 2.2s ease-in-out infinite;
+}
+@keyframes pulso-personal {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.15); opacity: 0.55; }
+}
+
 /* Cluster markers on the map at low zoom - attractive grouped view */
 .cluster-marker {
   filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));

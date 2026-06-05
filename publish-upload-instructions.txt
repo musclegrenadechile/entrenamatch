@@ -1,4 +1,22 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.76-live-map-strongest-point code 80) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.77-live-map-continue-strongest code 81) ===
+
+CONTINUA EN EL LIVE MAP - SIGUIENDO PULIENDO NUESTRO PUNTO MÁS FUERTE.
+
+Más mejoras para que el mapa en tiempo real sea imbatible:
+- Ripples de nuevo live ahora gadget-aware (Pulso = púrpura más grande, alto nivel = dorado).
+- Anillos persistentes para usuarios Pulso Maestro (anillo sutil que pulsa alrededor de su marker - se sienten especiales en el pulso).
+- Self marker mejorado: muestra ✨ y 🌀 según gadgets desbloqueados (Halo + Pulso).
+- Clusters más ricos: badges de gadgets en el icono del cluster, popup menciona si hay Pulso/Halo en el grupo.
+- Ambient Pulso ripples ocasionales de usuarios con Pulso Maestro (el mapa "respira" con su energía).
+- Header flotante ahora con "PULSO XX" (fuerza de actividad basada en joins + syncs) - indicador visual de cuán vivo está el GymPulse ahora.
+- Orbs y tethers ya reforzados en iteración anterior.
+
+El live map sigue siendo el centro de todo: ves gente empezando a entrenar (con ripple), ves syncs brillando, ves hubs activos, ves tu progreso (gadgets) impactando visualmente a toda la red. Esto es lo que hace que EntrenaMatch sea la primera red social real del fitness.
+
++ web build, AAB, debug APK. Push + instructions actualizado.
+Test S26: abre mapa, activa tu live (ripple + si tienes gadgets ver anillo en self), observa si alguien más activa (ripple gadget color), zoom para clusters con badges, mira header con PULSO strength subiendo cuando hay actividad. Debe sentirse como el feature estrella, vivo, motivador.
+
+Sigue con todo. El live map es nuestro punto más fuerte - continua puliéndolo.
 
 LIVE MAP (MAPA EN TIEMPO REAL / GYMPULSE) — NUESTRO PUNTO MÁS FUERTE. Seguimos puliéndolo fuerte porque es el corazón social y visual de EntrenaMatch.
 

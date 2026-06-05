@@ -6074,15 +6074,17 @@ function App() {
         newLives.forEach((newUser: any) => {
           if (!newUser.lat || !newUser.lng) return;
           const isHigh = (newUser.visibleLevel || 1) >= 15 || newUser.isLegend;
+          const hasPulsoNew = (newUser.visibleLevel || 1) >= 20;
+          const rippleColor = hasPulsoNew ? '#a855f7' : (isHigh ? '#FFD700' : '#22c55e');
           try {
             const newLiveRipple = L.circle([newUser.lat, newUser.lng], {
-              radius: isHigh ? 550 : 320,
-              color: isHigh ? '#FFD700' : '#22c55e',
-              weight: isHigh ? 2.5 : 1.8,
-              fillColor: isHigh ? '#FFD700' : '#22c55e',
-              fillOpacity: isHigh ? 0.08 : 0.05,
-              opacity: isHigh ? 0.6 : 0.45,
-              className: `map-heartbeat-ring${isHigh ? ' high-gadget-ripple' : ''}`
+              radius: hasPulsoNew ? 650 : (isHigh ? 550 : 320),
+              color: rippleColor,
+              weight: hasPulsoNew || isHigh ? 2.8 : 1.8,
+              fillColor: rippleColor,
+              fillOpacity: hasPulsoNew || isHigh ? 0.1 : 0.05,
+              opacity: hasPulsoNew || isHigh ? 0.7 : 0.45,
+              className: `map-heartbeat-ring${hasPulsoNew ? ' pulso-maestro-ripple' : (isHigh ? ' high-gadget-ripple' : '')}`
             }).addTo(mapInstanceRef.current);
             ;(newLiveRipple as any)._isNewLiveRipple = true;
             markersRef.current.push(newLiveRipple);
@@ -6102,6 +6104,30 @@ function App() {
         });
       }
       prevLiveIdsRef.current = currentIds;
+
+      // Ambient personal pulses for Pulso Maestro users - makes the map feel alive with their energy even without new events (subtle, not spammy)
+      const pulsoUsers = liveUsers.filter((u: any) => (u.visibleLevel || 1) >= 20 && u.lat && u.lng);
+      if (pulsoUsers.length > 0 && Math.random() < 0.4 && mapInstanceRef.current) { // occasional
+        const pUser = pulsoUsers[Math.floor(Math.random() * pulsoUsers.length)];
+        try {
+          const ambient = L.circle([pUser.lat, pUser.lng], {
+            radius: 180,
+            color: '#a855f7',
+            weight: 1.2,
+            fillColor: '#a855f7',
+            fillOpacity: 0.03,
+            opacity: 0.25,
+            className: 'pulso-maestro-ripple'
+          }).addTo(mapInstanceRef.current);
+          ;(ambient as any)._isAmbientPulso = true;
+          markersRef.current.push(ambient);
+          setTimeout(() => {
+            if (mapInstanceRef.current && (ambient as any)._isAmbientPulso) {
+              try { mapInstanceRef.current.removeLayer(ambient); } catch {}
+            }
+          }, 1800);
+        } catch {}
+      }
 
       // Simple but effective clustering at low zoom for attractiveness + perf
       // When zoomed out the map doesn't get a wall of dots; instead nice grouped "X GymPartners aquí" clusters.
@@ -6123,6 +6149,8 @@ function App() {
           const avgLat = group.reduce((s, u) => s + u.lat, 0) / group.length;
           const avgLng = group.reduce((s, u) => s + u.lng, 0) / group.length;
           const maxLvl = Math.max(0, ...group.map((u: any) => u.visibleLevel || 1));
+          const clusterHasPulso = group.some((u: any) => (u.visibleLevel || 1) >= 20);
+          const clusterHasHalo = group.some((u: any) => (u.visibleLevel || 1) >= 5);
           return {
             id: 'cluster-' + avgLat.toFixed(3) + avgLng.toFixed(3),
             lat: avgLat,
@@ -6131,6 +6159,8 @@ function App() {
             clusterCount: group.length,
             clusterMembers: group,
             visibleLevel: maxLvl,
+            hasPulso: clusterHasPulso,
+            hasHalo: clusterHasHalo,
             name: `${group.length} GymPartners`,
             photos: group[0]?.photos,
             trainingNow: true,
@@ -6170,9 +6200,8 @@ function App() {
 
         if ((user as any).isCluster) {
           const c = user as any;
-          const clLevel = c.visibleLevel || 5;
-          const clHasPulso = clLevel >= 20;
-          const clHasHalo = clLevel >= 5;
+          const clHasPulso = c.hasPulso || false;
+          const clHasHalo = c.hasHalo || false;
           const clGlow = clHasPulso ? '0 0 0 8px #a855f733, 0 0 0 14px #FFD70011' : (clHasHalo ? '0 0 0 6px #FFD70022' : '0 0 0 5px #FF671F22');
           const clBorder = clHasPulso ? '#a855f7' : '#FFD700';
           const clIcon = clHasPulso ? '🌀' : (clHasHalo ? '✨' : '');
@@ -6191,6 +6220,7 @@ function App() {
           iconHtml = `
             <div style="position:relative;width:36px;height:36px">
               ${networkPowerHalo}
+              ${hasPulso ? `<div style="position:absolute;inset:-7px;border-radius:9999px;border:2px solid #a855f7;opacity:0.35;animation:pulso-personal 2.2s ease-in-out infinite;"></div>` : ''}
               <div style="width:36px;height:36px;border-radius:9999px;overflow:hidden;border:${borderW} solid ${markerColor};box-shadow:${glow}, 0 2px 6px rgba(0,0,0,0.4);${pulseExtra}">
                 <img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='${markerColor}';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px\\'>${shortName.slice(0,2).toUpperCase()}</div>'" />
               </div>
@@ -6207,6 +6237,7 @@ function App() {
           iconHtml = `
             <div style="position:relative;width:36px;height:36px">
               ${networkPowerHalo}
+              ${hasPulso ? `<div style="position:absolute;inset:-7px;border-radius:9999px;border:2px solid #a855f7;opacity:0.35;animation:pulso-personal 2.2s ease-in-out infinite;"></div>` : ''}
               <div style="width:36px;height:36px;border-radius:9999px;background:${markerColor};border:${borderW} solid #fff;box-shadow:${glow},0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px;${pulseExtra}">${initials}</div>
               <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
               ${highEnergy ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:9999px;background:#fff;box-shadow:0 0 6px #fff;border:1.5px solid ${markerColor}"></div>` : ''}
@@ -6247,7 +6278,9 @@ function App() {
 
         if ((user as any).isCluster) {
           // Cluster special: no full popup, click flies in to reveal the individuals (attractive discovery)
-          marker.bindPopup(`<div style="font-size:12px"><strong>${(user as any).clusterCount} GymPartners</strong><br/>en esta zona<br/><span style="font-size:10px;color:#666">Toca para acercarte</span></div>`)
+          const c = user as any;
+          const extra = c.hasPulso ? '<br/><span style="font-size:9px;color:#a855f7">🌀 Pulso Maestro en el grupo</span>' : (c.hasHalo ? '<br/><span style="font-size:9px;color:#FFD700">✨ Alto rendimiento</span>' : '');
+          marker.bindPopup(`<div style="font-size:12px"><strong>${c.clusterCount} GymPartners</strong><br/>en esta zona${extra}<br/><span style="font-size:10px;color:#666">Toca para acercarte</span></div>`)
           marker.on('click', () => {
             try { triggerHaptic('medium') } catch {}
             if (mapInstanceRef.current) {
@@ -6491,24 +6524,30 @@ function App() {
       const photo = currentUser?.photos && currentUser.photos[0]
       const shortName = (currentUser?.name || 'Tú').split(' ')[0]
       const userLevel = dailyPulse?.level || 1
-      const hasEliteHalo = userLevel >= 5 // gadget desbloqueado
+      const selfUnlocked = getUnlockedGadgets(userLevel)
+      const hasEliteHalo = selfUnlocked.some(g => g.effect === 'map-halo')
+      const hasPulsoSelf = selfUnlocked.some(g => g.effect === 'map-ripple-boost')
       let iconHtml: string
       if (photo) {
         const halo = hasEliteHalo ? 'box-shadow: 0 0 0 8px #FFD70044, 0 0 16px #FFD70088, 0 0 0 3px rgba(59,130,246,0.4), 0 2px 6px rgba(0,0,0,0.5);' : 'box-shadow:0 0 0 3px rgba(59,130,246,0.4), 0 2px 6px rgba(0,0,0,0.5);'
+        const pulsoRing = hasPulsoSelf ? `<div style="position:absolute;inset:-8px;border-radius:9999px;border:2px solid #a855f7;opacity:0.3;animation:pulso-personal 2.2s ease-in-out infinite;"></div>` : ''
         iconHtml = `
           <div style="position:relative;width:36px;height:36px">
+            ${pulsoRing}
             <div style="width:36px;height:36px;border-radius:9999px;overflow:hidden;border:3px solid #3b82f6;${halo}">
               <img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='#3b82f6';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:12px\\'>${shortName.slice(0,2).toUpperCase()}</div>'" />
             </div>
-            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#3b82f6;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6)">TÚ${hasEliteHalo ? '✨' : ''}</div>
+            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#3b82f6;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6)">TÚ${hasEliteHalo ? '✨' : ''}${hasPulsoSelf ? '🌀' : ''}</div>
           </div>`
       } else {
         const initials = shortName.slice(0, 2).toUpperCase()
         const halo = hasEliteHalo ? 'box-shadow: 0 0 0 8px #FFD70044, 0 0 16px #FFD70088, 0 0 0 3px rgba(59,130,246,0.4),0 2px 6px rgba(0,0,0,0.5);' : 'box-shadow:0 0 0 3px rgba(59,130,246,0.4),0 2px 6px rgba(0,0,0,0.5);'
+        const pulsoRing = hasPulsoSelf ? `<div style="position:absolute;inset:-8px;border-radius:9999px;border:2px solid #a855f7;opacity:0.3;animation:pulso-personal 2.2s ease-in-out infinite;"></div>` : ''
         iconHtml = `
           <div style="position:relative;width:36px;height:36px">
+            ${pulsoRing}
             <div style="width:36px;height:36px;border-radius:9999px;background:#3b82f6;border:3px solid #fff;${halo}display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px;">${initials}</div>
-            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#3b82f6;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6)">TÚ${hasEliteHalo ? '✨' : ''}</div>
+            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#3b82f6;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6)">TÚ${hasEliteHalo ? '✨' : ''}${hasPulsoSelf ? '🌀' : ''}</div>
           </div>`
       }
       const selfIcon = L.divIcon({
@@ -7391,6 +7430,11 @@ function App() {
                     {(() => {
                       const activeSyncs = liveTrainingNow.filter((u: any) => u.trainingSyncWith).length / 2; // pairs
                       return activeSyncs > 0 ? <span className="text-[#FFD700] font-bold text-[9px]">• {Math.floor(activeSyncs)} EN SYNC</span> : null;
+                    })()}
+                    {(() => {
+                      const activity = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow).reduce((s: number, u: any) => s + ((u.joinCount || 0) + (u.trainingSyncWith ? 3 : 0)), 0);
+                      const strength = Math.min(99, Math.floor(activity / 1.5) + 10);
+                      return <span className="text-[8px] bg-[#22c55e]/20 px-1 rounded font-mono tabular-nums">⚡{strength}</span>;
                     })()}
                   </div>
 

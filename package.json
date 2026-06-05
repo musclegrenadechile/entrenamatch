@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.76-live-map-strongest-point",
+  "version": "0.1.77-live-map-continue-strongest",
   "type": "module",
   "scripts": {
     "dev": "vite",
