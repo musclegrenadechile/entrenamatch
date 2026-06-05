@@ -756,6 +756,9 @@ function App() {
   const recordingStartTimeRef = useRef(0)
   const currentRecordingTimeRef = useRef(0)
 
+  // For attractive voice message playback animation
+  const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null)
+
   // Squads feature (fixed small training groups)
   const [squads, setSquads] = useState<Squad[]>([])
 
@@ -7498,18 +7501,46 @@ function App() {
                           {time && <div className="text-[9px] text-[#6B7280] mb-0.5 px-1">{time}</div>}
                           <div className={`px-3.5 py-2 rounded-3xl text-[14px] leading-snug break-words overflow-hidden ${isMe ? 'bg-[#FF671F] text-black rounded-br-md' : 'bg-[#25252A] text-white rounded-bl-md'}`}>
                             {m.voiceUrl && !m.voiceUrl.startsWith('blob:') ? (
-                              <div className="flex items-center gap-2 min-w-[180px]">
+                              <div className={`flex items-center gap-2 min-w-[200px] p-1 rounded-2xl ${isMe ? 'bg-[#FF671F]/90' : 'bg-[#25252A]'} shadow-inner`}>
                                 <button 
                                   onClick={() => {
-                                    const audio = new Audio(m.voiceUrl)
-                                    audio.play().catch((e) => console.warn('audio play error', e))
+                                    if (playingVoiceId === m.id) {
+                                      setPlayingVoiceId(null);
+                                      // stop any playing if needed, but new Audio each time
+                                    } else {
+                                      setPlayingVoiceId(m.id);
+                                      const audio = new Audio(m.voiceUrl);
+                                      audio.onended = () => setPlayingVoiceId(null);
+                                      audio.play().catch((e) => {
+                                        console.warn('audio play error', e);
+                                        setPlayingVoiceId(null);
+                                      });
+                                      // auto stop animation after duration
+                                      setTimeout(() => setPlayingVoiceId(null), (m.voiceDuration || 5) * 1000 + 200);
+                                    }
                                   }}
-                                  className="flex-shrink-0 w-8 h-8 rounded-full bg-black/20 flex items-center justify-center active:bg-black/40 text-lg"
+                                  className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-xl transition-all active:scale-95 ${isMe ? 'bg-black/30 text-white' : 'bg-[#FF671F]/20 text-[#FF671F]'} ${playingVoiceId === m.id ? 'scale-110' : ''}`}
                                   title="Reproducir nota de voz"
                                 >
-                                  ▶️
+                                  {playingVoiceId === m.id ? '⏸' : '▶️'}
                                 </button>
-                                <span className="text-[10px] opacity-70 whitespace-nowrap font-mono">🎙️ {m.voiceDuration || '?'}s</span>
+                                {/* Attractive simple waveform - animated when playing */}
+                                <div className="flex items-center gap-0.5 flex-1 h-5 mx-1">
+                                  {[3,5,4,6,3,5,4].map((h, idx) => (
+                                    <div 
+                                      key={idx} 
+                                      className={`w-1 bg-current rounded-full transition-all ${playingVoiceId === m.id ? 'animate-pulse' : ''}`}
+                                      style={{ 
+                                        height: `${h * 2}px`,
+                                        animationDelay: `${idx * 80}ms`,
+                                        opacity: playingVoiceId === m.id ? 1 : 0.7
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                                <span className={`text-[10px] font-mono whitespace-nowrap ${isMe ? 'text-black/80' : 'text-white/70'}`}>
+                                  🎙️ {m.voiceDuration || '?'}s
+                                </span>
                               </div>
                             ) : m.voiceUrl && m.voiceUrl.startsWith('blob:') ? (
                               <span className="text-[10px] text-red-400">Nota de voz no disponible en esta sesión</span>
@@ -7582,40 +7613,72 @@ function App() {
                   }} className="flex gap-2 items-center">
                     <input type="text" placeholder="Escribe un mensaje o graba voz..." className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none" />
                     
-                    {/* Voice note mic for 1:1 - spectacular for sharing training motivation */}
-                    <button 
-                      type="button"
-                      onClick={isRecordingVoice ? stopVoiceRecording : startVoiceRecording}
-                      className={`w-10 h-10 rounded-3xl flex items-center justify-center transition active:scale-95 ${isRecordingVoice ? 'bg-red-500 text-white animate-pulse' : 'bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A]'}`}
-                      title={isRecordingVoice ? 'Detener grabación' : 'Grabar nota de voz'}
-                    >
-                      {isRecordingVoice ? '⏹' : '🎙️'}
-                    </button>
-                    {isRecordingVoice && (
-                      <div className="text-[9px] text-red-400 font-mono px-0.5 self-center">
-                        {recordingTime}s
+                    {/* Attractive voice recording & preview for 1:1 */}
+                    {isRecordingVoice ? (
+                      <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/30 rounded-3xl px-3 py-1">
+                        <div className="flex items-center gap-1">
+                          <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse" />
+                          <span className="text-red-400 text-xs font-bold">GRABANDO</span>
+                        </div>
+                        <div className="text-red-400 font-mono text-sm">{recordingTime}s / 60s</div>
+                        {/* Simple animated waveform bars during record */}
+                        <div className="flex gap-0.5 items-end h-4">
+                          {[2,4,3,5,2,4].map((h,i) => (
+                            <div key={i} className="w-0.5 bg-red-500 rounded animate-pulse" style={{height: `${h*2}px`, animationDelay: `${i*60}ms`}} />
+                          ))}
+                        </div>
+                        <button onClick={stopVoiceRecording} className="ml-1 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full active:bg-red-600">Detener</button>
                       </div>
+                    ) : (
+                      <button 
+                        type="button"
+                        onClick={startVoiceRecording}
+                        className="w-10 h-10 rounded-3xl flex items-center justify-center transition active:scale-95 bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A]"
+                        title="Grabar nota de voz"
+                      >
+                        🎙️
+                      </button>
                     )}
                     {pendingVoice && !isUploadingVoice && (
-                      <div className="flex items-center gap-1 ml-1">
-                        <audio 
-                          src={pendingVoice.url} 
-                          controls 
-                          className="h-8 w-32" 
-                          style={{maxWidth: '120px'}}
-                        />
+                      <div className="ml-1 flex items-center gap-1 bg-[#0D0D10] border border-[#FF671F]/30 rounded-2xl p-1">
+                        <button 
+                          onClick={() => {
+                            const audio = new Audio(pendingVoice.url);
+                            audio.play().catch(() => {});
+                          }}
+                          className="w-8 h-8 rounded-full bg-[#FF671F]/20 flex items-center justify-center text-[#FF671F] active:bg-[#FF671F]/40"
+                          title="Escuchar preview"
+                        >
+                          ▶️
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[9px] text-[#FF671F] font-medium">Nota de voz lista</div>
+                          <div className="text-[10px] text-[#9CA3AF]">{pendingVoice.duration}s</div>
+                        </div>
                         <button 
                           type="button" 
                           onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} 
-                          className="text-[9px] px-1.5 py-0.5 text-red-400 hover:text-red-500 border border-red-400/30 rounded"
+                          className="text-[9px] px-2 py-0.5 text-red-400 hover:text-red-500"
                         >
-                          Descartar
+                          ✕
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            // trigger send via the form submit logic
+                            const form = document.querySelector('form'); // rough, but works for now
+                            if (form) form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+                          }}
+                          className="text-[9px] px-2 py-0.5 bg-[#FF671F] text-black rounded-full font-bold active:bg-[#E55A1A]"
+                        >
+                          Enviar
                         </button>
                       </div>
                     )}
                     {isUploadingVoice && (
-                      <div className="ml-2 text-[10px] text-[#FF671F] flex items-center gap-1">
-                        <span className="animate-pulse">⏳ Enviando nota de voz...</span>
+                      <div className="ml-2 flex items-center gap-1 text-[#FF671F] text-xs">
+                        <div className="w-2 h-2 bg-[#FF671F] rounded-full animate-pulse" />
+                        Subiendo voz...
                       </div>
                     )}
 
@@ -11001,18 +11064,44 @@ function App() {
                                 {renderMessageText(msg.text)}
                                 {msg.photo && <img src={msg.photo} className="mt-2 max-w-[200px] rounded-xl border border-white/10" />}
                                 {msg.voiceUrl && !msg.voiceUrl.startsWith('blob:') ? (
-                                  <div className="mt-1 flex items-center gap-2 text-sm">
+                                  <div className={`mt-1 flex items-center gap-2 p-1 rounded-2xl min-w-[180px] ${isMe ? 'bg-[#FF671F]/90' : 'bg-[#25252A]'}`}>
                                     <button 
                                       onClick={() => {
-                                        const audio = new Audio(msg.voiceUrl)
-                                        audio.play().catch((e) => console.warn('audio play error', e))
+                                        if (playingVoiceId === msg.id) {
+                                          setPlayingVoiceId(null);
+                                        } else {
+                                          setPlayingVoiceId(msg.id);
+                                          const audio = new Audio(msg.voiceUrl);
+                                          audio.onended = () => setPlayingVoiceId(null);
+                                          audio.play().catch((e) => {
+                                            console.warn('audio play error', e);
+                                            setPlayingVoiceId(null);
+                                          });
+                                          setTimeout(() => setPlayingVoiceId(null), (msg.voiceDuration || 5) * 1000 + 200);
+                                        }
                                       }}
-                                      className="flex-shrink-0 w-8 h-8 rounded-full bg-white/10 flex items-center justify-center active:bg-white/20 text-lg"
+                                      className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-lg transition-all active:scale-95 ${isMe ? 'bg-black/30 text-white' : 'bg-[#FF671F]/20 text-[#FF671F]'} ${playingVoiceId === msg.id ? 'scale-110' : ''}`}
                                       title="Reproducir nota de voz"
                                     >
-                                      ▶️
+                                      {playingVoiceId === msg.id ? '⏸' : '▶️'}
                                     </button>
-                                    <span className="text-[10px] opacity-70 whitespace-nowrap font-mono">🎙️ {msg.voiceDuration || '?'}s</span>
+                                    {/* Attractive waveform bars */}
+                                    <div className="flex items-center gap-0.5 flex-1 h-4">
+                                      {[3,5,4,6,3,5,4].map((h, idx) => (
+                                        <div 
+                                          key={idx} 
+                                          className={`w-0.5 bg-current rounded-full transition-all ${playingVoiceId === msg.id ? 'animate-pulse' : ''}`}
+                                          style={{ 
+                                            height: `${h * 1.8}px`,
+                                            animationDelay: `${idx * 70}ms`,
+                                            opacity: playingVoiceId === msg.id ? 1 : 0.6
+                                          }}
+                                        />
+                                      ))}
+                                    </div>
+                                    <span className={`text-[9px] font-mono whitespace-nowrap ${isMe ? 'text-black/80' : 'text-white/70'}`}>
+                                      🎙️ {msg.voiceDuration || '?'}s
+                                    </span>
                                   </div>
                                 ) : msg.voiceUrl && msg.voiceUrl.startsWith('blob:') ? (
                                   <span className="text-[10px] text-red-400">Nota de voz no disponible en esta sesión</span>
@@ -11079,25 +11168,48 @@ function App() {
                       </div>
                     )}
                     {pendingVoice && !isUploadingVoice && (
-                      <div className="mb-2 flex items-center gap-2 bg-[#0D0D10] p-2 rounded-2xl border border-[#2F2F35]">
-                        <div className="flex items-center gap-2 flex-1">
-                          <audio 
-                            src={pendingVoice.url} 
-                            controls 
-                            className="h-8 flex-1" 
-                          />
-                          <span className="text-[10px] text-[#9CA3AF] whitespace-nowrap">{pendingVoice.duration}s</span>
+                      <div className="mb-2 bg-[#0D0D10] border border-[#FF671F]/40 rounded-2xl p-2 flex items-center gap-2">
+                        <button 
+                          onClick={() => {
+                            const audio = new Audio(pendingVoice.url);
+                            audio.play().catch(() => {});
+                          }}
+                          className="w-9 h-9 rounded-full bg-[#FF671F]/20 flex items-center justify-center text-[#FF671F] active:bg-[#FF671F]/40 text-xl flex-shrink-0"
+                          title="Escuchar preview"
+                        >
+                          ▶️
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-medium text-[#FF671F]">🎙️ Nota de voz lista para enviar</div>
+                          <div className="text-[10px] text-[#9CA3AF]">{pendingVoice.duration}s de energía para tu red</div>
                         </div>
-                        <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-xs px-2 py-1 text-red-400 hover:text-red-500">Descartar</button>
+                        <button 
+                          onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} 
+                          className="text-xs px-2 py-1 text-red-400 hover:text-red-500 border border-red-400/30 rounded"
+                        >
+                          Descartar
+                        </button>
+                        <button 
+                          onClick={() => {
+                            // dispatch submit to send the voice
+                            const form = document.querySelector('#group-chat-form');
+                            if (form) form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+                          }}
+                          className="text-xs px-3 py-1 bg-[#FF671F] text-black rounded-full font-bold active:bg-[#E55A1A]"
+                        >
+                          Enviar voz
+                        </button>
                       </div>
                     )}
                     {isUploadingVoice && (
-                      <div className="mb-2 text-[10px] text-[#FF671F] px-2 flex items-center gap-1">
-                        ⏳ Subiendo nota de voz...
+                      <div className="mb-2 flex items-center gap-1 text-xs text-[#FF671F] px-2">
+                        <div className="w-2 h-2 bg-[#FF671F] rounded-full animate-pulse" />
+                        Subiendo nota de voz a la red...
                       </div>
                     )}
 
                     <form 
+                      id="group-chat-form"
                       onSubmit={(e) => {
                         e.preventDefault()
                         if ((chatInputValue.trim() || groupChatPhoto || pendingVoice) && showGroupChatModalFor) {
@@ -11134,19 +11246,28 @@ function App() {
                         }} />
                       </label>
 
-                      {/* Mic for voice notes in group - unique social feature */}
-                      <button 
-                        type="button"
-                        onClick={isRecordingVoice ? stopVoiceRecording : startVoiceRecording}
-                        className={`w-11 h-11 rounded-3xl flex items-center justify-center transition active:scale-95 ${isRecordingVoice ? 'bg-red-500 text-white animate-pulse' : 'bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A]'}`}
-                        title={isRecordingVoice ? 'Detener grabación' : 'Grabar nota de voz'}
-                      >
-                        {isRecordingVoice ? '⏹' : '🎙️'}
-                      </button>
-                      {isRecordingVoice && (
-                        <div className="text-[10px] text-red-400 font-mono px-1">
-                          {recordingTime}s / 60s
+                      {/* Attractive recording state for group */}
+                      {isRecordingVoice ? (
+                        <div className="flex items-center gap-2 bg-red-500/10 border border-red-500/40 rounded-3xl px-3 py-1 text-sm">
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                            <span className="text-red-400 text-xs font-bold">GRABANDO</span>
+                          </div>
+                          <span className="text-red-400 font-mono text-xs">{recordingTime}s / 60s</span>
+                          <div className="flex gap-0.5 items-end h-3 ml-1">
+                            {[2,4,3,5,2].map((h,i) => <div key={i} className="w-0.5 bg-red-500 rounded animate-pulse" style={{height: h}} />)}
+                          </div>
+                          <button onClick={stopVoiceRecording} className="ml-1 text-xs px-2 py-0.5 bg-red-500 text-white rounded-full">Parar</button>
                         </div>
+                      ) : (
+                        <button 
+                          type="button"
+                          onClick={startVoiceRecording}
+                          className="w-11 h-11 rounded-3xl flex items-center justify-center transition active:scale-95 bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A]"
+                          title="Grabar nota de voz"
+                        >
+                          🎙️
+                        </button>
                       )}
                       {pendingVoice && <span className="text-[10px] text-[#FF671F] self-center">Voz lista</span>}
 
