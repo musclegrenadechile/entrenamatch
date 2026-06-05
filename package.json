@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.32-ceremonia-iniciacion",
+  "version": "0.1.33-living-mythology",
   "type": "module",
   "scripts": {
     "dev": "vite",

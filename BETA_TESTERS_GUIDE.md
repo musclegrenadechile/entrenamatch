@@ -632,3 +632,11 @@ This is the build to upload to Closed track. Full "sigue con todo" — more uniq
 - Al terminar (nuevo usuario): mensaje épico '¡Has sido iniciado! Bienvenido al Círculo...'.
 - El onboarding ya no es 'llenar un formulario'. Es el momento en que sientes que estás entrando a algo único, ceremonial e irreversible.
 - Prueba: Borra datos o usa cuenta nueva. Siente cómo el flujo entero genera anticipación por el 'ritual que nadie más tiene'.
+
+**NUEVO — LIVING MYTHOLOGY / ECHOES (v0.1.33-living-mythology, code 38)**:
+- Los momentos épicos ahora se convierten en **Echoes** permanentes.
+- Desde el Witness modal o desde un Echo Pin en el mapa, puedes 'Reclamar como Echo' → crea un post especial dorado en el feed global ('👁️ Fui testigo de un RITUAL LEGENDARIO') que forma parte de la mitología compartida.
+- Echo Pins: los ripples legendarios dejan pines persistentes ⭐ en el mapa (hasta 45 min) que cualquiera puede tocar para abrir el witness y reclamar el eco.
+- Los Echo posts tienen estilo especial (borde y barra dorada) y suben con prioridad en el feed.
+- Esto hace que la app tenga **cultura viva**: los rituales no se pierden, se convierten en historia que inspira a otros a crear sus propios momentos.
+- Prueba: Genera un alto vibe legendario en Arena. Ve al mapa con otra cuenta. Toca el pin o la onda → Reclamar Echo. Ve cómo aparece en el feed global con el estilo dorado. ¡La mitología crece!.

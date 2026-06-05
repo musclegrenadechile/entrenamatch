@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 37 / 0.1.32-ceremonia-iniciacion. **ONBOARDING COMO CEREMONIA DE INICIACIÓN**: Primer minuto elevado a rito de paso al Ritual. 
+**Current version for this upload**: versionCode 38 / 0.1.33-living-mythology. **LIVING MYTHOLOGY / ECHOES**: Los momentos épicos ahora se convierten en Echoes reclamables que viven en el feed global y como pines en el mapa. La mitología crece con cada ripple. 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -149,11 +149,18 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 
 ## What's new (for this Pre-Alpha release, short & punchy)
 
-**READY FOR PLAY CLOSED UPLOAD (v0.1.32-ceremonia-iniciacion code 37)**
-- Fresh signed AAB: `EntrenaMatch-v0.1.32-ceremonia-iniciacion-code37-20260604-2012.aab` (7.2 MB) + `EntrenaMatch-release.aab`
-- Fresh debug APK for device: `EntrenaMatch-debug-ceremonia-iniciacion-0.1.32-20260604-2011.apk` (10 MB) + `EntrenaMatch-debug.apk`
+**READY FOR PLAY CLOSED UPLOAD (v0.1.33-living-mythology code 38)**
+- Fresh signed AAB: `EntrenaMatch-v0.1.33-living-mythology-code38-20260604-2015.aab` (7.2 MB) + `EntrenaMatch-release.aab`
+- Fresh debug APK for device: `EntrenaMatch-debug-living-mythology-0.1.33-20260604-2015.apk` (10 MB) + `EntrenaMatch-debug.apk`
 - Web: pushed to main → GH Pages will have the new bundle (hard refresh after Actions finish).
 - Copy the short "What's new" below directly into Play Console when uploading the AAB to closed track.
+
+**v0.1.33-living-mythology (code 38) — LIVING MYTHOLOGY: ECHOES Y PINS DE LEYENDA**
+• Cuando alguien reclama un Echo desde el Witness modal o desde un pin en el mapa, se crea un post especial "👁️ Fui testigo de un RITUAL LEGENDARIO" que vive en el feed global con estilo dorado y "Echo" badge.
+• Los Echo posts suben con prioridad (mitología viva).
+• En el mapa: los ripples legendarios dejan "Echo Pins" persistentes (hasta 45 min) con el icono ⭐ que cualquiera puede tocar para abrir el witness y reclamar el eco.
+• Esto convierte los momentos privados de la Arena en patrimonio cultural compartido. La app ya no es solo "dónde entrenar con alguien" — es el lugar donde se construye y se vive la mitología del movimiento sincronizado.
+• "Every ripple becomes an echo. The mythology grows."
 
 **v0.1.32-ceremonia-iniciacion (code 37) — ELEVACIÓN DEL PRIMER MINUTO: ONBOARDING COMO CEREMONIA DE INICIACIÓN**
 • El flujo de onboarding ahora es una **ceremonia de iniciación** al Círculo: títulos como "Iniciación • Paso X", "Los Votos de Iniciación", "Completar la Ceremonia e Ingresar al Ritual".
@@ -224,8 +231,8 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • AAB + debug APK frescos listos (ver nombres abajo). Build limpia + pipeline completo.
 • Todo el pipeline: web GH Pages, Android AAB/debug, docs actualizados. Sigue con todo ritmo.
 
-**Short "What's new" (copy-paste to Play Console for v0.1.32 code 37):**
-Onboarding como Ceremonia de Iniciación: el primer minuto es ahora un rito de paso al Círculo. Títulos rituales ("Iniciación", "Los Votos de Iniciación"), juras épicas, preview que teaser ripples/witness/legends/Arena. Botón final "Completar la Ceremonia e Ingresar al Ritual". Mensaje de bienvenida "¡Has sido iniciado!". Sensación de entrar a algo único e irreversible desde el segundo uno. (code 37)
+**Short "What's new" (copy-paste to Play Console for v0.1.33 code 38):**
+Living Mythology: Los momentos épicos ahora se convierten en Echoes permanentes que cualquiera puede reclamar. Echo posts dorados en el feed global + Echo Pins en el mapa que se pueden tocar para presenciar y reclamar el eco. La mitología del movimiento sincronizado crece con cada ripple. "Cada ripple se convierte en un eco que la comunidad puede vivir." (code 38)
 
 **Artifacts for this version:**
 - AAB (Play): EntrenaMatch-v0.1.28-recuperacion-cuenta-code33-20260604-1958.aab (y EntrenaMatch-release.aab)

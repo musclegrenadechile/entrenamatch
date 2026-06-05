@@ -422,6 +422,13 @@ function App() {
   const [lastSyncStory, setLastSyncStory] = useState<any>(null)
   const [replaySession, setReplaySession] = useState<any>(null) // {partnerName, minutes, vibe, actions, rating?}
   const [witnessData, setWitnessData] = useState<any>(null) // for Witness mode: short replay of epic moment that caused a ripple
+
+  // Living Mythology: Echoes
+  // High-vibe legend moments can be "claimed" as Echoes by witnesses.
+  // These become permanent, visible community memory in the feed and as tappable pins on the map.
+  // This is what makes the app feel like it has culture, history, and status from day one.
+  // "Every ripple becomes an echo. The mythology grows with every sync."
+  const [echoPins, setEchoPins] = useState<any[]>([]); // persistent tappable echo markers on map from legend ripples
   const [activeSyncPairs, setActiveSyncPairs] = useState<any[]>([]) // lightweight for global FOMO teasers
 
   // Auto-refresh real sessions on tab DISABLED to fix TDZ.
@@ -2838,6 +2845,19 @@ function App() {
     ;(window as any).witnessRipple = witnessRipple
   }, [witnessRipple])
 
+  // For echo pins on map (persistent legend ripples)
+  const witnessEchoPin = useCallback((pinId: string) => {
+    const pin = echoPins.find((p: any) => p.id === pinId);
+    if (pin && pin.witnessData) {
+      setWitnessData(pin.witnessData);
+      triggerHaptic('medium');
+    }
+  }, [echoPins, triggerHaptic]);
+
+  useEffect(() => {
+    ;(window as any).witnessEchoPin = witnessEchoPin;
+  }, [witnessEchoPin]);
+
   // Same for profile modal – marker clicks and "Ver perfil" in popups can reliably open the rich profile.
   useEffect(() => {
     showFullProfileRef.current = setShowFullProfile
@@ -3072,6 +3092,30 @@ function App() {
             setTimeout(() => {
               setRitualRipples(r => r.filter(x => x.id !== rippleId))
             }, 5200)
+
+            // If this is a legend ripple, leave a persistent Echo Pin on the map for a while (45min)
+            // so the community can discover and witness the mythology.
+            if (isLegendRipple) {
+              const pinId = 'echo-pin-' + rippleId;
+              setEchoPins(prev => [...prev, {
+                id: pinId,
+                lat: partner.lat,
+                lng: partner.lng,
+                label: `⭐ ${label}`,
+                witnessData: {
+                  actions: syncActions.slice(0, 6).map((a: any) => ({...a})),
+                  vibe: newVibe,
+                  partnerName: partner.name || partner.nombre || 'Compañero de ritual',
+                  photoUrl: syncActions.find((a:any) => a.photoUrl)?.photoUrl || null,
+                  label: `⭐ ${label}`,
+                  timestamp: Date.now(),
+                  minutes: syncStartedAt ? Math.floor((Date.now() - syncStartedAt)/60000) : 0
+                }
+              }]);
+              setTimeout(() => {
+                setEchoPins(p => p.filter(x => x.id !== pinId));
+              }, 45 * 60 * 1000);
+            }
 
             // Extra "physics" awareness: even if map is closed, if the current user is geographically close
             // to the high-vibe event, give them a personal mini-notification. This makes ripples feel real.
@@ -4452,6 +4496,10 @@ function App() {
         const bIsLegend = !!syncBonds[b.ownerId];
         if (bIsLegend && !aIsLegend) return -1; // Legends have real weight in global feed
         if (aIsLegend && !bIsLegend) return 1;
+        const aIsEcho = (a.text || '').includes('Fui testigo') || (a.text || '').includes('RITUAL LEGENDARIO') || (a.text || '').includes('Echo');
+        const bIsEcho = (b.text || '').includes('Fui testigo') || (b.text || '').includes('RITUAL LEGENDARIO') || (b.text || '').includes('Echo');
+        if (bIsEcho && !aIsEcho) return -1; // Echoes (witnessed legends) rise to the top - living mythology
+        if (aIsEcho && !bIsEcho) return 1;
         if (b.pinned && !a.pinned) return 1;
         if (a.pinned && !b.pinned) return -1;
         return b.timestamp - a.timestamp;
@@ -4830,6 +4878,39 @@ function App() {
             }
           }
         })
+      } catch (e) {}
+    })
+
+    // Echo Pins - persistent tappable markers for legendary witnessed moments on the map.
+    // These turn private high-vibe syncs into discoverable community mythology.
+    // Tapping opens the witness modal so anyone can "be part of the story".
+    echoPins.forEach((pin: any) => {
+      try {
+        const iconHtml = `
+          <div style="width:26px;height:26px;border-radius:9999px;background:#FFD700;border:3px solid #111;box-shadow:0 0 10px #FFD700, 0 0 20px rgba(255,215,0,0.5);display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1">⭐</div>
+        `;
+        const echoMarker = L.marker([pin.lat, pin.lng], {
+          icon: L.divIcon({
+            html: iconHtml,
+            className: 'echo-pin-marker',
+            iconSize: [26, 26],
+            iconAnchor: [13, 13]
+          })
+        }).addTo(mapInstanceRef.current);
+
+        echoMarker.bindPopup(`
+          <div style="min-width:150px">
+            <strong>⭐ Echo Legendario</strong><br/>
+            <span style="font-size:11px">${pin.label}</span><br/><br/>
+            <button onclick="window.witnessEchoPin('${pin.id}')" 
+              style="background:#FFD700;color:#111;border:none;padding:5px 8px;border-radius:6px;font-size:10px;font-weight:700;width:100%">
+              👁️ Ser testigo de este momento
+            </button>
+          </div>
+        `);
+
+        markersRef.current.push(echoMarker);
+        (echoMarker as any)._isEchoPin = true;
       } catch (e) {}
     })
 
@@ -5295,7 +5376,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
-          <span className="text-white/90 text-[11px]">Real backend • v0.1.32-ceremonia-iniciacion</span>
+          <span className="text-white/90 text-[11px]">Real backend • v0.1.33-living-mythology</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -5964,7 +6045,7 @@ function App() {
                     return (
                       <motion.div 
                         key={post.id} 
-                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${post.isSyncStory || (post.text || '').includes('ENTRENASYNC LEGENDARIO') ? 'muro-post--sync-story' : (post.text || '').toLowerCase().includes('sincronizado') ? 'muro-post--sync' : (post.text || '').toLowerCase().includes('entrenando ahora') || (post.text || '').includes('me uno al live') ? 'muro-post--live' : '' } ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-lg shadow-[#FF671F]/20' : ''} hover:border-[#FF671F]/40 hover:-translate-y-0.5 overflow-hidden transition-all active:scale-[0.995]`}
+                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${post.isSyncStory || (post.text || '').includes('ENTRENASYNC LEGENDARIO') ? 'muro-post--sync-story' : (post.text || '').toLowerCase().includes('sincronizado') ? 'muro-post--sync' : (post.text || '').toLowerCase().includes('entrenando ahora') || (post.text || '').includes('me uno al live') ? 'muro-post--live' : (post.text || '').includes('Fui testigo') || (post.text || '').includes('Echo') || (post.text || '').includes('RITUAL LEGENDARIO') ? 'muro-post--echo' : '' } ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-lg shadow-[#FF671F]/20' : ''} hover:border-[#FF671F]/40 hover:-translate-y-0.5 overflow-hidden transition-all active:scale-[0.995]`}
                         initial={{ opacity: 0, y: 16, scale: 0.985 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.98, height: 0, marginBottom: 0 }}
@@ -8237,7 +8318,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.32-ceremonia-iniciacion • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.33-living-mythology • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8464,7 +8545,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.32-ceremonia-iniciacion • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.33-living-mythology • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>
@@ -10462,9 +10543,26 @@ function App() {
               >
                 🔥 Crear mi propio momento
               </button>
+              <button 
+                onClick={() => {
+                  // CLAIM THE ECHO - turns the witnessed moment into permanent community mythology
+                  // This is the virality + status layer that makes the app feel inevitable.
+                  const echoText = `👁️ Fui testigo de un RITUAL LEGENDARIO\n${witnessData.minutes} min con ${witnessData.partnerName} • Vibe ${witnessData.vibe}%\n${(witnessData.actions || []).slice(0,3).map((a: any) => `${a.emoji} ${a.label}`).join(' · ')}\n\nEsta energía se propagó. El mito crece.`;
+                  createProfilePost(echoText, witnessData.photoUrl).then(() => {
+                    toast.success('Echo reclamado', { description: 'Este momento ahora vive en el feed global como parte de la mitología.' });
+                    setWitnessData(null);
+                  }).catch(() => {
+                    toast('Echo guardado localmente (se sincronizará).');
+                    setWitnessData(null);
+                  });
+                }} 
+                className="flex-1 py-2.5 rounded-2xl border border-[#FFD700] text-[#FFD700] font-semibold text-sm active:bg-[#FFD700]/10"
+              >
+                ⭐ Reclamar como Echo
+              </button>
               <button onClick={() => setWitnessData(null)} className="flex-1 py-2.5 rounded-2xl border border-white/20 text-sm">Cerrar</button>
             </div>
-            <div className="text-center text-[8px] text-[#9CA3AF]/60 mt-2">Fuiste testigo de un ritual que nadie más puede replicar.</div>
+            <div className="text-center text-[8px] text-[#9CA3AF]/60 mt-2">Fuiste testigo de un ritual que nadie más puede replicar. Reclámalo y forma parte del mito.</div>
           </div>
         </div>
       )}

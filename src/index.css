@@ -795,6 +795,30 @@ input[type="range"]::-moz-range-thumb {
   font-size: 15px;
 }
 
+/* Echo posts - Living Mythology. These are witnessed legendary moments claimed by the community.
+   They give the app culture, history, and status. "Every ripple becomes part of the shared story." */
+.muro-post--echo {
+  border-color: #FFD700;
+  background: linear-gradient(160deg, rgba(42,32,10,0.92), rgba(18,18,22,0.99));
+  box-shadow: 0 12px 35px -8px rgba(255,215,0,0.35), 0 0 0 1px rgba(255,215,0,0.25), inset 0 0 60px rgba(255,215,0,0.08);
+  position: relative;
+}
+.muro-post--echo::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, #FFD700, #FF671F, #FFD700, #22c55e);
+  background-size: 300% 100%;
+  opacity: 0.75;
+  animation: gradient-shift 6s ease infinite;
+}
+.muro-post--echo .muro-text {
+  font-weight: 500;
+  white-space: pre-line;
+  font-size: 15px;
+}
+
 /* ============================================
    LIVE MAP (Leaflet) — premium dark + Dunkin vibe
    ============================================ */
@@ -1050,6 +1074,17 @@ input[type="range"]::-moz-range-thumb {
   0% { opacity: 0.9; }
   50% { opacity: 0.5; }
   100% { opacity: 0.1; }
+}
+
+/* Echo pins on the map - persistent markers for legendary witnessed moments.
+   Tapping lets the community participate in the growing mythology. */
+.echo-pin-marker {
+  filter: drop-shadow(0 0 6px #FFD700);
+  animation: echo-pin-pulse 3s ease-in-out infinite;
+}
+@keyframes echo-pin-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
 }
 
 /* Enhanced Ritual Ripples with "physics" - energy flowing towards other users on the map.
