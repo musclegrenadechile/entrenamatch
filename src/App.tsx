@@ -1940,12 +1940,25 @@ function App() {
     const now = Date.now();
     const ASSUMED_SESSION_MS = 90 * 60 * 1000; // 90 min typical session
 
-    // Start from general realProfiles (recent updated profiles) + the dedicated live listener results.
-    // The dedicated where('trainingNow'==true) guarantees long-running or "not recently updated" live people are still visible to others.
-    const baseProfiles = [...realProfiles, ...liveUsersFromDedicated]
+    // CRITICAL: Base live list on the dedicated 'where trainingNow==true' listener first.
+    // This guarantees that when someone deactivates live, they are immediately dropped from
+    // everyone else's view (map, radar, "live cerca") as soon as the server reflects trainingNow=false.
+    // Previously we merged realProfiles first, so stale trainingNow:true entries from the general
+    // recent-profiles listener could keep people visible as "live" for up to 3h even after they turned off.
     const byId = new Map<string, any>()
-    baseProfiles.forEach(p => {
-      if (!byId.has(p.id)) byId.set(p.id, p)
+    // Dedicated first = authoritative for current live status
+    liveUsersFromDedicated.forEach(p => {
+      if (!byId.has(p.id)) byId.set(p.id, { ...p, trainingNow: true })
+    })
+    // Then enrich/supplement from realProfiles (for fresher photos, levels etc on already-live people)
+    // but NEVER let a stale trainingNow:true from realProfiles resurrect someone who is no longer in dedicated.
+    realProfiles.forEach(p => {
+      if (byId.has(p.id)) {
+        // enrich the dedicated entry with possibly fresher fields
+        const existing = byId.get(p.id)
+        byId.set(p.id, { ...existing, ...p, trainingNow: true, trainingNowSince: existing.trainingNowSince || p.trainingNowSince })
+      }
+      // do not add p if not already in dedicated, even if p.trainingNow (stale general list)
     })
     const candidateLives = Array.from(byId.values())
 
@@ -2329,6 +2342,22 @@ function App() {
             }
           })
           setLiveUsersFromDedicated(liveOnes)
+
+          // Keep the general realProfiles list's trainingNow flags in sync with reality.
+          // This prevents stale "still live" entries from the recent-profiles listener
+          // from keeping people visible after they deactivated.
+          setRealProfiles(prev => prev.map(p => {
+            const stillLiveEntry = liveOnes.find(l => l.id === p.id)
+            const shouldBeLive = !!stillLiveEntry
+            if (shouldBeLive !== !!p.trainingNow) {
+              return {
+                ...p,
+                trainingNow: shouldBeLive,
+                trainingNowSince: shouldBeLive ? (stillLiveEntry.trainingNowSince || p.trainingNowSince) : null
+              }
+            }
+            return p
+          }))
         }, (err) => {
           console.warn('live-only onSnapshot error', err)
           // Attempt recovery: re-enable network (helps after WebChannel death)
