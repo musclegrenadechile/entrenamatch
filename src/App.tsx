@@ -830,67 +830,6 @@ function App() {
     }
   }
 
-  useEffect(() => {
-    if (currentUser) {
-      const t = setTimeout(() => {
-        checkAndUpdateDailyPulse()
-        // Strong daily open hook: show banner for new pulse or if streak at risk (no activity yesterday)
-        const today = getTodayStr()
-        const last = dailyPulse?.lastDate
-        if (last !== today || (dailyPulse && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow)) {
-          setShowDailyPulseBanner(true)
-          // Auto hide after some time or on interaction
-          setTimeout(() => setShowDailyPulseBanner(false), 8000)
-        }
-      }, 600)
-      return () => clearTimeout(t)
-    }
-  }, [currentUser?.id, Object.keys(syncBonds).length, dailyPulse?.lastDate])
-
-  // Client-side intelligent reminder for streak risk (strong daily reason, complements push)
-  useEffect(() => {
-    if (!dailyPulse || !currentUser) return
-    const hour = new Date().getHours()
-    if (hour >= 18 && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow) {
-      const timer = setTimeout(() => {
-        toast.error('¡Streak en riesgo esta noche!', {
-          description: `Tu ${dailyPulse.trainingStreak}d training streak se resetea si no entrenas. Protege con Momentum o 20min ya.`
-        })
-      }, 1500)
-      return () => clearTimeout(timer)
-    }
-  }, [dailyPulse?.lastDate, currentUser?.trainingNow, dailyPulse?.trainingStreak])
-
-  // Offline / online listeners + Firebase persistence enable (good offline handling)
-  useEffect(() => {
-    const handleOnline = () => setIsOffline(false)
-    const handleOffline = () => setIsOffline(true)
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-
-    // Enable Firestore offline persistence (queues writes, serves cache when offline)
-    // Safe to call once; catches multi-tab or unsupported browser.
-    if (db && !isDemoMode) {
-      (async () => {
-        try {
-          const { enableIndexedDbPersistence } = await import('firebase/firestore')
-          await enableIndexedDbPersistence(db)
-        } catch (err: any) {
-          if (err.code === 'failed-precondition') {
-            console.log('[Firestore] Offline persistence: multiple tabs open')
-          } else if (err.code === 'unimplemented') {
-            console.log('[Firestore] Offline persistence not supported in this browser')
-          }
-        }
-      })()
-    }
-
-    return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
-    }
-  }, [isDemoMode])
-
   const refreshDailyPulse = () => checkAndUpdateDailyPulse()
 
   const completeDailyChallenge = async (progressInc = 1) => {
@@ -1134,6 +1073,65 @@ function App() {
   // Offline handling for good UX (Firebase queues writes, we show banner + use last cached for map)
   const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false)
   const audioChunksRef = useRef<Blob[]>([])
+
+  // Moved here (after dailyPulse / isOffline / showDailyPulseBanner states) to avoid TDZ.
+  // These useEffects reference the states in deps and the check function / dailyPulse in bodies.
+  // The checkAndUpdate... defs are earlier (after networkStats), which is fine.
+
+  useEffect(() => {
+    if (currentUser) {
+      const t = setTimeout(() => {
+        checkAndUpdateDailyPulse()
+        const today = getTodayStr()
+        const last = dailyPulse?.lastDate
+        if (last !== today || (dailyPulse && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow)) {
+          setShowDailyPulseBanner(true)
+          setTimeout(() => setShowDailyPulseBanner(false), 8000)
+        }
+      }, 600)
+      return () => clearTimeout(t)
+    }
+  }, [currentUser?.id, Object.keys(syncBonds).length, dailyPulse?.lastDate])
+
+  useEffect(() => {
+    if (!dailyPulse || !currentUser) return
+    const hour = new Date().getHours()
+    if (hour >= 18 && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow) {
+      const timer = setTimeout(() => {
+        toast.error('¡Streak en riesgo esta noche!', {
+          description: `Tu ${dailyPulse.trainingStreak}d training streak se resetea si no entrenas. Protege con Momentum o 20min ya.`
+        })
+      }, 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [dailyPulse?.lastDate, currentUser?.trainingNow, dailyPulse?.trainingStreak])
+
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false)
+    const handleOffline = () => setIsOffline(true)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    if (db && !isDemoMode) {
+      (async () => {
+        try {
+          const { enableIndexedDbPersistence } = await import('firebase/firestore')
+          await enableIndexedDbPersistence(db)
+        } catch (err: any) {
+          if (err.code === 'failed-precondition') {
+            console.log('[Firestore] Offline persistence: multiple tabs open')
+          } else if (err.code === 'unimplemented') {
+            console.log('[Firestore] Offline persistence not supported in this browser')
+          }
+        }
+      })()
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [isDemoMode])
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const voicePreviewUrlRef = useRef<string | null>(null)
   const currentRecordingTimeRef = useRef(0)
