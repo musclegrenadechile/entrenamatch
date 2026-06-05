@@ -7163,7 +7163,14 @@ function App() {
                               } else {
                                 await setDoc(doc(db, 'partnerLocations', pid), partnerData)
                               }
-                            } catch (e) { console.warn('save partner fs', e) }
+                            } catch (e) { 
+                              console.warn('save partner fs', e) 
+                              try {
+                                import('sonner').then(m => m.toast.error('Error guardando partner en Firestore (permisos)', { 
+                                  description: 'Deploy las firestore.rules nuevas. Asegúrate de estar logueado con Google/email (Firebase Auth real). El logo se subió bien. Se mostró localmente.' 
+                                }))
+                              } catch {}
+                            }
                           }
                           // Always update local state optimistically (for both demo and real mode)
                           // This ensures the partner appears immediately in the map even before the onSnapshot fires in real-time mode.
@@ -7293,7 +7300,10 @@ function App() {
                                     try {
                                       const { setDoc, doc } = await import('firebase/firestore')
                                       await setDoc(doc(db, 'partnerLocations', p.id), { lat: newLat, lng: newLng, updatedAt: new Date().toISOString() }, { merge: true })
-                                    } catch (e) { console.warn(e) }
+                                    } catch (e) { 
+                                      console.warn('partner move fs', e) 
+                                      try { import('sonner').then(m => m.toast.error('No se pudo mover en FS (revisa reglas)')) } catch {} 
+                                    }
                                   }
                                   map.setView([newLat, newLng], Math.max(map.getZoom() || 13, 14))
                                   try { triggerHaptic('success') } catch {}
@@ -7310,7 +7320,10 @@ function App() {
                                   try {
                                     const { deleteDoc, doc } = await import('firebase/firestore')
                                     await deleteDoc(doc(db, 'partnerLocations', p.id))
-                                  } catch (e) { console.warn(e) }
+                                  } catch (e) { 
+                                    console.warn('partner delete fs', e) 
+                                    try { import('sonner').then(m => m.toast.error('No se pudo borrar en FS (revisa reglas)')) } catch {} 
+                                  }
                                 }
                                 setPartnerLocations(prev => prev.filter(pp => pp.id !== p.id))
                                 try { triggerHaptic('light') } catch {}

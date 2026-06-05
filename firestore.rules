@@ -115,6 +115,18 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
+    // Partner locations (gyms, studios, stores shown as gold "PARTNER" hubs + logos on the GymPulse live map)
+    // - Public read: every user sees the partners on the map in realtime (no login required for viewing the map layer).
+    // - Write (create/update/delete): any authenticated user.
+    //   The UI is strictly gated client-side behind the developer password + isDeveloper mode
+    //   (see openAddPartner, isDeveloper state, dev login modal). Non-devs can't even open the form.
+    //   This mirrors the permissive-but-client-gated rule in storage.rules for /partners/** logos.
+    //   Needed because the save (setDoc/updateDoc/deleteDoc to 'partnerLocations') was hitting the default deny.
+    match /partnerLocations/{partnerId} {
+      allow read: if true;
+      allow create, update, delete: if isAuthenticated();
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;
