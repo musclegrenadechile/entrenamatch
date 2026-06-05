@@ -1,7 +1,7 @@
 === READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.42-network-power-glow code 46) ===
 
 AAB principal para subir:
-EntrenaMatch-v0.1.42-network-power-glow-code46-[timestamp].aab
+EntrenaMatch-v0.1.42-network-power-glow-code46-20260604-2240.aab
 (o usa EntrenaMatch-release.aab que es copia del mismo después del build)
 
 **Copia esto exacto en "Notas de la versión" / "What's new" en Play Console (Closed track):**
