@@ -268,7 +268,20 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       // Move zoom control to bottom right so our overlays (Centrar top-right, dev toolbar) are not covered
       L.control.zoom({ position: 'bottomright' }).addTo(mapInstanceRef.current)
 
-      setTimeout(() => { if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize() }, 50)
+      // Critical for "no se descuadra": Leaflet must know the *exact* rendered pixel size of its container.
+      // React conditional render + minHeight wrapper + possible CSS transitions/animations mean the div may report 0 or stale size on first paint.
+      // Multiple RAF + timeouts + explicit invalidate(true) (the arg helps Leaflet re-evaluate panes).
+      const forceMapSize = () => {
+        if (mapInstanceRef.current) {
+          try { mapInstanceRef.current.invalidateSize(true) } catch {}
+        }
+      }
+      forceMapSize()
+      requestAnimationFrame(forceMapSize)
+      requestAnimationFrame(() => requestAnimationFrame(forceMapSize))
+      setTimeout(forceMapSize, 60)
+      setTimeout(forceMapSize, 160)
+      setTimeout(forceMapSize, 400)
 
       // Dev click-to-place
       if (mapInstanceRef.current && !(mapInstanceRef.current as any)._emDevPlaceBound) {
@@ -297,7 +310,14 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         ;(mapInstanceRef.current as any)._clusterZoomBound = true
       }
     } else {
-      setTimeout(() => { if (mapInstanceRef.current) mapInstanceRef.current.invalidateSize() }, 50)
+      // Map instance already alive (data/filter update while visible). Still force size in case parent layout shifted.
+      const forceMapSize = () => {
+        if (mapInstanceRef.current) {
+          try { mapInstanceRef.current.invalidateSize() } catch {}
+        }
+      }
+      forceMapSize()
+      setTimeout(forceMapSize, 80)
     }
 
     // Debounced heavy update (core of the living GymPulse)
@@ -622,13 +642,6 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       // the user's position + activity when zooming or on filter changes.
       const shouldFit = markersRef.current.length > 0 || !!selfMarkerRef.current || !!userLocation;
 
-      // When user applies strong filters (nearOnly, specific zone, only legends), reset the flag so we re-fit
-      // the *relevant subset* + self. This makes the map "feel fixed" to what you're looking at after zoom/filter.
-      const filterActive = mapNearOnly || !!selectedMapZone || showOnlyLegends;
-      if (filterActive) {
-        ;(mapInstanceRef.current as any)._hasDoneInitialFit = false;
-      }
-
       if (shouldFit && !(mapInstanceRef.current as any)._hasDoneInitialFit) {
         try {
           const group = L.featureGroup(markersRef.current);
@@ -721,11 +734,12 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     return counts
   }, [liveTrainingNow])
 
-  // Keep map crisp on container size changes (tab switch, keyboard, parent layout, orientation).
-  // Prevents "map se pierde" / black/blank / wrong zoom after resize.
+  // Keep map crisp on container size changes (tab switch, keyboard, parent layout, orientation, form open/close).
+  // Prevents "map se descuadra" / tiles misaligned / wrong center / black areas after any layout shift.
+  // Observe the container as soon as it exists; the callback safely checks for mapInstance (which may be created slightly later).
   useEffect(() => {
     const el = mapContainerRef.current
-    if (!el || !mapInstanceRef.current) return
+    if (!el) return
     let ro: ResizeObserver | null = null
     try {
       ro = new ResizeObserver(() => {
@@ -734,9 +748,11 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         }
       })
       ro.observe(el)
-    } catch {}
+    } catch (e) {
+      // ResizeObserver not supported in this env (very old browser) - fallback to manual calls elsewhere
+    }
     return () => { try { ro && ro.disconnect() } catch {} }
-  }, [showLiveMap]) // re-attach when map (re)appears
+  }, [showLiveMap]) // re-attach when the map section mounts/unmounts
 
   // When strong filters change, reset the "initial fit done" flag so the next debounced update will
   // re-fitBounds to the *currently visible* lives + self. This makes the map feel "fijo" (anchored)

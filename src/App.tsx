@@ -1569,13 +1569,16 @@ function App() {
     setMapForceTick(t => t + 1)
   }, [showPartners, partnerLocations.length, showLiveMap])
 
-  // Ensure Leaflet recalcs size when the map is toggled or we switch tabs (prevents "map se pierde", wrong center, or blank after layout change).
+  // Ensure Leaflet recalcs size when the map is toggled or we switch tabs (prevents "map se pierde" / descuadre after layout change).
   useEffect(() => {
     if (showLiveMap && gymPulseMapRef.current) {
-      const t = setTimeout(() => {
+      const force = () => {
         try { gymPulseMapRef.current?.invalidateSize?.() } catch {}
-      }, 120)
-      return () => clearTimeout(t)
+      }
+      force()
+      const t1 = setTimeout(force, 80)
+      const t2 = setTimeout(force, 220)
+      return () => { clearTimeout(t1); clearTimeout(t2) }
     }
   }, [showLiveMap, activeTab])
 
