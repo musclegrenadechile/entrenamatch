@@ -1459,6 +1459,137 @@ function App() {
     return ids.join(',');
   }, [displaySessions, effectiveUserId]);
 
+  // Remaining profiles (not swiped) - Real Firestore profiles + Seed profiles (hybrid for Pre-Alpha)
+  // Hoisted early (right after real multi-user state + displaySessions) so that all later effects, JSX, and discovery logic (deck, map, feed, live notifs) see the declarations before any code that might reference them during render or effect setup. Prevents TDZ for remainingProfiles, liveTrainingNow, zoneLiveCounts, feedComputation.
+  const remainingProfiles = useMemo(() => {
+    const swiped = new Set([...likedIds, ...passedIds])
+    
+    // Combine real profiles from Firestore + hardcoded seeds
+    const allProfiles: Profile[] = [
+      ...realProfiles,
+      ...SEED_PROFILES
+    ]
+    
+    // Remove duplicates (if a real user has same id as a seed - unlikely but safe)
+    const unique = new Map<string, Profile>()
+    allProfiles.forEach(p => {
+      if (!unique.has(p.id)) unique.set(p.id, p)
+    })
+    
+    return Array.from(unique.values()).filter(p => !swiped.has(p.id))
+  }, [likedIds, passedIds, realProfiles])
+
+  // LIVE TRAINING NOW - the killer innovative feature. Real-time who is training right now near you. Green live indicator. Creates urgency, no fitness app does this well.
+  // Hoisted early after its data deps (realProfiles at ~1425, etc.) and before any effects/JSX that use it in deps or bodies.
+  const liveTrainingNow = useMemo(() => {
+    const now = Date.now();
+    const ASSUMED_SESSION_MS = 90 * 60 * 1000; // 90 min typical session
+    let lives = realProfiles
+      .filter(p => !blockedUsers.includes(p.id))
+      .filter(p => p.trainingNow && p.trainingNowSince && (now - p.trainingNowSince < 3 * 60 * 60 * 1000)) // auto expire after 3h
+      .map(p => {
+        const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng) : 999;
+        const seVaEnMs = (p.trainingNowSince + ASSUMED_SESSION_MS) - now;
+        const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 0;
+        // Join count from the live post (comments + other likes) - makes "se unieron" visible everywhere for FOMO
+        let joinCount = 0;
+        const theirPosts = profilePosts[p.id] || [];
+        const livePost = theirPosts.find((post: any) => (post.text || '').toLowerCase().includes('entrenando ahora')) || theirPosts[0];
+        if (livePost) {
+          const otherLikes = (livePost.likes || []).filter((id: string) => id !== p.id).length;
+          joinCount = (livePost.comments || []).length + otherLikes;
+        }
+        const bond = syncBonds[p.id];
+        const isLegend = !!bond && ((bond.totalMin || 0) >= 30 || (bond.bondLevel || 0) >= 2);
+        return { ...p, distance: dist, seVaEnMin, joinCount, isLegend, bondInfo: bond };
+      })
+      .filter(p => !userLocation || p.distance < 15) // near only if we have location; otherwise show all live (so feature works even without GPS)
+      .sort((a, b) => {
+        // NEVER-SEEN: active sync pairs + high sync legends bubble to the top of live discovery (social proof + bond capital)
+        const aSync = (a as any).trainingSyncWith ? 100 : 0;
+        const bSync = (b as any).trainingSyncWith ? 100 : 0;
+        const aLegend = (a as any).syncStreak || 0;
+        const bLegend = (b as any).syncStreak || 0;
+        if (userLocation) {
+          // distance primary, but sync/legend tiebreaker
+          if (aSync !== bSync) return bSync - aSync;
+          if (aLegend !== bLegend) return bLegend - aLegend;
+          return a.distance - b.distance;
+        }
+        if (aSync !== bSync) return bSync - aSync;
+        if (aLegend !== bLegend) return bLegend - aLegend;
+        return (b.trainingNowSince || 0) - (a.trainingNowSince || 0);
+      });
+    if (isDemoMode && lives.length === 0) {
+      // Demo fakes for the killer feature to shine
+      lives = SEED_PROFILES.slice(0, 3).map((p, i) => ({ ...p, trainingNow: true, trainingNowSince: now - (i+1)*10*60000, distance: 1 + i*2, seVaEnMin: 40 - i*10, joinCount: 1 + i }));
+    }
+    // Exceptional onboarding: immediately surface the new user's own live if they opted in during the 60s flow.
+    // This way the banner + map + explore show "you are live" right after finishing, even before any FS roundtrip.
+    if (currentUser && currentUser.trainingNow && currentUser.trainingNowSince && (now - currentUser.trainingNowSince < 3 * 60 * 60 * 1000)) {
+      const already = lives.some((l: any) => l.id === 'me' || l.id === currentUser.id)
+      if (!already) {
+        const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, currentUser.lat || -33.0153, currentUser.lng || -71.5528) : 0.3
+        const seVaEnMs = (currentUser.trainingNowSince + ASSUMED_SESSION_MS) - now
+        const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 55
+        lives = [{ ...currentUser, id: 'me', distance: dist, seVaEnMin, joinCount: 0, isLegend: false, bondInfo: null }, ...lives]
+      }
+    }
+    return lives;
+  }, [realProfiles, userLocation, isDemoMode, profilePosts, currentUser]);
+
+  // Zone live counts for interactive legend (sigue con todo el mapa + visual polish iteration)
+  const zoneLiveCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    liveTrainingNow.forEach((u: any) => {
+      if (u.city) counts[u.city] = (counts[u.city] || 0) + 1
+    })
+    return counts
+  }, [liveTrainingNow])
+
+  // Feed computation lifted to top-level useMemo so hook is ALWAYS called in the same order (fixes React #310 "Rendered more hooks than during the previous render" when switching tabs).
+  // The previous inline IIFE inside {activeTab==='feed' && ...} was conditionally executing the useMemo hook → violation.
+  const feedComputation = useMemo(() => {
+    const allCommunityPosts = Object.entries(profilePosts)
+      .filter(([uid]) => uid !== effectiveUserId)
+      .flatMap(([uid, posts]) => (posts || []).map((p: any) => ({ ...p, ownerId: uid })));
+
+    // Include a few of your own recent posts (from muro or "Publicar en el Feed") into the visible feed list.
+    // This fixes the "I published but don't see my post in the feed tab" disappointment.
+    // Own posts only mixed in default view; filters (Live/Reales/Fijados) stay pure community discovery.
+    // echoesSource always includes own so the "⭐ HIGHLIGHTS DE RED" strip shows your strong syncs immediately.
+    const myPostsRaw = (profilePosts[effectiveUserId] || []).map((p: any) => ({ ...p, ownerId: effectiveUserId, isMine: true }));
+    let feedPosts = [...allCommunityPosts, ...myPostsRaw];
+
+    feedPosts = feedPosts.sort((a: any, b: any) => {
+      const aIsLegend = !!syncBonds[a.ownerId];
+      const bIsLegend = !!syncBonds[b.ownerId];
+      if (bIsLegend && !aIsLegend) return -1; // High-performance network partners have real weight in global feed (your training graph gives status)
+      if (aIsLegend && !bIsLegend) return 1;
+      const aIsEcho = (a.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (a.text || '').includes('Destacado de Sesión Sync');
+      const bIsEcho = (b.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (b.text || '').includes('Destacado de Sesión Sync');
+      if (bIsEcho && !aIsEcho) return -1; // Network highlights (strong syncs) rise to the top - visible performance culture
+      if (aIsEcho && !bIsEcho) return 1;
+      if (b.pinned && !a.pinned) return 1;
+      if (a.pinned && !b.pinned) return -1;
+      return b.timestamp - a.timestamp;
+    });
+
+    const hasActiveFilter = feedShowPinnedOnly || feedOnlyReal || feedOnlyLive || !!feedSearch.trim();
+    if (feedShowPinnedOnly) feedPosts = feedPosts.filter((p: any) => p.pinned);
+    if (feedOnlyReal) feedPosts = feedPosts.filter((p: any) => p.isMine || realProfiles.some(rp => rp.id === p.ownerId));
+    if (feedOnlyLive) feedPosts = feedPosts.filter((p: any) => !p.isMine && realProfiles.some(rp => rp.id === p.ownerId && rp.trainingNow));
+    if (feedSearch.trim()) {
+      const q = feedSearch.toLowerCase().trim();
+      feedPosts = feedPosts.filter((p: any) => {
+        const ownerName = p.isMine ? (currentUser?.name || '') : ((realProfiles.find(r => r.id === p.ownerId) || { name: '' }).name);
+        return (p.text || '').toLowerCase().includes(q) || (ownerName || '').toLowerCase().includes(q);
+      });
+    }
+    feedPosts = feedPosts.slice(0, feedDisplayLimit);
+    return { feedPosts, allCommunityPosts, echoesSource: [...allCommunityPosts, ...myPostsRaw], hasActiveFilter };
+  }, [profilePosts, feedShowPinnedOnly, feedOnlyReal, feedOnlyLive, feedSearch, feedDisplayLimit, realProfiles, effectiveUserId, syncBonds, currentUser]);
+
   // Beta Feedback enhanced (Phase 0 - structured + history)
   const [feedbackType, setFeedbackType] = useState<'bug' | 'idea' | 'ux' | 'other'>('idea')
   const [feedbackRating, setFeedbackRating] = useState(5)
@@ -5286,135 +5417,6 @@ function App() {
     }
   }
 
-  // Remaining profiles (not swiped) - Real Firestore profiles + Seed profiles (hybrid for Pre-Alpha)
-  const remainingProfiles = useMemo(() => {
-    const swiped = new Set([...likedIds, ...passedIds])
-    
-    // Combine real profiles from Firestore + hardcoded seeds
-    const allProfiles: Profile[] = [
-      ...realProfiles,
-      ...SEED_PROFILES
-    ]
-    
-    // Remove duplicates (if a real user has same id as a seed - unlikely but safe)
-    const unique = new Map<string, Profile>()
-    allProfiles.forEach(p => {
-      if (!unique.has(p.id)) unique.set(p.id, p)
-    })
-    
-    return Array.from(unique.values()).filter(p => !swiped.has(p.id))
-  }, [likedIds, passedIds, realProfiles])
-
-  // LIVE TRAINING NOW - the killer innovative feature. Real-time who is training right now near you. Green live indicator. Creates urgency, no fitness app does this well.
-  // Declared after the data states it depends on (realProfiles, profilePosts, blockedUsers, userLocation, etc.) and before effects that use it in deps.
-  const liveTrainingNow = useMemo(() => {
-    const now = Date.now();
-    const ASSUMED_SESSION_MS = 90 * 60 * 1000; // 90 min typical session
-    let lives = realProfiles
-      .filter(p => !blockedUsers.includes(p.id))
-      .filter(p => p.trainingNow && p.trainingNowSince && (now - p.trainingNowSince < 3 * 60 * 60 * 1000)) // auto expire after 3h
-      .map(p => {
-        const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng) : 999;
-        const seVaEnMs = (p.trainingNowSince + ASSUMED_SESSION_MS) - now;
-        const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 0;
-        // Join count from the live post (comments + other likes) - makes "se unieron" visible everywhere for FOMO
-        let joinCount = 0;
-        const theirPosts = profilePosts[p.id] || [];
-        const livePost = theirPosts.find((post: any) => (post.text || '').toLowerCase().includes('entrenando ahora')) || theirPosts[0];
-        if (livePost) {
-          const otherLikes = (livePost.likes || []).filter((id: string) => id !== p.id).length;
-          joinCount = (livePost.comments || []).length + otherLikes;
-        }
-        const bond = syncBonds[p.id];
-        const isLegend = !!bond && ((bond.totalMin || 0) >= 30 || (bond.bondLevel || 0) >= 2);
-        return { ...p, distance: dist, seVaEnMin, joinCount, isLegend, bondInfo: bond };
-      })
-      .filter(p => !userLocation || p.distance < 15) // near only if we have location; otherwise show all live (so feature works even without GPS)
-      .sort((a, b) => {
-        // NEVER-SEEN: active sync pairs + high sync legends bubble to the top of live discovery (social proof + bond capital)
-        const aSync = (a as any).trainingSyncWith ? 100 : 0;
-        const bSync = (b as any).trainingSyncWith ? 100 : 0;
-        const aLegend = (a as any).syncStreak || 0;
-        const bLegend = (b as any).syncStreak || 0;
-        if (userLocation) {
-          // distance primary, but sync/legend tiebreaker
-          if (aSync !== bSync) return bSync - aSync;
-          if (aLegend !== bLegend) return bLegend - aLegend;
-          return a.distance - b.distance;
-        }
-        if (aSync !== bSync) return bSync - aSync;
-        if (aLegend !== bLegend) return bLegend - aLegend;
-        return (b.trainingNowSince || 0) - (a.trainingNowSince || 0);
-      });
-    if (isDemoMode && lives.length === 0) {
-      // Demo fakes for the killer feature to shine
-      lives = SEED_PROFILES.slice(0, 3).map((p, i) => ({ ...p, trainingNow: true, trainingNowSince: now - (i+1)*10*60000, distance: 1 + i*2, seVaEnMin: 40 - i*10, joinCount: 1 + i }));
-    }
-    // Exceptional onboarding: immediately surface the new user's own live if they opted in during the 60s flow.
-    // This way the banner + map + explore show "you are live" right after finishing, even before any FS roundtrip.
-    if (currentUser && currentUser.trainingNow && currentUser.trainingNowSince && (now - currentUser.trainingNowSince < 3 * 60 * 60 * 1000)) {
-      const already = lives.some((l: any) => l.id === 'me' || l.id === currentUser.id)
-      if (!already) {
-        const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, currentUser.lat || -33.0153, currentUser.lng || -71.5528) : 0.3
-        const seVaEnMs = (currentUser.trainingNowSince + ASSUMED_SESSION_MS) - now
-        const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 55
-        lives = [{ ...currentUser, id: 'me', distance: dist, seVaEnMin, joinCount: 0, isLegend: false, bondInfo: null }, ...lives]
-      }
-    }
-    return lives;
-  }, [realProfiles, userLocation, isDemoMode, profilePosts, currentUser]);
-
-  // Zone live counts for interactive legend (sigue con todo el mapa + visual polish iteration)
-  const zoneLiveCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    liveTrainingNow.forEach((u: any) => {
-      if (u.city) counts[u.city] = (counts[u.city] || 0) + 1
-    })
-    return counts
-  }, [liveTrainingNow])
-
-  // Feed computation lifted to top-level useMemo so hook is ALWAYS called in the same order (fixes React #310 "Rendered more hooks than during the previous render" when switching tabs).
-  // The previous inline IIFE inside {activeTab==='feed' && ...} was conditionally executing the useMemo hook → violation.
-  const feedComputation = useMemo(() => {
-    const allCommunityPosts = Object.entries(profilePosts)
-      .filter(([uid]) => uid !== effectiveUserId)
-      .flatMap(([uid, posts]) => (posts || []).map((p: any) => ({ ...p, ownerId: uid })));
-
-    // Include a few of your own recent posts (from muro or "Publicar en el Feed") into the visible feed list.
-    // This fixes the "I published but don't see my post in the feed tab" disappointment.
-    // Own posts only mixed in default view; filters (Live/Reales/Fijados) stay pure community discovery.
-    // echoesSource always includes own so the "⭐ HIGHLIGHTS DE RED" strip shows your strong syncs immediately.
-    const myPostsRaw = (profilePosts[effectiveUserId] || []).map((p: any) => ({ ...p, ownerId: effectiveUserId, isMine: true }));
-    let feedPosts = [...allCommunityPosts, ...myPostsRaw];
-
-    feedPosts = feedPosts.sort((a: any, b: any) => {
-      const aIsLegend = !!syncBonds[a.ownerId];
-      const bIsLegend = !!syncBonds[b.ownerId];
-      if (bIsLegend && !aIsLegend) return -1; // High-performance network partners have real weight in global feed (your training graph gives status)
-      if (aIsLegend && !bIsLegend) return 1;
-      const aIsEcho = (a.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (a.text || '').includes('Destacado de Sesión Sync');
-      const bIsEcho = (b.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (b.text || '').includes('Destacado de Sesión Sync');
-      if (bIsEcho && !aIsEcho) return -1; // Network highlights (strong syncs) rise to the top - visible performance culture
-      if (aIsEcho && !bIsEcho) return 1;
-      if (b.pinned && !a.pinned) return 1;
-      if (a.pinned && !b.pinned) return -1;
-      return b.timestamp - a.timestamp;
-    });
-
-    const hasActiveFilter = feedShowPinnedOnly || feedOnlyReal || feedOnlyLive || !!feedSearch.trim();
-    if (feedShowPinnedOnly) feedPosts = feedPosts.filter((p: any) => p.pinned);
-    if (feedOnlyReal) feedPosts = feedPosts.filter((p: any) => p.isMine || realProfiles.some(rp => rp.id === p.ownerId));
-    if (feedOnlyLive) feedPosts = feedPosts.filter((p: any) => !p.isMine && realProfiles.some(rp => rp.id === p.ownerId && rp.trainingNow));
-    if (feedSearch.trim()) {
-      const q = feedSearch.toLowerCase().trim();
-      feedPosts = feedPosts.filter((p: any) => {
-        const ownerName = p.isMine ? (currentUser?.name || '') : ((realProfiles.find(r => r.id === p.ownerId) || { name: '' }).name);
-        return (p.text || '').toLowerCase().includes(q) || (ownerName || '').toLowerCase().includes(q);
-      });
-    }
-    feedPosts = feedPosts.slice(0, feedDisplayLimit);
-    return { feedPosts, allCommunityPosts, echoesSource: [...allCommunityPosts, ...myPostsRaw], hasActiveFilter };
-  }, [profilePosts, feedShowPinnedOnly, feedOnlyReal, feedOnlyLive, feedSearch, feedDisplayLimit, realProfiles, effectiveUserId, syncBonds, currentUser]);
 
   // Real-time urgency notifications for NEW live trainers nearby (the killer retention hook).
   // Placed HERE (after liveTrainingNow declaration) to avoid TDZ "Cannot access before initialization" on app start.

@@ -1,0 +1,1 @@
+fix(TDZ): hoist dailyPulse state+ref before sendVoiceNote(453); use ref in voice success for latest. Kills remaining Cannot access before init on open. tsc clean.
