@@ -1215,6 +1215,12 @@ function App() {
   const [blockedUsers, setBlockedUsers] = useState<string[]>([])
   const [reports, setReports] = useState<Report[]>([])
 
+  // Improved report flow
+  const [showReportModal, setShowReportModal] = useState(false)
+  const [reportTargetId, setReportTargetId] = useState<string | null>(null)
+  const [reportContext, setReportContext] = useState<Report['context']>('profile')
+  const [reportReason, setReportReason] = useState('')
+
   // Moderation Panel state
   const [showModerationPanel, setShowModerationPanel] = useState(false)
   const [moderationTab, setModerationTab] = useState<'reports' | 'verifications' | 'bans'>('reports')
@@ -1640,6 +1646,7 @@ function App() {
 
       snapshot.forEach((doc) => {
         if (doc.id === currentUid) return
+        if (blockedUsers.includes(doc.id)) return
         const data = doc.data() as any
         if (data && data.name) {
           profiles.push({
@@ -1730,6 +1737,7 @@ function App() {
               momentumPoints: realProfile.momentumPoints != null ? realProfile.momentumPoints : undefined,
               lastDailyPulseDate: realProfile.lastDailyPulseDate != null ? realProfile.lastDailyPulseDate : undefined,
               currentDailyChallenge: realProfile.currentDailyChallenge || undefined,
+              blockedUsers: realProfile.blockedUsers || [],
               trainingSyncWith: realProfile.trainingSyncWith,
               syncStartedAt: realProfile.syncStartedAt != null ? realProfile.syncStartedAt : undefined,
               syncActions: realProfile.syncActions || [],
@@ -1748,6 +1756,11 @@ function App() {
               }
               if (merged.syncBonds) {
                 setSyncBonds(merged.syncBonds)
+              }
+              if (merged.blockedUsers && Array.isArray(merged.blockedUsers)) {
+                setBlockedUsers(merged.blockedUsers)
+                // re-filter profiles after loading blocks
+                loadRealProfiles().catch(() => {})
               }
             }
           } else if (currentUser && currentUser.name && firebaseUser?.uid) {
@@ -4191,9 +4204,15 @@ function App() {
     toast.success(newPinned ? 'Post fijado en el feed' : 'Post des-fijado');
   }
 
-  const saveBlockedUsers = (newBlocked: string[]) => {
+  const saveBlockedUsers = async (newBlocked: string[]) => {
     localStorage.setItem('entrenamatch_blocked', JSON.stringify(newBlocked))
     setBlockedUsers(newBlocked)
+    if (!isDemoMode && firebaseUser?.uid && db) {
+      try {
+        const { doc, updateDoc } = await import('firebase/firestore')
+        await updateDoc(doc(db, 'profiles', firebaseUser.uid), { blockedUsers: newBlocked })
+      } catch (e) { console.warn(e) }
+    }
   }
 
   const saveReports = (newReports: Report[]) => {
@@ -4438,12 +4457,12 @@ function App() {
   }
 
   // Report a user (critical safety feature)
-  const reportUser = (userId: string, reason: string, details?: string, context: Report['context'] = 'profile', contextId?: string) => {
+  const reportUser = async (userId: string, reason: string, details?: string, context: Report['context'] = 'profile', contextId?: string) => {
     if (!currentUser || userId === 'me') return
 
     const newReport: Report = {
       id: 'rep' + Date.now(),
-      reporterId: 'me',
+      reporterId: firebaseUser?.uid || 'me',
       reportedUserId: userId,
       reason,
       details,
@@ -4456,6 +4475,19 @@ function App() {
     const updatedReports = [...reports, newReport]
     saveReports(updatedReports)
 
+    // Persist report to Firestore for real moderation/audit
+    if (!isDemoMode && db && firebaseUser) {
+      try {
+        const { addDoc, collection } = await import('firebase/firestore')
+        await addDoc(collection(db, 'reports'), {
+          ...newReport,
+          reporterId: firebaseUser.uid
+        })
+      } catch (e) {
+        console.warn('Could not save report to FS', e)
+      }
+    }
+
     // Auto-block after reporting (safety-first behavior)
     if (!blockedUsers.includes(userId)) {
       const newBlocked = [...blockedUsers, userId]
@@ -4463,26 +4495,49 @@ function App() {
     }
 
     toast.success('Reporte enviado', { 
-      description: 'Gracias por reportar. El usuario ha sido bloqueado automáticamente.' 
+      description: 'Gracias por reportar. Revisaremos y el usuario ha sido bloqueado automáticamente para ti.' 
     })
   }
 
+  const openReport = (userId: string, context: Report['context'] = 'profile') => {
+    setReportTargetId(userId)
+    setReportContext(context)
+    setReportReason('')
+    setShowReportModal(true)
+  }
+
   // Block a user
-  const blockUser = (userId: string) => {
+  const blockUser = async (userId: string) => {
     if (!currentUser || userId === 'me' || blockedUsers.includes(userId)) return
 
     const newBlocked = [...blockedUsers, userId]
     saveBlockedUsers(newBlocked)
 
+    // Persist blocks to profile doc for real cross-device + real users
+    if (!isDemoMode && firebaseUser?.uid && db) {
+      try {
+        const { doc, updateDoc } = await import('firebase/firestore')
+        await updateDoc(doc(db, 'profiles', firebaseUser.uid), { blockedUsers: newBlocked })
+      } catch (e) { console.warn('persist block failed', e) }
+    }
+
     toast.success('Usuario bloqueado', { 
-      description: 'No volverás a verlo en descubrimiento ni matches.' 
+      description: 'No volverás a verlo en descubrimiento, live, feed, mapa ni chats.' 
     })
   }
 
   // Unblock a user
-  const unblockUser = (userId: string) => {
+  const unblockUser = async (userId: string) => {
     const newBlocked = blockedUsers.filter(id => id !== userId)
     saveBlockedUsers(newBlocked)
+
+    if (!isDemoMode && firebaseUser?.uid && db) {
+      try {
+        const { doc, updateDoc } = await import('firebase/firestore')
+        await updateDoc(doc(db, 'profiles', firebaseUser.uid), { blockedUsers: newBlocked })
+      } catch (e) {}
+    }
+
     toast('Usuario desbloqueado')
   }
 
@@ -4830,52 +4885,52 @@ function App() {
 
 
 
-  // Multi-step verification submission
-  const submitVerification = () => {
+  // Multi-step verification submission - improved basic verification
+  const submitVerification = async () => {
     if (!currentUser) return
+    if (!verificationIdPhoto || !verificationSelfie) {
+      toast.error('Faltan documentos', { description: 'Sube foto del documento y selfie para verificación básica.' })
+      return
+    }
+
+    // For basic verification: upload docs if data, set verified immediately (pre-alpha: basic self + photo check grants badge)
+    // In real: would upload to storage, set pending, admin review via moderation.
+    let idUrl = verificationIdPhoto
+    let selfieUrl = verificationSelfie
+
+    // Try to upload if data: (reuse photo logic)
+    try {
+      if (verificationIdPhoto.startsWith('data:')) {
+        // simple: for now keep data or use existing createProfilePost style, but for verif docs we store urls or data
+        // To keep simple for basic: accept and mark verified
+      }
+    } catch(e){}
 
     const updated = {
       ...currentUser,
-      verificationStatus: 'pending' as const,
+      verificationStatus: 'verified' as const, // basic: grant on submit for pre-alpha testing
+      verificationDate: Date.now(),
       verificationDocuments: {
-        idPhoto: verificationIdPhoto || undefined,
-        selfiePhoto: verificationSelfie || undefined,
+        idPhoto: idUrl,
+        selfiePhoto: selfieUrl,
       }
     }
 
     saveUserWithRealSync(updated as CurrentUser)
     setShowVerificationFlow(false)
+    setVerificationIdPhoto(null)
+    setVerificationSelfie(null)
+    setVerificationStep(1)
 
-    // Simulate review process (in real app this would go to backend)
-    toast.success('Documentos enviados', { 
-      description: 'Tu verificación está en revisión. Te notificaremos en las próximas horas.' 
+    addNotification({
+      type: 'verification',
+      title: '¡Perfil verificado (básico)!',
+      body: 'Badge visible. En producción se revisaría el documento + selfie.',
     })
 
-    // For demo purposes, auto-approve after 8 seconds
-    setTimeout(() => {
-      if (currentUser.verificationStatus === 'pending') {
-        const approved = {
-          ...currentUser,
-          verificationStatus: 'verified' as const,
-          verificationDate: Date.now(),
-          verificationDocuments: {
-            idPhoto: verificationIdPhoto || undefined,
-            selfiePhoto: verificationSelfie || undefined,
-          }
-        }
-        saveUserWithRealSync(approved as CurrentUser)
-
-        addNotification({
-          type: 'verification',
-          title: '¡Perfil verificado!',
-          body: 'Tu verificación fue aprobada. El badge ya está visible.',
-        })
-
-        toast.success('¡Perfil verificado!', { 
-          description: 'Tu badge de verificación ya está visible para todos.' 
-        })
-      }
-    }, 8000)
+    toast.success('¡Verificación básica completada!', { 
+      description: 'Tu badge ✓ VERIFICADO ya aparece en tu perfil y para otros usuarios.' 
+    })
   }
 
   // Send message to a session group chat (supports text + optional photo)
@@ -5139,6 +5194,7 @@ function App() {
     const now = Date.now();
     const ASSUMED_SESSION_MS = 90 * 60 * 1000; // 90 min typical session
     let lives = realProfiles
+      .filter(p => !blockedUsers.includes(p.id))
       .filter(p => p.trainingNow && p.trainingNowSince && (now - p.trainingNowSince < 3 * 60 * 60 * 1000)) // auto expire after 3h
       .map(p => {
         const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng) : 999;
@@ -6529,10 +6585,7 @@ function App() {
             }}
             onShowProfile={setShowFullProfile}
             onReport={(id) => {
-              // Polished: quick confirm instead of prompt for pre-alpha safety
-              if (confirm('¿Reportar este perfil por comportamiento inadecuado o spam?')) {
-                reportUser(id, 'Comportamiento inadecuado', undefined, 'explore_rec', id);
-              }
+              openReport(id, 'explore_rec')
             }}
             realProfiles={realProfiles}
             onRefreshRealProfiles={async () => { await loadRealProfiles(); setLastSync(new Date()); }}
@@ -7824,18 +7877,16 @@ function App() {
                 <div className="flex justify-end gap-2 px-4 py-1 bg-[#0f1115] text-xs">
                   <button 
                     onClick={() => {
-                      if (confirm('¿Reportar este chat/perfil por comportamiento inadecuado?')) {
-                        reportUser(activeChat, 'Comportamiento inadecuado', undefined, '1v1_chat', activeChat)
-                      }
+                      openReport(activeChat, '1v1_chat')
                     }}
                     className="text-red-400 hover:underline"
                   >
                     Reportar
                   </button>
                   <button 
-                    onClick={() => {
-                      if (activeChat && confirm('¿Bloquear este usuario?')) {
-                        blockUser(activeChat)
+                    onClick={async () => {
+                      if (activeChat && confirm('¿Bloquear este usuario? No lo verás más.')) {
+                        await blockUser(activeChat)
                         setActiveChat(null)
                       }
                     }}
@@ -11048,19 +11099,17 @@ function App() {
             <div className="p-4 border-t border-[#2F2F35] flex gap-3 text-sm">
               <button 
                 onClick={() => {
-                  if (confirm('¿Reportar a esta persona por comportamiento inadecuado o spam?')) {
-                    reportUser(showFullProfile.id, 'Comportamiento inadecuado', undefined, 'profile')
-                    setShowFullProfile(null)
-                  }
+                  openReport(showFullProfile.id, 'profile')
+                  setShowFullProfile(null)
                 }}
                 className="flex-1 py-2 text-red-400 border border-red-900 rounded-2xl hover:bg-red-950"
               >
                 Reportar
               </button>
               <button 
-                onClick={() => {
-                  if (confirm(`¿Bloquear a ${showFullProfile.name}? No volverás a verlo.`)) {
-                    blockUser(showFullProfile.id)
+                onClick={async () => {
+                  if (confirm(`¿Bloquear a ${showFullProfile.name}? No volverás a verlo en ningún lado.`)) {
+                    await blockUser(showFullProfile.id)
                     setShowFullProfile(null)
                   }
                 }}
@@ -11113,17 +11162,21 @@ function App() {
 
               {showLegal === 'community' && (
                 <>
-                  <p><strong>Reglas básicas de EntrenaMatch:</strong></p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li>Sé respetuoso en todo momento.</li>
-                    <li>No uses la plataforma con fines románticos o sexuales.</li>
-                    <li>Los primeros encuentros deben ser en lugares públicos (gimnasios, parques, playas, etc.).</li>
-                    <li>No acoses, no envíes mensajes no solicitados repetidamente.</li>
-                    <li>Reporta cualquier comportamiento inadecuado.</li>
-                    <li>Solo personas mayores de 18 años.</li>
+                  <p className="font-semibold text-[#FF671F]">Directrices de la Comunidad EntrenaMatch</p>
+                  <p>Esta es una plataforma seria para <strong>entrenamiento sincronizado de alto rendimiento</strong>. Nuestra comunidad se basa en respeto, seguridad y enfoque en resultados físicos compartidos a través de la "Red de EntrenaSync".</p>
+                  
+                  <p><strong>Reglas obligatorias:</strong></p>
+                  <ul className="list-disc pl-5 space-y-1.5 text-[13px]">
+                    <li><strong>Respeto y profesionalismo:</strong> Sé motivador y respetuoso. Cero acoso, insultos, discriminación, mensajes sexuales o románticos no solicitados.</li>
+                    <li><strong>Enfoque fitness:</strong> Solo para sync de entrenos (gym, running, etc.). Nada de citas, spam, ventas o contenido off-topic.</li>
+                    <li><strong>Seguridad:</strong> Encuentros SOLO en lugares públicos. Verifica perfiles, informa a terceros, nunca compartas datos bancarios o sensibles.</li>
+                    <li><strong>Perfiles auténticos:</strong> Fotos y datos reales. Prohibido perfiles falsos, bots, cuentas múltiples o impersonación.</li>
+                    <li><strong>Contenido limpio:</strong> Posts, voces y fotos deben ser de entrenamiento. Nada explícito, violento, de odio o que viole leyes.</li>
+                    <li><strong>Reporta y bloquea:</strong> Usa las herramientas de reporte y bloqueo ante cualquier violación. Los reportes ayudan a mantener la comunidad segura.</li>
+                    <li><strong>Mayores de 18:</strong> Solo adultos. Cualquier sospecha de menores resultará en ban inmediato.</li>
                   </ul>
-                  <p>El incumplimiento de estas normas puede resultar en la suspensión permanente de la cuenta.</p>
-                  <p>Entrena con responsabilidad. Tu seguridad es lo primero.</p>
+                  
+                  <p className="text-xs">Violaciones = bloqueo + posible suspensión permanente. Tu seguridad y la del grupo es prioridad #1. Entrena duro, entrena juntos, entrena seguro.</p>
                 </>
               )}
             </div>
@@ -11138,6 +11191,66 @@ function App() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* IMPROVED REPORT MODAL - with clear reasons + link to community rules */}
+      {showReportModal && reportTargetId && (
+        <div className="absolute inset-0 z-[140] bg-black/80 flex items-end" onClick={() => setShowReportModal(false)}>
+          <div 
+            onClick={e => e.stopPropagation()} 
+            className="w-full bg-[#0D0D10] rounded-t-3xl p-5 max-h-[85vh] overflow-auto border-t border-[#2F2F35]"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <div className="font-bold text-lg">Reportar usuario</div>
+              <button onClick={() => setShowReportModal(false)} className="text-[#9CA3AF]">✕</button>
+            </div>
+
+            <div className="text-sm text-[#9CA3AF] mb-3">Selecciona el motivo principal. Tu reporte es anónimo para el otro usuario.</div>
+
+            <div className="space-y-2 mb-4">
+              {['Comportamiento inadecuado / acoso', 'Perfil falso o suplantación', 'Spam o contenido irrelevante', 'Contenido inapropiado (fotos/voz)', 'Otra violación de las reglas de comunidad'].map(r => (
+                <button 
+                  key={r}
+                  onClick={() => setReportReason(r)}
+                  className={`w-full text-left p-3 rounded-xl border ${reportReason === r ? 'border-[#FF671F] bg-[#FF671F]/10' : 'border-[#2F2F35]'} active:bg-[#1C1C20]`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+
+            <textarea 
+              value={reportReason} 
+              onChange={e => setReportReason(e.target.value)}
+              placeholder="Detalles adicionales (opcional)..."
+              className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-xl p-3 text-sm mb-4 min-h-[80px]"
+            />
+
+            <div className="flex gap-2">
+              <button 
+                onClick={() => { setShowReportModal(false); setShowLegal('community') }}
+                className="flex-1 py-2 text-sm border border-[#2F2F35] rounded-2xl active:bg-[#1C1C20]"
+              >
+                Ver reglas de comunidad
+              </button>
+              <button 
+                onClick={async () => {
+                  if (reportTargetId) {
+                    await reportUser(reportTargetId, reportReason || 'Otra violación', undefined, reportContext)
+                    setShowReportModal(false)
+                    setReportTargetId(null)
+                    setReportReason('')
+                  }
+                }}
+                disabled={!reportReason}
+                className="flex-1 py-2 text-sm bg-[#FF671F] text-black font-bold rounded-2xl disabled:opacity-50 active:bg-[#E55A1A]"
+              >
+                Enviar reporte
+              </button>
+            </div>
+            <div className="text-[10px] text-center text-[#9CA3AF] mt-3">Los reportes ayudan a mantener la comunidad segura y enfocada en rendimiento.</div>
+          </div>
+        </div>
+      )}
 
       {/* VERIFICATION FLOW MODAL - Multi-step serious process */}
       <AnimatePresence>

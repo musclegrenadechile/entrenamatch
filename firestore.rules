@@ -90,6 +90,14 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Reports - anyone authenticated can create (for safety). Reporter can read their own reports.
+    // For pre-alpha moderation, reporter reads; full admin panel can be added later.
+    match /reports/{reportId} {
+      allow create: if isAuthenticated();
+      allow read: if isAuthenticated() && request.auth.uid == resource.data.reporterId;
+      allow update, delete: if false;
+    }
+
     // Profile Posts / Muro (wall) - makes profiles alive like FB wall
     // Public read so anyone can see posts when viewing a profile (pre-alpha discovery)
     // Create only by owner

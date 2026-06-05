@@ -1,6 +1,8 @@
 === READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.54-voice-send-polish code 58) ===
 
-AAB: EntrenaMatch-v0.1.55-tdz-fix-pulso-20260605.aab + EntrenaMatch-release.aab (7.58MB)  [includes fix for 'Cannot access before initialization' TDZ in Pulso code placement]
+AAB: EntrenaMatch-v0.1.55-pulso-mejorado-20260605.aab + EntrenaMatch-release.aab (7.58MB)
+
+Mejoras al sistema Pulso Diario: más streaks (voice + pulse visibility), desafíos más inteligentes y variados (incluyendo voz a bonds débiles y ripples de mapa), protección de streak con Momentum, banner atractivo al abrir app, recordatorios de riesgo por la noche, notifs in-app especiales para daily pulse con navegación directa, UI compacta de streaks + polish. Más razones fuertes y hooks inteligentes para abrir todos los días, reforzando el grafo Red + Pulso.
 
 **CRITICAL - DO THIS FIRST OR VOICE NOTES WILL 403:**
 The voice upload rules (chat-voice path) are now fixed and well documented in storage.rules.
