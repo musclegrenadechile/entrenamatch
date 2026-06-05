@@ -1,4 +1,40 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.71-gps-self-marker-fix code 75) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.72-levels-gadgets-retention code 76) ===
+
+SISTEMA DE NIVELES + GADGETS EXCLUSIVOS para retención (mientras más entrenes / hagas streaks / voces / bonds / pulses / lives, más XP y desbloqueos).
+
+- computeRetentionLevel expandido + GADGETS array con 5 gadgets atados a las 5 mecánicas:
+  Lv5: Halo Élite (map marker con halo dorado extra - ya aplicado en self marker)
+  Lv10: Tether Legendario (tethers dorados más gruesos - aplicado en sync lines si nivel alto)
+  Lv15: Ritual Exclusivo (acciones/emojis especiales en Arena)
+  Lv20: Pulso Maestro (ripples más grandes)
+  Lv25: Aura de Campeón (prioridad + badge)
+
+- getUnlockedGadgets + getNextGadget helpers.
+
+- En toggle de "Entrenando Ahora": al terminar sesión, award XP basado en minutos entrenados (mientras más tiempo, más puntos para nivel/gadgets) + momentum extra.
+
+- UI en GymPulse Diario:
+  - Texto de progreso actualizado a "Entrena más → +XP → sube de nivel y desbloquea GADGETS"
+  - Sección "🎁 GADGETS DESBLOQUEADOS" con icons + nombres + "Próximo gadget"
+  - Lista de gadgets con tooltips (desc)
+
+- En "Tu Poder en la Red" (perfil hero): muestra Nivel + fila de gadgets desbloqueados (icons).
+
+- Level up mejorado: toast menciona gadget nuevo desbloqueado + post automático con gadget.
+
+- Visuales en mapa: self marker (tu posición con foto) ahora tiene halo dorado ✨ si nivel >=5 (gadget Halo Élite).
+
+- En tethers del mapa: si eres nivel alto (gadget Tether), el tether es dorado aunque no sea legend bond.
+
+- Todo ayuda a retención: progreso visible, recompensas exclusivas visuales que se sienten "reales" en el Pulso/Mapa/Sync, momentum bonus por nivel.
+
+- Persistencia: retentionLevel / xp / momentum ya se guardan; gadgets son derivados de level.
+
+AAB + debug listos. Git push. Instructions actualizado.
+
+Test: activa lives, completa sesiones, voces, challenges → ve XP subir, nivel up con gadget mention, gadgets list en daily + perfil, halo en tu marker si nivel alto, tether boost si aplica.
+
+Sigue con todo.
 
 FIX BUGS GPS / SELF MARKER EN MAPA EN TIEMPO REAL:
 

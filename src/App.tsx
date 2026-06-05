@@ -735,6 +735,19 @@ function App() {
     return { level, xp, totalXp }
   }
 
+  // Niveles + Gadgets exclusivos para retención (mientras más entrenes / hagas streaks / bonds / voces / pulses, más XP y desbloqueos visuales)
+  // Gadgets atados a las 5 mecánicas para que se sientan "reales" y motivadores.
+  const GADGETS = [
+    { level: 5, name: 'Halo Élite', icon: '✨', desc: 'Tu marcador en el mapa brilla con halo dorado extra (más visible para la red)', effect: 'map-halo' },
+    { level: 10, name: 'Tether Legendario', icon: '🌟', desc: 'Tethers en EntrenaSync son dorados y más gruesos para ti', effect: 'golden-tether' },
+    { level: 15, name: 'Ritual Exclusivo', icon: '🔥', desc: 'Acciones y emojis especiales solo para niveles altos en la Arena Sync', effect: 'exclusive-emojis' },
+    { level: 20, name: 'Pulso Maestro', icon: '🌀', desc: 'Tus ripples/ondas en el mapa son más grandes y con color único', effect: 'map-ripple-boost' },
+    { level: 25, name: 'Aura de Campeón', icon: '👑', desc: 'Badge especial + prioridad en lista live y recomendaciones', effect: 'priority' },
+  ]
+
+  const getUnlockedGadgets = (level: number) => GADGETS.filter(g => level >= g.level)
+  const getNextGadget = (level: number) => GADGETS.find(g => level < g.level) || null
+
   const generateDailyChallenge = (user: any, bonds: any, liveNow: any[], networkPower: number) => {
     const bondCount = Object.keys(bonds || {}).length
     const hasLiveRed = liveNow.some((u: any) => (bonds || {})[u.id])
@@ -956,8 +969,10 @@ function App() {
     if (justCompleted && computedLevel > prevLevel) {
       try { triggerHaptic('success') } catch {}
       try { triggerConfetti() } catch {}
-      toast.success(`¡Subiste a NIVEL ${computedLevel}!`, { description: 'Perk permanente: +8% Momentum en desafíos. ¡Tu retención es legendaria!' })
-      createProfilePost(`⭐ ¡NIVEL ${computedLevel} DE RETENCIÓN! Mi constancia diaria hace fuerte a toda la Red.`, null, 'dailyPulse').catch(() => {})
+      const newGadgets = getUnlockedGadgets(computedLevel).filter(g => g.level > prevLevel)
+      const gadgetText = newGadgets.length > 0 ? ` + ${newGadgets.map(g=>g.name).join(', ')} desbloqueado(s)!` : ''
+      toast.success(`¡Subiste a NIVEL ${computedLevel}!`, { description: `Perk permanente: +8% Momentum en desafíos. ${gadgetText} ¡Tu retención es legendaria!` })
+      createProfilePost(`⭐ ¡NIVEL ${computedLevel} DE RETENCIÓN! Mi constancia diaria hace fuerte a toda la Red.${newGadgets.length ? ' Gadget: ' + newGadgets[0].name : ''}`, null, 'dailyPulse').catch(() => {})
     }
 
     const u = currentUser as any
@@ -6132,21 +6147,25 @@ function App() {
     if (userLocation) {
       const photo = currentUser?.photos && currentUser.photos[0]
       const shortName = (currentUser?.name || 'Tú').split(' ')[0]
+      const userLevel = dailyPulse?.level || 1
+      const hasEliteHalo = userLevel >= 5 // gadget desbloqueado
       let iconHtml: string
       if (photo) {
+        const halo = hasEliteHalo ? 'box-shadow: 0 0 0 8px #FFD70044, 0 0 16px #FFD70088, 0 0 0 3px rgba(59,130,246,0.4), 0 2px 6px rgba(0,0,0,0.5);' : 'box-shadow:0 0 0 3px rgba(59,130,246,0.4), 0 2px 6px rgba(0,0,0,0.5);'
         iconHtml = `
           <div style="position:relative;width:36px;height:36px">
-            <div style="width:36px;height:36px;border-radius:9999px;overflow:hidden;border:3px solid #3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.4), 0 2px 6px rgba(0,0,0,0.5);">
+            <div style="width:36px;height:36px;border-radius:9999px;overflow:hidden;border:3px solid #3b82f6;${halo}">
               <img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='#3b82f6';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:12px\\'>${shortName.slice(0,2).toUpperCase()}</div>'" />
             </div>
-            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#3b82f6;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6)">TÚ</div>
+            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#3b82f6;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6)">TÚ${hasEliteHalo ? '✨' : ''}</div>
           </div>`
       } else {
         const initials = shortName.slice(0, 2).toUpperCase()
+        const halo = hasEliteHalo ? 'box-shadow: 0 0 0 8px #FFD70044, 0 0 16px #FFD70088, 0 0 0 3px rgba(59,130,246,0.4),0 2px 6px rgba(0,0,0,0.5);' : 'box-shadow:0 0 0 3px rgba(59,130,246,0.4),0 2px 6px rgba(0,0,0,0.5);'
         iconHtml = `
           <div style="position:relative;width:36px;height:36px">
-            <div style="width:36px;height:36px;border-radius:9999px;background:#3b82f6;border:3px solid #fff;box-shadow:0 0 0 3px rgba(59,130,246,0.4),0 2px 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px;">${initials}</div>
-            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#3b82f6;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6)">TÚ</div>
+            <div style="width:36px;height:36px;border-radius:9999px;background:#3b82f6;border:3px solid #fff;${halo}display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px;">${initials}</div>
+            <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#3b82f6;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6)">TÚ${hasEliteHalo ? '✨' : ''}</div>
           </div>`
       }
       const selfIcon = L.divIcon({
@@ -6190,16 +6209,18 @@ function App() {
         const partner = liveUsers.find(u => u.id === user.trainingSyncWith)
         if (partner && partner.lat && partner.lng) {
           const isBondedLegend = !!syncBonds[user.id] || !!syncBonds[partner.id]
+          const myLevel = dailyPulse?.level || 1
+          const isHighLevelSelf = (user.id === 'me' || user.id === currentUser?.id) && myLevel >= 10 // gadget Tether Legendario
           const tetherBoost = !!(showOnlyLegends && isBondedLegend) ? ' network-tether-boost' : ''
           const line = L.polyline(
             [[user.lat, user.lng], [partner.lat, partner.lng]],
             {
-              color: isBondedLegend ? '#FFD700' : '#FF671F',
-              weight: isBondedLegend ? (showOnlyLegends ? 5.5 : 4) : 2.5,
-              opacity: isBondedLegend ? 0.9 : 0.65,
-              dashArray: isBondedLegend ? '3,6' : '5, 8',
+              color: isBondedLegend || isHighLevelSelf ? '#FFD700' : '#FF671F',
+              weight: isBondedLegend || isHighLevelSelf ? (showOnlyLegends ? 5.5 : 4) : 2.5,
+              opacity: isBondedLegend || isHighLevelSelf ? 0.9 : 0.65,
+              dashArray: isBondedLegend || isHighLevelSelf ? '3,6' : '5, 8',
               lineJoin: 'round',
-              className: `map-sync-tether${isBondedLegend ? ' legend-tether' : ''}${tetherBoost}`
+              className: `map-sync-tether${isBondedLegend || isHighLevelSelf ? ' legend-tether' : ''}${tetherBoost}`
             }
           ).addTo(mapInstanceRef.current)
           line.bindPopup(`<strong>${isBondedLegend ? '⭐ SYNC DE TUS GYMPARTNERS' : '🔄 Sync en vivo'}</strong><br/>${user.name} ↔ ${partner.name}<br/><span style="font-size:10px">${isBondedLegend ? 'Alianza real de alto rendimiento • Tu grafo da peso en el GymPulse' : 'EntrenaSync en vivo ahora'}</span>`)
@@ -9278,7 +9299,11 @@ function App() {
                   <div><span className="font-mono text-lg font-bold text-[#FFD700]">{networkStats?.networkPower || 0}</span> <span className="text-[9px] text-[#9CA3AF]">Network Power</span></div>
                   <div><span className="font-mono text-lg font-bold text-[#22c55e]">{Object.keys(syncBonds || {}).length}</span> <span className="text-[9px] text-[#9CA3AF]">Bonds</span></div>
                   <div><span className="font-mono text-lg font-bold text-[#FF671F]">{currentUser?.liveStreak || 0}</span> <span className="text-[9px] text-[#9CA3AF]">Live Streak</span></div>
+                  <div><span className="font-mono text-lg font-bold text-[#EAB308]">{dailyPulse?.level || 1}</span> <span className="text-[9px] text-[#9CA3AF]">Nivel</span></div>
                 </div>
+                {dailyPulse && getUnlockedGadgets(dailyPulse.level || 1).length > 0 && (
+                  <div className="mt-1 text-[8px] text-[#FFD700]">Gadgets: {getUnlockedGadgets(dailyPulse.level || 1).map(g => g.icon).join(' ')}</div>
+                )}
                 <div className="text-[8px] text-[#9CA3AF] mt-1">Entrenar juntos multiplica tu peso en el GymPulse. Tu primer Sync lo activa.</div>
               </div>
             </div>
@@ -9502,8 +9527,25 @@ function App() {
                     <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
                       <div className="h-1.5 bg-gradient-to-r from-[#FFD700] to-[#FF671F]" style={{width: `${((dailyPulse.xp || 0) / 300) * 100}%`}} />
                     </div>
-                    <div className="text-[7px] text-[#9CA3AF] mt-0.5">+50 XP por milestone de streak • Desbloquea perks en nivel 5/10/15</div>
+                    <div className="text-[7px] text-[#9CA3AF] mt-0.5">Entrena más → +XP → sube de nivel y desbloquea GADGETS exclusivos (mapa, sync, ripples...)</div>
                   </div>
+
+                  {/* Gadgets exclusivos - fuerte motivador de retención visual (mientras más entrenes, más efectos únicos) */}
+                  {dailyPulse && getUnlockedGadgets(dailyPulse.level || 1).length > 0 && (
+                    <div className="mb-3">
+                      <div className="text-[8px] text-[#FFD700] font-bold mb-1">🎁 GADGETS DESBLOQUEADOS</div>
+                      <div className="flex gap-1 flex-wrap">
+                        {getUnlockedGadgets(dailyPulse.level || 1).map((g, i) => (
+                          <div key={i} className="text-[9px] bg-black/40 border border-[#FFD700]/30 rounded px-1.5 py-0.5 flex items-center gap-1" title={g.desc}>
+                            <span>{g.icon}</span> <span className="font-medium text-white/90">{g.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                      {getNextGadget(dailyPulse.level || 1) && (
+                        <div className="text-[7px] text-[#9CA3AF] mt-0.5">Siguiente: {getNextGadget(dailyPulse.level || 1)!.name} (nivel {getNextGadget(dailyPulse.level || 1)!.level})</div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Misión Diaria / Daily Challenge - more potent retention */}
                   {dailyPulse.currentChallenge && (
@@ -9898,6 +9940,19 @@ function App() {
                     }
                     if (newVal) {
                       createProfilePost('¡Entrenando ahora cerca! ¿Quién se une? 🏋️', null).catch(() => {})
+                    } else {
+                      // Mientras más entrenes, más puntos para nivel y gadgets (retención fuerte)
+                      const durationMs = currentUser.trainingNowSince ? Date.now() - currentUser.trainingNowSince : 30 * 60 * 1000
+                      const minutes = Math.max(5, Math.floor(durationMs / 60000))
+                      // Award XP directly to feed the level system (in addition to momentum/streaks)
+                      if (dailyPulse) {
+                        const newTotal = (dailyPulse.xp || 0) + (minutes * 2) + 10 // bonus base por sesión
+                        const { level: newL, xp: rem } = computeRetentionLevel(dailyPulse.momentum, dailyPulse.trainingStreak, dailyPulse.synergyStreak, dailyPulse.voiceStreak || 0, dailyPulse.pulseStreak || 0, networkStats.networkPower)
+                        // simple: add to momentum which feeds total, or directly bump xp in pulse
+                        const bumped = { ...dailyPulse, xp: Math.min(299, (dailyPulse.xp || 0) + Math.floor(minutes * 1.5)) }
+                        setDailyPulse(bumped)
+                      }
+                      awardMomentum(Math.floor(minutes / 3) + 5, `Sesión de ${minutes}min completada`)
                     }
                   }}
                   className={`w-full py-3 rounded-2xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm ${currentUser.trainingNow ? 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black ring-1 ring-[#22c55e]/60' : 'bg-[#1C1C20] border border-[#2F2F35] text-white hover:border-[#22c55e]/50 active:bg-[#25252A]'}`}
