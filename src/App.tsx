@@ -2433,7 +2433,20 @@ function App() {
   // This gives true realtime (onSnapshot push) for doSyncAction without waiting for profile polls.
   // We still keep trainingSyncWith pointer in profiles for discovery/badges across Feed/Explore/Live.
   useEffect(() => {
-    if (!syncPartnerId || !effectiveUserId || !db || isDemoMode || !isFirebaseConfigured) return undefined
+    // Strict guard: only attach when we have a *real* authenticated uid (not 'me' or demo).
+    // This prevents "Missing or insufficient permissions" on the onSnapshot when the Firebase Auth
+    // token is not yet attached to the Firestore client (e.g. during restore, network recovery, or
+    // optimistic local state before full auth settles). The rule requires isAuthenticated().
+    if (
+      !syncPartnerId ||
+      effectiveUserId === 'me' ||
+      !firebaseUser?.uid ||
+      !db ||
+      isDemoMode ||
+      !isFirebaseConfigured
+    ) {
+      return undefined
+    }
 
     const uids = [effectiveUserId, syncPartnerId].sort()
     const sessionId = `sync_${uids[0]}_${uids[1]}`
@@ -2470,13 +2483,21 @@ function App() {
       }
     }, (err) => {
       console.warn('syncSessions onSnapshot error (non-fatal, fallback to mirror):', err)
-      import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
+      // Stronger recovery on permission / transport errors: full disable+enable cycle to clear
+      // any corrupted internal state that can lead to da08 / mutations assertion later.
+      import('./services/firebase').then(async (m) => {
+        try {
+          await m.disableFirestoreNetwork?.()
+          await new Promise(r => setTimeout(r, 80))
+          await m.enableFirestoreNetwork?.()
+        } catch {}
+      }).catch(() => {})
     })
 
     return () => {
       try { unsub() } catch {}
     }
-  }, [syncPartnerId, effectiveUserId, db, isDemoMode, isFirebaseConfigured])
+  }, [syncPartnerId, effectiveUserId, firebaseUser?.uid, db, isDemoMode, isFirebaseConfigured])
 
   const loadActiveSyncCount = async () => {
     if (!isFirebaseConfigured || !db) {
@@ -4572,6 +4593,17 @@ function App() {
     if (!partnerId || myIds.includes(partnerId)) return; // prevent self-join / self-sync
     if (!currentUser?.trainingNow || !realProfiles.some(p => p.id === partnerId && p.trainingNow)) return
     if (syncPartnerId || joiningSyncWith === partnerId) return // anti-spam guard
+
+    // Defensive: in real mode we must have a real uid before optimistic sync state (which triggers
+    // the dedicated syncSessions listener) and before any FS writes. Prevents permission errors on
+    // listener + reduces chance of hitting internal assertion during auth recovery.
+    if (!isDemoMode && !firebaseUser?.uid) {
+      console.warn('startSyncWith: no real firebaseUser uid, cannot start real EntrenaSync')
+      setJoiningSyncWith(null)
+      toast.error('Inicia sesión con cuenta real para usar EntrenaSync')
+      return
+    }
+
     const now = Date.now()
     setSyncPartnerId(partnerId)
     setSyncStartedAt(now)
