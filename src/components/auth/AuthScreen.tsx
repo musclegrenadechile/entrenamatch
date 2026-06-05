@@ -277,7 +277,7 @@ export const AuthScreen = ({
           <br />Solo +18 • Entrenamiento serio • Pre-alpha real
         </p>
 
-        <p className="text-center text-[10px] text-[#6B7280]/60 mt-1 tracking-wider">v0.1.29-ripples-fisica</p>
+        <p className="text-center text-[10px] text-[#6B7280]/60 mt-1 tracking-wider">v0.1.30-witness-mode</p>
       </div>
     </div>
   );

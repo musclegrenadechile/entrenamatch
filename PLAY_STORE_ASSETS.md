@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 34 / 0.1.29-ripples-fisica. **RIPPLES CON FÍSICA**: Las ondas de ritual ahora viajan hacia otros usuarios en el mapa + mini notificaciones personales. 
+**Current version for this upload**: versionCode 35 / 0.1.30-witness-mode. **WITNESS MODE**: Cualquiera puede ver un replay corto del momento épico que generó la onda en el mapa. 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -149,11 +149,18 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 
 ## What's new (for this Pre-Alpha release, short & punchy)
 
-**READY FOR PLAY CLOSED UPLOAD (v0.1.29-ripples-fisica code 34)**
-- Fresh signed AAB: `EntrenaMatch-v0.1.29-ripples-fisica-code34-20260604-2001.aab` (7.2 MB) + `EntrenaMatch-release.aab`
-- Fresh debug APK for device: `EntrenaMatch-debug-ripples-fisica-0.1.29-20260604-2001.apk` (10 MB) + `EntrenaMatch-debug.apk`
+**READY FOR PLAY CLOSED UPLOAD (v0.1.30-witness-mode code 35)**
+- Fresh signed AAB: `EntrenaMatch-v0.1.30-witness-mode-code35-20260604-2004.aab` (7.2 MB) + `EntrenaMatch-release.aab`
+- Fresh debug APK for device: `EntrenaMatch-debug-witness-mode-0.1.30-20260604-2004.apk` (10 MB) + `EntrenaMatch-debug.apk`
 - Web: pushed to main → GH Pages will have the new bundle (hard refresh after Actions finish).
 - Copy the short "What's new" below directly into Play Console when uploading the AAB to closed track.
+
+**v0.1.30-witness-mode (code 35) — WITNESS MODE PARA MOMENTOS ÉPICOS**
+• Cualquiera que vea una onda de ritual en el mapa (o reciba la notificación de que una onda llegó cerca) puede tocar "👁️ Ver replay del momento épico".
+• Abre un replay corto y hermoso del pico de alta energía en la Arena que generó esa onda: acciones clave, vibe, foto si hubo, nombres de los atletas.
+• Branding especial "TESTIGO DE UN MOMENTO LEGENDARIO".
+• Esto convierte los rituales privados en momentos culturales compartidos por la comunidad. La gente puede "presenciar" la leyenda que acaba de propagarse por la ciudad.
+• Botón en el popup del ripple + integración con las notificaciones personales.
 
 **v0.1.29-ripples-fisica (code 34) — RIPPLES CON MÁS FÍSICA Y NOTIFICACIONES**
 • Las ondas de ritual ahora tienen "física": desde el epicentro en el mapa se dibujan líneas animadas (flujo de energía) que viajan hacia otros usuarios live cercanos (hasta ~12km).
@@ -202,8 +209,8 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • AAB + debug APK frescos listos (ver nombres abajo). Build limpia + pipeline completo.
 • Todo el pipeline: web GH Pages, Android AAB/debug, docs actualizados. Sigue con todo ritmo.
 
-**Short "What's new" (copy-paste to Play Console for v0.1.29 code 34):**
-Ripples con física real: las ondas de ritual en el mapa ahora viajan (líneas animadas con flujo) hacia otros usuarios cercanos. Si la onda te alcanza o pasa cerca, recibes notificación personal "Onda de Ritual recibida". Los momentos épicos en Arena ahora tienen consecuencia visible y emocional en la ciudad. (code 34)
+**Short "What's new" (copy-paste to Play Console for v0.1.30 code 35):**
+Witness Mode: Cualquiera puede ser testigo de los momentos épicos. Al ver una onda de ritual en el mapa o recibir notificación, puedes abrir un replay corto del pico de alta energía en la Arena que la generó (acciones, vibe, foto). Los rituales legendarios ahora se vuelven momentos culturales que la comunidad puede presenciar. (code 35)
 
 **Artifacts for this version:**
 - AAB (Play): EntrenaMatch-v0.1.28-recuperacion-cuenta-code33-20260604-1958.aab (y EntrenaMatch-release.aab)

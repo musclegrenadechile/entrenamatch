@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.29-ripples-fisica",
+  "version": "0.1.30-witness-mode",
   "type": "module",
   "scripts": {
     "dev": "vite",

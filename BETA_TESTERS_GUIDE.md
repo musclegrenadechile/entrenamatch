@@ -608,3 +608,10 @@ This is the build to upload to Closed track. Full "sigue con todo" — more uniq
 - Si estás cerca de donde una onda está llegando, recibes notificación interna + toast personal ('Onda de Ritual recibida', 'Energía de Ritual cerca').
 - La detección funciona aunque no tengas el mapa abierto (usa tu ubicación real + distancia).
 - Prueba fuerte: En Arena con alguien, sube mucho el vibe. Abre el mapa en tu cuenta y en la de otra persona cercana. Verás las líneas animadas moviéndose hacia los usuarios. Recibirás notificaciones cuando las ondas 'lleguen'. Esto hace que los rituales tengan peso real en la comunidad.
+
+**NUEVO — WITNESS MODE (v0.1.30-witness-mode, code 35)**:
+- En el popup de cualquier ripple en el mapa aparece el botón **"👁️ Ver replay del momento épico"**.
+- Abre un modal especial "TESTIGO DE UN MOMENTO LEGENDARIO" con un replay corto del pico que generó la onda: las acciones clave del ritual, el vibe alcanzado, foto si se capturó en ese momento.
+- También accesible desde las notificaciones personales cuando una onda te alcanza.
+- Esto permite que cualquiera en la comunidad sea "testigo" de los rituales legendarios que acaban de propagarse. Convierte lo privado en patrimonio cultural compartido.
+- Prueba: Genera un alto vibe en Arena (con alguien), ve al mapa con otra cuenta cercana. Toca la onda → Witness. Siente la magia de presenciar un momento que "apenas pasó".

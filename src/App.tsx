@@ -421,6 +421,7 @@ function App() {
   const [syncBonds, setSyncBonds] = useState<Record<string, {totalMin: number, sessions: number, avgRating: number, bondLevel: number}>>({})
   const [lastSyncStory, setLastSyncStory] = useState<any>(null)
   const [replaySession, setReplaySession] = useState<any>(null) // {partnerName, minutes, vibe, actions, rating?}
+  const [witnessData, setWitnessData] = useState<any>(null) // for Witness mode: short replay of epic moment that caused a ripple
   const [activeSyncPairs, setActiveSyncPairs] = useState<any[]>([]) // lightweight for global FOMO teasers
 
   // Auto-refresh real sessions on tab DISABLED to fix TDZ.
@@ -2818,6 +2819,24 @@ function App() {
     startSyncRef.current = startSyncWith
   }, [startSyncWith])
 
+  // Witness mode for ripples: anyone who sees a ripple on the map (or gets notified) can view a short replay
+  // of the epic high-vibe moment in the Arena that generated the wave.
+  // This is the "never seen before" social proof layer — your legendary syncs become witnessable by the community.
+  const witnessRipple = useCallback((rippleId: string) => {
+    const r = ritualRipples.find((rr: any) => rr.id === rippleId)
+    if (r && r.witnessData) {
+      setWitnessData(r.witnessData)
+      triggerHaptic('medium')
+    } else {
+      toast('El momento legendario ya se disipó en el tiempo. ¡Crea el tuyo ahora en la Arena!')
+    }
+  }, [ritualRipples, triggerHaptic])
+
+  // Expose globally so Leaflet popup HTML onclick can call it (same pattern as map join buttons)
+  useEffect(() => {
+    ;(window as any).witnessRipple = witnessRipple
+  }, [witnessRipple])
+
   // Same for profile modal – marker clicks and "Ver perfil" in popups can reliably open the rich profile.
   useEffect(() => {
     showFullProfileRef.current = setShowFullProfile
@@ -3036,7 +3055,16 @@ function App() {
               lat: partner.lat, 
               lng: partner.lng, 
               label: `⚡ Ritual Épico • ${label}`, 
-              intensity 
+              intensity,
+              witnessData: {
+                actions: syncActions.slice(0, 6).map((a: any) => ({...a})),
+                vibe: newVibe,
+                partnerName: partner.name || partner.nombre || 'Compañero de ritual',
+                photoUrl: syncActions.find((a:any) => a.photoUrl)?.photoUrl || null,
+                label: `⚡ ${label}`,
+                timestamp: Date.now(),
+                minutes: syncStartedAt ? Math.floor((Date.now() - syncStartedAt)/60000) : 0
+              }
             }])
             // Auto-clean the ripple after it has "propagated"
             setTimeout(() => {
@@ -4693,8 +4721,18 @@ function App() {
           className: 'ritual-map-ripple'
         }).addTo(mapInstanceRef.current)
 
-        // Bind a special popup that teases the magic
-        ripple.bindPopup(`<strong>⚡ ${r.label}</strong><br/><span style="font-size:10px">Energía de un ritual en Arena propagándose. Esto es lo que hace única a esta app.</span>`)
+        // Bind a special popup that teases the magic + Witness button
+        // Anyone on the map can click to see a short replay of the exact epic moment that sent this wave.
+        ripple.bindPopup(`
+          <div style="min-width:160px">
+            <strong>⚡ ${r.label}</strong><br/>
+            <span style="font-size:10px">Energía de un ritual en Arena propagándose.</span><br/><br/>
+            <button onclick="window.witnessRipple('${r.id}')" 
+              style="background:#FF671F;color:black;border:none;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;width:100%">
+              👁️ Ver replay del momento épico
+            </button>
+          </div>
+        `)
 
         // Store for cleanup
         ;(ripple as any)._isRitualRipple = true
@@ -5239,7 +5277,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
-          <span className="text-white/90 text-[11px]">Real backend • v0.1.29-ripples-fisica</span>
+          <span className="text-white/90 text-[11px]">Real backend • v0.1.30-witness-mode</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -8175,7 +8213,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.29-ripples-fisica • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.30-witness-mode • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8402,7 +8440,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.29-ripples-fisica • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.30-witness-mode • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>
@@ -10351,6 +10389,58 @@ function App() {
               <button onClick={() => setReplaySession(null)} className="flex-1 py-2.5 rounded-2xl border border-white/15 text-sm">Cerrar</button>
             </div>
             <div className="text-center text-[9px] text-[#9CA3AF] mt-2">Este recuerdo vive en tus dos muros. Nadie más tiene esto.</div>
+          </div>
+        </div>
+      )}
+
+      {/* WITNESS MODE: Short replay of the epic high-vibe moment that generated a Ritual Ripple.
+          Anyone who sees the wave on the map (or receives the notification) can witness what actually happened in the Arena.
+          This turns private legendary syncs into community-shared cultural moments. Never-seen-before social layer. */}
+      {witnessData && (
+        <div className="fixed inset-0 z-[130] bg-black/90 flex items-center justify-center p-4" onClick={() => setWitnessData(null)}>
+          <div className="bg-[#1C1C20] rounded-3xl p-5 max-w-sm w-full border border-[#FF671F]/40" onClick={e=>e.stopPropagation()}>
+            <div className="text-center mb-4">
+              <div className="text-[#FF671F] text-xs tracking-[2.5px] font-bold">TESTIGO DE UN MOMENTO LEGENDARIO</div>
+              <div className="font-black text-2xl mt-1">Sync con {witnessData.partnerName}</div>
+              <div className="text-sm text-[#9CA3AF]">{witnessData.minutes} min • Vibe pico {witnessData.vibe}%</div>
+              <div className="text-[10px] text-[#FF671F]/70 mt-1">Esta energía se propagó por la ciudad</div>
+            </div>
+
+            {/* Compact epic actions timeline */}
+            <div className="bg-black/50 rounded-2xl p-3 mb-4 border border-[#FF671F]/20">
+              {(witnessData.actions || []).slice(0,5).map((a: any, idx: number) => (
+                <div key={idx} className="flex items-center gap-2 py-1 text-sm border-b border-white/10 last:border-none">
+                  <span className="text-xl">{a.emoji}</span>
+                  <span className="flex-1 text-white/90">{a.label}{a.combo ? <span className="text-[#FF671F] font-bold"> ×{a.combo}</span> : ''}</span>
+                  {a.photoUrl && <img src={a.photoUrl} className="w-7 h-7 rounded object-cover border border-white/20" />}
+                </div>
+              ))}
+              {(!witnessData.actions || witnessData.actions.length === 0) && (
+                <div className="text-[#9CA3AF] text-xs py-4 text-center">Momento de alta energía capturado en el ritual.</div>
+              )}
+            </div>
+
+            {witnessData.photoUrl && (
+              <div className="mb-4">
+                <img src={witnessData.photoUrl} className="w-full rounded-2xl border border-[#FF671F]/30" alt="Momento épico" />
+                <div className="text-[10px] text-center text-[#9CA3AF] mt-1">Foto del pico de energía</div>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <button 
+                onClick={() => { 
+                  setWitnessData(null); 
+                  // Nice touch: offer to create your own legendary moment
+                  toast('¿Listo para crear tu propio momento que genere ondas?');
+                }} 
+                className="flex-1 py-2.5 rounded-2xl bg-[#FF671F] text-black font-semibold text-sm active:bg-[#e55a1a]"
+              >
+                🔥 Crear mi propio momento
+              </button>
+              <button onClick={() => setWitnessData(null)} className="flex-1 py-2.5 rounded-2xl border border-white/20 text-sm">Cerrar</button>
+            </div>
+            <div className="text-center text-[8px] text-[#9CA3AF]/60 mt-2">Fuiste testigo de un ritual que nadie más puede replicar.</div>
           </div>
         </div>
       )}
