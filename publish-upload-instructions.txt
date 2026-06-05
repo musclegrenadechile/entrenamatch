@@ -1,6 +1,6 @@
 === READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.54-voice-send-polish code 58) ===
 
-AAB: EntrenaMatch-v0.1.54-voice-send-polish-0008.aab + EntrenaMatch-release.aab (7.58MB)
+AAB: EntrenaMatch-v0.1.54-voice-rules-fix-0009.aab + EntrenaMatch-release.aab (7.58MB)
 
 **CRITICAL - DO THIS FIRST OR VOICE NOTES WILL 403:**
 The voice upload rules (chat-voice path) are now fixed and well documented in storage.rules.
