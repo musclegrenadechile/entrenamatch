@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.45-network-sync-boost",
+  "version": "0.1.46-fcm-red-pushes",
   "type": "module",
   "scripts": {
     "dev": "vite",

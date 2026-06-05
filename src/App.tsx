@@ -733,6 +733,7 @@ function App() {
   const syncLinesRef = useRef<any[]>([]) // for light tethers between active sync pairs on the live map
   const startSyncRef = useRef<((partnerId: string, partnerName: string) => any) | null>(null)
   const showFullProfileRef = useRef<((profile: any) => void) | null>(null)
+  const latestRealProfilesRef = useRef<any[]>([])
 
   // Dedicated unmount cleanup for the Leaflet map to avoid memory leaks / zombie maps
   // when the app unmounts, hot-reloads, or user leaves the tab. Runs only on mount/unmount.
@@ -1418,6 +1419,26 @@ function App() {
           try {
             await PushNotifications.register()
             console.log('✅ Push notifications registered (already permitted)')
+
+            // Create high-priority channel for network red activity (Android)
+            if (Capacitor.getPlatform() === 'android') {
+              try {
+                await PushNotifications.createChannel({
+                  id: 'network_activity',
+                  name: 'Actividad de tu Red (EntrenaSync)',
+                  description: 'Notificaciones cuando alguien de tu red entra en vivo o inicia un sync',
+                  importance: 5, // max
+                  visibility: 1,
+                  sound: 'default',
+                  lights: true,
+                  lightColor: '#FF671F',
+                  vibration: true,
+                })
+                console.log('✅ network_activity channel created for red pushes')
+              } catch (chErr) {
+                console.warn('createChannel failed (may already exist)', chErr)
+              }
+            }
           } catch (regErr) {
             console.warn('register after check failed (google-services?)', regErr)
           }
@@ -1445,17 +1466,71 @@ function App() {
             console.log('Push received while open:', notification)
             const title = (notification && (notification.title || notification.notification?.title)) || 'Nueva notificación'
             const body = (notification && (notification.body || notification.notification?.body)) || 'Revisa la app'
-            toast.info(title, { 
-              description: body,
-              className: 'bg-[#1C1C20] border-[#FF671F] text-white',
-              duration: 5000
-            })
+            const data = notification && (notification.data || notification.notification?.data) || {}
+            const isNetwork = data.type === 'network_live' || data.type === 'network_sync'
+
+            if (isNetwork) {
+              toast.success(title, {
+                description: body + ' (tu red)',
+                className: 'legend-notif border-l-4 border-[#FFD700] bg-[#1a160f]',
+                duration: 6000,
+                action: data.userId ? {
+                  label: 'Ver / Unirme',
+                  onClick: () => {
+                    // Deep link: open live map or try to start sync with the partner
+                    setActiveTab('explore')
+                    setShowLiveModal(true)
+                    if (data.userId) {
+                      setTimeout(() => {
+                        const currentProfiles = latestRealProfilesRef.current || realProfiles
+                        const partner = currentProfiles.find((p: any) => p.id === data.userId)
+                        if (partner) {
+                          if (startSyncRef.current) {
+                            startSyncRef.current(partner.id, partner.name)
+                          } else {
+                            startSyncWith(partner.id, partner.name)
+                          }
+                        } else {
+                          setShowFullProfile({ id: data.userId, name: data.partnerName || 'Socio de red' } as any)
+                        }
+                      }, 300)
+                    }
+                  }
+                } : undefined
+              })
+            } else {
+              toast.info(title, { 
+                description: body,
+                className: 'bg-[#1C1C20] border-[#FF671F] text-white',
+                duration: 5000
+              })
+            }
           })
 
           PushNotifications.addListener('pushNotificationActionPerformed', (action: any) => {
             console.log('Push action performed (user tapped):', action)
-            // TODO: navigate to chat/session based on action.notification.data
-            toast('Notificación tocada', { description: 'Abriendo app...' })
+            const data = action && action.notification && (action.notification.data || action.notification.notification?.data) || {}
+            const isNetwork = data.type === 'network_live' || data.type === 'network_sync'
+
+            if (isNetwork && data.userId) {
+              setActiveTab('explore')
+              setShowLiveModal(true)
+              setTimeout(() => {
+                const currentProfiles = latestRealProfilesRef.current || realProfiles
+                const partner = currentProfiles.find((p: any) => p.id === data.userId)
+                if (partner) {
+                  if (partner.trainingNow && startSyncRef.current) {
+                    startSyncRef.current(partner.id, partner.name)
+                  } else if (partner.trainingNow) {
+                    startSyncWith(partner.id, partner.name)
+                  } else {
+                    setShowFullProfile(partner as any)
+                  }
+                }
+              }, 400)
+            } else {
+              toast('Notificación tocada', { description: 'Abriendo app...' })
+            }
           })
         } catch (listenerErr) {
           console.warn('Failed to attach some push listeners', listenerErr)
@@ -2841,6 +2916,10 @@ function App() {
     startSyncRef.current = startSyncWith
   }, [startSyncWith])
 
+  useEffect(() => {
+    latestRealProfilesRef.current = realProfiles
+  }, [realProfiles])
+
   // Witness mode for ripples: anyone who sees a ripple on the map (or gets notified) can view a short replay
   // of the epic high-vibe moment in the Arena that generated the wave.
   // This is the social proof layer of the network — your strong syncs become discoverable highlights that the community can see and be inspired by. Your training graph builds culture and status in the first fitness social network.
@@ -3633,6 +3712,22 @@ function App() {
       const receive = perm && (perm.receive || perm.notifications || '')
       if (receive === 'granted') {
         await PushNotifications.register()
+        // Ensure the red network high priority channel exists
+        if (Capacitor.getPlatform() === 'android') {
+          try {
+            await PushNotifications.createChannel({
+              id: 'network_activity',
+              name: 'Actividad de tu Red (EntrenaSync)',
+              description: 'Notificaciones cuando alguien de tu red entra en vivo o inicia un sync',
+              importance: 5,
+              visibility: 1,
+              sound: 'default',
+              lights: true,
+              lightColor: '#FF671F',
+              vibration: true,
+            })
+          } catch {}
+        }
         toast.success('Notificaciones push nativas activadas', {
           description: 'Ahora recibirás alertas reales en tu celular incluso con la app cerrada (mejor que web).'
         })
