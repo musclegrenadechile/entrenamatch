@@ -14,7 +14,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, MessageCircle, User, MapPin, Dumbbell, 
   Edit2, RefreshCw, ArrowLeft, Send, Star, Plus, Users, Bell, Download,
-  Clock, Camera, Activity, Zap
+  Clock, Camera, Activity, Zap, Mic, Square, Play, Pause, X, RotateCcw
 } from 'lucide-react'
 import { 
   signUpWithEmail, 
@@ -408,19 +408,57 @@ function App() {
           clearInterval(recordingTimerRef.current)
           recordingTimerRef.current = null
         }
+        isRecordingRef.current = false
         setIsRecordingVoice(false)
         setRecordingTime(0)
         currentRecordingTimeRef.current = 0
         recordingStartTimeRef.current = 0
+        // cleanup live visualizer
+        if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+        if (analyserRef.current) analyserRef.current = null
+        if (audioContextRef.current) { try { audioContextRef.current.close() } catch {}; audioContextRef.current = null }
+        setRecordingLevels([4,7,5,9,3,8,4,6,5,7])
       }
 
       mediaRecorder.start()
+      isRecordingRef.current = true
       setIsRecordingVoice(true)
       setRecordingTime(0)
       currentRecordingTimeRef.current = 0
       recordingStartTimeRef.current = Date.now()
       setPendingVoice(null)
       try { triggerHaptic('medium') } catch {}
+
+      // === PREMIUM LIVE VISUALIZER (real mic levels via WebAudio) ===
+      try {
+        const AudioCtx = (window.AudioContext || (window as any).webkitAudioContext)
+        const audioCtx = new AudioCtx()
+        const source = audioCtx.createMediaStreamSource(stream)
+        const analyser = audioCtx.createAnalyser()
+        analyser.fftSize = 64
+        analyser.minDecibels = -80
+        analyser.maxDecibels = -10
+        analyser.smoothingTimeConstant = 0.75
+        source.connect(analyser)
+        audioContextRef.current = audioCtx
+        analyserRef.current = analyser
+
+        const buffer = new Uint8Array(analyser.frequencyBinCount)
+        const updateLiveWave = () => {
+          if (!analyserRef.current || !isRecordingRef.current) return
+          analyserRef.current.getByteFrequencyData(buffer)
+          const levels = Array.from({ length: 10 }, (_, i) => {
+            const v = buffer[i * 2] || 20
+            return Math.max(3, Math.min(16, Math.floor(3 + (v / 255) * 13)))
+          })
+          setRecordingLevels(levels)
+          rafRef.current = requestAnimationFrame(updateLiveWave)
+        }
+        rafRef.current = requestAnimationFrame(updateLiveWave)
+      } catch (e) {
+        // graceful fallback static-ish bars
+        setRecordingLevels([5,8,4,11,6,9,5,7,4,10])
+      }
 
       // timer
       recordingTimerRef.current = setInterval(() => {
@@ -441,7 +479,7 @@ function App() {
         })
       }, 1000)
 
-      toast('🎙️ Grabando nota de voz', { description: 'Habla claro. Máx 60s. Toca detener para enviar.' })
+      toast('🎙️ Grabando nota de voz', { description: 'Transmite tu energía. Máx 60s. Detén para preview y enviar al Círculo.' })
     } catch (err) {
       console.error('Mic error', err)
       toast.error('No se pudo acceder al micrófono', { description: 'Revisa permisos del navegador o app.' })
@@ -457,7 +495,7 @@ function App() {
       recordingTimerRef.current = null
     }
     try { triggerHaptic('light') } catch {}
-    // reset happens in onstop
+    // reset happens in onstop (also cleans visualizer)
   }
 
   const cancelVoiceRecording = () => {
@@ -468,6 +506,11 @@ function App() {
       clearInterval(recordingTimerRef.current)
       recordingTimerRef.current = null
     }
+    isRecordingRef.current = false
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+    if (analyserRef.current) analyserRef.current = null
+    if (audioContextRef.current) { try { audioContextRef.current.close() } catch {}; audioContextRef.current = null }
+    setRecordingLevels([4,7,5,9,3,8,4,6,5,7])
     setIsRecordingVoice(false)
     setRecordingTime(0)
     currentRecordingTimeRef.current = 0
@@ -477,6 +520,7 @@ function App() {
       voicePreviewUrlRef.current = null
     }
     setPendingVoice(null)
+    try { triggerHaptic('light') } catch {}
   }
 
   const sendVoiceNote = async (chatId: string, isGroup = false) => {
@@ -539,21 +583,23 @@ function App() {
       setIsUploadingVoice(false)
       setVoiceUploadProgress(0)
       try { triggerHaptic('success') } catch {}
-      toast.success('Nota de voz enviada', { description: `${duration}s • compártela con tu red de rendimiento` })
-      // Daily Pulse progress (voice is powerful for bond/ripple challenges)
-      // Use ref for latest value to be robust with early function definition + state hoisting
+      // Voice streak update (before toast so accurate)
       checkAndUpdateDailyPulse()
       const dp = dailyPulseRef.current || dailyPulse || {}
+      const vStreak = (dp.voiceStreak || 0) + 1
+      const vUpdate = { ...dp, voiceStreak: vStreak, longestVoice: Math.max((dp.longestVoice || 0), vStreak) }
+      setDailyPulse(vUpdate)
+      saveUserWithRealSync({ ...(currentUser as any), dailyVoiceStreak: vStreak } as any)
+      // Premium toast celebrating the ritual voice + streak
+      toast.success('Energía transmitida al Círculo', { 
+        description: `${duration}s • Voice Streak ahora ${vStreak}d 🔥  +5 Momentum al Pulso` 
+      })
+      // Daily Pulse progress (voice is powerful for bond/ripple challenges)
       if (dp.currentChallenge?.type === 'bond' || dp.currentChallenge?.type === 'network') {
         completeDailyChallenge(1)
       } else {
         awardMomentum(5, 'Voz enviada al Pulso')
       }
-      // Voice streak for daily engagement
-      const vStreak = (dp.voiceStreak || 0) + 1
-      const vUpdate = { ...dp, voiceStreak: vStreak, longestVoice: Math.max((dp.longestVoice || 0), vStreak) }
-      setDailyPulse(vUpdate)
-      saveUserWithRealSync({ ...(currentUser as any), dailyVoiceStreak: vStreak } as any)
     } catch (e) {
       console.error('Send voice error', e)
       const isReal = !isDemoMode
@@ -738,7 +784,7 @@ function App() {
         id: 'voice-weak-' + seed,
         type: 'bond',
         title: 'Misión: Voz a Bond Débil',
-        description: bondCount > 0 ? 'Envía una nota de voz motivadora a un socio de Red con menor interacción reciente.' : 'Envía tu primera voz a la Red.',
+        description: bondCount > 0 ? 'Transmite una nota de voz del Ritual a un socio de Red con menor interacción reciente.' : 'Envía tu primera nota de voz al Círculo y activa tu Voice Streak.',
         target: 1,
         progress: 0,
         reward: 35,
@@ -1224,8 +1270,28 @@ function App() {
   const currentRecordingTimeRef = useRef(0)
   const recordingStartTimeRef = useRef(0)
 
+  // Cleanup voice player + analyser on unmount / major navigation (prevents leaks + background audio)
+  useEffect(() => {
+    return () => {
+      isRecordingRef.current = false
+      if (currentAudioRef.current) { try { currentAudioRef.current.pause() } catch {}; currentAudioRef.current = null }
+      if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null }
+      if (audioContextRef.current) { try { audioContextRef.current.close() } catch {}; audioContextRef.current = null }
+      if (recordingTimerRef.current) { clearInterval(recordingTimerRef.current); recordingTimerRef.current = null }
+    }
+  }, [])
+
   // For attractive voice message playback animation
   const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null)
+
+  // Live visualizer for PREMIUM recording UX (real mic levels) + synced playback progress
+  const [recordingLevels, setRecordingLevels] = useState<number[]>([4,7,5,9,3,8,4,6,5,7])
+  const [voicePlayProgress, setVoicePlayProgress] = useState(0)
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const analyserRef = useRef<AnalyserNode | null>(null)
+  const rafRef = useRef<number | null>(null)
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null)
+  const isRecordingRef = useRef(false)
 
   // Squads feature (fixed small training groups)
   const [squads, setSquads] = useState<Squad[]>([])
@@ -8105,32 +8171,59 @@ function App() {
                               <div className={`voice-bubble ${isMe ? 'sent' : 'received'}`}>
                                 <button 
                                   onClick={() => {
+                                    try { triggerHaptic(playingVoiceId === m.id ? 'light' : 'medium') } catch {}
                                     if (playingVoiceId === m.id) {
-                                      setPlayingVoiceId(null);
+                                      // PAUSE current
+                                      if (currentAudioRef.current) {
+                                        currentAudioRef.current.pause()
+                                        currentAudioRef.current = null
+                                      }
+                                      setPlayingVoiceId(null)
+                                      setVoicePlayProgress(0)
                                     } else {
-                                      setPlayingVoiceId(m.id);
-                                      const dur = m.voiceDuration || 5;
-                                      const audio = new Audio(m.voiceUrl);
-                                      audio.onended = () => { setPlayingVoiceId(null); };
-                                      audio.play().catch((e) => { console.warn('audio play error', e); setPlayingVoiceId(null); });
-                                      // safety timeout
-                                      setTimeout(() => setPlayingVoiceId(null), dur * 1000 + 280);
+                                      // stop any previous
+                                      if (currentAudioRef.current) {
+                                        currentAudioRef.current.pause()
+                                        currentAudioRef.current = null
+                                      }
+                                      setPlayingVoiceId(m.id)
+                                      setVoicePlayProgress(0)
+                                      const audio = new Audio(m.voiceUrl)
+                                      currentAudioRef.current = audio
+                                      const dur = m.voiceDuration || 5
+                                      audio.onended = () => { 
+                                        setPlayingVoiceId(null); 
+                                        setVoicePlayProgress(0); 
+                                        currentAudioRef.current = null 
+                                      }
+                                      audio.ontimeupdate = () => {
+                                        if (audio.duration > 0) {
+                                          setVoicePlayProgress(Math.min(100, (audio.currentTime / audio.duration) * 100))
+                                        }
+                                      }
+                                      audio.play().catch((e) => { console.warn('audio play error', e); setPlayingVoiceId(null); setVoicePlayProgress(0); currentAudioRef.current = null })
+                                      // safety
+                                      setTimeout(() => {
+                                        if (playingVoiceId === m.id && currentAudioRef.current === audio) {
+                                          // will be cleared by onend anyway
+                                        }
+                                      }, dur * 1000 + 400)
                                     }
                                   }}
                                   className={`voice-play-btn ${playingVoiceId === m.id ? 'playing' : ''}`}
-                                  title="Reproducir nota de voz"
+                                  title={playingVoiceId === m.id ? "Pausar nota de voz" : "Reproducir nota de voz del Círculo"}
                                 >
-                                  {playingVoiceId === m.id ? '⏸' : '▶️'}
+                                  {playingVoiceId === m.id ? <Pause size={15} /> : <Play size={15} />}
                                 </button>
                                 <div className="voice-wave-container">
                                   <div className={`voice-wave ${playingVoiceId === m.id ? 'playing' : ''}`}>
-                                    {[3,5,7,4,8,5,6,3,7,4,5].map((h, idx) => (
+                                    {[4,6,3,8,5,9,4,7,3,6,5,8].map((h, idx) => (
                                       <div 
                                         key={idx} 
                                         className="voice-bar" 
                                         style={{ 
-                                          height: `${h * 1.35}px`, 
-                                          animationDelay: `${(idx % 6) * -180}ms` 
+                                          height: `${h * 1.6}px`, 
+                                          animationDelay: `${(idx % 7) * -140}ms` 
                                         }} 
                                       />
                                     ))}
@@ -8138,7 +8231,7 @@ function App() {
                                   {playingVoiceId === m.id && (
                                     <div 
                                       className="voice-progress" 
-                                      style={{ width: '100%', animation: `voice-progress ${m.voiceDuration || 5}s linear forwards` }} 
+                                      style={{ width: `${voicePlayProgress}%`, transition: 'width 80ms linear' }} 
                                     />
                                   )}
                                 </div>
@@ -8202,27 +8295,54 @@ function App() {
                       ))}
                     </div>
                   )}
-                  {/* Voice preview / uploading state — lifted above form for clean, consistent layout (cuadrado) */}
+                  {/* Voice preview / uploading state — PREMIUM "energía lista para el Círculo" card */}
                   {pendingVoice && !isUploadingVoice && (
-                    <div className="voice-preview mb-2">
+                    <div className="voice-preview mb-2 ring-1 ring-[#FF671F]/30">
                       <button 
-                        onClick={() => { const a = new Audio(pendingVoice.url); a.play().catch(()=>{}); }}
-                        className="w-9 h-9 rounded-full bg-[#FF671F]/15 flex items-center justify-center text-[#FF671F] active:bg-[#FF671F]/30 text-lg flex-shrink-0"
-                        title="Escuchar antes de enviar"
+                        onClick={() => { 
+                          try { triggerHaptic('medium') } catch {}
+                          const a = new Audio(pendingVoice.url); 
+                          a.play().catch(()=>{}); 
+                        }}
+                        className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center text-black active:scale-90 shadow flex-shrink-0"
+                        title="Escuchar preview de tu energía"
                       >
-                        ▶️
+                        <Play size={18} />
                       </button>
-                      <div className="voice-wave-container" style={{height:'16px'}}>
+                      <div className="voice-wave-container" style={{height:'18px'}}>
                         <div className="voice-wave">
-                          {[3,5,4,7,3,6,4,5].map((h,i) => <div key={i} className="voice-bar" style={{height: h}} />)}
+                          {[5,8,4,10,6,9,5,7,4,8].map((h,i) => <div key={i} className="voice-bar" style={{height: `${h}px`, background: 'linear-gradient(#FF671F, #FDBA74)'}} />)}
                         </div>
                       </div>
                       <div className="meta">
-                        <div className="title">🎙️ Nota de voz lista para enviar</div>
-                        <div className="sub">{pendingVoice.duration}s • energía para tu red</div>
+                        <div className="title">🎙️ NOTA DE VOZ DEL RITUAL LISTA</div>
+                        <div className="sub">{pendingVoice.duration}s • +1 Voice Streak al enviar • energía para el Pulso</div>
                       </div>
-                      <div className="actions">
-                        <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-[10px] px-2 py-1 text-red-400 hover:text-red-500 border border-red-400/30 rounded active:bg-red-500/10" title="Cancelar nota de voz">Cancelar</button>
+                      <div className="actions flex-col gap-1 items-end">
+                        <button 
+                          onClick={() => { 
+                            if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); 
+                            voicePreviewUrlRef.current = null; 
+                            setPendingVoice(null) 
+                          }} 
+                          className="text-[9px] px-2 py-0.5 text-red-400 hover:text-red-500 border border-red-400/40 rounded active:bg-red-500/10 flex items-center gap-0.5" 
+                          title="Descartar"
+                        >
+                          <X size={11}/> Cancelar
+                        </button>
+                        <button 
+                          onClick={() => { 
+                            if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); 
+                            voicePreviewUrlRef.current = null; 
+                            setPendingVoice(null); 
+                            // re-record immediately
+                            setTimeout(() => startVoiceRecording(), 60) 
+                          }} 
+                          className="text-[9px] px-2 py-0.5 text-[#EAB308] hover:text-[#FCD34D] border border-[#EAB308]/40 rounded active:bg-[#EAB308]/10 flex items-center gap-0.5" 
+                          title="Grabar otra"
+                        >
+                          <RotateCcw size={11}/> Re-grabar
+                        </button>
                         <button 
                           type="button"
                           onClick={() => {
@@ -8230,16 +8350,16 @@ function App() {
                               sendVoiceNote(activeChat, false)
                             }
                           }}
-                          className="text-[11px] px-4 py-1.5 bg-[#FF671F] text-black rounded-2xl font-extrabold active:bg-[#E55A1A] shadow flex items-center gap-1"
+                          className="text-[11px] px-5 py-1.5 bg-[#FF671F] text-black rounded-2xl font-extrabold active:bg-[#E55A1A] shadow flex items-center gap-1.5 active:scale-[0.985]"
                         >
-                          ENVIAR VOZ <Send size={14} />
+                          ENVIAR AL CÍRCULO <Send size={14} />
                         </button>
                       </div>
                     </div>
                   )}
                   {isUploadingVoice && (
                     <div className="voice-uploading mb-2">
-                      <div className="label">Enviando nota de voz</div>
+                      <div className="label">TRANSMITIENDO TU ENERGÍA AL PULSO...</div>
                       <div className="progress-track">
                         <div className="progress-fill" style={{ width: `${voiceUploadProgress || 10}%` }} />
                       </div>
@@ -8264,31 +8384,37 @@ function App() {
                     }
                     input.value = '' 
                   }} className="flex gap-2 items-center">
-                    <input type="text" placeholder={pendingVoice ? "Nota de voz adjunta - presiona enviar" : "Escribe un mensaje o graba voz..."} className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none" />
+                    <input type="text" placeholder={pendingVoice ? "Nota de voz del Ritual adjunta — presiona ENVIAR" : "Mensaje o nota de voz al Círculo..."} className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none" />
                     
-                    {/* Attractive voice recording for 1:1 */}
+                    {/* PREMIUM voice recording control for 1:1 — live waveform when active */}
                     {isRecordingVoice ? (
-                      <div className="voice-recording">
+                      <div className="voice-recording" style={{minWidth: 148}}>
                         <div className="dot" />
-                        <span className="text-red-400 text-[10px] font-bold tracking-wide">GRABANDO</span>
-                        <span className="timer">{recordingTime}s<span className="opacity-60">/60</span></span>
-                        <div className="flex gap-0.5 items-end h-[13px] ml-0.5">
-                          {[3,5,4,7,3,6,4].map((h,i) => <div key={i} className="w-[2px] bg-red-400 rounded" style={{height: h}} />)}
+                        <div>
+                          <div className="text-red-400 text-[9px] font-bold tracking-[1px]">GRABANDO EN VIVO</div>
+                          <span className="timer">{recordingTime}s <span className="opacity-60">/60</span></span>
                         </div>
-                        <button onClick={stopVoiceRecording} className="ml-1 px-2.5 py-px text-[10px] bg-red-500 text-white rounded-full active:bg-red-600 font-semibold">PARAR</button>
+                        {/* LIVE DANCING BARS from real analyser */}
+                        <div className="flex gap-[1.5px] items-end h-[17px] mx-0.5 px-0.5 bg-black/30 rounded">
+                          {recordingLevels.map((h, i) => (
+                            <div key={i} className="w-[2.5px] bg-red-400 rounded transition-all duration-75" style={{height: `${h}px`}} />
+                          ))}
+                        </div>
+                        <button onClick={stopVoiceRecording} className="ml-1 px-3 py-px text-[10px] bg-red-600 text-white rounded-full active:bg-red-700 font-extrabold shadow">DETENER</button>
+                        <button onClick={cancelVoiceRecording} className="ml-0.5 text-red-400/80 hover:text-red-400 px-1 text-lg leading-none" title="Cancelar grabación">×</button>
                       </div>
                     ) : (
                       <button 
                         type="button"
                         onClick={startVoiceRecording}
-                        className="w-10 h-10 rounded-3xl flex items-center justify-center transition active:scale-95 bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A]"
-                        title="Grabar nota de voz"
+                        className="w-11 h-11 rounded-3xl flex items-center justify-center transition active:scale-95 bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A] hover:border-[#FF671F]/50"
+                        title="Grabar nota de voz — transmite tu energía al Pulso"
                       >
-                        🎙️
+                        <Mic size={19} />
                       </button>
                     )}
 
-                    <button type="submit" disabled={!chatInputValue.trim() && !pendingVoice} title={pendingVoice ? 'Enviar la nota de voz grabada' : 'Enviar mensaje'} className={`${pendingVoice ? 'bg-[#22c55e] text-black' : 'bg-[#FF671F]'} disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black w-12 rounded-3xl flex items-center justify-center active:scale-95 transition`}><Send size={18} /></button>
+                    <button type="submit" disabled={!chatInputValue.trim() && !pendingVoice} title={pendingVoice ? 'Enviar la nota de voz grabada al Círculo' : 'Enviar mensaje'} className={`${pendingVoice ? 'bg-[#22c55e] text-black' : 'bg-[#FF671F]'} disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black w-12 rounded-3xl flex items-center justify-center active:scale-95 transition`}><Send size={18} /></button>
                   </form>
                   <div className="text-center text-[10px] text-[#6B7280] mt-2">
                     {!isDemoMode 
@@ -8425,13 +8551,6 @@ function App() {
               >
                 <Edit2 size={13} /> REMASTERIZAR MI RITUAL
               </button>
-                  <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 rounded-2xl bg-[#22c55e] text-black text-xs font-extrabold tracking-wider shadow-[0_0_20px_rgba(34,197,94,0.6)]">
-                    🔥 ENTRENANDO AHORA • {currentUser.liveStreak ? `${currentUser.liveStreak}d streak` : 'EN VIVO'} 
-                    <span className="w-2 h-2 bg-black rounded-full animate-pulse" />
-                  </div>
-                )}
-              </div>
-
             </div>
 
             {/* GALERÍA DE LEYENDAS - Remastered attractive curation. Unique visual for profile creation/editing */}
@@ -8768,9 +8887,9 @@ function App() {
                       <div className="text-lg font-black text-[#FF671F] flex items-center justify-center gap-0.5">🔗{dailyPulse.synergyStreak}</div>
                       <div className="text-[8px] text-[#9CA3AF] font-medium">Synergy</div>
                     </div>
-                    <div className="flex-1 bg-black/40 rounded-2xl p-2 text-center border border-[#EAB308]/20">
+                    <div className="flex-1 bg-black/40 rounded-2xl p-2 text-center border border-[#EAB308]/30 ring-1 ring-inset ring-[#EAB308]/10">
                       <div className="text-lg font-black text-[#EAB308] flex items-center justify-center gap-0.5">🎙️{dailyPulse.voiceStreak || 0}</div>
-                      <div className="text-[8px] text-[#9CA3AF] font-medium">Voice</div>
+                      <div className="text-[8px] text-[#EAB308]/90 font-medium tracking-wide">VOICE RITUAL</div>
                     </div>
                     <div className="flex-1 bg-black/40 rounded-2xl p-2 text-center border border-[#06B6D4]/20">
                       <div className="text-lg font-black text-[#06B6D4] flex items-center justify-center gap-0.5">🗺️{dailyPulse.pulseStreak || 0}</div>
@@ -11952,30 +12071,48 @@ function App() {
                                   <div className={`voice-bubble mt-1 ${isMe ? 'sent' : 'received'}`}>
                                     <button 
                                       onClick={() => {
+                                        try { triggerHaptic(playingVoiceId === msg.id ? 'light' : 'medium') } catch {}
                                         if (playingVoiceId === msg.id) {
-                                          setPlayingVoiceId(null);
+                                          if (currentAudioRef.current) {
+                                            currentAudioRef.current.pause()
+                                            currentAudioRef.current = null
+                                          }
+                                          setPlayingVoiceId(null)
+                                          setVoicePlayProgress(0)
                                         } else {
-                                          setPlayingVoiceId(msg.id);
-                                          const dur = msg.voiceDuration || 5;
-                                          const audio = new Audio(msg.voiceUrl);
-                                          audio.onended = () => setPlayingVoiceId(null);
-                                          audio.play().catch((e) => { console.warn('audio play error', e); setPlayingVoiceId(null); });
-                                          setTimeout(() => setPlayingVoiceId(null), dur * 1000 + 280);
+                                          if (currentAudioRef.current) {
+                                            currentAudioRef.current.pause()
+                                            currentAudioRef.current = null
+                                          }
+                                          setPlayingVoiceId(msg.id)
+                                          setVoicePlayProgress(0)
+                                          const audio = new Audio(msg.voiceUrl)
+                                          currentAudioRef.current = audio
+                                          const dur = msg.voiceDuration || 5
+                                          audio.onended = () => { 
+                                            setPlayingVoiceId(null); 
+                                            setVoicePlayProgress(0); 
+                                            currentAudioRef.current = null 
+                                          }
+                                          audio.ontimeupdate = () => {
+                                            if (audio.duration > 0) setVoicePlayProgress(Math.min(100, (audio.currentTime / audio.duration) * 100))
+                                          }
+                                          audio.play().catch((e) => { console.warn('audio play error', e); setPlayingVoiceId(null); setVoicePlayProgress(0); currentAudioRef.current = null })
                                         }
                                       }}
                                       className={`voice-play-btn ${playingVoiceId === msg.id ? 'playing' : ''}`}
-                                      title="Reproducir nota de voz"
+                                      title={playingVoiceId === msg.id ? "Pausar nota de voz" : "Reproducir nota de voz del Círculo"}
                                     >
-                                      {playingVoiceId === msg.id ? '⏸' : '▶️'}
+                                      {playingVoiceId === msg.id ? <Pause size={15} /> : <Play size={15} />}
                                     </button>
                                     <div className="voice-wave-container">
                                       <div className={`voice-wave ${playingVoiceId === msg.id ? 'playing' : ''}`}>
-                                        {[3,5,7,4,8,5,6,3,7,4,5].map((h, idx) => (
-                                          <div key={idx} className="voice-bar" style={{ height: `${h * 1.35}px`, animationDelay: `${(idx % 6) * -180}ms` }} />
+                                        {[4,6,3,8,5,9,4,7,3,6,5,8].map((h, idx) => (
+                                          <div key={idx} className="voice-bar" style={{ height: `${h * 1.6}px`, animationDelay: `${(idx % 7) * -140}ms` }} />
                                         ))}
                                       </div>
                                       {playingVoiceId === msg.id && (
-                                        <div className="voice-progress" style={{ width: '100%', animation: `voice-progress ${msg.voiceDuration || 5}s linear forwards` }} />
+                                        <div className="voice-progress" style={{ width: `${voicePlayProgress}%`, transition: 'width 80ms linear' }} />
                                       )}
                                     </div>
                                     <span className="voice-duration">🎙️ {msg.voiceDuration || '?'}s</span>
@@ -12045,34 +12182,60 @@ function App() {
                       </div>
                     )}
                     {pendingVoice && !isUploadingVoice && (
-                      <div className="voice-preview mb-2">
+                      <div className="voice-preview mb-2 ring-1 ring-[#FF671F]/30">
                         <button 
-                          onClick={() => { const a = new Audio(pendingVoice.url); a.play().catch(()=>{}); }}
-                          className="w-9 h-9 rounded-full bg-[#FF671F]/15 flex items-center justify-center text-[#FF671F] active:bg-[#FF671F]/30 text-lg flex-shrink-0"
-                          title="Escuchar antes de enviar al grupo"
+                          onClick={() => { 
+                            try { triggerHaptic('medium') } catch {}
+                            const a = new Audio(pendingVoice.url); 
+                            a.play().catch(()=>{}); 
+                          }}
+                          className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center text-black active:scale-90 shadow flex-shrink-0"
+                          title="Escuchar preview de tu energía para el squad"
                         >
-                          ▶️
+                          <Play size={18} />
                         </button>
-                        <div className="voice-wave-container" style={{height:'16px'}}>
+                        <div className="voice-wave-container" style={{height:'18px'}}>
                           <div className="voice-wave">
-                            {[3,5,4,7,3,6,4,5].map((h,i) => <div key={i} className="voice-bar" style={{height: h}} />)}
+                            {[5,8,4,10,6,9,5,7,4,8].map((h,i) => <div key={i} className="voice-bar" style={{height: `${h}px`, background: 'linear-gradient(#FF671F, #FDBA74)'}} />)}
                           </div>
                         </div>
                         <div className="meta">
-                          <div className="title">🎙️ Nota de voz lista para enviar al grupo</div>
-                          <div className="sub">{pendingVoice.duration}s de energía para tu red</div>
+                          <div className="title">🎙️ NOTA DE VOZ DEL RITUAL LISTA</div>
+                          <div className="sub">{pendingVoice.duration}s • +1 Voice Streak • para todo el squad</div>
                         </div>
-                        <div className="actions">
-                          <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-[10px] px-2 py-1 text-red-400 hover:text-red-500 border border-red-400/30 rounded active:bg-red-500/10" title="Cancelar nota de voz">Cancelar</button>
+                        <div className="actions flex-col gap-1 items-end">
+                          <button 
+                            onClick={() => { 
+                              if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); 
+                              voicePreviewUrlRef.current = null; 
+                              setPendingVoice(null) 
+                            }} 
+                            className="text-[9px] px-2 py-0.5 text-red-400 hover:text-red-500 border border-red-400/40 rounded active:bg-red-500/10 flex items-center gap-0.5" 
+                            title="Descartar"
+                          >
+                            <X size={11}/> Cancelar
+                          </button>
+                          <button 
+                            onClick={() => { 
+                              if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); 
+                              voicePreviewUrlRef.current = null; 
+                              setPendingVoice(null); 
+                              setTimeout(() => startVoiceRecording(), 60) 
+                            }} 
+                            className="text-[9px] px-2 py-0.5 text-[#EAB308] hover:text-[#FCD34D] border border-[#EAB308]/40 rounded active:bg-[#EAB308]/10 flex items-center gap-0.5" 
+                            title="Grabar otra"
+                          >
+                            <RotateCcw size={11}/> Re-grabar
+                          </button>
                           <button 
                             onClick={() => {
                               if (showGroupChatModalFor && pendingVoice) {
                                 sendVoiceNote(showGroupChatModalFor, true)
                               }
                             }}
-                            className="text-[11px] px-4 py-1.5 bg-[#FF671F] text-black rounded-2xl font-extrabold active:bg-[#E55A1A] shadow flex items-center gap-1"
+                            className="text-[11px] px-5 py-1.5 bg-[#FF671F] text-black rounded-2xl font-extrabold active:bg-[#E55A1A] shadow flex items-center gap-1.5 active:scale-[0.985]"
                           >
-                            ENVIAR VOZ <Send size={14} />
+                            ENVIAR AL SQUAD <Send size={14} />
                           </button>
                         </div>
                       </div>
@@ -12114,7 +12277,7 @@ function App() {
                         type="text" 
                         value={chatInputValue}
                         onChange={(e) => setChatInputValue(e.target.value)}
-                        placeholder={pendingVoice ? "Nota de voz adjunta - presiona enviar al grupo" : "Mensaje al grupo..."}
+                        placeholder={pendingVoice ? "Nota de voz del Ritual adjunta — ENVIAR AL SQUAD" : "Mensaje o voz para el squad..."}
                         enterKeyHint="send"
                         className="flex-1 bg-[#0D0D10] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none placeholder:text-[#9CA3AF] min-w-0 focus:border-[#FF671F]/50" 
                       />
@@ -12130,29 +12293,35 @@ function App() {
                         }} />
                       </label>
 
-                      {/* Attractive recording state for group — epic voice to the squad */}
+                      {/* PREMIUM live recording for squad — real waveform + clear actions */}
                       {isRecordingVoice ? (
-                        <div className="voice-recording">
+                        <div className="voice-recording" style={{minWidth: 152}}>
                           <div className="dot" />
-                          <span className="text-red-400 text-[10px] font-bold tracking-wide">GRABANDO</span>
-                          <span className="timer">{recordingTime}s<span className="opacity-60">/60</span></span>
-                          <div className="flex gap-0.5 items-end h-[13px] ml-0.5">
-                            {[3,5,4,7,3,6].map((h,i) => <div key={i} className="w-[2px] bg-red-400 rounded" style={{height: h}} />)}
+                          <div>
+                            <div className="text-red-400 text-[9px] font-bold tracking-[1px]">GRABANDO EN VIVO</div>
+                            <span className="timer">{recordingTime}s <span className="opacity-60">/60</span></span>
                           </div>
-                          <button onClick={stopVoiceRecording} className="ml-1 px-2 py-px text-[10px] bg-red-500 text-white rounded-full font-semibold active:bg-red-600">PARAR</button>
+                          {/* LIVE bars synced to mic */}
+                          <div className="flex gap-[1.5px] items-end h-[17px] mx-0.5 px-0.5 bg-black/30 rounded">
+                            {recordingLevels.map((h, i) => (
+                              <div key={i} className="w-[2.5px] bg-red-400 rounded transition-all duration-75" style={{height: `${h}px`}} />
+                            ))}
+                          </div>
+                          <button onClick={stopVoiceRecording} className="ml-1 px-3 py-px text-[10px] bg-red-600 text-white rounded-full active:bg-red-700 font-extrabold shadow">DETENER</button>
+                          <button onClick={cancelVoiceRecording} className="ml-0.5 text-red-400/80 hover:text-red-400 px-1 text-lg leading-none" title="Cancelar grabación">×</button>
                         </div>
                       ) : (
                         <button 
                           type="button"
                           onClick={startVoiceRecording}
-                          className="w-11 h-11 rounded-3xl flex items-center justify-center transition active:scale-95 bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A]"
-                          title="Grabar nota de voz para el grupo"
+                          className="w-11 h-11 rounded-3xl flex items-center justify-center transition active:scale-95 bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A] hover:border-[#FF671F]/50"
+                          title="Grabar nota de voz para el squad — energía compartida"
                         >
-                          🎙️
+                          <Mic size={19} />
                         </button>
                       )}
 
-                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto && !pendingVoice} title={pendingVoice ? 'Enviar la nota de voz grabada al grupo' : 'Enviar mensaje'} className={`${pendingVoice ? 'bg-[#22c55e] text-black' : 'bg-[#FF671F]'} disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black px-3 rounded-3xl font-semibold h-11 w-11 flex items-center justify-center active:scale-95 transition`} aria-label="Enviar">
+                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto && !pendingVoice} title={pendingVoice ? 'Enviar la nota de voz grabada al squad' : 'Enviar mensaje'} className={`${pendingVoice ? 'bg-[#22c55e] text-black' : 'bg-[#FF671F]'} disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black px-3 rounded-3xl font-semibold h-11 w-11 flex items-center justify-center active:scale-95 transition`} aria-label="Enviar">
                         <Send size={18} />
                       </button>
                     </form>

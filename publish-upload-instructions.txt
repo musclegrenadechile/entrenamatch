@@ -1,4 +1,46 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.61-voice-send-visible-fix code 65) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.63-voice-premium-polish-waveforms-preview code 67) ===
+
+PULIDO COMPLETO Y MEJORA TOTAL de las NOTAS DE VOZ (por "hay que pulir más lo de las nota de voz hay que mejorar todo ello"):
+
+- Recording: Live real-time waveform visualizer usando WebAudio AnalyserNode + getByteFrequencyData + raf (10 bars dancing synced al mic real, no fake estáticos). Timer + "GRABANDO EN VIVO" + bars rojos en pill premium glass. DETENER (para preview) + × cancelar. Haptic medium al start, light al stop. Toast ritual: "Transmite tu energía. Máx 60s. Detén para preview y enviar al Círculo."
+
+- Pending preview (1:1 y group): Card premium glassmorphism con borde 2px brand + ring, left accent gradient gold/orange. Play button grande con gradiente naranja (usa <Play/> lucide). Wave estática pero atractiva con gradiente. Meta: "🎙️ NOTA DE VOZ DEL RITUAL LISTA" + " +1 Voice Streak al enviar • energía para el Pulso/squad". Actions: Cancelar (rojo), Re-grabar (RotateCcw gold, cancela + startVoiceRecording), ENVIAR AL CÍRCULO / AL SQUAD (big, bold, active:scale). 
+
+- Playback bubbles (ambos chats): Denser wave (12 bars variados), icons lucide <Play size=15/> / <Pause/>. Soporte real pause/resume (no solo toggle new audio). Progreso real synced via audio.ontimeupdate + voicePlayProgress state (width controlado, no anim CSS fake de duración). Haptic en play/pause. Title "Reproducir nota de voz del Círculo". Limpieza de audio ref en end/unmount.
+
+- Send flow frictionless + premium: Main send button verde cuando pendingVoice (ya antes, reforzado). Form submit también envía la voz. Upload progress "TRANSMITIENDO TU ENERGÍA AL PULSO..." con label épico. En success: toast "Energía transmitida al Círculo" + "Voice Streak ahora Xd 🔥 +5 Momentum". Actualiza dailyPulse + voiceStreak + save real + check challenge.
+
+- 1:1 + group full parity: Mismo preview, mismo recording pill live bars, mismos textos ritual ("al Círculo", "al squad"), mismos botones, mismos placeholders dinámicos. Mismo código de play.
+
+- Visual + micro + retention: CSS renovado (glass + shadows gold, denser dance keyframes, progress thicker, preview min-h+ring, recording con live bars transition). Mic icon lucide en vez de emoji. Voice streak "VOICE RITUAL" destacado en Pulso diario (borde ring). Misión voice-weak actualizada a "Transmite una nota de voz del Ritual". Todo integra con 5 mechanics + daily retention + ritual profile aesthetic.
+
+- Otros: Refs para analyser/raf/audio/isRecordingRef para live wave estable sin leaks. useEffect cleanup global. Sin TDZ (se mantuvo disciplina hoist + refs). 
+
+Rebuild limpio (tsc --noEmit + vite ✓ + full gradle bundleRelease SUCCESS). AAB nuevo v0.1.63 + EntrenaMatch-v0.1.63-voice-premium-polish-waveforms.aab + release.aab actualizado. Listo para device test en S26 Ultra + Play.
+
+(Continúa TODO lo anterior de onboarding 60-90s, profile ritual remaster, Pulso Diario, etc.)
+
+FULL REMASTER del sistema de creación de perfil (OnboardingFlow + mi perfil tab completo):
+
+OnboardingFlow ahora es premium, atractivo y único (nunca visto en fitness social):
+- Header épico con motion, "LA PRIMERA RED DEL RITUAL FITNESS".
+- Paso 0 (Presencia): Galería completa atractiva (hasta 6, principal badge, hacer principal, cámara/archivo como cards rituales bonitas, bio+mantra con sugerencias como ritual cards).
+- Paso 1 (Esencia): Grid de cards hermosas con emojis + descripciones para tipos de entrenamiento; propósitos como cards seleccionables con "TU FUEGO".
+- Paso 2 (Pulso): Aha completo épico con 01-04 en cards visuales, mock UI único de live banner + tether dorado, CTA dramático grande, "ASÍ SE VE EN EL MUNDO REAL".
+- Paso 3 (Votos): Tarjetas de votos solemnes bonitas con descripciones, panel final dramático + CTA.
+- Progress como camino ritual visual. Todo copy ritual/único/épico. Preview remasterizado con badge NP, mock pulso, overlays ricos.
+
+En tab Perfil (parte del sistema de creación/edición):
+- Hero ahora "MI RITUAL" épico con overlays ricos, mini-dashboard único "Tu Poder" (NP + Bonds + Fotos), CTA prominente "REMASTERIZAR MI RITUAL".
+- Galería de Leyendas con título único y framing de capital.
+- Sección "Tu Poder en la Red" premium (ya agregada).
+- Motivator mejorado previamente.
+
+Mantiene flujo rápido 4 pasos + uploads a Storage + multi-foto + haptics. La creación de perfil ahora se siente premium, única y legendaria, perfecta para la primera red donde bonds tienen peso, pulsos se ven y syncs se sienten en ambos.
+
+Rebuild limpio + AAB nuevo. tsc clean.
+
+(Continúa remaster de voz, profile anterior, TDZ fixes, etc.)
 
 Fix for voice notes in chat: after recording audio (stop recording), the option to send was not obvious or felt hidden/not visible.
 
