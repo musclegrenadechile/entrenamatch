@@ -1556,6 +1556,10 @@ function App() {
   const liveMapRef = useRef<HTMLDivElement>(null) // legacy - will be removed after full extraction
   const gymPulseMapRef = useRef<any>(null) // new extracted component ref (2026-06-05)
 
+  // Dev-only: temporary fake live users (for testing GymPulse markers, near counts, popups, ripples WITHOUT needing other real devices/accounts online).
+  // Only merged into the map prop (not global live lists or UI counts) and auto-expire or cleared by dev.
+  const [devTestLives, setDevTestLives] = useState<any[]>([])
+
   // Sync refs for listeners (prevents using stale uid/blocked in onSnapshot for live propagation)
   useEffect(() => { currentUidRef.current = firebaseUser?.uid || null }, [firebaseUser?.uid])
   useEffect(() => { blockedUsersRef.current = blockedUsers }, [blockedUsers])
@@ -1589,7 +1593,81 @@ function App() {
     setEditingPartnerId(null)
     setPartnerLogoFile(null)
     setPartnerLogoPreview(null)
+    setDevTestLives([]) // also clear any test lives on dev logout
+    setMapForceTick(t => t + 1)
     toast('Developer mode disabled')
+  }
+
+  // Dev superpowers for fast iteration on the live map without other users.
+  const addPartnerAtCurrentCenter = async () => {
+    if (!isDeveloper || !gymPulseMapRef.current) { toast.error('Mapa dev no listo'); return }
+    const center = gymPulseMapRef.current.getCenter?.()
+    if (!center) { toast.error('No se pudo obtener centro del mapa'); return }
+    const { lat, lng } = center
+    const pid = 'partner-' + Date.now()
+    const minimal: any = {
+      id: pid,
+      name: 'Partner @centro ' + new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }),
+      lat, lng,
+      type: 'gym',
+      address: 'Agregado rápido por dev (centro mapa)',
+      addedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    setPartnerLocations(prev => [...prev, minimal])
+    setMapForceTick(t => t + 1)
+    if (!isDemoMode && db) {
+      try {
+        const { setDoc, doc } = await import('firebase/firestore')
+        await setDoc(doc(db, 'partnerLocations', pid), minimal)
+      } catch (e) { console.warn('add@center fs', e) }
+    }
+    toast.success('Partner agregado en centro', { description: 'Abre Manage o Edit para logo/nombre' })
+    // auto open edit for convenience
+    setTimeout(() => startEditPartner(minimal), 80)
+  }
+
+  const reloadPartners = () => {
+    setMapForceTick(t => t + 1)
+    toast('Mapa y partners refrescados')
+  }
+
+  const spawnDevTestLives = (count = 3) => {
+    if (!isDeveloper || !userLocation) { toast.error('Necesitas GPS y modo dev'); return }
+    const fakes: any[] = []
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.5
+      const distKm = 0.3 + Math.random() * 2.2
+      const dLat = (distKm / 111) * Math.cos(angle)
+      const dLng = (distKm / (111 * Math.cos((userLocation.lat * Math.PI) / 180))) * Math.sin(angle)
+      fakes.push({
+        id: 'devtest-' + Date.now() + '-' + i,
+        name: `TestDev${i + 1}`,
+        lat: userLocation.lat + dLat,
+        lng: userLocation.lng + dLng,
+        trainingNow: true,
+        trainingNowSince: Date.now() - (i + 1) * 4 * 60 * 1000,
+        trainingTypes: ['Pesas/Gym', 'Running'],
+        level: i % 2 === 0 ? 'Avanzado' : 'Intermedio',
+        _devTest: true,
+        distance: distKm,
+        seVaEnMin: 25 + i * 5,
+      })
+    }
+    setDevTestLives(prev => [...prev.filter((p: any) => !p._devTest), ...fakes])
+    setMapForceTick(t => t + 1)
+    toast.success(`+${count} test lives cerca de ti`, { description: 'Solo para testing del GymPulse en este mapa. Expira en ~5min.' })
+    // auto-clean after ~5min
+    setTimeout(() => {
+      setDevTestLives(prev => prev.filter((p: any) => !p._devTest))
+      setMapForceTick(t => t + 1)
+    }, 5 * 60 * 1000)
+  }
+
+  const clearDevTestLives = () => {
+    setDevTestLives([])
+    setMapForceTick(t => t + 1)
+    toast('Vidas de test limpiadas')
   }
   const openDevLogin = () => {
     setShowDevLogin(true)
@@ -2048,6 +2126,14 @@ function App() {
 
     return lives;
   }, [realProfiles, userLocation, isDemoMode, profilePosts, currentUser, liveUsersFromDedicated]);
+
+  // Only for the map widget in dev mode: augment with temporary test lives so devs can test GymPulse visuals,
+  // near counts, popups, etc. without other real accounts being live. These do NOT pollute global liveTrainingNow used by lists/feeds/notifs.
+  const mapLiveTrainingNow = useMemo(() => {
+    if (!isDeveloper || devTestLives.length === 0) return liveTrainingNow;
+    // Tag fakes so they can be identified if needed; they are already filtered out of self etc in parent live calc.
+    return [...liveTrainingNow, ...devTestLives];
+  }, [liveTrainingNow, isDeveloper, devTestLives]);
 
   // For UI counts/banners ("X live cerca"), include self so when you are the only one live it doesn't show 0 and feel broken.
   // The actual liveTrainingNow list (passed to map/lists) still excludes self to avoid self-join etc.
@@ -7089,7 +7175,7 @@ function App() {
                   <GymPulseMap
                     ref={gymPulseMapRef}
                     showLiveMap={showLiveMap}
-                    liveTrainingNow={liveTrainingNow}
+                    liveTrainingNow={mapLiveTrainingNow}
                     ritualRipples={ritualRipples}
                     partnerLocations={partnerLocations}
                     echoPins={echoPins || []}
@@ -7104,6 +7190,7 @@ function App() {
                     isPlacingPartner={isPlacingPartner}
                     isQuickAddPartner={isQuickAddPartner}
                     selfIsLive={!!currentUser?.trainingNow}
+                    devTestCount={devTestLives.length}
 
                     // New control callbacks (widget now manages its own filter/legend/dev buttons)
                     onMapNearOnlyChange={setMapNearOnly}
@@ -7114,6 +7201,10 @@ function App() {
                     onOpenManagePartners={openManagePartners}
                     onToggleQuickAdd={(next) => { setIsQuickAddPartner(next); if (next) toast('Modo ADD RÁPIDO activado'); else toast('Modo add rápido OFF') }}
                     onLogoutDeveloper={logoutDeveloper}
+                    onAddPartnerAtCurrentCenter={addPartnerAtCurrentCenter}
+                    onReloadPartners={reloadPartners}
+                    onSpawnTestLives={spawnDevTestLives}
+                    onClearDevTestLives={clearDevTestLives}
 
                     onShowProfile={setShowFullProfile}
                     onStartSync={startSyncWith}

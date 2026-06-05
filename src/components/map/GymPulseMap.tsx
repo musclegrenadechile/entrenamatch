@@ -66,6 +66,11 @@ export interface GymPulseMapProps {
   onOpenManagePartners?: () => void
   onToggleQuickAdd?: (next: boolean) => void
   onLogoutDeveloper?: () => void
+  onAddPartnerAtCurrentCenter?: () => void
+  onReloadPartners?: () => void
+  onSpawnTestLives?: (count?: number) => void
+  onClearDevTestLives?: () => void
+  devTestCount?: number // for showing clear button only when there are active test lives
 
   // Callbacks
   onShowProfile?: (p: any) => void
@@ -618,7 +623,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   }, [
     showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone,
     ritualRipples, echoPins, showPartners, mapForceTick, partnerLocations.length,
-    showOnlyLegends, syncBonds, isDeveloper, selfIsLive, onShowProfile, onStartSync, onPartnerPositionSelected, onPartnerMoved, onPartnerDelete, onPartnerEdit, onForceTick, onRequestLocation, isQuickAddPartner
+    showOnlyLegends, syncBonds, isDeveloper, selfIsLive, onShowProfile, onStartSync, onPartnerPositionSelected, onPartnerMoved, onPartnerDelete, onPartnerEdit, onForceTick, onRequestLocation, isQuickAddPartner,
+    onAddPartnerAtCurrentCenter, onReloadPartners, onSpawnTestLives, onClearDevTestLives, devTestCount
   ])
 
   // Global window helpers for popups (quick bridge until we use React portals or better event system)
@@ -637,13 +643,22 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     ;(window as any).devEditPartner = (id: string) => {
       if (onPartnerEdit) onPartnerEdit(id)
     }
+    // Extra dev tools exposed for console / quick calls
+    ;(window as any).devAddAtCenter = () => onAddPartnerAtCurrentCenter && onAddPartnerAtCurrentCenter()
+    ;(window as any).devReloadPartners = () => onReloadPartners && onReloadPartners()
+    ;(window as any).devSpawnTestLives = (n = 3) => onSpawnTestLives && onSpawnTestLives(n)
+    ;(window as any).devClearTestLives = () => onClearDevTestLives && onClearDevTestLives()
     return () => {
       delete (window as any).startSyncFromMap
       delete (window as any).witnessEchoPin
       delete (window as any).devDeletePartner
       delete (window as any).devEditPartner
+      delete (window as any).devAddAtCenter
+      delete (window as any).devReloadPartners
+      delete (window as any).devSpawnTestLives
+      delete (window as any).devClearTestLives
     }
-  }, [onStartSync, onPartnerDelete, onPartnerEdit])
+  }, [onStartSync, onPartnerDelete, onPartnerEdit, onAddPartnerAtCurrentCenter, onReloadPartners, onSpawnTestLives, onClearDevTestLives])
 
   // Small local computation for the zone legend (self contained)
   const zoneLiveCounts = useMemo(() => {
@@ -802,6 +817,36 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           >
             {isQuickAddPartner ? '✕ Add rápido' : '+ Add rápido'}
           </button>
+          <button
+            onClick={() => onAddPartnerAtCurrentCenter && onAddPartnerAtCurrentCenter()}
+            className="absolute top-2 right-[260px] text-[8px] px-2 py-0.5 rounded-full bg-[#FFD700]/60 text-black font-bold border border-[#FFD700] active:scale-95 z-30"
+            title="Agregar partner directamente en el centro actual del mapa (rápido para devs)"
+          >
+            +@centro
+          </button>
+          <button
+            onClick={() => onReloadPartners && onReloadPartners()}
+            className="absolute top-9 right-2 text-[8px] px-2 py-0.5 rounded-full bg-black/70 text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black z-30"
+            title="Forzar refresh de partners y mapa"
+          >
+            ↻ Reload
+          </button>
+          <button
+            onClick={() => onSpawnTestLives && onSpawnTestLives(3)}
+            className="absolute top-9 right-16 text-[8px] px-2 py-0.5 rounded-full bg-purple-600/80 text-white font-bold border border-purple-400 active:scale-95 z-30"
+            title="Spawnea 3 vidas de test cerca de ti (solo visibles en este mapa para probar GymPulse sin otras cuentas)"
+          >
+            🧪 +3 lives
+          </button>
+          {isDeveloper && (devTestCount || 0) > 0 && (
+            <button
+              onClick={() => onClearDevTestLives && onClearDevTestLives()}
+              className="absolute top-9 right-28 text-[8px] px-2 py-0.5 rounded-full bg-red-900/70 text-red-200 border border-red-500/50 active:bg-red-800 z-30"
+              title="Quitar las vidas de test"
+            >
+              🧹 clear tests
+            </button>
+          )}
         </>
       )}
 
