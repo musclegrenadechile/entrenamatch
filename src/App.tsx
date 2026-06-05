@@ -7237,7 +7237,15 @@ function App() {
 
             {/* Photo gallery strip - drag to reorder (nativo), flechas fallback. Primera siempre principal. ¡Perfil curation VIVO! */}
             {currentUser.photos && currentUser.photos.length > 0 && (
-              <div className="px-4 py-3 flex gap-2 overflow-x-auto bg-[#0D0D10] border-b border-[#2F2F35]">
+              <div className="px-4 pt-3 pb-2 bg-[#0D0D10] border-b border-[#2F2F35]">
+                <div className="flex items-center justify-between mb-1.5 px-0.5">
+                  <div>
+                    <span className="text-[10px] uppercase tracking-[1px] text-[#9CA3AF]">Galería de Leyendas</span>
+                    <span className="ml-2 text-[11px] text-[#FF671F] font-semibold">{currentUser.photos.length} momentos capturados</span>
+                  </div>
+                  <div className="text-[8px] text-[#9CA3AF]/60">Arrastra • la 1ª es tu portada heroica</div>
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-1 snap-x">
                 {currentUser.photos.map((photo: string, idx: number) => (
                   <div 
                     key={idx} 
@@ -7290,6 +7298,7 @@ function App() {
                     )}
                   </div>
                 ))}
+                </div>
               </div>
             )}
 
@@ -7299,34 +7308,43 @@ function App() {
                 <button
                   onClick={async () => {
                     try {
-                      const photo = await CapacitorCamera.getPhoto({ quality: 80, allowEditing: false, resultType: 'base64' })
+                      const photo = await CapacitorCamera.getPhoto({ quality: 80, allowEditing: true, resultType: 'base64' })
                       if (photo?.base64String) {
                         const dataUrl = `data:image/jpeg;base64,${photo.base64String}`
                         const newPhotos = [...(currentUser.photos || []), dataUrl].slice(0, 6)
                         const updated = { ...currentUser, photos: newPhotos }
                         // Use the real-sync saver (handles local + Firestore for real users)
                         saveUserWithRealSync(updated as any)
-                        toast.success('Foto agregada con cámara')
+                        toast.success('Foto icónica agregada a tu galería', { description: 'Arrastra para elegir cuál es tu portada heroica' })
                         setLastSync(new Date())
                       }
                     } catch (e) {
                       toast('No se pudo usar la cámara (permisos o cancelado)')
                     }
                   }}
-                  className="w-full py-2 rounded-2xl border border-[#FF671F] text-[#FF671F] text-sm flex items-center justify-center gap-2 active:bg-[#FF671F]/10"
+                  className="w-full py-2.5 rounded-2xl border border-[#FF671F] text-[#FF671F] text-sm flex items-center justify-center gap-2 active:bg-[#FF671F]/10 hover:border-[#FF671F]/60"
                 >
-                  <span>📷</span> Agregar foto con cámara del teléfono
+                  <span>📷</span> Añadir foto icónica a mi galería de leyendas
                 </button>
-                <div className="text-center text-[10px] text-[#9CA3AF] mt-1">Disponible en la app nativa (APK)</div>
+                <div className="text-center text-[9px] text-[#9CA3AF] mt-1">Cámara nativa • hasta 6 fotos • la primera brilla en tu hero</div>
               </div>
             )}
 
-            {/* Incomplete CTA */}
-            {(!currentUser.bio || !currentUser.photos?.length || !currentUser.trainingTypes?.length) && (
-              <div className="mx-4 mt-4 p-4 rounded-3xl bg-[#25252A] border border-[#FF671F]/40">
-                <div className="text-[#FF671F] font-semibold mb-1">Completa tu perfil</div>
-                <p className="text-sm text-[#cbd5e1] mb-3">Agrega bio, fotos y entrenamiento para que otros testers reales te vean en Explorar.</p>
-                <button onClick={() => setShowOnboarding(true)} className="btn-primary w-full text-sm py-2">Completar ahora</button>
+            {/* "Hazlo icónico" motivator — users feel they can decorate & improve their profile visually */}
+            {(!currentUser.photos?.length || (currentUser.photos?.length || 0) < 3 || !currentUser.bio || (profilePosts[effectiveUserId] || []).filter((p:any)=>p.photo).length === 0) && (
+              <div className="mx-4 mt-4 p-4 rounded-3xl bg-gradient-to-b from-[#1a160f] to-[#25252A] border border-[#FFD700]/30">
+                <div className="flex items-center gap-2 text-[#FFD700] font-semibold mb-1">
+                  <span>✨</span> Eleva tu presencia visual
+                </div>
+                <p className="text-sm text-[#f5e8c7] mb-2">Tu muro y galería son tu mitología. Hazlos icónicos para que otros sientan tu energía antes de conocerte.</p>
+                <div className="text-[10px] space-y-0.5 mb-3 text-[#9CA3AF]">
+                  {!currentUser.photos?.length && <div>• Sube tu primera foto principal (se verá heroica)</div>}
+                  {(currentUser.photos?.length || 0) < 3 && <div>• Agrega al menos 3 fotos a tu galería de leyendas</div>}
+                  {!currentUser.bio && <div>• Escribe una bio que inspire</div>}
+                  {(profilePosts[effectiveUserId] || []).filter((p:any)=>p.photo).length === 0 && <div>• Publica 1 foto en tu Muro de Leyendas (momento capturado)</div>}
+                </div>
+                <button onClick={() => { setActiveTab('profile'); setTimeout(()=> muroComposerRef.current?.focus(), 60); }} className="w-full py-2 text-sm rounded-2xl bg-[#FFD700] text-black font-bold active:brightness-90">Hacer mi perfil icónico ahora</button>
+                <button onClick={() => setShowOnboarding(true)} className="mt-1.5 w-full text-[10px] text-[#9CA3AF] underline">Editar todo el perfil</button>
               </div>
             )}
 
@@ -8077,10 +8095,29 @@ function App() {
                 <div className="text-[10px] text-right text-[#9CA3AF] -mt-2 mb-2 pr-1">
                   {muroComposerText.length}/280
                 </div>
-                {muroComposerPhoto && <div className="text-[9px] text-[#FF671F]/70 -mt-1 mb-2">Foto + texto se publican juntos en tu muro</div>}
+                {/* Iconic photo caption suggestions — makes uploading a photo to the wall feel like capturing a legendary moment */}
+                {muroComposerPhoto && !muroPhotoUploading && (
+                  <div className="mb-2">
+                    <div className="text-[8px] uppercase tracking-[1px] text-[#9CA3AF]/70 mb-1">Sugerencias para este momento icónico</div>
+                    <div className="flex flex-wrap gap-1">
+                      {[
+                        'El pico del ritual • imbatible',
+                        'Momento que nadie más presenció',
+                        'Mi entreno más puro y salvaje',
+                        'Leyenda capturada hoy',
+                        'Vibe máxima • este es el que cuenta'
+                      ].map((sug, i) => (
+                        <button key={i} onClick={() => setMuroComposerText(sug)} className="text-[9px] px-2 py-0.5 rounded-full border border-[#FFD700]/30 text-[#f5e8c7] hover:bg-[#FFD700]/10 active:bg-[#FFD700]/20">
+                          {sug}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {muroComposerPhoto && <div className="text-[9px] text-[#FF671F]/70 -mt-1 mb-2">Foto icónica + texto se publican juntos en tu Muro de Leyendas</div>}
                 {muroPhotoUploading && (
                   <div className="mb-3">
-                    <div className="text-[10px] text-[#9CA3AF] mb-1">Subiendo foto...</div>
+                    <div className="text-[10px] text-[#9CA3AF] mb-1">Subiendo momento icónico...</div>
                     <div className="w-full h-2 bg-[#2F2F35] rounded-full overflow-hidden">
                       <div className="h-2 bg-gradient-to-r from-[#FF671F] to-[#FF4F79] transition-all" style={{ width: `${muroPhotoUploadProgress}%` }} />
                     </div>
@@ -8089,17 +8126,19 @@ function App() {
                 )}
                 {muroComposerPhoto && !muroPhotoUploading && (
                   <div className="mb-3">
-                    <div className="text-[10px] text-[#9CA3AF] mb-1 flex items-center justify-between">Foto del entreno <span className="text-[#FF671F]/60 text-[9px]">toca para ver grande</span></div>
-                    <div className="relative inline-block group" onClick={() => setFeedPhotoModal({url: muroComposerPhoto})}>
-                      <img src={muroComposerPhoto} className="max-h-40 w-full rounded-2xl border-2 border-[#FF671F]/30 object-cover shadow-sm cursor-zoom-in group-hover:brightness-95 transition" />
+                    <div className="text-[9px] uppercase tracking-[1px] text-[#FFD700]/80 mb-1 flex items-center gap-1">📸 MOMENTO ICÓNICO — esto quedará en tu muro para siempre</div>
+                    <div className="relative inline-block group w-full muro-composer-iconic-preview" onClick={() => setFeedPhotoModal({url: muroComposerPhoto})}>
+                      <img src={muroComposerPhoto} className="w-full max-h-[220px] object-cover rounded-3xl border-2 border-[#FF671F]/40 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.6)] cursor-zoom-in group-hover:scale-[1.01] group-hover:brightness-110 transition-all duration-300" />
+                      <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/60 rounded-3xl" />
+                      <div className="absolute bottom-3 left-3 text-[10px] bg-black/70 text-[#f5e8c7] px-2.5 py-0.5 rounded-full flex items-center gap-1 border border-white/10">Toca para ver en grande</div>
                       <button 
                         onClick={(e) => { e.stopPropagation(); setMuroComposerPhoto(null); }} 
-                        className="absolute -top-2 -right-2 bg-[#1C1C20] hover:bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center border border-[#2F2F35] transition-colors z-10"
-                        title="Quitar foto"
+                        className="absolute -top-2 -right-2 bg-[#1C1C20] hover:bg-red-500 text-white text-xs w-7 h-7 rounded-full flex items-center justify-center border border-[#2F2F35] transition-colors z-10 shadow"
+                        title="Quitar foto icónica"
                       >
                         ✕
                       </button>
-                      <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10" />
+                      <div className="absolute inset-0 rounded-3xl ring-1 ring-inset ring-[#FF671F]/20" />
                     </div>
                   </div>
                 )}
@@ -8139,7 +8178,7 @@ function App() {
                     }}
                     className="flex-1 py-2 text-sm border border-[#2F2F35] rounded-2xl active:bg-[#25252A] flex items-center justify-center gap-1 hover:border-[#FF671F]/40 transition-colors"
                   >
-                    <Camera size={15} /> {muroComposerPhoto ? 'Cambiar foto del entreno' : 'Añadir foto (cámara primero)'}
+                    <Camera size={15} /> {muroComposerPhoto ? 'Cambiar foto icónica' : 'Capturar momento icónico (cámara primero)'}
                   </button>
                   {/* Hidden file input for web - makes photo upload feel native and attractive */}
                   <input
@@ -8168,8 +8207,18 @@ function App() {
                     {muroPublishing ? 'Publicando...' : 'Publicar'}
                   </button>
                 </div>
-                <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Visible en tu perfil y para quien vea tu perfil completo</div>
+                <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Se vuelve parte de tu Muro de Leyendas • visible en tu perfil y para la comunidad</div>
               </div>
+
+              {/* Small decorative "I am building something beautiful" stat — makes profile feel improvable & alive */}
+              {(() => {
+                const photoPosts = (profilePosts[effectiveUserId] || []).filter((p: any) => p.photo).length;
+                const gal = currentUser.photos?.length || 0;
+                if (photoPosts + gal < 2) return null;
+                return (
+                  <div className="mx-1 mb-2 text-[9px] text-center text-[#FFD700]/70">✨ {photoPosts} momentos icónicos en tu muro • {gal} fotos en tu galería de leyendas</div>
+                );
+              })()}
 
               {/* Posts feed - ICONIC beautiful muro for your personal legacy */}
               <div className="px-1 mb-3 flex items-center justify-between">
@@ -8289,15 +8338,16 @@ function App() {
                         )}
                         {post.photo && (
                           <div 
-                            className="relative mb-4 -mx-1 rounded-3xl overflow-hidden ring-1 ring-inset ring-[#FF671F]/10 cursor-pointer group shadow-inner"
+                            className={`relative mb-4 -mx-1 rounded-3xl overflow-hidden cursor-pointer group shadow-inner muro-post-photo ${ (post.text || '').includes('icónico') || (post.text || '').includes('Leyenda') || (post.text || '').includes('pico') ? 'ring-2 ring-[#FFD700]/60' : 'ring-1 ring-inset ring-[#FF671F]/10' }`}
                             onClick={() => setFeedPhotoModal({ url: post.photo, postId: post.id })}
                           >
-                            <img src={post.photo} className="w-full max-h-[280px] object-cover transition-all duration-500 group-hover:scale-[1.03] group-hover:brightness-105" />
-                            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black/40" />
-                            <div className="absolute bottom-3 right-3 text-[10px] bg-black/70 backdrop-blur text-white px-2.5 py-1 rounded-2xl flex items-center gap-1 border border-white/10">
-                              <span>📷</span> <span className="font-medium">Ver foto completa</span>
+                            <img src={post.photo} className="w-full max-h-[300px] object-cover transition-all duration-500 group-hover:scale-[1.015] group-hover:brightness-110" />
+                            <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/10 to-black/70 rounded-3xl" />
+                            <div className="absolute bottom-3 right-3 text-[9px] bg-black/80 text-[#f5e8c7] px-2.5 py-1 rounded-2xl flex items-center gap-1 border border-white/10 backdrop-blur-sm">
+                              <span>📸</span> <span className="font-medium tracking-tight">Ver momento completo</span>
                             </div>
-                            {post.pinned && <div className="absolute top-3 left-3 text-[10px] bg-[#FF671F] text-black px-2 py-0.5 rounded-full font-bold tracking-wider">DESTACADA</div>}
+                            <div className="absolute top-3 left-3 text-[8px] px-1.5 py-px rounded bg-black/70 text-[#FFD700] border border-[#FFD700]/30 font-bold tracking-[1px]">MOMENTO CAPTURADO</div>
+                            {post.pinned && <div className="absolute top-3 right-3 text-[10px] bg-[#FF671F] text-black px-2 py-0.5 rounded-full font-bold tracking-wider">DESTACADA</div>}
                           </div>
                         )}
                         <div className="flex items-center justify-between pt-2 border-t border-[#2F2F35]">

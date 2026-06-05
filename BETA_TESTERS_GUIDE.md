@@ -689,3 +689,9 @@ This is the build to upload to Closed track. Full "sigue con todo" — more uniq
   5. Hard refresh web + adb install fresh APK. Todo realtime (likes/reactions de otros aparecen en tus listas).
 - Si algo raro en list order o missing post propio: export debug logs desde perfil (botón 🐞) y reporta.
 - Esto cierra el loop de "publicar en feed decepciona" + "mitología no se ve para quien la crea". Ahora se siente inevitablemente grande y vivo.
+
+**NUEVO — FOTOS ICÓNICAS + SENTIR QUE PUEDES DECORAR TU PERFIL (v0.1.39-iconic-photos-profile, code 44)**
+- Prueba el flujo de foto en Muro: en Perfil abre el composer, toca "Capturar momento icónico", toma foto o elige. Observa el preview grande con copy "MOMENTO ICÓNICO — esto quedará...", las sugerencias de captions doradas (tócalas para rellenar). Publica. En tu muro debe aparecer el post con badge "MOMENTO CAPTURADO", foto más alta, tratamiento premium.
+- Galería: "Galería de Leyendas • X momentos capturados". Arrastra, usa ★ para cambiar la portada hero (mira cómo cambia arriba en el hero con los gradientes cinematográficos). Agrega con el botón grande "Añadir foto icónica a mi galería de leyendas".
+- "Eleva tu presencia visual": si te falta algo (pocas fotos, sin foto en muro), verás el card motivador con checklist. Toca el botón — debe llevarte/focusear el composer. Publica una foto en muro y refresca: el card desaparece y aparece la línea decorativa "X momentos icónicos en tu muro • Y fotos...".
+- Siente la diferencia: el muro ya no es "subir una foto", es coleccionar momentos legendarios. El perfil invita a mejorarlo visualmente. Reporta si el preview se ve bien en tu teléfono (bordes, tamaños, toque para agrandar).

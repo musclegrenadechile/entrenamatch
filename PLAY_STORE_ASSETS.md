@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 43 / 0.1.38-feed-muro-fixes. **BUG HUNT EXHAUSTIVO FEED + MURO + ECOs**: Own posts (publish + claim echo) ahora visibles inmediatamente en feed tab (default view) + "⭐ ECOS DE LEYENDA" strip (antes se filtraban por self-exclude). Quick reactions 🔥💪❤️👏 también en muro personal (antes solo feed). Guards defensivos .length en todos los posts (feed/muro/full profile). Sort, filtros Live/Fijados/Reales, labels ECO/TÚ, recentlyPublished, counters, classes muro-post--echo, createProfilePost, map echoPins reactivity, etc. revisados y robustecidos. Arena + ripples + witness + claim siguen intactos. 
+**Current version for this upload**: versionCode 44 / 0.1.39-iconic-photos-profile. **FOTOS ICÓNICAS + DECORAR PERFIL**: Muro de Leyendas ahora invita a capturar "momentos icónicos" (preview grande cinematográfico, sugerencias de captions legendarios, "MOMENTO CAPTURADO" stamp + tratamiento premium en posts con foto). Galería renombrada "Galería de Leyendas" con conteo + copy aspiracional. Motivador "Eleva tu presencia visual" con checklist de fotos/muro + CTA directo al composer. Stats decorativas de legado visual. Todo para que el usuario sienta que puede (y quiere) hacer su perfil y muro más bello y personal.: Own posts (publish + claim echo) ahora visibles inmediatamente en feed tab (default view) + "⭐ ECOS DE LEYENDA" strip (antes se filtraban por self-exclude). Quick reactions 🔥💪❤️👏 también en muro personal (antes solo feed). Guards defensivos .length en todos los posts (feed/muro/full profile). Sort, filtros Live/Fijados/Reales, labels ECO/TÚ, recentlyPublished, counters, classes muro-post--echo, createProfilePost, map echoPins reactivity, etc. revisados y robustecidos. Arena + ripples + witness + claim siguen intactos. 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -153,6 +153,15 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 - Fresh debug APK for device test (adb): `EntrenaMatch-debug-feed-muro-fixes-0.1.38-....apk` (will be generated post-build) + previous arena one.
 - Web + GH Pages updated with fixes.
 - Copy the short "What's new" below directly into Play Console when uploading new AAB to closed track.
+
+**v0.1.39-iconic-photos-profile (code 44) — FOTOS ICÓNICAS EN MURO + SENTIR QUE PUEDES DECORAR TU PERFIL**
+- Experiencia de subir foto al Muro de Leyendas ahora se siente "ceremonial": preview mucho más grande y cinematográfico con copy "MOMENTO ICÓNICO — esto quedará en tu muro para siempre", anillo dorado, gradientes elegantes.
+- Sugerencias rápidas de captions icónicos cuando hay foto adjunta ( "El pico del ritual", "Momento que nadie más presenció", etc.). Botón de cámara renombrado "Capturar momento icónico".
+- Posts con foto en el muro personal tienen tratamiento premium: "MOMENTO CAPTURADO" badge, max height mayor, hover más dramático, anillo dorado condicional si el caption suena legendario.
+- Galería de fotos renombrada "Galería de Leyendas" + conteo "X momentos capturados" + copy "Arrastra • la 1ª es tu portada heroica". Botón de añadir más aspiracional.
+- Nuevo motivador visual "✨ Eleva tu presencia visual": checklist accionable (fotos en galería, publicar foto en muro, bio, etc.) que hace sentir al usuario que puede mejorar y decorar su perfil. CTA directo enfoca el composer.
+- Pequeñas decoraciones: línea de "X momentos icónicos en tu muro • Y fotos en galería" cuando ya hay contenido. Todo refuerza el loop de "mi perfil es mi mitología visual y la puedo hacer más bella".
+- Mantiene toda la funcionalidad anterior (drag reorder, principal, Storage upload con progress, etc.).
 
 **v0.1.38-feed-muro-fixes (code 43) — BUG HUNT FEED/MURO/ECOS + VISIBILIDAD PROPIA**
 - Fix crítico: al "Publicar en el Feed" o "⭐ Reclamar como Echo" (desde witness/ripple), tu post ahora aparece arriba en la lista del feed tab (default "recientes") + en el strip dorado "⭐ ECOS DE LEYENDA". Antes el filtro uid !== self los ocultaba para ti (aunque comunidad los veía).

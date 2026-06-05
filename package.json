@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.38-feed-muro-fixes",
+  "version": "0.1.39-iconic-photos-profile",
   "type": "module",
   "scripts": {
     "dev": "vite",

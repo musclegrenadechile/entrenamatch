@@ -819,6 +819,30 @@ input[type="range"]::-moz-range-thumb {
   font-size: 15px;
 }
 
+/* Iconic photo upload/preview in muro composer — feels like capturing a legend, not "just a pic" */
+.muro-composer-iconic-preview {
+  border-color: #FFD700;
+  box-shadow: 0 15px 40px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,215,0,0.25);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.muro-composer-iconic-preview:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 50px -10px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,215,0,0.35);
+}
+
+/* Stronger "collected legendary moment" treatment for photos in personal muro posts */
+.muro-post-photo {
+  box-shadow: 0 12px 40px -10px rgba(0,0,0,0.65);
+}
+.muro-post-photo:hover img {
+  filter: contrast(1.04) saturate(1.08) brightness(1.02);
+}
+
+/* Gallery header "Galería de Leyendas" */
+.galeria-leyendas-count {
+  font-feature-settings: "tnum";
+}
+
 /* ============================================
    LIVE MAP (Leaflet) — premium dark + Dunkin vibe
    ============================================ */
