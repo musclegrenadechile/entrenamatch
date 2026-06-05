@@ -1,6 +1,11 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.54-voice-send-polish code 58) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.55-onboarding-60s-first-live-match code 59) ===
 
-AAB: EntrenaMatch-v0.1.55-retencion-potente-20260605.aab + EntrenaMatch-release.aab (7.58MB)
+AAB: EntrenaMatch-v0.1.55-onboarding-60s-first-live-match-*.aab + EntrenaMatch-release.aab
+
+**LO MÁS IMPORTANTE DE ESTA RELEASE: Onboarding excepcional**
+El usuario nuevo entiende la app completa (Pulso/Live/EntrenaSync/Red/Network Power) y hace su primer Live o primer match en <60-90 segundos desde abrir la app por primera vez. 4 pasos ultra-rápidos + preview en vivo + explicación del ritual en paso 2 + opt-in Live prominente + guidance post-cierre que fuerza tab=explore + toast de acción inmediata ("toca ❤️ en un live cerca"). 
+
+Esto resuelve la barrera #1 de retención: "no entiendo para qué sirve esto ni qué hacer primero". Ahora el primer "aha" (ver tu propio pulso verde + like → chat → Sync) llega en el minuto 1-2.
 
 Mejoras al sistema Pulso Diario: más streaks (voice + pulse visibility), desafíos más inteligentes y variados (incluyendo voz a bonds débiles y ripples de mapa), protección de streak con Momentum, banner atractivo al abrir app, recordatorios de riesgo por la noche, notifs in-app especiales para daily pulse con navegación directa, UI compacta de streaks + polish. Más razones fuertes y hooks inteligentes para abrir todos los días, reforzando el grafo Red + Pulso.
 
@@ -21,6 +26,20 @@ Without this step you will keep getting "storage/unauthorized" on voice notes ev
 Major visual + layout polish on the entire "send voice note" flow (preview, uploading, bubbles). See commit for details.
 
 **What's new:**
+
+**v0.1.55 (code 59) — Onboarding excepcional (lo más importante ahora)**
+- 4 pasos en <60-90s total: Presencia (nombre+cámara+bio 15s) → Esencia entrenamiento (chips 15s) → El Ritual explicado (Live+Sync+Red con peso + CTA enorme para activar primer Live) → Votos cortos + gran CTA final.
+- Preview de perfil SIEMPRE visible arriba, se actualiza en vivo mientras eliges (incluye badge 🟢 EN VIVO si optas).
+- Paso 2 es el "aha moment" visual: explica con 1-2-3-4 exactamente cómo Live → like → chat → EntrenaSync → tether dorado + Network Power + ripples que otros presencian. Lenguaje épico pero concreto ("esto no es matching de gym, es la primera red donde entrenar juntos se siente en ambos cuerpos").
+- Opt-in "Activar mi primer LIVE ahora" con haptic success y copy que promete "banner verde al instante + match en <30s".
+- Al terminar: si optaste Live, trainingNow se setea + se escribe a FS real + optimistic en liveTrainingNow del mapa/pulso (te ves a ti mismo en verde inmediatamente).
+- Post-onboarding guidance (useEffect seguro, unconditional hooks): cambia automáticamente a tab 'explore', toast fuerte "¡Tu primer LIVE activo! Explora y da like...", marca hasCompletedFirstAction.
+- Fix crítico: useEffect de guidance movido antes de cualquier early-return + usa saveUser temprano (evita TDZ "Cannot access before initialization").
+- Validación en finish + toasts de acción inmediata. Fill ejemplo ultra visible.
+- Preview + haptics en cada tap + progreso % + copy "60-90 segundos al primer ritual".
+- Asegura que el usuario NO sale de onboarding sin haber entendido las 5 mecánicas + sin haber activado (o saber exactamente cómo activar) su primer Live o match.
+
+Esto hace que la app sea usable e inevitable desde el minuto 1. Todo lo anterior (retención, Pulso, voice, map, Arena, mythology) ahora tiene un "primer momento" que lo hace click.
 
 **v0.1.54 (code 58) — Pulido visual atractivo para envíos de audio / notas de voz**
 
@@ -86,6 +105,16 @@ App ahora smooth en mapa incluso con mucho live, usable sin internet, bugs visib
 - Recompensas potentes: milestones, level bonus auto, special posts.
 
 Retención que se siente: ves progreso constante, misiones guían, streaks dan estatus, notifs traen de vuelta con razón real.
+
+**v0.1.55 - Pulido visual y micro-interacciones premium**
+
+- Animaciones suaves: motion spring enter/hover en Pulso card y banners (scale, fade, y), progress transitions.
+- Consistencia total: mismos active:scale-95, hover effects, shadows, rounded, colors en todos botones de misiones/spends/refresh.
+- Feedback táctil premium: haptics light/medium/success en clicks de +1, avanzar, spends, refresh, level up + confetti.
+- Premium extras: richer shadows on hover, better gradients, consistent typography/spacing in retention UI, live banner polish.
+- Global: offline banner with motion, daily on-open with premium enter.
+
+App se siente pulida, responsive y premium en interacciones. Retención + UI cohesionada.
 
 Sigue con todo. Sube este AAB. 
 

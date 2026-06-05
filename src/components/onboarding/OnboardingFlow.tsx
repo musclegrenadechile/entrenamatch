@@ -3,7 +3,7 @@ import { useState, type ChangeEvent } from 'react';
 import { Dumbbell, MapPin, Camera, Trash2, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { TRAINING_OPTIONS, TRAINING_GOALS, TRAINING_INTENSITIES } from '../../constants';
+import { TRAINING_OPTIONS, TRAINING_GOALS, TRAINING_INTENSITIES } from '../../constants'; // resolves to index.ts
 
 // Camera is provided by the loader loaded from App.tsx in CAP builds (via global side effect).
 // No direct dynamic import here to avoid module graph issues in bundler analysis.
@@ -23,6 +23,7 @@ interface OnboardingFlowProps {
   requestUserLocation: () => void;
   consents: any;
   setConsents: (consents: any) => void;
+  triggerHaptic?: (style?: 'light' | 'medium' | 'success') => void;
 }
 
 export const OnboardingFlow = ({
@@ -34,6 +35,7 @@ export const OnboardingFlow = ({
   requestUserLocation,
   consents,
   setConsents,
+  triggerHaptic = () => { try { navigator.vibrate && navigator.vibrate(20) } catch {} },
 }) => {
   // Internal state (moved from App.tsx for better encapsulation)
   // Seed from existing currentUser (for edit flow or returning incomplete profiles) so user doesn't re-type everything
@@ -232,7 +234,8 @@ export const OnboardingFlow = ({
     }
   };
   const nextOnboarding = () => {
-    if (onboardingStep < 4) {
+    if (onboardingStep < 3) {
+      try { triggerHaptic('light') } catch {}
       setOnboardingStep(s => s + 1);
     } else {
       finishOnboarding(); // async but fire-and-forget is fine (it handles its own errors)
@@ -318,12 +321,13 @@ export const OnboardingFlow = ({
       setShowOnboarding(false);
       setOnboardingStep(0);
 
-      const liveDesc = onboardData.wantsToGoLive ? ' ¡Estás EN VIVO ahora — otros te verán en el banner!' : ' Activa "Entrenando ahora" en Perfil para aparecer en vivo.';
-      toast.success(isEditingProfile ? '¡Perfil actualizado!' : '¡Has sido iniciado!', { 
+      const liveDesc = onboardData.wantsToGoLive ? ' ¡Estás EN VIVO ahora en el Pulso! Ve a Explorar y da like al primer perfil vivo cerca.' : ' Ve a Explorar y activa Live o da like a alguien cerca para tu primer match.';
+      toast.success(isEditingProfile ? '¡Perfil actualizado!' : '¡Iniciado! Tu primer ritual te espera.', { 
         description: isEditingProfile 
           ? 'Los cambios se guardaron y sincronizaron con el backend real.' 
-          : ('Bienvenido al Círculo. Eres parte del primer ritual donde el esfuerzo se sincroniza. ' + liveDesc + ' Tus bonds tendrán peso real. Tus momentos podrán ser presenciados.')
+          : ('Bienvenido al Círculo. ' + liveDesc + ' Crea un EntrenaSync en <60s más y sentirás la diferencia.')
       });
+      try { triggerHaptic('success') } catch {}
 
       // Ceremonial touch: for new users who opt live, create a subtle "iniciación" post so their first presence is felt in the community
       if (!isEditingProfile && onboardData.wantsToGoLive) {
@@ -339,7 +343,7 @@ export const OnboardingFlow = ({
   return (
     <div className="app-container flex flex-col bg-[#0D0D10] text-white">
       <div className="flex-1 flex flex-col p-6 pt-10">
-        <div className="flex items-center gap-3 mb-8">
+        <div className="flex items-center gap-3 mb-5">
           <motion.div 
             animate={{ scale: [1, 1.05, 1], boxShadow: ['0 0 0 0 rgba(255,103,31,0.3)', '0 0 0 12px rgba(255,103,31,0.1)', '0 0 0 0 rgba(255,103,31,0.3)'] }}
             transition={{ duration: 2.5, repeat: Infinity }}
@@ -349,38 +353,37 @@ export const OnboardingFlow = ({
           </motion.div>
           <div>
             <div className="font-bold text-3xl tracking-tighter">EntrenaMatch</div>
-            <div className="text-[#FF671F] text-xs -mt-1 tracking-[2px]">LA INICIACIÓN AL RITUAL</div>
+            <div className="text-[#FF671F] text-xs -mt-1 tracking-[2px]">INICIACIÓN EN 60 SEGUNDOS</div>
           </div>
         </div>
 
-        <div className="mb-4">
+        <div className="mb-3">
           <div className="flex items-center justify-between">
             <div>
-              <div className="text-3xl font-semibold tracking-tighter leading-none mb-1">
-                {isEditingProfile ? 'Edita tu Iniciación' : 'Ceremonia de Iniciación'}
+              <div className="text-3xl font-semibold tracking-tighter leading-none mb-0.5">
+                {isEditingProfile ? 'Edita tu perfil' : 'Iniciación Express'}
               </div>
-              <div className="text-[#9CA3AF] text-sm">Estás a punto de entrar al primer ritual donde el entrenamiento se vive sincronizado. Tus bonds tendrán peso. Tus momentos serán presenciados.</div>
+              <div className="text-[#9CA3AF] text-sm">Entiende el Pulso + EntrenaSync + Red. <span className="font-bold text-[#FF671F]">Primer Live o match en &lt;90s</span>.</div>
             </div>
             {!isEditingProfile && (
-              <button onClick={fillExampleData} className="text-[10px] px-3 py-1 rounded-2xl border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10">Rellenar ejemplo</button>
+              <button onClick={fillExampleData} className="text-[10px] px-3 py-1.5 rounded-2xl border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10 font-medium">Rellenar ejemplo</button>
             )}
           </div>
         </div>
 
-        {/* Progress - ritual language */}
+        {/* Progress - 4 steps, ~15-20s each, total <90s to first action */}
         <div className="mb-3">
           <div className="flex items-center justify-between text-xs mb-1.5 px-0.5">
-            <div className="font-medium text-[#FF671F]">Paso {onboardingStep + 1} de 5 • Iniciación</div>
+            <div className="font-medium text-[#FF671F]">Paso {onboardingStep + 1} de 4 • {Math.round((onboardingStep+1)/4 * 100)}% listo</div>
             <div className="text-[#9CA3AF]">
-              {onboardingStep === 0 && 'Declara tu presencia'}
-              {onboardingStep === 1 && 'Tu imagen en el Círculo'}
-              {onboardingStep === 2 && 'Tu camino de entrenamiento'}
-              {onboardingStep === 3 && 'Tu nivel en el ritual'}
-              {onboardingStep === 4 && 'Votos y entrada al mapa vivo'}
+              {onboardingStep === 0 && 'Presencia'}
+              {onboardingStep === 1 && 'Entrenamiento'}
+              {onboardingStep === 2 && 'El Ritual (Live)'}
+              {onboardingStep === 3 && 'Entrar al Pulso'}
             </div>
           </div>
           <div className="flex gap-2">
-            {[0,1,2,3,4].map(i => (
+            {[0,1,2,3].map(i => (
               <div key={i} className={`step-dot flex-1 ${i <= onboardingStep ? 'active' : ''}`} style={i <= onboardingStep ? {width: 'auto', minWidth: 28} : {}} />
             ))}
           </div>
@@ -389,345 +392,203 @@ export const OnboardingFlow = ({
         {/* LIVE PREVIEW - ALWAYS VISIBLE, updates in real-time as user types/selects. THIS IS THE KEY IMPROVEMENT for onboarding. */}
         {renderProfilePreview()}
 
-        {/* Scrollable step content */}
+        {/* Scrollable step content - 4 ultra-fast steps for <60-90s to first Live or Match. NO old/dupe JSX. */}
         <div className="flex-1 overflow-auto -mx-1 px-1 pb-8 min-h-0">
 
-        {/* Paso 0: La Declaración — tu nombre entra al Círculo */}
+        {/* Paso 0: Presencia rápida (nombre + foto + bio) — 15s */}
         {onboardingStep === 0 && (
-          <div className="space-y-6">
+          <div className="space-y-5">
             <div>
-              <label className="text-sm text-[#9CA3AF] mb-1.5 block font-medium">¿Cómo te llamas en el Ritual?</label>
-              <input value={onboardData.name} onChange={e => updateOnboard({ name: e.target.value })} 
-                className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-5 py-4 text-xl placeholder:text-[#475569] focus:border-[#FF671F] focus:outline-none" placeholder="Tu nombre" />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-[#9CA3AF] mb-1.5 block">Edad</label>
-                <input 
-                  type="number" 
-                  value={onboardData.age || ''} 
-                  onChange={e => {
-                    const val = e.target.value;
-                    // Permitir campo vacío mientras se escribe, solo parsear cuando hay valor
-                    const num = val === '' ? '' : parseInt(val);
-                    updateOnboard({ age: num });
-                  }} 
-                  className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-5 py-4 text-xl" 
-                  min="18" 
-                  max="80"
-                  placeholder="Ej: 28"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-[#9CA3AF] mb-1.5 block">Género</label>
-                <div className="flex gap-2">
-                  {(['mujer','hombre'] as const).map(g => (
-                    <button key={g} onClick={() => updateOnboard({ gender: g })}
-                      className={`flex-1 py-4 rounded-2xl border text-sm font-medium ${onboardData.gender === g ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#2F2F35] bg-[#1C1C20]'}`}>
-                      {g === 'mujer' ? 'Mujer' : 'Hombre'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div>
-              <label className="text-sm text-[#9CA3AF] mb-1.5 block font-medium">¿En qué sector de Viña vives / entrenas?</label>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-[#9CA3AF] mb-1 block">Ciudad</label>
-                  <input value={onboardData.city || ''} onChange={e => updateOnboard({ city: e.target.value })} 
-                    className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3 focus:border-[#FF671F] focus:outline-none" placeholder="Ej: Viña del Mar" />
-                </div>
-                <div>
-                  <label className="text-xs text-[#9CA3AF] mb-1 block">País</label>
-                  <input value={onboardData.country || ''} onChange={e => updateOnboard({ country: e.target.value })} 
-                    className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3 focus:border-[#FF671F] focus:outline-none" placeholder="Ej: Chile" />
-                </div>
-              </div>
-              <button 
-                onClick={handleGpsRequest}
-                className="mt-3 w-full text-sm flex items-center justify-center gap-2 py-2.5 rounded-2xl border border-[#FF671F] text-[#FF671F] active:bg-[#FF671F] active:text-black"
-              >
-                <MapPin size={16} /> Usar mi ubicación actual (GPS)
-              </button>
-              {onboardData.lat && onboardData.lng && (
-                <div className="text-[10px] text-[#22c55e] mt-1 text-center">✓ GPS capturado para tu perfil</div>
-              )}
-            </div>
-
-            {/* Bio - required field + examples + counter */}
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-sm text-[#9CA3AF] font-medium">Cuéntanos un poco sobre ti (bio) — obligatorio</label>
-                <span className="text-[10px] text-[#9CA3AF]">{(onboardData.bio || '').length}/180</span>
-              </div>
-              <textarea 
-                value={onboardData.bio || ''} 
-                onChange={e => updateOnboard({ bio: e.target.value.slice(0,180) })}
-                className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3 h-16 resize-y text-sm focus:border-[#FF671F] focus:outline-none"
-                placeholder="Ej: Pesas + correr. Busco compañero constante..."
+              <div className="text-xl font-semibold mb-1 tracking-tight">Tu nombre en el Círculo</div>
+              <input 
+                type="text" 
+                value={onboardData.name} 
+                onChange={e => { updateOnboard({ name: e.target.value }); try { triggerHaptic('light') } catch {} }}
+                placeholder="Alex Rivera" 
+                className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3.5 text-2xl font-semibold tracking-tighter" 
               />
-              <div className="mt-1.5 flex flex-wrap gap-1">
-                {suggestedBios.map((b, idx) => (
-                  <button key={idx} onClick={() => updateOnboard({ bio: b })} className="text-[9px] px-2 py-0.5 rounded-full border border-[#2F2F35] bg-[#1C1C20] text-[#9CA3AF] active:bg-[#25252A] active:text-white">
-                    {b.slice(0,38)}...
-                  </button>
-                ))}
-              </div>
             </div>
 
-            {/* Availability - now collected in onboarding (key filter for "disponibles ahora") */}
-            <div>
-              <label className="text-sm text-[#9CA3AF] mb-1.5 block font-medium">¿Cuándo sueles estar disponible para entrenar?</label>
-              <div className="flex gap-2">
-                {['Mañana','Tarde','Noche'].map(t => {
-                  const sel = (onboardData.availability || []).includes(t);
-                  return (
-                    <button key={t} onClick={() => toggleAvailability(t)} className={`flex-1 py-2 rounded-2xl text-sm border ${sel ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#2F2F35] bg-[#1C1C20]'}`}>
-                      {t}
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-[10px] text-[#9CA3AF] mt-1">Se usa para el filtro "Disponibles ahora" y matching.</p>
-            </div>
-          </div>
-        )}
-
-        {/* Step 1: Photos - Attractive upload */}
-        {onboardingStep === 1 && (
-          <div>
-            <div className="mb-4">
-              <div className="text-xl font-semibold mb-1">Sube tus fotos</div>
-              <div className="text-[#9CA3AF] text-sm">Máximo 6. La primera es la principal y más importante.</div>
-            </div>
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              {(onboardData.photos || []).map((photo: string, idx: number) => (
-                <div key={idx} className="relative aspect-[3/3.2] rounded-2xl overflow-hidden bg-[#1C1C20] border border-[#2F2F35]">
-                  <img src={photo} className="w-full h-full object-cover" alt="" />
-                  <button onClick={() => removeOnboardPhoto(idx)} className="absolute top-2 right-2 bg-black/70 p-1.5 rounded-full active:bg-black">
-                    <Trash2 size={15} />
-                  </button>
-                  {idx === 0 && (
-                    <div className="absolute bottom-2 left-2 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded">Principal (la que ven primero)</div>
-                  )}
-                  {idx > 0 && (
-                    <button onClick={() => {
-                      const photos = [...(onboardData.photos || [])];
-                      const [moved] = photos.splice(idx, 1);
-                      photos.unshift(moved);
-                      updateOnboard({ photos });
-                    }} className="absolute bottom-2 right-2 bg-black/70 text-[9px] px-1.5 py-0.5 rounded active:bg-black">Hacer principal</button>
-                  )}
-                </div>
-              ))}
-              {(onboardData.photos || []).length < 6 && (
-                <label className="aspect-[3/3.2] border-2 border-dashed border-[#2F2F35] rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:bg-[#1C1C20] active:bg-[#25252A]">
-                  <Camera className="mb-2 text-[#FF671F]" />
-                  <span className="text-xs text-[#9CA3AF]">Agregar foto</span>
-                  <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
-                </label>
-              )}
-              {/* Native camera (shows only when running as real APK via Capacitor) */}
-              {(onboardData.photos || []).length < 6 && typeof window !== 'undefined' && (window as any).Capacitor && CapacitorCamera && (
-                <button
-                  type="button"
-                  onClick={takeNativePhoto}
-                  className="aspect-[3/3.2] border-2 border-[#FF671F] text-[#FF671F] rounded-2xl flex flex-col items-center justify-center text-xs active:bg-[#FF671F]/10"
-                >
-                  <Camera className="mb-1" />
-                  Cámara del teléfono
-                </button>
-              )}
-            </div>
-            <p className="text-[10px] text-[#9CA3AF]">Usa fotos recientes con buena luz. La primera es la que aparece en swipe y live cards. Toca "Hacer principal" para reordenar.</p>
-          </div>
-        )}
-
-        {/* Step 2: Training Types + Goals - Attractive multi-select */}
-        {onboardingStep === 2 && (
-          <div className="space-y-7">
+            {/* Photo - camera-first for speed + native feel */}
             <div>
               <div className="flex items-center justify-between mb-2">
-                <div className="text-xl font-semibold flex items-center gap-2">
-                  <Dumbbell size={20} className="text-[#FF671F]" /> ¿Qué tipos de entrenamiento haces?
-                </div>
-                {(onboardData.trainingTypes || []).length > 0 && (
-                  <span className="text-xs text-[#FF671F] font-medium">{(onboardData.trainingTypes || []).length} seleccionados</span>
+                <div className="text-sm text-[#9CA3AF]">Tu foto principal (obligatoria)</div>
+                <div className="text-[10px] text-[#FF671F]">Cámara recomendada</div>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {(onboardData.photos || []).slice(0,3).map((photo: string, idx: number) => (
+                  <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-[#FF671F]/40 ring-1 ring-[#FF671F]/10">
+                    <img src={photo} className="w-full h-full object-cover" alt="" />
+                    <button onClick={() => { removeOnboardPhoto(idx); try { triggerHaptic('light') } catch {} }} className="absolute top-1 right-1 bg-black/80 text-white p-1 rounded-full text-xs leading-none">×</button>
+                  </div>
+                ))}
+                {(onboardData.photos || []).length < 1 && (
+                  <>
+                    <button onClick={() => { try { triggerHaptic('medium') } catch {}; takeNativePhoto() }} className="aspect-square border-2 border-[#FF671F] rounded-2xl flex flex-col items-center justify-center text-[#FF671F] text-xs font-medium active:bg-[#FF671F]/10 active:scale-[0.985]">
+                      <Camera size={26} className="mb-1" />
+                      <span>Cámara YA</span>
+                    </button>
+                    <label className="aspect-square border-2 border-dashed border-[#3A3A40] rounded-2xl flex flex-col items-center justify-center text-xs cursor-pointer active:bg-[#1C1C20]">
+                      <Camera className="mb-1 text-[#9CA3AF]" size={22} />
+                      <span className="text-[#9CA3AF]">Elegir foto</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                    </label>
+                  </>
                 )}
               </div>
-              <div className="flex flex-wrap gap-1.5">
+              <p className="text-[10px] text-[#9CA3AF] mt-1.5">Cara clara. Esta foto te representa en el mapa Pulso y en todos los swipes.</p>
+            </div>
+
+            {/* Bio quick */}
+            <div>
+              <div className="text-sm text-[#9CA3AF] mb-1.5">Tu bio (corta y directa)</div>
+              <textarea 
+                value={onboardData.bio || ''} 
+                onChange={e => { updateOnboard({ bio: e.target.value.slice(0,140) }); try { triggerHaptic('light') } catch {} }}
+                className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-2xl px-4 py-3 h-14 text-sm resize-y"
+                placeholder="Pesas + running. Busco gente constante para motivarnos sin excusas."
+              />
+              <button onClick={() => { updateOnboard({ bio: 'Pesas 4x semana y running por la costanera. Quiero entrenar con gente seria y constante.' }); try { triggerHaptic('light') } catch {} }} className="mt-1 text-xs text-[#FF671F] underline">Usar bio de ejemplo (1 toque)</button>
+            </div>
+          </div>
+        )}
+
+        {/* Paso 1: Tu esencia de entrenamiento — 15s. Esto alimenta Pulso + matches reales */}
+        {onboardingStep === 1 && (
+          <div className="space-y-6">
+            <div>
+              <div className="text-xl font-semibold mb-2 tracking-tight">¿Qué entrenas? (1-3)</div>
+              <div className="flex flex-wrap gap-2">
                 {TRAINING_OPTIONS.map((type: string) => {
                   const selected = (onboardData.trainingTypes || []).includes(type);
                   return (
-                    <button
-                      key={type}
-                      onClick={() => {
-                        const current = onboardData.trainingTypes || [];
-                        const newTypes = selected ? current.filter((t: string) => t !== type) : [...current, type];
-                        updateOnboard({ trainingTypes: newTypes });
-                      }}
-                      className={`px-3 py-1.5 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3A3A3F] hover:bg-[#25252A]'}`}
-                    >
+                    <button key={type} onClick={() => { 
+                      const curr = onboardData.trainingTypes || [];
+                      const next = selected ? curr.filter((t:string)=>t!==type) : [...curr, type].slice(0,3);
+                      updateOnboard({ trainingTypes: next }); 
+                      try { triggerHaptic('light') } catch {} 
+                    }} className={`px-4 py-2 rounded-2xl text-sm border active:scale-95 transition ${selected ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#2F2F35] bg-[#1C1C20]'}`}>
                       {type}
                     </button>
                   );
                 })}
               </div>
-              <div className="flex gap-2 mt-1.5">
-                <button onClick={() => updateOnboard({ trainingTypes: TRAINING_OPTIONS })} className="text-[10px] text-[#FF671F] underline">Seleccionar todos</button>
-                <button onClick={() => updateOnboard({ trainingTypes: [] })} className="text-[10px] text-[#9CA3AF] underline">Limpiar</button>
-              </div>
-              {(onboardData.trainingTypes || []).length === 0 && (
-                <p className="text-xs text-[#ef4444] mt-1.5">Selecciona al menos uno para continuar</p>
-              )}
+              <p className="text-[10px] text-[#9CA3AF] mt-1">Apareces en el Pulso correcto y en recomendaciones precisas de la Red.</p>
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <div className="text-xl font-semibold">¿Cuáles son tus objetivos principales?</div>
-                {(onboardData.goals || []).length > 0 && (
-                  <span className="text-xs text-[#FF671F] font-medium">{(onboardData.goals || []).length} seleccionados</span>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="text-xl font-semibold mb-2 tracking-tight">Tu objetivo principal</div>
+              <div className="flex flex-wrap gap-2">
                 {TRAINING_GOALS.map((goal: string) => {
                   const selected = (onboardData.goals || []).includes(goal);
                   return (
-                    <button
-                      key={goal}
-                      onClick={() => {
-                        const current = onboardData.goals || [];
-                        const newGoals = selected ? current.filter((g: string) => g !== goal) : [...current, goal];
-                        updateOnboard({ goals: newGoals });
-                      }}
-                      className={`px-3 py-1.5 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3A3A3F] hover:bg-[#25252A]'}`}
-                    >
+                    <button key={goal} onClick={() => { 
+                      updateOnboard({ goals: [goal] }); 
+                      try { triggerHaptic('light') } catch {} 
+                    }} className={`px-4 py-2 rounded-2xl text-sm border active:scale-95 ${selected ? 'bg-[#FF671F] text-black' : 'border-[#2F2F35]'}`}>
                       {goal}
                     </button>
                   );
                 })}
               </div>
-              <div className="flex gap-2 mt-1.5">
-                <button onClick={() => updateOnboard({ goals: TRAINING_GOALS })} className="text-[10px] text-[#FF671F] underline">Seleccionar todos</button>
-                <button onClick={() => updateOnboard({ goals: [] })} className="text-[10px] text-[#9CA3AF] underline">Limpiar</button>
-              </div>
-              {(onboardData.goals || []).length === 0 && (
-                <p className="text-xs text-[#ef4444] mt-1.5">Selecciona al menos uno para continuar</p>
-              )}
+              <div className="text-xs text-[#9CA3AF] mt-1">Usado para crear matches de alto valor y Daily Challenges que importan.</div>
             </div>
           </div>
         )}
 
-        {/* Step 3: Level + Intensity - Attractive segmented controls */}
+        {/* Paso 2: EL AHA MOMENT — por qué esto es diferente. Live + EntrenaSync + Red con peso real. 20s */}
+        {onboardingStep === 2 && (
+          <div className="space-y-5">
+            <div className="rounded-3xl bg-gradient-to-br from-[#0f1a14] to-[#111113] border border-[#22c55e]/30 p-5">
+              <div className="uppercase tracking-[1.5px] text-[10px] text-[#22c55e] font-semibold mb-1">LA FUNCIÓN QUE NADIE MÁS TIENE</div>
+              <div className="text-lg font-semibold leading-tight mb-3">EntrenaSync + Pulso del Mapa = tu Red cobra vida real</div>
+              
+              <div className="space-y-3 text-sm">
+                <div className="flex gap-3"><span className="text-[#22c55e] mt-0.5">1</span><span><span className="font-semibold">Marca "Entrenando Ahora"</span> → apareces en el mapa con urgencia (verde pulsante). Otros cerca te ven en tiempo real.</span></div>
+                <div className="flex gap-3"><span className="text-[#22c55e] mt-0.5">2</span><span><span className="font-semibold">Dan like</span> → chat instantáneo. Estás a 1 toque de conectar con alguien que está sudando ahora mismo.</span></div>
+                <div className="flex gap-3"><span className="text-[#22c55e] mt-0.5">3</span><span><span className="font-semibold">Creas EntrenaSync</span> → acciones compartidas en vivo (flexiones, sprints, etc). Ambos sienten el efecto. Se crea un tether visual dorado en el mapa. + Network Power para tu Red.</span></div>
+                <div className="flex gap-3"><span className="text-[#22c55e] mt-0.5">4</span><span>Todo queda en tus muros, en el feed global y genera <span className="font-semibold text-[#FF671F]">ripples</span> que otros presencian. Entrenar juntos tiene consecuencias medibles.</span></div>
+              </div>
+            </div>
+
+            <div className="text-center pt-1">
+              <div className="text-base font-semibold mb-2 text-[#22c55e]">¿Quieres sentirlo YA con tu primer Live?</div>
+              <button 
+                onClick={() => { 
+                  const next = !onboardData.wantsToGoLive;
+                  updateOnboard({ wantsToGoLive: next }); 
+                  try { triggerHaptic(next ? 'success' : 'light') } catch {} 
+                }} 
+                className={`w-full py-4 rounded-3xl text-lg font-bold transition-all active:scale-[0.985] ${onboardData.wantsToGoLive ? 'bg-[#22c55e] text-black shadow-lg shadow-[#22c55e]/30' : 'border-2 border-[#22c55e] text-[#22c55e] active:bg-[#22c55e]/10'}`}
+              >
+                {onboardData.wantsToGoLive ? '✅ SÍ — Activa mi primer LIVE al terminar' : '🚀 ACTIVAR MI PRIMER LIVE AHORA (recomendado)'}
+              </button>
+              <div className="text-[11px] text-[#9CA3AF] mt-2">Banner verde visible al instante. En el mapa + explore. 30 segundos después ya puedes dar tu primer like y match.</div>
+            </div>
+
+            <div className="text-center text-[10px] text-[#FF671F]/90">Esto no es una app de citas de gym. Es la primera red donde entrenar juntos se siente en el cuerpo de ambos al mismo tiempo.</div>
+          </div>
+        )}
+
+        {/* Paso 3: Votos cortos + gran CTA de acción inmediata */}
         {onboardingStep === 3 && (
-          <div className="space-y-8">
-            <div>
-              <div className="text-xl font-semibold mb-3 flex items-center gap-2">
-                <Star size={20} className="text-[#FF671F]" /> Nivel actual
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                {['Principiante', 'Intermedio', 'Avanzado'].map(lvl => (
-                  <button
-                    key={lvl}
-                    onClick={() => updateOnboard({ level: lvl })}
-                    className={`py-4 rounded-3xl border text-sm font-semibold transition-all active:scale-[0.985] ${onboardData.level === lvl ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3A3A3F] hover:bg-[#25252A]'}`}
-                  >
-                    {lvl}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <div className="text-xl font-semibold mb-3">Intensidad preferida</div>
-              <div className="grid grid-cols-3 gap-3">
-                {TRAINING_INTENSITIES.map((int: string) => (
-                  <button
-                    key={int}
-                    onClick={() => updateOnboard({ intensity: int })}
-                    className={`py-4 rounded-3xl border text-sm font-semibold transition-all active:scale-[0.985] ${onboardData.intensity === int ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3A3A3F] hover:bg-[#25252A]'}`}
-                  >
-                    {int}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Paso 4: La Ceremonia Final — los Votos + Declaración de Presencia Viva */}
-        {onboardingStep === 4 && (
           <div className="space-y-4">
             <div>
-              <div className="text-xl font-semibold mb-1">Los Votos de Iniciación (obligatorios)</div>
-              <p className="text-sm text-[#9CA3AF]">{isEditingProfile ? 'Confirma que sigues de acuerdo para guardar los cambios.' : 'Debes aceptar todos para crear tu perfil y usar la plataforma.'}</p>
+              <div className="text-xl font-semibold mb-1.5">Últimos 3 votos rápidos</div>
+              <div className="text-xs text-[#9CA3AF]">Obligatorios para entrar al ritual.</div>
             </div>
 
             {[
-              { key: 'is18', label: 'Juro que tengo 18 años o más y entro con respeto al Círculo' },
-              { key: 'isForTraining', label: 'Juro entrenar de forma seria, sincera y respetuosa con mis compañeros de ritual' },
-              { key: 'sharesLocation', label: 'Juro compartir mi presencia en el mapa vivo para que otros puedan sincronizarse conmigo' }
+              { key: 'is18', label: 'Soy mayor de 18 y entreno con respeto' },
+              { key: 'isForTraining', label: 'Entreno en serio y con motivación real' },
+              { key: 'sharesLocation', label: 'Quiero aparecer en el mapa vivo para sincronizarme' }
             ].map(item => (
-              <label key={item.key} className="flex items-start gap-3 p-4 bg-[#1C1C20] rounded-2xl border border-[#2F2F35] cursor-pointer active:bg-[#25252A] transition-colors">
-                <input
-                  type="checkbox"
-                  checked={(localConsents as any)[item.key]}
-                  onChange={(e) => setLocalConsents(prev => ({ ...prev, [item.key]: e.target.checked }))}
-                  className="mt-1 w-4 h-4 accent-[#FF671F]"
-                />
-                <span className="text-sm leading-snug">{item.label}</span>
+              <label key={item.key} onClick={() => { 
+                const next = ! (localConsents as any)[item.key]; 
+                setLocalConsents(prev => ({ ...prev, [item.key]: next })); 
+                try { triggerHaptic('light') } catch {} 
+              }} className="flex items-center gap-3 p-4 bg-[#1C1C20] rounded-2xl border border-[#2F2F35] cursor-pointer active:bg-[#25252A] active:scale-[0.995]">
+                <input type="checkbox" checked={(localConsents as any)[item.key]} readOnly className="w-5 h-5 accent-[#FF671F] pointer-events-none" />
+                <span className="text-sm">{item.label}</span>
               </label>
             ))}
 
-            {/* THE KEY SELL: Opt-in to live right here in onboarding - makes the unique feature the exciting finish */}
-            <label className="flex items-start gap-3 p-4 bg-[#22c55e]/10 border border-[#22c55e]/40 rounded-2xl cursor-pointer active:bg-[#22c55e]/15">
-              <input
-                type="checkbox"
-                checked={!!onboardData.wantsToGoLive}
-                onChange={(e) => updateOnboard({ wantsToGoLive: e.target.checked })}
-                className="mt-1 w-4 h-4 accent-[#22c55e]"
-              />
-              <div className="text-sm leading-snug">
-                <span className="font-semibold text-[#22c55e]">¡Quiero aparecer EN VIVO ahora mismo!</span> <span className="text-[#9CA3AF]">(recomendado)</span><br />
-                <span className="text-xs text-[#9CA3AF]">Al terminar activaré "Entrenando ahora". La gente cerca me verá con contador de urgencia en el banner verde. ¡Es la función más fuerte de la app!</span>
-              </div>
-            </label>
+            <div className="mt-3 rounded-2xl bg-[#22c55e]/10 border border-[#22c55e]/50 p-4">
+              <div className="font-bold text-[#22c55e] text-sm mb-1">AL TERMINAR:</div>
+              <div className="text-sm leading-snug">Si activaste Live → verás el banner verde inmediatamente.<br/>Ve a <span className="font-semibold">Explorar</span>, toca cualquier card cerca y da ❤️ like. Tu primer chat + match en &lt;20s.<br/>Luego abre el chat y toca "Iniciar EntrenaSync".</div>
+            </div>
 
-            <p className="text-[10px] text-[#9CA3AF] mt-2">
-              Al continuar aceptas nuestra <a href="/entrenamatch/privacy.html" target="_blank" className="underline">Política de Privacidad</a> y <a href="/entrenamatch/terms.html" target="_blank" className="underline">Términos de Servicio</a>.
-            </p>
-
-            <div className="text-[10px] text-center text-[#22c55e] mt-1">La preview arriba muestra exactamente cómo te verán los demás (incluyendo si vas EN VIVO).</div>
+            <div className="text-[10px] text-center text-[#9CA3AF] pt-1">Tus datos se guardan en el backend real. Puedes editar todo después desde Perfil.</div>
           </div>
         )}
 
         </div> {/* end scrollable step content */}
 
-        {/* Fixed bottom navigation - always visible */}
+        {/* Fixed bottom navigation - always visible, haptic, speed-focused */}
         <div className="pt-3 pb-2 flex flex-col gap-2 bg-[#0D0D10] border-t border-[#2F2F35]">
           {onboardingStep > 0 && (
-            <button onClick={() => setOnboardingStep(onboardingStep - 1)} className="w-full py-3 text-sm rounded-2xl border border-[#2F2F35] active:bg-[#1f242b]">
+            <button onClick={() => { try { triggerHaptic('light') } catch {}; setOnboardingStep(onboardingStep - 1) }} className="w-full py-3 text-sm rounded-2xl border border-[#2F2F35] active:bg-[#1f242b]">
               Atrás
             </button>
           )}
 
-          {onboardingStep === 2 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0) && (
+          {onboardingStep === 1 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0) && (
             <p className="text-center text-[10px] text-[#ef4444] font-medium">
-              Selecciona al menos un tipo de entrenamiento y un objetivo
+              Elige al menos un tipo de entrenamiento y un objetivo
             </p>
           )}
 
           <button 
             onClick={nextOnboarding} 
-            className="w-full py-3.5 text-base font-semibold rounded-3xl btn-primary disabled:opacity-50"
+            className="w-full py-3.5 text-base font-semibold rounded-3xl btn-primary disabled:opacity-50 active:scale-[0.985]"
             disabled={
-              (onboardingStep === 2 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0)) ||
-              (onboardingStep === 4 && !Object.values(localConsents).every(Boolean))
+              (onboardingStep === 1 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0)) ||
+              (onboardingStep === 3 && !Object.values(localConsents).every(Boolean))
             }
           >
-            {onboardingStep < 4 ? 'Continuar la Iniciación' : 'Completar la Ceremonia e Ingresar al Ritual'}
+            {onboardingStep < 3 ? 'Continuar' : '¡COMPLETAR INICIACIÓN + IR A MI PRIMER LIVE / MATCH!'}
           </button>
+          <div className="text-center text-[9px] text-[#9CA3AF]">60-90 segundos desde que empezaste. Tu primer ritual te espera.</div>
         </div>
       </div>
     </div>

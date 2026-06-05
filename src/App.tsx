@@ -1010,6 +1010,35 @@ function App() {
     } catch (e) { console.warn('quick demo', e); }
   }, [saveUser, setShowOnboarding]); // deps safe
 
+  // ==================== EXCEPTIONAL ONBOARDING GUIDANCE (post-finish) ====================
+  // Fires only once, right after OnboardingFlow sets showOnboarding=false for a brand-new user.
+  // Goal: user understands the 5 mechanics + does first Live (already activated in finish if opted) or first match in <30-60s total after close.
+  // Placed here unconditionally (after other early effects) to obey Rules of Hooks. Uses ref guard.
+  const hasFiredFirstActionGuidanceRef = useRef(false)
+  useEffect(() => {
+    if (hasFiredFirstActionGuidanceRef.current) return
+    if (showOnboarding === false && currentUser && !currentUser.hasCompletedFirstAction) {
+      const looksNew = !currentUser.liveJoins && !currentUser.syncStreak && (currentUser.trainingNow || (currentUser.photos?.length || 0) > 0)
+      if (looksNew) {
+        hasFiredFirstActionGuidanceRef.current = true
+        const t = setTimeout(() => {
+          // Switch to explore so the first action (like on nearby card) is obvious and one tap away
+          setActiveTab('explore')
+          // Strong, actionable toast
+          toast.success(currentUser.trainingNow ? '¡Tu primer LIVE está activo en el Pulso!' : '¡Perfil listo!', {
+            description: 'Explora perfiles cerca. Toca ❤️ en uno que esté vivo o disponible. Tu primer match y chat en <20s. Luego crea EntrenaSync desde el chat.'
+          })
+          try { triggerHaptic('medium') } catch {}
+          // Mark to never repeat (use early saveUser to avoid TDZ; real writes already happened in OnboardingFlow finish)
+          const marked = { ...currentUser, hasCompletedFirstAction: true }
+          try { saveUser(marked as any) } catch {}
+          // Extra nudge: if they opted live, also flash the map button hint by briefly showing live count if any
+        }, 650)
+        return () => clearTimeout(t)
+      }
+    }
+  }, [showOnboarding, currentUser]) // safe: inside effect we guard with ref + looksNew
+
   // Auth UI state (restored for account creation)
   const [authMode, setAuthMode] = useState<'login' | 'register'>('register')
   const [authEmail, setAuthEmail] = useState('')
@@ -5317,8 +5346,19 @@ function App() {
       // Demo fakes for the killer feature to shine
       lives = SEED_PROFILES.slice(0, 3).map((p, i) => ({ ...p, trainingNow: true, trainingNowSince: now - (i+1)*10*60000, distance: 1 + i*2, seVaEnMin: 40 - i*10, joinCount: 1 + i }));
     }
+    // Exceptional onboarding: immediately surface the new user's own live if they opted in during the 60s flow.
+    // This way the banner + map + explore show "you are live" right after finishing, even before any FS roundtrip.
+    if (currentUser && currentUser.trainingNow && currentUser.trainingNowSince && (now - currentUser.trainingNowSince < 3 * 60 * 60 * 1000)) {
+      const already = lives.some((l: any) => l.id === 'me' || l.id === currentUser.id)
+      if (!already) {
+        const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, currentUser.lat || -33.0153, currentUser.lng || -71.5528) : 0.3
+        const seVaEnMs = (currentUser.trainingNowSince + ASSUMED_SESSION_MS) - now
+        const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 55
+        lives = [{ ...currentUser, id: 'me', distance: dist, seVaEnMin, joinCount: 0, isLegend: false, bondInfo: null }, ...lives]
+      }
+    }
     return lives;
-  }, [realProfiles, userLocation, isDemoMode, profilePosts]);
+  }, [realProfiles, userLocation, isDemoMode, profilePosts, currentUser]);
 
   // Zone live counts for interactive legend (sigue con todo el mapa + visual polish iteration)
   const zoneLiveCounts = useMemo(() => {
@@ -6314,10 +6354,13 @@ function App() {
           requestUserLocation={requestUserLocation}
           consents={{ is18: false, isForTraining: false, sharesLocation: false }}
           setConsents={() => {}}
+          triggerHaptic={triggerHaptic}
         />
       </ErrorBoundary>
     )
   }
+
+  // Post-onboarding guidance moved to early unconditional useEffect below (see "exceptional onboarding guidance effect").
 
   return (
     <ErrorBoundary>
