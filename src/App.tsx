@@ -439,6 +439,7 @@ function App() {
     if (!pendingVoice) return
 
     const { blob, duration, url } = pendingVoice
+    setIsUploadingVoice(true)
 
     try {
       // Upload to Firebase Storage for persistent https URL (like photos)
@@ -479,10 +480,12 @@ function App() {
         voicePreviewUrlRef.current = null
       }
       setPendingVoice(null)
+      setIsUploadingVoice(false)
       toast.success('Nota de voz enviada', { description: `${duration}s • compártela con tu red de rendimiento` })
     } catch (e) {
       console.error('Send voice error', e)
       toast.error('Error enviando nota de voz')
+      setIsUploadingVoice(false)
     }
   }
 
@@ -732,6 +735,7 @@ function App() {
   const [isRecordingVoice, setIsRecordingVoice] = useState(false)
   const [recordingTime, setRecordingTime] = useState(0)
   const [pendingVoice, setPendingVoice] = useState<{blob: Blob, duration: number, url: string} | null>(null)
+  const [isUploadingVoice, setIsUploadingVoice] = useState(false)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -7477,23 +7481,14 @@ function App() {
                           {time && <div className="text-[9px] text-[#6B7280] mb-0.5 px-1">{time}</div>}
                           <div className={`px-3.5 py-2 rounded-3xl text-[14px] leading-snug break-words overflow-hidden ${isMe ? 'bg-[#FF671F] text-black rounded-br-md' : 'bg-[#25252A] text-white rounded-bl-md'}`}>
                             {m.voiceUrl ? (
-                              <div className="flex items-center gap-2">
-                                <button 
-                                  onClick={() => {
-                                    const audio = new Audio(m.voiceUrl)
-                                    audio.play().catch(() => {})
-                                  }}
-                                  className="w-8 h-8 rounded-full bg-black/30 flex items-center justify-center active:scale-95"
-                                  title="Reproducir nota de voz"
-                                >
-                                  ▶️
-                                </button>
-                                <div className="flex-1">
-                                  <div className="text-[11px] opacity-80">Nota de voz • {m.voiceDuration || '?'}s</div>
-                                  <div className="h-1 bg-black/20 rounded mt-1">
-                                    <div className="h-1 bg-current rounded w-0" style={{width: '100%'}} /> {/* simple progress placeholder */}
-                                  </div>
-                                </div>
+                              <div className="flex items-center gap-2 min-w-[160px]">
+                                <audio 
+                                  src={m.voiceUrl} 
+                                  controls 
+                                  className="h-7 flex-1" 
+                                  style={{ maxWidth: '160px' }}
+                                />
+                                <span className="text-[10px] opacity-70 whitespace-nowrap">{m.voiceDuration || '?'}s</span>
                               </div>
                             ) : renderMessageText(m.text)}
                           </div>
@@ -7573,8 +7568,32 @@ function App() {
                     >
                       {isRecordingVoice ? '⏹' : '🎙️'}
                     </button>
-                    {pendingVoice && (
-                      <button type="button" onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-[10px] px-2 py-1 text-red-400">Cancelar voz</button>
+                    {isRecordingVoice && (
+                      <div className="text-[9px] text-red-400 font-mono px-0.5 self-center">
+                        {recordingTime}s
+                      </div>
+                    )}
+                    {pendingVoice && !isUploadingVoice && (
+                      <div className="flex items-center gap-1 ml-1">
+                        <audio 
+                          src={pendingVoice.url} 
+                          controls 
+                          className="h-8 w-32" 
+                          style={{maxWidth: '120px'}}
+                        />
+                        <button 
+                          type="button" 
+                          onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} 
+                          className="text-[9px] px-1.5 py-0.5 text-red-400 hover:text-red-500 border border-red-400/30 rounded"
+                        >
+                          Descartar
+                        </button>
+                      </div>
+                    )}
+                    {isUploadingVoice && (
+                      <div className="ml-2 text-[10px] text-[#FF671F] flex items-center gap-1">
+                        <span className="animate-pulse">⏳ Enviando nota de voz...</span>
+                      </div>
                     )}
 
                     <button type="submit" disabled={!chatInputValue.trim() && !pendingVoice} className="bg-[#FF671F] disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black w-12 rounded-3xl flex items-center justify-center"><Send size={18} /></button>
@@ -10960,13 +10979,13 @@ function App() {
                                 {msg.photo && <img src={msg.photo} className="mt-2 max-w-[200px] rounded-xl border border-white/10" />}
                                 {msg.voiceUrl && (
                                   <div className="mt-1 flex items-center gap-2 text-sm">
-                                    <button 
-                                      onClick={() => { const a = new Audio(msg.voiceUrl); a.play().catch(()=>{}) }}
-                                      className="px-2 py-0.5 bg-white/10 rounded active:bg-white/20"
-                                    >
-                                      ▶️ {msg.voiceDuration || '?'}s
-                                    </button>
-                                    <span className="text-[10px] opacity-70">Nota de voz</span>
+                                    <audio 
+                                      src={msg.voiceUrl} 
+                                      controls 
+                                      className="h-7 flex-1" 
+                                      style={{ maxWidth: '160px' }}
+                                    />
+                                    <span className="text-[10px] opacity-70 whitespace-nowrap">{msg.voiceDuration || '?'}s</span>
                                   </div>
                                 )}
                               </div>
@@ -11030,11 +11049,22 @@ function App() {
                         <button onClick={() => setGroupChatPhoto(null)} className="text-xs px-2 py-1 text-red-400 hover:text-red-500">Quitar</button>
                       </div>
                     )}
-                    {pendingVoice && (
+                    {pendingVoice && !isUploadingVoice && (
                       <div className="mb-2 flex items-center gap-2 bg-[#0D0D10] p-2 rounded-2xl border border-[#2F2F35]">
-                        <div className="w-10 h-10 bg-[#FF671F]/20 rounded-xl flex items-center justify-center text-lg">🎙️</div>
-                        <div className="flex-1 text-xs text-[#9CA3AF]">Nota de voz lista • {pendingVoice.duration}s</div>
-                        <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-xs px-2 py-1 text-red-400 hover:text-red-500">Quitar</button>
+                        <div className="flex items-center gap-2 flex-1">
+                          <audio 
+                            src={pendingVoice.url} 
+                            controls 
+                            className="h-8 flex-1" 
+                          />
+                          <span className="text-[10px] text-[#9CA3AF] whitespace-nowrap">{pendingVoice.duration}s</span>
+                        </div>
+                        <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-xs px-2 py-1 text-red-400 hover:text-red-500">Descartar</button>
+                      </div>
+                    )}
+                    {isUploadingVoice && (
+                      <div className="mb-2 text-[10px] text-[#FF671F] px-2 flex items-center gap-1">
+                        ⏳ Subiendo nota de voz...
                       </div>
                     )}
 
@@ -11080,10 +11110,15 @@ function App() {
                         type="button"
                         onClick={isRecordingVoice ? stopVoiceRecording : startVoiceRecording}
                         className={`w-11 h-11 rounded-3xl flex items-center justify-center transition active:scale-95 ${isRecordingVoice ? 'bg-red-500 text-white animate-pulse' : 'bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A]'}`}
-                        title={isRecordingVoice ? 'Detener' : 'Grabar voz'}
+                        title={isRecordingVoice ? 'Detener grabación' : 'Grabar nota de voz'}
                       >
                         {isRecordingVoice ? '⏹' : '🎙️'}
                       </button>
+                      {isRecordingVoice && (
+                        <div className="text-[10px] text-red-400 font-mono px-1">
+                          {recordingTime}s / 60s
+                        </div>
+                      )}
                       {pendingVoice && <span className="text-[10px] text-[#FF671F] self-center">Voz lista</span>}
 
                       <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto && !pendingVoice} className="bg-[#FF671F] disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black px-3 rounded-3xl font-semibold h-11 w-11 flex items-center justify-center active:bg-[#E55A1A] active:scale-95 transition" aria-label="Enviar">

@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.49-voice-audio-fix-storage-rules",
+  "version": "0.1.50-voice-send-ux-improved",
   "type": "module",
   "scripts": {
     "dev": "vite",
