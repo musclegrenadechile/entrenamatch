@@ -1,25 +1,17 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.46-fcm-red-pushes code 50) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.47-network-leaderboard-perks code 51) ===
 
-AAB: EntrenaMatch-v0.1.46-fcm-red-pushes-code50-20260604-2305.aab + EntrenaMatch-release.aab
+AAB: EntrenaMatch-v0.1.47-network-leaderboard-perks-code51-20260604-2313.aab + EntrenaMatch-release.aab
 
 **What's new (copia esto):**
 
-**v0.1.46-fcm-red-pushes (code 50) — SIGUE SIN PARAR: PUSH NOTIFICATIONS REALES FCM EN BACKGROUND para tu Red de EntrenaSync (live o sync)**
+**v0.1.47-network-leaderboard-perks (code 51) — SIGUE SOLO CON LO DE MAYOR IMPACTO: Leaderboard de Redes + Perks concretos por alto Network Power + cuantificación global (primera red social real del fitness)**
 
-• Notificaciones push nativas reales (FCM) en segundo plano / app cerrada: cuando alguien de tu red (syncBonds) entra en "Entrenando ahora" o inicia un EntrenaSync, recibes alerta OS con título "?? {name} de tu Red está entrenando ahora" o "activó EntrenaSync".
-• Cloud Function (nuevo /functions) reacciona a updates en perfiles y envía a los tokens de los socios de red (guardados en userPushTokens).
-• En app: toasts especiales dorados para estos eventos + botón de acción que abre el mapa live y auto-ofrece el sync.
-• Canal Android 'network_activity' de alta prioridad (con luces, vibración, color naranja).
-• Para activar el server side: después de instalar el AAB, ve a la carpeta functions, npm install, y firebase deploy --only functions --project entrenamatch (una sola vez).
-• Todo el resto de Network Power (prioridad en swipe, badges, arena boost, stats, etc) sigue acumulando.
+• LEADERBOARD '?? TOP REDES (Network Power global)' en Explore: top 4 por NP (avg bond * sesiones), con #socios, min total sincronizados, partner top e impacto % colectivo en la red. Tappable a perfil. El grafo social ahora es visible, competitivo y con estatus real.
+• PERKS DESBLOQUEADOS POR ALTO NP (global): en el Pulso (mapa) cualquier usuario con bondLevel>=3 o >=100 min total en su red personal aparece más grande, con halo dorado, color gold y badge 'HIGH NP' — prioridad visual permanente sin necesidad de filtro 'Mi Red'.
+• MÁS CUANTIFICACIÓN GLOBAL: banner del Pulso ahora 'Redes activas hoy: N • +X joins en la red'. En leaderboard '+Y% impacto colectivo'.
+• Todo refuerza que tu Red de EntrenaSync = capital que te da prioridad, visibilidad y poder medible en la plataforma entera.
 
-Tu red ahora te "avisa" de verdad incluso fuera de la app. El grafo social de alto rendimiento se vuelve imposible de ignorar.
-
-Sube el AAB. Despliega la function. Sigue sin parar.
-
-(Ver functions/DEPLOY.md para pasos exactos)
-
-
+Sigue sin parar. Sube el AAB.
 Sube el AAB fresco. Sigue con todo.
 
 (Previous version notes below for reference if needed, but use the v0.1.44 block above for this upload.)
