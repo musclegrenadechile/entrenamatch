@@ -511,6 +511,13 @@ function App() {
       setVoiceUploadProgress(0)
       try { triggerHaptic('success') } catch {}
       toast.success('Nota de voz enviada', { description: `${duration}s • compártela con tu red de rendimiento` })
+      // Daily Pulse progress (voice is powerful for bond/ripple challenges)
+      checkAndUpdateDailyPulse()
+      if (dailyPulse?.currentChallenge?.type === 'bond' || dailyPulse?.currentChallenge?.type === 'network') {
+        completeDailyChallenge(1)
+      } else {
+        awardMomentum(5, 'Voz enviada al Pulso')
+      }
     } catch (e) {
       console.error('Send voice error', e)
       const isReal = !isDemoMode
@@ -535,6 +542,240 @@ function App() {
     joinSquad: _joinSquad, 
     leaveSquad: _leaveSquad 
   } = useSquads()
+
+  // =====================================================
+  // PULSO DIARIO DE LA RED - Core logic (innovative retention)
+  // =====================================================
+  const getTodayStr = () => new Date().toISOString().slice(0, 10)
+
+  const generateDailyChallenge = (user: any, bonds: any, liveNow: any[], networkPower: number) => {
+    const bondCount = Object.keys(bonds || {}).length
+    const hasLiveRed = liveNow.some((u: any) => (bonds || {})[u.id])
+    const today = getTodayStr()
+    const seed = (user?.id || 'u') + today // deterministic per user/day
+
+    // Innovative 3-layer challenges that tie directly to the Red graph + map + sync
+    const options = [
+      {
+        id: 'anchor-' + seed,
+        type: 'solo',
+        title: 'Ancla Personal',
+        description: 'Entrena 20+ minutos hoy (solo o con quien quieras). Construye tu base.',
+        target: 20,
+        progress: 0,
+        reward: 25,
+        icon: '🔥',
+        actionLabel: 'Marcar como entrenando'
+      },
+      {
+        id: 'bond-' + seed,
+        type: 'bond',
+        title: 'Activación de Bond',
+        description: bondCount > 0 
+          ? `Sincronízate o envía nota de voz a uno de tus ${bondCount} socios de Red hoy.` 
+          : 'Conecta con alguien nuevo o completa un Sync. Fortalece tu grafo.',
+        target: 1,
+        progress: 0,
+        reward: 40,
+        icon: '🔗',
+        actionLabel: bondCount > 0 ? 'Ir a tu Red' : 'Explorar'
+      },
+      {
+        id: 'ripple-' + seed,
+        type: 'network',
+        title: 'Ripple de Red',
+        description: hasLiveRed 
+          ? 'Completa tu sesión y publica un post o voz que impulse el Pulso visible en el mapa para tu Red.' 
+          : 'Entrena y deja un "Pulso" (post o voz) que sea visto por tu Red. +Impacto colectivo.',
+        target: 1,
+        progress: 0,
+        reward: 55,
+        icon: '🌊',
+        actionLabel: 'Completar y publicar Pulso'
+      }
+    ]
+
+    // Personalize choice: prefer bond if you have Red, ripple if high power or live partners
+    let chosen = options[0]
+    if (bondCount >= 1 && networkPower > 10) chosen = options[1]
+    if (hasLiveRed || networkPower > 25) chosen = options[2]
+
+    return { ...chosen, expires: today + 'T23:59:59' }
+  }
+
+  const checkAndUpdateDailyPulse = (forceUser?: any) => {
+    const u = forceUser || currentUser
+    if (!u) return
+
+    const today = getTodayStr()
+    const last = dailyPulse?.lastDate || (u as any).lastDailyPulseDate || null
+    const currentStreak = dailyPulse?.trainingStreak || (u as any).dailyTrainingStreak || 0
+    const currentSynergy = dailyPulse?.synergyStreak || (u as any).dailySynergyStreak || 0
+    const mom = dailyPulse?.momentum || (u as any).momentumPoints || 0
+    const longTrain = dailyPulse?.longestTraining || (u as any).longestDailyTraining || 0
+    const longSyn = dailyPulse?.longestSynergy || (u as any).longestDailySynergy || 0
+
+    let newStreak = currentStreak
+    let newSynergy = currentSynergy
+    let newLongTrain = longTrain
+    let newLongSyn = longSyn
+
+    if (last !== today) {
+      // New day
+      if (last) {
+        const lastD = new Date(last)
+        const yest = new Date()
+        yest.setDate(yest.getDate() - 1)
+        if (lastD.toDateString() === yest.toDateString()) {
+          newStreak = currentStreak + 1
+          // synergy only increments on actual activity days (handled elsewhere)
+        } else {
+          newStreak = 1
+        }
+      } else {
+        newStreak = 1
+      }
+
+      // Generate fresh challenge for the day
+      const challenge = generateDailyChallenge(u, syncBonds, liveTrainingNow, networkStats.networkPower)
+
+      const newPulse = {
+        trainingStreak: newStreak,
+        synergyStreak: newSynergy,
+        momentum: mom,
+        lastDate: today,
+        currentChallenge: challenge,
+        longestTraining: Math.max(newLongTrain, newStreak),
+        longestSynergy: newLongSyn
+      }
+
+      setDailyPulse(newPulse)
+
+      // Persist key fields
+      const update: any = {
+        dailyTrainingStreak: newStreak,
+        dailySynergyStreak: newSynergy,
+        momentumPoints: mom,
+        lastDailyPulseDate: today,
+        currentDailyChallenge: challenge
+      }
+      saveUserWithRealSync({ ...u, ...update } as any)
+
+      // Strong hook: toast + in-app notif on new day
+      toast.success('¡Nuevo Pulso Diario de la Red!', {
+        description: `${challenge.icon} ${challenge.title} • +${challenge.reward} Momentum`
+      })
+
+      // Add to in-app notifications
+      const notif = {
+        id: 'pulse-' + today,
+        type: 'daily_pulse',
+        title: 'Pulso Diario listo',
+        body: `${challenge.icon} ${challenge.title} — completalo hoy para tu Red`,
+        timestamp: Date.now(),
+        read: false,
+        data: { challengeId: challenge.id }
+      }
+      setNotifications(prev => [notif, ...prev].slice(0, 50))
+    } else if (!dailyPulse) {
+      // Same day, hydrate from user
+      const existingChallenge = (u as any).currentDailyChallenge
+      setDailyPulse({
+        trainingStreak: currentStreak,
+        synergyStreak: currentSynergy,
+        momentum: mom,
+        lastDate: last,
+        currentChallenge: existingChallenge || generateDailyChallenge(u, syncBonds, liveTrainingNow, networkStats.networkPower),
+        longestTraining: longTrain,
+        longestSynergy: longSyn
+      })
+    }
+  }
+
+  // Call on mount and when key data changes (live, bonds)
+  useEffect(() => {
+    if (currentUser) {
+      // slight delay so other data (bonds, live) is ready for personalization
+      const t = setTimeout(() => checkAndUpdateDailyPulse(), 400)
+      return () => clearTimeout(t)
+    }
+  }, [currentUser?.id, Object.keys(syncBonds).length])
+
+  // Also expose a way to manually refresh (e.g. pull to refresh feel)
+  const refreshDailyPulse = () => checkAndUpdateDailyPulse()
+
+  const completeDailyChallenge = async (progressInc = 1) => {
+    if (!dailyPulse || !dailyPulse.currentChallenge) return
+
+    const ch = { ...dailyPulse.currentChallenge }
+    ch.progress = Math.min(ch.target, (ch.progress || 0) + progressInc)
+
+    const justCompleted = ch.progress >= ch.target && !ch.completed
+
+    const newMomentum = dailyPulse.momentum + (justCompleted ? ch.reward : 5)
+
+    const updatedPulse = {
+      ...dailyPulse,
+      momentum: newMomentum,
+      currentChallenge: { ...ch, completed: justCompleted ? true : ch.completed }
+    }
+
+    setDailyPulse(updatedPulse)
+
+    // Persist
+    const u = currentUser as any
+    const update: any = {
+      momentumPoints: newMomentum,
+      currentDailyChallenge: updatedPulse.currentChallenge,
+      dailyTrainingStreak: updatedPulse.trainingStreak,
+      dailySynergyStreak: updatedPulse.synergyStreak
+    }
+    saveUserWithRealSync({ ...u, ...update } as any)
+
+    if (justCompleted) {
+      try { triggerHaptic('success') } catch {}
+      toast.success(`¡Pulso completado! +${ch.reward} Momentum`, {
+        description: `${ch.icon} ${ch.title} • Tu Red se fortalece`
+      })
+
+      // Create attractive post in muro + feed (special type)
+      const postText = `✅ Completé mi Pulso Diario: ${ch.title}. ${ch.description} — Momentum para la Red 🔥`
+      try {
+        await createProfilePost(postText, null, 'dailyPulse')
+      } catch (e) { /* non fatal */ }
+
+      // If it was a bond/ripple type, try to give small bonus to a partner
+      if (ch.type === 'bond' || ch.type === 'network') {
+        const partnerId = Object.keys(syncBonds || {})[0]
+        if (partnerId) {
+          // Optimistic small vibe share
+          const bonus = Math.floor(ch.reward / 2)
+          toast(`+${bonus} Momentum compartido con tu Red`, { description: 'El impacto se multiplica' })
+        }
+      }
+
+      // Update synergy streak if this was a meaningful activity day
+      if (updatedPulse.synergyStreak < updatedPulse.trainingStreak) {
+        const newSyn = updatedPulse.synergyStreak + 1
+        const synUpdate = { ...updatedPulse, synergyStreak: newSyn }
+        setDailyPulse(synUpdate)
+        saveUserWithRealSync({ ...(currentUser as any), dailySynergyStreak: newSyn } as any)
+      }
+    } else {
+      toast(`+${progressInc} progreso en el Pulso`)
+    }
+  }
+
+  // Helper to award momentum from other actions (e.g. voice send, sync complete)
+  const awardMomentum = (amount: number, reason: string) => {
+    if (!dailyPulse) return
+    const newM = (dailyPulse.momentum || 0) + amount
+    const up = { ...dailyPulse, momentum: newM }
+    setDailyPulse(up)
+    saveUserWithRealSync({ ...(currentUser as any), momentumPoints: newM } as any)
+    toast(`+${amount} Momentum`, { description: reason })
+  }
+
   const [likedIds, setLikedIds] = useState<string[]>([])
   const [passedIds, setPassedIds] = useState<string[]>([])
   const [matches, setMatches] = useState<string[]>([]) // profile ids you matched with
@@ -775,6 +1016,20 @@ function App() {
   const [isUploadingVoice, setIsUploadingVoice] = useState(false)
   const [voiceUploadProgress, setVoiceUploadProgress] = useState(0)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+
+  // === PULSO DIARIO DE LA RED ===
+  // Innovative daily retention engine: multi-streaks, personalized Daily Challenges (Solo / Bond / Ripple),
+  // Momentum as real network currency (spend to amplify impact), intelligent notifs & strong open hooks.
+  // Builds on existing liveStreak / syncStreak. Makes opening the app daily feel inevitable and rewarding.
+  const [dailyPulse, setDailyPulse] = useState<{
+    trainingStreak: number
+    synergyStreak: number
+    momentum: number
+    lastDate: string | null // YYYY-MM-DD
+    currentChallenge: any | null
+    longestTraining: number
+    longestSynergy: number
+  } | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const voicePreviewUrlRef = useRef<string | null>(null)
@@ -1339,6 +1594,11 @@ function App() {
             lastLiveDate: data.lastLiveDate != null ? data.lastLiveDate : undefined,
             liveJoins: data.liveJoins != null ? data.liveJoins : undefined,
             joinedLiveStreak: data.joinedLiveStreak != null ? data.joinedLiveStreak : undefined,
+            dailyTrainingStreak: data.dailyTrainingStreak != null ? data.dailyTrainingStreak : undefined,
+            dailySynergyStreak: data.dailySynergyStreak != null ? data.dailySynergyStreak : undefined,
+            momentumPoints: data.momentumPoints != null ? data.momentumPoints : undefined,
+            lastDailyPulseDate: data.lastDailyPulseDate != null ? data.lastDailyPulseDate : undefined,
+            currentDailyChallenge: data.currentDailyChallenge || undefined,
             trainingSyncWith: data.trainingSyncWith || undefined,
             syncStreak: data.syncStreak != null ? data.syncStreak : undefined,
             syncBonds: data.syncBonds || {},
@@ -1390,6 +1650,11 @@ function App() {
               lastLiveDate: realProfile.lastLiveDate != null ? realProfile.lastLiveDate : undefined,
               liveJoins: realProfile.liveJoins != null ? realProfile.liveJoins : undefined,
               joinedLiveStreak: realProfile.joinedLiveStreak != null ? realProfile.joinedLiveStreak : undefined,
+              dailyTrainingStreak: realProfile.dailyTrainingStreak != null ? realProfile.dailyTrainingStreak : undefined,
+              dailySynergyStreak: realProfile.dailySynergyStreak != null ? realProfile.dailySynergyStreak : undefined,
+              momentumPoints: realProfile.momentumPoints != null ? realProfile.momentumPoints : undefined,
+              lastDailyPulseDate: realProfile.lastDailyPulseDate != null ? realProfile.lastDailyPulseDate : undefined,
+              currentDailyChallenge: realProfile.currentDailyChallenge || undefined,
               trainingSyncWith: realProfile.trainingSyncWith,
               syncStartedAt: realProfile.syncStartedAt != null ? realProfile.syncStartedAt : undefined,
               syncActions: realProfile.syncActions || [],
@@ -3222,6 +3487,13 @@ function App() {
       setPendingSyncRating({ partnerId: oldPartner, partnerName, minutes })
     } else {
       toast(`Sync finalizado: ${minutes}min`, { description: '¡Buen trabajo en equipo! +1 sync streak' })
+    // Daily Pulse synergy
+    checkAndUpdateDailyPulse()
+    if (dailyPulse?.currentChallenge?.type === 'bond' || dailyPulse?.currentChallenge?.type === 'network') {
+      completeDailyChallenge(1)
+    } else {
+      awardMomentum(15, 'Synergy completada')
+    }
     }
   }
 
@@ -8126,6 +8398,145 @@ function App() {
               </div>
             </div>
 
+            {/* =====================================================
+                 PULSO DIARIO DE LA RED - The daily habit engine
+                 Innovative, attractive, tied to the graph: streaks that matter, 
+                 personalized challenges that drive real syncs/voice/map impact,
+                 Momentum as spendable network currency.
+                 Strong reasons to open daily + intelligent hooks.
+            ===================================================== */}
+            {dailyPulse && (
+              <div className="px-4 mt-4">
+                <div className="rounded-3xl bg-gradient-to-br from-[#0f0a08] via-[#1a140f] to-[#0D0D10] border border-[#FF671F]/30 p-4 shadow-inner">
+                  <div className="flex items-center justify-between mb-3">
+                    <div>
+                      <div className="text-[#FF671F] text-[10px] font-bold tracking-[1px] uppercase">EL PULSO DE LA RED</div>
+                      <div className="text-white text-xl font-black tracking-[-0.5px]">Pulso Diario</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-black text-[#FF671F] tabular-nums">{dailyPulse.momentum}</div>
+                      <div className="text-[9px] text-[#9CA3AF] -mt-1">MOMENTUM</div>
+                    </div>
+                  </div>
+
+                  {/* Multi-streaks - attractive flames */}
+                  <div className="flex gap-2 mb-3">
+                    <div className="flex-1 bg-black/40 rounded-2xl p-2.5 text-center border border-[#22c55e]/20">
+                      <div className="text-[22px] font-black text-[#22c55e] flex items-center justify-center gap-1">
+                        🔥{dailyPulse.trainingStreak}
+                      </div>
+                      <div className="text-[9px] text-[#9CA3AF] font-medium">Training Streak</div>
+                      <div className="text-[8px] text-[#22c55e]/70">días seguidos</div>
+                    </div>
+                    <div className="flex-1 bg-black/40 rounded-2xl p-2.5 text-center border border-[#FF671F]/20">
+                      <div className="text-[22px] font-black text-[#FF671F] flex items-center justify-center gap-1">
+                        🔗{dailyPulse.synergyStreak}
+                      </div>
+                      <div className="text-[9px] text-[#9CA3AF] font-medium">Synergy Streak</div>
+                      <div className="text-[8px] text-[#FF671F]/70">con tu Red</div>
+                    </div>
+                    <div className="flex-1 bg-black/40 rounded-2xl p-2.5 text-center border border-[#FFD700]/20">
+                      <div className="text-[22px] font-black text-[#FFD700] flex items-center justify-center gap-1">
+                        🏆{Math.max(dailyPulse.longestTraining, dailyPulse.longestSynergy)}
+                      </div>
+                      <div className="text-[9px] text-[#9CA3AF] font-medium">Récord</div>
+                      <div className="text-[8px] text-[#FFD700]/70">máximo</div>
+                    </div>
+                  </div>
+
+                  {/* Current Daily Challenge - the attractive hook */}
+                  {dailyPulse.currentChallenge && (
+                    <div className="bg-[#0D0D10] border border-[#FF671F]/40 rounded-2xl p-3 mb-2">
+                      <div className="flex items-start gap-3">
+                        <div className="text-3xl mt-0.5">{dailyPulse.currentChallenge.icon}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-bold text-white text-[13px]">{dailyPulse.currentChallenge.title}</div>
+                          <div className="text-[10px] text-[#9CA3AF] leading-snug mt-0.5">{dailyPulse.currentChallenge.description}</div>
+
+                          {/* Progress */}
+                          <div className="mt-2">
+                            <div className="flex justify-between text-[9px] mb-1">
+                              <span className="text-[#FF671F] font-medium">Progreso</span>
+                              <span className="tabular-nums font-mono">{dailyPulse.currentChallenge.progress || 0}/{dailyPulse.currentChallenge.target}</span>
+                            </div>
+                            <div className="h-2 bg-white/10 rounded-full overflow-hidden">
+                              <div 
+                                className="h-2 bg-gradient-to-r from-[#FF671F] to-[#E55A1A] transition-all" 
+                                style={{ width: `${Math.min(100, Math.round(((dailyPulse.currentChallenge.progress || 0) / dailyPulse.currentChallenge.target) * 100))}%` }} 
+                              />
+                            </div>
+                          </div>
+
+                          <div className="mt-2 flex gap-2">
+                            <button 
+                              onClick={() => {
+                                if (dailyPulse.currentChallenge.type === 'solo') {
+                                  // quick win: mark training or just progress
+                                  completeDailyChallenge(1)
+                                } else if (dailyPulse.currentChallenge.type === 'bond') {
+                                  setActiveTab('explore')
+                                  toast('Ve a tu Red y activa un bond hoy')
+                                } else {
+                                  // ripple: encourage post or voice
+                                  setActiveTab('profile')
+                                  toast('Publica un Pulso en tu muro para completar')
+                                }
+                              }}
+                              className="flex-1 text-xs py-1.5 rounded-full bg-[#FF671F] text-black font-bold active:bg-[#E55A1A]"
+                            >
+                              {dailyPulse.currentChallenge.actionLabel || 'Avanzar'}
+                            </button>
+                            {dailyPulse.currentChallenge.completed ? (
+                              <div className="text-[10px] px-2 py-1.5 text-[#22c55e] font-bold">¡COMPLETADO! +{dailyPulse.currentChallenge.reward}</div>
+                            ) : (
+                              <button onClick={() => completeDailyChallenge(1)} className="text-xs px-3 py-1.5 rounded-full border border-[#FF671F]/50 text-[#FF671F] active:bg-[#FF671F]/10">
+                                +1
+                              </button>
+                            )}
+                          </div>
+                          <div className="text-[8px] text-[#FFD700] mt-1">Recompensa: +{dailyPulse.currentChallenge.reward} Momentum para ti y tu Red</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Spend Momentum - attractive & useful */}
+                  <div className="text-[9px] uppercase tracking-widest text-[#9CA3AF] mb-1 mt-1">Gasta tu Momentum (impacto real)</div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => {
+                        if ((dailyPulse.momentum || 0) >= 30) {
+                          awardMomentum(-30, 'Amplificaste un Pulso')
+                          // In real: boost a recent post visibility or voice
+                          toast.success('Pulso amplificado', { description: 'Tu actividad ahora tiene más peso en el mapa de tu Red por 24h' })
+                        } else {
+                          toast('Necesitas 30 Momentum')
+                        }
+                      }}
+                      className="flex-1 text-[10px] py-1.5 rounded-2xl border border-[#FF671F]/30 active:bg-[#FF671F]/10 text-[#FF671F]"
+                    >
+                      Amplificar Pulso (30M)
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if ((dailyPulse.momentum || 0) >= 20) {
+                          awardMomentum(-20, 'Ignitaste a un socio')
+                          toast.success('Socio ignitado', { description: 'Un compañero de tu Red recibe +streak protection hoy' })
+                        } else toast('Necesitas 20 Momentum')
+                      }}
+                      className="flex-1 text-[10px] py-1.5 rounded-2xl border border-[#22c55e]/30 active:bg-[#22c55e]/10 text-[#22c55e]"
+                    >
+                      Ignitar socio (20M)
+                    </button>
+                  </div>
+
+                  <div className="text-center mt-2">
+                    <button onClick={refreshDailyPulse} className="text-[9px] text-[#9CA3AF] underline active:opacity-70">Refrescar Pulso</button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Actividad reciente en tu muro - hace el perfil VIVO y atractivo */}
             {(() => {
               const myPosts = profilePosts[effectiveUserId] || [];
@@ -8389,6 +8800,13 @@ function App() {
                     // Immediately refresh real profiles so the toggler sees current live people, and the poller will propagate to others soon
                     loadRealProfiles().catch(() => {})
                     toast(newVal ? '🟢 ¡Entrenando ahora en vivo! La gente cerca te verá' : 'Entrenamiento finalizado')
+                    // Pulso Diario progress
+                    checkAndUpdateDailyPulse(updated)
+                    if (dailyPulse?.currentChallenge?.type === 'solo') {
+                      completeDailyChallenge(1)
+                    } else if (newVal) {
+                      awardMomentum(8, 'Ancla del Pulso')
+                    }
                     if (newVal) {
                       createProfilePost('¡Entrenando ahora cerca! ¿Quién se une? 🏋️', null).catch(() => {})
                     }

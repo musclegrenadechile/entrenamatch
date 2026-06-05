@@ -1256,6 +1256,18 @@ input[type="range"]::-moz-range-thumb {
   box-shadow: 0 0 4px rgba(255,103,31,0.5);
 }
 
+/* Pulso Diario - attractive daily retention system */
+.pulso-flame {
+  filter: drop-shadow(0 0 3px currentColor);
+}
+.pulso-challenge {
+  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.pulso-challenge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px -2px rgba(255,103,31,0.15);
+}
+
 /* Recording pill — urgent + premium */
 .voice-recording {
   display: flex;
