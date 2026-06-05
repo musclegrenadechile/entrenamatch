@@ -1495,24 +1495,36 @@ function App() {
     }
 
     // Real mode: listen to partnerLocations collection (devs add via the form below)
-    const { collection, onSnapshot, query, orderBy } = require('firebase/firestore') // dynamic to avoid TDZ
-    const q = query(collection(db, 'partnerLocations'), orderBy('name'))
-    const unsub = onSnapshot(q, (snap: any) => {
-      const fromFs: any[] = []
-      snap.forEach((d: any) => fromFs.push({ id: d.id, ...d.data() }))
-      // merge seeds + fs (fs overrides if same id)
-      const merged = [...base]
-      fromFs.forEach(p => {
-        const idx = merged.findIndex(s => s.id === p.id)
-        if (idx >= 0) merged[idx] = p
-        else merged.push(p)
-      })
-      setPartnerLocations(merged)
-    }, (err: any) => {
-      console.warn('partnerLocations listener error (using seeds only)', err)
-      setPartnerLocations(base)
-    })
-    return () => unsub && unsub()
+    // Use dynamic import (consistent with other firestore calls) to avoid bundle/TDZ issues that were causing
+    // "Expected first argument to collection() to be a CollectionReference, a DocumentReference or FirebaseFirestore"
+    let unsub: any = null
+    ;(async () => {
+      try {
+        const firestoreMod = await import('firebase/firestore')
+        const { collection, onSnapshot, query, orderBy } = firestoreMod
+        const q = query(collection(db, 'partnerLocations'), orderBy('name'))
+        unsub = onSnapshot(q, (snap: any) => {
+          const fromFs: any[] = []
+          snap.forEach((d: any) => fromFs.push({ id: d.id, ...d.data() }))
+          // merge seeds + fs (fs overrides if same id)
+          const merged = [...base]
+          fromFs.forEach(p => {
+            const idx = merged.findIndex(s => s.id === p.id)
+            if (idx >= 0) merged[idx] = p
+            else merged.push(p)
+          })
+          setPartnerLocations(merged)
+        }, (err: any) => {
+          console.warn('partnerLocations listener error (using seeds only)', err)
+          setPartnerLocations(base)
+        })
+      } catch (err: any) {
+        console.warn('partnerLocations listener error (using seeds only)', err)
+        setPartnerLocations(base)
+      }
+    })()
+
+    return () => { if (unsub) unsub() }
   }, [isDemoMode, db])
   const showFullProfileRef = useRef<((profile: any) => void) | null>(null)
   const latestRealProfilesRef = useRef<any[]>([])

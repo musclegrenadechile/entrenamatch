@@ -1,4 +1,25 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.66-mapa-tiempo-real-labels code 70) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.67-partners-collection-fix code 71) ===
+
+CRASH FIX: FirebaseError "Expected first argument to collection() to be a CollectionReference, a DocumentReference or FirebaseFirestore"
+
+Root cause:
+- In the partnerLocations listener (added for the "devs add partner businesses on map" feature), we were using `require('firebase/firestore')` inside the useEffect.
+- In the Vite production bundle (the index-*.js that runs on github.io and in the webview), mixing `require` with the top-level static imports from services/firebase.ts (which does `getFirestore`) and other dynamic `await import('firebase/firestore')` elsewhere in the app causes the firestore functions to be from a different module instance.
+- When `collection(db, 'partnerLocations')` ran, the first arg check inside the (wrong) collection() implementation saw `db` as invalid → crash on map open / partners load.
+
+Fix:
+- Changed the partners effect to use the exact same pattern as the rest of the app:
+  `const firestoreMod = await import('firebase/firestore'); const { collection, onSnapshot, query, orderBy } = firestoreMod;`
+- Kept the `if (!db || isDemoMode)` guard + seeds fallback.
+- This makes the listener consistent, avoids duplicate module instances in the bundle, and prevents the type error on collection().
+
+The deprecation warning about enableIndexedDbPersistence() is still there (legacy API); can be cleaned in a future pass by moving to `initializeFirestore(app, { localCache: persistentLocalCache() })` at service init time.
+
+OAuth domain warning is non-fatal info (add musclegrenadechile.github.io to Firebase Auth > Authorized domains for full web Google sign-in on gh-pages).
+
+New AAB + version bump included. The web bundle now has the fixed listener so the collection error should be gone. 
+
+Test: open the app (especially web/gh-pages or after fresh install), go to the map — partners should load without crashing. Adding partners via the dev button should still work.
 
 FIX RÁPIDO DE LABELS EN EL MAPA (por tu último pedido):
 - Donde decía "Ocultar el GymPulse" ahora dice "Ocultar el mapa en tiempo real"

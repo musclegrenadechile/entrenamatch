@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.66-mapa-tiempo-real-labels",
+  "version": "0.1.67-partners-collection-fix",
   "type": "module",
   "scripts": {
     "dev": "vite",
