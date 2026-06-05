@@ -795,8 +795,8 @@ input[type="range"]::-moz-range-thumb {
   font-size: 15px;
 }
 
-/* Echo posts - Living Mythology. These are witnessed legendary moments claimed by the community.
-   They give the app culture, history, and status. "Every ripple becomes part of the shared story." */
+/* Highlight posts from the network - Shared Performance Highlights from strong EntrenaSync sessions.
+   These build the culture, history, and status of the first fitness social network. Great syncs become visible and inspire the community. */
 .muro-post--echo {
   border-color: #FFD700;
   background: linear-gradient(160deg, rgba(42,32,10,0.92), rgba(18,18,22,0.99));
@@ -819,7 +819,7 @@ input[type="range"]::-moz-range-thumb {
   font-size: 15px;
 }
 
-/* Iconic photo upload/preview in muro composer — feels like capturing a legend, not "just a pic" */
+/* Iconic photo upload/preview in muro composer — feels like capturing a high-performance session for your network, not "just a pic" */
 .muro-composer-iconic-preview {
   border-color: #FFD700;
   box-shadow: 0 15px 40px -10px rgba(0,0,0,0.7), 0 0 0 1px rgba(255,215,0,0.25);
@@ -1112,7 +1112,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* Enhanced attractive message notifications */
-.legend-message-toast {
+.legend-message-toast { /* gold for messages from your training network / red */
   border: 2px solid #FFD700 !important;
   background: linear-gradient(145deg, #1a160f, #1C1C20) !important;
   box-shadow: 0 12px 35px -5px rgba(255, 215, 0, 0.35), 0 0 0 1px rgba(255,215,0,0.25) !important;
@@ -1160,7 +1160,7 @@ input[type="range"]::-moz-range-thumb {
   100% { stroke-dashoffset: -40; }
 }
 
-/* Legend markers on map - real weight for bonds/legends */
+/* Network markers on map - real weight for your training graph (high bond partners in your red) */
 .entrenamatch-marker.legend-marker {
   filter: drop-shadow(0 0 8px #FFD700);
 }
@@ -1170,7 +1170,22 @@ input[type="range"]::-moz-range-thumb {
   box-shadow: 0 0 0 3px #FFD70055, 0 0 12px #FFD70088 !important;
 }
 
-/* Legend tethers on map - bonded pairs have golden persistent weight */
+/* When Mi Red (Network Power) filter is active: your graph members get MAX visual dominance on the pulse */
+.entrenamatch-marker.network-power-active {
+  z-index: 1000 !important;
+}
+.entrenamatch-marker.network-power-active img,
+.entrenamatch-marker.network-power-active > div {
+  border-color: #FFD700 !important;
+  box-shadow: 0 0 0 5px #FFD70066, 0 0 18px #FFD700cc, 0 0 32px rgba(255,215,0,0.35) !important;
+  animation-duration: 1.6s !important;
+}
+@keyframes network-power-halo {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.08); }
+}
+
+/* Network tethers on map - your high-performance sync partners have golden persistent connection in the pulse */
 .map-sync-tether.legend-tether {
   stroke: #FFD700;
   stroke-width: 4;
@@ -1180,6 +1195,11 @@ input[type="range"]::-moz-range-thumb {
 @keyframes legend-tether-glow {
   0%, 100% { stroke-opacity: 0.85; }
   50% { stroke-opacity: 1; }
+}
+/* Extra dominance when viewing your Red filter */
+.map-sync-tether.legend-tether.network-tether-boost {
+  stroke-width: 5.5;
+  filter: drop-shadow(0 0 4px #FFD700);
 }
 
 /* Small pulse at the "receiving" user when a wave arrives */

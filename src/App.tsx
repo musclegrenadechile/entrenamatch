@@ -384,7 +384,7 @@ function App() {
   const [recentlyPublishedPostId, setRecentlyPublishedPostId] = useState<string | null>(null)
   const [feedPublishing, setFeedPublishing] = useState(false)
   const [showFeedPublishSuccess, setShowFeedPublishSuccess] = useState(false)
-  // DISRUPTIVE EntrenaSync (v0.2.0 killer): shared real-time synced training - turns live presence into "training together" experience (completely unique vs market async buddies)
+  // THE KILLER FEATURE: EntrenaSync - real-time synchronized training that turns two people into a high-performance unit with shared state, visible connection, joint impact, and lasting social capital. This is the foundation of the first true social network for fitness performance.
   const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
   const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
   const [syncActions, setSyncActions] = useState<any[]>([]) // {id, emoji, userId, at, label}
@@ -400,39 +400,47 @@ function App() {
   const [liveModalSort, setLiveModalSort] = useState<'distance' | 'urgency' | 'hot'>('distance')
 
   // =====================================================
-  // THE CORE PURPOSE OF THE ARENA (ENTRENASYNC RITUAL) — polished to feel like it *actually matters*
-  // The Arena is the engine that makes "training together" a first-class, visible, status-building, culture-creating experience.
-  // Its real function (what makes the whole app inevitable):
-  // - Turn two separate bodies into one synchronized system in real time (flying actions, shared vibe orb, living energy field, tether that reacts to your combined effort).
-  // - Every action and high-vibe moment has **real consequence**: combos multiply vibe, >80 auto-creates "alta energía" that broadcasts as ripples on the live map (the city sees where legends are happening).
-  // - Builds permanent **bonds & legends** (real history, gold markers, special tethers, priority in feed, "LEYENDA" status that others respect).
-  // - Creates **community mythology**: high moments are witnessable (short replay anyone can see). Witnesses can "claim the echo" → permanent gold post in global feed. Your private ritual becomes shared legend that inspires others.
-  // - Your personal muro becomes your **living archive of achievements** (sync legendarios, ecos reclamados, ripples enviados). It feels like your hall of fame.
-  // - End result: Training alone feels lesser once you've felt the ritual. Bonds have weight. Moments have legacy. The map and feed feel alive because real human synchronization is happening and being celebrated.
+  // THE CORE PURPOSE OF ENTRENASYNC — building the first real social network for synchronized fitness performance.
   //
-  // In the UI this must be *obvious*: actions feel powerful, high vibe feels epic and visible, ending a ritual feels like you just forged something meaningful, ripples/echoes/witness make the community part of your legend.
-  // This is not a game. This is the operating system for synchronized human effort and shared mythology.
+  // We are deliberately keeping these 5 non-negotiable mechanics (user directive):
+  // • Real-time synchronized training with shared state — two people training "juntas" even when physically in different places.
+  // • Strong visual connection in the moment — tether/energy line + orb that reacts live to the combined effort of both.
+  // • Joint actions that create a shared performance score + visible, lasting impact afterward (profiles, feed, live map).
+  // • "Training with someone" produces real, measurable consequences: better consistency, higher training volume, stronger motivation, and a permanent shared archive of the session.
+  // • The map functions as a living social layer of real activity — you can literally see where meaningful, high-signal training is happening right now.
+  //
+  // Epic category vision (first-principles, like the original social graph or real-time public conversation):
+  // This is the platform that makes synchronized physical effort between humans a primary, high-status, performance-enhancing social primitive.
+  // Not another matching app. Not solo tracking.
+  // But the network where training together is visible, consequential, status-bearing, and culturally significant.
+  // Your training relationships form a real graph with history and compounding value.
+  // Great sync sessions don't disappear — they leave measurable traces on both profiles, propagate through the feed, and light up the map.
+  // The map becomes the living pulse of training communities worldwide.
+  // In 5-10 years, serious athletes will say "I do my important sessions in Sync" the same way people say they post on the main social networks today.
+  //
+  // In the UI this must be obvious: the connection feels electric and high-stakes, joint actions feel powerful and consequential,
+  // ending a strong sync feels like you built something real together that is now part of both of your permanent records,
+  // and the entire community (feed + map) feels more alive because real synchronized training is happening at scale and being recognized.
+  // This is infrastructure for the future of fitness as a synchronized, social, high-performance activity.
   // =====================================================
   const [syncCombo, setSyncCombo] = useState(0)
   const [flyingEmojis, setFlyingEmojis] = useState<any[]>([]) // {id, emoji, label}
-  const [showSyncArena, setShowSyncArena] = useState(false)
+  const [showSyncArena, setShowSyncArena] = useState(false)  // EntrenaSync immersive view (the core synchronized training experience)
 
-  // VISIONARY "NEVER SEEN BEFORE" LAYER: Ritual Ripples
-  // When something epic happens inside the Arena (high vibe, big combo), it sends a visible energy wave to the Live Map.
-  // This turns the map from "who is training" into "where the living rituals are happening right now".
-  // This is the kind of ambient awareness that makes the product feel alive at a city scale — like nothing else exists.
-  const [ritualRipples, setRitualRipples] = useState<any[]>([]) // {id, lat, lng, label, intensity}
+  // PERFORMANCE PROPAGATION: Strong EntrenaSync sessions send visible waves to the Live Map.
+  // This is the living social layer of the network — you see where synchronized high-performance training is happening and propagating right now.
+  // The map becomes the pulse of the fitness social graph.
+  const [ritualRipples, setRitualRipples] = useState<any[]>([]) // {id, lat, lng, label, intensity}  // TODO: rename to performanceWaves or syncRipples for clarity (internal name legacy)
   const [syncBonds, setSyncBonds] = useState<Record<string, {totalMin: number, sessions: number, avgRating: number, bondLevel: number}>>({})
   const [lastSyncStory, setLastSyncStory] = useState<any>(null)
   const [replaySession, setReplaySession] = useState<any>(null) // {partnerName, minutes, vibe, actions, rating?}
-  const [witnessData, setWitnessData] = useState<any>(null) // for Witness mode: short replay of epic moment that caused a ripple
+  const [witnessData, setWitnessData] = useState<any>(null) // for shared session highlight replay: replay of a strong EntrenaSync (shared state, actions, vibe) that can be archived as co-authored performance memory
 
-  // Living Mythology: Echoes
-  // High-vibe legend moments can be "claimed" as Echoes by witnesses.
-  // These become permanent, visible community memory in the feed and as tappable pins on the map.
-  // This is what makes the app feel like it has culture, history, and status from day one.
-  // "Every ripple becomes an echo. The mythology grows with every sync."
-  const [echoPins, setEchoPins] = useState<any[]>([]); // persistent tappable echo markers on map from legend ripples
+  // Shared Performance Highlights & Discovery Pins
+  // Strong EntrenaSync sessions create permanent, visible co-authored highlights in the feed and tappable pins on the map.
+  // This builds real culture and status in the network: great synchronized training becomes discoverable and inspires others.
+  // Training together compounds into visible performance capital for both people.
+  const [echoPins, setEchoPins] = useState<any[]>([]); // persistent tappable highlight pins on map from strong sync sessions
   const [activeSyncPairs, setActiveSyncPairs] = useState<any[]>([]) // lightweight for global FOMO teasers
 
   // Auto-refresh real sessions on tab DISABLED to fix TDZ.
@@ -707,7 +715,7 @@ function App() {
   })
   const [mapNearOnly, setMapNearOnly] = useState(false) // simple filter for map UX
   const [selectedMapZone, setSelectedMapZone] = useState<string | null>(null) // interactive zone filter for "sigue con todo el mapa"
-  const [showOnlyLegends, setShowOnlyLegends] = useState(false) // real weight for bonds/legends on map
+  const [showOnlyLegends, setShowOnlyLegends] = useState(false) // filter to only high-performance sync partners (your real training network) on map
   const liveMapRef = useRef<HTMLDivElement>(null)
 
   // Zone colors shared for map markers and interactive legend (sigue con todo el mapa)
@@ -2817,7 +2825,7 @@ function App() {
     }
     // Auto post to muro for both
     createProfilePost(`¡Sincronizado con ${partnerName}! Entrenamos juntos ahora 🔥`, null).catch(() => {})
-    toast.success(`EntrenaSync iniciado con ${partnerName}`, { description: 'Timer y acciones compartidas en vivo' })
+    toast.success(`EntrenaSync iniciado con ${partnerName}`, { description: 'Estado compartido en vivo + acciones conjuntas. Esto genera resultados reales.' })
     // Attractive feedback: confetti + clear joining loader (the UI will switch to profile showing the rich sync panel)
     try { confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } }) } catch {}
     addDebugLog(`EntrenaSync started with ${partnerName}`)
@@ -2833,14 +2841,14 @@ function App() {
 
   // Witness mode for ripples: anyone who sees a ripple on the map (or gets notified) can view a short replay
   // of the epic high-vibe moment in the Arena that generated the wave.
-  // This is the "never seen before" social proof layer — your legendary syncs become witnessable by the community.
+  // This is the social proof layer of the network — your strong syncs become discoverable highlights that the community can see and be inspired by. Your training graph builds culture and status in the first fitness social network.
   const witnessRipple = useCallback((rippleId: string) => {
     const r = ritualRipples.find((rr: any) => rr.id === rippleId)
     if (r && r.witnessData) {
       setWitnessData(r.witnessData)
       triggerHaptic('medium')
     } else {
-      toast('El momento legendario ya se disipó en el tiempo. ¡Crea el tuyo ahora en la Arena!')
+      toast('El highlight de esta sesión ya no está disponible. Crea uno nuevo con un EntrenaSync fuerte.')
     }
   }, [ritualRipples, triggerHaptic])
 
@@ -2849,7 +2857,7 @@ function App() {
     ;(window as any).witnessRipple = witnessRipple
   }, [witnessRipple])
 
-  // For echo pins on map (persistent legend ripples)
+  // For highlight pins on map (persistent strong sync moments from the network graph)
   const witnessEchoPin = useCallback((pinId: string) => {
     const pin = echoPins.find((p: any) => p.id === pinId);
     if (pin && pin.witnessData) {
@@ -2903,7 +2911,7 @@ function App() {
       } catch (e) {}
     }
     createProfilePost(`Sync terminado con ${partnerName} - ${minutes}min juntos`, null).catch(() => {})
-    // Save replayable memory (unique persistence of the shared ritual)
+    // Save replayable memory (unique persistence of the shared performance sync)
     if (minutes >= 2 && capturedActions.length > 0) {
       setReplaySession({ partnerName, minutes, vibe: capturedVibe, actions: capturedActions.slice(0,8), rating: null })
     }
@@ -2967,7 +2975,7 @@ function App() {
     if (minutes >= 3 && (replaySession || syncActions.length > 1)) {
       const actionsForStory = (replaySession?.actions || syncActions).slice(0, 6)
       const actionSummary = actionsForStory.map((a: any) => `${a.emoji} ${a.label}${a.combo ? `x${a.combo}` : ''}`).join(' · ')
-      const storyText = `🔄 ENTRENASYNC LEGENDARIO\n${minutes} min juntos con ${partnerName}\nVibe final: ${syncVibe || 70}% • Calificación: ${rating}★\nRitual: ${actionSummary}\n\nEntrenamos como si estuviéramos en el mismo gym. Esto nadie más lo tiene. #EntrenaSync`
+      const storyText = `🔄 ENTRENASYNC COMPLETADO\n${minutes} min sincronizados con ${partnerName}\nSync Score final: ${syncVibe || 70}% • Calificación: ${rating}★\nAcciones clave: ${actionSummary}\n\nEntrenamos en sync real-time y subimos nuestro rendimiento. Esta alianza ya genera +${Math.floor(minutes * 1.2)} min de alto rendimiento compartido. Queda en nuestra red para siempre. #EntrenaSync`
       // Post to self (visible in my muro + feed)
       createProfilePost(storyText, null).catch(() => {})
       // Also post directly for the partner so BOTH get the beautiful shared story in their muro (true co-presence even after session ends)
@@ -3039,7 +3047,14 @@ function App() {
         const uids = [effectiveUserId, syncPartnerId].sort()
         const sessionId = `sync_${uids[0]}_${uids[1]}`
         const actionForSession = { emoji, label, userId: effectiveUserId, at: Date.now(), combo: newCombo > 1 ? newCombo : undefined }
-        const newVibe = Math.min(100, (syncVibe || 0) + vibeGain)
+        let newVibe = Math.min(100, (syncVibe || 0) + vibeGain)
+        // Network Power bonus: when syncing with a high-bond partner from your red, extra vibe — the graph rewards real alliances with higher shared energy.
+        const isBondedAction = !!syncBonds[syncPartnerId]
+        if (isBondedAction) {
+          const bond = syncBonds[syncPartnerId]
+          const netBonus = Math.floor((bond.bondLevel || 1) * 0.8)
+          newVibe = Math.min(100, newVibe + netBonus)
+        }
         await updateDoc(doc(db, 'syncSessions', sessionId), {
           actions: arrayUnion(actionForSession),
           vibe: newVibe,
@@ -3047,11 +3062,11 @@ function App() {
         })
         setSyncVibe(newVibe)
 
-        // Make the purpose *felt*: every action with a real bond builds your legend visibly.
+        // Make the purpose *felt*: every action with a real bond from your red builds your Network Power visibly, and boosts the shared vibe — the social graph has real performance teeth.
         const isBondedAction = !!syncBonds[syncPartnerId]
         if (isBondedAction && (newCombo >= 2 || vibeGain > 10)) {
           const bondBoost = Math.max(1, Math.floor(vibeGain / 8))
-          toast.success(`❤️ Bond +${bondBoost} con tu leyenda`, { description: 'Esto se ve en tu mapa (tether dorado) y en tu muro de logros.' })
+          toast.success(`❤️ Alianza fortalecida +${bondBoost} con tu socio de sync`, { description: 'Tu Network Power sube. Se propaga en tu red, mapa y feed – la red te hace más fuerte.' })
         }
 
         // PEQUEÑO TOQUE DISRUPTIVO: auto-captura de "momento de alta vibe" cuando cruza 80.
@@ -3656,9 +3671,9 @@ function App() {
     )
 
     // Enhanced attractive in-app toast for messages (more visual pop, especially for legends)
-    const isLegendMsg = !isGroup && !!syncBonds[chatId]
-    const toastTitle = isLegendMsg ? `⭐ Mensaje de tu Leyenda ${name}` : title
-    const toastClass = isLegendMsg ? 'legend-message-toast' : ''
+    const isLegendMsg = !isGroup && !!syncBonds[chatId] // from your training network / red
+    const toastTitle = isLegendMsg ? `⭐ Mensaje de tu Red (Network Power) ${name}` : title
+    const toastClass = isLegendMsg ? 'legend-message-toast' : '' // network msg gold for your red
     toast.info(toastTitle, {
       description: (
         <div className={`flex items-start gap-3 mt-1 ${isLegendMsg ? 'legend-toast-content' : ''}`}>
@@ -3673,7 +3688,7 @@ function App() {
         </div>
       ),
       action: {
-        label: isLegendMsg ? 'Responder a Leyenda' : 'Ver',
+        label: isLegendMsg ? 'Responder a tu Red' : 'Ver',
         onClick: () => {
           if (isGroup) {
             setActiveTab('sesiones')
@@ -4510,18 +4525,18 @@ function App() {
     // Include a few of your own recent posts (from muro or "Publicar en el Feed") into the visible feed list.
     // This fixes the "I published but don't see my post in the feed tab" disappointment.
     // Own posts only mixed in default view; filters (Live/Reales/Fijados) stay pure community discovery.
-    // echoesSource always includes own so "⭐ ECOS DE LEYENDA" strip shows your claimed echoes immediately.
+    // echoesSource always includes own so the "⭐ HIGHLIGHTS DE RED" strip shows your strong syncs immediately.
     const myPostsRaw = (profilePosts[effectiveUserId] || []).map((p: any) => ({ ...p, ownerId: effectiveUserId, isMine: true }));
     let feedPosts = [...allCommunityPosts, ...myPostsRaw];
 
     feedPosts = feedPosts.sort((a: any, b: any) => {
       const aIsLegend = !!syncBonds[a.ownerId];
       const bIsLegend = !!syncBonds[b.ownerId];
-      if (bIsLegend && !aIsLegend) return -1; // Legends have real weight in global feed
+      if (bIsLegend && !aIsLegend) return -1; // High-performance network partners have real weight in global feed (your training graph gives status)
       if (aIsLegend && !bIsLegend) return 1;
-      const aIsEcho = (a.text || '').includes('Fui testigo') || (a.text || '').includes('RITUAL LEGENDARIO') || (a.text || '').includes('Echo');
-      const bIsEcho = (b.text || '').includes('Fui testigo') || (b.text || '').includes('RITUAL LEGENDARIO') || (b.text || '').includes('Echo');
-      if (bIsEcho && !aIsEcho) return -1; // Echoes (witnessed legends) rise to the top - living mythology
+      const aIsEcho = (a.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (a.text || '').includes('Destacado de Sesión Sync');
+      const bIsEcho = (b.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (b.text || '').includes('Destacado de Sesión Sync');
+      if (bIsEcho && !aIsEcho) return -1; // Network highlights (strong syncs) rise to the top - visible performance culture
       if (aIsEcho && !bIsEcho) return 1;
       if (b.pinned && !a.pinned) return 1;
       if (a.pinned && !b.pinned) return -1;
@@ -4556,15 +4571,16 @@ function App() {
         addedNew = true
         // Guard: only notify if we've already seen at least one before (skip init spam)
         if (seenLiveUserIdsRef.current.size > 1) {
+          const inMyNet = !!syncBonds[liveUser.id];
           addNotification({
             type: 'session_join',
-            title: '🟢 ¡Entrenando ahora cerca!',
-            body: `${liveUser.name} está en vivo a ${(liveUser.distance || 0).toFixed(1)}km. ¡Únete ya antes de que se vaya!`,
+            title: inMyNet ? '🔥 ¡Tu red en vivo cerca!' : '🟢 ¡Entrenando ahora cerca!',
+            body: `${liveUser.name} está en vivo a ${(liveUser.distance || 0).toFixed(1)}km. ¡Únete ya antes de que se vaya!${inMyNet ? ' (tu socio de EntrenaSync)' : ''}`,
             relatedId: liveUser.id,
             photoUrl: liveUser.photos?.[0],
           })
-          toast(`🟢 ${liveUser.name} entrenando ahora cerca`, {
-            description: `A ${(liveUser.distance || 0).toFixed(1)}km · se va en ~${liveUser.seVaEnMin || 40}m — ¡Ver perfil!`,
+          toast(`${inMyNet ? '🔥' : '🟢'} ${liveUser.name} entrenando ahora cerca`, {
+            description: `A ${(liveUser.distance || 0).toFixed(1)}km · se va en ~${liveUser.seVaEnMin || 40}m — ¡Ver perfil!${inMyNet ? ' (fortalece tu red)' : ''}`,
             action: {
               label: 'Ver',
               onClick: () => setShowFullProfile(liveUser as any)
@@ -4654,7 +4670,8 @@ function App() {
         const highEnergy = ((user.joinCount || 0) >= 3) || !!user.trainingSyncWith || (user.syncStreak || 0) > 2
         const isLegend = !!user.isLegend || (user.bondInfo && ((user.bondInfo.totalMin || 0) >= 30 || (user.bondInfo.bondLevel || 0) >= 2))
         const markerColor = isLegend ? '#FFD700' : color // Gold for legends - real weight on map
-        const legendBadge = isLegend ? `<div style="position:absolute;top:-4px;right:-4px;background:#FFD700;color:#111;font-size:7px;font-weight:900;padding:0 3px;border-radius:3px;border:1px solid #111">⭐ LEGEND</div>` : ''
+        const legendBadge = isLegend ? `<div style="position:absolute;top:-4px;right:-4px;background:#FFD700;color:#111;font-size:7px;font-weight:900;padding:0 3px;border-radius:3px;border:1px solid #111">⭐ RED</div>` : ''
+        const networkPowerHalo = (showOnlyLegends && isLegend) ? `<div style="position:absolute;inset:-6px;border-radius:9999px;border:2px solid #FFD700;opacity:0.5;animation:network-power-halo 2.2s ease-in-out infinite;"></div>` : ''
 
         // Premium personal marker: photo if available, else nice initials badge + name label.
         // Makes the map feel alive and social (the "preciosa" part).
@@ -4667,6 +4684,7 @@ function App() {
         if (photo) {
           iconHtml = `
             <div style="position:relative;width:36px;height:36px">
+              ${networkPowerHalo}
               <div style="width:36px;height:36px;border-radius:9999px;overflow:hidden;border:${borderW} solid ${markerColor};box-shadow:${glow}, 0 2px 6px rgba(0,0,0,0.4);${pulseExtra}">
                 <img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='${markerColor}';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px\\'>${shortName.slice(0,2).toUpperCase()}</div>'" />
               </div>
@@ -4678,6 +4696,7 @@ function App() {
           const initials = shortName.slice(0, 2).toUpperCase()
           iconHtml = `
             <div style="position:relative;width:36px;height:36px">
+              ${networkPowerHalo}
               <div style="width:36px;height:36px;border-radius:9999px;background:${markerColor};border:${borderW} solid #fff;box-shadow:${glow},0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px;${pulseExtra}">${initials}</div>
               <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
               ${highEnergy ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:9999px;background:#fff;box-shadow:0 0 6px #fff;border:1.5px solid ${markerColor}"></div>` : ''}
@@ -4685,10 +4704,22 @@ function App() {
             </div>`
         }
 
+        let netSize = [40, 48];
+        const isNetworkFilterActive = !!showOnlyLegends && isLegend;
+        if (isNetworkFilterActive) {
+          // Network Power visual: scale size + extra glow when "Mi Red" filter active — your graph shines on the pulse
+          const bond = user.bondInfo || { bondLevel: 1 };
+          const scale = 1 + (bond.bondLevel - 1) * 0.22; // stronger boost ~2x for high bonds under filter
+          netSize = [Math.round(42 * scale), Math.round(50 * scale)];
+        } else if (showOnlyLegends && isLegend) {
+          const bond = user.bondInfo || { bondLevel: 1 };
+          const scale = 1 + (bond.bondLevel - 1) * 0.15;
+          netSize = [Math.round(40 * scale), Math.round(48 * scale)];
+        }
         const customIcon = L.divIcon({
-          className: `entrenamatch-marker${highEnergy ? ' high-energy' : ''}${isLegend ? ' legend-marker' : ''}`,
+          className: `entrenamatch-marker${highEnergy ? ' high-energy' : ''}${isLegend ? ' legend-marker' : ''}${isNetworkFilterActive ? ' network-power-active' : ''}`,
           html: iconHtml,
-          iconSize: [40, 48],
+          iconSize: netSize,
           iconAnchor: [20, 24],
           popupAnchor: [0, -24]
         })
@@ -4777,25 +4808,26 @@ function App() {
         const partner = liveUsers.find(u => u.id === user.trainingSyncWith)
         if (partner && partner.lat && partner.lng) {
           const isBondedLegend = !!syncBonds[user.id] || !!syncBonds[partner.id]
+          const tetherBoost = !!(showOnlyLegends && isBondedLegend) ? ' network-tether-boost' : ''
           const line = L.polyline(
             [[user.lat, user.lng], [partner.lat, partner.lng]],
             {
               color: isBondedLegend ? '#FFD700' : '#FF671F',
-              weight: isBondedLegend ? 4 : 2.5,
-              opacity: isBondedLegend ? 0.85 : 0.65,
+              weight: isBondedLegend ? (showOnlyLegends ? 5.5 : 4) : 2.5,
+              opacity: isBondedLegend ? 0.9 : 0.65,
               dashArray: isBondedLegend ? '3,6' : '5, 8',
               lineJoin: 'round',
-              className: `map-sync-tether${isBondedLegend ? ' legend-tether' : ''}`
+              className: `map-sync-tether${isBondedLegend ? ' legend-tether' : ''}${tetherBoost}`
             }
           ).addTo(mapInstanceRef.current)
-          line.bindPopup(`<strong>${isBondedLegend ? '⭐ SYNC LEGENDARIO' : '🔄 Sync en vivo'}</strong><br/>${user.name} ↔ ${partner.name}<br/><span style="font-size:10px">${isBondedLegend ? 'Bonds reales con historia • Peso en el mapa' : 'Ritual compartido ahora'}</span>`)
+          line.bindPopup(`<strong>${isBondedLegend ? '⭐ SYNC DE TU RED' : '🔄 Sync en vivo'}</strong><br/>${user.name} ↔ ${partner.name}<br/><span style="font-size:10px">${isBondedLegend ? 'Alianza real de alto rendimiento • Tu grafo da peso en el pulso' : 'EntrenaSync en vivo ahora'}</span>`)
           syncLinesRef.current.push(line)
         }
       }
     })
 
-    // THE VISIONARY RIPPLE LAYER — "Energy from the Arena becomes visible on the map"
-    // When two people create something legendary inside the Arena, the map "feels" it.
+    // THE PERFORMANCE PROPAGATION LAYER — "Energy from strong EntrenaSync becomes visible on the map"
+    // When your network creates high-intensity sync, the map "feels" it as part of the social graph.
     // This is the ambient, city-scale awareness that no other fitness product has.
     // Other users see "Ritual Épico" waves propagating — pure FOMO + proof that real human synchronization is happening right now.
     ritualRipples.forEach((r: any) => {
@@ -4809,7 +4841,7 @@ function App() {
           fillColor: isLegendRipple ? '#FFD700' : '#FF671F',
           fillOpacity: isLegendRipple ? 0.1 : 0.07,
           opacity: isLegendRipple ? 0.8 : 0.65,
-          className: `ritual-map-ripple${isLegendRipple ? ' legend-ripple' : ''}`
+          className: `ritual-map-ripple${isLegendRipple ? ' legend-ripple' : ''}` // performance wave from the network graph
         }).addTo(mapInstanceRef.current)
 
         // Bind a special popup that teases the magic + Witness button
@@ -4817,10 +4849,10 @@ function App() {
         ripple.bindPopup(`
           <div style="min-width:160px">
             <strong>⚡ ${r.label}</strong><br/>
-            <span style="font-size:10px">Energía de un ritual en Arena propagándose.</span><br/><br/>
+            <span style="font-size:10px">Energía de un EntrenaSync de tu red propagándose en el pulso global.</span><br/><br/>
             <button onclick="window.witnessRipple('${r.id}')" 
               style="background:#FF671F;color:black;border:none;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;width:100%">
-              👁️ Ver replay del momento épico
+              Ver replay del sync fuerte de la red
             </button>
           </div>
         `)
@@ -4911,10 +4943,10 @@ function App() {
       mapInstanceRef.current.fitBounds(group.getBounds().pad(0.22))
     }
 
-    // Echo Pins - persistent tappable markers for legendary witnessed moments on the map.
-    // These turn private high-vibe syncs into discoverable community mythology.
-    // Tapping opens the witness modal so anyone can "be part of the story".
-    // Rendered AFTER fitBounds so old echoes don't pull the initial view.
+    // Highlight Pins - persistent tappable markers for strong EntrenaSync moments on the map.
+    // These turn private high-performance syncs into discoverable network culture.
+    // Tapping opens the highlight replay so anyone in the community can see and be inspired.
+    // Rendered AFTER fitBounds so old pins don't pull the initial view.
     echoPins.forEach((pin: any) => {
       try {
         const iconHtml = `
@@ -4931,11 +4963,11 @@ function App() {
 
         echoMarker.bindPopup(`
           <div style="min-width:150px">
-            <strong>⭐ Echo Legendario</strong><br/>
+            <strong>⭐ Highlight de la Red</strong><br/>
             <span style="font-size:11px">${pin.label}</span><br/><br/>
             <button onclick="window.witnessEchoPin('${pin.id}')" 
               style="background:#FFD700;color:#111;border:none;padding:5px 8px;border-radius:6px;font-size:10px;font-weight:700;width:100%">
-              👁️ Ser testigo de este momento
+              Ver replay del sync fuerte
             </button>
           </div>
         `);
@@ -5181,7 +5213,7 @@ function App() {
         // If both were live, the tryAutoStartSync already set loader + will auto-nav to the rich attractive sync panel
         toast.success(`¡Unido al live de ${profile.name}!`, {
           description: profile.trainingNow && currentUser?.trainingNow 
-            ? '¡EntrenaSync iniciado! Timer + acciones compartidas. Te llevamos al panel.' 
+            ? '¡EntrenaSync iniciado! Estado compartido + acciones conjuntas en vivo. Te llevamos al panel.' 
             : 'Dejé un comentario en su muro en vivo — ¡ellos lo verán!'
         })
 
@@ -5526,12 +5558,18 @@ function App() {
             </div>
             {liveTrainingNow.length > 0 ? (
               <div className="flex gap-2 overflow-x-auto pb-1">
-                {liveTrainingNow.slice(0, 4).map(user => (
+                {[...liveTrainingNow].sort((a,b)=> {
+                  const aInNet = !!syncBonds[a.id] ? -1 : 0;
+                  const bInNet = !!syncBonds[b.id] ? -1 : 0;
+                  if (aInNet !== bInNet) return aInNet - bInNet;
+                  return (a.distance||0)-(b.distance||0);
+                }).slice(0, 4).map(user => (
                   <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className={`min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border active:scale-95 relative overflow-hidden shadow-lg shadow-[#22c55e]/10 ${ (user.joinCount||0) >= 3 ? 'border-[#FF671F]/60 shadow-[0_0_0_1px_#FF671F] animate-[pulse_2s_ease-in-out_infinite]' : 'border-[#22c55e]/70' }`} whileHover={{ scale: 1.04, y: -2, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(34 197 94 / 0.2)' }} whileTap={{ scale: 0.96 }} initial={{ opacity: 0.85, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
                     <div className="flex justify-between items-start mb-1">
                       <div className="flex items-center gap-1">
                         {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-5 h-5 rounded-full object-cover border-2 border-[#22c55e]/60 ring-1 ring-[#22c55e]/20" />}
                         <div className="font-semibold truncate text-white drop-shadow-sm">{user.name}</div>
+                        {!!syncBonds[user.id] && <span className="text-[6px] bg-[#FFD700] text-black px-0.5 rounded font-bold">RED</span>}
                       </div>
                       <div className="w-3 h-3 bg-[#22c55e] rounded-full flex-shrink-0 ring-2 ring-[#22c55e]/40" style={{animation: user.seVaEnMin < 10 ? 'live-pulse-green-urgent 1.1s ease-in-out infinite' : 'live-pulse-green 2.0s ease-in-out infinite'}}></div>
                     </div>
@@ -5561,7 +5599,7 @@ function App() {
                       {joiningSyncWith === user.id ? (
                         <>⏳ Iniciando Sync...</>
                       ) : (
-                        <>🔥 Entrenar juntos — abrir Arena</>
+                        <>🔥 Entrenar juntos — abrir EntrenaSync</>
                       )}
                     </button>
                   </motion.div>
@@ -5581,18 +5619,19 @@ function App() {
               <button onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline active:text-white">Ver todos live →</button>
             </div>
 
-            {/* NEW: Real-time Map of people training live (viable with Leaflet + real geo) */}
+            {/* THE LIVING PULSE: Real-time map of synchronized training activity — the social layer of the first fitness network. Shows where high-signal co-training is happening right now. */}
             <div className="mt-3 relative z-10">
               <div className="flex items-center justify-between mb-1.5 px-1">
                 <div className="text-[10px] font-semibold text-[#22c55e] flex items-center gap-1.5">
-                  🗺️ Mapa en tiempo real
-                  <span className="text-[8px] bg-[#22c55e]/20 px-1.5 rounded">BETA</span>
+                  🗺️ El Pulso Global de Entrenamiento Sincronizado
+                  <span className="text-[8px] bg-[#22c55e]/20 px-1.5 rounded">LA RED EN VIVO</span>
+                  {Object.keys(syncBonds).length > 0 && <span className="text-[7px] bg-[#FFD700]/90 text-black px-1 rounded font-bold">TU RED: {Object.keys(syncBonds).length} • NP {networkPower}</span>}
                 </div>
                 <button 
                   onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(!showLiveMap) }} 
                   className={`text-xs px-3 py-1 rounded-full border transition ${showLiveMap ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
                 >
-                  {showLiveMap ? 'Ocultar mapa' : 'Ver mapa por zonas'}
+                  {showLiveMap ? 'Ocultar el Pulso' : 'Ver el Pulso por zonas'}
                 </button>
               </div>
 
@@ -5607,7 +5646,8 @@ function App() {
                   {/* Live badge + near filter (counts respect current filters + legend selection) */}
                   <div className="absolute bottom-2 right-2 flex items-center gap-1 z-30">
                     <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-                      🟢 {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && (u.distance||999)<10)) && (!selectedMapZone || u.city === selectedMapZone) && (!showOnlyLegends || u.isLegend)).length} en vivo • realtime
+                      🟢 {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && (u.distance||999)<10)) && (!selectedMapZone || u.city === selectedMapZone) && (!showOnlyLegends || u.isLegend)).length} en vivo • realtime {showOnlyLegends ? ' (tu red)' : ''}
+                      {Object.keys(syncBonds).length > 0 && <span className="ml-1 text-[6px] bg-[#FFD700] text-black px-0.5 rounded font-bold">NP {networkPower}</span>}
                       {selectedMapZone && <span className="ml-1 text-[7px] bg-white/20 px-1 rounded">filtrado: {selectedMapZone.split(' ')[0]}</span>}
                     </div>
                     <button
@@ -5620,9 +5660,12 @@ function App() {
                       onClick={() => { try { triggerHaptic('light') } catch {}; setShowOnlyLegends(!showOnlyLegends) }}
                       className={`text-[8px] px-2 py-0.5 rounded-full border transition ${showOnlyLegends ? 'bg-[#FFD700] text-black border-[#FFD700]' : 'bg-black/70 text-[#FFD700] border-[#FFD700]/40 hover:bg-[#FFD700]/10'}`}
                     >
-                      {showOnlyLegends ? '✓ Mis Legends' : 'Solo Legends'}
+                      {showOnlyLegends ? '✓ Mi Red (Network Power)' : 'Solo Mi Red de Alto Rendimiento'}
                     </button>
                   </div>
+                  {showOnlyLegends && (
+                    <div className="text-[7px] text-[#FFD700] px-1 mt-0.5">Tu Network Power activa — tus socios de red destacan en el pulso</div>
+                  )}
 
                   {/* Centrar / recenter control */}
                   <button
@@ -5788,7 +5831,12 @@ function App() {
                 <div className="radar-lines"></div>
                 <div className="text-[8px] text-[#9CA3AF] mb-1">Cerca de ti (radar ordenado por distancia)</div>
                 <div className="flex gap-2 overflow-x-auto pb-1">
-                  {[...liveTrainingNow].sort((a,b)=> (a.distance||0)-(b.distance||0)).map((u, idx) => (
+                  {[...liveTrainingNow].sort((a,b)=> {
+                    const aInNet = !!syncBonds[a.id] ? -1 : 0;
+                    const bInNet = !!syncBonds[b.id] ? -1 : 0;
+                    if (aInNet !== bInNet) return aInNet - bInNet; // your network first - social graph priority
+                    return (a.distance||0)-(b.distance||0);
+                  }).map((u, idx) => (
                     <motion.div key={u.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(u); }} whileHover={{scale:1.1}} whileTap={{scale:0.9}} initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} transition={{delay: idx * 0.05}} className="flex flex-col items-center text-center cursor-pointer active:opacity-80">
                       <div className="relative">
                         {u.photos?.[0] ? <img src={u.photos[0]} className="w-9 h-9 rounded-full object-cover border-2 border-[#22c55e]/60" /> : <div className="w-9 h-9 rounded-full bg-[#22c55e]/20 flex items-center justify-center text-[10px] border border-[#22c55e]/30">{u.name[0]}</div>}
@@ -5840,7 +5888,7 @@ function App() {
                         onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); }} 
                         className={`text-[10px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-3 py-1 rounded font-semibold active:brightness-90 flex items-center justify-center gap-1 ${joiningSyncWith === user.id ? 'opacity-80 cursor-wait' : ''}`}
                       >
-                        {joiningSyncWith === user.id ? '⏳ Abriendo Arena...' : `🔥 Entrenar juntos ${userLocation && user.distance < 900 ? `(${user.distance.toFixed(0)}km)` : '(Arena)'}`}
+                        {joiningSyncWith === user.id ? '⏳ Abriendo EntrenaSync...' : `🔥 Entrenar juntos (Sync) ${userLocation && user.distance < 900 ? `(${user.distance.toFixed(0)}km)` : ''}`}
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); setShowLiveModal(false); openChat(user.id); if (!matches.includes(user.id) && !realMatches.includes(user.id)) handleSwipe(user.id, 'right'); }} className="text-[9px] border border-[#22c55e]/60 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10 hover:bg-[#22c55e]/5">Chatear ya</button>
                     </div>
@@ -5913,7 +5961,7 @@ function App() {
                     <div className="text-2xl">🔥</div>
                     <div>
                       <div className="font-bold text-xl tracking-[-0.5px] bg-gradient-to-r from-[#FF671F] via-[#FF4F79] to-[#FF671F] bg-clip-text text-transparent">EL MURO</div>
-                      <div className="text-[10px] text-[#9CA3AF] -mt-0.5">de la comunidad • donde el entreno se vuelve leyenda</div>
+                      <div className="text-[10px] text-[#9CA3AF] -mt-0.5">de la comunidad • donde el entrenamiento sincronizado genera resultados y estatus real</div>
                     </div>
                   </div>
                   <div className="text-[#9CA3AF] text-xs flex items-center gap-1.5 mt-1.5">
@@ -5940,7 +5988,7 @@ function App() {
                       Clicking one can inspire or (if you are live) quick-join the culture of training together. */}
                   {activeSyncPairs.length > 0 && (
                     <div className="text-[9px] mb-1 px-0.5 flex items-center gap-1 text-[#22c55e]/90">
-                      <span className="font-bold">🔄 {activeSyncPairs.length} pares en arena ahora:</span>
+                      <span className="font-bold">🔄 {activeSyncPairs.length} EntrenaSyncs activos ahora — tu red de rendimiento en movimiento (el grafo vivo):</span>
                       {activeSyncPairs.map((pr, i) => (
                         <span key={i} className="px-1.5 py-px rounded bg-[#22c55e]/10 text-[#22c55e]">{pr.names} <span className="opacity-60">{pr.vibe}%</span></span>
                       ))}
@@ -5994,7 +6042,12 @@ function App() {
               <div className="mb-4 -mx-1">
                 <div className="text-[8px] uppercase tracking-[1px] text-[#22c55e]/80 mb-1.5 px-2 font-bold flex items-center gap-1">🔥 EN VIVO AHORA EN LA COMUNIDAD {liveTrainingNow.length > 5 && <span className="text-red-400">HOT ZONE</span>}</div>
                 <div className="flex gap-2 overflow-x-auto pb-2 px-1 snap-x snap-mandatory">
-                  {liveTrainingNow.slice(0,4).map((u, idx) => (
+                  {[...liveTrainingNow].sort((a,b)=> {
+                    const aInNet = !!syncBonds[a.id] ? -1 : 0;
+                    const bInNet = !!syncBonds[b.id] ? -1 : 0;
+                    if (aInNet !== bInNet) return aInNet - bInNet;
+                    return (a.distance||0)-(b.distance||0);
+                  }).slice(0,4).map((u, idx) => (
                     <motion.div 
                       key={u.id} 
                       onClick={() => { setActiveTab('explore'); /* extra: if user is live, could auto-offer sync but keep simple for now */ }} 
@@ -6025,12 +6078,12 @@ function App() {
               if (recentEchoes.length === 0) return null;
               return (
                 <div className="mb-4 -mx-1">
-                  <div className="text-[8px] uppercase tracking-[1px] text-[#FFD700]/80 mb-1.5 px-2 font-bold flex items-center gap-1">⭐ ECOS DE LEYENDA — la mitología crece</div>
+                  <div className="text-[8px] uppercase tracking-[1px] text-[#FFD700]/80 mb-1.5 px-2 font-bold flex items-center gap-1">⭐ HIGHLIGHTS DE LA RED — el grafo de rendimiento sincronizado se propaga y construye la cultura de la primera red social del fitness</div>
                   <div className="flex gap-2 overflow-x-auto pb-2 px-1">
                     {recentEchoes.map((e: any) => (
                       <div key={e.id} className="min-w-[140px] card p-2 text-[9px] border border-[#FFD700]/40 bg-[#1a160f]">
                         <div className="line-clamp-3 text-[#f5e8c7]">{(e.text || '').substring(0, 120)}...</div>
-                        <div className="text-[7px] text-[#FFD700]/70 mt-1">Echo en el feed global</div>
+                        <div className="text-[7px] text-[#FFD700]/70 mt-1">Highlight de la red — se propaga en el grafo y construye estatus</div>
                       </div>
                     ))}
                   </div>
@@ -6093,7 +6146,7 @@ function App() {
                     return (
                       <motion.div 
                         key={post.id} 
-                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${post.isSyncStory || (post.text || '').includes('ENTRENASYNC LEGENDARIO') ? 'muro-post--sync-story' : (post.text || '').toLowerCase().includes('sincronizado') ? 'muro-post--sync' : (post.text || '').toLowerCase().includes('entrenando ahora') || (post.text || '').includes('me uno al live') ? 'muro-post--live' : (post.text || '').includes('Fui testigo') || (post.text || '').includes('Echo') || (post.text || '').includes('RITUAL LEGENDARIO') ? 'muro-post--echo' : '' } ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-lg shadow-[#FF671F]/20' : ''} hover:border-[#FF671F]/40 hover:-translate-y-0.5 overflow-hidden transition-all active:scale-[0.995]`}
+                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${post.isSyncStory || (post.text || '').includes('ENTRENASYNC COMPLETADO') ? 'muro-post--sync-story' : (post.text || '').toLowerCase().includes('sincronizado') ? 'muro-post--sync' : (post.text || '').toLowerCase().includes('entrenando ahora') || (post.text || '').includes('me uno al live') ? 'muro-post--live' : (post.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (post.text || '').includes('Destacado de Sesión Sync') ? 'muro-post--echo' : '' } ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-lg shadow-[#FF671F]/20' : ''} hover:border-[#FF671F]/40 hover:-translate-y-0.5 overflow-hidden transition-all active:scale-[0.995]`}
                         initial={{ opacity: 0, y: 16, scale: 0.985 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -10, scale: 0.98, height: 0, marginBottom: 0 }}
@@ -6812,6 +6865,12 @@ function App() {
               <div className="grid grid-cols-2 gap-3">
                 {matchProfiles
                   .filter(p => !blockedUsers.includes(p.id))
+                  .sort((a,b)=> {
+                    const aInNet = !!syncBonds[a.id] ? -1 : 0;
+                    const bInNet = !!syncBonds[b.id] ? -1 : 0;
+                    if (aInNet !== bInNet) return aInNet - bInNet; // network priority in explore
+                    return 0;
+                  })
                   .map(profile => (
                   <div key={profile.id} onClick={() => openChat(profile.id)} className={`card card-glass rounded-3xl overflow-hidden active:opacity-80 cursor-pointer relative ring-1 ring-white/5 ${profile.trainingNow ? 'ring-2 ring-[#22c55e]/60 shadow-lg shadow-[#22c55e]/10' : ''}`} style={{transition: 'transform 0.2s'}}>
                     <div className="relative">
@@ -6925,7 +6984,7 @@ function App() {
                       <img src={profile.photos[0]} className="w-14 h-14 rounded-2xl object-cover flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <div className="flex justify-between items-baseline">
-                          <span className="font-semibold flex items-center gap-1">{profile.name} {syncBonds[profile.id] && <span className="text-[9px] px-1 bg-[#FFD700] text-black rounded">⭐ LEYENDA</span>}</span>
+                          <span className="font-semibold flex items-center gap-1">{profile.name} {syncBonds[profile.id] && <span className="text-[9px] px-1 bg-[#FFD700] text-black rounded">⭐ RED</span>}</span>
                           <span className="text-xs text-[#9CA3AF]">{profile.city}</span>
                         </div>
                         {userLocation && (
@@ -6967,7 +7026,7 @@ function App() {
                     </div>
                     <div className="text-[10px] text-[#FF671F] -mt-0.5 flex items-center gap-1">
                       {chatProfile?.city}, {chatProfile?.country} • En línea
-                      {syncBonds[activeChat!] && <span className="ml-1 px-1.5 py-0 text-[8px] rounded bg-[#FFD700] text-black font-bold">⭐ TU LEYENDA • LV{syncBonds[activeChat!].bondLevel || 1}</span>}
+                      {syncBonds[activeChat!] && <span className="ml-1 px-1.5 py-0 text-[8px] rounded bg-[#FFD700] text-black font-bold">⭐ TU RED • LV{syncBonds[activeChat!].bondLevel || 1}</span>}
                     </div>
                   </div>
                   <button onClick={() => setShowFullProfile(chatProfile!)} className="ml-auto text-xs px-3 py-1 bg-[#1C1C20] rounded-full">Ver perfil</button>
@@ -7101,7 +7160,7 @@ function App() {
                   {syncBonds[activeChat!] && (
                     <div className="flex gap-1 mb-2 flex-wrap">
                       {['🏆 Compartir nuestro último Sync Legendario', '⭐ Postear mi eco de este bond', '🌊 Mencionar ripples de nuestro Arena'].map((tpl, i) => (
-                        <button key={i} onClick={() => { sendMessage(tpl); /* also auto-post to muro as achievement */ createProfilePost(`En chat con mi leyenda: ${tpl}`, null).catch(()=>{}); }} className="text-[9px] px-2 py-0.5 rounded-full border border-[#FFD700]/40 text-[#FFD700] active:bg-[#FFD700]/10">
+                        <button key={i} onClick={() => { sendMessage(tpl); /* also auto-post to muro as achievement */ createProfilePost(`En chat con mi socio de EntrenaSync: ${tpl}`, null).catch(()=>{}); }} className="text-[9px] px-2 py-0.5 rounded-full border border-[#FFD700]/40 text-[#FFD700] active:bg-[#FFD700]/10">
                           {tpl.split(' ')[0]}
                         </button>
                       ))}
@@ -7246,15 +7305,15 @@ function App() {
               )}
             </div>
 
-            {/* Photo gallery strip - drag to reorder (nativo), flechas fallback. Primera siempre principal. ¡Perfil curation VIVO! */}
+            {/* Photo gallery strip - drag to reorder. Primera es la principal. ¡Curation de tu red de rendimiento! */}
             {currentUser.photos && currentUser.photos.length > 0 && (
               <div className="px-4 pt-3 pb-2 bg-[#0D0D10] border-b border-[#2F2F35]">
                 <div className="flex items-center justify-between mb-1.5 px-0.5">
                   <div>
-                    <span className="text-[10px] uppercase tracking-[1px] text-[#9CA3AF]">Galería de Leyendas</span>
-                    <span className="ml-2 text-[11px] text-[#FF671F] font-semibold">{currentUser.photos.length} momentos capturados</span>
+                    <span className="text-[10px] uppercase tracking-[1px] text-[#9CA3AF]">Galería de Rendimiento</span>
+                    <span className="ml-2 text-[11px] text-[#FF671F] font-semibold">{currentUser.photos.length} sesiones documentadas</span>
                   </div>
-                  <div className="text-[8px] text-[#9CA3AF]/60">Arrastra • la 1ª es tu portada heroica</div>
+                  <div className="text-[8px] text-[#9CA3AF]/60">Arrastra • la 1ª es tu presencia principal</div>
                 </div>
                 <div className="flex gap-2 overflow-x-auto pb-1 snap-x">
                 {currentUser.photos.map((photo: string, idx: number) => (
@@ -7335,27 +7394,27 @@ function App() {
                   }}
                   className="w-full py-2.5 rounded-2xl border border-[#FF671F] text-[#FF671F] text-sm flex items-center justify-center gap-2 active:bg-[#FF671F]/10 hover:border-[#FF671F]/60"
                 >
-                  <span>📷</span> Añadir foto icónica a mi galería de leyendas
+                  <span>📷</span> Añadir foto de sesión a mi galería de rendimiento
                 </button>
-                <div className="text-center text-[9px] text-[#9CA3AF] mt-1">Cámara nativa • hasta 6 fotos • la primera brilla en tu hero</div>
+                <div className="text-center text-[9px] text-[#9CA3AF] mt-1">Cámara nativa • hasta 6 fotos • la primera es tu presencia principal en la red</div>
               </div>
             )}
 
-            {/* "Hazlo icónico" motivator — users feel they can decorate & improve their profile visually */}
+            {/* Motivator: Build your performance network */}
             {(!currentUser.photos?.length || (currentUser.photos?.length || 0) < 3 || !currentUser.bio || (profilePosts[effectiveUserId] || []).filter((p:any)=>p.photo).length === 0) && (
               <div className="mx-4 mt-4 p-4 rounded-3xl bg-gradient-to-b from-[#1a160f] to-[#25252A] border border-[#FFD700]/30">
                 <div className="flex items-center gap-2 text-[#FFD700] font-semibold mb-1">
-                  <span>✨</span> Eleva tu presencia visual
+                  <span>✨</span> Construye tu red de rendimiento
                 </div>
-                <p className="text-sm text-[#f5e8c7] mb-2">Tu muro y galería son tu mitología. Hazlos icónicos para que otros sientan tu energía antes de conocerte.</p>
+                <p className="text-sm text-[#f5e8c7] mb-2">Tu galería y EntrenaSyncs son tu capital en la red. Hazlos visibles para que otros vean tu progreso real y quieran sincronizarse contigo.</p>
                 <div className="text-[10px] space-y-0.5 mb-3 text-[#9CA3AF]">
-                  {!currentUser.photos?.length && <div>• Sube tu primera foto principal (se verá heroica)</div>}
-                  {(currentUser.photos?.length || 0) < 3 && <div>• Agrega al menos 3 fotos a tu galería de leyendas</div>}
-                  {!currentUser.bio && <div>• Escribe una bio que inspire</div>}
-                  {(profilePosts[effectiveUserId] || []).filter((p:any)=>p.photo).length === 0 && <div>• Publica 1 foto en tu Muro de Leyendas (momento capturado)</div>}
+                  {!currentUser.photos?.length && <div>• Sube fotos de tus sesiones (muestra tu presencia)</div>}
+                  {(currentUser.photos?.length || 0) < 3 && <div>• Agrega al menos 3 fotos a tu galería de entrenamiento</div>}
+                  {!currentUser.bio && <div>• Escribe una bio que muestre tu enfoque de rendimiento</div>}
+                  {(profilePosts[effectiveUserId] || []).filter((p:any)=>p.photo).length === 0 && <div>• Publica 1 foto de una sesión de EntrenaSync (progreso compartido)</div>}
                 </div>
-                <button onClick={() => { setActiveTab('profile'); setTimeout(()=> muroComposerRef.current?.focus(), 60); }} className="w-full py-2 text-sm rounded-2xl bg-[#FFD700] text-black font-bold active:brightness-90">Hacer mi perfil icónico ahora</button>
-                <button onClick={() => setShowOnboarding(true)} className="mt-1.5 w-full text-[10px] text-[#9CA3AF] underline">Editar todo el perfil</button>
+                <button onClick={() => { setActiveTab('profile'); setTimeout(()=> muroComposerRef.current?.focus(), 60); }} className="w-full py-2 text-sm rounded-2xl bg-[#FFD700] text-black font-bold active:brightness-90">Construir mi red ahora</button>
+                <button onClick={() => setShowOnboarding(true)} className="mt-1.5 w-full text-[10px] text-[#9CA3AF] underline">Editar perfil completo</button>
               </div>
             )}
 
@@ -7443,8 +7502,8 @@ function App() {
                     <div className="text-[10px] text-[#9CA3AF]">syncs</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-[#FFD700]">{(profilePosts[effectiveUserId] || []).filter((p: any) => (p.text || '').includes('ENTRENASYNC LEGENDARIO') || (p.text || '').includes('Ritual Legendario')).length}</div>
-                    <div className="text-[10px] text-[#9CA3AF]">rituales Arena</div>
+                    <div className="text-lg font-bold text-[#FFD700]">{(profilePosts[effectiveUserId] || []).filter((p: any) => (p.text || '').includes('ENTRENASYNC') || (p.text || '').includes('HIGHLIGHT')).length}</div>
+                    <div className="text-[10px] text-[#9CA3AF]">EntrenaSyncs completados</div>
                   </div>
                 </div>
                 {currentUser.trainingNow && (
@@ -7478,16 +7537,16 @@ function App() {
                 {/* ULTRA VIVO: Live bonds right now - if any of your EntrenaSync legends are training live, show them with instant re-sync CTA. Makes bonds feel alive and valuable. */}
                 {Object.keys(syncBonds).length > 0 && (
                   <div className="mt-2 pt-2 border-t border-white/10">
-                    <div className="text-[8px] uppercase tracking-[1px] text-[#FF671F]/80 mb-1">Legends en vivo ahora 🔥</div>
+                    <div className="text-[8px] uppercase tracking-[1px] text-[#FF671F]/80 mb-1">Tu red en vivo ahora 🔥 (re-sync para subir Network Power)</div>
                     <div className="flex flex-wrap gap-1">
-                      {liveTrainingNow.filter((u: any) => Object.keys(syncBonds).includes(u.id)).slice(0, 3).map((liveBond: any) => (
+                      {liveTrainingNow.filter((u: any) => Object.keys(syncBonds).includes(u.id)).slice(0, 3).map((livePartner: any) => (
                         <button
-                          key={liveBond.id}
-                          onClick={() => { try { triggerHaptic('medium') } catch {}; startSyncWith(liveBond.id, liveBond.name || liveBond.nombre) }}
+                          key={livePartner.id}
+                          onClick={() => { try { triggerHaptic('medium') } catch {}; startSyncWith(livePartner.id, livePartner.name || livePartner.nombre) }}
                           className="text-[8px] px-2 py-0.5 bg-[#FF671F]/10 hover:bg-[#FF671F]/20 text-[#FF671F] rounded-full active:scale-[0.95] transition flex items-center gap-1 border border-[#FF671F]/30"
                         >
-                          <span className="font-medium">{(liveBond.name || liveBond.nombre || '?').split(' ')[0]}</span>
-                          <span className="text-[7px] opacity-80">🔄 Re-sync</span>
+                          <span className="font-medium">{(livePartner.name || livePartner.nombre || '?').split(' ')[0]}</span>
+                          <span className="text-[7px] opacity-80">🔄 Re-sync (sube Network Power)</span>
                         </button>
                       ))}
                       {liveTrainingNow.filter((u: any) => Object.keys(syncBonds).includes(u.id)).length === 0 && (
@@ -7551,15 +7610,35 @@ function App() {
               );
             })()}
 
-            {/* NEVER-SEEN: Sync Legends / Bonds — persistent proof of real training partnerships. MADE MORE VIVO Y ATRACTIVO */}
+            {/* YOUR TRAINING NETWORK — the social graph of real synchronized performance.
+               This is the heart of EntrenaMatch as the first fitness social network:
+               your alliances have real history, generate measurable results, and create visible status in the community. */}
             {Object.keys(syncBonds).length > 0 && (
               <div className="px-4 mt-3">
-                <div className="text-[10px] uppercase tracking-[1px] text-[#9CA3AF] mb-1.5 flex items-center gap-1">🔥 TUS SYNC LEGENDS <span className="text-[8px] normal-case opacity-60">(entrenaron contigo de verdad)</span></div>
+                <div className="text-[10px] uppercase tracking-[1px] text-[#9CA3AF] mb-1.5 flex items-center gap-1">🔥 TU RED DE ENTRENASYNC <span className="text-[8px] normal-case opacity-60">(tu grafo de rendimiento sincronizado — alianzas que generan resultados reales y estatus en la comunidad)</span></div>
+                {/* Network summary — epic social graph value. This is what makes EntrenaMatch the first real fitness social network: your sync alliances are a visible, compounding performance asset. */}
+                {(() => {
+                  const totalMin = Object.values(syncBonds).reduce((sum: number, b: any) => sum + (b.totalMin || 0), 0)
+                  const totalSessions = Object.values(syncBonds).reduce((sum: number, b: any) => sum + (b.sessions || 0), 0)
+                  const avgBond = Object.values(syncBonds).reduce((sum: number, b: any) => sum + (b.bondLevel || 1), 0) / Object.keys(syncBonds).length
+                  const estimatedImpact = Math.min(52, Math.floor(totalMin / 7)) 
+                  const networkPower = Math.round(avgBond * totalSessions * 0.8) // epic "power level" of your training graph
+                  return (
+                    <div className="mb-2 px-0.5">
+                      <div className="text-[11px] font-bold text-[#FFD700] mb-0.5">Network Power: {networkPower} — tu red de sync te hace más fuerte, más consistente y más visible</div>
+                      {networkPower > 30 && <div className="text-[8px] text-[#22c55e] mt-0.5">¡Tu red te da prioridad en el pulso del mapa, recomendaciones de alto rendimiento y +visibilidad global en la red!</div>}
+                      <div className="text-[9px] text-[#22c55e]">
+                        {Object.keys(syncBonds).length} socios • {totalMin}min sincronizados • {totalSessions} sesiones • Impacto colectivo en tu rendimiento: +{estimatedImpact}%
+                      </div>
+                    </div>
+                  )
+                })()}
                 <div className="grid grid-cols-2 gap-2">
                   {Object.entries(syncBonds).slice(0,4).map(([pid, b]: any) => {
                     const p = [...realProfiles, ...SEED_PROFILES].find(pp => pp.id === pid)
                     const flames = '🔥'.repeat(Math.max(1, b.bondLevel || 1))
-                    const progress = Math.min(100, Math.round(((b.totalMin || 0) / 120) * 100)) // progress to next legend (2h example)
+                    const progress = Math.min(100, Math.round(((b.totalMin || 0) / 120) * 100))
+                    const partnerImpact = Math.floor((b.totalMin || 0) / 6) // estimated % boost from this specific alliance
                     return (
                       <div key={pid} className="legend-card rounded-2xl p-3 text-xs flex gap-3 items-center active:scale-[0.985] border border-[#FF671F]/20 hover:border-[#FF671F]/50 transition-all" onClick={() => { const prof = p; if (prof) setShowFullProfile(prof as any); else toast('Compa no disponible ahora') }}>
                         <div className="w-10 h-10 rounded-full bg-[#1C1C20] overflow-hidden ring-2 ring-[#FF671F]/40 flex-shrink-0 relative">
@@ -7567,21 +7646,32 @@ function App() {
                           <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#22c55e] rounded-full flex items-center justify-center text-[8px] ring-1 ring-[#0D0D10]">🔄</div>
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="font-semibold text-white/95 truncate flex items-center gap-1">{p?.name || 'Leyenda'} <span className="text-[8px] text-[#FF671F] font-mono">LV{b.bondLevel}</span>{liveTrainingNow.some(u => u.id === pid && u.trainingNow) && <span className="ml-1 text-[7px] px-1 bg-[#22c55e] text-black rounded font-bold animate-pulse">EN VIVO</span>}</div>
-                          <div className="text-[9px] text-[#9CA3AF]">{b.totalMin}min • {b.sessions} sesiones • {b.avgRating}★</div>
+                          <div className="font-semibold text-white/95 truncate flex items-center gap-1">{p?.name || 'Socio'} <span className="text-[8px] text-[#FF671F] font-mono">LV{b.bondLevel}</span>{liveTrainingNow.some(u => u.id === pid && u.trainingNow) && <span className="ml-1 text-[7px] px-1 bg-[#22c55e] text-black rounded font-bold animate-pulse">EN VIVO</span>}</div>
+                          <div className="text-[9px] text-[#9CA3AF]">{b.totalMin}min • {b.sessions} sesiones • {b.avgRating}★ • <span className="text-[#22c55e]">tu Network Power sube con esta alianza</span></div>
                           <div className="legend-flame text-[12px] leading-none mt-0.5">{flames}</div>
-                          {/* Visual bond progress bar - makes it feel alive and goal-oriented */}
+                          {/* Visual bond progress bar */}
                           <div className="mt-1 h-1 bg-white/10 rounded overflow-hidden">
                             <div className="h-1 bg-gradient-to-r from-[#FF671F] to-[#FF4F79] transition-all" style={{width: `${progress}%`}} />
                           </div>
-                          <div className="text-[7px] text-[#9CA3AF]/70 mt-px">Bond {b.bondLevel} • {progress}% to next</div>
-                          {p && <button onClick={(e)=>{e.stopPropagation(); tryAutoStartSync(p.id, p.name)}} className="mt-1 text-[7px] px-1 py-px bg-[#22c55e]/10 text-[#22c55e] rounded active:bg-[#22c55e]/30">🔄 Re-sync</button>}
+                          <div className="text-[7px] text-[#9CA3AF]/70 mt-px">Nivel {b.bondLevel} • {progress}% al siguiente</div>
+                          {/* Real value from this alliance — the social graph has teeth. This partner is actively boosting your performance. */}
+                          <div className="text-[8px] font-medium text-[#22c55e] mt-0.5">+{partnerImpact}% en tu rendimiento por esta alianza 🔥</div>
+                          {p && <button onClick={(e)=>{e.stopPropagation(); tryAutoStartSync(p.id, p.name)}} className="mt-1 text-[7px] px-1 py-px bg-[#22c55e]/10 text-[#22c55e] rounded active:bg-[#22c55e]/30">🔄 Re-sync ahora</button>}
                         </div>
                       </div>
                     )
                   })}
                 </div>
-                <div className="text-[8px] text-center text-[#22c55e]/60 mt-1">Re-sync para subir tu bond y desbloquear prioridad en live + explore</div>
+                <div className="text-[8px] text-center text-[#22c55e]/60 mt-1">Re-sync para subir tu Network Power, fortalecer alianzas y desbloquear prioridad en el mapa + mejores recomendaciones de alto rendimiento</div>
+                {Object.keys(syncBonds).length > 4 && (
+                  <div className="text-center mt-1">
+                    <button onClick={() => setActiveTab('profile')} className="text-[8px] text-[#FF671F] underline">Ver toda tu red ({Object.keys(syncBonds).length} socios) →</button>
+                  </div>
+                )}
+                <div className="text-center mt-1 text-[7px] text-[#FFD700]/60">Tu red de EntrenaSync es tu capital más valioso. Cuanto más sincronizas, más fuerte te haces — y más te ven los demás.</div>
+                <div className="text-center mt-1">
+                  <button onClick={() => setActiveTab('explore')} className="text-[8px] px-2 py-0.5 bg-[#22c55e]/10 text-[#22c55e] rounded active:bg-[#22c55e]/20">Explora más socios para expandir tu red →</button>
+                </div>
               </div>
             )}
 
@@ -7790,13 +7880,13 @@ function App() {
                     </div>
                   </div>
 
-                  {/* RITUAL IMPACT — makes the purpose obvious and valuable. This is not just play; every high moment builds your legend and the community's mythology. */}
+                  {/* NETWORK IMPACT — makes the purpose obvious and valuable. This is the social graph in action; every high moment builds your alliances, your Network Power, and propagates through the fitness social network. */}
                   <div className="mb-2 text-[8px] flex items-center justify-between bg-black/30 rounded px-2 py-1 border border-[#22c55e]/20">
                     <div className="flex items-center gap-3">
-                      <span className="text-[#22c55e]">Ripples enviados: <span className="font-bold">{Math.floor(syncVibe / 25)}</span></span>
-                      <span className="text-[#FF671F]">Testigos potenciales: <span className="font-bold">{syncVibe > 70 ? 'ALTO' : syncVibe > 40 ? 'MEDIO' : 'BAJO'}</span></span>
+                      <span className="text-[#22c55e]">Ondas de red: <span className="font-bold">{Math.floor(syncVibe / 25)}</span></span>
+                      <span className="text-[#FF671F]">Impacto en tu grafo: <span className="font-bold">{syncVibe > 70 ? 'ALTO' : syncVibe > 40 ? 'MEDIO' : 'BAJO'}</span></span>
                     </div>
-                    {syncVibe > 65 && <span className="text-[#FFD700] font-bold">⭐ ESTO ESTÁ CONSTRUYENDO TU LEYENDA</span>}
+                    {syncVibe > 65 && <span className="text-[#FFD700] font-bold">⭐ ESTO ESTÁ FORTALECIENDO TU RED DE RENDIMIENTO</span>}
                   </div>
 
                   {/* THE IMMERSIVE RITUAL: Dual avatars + tether + reactive energy orb */}
@@ -7828,24 +7918,25 @@ function App() {
                       </div>
                       <div className="mt-1 text-[10px] font-mono text-[#22c55e] tracking-[2px] flex items-center gap-1">
                         VIBE <span className="font-black text-lg tabular-nums">{syncVibe}</span><span className="text-[8px] opacity-70">%</span>
+                        {!!syncBonds[syncPartnerId] && <span className="ml-1 text-[7px] bg-[#FFD700]/20 text-[#FFD700] px-1 rounded">+ NETWORK POWER</span>}
                       </div>
                     </div>
 
                     {/* Tether line — visual "we are connected" never-seen cue */}
                     <div className="sync-tether" />
 
-                    {/* THE SHARED ENERGY FIELD — the visual soul of synchronized human effort.
+                    {/* THE SHARED ENERGY FIELD — the visual soul of synchronized human effort in the fitness social network.
                         This is what makes people say "I've never seen anything like this".
                         The field between two people grows, pulses, and glows with your combined vibe.
-                        It is the physical representation of "we are one system right now". */}
+                        It is the physical representation of "we are one system right now" — and when with your high Network Power allies, it shines brighter, building the graph. */}
                     <div 
                       className="absolute left-[18%] right-[18%] top-1/2 -translate-y-1/2 h-[5px] rounded-full z-[5] pointer-events-none"
                       style={{
                         background: `linear-gradient(90deg, #22c55e, #FF671F, #FF4F79, #22c55e)`,
-                        opacity: 0.12 + (syncVibe / 280) + (syncCombo * 0.08),
-                        filter: `blur(${1.5 + syncVibe / 38 + syncCombo}px) saturate(${1 + syncVibe / 180 + syncCombo * 0.3})`,
-                        boxShadow: syncVibe > 65 || syncCombo >= 3 ? `0 0 ${12 + syncVibe / 5 + syncCombo * 4}px rgba(255,103,31,0.7)` : 'none',
-                        height: `${5 + syncCombo * 1.5}px`,
+                        opacity: 0.12 + (syncVibe / 280) + (syncCombo * 0.08) + (!!syncBonds[syncPartnerId] ? 0.1 : 0),
+                        filter: `blur(${1.5 + syncVibe / 38 + syncCombo}px) saturate(${1 + syncVibe / 180 + syncCombo * 0.3 + (!!syncBonds[syncPartnerId] ? 0.2 : 0)})`,
+                        boxShadow: syncVibe > 65 || syncCombo >= 3 ? `0 0 ${12 + syncVibe / 5 + syncCombo * 4 + (!!syncBonds[syncPartnerId] ? 8 : 0)}px rgba(255,103,31,0.7)` : 'none',
+                        height: `${5 + syncCombo * 1.5 + (!!syncBonds[syncPartnerId] ? 2 : 0)}px`,
                         transition: 'all 180ms cubic-bezier(0.23,1,0.32,1)'
                       }}
                     />
@@ -7895,7 +7986,7 @@ function App() {
                       {e:'🔥', l:'¡Vamos!', purpose: 'vibe'}
                     ].map((a, idx) => {
                       const isActiveCombo = syncCombo >= 2 && syncActions[0]?.label === a.l
-                      const purposeLabel = a.purpose === 'legend' ? '⭐ LEYENDA' : a.purpose === 'ripple' ? '🌊 RIPPLE' : a.purpose === 'bond' ? '❤️ BOND' : '🔥 VIBE'
+                      const purposeLabel = a.purpose === 'legend' ? '⭐ RED' : a.purpose === 'ripple' ? '🌊 ONDA' : a.purpose === 'bond' ? '❤️ ALIANZA' : '🔥 VIBE'
                       return (
                         <button 
                           key={idx} 
@@ -7975,7 +8066,7 @@ function App() {
                     <button onClick={() => setShowSyncArena(false)} className="text-[10px] px-3 py-1 rounded-full bg-white/5 text-white/70 border border-white/10 active:bg-white/10">Cerrar arena</button>
                   </div>
 
-                  <div className="text-center text-[7.5px] text-[#22c55e]/45 mt-1.5">Cada acción construye tu leyenda real (se ve en mapa dorado + feed de ecos). Alta vibe = ripples que otros pueden presenciar y reclamar. Terminar un ritual fuerte = +bond + historia que vive para siempre en la mitología de la comunidad. Esto sirve de verdad: convierte esfuerzo aislado en legado compartido que otros respetan y quieren repetir.</div>
+                  <div className="text-center text-[7.5px] text-[#22c55e]/45 mt-1.5">Cada acción construye tu red de rendimiento real (se ve en tu perfil, mapa y feed). Alta intensidad compartida = ondas de actividad que otros ven. Terminar un EntrenaSync fuerte = +alianza + historia de resultados que queda archivada para siempre en tu red y la de tu socio. Esto genera valor real: convierte esfuerzo aislado en progreso compartido y visible que inspira a la comunidad.</div>
                 </div>
               )}
 
@@ -8077,8 +8168,8 @@ function App() {
               {/* Attractive composer - premium journal style */}
               <div className="card p-5 mb-4 border border-[#FF671F]/10 bg-gradient-to-b from-[#1C1C20] to-[#0D0D10]">
                 <div className="text-sm font-semibold text-[#FF671F] mb-3 flex items-center gap-2">
-                  <span>✍️</span> Publica un logro en tu Muro de Leyendas
-                  <span className="text-[10px] text-[#9CA3AF] font-normal tracking-normal">— tu mitología personal</span>
+                  <span>✍️</span> Registra una sesión de EntrenaSync
+                  <span className="text-[10px] text-[#9CA3AF] font-normal tracking-normal">— tu progreso y alianzas en la red</span>
                 </div>
 
                 {/* Quick achievement templates - makes posting logros frictionless and celebratory */}
@@ -8087,7 +8178,7 @@ function App() {
                     '🏆 Nuevo Sync Legendario con mi bond',
                     '⭐ Reclamé un Eco de un momento épico',
                     '🌊 Envié ripples con mi último Arena',
-                    '🔥 Pico de vibe >80 — ritual intenso',
+                    '🔥 Pico de rendimiento >80 — sync intenso',
                     '📈 Subí de nivel de bond con X'
                   ].map((tpl, i) => (
                     <button key={i} onClick={() => setMuroComposerText(tpl)} className="text-[10px] px-2 py-1 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10 hover:bg-[#FF671F]/5">
@@ -8106,13 +8197,13 @@ function App() {
                 <div className="text-[10px] text-right text-[#9CA3AF] -mt-2 mb-2 pr-1">
                   {muroComposerText.length}/280
                 </div>
-                {/* Iconic photo caption suggestions — makes uploading a photo to the wall feel like capturing a legendary moment */}
+                {/* Iconic photo caption suggestions — makes uploading a photo to the wall feel like capturing a high-performance network moment */}
                 {muroComposerPhoto && !muroPhotoUploading && (
                   <div className="mb-2">
                     <div className="text-[8px] uppercase tracking-[1px] text-[#9CA3AF]/70 mb-1">Sugerencias para este momento icónico</div>
                     <div className="flex flex-wrap gap-1">
                       {[
-                        'El pico del ritual • imbatible',
+                        'El pico del sync • imbatible',
                         'Momento que nadie más presenció',
                         'Mi entreno más puro y salvaje',
                         'Leyenda capturada hoy',
@@ -8125,7 +8216,7 @@ function App() {
                     </div>
                   </div>
                 )}
-                {muroComposerPhoto && <div className="text-[9px] text-[#FF671F]/70 -mt-1 mb-2">Foto icónica + texto se publican juntos en tu Muro de Leyendas</div>}
+                {muroComposerPhoto && <div className="text-[9px] text-[#FF671F]/70 -mt-1 mb-2">Foto + texto se publican juntos como parte de tu red de EntrenaSync</div>}
                 {muroPhotoUploading && (
                   <div className="mb-3">
                     <div className="text-[10px] text-[#9CA3AF] mb-1">Subiendo momento icónico...</div>
@@ -8233,54 +8324,55 @@ function App() {
                     {muroPublishing ? 'Publicando...' : 'Publicar'}
                   </button>
                 </div>
-                <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Se vuelve parte de tu Muro de Leyendas • visible en tu perfil y para la comunidad</div>
+                <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Se vuelve parte de tu red de rendimiento en EntrenaMatch • visible en tu perfil y para la comunidad</div>
               </div>
 
-              {/* Small decorative "I am building something beautiful" stat — makes profile feel improvable & alive */}
+              {/* Small decorative stat — makes the network feel alive */}
               {(() => {
                 const photoPosts = (profilePosts[effectiveUserId] || []).filter((p: any) => p.photo).length;
                 const gal = currentUser.photos?.length || 0;
                 if (photoPosts + gal < 2) return null;
                 return (
-                  <div className="mx-1 mb-2 text-[9px] text-center text-[#FFD700]/70">✨ {photoPosts} momentos icónicos en tu muro • {gal} fotos en tu galería de leyendas</div>
+                  <div className="mx-1 mb-2 text-[9px] text-center text-[#FFD700]/70">✨ {photoPosts} sesiones de EntrenaSync documentadas • {gal} fotos en tu galería de rendimiento</div>
                 );
               })()}
 
-              {/* Posts feed - ICONIC beautiful muro for your personal legacy */}
+              {/* Posts feed - ICONIC beautiful muro for your performance network */}
               <div className="px-1 mb-3 flex items-center justify-between">
                 <div>
                   <div className="font-semibold text-base flex items-center gap-2">
                     <span>🏋️</span> 
-                    <span>Tu Muro Personal</span>
+                    <span>Tu Historial de EntrenaSync</span>
                   </div>
-                  <div className="text-[10px] text-[#9CA3AF] -mt-0.5">Tu legado de entreno • visible en Feed Global</div>
+                  <div className="text-[10px] text-[#9CA3AF] -mt-0.5">Tu red de rendimiento • sesiones compartidas visibles en Feed Global</div>
                 </div>
                 <button onClick={() => setActiveTab('feed')} className="text-xs px-3 py-1 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10">Ver en Feed →</button>
               </div>
 
-              {/* Achievement counters - makes muro feel like your personal Legend Wall / achievement log */}
+              {/* Achievement counters - your performance network capital. Alianzas + Syncs + Highlights = the visible proof of your training graph. */}
               <div className="grid grid-cols-3 gap-2 mb-3 px-1">
                 {(() => {
-                  const myEchoes = (profilePosts[effectiveUserId] || []).filter((p: any) => (p.text || '').includes('Fui testigo') || (p.text || '').includes('RITUAL LEGENDARIO')).length;
-                  const myLegendSyncs = (profilePosts[effectiveUserId] || []).filter((p: any) => (p.text || '').includes('ENTRENASYNC LEGENDARIO') || (p.text || '').includes('Sync Legendario')).length;
+                  const myHighlights = (profilePosts[effectiveUserId] || []).filter((p: any) => (p.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (p.text || '').includes('Destacado de Sesión Sync')).length;
+                  const myCompletedSyncs = (profilePosts[effectiveUserId] || []).filter((p: any) => (p.text || '').includes('ENTRENASYNC COMPLETADO') || (p.text || '').includes('Sync Legendario')).length;
                   const bondCount = Object.keys(syncBonds).length;
                   return (
                     <>
                       <div className="text-center p-2 rounded-2xl bg-[#1C1C20] border border-[#FFD700]/30">
                         <div className="text-xl font-black text-[#FFD700]">{bondCount}</div>
-                        <div className="text-[8px] text-[#9CA3AF]">LEGENDS FORJADAS</div>
+                        <div className="text-[8px] text-[#9CA3AF]">ALIANZAS DE SYNC</div>
                       </div>
                       <div className="text-center p-2 rounded-2xl bg-[#1C1C20] border border-[#22c55e]/30">
-                        <div className="text-xl font-black text-[#22c55e]">{myLegendSyncs}</div>
-                        <div className="text-[8px] text-[#9CA3AF]">SYNC LEGENDARIOS</div>
+                        <div className="text-xl font-black text-[#22c55e]">{myCompletedSyncs}</div>
+                        <div className="text-[8px] text-[#9CA3AF]">SYNC COMPLETADOS</div>
                       </div>
                       <div className="text-center p-2 rounded-2xl bg-[#1C1C20] border border-[#FF671F]/30">
-                        <div className="text-xl font-black text-[#FF671F]">{myEchoes}</div>
-                        <div className="text-[8px] text-[#9CA3AF]">ECOS RECLAMADOS</div>
+                        <div className="text-xl font-black text-[#FF671F]">{myHighlights}</div>
+                        <div className="text-[8px] text-[#9CA3AF]">HIGHLIGHTS DE SYNC</div>
                       </div>
                     </>
                   );
                 })()}
+                <div className="text-center text-[7px] text-[#FFD700]/50 -mt-1 mb-1">Tu red de sync = tu estatus y resultados en la primera red social del fitness de verdad.</div>
               </div>
               <AnimatePresence>
                 {loadingPersonalMuro && (profilePosts[effectiveUserId] || []).length === 0 ? (
@@ -8305,7 +8397,7 @@ function App() {
                         exit={{ opacity: 0, y: -12, scale: 0.97, height: 0, marginBottom: 0 }}
                         whileHover={{ scale: 1.01, y: -2 }}
                         transition={{ type: 'spring', bounce: 0.12, duration: 0.28 }}
-                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${post.isSyncStory || (post.text || '').includes('ENTRENASYNC LEGENDARIO') ? 'muro-post--sync-story' : (post.text || '').includes('Fui testigo') || (post.text || '').includes('Echo') || (post.text || '').includes('RITUAL LEGENDARIO') ? 'muro-post--echo' : '' } ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-lg shadow-[#FF671F]/20' : ''} hover:border-[#FF671F]/40 hover:-translate-y-0.5 overflow-hidden transition-all active:scale-[0.995]`}
+                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${post.isSyncStory || (post.text || '').includes('ENTRENASYNC COMPLETADO') ? 'muro-post--sync-story' : (post.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (post.text || '').includes('Destacado de Sesión Sync') ? 'muro-post--echo' : '' } ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-lg shadow-[#FF671F]/20' : ''} hover:border-[#FF671F]/40 hover:-translate-y-0.5 overflow-hidden transition-all active:scale-[0.995]`}
                       >
                         <div className="flex justify-between items-start mb-3">
                           <div className="flex items-center gap-2 text-[10px]">
@@ -8482,8 +8574,8 @@ function App() {
                     className="muro-empty p-8 text-center mb-3 rounded-3xl border border-[#FF671F]/10"
                   >
                     <div className="mx-auto w-16 h-16 rounded-3xl bg-gradient-to-br from-[#FF671F]/10 to-[#FF4F79]/10 flex items-center justify-center mb-4 text-4xl">📜</div>
-                    <div className="font-bold text-lg mb-2 tracking-tight">Mi Muro de Leyendas — tu archivo vivo de logros y mitología personal</div>
-                    <div className="text-sm text-[#9CA3AF] mb-5 max-w-[260px] mx-auto">Este es TU lugar. Publica tus logros, ecos que presenciaste, nuevos bonds legendarios y momentos que generaron ripples. Tu muro es tu mitología personal — visible, inspiradora y parte del legado de la comunidad.</div>
+                    <div className="font-bold text-lg mb-2 tracking-tight">Mi Historial de EntrenaSync — tu red de rendimiento y progreso compartido</div>
+                    <div className="text-sm text-[#9CA3AF] mb-5 max-w-[260px] mx-auto">Este es TU lugar en la red. Aquí quedan registradas las sesiones sincronizadas que realmente movieron la aguja: alianzas de alto rendimiento, resultados medibles, y el archivo de lo que construyes entrenando con otros. Tu historial es visible, inspira a la comunidad y demuestra el poder del esfuerzo sincronizado.</div>
                     <div className="flex flex-col gap-2 max-w-[220px] mx-auto">
                       <button 
                         onClick={() => muroComposerRef.current?.focus()}
@@ -9709,7 +9801,7 @@ function App() {
                           <div className="absolute bottom-0 left-0 h-0.5 bg-white/30" style={{width: `${Math.max(5, Math.min(100, (90 - Math.floor((Date.now() - showFullProfile.trainingNowSince + 90*60*1000 - Date.now())/60000 ))/90 * 100))}%`}}></div>
                         )}
                       </div>
-                      <button onClick={() => { handleSwipe(showFullProfile.id, 'right'); setShowFullProfile(null); /* live join toast + auto muro comment handled inside handleSwipe for consistency */ }} className="mt-1 w-full py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-bold active:bg-[#16a34a]">🔥 Entrenar juntos — abrir Arena Sync ahora</button>
+                      <button onClick={() => { handleSwipe(showFullProfile.id, 'right'); setShowFullProfile(null); /* live join toast + auto muro comment handled inside handleSwipe for consistency */ }} className="mt-1 w-full py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-bold active:bg-[#16a34a]">🔥 Entrenar juntos — abrir EntrenaSync ahora</button>
                     </>
                   )}
                   {currentUser && (
@@ -10610,13 +10702,13 @@ function App() {
                   </div>
                 ) : (
                   notifications.map(notif => {
-                    const isLegendNotif = notif.type === 'message' && notif.relatedId && !!syncBonds[notif.relatedId]
+                    const isLegendNotif = notif.type === 'message' && notif.relatedId && !!syncBonds[notif.relatedId] // from your training network
                     const typeIcon = notif.type === 'message' ? (isLegendNotif ? '⭐' : '💬') : notif.type === 'match' ? '❤️' : notif.type === 'session_join' ? '👥' : notif.type === 'squad_join' ? '🏋️' : '🔔'
                     const time = notif.timestamp ? getRelativeTime(notif.timestamp) : ''
                     return (
                       <div 
                         key={notif.id} 
-                        className={`p-4 border-b border-[#2F2F35] flex items-start gap-3 active:bg-[#1C1C20] cursor-pointer ${!notif.read ? 'bg-[#1C1C20]' : ''} ${isLegendNotif ? 'legend-notif border-l-4 border-[#FFD700] bg-[#1a160f]' : ''}`}
+                        className={`p-4 border-b border-[#2F2F35] flex items-start gap-3 active:bg-[#1C1C20] cursor-pointer ${!notif.read ? 'bg-[#1C1C20]' : ''} ${isLegendNotif ? 'legend-notif border-l-4 border-[#FFD700] bg-[#1a160f]' : ''}`} {/* network notif gold for your red */}
                         onClick={() => {
                           const updated = notifications.map(n => 
                             n.id === notif.id ? {...n, read: true} : n
@@ -10664,7 +10756,7 @@ function App() {
                           {!notif.read && (
                             <div className="mt-1.5 inline-block w-1.5 h-1.5 bg-[#FF671F] rounded-full"></div>
                           )}
-                          {isLegendNotif && <div className="mt-1 text-[9px] text-[#FFD700] font-bold">⭐ De tu Leyenda</div>}
+                          {isLegendNotif && <div className="mt-1 text-[9px] text-[#FFD700] font-bold">⭐ De tu Red (Network Power)</div>}
                         </div>
                         {notif.photoUrl && (
                           <img src={notif.photoUrl} alt="" className="w-9 h-9 rounded-xl object-cover flex-shrink-0 border border-[#2F2F35]" />
@@ -10746,10 +10838,10 @@ function App() {
         <div className="fixed inset-0 z-[130] bg-black/90 flex items-center justify-center p-4" onClick={() => setWitnessData(null)}>
           <div className="bg-[#1C1C20] rounded-3xl p-5 max-w-sm w-full border border-[#FF671F]/40" onClick={e=>e.stopPropagation()}>
             <div className="text-center mb-4">
-              <div className="text-[#FF671F] text-xs tracking-[2.5px] font-bold">TESTIGO DE UN MOMENTO LEGENDARIO</div>
+              <div className="text-[#FF671F] text-xs tracking-[2.5px] font-bold">HIGHLIGHT DE LA RED — ENTRENASYNC FUERTE</div>
               <div className="font-black text-2xl mt-1">Sync con {witnessData.partnerName}</div>
-              <div className="text-sm text-[#9CA3AF]">{witnessData.minutes} min • Vibe pico {witnessData.vibe}%</div>
-              <div className="text-[10px] text-[#FF671F]/70 mt-1">Esta energía se propagó por la ciudad</div>
+              <div className="text-sm text-[#9CA3AF]">{witnessData.minutes} min • Sync Score {witnessData.vibe}%</div>
+              <div className="text-[10px] text-[#FF671F]/70 mt-1">Esta sesión fortalece el grafo de la red</div>
             </div>
 
             {/* Compact epic actions timeline */}
@@ -10762,7 +10854,7 @@ function App() {
                 </div>
               ))}
               {(!witnessData.actions || witnessData.actions.length === 0) && (
-                <div className="text-[#9CA3AF] text-xs py-4 text-center">Momento de alta energía capturado en el ritual.</div>
+                <div className="text-[#9CA3AF] text-xs py-4 text-center">Momento de alto rendimiento capturado en el sync de la red.</div>
               )}
             </div>
 
@@ -10777,8 +10869,8 @@ function App() {
               <button 
                 onClick={() => { 
                   setWitnessData(null); 
-                  // Nice touch: offer to create your own legendary moment
-                  toast('¿Listo para crear tu propio momento que genere ondas?');
+                  // Nice touch: offer to create your own network highlight
+                  toast('¿Listo para crear tu propio sync que fortalezca tu red y se propague?');
                 }} 
                 className="flex-1 py-2.5 rounded-2xl bg-[#FF671F] text-black font-semibold text-sm active:bg-[#e55a1a]"
               >
@@ -10788,22 +10880,22 @@ function App() {
                 onClick={() => {
                   // CLAIM THE ECHO - turns the witnessed moment into permanent community mythology
                   // This is the virality + status layer that makes the app feel inevitable.
-                  const echoText = `👁️ Fui testigo de un RITUAL LEGENDARIO\n${witnessData.minutes} min con ${witnessData.partnerName} • Vibe ${witnessData.vibe}%\n${(witnessData.actions || []).slice(0,3).map((a: any) => `${a.emoji} ${a.label}`).join(' · ')}\n\nEsta energía se propagó. El mito crece.`;
+                  const echoText = `🔄 HIGHLIGHT DE ENTRENASYNC\n${witnessData.minutes} min sincronizados con ${witnessData.partnerName} • Sync Score ${witnessData.vibe}%\n${(witnessData.actions || []).slice(0,3).map((a: any) => `${a.emoji} ${a.label}`).join(' · ')}\n\nSesión de alto rendimiento que fortalece nuestra red. +${Math.floor(witnessData.minutes * 1.2)} min de progreso compartido. Queda como highlight visible para la comunidad.`;
                   createProfilePost(echoText, witnessData.photoUrl).then(() => {
-                    toast.success('Echo reclamado', { description: 'Este momento ahora vive en el feed global como parte de la mitología.' });
+                    toast.success('Highlight archivado', { description: 'Esta sesión de EntrenaSync queda como parte permanente de tu red de rendimiento y es visible para la comunidad.' });
                     setWitnessData(null);
                   }).catch(() => {
-                    toast('Echo guardado localmente (se sincronizará).');
+                    toast('Highlight guardado localmente (se sincronizará).');
                     setWitnessData(null);
                   });
                 }} 
                 className="flex-1 py-2.5 rounded-2xl border border-[#FFD700] text-[#FFD700] font-semibold text-sm active:bg-[#FFD700]/10"
               >
-                ⭐ Reclamar como Echo
+                📌 Archivar como Highlight de EntrenaSync
               </button>
               <button onClick={() => setWitnessData(null)} className="flex-1 py-2.5 rounded-2xl border border-white/20 text-sm">Cerrar</button>
             </div>
-            <div className="text-center text-[8px] text-[#9CA3AF]/60 mt-2">Fuiste testigo de un ritual que nadie más puede replicar. Reclámalo y forma parte del mito.</div>
+            <div className="text-center text-[8px] text-[#9CA3AF]/60 mt-2">Fuiste parte de un EntrenaSync fuerte de la red. Archívalo y forma parte de la cultura de alto rendimiento.</div>
           </div>
         </div>
       )}

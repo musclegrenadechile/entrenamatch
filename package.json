@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.39-iconic-photos-profile",
+  "version": "0.1.42-network-power-glow",
   "type": "module",
   "scripts": {
     "dev": "vite",

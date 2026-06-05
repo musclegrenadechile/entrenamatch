@@ -1,20 +1,52 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED (v0.1.27-ritual-invention code 32) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.42-network-power-glow code 46) ===
 
-AAB: EntrenaMatch-v0.1.27-ritual-invention-code32-20260604-1950.aab (o EntrenaMatch-release.aab)
+AAB principal para subir:
+EntrenaMatch-v0.1.42-network-power-glow-code46-[timestamp].aab
+(o usa EntrenaMatch-release.aab que es copia del mismo después del build)
 
-Notas de versión (pega esto):
+**Copia esto exacto en "Notas de la versión" / "What's new" en Play Console (Closed track):**
 
-**v0.1.37-arena-real (code 42) — ARENA CON PROPÓSITO REAL**
-• Ritual Impact bar visible (ripples, testigos, "construyendo tu leyenda").
-• Acciones con propósito explícito (bond/ripple/legend).
-• Feedback claro de impacto + energía field más dramática.
-• Ahora se nota que la Arena sirve de verdad: construye legado, ripples, ecos y mitología que otros respetan.
+**v0.1.42-network-power-glow (code 46) — PRIMERA RED SOCIAL REAL DEL FITNESS: TU RED DE ENTRENASYNC AHORA DA PODER VISUAL Y PRIORIDAD EN EL PULSO GLOBAL**
 
-Artefactos:
-- AAB Play: EntrenaMatch-v0.1.27-ritual-invention-code32-20260604-1950.aab
-- Debug: EntrenaMatch-debug-ritual-invention-0.1.27-20260604-1950.apk
+• Tu Red de EntrenaSync (el grafo de alianzas de alto rendimiento) es ahora el activo central: Network Power te hace más fuerte, visible y con prioridad real en la plataforma.
+• El Pulso Global (mapa) se potencia brutalmente para tu red: activa "Mi Red (Network Power)" y tus socios de sync aparecen con HALO DORADO PULSANTE extra, tamaño hasta ~2x más grande, tethers de conexión más gruesos y con glow — tu grafo literalmente domina visualmente el mapa cuando filtras por él.
+• Header del Pulso y contadores en vivo ahora muestran badge fijo "TU RED: X socios • NP Y" para que siempre veas el poder de tu grafo.
+• Prioridad de red ya estaba en sorts de live/explore/feed (tus aliados primero), ahora el mapa lo hace obvio y épico.
+• Limpieza total de lenguaje: cero fantasía. Todo es serio, ambicioso y posicionado como la infraestructura de la primera red social del fitness de alto rendimiento sincronizado (los 5 mecánicos no-negociables se sienten inevitables).
+• Refuerzo en EntrenaSync: cuando sync con alguien de tu red, +Network Power bonus en el vibe compartido, notifs especiales "RED DE ENTRENASYNC", tether/orb más fuertes visualmente.
+• Perfil: sección "TU RED DE ENTRENASYNC" con impacto colectivo cuantificado, botones para re-sync y expandir tu grafo.
+• Feed y highlights: "HIGHLIGHTS DE LA RED" — las sesiones fuertes de tu grafo se propagan como cultura y estatus.
 
-Script después del seed:
-publish-play.bat closed
+Esto es lo que marca la diferencia: entrenar con alguien ya no es solo motivación — construye tu capital social y de rendimiento que otros ven y respetan. Tu grafo = tu estatus en la red.
 
-Sigue como si estuviéramos inventando el futuro del movimiento.
+Artefactos generados:
+- AAB para Play: la versión 0.1.42 code 46 (generada por pipeline completa)
+- También: EntrenaMatch-release.aab (copia lista para subir)
+
+Después de subir:
+- Actualiza testers closed track.
+- Recuerda desplegar storage rules si no lo hiciste: `npx firebase deploy --only storage --project entrenamatch` (para que las fotos del muro usen URLs https reales).
+
+Comando útil: publica con tus scripts o manual en Play.
+
+Sigue a mil. Esto ya se siente como la categoría que nadie ha hecho.
+
+Fecha de build: $(Get-Date -Format "yyyy-MM-dd HH:mm")
+
+================================================================================
+
+Instrucciones rápidas:
+1. Play Console > EntrenaMatch > Closed testing > Nueva versión.
+2. Sube el AAB versionado o EntrenaMatch-release.aab.
+3. Pega el "What's new" completo de arriba.
+4. Guarda, revisa, rollout a testers.
+5. (Importante) Si las fotos del muro siguen fallando para usuarios: deploy storage rules.
+
+El build incluyó:
+- Versión 0.1.42 / code 46
+- Glow + prioridad visual máxima de Network Power en el mapa cuando filtras tu red
+- Más superficies mostrando tu grafo (badges, contadores, NP en vivo)
+- Reframe completo a "primera red social del fitness" sin perder los 5 mecánicos épicos
+- Build limpio, google-services verificado para com.entrenamatch.app
+
+¡Sube esto ya! Esto es disruptivo de verdad.
