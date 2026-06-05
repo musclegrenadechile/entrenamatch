@@ -876,6 +876,7 @@ function App() {
 
     if (justCompleted && computedLevel > prevLevel) {
       try { triggerHaptic('success') } catch {}
+      try { triggerConfetti() } catch {}
       toast.success(`¡Subiste a NIVEL ${computedLevel}!`, { description: 'Perk permanente: +8% Momentum en desafíos. ¡Tu retención es legendaria!' })
       createProfilePost(`⭐ ¡NIVEL ${computedLevel} DE RETENCIÓN! Mi constancia diaria hace fuerte a toda la Red.`, null, 'dailyPulse').catch(() => {})
     }
@@ -6440,14 +6441,19 @@ function App() {
       <div className="flex-1 overflow-hidden relative flex flex-col">
         {/* Global offline indicator - visible on all tabs for good UX when no connectivity (Firebase queues + cache) */}
         {isOffline && (
-          <div className="bg-yellow-900/90 text-yellow-200 text-[10px] px-3 py-1 text-center border-b border-yellow-800/60 z-20">
-            📡 Sin conexión • usando caché • cambios se guardan y sincronizan al reconectar
-          </div>
+          <motion.div 
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            className="bg-yellow-900/90 text-yellow-200 text-[10px] px-3 py-1 text-center border-b border-yellow-800/60 z-20 flex items-center justify-center gap-2"
+          >
+            <span>📡</span>
+            <span>Sin conexión • usando caché • cambios se guardan y sincronizan al reconectar</span>
+          </motion.div>
         )}
         {/* ===== EXPLORE / SWIPE (fully owned by ExploreTab) ===== */}
         {/* LIVE TRAINING BANNER - ALWAYS VISIBLE, the star feature for urgency and retention. Green pulsing, se va en, mini photos, quick join. Makes app addictive. Top of explore for maximum impact. */}
         {activeTab === 'explore' && (
-          <div className="px-4 py-2.5 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden live-banner-glow">
+          <div className="px-4 py-2.5 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden live-banner-glow transition-all duration-300">
             <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
             <div className="flex items-center gap-2 mb-1.5 relative z-10">
               <div className="live-pill green !px-2.5 !py-0.5 text-[9px]">🟢 EN VIVO AHORA</div>
@@ -8230,14 +8236,28 @@ function App() {
           <div className="flex-1 overflow-auto bg-[#0D0D10] pb-28">
             {/* Daily Pulse Banner - strong reason to engage immediately on open */}
             {showDailyPulseBanner && dailyPulse && (
-              <div className="mx-4 mt-3 p-3 rounded-2xl bg-gradient-to-r from-[#FF671F]/15 via-[#1a140f] to-transparent border border-[#FF671F]/50 flex items-center gap-3 shadow-sm">
+              <motion.div 
+                initial={{ opacity: 0, y: -10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                className="mx-4 mt-3 p-3 rounded-2xl bg-gradient-to-r from-[#FF671F]/15 via-[#1a140f] to-transparent border border-[#FF671F]/50 flex items-center gap-3 shadow-sm"
+              >
                 <div className="text-2xl">🌅</div>
                 <div className="flex-1">
                   <div className="text-sm font-bold text-[#FF671F]">¡Pulso Diario de la Red activado!</div>
                   <div className="text-xs text-[#9CA3AF]">Streak {dailyPulse.trainingStreak}d • {dailyPulse.currentChallenge?.title} esperando tu energía</div>
                 </div>
-                <button onClick={() => { setShowDailyPulseBanner(false); /* scroll or focus the card */ }} className="text-xs px-3 py-1 bg-[#FF671F] text-black rounded-full font-bold active:bg-[#E55A1A]">Ver Pulso</button>
-              </div>
+                <button 
+                  onClick={() => { 
+                    try { triggerHaptic('light') } catch {} 
+                    setShowDailyPulseBanner(false); 
+                  }} 
+                  className="text-xs px-3 py-1 bg-[#FF671F] text-black rounded-full font-bold active:bg-[#E55A1A] active:scale-95 transition-transform"
+                >
+                  Ver Pulso
+                </button>
+              </motion.div>
             )}
             {/* Sticky header with escape hatches - polished aesthetics */}
             <div className="sticky top-0 z-20 bg-[#0D0D10]/95 backdrop-blur-xl border-b border-[#2F2F35] px-4 py-3 flex items-center justify-between">
@@ -8646,8 +8666,13 @@ function App() {
                  Strong reasons to open daily + intelligent hooks.
             ===================================================== */}
             {dailyPulse && (
-              <div className="px-4 mt-4">
-                <div className="rounded-3xl bg-gradient-to-br from-[#0f0a08] via-[#1a140f] to-[#0D0D10] border border-[#FF671F]/30 p-4 shadow-inner">
+              <motion.div 
+                className="px-4 mt-4"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ type: 'spring', stiffness: 200, damping: 25 }}
+              >
+                <div className="rounded-3xl bg-gradient-to-br from-[#0f0a08] via-[#1a140f] to-[#0D0D10] border border-[#FF671F]/30 p-4 shadow-inner hover:shadow-2xl transition-all duration-300">
                   <div className="flex items-center justify-between mb-3">
                     <div>
                       <div className="text-[#FF671F] text-[10px] font-bold tracking-[1px] uppercase">EL PULSO DE LA RED</div>
@@ -8727,26 +8752,28 @@ function App() {
                           <div className="mt-2 flex gap-2">
                             <button 
                               onClick={() => {
+                                try { triggerHaptic('light') } catch {}
                                 if (dailyPulse.currentChallenge.type === 'solo') {
-                                  // quick win: mark training or just progress
                                   completeDailyChallenge(1)
                                 } else if (dailyPulse.currentChallenge.type === 'bond') {
                                   setActiveTab('explore')
                                   toast('Ve a tu Red y activa un bond hoy')
                                 } else {
-                                  // ripple: encourage post or voice
                                   setActiveTab('profile')
                                   toast('Publica un Pulso en tu muro para completar')
                                 }
                               }}
-                              className="flex-1 text-xs py-1.5 rounded-full bg-[#FF671F] text-black font-bold active:bg-[#E55A1A]"
+                              className="flex-1 text-xs py-1.5 rounded-full bg-[#FF671F] text-black font-bold active:bg-[#E55A1A] active:scale-[0.985] transition-transform"
                             >
                               {dailyPulse.currentChallenge.actionLabel || 'Avanzar'}
                             </button>
                             {dailyPulse.currentChallenge.completed ? (
                               <div className="text-[10px] px-2 py-1.5 text-[#22c55e] font-bold">¡COMPLETADO! +{dailyPulse.currentChallenge.reward}</div>
                             ) : (
-                              <button onClick={() => completeDailyChallenge(1)} className="text-xs px-3 py-1.5 rounded-full border border-[#FF671F]/50 text-[#FF671F] active:bg-[#FF671F]/10">
+                              <button 
+                                onClick={() => { try { triggerHaptic('light') } catch {}; completeDailyChallenge(1) }} 
+                                className="text-xs px-3 py-1.5 rounded-full border border-[#FF671F]/50 text-[#FF671F] active:bg-[#FF671F]/10 active:scale-[0.985] transition-transform"
+                              >
                                 +1
                               </button>
                             )}
@@ -8763,49 +8790,58 @@ function App() {
                     <button 
                       onClick={() => {
                         if ((dailyPulse.momentum || 0) >= 30) {
+                          try { triggerHaptic('medium') } catch {}
                           awardMomentum(-30, 'Amplificaste un Pulso')
-                          // In real: boost a recent post visibility or voice
                           toast.success('Pulso amplificado', { description: 'Tu actividad ahora tiene más peso en el mapa de tu Red por 24h' })
                         } else {
                           toast('Necesitas 30 Momentum')
                         }
                       }}
-                      className="flex-1 text-[10px] py-1.5 rounded-2xl border border-[#FF671F]/30 active:bg-[#FF671F]/10 text-[#FF671F]"
+                      className="flex-1 text-[10px] py-1.5 rounded-2xl border border-[#FF671F]/30 active:bg-[#FF671F]/10 active:scale-[0.985] hover:bg-[#FF671F]/5 transition-all text-[#FF671F]"
                     >
                       Amplificar Pulso (30M)
                     </button>
                     <button 
                       onClick={() => {
                         if ((dailyPulse.momentum || 0) >= 20) {
+                          try { triggerHaptic('medium') } catch {}
                           awardMomentum(-20, 'Ignitaste a un socio')
                           toast.success('Socio ignitado', { description: 'Un compañero de tu Red recibe +streak protection hoy' })
                         } else toast('Necesitas 20 Momentum')
                       }}
-                      className="flex-1 text-[10px] py-1.5 rounded-2xl border border-[#22c55e]/30 active:bg-[#22c55e]/10 text-[#22c55e]"
+                      className="flex-1 text-[10px] py-1.5 rounded-2xl border border-[#22c55e]/30 active:bg-[#22c55e]/10 active:scale-[0.985] hover:bg-[#22c55e]/5 transition-all text-[#22c55e]"
                     >
                       Ignitar socio (20M)
                     </button>
                     <button 
                       onClick={() => {
                         if ((dailyPulse.momentum || 0) >= 50) {
+                          try { triggerHaptic('medium') } catch {}
                           awardMomentum(-50, 'Streak protegido')
                           toast.success('Streak protegido', { description: 'No perderás tu racha si no entrenas hoy. ¡Buen uso de Momentum!' })
-                          // In future: set a protected flag for the day
                         } else {
                           toast('Necesitas 50 Momentum para proteger')
                         }
                       }}
-                      className="flex-1 text-[10px] py-1.5 rounded-2xl border border-[#EAB308]/30 active:bg-[#EAB308]/10 text-[#EAB308]"
+                      className="flex-1 text-[10px] py-1.5 rounded-2xl border border-[#EAB308]/30 active:bg-[#EAB308]/10 active:scale-[0.985] hover:bg-[#EAB308]/5 transition-all text-[#EAB308]"
                     >
                       Proteger streak (50M)
                     </button>
                   </div>
 
                   <div className="text-center mt-2">
-                    <button onClick={refreshDailyPulse} className="text-[9px] text-[#9CA3AF] underline active:opacity-70">Refrescar Pulso</button>
+                    <button 
+                      onClick={() => { 
+                        refreshDailyPulse(); 
+                        try { triggerHaptic('light') } catch {} 
+                      }} 
+                      className="text-[9px] text-[#9CA3AF] underline active:opacity-70 active:text-white transition-colors"
+                    >
+                      Refrescar Pulso
+                    </button>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             )}
 
             {/* Actividad reciente en tu muro - hace el perfil VIVO y atractivo */}
