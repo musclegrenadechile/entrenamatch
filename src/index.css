@@ -1800,6 +1800,392 @@ input[type="range"]::-moz-range-thumb {
   border: 1px solid #FF671F33 !important;
 }
 
+/* ============================================================
+   FEED / MURO REMASTER — "El Muro del GymPulse se siente como el centro del mundo del entrenamiento comunitario"
+   Cinematic, dominant imagery, alive reactions, luxurious composer, epic empty states.
+   ============================================================ */
+
+/* Cinematic sticky feed header */
+.feed-header-cinematic {
+  background: linear-gradient(180deg, rgba(13,13,16,0.98) 0%, rgba(13,13,16,0.92) 70%, rgba(13,13,16,0.85) 100%);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 4px 20px -4px rgba(0,0,0,0.6);
+}
+.feed-title-gradient {
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -1.2px;
+  line-height: 1;
+  background: linear-gradient(90deg, #FF671F 0%, #FF4F79 45%, #FF671F 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 100%;
+  animation: title-shimmer 6s ease infinite;
+}
+@keyframes title-shimmer {
+  0%,100% { background-position: 0% 50%; }
+  50% { background-position: 120% 50%; }
+}
+.feed-live-pulse {
+  position: relative;
+}
+.feed-live-pulse::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(34,197,94,0.25) 0%, transparent 70%);
+  animation: feed-live-glow 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes feed-live-glow {
+  0%,100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.15); }
+}
+
+/* Live strip in feed - premium horizontal "who is training right now" */
+.feed-live-strip {
+  background: linear-gradient(90deg, rgba(10,18,15,0.95), rgba(13,13,16,0.9));
+  border: 1px solid rgba(34,197,94,0.18);
+  border-radius: 18px;
+}
+.feed-live-card {
+  background: #0a120f;
+  border: 1px solid rgba(34,197,94,0.35);
+  transition: all 0.2s cubic-bezier(0.23,1,0.32,1);
+}
+.feed-live-card:hover {
+  border-color: #22c55e;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px -6px rgba(34,197,94,0.3);
+}
+.feed-live-card.red {
+  background: #1a160f;
+  border-color: rgba(255,215,0,0.5);
+}
+
+/* Remastered post card — hero media first, luxurious details */
+.muro-post {
+  background: linear-gradient(160deg, rgba(28,28,32,0.98) 0%, rgba(18,18,22,0.99) 100%);
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.55), 
+              0 0 0 1px rgba(255, 103, 31, 0.06),
+              inset 0 1px 0 rgba(255,255,255,0.03);
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  transition: all 0.25s cubic-bezier(0.23, 1, 0.32, 1);
+}
+.muro-post::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #FF671F, #FF4F79, #FF671F);
+  background-size: 220% 100%;
+  opacity: 0.28;
+  animation: gradient-shift 5s ease infinite;
+}
+.muro-post:hover {
+  border-color: rgba(255, 103, 31, 0.38);
+  box-shadow: 0 28px 55px -14px rgb(0 0 0 / 0.7), 
+              0 0 0 1px rgba(255, 103, 31, 0.22);
+  transform: translateY(-5px);
+}
+.muro-post:active {
+  transform: scale(0.993);
+}
+
+/* Hero media treatment — photo becomes the star */
+.muro-post-hero-media {
+  position: relative;
+  margin: -16px -16px 12px;
+  border-radius: 20px 20px 0 0;
+  overflow: hidden;
+  background: #111;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.muro-post-hero-media img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  transition: transform 0.45s cubic-bezier(0.23,1,0.32,1), filter 0.3s ease;
+}
+.muro-post:hover .muro-post-hero-media img {
+  transform: scale(1.035);
+  filter: contrast(1.03) saturate(1.06) brightness(1.01);
+}
+.muro-post-hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0.85) 100%);
+  pointer-events: none;
+}
+.muro-post-hero-label {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  font-size: 9px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0,0,0,0.65);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: #ddd;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+.muro-post-hero-zoom {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  font-size: 10px;
+  padding: 3px 9px;
+  background: rgba(0,0,0,0.7);
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.9;
+}
+
+/* Premium author row inside posts */
+.feed-author-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.feed-author-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 2px solid #2F2F35;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  flex-shrink: 0;
+  position: relative;
+}
+.feed-author-avatar.live {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.2), 0 2px 6px rgba(0,0,0,0.4);
+}
+.feed-author-avatar.live::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  border: 2px solid #22c55e;
+  opacity: 0.4;
+  animation: live-pulse-green 2s ease-in-out infinite;
+}
+.feed-author-meta {
+  flex: 1;
+  min-width: 0;
+}
+.feed-author-name {
+  font-weight: 700;
+  color: #FF671F;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  line-height: 1.1;
+}
+.feed-author-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.feed-author-badge {
+  font-size: 8px;
+  padding: 0 5px;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  line-height: 13px;
+  height: 13px;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Post body + text */
+.muro-post-body {
+  font-size: 14.5px;
+  line-height: 1.45;
+  color: #F1F1F3;
+  margin-bottom: 10px;
+}
+
+/* Alive reaction bar */
+.feed-reaction-bar {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.feed-reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(28,28,32,0.8);
+  transition: all 0.12s cubic-bezier(0.23,1,0.32,1);
+  color: #9CA3AF;
+}
+.feed-reaction:hover {
+  border-color: rgba(255,103,31,0.4);
+  color: #FF671F;
+  transform: translateY(-1px);
+}
+.feed-reaction.active {
+  background: rgba(255,103,31,0.13);
+  border-color: #FF671F;
+  color: #FF671F;
+  transform: scale(1.04);
+}
+.feed-reaction .count {
+  font-weight: 700;
+  font-size: 12px;
+  color: #FF671F;
+  min-width: 12px;
+  text-align: center;
+}
+
+/* Comments preview — elegant stacked */
+.feed-comments-preview {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: rgba(10,10,12,0.6);
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.feed-comment-row {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.3;
+}
+.feed-comment-row + .feed-comment-row {
+  margin-top: 4px;
+}
+.feed-comment-more {
+  margin-top: 4px;
+  font-size: 10px;
+  color: #FF671F;
+  font-weight: 600;
+}
+
+/* Special stronger variants for remaster */
+.muro-post--pinned {
+  border-color: rgba(255, 103, 31, 0.55);
+  box-shadow: 0 16px 45px -10px rgb(255 103 31 / 0.28), 0 0 0 1px rgba(255, 103, 31, 0.25);
+}
+.muro-post--pinned::before {
+  height: 5px;
+  opacity: 0.7;
+  animation: gradient-shift 2.8s ease infinite;
+}
+.muro-post--live {
+  border-color: rgba(34, 197, 94, 0.45);
+  box-shadow: 0 12px 32px -8px rgba(34,197,94,0.22);
+}
+.muro-post--live::before {
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  opacity: 0.55;
+}
+.muro-post--sync {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: linear-gradient(155deg, rgba(8,32,22,0.75) 0%, rgba(18,18,22,0.98) 65%);
+}
+.muro-post--sync::before {
+  background: linear-gradient(90deg, #22c55e, #FF671F, #22c55e);
+  opacity: 0.5;
+}
+
+/* Epic empty state for feed */
+.feed-empty-epic {
+  border: 1px solid rgba(255,103,31,0.2);
+  background: linear-gradient(160deg, rgba(28,28,32,0.7), rgba(13,13,16,0.95));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+}
+.feed-empty-epic .big-icon {
+  font-size: 68px;
+  opacity: 0.15;
+  filter: grayscale(0.3);
+}
+
+/* Luxurious composer modal */
+.feed-composer-modal {
+  background: linear-gradient(155deg, #1C1C20 0%, #0D0D10 100%);
+  border: 1px solid rgba(255,103,31,0.2);
+  box-shadow: 0 25px 70px -15px rgba(0,0,0,0.8);
+}
+.feed-composer-textarea {
+  background: #111114;
+  border: 1px solid rgba(255,255,255,0.08);
+  font-size: 15px;
+  line-height: 1.5;
+}
+.feed-composer-textarea:focus {
+  border-color: #FF671F;
+  box-shadow: 0 0 0 4px rgba(255,103,31,0.1);
+}
+.feed-composer-photo {
+  border: 2px solid rgba(255,215,0,0.25);
+  box-shadow: 0 15px 45px -10px rgba(0,0,0,0.75);
+}
+.feed-publish-btn {
+  background: linear-gradient(90deg, #FF671F, #FF4F79);
+  color: black;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  box-shadow: 0 4px 14px -2px rgba(255,103,31,0.5);
+  transition: all .1s ease;
+}
+.feed-publish-btn:active {
+  transform: scale(0.985);
+  filter: brightness(0.92);
+}
+
+/* Filter chips in feed */
+.feed-filter-chip {
+  font-size: 10px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,103,31,0.3);
+  color: #FF671F;
+  transition: all 0.1s ease;
+  white-space: nowrap;
+}
+.feed-filter-chip.active {
+  background: #FF671F;
+  color: black;
+  border-color: #FF671F;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(255,103,31,0.3);
+}
+.feed-filter-chip.live.active {
+  background: #22c55e;
+  color: black;
+  border-color: #22c55e;
+}
+
+/* Success banner after publish */
+.feed-publish-success {
+  background: linear-gradient(90deg, rgba(34,197,94,0.12), rgba(16,185,129,0.06));
+  border: 1px solid rgba(34,197,94,0.35);
+  color: #22c55e;
+  font-weight: 600;
+}
+
 /* =====================================================
    VISUAL QUALITY BOOST — "Todo se siente premium, vivo y cohesionado"
    Global upgrades for buttons, cards, daily pulse, live states, empty states, modals.

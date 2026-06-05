@@ -7783,149 +7783,164 @@ function App() {
         {/* ===== GLOBAL FEED TAB - Muro Comunitario (per plan: global recent activity feed) ===== */}
         {activeTab === 'feed' && (
           <div className="flex-1 overflow-auto p-4">
-            <div className="sticky top-0 bg-[#0D0D10]/95 backdrop-blur-md z-10 -mx-4 px-4 pb-4 border-b border-[#2F2F35]/50">
-              <div className="flex items-center justify-between mb-2 px-1">
-                <div>
+            {/* CINEMATIC REMASTERED FEED HEADER — the social heart of the GymPulse */}
+            <div className="feed-header-cinematic sticky top-0 z-10 -mx-4 px-4 pt-3 pb-3">
+              <div className="flex items-start justify-between gap-3 px-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3">
-                    <div className="text-2xl">🔥</div>
+                    <div className="text-3xl drop-shadow">🔥</div>
                     <div>
-                      <div className="font-bold text-xl tracking-[-0.5px] bg-gradient-to-r from-[#FF671F] via-[#FF4F79] to-[#FF671F] bg-clip-text text-transparent">EL MURO</div>
-                      <div className="text-[10px] text-[#9CA3AF] -mt-0.5">de la comunidad • donde el entrenamiento sincronizado genera resultados y estatus real</div>
+                      <div className="feed-title-gradient">EL MURO</div>
+                      <div className="text-[11px] text-[#9CA3AF] -mt-0.5 tracking-[0.3px]">del GymPulse • donde el esfuerzo sincronizado se vuelve cultura y estatus real</div>
                     </div>
                   </div>
-                  <div className="text-[#9CA3AF] text-xs flex items-center gap-1.5 mt-1.5">
-                    El feed icónico de EntrenaMatch
-                    {liveCountForUI > 0 && <span className="text-[8px] ml-1 px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50">🟢 {liveCountForUI} LIVE AHORA</span>}
-                    {activeSyncCount > 0 && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e]/10 text-[#22c55e] font-bold">🔄 {activeSyncCount} EN SYNC</span>}
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <div className="text-[#9CA3AF] text-xs">Feed icónico de la comunidad</div>
+                    {liveCountForUI > 0 && (
+                      <span className="feed-live-pulse text-[9px] px-2.5 py-0.5 rounded-full bg-[#22c55e] text-black font-black shadow-sm ring-1 ring-[#22c55e]/60 flex items-center gap-1">
+                        🟢 {liveCountForUI} EN VIVO AHORA
+                      </span>
+                    )}
+                    {activeSyncCount > 0 && (
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#22c55e]/10 text-[#22c55e] font-bold border border-[#22c55e]/30">🔄 {activeSyncCount} EN SYNC</span>
+                    )}
                   </div>
                 </div>
-                <div className="mt-2">
-                  <div className="flex gap-2 items-center mb-1.5">
-                    <input 
-                      type="text" 
-                      value={feedSearch} 
-                      onChange={e => setFeedSearch(e.target.value)}
-                      placeholder="Buscar posts..."
-                      className="form-input text-xs py-1 px-3 flex-1 min-w-[80px] rounded-2xl"
-                    />
-                    <button onClick={() => setShowFeedPostModal(true)} className="text-[9px] px-3 py-1 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black font-bold active:brightness-90 shadow-sm flex items-center gap-1 flex-shrink-0">
-                      <Plus className="w-3 h-3" /> Publicar
-                    </button>
-                  </div>
 
-                  {/* NEVER-SEEN GLOBAL FOMO: active EntrenaSync pairs happening RIGHT NOW across the community.
-                      Clicking one can inspire or (if you are live) quick-join the culture of training together. */}
-                  {activeSyncPairs.length > 0 && (
-                    <div className="text-[9px] mb-1 px-0.5 flex items-center gap-1 text-[#22c55e]/90">
-                      <span className="font-bold">🔄 {activeSyncPairs.length} EntrenaSyncs activos ahora — tu red de rendimiento en movimiento (el grafo vivo):</span>
-                      {activeSyncPairs.map((pr, i) => (
-                        <span key={i} className="px-1.5 py-px rounded bg-[#22c55e]/10 text-[#22c55e]">{pr.names} <span className="opacity-60">{pr.vibe}%</span></span>
-                      ))}
-                    </div>
-                  )}
+                {/* Big beautiful Publish CTA */}
+                <button 
+                  onClick={() => setShowFeedPostModal(true)} 
+                  className="mt-0.5 flex-shrink-0 px-4 py-2 rounded-2xl bg-gradient-to-r from-[#FF671F] via-[#FF4F79] to-[#FF671F] text-black font-extrabold text-sm shadow-lg active:scale-[0.975] transition flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> PUBLICAR
+                </button>
+              </div>
 
-                  {/* FILTERS - horizontal scroll premium: "live fijados" now slide beautifully. Fade hints + snap for muscle memory on small screens. */}
-                  <div className="relative -mx-1 px-1">
-                    <div className="flex gap-1.5 overflow-x-auto pb-1 snap-x snap-mandatory touch-pan-x scrollbar-hide">
-                      <button 
-                        onClick={() => setFeedOnlyReal(!feedOnlyReal)}
-                        className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 flex-shrink-0 snap-start ${feedOnlyReal ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#FF671F]/40 text-[#FF671F] hover:bg-[#FF671F]/10'}`}
-                      >
-                        {feedOnlyReal ? '★ Reales' : 'REAL'}
-                      </button>
-                      <button 
-                        onClick={() => setFeedOnlyLive(!feedOnlyLive)}
-                        className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 flex-shrink-0 snap-start ${feedOnlyLive ? 'bg-[#22c55e] text-black border-[#22c55e] shadow-sm' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
-                      >
-                        {feedOnlyLive ? '🟢 Live' : '🟢 Live'}
-                      </button>
-                      <button 
-                        onClick={() => setFeedShowPinnedOnly(!feedShowPinnedOnly)}
-                        className={`text-[9px] px-2.5 py-1 rounded-2xl border transition-all active:scale-95 flex-shrink-0 snap-start ${feedShowPinnedOnly ? 'bg-[#FF671F] text-black border-[#FF671F] shadow-sm' : 'border-[#FF671F]/40 text-[#FF671F] hover:bg-[#FF671F]/10'}`}
-                      >
-                        {feedShowPinnedOnly ? '📌 Fijados' : '📌 Fijados'}
-                      </button>
-                      <button 
-                        onClick={() => { setFeedMaxProfiles(15); setFeedDisplayLimit(10); loadGlobalFeed(); if (!isDemoMode) loadRealProfiles(); }} 
-                        disabled={isLoadingFeed}
-                        className="text-[9px] px-2.5 py-1 rounded-2xl border border-[#FF671F]/40 text-[#FF671F] active:bg-[#FF671F]/10 active:scale-95 flex-shrink-0 snap-start"
-                      >
-                        {isLoadingFeed ? 'Cargando...' : '↻ Actualizar'}
-                      </button>
-                    </div>
-                    {/* subtle scroll hint for first-time users */}
-                    <div className="absolute right-0 top-0 bottom-1 w-6 bg-gradient-to-l from-[#0D0D10] to-transparent pointer-events-none rounded-r" />
-                    <div className="text-[7px] text-[#9CA3AF]/60 mt-0.5 px-1">desliza → filtros y live</div>
-                  </div>
+              {/* Search + Filters row — elegant chips */}
+              <div className="mt-3 flex items-center gap-2 px-1">
+                <input 
+                  type="text" 
+                  value={feedSearch} 
+                  onChange={e => setFeedSearch(e.target.value)}
+                  placeholder="Buscar en el Muro..."
+                  className="form-input text-sm py-1.5 px-3 flex-1 rounded-2xl min-w-[90px]"
+                />
+                <div className="flex gap-1.5 overflow-x-auto pb-1 snap-x snap-mandatory touch-pan-x scrollbar-hide -mr-1 pr-1">
+                  <button 
+                    onClick={() => setFeedOnlyReal(!feedOnlyReal)}
+                    className={`feed-filter-chip snap-start ${feedOnlyReal ? 'active' : ''}`}
+                  >
+                    {feedOnlyReal ? '★ Solo Reales' : 'Reales'}
+                  </button>
+                  <button 
+                    onClick={() => setFeedOnlyLive(!feedOnlyLive)}
+                    className={`feed-filter-chip live snap-start ${feedOnlyLive ? 'active' : ''}`}
+                  >
+                    {feedOnlyLive ? '🟢 Solo Live' : '🟢 Live'}
+                  </button>
+                  <button 
+                    onClick={() => setFeedShowPinnedOnly(!feedShowPinnedOnly)}
+                    className={`feed-filter-chip snap-start ${feedShowPinnedOnly ? 'active' : ''}`}
+                  >
+                    {feedShowPinnedOnly ? '📌 Fijados' : '📌 Fijados'}
+                  </button>
+                  <button 
+                    onClick={() => { setFeedMaxProfiles(15); setFeedDisplayLimit(10); loadGlobalFeed(); if (!isDemoMode) loadRealProfiles(); }} 
+                    disabled={isLoadingFeed}
+                    className="feed-filter-chip snap-start text-[#9CA3AF] border-[#9CA3AF]/30 hover:text-white"
+                  >
+                    {isLoadingFeed ? '...' : '↻'}
+                  </button>
                 </div>
               </div>
+
+              {/* Active Sync FOMO strip — kept powerful but prettier */}
+              {activeSyncPairs.length > 0 && (
+                <div className="mt-2.5 px-1 text-[10px] text-[#22c55e]/90 flex items-center gap-1.5">
+                  <span className="font-bold tracking-wide">🔄 {activeSyncPairs.length} SYNC ACTIVO{activeSyncPairs.length>1?'S':''} AHORA</span>
+                  {activeSyncPairs.slice(0,2).map((pr, i) => (
+                    <span key={i} className="px-2 py-px rounded-full bg-[#22c55e]/10 text-[#22c55e] text-[9px] border border-[#22c55e]/20">{pr.names} <span className="opacity-60">{pr.vibe}%</span></span>
+                  ))}
+                  <span className="text-[9px] text-[#9CA3AF]/70">— el grafo vivo del rendimiento</span>
+                </div>
+              )}
             </div>
 
             {showFeedPublishSuccess && (
-              <div className="mb-3 mx-1 p-3 bg-[#22c55e]/10 border border-[#22c55e]/30 rounded-2xl text-center text-[#22c55e] text-sm font-medium flex items-center justify-center gap-2">
-                🎉 ¡Tu post se publicó en el Feed! Aparece arriba en la lista.
+              <div className="feed-publish-success mb-3 mx-1 p-3 rounded-2xl text-center text-sm font-semibold flex items-center justify-center gap-2">
+                ✨ ¡Publicado en el Muro del GymPulse! Tu post ya está vivo para toda la comunidad.
               </div>
             )}
 
+            {/* PREMIUM "EN EL PULSO AHORA" LIVE STRIP — much more attractive, tappable, FOMO-inducing */}
             {liveTrainingNow.length > 0 && (
-              <div className="mb-4 -mx-1">
-                <div className="text-[8px] uppercase tracking-[1px] text-[#22c55e]/80 mb-1.5 px-2 font-bold flex items-center gap-1">🔥 EN VIVO AHORA EN LA COMUNIDAD {liveTrainingNow.length > 5 && <span className="text-red-400">HOT ZONE</span>}</div>
-                <div className="flex gap-2 overflow-x-auto pb-2 px-1 snap-x snap-mandatory">
+              <div className="mb-4 -mx-1 px-1">
+                <div className="flex items-center justify-between mb-1.5 px-1">
+                  <div className="text-[9px] uppercase tracking-[1.5px] text-[#22c55e] font-black flex items-center gap-1.5">
+                    🔥 EN EL GYMPULSE AHORA <span className="text-[10px] text-[#22c55e]/70 font-normal">({liveTrainingNow.length})</span>
+                    {liveTrainingNow.length > 5 && <span className="text-red-400 text-[8px] font-bold tracking-wider">HOT ZONE</span>}
+                  </div>
+                  <div className="text-[8px] text-[#9CA3AF]">Toca para unirte o re-sync</div>
+                </div>
+                <div className="feed-live-strip flex gap-2 overflow-x-auto pb-2 px-1 snap-x snap-mandatory">
                   {[...liveTrainingNow].sort((a,b)=> {
                     const aInNet = !!syncBonds[a.id] ? -1 : 0;
                     const bInNet = !!syncBonds[b.id] ? -1 : 0;
                     if (aInNet !== bInNet) return aInNet - bInNet;
                     return (a.distance||0)-(b.distance||0);
-                  }).slice(0,4).map((u, idx) => (
+                  }).slice(0,5).map((u, idx) => (
                     <motion.div 
                       key={u.id} 
                       onClick={() => {
-                        if (syncBonds[u.id]) {
-                          // Direct re-sync for your network = instant Network Power boost
-                          try { triggerHaptic('medium') } catch {}
-                          startSyncWith(u.id, u.name)
-                        } else {
-                          setActiveTab('explore')
-                          // Optional: show profile or offer join
-                          if (u.trainingNow) {
-                            setTimeout(() => startSyncWith(u.id, u.name), 120)
-                          }
-                        }
+                        if (syncBonds[u.id]) { try { triggerHaptic('medium') } catch {}; startSyncWith(u.id, u.name) } 
+                        else { setActiveTab('explore'); if (u.trainingNow) setTimeout(() => startSyncWith(u.id, u.name), 130) }
                       }} 
-                      whileHover={{scale:1.03, y:-2}} 
+                      whileHover={{scale:1.02, y:-1}} 
                       whileTap={{scale:0.97}} 
-                      initial={{opacity:0, x:10}}
+                      initial={{opacity:0, x:12}}
                       animate={{opacity:1, x:0}}
-                      transition={{delay: idx*0.03}}
-                      className={`text-[9px] bg-[#0a120f] border ${syncBonds[u.id] ? 'border-[#FFD700]/70 bg-[#1a160f]' : 'border-[#22c55e]/40'} text-[#22c55e] px-3 py-1.5 rounded-2xl cursor-pointer active:bg-[#22c55e]/10 flex flex-col min-w-[100px] shadow-sm hover:border-[#22c55e]/70 snap-start`}
+                      transition={{delay: idx*0.025}}
+                      className={`feed-live-card snap-start min-w-[118px] px-3 py-2 rounded-2xl text-[10px] cursor-pointer flex flex-col gap-0.5 ${syncBonds[u.id] ? 'red' : ''}`}
                     >
-                      <div className="font-bold flex items-center gap-1 text-white/90">{(u.name || 'Usuario').split(' ')[0]} <span className="text-[7px] text-[#9CA3AF]">{userLocation && u.distance < 900 ? `${u.distance.toFixed(0)}km` : '—'}</span>{userLocation && u.distance < 5 && <span className="ml-1 text-[6px] bg-[#22c55e]/20 px-1 rounded">CERCA</span>}</div>
-                      {!!syncBonds[u.id] && <div className="text-[6px] bg-[#FFD700] text-black px-1 rounded font-bold self-start mt-0.5">⭐ RED LV{syncBonds[u.id]?.bondLevel || 1} • NP ACTIVO</div>}
-                      {u.seVaEnMin > 0 && <div className="text-[7px] text-orange-400">{u.seVaEnMin < 15 ? '🔥 se va pronto' : `se va en ${u.seVaEnMin}m`}</div>}
-                      {u.joinCount > 0 && <div className="text-[7px] text-[#22c55e]/70">+{u.joinCount} se unieron</div>}
-                      {u.trainingSyncWith && <div className="text-[7px] text-[#22c55e] mt-0.5">🔄 En Sync ahora — ¡Únete!</div>}
-                      {u.seVaEnMin > 0 && <div className="h-px bg-[#22c55e]/20 mt-1"><div className="h-px bg-[#22c55e]" style={{width: `${Math.max(8, Math.min(100, (90 - u.seVaEnMin)/90 * 100))}%`}}></div></div>}
-                      <div className="text-[6.5px] mt-1 text-[#22c55e]/70">{!!syncBonds[u.id] ? 'Toca para re-sync y subir tu Network Power' : 'Toca → ver en Explore'}</div>
+                      <div className="flex items-center gap-1.5">
+                        <div className="font-extrabold text-white text-[12px] leading-none tracking-[-0.2px]">{(u.name || 'U').split(' ')[0]}</div>
+                        {userLocation && u.distance < 900 && <span className="text-[8px] text-[#9CA3AF] tabular-nums">{u.distance.toFixed(0)}km</span>}
+                        {userLocation && u.distance < 5 && <span className="text-[7px] bg-[#22c55e]/25 text-[#22c55e] px-1 rounded">CERCA</span>}
+                      </div>
+
+                      {!!syncBonds[u.id] && <div className="text-[7px] bg-[#FFD700] text-black px-1.5 rounded font-black self-start -mt-0.5 tracking-wider">⭐ RED • NP ACTIVO</div>}
+
+                      {u.seVaEnMin > 0 && (
+                        <div className="text-orange-400 text-[9px] font-medium flex items-center gap-1">
+                          {u.seVaEnMin < 15 ? '🔥 se va YA' : `se va en ${u.seVaEnMin}m`}
+                          <div className="flex-1 h-px bg-orange-400/30 ml-1"><div className="h-px bg-orange-400" style={{width: `${Math.max(12, Math.min(100, (95 - u.seVaEnMin)/95 * 100))}%`}} /></div>
+                        </div>
+                      )}
+
+                      {u.joinCount > 0 && <div className="text-[8px] text-[#22c55e]/70">+{u.joinCount} ya se unieron</div>}
+                      {u.trainingSyncWith && <div className="text-[8px] text-[#22c55e] font-bold">🔄 EN SYNC — ÚNETE</div>}
+
+                      <div className="text-[8px] text-[#22c55e]/60 mt-0.5 leading-none">{syncBonds[u.id] ? 'Re-sync y sube tu poder' : 'Ver en mapa / unirte'}</div>
                     </motion.div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Living Echoes strip - makes the mythology visible and aspirational in the first tab the user sees */}
+            {/* Living Echoes / Highlights strip — remastered to feel legendary */}
             {(() => {
               const { echoesSource } = feedComputation;
               const src = echoesSource || [];
               const recentEchoes = [...src].filter((p: any) => (p.text || '').includes('HIGHLIGHT') || (p.text || '').includes('ENTRENASYNC COMPLETADO') || (p.text || '').includes('fortalece nuestra red')).sort((a,b)=>b.timestamp-a.timestamp).slice(0, 3);
               if (recentEchoes.length === 0) return null;
               return (
-                <div className="mb-4 -mx-1">
-                  <div className="text-[8px] uppercase tracking-[1px] text-[#FFD700]/80 mb-1.5 px-2 font-bold flex items-center gap-1">⭐ HIGHLIGHTS DE LA RED — el grafo de rendimiento sincronizado se propaga y construye la cultura de la primera red social del fitness</div>
-                  <div className="flex gap-2 overflow-x-auto pb-2 px-1">
+                <div className="mb-4 -mx-1 px-1">
+                  <div className="text-[8px] uppercase tracking-[1.5px] text-[#FFD700] font-black mb-1.5 flex items-center gap-1">⭐ HIGHLIGHTS DE LA RED — momentos que construyen la cultura del GymPulse</div>
+                  <div className="flex gap-2 overflow-x-auto pb-1 snap-x">
                     {recentEchoes.map((e: any) => (
-                      <div key={e.id} className="min-w-[140px] card p-2 text-[9px] border border-[#FFD700]/40 bg-[#1a160f]">
-                        <div className="line-clamp-3 text-[#f5e8c7]">{(e.text || '').substring(0, 120)}...</div>
-                        <div className="text-[7px] text-[#FFD700]/70 mt-1">Highlight de la red — se propaga en el grafo y construye estatus</div>
+                      <div key={e.id} className="min-w-[158px] snap-start p-3 rounded-2xl text-[10px] border border-[#FFD700]/40 bg-gradient-to-br from-[#1a160f] to-[#111] text-[#f5e8c7]">
+                        <div className="line-clamp-3 leading-snug">{(e.text || '').substring(0, 118)}...</div>
+                        <div className="text-[8px] text-[#FFD700]/70 mt-1.5 font-medium">Highlight de Sync — se propaga y da estatus</div>
                       </div>
                     ))}
                   </div>
@@ -7939,12 +7954,11 @@ function App() {
 
               if (isLoadingFeed && feedPosts.length === 0) {
                 return (
-                  <div className="space-y-3 mt-4">
+                  <div className="space-y-4 mt-4 px-1">
                     {[1,2,3].map(i => (
-                      <div key={i} className="card card-glass p-4 mb-3 rounded-2xl animate-pulse">
-                        <div className="h-4 bg-[#2F2F35] rounded w-1/3 mb-2"></div>
-                        <div className="h-3 bg-[#2F2F35] rounded w-2/3 mb-1"></div>
-                        <div className="h-3 bg-[#2F2F35] rounded w-1/2"></div>
+                      <div key={i} className="muro-post p-4 rounded-2xl animate-pulse">
+                        <div className="flex gap-2 mb-3"><div className="w-8 h-8 bg-[#2F2F35] rounded-full" /><div className="flex-1"><div className="h-3 bg-[#2F2F35] rounded w-2/5 mb-1"/><div className="h-2.5 bg-[#2F2F35] rounded w-1/3"/></div></div>
+                        <div className="h-3 bg-[#2F2F35] rounded w-4/5 mb-1.5"/><div className="h-3 bg-[#2F2F35] rounded w-3/5"/><div className="h-40 bg-[#2F2F35] rounded-2xl mt-3"/>
                       </div>
                     ))}
                   </div>
@@ -7952,32 +7966,34 @@ function App() {
               }
               if (feedPosts.length === 0) {
                 return (
-                  <div className="card card-glass p-10 rounded-3xl text-center mt-6 border border-[#FF671F]/20">
-                    <div className="text-5xl mb-4">🏋️‍♂️</div>
-                    <div className="font-bold text-2xl mb-2 tracking-tight">El feed está despertando</div>
-                    <p className="text-sm text-[#9CA3AF] max-w-[280px] mx-auto mb-5">Publica tu entreno o foto. Los posts de la comunidad aparecen aquí en vivo con likes y comentarios. ¡El mapa en tiempo real muestra el pulso social!</p>
-                    <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                      <button onClick={() => setShowFeedPostModal(true)} className="btn-primary px-8 py-2.5 text-sm">Publicar en el Feed</button>
-                      {!isDemoMode && <button onClick={() => { setFeedMaxProfiles(15); loadGlobalFeed(); }} className="px-6 py-2.5 border border-[#FF671F]/50 text-[#FF671F] rounded-2xl text-sm active:bg-[#FF671F]/10">Cargar más comunidad</button>}
+                  <div className="feed-empty-epic mx-1 mt-8 p-9 rounded-3xl text-center border">
+                    <div className="big-icon mb-1">🏋️</div>
+                    <div className="font-black text-3xl tracking-[-1.5px] mb-2">El Muro está vivo</div>
+                    <p className="text-sm text-[#9CA3AF] max-w-[300px] mx-auto mb-6 leading-relaxed">Este es el corazón social del GymPulse. Publica tu sesión, una foto épica o un "me uno". Las reacciones y los syncs reales aparecen aquí en tiempo real y construyen tu estatus en la red.</p>
+                    <div className="flex flex-col gap-2.5 max-w-[240px] mx-auto">
+                      <button onClick={() => setShowFeedPostModal(true)} className="feed-publish-btn py-3 rounded-2xl text-base">Publicar mi primer post en el Feed</button>
+                      {!isDemoMode && <button onClick={() => { setFeedMaxProfiles(18); loadGlobalFeed(); }} className="py-2.5 border border-[#FF671F]/40 text-[#FF671F] rounded-2xl text-sm active:bg-[#FF671F]/10">Cargar comunidad real</button>}
                     </div>
-                    <div className="text-[10px] text-[#9CA3AF]/60 mt-4">Tip: Fija tus posts para que destaquen en el feed global</div>
+                    <div className="text-[10px] text-[#9CA3AF]/50 mt-6">Fija tus mejores posts • Las sesiones sync generan highlights automáticos</div>
                   </div>
                 );
               }
 
               return (
                 <>
-                  <div className="flex items-center justify-between text-[10px] text-[#9CA3AF] mb-2 px-1 font-medium">
-                    <span>{feedPosts.length} posts {hasActiveFilter ? 'de la comunidad · filtrados' : 'visibles (comunidad + tus recientes)'} </span>
-                    {(feedSearch || feedOnlyReal || feedShowPinnedOnly || feedOnlyLive) && <button onClick={() => { setFeedSearch(''); setFeedOnlyReal(false); setFeedShowPinnedOnly(false); setFeedOnlyLive(false); }} className="text-[#FF671F] underline active:text-white">limpiar</button>}
+                  <div className="flex items-center justify-between text-[10px] text-[#9CA3AF] mb-3 px-1 font-medium tracking-wider">
+                    <span>{feedPosts.length} posts {hasActiveFilter ? 'filtrados' : 'en el pulso'}</span>
+                    {(feedSearch || feedOnlyReal || feedShowPinnedOnly || feedOnlyLive) && <button onClick={() => { setFeedSearch(''); setFeedOnlyReal(false); setFeedShowPinnedOnly(false); setFeedOnlyLive(false); }} className="text-[#FF671F] underline active:text-white">limpiar filtros</button>}
                   </div>
+
                   {(() => {
                     const pinnedInFeed = allCommunityPosts.filter((p: any) => p.pinned);
                     if (pinnedInFeed.length > 0 && !feedShowPinnedOnly && !feedSearch && !feedOnlyReal && !feedOnlyLive) {
-                      return <div className="text-[9px] text-[#FF671F] mb-2 px-1">📌 {pinnedInFeed.length} posts fijados destacados arriba</div>;
+                      return <div className="text-[9px] text-[#FF671F] mb-2 px-1 flex items-center gap-1">📌 <span className="font-medium">{pinnedInFeed.length} posts fijados</span> — destacados por la comunidad</div>;
                     }
                     return null;
                   })()}
+
                   <AnimatePresence>
                   {feedPosts.map((post: any, idx: number) => {
                     const isMine = !!(post.isMine || post.ownerId === effectiveUserId);
@@ -7985,142 +8001,146 @@ function App() {
                     const owner = ownerProfile || { name: currentUser?.name || 'Tú', id: post.ownerId, photos: (currentUser as any)?.photos || [] };
                     const liked = (post.likes || []).includes(effectiveUserId);
                     const isOwnPost = post.ownerId === effectiveUserId || isMine;
+                    const isLivePost = (post.text || '').toLowerCase().includes('entrenando ahora') || (post.text || '').includes('me uno al live');
+                    const isSyncPost = (post.text || '').toLowerCase().includes('sincronizado') || post.isSyncStory || (post.text || '').includes('ENTRENASYNC');
+                    const isEcho = (post.text || '').includes('HIGHLIGHT') || (post.text || '').includes('Destacado de Sesión Sync') || (post.text || '').includes('Fui testigo');
+
                     return (
                       <motion.div 
                         key={post.id} 
-                        className={`muro-post p-4 mb-3 rounded-2xl ${post.pinned ? 'muro-post--pinned' : ''} ${post.isSyncStory || (post.text || '').includes('ENTRENASYNC COMPLETADO') ? 'muro-post--sync-story' : (post.text || '').toLowerCase().includes('sincronizado') ? 'muro-post--sync' : (post.text || '').toLowerCase().includes('entrenando ahora') || (post.text || '').includes('me uno al live') ? 'muro-post--live' : (post.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (post.text || '').includes('Destacado de Sesión Sync') ? 'muro-post--echo' : '' } ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-lg shadow-[#FF671F]/20' : ''} ${post.ownerId && syncBonds[post.ownerId] ? 'muro-post--red border-[#FFD700]/50' : ''} hover:border-[#FF671F]/40 hover:-translate-y-0.5 overflow-hidden transition-all active:scale-[0.995]`}
-                        initial={{ opacity: 0, y: 16, scale: 0.985 }}
+                        className={`muro-post mb-4 ${post.pinned ? 'muro-post--pinned' : ''} ${isSyncPost ? 'muro-post--sync' : isLivePost ? 'muro-post--live' : isEcho ? 'muro-post--echo' : ''} ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-[0_0_0_1px_#FF671F,0_20px_50px_-12px_rgba(255,103,31,0.3)]' : ''} ${post.ownerId && syncBonds[post.ownerId] ? 'border-[#FFD700]/40' : ''}`}
+                        initial={{ opacity: 0, y: 18, scale: 0.985 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -10, scale: 0.98, height: 0, marginBottom: 0 }}
-                        whileHover={{ scale: 1.012, y: -3 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 20, delay: Math.min(idx * 0.015, 0.2) }}
+                        exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                        whileHover={{ y: -4 }}
+                        transition={{ type: 'spring', stiffness: 280, damping: 22, delay: Math.min(idx * 0.012, 0.18) }}
                       >
-                        {/* Owner header with photo - premium */}
-                        <div className="flex items-center gap-2.5 mb-2.5" onClick={() => setShowFullProfile(owner as any)} style={{cursor: 'pointer'}}>
-                          {owner.photos && owner.photos[0] ? (
-                            <img src={owner.photos[0]} className={`w-7 h-7 rounded-full object-cover border-2 ${ownerProfile?.trainingNow ? 'border-[#22c55e] ring-1 ring-[#22c55e]/30' : 'border-[#2F2F35]'}`} />
-                          ) : (
-                            <div className="w-7 h-7 rounded-full bg-[#2F2F35] flex items-center justify-center text-[10px] ring-1 ring-inset ring-[#FF671F]/20">👤</div>
-                          )}
-                          <div className="text-sm text-[#FF671F] font-semibold flex-1 flex items-center gap-1.5">
-                            {owner.name}
-                            {ownerProfile && ownerProfile.city && <span className="text-[#9CA3AF] text-[10px] font-normal">· {ownerProfile.city}</span>}
-                            {ownerProfile && ownerProfile.level && <span className="text-[8px] px-1 py-px bg-[#FF671F]/10 text-[#FF671F]/80 rounded">{ownerProfile.level}</span>}
-                            {isMine && <span className="text-[8px] bg-[#FFD700] text-black px-1.5 rounded font-bold">TÚ</span>}
-                            {ownerProfile && !isMine && realProfiles.some(rp => rp.id === post.ownerId) && <span className="text-[8px] bg-[#FF671F] text-black px-1.5 rounded font-bold">REAL</span>}
-                            {ownerProfile?.trainingNow && <span className="live-pill bg-[#22c55e] text-black text-[8px] ml-0.5">🟢 LIVE {ownerProfile.liveStreak ? `🔥${ownerProfile.liveStreak}d` : ''}</span>}
-                            {ownerProfile?.trainingSyncWith && <span className="text-[8px] px-1.5 py-px rounded-full bg-[#22c55e]/10 text-[#22c55e] font-bold ml-0.5">🔄 SYNC</span>}
-                            {(post.text || '').toLowerCase().includes('sincronizado') && <span className="text-[8px] bg-[#22c55e] text-black px-1.5 py-px rounded-full font-bold ml-0.5">🔄 SYNC SESSION</span>}
-                            {(post.text || '').toLowerCase().includes('me uno al live') && <span className="text-[8px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-1.5 py-px rounded-full font-bold shadow">🔥 JOIN</span>}
-                          </div>
-                          <div className="text-[9px] text-[#9CA3AF] tabular-nums">{getRelativeTime(post.timestamp)}</div>
-                          {post.pinned && <span className="text-[8px] px-1 py-px bg-[#FF671F]/20 text-[#FF671F] rounded">📌 FIJADO</span>}
-                          {Date.now() - post.timestamp < 3600000 && <span className="text-[8px] bg-[#22c55e] text-black px-1 rounded font-bold">NUEVO</span>}
-                          {recentlyPublishedPostId === post.id && <span className="text-[8px] bg-[#FF671F] text-black px-1.5 rounded font-bold animate-pulse">¡ACABAS DE PUBLICAR!</span>}
-                          {(post.text || '').includes('Fui testigo') || (post.text || '').includes('RITUAL LEGENDARIO') || (post.text || '').includes('Echo') ? <span className="text-[8px] bg-[#FFD700] text-black px-1 rounded font-bold">👁️ ECO</span> : null}
-                        </div>
-
-                        <div className="text-[13px] leading-snug mb-2.5 text-white/95">
-                          {(post.text || '').includes('Fui testigo') || (post.text || '').includes('RITUAL LEGENDARIO') || (post.text || '').includes('Echo') ? (
-                            <span className="text-[#FFD700] font-semibold">👁️ Highlight de EntrenaSync</span>
-                          ) : null}
-                          <div>{post.text}</div>
-                        </div>
+                        {/* HERO MEDIA — dominant, cinematic when photo exists */}
                         {post.photo && (
                           <div 
-                            className="relative mb-3 -mx-1 rounded-2xl overflow-hidden ring-1 ring-[#2F2F35] cursor-pointer group"
+                            className="muro-post-hero-media cursor-pointer group"
                             onClick={() => setFeedPhotoModal({ url: post.photo, postId: post.id })}
                           >
-                            <img src={post.photo} className="w-full max-h-[260px] object-cover transition-transform duration-300 group-hover:scale-[1.03] brightness-[0.92]" />
-                            <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
-                            <div className="absolute bottom-2 right-2 text-[9px] bg-black/70 text-white/90 px-2 py-0.5 rounded-full flex items-center gap-1 border border-white/10">
-                              <span>🔍</span> <span className="font-medium tracking-tight">ver foto completa</span>
+                            <img src={post.photo} className="w-full object-cover" />
+                            <div className="muro-post-hero-overlay" />
+                            <div className="muro-post-hero-label">FOTO DEL MOMENTO</div>
+                            <div className="muro-post-hero-zoom group-hover:bg-black/80">
+                              <span>🔍</span> <span className="font-semibold">ampliar</span>
                             </div>
-                            <div className="absolute top-2 left-2 text-[8px] bg-black/50 text-white/70 px-1.5 py-px rounded">FOTO DEL MOMENTO</div>
                           </div>
                         )}
 
-                        <div className="flex items-center gap-3 text-sm pt-1">
-                          <button 
-                            onClick={() => likeProfilePost(post.id, post.ownerId)}
-                            className={`flex items-center gap-1.5 transition active:scale-95 ${liked ? 'text-[#FF671F]' : 'text-[#9CA3AF] hover:text-[#FF671F]'}`}
-                          >
-                            <motion.span animate={{ scale: liked ? [1, 1.4, 1] : 1 }} transition={{duration: 0.2}} className="text-base">{liked ? '❤️' : '🤍'}</motion.span> 
-                            <span className="font-semibold tabular-nums">{(post.likes || []).length}</span>
-                          </button>
-                          <button 
-                            onClick={() => startComment(post.id, post.ownerId, owner.name)}
-                            className="flex items-center gap-1.5 text-[#9CA3AF] hover:text-[#FF671F] active:scale-95"
-                          >
-                            💬 <span className="font-semibold tabular-nums">{(post.comments || []).length}</span>
-                          </button>
+                        <div className={post.photo ? "px-4 pt-1 pb-4" : "p-4"}>
 
-                          {isOwnPost && (
-                            <>
-                              <button 
-                                onClick={() => togglePinPost(post.id, post.ownerId, post.pinned)}
-                                className={`text-xs ml-0.5 px-1 py-0.5 rounded active:scale-95 ${post.pinned ? 'text-[#FF671F]' : 'text-[#9CA3AF] active:text-[#FF671F]'}`}
-                                title={post.pinned ? 'Desfijar del feed' : 'Fijar en feed global'}
-                              >
-                                📌
-                              </button>
-                              <button 
-                                onClick={() => deleteProfilePost(post.id, post.ownerId)}
-                                className="text-red-400 text-xs ml-0.5 px-1 py-0.5 active:text-red-500 active:scale-95"
-                              >
-                                🗑
-                              </button>
-                            </>
+                          {/* REMASTERED AUTHOR ROW — bigger, richer, with live rings */}
+                          <div className="feed-author-row" onClick={() => setShowFullProfile(owner as any)} style={{cursor:'pointer'}}>
+                            <div className={`feed-author-avatar ${ownerProfile?.trainingNow ? 'live' : ''}`}>
+                              {owner.photos && owner.photos[0] ? (
+                                <img src={owner.photos[0]} className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-[#2F2F35] flex items-center justify-center text-lg">👤</div>
+                              )}
+                            </div>
+                            <div className="feed-author-meta min-w-0">
+                              <div className="feed-author-name">
+                                {owner.name}
+                                {ownerProfile && ownerProfile.city && <span className="text-[#9CA3AF] text-[11px] font-normal">· {ownerProfile.city}</span>}
+                                {isMine && <span className="feed-author-badge bg-[#FFD700] text-black">TÚ</span>}
+                                {ownerProfile && !isMine && realProfiles.some(rp => rp.id === post.ownerId) && <span className="feed-author-badge bg-[#FF671F] text-black">REAL</span>}
+                                {post.pinned && <span className="feed-author-badge bg-[#FF671F]/15 text-[#FF671F]">📌 FIJADO</span>}
+                                {Date.now() - post.timestamp < 3600000 && <span className="feed-author-badge bg-[#22c55e] text-black">NUEVO</span>}
+                                {recentlyPublishedPostId === post.id && <span className="feed-author-badge bg-[#FF671F] text-black animate-pulse">ACABAS DE PUBLICAR</span>}
+                              </div>
+                              <div className="feed-author-badges">
+                                {ownerProfile && ownerProfile.level && <span className="feed-author-badge bg-white/10 text-white/80 border border-white/10">{ownerProfile.level}</span>}
+                                {ownerProfile?.liveStreak > 0 && <span className="feed-author-badge bg-[#22c55e] text-black">🔥 {ownerProfile.liveStreak}d LIVE</span>}
+                                {ownerProfile?.trainingSyncWith && <span className="feed-author-badge bg-[#22c55e]/15 text-[#22c55e]">EN SYNC</span>}
+                                {isSyncPost && <span className="feed-author-badge bg-[#22c55e] text-black">SYNC</span>}
+                                {isEcho && <span className="feed-author-badge bg-[#FFD700] text-black">HIGHLIGHT</span>}
+                                {ownerProfile?.trainingNow && <span className="feed-author-badge bg-[#22c55e] text-black">🟢 LIVE AHORA</span>}
+                              </div>
+                            </div>
+                            <div className="text-right text-[10px] text-[#9CA3AF] tabular-nums whitespace-nowrap ml-auto">{getRelativeTime(post.timestamp)}</div>
+                          </div>
+
+                          {/* BODY TEXT */}
+                          <div className="muro-post-body">
+                            {isEcho && <span className="text-[#FFD700] font-semibold block mb-0.5">👁️ Highlight de EntrenaSync — se propaga en la red</span>}
+                            <div className="whitespace-pre-wrap">{post.text}</div>
+                          </div>
+
+                          {/* ACTIONS BAR — likes, comments, owner tools */}
+                          <div className="flex items-center gap-4 text-sm mt-1">
+                            <button 
+                              onClick={() => likeProfilePost(post.id, post.ownerId)}
+                              className={`flex items-center gap-1.5 transition active:scale-95 ${liked ? 'text-[#FF671F]' : 'text-[#9CA3AF] hover:text-[#FF671F]'}`}
+                            >
+                              <motion.span animate={{ scale: liked ? [1, 1.45, 1] : 1 }} transition={{duration: 0.18}} className="text-lg leading-none">{liked ? '❤️' : '🤍'}</motion.span> 
+                              <span className="font-extrabold tabular-nums text-sm">{(post.likes || []).length}</span>
+                            </button>
+                            <button 
+                              onClick={() => startComment(post.id, post.ownerId, owner.name)}
+                              className="flex items-center gap-1.5 text-[#9CA3AF] hover:text-[#FF671F] active:scale-95"
+                            >
+                              💬 <span className="font-extrabold tabular-nums text-sm">{(post.comments || []).length}</span>
+                            </button>
+
+                            {isOwnPost && (
+                              <>
+                                <button onClick={() => togglePinPost(post.id, post.ownerId, post.pinned)} className={`ml-0.5 text-xs px-1.5 py-0.5 rounded active:scale-95 ${post.pinned ? 'text-[#FF671F]' : 'text-[#9CA3AF] active:text-[#FF671F]'}`} title={post.pinned ? 'Desfijar' : 'Fijar en el Muro global'}>📌</button>
+                                <button onClick={() => deleteProfilePost(post.id, post.ownerId)} className="text-red-400 text-xs px-1.5 py-0.5 active:text-red-500 active:scale-95">🗑</button>
+                              </>
+                            )}
+                            <button onClick={() => setShowFullProfile(owner as any)} className="ml-auto text-[11px] text-[#FF671F] hover:text-white font-semibold tracking-wide active:underline">VER PERFIL →</button>
+                          </div>
+
+                          {/* ALIVE REACTIONS — big, satisfying, pop on tap */}
+                          <div className="feed-reaction-bar">
+                            {['🔥','💪','❤️','👏'].map(emo => {
+                              const postReactors = post.reactions?.[emo] || []
+                              const count = postReactors.length || (feedReactions[post.id]?.[emo] || 0)
+                              const active = postReactors.includes(effectiveUserId) || ((feedReactions[post.id]?.[emo] || 0) > 0)
+                              return (
+                                <button 
+                                  key={emo}
+                                  onClick={() => { boostReaction(post.id, emo, post.ownerId || post.userId); triggerHaptic('light'); }}
+                                  className={`feed-reaction ${active ? 'active' : ''}`}
+                                >
+                                  <span className="text-base">{emo}</span>
+                                  {count > 0 && <span className="count">{count}</span>}
+                                </button>
+                              )
+                            })}
+                          </div>
+
+                          {/* Live FOMO callout */}
+                          {isLivePost && (post.comments || []).length > 0 && (
+                            <div className="mt-2 text-[9px] bg-[#22c55e]/8 text-[#22c55e] px-2.5 py-1 rounded-xl flex items-center gap-1 font-medium">
+                              🔥 {(post.comments || []).length} personas se unieron a este pulso • ¡Únete desde el mapa o el strip de arriba!
+                            </div>
                           )}
 
-                          <button onClick={() => setShowFullProfile(owner as any)} className="ml-auto text-[10px] text-[#FF671F] active:underline hover:text-white font-medium">Ver perfil →</button>
+                          {/* COMMENTS PREVIEW — elegant and tappable to open full thread */}
+                          {(post.comments || []).length > 0 && (
+                            <div onClick={() => openFullComments(post.id, post.ownerId, owner.name)} className="feed-comments-preview cursor-pointer">
+                              {(post.comments || []).slice(-2).map((c: any) => (
+                                <div key={c.id} className="feed-comment-row">
+                                  <span className="font-semibold text-white/85 text-[10px] mt-px flex-shrink-0">{c.userName}</span> 
+                                  <span className="truncate text-[10px] text-white/70 leading-snug">{c.text}</span>
+                                </div>
+                              ))}
+                              {(post.comments || []).length > 2 && <div className="feed-comment-more">+{(post.comments || []).length-2} comentarios más — ver hilo completo</div>}
+                            </div>
+                          )}
                         </div>
-
-                        {/* ICONIC Quick reactions - satisfying, visual pop, part of the signature muro experience */}
-                        <div className="flex gap-1.5 mt-2 -ml-0.5">
-                          {['🔥','💪','❤️','👏'].map(emo => {
-                            const postReactors = post.reactions?.[emo] || []
-                            const count = postReactors.length || (feedReactions[post.id]?.[emo] || 0)
-                            const active = postReactors.includes(effectiveUserId) || ((feedReactions[post.id]?.[emo] || 0) > 0)
-                            return (
-                              <button 
-                                key={emo}
-                                onClick={() => { boostReaction(post.id, emo, post.ownerId || post.userId); triggerHaptic('light'); }}
-                                className={`muro-reaction px-2.5 py-1 rounded-full border flex items-center gap-1 transition-all active:scale-90 ${active ? 'bg-[#FF671F]/10 border-[#FF671F] scale-105' : 'bg-[#1C1C20] border-[#2F2F35] hover:border-[#FF671F]/40'}`}
-                              >
-                                <span className="text-base">{emo}</span>
-                                {count > 0 && <span className="count text-[#FF671F] font-bold tabular-nums text-xs">{count}</span>}
-                              </button>
-                            )
-                          })}
-                        </div>
-
-                        {(post.text || '').toLowerCase().includes('entrenando ahora') && (post.comments || []).length > 0 && (
-                          <div className="mt-1.5 text-[9px] bg-[#22c55e]/5 text-[#22c55e] px-2 py-0.5 rounded flex items-center gap-1 font-medium">
-                            🔥 {(post.comments || []).length} se unieron • FOMO real
-                            <span className="text-[8px] opacity-70">¡Únete en el strip live o mapa!</span>
-                          </div>
-                        )}
-
-                        {(post.comments || []).length > 0 && (
-                          <div onClick={() => openFullComments(post.id, post.ownerId, owner.name)} className="mt-2.5 pt-2 border-t border-[#2F2F35]/70 text-[11px] text-[#9CA3AF] cursor-pointer bg-[#0a0a0c]/30 -mx-1 px-2 py-1 rounded-xl space-y-1">
-                            {(post.comments || []).slice(-2).map((c: any) => (
-                              <div key={c.id} className="flex gap-1.5 items-start">
-                                <span className="font-semibold text-white/90 text-[10px] mt-px">{c.userName}</span> 
-                                <span className="truncate text-[10px] text-white/70">{c.text}</span>
-                              </div>
-                            ))}
-                            {(post.comments || []).length > 2 && <div className="text-[#FF671F] text-[9px] font-medium pl-0.5">+{(post.comments || []).length-2} comentarios más • ver hilo</div>}
-                          </div>
-                        )}
                       </motion.div>
                     );
                   })}
                   </AnimatePresence>
 
                   {feedPosts.length < allCommunityPosts.length && (
-                    <div className="text-center mt-3">
-                      <button onClick={() => setFeedDisplayLimit(feedDisplayLimit + 10)} className="text-xs px-4 py-1.5 rounded-2xl border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10 active:scale-95">Cargar más posts de la comunidad →</button>
+                    <div className="text-center mt-2 mb-4">
+                      <button onClick={() => setFeedDisplayLimit(feedDisplayLimit + 12)} className="text-sm px-6 py-2 rounded-2xl border border-[#FF671F]/40 text-[#FF671F] active:bg-[#FF671F]/10 active:scale-95 font-medium">Cargar más posts de la comunidad →</button>
                     </div>
                   )}
                 </>
@@ -8129,118 +8149,89 @@ function App() {
           </div>
         )}
 
-        {/* ATTRACTIVE DIRECT POST MODAL FROM FEED - no more disappointing jump to profile. User stays in feed context, posts, sees it appear immediately. */}
+        {/* LUXURIOUS REMASTERED FEED COMPOSER MODAL — feels expensive and important */}
         {activeTab === 'feed' && showFeedPostModal && (
-          <div className="absolute inset-0 z-[95] bg-black/80 flex items-end md:items-center justify-center p-0 md:p-6" onClick={() => setShowFeedPostModal(false)}>
+          <div className="absolute inset-0 z-[95] bg-black/90 flex items-end md:items-center justify-center p-0 md:p-6" onClick={() => setShowFeedPostModal(false)}>
             <div 
-              className="w-full md:w-[480px] card-glass rounded-t-3xl md:rounded-3xl p-5 md:p-6 text-white"
+              className="feed-composer-modal w-full md:w-[520px] rounded-t-3xl md:rounded-3xl p-6 md:p-7 text-white"
               onClick={e => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="text-2xl">🔥</div>
-                  <div>
-                    <div className="font-bold text-lg">Publicar en el Feed Global</div>
-                    <div className="text-xs text-[#9CA3AF]">Tu post aparecerá en el muro de la comunidad en vivo</div>
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-3xl">🔥</div>
+                    <div className="font-black text-2xl tracking-[-1px]">Publicar en el Muro</div>
                   </div>
+                  <div className="text-sm text-[#9CA3AF] mt-0.5">Tu momento aparecerá en el GymPulse de toda la comunidad</div>
                 </div>
-                <button onClick={() => { setShowFeedPostModal(false); setFeedPostText(''); setFeedPostPhoto(null); }} className="text-[#9CA3AF] text-xl">✕</button>
+                <button onClick={() => { setShowFeedPostModal(false); setFeedPostText(''); setFeedPostPhoto(null); }} className="text-3xl text-[#9CA3AF] leading-none mt-[-6px] active:text-white">×</button>
               </div>
 
               <textarea
                 value={feedPostText}
                 onChange={e => setFeedPostText(e.target.value)}
-                placeholder={feedPostPhoto ? "Caption para tu foto del entreno..." : "¿Qué entrenaste hoy? Comparte un logro, una foto del gym, un '¡me uno!' o motivación para la comunidad..."}
-                className="form-input w-full h-28 text-base resize-y mb-3"
+                placeholder={feedPostPhoto ? "Añade un caption épico para tu foto..." : "Comparte tu entreno, un PR, una foto del gym, un \"me uno al pulso\" o lo que quieras que inspire a la red..."}
+                className="feed-composer-textarea form-input w-full h-32 text-[15px] resize-y mb-4 rounded-2xl p-4"
                 maxLength={280}
                 autoFocus
               />
-              {feedPostPhoto && <div className="text-[9px] text-[#FF671F]/70 -mt-2 mb-2">La foto + este texto se publican juntos</div>}
+
+              {feedPostPhoto && <div className="text-[10px] text-[#FF671F]/70 -mt-3 mb-3 tracking-wide">Foto + texto se publican juntos en el Muro</div>}
 
               {feedPhotoUploading && (
-                <div className="mb-3">
-                  <div className="text-[10px] text-[#9CA3AF] mb-1">Subiendo foto al Feed...</div>
-                  <div className="w-full h-2 bg-[#2F2F35] rounded-full overflow-hidden">
-                    <div className="h-2 bg-gradient-to-r from-[#FF671F] to-[#FF4F79] transition-all" style={{ width: `${feedPhotoUploadProgress}%` }} />
-                  </div>
-                  <div className="text-[9px] text-right text-[#FF671F]">{feedPhotoUploadProgress}%</div>
+                <div className="mb-4">
+                  <div className="text-xs text-[#9CA3AF] mb-1 flex justify-between"><span>Subiendo foto al GymPulse...</span><span className="text-[#FF671F]">{feedPhotoUploadProgress}%</span></div>
+                  <div className="w-full h-1.5 bg-[#222] rounded-full overflow-hidden"><div className="h-1.5 bg-gradient-to-r from-[#FF671F] via-[#FF4F79] to-[#FF671F] transition-all" style={{ width: `${feedPhotoUploadProgress}%` }} /></div>
                 </div>
               )}
+
               {feedPostPhoto && !feedPhotoUploading && (
-                <div className="mb-3">
-                  <div className="text-[10px] text-[#9CA3AF] mb-1 flex items-center justify-between">Foto del entreno <span className="text-[#FF671F]/60 text-[9px]">toca para ver grande</span></div>
-                  <div className="relative inline-block group" onClick={() => setFeedPhotoModal({url: feedPostPhoto})}>
-                    <img src={feedPostPhoto} className="w-full max-h-44 rounded-2xl border-2 border-[#FF671F]/30 object-cover shadow-sm cursor-zoom-in group-hover:brightness-95 transition" />
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setFeedPostPhoto(null); }} 
-                      className="absolute -top-2 -right-2 bg-[#1C1C20] hover:bg-red-500 text-white text-xs w-6 h-6 rounded-full flex items-center justify-center border border-[#2F2F35] transition-colors z-10"
-                      title="Quitar foto"
-                    >
-                      ✕
-                    </button>
-                    <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/10" />
+                <div className="mb-4">
+                  <div className="text-xs text-[#9CA3AF] mb-1.5 flex items-center justify-between px-0.5">Foto del entreno <span className="text-[#FF671F]/60">toca para previsualizar</span></div>
+                  <div className="relative inline-block w-full group" onClick={() => setFeedPhotoModal({url: feedPostPhoto})}>
+                    <img src={feedPostPhoto} className="feed-composer-photo w-full max-h-[210px] rounded-2xl object-cover cursor-zoom-in" />
+                    <button onClick={(e) => { e.stopPropagation(); setFeedPostPhoto(null); }} className="absolute -top-2.5 -right-2.5 bg-black/90 hover:bg-red-600 text-white w-7 h-7 rounded-full flex items-center justify-center border border-white/20 z-10 active:scale-90">×</button>
                   </div>
                 </div>
               )}
 
-              <div className="flex gap-2">
+              <div className="flex gap-3">
                 <button 
                   onClick={() => {
                     if (Capacitor.isNativePlatform() && CapacitorCamera) {
                       (async () => {
                         try {
-                          const photo = await CapacitorCamera.getPhoto({
-                            quality: 80,
-                            allowEditing: true,
-                            resultType: 'base64'
-                          });
+                          const photo = await CapacitorCamera.getPhoto({ quality: 82, allowEditing: true, resultType: 'base64' });
                           if (photo?.base64String) {
                             const dataUrl = `data:image/jpeg;base64,${photo.base64String}`;
                             if (!isDemoMode && storage) {
-                              setFeedPhotoUploading(true);
-                              setFeedPhotoUploadProgress(0);
+                              setFeedPhotoUploading(true); setFeedPhotoUploadProgress(0);
                               try {
                                 const { ref, uploadString, getDownloadURL } = await import('firebase/storage');
                                 const path = `posts/${effectiveUserId}/feed-${Date.now()}.jpg`;
                                 const storageRef = ref(storage, path);
                                 const snap = await uploadString(storageRef, dataUrl, 'data_url');
                                 const url = await getDownloadURL(snap.ref);
-                                setFeedPostPhoto(url);
-                                setFeedPhotoUploading(false);
+                                setFeedPostPhoto(url); setFeedPhotoUploading(false);
                               } catch (uploadErr) {
-                                console.warn('Feed photo Storage upload failed, falling back to data: URL', uploadErr);
-                                setFeedPostPhoto(dataUrl);
-                                setFeedPhotoUploading(false);
-                                if (uploadErr && (uploadErr.code === 'storage/unauthorized' || (uploadErr.message || '').includes('unauthorized'))) {
-                                  toast.error('Storage sin permisos (despliega storage.rules para subir fotos reales).');
-                                } else {
-                                  toast('Foto embebida (no se pudo subir a Storage)');
-                                }
+                                setFeedPostPhoto(dataUrl); setFeedPhotoUploading(false);
+                                toast((uploadErr as any)?.code === 'storage/unauthorized' ? 'Storage sin permisos — revisa reglas' : 'Foto embebida');
                               }
                             } else {
                               setFeedPostPhoto(dataUrl);
                             }
                           }
-                        } catch (e) {
-                          toast('No se pudo agregar foto');
-                          setFeedPhotoUploading(false);
-                        }
+                        } catch { toast('No se pudo usar cámara'); setFeedPhotoUploading(false); }
                       })();
                     } else {
                       feedPhotoInputRef.current?.click();
                     }
                   }}
-                  className="flex-1 py-2.5 text-sm border border-[#2F2F35] rounded-2xl active:bg-[#25252A] flex items-center justify-center gap-1 hover:border-[#FF671F]/40 transition-colors"
+                  className="flex-1 py-3 text-sm border border-[#333] rounded-2xl active:bg-[#25252A] flex items-center justify-center gap-2 hover:border-[#FF671F]/50 transition"
                 >
-                  <Camera size={15} /> {feedPostPhoto ? 'Cambiar foto del entreno' : 'Añadir foto (cámara o galería)'}
+                  <Camera size={16} /> {feedPostPhoto ? 'Cambiar foto' : 'Añadir foto del entreno'}
                 </button>
-                <input
-                  ref={feedPhotoInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFeedPhotoFile}
-                  className="hidden"
-                />
+                <input ref={feedPhotoInputRef} type="file" accept="image/*" onChange={handleFeedPhotoFile} className="hidden" />
 
                 <button 
                   onClick={async () => {
@@ -8251,29 +8242,21 @@ function App() {
                     try {
                       await createProfilePost(text, photo);
                       setShowFeedPostModal(false);
-                      setFeedPostText('');
-                      setFeedPostPhoto(null);
-                      setFeedPublishing(false);
-                      setShowFeedPublishSuccess(true);
-                      setTimeout(() => setShowFeedPublishSuccess(false), 4000);
-                      toast.success('¡Publicado en el Feed!', { 
-                        description: 'Tu post ya está visible para toda la comunidad. ¡Gracias por aportar!' 
-                      });
+                      setFeedPostText(''); setFeedPostPhoto(null); setFeedPublishing(false);
+                      setShowFeedPublishSuccess(true); setTimeout(() => setShowFeedPublishSuccess(false), 4200);
+                      toast.success('¡Publicado en el Muro del GymPulse!', { description: 'Toda la comunidad ya puede verlo y reaccionar.' });
                       if (activeTab === 'feed') loadGlobalFeed().catch(() => {});
-                      try { confetti({ particleCount: 100, spread: 65, origin: { y: 0.7 } }); } catch {}
-                    } catch (e) {
-                      setFeedPublishing(false);
-                      toast.error('Error al publicar');
-                    }
+                      try { confetti({ particleCount: 140, spread: 70, origin: { y: 0.65 } }); } catch {}
+                    } catch (e) { setFeedPublishing(false); toast.error('Error al publicar'); }
                   }}
                   disabled={!feedPostText.trim() || feedPublishing}
-                  className="flex-1 btn-primary text-sm py-2.5 disabled:opacity-60 flex items-center justify-center gap-2"
+                  className="flex-1 feed-publish-btn py-3 rounded-2xl text-base disabled:opacity-60 flex items-center justify-center gap-2"
                 >
-                  {feedPublishing ? 'Publicando...' : 'Publicar en el Feed'}
+                  {feedPublishing ? 'PUBLICANDO EN EL PULSO...' : 'PUBLICAR EN EL MURO'}
                 </button>
               </div>
 
-              <div className="text-[10px] text-center text-[#9CA3AF] mt-3">Los posts son visibles para todos • reacciones y comentarios en vivo</div>
+              <div className="text-center text-[10px] text-[#9CA3AF]/70 mt-4">Visible para toda la comunidad • reacciones y comentarios en tiempo real • los mejores posts se propagan como highlights</div>
             </div>
           </div>
         )}
