@@ -8218,11 +8218,11 @@ function App() {
                         </div>
                       </div>
                       <div className="meta">
-                        <div className="title">Nota de voz lista</div>
+                        <div className="title">🎙️ Nota de voz lista para enviar</div>
                         <div className="sub">{pendingVoice.duration}s • energía para tu red</div>
                       </div>
                       <div className="actions">
-                        <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-[9px] px-1.5 py-0.5 text-red-400 hover:text-red-500">✕</button>
+                        <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-[10px] px-2 py-1 text-red-400 hover:text-red-500 border border-red-400/30 rounded active:bg-red-500/10" title="Cancelar nota de voz">Cancelar</button>
                         <button 
                           type="button"
                           onClick={() => {
@@ -8230,9 +8230,9 @@ function App() {
                               sendVoiceNote(activeChat, false)
                             }
                           }}
-                          className="text-[9px] px-2.5 py-0.5 bg-[#FF671F] text-black rounded-full font-extrabold active:bg-[#E55A1A] shadow"
+                          className="text-[11px] px-4 py-1.5 bg-[#FF671F] text-black rounded-2xl font-extrabold active:bg-[#E55A1A] shadow flex items-center gap-1"
                         >
-                          ENVIAR
+                          ENVIAR VOZ <Send size={14} />
                         </button>
                       </div>
                     </div>
@@ -8264,7 +8264,7 @@ function App() {
                     }
                     input.value = '' 
                   }} className="flex gap-2 items-center">
-                    <input type="text" placeholder="Escribe un mensaje o graba voz..." className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none" />
+                    <input type="text" placeholder={pendingVoice ? "Nota de voz adjunta - presiona enviar" : "Escribe un mensaje o graba voz..."} className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none" />
                     
                     {/* Attractive voice recording for 1:1 */}
                     {isRecordingVoice ? (
@@ -8288,7 +8288,7 @@ function App() {
                       </button>
                     )}
 
-                    <button type="submit" disabled={!chatInputValue.trim() && !pendingVoice} className="bg-[#FF671F] disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black w-12 rounded-3xl flex items-center justify-center"><Send size={18} /></button>
+                    <button type="submit" disabled={!chatInputValue.trim() && !pendingVoice} title={pendingVoice ? 'Enviar la nota de voz grabada' : 'Enviar mensaje'} className={`${pendingVoice ? 'bg-[#22c55e] text-black' : 'bg-[#FF671F]'} disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black w-12 rounded-3xl flex items-center justify-center active:scale-95 transition`}><Send size={18} /></button>
                   </form>
                   <div className="text-center text-[10px] text-[#6B7280] mt-2">
                     {!isDemoMode 
@@ -12075,20 +12075,20 @@ function App() {
                           </div>
                         </div>
                         <div className="meta">
-                          <div className="title">🎙️ Lista para el grupo</div>
+                          <div className="title">🎙️ Nota de voz lista para enviar al grupo</div>
                           <div className="sub">{pendingVoice.duration}s de energía para tu red</div>
                         </div>
                         <div className="actions">
-                          <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-[9px] px-1.5 py-0.5 text-red-400 hover:text-red-500">✕</button>
+                          <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-[10px] px-2 py-1 text-red-400 hover:text-red-500 border border-red-400/30 rounded active:bg-red-500/10" title="Cancelar nota de voz">Cancelar</button>
                           <button 
                             onClick={() => {
                               if (showGroupChatModalFor && pendingVoice) {
                                 sendVoiceNote(showGroupChatModalFor, true)
                               }
                             }}
-                            className="text-[9px] px-2.5 py-0.5 bg-[#FF671F] text-black rounded-full font-extrabold active:bg-[#E55A1A] shadow"
+                            className="text-[11px] px-4 py-1.5 bg-[#FF671F] text-black rounded-2xl font-extrabold active:bg-[#E55A1A] shadow flex items-center gap-1"
                           >
-                            ENVIAR VOZ
+                            ENVIAR VOZ <Send size={14} />
                           </button>
                         </div>
                       </div>
@@ -12130,7 +12130,7 @@ function App() {
                         type="text" 
                         value={chatInputValue}
                         onChange={(e) => setChatInputValue(e.target.value)}
-                        placeholder="Mensaje al grupo..."
+                        placeholder={pendingVoice ? "Nota de voz adjunta - presiona enviar al grupo" : "Mensaje al grupo..."}
                         enterKeyHint="send"
                         className="flex-1 bg-[#0D0D10] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none placeholder:text-[#9CA3AF] min-w-0 focus:border-[#FF671F]/50" 
                       />
@@ -12168,7 +12168,7 @@ function App() {
                         </button>
                       )}
 
-                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto && !pendingVoice} className="bg-[#FF671F] disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black px-3 rounded-3xl font-semibold h-11 w-11 flex items-center justify-center active:bg-[#E55A1A] active:scale-95 transition" aria-label="Enviar">
+                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto && !pendingVoice} title={pendingVoice ? 'Enviar la nota de voz grabada al grupo' : 'Enviar mensaje'} className={`${pendingVoice ? 'bg-[#22c55e] text-black' : 'bg-[#FF671F]'} disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black px-3 rounded-3xl font-semibold h-11 w-11 flex items-center justify-center active:scale-95 transition`} aria-label="Enviar">
                         <Send size={18} />
                       </button>
                     </form>

@@ -1,4 +1,20 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.59-tdz-isDemo-hoist code 63) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.60-profile-creation-remaster code 64) ===
+
+Remaster completo de la creación de perfil (OnboardingFlow + vista/edición en Perfil tab): 
+- Errores fix: fotos de perfil ahora SIEMPRE se suben a Firebase Storage (helper uploadProfilePhotoIfNeeded usado en onboarding adds + finish + cámara nativa en galería de perfil). Antes data:base64 quedaban en Firestore → bloat, lentos, errores de display/save en real mode.
+- Soporte multi-foto en creación (hasta 6): grid siempre muestra existentes + botones añadir (cámara/archivo) si hay espacio. Badge "principal" en la primera. Antes la UI limitaba a 1 foto (condición length<1), perfiles incompletos.
+- Visualmente atractivo + ÚNICO (primera red social del fitness con rituales reales):
+  - Lenguaje épico/ritual en todo: "Círculo de Rendimiento", "Juro ser mayor...", "Los Votos del Círculo", "Pulso simulado", "Tu Poder en la Red", "Ritual de Iniciación", "Tu Esencia", "Tu Presencia".
+  - Preview premium mejorado con mock único de live map (barra "tú + 4 cerca • tether dorado listo • primer match en 20s") — hace que el primer Live se sienta real e inevitable durante la creación.
+  - Headers más bonitos, labels de pasos, votos como tarjetas solemnes "juro" con haptics.
+  - En tab Perfil (vista y "creación" de mi perfil): nueva sección atractiva "Tu Poder en la Red" (Network Power + Bonds + Live Streak) con acentos gold — visual único de capital social. Motivator card mejorado con gold, bullets claros del valor único.
+  - Feel premium: gradientes fuertes, rings/borders, tracking, scales activos, haptics en cada tap.
+
+Mantiene los 4 pasos rápidos (60-90s a primer Live/Match). La creación de perfil ahora es hermosa, única y sin errores — encaja perfecto con "la primera redsocial del fitness" donde bonds tienen peso, pulsos se ven y syncs se sienten en ambos.
+
+Rebuild limpio requerido. tsc clean. AAB nuevo para Play.
+
+(Continúa la racha de fixes de TDZ + onboarding excepcional del burst anterior.)
 
 Additional TDZ fix: hoisted the useAuth() and useDemoAuth() calls (providing isDemoMode, firebaseUser) right after useProfile at the top of App(). This ensures they are declared before any early effects that have isDemoMode in their dependency arrays (e.g. the daily "offline" effect that runs on open). The dep array evaluation during render was previously hitting the uninitialized 'isDemoMode' binding (likely the 'z' in the minified TDZ error). Removed the duplicate late destructure. This, combined with all previous hoists of dailyPulse, discovery memos (live, deck, feed etc.), should finally kill the "Cannot access before initialization" on app open. Rebuild clean.
 

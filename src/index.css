@@ -1286,14 +1286,15 @@ input[type="range"]::-moz-range-thumb {
 /* Pending voice preview card — "ready to broadcast your energy" — well squared and premium */
 .voice-preview {
   background: #0D0D10;
-  border: 1px solid rgba(255,103,31,.42);
+  border: 2px solid rgba(255,103,31,.6);
   border-radius: 16px;
-  padding: 7px 9px;
+  padding: 8px 10px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  gap: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
   position: relative;
+  min-height: 48px;
 }
 .voice-preview::before {
   content: '';
@@ -1306,7 +1307,7 @@ input[type="range"]::-moz-range-thumb {
 .voice-preview .meta { min-width: 0; flex: 1; }
 .voice-preview .meta .title { font-size: 11px; color:#FF671F; font-weight:700; line-height:1.05; }
 .voice-preview .meta .sub { font-size: 9.5px; color:#9CA3AF; }
-.voice-preview .actions { display:flex; gap:3px; align-items:center; flex-shrink: 0; }
+.voice-preview .actions { display:flex; gap:6px; align-items:center; flex-shrink: 0; }
 .legend-toast-content {
   border-left: 3px solid #FFD700;
   padding-left: 8px;

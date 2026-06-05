@@ -1,0 +1,20 @@
+remaster(profile creation): attractive + unique + fix errors
+
+- Fixed errors in profile creation: photos now ALWAYS uploaded to Firebase Storage (via new uploadProfilePhotoIfNeeded helper, used in OnboardingFlow photo add + finish + profile tab native gallery add). No more data:base64 bloat in Firestore profile docs, slow saves, or display issues in real mode (was causing broken photo flows on real auth).
+
+- Multi-photo support in creation flow (OnboardingFlow step 0): up to 6 photos, grid always shows existing + add buttons (camera/file) if room. Principal badge on first. Previously UI only allowed 1 photo (length<1 condition), leading to incomplete profiles. Fill example now seeds 3 photos so user sees the full attractive UI.
+
+- Visually remastered + unique (la primera red social del fitness):
+  - Epic ritual language everywhere: " Círculo de Rendimiento\, \Juro...\, \Los Votos del Círculo\, \Pulso simulado\, \Tu Poder en la Red\, \Ritual de Iniciación\, \Esencia\, \Presencia\.
+ - Premium preview card enhanced with unique live map simulation mock (small pulso bar: \tú + 4 cerca • tether dorado listo • primer match en 20s\) - makes the killer Live feature feel real/inevitable during the 60s creation.
+ - Nicer headers, step labels, vows as solemn \juro\ cards with active haptics.
+ - In profile tab (mi perfil view/creation): new attractive \Tu Poder en la Red\ section (Network Power + Bonds + Live Streak) with gold accents - unique social capital visual. Enhanced motivator card with stronger unique value, clearer bullets.
+ - More premium feel: stronger gradients, ring/border accents, tracking, active scales, haptics on every tap.
+
+- Kept the fast 4-step structure (for the 60-90s first Live/Match goal from previous). Onboarding now both fast AND beautiful/unique.
+
+- Profile editing reuses the flow (with upload safety). Gallery curation in profile tab already premium with drag/reorder/make principal.
+
+Rebuild clean (npm run build + AAB) required for new bundle. tsc clean.
+
+This makes creating your profile in EntrenaMatch attractive, unique and error-free - fitting \la primera redsocial del fitness\ with real bonds, visible pulses and shared rituals.
