@@ -518,6 +518,11 @@ function App() {
       } else {
         awardMomentum(5, 'Voz enviada al Pulso')
       }
+      // Voice streak for daily engagement
+      const vStreak = (dailyPulse?.voiceStreak || 0) + 1
+      const vUpdate = { ...(dailyPulse || {}), voiceStreak: vStreak, longestVoice: Math.max((dailyPulse?.longestVoice || 0), vStreak) }
+      setDailyPulse(vUpdate)
+      saveUserWithRealSync({ ...(currentUser as any), dailyVoiceStreak: vStreak } as any)
     } catch (e) {
       console.error('Send voice error', e)
       const isReal = !isDemoMode
@@ -686,12 +691,41 @@ function App() {
         reward: 55,
         icon: '🌊',
         actionLabel: 'Completar y publicar Pulso'
+      },
+      // New variety for more engagement
+      {
+        id: 'voice-weak-' + seed,
+        type: 'bond',
+        title: 'Voz a Bond Débil',
+        description: bondCount > 0 ? 'Envía una nota de voz motivadora a un socio de Red con menor interacción reciente.' : 'Envía tu primera voz a la Red.',
+        target: 1,
+        progress: 0,
+        reward: 35,
+        icon: '🎙️',
+        actionLabel: 'Grabar voz para Red'
+      },
+      {
+        id: 'map-ripple-' + seed,
+        type: 'network',
+        title: 'Pulso en el Mapa',
+        description: 'Completa entrenamiento y asegúrate de que tu actividad aparezca como ripple/pulso en el mapa (post + live).',
+        target: 1,
+        progress: 0,
+        reward: 45,
+        icon: '🗺️',
+        actionLabel: 'Ir al Pulso (mapa)'
       }
     ]
 
+    // Personalize choice intelligently: prefer bond/voice if Red exists, map ripple if live or high power, etc.
     let chosen = options[0]
-    if (bondCount >= 1 && networkPower > 10) chosen = options[1]
-    if (hasLiveRed || networkPower > 25) chosen = options[2]
+    if (bondCount >= 1) {
+      chosen = Math.random() > 0.5 ? options[1] : options[3] // bond or voice-weak
+    }
+    if (hasLiveRed || networkPower > 25) {
+      chosen = options[4] // map ripple
+    }
+    if (networkPower > 40) chosen = options[2] // network ripple for high power users
 
     return { ...chosen, expires: today + 'T23:59:59' }
   }
@@ -704,14 +738,22 @@ function App() {
     const last = dailyPulse?.lastDate || (u as any).lastDailyPulseDate || null
     const currentStreak = dailyPulse?.trainingStreak || (u as any).dailyTrainingStreak || 0
     const currentSynergy = dailyPulse?.synergyStreak || (u as any).dailySynergyStreak || 0
+    const currentVoice = dailyPulse?.voiceStreak || (u as any).dailyVoiceStreak || 0
+    const currentPulse = dailyPulse?.pulseStreak || (u as any).dailyPulseStreak || 0
     const mom = dailyPulse?.momentum || (u as any).momentumPoints || 0
     const longTrain = dailyPulse?.longestTraining || (u as any).longestDailyTraining || 0
     const longSyn = dailyPulse?.longestSynergy || (u as any).longestDailySynergy || 0
+    const longVoice = dailyPulse?.longestVoice || (u as any).longestDailyVoice || 0
+    const longPulse = dailyPulse?.longestPulse || (u as any).longestDailyPulse || 0
 
     let newStreak = currentStreak
     let newSynergy = currentSynergy
+    let newVoice = currentVoice
+    let newPulseStreak = currentPulse
     let newLongTrain = longTrain
     let newLongSyn = longSyn
+    let newLongVoice = longVoice
+    let newLongPulse = longPulse
 
     if (last !== today) {
       if (last) {
@@ -732,11 +774,15 @@ function App() {
       const newPulse = {
         trainingStreak: newStreak,
         synergyStreak: newSynergy,
+        voiceStreak: newVoice,
+        pulseStreak: newPulseStreak,
         momentum: mom,
         lastDate: today,
         currentChallenge: challenge,
         longestTraining: Math.max(newLongTrain, newStreak),
-        longestSynergy: newLongSyn
+        longestSynergy: newLongSyn,
+        longestVoice: Math.max(newLongVoice, newVoice),
+        longestPulse: Math.max(newLongPulse, newPulseStreak)
       }
 
       setDailyPulse(newPulse)
@@ -744,6 +790,8 @@ function App() {
       const update: any = {
         dailyTrainingStreak: newStreak,
         dailySynergyStreak: newSynergy,
+        dailyVoiceStreak: newVoice,
+        dailyPulseStreak: newPulseStreak,
         momentumPoints: mom,
         lastDailyPulseDate: today,
         currentDailyChallenge: challenge
@@ -769,21 +817,49 @@ function App() {
       setDailyPulse({
         trainingStreak: currentStreak,
         synergyStreak: currentSynergy,
+        voiceStreak: currentVoice,
+        pulseStreak: currentPulse,
         momentum: mom,
         lastDate: last,
         currentChallenge: existingChallenge || generateDailyChallenge(u, syncBonds, liveTrainingNow, networkStats.networkPower),
         longestTraining: longTrain,
-        longestSynergy: longSyn
+        longestSynergy: longSyn,
+        longestVoice: longVoice,
+        longestPulse: longPulse
       })
     }
   }
 
   useEffect(() => {
     if (currentUser) {
-      const t = setTimeout(() => checkAndUpdateDailyPulse(), 400)
+      const t = setTimeout(() => {
+        checkAndUpdateDailyPulse()
+        // Strong daily open hook: show banner for new pulse or if streak at risk (no activity yesterday)
+        const today = getTodayStr()
+        const last = dailyPulse?.lastDate
+        if (last !== today || (dailyPulse && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow)) {
+          setShowDailyPulseBanner(true)
+          // Auto hide after some time or on interaction
+          setTimeout(() => setShowDailyPulseBanner(false), 8000)
+        }
+      }, 600)
       return () => clearTimeout(t)
     }
-  }, [currentUser?.id, Object.keys(syncBonds).length])
+  }, [currentUser?.id, Object.keys(syncBonds).length, dailyPulse?.lastDate])
+
+  // Client-side intelligent reminder for streak risk (strong daily reason, complements push)
+  useEffect(() => {
+    if (!dailyPulse || !currentUser) return
+    const hour = new Date().getHours()
+    if (hour >= 18 && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow) {
+      const timer = setTimeout(() => {
+        toast.error('¡Streak en riesgo esta noche!', {
+          description: `Tu ${dailyPulse.trainingStreak}d training streak se resetea si no entrenas. Protege con Momentum o 20min ya.`
+        })
+      }, 1500)
+      return () => clearTimeout(timer)
+    }
+  }, [dailyPulse?.lastDate, currentUser?.trainingNow, dailyPulse?.trainingStreak])
 
   const refreshDailyPulse = () => checkAndUpdateDailyPulse()
 
@@ -810,7 +886,9 @@ function App() {
       momentumPoints: newMomentum,
       currentDailyChallenge: updatedPulse.currentChallenge,
       dailyTrainingStreak: updatedPulse.trainingStreak,
-      dailySynergyStreak: updatedPulse.synergyStreak
+      dailySynergyStreak: updatedPulse.synergyStreak,
+      dailyVoiceStreak: updatedPulse.voiceStreak,
+      dailyPulseStreak: updatedPulse.pulseStreak
     }
     saveUserWithRealSync({ ...u, ...update } as any)
 
@@ -839,6 +917,11 @@ function App() {
         setDailyPulse(synUpdate)
         saveUserWithRealSync({ ...(currentUser as any), dailySynergyStreak: newSyn } as any)
       }
+      // Pulse visibility streak for completing daily challenges that create visible impact
+      const newPulseSt = (updatedPulse.pulseStreak || 0) + 1
+      const pUpdate = { ...updatedPulse, pulseStreak: newPulseSt, longestPulse: Math.max(updatedPulse.longestPulse || 0, newPulseSt) }
+      setDailyPulse(pUpdate)
+      saveUserWithRealSync({ ...(currentUser as any), dailyPulseStreak: newPulseSt } as any)
     } else {
       toast(`+${progressInc} progreso en el Pulso`)
     }
@@ -1007,12 +1090,17 @@ function App() {
   const [dailyPulse, setDailyPulse] = useState<{
     trainingStreak: number
     synergyStreak: number
+    voiceStreak: number
+    pulseStreak: number // for daily pulse visibility/completion that affects map/red
     momentum: number
     lastDate: string | null // YYYY-MM-DD
     currentChallenge: any | null
     longestTraining: number
     longestSynergy: number
+    longestVoice: number
+    longestPulse: number
   } | null>(null)
+  const [showDailyPulseBanner, setShowDailyPulseBanner] = useState(false)
   const audioChunksRef = useRef<Blob[]>([])
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const voicePreviewUrlRef = useRef<string | null>(null)
@@ -1579,6 +1667,8 @@ function App() {
             joinedLiveStreak: data.joinedLiveStreak != null ? data.joinedLiveStreak : undefined,
             dailyTrainingStreak: data.dailyTrainingStreak != null ? data.dailyTrainingStreak : undefined,
             dailySynergyStreak: data.dailySynergyStreak != null ? data.dailySynergyStreak : undefined,
+            dailyVoiceStreak: data.dailyVoiceStreak != null ? data.dailyVoiceStreak : undefined,
+            dailyPulseStreak: data.dailyPulseStreak != null ? data.dailyPulseStreak : undefined,
             momentumPoints: data.momentumPoints != null ? data.momentumPoints : undefined,
             lastDailyPulseDate: data.lastDailyPulseDate != null ? data.lastDailyPulseDate : undefined,
             currentDailyChallenge: data.currentDailyChallenge || undefined,
@@ -1635,6 +1725,8 @@ function App() {
               joinedLiveStreak: realProfile.joinedLiveStreak != null ? realProfile.joinedLiveStreak : undefined,
               dailyTrainingStreak: realProfile.dailyTrainingStreak != null ? realProfile.dailyTrainingStreak : undefined,
               dailySynergyStreak: realProfile.dailySynergyStreak != null ? realProfile.dailySynergyStreak : undefined,
+              dailyVoiceStreak: realProfile.dailyVoiceStreak != null ? realProfile.dailyVoiceStreak : undefined,
+              dailyPulseStreak: realProfile.dailyPulseStreak != null ? realProfile.dailyPulseStreak : undefined,
               momentumPoints: realProfile.momentumPoints != null ? realProfile.momentumPoints : undefined,
               lastDailyPulseDate: realProfile.lastDailyPulseDate != null ? realProfile.lastDailyPulseDate : undefined,
               currentDailyChallenge: realProfile.currentDailyChallenge || undefined,
@@ -7983,6 +8075,17 @@ function App() {
         {/* ===== PROFILE - Premium Pre-Alpha experience (self-contained to prevent black screens) */}
         {activeTab === 'profile' && currentUser && (
           <div className="flex-1 overflow-auto bg-[#0D0D10] pb-28">
+            {/* Daily Pulse Banner - strong reason to engage immediately on open */}
+            {showDailyPulseBanner && dailyPulse && (
+              <div className="mx-4 mt-3 p-3 rounded-2xl bg-gradient-to-r from-[#FF671F]/15 via-[#1a140f] to-transparent border border-[#FF671F]/50 flex items-center gap-3 shadow-sm">
+                <div className="text-2xl">🌅</div>
+                <div className="flex-1">
+                  <div className="text-sm font-bold text-[#FF671F]">¡Pulso Diario de la Red activado!</div>
+                  <div className="text-xs text-[#9CA3AF]">Streak {dailyPulse.trainingStreak}d • {dailyPulse.currentChallenge?.title} esperando tu energía</div>
+                </div>
+                <button onClick={() => { setShowDailyPulseBanner(false); /* scroll or focus the card */ }} className="text-xs px-3 py-1 bg-[#FF671F] text-black rounded-full font-bold active:bg-[#E55A1A]">Ver Pulso</button>
+              </div>
+            )}
             {/* Sticky header with escape hatches - polished aesthetics */}
             <div className="sticky top-0 z-20 bg-[#0D0D10]/95 backdrop-blur-xl border-b border-[#2F2F35] px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -8402,30 +8505,26 @@ function App() {
                     </div>
                   </div>
 
-                  {/* Multi-streaks - attractive flames */}
-                  <div className="flex gap-2 mb-3">
-                    <div className="flex-1 bg-black/40 rounded-2xl p-2.5 text-center border border-[#22c55e]/20">
-                      <div className="text-[22px] font-black text-[#22c55e] flex items-center justify-center gap-1">
-                        🔥{dailyPulse.trainingStreak}
-                      </div>
-                      <div className="text-[9px] text-[#9CA3AF] font-medium">Training Streak</div>
-                      <div className="text-[8px] text-[#22c55e]/70">días seguidos</div>
+                  {/* Multi-streaks - attractive flames (enhanced with Voice + Pulse for more daily hooks) */}
+                  <div className="flex gap-1.5 mb-3">
+                    <div className="flex-1 bg-black/40 rounded-2xl p-2 text-center border border-[#22c55e]/20">
+                      <div className="text-lg font-black text-[#22c55e] flex items-center justify-center gap-0.5">🔥{dailyPulse.trainingStreak}</div>
+                      <div className="text-[8px] text-[#9CA3AF] font-medium">Train</div>
                     </div>
-                    <div className="flex-1 bg-black/40 rounded-2xl p-2.5 text-center border border-[#FF671F]/20">
-                      <div className="text-[22px] font-black text-[#FF671F] flex items-center justify-center gap-1">
-                        🔗{dailyPulse.synergyStreak}
-                      </div>
-                      <div className="text-[9px] text-[#9CA3AF] font-medium">Synergy Streak</div>
-                      <div className="text-[8px] text-[#FF671F]/70">con tu Red</div>
+                    <div className="flex-1 bg-black/40 rounded-2xl p-2 text-center border border-[#FF671F]/20">
+                      <div className="text-lg font-black text-[#FF671F] flex items-center justify-center gap-0.5">🔗{dailyPulse.synergyStreak}</div>
+                      <div className="text-[8px] text-[#9CA3AF] font-medium">Synergy</div>
                     </div>
-                    <div className="flex-1 bg-black/40 rounded-2xl p-2.5 text-center border border-[#FFD700]/20">
-                      <div className="text-[22px] font-black text-[#FFD700] flex items-center justify-center gap-1">
-                        🏆{Math.max(dailyPulse.longestTraining, dailyPulse.longestSynergy)}
-                      </div>
-                      <div className="text-[9px] text-[#9CA3AF] font-medium">Récord</div>
-                      <div className="text-[8px] text-[#FFD700]/70">máximo</div>
+                    <div className="flex-1 bg-black/40 rounded-2xl p-2 text-center border border-[#EAB308]/20">
+                      <div className="text-lg font-black text-[#EAB308] flex items-center justify-center gap-0.5">🎙️{dailyPulse.voiceStreak || 0}</div>
+                      <div className="text-[8px] text-[#9CA3AF] font-medium">Voice</div>
+                    </div>
+                    <div className="flex-1 bg-black/40 rounded-2xl p-2 text-center border border-[#06B6D4]/20">
+                      <div className="text-lg font-black text-[#06B6D4] flex items-center justify-center gap-0.5">🗺️{dailyPulse.pulseStreak || 0}</div>
+                      <div className="text-[8px] text-[#9CA3AF] font-medium">Pulse</div>
                     </div>
                   </div>
+                  <div className="text-[8px] text-[#FFD700] -mt-2 mb-2 text-center">Récord: {Math.max(dailyPulse.longestTraining || 0, dailyPulse.longestSynergy || 0, dailyPulse.longestVoice || 0, dailyPulse.longestPulse || 0)}d</div>
 
                   {/* Current Daily Challenge - the attractive hook */}
                   {dailyPulse.currentChallenge && (
@@ -8510,6 +8609,20 @@ function App() {
                       className="flex-1 text-[10px] py-1.5 rounded-2xl border border-[#22c55e]/30 active:bg-[#22c55e]/10 text-[#22c55e]"
                     >
                       Ignitar socio (20M)
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if ((dailyPulse.momentum || 0) >= 50) {
+                          awardMomentum(-50, 'Streak protegido')
+                          toast.success('Streak protegido', { description: 'No perderás tu racha si no entrenas hoy. ¡Buen uso de Momentum!' })
+                          // In future: set a protected flag for the day
+                        } else {
+                          toast('Necesitas 50 Momentum para proteger')
+                        }
+                      }}
+                      className="flex-1 text-[10px] py-1.5 rounded-2xl border border-[#EAB308]/30 active:bg-[#EAB308]/10 text-[#EAB308]"
+                    >
+                      Proteger streak (50M)
                     </button>
                   </div>
 
@@ -11764,12 +11877,13 @@ function App() {
                   notifications.map(notif => {
                     const isLegendNotif = notif.type === 'message' && notif.relatedId && !!syncBonds[notif.relatedId] // from your training network
                     const isNetworkLive = (notif.type === 'session_join' || notif.type === 'squad_join') && notif.relatedId && !!syncBonds[notif.relatedId]
-                    const typeIcon = notif.type === 'message' ? (isLegendNotif ? '⭐' : '💬') : notif.type === 'match' ? '❤️' : notif.type === 'session_join' ? (isNetworkLive ? '🔥' : '👥') : notif.type === 'squad_join' ? '🏋️' : '🔔'
+                    const isDailyPulse = notif.type === 'daily_pulse'
+                    const typeIcon = notif.type === 'message' ? (isLegendNotif ? '⭐' : '💬') : notif.type === 'match' ? '❤️' : notif.type === 'session_join' ? (isNetworkLive ? '🔥' : '👥') : notif.type === 'squad_join' ? '🏋️' : isDailyPulse ? '🌅' : '🔔'
                     const time = notif.timestamp ? getRelativeTime(notif.timestamp) : ''
                     return (
                       <div 
                         key={notif.id} 
-                        className={`p-4 border-b border-[#2F2F35] flex items-start gap-3 active:bg-[#1C1C20] cursor-pointer ${!notif.read ? 'bg-[#1C1C20]' : ''} ${(isLegendNotif || isNetworkLive) ? 'legend-notif border-l-4 border-[#FFD700] bg-[#1a160f]' : ''}`} 
+                        className={`p-4 border-b border-[#2F2F35] flex items-start gap-3 active:bg-[#1C1C20] cursor-pointer ${!notif.read ? 'bg-[#1C1C20]' : ''} ${(isLegendNotif || isNetworkLive) ? 'legend-notif border-l-4 border-[#FFD700] bg-[#1a160f]' : ''} ${isDailyPulse ? 'border-l-4 border-[#FF671F] bg-[#1a140f]' : ''}`} 
                         // network notif gold for your red (legend-notif styling)
                         onClick={() => {
                           const updated = notifications.map(n => 
@@ -11796,6 +11910,12 @@ function App() {
                               setActiveChat(notif.relatedId)
                               setChatUnreads(prev => { const c = { ...prev }; if (notif.relatedId) c[notif.relatedId] = 0; return c })
                             }
+                          }
+                          if (isDailyPulse) {
+                            setShowNotifications(false)
+                            setActiveTab('profile')
+                            setShowDailyPulseBanner(true)
+                            return
                           }
                           if (notif.type === 'session_join' && notif.relatedId) {
                             setShowNotifications(false)

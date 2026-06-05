@@ -1,6 +1,6 @@
 === READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.54-voice-send-polish code 58) ===
 
-AAB: EntrenaMatch-v0.1.55-pulso-diario-innovador-20260605.aab + EntrenaMatch-release.aab (7.58MB)
+AAB: EntrenaMatch-v0.1.55-tdz-fix-pulso-20260605.aab + EntrenaMatch-release.aab (7.58MB)  [includes fix for 'Cannot access before initialization' TDZ in Pulso code placement]
 
 **CRITICAL - DO THIS FIRST OR VOICE NOTES WILL 403:**
 The voice upload rules (chat-voice path) are now fixed and well documented in storage.rules.
