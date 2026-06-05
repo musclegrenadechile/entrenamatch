@@ -1481,6 +1481,10 @@ function App() {
   // profile doc is not among the top-N most recently updatedAt (many other writes can push long-running lives out of a simple recent query).
   const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
 
+  // Refs for current auth uid and blocked to avoid stale closures in onSnapshot callbacks (critical for live status skip-self and filtering)
+  const currentUidRef = useRef<string | null>(null)
+  const blockedUsersRef = useRef<string[]>([])
+
   // Keep refs in sync for leaflet click handlers (closed over values would be stale)
   useEffect(() => { isPlacingPartnerRef.current = isPlacingPartner }, [isPlacingPartner])
   useEffect(() => { showAddPartnerFormRef.current = showAddPartnerForm }, [showAddPartnerForm])
@@ -1493,6 +1497,10 @@ function App() {
   const DEV_PASSWORD = 'dev2026map' // change in production; documented in instructions
   const liveMapRef = useRef<HTMLDivElement>(null) // legacy - will be removed after full extraction
   const gymPulseMapRef = useRef<any>(null) // new extracted component ref (2026-06-05)
+
+  // Sync refs for listeners (prevents using stale uid/blocked in onSnapshot for live propagation)
+  useEffect(() => { currentUidRef.current = firebaseUser?.uid || null }, [firebaseUser?.uid])
+  useEffect(() => { blockedUsersRef.current = blockedUsers }, [blockedUsers])
 
   // When partner visibility or list changes (or dev added one), force the map layer to refresh immediately.
   useEffect(() => {
@@ -1939,6 +1947,10 @@ function App() {
     return lives;
   }, [realProfiles, userLocation, isDemoMode, profilePosts, currentUser, liveUsersFromDedicated]);
 
+  // For UI counts/banners ("X live cerca"), include self so when you are the only one live it doesn't show 0 and feel broken.
+  // The actual liveTrainingNow list (passed to map/lists) still excludes self to avoid self-join etc.
+  const liveCountForUI = liveTrainingNow.length + (currentUser?.trainingNow ? 1 : 0)
+
   // Zone live counts for interactive legend (sigue con todo el mapa + visual polish iteration)
   const zoneLiveCounts = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -2119,11 +2131,11 @@ function App() {
 
         unsub = onSnapshot(q, (snapshot) => {
           const profiles: Profile[] = [];
-          const currentUid = firebaseUser?.uid;
+          const currentUid = currentUidRef.current;
 
           snapshot.forEach((doc) => {
             if (doc.id === currentUid) return;
-            if (blockedUsers.includes(doc.id)) return;
+            if (blockedUsersRef.current.includes(doc.id)) return;
             const data = doc.data() as any;
             if (data && data.name) {
               profiles.push({
@@ -2188,11 +2200,11 @@ function App() {
 
         unsubLive = onSnapshot(q, (snapshot) => {
           const liveOnes: any[] = []
-          const currentUid = firebaseUser?.uid
+          const currentUid = currentUidRef.current
 
           snapshot.forEach((doc) => {
             if (doc.id === currentUid) return
-            if (blockedUsers.includes(doc.id)) return
+            if (blockedUsersRef.current.includes(doc.id)) return
             const data = doc.data() as any
             if (data && data.name) {
               liveOnes.push({
@@ -2236,6 +2248,42 @@ function App() {
 
     return () => { if (unsubLive) unsubLive(); }
   }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, blockedUsers])
+
+  // Own profile doc listener - keeps currentUser.trainingNow / streaks etc in sync if changed on another device or by server.
+  // Uses doc-level so we get our own live status even though collection listeners skip self.
+  useEffect(() => {
+    if (isDemoMode || !db || !isFirebaseConfigured || !firebaseUser?.uid) return undefined
+    let unsubOwn: any = null
+    ;(async () => {
+      try {
+        const { doc, onSnapshot } = await import('firebase/firestore')
+        const ownRef = doc(db, 'profiles', firebaseUser.uid)
+        unsubOwn = onSnapshot(ownRef, (snap) => {
+          if (!snap.exists()) return
+          const data = snap.data() as any
+          if (data) {
+            const newTrainingNow = !!data.trainingNow
+            const newSince = normalizeTrainingSince(data.trainingNowSince)
+            // Only update local if it differs (prevents unnecessary re-renders or loops on our own writes)
+            if (currentUser && (currentUser.trainingNow !== newTrainingNow || normalizeTrainingSince(currentUser.trainingNowSince) !== newSince)) {
+              const merged = {
+                ...currentUser,
+                trainingNow: newTrainingNow,
+                trainingNowSince: newSince,
+                liveStreak: data.liveStreak != null ? data.liveStreak : currentUser.liveStreak,
+                // add more if needed
+              }
+              saveUser(merged as any)
+              setMapForceTick(t => t + 1) // reflect self live change on map immediately
+            }
+          }
+        })
+      } catch (e) {
+        console.warn('own profile listener failed', e)
+      }
+    })()
+    return () => { if (unsubOwn) unsubOwn() }
+  }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, currentUser?.id]) // depend on id to re-sub on user change
 
   // EntrenaSync real-time mirror: when in sync, pull partner's latest syncActions and state from realProfiles (via periodic load or on change)
   // Placed here AFTER all dependent states (realProfiles, effectiveUserId, currentUser local from saveUser) to avoid TDZ or init order issues in render/bundler.
@@ -2497,11 +2545,11 @@ function App() {
       const snapshot = await getDocs(q)
       
       const profiles: Profile[] = []
-      const currentUid = firebaseUser?.uid
+      const currentUid = currentUidRef.current || firebaseUser?.uid
 
       snapshot.forEach((doc) => {
         if (doc.id === currentUid) return
-        if (blockedUsers.includes(doc.id)) return
+        if (blockedUsersRef.current.includes(doc.id)) return
         const data = doc.data() as any
         if (data && data.name) {
           profiles.push({
@@ -6552,7 +6600,7 @@ function App() {
               className="ml-1 text-[8px] px-2 py-1 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50 active:brightness-90 active:scale-[0.985] transition" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}
               title="Ver mapa en vivo"
             >
-              🟢 {liveTrainingNow.length} LIVE {currentUser?.trainingNow && currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}{syncPartnerId ? ' 🔄SYNC' : ''}{activeSyncCount > 0 ? ` · 🔄${activeSyncCount} PARES EN SYNC` : ''}
+              🟢 {liveCountForUI} LIVE {currentUser?.trainingNow && currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}{syncPartnerId ? ' 🔄SYNC' : ''}{activeSyncCount > 0 ? ` · 🔄${activeSyncCount} PARES EN SYNC` : ''}
             </button>
           )}
         </div>
@@ -6667,7 +6715,7 @@ function App() {
             <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
             <div className="flex items-center gap-2 mb-1.5 relative z-10">
               <div className="live-pill green !px-2.5 !py-0.5 text-[9px]">🟢 EN VIVO AHORA</div>
-              <div className="text-sm font-semibold tracking-[-0.1px]">{liveTrainingNow.length} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡se va pronto!' : ''} {liveTrainingNow.length > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}{activeSyncCount > 0 ? ` · 🔄 ${activeSyncCount} pares sincronizados ahora (único)` : ''}</div>
+              <div className="text-sm font-semibold tracking-[-0.1px]">{liveCountForUI} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡se va pronto!' : ''} {liveCountForUI > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}{activeSyncCount > 0 ? ` · 🔄 ${activeSyncCount} pares sincronizados ahora (único)` : ''}</div>
               {dailyPulse && (dailyPulse.trainingStreak > 0 || dailyPulse.synergyStreak > 0) && (
                 <div className="text-[10px] mt-1 text-[#22c55e] font-medium flex items-center gap-1">
                   🔥 Tu streak: {dailyPulse.trainingStreak}d train + {dailyPulse.synergyStreak}d synergy • Nivel {dailyPulse.level}
@@ -7562,7 +7610,7 @@ function App() {
                   </div>
                   <div className="text-[#9CA3AF] text-xs flex items-center gap-1.5 mt-1.5">
                     El feed icónico de EntrenaMatch
-                    {liveTrainingNow.length > 0 && <span className="text-[8px] ml-1 px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50">🟢 {liveTrainingNow.length} LIVE AHORA</span>}
+                    {liveCountForUI > 0 && <span className="text-[8px] ml-1 px-1.5 py-0.5 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50">🟢 {liveCountForUI} LIVE AHORA</span>}
                     {activeSyncCount > 0 && <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#22c55e]/10 text-[#22c55e] font-bold">🔄 {activeSyncCount} EN SYNC</span>}
                   </div>
                 </div>
@@ -9281,7 +9329,7 @@ function App() {
                 { label: 'Sesiones', value: squads?.length || 0, icon: Star, color: '#00C4B4' },
                 { label: 'Nivel', value: currentUser.level || '—', icon: Dumbbell, color: '#FF4F79', isText: true, isSquare: true },
                 { label: 'Retención', value: dailyPulse?.level || 1, icon: Zap, color: '#FFD700', isText: true, isSquare: true },
-                { label: 'Live cerca', value: liveTrainingNow.length, icon: Zap, color: '#22c55e', isLive: true },
+                { label: 'Live cerca', value: liveCountForUI, icon: Zap, color: '#22c55e', isLive: true },
                 { label: 'Live joins', value: currentUser.liveJoins || 0, icon: Zap, color: '#22c55e' },
                 { label: 'Syncs', value: (currentUser as any).syncStreak || 0, icon: Users, color: '#22c55e' }
               ].map((stat: any, i) => (
@@ -11152,7 +11200,7 @@ function App() {
                 {badge > 9 ? '9+' : badge}
               </span>
             )}
-            {id === 'explore' && liveTrainingNow.length > 0 && (
+            {id === 'explore' && liveCountForUI > 0 && (
               <span className="absolute -top-0.5 right-1 w-3 h-3 bg-[#22c55e] rounded-full animate-pulse ring-1 ring-black/30 flex items-center justify-center text-[6px] text-black font-bold" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}>
                 {currentUser?.trainingNow && currentUser.liveStreak ? Math.min(9, currentUser.liveStreak) : ''}
               </span>

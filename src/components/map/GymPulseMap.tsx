@@ -331,8 +331,9 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         const isLive = !!selfIsLive;
         const liveClass = isLive ? ' live-self' : '';
         const liveBorder = isLive ? 'box-shadow:0 0 0 4px #22c55e55, 0 0 0 8px rgba(34,197,94,0.25); animation: live-pulse-green 2s ease-in-out infinite;' : 'box-shadow:0 0 0 3px rgba(34,197,94,0.3);';
+        const liveBadgeSelf = isLive ? `<div style="position:absolute;top:-2px;right:-2px;background:#22c55e;color:#111;font-size:7px;font-weight:900;padding:0 3px;border-radius:3px;line-height:10px;border:1px solid #111">LIVE</div>` : '';
         const selfIcon = L.divIcon({
-          html: `<div style="width:28px;height:28px;border-radius:9999px;overflow:hidden;border:3px solid ${isLive ? '#22c55e' : '#22c55e'};${liveBorder}"><img src="${userLocation.photo || ''}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#22c55e';this.innerHTML='<div style=font-size:10px;color:white;display:flex;align-items:center;justify-content:center;height:100%>TÚ</div>'"/></div>`,
+          html: `<div style="position:relative;width:28px;height:28px"><div style="width:28px;height:28px;border-radius:9999px;overflow:hidden;border:3px solid ${isLive ? '#22c55e' : '#22c55e'};${liveBorder}"><img src="${userLocation.photo || ''}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#22c55e';this.innerHTML='<div style=\\'font-size:10px;color:white;display:flex;align-items:center;justify-content:center;height:100%\\'>TÚ</div>'"/></div>${liveBadgeSelf}</div>`,
           className: `self-marker${liveClass}`, iconSize: [28, 28], iconAnchor: [14, 14]
         })
         if (!selfMarkerRef.current) {
@@ -354,21 +355,37 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       // ... (the rest of the original marker creation for liveUsers, partners with logos, sync tethers, ritual ripples, echo pins, etc. would go here)
       // For this step we keep a functional core and note that the full rich version (with all the beautiful icons, popups, tethers, partner logos, legend gold, etc.) lives in the original until fully ported.
 
-      // Basic live markers (can be enriched)
+      // Enriched live markers for "Entrenando Ahora" (GymPulse) - makes the live status visually obvious
+      // Uses data like seVaEnMin, joinCount, isLegend, visibleLevel from the parent liveTrainingNow computation.
       renderUsers.forEach((u: any) => {
         if (!u.lat || !u.lng) return
         const isBond = !!syncBonds[u.id]
-        const iconHtml = `<div style="width:26px;height:26px;border-radius:9999px;overflow:hidden;border:2px solid ${isBond ? '#FFD700' : '#22c55e'};box-shadow:0 0 0 2px rgba(0,0,0,0.6);"><img src="${u.photos?.[0] || ''}" style="width:100%;height:100%;object-fit:cover" /></div>`
+        const isHigh = (u.visibleLevel || 1) >= 15 || u.isLegend
+        const hasPulso = (u.visibleLevel || 1) >= 20
+        const borderColor = isBond ? '#FFD700' : (hasPulso ? '#a855f7' : (isHigh ? '#eab308' : '#22c55e'))
+        const ring = hasPulso || isHigh ? '0 0 0 3px ' + (hasPulso ? '#a855f755' : '#eab30855') + ', ' : ''
+        const liveBadge = `<div style="position:absolute;top:-2px;right:-2px;background:#22c55e;color:#111;font-size:7px;font-weight:900;padding:0 3px;border-radius:3px;line-height:10px;border:1px solid #111">LIVE</div>`
+        const timeBadge = u.seVaEnMin != null ? `<div style="position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);background:#111;color:#22c55e;font-size:7px;padding:0 3px;border-radius:2px;white-space:nowrap;">~${u.seVaEnMin}m</div>` : ''
+        const iconHtml = `
+          <div style="position:relative;width:28px;height:28px">
+            <div style="width:28px;height:28px;border-radius:9999px;overflow:hidden;border:2.5px solid ${borderColor};box-shadow:${ring}0 0 0 2px rgba(0,0,0,0.7);">
+              <img src="${u.photos?.[0] || ''}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#22c55e';this.innerHTML='<div style=\\'font-size:9px;color:white;display:flex;align-items:center;justify-content:center;height:100%\\'>LIVE</div>'" />
+            </div>
+            ${liveBadge}
+            ${timeBadge}
+          </div>`
         try {
           const marker = L.marker([u.lat, u.lng], {
-            icon: L.divIcon({ html: iconHtml, className: '', iconSize: [26, 26], iconAnchor: [13, 13] })
+            icon: L.divIcon({ html: iconHtml, className: 'live-user-marker', iconSize: [28, 28], iconAnchor: [14, 14] })
           }).addTo(mapInstanceRef.current)
 
+          const joinTxt = u.joinCount ? ` • ${u.joinCount} joined` : ''
           marker.bindPopup(`
-            <div style="min-width:160px">
-              <strong>${u.name}</strong> ${isBond ? '⭐ RED' : ''}<br/>
-              <span style="font-size:10px">${u.trainingTypes?.[0] || ''} • ${(u.distance || 0).toFixed(1)}km</span><br/>
-              <button style="margin-top:4px;background:#22c55e;color:black;border:none;padding:2px 8px;border-radius:4px;font-size:10px" onclick="window.startSyncFromMap && window.startSyncFromMap('${u.id}', '${u.name}')">Entrenar juntos</button>
+            <div style="min-width:170px;font-size:12px">
+              <strong>${u.name}</strong> ${isBond ? '⭐ RED' : ''} <span style="color:#22c55e;font-size:10px">🟢 EN VIVO</span><br/>
+              <span style="font-size:10px">${u.trainingTypes?.[0] || ''} • ${(u.distance || 0).toFixed(1)}km${joinTxt}</span><br/>
+              ${u.seVaEnMin != null ? `<span style="font-size:10px">Se va en ~${u.seVaEnMin} min</span><br/>` : ''}
+              <button style="margin-top:5px;background:#22c55e;color:black;border:none;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600" onclick="window.startSyncFromMap && window.startSyncFromMap('${u.id}', '${u.name}')">🔥 Entrenar juntos / Sync</button>
             </div>
           `)
 
