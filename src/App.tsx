@@ -933,7 +933,7 @@ function App() {
             const [u1, u2] = data.participants
             const p1 = realProfiles.find(pp => pp.id === u1) || SEED_PROFILES.find(pp => pp.id === u1)
             const p2 = realProfiles.find(pp => pp.id === u2) || SEED_PROFILES.find(pp => pp.id === u2)
-            if (p1 && p2) pairs.push({ names: `${p1.name.split(' ')[0]} + ${p2.name.split(' ')[0]}`, vibe: data.vibe || 50 })
+            if (p1 && p2) pairs.push({ names: `${(p1.name||'U').split(' ')[0]} + ${(p2.name||'U').split(' ')[0]}`, vibe: data.vibe || 50 })
           }
         }
       })
@@ -6000,11 +6000,11 @@ function App() {
                   }).map((u, idx) => (
                     <motion.div key={u.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(u); }} whileHover={{scale:1.1}} whileTap={{scale:0.9}} initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} transition={{delay: idx * 0.05}} className="flex flex-col items-center text-center cursor-pointer active:opacity-80">
                       <div className="relative">
-                        {u.photos?.[0] ? <img src={u.photos[0]} className={`w-9 h-9 rounded-full object-cover border-2 ${syncBonds[u.id] ? 'border-[#FFD700]' : 'border-[#22c55e]/60'}`} /> : <div className={`w-9 h-9 rounded-full ${syncBonds[u.id] ? 'bg-[#FFD700] text-black' : 'bg-[#22c55e]/20'} flex items-center justify-center text-[10px] border ${syncBonds[u.id] ? 'border-[#FFD700]' : 'border-[#22c55e]/30'}`}>{u.name[0]}</div>}
+                        {u.photos?.[0] ? <img src={u.photos[0]} className={`w-9 h-9 rounded-full object-cover border-2 ${syncBonds[u.id] ? 'border-[#FFD700]' : 'border-[#22c55e]/60'}`} /> : <div className={`w-9 h-9 rounded-full ${syncBonds[u.id] ? 'bg-[#FFD700] text-black' : 'bg-[#22c55e]/20'} flex items-center justify-center text-[10px] border ${syncBonds[u.id] ? 'border-[#FFD700]' : 'border-[#22c55e]/30'}`}>{(u.name||'U')[0]}</div>}
                         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#22c55e] rounded-full ring-2 ring-black" style={{animation: u.seVaEnMin < 10 ? 'live-pulse-green-urgent 1.1s ease-in-out infinite' : 'live-pulse-green 1.8s ease-in-out infinite'}}></div>
                         {!!syncBonds[u.id] && <div className="absolute -top-0.5 -left-0.5 text-[6px] bg-[#FFD700] text-black px-0.5 rounded font-bold">RED</div>}
                       </div>
-                      <div className="text-[8px] mt-0.5 text-white truncate max-w-[48px] font-medium">{u.name.split(' ')[0]}</div>
+                      <div className="text-[8px] mt-0.5 text-white truncate max-w-[48px] font-medium">{(u.name || 'U').split(' ')[0]}</div>
                       <div className="text-[7px] text-[#22c55e]">{(u.distance||0).toFixed(0)}km {u.joinCount > 0 ? `+${u.joinCount}🔥` : ''} {!!syncBonds[u.id] && <span className="text-[#FFD700]">•NP</span>}</div>
                     </motion.div>
                   ))}
@@ -6032,7 +6032,7 @@ function App() {
                   <div key={user.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(user); }} className="card card-glass p-3 mb-2 flex gap-3 cursor-pointer active:scale-95 border border-[#22c55e]/50 hover:border-[#22c55e]/80 transition-all group">
                     {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-12 h-12 rounded-xl object-cover border-2 border-[#22c55e]/40 group-hover:border-[#22c55e]/70 transition" />}
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold flex items-center gap-1.5 text-white">{user.name} <span className="text-[#9CA3AF] text-xs font-normal">· {userLocation && user.distance < 900 ? `${user.distance.toFixed(1)}km` : '— km'}</span>{!!syncBonds[user.id] && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED LV{syncBonds[user.id].bondLevel || 1}</span>}</div>
+                      <div className="font-semibold flex items-center gap-1.5 text-white">{user.name || 'Usuario'} <span className="text-[#9CA3AF] text-xs font-normal">· {userLocation && user.distance < 900 ? `${user.distance.toFixed(1)}km` : '— km'}</span>{!!syncBonds[user.id] && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED LV{syncBonds[user.id].bondLevel || 1}</span>}</div>
                       <div className="text-[#9CA3AF] text-sm truncate">{user.trainingTypes?.join(', ') || 'Entreno'}</div>
                       <div className="text-[#22c55e] text-xs flex items-center gap-1 mt-0.5">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m {user.seVaEnMin > 0 ? <span className={user.seVaEnMin < 15 ? 'text-red-400 font-bold' : 'text-orange-400'}>{user.seVaEnMin < 15 ? `· se va pronto en ${user.seVaEnMin}m 🔥` : `· se va en ${user.seVaEnMin}m`}</span> : ''}
                       </div>
@@ -6073,7 +6073,7 @@ function App() {
                   onClick={() => {
                     setShowLiveModal(false)
                     // Quick group session polish: create an optimistic session with the current live people + self
-                    const liveNames = liveTrainingNow.slice(0, 4).map(u => u.name.split(' ')[0]).join(', ')
+                    const liveNames = liveTrainingNow.slice(0, 4).map(u => (u.name||'U').split(' ')[0]).join(', ')
                     const newGroupSession: TrainingSession = {
                       id: 'livegroup' + Date.now(),
                       creatorId: effectiveUserId,
@@ -6233,7 +6233,7 @@ function App() {
                       transition={{delay: idx*0.03}}
                       className={`text-[9px] bg-[#0a120f] border ${syncBonds[u.id] ? 'border-[#FFD700]/70 bg-[#1a160f]' : 'border-[#22c55e]/40'} text-[#22c55e] px-3 py-1.5 rounded-2xl cursor-pointer active:bg-[#22c55e]/10 flex flex-col min-w-[100px] shadow-sm hover:border-[#22c55e]/70 snap-start`}
                     >
-                      <div className="font-bold flex items-center gap-1 text-white/90">{u.name.split(' ')[0]} <span className="text-[7px] text-[#9CA3AF]">{userLocation && u.distance < 900 ? `${u.distance.toFixed(0)}km` : '—'}</span>{userLocation && u.distance < 5 && <span className="ml-1 text-[6px] bg-[#22c55e]/20 px-1 rounded">CERCA</span>}</div>
+                      <div className="font-bold flex items-center gap-1 text-white/90">{(u.name || 'Usuario').split(' ')[0]} <span className="text-[7px] text-[#9CA3AF]">{userLocation && u.distance < 900 ? `${u.distance.toFixed(0)}km` : '—'}</span>{userLocation && u.distance < 5 && <span className="ml-1 text-[6px] bg-[#22c55e]/20 px-1 rounded">CERCA</span>}</div>
                       {!!syncBonds[u.id] && <div className="text-[6px] bg-[#FFD700] text-black px-1 rounded font-bold self-start mt-0.5">⭐ RED LV{syncBonds[u.id]?.bondLevel || 1} • NP ACTIVO</div>}
                       {u.seVaEnMin > 0 && <div className="text-[7px] text-orange-400">{u.seVaEnMin < 15 ? '🔥 se va pronto' : `se va en ${u.seVaEnMin}m`}</div>}
                       {u.joinCount > 0 && <div className="text-[7px] text-[#22c55e]/70">+{u.joinCount} se unieron</div>}
@@ -10158,7 +10158,7 @@ function App() {
             </div>
             <div className="p-4 border-t border-[#2F2F35] flex gap-3">
               {matches.includes(showFullProfile.id) || realMatches.includes(showFullProfile.id) ? (
-                <button onClick={() => { setShowFullProfile(null); openChat(showFullProfile.id) }} className="flex-1 btn-primary">Abrir chat con {showFullProfile.name.split(' ')[0]}</button>
+                <button onClick={() => { setShowFullProfile(null); openChat(showFullProfile.id) }} className="flex-1 btn-primary">Abrir chat con {(showFullProfile.name||'Usuario').split(' ')[0]}</button>
               ) : (
                 <>
                   <button onClick={() => { setShowFullProfile(null); handleSwipe(showFullProfile.id, 'left') }} className="flex-1 btn-secondary">Pasar</button>
@@ -10629,7 +10629,7 @@ function App() {
                         <button 
                           key={idx}
                           onClick={() => {
-                            const mention = `@${name.split(' ')[0]} `
+                            const mention = `@${(name||'U').split(' ')[0]} `
                             setChatInputValue(prev => prev + mention)
                           }}
                           className="block w-full text-left px-2 py-1 hover:bg-[#25252A] rounded text-[#cbd5e1] truncate flex items-center justify-between"
