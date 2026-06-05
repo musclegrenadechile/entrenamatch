@@ -58,12 +58,13 @@
 
 ## P2 - Testing real + Salud a largo plazo — EN PROGRESO
 
-- [x] **Primer paso de modularización (quick win visible)**
-  - ✅ `src/components/map/GymPulseMap.tsx` creado (con docstring, props, handle imperative ref para centerOn/fly, lógica Leaflet + markers + ripples + partners + tethers + dev click).
-  - ✅ Lógica pesada movida de App.tsx (useEffect viejo eliminado, stub preservado por hook order; import + <GymPulseMap ref=... /> en uso).
-  - [ ] Limpiar el TODO restante + sección de render en App.tsx (~6884+): mover o adelgazar el "floating pulse header", controles, leyendas, quick-add handlers, refs legacy (mapInstanceRef) que aún se usan en el JSX del mapa. Hacer que el componente sea más self-contained.
-  - [ ] Completar ports pendientes en GymPulseMap.tsx (ver sus TODOs: full ritualRipples/waves, witness modal wiring, clusters/expand, fitBounds, etc.).
-  - Dejar stub limpio + comentario de fecha.
+- [x] **Primer paso de modularización (quick win visible) — AVANZADO Y PULIDO**
+  - ✅ GymPulseMap self-contained: header flotante, filtros, zona legend, centrar, dev buttons, GPS prompt todos internos.
+  - ✅ Ports: ritualRipples, sync tethers, echo pins, clusters básicos, fitBounds, heartbeats, etc. implementados.
+  - ✅ Witness wiring: onWitnessEchoPin / onWitnessRipple props + window helpers conectados al parent (witnessEchoPin / witnessRipple callbacks existentes).
+  - ✅ Parent App map JSX adelgazado (sin duplicados de chrome, legacy refs limpios del render del mapa).
+  - TODO de witness resuelto. Sección de render en App limpia. Más ports fáciles de seguir si se quiere (full popups, etc.).
+  - Deuda menor: algunos comentarios de "simplified" se pueden limpiar en próxima pasada.
 
 - [ ] **Checklist de pruebas en dispositivo (ya documentada en este archivo)**
   - [ ] Ejecutar en la práctica (o guiar al usuario): adb devices, install última debug APK de CI o local, logcat, chrome://inspect.
