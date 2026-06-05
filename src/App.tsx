@@ -13126,4 +13126,50 @@ function App() {
   )
 }
 
+// ErrorBoundary restaurado (fue eliminado accidentalmente durante limpieza de código muerto del mapa).
+// Envuelve secciones críticas (Auth, Onboarding y el shell principal) para que crashes no dejen la app en blanco.
+// Integra con el sistema de debug logs expuesto en window.__addEntrenaDebugLog.
+class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error('App crashed:', error, errorInfo)
+    try {
+      ;(window as any).__addEntrenaDebugLog?.(`CRASH: ${error.message} ${errorInfo?.componentStack || ''}`)
+    } catch {}
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#0D0D10] text-white flex items-center justify-center p-6">
+          <div className="text-center max-w-xs">
+            <div className="text-2xl mb-4">Algo salió mal</div>
+            <p className="text-[#9CA3AF] mb-6 text-sm">
+              La aplicación tuvo un error. Tus datos en Firebase siguen seguros.
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="btn-primary px-6 py-2.5"
+            >
+              Recargar la página
+            </button>
+            <div className="mt-4 text-[10px] text-[#9CA3AF]/60">
+              Si persiste, avísanos en el feedback del perfil.
+            </div>
+          </div>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
+
 export default App
