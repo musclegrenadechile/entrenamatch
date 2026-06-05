@@ -654,6 +654,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         console.log('witness echo (no handler wired)', id)
       }
     }
+    ;(window as any).witnessRipple = (id: string) => { onWitnessRipple && onWitnessRipple(id) }
     ;(window as any).devDeletePartner = (id: string) => {
       if (onPartnerDelete) onPartnerDelete(id)
     }
@@ -668,6 +669,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     return () => {
       delete (window as any).startSyncFromMap
       delete (window as any).witnessEchoPin
+      delete (window as any).witnessRipple
       delete (window as any).devDeletePartner
       delete (window as any).devEditPartner
       delete (window as any).devAddAtCenter
@@ -711,8 +713,12 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
             return score > bestScore ? u : best
           }, active[0])
           if (hottest) {
-            // use our own flyTo
-            ;(ref as any)?.current?.flyTo?.(hottest.lat, hottest.lng, 14) || (window as any).__gymPulseCentrar?.()
+            const handle = (ref as any)?.current
+            if (handle?.flyTo) {
+              handle.flyTo(hottest.lat, hottest.lng, 14)
+            } else if ((window as any).__gymPulseCentrar) {
+              ;(window as any).__gymPulseCentrar()
+            }
           }
         }}
         title="Click para volar al punto más caliente del GymPulse"
@@ -765,8 +771,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         </button>
       </div>
 
-      {/* Top-left interactive zone legend */}
-      <div className="absolute top-2 left-2 z-30 flex flex-col gap-1">
+      {/* Top-left interactive zone legend - positioned below the floating header to avoid overlap */}
+      <div className="absolute top-9 left-2 z-30 flex flex-col gap-1">
         {['Viña del Mar', 'Santiago', 'Valparaíso', 'Concon'].map(city => {
           const col = zoneColors[city] || zoneColors.default
           const isActive = selectedMapZone === city
@@ -798,10 +804,11 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       <button
         onClick={() => {
           try {
-            if ((ref as any).current?.flyToSelf) {
-              (ref as any).current.flyToSelf()
-            } else if (onRegisterCentrar) {
-              // fallback registered from parent
+            const h = (ref as any)?.current
+            if (h?.flyToSelf) {
+              h.flyToSelf()
+            } else if ((window as any).__gymPulseCentrar) {
+              ;(window as any).__gymPulseCentrar()
             }
           } catch {}
         }}
@@ -810,61 +817,65 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         Centrar
       </button>
 
-      {/* Dev quick actions (inside the map widget) */}
+      {/* Dev quick actions (inside the map widget) - compact to avoid overflow on mobile viewport (GH Pages live) */}
       {isDeveloper && (
-        <>
-          <button
-            onClick={() => onOpenAddPartner && onOpenAddPartner()}
-            className="absolute top-2 right-20 text-[8px] px-2 py-0.5 rounded-full bg-[#FFD700] text-black font-bold border border-[#FFD700] active:scale-95 z-30"
-            title="Agregar local partner con logo (solo devs)"
-          >
-            + Partner
-          </button>
-          <button
-            onClick={() => onOpenManagePartners && onOpenManagePartners()}
-            className="absolute top-2 right-36 text-[8px] px-2 py-0.5 rounded-full bg-[#FFD700]/80 text-black font-bold border border-[#FFD700] active:scale-95 z-30"
-            title="Gestionar partners existentes"
-          >
-            Manage
-          </button>
-          <button
-            onClick={() => onToggleQuickAdd && onToggleQuickAdd(!isQuickAddPartner)}
-            className={`absolute top-2 right-[170px] text-[8px] px-2 py-0.5 rounded-full font-bold border active:scale-95 z-30 ${isQuickAddPartner ? 'bg-red-500 text-white border-red-500' : 'bg-[#FFD700]/70 text-black border-[#FFD700]'}`}
-            title="Modo agregar rápido: click en mapa crea tienda mínima"
-          >
-            {isQuickAddPartner ? '✕ Add rápido' : '+ Add rápido'}
-          </button>
-          <button
-            onClick={() => onAddPartnerAtCurrentCenter && onAddPartnerAtCurrentCenter()}
-            className="absolute top-2 right-[260px] text-[8px] px-2 py-0.5 rounded-full bg-[#FFD700]/60 text-black font-bold border border-[#FFD700] active:scale-95 z-30"
-            title="Agregar partner directamente en el centro actual del mapa (rápido para devs)"
-          >
-            +@centro
-          </button>
-          <button
-            onClick={() => onReloadPartners && onReloadPartners()}
-            className="absolute top-9 right-2 text-[8px] px-2 py-0.5 rounded-full bg-black/70 text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black z-30"
-            title="Forzar refresh de partners y mapa"
-          >
-            ↻ Reload
-          </button>
-          <button
-            onClick={() => onSpawnTestLives && onSpawnTestLives(3)}
-            className="absolute top-9 right-16 text-[8px] px-2 py-0.5 rounded-full bg-purple-600/80 text-white font-bold border border-purple-400 active:scale-95 z-30"
-            title="Spawnea 3 vidas de test cerca de ti (solo visibles en este mapa para probar GymPulse sin otras cuentas)"
-          >
-            🧪 +3 lives
-          </button>
-          {isDeveloper && (devTestCount || 0) > 0 && (
+        <div className="absolute top-9 right-2 flex flex-col gap-0.5 z-30">
+          <div className="flex gap-1 justify-end">
             <button
-              onClick={() => onClearDevTestLives && onClearDevTestLives()}
-              className="absolute top-9 right-28 text-[8px] px-2 py-0.5 rounded-full bg-red-900/70 text-red-200 border border-red-500/50 active:bg-red-800 z-30"
-              title="Quitar las vidas de test"
+              onClick={() => onOpenAddPartner && onOpenAddPartner()}
+              className="text-[7px] px-1.5 py-0.5 rounded-full bg-[#FFD700] text-black font-bold border border-[#FFD700] active:scale-95"
+              title="Agregar local partner con logo (solo devs)"
             >
-              🧹 clear tests
+              +P
             </button>
-          )}
-        </>
+            <button
+              onClick={() => onOpenManagePartners && onOpenManagePartners()}
+              className="text-[7px] px-1.5 py-0.5 rounded-full bg-[#FFD700]/80 text-black font-bold border border-[#FFD700] active:scale-95"
+              title="Gestionar partners existentes"
+            >
+              M
+            </button>
+            <button
+              onClick={() => onToggleQuickAdd && onToggleQuickAdd(!isQuickAddPartner)}
+              className={`text-[7px] px-1.5 py-0.5 rounded-full font-bold border active:scale-95 ${isQuickAddPartner ? 'bg-red-500 text-white border-red-500' : 'bg-[#FFD700]/70 text-black border-[#FFD700]'}`}
+              title="Modo agregar rápido: click en mapa crea tienda mínima"
+            >
+              {isQuickAddPartner ? '✕' : '+Ráp'}
+            </button>
+            <button
+              onClick={() => onAddPartnerAtCurrentCenter && onAddPartnerAtCurrentCenter()}
+              className="text-[7px] px-1.5 py-0.5 rounded-full bg-[#FFD700]/60 text-black font-bold border border-[#FFD700] active:scale-95"
+              title="Agregar partner directamente en el centro actual del mapa (rápido para devs)"
+            >
+              @C
+            </button>
+          </div>
+          <div className="flex gap-1 justify-end">
+            <button
+              onClick={() => onReloadPartners && onReloadPartners()}
+              className="text-[7px] px-1.5 py-0.5 rounded-full bg-black/70 text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black"
+              title="Forzar refresh de partners y mapa"
+            >
+              ↻
+            </button>
+            <button
+              onClick={() => onSpawnTestLives && onSpawnTestLives(3)}
+              className="text-[7px] px-1.5 py-0.5 rounded-full bg-purple-600/80 text-white font-bold border border-purple-400 active:scale-95"
+              title="Spawnea 3 vidas de test cerca de ti (solo visibles en este mapa para probar GymPulse sin otras cuentas)"
+            >
+              🧪+3
+            </button>
+            {(devTestCount || 0) > 0 && (
+              <button
+                onClick={() => onClearDevTestLives && onClearDevTestLives()}
+                className="text-[7px] px-1.5 py-0.5 rounded-full bg-red-900/70 text-red-200 border border-red-500/50 active:bg-red-800"
+                title="Quitar las vidas de test"
+              >
+                🧹
+              </button>
+            )}
+          </div>
+        </div>
       )}
 
       {/* GPS prompt overlay */}

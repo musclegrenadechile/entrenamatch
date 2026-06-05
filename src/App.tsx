@@ -37,7 +37,7 @@ import type {
   ProfilePost
 } from './types'
 import { 
-  TRAINING_OPTIONS, AVAILABILITY, LEGAL_VERSIONS, AUTO_MATCH_IDS 
+  TRAINING_OPTIONS, AVAILABILITY, LEGAL_VERSIONS, AUTO_MATCH_IDS, APP_VERSION 
 } from './constants'
 
 // Capacitor plugins are loaded via a separate module that is only analyzed in CAPACITOR builds.
@@ -84,9 +84,6 @@ import { db, isFirebaseConfigured } from './services/firebase'
 import { requestPlayIntegrityToken, hasPositiveIntegrity, getLastIntegrityResult } from './services/playIntegrity'
 import { Capacitor } from '@capacitor/core'
 import { collection, query, where, getDocs, orderBy, limit, doc, onSnapshot } from 'firebase/firestore'
-
-// ==================== VERSION (centralizada - actualizar en cada release) ====================
-export const APP_VERSION = '0.1.86-work'
 
 // ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
 // Lanzamiento inicial fuerte en Chile + presencia en LatAm y España
@@ -1553,8 +1550,7 @@ function App() {
   const [showDevLogin, setShowDevLogin] = useState(false)
   const [devPassword, setDevPassword] = useState('')
   const DEV_PASSWORD = 'dev2026map' // change in production; documented in instructions
-  const liveMapRef = useRef<HTMLDivElement>(null) // legacy - will be removed after full extraction
-  const gymPulseMapRef = useRef<any>(null) // new extracted component ref (2026-06-05)
+  const gymPulseMapRef = useRef<any>(null) // extracted GymPulseMap handle (centrar, flyTo, getCenter, invalidate)
 
   // Dev-only: temporary fake live users (for testing GymPulse markers, near counts, popups, ripples WITHOUT needing other real devices/accounts online).
   // Only merged into the map prop (not global live lists or UI counts) and auto-expire or cleared by dev.
@@ -1682,12 +1678,14 @@ function App() {
     setPartnerLogoFile(null)
     setPartnerLogoPreview(null)
     setPartnerFormAddress('')
-    // default to current map center so "ponerlo correctamente" is instant
-    const map = mapInstanceRef.current
-    if (map) {
-      const c = map.getCenter()
-      setPartnerFormLat(c.lat)
-      setPartnerFormLng(c.lng)
+    // default to current map center (prefer the extracted GymPulseMap handle)
+    let center: { lat: number; lng: number } | null = null
+    try {
+      center = gymPulseMapRef.current?.getCenter?.() || null
+    } catch {}
+    if (center) {
+      setPartnerFormLat(center.lat)
+      setPartnerFormLng(center.lng)
     } else if (userLocation) {
       setPartnerFormLat(userLocation.lat)
       setPartnerFormLng(userLocation.lng)
@@ -1723,9 +1721,8 @@ function App() {
     setTimeout(() => {
       if (gymPulseMapRef.current && p.lat && p.lng) {
         try { gymPulseMapRef.current.centerOn(p.lat, p.lng, 15) } catch {}
-      } else if (mapInstanceRef.current && p.lat && p.lng) {
-        mapInstanceRef.current.flyTo([p.lat, p.lng], Math.max(mapInstanceRef.current.getZoom() || 13, 15), { duration: 0.8, easeLinearity: 0.28 })
       }
+      // legacy mapInstanceRef path removed (modularization)
     }, 80)
   }
 
@@ -1831,22 +1828,12 @@ function App() {
     'Concon': '#a855f7',
     default: '#eab308'
   }
-  const mapInstanceRef = useRef<any>(null)
-  const markersRef = useRef<any[]>([])
-  const syncLinesRef = useRef<any[]>([]) // for light tethers between active sync pairs on the live map
   const startSyncRef = useRef<((partnerId: string, partnerName: string) => any) | null>(null)
-  // Separate refs for self GPS marker and area circle so they update in-place without being nuked in the markersRef cleanup,
-  // and are not included in auto fitBounds. This keeps the view fixed on user's location during zoom/pan and live updates.
-  const selfMarkerRef = useRef<any>(null)
-  const areaCircleRef = useRef<any>(null)
-  // Refs for dev map placement UX (click-to-place partner without leaving map view). Always current even inside leaflet handlers.
+  // Refs for dev map placement UX (click-to-place partner without leaving map view) + latest partners (passed down + used in quick add handler).
+  // The actual Leaflet markers/ripples/tethers live inside <GymPulseMap /> (first modularization step).
   const isPlacingPartnerRef = useRef(false)
   const isQuickAddPartnerRef = useRef(false)
   const showAddPartnerFormRef = useRef(false)
-  // For attractive "map heartbeats" — when live activity increases we spawn subtle expanding rings so the GymPulse feels alive
-  const prevLiveCountRef = useRef(0)
-  const prevLiveIdsRef = useRef<Set<string>>(new Set()) // to detect brand new lives and spawn "someone just started" ripples on the map (makes it the strongest real-time social pulse)
-  const lastZoomTimeRef = useRef(0) // for zoom-aware shorter debounce to polish zoom in/out without markers jumping or clusters lagging
   const partnerLocationsRef = useRef<any[]>([]) // latest partners always, to avoid stale closure in debounced map render (helps add-partner persistence)
   useEffect(() => { partnerLocationsRef.current = partnerLocations }, [partnerLocations])
 
@@ -1903,26 +1890,11 @@ function App() {
   }, [isDemoMode, db])
   const showFullProfileRef = useRef<((profile: any) => void) | null>(null)
   const latestRealProfilesRef = useRef<any[]>([])
-  const mapUpdateTimeoutRef = useRef<any>(null) // for debouncing heavy map rebuilds (prevents lag on frequent live updates)
 
-  // Dedicated unmount cleanup for the Leaflet map to avoid memory leaks / zombie maps
-  // when the app unmounts, hot-reloads, or user leaves the tab. Runs only on mount/unmount.
+// Dedicated unmount cleanup for the Leaflet map (now mostly no-op since GymPulseMap owns the instance; kept for safety on unmount/hot-reload)
   useEffect(() => {
     return () => {
-      if (mapInstanceRef.current) {
-        try { mapInstanceRef.current.remove() } catch {}
-        mapInstanceRef.current = null
-      }
-      markersRef.current = []
-      syncLinesRef.current = []
-      if (selfMarkerRef.current) {
-        try { selfMarkerRef.current.remove() } catch {}
-        selfMarkerRef.current = null
-      }
-      if (areaCircleRef.current) {
-        try { areaCircleRef.current.remove() } catch {}
-        areaCircleRef.current = null
-      }
+      // Legacy map refs removed during GymPulseMap extraction polish. Child component manages its own Leaflet lifecycle + cleanup.
     }
   }, [])
 
@@ -7171,7 +7143,8 @@ function App() {
               </div>
 
               {showLiveMap && (
-                <div className="relative">
+                <div className="relative z-10" style={{ minHeight: '340px' }}>
+                  {/* Map widget owns its 340px inner + floating chrome; this wrapper ensures dev form overlays correctly at bottom of map area */}
                   <GymPulseMap
                     ref={gymPulseMapRef}
                     showLiveMap={showLiveMap}
@@ -7208,6 +7181,8 @@ function App() {
 
                     onShowProfile={setShowFullProfile}
                     onStartSync={startSyncWith}
+                    onWitnessEchoPin={witnessEchoPin}
+                    onWitnessRipple={witnessRipple}
                     onPartnerPositionSelected={async (lat, lng) => {
                       if (isQuickAddPartnerRef.current && isDeveloper) {
                         // Quick add mode: create minimal partner immediately on map click (great for rapid dev iteration)
@@ -7285,16 +7260,20 @@ function App() {
                       ;(window as any).__gymPulseCentrar = fn
                     }}
                   />
-                  {showOnlyLegends && (
-                    <div className="text-[7px] text-[#FFD700] px-1 mt-0.5">Tu Network Power activa — tus GymPartners destacan en el GymPulse</div>
-                  )}
-                  {isDeveloper && showPartners && (
-                    <div className="text-[7px] text-[#FFD700]/80 px-1 mt-0.5">DEV: arrastra pins PARTNERS para mover • +Add rápido (click mapa crea tienda) • Manage para borrar/editar • popups tienen 🗑️ Borrar</div>
+                  {!showAddPartnerForm && (
+                    <>
+                      {showOnlyLegends && (
+                        <div className="text-[7px] text-[#FFD700] px-1 mt-0.5">Tu Network Power activa — tus GymPartners destacan en el GymPulse</div>
+                      )}
+                      {isDeveloper && showPartners && (
+                        <div className="text-[7px] text-[#FFD700]/80 px-1 mt-0.5">DEV: arrastra pins PARTNERS para mover • +Add rápido (click mapa crea tienda) • Manage para borrar/editar • popups tienen 🗑️ Borrar</div>
+                      )}
+                    </>
                   )}
 
                   {/* DEV PARTNER FORM - attractive, with logo upload. Gated by developer login. Supports add + edit with logo for negocios. */}
                   {showAddPartnerForm && isDeveloper && (
-                    <div className="absolute bottom-3 left-3 right-3 z-50 bg-[#0D0D10] border-2 border-[#FFD700] rounded-2xl p-3 text-xs shadow-2xl">
+                    <div className="absolute bottom-1 left-1 right-1 z-[70] bg-[#0D0D10] border-2 border-[#FFD700] rounded-2xl p-3 text-xs shadow-2xl max-h-[220px] overflow-auto">
                       <div className="font-bold text-[#FFD700] mb-2 flex justify-between items-center">
                         {editingPartnerId ? 'Editar Partner (devs)' : 'Agregar Partner + Logo (devs)'} — visible en mapa en tiempo real
                         <button onClick={cancelPartnerForm} className="text-white/60 hover:text-white px-1">✕</button>
@@ -7352,7 +7331,7 @@ function App() {
                           <button 
                             type="button"
                             onClick={() => {
-                              const c = gymPulseMapRef.current?.getCenter?.() || (mapInstanceRef.current ? (() => { try { const cc = mapInstanceRef.current.getCenter(); return {lat:cc.lat, lng:cc.lng} } catch { return null } })() : null)
+                              const c = gymPulseMapRef.current?.getCenter?.() || null
                               if (c) {
                                 setPartnerFormLat(c.lat)
                                 setPartnerFormLng(c.lng)
@@ -7609,9 +7588,7 @@ function App() {
                                 onClick={() => {
                                   if (gymPulseMapRef.current && p.lat && p.lng) {
                                     try { gymPulseMapRef.current.centerOn(p.lat, p.lng, 15) } catch {}
-                                  } else if (mapInstanceRef.current && p.lat && p.lng) {
-                                    mapInstanceRef.current.setView([p.lat, p.lng], Math.max(mapInstanceRef.current.getZoom()||13, 15))
-                                  }
+                                  } // legacy mapInstanceRef removed
                                   try { triggerHaptic('light') } catch {}
                                 }} 
                                 className="text-[9px] px-1.5 py-0.5 border border-[#3b82f6]/50 rounded text-[#3b82f6] active:bg-[#3b82f6]/10" 
@@ -7622,7 +7599,7 @@ function App() {
                               <button 
                                 onClick={async () => {
                                   // Move this partner to whatever the map is currently centered on — super fast iteration for placement
-                                  const c = gymPulseMapRef.current?.getCenter?.() || (mapInstanceRef.current ? (() => { try { const cc = mapInstanceRef.current.getCenter(); return { lat: cc.lat, lng: cc.lng } } catch { return null } })() : null)
+                                  const c = gymPulseMapRef.current?.getCenter?.() || null
                                   if (!c) { toast.error('Mapa no disponible'); return }
                                   const newLat = c.lat, newLng = c.lng
                                   setPartnerLocations(prev => prev.map(x => x.id === p.id ? { ...x, lat: newLat, lng: newLng } : x))

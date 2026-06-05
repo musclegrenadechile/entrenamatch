@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 import { Dumbbell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { APP_VERSION } from '../../constants'; // use centralized version (no more stale 0.1.37)
 
 interface AuthScreenProps {
   authMode: 'login' | 'register';
@@ -277,7 +278,7 @@ export const AuthScreen = ({
           <br />Solo +18 • Entrenamiento serio • Pre-alpha real
         </p>
 
-        <p className="text-center text-[10px] text-[#6B7280]/60 mt-1 tracking-wider">v0.1.37-arena-real</p>
+        <p className="text-center text-[10px] text-[#6B7280]/60 mt-1 tracking-wider">v{APP_VERSION}</p>
       </div>
     </div>
   );

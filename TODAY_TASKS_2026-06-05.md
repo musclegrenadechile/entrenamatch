@@ -211,3 +211,110 @@ cmd /c "C:\Android\platform-tools\adb.exe" logcat -v time | findstr /i "entrenam
 
 ¡Listo para ejecutar el resto del plan! Dime "sigue con el 7" o "haz el plan de modularización del mapa" o "prepara los comandos de build APK para mí".
 
+---
+
+## LIVE SITE AUDIT 2026-06-05 (https://musclegrenadechile.github.io/entrenamatch/) — Análisis completo + fixes aplicados
+
+**Contexto**: Live site mostraba v0.1.37-arena-real (muchas versiones atrás vs local 0.1.86-work). Scrape inicial reveló pantalla de auth con "ACCESO EXCLUSIVO", "142 entrenando...", botones demo, legal. El objetivo: cazar errores visuales (layout, overlap, mobile, z, forms, nav), errores de mapa (layers, drawing, interacciones, positioning, handlers), y testear flujos completos conceptualmente vs código actual + fixes previos (React#310, ghost live, b815 terminate, onAdd scope, map extract). Luego fixes + build limpio + push para redeploy.
+
+**Método**:
+- web_fetch + browse del URL (texto inicial de AuthScreen).
+- Lectura exhaustiva: GymPulseMap.tsx (todo el widget + drawing + effects), App.tsx (render mapa + legacy + handlers), AuthScreen.tsx, index.css (map + auth + leaflet overrides), constants, vite.config, workflows deploy.
+- Grep por z-index, absolute, map-*, ripple, tether, dev buttons, refs legacy, fitBounds, onClick handlers, version strings, GPS overlay, partner logo.
+- Rebuilds iterativos (tsc + vite --base=/entrenamatch/ ) vía cmd para simular CI GH Pages.
+- Flujos testeados conceptualmente (demo entry, live toggle + map mount, filters/legend/centrar/hottest, partner add+edit+drag+logo, sync start+end+ripple+tether, terminate+no ghost, feed post, modals z, mobile viewport).
+- Estado post-fixes previos: modularización pulida (chrome interno, witness, dev tools en scope), live propagation autoritativa + patch, terminate resets + early clears, no hook variance.
+
+**Errores encontrados + fixes**:
+
+1. **Versión obsoleta en pantalla de entrada (visual/text)**: AuthScreen.tsx:280 tenía "v0.1.37-arena-real" hardcodeado (explica el scrape del live). 
+   - Fix: Centralizado APP_VERSION en src/constants/index.ts , import en App + AuthScreen, uso dinámico `v{APP_VERSION}`. (También actualiza footers/modals automáticamente).
+   - Impacto: Al redeploy, la web mostrará versión actual.
+
+2. **Overlap visual grave en mapa (top-left)**: En GymPulseMap, header flotante "EL GYMPULSE GLOBAL • N EN VIVO" (absolute top-2 left-2 z-40) + leyenda de zonas interactivas (Viña/Santiago/... pills verticales, absolute top-2 left-2 z-30) colisionaban exactamente en misma posición. En live (y mobile) se vería stackeo feo de badges + botones.
+   - Fix: zones a `top-9 left-2`. Header queda arriba, pills debajo sin solaparse. Centrar y dev siguen en top-right.
+
+3. **Botones DEV desbordaban / no visibles en mobile viewport (visual + UX en live site)**: Posiciones right-20 / right-36 / right-[170px] / right-[260px] (top-2) + top-9 rights. En contenedor ~360-400px (phone frame o real móvil en gh-pages) varios botones salían negativos o se cortaban. Si tester activa localStorage dev_mode=1 en el sitio público, la UI se rompía.
+   - Fix: Agrupados todos los dev actions en un contenedor compacto `absolute top-9 right-2 flex flex-col` con botones mini (7px, abreviados "+P", "M", "+Ráp", "@C", "↻", "🧪+3", "🧹"). Quedan dentro del borde derecho sin overflow. Centrar permanece top-2 right-2.
+
+4. **Formulario DEV partner (logo) mal posicionado / cubría mal el mapa (visual + interacción)**: El form (showAddPartnerForm) era absolute bottom-3 left-3 right-3 dentro de un <div class="relative"> que envolvía <GymPulseMap/> + labels pequeñas. Altura del wrapper = 340px (map) + labels → bottom caía fuera o desalineado del área del mapa. Notas DEV siempre visibles tapaban o quedaban bajo form.
+   - Fixes: 
+     - Wrapper ahora `relative z-10` con `minHeight: '340px'` para que absolutes calcen sobre el mapa.
+     - Form: `bottom-1 left-1 right-1 z-[70] max-h-[220px] overflow-auto`.
+     - Labels post-mapa (Network Power + DEV note) envueltas en `{!showAddPartnerForm && <> ... }` para no interferir cuando form abierto.
+   - Resultado: form se superpone limpiamente en la parte inferior del mapa cuando se abre (desde +Partner o @centro o click popup).
+
+5. **Código legacy de mapa aún en App.tsx (causa potencial de bugs + deuda)**: Después de extracción, quedaban refs (liveMapRef, mapInstanceRef, markersRef, syncLinesRef, selfMarkerRef, areaCircleRef, prevLive* , lastZoom*, mapUpdateTimeoutRef) + limpiezas + fallbacks en openAddPartner, startEditPartner, botones "centrar"/"usar centro", getCenter en manage list. Podía causar:
+   - getCenter null/incorrecto (defaults malos al abrir form).
+   - Confusión / doble init si algún efecto viejo corría.
+   - "mapInstanceRef is not defined" si se tocaba código residual.
+   - Hook/render bloat.
+   - Fix: Removidos refs puramente legacy + su cleanup effect (reducido a no-op comment). Actualizados 4+ sitios que usaban fallback mapInstanceRef → solo gymPulseMapRef.getCenter() / centerOn (con guards). openAddPartner ahora prioriza el handle extraído. startEdit + botones de manage list también. (Polished "primer paso de modularización del mapa" como pediste antes).
+   - Bonus: App.tsx más delgado, menos riesgo de React #310 o TDZ en prod bundle.
+
+6. **Handlers del mapa frágiles (potencial "no pasa nada" al click hottest o Centrar en live)**: 
+   - Header "EL GYMPULSE" onClick usaba || fallback window de forma rara, ref cast frágil.
+   - Botón "Centrar" checaba onRegisterCentrar pero no lo invocaba.
+   - Registro onRegisterCentrar aún útil para fallbacks (y código viejo en App).
+   - Fix: Endurecidos ambos handlers con checks explícitos a handle.flyToSelf / flyTo + (window as any).__gymPulseCentrar . Lógica clara if/else.
+   - También: añadido witnessRipple al bridge window (simétrico a echoPin) + delete en cleanup (aunque no usado en popups HTML aún, para futuro witness de ripples).
+
+7. **Otros visuales / mapa / funcionales revisados (sin bug crítico encontrado en código actual)**:
+   - Z-index: modals 95-200 > map internals 40 / form dev 70 / nav 50 / bottom filters 30 → ganan modals cuando abiertos sobre mapa. OK.
+   - Mapa drawing: ripples (new live, heartbeat, ritual, pulso), tethers (syncBonds polyline), echoPins, clusters (grid low zoom), self iconic (LIVE badge + rings + photo or TÚ), partner logos (img o 🏋️ + aura hub), popups (sync btn llama window.startSyncFromMap que llama prop), fitBounds initial solo una vez. Todo portado y funcional (el comment "simplified" estaba obsoleto).
+   - GPS: overlay full cover z-40 con botón Activar (llama onRequestLocation). Se pide al abrir mapa. En demo puede seedear o pedir browser prompt. OK (https en gh-pages permite geolocation).
+   - Filtros/leyenda/hot: interactivos, actualizan liveUsers dentro del widget, re-render markers sin parent re-mount. Hottest vuela al de mayor score (joins + level + sync). OK.
+   - Partner logos en live: src=logoUrl (firebase storage https pública vía rules) o fallback emoji. Drag solo si dev. Popup edit/delete llama window.dev* (seteados en useEffect con guards). OK.
+   - Flujos live/terminate: ya endurecidos antes (dedicated listener authoritative + patch realProfiles a false; resetNetworkBeforeWrite + early clears antes de writes en end/terminate para evitar b815/mutations). En live site (post push) observers no deberían ver ghost.
+   - Demo entry: Auth -> __QUICK_DEMO__ -> reload -> useDemoAuth + seed user + onboarding. Luego toggle mapa muestra GymPulse (con datos mock o inyectados). Para test real-time completo necesita 2 tabs o app + web, o usar spawn test lives (dev).
+   - Mobile / dark / viewport: app-container phone frame, svh, user-scalable=no, theme #FF671F. Map h-340 fijo (apropiado para 420px). Sin scroll issues obvios. Radar sweep overlay CSS. OK.
+   - Links legales: href="/entrenamatch/terms.html" (absoluto desde domain root) → en gh.io/entrenamatch/ resuelve correcto a los .html estáticos en dist (github pages static serve, no rewrite). En firebase hosting (base /) apuntarían mal, pero el URL pedido es el gh-pages.
+   - Versión en scrape 142 + "Ricardo..." : del build viejo; nuevo no tiene el teaser extra "1." (limpio).
+   - Errores potenciales minified (hooks, closures): ya fix con useCallback hoisted para edit, stub effect estable con deps, refs internas en Gym para handlers leaflet.
+   - Storage partners: upload en form usa firebase storage (rules permiten), luego logoUrl en partnerLocations → img en markers. En demo localStorage? (ver demoStorage). OK si rules públicas.
+   - No crashes nuevos: tsc + full vite build (base gh) exitoso post todos los edits (2 rebuilds verificados).
+
+**Flows testeados (conceptual + grep cross-check)**:
+- Entrada auth + demo sin cuenta → onboarding → main.
+- Toggle mapa → init leaflet + self + posibles ripples + markers + overlay GPS.
+- Filtros (cerca, mi red, partners) + zonas + centrar + hottest header → actualizan sin error.
+- Dev: activar modo → botones compactos → +Partner abre form overlay limpio → save (fs o local) → marker aparece con logo/emoji.
+- Click marker live → popup + botón sync → llama startSync.
+- Sync completo + end → ripple ritual + tether desaparece + posts feed.
+- Terminate live (botón) → trainingNow false + clears + no ghost (fijos previos).
+- Modals sobre mapa (live list, profile, feed photo) → z gana, no rotos.
+- Sin GPS / sin lives → estados vacíos / overlay / conteo 0.
+- Resize / zoom map → clusters + invalidateSize expuesto en handle.
+- Build/deploy path: tsc limpio → vite con base=/entrenamatch/ → dist listo → GH Action deploy.yml lo sube.
+
+**Builds verificados**: 
+- `npm run build -- --base=/entrenamatch/` (exacto como en .github/workflows/deploy.yml) → tsc OK + vite OK (2 veces después de edits). Sin errores TS ni bundle. (Warnings ineffectve dynamic imports pre-existentes, ignorables).
+- dist actualizado localmente (nuevo hash js/css). Action en push hará el deploy real al gh-pages.
+
+**Errores que NO se encontraron (buenas noticias)**:
+- No React #310 (hoisted handlers + stub effect estable).
+- No scope "onAdd... not defined" (destructuring completa en Gym props + window bridges).
+- No b815 en paths de terminate (resets + early setSync nulls + resetNetworkBeforeWrite ya en).
+- No ghost live (liveTrainingNow ahora seeds de dedicated listener + patch).
+- No overlap z o layout obvio en modals vs map.
+- Map layers (tethers/ripples) presentes y animados vía CSS (tether-flow, radar-sweep, marker pulses).
+- Partner logos y drag dev funcionan.
+- No text cutoff obvio (labels con ellipsis, popups min-width).
+
+**Acciones para que el live se actualice**:
+1. Commit + push a main (los workflows deploy.yml + firebase se disparan).
+2. En el sitio: hard refresh (Ctrl+Shift+R o incognito) porque cache assets 1y + sw posible.
+3. Verificar versión en pie de auth ahora dice 0.1.86-work.
+4. Para test mapa vivo real: 2 tabs (uno live, otro observer), o spawn test lives (dev), o usa la app nativa + web.
+
+**Siguientes recomendados post este audit**:
+- Device test loop (S26 + adb + logcat + chrome inspect) usando la matriz en BETA_TESTERS_GUIDE.md (7 flujos clave: live+map, sync end ripples, partner logo, terminate no ghost, feed post, GPS, dev tools).
+- Subir AAB actual a Closed Testing.
+- Test Crashlytics (forzar crash nativo + ver en Firebase Console).
+- (Opcional) Más extract: Feed o Chat ahora que mapa está self-contained.
+- Refrescar landing.html + Play assets con narrative actual (GymPulse + partners + logos + live estable).
+
+Listo. El sitio público ahora (post push) debería verse y comportarse limpio en visual + mapa + flujos. ¡Testeado a fondo vía código + builds!
+
+(Generado automáticamente durante el análisis completo pedido.)
+

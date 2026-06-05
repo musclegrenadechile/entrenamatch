@@ -32,3 +32,6 @@ export const LEGAL_VERSIONS = {
 
 // Note: SEED_PROFILES will be moved later as it's large
 export const AUTO_MATCH_IDS = ['p1', 'p3', 'p5', 'p6', 'p9', 'p11', 'p13']
+
+// Centralized app version (used in UI footers, auth screen, crash reports, APK, etc.)
+export const APP_VERSION = '0.1.86-work'
