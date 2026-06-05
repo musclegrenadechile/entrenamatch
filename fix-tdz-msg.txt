@@ -1,0 +1,18 @@
+fix(TDZ): hoist dailyPulse state early + remove liveTrainingNow closure from checkAndUpdateDailyPulse
+
+Root cause of " Cannot access ... before initialization\ on app open (minified B):
+- dailyPulse / showDailyPulseBanner / isOffline states were declared at ~1133.
+- The daily helper functions (generateDailyChallenge, checkAndUpdateDailyPulse, completeDailyChallenge, awardMomentum, refreshDailyPulse) + their internal references to dailyPulse + calls to saveUserWithRealSync were defined at ~649-951 (before the states).
+- checkAndUpdateDailyPulse also directly closed over liveTrainingNow (declared at 5306) in two places when calling generate.
+- On initial mount the daily effect (setTimeout checkAndUpdateDailyPulse) + first render execution of the early-defined functions hit TDZ for the closed-over identifiers (dailyPulse, liveTrainingNow, and transitively saveUserWithRealSync) in prod bundle.
+
+Fix (follows exact pattern of all previous TDZ fixes in this codebase):
+- Hoisted the three daily* states + isOffline immediately after networkStats (so they are declared before the helpers that close over them).
+- Updated the two generate calls inside checkAndUpdateDailyPulse to pass [] for liveNow (the personalization is a nice-to-have on the very first daily calc; liveTrainingNow is available for subsequent calls from UI/effects declared after the live memo).
+- Updated/added comments so the \avoid TDZ by placing after state\ intent is actually true in source order.
+- All hooks still before the isAuthenticated / shouldShowOnboarding early returns.
+
+This eliminates the forward reference during render for the daily logic that runs on open (the 600ms check + any initial hydrate path).
+
+tsc clean after change.
+

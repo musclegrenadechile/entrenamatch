@@ -321,6 +321,27 @@ function App() {
     }
   }, [])
 
+  // === PULSO DIARIO DE LA RED (states + ref hoisted VERY early, before sendVoiceNote ~453 and daily helpers, to eliminate all TDZ "Cannot access 'B' before initialization" for dailyPulse in any closure on initial open)
+  const [dailyPulse, setDailyPulse] = useState<{
+    trainingStreak: number
+    synergyStreak: number
+    voiceStreak: number
+    pulseStreak: number
+    momentum: number
+    lastDate: string | null
+    currentChallenge: any | null
+    longestTraining: number
+    longestSynergy: number
+    longestVoice: number
+    longestPulse: number
+    level: number
+    xp: number
+  } | null>(null)
+  const [showDailyPulseBanner, setShowDailyPulseBanner] = useState(false)
+  const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false)
+  const dailyPulseRef = useRef<any>(null)
+  useEffect(() => { dailyPulseRef.current = dailyPulse }, [dailyPulse])
+
   // Boost visibility of install banner on meaningful interaction (swipe or tab change to social)
   // More aggressive: show even without deferred (for manual guidance) if not dismissed
   const bumpPwaEngagement = () => {
@@ -512,15 +533,17 @@ function App() {
       try { triggerHaptic('success') } catch {}
       toast.success('Nota de voz enviada', { description: `${duration}s • compártela con tu red de rendimiento` })
       // Daily Pulse progress (voice is powerful for bond/ripple challenges)
+      // Use ref for latest value to be robust with early function definition + state hoisting
       checkAndUpdateDailyPulse()
-      if (dailyPulse?.currentChallenge?.type === 'bond' || dailyPulse?.currentChallenge?.type === 'network') {
+      const dp = dailyPulseRef.current || dailyPulse || {}
+      if (dp.currentChallenge?.type === 'bond' || dp.currentChallenge?.type === 'network') {
         completeDailyChallenge(1)
       } else {
         awardMomentum(5, 'Voz enviada al Pulso')
       }
       // Voice streak for daily engagement
-      const vStreak = (dailyPulse?.voiceStreak || 0) + 1
-      const vUpdate = { ...(dailyPulse || {}), voiceStreak: vStreak, longestVoice: Math.max((dailyPulse?.longestVoice || 0), vStreak) }
+      const vStreak = (dp.voiceStreak || 0) + 1
+      const vUpdate = { ...dp, voiceStreak: vStreak, longestVoice: Math.max((dp.longestVoice || 0), vStreak) }
       setDailyPulse(vUpdate)
       saveUserWithRealSync({ ...(currentUser as any), dailyVoiceStreak: vStreak } as any)
     } catch (e) {
@@ -641,33 +664,12 @@ function App() {
     return { networkPower, totalMin, totalSessions, estimatedImpact, numPartners }
   }, [syncBonds])
 
-  // === PULSO DIARIO DE LA RED (states hoisted early to avoid TDZ with helper functions defined right below) ===
-  const [dailyPulse, setDailyPulse] = useState<{
-    trainingStreak: number
-    synergyStreak: number
-    voiceStreak: number
-    pulseStreak: number
-    momentum: number
-    lastDate: string | null
-    currentChallenge: any | null
-    longestTraining: number
-    longestSynergy: number
-    longestVoice: number
-    longestPulse: number
-    level: number
-    xp: number
-  } | null>(null)
-  const [showDailyPulseBanner, setShowDailyPulseBanner] = useState(false)
-  const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false)
-
   const [replaySession, setReplaySession] = useState<any>(null) // {partnerName, minutes, vibe, actions, rating?}
 
   // =====================================================
   // PULSO DIARIO DE LA RED - Core logic (innovative retention)
-  // States for dailyPulse / banner / isOffline are hoisted right before this block (after networkStats)
-  // so that generateDailyChallenge, checkAndUpdateDailyPulse, completeDailyChallenge, awardMomentum etc.
-  // are defined AFTER the state they close over. This prevents "Cannot access '...' before initialization" TDZ
-  // on initial render / effect setup (recurring source of prod crashes on app open).
+  // dailyPulse state + ref + isOffline etc hoisted extremely early (before sendVoiceNote and daily helpers)
+  // so every closure sees the declaration before function def. Prevents TDZ on open (mount effects call check).
   // =====================================================
   const getTodayStr = () => new Date().toISOString().slice(0, 10)
 

@@ -1,4 +1,6 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.55-onboarding-60s-first-live-match code 59) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.56-tdz-daily-live-fix code 60) ===
+
+Hotfix on top of v0.1.55 onboarding: eliminated the last "Cannot access 'X' before initialization" (TDZ) crashes on app open that were caused by daily pulse helper functions + checkAndUpdateDailyPulse closing over dailyPulse state and liveTrainingNow (declared thousands of lines later in the monolithic App.tsx). States hoisted early (after networkStats) so function definitions are after the things they close over; direct liveTrainingNow ref removed from the early check function (pass [] for initial daily calc). Follows the exact hoisting/reorder pattern that fixed all previous TDZ instances in this project. tsc clean. Rebuild AAB before next Play upload.
 
 AAB: EntrenaMatch-v0.1.55-onboarding-60s-first-live-match-20260605.aab (9.19MB) + EntrenaMatch-release.aab (fresh from this build)
 
