@@ -1772,7 +1772,12 @@ function App() {
         const q = query(collection(db, 'partnerLocations'), orderBy('name'))
         unsub = onSnapshot(q, (snap: any) => {
           const fromFs: any[] = []
-          snap.forEach((d: any) => fromFs.push({ id: d.id, ...d.data() }))
+          snap.forEach((d: any) => {
+            const data = d.data() || {}
+            // Sanitize: Firestore shouldn't have undefined but defensive (prevents bad data in state)
+            Object.keys(data).forEach(k => { if (data[k] === undefined) delete data[k] })
+            fromFs.push({ id: d.id, ...data })
+          })
           // merge seeds + fs (fs overrides if same id)
           const merged = [...base]
           fromFs.forEach(p => {
@@ -6958,7 +6963,7 @@ function App() {
                       if (isQuickAddPartnerRef.current && isDeveloper) {
                         // Quick add mode: create minimal partner immediately on map click (great for rapid dev iteration)
                         const pid = 'partner-' + Date.now()
-                        const minimal = {
+                        const minimal: any = {
                           id: pid,
                           name: 'Nueva Tienda ' + new Date().toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit'}),
                           lat, lng,
@@ -6966,10 +6971,14 @@ function App() {
                           address: 'Agregada rápido por dev',
                           addedAt: new Date().toISOString(),
                           updatedAt: new Date().toISOString(),
-                          logoUrl: undefined
                         }
+                        // Never include logoUrl if no logo (Firestore rejects undefined)
+                        // Will be added later when editing in the auto-opened form.
                         setPartnerLocations(prev => [...prev, minimal])
                         setMapForceTick(t => t + 1)
+                        // Defensive clean for any undefineds (Firestore forbids them in setDoc)
+                        Object.keys(minimal).forEach(k => { if (minimal[k] === undefined) delete minimal[k] })
+
                         if (!isDemoMode && db) {
                           try {
                             const { setDoc, doc } = await import('firebase/firestore')
@@ -7366,11 +7375,20 @@ function App() {
                             lng,
                             type,
                             address,
-                            addedAt: editingPartnerId ? undefined : new Date().toISOString(),
                             updatedAt: new Date().toISOString(),
-                            logoUrl
                           }
-                          if (editingPartnerId) delete partnerData.addedAt
+                          if (!editingPartnerId) {
+                            partnerData.addedAt = new Date().toISOString()
+                          }
+                          // Only include logoUrl if we have a real value (Firestore setDoc rejects undefined)
+                          if (logoUrl) {
+                            partnerData.logoUrl = logoUrl
+                          }
+
+                          // Defensive: never send undefined values to Firestore (causes "Unsupported field value: undefined")
+                          Object.keys(partnerData).forEach(k => {
+                            if (partnerData[k] === undefined) delete partnerData[k]
+                          })
 
                           if (!isDemoMode && db) {
                             try {
@@ -7600,7 +7618,10 @@ function App() {
                                   if (!isDemoMode && db) {
                                     try {
                                       const { setDoc, doc } = await import('firebase/firestore')
-                                      await setDoc(doc(db, 'partnerLocations', p.id), { ...p, updatedAt: new Date().toISOString() }, { merge: true })
+                                      const payload: any = { ...p, updatedAt: new Date().toISOString() }
+                                      // sanitize undefineds for Firestore
+                                      Object.keys(payload).forEach(k => { if (payload[k] === undefined) delete payload[k] })
+                                      await setDoc(doc(db, 'partnerLocations', p.id), payload, { merge: true })
                                     } catch {}
                                   }
                                   // merge into local
