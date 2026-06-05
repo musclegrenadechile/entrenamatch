@@ -1854,6 +1854,7 @@ function App() {
     }
     // Exceptional onboarding: immediately surface the new user's own live if they opted in during the 60s flow.
     // This way the banner + map + explore show "you are live" right after finishing, even before any FS roundtrip.
+    // NOTE: we still add the 'me' entry internally for own awareness, but we filter self out below so public lists/map never include self (fixes self-join, self-chat, duplication).
     if (currentUser && currentUser.trainingNow && currentUser.trainingNowSince && (now - currentUser.trainingNowSince < 3 * 60 * 60 * 1000)) {
       const already = lives.some((l: any) => l.id === 'me' || l.id === currentUser.id)
       if (!already) {
@@ -1863,6 +1864,24 @@ function App() {
         lives = [{ ...currentUser, id: 'me', distance: dist, seVaEnMin, joinCount: 0, isLegend: false, bondInfo: null, visibleLevel: (dailyPulse?.level || 1) }, ...lives]
       }
     }
+
+    // CRITICAL FIX: never include self (or 'me') in the public liveTrainingNow list.
+    // This prevents:
+    // - Duplication (self profile + injected 'me')
+    // - Self appearing in live lists, map markers as joinable, urgent notifs, chat suggestions, etc.
+    // - You being able to "join" or "chat" with yourself.
+    // Own live status is handled via currentUser.trainingNow in UI (banners, profile, self marker on map).
+    const myIds = new Set([effectiveUserId, currentUser?.id, 'me'].filter(Boolean));
+    lives = lives.filter((l: any) => !myIds.has(l.id));
+
+    // Extra dedup by id (defensive, in case any leak from seeds or realProfiles)
+    const seenIds = new Set<string>();
+    lives = lives.filter((l: any) => {
+      if (seenIds.has(l.id)) return false;
+      seenIds.add(l.id);
+      return true;
+    });
+
     return lives;
   }, [realProfiles, userLocation, isDemoMode, profilePosts, currentUser]);
 
@@ -4113,6 +4132,8 @@ function App() {
   }
 
   const startSyncWith = async (partnerId: string, partnerName: string) => {
+    const myIds = [effectiveUserId, currentUser?.id, 'me'].filter(Boolean);
+    if (!partnerId || myIds.includes(partnerId)) return; // prevent self-join / self-sync
     if (!currentUser?.trainingNow || !realProfiles.some(p => p.id === partnerId && p.trainingNow)) return
     if (syncPartnerId || joiningSyncWith === partnerId) return // anti-spam guard
     const now = Date.now()

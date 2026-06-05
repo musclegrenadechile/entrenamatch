@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.80-map-partner-save-zoom-fix",
+  "version": "0.1.81-live-bug-self-dupe-fix",
   "type": "module",
   "scripts": {
     "dev": "vite",

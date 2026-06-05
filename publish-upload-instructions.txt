@@ -1,4 +1,32 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.80-map-partner-save-zoom-fix code 84) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.81-live-bug-self-dupe-fix code 85) ===
+
+FIX BUG LIVE: duplicación de lives + auto-join/chat con uno mismo.
+
+- En liveTrainingNow useMemo: después de toda la lógica (incluyendo inyección de 'me' para own awareness), filtramos self (id==='me' o currentUser.id o effectiveUserId). 
+  - realProfiles ya excluye currentUid en loadRealProfiles, pero la inyección de 'me' para surface "you are live" en banner/map/explore estaba contaminando las listas públicas.
+  - Ahora liveTrainingNow solo contiene OTRAS personas en live. Self live se maneja vía currentUser.trainingNow en UI (self marker en mapa con TÚ, banners propios, etc.).
+- Dedup defensivo por id al final.
+- Guard en startSyncWith: if partnerId es mi id o 'me' → return. Previene join propio.
+- Efectos: 
+  - live lists / live modal / radar: no te ves a ti mismo.
+  - Map markers liveUsers: solo otros (self render separado con selfMarkerRef).
+  - Urgent notifs: no te notificas a ti mismo.
+  - No puedes chatear o unirte a tu propia sesión desde live discovery.
+- Duplicación resuelta: una sola entrada por usuario real en live (antes self se replicaba como entrada real + 'me', y quizás otros leaks).
+- Todo sigue funcionando para interacciones reales: re-sync con red, unirte a otros, etc. live map y sync intactos.
+
+El live (y el mapa en tiempo real que lo muestra) ahora es limpio, sin self-bugs.
+
++ web build, AAB, debug APK. Push (registra en Actions). Instructions actualizado.
+Test S26:
+- Activa tu live.
+- Abre live modal / mapa: NO debes aparecer en la lista de "entrenando ahora" como alguien a quien unirte o chatear.
+- Intenta (no deberías poder) join o chat contigo mismo.
+- Pide a otro tester que active live: ves su entrada una sola vez, puedes unirte/chatear normalmente.
+- Verifica que tu propio "estoy live" se muestre en tu perfil, self marker en mapa, etc.
+- No duplicados en lists o mapa.
+
+Sigue con todo. Fix del live bug crítico.
 
 FIXES CRÍTICOS EN MAPA INTERACTIVO:
 - "al agregar un partner en el mapa no queda guardado": 
