@@ -1,84 +1,19 @@
 === READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.44-network-priority-invite code 48) ===
 
-AAB: EntrenaMatch-v0.1.44-network-priority-invite-code48-20260604-2258.aab (o EntrenaMatch-release.aab)
+AAB principal: EntrenaMatch-v0.1.44-network-priority-invite-code48-20260604-2258.aab (o la EntrenaMatch-release.aab)
 
-**Copia esto en "What's new":**
+**Copia esto exacto como "What's new" en Play Console:**
 
-**v0.1.44-network-priority-invite (code 48) ó SIGUE CON TODO: TU RED DE ENTRENASYNC AHORA TIENE PRIORIDAD REAL EN EL SWIPE Y DESCUBRIMIENTO (primera red social del fitness)**
+**v0.1.44-network-priority-invite (code 48) ó SIGUE CON TODO: Network Power da PRIORIDAD REAL en swipe/recomendaciones + badges en tarjetas + invita a tu red (la primera red social seria del fitness de alto rendimiento)**
 
-ï Network Power = prioridad en recomendaciones: los miembros de tu Red (syncBonds) suben SIEMPRE al tope del deck de swipe (primero los de mayor bondLevel). +75 bonus en compat score para que aparezcan con % m·s alto y en las primeras posiciones.
-ï Tarjetas de perfil en swipe y "M·s compatibles": badge dorado grande "? RED LVx +Y% NP", razones de match incluyen "Tu red ï Network Power", recs ordenan tu grafo primero.
-ï Swipe right en alguien de tu red: toast inmediato "Tu red ï Alianza reforzada" recordando el poder del grafo.
-ï En tu secciÛn Red del perfil: botÛn "Invitar a tu red (copiar link)" con mensaje listo para viralizar la app y el concepto de grafo de alto rendimiento.
-ï Todo refuerza que entrenar sincronizado con alguien no es solo motivaciÛn ó es el mecanismo que te da visibilidad prioritaria, estatus y una red que se expande.
+ï PRIORIDAD EN EL DECK DE SWIPE: Miembros de tu Red de EntrenaSync suben al tope del stack de perfiles para deslizar (ordenados por bondLevel alto primero). +75 puntos de compat visual para que aparezcan con % m·s alto y en las primeras posiciones. Tu grafo de sync ahora controla literalmente quÈ ves primero en descubrimiento.
+ï Badges y feedback en tarjetas (ExploreTab): en la tarjeta principal de swipe y en la grilla "M·s compatibles" aparece "? RED LVx +Y% NP" dorado, el % de match se infla con el boost de red, las razones incluyen "Tu red ï Network Power". Recs ordenan tu red primero.
+ï Swipe right en alguien de tu red: toast especial "Tu red ï Alianza reforzada" que recuerda el poder.
+ï En tu secciÛn TU RED DE ENTRENASYNC (perfil): nuevo botÛn "Invitar a tu red (copiar link)" que genera un mensaje listo para pegar y viralizar la app + el concepto del grafo de rendimiento.
+ï Acumulado: notifs de red, glow en mapa cuando filtras Mi Red, prioridad en live, etc. Todo hace que "entrenar con alguien" genere capital social visible y ventaja en la plataforma.
 
-Esto es la pieza clave que hace que el social graph sea inevitable: tu capital de alianzas de sync te da ventaja real en el descubrimiento de la plataforma.
+Esto es lo que hace que EntrenaMatch sea la categorÌa: el social graph de alto rendimiento sincronizado no es un feature ó es el motor de prioridad, estatus y crecimiento.
 
-Sube el AAB. Sigue con todo.
+Sube el AAB fresco. Sigue con todo.
 
-
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.43-network-notifs-badges code 47) ===
-
-AAB principal para subir:
-EntrenaMatch-v0.1.44-network-priority-invite-code48-20260604-2258.aab
-(o usa EntrenaMatch-release.aab que es copia del mismo despu√©s del build)
-
-**Copia esto exacto en "Notas de la versi√≥n" / "What's new" en Play Console (Closed track):**
-
-**v0.1.44-network-priority-invite (code 48) ‚Äî CONTIN√öA SIN PARAR: NOTIFICACIONES DE RED + BADGES DORADOS "RED LVx" + CTAs DIRECTOS DE RE-SYNC EN TODO EL DESCUBRIMIENTO (la primera red social real del fitness de alto rendimiento)**
-
-‚Ä¢ Notificaciones potentes de tu grafo: cuando un socio de tu Red (syncBonds) aparece en vivo ‚Üí "üî• ¬°TU RED ACTIV√ì ENTRENAMIENTO!". Cuando entra en un EntrenaSync ‚Üí "üî• TU RED ACTIV√ì ENTRENASYNC". Toasts dorados + acci√≥n directa "Re-sync ahora" que abre el sync y sube tu Network Power.
-‚Ä¢ Badges y CTAs de RED dominan los flujos de descubrimiento: 
-  - Tarjetas horizontales "EN VIVO AHORA": borde gold + "‚≠ê RED LVx ‚Ä¢ NP ACTIVO", click directo hace startSyncWith.
-  - Modal live completo (radar + lista grande): avatares con borde gold, pildora RED, botones de join se vuelven gold "RE-SYNC RED (NP+)" para miembros de tu red.
-  - Perfil: strip "TU RED EN VIVO AHORA" con LV y copy "re-sync = +Network Power + resultados que se propagan".
-‚Ä¢ Prioridad de grafo ya en sorts + mapa glow (burst anterior); ahora las notifs y botones hacen que tu red sea *ruidosa y accionable* en toda la app.
-‚Ä¢ Todo refuerza que tu Red de EntrenaSync es capital social de rendimiento: actividad de tus alianzas te notifica, brilla y te da atajos para fortalecer el grafo.
-‚Ä¢ Limpieza + posicionamiento como infraestructura seria de la primera red social del fitness sincronizado.
-
-Artefactos:
-- AAB: EntrenaMatch-v0.1.44-network-priority-invite-code48-20260604-2258.aab + EntrenaMatch-release.aab (copia)
-
-Sube esto ya. Sigue sin parar.
-‚Ä¢ El Pulso Global (mapa) se potencia brutalmente para tu red: activa "Mi Red (Network Power)" y tus socios de sync aparecen con HALO DORADO PULSANTE extra, tama√±o hasta ~2x m√°s grande, tethers de conexi√≥n m√°s gruesos y con glow ‚Äî tu grafo literalmente domina visualmente el mapa cuando filtras por √©l.
-‚Ä¢ Header del Pulso y contadores en vivo ahora muestran badge fijo "TU RED: X socios ‚Ä¢ NP Y" para que siempre veas el poder de tu grafo.
-‚Ä¢ Prioridad de red ya estaba en sorts de live/explore/feed (tus aliados primero), ahora el mapa lo hace obvio y √©pico.
-‚Ä¢ Limpieza total de lenguaje: cero fantas√≠a. Todo es serio, ambicioso y posicionado como la infraestructura de la primera red social del fitness de alto rendimiento sincronizado (los 5 mec√°nicos no-negociables se sienten inevitables).
-‚Ä¢ Refuerzo en EntrenaSync: cuando sync con alguien de tu red, +Network Power bonus en el vibe compartido, notifs especiales "RED DE ENTRENASYNC", tether/orb m√°s fuertes visualmente.
-‚Ä¢ Perfil: secci√≥n "TU RED DE ENTRENASYNC" con impacto colectivo cuantificado, botones para re-sync y expandir tu grafo.
-‚Ä¢ Feed y highlights: "HIGHLIGHTS DE LA RED" ‚Äî las sesiones fuertes de tu grafo se propagan como cultura y estatus.
-
-Esto es lo que marca la diferencia: entrenar con alguien ya no es solo motivaci√≥n ‚Äî construye tu capital social y de rendimiento que otros ven y respetan. Tu grafo = tu estatus en la red.
-
-Artefactos generados:
-- AAB para Play: la versi√≥n 0.1.42 code 46 (generada por pipeline completa)
-- Tambi√©n: EntrenaMatch-release.aab (copia lista para subir)
-
-Despu√©s de subir:
-- Actualiza testers closed track.
-- Recuerda desplegar storage rules si no lo hiciste: `npx firebase deploy --only storage --project entrenamatch` (para que las fotos del muro usen URLs https reales).
-
-Comando √∫til: publica con tus scripts o manual en Play.
-
-Sigue a mil. Esto ya se siente como la categor√≠a que nadie ha hecho.
-
-Fecha de build: $(Get-Date -Format "yyyy-MM-dd HH:mm")
-
-================================================================================
-
-Instrucciones r√°pidas:
-1. Play Console > EntrenaMatch > Closed testing > Nueva versi√≥n.
-2. Sube el AAB versionado o EntrenaMatch-release.aab.
-3. Pega el "What's new" completo de arriba.
-4. Guarda, revisa, rollout a testers.
-5. (Importante) Si las fotos del muro siguen fallando para usuarios: deploy storage rules.
-
-El build incluy√≥:
-- Versi√≥n 0.1.42 / code 46
-- Glow + prioridad visual m√°xima de Network Power en el mapa cuando filtras tu red
-- M√°s superficies mostrando tu grafo (badges, contadores, NP en vivo)
-- Reframe completo a "primera red social del fitness" sin perder los 5 mec√°nicos √©picos
-- Build limpio, google-services verificado para com.entrenamatch.app
-
-¬°Sube esto ya! Esto es disruptivo de verdad.
-
+(Previous version notes below for reference if needed, but use the v0.1.44 block above for this upload.)
