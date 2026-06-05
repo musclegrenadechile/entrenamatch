@@ -1,6 +1,6 @@
 === READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.54-voice-attractive-polish code 58) ===
 
-AAB: EntrenaMatch-v0.1.54-voice-attractive-polish-code58-20260605-0004.aab + EntrenaMatch-release.aab (7.58MB)
+AAB: EntrenaMatch-v0.1.54-voice-attractive-polish-code58-20260605-0007.aab + EntrenaMatch-release.aab (7.58MB)  [this build has slightly improved error toast]
 
 **What's new:**
 

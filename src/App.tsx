@@ -455,23 +455,42 @@ function App() {
 
     const { blob, duration, url: previewUrl } = pendingVoice
     setIsUploadingVoice(true)
+    setVoiceUploadProgress(0)
 
     try {
       let voiceUrl: string
 
       if (isDemoMode) {
         // Demo/local only: blob URL is acceptable (ephemeral)
+        // simulate a quick progress for demo polish
+        for (let p = 20; p <= 100; p += 20) {
+          setVoiceUploadProgress(p)
+          await new Promise(r => setTimeout(r, 80))
+        }
         voiceUrl = previewUrl
       } else {
-        // Real Firebase (web GH Pages or native APK): always upload to get a permanent https URL.
-        // Never send blob: URLs for persisted messages — they cause ERR_FILE_NOT_FOUND on reload or for other users.
+        // Real Firebase — use resumable upload for beautiful live progress bar
         if (!firebaseUser?.uid || !storage) {
           throw new Error('Firebase Storage no disponible')
         }
-        const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage')
+        const { ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage')
         const storageRef = ref(storage, `chat-voice/${chatId}/${Date.now()}.webm`)
-        const snap = await uploadBytes(storageRef, blob)
-        voiceUrl = await getDownloadURL(snap.ref)
+        const uploadTask = uploadBytesResumable(storageRef, blob)
+
+        // live progress
+        await new Promise<void>((resolve, reject) => {
+          uploadTask.on('state_changed',
+            (snapshot) => {
+              const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
+              setVoiceUploadProgress(progress)
+            },
+            (error) => reject(error),
+            async () => {
+              voiceUrl = await getDownloadURL(uploadTask.snapshot.ref)
+              resolve()
+            }
+          )
+        })
       }
 
       const voiceDescriptor = { voiceUrl, voiceDuration: duration }
@@ -489,6 +508,7 @@ function App() {
       }
       setPendingVoice(null)
       setIsUploadingVoice(false)
+      setVoiceUploadProgress(0)
       try { triggerHaptic('success') } catch {}
       toast.success('Nota de voz enviada', { description: `${duration}s • compártela con tu red de rendimiento` })
     } catch (e) {
@@ -501,6 +521,7 @@ function App() {
           : 'Error local al procesar el audio.'
       })
       setIsUploadingVoice(false)
+      setVoiceUploadProgress(0)
       // Do NOT clear pendingVoice on error, so user can retry or cancel
     }
   }
@@ -752,6 +773,7 @@ function App() {
   const [recordingTime, setRecordingTime] = useState(0)
   const [pendingVoice, setPendingVoice] = useState<{blob: Blob, duration: number, url: string} | null>(null)
   const [isUploadingVoice, setIsUploadingVoice] = useState(false)
+  const [voiceUploadProgress, setVoiceUploadProgress] = useState(0)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const audioChunksRef = useRef<Blob[]>([])
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -7502,7 +7524,7 @@ function App() {
                       <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
                         <div className={`max-w-[82%] ${isMe ? 'text-right' : ''}`}>
                           {time && <div className="text-[9px] text-[#6B7280] mb-0.5 px-1">{time}</div>}
-                          <div className={`px-3.5 py-2 rounded-3xl text-[14px] leading-snug break-words overflow-hidden ${isMe ? 'bg-[#FF671F] text-black rounded-br-md' : 'bg-[#25252A] text-white rounded-bl-md'}`}>
+                          <div className={`${m.voiceUrl && !m.voiceUrl.startsWith('blob:') ? 'p-1' : 'px-3.5 py-2'} rounded-3xl text-[14px] leading-snug break-words overflow-hidden ${isMe ? 'bg-[#FF671F] text-black rounded-br-md' : 'bg-[#25252A] text-white rounded-bl-md'}`}>
                             {m.voiceUrl && !m.voiceUrl.startsWith('blob:') ? (
                               <div className={`voice-bubble ${isMe ? 'sent' : 'received'}`}>
                                 <button 
@@ -7604,6 +7626,57 @@ function App() {
                       ))}
                     </div>
                   )}
+                  {/* Voice preview / uploading state — lifted above form for clean, consistent layout (cuadrado) */}
+                  {pendingVoice && !isUploadingVoice && (
+                    <div className="voice-preview mb-2">
+                      <button 
+                        onClick={() => { const a = new Audio(pendingVoice.url); a.play().catch(()=>{}); }}
+                        className="w-9 h-9 rounded-full bg-[#FF671F]/15 flex items-center justify-center text-[#FF671F] active:bg-[#FF671F]/30 text-lg flex-shrink-0"
+                        title="Escuchar antes de enviar"
+                      >
+                        ▶️
+                      </button>
+                      <div className="voice-wave-container" style={{height:'16px'}}>
+                        <div className="voice-wave">
+                          {[3,5,4,7,3,6,4,5].map((h,i) => <div key={i} className="voice-bar" style={{height: h}} />)}
+                        </div>
+                      </div>
+                      <div className="meta">
+                        <div className="title">Nota de voz lista</div>
+                        <div className="sub">{pendingVoice.duration}s • energía para tu red</div>
+                      </div>
+                      <div className="actions">
+                        <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-[9px] px-1.5 py-0.5 text-red-400 hover:text-red-500">✕</button>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            if (activeChat && pendingVoice) {
+                              sendVoiceNote(activeChat, false)
+                            }
+                          }}
+                          className="text-[9px] px-2.5 py-0.5 bg-[#FF671F] text-black rounded-full font-extrabold active:bg-[#E55A1A] shadow"
+                        >
+                          ENVIAR
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {isUploadingVoice && (
+                    <div className="voice-uploading mb-2">
+                      <div className="label">Enviando nota de voz</div>
+                      <div className="progress-track">
+                        <div className="progress-fill" style={{ width: `${voiceUploadProgress || 10}%` }} />
+                      </div>
+                      <div className="text-[10px] tabular-nums text-[#FF671F] font-mono w-8 text-right">{voiceUploadProgress || 0}%</div>
+                      <button 
+                        onClick={() => { setPendingVoice(null); setIsUploadingVoice(false); setVoiceUploadProgress(0) }}
+                        className="text-[9px] px-1.5 py-0.5 text-red-400 hover:text-red-500 ml-1"
+                      >
+                        cancelar
+                      </button>
+                    </div>
+                  )}
+
                   <form onSubmit={(e) => { 
                     e.preventDefault(); 
                     const input = (e.currentTarget.elements[0] as HTMLInputElement); 
@@ -7617,7 +7690,7 @@ function App() {
                   }} className="flex gap-2 items-center">
                     <input type="text" placeholder="Escribe un mensaje o graba voz..." className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none" />
                     
-                    {/* Attractive voice recording & preview for 1:1 — premium energy share */}
+                    {/* Attractive voice recording for 1:1 */}
                     {isRecordingVoice ? (
                       <div className="voice-recording">
                         <div className="dot" />
@@ -7637,46 +7710,6 @@ function App() {
                       >
                         🎙️
                       </button>
-                    )}
-                    {pendingVoice && !isUploadingVoice && (
-                      <div className="voice-preview ml-0.5">
-                        <button 
-                          onClick={() => { const a = new Audio(pendingVoice.url); a.play().catch(()=>{}); }}
-                          className="w-9 h-9 rounded-full bg-[#FF671F]/15 flex items-center justify-center text-[#FF671F] active:bg-[#FF671F]/30 text-lg flex-shrink-0"
-                          title="Escuchar antes de enviar"
-                        >
-                          ▶️
-                        </button>
-                        <div className="voice-wave-container" style={{height:'16px'}}>
-                          <div className="voice-wave">
-                            {[3,5,4,7,3,6,4,5].map((h,i) => <div key={i} className="voice-bar" style={{height: h}} />)}
-                          </div>
-                        </div>
-                        <div className="meta">
-                          <div className="title">Nota lista</div>
-                          <div className="sub">{pendingVoice.duration}s • tu red</div>
-                        </div>
-                        <div className="actions">
-                          <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null) }} className="text-[9px] px-1.5 py-0.5 text-red-400 hover:text-red-500">✕</button>
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              if (activeChat && pendingVoice) {
-                                sendVoiceNote(activeChat, false)
-                              }
-                            }}
-                            className="text-[9px] px-2.5 py-0.5 bg-[#FF671F] text-black rounded-full font-extrabold active:bg-[#E55A1A] shadow"
-                          >
-                            ENVIAR
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {isUploadingVoice && (
-                      <div className="ml-2 flex items-center gap-1 text-[#FF671F] text-xs">
-                        <div className="w-2 h-2 bg-[#FF671F] rounded-full animate-pulse" />
-                        Subiendo a la red...
-                      </div>
                     )}
 
                     <button type="submit" disabled={!chatInputValue.trim() && !pendingVoice} className="bg-[#FF671F] disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black w-12 rounded-3xl flex items-center justify-center"><Send size={18} /></button>
@@ -11057,7 +11090,7 @@ function App() {
                                 </div>
                               )}
                               {isMe && time && <div className="text-[10px] text-[#6B7280] mb-0.5 px-1 text-right">{time}</div>}
-                              <div className={`message-bubble inline-block ${isMe ? 'sent' : 'received'}`}>
+                              <div className={`message-bubble inline-block ${isMe ? 'sent' : 'received'} ${msg.voiceUrl && !msg.voiceUrl.startsWith('blob:') ? '!p-1' : ''}`}>
                                 {renderMessageText(msg.text)}
                                 {msg.photo && <img src={msg.photo} className="mt-2 max-w-[200px] rounded-xl border border-white/10" />}
                                 {msg.voiceUrl && !msg.voiceUrl.startsWith('blob:') ? (
@@ -11190,9 +11223,18 @@ function App() {
                       </div>
                     )}
                     {isUploadingVoice && (
-                      <div className="mb-2 flex items-center gap-1 text-xs text-[#FF671F] px-2">
-                        <div className="w-2 h-2 bg-[#FF671F] rounded-full animate-pulse" />
-                        Subiendo nota de voz a la red...
+                      <div className="voice-uploading mb-2">
+                        <div className="label">Enviando nota de voz</div>
+                        <div className="progress-track">
+                          <div className="progress-fill" style={{ width: `${voiceUploadProgress || 10}%` }} />
+                        </div>
+                        <div className="text-[10px] tabular-nums text-[#FF671F] font-mono w-8 text-right">{voiceUploadProgress || 0}%</div>
+                        <button 
+                          onClick={() => { setPendingVoice(null); setIsUploadingVoice(false); setVoiceUploadProgress(0) }}
+                          className="text-[9px] px-1.5 py-0.5 text-red-400 hover:text-red-500 ml-1"
+                        >
+                          cancelar
+                        </button>
                       </div>
                     )}
 
@@ -11254,7 +11296,6 @@ function App() {
                           🎙️
                         </button>
                       )}
-                      {pendingVoice && <span className="text-[10px] text-[#FF671F] self-center">Voz lista</span>}
 
                       <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto && !pendingVoice} className="bg-[#FF671F] disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black px-3 rounded-3xl font-semibold h-11 w-11 flex items-center justify-center active:bg-[#E55A1A] active:scale-95 transition" aria-label="Enviar">
                         <Send size={18} />

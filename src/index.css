@@ -1146,13 +1146,13 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .voice-play-btn {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border-radius: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1;
   transition: transform .08s ease, box-shadow .15s;
   flex-shrink: 0;
@@ -1161,15 +1161,16 @@ input[type="range"]::-moz-range-thumb {
 .voice-bubble.sent .voice-play-btn { background: rgba(0,0,0,0.22); color: #000; }
 .voice-bubble.received .voice-play-btn { background: rgba(255,103,31,0.15); color: #FF671F; }
 .voice-play-btn:active { transform: scale(0.9); }
-.voice-play-btn.playing { box-shadow: 0 0 0 3px rgba(255,103,31,0.35); background: rgba(255,103,31,0.25); }
+.voice-play-btn.playing { box-shadow: 0 0 0 4px rgba(255,103,31,0.3); background: rgba(255,103,31,0.22); }
 
 .voice-wave-container {
   position: relative;
   flex: 1;
-  min-width: 72px;
+  min-width: 78px;
   height: 22px;
   display: flex;
   align-items: center;
+  padding: 0 2px;
 }
 .voice-wave {
   display: flex;
@@ -1177,7 +1178,7 @@ input[type="range"]::-moz-range-thumb {
   gap: 2.5px;
   width: 100%;
   height: 18px;
-  padding: 1px 2px;
+  padding: 1px 1px;
 }
 .voice-bar {
   width: 2.5px;
@@ -1224,34 +1225,76 @@ input[type="range"]::-moz-range-thumb {
 .voice-bubble.sent .voice-duration { color: rgba(0,0,0,0.7); }
 .voice-bubble.received .voice-duration { color: rgba(255,255,255,0.65); }
 
+/* Uploading voice state — polished progress inside the same preview card */
+.voice-uploading {
+  background: #0D0D10;
+  border: 1px solid rgba(255,103,31,.45);
+  border-radius: 14px;
+  padding: 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.voice-uploading .label {
+  font-size: 11px;
+  color: #FF671F;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.voice-uploading .progress-track {
+  flex: 1;
+  height: 5px;
+  background: #1C1C20;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(255,103,31,0.2);
+}
+.voice-uploading .progress-fill {
+  height: 100%;
+  background: linear-gradient(to right, #FF671F, #FDBA74);
+  transition: width .12s linear;
+  box-shadow: 0 0 4px rgba(255,103,31,0.5);
+}
+
 /* Recording pill — urgent + premium */
 .voice-recording {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: rgba(239,68,68,.09);
-  border: 1px solid rgba(239,68,68,.38);
+  background: rgba(239,68,68,.1);
+  border: 1px solid rgba(239,68,68,.45);
   border-radius: 999px;
-  padding: 5px 11px 5px 9px;
+  padding: 5px 12px 5px 10px;
+  box-shadow: 0 1px 4px rgba(239,68,68,0.15);
 }
 .voice-recording .dot { width: 9px; height: 9px; background:#ef4444; border-radius:999px; animation: rec-pulse 1.1s ease-in-out infinite; }
 @keyframes rec-pulse { 0%,100%{opacity:1} 50%{opacity:.35} }
 .voice-recording .timer { font-variant-numeric: tabular-nums; color:#fca5a5; font-weight:700; letter-spacing:-.4px; font-size:13px; }
 
-/* Pending voice preview card — "ready to broadcast your energy" */
+/* Pending voice preview card — "ready to broadcast your energy" — well squared and premium */
 .voice-preview {
   background: #0D0D10;
-  border: 1px solid rgba(255,103,31,.38);
-  border-radius: 14px;
-  padding: 6px 8px;
+  border: 1px solid rgba(255,103,31,.42);
+  border-radius: 16px;
+  padding: 7px 9px;
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+  position: relative;
 }
-.voice-preview .meta { min-width: 0; }
+.voice-preview::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 4px; bottom: 4px;
+  width: 3px;
+  background: #FF671F;
+  border-radius: 3px;
+}
+.voice-preview .meta { min-width: 0; flex: 1; }
 .voice-preview .meta .title { font-size: 11px; color:#FF671F; font-weight:700; line-height:1.05; }
 .voice-preview .meta .sub { font-size: 9.5px; color:#9CA3AF; }
-.voice-preview .actions { display:flex; gap:4px; align-items:center; }
+.voice-preview .actions { display:flex; gap:3px; align-items:center; flex-shrink: 0; }
 .legend-toast-content {
   border-left: 3px solid #FFD700;
   padding-left: 8px;
