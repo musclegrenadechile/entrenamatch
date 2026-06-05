@@ -1,4 +1,48 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.68-partners-logos-devlogin code 72) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.69-map-partners-polish code 73) ===
+
+CONTINUACIÓN PULIDO MAPA + SISTEMA DE LOCALES/PARTNERS:
+
+Mejoras realizadas en esta iteración:
+
+- Marcadores de partners más atractivos y vivos:
+  - Badge numérico verde con conteo de GymPartners cercanos (si >0) en la esquina superior derecha del marker.
+  - Click en el marker del partner centra el mapa en él (zoom 15) + haptic.
+  - Popup mejorado con "Toca para centrar en este local".
+  - Mantiene soporte completo de logos (circular con borde gold) o fallback emoji + PARTNER badge.
+
+- Manage Partners modal mejorado (dev only):
+  - Input de búsqueda en tiempo real (filtra la lista por nombre).
+  - Stats arriba: "X locales • Y con logo".
+  - Mejor display de logo (más grande, con borde).
+  - Muestra coords truncadas + tipo.
+  - Botones Edit/Del por fila.
+  - + Agregar al final.
+  - Nota de sync en tiempo real.
+
+- Dev login UX mejorada:
+  - Badge "DEV ON" dorado en el contador de live/partners del mapa (arriba del todo en el badge).
+  - Tocar el badge "DEV ON" hace logout inmediato.
+  - El botón 🔐 Dev sigue ahí para entrar.
+  - Modal de login más claro.
+
+- Soporte cámara nativa para logo en el form de partner:
+  - Botón 📷 al lado de "Subir logo" que usa Capacitor Camera.getPhoto (igual que otras fotos de la app).
+  - Convierte a File y preview, luego sube normalmente.
+
+- Otras pulidas:
+  - Cuando agregas/ editas un partner, el mapa se centra en él automáticamente.
+  - Actividad badge en markers se actualiza con los filtros actuales del mapa (cerca, mi red, zona).
+  - Form de partner muestra coords actuales del centro del mapa implícitamente (mover mapa = nueva ubicación).
+  - Todo gated estrictamente detrás de dev login (isDeveloper flag + localStorage).
+  - Textos consistentes con "mapa en tiempo real".
+
+El sistema de partners ahora se siente más integrado, útil y "vivo" en el mapa: los locales con logos se ven premium, la actividad cerca se indica visualmente, y los devs tienen una herramienta cómoda para administrarlos (con search, stats, camera, edit/delete fácil).
+
+Builds generados (web + assets en AAB), versión 0.1.69.
+
+Test: mapa → 🔐 Dev (password) → ver badge DEV ON → +Partner (probar cámara si native + logo) → Manage (buscar, editar logo, borrar) → ver markers con badges de actividad y click para centrar.
+
+Sigue con todo lo que mandes para el mapa o partners.
 
 PULIDO MAPA + SISTEMA DE LOCALES/PARTNERS MEJORADO:
 

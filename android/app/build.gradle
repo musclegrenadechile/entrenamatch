@@ -15,8 +15,8 @@ android {
         applicationId "com.entrenamatch.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 72
-        versionName "0.1.68-partners-logos-devlogin"
+        versionCode 73
+        versionName "0.1.69-map-partners-polish"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

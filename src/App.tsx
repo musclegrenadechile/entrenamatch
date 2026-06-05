@@ -6039,23 +6039,34 @@ function App() {
           const logo = p.logoUrl
           const isGym = (p.type || 'gym') === 'gym'
           const fallbackIcon = isGym ? '🏋️' : '🛒'
+
+          // Compute nearby live count for "ellos vean actividad" (respects current map filters) - used for badge + popup
+          const nearby = liveUsers.filter((u: any) => {
+            const d = Math.sqrt(Math.pow((u.lat - p.lat), 2) + Math.pow((u.lng - p.lng), 2)) * 111 // rough km
+            return d < 5
+          }).length
+
           let partnerHtml: string
           if (logo) {
-            // Attractive logo-based marker with gold ring, shadow, PARTNER badge
+            // Attractive logo-based marker with gold ring, shadow, PARTNER badge + optional activity badge
+            const activityBadge = nearby > 0 ? `<div style="position:absolute;top:-2px;right:-2px;background:#22c55e;color:#000;font-size:8px;font-weight:900;padding:0 3px;border-radius:999px;border:1px solid #111;line-height:1;">${nearby}</div>` : ''
             partnerHtml = `
               <div style="position:relative;width:44px;height:44px">
                 <div style="width:44px;height:44px;border-radius:9999px;overflow:hidden;border:3px solid #FFD700;box-shadow:0 0 0 4px #FF671F33, 0 3px 8px rgba(0,0,0,0.6);">
                   <img src="${logo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(#FF671F,#E55A1A)';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-size:20px\\'>${fallbackIcon}</div>'" />
                 </div>
                 <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 5px;border-radius:4px;border:1.5px solid #FFD700;white-space:nowrap;letter-spacing:0.5px">PARTNER</div>
+                ${activityBadge}
               </div>`
           } else {
+            const activityBadge = nearby > 0 ? `<div style="position:absolute;top:-2px;right:-2px;background:#22c55e;color:#000;font-size:8px;font-weight:900;padding:0 3px;border-radius:999px;border:1px solid #111;line-height:1;">${nearby}</div>` : ''
             partnerHtml = `
               <div style="position:relative;width:40px;height:40px">
                 <div style="width:40px;height:40px;border-radius:9999px;background:linear-gradient(#FF671F,#E55A1A);border:3px solid #FFD700;box-shadow:0 0 0 3px #FF671F33,0 2px 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;line-height:1;">
                   ${fallbackIcon}
                 </div>
                 <div style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 4px;border-radius:3px;border:1px solid #FFD700;white-space:nowrap">PARTNER</div>
+                ${activityBadge}
               </div>`
           }
           const pIcon = L.divIcon({
@@ -6067,21 +6078,23 @@ function App() {
           })
           const pMarker = L.marker([p.lat, p.lng], { icon: pIcon }).addTo(mapInstanceRef.current)
 
-          // Compute nearby live count for "ellos vean actividad" (respects current map filters)
-          const nearby = liveUsers.filter((u: any) => {
-            const d = Math.sqrt(Math.pow((u.lat - p.lat), 2) + Math.pow((u.lng - p.lng), 2)) * 111 // rough km
-            return d < 5
-          }).length
-
           const pPopup = `
             <div style="min-width:160px;font-size:12px">
               <strong style="color:#FF671F">${p.name}</strong><br/>
               <span style="font-size:10px;color:#9CA3AF">${p.address || ''}</span><br/>
               <span style="color:#22c55e;font-weight:600">🏋️ Socio oficial del GymPulse (mapa en tiempo real)</span><br/>
               ${nearby > 0 ? `<span style="font-size:10px">👥 ${nearby} GymPartners entrenando cerca ahora</span><br/>` : ''}
-              <div style="margin-top:6px;font-size:10px;color:#666">Toca para destacar actividad en esta zona</div>
+              <div style="margin-top:6px;font-size:10px;color:#666">Toca para centrar en este local</div>
             </div>`
           pMarker.bindPopup(pPopup)
+
+          // Click to center on partner (nice UX for "ver el local")
+          pMarker.on('click', () => {
+            try { triggerHaptic('light') } catch {}
+            const map = mapInstanceRef.current
+            if (map) map.setView([p.lat, p.lng], 15)
+          })
+
           markersRef.current.push(pMarker)
         } catch (e) { console.warn('partner marker', e) }
       })
@@ -6935,6 +6948,7 @@ function App() {
                     <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                       🟢 {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && (u.distance||999)<10)) && (!selectedMapZone || u.city === selectedMapZone) && (!showOnlyLegends || u.isLegend)).length} en vivo • realtime {showOnlyLegends ? ' (tu red)' : ''}
                       {showPartners && partnerLocations.length > 0 && <span className="ml-1 text-[7px] bg-[#FF671F] text-black px-1 rounded font-bold">{partnerLocations.length} PARTNERS</span>}
+                      {isDeveloper && <span className="ml-1 text-[7px] bg-[#FFD700] text-black px-1 rounded font-extrabold cursor-pointer active:opacity-70" onClick={logoutDeveloper} title="Tap to logout dev mode">DEV ON</span>}
                       {networkStats.numPartners > 0 && <span className="ml-1 text-[6px] bg-[#FFD700] text-black px-0.5 rounded font-bold">NP {networkStats.networkPower}</span>}
                       {selectedMapZone && <span className="ml-1 text-[7px] bg-white/20 px-1 rounded">filtrado: {selectedMapZone.split(' ')[0]}</span>}
                     </div>
@@ -7099,6 +7113,26 @@ function App() {
                               </div>
                               <input type="file" accept="image/*" className="hidden" onChange={handlePartnerLogoSelect} />
                             </label>
+                            {typeof window !== 'undefined' && (window as any).Capacitor && CapacitorCamera && (
+                              <button type="button" onClick={async () => {
+                                try {
+                                  const photo = await CapacitorCamera.getPhoto({ quality: 70, allowEditing: true, resultType: 'base64' })
+                                  if (photo && photo.base64String) {
+                                    const byteCharacters = atob(photo.base64String)
+                                    const byteNumbers = new Array(byteCharacters.length)
+                                    for (let i=0; i<byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i)
+                                    const byteArray = new Uint8Array(byteNumbers)
+                                    const blob = new Blob([byteArray], { type: 'image/jpeg' })
+                                    const file = new File([blob], 'partner-logo.jpg', { type: 'image/jpeg' })
+                                    setPartnerLogoFile(file)
+                                    if (partnerLogoPreview && partnerLogoPreview.startsWith('blob:')) URL.revokeObjectURL(partnerLogoPreview)
+                                    const preview = URL.createObjectURL(file)
+                                    setPartnerLogoPreview(preview)
+                                    try { triggerHaptic('light') } catch {}
+                                  }
+                                } catch (e) { console.warn('camera logo', e) }
+                              }} className="text-[10px] px-2 py-1 border border-[#FF671F]/40 rounded text-[#FF671F] active:bg-[#FF671F]/10">📷</button>
+                            )}
                             {partnerLogoPreview && (
                               <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-[#FFD700] flex-shrink-0">
                                 <img src={partnerLogoPreview} className="w-full h-full object-cover" />
@@ -7209,37 +7243,65 @@ function App() {
                     </div>
                   )}
 
-                  {/* MANAGE PARTNERS MODAL (dev only) - list, edit with logo, delete */}
+                  {/* MANAGE PARTNERS MODAL (dev only) - improved with search, stats, logo previews, better UX */}
                   {showManagePartners && isDeveloper && (
                     <div className="absolute inset-0 z-[55] flex items-end justify-center bg-black/60 p-3" onClick={() => setShowManagePartners(false)}>
-                      <div onClick={e=>e.stopPropagation()} className="bg-[#0D0D10] border border-[#FFD700] rounded-t-2xl w-full max-w-[420px] max-h-[70vh] overflow-auto p-3 text-sm">
-                        <div className="flex justify-between items-center mb-2">
-                          <div className="font-bold text-[#FFD700]">Manage Partners (devs)</div>
+                      <div onClick={e=>e.stopPropagation()} className="bg-[#0D0D10] border border-[#FFD700] rounded-t-2xl w-full max-w-[420px] max-h-[75vh] overflow-auto p-3 text-sm">
+                        <div className="flex justify-between items-center mb-2 sticky top-0 bg-[#0D0D10] pb-1">
+                          <div>
+                            <div className="font-bold text-[#FFD700]">Manage Partners (devs)</div>
+                            <div className="text-[10px] text-[#9CA3AF]">{partnerLocations.length} locales • {partnerLocations.filter((pp:any)=>pp.logoUrl).length} con logo</div>
+                          </div>
                           <button onClick={() => setShowManagePartners(false)} className="text-white/50">✕</button>
                         </div>
-                        {partnerLocations.length === 0 && <div className="text-[#9CA3AF] text-xs py-2">No partners yet. Usa + Partner para agregar.</div>}
-                        {partnerLocations.map((p: any) => (
-                          <div key={p.id} className="flex items-center gap-2 border-b border-white/10 py-2 last:border-0">
-                            {p.logoUrl && <img src={p.logoUrl} className="w-8 h-8 rounded-full object-cover border border-[#FFD700]/50" />}
-                            <div className="flex-1 min-w-0">
-                              <div className="font-semibold truncate">{p.name}</div>
-                              <div className="text-[10px] text-[#9CA3AF] truncate">{p.address || p.type}</div>
+
+                        {/* Search for partners */}
+                        <input 
+                          placeholder="Buscar por nombre..." 
+                          className="w-full mb-2 bg-[#1C1C20] border border-[#2F2F35] rounded px-2 py-1 text-xs" 
+                          onChange={(e) => {
+                            const term = e.target.value.toLowerCase()
+                            // simple client filter via data attr or re-render list - for simplicity use state if needed, here we filter in map below
+                            const container = e.currentTarget.parentElement?.querySelector('#manage-partner-list')
+                            if (container) {
+                              Array.from(container.children).forEach((child: any) => {
+                                const name = (child.getAttribute('data-name') || '').toLowerCase()
+                                child.style.display = name.includes(term) ? '' : 'none'
+                              })
+                            }
+                          }}
+                        />
+
+                        <div id="manage-partner-list">
+                          {partnerLocations.length === 0 && <div className="text-[#9CA3AF] text-xs py-2">No partners yet. Usa + Partner para agregar.</div>}
+                          {partnerLocations.map((p: any) => (
+                            <div key={p.id} data-name={p.name} className="flex items-center gap-2 border-b border-white/10 py-2 last:border-0">
+                              {p.logoUrl ? (
+                                <img src={p.logoUrl} className="w-9 h-9 rounded-full object-cover border border-[#FFD700]/50 flex-shrink-0" />
+                              ) : (
+                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center text-lg text-white flex-shrink-0">📍</div>
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <div className="font-semibold truncate">{p.name}</div>
+                                <div className="text-[10px] text-[#9CA3AF] truncate">{p.address || p.type} • {p.lat?.toFixed(3)},{p.lng?.toFixed(3)}</div>
+                              </div>
+                              <button onClick={() => startEditPartner(p)} className="text-xs px-2 py-0.5 border border-[#FFD700]/50 rounded text-[#FFD700] active:bg-[#FFD700]/10">Edit</button>
+                              <button onClick={async () => {
+                                if (!confirm(`Eliminar ${p.name}?`)) return
+                                if (!isDemoMode && db) {
+                                  try {
+                                    const { deleteDoc, doc } = await import('firebase/firestore')
+                                    await deleteDoc(doc(db, 'partnerLocations', p.id))
+                                  } catch (e) { console.warn(e) }
+                                }
+                                setPartnerLocations(prev => prev.filter(pp => pp.id !== p.id))
+                                try { triggerHaptic('light') } catch {}
+                              }} className="text-xs px-2 py-0.5 border border-red-500/50 rounded text-red-400 active:bg-red-500/10">Del</button>
                             </div>
-                            <button onClick={() => startEditPartner(p)} className="text-xs px-2 py-0.5 border border-[#FFD700]/50 rounded text-[#FFD700] active:bg-[#FFD700]/10">Edit</button>
-                            <button onClick={async () => {
-                              if (!confirm(`Eliminar ${p.name}?`)) return
-                              if (!isDemoMode && db) {
-                                try {
-                                  const { deleteDoc, doc } = await import('firebase/firestore')
-                                  await deleteDoc(doc(db, 'partnerLocations', p.id))
-                                } catch (e) { console.warn(e) }
-                              }
-                              setPartnerLocations(prev => prev.filter(pp => pp.id !== p.id))
-                              try { triggerHaptic('light') } catch {}
-                            }} className="text-xs px-2 py-0.5 border border-red-500/50 rounded text-red-400 active:bg-red-500/10">Del</button>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                         <button onClick={openAddPartner} className="mt-3 w-full py-1.5 text-sm bg-[#FFD700] text-black rounded-xl font-bold">+ Agregar nuevo Partner</button>
+                        <div className="text-[9px] text-center text-[#666] mt-1">Los cambios se sincronizan en tiempo real vía Firestore.</div>
                       </div>
                     </div>
                   )}
