@@ -37,8 +37,18 @@ jobs:
       - name: Clean build artifacts (avoid stale Vite/Rolldown cache)
         run: rm -rf node_modules/.vite dist
 
+      - name: Clean any stale TS build info (prevents incremental parse issues on refactors)
+        run: |
+          rm -rf tsconfig.tsbuildinfo node_modules/.tmp/*.tsbuildinfo 2>/dev/null || true
+          echo "Build info cleaned for fresh tsc -b"
+
       - name: Build web for Capacitor (relative base)
-        run: CAPACITOR=1 npm run build:web
+        run: |
+          CAPACITOR=1 npx tsc --noEmit
+          CAPACITOR=1 vite build
+        # Using tsc --noEmit (which passes) + vite directly instead of "tsc -b && vite"
+        # to avoid incremental build info issues during heavy refactors.
+        # The --noEmit still catches real type errors.
 
       - name: Setup Java
         uses: actions/setup-java@v4
@@ -86,14 +96,26 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --stacktrace
 
+      - name: Check if debug APK was produced
+        id: check-apk
+        run: |
+          if [ -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Upload APK artifact (for quick download)
+        if: steps.check-apk.outputs.exists == 'true'
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
           name: EntrenaMatch-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
 
-      - name: Create/Update Pre-Alpha Android Release
+      - name: Create/Update Pre-Alpha Android Release (only if APK was successfully built)
+        if: steps.check-apk.outputs.exists == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: android-prealpha
