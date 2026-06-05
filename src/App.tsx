@@ -284,16 +284,17 @@ function App() {
   // PWA install prompt wiring (beforeinstallprompt + nice banner after engagement)
   useEffect(() => {
     const handler = (e: any) => {
-      e.preventDefault()
+      // Note: we intentionally do NOT call preventDefault here to avoid the "Banner not shown" browser info message.
+      // We still capture the event if available for our custom "Instalar" button (which will call .prompt()).
+      // The browser may show its own install banner at its preferred time.
+      // Our custom banner provides additional guidance and a nice button.
       setDeferredInstallPrompt(e)
-      // Show banner only if not previously dismissed and after some engagement
       if (!localStorage.getItem('entrenamatch_pwa_dismissed')) {
-        // Much shorter delay for visibility (was 28s, too long for testers)
         setTimeout(() => {
           if (!localStorage.getItem('entrenamatch_pwa_dismissed')) {
             setShowPwaInstall(true)
           }
-        }, 5000) // 5s after load
+        }, 5000)
       }
     }
     window.addEventListener('beforeinstallprompt', handler)
