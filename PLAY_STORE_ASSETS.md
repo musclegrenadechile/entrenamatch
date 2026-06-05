@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 39 / 0.1.34-eco-fixes. **LIVING MYTHOLOGY + BUG FIXES**: Echoes system con fixes de reactividad en mapa (deps), strip de visibilidad en feed, y mejoras en detección de legends para ripples. 
+**Current version for this upload**: versionCode 40 / 0.1.35-achievements-chats. **CHATS + MURO MÁS VIVO**: Chats con quick shares de logros para legends. Muro personal como archivo épico de achievements con contadores, templates rápidos y feel de "tu lugar para postear logros". 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -149,11 +149,19 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 
 ## What's new (for this Pre-Alpha release, short & punchy)
 
-**READY FOR PLAY CLOSED UPLOAD (v0.1.34-eco-fixes code 39)**
-- Fresh signed AAB: `EntrenaMatch-v0.1.34-eco-fixes-code39-20260604-2020.aab` (7.2 MB) + `EntrenaMatch-release.aab`
-- Fresh debug APK for device: `EntrenaMatch-debug-eco-fixes-0.1.34-20260604-2019.apk` (10 MB) + `EntrenaMatch-debug.apk`
+**READY FOR PLAY CLOSED UPLOAD (v0.1.35-achievements-chats code 40)**
+- Fresh signed AAB: `EntrenaMatch-v0.1.35-achievements-chats-code40-20260604-2023.aab` (7.2 MB) + `EntrenaMatch-release.aab`
+- Fresh debug APK for device: `EntrenaMatch-debug-achievements-chats-0.1.35-20260604-2023.apk` (10 MB) + `EntrenaMatch-debug.apk`
 - Web: pushed to main → GH Pages will have the new bundle (hard refresh after Actions finish).
 - Copy the short "What's new" below directly into Play Console when uploading the AAB to closed track.
+
+**v0.1.35-achievements-chats (code 40) — CHATS VIVOS + MURO COMO TU LUGAR DE LOGROS**
+• Chats 1:1 con legends ahora muestran badge "⭐ TU LEYENDA • LVx" y botones rápidos para compartir logros ("Compartir nuestro último Sync Legendario", "Postear mi eco", etc.) — al enviar en chat también se publica automáticamente en tu muro como achievement.
+• Muro personal elevado a "Mi Muro de Leyendas — tu archivo vivo de logros y mitología personal": 
+  - Contadores épicos arriba: Legends Forjadas, Sync Legendarios, Ecos Reclamados.
+  - Quick templates para postear logros al instante (Nuevo Sync Legendario, Eco reclamado, Ripples enviados, etc.).
+  - Descripción actualizada como "tu lugar" para celebrar y archivar tus hitos personales.
+• El muro se siente como tu santuario personal de logros — inspirador, vivo y conectado al resto de la app (Arena, ripples, witness, bonds).
 
 **v0.1.34-eco-fixes (code 39) — LIVING MYTHOLOGY + FIXES DE ECOES**
 • Echoes system más robusto: 
@@ -239,8 +247,8 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • AAB + debug APK frescos listos (ver nombres abajo). Build limpia + pipeline completo.
 • Todo el pipeline: web GH Pages, Android AAB/debug, docs actualizados. Sigue con todo ritmo.
 
-**Short "What's new" (copy-paste to Play Console for v0.1.34 code 39):**
-Living Mythology + fixes: Echoes reclamables desde witness o Echo Pins (persistentes en mapa para legends). Posts dorados en feed con prioridad. Fixes: reactividad de echoPins (agregado a useEffect deps), strip de ecos en feed para visibilidad, mejor detección isLegend para ripples de bonds. La mitología ahora es confiable y visible. (code 39)
+**Short "What's new" (copy-paste to Play Console for v0.1.35 code 40):**
+Chats más vivos con legends: badge "TU LEYENDA", quick buttons para compartir logros directamente a chat + muro (auto-post achievement). Muro personal como "Mi Muro de Leyendas": contadores de logros (bonds, syncs legendarios, ecos), templates rápidos para postear hitos, copy motivacional como tu santuario personal de mitología. (code 40)
 
 **Artifacts for this version:**
 - AAB (Play): EntrenaMatch-v0.1.28-recuperacion-cuenta-code33-20260604-1958.aab (y EntrenaMatch-release.aab)

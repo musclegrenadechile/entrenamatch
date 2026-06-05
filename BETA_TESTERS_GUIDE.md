@@ -647,3 +647,10 @@ This is the build to upload to Closed track. Full "sigue con todo" — more uniq
 - Mejora en isLegendRipple: usa directamente syncBonds para el cálculo incluso si el partner viene de realProfiles (mejor soporte para datos reales).
 - Esto hace que el sistema de Echoes sea robusto en todos los escenarios (demo, real, toggles de mapa, etc.).
 - Prueba: Genera ripple legendario, ve el pin en mapa con otra cuenta, reclámalo, verifica que aparezca en feed y que el pin se maneje bien al filtrar/actualizar mapa.
+
+**NUEVO — CHATS + MURO DE LOGROS MÁS VIVOS (v0.1.35-achievements-chats, code 40)**:
+- Chats 1:1 con tus Legends ahora muestran header con badge '⭐ TU LEYENDA • LVx' para que se sienta especial.
+- Botones rápidos en chat con legend: 'Compartir nuestro último Sync Legendario', 'Postear mi eco de este bond', etc. Al usarlos, el mensaje se envía en chat Y se publica automáticamente en tu muro como logro personal.
+- Muro personal (Tu Muro de Leyendas) ahora se siente como TU santuario de achievements: contadores arriba (LEGENDS FORJADAS, SYNC LEGENDARIOS, ECOS RECLAMADOS), templates rápidos para postear logros, copy 'Este es TU lugar. Publica tus logros... Tu muro es tu mitología personal'.
+- El muro se siente vivo y motivador — tu archivo personal de la mitología que estás construyendo.
+- Prueba: Abre chat con un legend. Usa quick button. Ve cómo aparece en tu muro con contadores. Publica logro directo desde muro usando templates.

@@ -5377,7 +5377,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
-          <span className="text-white/90 text-[11px]">Real backend • v0.1.34-eco-fixes</span>
+          <span className="text-white/90 text-[11px]">Real backend • v0.1.35-achievements-chats</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -6880,7 +6880,7 @@ function App() {
                       <img src={profile.photos[0]} className="w-14 h-14 rounded-2xl object-cover flex-shrink-0" />
                       <div className="min-w-0 flex-1">
                         <div className="flex justify-between items-baseline">
-                          <span className="font-semibold">{profile.name}</span>
+                          <span className="font-semibold flex items-center gap-1">{profile.name} {syncBonds[profile.id] && <span className="text-[9px] px-1 bg-[#FFD700] text-black rounded">⭐ LEYENDA</span>}</span>
                           <span className="text-xs text-[#9CA3AF]">{profile.city}</span>
                         </div>
                         {userLocation && (
@@ -6920,7 +6920,10 @@ function App() {
                         <span className="text-[9px] bg-[#FF671F] text-black px-1.5 py-0 rounded">REAL</span>
                       )}
                     </div>
-                    <div className="text-[10px] text-[#FF671F] -mt-0.5">{chatProfile?.city}, {chatProfile?.country} • En línea</div>
+                    <div className="text-[10px] text-[#FF671F] -mt-0.5 flex items-center gap-1">
+                      {chatProfile?.city}, {chatProfile?.country} • En línea
+                      {syncBonds[activeChat!] && <span className="ml-1 px-1.5 py-0 text-[8px] rounded bg-[#FFD700] text-black font-bold">⭐ TU LEYENDA • LV{syncBonds[activeChat!].bondLevel || 1}</span>}
+                    </div>
                   </div>
                   <button onClick={() => setShowFullProfile(chatProfile!)} className="ml-auto text-xs px-3 py-1 bg-[#1C1C20] rounded-full">Ver perfil</button>
                   <a href="/entrenamatch/privacy.html" target="_blank" className="text-[10px] text-[#9CA3AF] underline ml-1">Privacidad</a>
@@ -7049,6 +7052,16 @@ function App() {
 
                 {/* Input */}
                 <div className="p-3 border-t border-[#2F2F35] bg-[#0D0D10]">
+                  {/* Quick share logros to chat + muro - makes chat feel alive and tied to your personal achievements */}
+                  {syncBonds[activeChat!] && (
+                    <div className="flex gap-1 mb-2 flex-wrap">
+                      {['🏆 Compartir nuestro último Sync Legendario', '⭐ Postear mi eco de este bond', '🌊 Mencionar ripples de nuestro Arena'].map((tpl, i) => (
+                        <button key={i} onClick={() => { sendMessage(tpl); /* also auto-post to muro as achievement */ createProfilePost(`En chat con mi leyenda: ${tpl}`, null).catch(()=>{}); }} className="text-[9px] px-2 py-0.5 rounded-full border border-[#FFD700]/40 text-[#FFD700] active:bg-[#FFD700]/10">
+                          {tpl.split(' ')[0]}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   <form onSubmit={(e) => { e.preventDefault(); const input = (e.currentTarget.elements[0] as HTMLInputElement); sendMessage(input.value); input.value = '' }} className="flex gap-2">
                     <input type="text" placeholder="Escribe un mensaje..." className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none" />
                     <button type="submit" className="bg-[#FF671F] text-black w-12 rounded-3xl flex items-center justify-center"><Send size={18} /></button>
@@ -7976,8 +7989,23 @@ function App() {
               {/* Attractive composer - premium journal style */}
               <div className="card p-5 mb-4 border border-[#FF671F]/10 bg-gradient-to-b from-[#1C1C20] to-[#0D0D10]">
                 <div className="text-sm font-semibold text-[#FF671F] mb-3 flex items-center gap-2">
-                  <span>✍️</span> Escribe en tu muro
-                  <span className="text-[10px] text-[#9CA3AF] font-normal tracking-normal">— se comparte también en el Feed Global</span>
+                  <span>✍️</span> Publica un logro en tu Muro de Leyendas
+                  <span className="text-[10px] text-[#9CA3AF] font-normal tracking-normal">— tu mitología personal</span>
+                </div>
+
+                {/* Quick achievement templates - makes posting logros frictionless and celebratory */}
+                <div className="flex flex-wrap gap-1.5 mb-3">
+                  {[
+                    '🏆 Nuevo Sync Legendario con mi bond',
+                    '⭐ Reclamé un Eco de un momento épico',
+                    '🌊 Envié ripples con mi último Arena',
+                    '🔥 Pico de vibe >80 — ritual intenso',
+                    '📈 Subí de nivel de bond con X'
+                  ].map((tpl, i) => (
+                    <button key={i} onClick={() => setMuroComposerText(tpl)} className="text-[10px] px-2 py-1 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10 hover:bg-[#FF671F]/5">
+                      {tpl}
+                    </button>
+                  ))}
                 </div>
                 <textarea 
                   ref={muroComposerRef}
@@ -8094,6 +8122,31 @@ function App() {
                   <div className="text-[10px] text-[#9CA3AF] -mt-0.5">Tu legado de entreno • visible en Feed Global</div>
                 </div>
                 <button onClick={() => setActiveTab('feed')} className="text-xs px-3 py-1 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10">Ver en Feed →</button>
+              </div>
+
+              {/* Achievement counters - makes muro feel like your personal Legend Wall / achievement log */}
+              <div className="grid grid-cols-3 gap-2 mb-3 px-1">
+                {(() => {
+                  const myEchoes = (profilePosts[effectiveUserId] || []).filter((p: any) => (p.text || '').includes('Fui testigo') || (p.text || '').includes('RITUAL LEGENDARIO')).length;
+                  const myLegendSyncs = (profilePosts[effectiveUserId] || []).filter((p: any) => (p.text || '').includes('ENTRENASYNC LEGENDARIO') || (p.text || '').includes('Sync Legendario')).length;
+                  const bondCount = Object.keys(syncBonds).length;
+                  return (
+                    <>
+                      <div className="text-center p-2 rounded-2xl bg-[#1C1C20] border border-[#FFD700]/30">
+                        <div className="text-xl font-black text-[#FFD700]">{bondCount}</div>
+                        <div className="text-[8px] text-[#9CA3AF]">LEGENDS FORJADAS</div>
+                      </div>
+                      <div className="text-center p-2 rounded-2xl bg-[#1C1C20] border border-[#22c55e]/30">
+                        <div className="text-xl font-black text-[#22c55e]">{myLegendSyncs}</div>
+                        <div className="text-[8px] text-[#9CA3AF]">SYNC LEGENDARIOS</div>
+                      </div>
+                      <div className="text-center p-2 rounded-2xl bg-[#1C1C20] border border-[#FF671F]/30">
+                        <div className="text-xl font-black text-[#FF671F]">{myEchoes}</div>
+                        <div className="text-[8px] text-[#9CA3AF]">ECOS RECLAMADOS</div>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
               <AnimatePresence>
                 {loadingPersonalMuro && (profilePosts[effectiveUserId] || []).length === 0 ? (
@@ -8270,8 +8323,8 @@ function App() {
                     className="muro-empty p-8 text-center mb-3 rounded-3xl border border-[#FF671F]/10"
                   >
                     <div className="mx-auto w-16 h-16 rounded-3xl bg-gradient-to-br from-[#FF671F]/10 to-[#FF4F79]/10 flex items-center justify-center mb-4 text-4xl">📜</div>
-                    <div className="font-bold text-lg mb-2 tracking-tight">Tu muro personal — tu legado de fierro</div>
-                    <div className="text-sm text-[#9CA3AF] mb-5 max-w-[260px] mx-auto">Aquí queda grabada tu historia de entreno. Cada post, foto y logro se comparte también en el Feed Global. Haz que sea épico.</div>
+                    <div className="font-bold text-lg mb-2 tracking-tight">Mi Muro de Leyendas — tu archivo vivo de logros y mitología personal</div>
+                    <div className="text-sm text-[#9CA3AF] mb-5 max-w-[260px] mx-auto">Este es TU lugar. Publica tus logros, ecos que presenciaste, nuevos bonds legendarios y momentos que generaron ripples. Tu muro es tu mitología personal — visible, inspiradora y parte del legado de la comunidad.</div>
                     <div className="flex flex-col gap-2 max-w-[220px] mx-auto">
                       <button 
                         onClick={() => muroComposerRef.current?.focus()}
@@ -8339,7 +8392,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.34-eco-fixes • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.35-achievements-chats • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8566,7 +8619,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.34-eco-fixes • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.35-achievements-chats • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>
