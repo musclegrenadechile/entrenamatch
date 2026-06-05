@@ -662,3 +662,13 @@ This is the build to upload to Closed track. Full "sigue con todo" — more uniq
 - CSS premium para toasts Sonner (glass, sombras, bordes redondeados, botones atractivos).
 - Todo se siente parte del mundo vivo de la app: las notifs de legends destacan como algo especial y motivador.
 - Prueba: Recibe un mensaje de un legend (o simula). Ver toast atractivo + abre panel, ver el item dorado. Se ve mucho más premium y 'vivo'.
+
+**NUEVO — ARENA PULIDA CON PROPÓSITO REAL (v0.1.37-arena-real, code 42)**:
+- Propósito clarificado: La Arena es el motor que convierte tu esfuerzo en **ritual sincronizado con legado real** (bonds con peso, ripples visibles en mapa, ecos reclamados como mitología comunitaria, tu muro como archivo de logros).
+- 'Ritual Impact' bar siempre visible: ripples enviados, testigos potenciales, 'ESTO ESTÁ CONSTRUYENDO TU LEYENDA'.
+- Acciones ahora tienen propósito explícito en el botón (bond / ripple / vibe / legend) — se nota que cada una sirve para algo.
+- Feedback directo y motivador: acción con legend → 'Bond +X — se ve en tu mapa dorado y en tu muro'. Alta vibe → ripples + ecos. Terminar ritual fuerte → mensaje épico de legado.
+- Energy field y orb reaccionan más fuerte a combos (se nota el poder combinado).
+- En 'Tu vida de entrenamiento' ahora cuentas 'Rituales Arena' como stat real.
+- Hint final actualizado: 'Esto sirve de verdad: convierte esfuerzo aislado en legado compartido que otros respetan y quieren repetir'.
+- Prueba fuerte: Entra a Arena con un legend. Haz combos. Sube vibe. Observa el Impact bar, los toasts de bond/ripple, el field que se pone más dramático. Termina el ritual. Ve cómo tu muro y el feed global se llenan de ecos. Ahora se siente que la Arena *realmente sirve* para construir algo más grande que un simple match.

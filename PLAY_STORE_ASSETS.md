@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 41 / 0.1.36-notif-polish. **NOTIFICACIONES DE MENSAJES MÁS ATRACTIVAS**: Toasts y panel visualmente premium, gold para legends, mejor UX. 
+**Current version for this upload**: versionCode 42 / 0.1.37-arena-real. **ARENA PULIDA CON PROPÓSITO REAL**: Clarificada su función como motor de mitología y legado. Más feedback visible de impacto (ritual impact, bond progress, ripples/echoes). 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -149,11 +149,21 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 
 ## What's new (for this Pre-Alpha release, short & punchy)
 
-**READY FOR PLAY CLOSED UPLOAD (v0.1.36-notif-polish code 41)**
-- Fresh signed AAB: `EntrenaMatch-v0.1.36-notif-polish-code41-20260604-2027.aab` (7.2 MB) + `EntrenaMatch-release.aab`
-- Fresh debug APK for device: `EntrenaMatch-debug-notif-polish-0.1.36-20260604-2026.apk` (10 MB) + `EntrenaMatch-debug.apk`
+**READY FOR PLAY CLOSED UPLOAD (v0.1.37-arena-real code 42)**
+- Fresh signed AAB: `EntrenaMatch-v0.1.37-arena-real-code42-20260604-2031.aab` (7.2 MB) + `EntrenaMatch-release.aab`
+- Fresh debug APK for device: `EntrenaMatch-debug-arena-real-0.1.37-20260604-2030.apk` (10 MB) + `EntrenaMatch-debug.apk`
 - Web: pushed to main → GH Pages will have the new bundle (hard refresh after Actions finish).
 - Copy the short "What's new" below directly into Play Console when uploading the AAB to closed track.
+
+**v0.1.37-arena-real (code 42) — ARENA PULIDA: AHORA SE NOTA QUE REALMENTE SIRVE**
+• Propósito clarificado en código y UI: La Arena es el motor que convierte esfuerzo aislado en **ritual sincronizado con legado visible** (bonds con peso real, ripples que otros presencian, ecos que se reclaman como mitología comunitaria, tu muro como archivo de logros).
+• "Ritual Impact" bar visible en Arena: Ripples enviados, testigos potenciales, "ESTO ESTÁ CONSTRUYENDO TU LEYENDA".
+• Cada acción ahora tiene propósito explícito (bond / ripple / vibe / legend) con label en el botón.
+• Feedback claro: al hacer acción con legend → toast "Bond +X — se ve en mapa y muro". Alta vibe → ripples + ecos. Terminar ritual fuerte → mensaje épico de legado.
+• Energy field y orb reaccionan más dramáticamente a combos.
+• En tu "vida de entrenamiento" ahora cuentas "Rituales Arena" como stat real.
+• El hint final: "Esto sirve de verdad: convierte esfuerzo aislado en legado compartido que otros respetan y quieren repetir."
+• Ahora se siente inevitablemente valioso: no es un juego, es la forma en que la gente construye su mitología de entrenamiento y la de la comunidad.
 
 **v0.1.36-notif-polish (code 41) — NOTIFICACIONES DE MENSAJES VISUALMENTE ATRACTIVAS**
 • Toasts de llegada de mensajes ahora premium: layout más rico con avatar grande, contexto "En vivo", badge "⭐ LEYENDA" dorado si viene de un bond legendario.
@@ -254,8 +264,8 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • AAB + debug APK frescos listos (ver nombres abajo). Build limpia + pipeline completo.
 • Todo el pipeline: web GH Pages, Android AAB/debug, docs actualizados. Sigue con todo ritmo.
 
-**Short "What's new" (copy-paste to Play Console for v0.1.36 code 41):**
-Notificaciones de mensajes mucho más atractivas: toasts con diseño premium + gold glow para legends (badge "⭐ LEYENDA"), panel con items destacados (borde gold, "De tu Leyenda"), badge del bell con pulse. Se ven vivas, diferenciadas y parte del mundo de mitología de la app. (code 41)
+**Short "What's new" (copy-paste to Play Console for v0.1.37 code 42):**
+Arena pulida con propósito real: ahora se nota que sirve de verdad. Ritual Impact visible, acciones etiquetadas por valor (bond/ripple/legend), feedback claro de "esto construye tu leyenda y la mitología de la comunidad", energy field más dramático en combos, stat de "Rituales Arena" en tu vida de entrenamiento. La Arena ya no es solo divertido: es el motor que hace que tus logros tengan peso real, se propaguen y sean reclamados por otros. (code 42)
 
 **Artifacts for this version:**
 - AAB (Play): EntrenaMatch-v0.1.28-recuperacion-cuenta-code33-20260604-1958.aab (y EntrenaMatch-release.aab)

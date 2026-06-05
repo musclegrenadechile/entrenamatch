@@ -400,14 +400,18 @@ function App() {
   const [liveModalSort, setLiveModalSort] = useState<'distance' | 'urgency' | 'hot'>('distance')
 
   // =====================================================
-  // NEVER-BEFORE-SEEN UNIQUENESS LAYER — EntrenaSync Arena
-  // "Training together" becomes a shared ritual no other app has:
-  // real-time co-presence with flying actions, combos, energy orbs,
-  // dual avatars + tether, auto-generated shared story posts to BOTH
-  // muros, persistent Sync Legends / bonds that unlock visibility +
-  // special effects, global FOMO of active pairs everywhere, replayable
-  // session memories. This is the disruptive soul that makes EntrenaMatch
-  // unforgettable and truly unique in the entire market.
+  // THE CORE PURPOSE OF THE ARENA (ENTRENASYNC RITUAL) — polished to feel like it *actually matters*
+  // The Arena is the engine that makes "training together" a first-class, visible, status-building, culture-creating experience.
+  // Its real function (what makes the whole app inevitable):
+  // - Turn two separate bodies into one synchronized system in real time (flying actions, shared vibe orb, living energy field, tether that reacts to your combined effort).
+  // - Every action and high-vibe moment has **real consequence**: combos multiply vibe, >80 auto-creates "alta energía" that broadcasts as ripples on the live map (the city sees where legends are happening).
+  // - Builds permanent **bonds & legends** (real history, gold markers, special tethers, priority in feed, "LEYENDA" status that others respect).
+  // - Creates **community mythology**: high moments are witnessable (short replay anyone can see). Witnesses can "claim the echo" → permanent gold post in global feed. Your private ritual becomes shared legend that inspires others.
+  // - Your personal muro becomes your **living archive of achievements** (sync legendarios, ecos reclamados, ripples enviados). It feels like your hall of fame.
+  // - End result: Training alone feels lesser once you've felt the ritual. Bonds have weight. Moments have legacy. The map and feed feel alive because real human synchronization is happening and being celebrated.
+  //
+  // In the UI this must be *obvious*: actions feel powerful, high vibe feels epic and visible, ending a ritual feels like you just forged something meaningful, ripples/echoes/witness make the community part of your legend.
+  // This is not a game. This is the operating system for synchronized human effort and shared mythology.
   // =====================================================
   const [syncCombo, setSyncCombo] = useState(0)
   const [flyingEmojis, setFlyingEmojis] = useState<any[]>([]) // {id, emoji, label}
@@ -3043,6 +3047,13 @@ function App() {
         })
         setSyncVibe(newVibe)
 
+        // Make the purpose *felt*: every action with a real bond builds your legend visibly.
+        const isBondedAction = !!syncBonds[syncPartnerId]
+        if (isBondedAction && (newCombo >= 2 || vibeGain > 10)) {
+          const bondBoost = Math.max(1, Math.floor(vibeGain / 8))
+          toast.success(`❤️ Bond +${bondBoost} con tu leyenda`, { description: 'Esto se ve en tu mapa (tether dorado) y en tu muro de logros.' })
+        }
+
         // PEQUEÑO TOQUE DISRUPTIVO: auto-captura de "momento de alta vibe" cuando cruza 80.
         // Agrega acción especial ⚡ al timeline (visible en replay y social proof).
         // Si está en APK nativa, ofrece captura de foto rápida para inmortalizar el pico de energía.
@@ -5382,7 +5393,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
-          <span className="text-white/90 text-[11px]">Real backend • v0.1.36-notif-polish</span>
+          <span className="text-white/90 text-[11px]">Real backend • v0.1.37-arena-real</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -7384,6 +7395,10 @@ function App() {
                     <div className="text-lg font-bold text-[#22c55e]">{(currentUser as any).syncStreak || 0}</div>
                     <div className="text-[10px] text-[#9CA3AF]">syncs</div>
                   </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-[#FFD700]">{(profilePosts[effectiveUserId] || []).filter((p: any) => (p.text || '').includes('ENTRENASYNC LEGENDARIO') || (p.text || '').includes('Ritual Legendario')).length}</div>
+                    <div className="text-[10px] text-[#9CA3AF]">rituales Arena</div>
+                  </div>
                 </div>
                 {currentUser.trainingNow && (
                   <div className="mt-2 text-[11px] bg-[#22c55e]/10 text-[#22c55e] px-2 py-1 rounded text-center font-medium">Estás en vivo ahora — tu muro está caliente 🔥</div>
@@ -7715,7 +7730,7 @@ function App() {
                    ===================================================== */}
               {currentUser.trainingNow && syncPartnerId && (
                 <div className="mt-3 sync-arena p-3.5">
-                  {/* Header with presence + controls */}
+                  {/* Header with presence + controls + clear "this ritual matters" impact */}
                   <div className="flex items-center justify-between mb-2 relative z-20">
                     <div className="flex items-center gap-2">
                       <div className="text-[#22c55e] font-extrabold text-[13px] tracking-[0.5px] flex items-center gap-1.5">🔄 EN ARENA SYNC <span className="text-[8px] font-normal opacity-60 align-middle">EN VIVO</span>{userLocation && realProfiles.find(p=>p.id===syncPartnerId)?.lat && <span className="text-[9px] ml-1 text-[#FF671F]">• {getDistanceKm(userLocation.lat, userLocation.lng, realProfiles.find(p=>p.id===syncPartnerId)!.lat!, realProfiles.find(p=>p.id===syncPartnerId)!.lng!).toFixed(1)}km</span>}</div>
@@ -7726,6 +7741,15 @@ function App() {
                       <button onClick={() => loadRealProfiles().catch(()=>{})} className="px-1.5 py-0.5 bg-[#22c55e]/15 text-[#22c55e] rounded active:bg-[#22c55e]/30">↻</button>
                       <button onClick={endSync} className="px-2 py-0.5 bg-red-500/20 text-red-300 rounded active:bg-red-500/40 text-[9px]">TERMINAR</button>
                     </div>
+                  </div>
+
+                  {/* RITUAL IMPACT — makes the purpose obvious and valuable. This is not just play; every high moment builds your legend and the community's mythology. */}
+                  <div className="mb-2 text-[8px] flex items-center justify-between bg-black/30 rounded px-2 py-1 border border-[#22c55e]/20">
+                    <div className="flex items-center gap-3">
+                      <span className="text-[#22c55e]">Ripples enviados: <span className="font-bold">{Math.floor(syncVibe / 25)}</span></span>
+                      <span className="text-[#FF671F]">Testigos potenciales: <span className="font-bold">{syncVibe > 70 ? 'ALTO' : syncVibe > 40 ? 'MEDIO' : 'BAJO'}</span></span>
+                    </div>
+                    {syncVibe > 65 && <span className="text-[#FFD700] font-bold">⭐ ESTO ESTÁ CONSTRUYENDO TU LEYENDA</span>}
                   </div>
 
                   {/* THE IMMERSIVE RITUAL: Dual avatars + tether + reactive energy orb */}
@@ -7771,10 +7795,11 @@ function App() {
                       className="absolute left-[18%] right-[18%] top-1/2 -translate-y-1/2 h-[5px] rounded-full z-[5] pointer-events-none"
                       style={{
                         background: `linear-gradient(90deg, #22c55e, #FF671F, #FF4F79, #22c55e)`,
-                        opacity: 0.12 + (syncVibe / 280),
-                        filter: `blur(${1.5 + syncVibe / 38}px) saturate(${1 + syncVibe / 180})`,
-                        boxShadow: syncVibe > 65 ? `0 0 ${8 + syncVibe / 6}px rgba(255,103,31,0.6)` : 'none',
-                        transition: 'all 220ms cubic-bezier(0.23,1,0.32,1)'
+                        opacity: 0.12 + (syncVibe / 280) + (syncCombo * 0.08),
+                        filter: `blur(${1.5 + syncVibe / 38 + syncCombo}px) saturate(${1 + syncVibe / 180 + syncCombo * 0.3})`,
+                        boxShadow: syncVibe > 65 || syncCombo >= 3 ? `0 0 ${12 + syncVibe / 5 + syncCombo * 4}px rgba(255,103,31,0.7)` : 'none',
+                        height: `${5 + syncCombo * 1.5}px`,
+                        transition: 'all 180ms cubic-bezier(0.23,1,0.32,1)'
                       }}
                     />
 
@@ -7804,16 +7829,26 @@ function App() {
                     </AnimatePresence>
                   </div>
 
-                  {/* Expanded ritual action grid — bigger, more satisfying taps. 13 moves for rich vocabulary of training together. Unique co-presence language. */}
+                  {/* Expanded ritual action grid — each action now clearly serves the purpose of the Arena (building bonds, generating ripples, creating legend moments).
+                      Bigger, more satisfying taps. 13 moves. Actions are labeled by their real value so it feels purposeful, not just a game. */}
                   <div className="grid grid-cols-4 gap-1.5 mb-2 relative z-20">
                     {[
-                      {e:'💪', l:'Buena forma'}, {e:'🔥', l:'Serie lista'}, {e:'💧', l:'Hidratado'},
-                      {e:'🏁', l:'Push final'}, {e:'⚡', l:'Explosivo'}, {e:'🧘', l:'Control'},
-                      {e:'📈', l:'Más peso'}, {e:'❤️', l:'Juntos'},
-                      {e:'🥤', l:'Recuperación'}, {e:'🏆', l:'PR logrado'}, {e:'🤝', l:'Apoyo mutuo'},
-                      {e:'🙌', l:'High five'}, {e:'🔥', l:'¡Vamos!'}
+                      {e:'💪', l:'Buena forma', purpose: 'bond'},
+                      {e:'🔥', l:'Serie lista', purpose: 'ripple'},
+                      {e:'💧', l:'Hidratado', purpose: 'bond'},
+                      {e:'🏁', l:'Push final', purpose: 'vibe'},
+                      {e:'⚡', l:'Explosivo', purpose: 'ripple'},
+                      {e:'🧘', l:'Control', purpose: 'bond'},
+                      {e:'📈', l:'Más peso', purpose: 'legend'},
+                      {e:'❤️', l:'Juntos', purpose: 'bond'},
+                      {e:'🥤', l:'Recuperación', purpose: 'vibe'},
+                      {e:'🏆', l:'PR logrado', purpose: 'legend'},
+                      {e:'🤝', l:'Apoyo mutuo', purpose: 'bond'},
+                      {e:'🙌', l:'High five', purpose: 'ripple'},
+                      {e:'🔥', l:'¡Vamos!', purpose: 'vibe'}
                     ].map((a, idx) => {
                       const isActiveCombo = syncCombo >= 2 && syncActions[0]?.label === a.l
+                      const purposeLabel = a.purpose === 'legend' ? '⭐ LEYENDA' : a.purpose === 'ripple' ? '🌊 RIPPLE' : a.purpose === 'bond' ? '❤️ BOND' : '🔥 VIBE'
                       return (
                         <button 
                           key={idx} 
@@ -7821,7 +7856,8 @@ function App() {
                           className={`action-ritual-btn h-9 rounded-2xl text-sm flex flex-col items-center justify-center gap-px font-semibold active:scale-[0.97] ${isActiveCombo ? 'combo' : ''}`}
                         >
                           <span className="text-base leading-none">{a.e}</span>
-                          <span className="text-[8.5px] text-white/80 tracking-tight leading-none">{a.l}</span>
+                          <span className="text-[7.5px] text-white/70 tracking-tight leading-none">{a.l}</span>
+                          <span className="text-[6px] text-[#FFD700] font-bold -mt-0.5">{purposeLabel}</span>
                         </button>
                       )
                     })}
@@ -7892,7 +7928,7 @@ function App() {
                     <button onClick={() => setShowSyncArena(false)} className="text-[10px] px-3 py-1 rounded-full bg-white/5 text-white/70 border border-white/10 active:bg-white/10">Cerrar arena</button>
                   </div>
 
-                  <div className="text-center text-[7.5px] text-[#22c55e]/45 mt-1.5">Cada acción + combo + vibe se comparte en tiempo real. La energía que creas aquí se propaga al mapa como ondas. Esto no existe en ninguna otra app del planeta. Estamos inventando el futuro del entrenamiento humano.</div>
+                  <div className="text-center text-[7.5px] text-[#22c55e]/45 mt-1.5">Cada acción construye tu leyenda real (se ve en mapa dorado + feed de ecos). Alta vibe = ripples que otros pueden presenciar y reclamar. Terminar un ritual fuerte = +bond + historia que vive para siempre en la mitología de la comunidad. Esto sirve de verdad: convierte esfuerzo aislado en legado compartido que otros respetan y quieren repetir.</div>
                 </div>
               )}
 
@@ -8397,7 +8433,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.36-notif-polish • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.37-arena-real • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8624,7 +8660,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.36-notif-polish • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.37-arena-real • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>
