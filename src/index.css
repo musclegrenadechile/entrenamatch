@@ -1603,3 +1603,171 @@ input[type="range"]::-moz-range-thumb {
   0%, 100% { fill-opacity: 0.12; }
   50% { fill-opacity: 0.28; }
 }
+
+/* =====================================================
+   ICONIC & UNIQUE LIVE MAP — "El GymPulse es reconocible al instante"
+   Signature visual language: layered energy, gold/orange/purple auras,
+   pulsing social graph, memorable ripples that feel like real human connection.
+   This is what makes the map THE iconic feature of EntrenaMatch.
+   ===================================================== */
+
+/* Iconic self marker — the center of your personal GymPulse.
+   Full gadget showcase makes high-level users instantly feel powerful and unique. */
+.self-iconic {
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.5));
+}
+.self-halo-stack {
+  position: absolute;
+  inset: -10px;
+  border-radius: 9999px;
+  border: 1.5px solid #FFD700;
+  opacity: 0.25;
+  animation: self-halo-pulse 3s ease-in-out infinite;
+}
+.self-pulso-stack {
+  position: absolute;
+  inset: -14px;
+  border-radius: 9999px;
+  border: 2px solid #a855f7;
+  opacity: 0.2;
+  animation: self-pulso-pulse 2.4s ease-in-out infinite;
+}
+@keyframes self-halo-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.25; }
+  50% { transform: scale(1.08); opacity: 0.4; }
+}
+@keyframes self-pulso-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.2; }
+  50% { transform: scale(1.12); opacity: 0.35; }
+}
+
+/* Iconic live user markers — layered rings + gadget auras make every marker tell a story.
+   High gadget users look unmistakably "part of the elite pulse". */
+.iconic-live-marker {
+  transition: transform 0.2s cubic-bezier(0.22,1,0.36,1);
+}
+.iconic-live-marker:hover {
+  transform: scale(1.06);
+}
+.live-halo-ring {
+  position: absolute;
+  inset: -5px;
+  border-radius: 9999px;
+  border: 1.5px solid #FFD700;
+  opacity: 0.3;
+}
+.live-pulso-ring {
+  position: absolute;
+  inset: -9px;
+  border-radius: 9999px;
+  border: 2px solid #a855f7;
+  opacity: 0.22;
+  animation: live-pulso-ring 2.8s ease-in-out infinite;
+}
+@keyframes live-pulso-ring {
+  0%, 100% { transform: scale(1); opacity: 0.22; }
+  50% { transform: scale(1.1); opacity: 0.38; }
+}
+.live-aura-crown {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 9px;
+  filter: drop-shadow(0 0 3px #FFD700);
+}
+
+/* Iconic partner hubs — these feel like the "temples" of the social graph.
+   Stronger, more architectural when they are real activity centers. */
+.iconic-partner-hub {
+  filter: drop-shadow(0 0 12px #FFD70044);
+}
+.hub-energy-field {
+  position: absolute;
+  inset: -12px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(255,215,0,0.08) 0%, transparent 70%);
+  animation: hub-energy-breathe 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes hub-energy-breathe {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.06); }
+}
+
+/* Iconic clusters — look like glowing community nodes, not just counts.
+   When the group has high gadgets, they feel like "power spots". */
+.iconic-cluster {
+  filter: drop-shadow(0 3px 10px rgba(0,0,0,0.45));
+}
+.cluster-node-glow {
+  position: absolute;
+  inset: -8px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(255,215,0,0.15) 0%, transparent 65%);
+  animation: cluster-node-glow 3.2s ease-in-out infinite;
+}
+.cluster-high-pulso {
+  animation: cluster-pulso-node 2.5s ease-in-out infinite;
+}
+@keyframes cluster-pulso-node {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+/* Iconic tethers — energy flowing between people.
+   The signature "bond with real weight" visual. */
+.iconic-tether {
+  stroke-linecap: round;
+}
+.tether-glow-core {
+  stroke: #FFD700;
+  stroke-width: 1.5;
+  stroke-opacity: 0.4;
+  filter: blur(1.5px);
+}
+
+/* More epic, signature ripples — these are the "heartbeats" of the community.
+   Different events have distinct memorable signatures. */
+.iconic-ripple {
+  pointer-events: none;
+}
+.ripple-new-live {
+  animation: ripple-new-live 1.9s cubic-bezier(0.22,1,0.36,1) forwards;
+}
+@keyframes ripple-new-live {
+  0% { opacity: 0.65; transform: scale(0.4); }
+  30% { opacity: 0.35; }
+  100% { opacity: 0; transform: scale(2.1); }
+}
+.ripple-hub-pulse {
+  animation: ripple-hub-pulse 2.3s ease-out forwards;
+}
+@keyframes ripple-hub-pulse {
+  0% { opacity: 0.55; transform: scale(0.5); }
+  40% { opacity: 0.28; }
+  100% { opacity: 0; transform: scale(1.9); }
+}
+.ripple-pulso-master {
+  animation: ripple-pulso-master 2.7s ease-out forwards;
+}
+@keyframes ripple-pulso-master {
+  0% { opacity: 0.85; transform: scale(0.55); }
+  25% { opacity: 0.5; }
+  100% { opacity: 0.05; transform: scale(1.65); }
+}
+
+/* Global map "hum" — very subtle constant life when the GymPulse is active.
+   Makes the map feel like a living organism even when idle. */
+#live-map-container.live-map-hum::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(255,215,0,0.015) 0%, transparent 55%);
+  animation: global-hum 8s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: 16px;
+}
+@keyframes global-hum {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}

@@ -1,4 +1,30 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.77-live-map-continue-strongest code 81) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.78-map-iconic-unique code 82) ===
+
+MAPA VISUAL ICÓNICO Y ÚNICO — "El GymPulse se reconoce al instante como el corazón de EntrenaMatch".
+
+Hicimos que el live map sea verdaderamente icónico y único, no solo "bonito":
+- Signature layered energy design: múltiples anillos concéntricos, auras apiladas por gadget (Halo gold + Pulso púrpura + Aura crown), glows profundos y sombras premium. Cada marker cuenta la historia del usuario.
+- Self marker como el elemento más icónico del mapa: foto de perfil + stack completo de gadgets (Halo ring + Pulso outer pulse + Aura). Los usuarios de alto nivel se ven poderosos y reconocibles.
+- Tethers icónicos: dos capas (glow core + línea brillante) para que los syncs fuertes se sientan con "peso real". Orbs pulsantes en los extremos de pares legendarios/high-gadget.
+- Ripples con firmas memorables: diferentes animaciones y colores según el evento (new-live ripple, hub-pulse, Pulso Master wave, ritual energy). El mapa "reacciona" de forma única cuando pasa algo importante.
+- Clusters como "nodos de energía comunitaria": glow radial + badges de gadgets. Cuando el grupo tiene Pulso se ven como power spots.
+- Partner hubs como templos sociales: energy field que respira, label "HUB", aura más fuerte. Se sienten como centros vivos del GymPulse.
+- Global "hum" sutil en el contenedor cuando hay actividad (el mapa se siente como un organismo vivo incluso en idle).
+- Todo usa el lenguaje visual consistente Dunkin orange + gold + purple para Pulso, con transiciones suaves y animaciones premium (cubic-bezier pro).
+- El mapa ahora es el feature más reconocible y adictivo de la app: la gente lo abre y se queda porque ve el pulso social de forma épica y única.
+
+Esto eleva el live map de "útil" a "icónico" — el punto más fuerte de EntrenaMatch se siente inevitable y premium.
+
++ web build (dist), AAB + debug APK. Push + instructions actualizado.
+Test S26: abre el mapa con varios lives + syncs + hubs. Fíjate en:
+- Tu propio marker (stack de gadgets completo).
+- Tethers con glow core + orbs.
+- Ripples con personalidades distintas (nuevo live vs Pulso vs hub).
+- Clusters con glow y badges.
+- Header + hum del mapa cuando hay movimiento.
+Debe sentirse como una experiencia visual única que nadie más tiene.
+
+Sigue con todo. El mapa visual ahora es icónico y único.
 
 CONTINUA EN EL LIVE MAP - SIGUIENDO PULIENDO NUESTRO PUNTO MÁS FUERTE.
 

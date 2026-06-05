@@ -6046,7 +6046,7 @@ function App() {
               fillColor: '#22c55e',
               fillOpacity: 0.035,
               opacity: 0.28,
-              className: 'map-heartbeat-ring'
+              className: 'map-heartbeat-ring iconic-ripple'
             }).addTo(mapInstanceRef.current)
             ;(beat as any)._isHeartbeat = true
             markersRef.current.push(beat)
@@ -6084,7 +6084,7 @@ function App() {
               fillColor: rippleColor,
               fillOpacity: hasPulsoNew || isHigh ? 0.1 : 0.05,
               opacity: hasPulsoNew || isHigh ? 0.7 : 0.45,
-              className: `map-heartbeat-ring${hasPulsoNew ? ' pulso-maestro-ripple' : (isHigh ? ' high-gadget-ripple' : '')}`
+              className: `map-heartbeat-ring iconic-ripple ripple-new-live${hasPulsoNew ? ' pulso-maestro-ripple' : (isHigh ? ' high-gadget-ripple' : '')}`
             }).addTo(mapInstanceRef.current);
             ;(newLiveRipple as any)._isNewLiveRipple = true;
             markersRef.current.push(newLiveRipple);
@@ -6117,7 +6117,7 @@ function App() {
             fillColor: '#a855f7',
             fillOpacity: 0.03,
             opacity: 0.25,
-            className: 'pulso-maestro-ripple'
+            className: 'pulso-maestro-ripple iconic-ripple ripple-pulso-master'
           }).addTo(mapInstanceRef.current);
           ;(ambient as any)._isAmbientPulso = true;
           markersRef.current.push(ambient);
@@ -6205,8 +6205,11 @@ function App() {
           const clGlow = clHasPulso ? '0 0 0 8px #a855f733, 0 0 0 14px #FFD70011' : (clHasHalo ? '0 0 0 6px #FFD70022' : '0 0 0 5px #FF671F22');
           const clBorder = clHasPulso ? '#a855f7' : '#FFD700';
           const clIcon = clHasPulso ? '🌀' : (clHasHalo ? '✨' : '');
+          // Iconic clusters — glowing community nodes. When the group has high gadgets they feel like power spots in the social graph.
+          const clusterExtraGlow = clHasPulso ? ' cluster-high-pulso' : '';
           iconHtml = `
-            <div style="position:relative;width:46px;height:46px">
+            <div style="position:relative;width:46px;height:46px" class="iconic-cluster${clusterExtraGlow}">
+              <div class="cluster-node-glow"></div>
               <div style="width:46px;height:46px;border-radius:9999px;background:linear-gradient(#111,#1a1a1f);border:3.5px solid ${clBorder};box-shadow:${clGlow},0 4px 14px rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:16px;line-height:1;">
                 ${c.clusterCount}${clIcon ? `<span style="font-size:11px;margin-left:2px">${clIcon}</span>` : ''}
               </div>
@@ -6217,10 +6220,17 @@ function App() {
           let gadgetBadges = '';
           if (hasHalo) gadgetBadges += `<div style="position:absolute;top:-3px;left:-3px;width:12px;height:12px;border-radius:999px;background:#FFD700;color:#111;font-size:8px;line-height:11px;text-align:center;border:1px solid #111">✨</div>`;
           if (hasAura) gadgetBadges += `<div style="position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:999px;background:#FFD700;color:#111;font-size:7px;line-height:10px;text-align:center;border:1px solid #111">👑</div>`;
+          // Iconic layered marker — this is what makes the live map instantly recognizable and unique.
+          // Multiple concentric energy rings + gadget auras = every person tells their story visually.
+          const liveLayeredRings = `
+            ${hasHalo ? `<div style="position:absolute;inset:-5px;border-radius:9999px;border:1.5px solid #FFD700;opacity:0.28;"></div>` : ''}
+            ${hasPulso ? `<div style="position:absolute;inset:-9px;border-radius:9999px;border:2px solid #a855f7;opacity:0.22;animation:live-pulso-ring 2.8s ease-in-out infinite;"></div>` : ''}
+            ${hasAura ? `<div style="position:absolute;top:-5px;right:-5px;font-size:10px;filter:drop-shadow(0 0 2px #FFD700);line-height:1;">👑</div>` : ''}
+          `;
           iconHtml = `
-            <div style="position:relative;width:36px;height:36px">
+            <div style="position:relative;width:36px;height:36px" class="iconic-live-marker">
               ${networkPowerHalo}
-              ${hasPulso ? `<div style="position:absolute;inset:-7px;border-radius:9999px;border:2px solid #a855f7;opacity:0.35;animation:pulso-personal 2.2s ease-in-out infinite;"></div>` : ''}
+              ${liveLayeredRings}
               <div style="width:36px;height:36px;border-radius:9999px;overflow:hidden;border:${borderW} solid ${markerColor};box-shadow:${glow}, 0 2px 6px rgba(0,0,0,0.4);${pulseExtra}">
                 <img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='${markerColor}';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:11px\\'>${shortName.slice(0,2).toUpperCase()}</div>'" />
               </div>
@@ -6234,10 +6244,15 @@ function App() {
           let gadgetBadges = '';
           if (hasHalo) gadgetBadges += `<div style="position:absolute;top:-3px;left:-3px;width:12px;height:12px;border-radius:999px;background:#FFD700;color:#111;font-size:8px;line-height:11px;text-align:center;border:1px solid #111">✨</div>`;
           if (hasAura) gadgetBadges += `<div style="position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:999px;background:#FFD700;color:#111;font-size:7px;line-height:10px;text-align:center;border:1px solid #111">👑</div>`;
+          const liveLayeredRings = `
+            ${hasHalo ? `<div style="position:absolute;inset:-5px;border-radius:9999px;border:1.5px solid #FFD700;opacity:0.28;"></div>` : ''}
+            ${hasPulso ? `<div style="position:absolute;inset:-9px;border-radius:9999px;border:2px solid #a855f7;opacity:0.22;animation:live-pulso-ring 2.8s ease-in-out infinite;"></div>` : ''}
+            ${hasAura ? `<div style="position:absolute;top:-5px;right:-5px;font-size:10px;filter:drop-shadow(0 0 2px #FFD700);line-height:1;">👑</div>` : ''}
+          `;
           iconHtml = `
-            <div style="position:relative;width:36px;height:36px">
+            <div style="position:relative;width:36px;height:36px" class="iconic-live-marker">
               ${networkPowerHalo}
-              ${hasPulso ? `<div style="position:absolute;inset:-7px;border-radius:9999px;border:2px solid #a855f7;opacity:0.35;animation:pulso-personal 2.2s ease-in-out infinite;"></div>` : ''}
+              ${liveLayeredRings}
               <div style="width:36px;height:36px;border-radius:9999px;background:${markerColor};border:${borderW} solid #fff;box-shadow:${glow},0 2px 6px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px;${pulseExtra}">${initials}</div>
               <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#fff;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6);max-width:52px;overflow:hidden;text-overflow:ellipsis">${shortName}</div>
               ${highEnergy ? `<div style="position:absolute;top:-2px;right:-2px;width:10px;height:10px;border-radius:9999px;background:#fff;box-shadow:0 0 6px #fff;border:1.5px solid ${markerColor}"></div>` : ''}
@@ -6267,7 +6282,7 @@ function App() {
           netSize = [Math.round(netSize[0] * zoomScale), Math.round(netSize[1] * zoomScale)];
         }
         const customIcon = L.divIcon({
-          className: `entrenamatch-marker${highEnergy ? ' high-energy' : ''}${isLegend ? ' legend-marker' : ''}${isNetworkFilterActive ? ' network-power-active' : ''}${isHighNP ? ' high-np' : ''}${(user as any).isCluster ? ' cluster-marker' : ''}`,
+          className: `entrenamatch-marker iconic-live-marker${highEnergy ? ' high-energy' : ''}${isLegend ? ' legend-marker' : ''}${isNetworkFilterActive ? ' network-power-active' : ''}${isHighNP ? ' high-np' : ''}${(user as any).isCluster ? ' cluster-marker iconic-cluster' : ''}`,
           html: iconHtml,
           iconSize: (user as any).isCluster ? [46,46] : netSize,
           iconAnchor: (user as any).isCluster ? [23,23] : [20, 24],
@@ -6318,7 +6333,7 @@ function App() {
             fillColor: '#22c55e',
             fillOpacity: 0.05,
             opacity: 0.5,
-            className: 'temp-click-ring'
+            className: 'temp-click-ring iconic-ripple'
           }).addTo(mapInstanceRef.current)
           setTimeout(() => {
             if (mapInstanceRef.current) { try { mapInstanceRef.current.removeLayer(ring) } catch {} }
@@ -6378,8 +6393,11 @@ function App() {
           if (logo) {
             // Much more attractive: when it's a real hub (multiple GymPartners training near), it gets stronger glow + pulse
             const activityBadge = nearby > 0 ? `<div style="position:absolute;top:-2px;right:-2px;background:#22c55e;color:#000;font-size:8px;font-weight:900;padding:0 3px;border-radius:999px;border:1px solid #111;line-height:1;">${nearby}</div>` : ''
+            // Iconic partner hubs — these are the recognizable "social temples" of the GymPulse.
+            // When they have real activity they get the full energy field treatment.
             partnerHtml = `
-              <div style="position:relative;width:${isHub ? 48 : 44}px;height:${isHub ? 48 : 44}px${isHub ? ' z-index:2' : ''}">
+              <div style="position:relative;width:${isHub ? 48 : 44}px;height:${isHub ? 48 : 44}px${isHub ? ' z-index:2' : ''}" class="${isHub ? 'iconic-partner-hub' : ''}">
+                ${isHub ? `<div class="hub-energy-field"></div>` : ''}
                 <div style="width:${isHub ? 48 : 44}px;height:${isHub ? 48 : 44}px;border-radius:9999px;overflow:hidden;border:${isHub ? '4px' : '3px'} solid #FFD700;${hubAura}">
                   <img src="${logo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='linear-gradient(#FF671F,#E55A1A)';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-size:20px\\'>${fallbackIcon}</div>'" />
                 </div>
@@ -6389,7 +6407,8 @@ function App() {
           } else {
             const activityBadge = nearby > 0 ? `<div style="position:absolute;top:-2px;right:-2px;background:#22c55e;color:#000;font-size:8px;font-weight:900;padding:0 3px;border-radius:999px;border:1px solid #111;line-height:1;">${nearby}</div>` : ''
             partnerHtml = `
-              <div style="position:relative;width:${isHub ? 44 : 40}px;height:${isHub ? 44 : 40}px">
+              <div style="position:relative;width:${isHub ? 44 : 40}px;height:${isHub ? 44 : 40}px" class="${isHub ? 'iconic-partner-hub' : ''}">
+                ${isHub ? `<div class="hub-energy-field"></div>` : ''}
                 <div style="width:${isHub ? 44 : 40}px;height:${isHub ? 44 : 40}px;border-radius:9999px;background:linear-gradient(#FF671F,#E55A1A);border:${isHub ? '4px' : '3px'} solid #FFD700;${hubAura}display:flex;align-items:center;justify-content:center;color:white;font-size:18px;line-height:1;">
                   ${fallbackIcon}
                 </div>
@@ -6398,7 +6417,7 @@ function App() {
               </div>`
           }
           const pIcon = L.divIcon({
-            className: `entrenamatch-partner-marker${isHub ? ' partner-hub-strong' : ''}`,
+            className: `entrenamatch-partner-marker${isHub ? ' partner-hub-strong iconic-partner-hub' : ''}`,
             html: partnerHtml,
             iconSize: logo ? (isHub ? [48,48] : [44,44]) : (isHub ? [44,44] : [40,40]),
             iconAnchor: logo ? (isHub ? [24,24] : [22,22]) : (isHub ? [22,22] : [20,20]),
@@ -6435,7 +6454,7 @@ function App() {
                 fillColor: '#FFD700',
                 fillOpacity: 0.04,
                 opacity: 0.55,
-                className: 'temp-click-ring'
+                className: 'temp-click-ring iconic-ripple'
               }).addTo(map)
               setTimeout(() => { try { map.removeLayer(ring) } catch {} }, 820)
             }
@@ -6486,7 +6505,7 @@ function App() {
                 weight: 0,
                 fillColor: '#FFD700',
                 fillOpacity: 0.032,
-                className: 'partner-hub-aura'
+                className: 'partner-hub-aura iconic-partner-hub'
               }).addTo(mapInstanceRef.current)
               markersRef.current.push(aura)
             } catch {}
@@ -6502,7 +6521,7 @@ function App() {
                 fillColor: '#FFD700',
                 fillOpacity: 0.04,
                 opacity: 0.35,
-                className: 'map-heartbeat-ring'
+                className: 'map-heartbeat-ring iconic-ripple ripple-hub-pulse'
               }).addTo(mapInstanceRef.current)
               ;(hubRipple as any)._isHubRipple = true
               markersRef.current.push(hubRipple)
@@ -6531,9 +6550,15 @@ function App() {
       if (photo) {
         const halo = hasEliteHalo ? 'box-shadow: 0 0 0 8px #FFD70044, 0 0 16px #FFD70088, 0 0 0 3px rgba(59,130,246,0.4), 0 2px 6px rgba(0,0,0,0.5);' : 'box-shadow:0 0 0 3px rgba(59,130,246,0.4), 0 2px 6px rgba(0,0,0,0.5);'
         const pulsoRing = hasPulsoSelf ? `<div style="position:absolute;inset:-8px;border-radius:9999px;border:2px solid #a855f7;opacity:0.3;animation:pulso-personal 2.2s ease-in-out infinite;"></div>` : ''
+        // The most iconic element on the entire map: YOU with your full gadget stack.
+        // This is what high-level users will chase — their marker becomes a recognizable "power signature".
+        const selfFullAura = `
+          ${hasEliteHalo ? `<div class="self-halo-stack"></div>` : ''}
+          ${hasPulsoSelf ? `<div class="self-pulso-stack"></div>` : ''}
+        `;
         iconHtml = `
-          <div style="position:relative;width:36px;height:36px">
-            ${pulsoRing}
+          <div style="position:relative;width:36px;height:36px" class="self-iconic">
+            ${selfFullAura}
             <div style="width:36px;height:36px;border-radius:9999px;overflow:hidden;border:3px solid #3b82f6;${halo}">
               <img src="${photo}" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.parentElement.style.background='#3b82f6';this.parentElement.innerHTML='<div style=\\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:12px\\'>${shortName.slice(0,2).toUpperCase()}</div>'" />
             </div>
@@ -6543,15 +6568,19 @@ function App() {
         const initials = shortName.slice(0, 2).toUpperCase()
         const halo = hasEliteHalo ? 'box-shadow: 0 0 0 8px #FFD70044, 0 0 16px #FFD70088, 0 0 0 3px rgba(59,130,246,0.4),0 2px 6px rgba(0,0,0,0.5);' : 'box-shadow:0 0 0 3px rgba(59,130,246,0.4),0 2px 6px rgba(0,0,0,0.5);'
         const pulsoRing = hasPulsoSelf ? `<div style="position:absolute;inset:-8px;border-radius:9999px;border:2px solid #a855f7;opacity:0.3;animation:pulso-personal 2.2s ease-in-out infinite;"></div>` : ''
+        const selfFullAura = `
+          ${hasEliteHalo ? `<div class="self-halo-stack"></div>` : ''}
+          ${hasPulsoSelf ? `<div class="self-pulso-stack"></div>` : ''}
+        `;
         iconHtml = `
-          <div style="position:relative;width:36px;height:36px">
-            ${pulsoRing}
+          <div style="position:relative;width:36px;height:36px" class="self-iconic">
+            ${selfFullAura}
             <div style="width:36px;height:36px;border-radius:9999px;background:#3b82f6;border:3px solid #fff;${halo}display:flex;align-items:center;justify-content:center;color:white;font-weight:800;font-size:12px;letter-spacing:-0.5px;">${initials}</div>
             <div style="position:absolute;bottom:-3px;left:50%;transform:translateX(-50%);background:#111;color:#3b82f6;font-size:8px;line-height:1;padding:1px 4px;border-radius:3px;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,0.6)">TÚ${hasEliteHalo ? '✨' : ''}${hasPulsoSelf ? '🌀' : ''}</div>
           </div>`
       }
       const selfIcon = L.divIcon({
-        className: '',
+        className: 'self-iconic',
         html: iconHtml,
         iconSize: [36, 36],
         iconAnchor: [18, 18],
@@ -6594,6 +6623,22 @@ function App() {
           const myLevel = dailyPulse?.level || 1
           const isHighLevelSelf = (user.id === 'me' || user.id === currentUser?.id) && myLevel >= 10 // gadget Tether Legendario
           const tetherBoost = !!(showOnlyLegends && isBondedLegend) ? ' network-tether-boost' : ''
+          // Iconic tethers — the signature visual of real human connection.
+          // Two layers (glow core + bright line) make strong bonds feel heavy and alive.
+          if (isBondedLegend || isHighLevelSelf) {
+            // Glow core layer for depth
+            const glowCore = L.polyline(
+              [[user.lat, user.lng], [partner.lat, partner.lng]],
+              {
+                color: '#FFD700',
+                weight: showOnlyLegends ? 7.5 : 6,
+                opacity: 0.35,
+                lineJoin: 'round',
+                className: 'map-sync-tether iconic-tether tether-glow-core'
+              }
+            ).addTo(mapInstanceRef.current);
+            syncLinesRef.current.push(glowCore);
+          }
           const line = L.polyline(
             [[user.lat, user.lng], [partner.lat, partner.lng]],
             {
@@ -6602,7 +6647,7 @@ function App() {
               opacity: isBondedLegend || isHighLevelSelf ? 0.9 : 0.65,
               dashArray: isBondedLegend || isHighLevelSelf ? '3,6' : '5, 8',
               lineJoin: 'round',
-              className: `map-sync-tether${isBondedLegend || isHighLevelSelf ? ' legend-tether' : ''}${tetherBoost}`
+              className: `map-sync-tether${isBondedLegend || isHighLevelSelf ? ' legend-tether' : ''}${tetherBoost} iconic-tether`
             }
           ).addTo(mapInstanceRef.current)
           line.bindPopup(`<strong>${isBondedLegend ? '⭐ SYNC DE TUS GYMPARTNERS' : '🔄 Sync en vivo'}</strong><br/>${user.name} ↔ ${partner.name}<br/><span style="font-size:10px">${isBondedLegend ? 'Alianza real de alto rendimiento • Tu grafo da peso en el GymPulse' : 'EntrenaSync en vivo ahora'}</span>`)
@@ -6640,7 +6685,7 @@ function App() {
           fillColor: rippleColor,
           fillOpacity: (pulsoBoost || isLegendRipple) ? 0.12 : 0.07,
           opacity: (pulsoBoost || isLegendRipple) ? 0.85 : 0.65,
-          className: `ritual-map-ripple${isLegendRipple ? ' legend-ripple' : ''}${pulsoBoost ? ' pulso-maestro-ripple' : ''}`
+          className: `ritual-map-ripple iconic-ripple${isLegendRipple ? ' legend-ripple' : ''}${pulsoBoost ? ' pulso-maestro-ripple ripple-pulso-master' : ''}`
         }).addTo(mapInstanceRef.current)
 
         // Bind a special popup that teases the magic + Witness button
@@ -7441,7 +7486,7 @@ function App() {
                   <div 
                     id="live-map-container"
                     ref={liveMapRef} 
-                    className="w-full h-[340px] rounded-2xl overflow-hidden border border-[#22c55e]/30 bg-[#0a0a0c] shadow-inner"
+                    className={`w-full h-[340px] rounded-2xl overflow-hidden border border-[#22c55e]/30 bg-[#0a0a0c] shadow-inner ${liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow).length > 2 ? 'live-map-hum' : ''}`}
                     style={{ zIndex: 1 }}
                   />
                   {/* Live badge + near filter (counts respect current filters + legend selection) */}
