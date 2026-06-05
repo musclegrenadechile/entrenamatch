@@ -25,6 +25,14 @@ service firebase.storage {
       allow write: if isOwner(userId);
     }
 
+    // Chat voice notes (for 1:1 and group/session messages). 
+    // Any authenticated user can write (the app logic ensures only chat participants send).
+    // Anyone authenticated can read (to play the audio in the chat UI).
+    match /chat-voice/{chatId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
     // Default: deny everything else (secure by default)
     match /{allPaths=**} {
       allow read, write: if false;

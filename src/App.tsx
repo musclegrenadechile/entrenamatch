@@ -463,27 +463,14 @@ function App() {
         timestamp: Date.now()
       }
 
+      const voiceDescriptor = { voiceUrl, voiceDuration: duration }
+
       if (isGroup && showGroupChatModalFor) {
-        // send to group
-        sendSessionMessage(showGroupChatModalFor, '', null, voiceMsg as any)
+        // send to group - sendSessionMessage will handle optimistic + Firestore
+        sendSessionMessage(showGroupChatModalFor, '', null, voiceDescriptor)
       } else if (activeChat) {
-        // 1:1
-        const isReal = isRealChatId(activeChat)
-        if (isReal) {
-          await sendRealMessage('', activeChat, voiceMsg as any) // extend sendRealMessage later if needed
-        }
-        const newMsg: Message = {
-          id: voiceMsg.id,
-          from: 'me',
-          text: '',
-          timestamp: voiceMsg.timestamp,
-          voiceUrl: voiceMsg.voiceUrl,
-          voiceDuration: voiceMsg.voiceDuration
-        }
-        const current = messages[activeChat] || []
-        const updated = { ...messages, [activeChat]: [...current, newMsg] }
-        saveMessages(updated)
-        if (isReal) setRealChatMessages(prev => [...prev, newMsg])
+        // 1:1 - sendMessage handles real/demo, optimistic, etc.
+        sendMessage('', voiceDescriptor)
       }
 
       // cleanup
@@ -1928,8 +1915,10 @@ function App() {
         msgs.push({
           id: doc.id,
           from: 'me',
-          text: data.text,
+          text: data.text || '',
           timestamp: data.timestamp || Date.now(),
+          voiceUrl: data.voiceUrl,
+          voiceDuration: data.voiceDuration,
         });
       });
       snap2.forEach((doc) => {
@@ -1937,8 +1926,10 @@ function App() {
         msgs.push({
           id: doc.id,
           from: 'them',
-          text: data.text,
+          text: data.text || '',
           timestamp: data.timestamp || Date.now(),
+          voiceUrl: data.voiceUrl,
+          voiceDuration: data.voiceDuration,
         });
       });
       msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
@@ -2355,6 +2346,8 @@ function App() {
           text: d.text || '',
           timestamp: d.timestamp || Date.now(),
           photo: d.photo,
+          voiceUrl: d.voiceUrl,
+          voiceDuration: d.voiceDuration,
           reactions: d.reactions || {}
         });
       });
@@ -2405,6 +2398,8 @@ function App() {
               text: d.text || '',
               timestamp: d.timestamp || Date.now(),
               photo: d.photo,
+              voiceUrl: d.voiceUrl,
+              voiceDuration: d.voiceDuration,
               reactions: d.reactions || {}
             });
           });
@@ -7560,9 +7555,8 @@ function App() {
                     e.preventDefault(); 
                     const input = (e.currentTarget.elements[0] as HTMLInputElement); 
                     if (pendingVoice) {
-                      sendMessage('', {voiceUrl: pendingVoice.url, voiceDuration: pendingVoice.duration})
-                      if (voicePreviewUrlRef.current) { URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null }
-                      setPendingVoice(null)
+                      sendVoiceNote(activeChat, false)
+                      // sendVoiceNote handles cleanup and toast
                     } else if (input.value.trim()) {
                       sendMessage(input.value); 
                     }
@@ -11049,10 +11043,8 @@ function App() {
                         e.preventDefault()
                         if ((chatInputValue.trim() || groupChatPhoto || pendingVoice) && showGroupChatModalFor) {
                           if (pendingVoice) {
-                            sendSessionMessage(showGroupChatModalFor, '', null, { voiceUrl: pendingVoice.url, voiceDuration: pendingVoice.duration })
-                            // cleanup pending
-                            if (voicePreviewUrlRef.current) { URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null }
-                            setPendingVoice(null)
+                            sendVoiceNote(showGroupChatModalFor, true)
+                            // sendVoiceNote handles upload, send, cleanup, toast
                           } else {
                             sendSessionMessage(showGroupChatModalFor, chatInputValue, groupChatPhoto)
                           }

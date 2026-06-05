@@ -15,8 +15,8 @@ android {
         applicationId "com.entrenamatch.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 52
-        versionName "0.1.48-voice-notes-spectacular-profile"
+        versionCode 53
+        versionName "0.1.49-voice-audio-fix-storage-rules"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

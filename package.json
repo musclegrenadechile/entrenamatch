@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.48-voice-notes-spectacular-profile",
+  "version": "0.1.49-voice-audio-fix-storage-rules",
   "type": "module",
   "scripts": {
     "dev": "vite",
