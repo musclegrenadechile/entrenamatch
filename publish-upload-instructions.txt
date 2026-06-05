@@ -1,6 +1,6 @@
 === READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.54-voice-send-polish code 58) ===
 
-AAB: EntrenaMatch-v0.1.55-pulso-mejorado-20260605.aab + EntrenaMatch-release.aab (7.58MB)
+AAB: EntrenaMatch-v0.1.55-seguridad-mejorada-20260605.aab + EntrenaMatch-release.aab (7.58MB)
 
 Mejoras al sistema Pulso Diario: más streaks (voice + pulse visibility), desafíos más inteligentes y variados (incluyendo voz a bonds débiles y ripples de mapa), protección de streak con Momentum, banner atractivo al abrir app, recordatorios de riesgo por la noche, notifs in-app especiales para daily pulse con navegación directa, UI compacta de streaks + polish. Más razones fuertes y hooks inteligentes para abrir todos los días, reforzando el grafo Red + Pulso.
 
@@ -55,6 +55,16 @@ Sistema completo para que la gente abra la app TODOS los días con razones fuert
 • Base para notificaciones inteligentes futuras (ya emite eventos daily_pulse).
 
 Esto hace que abrir EntrenaMatch sea un ritual diario que fortalece tu Red de EntrenaSync y tu Network Power.
+
+**v0.1.55 - Mejoras de seguridad y comunidad (reportes, bloqueos, verificación básica, reglas)**
+
+- Sistema de reportes mejorado: modal con razones predefinidas + link directo a reglas, persiste en FS /reports (crear + leer propios), auto-bloqueo, usable desde explore/perfil/chats.
+- Bloqueo de usuarios: persiste en perfil FS 'blockedUsers' (cross device), filtra en listas live/explore/mapa/feed, previene interacciones y chats.
+- Verificación básica de perfiles: flujo mejorado (requiere ID + selfie), submit marca 'verified' inmediatamente para pre-alpha (con nota), docs guardados, badge visible más lugares.
+- Reglas claras de comunidad: directrices expandidas y específicas (respeto, seguridad pública, perfiles reales, no spam/sexual, reportar), linkeadas en report modal y perfil.
+- Integración: actualizaciones en rules FS, loads, moderation panel, notifs.
+
+Todo para una comunidad segura y enfocada en rendimiento real.
 
 Sigue con todo. Sube este AAB. 
 

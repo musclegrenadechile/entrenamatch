@@ -861,6 +861,36 @@ function App() {
     }
   }, [dailyPulse?.lastDate, currentUser?.trainingNow, dailyPulse?.trainingStreak])
 
+  // Offline / online listeners + Firebase persistence enable (good offline handling)
+  useEffect(() => {
+    const handleOnline = () => setIsOffline(false)
+    const handleOffline = () => setIsOffline(true)
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    // Enable Firestore offline persistence (queues writes, serves cache when offline)
+    // Safe to call once; catches multi-tab or unsupported browser.
+    if (db && !isDemoMode) {
+      (async () => {
+        try {
+          const { enableIndexedDbPersistence } = await import('firebase/firestore')
+          await enableIndexedDbPersistence(db)
+        } catch (err: any) {
+          if (err.code === 'failed-precondition') {
+            console.log('[Firestore] Offline persistence: multiple tabs open')
+          } else if (err.code === 'unimplemented') {
+            console.log('[Firestore] Offline persistence not supported in this browser')
+          }
+        }
+      })()
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [isDemoMode])
+
   const refreshDailyPulse = () => checkAndUpdateDailyPulse()
 
   const completeDailyChallenge = async (progressInc = 1) => {
@@ -1101,6 +1131,8 @@ function App() {
     longestPulse: number
   } | null>(null)
   const [showDailyPulseBanner, setShowDailyPulseBanner] = useState(false)
+  // Offline handling for good UX (Firebase queues writes, we show banner + use last cached for map)
+  const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false)
   const audioChunksRef = useRef<Blob[]>([])
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const voicePreviewUrlRef = useRef<string | null>(null)
@@ -1274,6 +1306,7 @@ function App() {
   const startSyncRef = useRef<((partnerId: string, partnerName: string) => any) | null>(null)
   const showFullProfileRef = useRef<((profile: any) => void) | null>(null)
   const latestRealProfilesRef = useRef<any[]>([])
+  const mapUpdateTimeoutRef = useRef<any>(null) // for debouncing heavy map rebuilds (prevents lag on frequent live updates)
 
   // Dedicated unmount cleanup for the Leaflet map to avoid memory leaks / zombie maps
   // when the app unmounts, hot-reloads, or user leaves the tab. Runs only on mount/unmount.
@@ -1688,6 +1721,8 @@ function App() {
       setRealProfiles(profiles)
       const now = new Date()
       setLastSync(now)
+      // Cache last live for offline map fallback + fast cold start
+      try { localStorage.setItem('entrenamatch_last_live', JSON.stringify(profiles)) } catch {}
       // Spectacular: preload muro teasers for first few so cards show latest posts immediately
       profiles.slice(0, 5).forEach(p => { loadProfilePosts(p.id).catch(() => {}) })
       // console.log removed for cleaner prod (was spammy on every refresh)
@@ -5417,29 +5452,37 @@ function App() {
       }, 50)
     }
 
-    // Always nuke old markers before re-adding (live list or location just changed)
-    markersRef.current.forEach(m => {
-      try { mapInstanceRef.current.removeLayer(m) } catch {}
-    })
-    markersRef.current = []
+    // Debounced update for performance: rapid changes to liveTrainingNow (from polls/snapshots) were causing full DOM rebuilds + lag.
+    // Now batched every 300ms, and we still clean old on hide.
+    if (mapUpdateTimeoutRef.current) clearTimeout(mapUpdateTimeoutRef.current)
+    mapUpdateTimeoutRef.current = setTimeout(() => {
+      if (!mapInstanceRef.current) return
 
-    let liveUsers = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow)
-    if (mapNearOnly && userLocation) {
-      liveUsers = liveUsers.filter(u => (u.distance || 999) < 10) // near me only filter (10km)
-    }
-    if (selectedMapZone) {
-      liveUsers = liveUsers.filter(u => u.city === selectedMapZone)
-    }
-    if (showOnlyLegends) {
-      liveUsers = liveUsers.filter(u => u.isLegend)
-    }
+      // Always nuke old markers before re-adding (live list or location just changed)
+      markersRef.current.forEach(m => {
+        try { mapInstanceRef.current.removeLayer(m) } catch {}
+      })
+      markersRef.current = []
 
-    liveUsers.forEach(user => {
+      let liveUsers = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow)
+      if (mapNearOnly && userLocation) {
+        liveUsers = liveUsers.filter(u => (u.distance || 999) < 10) // near me only filter (10km)
+      }
+      if (selectedMapZone) {
+        liveUsers = liveUsers.filter(u => u.city === selectedMapZone)
+      }
+      if (showOnlyLegends) {
+        liveUsers = liveUsers.filter(u => u.isLegend)
+      }
+
+      liveUsers.forEach(user => {
       try {
         const color = mapZoneColors[user.city] || mapZoneColors.default
         const shortName = (user.name || '?').split(' ')[0]
         const highEnergy = ((user.joinCount || 0) >= 3) || !!user.trainingSyncWith || (user.syncStreak || 0) > 2
         const isLegend = !!user.isLegend || (user.bondInfo && ((user.bondInfo.totalMin || 0) >= 30 || (user.bondInfo.bondLevel || 0) >= 2))
+        const userBond = user.bondInfo || { bondLevel: 1, totalMin: 0 };
+        const isHighNP = (userBond.bondLevel || 0) >= 3 || (userBond.totalMin || 0) >= 100; // global perk for high Network Power users
         const markerColor = isLegend || isHighNP ? '#FFD700' : color // Gold for legends + HIGH NP perk (global visual priority unlocked by strong personal network)
         const legendBadge = isLegend ? `<div style="position:absolute;top:-4px;right:-4px;background:#FFD700;color:#111;font-size:7px;font-weight:900;padding:0 3px;border-radius:3px;border:1px solid #111">⭐ RED</div>` : (isHighNP ? `<div style="position:absolute;top:-4px;right:-4px;background:#FFD700;color:#111;font-size:6px;font-weight:900;padding:0 2px;border-radius:2px;border:1px solid #111">HIGH NP</div>` : '')
         const networkPowerHalo = (showOnlyLegends && isLegend) || isHighNP ? `<div style="position:absolute;inset:-6px;border-radius:9999px;border:2px solid #FFD700;opacity:0.45;animation:network-power-halo 2.2s ease-in-out infinite;"></div>` : ''
@@ -5477,8 +5520,6 @@ function App() {
 
         let netSize = [40, 48];
         const isNetworkFilterActive = !!showOnlyLegends && isLegend;
-        const userBond = user.bondInfo || { bondLevel: 1, totalMin: 0 };
-        const isHighNP = (userBond.bondLevel || 0) >= 3 || (userBond.totalMin || 0) >= 100; // global perk for high Network Power users
         if (isNetworkFilterActive) {
           // Network Power visual: scale size + extra glow when "Mi Red" filter active — your graph shines on the pulse
           const bond = userBond;
@@ -5753,6 +5794,8 @@ function App() {
         (echoMarker as any)._isEchoPin = true;
       } catch (e) {}
     })
+
+    }, 300) // end debounce for map updates - prevents lag from frequent liveTrainingNow/ripples changes
 
     // Cleanup for this effect run (e.g. when liveTrainingNow or location updates while map is open).
     // We clear markers but keep the map instance alive (cheap updates).
@@ -6347,6 +6390,12 @@ function App() {
 
       {/* MAIN CONTENT AREA */}
       <div className="flex-1 overflow-hidden relative flex flex-col">
+        {/* Global offline indicator - visible on all tabs for good UX when no connectivity (Firebase queues + cache) */}
+        {isOffline && (
+          <div className="bg-yellow-900/90 text-yellow-200 text-[10px] px-3 py-1 text-center border-b border-yellow-800/60 z-20">
+            📡 Sin conexión • usando caché • cambios se guardan y sincronizan al reconectar
+          </div>
+        )}
         {/* ===== EXPLORE / SWIPE (fully owned by ExploreTab) ===== */}
         {/* LIVE TRAINING BANNER - ALWAYS VISIBLE, the star feature for urgency and retention. Green pulsing, se va en, mini photos, quick join. Makes app addictive. Top of explore for maximum impact. */}
         {activeTab === 'explore' && (
