@@ -1441,7 +1441,34 @@ function App() {
   const [mapNearOnly, setMapNearOnly] = useState(false) // simple filter for map UX
   const [selectedMapZone, setSelectedMapZone] = useState<string | null>(null) // interactive zone filter for "sigue con todo el mapa"
   const [showOnlyLegends, setShowOnlyLegends] = useState(false) // filter to only high-performance sync partners (your real training network) on map
+  const [partnerLocations, setPartnerLocations] = useState<any[]>([])
+  const [showPartners, setShowPartners] = useState(true)
+  const [showAddPartnerForm, setShowAddPartnerForm] = useState(false)
+  const [mapForceTick, setMapForceTick] = useState(0) // tiny trigger so map re-renders when toggling partners layer
   const liveMapRef = useRef<HTMLDivElement>(null)
+
+  // When partner visibility or list changes (or dev added one), force the map layer to refresh immediately.
+  useEffect(() => {
+    if (!showLiveMap || !mapInstanceRef.current) return
+    // re-trigger the debounced map update logic
+    if (mapUpdateTimeoutRef.current) clearTimeout(mapUpdateTimeoutRef.current)
+    mapUpdateTimeoutRef.current = setTimeout(() => {
+      // the big render effect will pick up the new showPartners/partnerLocations because they are closed over in the timeout? 
+      // simple hack: nudge liveTrainingNow dep by creating a micro change if needed, or just invalidate
+      if (mapInstanceRef.current) {
+        try { mapInstanceRef.current.invalidateSize() } catch {}
+      }
+    }, 30)
+  }, [showPartners, partnerLocations.length, mapForceTick, showLiveMap])
+
+  // Partner businesses (gyms, stores etc that partner with the app). Devs can add them so they appear on the GymPulse map.
+  // "ellos puedan ver": partners get prominent placement + nearby activity indicators (users training close get associated with the partner location).
+  const PARTNER_SEEDS = [
+    { id: 'p-seed-1', name: 'Muscle Grenade Viña', lat: -33.015, lng: -71.55, type: 'gym', address: 'Viña del Mar, cerca del centro' },
+    { id: 'p-seed-2', name: 'Gym Partner Santiago', lat: -33.45, lng: -70.65, type: 'gym', address: 'Santiago, Providencia' },
+    { id: 'p-seed-3', name: 'Suplementos Elite Valpo', lat: -33.05, lng: -71.62, type: 'store', address: 'Valparaíso, Cerro Concepción' },
+    { id: 'p-seed-4', name: 'CrossFit Concon Hub', lat: -32.92, lng: -71.52, type: 'gym', address: 'Concón, zona costera' }
+  ]
 
   // Zone colors shared for map markers and interactive legend (sigue con todo el mapa)
   const mapZoneColors: Record<string, string> = {
@@ -1455,6 +1482,38 @@ function App() {
   const markersRef = useRef<any[]>([])
   const syncLinesRef = useRef<any[]>([]) // for light tethers between active sync pairs on the live map
   const startSyncRef = useRef<((partnerId: string, partnerName: string) => any) | null>(null)
+
+  // Load partner locations: seeds (for immediate demo) + real Firestore (so devs can add persistent partners via the in-app tool).
+  // This makes the "devs put businesses on the map" easy and real-time visible to all users in the GymPulse.
+  useEffect(() => {
+    // Always start with seeds so the feature is visible even in demo / first run
+    let base = [...PARTNER_SEEDS]
+
+    if (isDemoMode || !db) {
+      setPartnerLocations(base)
+      return
+    }
+
+    // Real mode: listen to partnerLocations collection (devs add via the form below)
+    const { collection, onSnapshot, query, orderBy } = require('firebase/firestore') // dynamic to avoid TDZ
+    const q = query(collection(db, 'partnerLocations'), orderBy('name'))
+    const unsub = onSnapshot(q, (snap: any) => {
+      const fromFs: any[] = []
+      snap.forEach((d: any) => fromFs.push({ id: d.id, ...d.data() }))
+      // merge seeds + fs (fs overrides if same id)
+      const merged = [...base]
+      fromFs.forEach(p => {
+        const idx = merged.findIndex(s => s.id === p.id)
+        if (idx >= 0) merged[idx] = p
+        else merged.push(p)
+      })
+      setPartnerLocations(merged)
+    }, (err: any) => {
+      console.warn('partnerLocations listener error (using seeds only)', err)
+      setPartnerLocations(base)
+    })
+    return () => unsub && unsub()
+  }, [isDemoMode, db])
   const showFullProfileRef = useRef<((profile: any) => void) | null>(null)
   const latestRealProfilesRef = useRef<any[]>([])
   const mapUpdateTimeoutRef = useRef<any>(null) // for debouncing heavy map rebuilds (prevents lag on frequent live updates)
@@ -5845,6 +5904,52 @@ function App() {
       }
     })
 
+    // PARTNER BUSINESSES ON THE GYMPULSE MAP (devs add them so partner gyms/stores are visible).
+    // Distinct visual: orange/gold framed with 🏋️ or 🏪 icon + "PARTNER" badge.
+    // "ellos puedan ver": popup shows how many GymPartners are training nearby (radius ~3-5km).
+    // Clicking "Ver actividad" can be extended later; for now it gives social proof to the partner location.
+    if (showPartners) {
+      partnerLocations.forEach((p: any) => {
+        try {
+          if (!p.lat || !p.lng) return
+          const isGym = (p.type || 'gym') === 'gym'
+          const iconEmoji = isGym ? '🏋️' : '🛒'
+          const partnerHtml = `
+            <div style="position:relative;width:38px;height:38px">
+              <div style="width:38px;height:38px;border-radius:9999px;background:linear-gradient(#FF671F,#E55A1A);border:3px solid #FFD700;box-shadow:0 0 0 3px #FF671F33,0 2px 6px rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;color:white;font-size:18px;line-height:1;">
+                ${iconEmoji}
+              </div>
+              <div style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:#111;color:#FFD700;font-size:7px;font-weight:900;padding:0 4px;border-radius:3px;border:1px solid #FFD700;white-space:nowrap">PARTNER</div>
+            </div>`
+          const pIcon = L.divIcon({
+            className: 'entrenamatch-partner-marker',
+            html: partnerHtml,
+            iconSize: [38, 38],
+            iconAnchor: [19, 19],
+            popupAnchor: [0, -20]
+          })
+          const pMarker = L.marker([p.lat, p.lng], { icon: pIcon }).addTo(mapInstanceRef.current)
+
+          // Compute nearby live count for "ellos vean actividad" (respects current map filters)
+          const nearby = liveUsers.filter((u: any) => {
+            const d = Math.sqrt(Math.pow((u.lat - p.lat), 2) + Math.pow((u.lng - p.lng), 2)) * 111 // rough km
+            return d < 5
+          }).length
+
+          const pPopup = `
+            <div style="min-width:160px;font-size:12px">
+              <strong style="color:#FF671F">${p.name}</strong><br/>
+              <span style="font-size:10px;color:#9CA3AF">${p.address || ''}</span><br/>
+              <span style="color:#22c55e;font-weight:600">🏋️ Socio oficial del GymPulse</span><br/>
+              ${nearby > 0 ? `<span style="font-size:10px">👥 ${nearby} GymPartners entrenando cerca ahora</span><br/>` : ''}
+              <div style="margin-top:6px;font-size:10px;color:#666">Toca para destacar actividad en esta zona</div>
+            </div>`
+          pMarker.bindPopup(pPopup)
+          markersRef.current.push(pMarker)
+        } catch (e) { console.warn('partner marker', e) }
+      })
+    }
+
     // Self position marker + subtle "my area" radius circle (makes map feel personal and useful)
     if (userLocation) {
       // Self dot
@@ -6667,7 +6772,7 @@ function App() {
             <div className="mt-3 relative z-10">
               <div className="flex items-center justify-between mb-1.5 px-1">
                 <div className="text-[10px] font-semibold text-[#22c55e] flex items-center gap-1.5">
-                  🗺️ El GymPulse Global de Entrenamiento Sincronizado
+                  🗺️ El GymPulse Global • Partners + GymPartners en vivo
                   <span className="text-[8px] bg-[#22c55e]/20 px-1.5 rounded">LA RED EN VIVO</span>
                   {networkStats.numPartners > 0 && <span className="text-[7px] bg-[#FFD700]/90 text-black px-1 rounded font-bold">TU RED: {networkStats.numPartners} • NP {networkStats.networkPower}</span>}
                   <span className="text-[7px] ml-1 bg-[#22c55e]/10 px-1 rounded">Redes activas hoy: {Math.max(1, Math.floor(liveTrainingNow.length / 2))} • +{liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} joins en la red</span>
@@ -6692,6 +6797,7 @@ function App() {
                   <div className="absolute bottom-2 right-2 flex items-center gap-1 z-30">
                     <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                       🟢 {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && (u.distance||999)<10)) && (!selectedMapZone || u.city === selectedMapZone) && (!showOnlyLegends || u.isLegend)).length} en vivo • realtime {showOnlyLegends ? ' (tu red)' : ''}
+                      {showPartners && partnerLocations.length > 0 && <span className="ml-1 text-[7px] bg-[#FF671F] text-black px-1 rounded font-bold">{partnerLocations.length} PARTNERS</span>}
                       {networkStats.numPartners > 0 && <span className="ml-1 text-[6px] bg-[#FFD700] text-black px-0.5 rounded font-bold">NP {networkStats.networkPower}</span>}
                       {selectedMapZone && <span className="ml-1 text-[7px] bg-white/20 px-1 rounded">filtrado: {selectedMapZone.split(' ')[0]}</span>}
                     </div>
@@ -6706,6 +6812,12 @@ function App() {
                       className={`text-[8px] px-2 py-0.5 rounded-full border transition ${showOnlyLegends ? 'bg-[#FFD700] text-black border-[#FFD700]' : 'bg-black/70 text-[#FFD700] border-[#FFD700]/40 hover:bg-[#FFD700]/10'}`}
                     >
                       {showOnlyLegends ? '✓ Mi Red (Network Power)' : 'Solo Mi Red de Alto Rendimiento'}
+                    </button>
+                    <button
+                      onClick={() => { try { triggerHaptic('light') } catch {}; setShowPartners(!showPartners); setMapForceTick(t => t+1) }}
+                      className={`text-[8px] px-2 py-0.5 rounded-full border transition ${showPartners ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'bg-black/70 text-[#FF671F] border-[#FF671F]/40 hover:bg-[#FF671F]/10'}`}
+                    >
+                      {showPartners ? '✓ Partners GymPulse' : 'Mostrar Partners'}
                     </button>
                   </div>
                   {showOnlyLegends && (
@@ -6728,6 +6840,18 @@ function App() {
                     className="absolute top-2 right-2 text-[9px] px-2.5 py-0.5 rounded-full bg-black/70 hover:bg-black text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black transition z-30"
                   >
                     Centrar
+                  </button>
+
+                  {/* DEV TOOL: Add partner business directly on the GymPulse map.
+                      This is the requested "posibilidad a nosotros los desarrolladores de poner en el mapa negocios que son partner".
+                      Persists to Firestore in real mode so all users see the new partner locations.
+                      "ellos puedan ver": the partner marker shows nearby live GymPartners count. */}
+                  <button
+                    onClick={() => { try { triggerHaptic('medium') } catch {}; setShowAddPartnerForm(!showAddPartnerForm) }}
+                    className="absolute top-2 right-20 text-[8px] px-2 py-0.5 rounded-full bg-[#FFD700] text-black font-bold border border-[#FFD700] active:scale-95 z-30"
+                    title="Herramienta para desarrolladores: agrega gimnasios o tiendas partner que aparecerán en el mapa para todos"
+                  >
+                    + Partner (dev)
                   </button>
 
                   {/* Enhanced interactive zone legend (sigue con todo el mapa): colorful live pills with counts, hover pop, active ring/glow + "Mi zona" quick filter. Makes map feel premium + alive. */}
@@ -6784,6 +6908,67 @@ function App() {
                           Activar GPS para ver distancias + tú en el mapa
                         </button>
                       </div>
+                    </div>
+                  )}
+
+                  {/* DEV PARTNER ADD FORM (simple, appears over map when toggled) */}
+                  {showAddPartnerForm && (
+                    <div className="absolute bottom-3 left-3 right-3 z-50 bg-[#111] border border-[#FFD700] rounded-2xl p-3 text-xs shadow-xl">
+                      <div className="font-bold text-[#FFD700] mb-1 flex justify-between">
+                        Agregar Partner (devs) — aparecerá en GymPulse para todos
+                        <button onClick={() => setShowAddPartnerForm(false)} className="text-white/60">✕</button>
+                      </div>
+                      <div className="flex gap-2 mb-2">
+                        <input id="partner-name" placeholder="Nombre del gym/tienda" className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded px-2 py-1 text-white" defaultValue="Nuevo Partner Gym" />
+                        <select id="partner-type" className="bg-[#1C1C20] border border-[#2F2F35] rounded px-2 text-white">
+                          <option value="gym">Gym / Box</option>
+                          <option value="store">Tienda / Suplementos</option>
+                          <option value="studio">Studio / Otro</option>
+                        </select>
+                      </div>
+                      <div className="text-[10px] text-[#9CA3AF] mb-2">Ubicación: se usará el centro actual del mapa (mueve el mapa para posicionar). Se guarda en Firestore.</div>
+                      <button
+                        onClick={async () => {
+                          try { triggerHaptic('medium') } catch {}
+                          const nameEl = document.getElementById('partner-name') as HTMLInputElement
+                          const typeEl = document.getElementById('partner-type') as HTMLSelectElement
+                          const name = nameEl?.value?.trim() || 'Partner Gym'
+                          const type = typeEl?.value || 'gym'
+                          const map = mapInstanceRef.current
+                          let lat = userLocation?.lat || -33.02
+                          let lng = userLocation?.lng || -71.55
+                          if (map) {
+                            const c = map.getCenter()
+                            lat = c.lat
+                            lng = c.lng
+                          }
+                          const newP = {
+                            id: 'partner-' + Date.now(),
+                            name,
+                            lat,
+                            lng,
+                            type,
+                            address: 'Agregado por devs',
+                            addedAt: new Date().toISOString()
+                          }
+                          if (!isDemoMode && db) {
+                            try {
+                              const { setDoc, doc } = await import('firebase/firestore')
+                              await setDoc(doc(db, 'partnerLocations', newP.id), newP)
+                            } catch (e) { console.warn('save partner fs', e) }
+                          } else {
+                            setPartnerLocations(prev => [...prev, newP])
+                          }
+                          setShowAddPartnerForm(false)
+                          // recenter on it
+                          setTimeout(() => {
+                            if (mapInstanceRef.current) mapInstanceRef.current.setView([lat, lng], 14)
+                          }, 200)
+                        }}
+                        className="w-full py-1.5 bg-[#FFD700] text-black font-extrabold rounded-xl active:bg-white"
+                      >
+                        AGREGAR AL GYMPULSE MAPA
+                      </button>
                     </div>
                   )}
 

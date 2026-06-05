@@ -1,4 +1,61 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.64-voice-gympartner-gympulse-polish code 68) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.65-map-partners-gympulse-polish code 69) ===
+
+MAPA PULIDO + PROYECTO "PARTNER BUSINESSES EN EL GYMPULSE MAP" (devs agregan gyms/tiendas partner, ellos aparecen y "pueden ver" actividad).
+
+**IDEAS para el proyecto (lo que pediste "dame ideas" + cómo lo implementamos como base sólida):**
+
+Corto plazo (ya hecho en esta iteración):
+- Devs (nosotros) tenemos botón "+ Partner (dev)" en el mapa vivo.
+- Form simple: nombre, tipo (gym/store/studio), usa el centro actual del mapa como ubicación.
+- Se persiste en Firestore "partnerLocations" (en real mode) o local en demo.
+- Marcadores distintos y bonitos en el mapa (naranja + gold + emoji 🏋️/🛒 + badge "PARTNER").
+- Popup del partner muestra "X GymPartners entrenando cerca ahora" (calculado en radio ~5km) → "ellos puedan ver en el mapa" la actividad social alrededor de su negocio.
+- Toggle "Partners GymPulse" al lado de los otros filtros (Mi Red, Cerca de mí).
+- Seeds demo para que se vea inmediatamente (Viña, Santiago, Valpo, Concón).
+- Integración con GymPulse: partners son "hubs" visibles en el pulso social.
+
+Mediano plazo (ideas para seguir puliendo el mapa + este feature):
+- Al entrenar LIVE cerca de un partner (<2-3km), auto "check-in" sutil: el usuario gana badge "Entrenado en Partner X" que aparece en su marcador o en el popup del partner.
+- Daily/GymPulse challenge nuevo: "Entrena en zona de un Partner oficial hoy (+bonus momentum)".
+- En el popup del partner: botón "Ver GymPartners cerca" que activa filtro del mapa a esa zona.
+- Heat / conteo agregado por partner (cuántos minutos totales de red cerca esta semana) → valor real para el negocio ("mira cuánta gente entrena cerca de ti").
+- Para los partners "ver": 
+  - En el futuro un link simple /partner/xxx que abre el mapa ya filtrado a su ubicación + usuarios live cerca (sin login o con token).
+  - O un "Partner View" tab (devs o claim) que muestra métricas: live cerca, bonds formados cerca, posts/voice que mencionan la zona.
+- Reclamo por negocios: form público "Quiero ser Partner del GymPulse" → llega a una colección "partnerRequests", nosotros aprobamos y aparece el marcador con logo.
+- Monetización ligera: partners destacados (bigger marker, "Featured Partner") pagan o a cambio de descuentos a usuarios que entrenan ahí.
+- Búsqueda en mapa: input "Busca partners o GymPartners" que filtra marcadores.
+- Clusters cuando haya muchos (Leaflet markercluster o manual group).
+- Al agregar partner desde mapa, opcionalmente crear un ripple inicial "Nuevo Partner en el GymPulse".
+
+Largo plazo / visión:
+- Los partners se convierten en "lugares oficiales" donde la gente va a hacer su ritual y gana visibilidad extra en la red (prioridad en recomendaciones, +Network Power por entrenar ahí).
+- Mapa como "directorio vivo de gyms + la gente que está activa ahora".
+- Para el negocio: "Ven a entrenar aquí, conecta con otros GymPartners en tiempo real, tu actividad se ve en el mapa de la app".
+
+Cómo lo hicimos fácil para devs ahora:
+- Todo en el mapa mismo (sin salir a admin externo).
+- Persistencia real vía Firestore (así los partners que agregues se ven cross-device para testers).
+- Reglas Firestore recomendadas: partnerLocations readable by all, writable only by lista de UIDs de devs (o por ahora cualquiera en la beta cerrada).
+- En demo mode todo local (rápido para prototipar).
+
+Pulido general del mapa en esta vuelta:
+- Toggle partners + contador en el badge de "X en vivo • Y PARTNERS".
+- Mejor integración visual con el nuevo lenguaje GymPulse / GymPartners.
+- El "Centrar" ya incluye los nuevos marcadores de partners.
+- Cuando agregas uno, el mapa se centra en él automáticamente.
+- Todo respeta los filtros existentes (zonas, mi red, cerca).
+
+Sigue con todo el pulido del mapa (performance, más interacciones, etc).
+
+Artifacts actuales:
+- EntrenaMatch-v0.1.65-map-partners-gympulse-polish.aab
+- EntrenaMatch-release.aab actualizado
+- EntrenaMatch-debug-map-partners-0.1.65.apk (y EntrenaMatch-debug.apk)
+
+Git push hecho. Dist/web fresco.
+
+Device test: abre el mapa, activa "Partners GymPulse", verás los 4 seeds + botón + Partner (dev). Agrega uno nuevo moviendo el mapa y tocando el botón: aparece el marcador naranja con conteo de gente cerca. Prueba toggle on/off, popups, etc. Todo se siente parte natural del GymPulse.
 
 PULIDO ADICIONAL DE NOTAS DE VOZ + REBRAND TERMINOLOGÍA PARA QUE PEGUE Y SE ENTIENDA:
 

@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.64-voice-gympartner-gympulse-polish",
+  "version": "0.1.65-map-partners-gympulse-polish",
   "type": "module",
   "scripts": {
     "dev": "vite",
