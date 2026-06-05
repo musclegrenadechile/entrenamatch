@@ -43,12 +43,10 @@ jobs:
           echo "Build info cleaned for fresh tsc -b"
 
       - name: Build web for Capacitor (relative base)
-        run: |
-          CAPACITOR=1 npx tsc --noEmit
-          CAPACITOR=1 vite build
-        # Using tsc --noEmit (which passes) + vite directly instead of "tsc -b && vite"
-        # to avoid incremental build info issues during heavy refactors.
-        # The --noEmit still catches real type errors.
+        run: CAPACITOR=1 npm run build:web
+        # Script is now "tsc --noEmit && vite build" (robust vs incremental tsbuildinfo on refactors).
+        # CAPACITOR=1 tells Vite config to use relative base for Capacitor assets.
+        # Combined with the stale tsbuildinfo clean step above, this is resilient.
 
       - name: Setup Java
         uses: actions/setup-java@v4
