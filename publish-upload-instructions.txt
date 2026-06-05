@@ -1,4 +1,41 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.63-voice-premium-polish-waveforms-preview code 67) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.64-voice-gympartner-gympulse-polish code 68) ===
+
+PULIDO ADICIONAL DE NOTAS DE VOZ + REBRAND TERMINOLOGÍA PARA QUE PEGUE Y SE ENTIENDA:
+
+Detalles de UI en grabación (el problema reportado "en mensajes no se ve bien cuando uno esta grabando para parar o para enviar"):
+- Pill de grabación ahora más claro y ancho: "GRABANDO NOTA DE VOZ" + timer + hint explícito "• PARAR para escuchar y ENVIAR".
+- Botón grande "PARAR" (en vez de solo "DETENER") con title tooltip "Parar grabación: luego escucharás la nota y podrás enviarla a tu GymPartner".
+- × cancelar claro.
+- Texto de ayuda "PARAR para escuchar y ENVIAR" visible durante la grabación.
+- Mismo tratamiento mejorado en 1:1 y en grupo/squad.
+- Preview pendiente: título "NOTA DE VOZ LISTA PARA TU GYMPARTNER", botón "ENVIAR A TU GYMPARTNER" (o AL SQUAD), sub "compártela ahora".
+- Placeholders actualizados: "Mensaje o nota de voz a tu GymPartner...".
+- Upload label: "TRANSMITIENDO A TUS GYMPARTNERS...".
+- Toasts: "Para tu GymPartner", "Nota enviada a tu GymPartner", "PARAR para escucharla y decidir enviar".
+
+Rebrand para que "circulo" y "pulse" se entiendan y peguen (feedback del usuario):
+- "Círculo" / "Círculo de Rendimiento" / "al Círculo" → "GymPartner" / "tus GymPartners" / "a tu GymPartner" / "a tus GymPartners".
+- "Pulso" / "el Pulso" / "Pulso Diario de la Red" / "EN PULSO VIVO" / "en el pulso" → "GymPulse" / "el GymPulse" / "GymPulse Diario" / "EN GYMPULSE VIVO".
+- Ejemplos: "¡GymPulse Diario activado!", "EN GYMPULSE VIVO", "ENVIAR A TU GYMPARTNER", "transmite a tus GymPartners", "tu peso en el GymPulse", "prioridad en el GymPulse del mapa".
+- En onboarding (votos, previews, descripciones): "Juro ... con respeto a mis GymPartners", "aparecer en el GymPulse vivo", "Conectado con tus GymPartners", "GymPulse simulado".
+- "GymPulse" pega: es el "pulso" vivo de actividad de tus GymPartners en mapa, live, daily, ripples. Directo, fácil de entender, mantiene la idea de "mapa que late" + social real.
+- Voice + daily + profile + map + live banners + onboarding actualizados para consistencia total.
+- "ritual" se mantiene como motif de diseño personal ("tu entrenamiento"), pero el sistema social ahora es claro "GymPartners" + "GymPulse".
+
+Todo mantiene las 5 mecánicas épicas, tono serio/fitness social premium, haptics, glass, orange+gold.
+
+Builds: tsc OK, vite OK, aab pipeline BUILD SUCCESSFUL, debug APK generado.
+
+Artifacts:
+- EntrenaMatch-v0.1.64-voice-gympartner-gympulse-polish.aab
+- EntrenaMatch-release.aab actualizado
+- EntrenaMatch-debug-voice-gympartner-0.1.64.apk + EntrenaMatch-debug.apk actualizado
+
+Git push de fuentes + instructions. Dist/web fresco.
+
+Device test: graba en chat, nota que ahora durante grabación se ve clarísimo "PARAR para escuchar y ENVIAR", preview obvio, y términos "GymPartner" / "GymPulse" se entienden al instante (sin "circulo misterioso" ni "pulse abstracto"). 
+
+Sigue con todo.
 
 PULIDO COMPLETO Y MEJORA TOTAL de las NOTAS DE VOZ (por "hay que pulir más lo de las nota de voz hay que mejorar todo ello"):
 
@@ -16,7 +53,16 @@ PULIDO COMPLETO Y MEJORA TOTAL de las NOTAS DE VOZ (por "hay que pulir más lo d
 
 - Otros: Refs para analyser/raf/audio/isRecordingRef para live wave estable sin leaks. useEffect cleanup global. Sin TDZ (se mantuvo disciplina hoist + refs). 
 
-Rebuild limpio (tsc --noEmit + vite ✓ + full gradle bundleRelease SUCCESS). AAB nuevo v0.1.63 + EntrenaMatch-v0.1.63-voice-premium-polish-waveforms.aab + release.aab actualizado. Listo para device test en S26 Ultra + Play.
+Rebuild limpio (tsc --noEmit + vite ✓ + full gradle bundleRelease SUCCESS). AAB nuevo v0.1.63 + EntrenaMatch-v0.1.63-voice-premium-polish-waveforms.aab (9.2MB) + EntrenaMatch-release.aab actualizado + debug APK EntrenaMatch-debug-voice-premium-0.1.63.apk (12MB) generado.
+
+Git: commit + push origin main exitoso (src/App.tsx + css + package + gradle + instructions actualizados; binaries ignorados por .gitignore como esperado).
+
+Listo para:
+- Device test en S26 Ultra: adb install -r EntrenaMatch-debug-voice-premium-0.1.63.apk ; probar grabar (live wave real), preview (play + re-grabar + enviar), playback en 1:1 y grupo (pause + real progress), ver streak subir en Pulso.
+- Play Store upload del release AAB (com.entrenamatch.app).
+- Web GH Pages: dist actualizado por el build (web build incluido en pipeline).
+
+(Continúa TODO lo anterior de onboarding 60-90s, profile ritual remaster, Pulso Diario, etc.)
 
 (Continúa TODO lo anterior de onboarding 60-90s, profile ritual remaster, Pulso Diario, etc.)
 

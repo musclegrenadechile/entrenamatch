@@ -156,14 +156,14 @@ export const OnboardingFlow = ({
           </div>
         </div>
         <div className="px-3 py-1.5 text-[9px] bg-[#0D0D10] text-[#22c55e] flex items-center gap-1 border-t border-[#22c55e]/20">
-          <span>👁️ Tu presencia en el Pulso y swipes</span>
+          <span>👁️ Tu presencia en el GymPulse y swipes</span>
           {isLive && <span className="ml-auto font-bold">¡VERDE EN EL MAPA AL TERMINAR!</span>}
           <span className="ml-auto text-[8px] text-[#FF671F]">⚡ Red con peso • ripples visibles • syncs que se sienten</span>
         </div>
         {/* Unique ritual mock: small live map simulation for excitement - makes the first Live feel inevitable */}
         {isLive && (
           <div className="mx-3 -mt-1 mb-1 px-2 py-1 bg-[#0a120f] border border-[#22c55e]/20 rounded-b-2xl text-[7px] text-[#22c55e] flex items-center gap-1">
-            <span>🗺️</span> <span>Pulso simulado: tú + 4 cerca • tether dorado listo • primer match en 20s</span>
+            <span>🗺️</span> <span>GymPulse simulado: tú + 4 cerca • tether dorado listo • primer match en 20s</span>
           </div>
         )}
       </div>
@@ -356,11 +356,11 @@ export const OnboardingFlow = ({
       setShowOnboarding(false);
       setOnboardingStep(0);
 
-      const liveDesc = onboardData.wantsToGoLive ? ' ¡Estás EN VIVO ahora en el Pulso! Ve a Explorar y da like al primer perfil vivo cerca.' : ' Ve a Explorar y activa Live o da like a alguien cerca para tu primer match.';
-      toast.success(isEditingProfile ? '¡Perfil actualizado!' : '¡Iniciado! Tu primer ritual te espera.', { 
+      const liveDesc = onboardData.wantsToGoLive ? ' ¡Estás EN GYMPULSE VIVO ahora! Ve a Explorar y da like al primer perfil vivo cerca.' : ' Ve a Explorar y activa Live o da like a alguien cerca para tu primer match.';
+      toast.success(isEditingProfile ? '¡Perfil actualizado!' : '¡Iniciado! Tu primer GymPulse te espera.', { 
         description: isEditingProfile 
           ? 'Los cambios se guardaron y sincronizaron con el backend real.' 
-          : ('Bienvenido al Círculo. ' + liveDesc + ' Crea un EntrenaSync en <60s más y sentirás la diferencia.')
+          : ('¡Conectado con tus GymPartners! ' + liveDesc + ' Crea un EntrenaSync en <60s más y sentirás la diferencia.')
       });
       try { triggerHaptic('success') } catch {}
 
@@ -411,7 +411,7 @@ export const OnboardingFlow = ({
               <div className="text-4xl font-black tracking-[-1.5px] leading-none mb-1 text-white">
                 {isEditingProfile ? 'REMASTERIZA TU PRESENCIA' : 'CREA TU RITUAL'}
               </div>
-              <div className="text-[#9CA3AF] text-base max-w-md">Tu perfil no es un formulario. Es tu entrada al Círculo donde el entrenamiento se vuelve legendario. Único. Con peso real en el Pulso.</div>
+              <div className="text-[#9CA3AF] text-base max-w-md">Tu perfil no es un formulario. Es tu entrada a la red de GymPartners donde el entrenamiento se vuelve legendario. Único. Con peso real en el GymPulse.</div>
             </div>
           </div>
         </div>
@@ -505,7 +505,7 @@ export const OnboardingFlow = ({
                   </div>
                 )}
               </div>
-              <div className="text-[9px] text-[#9CA3AF] mt-1.5">Fotos reales de tus sesiones. Esto te hace único en el Pulso.</div>
+              <div className="text-[9px] text-[#9CA3AF] mt-1.5">Fotos reales de tus sesiones. Esto te hace único en el GymPulse.</div>
             </div>
 
             {/* Bio + Mantra - Unique & attractive */}
@@ -552,7 +552,7 @@ export const OnboardingFlow = ({
                       <span className="text-2xl mt-0.5">{emoji}</span>
                       <div>
                         <div className="font-bold text-sm tracking-wider">{type}</div>
-                        <div className="text-[9px] opacity-70 mt-0.5">Apareces en el Pulso correcto + matches de alto valor</div>
+                        <div className="text-[9px] opacity-70 mt-0.5">Apareces en el GymPulse correcto + matches de alto valor</div>
                       </div>
                     </button>
                   );
@@ -576,7 +576,7 @@ export const OnboardingFlow = ({
                   );
                 })}
               </div>
-              <div className="text-[9px] text-[#9CA3AF] mt-1.5">Esto alimenta tu Pulso, matches precisos y Daily Challenges que realmente importan.</div>
+              <div className="text-[9px] text-[#9CA3AF] mt-1.5">Esto alimenta tu GymPulse, matches precisos y Daily Challenges que realmente importan.</div>
             </div>
           </div>
         )}
@@ -591,11 +591,11 @@ export const OnboardingFlow = ({
               <div className="space-y-4 text-sm">
                 <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
                   <div className="text-[#22c55e] text-xl font-black mt-0.5">01</div>
-                  <div><span className="font-bold">MARCA "ENTRENANDO AHORA"</span><br/><span className="text-[#9CA3AF] text-xs">Apareces en el mapa Pulso con urgencia verde. Otros cerca te ven sudando en tiempo real.</span></div>
+                  <div><span className="font-bold">MARCA "ENTRENANDO AHORA"</span><br/><span className="text-[#9CA3AF] text-xs">Apareces en el GymPulse mapa con urgencia verde. Otros cerca te ven sudando en tiempo real.</span></div>
                 </div>
                 <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
                   <div className="text-[#22c55e] text-xl font-black mt-0.5">02</div>
-                  <div><span className="font-bold">DAN LIKE → CHAT INSTANTÁNEO</span><br/><span className="text-[#9CA3AF] text-xs">Estás a un toque de conectar con alguien que está en el mismo ritual que tú ahora.</span></div>
+                  <div><span className="font-bold">DAN LIKE → CHAT INSTANTÁNEO</span><br/><span className="text-[#9CA3AF] text-xs">Estás a un toque de conectar con un GymPartner que está en el mismo entrenamiento que tú ahora.</span></div>
                 </div>
                 <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
                   <div className="text-[#22c55e] text-xl font-black mt-0.5">03</div>
@@ -642,13 +642,13 @@ export const OnboardingFlow = ({
             <div className="text-center">
               <div className="uppercase tracking-[2px] text-[#FF671F] text-xs mb-1">ÚLTIMO RITUAL</div>
               <div className="text-2xl font-black tracking-[-1px]">LOS 3 VOTOS DEL CÍRCULO</div>
-              <div className="text-[#9CA3AF] text-sm mt-1">Sella tu entrada al primer ritual donde el esfuerzo se comparte y tiene peso real.</div>
+              <div className="text-[#9CA3AF] text-sm mt-1">Sella tu entrada a la red de GymPartners donde el esfuerzo se comparte y tiene peso real.</div>
             </div>
 
             {[
-              { key: 'is18', label: 'Juro ser mayor de 18 y entrenar con respeto al Círculo', desc: 'Respeto, seriedad y energía positiva siempre.' },
-              { key: 'isForTraining', label: 'Juro entrenar en serio y con motivación real para mi Red', desc: 'No excusas. Mi presencia construye la de otros.' },
-              { key: 'sharesLocation', label: 'Juro aparecer en el Pulso vivo para sincronizarme con otros', desc: 'Mi energía es visible. Mi Red me hace más fuerte.' }
+              { key: 'is18', label: 'Juro ser mayor de 18 y entrenar con respeto a mis GymPartners', desc: 'Respeto, seriedad y energía positiva siempre.' },
+              { key: 'isForTraining', label: 'Juro entrenar en serio y con motivación real para mis GymPartners', desc: 'No excusas. Mi presencia construye la de otros.' },
+              { key: 'sharesLocation', label: 'Juro aparecer en el GymPulse vivo para sincronizarme con mis GymPartners', desc: 'Mi energía es visible. Mis GymPartners me hacen más fuerte.' }
             ].map(item => (
               <label key={item.key} onClick={() => { 
                 const next = ! (localConsents as any)[item.key]; 

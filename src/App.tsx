@@ -329,7 +329,7 @@ function App() {
     }
   }, [])
 
-  // === PULSO DIARIO DE LA RED (states + ref hoisted VERY early, before sendVoiceNote ~453 and daily helpers, to eliminate all TDZ "Cannot access 'B' before initialization" for dailyPulse in any closure on initial open)
+  // === GYMPULSE DIARIO DE TUS GYMPARTNERS (states + ref hoisted VERY early, before sendVoiceNote and daily helpers, to eliminate all TDZ for dailyPulse in any closure on initial open)
   const [dailyPulse, setDailyPulse] = useState<{
     trainingStreak: number
     synergyStreak: number
@@ -479,7 +479,7 @@ function App() {
         })
       }, 1000)
 
-      toast('🎙️ Grabando nota de voz', { description: 'Transmite tu energía. Máx 60s. Detén para preview y enviar al Círculo.' })
+      toast('🎙️ Grabando nota de voz', { description: 'Para tu GymPartner. Máx 60s. PARAR para escucharla y decidir enviar.' })
     } catch (err) {
       console.error('Mic error', err)
       toast.error('No se pudo acceder al micrófono', { description: 'Revisa permisos del navegador o app.' })
@@ -591,14 +591,14 @@ function App() {
       setDailyPulse(vUpdate)
       saveUserWithRealSync({ ...(currentUser as any), dailyVoiceStreak: vStreak } as any)
       // Premium toast celebrating the ritual voice + streak
-      toast.success('Energía transmitida al Círculo', { 
-        description: `${duration}s • Voice Streak ahora ${vStreak}d 🔥  +5 Momentum al Pulso` 
+      toast.success('Nota enviada a tu GymPartner', { 
+        description: `${duration}s • Voice Streak ${vStreak}d 🔥  +5 Momentum en el GymPulse` 
       })
       // Daily Pulse progress (voice is powerful for bond/ripple challenges)
       if (dp.currentChallenge?.type === 'bond' || dp.currentChallenge?.type === 'network') {
         completeDailyChallenge(1)
       } else {
-        awardMomentum(5, 'Voz enviada al Pulso')
+        awardMomentum(5, 'Voz enviada al GymPulse')
       }
     } catch (e) {
       console.error('Send voice error', e)
@@ -721,7 +721,7 @@ function App() {
   const [replaySession, setReplaySession] = useState<any>(null) // {partnerName, minutes, vibe, actions, rating?}
 
   // =====================================================
-  // PULSO DIARIO DE LA RED - Core logic (innovative retention)
+  // GYMPULSE DIARIO - Core logic (innovative retention with your GymPartners)
   // dailyPulse state + ref + isOffline etc hoisted extremely early (before sendVoiceNote and daily helpers)
   // so every closure sees the declaration before function def. Prevents TDZ on open (mount effects call check).
   // =====================================================
@@ -771,20 +771,20 @@ function App() {
         type: 'network',
         title: 'Misión: Ripple de Red',
         description: hasLiveRed 
-          ? 'Completa tu sesión y publica un post o voz que impulse el Pulso visible en el mapa para tu Red.' 
-          : 'Entrena y deja un "Pulso" (post o voz) que sea visto por tu Red. +Impacto colectivo.',
+          ? 'Completa tu sesión y publica un post o voz que impulse el GymPulse visible en el mapa para tus GymPartners.' 
+          : 'Entrena y deja un "GymPulse" (post o voz) que sea visto por tus GymPartners. +Impacto colectivo.',
         target: 1,
         progress: 0,
         reward: 55,
         icon: '🌊',
-        actionLabel: 'Completar y publicar Pulso'
+        actionLabel: 'Completar y publicar en el GymPulse'
       },
       // New variety for more engagement
       {
         id: 'voice-weak-' + seed,
         type: 'bond',
         title: 'Misión: Voz a Bond Débil',
-        description: bondCount > 0 ? 'Transmite una nota de voz del Ritual a un socio de Red con menor interacción reciente.' : 'Envía tu primera nota de voz al Círculo y activa tu Voice Streak.',
+        description: bondCount > 0 ? 'Envía una nota de voz a un GymPartner con menos interacción reciente.' : 'Envía tu primera nota de voz a un GymPartner y activa tu Voice Streak.',
         target: 1,
         progress: 0,
         reward: 35,
@@ -794,13 +794,13 @@ function App() {
       {
         id: 'map-ripple-' + seed,
         type: 'network',
-        title: 'Misión: Pulso en el Mapa',
-        description: 'Completa entrenamiento y asegúrate de que tu actividad aparezca como ripple/pulso en el mapa (post + live).',
+        title: 'Misión: GymPulse en el Mapa',
+        description: 'Completa entrenamiento y asegúrate de que tu actividad aparezca como ripple en el GymPulse del mapa (post + live).',
         target: 1,
         progress: 0,
         reward: 45,
         icon: '🗺️',
-        actionLabel: 'Ir al Pulso (mapa)'
+        actionLabel: 'Ir al GymPulse (mapa)'
       }
     ]
 
@@ -892,14 +892,14 @@ function App() {
       }
       saveUserWithRealSync({ ...u, ...update } as any)
 
-      toast.success('¡Nuevo Pulso Diario de la Red!', {
-        description: `${challenge.icon} ${challenge.title} • +${challenge.reward} Momentum`
+      toast.success('¡Nuevo GymPulse Diario!', {
+        description: `${challenge.icon} ${challenge.title} • +${challenge.reward} Momentum para tus GymPartners`
       })
 
       const notif = {
         id: 'pulse-' + today,
         type: 'daily_pulse',
-        title: 'Pulso Diario listo',
+        title: 'GymPulse Diario listo',
         body: `${challenge.icon} ${challenge.title} — completalo hoy para tu Red`,
         timestamp: Date.now(),
         read: false,
@@ -975,11 +975,11 @@ function App() {
 
     if (justCompleted) {
       try { triggerHaptic('success') } catch {}
-      toast.success(`¡Pulso completado! +${levelBonus} Momentum`, {
+      toast.success(`¡GymPulse completado! +${levelBonus} Momentum`, {
         description: `${ch.icon} ${ch.title} • Nivel ${dailyPulse.level} • Tu Red se fortalece`
       })
 
-      const postText = `✅ Completé mi Pulso Diario: ${ch.title}. ${ch.description} — Momentum para la Red 🔥`
+      const postText = `✅ Completé mi GymPulse Diario: ${ch.title}. ${ch.description} — Momentum para mis GymPartners 🔥`
       try {
         await createProfilePost(postText, null, 'dailyPulse')
       } catch (e) { /* non fatal */ }
@@ -1013,10 +1013,10 @@ function App() {
         saveUserWithRealSync({ ...(currentUser as any), momentumPoints: milUpdate.momentum } as any)
         toast.success(`¡Milestone de Streak! +${bonus} Momentum`, { description: `${streak}d streak legendario - ¡Eres una máquina!` })
         // Special post
-        createProfilePost(`🔥 STREAK LEGENDARIO ${streak}d - Mi Red me hace imparable. Pulso Diario completado.`, null, 'dailyPulse').catch(()=>{})
+        createProfilePost(`🔥 STREAK LEGENDARIO ${streak}d - Mis GymPartners me hacen imparable. GymPulse Diario completado.`, null, 'dailyPulse').catch(()=>{})
       }
     } else {
-      toast(`+${progressInc} progreso en el Pulso`)
+      toast(`+${progressInc} progreso en el GymPulse`)
     }
   }
 
@@ -1104,7 +1104,7 @@ function App() {
           // Switch to explore so the first action (like on nearby card) is obvious and one tap away
           setActiveTab('explore')
           // Strong, actionable toast
-          toast.success(currentUser.trainingNow ? '¡Tu primer LIVE está activo en el Pulso!' : '¡Perfil listo!', {
+          toast.success(currentUser.trainingNow ? '¡Tu primer LIVE está activo en el GymPulse!' : '¡Perfil listo!', {
             description: 'Explora perfiles cerca. Toca ❤️ en uno que esté vivo o disponible. Tu primer match y chat en <20s. Luego crea EntrenaSync desde el chat.'
           })
           try { triggerHaptic('medium') } catch {}
@@ -5896,7 +5896,7 @@ function App() {
               className: `map-sync-tether${isBondedLegend ? ' legend-tether' : ''}${tetherBoost}`
             }
           ).addTo(mapInstanceRef.current)
-          line.bindPopup(`<strong>${isBondedLegend ? '⭐ SYNC DE TU RED' : '🔄 Sync en vivo'}</strong><br/>${user.name} ↔ ${partner.name}<br/><span style="font-size:10px">${isBondedLegend ? 'Alianza real de alto rendimiento • Tu grafo da peso en el pulso' : 'EntrenaSync en vivo ahora'}</span>`)
+          line.bindPopup(`<strong>${isBondedLegend ? '⭐ SYNC DE TUS GYMPARTNERS' : '🔄 Sync en vivo'}</strong><br/>${user.name} ↔ ${partner.name}<br/><span style="font-size:10px">${isBondedLegend ? 'Alianza real de alto rendimiento • Tu grafo da peso en el GymPulse' : 'EntrenaSync en vivo ahora'}</span>`)
           syncLinesRef.current.push(line)
         }
       }
@@ -5925,7 +5925,7 @@ function App() {
         ripple.bindPopup(`
           <div style="min-width:160px">
             <strong>⚡ ${r.label}</strong><br/>
-            <span style="font-size:10px">Energía de un EntrenaSync de tu red propagándose en el pulso global.</span><br/><br/>
+            <span style="font-size:10px">Energía de un EntrenaSync de tus GymPartners propagándose en el GymPulse global.</span><br/><br/>
             <button onclick="window.witnessRipple('${r.id}')" 
               style="background:#FF671F;color:black;border:none;padding:6px 10px;border-radius:8px;font-size:11px;font-weight:700;width:100%">
               Ver replay del sync fuerte de la red
@@ -6667,7 +6667,7 @@ function App() {
             <div className="mt-3 relative z-10">
               <div className="flex items-center justify-between mb-1.5 px-1">
                 <div className="text-[10px] font-semibold text-[#22c55e] flex items-center gap-1.5">
-                  🗺️ El Pulso Global de Entrenamiento Sincronizado
+                  🗺️ El GymPulse Global de Entrenamiento Sincronizado
                   <span className="text-[8px] bg-[#22c55e]/20 px-1.5 rounded">LA RED EN VIVO</span>
                   {networkStats.numPartners > 0 && <span className="text-[7px] bg-[#FFD700]/90 text-black px-1 rounded font-bold">TU RED: {networkStats.numPartners} • NP {networkStats.networkPower}</span>}
                   <span className="text-[7px] ml-1 bg-[#22c55e]/10 px-1 rounded">Redes activas hoy: {Math.max(1, Math.floor(liveTrainingNow.length / 2))} • +{liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} joins en la red</span>
@@ -6676,7 +6676,7 @@ function App() {
                   onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(!showLiveMap) }} 
                   className={`text-xs px-3 py-1 rounded-full border transition ${showLiveMap ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
                 >
-                  {showLiveMap ? 'Ocultar el Pulso' : 'Ver el Pulso por zonas'}
+                  {showLiveMap ? 'Ocultar el GymPulse' : 'Ver el GymPulse por zonas'}
                 </button>
               </div>
 
@@ -6709,7 +6709,7 @@ function App() {
                     </button>
                   </div>
                   {showOnlyLegends && (
-                    <div className="text-[7px] text-[#FFD700] px-1 mt-0.5">Tu Network Power activa — tus socios de red destacan en el pulso</div>
+                    <div className="text-[7px] text-[#FFD700] px-1 mt-0.5">Tu Network Power activa — tus GymPartners destacan en el GymPulse</div>
                   )}
 
                   {/* Centrar / recenter control */}
@@ -6801,7 +6801,7 @@ function App() {
               )}
               {showLiveMap && (
                 <div className="mt-1 text-[8px] text-[#9CA3AF] px-1 flex items-center gap-2">
-                  Foto/iniciales. Pulsos rápidos + glow = alta energía (3+ joins o en Sync). 
+                  Foto/iniciales. GymPulses rápidos + glow = alta energía (3+ joins o en Sync). 
                   <span className="text-[#FF671F]">Líneas fluyendo</span> = pares EntrenaSync (único). 
                   <span className="text-[#3b82f6]">●</span> = tú. Legend: toca pastilla (cuenta live) o "📍 Mi zona" para filtrar personal.
                 </div>
@@ -8211,7 +8211,7 @@ function App() {
                                     }
                                   }}
                                   className={`voice-play-btn ${playingVoiceId === m.id ? 'playing' : ''}`}
-                                  title={playingVoiceId === m.id ? "Pausar nota de voz" : "Reproducir nota de voz del Círculo"}
+                                  title={playingVoiceId === m.id ? "Pausar nota de voz" : "Reproducir nota de voz de tu GymPartner"}
                                 >
                                   {playingVoiceId === m.id ? <Pause size={15} /> : <Play size={15} />}
                                 </button>
@@ -8295,7 +8295,7 @@ function App() {
                       ))}
                     </div>
                   )}
-                  {/* Voice preview / uploading state — PREMIUM "energía lista para el Círculo" card */}
+                  {/* Voice preview / uploading state — PREMIUM clear "listo para enviar a tu GymPartner" card */}
                   {pendingVoice && !isUploadingVoice && (
                     <div className="voice-preview mb-2 ring-1 ring-[#FF671F]/30">
                       <button 
@@ -8305,7 +8305,7 @@ function App() {
                           a.play().catch(()=>{}); 
                         }}
                         className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center text-black active:scale-90 shadow flex-shrink-0"
-                        title="Escuchar preview de tu energía"
+                        title="Escuchar preview antes de enviar"
                       >
                         <Play size={18} />
                       </button>
@@ -8315,8 +8315,8 @@ function App() {
                         </div>
                       </div>
                       <div className="meta">
-                        <div className="title">🎙️ NOTA DE VOZ DEL RITUAL LISTA</div>
-                        <div className="sub">{pendingVoice.duration}s • +1 Voice Streak al enviar • energía para el Pulso</div>
+                        <div className="title">🎙️ NOTA DE VOZ LISTA PARA TU GYMPARTNER</div>
+                        <div className="sub">{pendingVoice.duration}s • +1 Voice Streak • compártela ahora</div>
                       </div>
                       <div className="actions flex-col gap-1 items-end">
                         <button 
@@ -8352,14 +8352,14 @@ function App() {
                           }}
                           className="text-[11px] px-5 py-1.5 bg-[#FF671F] text-black rounded-2xl font-extrabold active:bg-[#E55A1A] shadow flex items-center gap-1.5 active:scale-[0.985]"
                         >
-                          ENVIAR AL CÍRCULO <Send size={14} />
+                          ENVIAR A TU GYMPARTNER <Send size={14} />
                         </button>
                       </div>
                     </div>
                   )}
                   {isUploadingVoice && (
                     <div className="voice-uploading mb-2">
-                      <div className="label">TRANSMITIENDO TU ENERGÍA AL PULSO...</div>
+                      <div className="label">TRANSMITIENDO A TUS GYMPARTNERS...</div>
                       <div className="progress-track">
                         <div className="progress-fill" style={{ width: `${voiceUploadProgress || 10}%` }} />
                       </div>
@@ -8384,15 +8384,18 @@ function App() {
                     }
                     input.value = '' 
                   }} className="flex gap-2 items-center">
-                    <input type="text" placeholder={pendingVoice ? "Nota de voz del Ritual adjunta — presiona ENVIAR" : "Mensaje o nota de voz al Círculo..."} className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none" />
+                    <input type="text" placeholder={pendingVoice ? "Nota lista — presiona ENVIAR a tu GymPartner" : "Mensaje o nota de voz a tu GymPartner..."} className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none" />
                     
                     {/* PREMIUM voice recording control for 1:1 — live waveform when active */}
                     {isRecordingVoice ? (
-                      <div className="voice-recording" style={{minWidth: 148}}>
+                      <div className="voice-recording" style={{minWidth: 168, padding: '4px 8px 4px 10px'}}>
                         <div className="dot" />
-                        <div>
-                          <div className="text-red-400 text-[9px] font-bold tracking-[1px]">GRABANDO EN VIVO</div>
-                          <span className="timer">{recordingTime}s <span className="opacity-60">/60</span></span>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-red-400 text-[9px] font-extrabold tracking-[0.5px]">GRABANDO NOTA DE VOZ</div>
+                          <div className="flex items-baseline gap-1">
+                            <span className="timer">{recordingTime}s <span className="opacity-60">/60</span></span>
+                            <span className="text-[8px] text-red-400/70 font-medium">• PARAR para escuchar y ENVIAR</span>
+                          </div>
                         </div>
                         {/* LIVE DANCING BARS from real analyser */}
                         <div className="flex gap-[1.5px] items-end h-[17px] mx-0.5 px-0.5 bg-black/30 rounded">
@@ -8400,21 +8403,27 @@ function App() {
                             <div key={i} className="w-[2.5px] bg-red-400 rounded transition-all duration-75" style={{height: `${h}px`}} />
                           ))}
                         </div>
-                        <button onClick={stopVoiceRecording} className="ml-1 px-3 py-px text-[10px] bg-red-600 text-white rounded-full active:bg-red-700 font-extrabold shadow">DETENER</button>
-                        <button onClick={cancelVoiceRecording} className="ml-0.5 text-red-400/80 hover:text-red-400 px-1 text-lg leading-none" title="Cancelar grabación">×</button>
+                        <button 
+                          onClick={stopVoiceRecording} 
+                          className="ml-1 px-3.5 py-1 text-[10px] bg-red-600 text-white rounded-full active:bg-red-700 font-extrabold shadow active:scale-95"
+                          title="Parar grabación: luego escucharás la nota y podrás enviarla a tu GymPartner"
+                        >
+                          PARAR
+                        </button>
+                        <button onClick={cancelVoiceRecording} className="ml-0.5 text-red-400/80 hover:text-red-400 px-1 text-lg leading-none" title="Cancelar grabación sin enviar">×</button>
                       </div>
                     ) : (
                       <button 
                         type="button"
                         onClick={startVoiceRecording}
                         className="w-11 h-11 rounded-3xl flex items-center justify-center transition active:scale-95 bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A] hover:border-[#FF671F]/50"
-                        title="Grabar nota de voz — transmite tu energía al Pulso"
+                        title="Grabar nota de voz — compártela con tu GymPartner"
                       >
                         <Mic size={19} />
                       </button>
                     )}
 
-                    <button type="submit" disabled={!chatInputValue.trim() && !pendingVoice} title={pendingVoice ? 'Enviar la nota de voz grabada al Círculo' : 'Enviar mensaje'} className={`${pendingVoice ? 'bg-[#22c55e] text-black' : 'bg-[#FF671F]'} disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black w-12 rounded-3xl flex items-center justify-center active:scale-95 transition`}><Send size={18} /></button>
+                    <button type="submit" disabled={!chatInputValue.trim() && !pendingVoice} title={pendingVoice ? 'Enviar la nota de voz grabada a tu GymPartner' : 'Enviar mensaje'} className={`${pendingVoice ? 'bg-[#22c55e] text-black' : 'bg-[#FF671F]'} disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black w-12 rounded-3xl flex items-center justify-center active:scale-95 transition`}><Send size={18} /></button>
                   </form>
                   <div className="text-center text-[10px] text-[#6B7280] mt-2">
                     {!isDemoMode 
@@ -8441,8 +8450,8 @@ function App() {
               >
                 <div className="text-2xl">🌅</div>
                 <div className="flex-1">
-                  <div className="text-sm font-bold text-[#FF671F]">¡Pulso Diario de la Red activado!</div>
-                  <div className="text-xs text-[#9CA3AF]">Streak {dailyPulse.trainingStreak}d • {dailyPulse.currentChallenge?.title} esperando tu energía</div>
+                  <div className="text-sm font-bold text-[#FF671F]">¡GymPulse Diario activado!</div>
+                  <div className="text-xs text-[#9CA3AF]">Streak {dailyPulse.trainingStreak}d • {dailyPulse.currentChallenge?.title} esperando tu energía con tus GymPartners</div>
                 </div>
                 <button 
                   onClick={() => { 
@@ -8451,7 +8460,7 @@ function App() {
                   }} 
                   className="text-xs px-3 py-1 bg-[#FF671F] text-black rounded-full font-bold active:bg-[#E55A1A] active:scale-95 transition-transform"
                 >
-                  Ver Pulso
+                  Ver GymPulse
                 </button>
               </motion.div>
             )}
@@ -8526,7 +8535,7 @@ function App() {
               {/* Top status bar - unique */}
               <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start text-xs">
                 {currentUser.trainingNow && (
-                  <div className="bg-[#22c55e] text-black font-black px-3 py-1 rounded-2xl tracking-widest shadow-[0_0_15px_rgba(34,197,94,0.5)]">🟢 EN PULSO VIVO • {currentUser.liveStreak || 0}D</div>
+                  <div className="bg-[#22c55e] text-black font-black px-3 py-1 rounded-2xl tracking-widest shadow-[0_0_15px_rgba(34,197,94,0.5)]">🟢 EN GYMPULSE VIVO • {currentUser.liveStreak || 0}D</div>
                 )}
                 <div className="text-right font-mono text-white/50 tracking-widest">{currentUser.level} • {currentUser.intensity}</div>
               </div>
@@ -8559,7 +8568,7 @@ function App() {
                 <div className="flex items-center justify-between mb-1.5 px-0.5">
                   <div>
                     <span className="text-[10px] uppercase tracking-[1px] text-[#FFD700]">GALERÍA DE LEYENDAS</span>
-                    <span className="ml-2 text-[11px] text-[#FF671F] font-semibold">{currentUser.photos.length} sesiones • tu capital en el Pulso</span>
+                    <span className="ml-2 text-[11px] text-[#FF671F] font-semibold">{currentUser.photos.length} sesiones • tu peso en el GymPulse</span>
                   </div>
                   <div className="text-[8px] text-[#9CA3AF]/60">Arrastra • reordena • la 1ª es tu presencia</div>
                 </div>
@@ -8653,7 +8662,7 @@ function App() {
             {(!currentUser.photos?.length || (currentUser.photos?.length || 0) < 3 || !currentUser.bio || (profilePosts[effectiveUserId] || []).filter((p:any)=>p.photo).length === 0) && (
               <div className="mx-4 mt-4 p-5 rounded-3xl bg-gradient-to-br from-[#1a160f] via-[#25252A] to-[#1a160f] border border-[#FFD700]/40 shadow-inner">
                 <div className="flex items-center gap-2 text-[#FFD700] font-bold mb-1.5 text-sm tracking-wide">
-                  <span>⭐</span> CONSTRUYE TU LEGADO EN EL PULSO
+                  <span>⭐</span> CONSTRUYE TU LEGADO EN EL GYMPULSE
                 </div>
                 <p className="text-sm text-[#f5e8c7] mb-3 leading-snug">Tu galería y tus EntrenaSyncs son tu capital único. Hazlos visibles: otros verán tu progreso real y querrán sincronizarse para multiplicar poder.</p>
                 <div className="text-[10px] space-y-0.5 mb-4 text-[#9CA3AF]">
@@ -8684,7 +8693,7 @@ function App() {
                   <div><span className="font-mono text-lg font-bold text-[#22c55e]">{Object.keys(syncBonds || {}).length}</span> <span className="text-[9px] text-[#9CA3AF]">Bonds</span></div>
                   <div><span className="font-mono text-lg font-bold text-[#FF671F]">{currentUser?.liveStreak || 0}</span> <span className="text-[9px] text-[#9CA3AF]">Live Streak</span></div>
                 </div>
-                <div className="text-[8px] text-[#9CA3AF] mt-1">Entrenar juntos multiplica tu peso en el Pulso. Tu primer Sync lo activa.</div>
+                <div className="text-[8px] text-[#9CA3AF] mt-1">Entrenar juntos multiplica tu peso en el GymPulse. Tu primer Sync lo activa.</div>
               </div>
             </div>
 
@@ -8846,7 +8855,7 @@ function App() {
             </div>
 
             {/* =====================================================
-                 PULSO DIARIO DE LA RED - The daily habit engine
+                 GYMPULSE DIARIO - The daily habit engine with your GymPartners
                  Innovative, attractive, tied to the graph: streaks that matter, 
                  personalized challenges that drive real syncs/voice/map impact,
                  Momentum as spendable network currency.
@@ -8862,8 +8871,8 @@ function App() {
                 <div className="rounded-3xl bg-gradient-to-br from-[#0f0a08] via-[#1a140f] to-[#0D0D10] border border-[#FF671F]/30 p-4 shadow-inner hover:shadow-2xl transition-all duration-300">
                   <div className="flex items-center justify-between mb-3">
                     <div>
-                      <div className="text-[#FF671F] text-[10px] font-bold tracking-[1px] uppercase">EL PULSO DE LA RED</div>
-                      <div className="text-white text-xl font-black tracking-[-0.5px]">Pulso Diario</div>
+                      <div className="text-[#FF671F] text-[10px] font-bold tracking-[1px] uppercase">EL GYMPULSE DE TUS GYMPARTNERS</div>
+                      <div className="text-white text-xl font-black tracking-[-0.5px]">GymPulse Diario</div>
                     </div>
                     <div className="text-right flex items-center gap-3">
                       <div>
@@ -8947,7 +8956,7 @@ function App() {
                                   toast('Ve a tu Red y activa un bond hoy')
                                 } else {
                                   setActiveTab('profile')
-                                  toast('Publica un Pulso en tu muro para completar')
+                                  toast('Publica en el GymPulse para completar')
                                 }
                               }}
                               className="flex-1 text-xs py-1.5 rounded-full bg-[#FF671F] text-black font-bold active:bg-[#E55A1A] active:scale-[0.985] transition-transform"
@@ -8979,14 +8988,14 @@ function App() {
                         if ((dailyPulse.momentum || 0) >= 30) {
                           try { triggerHaptic('medium') } catch {}
                           awardMomentum(-30, 'Amplificaste un Pulso')
-                          toast.success('Pulso amplificado', { description: 'Tu actividad ahora tiene más peso en el mapa de tu Red por 24h' })
+                          toast.success('GymPulse amplificado', { description: 'Tu actividad ahora tiene más peso en el GymPulse de tus GymPartners por 24h' })
                         } else {
                           toast('Necesitas 30 Momentum')
                         }
                       }}
                       className="flex-1 text-[10px] py-1.5 rounded-2xl border border-[#FF671F]/30 active:bg-[#FF671F]/10 active:scale-[0.985] hover:bg-[#FF671F]/5 transition-all text-[#FF671F]"
                     >
-                      Amplificar Pulso (30M)
+                      Amplificar GymPulse (30M)
                     </button>
                     <button 
                       onClick={() => {
@@ -9024,7 +9033,7 @@ function App() {
                       }} 
                       className="text-[9px] text-[#9CA3AF] underline active:opacity-70 active:text-white transition-colors"
                     >
-                      Refrescar Pulso
+                      Refrescar GymPulse
                     </button>
                   </div>
                 </div>
@@ -9072,11 +9081,11 @@ function App() {
                 {/* Network summary — epic social graph value. This is what makes EntrenaMatch the first real fitness social network: your sync alliances are a visible, compounding performance asset. */}
                 <div className="mb-2 px-0.5">
                   <div className="text-[11px] font-bold text-[#FFD700] mb-0.5">Network Power: {networkStats.networkPower} — tu red de sync te hace más fuerte, más consistente y más visible</div>
-                  {networkStats.networkPower > 30 && <div className="text-[8px] text-[#22c55e] mt-0.5">¡Tu red te da prioridad en el pulso del mapa, recomendaciones de alto rendimiento y +visibilidad global en la red!</div>}
+                  {networkStats.networkPower > 30 && <div className="text-[8px] text-[#22c55e] mt-0.5">¡Tu red te da prioridad en el GymPulse del mapa, recomendaciones de alto rendimiento y +visibilidad global entre GymPartners!</div>}
                   <div className="text-[9px] text-[#22c55e]">
                     {networkStats.numPartners} socios • {networkStats.totalMin}min sincronizados • {networkStats.totalSessions} sesiones • Impacto colectivo en tu rendimiento: +{networkStats.estimatedImpact}%
                   </div>
-                  <div className="mt-1 text-[8px] text-[#FFD700]/80">Tu red esta semana: ~{Math.floor(networkStats.totalMin / 4)} min de alto rendimiento compartido • Esto genera ondas que otros ven en el pulso global.</div>
+                  <div className="mt-1 text-[8px] text-[#FFD700]/80">Tu red esta semana: ~{Math.floor(networkStats.totalMin / 4)} min de alto rendimiento compartido • Esto genera ondas que otros ven en el GymPulse global.</div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.entries(syncBonds).slice(0,4).map(([pid, b]: any) => {
@@ -9118,7 +9127,7 @@ function App() {
                   <button onClick={() => setActiveTab('explore')} className="text-[8px] px-2 py-0.5 bg-[#22c55e]/10 text-[#22c55e] rounded active:bg-[#22c55e]/20">Explora más socios para expandir tu red →</button>
                   <button 
                     onClick={() => {
-                      const msg = `🔥 Entreno en EntrenaMatch con mi red. Syncs reales dan +Network Power, prioridad en el pulso y resultados que se propagan. ¿Entrenamos juntos? https://musclegrenadechile.github.io/entrenamatch/`;
+                      const msg = `🔥 Entreno en EntrenaMatch con mis GymPartners. Syncs reales dan +Network Power, prioridad en el GymPulse y resultados que se propagan. ¿Entrenamos juntos? https://musclegrenadechile.github.io/entrenamatch/`;
                       navigator.clipboard?.writeText(msg).then(() => toast.success('Mensaje copiado', { description: 'Comparte con tu red para invitarlos a construir el grafo de alto rendimiento.' })).catch(() => toast('Invita a tu red abriendo el app con ellos.'));
                     }}
                     className="text-[8px] px-2 py-0.5 bg-[#FFD700]/20 text-[#FFD700] rounded active:bg-[#FFD700]/30 font-medium"
@@ -9299,7 +9308,7 @@ function App() {
                     if (dailyPulse?.currentChallenge?.type === 'solo') {
                       completeDailyChallenge(1)
                     } else if (newVal) {
-                      awardMomentum(8, 'Ancla del Pulso')
+                      awardMomentum(8, 'Ancla del GymPulse')
                     }
                     if (newVal) {
                       createProfilePost('¡Entrenando ahora cerca! ¿Quién se une? 🏋️', null).catch(() => {})
@@ -12101,7 +12110,7 @@ function App() {
                                         }
                                       }}
                                       className={`voice-play-btn ${playingVoiceId === msg.id ? 'playing' : ''}`}
-                                      title={playingVoiceId === msg.id ? "Pausar nota de voz" : "Reproducir nota de voz del Círculo"}
+                                      title={playingVoiceId === msg.id ? "Pausar nota de voz" : "Reproducir nota de voz de tu GymPartner"}
                                     >
                                       {playingVoiceId === msg.id ? <Pause size={15} /> : <Play size={15} />}
                                     </button>
@@ -12190,7 +12199,7 @@ function App() {
                             a.play().catch(()=>{}); 
                           }}
                           className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center text-black active:scale-90 shadow flex-shrink-0"
-                          title="Escuchar preview de tu energía para el squad"
+                          title="Escuchar preview antes de enviar al squad"
                         >
                           <Play size={18} />
                         </button>
@@ -12200,8 +12209,8 @@ function App() {
                           </div>
                         </div>
                         <div className="meta">
-                          <div className="title">🎙️ NOTA DE VOZ DEL RITUAL LISTA</div>
-                          <div className="sub">{pendingVoice.duration}s • +1 Voice Streak • para todo el squad</div>
+                          <div className="title">🎙️ NOTA DE VOZ LISTA PARA TU SQUAD</div>
+                          <div className="sub">{pendingVoice.duration}s • +1 Voice Streak • para el squad de GymPartners</div>
                         </div>
                         <div className="actions flex-col gap-1 items-end">
                           <button 
@@ -12242,7 +12251,7 @@ function App() {
                     )}
                     {isUploadingVoice && (
                       <div className="voice-uploading mb-2">
-                        <div className="label">Enviando nota de voz</div>
+                        <div className="label">TRANSMITIENDO A TUS GYMPARTNERS...</div>
                         <div className="progress-track">
                           <div className="progress-fill" style={{ width: `${voiceUploadProgress || 10}%` }} />
                         </div>
@@ -12277,7 +12286,7 @@ function App() {
                         type="text" 
                         value={chatInputValue}
                         onChange={(e) => setChatInputValue(e.target.value)}
-                        placeholder={pendingVoice ? "Nota de voz del Ritual adjunta — ENVIAR AL SQUAD" : "Mensaje o voz para el squad..."}
+                        placeholder={pendingVoice ? "Nota lista — ENVIAR AL SQUAD" : "Mensaje o voz para tu squad de GymPartners..."}
                         enterKeyHint="send"
                         className="flex-1 bg-[#0D0D10] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none placeholder:text-[#9CA3AF] min-w-0 focus:border-[#FF671F]/50" 
                       />
@@ -12293,13 +12302,16 @@ function App() {
                         }} />
                       </label>
 
-                      {/* PREMIUM live recording for squad — real waveform + clear actions */}
+                      {/* PREMIUM live recording for squad — clearer stop to send flow */}
                       {isRecordingVoice ? (
-                        <div className="voice-recording" style={{minWidth: 152}}>
+                        <div className="voice-recording" style={{minWidth: 168, padding: '4px 8px 4px 10px'}}>
                           <div className="dot" />
-                          <div>
-                            <div className="text-red-400 text-[9px] font-bold tracking-[1px]">GRABANDO EN VIVO</div>
-                            <span className="timer">{recordingTime}s <span className="opacity-60">/60</span></span>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-red-400 text-[9px] font-extrabold tracking-[0.5px]">GRABANDO NOTA DE VOZ</div>
+                            <div className="flex items-baseline gap-1">
+                              <span className="timer">{recordingTime}s <span className="opacity-60">/60</span></span>
+                              <span className="text-[8px] text-red-400/70 font-medium">• PARAR para preview y enviar</span>
+                            </div>
                           </div>
                           {/* LIVE bars synced to mic */}
                           <div className="flex gap-[1.5px] items-end h-[17px] mx-0.5 px-0.5 bg-black/30 rounded">
@@ -12307,7 +12319,13 @@ function App() {
                               <div key={i} className="w-[2.5px] bg-red-400 rounded transition-all duration-75" style={{height: `${h}px`}} />
                             ))}
                           </div>
-                          <button onClick={stopVoiceRecording} className="ml-1 px-3 py-px text-[10px] bg-red-600 text-white rounded-full active:bg-red-700 font-extrabold shadow">DETENER</button>
+                          <button 
+                            onClick={stopVoiceRecording} 
+                            className="ml-1 px-3.5 py-1 text-[10px] bg-red-600 text-white rounded-full active:bg-red-700 font-extrabold shadow active:scale-95"
+                            title="Parar: luego escuchas y envías al squad"
+                          >
+                            PARAR
+                          </button>
                           <button onClick={cancelVoiceRecording} className="ml-0.5 text-red-400/80 hover:text-red-400 px-1 text-lg leading-none" title="Cancelar grabación">×</button>
                         </div>
                       ) : (
@@ -12315,7 +12333,7 @@ function App() {
                           type="button"
                           onClick={startVoiceRecording}
                           className="w-11 h-11 rounded-3xl flex items-center justify-center transition active:scale-95 bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A] hover:border-[#FF671F]/50"
-                          title="Grabar nota de voz para el squad — energía compartida"
+                          title="Grabar nota de voz para el squad de GymPartners"
                         >
                           <Mic size={19} />
                         </button>

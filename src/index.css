@@ -1119,9 +1119,10 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* ===== VOICE NOTES — PREMIUM polished for the first fitness social network =====
-   Epic ritual feel: orange brand + gold network accents, glass, haptics, live waveforms.
-   Real mic visualizer in recording. Synced real progress on playback. Attractive actionable preview.
-   1:1 and group parity. Ties directly into Voice Streak + Daily Pulse retention.
+   Clear recording (big PARAR + "PARAR para escuchar y ENVIAR"), actionable preview.
+   Live real waveform. Real synced progress + pause on playback.
+   1:1 and group parity. New terms: GymPartner / GymPulse (clearer, sticks).
+   Ties to Voice Streak + GymPulse Diario retention.
 */
 .voice-bubble {
   display: flex;
@@ -1271,7 +1272,7 @@ input[type="range"]::-moz-range-thumb {
   box-shadow: 0 4px 15px -2px rgba(255,103,31,0.15);
 }
 
-/* Recording pill — URGENT + PREMIUM ritual recording (live bars + glass) */
+/* Recording pill — URGENT + PREMIUM (live mic bars + clear "PARAR para enviar" flow for GymPulse notes) */
 .voice-recording {
   display: flex;
   align-items: center;
@@ -1287,7 +1288,7 @@ input[type="range"]::-moz-range-thumb {
 @keyframes rec-pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
 .voice-recording .timer { font-variant-numeric: tabular-nums; color:#fda4af; font-weight:800; letter-spacing:-.3px; font-size:12px; }
 
-/* Pending voice preview card — "ready to broadcast your ritual energy" — glassmorphism premium */
+/* Pending voice preview card — "ready to send to your GymPartner" — glassmorphism premium, clear ENVIAR */
 .voice-preview {
   background: linear-gradient(145deg, #111113, #0A0A0C);
   border: 2px solid rgba(255,103,31,.65);
