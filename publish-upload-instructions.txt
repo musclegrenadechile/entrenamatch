@@ -1,4 +1,16 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.65-map-partners-gympulse-polish code 69) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.66-mapa-tiempo-real-labels code 70) ===
+
+FIX RÁPIDO DE LABELS EN EL MAPA (por tu último pedido):
+- Donde decía "Ocultar el GymPulse" ahora dice "Ocultar el mapa en tiempo real"
+- Donde decía "Ver el GymPulse por zonas" ahora dice "Ver el mapa en tiempo real"
+- Header del mapa actualizado a "🗺️ Mapa en tiempo real • El GymPulse Global ..."
+- Toggle de partners: "✓ Partners (mapa)"
+- Form de agregar partner y textos relacionados ajustados para usar "mapa en tiempo real"
+- El botón del banner diario "Ver GymPulse" cambiado a "Ver GymPulse Diario" para distinguir del mapa.
+
+El "GymPulse" se mantiene como nombre de la marca/sistema (diario, challenges, etc.), pero las acciones directas de mostrar/ocultar el mapa ahora usan lenguaje literal claro "mapa en tiempo real".
+
+Artifacts actualizados con la versión 0.1.66. Git y builds listos.
 
 MAPA PULIDO + PROYECTO "PARTNER BUSINESSES EN EL GYMPULSE MAP" (devs agregan gyms/tiendas partner, ellos aparecen y "pueden ver" actividad).
 

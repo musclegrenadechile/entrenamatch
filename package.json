@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.65-map-partners-gympulse-polish",
+  "version": "0.1.66-mapa-tiempo-real-labels",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -1461,7 +1461,7 @@ function App() {
     }, 30)
   }, [showPartners, partnerLocations.length, mapForceTick, showLiveMap])
 
-  // Partner businesses (gyms, stores etc that partner with the app). Devs can add them so they appear on the GymPulse map.
+  // Partner businesses (gyms, stores etc that partner with the app). Devs can add them so they appear on the mapa en tiempo real (GymPulse map).
   // "ellos puedan ver": partners get prominent placement + nearby activity indicators (users training close get associated with the partner location).
   const PARTNER_SEEDS = [
     { id: 'p-seed-1', name: 'Muscle Grenade Viña', lat: -33.015, lng: -71.55, type: 'gym', address: 'Viña del Mar, cerca del centro' },
@@ -1484,7 +1484,7 @@ function App() {
   const startSyncRef = useRef<((partnerId: string, partnerName: string) => any) | null>(null)
 
   // Load partner locations: seeds (for immediate demo) + real Firestore (so devs can add persistent partners via the in-app tool).
-  // This makes the "devs put businesses on the map" easy and real-time visible to all users in the GymPulse.
+  // This makes the "devs put businesses on the map" easy and real-time visible to all users in the GymPulse (mapa en tiempo real).
   useEffect(() => {
     // Always start with seeds so the feature is visible even in demo / first run
     let base = [...PARTNER_SEEDS]
@@ -5904,7 +5904,7 @@ function App() {
       }
     })
 
-    // PARTNER BUSINESSES ON THE GYMPULSE MAP (devs add them so partner gyms/stores are visible).
+    // PARTNER BUSINESSES ON THE MAPA EN TIEMPO REAL / GYMPULSE MAP (devs add them so partner gyms/stores are visible).
     // Distinct visual: orange/gold framed with 🏋️ or 🏪 icon + "PARTNER" badge.
     // "ellos puedan ver": popup shows how many GymPartners are training nearby (radius ~3-5km).
     // Clicking "Ver actividad" can be extended later; for now it gives social proof to the partner location.
@@ -5940,7 +5940,7 @@ function App() {
             <div style="min-width:160px;font-size:12px">
               <strong style="color:#FF671F">${p.name}</strong><br/>
               <span style="font-size:10px;color:#9CA3AF">${p.address || ''}</span><br/>
-              <span style="color:#22c55e;font-weight:600">🏋️ Socio oficial del GymPulse</span><br/>
+              <span style="color:#22c55e;font-weight:600">🏋️ Socio oficial del GymPulse (mapa en tiempo real)</span><br/>
               ${nearby > 0 ? `<span style="font-size:10px">👥 ${nearby} GymPartners entrenando cerca ahora</span><br/>` : ''}
               <div style="margin-top:6px;font-size:10px;color:#666">Toca para destacar actividad en esta zona</div>
             </div>`
@@ -6772,7 +6772,7 @@ function App() {
             <div className="mt-3 relative z-10">
               <div className="flex items-center justify-between mb-1.5 px-1">
                 <div className="text-[10px] font-semibold text-[#22c55e] flex items-center gap-1.5">
-                  🗺️ El GymPulse Global • Partners + GymPartners en vivo
+                  🗺️ Mapa en tiempo real • El GymPulse Global (Partners + GymPartners en vivo)
                   <span className="text-[8px] bg-[#22c55e]/20 px-1.5 rounded">LA RED EN VIVO</span>
                   {networkStats.numPartners > 0 && <span className="text-[7px] bg-[#FFD700]/90 text-black px-1 rounded font-bold">TU RED: {networkStats.numPartners} • NP {networkStats.networkPower}</span>}
                   <span className="text-[7px] ml-1 bg-[#22c55e]/10 px-1 rounded">Redes activas hoy: {Math.max(1, Math.floor(liveTrainingNow.length / 2))} • +{liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} joins en la red</span>
@@ -6781,7 +6781,7 @@ function App() {
                   onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(!showLiveMap) }} 
                   className={`text-xs px-3 py-1 rounded-full border transition ${showLiveMap ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
                 >
-                  {showLiveMap ? 'Ocultar el GymPulse' : 'Ver el GymPulse por zonas'}
+                  {showLiveMap ? 'Ocultar el mapa en tiempo real' : 'Ver el mapa en tiempo real'}
                 </button>
               </div>
 
@@ -6817,7 +6817,7 @@ function App() {
                       onClick={() => { try { triggerHaptic('light') } catch {}; setShowPartners(!showPartners); setMapForceTick(t => t+1) }}
                       className={`text-[8px] px-2 py-0.5 rounded-full border transition ${showPartners ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'bg-black/70 text-[#FF671F] border-[#FF671F]/40 hover:bg-[#FF671F]/10'}`}
                     >
-                      {showPartners ? '✓ Partners GymPulse' : 'Mostrar Partners'}
+                      {showPartners ? '✓ Partners (mapa)' : 'Mostrar Partners'}
                     </button>
                   </div>
                   {showOnlyLegends && (
@@ -6842,7 +6842,7 @@ function App() {
                     Centrar
                   </button>
 
-                  {/* DEV TOOL: Add partner business directly on the GymPulse map.
+                  {/* DEV TOOL: Add partner business directly on the mapa en tiempo real (GymPulse).
                       This is the requested "posibilidad a nosotros los desarrolladores de poner en el mapa negocios que son partner".
                       Persists to Firestore in real mode so all users see the new partner locations.
                       "ellos puedan ver": the partner marker shows nearby live GymPartners count. */}
@@ -6915,7 +6915,7 @@ function App() {
                   {showAddPartnerForm && (
                     <div className="absolute bottom-3 left-3 right-3 z-50 bg-[#111] border border-[#FFD700] rounded-2xl p-3 text-xs shadow-xl">
                       <div className="font-bold text-[#FFD700] mb-1 flex justify-between">
-                        Agregar Partner (devs) — aparecerá en GymPulse para todos
+                        Agregar Partner (devs) — aparecerá en el mapa en tiempo real para todos
                         <button onClick={() => setShowAddPartnerForm(false)} className="text-white/60">✕</button>
                       </div>
                       <div className="flex gap-2 mb-2">
@@ -8645,7 +8645,7 @@ function App() {
                   }} 
                   className="text-xs px-3 py-1 bg-[#FF671F] text-black rounded-full font-bold active:bg-[#E55A1A] active:scale-95 transition-transform"
                 >
-                  Ver GymPulse
+                  Ver GymPulse Diario
                 </button>
               </motion.div>
             )}
