@@ -83,6 +83,10 @@ export interface GymPulseMapProps {
   onRequestLocation?: () => void
 
   onRegisterCentrar?: (fn: () => void) => void
+
+  // Witness for echo pins / ripples from map (connect to parent modal/replay)
+  onWitnessEchoPin?: (id: string) => void
+  onWitnessRipple?: (id: string) => void
 }
 
 export interface GymPulseMapHandle {
@@ -145,6 +149,16 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     onForceTick,
     onRequestLocation,
     onRegisterCentrar,
+
+    onWitnessEchoPin,
+    onWitnessRipple,
+
+    // Dev tools props (passed from parent when isDeveloper)
+    onAddPartnerAtCurrentCenter,
+    onReloadPartners,
+    onSpawnTestLives,
+    onClearDevTestLives,
+    devTestCount,
   } = props
 
   const mapContainerRef = useRef<HTMLDivElement>(null)
@@ -634,8 +648,11 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       onStartSync && onStartSync(id, name)
     }
     ;(window as any).witnessEchoPin = (id: string) => {
-      // TODO: wire to parent witness modal
-      console.log('witness echo', id)
+      if (onWitnessEchoPin) {
+        onWitnessEchoPin(id)
+      } else {
+        console.log('witness echo (no handler wired)', id)
+      }
     }
     ;(window as any).devDeletePartner = (id: string) => {
       if (onPartnerDelete) onPartnerDelete(id)
@@ -658,7 +675,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       delete (window as any).devSpawnTestLives
       delete (window as any).devClearTestLives
     }
-  }, [onStartSync, onPartnerDelete, onPartnerEdit, onAddPartnerAtCurrentCenter, onReloadPartners, onSpawnTestLives, onClearDevTestLives])
+  }, [onStartSync, onPartnerDelete, onPartnerEdit, onAddPartnerAtCurrentCenter, onReloadPartners, onSpawnTestLives, onClearDevTestLives, onWitnessEchoPin, onWitnessRipple])
 
   // Small local computation for the zone legend (self contained)
   const zoneLiveCounts = useMemo(() => {
