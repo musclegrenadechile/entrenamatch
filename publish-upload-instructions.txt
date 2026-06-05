@@ -1,3 +1,16 @@
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.86-work) ===
+
+**Cambios principales de esta build (2026-06-05)**:
+- Versión centralizada + todos los strings de versión en UI actualizados (ya no aparecen 0.1.37 ni 0.1.7-prealpha).
+- Limpieza de lenguaje: se eliminó la mayoría del wrapper "ritual / leyenda" que quedaba en textos visibles (gadget, galería, highlights de sync, ondas, etc.). Ahora más consistente con el tono serio de "red de rendimiento sincronizado / GymPulse / EntrenaSync".
+- GymPulse + Partners con logos ya funcionando (reglas de storage deployadas + guard de auth en cliente).
+- Live toggle "Entrenando Ahora (EN VIVO)" ahora siempre responde + explicaciones educativas claras en todo el flujo.
+- Build con APP_VERSION unificada.
+
+Subir como nueva release en Closed (o Internal si aún no hay closed track). Usar el "What's new" de abajo.
+
+---
+
 === READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.85-partner-logo-deployed code 89) ===
 
 FIX 403 Forbidden partner logo (user report: index-....js POST .../partners/.../logo-... 403):

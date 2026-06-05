@@ -12,13 +12,21 @@ La app tiene un enfoque fuerte en **Chile** para su lanzamiento inicial, pero es
 - Ubicación por GPS real + cálculo de distancia
 - Lanzamiento inicial en Chile, pero con perfiles de todo el mundo
 
-## Características principales
+## Características principales (lo que hace único a EntrenaMatch)
 
+- **GymPulse**: Mapa en tiempo real del pulso de entrenamiento de la comunidad (vivo + partners/gyms con logos).
+- **EntrenaSync**: Entrenamiento sincronizado en tiempo real con tether/orb compartido, acciones conjuntas, ripples que se propagan al mapa y posts automáticos en ambos perfiles + feed.
+- Live "Entrenando Ahora": Radar + FOMO real + streaks + joins. La gente cerca te ve y quiere sumarse.
+- Red de Sync / Network Power / Levels + Gadgets visuales ligados a las 5 mecánicas.
+- Muro/Feed con fotos reales (Storage), reacciones, highlights de sync.
+- Todo con Firebase real (multi-dispositivo) + modo demo.
+
+Otras:
 - Swipe fluido estilo matching (arrastre + botones)
 - Ubicación por GPS + distancia real en km entre usuarios
 - Filtros avanzados: edad, distancia, tipo de entrenamiento, disponibilidad
-- Chat después del match
-- 18+ enforcement estricto
+- Chat después del match + sesiones grupales + voz
+- 18+ enforcement estricto + reportes/bloqueos
 - Términos de Servicio, Política de Privacidad y Directrices de Comunidad
 - Perfiles de Chile (Santiago, Viña, Valparaíso, Concepción...) + varios países
 
@@ -59,8 +67,10 @@ Puedes probar la aplicación directamente aquí (versión pública de prueba):
 
 ## Cómo ejecutar localmente
 
+El clon de git normalmente crea la carpeta `entrenamatch/` (nombre del repo). Si tu carpeta local se llama `fitvina` (nombre legacy previo al rename del proyecto), renómbrala a `entrenamatch` para que aparezca correctamente como "entrenamatch" en listas de proyectos/sesiones de Grok y herramientas.
+
 ```bash
-cd fitvina
+cd entrenamatch
 npm install
 npm run dev
 ```

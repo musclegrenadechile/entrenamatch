@@ -79,10 +79,14 @@ import { useSquads } from './hooks/useSquads'
 import { ExploreTab } from './components/explore/ExploreTab'
 import { AuthScreen } from './components/auth/AuthScreen'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
+import { GymPulseMap } from './components/map' // Inicio de modularización 2026-06-05 (stub + estructura)
 import { db, isFirebaseConfigured } from './services/firebase'
 import { requestPlayIntegrityToken, hasPositiveIntegrity, getLastIntegrityResult } from './services/playIntegrity'
 import { Capacitor } from '@capacitor/core'
 import { collection, query, where, getDocs, orderBy, limit, doc, onSnapshot } from 'firebase/firestore'
+
+// ==================== VERSION (centralizada - actualizar en cada release) ====================
+export const APP_VERSION = '0.1.86-work'
 
 // ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
 // Lanzamiento inicial fuerte en Chile + presencia en LatAm y España
@@ -700,7 +704,7 @@ function App() {
   // PERFORMANCE PROPAGATION: Strong EntrenaSync sessions send visible waves to the Live Map.
   // This is the living social layer of the network — you see where synchronized high-performance training is happening and propagating right now.
   // The map becomes the pulse of the fitness social graph.
-  const [ritualRipples, setRitualRipples] = useState<any[]>([]) // {id, lat, lng, label, intensity}  // internal name (performance waves from strong syncs) - kept for minimal diff; user-facing strings already use "ondas de red" / "performance propagation"
+  const [ritualRipples, setRitualRipples] = useState<any[]>([]) // {id, lat, lng, label, intensity}  // internal name only (performance waves / ripples from strong EntrenaSyncs). User-facing copy uses "onda de sync", "highlight de red", etc.
   const [syncBonds, setSyncBonds] = useState<Record<string, {totalMin: number, sessions: number, avgRating: number, bondLevel: number}>>({})
   const [lastSyncStory, setLastSyncStory] = useState<any>(null)
 
@@ -740,7 +744,7 @@ function App() {
   const GADGETS = [
     { level: 5, name: 'Halo Élite', icon: '✨', desc: 'Tu marcador en el mapa brilla con halo dorado extra (más visible para la red)', effect: 'map-halo' },
     { level: 10, name: 'Tether Legendario', icon: '🌟', desc: 'Tethers en EntrenaSync son dorados y más gruesos para ti', effect: 'golden-tether' },
-    { level: 15, name: 'Ritual Exclusivo', icon: '🔥', desc: 'Acciones y emojis especiales solo para niveles altos en la Arena Sync', effect: 'exclusive-emojis' },
+    { level: 15, name: 'Sync Elite', icon: '🔥', desc: 'Acciones y emojis especiales solo para niveles altos en EntrenaSync', effect: 'exclusive-emojis' },
     { level: 20, name: 'Pulso Maestro', icon: '🌀', desc: 'Tus ripples/ondas en el mapa son más grandes y con color único', effect: 'map-ripple-boost' },
     { level: 25, name: 'Aura de Campeón', icon: '👑', desc: 'Badge especial + prioridad en lista live y recomendaciones', effect: 'priority' },
   ]
@@ -4470,7 +4474,7 @@ function App() {
               id: rippleId, 
               lat: partner.lat, 
               lng: partner.lng, 
-              label: isLegendRipple ? `⭐ RITUAL LEGENDARIO • ${label}` : `⚡ Ritual Épico • ${label}`, 
+              label: isLegendRipple ? `⭐ HIGHLIGHT DE RED • ${label}` : `⚡ Onda de Sync • ${label}`, 
               intensity,
               witnessData: {
                 actions: syncActions.slice(0, 6).map((a: any) => ({...a})),
@@ -4520,7 +4524,7 @@ function App() {
                   addNotification({
                     id: 'ripple-global-' + rippleId,
                     type: 'session_join' as any,
-                    title: '⚡ Energía de Ritual cerca',
+                    title: '⚡ Energía de Sync cerca',
                     body: `${label} — alguien tuvo un momento épico a ${distToEvent.toFixed(1)}km`,
                     relatedId: syncPartnerId
                   })
@@ -5071,7 +5075,7 @@ function App() {
             <div className="text-sm text-[#cbd5e1] truncate leading-tight font-medium">{short}</div>
             <div className="text-[10px] text-[#9CA3AF] mt-1 flex items-center gap-1.5">
               {isGroup ? '👥 Chat grupal • En vivo' : '💬 Mensaje 1:1 • En vivo'}
-              {isLegendMsg && <span className="px-1.5 py-0 rounded bg-[#FFD700] text-black text-[9px] font-bold">⭐ LEYENDA</span>}
+              {isLegendMsg && <span className="px-1.5 py-0 rounded bg-[#FFD700] text-black text-[9px] font-bold">⭐ RED</span>}
             </div>
           </div>
         </div>
@@ -6705,7 +6709,7 @@ function App() {
 
     // PEQUEÑO TOQUE DISRUPTIVO: líneas tether ligeras entre pares que están en EntrenaSync ahora mismo.
     // Visible solo en el mapa en vivo, dashed naranja-verde sutil, con popup "Sync en vivo".
-    // Hace que el mapa muestre no solo "quién está live" sino "quién está conectado en ritual".
+    // Hace que el mapa muestre no solo "quién está live" sino "quién está conectado en EntrenaSync".
     syncLinesRef.current.forEach(l => { try { mapInstanceRef.current.removeLayer(l) } catch {} })
     syncLinesRef.current = []
     liveUsers.forEach(user => {
@@ -6763,7 +6767,7 @@ function App() {
     // THE PERFORMANCE PROPAGATION LAYER — "Energy from strong EntrenaSync becomes visible on the map"
     // When your network creates high-intensity sync, the map "feels" it as part of the social graph.
     // This is the ambient, city-scale awareness that no other fitness product has.
-    // Other users see "Ritual Épico" waves propagating — pure FOMO + proof that real human synchronization is happening right now.
+    // Other users see sync waves propagating — pure FOMO + proof that real high-performance synchronization is happening right now.
     ritualRipples.forEach((r: any) => {
       try {
         // Pulso Maestro integration: if the source user (or current) has the gadget, ripples are bigger + special color
@@ -6834,7 +6838,7 @@ function App() {
           ).addTo(mapInstanceRef.current)
 
           wave.bindPopup(
-            `<strong>⚡ Onda de Ritual en movimiento</strong><br/>` +
+            `<strong>⚡ Onda de Sync en movimiento</strong><br/>` +
             `${r.label}<br/>` +
             `Viajando hacia ${target.name || 'otro atleta'} • ${target.dist.toFixed(1)} km`
           )
@@ -6864,7 +6868,7 @@ function App() {
                 })
                 // Only one toast per ripple emission for this viewer
                 if (target.dist < 6) {
-                  toast(`⚡ Ritual épico cerca`, {
+                  toast(`⚡ Sync fuerte cerca`, {
                     description: `${r.label} se propagó hasta aquí`
                   })
                 }
@@ -7335,7 +7339,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
-          <span className="text-white/90 text-[11px]">Real backend • v0.1.37-arena-real</span>
+          <span className="text-white/90 text-[11px]">Real backend • v{APP_VERSION}</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -7536,7 +7540,10 @@ function App() {
               <button onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline active:text-white">Ver todos live →</button>
             </div>
 
-            {/* THE LIVING PULSE: Real-time map of synchronized training activity — the social layer of the first fitness network. Shows where high-signal co-training is happening right now. */}
+            {/* THE LIVING PULSE: Real-time map of synchronized training activity — the social layer of the first fitness network. 
+                Shows where high-signal co-training is happening right now.
+                TODO (2026-06-05): mover toda esta sección de render + useEffects pesados a <GymPulseMap /> (ver src/components/map/GymPulseMap.tsx)
+            */}
             <div className="mt-3 relative z-10">
               <div className="flex items-center justify-between mb-1.5 px-1">
                 <div className="text-[10px] font-semibold text-[#22c55e] flex items-center gap-1.5">
@@ -8546,7 +8553,7 @@ function App() {
 
                         <div className="text-[13px] leading-snug mb-2.5 text-white/95">
                           {(post.text || '').includes('Fui testigo') || (post.text || '').includes('RITUAL LEGENDARIO') || (post.text || '').includes('Echo') ? (
-                            <span className="text-[#FFD700] font-semibold">👁️ Eco de un Ritual Legendario</span>
+                            <span className="text-[#FFD700] font-semibold">👁️ Highlight de EntrenaSync</span>
                           ) : null}
                           <div>{post.text}</div>
                         </div>
@@ -9412,7 +9419,7 @@ function App() {
                               rating: 3,
                               text: `Chat 1:1 con ${activeChat}: Problema reportado por usuario`,
                               platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
-                              appVersion: '0.1.7-prealpha',
+                              appVersion: APP_VERSION,
                               context: '1v1-chat',
                               createdAt: serverTimestamp(),
                             });
@@ -9869,12 +9876,12 @@ function App() {
               </button>
             </div>
 
-            {/* GALERÍA DE LEYENDAS - Remastered attractive curation. Unique visual for profile creation/editing */}
+            {/* GALERÍA DE RENDIMIENTO - Remastered attractive curation. Unique visual for profile creation/editing */}
             {currentUser.photos && currentUser.photos.length > 0 && (
               <div className="px-4 pt-3 pb-2 bg-[#0D0D10] border-b border-[#2F2F35]">
                 <div className="flex items-center justify-between mb-1.5 px-0.5">
                   <div>
-                    <span className="text-[10px] uppercase tracking-[1px] text-[#FFD700]">GALERÍA DE LEYENDAS</span>
+                    <span className="text-[10px] uppercase tracking-[1px] text-[#FFD700]">GALERÍA DE RENDIMIENTO</span>
                     <span className="ml-2 text-[11px] text-[#FF671F] font-semibold">{currentUser.photos.length} sesiones • tu peso en el GymPulse</span>
                   </div>
                   <div className="text-[8px] text-[#9CA3AF]/60">Arrastra • reordena • la 1ª es tu presencia</div>
@@ -9979,7 +9986,7 @@ function App() {
                   {(profilePosts[effectiveUserId] || []).filter((p:any)=>p.photo).length === 0 && <div>• Publica 1 foto de Sync compartido (tu primer ripple)</div>}
                 </div>
                 <button onClick={() => { setActiveTab('profile'); setTimeout(()=> muroComposerRef.current?.focus(), 60); }} className="w-full py-2.5 text-sm rounded-2xl bg-[#FFD700] text-black font-extrabold active:brightness-90 tracking-wide">CONSTRUIR MI RED DE RENDIMIENTO AHORA</button>
-                <button onClick={() => setShowOnboarding(true)} className="mt-2 w-full text-[10px] text-[#9CA3AF] underline active:text-[#FF671F]">Editar perfil completo (ritual visual)</button>
+                <button onClick={() => setShowOnboarding(true)} className="mt-2 w-full text-[10px] text-[#9CA3AF] underline active:text-[#FF671F]">Editar perfil completo</button>
               </div>
             )}
 
@@ -11267,7 +11274,7 @@ function App() {
                         ) : (
                           <div className="muro-text mb-3 text-[15px] leading-snug tracking-[-0.1px] text-[#F1F1F3]">
                             {(post.text || '').includes('Fui testigo') || (post.text || '').includes('RITUAL LEGENDARIO') || (post.text || '').includes('Echo') ? (
-                              <span className="text-[#FFD700] font-semibold">👁️ Eco de un Ritual Legendario</span>
+                              <span className="text-[#FFD700] font-semibold">👁️ Highlight de EntrenaSync</span>
                             ) : null}
                             <div>{post.text}</div>
                           </div>
@@ -11461,7 +11468,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.37-arena-real • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v{APP_VERSION} • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -11558,7 +11565,7 @@ function App() {
                     if (!firebaseUser?.uid || !db) { toast('Inicia sesión para enviar feedback'); return }
 
                     const platform = (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web'
-                    const appVersion = '0.1.7-prealpha'
+                    const appVersion = APP_VERSION
 
                     try {
                       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
@@ -11641,7 +11648,7 @@ function App() {
                 <div className="text-[9px] text-center text-[#9CA3AF] mt-1">Mejor que PWA. Requiere build con google-services.json correcto.</div>
                 {!PushNotifications && (
                   <div className="mt-1.5 text-[9px] bg-red-950/50 border border-red-500/50 text-red-400 p-1.5 rounded-xl text-center">
-                    ⚠️ Esta build del APK no tiene google-services.json configurado. La app puede fallar al abrir en Android. Actualiza a v0.1.7+.
+                    ⚠️ Esta build del APK no tiene google-services.json configurado. La app puede fallar al abrir en Android. Actualiza a v{APP_VERSION}+.
                   </div>
                 )}
               </div>
@@ -11688,7 +11695,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.37-arena-real • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v{APP_VERSION} • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>
@@ -12687,7 +12694,7 @@ function App() {
                           <div className="text-[13px] leading-snug mb-2 text-white/95">
                             {post.pinned ? '📌 ' : ''}
                             {(post.text || '').includes('Fui testigo') || (post.text || '').includes('RITUAL LEGENDARIO') || (post.text || '').includes('Echo') ? (
-                              <span className="text-[#FFD700] font-semibold">👁️ Eco de un Ritual Legendario</span>
+                              <span className="text-[#FFD700] font-semibold">👁️ Highlight de EntrenaSync</span>
                             ) : null}
                             <div>{post.text}</div>
                           </div>
@@ -13293,7 +13300,7 @@ function App() {
                               rating: 3,
                               text: `Sesión ${showGroupChatModalFor}: Problema reportado por usuario`,
                               platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
-                              appVersion: '0.1.7-prealpha',
+                              appVersion: APP_VERSION,
                               context: 'group-chat',
                               createdAt: serverTimestamp(),
                             });
