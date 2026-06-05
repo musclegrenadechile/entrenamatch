@@ -1608,7 +1608,15 @@ function App() {
     if (isDemoMode || !storage) {
       return URL.createObjectURL(file) // demo only
     }
+    // Critical for 403: Storage rules require request.auth != null. The dev password only gates the UI form client-side.
+    // Real Firebase sign-in (Google/email via the app's auth) is mandatory for the upload to succeed with the isAuthenticated() rule.
+    if (!firebaseUser?.uid) {
+      try { import('sonner').then(m => m.toast.error('Para subir logo de partner necesitas estar sign-in con Firebase Auth (botón de Google o email en la app). El password dev solo muestra el formulario de devs, no otorga token de Storage. El partner se guardará sin logo.')) } catch {}
+      console.warn('partner logo upload skipped: no firebaseUser (no auth token for storage rules)')
+      return undefined
+    }
     try {
+      console.log('[partner-logo] uploading for pid=', pid, 'uid=', firebaseUser.uid, 'bucket=entrenamatch.firebasestorage.app')
       const { ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage')
       const storageRef = ref(storage, `partners/${pid}/logo-${Date.now()}`)
       const task = uploadBytesResumable(storageRef, file)
@@ -1619,9 +1627,12 @@ function App() {
           () => resolve()
         )
       })
-      return await getDownloadURL(task.snapshot.ref)
-    } catch (e) {
-      console.warn('logo upload failed', e)
+      const url = await getDownloadURL(task.snapshot.ref)
+      console.log('[partner-logo] success https url length=', url?.length)
+      return url
+    } catch (e: any) {
+      console.warn('logo upload failed (403 often means rules not deployed or no Firebase Auth token)', e?.code || e?.message || e)
+      // Caller shows the detailed 403 toast with deploy + sign-in steps.
       return undefined
     }
   }
@@ -7880,7 +7891,7 @@ function App() {
                               </div>
                             )}
                           </div>
-                          <div className="text-[9px] text-[#666] mt-0.5">Se sube a Storage y se asocia al partner. Solo visible para devs.</div>
+                          <div className="text-[9px] text-[#666] mt-0.5">Logo → Storage (https) → visible en marker dorado PARTNER del mapa en tiempo real. Requiere login real Firebase.</div>
                         </div>
                       </div>
 
@@ -7897,6 +7908,9 @@ function App() {
                           let logoUrl: string | undefined = editingPartnerId ? partnerLocations.find(pp => pp.id === editingPartnerId)?.logoUrl : undefined
                           if (partnerLogoFile) {
                             logoUrl = await uploadPartnerLogoIfNeeded(partnerLogoFile, pid)
+                            if (partnerLogoFile && !logoUrl) {
+                              toast.error('Logo no se subió (403). Asegúrate de: 1) firebase deploy --only storage (rules), 2) Estar logueado en la app con Google o email (Firebase Auth real, el password dev solo abre el form). Partner guardado sin logo.')
+                            }
                           }
                           const partnerData: any = {
                             id: pid,
@@ -7953,7 +7967,7 @@ function App() {
                       >
                         {editingPartnerId ? 'GUARDAR CAMBIOS + LOGO' : 'AGREGAR AL MAPA EN TIEMPO REAL'}
                       </button>
-                      <div className="text-center text-[9px] text-[#666] mt-1">Solo desarrolladores. Los logos se guardan en Storage.</div>
+                      <div className="text-center text-[9px] text-[#666] mt-1">Solo devs. Rules deployadas. Necesitas sign-in real (Google/email) en la app (no solo password dev) para que el upload de logo dé 200 y aparezca la imagen en el marker dorado del mapa.</div>
                     </div>
                   )}
 

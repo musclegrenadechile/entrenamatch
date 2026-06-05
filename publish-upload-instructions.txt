@@ -1,4 +1,39 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.83-partner-logo-map-fix code 87) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.85-partner-logo-deployed code 89) ===
+
+FIX 403 Forbidden partner logo (user report: index-....js POST .../partners/.../logo-... 403):
+
+- Causa exacta: storage.rules tenía el bloque /partners/ (isAuthenticated read/write) en el archivo local, PERO NUNCA se había hecho "firebase deploy --only storage". Firebase seguía usando las reglas viejas (default deny) → 403 en uploadBytesResumable.
+- 2da causa común: intentar subir sin firebaseUser (solo con el password 'dev2026map' que habilita el form en cliente, pero Storage rules exigen request.auth != null).
+
+Acciones tomadas:
+- Se ejecutó exitosamente: npx firebase-tools deploy --only storage --project entrenamatch
+  Resultado: "+ storage: released rules storage.rules to firebase.storage" + "Deploy complete!"
+- Mejorado uploadPartnerLogoIfNeeded:
+  - Early guard: si !firebaseUser?.uid en modo real → toast claro "necesitas sign-in con Google/email (Firebase Auth)" + return undefined (evita el 403 inútil).
+  - Logs: '[partner-logo] uploading for pid=... uid=... ' y success log.
+  - Mejor catch warn.
+- Caller en handleAddOrSavePartner: toast de error más corto ahora que rules están deployadas, pero mantiene los pasos por si se editan rules de nuevo.
+- Hints en el form actualizados: "Rules deployadas. Necesitas sign-in real... para que el upload de logo dé 200 y aparezca la imagen en el marker dorado".
+- Partner siempre se guarda (optimistic + FS) aunque logo falle; se ve en mapa (sin logo usa fallback emoji elegante).
+- Render del marker: <img src={https logoUrl}> con borde dorado + PARTNER badge + onerror fallback robusto a gradiente+emoji. Hubs (nearby>=2) tienen aura extra.
+
+Con esto: sign-in real + +Partner + logo (archivo o cámara) → upload 200 → logoUrl https guardado en partnerLocations doc → onSnapshot + mapForceTick → L.divIcon con <img> → logo visible en el mapa en tiempo real para todos.
+
+Test S26 Ultra (dev):
+- Abre app, asegúrate de estar logueado con cuenta Google o email (no solo demo o password dev).
+- En mapa: activa dev mode (long press o el botón), + Partner.
+- Pon nombre, tipo, dirección, logo (elige foto o usa cámara nativa), "Usar centro del mapa" o click-to-place.
+- AGREGAR AL MAPA EN TIEMPO REAL.
+- Esperado: toast success, NO aparece toast de 403, el marker aparece INMEDIATAMENTE con la IMAGEN del logo (no el emoji), borde #FFD700, badge "PARTNER", y si hay lives cerca muestra el count verde.
+- Recarga / abre en web GH Pages / otro cliente: debe persistir con logo (viene de FS + Storage).
+- Edita el partner, cambia logo: debe actualizar el marker con el nuevo logo.
+- Verifica en Firebase Console > Storage > Rules que el match /partners/{allPaths=**} esté publicado.
+
++ web build (dist/), debug APK, release AAB. git push (se registra en GitHub Actions). Instructions actualizado con deploy output.
+
+Sigue con todo. El live map / GymPulse ahora permite a los devs agregar partners con logos de forma confiable y visible para todos (parte clave de "el mapa como pulso social vivo").
+
+(continúa con el resto de instrucciones históricas del archivo...)
 
 FIX: al añadir un gympartner (partner location) con logo, el logo no aparecía en el mapa (solo el fallback emoji).
 
