@@ -73,6 +73,8 @@ export interface GymPulseMapHandle {
   flyToSelf: () => void
   invalidateSize: () => void
   centerOn: (lat: number, lng: number, zoom?: number) => void
+  flyTo: (lat: number, lng: number, zoom?: number) => void
+  getCenter: () => { lat: number; lng: number } | null
 }
 
 const ZONE_COLORS: Record<string, string> = {
@@ -155,6 +157,22 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       if (mapInstanceRef.current) {
         mapInstanceRef.current.flyTo([lat, lng], zoom, { duration: 0.8 })
       }
+    },
+    flyTo: (lat: number, lng: number, zoom = 14) => {
+      if (mapInstanceRef.current) {
+        try {
+          mapInstanceRef.current.flyTo([lat, lng], Math.max(zoom, 12), { duration: 0.9, easeLinearity: 0.25 })
+        } catch {}
+      }
+    },
+    getCenter: () => {
+      if (mapInstanceRef.current) {
+        try {
+          const c = mapInstanceRef.current.getCenter()
+          return { lat: c.lat, lng: c.lng }
+        } catch {}
+      }
+      return null
     }
   }), [])
 

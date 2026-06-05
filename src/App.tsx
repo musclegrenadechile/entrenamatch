@@ -1560,19 +1560,13 @@ function App() {
   useEffect(() => { currentUidRef.current = firebaseUser?.uid || null }, [firebaseUser?.uid])
   useEffect(() => { blockedUsersRef.current = blockedUsers }, [blockedUsers])
 
-  // When partner visibility or list changes (or dev added one), force the map layer to refresh immediately.
+  // When partner visibility or list changes (or dev added one), nudge the extracted GymPulseMap (it reacts to mapForceTick + partnerLocations).
   useEffect(() => {
-    if (!showLiveMap || !mapInstanceRef.current) return
-    // re-trigger the debounced map update logic
-    if (mapUpdateTimeoutRef.current) clearTimeout(mapUpdateTimeoutRef.current)
-    mapUpdateTimeoutRef.current = setTimeout(() => {
-      // the big render effect will pick up the new showPartners/partnerLocations because they are closed over in the timeout? 
-      // simple hack: nudge liveTrainingNow dep by creating a micro change if needed, or just invalidate
-      if (mapInstanceRef.current) {
-        try { mapInstanceRef.current.invalidateSize() } catch {}
-      }
-    }, 30)
-  }, [showPartners, partnerLocations.length, mapForceTick, showLiveMap])
+    if (!showLiveMap) return
+    // The child GymPulseMap owns the real map and already has partnerLocations + mapForceTick in its effect deps.
+    // Just ensure a tick so it re-renders markers promptly.
+    setMapForceTick(t => t + 1)
+  }, [showPartners, partnerLocations.length, showLiveMap])
 
   // Developer login for gated partner management (only devs can add/edit locals on the GymPulse map)
   const loginAsDeveloper = () => {
@@ -1656,6 +1650,32 @@ function App() {
       }
     }, 80)
   }
+
+  // Stable handler for map popup "Edit" (dev). Must be a top-level useCallback (not created inside conditional JSX)
+  // to keep hook call count stable across renders when showLiveMap toggles (fixes React #310 on GH Pages prod build).
+  const handlePartnerEditFromMap = useCallback((id: string) => {
+    const p = (partnerLocationsRef.current || partnerLocations).find((pp: any) => pp.id === id)
+    if (p) {
+      // Make sure we are in the right view to see the edit form (which overlays the map)
+      if (activeTab !== 'explore') setActiveTab('explore')
+      if (!showLiveMap) setShowLiveMap(true)
+      startEditPartner(p)
+    } else {
+      console.warn('dev edit: partner not found in current list for id', id)
+      // Fallback: still open edit form with the id so dev can fix
+      setEditingPartnerId(id)
+      setPartnerFormName('Partner ' + id.slice(-6))
+      setPartnerFormType('gym')
+      setPartnerFormLat(-33.02)
+      setPartnerFormLng(-71.55)
+      setPartnerFormAddress('')
+      setPartnerLogoFile(null)
+      setPartnerLogoPreview(null)
+      setIsPlacingPartner(false)
+      setShowAddPartnerForm(true)
+      setShowManagePartners(false)
+    }
+  }, [partnerLocations, activeTab, showLiveMap, startEditPartner])
 
   const cancelPartnerForm = () => {
     setShowAddPartnerForm(false)
@@ -6913,16 +6933,15 @@ function App() {
                     className="map-floating-pulse absolute top-2 left-2 z-40 px-3 py-1 rounded-2xl text-[10px] font-semibold text-[#22c55e] flex items-center gap-2 shadow-lg border border-[#22c55e]/20 cursor-pointer active:scale-[0.985] transition"
                     onClick={() => {
                       try { triggerHaptic('light') } catch {}
-                      if (!mapInstanceRef.current) return;
-                      // Interactive header: click the pulse strength to fly to the "hottest" spot on the GymPulse (highest activity user)
+                      // Use the extracted GymPulseMap imperative handle (the old mapInstanceRef is dead after modularization)
                       const active = liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow);
-                      if (active.length === 0) return;
+                      if (active.length === 0 || !gymPulseMapRef.current) return;
                       const hottest = active.reduce((best, u) => {
                         const score = (u.joinCount || 0) + ((u.visibleLevel || 1) * 0.5) + (u.trainingSyncWith ? 5 : 0);
                         const bestScore = (best.joinCount || 0) + ((best.visibleLevel || 1) * 0.5) + (best.trainingSyncWith ? 5 : 0);
                         return score > bestScore ? u : best;
                       }, active[0]);
-                      mapInstanceRef.current.flyTo([hottest.lat, hottest.lng], Math.max(mapInstanceRef.current.getZoom() || 12, 14), { duration: 0.9, easeLinearity: 0.25 });
+                      try { gymPulseMapRef.current.flyTo(hottest.lat, hottest.lng, 14) } catch {}
                     }}
                     title="Click to fly to the hottest activity spot on the GymPulse"
                   >
@@ -7013,29 +7032,7 @@ function App() {
                         }
                       }
                     }}
-                    onPartnerEdit={useCallback((id: string) => {
-                      const p = (partnerLocationsRef.current || partnerLocations).find((pp: any) => pp.id === id)
-                      if (p) {
-                        // Make sure we are in the right view to see the edit form (which overlays the map)
-                        if (activeTab !== 'explore') setActiveTab('explore')
-                        if (!showLiveMap) setShowLiveMap(true)
-                        startEditPartner(p)
-                      } else {
-                        console.warn('dev edit: partner not found in current list for id', id)
-                        // Fallback: still open edit form with the id so dev can fix
-                        setEditingPartnerId(id)
-                        setPartnerFormName('Partner ' + id.slice(-6))
-                        setPartnerFormType('gym')
-                        setPartnerFormLat(-33.02)
-                        setPartnerFormLng(-71.55)
-                        setPartnerFormAddress('')
-                        setPartnerLogoFile(null)
-                        setPartnerLogoPreview(null)
-                        setIsPlacingPartner(false)
-                        setShowAddPartnerForm(true)
-                        setShowManagePartners(false)
-                      }
-                    }, [partnerLocations, activeTab, showLiveMap, startEditPartner])}
+                    onPartnerEdit={handlePartnerEditFromMap}
                     onPartnerDelete={async (id: string) => {
                       // Dev delete from map popup
                       const p = (partnerLocationsRef.current || partnerLocations).find((pp: any) => pp.id === id)
@@ -7099,17 +7096,22 @@ function App() {
                   <button
                     onClick={() => {
                       try { triggerHaptic('light') } catch {}
+                      // Prefer the live extracted component handle (old mapInstanceRef / selfMarkerRef / markersRef are stale post-extraction)
+                      if (gymPulseMapRef.current) {
+                        try {
+                          gymPulseMapRef.current.flyToSelf()
+                          return
+                        } catch {}
+                      }
+                      // Fallbacks (may be limited until full port)
                       const map = mapInstanceRef.current
-                      if (!map) return
-                      if (selfMarkerRef.current) {
+                      if (map && selfMarkerRef.current) {
                         const currentZoom = map.getZoom() || 13
-                        // Cinematic fly — much more attractive than instant setView
                         map.flyTo(selfMarkerRef.current.getLatLng(), currentZoom, { duration: 0.85, easeLinearity: 0.28 })
-                      } else if (markersRef.current.length > 0) {
-                        const group = L.featureGroup(markersRef.current)
-                        map.flyToBounds(group.getBounds().pad(0.2), { duration: 0.9, easeLinearity: 0.25 })
-                      } else if (userLocation) {
+                      } else if (userLocation && map) {
                         map.flyTo([userLocation.lat, userLocation.lng], 13, { duration: 0.8 })
+                      } else if ((window as any).__gymPulseCentrar) {
+                        ;(window as any).__gymPulseCentrar()
                       }
                     }}
                     className="absolute top-2 right-2 text-[9px] px-2.5 py-0.5 rounded-full bg-black/70 hover:bg-black text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black transition z-30"
@@ -7277,13 +7279,14 @@ function App() {
                           <button 
                             type="button"
                             onClick={() => {
-                              const map = mapInstanceRef.current
-                              if (map) {
-                                const c = map.getCenter()
+                              const c = gymPulseMapRef.current?.getCenter?.() || (mapInstanceRef.current ? (() => { try { const cc = mapInstanceRef.current.getCenter(); return {lat:cc.lat, lng:cc.lng} } catch { return null } })() : null)
+                              if (c) {
                                 setPartnerFormLat(c.lat)
                                 setPartnerFormLng(c.lng)
                                 try { triggerHaptic('light') } catch {}
                                 toast('Centro del mapa copiado', { description: 'Ajusta manualmente o guarda' })
+                              } else {
+                                toast.error('Mapa no disponible todavía')
                               }
                             }} 
                             className="text-[9px] px-2 py-0.5 rounded border border-[#FFD700]/40 text-[#FFD700] active:bg-[#FFD700]/10"
@@ -7446,14 +7449,12 @@ function App() {
                           setMapForceTick(t => t + 1)
                           // ensure map immediately reflects the new/updated partner (fixes "no queda guardado" visual)
                           setTimeout(() => {
-                            if (mapInstanceRef.current) {
-                              try { mapInstanceRef.current.invalidateSize() } catch {}
-                            }
+                            try { gymPulseMapRef.current?.invalidateSize?.() } catch {}
                           }, 30)
                           toast.success(editingPartnerId ? 'Partner actualizado' : 'Partner agregado', { description: 'Aparecerá en el mapa en tiempo real para todos los usuarios' })
-                          // recenter with flyTo (consistent, smooth)
+                          // recenter with flyTo via the extracted component (old ref is dead)
                           setTimeout(() => {
-                            if (mapInstanceRef.current) mapInstanceRef.current.flyTo([lat, lng], 14, { duration: 0.6 })
+                            try { gymPulseMapRef.current?.flyTo?.(lat, lng, 14) } catch {}
                           }, 150)
                         }}
                         className="mt-3 w-full py-2 bg-[#FFD700] text-black font-extrabold rounded-xl active:bg-white active:scale-[0.985] transition flex items-center justify-center gap-2"
@@ -7533,7 +7534,9 @@ function App() {
                               {/* Instant move tools — core of "facil mover un local" for devs */}
                               <button 
                                 onClick={() => {
-                                  if (mapInstanceRef.current && p.lat && p.lng) {
+                                  if (gymPulseMapRef.current && p.lat && p.lng) {
+                                    try { gymPulseMapRef.current.centerOn(p.lat, p.lng, 15) } catch {}
+                                  } else if (mapInstanceRef.current && p.lat && p.lng) {
                                     mapInstanceRef.current.setView([p.lat, p.lng], Math.max(mapInstanceRef.current.getZoom()||13, 15))
                                   }
                                   try { triggerHaptic('light') } catch {}
@@ -7546,9 +7549,8 @@ function App() {
                               <button 
                                 onClick={async () => {
                                   // Move this partner to whatever the map is currently centered on — super fast iteration for placement
-                                  const map = mapInstanceRef.current
-                                  if (!map) { toast.error('Mapa no disponible'); return }
-                                  const c = map.getCenter()
+                                  const c = gymPulseMapRef.current?.getCenter?.() || (mapInstanceRef.current ? (() => { try { const cc = mapInstanceRef.current.getCenter(); return { lat: cc.lat, lng: cc.lng } } catch { return null } })() : null)
+                                  if (!c) { toast.error('Mapa no disponible'); return }
                                   const newLat = c.lat, newLng = c.lng
                                   setPartnerLocations(prev => prev.map(x => x.id === p.id ? { ...x, lat: newLat, lng: newLng } : x))
                                   setMapForceTick(t => t + 1)
@@ -7561,7 +7563,7 @@ function App() {
                                       try { toast.error('No se pudo mover en FS (revisa reglas)') } catch {} 
                                     }
                                   }
-                                  map.setView([newLat, newLng], Math.max(map.getZoom() || 13, 14))
+                                  try { gymPulseMapRef.current?.centerOn?.(newLat, newLng, 14) } catch {}
                                   try { triggerHaptic('success') } catch {}
                                   toast.success('Movido al centro', { description: `${p.name} actualizado en tiempo real` })
                                 }} 

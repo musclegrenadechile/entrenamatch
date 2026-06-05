@@ -9,95 +9,100 @@
 - P1: Builds + documentación actualizada (para poder subir hoy o mañana temprano)
 - P2: Preparación de testing real en teléfono + primer paso de modularización
 
----
+**Session note (CI fix)**: "revisa https://github.com/musclegrenadechile/entrenamatch/actions dio errores a subir y solucionalos" — root cause was ~150-350 lines of orphaned map code (iconHtml, L.marker, clusters, ripples etc.) left at top level after GymPulseMap extraction + a stray `;` before `export default App`. Fixed by precise excision in App.tsx (build now passes both `npm run build` and `CAPACITOR=1 npm run build:web`). Workflow hardened with clean tsbuildinfo + now calls the robust script. Committed + pushed (8579faf + a43c8d5). Next Actions run on main will be green and will update android-prealpha with fresh app-debug.apk containing the Entrenando Ahora realtime onSnapshot + isTogglingLive fixes.
 
-## P0 - Limpieza y consistencia (empezar ya)
-
-- [ ] **Centralizar versión**
-  - Crear `const APP_VERSION = '0.1.86-work'` (o '0.1.85-partner-logo-deployed') en App.tsx cerca del top.
-  - Reemplazar todos los strings hardcodeados viejos:
-    - v0.1.37-arena-real
-    - 0.1.7-prealpha
-    - v0.1.7+
-  - Actualizar headers, footers, betaFeedback, avisos y comentarios de versión.
-
-- [ ] **Limpieza de lenguaje residual (tono serio "red de rendimiento")**
-  - Cambiar gadget: 'Ritual Exclusivo' → 'Sync Exclusivo' o 'Acciones Elite'
-  - Revisar labels visibles:
-    - "GALERÍA DE LEYENDAS" → "GALERÍA DE RENDIMIENTO" (o "HIGHLIGHTS DE LA RED")
-    - "Eco de un Ritual Legendario" → "Highlight de EntrenaSync" o "Momento de la Red"
-    - Actualizar algunos comentarios internos importantes y títulos de ripples donde sea user-facing.
-  - Dejar nombres internos (ritualRipples, etc.) con comentario aclaratorio.
-
-- [ ] Verificar que no queden referencias feas en el header del top bar y perfil.
+**Estado de la revisión (actual)**: 
+- P0 completado en código: APP_VERSION centralizado en App.tsx:89 + references actualizadas. Limpieza de lenguaje agresiva aplicada (red de rendimiento, sync en vez de ritual/leyenda en UI user-facing, contadores, headers, motivators). 
+- P1 bump completado: package.json "0.1.86-work", android/app/build.gradle versionCode 90 + versionName "0.1.86-work".
+- Builds: web + CI limpios post-excision (tsc + vite). Informe completo generado. Modularización mapa iniciada (GymPulseMap.tsx extraído + lógica heavy movida; stub effect + uso del componente en App).
+- Docs: roadmap + informe actualizados con visión "primera red social de entrenamiento sincronizado". Cambios en BETA, PRODUCTION, ANDROID_OVERVIEW, firestore.rules (partners), logo nuevo.
+- Git: main up-to-date. Solo docs + rules modificados (sin commit aún). Untracked: INFORME + nuevo logo.
 
 ---
 
-## P1 - Versión, Build y Docs (core para distribución)
+## P0 - Limpieza y consistencia (empezar ya) — ✅ COMPLETADO
 
-- [ ] **Bump de versión formal**
-  - package.json → "0.1.86-work" (o similar)
-  - android/app/build.gradle → versionCode +1 (a 90), versionName "0.1.86-work"
-  - Actualizar cualquier otro sitio (si aparece en PRODUCTION_AND_APK.md ejemplos, etc.)
+- [x] **Centralizar versión**
+  - ✅ `const APP_VERSION = '0.1.86-work'` en App.tsx:89 (cerca del top).
+  - ✅ Reemplazados strings hardcodeados viejos + headers/footers/avisos usan `{APP_VERSION}`.
+  - Verificado en múltiples lugares (footer, modals, logs, etc.).
+
+- [x] **Limpieza de lenguaje residual (tono serio "red de rendimiento")**
+  - ✅ Cambios aplicados: contadores (ALIANZAS DE SYNC, SYNC COMPLETADOS, HIGHLIGHTS DE SYNC), headers ("Mi Historial de EntrenaSync", "Galería de Rendimiento"), motivators, toasts, botones, posts de sync ("ENTRENASYNC COMPLETADO", "HIGHLIGHT DE ENTRENASYNC").
+  - Nombres internos (ritualRipples, etc.) quedan con comentarios aclaratorios donde corresponde.
+  - Visión core en App.tsx reescrita a "primera red social de entrenamiento sincronizado" (5 mecánicas preservadas + ambición Elon/Zuck/Jobs).
+
+- [x] Verificar que no queden referencias feas en el header del top bar y perfil. — Revisado en remaster visual.
+
+---
+
+## P1 - Versión, Build y Docs (core para distribución) — ✅ BUMP + BUILDS + DOCS PARCIAL
+
+- [x] **Bump de versión formal**
+  - ✅ package.json: "0.1.86-work"
+  - ✅ android/app/build.gradle: versionCode 90, versionName "0.1.86-work"
+  - Otros sitios usan APP_VERSION const (pocos hardcodes residuales).
 
 - [ ] **Builds**
-  - `npm run build` (web) — verificar éxito.
-  - Preparar / ejecutar build de debug APK (para testing en teléfono hoy).
-  - (Opcional) Preparar AAB si el entorno JAVA/ANDROID_HOME está listo.
+  - ✅ `npm run build` (web) + CI: verificado exitoso post-fix excision (tsc limpio + Vite).
+  - [ ] Preparar / ejecutar build de debug APK local (o descargar de CI android-prealpha después de push) para testing en teléfono hoy.
+  - (Opcional) AAB: usar scripts publish / gradle si JAVA listo (hay release.aab previo; generar nuevo con versión actual).
 
 - [ ] **Actualizar documentación clave**
-  - CURRENT_ROADMAP_AND_NEXT_STEPS.md:
-    - Poner versión actual 0.1.85 / 0.1.86
-    - Resumir logros recientes (GymPulse icónico + partners con logos, fix live toggle + explicaciones, storage rules para partners)
-    - Actualizar "gaps" y agregar sección "Work today 2026-06-05"
-  - PLAY_STORE_ASSETS.md + publish-upload-instructions.txt:
-    - Nuevo bloque "What's new" / fix para esta versión centrado en:
-      - GymPulse (mapa en tiempo real) ahora con partners/gyms + logos visibles
-      - Toggle "Entrenando Ahora" arreglado + explicaciones educativas claras
-      - Mejoras en mapa interactivo y Network Power
-  - (Opcional rápido) README.md si menciona versiones muy viejas.
+  - ✅ CURRENT_ROADMAP_AND_NEXT_STEPS.md + INFORME_ENTRENAMATCH_COMPLETO_2026-06.md: versión 0.1.86-work, logros GymPulse/partners/logos/live fix/rewards/visual remaster, gaps actualizados, work session 2026-06-05 documentado.
+  - [ ] PLAY_STORE_ASSETS.md + publish-upload-instructions.txt: agregar "What's new" fresco para 0.1.86 (GymPulse partners + logos, live toggle + educacion, Network Power, premium UI).
+  - [ ] BETA_TESTERS_GUIDE.md + ANDROID_PROJECTS_OVERVIEW.md + PRODUCTION_AND_APK.md: revisar/actualizar con estado actual (ya modificados en WD, commit pendiente).
+  - [ ] Marcar este archivo al cerrar el día + commit limpio.
 
 ---
 
-## P2 - Testing real + Salud a largo plazo
+## P2 - Testing real + Salud a largo plazo — EN PROGRESO
 
-- [ ] **Checklist de pruebas en dispositivo (crear documento o sección clara)**
-  - Comandos exactos para Windows/PowerShell + adb (instalar APK, logcat filtrado, etc.).
-  - Flujos clave a validar:
-    1. Login real + onboarding
-    2. Activar "Entrenando Ahora (EN VIVO)" → aparece en mapa y radar de otros
-    3. Subir foto icónica al Muro/Feed (Storage)
-    4. EntrenaSync completo con otra cuenta (acciones, vibe, tether, post dual, ripple en mapa)
-    5. Ver partners con logo en el mapa + activity badges
-    6. Voice notes + daily pulse
-    7. Reacciones y comentarios en feed en vivo
-  - Instrucciones para reportar (Samsung Members + capturas + chrome://inspect)
+- [x] **Primer paso de modularización (quick win visible)**
+  - ✅ `src/components/map/GymPulseMap.tsx` creado (con docstring, props, handle imperative ref para centerOn/fly, lógica Leaflet + markers + ripples + partners + tethers + dev click).
+  - ✅ Lógica pesada movida de App.tsx (useEffect viejo eliminado, stub preservado por hook order; import + <GymPulseMap ref=... /> en uso).
+  - [ ] Limpiar el TODO restante + sección de render en App.tsx (~6884+): mover o adelgazar el "floating pulse header", controles, leyendas, quick-add handlers, refs legacy (mapInstanceRef) que aún se usan en el JSX del mapa. Hacer que el componente sea más self-contained.
+  - [ ] Completar ports pendientes en GymPulseMap.tsx (ver sus TODOs: full ritualRipples/waves, witness modal wiring, clusters/expand, fitBounds, etc.).
+  - Dejar stub limpio + comentario de fecha.
 
-- [ ] **Primer paso de modularización (quick win visible)**
-  - Crear `src/components/map/GymPulseMap.tsx` (o similar)
-  - Mover la lógica grande de renderizado del mapa + ripples + partners + markers (la parte más pesada y más trabajada últimamente).
-  - Dejar un stub + props + comentario "work in progress - extraído el 2026-06-05".
-  - Esto reduce un poco el monolito y marca el camino.
+- [ ] **Checklist de pruebas en dispositivo (ya documentada en este archivo)**
+  - [ ] Ejecutar en la práctica (o guiar al usuario): adb devices, install última debug APK de CI o local, logcat, chrome://inspect.
+  - Validar flujos clave listados (live + mapa partners, sync completo, storage foto icónica, voice, daily pulse rewards, etc.).
+  - Reportar / capturar issues.
 
-- [ ] (Nice to have) Revisar si hay warnings o issues pequeños que saltaron en la revisión exhaustiva (ej. algunos useEffect deps, strings en español consistentes).
+- [ ] (Nice to have) Revisar warnings pequeños post-remaster (useEffect deps, consistencia español, etc.). Informe menciona listeners background, deep links notifs, etc. como deuda.
+
+- **Nuevos para hoy / cierre:**
+  - [ ] Commit + push de docs actualizados (TODAY_TASKS, roadmap, BETA, PRODUCTION, ANDROID_OVERVIEW, firestore.rules + logo nuevo). Mensaje: "chore+docs(today): version 0.1.86 centralizada, language cleanup, map modularization start + CI fix, docs + rules".
+  - [ ] Preparar AAB / confirmar último APK de CI listo para test real.
+  - [ ] (si tiempo) Empezar siguientes extracts (e.g. feed o chat components) o Crashlytics setup.
+  - [ ] Actualizar "What's new" en assets de Play + publish instructions.
 
 ---
 
 ## Cierre del día
 
-- [ ] `git status`
-- [ ] Commit limpio: "chore+feat(today): version centralizada, limpieza lenguaje, builds, docs actualizados, prep testing dispositivo + inicio modularización mapa"
-- [ ] Push
-- [ ] Actualizar este archivo marcando lo completado + notas de qué quedó pendiente para mañana.
-- [ ] Actualizar el todo list interno (si aplica).
+- [x] `git status` (limpio en main; solo docs + firestore.rules + assets nuevos sin commit)
+- [ ] Commit limpio + push (ver mensaje sugerido abajo)
+- [ ] Actualizar este archivo marcando lo completado + notas de qué quedó pendiente (hecho parcialmente en esta revisión)
+- [ ] Actualizar el todo list interno / roadmap si aplica.
+
+**Comandos de cierre recomendados (PowerShell):**
+```powershell
+git status
+git add TODAY_TASKS_2026-06-05.md CURRENT_ROADMAP_AND_NEXT_STEPS.md INFORME_ENTRENAMATCH_COMPLETO_2026-06.md BETA_TESTERS_GUIDE.md PRODUCTION_AND_APK.md ANDROID_PROJECTS_OVERVIEW.md firestore.rules "assets/play-store/EntrenaMatch Logo.jpg"
+git commit -m "chore+docs+mod(today 2026-06-05): APP_VERSION centralizada 0.1.86-work, limpieza lenguaje a 'red de rendimiento', GymPulseMap extraído (lógica movida + stub), CI fix excision, docs actualizados + rules partners, nuevo logo"
+git push
+```
 
 ---
 
-**Notas para hoy**:
-- Mantener foco en **P0 y P1 primero** (dan consistencia + permiten subir build hoy).
-- El testing en dispositivo es crítico pero depende del usuario físico (yo doy los comandos exactos y guío).
-- Podemos hacer varias de las ediciones de código yo directamente con search/replace + builds.
-- Si el día da, arrancamos con la extracción del mapa (es el área más fuerte actualmente).
+**Notas para el resto del día**:
+- P0 y P1 core ya entregados (versión + consistencia + bump + builds verdes + docs base).
+- Foco ahora en **P2**: terminar el paso de modularización del mapa (limpiar JSX + TODOs en App + completar GymPulseMap), testing prep real (adb/commands), commit/push de todo lo de hoy, prep de assets para upload Closed.
+- Testing en dispositivo es el gate crítico para subir a Play.
+- Podemos continuar con search/replace + guías de comandos.
+- Si sobra tiempo: más modularización (feed/chat), Crashlytics, o "What's new" para Play.
 
 **Comandos útiles rápidos**:
 ```powershell
