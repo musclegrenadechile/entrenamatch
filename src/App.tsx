@@ -1590,6 +1590,85 @@ function App() {
     return { feedPosts, allCommunityPosts, echoesSource: [...allCommunityPosts, ...myPostsRaw], hasActiveFilter };
   }, [profilePosts, feedShowPinnedOnly, feedOnlyReal, feedOnlyLive, feedSearch, feedDisplayLimit, realProfiles, effectiveUserId, syncBonds, currentUser]);
 
+  // Filtered deck (with distance support + blocking)
+  // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
+  // Hoisted early with the other discovery memos.
+  const deck = useMemo(() => {
+    const filtered = remainingProfiles.filter(p => {
+      // Block filter (critical safety)
+      if (blockedUsers.includes(p.id)) return false
+
+      if (p.age < filters.minAge || p.age > filters.maxAge) return false
+      if (filters.gender !== 'todos' && p.gender !== filters.gender) return false
+      if (filters.trainingTypes.length > 0) {
+        const hasAny = filters.trainingTypes.some(t => p.trainingTypes.includes(t))
+        if (!hasAny) return false
+      }
+      if (filters.availability.length > 0) {
+        const hasTime = filters.availability.some(t => p.availability.includes(t))
+        if (!hasTime) return false
+      }
+      // Distance filter (only if user has location)
+      if (userLocation && filters.maxDistanceKm < 100) {
+        const dist = getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng)
+        if (dist > filters.maxDistanceKm) return false
+      }
+      if (filters.onlyAvailableToday && !p.availableToday) return false
+      if (filters.onlyLiveTraining && !p.trainingNow) return false
+      return true
+    })
+
+    // Sort: highest compatibility first, then closest distance, slight boost for verified/real
+    // NETWORK POWER PRIORITY: members of your Red de EntrenaSync bubble to the absolute top of the deck.
+    // This makes the social graph have real recommendation power — training with someone gives you visibility and priority with them and their circle over time.
+    if (currentUser) {
+      return [...filtered].sort((a, b) => {
+        const isNetA = !!syncBonds[a.id]
+        const isNetB = !!syncBonds[b.id]
+        if (isNetA && !isNetB) return -1
+        if (!isNetA && isNetB) return 1
+        // Within network, higher bondLevel first (stronger alliances rise)
+        if (isNetA && isNetB) {
+          const la = syncBonds[a.id]?.bondLevel || 1
+          const lb = syncBonds[b.id]?.bondLevel || 1
+          if (lb !== la) return lb - la
+        }
+
+        const ca = calculateCompatibility(currentUser, a, userLocation) + (isNetA ? 75 : 0) // massive Network Power boost to compat score
+        const cb = calculateCompatibility(currentUser, b, userLocation) + (isNetB ? 75 : 0)
+        if (cb !== ca) return cb - ca
+
+        if (userLocation) {
+          const da = getDistanceKm(userLocation.lat, userLocation.lng, a.lat, a.lng)
+          const db = getDistanceKm(userLocation.lat, userLocation.lng, b.lat, b.lng)
+          if (da !== db) return da - db
+        }
+
+        // Verified / real tester slight priority
+        const va = (a.verificationStatus === 'verified' || !a.id.startsWith('p')) ? 1 : 0
+        const vb = (b.verificationStatus === 'verified' || !b.id.startsWith('p')) ? 1 : 0
+        return vb - va
+      })
+    }
+    return filtered
+  }, [remainingProfiles, filters, userLocation, blockedUsers, currentUser])
+
+  // Visible cards (top 3 for stack effect)
+  const visibleCards = deck.slice(0, 3)
+
+  // Current chatting profile (supports real + seed)
+  const chatProfile = activeChat 
+    ? [...SEED_PROFILES, ...realProfiles].find(p => p.id === activeChat) 
+    : null
+
+  // Matches profiles (supports real profiles from Firestore + seeds)
+  const matchProfiles = useMemo(() => {
+    const all = [...SEED_PROFILES, ...realProfiles]
+    // Merge local matches + real matches loaded from Firestore + any pending real matches from current session
+    const combinedMatchIds = Array.from(new Set([...matches, ...realMatches]))
+    return all.filter(p => combinedMatchIds.includes(p.id))
+  }, [matches, realMatches, realProfiles])
+
   // Beta Feedback enhanced (Phase 0 - structured + history)
   const [feedbackType, setFeedbackType] = useState<'bug' | 'idea' | 'ux' | 'other'>('idea')
   const [feedbackRating, setFeedbackRating] = useState(5)
@@ -5912,83 +5991,6 @@ function App() {
     }
   }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone, ritualRipples, echoPins])
 
-  // Filtered deck (with distance support + blocking)
-  // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
-  const deck = useMemo(() => {
-    const filtered = remainingProfiles.filter(p => {
-      // Block filter (critical safety)
-      if (blockedUsers.includes(p.id)) return false
-
-      if (p.age < filters.minAge || p.age > filters.maxAge) return false
-      if (filters.gender !== 'todos' && p.gender !== filters.gender) return false
-      if (filters.trainingTypes.length > 0) {
-        const hasAny = filters.trainingTypes.some(t => p.trainingTypes.includes(t))
-        if (!hasAny) return false
-      }
-      if (filters.availability.length > 0) {
-        const hasTime = filters.availability.some(t => p.availability.includes(t))
-        if (!hasTime) return false
-      }
-      // Distance filter (only if user has location)
-      if (userLocation && filters.maxDistanceKm < 100) {
-        const dist = getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng)
-        if (dist > filters.maxDistanceKm) return false
-      }
-      if (filters.onlyAvailableToday && !p.availableToday) return false
-      if (filters.onlyLiveTraining && !p.trainingNow) return false
-      return true
-    })
-
-    // Sort: highest compatibility first, then closest distance, slight boost for verified/real
-    // NETWORK POWER PRIORITY: members of your Red de EntrenaSync bubble to the absolute top of the deck.
-    // This makes the social graph have real recommendation power — training with someone gives you visibility and priority with them and their circle over time.
-    if (currentUser) {
-      return [...filtered].sort((a, b) => {
-        const isNetA = !!syncBonds[a.id]
-        const isNetB = !!syncBonds[b.id]
-        if (isNetA && !isNetB) return -1
-        if (!isNetA && isNetB) return 1
-        // Within network, higher bondLevel first (stronger alliances rise)
-        if (isNetA && isNetB) {
-          const la = syncBonds[a.id]?.bondLevel || 1
-          const lb = syncBonds[b.id]?.bondLevel || 1
-          if (lb !== la) return lb - la
-        }
-
-        const ca = calculateCompatibility(currentUser, a, userLocation) + (isNetA ? 75 : 0) // massive Network Power boost to compat score
-        const cb = calculateCompatibility(currentUser, b, userLocation) + (isNetB ? 75 : 0)
-        if (cb !== ca) return cb - ca
-
-        if (userLocation) {
-          const da = getDistanceKm(userLocation.lat, userLocation.lng, a.lat, a.lng)
-          const db = getDistanceKm(userLocation.lat, userLocation.lng, b.lat, b.lng)
-          if (da !== db) return da - db
-        }
-
-        // Verified / real tester slight priority
-        const va = (a.verificationStatus === 'verified' || !a.id.startsWith('p')) ? 1 : 0
-        const vb = (b.verificationStatus === 'verified' || !b.id.startsWith('p')) ? 1 : 0
-        return vb - va
-      })
-    }
-    return filtered
-  }, [remainingProfiles, filters, userLocation, blockedUsers, currentUser])
-
-  // Visible cards (top 3 for stack effect)
-  const visibleCards = deck.slice(0, 3)
-
-  // Current chatting profile (supports real + seed)
-  const chatProfile = activeChat 
-    ? [...SEED_PROFILES, ...realProfiles].find(p => p.id === activeChat) 
-    : null
-
-  // Matches profiles (supports real profiles from Firestore + seeds)
-  const matchProfiles = useMemo(() => {
-    const all = [...SEED_PROFILES, ...realProfiles]
-    // Merge local matches + real matches loaded from Firestore + any pending real matches from current session
-    const combinedMatchIds = Array.from(new Set([...matches, ...realMatches]))
-    return all.filter(p => combinedMatchIds.includes(p.id))
-  }, [matches, realMatches, realProfiles])
 
   // Small relative time for message previews (e.g. "5m", "2h", "ahora")
   const getRelativeTime = (ts?: number) => {

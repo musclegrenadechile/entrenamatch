@@ -1,0 +1,1 @@
+fix(TDZ): move remaining/live/zone/feed useMemos early (after real multi-user state ~1462) so all later effects/JSX see declarations before render/effect code. Combined with ultra-early dailyPulse+ref, kills last forward refs for discovery layer (likely cause of persisting Cannot access z before init on open). tsc clean.
