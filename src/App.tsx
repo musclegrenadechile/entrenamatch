@@ -6304,13 +6304,24 @@ function App() {
                             if (!isDemoMode && storage) {
                               setFeedPhotoUploading(true);
                               setFeedPhotoUploadProgress(0);
-                              const { ref, uploadString, getDownloadURL } = await import('firebase/storage');
-                              const path = `posts/${effectiveUserId}/feed-${Date.now()}.jpg`;
-                              const storageRef = ref(storage, path);
-                              const snap = await uploadString(storageRef, dataUrl, 'data_url');
-                              const url = await getDownloadURL(snap.ref);
-                              setFeedPostPhoto(url);
-                              setFeedPhotoUploading(false);
+                              try {
+                                const { ref, uploadString, getDownloadURL } = await import('firebase/storage');
+                                const path = `posts/${effectiveUserId}/feed-${Date.now()}.jpg`;
+                                const storageRef = ref(storage, path);
+                                const snap = await uploadString(storageRef, dataUrl, 'data_url');
+                                const url = await getDownloadURL(snap.ref);
+                                setFeedPostPhoto(url);
+                                setFeedPhotoUploading(false);
+                              } catch (uploadErr) {
+                                console.warn('Feed photo Storage upload failed, falling back to data: URL', uploadErr);
+                                setFeedPostPhoto(dataUrl);
+                                setFeedPhotoUploading(false);
+                                if (uploadErr && (uploadErr.code === 'storage/unauthorized' || (uploadErr.message || '').includes('unauthorized'))) {
+                                  toast.error('Storage sin permisos (despliega storage.rules para subir fotos reales).');
+                                } else {
+                                  toast('Foto embebida (no se pudo subir a Storage)');
+                                }
+                              }
                             } else {
                               setFeedPostPhoto(dataUrl);
                             }
@@ -8155,13 +8166,28 @@ function App() {
                               if (!isDemoMode && storage) {
                                 setMuroPhotoUploading(true)
                                 setMuroPhotoUploadProgress(0)
-                                const { ref, uploadString, getDownloadURL } = await import('firebase/storage')
-                                const path = `posts/${effectiveUserId}/composer-${Date.now()}.jpg`
-                                const storageRef = ref(storage, path)
-                                const snap = await uploadString(storageRef, dataUrl, 'data_url')
-                                const url = await getDownloadURL(snap.ref)
-                                setMuroComposerPhoto(url)
-                                setMuroPhotoUploading(false)
+                                try {
+                                  const { ref, uploadString, getDownloadURL } = await import('firebase/storage')
+                                  const path = `posts/${effectiveUserId}/composer-${Date.now()}.jpg`
+                                  const storageRef = ref(storage, path)
+                                  const snap = await uploadString(storageRef, dataUrl, 'data_url')
+                                  const url = await getDownloadURL(snap.ref)
+                                  setMuroComposerPhoto(url)
+                                  setMuroPhotoUploading(false)
+                                } catch (uploadErr) {
+                                  // Fallback: still allow publishing the "iconic" photo by embedding as data URL
+                                  // (this is what used to happen before the Storage "giant update" fixes).
+                                  // This unblocks the beautiful new muro photo UX even if rules are not yet deployed
+                                  // or temporary permission issues.
+                                  console.warn('Muro photo Storage upload failed, falling back to data: URL embed', uploadErr)
+                                  setMuroComposerPhoto(dataUrl)
+                                  setMuroPhotoUploading(false)
+                                  if (uploadErr && (uploadErr.code === 'storage/unauthorized' || (uploadErr.message || '').includes('unauthorized'))) {
+                                    toast.error('Storage sin permisos todavía (403). Usando foto embebida. Despliega storage.rules.')
+                                  } else {
+                                    toast('No se pudo subir a Storage, foto embebida en el post')
+                                  }
+                                }
                               } else {
                                 setMuroComposerPhoto(dataUrl)
                               }

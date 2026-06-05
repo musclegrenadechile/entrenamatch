@@ -1,0 +1,33 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Helper
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // All post photos (muro, feed, arena actions, etc.) live under posts/{uid}/...
+    // - Anyone authenticated can READ (needed to display photos in feed, other profiles' muros, etc.)
+    // - Only the owner can WRITE (upload new photos for their posts)
+    // This matches exactly the paths used in createProfilePost, handleMuroPhotoFile, arena photo capture, etc.
+    match /posts/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
+    // Future-proof: if we ever store profile avatars/covers separately under users/{uid}/
+    match /users/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
+    // Default: deny everything else (secure by default)
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
