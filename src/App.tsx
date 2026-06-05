@@ -265,6 +265,8 @@ function App() {
   const seenLiveUserIdsRef = useRef<Set<string>>(new Set())
   // For "someone joined my live" notifs: dedup incoming comments/likes on the live posts we created when trainingNow
   const seenLiveJoinInteractionIdsRef = useRef<Set<string>>(new Set())
+  // Track previous trainingSyncWith for members of *your red* so we can notify when they start a strong sync (Network Power propagation moment)
+  const prevRedSyncStateRef = useRef<Record<string, string | null>>({})
   // Per-chat and per-session unread counts for badges + list dots (local, cleared on open)
   const [chatUnreads, setChatUnreads] = useState<Record<string, number>>({})
   const [sessionUnreads, setSessionUnreads] = useState<Record<string, number>>({})
@@ -3063,7 +3065,6 @@ function App() {
         setSyncVibe(newVibe)
 
         // Make the purpose *felt*: every action with a real bond from your red builds your Network Power visibly, and boosts the shared vibe — the social graph has real performance teeth.
-        const isBondedAction = !!syncBonds[syncPartnerId]
         if (isBondedAction && (newCombo >= 2 || vibeGain > 10)) {
           const bondBoost = Math.max(1, Math.floor(vibeGain / 8))
           toast.success(`❤️ Alianza fortalecida +${bondBoost} con tu socio de sync`, { description: 'Tu Network Power sube. Se propaga en tu red, mapa y feed – la red te hace más fuerte.' })
@@ -4572,18 +4573,23 @@ function App() {
         // Guard: only notify if we've already seen at least one before (skip init spam)
         if (seenLiveUserIdsRef.current.size > 1) {
           const inMyNet = !!syncBonds[liveUser.id];
+          const bond = inMyNet ? syncBonds[liveUser.id] : null;
           addNotification({
             type: 'session_join',
-            title: inMyNet ? '🔥 ¡Tu red en vivo cerca!' : '🟢 ¡Entrenando ahora cerca!',
-            body: `${liveUser.name} está en vivo a ${(liveUser.distance || 0).toFixed(1)}km. ¡Únete ya antes de que se vaya!${inMyNet ? ' (tu socio de EntrenaSync)' : ''}`,
+            title: inMyNet ? '🔥 ¡TU RED ACTIVÓ ENTRENAMIENTO!' : '🟢 ¡Entrenando ahora cerca!',
+            body: `${liveUser.name} está en vivo a ${(liveUser.distance || 0).toFixed(1)}km.${inMyNet ? ` Tu socio LV${bond?.bondLevel || 1} — re-sync ya para +Network Power y fortalecer el grafo.` : ' ¡Únete ya antes de que se vaya!'}`,
             relatedId: liveUser.id,
             photoUrl: liveUser.photos?.[0],
-          })
-          toast(`${inMyNet ? '🔥' : '🟢'} ${liveUser.name} entrenando ahora cerca`, {
-            description: `A ${(liveUser.distance || 0).toFixed(1)}km · se va en ~${liveUser.seVaEnMin || 40}m — ¡Ver perfil!${inMyNet ? ' (fortalece tu red)' : ''}`,
+            // extra flag for special rendering
+            isNetwork: inMyNet,
+          } as any)
+          toast(`${inMyNet ? '🔥' : '🟢'} ${liveUser.name} ${inMyNet ? 'de tu RED' : 'entrenando ahora cerca'}`, {
+            description: inMyNet 
+              ? `Aliado LV${bond?.bondLevel || 1} a ${(liveUser.distance || 0).toFixed(1)}km — toca para re-sync y subir tu NP. El grafo se fortalece.`
+              : `A ${(liveUser.distance || 0).toFixed(1)}km · se va en ~${liveUser.seVaEnMin || 40}m — ¡Ver perfil!`,
             action: {
-              label: 'Ver',
-              onClick: () => setShowFullProfile(liveUser as any)
+              label: inMyNet ? 'Re-sync ahora' : 'Ver',
+              onClick: () => inMyNet ? startSyncWith(liveUser.id, liveUser.name) : setShowFullProfile(liveUser as any)
             }
           })
         }
@@ -4595,6 +4601,42 @@ function App() {
       } catch {}
     }
   }, [liveTrainingNow, addNotification])
+
+  // NEW: Network Power propagation notifs — when someone FROM YOUR RED starts a live EntrenaSync (trainingSyncWith flips on).
+  // This makes the graph feel alive: "tu socio activó sync → ve y súmate para multiplicar poder".
+  useEffect(() => {
+    if (!liveTrainingNow || liveTrainingNow.length === 0) return
+    const currentRedSyncs: Record<string, string | null> = {}
+    liveTrainingNow.forEach((u: any) => {
+      if (syncBonds[u.id]) {
+        currentRedSyncs[u.id] = u.trainingSyncWith || null
+      }
+    })
+    Object.keys(currentRedSyncs).forEach(uid => {
+      const prev = prevRedSyncStateRef.current[uid]
+      const now = currentRedSyncs[uid]
+      if (prev !== now && now && !prev) {
+        // A red partner just entered a sync
+        const partner = liveTrainingNow.find((x: any) => x.id === uid)
+        if (partner) {
+          const bond = syncBonds[uid]
+          addNotification({
+            type: 'session_join',
+            title: '🔥 TU RED ACTIVÓ ENTRENASYNC',
+            body: `${partner.name} (LV${bond?.bondLevel || 1}) empezó un sync fuerte. Únete ahora — tu Network Power sube y el grafo se propaga.`,
+            relatedId: uid,
+            photoUrl: partner.photos?.[0],
+            isNetwork: true,
+          } as any)
+          toast.success(`🔥 ${partner.name} de tu red activó sync`, {
+            description: `LV${bond?.bondLevel || 1} • re-sync ya para +NP y resultados compartidos. Esto fortalece tu estatus en la red.`,
+            action: { label: 'Re-sync', onClick: () => startSyncWith(uid, partner.name) }
+          })
+        }
+      }
+    })
+    prevRedSyncStateRef.current = { ...prevRedSyncStateRef.current, ...currentRedSyncs }
+  }, [liveTrainingNow, syncBonds, addNotification])
 
   // Real-time Live Map effect (Leaflet zones) — MOVED HERE (after liveTrainingNow useMemo + urgency effect, BEFORE auth guards).
   // This is CRITICAL to fix React error #310 "Rendered more hooks than during the previous render" on login.
@@ -5839,11 +5881,12 @@ function App() {
                   }).map((u, idx) => (
                     <motion.div key={u.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(u); }} whileHover={{scale:1.1}} whileTap={{scale:0.9}} initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} transition={{delay: idx * 0.05}} className="flex flex-col items-center text-center cursor-pointer active:opacity-80">
                       <div className="relative">
-                        {u.photos?.[0] ? <img src={u.photos[0]} className="w-9 h-9 rounded-full object-cover border-2 border-[#22c55e]/60" /> : <div className="w-9 h-9 rounded-full bg-[#22c55e]/20 flex items-center justify-center text-[10px] border border-[#22c55e]/30">{u.name[0]}</div>}
+                        {u.photos?.[0] ? <img src={u.photos[0]} className={`w-9 h-9 rounded-full object-cover border-2 ${syncBonds[u.id] ? 'border-[#FFD700]' : 'border-[#22c55e]/60'}`} /> : <div className={`w-9 h-9 rounded-full ${syncBonds[u.id] ? 'bg-[#FFD700] text-black' : 'bg-[#22c55e]/20'} flex items-center justify-center text-[10px] border ${syncBonds[u.id] ? 'border-[#FFD700]' : 'border-[#22c55e]/30'}`}>{u.name[0]}</div>}
                         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#22c55e] rounded-full ring-2 ring-black" style={{animation: u.seVaEnMin < 10 ? 'live-pulse-green-urgent 1.1s ease-in-out infinite' : 'live-pulse-green 1.8s ease-in-out infinite'}}></div>
+                        {!!syncBonds[u.id] && <div className="absolute -top-0.5 -left-0.5 text-[6px] bg-[#FFD700] text-black px-0.5 rounded font-bold">RED</div>}
                       </div>
                       <div className="text-[8px] mt-0.5 text-white truncate max-w-[48px] font-medium">{u.name.split(' ')[0]}</div>
-                      <div className="text-[7px] text-[#22c55e]">{(u.distance||0).toFixed(0)}km {u.joinCount > 0 ? `+${u.joinCount}🔥` : ''}</div>
+                      <div className="text-[7px] text-[#22c55e]">{(u.distance||0).toFixed(0)}km {u.joinCount > 0 ? `+${u.joinCount}🔥` : ''} {!!syncBonds[u.id] && <span className="text-[#FFD700]">•NP</span>}</div>
                     </motion.div>
                   ))}
                 </div>
@@ -5870,7 +5913,7 @@ function App() {
                   <div key={user.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(user); }} className="card card-glass p-3 mb-2 flex gap-3 cursor-pointer active:scale-95 border border-[#22c55e]/50 hover:border-[#22c55e]/80 transition-all group">
                     {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-12 h-12 rounded-xl object-cover border-2 border-[#22c55e]/40 group-hover:border-[#22c55e]/70 transition" />}
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold flex items-center gap-1.5 text-white">{user.name} <span className="text-[#9CA3AF] text-xs font-normal">· {userLocation && user.distance < 900 ? `${user.distance.toFixed(1)}km` : '— km'}</span></div>
+                      <div className="font-semibold flex items-center gap-1.5 text-white">{user.name} <span className="text-[#9CA3AF] text-xs font-normal">· {userLocation && user.distance < 900 ? `${user.distance.toFixed(1)}km` : '— km'}</span>{!!syncBonds[user.id] && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED LV{syncBonds[user.id].bondLevel || 1}</span>}</div>
                       <div className="text-[#9CA3AF] text-sm truncate">{user.trainingTypes?.join(', ') || 'Entreno'}</div>
                       <div className="text-[#22c55e] text-xs flex items-center gap-1 mt-0.5">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m {user.seVaEnMin > 0 ? <span className={user.seVaEnMin < 15 ? 'text-red-400 font-bold' : 'text-orange-400'}>{user.seVaEnMin < 15 ? `· se va pronto en ${user.seVaEnMin}m 🔥` : `· se va en ${user.seVaEnMin}m`}</span> : ''}
                       </div>
@@ -5881,14 +5924,15 @@ function App() {
                       )}
                       {user.joinCount > 0 && <div className="text-[10px] text-[#22c55e] mt-0.5 font-medium">+{user.joinCount} se unieron a este live</div>}
                       {user.trainingSyncWith && <div className="text-[8px] text-[#22c55e] mt-0.5">🔄 En Sync ahora</div>}
+                      {!!syncBonds[user.id] && <div className="text-[7px] text-[#FFD700] mt-0.5 font-medium">Tu red • re-sync = +Network Power + impacto compartido</div>}
                     </div>
                     <div className="flex flex-col gap-1 self-center">
                       <button 
                         disabled={joiningSyncWith === user.id}
-                        onClick={(e) => { e.stopPropagation(); handleSwipe(user.id, 'right'); setShowLiveModal(false); }} 
-                        className={`text-[10px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-3 py-1 rounded font-semibold active:brightness-90 flex items-center justify-center gap-1 ${joiningSyncWith === user.id ? 'opacity-80 cursor-wait' : ''}`}
+                        onClick={(e) => { e.stopPropagation(); if (syncBonds[user.id]) { startSyncWith(user.id, user.name); setShowLiveModal(false); } else { handleSwipe(user.id, 'right'); setShowLiveModal(false); } }} 
+                        className={`text-[10px] ${syncBonds[user.id] ? 'bg-[#FFD700] text-black' : 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black'} px-3 py-1 rounded font-semibold active:brightness-90 flex items-center justify-center gap-1 ${joiningSyncWith === user.id ? 'opacity-80 cursor-wait' : ''}`}
                       >
-                        {joiningSyncWith === user.id ? '⏳ Abriendo EntrenaSync...' : `🔥 Entrenar juntos (Sync) ${userLocation && user.distance < 900 ? `(${user.distance.toFixed(0)}km)` : ''}`}
+                        {joiningSyncWith === user.id ? '⏳ Abriendo EntrenaSync...' : (syncBonds[user.id] ? `🔥 RE-SYNC RED (NP+)` : `🔥 Entrenar juntos (Sync) ${userLocation && user.distance < 900 ? `(${user.distance.toFixed(0)}km)` : ''}`)}
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); setShowLiveModal(false); openChat(user.id); if (!matches.includes(user.id) && !realMatches.includes(user.id)) handleSwipe(user.id, 'right'); }} className="text-[9px] border border-[#22c55e]/60 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10 hover:bg-[#22c55e]/5">Chatear ya</button>
                     </div>
@@ -6050,20 +6094,33 @@ function App() {
                   }).slice(0,4).map((u, idx) => (
                     <motion.div 
                       key={u.id} 
-                      onClick={() => { setActiveTab('explore'); /* extra: if user is live, could auto-offer sync but keep simple for now */ }} 
+                      onClick={() => {
+                        if (syncBonds[u.id]) {
+                          // Direct re-sync for your network = instant Network Power boost
+                          try { triggerHaptic('medium') } catch {}
+                          startSyncWith(u.id, u.name)
+                        } else {
+                          setActiveTab('explore')
+                          // Optional: show profile or offer join
+                          if (u.trainingNow) {
+                            setTimeout(() => startSyncWith(u.id, u.name), 120)
+                          }
+                        }
+                      }} 
                       whileHover={{scale:1.03, y:-2}} 
                       whileTap={{scale:0.97}} 
                       initial={{opacity:0, x:10}}
                       animate={{opacity:1, x:0}}
                       transition={{delay: idx*0.03}}
-                      className="text-[9px] bg-[#0a120f] border border-[#22c55e]/40 text-[#22c55e] px-3 py-1.5 rounded-2xl cursor-pointer active:bg-[#22c55e]/10 flex flex-col min-w-[100px] shadow-sm hover:border-[#22c55e]/70 snap-start"
+                      className={`text-[9px] bg-[#0a120f] border ${syncBonds[u.id] ? 'border-[#FFD700]/70 bg-[#1a160f]' : 'border-[#22c55e]/40'} text-[#22c55e] px-3 py-1.5 rounded-2xl cursor-pointer active:bg-[#22c55e]/10 flex flex-col min-w-[100px] shadow-sm hover:border-[#22c55e]/70 snap-start`}
                     >
                       <div className="font-bold flex items-center gap-1 text-white/90">{u.name.split(' ')[0]} <span className="text-[7px] text-[#9CA3AF]">{userLocation && u.distance < 900 ? `${u.distance.toFixed(0)}km` : '—'}</span>{userLocation && u.distance < 5 && <span className="ml-1 text-[6px] bg-[#22c55e]/20 px-1 rounded">CERCA</span>}</div>
+                      {!!syncBonds[u.id] && <div className="text-[6px] bg-[#FFD700] text-black px-1 rounded font-bold self-start mt-0.5">⭐ RED LV{syncBonds[u.id]?.bondLevel || 1} • NP ACTIVO</div>}
                       {u.seVaEnMin > 0 && <div className="text-[7px] text-orange-400">{u.seVaEnMin < 15 ? '🔥 se va pronto' : `se va en ${u.seVaEnMin}m`}</div>}
                       {u.joinCount > 0 && <div className="text-[7px] text-[#22c55e]/70">+{u.joinCount} se unieron</div>}
-                      {u.trainingSyncWith && <div className="text-[7px] text-[#22c55e] mt-0.5">🔄 En Sync ahora — ¡Arena!</div>}
+                      {u.trainingSyncWith && <div className="text-[7px] text-[#22c55e] mt-0.5">🔄 En Sync ahora — ¡Únete!</div>}
                       {u.seVaEnMin > 0 && <div className="h-px bg-[#22c55e]/20 mt-1"><div className="h-px bg-[#22c55e]" style={{width: `${Math.max(8, Math.min(100, (90 - u.seVaEnMin)/90 * 100))}%`}}></div></div>}
-                      <div className="text-[6.5px] mt-1 text-[#22c55e]/70">Toca → ver en Explore</div>
+                      <div className="text-[6.5px] mt-1 text-[#22c55e]/70">{!!syncBonds[u.id] ? 'Toca para re-sync y subir tu Network Power' : 'Toca → ver en Explore'}</div>
                     </motion.div>
                   ))}
                 </div>
@@ -6074,7 +6131,7 @@ function App() {
             {(() => {
               const { echoesSource } = feedComputation;
               const src = echoesSource || [];
-              const recentEchoes = [...src].filter((p: any) => (p.text || '').includes('Fui testigo') || (p.text || '').includes('RITUAL LEGENDARIO')).sort((a,b)=>b.timestamp-a.timestamp).slice(0, 3);
+              const recentEchoes = [...src].filter((p: any) => (p.text || '').includes('HIGHLIGHT') || (p.text || '').includes('ENTRENASYNC COMPLETADO') || (p.text || '').includes('fortalece nuestra red')).sort((a,b)=>b.timestamp-a.timestamp).slice(0, 3);
               if (recentEchoes.length === 0) return null;
               return (
                 <div className="mb-4 -mx-1">
@@ -7494,8 +7551,8 @@ function App() {
                     <div className="text-[#9CA3AF] text-xs -mt-1">streak host + join</div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-[#FF671F]">{Object.keys(syncBonds).length} legends</div>
-                    <div className="text-[10px] text-[#9CA3AF]">conexiones reales</div>
+                    <div className="text-lg font-bold text-[#FFD700]">{Object.keys(syncBonds).length} socios RED</div>
+                    <div className="text-[10px] text-[#9CA3AF]">tu grafo • Network Power {networkPower}</div>
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-[#22c55e]">{(currentUser as any).syncStreak || 0}</div>
@@ -7537,15 +7594,15 @@ function App() {
                 {/* ULTRA VIVO: Live bonds right now - if any of your EntrenaSync legends are training live, show them with instant re-sync CTA. Makes bonds feel alive and valuable. */}
                 {Object.keys(syncBonds).length > 0 && (
                   <div className="mt-2 pt-2 border-t border-white/10">
-                    <div className="text-[8px] uppercase tracking-[1px] text-[#FF671F]/80 mb-1">Tu red en vivo ahora 🔥 (re-sync para subir Network Power)</div>
+                    <div className="text-[8px] uppercase tracking-[1px] text-[#FFD700]/80 mb-1">🔥 TU RED EN VIVO AHORA — re-sync = +Network Power + resultados que se propagan</div>
                     <div className="flex flex-wrap gap-1">
                       {liveTrainingNow.filter((u: any) => Object.keys(syncBonds).includes(u.id)).slice(0, 3).map((livePartner: any) => (
                         <button
                           key={livePartner.id}
                           onClick={() => { try { triggerHaptic('medium') } catch {}; startSyncWith(livePartner.id, livePartner.name || livePartner.nombre) }}
-                          className="text-[8px] px-2 py-0.5 bg-[#FF671F]/10 hover:bg-[#FF671F]/20 text-[#FF671F] rounded-full active:scale-[0.95] transition flex items-center gap-1 border border-[#FF671F]/30"
+                          className="text-[8px] px-2 py-0.5 bg-[#FFD700]/20 hover:bg-[#FFD700]/30 text-[#FFD700] rounded-full active:scale-[0.95] transition flex items-center gap-1 border border-[#FFD700]/50 font-medium"
                         >
-                          <span className="font-medium">{(livePartner.name || livePartner.nombre || '?').split(' ')[0]}</span>
+                          <span>{(livePartner.name || livePartner.nombre || '?').split(' ')[0]}</span> <span className="text-[6px] opacity-70">LV{syncBonds[livePartner.id]?.bondLevel || 1}</span>
                           <span className="text-[7px] opacity-80">🔄 Re-sync (sube Network Power)</span>
                         </button>
                       ))}
@@ -10703,12 +10760,14 @@ function App() {
                 ) : (
                   notifications.map(notif => {
                     const isLegendNotif = notif.type === 'message' && notif.relatedId && !!syncBonds[notif.relatedId] // from your training network
-                    const typeIcon = notif.type === 'message' ? (isLegendNotif ? '⭐' : '💬') : notif.type === 'match' ? '❤️' : notif.type === 'session_join' ? '👥' : notif.type === 'squad_join' ? '🏋️' : '🔔'
+                    const isNetworkLive = (notif.type === 'session_join' || notif.type === 'squad_join') && notif.relatedId && !!syncBonds[notif.relatedId]
+                    const typeIcon = notif.type === 'message' ? (isLegendNotif ? '⭐' : '💬') : notif.type === 'match' ? '❤️' : notif.type === 'session_join' ? (isNetworkLive ? '🔥' : '👥') : notif.type === 'squad_join' ? '🏋️' : '🔔'
                     const time = notif.timestamp ? getRelativeTime(notif.timestamp) : ''
                     return (
                       <div 
                         key={notif.id} 
-                        className={`p-4 border-b border-[#2F2F35] flex items-start gap-3 active:bg-[#1C1C20] cursor-pointer ${!notif.read ? 'bg-[#1C1C20]' : ''} ${isLegendNotif ? 'legend-notif border-l-4 border-[#FFD700] bg-[#1a160f]' : ''}`} {/* network notif gold for your red */}
+                        className={`p-4 border-b border-[#2F2F35] flex items-start gap-3 active:bg-[#1C1C20] cursor-pointer ${!notif.read ? 'bg-[#1C1C20]' : ''} ${(isLegendNotif || isNetworkLive) ? 'legend-notif border-l-4 border-[#FFD700] bg-[#1a160f]' : ''}`} 
+                        // network notif gold for your red (legend-notif styling)
                         onClick={() => {
                           const updated = notifications.map(n => 
                             n.id === notif.id ? {...n, read: true} : n
@@ -10737,7 +10796,19 @@ function App() {
                           }
                           if (notif.type === 'session_join' && notif.relatedId) {
                             setShowNotifications(false)
-                            setActiveTab('sesiones')
+                            const isNet = !!syncBonds[notif.relatedId]
+                            const person = realProfiles.find(p => p.id === notif.relatedId) || { id: notif.relatedId, name: isNet ? 'Tu socio de red' : 'Socio' }
+                            if (isNet) {
+                              // Direct to EntrenaSync to boost your graph power
+                              setTimeout(() => {
+                                if (startSyncRef.current) startSyncRef.current(person.id, person.name)
+                              }, 80)
+                            } else {
+                              setActiveTab('sesiones')
+                              setTimeout(() => {
+                                if (startSyncRef.current) startSyncRef.current(person.id, person.name)
+                              }, 150)
+                            }
                           }
                           if (notif.type === 'squad_join' && notif.relatedId) {
                             setShowNotifications(false)

@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.42-network-power-glow",
+  "version": "0.1.43-network-notifs-badges",
   "type": "module",
   "scripts": {
     "dev": "vite",
