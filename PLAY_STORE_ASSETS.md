@@ -1,10 +1,16 @@
 # Play Store Assets & Listing Copy — EntrenaMatch (Hidden Internal/Closed Testing)
 
-## What's new - v0.1.86-work (2026-06-05)
-- **GymPulse (mapa en tiempo real) más icónico**: Partners (gimnasios, tiendas, estudios) ahora aparecen con sus logos reales subidos por devs. Los logos se ven en el mapa para todos los usuarios en tiempo real. Activity badges cuando hay gente entrenando cerca.
-- Toggle "🟢 Entrenando Ahora (EN VIVO)" arreglado: siempre funciona, con explicaciones claras de para qué sirve (apareces en el mapa, generas FOMO real, subes rachas y Network Power, motivas a la comunidad a abrir la app).
-- Limpieza y consistencia: versión centralizada en toda la app (ya no se ven números viejos como 0.1.37). Textos más alineados al tono serio de "primera red social de entrenamiento sincronizado de alto rendimiento".
-- Mejoras internas de estabilidad de versiones y lenguaje (sin cambiar las 5 mecánicas core).
+## What's new - v0.1.86-work (2026-06-05) — Review completo + fixes de estabilidad
+- **Live + Terminate ultra robusto**: Botón "TERMINAR ENTRENAMIENTO Y DESACTIVAR VIVO" y fin de EntrenaSync ahora resistentes a errores internos de Firestore (evita "mutations undefined" + b815 assertions que aparecían en consola al terminar). Resets de red timed, clear de sync state temprano, retry con recovery. Menos crashes y spam de INTERNAL en web/APK.
+- **Live status se propaga de verdad**: Al desactivar live, los demás ya no te siguen viendo "en vivo" en su mapa/radar (fix merge stale + corrección en tiempo real desde el listener dedicado).
+- **GymPulseMap más maduro y modular**: Chrome completo (header pulso, filtros de zona/cerca/red, leyenda, centrar, dev tools) ahora dentro del componente. Ports de ripples de sync, tethers dorados entre pares, echo pins, clusters. Witness de pins conectado al replay. Menos monolito, más fácil de mantener.
+- Partners/gyms con logos reales en el mapa en tiempo real + badges de actividad.
+- Toggle Entrenando Ahora siempre responde + explicaciones educativas.
+- Versión unificada + lenguaje serio "red de rendimiento sincronizado" (sin fantasy).
+- Remaster visual premium en feed/muro, chat (waveforms), mapa, profile.
+- Estabilidad realtime general (long polling, network recovery, listeners).
+
+Todo listo para Closed testing + validación en dispositivo real.
 
 ## What's new - v0.1.85 base (partner logos + live fixes)
 

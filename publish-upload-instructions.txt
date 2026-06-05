@@ -1,13 +1,17 @@
 === READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.86-work) ===
 
-**Cambios principales de esta build (2026-06-05)**:
-- Versión centralizada + todos los strings de versión en UI actualizados (ya no aparecen 0.1.37 ni 0.1.7-prealpha).
-- Limpieza de lenguaje: se eliminó la mayoría del wrapper "ritual / leyenda" que quedaba en textos visibles (gadget, galería, highlights de sync, ondas, etc.). Ahora más consistente con el tono serio de "red de rendimiento sincronizado / GymPulse / EntrenaSync".
-- GymPulse + Partners con logos ya funcionando (reglas de storage deployadas + guard de auth en cliente).
-- Live toggle "Entrenando Ahora (EN VIVO)" ahora siempre responde + explicaciones educativas claras en todo el flujo.
-- Build con APP_VERSION unificada.
+**Cambios principales de esta build (review completo 2026-06-05)**:
+- **Estabilidad de Live + Terminate**: Path de "TERMINAR ENTRENAMIENTO Y DESACTIVAR VIVO" y end de EntrenaSync endurecido contra errores internos de Firestore (mutations undefined, b815 assertions). Múltiples resets de red timed + clear temprano de estado de sync + retry resilient en writes. Ya no spamean INTERNAL UNHANDLED en consola al terminar.
+- **Propagación de Live confiable**: Al desactivar live, otros usuarios ya no te ven "aún live" en su mapa/radar (fix de merge stale realProfiles vs dedicated listener + parche correctivo en tiempo real).
+- **Modularización GymPulseMap pulida**: Header, filtros, leyenda de zonas, centrar, botones dev ahora internos al componente. Ports de ripples ritual, tethers, echo pins, clusters, etc. Witness para echo pins conectado al modal/replay del padre. Parent mucho más delgado. Build limpio.
+- Versión centralizada + limpieza lenguaje a "red de rendimiento sincronizado" (sin fantasy wrapper).
+- GymPulse + Partners con logos + visual remaster premium (feed, chat, map, profile).
+- Builds web/CI verdes, CI APK artifacts listos.
+- Múltiples fixes de realtime (long polling, network recovery, listeners).
 
 Subir como nueva release en Closed (o Internal si aún no hay closed track). Usar el "What's new" de abajo.
+
+Después de subir: npx firebase deploy --only storage --project entrenamatch (si no está) para URLs https reales en fotos.
 
 ---
 
