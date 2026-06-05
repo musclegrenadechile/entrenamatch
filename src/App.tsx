@@ -1272,7 +1272,18 @@ function App() {
   }, [dailyPulse?.lastDate, currentUser?.trainingNow, dailyPulse?.trainingStreak])
 
   useEffect(() => {
-    const handleOnline = () => setIsOffline(false)
+    const handleOnline = async () => {
+      setIsOffline(false)
+      // Force re-establishment of all onSnapshot Listen streams after network recovery.
+      // This prevents the "WebChannelConnection RPC 'Listen' stream ... transport errored" + 404s
+      // that commonly happen in Capacitor Android after connectivity changes or app resume.
+      try {
+        const { enableFirestoreNetwork } = await import('./services/firebase')
+        await enableFirestoreNetwork()
+      } catch (e) {
+        console.warn('enableFirestoreNetwork on online failed', e)
+      }
+    }
     const handleOffline = () => setIsOffline(true)
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
@@ -1297,6 +1308,38 @@ function App() {
       window.removeEventListener('offline', handleOffline)
     }
   }, [isDemoMode])
+
+  // Extra resilience for Capacitor: on app resume (user comes back from background), force network re-enable.
+  // Mobile apps frequently kill/restrict long-lived WebChannel connections in background.
+  useEffect(() => {
+    let unsubApp: (() => void) | null = null
+
+    ;(async () => {
+      try {
+        if (typeof window !== 'undefined' && (window as any).Capacitor && Capacitor.isNativePlatform()) {
+          const AppPlugin = await import(/* @vite-ignore */ '@capacitor/app').catch(() => null as any)
+          if (AppPlugin?.App) {
+            const listener = await AppPlugin.App.addListener('appStateChange', async (state: any) => {
+              if (state.isActive) {
+                // App came to foreground — give the OS a moment then recover Firestore streams.
+                setTimeout(async () => {
+                  try {
+                    const { enableFirestoreNetwork } = await import('./services/firebase')
+                    await enableFirestoreNetwork()
+                  } catch {}
+                }, 400)
+              }
+            })
+            unsubApp = () => { try { listener.remove() } catch {} }
+          }
+        }
+      } catch (e) {
+        // App plugin optional
+      }
+    })()
+
+    return () => { if (unsubApp) unsubApp() }
+  }, [])
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null)
   const voicePreviewUrlRef = useRef<string | null>(null)
   const currentRecordingTimeRef = useRef(0)

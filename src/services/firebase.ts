@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
 
@@ -57,7 +57,17 @@ let analytics: any = null;
 if (firebaseConfig) {
   app = initializeApp(firebaseConfig);
   auth = getAuth(app);
-  db = getFirestore(app);
+
+  // Use initializeFirestore with long-polling forced.
+  // This is critical for stability of real-time 'Listen' streams (onSnapshot) inside Capacitor Android WebView.
+  // The default WebChannel transport frequently fails with "transport errored" + 404 on the /Listen/channel endpoint
+  // on mobile hybrid apps due to WebView + network stack quirks. Long polling is far more reliable.
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache(),
+    experimentalForceLongPolling: true,
+    experimentalAutoDetectLongPolling: false,
+  });
+
   // Explicit bucket helps ensure the correct auth token is attached for Storage uploads (fixes some 403/unauthorized cases on web + Capacitor)
   storage = getStorage(app, 'gs://entrenamatch.firebasestorage.app');
 
@@ -71,3 +81,26 @@ export const isFirebaseConfigured = !!firebaseConfig;
 export const isDemoMode = !firebaseConfig;
 
 export default app;
+
+// Force re-enable Firestore network (re-establishes Listen/WebChannel streams after offline or transport errors).
+// Call this from online handlers and app resume.
+export async function enableFirestoreNetwork() {
+  if (!db) return;
+  try {
+    const { enableNetwork } = await import('firebase/firestore');
+    await enableNetwork(db);
+    console.log('[Firestore] Network enabled (recovering Listeners)');
+  } catch (e) {
+    console.warn('[Firestore] enableNetwork failed', e);
+  }
+}
+
+export async function disableFirestoreNetwork() {
+  if (!db) return;
+  try {
+    const { disableNetwork } = await import('firebase/firestore');
+    await disableNetwork(db);
+  } catch (e) {
+    console.warn('[Firestore] disableNetwork failed', e);
+  }
+}
