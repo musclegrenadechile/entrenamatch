@@ -8791,41 +8791,57 @@ function App() {
                 </div>
 
                 {matchProfiles.length === 0 && (
-                  <div className="mt-8 card p-6 rounded-3xl text-center">
-                    <MessageCircle className="mx-auto text-[#FF671F] mb-3" size={36} />
-                    <div className="font-semibold mb-1">Sin conversaciones aún</div>
-                    <p className="text-sm text-[#9CA3AF]">Los matches reales aparecen aquí. Chats en vivo cross-device. Recibirás notificación (toast + campana) cuando llegue un mensaje.</p>
+                  <div className="mt-8 p-8 rounded-3xl text-center border border-[#FF671F]/15 bg-gradient-to-b from-[#1C1C20] to-[#0D0D10]">
+                    <div className="text-5xl mb-3 opacity-40">💬</div>
+                    <div className="font-black text-2xl tracking-[-1px] mb-2">Tu red de GymPartners</div>
+                    <p className="text-sm text-[#9CA3AF] max-w-[260px] mx-auto leading-relaxed">Aquí aparecen tus matches reales. Chats 1:1 en vivo cross-device con notas de voz y propuestas de entrenamiento. El lugar donde las conexiones del GymPulse se vuelven conversaciones que importan.</p>
                   </div>
                 )}
+                {/* REMASTERED CHAT LIST — spectacular cards */}
                 {matchProfiles
                   .filter(p => !blockedUsers.includes(p.id))
                   .map(profile => {
                   const chatMsgs = messages[profile.id] || []
                   const last = chatMsgs[chatMsgs.length - 1]
                   const unread = chatUnreads[profile.id] || 0
+                  const isLive = !!profile.trainingNow
+                  const isBond = !!syncBonds[profile.id]
+                  const lastText = last ? (last.voiceUrl ? '🎙️ Nota de voz' : last.text) : 'Match nuevo — rompe el hielo'
                   return (
-                    <div key={profile.id} onClick={() => { setActiveChat(profile.id); setChatUnreads(prev => { const c = { ...prev }; c[profile.id] = 0; return c }) }} 
-                      className="flex items-center gap-4 card p-4 rounded-3xl mb-3 active:bg-[#25252A]">
-                      <img src={profile.photos[0]} className="w-14 h-14 rounded-2xl object-cover flex-shrink-0" />
+                    <div 
+                      key={profile.id} 
+                      onClick={() => { setActiveChat(profile.id); setChatUnreads(prev => { const c = { ...prev }; c[profile.id] = 0; return c }) }} 
+                      className="chat-list-card flex items-center gap-4 p-4 rounded-3xl mb-3 active:bg-[#25252A] cursor-pointer"
+                    >
+                      <div className={`chat-avatar w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 relative ${isLive ? 'live' : ''}`}>
+                        <img src={profile.photos[0]} className="w-full h-full object-cover" />
+                        {isLive && <div className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-[#22c55e] rounded-full ring-2 ring-[#0D0D10]" />}
+                      </div>
+
                       <div className="min-w-0 flex-1">
-                        <div className="flex justify-between items-baseline">
-                          <span className="font-semibold flex items-center gap-1">{profile.name} {syncBonds[profile.id] && <span className="text-[9px] px-1 bg-[#FFD700] text-black rounded">⭐ RED</span>}</span>
-                          <span className="text-xs text-[#9CA3AF]">{profile.city}</span>
+                        <div className="flex items-center justify-between">
+                          <div className="font-extrabold text-[15px] flex items-center gap-1.5 tracking-[-0.2px]">
+                            {profile.name}
+                            {isBond && <span className="text-[8px] px-1.5 py-px bg-[#FFD700] text-black rounded font-black tracking-wider">⭐ RED</span>}
+                          </div>
+                          <div className="text-[10px] text-[#9CA3AF] tabular-nums flex-shrink-0">{profile.city}</div>
                         </div>
+
                         {userLocation && (
-                          <div className="text-[10px] text-[#FF671F] mt-0.5">
-                            {getDistanceKm(userLocation.lat, userLocation.lng, profile.lat, profile.lng)} km de ti
+                          <div className="text-[10px] text-[#FF671F] mt-px font-medium">
+                            {getDistanceKm(userLocation.lat, userLocation.lng, profile.lat, profile.lng)} km
                           </div>
                         )}
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <div className="text-sm text-[#9CA3AF] truncate flex-1">
-                            {last ? last.text : 'Match nuevo — di hola'}
+
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="text-[13px] text-[#9CA3AF] truncate flex-1 leading-snug">
+                            {lastText}
                           </div>
                           {last && last.timestamp && (
-                            <span className="text-[10px] text-[#9CA3AF] flex-shrink-0">{getRelativeTime(last.timestamp)}</span>
+                            <span className="text-[10px] text-[#6B7280] flex-shrink-0 tabular-nums">{getRelativeTime(last.timestamp)}</span>
                           )}
                           {unread > 0 && (
-                            <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 text-[10px] font-bold rounded-full bg-[#ef4444] text-white">
+                            <span className="chat-unread ml-0.5 inline-flex items-center justify-center min-w-[19px] h-[19px] px-1.5 text-[10px] font-black rounded-full text-white">
                               {unread > 9 ? '9+' : unread}
                             </span>
                           )}
@@ -8836,51 +8852,36 @@ function App() {
                 })}
               </div>
             ) : (
-              // Chat view
+              // Chat view — SPECTACULAR REMASTER
               <div className="flex-1 flex flex-col">
-                {/* Chat header */}
-                <div className="h-14 px-4 flex items-center gap-3 border-b border-[#2F2F35] bg-[#0D0D10] z-10">
-                  <button onClick={() => setActiveChat(null)} className="p-2 -ml-2"><ArrowLeft /></button>
-                  <img src={chatProfile?.photos[0]} className="w-9 h-9 rounded-xl object-cover" />
-                  <div>
-                    <div className="font-semibold flex items-center gap-2">
+                {/* Premium chat header */}
+                <div className="chat-header h-16 px-4 flex items-center gap-3 z-10">
+                  <button onClick={() => setActiveChat(null)} className="p-1.5 -ml-1 text-[#9CA3AF] active:text-white"><ArrowLeft size={22} /></button>
+                  
+                  <div className={`chat-header-avatar w-11 h-11 rounded-2xl overflow-hidden flex-shrink-0 relative ${chatProfile?.trainingNow ? 'live' : ''}`} onClick={() => chatProfile && setShowFullProfile(chatProfile)}>
+                    <img src={chatProfile?.photos?.[0]} className="w-full h-full object-cover cursor-pointer" />
+                    {chatProfile?.trainingNow && <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#22c55e] rounded-full ring-[2.5px] ring-[#0D0D10]" />}
+                  </div>
+
+                  <div className="min-w-0 flex-1" onClick={() => chatProfile && setShowFullProfile(chatProfile)}>
+                    <div className="font-black text-[17px] tracking-[-0.3px] flex items-center gap-2 leading-none">
                       {chatProfile?.name}
-                      {realMatches.includes(activeChat || '') && (
-                        <span className="text-[9px] bg-[#FF671F] text-black px-1.5 py-0 rounded">REAL</span>
-                      )}
+                      {realMatches.includes(activeChat || '') && <span className="text-[8px] px-1.5 py-px bg-[#FF671F] text-black rounded font-black tracking-widest">REAL</span>}
                     </div>
-                    <div className="text-[10px] text-[#FF671F] -mt-0.5 flex items-center gap-1">
-                      {chatProfile?.city}, {chatProfile?.country} • En línea
-                      {syncBonds[activeChat!] && <span className="ml-1 px-1.5 py-0 text-[8px] rounded bg-[#FFD700] text-black font-bold">⭐ TU RED • LV{syncBonds[activeChat!].bondLevel || 1}</span>}
+                    <div className="text-[11px] text-[#FF671F] flex items-center gap-1.5 mt-1">
+                      {chatProfile?.city}, {chatProfile?.country}
+                      {chatProfile?.trainingNow && <span className="text-[#22c55e] font-bold">• EN VIVO AHORA</span>}
+                      {syncBonds[activeChat!] && <span className="px-1.5 py-px text-[8px] rounded bg-[#FFD700] text-black font-black tracking-wider">⭐ RED LV{syncBonds[activeChat!].bondLevel || 1}</span>}
                     </div>
                   </div>
-                  <button onClick={() => setShowFullProfile(chatProfile!)} className="ml-auto text-xs px-3 py-1 bg-[#1C1C20] rounded-full">Ver perfil</button>
-                  <a href="/entrenamatch/privacy.html" target="_blank" className="text-[10px] text-[#9CA3AF] underline ml-1">Privacidad</a>
-                  {!isDemoMode && (
-                    <button onClick={async () => { if (activeChat) { setIsLoadingChats(true); try { await loadRealChatMessages(activeChat); setLastSync(new Date()); setChatUnreads(prev => { const c = { ...prev }; if (activeChat) c[activeChat] = 0; return c }); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } } }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 border border-[#2F2F35] rounded-xl text-[#FF671F] active:bg-[#25252A] disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar'}</button>
-                  )}
-                  <button onClick={() => {
-                    if (confirm('¿Reportar problema en este chat?')) {
-                      if (activeChat && db) {
-                        (async () => {
-                          try {
-                            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-                            await addDoc(collection(db, 'betaFeedback'), {
-                              userId: firebaseUser?.uid || 'demo',
-                              type: 'other',
-                              rating: 3,
-                              text: `Chat 1:1 con ${activeChat}: Problema reportado por usuario`,
-                              platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
-                              appVersion: APP_VERSION,
-                              context: '1v1-chat',
-                              createdAt: serverTimestamp(),
-                            });
-                            toast.success('Reporte enviado (ver en Perfil > Feedback)');
-                          } catch {}
-                        })();
-                      }
-                    }
-                  }} className="text-[10px] text-red-400 underline ml-1">Reportar</button>
+
+                  <div className="chat-header-actions flex items-center gap-1 flex-shrink-0">
+                    <button onClick={() => chatProfile && setShowFullProfile(chatProfile)} className="text-[10px] px-3 py-1 bg-[#1C1C20] hover:bg-[#25252A] rounded-full text-[#FF671F] border border-[#2F2F35]">Perfil</button>
+                    {!isDemoMode && (
+                      <button onClick={async () => { if (activeChat) { setIsLoadingChats(true); try { await loadRealChatMessages(activeChat); setLastSync(new Date()); setChatUnreads(prev => { const c = { ...prev }; if (activeChat) c[activeChat] = 0; return c }); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } } }} disabled={isLoadingChats} className="text-[9px] px-2 py-1 border border-[#2F2F35] rounded-xl text-[#FF671F] active:bg-[#25252A] disabled:opacity-60">{isLoadingChats ? '...' : 'Sync'}</button>
+                    )}
+                    <button onClick={() => { if (activeChat) startSyncWith(activeChat, chatProfile?.name || ''); }} className="text-[9px] px-2.5 py-1 bg-[#22c55e]/10 text-[#22c55e] rounded-full active:bg-[#22c55e] active:text-black">Entrenar</button>
+                  </div>
                 </div>
 
                 {/* Safety in 1:1 chat */}
@@ -8922,107 +8923,70 @@ function App() {
                   </button>
                 </div>
 
-                {/* Messages - robust scroll container */}
-                <div ref={chatScrollRef} className="flex-1 overflow-auto p-4 space-y-3 pb-20 min-h-0" id="chat-scroll">
-                  {/* Real messages take priority when in a real cross-device chat */}
-                  {((realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || []))).map((m, i) => {
+                {/* Messages area — SPECTACULAR remastered bubbles */}
+                <div ref={chatScrollRef} className="flex-1 overflow-auto px-3 py-4 space-y-1 pb-24 min-h-0 bg-[#0a0a0c]" id="chat-scroll">
+                  {((realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || []))).map((m, i, arr) => {
                     const isMe = m.from === 'me'
                     const time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''
+                    const prev = arr[i-1]
+                    const isGrouped = prev && prev.from === m.from && (m.timestamp - (prev.timestamp || 0)) < 1000 * 60 * 4
                     return (
-                      <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
-                        <div className={`max-w-[82%] ${isMe ? 'text-right' : ''}`}>
-                          {time && <div className="text-[9px] text-[#6B7280] mb-0.5 px-1">{time}</div>}
-                          <div className={`${m.voiceUrl && !m.voiceUrl.startsWith('blob:') ? 'p-1' : 'px-3.5 py-2'} rounded-3xl text-[14px] leading-snug break-words overflow-hidden ${isMe ? 'bg-[#FF671F] text-black rounded-br-md' : 'bg-[#25252A] text-white rounded-bl-md'}`}>
+                      <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${isGrouped ? 'mt-0.5' : 'mt-2.5'} group`}>
+                        <div className={`max-w-[84%] ${isMe ? 'text-right' : ''}`}>
+                          {!isGrouped && time && <div className="chat-timestamp px-1 mb-0.5">{time}</div>}
+                          <div className={`chat-bubble ${isMe ? 'chat-bubble-sent' : 'chat-bubble-received'} ${isGrouped ? 'chat-bubble-grouped' : ''}`}>
                             {m.voiceUrl && !m.voiceUrl.startsWith('blob:') ? (
                               <div className={`voice-bubble ${isMe ? 'sent' : 'received'}`}>
                                 <button 
                                   onClick={() => {
                                     try { triggerHaptic(playingVoiceId === m.id ? 'light' : 'medium') } catch {}
                                     if (playingVoiceId === m.id) {
-                                      // PAUSE current
-                                      if (currentAudioRef.current) {
-                                        currentAudioRef.current.pause()
-                                        currentAudioRef.current = null
-                                      }
-                                      setPlayingVoiceId(null)
-                                      setVoicePlayProgress(0)
+                                      if (currentAudioRef.current) { currentAudioRef.current.pause(); currentAudioRef.current = null }
+                                      setPlayingVoiceId(null); setVoicePlayProgress(0)
                                     } else {
-                                      // stop any previous
-                                      if (currentAudioRef.current) {
-                                        currentAudioRef.current.pause()
-                                        currentAudioRef.current = null
-                                      }
-                                      setPlayingVoiceId(m.id)
-                                      setVoicePlayProgress(0)
+                                      if (currentAudioRef.current) { currentAudioRef.current.pause(); currentAudioRef.current = null }
+                                      setPlayingVoiceId(m.id); setVoicePlayProgress(0)
                                       const audio = new Audio(m.voiceUrl)
                                       currentAudioRef.current = audio
                                       const dur = m.voiceDuration || 5
-                                      audio.onended = () => { 
-                                        setPlayingVoiceId(null); 
-                                        setVoicePlayProgress(0); 
-                                        currentAudioRef.current = null 
-                                      }
+                                      audio.onended = () => { setPlayingVoiceId(null); setVoicePlayProgress(0); currentAudioRef.current = null }
                                       audio.ontimeupdate = () => {
-                                        if (audio.duration > 0) {
-                                          setVoicePlayProgress(Math.min(100, (audio.currentTime / audio.duration) * 100))
-                                        }
+                                        if (audio.duration > 0) setVoicePlayProgress(Math.min(100, (audio.currentTime / audio.duration) * 100))
                                       }
-                                      audio.play().catch((e) => { console.warn('audio play error', e); setPlayingVoiceId(null); setVoicePlayProgress(0); currentAudioRef.current = null })
-                                      // safety
-                                      setTimeout(() => {
-                                        if (playingVoiceId === m.id && currentAudioRef.current === audio) {
-                                          // will be cleared by onend anyway
-                                        }
-                                      }, dur * 1000 + 400)
+                                      audio.play().catch(() => { setPlayingVoiceId(null); setVoicePlayProgress(0); currentAudioRef.current = null })
                                     }
                                   }}
                                   className={`voice-play-btn ${playingVoiceId === m.id ? 'playing' : ''}`}
-                                  title={playingVoiceId === m.id ? "Pausar nota de voz" : "Reproducir nota de voz de tu GymPartner"}
                                 >
                                   {playingVoiceId === m.id ? <Pause size={15} /> : <Play size={15} />}
                                 </button>
                                 <div className="voice-wave-container">
                                   <div className={`voice-wave ${playingVoiceId === m.id ? 'playing' : ''}`}>
-                                    {[4,6,3,8,5,9,4,7,3,6,5,8].map((h, idx) => (
-                                      <div 
-                                        key={idx} 
-                                        className="voice-bar" 
-                                        style={{ 
-                                          height: `${h * 1.6}px`, 
-                                          animationDelay: `${(idx % 7) * -140}ms` 
-                                        }} 
-                                      />
+                                    {[4,7,3,9,5,8,4,6,3,7,5,9].map((h, idx) => (
+                                      <div key={idx} className="voice-bar" style={{ height: `${h * 1.55}px`, animationDelay: `${(idx % 6) * -120}ms` }} />
                                     ))}
                                   </div>
-                                  {playingVoiceId === m.id && (
-                                    <div 
-                                      className="voice-progress" 
-                                      style={{ width: `${voicePlayProgress}%`, transition: 'width 80ms linear' }} 
-                                    />
-                                  )}
+                                  {playingVoiceId === m.id && <div className="voice-progress" style={{ width: `${voicePlayProgress}%` }} />}
                                 </div>
                                 <span className="voice-duration">🎙️ {m.voiceDuration || '?'}s</span>
                               </div>
                             ) : m.voiceUrl && m.voiceUrl.startsWith('blob:') ? (
-                              <span className="text-[10px] text-red-400">Nota de voz no disponible en esta sesión</span>
-                            ) : renderMessageText(m.text)}
+                              <span className="text-[10px] text-red-400">Nota de voz (sesión actual)</span>
+                            ) : (
+                              <span>{renderMessageText(m.text)}</span>
+                            )}
                           </div>
                         </div>
                       </div>
                     )
                   })}
+
                   {((realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || []))).length === 0 && (
-                    <div className="text-center text-sm text-[#9CA3AF] mt-8">
-                      <div className="font-medium text-white mb-1">
-                        {realMatches.includes(activeChat || '') || (activeChat || '').startsWith('p') ? '¡Match real con otro tester!' : '¡Primer match!'}
-                      </div>
-                      <div>Escribe algo para romper el hielo.</div>
-                      {realMatches.includes(activeChat || '') && (
-                        <div className="text-[10px] mt-1 text-[#FF671F]">Los mensajes viajan en tiempo real a su celular</div>
-                      )}
-                      {!realMatches.includes(activeChat || '') && (
-                        <div className="text-[10px] mt-1">Ejemplo: “Hola! Vi que entrenas pesas, ¿en qué gym vas?”</div>
-                      )}
+                    <div className="chat-empty">
+                      <div className="icon">💬</div>
+                      <div className="title">Conexión lista</div>
+                      <div className="text-[#9CA3AF] text-sm max-w-[240px] mx-auto">Este es tu GymPartner. Envía un mensaje, una nota de voz o una propuesta de entrenamiento. Los chats reales se sincronizan cross-device.</div>
+                      <div className="mt-4 text-[11px] text-[#FF671F]/70">Prueba una de las propuestas rápidas de abajo</div>
                     </div>
                   )}
                 </div>
@@ -9061,66 +9025,23 @@ function App() {
                       ))}
                     </div>
                   )}
-                  {/* Voice preview / uploading state — PREMIUM clear "listo para enviar a tu GymPartner" card */}
+                  {/* Voice preview — spectacular ready-to-send card */}
                   {pendingVoice && !isUploadingVoice && (
-                    <div className="voice-preview mb-2 ring-1 ring-[#FF671F]/30">
-                      <button 
-                        onClick={() => { 
-                          try { triggerHaptic('medium') } catch {}
-                          const a = new Audio(pendingVoice.url); 
-                          a.play().catch(()=>{}); 
-                        }}
-                        className="w-10 h-10 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center text-black active:scale-90 shadow flex-shrink-0"
-                        title="Escuchar preview antes de enviar"
-                      >
-                        <Play size={18} />
+                    <div className="mb-3 p-3 rounded-2xl bg-[#1a140f] border border-[#FF671F]/30 flex items-center gap-3">
+                      <button onClick={() => { try { triggerHaptic('medium') } catch {}; new Audio(pendingVoice.url).play().catch(()=>{}); }} className="w-11 h-11 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center text-black active:scale-90 shadow-lg flex-shrink-0">
+                        <Play size={20} />
                       </button>
-                      <div className="voice-wave-container" style={{height:'18px'}}>
-                        <div className="voice-wave">
-                          {[5,8,4,10,6,9,5,7,4,8].map((h,i) => <div key={i} className="voice-bar" style={{height: `${h}px`, background: 'linear-gradient(#FF671F, #FDBA74)'}} />)}
-                        </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs font-bold text-[#FF671F] tracking-wider">NOTA DE VOZ LISTA</div>
+                        <div className="text-[11px] text-[#9CA3AF]">{pendingVoice.duration}s • +1 Voice Streak</div>
                       </div>
-                      <div className="meta">
-                        <div className="title">🎙️ NOTA DE VOZ LISTA PARA TU GYMPARTNER</div>
-                        <div className="sub">{pendingVoice.duration}s • +1 Voice Streak • compártela ahora</div>
+                      <div className="flex flex-col gap-1">
+                        <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null); }} className="text-[9px] px-2 py-0.5 text-red-400 border border-red-400/40 rounded active:bg-red-500/10">Cancelar</button>
+                        <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null); setTimeout(() => startVoiceRecording(), 50); }} className="text-[9px] px-2 py-0.5 text-[#EAB308] border border-[#EAB308]/40 rounded active:bg-[#EAB308]/10">Re-grabar</button>
                       </div>
-                      <div className="actions flex-col gap-1 items-end">
-                        <button 
-                          onClick={() => { 
-                            if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); 
-                            voicePreviewUrlRef.current = null; 
-                            setPendingVoice(null) 
-                          }} 
-                          className="text-[9px] px-2 py-0.5 text-red-400 hover:text-red-500 border border-red-400/40 rounded active:bg-red-500/10 flex items-center gap-0.5" 
-                          title="Descartar"
-                        >
-                          <X size={11}/> Cancelar
-                        </button>
-                        <button 
-                          onClick={() => { 
-                            if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); 
-                            voicePreviewUrlRef.current = null; 
-                            setPendingVoice(null); 
-                            // re-record immediately
-                            setTimeout(() => startVoiceRecording(), 60) 
-                          }} 
-                          className="text-[9px] px-2 py-0.5 text-[#EAB308] hover:text-[#FCD34D] border border-[#EAB308]/40 rounded active:bg-[#EAB308]/10 flex items-center gap-0.5" 
-                          title="Grabar otra"
-                        >
-                          <RotateCcw size={11}/> Re-grabar
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => {
-                            if (activeChat && pendingVoice) {
-                              sendVoiceNote(activeChat, false)
-                            }
-                          }}
-                          className="text-[11px] px-5 py-1.5 bg-[#FF671F] text-black rounded-2xl font-extrabold active:bg-[#E55A1A] shadow flex items-center gap-1.5 active:scale-[0.985]"
-                        >
-                          ENVIAR A TU GYMPARTNER <Send size={14} />
-                        </button>
-                      </div>
+                      <button onClick={() => { if (activeChat && pendingVoice) sendVoiceNote(activeChat, false); }} className="ml-1 px-4 py-2 bg-[#FF671F] text-black rounded-2xl font-black text-sm active:bg-[#E55A1A] flex items-center gap-1.5 active:scale-[0.985]">
+                        ENVIAR <Send size={15} />
+                      </button>
                     </div>
                   )}
                   {isUploadingVoice && (
@@ -9142,59 +9063,45 @@ function App() {
                   <form onSubmit={(e) => { 
                     e.preventDefault(); 
                     const input = (e.currentTarget.elements[0] as HTMLInputElement); 
-                    if (pendingVoice) {
-                      sendVoiceNote(activeChat, false)
-                      // sendVoiceNote handles cleanup and toast
-                    } else if (input.value.trim()) {
-                      sendMessage(input.value); 
-                    }
-                    input.value = '' 
+                    if (pendingVoice) { sendVoiceNote(activeChat, false); } 
+                    else if (input.value.trim()) { sendMessage(input.value); }
+                    input.value = ''; setChatInputValue('');
                   }} className="flex gap-2 items-center">
-                    <input type="text" placeholder={pendingVoice ? "Nota lista — presiona ENVIAR a tu GymPartner" : "Mensaje o nota de voz a tu GymPartner..."} className="flex-1 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none" />
+                    <input 
+                      type="text" 
+                      placeholder={pendingVoice ? "Nota lista — presiona ENVIAR" : "Mensaje o nota de voz a tu GymPartner..."} 
+                      className="chat-input flex-1" 
+                      onChange={(e) => setChatInputValue(e.target.value)}
+                      value={chatInputValue}
+                    />
                     
-                    {/* PREMIUM voice recording control for 1:1 — live waveform when active */}
+                    {/* Voice recording — spectacular live state */}
                     {isRecordingVoice ? (
-                      <div className="voice-recording" style={{minWidth: 168, padding: '4px 8px 4px 10px'}}>
+                      <div className="voice-recording flex-1" style={{minWidth: 175}}>
                         <div className="dot" />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-red-400 text-[9px] font-extrabold tracking-[0.5px]">GRABANDO NOTA DE VOZ</div>
-                          <div className="flex items-baseline gap-1">
-                            <span className="timer">{recordingTime}s <span className="opacity-60">/60</span></span>
-                            <span className="text-[8px] text-red-400/70 font-medium">• PARAR para escuchar y ENVIAR</span>
-                          </div>
+                        <div className="flex-1">
+                          <div className="text-red-400 text-[9px] font-extrabold tracking-[1px]">GRABANDO NOTA</div>
+                          <div className="text-xs text-red-400/80 tabular-nums">{recordingTime}s / 60</div>
                         </div>
-                        {/* LIVE DANCING BARS from real analyser */}
-                        <div className="flex gap-[1.5px] items-end h-[17px] mx-0.5 px-0.5 bg-black/30 rounded">
-                          {recordingLevels.map((h, i) => (
-                            <div key={i} className="w-[2.5px] bg-red-400 rounded transition-all duration-75" style={{height: `${h}px`}} />
-                          ))}
+                        <div className="flex gap-1 items-end h-4 mx-1 bg-black/30 rounded px-1">
+                          {recordingLevels.map((h, i) => <div key={i} className="w-[2px] bg-red-400 rounded" style={{height: `${Math.max(3,h)}px`}} />)}
                         </div>
-                        <button 
-                          onClick={stopVoiceRecording} 
-                          className="ml-1 px-3.5 py-1 text-[10px] bg-red-600 text-white rounded-full active:bg-red-700 font-extrabold shadow active:scale-95"
-                          title="Parar grabación: luego escucharás la nota y podrás enviarla a tu GymPartner"
-                        >
-                          PARAR
-                        </button>
-                        <button onClick={cancelVoiceRecording} className="ml-0.5 text-red-400/80 hover:text-red-400 px-1 text-lg leading-none" title="Cancelar grabación sin enviar">×</button>
+                        <button onClick={stopVoiceRecording} className="px-3.5 py-1 text-[10px] bg-red-600 text-white rounded-full font-extrabold active:bg-red-700">PARAR</button>
+                        <button onClick={cancelVoiceRecording} className="text-red-400 text-2xl leading-none px-1 hover:text-red-300">×</button>
                       </div>
                     ) : (
-                      <button 
-                        type="button"
-                        onClick={startVoiceRecording}
-                        className="w-11 h-11 rounded-3xl flex items-center justify-center transition active:scale-95 bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A] hover:border-[#FF671F]/50"
-                        title="Grabar nota de voz — compártela con tu GymPartner"
-                      >
-                        <Mic size={19} />
+                      <button type="button" onClick={startVoiceRecording} className="chat-mic-btn w-12 h-12 rounded-3xl flex items-center justify-center" title="Grabar nota de voz espectacular">
+                        <Mic size={20} />
                       </button>
                     )}
 
-                    <button type="submit" disabled={!chatInputValue.trim() && !pendingVoice} title={pendingVoice ? 'Enviar la nota de voz grabada a tu GymPartner' : 'Enviar mensaje'} className={`${pendingVoice ? 'bg-[#22c55e] text-black' : 'bg-[#FF671F]'} disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black w-12 rounded-3xl flex items-center justify-center active:scale-95 transition`}><Send size={18} /></button>
+                    <button type="submit" disabled={!chatInputValue.trim() && !pendingVoice} className="chat-send-btn w-12 h-12 rounded-3xl flex items-center justify-center active:scale-[0.93] disabled:bg-[#2F2F35] disabled:text-[#6B7280]">
+                      <Send size={18} />
+                    </button>
                   </form>
-                  <div className="text-center text-[10px] text-[#6B7280] mt-2">
-                    {!isDemoMode 
-                      ? 'Mensajes reales • se envían al servidor (visibles cross-device para usuarios reales)' 
-                      : 'Los mensajes son locales en esta versión (demo)'}
+
+                  <div className="text-center text-[9px] text-[#6B7280] mt-2 tracking-wider">
+                    {!isDemoMode ? 'Mensajes reales cross-device • notas de voz que se sienten' : 'Demo local'}
                   </div>
                 </div>
               </div>
