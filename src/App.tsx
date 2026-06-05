@@ -4358,6 +4358,16 @@ function App() {
     }
     if (!isDemoMode && firebaseUser?.uid && db) {
       try {
+        // Recovery reset before post write (especially important on sync-end / live-terminate paths
+        // where previous session action writes may have left the client in bad mutation state).
+        try {
+          const fb = await import('./services/firebase');
+          await fb.disableFirestoreNetwork?.();
+          await new Promise(r => setTimeout(r, 70));
+          await fb.enableFirestoreNetwork?.();
+          await new Promise(r => setTimeout(r, 40));
+        } catch {}
+
         const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
         const data: any = {
           userId: post.userId,
@@ -4650,9 +4660,17 @@ function App() {
       } catch (e) {
         console.warn('endSync self clear via resilient path failed', e);
       }
-      // Partner + session ended are cross-doc; best-effort (do not block UX if they fail)
+      // Partner + session ended are cross-doc; best-effort but with recovery reset first.
+      // Direct updateDoc after a session full of action writes can hit the bad mutations state
+      // if previous transport left the pipeline unhealthy.
       if (db) {
         try {
+          const fb = await import('./services/firebase');
+          await fb.disableFirestoreNetwork?.();
+          await new Promise(r => setTimeout(r, 100));
+          await fb.enableFirestoreNetwork?.();
+          await new Promise(r => setTimeout(r, 60));
+
           const { doc, updateDoc } = await import('firebase/firestore')
           if (oldPartner) await updateDoc(doc(db, 'profiles', oldPartner), { trainingSyncWith: null, syncStartedAt: null }).catch(() => {});
           // Mark session ended for active count queries
@@ -4665,6 +4683,14 @@ function App() {
         } catch (e) {}
       }
     }
+    // Post creation is a separate write; wrap with recovery too for safety on terminate path.
+    try {
+      const fb = await import('./services/firebase');
+      await fb.disableFirestoreNetwork?.();
+      await new Promise(r => setTimeout(r, 80));
+      await fb.enableFirestoreNetwork?.();
+      await new Promise(r => setTimeout(r, 50));
+    } catch {}
     createProfilePost(`Sync terminado con ${partnerName} - ${minutes}min juntos`, null).catch(() => {})
     // Save replayable memory (unique persistence of the shared performance sync)
     if (minutes >= 2 && capturedActions.length > 0) {
@@ -9957,22 +9983,6 @@ function App() {
                         setIsTogglingLive(true);
                         const oldTrainingNow = currentUser.trainingNow;
                         try {
-                          // CRITICAL: Hard network reset before the live-clear write.
-                          // Previous Listen/Write transport errors (404, WebChannel errored) can leave the Firestore
-                          // client's internal write pipeline (mutations batch) in "undefined" / b815 unexpected state.
-                          // This reset (disable + delay + enable) recreates streams cleanly and prevents the
-                          // "Cannot read properties of undefined (reading 'mutations')" + INTERNAL ASSERTION on terminate.
-                          // Applies to both web preview and Capacitor Android WebView.
-                          try {
-                            const fb = await import('./services/firebase');
-                            await fb.disableFirestoreNetwork?.();
-                            await new Promise(r => setTimeout(r, 110));
-                            await fb.enableFirestoreNetwork?.();
-                            await new Promise(r => setTimeout(r, 70));
-                          } catch (resetErr) {
-                            console.warn('pre-stop network reset non-fatal', resetErr);
-                          }
-
                           const newVal = false; // explicit deactivate
                           // Compute session finish bonus (duration + momentum + xp) and bake into the SAME payload
                           // so we do ONE write instead of 1 (clear) + check (possible daily) + award (mom) = 3 rapid writes.
@@ -9989,16 +9999,43 @@ function App() {
                           const updated = {
                             ...currentUser,
                             trainingNow: newVal,
-                            trainingNowSince: undefined,
+                            trainingNowSince: null,  // explicit null, never undefined (Firestore hates it in some pipelines)
                             trainingSyncWith: null,
                             syncStartedAt: null,
                             momentumPoints: newMom,
                             retentionXp: newXp
                           } as CurrentUser;
 
+                          // Clear local sync state *before* the FS write so the syncSessions listener unsubs cleanly.
+                          // This prevents a listener callback from queuing something while the terminate write is in flight
+                          // (one known trigger for the internal 'mutations' / b815 bad state).
+                          if (syncPartnerId) {
+                            setSyncPartnerId(null);
+                            setSyncStartedAt(null);
+                            setSyncActions([]);
+                            setSyncVibe(0);
+                            setSyncCombo(0);
+                          }
+
                           // Optimistic local daily for instant UI feedback (profile banner etc)
                           if (dailyPulse) {
                             setDailyPulse({ ...dailyPulse, momentum: newMom, xp: newXp });
+                          }
+
+                          // Extra-hard reset right before the critical terminate write.
+                          // Previous actions during the training (ripples, actions to session doc, live updates)
+                          // can leave the persistentLocalCache + write pipeline in a state where the next
+                          // setDoc causes "Cannot read ... 'mutations'" + repeated b815 assertions.
+                          // Doing disable + generous delay + enable right here (after local clears) gives
+                          // the SDK the best chance to recreate clean streams before we queue the mutation.
+                          try {
+                            const fb = await import('./services/firebase');
+                            await fb.disableFirestoreNetwork?.();
+                            await new Promise(r => setTimeout(r, 180));
+                            await fb.enableFirestoreNetwork?.();
+                            await new Promise(r => setTimeout(r, 120));
+                          } catch (resetErr) {
+                            console.warn('pre-terminate live reset non-fatal', resetErr);
                           }
 
                           await saveUserWithRealSync(updated);
