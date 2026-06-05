@@ -1,19 +1,24 @@
-=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.45-network-sync-boost code 49) ===
+=== READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.46-fcm-red-pushes code 50) ===
 
-AAB: EntrenaMatch-v0.1.45-network-sync-boost-code49-20260604-2301.aab + EntrenaMatch-release.aab
+AAB: EntrenaMatch-v0.1.46-fcm-red-pushes-code50-20260604-2305.aab + EntrenaMatch-release.aab
 
-**What's new para Play:**
+**What's new (copia esto):**
 
-**v0.1.45-network-sync-boost (code 49) — SIGUE SIN PARAR: Network Sync con tu red ahora es MÁS ÉPICO + impacto semanal visible (primera red social del fitness)**
+**v0.1.46-fcm-red-pushes (code 50) — SIGUE SIN PARAR: PUSH NOTIFICATIONS REALES FCM EN BACKGROUND para tu Red de EntrenaSync (live o sync)**
 
-• Cuando haces EntrenaSync con un socio de tu Red: la Arena muestra 'RED POWER' en header, 'NETWORK SYNC x1.5 POWER' badge en el vibe, y el orb/tether brillan más fuerte con efectos reforzados. Se siente como un boost real de poder compartido.
-• En tu sección TU RED DE ENTRENASYNC (perfil): nuevo stat 'Tu red esta semana: ~X min de alto rendimiento compartido • Esto genera ondas que otros ven en el pulso global.' Cuantifica el valor colectivo de tu grafo.
-• Al terminar un sync fuerte con red: el post automático en muro/feed dice 'RED — Network Power activado. Tu grafo gana +Z de fuerza y visibilidad global.'
-• Acumula con lo anterior: prioridad en swipe, badges dorados RED en discover, notifs de red, glow en mapa, etc.
+• Notificaciones push nativas reales (FCM) en segundo plano / app cerrada: cuando alguien de tu red (syncBonds) entra en "Entrenando ahora" o inicia un EntrenaSync, recibes alerta OS con título "?? {name} de tu Red está entrenando ahora" o "activó EntrenaSync".
+• Cloud Function (nuevo /functions) reacciona a updates en perfiles y envía a los tokens de los socios de red (guardados en userPushTokens).
+• En app: toasts especiales dorados para estos eventos + botón de acción que abre el mapa live y auto-ofrece el sync.
+• Canal Android 'network_activity' de alta prioridad (con luces, vibración, color naranja).
+• Para activar el server side: después de instalar el AAB, ve a la carpeta functions, npm install, y firebase deploy --only functions --project entrenamatch (una sola vez).
+• Todo el resto de Network Power (prioridad en swipe, badges, arena boost, stats, etc) sigue acumulando.
 
-Tu red de EntrenaSync ya no es solo historia — es el motor que te da prioridad, estatus, resultados medibles y visibilidad que se propaga en la comunidad.
+Tu red ahora te "avisa" de verdad incluso fuera de la app. El grafo social de alto rendimiento se vuelve imposible de ignorar.
 
-Sube el AAB. Sigue sin parar.
+Sube el AAB. Despliega la function. Sigue sin parar.
+
+(Ver functions/DEPLOY.md para pasos exactos)
+
 
 Sube el AAB fresco. Sigue con todo.
 
