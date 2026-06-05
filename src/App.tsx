@@ -4643,20 +4643,27 @@ function App() {
     // Capture for replay (the unique "remember this session together" moment)
     const capturedActions = [...syncActions]
     const capturedVibe = syncVibe
-    // Clear FS
-    if (!isDemoMode && db && firebaseUser) {
+    // Clear FS (use resilient saveUserWithRealSync for self so we get the mutations/b815 retry+reset protection)
+    if (!isDemoMode && firebaseUser) {
       try {
-        const { doc, updateDoc } = await import('firebase/firestore')
-        await updateDoc(doc(db, 'profiles', effectiveUserId), { trainingSyncWith: null, syncStartedAt: null, syncActions: [], syncStreak: newSyncStreak })
-        if (oldPartner) await updateDoc(doc(db, 'profiles', oldPartner), { trainingSyncWith: null, syncStartedAt: null })
-        // Mark session ended for active count queries
+        await saveUserWithRealSync(updated as any);
+      } catch (e) {
+        console.warn('endSync self clear via resilient path failed', e);
+      }
+      // Partner + session ended are cross-doc; best-effort (do not block UX if they fail)
+      if (db) {
         try {
-          const { doc: doc2, updateDoc: upd2 } = await import('firebase/firestore')
-          const uids = [effectiveUserId, oldPartner].sort()
-          const sid = `sync_${uids[0]}_${uids[1]}`
-          await upd2(doc2(db, 'syncSessions', sid), { endedAt: Date.now() })
-        } catch {}
-      } catch (e) {}
+          const { doc, updateDoc } = await import('firebase/firestore')
+          if (oldPartner) await updateDoc(doc(db, 'profiles', oldPartner), { trainingSyncWith: null, syncStartedAt: null }).catch(() => {});
+          // Mark session ended for active count queries
+          try {
+            const { doc: doc2, updateDoc: upd2 } = await import('firebase/firestore')
+            const uids = [effectiveUserId, oldPartner].sort()
+            const sid = `sync_${uids[0]}_${uids[1]}`
+            await upd2(doc2(db, 'syncSessions', sid), { endedAt: Date.now() }).catch(() => {});
+          } catch {}
+        } catch (e) {}
+      }
     }
     createProfilePost(`Sync terminado con ${partnerName} - ${minutes}min juntos`, null).catch(() => {})
     // Save replayable memory (unique persistence of the shared performance sync)
@@ -10014,6 +10021,14 @@ function App() {
                               if (realP) {
                                 const merged = { ...currentUser, trainingNow: realP.trainingNow, trainingNowSince: normalizeTrainingSince(realP.trainingNowSince) };
                                 saveUser(merged as any);
+                                // Also revert any optimistic daily/momentum bump we did before the failed write
+                                if (dailyPulse && (realP.momentumPoints != null || realP.retentionXp != null)) {
+                                  setDailyPulse({
+                                    ...dailyPulse,
+                                    momentum: realP.momentumPoints != null ? realP.momentumPoints : dailyPulse.momentum,
+                                    xp: realP.retentionXp != null ? realP.retentionXp : dailyPulse.xp
+                                  });
+                                }
                               }
                             } catch {}
                           }
