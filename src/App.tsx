@@ -3042,6 +3042,26 @@ function App() {
             setTimeout(() => {
               setRitualRipples(r => r.filter(x => x.id !== rippleId))
             }, 5200)
+
+            // Extra "physics" awareness: even if map is closed, if the current user is geographically close
+            // to the high-vibe event, give them a personal mini-notification. This makes ripples feel real.
+            if (userLocation) {
+              const distToEvent = getDistanceKm(userLocation.lat, userLocation.lng, partner.lat, partner.lng)
+              if (distToEvent < 8) {
+                try {
+                  addNotification({
+                    id: 'ripple-global-' + rippleId,
+                    type: 'session_join' as any,
+                    title: '⚡ Energía de Ritual cerca',
+                    body: `${label} — alguien tuvo un momento épico a ${distToEvent.toFixed(1)}km`,
+                    relatedId: syncPartnerId
+                  })
+                  if (distToEvent < 5) {
+                    toast(`⚡ Onda de Arena cerca`, { description: `${label} se sintió en tu zona` })
+                  }
+                } catch {}
+              }
+            }
           }
 
           // Oferta auto de foto si en native (no fuerza cámara, solo invita)
@@ -4686,6 +4706,74 @@ function App() {
             try { mapInstanceRef.current.removeLayer(ripple) } catch {}
           }
         }, 4800)
+
+        // =====================================================
+        // ENHANCED PHYSICS: Ripples now "travel" towards other live users
+        // This gives the feeling that high-vibe moments have real consequence
+        // and propagate across the city like a wave of synchronized energy.
+        // =====================================================
+        const nearbyUsers = liveTrainingNow
+          .filter((u: any) => u.lat && u.lng && u.trainingNow && u.id !== effectiveUserId)
+          .map((u: any) => {
+            const dist = getDistanceKm(r.lat, r.lng, u.lat, u.lng)
+            return { ...u, dist }
+          })
+          .filter((u: any) => u.dist < 12) // wave travel range ~12km
+          .sort((a: any, b: any) => a.dist - b.dist)
+          .slice(0, 3) // limit for visual clarity
+
+        nearbyUsers.forEach((target: any) => {
+          // Draw an animated flowing polyline "energy wave" traveling from the epicenter to this user
+          const wave = L.polyline(
+            [[r.lat, r.lng], [target.lat, target.lng]],
+            {
+              color: '#FF671F',
+              weight: 2.8,
+              opacity: 0.85,
+              dashArray: '7 11',
+              className: 'ritual-wave-line'
+            }
+          ).addTo(mapInstanceRef.current)
+
+          wave.bindPopup(
+            `<strong>⚡ Onda de Ritual en movimiento</strong><br/>` +
+            `${r.label}<br/>` +
+            `Viajando hacia ${target.name || 'otro atleta'} • ${target.dist.toFixed(1)} km`
+          )
+
+          ;(wave as any)._isRitualWave = true
+          markersRef.current.push(wave)
+
+          // Auto-clean the traveling wave after it "arrives"
+          setTimeout(() => {
+            if (mapInstanceRef.current && (wave as any)._isRitualWave) {
+              try { mapInstanceRef.current.removeLayer(wave) } catch {}
+            }
+          }, 5300)
+
+          // MINI NOTIFICATIONS: If the current viewer is close to the "receiver" or is affected,
+          // fire a nice in-app notification + toast so the user feels the ripple personally.
+          if (userLocation) {
+            const distToReceiver = getDistanceKm(userLocation.lat, userLocation.lng, target.lat, target.lng)
+            if (distToReceiver < 4.5) { // within ~4.5km of where the wave is landing
+              try {
+                addNotification({
+                  id: 'ripple-arrival-' + Date.now(),
+                  type: 'session_join' as any,
+                  title: '⚡ Onda de Ritual recibida',
+                  body: `${r.label} — la energía llegó cerca de ti`,
+                  relatedId: target.id
+                })
+                // Only one toast per ripple emission for this viewer
+                if (target.dist < 6) {
+                  toast(`⚡ Ritual épico cerca`, {
+                    description: `${r.label} se propagó hasta aquí`
+                  })
+                }
+              } catch (e) {}
+            }
+          }
+        })
       } catch (e) {}
     })
 
@@ -5151,7 +5239,7 @@ function App() {
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
-          <span className="text-white/90 text-[11px]">Real backend • v0.1.28-recuperacion-cuenta</span>
+          <span className="text-white/90 text-[11px]">Real backend • v0.1.29-ripples-fisica</span>
           <button 
             onClick={refreshAllReal} 
             disabled={isLoadingMatches}
@@ -8087,7 +8175,7 @@ function App() {
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
               </div>
-              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.28-recuperacion-cuenta • Solo +18 • Backend real</div>
+              <div className="text-center text-[10px] text-[#6B7280] mt-4">v0.1.29-ripples-fisica • Solo +18 • Backend real</div>
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
@@ -8314,7 +8402,7 @@ function App() {
 
             {/* Subtle logout at the very bottom of Profile (non-blocking, after all content) */}
             <div className="px-4 pb-8 pt-2 text-center">
-              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.28-recuperacion-cuenta • Phase 0 real</div>
+              <div className="text-[10px] text-[#6B7280] mb-1">v0.1.29-ripples-fisica • Phase 0 real</div>
               <div className="text-[10px] text-[#9CA3AF] mb-1 flex justify-center gap-2">
                 <a href="/entrenamatch/privacy.html" target="_blank" className="underline active:text-[#FF671F]">Privacidad</a>
                 <span>·</span>

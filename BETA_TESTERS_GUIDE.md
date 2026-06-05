@@ -601,3 +601,10 @@ This is the build to upload to Closed track. Full "sigue con todo" — more uniq
 - Mejora UX: usa el email que ya escribió el usuario en el formulario, muestra toast claro de éxito + recordatorio de spam, cambia automáticamente a modo "Iniciar sesión".
 - Prueba: Crea una cuenta real (en APK o con dominio autorizado), luego haz logout, ve a login, pon el email y toca "¿Olvidaste tu contraseña?". Deberías recibir el email y poder resetear.
 - Esto era el último agujero grande de "puedo crear cuenta pero si la pierdo estoy jodido".
+
+**NUEVO — RIPPLES CON FÍSICA (v0.1.29-ripples-fisica, code 34)**:
+- Las ondas de ritual ya no son solo círculos estáticos que se expanden.
+- Ahora tienen **física**: desde el lugar del ritual se dibujan líneas con animación de flujo (dash moviéndose) que 'viajan' hacia los usuarios live más cercanos (hasta 12km).
+- Si estás cerca de donde una onda está llegando, recibes notificación interna + toast personal ('Onda de Ritual recibida', 'Energía de Ritual cerca').
+- La detección funciona aunque no tengas el mapa abierto (usa tu ubicación real + distancia).
+- Prueba fuerte: En Arena con alguien, sube mucho el vibe. Abre el mapa en tu cuenta y en la de otra persona cercana. Verás las líneas animadas moviéndose hacia los usuarios. Recibirás notificaciones cuando las ondas 'lleguen'. Esto hace que los rituales tengan peso real en la comunidad.

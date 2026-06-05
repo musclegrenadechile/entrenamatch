@@ -4,7 +4,7 @@
 
 **Package name**: com.entrenamatch.app
 
-**Current version for this upload**: versionCode 33 / 0.1.28-recuperacion-cuenta. **RECUPERACIÓN DE CONTRASEÑA REAL**: El botón "¿Olvidaste tu contraseña?" ahora envía email de reset vía Firebase para cuentas reales. 
+**Current version for this upload**: versionCode 34 / 0.1.29-ripples-fisica. **RIPPLES CON FÍSICA**: Las ondas de ritual ahora viajan hacia otros usuarios en el mapa + mini notificaciones personales. 
 - Mapa: legend interactivo (toca zona para filtrar por ciudad, "✕ todas" para reset). Markers/tethers/self actualizan live.
 - Fixes: pressable (z, pointer-events, invalidateSize, timeouts, touch-action).
 - Toques: tethers para sync pairs, personal markers pulso + foto/iniciales, radar sweep, self + 10km radio, centrar, cerca filter, popups join/perfil.
@@ -149,11 +149,18 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 
 ## What's new (for this Pre-Alpha release, short & punchy)
 
-**READY FOR PLAY CLOSED UPLOAD (v0.1.28-recuperacion-cuenta code 33)**
-- Fresh signed AAB: `EntrenaMatch-v0.1.28-recuperacion-cuenta-code33-20260604-1958.aab` (7.2 MB) + `EntrenaMatch-release.aab`
-- Fresh debug APK for device: `EntrenaMatch-debug-recuperacion-cuenta-0.1.28-20260604-1958.apk` (10 MB) + `EntrenaMatch-debug.apk`
+**READY FOR PLAY CLOSED UPLOAD (v0.1.29-ripples-fisica code 34)**
+- Fresh signed AAB: `EntrenaMatch-v0.1.29-ripples-fisica-code34-20260604-2001.aab` (7.2 MB) + `EntrenaMatch-release.aab`
+- Fresh debug APK for device: `EntrenaMatch-debug-ripples-fisica-0.1.29-20260604-2001.apk` (10 MB) + `EntrenaMatch-debug.apk`
 - Web: pushed to main → GH Pages will have the new bundle (hard refresh after Actions finish).
 - Copy the short "What's new" below directly into Play Console when uploading the AAB to closed track.
+
+**v0.1.29-ripples-fisica (code 34) — RIPPLES CON MÁS FÍSICA Y NOTIFICACIONES**
+• Las ondas de ritual ahora tienen "física": desde el epicentro en el mapa se dibujan líneas animadas (flujo de energía) que viajan hacia otros usuarios live cercanos (hasta ~12km).
+• Las líneas usan dash animado que da sensación real de movimiento y propagación.
+• Mini notificaciones personales: si estás cerca de donde una onda "llega", recibes toast + notificación interna "Onda de Ritual recibida" o "Energía de Ritual cerca".
+• Funciona tanto si tienes el mapa abierto como si no (detección por distancia geográfica real).
+• Esto hace que los momentos épicos en Arena tengan consecuencia visible y emocional para toda la comunidad cercana. La ciudad "siente" tus rituales.
 
 **v0.1.28-recuperacion-cuenta (code 33) — RECUPERACIÓN DE CONTRASEÑA FUNCIONAL**
 • El botón "¿Olvidaste tu contraseña?" en la pantalla de login ahora funciona de verdad para cuentas reales.
@@ -195,8 +202,8 @@ Tu opinión en esta etapa temprana es lo más valioso. ¡Gracias por ayudar a co
 • AAB + debug APK frescos listos (ver nombres abajo). Build limpia + pipeline completo.
 • Todo el pipeline: web GH Pages, Android AAB/debug, docs actualizados. Sigue con todo ritmo.
 
-**Short "What's new" (copy-paste to Play Console for v0.1.28 code 33):**
-Recuperación de contraseña real: el botón "¿Olvidaste tu contraseña?" ahora funciona. Envía email oficial de Firebase para que el usuario pueda crear una nueva contraseña de forma segura. Cierra el problema de "creé cuenta pero si la olvido no puedo entrar". Funciona en la app nativa para todas las cuentas email+password. (code 33)
+**Short "What's new" (copy-paste to Play Console for v0.1.29 code 34):**
+Ripples con física real: las ondas de ritual en el mapa ahora viajan (líneas animadas con flujo) hacia otros usuarios cercanos. Si la onda te alcanza o pasa cerca, recibes notificación personal "Onda de Ritual recibida". Los momentos épicos en Arena ahora tienen consecuencia visible y emocional en la ciudad. (code 34)
 
 **Artifacts for this version:**
 - AAB (Play): EntrenaMatch-v0.1.28-recuperacion-cuenta-code33-20260604-1958.aab (y EntrenaMatch-release.aab)

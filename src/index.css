@@ -1042,3 +1042,31 @@ input[type="range"]::-moz-range-thumb {
   40% { opacity: 0.35; }
   100% { opacity: 0.05; }
 }
+
+/* Enhanced Ritual Ripples with "physics" - energy flowing towards other users on the map.
+   This makes the map feel like a living ecosystem where high-vibe moments in Arena send real waves across the city. */
+.ritual-wave-line {
+  stroke: #FF671F;
+  stroke-width: 2.5;
+  stroke-opacity: 0.7;
+  stroke-dasharray: 8 12;
+  animation: ritual-wave-flow 1.1s linear infinite;
+  transition: stroke-opacity 0.3s;
+}
+.ritual-wave-line:hover {
+  stroke-opacity: 0.95;
+}
+@keyframes ritual-wave-flow {
+  0% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -40; }
+}
+
+/* Small pulse at the "receiving" user when a wave arrives */
+.ritual-wave-receiver {
+  animation: ritual-receiver-pulse 0.8s ease-out 2;
+}
+@keyframes ritual-receiver-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.6); }
+  100% { transform: scale(1); }
+}
