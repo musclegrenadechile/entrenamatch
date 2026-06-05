@@ -339,28 +339,39 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         })
       }
 
-      // Self marker (in-place update, not in markersRef)
+      // Self marker (in-place update, not in markersRef) — upgraded iconic premium presence
       if (userLocation) {
         const isLive = !!selfIsLive;
-        const liveClass = isLive ? ' live-self' : '';
-        const liveBorder = isLive ? 'box-shadow:0 0 0 4px #22c55e55, 0 0 0 8px rgba(34,197,94,0.25); animation: live-pulse-green 2s ease-in-out infinite;' : 'box-shadow:0 0 0 3px rgba(34,197,94,0.3);';
-        const liveBadgeSelf = isLive ? `<div style="position:absolute;top:-2px;right:-2px;background:#22c55e;color:#111;font-size:7px;font-weight:900;padding:0 3px;border-radius:3px;line-height:10px;border:1px solid #111">LIVE</div>` : '';
+        const isAmp = (typeof (window as any) !== 'undefined' && (window as any).__selfAmplified) || false; // lightweight signal from parent if needed; we also accept via future prop
+        const liveClass = isLive ? ' live-self iconic-self' : ' iconic-self';
+        const size = isLive ? 34 : 30;
+        const borderC = isLive ? '#22c55e' : '#22c55e';
+        const ring = isLive 
+          ? `<div style="position:absolute;inset:-6px;border-radius:9999px;border:2px solid #22c55e;opacity:0.35;animation:live-pulse-green 1.6s ease-in-out infinite;"></div><div style="position:absolute;inset:-11px;border-radius:9999px;border:1.5px solid #a855f7;opacity:0.18;animation:live-pulso-ring 2.6s ease-in-out infinite;"></div>`
+          : `<div style="position:absolute;inset:-4px;border-radius:9999px;border:1.5px solid rgba(34,197,94,0.35);"></div>`;
+        const ampAura = isAmp ? `<div class="self-pulso-stack" style="inset:-16px;border-color:#a855f7;opacity:0.28"></div>` : '';
+        const liveBadgeSelf = isLive ? `<div style="position:absolute;top:-3px;right:-3px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#111;font-size:8px;font-weight:900;padding:1px 5px;border-radius:4px;line-height:10px;border:1px solid #111;box-shadow:0 0 0 1px rgba(0,0,0,0.6)">LIVE</div>` : '';
+        const photo = userLocation.photo || '';
+        const fallback = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;color:white;background:#22c55e;font-weight:700">TÚ</div>`;
         const selfIcon = L.divIcon({
-          html: `<div style="position:relative;width:28px;height:28px"><div style="width:28px;height:28px;border-radius:9999px;overflow:hidden;border:3px solid ${isLive ? '#22c55e' : '#22c55e'};${liveBorder}"><img src="${userLocation.photo || ''}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#22c55e';this.innerHTML='<div style=\\'font-size:10px;color:white;display:flex;align-items:center;justify-content:center;height:100%\\'>TÚ</div>'"/></div>${liveBadgeSelf}</div>`,
-          className: `self-marker${liveClass}`, iconSize: [28, 28], iconAnchor: [14, 14]
+          html: `<div class="self-iconic" style="position:relative;width:${size}px;height:${size}px"><div style="width:${size}px;height:${size}px;border-radius:9999px;overflow:hidden;border:3px solid ${borderC};box-shadow:0 0 0 3px rgba(0,0,0,0.65);">${photo ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='${fallback}'" />` : fallback}</div>${ring}${liveBadgeSelf}${ampAura}</div>`,
+          className: `self-marker${liveClass}`, iconSize: [size, size], iconAnchor: [size/2, size/2]
         })
         if (!selfMarkerRef.current) {
           selfMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: selfIcon }).addTo(mapInstanceRef.current)
-          selfMarkerRef.current.bindPopup('<strong>TÚ</strong><br/>Tu ubicación actual (GPS)')
+          selfMarkerRef.current.bindPopup('<strong>TÚ</strong><br/>Tu ubicación actual (GPS) — el centro de tu GymPulse')
         } else {
           selfMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng])
+          selfMarkerRef.current.setIcon(selfIcon)
         }
         if (!areaCircleRef.current) {
           areaCircleRef.current = L.circle([userLocation.lat, userLocation.lng], {
-            radius: 10000, color: '#22c55e', weight: 1, fillColor: '#22c55e', fillOpacity: 0.06, opacity: 0.25
+            radius: isLive ? 12000 : 9000, color: '#22c55e', weight: isLive ? 1.5 : 0.8, fillColor: '#22c55e', fillOpacity: isLive ? 0.09 : 0.05, opacity: isLive ? 0.35 : 0.2,
+            className: isLive ? 'self-area-pulse' : ''
           }).addTo(mapInstanceRef.current)
         } else {
           areaCircleRef.current.setLatLng([userLocation.lat, userLocation.lng])
+          areaCircleRef.current.setStyle({ radius: isLive ? 12000 : 9000, weight: isLive ? 1.5 : 0.8, fillOpacity: isLive ? 0.09 : 0.05, opacity: isLive ? 0.35 : 0.2 })
         }
       }
 
@@ -375,31 +386,46 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         const isBond = !!syncBonds[u.id]
         const isHigh = (u.visibleLevel || 1) >= 15 || u.isLegend
         const hasPulso = (u.visibleLevel || 1) >= 20
+        const lvl = u.visibleLevel || 1
         const borderColor = isBond ? '#FFD700' : (hasPulso ? '#a855f7' : (isHigh ? '#eab308' : '#22c55e'))
-        const ring = hasPulso || isHigh ? '0 0 0 3px ' + (hasPulso ? '#a855f755' : '#eab30855') + ', ' : ''
-        const liveBadge = `<div style="position:absolute;top:-2px;right:-2px;background:#22c55e;color:#111;font-size:7px;font-weight:900;padding:0 3px;border-radius:3px;line-height:10px;border:1px solid #111">LIVE</div>`
-        const timeBadge = u.seVaEnMin != null ? `<div style="position:absolute;bottom:-1px;left:50%;transform:translateX(-50%);background:#111;color:#22c55e;font-size:7px;padding:0 3px;border-radius:2px;white-space:nowrap;">~${u.seVaEnMin}m</div>` : ''
+        const size = hasPulso ? 36 : (isHigh ? 32 : 28)
+        const ringExtra = hasPulso 
+          ? `<div class="live-pulso-ring" style="inset:-11px;border-color:#a855f7;opacity:0.28"></div><div style="position:absolute;inset:-15px;border-radius:9999px;border:1px solid #a855f7;opacity:0.12;animation:live-pulso-ring 3.2s ease-in-out infinite;"></div>`
+          : (isHigh ? `<div class="live-halo-ring" style="border-color:#eab308;opacity:0.38"></div>` : '')
+        const bondHalo = isBond ? `<div style="position:absolute;inset:-7px;border-radius:9999px;border:2px solid #FFD700;opacity:0.35;animation:live-pulse-green 1.4s ease-in-out infinite;"></div>` : ''
+        const liveBadge = `<div style="position:absolute;top:-3px;right:-3px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#111;font-size:7px;font-weight:900;padding:0 4px;border-radius:4px;line-height:9px;border:1px solid #111;box-shadow:0 0 0 1px rgba(0,0,0,.7)">LIVE</div>`
+        const timeBadge = u.seVaEnMin != null ? `<div style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:#0a0a0c;color:#22c55e;font-size:8px;padding:0 4px;border-radius:3px;border:1px solid #22c55e55;white-space:nowrap;font-weight:700">~${u.seVaEnMin}m</div>` : ''
+        const lvlBadge = (isHigh || hasPulso) ? `<div style="position:absolute;bottom:-1px;right:2px;background:${hasPulso?'#a855f7':'#eab308'};color:#111;font-size:7px;font-weight:800;padding:0 2px;border-radius:2px;line-height:8px;opacity:0.95">${lvl}</div>` : ''
+        const nameLabel = `<div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:rgba(10,10,12,0.85);color:#ddd;font-size:8px;padding:0 4px;border-radius:3px;white-space:nowrap;max-width:68px;overflow:hidden;text-overflow:ellipsis;border:1px solid rgba(255,255,255,0.1)">${(u.name||'').split(' ')[0]}</div>`
         const iconHtml = `
-          <div style="position:relative;width:28px;height:28px">
-            <div style="width:28px;height:28px;border-radius:9999px;overflow:hidden;border:2.5px solid ${borderColor};box-shadow:${ring}0 0 0 2px rgba(0,0,0,0.7);">
-              <img src="${u.photos?.[0] || ''}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#22c55e';this.innerHTML='<div style=\\'font-size:9px;color:white;display:flex;align-items:center;justify-content:center;height:100%\\'>LIVE</div>'" />
+          <div class="iconic-live-marker" style="position:relative;width:${size}px;height:${size}px">
+            ${nameLabel}
+            <div style="width:${size}px;height:${size}px;border-radius:9999px;overflow:hidden;border:2.5px solid ${borderColor};box-shadow:0 0 0 2px rgba(0,0,0,0.75);">
+              <img src="${u.photos?.[0] || ''}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#22c55e';this.innerHTML='<div style=\\'font-size:9px;color:white;display:flex;align-items:center;justify-content:center;height:100%;font-weight:700\\'>LIVE</div>'" />
             </div>
+            ${ringExtra}
+            ${bondHalo}
             ${liveBadge}
             ${timeBadge}
-            <div style="position:absolute;inset:-3px;border-radius:9999px;border:1.5px solid #22c55e;opacity:0.4;animation:live-pulse-green 1.8s ease-in-out infinite;"></div>
+            ${lvlBadge}
+            <div style="position:absolute;inset:-4px;border-radius:9999px;border:1.5px solid #22c55e;opacity:0.32;animation:live-pulse-green 1.9s ease-in-out infinite;"></div>
           </div>`
         try {
           const marker = L.marker([u.lat, u.lng], {
-            icon: L.divIcon({ html: iconHtml, className: 'live-user-marker', iconSize: [28, 28], iconAnchor: [14, 14] })
+            icon: L.divIcon({ html: iconHtml, className: 'live-user-marker iconic-live-marker', iconSize: [size, size], iconAnchor: [size/2, size/2] })
           }).addTo(mapInstanceRef.current)
 
-          const joinTxt = u.joinCount ? ` • ${u.joinCount} joined` : ''
+          const joinTxt = u.joinCount ? ` • ${u.joinCount} unidos` : ''
+          const levelTxt = hasPulso ? ' • PULSO MAESTRO' : (isHigh ? ' • ALTO NIVEL' : '')
           marker.bindPopup(`
-            <div style="min-width:170px;font-size:12px">
-              <strong>${u.name}</strong> ${isBond ? '⭐ RED' : ''} <span style="color:#22c55e;font-size:10px">🟢 EN VIVO</span><br/>
-              <span style="font-size:10px">${u.trainingTypes?.[0] || ''} • ${(u.distance || 0).toFixed(1)}km${joinTxt}</span><br/>
-              ${u.seVaEnMin != null ? `<span style="font-size:10px">Se va en ~${u.seVaEnMin} min</span><br/>` : ''}
-              <button style="margin-top:5px;background:#22c55e;color:black;border:none;padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600" onclick="window.startSyncFromMap && window.startSyncFromMap('${u.id}', '${u.name}')">🔥 Entrenar juntos / Sync</button>
+            <div style="min-width:178px;font-size:12px;line-height:1.35">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+                <strong>${u.name}</strong> ${isBond ? '<span style="color:#FFD700">⭐ RED</span>' : ''} 
+                <span style="color:#22c55e;font-size:10px;font-weight:700">🟢 EN VIVO</span>
+              </div>
+              <span style="font-size:10px;color:#9CA3AF">${u.trainingTypes?.[0] || 'Entreno'} • ${(u.distance || 0).toFixed(1)}km${joinTxt}${levelTxt}</span><br/>
+              ${u.seVaEnMin != null ? `<span style="font-size:10px;color:#f59e0b">⏱ Se va en ~${u.seVaEnMin} min — ¡únete ya!</span><br/>` : ''}
+              <button style="margin-top:6px;background:linear-gradient(90deg,#22c55e,#16a34a);color:black;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;box-shadow:0 1px 4px rgba(34,197,94,0.4)" onclick="window.startSyncFromMap && window.startSyncFromMap('${u.id}', '${(u.name||'').replace(/'/g,'')}')">🔥 Entrenar juntos / Sync</button>
             </div>
           `)
 
@@ -408,38 +434,40 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         } catch (e) {}
       })
 
-      // Partner markers (logos if present). Enhanced for devs: draggable + dev actions in popup.
+      // Partner markers (logos if present). Premium hub look + dev tools.
       if (showPartners) {
         partnerLocationsRef.current.forEach((p: any) => {
           if (!p.lat || !p.lng) return
           const logo = p.logoUrl || p.logo || ''
+          const isHub = (p.hubStrength || 0) > 1 || (p.type === 'gym')
+          const size = isHub ? 36 : 30
+          const gold = isHub ? '#FFD700' : '#f4c95f'
+          const aura = isHub ? `<div class="partner-hub-aura" style="position:absolute;inset:-7px;border-radius:9999px;border:2px solid ${gold};opacity:0.18;animation:partner-aura-breathe 4.2s ease-in-out infinite"></div>` : ''
+          const hubLabel = isHub ? `<div style="position:absolute;top:-2px;left:50%;transform:translateX(-50%);background:#111;color:${gold};font-size:7px;padding:0 3px;border-radius:2px;font-weight:700;border:1px solid ${gold}33">HUB</div>` : ''
           const html = logo
-            ? `<div style="width:32px;height:32px;border-radius:9999px;overflow:hidden;border:2px solid #FFD700;box-shadow:0 0 8px #FFD70044;"><img src="${logo}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='<div style=width:32px;height:32px;background:#222;border:2px solid #FFD700;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-size:11px;color:#FFD700>🏋️</div>'" /></div>`
-            : `<div style="width:28px;height:28px;background:#222;border:2px solid #FFD700;border-radius:9999px;display:flex;align-items:center;justify-content:center;font-size:12px;color:#FFD700">🏋️</div>`
+            ? `<div style="position:relative;width:${size}px;height:${size}px"><div style="width:${size}px;height:${size}px;border-radius:9999px;overflow:hidden;border:2.5px solid ${gold};box-shadow:0 0 0 2px rgba(0,0,0,0.6), 0 0 10px ${gold}33;"> <img src="${logo}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='<div style=\\'width:${size}px;height:${size}px;background:#1a1a1f;border:2.5px solid ${gold};border-radius:9999px;display:flex;align-items:center;justify-content:center;font-size:13px;color:${gold}\\'>🏋️</div>'" /> </div>${aura}${hubLabel}</div>`
+            : `<div style="position:relative;width:${size}px;height:${size}px"><div style="width:${size}px;height:${size}px;background:#1a1a1f;border:2.5px solid ${gold};border-radius:9999px;display:flex;align-items:center;justify-content:center;font-size:14px;color:${gold};box-shadow:0 0 0 2px rgba(0,0,0,0.6)">🏋️</div>${aura}${hubLabel}</div>`
 
           try {
             const pm = L.marker([p.lat, p.lng], {
-              icon: L.divIcon({ html, className: 'partner-marker', iconSize: [32, 32], iconAnchor: [16, 16] }),
-              draggable: !!isDeveloper,  // devs can drag to reposition stores/tiendas instantly
+              icon: L.divIcon({ html, className: `partner-marker ${isHub ? 'partner-hub-strong' : ''}`, iconSize: [size, size], iconAnchor: [size/2, size/2] }),
+              draggable: !!isDeveloper,
               title: isDeveloper ? 'DEV: drag to move, tap for actions' : p.name
             }).addTo(mapInstanceRef.current)
 
-            // Basic popup, enriched for devs with action buttons (using window helpers for simplicity)
-            let popupContent = `<strong>${p.name}</strong><br/><span style="font-size:10px">${p.type || 'Partner'} • ${p.address || ''}</span>`
+            let popupContent = `<strong style="font-size:13px">${p.name}</strong><br/><span style="font-size:10px;color:#9CA3AF">${p.type || 'Partner'} • ${p.address || p.city || ''}</span>`
+            if (isHub) popupContent += `<div style="font-size:9px;color:#FFD700;margin-top:1px">⭐ Hub del GymPulse</div>`
             if (isDeveloper) {
               popupContent += `<br/><small style="color:#FFD700">DEV MODE</small><br/>`
-              popupContent += `<button onclick="window.devEditPartner && window.devEditPartner('${p.id}')" style="font-size:10px;margin-right:4px">✏️ Edit</button>`
-              popupContent += `<button onclick="window.devDeletePartner && window.devDeletePartner('${p.id}')" style="font-size:10px;color:#f55">🗑️ Borrar tienda</button>`
+              popupContent += `<button onclick="window.devEditPartner && window.devEditPartner('${p.id}')" style="font-size:10px;margin-right:4px;background:#222;color:#FFD700;border:1px solid #FFD70044;padding:1px 5px;border-radius:3px">✏️ Edit</button>`
+              popupContent += `<button onclick="window.devDeletePartner && window.devDeletePartner('${p.id}')" style="font-size:10px;color:#f55;background:#2a1515;border:1px solid #f55444;padding:1px 5px;border-radius:3px">🗑️ Borrar</button>`
             }
             pm.bindPopup(popupContent)
 
-            // Drag support for devs - calls parent to persist move (to state + FS)
             if (isDeveloper) {
               pm.on('dragend', () => {
                 const pos = pm.getLatLng()
-                if (onPartnerMoved) {
-                  onPartnerMoved(p.id, pos.lat, pos.lng)
-                }
+                if (onPartnerMoved) onPartnerMoved(p.id, pos.lat, pos.lng)
                 try { /* haptic */ } catch {}
               })
             }
@@ -506,7 +534,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   return (
     <div
       ref={mapContainerRef}
-      className="w-full h-[340px] rounded-2xl overflow-hidden border border-[#22c55e]/30 bg-[#0a0a0c] shadow-inner"
+      className="w-full h-[340px] rounded-2xl overflow-hidden border border-[#22c55e]/25 bg-[#0a0a0c] shadow-[0_0_0_1px_rgba(34,197,94,0.12),0_10px_40px_-12px_rgba(0,0,0,0.7)]"
+      id="live-map-container"
       style={{ zIndex: 1 }}
     />
   )
