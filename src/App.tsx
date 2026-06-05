@@ -640,11 +640,34 @@ function App() {
     const networkPower = Math.round(avgBond * totalSessions * 0.8)
     return { networkPower, totalMin, totalSessions, estimatedImpact, numPartners }
   }, [syncBonds])
+
+  // === PULSO DIARIO DE LA RED (states hoisted early to avoid TDZ with helper functions defined right below) ===
+  const [dailyPulse, setDailyPulse] = useState<{
+    trainingStreak: number
+    synergyStreak: number
+    voiceStreak: number
+    pulseStreak: number
+    momentum: number
+    lastDate: string | null
+    currentChallenge: any | null
+    longestTraining: number
+    longestSynergy: number
+    longestVoice: number
+    longestPulse: number
+    level: number
+    xp: number
+  } | null>(null)
+  const [showDailyPulseBanner, setShowDailyPulseBanner] = useState(false)
+  const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false)
+
   const [replaySession, setReplaySession] = useState<any>(null) // {partnerName, minutes, vibe, actions, rating?}
 
   // =====================================================
   // PULSO DIARIO DE LA RED - Core logic (innovative retention)
-  // Placed here AFTER syncBonds + networkStats + dailyPulse state to avoid TDZ.
+  // States for dailyPulse / banner / isOffline are hoisted right before this block (after networkStats)
+  // so that generateDailyChallenge, checkAndUpdateDailyPulse, completeDailyChallenge, awardMomentum etc.
+  // are defined AFTER the state they close over. This prevents "Cannot access '...' before initialization" TDZ
+  // on initial render / effect setup (recurring source of prod crashes on app open).
   // =====================================================
   const getTodayStr = () => new Date().toISOString().slice(0, 10)
 
@@ -777,7 +800,7 @@ function App() {
         newStreak = 1
       }
 
-      const challenge = generateDailyChallenge(u, syncBonds, liveTrainingNow, networkStats.networkPower)
+      const challenge = generateDailyChallenge(u, syncBonds, [], networkStats.networkPower) // liveNow omitted on initial daily calc to avoid TDZ (populated on next interactions)
 
       const { level, xp } = computeRetentionLevel(mom, newStreak, newSynergy, newVoice, newPulseStreak, networkStats.networkPower)
 
@@ -837,7 +860,7 @@ function App() {
         pulseStreak: currentPulse,
         momentum: mom,
         lastDate: last,
-        currentChallenge: existingChallenge || generateDailyChallenge(u, syncBonds, liveTrainingNow, networkStats.networkPower),
+        currentChallenge: existingChallenge || generateDailyChallenge(u, syncBonds, [], networkStats.networkPower), // liveNow omitted to avoid early closure over late-declared liveTrainingNow const
         longestTraining: longTrain,
         longestSynergy: longSyn,
         longestVoice: longVoice,
@@ -1126,33 +1149,11 @@ function App() {
   const [voiceUploadProgress, setVoiceUploadProgress] = useState(0)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
 
-  // === PULSO DIARIO DE LA RED ===
-  // Innovative daily retention engine: multi-streaks, personalized Daily Challenges (Solo / Bond / Ripple),
-  // Momentum as real network currency (spend to amplify impact), intelligent notifs & strong open hooks.
-  // Builds on existing liveStreak / syncStreak. Makes opening the app daily feel inevitable and rewarding.
-  const [dailyPulse, setDailyPulse] = useState<{
-    trainingStreak: number
-    synergyStreak: number
-    voiceStreak: number
-    pulseStreak: number // for daily pulse visibility/completion that affects map/red
-    momentum: number
-    lastDate: string | null // YYYY-MM-DD
-    currentChallenge: any | null
-    longestTraining: number
-    longestSynergy: number
-    longestVoice: number
-    longestPulse: number
-    level: number // new retention level
-    xp: number // current xp towards next level
-  } | null>(null)
-  const [showDailyPulseBanner, setShowDailyPulseBanner] = useState(false)
-  // Offline handling for good UX (Firebase queues writes, we show banner + use last cached for map)
-  const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false)
+  // Voice notes recording (for 1:1 and group chats) - spectacular UX for fitness social
   const audioChunksRef = useRef<Blob[]>([])
 
-  // Moved here (after dailyPulse / isOffline / showDailyPulseBanner states) to avoid TDZ.
-  // These useEffects reference the states in deps and the check function / dailyPulse in bodies.
-  // The checkAndUpdate... defs are earlier (after networkStats), which is fine.
+  // Daily pulse banner + risk effects. Defined after the hoisted dailyPulse state + helper functions.
+  // References to dailyPulse, checkAndUpdateDailyPulse etc. are safe (all declared earlier in render).
 
   useEffect(() => {
     if (currentUser) {
@@ -5303,6 +5304,7 @@ function App() {
   }, [likedIds, passedIds, realProfiles])
 
   // LIVE TRAINING NOW - the killer innovative feature. Real-time who is training right now near you. Green live indicator. Creates urgency, no fitness app does this well.
+  // Declared after the data states it depends on (realProfiles, profilePosts, blockedUsers, userLocation, etc.) and before effects that use it in deps.
   const liveTrainingNow = useMemo(() => {
     const now = Date.now();
     const ASSUMED_SESSION_MS = 90 * 60 * 1000; // 90 min typical session

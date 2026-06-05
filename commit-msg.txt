@@ -1,0 +1,11 @@
+feat(onboarding): exceptional 60-90s first Live or Match flow
+
+- 4 ultra-fast steps (15-20s each): Presence (name + native camera first + bio) -> Training essence (chips) -> The Ritual (full aha: Live->like->chat->EntrenaSync+tether+Network Power explained visually) -> Vows + giant action CTA
+- Live profile preview ALWAYS visible and updates in real time (sells the experience before finish)
+- Step 2 makes the 5 mechanics inevitable and exciting with numbered list + huge green primary opt-in for first LIVE
+- On save with wantsToGoLive: trainingNow + trainingNowSince written (real FS via saveUserWithRealSync) + self injected into liveTrainingNow useMemo so user sees own green live banner/map immediately
+- Post guidance (safe unconditional useEffect early + ref guard): forces activeTab=explore + high-signal toast with exact micro-instruction (like on nearby live card for first match <20s)
+- Haptics everywhere, one-tap example data, clear time promise, % progress, strong final copy
+- Fixed hook count/TDZ: removed misplaced useEffect that was after shouldShowOnboarding early return
+- Updated version to 0.1.55 code59 + publish notes
+- This is the highest leverage retention feature: new users now GET the product and perform a core action (first Live or first match) inside the first 90 seconds.

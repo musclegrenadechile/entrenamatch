@@ -1,6 +1,6 @@
 === READY FOR MANUAL UPLOAD TO PLAY CLOSED TRACK (v0.1.55-onboarding-60s-first-live-match code 59) ===
 
-AAB: EntrenaMatch-v0.1.55-onboarding-60s-first-live-match-*.aab + EntrenaMatch-release.aab
+AAB: EntrenaMatch-v0.1.55-onboarding-60s-first-live-match-20260605.aab (9.19MB) + EntrenaMatch-release.aab (fresh from this build)
 
 **LO MÁS IMPORTANTE DE ESTA RELEASE: Onboarding excepcional**
 El usuario nuevo entiende la app completa (Pulso/Live/EntrenaSync/Red/Network Power) y hace su primer Live o primer match en <60-90 segundos desde abrir la app por primera vez. 4 pasos ultra-rápidos + preview en vivo + explicación del ritual en paso 2 + opt-in Live prominente + guidance post-cierre que fuerza tab=explore + toast de acción inmediata ("toca ❤️ en un live cerca"). 
