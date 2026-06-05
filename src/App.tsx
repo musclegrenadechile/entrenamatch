@@ -432,9 +432,23 @@ function App() {
   // PERFORMANCE PROPAGATION: Strong EntrenaSync sessions send visible waves to the Live Map.
   // This is the living social layer of the network — you see where synchronized high-performance training is happening and propagating right now.
   // The map becomes the pulse of the fitness social graph.
-  const [ritualRipples, setRitualRipples] = useState<any[]>([]) // {id, lat, lng, label, intensity}  // TODO: rename to performanceWaves or syncRipples for clarity (internal name legacy)
+  const [ritualRipples, setRitualRipples] = useState<any[]>([]) // {id, lat, lng, label, intensity}  // internal name (performance waves from strong syncs) - kept for minimal diff; user-facing strings already use "ondas de red" / "performance propagation"
   const [syncBonds, setSyncBonds] = useState<Record<string, {totalMin: number, sessions: number, avgRating: number, bondLevel: number}>>({})
   const [lastSyncStory, setLastSyncStory] = useState<any>(null)
+
+  // Hoisted Network Power stats (used in live banner, map, ExploreTab, profile summary, red section).
+  // Previously this was only inside an IIFE in the red cards → caused "networkPower is not defined" ReferenceError on web render.
+  const networkStats = useMemo(() => {
+    const bonds = syncBonds || {}
+    const numPartners = Object.keys(bonds).length
+    if (numPartners === 0) return { networkPower: 0, totalMin: 0, totalSessions: 0, estimatedImpact: 0, numPartners: 0 }
+    const totalMin = Object.values(bonds).reduce((sum: number, b: any) => sum + (b.totalMin || 0), 0)
+    const totalSessions = Object.values(bonds).reduce((sum: number, b: any) => sum + (b.sessions || 0), 0)
+    const avgBond = Object.values(bonds).reduce((sum: number, b: any) => sum + (b.bondLevel || 1), 0) / numPartners
+    const estimatedImpact = Math.min(52, Math.floor(totalMin / 7))
+    const networkPower = Math.round(avgBond * totalSessions * 0.8)
+    return { networkPower, totalMin, totalSessions, estimatedImpact, numPartners }
+  }, [syncBonds])
   const [replaySession, setReplaySession] = useState<any>(null) // {partnerName, minutes, vibe, actions, rating?}
   const [witnessData, setWitnessData] = useState<any>(null) // for shared session highlight replay: replay of a strong EntrenaSync (shared state, actions, vibe) that can be archived as co-authored performance memory
 
@@ -3162,7 +3176,7 @@ function App() {
             at: Date.now() 
           }
           setSyncActions(prev => [highAction, ...prev].slice(0, 30))
-          toast.success('⚡ ¡Vibe alta alcanzada!', { description: 'Momento épico registrado en el ritual y replay' })
+          toast.success('⚡ ¡Vibe alta alcanzada!', { description: 'Momento épico registrado en el sync y replay' })
           triggerHaptic('medium')
           // Extra visual pop + multiple flying for high vibe (makes the peak feel spectacular and unique)
           setTimeout(() => {
@@ -5790,7 +5804,7 @@ function App() {
                 <div className="text-[10px] font-semibold text-[#22c55e] flex items-center gap-1.5">
                   🗺️ El Pulso Global de Entrenamiento Sincronizado
                   <span className="text-[8px] bg-[#22c55e]/20 px-1.5 rounded">LA RED EN VIVO</span>
-                  {Object.keys(syncBonds).length > 0 && <span className="text-[7px] bg-[#FFD700]/90 text-black px-1 rounded font-bold">TU RED: {Object.keys(syncBonds).length} • NP {networkPower}</span>}
+                  {networkStats.numPartners > 0 && <span className="text-[7px] bg-[#FFD700]/90 text-black px-1 rounded font-bold">TU RED: {networkStats.numPartners} • NP {networkStats.networkPower}</span>}
                   <span className="text-[7px] ml-1 bg-[#22c55e]/10 px-1 rounded">Redes activas hoy: {Math.max(1, Math.floor(liveTrainingNow.length / 2))} • +{liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} joins en la red</span>
                 </div>
                 <button 
@@ -5813,7 +5827,7 @@ function App() {
                   <div className="absolute bottom-2 right-2 flex items-center gap-1 z-30">
                     <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
                       🟢 {liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && (u.distance||999)<10)) && (!selectedMapZone || u.city === selectedMapZone) && (!showOnlyLegends || u.isLegend)).length} en vivo • realtime {showOnlyLegends ? ' (tu red)' : ''}
-                      {Object.keys(syncBonds).length > 0 && <span className="ml-1 text-[6px] bg-[#FFD700] text-black px-0.5 rounded font-bold">NP {networkPower}</span>}
+                      {networkStats.numPartners > 0 && <span className="ml-1 text-[6px] bg-[#FFD700] text-black px-0.5 rounded font-bold">NP {networkStats.networkPower}</span>}
                       {selectedMapZone && <span className="ml-1 text-[7px] bg-white/20 px-1 rounded">filtrado: {selectedMapZone.split(' ')[0]}</span>}
                     </div>
                     <button
@@ -5960,7 +5974,7 @@ function App() {
             lastSync={lastSync}
             profilePosts={profilePosts}
             syncBonds={syncBonds}
-            networkPower={networkPower}
+            networkPower={networkStats.networkPower}
           />
         )}
 
@@ -7678,7 +7692,7 @@ function App() {
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-[#FFD700]">{Object.keys(syncBonds).length} socios RED</div>
-                    <div className="text-[10px] text-[#9CA3AF]">tu grafo • Network Power {networkPower}</div>
+                    <div className="text-[10px] text-[#9CA3AF]">tu grafo • Network Power {networkStats.networkPower}</div>
                   </div>
                   <div className="text-right">
                     <div className="text-lg font-bold text-[#22c55e]">{(currentUser as any).syncStreak || 0}</div>
@@ -7800,23 +7814,14 @@ function App() {
               <div className="px-4 mt-3">
                 <div className="text-[10px] uppercase tracking-[1px] text-[#9CA3AF] mb-1.5 flex items-center gap-1">🔥 TU RED DE ENTRENASYNC <span className="text-[8px] normal-case opacity-60">(tu grafo de rendimiento sincronizado — alianzas que generan resultados reales y estatus en la comunidad)</span></div>
                 {/* Network summary — epic social graph value. This is what makes EntrenaMatch the first real fitness social network: your sync alliances are a visible, compounding performance asset. */}
-                {(() => {
-                  const totalMin = Object.values(syncBonds).reduce((sum: number, b: any) => sum + (b.totalMin || 0), 0)
-                  const totalSessions = Object.values(syncBonds).reduce((sum: number, b: any) => sum + (b.sessions || 0), 0)
-                  const avgBond = Object.values(syncBonds).reduce((sum: number, b: any) => sum + (b.bondLevel || 1), 0) / Object.keys(syncBonds).length
-                  const estimatedImpact = Math.min(52, Math.floor(totalMin / 7)) 
-                  const networkPower = Math.round(avgBond * totalSessions * 0.8) // epic "power level" of your training graph
-                  return (
-                    <div className="mb-2 px-0.5">
-                      <div className="text-[11px] font-bold text-[#FFD700] mb-0.5">Network Power: {networkPower} — tu red de sync te hace más fuerte, más consistente y más visible</div>
-                      {networkPower > 30 && <div className="text-[8px] text-[#22c55e] mt-0.5">¡Tu red te da prioridad en el pulso del mapa, recomendaciones de alto rendimiento y +visibilidad global en la red!</div>}
-                      <div className="text-[9px] text-[#22c55e]">
-                        {Object.keys(syncBonds).length} socios • {totalMin}min sincronizados • {totalSessions} sesiones • Impacto colectivo en tu rendimiento: +{estimatedImpact}%
-                      </div>
-                      <div className="mt-1 text-[8px] text-[#FFD700]/80">Tu red esta semana: ~{Math.floor(totalMin / 4)} min de alto rendimiento compartido • Esto genera ondas que otros ven en el pulso global.</div>
-                    </div>
-                  )
-                })()}
+                <div className="mb-2 px-0.5">
+                  <div className="text-[11px] font-bold text-[#FFD700] mb-0.5">Network Power: {networkStats.networkPower} — tu red de sync te hace más fuerte, más consistente y más visible</div>
+                  {networkStats.networkPower > 30 && <div className="text-[8px] text-[#22c55e] mt-0.5">¡Tu red te da prioridad en el pulso del mapa, recomendaciones de alto rendimiento y +visibilidad global en la red!</div>}
+                  <div className="text-[9px] text-[#22c55e]">
+                    {networkStats.numPartners} socios • {networkStats.totalMin}min sincronizados • {networkStats.totalSessions} sesiones • Impacto colectivo en tu rendimiento: +{networkStats.estimatedImpact}%
+                  </div>
+                  <div className="mt-1 text-[8px] text-[#FFD700]/80">Tu red esta semana: ~{Math.floor(networkStats.totalMin / 4)} min de alto rendimiento compartido • Esto genera ondas que otros ven en el pulso global.</div>
+                </div>
                 <div className="grid grid-cols-2 gap-2">
                   {Object.entries(syncBonds).slice(0,4).map(([pid, b]: any) => {
                     const p = [...realProfiles, ...SEED_PROFILES].find(pp => pp.id === pid)
