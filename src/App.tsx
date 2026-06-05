@@ -4807,18 +4807,18 @@ function App() {
         const shortName = (user.name || '?').split(' ')[0]
         const highEnergy = ((user.joinCount || 0) >= 3) || !!user.trainingSyncWith || (user.syncStreak || 0) > 2
         const isLegend = !!user.isLegend || (user.bondInfo && ((user.bondInfo.totalMin || 0) >= 30 || (user.bondInfo.bondLevel || 0) >= 2))
-        const markerColor = isLegend ? '#FFD700' : color // Gold for legends - real weight on map
-        const legendBadge = isLegend ? `<div style="position:absolute;top:-4px;right:-4px;background:#FFD700;color:#111;font-size:7px;font-weight:900;padding:0 3px;border-radius:3px;border:1px solid #111">⭐ RED</div>` : ''
-        const networkPowerHalo = (showOnlyLegends && isLegend) ? `<div style="position:absolute;inset:-6px;border-radius:9999px;border:2px solid #FFD700;opacity:0.5;animation:network-power-halo 2.2s ease-in-out infinite;"></div>` : ''
+        const markerColor = isLegend || isHighNP ? '#FFD700' : color // Gold for legends + HIGH NP perk (global visual priority unlocked by strong personal network)
+        const legendBadge = isLegend ? `<div style="position:absolute;top:-4px;right:-4px;background:#FFD700;color:#111;font-size:7px;font-weight:900;padding:0 3px;border-radius:3px;border:1px solid #111">⭐ RED</div>` : (isHighNP ? `<div style="position:absolute;top:-4px;right:-4px;background:#FFD700;color:#111;font-size:6px;font-weight:900;padding:0 2px;border-radius:2px;border:1px solid #111">HIGH NP</div>` : '')
+        const networkPowerHalo = (showOnlyLegends && isLegend) || isHighNP ? `<div style="position:absolute;inset:-6px;border-radius:9999px;border:2px solid #FFD700;opacity:0.45;animation:network-power-halo 2.2s ease-in-out infinite;"></div>` : ''
 
         // Premium personal marker: photo if available, else nice initials badge + name label.
         // Makes the map feel alive and social (the "preciosa" part).
         // High-energy (FOMO joins or in-Sync): stronger glow ring + faster pulse (disruptive live feel).
         let iconHtml: string
         const photo = user.photos && user.photos[0]
-        const glow = highEnergy ? `0 0 0 3px ${markerColor}55, 0 0 10px ${markerColor}88` : '0 0 0 2px rgba(255,255,255,0.9)'
-        const borderW = isLegend ? '4px' : (highEnergy ? '3px' : '2.5px')
-        const pulseExtra = highEnergy ? ' animation-duration:1.1s; filter: saturate(1.15) brightness(1.05);' : (isLegend ? ' animation-duration:1.8s; filter: saturate(1.3) brightness(1.1);' : '')
+        const glow = highEnergy || isHighNP ? `0 0 0 3px ${markerColor}55, 0 0 10px ${markerColor}88` : '0 0 0 2px rgba(255,255,255,0.9)'
+        const borderW = isLegend || isHighNP ? '4px' : (highEnergy ? '3px' : '2.5px')
+        const pulseExtra = highEnergy || isHighNP ? ' animation-duration:1.1s; filter: saturate(1.15) brightness(1.05);' : (isLegend ? ' animation-duration:1.8s; filter: saturate(1.3) brightness(1.1);' : '')
         if (photo) {
           iconHtml = `
             <div style="position:relative;width:36px;height:36px">
@@ -4844,18 +4844,24 @@ function App() {
 
         let netSize = [40, 48];
         const isNetworkFilterActive = !!showOnlyLegends && isLegend;
+        const userBond = user.bondInfo || { bondLevel: 1, totalMin: 0 };
+        const isHighNP = (userBond.bondLevel || 0) >= 3 || (userBond.totalMin || 0) >= 100; // global perk for high Network Power users
         if (isNetworkFilterActive) {
           // Network Power visual: scale size + extra glow when "Mi Red" filter active — your graph shines on the pulse
-          const bond = user.bondInfo || { bondLevel: 1 };
-          const scale = 1 + (bond.bondLevel - 1) * 0.22; // stronger boost ~2x for high bonds under filter
+          const bond = userBond;
+          const scale = 1 + (bond.bondLevel - 1) * 0.22;
           netSize = [Math.round(42 * scale), Math.round(50 * scale)];
         } else if (showOnlyLegends && isLegend) {
-          const bond = user.bondInfo || { bondLevel: 1 };
+          const bond = userBond;
           const scale = 1 + (bond.bondLevel - 1) * 0.15;
           netSize = [Math.round(40 * scale), Math.round(48 * scale)];
+        } else if (isHighNP) {
+          // PERK desbloqueado por alto Network Power: high NP users get permanent visual priority on the map (larger + glow) even without filter
+          const scale = 1 + ((userBond.bondLevel || 1) - 1) * 0.12 + (userBond.totalMin || 0) / 400;
+          netSize = [Math.round(40 * Math.min(1.6, scale)), Math.round(48 * Math.min(1.6, scale))];
         }
         const customIcon = L.divIcon({
-          className: `entrenamatch-marker${highEnergy ? ' high-energy' : ''}${isLegend ? ' legend-marker' : ''}${isNetworkFilterActive ? ' network-power-active' : ''}`,
+          className: `entrenamatch-marker${highEnergy ? ' high-energy' : ''}${isLegend ? ' legend-marker' : ''}${isNetworkFilterActive ? ' network-power-active' : ''}${isHighNP ? ' high-np' : ''}`,
           html: iconHtml,
           iconSize: netSize,
           iconAnchor: [20, 24],
@@ -5785,6 +5791,7 @@ function App() {
                   🗺️ El Pulso Global de Entrenamiento Sincronizado
                   <span className="text-[8px] bg-[#22c55e]/20 px-1.5 rounded">LA RED EN VIVO</span>
                   {Object.keys(syncBonds).length > 0 && <span className="text-[7px] bg-[#FFD700]/90 text-black px-1 rounded font-bold">TU RED: {Object.keys(syncBonds).length} • NP {networkPower}</span>}
+                  <span className="text-[7px] ml-1 bg-[#22c55e]/10 px-1 rounded">Redes activas hoy: {Math.max(1, Math.floor(liveTrainingNow.length / 2))} • +{liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} joins en la red</span>
                 </div>
                 <button 
                   onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(!showLiveMap) }} 

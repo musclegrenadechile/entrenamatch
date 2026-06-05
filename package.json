@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.46-fcm-red-pushes",
+  "version": "0.1.47-network-leaderboard-perks",
   "type": "module",
   "scripts": {
     "dev": "vite",

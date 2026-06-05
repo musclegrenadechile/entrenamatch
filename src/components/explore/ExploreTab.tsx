@@ -111,6 +111,31 @@ export const ExploreTab = ({
     return reasons.slice(0, 2);
   };
 
+  // TOP RED / NETWORK LEADERBOARD (global quantification + status for the social graph)
+  // Highest impact: makes high Network Power visible and aspirational. Top users/pairs by collective sync time + bond strength.
+  // Perk: high NP users get visual priority (already in sorts/badges); here we surface the leaders.
+  const topNetworks = [...realProfiles]
+    .filter(p => p.syncBonds && Object.keys(p.syncBonds).length > 0)
+    .map(p => {
+      const b = p.syncBonds || {};
+      const totalMin = Object.values(b).reduce((sum: number, bb: any) => sum + (bb.totalMin || 0), 0);
+      const sessions = Object.values(b).reduce((sum: number, bb: any) => sum + (bb.sessions || 0), 0);
+      const avgBond = Object.values(b).reduce((sum: number, bb: any) => sum + (bb.bondLevel || 1), 0) / Math.max(1, Object.keys(b).length);
+      const np = Math.round(avgBond * sessions * 0.8);
+      const topPartnerId = Object.keys(b).sort((a, c) => (b[c]?.bondLevel || 0) - (b[a]?.bondLevel || 0))[0];
+      const topPartner = realProfiles.find(r => r.id === topPartnerId);
+      return {
+        profile: p,
+        totalMin,
+        sessions,
+        np,
+        numPartners: Object.keys(b).length,
+        topPartnerName: topPartner?.name || 'socio',
+      };
+    })
+    .sort((a, b) => b.np - a.np || b.totalMin - a.totalMin)
+    .slice(0, 4);
+
   // Spectacular: get 1-2 latest muro posts for teaser (prefer pinned, makes profiles feel alive - progressive improvement)
   const getMuroTeaser = (profileId: string): string | null => {
     const posts = profilePosts[profileId] || []
@@ -585,6 +610,34 @@ export const ExploreTab = ({
                 </div>
               ))}
           </div>
+        </div>
+      )}
+
+      {/* NEW HIGH IMPACT: RED GLOBAL / TOP NETWORK POWER LEADERBOARD + GLOBAL QUANTIFICATION */}
+      {/* Makes the social graph visible and competitive at scale. High NP users get status. Your red's impact is quantified. */}
+      {topNetworks.length > 0 && (
+        <div className="mt-4 mb-2 px-1">
+          <div className="flex items-center justify-between mb-2 px-0.5">
+            <div className="font-semibold text-sm flex items-center gap-1 text-[#FFD700]">🔥 TOP REDES (Network Power global) <span className="text-[8px] bg-[#FFD700]/20 px-1 rounded text-black">LIVE</span></div>
+            <div className="text-[8px] text-[#9CA3AF]">Tu grafo mueve el pulso</div>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {topNetworks.map((n, i) => (
+              <div
+                key={n.profile.id}
+                onClick={() => onShowProfile?.(n.profile)}
+                className="card p-2.5 rounded-2xl flex gap-2.5 cursor-pointer active:scale-[0.985] border border-[#FFD700]/30 hover:border-[#FFD700]/60 transition"
+              >
+                <img src={n.profile.photos?.[0]} className="w-11 h-11 rounded-xl object-cover flex-shrink-0" alt="" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium text-sm truncate flex items-center gap-1 text-[#FFD700]">{n.profile.name} <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">NP {n.np}</span></div>
+                  <div className="text-[9px] text-[#9CA3AF] truncate">{n.numPartners} socios • {n.totalMin} min total • top con {n.topPartnerName}</div>
+                  <div className="text-[8px] text-[#22c55e] mt-0.5">+{Math.floor(n.totalMin / 10)}% impacto colectivo en la red</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="text-[8px] text-center text-[#FFD700]/60 mt-1">Las redes más fuertes dominan el pulso y las recomendaciones. Construye la tuya →</div>
         </div>
       )}
     </div>
