@@ -249,6 +249,14 @@ function App() {
     clearProfile 
   } = useProfile()
 
+  // Real Auth from Firebase + Demo Auth -- hoisted very early so that isDemoMode, firebaseUser are available for any early effects' deps (e.g. the daily offline effect at ~1188, and to avoid TDZ on open).
+  const { currentUser: firebaseUser, userProfile: firebaseProfile, isDemoMode } = useAuth()
+  const { 
+    signInDemo, 
+    signUpDemo, 
+    isAuthenticated: isDemoAuthenticated 
+  } = useDemoAuth()
+
   // Used to break the "stuck on AuthScreen after successful real auth" race
   // because firebaseUser from the hook can lag behind the successful signIn/signUp call.
   const lastSuccessfulAuthRef = useRef(null)
@@ -1408,14 +1416,6 @@ function App() {
   const totalSessionUnreads = Object.values(sessionUnreads).reduce((sum, n) => sum + (n || 0), 0)
 
 
-
-  // Real Auth from Firebase + Demo Auth
-  const { currentUser: firebaseUser, userProfile: firebaseProfile, isDemoMode } = useAuth()
-  const { 
-    signInDemo, 
-    signUpDemo, 
-    isAuthenticated: isDemoAuthenticated 
-  } = useDemoAuth()
 
   // ============================================================
   // REAL MULTI-USER STATE - DECLARED AS EARLY AS POSSIBLE TO AVOID TDZ
