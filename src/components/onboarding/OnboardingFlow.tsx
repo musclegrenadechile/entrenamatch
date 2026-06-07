@@ -385,58 +385,55 @@ export const OnboardingFlow = ({
   };
 
   return (
-    <div className="app-container onboarding-flow flex flex-col bg-[#0D0D10] text-white min-h-[100svh] h-[100dvh] max-h-[100dvh]">
-      {/* Single scroll region — avoids flex collapse that hid inputs on mobile */}
-      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
-        <div className="p-5 pt-6 pb-28">
-        {/* Header — compact on small screens */}
-        <div className="flex items-center gap-3 mb-4">
+    <div className="app-container flex flex-col bg-[#0D0D10] text-white h-[100svh] max-h-[100svh] overflow-hidden">
+      <div className="flex flex-col flex-1 min-h-0 p-6 pt-8">
+        {/* Epic Remastered Header - Unique ritual vibe */}
+        <div className="flex items-center gap-4 mb-5">
           <motion.div 
             animate={{ 
-              scale: [1, 1.08, 1], 
-              boxShadow: ['0 0 0 0 rgba(255,103,31,0.5)', '0 0 0 16px rgba(255,103,31,0.15)', '0 0 0 0 rgba(255,103,31,0.5)'] 
+              scale: [1, 1.1, 1], 
+              rotate: [0, 5, -5, 0],
+              boxShadow: ['0 0 0 0 rgba(255,103,31,0.5)', '0 0 0 20px rgba(255,103,31,0.2)', '0 0 0 0 rgba(255,103,31,0.5)'] 
             }}
             transition={{ duration: 3, repeat: Infinity }}
-            className="w-12 h-12 shrink-0 rounded-2xl bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center ring-2 ring-[#FF671F]/20"
+            className="w-14 h-14 rounded-3xl bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center ring-4 ring-[#FF671F]/20 shadow-2xl"
           >
-            <Dumbbell className="w-6 h-6 text-black" />
+            <Dumbbell className="w-8 h-8 text-black" />
           </motion.div>
-          <div className="flex-1 min-w-0">
-            <div className="font-black text-2xl sm:text-3xl tracking-[-1px] text-white truncate">ENTRENAMATCH</div>
-            <div className="text-[#FF671F] text-[10px] tracking-[2px] font-mono">LA RED DEL RITUAL FITNESS</div>
+          <div className="flex-1">
+            <div className="font-black text-4xl tracking-[-2px] text-white">ENTRENAMATCH</div>
+            <div className="text-[#FF671F] text-xs tracking-[3px] font-mono -mt-1">LA PRIMERA RED DEL RITUAL FITNESS</div>
           </div>
           {!isEditingProfile && (
             <button 
               onClick={fillExampleData} 
-              className="shrink-0 text-[8px] px-2.5 py-1.5 rounded-xl border border-[#22c55e]/50 text-[#22c55e] active:bg-[#22c55e]/10 font-semibold"
+              className="text-[9px] px-4 py-2 rounded-2xl border-2 border-[#22c55e]/50 text-[#22c55e] active:bg-[#22c55e]/10 active:border-[#22c55e] font-semibold tracking-wider"
             >
-              ⚡ EJEMPLO
+              ⚡ CARGAR EJEMPLO ÉPICO
             </button>
           )}
         </div>
 
-        <div className="mb-3">
-          <div className="text-2xl sm:text-3xl font-black tracking-[-1px] leading-tight mb-1 text-white">
-            {isEditMode ? 'Remasteriza tu presencia' : 'Crea tu ritual'}
-          </div>
-          <div className="text-[#9CA3AF] text-sm leading-snug">
-            {isEditMode
-              ? 'Actualiza cómo te ven tus GymPartners en el GymPulse.'
-              : 'Tu perfil es tu entrada a la red. Completa los 4 pasos en menos de 2 minutos.'}
+        <div className="mb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-4xl font-black tracking-[-1.5px] leading-none mb-1 text-white">
+                {isEditMode ? 'REMASTERIZA TU PRESENCIA' : 'CREA TU RITUAL'}
+              </div>
+              <div className="text-[#9CA3AF] text-base max-w-md">Tu perfil no es un formulario. Es tu entrada a la red de GymPartners donde el entrenamiento se vuelve legendario. Único. Con peso real en el GymPulse.</div>
+            </div>
           </div>
         </div>
 
-        {/* Progress */}
+        {/* Epic Ritual Progress - Visual path, not boring dots */}
         <div className="mb-4">
-          <div className="flex items-center justify-between text-xs mb-2 px-0.5">
-            <div className="font-mono text-[#FF671F] tracking-wider text-[10px]">
-              {isEditMode ? 'EDIT' : 'RITUAL'} {onboardingStep + 1}/4
-            </div>
+          <div className="flex items-center justify-between text-xs mb-2 px-1">
+            <div className="font-mono text-[#FF671F] tracking-[2px]">{isEditMode ? 'EDIT' : 'RITUAL'} {onboardingStep + 1} / 4 • {Math.round((onboardingStep+1)/4 * 100)}% EN EL PULSO</div>
             <div className="text-[#9CA3AF] text-[10px] font-medium">
-              {onboardingStep === 0 && 'Presencia'}
-              {onboardingStep === 1 && 'Esencia'}
-              {onboardingStep === 2 && 'Pulso vivo'}
-              {onboardingStep === 3 && 'Votos'}
+              {onboardingStep === 0 && (isEditMode ? 'PRESENCIA' : 'PRESENCIA EN EL CÍRCULO')}
+              {onboardingStep === 1 && 'TU ESENCIA DE RENDIMIENTO'}
+              {onboardingStep === 2 && 'EL PULSO VIVO (LA MAGIA)'}
+              {onboardingStep === 3 && (isEditMode ? 'GUARDAR CAMBIOS' : 'LOS VOTOS • ENTRA AL RITUAL')}
             </div>
           </div>
           <div className="h-1.5 bg-[#1C1C20] rounded-full overflow-hidden flex">
@@ -447,13 +444,16 @@ export const OnboardingFlow = ({
               />
             ))}
           </div>
+          <div className="flex justify-between text-[8px] text-[#9CA3AF]/60 mt-1 px-0.5 font-mono tracking-widest">
+            <div>PRESENCIA</div><div>ESENCIA</div><div>PULSO</div><div>VOTOS</div>
+          </div>
         </div>
 
-        {/* Preview — compact; hidden on consent step */}
+        {/* LIVE PREVIEW — hidden on consent step so vows + buttons stay tappable */}
         {onboardingStep !== 3 && renderProfilePreview()}
 
-        {/* Step content — no nested flex-1; lives inside main scroll */}
-        <div className="mt-4 relative z-10">
+        {/* Scrollable step content */}
+        <div className="flex-1 overflow-y-auto overscroll-contain -mx-1 px-1 pb-4 min-h-0 relative z-10">
 
         {/* PASO 0: PRESENCIA - Remastered full premium. Unique ritual entry. */}
         {onboardingStep === 0 && (
@@ -464,9 +464,8 @@ export const OnboardingFlow = ({
                 type="text" 
                 value={onboardData.name} 
                 onChange={e => { updateOnboard({ name: e.target.value }); try { triggerHaptic('light') } catch {} }}
-                placeholder="Tu nombre en el círculo" 
-                autoComplete="name"
-                className="w-full bg-[#1C1C20] border-2 border-[#FF671F]/30 focus:border-[#FF671F] rounded-2xl px-4 py-3.5 text-xl font-bold tracking-tight text-white touch-manipulation" 
+                placeholder="ALEX RIVERA • GUERRERO DEL PULSO" 
+                className="w-full bg-[#1C1C20] border-2 border-[#FF671F]/30 focus:border-[#FF671F] rounded-2xl px-5 py-4 text-2xl font-black tracking-[-1px]" 
               />
               <div className="text-[9px] text-[#9CA3AF] mt-1">Este nombre te representa en el mapa vivo y en tu Red.</div>
             </div>
@@ -527,8 +526,8 @@ export const OnboardingFlow = ({
               <textarea 
                 value={onboardData.bio || ''} 
                 onChange={e => { updateOnboard({ bio: e.target.value.slice(0,160) }); try { triggerHaptic('light') } catch {} }}
-                className="w-full bg-[#1C1C20] border-2 border-[#2F2F35] focus:border-[#FF671F] rounded-2xl px-4 py-3 text-sm h-20 resize-y text-white touch-manipulation"
-                placeholder="Pesas 4x + running costanera. Busco compañero constante."
+                className="w-full bg-[#1C1C20] border-2 border-[#2F2F35] focus:border-[#FF671F] rounded-2xl px-4 py-3 text-sm h-16 resize-y"
+                placeholder="Pesas 4x + running costanera. Mantra: 'Sin excusas, con mi Red.'"
               />
               <div className="flex flex-wrap gap-1 mt-1.5">
                 {[
@@ -696,12 +695,10 @@ export const OnboardingFlow = ({
           </div>
         )}
 
-        </div>
-        </div>
-      </div>
+        </div> {/* end scrollable step content */}
 
-      {/* Fixed bottom bar — outside scroll so always reachable */}
-      <div className="flex-shrink-0 px-5 pt-2 pb-4 flex flex-col gap-2 bg-[#0D0D10] border-t-2 border-[#2F2F35] safe-area-pb">
+        {/* Fixed bottom — ritual navigation */}
+        <div className="flex-shrink-0 pt-2 pb-3 flex flex-col gap-2 bg-[#0D0D10] border-t-2 border-[#2F2F35] relative z-20">
           {onboardingStep > 0 && (
             <button onClick={() => { try { triggerHaptic('light') } catch {}; setOnboardingStep(onboardingStep - 1) }} className="w-full py-2.5 text-xs uppercase tracking-[1.5px] rounded-2xl border border-[#2F2F35] active:bg-[#1f242b] text-[#9CA3AF]">
               ← VOLVER AL RITUAL ANTERIOR
@@ -727,8 +724,9 @@ export const OnboardingFlow = ({
           >
             {onboardingStep < 3 ? 'CONTINUAR EL RITUAL →' : '¡SELLAR LOS VOTOS • ENTRAR AL CÍRCULO DEL PULSO!'}
           </button>
-          <div className="text-center text-[8px] text-[#9CA3AF] tracking-[1px]">Paso {onboardingStep + 1} de 4 • Tu perfil en el GymPulse</div>
+          <div className="text-center text-[8px] text-[#9CA3AF] tracking-[1px]">TU PERFIL ÚNICO EN EL CÍRCULO • PRIMER PULSO EN &lt;90s. HAZLO LEGENDARIO.</div>
         </div>
+      </div>
     </div>
   );
 };
