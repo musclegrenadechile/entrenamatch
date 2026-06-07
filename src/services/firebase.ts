@@ -84,11 +84,13 @@ export default app;
 
 // Re-establish Listen/WebChannel streams after offline or transport errors.
 // Prefer this over disable+enable cycles — disabling tears down ALL active listeners.
+// ALL enable paths must go through this module — repeated enableNetwork() triggers
+// FIRESTORE INTERNAL ASSERTION FAILED (ID: ca9 / da08).
 let lastNetworkRecoverAt = 0;
 let recoverInFlight: Promise<void> | null = null;
 const NETWORK_RECOVER_DEBOUNCE_MS = 4000;
 
-export async function enableFirestoreNetwork() {
+async function runEnableNetwork(): Promise<void> {
   if (!db) return;
   try {
     const { enableNetwork } = await import('firebase/firestore');
@@ -99,19 +101,24 @@ export async function enableFirestoreNetwork() {
   }
 }
 
-/** Safe recovery after transport glitches — enable only, never disable first. Debounced to avoid SDK assertion churn. */
-export async function recoverFirestoreNetwork() {
+/** Debounced + coalesced — safe for all recovery paths (online, listener errors, sync start). */
+export async function enableFirestoreNetwork(): Promise<void> {
   if (!db) return;
-  const now = Date.now();
-  if (now - lastNetworkRecoverAt < NETWORK_RECOVER_DEBOUNCE_MS) return;
   if (recoverInFlight) return recoverInFlight;
 
-  recoverInFlight = enableFirestoreNetwork()
-    .finally(() => {
-      lastNetworkRecoverAt = Date.now();
-      recoverInFlight = null;
-    });
+  const now = Date.now();
+  if (now - lastNetworkRecoverAt < NETWORK_RECOVER_DEBOUNCE_MS) return;
+
+  recoverInFlight = runEnableNetwork().finally(() => {
+    lastNetworkRecoverAt = Date.now();
+    recoverInFlight = null;
+  });
   return recoverInFlight;
+}
+
+/** Alias — same debounced path as enableFirestoreNetwork. */
+export async function recoverFirestoreNetwork() {
+  return enableFirestoreNetwork();
 }
 
 /** @deprecated Avoid in normal flows — disables all RT listeners app-wide. Use recoverFirestoreNetwork. */

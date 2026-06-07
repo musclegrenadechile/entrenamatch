@@ -1429,8 +1429,8 @@ useEffect(() => {
                 // App came to foreground — give the OS a moment then recover Firestore streams.
                 setTimeout(async () => {
                   try {
-                    const { enableFirestoreNetwork } = await import('./services/firebase')
-                    await enableFirestoreNetwork()
+                    const { recoverFirestoreNetwork } = await import('./services/firebase')
+                    await recoverFirestoreNetwork()
                   } catch {}
                 }, 400)
               }
@@ -2467,7 +2467,7 @@ useEffect(() => {
           try { localStorage.setItem('entrenamatch_last_live', JSON.stringify(profiles)) } catch {}
         }, (err) => {
           console.warn('profiles onSnapshot error, falling back to polling', err);
-          import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
+          import('./services/firebase').then(m => m.recoverFirestoreNetwork?.()).catch(() => {})
           loadRealProfiles().catch(() => {})
         });
       } catch (e) {
@@ -2518,16 +2518,8 @@ useEffect(() => {
     }
   }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, publishLiveSnapshot])
 
-  // Recover live listener after network blips (live toggle disables/enables network aggressively)
-  useEffect(() => {
-    if (isDemoMode || !db) return undefined
-    const onOnline = () => {
-      import('./services/firebase').then((m) => m.enableFirestoreNetwork?.()).catch(() => {})
-      setMapForceTick((t) => t + 1)
-    }
-    window.addEventListener('online', onOnline)
-    return () => window.removeEventListener('online', onOnline)
-  }, [isDemoMode, db])
+  // Recover live listener after network blips — handled by global online handler above (recoverFirestoreNetwork).
+  // Removed duplicate window 'online' listener here to prevent double enableNetwork (da08 assertion).
 
   // Demo mode: synthesize liveUsersFromDedicated locally (no Firestore query).
   useEffect(() => {
@@ -2602,13 +2594,13 @@ useEffect(() => {
   }, [realProfiles, currentUser?.trainingSyncWith, currentUser?.trainingNow, effectiveUserId])
 
   // Incoming EntrenaSync: when partner starts sync, syncSessions doc is created — join + open Arena.
+  // Keep listener stable (ref guard) — do NOT tear down when syncPartnerId changes to avoid SDK listener churn (da08).
   useEffect(() => {
     if (
       !firebaseUser?.uid ||
       !db ||
       isDemoMode ||
-      !isFirebaseConfigured ||
-      syncPartnerId
+      !isFirebaseConfigured
     ) {
       return undefined
     }
@@ -2650,8 +2642,11 @@ useEffect(() => {
           description: 'Tu compañero inició sync contigo',
         })
       },
+      onError: () => {
+        import('./services/firebase').then((m) => m.recoverFirestoreNetwork?.()).catch(() => {})
+      },
     })
-  }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId, syncPartnerId, isFirebaseConfigured])
+  }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId, isFirebaseConfigured])
 
   // Dedicated syncSessions listener for INSTANT actions across devices
   useEffect(() => {
@@ -4793,12 +4788,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         }, { merge: true })
         setSyncVibe(baseVibe)
       } catch (e) { console.warn('sync persist failed', e) }
-
-      // Recover listeners after starting sync (ensures onSnapshot for actions works reliably)
-      import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
     }
-    // Auto post to muro for both (createProfilePost has its own small reset before addDoc)
-    createProfilePost(`¡Sincronizado con ${partnerName}! Entrenamos juntos ahora 🔥`, null).catch(() => {})
+    // Defer muro post so sync session write + RT listeners settle (reduces write/listener contention → da08)
+    setTimeout(() => {
+      createProfilePost(`¡Sincronizado con ${partnerName}! Entrenamos juntos ahora 🔥`, null).catch(() => {})
+    }, 400)
     toast.success(`EntrenaSync iniciado con ${partnerName}`, { description: 'Estado compartido en vivo + acciones conjuntas. Esto genera resultados reales.' })
     // Attractive feedback: confetti + clear joining loader (the UI will switch to profile showing the rich sync panel)
     try { confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } }) } catch {}
@@ -10698,7 +10692,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
                           loadRealProfiles().catch(() => {});
                           setMapForceTick(t => t + 1);
-                          import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {});
 
                           toast('Entrenamiento finalizado', { description: `+${momentumBonus} Momentum (${minutes}min)` });
 

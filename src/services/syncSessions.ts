@@ -2,7 +2,14 @@
  * EntrenaSync — syncSessions Firestore RT listeners (incoming invite + active session).
  */
 
-import type { Firestore } from 'firebase/firestore'
+import {
+  collection,
+  doc,
+  onSnapshot,
+  query,
+  where,
+  type Firestore,
+} from 'firebase/firestore'
 
 export interface SyncSessionData {
   participants?: string[]
@@ -45,9 +52,7 @@ export function attachIncomingSyncListener(
   let cancelled = false
   let unsub: (() => void) | null = null
 
-  ;(async () => {
-    const { collection, query, where, onSnapshot } = await import('firebase/firestore')
-    if (cancelled) return
+  try {
     const q = query(collection(db, 'syncSessions'), where('participants', 'array-contains', uid))
     unsub = onSnapshot(
       q,
@@ -80,7 +85,10 @@ export function attachIncomingSyncListener(
         handlers.onError?.(err)
       }
     )
-  })()
+  } catch (err) {
+    console.warn('incoming syncSessions listener setup failed:', err)
+    handlers.onError?.(err)
+  }
 
   return () => {
     cancelled = true
@@ -102,9 +110,7 @@ export function attachActiveSyncSessionListener(
   let cancelled = false
   let unsub: (() => void) | null = null
 
-  ;(async () => {
-    const { doc, onSnapshot } = await import('firebase/firestore')
-    if (cancelled) return
+  try {
     const sessionRef = doc(db, 'syncSessions', sessionId)
     unsub = onSnapshot(
       sessionRef,
@@ -124,7 +130,10 @@ export function attachActiveSyncSessionListener(
         handlers.onError?.(err)
       }
     )
-  })()
+  } catch (err) {
+    console.warn('active syncSessions listener setup failed:', err)
+    handlers.onError?.(err)
+  }
 
   return () => {
     cancelled = true
