@@ -11,8 +11,12 @@ export type {
   RetentionGadget,
 } from '../../types/profilePulse'
 export type { BetaFeedbackItem } from './profileTabTypes'
+export { ProfileHeaderSection } from './ProfileHeaderSection'
 export { ProfileHeroSection } from './ProfileHeroSection'
-export { ProfileSyncNetworkSection } from './ProfileSyncNetworkSection'
+export { ProfileActividadSection } from './ProfileActividadSection'
+export { ProfileRendimientoSection } from './ProfileRendimientoSection'
 export { ProfileDailyPulseSection } from './ProfileDailyPulseSection'
+export { ProfileSyncNetworkSection } from './ProfileSyncNetworkSection'
 export { ProfileMuroSection } from './ProfileMuroSection'
 export { ProfileAccountSection } from './ProfileAccountSection'
+export { ProfileFooterSection } from './ProfileFooterSection'
