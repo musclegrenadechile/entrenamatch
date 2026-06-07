@@ -2030,19 +2030,57 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
   }
 
              // LIVE TRAINING NOW - Versión de emergencia (mínima posible)
+  // LIVE TRAINING NOW - Versión completa pero segura para el mapa
   const liveTrainingNow = useMemo(() => {
-    return isDemoMode 
-      ? SEED_PROFILES.slice(0, 3).map((p: any, i: number) => ({
-          ...p,
-          trainingNow: true,
-          trainingNowSince: Date.now() - (i + 1) * 10 * 60000,
-          distance: 3,
-          seVaEnMin: 30,
-          joinCount: 0,
-          isLegend: false
-        }))
-      : [];
-  }, [isDemoMode]);
+    const now = Date.now()
+    const ASSUMED_SESSION_MS = 3 * 60 * 60 * 1000
+
+    const byId = new Map<string, any>()
+
+    // 1. Dedicated listener (la fuente de verdad)
+    (liveUsersFromDedicated || []).forEach((p: any) => {
+      if (p?.id) {
+        byId.set(p.id, { ...p, trainingNow: true })
+      }
+    })
+
+    // 2. Enrich con realProfiles
+    realProfiles.forEach((p: any) => {
+      if (byId.has(p.id)) {
+        const existing = byId.get(p.id)
+        byId.set(p.id, { ...existing, ...p, trainingNow: true })
+      }
+    })
+
+    let lives: any[] = Array.from(byId.values())
+      .filter((p: any) => !blockedUsers.includes(p.id))
+      .filter((p: any) => {
+        const since = Number(p.trainingNowSince || 0)
+        return Boolean(p.trainingNow) && since > 0 && (now - since < ASSUMED_SESSION_MS)
+      })
+      .map((p: any) => ({
+        ...p,
+        distance: 5,
+        seVaEnMin: 35,
+        joinCount: Math.floor(Math.random() * 4),
+        isLegend: false,
+        trainingNowSince: Number(p.trainingNowSince || now)
+      }))
+
+    // Demo fallback fuerte
+    if (isDemoMode && lives.length === 0) {
+      lives = SEED_PROFILES.slice(0, 5).map((p, i) => ({
+        ...p,
+        trainingNow: true,
+        trainingNowSince: now - (i + 1) * 12 * 60000,
+        distance: 1.5 + i * 0.8,
+        seVaEnMin: 42 - i * 6,
+        joinCount: i + 1
+      }))
+    }
+
+    return lives
+  }, [liveUsersFromDedicated, realProfiles, blockedUsers, isDemoMode])
 
   // Only for the map widget in dev mode: augment with temporary test lives so devs can test GymPulse visuals,
   // near counts, popups, etc. without other real accounts being live. These do NOT pollute global liveTrainingNow used by lists/feeds/notifs.
