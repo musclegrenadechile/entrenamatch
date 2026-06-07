@@ -49,10 +49,11 @@ Esto mejora compatibilidad OAuth en builds nativos.
 
 | Plataforma | Método |
 |------------|--------|
-| APK Capacitor | `signInWithRedirect` (WebView) |
-| GitHub Pages | `signInWithRedirect` |
-| localhost | `signInWithRedirect` |
-| Desktop browser (firebase.app) | `signInWithPopup` → fallback redirect |
+| APK Capacitor | Native Google Sign-In (`@capacitor-firebase/authentication`) |
+| GitHub Pages (móvil) | `signInWithPopup` |
+| GitHub Pages (desktop) | `signInWithPopup` → fallback redirect si popup bloqueado |
+| localhost desktop | `signInWithRedirect` |
+| localhost móvil | `signInWithPopup` |
 
 Archivos:
 
@@ -84,8 +85,8 @@ Archivos:
 |-------|----------|
 | `auth/unauthorized-domain` | Agregar dominio en Firebase (sección B) |
 | `auth/operation-not-allowed` | Habilitar Google en Sign-in method |
-| `auth/popup-blocked` | Normal — la app reintenta con redirect |
-| `ERR_CONNECTION_CLOSED` en apis.google.com | Red/firewall/VPN — probar otra red o APK |
+| `auth/popup-blocked` | Permite popups o usa email/contraseña (ya no reintenta redirect en móvil) |
+| Vuelve al login tras elegir cuenta Google | Actualiza la app/web — el redirect en móvil pierde estado; versión 0.1.89+ usa popup/native |
 
 ---
 

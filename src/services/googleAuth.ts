@@ -7,6 +7,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signInWithRedirect,
+  signInWithCredential,
   getRedirectResult,
   type User as FirebaseUser,
 } from 'firebase/auth';
@@ -35,18 +36,26 @@ export function getCurrentAuthHostname(): string {
   return window.location.hostname;
 }
 
-/** Redirect is more reliable than popup in WebView and mobile browsers. Desktop GH Pages uses popup. */
+export function isMobileWebBrowser(): boolean {
+  if (typeof window === 'undefined') return false;
+  if (Capacitor.isNativePlatform()) return false;
+  const ua = navigator.userAgent || '';
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+}
+
+/**
+ * Redirect only on desktop localhost — mobile browsers and WebViews lose OAuth redirect state.
+ * APK uses native Google Sign-In via @capacitor-firebase/authentication.
+ */
 export function shouldUseGoogleRedirect(): boolean {
   if (typeof window === 'undefined') return false;
-  if (Capacitor.isNativePlatform()) return true;
+  if (Capacitor.isNativePlatform()) return false;
 
   const host = window.location.hostname;
-  if (host === 'localhost' || host === '127.0.0.1') return true;
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return !isMobileWebBrowser();
+  }
 
-  const ua = navigator.userAgent || '';
-  if (/Android|iPhone|iPad|iPod|Mobile/i.test(ua)) return true;
-
-  // Desktop GH Pages / Firebase hosting: popup avoids redirect state loss (IndexedDB / COOP).
   return false;
 }
 
@@ -69,8 +78,17 @@ export function mapGoogleAuthError(error: unknown): GoogleAuthError {
       `Dominio no autorizado: ${host}. Agrega "${host}" en Firebase Console → Authentication → Settings → Authorized domains.`
     );
   }
+  if (code === 'auth/missing-initial-state') {
+    return new GoogleAuthError(
+      code,
+      'La sesión de Google se perdió al volver (común en móvil). Prueba de nuevo o usa email/contraseña.'
+    );
+  }
   if (code === 'auth/popup-blocked') {
-    return new GoogleAuthError(code, 'El navegador bloqueó la ventana de Google. Intenta de nuevo — usaremos redirección.');
+    return new GoogleAuthError(
+      code,
+      'Permite ventanas emergentes para Google o usa email/contraseña.'
+    );
   }
   if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
     return new GoogleAuthError(code, 'Inicio de sesión con Google cancelado.');
@@ -87,8 +105,25 @@ export function mapGoogleAuthError(error: unknown): GoogleAuthError {
       'Google Sign-In no está habilitado en Firebase. Activa el proveedor Google en Authentication → Sign-in method.'
     );
   }
+  if (code === 'auth/no-id-token') {
+    return new GoogleAuthError(
+      code,
+      err?.message ||
+        'Google no devolvió credenciales. Verifica SHA-1 release/debug en Firebase Console → app Android.'
+    );
+  }
 
   return new GoogleAuthError(code, err?.message || 'No se pudo iniciar sesión con Google.');
+}
+
+export function getGoogleRedirectFailureMessage(): string {
+  if (Capacitor.isNativePlatform()) {
+    return 'Actualiza la app desde Play Store. Si persiste, usa email/contraseña.';
+  }
+  if (isMobileWebBrowser()) {
+    return 'El inicio con Google en el navegador móvil falló al volver. Prueba de nuevo o usa email/contraseña.';
+  }
+  return 'Google no completó el redirect. Prueba de nuevo o usa email/contraseña.';
 }
 
 export type GoogleSignInResult =
@@ -97,6 +132,24 @@ export type GoogleSignInResult =
 
 let redirectResultOnce: Promise<FirebaseUser | null> | null = null;
 
+async function signInWithGoogleNative(): Promise<FirebaseUser> {
+  const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+  const result = await FirebaseAuthentication.signInWithGoogle({ skipNativeAuth: true });
+  const idToken = result.credential?.idToken;
+  const accessToken = result.credential?.accessToken;
+
+  if (!idToken) {
+    throw new GoogleAuthError(
+      'auth/no-id-token',
+      'Google no devolvió credenciales. Verifica SHA-1 release/debug en Firebase Console → app Android.'
+    );
+  }
+
+  const credential = GoogleAuthProvider.credential(idToken, accessToken ?? undefined);
+  const userCred = await signInWithCredential(auth!, credential);
+  return userCred.user;
+}
+
 /** Start Google sign-in. Returns redirect mode when the page will navigate away. */
 export async function startGoogleSignIn(): Promise<GoogleSignInResult> {
   if (!isFirebaseConfigured || !auth) {
@@ -104,6 +157,14 @@ export async function startGoogleSignIn(): Promise<GoogleSignInResult> {
       'auth/demo-mode',
       'Google Sign-In requiere Firebase configurado. Usa email/contraseña en demo o la app nativa con cuenta real.'
     );
+  }
+
+  if (Capacitor.isNativePlatform()) {
+    const user = await signInWithGoogleNative().catch((error) => {
+      throw mapGoogleAuthError(error);
+    });
+    sessionStorage.removeItem('entrenamatch_google_redirect_pending');
+    return { mode: 'popup', user };
   }
 
   const provider = buildGoogleProvider();
@@ -120,11 +181,10 @@ export async function startGoogleSignIn(): Promise<GoogleSignInResult> {
     return { mode: 'popup', user: cred.user };
   } catch (error: unknown) {
     const err = error as { code?: string };
-    if (
-      err?.code === 'auth/popup-blocked' ||
-      err?.code === 'auth/popup-closed-by-user' ||
-      err?.code === 'auth/cancelled-popup-request'
-    ) {
+    if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
+      throw mapGoogleAuthError(error);
+    }
+    if (err?.code === 'auth/popup-blocked' && !isMobileWebBrowser()) {
       sessionStorage.setItem('entrenamatch_google_redirect_pending', '1');
       await signInWithRedirect(auth, provider);
       return { mode: 'redirect' };
@@ -140,8 +200,17 @@ export async function finishGoogleRedirectSignIn(): Promise<FirebaseUser | null>
   if (!redirectResultOnce) {
     redirectResultOnce = (async () => {
       try {
+        await auth.authStateReady();
         const result = await getRedirectResult(auth);
-        return result?.user ?? null;
+        if (result?.user) {
+          sessionStorage.removeItem('entrenamatch_google_redirect_pending');
+          return result.user;
+        }
+        if (auth.currentUser) {
+          sessionStorage.removeItem('entrenamatch_google_redirect_pending');
+          return auth.currentUser;
+        }
+        return null;
       } catch (error) {
         redirectResultOnce = null;
         throw mapGoogleAuthError(error);

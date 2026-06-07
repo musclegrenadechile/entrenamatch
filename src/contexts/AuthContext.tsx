@@ -8,7 +8,7 @@ import {
   completeGoogleSignInProfile,
   getDemoUser,
 } from '../services/auth';
-import { GoogleAuthError } from '../services/googleAuth';
+import { GoogleAuthError, getGoogleRedirectFailureMessage } from '../services/googleAuth';
 import { isFirebaseConfigured } from '../services/firebase';
 import { toast } from 'sonner';
 
@@ -83,8 +83,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         } else if (sessionStorage.getItem('entrenamatch_google_redirect_pending') === '1') {
           sessionStorage.removeItem('entrenamatch_google_redirect_pending');
           toast.error('No se completó el login con Google', {
-            description:
-              'Prueba de nuevo o usa email/contraseña. Si persiste, revisa que musclegrenadechile.github.io esté en Firebase → Authorized domains.',
+            description: getGoogleRedirectFailureMessage(),
           });
         }
       } catch (error) {

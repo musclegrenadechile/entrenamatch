@@ -10,6 +10,11 @@ const config: CapacitorConfig = {
     // USB WebView debugging only for local dev (CAP_DEV=1). Off for Play Store builds.
     webContentsDebuggingEnabled: isDevBuild,
   },
+  plugins: {
+    FirebaseAuthentication: {
+      providers: ['google.com'],
+    },
+  },
 };
 
 export default config;
