@@ -18,16 +18,16 @@ export async function writeLike(
   likerId: string,
   likedId: string
 ): Promise<void> {
+  if (!likerId || !likedId || likerId === likedId) {
+    throw new Error('Invalid like participants')
+  }
   const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
-  await setDoc(
-    doc(db, 'likes', likeDocId(likerId, likedId)),
-    {
-      liker: likerId,
-      liked: likedId,
-      createdAt: serverTimestamp(),
-    },
-    { merge: true }
-  )
+  const ref = doc(db, 'likes', likeDocId(likerId, likedId))
+  await setDoc(ref, {
+    liker: likerId,
+    liked: likedId,
+    createdAt: serverTimestamp(),
+  })
 }
 
 /** True if `otherUid` already liked `myUid`. */
@@ -36,9 +36,14 @@ export async function hasReciprocalLike(
   myUid: string,
   otherUid: string
 ): Promise<boolean> {
-  const { doc, getDoc } = await import('firebase/firestore')
-  const snap = await getDoc(doc(db, 'likes', likeDocId(otherUid, myUid)))
-  return snap.exists()
+  try {
+    const { doc, getDoc } = await import('firebase/firestore')
+    const snap = await getDoc(doc(db, 'likes', likeDocId(otherUid, myUid)))
+    return snap.exists()
+  } catch (e) {
+    console.warn('[matching] reciprocal like read failed (treating as no match yet)', e)
+    return false
+  }
 }
 
 export async function createMutualMatch(

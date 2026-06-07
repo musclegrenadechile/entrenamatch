@@ -16,7 +16,7 @@ if (typeof window !== 'undefined' && (window as any).Capacitor) {
 
 interface OnboardingFlowProps {
   onboardingStep: number;
-  setOnboardingStep: (step: number) => void;
+  setOnboardingStep: (step: number | ((s: number) => number)) => void;
   currentUser: any;
   saveUser: (user: any) => void; // can be sync local or async saveUserWithRealSync
   setShowOnboarding: (show: boolean) => void;
@@ -25,6 +25,8 @@ interface OnboardingFlowProps {
   setConsents: (consents: any) => void;
   triggerHaptic?: (style?: 'light' | 'medium' | 'success') => void;
   uploadPhotoIfNeeded?: (dataUrl: string) => Promise<string>;
+  /** create = new account ritual; edit = user opened from Profile to update */
+  mode?: 'create' | 'edit';
 }
 
 export const OnboardingFlow = ({
@@ -38,12 +40,13 @@ export const OnboardingFlow = ({
   setConsents,
   triggerHaptic = () => { try { navigator.vibrate && navigator.vibrate(20) } catch {} },
   uploadPhotoIfNeeded,
+  mode = 'create',
 }) => {
-  const isEditMode = !!currentUser && !!currentUser.name;
+  const isEditMode = mode === 'edit';
   // Internal state (moved from App.tsx for better encapsulation)
-  // Seed from existing currentUser (for edit flow or returning incomplete profiles) so user doesn't re-type everything
+  // Seed from existing currentUser only in edit mode — create mode starts fresh
   const [onboardData, setOnboardData] = useState<any>(() => {
-    if (currentUser && currentUser.name) {
+    if (mode === 'edit' && currentUser && currentUser.name) {
       return {
         name: currentUser.name || '',
         age: currentUser.age || 26,
@@ -81,7 +84,7 @@ export const OnboardingFlow = ({
   // Consents fully managed internally now (previous props were dummy)
   // For edit mode, pre-fill from existing legalConsents so user doesn't have to re-tap to save changes
   const [localConsents, setLocalConsents] = useState(() => {
-    if (currentUser && currentUser.legalConsents) {
+    if (mode === 'edit' && currentUser && currentUser.legalConsents) {
       return {
         is18: !!currentUser.legalConsents.is18,
         isForTraining: !!currentUser.legalConsents.isForTraining,
@@ -105,7 +108,12 @@ export const OnboardingFlow = ({
     setOnboardData((prev: any) => ({ ...prev, ...patch }));
   };
 
-  const isEditingProfile = !!(currentUser && currentUser.name);
+  const toggleConsent = (key: 'is18' | 'isForTraining' | 'sharesLocation') => {
+    setLocalConsents((prev) => ({ ...prev, [key]: !prev[key] }))
+    try { triggerHaptic('light') } catch {}
+  }
+
+  const isEditingProfile = isEditMode;
 
   // Live updating preview card (the key onboarding improvement - user sees exactly how they will appear in Explore + live lists)
   // Enhanced to preview the unique EntrenaSync and live features to build excitement from day 1
@@ -377,8 +385,8 @@ export const OnboardingFlow = ({
   };
 
   return (
-    <div className="app-container flex flex-col bg-[#0D0D10] text-white">
-      <div className="flex-1 flex flex-col p-6 pt-8">
+    <div className="app-container flex flex-col bg-[#0D0D10] text-white h-[100svh] max-h-[100svh] overflow-hidden">
+      <div className="flex flex-col flex-1 min-h-0 p-6 pt-8">
         {/* Epic Remastered Header - Unique ritual vibe */}
         <div className="flex items-center gap-4 mb-5">
           <motion.div 
@@ -441,11 +449,11 @@ export const OnboardingFlow = ({
           </div>
         </div>
 
-        {/* LIVE PREVIEW - ALWAYS VISIBLE, updates in real-time as user types/selects. THIS IS THE KEY IMPROVEMENT for onboarding. */}
-        {renderProfilePreview()}
+        {/* LIVE PREVIEW — hidden on consent step so vows + buttons stay tappable */}
+        {onboardingStep !== 3 && renderProfilePreview()}
 
-        {/* Scrollable step content - 4 ultra-fast steps for <60-90s to first Live or Match. NO old/dupe JSX. */}
-        <div className="flex-1 overflow-auto -mx-1 px-1 pb-8 min-h-0">
+        {/* Scrollable step content */}
+        <div className="flex-1 overflow-y-auto overscroll-contain -mx-1 px-1 pb-4 min-h-0 relative z-10">
 
         {/* PASO 0: PRESENCIA - Remastered full premium. Unique ritual entry. */}
         {onboardingStep === 0 && (
@@ -647,24 +655,37 @@ export const OnboardingFlow = ({
             </div>
 
             {[
-              { key: 'is18', label: 'Juro ser mayor de 18 y entrenar con respeto a mis GymPartners', desc: 'Respeto, seriedad y energía positiva siempre.' },
-              { key: 'isForTraining', label: 'Juro entrenar en serio y con motivación real para mis GymPartners', desc: 'No excusas. Mi presencia construye la de otros.' },
-              { key: 'sharesLocation', label: 'Juro aparecer en el GymPulse vivo para sincronizarme con mis GymPartners', desc: 'Mi energía es visible. Mis GymPartners me hacen más fuerte.' }
-            ].map(item => (
-              <label key={item.key} onClick={() => { 
-                const next = ! (localConsents as any)[item.key]; 
-                setLocalConsents(prev => ({ ...prev, [item.key]: next })); 
-                try { triggerHaptic('light') } catch {} 
-              }} className="block p-4 bg-[#1C1C20] rounded-2xl border-2 border-[#2F2F35] cursor-pointer active:bg-[#25252A] active:border-[#FF671F]/40 transition">
-                <div className="flex items-start gap-3">
-                  <input type="checkbox" checked={(localConsents as any)[item.key]} readOnly className="w-5 h-5 accent-[#FF671F] mt-0.5 pointer-events-none" />
+              { key: 'is18' as const, label: 'Juro ser mayor de 18 y entrenar con respeto a mis GymPartners', desc: 'Respeto, seriedad y energía positiva siempre.' },
+              { key: 'isForTraining' as const, label: 'Juro entrenar en serio y con motivación real para mis GymPartners', desc: 'No excusas. Mi presencia construye la de otros.' },
+              { key: 'sharesLocation' as const, label: 'Juro aparecer en el GymPulse vivo para sincronizarme con mis GymPartners', desc: 'Mi energía es visible. Mis GymPartners me hacen más fuerte.' }
+            ].map(item => {
+              const checked = localConsents[item.key]
+              return (
+              <button
+                key={item.key}
+                type="button"
+                role="checkbox"
+                aria-checked={checked}
+                onClick={() => toggleConsent(item.key)}
+                className={`w-full text-left p-4 rounded-2xl border-2 transition touch-manipulation relative z-10 ${
+                  checked
+                    ? 'bg-[#FF671F]/15 border-[#FF671F] ring-1 ring-[#FF671F]/40'
+                    : 'bg-[#1C1C20] border-[#2F2F35] active:bg-[#25252A] active:border-[#FF671F]/40'
+                }`}
+              >
+                <div className="flex items-start gap-3 pointer-events-none">
+                  <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 text-xs font-bold ${
+                    checked ? 'bg-[#FF671F] border-[#FF671F] text-black' : 'border-[#9CA3AF] text-transparent'
+                  }`}>
+                    ✓
+                  </span>
                   <div className="flex-1">
                     <div className="font-bold text-sm leading-tight">{item.label}</div>
                     <div className="text-[#9CA3AF] text-xs mt-1 leading-tight">{item.desc}</div>
                   </div>
                 </div>
-              </label>
-            ))}
+              </button>
+            )})}
 
             <div className="mt-2 p-5 rounded-3xl bg-gradient-to-br from-[#0a120f] to-[#111113] border-2 border-[#22c55e]/50 text-center">
               <div className="text-[#22c55e] font-black text-sm tracking-widest mb-1">AL SELLAR ESTOS VOTOS</div>
@@ -676,8 +697,8 @@ export const OnboardingFlow = ({
 
         </div> {/* end scrollable step content */}
 
-        {/* Fixed bottom - Epic ritual navigation */}
-        <div className="pt-2 pb-3 flex flex-col gap-2 bg-[#0D0D10] border-t-2 border-[#2F2F35]">
+        {/* Fixed bottom — ritual navigation */}
+        <div className="flex-shrink-0 pt-2 pb-3 flex flex-col gap-2 bg-[#0D0D10] border-t-2 border-[#2F2F35] relative z-20">
           {onboardingStep > 0 && (
             <button onClick={() => { try { triggerHaptic('light') } catch {}; setOnboardingStep(onboardingStep - 1) }} className="w-full py-2.5 text-xs uppercase tracking-[1.5px] rounded-2xl border border-[#2F2F35] active:bg-[#1f242b] text-[#9CA3AF]">
               ← VOLVER AL RITUAL ANTERIOR
@@ -688,12 +709,17 @@ export const OnboardingFlow = ({
             <p className="text-center text-[9px] text-[#ef4444] font-medium tracking-wider">ELIGE AL MENOS UN RITUAL DE MOVIMIENTO Y TU FUEGO PRINCIPAL</p>
           )}
 
+          {onboardingStep === 3 && !Object.values(localConsents).every(Boolean) && (
+            <p className="text-center text-[9px] text-[#FF671F] font-medium tracking-wider">
+              Marca los 3 votos para sellar tu entrada ({Object.values(localConsents).filter(Boolean).length}/3)
+            </p>
+          )}
+
           <button 
             onClick={nextOnboarding} 
-            className="w-full py-4 text-base font-black tracking-[1.5px] rounded-3xl btn-primary disabled:opacity-50 active:scale-[0.985] bg-gradient-to-r from-[#FF671F] to-[#E55A1A]"
+            className="w-full py-4 text-base font-black tracking-[1.5px] rounded-3xl btn-primary active:scale-[0.985] bg-gradient-to-r from-[#FF671F] to-[#E55A1A] touch-manipulation"
             disabled={
-              (onboardingStep === 1 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0)) ||
-              (onboardingStep === 3 && !Object.values(localConsents).every(Boolean))
+              onboardingStep === 1 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0)
             }
           >
             {onboardingStep < 3 ? 'CONTINUAR EL RITUAL →' : '¡SELLAR LOS VOTOS • ENTRAR AL CÍRCULO DEL PULSO!'}

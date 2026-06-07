@@ -6090,7 +6090,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         if (isRegister) {
           const fbUser = await signUpWithEmail(authEmail, authPassword)
           await createUserProfile(fbUser, {
-            name: authEmail.split('@')[0],
+            name: '',
             age: 25,
             gender: 'hombre',
             city: '',
@@ -6146,29 +6146,19 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         try {
           const profile = await getUserProfile(loggedInUser.uid)
 
-          if (profile && profile.name) {
+          if (profile) {
             saveUser({ ...profile, id: 'me' } as any)
 
-            // Only force full onboarding immediately for brand new registrations.
-            // For returning logins (even with incomplete profile), load what exists and let user enter the app.
-            // They can complete via the Profile tab "Completar mi perfil" CTA (prevents trapping users in creation loop on every visit).
             if (isRegister) {
-              const needsOnboarding =
-                !profile.bio ||
-                !profile.photos?.length ||
-                !profile.trainingTypes?.length ||
-                !profile.goals?.length
-              if (needsOnboarding) {
-                setShowOnboarding(true)
-              }
+              setIsEditingProfile(false)
+              setOnboardingStepLocal(0)
+              setShowOnboarding(true)
             }
-            // If complete or login, main app shows (Profile will prompt if incomplete)
+            // Returning logins with incomplete profile can finish via Profile tab CTA
           } else {
-            // No profile or no name → create a minimal usable local profile immediately
-            // so the UI (including Profile tab + logout) never goes black/empty.
             const minimalUser = {
               id: 'me' as any,
-              name: loggedInUser.email?.split('@')[0] || 'Usuario',
+              name: '',
               age: 25,
               gender: 'hombre' as const,
               city: '',
@@ -6182,14 +6172,15 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               availability: ['Tarde'],
             }
             saveUser(minimalUser as any)
+            setIsEditingProfile(false)
+            setOnboardingStepLocal(0)
             setShowOnboarding(true)
           }
         } catch (e) {
           console.warn('Profile load after real auth failed', e)
-          // Create minimal local profile as last resort so user is never stuck without UI
           const fallbackUser = {
             id: 'me' as any,
-            name: loggedInUser.email?.split('@')[0] || 'Usuario',
+            name: '',
             age: 25,
             gender: 'hombre' as const,
             city: '',
@@ -6203,6 +6194,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             availability: ['Tarde'],
           }
           saveUser(fallbackUser as any)
+          setIsEditingProfile(false)
+          setOnboardingStepLocal(0)
           setShowOnboarding(true)
         }
       } else if (isDemoMode && loggedInUser) {
@@ -6875,9 +6868,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   description: `Si ${profile.name} también te da like, harán match`,
                 })
               }
-            } catch (e) {
+            } catch (e: any) {
               console.warn('Could not process real like/match:', e)
-              toast.error('No se pudo enviar el like', { description: 'Revisa tu conexión' })
+              const isPerm = e?.code === 'permission-denied' || `${e?.message || e}`.includes('permission')
+              toast.error(
+                isPerm ? 'Permisos de Firestore' : 'No se pudo enviar el like',
+                {
+                  description: isPerm
+                    ? 'Las reglas de likes/matches deben desplegarse (firebase deploy --only firestore:rules).'
+                    : 'Revisa tu conexión',
+                }
+              )
             }
           })()
         }
@@ -7147,8 +7148,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   }
 
   // For real users or demo users without full profile, show onboarding/creation flow
-  const shouldShowOnboarding = showOnboarding || 
-    (!isDemoMode && firebaseUser && (!currentUser || !currentUser.name ))
+  const profileNeedsOnboarding = !currentUser?.legalConsents?.acceptedAt || !String(currentUser?.name || '').trim()
+  const shouldShowOnboarding = showOnboarding ||
+    (!isDemoMode && firebaseUser && profileNeedsOnboarding)
+
+  const closeOnboarding = (show: boolean) => {
+    setShowOnboarding(show)
+    if (!show) setIsEditingProfile(false)
+  }
+
+  const openProfileEditor = () => {
+    setIsEditingProfile(true)
+    setOnboardingStepLocal(0)
+    setShowOnboarding(true)
+  }
 
   if (shouldShowOnboarding) {
     return (
@@ -7158,12 +7171,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           setOnboardingStep={setOnboardingStepLocal}
           currentUser={currentUser}
           saveUser={saveUserWithRealSync}
-          setShowOnboarding={setShowOnboarding}
+          setShowOnboarding={closeOnboarding}
           requestUserLocation={requestUserLocation}
           consents={{ is18: false, isForTraining: false, sharesLocation: false }}
           setConsents={() => {}}
           triggerHaptic={triggerHaptic}
           uploadPhotoIfNeeded={uploadProfilePhotoIfNeeded}
+          mode={isEditingProfile ? 'edit' : 'create'}
         />
       </ErrorBoundary>
     )
@@ -9627,7 +9641,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               </div>
               <div className="flex gap-2">
                 <button onClick={handleLogout} className="text-[10px] px-3 py-1 rounded-2xl border border-[#3f2a2a] text-[#f87171] active:bg-[#1f1616] active:text-white">Cambiar cuenta</button>
-                <button onClick={() => setShowOnboarding(true)} className="text-[10px] px-3 py-1 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black font-semibold active:opacity-90 flex items-center gap-1"><Edit2 size={13} /> Personalizar</button>
+                <button onClick={openProfileEditor} className="text-[10px] px-3 py-1 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black font-semibold active:opacity-90 flex items-center gap-1"><Edit2 size={13} /> Personalizar</button>
               </div>
             </div>
 
@@ -9666,7 +9680,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
               {/* Edit CTA - prominent for creation/editing */}
               <button 
-                onClick={() => setShowOnboarding(true)}
+                onClick={openProfileEditor}
                 className="absolute top-4 right-4 text-xs px-4 py-2 rounded-2xl bg-black/70 border border-white/30 text-white flex items-center gap-1.5 active:bg-black tracking-wider"
               >
                 <Edit2 size={13} /> REMASTERIZAR MI RITUAL
@@ -9847,7 +9861,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 <button onClick={() => muroComposerRef.current?.focus()} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl bg-[#FF671F] text-black font-bold active:opacity-90 flex items-center gap-1.5 shadow">
                   <Send size={14} /> Publicar en muro
                 </button>
-                <button onClick={() => { setShowOnboarding(true); }} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-white/20 text-white active:bg-white/10 flex items-center gap-1.5">
+                <button onClick={openProfileEditor} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-white/20 text-white active:bg-white/10 flex items-center gap-1.5">
                   <Camera size={14} /> Agregar foto
                 </button>
                 <button onClick={() => { if (currentUser.trainingNow) { /* deactivate */ } else { /* hint activate */ setActiveTab('profile'); toast('Activa Live más abajo para aparecer en el Pulso'); } }} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10 flex items-center gap-1.5">
@@ -9873,7 +9887,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   {(profilePosts[effectiveUserId] || []).filter((p:any)=>p.photo).length === 0 && <div>• Publica 1 foto de Sync compartido (tu primer ripple)</div>}
                 </div>
                 <button onClick={() => { setActiveTab('profile'); setTimeout(()=> muroComposerRef.current?.focus(), 60); }} className="w-full py-2.5 text-sm rounded-2xl bg-[#FFD700] text-black font-extrabold active:brightness-90 tracking-wide">CONSTRUIR MI RED DE RENDIMIENTO AHORA</button>
-                <button onClick={() => setShowOnboarding(true)} className="mt-2 w-full text-[10px] text-[#9CA3AF] underline active:text-[#FF671F]">Editar perfil completo</button>
+                <button onClick={openProfileEditor} className="mt-2 w-full text-[10px] text-[#9CA3AF] underline active:text-[#FF671F]">Editar perfil completo</button>
               </div>
             )}
 
@@ -9882,7 +9896,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               <div className="card p-4">
                 <div className="flex justify-between items-center mb-1.5">
                   <div className="uppercase text-[10px] tracking-[1px] text-[#9CA3AF]">Sobre mí</div>
-                  <button onClick={() => setShowOnboarding(true)} className="text-[9px] text-[#FF671F] underline">Editar completo</button>
+                  <button onClick={openProfileEditor} className="text-[9px] text-[#FF671F] underline">Editar completo</button>
                 </div>
                 {isEditingBio ? (
                   <textarea 
