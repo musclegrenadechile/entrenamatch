@@ -1382,19 +1382,13 @@ useEffect(() => {
 useEffect(() => {
   const handleOnline = async () => {
     setIsOffline(false)
-
-    try {
-      const fb = await import('./services/firebase')
-      await fb.recoverFirestoreNetwork?.()
-
-      if (!isDemoMode && firebaseUser?.uid) {
-        setTimeout(() => {
-          loadRealSessions?.()
-          if (typeof loadProfilePosts === 'function') loadProfilePosts(firebaseUser.uid)
-        }, 400)
-      }
-    } catch (e) {
-      console.warn('Network recovery failed', e)
+    // Firestore auto-reconnects with persistentLocalCache — do NOT call enableNetwork (causes da08).
+    if (!isDemoMode && firebaseUser?.uid) {
+      setTimeout(() => {
+        loadRealSessions?.()
+        loadRealProfiles?.().catch(() => {})
+        if (typeof loadProfilePosts === 'function') loadProfilePosts(firebaseUser.uid)
+      }, 400)
     }
   }
 
@@ -1426,12 +1420,10 @@ useEffect(() => {
           if (AppPlugin?.App) {
             const listener = await AppPlugin.App.addListener('appStateChange', async (state: any) => {
               if (state.isActive) {
-                // App came to foreground — give the OS a moment then recover Firestore streams.
-                setTimeout(async () => {
-                  try {
-                    const { recoverFirestoreNetwork } = await import('./services/firebase')
-                    await recoverFirestoreNetwork()
-                  } catch {}
+                // App resumed — reload data; Firestore RT listeners auto-reconnect (no enableNetwork).
+                setTimeout(() => {
+                  loadRealProfiles?.().catch(() => {})
+                  loadRealSessions?.()
                 }, 400)
               }
             })
@@ -2467,7 +2459,6 @@ useEffect(() => {
           try { localStorage.setItem('entrenamatch_last_live', JSON.stringify(profiles)) } catch {}
         }, (err) => {
           console.warn('profiles onSnapshot error, falling back to polling', err);
-          import('./services/firebase').then(m => m.recoverFirestoreNetwork?.()).catch(() => {})
           loadRealProfiles().catch(() => {})
         });
       } catch (e) {
@@ -2518,8 +2509,7 @@ useEffect(() => {
     }
   }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, publishLiveSnapshot])
 
-  // Recover live listener after network blips — handled by global online handler above (recoverFirestoreNetwork).
-  // Removed duplicate window 'online' listener here to prevent double enableNetwork (da08 assertion).
+  // Firestore RT listeners auto-reconnect after network blips — no enableNetwork needed (da08).
 
   // Demo mode: synthesize liveUsersFromDedicated locally (no Firestore query).
   useEffect(() => {
@@ -2643,7 +2633,7 @@ useEffect(() => {
         })
       },
       onError: () => {
-        import('./services/firebase').then((m) => m.recoverFirestoreNetwork?.()).catch(() => {})
+        // Listener will retry automatically; enableNetwork when already online causes da08.
       },
     })
   }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId, isFirebaseConfigured])
@@ -2687,9 +2677,7 @@ useEffect(() => {
         triggerHaptic('light')
       },
       onError: () => {
-        import('./services/firebase').then(async (m) => {
-          try { await m.recoverFirestoreNetwork?.() } catch {}
-        }).catch(() => {})
+        // Non-fatal — active session listener falls back to profile mirror.
       },
     })
   }, [syncPartnerId, effectiveUserId, firebaseUser?.uid, db, isDemoMode, isFirebaseConfigured, realProfiles])
@@ -4033,7 +4021,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           },
           onError: (err) => {
             console.warn(`BG group chat listener error for session ${sessionId}:`, err)
-            import('./services/firebase').then(m => m.recoverFirestoreNetwork?.()).catch(() => {})
           },
         }
       )
@@ -4566,14 +4553,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
     if (!isDemoMode && firebaseUser?.uid && db) {
       try {
-        // Recovery reset before post write (especially important on sync-end / live-terminate paths
-        // where previous session action writes may have left the client in bad mutation state).
-        try {
-          const fb = await import('./services/firebase');
-          await fb.recoverFirestoreNetwork?.();
-          await new Promise(r => setTimeout(r, 40));
-        } catch {}
-
         const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
         const data: any = {
           userId: post.userId,
@@ -4735,50 +4714,33 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     if (!currentUser?.trainingNow || !isUserLive(partnerId)) return
     if (syncPartnerId || joiningSyncWith === partnerId) return // anti-spam guard
 
-    // Defensive: in real mode we must have a real uid before optimistic sync state (which triggers
-    // the dedicated syncSessions listener) and before any FS writes. Prevents permission errors on
-    // listener + reduces chance of hitting internal assertion during auth recovery.
     if (!isDemoMode && !firebaseUser?.uid) {
       console.warn('startSyncWith: no real firebaseUser uid, cannot start real EntrenaSync')
-      setJoiningSyncWith(null)
       toast.error('Inicia sesión con cuenta real para usar EntrenaSync')
       return
     }
-    setSyncPartnerId(partnerId)
-    syncPartnerIdRef.current = partnerId
-    setSyncStartedAt(now)
-    setSyncActions([])
-    setSyncCombo(0)
-    setFlyingEmojis([])
-    setShowSyncArena(true) // open the immersive never-seen Arena immediately — this is the magic moment
-    triggerHaptic('medium')
-    const updated = { ...currentUser, trainingSyncWith: partnerId, syncStartedAt: now, syncActions: [] }
-    saveUser(updated as any)
-    // Persist to profiles (optimistic + FS)
-    if (!isDemoMode && db && firebaseUser) {
-      // CRITICAL: Same hard reset as terminate/start-live to prevent da08 / b815 / mutations undefined
-      // assertion when initiating sync. startSync does 3x writes in a row (self profile, partner profile,
-      // syncSessions doc) + later createProfilePost addDoc. After any prior transport error, the write
-      // pipeline is fragile; reset + routing self through the resilient saveUserWithRealSync fixes it.
-      try {
-        const fb = await import('./services/firebase');
-        await fb.recoverFirestoreNetwork?.();
-        await new Promise(r => setTimeout(r, 70));
-      } catch (resetErr) {
-        console.warn('pre-startSync network reset non-fatal', resetErr);
-      }
 
-      try {
-        // Use resilient path for self (gets retry + reset on internal assertion). This also ensures
-        // trainingSyncWith / syncStartedAt etc. are properly included via the payload builder.
-        await saveUserWithRealSync(updated as any);
+    setJoiningSyncWith(partnerId)
+    try {
+      setSyncPartnerId(partnerId)
+      syncPartnerIdRef.current = partnerId
+      setSyncStartedAt(now)
+      setSyncActions([])
+      setSyncCombo(0)
+      setFlyingEmojis([])
+      setShowSyncArena(true)
+      triggerHaptic('medium')
+      const updated = { ...currentUser, trainingSyncWith: partnerId, syncStartedAt: now, syncActions: [] }
+      saveUser(updated as any)
+
+      if (!isDemoMode && db && firebaseUser) {
+        await saveUserWithRealSync(updated as any)
 
         const { doc, setDoc } = await import('firebase/firestore')
-        // Dedicated instant session doc (for onSnapshot actions/timer; partner joins via incoming listener)
         const uids = [effectiveUserId, partnerId].sort()
         const sessionId = `sync_${uids[0]}_${uids[1]}`
         const sessionRef = doc(db, 'syncSessions', sessionId)
-        const baseVibe = 12 // starting "together" energy
+        const baseVibe = 12
         await setDoc(sessionRef, {
           participants: [effectiveUserId, partnerId],
           startedAt: now,
@@ -4787,17 +4749,23 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           updatedAt: now,
         }, { merge: true })
         setSyncVibe(baseVibe)
-      } catch (e) { console.warn('sync persist failed', e) }
+      }
+
+      setTimeout(() => {
+        createProfilePost(`¡Sincronizado con ${partnerName}! Entrenamos juntos ahora 🔥`, null).catch(() => {})
+      }, 400)
+      toast.success(`EntrenaSync iniciado con ${partnerName}`, { description: 'Estado compartido en vivo + acciones conjuntas. Esto genera resultados reales.' })
+      try { confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } }) } catch {}
+      addDebugLog(`EntrenaSync started with ${partnerName}`)
+    } catch (e) {
+      console.warn('startSyncWith failed', e)
+      setSyncPartnerId(null)
+      syncPartnerIdRef.current = null
+      setShowSyncArena(false)
+      toast.error('No se pudo iniciar EntrenaSync', { description: 'Revisa tu conexión e intenta de nuevo.' })
+    } finally {
+      setJoiningSyncWith(null)
     }
-    // Defer muro post so sync session write + RT listeners settle (reduces write/listener contention → da08)
-    setTimeout(() => {
-      createProfilePost(`¡Sincronizado con ${partnerName}! Entrenamos juntos ahora 🔥`, null).catch(() => {})
-    }, 400)
-    toast.success(`EntrenaSync iniciado con ${partnerName}`, { description: 'Estado compartido en vivo + acciones conjuntas. Esto genera resultados reales.' })
-    // Attractive feedback: confetti + clear joining loader (the UI will switch to profile showing the rich sync panel)
-    try { confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } }) } catch {}
-    addDebugLog(`EntrenaSync started with ${partnerName}`)
-    setJoiningSyncWith(null)
   }
 
   // Keep startSyncRef always pointing to the freshest startSyncWith implementation.
@@ -4888,13 +4856,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       // if previous transport left the pipeline unhealthy.
       if (db) {
         try {
-          const fb = await import('./services/firebase');
-          await fb.recoverFirestoreNetwork?.();
-          await new Promise(r => setTimeout(r, 60));
-
           const { doc, updateDoc } = await import('firebase/firestore')
           if (oldPartner) await updateDoc(doc(db, 'profiles', oldPartner), { trainingSyncWith: null, syncStartedAt: null }).catch(() => {});
-          // Mark session ended for active count queries
           try {
             const { doc: doc2, updateDoc: upd2 } = await import('firebase/firestore')
             const uids = [effectiveUserId, oldPartner].sort()
@@ -4904,12 +4867,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         } catch (e) {}
       }
     }
-    // Post creation is a separate write; wrap with recovery too for safety on terminate path.
-    try {
-      const fb = await import('./services/firebase');
-      await fb.recoverFirestoreNetwork?.();
-      await new Promise(r => setTimeout(r, 50));
-    } catch {}
     createProfilePost(`Sync terminado con ${partnerName} - ${minutes}min juntos`, null).catch(() => {})
     // Save replayable memory (unique persistence of the shared performance sync)
     if (minutes >= 2 && capturedActions.length > 0) {
@@ -5313,15 +5270,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     const target = realProfiles.find(p => p.id === targetId)
     if (!target) return
     if (currentUser?.trainingNow && isUserLive(targetId)) {
-      if (syncPartnerId || joiningSyncWith) return // prevent spam / already in sync
-      setJoiningSyncWith(targetId)
+      if (syncPartnerId || joiningSyncWith) return
       startSyncWith(targetId, target.name)
-        .then(() => {
-          setActiveTab('profile') // takes user to the attractive EntrenaSync UI (timer, actions, vibe meter, etc.)
-          // brief success state on the button (if still in view)
-          setTimeout(() => setJoiningSyncWith(null), 1200)
-        })
-        .catch(() => setJoiningSyncWith(null))
+        .then(() => setActiveTab('profile'))
+        .catch(() => {})
     }
   }
 
@@ -10671,20 +10623,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           // Optimistic local daily for instant UI feedback (profile banner etc)
                           if (dailyPulse) {
                             setDailyPulse({ ...dailyPulse, momentum: newMom, xp: newXp });
-                          }
-
-                          // Extra-hard reset right before the critical terminate write.
-                          // Previous actions during the training (ripples, actions to session doc, live updates)
-                          // can leave the persistentLocalCache + write pipeline in a state where the next
-                          // setDoc causes "Cannot read ... 'mutations'" + repeated b815 assertions.
-                          // Doing disable + generous delay + enable right here (after local clears) gives
-                          // the SDK the best chance to recreate clean streams before we queue the mutation.
-                          try {
-                            const fb = await import('./services/firebase');
-                            await fb.recoverFirestoreNetwork?.();
-                            await new Promise(r => setTimeout(r, 120));
-                          } catch (resetErr) {
-                            console.warn('pre-terminate live reset non-fatal', resetErr);
                           }
 
                           pendingLiveWriteRef.current = { trainingNow: false, at: Date.now() };

@@ -82,51 +82,46 @@ export const isDemoMode = !firebaseConfig;
 
 export default app;
 
-// Re-establish Listen/WebChannel streams after offline or transport errors.
-// Prefer this over disable+enable cycles — disabling tears down ALL active listeners.
-// ALL enable paths must go through this module — repeated enableNetwork() triggers
-// FIRESTORE INTERNAL ASSERTION FAILED (ID: ca9 / da08).
-let lastNetworkRecoverAt = 0;
+// enableNetwork() is ONLY valid after disableNetwork() (Firebase docs).
+// Calling enableNetwork while already online triggers INTERNAL ASSERTION FAILED (ID: ca9 / da08).
+// Firestore with persistentLocalCache auto-reconnects after offline — do NOT call enableNetwork proactively.
+let networkDisabledByUs = false;
 let recoverInFlight: Promise<void> | null = null;
-const NETWORK_RECOVER_DEBOUNCE_MS = 4000;
 
 async function runEnableNetwork(): Promise<void> {
   if (!db) return;
   try {
     const { enableNetwork } = await import('firebase/firestore');
     await enableNetwork(db);
-    console.log('[Firestore] Network enabled (recovering Listeners)');
+    networkDisabledByUs = false;
+    console.log('[Firestore] Network re-enabled after prior disable');
   } catch (e) {
     console.warn('[Firestore] enableNetwork failed', e);
   }
 }
 
-/** Debounced + coalesced — safe for all recovery paths (online, listener errors, sync start). */
+/** Re-enables network only if we previously called disableFirestoreNetwork. Safe no-op when online. */
 export async function enableFirestoreNetwork(): Promise<void> {
-  if (!db) return;
+  if (!db || !networkDisabledByUs) return;
   if (recoverInFlight) return recoverInFlight;
-
-  const now = Date.now();
-  if (now - lastNetworkRecoverAt < NETWORK_RECOVER_DEBOUNCE_MS) return;
-
   recoverInFlight = runEnableNetwork().finally(() => {
-    lastNetworkRecoverAt = Date.now();
     recoverInFlight = null;
   });
   return recoverInFlight;
 }
 
-/** Alias — same debounced path as enableFirestoreNetwork. */
+/** Alias — safe no-op unless network was explicitly disabled first. */
 export async function recoverFirestoreNetwork() {
   return enableFirestoreNetwork();
 }
 
-/** @deprecated Avoid in normal flows — disables all RT listeners app-wide. Use recoverFirestoreNetwork. */
+/** Disables Firestore network. Pair with enableFirestoreNetwork when coming back online. */
 export async function disableFirestoreNetwork() {
   if (!db) return;
   try {
     const { disableNetwork } = await import('firebase/firestore');
     await disableNetwork(db);
+    networkDisabledByUs = true;
   } catch (e) {
     console.warn('[Firestore] disableNetwork failed', e);
   }
