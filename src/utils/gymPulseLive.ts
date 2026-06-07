@@ -106,6 +106,16 @@ export function filterMapLiveUsers(
   })
 }
 
+export function isUserLiveInSnapshot(
+  userId: string,
+  liveUsers: LiveUserLike[],
+  now = Date.now()
+): boolean {
+  if (!userId) return false
+  const u = liveUsers.find((p) => p.id === userId)
+  return u ? isActiveLiveUser(u, now) : false
+}
+
 export function profileDocToLiveUser(
   id: string,
   data: Record<string, any>,

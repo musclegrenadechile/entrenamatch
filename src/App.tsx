@@ -76,6 +76,7 @@ import {
   mergeLiveUsersById,
   enrichLiveUser as buildEnrichedLiveUser,
   isActiveLiveUser,
+  isUserLiveInSnapshot,
   profileDocToLiveUser,
 } from './utils/gymPulseLive'
 import { useDemoAuth } from './hooks/useDemoAuth'
@@ -96,6 +97,8 @@ import {
   deleteCommentFromFirestore,
   type PostComment,
 } from './services/postComments'
+import { attachUserPostsListener } from './services/profilePosts'
+import { attachDirectChatListener, type DirectChatMsg } from './services/chatMessages'
 import { attachLiveUsersListener, patchRealProfilesWithLiveSnapshot } from './services/liveUsers'
 import {
   attachLivePresenceListener,
@@ -1365,18 +1368,8 @@ useEffect(() => {
   window.addEventListener('offline', handleOffline)
 
   if (db && !isDemoMode) {
-    (async () => {
-      try {
-        const { enableIndexedDbPersistence } = await import('firebase/firestore')
-        await enableIndexedDbPersistence(db)
-      } catch (err: any) {
-        if (err.code === 'failed-precondition') {
-          console.log('[Firestore] Offline persistence: multiple tabs open')
-        } else if (err.code === 'unimplemented') {
-          console.log('[Firestore] Offline persistence not supported')
-        }
-      }
-    })()
+    // Offline cache via initializeFirestore(persistentLocalCache()) in firebase.ts — do NOT also call
+    // enableIndexedDbPersistence (deprecated API; double persistence causes failed-precondition / stale writes).
   }
 
   return () => {
@@ -1451,6 +1444,9 @@ useEffect(() => {
   const [profilePosts, setProfilePosts] = useState<Record<string, ProfilePost[]>>({}) // userId -> posts array
   const profilePostsRef = useRef<Record<string, ProfilePost[]>>({})
   const postCommentUnsubsRef = useRef<Record<string, () => void>>({})
+  const userPostsUnsubsRef = useRef<Record<string, () => void>>({})
+  const liveUsersActiveRef = useRef<any[]>([])
+  const lastSyncActionToastRef = useRef<{ at: number; key: string } | null>(null)
   const postCommentInlineFallbackRef = useRef<Record<string, unknown>>({})
   useEffect(() => { profilePostsRef.current = profilePosts }, [profilePosts])
   const [muroComposerText, setMuroComposerText] = useState('')
@@ -2190,6 +2186,17 @@ useEffect(() => {
 
   const liveCountForUI = liveUsersActive.length
 
+  useEffect(() => { liveUsersActiveRef.current = liveUsersActive }, [liveUsersActive])
+
+  /** Unified live gate — reads GymPulse pipeline, not stale realProfiles.trainingNow */
+  const isUserLive = useCallback((userId: string): boolean => {
+    if (!userId) return false
+    if (userId === effectiveUserId || userId === 'me') {
+      return !!currentUserRef.current?.trainingNow
+    }
+    return isUserLiveInSnapshot(userId, liveUsersActiveRef.current)
+  }, [effectiveUserId])
+
   // Zone live counts for interactive legend (sigue con todo el mapa + visual polish iteration)
   const zoneLiveCounts = useMemo(() => {
     const counts: Record<string, number> = {}
@@ -2230,7 +2237,7 @@ useEffect(() => {
     const hasActiveFilter = feedShowPinnedOnly || feedOnlyReal || feedOnlyLive || !!feedSearch.trim();
     if (feedShowPinnedOnly) feedPosts = feedPosts.filter((p: any) => p.pinned);
     if (feedOnlyReal) feedPosts = feedPosts.filter((p: any) => p.isMine || realProfiles.some(rp => rp.id === p.ownerId));
-    if (feedOnlyLive) feedPosts = feedPosts.filter((p: any) => !p.isMine && realProfiles.some(rp => rp.id === p.ownerId && rp.trainingNow));
+    if (feedOnlyLive) feedPosts = feedPosts.filter((p: any) => !p.isMine && isUserLiveInSnapshot(p.ownerId, liveUsersActive));
     if (feedSearch.trim()) {
       const q = feedSearch.toLowerCase().trim();
       feedPosts = feedPosts.filter((p: any) => {
@@ -2240,7 +2247,7 @@ useEffect(() => {
     }
     feedPosts = feedPosts.slice(0, feedDisplayLimit);
     return { feedPosts, allCommunityPosts, echoesSource: [...allCommunityPosts, ...myPostsRaw], hasActiveFilter };
-  }, [profilePosts, feedShowPinnedOnly, feedOnlyReal, feedOnlyLive, feedSearch, feedDisplayLimit, realProfiles, effectiveUserId, syncBonds, currentUser]);
+  }, [profilePosts, feedShowPinnedOnly, feedOnlyReal, feedOnlyLive, feedSearch, feedDisplayLimit, realProfiles, effectiveUserId, syncBonds, currentUser, liveUsersActive]);
 
   // Filtered deck (with distance support + blocking)
   // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
@@ -2266,7 +2273,7 @@ useEffect(() => {
         if (dist > filters.maxDistanceKm) return false
       }
       if (filters.onlyAvailableToday && !p.availableToday) return false
-      if (filters.onlyLiveTraining && !p.trainingNow) return false
+      if (filters.onlyLiveTraining && !isUserLiveInSnapshot(p.id, liveUsersActive)) return false
       return true
     })
 
@@ -2303,7 +2310,7 @@ useEffect(() => {
       })
     }
     return filtered
-  }, [remainingProfiles, filters, userLocation, blockedUsers, currentUser])
+  }, [remainingProfiles, filters, userLocation, blockedUsers, currentUser, liveUsersActive])
 
   // Visible cards (top 3 for stack effect)
   const visibleCards = deck.slice(0, 3)
@@ -2652,7 +2659,10 @@ useEffect(() => {
           // Unique magic: if the latest action came from the partner, give strong in-app feedback
           const latest = recent[0]
           if (latest && latest.userId !== effectiveUserId) {
-            // Prominent toast so you feel your partner "with you" even if not looking at the panel
+            const key = `${latest.at || 0}-${latest.emoji || ''}-${latest.label || ''}`
+            const prevToast = lastSyncActionToastRef.current
+            if (prevToast?.key === key && Date.now() - prevToast.at < 4000) return
+            lastSyncActionToastRef.current = { at: Date.now(), key }
             toast(`${latest.emoji} ${latest.label}`, {
               description: `${realProfiles.find(p => p.id === syncPartnerId)?.name || 'Tu compañero'} lo hizo ahora`,
               duration: 2200,
@@ -3661,10 +3671,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         });
       });
       msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-      // Always update local messages state for this chat (for persistence and list previews)
       setMessages(prev => {
         const updated = { ...prev, [otherUserId]: msgs };
-        localStorage.setItem('fitvina_messages', JSON.stringify(updated));
+        if (isDemoMode) {
+          localStorage.setItem('fitvina_messages', JSON.stringify(updated));
+        }
         return updated;
       });
       console.log(`✅ Loaded ${msgs.length} real 1:1 messages for ${otherUserId}`);
@@ -3683,210 +3694,103 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   };
 
-  // Reliable 1:1 real chat: load on open + safe polling (avoids index/rules issues with complex 'in' queries)
-  // The previous onSnapshot is kept commented below as optional enhancement.
-  useEffect(() => {
-    if (!activeChat || isDemoMode || !firebaseUser?.uid || !db) {
-      setRealChatMessages([])
-      return
-    }
-
-    const isRealChat = isRealChatId(activeChat)
-    if (!isRealChat) {
-      setRealChatMessages([])
-      return
-    }
-
-    // Bootstrap for real user chats: if the chatId is a known real profile (from realProfiles) but not yet
-    // in realMatches (common for the "swiped" side until discovery, or if list entry came only from local matches),
-    // add it now (activates bg listeners, real path etc.) and write the match doc (helps the other side discover too).
-    if (!realMatches.includes(activeChat) && realProfiles.some(r => r.id === activeChat)) {
-      const newReal = [...realMatches, activeChat]
-      setRealMatches(newReal)
-      loadRealMatches() // re-query to confirm and trigger any bg effects cleanly
-      if (db && firebaseUser?.uid) {
-        (async () => {
-          try {
-            const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
-            const matchId = [firebaseUser.uid, activeChat].sort().join('_')
-            await setDoc(doc(db, 'matches', matchId), {
-              user1: firebaseUser.uid,
-              user2: activeChat,
-              createdAt: serverTimestamp(),
-              status: 'active',
-              autoMatchedForTesting: true
-            }, { merge: true })
-            console.log('✅ Match doc bootstrapped for', activeChat)
-          } catch (e) {
-            console.warn('Failed to bootstrap match doc for real chat', e)
-          }
-        })()
+  const applyDirectChatMessages = useCallback((otherUserId: string, msgs: DirectChatMsg[]) => {
+    setMessages(prev => {
+      const updated = { ...prev, [otherUserId]: msgs }
+      if (isDemoMode) {
+        try { localStorage.setItem('fitvina_messages', JSON.stringify(updated)) } catch {}
       }
+      return updated
+    })
+    if (currentActiveChatRef.current === otherUserId) {
+      setRealChatMessages(msgs)
+      setChatUnreads(prev => { const c = { ...prev }; c[otherUserId] = 0; return c })
     }
+    setLastSync(new Date())
+  }, [isDemoMode])
 
-    // Load immediately when opening a real chat
-    loadRealChatMessages(activeChat).then(msgs => {
-      if (msgs) setRealChatMessages(msgs);
-    });
-
-    // Safe polling for live updates (every 8s while chat is open) - feels real-time for pre-alpha
-    const interval = setInterval(async () => {
-      const msgs = await loadRealChatMessages(activeChat);
-      if (msgs) setRealChatMessages(msgs);
-    }, 8000);
-
-    return () => clearInterval(interval);
-  }, [activeChat, isDemoMode, firebaseUser?.uid, realMatches, db])  // db included to re-init if available
-
-  // Background load real chat histories for ALL real matches on login (so history is available instantly when opening any chat)
-  useEffect(() => {
-    if (isDemoMode || !firebaseUser?.uid || realMatches.length === 0) return;
-    realMatches.forEach(async (id) => {
-      await loadRealChatMessages(id);  // populates local messages state only
-    });
-  }, [realMatches, isDemoMode, firebaseUser?.uid]);
-
-  // Background polling for all real matches every 30s (updates local message history for "real time" feel even if chats not open)
-  useEffect(() => {
-    if (isDemoMode || !firebaseUser?.uid || realMatches.length === 0) return;
-    const interval = setInterval(() => {
-      realMatches.forEach(id => {
-        loadRealChatMessages(id);  // updates local messages for that chat
-      });
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [realMatches, isDemoMode, firebaseUser?.uid]);
-
-  // Background real-time listeners for ALL real matches (to update message list previews live when new msg arrives, even if chat not open).
-  // Robust ref-managed like the group sessions bg listeners. Direct snapshot processing for instant updates (no extra getDocs roundtrip in handler).
+  // Real-time 1:1 chat — one attachDirectChatListener per match (cancelled-flag cleanup, no polling)
   useEffect(() => {
     if (isDemoMode || !firebaseUser?.uid || !db) {
-      return;
+      return undefined
     }
-    const myMatchIds = realMatches || [];
 
-    // Cleanup listeners for matches we no longer have
+    const myMatchIds = realMatches || []
+
     Object.keys(realChatUnsubsRef.current).forEach((id) => {
       if (!myMatchIds.includes(id)) {
-        try { realChatUnsubsRef.current[id]?.(); } catch {}
-        delete realChatUnsubsRef.current[id];
+        try { realChatUnsubsRef.current[id]?.() } catch {}
+        delete realChatUnsubsRef.current[id]
       }
-    });
+    })
 
     myMatchIds.forEach((matchId) => {
-      if (realChatUnsubsRef.current[matchId]) return; // already subscribed
+      if (realChatUnsubsRef.current[matchId]) return
 
-      (async () => {
-        try {
-          const { collection, query, where, onSnapshot } = await import('firebase/firestore');
-          const messagesRef = collection(db, 'messages');
-          const q1 = query(messagesRef, where('from', '==', firebaseUser.uid), where('to', '==', matchId));
-          const q2 = query(messagesRef, where('from', '==', matchId), where('to', '==', firebaseUser.uid));
-
-          // Handler for q1 (my outgoing) — update state but do not notify self
-          const handler1 = (snapshot: any) => {
-            console.log(`📨 Live 1:1 update (bg) for ${matchId}`);
-            loadRealChatMessages(matchId);
-            // mark any new ids as seen so future incoming are detected
-            if (snapshot.docChanges) {
-              snapshot.docChanges().forEach((ch: any) => { if (ch.type === 'added') { if (!seenChatMsgIdsRef.current[matchId]) seenChatMsgIdsRef.current[matchId] = new Set(); seenChatMsgIdsRef.current[matchId].add(ch.doc.id); } });
-            persistSeen();
-            }
-          };
-          const unsub1 = onSnapshot(q1, handler1, (err: any) => { console.warn(`bg 1:1 q1 listener error for ${matchId}:`, err); import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(()=>{}); });
-
-          // Handler for q2 (possible incoming from match) — detect *new added* from them after initial, then notify
-          const handler2 = (snapshot: any) => {
-            console.log(`📨 Live 1:1 update (bg) for ${matchId}`);
-            const changes = snapshot.docChanges ? snapshot.docChanges() : [];
-            const preSize = seenChatMsgIdsRef.current[matchId] ? seenChatMsgIdsRef.current[matchId].size : 0;
-            const newlyAddedIncoming: any[] = [];
-            changes.forEach((ch: any) => {
-              if (ch.type === 'added') {
-                const d = ch.doc.data() as any;
-                const msgId = ch.doc.id;
-                if (!seenChatMsgIdsRef.current[matchId]) seenChatMsgIdsRef.current[matchId] = new Set();
-                const wasSeen = seenChatMsgIdsRef.current[matchId].has(msgId);
-                seenChatMsgIdsRef.current[matchId].add(msgId);
-                persistSeen();
-                // only from the other side AND not previously seen
-                if (d.from === matchId && !wasSeen) {
-                  newlyAddedIncoming.push({ id: msgId, text: d.text || '', photo: d.photo });
-                }
-              }
-            });
-            loadRealChatMessages(matchId);
-            // Fire notif only for truly new unseen. On first population for this chat (preSize==0), treat as historical -> no notify.
-            if (newlyAddedIncoming.length > 0 && preSize > 0) {
-              if (currentActiveChatRef.current !== matchId) {
-                const prof = (realProfiles || []).find((p: any) => p.id === matchId) || SEED_PROFILES.find((p: any) => p.id === matchId);
-                const senderName = prof?.name || 'Usuario';
-                const firstNew = newlyAddedIncoming[0];
-                triggerMessageArrivalNotification(matchId, senderName, firstNew.text, false, firstNew.photo || prof?.photos?.[0]);
-              }
-            }
-          };
-          const unsub2 = onSnapshot(q2, handler2, (err: any) => { console.warn(`bg 1:1 q2 listener error for ${matchId}:`, err); import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(()=>{}); });
-
-          realChatUnsubsRef.current[matchId] = () => {
-            try { unsub1(); } catch {}
-            try { unsub2(); } catch {}
-          };
-        } catch (e) {
-          console.warn('bg 1:1 listener setup error for', matchId, e);
+      realChatUnsubsRef.current[matchId] = attachDirectChatListener(
+        db,
+        firebaseUser.uid,
+        matchId,
+        {
+          onMessages: (msgs) => applyDirectChatMessages(matchId, msgs),
+          onIncoming: (msg) => {
+            if (!seenChatMsgIdsRef.current[matchId]) seenChatMsgIdsRef.current[matchId] = new Set()
+            if (seenChatMsgIdsRef.current[matchId].has(msg.id)) return
+            seenChatMsgIdsRef.current[matchId].add(msg.id)
+            persistSeen()
+            if (currentActiveChatRef.current === matchId) return
+            const prof = (realProfiles || []).find((p: any) => p.id === matchId) || SEED_PROFILES.find((p: any) => p.id === matchId)
+            triggerMessageArrivalNotification(matchId, prof?.name || 'Usuario', msg.text, false, prof?.photos?.[0])
+          },
+          onError: (err) => console.warn(`1:1 chat listener error for ${matchId}:`, err),
         }
-      })();
-    });
-  }, [realMatches, isDemoMode, firebaseUser?.uid, db, realProfiles]);
+      )
+    })
 
-  // Global cleanup for 1:1 bg message listeners (on unmount / mode change)
+    return undefined
+  }, [realMatches, isDemoMode, firebaseUser?.uid, db, applyDirectChatMessages, realProfiles])
+
   useEffect(() => {
     return () => {
-      Object.values(realChatUnsubsRef.current).forEach((u) => {
-        try { u(); } catch {}
-      });
-      realChatUnsubsRef.current = {};
-    };
-  }, []);
+      Object.values(realChatUnsubsRef.current).forEach((u) => { try { u() } catch {} })
+      realChatUnsubsRef.current = {}
+    }
+  }, [isDemoMode, firebaseUser?.uid])
 
-  // Real-time onSnapshot for 1:1 using safe separate == queries (triggers live update on changes, then load for data)
-  // This makes chat truly real-time when open, without complex 'in' that may need indexes.
+  // Bootstrap match doc when opening a real chat not yet in realMatches
+  useEffect(() => {
+    if (!activeChat || isDemoMode || !firebaseUser?.uid || !db) return
+    if (!isRealChatId(activeChat)) return
+    if (realMatches.includes(activeChat) || !realProfiles.some(r => r.id === activeChat)) return
+
+    const newReal = [...realMatches, activeChat]
+    setRealMatches(newReal)
+    loadRealMatches().catch(() => {})
+    ;(async () => {
+      try {
+        const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+        const matchId = [firebaseUser.uid, activeChat].sort().join('_')
+        await setDoc(doc(db, 'matches', matchId), {
+          user1: firebaseUser.uid,
+          user2: activeChat,
+          createdAt: serverTimestamp(),
+          status: 'active',
+          autoMatchedForTesting: true,
+        }, { merge: true })
+      } catch (e) {
+        console.warn('Failed to bootstrap match doc for real chat', e)
+      }
+    })()
+  }, [activeChat, isDemoMode, firebaseUser?.uid, db, realMatches, realProfiles])
+
+  // Clear realChatMessages when leaving a real chat tab
   useEffect(() => {
     if (!activeChat || isDemoMode || !firebaseUser?.uid || !db) {
-      return;
+      setRealChatMessages([])
     }
-    const isRealChat = isRealChatId(activeChat);
-    if (!isRealChat) {
-      return;
-    }
-    let unsub1: (() => void) | null = null;
-    let unsub2: (() => void) | null = null;
-    (async () => {
-      try {
-        const { collection, query, where, onSnapshot, orderBy } = await import('firebase/firestore');
-        const messagesRef = collection(db, 'messages');
-        const q1 = query(messagesRef, where('from', '==', firebaseUser.uid), where('to', '==', activeChat));
-        const q2 = query(messagesRef, where('from', '==', activeChat), where('to', '==', firebaseUser.uid));
-        const handler = (snap: any, direction: string) => {
-          console.log(`📨 Live 1:1 update (active chat)`);
-          // Load does the merge of both directions + sets messages + (thanks to ref) also realChatMessages when active
-          loadRealChatMessages(activeChat).then(msgs => {
-            if (msgs) setRealChatMessages(msgs);
-          });
-        };
-        unsub1 = onSnapshot(q1, (s) => handler(s, 'q1'), (err) => { console.warn('1:1 q1 listener error:', err); import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(()=>{}); });
-        unsub2 = onSnapshot(q2, (s) => handler(s, 'q2'), (err) => { console.warn('1:1 q2 listener error:', err); import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(()=>{}); });
-      } catch (e) {
-        console.warn('1:1 onSnapshot setup error (falling back to poll):', e);
-      }
-    })();
-    return () => {
-      if (unsub1) unsub1();
-      if (unsub2) unsub2();
-    };
-  }, [activeChat, isDemoMode, firebaseUser?.uid, realMatches, db]);
+  }, [activeChat, isDemoMode, firebaseUser?.uid, db])
 
-  // Note: Real-time 1:1 chat uses onSnapshot (safe queries) + polling + background for cross-device live updates.
+  // Note: Real-time 1:1 chat uses attachDirectChatListener per match (see chatMessages.ts).
 
   // Auto-scroll chat to bottom when new messages arrive (1:1 real or demo) or chat opens
   // Robust for opening from perfiles/matches list + real async load + mobile
@@ -4606,6 +4510,44 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   }, [isDemoMode, ensurePostCommentsListener])
 
+  const ensureUserPostsListener = useCallback((userId: string) => {
+    if (isDemoMode || !db || !userId) return
+    const resolved = resolvePostOwnerId(userId)
+    if (userPostsUnsubsRef.current[resolved]) return
+    userPostsUnsubsRef.current[resolved] = attachUserPostsListener(
+      db,
+      resolved,
+      (posts) => {
+        const prevStore = profilePostsRef.current
+        const localForUser = prevStore[resolved] || []
+        const fsIds = new Set(posts.map((p) => p.id))
+        const localOnly = localForUser.filter((p) => !fsIds.has(p.id))
+        const finalList = [...localOnly, ...posts].slice(0, 10)
+        saveProfilePosts({ ...prevStore, [resolved]: finalList })
+        subscribeCommentsForPosts(finalList)
+      },
+      { maxResults: 10 }
+    )
+  }, [isDemoMode, resolvePostOwnerId, subscribeCommentsForPosts])
+
+  // Real-time muro posts for self + feed-visible profiles
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid) return undefined
+    ensureUserPostsListener(effectiveUserId)
+    if (showFullProfile?.id) ensureUserPostsListener(showFullProfile.id)
+    if (activeTab === 'feed') {
+      realProfiles.slice(0, feedMaxProfiles).forEach((p) => ensureUserPostsListener(p.id))
+    }
+    return undefined
+  }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId, showFullProfile?.id, activeTab, feedMaxProfiles, realProfiles.length, ensureUserPostsListener])
+
+  useEffect(() => {
+    return () => {
+      Object.values(userPostsUnsubsRef.current).forEach((u) => { try { u() } catch {} })
+      userPostsUnsubsRef.current = {}
+    }
+  }, [])
+
   // Muro / Profile Posts helpers (demo + real Firestore)
   const loadProfilePosts = async (userId: string) => {
     const resolvedUserId = resolvePostOwnerId(userId)
@@ -4645,12 +4587,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       const limited = posts.slice(0, 10)
       const prevStore = profilePostsRef.current
       const localForUser = prevStore[resolvedUserId] || []
-      // Firestore wins; keep local-only posts not yet synced (optimistic create failures)
       const fsIds = new Set(limited.map((p) => p.id))
       const localOnly = localForUser.filter((p) => !fsIds.has(p.id))
       const finalList = [...localOnly, ...limited].slice(0, 10)
       saveProfilePosts({ ...prevStore, [resolvedUserId]: finalList })
       subscribeCommentsForPosts(finalList)
+      ensureUserPostsListener(resolvedUserId)
       return finalList
     } catch (e) {
       console.warn('loadProfilePosts error', e)
@@ -4885,7 +4827,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   const startSyncWith = async (partnerId: string, partnerName: string) => {
     const myIds = [effectiveUserId, currentUser?.id, 'me'].filter(Boolean);
     if (!partnerId || myIds.includes(partnerId)) return; // prevent self-join / self-sync
-    if (!currentUser?.trainingNow || !realProfiles.some(p => p.id === partnerId && p.trainingNow)) return
+    if (!currentUser?.trainingNow || !isUserLive(partnerId)) return
     if (syncPartnerId || joiningSyncWith === partnerId) return // anti-spam guard
 
     // Defensive: in real mode we must have a real uid before optimistic sync state (which triggers
@@ -5383,7 +5325,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   const tryAutoStartSync = (targetId: string) => {
     const target = realProfiles.find(p => p.id === targetId)
     if (!target) return
-    if (currentUser?.trainingNow && target?.trainingNow) {
+    if (currentUser?.trainingNow && isUserLive(targetId)) {
       if (syncPartnerId || joiningSyncWith) return // prevent spam / already in sync
       setJoiningSyncWith(targetId)
       startSyncWith(targetId, target.name)
@@ -6948,38 +6890,38 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       // This makes the post "alive" with real join comments (visible in their muro + feed teasers).
       // For real: direct FS arrayUnion on their latest profilePost so cross-device owners see the join in thread.
       // Owner will get notified via our processor (below) when they load/refresh their posts.
-      if (profile.trainingNow) {
+      if (isUserLive(profileId)) {
         (async () => {
           try {
             const joinText = '¡Me uno al live ahora mismo! 🔥 ¿Dónde estás entrenando?'
-            // DISRUPTIVE: auto-start EntrenaSync if both live (the unique market hook)
-            // set loader for attractive feedback on any join button
             if (!joiningSyncWith) setJoiningSyncWith(profileId)
             tryAutoStartSync(profileId)
             if (!isDemoMode && firebaseUser?.uid && db) {
-              // Query the target's most recent profilePost (the "¡Entrenando ahora..." one) and comment + like it
-              const { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, arrayUnion, serverTimestamp } = await import('firebase/firestore')
+              const { collection, query, where, orderBy, limit, getDocs, doc, updateDoc, arrayUnion } = await import('firebase/firestore')
               const postsCol = collection(db, 'profilePosts')
               const q = query(postsCol, where('userId', '==', profileId), orderBy('timestamp', 'desc'), limit(1))
               const snap = await getDocs(q)
               if (!snap.empty) {
-                const postRef = doc(db, 'profilePosts', snap.docs[0].id)
+                const postId = snap.docs[0].id
                 const joinComment = {
-                  id: 'lj' + Date.now(),
+                  id: createCommentId(),
                   userId: firebaseUser.uid,
                   userName: currentUser?.name || 'Un compañero live',
                   text: joinText,
-                  timestamp: Date.now()
+                  timestamp: Date.now(),
                 }
-                await updateDoc(postRef, {
-                  comments: arrayUnion(joinComment),
-                  // bump a virtual 'liveJoins' count or just likes for visibility
-                  likes: arrayUnion(firebaseUser.uid)
+                await writeCommentToFirestore(db, postId, joinComment, sanitizeForFirestore)
+                await updateDoc(doc(db, 'profilePosts', postId), {
+                  likes: arrayUnion(firebaseUser.uid),
                 })
-                // Optimistic: update local profilePosts for target so liveTrainingNow joinCount updates immediately for everyone viewing
+                ensurePostCommentsListener(postId, [joinComment])
                 setProfilePosts(prev => {
                   const targetPosts = prev[profileId] || []
-                  const updatedPosts = targetPosts.map((p: any) => p.id === postRef.id ? { ...p, comments: [...(p.comments||[]), joinComment], likes: [...(p.likes||[]), firebaseUser.uid] } : p )
+                  const updatedPosts = targetPosts.map((p: any) =>
+                    p.id === postId
+                      ? { ...p, comments: [...(p.comments || []), joinComment], likes: [...(p.likes || []), firebaseUser.uid] }
+                      : p
+                  )
                   return { ...prev, [profileId]: updatedPosts }
                 })
               }
@@ -7001,7 +6943,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         // Immediate UX feedback for the joiner (the "Unirme ya" action)
         // If both were live, the tryAutoStartSync already set loader + will auto-nav to the rich attractive sync panel
         toast.success(`¡Unido al live de ${profile.name}!`, {
-          description: profile.trainingNow && currentUser?.trainingNow 
+          description: isUserLive(profileId) && currentUser?.trainingNow 
             ? '¡EntrenaSync iniciado! Estado compartido + acciones conjuntas en vivo. Te llevamos al panel.' 
             : 'Dejé un comentario en su muro en vivo — ¡ellos lo verán!'
         })
