@@ -17,6 +17,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
     refreshDailyPulse,
     completeDailyChallenge,
     getNextGadget,
+    syncBonds,
   } = profileTabBindings(props)
   return (
     <>

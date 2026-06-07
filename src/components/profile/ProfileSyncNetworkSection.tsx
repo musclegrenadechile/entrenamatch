@@ -140,8 +140,6 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
   </div>
 </div>
 
-{/* =====================================================
-<ProfileDailyPulseSection {...props} />
 {/* Actividad reciente en tu muro - hace el perfil VIVO y atractivo */}
 {(() => {
   const myPosts = profilePosts[effectiveUserId] || [];

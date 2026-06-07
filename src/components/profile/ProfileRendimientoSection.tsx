@@ -74,9 +74,6 @@ export function ProfileRendimientoSection(props: ProfileTabProps) {
   ))}
 </div>
 
-<ProfileDailyPulseSection {...props} />
-
-<ProfileSyncNetworkSection {...props} />
 {/* Live streak badge - killer retention stat, shows when active */}
 {(currentUser.liveStreak && currentUser.liveStreak > 0) || (currentUser.joinedLiveStreak && currentUser.joinedLiveStreak > 0) ? (
   <div className="px-4 -mt-2 mb-1 text-center">
