@@ -21,6 +21,7 @@ export function docToProfilePost(docSnap: { id: string; data: () => Record<strin
     postType: d.postType as ProfilePost['postType'],
     workoutId: d.workoutId as string | undefined,
     workoutPreview: d.workoutPreview as ProfilePost['workoutPreview'],
+    nutritionPreview: d.nutritionPreview as ProfilePost['nutritionPreview'],
     reactions: (d.reactions as ProfilePost['reactions']) || {},
     comments: [],
   }

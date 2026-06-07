@@ -215,6 +215,21 @@ service cloud.firestore {
         && resource.data.userId == request.auth.uid;
     }
 
+    // Fuel AI — nutrition profile + daily meal logs (Phase 3)
+    match /fuelProfiles/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
+    match /fuelLogs/{logId} {
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

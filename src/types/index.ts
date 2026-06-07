@@ -145,6 +145,54 @@ export type WorkoutType = 'push' | 'pull' | 'legs' | 'full' | 'cardio' | 'other'
 
 export type ProfilePostType = 'text' | 'workout' | 'dailyPulse' | 'nutrition' | 'sync'
 
+export type FuelGoal = 'lose' | 'maintain' | 'gain' | 'muscle'
+
+export interface FuelProfile {
+  weightKg: number
+  heightCm: number
+  age: number
+  gender: 'hombre' | 'mujer'
+  goal: FuelGoal
+  activityLevel: 'light' | 'moderate' | 'active' | 'very_active'
+  restrictions?: string
+  tdee: number
+  targetKcal: number
+  targetProteinG: number
+  targetCarbsG: number
+  targetFatG: number
+  updatedAt?: number
+}
+
+export interface FuelLogEntry {
+  id: string
+  userId: string
+  date: string
+  mealLabel: string
+  kcal: number
+  proteinG: number
+  carbsG: number
+  fatG: number
+  photoUrl?: string
+  source: 'manual' | 'photo_ai' | 'text_ai'
+  createdAt: number
+}
+
+export interface FuelDayTotals {
+  kcal: number
+  proteinG: number
+  carbsG: number
+  fatG: number
+  entryCount: number
+}
+
+export interface NutritionPreview {
+  mealLabel: string
+  kcal: number
+  proteinG: number
+  carbsG: number
+  fatG: number
+}
+
 export interface WorkoutSet {
   reps: number
   weightKg: number
@@ -198,6 +246,7 @@ export interface ProfilePost {
   postType?: ProfilePostType
   workoutId?: string
   workoutPreview?: WorkoutPreview
+  nutritionPreview?: NutritionPreview
   reactions?: Record<string, string[]>
   comments: Array<{
     id: string

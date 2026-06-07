@@ -120,3 +120,100 @@ exports.notifyRedNetworkLiveOrSync = functions.firestore
 
     return null;
   });
+
+function estimateFromDescription(text) {
+  const t = String(text || '').toLowerCase();
+  let kcal = 450;
+  let label = String(text || 'Comida').slice(0, 60);
+  if (t.includes('ensalada') || t.includes('verdura')) kcal = 280;
+  else if (t.includes('pollo') || t.includes('pechuga')) kcal = 420;
+  else if (t.includes('arroz') || t.includes('pasta')) kcal = 520;
+  else if (t.includes('hamburg') || t.includes('pizza')) kcal = 750;
+  else if (t.includes('batido') || t.includes('prote')) kcal = 320;
+  else if (t.includes('desayuno') || t.includes('avena')) kcal = 380;
+  const proteinG = Math.round((kcal * 0.28) / 4);
+  const fatG = Math.round((kcal * 0.3) / 9);
+  const carbsG = Math.round((kcal - proteinG * 4 - fatG * 9) / 4);
+  return {
+    kcal,
+    proteinG,
+    carbsG,
+    fatG,
+    label,
+    tip: 'Estimación aproximada — no es consejo médico.',
+    source: 'heuristic',
+  };
+}
+
+async function callGeminiFoodAnalysis(apiKey, imageBase64, mealDescription) {
+  const parts = [];
+  if (mealDescription) {
+    parts.push({ text: `Estima macros de esta comida descrita en español: "${mealDescription}". Responde SOLO JSON válido: {"kcal":number,"proteinG":number,"carbsG":number,"fatG":number,"label":string,"tip":string}` });
+  }
+  if (imageBase64) {
+    parts.push({
+      inline_data: {
+        mime_type: 'image/jpeg',
+        data: imageBase64.replace(/^data:image\/\w+;base64,/, ''),
+      },
+    });
+    parts.push({
+      text: 'Estima kcal y macros P/C/G de esta comida en español. JSON only: {"kcal":number,"proteinG":number,"carbsG":number,"fatG":number,"label":string,"tip":string}. tip = consejo breve pre/post gym. No consejo médico.',
+    });
+  }
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts }],
+      generationConfig: { temperature: 0.2, maxOutputTokens: 256 },
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Gemini error ${res.status}: ${errText.slice(0, 200)}`);
+  }
+  const json = await res.json();
+  const raw = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('No JSON in Gemini response');
+  const parsed = JSON.parse(match[0]);
+  return {
+    kcal: Math.round(Number(parsed.kcal) || 400),
+    proteinG: Math.round(Number(parsed.proteinG) || 30),
+    carbsG: Math.round(Number(parsed.carbsG) || 40),
+    fatG: Math.round(Number(parsed.fatG) || 12),
+    label: String(parsed.label || mealDescription || 'Comida').slice(0, 80),
+    tip: String(parsed.tip || 'Estimación IA — no es consejo médico.').slice(0, 200),
+    source: 'gemini',
+  };
+}
+
+/** Callable: photo or text → estimated macros (Gemini Vision if GEMINI_API_KEY set). */
+exports.analyzeFood = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
+  }
+  const imageBase64 = data && data.imageBase64 ? String(data.imageBase64) : '';
+  const mealDescription = data && data.mealDescription ? String(data.mealDescription) : '';
+  if (!imageBase64 && !mealDescription.trim()) {
+    throw new functions.https.HttpsError('invalid-argument', 'Foto o descripción requerida.');
+  }
+
+  const apiKey =
+    process.env.GEMINI_API_KEY ||
+    (functions.config().gemini && functions.config().gemini.key) ||
+    '';
+
+  if (!apiKey) {
+    return estimateFromDescription(mealDescription || 'Comida');
+  }
+
+  try {
+    return await callGeminiFoodAnalysis(apiKey, imageBase64, mealDescription);
+  } catch (err) {
+    console.warn('Gemini food analysis failed, using heuristic', err.message || err);
+    return estimateFromDescription(mealDescription || 'Comida con foto');
+  }
+});

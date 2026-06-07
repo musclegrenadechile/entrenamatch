@@ -37,6 +37,7 @@ import type {
   SessionMessage, Squad, Report, Notification, CurrentUser, Tab,
   ProfilePost
 } from './types'
+import type { FuelProfile, FuelLogEntry, FuelDayTotals } from './types'
 import { 
   TRAINING_OPTIONS, AVAILABILITY, LEGAL_VERSIONS, AUTO_MATCH_IDS, APP_VERSION 
 } from './constants'
@@ -107,6 +108,19 @@ import {
 } from './utils/homeTeam'
 import { isTeamMemberId } from './utils/teamMembers'
 import { EntrenaLogModal, WorkoutPostCard } from './components/workout'
+import { FuelSetupModal, FuelLogModal, NutritionPostCard } from './components/fuel'
+import {
+  loadFuelProfile,
+  saveFuelProfile,
+  fetchFuelLogsForDate,
+  saveFuelLog,
+  createNutritionPost,
+  analyzeFoodWithAi,
+  sumFuelLogs,
+  emptyFuelDayTotals,
+} from './services/fuel'
+import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr } from './utils/fuelCalculator'
+import { fetchRecentWorkouts } from './services/workouts'
 import { saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, buildWorkoutPreview, computeWorkoutStats } from './services/workouts'
 import { EXERCISE_LIBRARY } from './data/exerciseLibrary'
 import {
@@ -794,6 +808,13 @@ function App() {
     type?: import('./types').WorkoutType
     durationMin?: number
   } | null>(null)
+  const [showFuelSetupModal, setShowFuelSetupModal] = useState(false)
+  const [showFuelLogModal, setShowFuelLogModal] = useState(false)
+  const [savingFuel, setSavingFuel] = useState(false)
+  const [fuelProfile, setFuelProfile] = useState<FuelProfile | null>(null)
+  const [fuelTodayLogs, setFuelTodayLogs] = useState<FuelLogEntry[]>([])
+  const [fuelTodayTotals, setFuelTodayTotals] = useState<FuelDayTotals>(emptyFuelDayTotals())
+  const [fuelPostWorkoutTip, setFuelPostWorkoutTip] = useState<string | undefined>()
   // THE KILLER FEATURE: EntrenaSync - real-time synchronized training that turns two people into a high-performance unit with shared state, visible connection, joint impact, and lasting social capital. This is the foundation of the first true social network for fitness performance.
   const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
   const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
@@ -4720,6 +4741,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             postType: d.postType,
             workoutId: d.workoutId,
             workoutPreview: d.workoutPreview,
+            nutritionPreview: d.nutritionPreview,
             reactions: d.reactions || {},
             comments: comments as ProfilePost['comments'],
           })
@@ -4935,6 +4957,165 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       toast.error('No se pudo guardar el entreno')
     } finally {
       setSavingWorkout(false)
+    }
+  }
+
+  const refreshFuelData = useCallback(async () => {
+    if (isDemoMode || !db || !firebaseUser?.uid) return
+    try {
+      const [profile, logs, workouts] = await Promise.all([
+        loadFuelProfile(db, effectiveUserId),
+        fetchFuelLogsForDate(db, effectiveUserId),
+        fetchRecentWorkouts(db, effectiveUserId, 1).catch(() => [] as import('./types').Workout[]),
+      ])
+      setFuelProfile(profile)
+      setFuelTodayLogs(logs)
+      setFuelTodayTotals(sumFuelLogs(logs))
+      setFuelPostWorkoutTip(
+        workouts[0] ? getPostWorkoutFuelTip(workouts[0].type) : undefined
+      )
+    } catch (e) {
+      console.warn('refreshFuelData failed', e)
+    }
+  }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId])
+
+  useEffect(() => {
+    if (!firebaseUser?.uid || isDemoMode) return
+    refreshFuelData().catch(() => {})
+  }, [firebaseUser?.uid, isDemoMode, refreshFuelData])
+
+  const handleSaveFuelProfile = async (profile: Omit<FuelProfile, 'updatedAt'>) => {
+    setSavingFuel(true)
+    try {
+      if (!isDemoMode && db && firebaseUser?.uid) {
+        await saveFuelProfile(db, effectiveUserId, profile)
+        setFuelProfile({ ...profile, updatedAt: Date.now() })
+        toast.success('Perfil Fuel guardado', {
+          description: `Target: ${profile.targetKcal} kcal/día`,
+        })
+      } else {
+        setFuelProfile({ ...profile, updatedAt: Date.now() })
+        toast.success('Perfil Fuel guardado (demo)')
+      }
+      setShowFuelSetupModal(false)
+    } catch (e) {
+      console.error('Fuel profile save failed', e)
+      toast.error('No se pudo guardar el perfil Fuel')
+    } finally {
+      setSavingFuel(false)
+    }
+  }
+
+  const handleAnalyzeFood = async (imageBase64: string, mealDescription?: string) => {
+    try {
+      return await analyzeFoodWithAi({ imageBase64, mealDescription })
+    } catch {
+      return estimateMacrosFromDescription(mealDescription || 'Comida')
+    }
+  }
+
+  const handleSaveFuelLog = async (payload: {
+    mealLabel: string
+    kcal: number
+    proteinG: number
+    carbsG: number
+    fatG: number
+    photoDataUrl?: string
+    source: 'manual' | 'photo_ai' | 'text_ai'
+    publishToMuro: boolean
+  }) => {
+    setSavingFuel(true)
+    try {
+      let photoUrl: string | undefined
+      if (payload.photoDataUrl?.startsWith('data:') && storage && firebaseUser?.uid && !isDemoMode) {
+        try {
+          const { ref, uploadString, getDownloadURL } = await import('firebase/storage')
+          const path = `fuel/${effectiveUserId}/${Date.now()}.jpg`
+          const storageRef = ref(storage, path)
+          const snap = await uploadString(storageRef, payload.photoDataUrl, 'data_url')
+          photoUrl = await getDownloadURL(snap.ref)
+        } catch (e) {
+          console.warn('fuel photo upload failed', e)
+        }
+      }
+
+      const preview: NutritionPreview = {
+        mealLabel: payload.mealLabel,
+        kcal: payload.kcal,
+        proteinG: payload.proteinG,
+        carbsG: payload.carbsG,
+        fatG: payload.fatG,
+      }
+
+      if (!isDemoMode && db && firebaseUser?.uid) {
+        const entry = await saveFuelLog(db, {
+          userId: effectiveUserId,
+          date: toLocalDateStr(),
+          mealLabel: payload.mealLabel,
+          kcal: payload.kcal,
+          proteinG: payload.proteinG,
+          carbsG: payload.carbsG,
+          fatG: payload.fatG,
+          photoUrl,
+          source: payload.source,
+        })
+        const nextLogs = [entry, ...fuelTodayLogs]
+        setFuelTodayLogs(nextLogs)
+        setFuelTodayTotals(sumFuelLogs(nextLogs))
+
+        if (payload.publishToMuro) {
+          const postId = await createNutritionPost(db, effectiveUserId, preview, photoUrl)
+          const post: ProfilePost = {
+            id: postId,
+            userId: effectiveUserId,
+            text: `🍽 Fuel check — ${preview.mealLabel}: ${preview.kcal} kcal · P${preview.proteinG} C${preview.carbsG} G${preview.fatG}`,
+            photo: photoUrl,
+            timestamp: Date.now(),
+            pinned: false,
+            likes: [],
+            comments: [],
+            postType: 'nutrition',
+            nutritionPreview: preview,
+            reactions: {},
+          }
+          setProfilePosts((prev) => {
+            const current = prev[effectiveUserId] || []
+            const newState = { ...prev, [effectiveUserId]: [post, ...current].slice(0, 10) }
+            profilePostsRef.current = newState
+            return newState
+          })
+          subscribeCommentsForPosts([post])
+          setRecentlyPublishedPostId(postId)
+          setTimeout(() => setRecentlyPublishedPostId(null), 4000)
+          if (activeTab === 'home') loadGlobalFeed().catch(() => {})
+        }
+        toast.success('Comida registrada', {
+          description: payload.publishToMuro ? 'Publicada en el muro' : `${payload.kcal} kcal sumadas hoy`,
+        })
+      } else {
+        const demoEntry: FuelLogEntry = {
+          id: 'fuel' + Date.now(),
+          userId: effectiveUserId,
+          date: toLocalDateStr(),
+          mealLabel: payload.mealLabel,
+          kcal: payload.kcal,
+          proteinG: payload.proteinG,
+          carbsG: payload.carbsG,
+          fatG: payload.fatG,
+          source: payload.source,
+          createdAt: Date.now(),
+        }
+        const nextLogs = [demoEntry, ...fuelTodayLogs]
+        setFuelTodayLogs(nextLogs)
+        setFuelTodayTotals(sumFuelLogs(nextLogs))
+        toast.success('Comida registrada (demo)')
+      }
+      setShowFuelLogModal(false)
+    } catch (e) {
+      console.error('Fuel log save failed', e)
+      toast.error('No se pudo guardar la comida')
+    } finally {
+      setSavingFuel(false)
     }
   }
 
@@ -9167,6 +9348,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               }}
               onOpenMatches={() => setActiveTab('matches')}
               onOpenEntrenaLog={() => setShowEntrenaLogModal(true)}
+              fuelProfile={fuelProfile}
+              fuelTotals={fuelTodayTotals}
+              fuelPostWorkoutTip={fuelPostWorkoutTip}
+              onOpenFuelSetup={() => setShowFuelSetupModal(true)}
+              onOpenFuelLog={() =>
+                fuelProfile ? setShowFuelLogModal(true) : setShowFuelSetupModal(true)
+              }
               cityLabel={currentUser?.city}
             />
             {/* CINEMATIC REMASTERED FEED HEADER — the social heart of the GymPulse */}
@@ -9465,6 +9653,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                                     : undefined
                                 }
                               />
+                            </div>
+                          ) : post.postType === 'nutrition' && post.nutritionPreview ? (
+                            <div className="muro-post-body mt-2">
+                              <NutritionPostCard preview={post.nutritionPreview} />
                             </div>
                           ) : (
                           <div className="muro-post-body">
@@ -12621,6 +12813,22 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         initialExercises={entrenaLogPrefill?.exercises}
         initialType={entrenaLogPrefill?.type}
         initialDurationMin={entrenaLogPrefill?.durationMin}
+      />
+      <FuelSetupModal
+        open={showFuelSetupModal}
+        initial={fuelProfile}
+        defaultAge={currentUser?.age}
+        defaultGender={currentUser?.gender}
+        onClose={() => setShowFuelSetupModal(false)}
+        onSave={handleSaveFuelProfile}
+        saving={savingFuel}
+      />
+      <FuelLogModal
+        open={showFuelLogModal}
+        onClose={() => setShowFuelLogModal(false)}
+        onSave={handleSaveFuelLog}
+        onAnalyzePhoto={handleAnalyzeFood}
+        saving={savingFuel}
       />
       <LiveToggleFab
         isLive={!!currentUser?.trainingNow}

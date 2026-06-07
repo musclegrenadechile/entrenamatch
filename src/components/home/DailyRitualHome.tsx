@@ -1,4 +1,5 @@
 import { MapPin, MessageCircle, Users } from 'lucide-react'
+import { FuelDayCard } from '../fuel/FuelDayCard'
 
 export type TeamMemberStatus = 'live' | 'recent' | 'this_week' | 'inactive'
 
@@ -26,6 +27,11 @@ export interface DailyRitualHomeProps {
   onMessageMember?: (id: string) => void
   onOpenMatches?: () => void
   onOpenEntrenaLog?: () => void
+  fuelProfile?: import('../../types').FuelProfile | null
+  fuelTotals?: import('../../types').FuelDayTotals
+  fuelPostWorkoutTip?: string
+  onOpenFuelSetup?: () => void
+  onOpenFuelLog?: () => void
   cityLabel?: string
 }
 
@@ -52,6 +58,11 @@ export function DailyRitualHome({
   onMessageMember,
   onOpenMatches,
   onOpenEntrenaLog,
+  fuelProfile,
+  fuelTotals,
+  fuelPostWorkoutTip,
+  onOpenFuelSetup,
+  onOpenFuelLog,
   cityLabel,
 }: DailyRitualHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
@@ -168,6 +179,18 @@ export function DailyRitualHome({
           </p>
         )}
       </div>
+
+      {(onOpenFuelSetup || onOpenFuelLog) && (
+        <FuelDayCard
+          profile={fuelProfile ?? null}
+          totals={
+            fuelTotals ?? { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 }
+          }
+          postWorkoutTip={fuelPostWorkoutTip}
+          onSetup={onOpenFuelSetup ?? (() => {})}
+          onLogMeal={onOpenFuelLog ?? (() => {})}
+        />
+      )}
 
       {/* Tu equipo */}
       <div className="rounded-3xl p-4 bg-[#141418] border border-[#2F2F35]">
