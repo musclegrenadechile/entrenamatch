@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { DailyHome } from './DailyHome'
 import { isGymCheckInFresh } from '../../services/localNetwork'
+import { countRedLiveMembers } from '../../utils/syncFomo'
 import { WorkoutPostCard } from '../workout'
 import { NutritionPostCard } from '../fuel'
 
@@ -97,6 +98,12 @@ export function HomeTab(props: HomeTabProps) {
     userLocation,
   } = props
 
+  const redLiveCount = countRedLiveMembers(
+    syncBonds,
+    (liveTrainingNow || []).map((u) => u.id),
+    effectiveUserId
+  )
+
   return (
     <div className="flex-1 overflow-auto p-4">
       <DailyHome
@@ -105,6 +112,7 @@ export function HomeTab(props: HomeTabProps) {
         weekTrainedCount={homeWeekTrainedCount}
         teamMembers={homeTeamMembers}
         liveCount={liveCountForUI}
+        redLiveCount={redLiveCount}
         syncCount={activeSyncCount}
         activeSyncPairs={activeSyncPairs}
         isLive={!!currentUser?.trainingNow}
@@ -283,7 +291,7 @@ export function HomeTab(props: HomeTabProps) {
                   {userLocation && u.distance < 5 && <span className="text-[7px] bg-[#22c55e]/25 text-[#22c55e] px-1 rounded">CERCA</span>}
                 </div>
 
-                {!!syncBonds[u.id] && <div className="text-[7px] bg-[#FFD700] text-black px-1.5 rounded font-black self-start -mt-0.5 tracking-wider">⭐ RED • NP ACTIVO</div>}
+                {!!syncBonds[u.id] && <div className="text-[7px] bg-[#FFD700] text-black px-1.5 rounded font-black self-start -mt-0.5 tracking-wider">⭐ RED • EN VIVO</div>}
 
                 {u.seVaEnMin > 0 && (
                   <div className="text-orange-400 text-[9px] font-medium flex items-center gap-1">

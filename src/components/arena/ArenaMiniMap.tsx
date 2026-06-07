@@ -49,10 +49,10 @@ export function ArenaMiniMap({
         <span className="text-[#22c55e] font-bold">🌊 Onda #{Math.max(1, rippleCount)}</span>
         <span className="text-white/70">
           {witnessCount > 0
-            ? `~${witnessCount} pueden presenciar`
+            ? `${witnessCount} presenciando`
             : liveNearbyCount > 0
-              ? `${liveNearbyCount} entrenando cerca`
-              : 'Propagando energía en el GymPulse'}
+              ? `${liveNearbyCount} entrenando cerca · sync visible`
+              : 'Sync visible en el GymPulse'}
         </span>
         {cityLabel && <span className="text-[#FF671F]/90">{cityLabel}</span>}
       </div>

@@ -38,6 +38,7 @@ L.Icon.Default.mergeOptions({
 import { getDistanceKm } from '../../utils'
 import { filterMapLiveUsers, hasMapCoords } from '../../utils/gymPulseLive'
 import { countLiveAtGym } from '../../services/localNetwork'
+import { syncElapsedMinutes } from '../../utils/syncFomo'
 
 export interface GymPulseMapProps {
   showLiveMap: boolean
@@ -694,6 +695,21 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
               className: `sync-tether active-sync ${isStrong ? 'strong-tether' : ''}`
             }
           ).addTo(mapInstanceRef.current)
+          const startedAt = u.syncStartedAt || partner.syncStartedAt
+          const syncMins = syncElapsedMinutes(startedAt)
+          const nameA = (u.name || 'Atleta').split(' ')[0]
+          const nameB = (partner.name || 'Atleta').split(' ')[0]
+          const bondTag = inRed
+            ? '<span style="color:#FFD700;font-size:10px;font-weight:700">⭐ Alianza de sync</span><br/>'
+            : ''
+          line.bindPopup(`
+            <div style="min-width:168px;font-size:12px;line-height:1.35">
+              ${bondTag}
+              <strong>${nameA} × ${nameB}</strong><br/>
+              <span style="font-size:10px;color:#22c55e;font-weight:700">🔄 EN SYNC${syncMins > 0 ? ` · ${syncMins} min` : ''}</span><br/>
+              <span style="font-size:10px;color:#9CA3AF">Tether activo en GymPulse — al ver el mapa cuentas como testigo</span>
+            </div>
+          `)
           syncLinesRef.current.push(line)
         } catch {}
       })

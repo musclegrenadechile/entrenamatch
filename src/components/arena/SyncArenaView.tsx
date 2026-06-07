@@ -41,7 +41,6 @@ export interface SyncArenaViewProps {
   liveNearbyCount: number
   rippleCount: number
   witnessCount: number
-  realWitnessCount?: number
   redLiveCount: number
   waveCount: number
   lastWaveLabel?: string
@@ -91,7 +90,6 @@ export function SyncArenaView({
   liveNearbyCount,
   rippleCount,
   witnessCount,
-  realWitnessCount = 0,
   redLiveCount,
   waveCount,
   lastWaveLabel,
@@ -128,8 +126,6 @@ export function SyncArenaView({
   const secsToStory = Math.floor((msToStory % 60000) / 1000)
   const highlightUnlocked = syncVibe >= 80
   const vibeToHighlight = Math.max(0, 80 - syncVibe)
-
-  const displayWitness = Math.max(witnessCount, realWitnessCount)
 
   const exerciseOptions = useMemo(() => {
     const set = new Set(exerciseSuggestions)
@@ -360,7 +356,7 @@ export function SyncArenaView({
 
       <div className="px-4 mt-2 space-y-2">
         <ArenaFomoStrip
-          witnessCount={displayWitness}
+          witnessCount={witnessCount}
           redLiveCount={redLiveCount}
           waveCount={waveCount}
           syncVibe={syncVibe}
@@ -371,7 +367,7 @@ export function SyncArenaView({
           cityLabel={cityLabel}
         />
         <ArenaWitnessRow
-          witnessCount={displayWitness}
+          witnessCount={witnessCount}
           liveNearbyCount={liveNearbyCount}
           redLiveCount={redLiveCount}
         />
@@ -380,7 +376,7 @@ export function SyncArenaView({
           rippleCount={rippleCount}
           cityLabel={cityLabel}
           vibe={syncVibe}
-          witnessCount={displayWitness}
+          witnessCount={witnessCount}
           wavePulseKey={wavePulseKey}
         />
       </div>
@@ -446,8 +442,8 @@ export function SyncArenaView({
         </button>
         <p className="text-[9px] text-center text-white/40 px-6 flex items-center justify-center gap-1">
           <Zap size={10} className="text-[#22c55e]" />
-          {displayWitness > 0
-            ? `Cada acción llega a ${partnerFirst} y ${displayWitness} más pueden presenciarlo en el mapa`
+          {witnessCount > 0
+            ? `Cada acción llega a ${partnerFirst} y ${witnessCount} más presencian en el mapa`
             : 'Cada acción se ve en su pantalla y ondea en el GymPulse'}
         </p>
       </footer>

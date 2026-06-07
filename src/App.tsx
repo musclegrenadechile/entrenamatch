@@ -2191,6 +2191,7 @@ useEffect(() => {
   }, [isDemoMode, db])
   const showFullProfileRef = useRef<((profile: any) => void) | null>(null)
   const latestRealProfilesRef = useRef<any[]>([])
+  const syncBondsRef = useRef<Record<string, { totalMin: number; sessions: number; avgRating: number; bondLevel: number }>>({})
 
 // Dedicated unmount cleanup for the Leaflet map (now mostly no-op since GymPulseMap owns the instance; kept for safety on unmount/hot-reload)
   useEffect(() => {
@@ -2954,14 +2955,25 @@ useEffect(() => {
 
         addNotification({
           type: 'sync_invite',
-          title: `EntrenaSync con ${payload.partnerName}`,
-          body: 'Tu compañero inició sync contigo — Arena abierta',
+          title: syncBondsRef.current[payload.partnerId]
+            ? `${payload.partnerName} inició sync contigo`
+            : `EntrenaSync con ${payload.partnerName}`,
+          body: syncBondsRef.current[payload.partnerId]
+            ? 'Tu alianza de sync está en vivo — Arena abierta'
+            : 'Tu compañero inició sync contigo — Arena abierta',
           relatedId: payload.partnerId,
         })
 
-        toast.success(`EntrenaSync con ${payload.partnerName}`, {
-          description: 'Tu compañero inició sync contigo',
-        })
+        toast.success(
+          syncBondsRef.current[payload.partnerId]
+            ? `⭐ ${payload.partnerName} te invitó a sync`
+            : `EntrenaSync con ${payload.partnerName}`,
+          {
+            description: syncBondsRef.current[payload.partnerId]
+              ? 'Tu alianza está en vivo — abrimos la Arena'
+              : 'Tu compañero inició sync contigo',
+          }
+        )
       },
       onError: () => {
         // Listener will retry automatically; enableNetwork when already online causes da08.
@@ -3071,9 +3083,15 @@ useEffect(() => {
       seen.add(pairKey)
       count++
       if (pairs.length < 2) {
+        const startedAt = p.syncStartedAt || partner.syncStartedAt
+        const minutes =
+          startedAt && startedAt > 0
+            ? Math.max(0, Math.floor((Date.now() - startedAt) / 60000))
+            : undefined
         pairs.push({
           names: `${(p.name || 'U').split(' ')[0]} + ${(partner.name || 'U').split(' ')[0]}`,
           vibe: 50,
+          minutes,
         })
       }
     }
@@ -6018,13 +6036,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       setTimeout(() => {
         createProfilePost(`¡Sincronizado con ${partnerName}! Entrenamos juntos ahora 🔥`, null).catch(() => {})
       }, 400)
-      const witnessHint = Math.max(0, liveTrainingNow.length - 2)
       emitArenaMapRipple('Sync iniciado', 1.05, { vibe: 12, actionsSnapshot: [], notifyNearby: false })
       toast.success(`EntrenaSync iniciado con ${partnerName}`, {
-        description:
-          witnessHint > 0
-            ? `Arena abierta — ~${witnessHint} personas pueden ver vuestra ola en el mapa`
-            : 'Arena abierta — vuestra sync ondea en el GymPulse en vivo',
+        description: 'Arena abierta — vuestra sync ondea en el GymPulse en vivo',
       })
       try { confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } }) } catch {}
       addDebugLog(`EntrenaSync started with ${partnerName}`)
@@ -6057,6 +6071,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   useEffect(() => {
     latestRealProfilesRef.current = realProfiles
   }, [realProfiles])
+
+  useEffect(() => {
+    syncBondsRef.current = syncBonds
+  }, [syncBonds])
 
   // Witness mode for ripples: anyone who sees a ripple on the map (or gets notified) can view a short replay
   // of the epic high-vibe moment in the Arena that generated the wave.
@@ -12189,16 +12207,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             : null
         const bond = syncBonds[syncPartnerId]
         const excludeIds = new Set([effectiveUserId, syncPartnerId, 'me', firebaseUser?.uid].filter(Boolean))
-        let witnessCount = 0
-        liveTrainingNow.forEach((u: any) => {
-          if (excludeIds.has(u.id)) return
-          if (userLocation && u.lat != null && u.lng != null) {
-            if (getDistanceKm(userLocation.lat, userLocation.lng, u.lat, u.lng) <= 30) witnessCount++
-          } else {
-            witnessCount++
-          }
-        })
-        witnessCount = Math.max(witnessCount, Math.max(0, liveTrainingNow.length - 2))
         const redLiveCount = Object.keys(syncBonds).filter(
           (id) => !excludeIds.has(id) && isUserLive(id)
         ).length
@@ -12221,8 +12229,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             distanceKm={dist}
             liveNearbyCount={liveTrainingNow.length}
             rippleCount={Math.max(1, arenaWaveCount || Math.floor(syncVibe / 25) + syncRipples.length)}
-            witnessCount={witnessCount}
-            realWitnessCount={syncRealWitnessCount}
+            witnessCount={syncRealWitnessCount}
             redLiveCount={redLiveCount}
             waveCount={arenaWaveCount}
             lastWaveLabel={lastArenaWaveLabel}
@@ -12262,10 +12269,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         <ArenaGlobalPulseBar
           partnerName={realProfiles.find((p) => p.id === syncPartnerId)?.name || 'Compañero'}
           syncVibe={syncVibe}
-          witnessCount={Math.max(
-            syncRealWitnessCount,
-            Math.max(0, liveTrainingNow.length - 2)
-          )}
+          witnessCount={syncRealWitnessCount}
           waveCount={arenaWaveCount}
           globalPairs={activeSyncPairs}
           onOpenArena={() => setShowSyncArena(true)}

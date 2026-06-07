@@ -28,10 +28,10 @@ export function ArenaFomoStrip({
     const m: string[] = []
     if (witnessCount > 0) {
       m.push(
-        `👁️ ~${witnessCount} ${witnessCount === 1 ? 'persona puede' : 'personas pueden'} presenciar tu Arena en el GymPulse`
+        `👁️ ${witnessCount} ${witnessCount === 1 ? 'persona presencia' : 'personas presencian'} tu Arena en el GymPulse`
       )
     } else {
-      m.push('🌊 Tu sync ondea en el mapa — quien abra GymPulse lo verá ahora')
+      m.push('🌊 Tu sync ondea en el mapa — quien abra GymPulse puede presenciarla')
     }
     if (redLiveCount > 0) {
       m.push(`🔥 ${redLiveCount} de tu red entrenan en vivo — ven vuestro tether en el mapa`)

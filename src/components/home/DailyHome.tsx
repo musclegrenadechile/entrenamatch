@@ -4,6 +4,7 @@ import { FuelDayCard } from '../fuel/FuelDayCard'
 import { LocalNetworkCard } from './LocalNetworkCard'
 import { FirstStepsGuide, isFirstStepsDismissed, dismissFirstSteps } from './FirstStepsGuide'
 import { HomeLoopStepper, resolveHomeLoopStep } from './HomeLoopStepper'
+import { formatRedSyncFomoLine } from '../../utils/syncFomo'
 import type { LocalNetworkCardProps } from './LocalNetworkCard'
 
 export type TeamMemberStatus = 'live' | 'recent' | 'this_week' | 'inactive'
@@ -19,6 +20,7 @@ export interface TeamMemberView {
 export interface ActiveSyncPairView {
   names: string
   vibe?: number
+  minutes?: number
 }
 
 export interface DailyHomeProps {
@@ -27,6 +29,7 @@ export interface DailyHomeProps {
   weekTrainedCount: number
   teamMembers: TeamMemberView[]
   liveCount: number
+  redLiveCount?: number
   syncCount: number
   activeSyncPairs?: ActiveSyncPairView[]
   isLive: boolean
@@ -81,6 +84,7 @@ export function DailyHome({
   weekTrainedCount,
   teamMembers,
   liveCount,
+  redLiveCount = 0,
   syncCount,
   activeSyncPairs = [],
   isLive,
@@ -119,6 +123,7 @@ export function DailyHome({
     liveTeamCount: liveTeamMembers.length,
     syncCount,
   })
+  const syncFomoLine = formatRedSyncFomoLine(redLiveCount, syncCount)
 
   return (
     <div className="daily-home mb-4 -mx-1 px-1 space-y-3">
@@ -356,6 +361,10 @@ export function DailyHome({
           }
         />
 
+        {syncFomoLine && (
+          <p className="text-[10px] text-[#22c55e]/90 font-semibold mb-3 ml-7">{syncFomoLine}</p>
+        )}
+
         {!isLive && (
           <div className="mb-3 p-3 rounded-2xl bg-black/30 border border-white/10 text-center">
             <p className="text-[11px] text-[#9CA3AF]">Activa live para iniciar un EntrenaSync.</p>
@@ -382,6 +391,7 @@ export function DailyHome({
                   className="shrink-0 px-2.5 py-1 rounded-full bg-[#22c55e]/10 text-[#22c55e] text-[10px] font-medium border border-[#22c55e]/25"
                 >
                   {pair.names}
+                  {pair.minutes != null && pair.minutes > 0 ? ` · ${pair.minutes} min` : ''}
                   {pair.vibe != null ? ` · ${pair.vibe}%` : ''}
                 </span>
               ))}
