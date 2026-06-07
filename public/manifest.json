@@ -22,5 +22,28 @@
       "type": "image/jpeg",
       "purpose": "any maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "Tu zona — Hoy",
+      "short_name": "Hoy",
+      "description": "Ritual diario, reto de ciudad y ranking local",
+      "url": "/entrenamatch/?tab=home",
+      "icons": [{ "src": "/entrenamatch/favicon.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Mapa GymPulse",
+      "short_name": "Mapa",
+      "description": "Ver quién entrena en vivo cerca",
+      "url": "/entrenamatch/?tab=explore&map=1",
+      "icons": [{ "src": "/entrenamatch/favicon.svg", "sizes": "96x96" }]
+    },
+    {
+      "name": "Mis Squads",
+      "short_name": "Squads",
+      "description": "Grupos fijos y rutina semanal",
+      "url": "/entrenamatch/?tab=squads",
+      "icons": [{ "src": "/entrenamatch/favicon.svg", "sizes": "96x96" }]
+    }
   ]
 }

@@ -114,6 +114,12 @@ import {
   findLeaderboardRank,
 } from './services/localNetwork'
 import {
+  attachCityWeeklyStatsListener,
+  bumpCityWeeklyStats,
+  cityStatsDocId,
+  mergeCityChallengeWithFirestore,
+} from './services/cityWeeklyStats'
+import {
   formatLastLiveLabel,
   getTeamMemberStatus,
   sortTeamMembers,
@@ -1749,6 +1755,19 @@ useEffect(() => {
   const [showLiveMap, setShowLiveMap] = useState(() => {
     try { return localStorage.getItem('entrenamatch_show_map') === '1' } catch { return false }
   })
+
+  // PWA manifest shortcuts: /entrenamatch/?tab=home | ?tab=explore&map=1
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const tab = params.get('tab')
+      const validTabs: Tab[] = ['home', 'explore', 'squads', 'sesiones', 'matches', 'messages', 'profile']
+      if (tab && validTabs.includes(tab as Tab)) setActiveTab(tab as Tab)
+      if (params.get('map') === '1') setShowLiveMap(true)
+    } catch {}
+  }, [])
+
+  const [firestoreCityStats, setFirestoreCityStats] = useState<import('./services/cityWeeklyStats').CityWeeklyStatsDoc | null>(null)
   const [mapNearOnly, setMapNearOnly] = useState(false) // simple filter for map UX
   const [mapMyGymOnly, setMapMyGymOnly] = useState(false)
   const [selectedMapZone, setSelectedMapZone] = useState<string | null>(null) // interactive zone filter for "sigue con todo el mapa"
@@ -2589,6 +2608,11 @@ useEffect(() => {
     )
   }, [realProfiles, homeCityNorm, currentUser?.city, currentUser?.weekStats, effectiveUserId])
 
+  const homeCityChallengeMerged = useMemo(
+    () => mergeCityChallengeWithFirestore(homeCityChallenge, firestoreCityStats),
+    [homeCityChallenge, firestoreCityStats]
+  )
+
   const homeNearestGym = useMemo(() => {
     const lat = userLocation?.lat ?? currentUser?.lat
     const lng = userLocation?.lng ?? currentUser?.lng
@@ -2624,19 +2648,29 @@ useEffect(() => {
     ? currentUser?.gymCheckIn?.gymId ?? null
     : null
 
+  // Real-time city challenge aggregate (Firestore)
+  useEffect(() => {
+    if (isDemoMode || !db || !homeCityNorm) {
+      setFirestoreCityStats(null)
+      return undefined
+    }
+    const docId = cityStatsDocId(homeCityNorm, getWeekKey())
+    return attachCityWeeklyStatsListener(db, docId, setFirestoreCityStats)
+  }, [isDemoMode, db, homeCityNorm])
+
   // Celebrate city challenge completion once per week (client-side)
   useEffect(() => {
-    if (!homeCityChallenge || homeCityChallenge.progressPct < 100 || !homeCityNorm) return
-    const storageKey = `entrenamatch_city_done_${homeCityChallenge.weekKey}_${homeCityNorm}`
+    if (!homeCityChallengeMerged || homeCityChallengeMerged.progressPct < 100 || !homeCityNorm) return
+    const storageKey = `entrenamatch_city_done_${homeCityChallengeMerged.weekKey}_${homeCityNorm}`
     try {
       if (localStorage.getItem(storageKey)) return
       localStorage.setItem(storageKey, '1')
-      toast.success(`¡Reto completado en ${homeCityChallenge.cityLabel}!`, {
-        description: `${homeCityChallenge.targetMinutes} min live+sync esta semana — la ciudad lo logró 🏆`,
+      toast.success(`¡Reto completado en ${homeCityChallengeMerged.cityLabel}!`, {
+        description: `${homeCityChallengeMerged.targetMinutes} min live+sync esta semana — la ciudad lo logró 🏆`,
       })
       confetti({ particleCount: 90, spread: 75, origin: { y: 0.65 } })
     } catch {}
-  }, [homeCityChallenge, homeCityNorm])
+  }, [homeCityChallengeMerged, homeCityNorm])
 
   // Beta Feedback enhanced (Phase 0 - structured + history)
   const [feedbackType, setFeedbackType] = useState<'bug' | 'idea' | 'ux' | 'other'>('idea')
@@ -3641,6 +3675,27 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       }, 400)
     }
   }, [mapMyGymId, currentUser?.gymCheckIn])
+
+  const syncCityStatsBump = useCallback(
+    async (liveMinutesDelta: number, syncMinutesDelta: number) => {
+      if (isDemoMode || !db || !firebaseUser?.uid) return
+      const cityNorm = normalizeCity(currentUser?.city)
+      if (!cityNorm || liveMinutesDelta + syncMinutesDelta <= 0) return
+      try {
+        await bumpCityWeeklyStats(db, {
+          cityNorm,
+          cityLabel: currentUser?.city || cityNorm,
+          weekKey: getWeekKey(),
+          uid: firebaseUser.uid,
+          liveMinutesDelta,
+          syncMinutesDelta,
+        })
+      } catch (e) {
+        console.warn('cityWeeklyStats bump failed', e)
+      }
+    },
+    [isDemoMode, db, firebaseUser?.uid, currentUser?.city]
+  )
 
   // Native push notifications setup (only for real users in native APK)
   // NOTE: We no longer auto-request permission on every login to avoid unwanted prompts/crashes during "activation".
@@ -5617,6 +5672,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         saveUser(updated)
         await saveUserWithRealSync(updated)
         loadRealProfiles().catch(() => {})
+        syncCityStatsBump(minutes, 0).catch(() => {})
         setMapForceTick((t) => t + 1)
         if (minutes >= MIN_LIVE_MINUTES_FOR_WEEK_DAY) {
           setWeekLiveDays(nextLiveDays)
@@ -5950,6 +6006,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       } catch (e) {
         console.warn('endSync self clear via resilient path failed', e);
       }
+      if (syncMins > 0) syncCityStatsBump(0, syncMins).catch(() => {})
       // Partner + session ended are cross-doc; best-effort but with recovery reset first.
       // Direct updateDoc after a session full of action writes can hit the bad mutations state
       // if previous transport left the pipeline unhealthy.
@@ -9634,7 +9691,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               }
               cityLabel={currentUser?.city}
               localNetwork={{
-                challenge: homeCityChallenge,
+                challenge: homeCityChallengeMerged,
                 leaderboard: homeLocalLeaderboard,
                 myRank: homeMyLeaderboardRank,
                 cityLiveCount: homeCityLiveCount,
@@ -13589,6 +13646,28 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                             >
                               {savingSquadRoutine ? 'Guardando…' : 'Guardar rutina'}
                             </button>
+                            {squad.weeklyRoutine?.label && (
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  const label = squad.weeklyRoutine!.label
+                                  const sched = squad.weeklyRoutine!.schedule
+                                  sendSessionMessage(
+                                    squad.id,
+                                    `🏋️ Rutina del squad: ${label}${sched ? ` (${sched})` : ''} — ¡voy en live!`
+                                  )
+                                  if (!currentUser?.trainingNow) {
+                                    await toggleLiveTraining('on')
+                                  }
+                                  toast.success('Rutina activada', {
+                                    description: 'Live encendido y aviso enviado al squad',
+                                  })
+                                }}
+                                className="mt-2 w-full py-2.5 rounded-xl bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black text-sm font-extrabold active:scale-[0.985]"
+                              >
+                                🟢 Entrenar rutina ahora
+                              </button>
+                            )}
                           </div>
 
                           <button 

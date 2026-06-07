@@ -230,6 +230,17 @@ service cloud.firestore {
         && resource.data.userId == request.auth.uid;
     }
 
+    // City weekly challenge aggregate (Phase 4 — local network)
+    match /cityWeeklyStats/{docId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated();
+    }
+
+    match /cityWeeklyStats/{docId}/contributors/{uid} {
+      allow read: if true;
+      allow write: if isAuthenticated() && request.auth.uid == uid;
+    }
+
     // Default deny
     match /{document=**} {
       allow read, write: if false;

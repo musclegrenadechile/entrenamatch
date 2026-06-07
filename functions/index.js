@@ -147,6 +147,90 @@ exports.notifyRedNetworkLiveOrSync = functions.firestore
     return null;
   });
 
+const CITY_CHALLENGE_TARGET = 500;
+
+async function collectFcmTokens(userIds) {
+  const tokens = [];
+  for (const uid of userIds) {
+    try {
+      const tokenSnap = await db.collection('userPushTokens').doc(uid).get();
+      if (tokenSnap.exists) {
+        const data = tokenSnap.data();
+        if (data && data.token) tokens.push(data.token);
+      }
+    } catch (e) {
+      console.warn('Token read failed', uid, e);
+    }
+  }
+  return tokens;
+}
+
+/**
+ * City weekly challenge completed → push all contributors (Phase 4).
+ */
+exports.onCityChallengeComplete = functions.firestore
+  .document('cityWeeklyStats/{docId}')
+  .onUpdate(async (change, context) => {
+    const before = change.before.data() || {};
+    const after = change.after.data() || {};
+    const target = Number(after.targetMinutes) || CITY_CHALLENGE_TARGET;
+
+    const wasDone = (before.totalMinutes || 0) >= target || before.completedAt;
+    const nowDone = (after.totalMinutes || 0) >= target;
+    if (wasDone || !nowDone) return null;
+
+    await change.after.ref.set({ completedAt: admin.firestore.FieldValue.serverTimestamp() }, { merge: true });
+
+    const cityLabel = after.cityLabel || 'Tu ciudad';
+    const title = `🏆 Reto completado en ${cityLabel}`;
+    const body = `${target} min live+sync esta semana — la ciudad lo logró. ¡Sigue el momentum!`;
+
+    let uids = [];
+    try {
+      const contribSnap = await change.after.ref.collection('contributors').limit(200).get();
+      uids = contribSnap.docs.map((d) => d.id);
+    } catch (e) {
+      console.warn('contributors read failed', e);
+    }
+
+    if (uids.length === 0) return null;
+
+    const tokens = await collectFcmTokens(uids);
+    if (tokens.length === 0) {
+      console.log('City challenge complete but no FCM tokens', context.params.docId);
+      return null;
+    }
+
+    const messages = tokens.map((token) => ({
+      token,
+      notification: { title, body },
+      data: {
+        type: 'city_challenge_complete',
+        cityLabel,
+        click_action: 'FLUTTER_NOTIFICATION_CLICK',
+      },
+      android: {
+        priority: 'high',
+        notification: {
+          channelId: 'network_activity',
+          sound: 'default',
+          color: '#FFD700',
+        },
+      },
+    }));
+
+    try {
+      const response = await messaging.sendEach(messages);
+      console.log(
+        `City challenge push ${context.params.docId}: success=${response.successCount}, failure=${response.failureCount}`
+      );
+    } catch (err) {
+      console.error('City challenge FCM error', err);
+    }
+
+    return null;
+  });
+
 function estimateFromDescription(text) {
   const t = String(text || '').toLowerCase();
   let kcal = 450;
