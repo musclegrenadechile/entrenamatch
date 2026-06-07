@@ -44,6 +44,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     setShowOnlyLegends,
     setShowPartners,
     setMapForceTick,
+    setMapMyGymOnly,
     openAddPartner,
     openManagePartners,
     setIsQuickAddPartner,

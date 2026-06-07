@@ -5244,20 +5244,24 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   const handleSaveFuelProfile = async (profile: Omit<FuelProfile, 'updatedAt'>) => {
     setSavingFuel(true)
     try {
+      const saved = { ...profile, updatedAt: Date.now() }
       if (!isDemoMode && db && firebaseUser?.uid) {
         await saveFuelProfile(db, effectiveUserId, profile)
-        setFuelProfile({ ...profile, updatedAt: Date.now() })
         toast.success('Perfil Fuel guardado', {
           description: `Target: ${profile.targetKcal} kcal/día`,
         })
       } else {
-        setFuelProfile({ ...profile, updatedAt: Date.now() })
-        toast.success('Perfil Fuel guardado (demo)')
+        toast.success('Perfil Fuel guardado (demo)', {
+          description: `Target: ${profile.targetKcal} kcal/día`,
+        })
       }
+      setFuelProfile(saved)
       setShowFuelSetupModal(false)
     } catch (e) {
       console.error('Fuel profile save failed', e)
-      toast.error('No se pudo guardar el perfil Fuel')
+      toast.error('No se pudo guardar el perfil Fuel', {
+        description: e instanceof Error ? e.message : 'Revisa conexión e inicio de sesión',
+      })
     } finally {
       setSavingFuel(false)
     }
@@ -8818,6 +8822,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             setShowOnlyLegends={setShowOnlyLegends}
             setShowPartners={setShowPartners}
             setMapForceTick={setMapForceTick}
+            setMapMyGymOnly={setMapMyGymOnly}
             openAddPartner={openAddPartner}
             openManagePartners={openManagePartners}
             setIsQuickAddPartner={setIsQuickAddPartner}

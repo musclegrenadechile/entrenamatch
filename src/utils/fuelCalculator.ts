@@ -59,17 +59,19 @@ export function buildFuelProfile(input: {
   const tdee = calculateTdee(input)
   const targetKcal = targetKcalFromGoal(tdee, input.goal)
   const macros = macroTargetsFromKcal(targetKcal, input.goal)
-  return {
+  const profile: Omit<FuelProfile, 'updatedAt'> = {
     weightKg: input.weightKg,
     heightCm: input.heightCm,
     age: input.age,
     gender: input.gender,
     goal: input.goal,
     activityLevel: input.activityLevel,
-    restrictions: input.restrictions?.trim() || undefined,
     tdee,
     ...macros,
   }
+  const restrictions = input.restrictions?.trim()
+  if (restrictions) profile.restrictions = restrictions
+  return profile
 }
 
 export function toLocalDateStr(d = new Date()): string {

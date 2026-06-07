@@ -26,6 +26,15 @@ export function emptyFuelDayTotals(): FuelDayTotals {
   return { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 }
 }
 
+/** Firestore rejects undefined field values — strip before setDoc/addDoc. */
+function stripUndefined<T extends Record<string, unknown>>(obj: T): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) out[key] = value
+  }
+  return out
+}
+
 export function sumFuelLogs(entries: FuelLogEntry[]): FuelDayTotals {
   return entries.reduce(
     (acc, e) => ({
@@ -57,7 +66,7 @@ export async function saveFuelProfile(
   const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
   await setDoc(
     doc(db, 'fuelProfiles', userId),
-    { ...profile, updatedAt: serverTimestamp() },
+    stripUndefined({ ...profile, updatedAt: serverTimestamp() }),
     { merge: true }
   )
 }
@@ -104,11 +113,11 @@ export async function saveFuelLog(
 ): Promise<FuelLogEntry> {
   const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
   const createdAt = entry.createdAt ?? Date.now()
-  const ref = await addDoc(collection(db, 'fuelLogs'), {
+  const ref = await addDoc(collection(db, 'fuelLogs'), stripUndefined({
     ...entry,
     createdAt,
     serverTimestamp: serverTimestamp(),
-  })
+  }))
   return { ...entry, id: ref.id, createdAt }
 }
 
