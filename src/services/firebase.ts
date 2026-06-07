@@ -10,6 +10,7 @@ import {
   getFirestore,
   initializeFirestore,
   persistentLocalCache,
+  persistentMultipleTabManager,
   memoryLocalCache,
 } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
@@ -91,7 +92,7 @@ if (firebaseConfig) {
   // Long-polling is critical for Capacitor WebView. persistentLocalCache needs IndexedDB — fall back on mobile Safari private mode.
   try {
     db = initializeFirestore(app, {
-      localCache: persistentLocalCache(),
+      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
       experimentalForceLongPolling: true,
       experimentalAutoDetectLongPolling: false,
     });

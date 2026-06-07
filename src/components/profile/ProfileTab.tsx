@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import {
-  Clock, Dumbbell, Edit2, Heart, RefreshCw, Send, Star, Users, Zap,
+  Camera, Clock, Dumbbell, Edit2, Heart, Plus, RefreshCw, Send, Star, Users, Zap,
 } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'

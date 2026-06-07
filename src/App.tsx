@@ -2906,6 +2906,7 @@ useEffect(() => {
   // Keep listener stable (ref guard) — do NOT tear down when syncPartnerId changes to avoid SDK listener churn (da08).
   useEffect(() => {
     if (
+      authBooting ||
       !firebaseUser?.uid ||
       !db ||
       isDemoMode ||
@@ -2955,7 +2956,7 @@ useEffect(() => {
         // Listener will retry automatically; enableNetwork when already online causes da08.
       },
     })
-  }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId, isFirebaseConfigured])
+  }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId, isFirebaseConfigured, authBooting])
 
   // Dedicated syncSessions listener for INSTANT actions across devices
   useEffect(() => {
@@ -3040,36 +3041,34 @@ useEffect(() => {
   ])
 
   const loadActiveSyncCount = async () => {
-    if (!isFirebaseConfigured || !db) {
+    if (!isFirebaseConfigured) {
       setActiveSyncCount(0)
       setActiveSyncPairs([])
       return
     }
-    try {
-      const ref = collection(db, 'syncSessions')
-      const snap = await getDocs(query(ref, limit(80)))
-      let count = 0
-      const pairs: any[] = []
-      snap.forEach(d => {
-        const data = d.data() as any
-        const started = data.startedAt || 0
-        const ended = data.endedAt || 0
-        const isActive = !ended && (Date.now() - started < 3 * 60 * 60 * 1000)
-        if (isActive) {
-          count++
-          if (pairs.length < 2 && data.participants?.length === 2) {
-            const [u1, u2] = data.participants
-            const p1 = realProfiles.find(pp => pp.id === u1) || SEED_PROFILES.find(pp => pp.id === u1)
-            const p2 = realProfiles.find(pp => pp.id === u2) || SEED_PROFILES.find(pp => pp.id === u2)
-            if (p1 && p2) pairs.push({ names: `${(p1.name||'U').split(' ')[0]} + ${(p2.name||'U').split(' ')[0]}`, vibe: data.vibe || 50 })
-          }
-        }
-      })
-      setActiveSyncCount(count)
-      if (pairs.length) setActiveSyncPairs(pairs)
-    } catch (e) {
-      // non-fatal
+    // Rules allow read only on syncSessions where user is a participant — derive global
+    // active pairs from live profile snapshots instead of an unscoped collection query.
+    const seen = new Set<string>()
+    let count = 0
+    const pairs: any[] = []
+    for (const p of realProfiles) {
+      if (!p.trainingNow || !p.trainingSyncWith) continue
+      const partner = realProfiles.find((pp) => pp.id === p.trainingSyncWith)
+      if (!partner?.trainingNow || partner.trainingSyncWith !== p.id) continue
+      const pairKey = [p.id, partner.id].sort().join('_')
+      if (seen.has(pairKey)) continue
+      seen.add(pairKey)
+      count++
+      if (pairs.length < 2) {
+        pairs.push({
+          names: `${(p.name || 'U').split(' ')[0]} + ${(partner.name || 'U').split(' ')[0]}`,
+          vibe: 50,
+        })
+      }
     }
+    setActiveSyncCount(count)
+    if (pairs.length) setActiveSyncPairs(pairs)
+    else setActiveSyncPairs([])
   }
 
   useEffect(() => {
