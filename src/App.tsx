@@ -99,6 +99,7 @@ import {
 } from './services/postComments'
 import { attachUserPostsListener } from './services/profilePosts'
 import { attachDirectChatListener, type DirectChatMsg } from './services/chatMessages'
+import { processLikeAndMaybeMatch } from './services/matching'
 import { attachLiveUsersListener, patchRealProfilesWithLiveSnapshot } from './services/liveUsers'
 import {
   attachLivePresenceListener,
@@ -2019,6 +2020,9 @@ useEffect(() => {
 
   const [realProfiles, setRealProfiles] = useState<Profile[]>([])
   const [realMatches, setRealMatches] = useState<string[]>([])
+  const prevRealMatchesRef = useRef<string[]>([])
+  const realMatchesInitializedRef = useRef(false)
+  const justMatchedLocallyRef = useRef<Set<string>>(new Set())
   const [realChatMessages, setRealChatMessages] = useState<any[]>([])
 
   // Helper: treat a chatId as "real cross-device" if it's in our discovered realMatches,
@@ -3097,6 +3101,27 @@ useEffect(() => {
         })
         
         const ids = Array.from(matchedUserIds)
+        if (realMatchesInitializedRef.current) {
+          const prev = prevRealMatchesRef.current
+          for (const id of ids) {
+            if (prev.includes(id) || justMatchedLocallyRef.current.has(id)) {
+              if (justMatchedLocallyRef.current.has(id)) justMatchedLocallyRef.current.delete(id)
+              continue
+            }
+            const prof = (latestRealProfilesRef.current || []).find((p) => p.id === id)
+            addNotification({
+              type: 'match',
+              title: '¡Nuevo Match!',
+              body: `Hiciste match con ${prof?.name || 'un GymPartner'}`,
+              relatedId: id,
+            })
+            toast.success(`¡Match con ${prof?.name || 'un GymPartner'}!`, {
+              description: 'Ambos se dieron like — ya pueden chatear',
+            })
+          }
+        }
+        realMatchesInitializedRef.current = true
+        prevRealMatchesRef.current = ids
         setRealMatches(ids)
         // Preload muro teasers for spectacular cards in Matches tab
         ids.slice(0, 6).forEach(id => { loadProfilePosts(id).catch(()=>{}) })
@@ -3757,31 +3782,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   }, [isDemoMode, firebaseUser?.uid])
 
-  // Bootstrap match doc when opening a real chat not yet in realMatches
+  // Refresh matches when opening a real chat (no auto-create — mutual like required)
   useEffect(() => {
     if (!activeChat || isDemoMode || !firebaseUser?.uid || !db) return
     if (!isRealChatId(activeChat)) return
-    if (realMatches.includes(activeChat) || !realProfiles.some(r => r.id === activeChat)) return
-
-    const newReal = [...realMatches, activeChat]
-    setRealMatches(newReal)
     loadRealMatches().catch(() => {})
-    ;(async () => {
-      try {
-        const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
-        const matchId = [firebaseUser.uid, activeChat].sort().join('_')
-        await setDoc(doc(db, 'matches', matchId), {
-          user1: firebaseUser.uid,
-          user2: activeChat,
-          createdAt: serverTimestamp(),
-          status: 'active',
-          autoMatchedForTesting: true,
-        }, { merge: true })
-      } catch (e) {
-        console.warn('Failed to bootstrap match doc for real chat', e)
-      }
-    })()
-  }, [activeChat, isDemoMode, firebaseUser?.uid, db, realMatches, realProfiles])
+  }, [activeChat, isDemoMode, firebaseUser?.uid, db])
 
   // Clear realChatMessages when leaving a real chat tab
   useEffect(() => {
@@ -6798,12 +6804,48 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   }
 
   // ==================== SWIPE LOGIC ====================
+  const celebrateNewMatch = (profile: Profile, isReal = false) => {
+    const profileId = profile.id
+    justMatchedLocallyRef.current.add(profileId)
+
+    if (!matches.includes(profileId) && !realMatches.includes(profileId)) {
+      saveMatches([...matches, profileId])
+    }
+    if (isReal) {
+      setRealMatches((prev) => (prev.includes(profileId) ? prev : [...prev, profileId]))
+    }
+
+    const openers = CHAT_OPENERS[profileId] || ['¡Hola! Vi tu perfil y me tinca entrenar juntos 💪']
+    const firstMsg: Message = {
+      id: Date.now().toString(36),
+      from: 'them',
+      text: openers[0],
+      timestamp: Date.now(),
+    }
+    saveMessages({ ...messages, [profileId]: [firstMsg] })
+
+    addNotification({
+      type: 'match',
+      title: '¡Nuevo Match!',
+      body: `Hiciste match con ${profile.name}`,
+      relatedId: profileId,
+    })
+
+    bumpPwaEngagement()
+    setShowMatchModal(profile)
+    triggerConfetti()
+    toast.success(`¡Match con ${profile.name}!`, {
+      description: isReal ? '¡Ambos se dieron like!' : 'Tienen ganas de entrenar juntos 🔥',
+    })
+  }
+
   const handleSwipe = (profileId: string, direction: 'left' | 'right') => {
     // Support both seed profiles and real Firestore profiles
     const profile = [...SEED_PROFILES, ...realProfiles].find(p => p.id === profileId)
     if (!profile) return
 
     if (direction === 'right') {
+      if (likedIds.includes(profileId)) return
       const newLiked = [...likedIds, profileId]
       saveLiked(newLiked)
 
@@ -6816,73 +6858,38 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       }
 
       const isRealProfile = !profileId.startsWith('p') && realProfiles.some(r => r.id === profileId)
-      const isAutoMatch = AUTO_MATCH_IDS.includes(profileId)
-      const randomMatch = Math.random() < 0.28
-      const alreadyMatched = matches.includes(profileId)
+      const alreadyMatched = matches.includes(profileId) || realMatches.includes(profileId)
 
-      if (!alreadyMatched && (isAutoMatch || randomMatch || isRealProfile)) {
-        const newMatches = [...matches, profileId]
-        saveMatches(newMatches)
-        
-        // Seed a nice first message (works for both demo and real)
-        const openers = CHAT_OPENERS[profileId] || ["¡Hola! Vi tu perfil y me tinca entrenar juntos 💪"]
-        const firstMsg: Message = {
-          id: Date.now().toString(36),
-          from: 'them',
-          text: openers[0],
-          timestamp: Date.now()
+      if (isRealProfile && !isDemoMode && firebaseUser?.uid && db) {
+        if (alreadyMatched) {
+          toast('Like enviado', { description: `Ya tienes match con ${profile.name}` })
+        } else {
+          ;(async () => {
+            try {
+              const result = await processLikeAndMaybeMatch(db, firebaseUser.uid, profileId)
+              if (result === 'matched') {
+                celebrateNewMatch(profile, true)
+                await loadRealMatches()
+              } else {
+                toast('Like enviado', {
+                  description: `Si ${profile.name} también te da like, harán match`,
+                })
+              }
+            } catch (e) {
+              console.warn('Could not process real like/match:', e)
+              toast.error('No se pudo enviar el like', { description: 'Revisa tu conexión' })
+            }
+          })()
         }
-        const updatedMsgs = { ...messages, [profileId]: [firstMsg] }
-        saveMessages(updatedMsgs)
-
-        // Add notification
-        addNotification({
-          type: 'match',
-          title: '¡Nuevo Match!',
-          body: `Hiciste match con ${profile.name}`,
-          relatedId: profileId
-        })
-
-        bumpPwaEngagement() // PWA hint after positive engagement (match)
-
-        // Show beautiful match modal
-        setShowMatchModal(profile)
-        triggerConfetti()
-        toast.success(`¡Match con ${profile.name}!`, { description: isRealProfile ? '¡Match real con otro usuario!' : 'Tienen ganas de entrenar juntos 🔥' })
       } else {
-        toast('Like enviado', { description: `A ${profile.name} le avisaremos si hay match` })
-      }
-
-      // Real Firebase: persist the like + match for cross-device visibility
-      if (isRealProfile && firebaseUser?.uid && db) {
-        (async () => {
-          try {
-            const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
-            const matchId = [firebaseUser.uid, profileId].sort().join('_')
-
-            // Write a like record (useful for future mutual matching logic)
-            await setDoc(doc(db, 'likes', `${firebaseUser.uid}_${profileId}`), {
-              liker: firebaseUser.uid,
-              liked: profileId,
-              createdAt: serverTimestamp(),
-            }, { merge: true })
-
-            // Write the match (current Pre-Alpha: auto-match for fast testing of real chat)
-            await setDoc(doc(db, 'matches', matchId), {
-              user1: firebaseUser.uid,
-              user2: profileId,
-              createdAt: serverTimestamp(),
-              status: 'active',
-              autoMatchedForTesting: true
-            }, { merge: true })
-
-            console.log('✅ Real like + match written to Firestore for cross-device testing')
-            // Immediately load so this device also has it in realMatches (for isRealChat, bg listeners etc.)
-            loadRealMatches()
-          } catch (e) {
-            console.warn('Could not write real like/match yet:', e)
-          }
-        })()
+        // Demo / perfiles seed: match simulado (auto-match ids o probabilidad)
+        const isAutoMatch = AUTO_MATCH_IDS.includes(profileId)
+        const randomMatch = Math.random() < 0.28
+        if (!alreadyMatched && (isAutoMatch || randomMatch)) {
+          celebrateNewMatch(profile, false)
+        } else {
+          toast('Like enviado', { description: `A ${profile.name} le avisaremos si hay match` })
+        }
       }
 
       // === KILLER LIVE FEATURE: "someone joined my live" flow ===
