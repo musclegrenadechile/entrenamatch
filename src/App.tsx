@@ -6634,59 +6634,123 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     saveSessionMessages(updated)
   }
 
+  const readCachedLocation = (): { lat: number; lng: number } | null => {
+    try {
+      const raw = localStorage.getItem('entrenamatch_location')
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        if (Number.isFinite(parsed?.lat) && Number.isFinite(parsed?.lng)) {
+          return { lat: parsed.lat, lng: parsed.lng }
+        }
+      }
+    } catch {}
+    const u = currentUserRef.current ?? currentUser
+    if (u && Number.isFinite(Number(u.lat)) && Number.isFinite(Number(u.lng))) {
+      return { lat: Number(u.lat), lng: Number(u.lng) }
+    }
+    return null
+  }
+
+  const applyUserLocation = async (loc: { lat: number; lng: number }, opts?: { silent?: boolean }) => {
+    setUserLocation(loc)
+    userLocationRef.current = loc
+    localStorage.setItem('entrenamatch_location', JSON.stringify(loc))
+
+    const u = currentUserRef.current ?? currentUser
+    if (!u) {
+      if (!opts?.silent) {
+        toast.success('Ubicación activada', { description: 'Distancias y mapa usan esta posición' })
+      }
+      return
+    }
+
+    const updated = { ...u, lat: loc.lat, lng: loc.lng }
+    await saveUserWithRealSync(updated as CurrentUser)
+    if (!opts?.silent) {
+      toast.success('Ubicación real activada', { description: 'Distancias y "vivo cerca" usan tu GPS ahora' })
+    }
+  }
+
   // Request REAL user GPS location (native Capacitor first for APK realism, fallback to browser)
-  const requestUserLocation = async () => {
-    if (isGettingLocationRef.current) return // prevent concurrent calls that can cause permission/GPS prompt conflicts and crashes on Android
+  const requestUserLocation = async (): Promise<{ lat: number; lng: number } | null> => {
+    if (isGettingLocationRef.current) return readCachedLocation()
     isGettingLocationRef.current = true
     try {
       let loc: { lat: number; lng: number } | null = null
 
       if (GeolocationNative && Capacitor.isNativePlatform()) {
-        // Real device GPS via Capacitor (proper permissions on Android)
         const perm = await GeolocationNative.requestPermissions()
         if (perm?.location !== 'granted' && perm?.coarseLocation !== 'granted') {
           toast.error('Permiso de ubicación denegado', { description: 'Actívalo en Ajustes del teléfono para distancias reales' })
-          return
+          loc = readCachedLocation()
+          if (loc) await applyUserLocation(loc, { silent: true })
+          return loc
         }
-        // Try high accuracy first, fallback to low if fails (e.g. GPS off or only coarse allowed)
         let position
         try {
-          position = await GeolocationNative.getCurrentPosition({ enableHighAccuracy: true, timeout: 15000 })
+          position = await GeolocationNative.getCurrentPosition({ enableHighAccuracy: true, timeout: 20000 })
         } catch (highErr) {
           console.warn('High accuracy GPS failed, trying low accuracy:', highErr)
-          position = await GeolocationNative.getCurrentPosition({ enableHighAccuracy: false, timeout: 10000 })
+          position = await GeolocationNative.getCurrentPosition({
+            enableHighAccuracy: false,
+            timeout: 25000,
+            maximumAge: 600000,
+          })
         }
         loc = { lat: position.coords.latitude, lng: position.coords.longitude }
       } else if (navigator.geolocation) {
-        // Web / fallback
-        const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000 })
-        })
-        loc = { lat: position.coords.latitude, lng: position.coords.longitude }
+        const tryWebPosition = (opts: PositionOptions) =>
+          new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, opts)
+          })
+
+        try {
+          const position = await tryWebPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 })
+          loc = { lat: position.coords.latitude, lng: position.coords.longitude }
+        } catch (highErr: any) {
+          const code = highErr?.code
+          console.warn('High accuracy web geolocation failed, trying low accuracy / cache:', highErr)
+          try {
+            const position = await tryWebPosition({
+              enableHighAccuracy: false,
+              timeout: 25000,
+              maximumAge: 600000,
+            })
+            loc = { lat: position.coords.latitude, lng: position.coords.longitude }
+          } catch (lowErr) {
+            console.warn('Low accuracy web geolocation failed:', lowErr)
+            loc = readCachedLocation()
+            if (loc) {
+              const reason = code === 3 ? 'GPS tardó demasiado' : code === 1 ? 'Permiso denegado' : 'GPS no disponible'
+              toast('Usando última ubicación conocida', {
+                description: `${reason}. Live y mapa siguen activos con tu posición guardada.`,
+              })
+            }
+          }
+        }
       } else {
-        toast.error('Geolocalización no soportada')
-        return
+        loc = readCachedLocation()
+        if (!loc) toast.error('Geolocalización no soportada en este navegador')
+        return loc
       }
 
       if (loc) {
-        setUserLocation(loc)
-        localStorage.setItem('entrenamatch_location', JSON.stringify(loc))
-
-        if (!currentUser) {
-          // Can happen in race during early load; still set loc for map/distances
-          toast.success('Ubicación real activada', { description: 'Distancias y "vivo cerca" usan tu GPS real ahora' })
-          return
-        }
-
-        // Update current user's profile with REAL location for realism (sync to Firestore too)
-        const updated = { ...currentUser, lat: loc.lat, lng: loc.lng }
-        saveUserWithRealSync(updated as CurrentUser)
-
-        toast.success('Ubicación real activada', { description: 'Distancias y "vivo cerca" usan tu GPS real ahora' })
+        await applyUserLocation(loc)
+        return loc
       }
+
+      toast.error('No pudimos obtener ubicación', { description: 'Revisa permisos de ubicación o intenta en otro navegador.' })
+      return null
     } catch (e: any) {
       console.warn('Real geolocation failed:', e)
-      toast.error('No pudimos obtener ubicación real', { description: 'Permisos o GPS apagado. Usando fallback.' })
+      const fallback = readCachedLocation()
+      if (fallback) {
+        await applyUserLocation(fallback, { silent: true })
+        toast('Usando última ubicación conocida', { description: 'El GPS no respondió a tiempo; live y mapa usan tu posición guardada.' })
+        return fallback
+      }
+      toast.error('No pudimos obtener ubicación real', { description: 'Activa permisos de ubicación en el navegador o dispositivo.' })
+      return null
     } finally {
       isGettingLocationRef.current = false
     }
