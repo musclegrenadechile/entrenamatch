@@ -6,8 +6,9 @@ import {
 import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'
 import { APP_VERSION } from '../../constants'
-import { ProfileSectionNav, TuRedPowerCard } from './index'
-import type { ProfileSection } from './index'
+import { ProfileSectionNav } from './ProfileSectionNav'
+import { TuRedPowerCard } from './TuRedPowerCard'
+import type { ProfileSection } from './ProfileSectionNav'
 
 /** Context bag passed from App — typed loosely until App.tsx drops @ts-nocheck */
 export type ProfileTabProps = Record<string, any>
