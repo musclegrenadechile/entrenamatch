@@ -1091,12 +1091,14 @@ function App() {
     }
   }
 
-  const awardMomentum = (amount: number, reason: string) => {
+  const awardMomentum = (amount: number, reason: string, baseUser?: CurrentUser) => {
     if (!dailyPulse) return
+    const base = baseUser ?? currentUserRef.current ?? currentUser
+    if (!base) return
     const newM = (dailyPulse.momentum || 0) + amount
     const up = { ...dailyPulse, momentum: newM }
     setDailyPulse(up)
-    saveUserWithRealSync({ ...(currentUser as any), momentumPoints: newM, streakProtectedDate: dailyPulse?.streakProtectedDate, pulseAmplifiedDate: dailyPulse?.pulseAmplifiedDate } as any)
+    saveUserWithRealSync({ ...(base as any), momentumPoints: newM, streakProtectedDate: dailyPulse?.streakProtectedDate, pulseAmplifiedDate: dailyPulse?.pulseAmplifiedDate } as any)
     toast(`+${amount} Momentum`, { description: reason })
   }
   const [witnessData, setWitnessData] = useState<any>(null) // for shared session highlight replay: replay of a strong EntrenaSync (shared state, actions, vibe) that can be archived as co-authored performance memory
@@ -2507,7 +2509,7 @@ useEffect(() => {
           const pending = pendingLiveWriteRef.current
           const newTrainingNow = !!data.trainingNow
           const newSince = normalizeTrainingSince(data.trainingNowSince)
-          if (pending && Date.now() - pending.at < 10000) {
+          if (pending && Date.now() - pending.at < 15000) {
             if (newTrainingNow !== pending.trainingNow) return
             pendingLiveWriteRef.current = null
           }
@@ -3139,38 +3141,80 @@ useEffect(() => {
     return () => { unsubs.forEach(u => u()); };
   }, [isDemoMode, firebaseUser?.uid, db]);
 
+ // Merge partial profile patches without accidentally killing an active live session
+ // (e.g. awardMomentum spreading stale currentUser with trainingNow:false right after going live).
+const mergeUserForRealtimeSync = (incoming: CurrentUser, prev: CurrentUser | null): CurrentUser => {
+  if (!prev) return incoming
+
+  const explicitLiveOff =
+    prev.trainingNow === true &&
+    incoming.trainingNow === false &&
+    incoming.trainingNowSince === null &&
+    (incoming.trainingSyncWith === null || incoming.syncStartedAt === null)
+
+  const explicitLiveOn =
+    incoming.trainingNow === true &&
+    typeof incoming.trainingNowSince === 'number' &&
+    incoming.trainingNowSince > 0
+
+  if (explicitLiveOff || explicitLiveOn) {
+    return { ...prev, ...incoming }
+  }
+
+  if (prev.trainingNow && incoming.trainingNow === false) {
+    const isStalePartial =
+      incoming.trainingNowSince === undefined ||
+      (incoming.trainingSyncWith === undefined && incoming.syncStartedAt === undefined)
+    if (isStalePartial) {
+      return {
+        ...prev,
+        ...incoming,
+        trainingNow: true,
+        trainingNowSince: prev.trainingNowSince,
+        trainingSyncWith: prev.trainingSyncWith ?? null,
+        syncStartedAt: prev.syncStartedAt ?? null,
+        syncActions: prev.syncActions ?? incoming.syncActions,
+      }
+    }
+  }
+
+  return { ...prev, ...incoming }
+}
+
  // ✅ SOLUCIÓN SIMPLE Y ESTABLE - Sin dynamic import problemático
 const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
-  saveUser(user);
+  const merged = mergeUserForRealtimeSync(user, currentUserRef.current)
+  currentUserRef.current = merged
+  saveUser(merged);
 
   if (!isDemoMode && firebaseUser?.uid && db) {
     try {
       const loc = userLocationRef.current
-      const goingLive = !!user.trainingNow
+      const goingLive = !!merged.trainingNow
       const profileUpdate: any = {
-        name: user.name,
-        age: user.age,
-        gender: user.gender,
-        city: user.city,
-        country: user.country,
-        bio: user.bio,
-        photos: user.photos,
-        trainingTypes: user.trainingTypes,
-        goals: user.goals,
-        level: user.level,
-        intensity: user.intensity,
-        availability: user.availability,
-        lat: user.lat ?? loc?.lat ?? -33.02,
-        lng: user.lng ?? loc?.lng ?? -71.55,
+        name: merged.name,
+        age: merged.age,
+        gender: merged.gender,
+        city: merged.city,
+        country: merged.country,
+        bio: merged.bio,
+        photos: merged.photos,
+        trainingTypes: merged.trainingTypes,
+        goals: merged.goals,
+        level: merged.level,
+        intensity: merged.intensity,
+        availability: merged.availability,
+        lat: merged.lat ?? loc?.lat ?? -33.02,
+        lng: merged.lng ?? loc?.lng ?? -71.55,
         trainingNow: goingLive,
-        trainingNowSince: goingLive ? (user.trainingNowSince ?? Date.now()) : null,
-        liveStreak: user.liveStreak ?? null,
-        lastLiveDate: user.lastLiveDate ?? null,
-        joinedLiveStreak: user.joinedLiveStreak ?? null,
-        liveJoins: user.liveJoins ?? null,
-        trainingSyncWith: user.trainingSyncWith ?? null,
-        syncStartedAt: user.syncStartedAt ?? null,
-        currentDailyChallenge: user.currentDailyChallenge,
+        trainingNowSince: goingLive ? (merged.trainingNowSince ?? Date.now()) : null,
+        liveStreak: merged.liveStreak ?? null,
+        lastLiveDate: merged.lastLiveDate ?? null,
+        joinedLiveStreak: merged.joinedLiveStreak ?? null,
+        liveJoins: merged.liveJoins ?? null,
+        trainingSyncWith: merged.trainingSyncWith ?? null,
+        syncStartedAt: merged.syncStartedAt ?? null,
+        currentDailyChallenge: merged.currentDailyChallenge,
       };
 
       const cleanProfileUpdate = sanitizeForFirestore(profileUpdate);
@@ -3193,7 +3237,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       if (goingLive) {
         await writeLivePresence(
           db,
-          buildLivePresencePayload(firebaseUser.uid, { ...user, ...profileUpdate }, loc),
+          buildLivePresencePayload(firebaseUser.uid, { ...merged, ...profileUpdate }, loc),
           sanitizeForFirestore
         )
       } else {
@@ -3204,6 +3248,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       setMapForceTick((t) => t + 1)
     } catch (e) {
       console.warn('Failed to sync profile to Firestore:', e);
+      if (merged.trainingNow) {
+        toast.error('Live activo localmente, pero falló sync a la nube', {
+          description: 'Revisa conexión. Otros pueden no verte hasta que se sincronice.',
+        })
+      }
+      throw e
     }
   }
 }, [saveUser, isDemoMode, firebaseUser?.uid, db, updateUserProfile, publishLiveSnapshot]);
@@ -10629,7 +10679,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           pendingLiveWriteRef.current = { trainingNow: false, at: Date.now() };
                           await saveUserWithRealSync(updated);
 
-                          pendingLiveWriteRef.current = null;
                           loadRealProfiles().catch(() => {});
                           setMapForceTick(t => t + 1);
                           import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {});
@@ -10725,7 +10774,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                         pendingLiveWriteRef.current = { trainingNow: !!newVal, at: Date.now() };
                         await saveUserWithRealSync(updated as CurrentUser)
 
-                        pendingLiveWriteRef.current = null
                         loadRealProfiles().catch(() => {})
                         setMapForceTick(t => t + 1)
                         toast(newVal ? '🟢 ¡Entrenando Ahora (EN VIVO) activado!' : 'Entrenamiento finalizado')
@@ -10733,7 +10781,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                         if (dailyPulse?.currentChallenge?.type === 'solo') {
                           completeDailyChallenge(1)
                         } else if (newVal) {
-                          awardMomentum(8, 'Ancla del GymPulse')
+                          awardMomentum(8, 'Ancla del GymPulse', updated as CurrentUser)
                         }
                         if (newVal) {
                           createProfilePost('¡Entrenando ahora en el GymPulse! ¿Quién se une al pulso? 🏋️', null).catch(() => {})
