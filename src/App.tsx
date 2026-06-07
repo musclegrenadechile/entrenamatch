@@ -773,6 +773,13 @@ function App() {
   // For delightful "just published" highlight in feed/muro lists (no giant re-render, just temp visual cue)
   const [recentlyPublishedPostId, setRecentlyPublishedPostId] = useState<string | null>(null)
   const [feedPublishing, setFeedPublishing] = useState(false)
+  const [showFeedPublishSuccess, setShowFeedPublishSuccess] = useState(false)
+  const [showEntrenaLogModal, setShowEntrenaLogModal] = useState(false)
+  const [savingWorkout, setSavingWorkout] = useState(false)
+  const [syncWorkoutLog, setSyncWorkoutLog] = useState<SyncWorkoutLogState>(() =>
+    createEmptySyncWorkoutLog()
+  )
+  const syncWorkoutLogRef = useRef<SyncWorkoutLogState>(syncWorkoutLog)
   useEffect(() => {
     syncWorkoutLogRef.current = syncWorkoutLog
   }, [syncWorkoutLog])
@@ -781,13 +788,6 @@ function App() {
     () => EXERCISE_LIBRARY.slice(0, 12).map((e) => e.name),
     []
   )
-  const [showFeedPublishSuccess, setShowFeedPublishSuccess] = useState(false)
-  const [showEntrenaLogModal, setShowEntrenaLogModal] = useState(false)
-  const [savingWorkout, setSavingWorkout] = useState(false)
-  const [syncWorkoutLog, setSyncWorkoutLog] = useState<SyncWorkoutLogState>(() =>
-    createEmptySyncWorkoutLog()
-  )
-  const syncWorkoutLogRef = useRef<SyncWorkoutLogState>(syncWorkoutLog)
   const [entrenaLogPrefill, setEntrenaLogPrefill] = useState<{
     title?: string
     exercises?: import('./types').WorkoutExercise[]
