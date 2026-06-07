@@ -1403,6 +1403,8 @@ useEffect(() => {
 
   // Profile Muro / Wall posts - makes profiles feel alive (like FB wall)
   const [profilePosts, setProfilePosts] = useState<Record<string, ProfilePost[]>>({}) // userId -> posts array
+  const profilePostsRef = useRef<Record<string, ProfilePost[]>>({})
+  useEffect(() => { profilePostsRef.current = profilePosts }, [profilePosts])
   const [muroComposerText, setMuroComposerText] = useState('')
   const [muroComposerPhoto, setMuroComposerPhoto] = useState<string | null>(null)
   const [muroPhotoUploading, setMuroPhotoUploading] = useState(false)
@@ -3343,13 +3345,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     return () => clearInterval(id)
   }, [currentUser?.trainingNow])
 
-  // Clear comment UI when leaving profile tab
+  // Clear inline comment composer when changing tabs — but keep it while viewing another profile or the comments modal
   useEffect(() => {
-    if (activeTab !== 'profile') {
-      setActiveComment(null)
-      setCommentDraft('')
-    }
-  }, [activeTab])
+    if (activeTab === 'profile') return
+    if (showFullProfile || viewingPostComments) return
+    setActiveComment(null)
+    setCommentDraft('')
+  }, [activeTab, showFullProfile, viewingPostComments])
 
   // Logout handler - works for both demo and real Firebase
   const handleLogout = async () => {
@@ -5117,46 +5119,88 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   }
 
-  const addCommentToPost = async (postId: string, postUserId: string, text: string) => {
-    if (!text.trim()) return
+  const findPostInProfilePosts = (postId: string, postUserId: string, source?: Record<string, ProfilePost[]>) => {
+    const store = source || profilePostsRef.current
+    const tryUser = (uid: string) => {
+      const posts = store[uid] || []
+      const idx = posts.findIndex((p) => p.id === postId)
+      return idx >= 0 ? { posts, idx, resolvedUserId: uid } : null
+    }
+    return tryUser(postUserId) || Object.keys(store).map(tryUser).find(Boolean) || null
+  }
+
+  const addCommentToPost = async (postId: string, postUserId: string, text: string): Promise<boolean> => {
+    const trimmed = text.trim()
+    if (!trimmed) return false
+
     const comment = {
       id: 'c' + Date.now(),
       userId: effectiveUserId,
       userName: currentUser?.name || 'Tú',
-      text: text.trim(),
+      text: trimmed,
       timestamp: Date.now()
     }
-    const posts = profilePosts[postUserId] || []
-    const idx = posts.findIndex((p) => p.id === postId)
-    if (idx < 0) return
-    const post = posts[idx]
-    const updatedPost = { ...post, comments: [...post.comments, comment] }
-    const newPosts = [...posts]
-    newPosts[idx] = updatedPost
-    if (!isDemoMode && db) {
+
+    let located = findPostInProfilePosts(postId, postUserId)
+    if (!located && !isDemoMode && db) {
+      await loadProfilePosts(postUserId).catch(() => {})
+      located = findPostInProfilePosts(postId, postUserId)
+    }
+    if (!located) {
+      toast.error('No se encontró la publicación', { description: 'Intenta recargar el muro e inténtalo de nuevo.' })
+      return false
+    }
+
+    const { resolvedUserId } = located
+    let applied = false
+    setProfilePosts((prev) => {
+      const hit = findPostInProfilePosts(postId, resolvedUserId, prev)
+      if (!hit) return prev
+      const post = hit.posts[hit.idx]
+      const newPosts = [...hit.posts]
+      newPosts[hit.idx] = { ...post, comments: [...(post.comments || []), comment] }
+      applied = true
+      const newState = { ...prev, [hit.resolvedUserId]: newPosts }
+      try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+      return newState
+    })
+
+    if (!applied) {
+      toast.error('No se pudo añadir el comentario')
+      return false
+    }
+
+    if (!isDemoMode && db && firebaseUser?.uid) {
       try {
         const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
         await updateDoc(doc(db, 'profilePosts', postId), { comments: arrayUnion(comment) })
+      } catch (e) {
+        console.warn('addCommentToPost FS error', e)
         setProfilePosts((prev) => {
-          const newState = { ...prev, [postUserId]: newPosts }
+          const hit = findPostInProfilePosts(postId, resolvedUserId, prev)
+          if (!hit) return prev
+          const post = hit.posts[hit.idx]
+          const reverted = (post.comments || []).filter((c: any) => c.id !== comment.id)
+          const newPosts = [...hit.posts]
+          newPosts[hit.idx] = { ...post, comments: reverted }
+          const newState = { ...prev, [hit.resolvedUserId]: newPosts }
           try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
           return newState
         })
-      } catch (e) {
-        console.warn(e)
+        toast.error('No se pudo guardar el comentario', { description: 'Revisa tu conexión e inténtalo otra vez.' })
+        return false
       }
-    } else {
-      const updated = { ...profilePosts, [postUserId]: newPosts }
-      saveProfilePosts(updated)
     }
-    if (postUserId !== effectiveUserId) {
+
+    if (resolvedUserId !== effectiveUserId) {
       addNotification({
         type: 'message',
         title: 'Comentario en tu muro',
-        body: `${currentUser?.name || 'Alguien'}: ${text.substring(0, 60)}`,
-        relatedId: postUserId
+        body: `${currentUser?.name || 'Alguien'}: ${trimmed.substring(0, 60)}`,
+        relatedId: resolvedUserId
       })
     }
+    return true
   }
 
   const deleteProfilePost = async (postId: string, postUserId: string) => {
@@ -5311,9 +5355,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   }
   const submitComment = async () => {
     if (!activeComment || !commentDraft.trim()) return
-    await addCommentToPost(activeComment.postId, activeComment.postUserId, commentDraft)
-    setActiveComment(null)
-    setCommentDraft('')
+    const ok = await addCommentToPost(activeComment.postId, activeComment.postUserId, commentDraft)
+    if (ok) {
+      setActiveComment(null)
+      setCommentDraft('')
+      toast.success('Comentario enviado')
+    }
   }
   const cancelComment = () => {
     setActiveComment(null)
@@ -5331,9 +5378,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
   const submitModalComment = async () => {
     if (!viewingPostComments || !modalCommentDraft.trim()) return
-    await addCommentToPost(viewingPostComments.postId, viewingPostComments.postUserId, modalCommentDraft)
-    setModalCommentDraft('')
-    // modal will auto-refresh via global profilePosts
+    const ok = await addCommentToPost(viewingPostComments.postId, viewingPostComments.postUserId, modalCommentDraft)
+    if (ok) {
+      setModalCommentDraft('')
+      toast.success('Comentario enviado')
+    }
   }
 
   const closeFullComments = () => {
@@ -5343,31 +5392,34 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
   // Delete own comment from post (polish for spectacular muro)
   const deleteCommentFromPost = async (postId: string, postUserId: string, commentId: string) => {
-    if (!confirm('¿Eliminar tu comentario?')) return;
-    const posts = profilePosts[postUserId] || [];
-    const pIdx = posts.findIndex(p => p.id === postId);
-    if (pIdx < 0) return;
-    const post = posts[pIdx];
-    const newComments = post.comments.filter((c: any) => c.id !== commentId);
-    const updatedPost = { ...post, comments: newComments };
-    const newPosts = [...posts];
-    newPosts[pIdx] = updatedPost;
+    if (!confirm('¿Eliminar tu comentario?')) return
+    const located = findPostInProfilePosts(postId, postUserId)
+    if (!located) return
+    const { resolvedUserId } = located
+    let newComments: any[] = []
 
-    if (!isDemoMode && db) {
+    setProfilePosts((prev) => {
+      const hit = findPostInProfilePosts(postId, resolvedUserId, prev)
+      if (!hit) return prev
+      const p = hit.posts[hit.idx]
+      newComments = (p.comments || []).filter((c: any) => c.id !== commentId)
+      const next = [...hit.posts]
+      next[hit.idx] = { ...p, comments: newComments }
+      const newState = { ...prev, [hit.resolvedUserId]: next }
+      try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+      return newState
+    })
+
+    if (!isDemoMode && db && firebaseUser?.uid) {
       try {
-        const { doc, updateDoc } = await import('firebase/firestore');
-        await updateDoc(doc(db, 'profilePosts', postId), { comments: newComments });
-        setProfilePosts((prev) => {
-          const newState = { ...prev, [postUserId]: newPosts };
-          try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
-          return newState;
-        });
-      } catch (e) { console.warn(e); }
-    } else {
-      const updated = { ...profilePosts, [postUserId]: newPosts };
-      saveProfilePosts(updated);
+        const { doc, updateDoc } = await import('firebase/firestore')
+        await updateDoc(doc(db, 'profilePosts', postId), { comments: newComments })
+      } catch (e) {
+        console.warn(e)
+        toast.error('No se pudo eliminar en el servidor')
+      }
     }
-    toast.success('Comentario eliminado');
+    toast.success('Comentario eliminado')
   }
 
   // Edit own muro post (inline for spectacular UX, no prompt)
@@ -8190,7 +8242,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                               <span className="font-extrabold tabular-nums text-sm">{(post.likes || []).length}</span>
                             </button>
                             <button 
-                              onClick={() => startComment(post.id, post.ownerId, owner.name)}
+                              onClick={() => openFullComments(post.id, post.ownerId, owner.name)}
                               className="flex items-center gap-1.5 text-[#9CA3AF] hover:text-[#FF671F] active:scale-95"
                             >
                               💬 <span className="font-extrabold tabular-nums text-sm">{(post.comments || []).length}</span>
@@ -8241,6 +8293,29 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                                 </div>
                               ))}
                               {(post.comments || []).length > 2 && <div className="feed-comment-more">+{(post.comments || []).length-2} comentarios más — ver hilo completo</div>}
+                            </div>
+                          )}
+
+                          {activeComment?.postId === post.id && (
+                            <div className="mt-2 pt-2 border-t border-[#2F2F35]/60 flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={commentDraft}
+                                onChange={e => setCommentDraft(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment() } }}
+                                placeholder={owner.name ? `Comentar en el muro de ${owner.name}...` : 'Escribe un comentario...'}
+                                className="flex-1 form-input text-sm py-1.5"
+                                maxLength={200}
+                                autoFocus
+                              />
+                              <button
+                                onClick={submitComment}
+                                disabled={!commentDraft.trim()}
+                                className="text-[#FF671F] text-sm font-semibold px-3 disabled:opacity-40 active:scale-95"
+                              >
+                                Enviar
+                              </button>
+                              <button onClick={cancelComment} className="text-[#9CA3AF] text-xs px-1">✕</button>
                             </div>
                           )}
                         </div>
@@ -11123,7 +11198,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                             );
                           })}
                         </div>
-                        {post.comments.length > 0 && (
+                        {post.comments && post.comments.length > 0 && (
                           <div 
                             onClick={() => openFullComments(post.id, effectiveUserId)}
                             className="mt-3 pt-3 border-t border-[#2F2F35] text-xs cursor-pointer group"
@@ -12493,9 +12568,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           <div className="flex items-center gap-4 text-xs text-[#9CA3AF]">
                             <span title={new Date(post.timestamp).toLocaleString('es-CL')}>{getRelativeTime(post.timestamp)}</span>
                             <span onClick={() => likeProfilePost(post.id, showFullProfile.id)} className="cursor-pointer active:text-[#FF671F]">❤️ {(post.likes || []).length}</span>
-                            <span onClick={() => startComment(post.id, showFullProfile.id, showFullProfile.name)} className="cursor-pointer active:text-[#FF671F]">💬 {(post.comments || []).length}</span>
+                            <span onClick={() => openFullComments(post.id, showFullProfile.id, showFullProfile.name)} className="cursor-pointer active:text-[#FF671F]">💬 {(post.comments || []).length}</span>
                           </div>
-                          {post.comments.length > 0 && (
+                          {post.comments && post.comments.length > 0 && (
                             <div 
                               onClick={() => openFullComments(post.id, showFullProfile.id, showFullProfile.name)}
                               className="mt-1.5 text-[11px] text-[#9CA3AF] pl-1 border-l border-[#2F2F35] cursor-pointer active:bg-[#1A1A1E]/40 rounded"
