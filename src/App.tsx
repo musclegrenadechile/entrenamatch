@@ -1189,17 +1189,27 @@ function App() {
     setSelectedTrainingType('Pesas/Gym')
   }
 
-  // Helper to remove undefined fields before Firestore writes (Firestore rejects undefined values in data)
-  const sanitizeForFirestore = (obj) => {
-    if (!obj || typeof obj !== 'object') return obj;
-    const clean = {};
+  // ✅ FUNCIÓN RECURSIVA PARA LIMPIAR UNDEFINED (arregla currentDailyChallenge.completed y cualquier objeto anidado)
+const sanitizeForFirestore = (obj: any): any => {
+  if (obj === null || obj === undefined) return null;
+
+  if (Array.isArray(obj)) {
+    return obj.map(item => sanitizeForFirestore(item)).filter(item => item !== undefined);
+  }
+
+  if (typeof obj === 'object' && obj !== null) {
+    const cleaned: any = {};
     Object.keys(obj).forEach(key => {
-      if (obj[key] !== undefined) {
-        clean[key] = obj[key];
+      const value = sanitizeForFirestore(obj[key]);
+      if (value !== undefined) {
+        cleaned[key] = value;
       }
     });
-    return clean;
+    return cleaned;
   }
+
+  return obj;
+};
 
   const [isLoadingMatches, setIsLoadingMatches] = useState(false)
   const [isLoadingChats, setIsLoadingChats] = useState(false)
