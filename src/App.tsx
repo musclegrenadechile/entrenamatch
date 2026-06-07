@@ -2029,61 +2029,20 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
     return isFinite(n) ? n : undefined
   }
 
-           // LIVE TRAINING NOW - Versión ultra-minimalista y segura
+             // LIVE TRAINING NOW - Versión de emergencia (mínima posible)
   const liveTrainingNow = useMemo(() => {
-    const now = Date.now()
-    const ASSUMED_SESSION_MS = 3 * 60 * 60 * 1000
-
-    const byId = new Map<string, any>()
-
-    // Dedicated live users (principal fuente)
-    (liveUsersFromDedicated || []).forEach((p: any) => {
-      if (p?.id) byId.set(p.id, { ...p, trainingNow: true })
-    })
-
-    // Enrich con perfiles reales
-    realProfiles.forEach((p: any) => {
-      if (byId.has(p.id)) {
-        const existing = byId.get(p.id)
-        byId.set(p.id, { ...existing, ...p, trainingNow: true })
-      }
-    })
-
-    let lives: any[] = Array.from(byId.values())
-      .filter((p: any) => !blockedUsers.includes(p.id))
-      .filter((p: any) => {
-        const since = Number(p.trainingNowSince || 0)
-        return Boolean(p.trainingNow) && since > 0 && (now - since < ASSUMED_SESSION_MS)
-      })
-      .map((p: any) => {
-        const since = Number(p.trainingNowSince || now)
-        const dist = 5 // valor seguro temporal
-
-        const seVaEnMs = (since + ASSUMED_SESSION_MS) - now
-        const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 0
-
-        return { 
-          ...p, 
-          distance: dist, 
-          seVaEnMin, 
-          joinCount: 0, 
-          isLegend: false,
-          trainingNowSince: since 
-        }
-      })
-
-    // Demo fallback
-    if (isDemoMode && lives.length === 0) {
-      lives = SEED_PROFILES.slice(0, 3).map((p, i) => ({ 
-        ...p, 
-        trainingNow: true, 
-        trainingNowSince: now - (i+1)*10*60000, 
-        distance: 3 
-      }))
-    }
-
-    return lives
-  }, [liveUsersFromDedicated, realProfiles, blockedUsers, isDemoMode])
+    return isDemoMode 
+      ? SEED_PROFILES.slice(0, 3).map((p: any, i: number) => ({
+          ...p,
+          trainingNow: true,
+          trainingNowSince: Date.now() - (i + 1) * 10 * 60000,
+          distance: 3,
+          seVaEnMin: 30,
+          joinCount: 0,
+          isLegend: false
+        }))
+      : [];
+  }, [isDemoMode]);
 
   // Only for the map widget in dev mode: augment with temporary test lives so devs can test GymPulse visuals,
   // near counts, popups, etc. without other real accounts being live. These do NOT pollute global liveTrainingNow used by lists/feeds/notifs.
