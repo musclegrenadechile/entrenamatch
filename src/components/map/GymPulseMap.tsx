@@ -105,6 +105,22 @@ const ZONE_COLORS: Record<string, string> = {
   default: '#eab308'
 }
 
+/** Count live users on map, including self when selfIsLive (self marker is separate from live pins). */
+function countMapLiveUsers(
+  users: any[],
+  opts: { mapNearOnly?: boolean; userLocation?: { lat: number; lng: number } | null; selectedMapZone?: string | null; showOnlyLegends?: boolean; selfIsLive?: boolean }
+): number {
+  const { mapNearOnly, userLocation, selectedMapZone, showOnlyLegends, selfIsLive } = opts
+  const n = (users || []).filter((u: any) => {
+    if (!u.lat || !u.lng || !u.trainingNow) return false
+    if (mapNearOnly && userLocation && (u.distance || 999) >= 10) return false
+    if (selectedMapZone && u.city !== selectedMapZone) return false
+    if (showOnlyLegends && !u.isLegend) return false
+    return true
+  }).length
+  return n + (selfIsLive ? 1 : 0)
+}
+
 const PARTNER_SEEDS = [ /* keep seeds here or import from constants if moved later */
   { id: 'gym1', name: 'Power Gym Reñaca', type: 'gym', lat: -32.95, lng: -71.55, logo: null, city: 'Viña del Mar' },
   { id: 'gym2', name: 'CrossFit Viña', type: 'crossfit', lat: -33.02, lng: -71.55, logo: null, city: 'Viña del Mar' },
@@ -337,8 +353,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       if (selectedMapZone) liveUsers = liveUsers.filter(u => u.city === selectedMapZone)
       if (showOnlyLegends) liveUsers = liveUsers.filter(u => u.isLegend)
 
-      // Heartbeats when live count increases
-      const currentLive = liveUsers.length
+      // Heartbeats when live count increases (include self when live — self marker is separate)
+      const currentLive = liveUsers.length + (selfIsLive ? 1 : 0)
       const prevLive = prevLiveCountRef.current
       if (currentLive > prevLive && currentLive > 0) {
         const candidates = liveUsers.length > 0 ? liveUsers : (userLocation ? [userLocation] : [])
@@ -680,9 +696,11 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     }
   }, [
     showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone,
-    ritualRipples, echoPins, showPartners, mapForceTick, partnerLocations.length,
-    showOnlyLegends, syncBonds, isDeveloper, selfIsLive, onShowProfile, onStartSync, onPartnerPositionSelected, onPartnerMoved, onPartnerDelete, onPartnerEdit, onForceTick, onRequestLocation, isQuickAddPartner,
-    onAddPartnerAtCurrentCenter, onReloadPartners, onSpawnTestLives, onClearDevTestLives, devTestCount
+    showOnlyLegends, showPartners, mapForceTick, ritualRipples, partnerLocations,
+    echoPins, syncBonds, selfIsLive, isDeveloper, isPlacingPartner, isQuickAddPartner,
+    onShowProfile, onStartSync, onPartnerPositionSelected, onPartnerMoved, onPartnerDelete,
+    onPartnerEdit, onForceTick, onRequestLocation, onAddPartnerAtCurrentCenter, onReloadPartners,
+    onSpawnTestLives, onClearDevTestLives, devTestCount
   ])
 
   // Global window helpers for popups (quick bridge until we use React portals or better event system)
@@ -779,6 +797,10 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     default: '#eab308'
   }
 
+  const mapCountOpts = { mapNearOnly, userLocation, selectedMapZone, showOnlyLegends, selfIsLive }
+  const totalLiveOnMap = countMapLiveUsers(liveTrainingNow || [], mapCountOpts)
+  const filteredLiveOnMap = countMapLiveUsers(liveTrainingNow || [], { ...mapCountOpts, mapNearOnly: true })
+
   return (
     <div className="relative w-full" style={{ zIndex: 10 }}> {/* higher stacking context so custom controls can reliably sit above Leaflet */}
       {/* Floating "El Pulso está vivo" header — now owned by the component */}
@@ -787,7 +809,13 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         onClick={() => {
           try { /* haptic if available */ } catch {}
           const active = (liveTrainingNow || []).filter((u: any) => u.lat && u.lng && u.trainingNow)
-          if (active.length === 0) return
+          if (active.length === 0) {
+            if (selfIsLive && userLocation) {
+              const handle = (ref as any)?.current
+              if (handle?.flyTo) handle.flyTo(userLocation.lat, userLocation.lng, 15)
+            }
+            return
+          }
           const hottest = active.reduce((best: any, u: any) => {
             const score = (u.joinCount || 0) + ((u.visibleLevel || 1) * 0.5) + (u.trainingSyncWith ? 5 : 0)
             const bestScore = (best.joinCount || 0) + ((best.visibleLevel || 1) * 0.5) + (best.trainingSyncWith ? 5 : 0)
@@ -807,7 +835,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
         EL GYMPULSE GLOBAL
         <span className="text-[#22c55e]/70 font-mono text-[9px] tabular-nums">
-          • {(liveTrainingNow || []).filter((u: any) => u.lat && u.lng && u.trainingNow).length} EN VIVO
+          • {totalLiveOnMap} EN VIVO
         </span>
         {(() => {
           const activeSyncs = (liveTrainingNow || []).filter((u: any) => u.trainingSyncWith).length / 2
@@ -825,7 +853,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       {/* Bottom-right filter cluster (self-contained) */}
       <div className="absolute bottom-2 right-2 flex items-center gap-1 z-[2000]">
         <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-          🟢 {(liveTrainingNow || []).filter((u: any) => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && ((u.distance||999)<10))) && (!selectedMapZone || u.city === selectedMapZone) && (!showOnlyLegends || u.isLegend)).length} en vivo
+          🟢 {mapNearOnly ? filteredLiveOnMap : totalLiveOnMap} en vivo
+          {selfIsLive && totalLiveOnMap <= 1 && <span className="ml-1 text-[7px] text-white/80">(tú)</span>}
           {showPartners && partnerLocations.length > 0 && <span className="ml-1 text-[7px] bg-[#FF671F] text-black px-1 rounded font-bold">{partnerLocations.length} PARTNERS</span>}
           {isDeveloper && <span className="ml-1 text-[7px] bg-[#FFD700] text-black px-1 rounded font-extrabold cursor-pointer active:opacity-70" onClick={onLogoutDeveloper} title="Tap to logout dev mode">DEV ON</span>}
         </div>

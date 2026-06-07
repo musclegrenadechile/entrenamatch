@@ -1562,10 +1562,13 @@ useEffect(() => {
   const [isQuickAddPartner, setIsQuickAddPartner] = useState(false) // extra dev mode: click map = instantly create minimal tienda/partner (no form)
   const [mapForceTick, setMapForceTick] = useState(0) // tiny trigger so map re-renders when toggling partners layer
   const [isTogglingLive, setIsTogglingLive] = useState(false) // prevent double-tap and show loading on the live toggle button (fixes stuck click)
+  const isTogglingLiveRef = useRef(false)
+  // Ignore stale own-profile snapshots right after we write trainingNow (prevents instant revert)
+  const pendingLiveWriteRef = useRef<{ trainingNow: boolean; at: number } | null>(null)
+  useEffect(() => { isTogglingLiveRef.current = isTogglingLive }, [isTogglingLive])
 
- // Dedicated source of truth for currently live users coming from a where('trainingNow'==true) listener.
-// This guarantees that people who activated "Entrenando Ahora" appear for others on the GymPulse...
-const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
+  // Dedicated source of truth: where('trainingNow'==true) listener (real mode) or demo synthesis.
+  const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
 
   // Refs for current auth uid and blocked to avoid stale closures in onSnapshot callbacks (critical for live status skip-self and filtering)
   const currentUidRef = useRef<string | null>(null)
@@ -2029,79 +2032,118 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
     return isFinite(n) ? n : undefined
   }
 
-             // LIVE TRAINING NOW - Versión de emergencia (mínima posible)
-  // LIVE TRAINING NOW - Versión completa pero segura para el mapa
+  const ASSUMED_LIVE_SESSION_MS = 3 * 60 * 60 * 1000
+
+  const enrichLiveUser = useCallback((p: any, now: number, bonds: Record<string, any>) => {
+    const since = Number(normalizeTrainingSince(p.trainingNowSince) || now)
+    const remainingMs = Math.max(0, ASSUMED_LIVE_SESSION_MS - (now - since))
+    const seVaEnMin = Math.ceil(remainingMs / 60000)
+    let distance = 999
+    if (userLocation && p.lat != null && p.lng != null) {
+      distance = getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng)
+    }
+    const bond = bonds[p.id]
+    const visibleLevel = p.retentionLevel || bond?.bondLevel || 1
+    return {
+      ...p,
+      trainingNow: true,
+      trainingNowSince: since,
+      distance,
+      seVaEnMin,
+      joinCount: p.liveJoins ?? p.joinCount ?? 0,
+      isLegend: !!bond && (bond.bondLevel || 0) >= 3,
+      visibleLevel,
+    }
+  }, [userLocation])
+
+  // Merge dedicated listener + optimistic self (listener skips own uid) + realProfiles enrichment.
+  const liveUsersEffective = useMemo(() => {
+    const byId = new Map<string, any>()
+    for (const p of liveUsersFromDedicated || []) {
+      if (p?.id) byId.set(p.id, { ...p, trainingNow: true })
+    }
+    // Self: FS dedicated query excludes own doc — inject locally when live so map/counts stay correct.
+    if (currentUser?.trainingNow && effectiveUserId) {
+      byId.set(effectiveUserId, {
+        id: effectiveUserId,
+        name: currentUser.name,
+        age: currentUser.age,
+        gender: currentUser.gender,
+        city: currentUser.city,
+        country: currentUser.country,
+        lat: currentUser.lat ?? userLocation?.lat,
+        lng: currentUser.lng ?? userLocation?.lng,
+        bio: currentUser.bio,
+        photos: currentUser.photos,
+        trainingTypes: currentUser.trainingTypes,
+        goals: currentUser.goals,
+        level: currentUser.level,
+        trainingNow: true,
+        trainingNowSince: normalizeTrainingSince(currentUser.trainingNowSince) || Date.now(),
+        liveStreak: currentUser.liveStreak,
+        joinedLiveStreak: currentUser.joinedLiveStreak,
+        liveJoins: currentUser.liveJoins,
+        trainingSyncWith: currentUser.trainingSyncWith,
+        retentionLevel: (currentUser as any).retentionLevel || 1,
+      })
+    }
+    for (const p of realProfiles || []) {
+      if (!byId.has(p.id)) continue
+      const existing = byId.get(p.id)
+      byId.set(p.id, { ...existing, ...p, trainingNow: true })
+    }
+    return Array.from(byId.values())
+  }, [liveUsersFromDedicated, currentUser, effectiveUserId, userLocation, realProfiles])
+
+  // Others-only list (join/sync UI). Self visibility uses self marker + liveCountForUI.
   const liveTrainingNow = useMemo(() => {
     const now = Date.now()
-    const ASSUMED_SESSION_MS = 3 * 60 * 60 * 1000
-
-    const byId = new Map<string, any>()
-
-    // 1. Dedicated listener (la fuente de verdad)
-    (liveUsersFromDedicated || []).forEach((p: any) => {
-      if (p?.id) {
-        byId.set(p.id, { ...p, trainingNow: true })
-      }
-    })
-
-    // 2. Enrich con realProfiles
-    realProfiles.forEach((p: any) => {
-      if (byId.has(p.id)) {
-        const existing = byId.get(p.id)
-        byId.set(p.id, { ...existing, ...p, trainingNow: true })
-      }
-    })
-
-    let lives: any[] = Array.from(byId.values())
+    let lives = liveUsersEffective
+      .filter((p: any) => p?.id && p.id !== effectiveUserId && p.id !== 'me')
       .filter((p: any) => !blockedUsers.includes(p.id))
       .filter((p: any) => {
-        const since = Number(p.trainingNowSince || 0)
-        return Boolean(p.trainingNow) && since > 0 && (now - since < ASSUMED_SESSION_MS)
+        const since = Number(normalizeTrainingSince(p.trainingNowSince) || 0)
+        return Boolean(p.trainingNow) && since > 0 && (now - since < ASSUMED_LIVE_SESSION_MS)
       })
-      .map((p: any) => ({
-        ...p,
-        distance: 5,
-        seVaEnMin: 35,
-        joinCount: Math.floor(Math.random() * 4),
-        isLegend: false,
-        trainingNowSince: Number(p.trainingNowSince || now)
-      }))
+      .map((p: any) => enrichLiveUser(p, now, syncBonds))
 
-    // Demo fallback fuerte
     if (isDemoMode && lives.length === 0) {
-      lives = SEED_PROFILES.slice(0, 5).map((p, i) => ({
-        ...p,
-        trainingNow: true,
-        trainingNowSince: now - (i + 1) * 12 * 60000,
-        distance: 1.5 + i * 0.8,
-        seVaEnMin: 42 - i * 6,
-        joinCount: i + 1
-      }))
+      lives = SEED_PROFILES.slice(0, 5)
+        .filter(p => p.id !== effectiveUserId)
+        .map((p, i) => enrichLiveUser({
+          ...p,
+          trainingNow: true,
+          trainingNowSince: now - (i + 1) * 12 * 60000,
+          joinCount: i + 1,
+        }, now, syncBonds))
     }
 
-    return lives
-  }, [liveUsersFromDedicated, realProfiles, blockedUsers, isDemoMode])
+    return lives.sort((a, b) => (a.distance || 999) - (b.distance || 999))
+  }, [liveUsersEffective, effectiveUserId, blockedUsers, isDemoMode, enrichLiveUser, syncBonds])
 
-  // Only for the map widget in dev mode: augment with temporary test lives so devs can test GymPulse visuals,
-  // near counts, popups, etc. without other real accounts being live. These do NOT pollute global liveTrainingNow used by lists/feeds/notifs.
+  // Map prop: others + dev test lives (self rendered via dedicated self marker, not duplicate pin).
   const mapLiveTrainingNow = useMemo(() => {
-    if (!isDeveloper || devTestLives.length === 0) return liveTrainingNow;
-    // Tag fakes so they can be identified if needed; they are already filtered out of self etc in parent live calc.
-    return [...liveTrainingNow, ...devTestLives];
-  }, [liveTrainingNow, isDeveloper, devTestLives]);
+    const base = [...liveTrainingNow]
+    if (isDeveloper && devTestLives.length > 0) base.push(...devTestLives)
+    return base
+  }, [liveTrainingNow, isDeveloper, devTestLives])
 
-  // For UI counts/banners ("X live cerca"), include self so when you are the only one live it doesn't show 0 and feel broken.
-  // The actual liveTrainingNow list (passed to map/lists) still excludes self to avoid self-join etc.
-  const liveCountForUI = liveTrainingNow.length + (currentUser?.trainingNow ? 1 : 0)
+  const liveCountForUI = useMemo(() => {
+    const now = Date.now()
+    return liveUsersEffective.filter((p: any) => {
+      const since = Number(normalizeTrainingSince(p.trainingNowSince) || 0)
+      return Boolean(p.trainingNow) && since > 0 && (now - since < ASSUMED_LIVE_SESSION_MS)
+    }).length
+  }, [liveUsersEffective])
 
   // Zone live counts for interactive legend (sigue con todo el mapa + visual polish iteration)
   const zoneLiveCounts = useMemo(() => {
     const counts: Record<string, number> = {}
-    liveTrainingNow.forEach((u: any) => {
+    liveUsersEffective.forEach((u: any) => {
       if (u.city) counts[u.city] = (counts[u.city] || 0) + 1
     })
     return counts
-  }, [liveTrainingNow])
+  }, [liveUsersEffective])
 
   // Feed computation lifted to top-level useMemo so hook is ALWAYS called in the same order (fixes React #310 "Rendered more hooks than during the previous render" when switching tabs).
   // The previous inline IIFE inside {activeTab==='feed' && ...} was conditionally executing the useMemo hook → violation.
@@ -2373,7 +2415,7 @@ useEffect(() => {
               intensity: data.intensity,
               verificationStatus: data.verificationStatus,
               trainingNow: true,
-              trainingNowSince: normalizeTrainingSince?.(data.trainingNowSince) || Date.now(),
+              trainingNowSince: normalizeTrainingSince(data.trainingNowSince) || Date.now(),
               liveStreak: data.liveStreak ?? undefined,
               lastLiveDate: data.lastLiveDate ?? undefined,
               liveJoins: data.liveJoins ?? undefined,
@@ -2399,8 +2441,38 @@ useEffect(() => {
   }
 }, [isDemoMode, db, isFirebaseConfigured])
 
-  // Own profile doc listener - keeps currentUser.trainingNow / streaks etc in sync if changed on another device or by server.
-  // Uses doc-level so we get our own live status even though collection listeners skip self.
+  // Demo mode: synthesize liveUsersFromDedicated locally (no Firestore query).
+  useEffect(() => {
+    if (!isDemoMode) return
+    const now = Date.now()
+    const demoLives: any[] = []
+    if (currentUser?.trainingNow) {
+      demoLives.push({
+        id: effectiveUserId,
+        name: currentUser.name,
+        city: currentUser.city,
+        lat: currentUser.lat ?? userLocation?.lat ?? -33.02,
+        lng: currentUser.lng ?? userLocation?.lng ?? -71.55,
+        photos: currentUser.photos,
+        trainingTypes: currentUser.trainingTypes,
+        level: currentUser.level,
+        trainingNow: true,
+        trainingNowSince: normalizeTrainingSince(currentUser.trainingNowSince) || now,
+      })
+    }
+    SEED_PROFILES.slice(0, 5).forEach((p, i) => {
+      if (p.id === effectiveUserId) return
+      demoLives.push({
+        ...p,
+        trainingNow: true,
+        trainingNowSince: now - (i + 1) * 12 * 60000,
+      })
+    })
+    setLiveUsersFromDedicated(demoLives)
+  }, [isDemoMode, currentUser?.trainingNow, currentUser?.trainingNowSince, currentUser?.lat, currentUser?.lng, currentUser?.name, currentUser?.city, currentUser?.photos, currentUser?.trainingTypes, currentUser?.level, effectiveUserId, userLocation])
+
+  // Own profile doc listener - keeps currentUser.trainingNow in sync from other devices.
+  // Guards against stale cached snapshots reverting an in-flight toggle write.
   useEffect(() => {
     if (isDemoMode || !db || !isFirebaseConfigured || !firebaseUser?.uid) return undefined
     let unsubOwn: any = null
@@ -2411,21 +2483,24 @@ useEffect(() => {
         unsubOwn = onSnapshot(ownRef, (snap) => {
           if (!snap.exists()) return
           const data = snap.data() as any
-          if (data) {
-            const newTrainingNow = !!data.trainingNow
-            const newSince = normalizeTrainingSince(data.trainingNowSince)
-            // Only update local if it differs (prevents unnecessary re-renders or loops on our own writes)
-            if (currentUser && (currentUser.trainingNow !== newTrainingNow || normalizeTrainingSince(currentUser.trainingNowSince) !== newSince)) {
-              const merged = {
-                ...currentUser,
-                trainingNow: newTrainingNow,
-                trainingNowSince: newSince,
-                liveStreak: data.liveStreak != null ? data.liveStreak : currentUser.liveStreak,
-                // add more if needed
-              }
-              saveUser(merged as any)
-              setMapForceTick(t => t + 1) // reflect self live change on map immediately
+          if (!data) return
+          if (isTogglingLiveRef.current) return
+          const pending = pendingLiveWriteRef.current
+          const newTrainingNow = !!data.trainingNow
+          const newSince = normalizeTrainingSince(data.trainingNowSince)
+          if (pending && Date.now() - pending.at < 10000) {
+            if (newTrainingNow !== pending.trainingNow) return
+            pendingLiveWriteRef.current = null
+          }
+          if (currentUser && (currentUser.trainingNow !== newTrainingNow || normalizeTrainingSince(currentUser.trainingNowSince) !== newSince)) {
+            const merged = {
+              ...currentUser,
+              trainingNow: newTrainingNow,
+              trainingNowSince: newSince,
+              liveStreak: data.liveStreak != null ? data.liveStreak : currentUser.liveStreak,
             }
+            saveUser(merged as any)
+            setMapForceTick(t => t + 1)
           }
         })
       } catch (e) {
@@ -3001,10 +3076,15 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         availability: user.availability,
         lat: user.lat,
         lng: user.lng,
-        trainingNow: user.trainingNow,
-        trainingNowSince: user.trainingNow ? user.trainingNowSince : null,
+        trainingNow: !!user.trainingNow,
+        trainingNowSince: user.trainingNow ? (user.trainingNowSince ?? Date.now()) : null,
+        liveStreak: user.liveStreak ?? null,
+        lastLiveDate: user.lastLiveDate ?? null,
+        joinedLiveStreak: user.joinedLiveStreak ?? null,
+        liveJoins: user.liveJoins ?? null,
+        trainingSyncWith: user.trainingSyncWith ?? null,
+        syncStartedAt: user.syncStartedAt ?? null,
         currentDailyChallenge: user.currentDailyChallenge,
-        // Agrega aquí más campos si quieres (liveStreak, etc.)
       };
 
       const cleanProfileUpdate = sanitizeForFirestore(profileUpdate);
@@ -6986,6 +7066,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   </motion.div>
                 ))}
               </div>
+            ) : currentUser?.trainingNow ? (
+              <div className="card card-glass p-4 text-center border border-[#22c55e]/50 relative overflow-hidden">
+                <div className="text-3xl mb-2">🟢</div>
+                <div className="font-semibold text-base mb-1 text-[#22c55e]">¡Tú estás en vivo en el GymPulse!</div>
+                <div className="text-sm text-[#9CA3AF] mb-3 leading-snug">Tu marcador verde ya está en el mapa. Cuando alguien más active live cerca, aparecerá aquí para unirte o sync.</div>
+                <button onClick={() => setShowLiveMap(true)} className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90">Ver mapa en tiempo real →</button>
+              </div>
             ) : (
               <div className="card card-glass p-6 text-center border border-[#22c55e]/30 relative overflow-hidden">
                 <div className="text-5xl mb-3 opacity-90">🏋️‍♂️</div>
@@ -7025,7 +7112,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       ref={gymPulseMapRef}
       showLiveMap={showLiveMap}
       liveTrainingNow={mapLiveTrainingNow}
-      liveUsersFromDedicated={liveUsersFromDedicated}
       ritualRipples={ritualRipples}
       partnerLocations={partnerLocations}
       echoPins={echoPins || []}
@@ -7596,7 +7682,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   )}
 
                   {/* Beautiful empty state when map open but no one live (after near filter) */}
-                  {showLiveMap && liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && (u.distance||999)<10))).length === 0 && userLocation && (
+                  {showLiveMap && !currentUser?.trainingNow && liveTrainingNow.filter(u => u.lat && u.lng && u.trainingNow && (!mapNearOnly || (userLocation && (u.distance||999)<10))).length === 0 && userLocation && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl text-center p-4 text-xs z-40">
                       <div>
                         <div className="text-2xl mb-1">🗺️</div>
@@ -7646,7 +7732,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           <div className="absolute inset-0 z-[95] bg-[#0D0D10] flex flex-col" onClick={() => { setShowLiveModal(false); setLiveModalSearch(''); setLiveModalSort('distance'); }}>
             <div className="p-4 flex items-center justify-between border-b border-[#2F2F35]">
               <button onClick={() => { setShowLiveModal(false); setLiveModalSearch(''); setLiveModalSort('distance'); }}><ArrowLeft /></button>
-              <div className="font-medium flex items-center gap-2">Entrenando Ahora cerca ({liveTrainingNow.length}) {liveTrainingNow.some(u => u.seVaEnMin > 0) && <span className="text-orange-400 text-xs">¡se va pronto, únete!</span>} {liveTrainingNow.length > 5 && <span className="text-[#22c55e] text-xs">🔥 HOT</span>}</div>
+              <div className="font-medium flex items-center gap-2">Entrenando Ahora cerca ({liveCountForUI}) {liveTrainingNow.some(u => u.seVaEnMin > 0) && <span className="text-orange-400 text-xs">¡se va pronto, únete!</span>} {liveCountForUI > 5 && <span className="text-[#22c55e] text-xs">🔥 HOT</span>}</div>
               <div />
             </div>
 
@@ -7740,7 +7826,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                       <button onClick={(e) => { e.stopPropagation(); setShowLiveModal(false); openChat(user.id); if (!matches.includes(user.id) && !realMatches.includes(user.id)) handleSwipe(user.id, 'right'); }} className="text-[9px] border border-[#22c55e]/60 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10 hover:bg-[#22c55e]/5">Chatear ya</button>
                     </div>
                   </div>
-                )) : (
+                )) : currentUser?.trainingNow ? (
+                  <div className="card card-glass p-6 text-center border border-[#22c55e]/40">
+                    <div className="text-3xl mb-2">🟢</div>
+                    <div className="font-semibold text-[#22c55e] mb-1">Estás en vivo — visible en el GymPulse</div>
+                    <div className="text-sm text-[#9CA3AF] mb-3">Aún no hay otros entrenando cerca. Tu marcador ya está en el mapa; cuando alguien más active live aparecerá aquí.</div>
+                    <button onClick={() => { setShowLiveModal(false); setShowLiveMap(true); }} className="text-xs px-4 py-1.5 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90">Ver mapa →</button>
+                  </div>
+                ) : (
                   <div className="card card-glass p-6 text-center border border-[#22c55e]/30">
                     <div className="text-3xl mb-2">🏋️</div>
                     <div className="font-semibold text-white mb-1">¡Aún no hay nadie entrenando cerca!</div>
@@ -10207,8 +10300,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                             console.warn('pre-terminate live reset non-fatal', resetErr);
                           }
 
+                          pendingLiveWriteRef.current = { trainingNow: false, at: Date.now() };
                           await saveUserWithRealSync(updated);
 
+                          pendingLiveWriteRef.current = null;
                           loadRealProfiles().catch(() => {});
                           setMapForceTick(t => t + 1);
                           import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {});
@@ -10220,6 +10315,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           // This keeps write pressure minimal on the critical terminate path.
                         } catch (err) {
                           console.error('Live deactivate failed', err);
+                          pendingLiveWriteRef.current = null;
                           toast.error('No se pudo desactivar el live', { description: 'Revisa tu conexión. Estado revertido.' });
                           if (!isDemoMode && firebaseUser?.uid) {
                             try {
@@ -10303,6 +10399,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                         }
                         const updated = { ...currentUser, trainingNow: newVal, trainingNowSince: newVal ? Date.now() : undefined, ...streakUpdate, ...( !newVal ? { trainingSyncWith: null, syncStartedAt: null } : {} ) }
                         
+                        pendingLiveWriteRef.current = { trainingNow: !!newVal, at: Date.now() };
                         await saveUserWithRealSync(updated as CurrentUser)
                         
                         loadRealProfiles().catch(() => {})
@@ -10320,6 +10417,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                         }
                       } catch (err) {
                         console.error('Live toggle failed', err);
+                        pendingLiveWriteRef.current = null;
                         toast.error('No se pudo activar/desactivar el live', { description: 'Revisa tu conexión o integridad. Estado revertido.' });
                         if (!isDemoMode && firebaseUser?.uid) {
                           try {
