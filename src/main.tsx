@@ -6,6 +6,7 @@ import RootApp from './RootApp.tsx'
 import { AuthProvider } from './contexts/AuthContext'
 import { ProfileProvider } from './contexts/ProfileContext'
 import { RootErrorBoundary } from './boot/RootErrorBoundary'
+import { initCrashReporting, reportError } from './services/crashReporting'
 
 function showFatalBootError(message: string) {
   const root = document.getElementById('root')
@@ -21,14 +22,16 @@ function showFatalBootError(message: string) {
     </div>`
 }
 
+initCrashReporting()
+
 window.addEventListener('error', (event) => {
-  console.error('[Crashlytics] JS Global Error:', event.error || event.message, 'at', event.filename, ':', event.lineno, event.colno)
+  reportError(event.error || event.message, 'window.error', true)
   if (!document.getElementById('root')?.innerHTML?.includes('EntrenaMatch')) {
     showFatalBootError(String(event.error?.message || event.message || 'Error de JavaScript'))
   }
 })
 window.addEventListener('unhandledrejection', (event) => {
-  console.error('[Crashlytics] Unhandled Promise Rejection:', event.reason)
+  reportError(event.reason, 'unhandledrejection', false)
 })
 
 const mountEl = document.getElementById('root')

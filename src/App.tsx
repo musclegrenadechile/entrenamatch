@@ -41,6 +41,7 @@ import type { FuelProfile, FuelLogEntry, FuelDayTotals } from './types'
 import { 
   TRAINING_OPTIONS, AVAILABILITY, LEGAL_VERSIONS, AUTO_MATCH_IDS, APP_VERSION 
 } from './constants'
+import { verifyDevMapPassword, isDevPasswordConfigured } from './config/devGate'
 
 // Capacitor plugins are loaded via a separate module that is only analyzed in CAPACITOR builds.
 // This prevents Vite/Rolldown from ever trying to resolve @capacitor/* packages during pure web builds
@@ -1810,7 +1811,6 @@ useEffect(() => {
   })
   const [showDevLogin, setShowDevLogin] = useState(false)
   const [devPassword, setDevPassword] = useState('')
-  const DEV_PASSWORD = 'dev2026map' // change in production; documented in instructions
   const gymPulseMapRef = useRef<any>(null) // extracted GymPulseMap handle (centrar, flyTo, getCenter, invalidate)
 
   // Dev-only: temporary fake live users (for testing GymPulse markers, near counts, popups, ripples WITHOUT needing other real devices/accounts online).
@@ -1844,7 +1844,13 @@ useEffect(() => {
 
   // Developer login for gated partner management (only devs can add/edit locals on the GymPulse map)
   const loginAsDeveloper = () => {
-    if (devPassword === DEV_PASSWORD) {
+    if (!isDevPasswordConfigured()) {
+      toast.error('Editor de mapa no configurado', {
+        description: 'Define VITE_DEV_MAP_PASSWORD en build local y añade tu UID en Firestore mapEditors/{uid}.',
+      })
+      return
+    }
+    if (verifyDevMapPassword(devPassword)) {
       setIsDeveloper(true)
       try { localStorage.setItem('entrenamatch_dev_mode', '1') } catch {}
       setShowDevLogin(false)
@@ -9199,7 +9205,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           <button onClick={() => { setShowDevLogin(false); setDevPassword('') }} className="flex-1 py-2 rounded-xl border border-white/20 text-white/70 active:bg-white/5">Cancelar</button>
                           <button onClick={loginAsDeveloper} className="flex-1 py-2 bg-[#FFD700] text-black font-bold rounded-xl active:bg-white">Entrar como Dev</button>
                         </div>
-                        <div className="text-[10px] text-center text-[#666] mt-2">Cambia la contraseña en el código (DEV_PASSWORD)</div>
+                        <div className="text-[10px] text-center text-[#666] mt-2">
+                          Requiere VITE_DEV_MAP_PASSWORD + doc mapEditors/tu-uid en Firestore
+                        </div>
                       </div>
                     </div>
                   )}

@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from 'react';
 import { APP_VERSION } from '../constants';
+import { reportError } from '../services/crashReporting';
 
 interface Props {
   children: ReactNode;
@@ -18,7 +19,7 @@ export class RootErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: unknown) {
-    console.error('[EntrenaMatch] Root crash:', error, info);
+    reportError(error, `RootErrorBoundary:${String((info as { componentStack?: string })?.componentStack?.slice(0, 200) || '')}`, true);
     try {
       (window as any).__ENTRENAMATCH_LAST_CRASH__ = {
         message: error.message,
