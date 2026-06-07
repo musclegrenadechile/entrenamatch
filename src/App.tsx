@@ -92,13 +92,15 @@ import { useFilters } from './hooks/useFilters'
 import { useRealSessions } from './hooks/useRealSessions'
 import { useSwipeDeck } from './hooks/useSwipeDeck'
 import { ExploreTab } from './components/explore/ExploreTab'
+import { ExploreLivePanel } from './components/explore/ExploreLivePanel'
 import { SquadsTab } from './components/squads'
 import { MatchesTab } from './components/matches'
 import { SessionsTab } from './components/sessions'
 import { ChatListPanel, ChatView } from './components/messages'
 import { ProfileTab } from './components/profile'
 import type { ProfileSection } from './components/profile'
-import { DailyRitualHome, LiveToggleFab } from './components/home'
+import { LiveToggleFab } from './components/home'
+import { HomeTab } from './components/home/HomeTab'
 import { fetchGlobalProfilePosts } from './services/profilePosts'
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
 import { isQuickDemoSession, clearQuickDemoSession } from './utils/quickDemo'
@@ -8775,705 +8777,107 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             <span>Sin conexión • usando caché • cambios se guardan y sincronizan al reconectar</span>
           </motion.div>
         )}
-        {/* ===== EXPLORE / SWIPE (fully owned by ExploreTab) ===== */}
-        {/* LIVE TRAINING BANNER - ALWAYS VISIBLE, the star feature for urgency and retention. Green pulsing, se va en, mini photos, quick join. Makes app addictive. Top of explore for maximum impact. */}
+        {/* ===== EXPLORE live banner + map (ExploreLivePanel) ===== */}
         {activeTab === 'explore' && (
-          <div className="px-4 py-2.5 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden live-banner-glow transition-all duration-300" style={{boxShadow: '0 1px 0 rgba(34,197,94,0.1)'}}>
-            <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
-            <div className="flex items-center gap-2 mb-1.5 relative z-10">
-              <div className="live-pill green !px-2.5 !py-0.5 text-[9px]">🟢 EN VIVO AHORA</div>
-              <div className="text-sm font-semibold tracking-[-0.1px]">{liveCountForUI} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡se va pronto!' : ''} {liveCountForUI > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}{activeSyncCount > 0 ? ` · 🔄 ${activeSyncCount} pares sincronizados ahora (único)` : ''}</div>
-              {dailyPulse && (dailyPulse.trainingStreak > 0 || dailyPulse.synergyStreak > 0) && (
-                <div className="text-[10px] mt-1 text-[#22c55e] font-medium flex items-center gap-1">
-                  🔥 Tu streak: {dailyPulse.trainingStreak}d train + {dailyPulse.synergyStreak}d synergy • Nivel {dailyPulse.level}
-                </div>
-              )}
-            </div>
-            {liveTrainingNow.length > 0 ? (
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {[...liveTrainingNow].sort((a,b)=> {
-                  const aInNet = !!syncBonds[a.id] ? -1 : 0;
-                  const bInNet = !!syncBonds[b.id] ? -1 : 0;
-                  if (aInNet !== bInNet) return aInNet - bInNet;
-                  return (a.distance||0)-(b.distance||0);
-                }).slice(0, 4).map(user => (
-                  <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className={`min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border active:scale-95 relative overflow-hidden shadow-lg shadow-[#22c55e]/10 ${ (user.joinCount||0) >= 3 ? 'border-[#FF671F]/60 shadow-[0_0_0_1px_#FF671F] animate-[pulse_2s_ease-in-out_infinite]' : 'border-[#22c55e]/70' }`} whileHover={{ scale: 1.04, y: -2, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(34 197 94 / 0.2)' }} whileTap={{ scale: 0.96 }} initial={{ opacity: 0.85, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
-                    <div className="flex justify-between items-start mb-1">
-                      <div className="flex items-center gap-1">
-                        {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-5 h-5 rounded-full object-cover border-2 border-[#22c55e]/60 ring-1 ring-[#22c55e]/20" />}
-                        <div className="font-semibold truncate text-white drop-shadow-sm">{user.name}</div>
-                        {!!syncBonds[user.id] && <span className="text-[6px] bg-[#FFD700] text-black px-0.5 rounded font-bold">RED</span>}
-                      </div>
-                      <div className="w-3 h-3 bg-[#22c55e] rounded-full flex-shrink-0 ring-2 ring-[#22c55e]/40" style={{animation: user.seVaEnMin < 10 ? 'live-pulse-green-urgent 1.1s ease-in-out infinite' : 'live-pulse-green 2.0s ease-in-out infinite'}}></div>
-                    </div>
-                    <div className="text-[#9CA3AF] text-[9px] mb-0.5 flex items-center gap-1">{userLocation && user.distance < 900 ? `${user.distance.toFixed(1)}km` : '— km'} <span className="text-[#22c55e]/70">·</span> {user.trainingTypes?.[0] || 'Entreno'}</div>
-                    <div className="flex items-center gap-1 text-[#22c55e] text-[9px] mb-1">
-                      <span>En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m</span>
-                      {user.seVaEnMin > 0 && <span className={`text-orange-400 ${user.seVaEnMin < 20 ? 'font-bold text-red-400 animate-pulse' : ''}`}>{user.seVaEnMin < 15 ? '· se va pronto' : '· se va en'} {user.seVaEnMin}m {user.seVaEnMin < 10 ? '¡ya!' : ''}</span>}
-                    </div>
-                    {user.seVaEnMin > 0 && (
-                      <div className="h-1 bg-[#22c55e]/20 rounded mt-0.5 mb-1">
-                        <div className="h-1 bg-[#22c55e] rounded" style={{width: `${Math.max(5, Math.min(100, (90 - user.seVaEnMin)/90 * 100))}%`}}></div>
-                      </div>
-                    )}
-                    {user.joinCount > 0 && (
-                      <div className="text-[8px] text-[#22c55e] mb-1 font-medium flex items-center gap-0.5">+{user.joinCount} se unieron 🔥</div>
-                    )}
-                    {(user.liveStreak || user.joinedLiveStreak) && (
-                      <div className="text-[8px] text-[#22c55e] mb-1">🔥{(user.liveStreak||0)}h +{(user.joinedLiveStreak||0)}j streak</div>
-                    )}
-                    {user.trainingSyncWith && <div className="text-[7px] text-[#22c55e] mb-1">🔄 En Sync ahora</div>}
-                    {user.syncStreak && <div className="text-[7px] text-[#22c55e] mb-1">🔄 SyncStreak {user.syncStreak}d</div>}
-                    <button 
-                      disabled={joiningSyncWith === user.id}
-                      onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); }} 
-                      className={`w-full text-[9px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black py-1 rounded font-bold active:brightness-90 transition shadow-sm flex items-center justify-center gap-1 ${joiningSyncWith === user.id ? 'opacity-80 cursor-wait' : ''}`}
-                    >
-                      {joiningSyncWith === user.id ? (
-                        <>⏳ Iniciando Sync...</>
-                      ) : (
-                        <>🔥 Entrenar juntos — abrir EntrenaSync</>
-                      )}
-                    </button>
-                  </motion.div>
-                ))}
-              </div>
-            ) : currentUser?.trainingNow ? (
-              <div className="card card-glass p-4 text-center border border-[#22c55e]/50 relative overflow-hidden">
-                <div className="text-3xl mb-2">🟢</div>
-                <div className="font-semibold text-base mb-1 text-[#22c55e]">¡Tú estás en vivo en el GymPulse!</div>
-                <div className="text-sm text-[#9CA3AF] mb-3 leading-snug">Tu marcador verde ya está en el mapa. Cuando alguien más active live cerca, aparecerá aquí para unirte o sync.</div>
-                <button onClick={() => setShowLiveMap(true)} className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90">Ver mapa en tiempo real →</button>
-              </div>
-            ) : (
-              <div className="card card-glass p-6 text-center border border-[#22c55e]/30 relative overflow-hidden">
-                <div className="text-5xl mb-3 opacity-90">🏋️‍♂️</div>
-                <div className="font-semibold text-base mb-1.5">Nadie entrenando cerca todavía</div>
-                <div className="text-sm text-[#9CA3AF] mb-4 leading-snug">Activa "Entrenando Ahora (EN VIVO)" en tu Perfil para aparecer en el mapa en tiempo real (GymPulse). ¡La gente cerca te ve entrenando y siente urgencia real (FOMO) de unirse o sync antes de que termines!</div>
-                <button onClick={() => setActiveTab('profile')} className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90 active:scale-[0.985] transition shadow-sm">Ir a Perfil y activar live →</button>
-                <div className="absolute -bottom-6 -right-6 text-[70px] opacity-5">📡</div>
-              </div>
-            )}
-            <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between items-center">
-              <span>¡FOMO real! Toca para ver o únete antes de que terminen. El mapa muestra el pulso vivo de la comunidad.</span>
-              <button onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline active:text-white">Ver todos live →</button>
-            </div>
-
-            {/* Map area - primer paso de modularización pulido.
-                La mayoría del chrome (header flotante, filtros, leyenda de zonas, centrar, botones dev) ahora vive dentro de <GymPulseMap />.
-                El padre mantiene el toggle + el form pesado de partners (por ahora).
-            */}
-            <div className="mt-3 relative z-10">
-              <div className="flex items-center justify-between mb-1.5 px-1">
-                <div className="text-[10px] font-semibold text-[#22c55e] flex items-center gap-1.5">
-                  🗺️ Mapa en tiempo real • El GymPulse Global (Partners + GymPartners en vivo)
-                  <span className="text-[8px] bg-[#22c55e]/20 px-1.5 rounded">LA RED EN VIVO</span>
-                  {networkStats.numPartners > 0 && <span className="text-[7px] bg-[#FFD700]/90 text-black px-1 rounded font-bold">TU RED: {networkStats.numPartners} • NP {networkStats.networkPower}</span>}
-                </div>
-                <button 
-                  onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(!showLiveMap) }} 
-                  className={`text-xs px-3 py-1 rounded-full border transition ${showLiveMap ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
-                >
-                  {showLiveMap ? 'Ocultar el mapa en tiempo real' : 'Ver el mapa en tiempo real'}
-                </button>
-              </div>
-
-              {showLiveMap && (
-  <div className="relative z-10" style={{ minHeight: '340px' }}>
-    <GymPulseMap
-      ref={gymPulseMapRef}
-      showLiveMap={showLiveMap}
-      liveTrainingNow={mapLiveTrainingNow}
-      liveCount={liveCountForUI}
-      selfUserId={effectiveUserId}
-      ritualRipples={ritualRipples}
-      partnerLocations={partnerLocations}
-      echoPins={echoPins || []}
-      userLocation={userLocation}
-      mapNearOnly={mapNearOnly}
-      selectedMapZone={selectedMapZone}
-      showOnlyLegends={showOnlyLegends}
-      showPartners={showPartners}
-      mapMyGymOnly={mapMyGymOnly}
-      mapMyGymId={mapMyGymId}
-      mapForceTick={mapForceTick}
-      syncBonds={syncBonds}
-      isDeveloper={isDeveloper}
-      isPlacingPartner={isPlacingPartner}
-      isQuickAddPartner={isQuickAddPartner}
-      selfIsLive={!!currentUser?.trainingNow}
-      devTestCount={devTestLives.length}
-
-      // New control callbacks (widget now manages its own filter/legend/dev buttons)
-      onMapNearOnlyChange={setMapNearOnly}
-      onSelectedMapZoneChange={setSelectedMapZone}
-      onShowOnlyLegendsChange={setShowOnlyLegends}
-      onShowPartnersChange={(v) => { setShowPartners(v); setMapForceTick(t => t + 1) }}
-      onMapMyGymOnlyChange={setMapMyGymOnly}
-      onOpenAddPartner={openAddPartner}
-      onOpenManagePartners={openManagePartners}
-      onToggleQuickAdd={(next) => { setIsQuickAddPartner(next); if (next) toast('Modo ADD RÁPIDO activado'); else toast('Modo add rápido OFF') }}
-      onLogoutDeveloper={logoutDeveloper}
-      onAddPartnerAtCurrentCenter={addPartnerAtCurrentCenter}
-      onReloadPartners={reloadPartners}
-      onSpawnTestLives={spawnDevTestLives}
-      onClearDevTestLives={clearDevTestLives}
-
-      onShowProfile={setShowFullProfile}
-      onStartSync={startSyncWith}
-      onWitnessEchoPin={witnessEchoPin}
-      onWitnessRipple={witnessRipple}
-      onPartnerPositionSelected={async (lat, lng) => {
-        if (isQuickAddPartnerRef.current && isDeveloper) {
-          // Quick add mode: create minimal partner immediately on map click (great for rapid dev iteration)
-          const pid = 'partner-' + Date.now()
-          const minimal: any = {
-            id: pid,
-            name: 'Nueva Tienda ' + new Date().toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit'}),
-            lat, lng,
-            type: 'gym',
-            address: 'Agregada rápido por dev',
-            addedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          }
-                        // Never include logoUrl if no logo (Firestore rejects undefined)
-                        // Will be added later when editing in the auto-opened form.
-                        setPartnerLocations(prev => [...prev, minimal])
-                        setMapForceTick(t => t + 1)
-                        // Defensive clean for any undefineds (Firestore forbids them in setDoc)
-                        Object.keys(minimal).forEach(k => { if (minimal[k] === undefined) delete minimal[k] })
-
-                        if (!isDemoMode && db) {
-                          try {
-                            const { setDoc, doc } = await import('firebase/firestore')
-                            await setDoc(doc(db, 'partnerLocations', pid), minimal)
-                          } catch (e) { console.warn('quick add fs', e) }
-                        }
-                        toast.success('Tienda agregada rápido', { description: `${lat.toFixed(4)}, ${lng.toFixed(4)} — usa Manage para editar` })
-                        // turn off quick mode after one add
-                        setIsQuickAddPartner(false)
-                        // Auto open edit for the new one so dev can immediately set name/logo etc.
-                        setTimeout(() => startEditPartner(minimal), 50)
-                        return
-                      }
-                      setPartnerFormLat(lat)
-                      setPartnerFormLng(lng)
-                      // keep form open so dev can confirm
-                    }}
-                    onPartnerMoved={async (id: string, lat: number, lng: number) => {
-                      // Dev drag-to-move partner/tienda on map
-                      setPartnerLocations(prev => prev.map(x => x.id === id ? { ...x, lat, lng } : x))
-                      setMapForceTick(t => t + 1)
-                      if (!isDemoMode && db) {
-                        try {
-                          const { setDoc, doc } = await import('firebase/firestore')
-                          await setDoc(doc(db, 'partnerLocations', id), { lat, lng, updatedAt: new Date().toISOString() }, { merge: true })
-                          toast.success('Tienda movida', { description: 'Posición actualizada en el mapa para todos' })
-                        } catch (e) {
-                          console.warn('partner drag fs', e)
-                          toast.error('No se pudo guardar el movimiento en FS')
-                        }
-                      }
-                    }}
-                    onPartnerEdit={handlePartnerEditFromMap}
-                    onPartnerDelete={async (id: string) => {
-                      // Dev delete from map popup
-                      const p = (partnerLocationsRef.current || partnerLocations).find((pp: any) => pp.id === id)
-                      if (!p || !confirm(`Eliminar ${p.name || 'esta tienda'}?`)) return
-                      if (!isDemoMode && db) {
-                        try {
-                          const { deleteDoc, doc } = await import('firebase/firestore')
-                          await deleteDoc(doc(db, 'partnerLocations', id))
-                        } catch (e) {
-                          console.warn('partner delete from map fs', e)
-                          try { toast.error('No se pudo borrar en FS (revisa reglas)') } catch {}
-                        }
-                      }
-                      setPartnerLocations(prev => prev.filter(pp => pp.id !== id))
-                      setMapForceTick(t => t + 1)
-                      try { triggerHaptic('light') } catch {}
-                    }}
-                    onForceTick={() => setMapForceTick(t => t + 1)}
-                    onRequestLocation={() => requestUserLocation().catch(() => {})}
-                    onRegisterCentrar={(fn) => {
-                      // store for the "Centrar" button below
-                      ;(window as any).__gymPulseCentrar = fn
-                    }}
-                  />
-                  {!showAddPartnerForm && (
-                    <>
-                      {showOnlyLegends && (
-                        <div className="text-[7px] text-[#FFD700] px-1 mt-0.5">Tu Network Power activa — tus GymPartners destacan en el GymPulse</div>
-                      )}
-                      {isDeveloper && showPartners && (
-                        <div className="text-[7px] text-[#FFD700]/80 px-1 mt-0.5">DEV: arrastra pins PARTNERS para mover • +Add rápido (click mapa crea tienda) • Manage para borrar/editar • popups tienen 🗑️ Borrar</div>
-                      )}
-                    </>
-                  )}
-
-                  {/* DEV PARTNER FORM - attractive, with logo upload. Gated by developer login. Supports add + edit with logo for negocios. */}
-                  {showAddPartnerForm && isDeveloper && (
-                    <div className="absolute bottom-1 left-1 right-1 z-[5000] bg-[#0D0D10] border-2 border-[#FFD700] rounded-2xl p-3 text-xs shadow-2xl max-h-[220px] overflow-auto">
-                      <div className="font-bold text-[#FFD700] mb-2 flex justify-between items-center">
-                        {editingPartnerId ? 'Editar Partner (devs)' : 'Agregar Partner + Logo (devs)'} — visible en mapa en tiempo real
-                        <button onClick={cancelPartnerForm} className="text-white/60 hover:text-white px-1">✕</button>
-                      </div>
-
-                      <div className="space-y-2">
-                        <input 
-                          value={partnerFormName} 
-                          onChange={(e) => setPartnerFormName(e.target.value)} 
-                          placeholder="Nombre del gym / negocio" 
-                          className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded px-3 py-1.5 text-white text-sm outline-none focus:border-[#FF671F]" 
-                        />
-                        <select 
-                          value={partnerFormType} 
-                          onChange={(e) => setPartnerFormType(e.target.value as any)} 
-                          className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded px-3 py-1.5 text-white text-sm"
-                        >
-                          <option value="gym">Gym / Box / Entrenamiento</option>
-                          <option value="store">Tienda / Suplementos</option>
-                          <option value="studio">Studio / Otro</option>
-                        </select>
-
-                        {/* Address + precise lat/lng — makes "ponerlo correctamente con direccion" trivial for devs */}
-                        <div>
-                          <div className="text-[9px] text-[#9CA3AF] mb-0.5">Dirección / referencia (se muestra en popup del mapa)</div>
-                          <input 
-                            value={partnerFormAddress} 
-                            onChange={(e) => setPartnerFormAddress(e.target.value)} 
-                            placeholder="Ej: Av. Libertad 1234, Viña del Mar • cerca del mall" 
-                            className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded px-3 py-1 text-white text-xs outline-none focus:border-[#FF671F]" 
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <div className="text-[9px] text-[#9CA3AF] mb-0.5">Latitud</div>
-                            <input 
-                              type="number" step="0.0001" 
-                              value={partnerFormLat} 
-                              onChange={(e) => setPartnerFormLat(parseFloat(e.target.value) || -33.02)} 
-                              className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded px-2 py-1 text-white text-xs font-mono" 
-                            />
-                          </div>
-                          <div>
-                            <div className="text-[9px] text-[#9CA3AF] mb-0.5">Longitud</div>
-                            <input 
-                              type="number" step="0.0001" 
-                              value={partnerFormLng} 
-                              onChange={(e) => setPartnerFormLng(parseFloat(e.target.value) || -71.55)} 
-                              className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded px-2 py-1 text-white text-xs font-mono" 
-                            />
-                          </div>
-                        </div>
-                        {/* Quick actions to make moving/placing frictionless for devs */}
-                        <div className="flex flex-wrap gap-1">
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              const c = gymPulseMapRef.current?.getCenter?.() || null
-                              if (c) {
-                                setPartnerFormLat(c.lat)
-                                setPartnerFormLng(c.lng)
-                                try { triggerHaptic('light') } catch {}
-                                toast('Centro del mapa copiado', { description: 'Ajusta manualmente o guarda' })
-                              } else {
-                                toast.error('Mapa no disponible todavía')
-                              }
-                            }} 
-                            className="text-[9px] px-2 py-0.5 rounded border border-[#FFD700]/40 text-[#FFD700] active:bg-[#FFD700]/10"
-                          >
-                            📍 Usar centro del mapa
-                          </button>
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              if (userLocation) {
-                                setPartnerFormLat(userLocation.lat)
-                                setPartnerFormLng(userLocation.lng)
-                                try { triggerHaptic('light') } catch {}
-                                toast('Tu GPS copiado al partner')
-                              } else {
-                                toast.error('GPS no disponible aún')
-                              }
-                            }} 
-                            className="text-[9px] px-2 py-0.5 rounded border border-[#FFD700]/40 text-[#FFD700] active:bg-[#FFD700]/10"
-                          >
-                            📌 Usar mi ubicación
-                          </button>
-                          <button 
-                            type="button"
-                            onClick={() => {
-                              const next = !isPlacingPartner
-                              setIsPlacingPartner(next)
-                              if (next) {
-                                toast.info('MODO COLOCAR: toca el mapa donde quieres el local', { description: 'Puedes tocar varias veces para ajustar' })
-                                try { triggerHaptic('medium') } catch {}
-                              }
-                            }} 
-                            className={`text-[9px] px-2 py-0.5 rounded border ${isPlacingPartner ? 'bg-[#FF671F] text-white border-[#FF671F]' : 'border-[#FFD700]/40 text-[#FFD700] active:bg-[#FFD700]/10'}`}
-                          >
-                            {isPlacingPartner ? '✋ CANCELAR CLICK-MAPA' : '👆 COLOCAR TOCANDO MAPA'}
-                          </button>
-                        </div>
-                        {isPlacingPartner && (
-                          <div className="text-[9px] text-[#FF671F] bg-black/40 px-2 py-0.5 rounded">Toca cualquier punto del mapa en tiempo real → lat/lng del formulario se actualizan al instante.</div>
-                        )}
-
-                        {/* Logo upload - attractive preview */}
-                        <div>
-                          <div className="text-[10px] text-[#9CA3AF] mb-1">Logo del negocio (recomendado 200x200+)</div>
-                          <div className="flex items-center gap-3">
-                            <label className="cursor-pointer flex-1">
-                              <div className="border border-dashed border-[#FF671F]/50 hover:border-[#FF671F] rounded-xl px-3 py-2 text-center text-[#FF671F] active:bg-[#FF671F]/10 transition">
-                                {partnerLogoPreview ? 'Cambiar logo' : 'Subir logo (jpg/png)'}
-                              </div>
-                              <input type="file" accept="image/*" className="hidden" onChange={handlePartnerLogoSelect} />
-                            </label>
-                            {typeof window !== 'undefined' && (window as any).Capacitor && CapacitorCamera && (
-                              <button type="button" onClick={async () => {
-                                try {
-                                  const photo = await CapacitorCamera.getPhoto({ quality: 70, allowEditing: true, resultType: 'base64' })
-                                  if (photo && photo.base64String) {
-                                    const byteCharacters = atob(photo.base64String)
-                                    const byteNumbers = new Array(byteCharacters.length)
-                                    for (let i=0; i<byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i)
-                                    const byteArray = new Uint8Array(byteNumbers)
-                                    const blob = new Blob([byteArray], { type: 'image/jpeg' })
-                                    const file = new File([blob], 'partner-logo.jpg', { type: 'image/jpeg' })
-                                    setPartnerLogoFile(file)
-                                    if (partnerLogoPreview && partnerLogoPreview.startsWith('blob:')) URL.revokeObjectURL(partnerLogoPreview)
-                                    const preview = URL.createObjectURL(file)
-                                    setPartnerLogoPreview(preview)
-                                    try { triggerHaptic('light') } catch {}
-                                  }
-                                } catch (e) { console.warn('camera logo', e) }
-                              }} className="text-[10px] px-2 py-1 border border-[#FF671F]/40 rounded text-[#FF671F] active:bg-[#FF671F]/10">📷</button>
-                            )}
-                            {partnerLogoPreview && (
-                              <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-[#FFD700] flex-shrink-0">
-                                <img src={partnerLogoPreview} className="w-full h-full object-cover" />
-                                <button 
-                                  onClick={() => { 
-                                    setPartnerLogoFile(null); 
-                                    if (partnerLogoPreview.startsWith('blob:')) URL.revokeObjectURL(partnerLogoPreview); 
-                                    setPartnerLogoPreview(editingPartnerId ? (partnerLocations.find(pp=>pp.id===editingPartnerId)?.logoUrl || null) : null); 
-                                  }} 
-                                  className="absolute -top-1 -right-1 bg-black/80 text-white text-[10px] w-4 h-4 rounded-full leading-none flex items-center justify-center">×</button>
-                              </div>
-                            )}
-                          </div>
-                          <div className="text-[9px] text-[#666] mt-0.5">Logo → Storage (https) → visible en marker dorado PARTNER del mapa en tiempo real. Requiere login real Firebase.</div>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={async () => {
-                          try { triggerHaptic('medium') } catch {}
-                          const name = partnerFormName.trim() || 'Partner Gym'
-                          const type = partnerFormType
-                          // Use the controlled form values (dev can tweak manually, use buttons, or click on map)
-                          let lat = partnerFormLat
-                          let lng = partnerFormLng
-                          const address = partnerFormAddress.trim() || (editingPartnerId ? (partnerLocations.find(pp=>pp.id===editingPartnerId)?.address || 'Actualizado por devs') : 'Agregado por devs')
-                          const pid = editingPartnerId || ('partner-' + Date.now())
-                          let logoUrl: string | undefined = editingPartnerId ? partnerLocations.find(pp => pp.id === editingPartnerId)?.logoUrl : undefined
-                          if (partnerLogoFile) {
-                            logoUrl = await uploadPartnerLogoIfNeeded(partnerLogoFile, pid)
-                            if (partnerLogoFile && !logoUrl) {
-                              toast.error('Logo no se subió (403). Asegúrate de: 1) firebase deploy --only storage (rules), 2) Estar logueado en la app con Google o email (Firebase Auth real, el password dev solo abre el form). Partner guardado sin logo.')
-                            }
-                          }
-                          const partnerData: any = {
-                            id: pid,
-                            name,
-                            lat,
-                            lng,
-                            type,
-                            address,
-                            updatedAt: new Date().toISOString(),
-                          }
-                          if (!editingPartnerId) {
-                            partnerData.addedAt = new Date().toISOString()
-                          }
-                          // Only include logoUrl if we have a real value (Firestore setDoc rejects undefined)
-                          if (logoUrl) {
-                            partnerData.logoUrl = logoUrl
-                          }
-
-                          // Defensive: never send undefined values to Firestore (causes "Unsupported field value: undefined")
-                          Object.keys(partnerData).forEach(k => {
-                            if (partnerData[k] === undefined) delete partnerData[k]
-                          })
-
-                          if (!isDemoMode && db) {
-                            try {
-                              const { setDoc, doc, updateDoc } = await import('firebase/firestore')
-                              if (editingPartnerId) {
-                                await updateDoc(doc(db, 'partnerLocations', pid), partnerData)
-                              } else {
-                                await setDoc(doc(db, 'partnerLocations', pid), partnerData)
-                              }
-                            } catch (e) { 
-                              console.warn('save partner fs', e) 
-                              try {
-                                toast.error('Error guardando partner en Firestore (permisos)', { 
-                                  description: 'Deploy las firestore.rules nuevas. Asegúrate de estar logueado con Google/email (Firebase Auth real). El logo se subió bien. Se mostró localmente.' 
-                                })
-                              } catch {}
-                            }
-                          }
-                          // Always update local state optimistically (for both demo and real mode)
-                          // This ensures the partner appears immediately in the map even before the onSnapshot fires in real-time mode.
-                          setPartnerLocations(prev => {
-                            if (editingPartnerId) {
-                              return prev.map(pp => pp.id === pid ? { ...pp, ...partnerData } : pp)
-                            }
-                            return [...prev, partnerData]
-                          })
-                          // cleanup
-                          if (partnerLogoPreview && partnerLogoPreview.startsWith('blob:')) URL.revokeObjectURL(partnerLogoPreview)
-                          setPartnerLogoFile(null)
-                          setPartnerLogoPreview(null)
-                          setIsPlacingPartner(false)
-                          setShowAddPartnerForm(false)
-                          setEditingPartnerId(null)
-                          setMapForceTick(t => t + 1)
-                          // ensure map immediately reflects the new/updated partner (fixes "no queda guardado" visual)
-                          setTimeout(() => {
-                            try { gymPulseMapRef.current?.invalidateSize?.() } catch {}
-                          }, 30)
-                          toast.success(editingPartnerId ? 'Partner actualizado' : 'Partner agregado', { description: 'Aparecerá en el mapa en tiempo real para todos los usuarios' })
-                          // recenter with flyTo via the extracted component (old ref is dead)
-                          setTimeout(() => {
-                            try { gymPulseMapRef.current?.flyTo?.(lat, lng, 14) } catch {}
-                          }, 150)
-                        }}
-                        className="mt-3 w-full py-2 bg-[#FFD700] text-black font-extrabold rounded-xl active:bg-white active:scale-[0.985] transition flex items-center justify-center gap-2"
-                      >
-                        {editingPartnerId ? 'GUARDAR CAMBIOS + LOGO' : 'AGREGAR AL MAPA EN TIEMPO REAL'}
-                      </button>
-                      <div className="text-center text-[9px] text-[#666] mt-1">Solo devs. Rules deployadas. Necesitas sign-in real (Google/email) en la app (no solo password dev) para que el upload de logo dé 200 y aparezca la imagen en el marker dorado del mapa.</div>
-                    </div>
-                  )}
-
-                  {/* DEV LOGIN MODAL - password gate so ONLY developers can add/edit partner locals + logos */}
-                  {showDevLogin && (
-                    <div className="absolute inset-0 z-[6000] flex items-center justify-center bg-black/70 p-4" onClick={() => setShowDevLogin(false)}>
-                      <div onClick={e => e.stopPropagation()} className="bg-[#0D0D10] border-2 border-[#FFD700] rounded-2xl p-4 w-full max-w-[320px] text-sm">
-                        <div className="font-black text-[#FFD700] mb-1">Developer Login</div>
-                        <div className="text-[#9CA3AF] text-xs mb-3">Acceso exclusivo para agregar y editar partners (locales) con logos en el mapa en tiempo real.</div>
-                        <input 
-                          type="password" 
-                          value={devPassword} 
-                          onChange={e => setDevPassword(e.target.value)} 
-                          onKeyDown={e => { if (e.key === 'Enter') loginAsDeveloper() }} 
-                          placeholder="Password de desarrollador" 
-                          className="w-full bg-black border border-[#FFD700]/40 rounded px-3 py-2 mb-3 text-white focus:outline-none focus:border-[#FFD700]" 
-                        />
-                        <div className="flex gap-2">
-                          <button onClick={() => { setShowDevLogin(false); setDevPassword('') }} className="flex-1 py-2 rounded-xl border border-white/20 text-white/70 active:bg-white/5">Cancelar</button>
-                          <button onClick={loginAsDeveloper} className="flex-1 py-2 bg-[#FFD700] text-black font-bold rounded-xl active:bg-white">Entrar como Dev</button>
-                        </div>
-                        <div className="text-[10px] text-center text-[#666] mt-2">
-                          Requiere VITE_DEV_MAP_PASSWORD + doc mapEditors/tu-uid en Firestore
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* MANAGE PARTNERS MODAL (dev only) - improved with search, stats, logo previews, better UX */}
-                  {showManagePartners && isDeveloper && (
-                    <div className="absolute inset-0 z-[5500] flex items-end justify-center bg-black/60 p-3" onClick={() => setShowManagePartners(false)}>
-                      <div onClick={e=>e.stopPropagation()} className="bg-[#0D0D10] border border-[#FFD700] rounded-t-2xl w-full max-w-[420px] max-h-[75vh] overflow-auto p-3 text-sm">
-                        <div className="flex justify-between items-center mb-2 sticky top-0 bg-[#0D0D10] pb-1">
-                          <div>
-                            <div className="font-bold text-[#FFD700]">Manage Partners (devs)</div>
-                            <div className="text-[10px] text-[#9CA3AF]">{partnerLocations.length} locales • {partnerLocations.filter((pp:any)=>pp.logoUrl).length} con logo</div>
-                          </div>
-                          <button onClick={() => setShowManagePartners(false)} className="text-white/50">✕</button>
-                        </div>
-
-                        {/* Search for partners */}
-                        <input 
-                          placeholder="Buscar por nombre..." 
-                          className="w-full mb-2 bg-[#1C1C20] border border-[#2F2F35] rounded px-2 py-1 text-xs" 
-                          onChange={(e) => {
-                            const term = e.target.value.toLowerCase()
-                            // simple client filter via data attr or re-render list - for simplicity use state if needed, here we filter in map below
-                            const container = e.currentTarget.parentElement?.querySelector('#manage-partner-list')
-                            if (container) {
-                              Array.from(container.children).forEach((child: any) => {
-                                const name = (child.getAttribute('data-name') || '').toLowerCase()
-                                child.style.display = name.includes(term) ? '' : 'none'
-                              })
-                            }
-                          }}
-                        />
-
-                        <div id="manage-partner-list">
-                          {partnerLocations.length === 0 && <div className="text-[#9CA3AF] text-xs py-2">No partners yet. Usa + Partner para agregar.</div>}
-                          {partnerLocations.map((p: any) => (
-                            <div key={p.id} data-name={p.name} className="flex items-center gap-1 border-b border-white/10 py-2 last:border-0">
-                              {p.logoUrl ? (
-                                <img src={p.logoUrl} className="w-9 h-9 rounded-full object-cover border border-[#FFD700]/50 flex-shrink-0" />
-                              ) : (
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center text-lg text-white flex-shrink-0">📍</div>
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <div className="font-semibold truncate text-sm">{p.name}</div>
-                                <div className="text-[9px] text-[#9CA3AF] truncate">{p.address || p.type} • {p.lat?.toFixed(3)},{p.lng?.toFixed(3)}</div>
-                              </div>
-                              <button onClick={() => startEditPartner(p)} className="text-[9px] px-1.5 py-0.5 border border-[#FFD700]/50 rounded text-[#FFD700] active:bg-[#FFD700]/10" title="Editar nombre, logo, dirección, coords">Edit</button>
-                              {/* Instant move tools — core of "facil mover un local" for devs */}
-                              <button 
-                                onClick={() => {
-                                  if (gymPulseMapRef.current && p.lat && p.lng) {
-                                    try { gymPulseMapRef.current.centerOn(p.lat, p.lng, 15) } catch {}
-                                  } // legacy mapInstanceRef removed
-                                  try { triggerHaptic('light') } catch {}
-                                }} 
-                                className="text-[9px] px-1.5 py-0.5 border border-[#3b82f6]/50 rounded text-[#3b82f6] active:bg-[#3b82f6]/10" 
-                                title="Centrar el mapa en este local (para ver o preparar move)"
-                              >
-                                Centrar
-                              </button>
-                              <button 
-                                onClick={async () => {
-                                  // Move this partner to whatever the map is currently centered on — super fast iteration for placement
-                                  const c = gymPulseMapRef.current?.getCenter?.() || null
-                                  if (!c) { toast.error('Mapa no disponible'); return }
-                                  const newLat = c.lat, newLng = c.lng
-                                  setPartnerLocations(prev => prev.map(x => x.id === p.id ? { ...x, lat: newLat, lng: newLng } : x))
-                                  setMapForceTick(t => t + 1)
-                                  if (!isDemoMode && db) {
-                                    try {
-                                      const { setDoc, doc } = await import('firebase/firestore')
-                                      await setDoc(doc(db, 'partnerLocations', p.id), { lat: newLat, lng: newLng, updatedAt: new Date().toISOString() }, { merge: true })
-                                    } catch (e) { 
-                                      console.warn('partner move fs', e) 
-                                      try { toast.error('No se pudo mover en FS (revisa reglas)') } catch {} 
-                                    }
-                                  }
-                                  try { gymPulseMapRef.current?.centerOn?.(newLat, newLng, 14) } catch {}
-                                  try { triggerHaptic('success') } catch {}
-                                  toast.success('Movido al centro', { description: `${p.name} actualizado en tiempo real` })
-                                }} 
-                                className="text-[9px] px-1.5 py-0.5 border border-[#22c55e]/50 rounded text-[#22c55e] active:bg-[#22c55e]/10" 
-                                title="Poner este local exactamente donde está centrado el mapa ahora (guarda al instante)"
-                              >
-                                Poner aquí
-                              </button>
-                              <button onClick={async () => {
-                                if (!confirm(`Eliminar ${p.name}?`)) return
-                                if (!isDemoMode && db) {
-                                  try {
-                                    const { deleteDoc, doc } = await import('firebase/firestore')
-                                    await deleteDoc(doc(db, 'partnerLocations', p.id))
-                                  } catch (e) { 
-                                    console.warn('partner delete fs', e) 
-                                    try { toast.error('No se pudo borrar en FS (revisa reglas)') } catch {} 
-                                  }
-                                }
-                                setPartnerLocations(prev => prev.filter(pp => pp.id !== p.id))
-                                try { triggerHaptic('light') } catch {}
-                              }} className="text-[9px] px-1.5 py-0.5 border border-red-500/50 rounded text-red-400 active:bg-red-500/10">Del</button>
-                            </div>
-                          ))}
-                        </div>
-                        <button onClick={openAddPartner} className="mt-3 w-full py-1.5 text-sm bg-[#FFD700] text-black rounded-xl font-bold">+ Agregar nuevo Partner</button>
-
-                        {/* Extra dev superpowers for rapid testing / content creation on the map */}
-                        <div className="mt-2 grid grid-cols-3 gap-1 text-[9px]">
-                          <button 
-                            onClick={() => {
-                              if (!confirm('¿BORRAR TODAS las tiendas/partners? Esto es solo para devs y es permanente en FS.')) return
-                              ;(async () => {
-                                for (const p of partnerLocations) {
-                                  if (!isDemoMode && db) {
-                                    try { const { deleteDoc, doc } = await import('firebase/firestore'); await deleteDoc(doc(db, 'partnerLocations', p.id)) } catch {}
-                                  }
-                                }
-                                setPartnerLocations([])
-                                setMapForceTick(t => t + 1)
-                                toast('Todas las tiendas borradas')
-                              })()
-                            }}
-                            className="py-1 bg-red-900/60 text-red-300 rounded border border-red-500/40 active:bg-red-800"
-                          >
-                            🗑️ Borrar TODAS
-                          </button>
-                          <button 
-                            onClick={() => {
-                              const data = JSON.stringify(partnerLocations, null, 2)
-                              const blob = new Blob([data], {type: 'application/json'})
-                              const url = URL.createObjectURL(blob)
-                              const a = document.createElement('a')
-                              a.href = url
-                              a.download = 'entrenamatch-partners.json'
-                              a.click()
-                              URL.revokeObjectURL(url)
-                              toast.success('Partners exportados')
-                            }}
-                            className="py-1 bg-[#1C1C20] text-[#9CA3AF] rounded border border-white/20 active:bg-[#25252A]"
-                          >
-                            📤 Export JSON
-                          </button>
-                          <label className="py-1 bg-[#1C1C20] text-[#9CA3AF] rounded border border-white/20 active:bg-[#25252A] text-center cursor-pointer">
-                            📥 Import JSON
-                            <input type="file" accept=".json" className="hidden" onChange={async (e) => {
-                              const file = e.target.files?.[0]
-                              if (!file) return
-                              try {
-                                const text = await file.text()
-                                const imported = JSON.parse(text)
-                                if (!Array.isArray(imported)) throw new Error('Formato inválido')
-                                for (const p of imported) {
-                                  if (!p.id || !p.name || typeof p.lat !== 'number') continue
-                                  if (!isDemoMode && db) {
-                                    try {
-                                      const { setDoc, doc } = await import('firebase/firestore')
-                                      const payload: any = { ...p, updatedAt: new Date().toISOString() }
-                                      // sanitize undefineds for Firestore
-                                      Object.keys(payload).forEach(k => { if (payload[k] === undefined) delete payload[k] })
-                                      await setDoc(doc(db, 'partnerLocations', p.id), payload, { merge: true })
-                                    } catch {}
-                                  }
-                                  // merge into local
-                                  setPartnerLocations(prev => {
-                                    const exists = prev.some(x => x.id === p.id)
-                                    if (exists) return prev.map(x => x.id === p.id ? { ...x, ...p } : x)
-                                    return [...prev, p]
-                                  })
-                                }
-                                setMapForceTick(t => t + 1)
-                                toast.success(`${imported.length} partners importados`)
-                              } catch (err) {
-                                toast.error('Error importando JSON')
-                              }
-                              e.target.value = '' // reset input
-                            }} />
-                          </label>
-                        </div>
-                        <div className="text-[9px] text-center text-[#666] mt-1">Drag del pin en el mapa (solo devs) = mover instantáneo. "Poner aquí" o "COLOCAR TOCANDO MAPA" para precisión. Todo realtime. +Add rápido = click = crear ya.</div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Beautiful empty state when map open but no one live (after near filter) */}
-                  {showLiveMap && liveCountForUI === 0 && !currentUser?.trainingNow && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl text-center p-4 text-xs z-40 pointer-events-none">
-                      <div>
-                        <div className="text-2xl mb-1">🗺️</div>
-                        <div className="font-semibold">Nadie entrenando cerca ahora</div>
-                        <div className="text-[#9CA3AF] mt-0.5">Activa &quot;Entrenando Ahora (EN VIVO)&quot; en tu perfil para aparecer aquí. ¡Serás el centro del mapa!</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
+          <ExploreLivePanel
+            liveCountForUI={liveCountForUI}
+            liveTrainingNow={liveTrainingNow}
+            syncBonds={syncBonds}
+            dailyPulse={dailyPulse}
+            activeSyncCount={activeSyncCount}
+            currentUser={currentUser}
+            userLocation={userLocation}
+            joiningSyncWith={joiningSyncWith}
+            setShowFullProfile={setShowFullProfile}
+            handleSwipe={handleSwipe}
+            setShowLiveMap={setShowLiveMap}
+            setActiveTab={setActiveTab}
+            setShowLiveModal={setShowLiveModal}
+            triggerHaptic={triggerHaptic}
+            showLiveMap={showLiveMap}
+            networkStats={networkStats}
+            gymPulseMapRef={gymPulseMapRef}
+            mapLiveTrainingNow={mapLiveTrainingNow}
+            effectiveUserId={effectiveUserId}
+            ritualRipples={ritualRipples}
+            partnerLocations={partnerLocations}
+            echoPins={echoPins}
+            mapNearOnly={mapNearOnly}
+            selectedMapZone={selectedMapZone}
+            showOnlyLegends={showOnlyLegends}
+            showPartners={showPartners}
+            mapMyGymOnly={mapMyGymOnly}
+            mapMyGymId={mapMyGymId}
+            mapForceTick={mapForceTick}
+            isDeveloper={isDeveloper}
+            isPlacingPartner={isPlacingPartner}
+            isQuickAddPartner={isQuickAddPartner}
+            setMapNearOnly={setMapNearOnly}
+            setSelectedMapZone={setSelectedMapZone}
+            setShowOnlyLegends={setShowOnlyLegends}
+            setShowPartners={setShowPartners}
+            setMapForceTick={setMapForceTick}
+            openAddPartner={openAddPartner}
+            openManagePartners={openManagePartners}
+            setIsQuickAddPartner={setIsQuickAddPartner}
+            logoutDeveloper={logoutDeveloper}
+            addPartnerAtCurrentCenter={addPartnerAtCurrentCenter}
+            reloadPartners={reloadPartners}
+            spawnDevTestLives={spawnDevTestLives}
+            clearDevTestLives={clearDevTestLives}
+            startSyncWith={startSyncWith}
+            witnessEchoPin={witnessEchoPin}
+            witnessRipple={witnessRipple}
+            isQuickAddPartnerRef={isQuickAddPartnerRef}
+            isDemoMode={isDemoMode}
+            db={db}
+            setPartnerLocations={setPartnerLocations}
+            startEditPartner={startEditPartner}
+            setPartnerFormLat={setPartnerFormLat}
+            setPartnerFormLng={setPartnerFormLng}
+            setIsPlacingPartner={setIsPlacingPartner}
+            setEditingPartner={setEditingPartner}
+            setPartnerForm={setPartnerForm}
+            setShowPartnerForm={setShowPartnerForm}
+            devTestLives={devTestLives}
+            toast={toast}
+            partnerForm={partnerForm}
+            editingPartner={editingPartner}
+            showPartnerForm={showPartnerForm}
+            isSavingPartner={isSavingPartner}
+            savePartner={savePartner}
+            deletePartner={deletePartner}
+            partnerFormLat={partnerFormLat}
+            partnerFormLng={partnerFormLng}
+            handlePartnerEditFromMap={handlePartnerEditFromMap}
+            cancelPartnerForm={cancelPartnerForm}
+            partnerFormName={partnerFormName}
+            partnerFormType={partnerFormType}
+            partnerFormAddress={partnerFormAddress}
+            setPartnerFormName={setPartnerFormName}
+            setPartnerFormType={setPartnerFormType}
+            setPartnerFormAddress={setPartnerFormAddress}
+            showAddPartnerForm={showAddPartnerForm}
+            editingPartnerId={editingPartnerId}
+            setEditingPartnerId={setEditingPartnerId}
+            setShowAddPartnerForm={setShowAddPartnerForm}
+            partnerLocationsRef={partnerLocationsRef}
+            requestUserLocation={requestUserLocation}
+            showDevLogin={showDevLogin}
+            setShowDevLogin={setShowDevLogin}
+            devPassword={devPassword}
+            setDevPassword={setDevPassword}
+            loginAsDeveloper={loginAsDeveloper}
+            showManagePartners={showManagePartners}
+            setShowManagePartners={setShowManagePartners}
+            partnerLogoPreview={partnerLogoPreview}
+            partnerLogoFile={partnerLogoFile}
+            setPartnerLogoFile={setPartnerLogoFile}
+            setPartnerLogoPreview={setPartnerLogoPreview}
+            handlePartnerLogoSelect={handlePartnerLogoSelect}
+            CapacitorCamera={CapacitorCamera}
+            uploadPartnerLogoIfNeeded={uploadPartnerLogoIfNeeded}
+          />
         )}
 
         {activeTab === 'explore' && (
@@ -9670,479 +9074,79 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           </div>
         )}
 
-        {/* ===== GLOBAL FEED TAB - Muro Comunitario (per plan: global recent activity feed) ===== */}
+        {/* ===== HOME — DailyRitual + Muro (HomeTab) ===== */}
         {activeTab === 'home' && (
-          <div className="flex-1 overflow-auto p-4">
-            <DailyRitualHome
-              userName={currentUser?.name || 'Atleta'}
-              weekDays={homeWeekDays}
-              weekTrainedCount={homeWeekTrainedCount}
-              teamMembers={homeTeamMembers}
-              liveCount={liveCountForUI}
-              syncCount={activeSyncCount}
-              isLive={!!currentUser?.trainingNow}
-              isTogglingLive={isTogglingLive}
-              onToggleLive={() => toggleLiveTraining()}
-              onOpenExplore={() => {
-                setActiveTab('explore')
-                setShowLiveMap(true)
-              }}
-              onOpenMap={() => {
-                setActiveTab('explore')
-                setShowLiveMap(true)
-              }}
-              onJoinMember={(id, name) => startSyncWith(id, name)}
-              onMessageMember={(id) => {
-                setActiveTab('messages')
-                setActiveChat(id)
-              }}
-              onOpenMatches={() => setActiveTab('matches')}
-              onOpenEntrenaLog={() => setShowEntrenaLogModal(true)}
-              fuelProfile={fuelProfile}
-              fuelTotals={fuelTodayTotals}
-              fuelPostWorkoutTip={fuelPostWorkoutTip}
-              onOpenFuelSetup={() => setShowFuelSetupModal(true)}
-              onOpenFuelLog={() =>
-                fuelProfile ? setShowFuelLogModal(true) : setShowFuelSetupModal(true)
-              }
-              cityLabel={currentUser?.city}
-              localNetwork={{
-                challenge: homeCityChallengeMerged,
-                leaderboard: homeLocalLeaderboard,
-                myRank: homeMyLeaderboardRank,
-                cityLiveCount: homeCityLiveCount,
-                nearestGym: homeNearestGym,
-                gymCheckIn: isGymCheckInFresh(currentUser?.gymCheckIn)
-                  ? currentUser.gymCheckIn
-                  : null,
-                gymLiveCount: homeGymLiveCount,
-                showOnLeaderboard: currentUser?.showOnLeaderboard !== false,
-                onToggleLeaderboard: handleToggleLeaderboard,
-                onGymCheckIn: handleGymCheckIn,
-                onOpenMap: () => {
-                  setActiveTab('explore')
-                  setShowLiveMap(true)
-                },
-                onOpenGymMap: mapMyGymId ? handleOpenGymMap : undefined,
-              }}
-            />
-            {/* CINEMATIC REMASTERED FEED HEADER — the social heart of the GymPulse */}
-            <div className="feed-header-cinematic sticky top-0 z-10 -mx-4 px-4 pt-3 pb-3">
-              <div className="flex items-start justify-between gap-3 px-1">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3">
-                    <div className="text-3xl drop-shadow">🔥</div>
-                    <div>
-                      <div className="feed-title-gradient">EL MURO</div>
-                      <div className="text-[11px] text-[#9CA3AF] -mt-0.5 tracking-[0.3px]">del GymPulse • donde el esfuerzo sincronizado se vuelve cultura y estatus real</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <div className="text-[#9CA3AF] text-xs">Feed icónico de la comunidad</div>
-                    {liveCountForUI > 0 && (
-                      <span className="feed-live-pulse text-[9px] px-2.5 py-0.5 rounded-full bg-[#22c55e] text-black font-black shadow-sm ring-1 ring-[#22c55e]/60 flex items-center gap-1">
-                        🟢 {liveCountForUI} EN VIVO AHORA
-                      </span>
-                    )}
-                    {activeSyncCount > 0 && (
-                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#22c55e]/10 text-[#22c55e] font-bold border border-[#22c55e]/30">🔄 {activeSyncCount} EN SYNC</span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Big beautiful Publish CTA */}
-                <button 
-                  onClick={() => setShowFeedPostModal(true)} 
-                  className="mt-0.5 flex-shrink-0 px-4 py-2 rounded-2xl bg-gradient-to-r from-[#FF671F] via-[#FF4F79] to-[#FF671F] text-black font-extrabold text-sm shadow-lg active:scale-[0.975] transition flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" /> PUBLICAR
-                </button>
-              </div>
-
-              {/* Search + Filters row — elegant chips */}
-              <div className="mt-3 flex items-center gap-2 px-1">
-                <input 
-                  type="text" 
-                  value={feedSearch} 
-                  onChange={e => setFeedSearch(e.target.value)}
-                  placeholder="Buscar en el Muro..."
-                  className="form-input text-sm py-1.5 px-3 flex-1 rounded-2xl min-w-[90px]"
-                />
-                <div className="flex gap-1.5 overflow-x-auto pb-1 snap-x snap-mandatory touch-pan-x scrollbar-hide -mr-1 pr-1">
-                  <button 
-                    onClick={() => setFeedOnlyReal(!feedOnlyReal)}
-                    className={`feed-filter-chip snap-start ${feedOnlyReal ? 'active' : ''}`}
-                  >
-                    {feedOnlyReal ? '★ Solo Reales' : 'Reales'}
-                  </button>
-                  <button 
-                    onClick={() => setFeedOnlyLive(!feedOnlyLive)}
-                    className={`feed-filter-chip live snap-start ${feedOnlyLive ? 'active' : ''}`}
-                  >
-                    {feedOnlyLive ? '🟢 Solo Live' : '🟢 Live'}
-                  </button>
-                  <button 
-                    onClick={() => setFeedShowPinnedOnly(!feedShowPinnedOnly)}
-                    className={`feed-filter-chip snap-start ${feedShowPinnedOnly ? 'active' : ''}`}
-                  >
-                    {feedShowPinnedOnly ? '📌 Fijados' : '📌 Fijados'}
-                  </button>
-                  <button 
-                    onClick={() => { setFeedMaxProfiles(15); setFeedDisplayLimit(10); loadGlobalFeed(); if (!isDemoMode) loadRealProfiles(); }} 
-                    disabled={isLoadingFeed}
-                    className="feed-filter-chip snap-start text-[#9CA3AF] border-[#9CA3AF]/30 hover:text-white"
-                  >
-                    {isLoadingFeed ? '...' : '↻'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Active Sync FOMO strip — kept powerful but prettier */}
-              {activeSyncPairs.length > 0 && (
-                <div className="mt-2.5 px-1 text-[10px] text-[#22c55e]/90 flex items-center gap-1.5">
-                  <span className="font-bold tracking-wide">🔄 {activeSyncPairs.length} SYNC ACTIVO{activeSyncPairs.length>1?'S':''} AHORA</span>
-                  {activeSyncPairs.slice(0,2).map((pr, i) => (
-                    <span key={i} className="px-2 py-px rounded-full bg-[#22c55e]/10 text-[#22c55e] text-[9px] border border-[#22c55e]/20">{pr.names} <span className="opacity-60">{pr.vibe}%</span></span>
-                  ))}
-                  <span className="text-[9px] text-[#9CA3AF]/70">— el grafo vivo del rendimiento</span>
-                </div>
-              )}
-            </div>
-
-            {showFeedPublishSuccess && (
-              <div className="feed-publish-success mb-3 mx-1 p-3 rounded-2xl text-center text-sm font-semibold flex items-center justify-center gap-2">
-                ✨ ¡Publicado en el Muro del GymPulse! Tu post ya está vivo para toda la comunidad.
-              </div>
-            )}
-
-            {/* PREMIUM "EN EL PULSO AHORA" LIVE STRIP — much more attractive, tappable, FOMO-inducing */}
-            {liveTrainingNow.length > 0 && (
-              <div className="mb-4 -mx-1 px-1">
-                <div className="flex items-center justify-between mb-1.5 px-1">
-                  <div className="text-[9px] uppercase tracking-[1.5px] text-[#22c55e] font-black flex items-center gap-1.5">
-                    🔥 EN EL GYMPULSE AHORA <span className="text-[10px] text-[#22c55e]/70 font-normal">({liveTrainingNow.length})</span>
-                    {liveTrainingNow.length > 5 && <span className="text-red-400 text-[8px] font-bold tracking-wider">HOT ZONE</span>}
-                  </div>
-                  <div className="text-[8px] text-[#9CA3AF]">Toca para unirte o re-sync</div>
-                </div>
-                <div className="feed-live-strip flex gap-2 overflow-x-auto pb-2 px-1 snap-x snap-mandatory">
-                  {[...liveTrainingNow].sort((a,b)=> {
-                    const aInNet = !!syncBonds[a.id] ? -1 : 0;
-                    const bInNet = !!syncBonds[b.id] ? -1 : 0;
-                    if (aInNet !== bInNet) return aInNet - bInNet;
-                    return (a.distance||0)-(b.distance||0);
-                  }).slice(0,5).map((u, idx) => (
-                    <motion.div 
-                      key={u.id} 
-                      onClick={() => {
-                        if (syncBonds[u.id]) { try { triggerHaptic('medium') } catch {}; startSyncWith(u.id, u.name) } 
-                        else { setActiveTab('explore'); if (u.trainingNow) setTimeout(() => startSyncWith(u.id, u.name), 130) }
-                      }} 
-                      whileHover={{scale:1.02, y:-1}} 
-                      whileTap={{scale:0.97}} 
-                      initial={{opacity:0, x:12}}
-                      animate={{opacity:1, x:0}}
-                      transition={{delay: idx*0.025}}
-                      className={`feed-live-card snap-start min-w-[118px] px-3 py-2 rounded-2xl text-[10px] cursor-pointer flex flex-col gap-0.5 ${syncBonds[u.id] ? 'red' : ''}`}
-                    >
-                      <div className="flex items-center gap-1.5">
-                        <div className="font-extrabold text-white text-[12px] leading-none tracking-[-0.2px]">{(u.name || 'U').split(' ')[0]}</div>
-                        {userLocation && u.distance < 900 && <span className="text-[8px] text-[#9CA3AF] tabular-nums">{u.distance.toFixed(0)}km</span>}
-                        {userLocation && u.distance < 5 && <span className="text-[7px] bg-[#22c55e]/25 text-[#22c55e] px-1 rounded">CERCA</span>}
-                      </div>
-
-                      {!!syncBonds[u.id] && <div className="text-[7px] bg-[#FFD700] text-black px-1.5 rounded font-black self-start -mt-0.5 tracking-wider">⭐ RED • NP ACTIVO</div>}
-
-                      {u.seVaEnMin > 0 && (
-                        <div className="text-orange-400 text-[9px] font-medium flex items-center gap-1">
-                          {u.seVaEnMin < 15 ? '🔥 se va YA' : `se va en ${u.seVaEnMin}m`}
-                          <div className="flex-1 h-px bg-orange-400/30 ml-1"><div className="h-px bg-orange-400" style={{width: `${Math.max(12, Math.min(100, (95 - u.seVaEnMin)/95 * 100))}%`}} /></div>
-                        </div>
-                      )}
-
-                      {u.joinCount > 0 && <div className="text-[8px] text-[#22c55e]/70">+{u.joinCount} ya se unieron</div>}
-                      {u.trainingSyncWith && <div className="text-[8px] text-[#22c55e] font-bold">🔄 EN SYNC — ÚNETE</div>}
-
-                      <div className="text-[8px] text-[#22c55e]/60 mt-0.5 leading-none">{syncBonds[u.id] ? 'Re-sync y sube tu poder' : 'Ver en mapa / unirte'}</div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Living Echoes / Highlights strip — remastered to feel legendary */}
-            {(() => {
-              const { echoesSource } = feedComputation;
-              const src = echoesSource || [];
-              const recentEchoes = [...src].filter((p: any) => (p.text || '').includes('HIGHLIGHT') || (p.text || '').includes('ENTRENASYNC COMPLETADO') || (p.text || '').includes('fortalece nuestra red')).sort((a,b)=>b.timestamp-a.timestamp).slice(0, 3);
-              if (recentEchoes.length === 0) return null;
-              return (
-                <div className="mb-4 -mx-1 px-1">
-                  <div className="text-[8px] uppercase tracking-[1.5px] text-[#FFD700] font-black mb-1.5 flex items-center gap-1">⭐ HIGHLIGHTS DE LA RED — momentos que construyen la cultura del GymPulse</div>
-                  <div className="flex gap-2 overflow-x-auto pb-1 snap-x">
-                    {recentEchoes.map((e: any) => (
-                      <div key={e.id} className="min-w-[158px] snap-start p-3 rounded-2xl text-[10px] border border-[#FFD700]/40 bg-gradient-to-br from-[#1a160f] to-[#111] text-[#f5e8c7]">
-                        <div className="line-clamp-3 leading-snug">{(e.text || '').substring(0, 118)}...</div>
-                        <div className="text-[8px] text-[#FFD700]/70 mt-1.5 font-medium">Highlight de Sync — se propaga y da estatus</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {(() => {
-              // Use the top-level feedComputation (hook always called at top of component)
-              const { feedPosts, allCommunityPosts, hasActiveFilter } = feedComputation;
-
-              if (isLoadingFeed && feedPosts.length === 0) {
-                return (
-                  <div className="space-y-4 mt-4 px-1">
-                    {[1,2,3].map(i => (
-                      <div key={i} className="muro-post p-4 rounded-2xl animate-pulse">
-                        <div className="flex gap-2 mb-3"><div className="w-8 h-8 bg-[#2F2F35] rounded-full" /><div className="flex-1"><div className="h-3 bg-[#2F2F35] rounded w-2/5 mb-1"/><div className="h-2.5 bg-[#2F2F35] rounded w-1/3"/></div></div>
-                        <div className="h-3 bg-[#2F2F35] rounded w-4/5 mb-1.5"/><div className="h-3 bg-[#2F2F35] rounded w-3/5"/><div className="h-40 bg-[#2F2F35] rounded-2xl mt-3"/>
-                      </div>
-                    ))}
-                  </div>
-                );
-              }
-              if (feedPosts.length === 0) {
-                return (
-                  <div className="feed-empty-epic mx-1 mt-8 p-9 rounded-3xl text-center border">
-                    <div className="big-icon mb-1">🏋️</div>
-                    <div className="font-black text-3xl tracking-[-1.5px] mb-2">El Muro está vivo</div>
-                    <p className="text-sm text-[#9CA3AF] max-w-[300px] mx-auto mb-6 leading-relaxed">Este es el corazón social del GymPulse. Publica tu sesión, una foto épica o un "me uno". Las reacciones y los syncs reales aparecen aquí en tiempo real y construyen tu estatus en la red.</p>
-                    <div className="flex flex-col gap-2.5 max-w-[240px] mx-auto">
-                      <button onClick={() => setShowFeedPostModal(true)} className="feed-publish-btn py-3 rounded-2xl text-base">Publicar mi primer post en el Feed</button>
-                      {!isDemoMode && <button onClick={() => { setFeedMaxProfiles(18); loadGlobalFeed(); }} className="py-2.5 border border-[#FF671F]/40 text-[#FF671F] rounded-2xl text-sm active:bg-[#FF671F]/10">Cargar comunidad real</button>}
-                    </div>
-                    <div className="text-[10px] text-[#9CA3AF]/50 mt-6">Fija tus mejores posts • Las sesiones sync generan highlights automáticos</div>
-                  </div>
-                );
-              }
-
-              return (
-                <>
-                  <div className="flex items-center justify-between text-[10px] text-[#9CA3AF] mb-3 px-1 font-medium tracking-wider">
-                    <span>{feedPosts.length} posts {hasActiveFilter ? 'filtrados' : 'en el pulso'}</span>
-                    {(feedSearch || feedOnlyReal || feedShowPinnedOnly || feedOnlyLive) && <button onClick={() => { setFeedSearch(''); setFeedOnlyReal(false); setFeedShowPinnedOnly(false); setFeedOnlyLive(false); }} className="text-[#FF671F] underline active:text-white">limpiar filtros</button>}
-                  </div>
-
-                  {(() => {
-                    const pinnedInFeed = allCommunityPosts.filter((p: any) => p.pinned);
-                    if (pinnedInFeed.length > 0 && !feedShowPinnedOnly && !feedSearch && !feedOnlyReal && !feedOnlyLive) {
-                      return <div className="text-[9px] text-[#FF671F] mb-2 px-1 flex items-center gap-1">📌 <span className="font-medium">{pinnedInFeed.length} posts fijados</span> — destacados por la comunidad</div>;
-                    }
-                    return null;
-                  })()}
-
-                  <AnimatePresence>
-                  {feedPosts.map((post: any, idx: number) => {
-                    const isMine = !!(post.isMine || post.ownerId === effectiveUserId);
-                    const ownerProfile = isMine ? (currentUser as any) : realProfiles.find(r => r.id === post.ownerId);
-                    const owner = ownerProfile || { name: currentUser?.name || 'Tú', id: post.ownerId, photos: (currentUser as any)?.photos || [] };
-                    const liked = (post.likes || []).includes(effectiveUserId);
-                    const isOwnPost = post.ownerId === effectiveUserId || isMine;
-                    const isLivePost = (post.text || '').toLowerCase().includes('entrenando ahora') || (post.text || '').includes('me uno al live');
-                    const isSyncPost = (post.text || '').toLowerCase().includes('sincronizado') || post.isSyncStory || (post.text || '').includes('ENTRENASYNC');
-                    const isEcho = (post.text || '').includes('HIGHLIGHT') || (post.text || '').includes('Destacado de Sesión Sync') || (post.text || '').includes('Fui testigo');
-
-                    return (
-                      <motion.div 
-                        key={post.id} 
-                        className={`muro-post mb-4 ${post.pinned ? 'muro-post--pinned' : ''} ${isSyncPost ? 'muro-post--sync' : isLivePost ? 'muro-post--live' : isEcho ? 'muro-post--echo' : ''} ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-[0_0_0_1px_#FF671F,0_20px_50px_-12px_rgba(255,103,31,0.3)]' : ''} ${post.ownerId && syncBonds[post.ownerId] ? 'border-[#FFD700]/40' : ''}`}
-                        initial={{ opacity: 0, y: 18, scale: 0.985 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                        whileHover={{ y: -4 }}
-                        transition={{ type: 'spring', stiffness: 280, damping: 22, delay: Math.min(idx * 0.012, 0.18) }}
-                      >
-                        {/* HERO MEDIA — dominant, cinematic when photo exists */}
-                        {post.photo && (
-                          <div 
-                            className="muro-post-hero-media cursor-pointer group"
-                            onClick={() => setFeedPhotoModal({ url: post.photo, postId: post.id })}
-                          >
-                            <img src={post.photo} className="w-full object-cover" />
-                            <div className="muro-post-hero-overlay" />
-                            <div className="muro-post-hero-label">FOTO DEL MOMENTO</div>
-                            <div className="muro-post-hero-zoom group-hover:bg-black/80">
-                              <span>🔍</span> <span className="font-semibold">ampliar</span>
-                            </div>
-                          </div>
-                        )}
-
-                        <div className={post.photo ? "px-4 pt-1 pb-4" : "p-4"}>
-
-                          {/* REMASTERED AUTHOR ROW — bigger, richer, with live rings */}
-                          <div className="feed-author-row" onClick={() => setShowFullProfile(owner as any)} style={{cursor:'pointer'}}>
-                            <div className={`feed-author-avatar ${ownerProfile?.trainingNow ? 'live' : ''}`}>
-                              {owner.photos && owner.photos[0] ? (
-                                <img src={owner.photos[0]} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="w-full h-full bg-[#2F2F35] flex items-center justify-center text-lg">👤</div>
-                              )}
-                            </div>
-                            <div className="feed-author-meta min-w-0">
-                              <div className="feed-author-name">
-                                {owner.name}
-                                {ownerProfile && ownerProfile.city && <span className="text-[#9CA3AF] text-[11px] font-normal">· {ownerProfile.city}</span>}
-                                {isMine && <span className="feed-author-badge bg-[#FFD700] text-black">TÚ</span>}
-                                {ownerProfile && !isMine && realProfiles.some(rp => rp.id === post.ownerId) && <span className="feed-author-badge bg-[#FF671F] text-black">REAL</span>}
-                                {post.pinned && <span className="feed-author-badge bg-[#FF671F]/15 text-[#FF671F]">📌 FIJADO</span>}
-                                {Date.now() - post.timestamp < 3600000 && <span className="feed-author-badge bg-[#22c55e] text-black">NUEVO</span>}
-                                {recentlyPublishedPostId === post.id && <span className="feed-author-badge bg-[#FF671F] text-black animate-pulse">ACABAS DE PUBLICAR</span>}
-                              </div>
-                              <div className="feed-author-badges">
-                                {ownerProfile && ownerProfile.level && <span className="feed-author-badge bg-white/10 text-white/80 border border-white/10">{ownerProfile.level}</span>}
-                                {ownerProfile?.liveStreak > 0 && <span className="feed-author-badge bg-[#22c55e] text-black">🔥 {ownerProfile.liveStreak}d LIVE</span>}
-                                {ownerProfile?.trainingSyncWith && <span className="feed-author-badge bg-[#22c55e]/15 text-[#22c55e]">EN SYNC</span>}
-                                {isSyncPost && <span className="feed-author-badge bg-[#22c55e] text-black">SYNC</span>}
-                                {isEcho && <span className="feed-author-badge bg-[#FFD700] text-black">HIGHLIGHT</span>}
-                                {ownerProfile?.trainingNow && <span className="feed-author-badge bg-[#22c55e] text-black">🟢 LIVE AHORA</span>}
-                              </div>
-                            </div>
-                            <div className="text-right text-[10px] text-[#9CA3AF] tabular-nums whitespace-nowrap ml-auto">{getRelativeTime(post.timestamp)}</div>
-                          </div>
-
-                          {/* BODY — workout card or plain text */}
-                          {post.postType === 'workout' && post.workoutPreview ? (
-                            <div className="muro-post-body mt-2">
-                              <WorkoutPostCard
-                                preview={post.workoutPreview}
-                                compact
-                                onCopyRoutine={
-                                  post.workoutId && !isMine
-                                    ? () =>
-                                        handleCopyWorkoutFromPost(
-                                          post.workoutId,
-                                          post.workoutPreview?.title
-                                        )
-                                    : undefined
-                                }
-                              />
-                            </div>
-                          ) : post.postType === 'nutrition' && post.nutritionPreview ? (
-                            <div className="muro-post-body mt-2">
-                              <NutritionPostCard preview={post.nutritionPreview} />
-                            </div>
-                          ) : (
-                          <div className="muro-post-body">
-                            {isEcho && <span className="text-[#FFD700] font-semibold block mb-0.5">👁️ Highlight de EntrenaSync — se propaga en la red</span>}
-                            <div className="whitespace-pre-wrap">{post.text}</div>
-                          </div>
-                          )}
-
-                          {/* ACTIONS BAR — likes, comments, owner tools */}
-                          <div className="flex items-center gap-4 text-sm mt-1">
-                            <button 
-                              onClick={() => likeProfilePost(post.id, post.ownerId)}
-                              className={`flex items-center gap-1.5 transition active:scale-95 ${liked ? 'text-[#FF671F]' : 'text-[#9CA3AF] hover:text-[#FF671F]'}`}
-                            >
-                              <motion.span animate={{ scale: liked ? [1, 1.45, 1] : 1 }} transition={{duration: 0.18}} className="text-lg leading-none">{liked ? '❤️' : '🤍'}</motion.span> 
-                              <span className="font-extrabold tabular-nums text-sm">{(post.likes || []).length}</span>
-                            </button>
-                            <button 
-                              onClick={() => openFullComments(post.id, post.ownerId, owner.name)}
-                              className="flex items-center gap-1.5 text-[#9CA3AF] hover:text-[#FF671F] active:scale-95"
-                            >
-                              💬 <span className="font-extrabold tabular-nums text-sm">{(post.comments || []).length}</span>
-                            </button>
-
-                            {isOwnPost && (
-                              <>
-                                <button onClick={() => togglePinPost(post.id, post.ownerId, post.pinned)} className={`ml-0.5 text-xs px-1.5 py-0.5 rounded active:scale-95 ${post.pinned ? 'text-[#FF671F]' : 'text-[#9CA3AF] active:text-[#FF671F]'}`} title={post.pinned ? 'Desfijar' : 'Fijar en el Muro global'}>📌</button>
-                                <button onClick={() => deleteProfilePost(post.id, post.ownerId)} className="text-red-400 text-xs px-1.5 py-0.5 active:text-red-500 active:scale-95">🗑</button>
-                              </>
-                            )}
-                            <button onClick={() => setShowFullProfile(owner as any)} className="ml-auto text-[11px] text-[#FF671F] hover:text-white font-semibold tracking-wide active:underline">VER PERFIL →</button>
-                          </div>
-
-                          {/* ALIVE REACTIONS — big, satisfying, pop on tap */}
-                          <div className="feed-reaction-bar">
-                            {['🔥','💪','❤️','👏'].map(emo => {
-                              const postReactors = post.reactions?.[emo] || []
-                              const count = postReactors.length || (feedReactions[post.id]?.[emo] || 0)
-                              const active = postReactors.includes(effectiveUserId) || ((feedReactions[post.id]?.[emo] || 0) > 0)
-                              return (
-                                <button 
-                                  key={emo}
-                                  onClick={() => { boostReaction(post.id, emo, post.ownerId || post.userId); triggerHaptic('light'); }}
-                                  className={`feed-reaction ${active ? 'active' : ''}`}
-                                >
-                                  <span className="text-base">{emo}</span>
-                                  {count > 0 && <span className="count">{count}</span>}
-                                </button>
-                              )
-                            })}
-                          </div>
-
-                          {/* Live FOMO callout */}
-                          {isLivePost && (post.comments || []).length > 0 && (
-                            <div className="mt-2 text-[9px] bg-[#22c55e]/8 text-[#22c55e] px-2.5 py-1 rounded-xl flex items-center gap-1 font-medium">
-                              🔥 {(post.comments || []).length} personas se unieron a este pulso • ¡Únete desde el mapa o el strip de arriba!
-                            </div>
-                          )}
-
-                          {/* COMMENTS PREVIEW — elegant and tappable to open full thread */}
-                          {(post.comments || []).length > 0 && (
-                            <div onClick={() => openFullComments(post.id, post.ownerId, owner.name)} className="feed-comments-preview cursor-pointer">
-                              {(post.comments || []).slice(-2).map((c: any) => (
-                                <div key={c.id} className="feed-comment-row">
-                                  <span className="font-semibold text-white/85 text-[10px] mt-px flex-shrink-0">{c.userName}</span> 
-                                  <span className="truncate text-[10px] text-white/70 leading-snug">{c.text}</span>
-                                </div>
-                              ))}
-                              {(post.comments || []).length > 2 && <div className="feed-comment-more">+{(post.comments || []).length-2} comentarios más — ver hilo completo</div>}
-                            </div>
-                          )}
-
-                          {activeComment?.postId === post.id && (
-                            <div className="mt-2 pt-2 border-t border-[#2F2F35]/60 flex items-center gap-2">
-                              <input
-                                type="text"
-                                value={commentDraft}
-                                onChange={e => setCommentDraft(e.target.value)}
-                                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment() } }}
-                                placeholder={owner.name ? `Comentar en el muro de ${owner.name}...` : 'Escribe un comentario...'}
-                                className="flex-1 form-input text-sm py-1.5"
-                                maxLength={200}
-                                autoFocus
-                              />
-                              <button
-                                onClick={submitComment}
-                                disabled={!commentDraft.trim()}
-                                className="text-[#FF671F] text-sm font-semibold px-3 disabled:opacity-40 active:scale-95"
-                              >
-                                Enviar
-                              </button>
-                              <button onClick={cancelComment} className="text-[#9CA3AF] text-xs px-1">✕</button>
-                            </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                  </AnimatePresence>
-
-                  {feedPosts.length < allCommunityPosts.length && (
-                    <div className="text-center mt-2 mb-4">
-                      <button
-                        onClick={() => {
-                          if (!isDemoMode && hasMoreGlobalFeed) loadGlobalFeed(true).catch(() => {})
-                          setFeedDisplayLimit(feedDisplayLimit + 12)
-                        }}
-                        className="text-sm px-6 py-2 rounded-2xl border border-[#FF671F]/40 text-[#FF671F] active:bg-[#FF671F]/10 active:scale-95 font-medium"
-                      >
-                        Cargar más posts de la comunidad →
-                      </button>
-                    </div>
-                  )}
-                </>
-              );
-            })()}
-          </div>
+          <HomeTab
+            currentUser={currentUser}
+            homeWeekDays={homeWeekDays}
+            homeWeekTrainedCount={homeWeekTrainedCount}
+            homeTeamMembers={homeTeamMembers}
+            liveCountForUI={liveCountForUI}
+            activeSyncCount={activeSyncCount}
+            isTogglingLive={isTogglingLive}
+            toggleLiveTraining={toggleLiveTraining}
+            setActiveTab={setActiveTab}
+            setShowLiveMap={setShowLiveMap}
+            startSyncWith={startSyncWith}
+            setActiveChat={setActiveChat}
+            setShowEntrenaLogModal={setShowEntrenaLogModal}
+            fuelProfile={fuelProfile}
+            fuelTodayTotals={fuelTodayTotals}
+            fuelPostWorkoutTip={fuelPostWorkoutTip}
+            setShowFuelSetupModal={setShowFuelSetupModal}
+            setShowFuelLogModal={setShowFuelLogModal}
+            homeCityChallengeMerged={homeCityChallengeMerged}
+            homeLocalLeaderboard={homeLocalLeaderboard}
+            homeMyLeaderboardRank={homeMyLeaderboardRank}
+            homeCityLiveCount={homeCityLiveCount}
+            homeNearestGym={homeNearestGym}
+            homeGymLiveCount={homeGymLiveCount}
+            handleToggleLeaderboard={handleToggleLeaderboard}
+            handleGymCheckIn={handleGymCheckIn}
+            mapMyGymId={mapMyGymId}
+            handleOpenGymMap={handleOpenGymMap}
+            setShowFeedPostModal={setShowFeedPostModal}
+            feedSearch={feedSearch}
+            setFeedSearch={setFeedSearch}
+            feedOnlyReal={feedOnlyReal}
+            setFeedOnlyReal={setFeedOnlyReal}
+            feedOnlyLive={feedOnlyLive}
+            setFeedOnlyLive={setFeedOnlyLive}
+            feedShowPinnedOnly={feedShowPinnedOnly}
+            setFeedShowPinnedOnly={setFeedShowPinnedOnly}
+            feedMaxProfiles={feedMaxProfiles}
+            setFeedMaxProfiles={setFeedMaxProfiles}
+            feedDisplayLimit={feedDisplayLimit}
+            setFeedDisplayLimit={setFeedDisplayLimit}
+            loadGlobalFeed={loadGlobalFeed}
+            isDemoMode={isDemoMode}
+            loadRealProfiles={loadRealProfiles}
+            isLoadingFeed={isLoadingFeed}
+            activeSyncPairs={activeSyncPairs}
+            liveTrainingNow={liveTrainingNow}
+            syncBonds={syncBonds}
+            triggerHaptic={triggerHaptic}
+            showFeedPublishSuccess={showFeedPublishSuccess}
+            feedComputation={feedComputation}
+            hasMoreGlobalFeed={hasMoreGlobalFeed}
+            effectiveUserId={effectiveUserId}
+            setShowFullProfile={setShowFullProfile}
+            boostReaction={boostReaction}
+            openFullComments={openFullComments}
+            activeComment={activeComment}
+            commentDraft={commentDraft}
+            setCommentDraft={setCommentDraft}
+            submitComment={submitComment}
+            cancelComment={cancelComment}
+            realProfiles={realProfiles}
+            recentlyPublishedPostId={recentlyPublishedPostId}
+            setFeedPhotoModal={setFeedPhotoModal}
+            getRelativeTime={getRelativeTime}
+            handleCopyWorkoutFromPost={handleCopyWorkoutFromPost}
+            togglePinPost={togglePinPost}
+            deleteProfilePost={deleteProfilePost}
+            toast={toast}
+          />
         )}
 
         {/* LUXURIOUS REMASTERED FEED COMPOSER MODAL — feels expensive and important */}
