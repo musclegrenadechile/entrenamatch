@@ -755,7 +755,7 @@ function App() {
       if (dp.currentChallenge?.type === 'bond' || dp.currentChallenge?.type === 'network') {
         completeDailyChallenge(1)
       } else {
-        awardMomentum(5, 'Voz enviada al GymPulse')
+        awardConstancy(5, 'Voz enviada al GymPulse')
       }
     } catch (e) {
       console.error('Send voice error', e)
@@ -895,7 +895,7 @@ function App() {
   // PERFORMANCE PROPAGATION: Strong EntrenaSync sessions send visible waves to the Live Map.
   // This is the living social layer of the network — you see where synchronized high-performance training is happening and propagating right now.
   // The map becomes the pulse of the fitness social graph.
-  const [ritualRipples, setRitualRipples] = useState<any[]>([]) // {id, lat, lng, label, intensity}  // internal name only (performance waves / ripples from strong EntrenaSyncs). User-facing copy uses "onda de sync", "highlight de red", etc.
+  const [syncRipples, setSyncRipples] = useState<any[]>([]) // {id, lat, lng, label, intensity}  // internal name only (performance waves / ripples from strong EntrenaSyncs). User-facing copy uses "onda de sync", "highlight de red", etc.
   const [syncBonds, setSyncBonds] = useState<Record<string, {totalMin: number, sessions: number, avgRating: number, bondLevel: number}>>({})
   const [lastSyncStory, setLastSyncStory] = useState<any>(null)
 
@@ -1242,7 +1242,7 @@ function App() {
     }
   }
 
-  const awardMomentum = (amount: number, reason: string, baseUser?: CurrentUser) => {
+  const awardConstancy = (amount: number, reason: string, baseUser?: CurrentUser) => {
     if (!dailyPulse) return
     const base = baseUser ?? currentUserRef.current ?? currentUser
     if (!base) return
@@ -1781,7 +1781,7 @@ useEffect(() => {
   const [mapNearOnly, setMapNearOnly] = useState(false) // simple filter for map UX
   const [mapMyGymOnly, setMapMyGymOnly] = useState(false)
   const [selectedMapZone, setSelectedMapZone] = useState<string | null>(null) // interactive zone filter for "sigue con todo el mapa"
-  const [showOnlyLegends, setShowOnlyLegends] = useState(false) // filter to only high-performance sync partners (your real training network) on map
+  const [showOnlyNetwork, setShowOnlyNetwork] = useState(false) // filter to only high-performance sync partners (your real training network) on map
   const [partnerLocations, setPartnerLocations] = useState<any[]>([])
   const [showPartners, setShowPartners] = useState(true)
   const [showAddPartnerForm, setShowAddPartnerForm] = useState(false)
@@ -3508,7 +3508,7 @@ useEffect(() => {
   }, [isDemoMode, firebaseUser?.uid, db]);
 
  // Merge partial profile patches without accidentally killing an active live session
- // (e.g. awardMomentum spreading stale currentUser with trainingNow:false right after going live).
+ // (e.g. awardConstancy spreading stale currentUser with trainingNow:false right after going live).
 const mergeUserForRealtimeSync = (incoming: CurrentUser, prev: CurrentUser | null): CurrentUser => {
   if (!prev) return incoming
 
@@ -3795,7 +3795,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               const isTeam = data.type === 'team_live' || data.type === 'team_sync' || data.type === 'network_live' || data.type === 'network_sync'
               toast.success(title, {
                 description: body + (isTeam ? ' (tu equipo/red)' : ''),
-                className: 'legend-notif border-l-4 border-[#FFD700] bg-[#1a160f]',
+                className: 'network-notif border-l-4 border-[#FFD700] bg-[#1a160f]',
                 duration: 6000,
                 action: {
                   label: target.showSyncArena ? 'Unirme' : target.tab === 'home' ? 'Ver reto' : 'Ver live',
@@ -5681,19 +5681,19 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           )
         : undefined
     const partnerBond = syncBonds[partner.id]
-    const isLegendRipple =
+    const isHighlightRipple =
       opts?.forceLegend ||
-      !!partner.isLegend ||
+      !!partner.isNetworkBond ||
       (partnerBond && ((partnerBond.totalMin || 0) >= 30 || (partnerBond.bondLevel || 0) >= 2))
-    const finalIntensity = isLegendRipple ? Math.max(intensity, 2.4) : intensity
-    const rippleId = 'ritual-' + Date.now()
-    const rippleLabel = isLegendRipple
+    const finalIntensity = isHighlightRipple ? Math.max(intensity, 2.4) : intensity
+    const rippleId = 'sync-' + Date.now()
+    const rippleLabel = isHighlightRipple
       ? `⭐ HIGHLIGHT DE RED • ${label}`
       : intensity >= 1.5
         ? `⚡ Onda de Sync • ${label}`
         : `🌊 Onda de Sync • ${label}`
 
-    setRitualRipples((prev) => [
+    setSyncRipples((prev) => [
       ...prev,
       {
         id: rippleId,
@@ -5706,7 +5706,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           vibe: vibeNow,
           partnerName: partner.name || partner.nombre || 'Gym partner',
           photoUrl: actionsSnap.find((a: any) => a.photoUrl)?.photoUrl || null,
-          label: isLegendRipple ? `⭐ ${label}` : `🌊 ${label}`,
+          label: isHighlightRipple ? `⭐ ${label}` : `🌊 ${label}`,
           timestamp: Date.now(),
           minutes: syncStartedAt ? Math.floor((Date.now() - syncStartedAt) / 60000) : 0,
           workoutPreview: workoutWitness,
@@ -5715,11 +5715,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       },
     ])
     setTimeout(
-      () => setRitualRipples((r) => r.filter((x) => x.id !== rippleId)),
-      isLegendRipple ? 5200 : 3200
+      () => setSyncRipples((r) => r.filter((x) => x.id !== rippleId)),
+      isHighlightRipple ? 5200 : 3200
     )
 
-    if (isLegendRipple) {
+    if (isHighlightRipple) {
       const pinId = 'echo-pin-' + rippleId
       setEchoPins((prev) => [
         ...prev,
@@ -5744,7 +5744,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       setTimeout(() => setEchoPins((p) => p.filter((x) => x.id !== pinId)), 45 * 60 * 1000)
     }
 
-    const shouldNotify = opts?.notifyNearby !== false && (isLegendRipple || intensity >= 1.4)
+    const shouldNotify = opts?.notifyNearby !== false && (isHighlightRipple || intensity >= 1.4)
     if (shouldNotify && userLocation) {
       const distToEvent = getDistanceKm(userLocation.lat, userLocation.lng, partner.lat, partner.lng)
       if (distToEvent < 8) {
@@ -5752,11 +5752,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           addNotification({
             id: 'ripple-global-' + rippleId,
             type: 'session_join' as any,
-            title: isLegendRipple ? '⭐ Highlight de Sync cerca' : '⚡ Energía de Sync cerca',
+            title: isHighlightRipple ? '⭐ Highlight de Sync cerca' : '⚡ Energía de Sync cerca',
             body: `${label} — alguien entrena en sync a ${distToEvent.toFixed(1)}km`,
             relatedId: partnerId,
           })
-          if (distToEvent < 5 && isLegendRipple) {
+          if (distToEvent < 5 && isHighlightRipple) {
             toast(`⚡ Onda de Arena cerca`, { description: `${label} se sintió en tu zona` })
           }
         } catch {}
@@ -5764,7 +5764,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   }
 
-  /** Global live toggle — used by FAB, Daily Ritual home, and Profile (Phase 0). */
+  /** Global live toggle — used by FAB, Daily home, and Profile (Phase 0). */
   const toggleLiveTraining = async (mode?: 'on' | 'off' | 'toggle') => {
     if (isTogglingLive || !currentUser) return
     const me = currentUser
@@ -5923,7 +5923,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           if (dailyPulse?.currentChallenge?.type === 'solo') {
             completeDailyChallenge(1, liveUserSnapshot as CurrentUser)
           } else {
-            awardMomentum(8, 'Ancla del GymPulse', liveUserSnapshot as CurrentUser)
+            awardConstancy(8, 'Ancla del GymPulse', liveUserSnapshot as CurrentUser)
           }
           createProfilePost(
             '¡Entrenando ahora en el GymPulse! ¿Quién se une al pulso? 🏋️',
@@ -6062,14 +6062,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   // of the epic high-vibe moment in the Arena that generated the wave.
   // This is the social proof layer of the network — your strong syncs become discoverable highlights that the community can see and be inspired by. Your training graph builds culture and status in the first fitness social network.
   const witnessRipple = useCallback((rippleId: string) => {
-    const r = ritualRipples.find((rr: any) => rr.id === rippleId)
+    const r = syncRipples.find((rr: any) => rr.id === rippleId)
     if (r && r.witnessData) {
       setWitnessData(r.witnessData)
       triggerHaptic('medium')
     } else {
       toast('El highlight de esta sesión ya no está disponible. Crea uno nuevo con un EntrenaSync fuerte.')
     }
-  }, [ritualRipples, triggerHaptic])
+  }, [syncRipples, triggerHaptic])
 
   // Expose globally so Leaflet popup HTML onclick can call it (same pattern as map join buttons)
   useEffect(() => {
@@ -6244,7 +6244,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     if (dailyPulse?.currentChallenge?.type === 'bond' || dailyPulse?.currentChallenge?.type === 'network') {
       completeDailyChallenge(1)
     } else {
-      awardMomentum(15, 'Synergy completada')
+      awardConstancy(15, 'Synergy completada')
     }
     }
   }
@@ -7336,24 +7336,24 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     )
 
     // Enhanced attractive in-app toast for messages (more visual pop, especially for legends)
-    const isLegendMsg = !isGroup && !!syncBonds[chatId] // from your training network / red
-    const toastTitle = isLegendMsg ? `⭐ Mensaje de tu Red (Fuerza del equipo) ${name}` : title
-    const toastClass = isLegendMsg ? 'legend-message-toast' : '' // network msg gold for your red
+    const isNetworkMsg = !isGroup && !!syncBonds[chatId] // from your training network / red
+    const toastTitle = isNetworkMsg ? `⭐ Mensaje de tu Red (Fuerza del equipo) ${name}` : title
+    const toastClass = isNetworkMsg ? 'network-message-toast' : '' // network msg gold for your red
     toast.info(toastTitle, {
       description: (
-        <div className={`flex items-start gap-3 mt-1 ${isLegendMsg ? 'legend-toast-content' : ''}`}>
+        <div className={`flex items-start gap-3 mt-1 ${isNetworkMsg ? 'network-toast-content' : ''}`}>
           {avatarEl}
           <div className="flex-1 min-w-0">
             <div className="text-sm text-[#cbd5e1] truncate leading-tight font-medium">{short}</div>
             <div className="text-[10px] text-[#9CA3AF] mt-1 flex items-center gap-1.5">
               {isGroup ? '👥 Chat grupal • En vivo' : '💬 Mensaje 1:1 • En vivo'}
-              {isLegendMsg && <span className="px-1.5 py-0 rounded bg-[#FFD700] text-black text-[9px] font-bold">⭐ RED</span>}
+              {isNetworkMsg && <span className="px-1.5 py-0 rounded bg-[#FFD700] text-black text-[9px] font-bold">⭐ RED</span>}
             </div>
           </div>
         </div>
       ),
       action: {
-        label: isLegendMsg ? 'Responder a tu Red' : 'Ver',
+        label: isNetworkMsg ? 'Responder a tu Red' : 'Ver',
         onClick: () => openMessageNotificationTarget(chatId, name, isGroup),
       },
       duration: 8000,
@@ -8408,7 +8408,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     // No more heavy work here.
     return () => {}
   // Keep similar deps so React doesn't complain during transition
-  }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone, ritualRipples, echoPins, showPartners, mapForceTick, partnerLocations.length])
+  }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone, syncRipples, echoPins, showPartners, mapForceTick, partnerLocations.length])
 
   // OLD MAP EFFECT BODY FULLY DELETED (2026-06-05) — all live marker, cluster, ripple, partner hub, tether, self-area, heartbeat, ritual wave logic
   // now lives exclusively inside <GymPulseMap ref=... /> (see src/components/map/GymPulseMap.tsx).
@@ -8950,12 +8950,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             gymPulseMapRef={gymPulseMapRef}
             mapLiveTrainingNow={mapLiveTrainingNow}
             effectiveUserId={effectiveUserId}
-            ritualRipples={ritualRipples}
+            syncRipples={syncRipples}
             partnerLocations={partnerLocations}
             echoPins={echoPins}
             mapNearOnly={mapNearOnly}
             selectedMapZone={selectedMapZone}
-            showOnlyLegends={showOnlyLegends}
+            showOnlyNetwork={showOnlyNetwork}
             showPartners={showPartners}
             mapMyGymOnly={mapMyGymOnly}
             mapMyGymId={mapMyGymId}
@@ -8965,7 +8965,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             isQuickAddPartner={isQuickAddPartner}
             setMapNearOnly={setMapNearOnly}
             setSelectedMapZone={setSelectedMapZone}
-            setShowOnlyLegends={setShowOnlyLegends}
+            setShowOnlyNetwork={setShowOnlyNetwork}
             setShowPartners={setShowPartners}
             setMapForceTick={setMapForceTick}
             setMapMyGymOnly={setMapMyGymOnly}
@@ -9217,7 +9217,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           </div>
         )}
 
-        {/* ===== HOME — DailyRitual + Muro (HomeTab) ===== */}
+        {/* ===== HOME — DailyHome + Muro (HomeTab) ===== */}
         {activeTab === 'home' && (
           <HomeTab
             currentUser={currentUser}
@@ -11961,16 +11961,16 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   </div>
                 ) : (
                   notifications.map(notif => {
-                    const isLegendNotif = notif.type === 'message' && notif.relatedId && !!syncBonds[notif.relatedId] // from your training network
+                    const isNetworkNotif = notif.type === 'message' && notif.relatedId && !!syncBonds[notif.relatedId] // from your training network
                     const isNetworkLive = (notif.type === 'session_join' || notif.type === 'squad_join') && notif.relatedId && !!syncBonds[notif.relatedId]
                     const isDailyPulse = notif.type === 'daily_pulse'
-                    const typeIcon = notif.type === 'message' ? (isLegendNotif ? '⭐' : '💬') : notif.type === 'match' ? '❤️' : notif.type === 'session_join' ? (isNetworkLive ? '🔥' : '👥') : notif.type === 'squad_join' ? '🏋️' : isDailyPulse ? '🌅' : '🔔'
+                    const typeIcon = notif.type === 'message' ? (isNetworkNotif ? '⭐' : '💬') : notif.type === 'match' ? '❤️' : notif.type === 'session_join' ? (isNetworkLive ? '🔥' : '👥') : notif.type === 'squad_join' ? '🏋️' : isDailyPulse ? '🌅' : '🔔'
                     const time = notif.timestamp ? getRelativeTime(notif.timestamp) : ''
                     return (
                       <div 
                         key={notif.id} 
-                        className={`p-4 border-b border-[#2F2F35] flex items-start gap-3 active:bg-[#1C1C20] cursor-pointer ${!notif.read ? 'bg-[#1C1C20]' : ''} ${(isLegendNotif || isNetworkLive) ? 'legend-notif border-l-4 border-[#FFD700] bg-[#1a160f]' : ''} ${isDailyPulse ? 'border-l-4 border-[#FF671F] bg-[#1a140f]' : ''}`} 
-                        // network notif gold for your red (legend-notif styling)
+                        className={`p-4 border-b border-[#2F2F35] flex items-start gap-3 active:bg-[#1C1C20] cursor-pointer ${!notif.read ? 'bg-[#1C1C20]' : ''} ${(isNetworkNotif || isNetworkLive) ? 'network-notif border-l-4 border-[#FFD700] bg-[#1a160f]' : ''} ${isDailyPulse ? 'border-l-4 border-[#FF671F] bg-[#1a140f]' : ''}`} 
+                        // network notif gold for your red (network-notif styling)
                         onClick={() => {
                           const updated = notifications.map(n =>
                             n.id === notif.id ? { ...n, read: true } : n
@@ -11998,7 +11998,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           {!notif.read && (
                             <div className="mt-1.5 inline-block w-1.5 h-1.5 bg-[#FF671F] rounded-full"></div>
                           )}
-                          {isLegendNotif && <div className="mt-1 text-[9px] text-[#FFD700] font-bold">⭐ De tu Red (Fuerza del equipo)</div>}
+                          {isNetworkNotif && <div className="mt-1 text-[9px] text-[#FFD700] font-bold">⭐ De tu Red (Fuerza del equipo)</div>}
                         </div>
                         {notif.photoUrl && (
                           <img src={notif.photoUrl} alt="" className="w-9 h-9 rounded-xl object-cover flex-shrink-0 border border-[#2F2F35]" />
@@ -12220,7 +12220,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             isNetworkBond={!!bond}
             distanceKm={dist}
             liveNearbyCount={liveTrainingNow.length}
-            rippleCount={Math.max(1, arenaWaveCount || Math.floor(syncVibe / 25) + ritualRipples.length)}
+            rippleCount={Math.max(1, arenaWaveCount || Math.floor(syncVibe / 25) + syncRipples.length)}
             witnessCount={witnessCount}
             realWitnessCount={syncRealWitnessCount}
             redLiveCount={redLiveCount}

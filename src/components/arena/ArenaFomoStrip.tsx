@@ -8,7 +8,7 @@ export interface ArenaFomoStripProps {
   syncVibe: number
   minsToStory: number
   secsToStory?: number
-  legendUnlocked: boolean
+  highlightUnlocked: boolean
   lastWaveLabel?: string
   cityLabel?: string
 }
@@ -20,7 +20,7 @@ export function ArenaFomoStrip({
   syncVibe,
   minsToStory,
   secsToStory = 0,
-  legendUnlocked,
+  highlightUnlocked,
   lastWaveLabel,
   cityLabel,
 }: ArenaFomoStripProps) {
@@ -36,7 +36,7 @@ export function ArenaFomoStrip({
     if (redLiveCount > 0) {
       m.push(`🔥 ${redLiveCount} de tu red entrenan en vivo — ven vuestro tether en el mapa`)
     }
-    if (legendUnlocked) {
+    if (highlightUnlocked) {
       m.push('⭐ Modo Highlight activo — la ciudad siente esta sesión')
     } else if (syncVibe >= 60) {
       m.push(`⚡ A ${80 - syncVibe} pts del highlight de sync — una acción más y explota`)
@@ -57,7 +57,7 @@ export function ArenaFomoStrip({
       m.push(`📍 ${cityLabel} — el pulso de esta sync es visible en tu zona`)
     }
     return m
-  }, [witnessCount, redLiveCount, waveCount, syncVibe, minsToStory, secsToStory, legendUnlocked, lastWaveLabel, cityLabel])
+  }, [witnessCount, redLiveCount, waveCount, syncVibe, minsToStory, secsToStory, highlightUnlocked, lastWaveLabel, cityLabel])
 
   const [idx, setIdx] = useState(0)
 

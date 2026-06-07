@@ -711,19 +711,19 @@ input[type="range"]::-moz-range-thumb {
   100% { transform: translateY(-68px) scale(0.6); opacity: 0; }
 }
 
-.action-ritual-btn {
+.action-sync-btn {
   transition: all 0.12s cubic-bezier(0.23,1,0.32,1);
   border: 1px solid rgba(34,197,94,0.35);
   background: rgba(16, 28, 20, 0.85);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
 }
-.action-ritual-btn:active {
+.action-sync-btn:active {
   transform: scale(0.92) translateY(1px);
   background: rgba(34,197,94,0.3);
   border-color: #22c55e;
   box-shadow: 0 0 0 4px rgba(34,197,94,0.15);
 }
-.action-ritual-btn.combo {
+.action-sync-btn.combo {
   border-color: #FF671F;
   box-shadow: 0 0 0 4px rgba(255,103,31,0.25), inset 0 1px 0 rgba(255,255,255,0.05);
   animation: combo-glow 1.1s ease;
@@ -1241,7 +1241,7 @@ input[type="range"]::-moz-range-thumb {
   font-weight: 600;
 }
 
-.arena-legend-badge {
+.arena-highlight-badge {
   font-size: 9px;
   font-weight: 900;
   padding: 4px 8px;
@@ -1252,7 +1252,7 @@ input[type="range"]::-moz-range-thumb {
   animation: combo-glow 1.4s ease infinite;
 }
 
-.arena-legend-badge--soon {
+.arena-highlight-badge--soon {
   background: rgba(255, 103, 31, 0.2);
   border: 1px solid rgba(255, 103, 31, 0.5);
   color: #ff671f;
@@ -1445,16 +1445,16 @@ input[type="range"]::-moz-range-thumb {
   background: linear-gradient(145deg, #0a2a1a 0%, #0d0d10 100%);
 }
 
-.legend-card {
+.network-bond-card {
   background: linear-gradient(145deg, rgba(28,28,32,0.92), rgba(18,18,22,0.96));
   border: 1px solid rgba(255,103,31,0.18);
   transition: transform 0.2s ease, border-color 0.2s;
 }
-.legend-card:hover {
+.network-bond-card:hover {
   transform: translateY(-1px);
   border-color: rgba(255,103,31,0.45);
 }
-.legend-flame {
+.bond-flame {
   filter: drop-shadow(0 0 3px rgba(255,103,31,0.6));
 }
 
@@ -1783,20 +1783,20 @@ input[type="range"]::-moz-range-thumb {
 /* Ritual Ripples on the Live Map — the ambient "energy is happening" signal.
    This is the layer that makes the entire city feel like one giant synchronized training ground.
    When two people create magic in the Arena, the map lights up. Never seen in fitness before. */
-.ritual-map-ripple {
-  animation: ritual-ripple-pulse 1.8s ease-out forwards;
+.sync-map-ripple {
+  animation: sync-ripple-pulse 1.8s ease-out forwards;
   pointer-events: auto;
 }
-@keyframes ritual-ripple-pulse {
+@keyframes sync-ripple-pulse {
   0% { opacity: 0.75; }
   40% { opacity: 0.35; }
   100% { opacity: 0.05; }
 }
 
-.ritual-map-ripple.legend-ripple {
-  animation: legend-ripple-pulse 2.2s ease-out forwards;
+.sync-map-ripple.highlight-ripple {
+  animation: highlight-ripple-pulse 2.2s ease-out forwards;
 }
-@keyframes legend-ripple-pulse {
+@keyframes highlight-ripple-pulse {
   0% { opacity: 0.9; }
   50% { opacity: 0.5; }
   100% { opacity: 0.1; }
@@ -1814,7 +1814,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* Enhanced attractive message notifications */
-.legend-message-toast { /* gold for messages from your training network / red */
+.network-message-toast { /* gold for messages from your training network / red */
   border: 2px solid #FFD700 !important;
   background: linear-gradient(145deg, #1a160f, #1C1C20) !important;
   box-shadow: 0 12px 35px -5px rgba(255, 215, 0, 0.35), 0 0 0 1px rgba(255,215,0,0.25) !important;
@@ -2016,7 +2016,7 @@ input[type="range"]::-moz-range-thumb {
 .voice-preview .meta .title { font-size: 10.5px; color:#FF671F; font-weight:900; line-height:1.0; letter-spacing:.3px; }
 .voice-preview .meta .sub { font-size: 9px; color:#9CA3AF; line-height:1.1; }
 .voice-preview .actions { display:flex; gap:5px; align-items:flex-end; flex-shrink: 0; }
-.legend-toast-content {
+.network-toast-content {
   border-left: 3px solid #FFD700;
   padding-left: 8px;
 }
@@ -2043,28 +2043,28 @@ input[type="range"]::-moz-range-thumb {
 
 /* Enhanced Ritual Ripples with "physics" - energy flowing towards other users on the map.
    This makes the map feel like a living ecosystem where high-vibe moments in Arena send real waves across the city. */
-.ritual-wave-line {
+.sync-wave-line {
   stroke: #FF671F;
   stroke-width: 2.5;
   stroke-opacity: 0.7;
   stroke-dasharray: 8 12;
-  animation: ritual-wave-flow 1.1s linear infinite;
+  animation: sync-wave-flow 1.1s linear infinite;
   transition: stroke-opacity 0.3s;
 }
 .ritual-wave-line:hover {
   stroke-opacity: 0.95;
 }
-@keyframes ritual-wave-flow {
+@keyframes sync-wave-flow {
   0% { stroke-dashoffset: 0; }
   100% { stroke-dashoffset: -40; }
 }
 
 /* Network markers on map - real weight for your training graph (high bond partners in your red) */
-.entrenamatch-marker.legend-marker {
+.entrenamatch-marker.network-bond-marker {
   filter: drop-shadow(0 0 8px #FFD700);
 }
-.entrenamatch-marker.legend-marker img,
-.entrenamatch-marker.legend-marker > div {
+.entrenamatch-marker.network-bond-marker img,
+.entrenamatch-marker.network-bond-marker > div {
   border-color: #FFD700 !important;
   box-shadow: 0 0 0 3px #FFD70055, 0 0 12px #FFD70088 !important;
 }
@@ -2085,27 +2085,27 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* Network tethers on map - your high-performance sync partners have golden persistent connection in the pulse */
-.map-sync-tether.legend-tether {
+.map-sync-tether.network-bond-tether {
   stroke: #FFD700;
   stroke-width: 4;
   stroke-opacity: 0.85;
-  animation: legend-tether-glow 2s ease-in-out infinite;
+  animation: network-bond-tether-glow 2s ease-in-out infinite;
 }
-@keyframes legend-tether-glow {
+@keyframes network-bond-tether-glow {
   0%, 100% { stroke-opacity: 0.85; }
   50% { stroke-opacity: 1; }
 }
 /* Extra dominance when viewing your Red filter */
-.map-sync-tether.legend-tether.network-tether-boost {
+.map-sync-tether.network-bond-tether.network-tether-boost {
   stroke-width: 5.5;
   filter: drop-shadow(0 0 4px #FFD700);
 }
 
 /* Small pulse at the "receiving" user when a wave arrives */
-.ritual-wave-receiver {
-  animation: ritual-receiver-pulse 0.8s ease-out 2;
+.sync-wave-receiver {
+  animation: sync-receiver-pulse 0.8s ease-out 2;
 }
-@keyframes ritual-receiver-pulse {
+@keyframes sync-receiver-pulse {
   0% { transform: scale(1); }
   50% { transform: scale(1.6); }
   100% { transform: scale(1); }
@@ -2139,7 +2139,7 @@ input[type="range"]::-moz-range-thumb {
   animation: marker-live-pulse-high 1.1s ease-in-out infinite;
   filter: saturate(1.18) brightness(1.06) drop-shadow(0 2px 8px rgba(0,0,0,0.4));
 }
-.entrenamatch-marker.legend-marker {
+.entrenamatch-marker.network-bond-marker {
   filter: drop-shadow(0 0 8px #FFD70055) drop-shadow(0 1px 4px rgba(0,0,0,0.5));
 }
 .entrenamatch-marker.high-np {
@@ -2172,13 +2172,13 @@ input[type="range"]::-moz-range-thumb {
   transition: stroke 0.2s, stroke-width 0.2s, stroke-opacity 0.2s;
   animation: tether-flow-premium 1.45s linear infinite;
 }
-.map-sync-tether.legend-tether {
+.map-sync-tether.network-bond-tether {
   stroke: #FFD700;
   stroke-opacity: 0.92;
   stroke-width: 4.2;
   filter: drop-shadow(0 0 3px #FFD70088);
 }
-.map-sync-tether.legend-tether.network-tether-boost {
+.map-sync-tether.network-bond-tether.network-tether-boost {
   stroke-width: 6;
   filter: drop-shadow(0 0 7px #FFD700);
 }

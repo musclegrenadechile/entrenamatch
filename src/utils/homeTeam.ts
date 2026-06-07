@@ -1,4 +1,4 @@
-import type { TeamMemberStatus } from '../components/home/DailyRitualHome'
+import type { TeamMemberStatus } from '../components/home/DailyHome'
 
 export function formatLastLiveLabel(lastLiveDate?: number): string | undefined {
   if (!lastLiveDate || !Number.isFinite(lastLiveDate)) return undefined

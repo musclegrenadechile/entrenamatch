@@ -126,8 +126,8 @@ export function SyncArenaView({
   const msToStory = Math.max(0, storyTargetMs - elapsedMs)
   const minsToStory = Math.floor(msToStory / 60000)
   const secsToStory = Math.floor((msToStory % 60000) / 1000)
-  const legendUnlocked = syncVibe >= 80
-  const vibeToLegend = Math.max(0, 80 - syncVibe)
+  const highlightUnlocked = syncVibe >= 80
+  const vibeToHighlight = Math.max(0, 80 - syncVibe)
 
   const displayWitness = Math.max(witnessCount, realWitnessCount)
 
@@ -176,10 +176,10 @@ export function SyncArenaView({
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {legendUnlocked ? (
-            <span className="arena-legend-badge">⭐ HIGHLIGHT</span>
+          {highlightUnlocked ? (
+            <span className="arena-highlight-badge">⭐ HIGHLIGHT</span>
           ) : syncVibe >= 60 ? (
-            <span className="arena-legend-badge arena-legend-badge--soon">⚡ {vibeToLegend}→80</span>
+            <span className="arena-highlight-badge arena-highlight-badge--soon">⚡ {vibeToHighlight}→80</span>
           ) : null}
           {syncCombo >= 2 && (
             <span className="arena-combo-badge">COMBO ×{syncCombo}</span>
@@ -366,7 +366,7 @@ export function SyncArenaView({
           syncVibe={syncVibe}
           minsToStory={minsToStory}
           secsToStory={secsToStory}
-          legendUnlocked={legendUnlocked}
+          highlightUnlocked={highlightUnlocked}
           lastWaveLabel={lastWaveLabel}
           cityLabel={cityLabel}
         />

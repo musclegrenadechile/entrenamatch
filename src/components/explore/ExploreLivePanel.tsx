@@ -26,12 +26,12 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     gymPulseMapRef,
     mapLiveTrainingNow,
     effectiveUserId,
-    ritualRipples,
+    syncRipples,
     partnerLocations,
     echoPins,
     mapNearOnly,
     selectedMapZone,
-    showOnlyLegends,
+    showOnlyNetwork,
     showPartners,
     mapMyGymOnly,
     mapMyGymId,
@@ -41,7 +41,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     isQuickAddPartner,
     setMapNearOnly,
     setSelectedMapZone,
-    setShowOnlyLegends,
+    setShowOnlyNetwork,
     setShowPartners,
     setMapForceTick,
     setMapMyGymOnly,
@@ -207,13 +207,13 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           liveTrainingNow={mapLiveTrainingNow}
           liveCount={liveCountForUI}
           selfUserId={effectiveUserId}
-          ritualRipples={ritualRipples}
+          syncRipples={syncRipples}
           partnerLocations={partnerLocations}
           echoPins={echoPins || []}
           userLocation={userLocation}
           mapNearOnly={mapNearOnly}
           selectedMapZone={selectedMapZone}
-          showOnlyLegends={showOnlyLegends}
+          showOnlyNetwork={showOnlyNetwork}
           showPartners={showPartners}
           mapMyGymOnly={mapMyGymOnly}
           mapMyGymId={mapMyGymId}
@@ -228,7 +228,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           // New control callbacks (widget now manages its own filter/legend/dev buttons)
           onMapNearOnlyChange={setMapNearOnly}
           onSelectedMapZoneChange={setSelectedMapZone}
-          onShowOnlyLegendsChange={setShowOnlyLegends}
+          onShowOnlyNetworkChange={setShowOnlyNetwork}
           onShowPartnersChange={(v) => { setShowPartners(v); setMapForceTick(t => t + 1) }}
           onMapMyGymOnlyChange={setMapMyGymOnly}
           onOpenAddPartner={openAddPartner}
@@ -323,7 +323,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
             />
             {!showAddPartnerForm && (
               <>
-                {showOnlyLegends && (
+                {showOnlyNetwork && (
                   <div className="text-[7px] text-[#FFD700] px-1 mt-0.5">Tu Fuerza del equipo activa — tus GymPartners destacan en el GymPulse</div>
                 )}
                 {isDeveloper && showPartners && (

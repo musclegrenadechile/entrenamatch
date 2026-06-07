@@ -1,7 +1,7 @@
 // @ts-nocheck — P1 extract from App.tsx; tighten types incrementally
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus } from 'lucide-react'
-import { DailyRitualHome } from './DailyRitualHome'
+import { DailyHome } from './DailyHome'
 import { isGymCheckInFresh } from '../../services/localNetwork'
 import { WorkoutPostCard } from '../workout'
 import { NutritionPostCard } from '../fuel'
@@ -99,7 +99,7 @@ export function HomeTab(props: HomeTabProps) {
 
   return (
     <div className="flex-1 overflow-auto p-4">
-      <DailyRitualHome
+      <DailyHome
         userName={currentUser?.name || 'Atleta'}
         weekDays={homeWeekDays}
         weekTrainedCount={homeWeekTrainedCount}

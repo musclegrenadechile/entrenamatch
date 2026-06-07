@@ -76,7 +76,7 @@ export function enrichLiveUser(
     distance,
     seVaEnMin,
     joinCount: p.liveJoins ?? p.joinCount ?? 0,
-    isLegend: !!bond && (bond.bondLevel || 0) >= 3,
+    isNetworkBond: !!bond && (bond.bondLevel || 0) >= 3,
     visibleLevel,
   }
 }
@@ -87,12 +87,12 @@ export function filterMapLiveUsers(
     mapNearOnly?: boolean
     userLocation?: { lat: number; lng: number } | null
     selectedMapZone?: string | null
-    showOnlyLegends?: boolean
+    showOnlyNetwork?: boolean
     mapMyGymId?: string | null
     getDistanceKm?: (lat1: number, lng1: number, lat2: number, lng2: number) => number
   }
 ): LiveUserLike[] {
-  const { mapNearOnly, userLocation, selectedMapZone, showOnlyLegends, mapMyGymId, getDistanceKm } = opts
+  const { mapNearOnly, userLocation, selectedMapZone, showOnlyNetwork, mapMyGymId, getDistanceKm } = opts
   return (users || []).filter((u) => {
     if (!isActiveLiveUser(u)) return false
     if (!hasMapCoords(u)) return false
@@ -103,7 +103,7 @@ export function filterMapLiveUsers(
     if (mapMyGymId && u.gymCheckIn?.gymId !== mapMyGymId) return false
     if (mapNearOnly && userLocation && dist >= 10) return false
     if (selectedMapZone && u.city !== selectedMapZone) return false
-    if (showOnlyLegends && !u.isLegend) return false
+    if (showOnlyNetwork && !u.isNetworkBond) return false
     return true
   })
 }

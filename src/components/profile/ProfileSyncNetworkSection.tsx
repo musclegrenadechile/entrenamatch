@@ -193,7 +193,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
         const progress = Math.min(100, Math.round(((b.totalMin || 0) / 120) * 100))
         const partnerImpact = Math.floor((b.totalMin || 0) / 6) // estimated % boost from this specific alliance
         return (
-          <div key={pid} className="legend-card rounded-2xl p-3 text-xs flex gap-3 items-center active:scale-[0.985] border border-[#FF671F]/20 hover:border-[#FF671F]/50 transition-all" onClick={() => { const prof = p; if (prof) setShowFullProfile(prof as any); else toast('Compa no disponible ahora') }}>
+          <div key={pid} className="network-bond-card rounded-2xl p-3 text-xs flex gap-3 items-center active:scale-[0.985] border border-[#FF671F]/20 hover:border-[#FF671F]/50 transition-all" onClick={() => { const prof = p; if (prof) setShowFullProfile(prof as any); else toast('Compa no disponible ahora') }}>
             <div className="w-10 h-10 rounded-full bg-[#1C1C20] overflow-hidden ring-2 ring-[#FF671F]/40 flex-shrink-0 relative">
               {p?.photos?.[0] ? <img src={p.photos[0]} className="w-full h-full object-cover" /> : <div className="text-center text-xl pt-1.5">{(p?.name||'?')[0]}</div>}
               <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#22c55e] rounded-full flex items-center justify-center text-[8px] ring-1 ring-[#0D0D10]">🔄</div>
@@ -201,7 +201,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-white/95 truncate flex items-center gap-1">{p?.name || 'Socio'} <span className="text-[8px] text-[#FF671F] font-mono">LV{b.bondLevel}</span>{liveTrainingNow.some(u => u.id === pid && u.trainingNow) && <span className="ml-1 text-[7px] px-1 bg-[#22c55e] text-black rounded font-bold animate-pulse">EN VIVO</span>}</div>
               <div className="text-[9px] text-[#9CA3AF]">{b.totalMin}min • {b.sessions} sesiones • {b.avgRating}★ • <span className="text-[#22c55e]">tu Fuerza del equipo sube con esta alianza</span></div>
-              <div className="legend-flame text-[12px] leading-none mt-0.5">{flames}</div>
+              <div className="bond-flame text-[12px] leading-none mt-0.5">{flames}</div>
               {/* Visual bond progress bar */}
               <div className="mt-1 h-1 bg-white/10 rounded overflow-hidden">
                 <div className="h-1 bg-gradient-to-r from-[#FF671F] to-[#FF4F79] transition-all" style={{width: `${progress}%`}} />

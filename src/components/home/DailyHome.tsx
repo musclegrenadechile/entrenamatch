@@ -15,7 +15,7 @@ export interface TeamMemberView {
   isBond: boolean
 }
 
-export interface DailyRitualHomeProps {
+export interface DailyHomeProps {
   userName: string
   weekDays: Array<{ label: string; trained: boolean; isToday: boolean }>
   weekTrainedCount: number
@@ -52,7 +52,7 @@ function statusLine(member: TeamMemberView): string {
   return 'Sin actividad esta semana'
 }
 
-export function DailyRitualHome({
+export function DailyHome({
   userName,
   weekDays,
   weekTrainedCount,
@@ -80,7 +80,7 @@ export function DailyRitualHome({
   deletingFuelLogId,
   cityLabel,
   localNetwork,
-}: DailyRitualHomeProps) {
+}: DailyHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
   const hour = new Date().getHours()
   const greeting =
@@ -89,7 +89,7 @@ export function DailyRitualHome({
   const [showFirstSteps, setShowFirstSteps] = useState(() => !isFirstStepsDismissed())
 
   return (
-    <div className="daily-ritual-home mb-4 -mx-1 px-1 space-y-3">
+    <div className="daily-home mb-4 -mx-1 px-1 space-y-3">
       {showFirstSteps && (
         <FirstStepsGuide
           isLive={isLive}

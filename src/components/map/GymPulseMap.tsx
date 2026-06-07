@@ -14,8 +14,8 @@
  * - Zoom cluster behavior
  *
  * Parent (App) is responsible for:
- * - All the data (liveTrainingNow, partnerLocations, ritualRipples, etc.)
- * - Higher level state (showLiveMap, filters like mapNearOnly, selectedMapZone, showPartners, showOnlyLegends)
+ * - All the data (liveTrainingNow, partnerLocations, syncRipples, etc.)
+ * - Higher level state (showLiveMap, filters like mapNearOnly, selectedMapZone, showPartners, showOnlyNetwork)
  * - Callbacks for user actions (show profile, start sync, partner placed by dev, force tick)
  * - The partner Firestore listener (can be moved here later)
  *
@@ -47,13 +47,13 @@ export interface GymPulseMapProps {
   liveCount?: number
   /** Current user id — used to avoid duplicate self pin (self uses premium marker). */
   selfUserId?: string | null
-  ritualRipples: any[]
+  syncRipples: any[]
   partnerLocations: any[]
   echoPins?: any[]
   userLocation: { lat: number; lng: number } | null
   mapNearOnly: boolean
   selectedMapZone: string | null
-  showOnlyLegends?: boolean
+  showOnlyNetwork?: boolean
   showPartners: boolean
   /** When set, only show live users checked in at this partner gym. */
   mapMyGymOnly?: boolean
@@ -68,7 +68,7 @@ export interface GymPulseMapProps {
   // Filter controls (moved inside for self-contained widget)
   onMapNearOnlyChange?: (v: boolean) => void
   onSelectedMapZoneChange?: (z: string | null) => void
-  onShowOnlyLegendsChange?: (v: boolean) => void
+  onShowOnlyNetworkChange?: (v: boolean) => void
   onShowPartnersChange?: (v: boolean) => void
   onMapMyGymOnlyChange?: (v: boolean) => void
 
@@ -148,13 +148,13 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     liveTrainingNow,
     liveCount,
     selfUserId = null,
-    ritualRipples,
+    syncRipples,
     partnerLocations,
     echoPins = [],
     userLocation,
     mapNearOnly,
     selectedMapZone,
-    showOnlyLegends = false,
+    showOnlyNetwork = false,
     showPartners,
     mapMyGymOnly = false,
     mapMyGymId = null,
@@ -168,7 +168,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     // New internal control props
     onMapNearOnlyChange,
     onSelectedMapZoneChange,
-    onShowOnlyLegendsChange,
+    onShowOnlyNetworkChange,
     onShowPartnersChange,
     onMapMyGymOnlyChange,
     onOpenAddPartner,
@@ -372,7 +372,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         mapNearOnly,
         userLocation,
         selectedMapZone,
-        showOnlyLegends,
+        showOnlyNetwork,
         mapMyGymId: mapMyGymOnly && mapMyGymId ? mapMyGymId : null,
         getDistanceKm,
       })
@@ -386,7 +386,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           mapNearOnly,
           userLocation,
           selectedMapZone,
-          showOnlyLegends,
+          showOnlyNetwork,
           mapMyGymId: mapMyGymOnly && mapMyGymId ? mapMyGymId : null,
           getDistanceKm,
         }
@@ -422,7 +422,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       const newLives = liveUsers.filter((u: any) => !prevIds.has(u.id))
       newLives.forEach((newUser: any) => {
         if (!newUser.lat || !newUser.lng) return
-        const isHigh = (newUser.visibleLevel || 1) >= 15 || newUser.isLegend
+        const isHigh = (newUser.visibleLevel || 1) >= 15 || newUser.isNetworkBond
         const hasPulso = (newUser.visibleLevel || 1) >= 20
         const color = hasPulso ? '#a855f7' : (isHigh ? '#FFD700' : '#22c55e')
         try {
@@ -524,11 +524,11 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       // For this step we keep a functional core and note that the full rich version (with all the beautiful icons, popups, tethers, partner logos, legend gold, etc.) lives in the original until fully ported.
 
       // Enriched live markers for "Entrenando Ahora" (GymPulse) - makes the live status visually obvious
-      // Uses data like seVaEnMin, joinCount, isLegend, visibleLevel from the parent liveTrainingNow computation.
+      // Uses data like seVaEnMin, joinCount, isNetworkBond, visibleLevel from the parent liveTrainingNow computation.
       renderUsers.forEach((u: any) => {
         if (!hasMapCoords(u)) return
         const isBond = !!syncBonds[u.id]
-        const isHigh = (u.visibleLevel || 1) >= 15 || u.isLegend
+        const isHigh = (u.visibleLevel || 1) >= 15 || u.isNetworkBond
         const hasPulso = (u.visibleLevel || 1) >= 20
         const lvl = u.visibleLevel || 1
         const borderColor = isBond ? '#FFD700' : (hasPulso ? '#a855f7' : (isHigh ? '#eab308' : '#22c55e'))
@@ -631,7 +631,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
       // === Ritual Ripples (performance waves from completed EntrenaSync) ===
       // These are the "the community felt that" visual layer.
-      (ritualRipples || []).forEach((r: any) => {
+      (syncRipples || []).forEach((r: any) => {
         if (!r.lat || !r.lng) return
         try {
           const intensity = r.intensity || 1.6
@@ -643,9 +643,9 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
             fillColor: '#a855f7',
             fillOpacity: 0.09,
             opacity: 0.65,
-            className: 'iconic-ripple ritual-ripple'
+            className: 'iconic-ripple sync-ripple'
           }).addTo(mapInstanceRef.current)
-          ;(c as any)._isRitualRipple = true
+          ;(c as any)._isSyncRipple = true
           markersRef.current.push(c)
 
           // subtle second ring for stronger ripples
@@ -656,9 +656,9 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
               weight: 1.5,
               fillOpacity: 0,
               opacity: 0.4,
-              className: 'iconic-ripple ritual-ripple'
+              className: 'iconic-ripple sync-ripple'
             }).addTo(mapInstanceRef.current)
-            ;(c2 as any)._isRitualRipple = true
+            ;(c2 as any)._isSyncRipple = true
             markersRef.current.push(c2)
           }
         } catch {}
@@ -784,7 +784,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     }
   }, [
     showLiveMap, liveTrainingNow, liveCount, selfUserId, userLocation, mapNearOnly, selectedMapZone,
-    showOnlyLegends, showPartners, mapMyGymOnly, mapMyGymId, mapForceTick, ritualRipples, partnerLocations,
+    showOnlyNetwork, showPartners, mapMyGymOnly, mapMyGymId, mapForceTick, syncRipples, partnerLocations,
     echoPins, syncBonds, selfIsLive, isDeveloper, isPlacingPartner, isQuickAddPartner,
     onShowProfile, onStartSync, onPartnerPositionSelected, onPartnerMoved, onPartnerDelete,
     onPartnerEdit, onForceTick, onRequestLocation, onAddPartnerAtCurrentCenter, onReloadPartners,
@@ -833,13 +833,13 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     mapNearOnly,
     userLocation,
     selectedMapZone,
-    showOnlyLegends,
+    showOnlyNetwork,
     mapMyGymId: mapMyGymOnly && mapMyGymId ? mapMyGymId : null,
     getDistanceKm,
   }
   const filteredLiveUsers = useMemo(
     () => filterMapLiveUsers(liveTrainingNow || [], mapFilterOpts),
-    [liveTrainingNow, mapNearOnly, userLocation, selectedMapZone, showOnlyLegends, mapMyGymOnly, mapMyGymId]
+    [liveTrainingNow, mapNearOnly, userLocation, selectedMapZone, showOnlyNetwork, mapMyGymOnly, mapMyGymId]
   )
   const totalLiveOnMap = typeof liveCount === 'number' ? liveCount : filteredLiveUsers.length
   const filteredLiveOnMap = filteredLiveUsers.length
@@ -878,19 +878,19 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   // When strong filters change, reset the "initial fit done" flag so the next debounced update will
   // re-fitBounds to the *currently visible* lives + self. This makes the map feel "fijo" (anchored)
   // to what the user selected after they zoom or pan.
-  const prevFiltersRef = useRef({ mapNearOnly, selectedMapZone, showOnlyLegends })
+  const prevFiltersRef = useRef({ mapNearOnly, selectedMapZone, showOnlyNetwork })
   useEffect(() => {
     const prev = prevFiltersRef.current
     const changed = prev.mapNearOnly !== mapNearOnly ||
                     prev.selectedMapZone !== selectedMapZone ||
-                    prev.showOnlyLegends !== showOnlyLegends
+                    prev.showOnlyNetwork !== showOnlyNetwork
     if (changed && mapInstanceRef.current) {
       ;(mapInstanceRef.current as any)._hasDoneInitialFit = false
       // nudge the update so it re-computes + fits promptly
       if (onForceTick) onForceTick()
     }
-    prevFiltersRef.current = { mapNearOnly, selectedMapZone, showOnlyLegends }
-  }, [mapNearOnly, selectedMapZone, showOnlyLegends, onForceTick])
+    prevFiltersRef.current = { mapNearOnly, selectedMapZone, showOnlyNetwork }
+  }, [mapNearOnly, selectedMapZone, showOnlyNetwork, onForceTick])
 
   const zoneColors: Record<string, string> = {
     'Viña del Mar': '#22c55e',
@@ -977,10 +977,10 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         )}
 
         <button
-          onClick={() => onShowOnlyLegendsChange && onShowOnlyLegendsChange(!showOnlyLegends)}
-          className={`text-[8px] px-2 py-0.5 rounded-full border transition ${showOnlyLegends ? 'bg-[#FFD700] text-black border-[#FFD700]' : 'bg-black/70 text-[#FFD700] border-[#FFD700]/40 hover:bg-[#FFD700]/10'}`}
+          onClick={() => onShowOnlyNetworkChange && onShowOnlyNetworkChange(!showOnlyNetwork)}
+          className={`text-[8px] px-2 py-0.5 rounded-full border transition ${showOnlyNetwork ? 'bg-[#FFD700] text-black border-[#FFD700]' : 'bg-black/70 text-[#FFD700] border-[#FFD700]/40 hover:bg-[#FFD700]/10'}`}
         >
-          {showOnlyLegends ? '✓ Mi Red (Fuerza del equipo)' : 'Solo mi red de sync'}
+          {showOnlyNetwork ? '✓ Mi Red (Fuerza del equipo)' : 'Solo mi red de sync'}
         </button>
 
         <button
