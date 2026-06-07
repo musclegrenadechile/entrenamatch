@@ -90,6 +90,8 @@ import { ExploreTab } from './components/explore/ExploreTab'
 import { AuthScreen } from './components/auth/AuthScreen'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { GymPulseMap } from './components/map' // Inicio de modularización 2026-06-05 (stub + estructura)
+import { SyncArenaView } from './components/arena'
+import { uploadArenaPhotoUrl, postPartnerSyncStory } from './services/arenaFormPhoto'
 import { db, isFirebaseConfigured } from './services/firebase'
 import {
   attachPostCommentsListener,
@@ -5031,6 +5033,83 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     toast.success(`Sync con ${partnerName} calificado ${rating}/5`, { description: '¡Gracias! Ayuda a mejorar el matching + tu Bond Legend creció.' })
     setPendingSyncRating(null)
   }
+
+  const arenaPhotoInputRef = useRef<HTMLInputElement>(null)
+  const arenaPhotoResolverRef = useRef<((url: string | null) => void) | null>(null)
+
+  const handleArenaCapturePhoto = useCallback(async () => {
+    if (!syncPartnerId || !currentUser) return
+    const partner = realProfiles.find((p) => p.id === syncPartnerId)
+    const partnerName = partner?.name || 'Compañero'
+
+    try {
+      let dataUrl: string | null = null
+      if (Capacitor.isNativePlatform() && CapacitorCamera) {
+        const photo = await CapacitorCamera.getPhoto({
+          quality: 75,
+          allowEditing: true,
+          resultType: 'base64',
+        })
+        dataUrl = `data:image/jpeg;base64,${photo.base64String}`
+      } else {
+        dataUrl = await new Promise<string | null>((resolve) => {
+          arenaPhotoResolverRef.current = resolve
+          arenaPhotoInputRef.current?.click()
+        })
+      }
+      if (!dataUrl) return
+
+      let url = dataUrl
+      if (!isDemoMode && storage && firebaseUser?.uid && dataUrl.startsWith('data:')) {
+        url = await uploadArenaPhotoUrl(storage, effectiveUserId, dataUrl)
+      }
+
+      const caption = 'Momento en Arena'
+      const photoAction = {
+        id: 'sa' + Date.now(),
+        emoji: '📸',
+        label: caption,
+        userId: effectiveUserId,
+        at: Date.now(),
+        photoUrl: url,
+      }
+      setSyncActions((prev) => [photoAction, ...prev].slice(0, 30))
+
+      const photoText = `📸 ${caption} — con ${partnerName} en Arena (vibe ${syncVibe}%)`
+      await createProfilePost(photoText, url)
+      if (!isDemoMode && db && syncPartnerId) {
+        await postPartnerSyncStory(db, syncPartnerId, photoText, url).catch(() => {})
+        const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
+        const sessionId = buildSyncSessionId(effectiveUserId, syncPartnerId)
+        await updateDoc(doc(db, 'syncSessions', sessionId), {
+          actions: arrayUnion({
+            emoji: '📸',
+            label: caption,
+            userId: effectiveUserId,
+            at: Date.now(),
+            photoUrl: url,
+          }),
+        }).catch(() => {})
+      }
+
+      toast.success('📸 Momento capturado', {
+        description: 'Timeline + muros de ambos + onda en el mapa',
+      })
+      triggerHaptic('success')
+    } catch {
+      toast.error('No se pudo capturar la foto')
+    }
+  }, [
+    syncPartnerId,
+    currentUser,
+    realProfiles,
+    isDemoMode,
+    storage,
+    firebaseUser?.uid,
+    effectiveUserId,
+    syncVibe,
+    db,
+  ])
 
   const doSyncAction = async (emoji: string, label: string) => {
     if (!syncPartnerId || !syncStartedAt) return
@@ -10760,219 +10839,32 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 )}
               </div>
 
-              {/* =====================================================
-                   THE NEVER-BEFORE-SEEN ENTRenaSync ARENA
-                   ... (core philosophy comment preserved)
-                   ===================================================== */}
-              {currentUser.trainingNow && syncPartnerId && (
-                <div className="mt-3 sync-arena p-3.5 border border-[#22c55e]/30">
-                  {/* Header with presence + controls + clear "this ritual matters" impact */}
-                  <div className="flex items-center justify-between mb-2 relative z-20">
-                    <div className="flex items-center gap-2">
-                      <div className="text-[#22c55e] font-extrabold text-[13px] tracking-[0.5px] flex items-center gap-1.5">🔄 EN ARENA SYNC <span className="text-[8px] font-normal opacity-60 align-middle">EN VIVO</span>{!!syncBonds[syncPartnerId] && <span className="ml-1 text-[8px] bg-[#FFD700] text-black px-1 rounded font-black">RED POWER</span>}{userLocation && realProfiles.find(p=>p.id===syncPartnerId)?.lat && <span className="text-[9px] ml-1 text-[#FF671F]">• {getDistanceKm(userLocation.lat, userLocation.lng, realProfiles.find(p=>p.id===syncPartnerId)!.lat!, realProfiles.find(p=>p.id===syncPartnerId)!.lng!).toFixed(1)}km</span>}</div>
-                      {syncCombo >= 2 && <div className={`text-[9px] px-1.5 py-px rounded bg-[#FF671F] text-black font-black tracking-wider ${syncCombo >= 4 ? 'animate-pulse' : ''}`}>COMBO x{syncCombo}</div>}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[10px]">
-                      <button onClick={() => setShowSyncArena(!showSyncArena)} className="px-2 py-0.5 rounded bg-white/5 text-[#22c55e] active:bg-white/10">{showSyncArena ? 'COMPACT' : 'ARENA'}</button>
-                      <button onClick={() => loadRealProfiles().catch(()=>{})} className="px-1.5 py-0.5 bg-[#22c55e]/15 text-[#22c55e] rounded active:bg-[#22c55e]/30">↻</button>
-                      <button onClick={endSync} className="px-2 py-0.5 bg-red-500/20 text-red-300 rounded active:bg-red-500/40 text-[9px]">TERMINAR</button>
-                    </div>
-                  </div>
-
-                  {/* NETWORK IMPACT — makes the purpose obvious and valuable. This is the social graph in action; every high moment builds your alliances, your Network Power, and propagates through the fitness social network. */}
-                  <div className="mb-2 text-[8px] flex items-center justify-between bg-black/30 rounded px-2 py-1 border border-[#22c55e]/20">
-                    <div className="flex items-center gap-3">
-                      <span className="text-[#22c55e]">Ondas de red: <span className="font-bold">{Math.floor(syncVibe / 25)}</span></span>
-                      <span className="text-[#FF671F]">Impacto en tu grafo: <span className="font-bold">{syncVibe > 70 ? 'ALTO' : syncVibe > 40 ? 'MEDIO' : 'BAJO'}</span></span>
-                    </div>
-                    {syncVibe > 65 && <span className="text-[#FFD700] font-bold">⭐ ESTO ESTÁ FORTALECIENDO TU RED DE RENDIMIENTO</span>}
-                  </div>
-
-                  {/* THE IMMERSIVE RITUAL: Dual avatars + tether + reactive energy orb */}
-                  <div className="relative h-[128px] flex items-center justify-center mb-2.5" style={{background: 'radial-gradient(ellipse at center, rgba(16,28,20,0.6) 0%, transparent 70%)'}}>
-                    {/* Avatar YOU */}
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 flex flex-col items-center z-10">
-                      <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-[#22c55e]/70 shadow-[0_0_12px_rgba(34,197,94,0.5)] bg-[#1C1C20] border border-[#22c55e]/40">
-                        {currentUser.photos?.[0] ? <img src={currentUser.photos[0]} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-lg font-black text-white/90">{(currentUser.name||'T')[0]}</div>}
-                      </div>
-                      <div className="text-[9px] mt-1 text-[#22c55e] font-semibold tracking-widest">TÚ</div>
-                    </div>
-
-                    {/* CENTRAL VIBE ORB — the soul of the unique experience. Reacts to shared energy. Both people see the exact same pulse. */}
-                    <div className="relative z-10 flex flex-col items-center">
-                      <div 
-                        className={`energy-orb ${syncVibe > 80 ? 'high' : ''} ${!!syncBonds[syncPartnerId] ? 'network-boosted' : ''}`}
-                        style={{ 
-                          transform: `scale(${0.82 + (syncVibe/100)*0.32})`,
-                          filter: syncVibe > 70 ? 'hue-rotate(20deg) saturate(1.2)' : 'none',
-                          boxShadow: syncVibe > 80 ? '0 0 55px rgba(255,103,31,0.95), 0 0 110px rgba(255,79,121,0.6), inset 0 -12px 18px rgba(0,0,0,0.5)' : undefined
-                        }}
-                      >
-                        <div className="absolute inset-0 rounded-full flex items-center justify-center">
-                          <div className="text-center">
-                            <div className="font-mono text-[22px] font-black text-black/90 tracking-[-1.5px]">{syncStartedAt ? Math.floor((Date.now()-syncStartedAt)/60000) : 0}</div>
-                            <div className="text-[7px] -mt-1 text-black/70 font-bold tracking-[1px]">MIN</div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-1 text-[10px] font-mono text-[#22c55e] tracking-[2px] flex items-center gap-1">
-                        VIBE <span className="font-black text-lg tabular-nums">{syncVibe}</span><span className="text-[8px] opacity-70">%</span>
-                        {!!syncBonds[syncPartnerId] && <span className="ml-1 text-[7px] bg-[#FFD700] text-black px-1 rounded font-black">NETWORK SYNC x1.5 POWER</span>}
-                      </div>
-                    </div>
-
-                    {/* Tether line — visual "we are connected" never-seen cue */}
-                    <div className="sync-tether" />
-
-                    {/* THE SHARED ENERGY FIELD — the visual soul of synchronized human effort in the fitness social network.
-                        This is what makes people say "I've never seen anything like this".
-                        The field between two people grows, pulses, and glows with your combined vibe.
-                        It is the physical representation of "we are one system right now" — and when with your high Network Power allies, it shines brighter, building the graph. */}
-                    <div 
-                      className="absolute left-[18%] right-[18%] top-1/2 -translate-y-1/2 h-[5px] rounded-full z-[5] pointer-events-none"
-                      style={{
-                        background: `linear-gradient(90deg, #22c55e, #FF671F, #FF4F79, #22c55e)`,
-                        opacity: 0.12 + (syncVibe / 280) + (syncCombo * 0.08) + (!!syncBonds[syncPartnerId] ? 0.1 : 0),
-                        filter: `blur(${1.5 + syncVibe / 38 + syncCombo}px) saturate(${1 + syncVibe / 180 + syncCombo * 0.3 + (!!syncBonds[syncPartnerId] ? 0.2 : 0)})`,
-                        boxShadow: syncVibe > 65 || syncCombo >= 3 ? `0 0 ${12 + syncVibe / 5 + syncCombo * 4 + (!!syncBonds[syncPartnerId] ? 8 : 0)}px rgba(255,103,31,0.7)` : 'none',
-                        height: `${5 + syncCombo * 1.5 + (!!syncBonds[syncPartnerId] ? 2 : 0)}px`,
-                        transition: 'all 180ms cubic-bezier(0.23,1,0.32,1)'
-                      }}
-                    />
-
-                    {/* Avatar PARTNER */}
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col items-center z-10">
-                      <div className="w-11 h-11 rounded-full overflow-hidden ring-2 ring-[#FF671F]/70 shadow-[0_0_12px_rgba(255,103,31,0.45)] bg-[#1C1C20] border border-[#FF671F]/40">
-                        {realProfiles.find(p=>p.id===syncPartnerId)?.photos?.[0] ? <img src={realProfiles.find(p=>p.id===syncPartnerId)!.photos![0]} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-lg font-black text-white/90">{(realProfiles.find(p=>p.id===syncPartnerId)?.name||'C')[0]}</div>}
-                      </div>
-                      <div className="text-[9px] mt-1 text-[#FF671F] font-semibold tracking-widest">{(realProfiles.find(p=>p.id===syncPartnerId)?.name || 'COMPA').split(' ')[0].toUpperCase()}</div>
-                    </div>
-
-                    {/* FLYING EMOJI WAVES — the dopamine "we moved at the same time" effect. Both clients render the exact same ones because of instant listener */}
-                    <AnimatePresence>
-                      {flyingEmojis.map((f, idx) => (
-                        <motion.div
-                          key={f.id}
-                          initial={{ opacity: 0.95, scale: 0.9, x: -30 + idx*18 }}
-                          animate={{ opacity: 0, scale: 0.4, x: 8 }}
-                          exit={{ opacity: 0 }}
-                          transition={{ duration: 1.35, ease: [0.22,1,0.36,1] }}
-                          className="flying-emoji"
-                          style={{ left: `${34 + idx * 7}%`, top: '34%' }}
-                        >
-                          {f.emoji}
-                        </motion.div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-
-                  {/* Expanded ritual action grid — each action now clearly serves the purpose of the Arena (building bonds, generating ripples, creating legend moments).
-                      Bigger, more satisfying taps. 13 moves. Actions are labeled by their real value so it feels purposeful, not just a game. */}
-                  <div className="grid grid-cols-4 gap-1.5 mb-2 relative z-20">
-                    {[
-                      {e:'💪', l:'Buena forma', purpose: 'bond'},
-                      {e:'🔥', l:'Serie lista', purpose: 'ripple'},
-                      {e:'💧', l:'Hidratado', purpose: 'bond'},
-                      {e:'🏁', l:'Push final', purpose: 'vibe'},
-                      {e:'⚡', l:'Explosivo', purpose: 'ripple'},
-                      {e:'🧘', l:'Control', purpose: 'bond'},
-                      {e:'📈', l:'Más peso', purpose: 'legend'},
-                      {e:'❤️', l:'Juntos', purpose: 'bond'},
-                      {e:'🥤', l:'Recuperación', purpose: 'vibe'},
-                      {e:'🏆', l:'PR logrado', purpose: 'legend'},
-                      {e:'🤝', l:'Apoyo mutuo', purpose: 'bond'},
-                      {e:'🙌', l:'High five', purpose: 'ripple'},
-                      {e:'🔥', l:'¡Vamos!', purpose: 'vibe'}
-                    ].map((a, idx) => {
-                      const isActiveCombo = syncCombo >= 2 && syncActions[0]?.label === a.l
-                      const purposeLabel = a.purpose === 'legend' ? '⭐ RED' : a.purpose === 'ripple' ? '🌊 ONDA' : a.purpose === 'bond' ? '❤️ ALIANZA' : '🔥 VIBE'
-                      return (
-                        <button 
-                          key={idx} 
-                          onClick={() => doSyncAction(a.e, a.l)} 
-                          className={`action-ritual-btn h-9 rounded-2xl text-sm flex flex-col items-center justify-center gap-px font-semibold active:scale-[0.97] ${isActiveCombo ? 'combo' : ''}`}
-                        >
-                          <span className="text-base leading-none">{a.e}</span>
-                          <span className="text-[7.5px] text-white/70 tracking-tight leading-none">{a.l}</span>
-                          <span className="text-[6px] text-[#FFD700] font-bold -mt-0.5">{purposeLabel}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  {/* Mirror hint + story tools — the "ritual" language that sells uniqueness */}
-                  <div className="text-[8px] text-center text-[#22c55e]/55 mb-1.5">Tus acciones aparecen al instante en su pantalla. ¡Entrenen como si estuvieran en el mismo lugar!</div>
-
-                  {/* Action story log as beautiful timeline (the shared memory being built live) */}
-                  {syncActions.length > 0 && (
-                    <div className="text-[9px] bg-black/40 border border-[#22c55e]/20 p-2 rounded-xl mb-2 max-h-[74px] overflow-auto story-timeline relative z-10">
-                      <div className="flex items-center justify-between text-[#22c55e]/70 mb-0.5 px-0.5">
-                        <div>RITUAL EN VIVO ({syncActions.length})</div>
-                        <button onClick={() => setReplaySession({partnerName: realProfiles.find(p=>p.id===syncPartnerId)?.name, minutes: syncStartedAt ? Math.floor((Date.now()-syncStartedAt)/60000):0 , vibe: syncVibe, actions: [...syncActions], rating: null })} className="text-[#FF671F] underline text-[8px]">REPLAY</button>
-                      </div>
-                      <AnimatePresence>
-                      {syncActions.slice(0,7).map((a: any, i: number) => {
-                        const isMe = a.userId === effectiveUserId
-                        const who = isMe ? 'Tú' : (realProfiles.find(p => p.id === syncPartnerId)?.name?.split(' ')[0] || 'Compa')
-                        return (
-                          <motion.div 
-                            key={a.id || i} 
-                            initial={{ opacity: 0, y: -6, scale: 0.96 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            transition={{ duration: 0.18 }}
-                            className="flex items-center gap-1.5 py-[1px] text-[10px]"
-                          >
-                            <span className={isMe ? 'text-white' : 'text-[#22c55e]'}>{who} {a.emoji} {a.label}{a.combo ? <span className="text-[#FF671F] font-black">×{a.combo}</span> : ''}</span>
-                            {a.photoUrl && <img src={a.photoUrl} className="w-5 h-5 rounded object-cover border border-white/20" />}
-                            <span className="ml-auto text-[#22c55e]/40 text-[7.5px] tabular-nums">{a.at ? Math.max(0,Math.floor((Date.now()-a.at)/60000)) : 0}m</span>
-                          </motion.div>
-                        )
-                      })}
-                      </AnimatePresence>
-                    </div>
-                  )}
-
-                  {/* Quick unique actions row + NEW: quick photo during Arena (the "moment captured together" that posts to both + replay) */}
-                  <div className="flex gap-2 justify-center flex-wrap">
-                    <button onClick={() => { /* quick story post without ending */ const p = realProfiles.find(pp=>pp.id===syncPartnerId); createProfilePost(`🔄 Sigo en Sync con ${p?.name||'mi buddy'} — vibe ${syncVibe}%`, null).catch(()=>{}); toast('Historia parcial guardada en tu muro') }} className="text-[10px] px-3 py-1 rounded-full bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e]/20">📝 Guardar historia ahora</button>
-                    <button 
-                      onClick={async () => {
-                        if (!CapacitorCamera || !Capacitor.isNativePlatform()) { toast('Cámara disponible en la app Android'); return; }
-                        try {
-                          const photo = await CapacitorCamera.getPhoto({ quality: 75, allowEditing: true, resultType: 'base64' });
-                          const dataUrl = `data:image/jpeg;base64,${photo.base64String}`;
-                          const partner = realProfiles.find(p=>p.id===syncPartnerId);
-                          // Quick caption for the moment (makes it personal and attractive)
-                          const caption = prompt('Caption para la foto del momento (opcional):', '¡Momento épico en Arena!') || 'Momento en Arena';
-                          const path = `posts/${effectiveUserId}/arena-${Date.now()}.jpg`;
-                          const storageRef = ref(storage, path);
-                          const snap = await uploadString(storageRef, dataUrl, 'data_url');
-                          const url = await getDownloadURL(snap.ref);
-                          // Special action in arena (visible in timeline)
-                          const photoAction = { id: 'sa' + Date.now(), emoji: '📸', label: caption.substring(0,25), userId: effectiveUserId, at: Date.now(), photoUrl: url };
-                          setSyncActions(prev => [photoAction, ...prev].slice(0, 30));
-                          // Rich post to both walls
-                          const photoText = `📸 ${caption} — con ${partner?.name || 'mi sync buddy'} en Arena (vibe ${syncVibe}%)`;
-                          await createProfilePost(photoText, url);
-                          toast.success('📸 Momento capturado y compartido', { description: 'Foto + caption en replay y muros de ambos' });
-                          triggerHaptic('light');
-                        } catch(e) { toast('No se pudo capturar la foto'); }
-                      }}
-                      className="text-[10px] px-3 py-1 rounded-full bg-[#FF671F]/10 text-[#FF671F] border border-[#FF671F]/40 active:bg-[#FF671F]/20 flex items-center gap-1"
-                    >
-                      📸 Capturar momento en Arena
-                    </button>
-                    <button onClick={() => setShowSyncArena(false)} className="text-[10px] px-3 py-1 rounded-full bg-white/5 text-white/70 border border-white/10 active:bg-white/10">Cerrar arena</button>
-                  </div>
-
-                  <div className="text-center text-[7.5px] text-[#22c55e]/45 mt-1.5">Cada acción construye tu red de rendimiento real (se ve en tu perfil, mapa y feed). Alta intensidad compartida = ondas de actividad que otros ven. Terminar un EntrenaSync fuerte = +alianza + historia de resultados que queda archivada para siempre en tu red y la de tu socio. Esto genera valor real: convierte esfuerzo aislado en progreso compartido y visible que inspira a la comunidad.</div>
-                </div>
-              )}
-
-              {/* Compact legacy indicator when arena closed but still in sync (keeps awareness) */}
+              {/* EntrenaSync — compact teaser (full immersive Arena is a fixed overlay) */}
               {currentUser.trainingNow && syncPartnerId && !showSyncArena && (
-                <button onClick={() => setShowSyncArena(true)} className="mt-2 w-full text-[10px] py-1.5 rounded-2xl border border-[#22c55e]/50 text-[#22c55e] bg-[#0a2a1a]/60 flex items-center justify-center gap-2 active:bg-[#112211]">
-                  🔄 Abrir ARENA SYNC completa — {syncVibe}% vibe • {syncStartedAt ? Math.floor((Date.now()-syncStartedAt)/60000):0}min juntos
+                <button
+                  type="button"
+                  onClick={() => setShowSyncArena(true)}
+                  className="mt-3 w-full text-left sync-arena-compact p-3 border border-[#22c55e]/40 active:scale-[0.99] transition-transform"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div>
+                      <p className="text-[11px] font-black text-[#22c55e] tracking-wide">
+                        🔄 Pista compartida activa
+                      </p>
+                      <p className="text-[10px] text-white/70 mt-0.5">
+                        {syncVibe}% vibe · {syncStartedAt ? Math.floor((Date.now() - syncStartedAt) / 60000) : 0} min con{' '}
+                        {(realProfiles.find((p) => p.id === syncPartnerId)?.name || 'tu compañero').split(' ')[0]}
+                      </p>
+                    </div>
+                    <span className="text-[10px] px-3 py-1.5 rounded-full bg-[#22c55e] text-black font-bold shrink-0">
+                      Abrir Arena
+                    </span>
+                  </div>
+                  {liveTrainingNow.length > 0 && (
+                    <p className="text-[9px] text-[#FF671F]/90 mt-2">
+                      🌊 {liveTrainingNow.length} personas live cerca sienten el pulso del GymPulse
+                    </p>
+                  )}
                 </button>
               )}
 
@@ -14035,6 +13927,77 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           </div>
         </div>
       )}
+
+      {/* Hidden input — Arena form photo on web */}
+      <input
+        ref={arenaPhotoInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          const resolve = arenaPhotoResolverRef.current
+          arenaPhotoResolverRef.current = null
+          if (!file || !resolve) {
+            resolve?.(null)
+            return
+          }
+          const reader = new FileReader()
+          reader.onload = () => {
+            resolve(typeof reader.result === 'string' ? reader.result : null)
+            e.target.value = ''
+          }
+          reader.onerror = () => {
+            resolve(null)
+            e.target.value = ''
+          }
+          reader.readAsDataURL(file)
+        }}
+      />
+
+      {currentUser?.trainingNow && syncPartnerId && showSyncArena && (() => {
+        const partner = realProfiles.find((p) => p.id === syncPartnerId)
+        const dist =
+          userLocation && partner?.lat != null && partner?.lng != null
+            ? getDistanceKm(userLocation.lat, userLocation.lng, partner.lat, partner.lng)
+            : null
+        const bond = syncBonds[syncPartnerId]
+        return (
+          <SyncArenaView
+            open
+            onMinimize={() => setShowSyncArena(false)}
+            onEndSync={endSync}
+            selfName={currentUser.name || 'Tú'}
+            selfPhoto={currentUser.photos?.[0]}
+            partnerName={partner?.name || 'Compañero'}
+            partnerPhoto={partner?.photos?.[0]}
+            effectiveUserId={effectiveUserId}
+            syncStartedAt={syncStartedAt}
+            syncVibe={syncVibe}
+            syncCombo={syncCombo}
+            syncActions={syncActions}
+            bondLevel={bond?.bondLevel ?? 1}
+            isNetworkBond={!!bond}
+            distanceKm={dist}
+            liveNearbyCount={liveTrainingNow.length}
+            rippleCount={Math.max(1, Math.floor(syncVibe / 25) + ritualRipples.length)}
+            cityLabel={currentUser.city || partner?.city}
+            flyingEmojis={flyingEmojis}
+            onSyncAction={doSyncAction}
+            onCapturePhoto={handleArenaCapturePhoto}
+            onReplay={() =>
+              setReplaySession({
+                partnerName: partner?.name,
+                minutes: syncStartedAt ? Math.floor((Date.now() - syncStartedAt) / 60000) : 0,
+                vibe: syncVibe,
+                actions: [...syncActions],
+                rating: null,
+              })
+            }
+          />
+        )
+      })()}
 
     </ErrorBoundary>
   )
