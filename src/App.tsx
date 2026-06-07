@@ -1639,6 +1639,7 @@ useEffect(() => {
   const isTogglingLiveRef = useRef(false)
   // Ignore stale own-profile snapshots right after we write trainingNow (prevents instant revert)
   const pendingLiveWriteRef = useRef<{ trainingNow: boolean; at: number } | null>(null)
+  const LIVE_WRITE_GUARD_MS = 20000
   useEffect(() => { isTogglingLiveRef.current = isTogglingLive }, [isTogglingLive])
 
   // Dedicated source of truth: where('trainingNow'==true) listener (real mode) or demo synthesis.
@@ -2543,22 +2544,31 @@ useEffect(() => {
           const data = snap.data() as any
           if (!data) return
           if (isTogglingLiveRef.current) return
-          const pending = pendingLiveWriteRef.current
+
           const newTrainingNow = !!data.trainingNow
           const newSince = normalizeTrainingSince(data.trainingNowSince)
-          if (pending && Date.now() - pending.at < 15000) {
+          const pending = pendingLiveWriteRef.current
+          const base = currentUserRef.current
+
+          // During the guard window, ignore snapshots that disagree with our in-flight write.
+          // Clearing pending on first match allowed stale cache (trainingNow:false) to revert live UI.
+          if (pending && Date.now() - pending.at < LIVE_WRITE_GUARD_MS) {
             if (newTrainingNow !== pending.trainingNow) return
-            pendingLiveWriteRef.current = null
           }
-          if (currentUser && (currentUser.trainingNow !== newTrainingNow || normalizeTrainingSince(currentUser.trainingNowSince) !== newSince)) {
+
+          if (
+            base &&
+            (base.trainingNow !== newTrainingNow ||
+              normalizeTrainingSince(base.trainingNowSince) !== newSince)
+          ) {
             const merged = {
-              ...currentUser,
+              ...base,
               trainingNow: newTrainingNow,
               trainingNowSince: newSince,
-              liveStreak: data.liveStreak != null ? data.liveStreak : currentUser.liveStreak,
+              liveStreak: data.liveStreak != null ? data.liveStreak : base.liveStreak,
             }
             saveUser(merged as any)
-            setMapForceTick(t => t + 1)
+            setMapForceTick((t) => t + 1)
           }
         })
       } catch (e) {
@@ -10514,7 +10524,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 <p className="text-xs text-[#9CA3AF] mb-3">
                   Verifica app oficial (PLAY_RECOGNIZED), licencia (LICENSED) y dispositivo íntegro. 
                   Pega aquí el nonce de tu "prueba de integridad" creada en Play Console para obtener veredictos específicos de prueba (ej. MEETS_DEVICE_INTEGRITY).
-                  La app ahora requiere integridad positiva para activar "Entrenando ahora (EN VIVO)" en builds reales.
+                  En web y pruebas el live funciona sin verificación; en APK de producción se recomienda integridad positiva.
                 </p>
                 <div className="text-[10px] text-[#9CA3AF] mb-2">
                   Detección actual: <span className="font-mono">{Capacitor.isNativePlatform() ? 'Nativa (APK real)' : 'Web (simulado)'}</span> — debe ser Nativa en la APK instalada. (Ver logs: [Play Integrity] isNativePlatform())
@@ -10626,6 +10636,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           }
 
                           pendingLiveWriteRef.current = { trainingNow: false, at: Date.now() };
+                          saveUser(updated)
                           await saveUserWithRealSync(updated);
 
                           loadRealProfiles().catch(() => {});
@@ -10659,6 +10670,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           }
                         } finally {
                           setIsTogglingLive(false);
+                          setTimeout(() => {
+                            if (pendingLiveWriteRef.current && Date.now() - pendingLiveWriteRef.current.at >= LIVE_WRITE_GUARD_MS - 500) {
+                              pendingLiveWriteRef.current = null
+                            }
+                          }, LIVE_WRITE_GUARD_MS)
                         }
                       }}
                       disabled={isTogglingLive}
@@ -10713,31 +10729,37 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                         const updated = {
                           ...currentUser,
                           trainingNow: newVal,
-                          trainingNowSince: newVal ? Date.now() : undefined,
+                          trainingNowSince: newVal ? Date.now() : null,
                           ...(newVal && loc ? { lat: loc.lat, lng: loc.lng } : {}),
                           ...streakUpdate,
                           ...( !newVal ? { trainingSyncWith: null, syncStartedAt: null } : {} )
                         }
-                        
+
                         pendingLiveWriteRef.current = { trainingNow: !!newVal, at: Date.now() };
+                        saveUser(updated as CurrentUser)
                         await saveUserWithRealSync(updated as CurrentUser)
 
                         loadRealProfiles().catch(() => {})
                         setMapForceTick(t => t + 1)
                         toast(newVal ? '🟢 ¡Entrenando Ahora (EN VIVO) activado!' : 'Entrenamiento finalizado')
-                        checkAndUpdateDailyPulse(updated)
-                        if (dailyPulse?.currentChallenge?.type === 'solo') {
-                          completeDailyChallenge(1)
-                        } else if (newVal) {
-                          awardMomentum(8, 'Ancla del GymPulse', updated as CurrentUser)
-                        }
-                        if (newVal) {
-                          createProfilePost('¡Entrenando ahora en el GymPulse! ¿Quién se une al pulso? 🏋️', null).catch(() => {})
-                        }
+
+                        // Defer secondary profile writes so they don't race with the live toggle + listener guard.
+                        const liveUserSnapshot = { ...updated }
+                        setTimeout(() => {
+                          checkAndUpdateDailyPulse(liveUserSnapshot)
+                          if (dailyPulse?.currentChallenge?.type === 'solo') {
+                            completeDailyChallenge(1)
+                          } else if (newVal) {
+                            awardMomentum(8, 'Ancla del GymPulse', liveUserSnapshot as CurrentUser)
+                          }
+                          if (newVal) {
+                            createProfilePost('¡Entrenando ahora en el GymPulse! ¿Quién se une al pulso? 🏋️', null).catch(() => {})
+                          }
+                        }, 600)
                       } catch (err) {
                         console.error('Live toggle failed', err);
                         pendingLiveWriteRef.current = null;
-                        toast.error('No se pudo activar/desactivar el live', { description: 'Revisa tu conexión o integridad. Estado revertido.' });
+                        toast.error('No se pudo activar/desactivar el live', { description: 'Revisa tu conexión e intenta de nuevo.' });
                         if (!isDemoMode && firebaseUser?.uid) {
                           try {
                             const realP = await getUserProfile(firebaseUser.uid);
@@ -10749,6 +10771,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                         }
                       } finally {
                         setIsTogglingLive(false);
+                        setTimeout(() => {
+                          if (pendingLiveWriteRef.current && Date.now() - pendingLiveWriteRef.current.at >= LIVE_WRITE_GUARD_MS - 500) {
+                            pendingLiveWriteRef.current = null
+                          }
+                        }, LIVE_WRITE_GUARD_MS)
                       }
                     }}
                     disabled={isTogglingLive}
