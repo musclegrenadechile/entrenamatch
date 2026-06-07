@@ -2029,7 +2029,7 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
     return isFinite(n) ? n : undefined
   }
 
-         // LIVE TRAINING NOW - Versión ultra-minimalista y segura (evita todos los crashes)
+           // LIVE TRAINING NOW - Versión ultra-minimalista y segura
   const liveTrainingNow = useMemo(() => {
     const now = Date.now()
     const ASSUMED_SESSION_MS = 3 * 60 * 60 * 1000
