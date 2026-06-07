@@ -28,7 +28,7 @@ export function TuRedPowerCard({
         <div className="flex items-baseline gap-4 text-sm flex-wrap">
           <div>
             <span className="font-mono text-lg font-bold text-[#FFD700]">{networkPower}</span>{' '}
-            <span className="text-[9px] text-[#9CA3AF]">Network Power</span>
+            <span className="text-[9px] text-[#9CA3AF]">Fuerza del equipo</span>
           </div>
           <div>
             <span className="font-mono text-lg font-bold text-[#22c55e]">{bondsCount}</span>{' '}

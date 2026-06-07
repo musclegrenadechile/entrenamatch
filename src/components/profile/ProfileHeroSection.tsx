@@ -60,7 +60,7 @@ export function ProfileHeroSection(props: ProfileTabProps) {
 
     {/* Unique "Tu Poder" mini dashboard in hero - makes profile creation feel valuable immediately */}
     <div className="mt-3 flex gap-2 text-[10px]">
-      <div className="bg-white/10 border border-white/20 px-2 py-1 rounded-xl font-mono"><span className="text-[#FFD700]">{networkStats?.networkPower || 0}</span> NP</div>
+      <div className="bg-white/10 border border-white/20 px-2 py-1 rounded-xl font-mono"><span className="text-[#FFD700]">{networkStats?.networkPower || 0}</span> FE</div>
       <div className="bg-white/10 border border-white/20 px-2 py-1 rounded-xl font-mono"><span className="text-[#22c55e]">{Object.keys(syncBonds || {}).length}</span> BONDS</div>
       <div className="bg-white/10 border border-white/20 px-2 py-1 rounded-xl font-mono"><span className="text-[#FF671F]">{currentUser.photos?.length || 0}</span> FOTOS</div>
     </div>
@@ -71,7 +71,7 @@ export function ProfileHeroSection(props: ProfileTabProps) {
     onClick={openProfileEditor}
     className="absolute top-4 right-4 text-xs px-4 py-2 rounded-2xl bg-black/70 border border-white/30 text-white flex items-center gap-1.5 active:bg-black tracking-wider"
   >
-    <Edit2 size={13} /> REMASTERIZAR MI RITUAL
+    <Edit2 size={13} /> EDITAR PERFIL
   </button>
 </div>
 
@@ -189,7 +189,7 @@ export function ProfileHeroSection(props: ProfileTabProps) {
         try { triggerHaptic('medium') } catch {}; 
         muroComposerRef.current?.focus(); 
         setActiveTab('profile'); 
-        toast('¡Cuéntale a tu red! +Momentum por posts con foto'); 
+        toast('¡Cuéntale a tu red! +Constancia por posts con foto'); 
       }} 
       className="flex-shrink-0 w-16 h-16 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex flex-col items-center justify-center text-black text-[10px] font-black cursor-pointer active:scale-95 border-2 border-white/30 shadow-lg snap-start"
     >

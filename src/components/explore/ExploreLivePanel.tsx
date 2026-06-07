@@ -324,7 +324,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
             {!showAddPartnerForm && (
               <>
                 {showOnlyLegends && (
-                  <div className="text-[7px] text-[#FFD700] px-1 mt-0.5">Tu Network Power activa — tus GymPartners destacan en el GymPulse</div>
+                  <div className="text-[7px] text-[#FFD700] px-1 mt-0.5">Tu Fuerza del equipo activa — tus GymPartners destacan en el GymPulse</div>
                 )}
                 {isDeveloper && showPartners && (
                   <div className="text-[7px] text-[#FFD700]/80 px-1 mt-0.5">DEV: arrastra pins PARTNERS para mover • +Add rápido (click mapa crea tienda) • Manage para borrar/editar • popups tienen 🗑️ Borrar</div>

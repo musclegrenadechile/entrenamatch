@@ -413,7 +413,7 @@ export function SyncArenaView({
         <section className="arena-fullscreen__timeline mx-4 mb-2">
           <div className="flex items-center justify-between mb-1">
             <span className="text-[9px] text-[#22c55e]/70 uppercase tracking-wider">
-              Ritual en vivo ({syncActions.length})
+              Sync en vivo ({syncActions.length})
             </span>
             <button type="button" onClick={onReplay} className="text-[9px] text-[#FF671F] underline">
               Replay

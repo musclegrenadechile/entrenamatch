@@ -39,7 +39,7 @@ export function ArenaFomoStrip({
     if (legendUnlocked) {
       m.push('⭐ Modo Highlight activo — la ciudad siente esta sesión')
     } else if (syncVibe >= 60) {
-      m.push(`⚡ A ${80 - syncVibe} pts del Highlight legendario — una acción más y explota`)
+      m.push(`⚡ A ${80 - syncVibe} pts del highlight de sync — una acción más y explota`)
     }
     if (minsToStory > 0 || secsToStory > 0) {
       const label =

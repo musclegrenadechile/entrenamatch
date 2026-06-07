@@ -736,7 +736,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           }).addTo(mapInstanceRef.current)
           ;(pinMarker as any)._isEchoPin = true
           markersRef.current.push(pinMarker)
-          pinMarker.bindPopup(`<div style="font-size:11px">Highlight de la red<br/><strong>${pin.label || 'Sync legendario'}</strong></div>`)
+          pinMarker.bindPopup(`<div style="font-size:11px">Highlight de la red<br/><strong>${pin.label || 'Sync destacado'}</strong></div>`)
         } catch {}
       })
 
@@ -980,7 +980,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           onClick={() => onShowOnlyLegendsChange && onShowOnlyLegendsChange(!showOnlyLegends)}
           className={`text-[8px] px-2 py-0.5 rounded-full border transition ${showOnlyLegends ? 'bg-[#FFD700] text-black border-[#FFD700]' : 'bg-black/70 text-[#FFD700] border-[#FFD700]/40 hover:bg-[#FFD700]/10'}`}
         >
-          {showOnlyLegends ? '✓ Mi Red (Network Power)' : 'Solo Mi Red de Alto Rendimiento'}
+          {showOnlyLegends ? '✓ Mi Red (Fuerza del equipo)' : 'Solo mi red de sync'}
         </button>
 
         <button

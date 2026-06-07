@@ -121,7 +121,7 @@ export function ProfileMuroSection(props: ProfileTabProps) {
     <div className="text-sm font-semibold text-[#FF671F] mb-1 flex items-center gap-2">
       <span>✍️</span> ¿Qué lograste hoy en tu red?
     </div>
-    <div className="text-[11px] text-[#9CA3AF] mb-3">Comparte tu entreno, un Sync épico o un PR. Tu red gana Momentum y tú construyes tu legado visible. ¡Posts con foto dan +5 extra!</div>
+    <div className="text-[11px] text-[#9CA3AF] mb-3">Comparte tu entreno, un Sync épico o un PR. Tu red gana Constancia y tú construyes historial visible. ¡Posts con foto dan +5 extra!</div>
 
     {/* Quick achievement templates - makes posting logros frictionless and celebratory (IG story style but performance) */}
     <div className="flex flex-wrap gap-1.5 mb-3">
@@ -158,7 +158,7 @@ export function ProfileMuroSection(props: ProfileTabProps) {
             'El pico del sync • imbatible',
             'Momento que nadie más presenció',
             'Mi entreno más puro y salvaje',
-            'Leyenda capturada hoy',
+            'Highlight de hoy',
             'Vibe máxima • este es el que cuenta'
           ].map((sug, i) => (
             <button key={i} onClick={() => setMuroComposerText(sug)} className="text-[9px] px-2 py-0.5 rounded-full border border-[#FFD700]/30 text-[#f5e8c7] hover:bg-[#FFD700]/10 active:bg-[#FFD700]/20">

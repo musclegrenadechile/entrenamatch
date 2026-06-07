@@ -41,7 +41,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
           </div>
           <div>
             <div className="momentum-number tabular-nums">{dailyPulse.momentum}</div>
-            <div className="text-[9px] text-[#9CA3AF] -mt-1 font-medium tracking-widest">MOMENTUM</div>
+            <div className="text-[9px] text-[#9CA3AF] -mt-1 font-medium tracking-widest">CONSTANCIA</div>
           </div>
         </div>
       </div>
@@ -58,7 +58,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
         </div>
         <div className="flex-1 bg-black/40 rounded-2xl p-2 text-center border border-[#EAB308]/30 ring-1 ring-inset ring-[#EAB308]/10">
           <div className="text-lg font-black text-[#EAB308] flex items-center justify-center gap-0.5">🎙️{dailyPulse.voiceStreak || 0}</div>
-          <div className="text-[8px] text-[#EAB308]/90 font-medium tracking-wide">VOICE RITUAL</div>
+          <div className="text-[8px] text-[#EAB308]/90 font-medium tracking-wide">NOTAS DE VOZ</div>
         </div>
         <div className="flex-1 bg-black/40 rounded-2xl p-2 text-center border border-[#06B6D4]/20">
           <div className="text-lg font-black text-[#06B6D4] flex items-center justify-center gap-0.5">🗺️{dailyPulse.pulseStreak || 0}</div>
@@ -159,14 +159,14 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
                   </button>
                 )}
               </div>
-              <div className="text-[8px] text-[#FFD700] mt-1">Recompensa: +{dailyPulse.currentChallenge.reward} Momentum para ti y tu Red</div>
+              <div className="text-[8px] text-[#FFD700] mt-1">Recompensa: +{dailyPulse.currentChallenge.reward} Constancia para ti y tu Red</div>
             </div>
           </div>
         </div>
       )}
 
       {/* Spend Momentum - premium, impactful, clear payoff */}
-      <div className="text-[9px] uppercase tracking-[1px] text-[#9CA3AF] mb-1 mt-2">Gasta Momentum — impacto real en tu pulso y el de tu red</div>
+      <div className="text-[9px] uppercase tracking-[1px] text-[#9CA3AF] mb-1 mt-2">Gasta Constancia — impacto real en tu pulso y el de tu red</div>
       <div className="flex gap-2">
         <button 
           onClick={() => {
@@ -178,7 +178,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
               saveUserWithRealSync({ ...(currentUser as any), pulseAmplifiedDate: todayStr, momentumPoints: ampPulse.momentum } as any)
               toast.success('GymPulse amplificado', { description: 'Tu actividad ahora tiene más peso en el GymPulse de tus GymPartners por 24h' })
             } else {
-              toast('Necesitas 30 Momentum')
+              toast('Necesitas 30 Constancia')
             }
           }}
           className="flex-1 text-[10px] py-2 rounded-2xl border border-[#FF671F]/40 active:bg-[#FF671F]/10 active:scale-[0.985] hover:bg-[#FF671F]/5 transition-all text-[#FF671F] flex flex-col items-center leading-tight"
@@ -199,7 +199,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
               const bondIds = Object.keys(syncBonds || {})
               const target = bondIds.length > 0 ? bondIds[Math.floor(Math.random() * bondIds.length)] : null
               toast.success('Socio ignitado', { description: target ? `+protección de streak enviada a ${syncBonds[target]?.name || 'socio' } hoy` : 'Protección de streak enviada a tu Red' })
-            } else toast('Necesitas 20 Momentum')
+            } else toast('Necesitas 20 Constancia')
           }}
           className="flex-1 text-[10px] py-2 rounded-2xl border border-[#22c55e]/40 active:bg-[#22c55e]/10 active:scale-[0.985] hover:bg-[#22c55e]/5 transition-all text-[#22c55e] flex flex-col items-center leading-tight"
         >
@@ -215,9 +215,9 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
               const protectedPulse = { ...dailyPulse, streakProtectedDate: todayStr, momentum: (dailyPulse.momentum || 0) - 50 }
               setDailyPulse(protectedPulse)
               saveUserWithRealSync({ ...(currentUser as any), streakProtectedDate: todayStr, momentumPoints: protectedPulse.momentum } as any)
-              toast.success('Streak protegido', { description: 'No perderás tu racha si no entrenas hoy. ¡Buen uso de Momentum!' })
+              toast.success('Streak protegido', { description: 'No perderás tu racha si no entrenas hoy. ¡Buen uso de Constancia!' })
             } else {
-              toast('Necesitas 50 Momentum para proteger')
+              toast('Necesitas 50 Constancia para proteger')
             }
           }}
           className="flex-1 text-[10px] py-2 rounded-2xl border border-[#EAB308]/40 active:bg-[#EAB308]/10 active:scale-[0.985] hover:bg-[#EAB308]/5 transition-all text-[#EAB308] flex flex-col items-center leading-tight"

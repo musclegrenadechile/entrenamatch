@@ -93,7 +93,7 @@ export const AuthScreen = ({
         <div className="flex justify-center mb-5">
           <div className="inline-flex items-center gap-2 text-[10px] font-bold tracking-[1.5px] bg-white/5 text-[#FF671F] border border-[#FF671F]/30 px-4 py-1 rounded-full">
             <span className="w-1.5 h-1.5 bg-[#FF671F] rounded-full animate-pulse" />
-            ACCESO EXCLUSIVO • EL RITUAL COMIENZA AQUÍ
+            ACCESO EXCLUSIVO • TU EQUIPO TE ESPERA
           </div>
         </div>
 
@@ -218,9 +218,9 @@ export const AuthScreen = ({
               className="auth-primary-btn w-full py-[17px] rounded-2xl text-base disabled:opacity-70 flex items-center justify-center gap-2"
             >
               {authLoading ? (
-                'Abriendo el ritual...'
+                'Entrando...'
               ) : (
-                authMode === 'register' ? 'Abrir mi cuenta y entrar' : 'Entrar al ritual'
+                authMode === 'register' ? 'Abrir mi cuenta y entrar' : 'Entrar a EntrenaMatch'
               )}
             </motion.button>
 
@@ -293,7 +293,7 @@ export const AuthScreen = ({
               onClick={handleDemo}
               className="auth-demo-btn w-full flex items-center justify-center gap-2 py-3.5 border rounded-2xl text-sm font-semibold active:scale-[0.985]"
             >
-              ⚡ Quiero sentir el ritual ahora (demo sin cuenta)
+              ⚡ Probar ahora (demo sin cuenta)
             </button>
           </div>
         </div>

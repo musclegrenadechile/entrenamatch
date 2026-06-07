@@ -402,7 +402,7 @@ export const OnboardingFlow = ({
           </motion.div>
           <div className="flex-1">
             <div className="font-black text-4xl tracking-[-2px] text-white">ENTRENAMATCH</div>
-            <div className="text-[#FF671F] text-xs tracking-[3px] font-mono -mt-1">LA PRIMERA RED DEL RITUAL FITNESS</div>
+            <div className="text-[#FF671F] text-xs tracking-[3px] font-mono -mt-1">TU EQUIPO DE GYM EN VIVO</div>
           </div>
           {!isEditingProfile && (
             <button 
@@ -418,9 +418,9 @@ export const OnboardingFlow = ({
           <div className="flex items-center justify-between">
             <div>
               <div className="text-4xl font-black tracking-[-1.5px] leading-none mb-1 text-white">
-                {isEditMode ? 'REMASTERIZA TU PRESENCIA' : 'CREA TU RITUAL'}
+                {isEditMode ? 'REMASTERIZA TU PRESENCIA' : 'CREA TU PERFIL'}
               </div>
-              <div className="text-[#9CA3AF] text-base max-w-md">Tu perfil no es un formulario. Es tu entrada a la red de GymPartners donde el entrenamiento se vuelve legendario. Único. Con peso real en el GymPulse.</div>
+              <div className="text-[#9CA3AF] text-base max-w-md">Tu perfil es tu entrada a la red de GymPartners. Entrena en vivo, sincronízate y deja historial compartido en el GymPulse.</div>
             </div>
           </div>
         </div>
@@ -428,12 +428,12 @@ export const OnboardingFlow = ({
         {/* Epic Ritual Progress - Visual path, not boring dots */}
         <div className="mb-4">
           <div className="flex items-center justify-between text-xs mb-2 px-1">
-            <div className="font-mono text-[#FF671F] tracking-[2px]">{isEditMode ? 'EDIT' : 'RITUAL'} {onboardingStep + 1} / 4 • {Math.round((onboardingStep+1)/4 * 100)}% EN EL PULSO</div>
+            <div className="font-mono text-[#FF671F] tracking-[2px]">{isEditMode ? 'EDIT' : 'PASO'} {onboardingStep + 1} / 4 • {Math.round((onboardingStep+1)/4 * 100)}% EN EL PULSO</div>
             <div className="text-[#9CA3AF] text-[10px] font-medium">
               {onboardingStep === 0 && (isEditMode ? 'PRESENCIA' : 'PRESENCIA EN EL CÍRCULO')}
               {onboardingStep === 1 && 'TU ESENCIA DE RENDIMIENTO'}
               {onboardingStep === 2 && 'EL PULSO VIVO (LA MAGIA)'}
-              {onboardingStep === 3 && (isEditMode ? 'GUARDAR CAMBIOS' : 'LOS VOTOS • ENTRA AL RITUAL')}
+              {onboardingStep === 3 && (isEditMode ? 'GUARDAR CAMBIOS' : 'LISTO • ENTRAR A LA RED')}
             </div>
           </div>
           <div className="h-1.5 bg-[#1C1C20] rounded-full overflow-hidden flex">
@@ -459,7 +459,7 @@ export const OnboardingFlow = ({
         {onboardingStep === 0 && (
           <div className="space-y-6">
             <div>
-              <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1 font-medium">PRIMER RITUAL • TU NOMBRE EN EL CÍRCULO</div>
+              <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1 font-medium">PASO 1 • TU NOMBRE EN LA RED</div>
               <input 
                 type="text" 
                 value={onboardData.name} 
@@ -474,7 +474,7 @@ export const OnboardingFlow = ({
             <div>
               <div className="flex justify-between items-end mb-2">
                 <div>
-                  <div className="text-sm font-semibold tracking-wider">TU GALERÍA DEL RITUAL (hasta 6)</div>
+                  <div className="text-sm font-semibold tracking-wider">TUS FOTOS DE ENTRENO (hasta 6)</div>
                   <div className="text-[10px] text-[#9CA3AF]">La primera es tu presencia principal. Arrastra/reordena después en Perfil.</div>
                 </div>
                 <div className="text-[10px] text-[#FF671F] font-mono">{(onboardData.photos || []).length}/6</div>
@@ -502,7 +502,7 @@ export const OnboardingFlow = ({
                   <div className="grid grid-rows-2 gap-2.5">
                     <button onClick={() => { try { triggerHaptic('medium') } catch {}; takeNativePhoto() }} className="border-2 border-[#FF671F] rounded-2xl flex flex-col items-center justify-center text-[#FF671F] text-xs active:bg-[#FF671F]/10 active:scale-[0.985] transition">
                       <Camera size={22} className="mb-1" />
-                      <span className="font-bold tracking-wider">CÁMARA DEL RITUAL</span>
+                      <span className="font-bold tracking-wider">CÁMARA</span>
                       <span className="text-[8px] opacity-60">NATIVA • RÁPIDA</span>
                     </button>
                     <label className="border-2 border-dashed border-[#FF671F]/40 rounded-2xl flex flex-col items-center justify-center text-xs cursor-pointer active:bg-[#1C1C20] text-[#9CA3AF]">
@@ -520,7 +520,7 @@ export const OnboardingFlow = ({
             {/* Bio + Mantra - Unique & attractive */}
             <div>
               <div className="flex justify-between text-sm mb-1.5">
-                <div className="font-semibold tracking-wider">TU BIO DEL RITUAL + MANTRA (corta, poderosa)</div>
+                <div className="font-semibold tracking-wider">TU BIO + MANTRA (corta, directa)</div>
                 <span className="text-[#FF671F] text-xs font-mono">{(onboardData.bio || '').length}/160</span>
               </div>
               <textarea 
@@ -546,7 +546,7 @@ export const OnboardingFlow = ({
         {onboardingStep === 1 && (
           <div className="space-y-7">
             <div>
-              <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1.5">TU ESENCIA • ELIGE TUS RITUALES (1-3)</div>
+              <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1.5">TU ESENCIA • ELIGE TUS ENTRENOS (1-3)</div>
               <div className="grid grid-cols-2 gap-2">
                 {TRAINING_OPTIONS.map((type: string) => {
                   const selected = (onboardData.trainingTypes || []).includes(type);
@@ -608,7 +608,7 @@ export const OnboardingFlow = ({
                 </div>
                 <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
                   <div className="text-[#22c55e] text-xl font-black mt-0.5">03</div>
-                  <div><span className="font-bold">CREAS ENTRENASYNC</span><br/><span className="text-[#9CA3AF] text-xs">Acciones en vivo (flexiones juntos se sienten en ambos). Tether dorado en el mapa. +Network Power real para tu Red.</span></div>
+                  <div><span className="font-bold">CREAS ENTRENASYNC</span><br/><span className="text-[#9CA3AF] text-xs">Acciones en vivo (flexiones juntos se sienten en ambos). Tether dorado en el mapa. +Fuerza del equipo real para tu Red.</span></div>
                 </div>
                 <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
                   <div className="text-[#22c55e] text-xl font-black mt-0.5">04</div>
@@ -625,7 +625,7 @@ export const OnboardingFlow = ({
                 <div className="text-[#FFD700]">⟷</div>
                 <div className="bg-[#FFD700] text-black px-2 py-0.5 rounded font-bold">TETHER DORADO CON TU RED</div>
               </div>
-              <div className="text-[9px] text-[#9CA3AF] mt-1">+25 Network Power • ripples que viajan • tu primer match en &lt;30s</div>
+              <div className="text-[9px] text-[#9CA3AF] mt-1">+25 Fuerza del equipo • ondas en el mapa • tu primer match en &lt;30s</div>
             </div>
 
             <div className="text-center">
@@ -640,7 +640,7 @@ export const OnboardingFlow = ({
               >
                 {onboardData.wantsToGoLive ? '✅ SÍ, ACTIVA MI PRIMER PULSO VIVO AL TERMINAR' : '🚀 SÍ — QUIERO SENTIR EL PULSO VIVO AHORA'}
               </button>
-              <div className="text-[10px] text-[#9CA3AF] mt-2 max-w-xs mx-auto">Banner verde al instante. En mapa + explore. 30s después ya puedes dar tu primer like y crear tu primer Sync legendario.</div>
+              <div className="text-[10px] text-[#9CA3AF] mt-2 max-w-xs mx-auto">Banner verde al instante. En mapa + explore. 30s después ya puedes dar tu primer like y crear tu primer EntrenaSync.</div>
             </div>
           </div>
         )}
@@ -649,7 +649,7 @@ export const OnboardingFlow = ({
         {onboardingStep === 3 && (
           <div className="space-y-5">
             <div className="text-center">
-              <div className="uppercase tracking-[2px] text-[#FF671F] text-xs mb-1">ÚLTIMO RITUAL</div>
+              <div className="uppercase tracking-[2px] text-[#FF671F] text-xs mb-1">ÚLTIMO PASO</div>
               <div className="text-2xl font-black tracking-[-1px]">LOS 3 VOTOS DEL CÍRCULO</div>
               <div className="text-[#9CA3AF] text-sm mt-1">Sella tu entrada a la red de GymPartners donde el esfuerzo se comparte y tiene peso real.</div>
             </div>
@@ -690,7 +690,7 @@ export const OnboardingFlow = ({
             <div className="mt-2 p-5 rounded-3xl bg-gradient-to-br from-[#0a120f] to-[#111113] border-2 border-[#22c55e]/50 text-center">
               <div className="text-[#22c55e] font-black text-sm tracking-widest mb-1">AL SELLAR ESTOS VOTOS</div>
               <div className="text-sm leading-snug text-white/90">Si activaste Live → tu punto verde pulsa en el mapa al instante.<br/>Ve a <span className="font-bold text-[#FF671F]">EXPLORAR</span> → ❤️ en el primero que veas cerca = chat + match en &lt;20s.<br/>Luego abre el chat y toca <span className="font-bold">"INICIAR ENTRENASYNC"</span> y siente el tether dorado.</div>
-              <div className="text-[9px] text-[#22c55e] mt-2 tracking-wider">BIENVENIDO AL CÍRCULO. TU PRIMER RITUAL EMPIEZA AHORA.</div>
+              <div className="text-[9px] text-[#22c55e] mt-2 tracking-wider">BIENVENIDO A LA RED. TU PRIMER LIVE EMPIEZA AHORA.</div>
             </div>
           </div>
         )}
@@ -701,12 +701,12 @@ export const OnboardingFlow = ({
         <div className="flex-shrink-0 pt-2 pb-3 flex flex-col gap-2 bg-[#0D0D10] border-t-2 border-[#2F2F35]">
           {onboardingStep > 0 && (
             <button onClick={() => { try { triggerHaptic('light') } catch {}; setOnboardingStep(onboardingStep - 1) }} className="w-full py-2.5 text-xs uppercase tracking-[1.5px] rounded-2xl border border-[#2F2F35] active:bg-[#1f242b] text-[#9CA3AF]">
-              ← VOLVER AL RITUAL ANTERIOR
+              ← VOLVER AL PASO ANTERIOR
             </button>
           )}
 
           {onboardingStep === 1 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0) && (
-            <p className="text-center text-[9px] text-[#ef4444] font-medium tracking-wider">ELIGE AL MENOS UN RITUAL DE MOVIMIENTO Y TU FUEGO PRINCIPAL</p>
+            <p className="text-center text-[9px] text-[#ef4444] font-medium tracking-wider">ELIGE AL MENOS UN TIPO DE ENTRENO Y TU FUEGO PRINCIPAL</p>
           )}
 
           {onboardingStep === 3 && !Object.values(localConsents).every(Boolean) && (
@@ -722,9 +722,9 @@ export const OnboardingFlow = ({
               onboardingStep === 1 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0)
             }
           >
-            {onboardingStep < 3 ? 'CONTINUAR EL RITUAL →' : '¡SELLAR LOS VOTOS • ENTRAR AL CÍRCULO DEL PULSO!'}
+            {onboardingStep < 3 ? 'CONTINUAR →' : '¡ENTRAR A ENTRENAMATCH!'}
           </button>
-          <div className="text-center text-[8px] text-[#9CA3AF] tracking-[1px]">TU PERFIL ÚNICO EN EL CÍRCULO • PRIMER PULSO EN &lt;90s. HAZLO LEGENDARIO.</div>
+          <div className="text-center text-[8px] text-[#9CA3AF] tracking-[1px]">TU PERFIL EN LA RED • PRIMER LIVE EN &lt;90s</div>
         </div>
       </div>
     </div>

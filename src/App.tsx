@@ -749,7 +749,7 @@ function App() {
       saveUserWithRealSync({ ...(currentUser as any), dailyVoiceStreak: vStreak } as any)
       // Premium toast celebrating the ritual voice + streak
       toast.success('Nota enviada a tu GymPartner', { 
-        description: `${duration}s • Voice Streak ${vStreak}d 🔥  +5 Momentum en el GymPulse` 
+        description: `${duration}s • Racha de voz ${vStreak}d 🔥  +5 Constancia en el GymPulse` 
       })
       // Daily Pulse progress (voice is powerful for bond/ripple challenges)
       if (dp.currentChallenge?.type === 'bond' || dp.currentChallenge?.type === 'network') {
@@ -934,7 +934,7 @@ function App() {
   // Gadgets atados a las 5 mecánicas para que se sientan "reales" y motivadores.
   const GADGETS = [
     { level: 5, name: 'Halo Élite', icon: '✨', desc: 'Tu marcador en el mapa brilla con halo dorado extra (más visible para la red)', effect: 'map-halo' },
-    { level: 10, name: 'Tether Legendario', icon: '🌟', desc: 'Tethers en EntrenaSync son dorados y más gruesos para ti', effect: 'golden-tether' },
+    { level: 10, name: 'Tether dorado Sync', icon: '🌟', desc: 'Tethers en EntrenaSync son dorados y más gruesos para ti', effect: 'golden-tether' },
     { level: 15, name: 'Sync Elite', icon: '🔥', desc: 'Acciones y emojis especiales solo para niveles altos en EntrenaSync', effect: 'exclusive-emojis' },
     { level: 20, name: 'Pulso Maestro', icon: '🌀', desc: 'Tus ripples/ondas en el mapa son más grandes y con color único', effect: 'map-ripple-boost' },
     { level: 25, name: 'Aura de Campeón', icon: '👑', desc: 'Badge especial + prioridad en lista live y recomendaciones', effect: 'priority' },
@@ -1108,7 +1108,7 @@ function App() {
       saveUserWithRealSync({ ...u, ...update } as any)
 
       toast.success('¡Nuevo GymPulse Diario!', {
-        description: `${challenge.icon} ${challenge.title} • +${challenge.reward} Momentum para tus GymPartners`
+        description: `${challenge.icon} ${challenge.title} • +${challenge.reward} Constancia para tus GymPartners`
       })
 
       const notif = {
@@ -1175,7 +1175,7 @@ function App() {
       try { triggerConfetti() } catch {}
       const newGadgets = getUnlockedGadgets(computedLevel).filter(g => g.level > prevLevel)
       const gadgetText = newGadgets.length > 0 ? ` + ${newGadgets.map(g=>g.name).join(', ')} desbloqueado(s)!` : ''
-      toast.success(`¡Subiste a NIVEL ${computedLevel}!`, { description: `Perk permanente: +8% Momentum en desafíos. ${gadgetText} ¡Tu retención es legendaria!` })
+      toast.success(`¡Subiste a NIVEL ${computedLevel}!`, { description: `Perk permanente: +8% Constancia en desafíos. ${gadgetText} ¡Tu constancia sube!` })
       createProfilePost(`⭐ ¡NIVEL ${computedLevel} DE RETENCIÓN! Mi constancia diaria hace fuerte a toda la Red.${newGadgets.length ? ' Gadget: ' + newGadgets[0].name : ''}`, null, 'dailyPulse').catch(() => {})
     }
 
@@ -1197,11 +1197,11 @@ function App() {
 
     if (justCompleted) {
       try { triggerHaptic('success') } catch {}
-      toast.success(`¡GymPulse completado! +${levelBonus} Momentum`, {
+      toast.success(`¡GymPulse completado! +${levelBonus} Constancia`, {
         description: `${ch.icon} ${ch.title} • Nivel ${dailyPulse.level} • Tu Red se fortalece`
       })
 
-      const postText = `✅ Completé mi GymPulse Diario: ${ch.title}. ${ch.description} — Momentum para mis GymPartners 🔥`
+      const postText = `✅ Completé mi GymPulse Diario: ${ch.title}. ${ch.description} — Constancia para mis GymPartners 🔥`
       try {
         await createProfilePost(postText, null, 'dailyPulse')
       } catch (e) { /* non fatal */ }
@@ -1210,7 +1210,7 @@ function App() {
         const partnerId = Object.keys(syncBonds || {})[0]
         if (partnerId) {
           const bonus = Math.floor(ch.reward / 2)
-          toast(`+${bonus} Momentum compartido con tu Red`, { description: 'El impacto se multiplica' })
+          toast(`+${bonus} Constancia compartida con tu Red`, { description: 'El impacto se multiplica' })
         }
       }
 
@@ -1233,9 +1233,9 @@ function App() {
         const milUpdate = { ...updatedPulse, momentum: (updatedPulse.momentum || 0) + bonus }
         setDailyPulse(milUpdate)
         saveUserWithRealSync({ ...(currentUser as any), momentumPoints: milUpdate.momentum, streakProtectedDate: updatedPulse.streakProtectedDate, pulseAmplifiedDate: updatedPulse.pulseAmplifiedDate } as any)
-        toast.success(`¡Milestone de Streak! +${bonus} Momentum`, { description: `${streak}d streak legendario - ¡Eres una máquina!` })
+        toast.success(`¡Milestone de Streak! +${bonus} Constancia`, { description: `${streak}d de racha activa — ¡Sigue así!` })
         // Special post
-        createProfilePost(`🔥 STREAK LEGENDARIO ${streak}d - Mis GymPartners me hacen imparable. GymPulse Diario completado.`, null, 'dailyPulse').catch(()=>{})
+        createProfilePost(`🔥 RACHA ${streak}d — Mis GymPartners me hacen imparable. GymPulse Diario completado.`, null, 'dailyPulse').catch(()=>{})
       }
     } else {
       toast(`+${progressInc} progreso en el GymPulse`)
@@ -1250,7 +1250,7 @@ function App() {
     const up = { ...dailyPulse, momentum: newM }
     setDailyPulse(up)
     saveUserWithRealSync({ ...(base as any), momentumPoints: newM, streakProtectedDate: dailyPulse?.streakProtectedDate, pulseAmplifiedDate: dailyPulse?.pulseAmplifiedDate } as any)
-    toast(`+${amount} Momentum`, { description: reason })
+    toast(`+${amount} Constancia`, { description: reason })
   }
   const [witnessData, setWitnessData] = useState<any>(null) // for shared session highlight replay: replay of a strong EntrenaSync (shared state, actions, vibe) that can be archived as co-authored performance memory
 
@@ -1504,7 +1504,7 @@ const sanitizeForFirestore = (obj: any): any => {
       if (hour >= 18 && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow && dailyPulse.streakProtectedDate !== getTodayStr()) {
         const timer = setTimeout(() => {
           toast.error('¡Streak en riesgo esta noche!', {
-            description: `Tu ${dailyPulse.trainingStreak}d training streak se resetea si no entrenas. Protege con Momentum o 20min ya.`
+            description: `Tu ${dailyPulse.trainingStreak}d training streak se resetea si no entrenas. Protege con Constancia o 20min ya.`
           })
         }, 1500)
         return () => clearTimeout(timer)
@@ -5704,7 +5704,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         witnessData: {
           actions: actionsSnap.slice(0, 6).map((a: any) => ({ ...a })),
           vibe: vibeNow,
-          partnerName: partner.name || partner.nombre || 'Compañero de ritual',
+          partnerName: partner.name || partner.nombre || 'Gym partner',
           photoUrl: actionsSnap.find((a: any) => a.photoUrl)?.photoUrl || null,
           label: isLegendRipple ? `⭐ ${label}` : `🌊 ${label}`,
           timestamp: Date.now(),
@@ -5731,7 +5731,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           witnessData: {
             actions: actionsSnap.slice(0, 6).map((a: any) => ({ ...a })),
             vibe: vibeNow,
-            partnerName: partner.name || partner.nombre || 'Compañero de ritual',
+            partnerName: partner.name || partner.nombre || 'Gym partner',
             photoUrl: actionsSnap.find((a: any) => a.photoUrl)?.photoUrl || null,
             label: `⭐ ${label}`,
             timestamp: Date.now(),
@@ -5947,7 +5947,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     const me = currentUserRef.current ?? currentUser
     if (!me?.trainingNow) {
       toast.error('Activa "Entrenando Ahora (EN VIVO)" primero', {
-        description: 'Usa el botón IR LIVE (abajo a la derecha) o el Ritual de Hoy.',
+        description: 'Usa el botón IR LIVE (abajo a la derecha) o la pestaña Hoy.',
       })
       return
     }
@@ -6315,7 +6315,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       const actionsForStory = (replaySession?.actions || syncActions).slice(0, 6)
       const actionSummary = actionsForStory.map((a: any) => `${a.emoji} ${a.label}${a.combo ? `x${a.combo}` : ''}`).join(' · ')
       const isNet = !!syncBonds[partnerId]
-      const storyText = `🔄 ENTRENASYNC COMPLETADO\n${minutes} min sincronizados con ${partnerName}\nSync Score final: ${syncVibe || 70}% • Calificación: ${rating}★\nAcciones clave: ${actionSummary}\n\nEntrenamos en sync real-time y subimos nuestro rendimiento. ${isNet ? `Esta fue una sesión de RED — Network Power activado. Tu grafo gana +${Math.floor(minutes / 3)} de fuerza y visibilidad global.` : `Esta alianza ya genera +${Math.floor(minutes * 1.2)} min de alto rendimiento compartido.`} Queda en nuestra red para siempre. #EntrenaSync`
+      const storyText = `🔄 ENTRENASYNC COMPLETADO\n${minutes} min sincronizados con ${partnerName}\nSync Score final: ${syncVibe || 70}% • Calificación: ${rating}★\nAcciones clave: ${actionSummary}\n\nEntrenamos en sync real-time y subimos nuestro rendimiento. ${isNet ? `Esta fue una sesión de RED — Fuerza del equipo activada. Tu grafo gana +${Math.floor(minutes / 3)} de fuerza y visibilidad global.` : `Esta alianza ya genera +${Math.floor(minutes * 1.2)} min de alto rendimiento compartido.`} Queda en nuestra red para siempre. #EntrenaSync`
       // Post to self (visible in my muro + feed)
       createProfilePost(storyText, null).catch(() => {})
       // Also post directly for the partner so BOTH get the beautiful shared story in their muro (true co-presence even after session ends)
@@ -6344,7 +6344,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       setReplaySession({ ...replaySession, rating })
     }
 
-    toast.success(`Sync con ${partnerName} calificado ${rating}/5`, { description: '¡Gracias! Ayuda a mejorar el matching + tu Bond Legend creció.' })
+    toast.success(`Sync con ${partnerName} calificado ${rating}/5`, { description: '¡Gracias! Ayuda a mejorar el matching + tu alianza de sync creció.' })
     setPendingSyncRating(null)
   }
 
@@ -6592,7 +6592,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         // Make the purpose *felt*: every action with a real bond from your red builds your Network Power visibly, and boosts the shared vibe — the social graph has real performance teeth.
         if (isBondedAction && (newCombo >= 2 || vibeGain > 10)) {
           const bondBoost = Math.max(1, Math.floor(vibeGain / 8))
-          toast.success(`❤️ Alianza fortalecida +${bondBoost} con tu socio de sync`, { description: 'Tu Network Power sube. Se propaga en tu red, mapa y feed – la red te hace más fuerte.' })
+          toast.success(`❤️ Alianza fortalecida +${bondBoost} con tu socio de sync`, { description: 'Tu Fuerza del equipo sube. Se propaga en tu red, mapa y feed – la red te hace más fuerte.' })
         }
 
         // PEQUEÑO TOQUE DISRUPTIVO: auto-captura de "momento de alta vibe" cuando cruza 80.
@@ -6605,8 +6605,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             at: Date.now(),
           }
           setSyncActions((prev) => [highAction, ...prev].slice(0, 30))
-          toast.success('⚡ ¡Highlight legendario!', {
-            description: 'La ciudad puede presenciarlo — momento épico en mapa + replay',
+          toast.success('⚡ ¡Highlight de sync!', {
+            description: 'La ciudad puede presenciarlo — momento destacado en mapa + replay',
           })
           triggerHaptic('medium')
           setTimeout(() => {
@@ -7337,7 +7337,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
     // Enhanced attractive in-app toast for messages (more visual pop, especially for legends)
     const isLegendMsg = !isGroup && !!syncBonds[chatId] // from your training network / red
-    const toastTitle = isLegendMsg ? `⭐ Mensaje de tu Red (Network Power) ${name}` : title
+    const toastTitle = isLegendMsg ? `⭐ Mensaje de tu Red (Fuerza del equipo) ${name}` : title
     const toastClass = isLegendMsg ? 'legend-message-toast' : '' // network msg gold for your red
     toast.info(toastTitle, {
       description: (
@@ -8477,7 +8477,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       if (syncBonds[profileId]) {
         const bond = syncBonds[profileId]
         toast.success(`⭐ Tu red • ${profile.name}`, {
-          description: `LV${bond.bondLevel || 1} • Network Power reforzado. Re-sync pronto para +rendimiento compartido y más visibilidad.`
+          description: `LV${bond.bondLevel || 1} • Fuerza del equipo reforzada. Re-sync pronto para +rendimiento compartido y más visibilidad.`
         })
       }
 
@@ -9139,7 +9139,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                       )}
                       {user.joinCount > 0 && <div className="text-[10px] text-[#22c55e] mt-0.5 font-medium">+{user.joinCount} se unieron a este live</div>}
                       {user.trainingSyncWith && <div className="text-[8px] text-[#22c55e] mt-0.5">🔄 En Sync ahora</div>}
-                      {!!syncBonds[user.id] && <div className="text-[7px] text-[#FFD700] mt-0.5 font-medium">Tu red • re-sync = +Network Power + impacto compartido</div>}
+                      {!!syncBonds[user.id] && <div className="text-[7px] text-[#FFD700] mt-0.5 font-medium">Tu red • re-sync = +Fuerza del equipo + impacto compartido</div>}
                     </div>
                     <div className="flex flex-col gap-1 self-center">
                       <button 
@@ -9810,7 +9810,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 >
                   <div className="text-2xl font-semibold mb-2">¡Bienvenido al prealpha!</div>
                   <p className="text-sm text-[#9CA3AF] mb-4">
-                    Estás entre los primeros en probar <strong>El match del movimiento</strong> con perfiles reales. <span className="text-[#FF671F]">¡Nuevo diseño con energía naranja estilo Dunkin' para que te atrape!</span>
+                    Estás entre los primeros en probar <strong>Tu equipo de gym en vivo</strong> con perfiles reales. <span className="text-[#FF671F]">Mapa en vivo, EntrenaSync y tu red de gym partners.</span>
                   </p>
 
                   <div className="bg-[#1C1C20] rounded-2xl p-4 text-left text-sm mb-5">
@@ -11998,7 +11998,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           {!notif.read && (
                             <div className="mt-1.5 inline-block w-1.5 h-1.5 bg-[#FF671F] rounded-full"></div>
                           )}
-                          {isLegendNotif && <div className="mt-1 text-[9px] text-[#FFD700] font-bold">⭐ De tu Red (Network Power)</div>}
+                          {isLegendNotif && <div className="mt-1 text-[9px] text-[#FFD700] font-bold">⭐ De tu Red (Fuerza del equipo)</div>}
                         </div>
                         {notif.photoUrl && (
                           <img src={notif.photoUrl} alt="" className="w-9 h-9 rounded-xl object-cover flex-shrink-0 border border-[#2F2F35]" />

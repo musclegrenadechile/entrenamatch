@@ -212,7 +212,7 @@ export function ProfileRendimientoSection(props: ProfileTabProps) {
           {isTogglingLive ? '⚡ Finalizando sesión...' : '⏹️ TERMINAR ENTRENAMIENTO Y DESACTIVAR VIVO'}
         </button>
         <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">
-          Al terminar, se quita tu marcador del mapa en tiempo real, se calcula tu duración y se suman puntos de Momentum + rachas.
+          Al terminar, se quita tu marcador del mapa en tiempo real, se calcula tu duración y se suman puntos de Constancia + rachas.
         </div>
       </>
     ) : (

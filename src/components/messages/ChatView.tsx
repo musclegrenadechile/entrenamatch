@@ -52,7 +52,7 @@ const QUICK_PROPOSALS = [
 ]
 
 const BOND_TEMPLATES = [
-  '🏆 Compartir nuestro último Sync Legendario',
+  '🏆 Compartir nuestro último EntrenaSync',
   '⭐ Postear mi eco de este bond',
   '🌊 Mencionar ripples de nuestro Arena',
 ]

@@ -106,7 +106,7 @@ export const ExploreTab = ({
     }
 
     if (isNetwork(profile)) {
-      reasons.unshift('Tu red • Network Power');
+      reasons.unshift('Tu red • Fuerza del equipo');
     }
 
     return reasons.slice(0, 2);
@@ -400,7 +400,7 @@ export const ExploreTab = ({
             {realProfiles && realProfiles.length > 0 && (
               <span className="text-[10px] text-[#FF671F] font-medium">+ {realProfiles.length} reales <span className="live-pill text-[8px]">en vivo</span></span>
             )}
-            <span className="text-[10px] text-[#FF671F]/70">• el match del movimiento</span>
+            <span className="text-[10px] text-[#FF671F]/70">• tu equipo de gym en vivo</span>
           </div>
         </div>
 
@@ -463,7 +463,7 @@ export const ExploreTab = ({
               <div className="text-2xl font-semibold tracking-tight mb-1">¡No más perfiles por hoy!</div>
               <p className="text-[#9CA3AF] max-w-[300px] mx-auto mb-4 text-sm">
                 {realProfiles.length > 0 
-                  ? 'Ajusta filtros o crea una sesión para que otros te encuentren. ¡El match del movimiento sigue!'
+                  ? 'Ajusta filtros o crea una sesión para que otros te encuentren. ¡Sigue buscando tu equipo!'
                   : 'Aún no hay perfiles reales. ¡Sé el primero en crear una sesión!'}
               </p>
 
@@ -625,7 +625,7 @@ export const ExploreTab = ({
       {topNetworks.length > 0 && (
         <div className="mt-4 mb-2 px-1">
           <div className="flex items-center justify-between mb-2 px-0.5">
-            <div className="font-semibold text-sm flex items-center gap-1 text-[#FFD700]">🔥 TOP REDES (Network Power global) <span className="text-[8px] bg-[#FFD700]/20 px-1 rounded text-black">LIVE</span></div>
+            <div className="font-semibold text-sm flex items-center gap-1 text-[#FFD700]">🔥 TOP REDES (Fuerza del equipo global) <span className="text-[8px] bg-[#FFD700]/20 px-1 rounded text-black">LIVE</span></div>
             <div className="text-[8px] text-[#9CA3AF]">Tu grafo mueve el pulso</div>
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -637,7 +637,7 @@ export const ExploreTab = ({
               >
                 <img src={n.profile.photos?.[0]} className="w-11 h-11 rounded-xl object-cover flex-shrink-0" alt="" />
                 <div className="min-w-0 flex-1">
-                  <div className="font-medium text-sm truncate flex items-center gap-1 text-[#FFD700]">{n.profile.name} <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">NP {n.np}</span></div>
+                  <div className="font-medium text-sm truncate flex items-center gap-1 text-[#FFD700]">{n.profile.name} <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">FE {n.np}</span></div>
                   <div className="text-[9px] text-[#9CA3AF] truncate">{n.numPartners} socios • {n.totalMin} min total • top con {n.topPartnerName}</div>
                   <div className="text-[8px] text-[#22c55e] mt-0.5">+{Math.floor(n.totalMin / 10)}% impacto colectivo en la red</div>
                 </div>

@@ -1,5 +1,5 @@
 {
-  "name": "EntrenaMatch - El match del movimiento",
+  "name": "EntrenaMatch - Tu equipo de gym en vivo",
   "short_name": "EntrenaMatch",
   "description": "Conecta con personas que entrenan cerca de ti en todo el mundo. Solo para mayores de 18 años. Lanzamiento inicial en Chile.",
   "start_url": "/entrenamatch/",
@@ -27,7 +27,7 @@
     {
       "name": "Tu zona — Hoy",
       "short_name": "Hoy",
-      "description": "Ritual diario, reto de ciudad y ranking local",
+      "description": "Tu día, reto de ciudad y ranking local",
       "url": "/entrenamatch/?tab=home",
       "icons": [{ "src": "/entrenamatch/favicon.svg", "sizes": "96x96" }]
     },

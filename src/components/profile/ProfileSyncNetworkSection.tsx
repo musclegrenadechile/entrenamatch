@@ -53,7 +53,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
       </div>
       <div className="text-right">
         <div className="text-lg font-bold text-[#FFD700]">{Object.keys(syncBonds).length} socios RED</div>
-        <div className="text-[10px] text-[#9CA3AF]">tu grafo • Network Power {networkStats.networkPower}</div>
+        <div className="text-[10px] text-[#9CA3AF]">tu grafo • Fuerza del equipo {networkStats.networkPower}</div>
       </div>
       <div className="text-right">
         <div className="text-lg font-bold text-[#22c55e]">{(currentUser as any).syncStreak || 0}</div>
@@ -95,7 +95,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
     {/* ULTRA VIVO: Live bonds right now - if any of your EntrenaSync legends are training live, show them with instant re-sync CTA. Makes bonds feel alive and valuable. */}
     {Object.keys(syncBonds).length > 0 && (
       <div className="mt-2 pt-2 border-t border-white/10">
-        <div className="text-[8px] uppercase tracking-[1px] text-[#FFD700]/80 mb-1">🔥 TU RED EN VIVO AHORA — re-sync = +Network Power + resultados que se propagan</div>
+        <div className="text-[8px] uppercase tracking-[1px] text-[#FFD700]/80 mb-1">🔥 TU RED EN VIVO AHORA — re-sync = +Fuerza del equipo + resultados que se propagan</div>
         <div className="flex flex-wrap gap-1">
           {liveTrainingNow.filter((u: any) => Object.keys(syncBonds).includes(u.id)).slice(0, 3).map((livePartner: any) => (
             <button
@@ -104,11 +104,11 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
               className="text-[8px] px-2 py-0.5 bg-[#FFD700]/20 hover:bg-[#FFD700]/30 text-[#FFD700] rounded-full active:scale-[0.95] transition flex items-center gap-1 border border-[#FFD700]/50 font-medium"
             >
               <span>{(livePartner.name || livePartner.nombre || '?').split(' ')[0]}</span> <span className="text-[6px] opacity-70">LV{syncBonds[livePartner.id]?.bondLevel || 1}</span>
-              <span className="text-[7px] opacity-80">🔄 Re-sync (sube Network Power)</span>
+              <span className="text-[7px] opacity-80">🔄 Re-sync (sube Fuerza del equipo)</span>
             </button>
           ))}
           {liveTrainingNow.filter((u: any) => Object.keys(syncBonds).includes(u.id)).length === 0 && (
-            <span className="text-[8px] text-[#9CA3AF]/70">Ninguno de tus legends está entrenando ahora</span>
+            <span className="text-[8px] text-[#9CA3AF]/70">Ninguno de tu red está entrenando ahora</span>
           )}
         </div>
       </div>
@@ -179,7 +179,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
     </div>
     {/* Network summary — epic social graph value. This is what makes EntrenaMatch the first real fitness social network: your sync alliances are a visible, compounding performance asset. */}
     <div className="mb-2 px-0.5">
-      <div className="text-[11px] font-bold text-[#FFD700] mb-0.5">Network Power: {networkStats.networkPower} — tu red de sync te hace más fuerte, más consistente y más visible</div>
+      <div className="text-[11px] font-bold text-[#FFD700] mb-0.5">Fuerza del equipo: {networkStats.networkPower} — tu red de sync te hace más fuerte, más consistente y más visible</div>
       {networkStats.networkPower > 30 && <div className="text-[8px] text-[#22c55e] mt-0.5">¡Tu red te da prioridad en el GymPulse del mapa, recomendaciones de alto rendimiento y +visibilidad global entre GymPartners!</div>}
       <div className="text-[9px] text-[#22c55e]">
         {networkStats.numPartners} socios • {networkStats.totalMin}min sincronizados • {networkStats.totalSessions} sesiones • Impacto colectivo en tu rendimiento: +{networkStats.estimatedImpact}%
@@ -200,7 +200,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
             </div>
             <div className="min-w-0 flex-1">
               <div className="font-semibold text-white/95 truncate flex items-center gap-1">{p?.name || 'Socio'} <span className="text-[8px] text-[#FF671F] font-mono">LV{b.bondLevel}</span>{liveTrainingNow.some(u => u.id === pid && u.trainingNow) && <span className="ml-1 text-[7px] px-1 bg-[#22c55e] text-black rounded font-bold animate-pulse">EN VIVO</span>}</div>
-              <div className="text-[9px] text-[#9CA3AF]">{b.totalMin}min • {b.sessions} sesiones • {b.avgRating}★ • <span className="text-[#22c55e]">tu Network Power sube con esta alianza</span></div>
+              <div className="text-[9px] text-[#9CA3AF]">{b.totalMin}min • {b.sessions} sesiones • {b.avgRating}★ • <span className="text-[#22c55e]">tu Fuerza del equipo sube con esta alianza</span></div>
               <div className="legend-flame text-[12px] leading-none mt-0.5">{flames}</div>
               {/* Visual bond progress bar */}
               <div className="mt-1 h-1 bg-white/10 rounded overflow-hidden">
@@ -215,7 +215,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
         )
       })}
     </div>
-    <div className="text-[8px] text-center text-[#22c55e]/60 mt-1">Re-sync para subir tu Network Power, fortalecer alianzas y desbloquear prioridad en el mapa + mejores recomendaciones de alto rendimiento</div>
+    <div className="text-[8px] text-center text-[#22c55e]/60 mt-1">Re-sync para subir tu Fuerza del equipo, fortalecer alianzas y desbloquear prioridad en el mapa + mejores recomendaciones</div>
     {Object.keys(syncBonds).length > 4 && (
       <div className="text-center mt-1">
         <button onClick={() => setActiveTab('profile')} className="text-[8px] text-[#FF671F] underline">Ver toda tu red ({Object.keys(syncBonds).length} socios) →</button>
@@ -226,7 +226,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
       <button onClick={() => setActiveTab('explore')} className="text-[8px] px-2 py-0.5 bg-[#22c55e]/10 text-[#22c55e] rounded active:bg-[#22c55e]/20">Explora más socios para expandir tu red →</button>
       <button 
         onClick={() => {
-          const msg = `🔥 Entreno en EntrenaMatch con mis GymPartners. Syncs reales dan +Network Power, prioridad en el GymPulse y resultados que se propagan. ¿Entrenamos juntos? https://musclegrenadechile.github.io/entrenamatch/`;
+          const msg = `🔥 Entreno en EntrenaMatch con mis GymPartners. Syncs reales dan +Fuerza del equipo, prioridad en el GymPulse y resultados que se propagan. ¿Entrenamos juntos? https://musclegrenadechile.github.io/entrenamatch/`;
           navigator.clipboard?.writeText(msg).then(() => toast.success('Mensaje copiado', { description: 'Comparte con tu red para invitarlos a construir el grafo de alto rendimiento.' })).catch(() => toast('Invita a tu red abriendo el app con ellos.'));
         }}
         className="text-[8px] px-2 py-0.5 bg-[#FFD700]/20 text-[#FFD700] rounded active:bg-[#FFD700]/30 font-medium"
