@@ -10,6 +10,7 @@ export interface NotificationNavTarget {
   groupChatId?: string
   selectedSquad?: string
   showDailyPulse?: boolean
+  showSyncArena?: boolean
   startSyncWith?: { partnerId: string; partnerName?: string }
 }
 
@@ -64,6 +65,10 @@ export function resolveNotificationTarget(
       return { tab: 'sesiones', groupChatId: id }
     }
     return { tab: 'explore', startSyncWith: { partnerId: id } }
+  }
+
+  if (notif.type === 'sync_invite' && id) {
+    return { tab: 'explore', showSyncArena: true, startSyncWith: { partnerId: id } }
   }
 
   return null

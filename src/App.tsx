@@ -84,6 +84,8 @@ import { useDemoAuth } from './hooks/useDemoAuth'
 import { useProfile } from './hooks/useProfile'
 import { useFilters } from './hooks/useFilters'
 import { useSquads } from './hooks/useSquads'
+import { useRealSessions } from './hooks/useRealSessions'
+import { useSwipeDeck } from './hooks/useSwipeDeck'
 import { ExploreTab } from './components/explore/ExploreTab'
 import { AuthScreen } from './components/auth/AuthScreen'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
@@ -101,7 +103,13 @@ import {
 import { attachUserPostsListener } from './services/profilePosts'
 import { attachDirectChatListener, type DirectChatMsg } from './services/chatMessages'
 import { processLikeAndMaybeMatch } from './services/matching'
-import { loadSwipeStateForUser, writePass } from './services/swipeState'
+import { writePass } from './services/swipeState'
+import {
+  attachIncomingSyncListener,
+  attachActiveSyncSessionListener,
+  buildSyncSessionId,
+} from './services/syncSessions'
+import { triggerHaptic } from './utils/haptics'
 import {
   attachGroupMessagesListener,
   mapGroupMessageDoc,
@@ -696,8 +704,14 @@ function App() {
     leaveSquad: _leaveSquad 
   } = useSquads()
 
-  const [likedIds, setLikedIds] = useState<string[]>([])
-  const [passedIds, setPassedIds] = useState<string[]>([])
+  const {
+    likedIds,
+    passedIds,
+    saveLiked,
+    savePassed,
+    resetDeck: resetSwipeDeck,
+  } = useSwipeDeck({ isDemoMode, db, firebaseUser })
+
   const [matches, setMatches] = useState<string[]>([]) // profile ids you matched with
   const [messages, setMessages] = useState<Record<string, Message[]>>({})
   const [activeChat, setActiveChat] = useState<string | null>(null)
@@ -2054,7 +2068,13 @@ useEffect(() => {
     const isKnownRealProfile = realProfiles.some(r => r.id === chatId)
     return realMatches.includes(chatId) || isKnownRealProfile
   }
-  const [realSessions, setRealSessions] = useState<TrainingSession[]>([])
+  const [lastSync, setLastSync] = useState<Date | null>(null)
+
+  const { realSessions, setRealSessions, loadRealSessions } = useRealSessions(db, {
+    isDemoMode,
+    firebaseUid: firebaseUser?.uid,
+    onSync: setLastSync,
+  })
 
   // Merge local + real sessions, deduping by id so real cross-user sessions are always visible
   const displaySessions = (() => {
@@ -2363,8 +2383,6 @@ useEffect(() => {
   const [myFeedbacks, setMyFeedbacks] = useState<any[]>([])
   const [loadingMyFeedbacks, setLoadingMyFeedbacks] = useState(false)
 
-  // Simple last sync time for polish in Explore/Sessions/Profile
-  const [lastSync, setLastSync] = useState<Date | null>(null)
   const [isSyncingProfile, setIsSyncingProfile] = useState(false)
 
   // Google Play Integrity (app + device attestation). Critical for closed beta security.
@@ -2581,7 +2599,7 @@ useEffect(() => {
     }
   }, [realProfiles, currentUser?.trainingSyncWith, currentUser?.trainingNow, effectiveUserId])
 
-  // Incoming EntrenaSync: when partner starts sync, syncSessions doc is created — join without writing their profile.
+  // Incoming EntrenaSync: when partner starts sync, syncSessions doc is created — join + open Arena.
   useEffect(() => {
     if (
       !firebaseUser?.uid ||
@@ -2593,72 +2611,48 @@ useEffect(() => {
       return undefined
     }
 
-    const q = query(
-      collection(db, 'syncSessions'),
-      where('participants', 'array-contains', firebaseUser.uid)
-    )
-
-    const unsub = onSnapshot(q, (snap) => {
-      if (syncPartnerIdRef.current) return
-
-      for (const docSnap of snap.docs) {
-        const data = docSnap.data() as any
-        if (data.endedAt) continue
-        const started = data.startedAt || 0
-        if (Date.now() - started > 3 * 60 * 60 * 1000) continue
-
-        const otherId = (data.participants as string[] | undefined)?.find((p) => p !== firebaseUser.uid)
-        if (!otherId || otherId === effectiveUserId) continue
-        if (!currentUserRef.current?.trainingNow) continue
-
-        const partner = (latestRealProfilesRef.current || []).find((p) => p.id === otherId)
-        const partnerName = partner?.name || 'Compañero'
-
-        syncPartnerIdRef.current = otherId
-        setSyncPartnerId(otherId)
-        setSyncStartedAt(data.startedAt || Date.now())
-        if (Array.isArray(data.actions)) {
-          const recent = [...data.actions]
-            .sort((a: any, b: any) => (b.at || 0) - (a.at || 0))
-            .slice(0, 10)
-          setSyncActions(recent)
-        }
-        if (typeof data.vibe === 'number') {
-          setSyncVibe(Math.max(0, Math.min(100, data.vibe)))
+    return attachIncomingSyncListener(db, firebaseUser.uid, {
+      getHasActivePartner: () => !!syncPartnerIdRef.current,
+      getTrainingNow: () => !!currentUserRef.current?.trainingNow,
+      findPartnerName: (partnerId) =>
+        (latestRealProfilesRef.current || []).find((p) => p.id === partnerId)?.name || 'Compañero',
+      onIncoming: (payload) => {
+        syncPartnerIdRef.current = payload.partnerId
+        setSyncPartnerId(payload.partnerId)
+        setSyncStartedAt(payload.startedAt)
+        setSyncActions(payload.actions || [])
+        if (typeof payload.vibe === 'number') {
+          setSyncVibe(Math.max(0, Math.min(100, payload.vibe)))
         }
         setShowSyncArena(true)
+        setActiveTab('explore')
         triggerHaptic('medium')
 
         const updated = {
           ...currentUserRef.current,
-          trainingSyncWith: otherId,
-          syncStartedAt: data.startedAt || Date.now(),
-          syncActions: Array.isArray(data.actions) ? data.actions : [],
+          trainingSyncWith: payload.partnerId,
+          syncStartedAt: payload.startedAt,
+          syncActions: payload.actions || [],
         }
         saveUser(updated as any)
         saveUserWithRealSync(updated as any).catch(() => {})
 
-        toast.success(`EntrenaSync con ${partnerName}`, {
+        addNotification({
+          type: 'sync_invite',
+          title: `EntrenaSync con ${payload.partnerName}`,
+          body: 'Tu compañero inició sync contigo — Arena abierta',
+          relatedId: payload.partnerId,
+        })
+
+        toast.success(`EntrenaSync con ${payload.partnerName}`, {
           description: 'Tu compañero inició sync contigo',
         })
-        break
-      }
-    }, (err) => {
-      console.warn('incoming syncSessions listener error:', err)
+      },
     })
-
-    return () => { try { unsub() } catch {} }
   }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId, syncPartnerId, isFirebaseConfigured])
 
-  // === NEW: Dedicated syncSessions collection listener for INSTANT actions across devices ===
-  // When we have an active EntrenaSync (syncPartnerId), we listen to a stable doc for the pair.
-  // This gives true realtime (onSnapshot push) for doSyncAction without waiting for profile polls.
-  // We still keep trainingSyncWith pointer in profiles for discovery/badges across Feed/Explore/Live.
+  // Dedicated syncSessions listener for INSTANT actions across devices
   useEffect(() => {
-    // Strict guard: only attach when we have a *real* authenticated uid (not 'me' or demo).
-    // This prevents "Missing or insufficient permissions" on the onSnapshot when the Firebase Auth
-    // token is not yet attached to the Firestore client (e.g. during restore, network recovery, or
-    // optimistic local state before full auth settles). The rule requires isAuthenticated().
     if (
       !syncPartnerId ||
       effectiveUserId === 'me' ||
@@ -2670,57 +2664,38 @@ useEffect(() => {
       return undefined
     }
 
-    const uids = [effectiveUserId, syncPartnerId].sort()
-    const sessionId = `sync_${uids[0]}_${uids[1]}`
-    const sessionRef = doc(db, 'syncSessions', sessionId)
-
-    const unsub = onSnapshot(sessionRef, (snap) => {
-      if (snap.exists()) {
-        const data = snap.data() as any
+    const sessionId = buildSyncSessionId(effectiveUserId, syncPartnerId)
+    return attachActiveSyncSessionListener(db, sessionId, effectiveUserId, {
+      onUpdate: (data) => {
         if (Array.isArray(data.actions)) {
-          // Keep last 10, newest first for UI
           const recent = [...data.actions]
             .sort((a: any, b: any) => (b.at || 0) - (a.at || 0))
             .slice(0, 10)
           setSyncActions(recent)
-
-          // Unique magic: if the latest action came from the partner, give strong in-app feedback
-          const latest = recent[0]
-          if (latest && latest.userId !== effectiveUserId) {
-            const key = `${latest.at || 0}-${latest.emoji || ''}-${latest.label || ''}`
-            const prevToast = lastSyncActionToastRef.current
-            if (prevToast?.key === key && Date.now() - prevToast.at < 4000) return
-            lastSyncActionToastRef.current = { at: Date.now(), key }
-            toast(`${latest.emoji} ${latest.label}`, {
-              description: `${realProfiles.find(p => p.id === syncPartnerId)?.name || 'Tu compañero'} lo hizo ahora`,
-              duration: 2200,
-            })
-            // Small global pulse feel (we can enhance with a state later)
-            triggerHaptic('light')
-          }
         }
-        if (data.startedAt) {
-          setSyncStartedAt(data.startedAt)
-        }
+        if (data.startedAt) setSyncStartedAt(data.startedAt)
         if (typeof data.vibe === 'number') {
           setSyncVibe(Math.max(0, Math.min(100, data.vibe)))
         }
-      }
-    }, (err) => {
-      console.warn('syncSessions onSnapshot error (non-fatal, fallback to mirror):', err)
-      // Stronger recovery on permission / transport errors: full disable+enable cycle to clear
-      // any corrupted internal state that can lead to da08 / mutations assertion later.
-      import('./services/firebase').then(async (m) => {
-        try {
-          await m.recoverFirestoreNetwork?.()
-        } catch {}
-      }).catch(() => {})
+      },
+      onPartnerAction: (latest) => {
+        const key = `${latest.at || 0}-${latest.emoji || ''}-${latest.label || ''}`
+        const prevToast = lastSyncActionToastRef.current
+        if (prevToast?.key === key && Date.now() - prevToast.at < 4000) return
+        lastSyncActionToastRef.current = { at: Date.now(), key }
+        toast(`${latest.emoji} ${latest.label}`, {
+          description: `${realProfiles.find(p => p.id === syncPartnerId)?.name || 'Tu compañero'} lo hizo ahora`,
+          duration: 2200,
+        })
+        triggerHaptic('light')
+      },
+      onError: () => {
+        import('./services/firebase').then(async (m) => {
+          try { await m.recoverFirestoreNetwork?.() } catch {}
+        }).catch(() => {})
+      },
     })
-
-    return () => {
-      try { unsub() } catch {}
-    }
-  }, [syncPartnerId, effectiveUserId, firebaseUser?.uid, db, isDemoMode, isFirebaseConfigured])
+  }, [syncPartnerId, effectiveUserId, firebaseUser?.uid, db, isDemoMode, isFirebaseConfigured, realProfiles])
 
   const loadActiveSyncCount = async () => {
     if (!isFirebaseConfigured || !db) {
@@ -2752,47 +2727,6 @@ useEffect(() => {
       if (pairs.length) setActiveSyncPairs(pairs)
     } catch (e) {
       // non-fatal
-    }
-  }
-
-  const loadRealSessions = async () => {
-    if (!isFirebaseConfigured || !db) {
-      setRealSessions([])
-      return
-    }
-    try {
-      const sessionsRef = collection(db, 'sessions')
-      // Order by creation time desc so newest sessions appear first for everyone
-      const q = query(sessionsRef, orderBy('createdAt', 'desc'), limit(50))
-      const snapshot = await getDocs(q)
-      const loaded: TrainingSession[] = []
-      snapshot.forEach((doc) => {
-        const data = doc.data() as any
-        if (data && data.title) {
-          loaded.push({
-            id: doc.id,
-            creatorId: data.creatorId || '',
-            creatorName: data.creatorName || 'Usuario',
-            title: data.title,
-            description: data.description || '',
-            time: data.time || '',
-            location: data.location || '',
-            trainingType: data.trainingType || '',
-            maxParticipants: data.maxParticipants || 4,
-            participants: data.participants || [],
-            createdAt: (data.createdAt?.toMillis ? data.createdAt.toMillis() : data.createdAt) || Date.now(),
-            lastMessagePreview: data.lastMessagePreview || undefined,
-            lastMessageAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : data.lastMessageAt,
-          })
-        }
-      })
-      setRealSessions(loaded)
-      const now = new Date()
-      setLastSync(now)
-      // console.log removed for production cleanliness (spammy on refresh)
-    } catch (err) {
-      console.warn('Could not load real sessions yet:', err)
-      setRealSessions([])
     }
   }
 
@@ -3160,24 +3094,6 @@ useEffect(() => {
   // Load real matches from Firestore for the current user (so they appear on any device)
   useEffect(() => {
     loadRealMatches()
-  }, [firebaseUser?.uid, isDemoMode])
-
-  // Fase 3: swipe deck state from Firestore profile (swipeLikedIds / swipePassedIds)
-  useEffect(() => {
-    if (isDemoMode || !firebaseUser?.uid || !db) return
-    let cancelled = false
-    ;(async () => {
-      try {
-        await firebaseUser.getIdToken()
-        const { liked, passed } = await loadSwipeStateForUser(db, firebaseUser.uid)
-        if (cancelled) return
-        setLikedIds(liked)
-        setPassedIds(passed)
-      } catch (e) {
-        console.warn('Could not load swipe state from Firestore', e)
-      }
-    })()
-    return () => { cancelled = true }
   }, [firebaseUser?.uid, isDemoMode])
 
   // Fase 3: squads from Firestore (real-time)
@@ -3647,8 +3563,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       purgeAccountScopedStorage()
       
       setMatches([])
-      setLikedIds([])
-      setPassedIds([])
+      resetSwipeDeck()
       setMessages({})
       setRealProfiles([])
       setRealMatches([])
@@ -3928,67 +3843,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   }, [firebaseUser?.uid, isDemoMode, currentUser])
 
-  // Safe polling for real sessions (no TDZ risk)
-  useEffect(() => {
-    if (!isDemoMode && firebaseUser?.uid) {
-      const interval = setInterval(() => {
-        loadRealSessions()
-      }, 30000) // every 30 seconds when in real mode
-
-      return () => clearInterval(interval)
-    }
-  }, [isDemoMode, firebaseUser?.uid])
-
-  // Real-time onSnapshot for sessions list (new sessions, joins, expels, closes appear instantly cross-device)
-  // This makes sessions fully "live" and automated on the server (no more waiting 30s or manual refresh for others' actions).
-  useEffect(() => {
-    if (isDemoMode || !firebaseUser?.uid || !db) {
-      return
-    }
-    let unsubscribe: (() => void) | null = null
-    ;(async () => {
-      try {
-        const { collection, query, orderBy, limit, onSnapshot } = await import('firebase/firestore')
-        const sessionsRef = collection(db, 'sessions')
-        // Use same query as loadRealSessions for consistency (newest first)
-        const q = query(sessionsRef, orderBy('createdAt', 'desc'), limit(50))
-        unsubscribe = onSnapshot(q, (snapshot) => {
-          const loaded: TrainingSession[] = []
-          snapshot.forEach((doc) => {
-            const data = doc.data() as any
-            if (data && data.title) {
-              loaded.push({
-                id: doc.id,
-                creatorId: data.creatorId || '',
-                creatorName: data.creatorName || 'Usuario',
-                title: data.title,
-                description: data.description || '',
-                time: data.time || '',
-                location: data.location || '',
-                trainingType: data.trainingType || '',
-                maxParticipants: data.maxParticipants || 4,
-                participants: data.participants || [],
-                createdAt: (data.createdAt?.toMillis ? data.createdAt.toMillis() : data.createdAt) || Date.now(),
-                lastMessagePreview: data.lastMessagePreview || undefined,
-                lastMessageAt: data.lastMessageAt?.toMillis ? data.lastMessageAt.toMillis() : data.lastMessageAt,
-              })
-            }
-          })
-          setRealSessions(loaded)
-          setLastSync(new Date())
-          console.log(`📡 Live sessions update: ${loaded.length} sessions from Firestore`)
-        }, (err) => {
-          console.warn('Sessions live listener error (may need index or rules):', err)
-        })
-      } catch (e) {
-        console.warn('Sessions onSnapshot setup error (falling back to poll):', e)
-      }
-    })()
-    return () => {
-      if (unsubscribe) unsubscribe()
-    }
-  }, [isDemoMode, firebaseUser?.uid, db])
-
   // Load my previous beta feedbacks when viewing Profile (real users only)
   useEffect(() => {
     if (activeTab === 'profile' && !isDemoMode && firebaseUser?.uid) {
@@ -4232,15 +4086,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   useEffect(() => {
     // NOTE: Profile loading is now handled by useProfile hook.
     // The old 'fitvina_user' load has been migrated.
-    const savedLiked = localStorage.getItem('fitvina_liked')
-    const savedPassed = localStorage.getItem('fitvina_passed')
     const savedMatches = localStorage.getItem('fitvina_matches')
     const savedMessages = localStorage.getItem('fitvina_messages')
     const savedLocation = localStorage.getItem('entrenamatch_location')
 
     if (isDemoMode) {
-      if (savedLiked) setLikedIds(JSON.parse(savedLiked))
-      if (savedPassed) setPassedIds(JSON.parse(savedPassed))
       if (savedMatches) setMatches(JSON.parse(savedMatches))
       if (savedMessages) setMessages(JSON.parse(savedMessages))
     }
@@ -4392,14 +4242,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
   // Save helpers - now delegated to useProfile hook
   // (saveUser is already provided by the hook)
-  const saveLiked = (ids: string[]) => {
-    if (isDemoMode) localStorage.setItem('fitvina_liked', JSON.stringify(ids))
-    setLikedIds(ids)
-  }
-  const savePassed = (ids: string[]) => {
-    if (isDemoMode) localStorage.setItem('fitvina_passed', JSON.stringify(ids))
-    setPassedIds(ids)
-  }
   const saveMatches = (ids: string[]) => {
     if (isDemoMode) localStorage.setItem('fitvina_matches', JSON.stringify(ids))
     setMatches(ids)
@@ -4889,16 +4731,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   }
 
   // === DISRUPTIVE EntrenaSync implementation (core of the top unique feature) ===
-
-  // Haptic helper (works on web + Capacitor Android webview; upgrade to @capacitor/haptics later for native ImpactStyle)
-  const triggerHaptic = (style: 'light' | 'medium' | 'success' = 'light') => {
-    try {
-      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        const pattern = style === 'success' ? [25, 15, 25] : style === 'medium' ? 55 : 22
-        ;(navigator as any).vibrate(pattern)
-      }
-    } catch {}
-  }
 
   const startSyncWith = async (partnerId: string, partnerName: string) => {
     const myIds = [effectiveUserId, currentUser?.id, 'me'].filter(Boolean);
@@ -5979,6 +5811,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
     if (target.selectedSquad) {
       setSelectedSquad(target.selectedSquad)
+    }
+    if (target.showSyncArena) {
+      setShowSyncArena(true)
     }
     if (target.startSyncWith) {
       const { partnerId, partnerName } = target.startSyncWith
@@ -8164,7 +7999,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             filters={filters}
             currentUser={currentUser}
             setShowFilters={setShowFilters}
-            resetDeck={() => { saveLiked([]); savePassed([]); toast('Deck reiniciado'); }}
+            resetDeck={() => { resetSwipeDeck(); toast('Deck reiniciado'); }}
             requestUserLocation={requestUserLocation}
             onSwipe={(direction, profileId) => {
               if (direction === 'right') {
