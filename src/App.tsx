@@ -134,6 +134,7 @@ import {
   sortTeamMembers,
 } from './utils/homeTeam'
 import { isTeamMemberId } from './utils/teamMembers'
+import { isSeedProfileId } from './utils/seedProfiles'
 import { EntrenaLogModal, WorkoutPostCard } from './components/workout'
 import { FuelSetupModal, FuelLogModal, NutritionPostCard } from './components/fuel'
 import {
