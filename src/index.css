@@ -56,20 +56,6 @@ body {
   }
 }
 
-/* Onboarding: full-height scrollable flow inside phone frame */
-.onboarding-flow {
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-}
-.onboarding-flow input,
-.onboarding-flow textarea {
-  pointer-events: auto;
-  touch-action: manipulation;
-  -webkit-user-select: text;
-  user-select: text;
-}
-
 .card {
   background: var(--fit-card);
   border: 1px solid var(--fit-border);

@@ -385,8 +385,8 @@ export const OnboardingFlow = ({
   };
 
   return (
-    <div className="app-container flex flex-col bg-[#0D0D10] text-white h-[100svh] max-h-[100svh] overflow-hidden">
-      <div className="flex flex-col flex-1 min-h-0 p-6 pt-8">
+    <div className="app-container flex flex-col bg-[#0D0D10] text-white">
+      <div className="flex-1 flex flex-col p-6 pt-8">
         {/* Epic Remastered Header - Unique ritual vibe */}
         <div className="flex items-center gap-4 mb-5">
           <motion.div 
@@ -453,7 +453,7 @@ export const OnboardingFlow = ({
         {onboardingStep !== 3 && renderProfilePreview()}
 
         {/* Scrollable step content */}
-        <div className="flex-1 overflow-y-auto overscroll-contain -mx-1 px-1 pb-4 min-h-0 relative z-10">
+        <div className="flex-1 overflow-auto -mx-1 px-1 pb-8 min-h-0">
 
         {/* PASO 0: PRESENCIA - Remastered full premium. Unique ritual entry. */}
         {onboardingStep === 0 && (
@@ -698,7 +698,7 @@ export const OnboardingFlow = ({
         </div> {/* end scrollable step content */}
 
         {/* Fixed bottom — ritual navigation */}
-        <div className="flex-shrink-0 pt-2 pb-3 flex flex-col gap-2 bg-[#0D0D10] border-t-2 border-[#2F2F35] relative z-20">
+        <div className="flex-shrink-0 pt-2 pb-3 flex flex-col gap-2 bg-[#0D0D10] border-t-2 border-[#2F2F35]">
           {onboardingStep > 0 && (
             <button onClick={() => { try { triggerHaptic('light') } catch {}; setOnboardingStep(onboardingStep - 1) }} className="w-full py-2.5 text-xs uppercase tracking-[1.5px] rounded-2xl border border-[#2F2F35] active:bg-[#1f242b] text-[#9CA3AF]">
               ← VOLVER AL RITUAL ANTERIOR

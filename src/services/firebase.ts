@@ -82,8 +82,8 @@ export const isDemoMode = !firebaseConfig;
 
 export default app;
 
-// Force re-enable Firestore network (re-establishes Listen/WebChannel streams after offline or transport errors).
-// Call this from online handlers and app resume.
+// Re-establish Listen/WebChannel streams after offline or transport errors.
+// Prefer this over disable+enable cycles — disabling tears down ALL active listeners.
 export async function enableFirestoreNetwork() {
   if (!db) return;
   try {
@@ -95,6 +95,12 @@ export async function enableFirestoreNetwork() {
   }
 }
 
+/** Safe recovery after transport glitches — enable only, never disable first. */
+export async function recoverFirestoreNetwork() {
+  await enableFirestoreNetwork();
+}
+
+/** @deprecated Avoid in normal flows — disables all RT listeners app-wide. Use recoverFirestoreNetwork. */
 export async function disableFirestoreNetwork() {
   if (!db) return;
   try {

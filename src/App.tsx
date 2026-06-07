@@ -100,6 +100,18 @@ import {
 import { attachUserPostsListener } from './services/profilePosts'
 import { attachDirectChatListener, type DirectChatMsg } from './services/chatMessages'
 import { processLikeAndMaybeMatch } from './services/matching'
+import { loadSwipeStateForUser, writePass } from './services/swipeState'
+import {
+  attachGroupMessagesListener,
+  mapGroupMessageDoc,
+  mergeGroupMessages,
+} from './services/groupMessages'
+import {
+  attachSquadsListener,
+  createSquadInFirestore,
+  joinSquadInFirestore,
+  leaveSquadInFirestore,
+} from './services/squads'
 import { attachLiveUsersListener, patchRealProfilesWithLiveSnapshot } from './services/liveUsers'
 import {
   attachLivePresenceListener,
@@ -129,6 +141,15 @@ function purgeAccountScopedStorage() {
   for (const key of ACCOUNT_SCOPED_STORAGE_KEYS) {
     try { localStorage.removeItem(key) } catch {}
   }
+}
+
+/** Squad ids from Firestore (`sq_*`) or legacy demo (`sq` + timestamp). */
+function isSquadChatId(id: string): boolean {
+  return id.startsWith('sq')
+}
+
+function groupMessagesCollectionPath(chatId: string): string {
+  return isSquadChatId(chatId) ? `squads/${chatId}/messages` : `sessions/${chatId}/messages`
 }
 
 // ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
@@ -1340,17 +1361,14 @@ useEffect(() => {
   return () => cleanupAllListeners()
 }, [cleanupAllListeners])
 
-// Network + Listener resilience
+// Network + Listener resilience (Fase 4: recover without disable — keeps RT listeners alive)
 useEffect(() => {
   const handleOnline = async () => {
     setIsOffline(false)
-    cleanupAllListeners() // ← CRÍTICO
 
     try {
       const fb = await import('./services/firebase')
-      await fb.disableFirestoreNetwork?.()
-      await new Promise(r => setTimeout(r, 150))
-      await fb.enableFirestoreNetwork?.()
+      await fb.recoverFirestoreNetwork?.()
 
       if (!isDemoMode && firebaseUser?.uid) {
         setTimeout(() => {
@@ -1359,7 +1377,7 @@ useEffect(() => {
         }, 400)
       }
     } catch (e) {
-      console.warn('Network reset failed', e)
+      console.warn('Network recovery failed', e)
     }
   }
 
@@ -2688,9 +2706,7 @@ useEffect(() => {
       // any corrupted internal state that can lead to da08 / mutations assertion later.
       import('./services/firebase').then(async (m) => {
         try {
-          await m.disableFirestoreNetwork?.()
-          await new Promise(r => setTimeout(r, 80))
-          await m.enableFirestoreNetwork?.()
+          await m.recoverFirestoreNetwork?.()
         } catch {}
       }).catch(() => {})
     })
@@ -3139,6 +3155,27 @@ useEffect(() => {
   useEffect(() => {
     loadRealMatches()
   }, [firebaseUser?.uid, isDemoMode])
+
+  // Fase 3: swipe deck state from Firestore (likes + passes) for real users
+  useEffect(() => {
+    if (isDemoMode || !firebaseUser?.uid || !db) return
+    let cancelled = false
+    loadSwipeStateForUser(db, firebaseUser.uid)
+      .then(({ liked, passed }) => {
+        if (cancelled) return
+        setLikedIds(liked)
+        setPassedIds(passed)
+      })
+      .catch((e) => console.warn('Could not load swipe state from Firestore', e))
+    return () => { cancelled = true }
+  }, [firebaseUser?.uid, isDemoMode])
+
+  // Fase 3: squads from Firestore (real-time)
+  useEffect(() => {
+    if (isDemoMode || !db) return
+    const unsub = attachSquadsListener(db, (list) => setSquads(list))
+    return unsub
+  }, [isDemoMode])
 
   // Safe polling for real matches (so new likes/matches from others appear without full reload)
   useEffect(() => {
@@ -3970,29 +4007,18 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
     try {
       const { collection, query, orderBy, getDocs } = await import('firebase/firestore');
-      const msgsRef = collection(db, `sessions/${sessionId}/messages`);
+      const msgsRef = collection(db, groupMessagesCollectionPath(sessionId));
       const q = query(msgsRef, orderBy('createdAt', 'asc'));
       const snap = await getDocs(q);
 
       const loaded: SessionMessage[] = [];
       snap.forEach(doc => {
-        const d = doc.data() as any;
-        loaded.push({
-          id: doc.id,
-          senderId: d.senderId,
-          senderName: d.senderName || 'Usuario',
-          text: d.text || '',
-          timestamp: d.timestamp || Date.now(),
-          photo: d.photo,
-          voiceUrl: d.voiceUrl,
-          voiceDuration: d.voiceDuration,
-          reactions: d.reactions || {}
-        });
+        loaded.push(mapGroupMessageDoc(doc.id, doc.data() as Record<string, unknown>))
       });
 
       setSessionMessages(prev => ({
         ...prev,
-        [sessionId]: loaded
+        [sessionId]: mergeGroupMessages(loaded, prev[sessionId]),
       }));
       console.log(`✅ Loaded ${loaded.length} real group messages for session ${sessionId}`);
       setLastSync(new Date());
@@ -4011,53 +4037,50 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   }, [showGroupChatModalFor, isDemoMode, firebaseUser?.uid]);
 
-  // Real-time onSnapshot for group chat when modal open (subcollection under session)
+  // Real-time onSnapshot for group chat when modal open
   useEffect(() => {
-    if (!showGroupChatModalFor || isDemoMode || !firebaseUser?.uid || !db) {
-      return;
-    }
+    if (!showGroupChatModalFor || isDemoMode || !firebaseUser?.uid || !db) return
 
-    let unsubscribe: (() => void) | null = null;
-
-    (async () => {
-      try {
-        const { collection, query, orderBy, onSnapshot } = await import('firebase/firestore');
-        const msgsRef = collection(db, `sessions/${showGroupChatModalFor}/messages`);
-        const q = query(msgsRef, orderBy('createdAt', 'asc'));
-
-        unsubscribe = onSnapshot(q, (snapshot) => {
-          const loaded: SessionMessage[] = [];
-          snapshot.forEach(doc => {
-            const d = doc.data() as any;
-            loaded.push({
-              id: doc.id,
-              senderId: d.senderId,
-              senderName: d.senderName || 'Usuario',
-              text: d.text || '',
-              timestamp: d.timestamp || Date.now(),
-              photo: d.photo,
-              voiceUrl: d.voiceUrl,
-              voiceDuration: d.voiceDuration,
-              reactions: d.reactions || {}
-            });
-          });
+    const chatId = showGroupChatModalFor
+    const unsub = attachGroupMessagesListener(
+      db,
+      groupMessagesCollectionPath(chatId),
+      {
+        onMessages: (loaded) => {
           setSessionMessages(prev => ({
             ...prev,
-            [showGroupChatModalFor]: loaded
-          }));
-          console.log(`📨 Live group update: ${loaded.length} msgs for session ${showGroupChatModalFor}`);
-        }, (err) => {
-          console.warn('Group chat live listener error (check rules/participants):', err);
-        });
-      } catch (e) {
-        console.warn('Group chat onSnapshot setup error:', e);
+            [chatId]: mergeGroupMessages(loaded, prev[chatId]),
+          }))
+        },
+        onError: (err) => console.warn('Group chat live listener error:', err),
       }
-    })();
+    )
 
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+    return unsub
   }, [showGroupChatModalFor, isDemoMode, firebaseUser?.uid, db]);
+
+  // Real-time squad chat when squad detail modal is open
+  useEffect(() => {
+    if (!selectedSquad || isDemoMode || !firebaseUser?.uid || !db) return
+
+    loadRealGroupMessages(selectedSquad)
+
+    const unsub = attachGroupMessagesListener(
+      db,
+      groupMessagesCollectionPath(selectedSquad),
+      {
+        onMessages: (loaded) => {
+          setSessionMessages(prev => ({
+            ...prev,
+            [selectedSquad]: mergeGroupMessages(loaded, prev[selectedSquad]),
+          }))
+        },
+        onError: (err) => console.warn('Squad chat listener error:', err),
+      }
+    )
+
+    return unsub
+  }, [selectedSquad, isDemoMode, firebaseUser?.uid, db])
 
   // Safe polling fallback for group messages (8s) while modal open - guarantees updates even if listener has rules/index hiccup
   useEffect(() => {
@@ -4098,75 +4121,61 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     });
 
     myIds.forEach((sessionId) => {
-      if (groupMessageUnsubsRef.current[sessionId]) return; // already have active listener
+      if (groupMessageUnsubsRef.current[sessionId]) return
 
-      (async () => {
-        try {
-          const { collection, query, orderBy, onSnapshot } = await import('firebase/firestore');
-          const msgsRef = collection(db, `sessions/${sessionId}/messages`);
-          const q = query(msgsRef, orderBy('createdAt', 'asc'));
+      groupMessageUnsubsRef.current[sessionId] = attachGroupMessagesListener(
+        db,
+        groupMessagesCollectionPath(sessionId),
+        {
+          onMessages: (loaded) => {
+            const preSize = seenGroupMsgIdsRef.current[sessionId]?.size ?? 0
+            const newlyAddedFromOthers: { id: string; text: string; senderName: string; photo?: string }[] = []
 
-          const unsub = onSnapshot(q, (snapshot) => {
-            const preSize = seenGroupMsgIdsRef.current[sessionId] ? seenGroupMsgIdsRef.current[sessionId].size : 0;
-            const loaded: SessionMessage[] = [];
-            const newlyAddedFromOthers: any[] = [];
-            const changes = snapshot.docChanges ? snapshot.docChanges() : [];
-            changes.forEach((ch: any) => {
-              if (ch.type === 'added') {
-                const d = ch.doc.data() as any;
-                const msgId = ch.doc.id;
-                if (!seenGroupMsgIdsRef.current[sessionId]) seenGroupMsgIdsRef.current[sessionId] = new Set();
-                const wasSeen = seenGroupMsgIdsRef.current[sessionId].has(msgId);
-                seenGroupMsgIdsRef.current[sessionId].add(msgId);
-                persistSeen();
-                if (d.senderId && d.senderId !== firebaseUser.uid && d.senderId !== effectiveUserId && !wasSeen) {
-                  newlyAddedFromOthers.push({ id: msgId, text: d.text || '', senderName: d.senderName || 'Participante', photo: d.photo });
-                }
+            if (!seenGroupMsgIdsRef.current[sessionId]) {
+              seenGroupMsgIdsRef.current[sessionId] = new Set()
+            }
+            for (const m of loaded) {
+              const wasSeen = seenGroupMsgIdsRef.current[sessionId].has(m.id)
+              seenGroupMsgIdsRef.current[sessionId].add(m.id)
+              if (
+                preSize > 0 &&
+                !wasSeen &&
+                m.senderId &&
+                m.senderId !== firebaseUser.uid &&
+                m.senderId !== effectiveUserId
+              ) {
+                newlyAddedFromOthers.push({
+                  id: m.id,
+                  text: m.text || '',
+                  senderName: m.senderName || 'Participante',
+                  photo: m.photo,
+                })
               }
-            });
-            snapshot.forEach((doc) => {
-              const d = doc.data() as any;
-              loaded.push({
-                id: doc.id,
-                senderId: d.senderId,
-                senderName: d.senderName || 'Usuario',
-                text: d.text || '',
-                timestamp: d.timestamp || Date.now(),
-                photo: d.photo,
-                voiceUrl: d.voiceUrl,
-                voiceDuration: d.voiceDuration,
-                reactions: d.reactions || {},
-              });
-            });
+            }
+            persistSeen()
+
             setSessionMessages((prev) => ({
               ...prev,
-              [sessionId]: loaded,
-            }));
-            setLastSync(new Date());
+              [sessionId]: mergeGroupMessages(loaded, prev[sessionId]),
+            }))
+            setLastSync(new Date())
             if (showGroupChatModalFor === sessionId) {
               setSessionUnreads(prev => { const c = { ...prev }; c[sessionId] = 0; return c })
             }
-            console.log(`📨 BG live group msg for ${sessionId}: ${loaded.length} msgs`);
-            // Notify only for truly new unseen from others. Skip on first population for this listener (preSize==0 means historical).
-            if (newlyAddedFromOthers.length > 0 && preSize > 0) {
-              if (showGroupChatModalFor !== sessionId) {
-                const first = newlyAddedFromOthers[0];
-                const sess = (realSessions || []).find((s: any) => s.id === sessionId) || displaySessions.find((s: any) => s.id === sessionId);
-                const sname = first.senderName || (sess ? (sess.creatorName || 'Alguien') : 'Participante');
-                triggerMessageArrivalNotification(sessionId, sname, first.text, true, first.photo);
-              }
-            }
-          }, (err) => {
-            console.warn(`BG group chat listener error for session ${sessionId} (rules/participants):`, err);
-            import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
-          });
 
-          groupMessageUnsubsRef.current[sessionId] = unsub;
-        } catch (e) {
-          console.warn('BG group messages onSnapshot setup error for', sessionId, e);
-          import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
+            if (newlyAddedFromOthers.length > 0 && showGroupChatModalFor !== sessionId) {
+              const first = newlyAddedFromOthers[0]
+              const sess = (realSessions || []).find((s: any) => s.id === sessionId) || displaySessions.find((s: any) => s.id === sessionId)
+              const sname = first.senderName || (sess ? (sess.creatorName || 'Alguien') : 'Participante')
+              triggerMessageArrivalNotification(sessionId, sname, first.text, true, first.photo)
+            }
+          },
+          onError: (err) => {
+            console.warn(`BG group chat listener error for session ${sessionId}:`, err)
+            import('./services/firebase').then(m => m.recoverFirestoreNetwork?.()).catch(() => {})
+          },
         }
-      })();
+      )
     });
   }, [myGroupSessionIdsKey, isDemoMode, firebaseUser?.uid, db, showGroupChatModalFor]);
 
@@ -4436,8 +4445,56 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   }
 
   const saveSquads = (newSquads: Squad[]) => {
-    localStorage.setItem('entrenamatch_squads', JSON.stringify(newSquads))
+    if (isDemoMode) {
+      localStorage.setItem('entrenamatch_squads', JSON.stringify(newSquads))
+    }
     setSquads(newSquads)
+  }
+
+  const resolveMemberName = (memberId: string): string => {
+    if (memberId === effectiveUserId || memberId === 'me') return currentUser?.name || 'Tú'
+    const seed = SEED_PROFILES.find(p => p.id === memberId)
+    if (seed) return seed.name
+    const real = realProfiles.find(p => p.id === memberId)
+    return real?.name || 'Usuario'
+  }
+
+  const handleJoinSquad = async (squadId: string) => {
+    if (!isDemoMode && firebaseUser?.uid && db) {
+      try {
+        await joinSquadInFirestore(db, squadId, firebaseUser.uid)
+        toast.success('¡Te uniste al Squad!')
+      } catch (e) {
+        console.warn('Could not join squad in Firestore', e)
+        toast.error('No se pudo unir al Squad')
+      }
+      return
+    }
+    const updated = squads.map(sq =>
+      sq.id === squadId ? { ...sq, members: [...sq.members, 'me'] } : sq
+    )
+    saveSquads(updated)
+    toast.success('¡Te uniste al Squad!')
+  }
+
+  const handleLeaveSquad = async (squadId: string) => {
+    if (!isDemoMode && firebaseUser?.uid && db) {
+      try {
+        await leaveSquadInFirestore(db, squadId, firebaseUser.uid)
+        setSelectedSquad(null)
+        toast('Saliste del Squad')
+      } catch (e) {
+        console.warn('Could not leave squad in Firestore', e)
+        toast.error('No se pudo salir del Squad')
+      }
+      return
+    }
+    const updated = squads.map(sq =>
+      sq.id === squadId ? { ...sq, members: sq.members.filter(m => m !== 'me') } : sq
+    )
+    saveSquads(updated)
+    setSelectedSquad(null)
+    toast('Saliste del Squad')
   }
 
   const saveProfilePosts = (posts: Record<string, ProfilePost[]>, opts?: { persistLocal?: boolean }) => {
@@ -4659,9 +4716,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         // where previous session action writes may have left the client in bad mutation state).
         try {
           const fb = await import('./services/firebase');
-          await fb.disableFirestoreNetwork?.();
-          await new Promise(r => setTimeout(r, 70));
-          await fb.enableFirestoreNetwork?.();
+          await fb.recoverFirestoreNetwork?.();
           await new Promise(r => setTimeout(r, 40));
         } catch {}
 
@@ -4863,9 +4918,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       // pipeline is fragile; reset + routing self through the resilient saveUserWithRealSync fixes it.
       try {
         const fb = await import('./services/firebase');
-        await fb.disableFirestoreNetwork?.();
-        await new Promise(r => setTimeout(r, 110));
-        await fb.enableFirestoreNetwork?.();
+        await fb.recoverFirestoreNetwork?.();
         await new Promise(r => setTimeout(r, 70));
       } catch (resetErr) {
         console.warn('pre-startSync network reset non-fatal', resetErr);
@@ -4993,9 +5046,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       if (db) {
         try {
           const fb = await import('./services/firebase');
-          await fb.disableFirestoreNetwork?.();
-          await new Promise(r => setTimeout(r, 100));
-          await fb.enableFirestoreNetwork?.();
+          await fb.recoverFirestoreNetwork?.();
           await new Promise(r => setTimeout(r, 60));
 
           const { doc, updateDoc } = await import('firebase/firestore')
@@ -5013,9 +5064,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     // Post creation is a separate write; wrap with recovery too for safety on terminate path.
     try {
       const fb = await import('./services/firebase');
-      await fb.disableFirestoreNetwork?.();
-      await new Promise(r => setTimeout(r, 80));
-      await fb.enableFirestoreNetwork?.();
+      await fb.recoverFirestoreNetwork?.();
       await new Promise(r => setTimeout(r, 50));
     } catch {}
     createProfilePost(`Sync terminado con ${partnerName} - ${minutes}min juntos`, null).catch(() => {})
@@ -5667,6 +5716,27 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       ensurePostCommentsListener(activeComment.postId, hit?.posts[hit?.idx ?? -1]?.comments || [])
     }
   }, [isDemoMode, viewingPostComments, activeComment, ensurePostCommentsListener])
+
+  // Fase 4: prune comment listeners when leaving feed (avoid unbounded growth)
+  useEffect(() => {
+    if (isDemoMode || activeTab === 'feed') return
+
+    const keepIds = new Set<string>()
+    if (viewingPostComments?.postId) keepIds.add(viewingPostComments.postId)
+    if (activeComment?.postId) keepIds.add(activeComment.postId)
+    for (const p of profilePostsRef.current[effectiveUserId] || []) {
+      if (p?.id) keepIds.add(p.id)
+    }
+    if (showFullProfile?.id) {
+      for (const p of profilePostsRef.current[showFullProfile.id] || []) {
+        if (p?.id) keepIds.add(p.id)
+      }
+    }
+
+    Object.keys(postCommentUnsubsRef.current).forEach((postId) => {
+      if (!keepIds.has(postId)) releasePostCommentsListener(postId)
+    })
+  }, [activeTab, isDemoMode, effectiveUserId, showFullProfile?.id, viewingPostComments?.postId, activeComment?.postId, releasePostCommentsListener])
 
   // Edit own muro post (inline for spectacular UX, no prompt)
   const startEditPost = (postId: string, postUserId: string, currentText: string) => {
@@ -6490,18 +6560,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             msgData.voiceUrl = newMsg.voiceUrl
             msgData.voiceDuration = newMsg.voiceDuration
           }
-          await addDoc(collection(db, `sessions/${sessionId}/messages`), msgData)
-          console.log('✅ Real session group message sent')
+          await addDoc(collection(db, groupMessagesCollectionPath(sessionId)), msgData)
+          console.log('✅ Real group message sent')
 
-          // Update parent session doc with last activity so the sessions list shows live preview + updates via listener
-          try {
-            const { doc, setDoc, serverTimestamp: ts } = await import('firebase/firestore')
-            await setDoc(doc(db, 'sessions', sessionId), {
-              lastMessagePreview: newMsg.text ? newMsg.text.substring(0, 80) : (photo ? '[foto]' : (voice ? `[nota de voz ${voice.voiceDuration || 0}s]` : '')),
-              lastMessageAt: ts(),
-              updatedAt: ts(),
-            }, { merge: true })
-          } catch (e) { /* non critical */ }
+          // Update parent session doc (not squads) with last activity for live preview in sessions list
+          if (!isSquadChatId(sessionId)) {
+            try {
+              const { doc, setDoc, serverTimestamp: ts } = await import('firebase/firestore')
+              await setDoc(doc(db, 'sessions', sessionId), {
+                lastMessagePreview: newMsg.text ? newMsg.text.substring(0, 80) : (photo ? '[foto]' : (voice ? `[nota de voz ${voice.voiceDuration || 0}s]` : '')),
+                lastMessageAt: ts(),
+                updatedAt: ts(),
+              }, { merge: true })
+            } catch (e) { /* non critical */ }
+          }
 
           // Force reload to sync the authoritative server list (prevents optimistic message from disappearing before snapshot arrives)
           loadRealGroupMessages(sessionId)
@@ -6532,6 +6604,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     const doScroll = () => {
       const scrollEl = document.getElementById('group-chat-scroll')
       if (scrollEl) scrollEl.scrollTop = scrollEl.scrollHeight
+      const squadScroll = document.getElementById('squad-chat-scroll')
+      if (squadScroll) squadScroll.scrollTop = squadScroll.scrollHeight
       const el = groupChatScrollRef.current
       if (el) el.scrollTop = el.scrollHeight
     }
@@ -6984,6 +7058,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     } else {
       const newPassed = [...passedIds, profileId]
       savePassed(newPassed)
+      const isRealProfile = !profileId.startsWith('p') && realProfiles.some(r => r.id === profileId)
+      if (isRealProfile && !isDemoMode && firebaseUser?.uid && db) {
+        writePass(db, firebaseUser.uid, profileId).catch((e) =>
+          console.warn('Could not persist pass to Firestore', e)
+        )
+      }
     }
 
     // Advance deck (index + drag state now live inside ExploreTab)
@@ -8735,7 +8815,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <div className="section-header">Tus Squads</div>
-                <div className="text-[#9CA3AF] text-sm">Grupos fijos (próximamente real)</div>
+                <div className="text-[#9CA3AF] text-sm">
+                  {isDemoMode ? 'Grupos fijos de entrenamiento (demo)' : 'Grupos fijos en vivo — chat cross-device'}
+                </div>
               </div>
               <button 
                 onClick={() => setShowCreateSquad(true)}
@@ -8782,17 +8864,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
                       <div className="mt-3 flex justify-between items-center text-sm">
                         <div className="text-[#9CA3AF] text-xs">
-                          Creado por {SEED_PROFILES.find(p => p.id === squad.createdBy)?.name || 'alguien'}
+                          Creado por {resolveMemberName(squad.createdBy)}
                         </div>
                         {!isMember && spots > 0 && (
                           <button 
                             onClick={(e) => {
                               e.stopPropagation()
-                              const updated = squads.map(sq =>
-                                sq.id === squad.id ? { ...sq, members: [...sq.members, 'me'] } : sq
-                              )
-                              saveSquads(updated)
-                              toast.success('¡Te uniste al Squad!')
+                              handleJoinSquad(squad.id)
                             }}
                             className="bg-[#FF671F] text-black text-xs px-4 py-1.5 rounded-2xl font-medium active:bg-[#E55A1A]"
                           >
@@ -10631,9 +10709,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           // the SDK the best chance to recreate clean streams before we queue the mutation.
                           try {
                             const fb = await import('./services/firebase');
-                            await fb.disableFirestoreNetwork?.();
-                            await new Promise(r => setTimeout(r, 180));
-                            await fb.enableFirestoreNetwork?.();
+                            await fb.recoverFirestoreNetwork?.();
                             await new Promise(r => setTimeout(r, 120));
                           } catch (resetErr) {
                             console.warn('pre-terminate live reset non-fatal', resetErr);
@@ -12271,19 +12347,33 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           <div className="absolute inset-0 z-[95] flex items-end bg-black/70" onClick={() => setShowCreateSquad(false)}>
             <div onClick={e => e.stopPropagation()} className="w-full card rounded-t-3xl p-6 pb-8">
               <div className="font-semibold text-xl mb-1">Crear un Squad</div>
-              <form onSubmit={(e) => {
+              <form onSubmit={async (e) => {
                 e.preventDefault()
                 const form = e.currentTarget
+                const name = (form.elements.namedItem('name') as HTMLInputElement).value
+                const focus = (form.elements.namedItem('focus') as HTMLInputElement).value
+
+                if (!isDemoMode && firebaseUser?.uid && db) {
+                  try {
+                    await createSquadInFirestore(db, firebaseUser.uid, name, focus)
+                    setShowCreateSquad(false)
+                    toast.success('Squad creado')
+                  } catch (err) {
+                    console.warn('Could not create squad in Firestore', err)
+                    toast.error('No se pudo crear el Squad')
+                  }
+                  return
+                }
+
                 const newSquad: Squad = {
                   id: 'sq' + Date.now(),
-                  name: (form.elements.namedItem('name') as HTMLInputElement).value,
-                  focus: (form.elements.namedItem('focus') as HTMLInputElement).value,
+                  name,
+                  focus,
                   members: ['me'],
                   createdBy: 'me',
                   createdAt: Date.now()
                 }
-                const updated = [newSquad, ...squads]
-                saveSquads(updated)
+                saveSquads([newSquad, ...squads])
                 setShowCreateSquad(false)
                 toast.success('Squad creado')
               }}>
@@ -12323,8 +12413,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                       <div className="text-sm text-[#9CA3AF] mb-2">Miembros</div>
                       <div className="flex flex-wrap gap-2 mb-4">
                         {squad.members.map(mid => {
-                          const memberProfile = SEED_PROFILES.find(p => p.id === mid)
-                          const displayName = memberProfile ? memberProfile.name : (mid === 'me' ? currentUser?.name || 'Tú' : 'Tú')
+                          const memberProfile = SEED_PROFILES.find(p => p.id === mid) || realProfiles.find(p => p.id === mid)
+                          const displayName = resolveMemberName(mid)
 
                           return (
                             <div 
@@ -12333,11 +12423,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                               onClick={(e) => {
                                 e.stopPropagation()
                                 if (memberProfile) {
-                                  setSelectedSquad(null)           // close squad modal
-                                  setShowFullProfile(memberProfile) // open their profile
-                                } else if (mid === 'me') {
                                   setSelectedSquad(null)
-                                  // optionally open own profile, but for now just close
+                                  setShowFullProfile(memberProfile)
+                                } else if (mid === effectiveUserId || mid === 'me') {
+                                  setSelectedSquad(null)
                                 }
                               }}
                             >
@@ -12352,13 +12441,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
                       {!isMember && squad.members.length < 4 && (
                         <button 
-                          onClick={() => {
-                            const updated = squads.map(sq =>
-                              sq.id === squad.id ? { ...sq, members: [...sq.members, 'me'] } : sq
-                            )
-                            saveSquads(updated)
-                            toast.success('¡Te uniste al Squad!')
-                          }}
+                          onClick={() => handleJoinSquad(squad.id)}
                           className="btn-primary w-full mb-4"
                         >
                           Unirme a este Squad
@@ -12379,7 +12462,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                                 location: squad.focus === 'Running' ? 'Playa Reñaca' : 'Gym cercano',
                                 trainingType: squad.focus,
                                 maxParticipants: Math.min(6, squad.members.length + 2),
-                                participants: [...squad.members.filter(m => m !== 'me'), effectiveUserId],
+                                participants: [...squad.members.filter(m => m !== effectiveUserId && m !== 'me'), effectiveUserId],
                                 createdAt: Date.now()
                               }
                               const updatedSessions = [newSession, ...sessions]
@@ -12409,18 +12492,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                             Crear Sesión del Squad
                           </button>
 
-                          {squad.createdBy !== 'me' && (
+                          {squad.createdBy !== effectiveUserId && squad.createdBy !== 'me' && (
                             <button 
-                              onClick={() => {
-                                const updated = squads.map(sq =>
-                                  sq.id === squad.id 
-                                    ? { ...sq, members: sq.members.filter(m => m !== 'me') } 
-                                    : sq
-                                )
-                                saveSquads(updated)
-                                setSelectedSquad(null)
-                                toast('Saliste del Squad')
-                              }}
+                              onClick={() => handleLeaveSquad(squad.id)}
                               className="w-full text-sm text-red-400 py-2"
                             >
                               Dejar el Squad
@@ -12438,8 +12512,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                             <div className="text-[#9CA3AF] text-center text-xs mt-6">Aún no hay mensajes. ¡Empieza la coordinación!</div>
                           ) : (
                             (sessionMessages[squad.id] || []).map((msg, i) => (
-                              <div key={i} className={`flex ${msg.senderId === 'me' ? 'justify-end' : ''}`}>
-                                <div className={`max-w-[75%] px-3 py-1.5 rounded-2xl break-words overflow-hidden ${msg.senderId === 'me' ? 'bg-[#FF671F] text-black' : 'bg-[#25252A]'}`}>
+                              <div key={i} className={`flex ${msg.senderId === effectiveUserId || msg.senderId === 'me' ? 'justify-end' : ''}`}>
+                                <div className={`max-w-[75%] px-3 py-1.5 rounded-2xl break-words overflow-hidden ${msg.senderId === effectiveUserId || msg.senderId === 'me' ? 'bg-[#FF671F] text-black' : 'bg-[#25252A]'}`}>
                                   <div className="text-[10px] opacity-70">{msg.senderName}</div>
                                   {renderMessageText(msg.text)}
                                 </div>
