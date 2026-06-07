@@ -290,3 +290,11 @@ export interface ProfilePost {
     timestamp: number
   }>
 }
+
+export type {
+  DailyChallenge,
+  DailyPulseState,
+  NetworkStats,
+  RetentionGadget,
+  SyncBond,
+} from './profilePulse'
