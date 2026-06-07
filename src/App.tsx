@@ -2029,7 +2029,7 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
     return isFinite(n) ? n : undefined
   }
 
-     // LIVE TRAINING NOW - Versión mínima ultra-segura (evita crashes)
+       // LIVE TRAINING NOW - Versión mínima para evitar crashes
   const liveTrainingNow = useMemo(() => {
     const now = Date.now()
     const ASSUMED_SESSION_MS = 3 * 60 * 60 * 1000
@@ -2038,7 +2038,9 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
 
     // Dedicated live users
     (liveUsersFromDedicated || []).forEach((p: any) => {
-      if (p?.id) byId.set(p.id, { ...p, trainingNow: true })
+      if (p?.id) {
+        byId.set(p.id, { ...p, trainingNow: true })
+      }
     })
 
     // Enrich with real profiles
@@ -2053,16 +2055,11 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
       .filter((p: any) => !blockedUsers.includes(p.id))
       .filter((p: any) => {
         const since = Number(p.trainingNowSince || 0)
-        return p.trainingNow && since > 0 && (now - since < ASSUMED_SESSION_MS)
+        return p.trainingNow === true && since > 0 && (now - since < ASSUMED_SESSION_MS)
       })
       .map((p: any) => {
         const since = Number(p.trainingNowSince || now)
-
-        // Distance fallback seguro
-        let dist = 999
-        if (userLocation && p.lat != null && p.lng != null) {
-          dist = 5 // temporal safe value
-        }
+        const dist = 5 // safe fallback
 
         const seVaEnMs = (since + ASSUMED_SESSION_MS) - now
         const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 0
@@ -2083,12 +2080,12 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
         ...p, 
         trainingNow: true, 
         trainingNowSince: now - (i+1)*10*60000, 
-        distance: 2 + i 
+        distance: 3 
       }))
     }
 
     return lives
-  }, [liveUsersFromDedicated, realProfiles, blockedUsers, userLocation, isDemoMode])
+  }, [liveUsersFromDedicated, realProfiles, blockedUsers, isDemoMode])
 
   // Only for the map widget in dev mode: augment with temporary test lives so devs can test GymPulse visuals,
   // near counts, popups, etc. without other real accounts being live. These do NOT pollute global liveTrainingNow used by lists/feeds/notifs.
