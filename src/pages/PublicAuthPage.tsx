@@ -1,9 +1,15 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
+import { toast } from 'sonner';
 import { AuthScreen } from '../components/auth/AuthScreen';
 import { useAuth } from '../contexts/AuthContext';
 import { useProfile } from '../contexts/ProfileContext';
 import { useAuthActions } from '../hooks/useAuthActions';
 import { isFirebaseConfigured } from '../services/firebase';
+import {
+  isQuickDemoSession,
+  markQuickDemoSession,
+  QUICK_DEMO_USER,
+} from '../utils/quickDemo';
 
 function triggerHaptic(_style?: 'light' | 'medium' | 'heavy' | 'success') {
   try {
@@ -14,7 +20,7 @@ function triggerHaptic(_style?: 'light' | 'medium' | 'heavy' | 'success') {
 }
 
 export function PublicAuthPage() {
-  const { isDemoMode } = useAuth();
+  const { isDemoMode, setDemoMode } = useAuth();
   const { saveUser, setShowOnboarding } = useProfile();
   const {
     authMode,
@@ -30,33 +36,26 @@ export function PublicAuthPage() {
     handleForgotPassword,
   } = useAuthActions();
 
+  const startQuickDemo = useCallback(() => {
+    markQuickDemoSession();
+    setDemoMode(true);
+    saveUser(QUICK_DEMO_USER);
+    setTimeout(() => setShowOnboarding(true), 80);
+    toast.success('Demo rápido activado', {
+      description: 'Preview en vivo + opt-in EN VIVO en el paso final.',
+    });
+  }, [saveUser, setShowOnboarding, setDemoMode]);
+
+  // Resume after reload (Capacitor / mobile browsers)
   useEffect(() => {
     try {
-      if ((window as any).__ENTRENAMATCH_QUICK_DEMO__) {
-        (window as any).__ENTRENAMATCH_QUICK_DEMO__ = false;
-        const demoSeed = {
-          id: 'me' as const,
-          name: 'Demo Tester',
-          age: 28,
-          gender: 'mujer' as const,
-          city: 'Viña del Mar',
-          country: 'Chile',
-          lat: -33.0153,
-          lng: -71.5528,
-          bio: 'Demo lista para probar live + muro. Entreno pesas y running. ¡Conectemos!',
-          photos: ['https://picsum.photos/id/1011/600/800'],
-          trainingTypes: ['Pesas/Gym', 'Running'],
-          goals: ['Ganar músculo', 'Socializar y motivación'],
-          level: 'Intermedio',
-          intensity: 'Moderado',
-          availability: ['Tarde'],
-          wantsToGoLive: true,
-        };
-        saveUser(demoSeed as any);
-        setTimeout(() => setShowOnboarding(true), 80);
-      }
+      const quickDemo =
+        (window as any).__ENTRENAMATCH_QUICK_DEMO__ || isQuickDemoSession();
+      if (!quickDemo) return;
+      (window as any).__ENTRENAMATCH_QUICK_DEMO__ = false;
+      startQuickDemo();
     } catch {}
-  }, [saveUser, setShowOnboarding]);
+  }, [startQuickDemo]);
 
   return (
     <AuthScreen
@@ -74,6 +73,7 @@ export function PublicAuthPage() {
       handleForgotPassword={handleForgotPassword}
       isDemoMode={isDemoMode}
       triggerHaptic={triggerHaptic}
+      onQuickDemo={startQuickDemo}
     />
   );
 }

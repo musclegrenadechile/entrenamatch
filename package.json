@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.114",
+  "version": "0.1.115",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -18,7 +18,8 @@
     "build:release:win": "build-release.bat",
     "publish:play": "publish-play.bat",
     "publish:play:internal": "publish-play.bat internal",
-    "publish:play:closed": "publish-play.bat closed"
+    "publish:play:closed": "publish-play.bat closed",
+    "test:fuel": "npx tsx scripts/test-fuel-ai.mjs"
   },
   "dependencies": {
     "@capacitor-community/play-integrity": "^8.0.0",

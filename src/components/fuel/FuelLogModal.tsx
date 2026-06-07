@@ -66,9 +66,21 @@ export function FuelLogModal({
     setSource(src)
   }
 
-  const handleAnalyzeText = () => {
+  const handleAnalyzeText = async () => {
     if (!description.trim()) return
-    applyEstimate(estimateMacrosFromDescription(description), 'text_ai')
+    setAnalyzing(true)
+    try {
+      if (onAnalyzePhoto) {
+        const est = await onAnalyzePhoto('', description.trim())
+        applyEstimate(est, 'text_ai')
+      } else {
+        applyEstimate(estimateMacrosFromDescription(description), 'text_ai')
+      }
+    } catch {
+      applyEstimate(estimateMacrosFromDescription(description), 'text_ai')
+    } finally {
+      setAnalyzing(false)
+    }
   }
 
   const handleAnalyzePhoto = async () => {
@@ -166,10 +178,11 @@ export function FuelLogModal({
           />
           <button
             type="button"
-            onClick={handleAnalyzeText}
-            className="text-[10px] text-[#c084fc] font-bold underline"
+            disabled={analyzing || !description.trim()}
+            onClick={() => void handleAnalyzeText()}
+            className="text-[10px] text-[#c084fc] font-bold underline disabled:opacity-50"
           >
-            Estimar macros del texto
+            {analyzing ? 'Analizando texto…' : 'Estimar macros con Fuel AI'}
           </button>
 
           <input

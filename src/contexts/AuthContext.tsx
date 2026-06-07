@@ -10,6 +10,7 @@ import {
 } from '../services/auth';
 import { GoogleAuthError, getGoogleRedirectFailureMessage } from '../services/googleAuth';
 import { isFirebaseConfigured } from '../services/firebase';
+import { isQuickDemoSession } from '../utils/quickDemo';
 import { toast } from 'sonner';
 
 interface AuthContextType {
@@ -42,7 +43,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isDemoMode, setDemoMode] = useState(shouldForceDemo);
+  const [isDemoMode, setDemoMode] = useState(() => {
+    if (shouldForceDemo) return true
+    return isQuickDemoSession()
+  })
   const [googleNewUser, setGoogleNewUser] = useState(false);
 
   useEffect(() => {

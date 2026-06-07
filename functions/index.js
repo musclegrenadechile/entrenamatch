@@ -1,5 +1,8 @@
 const functions = require('firebase-functions');
+const { defineSecret } = require('firebase-functions/params');
 const admin = require('firebase-admin');
+
+const geminiApiKey = defineSecret('GEMINI_API_KEY');
 
 admin.initializeApp();
 
@@ -301,7 +304,9 @@ async function callGeminiFoodAnalysis(apiKey, imageBase64, mealDescription) {
 }
 
 /** Callable: photo or text → estimated macros (Gemini Vision if GEMINI_API_KEY set). */
-exports.analyzeFood = functions.https.onCall(async (data, context) => {
+exports.analyzeFood = functions
+  .runWith({ secrets: [geminiApiKey], timeoutSeconds: 30, memory: '256MB' })
+  .https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
   }
@@ -312,11 +317,13 @@ exports.analyzeFood = functions.https.onCall(async (data, context) => {
   }
 
   const apiKey =
+    geminiApiKey.value() ||
     process.env.GEMINI_API_KEY ||
     (functions.config().gemini && functions.config().gemini.key) ||
     '';
 
   if (!apiKey) {
+    console.warn('analyzeFood: GEMINI_API_KEY not configured — using heuristic fallback');
     return estimateFromDescription(mealDescription || 'Comida');
   }
 

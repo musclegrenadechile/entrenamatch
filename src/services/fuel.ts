@@ -145,11 +145,17 @@ export async function analyzeFoodWithAi(input: {
   const { app: firebaseApp } = await import('./firebase')
   if (!firebaseApp) throw new Error('Firebase not initialized')
   const { getFunctions, httpsCallable } = await import('firebase/functions')
-  const functions = getFunctions(firebaseApp)
+  const functions = getFunctions(firebaseApp, 'us-central1')
   const fn = httpsCallable<
     { imageBase64?: string; mealDescription?: string },
     AnalyzeFoodResult
   >(functions, 'analyzeFood')
-  const res = await fn(input)
+  const payload: { imageBase64?: string; mealDescription?: string } = {}
+  if (input.imageBase64?.trim()) payload.imageBase64 = input.imageBase64.trim()
+  if (input.mealDescription?.trim()) payload.mealDescription = input.mealDescription.trim()
+  if (!payload.imageBase64 && !payload.mealDescription) {
+    throw new Error('Foto o descripción requerida para Fuel AI')
+  }
+  const res = await fn(payload)
   return res.data
 }

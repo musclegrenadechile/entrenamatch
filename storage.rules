@@ -61,6 +61,13 @@ service firebase.storage {
       allow write: if isAuthenticated();
     }
 
+    // ===== FUEL AI (meal photos for macro logging) =====
+    // Path: fuel/{userId}/{timestamp}.jpg — owner-only write, authenticated read
+    match /fuel/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
     // ===== DEFAULT DENY (everything else is locked) =====
     // This must stay last. More specific rules above take precedence.
     match /{allPaths=**} {

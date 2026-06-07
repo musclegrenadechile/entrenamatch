@@ -2,6 +2,7 @@ import { toast } from 'sonner';
 import { Dumbbell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { APP_VERSION } from '../../constants'; // use centralized version (no more stale 0.1.37)
+import { markQuickDemoSession } from '../../utils/quickDemo';
 
 interface AuthScreenProps {
   authMode: 'login' | 'register';
@@ -18,6 +19,7 @@ interface AuthScreenProps {
   handleForgotPassword?: (email: string) => void;
   isDemoMode: boolean;
   triggerHaptic?: (style?: 'light' | 'medium' | 'heavy' | 'success') => void;
+  onQuickDemo?: () => void;
 }
 
 export const AuthScreen = ({
@@ -35,6 +37,7 @@ export const AuthScreen = ({
   handleForgotPassword,
   isDemoMode,
   triggerHaptic = () => {},
+  onQuickDemo,
 }: AuthScreenProps) => {
   const handleTab = (mode: 'login' | 'register') => {
     triggerHaptic('light');
@@ -48,7 +51,12 @@ export const AuthScreen = ({
 
   const handleDemo = () => {
     triggerHaptic('success');
+    if (onQuickDemo) {
+      onQuickDemo();
+      return;
+    }
     try {
+      markQuickDemoSession();
       (window as any).__ENTRENAMATCH_QUICK_DEMO__ = true;
     } catch {}
     window.location.reload();

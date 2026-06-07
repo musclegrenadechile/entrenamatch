@@ -101,7 +101,7 @@ import type { ProfileSection } from './components/profile'
 import { DailyRitualHome, LiveToggleFab } from './components/home'
 import { fetchGlobalProfilePosts } from './services/profilePosts'
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
-import { isSeedProfileId } from './utils/seedProfiles'
+import { isQuickDemoSession, clearQuickDemoSession } from './utils/quickDemo'
 import {
   buildWeekDayStatuses,
   loadWeekLiveDays,
@@ -398,7 +398,7 @@ function App() {
   } = useProfile()
 
   // Real Auth from Firebase + Demo Auth -- hoisted very early so that isDemoMode, firebaseUser are available for any early effects' deps (e.g. the daily offline effect at ~1188, and to avoid TDZ on open).
-  const { currentUser: firebaseUser, userProfile: firebaseProfile, isDemoMode, googleNewUser, clearGoogleNewUser, loading: authBooting } = useAuth()
+  const { currentUser: firebaseUser, userProfile: firebaseProfile, isDemoMode, googleNewUser, clearGoogleNewUser, loading: authBooting, setDemoMode } = useAuth()
   const { 
     signInDemo, 
     signUpDemo, 
@@ -3997,6 +3997,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
       // Clear all local state
       if (clearProfile) clearProfile()
+      clearQuickDemoSession()
+      setDemoMode(false)
       setChatUnreads({})
       setSessionUnreads({})
       seenChatMsgIdsRef.current = {}
@@ -5260,9 +5262,21 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
   const handleAnalyzeFood = async (imageBase64: string, mealDescription?: string) => {
     try {
-      return await analyzeFoodWithAi({ imageBase64, mealDescription })
-    } catch {
-      return estimateMacrosFromDescription(mealDescription || 'Comida')
+      const result = await analyzeFoodWithAi({
+        imageBase64: imageBase64 || undefined,
+        mealDescription,
+      })
+      if (result.source === 'heuristic') {
+        toast.message('Estimación aproximada', {
+          description: 'Fuel AI usa heurística local. Configura GEMINI_API_KEY en Functions para análisis Gemini.',
+        })
+      }
+      return result
+    } catch (e) {
+      console.warn('Fuel AI analyze failed', e)
+      const fallback = estimateMacrosFromDescription(mealDescription || 'Comida')
+      toast.message('Fuel AI no disponible', { description: 'Usando estimación local.' })
+      return { ...fallback, source: 'heuristic' as const }
     }
   }
 
