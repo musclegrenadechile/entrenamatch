@@ -106,6 +106,7 @@ export function HomeTab(props: HomeTabProps) {
         teamMembers={homeTeamMembers}
         liveCount={liveCountForUI}
         syncCount={activeSyncCount}
+        activeSyncPairs={activeSyncPairs}
         isLive={!!currentUser?.trainingNow}
         isTogglingLive={isTogglingLive}
         onToggleLive={() => toggleLiveTraining()}

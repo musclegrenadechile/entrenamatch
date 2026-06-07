@@ -1,4 +1,4 @@
-import { X, Radio, Map, Users } from 'lucide-react'
+import { X, Radio, Users, RefreshCw } from 'lucide-react'
 
 const STORAGE_KEY = 'entrenamatch_first_steps_dismissed'
 
@@ -18,46 +18,50 @@ export function dismissFirstSteps(): void {
 
 export interface FirstStepsGuideProps {
   isLive: boolean
+  hasTeam: boolean
   onToggleLive: () => void
-  onOpenMap: () => void
+  onOpenMatches?: () => void
   onOpenExplore: () => void
+  onStartSync: () => void
   onDismiss: () => void
 }
 
 export function FirstStepsGuide({
   isLive,
+  hasTeam,
   onToggleLive,
-  onOpenMap,
+  onOpenMatches,
   onOpenExplore,
+  onStartSync,
   onDismiss,
 }: FirstStepsGuideProps) {
   const steps = [
     {
       id: 'live',
       icon: Radio,
-      title: '1. Activa LIVE',
-      desc: 'Cuando empieces a entrenar, enciende live. Cuenta para tu semana y te ven en el mapa.',
+      title: '1. Live',
+      desc: 'Enciende live cuando entrenes. Apareces en el mapa y cuenta para tu semana.',
       done: isLive,
       action: isLive ? undefined : onToggleLive,
       actionLabel: 'Activar live',
     },
     {
-      id: 'map',
-      icon: Map,
-      title: '2. Abre el mapa',
-      desc: 'GymPulse muestra quién entrena cerca — únete o inicia un sync.',
-      done: false,
-      action: onOpenMap,
-      actionLabel: 'Ver mapa',
-    },
-    {
       id: 'team',
       icon: Users,
-      title: '3. Conecta con alguien',
-      desc: 'Explora perfiles, haz match y entrena en sync con tu equipo.',
+      title: '2. Equipo',
+      desc: 'Matches y socios con los que ya entrenaste — tu red de gym.',
+      done: hasTeam,
+      action: hasTeam ? onOpenMatches : onOpenExplore,
+      actionLabel: hasTeam ? 'Ver mi equipo' : 'Buscar partner',
+    },
+    {
+      id: 'sync',
+      icon: RefreshCw,
+      title: '3. Sync',
+      desc: 'EntrenaSync en tiempo real con alguien de tu equipo o del mapa.',
       done: false,
-      action: onOpenExplore,
-      actionLabel: 'Explorar',
+      action: onStartSync,
+      actionLabel: 'Iniciar sync',
     },
   ]
 
@@ -72,10 +76,10 @@ export function FirstStepsGuide({
         <X size={16} />
       </button>
       <p className="text-[10px] uppercase tracking-[0.16em] text-[#FF671F] font-bold mb-1">
-        Primeros 3 pasos
+        Loop Live → Equipo → Sync
       </p>
       <p className="text-sm font-semibold text-white mb-3 pr-6">
-        Así se siente EntrenaMatch en 2 minutos
+        Tu rutina en EntrenaMatch
       </p>
       <div className="space-y-2.5">
         {steps.map((step) => {
