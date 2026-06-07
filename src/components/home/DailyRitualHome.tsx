@@ -1,5 +1,7 @@
 import { MapPin, MessageCircle, Users } from 'lucide-react'
 import { FuelDayCard } from '../fuel/FuelDayCard'
+import { LocalNetworkCard } from './LocalNetworkCard'
+import type { LocalNetworkCardProps } from './LocalNetworkCard'
 
 export type TeamMemberStatus = 'live' | 'recent' | 'this_week' | 'inactive'
 
@@ -33,6 +35,7 @@ export interface DailyRitualHomeProps {
   onOpenFuelSetup?: () => void
   onOpenFuelLog?: () => void
   cityLabel?: string
+  localNetwork?: Omit<LocalNetworkCardProps, 'cityLabel'> & { cityLabel?: string }
 }
 
 function statusLine(member: TeamMemberView): string {
@@ -64,6 +67,7 @@ export function DailyRitualHome({
   onOpenFuelSetup,
   onOpenFuelLog,
   cityLabel,
+  localNetwork,
 }: DailyRitualHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
   const hour = new Date().getHours()
@@ -190,6 +194,10 @@ export function DailyRitualHome({
           onSetup={onOpenFuelSetup ?? (() => {})}
           onLogMeal={onOpenFuelLog ?? (() => {})}
         />
+      )}
+
+      {localNetwork && (
+        <LocalNetworkCard cityLabel={cityLabel} {...localNetwork} />
       )}
 
       {/* Tu equipo */}

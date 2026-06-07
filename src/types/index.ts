@@ -31,6 +31,27 @@
   trainingSyncWith?: string
   syncStreak?: number
   syncStartedAt?: number
+  /** Weekly live stats for local leaderboard (Phase 4). */
+  weekStats?: WeekStats
+  /** Opt-in for city leaderboard; default visible when unset. */
+  showOnLeaderboard?: boolean
+  /** Last gym partner check-in (shown on map when live). */
+  gymCheckIn?: GymCheckIn
+}
+
+export interface WeekStats {
+  weekKey: string
+  liveMinutes: number
+  liveDays: number
+  updatedAt: number
+}
+
+export interface GymCheckIn {
+  gymId: string
+  gymName: string
+  lat: number
+  lng: number
+  checkedInAt: number
 }
 
 export interface Message {

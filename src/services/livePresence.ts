@@ -41,6 +41,13 @@ export interface LivePresenceWritePayload {
   liveJoins?: number
   trainingSyncWith?: string | null
   retentionLevel?: number
+  gymCheckIn?: {
+    gymId: string
+    gymName: string
+    lat: number
+    lng: number
+    checkedInAt: number
+  } | null
 }
 
 /** Write / refresh presence doc when user goes live. */
@@ -130,5 +137,6 @@ export function buildLivePresencePayload(
     liveJoins: user.liveJoins,
     trainingSyncWith: user.trainingSyncWith ?? null,
     retentionLevel: user.retentionLevel,
+    gymCheckIn: user.gymCheckIn ?? null,
   }
 }

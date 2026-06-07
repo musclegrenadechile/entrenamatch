@@ -99,8 +99,17 @@ import {
   buildWeekDayStatuses,
   loadWeekLiveDays,
   recordWeekLiveDay,
+  getWeekKey,
   MIN_LIVE_MINUTES_FOR_WEEK_DAY,
 } from './utils/weekLiveTracker'
+import {
+  buildCityChallenge,
+  buildCityLeaderboard,
+  findNearestGym,
+  mergeWeekStats,
+  normalizeCity,
+  isGymCheckInFresh,
+} from './services/localNetwork'
 import {
   formatLastLiveLabel,
   getTeamMemberStatus,
@@ -2541,6 +2550,53 @@ useEffect(() => {
 
   const homeWeekTrainedCount = weekLiveDays.length
 
+  const homeCityNorm = normalizeCity(currentUser?.city)
+
+  const homeLocalLeaderboard = useMemo(() => {
+    if (!homeCityNorm) return []
+    return buildCityLeaderboard(realProfiles as Profile[], homeCityNorm, {
+      userId: effectiveUserId,
+      name: currentUser?.name || 'Tú',
+      stats: currentUser?.weekStats,
+      liveStreak: currentUser?.liveStreak,
+      showOnLeaderboard: currentUser?.showOnLeaderboard,
+    })
+  }, [
+    realProfiles,
+    homeCityNorm,
+    effectiveUserId,
+    currentUser?.name,
+    currentUser?.weekStats,
+    currentUser?.liveStreak,
+    currentUser?.showOnLeaderboard,
+  ])
+
+  const homeCityChallenge = useMemo(() => {
+    if (!homeCityNorm) return null
+    return buildCityChallenge(
+      realProfiles as Profile[],
+      homeCityNorm,
+      currentUser?.city || '',
+      currentUser?.weekStats,
+      effectiveUserId
+    )
+  }, [realProfiles, homeCityNorm, currentUser?.city, currentUser?.weekStats, effectiveUserId])
+
+  const homeNearestGym = useMemo(() => {
+    const lat = userLocation?.lat ?? currentUser?.lat
+    const lng = userLocation?.lng ?? currentUser?.lng
+    if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) return null
+    const gyms = (partnerLocations || []).map((p: any) => ({
+      id: p.id,
+      name: p.name,
+      lat: p.lat,
+      lng: p.lng,
+      address: p.address,
+      city: p.city,
+    }))
+    return findNearestGym(gyms, Number(lat), Number(lng))
+  }, [userLocation, currentUser?.lat, currentUser?.lng, partnerLocations])
+
   // Beta Feedback enhanced (Phase 0 - structured + history)
   const [feedbackType, setFeedbackType] = useState<'bug' | 'idea' | 'ux' | 'other'>('idea')
   const [feedbackRating, setFeedbackRating] = useState(5)
@@ -2621,6 +2677,9 @@ useEffect(() => {
                 trainingSyncWith: data.trainingSyncWith || undefined,
                 syncStreak: data.syncStreak != null ? data.syncStreak : undefined,
                 syncBonds: data.syncBonds || {},
+                weekStats: data.weekStats || undefined,
+                showOnLeaderboard: data.showOnLeaderboard,
+                gymCheckIn: data.gymCheckIn || undefined,
                 // add other fields as needed for map (level etc)
                 retentionLevel: data.retentionLevel || 1,
               } as any);
@@ -3099,6 +3158,9 @@ useEffect(() => {
             trainingSyncWith: data.trainingSyncWith || undefined,
             syncStreak: data.syncStreak != null ? data.syncStreak : undefined,
             syncBonds: data.syncBonds || {},
+            weekStats: data.weekStats || undefined,
+            showOnLeaderboard: data.showOnLeaderboard,
+            gymCheckIn: data.gymCheckIn || undefined,
           })
         }
       })
@@ -3434,6 +3496,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         trainingSyncWith: merged.trainingSyncWith ?? null,
         syncStartedAt: merged.syncStartedAt ?? null,
         currentDailyChallenge: merged.currentDailyChallenge,
+        weekStats: merged.weekStats ?? null,
+        showOnLeaderboard: merged.showOnLeaderboard !== false,
+        gymCheckIn: isGymCheckInFresh(merged.gymCheckIn) ? merged.gymCheckIn : null,
       };
 
       const cleanProfileUpdate = sanitizeForFirestore(profileUpdate);
@@ -3476,6 +3541,52 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   }
 }, [saveUser, isDemoMode, firebaseUser?.uid, db, updateUserProfile, publishLiveSnapshot]);
+
+  const handleGymCheckIn = useCallback(
+    async (gym: { id: string; name: string; lat: number; lng: number }) => {
+      if (!currentUser) return
+      const gymCheckIn = {
+        gymId: gym.id,
+        gymName: gym.name,
+        lat: gym.lat,
+        lng: gym.lng,
+        checkedInAt: Date.now(),
+      }
+      const updated = {
+        ...currentUser,
+        gymCheckIn,
+        lat: gym.lat,
+        lng: gym.lng,
+      } as CurrentUser
+      saveUser(updated)
+      try {
+        await saveUserWithRealSync(updated)
+        toast.success(`Check-in en ${gym.name}`, {
+          description: 'Tu pin aparecerá en el mapa cuando entrenes en vivo',
+        })
+        setMapForceTick((t) => t + 1)
+      } catch {
+        toast.error('No se pudo registrar el check-in')
+      }
+    },
+    [currentUser, saveUser, saveUserWithRealSync]
+  )
+
+  const handleToggleLeaderboard = useCallback(
+    async (visible: boolean) => {
+      if (!currentUser) return
+      const updated = { ...currentUser, showOnLeaderboard: visible } as CurrentUser
+      saveUser(updated)
+      try {
+        await saveUserWithRealSync(updated)
+        toast(visible ? 'Visible en el ranking de tu ciudad' : 'Oculto del ranking local')
+      } catch {
+        toast.error('No se pudo actualizar visibilidad')
+      }
+    },
+    [currentUser, saveUser, saveUserWithRealSync]
+  )
+
   // Native push notifications setup (only for real users in native APK)
   // NOTE: We no longer auto-request permission on every login to avoid unwanted prompts/crashes during "activation".
   // Users explicitly activate via the button in Profile. This effect only sets up listeners if plugin present.
@@ -5364,6 +5475,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         const currentXp = dailyPulse?.xp ?? (me as any).retentionXp ?? 0
         const newMom = currentMom + momentumBonus
         const newXp = Math.min(299, currentXp + xpBonus)
+        const weekKey = getWeekKey()
+        const nextLiveDays =
+          minutes >= MIN_LIVE_MINUTES_FOR_WEEK_DAY
+            ? recordWeekLiveDay(effectiveUserId)
+            : weekLiveDays
+        const newWeekStats = mergeWeekStats(
+          me.weekStats?.weekKey === weekKey ? me.weekStats : undefined,
+          weekKey,
+          minutes,
+          nextLiveDays.length
+        )
 
         const updated = {
           ...me,
@@ -5373,6 +5495,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           syncStartedAt: null,
           momentumPoints: newMom,
           retentionXp: newXp,
+          weekStats: newWeekStats,
         } as CurrentUser
 
         if (syncPartnerId) {
@@ -5391,7 +5514,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         loadRealProfiles().catch(() => {})
         setMapForceTick((t) => t + 1)
         if (minutes >= MIN_LIVE_MINUTES_FOR_WEEK_DAY) {
-          setWeekLiveDays(recordWeekLiveDay(effectiveUserId))
+          setWeekLiveDays(nextLiveDays)
           toast('Entrenamiento finalizado', { description: `${minutes} min — cuenta para tu semana ✓` })
         } else {
           toast('Sesión finalizada', {
@@ -9356,6 +9479,21 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 fuelProfile ? setShowFuelLogModal(true) : setShowFuelSetupModal(true)
               }
               cityLabel={currentUser?.city}
+              localNetwork={{
+                challenge: homeCityChallenge,
+                leaderboard: homeLocalLeaderboard,
+                nearestGym: homeNearestGym,
+                gymCheckIn: isGymCheckInFresh(currentUser?.gymCheckIn)
+                  ? currentUser.gymCheckIn
+                  : null,
+                showOnLeaderboard: currentUser?.showOnLeaderboard !== false,
+                onToggleLeaderboard: handleToggleLeaderboard,
+                onGymCheckIn: handleGymCheckIn,
+                onOpenMap: () => {
+                  setActiveTab('explore')
+                  setShowLiveMap(true)
+                },
+              }}
             />
             {/* CINEMATIC REMASTERED FEED HEADER — the social heart of the GymPulse */}
             <div className="feed-header-cinematic sticky top-0 z-10 -mx-4 px-4 pt-3 pb-3">
