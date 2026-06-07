@@ -18,6 +18,9 @@ export function docToProfilePost(docSnap: { id: string; data: () => Record<strin
     timestamp: Number.isFinite(ts) ? ts : Date.now(),
     likes: Array.isArray(d.likes) ? (d.likes as string[]) : [],
     pinned: !!d.pinned,
+    postType: d.postType as ProfilePost['postType'],
+    workoutId: d.workoutId as string | undefined,
+    workoutPreview: d.workoutPreview as ProfilePost['workoutPreview'],
     reactions: (d.reactions as ProfilePost['reactions']) || {},
     comments: [],
   }

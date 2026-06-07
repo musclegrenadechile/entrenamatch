@@ -25,6 +25,7 @@ export interface DailyRitualHomeProps {
   onJoinMember?: (id: string, name: string) => void
   onMessageMember?: (id: string) => void
   onOpenMatches?: () => void
+  onOpenEntrenaLog?: () => void
   cityLabel?: string
 }
 
@@ -50,6 +51,7 @@ export function DailyRitualHome({
   onJoinMember,
   onMessageMember,
   onOpenMatches,
+  onOpenEntrenaLog,
   cityLabel,
 }: DailyRitualHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
@@ -147,6 +149,16 @@ export function DailyRitualHome({
             Buscar partner
           </button>
         </div>
+
+        {onOpenEntrenaLog && (
+          <button
+            type="button"
+            onClick={onOpenEntrenaLog}
+            className="mt-2 w-full py-2.5 rounded-xl border border-[#FF671F]/35 bg-[#FF671F]/10 text-[11px] font-bold text-[#FF671F] active:bg-[#FF671F]/20"
+          >
+            🏋️ Registrar entreno (EntrenaLog)
+          </button>
+        )}
 
         {(liveCount > 0 || syncCount > 0) && (
           <p className="text-[10px] text-[#22c55e]/90 mt-3 font-medium text-center">

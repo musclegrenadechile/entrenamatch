@@ -141,6 +141,51 @@ export interface CurrentUser extends Omit<Profile, 'id'> {
 
 export type Tab = 'home' | 'explore' | 'squads' | 'sesiones' | 'matches' | 'messages' | 'profile'
 
+export type WorkoutType = 'push' | 'pull' | 'legs' | 'full' | 'cardio' | 'other'
+
+export type ProfilePostType = 'text' | 'workout' | 'dailyPulse' | 'nutrition' | 'sync'
+
+export interface WorkoutSet {
+  reps: number
+  weightKg: number
+}
+
+export interface WorkoutExercise {
+  name: string
+  sets: WorkoutSet[]
+}
+
+export interface WorkoutStats {
+  totalSets: number
+  totalVolumeKg: number
+  durationMin: number
+  exerciseCount: number
+}
+
+export interface Workout {
+  id: string
+  userId: string
+  title: string
+  type: WorkoutType
+  startedAt: number
+  endedAt: number
+  exercises: WorkoutExercise[]
+  stats: WorkoutStats
+  source: 'manual' | 'arena' | 'sync' | 'template'
+  syncSessionId?: string
+  partnerId?: string
+}
+
+export interface WorkoutPreview {
+  title: string
+  type: WorkoutType
+  exerciseCount: number
+  totalSets: number
+  volumeLabel: string
+  durationMin: number
+  exercises?: Array<{ name: string; setCount: number; topWeightKg?: number }>
+}
+
 export interface ProfilePost {
   id: string
   userId: string
@@ -149,6 +194,10 @@ export interface ProfilePost {
   timestamp: number
   pinned?: boolean
   likes: string[] // list of userIds who liked
+  postType?: ProfilePostType
+  workoutId?: string
+  workoutPreview?: WorkoutPreview
+  reactions?: Record<string, string[]>
   comments: Array<{
     id: string
     userId: string

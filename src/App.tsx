@@ -105,6 +105,9 @@ import {
   getTeamMemberStatus,
   sortTeamMembers,
 } from './utils/homeTeam'
+import { isTeamMemberId } from './utils/teamMembers'
+import { EntrenaLogModal, WorkoutPostCard } from './components/workout'
+import { saveWorkoutWithPost } from './services/workouts'
 import { AuthScreen } from './components/auth/AuthScreen'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { GymPulseMap } from './components/map' // Inicio de modularización 2026-06-05 (stub + estructura)
@@ -762,6 +765,8 @@ function App() {
   const [recentlyPublishedPostId, setRecentlyPublishedPostId] = useState<string | null>(null)
   const [feedPublishing, setFeedPublishing] = useState(false)
   const [showFeedPublishSuccess, setShowFeedPublishSuccess] = useState(false)
+  const [showEntrenaLogModal, setShowEntrenaLogModal] = useState(false)
+  const [savingWorkout, setSavingWorkout] = useState(false)
   // THE KILLER FEATURE: EntrenaSync - real-time synchronized training that turns two people into a high-performance unit with shared state, visible connection, joint impact, and lasting social capital. This is the foundation of the first true social network for fitness performance.
   const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
   const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
@@ -2445,6 +2450,11 @@ useEffect(() => {
     const combinedMatchIds = Array.from(new Set([...matches, ...realMatches]))
     return all.filter(p => combinedMatchIds.includes(p.id))
   }, [matches, realMatches, realProfiles])
+
+  const teamMatchIds = useMemo(
+    () => Array.from(new Set([...matches, ...realMatches])),
+    [matches, realMatches]
+  )
 
   // Phase A home: team strip (matches + sync partners, real people first)
   const homeTeamMembers = useMemo(() => {
@@ -4673,6 +4683,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             timestamp: d.timestamp || Date.now(),
             likes: d.likes || [],
             pinned: !!d.pinned,
+            postType: d.postType,
+            workoutId: d.workoutId,
+            workoutPreview: d.workoutPreview,
             reactions: d.reactions || {},
             comments: comments as ProfilePost['comments'],
           })
@@ -4817,8 +4830,78 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     setRecentlyPublishedPostId(post.id)
     setTimeout(() => setRecentlyPublishedPostId(null), 4000)
     addDebugLog(`Publicado: ${post.text.slice(0,50)}${post.photo ? ' +foto' : ''}`)
-
     toast.success('Publicado en tu muro')
+    return post
+  }
+  const handleSaveEntrenaLog = async (payload: {
+    title: string
+    type: import('./types').WorkoutType
+    exercises: import('./types').WorkoutExercise[]
+    durationMin: number
+  }) => {
+    if (!payload.exercises.length) return
+    setSavingWorkout(true)
+    try {
+      if (!isDemoMode && firebaseUser?.uid && db) {
+        const { workout, postId, postText } = await saveWorkoutWithPost(db, {
+          userId: effectiveUserId,
+          title: payload.title,
+          type: payload.type,
+          exercises: payload.exercises,
+          durationMin: payload.durationMin,
+          source: 'manual',
+        })
+        const preview = {
+          title: workout.title,
+          type: workout.type,
+          exerciseCount: workout.stats.exerciseCount,
+          totalSets: workout.stats.totalSets,
+          volumeLabel: `${workout.stats.totalVolumeKg >= 1000 ? (workout.stats.totalVolumeKg / 1000).toFixed(1) + 'k kg' : workout.stats.totalVolumeKg + ' kg'}`,
+          durationMin: workout.stats.durationMin,
+          exercises: payload.exercises.map((ex) => ({
+            name: ex.name,
+            setCount: ex.sets.length,
+            topWeightKg: ex.sets.reduce((m, s) => Math.max(m, s.weightKg || 0), 0) || undefined,
+          })),
+        }
+        const post: ProfilePost = {
+          id: postId,
+          userId: effectiveUserId,
+          text: postText,
+          timestamp: Date.now(),
+          pinned: false,
+          likes: [],
+          comments: [],
+          postType: 'workout',
+          workoutId: workout.id,
+          workoutPreview: preview,
+          reactions: {},
+        }
+        setProfilePosts((prev) => {
+          const current = prev[effectiveUserId] || []
+          const newState = { ...prev, [effectiveUserId]: [post, ...current].slice(0, 10) }
+          profilePostsRef.current = newState
+          return newState
+        })
+        subscribeCommentsForPosts([post])
+        setRecentlyPublishedPostId(postId)
+        setTimeout(() => setRecentlyPublishedPostId(null), 4000)
+        if (activeTab === 'home') loadGlobalFeed().catch(() => {})
+        toast.success('Entreno registrado', { description: 'Publicado en tu muro y el feed' })
+      } else {
+        await createProfilePost(
+          `🏋️ ${payload.title} — ${payload.exercises.length} ejercicios, ${payload.durationMin} min (demo)`,
+          null
+        )
+        toast.success('Entreno guardado (demo)')
+      }
+      setShowEntrenaLogModal(false)
+    } catch (e) {
+      console.error('EntrenaLog save failed', e)
+      toast.error('No se pudo guardar el entreno')
+    } finally {
+      setSavingWorkout(false)
+    }
   }
 
   // Shared helper: upload data: URL photo to Storage for profile photos (onboarding + gallery).
@@ -7316,40 +7399,40 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   }
 
 
-  // Real-time urgency notifications for NEW live trainers nearby (the killer retention hook).
-  // Placed HERE (after liveTrainingNow declaration) to avoid TDZ "Cannot access before initialization" on app start.
-  // Fires in-app notif + toast when fresh lives appear (on loadRealProfiles refresh or 60s interval).
-  // Uses seen ref + dedup inside addNotification. Guard skips pure first-load spam. Demo + real parity.
+  // Phase B: in-app alerts only when someone from YOUR TEAM (matches + sync bonds) goes live.
   useEffect(() => {
     if (!liveTrainingNow || liveTrainingNow.length === 0) return
     let addedNew = false
     liveTrainingNow.forEach((liveUser: any) => {
-      if (!seenLiveUserIdsRef.current.has(liveUser.id)) {
-        seenLiveUserIdsRef.current.add(liveUser.id)
-        addedNew = true
-        // Guard: only notify if we've already seen at least one before (skip init spam)
-        if (seenLiveUserIdsRef.current.size > 1) {
-          const inMyNet = !!syncBonds[liveUser.id];
-          const bond = inMyNet ? syncBonds[liveUser.id] : null;
-          addNotification({
-            type: 'session_join',
-            title: inMyNet ? '🔥 ¡TU RED ACTIVÓ ENTRENAMIENTO!' : '🟢 ¡Entrenando ahora cerca!',
-            body: `${liveUser.name} está en vivo a ${(liveUser.distance || 0).toFixed(1)}km.${inMyNet ? ` Tu socio LV${bond?.bondLevel || 1} — re-sync ya para +Network Power y fortalecer el grafo.` : ' ¡Únete ya antes de que se vaya!'}`,
-            relatedId: liveUser.id,
-            photoUrl: liveUser.photos?.[0],
-            // extra flag for special rendering
-            isNetwork: inMyNet,
-          } as any)
-          toast(`${inMyNet ? '🔥' : '🟢'} ${liveUser.name} ${inMyNet ? 'de tu RED' : 'entrenando ahora cerca'}`, {
-            description: inMyNet 
-              ? `Aliado LV${bond?.bondLevel || 1} a ${(liveUser.distance || 0).toFixed(1)}km — toca para re-sync y subir tu NP. El grafo se fortalece.`
-              : `A ${(liveUser.distance || 0).toFixed(1)}km · se va en ~${liveUser.seVaEnMin || 40}m — ¡Ver perfil!`,
-            action: {
-              label: inMyNet ? 'Re-sync ahora' : 'Ver',
-              onClick: () => inMyNet ? startSyncWith(liveUser.id, liveUser.name) : setShowFullProfile(liveUser as any)
-            }
-          })
-        }
+      if (seenLiveUserIdsRef.current.has(liveUser.id)) return
+      seenLiveUserIdsRef.current.add(liveUser.id)
+      addedNew = true
+
+      const inMyTeam = isTeamMemberId(liveUser.id, syncBonds, teamMatchIds)
+      if (!inMyTeam) return
+
+      if (seenLiveUserIdsRef.current.size > 1) {
+        const isBond = !!syncBonds[liveUser.id]
+        addNotification({
+          type: 'session_join',
+          title: isBond ? `${liveUser.name.split(' ')[0]} está en vivo` : `${liveUser.name.split(' ')[0]} de tu equipo está entrenando`,
+          body: isBond
+            ? 'Tu socio de sync activó live — únete desde Hoy.'
+            : `Match activo a ${(liveUser.distance || 0).toFixed(1)}km — ¿te sumas?`,
+          relatedId: liveUser.id,
+          photoUrl: liveUser.photos?.[0],
+          isNetwork: isBond,
+        } as any)
+        toast(`${isBond ? '🔥' : '🟢'} ${liveUser.name.split(' ')[0]} está en vivo`, {
+          description: isBond
+            ? 'Tu equipo — toca para unirte al sync'
+            : `Match · ${(liveUser.distance || 0).toFixed(1)}km`,
+          action: {
+            label: isBond ? 'Unirme' : 'Ver',
+            onClick: () =>
+              isBond ? startSyncWith(liveUser.id, liveUser.name) : setShowFullProfile(liveUser as any),
+          },
+        })
       }
     })
     if (addedNew) {
@@ -7357,10 +7440,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         localStorage.setItem('entrenamatch_seen_live_users', JSON.stringify(Array.from(seenLiveUserIdsRef.current)))
       } catch {}
     }
-  }, [liveTrainingNow, addNotification])
+  }, [liveTrainingNow, addNotification, syncBonds, teamMatchIds])
 
-  // NEW: Network Power propagation notifs — when someone FROM YOUR RED starts a live EntrenaSync (trainingSyncWith flips on).
-  // This makes the graph feel alive: "tu socio activó sync → ve y súmate para multiplicar poder".
+  // Phase B: sync-start alerts — team bonds only (matches get live alert above).
   useEffect(() => {
     if (!liveTrainingNow || liveTrainingNow.length === 0) return
     const currentRedSyncs: Record<string, string | null> = {}
@@ -7373,21 +7455,19 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       const prev = prevRedSyncStateRef.current[uid]
       const now = currentRedSyncs[uid]
       if (prev !== now && now && !prev) {
-        // A red partner just entered a sync
         const partner = liveTrainingNow.find((x: any) => x.id === uid)
         if (partner) {
-          const bond = syncBonds[uid]
           addNotification({
             type: 'session_join',
-            title: '🔥 TU RED ACTIVÓ ENTRENASYNC',
-            body: `${partner.name} (LV${bond?.bondLevel || 1}) empezó un sync fuerte. Únete ahora — tu Network Power sube y el grafo se propaga.`,
+            title: `${partner.name.split(' ')[0]} activó EntrenaSync`,
+            body: 'Tu socio de sync está entrenando en pareja — únete desde Hoy.',
             relatedId: uid,
             photoUrl: partner.photos?.[0],
             isNetwork: true,
           } as any)
-          toast.success(`🔥 ${partner.name} de tu red activó sync`, {
-            description: `LV${bond?.bondLevel || 1} • re-sync ya para +NP y resultados compartidos. Esto fortalece tu estatus en la red.`,
-            action: { label: 'Re-sync', onClick: () => startSyncWith(uid, partner.name) }
+          toast.success(`${partner.name.split(' ')[0]} en EntrenaSync`, {
+            description: 'Tu equipo — toca para unirte',
+            action: { label: 'Unirme', onClick: () => startSyncWith(uid, partner.name) },
           })
         }
       }
@@ -8881,6 +8961,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 setActiveChat(id)
               }}
               onOpenMatches={() => setActiveTab('matches')}
+              onOpenEntrenaLog={() => setShowEntrenaLogModal(true)}
               cityLabel={currentUser?.city}
             />
             {/* CINEMATIC REMASTERED FEED HEADER — the social heart of the GymPulse */}
@@ -9163,11 +9244,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                             <div className="text-right text-[10px] text-[#9CA3AF] tabular-nums whitespace-nowrap ml-auto">{getRelativeTime(post.timestamp)}</div>
                           </div>
 
-                          {/* BODY TEXT */}
+                          {/* BODY — workout card or plain text */}
+                          {post.postType === 'workout' && post.workoutPreview ? (
+                            <div className="muro-post-body mt-2">
+                              <WorkoutPostCard preview={post.workoutPreview} compact />
+                            </div>
+                          ) : (
                           <div className="muro-post-body">
                             {isEcho && <span className="text-[#FFD700] font-semibold block mb-0.5">👁️ Highlight de EntrenaSync — se propaga en la red</span>}
                             <div className="whitespace-pre-wrap">{post.text}</div>
                           </div>
+                          )}
 
                           {/* ACTIONS BAR — likes, comments, owner tools */}
                           <div className="flex items-center gap-4 text-sm mt-1">
@@ -12305,6 +12392,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
          Welcome guide modal can still be triggered if needed via other means or first-load. */}
 
       {/* Bottom Navigation - Premium, energetic feel (polished aesthetics) */}
+      <EntrenaLogModal
+        open={showEntrenaLogModal}
+        onClose={() => setShowEntrenaLogModal(false)}
+        onSave={handleSaveEntrenaLog}
+        saving={savingWorkout}
+      />
       <LiveToggleFab
         isLive={!!currentUser?.trainingNow}
         isTogglingLive={isTogglingLive}

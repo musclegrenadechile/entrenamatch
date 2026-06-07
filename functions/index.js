@@ -6,11 +6,33 @@ admin.initializeApp();
 const db = admin.firestore();
 const messaging = admin.messaging();
 
+/** Sync bonds + mutual matches — who gets "tu equipo está live" push. */
+async function getTeamPartnerIds(uid, syncBonds) {
+  const partnerIds = new Set(Object.keys(syncBonds || {}));
+
+  try {
+    const [asUser1, asUser2] = await Promise.all([
+      db.collection('matches').where('user1', '==', uid).get(),
+      db.collection('matches').where('user2', '==', uid).get(),
+    ]);
+    asUser1.forEach((doc) => {
+      const d = doc.data() || {};
+      if (d.user2) partnerIds.add(d.user2);
+    });
+    asUser2.forEach((doc) => {
+      const d = doc.data() || {};
+      if (d.user1) partnerIds.add(d.user1);
+    });
+  } catch (e) {
+    console.warn('Match lookup for team push failed', uid, e);
+  }
+
+  partnerIds.delete(uid);
+  return Array.from(partnerIds);
+}
+
 /**
- * Trigger: when a profile is updated (trainingNow or trainingSyncWith changes).
- * If the user just went live or started a sync, notify all their Red (syncBonds) via real FCM background push.
- * This gives true background notifications even if the app is closed or in background on the receiver devices.
- * Tokens are stored by the client in userPushTokens/{uid}.
+ * Trigger: profile live/sync change → FCM push to team only (bonds + matches).
  */
 exports.notifyRedNetworkLiveOrSync = functions.firestore
   .document('profiles/{userId}')
@@ -23,28 +45,26 @@ exports.notifyRedNetworkLiveOrSync = functions.firestore
     const startedSync = !before.trainingSyncWith && after.trainingSyncWith;
 
     if (!wentLive && !startedSync) {
-      return null; // nothing relevant changed
-    }
-
-    const bonds = after.syncBonds || {};
-    const partnerIds = Object.keys(bonds);
-    if (partnerIds.length === 0) {
-      console.log(`No bonds for ${uid}, skipping network push`);
       return null;
     }
 
-    const name = after.name || 'Un socio de tu red';
+    const partnerIds = await getTeamPartnerIds(uid, after.syncBonds || {});
+    if (partnerIds.length === 0) {
+      console.log(`No team partners for ${uid}, skipping push`);
+      return null;
+    }
+
+    const name = after.name || 'Tu gym partner';
     const isSync = !!startedSync;
 
     const title = isSync
-      ? `🔥 ${name} activó EntrenaSync`
-      : `🔥 ${name} está entrenando ahora (en vivo)`;
+      ? `${name} activó EntrenaSync`
+      : `${name} está entrenando en vivo`;
 
     const body = isSync
-      ? 'Súmate ya con tu red. Network Power se fortalece y tu grafo gana visibilidad.'
-      : 'Únete al pulso de tu red y construye más alianzas de alto rendimiento.';
+      ? 'Tu equipo está en sync — únete desde Hoy o el mapa.'
+      : 'Alguien de tu equipo acaba de activar live. ¿Te sumas?';
 
-    // Fetch tokens for all partners in the red
     const tokenPromises = partnerIds.map(async (partnerId) => {
       try {
         const tokenSnap = await db.collection('userPushTokens').doc(partnerId).get();
@@ -61,28 +81,23 @@ exports.notifyRedNetworkLiveOrSync = functions.firestore
     const tokens = (await Promise.all(tokenPromises)).filter(Boolean);
 
     if (tokens.length === 0) {
-      console.log('No FCM tokens found for the red partners of', uid);
+      console.log('No FCM tokens for team of', uid);
       return null;
     }
 
-    // Build messages for each token (sendEach is safer for individual handling)
     const messages = tokens.map((token) => ({
       token,
-      notification: {
-        title,
-        body,
-      },
+      notification: { title, body },
       data: {
-        type: isSync ? 'network_sync' : 'network_live',
+        type: isSync ? 'team_sync' : 'team_live',
         userId: uid,
         partnerName: name,
-        // The app can use this to deep link (e.g. open live map or auto-offer sync)
         click_action: 'FLUTTER_NOTIFICATION_CLICK',
       },
       android: {
         priority: 'high',
         notification: {
-          channelId: 'network_activity', // app should create this channel for high importance
+          channelId: 'network_activity',
           sound: 'default',
           color: '#FF671F',
         },
@@ -91,19 +106,17 @@ exports.notifyRedNetworkLiveOrSync = functions.firestore
 
     try {
       const response = await messaging.sendEach(messages);
-      console.log(`Network push sent for ${uid} (live/sync): success=${response.successCount}, failure=${response.failureCount}`);
-      // Log failures for debugging (tokens may be stale)
+      console.log(
+        `Team push for ${uid} (live/sync): success=${response.successCount}, failure=${response.failureCount}`
+      );
       response.responses.forEach((r, i) => {
         if (!r.success) {
-          console.warn('FCM failure for token index', i, r.error && r.error.code);
+          console.warn('FCM failure index', i, r.error && r.error.code);
         }
       });
     } catch (err) {
-      console.error('Error sending multicast network FCM:', err);
+      console.error('Error sending team FCM:', err);
     }
 
     return null;
   });
-
-// Optional: also listen on sessions or syncSessions if you want more granular "sync started" events.
-// For now the profile update on trainingSyncWith is sufficient and simple.
