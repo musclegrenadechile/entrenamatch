@@ -2029,22 +2029,22 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
     return isFinite(n) ? n : undefined
   }
 
-    // LIVE TRAINING NOW - the killer innovative feature.
+     // LIVE TRAINING NOW - the killer innovative feature.
   const liveTrainingNow = useMemo(() => {
     const now = Date.now()
     const ASSUMED_SESSION_MS = 3 * 60 * 60 * 1000
 
     const byId = new Map<string, any>()
 
-    // 1. Dedicated listener first (authoritative)
-    (liveUsersFromDedicated || []).forEach(p => {
+    // Dedicated listener first
+    (liveUsersFromDedicated || []).forEach((p: any) => {
       if (p && p.id) {
         byId.set(p.id, { ...p, trainingNow: true })
       }
     })
 
-    // 2. Enrich with realProfiles
-    realProfiles.forEach(p => {
+    // Enrich with realProfiles
+    realProfiles.forEach((p: any) => {
       if (byId.has(p.id)) {
         const existing = byId.get(p.id)
         byId.set(p.id, { ...existing, ...p, trainingNow: true })
@@ -2052,21 +2052,23 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
     })
 
     let lives = Array.from(byId.values())
-      .filter(p => !blockedUsers.includes(p.id))
-      .filter(p => {
+      .filter((p: any) => !blockedUsers.includes(p.id))
+      .filter((p: any) => {
         const since = typeof normalizeTrainingSince === 'function' 
           ? normalizeTrainingSince(p.trainingNowSince) 
-          : (p.trainingNowSince || 0)
+          : Number(p.trainingNowSince || 0)
         return p.trainingNow && since > 0 && (now - since < ASSUMED_SESSION_MS)
       })
-      .map(p => {
+      .map((p: any) => {
         const since = typeof normalizeTrainingSince === 'function' 
           ? normalizeTrainingSince(p.trainingNowSince) || now 
-          : (p.trainingNowSince || now)
+          : Number(p.trainingNowSince || now)
 
-        const dist = (typeof getDistanceKm === 'function' && userLocation) 
-          ? getDistanceKm(userLocation.lat, userLocation.lng, p.lat || -33, p.lng || -71) 
-          : 999
+        // Safe distance calculation
+        let dist = 999
+        if (typeof getDistanceKm === 'function' && userLocation && p.lat != null && p.lng != null) {
+          dist = getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng)
+        }
 
         const seVaEnMs = (since + ASSUMED_SESSION_MS) - now
         const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 0
@@ -2092,8 +2094,8 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
           trainingNowSince: since 
         }
       })
-      .filter(p => !userLocation || p.distance < 10)
-      .sort((a, b) => {
+      .filter((p: any) => !userLocation || p.distance < 10)
+      .sort((a: any, b: any) => {
         const aSync = (a as any).trainingSyncWith ? 100 : 0
         const bSync = (b as any).trainingSyncWith ? 100 : 0
         if (aSync !== bSync) return bSync - aSync
@@ -2113,38 +2115,9 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
       }))
     }
 
-    // Add self if currently live
-    if (currentUser && currentUser.trainingNow) {
-      const selfSince = typeof normalizeTrainingSince === 'function' 
-        ? normalizeTrainingSince(currentUser.trainingNowSince) || now 
-        : (currentUser.trainingNowSince || now)
-      
-      if (selfSince && (now - selfSince < ASSUMED_SESSION_MS)) {
-        const already = lives.some((l: any) => l.id === 'me' || l.id === currentUser.id)
-        if (!already) {
-          const dist = (typeof getDistanceKm === 'function' && userLocation) 
-            ? getDistanceKm(userLocation.lat, userLocation.lng, currentUser.lat || -33, currentUser.lng || -71) 
-            : 0.3
-          
-          const seVaEnMs = (selfSince + ASSUMED_SESSION_MS) - now
-          const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 55
-
-          lives = [{ 
-            ...currentUser, 
-            id: 'me', 
-            distance: dist, 
-            seVaEnMin, 
-            joinCount: 0, 
-            isLegend: false, 
-            trainingNowSince: selfSince 
-          }, ...lives]
-        }
-      }
-    }
-
     return lives
-  }, [liveUsersFromDedicated, realProfiles, blockedUsers, userLocation, profilePosts, syncBonds, currentUser, isDemoMode, SEED_PROFILES])
-
+  }, [liveUsersFromDedicated, realProfiles, blockedUsers, userLocation, profilePosts, syncBonds, currentUser, isDemoMode])
+  
   // Only for the map widget in dev mode: augment with temporary test lives so devs can test GymPulse visuals,
   // near counts, popups, etc. without other real accounts being live. These do NOT pollute global liveTrainingNow used by lists/feeds/notifs.
   const mapLiveTrainingNow = useMemo(() => {
