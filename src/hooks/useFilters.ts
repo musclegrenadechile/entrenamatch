@@ -11,6 +11,7 @@ export interface Filters {
   maxDistanceKm: number;
   onlyAvailableToday: boolean;
   onlyLiveTraining: boolean;
+  onlyRealProfiles: boolean;
 }
 
 const defaultFilters: Filters = {
@@ -22,6 +23,7 @@ const defaultFilters: Filters = {
   maxDistanceKm: 50,
   onlyAvailableToday: false,
   onlyLiveTraining: false,
+  onlyRealProfiles: false,
 };
 
 export function useFilters() {

@@ -104,3 +104,57 @@ export function attachUserPostsListener(
     unsubFn?.()
   }
 }
+
+export type GlobalPostsPage = {
+  posts: ProfilePost[]
+  lastDoc: import('firebase/firestore').QueryDocumentSnapshot | null
+  hasMore: boolean
+}
+
+/** Community-wide feed — ordered by timestamp (requires Firestore index on profilePosts.timestamp). */
+export async function fetchGlobalProfilePosts(
+  db: Firestore,
+  options: {
+    pageSize?: number
+    lastDoc?: import('firebase/firestore').QueryDocumentSnapshot | null
+  } = {}
+): Promise<GlobalPostsPage> {
+  const pageSize = options.pageSize ?? 25
+  const {
+    collection,
+    query,
+    orderBy,
+    limit,
+    startAfter,
+    getDocs,
+  } = await import('firebase/firestore')
+
+  let q = query(collection(db, 'profilePosts'), orderBy('timestamp', 'desc'), limit(pageSize))
+  if (options.lastDoc) {
+    q = query(
+      collection(db, 'profilePosts'),
+      orderBy('timestamp', 'desc'),
+      startAfter(options.lastDoc),
+      limit(pageSize)
+    )
+  }
+
+  const snap = await getDocs(q)
+  const posts: ProfilePost[] = []
+  await Promise.all(
+    snap.docs.map(async (docSnap) => {
+      const post = docToProfilePost(docSnap)
+      post.comments = await fetchPostComments(db, docSnap.id, [])
+      posts.push(post)
+    })
+  )
+  posts.sort((a, b) => b.timestamp - a.timestamp)
+
+  const lastDoc = snap.docs.length > 0 ? snap.docs[snap.docs.length - 1] : null
+  return {
+    posts,
+    lastDoc,
+    hasMore: snap.docs.length >= pageSize,
+  }
+}
+

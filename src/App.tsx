@@ -12,7 +12,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, MessageCircle, User, MapPin, Dumbbell, 
   Edit2, RefreshCw, ArrowLeft, Send, Star, Plus, Users, Bell, Download,
-  Clock, Camera, Activity, Zap, Mic, Square, Play, Pause, X, RotateCcw
+  Clock, Camera, Activity, Zap, Mic, Square, Play, Pause, X, RotateCcw, Sparkles
 } from 'lucide-react'
 import { 
   signUpWithEmail, 
@@ -90,6 +90,21 @@ import { useSquads } from './hooks/useSquads'
 import { useRealSessions } from './hooks/useRealSessions'
 import { useSwipeDeck } from './hooks/useSwipeDeck'
 import { ExploreTab } from './components/explore/ExploreTab'
+import { DailyRitualHome, LiveToggleFab } from './components/home'
+import { fetchGlobalProfilePosts } from './services/profilePosts'
+import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
+import { isSeedProfileId } from './utils/seedProfiles'
+import {
+  buildWeekDayStatuses,
+  loadWeekLiveDays,
+  recordWeekLiveDay,
+  MIN_LIVE_MINUTES_FOR_WEEK_DAY,
+} from './utils/weekLiveTracker'
+import {
+  formatLastLiveLabel,
+  getTeamMemberStatus,
+  sortTeamMembers,
+} from './utils/homeTeam'
 import { AuthScreen } from './components/auth/AuthScreen'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { GymPulseMap } from './components/map' // Inicio de modularización 2026-06-05 (stub + estructura)
@@ -722,7 +737,7 @@ function App() {
   const [activeChat, setActiveChat] = useState<string | null>(null)
 
   // UI state
-  const [activeTab, setActiveTab] = useState<Tab>('explore')
+  const [activeTab, setActiveTab] = useState<Tab>('home')
   const [isLoadingFeed, setIsLoadingFeed] = useState(false)
   const [feedShowPinnedOnly, setFeedShowPinnedOnly] = useState(false)
   const [feedSearch, setFeedSearch] = useState('')
@@ -730,6 +745,9 @@ function App() {
   const [feedOnlyLive, setFeedOnlyLive] = useState(false)
   const [feedMaxProfiles, setFeedMaxProfiles] = useState(15)
   const [feedDisplayLimit, setFeedDisplayLimit] = useState(10)
+  const globalFeedLastDocRef = useRef<any>(null)
+  const [hasMoreGlobalFeed, setHasMoreGlobalFeed] = useState(true)
+  const [weekLiveDays, setWeekLiveDays] = useState<string[]>([])
   const [showLiveModal, setShowLiveModal] = useState(false)
   // TOP UPDATE: Feed 2.0 - photo lightbox + quick reactions (optimistic, attractive social feel)
   const [feedPhotoModal, setFeedPhotoModal] = useState<{url: string, postId?: string} | null>(null)
@@ -2159,7 +2177,10 @@ useEffect(() => {
       if (!unique.has(p.id)) unique.set(p.id, p)
     })
     
-    return Array.from(unique.values()).filter(p => !swiped.has(p.id))
+    return Array.from(unique.values()).filter(p => {
+      if (swiped.has(p.id)) return false
+      return true
+    })
   }, [likedIds, passedIds, realProfiles])
 
   // Prevents (now - Timestamp) producing NaN which would drop live users from GymPulse lists.
@@ -2332,7 +2353,7 @@ useEffect(() => {
 
     const hasActiveFilter = feedShowPinnedOnly || feedOnlyReal || feedOnlyLive || !!feedSearch.trim();
     if (feedShowPinnedOnly) feedPosts = feedPosts.filter((p: any) => p.pinned);
-    if (feedOnlyReal) feedPosts = feedPosts.filter((p: any) => p.isMine || realProfiles.some(rp => rp.id === p.ownerId));
+    if (feedOnlyReal) feedPosts = feedPosts.filter((p: any) => p.isMine || !isSeedProfileId(p.ownerId));
     if (feedOnlyLive) feedPosts = feedPosts.filter((p: any) => !p.isMine && isUserLiveInSnapshot(p.ownerId, liveUsersActive));
     if (feedSearch.trim()) {
       const q = feedSearch.toLowerCase().trim();
@@ -2370,6 +2391,7 @@ useEffect(() => {
       }
       if (filters.onlyAvailableToday && !p.availableToday) return false
       if (filters.onlyLiveTraining && !isUserLiveInSnapshot(p.id, liveUsersActive)) return false
+      if (filters.onlyRealProfiles && isSeedProfileId(p.id)) return false
       return true
     })
 
@@ -2423,6 +2445,43 @@ useEffect(() => {
     const combinedMatchIds = Array.from(new Set([...matches, ...realMatches]))
     return all.filter(p => combinedMatchIds.includes(p.id))
   }, [matches, realMatches, realProfiles])
+
+  // Phase A home: team strip (matches + sync partners, real people first)
+  const homeTeamMembers = useMemo(() => {
+    const ids = new Set<string>()
+    Object.keys(syncBonds || {}).forEach((id) => {
+      if (!isSeedProfileId(id)) ids.add(id)
+    })
+    matchProfiles.forEach((p) => {
+      if (!isSeedProfileId(p.id)) ids.add(p.id)
+    })
+
+    const members = Array.from(ids).map((id) => {
+      const profile =
+        realProfiles.find((p) => p.id === id) ||
+        SEED_PROFILES.find((p) => p.id === id) ||
+        matchProfiles.find((p) => p.id === id)
+      const live = isUserLive(id)
+      const lastLive = profile?.lastLiveDate
+      const status = getTeamMemberStatus(live, lastLive)
+      return {
+        id,
+        name: profile?.name || 'Socio',
+        status,
+        lastLiveLabel: live ? undefined : formatLastLiveLabel(lastLive),
+        isBond: !!syncBonds[id],
+      }
+    })
+
+    return sortTeamMembers(members).slice(0, 6)
+  }, [syncBonds, matchProfiles, realProfiles, liveUsersActive, isUserLive])
+
+  const homeWeekDays = useMemo(
+    () => buildWeekDayStatuses(weekLiveDays).map(({ label, trained, isToday }) => ({ label, trained, isToday })),
+    [weekLiveDays]
+  )
+
+  const homeWeekTrainedCount = weekLiveDays.length
 
   // Beta Feedback enhanced (Phase 0 - structured + history)
   const [feedbackType, setFeedbackType] = useState<'bug' | 'idea' | 'ux' | 'other'>('idea')
@@ -2752,7 +2811,7 @@ useEffect(() => {
   useEffect(() => {
     if (isDemoMode || !db || !firebaseUser?.uid || effectiveUserId === 'me') return
     const uid = firebaseUser.uid
-    const shouldScan = showLiveMap || activeTab === 'feed' || activeTab === 'explore'
+    const shouldScan = showLiveMap || activeTab === 'home' || activeTab === 'explore'
     if (!shouldScan) return
 
     liveTrainingNow.forEach((u: any) => {
@@ -2808,7 +2867,7 @@ useEffect(() => {
   }
 
   useEffect(() => {
-    if (activeTab !== 'feed' && activeTab !== 'explore') return
+    if (activeTab !== 'home' && activeTab !== 'explore') return
     loadActiveSyncCount().catch(() => {})
     const t = setInterval(() => loadActiveSyncCount().catch(() => {}), 45000)
     return () => clearInterval(t)
@@ -2829,7 +2888,7 @@ useEffect(() => {
         await loadProfilePosts(effectiveUserId)
         processIncomingLiveJoins()
       }
-      if (activeTab === 'feed') {
+      if (activeTab === 'home') {
         await loadGlobalFeed()
       }
       // Refresh personal muro if in profile
@@ -3568,6 +3627,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   useEffect(() => {
     if (showFullProfile) {
       loadProfilePosts(showFullProfile.id)
+      if (!isDemoMode && db && !isSeedProfileId(showFullProfile.id)) {
+        fetchReviewsForProfile(db, showFullProfile.id)
+          .then((list) => {
+            if (list.length === 0) return
+            setReviews((prev) => ({ ...prev, [showFullProfile!.id]: list }))
+            try {
+              localStorage.setItem(
+                'entrenamatch_reviews',
+                JSON.stringify({ ...reviews, [showFullProfile!.id]: list })
+              )
+            } catch {}
+          })
+          .catch(() => {})
+      }
     } else {
       // clean comment composer when closing full profile view
       setActiveComment(null)
@@ -3577,14 +3650,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
 
 
-  // Auto-load global feed when entering the new Feed tab
+  // Auto-load global feed when entering the Hoy tab
   useEffect(() => {
-    if (activeTab === 'feed' && !isDemoMode) {
+    if (activeTab === 'home' && !isDemoMode) {
       setFeedMaxProfiles(15);
       setFeedDisplayLimit(10);
       loadGlobalFeed()
     }
   }, [activeTab])
+
+  useEffect(() => {
+    if (effectiveUserId) {
+      setWeekLiveDays(loadWeekLiveDays(effectiveUserId))
+    }
+  }, [effectiveUserId])
 
   // Live refresh for "Entrenando Ahora" to keep real-time urgency (every 60s in explore)
   // Also reloads *own* profilePosts when we are the one training live, so processIncomingLiveJoins can detect new join comments/likes from others in near real-time.
@@ -4551,7 +4630,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     if (isDemoMode || !db || !firebaseUser?.uid) return undefined
     ensureUserPostsListener(effectiveUserId)
     if (showFullProfile?.id) ensureUserPostsListener(showFullProfile.id)
-    if (activeTab === 'feed') {
+    if (activeTab === 'home') {
       realProfiles.slice(0, feedMaxProfiles).forEach((p) => ensureUserPostsListener(p.id))
     }
     return undefined
@@ -4619,20 +4698,46 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   }
 
-  // Global feed loader for the new 'feed' tab - loads recent muro posts from community
+  // Global feed loader — Firestore query by timestamp (Phase 0)
   const loadGlobalFeed = async (more: boolean = false) => {
-    if (isDemoMode || !realProfiles.length) return;
-    setIsLoadingFeed(true);
+    setIsLoadingFeed(true)
     try {
-      const max = more ? Math.min(feedMaxProfiles + 10, realProfiles.length) : feedMaxProfiles;
-      if (more) setFeedMaxProfiles(max);
-      // Load for up to max recent real profiles to keep it fast
-      const toLoad = realProfiles.slice(0, max);
-      // Parallel load (was sequential — small but real win for "giant update" feel when refreshing feed)
-      await Promise.all(toLoad.map(p => loadProfilePosts(p.id).catch(() => {})));
-      setLastSync(new Date());
+      if (!isDemoMode && db) {
+        const { posts, lastDoc, hasMore } = await fetchGlobalProfilePosts(db, {
+          pageSize: 25,
+          lastDoc: more ? globalFeedLastDocRef.current : null,
+        })
+        if (!more) globalFeedLastDocRef.current = null
+        globalFeedLastDocRef.current = lastDoc
+        setHasMoreGlobalFeed(hasMore)
+
+        setProfilePosts((prev) => {
+          const next = { ...prev }
+          for (const post of posts) {
+            const uid = post.userId
+            const existing = next[uid] || []
+            const merged = [...existing.filter((x) => x.id !== post.id), post].sort(
+              (a, b) => b.timestamp - a.timestamp
+            )
+            next[uid] = merged.slice(0, 30)
+          }
+          return next
+        })
+      } else {
+        const max = more ? Math.min(feedMaxProfiles + 10, realProfiles.length) : feedMaxProfiles
+        if (more) setFeedMaxProfiles(max)
+        const toLoad = realProfiles.slice(0, max)
+        await Promise.all(toLoad.map((p) => loadProfilePosts(p.id).catch(() => {})))
+      }
+      setLastSync(new Date())
+    } catch (e) {
+      console.warn('loadGlobalFeed error', e)
+      if (realProfiles.length) {
+        const toLoad = realProfiles.slice(0, feedMaxProfiles)
+        await Promise.all(toLoad.map((p) => loadProfilePosts(p.id).catch(() => {})))
+      }
     } finally {
-      setIsLoadingFeed(false);
+      setIsLoadingFeed(false)
     }
   }
 
@@ -4692,7 +4797,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         })
         subscribeCommentsForPosts([post])
 
-        if (activeTab === 'feed') {
+        if (activeTab === 'home') {
           setTimeout(() => loadGlobalFeed().catch(() => {}), 300)
         }
       } catch (e) {
@@ -4928,6 +5033,142 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   }
 
+  /** Global live toggle — used by FAB, Daily Ritual home, and Profile (Phase 0). */
+  const toggleLiveTraining = async (mode?: 'on' | 'off' | 'toggle') => {
+    if (isTogglingLive || !currentUser) return
+    const me = currentUser
+    const wantOff =
+      mode === 'off' || (mode !== 'on' && !!me.trainingNow)
+    const wantOn = mode === 'on' || (mode !== 'off' && !me.trainingNow)
+
+    if (wantOff && me.trainingNow) {
+      setIsTogglingLive(true)
+      try {
+        const durationMs = me.trainingNowSince ? Date.now() - me.trainingNowSince : 30 * 60 * 1000
+        const minutes = Math.max(5, Math.floor(durationMs / 60000))
+        const momentumBonus = Math.floor(minutes / 3) + 5
+        const xpBonus = Math.floor(minutes * 1.5)
+        const currentMom = dailyPulse?.momentum ?? (me as any).momentumPoints ?? 0
+        const currentXp = dailyPulse?.xp ?? (me as any).retentionXp ?? 0
+        const newMom = currentMom + momentumBonus
+        const newXp = Math.min(299, currentXp + xpBonus)
+
+        const updated = {
+          ...me,
+          trainingNow: false,
+          trainingNowSince: null,
+          trainingSyncWith: null,
+          syncStartedAt: null,
+          momentumPoints: newMom,
+          retentionXp: newXp,
+        } as CurrentUser
+
+        if (syncPartnerId) {
+          setSyncPartnerId(null)
+          syncPartnerIdRef.current = null
+          setSyncStartedAt(null)
+          setSyncActions([])
+          setSyncVibe(0)
+          setSyncCombo(0)
+        }
+        if (dailyPulse) setDailyPulse({ ...dailyPulse, momentum: newMom, xp: newXp })
+
+        pendingLiveWriteRef.current = { trainingNow: false, at: Date.now() }
+        saveUser(updated)
+        await saveUserWithRealSync(updated)
+        loadRealProfiles().catch(() => {})
+        setMapForceTick((t) => t + 1)
+        if (minutes >= MIN_LIVE_MINUTES_FOR_WEEK_DAY) {
+          setWeekLiveDays(recordWeekLiveDay(effectiveUserId))
+          toast('Entrenamiento finalizado', { description: `${minutes} min — cuenta para tu semana ✓` })
+        } else {
+          toast('Sesión finalizada', {
+            description: `${minutes} min. Entrena al menos ${MIN_LIVE_MINUTES_FOR_WEEK_DAY} min para marcar el día.`,
+          })
+        }
+      } catch (err) {
+        console.error('Live deactivate failed', err)
+        pendingLiveWriteRef.current = null
+        toast.error('No se pudo desactivar el live')
+      } finally {
+        setIsTogglingLive(false)
+      }
+      return
+    }
+
+    if (wantOn && !me.trainingNow) {
+      setIsTogglingLive(true)
+      try {
+        await requestUserLocation().catch(() => {})
+        if (!isDemoMode && PlayIntegrityNative) {
+          const current = getLastIntegrityResult() || lastIntegrity
+          if (!hasPositiveIntegrity(current)) {
+            toast('🛡️ Verifica integridad para full visibilidad en prod', {
+              description:
+                'Usa el botón 🛡️ Google Play Integrity arriba. El live se activa localmente de todas formas.',
+            })
+          }
+        }
+        const todayStr = new Date().toDateString()
+        const lastStr = me.lastLiveDate ? new Date(me.lastLiveDate).toDateString() : null
+        let newStreak = me.liveStreak || 0
+        if (!lastStr || lastStr === todayStr) {
+          if (!lastStr) newStreak = 1
+        } else {
+          const lastDate = new Date(lastStr)
+          const yesterday = new Date()
+          yesterday.setDate(yesterday.getDate() - 1)
+          newStreak =
+            lastDate.toDateString() === yesterday.toDateString()
+              ? (me.liveStreak || 0) + 1
+              : 1
+        }
+        const streakUpdate = {
+          liveStreak: newStreak,
+          lastLiveDate: Date.now(),
+          joinedLiveStreak:
+            (me.joinedLiveStreak || 0) +
+            (lastStr && lastStr !== todayStr ? 1 : lastStr ? 0 : 1),
+        }
+        const loc = userLocationRef.current
+        const updated = {
+          ...me,
+          trainingNow: true,
+          trainingNowSince: Date.now(),
+          ...(loc ? { lat: loc.lat, lng: loc.lng } : {}),
+          ...streakUpdate,
+        } as CurrentUser
+
+        pendingLiveWriteRef.current = { trainingNow: true, at: Date.now() }
+        saveUser(updated)
+        await saveUserWithRealSync(updated)
+        loadRealProfiles().catch(() => {})
+        setMapForceTick((t) => t + 1)
+        toast('🟢 ¡Entrenando Ahora (EN VIVO) activado!')
+
+        const liveUserSnapshot = { ...updated }
+        setTimeout(() => {
+          checkAndUpdateDailyPulse(liveUserSnapshot)
+          if (dailyPulse?.currentChallenge?.type === 'solo') {
+            completeDailyChallenge(1, liveUserSnapshot as CurrentUser)
+          } else {
+            awardMomentum(8, 'Ancla del GymPulse', liveUserSnapshot as CurrentUser)
+          }
+          createProfilePost(
+            '¡Entrenando ahora en el GymPulse! ¿Quién se une al pulso? 🏋️',
+            null
+          ).catch(() => {})
+        }, 600)
+      } catch (err) {
+        console.error('Live activate failed', err)
+        pendingLiveWriteRef.current = null
+        toast.error('No se pudo activar el live')
+      } finally {
+        setIsTogglingLive(false)
+      }
+    }
+  }
+
   const startSyncWith = async (partnerId: string, partnerName: string) => {
     const myIds = [effectiveUserId, currentUser?.id, firebaseUser?.uid, 'me'].filter(Boolean)
     if (!partnerId || myIds.includes(partnerId)) return
@@ -4935,7 +5176,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     const me = currentUserRef.current ?? currentUser
     if (!me?.trainingNow) {
       toast.error('Activa "Entrenando Ahora (EN VIVO)" primero', {
-        description: 'Ve a Perfil y enciende tu live. EntrenaSync requiere que tú y tu compañero estén en vivo.',
+        description: 'Usa el botón IR LIVE (abajo a la derecha) o el Ritual de Hoy.',
       })
       return
     }
@@ -5697,7 +5938,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 // Try to open the joiner's profile if we have them loaded
                 const joiner = [...realProfiles, ...SEED_PROFILES].find(p => p.id === c.userId)
                 if (joiner) setShowFullProfile(joiner as any)
-                else setActiveTab('feed')
+                else setActiveTab('home')
               }
             }
           })
@@ -5852,7 +6093,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
   // Fase 4: prune comment listeners when leaving feed (avoid unbounded growth)
   useEffect(() => {
-    if (isDemoMode || activeTab === 'feed') return
+    if (isDemoMode || activeTab === 'home') return
 
     const keepIds = new Set<string>()
     if (viewingPostComments?.postId) keepIds.add(viewingPostComments.postId)
@@ -6196,17 +6437,32 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   }
 
-  const submitTrainingReview = (profileId: string) => {
+  const submitTrainingReview = async (profileId: string) => {
     if (!currentUser) return
 
     const newReview: TrainingReview = {
       id: 'r' + Date.now(),
-      reviewerId: 'me',
+      reviewerId: firebaseUser?.uid || 'me',
       reviewerName: currentUser?.name || 'Anónimo',
       rating: reviewRating,
       comment: reviewComment.trim() || undefined,
       photo: reviewPhoto || undefined,
       timestamp: Date.now()
+    }
+
+    if (!isDemoMode && db && firebaseUser?.uid) {
+      try {
+        newReview.id = await submitReviewToFirestore(db, profileId, {
+          reviewerId: firebaseUser.uid,
+          reviewerName: newReview.reviewerName,
+          rating: newReview.rating,
+          comment: newReview.comment,
+          photo: newReview.photo,
+          timestamp: newReview.timestamp,
+        })
+      } catch (e) {
+        console.warn('Could not save review to Firestore', e)
+      }
     }
 
     const existing = reviews[profileId] || []
@@ -8599,8 +8855,34 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         )}
 
         {/* ===== GLOBAL FEED TAB - Muro Comunitario (per plan: global recent activity feed) ===== */}
-        {activeTab === 'feed' && (
+        {activeTab === 'home' && (
           <div className="flex-1 overflow-auto p-4">
+            <DailyRitualHome
+              userName={currentUser?.name || 'Atleta'}
+              weekDays={homeWeekDays}
+              weekTrainedCount={homeWeekTrainedCount}
+              teamMembers={homeTeamMembers}
+              liveCount={liveCountForUI}
+              syncCount={activeSyncCount}
+              isLive={!!currentUser?.trainingNow}
+              isTogglingLive={isTogglingLive}
+              onToggleLive={() => toggleLiveTraining()}
+              onOpenExplore={() => {
+                setActiveTab('explore')
+                setShowLiveMap(true)
+              }}
+              onOpenMap={() => {
+                setActiveTab('explore')
+                setShowLiveMap(true)
+              }}
+              onJoinMember={(id, name) => startSyncWith(id, name)}
+              onMessageMember={(id) => {
+                setActiveTab('messages')
+                setActiveChat(id)
+              }}
+              onOpenMatches={() => setActiveTab('matches')}
+              cityLabel={currentUser?.city}
+            />
             {/* CINEMATIC REMASTERED FEED HEADER — the social heart of the GymPulse */}
             <div className="feed-header-cinematic sticky top-0 z-10 -mx-4 px-4 pt-3 pb-3">
               <div className="flex items-start justify-between gap-3 px-1">
@@ -8981,7 +9263,15 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
                   {feedPosts.length < allCommunityPosts.length && (
                     <div className="text-center mt-2 mb-4">
-                      <button onClick={() => setFeedDisplayLimit(feedDisplayLimit + 12)} className="text-sm px-6 py-2 rounded-2xl border border-[#FF671F]/40 text-[#FF671F] active:bg-[#FF671F]/10 active:scale-95 font-medium">Cargar más posts de la comunidad →</button>
+                      <button
+                        onClick={() => {
+                          if (!isDemoMode && hasMoreGlobalFeed) loadGlobalFeed(true).catch(() => {})
+                          setFeedDisplayLimit(feedDisplayLimit + 12)
+                        }}
+                        className="text-sm px-6 py-2 rounded-2xl border border-[#FF671F]/40 text-[#FF671F] active:bg-[#FF671F]/10 active:scale-95 font-medium"
+                      >
+                        Cargar más posts de la comunidad →
+                      </button>
                     </div>
                   )}
                 </>
@@ -8991,7 +9281,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         )}
 
         {/* LUXURIOUS REMASTERED FEED COMPOSER MODAL — feels expensive and important */}
-        {activeTab === 'feed' && showFeedPostModal && (
+        {activeTab === 'home' && showFeedPostModal && (
           <div className="absolute inset-0 z-[95] bg-black/90 flex items-end md:items-center justify-center p-0 md:p-6" onClick={() => setShowFeedPostModal(false)}>
             <div 
               className="feed-composer-modal w-full md:w-[520px] rounded-t-3xl md:rounded-3xl p-6 md:p-7 text-white"
@@ -9086,7 +9376,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                       setFeedPostText(''); setFeedPostPhoto(null); setFeedPublishing(false);
                       setShowFeedPublishSuccess(true); setTimeout(() => setShowFeedPublishSuccess(false), 4200);
                       toast.success('¡Publicado en el Muro del GymPulse!', { description: 'Toda la comunidad ya puede verlo y reaccionar.' });
-                      if (activeTab === 'feed') loadGlobalFeed().catch(() => {});
+                      if (activeTab === 'home') loadGlobalFeed().catch(() => {});
                       try { confetti({ particleCount: 140, spread: 70, origin: { y: 0.65 } }); } catch {}
                     } catch (e) { setFeedPublishing(false); toast.error('Error al publicar'); }
                   }}
@@ -10968,88 +11258,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                       <div className="text-[#22c55e] font-extrabold text-sm tracking-tight">🟢 ESTÁS ENTRENANDO EN VIVO EN EL GYMPULSE</div>
                     </div>
                     <button 
-                      onClick={async () => {
-                        if (isTogglingLive) return;
-                        setIsTogglingLive(true);
-                        const oldTrainingNow = currentUser.trainingNow;
-                        try {
-                          const newVal = false; // explicit deactivate
-                          // Compute session finish bonus (duration + momentum + xp) and bake into the SAME payload
-                          // so we do ONE write instead of 1 (clear) + check (possible daily) + award (mom) = 3 rapid writes.
-                          // Multiple writes in a row after flaky network is the trigger for the assertion crash.
-                          const durationMs = currentUser.trainingNowSince ? Date.now() - currentUser.trainingNowSince : 30 * 60 * 1000;
-                          const minutes = Math.max(5, Math.floor(durationMs / 60000));
-                          const momentumBonus = Math.floor(minutes / 3) + 5;
-                          const xpBonus = Math.floor(minutes * 1.5);
-                          const currentMom = (dailyPulse?.momentum ?? (currentUser as any).momentumPoints ?? 0);
-                          const currentXp = (dailyPulse?.xp ?? (currentUser as any).retentionXp ?? 0);
-                          const newMom = currentMom + momentumBonus;
-                          const newXp = Math.min(299, currentXp + xpBonus);
-
-                          const updated = {
-                            ...currentUser,
-                            trainingNow: newVal,
-                            trainingNowSince: null,  // explicit null, never undefined (Firestore hates it in some pipelines)
-                            trainingSyncWith: null,
-                            syncStartedAt: null,
-                            momentumPoints: newMom,
-                            retentionXp: newXp
-                          } as CurrentUser;
-
-                          // Clear local sync state *before* the FS write so the syncSessions listener unsubs cleanly.
-                          // This prevents a listener callback from queuing something while the terminate write is in flight
-                          // (one known trigger for the internal 'mutations' / b815 bad state).
-                          if (syncPartnerId) {
-                            setSyncPartnerId(null)
-                            syncPartnerIdRef.current = null
-                            setSyncStartedAt(null);
-                            setSyncActions([]);
-                            setSyncVibe(0);
-                            setSyncCombo(0);
-                          }
-
-                          // Optimistic local daily for instant UI feedback (profile banner etc)
-                          if (dailyPulse) {
-                            setDailyPulse({ ...dailyPulse, momentum: newMom, xp: newXp });
-                          }
-
-                          pendingLiveWriteRef.current = { trainingNow: false, at: Date.now() };
-                          saveUser(updated)
-                          await saveUserWithRealSync(updated);
-
-                          loadRealProfiles().catch(() => {});
-                          setMapForceTick(t => t + 1);
-
-                          toast('Entrenamiento finalizado', { description: `+${momentumBonus} Momentum (${minutes}min)` });
-
-                          // Intentionally do NOT call checkAndUpdateDailyPulse or awardMomentum here.
-                          // We already credited everything in the single robust write above.
-                          // This keeps write pressure minimal on the critical terminate path.
-                        } catch (err) {
-                          console.error('Live deactivate failed', err);
-                          pendingLiveWriteRef.current = null;
-                          toast.error('No se pudo desactivar el live', { description: 'Revisa tu conexión. Estado revertido.' });
-                          if (!isDemoMode && firebaseUser?.uid) {
-                            try {
-                              const realP = await getUserProfile(firebaseUser.uid);
-                              if (realP) {
-                                const merged = { ...currentUser, trainingNow: realP.trainingNow, trainingNowSince: normalizeTrainingSince(realP.trainingNowSince) };
-                                saveUser(merged as any);
-                                // Also revert any optimistic daily/momentum bump we did before the failed write
-                                if (dailyPulse && (realP.momentumPoints != null || realP.retentionXp != null)) {
-                                  setDailyPulse({
-                                    ...dailyPulse,
-                                    momentum: realP.momentumPoints != null ? realP.momentumPoints : dailyPulse.momentum,
-                                    xp: realP.retentionXp != null ? realP.retentionXp : dailyPulse.xp
-                                  });
-                                }
-                              }
-                            } catch {}
-                          }
-                        } finally {
-                          setIsTogglingLive(false);
-                        }
-                      }}
+                      onClick={() => toggleLiveTraining('off')}
                       disabled={isTogglingLive}
                       className="btn-live w-full py-3.5 rounded-2xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm bg-[#E11D48] text-white ring-1 ring-[#E11D48]/60 active:brightness-90 active:scale-[0.985]"
                     >
@@ -11062,90 +11271,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 ) : (
                   /* Activate button when not live */
                   <button 
-                    onClick={async () => {
-                      if (isTogglingLive) return;
-                      setIsTogglingLive(true);
-                      const oldTrainingNow = currentUser.trainingNow;
-                      try {
-                        const newVal = !oldTrainingNow;
-                        if (newVal) {
-                          await requestUserLocation().catch(() => {});
-                        }
-                        if (newVal && !isDemoMode && PlayIntegrityNative) {
-                          const current = getLastIntegrityResult() || lastIntegrity;
-                          if (!hasPositiveIntegrity(current)) {
-                            toast('🛡️ Verifica integridad para full visibilidad en prod', { 
-                              description: 'Usa el botón 🛡️ Google Play Integrity arriba. El live se activa localmente de todas formas.' 
-                            });
-                          }
-                        }
-                        let streakUpdate: any = {}
-                        if (newVal) {
-                          const todayStr = new Date().toDateString()
-                          const lastStr = currentUser.lastLiveDate ? new Date(currentUser.lastLiveDate).toDateString() : null
-                          let newStreak = currentUser.liveStreak || 0
-                          if (!lastStr || lastStr === todayStr) {
-                            if (!lastStr) newStreak = 1
-                          } else {
-                            const lastDate = new Date(lastStr)
-                            const yesterday = new Date()
-                            yesterday.setDate(yesterday.getDate() - 1)
-                            if (lastDate.toDateString() === yesterday.toDateString()) {
-                              newStreak = (currentUser.liveStreak || 0) + 1
-                            } else {
-                              newStreak = 1
-                            }
-                          }
-                          streakUpdate = { liveStreak: newStreak, lastLiveDate: Date.now(), joinedLiveStreak: (currentUser.joinedLiveStreak || 0) + (lastStr && lastStr !== todayStr ? 1 : (lastStr ? 0 : 1)) }
-                        }
-                        const loc = userLocationRef.current
-                        const updated = {
-                          ...currentUser,
-                          trainingNow: newVal,
-                          trainingNowSince: newVal ? Date.now() : null,
-                          ...(newVal && loc ? { lat: loc.lat, lng: loc.lng } : {}),
-                          ...streakUpdate,
-                          ...( !newVal ? { trainingSyncWith: null, syncStartedAt: null } : {} )
-                        }
-
-                        pendingLiveWriteRef.current = { trainingNow: !!newVal, at: Date.now() };
-                        saveUser(updated as CurrentUser)
-                        await saveUserWithRealSync(updated as CurrentUser)
-
-                        loadRealProfiles().catch(() => {})
-                        setMapForceTick(t => t + 1)
-                        toast(newVal ? '🟢 ¡Entrenando Ahora (EN VIVO) activado!' : 'Entrenamiento finalizado')
-
-                        // Defer secondary profile writes so they don't race with the live toggle + listener guard.
-                        const liveUserSnapshot = { ...updated }
-                        setTimeout(() => {
-                          checkAndUpdateDailyPulse(liveUserSnapshot)
-                          if (dailyPulse?.currentChallenge?.type === 'solo') {
-                            completeDailyChallenge(1, liveUserSnapshot as CurrentUser)
-                          } else if (newVal) {
-                            awardMomentum(8, 'Ancla del GymPulse', liveUserSnapshot as CurrentUser)
-                          }
-                          if (newVal) {
-                            createProfilePost('¡Entrenando ahora en el GymPulse! ¿Quién se une al pulso? 🏋️', null).catch(() => {})
-                          }
-                        }, 600)
-                      } catch (err) {
-                        console.error('Live toggle failed', err);
-                        pendingLiveWriteRef.current = null;
-                        toast.error('No se pudo activar/desactivar el live', { description: 'Revisa tu conexión e intenta de nuevo.' });
-                        if (!isDemoMode && firebaseUser?.uid) {
-                          try {
-                            const realP = await getUserProfile(firebaseUser.uid);
-                            if (realP) {
-                              const merged = { ...currentUser, trainingNow: realP.trainingNow, trainingNowSince: normalizeTrainingSince(realP.trainingNowSince) };
-                              saveUser(merged as any);
-                            }
-                          } catch {}
-                        }
-                      } finally {
-                        setIsTogglingLive(false);
-                      }
-                    }}
+                    onClick={() => toggleLiveTraining('on')}
                     disabled={isTogglingLive}
                     className={`btn-live w-full py-3.5 rounded-2xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm ${isTogglingLive ? 'opacity-70 cursor-wait' : ''} bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black ring-1 ring-[#22c55e]/60 active:brightness-90 active:scale-[0.985]`}
                   >
@@ -11210,7 +11336,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                       {recent.map((c: any, idx: number) => (
                         <div key={idx} className="flex items-center gap-2 text-[10px] bg-[#1C1C20] px-2 py-1 rounded-xl border border-[#22c55e]/10 hover:border-[#22c55e]/40 transition cursor-pointer active:bg-[#25252A]" onClick={() => {
                           const joiner = [...realProfiles, ...SEED_PROFILES].find(p => p.id === c.userId);
-                          if (joiner) setShowFullProfile(joiner as any); else setActiveTab('feed');
+                          if (joiner) setShowFullProfile(joiner as any); else setActiveTab('home');
                         }}>
                           <span className="font-medium text-white/95">{c.userName || 'Compañero'}</span> <span className="text-[#22c55e]">{c.isLike ? '❤️ dio like' : '💬 ' + (c.text || '').substring(0,28)}</span>
                           <span className="ml-auto text-[#9CA3AF] text-[8px]">ver →</span>
@@ -11227,7 +11353,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               <div className="flex items-center justify-between mb-2 px-1">
                 <div className="flex items-center gap-2">
                   <div className="text-xs uppercase tracking-[1px] text-[#9CA3AF]">Muro</div>
-                  <button onClick={() => setActiveTab('feed')} className="text-[9px] text-[#FF671F] underline active:opacity-70">Ver feed global →</button>
+                  <button onClick={() => setActiveTab('home')} className="text-[9px] text-[#FF671F] underline active:opacity-70">Ver feed global →</button>
                 </div>
                 <button 
                   disabled={loadingPersonalMuro}
@@ -11268,11 +11394,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   <div className="px-1 mb-3">
                     <div className="text-[9px] text-[#FF671F] mb-1 flex justify-between items-center">
                       <span>📌 Tus posts fijados ({pinned.length}) — aparecen primero en el feed global</span>
-                      <button onClick={() => setActiveTab('feed')} className="text-xs underline active:text-white">ver todo en feed →</button>
+                      <button onClick={() => setActiveTab('home')} className="text-xs underline active:text-white">ver todo en feed →</button>
                     </div>
                     <div className="card card-glass p-2 text-xs space-y-1">
                       {pinned.slice(0,3).map((p: any) => (
-                        <div key={p.id} onClick={() => setActiveTab('feed')} className="truncate cursor-pointer hover:text-[#FF671F] active:text-[#FF671F] flex gap-1">
+                        <div key={p.id} onClick={() => setActiveTab('home')} className="truncate cursor-pointer hover:text-[#FF671F] active:text-[#FF671F] flex gap-1">
                           <span>📌</span> <span>{p.text}</span>
                         </div>
                       ))}
@@ -11468,7 +11594,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   </div>
                   <div className="text-[10px] text-[#9CA3AF] -mt-0.5">Tu red de rendimiento • sesiones compartidas visibles en Feed Global</div>
                 </div>
-                <button onClick={() => setActiveTab('feed')} className="text-xs px-3 py-1 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10">Ver en Feed →</button>
+                <button onClick={() => setActiveTab('home')} className="text-xs px-3 py-1 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10">Ver en Feed →</button>
               </div>
 
               {/* Achievement counters - your performance network capital. Alianzas + Syncs + Highlights = the visible proof of your training graph. */}
@@ -11735,7 +11861,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
               {/* Prominent link to global feed - makes the app feel like a living movement */}
               <div className="mt-3 px-1">
-                <button onClick={() => setActiveTab('feed')} className="w-full text-left card card-glass p-3 text-sm flex items-center justify-between active:scale-[0.99]">
+                <button onClick={() => setActiveTab('home')} className="w-full text-left card card-glass p-3 text-sm flex items-center justify-between active:scale-[0.99]">
                   <div>
                     <div className="text-[#FF671F] font-medium">Explora el Feed Global →</div>
                     <div className="text-[10px] text-[#9CA3AF]">Muro completo de la comunidad, posts fijados y más</div>
@@ -12179,10 +12305,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
          Welcome guide modal can still be triggered if needed via other means or first-load. */}
 
       {/* Bottom Navigation - Premium, energetic feel (polished aesthetics) */}
+      <LiveToggleFab
+        isLive={!!currentUser?.trainingNow}
+        isTogglingLive={isTogglingLive}
+        liveCount={liveCountForUI}
+        onToggle={() => toggleLiveTraining()}
+        hidden={!currentUser || showSyncArena || showOnboarding || authBooting}
+      />
       <div className="bottom-nav h-[62px] grid grid-cols-7 z-50 text-[9px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_20px_-6px_rgb(0,0,0,0.4)]">
         {[
           { id: 'explore' as Tab, label: 'Explorar', icon: Dumbbell, live: liveTrainingNow.length > 0 },
-          { id: 'feed' as Tab, label: 'Feed', icon: Activity },
+          { id: 'home' as Tab, label: 'Hoy', icon: Sparkles },
           { id: 'squads' as Tab, label: 'Squads', icon: Users },
           { id: 'sesiones' as Tab, label: 'Sesiones', icon: Star, badge: totalSessionUnreads },
           { id: 'matches' as Tab, label: 'Matches', icon: Heart },
@@ -12378,6 +12511,19 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   <div>
                     <div className="text-sm font-medium flex items-center gap-1">Solo entrenando ahora <span className="live-pill bg-[#22c55e] text-black text-[8px]">🟢 EN VIVO</span></div>
                     <div className="text-xs text-[#9CA3AF]">¡Quién está entrenando en este preciso momento cerca! Ver el pulso en vivo en el mapa.</div>
+                  </div>
+                </label>
+
+                <label className="flex items-center gap-3 p-3 bg-[#1C1C20] rounded-2xl border border-[#FF671F]/40 cursor-pointer active:bg-[#25252A] mt-2">
+                  <input
+                    type="checkbox"
+                    checked={filters.onlyRealProfiles}
+                    onChange={(e) => setFilters((f) => ({ ...f, onlyRealProfiles: e.target.checked }))}
+                    className="w-5 h-5 accent-[#FF671F]"
+                  />
+                  <div>
+                    <div className="text-sm font-medium">Solo perfiles reales</div>
+                    <div className="text-xs text-[#9CA3AF]">Oculta perfiles DEMO (p1, p2…) del swipe. Ideal para testers en beta.</div>
                   </div>
                 </label>
               </div>
@@ -12990,7 +13136,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-2 flex justify-between items-center px-1">
                     <span>MURO DE {showFullProfile.name.toUpperCase()}</span>
                     <div className="flex gap-1">
-                      <button onClick={() => setActiveTab('feed')} className="text-[9px] text-[#FF671F] underline active:opacity-70">Ver feed global</button>
+                      <button onClick={() => setActiveTab('home')} className="text-[9px] text-[#FF671F] underline active:opacity-70">Ver feed global</button>
                       <button onClick={() => loadProfilePosts(showFullProfile.id)} className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10">Refrescar</button>
                     </div>
                   </div>

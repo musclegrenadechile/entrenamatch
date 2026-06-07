@@ -5,6 +5,7 @@ import { Filter, RefreshCw, MapPin, CheckCircle, X, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Profile, CurrentUser } from '../../types';
 import { calculateCompatibility, getDistanceKm } from '../../utils';
+import { isSeedProfileId } from '../../utils/seedProfiles';
 
 interface ExploreTabProps {
   deck: Profile[];
@@ -194,6 +195,7 @@ export const ExploreTab = ({
     const dist = getDistance(profile);
     const verified = isVerified(profile);
     const isRealProfile = realProfiles.some(rp => rp.id === profile.id);
+    const isDemoSeed = isSeedProfileId(profile.id) && !isRealProfile;
 
     const scale = isTop ? 1 : index === 1 ? 0.955 : 0.91;
     const yOffset = isTop ? 0 : index === 1 ? 14 : 28;
@@ -244,6 +246,11 @@ export const ExploreTab = ({
         {/* Top badges row - Premium with Real tester indicator */}
         <div className="absolute top-4 left-4 right-4 flex items-start justify-between">
           <div className="flex flex-col gap-1.5">
+            {isDemoSeed && (
+              <div className="inline-flex items-center gap-1 bg-[#6B7280]/90 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full ring-1 ring-white/30">
+                DEMO
+              </div>
+            )}
             {isRealProfile && (
               <div className="inline-flex items-center gap-1 bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black text-[9px] font-extrabold px-2.5 py-0.5 rounded-full shadow ring-1 ring-white/70 animate-pulse">
                 ★ REAL TESTER
