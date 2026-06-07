@@ -7189,8 +7189,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     <ErrorBoundary>
       <div className="min-h-screen bg-[#0D0D10] text-white flex flex-col overflow-hidden relative app-container">
       {/* PREMIUM TOP BAR - more attractive with better hierarchy, consistent buttons, subtle premium feel */}
-      <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
-        <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
+      <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex flex-wrap items-center justify-between gap-x-2 gap-y-1 px-3 py-2 text-[10px] font-medium shadow-sm">
+        <div className="font-semibold tracking-[-0.2px] flex flex-wrap items-center gap-1.5 text-[#FF671F] min-w-0">
           <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
           <span className="text-white/90 text-[11px]">Real backend • v{APP_VERSION}</span>
           <button 
@@ -7214,7 +7214,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         </div>
 
         {(currentUser || firebaseUser) ? (
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-end gap-1 shrink-0">
             {/* Bell for notifications */}
             <button
               onClick={() => setShowNotifications(true)}
@@ -7316,17 +7316,26 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             <span>Sin conexión • usando caché • cambios se guardan y sincronizan al reconectar</span>
           </motion.div>
         )}
-        {/* ===== EXPLORE / SWIPE (fully owned by ExploreTab) ===== */}
-        {/* LIVE TRAINING BANNER - ALWAYS VISIBLE, the star feature for urgency and retention. Green pulsing, se va en, mini photos, quick join. Makes app addictive. Top of explore for maximum impact. */}
+        {/* ===== EXPLORE TAB — live strip + swipe deck share one scroll column ===== */}
         {activeTab === 'explore' && (
-          <div className="px-4 py-2.5 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden live-banner-glow transition-all duration-300" style={{boxShadow: '0 1px 0 rgba(34,197,94,0.1)'}}>
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div className="flex-shrink-0 px-4 py-2 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden live-banner-glow z-10">
             <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
-            <div className="flex items-center gap-2 mb-1.5 relative z-10">
-              <div className="live-pill green !px-2.5 !py-0.5 text-[9px]">🟢 EN VIVO AHORA</div>
-              <div className="text-sm font-semibold tracking-[-0.1px]">{liveCountForUI} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡se va pronto!' : ''} {liveCountForUI > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}{activeSyncCount > 0 ? ` · 🔄 ${activeSyncCount} pares sincronizados ahora (único)` : ''}</div>
+            <div className="relative z-10 space-y-1">
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                <div className="live-pill green !px-2.5 !py-0.5 text-[9px] shrink-0">🟢 EN VIVO AHORA</div>
+                <div className="text-xs sm:text-sm font-semibold tracking-[-0.1px] text-white/90">
+                  {liveCountForUI} entrenando cerca
+                  {liveCountForUI > 5 ? ' · 🔥 HOT ZONE' : ''}
+                  {activeSyncCount > 0 ? ` · 🔄 ${activeSyncCount} en sync` : ''}
+                </div>
+                <button onClick={() => setShowLiveModal(true)} className="ml-auto text-[10px] text-[#22c55e] underline active:text-white shrink-0">
+                  Ver todos →
+                </button>
+              </div>
               {dailyPulse && (dailyPulse.trainingStreak > 0 || dailyPulse.synergyStreak > 0) && (
-                <div className="text-[10px] mt-1 text-[#22c55e] font-medium flex items-center gap-1">
-                  🔥 Tu streak: {dailyPulse.trainingStreak}d train + {dailyPulse.synergyStreak}d synergy • Nivel {dailyPulse.level}
+                <div className="text-[10px] text-[#22c55e] font-medium">
+                  🔥 Streak: {dailyPulse.trainingStreak}d train + {dailyPulse.synergyStreak}d synergy · Nivel {dailyPulse.level}
                 </div>
               )}
             </div>
@@ -7380,44 +7389,26 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 ))}
               </div>
             ) : currentUser?.trainingNow ? (
-              <div className="card card-glass p-4 text-center border border-[#22c55e]/50 relative overflow-hidden">
-                <div className="text-3xl mb-2">🟢</div>
-                <div className="font-semibold text-base mb-1 text-[#22c55e]">¡Tú estás en vivo en el GymPulse!</div>
-                <div className="text-sm text-[#9CA3AF] mb-3 leading-snug">Tu marcador verde ya está en el mapa. Cuando alguien más active live cerca, aparecerá aquí para unirte o sync.</div>
-                <button onClick={() => setShowLiveMap(true)} className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90">Ver mapa en tiempo real →</button>
+              <div className="mt-2 card card-glass p-3 text-center border border-[#22c55e]/50">
+                <div className="font-semibold text-sm mb-1 text-[#22c55e]">¡Tú estás en vivo en el GymPulse!</div>
+                <button onClick={() => setShowLiveMap(true)} className="text-xs px-4 py-1.5 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90">Ver mapa →</button>
               </div>
             ) : (
-              <div className="card card-glass p-6 text-center border border-[#22c55e]/30 relative overflow-hidden">
-                <div className="text-5xl mb-3 opacity-90">🏋️‍♂️</div>
-                <div className="font-semibold text-base mb-1.5">Nadie entrenando cerca todavía</div>
-                <div className="text-sm text-[#9CA3AF] mb-4 leading-snug">Activa "Entrenando Ahora (EN VIVO)" en tu Perfil para aparecer en el mapa en tiempo real (GymPulse). ¡La gente cerca te ve entrenando y siente urgencia real (FOMO) de unirse o sync antes de que termines!</div>
-                <button onClick={() => setActiveTab('profile')} className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90 active:scale-[0.985] transition shadow-sm">Ir a Perfil y activar live →</button>
-                <div className="absolute -bottom-6 -right-6 text-[70px] opacity-5">📡</div>
-              </div>
-            )}
-            <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between items-center">
-              <span>¡FOMO real! Toca para ver o únete antes de que terminen. El mapa muestra el pulso vivo de la comunidad.</span>
-              <button onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline active:text-white">Ver todos live →</button>
-            </div>
-
-            {/* Map area - primer paso de modularización pulido.
-                La mayoría del chrome (header flotante, filtros, leyenda de zonas, centrar, botones dev) ahora vive dentro de <GymPulseMap />.
-                El padre mantiene el toggle + el form pesado de partners (por ahora).
-            */}
-            <div className="mt-3 relative z-10">
-              <div className="flex items-center justify-between mb-1.5 px-1">
-                <div className="text-[10px] font-semibold text-[#22c55e] flex items-center gap-1.5">
-                  🗺️ Mapa en tiempo real • El GymPulse Global (Partners + GymPartners en vivo)
-                  <span className="text-[8px] bg-[#22c55e]/20 px-1.5 rounded">LA RED EN VIVO</span>
-                  {networkStats.numPartners > 0 && <span className="text-[7px] bg-[#FFD700]/90 text-black px-1 rounded font-bold">TU RED: {networkStats.numPartners} • NP {networkStats.networkPower}</span>}
-                </div>
-                <button 
-                  onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(!showLiveMap) }} 
-                  className={`text-xs px-3 py-1 rounded-full border transition ${showLiveMap ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
-                >
-                  {showLiveMap ? 'Ocultar el mapa en tiempo real' : 'Ver el mapa en tiempo real'}
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="text-[#9CA3AF]">Nadie cerca ahora. Activa live en Perfil para aparecer en el mapa.</span>
+                <button onClick={() => setActiveTab('profile')} className="text-[10px] px-3 py-1 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90 shrink-0">
+                  Activar live →
                 </button>
               </div>
+            )}
+            <div className="mt-2 flex items-center justify-end">
+                <button 
+                  onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(!showLiveMap) }} 
+                  className={`text-[10px] px-3 py-1 rounded-full border transition ${showLiveMap ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
+                >
+                  {showLiveMap ? 'Ocultar mapa' : 'Ver mapa GymPulse'}
+                </button>
+            </div>
 
               {showLiveMap && (
   <div className="relative z-10" style={{ minHeight: '340px' }}>
@@ -8008,11 +7999,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   )}
                 </div>
               )}
-            </div>
           </div>
-        )}
 
-        {activeTab === 'explore' && (
           <ExploreTab
             deck={deck}
             visibleCards={visibleCards}
@@ -8040,6 +8028,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             syncBonds={syncBonds}
             networkPower={networkStats.networkPower}
           />
+          </div>
         )}
 
         {/* FULL LIVE MODAL - spectacular full list of live training near you. Enhanced with search, sort by dist/urgency, quick chat, simple visual "map" row (dots sorted by dist). Makes the killer feature even stronger. */}

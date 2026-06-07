@@ -241,16 +241,16 @@ export const ExploreTab = ({
           />
         )}
 
-        {/* Top badges row - Premium with Real tester indicator */}
-        <div className="absolute top-4 left-4 right-4 flex items-start justify-between">
-          <div className="flex flex-col gap-1.5">
+        {/* Top badges row - left stack + right actions (distance + report, no overlap) */}
+        <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2 pointer-events-none">
+          <div className="flex flex-col gap-1.5 pointer-events-auto min-w-0">
             {isRealProfile && (
-              <div className="inline-flex items-center gap-1 bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black text-[9px] font-extrabold px-2.5 py-0.5 rounded-full shadow ring-1 ring-white/70 animate-pulse">
+              <div className="inline-flex items-center gap-1 bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black text-[9px] font-extrabold px-2.5 py-0.5 rounded-full shadow ring-1 ring-white/70 w-fit">
                 ★ REAL TESTER
               </div>
             )}
             {verified && (
-              <div className="inline-flex items-center gap-1 bg-[#FF671F] text-black text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
+              <div className="inline-flex items-center gap-1 bg-[#FF671F] text-black text-[10px] font-semibold px-2.5 py-0.5 rounded-full w-fit">
                 <CheckCircle size={12} /> VERIFICADO
               </div>
             )}
@@ -261,11 +261,25 @@ export const ExploreTab = ({
             )}
           </div>
 
-          {dist !== null && (
-            <div className="bg-black/60 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
-              <MapPin size={12} /> {dist} km
-            </div>
-          )}
+          <div className="flex flex-col items-end gap-1.5 pointer-events-auto shrink-0">
+            {onReport && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReport(profile.id);
+                }}
+                className="text-[9px] bg-black/60 hover:bg-black/80 active:bg-red-900/70 px-2 py-0.5 rounded-full text-white/80 hover:text-white flex items-center gap-0.5 transition touch-manipulation"
+                title="Reportar perfil"
+              >
+                ⚠ <span className="text-[8px]">REPORT</span>
+              </button>
+            )}
+            {dist !== null && (
+              <div className="bg-black/60 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
+                <MapPin size={12} /> {dist} km
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Bottom info - Premium layout */}
@@ -346,31 +360,17 @@ export const ExploreTab = ({
           </div>
         </div>
 
-        {/* VER PERFIL overlay button */}
+        {/* VER PERFIL — above bottom info to avoid clash with match score */}
         <button
           onClick={(e) => {
             e.stopPropagation();
             if (onShowProfile) onShowProfile(profile);
             else toast.info('Ver perfil completo');
           }}
-          className="absolute bottom-4 right-4 text-[10px] bg-black/60 hover:bg-black/80 active:bg-black px-3 py-1 rounded-full border border-white/20 text-white font-medium transition"
+          className="absolute bottom-[7.5rem] right-3 text-[10px] bg-black/60 hover:bg-black/80 active:bg-black px-3 py-1 rounded-full border border-white/20 text-white font-medium transition pointer-events-auto touch-manipulation"
         >
           VER PERFIL
         </button>
-
-        {/* Report for safety / moderation polish (visible on hover/tap for testers) */}
-        {onReport && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onReport(profile.id);
-            }}
-            className="absolute top-4 right-4 text-[9px] bg-black/50 hover:bg-black/70 active:bg-red-900/70 px-2 py-0.5 rounded-full text-white/70 hover:text-white flex items-center gap-0.5 transition"
-            title="Reportar perfil"
-          >
-            ⚠ <span className="text-[8px]">REPORT</span>
-          </button>
-        )}
 
         {/* No text hint - clean for premium profile choosing (swipe or use buttons below) */}
       </motion.div>
@@ -378,26 +378,44 @@ export const ExploreTab = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col p-4 pt-3 relative bg-[#0D0D10]">
-      {/* Header - Cleaner and more premium, tight spacing */}
-      <div className="flex items-start justify-between mb-1.5 px-1">
-        <div>
-          <div className="section-header text-3xl">Explorar</div>
-          <div className="mt-0.5 flex items-center gap-x-2 text-xs leading-tight flex-wrap">
-            <span className="text-[#FF671F] font-semibold">
-              {deck.length} disponibles ahora {userLocation ? 'cerca de ti' : ''} · ordenados por compat
-            </span>
-            {lastSync && (
-              <span className="text-[9px] text-[#9CA3AF] bg-[#1C1C20] px-1.5 py-px rounded">sync hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>
+    <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overscroll-contain p-4 pt-2 relative bg-[#0D0D10]">
+      {/* Header — two rows so actions don't crush the title on mobile */}
+      <div className="mb-2 px-0.5 flex-shrink-0">
+        <div className="flex items-center justify-between gap-2">
+          <div className="section-header text-2xl sm:text-3xl">Explorar</div>
+          <button 
+            onClick={() => setShowFilters(true)} 
+            className="relative p-2 active:bg-[#25252A] rounded-2xl bg-[#1C1C20] border border-[#2F2F35] shrink-0"
+            aria-label="Filtros"
+          >
+            <Filter size={18} />
+            {(filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0) > 0 && (
+              <div className="absolute -top-1 -right-1 bg-[#FF671F] text-black text-[9px] font-bold min-w-[14px] h-[14px] flex items-center justify-center rounded-full px-1">
+                {(filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0)}
+              </div>
             )}
-            {realProfiles && realProfiles.length > 0 && (
-              <span className="text-[10px] text-[#FF671F] font-medium">+ {realProfiles.length} reales <span className="live-pill text-[8px]">en vivo</span></span>
-            )}
-            <span className="text-[10px] text-[#FF671F]/70">• el match del movimiento</span>
-          </div>
+          </button>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="mt-1 text-xs leading-snug text-[#FF671F] font-medium">
+          {deck.length} disponibles {userLocation ? 'cerca de ti' : 'ahora'} · por compatibilidad
+        </div>
+
+        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[10px]">
+          {lastSync && (
+            <span className="text-[#9CA3AF] bg-[#1C1C20] px-2 py-0.5 rounded-full">
+              sync hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s
+            </span>
+          )}
+          {realProfiles && realProfiles.length > 0 && (
+            <span className="text-[#FF671F] font-medium bg-[#FF671F]/10 px-2 py-0.5 rounded-full">
+              +{realProfiles.length} reales <span className="live-pill text-[8px] !py-0">en vivo</span>
+            </span>
+          )}
+          <span className="text-[#9CA3AF]">el match del movimiento</span>
+        </div>
+
+        <div className="mt-2 flex flex-wrap items-center gap-1.5">
           {!userLocation && (
             <button 
               onClick={requestUserLocation}
@@ -408,45 +426,32 @@ export const ExploreTab = ({
           )}
           <button 
             onClick={() => { setOptimisticRemovedId(null); setDragX(0); resetDeck(); }} 
-            className="text-xs flex items-center gap-1 text-[#9CA3AF] active:text-white px-3 py-1.5 rounded-2xl active:bg-[#25252A]"
+            className="text-xs flex items-center gap-1 text-[#9CA3AF] active:text-white px-3 py-1.5 rounded-2xl active:bg-[#25252A] border border-[#2F2F35]"
           >
             <RefreshCw size={13}/> Reiniciar
           </button>
           {realProfiles.length > 0 && onRefreshRealProfiles && (
-            <>
-              <button 
-                onClick={async () => {
-                  setIsRefreshingReals(true);
-                  try {
-                    await onRefreshRealProfiles();
-                    toast.success('Perfiles reales actualizados');
-                  } finally {
-                    setIsRefreshingReals(false);
-                  }
-                }} 
-                disabled={isRefreshingReals}
-                className="text-xs flex items-center gap-1 bg-[#FF671F] text-black px-3 py-1.5 rounded-2xl font-semibold active:bg-[#E55A1A] disabled:opacity-60"
-              >
-                <RefreshCw size={13} className={isRefreshingReals ? 'animate-spin' : ''}/> {isRefreshingReals ? '...' : 'Actualizar reales'}
-              </button>
-            </>
+            <button 
+              onClick={async () => {
+                setIsRefreshingReals(true);
+                try {
+                  await onRefreshRealProfiles();
+                  toast.success('Perfiles reales actualizados');
+                } finally {
+                  setIsRefreshingReals(false);
+                }
+              }} 
+              disabled={isRefreshingReals}
+              className="text-xs flex items-center gap-1 bg-[#FF671F] text-black px-3 py-1.5 rounded-2xl font-semibold active:bg-[#E55A1A] disabled:opacity-60"
+            >
+              <RefreshCw size={13} className={isRefreshingReals ? 'animate-spin' : ''}/> {isRefreshingReals ? '...' : 'Actualizar reales'}
+            </button>
           )}
-          <button 
-            onClick={() => setShowFilters(true)} 
-            className="relative p-2 active:bg-[#25252A] rounded-2xl bg-[#1C1C20] border border-[#2F2F35]"
-          >
-            <Filter size={18} />
-            {(filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0) > 0 && (
-              <div className="absolute -top-1 -right-1 bg-[#FF671F] text-black text-[9px] font-bold min-w-[14px] h-[14px] flex items-center justify-center rounded-full px-1">
-                {(filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0)}
-              </div>
-            )}
-          </button>
         </div>
       </div>
 
       {/* Cards Stack Area */}
-      <div className="relative flex-1 flex items-center justify-center mt-0.5 mb-2 min-h-[460px]">
+      <div className="relative flex-shrink-0 flex items-center justify-center mt-1 mb-2 min-h-[380px] max-h-[52vh]">
         <AnimatePresence>
           {visibleCards.length === 0 && (
             <div className="text-center px-6">
