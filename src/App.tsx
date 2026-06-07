@@ -85,7 +85,7 @@ import {
   profileDocToLiveUser,
 } from './utils/gymPulseLive'
 import { useDemoAuth } from './hooks/useDemoAuth'
-import { useProfile } from './hooks/useProfile'
+import { useProfile } from './contexts/ProfileContext'
 import { useFilters } from './hooks/useFilters'
 import { useSquads } from './hooks/useSquads'
 import { useRealSessions } from './hooks/useRealSessions'

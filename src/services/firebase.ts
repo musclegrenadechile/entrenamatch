@@ -66,6 +66,7 @@ let storage: any = null;
 let analytics: any = null;
 
 if (firebaseConfig) {
+  try {
   app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
   // initializeAuth + redirect resolver — required for reliable Google OAuth redirect/popup (GH Pages + Capacitor).
@@ -115,6 +116,9 @@ if (firebaseConfig) {
     } catch (analyticsErr) {
       console.warn('[Firebase] Analytics unavailable on this device', analyticsErr);
     }
+  }
+  } catch (initErr) {
+    console.error('[Firebase] Critical init failure — app will run in degraded mode', initErr);
   }
 }
 
