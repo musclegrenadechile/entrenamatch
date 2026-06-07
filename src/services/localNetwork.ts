@@ -244,3 +244,21 @@ export function listLiveAtGym(liveUsers: LiveUserWithGym[], gymId: string): Live
     (u) => u.trainingNow !== false && u.gymCheckIn?.gymId === gymId
   )
 }
+
+export function countLiveInCity(
+  liveUsers: Array<{ city?: string; trainingNow?: boolean }>,
+  cityNorm: string
+): number {
+  if (!cityNorm) return 0
+  return (liveUsers || []).filter(
+    (u) => u.trainingNow !== false && normalizeCity(u.city) === cityNorm
+  ).length
+}
+
+export function findLeaderboardRank(
+  leaderboard: LeaderboardEntry[],
+  userId: string
+): number | null {
+  const idx = leaderboard.findIndex((e) => e.userId === userId || e.isMe)
+  return idx >= 0 ? idx + 1 : null
+}

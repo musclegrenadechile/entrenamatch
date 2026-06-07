@@ -88,10 +88,11 @@ export function filterMapLiveUsers(
     userLocation?: { lat: number; lng: number } | null
     selectedMapZone?: string | null
     showOnlyLegends?: boolean
+    mapMyGymId?: string | null
     getDistanceKm?: (lat1: number, lng1: number, lat2: number, lng2: number) => number
   }
 ): LiveUserLike[] {
-  const { mapNearOnly, userLocation, selectedMapZone, showOnlyLegends, getDistanceKm } = opts
+  const { mapNearOnly, userLocation, selectedMapZone, showOnlyLegends, mapMyGymId, getDistanceKm } = opts
   return (users || []).filter((u) => {
     if (!isActiveLiveUser(u)) return false
     if (!hasMapCoords(u)) return false
@@ -99,6 +100,7 @@ export function filterMapLiveUsers(
     if (userLocation && getDistanceKm && hasMapCoords(u)) {
       dist = getDistanceKm(userLocation.lat, userLocation.lng, Number(u.lat), Number(u.lng))
     }
+    if (mapMyGymId && u.gymCheckIn?.gymId !== mapMyGymId) return false
     if (mapNearOnly && userLocation && dist >= 10) return false
     if (selectedMapZone && u.city !== selectedMapZone) return false
     if (showOnlyLegends && !u.isLegend) return false

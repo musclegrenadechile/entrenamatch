@@ -7,6 +7,8 @@ export interface LocalNetworkCardProps {
   cityLabel?: string
   challenge: CityChallenge | null
   leaderboard: LeaderboardEntry[]
+  myRank?: number | null
+  cityLiveCount?: number
   nearestGym: (PartnerGym & { distanceKm: number }) | null
   gymCheckIn?: GymCheckIn | null
   gymLiveCount?: number
@@ -14,12 +16,15 @@ export interface LocalNetworkCardProps {
   onToggleLeaderboard: (visible: boolean) => void
   onGymCheckIn: (gym: PartnerGym) => void
   onOpenMap: () => void
+  onOpenGymMap?: () => void
 }
 
 export function LocalNetworkCard({
   cityLabel,
   challenge,
   leaderboard,
+  myRank,
+  cityLiveCount = 0,
   nearestGym,
   gymCheckIn,
   gymLiveCount = 0,
@@ -27,6 +32,7 @@ export function LocalNetworkCard({
   onToggleLeaderboard,
   onGymCheckIn,
   onOpenMap,
+  onOpenGymMap,
 }: LocalNetworkCardProps) {
   if (!cityLabel && !challenge && leaderboard.length === 0 && !nearestGym) return null
 
@@ -42,6 +48,13 @@ export function LocalNetworkCard({
           <h3 className="text-sm font-black text-white mt-0.5">
             {cityLabel ? `Red en ${cityLabel}` : 'Red local'}
           </h3>
+          {(cityLiveCount > 0 || (myRank != null && myRank > 0)) && (
+            <p className="text-[10px] text-[#9CA3AF] mt-1 leading-snug">
+              {cityLiveCount > 0 ? `${cityLiveCount} entrenando en vivo en tu ciudad` : ''}
+              {cityLiveCount > 0 && myRank ? ' · ' : ''}
+              {myRank ? `Tu puesto: #${myRank} esta semana` : ''}
+            </p>
+          )}
         </div>
         <button
           type="button"
@@ -146,6 +159,15 @@ export function LocalNetworkCard({
                   <Zap className="w-3 h-3" />
                   {gymLiveCount} entrenando en este gym ahora
                 </p>
+              )}
+              {onOpenGymMap && (
+                <button
+                  type="button"
+                  onClick={onOpenGymMap}
+                  className="w-full py-2 rounded-xl bg-[#22c55e]/10 border border-[#22c55e]/30 text-[10px] font-bold text-[#22c55e] active:bg-[#22c55e]/20"
+                >
+                  Ver solo mi gym en el mapa
+                </button>
               )}
             </div>
           ) : nearestGym ? (

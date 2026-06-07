@@ -110,6 +110,8 @@ import {
   normalizeCity,
   isGymCheckInFresh,
   countLiveAtGym,
+  countLiveInCity,
+  findLeaderboardRank,
 } from './services/localNetwork'
 import {
   formatLastLiveLabel,
@@ -1748,6 +1750,7 @@ useEffect(() => {
     try { return localStorage.getItem('entrenamatch_show_map') === '1' } catch { return false }
   })
   const [mapNearOnly, setMapNearOnly] = useState(false) // simple filter for map UX
+  const [mapMyGymOnly, setMapMyGymOnly] = useState(false)
   const [selectedMapZone, setSelectedMapZone] = useState<string | null>(null) // interactive zone filter for "sigue con todo el mapa"
   const [showOnlyLegends, setShowOnlyLegends] = useState(false) // filter to only high-performance sync partners (your real training network) on map
   const [partnerLocations, setPartnerLocations] = useState<any[]>([])
@@ -2606,6 +2609,34 @@ useEffect(() => {
     if (!gymId || !isGymCheckInFresh(currentUser?.gymCheckIn)) return 0
     return countLiveAtGym(liveUsersActive, gymId)
   }, [currentUser?.gymCheckIn, liveUsersActive])
+
+  const homeMyLeaderboardRank = useMemo(
+    () => findLeaderboardRank(homeLocalLeaderboard, effectiveUserId),
+    [homeLocalLeaderboard, effectiveUserId]
+  )
+
+  const homeCityLiveCount = useMemo(() => {
+    if (!homeCityNorm) return 0
+    return countLiveInCity(liveUsersActive, homeCityNorm)
+  }, [homeCityNorm, liveUsersActive])
+
+  const mapMyGymId = isGymCheckInFresh(currentUser?.gymCheckIn)
+    ? currentUser?.gymCheckIn?.gymId ?? null
+    : null
+
+  // Celebrate city challenge completion once per week (client-side)
+  useEffect(() => {
+    if (!homeCityChallenge || homeCityChallenge.progressPct < 100 || !homeCityNorm) return
+    const storageKey = `entrenamatch_city_done_${homeCityChallenge.weekKey}_${homeCityNorm}`
+    try {
+      if (localStorage.getItem(storageKey)) return
+      localStorage.setItem(storageKey, '1')
+      toast.success(`¡Reto completado en ${homeCityChallenge.cityLabel}!`, {
+        description: `${homeCityChallenge.targetMinutes} min live+sync esta semana — la ciudad lo logró 🏆`,
+      })
+      confetti({ particleCount: 90, spread: 75, origin: { y: 0.65 } })
+    } catch {}
+  }, [homeCityChallenge, homeCityNorm])
 
   // Beta Feedback enhanced (Phase 0 - structured + history)
   const [feedbackType, setFeedbackType] = useState<'bug' | 'idea' | 'ux' | 'other'>('idea')
@@ -3596,6 +3627,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     },
     [currentUser, saveUser, saveUserWithRealSync]
   )
+
+  const handleOpenGymMap = useCallback(() => {
+    setActiveTab('explore')
+    setShowLiveMap(true)
+    if (mapMyGymId) setMapMyGymOnly(true)
+    const gym = currentUser?.gymCheckIn
+    if (gym?.lat != null && gym?.lng != null) {
+      setTimeout(() => {
+        try {
+          gymPulseMapRef.current?.flyTo?.(gym.lat, gym.lng, 16)
+        } catch {}
+      }, 400)
+    }
+  }, [mapMyGymId, currentUser?.gymCheckIn])
 
   // Native push notifications setup (only for real users in native APK)
   // NOTE: We no longer auto-request permission on every login to avoid unwanted prompts/crashes during "activation".
@@ -8778,6 +8823,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       selectedMapZone={selectedMapZone}
       showOnlyLegends={showOnlyLegends}
       showPartners={showPartners}
+      mapMyGymOnly={mapMyGymOnly}
+      mapMyGymId={mapMyGymId}
       mapForceTick={mapForceTick}
       syncBonds={syncBonds}
       isDeveloper={isDeveloper}
@@ -8791,6 +8838,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       onSelectedMapZoneChange={setSelectedMapZone}
       onShowOnlyLegendsChange={setShowOnlyLegends}
       onShowPartnersChange={(v) => { setShowPartners(v); setMapForceTick(t => t + 1) }}
+      onMapMyGymOnlyChange={setMapMyGymOnly}
       onOpenAddPartner={openAddPartner}
       onOpenManagePartners={openManagePartners}
       onToggleQuickAdd={(next) => { setIsQuickAddPartner(next); if (next) toast('Modo ADD RÁPIDO activado'); else toast('Modo add rápido OFF') }}
@@ -9588,6 +9636,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               localNetwork={{
                 challenge: homeCityChallenge,
                 leaderboard: homeLocalLeaderboard,
+                myRank: homeMyLeaderboardRank,
+                cityLiveCount: homeCityLiveCount,
                 nearestGym: homeNearestGym,
                 gymCheckIn: isGymCheckInFresh(currentUser?.gymCheckIn)
                   ? currentUser.gymCheckIn
@@ -9600,6 +9650,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   setActiveTab('explore')
                   setShowLiveMap(true)
                 },
+                onOpenGymMap: mapMyGymId ? handleOpenGymMap : undefined,
               }}
             />
             {/* CINEMATIC REMASTERED FEED HEADER — the social heart of the GymPulse */}
@@ -10191,12 +10242,21 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 {squads.map(squad => {
                   const isMember = squad.members.includes(effectiveUserId)
                   const spots = 4 - squad.members.length
+                  const membersLive = squad.members.filter((mid) => isUserLive(mid)).length
 
                   return (
                     <div key={squad.id} className="card card-glass session-card rounded-3xl p-4 active:bg-[#25252A] border border-[#FF671F]/20" onClick={() => setSelectedSquad(squad.id)}>
                       <div className="flex justify-between">
                         <div>
-                          <div className="font-semibold text-lg flex items-center gap-2 tracking-tight">{squad.name} <span className="text-[9px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded font-medium">SQUAD</span></div>
+                          <div className="font-semibold text-lg flex items-center gap-2 tracking-tight flex-wrap">
+                            {squad.name}
+                            <span className="text-[9px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded font-medium">SQUAD</span>
+                            {membersLive > 0 && (
+                              <span className="text-[9px] bg-[#22c55e] text-black px-1.5 py-0.5 rounded font-black animate-pulse">
+                                🟢 {membersLive} LIVE
+                              </span>
+                            )}
+                          </div>
                           <div className="text-sm text-[#FF671F] font-medium mt-0.5">{squad.focus}</div>
                           {squad.weeklyRoutine?.label && (
                             <div className="text-[10px] text-[#9CA3AF] mt-1 leading-snug">

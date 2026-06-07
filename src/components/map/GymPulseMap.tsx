@@ -55,6 +55,9 @@ export interface GymPulseMapProps {
   selectedMapZone: string | null
   showOnlyLegends?: boolean
   showPartners: boolean
+  /** When set, only show live users checked in at this partner gym. */
+  mapMyGymOnly?: boolean
+  mapMyGymId?: string | null
   mapForceTick: number
   syncBonds: Record<string, any>
   isDeveloper?: boolean
@@ -67,6 +70,7 @@ export interface GymPulseMapProps {
   onSelectedMapZoneChange?: (z: string | null) => void
   onShowOnlyLegendsChange?: (v: boolean) => void
   onShowPartnersChange?: (v: boolean) => void
+  onMapMyGymOnlyChange?: (v: boolean) => void
 
   // Dev actions
   onOpenAddPartner?: () => void
@@ -152,6 +156,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     selectedMapZone,
     showOnlyLegends = false,
     showPartners,
+    mapMyGymOnly = false,
+    mapMyGymId = null,
     mapForceTick,
     syncBonds,
     isDeveloper = false,
@@ -164,6 +170,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     onSelectedMapZoneChange,
     onShowOnlyLegendsChange,
     onShowPartnersChange,
+    onMapMyGymOnlyChange,
     onOpenAddPartner,
     onOpenManagePartners,
     onToggleQuickAdd,
@@ -366,6 +373,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         userLocation,
         selectedMapZone,
         showOnlyLegends,
+        mapMyGymId: mapMyGymOnly && mapMyGymId ? mapMyGymId : null,
         getDistanceKm,
       })
       // Self gets the premium marker below — skip duplicate live pin
@@ -374,7 +382,14 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       const selfMapPos = resolveSelfMapPosition(userLocation, liveTrainingNow || [], selfUserId)
       const selfInFilteredView = selfIsLive && selfMapPos && filterMapLiveUsers(
         (liveTrainingNow || []).filter((u) => isSelfLiveUser(u, selfUserId)),
-        { mapNearOnly, userLocation, selectedMapZone, showOnlyLegends, getDistanceKm }
+        {
+          mapNearOnly,
+          userLocation,
+          selectedMapZone,
+          showOnlyLegends,
+          mapMyGymId: mapMyGymOnly && mapMyGymId ? mapMyGymId : null,
+          getDistanceKm,
+        }
       ).length > 0
 
       // Heartbeats when live count increases (self counts when live + visible on map)
@@ -769,7 +784,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     }
   }, [
     showLiveMap, liveTrainingNow, liveCount, selfUserId, userLocation, mapNearOnly, selectedMapZone,
-    showOnlyLegends, showPartners, mapForceTick, ritualRipples, partnerLocations,
+    showOnlyLegends, showPartners, mapMyGymOnly, mapMyGymId, mapForceTick, ritualRipples, partnerLocations,
     echoPins, syncBonds, selfIsLive, isDeveloper, isPlacingPartner, isQuickAddPartner,
     onShowProfile, onStartSync, onPartnerPositionSelected, onPartnerMoved, onPartnerDelete,
     onPartnerEdit, onForceTick, onRequestLocation, onAddPartnerAtCurrentCenter, onReloadPartners,
@@ -814,10 +829,17 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     }
   }, [onStartSync, onPartnerDelete, onPartnerEdit, onAddPartnerAtCurrentCenter, onReloadPartners, onSpawnTestLives, onClearDevTestLives, onWitnessEchoPin, onWitnessRipple])
 
-  const mapFilterOpts = { mapNearOnly, userLocation, selectedMapZone, showOnlyLegends, getDistanceKm }
+  const mapFilterOpts = {
+    mapNearOnly,
+    userLocation,
+    selectedMapZone,
+    showOnlyLegends,
+    mapMyGymId: mapMyGymOnly && mapMyGymId ? mapMyGymId : null,
+    getDistanceKm,
+  }
   const filteredLiveUsers = useMemo(
     () => filterMapLiveUsers(liveTrainingNow || [], mapFilterOpts),
-    [liveTrainingNow, mapNearOnly, userLocation, selectedMapZone, showOnlyLegends]
+    [liveTrainingNow, mapNearOnly, userLocation, selectedMapZone, showOnlyLegends, mapMyGymOnly, mapMyGymId]
   )
   const totalLiveOnMap = typeof liveCount === 'number' ? liveCount : filteredLiveUsers.length
   const filteredLiveOnMap = filteredLiveUsers.length
@@ -943,6 +965,16 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         >
           {mapNearOnly ? '✓ Cerca de mí (10km)' : 'Solo cerca de mí'}
         </button>
+
+        {mapMyGymId && (
+          <button
+            onClick={() => onMapMyGymOnlyChange && onMapMyGymOnlyChange(!mapMyGymOnly)}
+            className={`text-[8px] px-2 py-0.5 rounded-full border transition ${mapMyGymOnly ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'bg-black/70 text-[#22c55e] border-[#22c55e]/40 hover:bg-[#22c55e]/10'}`}
+            title="Solo atletas con check-in en tu gym partner"
+          >
+            {mapMyGymOnly ? '✓ Mi gym' : 'Solo mi gym'}
+          </button>
+        )}
 
         <button
           onClick={() => onShowOnlyLegendsChange && onShowOnlyLegendsChange(!showOnlyLegends)}

@@ -31,6 +31,23 @@ async function getTeamPartnerIds(uid, syncBonds) {
   return Array.from(partnerIds);
 }
 
+/** Squad mates — fixed crews get live/sync push too (Phase 4). */
+async function getSquadMateIds(uid) {
+  const mates = new Set();
+  try {
+    const snap = await db.collection('squads').where('members', 'array-contains', uid).limit(10).get();
+    snap.forEach((doc) => {
+      const members = (doc.data() || {}).members || [];
+      members.forEach((m) => {
+        if (m && m !== uid) mates.add(m);
+      });
+    });
+  } catch (e) {
+    console.warn('Squad lookup for push failed', uid, e);
+  }
+  return Array.from(mates);
+}
+
 /**
  * Trigger: profile live/sync change → FCM push to team only (bonds + matches).
  */
@@ -48,22 +65,31 @@ exports.notifyRedNetworkLiveOrSync = functions.firestore
       return null;
     }
 
-    const partnerIds = await getTeamPartnerIds(uid, after.syncBonds || {});
+    const [teamIds, squadMateIds] = await Promise.all([
+      getTeamPartnerIds(uid, after.syncBonds || {}),
+      getSquadMateIds(uid),
+    ]);
+    const partnerIds = [...new Set([...teamIds, ...squadMateIds])];
     if (partnerIds.length === 0) {
-      console.log(`No team partners for ${uid}, skipping push`);
+      console.log(`No team/squad partners for ${uid}, skipping push`);
       return null;
     }
 
     const name = after.name || 'Tu gym partner';
     const isSync = !!startedSync;
+    const gymName = after.gymCheckIn && after.gymCheckIn.gymName ? after.gymCheckIn.gymName : null;
 
     const title = isSync
       ? `${name} activó EntrenaSync`
-      : `${name} está entrenando en vivo`;
+      : gymName
+        ? `${name} está en ${gymName}`
+        : `${name} está entrenando en vivo`;
 
     const body = isSync
       ? 'Tu equipo está en sync — únete desde Hoy o el mapa.'
-      : 'Alguien de tu equipo acaba de activar live. ¿Te sumas?';
+      : gymName
+        ? 'Alguien de tu red acaba de activar live en el gym. ¿Te sumas?'
+        : 'Alguien de tu equipo acaba de activar live. ¿Te sumas?';
 
     const tokenPromises = partnerIds.map(async (partnerId) => {
       try {
