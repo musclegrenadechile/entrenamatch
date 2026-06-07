@@ -4,8 +4,10 @@
 import assert from 'node:assert/strict'
 import {
   buildFuelProfile,
+  buildFuelAnalyzeContext,
   calculateTdee,
   estimateMacrosFromDescription,
+  getFuelCoachingTip,
   macroTargetsFromKcal,
   targetKcalFromGoal,
   toLocalDateStr,
@@ -48,5 +50,12 @@ assert.ok(pizza.kcal > ensalada.kcal)
 
 const dateStr = toLocalDateStr(new Date('2026-06-07T12:00:00'))
 assert.match(dateStr, /^\d{4}-\d{2}-\d{2}$/)
+
+const ctx = buildFuelAnalyzeContext(profile, { kcal: 800, proteinG: 40, carbsG: 90, fatG: 20 })
+assert.equal(ctx?.goal, 'muscle')
+assert.equal(ctx?.remainingKcal, profile.targetKcal - 800)
+
+const tip = getFuelCoachingTip(profile, { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 })
+assert.ok(tip?.includes('Objetivo hoy'))
 
 console.log('✅ Fuel AI smoke tests passed')

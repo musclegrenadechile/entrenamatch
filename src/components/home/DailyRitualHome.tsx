@@ -33,6 +33,7 @@ export interface DailyRitualHomeProps {
   onOpenEntrenaLog?: () => void
   fuelProfile?: import('../../types').FuelProfile | null
   fuelTotals?: import('../../types').FuelDayTotals
+  fuelTodayLogs?: import('../../types').FuelLogEntry[]
   fuelPostWorkoutTip?: string
   onOpenFuelSetup?: () => void
   onOpenFuelLog?: () => void
@@ -65,6 +66,7 @@ export function DailyRitualHome({
   onOpenEntrenaLog,
   fuelProfile,
   fuelTotals,
+  fuelTodayLogs,
   fuelPostWorkoutTip,
   onOpenFuelSetup,
   onOpenFuelLog,
@@ -206,6 +208,7 @@ export function DailyRitualHome({
           totals={
             fuelTotals ?? { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 }
           }
+          todayLogs={fuelTodayLogs}
           postWorkoutTip={fuelPostWorkoutTip}
           onSetup={onOpenFuelSetup ?? (() => {})}
           onLogMeal={onOpenFuelLog ?? (() => {})}

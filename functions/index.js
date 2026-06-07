@@ -258,10 +258,30 @@ function estimateFromDescription(text) {
   };
 }
 
-async function callGeminiFoodAnalysis(apiKey, imageBase64, mealDescription) {
+async function callGeminiFoodAnalysis(apiKey, imageBase64, mealDescription, fuelContext) {
+  const ctx = fuelContext && typeof fuelContext === 'object' ? fuelContext : null;
+  let contextBlock = '';
+  if (ctx) {
+    const parts = [];
+    if (ctx.goalLabel || ctx.goal) parts.push(`Objetivo: ${ctx.goalLabel || ctx.goal}`);
+    if (ctx.targetKcal) parts.push(`Target diario: ${ctx.targetKcal} kcal, ${ctx.targetProteinG || '?'}g proteína`);
+    if (typeof ctx.consumedKcal === 'number') {
+      parts.push(`Ya consumido hoy: ${ctx.consumedKcal} kcal, ${ctx.consumedProteinG || 0}g proteína`);
+    }
+    if (typeof ctx.remainingKcal === 'number') {
+      parts.push(`Quedan ~${ctx.remainingKcal} kcal y ~${ctx.remainingProteinG || 0}g proteína`);
+    }
+    if (ctx.restrictions) parts.push(`Restricciones: ${ctx.restrictions}`);
+    if (parts.length) {
+      contextBlock = `\nContexto del atleta (usa para el tip, no inventes alergias): ${parts.join('. ')}.`;
+    }
+  }
+
   const parts = [];
   if (mealDescription) {
-    parts.push({ text: `Estima macros de esta comida descrita en español: "${mealDescription}". Responde SOLO JSON válido: {"kcal":number,"proteinG":number,"carbsG":number,"fatG":number,"label":string,"tip":string}` });
+    parts.push({
+      text: `Estima macros de esta comida descrita en español: "${mealDescription}".${contextBlock} Responde SOLO JSON válido: {"kcal":number,"proteinG":number,"carbsG":number,"fatG":number,"label":string,"tip":string}. tip = consejo breve gym-friendly en español.`,
+    });
   }
   if (imageBase64) {
     parts.push({
@@ -271,7 +291,7 @@ async function callGeminiFoodAnalysis(apiKey, imageBase64, mealDescription) {
       },
     });
     parts.push({
-      text: 'Estima kcal y macros P/C/G de esta comida en español. JSON only: {"kcal":number,"proteinG":number,"carbsG":number,"fatG":number,"label":string,"tip":string}. tip = consejo breve pre/post gym. No consejo médico.',
+      text: `Estima kcal y macros P/C/G de esta comida en español.${contextBlock} JSON only: {"kcal":number,"proteinG":number,"carbsG":number,"fatG":number,"label":string,"tip":string}. tip = consejo breve pre/post gym en español. No consejo médico.`,
     });
   }
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
@@ -312,6 +332,7 @@ exports.analyzeFood = functions
   }
   const imageBase64 = data && data.imageBase64 ? String(data.imageBase64) : '';
   const mealDescription = data && data.mealDescription ? String(data.mealDescription) : '';
+  const fuelContext = data && data.fuelContext ? data.fuelContext : null;
   if (!imageBase64 && !mealDescription.trim()) {
     throw new functions.https.HttpsError('invalid-argument', 'Foto o descripción requerida.');
   }
@@ -328,7 +349,7 @@ exports.analyzeFood = functions
   }
 
   try {
-    return await callGeminiFoodAnalysis(apiKey, imageBase64, mealDescription);
+    return await callGeminiFoodAnalysis(apiKey, imageBase64, mealDescription, fuelContext);
   } catch (err) {
     console.warn('Gemini food analysis failed, using heuristic', err.message || err);
     return estimateFromDescription(mealDescription || 'Comida con foto');

@@ -25,6 +25,7 @@ export function HomeTab(props: HomeTabProps) {
     setShowEntrenaLogModal,
     fuelProfile,
     fuelTodayTotals,
+    fuelTodayLogs,
     fuelPostWorkoutTip,
     setShowFuelSetupModal,
     setShowFuelLogModal,
@@ -121,6 +122,7 @@ export function HomeTab(props: HomeTabProps) {
         onOpenEntrenaLog={() => setShowEntrenaLogModal(true)}
         fuelProfile={fuelProfile}
         fuelTotals={fuelTodayTotals}
+        fuelTodayLogs={fuelTodayLogs}
         fuelPostWorkoutTip={fuelPostWorkoutTip}
         onOpenFuelSetup={() => setShowFuelSetupModal(true)}
         onOpenFuelLog={() =>

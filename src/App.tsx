@@ -147,7 +147,7 @@ import {
   sumFuelLogs,
   emptyFuelDayTotals,
 } from './services/fuel'
-import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr } from './utils/fuelCalculator'
+import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr, buildFuelAnalyzeContext } from './utils/fuelCalculator'
 import { fetchRecentWorkouts } from './services/workouts'
 import { saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, buildWorkoutPreview, computeWorkoutStats } from './services/workouts'
 import { EXERCISE_LIBRARY } from './data/exerciseLibrary'
@@ -5272,10 +5272,15 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       const result = await analyzeFoodWithAi({
         imageBase64: imageBase64 || undefined,
         mealDescription,
+        fuelContext: buildFuelAnalyzeContext(fuelProfile, fuelTodayTotals),
       })
-      if (result.source === 'heuristic') {
+      if (result.source === 'gemini') {
+        toast.success('Fuel AI · Gemini', {
+          description: `${result.kcal} kcal estimadas — revisa y guarda si cuadra.`,
+        })
+      } else {
         toast.message('Estimación aproximada', {
-          description: 'Fuel AI usa heurística local. Configura GEMINI_API_KEY en Functions para análisis Gemini.',
+          description: 'Gemini no respondió — usando heurística local. Ajusta manualmente si hace falta.',
         })
       }
       return result
@@ -9089,6 +9094,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             setShowEntrenaLogModal={setShowEntrenaLogModal}
             fuelProfile={fuelProfile}
             fuelTodayTotals={fuelTodayTotals}
+            fuelTodayLogs={fuelTodayLogs}
             fuelPostWorkoutTip={fuelPostWorkoutTip}
             setShowFuelSetupModal={setShowFuelSetupModal}
             setShowFuelLogModal={setShowFuelLogModal}

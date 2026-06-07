@@ -81,6 +81,57 @@ export function toLocalDateStr(d = new Date()): string {
   return `${y}-${m}-${day}`
 }
 
+const GOAL_LABELS: Record<FuelGoal, string> = {
+  lose: 'perder grasa',
+  maintain: 'mantener peso',
+  muscle: 'ganar músculo',
+  gain: 'subir peso',
+}
+
+/** Context sent to Gemini for personalized meal analysis. */
+export function buildFuelAnalyzeContext(
+  profile: FuelProfile | null | undefined,
+  totals: { kcal: number; proteinG: number; carbsG: number; fatG: number }
+) {
+  if (!profile) return undefined
+  return {
+    goal: profile.goal,
+    goalLabel: GOAL_LABELS[profile.goal],
+    restrictions: profile.restrictions?.trim() || undefined,
+    targetKcal: profile.targetKcal,
+    targetProteinG: profile.targetProteinG,
+    consumedKcal: totals.kcal,
+    consumedProteinG: totals.proteinG,
+    remainingKcal: Math.max(0, profile.targetKcal - totals.kcal),
+    remainingProteinG: Math.max(0, profile.targetProteinG - totals.proteinG),
+  }
+}
+
+/** Short coaching line for FuelDayCard based on progress today. */
+export function getFuelCoachingTip(
+  profile: FuelProfile,
+  totals: { kcal: number; proteinG: number; carbsG: number; fatG: number; entryCount: number }
+): string | undefined {
+  if (totals.entryCount === 0) {
+    return `Objetivo hoy: ${profile.targetKcal} kcal · ${profile.targetProteinG}g proteína. Registra tu primera comida con Fuel AI.`
+  }
+  const remKcal = profile.targetKcal - totals.kcal
+  const remP = profile.targetProteinG - totals.proteinG
+  if (remKcal < -150) {
+    return 'Vas sobre el target de kcal — prioriza proteína magra y verduras en lo que queda del día.'
+  }
+  if (remP > 25) {
+    return `Te faltan ~${remP}g proteína. Un plato con pollo, huevos o batido te acerca al objetivo.`
+  }
+  if (remKcal > 400 && profile.goal === 'muscle') {
+    return `Quedan ~${remKcal} kcal — buen margen post-entreno para carbs + proteína.`
+  }
+  if (remKcal > 0 && remKcal <= 400) {
+    return `Cerca del cierre: ~${remKcal} kcal restantes para completar el día.`
+  }
+  return undefined
+}
+
 export function getPostWorkoutFuelTip(workoutType?: WorkoutType): string | undefined {
   if (!workoutType) return undefined
   if (workoutType === 'legs')

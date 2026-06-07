@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react'
+import { useRef, useState, useEffect } from 'react'
 import { Camera, Sparkles, X } from 'lucide-react'
 import { estimateMacrosFromDescription } from '../../utils/fuelCalculator'
+import type { AnalyzeFoodResult } from '../../services/fuel'
 
 export interface FuelLogModalProps {
   open: boolean
@@ -15,15 +16,23 @@ export interface FuelLogModalProps {
     source: 'manual' | 'photo_ai' | 'text_ai'
     publishToMuro: boolean
   }) => Promise<void>
-  onAnalyzePhoto?: (imageBase64: string, mealDescription?: string) => Promise<{
-    kcal: number
-    proteinG: number
-    carbsG: number
-    fatG: number
-    label: string
-    tip: string
-  }>
+  onAnalyzePhoto?: (imageBase64: string, mealDescription?: string) => Promise<AnalyzeFoodResult>
   saving?: boolean
+}
+
+const EMPTY = {
+  mealLabel: '',
+  description: '',
+  kcal: 450,
+  proteinG: 35,
+  carbsG: 40,
+  fatG: 15,
+  photoPreview: null as string | null,
+  photoBase64: null as string | null,
+  source: 'manual' as 'manual' | 'photo_ai' | 'text_ai',
+  aiTip: null as string | null,
+  aiSource: null as 'gemini' | 'heuristic' | null,
+  publishToMuro: false,
 }
 
 export function FuelLogModal({
@@ -34,35 +43,47 @@ export function FuelLogModal({
   saving = false,
 }: FuelLogModalProps) {
   const fileRef = useRef<HTMLInputElement>(null)
-  const [mealLabel, setMealLabel] = useState('')
-  const [description, setDescription] = useState('')
-  const [kcal, setKcal] = useState(450)
-  const [proteinG, setProteinG] = useState(35)
-  const [carbsG, setCarbsG] = useState(40)
-  const [fatG, setFatG] = useState(15)
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null)
-  const [photoBase64, setPhotoBase64] = useState<string | null>(null)
-  const [source, setSource] = useState<'manual' | 'photo_ai' | 'text_ai'>('manual')
-  const [aiTip, setAiTip] = useState<string | null>(null)
+  const [mealLabel, setMealLabel] = useState(EMPTY.mealLabel)
+  const [description, setDescription] = useState(EMPTY.description)
+  const [kcal, setKcal] = useState(EMPTY.kcal)
+  const [proteinG, setProteinG] = useState(EMPTY.proteinG)
+  const [carbsG, setCarbsG] = useState(EMPTY.carbsG)
+  const [fatG, setFatG] = useState(EMPTY.fatG)
+  const [photoPreview, setPhotoPreview] = useState<string | null>(EMPTY.photoPreview)
+  const [photoBase64, setPhotoBase64] = useState<string | null>(EMPTY.photoBase64)
+  const [source, setSource] = useState<'manual' | 'photo_ai' | 'text_ai'>(EMPTY.source)
+  const [aiTip, setAiTip] = useState<string | null>(EMPTY.aiTip)
+  const [aiSource, setAiSource] = useState<'gemini' | 'heuristic' | null>(EMPTY.aiSource)
   const [analyzing, setAnalyzing] = useState(false)
-  const [publishToMuro, setPublishToMuro] = useState(false)
+  const [publishToMuro, setPublishToMuro] = useState(EMPTY.publishToMuro)
+
+  useEffect(() => {
+    if (!open) return
+    setMealLabel(EMPTY.mealLabel)
+    setDescription(EMPTY.description)
+    setKcal(EMPTY.kcal)
+    setProteinG(EMPTY.proteinG)
+    setCarbsG(EMPTY.carbsG)
+    setFatG(EMPTY.fatG)
+    setPhotoPreview(EMPTY.photoPreview)
+    setPhotoBase64(EMPTY.photoBase64)
+    setSource(EMPTY.source)
+    setAiTip(EMPTY.aiTip)
+    setAiSource(EMPTY.aiSource)
+    setPublishToMuro(EMPTY.publishToMuro)
+    if (fileRef.current) fileRef.current.value = ''
+  }, [open])
 
   if (!open) return null
 
-  const applyEstimate = (est: {
-    kcal: number
-    proteinG: number
-    carbsG: number
-    fatG: number
-    label: string
-    tip: string
-  }, src: 'photo_ai' | 'text_ai') => {
+  const applyEstimate = (est: AnalyzeFoodResult, src: 'photo_ai' | 'text_ai') => {
     setKcal(est.kcal)
     setProteinG(est.proteinG)
     setCarbsG(est.carbsG)
     setFatG(est.fatG)
     if (!mealLabel) setMealLabel(est.label)
     setAiTip(est.tip)
+    setAiSource(est.source)
     setSource(src)
   }
 
@@ -74,10 +95,10 @@ export function FuelLogModal({
         const est = await onAnalyzePhoto('', description.trim())
         applyEstimate(est, 'text_ai')
       } else {
-        applyEstimate(estimateMacrosFromDescription(description), 'text_ai')
+        applyEstimate({ ...estimateMacrosFromDescription(description), source: 'heuristic' }, 'text_ai')
       }
     } catch {
-      applyEstimate(estimateMacrosFromDescription(description), 'text_ai')
+      applyEstimate({ ...estimateMacrosFromDescription(description), source: 'heuristic' }, 'text_ai')
     } finally {
       setAnalyzing(false)
     }
@@ -92,13 +113,13 @@ export function FuelLogModal({
         applyEstimate(est, 'photo_ai')
       } else {
         applyEstimate(
-          estimateMacrosFromDescription(description || mealLabel || 'Comida con foto'),
+          { ...estimateMacrosFromDescription(description || mealLabel || 'Comida con foto'), source: 'heuristic' },
           'photo_ai'
         )
       }
     } catch {
       applyEstimate(
-        estimateMacrosFromDescription(description || mealLabel || 'Comida'),
+        { ...estimateMacrosFromDescription(description || mealLabel || 'Comida'), source: 'heuristic' },
         'text_ai'
       )
     } finally {
@@ -244,7 +265,19 @@ export function FuelLogModal({
           </div>
 
           {aiTip && (
-            <p className="text-[10px] text-[#9CA3AF] bg-white/5 rounded-xl p-2 leading-snug">{aiTip}</p>
+            <div className="text-[10px] text-[#9CA3AF] bg-white/5 rounded-xl p-2 leading-snug space-y-1">
+              {aiSource === 'gemini' && (
+                <span className="inline-block text-[9px] font-bold text-[#c084fc] bg-[#a855f7]/15 px-2 py-0.5 rounded-full">
+                  ✨ Gemini
+                </span>
+              )}
+              {aiSource === 'heuristic' && (
+                <span className="inline-block text-[9px] font-bold text-[#9CA3AF] bg-white/5 px-2 py-0.5 rounded-full">
+                  Estimación local
+                </span>
+              )}
+              <p>{aiTip}</p>
+            </div>
           )}
 
           <label className="flex items-center gap-2 text-[11px] text-[#9CA3AF]">

@@ -22,6 +22,18 @@ export type AnalyzeFoodResult = {
   source: 'gemini' | 'heuristic'
 }
 
+export type FuelAnalyzeContext = {
+  goal?: string
+  goalLabel?: string
+  restrictions?: string
+  targetKcal?: number
+  targetProteinG?: number
+  consumedKcal?: number
+  consumedProteinG?: number
+  remainingKcal?: number
+  remainingProteinG?: number
+}
+
 export function emptyFuelDayTotals(): FuelDayTotals {
   return { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 }
 }
@@ -150,18 +162,24 @@ export async function createNutritionPost(
 export async function analyzeFoodWithAi(input: {
   imageBase64?: string
   mealDescription?: string
+  fuelContext?: FuelAnalyzeContext
 }): Promise<AnalyzeFoodResult> {
   const { app: firebaseApp } = await import('./firebase')
   if (!firebaseApp) throw new Error('Firebase not initialized')
   const { getFunctions, httpsCallable } = await import('firebase/functions')
   const functions = getFunctions(firebaseApp, 'us-central1')
   const fn = httpsCallable<
-    { imageBase64?: string; mealDescription?: string },
+    { imageBase64?: string; mealDescription?: string; fuelContext?: FuelAnalyzeContext },
     AnalyzeFoodResult
   >(functions, 'analyzeFood')
-  const payload: { imageBase64?: string; mealDescription?: string } = {}
+  const payload: {
+    imageBase64?: string
+    mealDescription?: string
+    fuelContext?: FuelAnalyzeContext
+  } = {}
   if (input.imageBase64?.trim()) payload.imageBase64 = input.imageBase64.trim()
   if (input.mealDescription?.trim()) payload.mealDescription = input.mealDescription.trim()
+  if (input.fuelContext) payload.fuelContext = input.fuelContext
   if (!payload.imageBase64 && !payload.mealDescription) {
     throw new Error('Foto o descripción requerida para Fuel AI')
   }
