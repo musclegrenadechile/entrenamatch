@@ -1038,7 +1038,7 @@ function App() {
 
   const refreshDailyPulse = () => checkAndUpdateDailyPulse()
 
-  const completeDailyChallenge = async (progressInc = 1) => {
+  const completeDailyChallenge = async (progressInc = 1, baseUser?: CurrentUser) => {
     if (!dailyPulse || !dailyPulse.currentChallenge) return
 
     const ch = { ...dailyPulse.currentChallenge }
@@ -1071,7 +1071,8 @@ function App() {
       createProfilePost(`⭐ ¡NIVEL ${computedLevel} DE RETENCIÓN! Mi constancia diaria hace fuerte a toda la Red.${newGadgets.length ? ' Gadget: ' + newGadgets[0].name : ''}`, null, 'dailyPulse').catch(() => {})
     }
 
-    const u = currentUser as any
+    const u = (baseUser ?? currentUserRef.current ?? currentUser) as any
+    if (!u) return
     const update: any = {
       momentumPoints: newMomentum,
       currentDailyChallenge: updatedPulse.currentChallenge,
@@ -1639,7 +1640,6 @@ useEffect(() => {
   const isTogglingLiveRef = useRef(false)
   // Ignore stale own-profile snapshots right after we write trainingNow (prevents instant revert)
   const pendingLiveWriteRef = useRef<{ trainingNow: boolean; at: number } | null>(null)
-  const LIVE_WRITE_GUARD_MS = 20000
   useEffect(() => { isTogglingLiveRef.current = isTogglingLive }, [isTogglingLive])
 
   // Dedicated source of truth: where('trainingNow'==true) listener (real mode) or demo synthesis.
@@ -2550,11 +2550,9 @@ useEffect(() => {
           const pending = pendingLiveWriteRef.current
           const base = currentUserRef.current
 
-          // During the guard window, ignore snapshots that disagree with our in-flight write.
-          // Clearing pending on first match allowed stale cache (trainingNow:false) to revert live UI.
-          if (pending && Date.now() - pending.at < LIVE_WRITE_GUARD_MS) {
-            if (newTrainingNow !== pending.trainingNow) return
-          }
+          // Ignore snapshots that disagree with the last explicit user toggle.
+          // pending is overwritten only on the next toggle — never auto-cleared (stale cache was reverting live).
+          if (pending && newTrainingNow !== pending.trainingNow) return
 
           if (
             base &&
@@ -10670,11 +10668,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           }
                         } finally {
                           setIsTogglingLive(false);
-                          setTimeout(() => {
-                            if (pendingLiveWriteRef.current && Date.now() - pendingLiveWriteRef.current.at >= LIVE_WRITE_GUARD_MS - 500) {
-                              pendingLiveWriteRef.current = null
-                            }
-                          }, LIVE_WRITE_GUARD_MS)
                         }
                       }}
                       disabled={isTogglingLive}
@@ -10748,7 +10741,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                         setTimeout(() => {
                           checkAndUpdateDailyPulse(liveUserSnapshot)
                           if (dailyPulse?.currentChallenge?.type === 'solo') {
-                            completeDailyChallenge(1)
+                            completeDailyChallenge(1, liveUserSnapshot as CurrentUser)
                           } else if (newVal) {
                             awardMomentum(8, 'Ancla del GymPulse', liveUserSnapshot as CurrentUser)
                           }
@@ -10771,11 +10764,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                         }
                       } finally {
                         setIsTogglingLive(false);
-                        setTimeout(() => {
-                          if (pendingLiveWriteRef.current && Date.now() - pendingLiveWriteRef.current.at >= LIVE_WRITE_GUARD_MS - 500) {
-                            pendingLiveWriteRef.current = null
-                          }
-                        }, LIVE_WRITE_GUARD_MS)
                       }
                     }}
                     disabled={isTogglingLive}
