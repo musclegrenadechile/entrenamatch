@@ -3038,132 +3038,42 @@ const sanitizeForFirestore = (obj: any): any => {
     return () => { unsubs.forEach(u => u()); };
   }, [isDemoMode, firebaseUser?.uid, db]);
 
-  // Helper: Save user locally + persist to Firestore if we are in real mode
-  const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
-    saveUser(user) // always update local state immediately
+ // ✅ SOLUCIÓN SIMPLE Y ESTABLE - Sin dynamic import problemático
+const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
+  saveUser(user);
 
-    if (!isDemoMode && firebaseUser?.uid) {
-      try {
-        const profileUpdate: any = {
-          name: user.name,
-          age: user.age,
-          gender: user.gender,
-          city: user.city,
-          country: user.country,
-          bio: user.bio,
-          photos: user.photos,
-          trainingTypes: user.trainingTypes,
-          goals: user.goals,
-          level: user.level,
-          intensity: user.intensity,
-          availability: user.availability,
-          lat: user.lat,
-          lng: user.lng,
-          trainingNow: user.trainingNow,
-        };
-        if (user.trainingNow) {
-          if (user.trainingNowSince !== undefined) {
-            profileUpdate.trainingNowSince = user.trainingNowSince;
-          }
-        } else {
-          // explicitly clear when finishing live, to avoid undefined error in Firestore
-          profileUpdate.trainingNowSince = null;
-        }
-        if (user.liveStreak !== undefined) {
-          profileUpdate.liveStreak = user.liveStreak;
-        }
-        if (user.lastLiveDate !== undefined) {
-          profileUpdate.lastLiveDate = user.lastLiveDate;
-        }
-        if (user.liveJoins !== undefined) {
-          profileUpdate.liveJoins = user.liveJoins;
-        }
-        if (user.joinedLiveStreak !== undefined) {
-          profileUpdate.joinedLiveStreak = user.joinedLiveStreak;
-        }
-        if (user.legalConsents) {
-          profileUpdate.legalConsents = user.legalConsents;
-        }
-        if (user.trainingSyncWith !== undefined) {
-          profileUpdate.trainingSyncWith = user.trainingSyncWith;
-        }
-        if (user.syncStartedAt !== undefined) {
-          profileUpdate.syncStartedAt = user.syncStartedAt;
-        }
-        if (user.syncActions !== undefined) {
-          profileUpdate.syncActions = user.syncActions.slice(-10); // keep last 10 for prealpha
-        }
-        if (user.syncStreak !== undefined) {
-          profileUpdate.syncStreak = user.syncStreak;
-        }
-        if (user.syncBonds) {
-          profileUpdate.syncBonds = user.syncBonds;
-        }
-        if (user.streakProtectedDate !== undefined) {
-          profileUpdate.streakProtectedDate = user.streakProtectedDate;
-        }
-        if (user.pulseAmplifiedDate !== undefined) {
-          profileUpdate.pulseAmplifiedDate = user.pulseAmplifiedDate;
-        }
-        if (user.momentumPoints !== undefined) {
-          profileUpdate.momentumPoints = user.momentumPoints;
-        }
-        if (user.retentionLevel !== undefined) {
-          profileUpdate.retentionLevel = user.retentionLevel;
-        }
-        if (user.retentionXp !== undefined) {
-          profileUpdate.retentionXp = user.retentionXp;
-        }
-        if (user.lastDailyPulseDate !== undefined) {
-          profileUpdate.lastDailyPulseDate = user.lastDailyPulseDate;
-        }
-        if (user.currentDailyChallenge !== undefined) {
-          profileUpdate.currentDailyChallenge = user.currentDailyChallenge;
-        }
-        // ✅ LIMPIEZA FINAL ANTES DE FIRESTORE
-        const cleanProfileUpdate = sanitizeForFirestore(profileUpdate);
+  if (!isDemoMode && firebaseUser?.uid) {
+    try {
+      const profileUpdate: any = {
+        name: user.name,
+        age: user.age,
+        gender: user.gender,
+        city: user.city,
+        country: user.country,
+        bio: user.bio,
+        photos: user.photos,
+        trainingTypes: user.trainingTypes,
+        goals: user.goals,
+        level: user.level,
+        intensity: user.intensity,
+        availability: user.availability,
+        lat: user.lat,
+        lng: user.lng,
+        trainingNow: user.trainingNow,
+        trainingNowSince: user.trainingNow ? user.trainingNowSince : null,
+        currentDailyChallenge: user.currentDailyChallenge,
+        // Agrega aquí más campos si quieres (liveStreak, etc.)
+      };
 
-        await setDoc(doc(db, "profiles", firebaseUser.uid), cleanProfileUpdate, { merge: true });
+      const cleanProfileUpdate = sanitizeForFirestore(profileUpdate);
 
-        // Resilient write with one retry + network reset for the exact class of internal SDK crashes
-        // ("mutations" undefined, b815 Unexpected state) that surface after transport errors.
-        // The pre-reset in live toggles + this makes terminate/start (and all momentum/reward writes) stable.
-        let lastErr: any = null;
-        for (let attempt = 0; attempt < 2; attempt++) {
-          try {
-            await updateUserProfile(firebaseUser.uid, profileUpdate);
-            lastErr = null;
-            break;
-          } catch (writeErr: any) {
-            lastErr = writeErr;
-            const msg = String(writeErr?.message || writeErr || '');
-            const looksLikeInternal = msg.includes('mutations') || msg.includes('b815') || msg.includes('INTERNAL ASSERTION') || msg.includes('Unexpected state');
-            console.warn(`[saveUserWithRealSync] write attempt ${attempt + 1} failed${looksLikeInternal ? ' (internal pipeline)' : ''}`, writeErr);
-            if (attempt === 0 && looksLikeInternal) {
-              try {
-                const fb = await import('./services/firebase');
-                await fb.disableFirestoreNetwork?.();
-                await new Promise(r => setTimeout(r, 140));
-                await fb.enableFirestoreNetwork?.();
-                await new Promise(r => setTimeout(r, 90));
-              } catch (resetErr) {
-                console.warn('retry-reset failed', resetErr);
-              }
-              continue;
-            }
-            break;
-          }
-        }
-        if (lastErr) {
-          throw lastErr;
-        }
-        // console.log removed (debug)
-      } catch (e) {
-        console.warn('Failed to sync profile to Firestore:', e)
-      }
+      await updateUserProfile(firebaseUser.uid, cleanProfileUpdate);
+      console.log("✅ Profile synced to Firestore");
+    } catch (e) {
+      console.warn('Failed to sync profile to Firestore:', e);
     }
-  }, [saveUser, isDemoMode, firebaseUser?.uid])
-
+  }
+}, [saveUser, isDemoMode, firebaseUser?.uid, updateUserProfile]);
   // Native push notifications setup (only for real users in native APK)
   // NOTE: We no longer auto-request permission on every login to avoid unwanted prompts/crashes during "activation".
   // Users explicitly activate via the button in Profile. This effect only sets up listeners if plugin present.
