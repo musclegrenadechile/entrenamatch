@@ -174,6 +174,7 @@ export interface Workout {
   source: 'manual' | 'arena' | 'sync' | 'template'
   syncSessionId?: string
   partnerId?: string
+  participantIds?: string[]
 }
 
 export interface WorkoutPreview {

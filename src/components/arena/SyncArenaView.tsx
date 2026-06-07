@@ -48,9 +48,18 @@ export interface SyncArenaViewProps {
   wavePulseKey?: number
   cityLabel?: string
   flyingEmojis: SyncArenaFlyingEmoji[]
-  onSyncAction: (emoji: string, label: string) => void
+  onSyncAction: (actionId: string, emoji: string, label: string) => void
   onCapturePhoto: () => void
   onReplay: () => void
+  /** Phase 2 — EntrenaLog in Arena */
+  activeExercise: string
+  pendingReps: number
+  pendingWeightKg: number
+  loggedSetCount: number
+  exerciseSuggestions: string[]
+  onActiveExerciseChange: (name: string) => void
+  onPendingRepsChange: (reps: number) => void
+  onPendingWeightChange: (kg: number) => void
 }
 
 const STORY_MILESTONE_MIN = 3
@@ -92,6 +101,14 @@ export function SyncArenaView({
   onSyncAction,
   onCapturePhoto,
   onReplay,
+  activeExercise,
+  pendingReps,
+  pendingWeightKg,
+  loggedSetCount,
+  exerciseSuggestions,
+  onActiveExerciseChange,
+  onPendingRepsChange,
+  onPendingWeightChange,
 }: SyncArenaViewProps) {
   const [now, setNow] = useState(Date.now())
   const [partnerFlash, setPartnerFlash] = useState<SyncArenaAction | null>(null)
@@ -113,6 +130,12 @@ export function SyncArenaView({
   const vibeToLegend = Math.max(0, 80 - syncVibe)
 
   const displayWitness = Math.max(witnessCount, realWitnessCount)
+
+  const exerciseOptions = useMemo(() => {
+    const set = new Set(exerciseSuggestions)
+    if (activeExercise) set.add(activeExercise)
+    return Array.from(set)
+  }, [exerciseSuggestions, activeExercise])
 
   const latestPartnerAction = useMemo(() => {
     return syncActions.find((a) => a.userId && a.userId !== effectiveUserId) || null
@@ -289,6 +312,52 @@ export function SyncArenaView({
         </div>
       </section>
 
+      {/* EntrenaLog strip — active exercise + set inputs (Phase 2) */}
+      <section className="mx-4 mb-2 rounded-2xl border border-[#FF671F]/25 bg-[#FF671F]/5 p-3">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] font-bold text-[#FF671F] uppercase tracking-wider">
+            EntrenaLog en vivo
+          </span>
+          {loggedSetCount > 0 && (
+            <span className="text-[10px] text-[#22c55e] font-bold">{loggedSetCount} sets</span>
+          )}
+        </div>
+        <select
+          value={activeExercise}
+          onChange={(e) => onActiveExerciseChange(e.target.value)}
+          className="w-full mb-2 px-2.5 py-2 rounded-xl bg-[#1a1a22] border border-white/10 text-white text-xs font-semibold"
+        >
+          {exerciseOptions.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+        <div className="flex items-center gap-2 text-xs">
+          <label className="text-[#9CA3AF] shrink-0">Reps</label>
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={pendingReps}
+            onChange={(e) => onPendingRepsChange(Math.max(1, Number(e.target.value) || 10))}
+            className="w-14 px-2 py-1.5 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
+          />
+          <label className="text-[#9CA3AF] shrink-0 ml-1">Kg</label>
+          <input
+            type="number"
+            min={0}
+            step={0.5}
+            value={pendingWeightKg}
+            onChange={(e) => onPendingWeightChange(Math.max(0, Number(e.target.value) || 0))}
+            className="w-16 px-2 py-1.5 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
+          />
+          <span className="text-[9px] text-[#6B7280] ml-auto leading-tight text-right">
+            Set listo / PR registran aquí
+          </span>
+        </div>
+      </section>
+
       <div className="px-4 mt-2 space-y-2">
         <ArenaFomoStrip
           witnessCount={displayWitness}
@@ -329,7 +398,7 @@ export function SyncArenaView({
                 return
               }
               const { emoji, label } = heroActionToSync(hero)
-              onSyncAction(emoji, label)
+              onSyncAction(hero.id, emoji, label)
             }}
           >
             <span className="arena-hero-btn__emoji">{hero.emoji}</span>

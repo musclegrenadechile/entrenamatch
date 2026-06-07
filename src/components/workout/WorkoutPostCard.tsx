@@ -7,9 +7,11 @@ export interface WorkoutPostCardProps {
   preview: WorkoutPreview
   text?: string
   compact?: boolean
+  onCopyRoutine?: () => void
+  copyLabel?: string
 }
 
-export function WorkoutPostCard({ preview, text, compact = false }: WorkoutPostCardProps) {
+export function WorkoutPostCard({ preview, text, compact = false, onCopyRoutine, copyLabel = 'Copiar rutina' }: WorkoutPostCardProps) {
   const [expanded, setExpanded] = useState(!compact)
   const typeLabel = WORKOUT_TYPE_LABELS[preview.type] || preview.type
 
@@ -66,6 +68,16 @@ export function WorkoutPostCard({ preview, text, compact = false }: WorkoutPostC
 
         {text && !compact && (
           <p className="mt-2 text-[11px] text-[#9CA3AF] leading-snug line-clamp-2">{text}</p>
+        )}
+
+        {onCopyRoutine && preview.exercises && preview.exercises.length > 0 && (
+          <button
+            type="button"
+            onClick={onCopyRoutine}
+            className="mt-3 w-full py-2 rounded-xl border border-[#FF671F]/40 text-[10px] font-bold text-[#FF671F] active:bg-[#FF671F]/10"
+          >
+            📋 {copyLabel}
+          </button>
         )}
       </div>
     </div>

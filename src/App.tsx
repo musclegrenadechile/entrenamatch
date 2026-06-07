@@ -107,7 +107,16 @@ import {
 } from './utils/homeTeam'
 import { isTeamMemberId } from './utils/teamMembers'
 import { EntrenaLogModal, WorkoutPostCard } from './components/workout'
-import { saveWorkoutWithPost } from './services/workouts'
+import { saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, buildWorkoutPreview, computeWorkoutStats } from './services/workouts'
+import { EXERCISE_LIBRARY } from './data/exerciseLibrary'
+import {
+  createEmptySyncWorkoutLog,
+  appendSetToLog,
+  countLoggedSets,
+  syncWorkoutHasData,
+  formatSetLabel,
+  type SyncWorkoutLogState,
+} from './utils/arenaWorkoutLog'
 import { AuthScreen } from './components/auth/AuthScreen'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { GymPulseMap } from './components/map' // Inicio de modularización 2026-06-05 (stub + estructura)
@@ -764,9 +773,27 @@ function App() {
   // For delightful "just published" highlight in feed/muro lists (no giant re-render, just temp visual cue)
   const [recentlyPublishedPostId, setRecentlyPublishedPostId] = useState<string | null>(null)
   const [feedPublishing, setFeedPublishing] = useState(false)
+  useEffect(() => {
+    syncWorkoutLogRef.current = syncWorkoutLog
+  }, [syncWorkoutLog])
+
+  const arenaExerciseNames = useMemo(
+    () => EXERCISE_LIBRARY.slice(0, 12).map((e) => e.name),
+    []
+  )
   const [showFeedPublishSuccess, setShowFeedPublishSuccess] = useState(false)
   const [showEntrenaLogModal, setShowEntrenaLogModal] = useState(false)
   const [savingWorkout, setSavingWorkout] = useState(false)
+  const [syncWorkoutLog, setSyncWorkoutLog] = useState<SyncWorkoutLogState>(() =>
+    createEmptySyncWorkoutLog()
+  )
+  const syncWorkoutLogRef = useRef<SyncWorkoutLogState>(syncWorkoutLog)
+  const [entrenaLogPrefill, setEntrenaLogPrefill] = useState<{
+    title?: string
+    exercises?: import('./types').WorkoutExercise[]
+    type?: import('./types').WorkoutType
+    durationMin?: number
+  } | null>(null)
   // THE KILLER FEATURE: EntrenaSync - real-time synchronized training that turns two people into a high-performance unit with shared state, visible connection, joint impact, and lasting social capital. This is the foundation of the first true social network for fitness performance.
   const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
   const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
@@ -2798,6 +2825,13 @@ useEffect(() => {
           setSyncRealWitnessCount(
             countExternalWitnesses(data.witnesses, effectiveUserId, syncPartnerId)
           )
+        }
+        if (data.workoutLog?.exercises?.length) {
+          setSyncWorkoutLog((prev) => ({
+            ...prev,
+            exercises: data.workoutLog.exercises,
+            prs: data.workoutLog.prs || prev.prs,
+          }))
         }
       },
       onPartnerAction: (latest) => {
@@ -5036,6 +5070,16 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
     const actionsSnap = opts?.actionsSnapshot ?? syncActions
     const vibeNow = opts?.vibe ?? syncVibe
+    const logSnap = syncWorkoutLogRef.current
+    const workoutWitness =
+      syncWorkoutHasData(logSnap) && logSnap.exercises.length > 0
+        ? buildWorkoutPreview(
+            'EntrenaSync en vivo',
+            'full',
+            logSnap.exercises,
+            computeWorkoutStats(logSnap.exercises, syncStartedAt ? Math.max(1, Math.floor((Date.now() - syncStartedAt) / 60000)) : 1)
+          )
+        : undefined
     const partnerBond = syncBonds[partner.id]
     const isLegendRipple =
       opts?.forceLegend ||
@@ -5065,6 +5109,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           label: isLegendRipple ? `⭐ ${label}` : `🌊 ${label}`,
           timestamp: Date.now(),
           minutes: syncStartedAt ? Math.floor((Date.now() - syncStartedAt) / 60000) : 0,
+          workoutPreview: workoutWitness,
+          loggedSets: countLoggedSets(logSnap),
         },
       },
     ])
@@ -5090,6 +5136,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             label: `⭐ ${label}`,
             timestamp: Date.now(),
             minutes: syncStartedAt ? Math.floor((Date.now() - syncStartedAt) / 60000) : 0,
+            workoutPreview: workoutWitness,
+            loggedSets: countLoggedSets(logSnap),
           },
         },
       ])
@@ -5288,6 +5336,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       setSyncActions([])
       setSyncCombo(0)
       setFlyingEmojis([])
+      setSyncWorkoutLog(createEmptySyncWorkoutLog())
       setShowSyncArena(true)
       setActiveTab('explore')
       triggerHaptic('medium')
@@ -5318,6 +5367,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           actions: [],
           vibe: baseVibe,
           witnesses: [],
+          workoutLog: { exercises: [], prs: [], updatedAt: syncAt },
           updatedAt: syncAt,
         }, { merge: true })
         setSyncVibe(baseVibe)
@@ -5408,6 +5458,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     if (!syncPartnerId) return
     const partnerName = realProfiles.find(p => p.id === syncPartnerId)?.name || 'compañero'
     const minutes = syncStartedAt ? Math.floor((Date.now() - syncStartedAt) / 60000) : 0
+    const syncStartedAtCapture = syncStartedAt
     // Clear local
     const oldPartner = syncPartnerId
     // Boost syncStreak
@@ -5429,6 +5480,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     // Capture for replay (the unique "remember this session together" moment)
     const capturedActions = [...syncActions]
     const capturedVibe = syncVibe
+    const capturedWorkoutLog = {
+      ...syncWorkoutLogRef.current,
+      exercises: syncWorkoutLogRef.current.exercises.map((e) => ({
+        ...e,
+        sets: [...e.sets],
+      })),
+    }
+    setSyncWorkoutLog(createEmptySyncWorkoutLog())
     // Clear FS (use resilient saveUserWithRealSync for self so we get the mutations/b815 retry+reset protection)
     if (!isDemoMode && firebaseUser) {
       try {
@@ -5453,6 +5512,65 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       }
     }
     createProfilePost(`Sync terminado con ${partnerName} - ${minutes}min juntos`, null).catch(() => {})
+
+    if (
+      minutes >= 2 &&
+      syncWorkoutHasData(capturedWorkoutLog) &&
+      !isDemoMode &&
+      db &&
+      firebaseUser &&
+      oldPartner
+    ) {
+      try {
+        const uids = [effectiveUserId, oldPartner].sort()
+        const sid = `sync_${uids[0]}_${uids[1]}`
+        const { workout, postId, postText } = await saveSyncWorkoutWithPost(db, {
+          userId: effectiveUserId,
+          partnerId: oldPartner,
+          partnerName,
+          syncSessionId: sid,
+          title: `Sync con ${partnerName.split(' ')[0]}`,
+          type: 'full',
+          exercises: capturedWorkoutLog.exercises,
+          durationMin: Math.max(1, minutes),
+          source: 'sync',
+          startedAt: syncStartedAtCapture || undefined,
+        })
+        const preview = buildWorkoutPreview(
+          workout.title,
+          workout.type,
+          capturedWorkoutLog.exercises,
+          workout.stats
+        )
+        const post: ProfilePost = {
+          id: postId,
+          userId: effectiveUserId,
+          text: postText,
+          timestamp: Date.now(),
+          pinned: false,
+          likes: [],
+          comments: [],
+          postType: 'workout',
+          workoutId: workout.id,
+          workoutPreview: preview,
+          reactions: {},
+        }
+        setProfilePosts((prev) => {
+          const current = prev[effectiveUserId] || []
+          const newState = { ...prev, [effectiveUserId]: [post, ...current].slice(0, 10) }
+          profilePostsRef.current = newState
+          return newState
+        })
+        subscribeCommentsForPosts([post])
+        if (activeTab === 'home') loadGlobalFeed().catch(() => {})
+        toast.success('EntrenoSync guardado en el muro', {
+          description: `${workout.stats.totalSets} sets registrados juntos`,
+        })
+      } catch (e) {
+        console.warn('sync workout save failed', e)
+      }
+    }
+
     // Save replayable memory (unique persistence of the shared performance sync)
     if (minutes >= 2 && capturedActions.length > 0) {
       setReplaySession({ partnerName, minutes, vibe: capturedVibe, actions: capturedActions.slice(0,8), rating: null })
@@ -5651,6 +5769,93 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     syncVibe,
     db,
   ])
+
+  const persistSyncWorkoutLogToSession = async (log: SyncWorkoutLogState) => {
+    if (isDemoMode || !db || !syncPartnerId) return
+    try {
+      const { doc, updateDoc } = await import('firebase/firestore')
+      const sessionId = buildSyncSessionId(effectiveUserId, syncPartnerId)
+      await updateDoc(doc(db, 'syncSessions', sessionId), {
+        workoutLog: {
+          exercises: log.exercises,
+          prs: log.prs,
+          updatedAt: Date.now(),
+        },
+        updatedAt: Date.now(),
+      })
+    } catch (e) {
+      console.warn('workoutLog persist failed', e)
+    }
+  }
+
+  const handleArenaSyncAction = async (actionId: string, emoji: string, label: string) => {
+    if ((actionId === 'set' || actionId === 'pr') && syncPartnerId && syncStartedAt) {
+      const set = {
+        reps: syncWorkoutLog.pendingReps,
+        weightKg: syncWorkoutLog.pendingWeightKg,
+      }
+      let nextLog = appendSetToLog(syncWorkoutLog, syncWorkoutLog.activeExercise, set)
+      if (actionId === 'pr') {
+        nextLog = {
+          ...nextLog,
+          prs: [
+            ...nextLog.prs,
+            {
+              exercise: syncWorkoutLog.activeExercise,
+              weightKg: syncWorkoutLog.pendingWeightKg,
+              reps: syncWorkoutLog.pendingReps,
+              at: Date.now(),
+            },
+          ],
+        }
+      }
+      setSyncWorkoutLog(nextLog)
+      await persistSyncWorkoutLogToSession(nextLog)
+      const detail = formatSetLabel(syncWorkoutLog.activeExercise, set.reps, set.weightKg)
+      const actionLabel = actionId === 'pr' ? `PR · ${detail}` : `Set · ${detail}`
+      await doSyncAction(emoji, actionLabel)
+      if (actionId === 'pr') {
+        try {
+          confetti({ particleCount: 160, spread: 90, origin: { y: 0.65 } })
+        } catch {}
+        createProfilePost(
+          `🏆 PR en ${syncWorkoutLog.activeExercise}: ${set.reps}×${set.weightKg}kg — EntrenaSync en vivo`,
+          null
+        ).catch(() => {})
+        toast.success('PR registrado', { description: detail })
+      }
+      return
+    }
+    await doSyncAction(emoji, label)
+  }
+
+  const handleCopyWorkoutFromPost = async (workoutId: string, title?: string) => {
+    if (!workoutId) return
+    if (isDemoMode || !db) {
+      toast('Copiar rutina disponible con cuenta real')
+      return
+    }
+    try {
+      const w = await fetchWorkoutById(db, workoutId)
+      if (!w?.exercises?.length) {
+        toast.error('Rutina no encontrada')
+        return
+      }
+      setEntrenaLogPrefill({
+        title: title ? `Copia · ${title}` : 'Rutina copiada',
+        exercises: w.exercises.map((e) => ({
+          ...e,
+          sets: e.sets.map((s) => ({ ...s })),
+        })),
+        type: w.type,
+        durationMin: w.stats?.durationMin || 45,
+      })
+      setShowEntrenaLogModal(true)
+      toast.success('Rutina cargada', { description: 'Edita y guarda en EntrenaLog' })
+    } catch {
+      toast.error('No se pudo cargar la rutina')
+    }
+  }
 
   const doSyncAction = async (emoji: string, label: string) => {
     if (!syncPartnerId || !syncStartedAt) return
@@ -9247,7 +9452,19 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           {/* BODY — workout card or plain text */}
                           {post.postType === 'workout' && post.workoutPreview ? (
                             <div className="muro-post-body mt-2">
-                              <WorkoutPostCard preview={post.workoutPreview} compact />
+                              <WorkoutPostCard
+                                preview={post.workoutPreview}
+                                compact
+                                onCopyRoutine={
+                                  post.workoutId && !isMine
+                                    ? () =>
+                                        handleCopyWorkoutFromPost(
+                                          post.workoutId,
+                                          post.workoutPreview?.title
+                                        )
+                                    : undefined
+                                }
+                              />
                             </div>
                           ) : (
                           <div className="muro-post-body">
@@ -12394,9 +12611,16 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       {/* Bottom Navigation - Premium, energetic feel (polished aesthetics) */}
       <EntrenaLogModal
         open={showEntrenaLogModal}
-        onClose={() => setShowEntrenaLogModal(false)}
+        onClose={() => {
+          setShowEntrenaLogModal(false)
+          setEntrenaLogPrefill(null)
+        }}
         onSave={handleSaveEntrenaLog}
         saving={savingWorkout}
+        defaultTitle={entrenaLogPrefill?.title || 'Entrenamiento de hoy'}
+        initialExercises={entrenaLogPrefill?.exercises}
+        initialType={entrenaLogPrefill?.type}
+        initialDurationMin={entrenaLogPrefill?.durationMin}
       />
       <LiveToggleFab
         isLive={!!currentUser?.trainingNow}
@@ -14451,6 +14675,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               )}
             </div>
 
+            {witnessData.workoutPreview && (
+              <div className="mb-4">
+                <WorkoutPostCard preview={witnessData.workoutPreview} compact />
+                {witnessData.loggedSets > 0 && (
+                  <p className="text-[10px] text-center text-[#22c55e] mt-2 font-medium">
+                    {witnessData.loggedSets} sets reales registrados en EntrenaLog
+                  </p>
+                )}
+              </div>
+            )}
+
             {witnessData.photoUrl && (
               <div className="mb-4">
                 <img src={witnessData.photoUrl} className="w-full rounded-2xl border border-[#FF671F]/30" alt="Momento épico" />
@@ -14569,8 +14804,22 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             wavePulseKey={arenaWavePulseKey}
             cityLabel={currentUser.city || partner?.city}
             flyingEmojis={flyingEmojis}
-            onSyncAction={doSyncAction}
+            onSyncAction={handleArenaSyncAction}
             onCapturePhoto={handleArenaCapturePhoto}
+            activeExercise={syncWorkoutLog.activeExercise}
+            pendingReps={syncWorkoutLog.pendingReps}
+            pendingWeightKg={syncWorkoutLog.pendingWeightKg}
+            loggedSetCount={countLoggedSets(syncWorkoutLog)}
+            exerciseSuggestions={arenaExerciseNames}
+            onActiveExerciseChange={(name) =>
+              setSyncWorkoutLog((prev) => ({ ...prev, activeExercise: name }))
+            }
+            onPendingRepsChange={(reps) =>
+              setSyncWorkoutLog((prev) => ({ ...prev, pendingReps: reps }))
+            }
+            onPendingWeightChange={(kg) =>
+              setSyncWorkoutLog((prev) => ({ ...prev, pendingWeightKg: kg }))
+            }
             onReplay={() =>
               setReplaySession({
                 partnerName: partner?.name,

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Dumbbell, Plus, Trash2, X } from 'lucide-react'
 import {
   EXERCISE_LIBRARY,
@@ -18,6 +18,9 @@ export interface EntrenaLogModalProps {
   }) => Promise<void>
   defaultTitle?: string
   saving?: boolean
+  initialExercises?: WorkoutExercise[]
+  initialType?: WorkoutType
+  initialDurationMin?: number
 }
 
 const WORKOUT_TYPES: WorkoutType[] = ['push', 'pull', 'legs', 'full', 'cardio', 'other']
@@ -36,6 +39,9 @@ export function EntrenaLogModal({
   onSave,
   defaultTitle = 'Entrenamiento de hoy',
   saving = false,
+  initialExercises,
+  initialType,
+  initialDurationMin,
 }: EntrenaLogModalProps) {
   const [title, setTitle] = useState(defaultTitle)
   const [type, setType] = useState<WorkoutType>('full')
@@ -43,6 +49,16 @@ export function EntrenaLogModal({
   const [exercises, setExercises] = useState<WorkoutExercise[]>([])
   const [search, setSearch] = useState('')
   const [showPicker, setShowPicker] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    setTitle(defaultTitle)
+    setType(initialType || 'full')
+    setDurationMin(initialDurationMin ?? 45)
+    setExercises(initialExercises?.length ? initialExercises.map((e) => ({ ...e, sets: [...e.sets] })) : [])
+    setSearch('')
+    setShowPicker(false)
+  }, [open, defaultTitle, initialExercises, initialType, initialDurationMin])
 
   const suggestions = useMemo(() => filterExercises(search, 6), [search])
 

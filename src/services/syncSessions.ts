@@ -19,6 +19,11 @@ export interface SyncSessionData {
   vibe?: number
   witnesses?: string[]
   lastWitnessAt?: number
+  workoutLog?: {
+    exercises?: import('../types').WorkoutExercise[]
+    prs?: Array<{ exercise: string; weightKg: number; reps: number; at: number }>
+    updatedAt?: number
+  }
 }
 
 export interface IncomingSyncPayload {
