@@ -1,6 +1,8 @@
 import { MapPin, MessageCircle, Users } from 'lucide-react'
+import { useState } from 'react'
 import { FuelDayCard } from '../fuel/FuelDayCard'
 import { LocalNetworkCard } from './LocalNetworkCard'
+import { FirstStepsGuide, isFirstStepsDismissed, dismissFirstSteps } from './FirstStepsGuide'
 import type { LocalNetworkCardProps } from './LocalNetworkCard'
 
 export type TeamMemberStatus = 'live' | 'recent' | 'this_week' | 'inactive'
@@ -74,8 +76,22 @@ export function DailyRitualHome({
   const greeting =
     hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches'
 
+  const [showFirstSteps, setShowFirstSteps] = useState(() => !isFirstStepsDismissed())
+
   return (
     <div className="daily-ritual-home mb-4 -mx-1 px-1 space-y-3">
+      {showFirstSteps && (
+        <FirstStepsGuide
+          isLive={isLive}
+          onToggleLive={onToggleLive}
+          onOpenMap={onOpenMap}
+          onOpenExplore={onOpenExplore}
+          onDismiss={() => {
+            dismissFirstSteps()
+            setShowFirstSteps(false)
+          }}
+        />
+      )}
       <div className="rounded-3xl p-4 bg-gradient-to-br from-[#141418] via-[#12121a] to-[#0f0f12] border border-[#2F2F35] shadow-lg">
         <p className="text-[10px] uppercase tracking-[0.18em] text-[#9CA3AF] font-bold">
           Hoy

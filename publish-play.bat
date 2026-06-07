@@ -45,6 +45,18 @@ call gradlew.bat publishBundle "-Pplay.track=%TRACK%" --stacktrace
 set "PUBLISH_ERR=!ERRORLEVEL!"
 cd /d "%~dp0"
 
+if not "!PUBLISH_ERR!"=="0" (
+  if /i "%TRACK%"=="closed" (
+    echo.
+    echo [WARN] Track "closed" failed — retrying on "internal" ...
+    cd /d "%~dp0android"
+    call gradlew.bat publishBundle "-Pplay.track=internal" --stacktrace
+    set "PUBLISH_ERR=!ERRORLEVEL!"
+    set "TRACK=internal"
+    cd /d "%~dp0"
+  )
+)
+
 if not "!PUBLISH_ERR!"=="0" goto publish_failed
 
 echo.

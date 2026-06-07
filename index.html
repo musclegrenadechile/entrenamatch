@@ -5,8 +5,8 @@
     <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg?v=20260603-01" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <meta name="theme-color" content="#FF671F" />
-    <meta name="description" content="EntrenaMatch â€” El match del movimiento. Conecta con personas que entrenan cerca de ti y construye tu equipo de entrenamiento. Lanzamiento inicial en Chile." />
-    <title>EntrenaMatch â€¢ El match del movimiento</title>
+    <meta name="description" content="EntrenaMatch — El match del movimiento. Conecta con personas que entrenan cerca de ti y construye tu equipo de entrenamiento. Lanzamiento inicial en Chile." />
+    <title>EntrenaMatch • El match del movimiento</title>
     
     <!-- PWA -->
     <link rel="manifest" href="%BASE_URL%manifest.json?v=20260603-01" />
@@ -19,14 +19,23 @@
   </head>
   <body>
     <div id="root">
-      <div style="min-height:100svh;display:flex;align-items:center;justify-content:center;background:#0D0D10;color:#F8F8F8;font-family:system-ui,sans-serif;text-align:center;padding:24px">
-        <div>
-          <div style="font-size:28px;margin-bottom:8px">🏋️</div>
-          <p style="font-size:14px;color:#9CA3AF;margin:0">Cargando EntrenaMatch…</p>
+      <div style="min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0D0D10;color:#F8F8F8;font-family:system-ui,sans-serif;text-align:center;padding:24px">
+        <div style="max-width:280px">
+          <div style="font-size:32px;margin-bottom:12px">🏋️</div>
+          <p style="font-size:16px;font-weight:600;margin:0 0 6px">Cargando EntrenaMatch…</p>
+          <p style="font-size:13px;color:#9CA3AF;margin:0">Preparando mapa, live y tu equipo</p>
+          <div style="margin:24px auto 0;height:4px;width:96px;border-radius:999px;background:#2F2F35;overflow:hidden">
+            <div style="height:100%;width:50%;background:#FF671F;border-radius:999px;animation:boot-pulse 1.2s ease-in-out infinite alternate"></div>
+          </div>
         </div>
       </div>
     </div>
+    <style>
+      @keyframes boot-pulse {
+        from { transform: translateX(-80%); opacity: 0.55; }
+        to { transform: translateX(120%); opacity: 1; }
+      }
+    </style>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-
