@@ -1252,71 +1252,95 @@ const sanitizeForFirestore = (obj: any): any => {
   // Daily pulse banner + risk effects. Defined after the hoisted dailyPulse state + helper functions.
   // References to dailyPulse, checkAndUpdateDailyPulse etc. are safe (all declared earlier in render).
 
-  useEffect(() => {
-    if (currentUser) {
-      const t = setTimeout(() => {
-        checkAndUpdateDailyPulse()
-        const today = getTodayStr()
-        const last = dailyPulse?.lastDate
-        if (last !== today || (dailyPulse && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow)) {
-          setShowDailyPulseBanner(true)
-          setTimeout(() => setShowDailyPulseBanner(false), 8000)
-        }
-      }, 600)
-      return () => clearTimeout(t)
-    }
-  }, [currentUser?.id, Object.keys(syncBonds).length, dailyPulse?.lastDate])
-
-  useEffect(() => {
-    if (!dailyPulse || !currentUser) return
-    const hour = new Date().getHours()
-    if (hour >= 18 && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow && dailyPulse.streakProtectedDate !== getTodayStr()) {
-      const timer = setTimeout(() => {
-        toast.error('¡Streak en riesgo esta noche!', {
-          description: `Tu ${dailyPulse.trainingStreak}d training streak se resetea si no entrenas. Protege con Momentum o 20min ya.`
-        })
-      }, 1500)
-      return () => clearTimeout(timer)
-    }
-  }, [dailyPulse?.lastDate, currentUser?.trainingNow, dailyPulse?.trainingStreak])
-
-  useEffect(() => {
-    const handleOnline = async () => {
-      setIsOffline(false)
-      // Force re-establishment of all onSnapshot Listen streams after network recovery.
-      // This prevents the "WebChannelConnection RPC 'Listen' stream ... transport errored" + 404s
-      // that commonly happen in Capacitor Android after connectivity changes or app resume.
-      try {
-        const { enableFirestoreNetwork } = await import('./services/firebase')
-        await enableFirestoreNetwork()
-      } catch (e) {
-        console.warn('enableFirestoreNetwork on online failed', e)
-      }
-    }
-    const handleOffline = () => setIsOffline(true)
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
-
-    if (db && !isDemoMode) {
-      (async () => {
-        try {
-          const { enableIndexedDbPersistence } = await import('firebase/firestore')
-          await enableIndexedDbPersistence(db)
-        } catch (err: any) {
-          if (err.code === 'failed-precondition') {
-            console.log('[Firestore] Offline persistence: multiple tabs open')
-          } else if (err.code === 'unimplemented') {
-            console.log('[Firestore] Offline persistence not supported in this browser')
+    useEffect(() => {
+      if (currentUser) {
+        const t = setTimeout(() => {
+          checkAndUpdateDailyPulse()
+          const today = getTodayStr()
+          const last = dailyPulse?.lastDate
+          if (last !== today || (dailyPulse && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow)) {
+            setShowDailyPulseBanner(true)
+            setTimeout(() => setShowDailyPulseBanner(false), 8000)
           }
-        }
-      })()
-    }
+        }, 600)
+        return () => clearTimeout(t)
+      }
+    }, [currentUser?.id, Object.keys(syncBonds).length, dailyPulse?.lastDate])
 
-    return () => {
-      window.removeEventListener('online', handleOnline)
-      window.removeEventListener('offline', handleOffline)
+    useEffect(() => {
+      if (!dailyPulse || !currentUser) return
+      const hour = new Date().getHours()
+      if (hour >= 18 && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow && dailyPulse.streakProtectedDate !== getTodayStr()) {
+        const timer = setTimeout(() => {
+          toast.error('¡Streak en riesgo esta noche!', {
+            description: `Tu ${dailyPulse.trainingStreak}d training streak se resetea si no entrenas. Protege con Momentum o 20min ya.`
+          })
+        }, 1500)
+        return () => clearTimeout(timer)
+      }
+    }, [dailyPulse?.lastDate, currentUser?.trainingNow, dailyPulse?.trainingStreak])
+
+    // === FIRESTORE GLOBAL RESILIENCE + LISTENER CLEANUP (Fix para INTERNAL ASSERTION) ===
+const listenersRef = useRef<(() => void)[]>([])
+
+const cleanupAllListeners = useCallback(() => {
+  listenersRef.current.forEach(unsub => unsub?.())
+  listenersRef.current = []
+  console.log('✅ All Firestore listeners cleaned')
+}, [])
+
+useEffect(() => {
+  return () => cleanupAllListeners()
+}, [cleanupAllListeners])
+
+// Network + Listener resilience
+useEffect(() => {
+  const handleOnline = async () => {
+    setIsOffline(false)
+    cleanupAllListeners() // ← CRÍTICO
+
+    try {
+      const fb = await import('./services/firebase')
+      await fb.disableFirestoreNetwork?.()
+      await new Promise(r => setTimeout(r, 150))
+      await fb.enableFirestoreNetwork?.()
+
+      if (!isDemoMode && firebaseUser?.uid) {
+        setTimeout(() => {
+          loadRealSessions?.()
+          if (typeof loadProfilePosts === 'function') loadProfilePosts(firebaseUser.uid)
+        }, 400)
+      }
+    } catch (e) {
+      console.warn('Network reset failed', e)
     }
-  }, [isDemoMode])
+  }
+
+  const handleOffline = () => setIsOffline(true)
+
+  window.addEventListener('online', handleOnline)
+  window.addEventListener('offline', handleOffline)
+
+  if (db && !isDemoMode) {
+    (async () => {
+      try {
+        const { enableIndexedDbPersistence } = await import('firebase/firestore')
+        await enableIndexedDbPersistence(db)
+      } catch (err: any) {
+        if (err.code === 'failed-precondition') {
+          console.log('[Firestore] Offline persistence: multiple tabs open')
+        } else if (err.code === 'unimplemented') {
+          console.log('[Firestore] Offline persistence not supported')
+        }
+      }
+    })()
+  }
+
+  return () => {
+    window.removeEventListener('online', handleOnline)
+    window.removeEventListener('offline', handleOffline)
+  }
+}, [isDemoMode, firebaseUser?.uid, cleanupAllListeners])
 
   // Extra resilience for Capacitor: on app resume (user comes back from background), force network re-enable.
   // Mobile apps frequently kill/restrict long-lived WebChannel connections in background.
