@@ -10799,6 +10799,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             notifPrefs={notifPrefs}
             setNotifPrefs={setNotifPrefs}
             setShowPwaInstall={setShowPwaInstall}
+            reorderGallery={reorderGallery}
+            deleteExtraPhoto={deleteExtraPhoto}
+            uploadProfilePhotoIfNeeded={uploadProfilePhotoIfNeeded}
           />
         )}
             {/* DUPLICATE ORPHAN PROFILE JSX REMOVED — all rich Profile UI now lives cleanly inside the activeTab==='profile' conditional (prevents black screens, duplicate renders, and JSX imbalance) */}

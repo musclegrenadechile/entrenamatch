@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion'
+import { Camera } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'
 import type { ProfileTabProps } from './profileTabTypes'

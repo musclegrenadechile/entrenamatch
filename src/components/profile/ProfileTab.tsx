@@ -4,6 +4,8 @@ import {
 } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'
+import { APP_VERSION } from '../../constants'
+import type { CurrentUser } from '../../types'
 import { ProfileSectionNav } from './ProfileSectionNav'
 import { TuRedPowerCard } from './TuRedPowerCard'
 import { ProfileDailyPulseSection } from './ProfileDailyPulseSection'
@@ -129,6 +131,9 @@ export function ProfileTab(props: ProfileTabProps) {
     notifPrefs,
     setNotifPrefs,
     setShowPwaInstall,
+    reorderGallery,
+    deleteExtraPhoto,
+    uploadProfilePhotoIfNeeded,
   } = profileTabBindings(props)
 
   return (

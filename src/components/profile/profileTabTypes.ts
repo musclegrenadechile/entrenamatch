@@ -225,4 +225,7 @@ export interface ProfileTabProps {
   notifPrefs: NotifPrefs
   setNotifPrefs: Dispatch<SetStateAction<NotifPrefs>>
   setShowPwaInstall: Dispatch<SetStateAction<boolean>>
+  reorderGallery: (fromIndex: number, toIndex: number) => void
+  deleteExtraPhoto: (indexToRemove: number) => void | Promise<void>
+  uploadProfilePhotoIfNeeded: (dataUrl: string) => Promise<string>
 }

@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
+import { APP_VERSION } from '../constants';
 
 interface FirebaseConfig {
   apiKey: string;
@@ -58,6 +59,20 @@ function getFirebaseConfig(): FirebaseConfig | null {
   return REAL_CONFIG;
 }
 
+const FIRESTORE_CACHE_VERSION_KEY = 'entrenamatch_firestore_cache_version';
+
+/** After an app upgrade, skip IndexedDB persistence once to avoid tab-manager conflicts with stale tabs. */
+function shouldUsePersistentFirestoreCache(): boolean {
+  if (typeof localStorage === 'undefined') return true;
+  try {
+    const prev = localStorage.getItem(FIRESTORE_CACHE_VERSION_KEY);
+    localStorage.setItem(FIRESTORE_CACHE_VERSION_KEY, APP_VERSION);
+    return !prev || prev === APP_VERSION;
+  } catch {
+    return true;
+  }
+}
+
 const firebaseConfig = getFirebaseConfig();
 
 let app: any = null;
@@ -90,9 +105,12 @@ if (firebaseConfig) {
   }
 
   // Long-polling is critical for Capacitor WebView. persistentLocalCache needs IndexedDB — fall back on mobile Safari private mode.
+  const usePersistentCache = shouldUsePersistentFirestoreCache();
   try {
     db = initializeFirestore(app, {
-      localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+      localCache: usePersistentCache
+        ? persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+        : memoryLocalCache(),
       experimentalForceLongPolling: true,
       experimentalAutoDetectLongPolling: false,
     });
