@@ -2029,19 +2029,19 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
     return isFinite(n) ? n : undefined
   }
 
-    // LIVE TRAINING NOW - Versión mínima y segura
+     // LIVE TRAINING NOW - Versión mínima ultra-segura (evita crashes)
   const liveTrainingNow = useMemo(() => {
     const now = Date.now()
     const ASSUMED_SESSION_MS = 3 * 60 * 60 * 1000
 
     const byId = new Map<string, any>()
 
-    // Dedicated listener (principal fuente)
+    // Dedicated live users
     (liveUsersFromDedicated || []).forEach((p: any) => {
-      if (p && p.id) byId.set(p.id, { ...p, trainingNow: true })
+      if (p?.id) byId.set(p.id, { ...p, trainingNow: true })
     })
 
-    // Enrich con real profiles
+    // Enrich with real profiles
     realProfiles.forEach((p: any) => {
       if (byId.has(p.id)) {
         const existing = byId.get(p.id)
@@ -2052,16 +2052,16 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
     let lives: any[] = Array.from(byId.values())
       .filter((p: any) => !blockedUsers.includes(p.id))
       .filter((p: any) => {
-        const since = p.trainingNowSince ? Number(p.trainingNowSince) : 0
+        const since = Number(p.trainingNowSince || 0)
         return p.trainingNow && since > 0 && (now - since < ASSUMED_SESSION_MS)
       })
       .map((p: any) => {
-        const since = p.trainingNowSince ? Number(p.trainingNowSince) : now
+        const since = Number(p.trainingNowSince || now)
 
-        // Distance calculation segura
+        // Distance fallback seguro
         let dist = 999
         if (userLocation && p.lat != null && p.lng != null) {
-          dist = 5 // fallback temporal
+          dist = 5 // temporal safe value
         }
 
         const seVaEnMs = (since + ASSUMED_SESSION_MS) - now
@@ -2076,7 +2076,6 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
           trainingNowSince: since 
         }
       })
-      .filter((p: any) => !userLocation || p.distance < 50)
 
     // Demo fallback
     if (isDemoMode && lives.length === 0) {
@@ -2084,8 +2083,7 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
         ...p, 
         trainingNow: true, 
         trainingNowSince: now - (i+1)*10*60000, 
-        distance: 2 + i, 
-        seVaEnMin: 35 - i*10 
+        distance: 2 + i 
       }))
     }
 
