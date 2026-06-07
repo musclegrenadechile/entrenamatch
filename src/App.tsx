@@ -7148,9 +7148,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   }
 
   // For real users or demo users without full profile, show onboarding/creation flow
-  const profileNeedsOnboarding = !currentUser?.legalConsents?.acceptedAt || !String(currentUser?.name || '').trim()
-  const shouldShowOnboarding = showOnboarding ||
-    (!isDemoMode && firebaseUser && profileNeedsOnboarding)
+  // Only show onboarding when explicitly opened (register, profile editor, demo).
+  // Avoid auto-trapping returning logins with incomplete profiles — they can finish via Perfil.
+  const shouldShowOnboarding = showOnboarding
 
   const closeOnboarding = (show: boolean) => {
     setShowOnboarding(show)
