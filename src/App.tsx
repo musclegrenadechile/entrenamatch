@@ -101,7 +101,7 @@ import { ProfileTab } from './components/profile'
 import type { ProfileSection } from './components/profile'
 import { LiveToggleFab } from './components/home'
 import { HomeTab } from './components/home/HomeTab'
-import { fetchGlobalProfilePosts } from './services/profilePosts'
+import { fetchGlobalProfilePosts, fetchProfilePostById, togglePostLikeInFirestore, persistPostReactionsInFirestore } from './services/profilePosts'
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
 import { isQuickDemoSession, clearQuickDemoSession } from './utils/quickDemo'
 import {
@@ -5521,52 +5521,89 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   };
 
   const likeProfilePost = async (postId: string, postUserId: string) => {
-    const posts = profilePosts[postUserId] || []
-    const idx = posts.findIndex((p) => p.id === postId)
-    if (idx < 0) return
-    const post = posts[idx]
+    let posts = profilePosts[postUserId] || []
+    let idx = posts.findIndex((p) => p.id === postId)
+    let post = idx >= 0 ? posts[idx] : null
+    let ownerId = postUserId
+
+    if (!post && !isDemoMode && db) {
+      try {
+        const remote = await fetchProfilePostById(db, postId)
+        if (remote) {
+          post = remote
+          ownerId = remote.userId
+          posts = profilePosts[ownerId] || []
+          idx = posts.findIndex((p) => p.id === postId)
+        }
+      } catch (e) {
+        console.warn('likeProfilePost fetch failed', e)
+      }
+    }
+
+    if (!post) return
+
     const hasLiked = post.likes.includes(effectiveUserId)
     const newLikes = hasLiked
       ? post.likes.filter((id) => id !== effectiveUserId)
       : [...post.likes, effectiveUserId]
     const updatedPost = { ...post, likes: newLikes }
-    const newPosts = [...posts]
-    newPosts[idx] = updatedPost
-    if (!isDemoMode && db) {
+    const newPosts = idx >= 0 ? [...posts] : [updatedPost, ...posts]
+    if (idx >= 0) newPosts[idx] = updatedPost
+
+    if (!isDemoMode && db && firebaseUser?.uid) {
       try {
-        const { doc, updateDoc } = await import('firebase/firestore')
-        await updateDoc(doc(db, 'profilePosts', postId), { likes: newLikes })
+        await togglePostLikeInFirestore(db, postId, effectiveUserId, hasLiked)
         setProfilePosts((prev) => {
-          const newState = { ...prev, [postUserId]: newPosts }
+          const newState = { ...prev, [ownerId]: newPosts.slice(0, 30) }
           profilePostsRef.current = newState
           return newState
         })
       } catch (e) {
         console.warn(e)
+        toast.error('No se pudo dar like', {
+          description: 'Revisa permisos o conexión e intenta de nuevo.',
+        })
+        return
       }
     } else {
-      const updated = { ...profilePosts, [postUserId]: newPosts }
+      const updated = { ...profilePosts, [ownerId]: newPosts.slice(0, 30) }
       saveProfilePosts(updated, { persistLocal: isDemoMode })
     }
-    if (!hasLiked && postUserId !== effectiveUserId) {
+    if (!hasLiked && ownerId !== effectiveUserId) {
       addNotification({
         type: 'message',
         title: '¡Like en tu muro!',
         body: `${currentUser?.name || 'Alguien'} le gustó tu publicación`,
-        relatedId: postUserId
+        relatedId: ownerId
       })
     }
   }
 
   // TOP UPDATE v0.1.7: Quick reactions on feed posts (optimistic, super attractive social boost)
   const boostReaction = async (postId: string, emoji: string, postOwnerId: string) => {
-    if (!postOwnerId) postOwnerId = effectiveUserId // fallback
+    if (!postOwnerId) postOwnerId = effectiveUserId
 
-    const posts = profilePosts[postOwnerId] || []
-    const idx = posts.findIndex((p) => p.id === postId)
-    if (idx < 0) return
+    let posts = profilePosts[postOwnerId] || []
+    let idx = posts.findIndex((p) => p.id === postId)
+    let post = idx >= 0 ? posts[idx] : null
+    let ownerId = postOwnerId
 
-    const post = posts[idx]
+    if (!post && !isDemoMode && db) {
+      try {
+        const remote = await fetchProfilePostById(db, postId)
+        if (remote) {
+          post = remote
+          ownerId = remote.userId
+          posts = profilePosts[ownerId] || []
+          idx = posts.findIndex((p) => p.id === postId)
+        }
+      } catch (e) {
+        console.warn('boostReaction fetch failed', e)
+      }
+    }
+
+    if (!post) return
+
     const currentReactors = (post.reactions && post.reactions[emoji]) || []
     const hasReacted = currentReactors.includes(effectiveUserId)
     const newReactors = hasReacted
@@ -5575,13 +5612,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     const newReactions = { ...(post.reactions || {}), [emoji]: newReactors }
 
     const updatedPost = { ...post, reactions: newReactions }
-    const newPosts = [...posts]
-    newPosts[idx] = updatedPost
+    const newPosts = idx >= 0 ? [...posts] : [updatedPost, ...posts]
+    if (idx >= 0) newPosts[idx] = updatedPost
 
-    // optimistic update for muro/feed
-    setProfilePosts((prev) => ({ ...prev, [postOwnerId]: newPosts }))
+    setProfilePosts((prev) => ({ ...prev, [ownerId]: newPosts.slice(0, 30) }))
 
-    // sync the local feedReactions count for immediate UI (used in feed rendering)
     setFeedReactions((prev) => {
       const forPost = prev[postId] || {}
       return {
@@ -5590,16 +5625,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       }
     })
 
-    // Fun micro feedback
     toast.success(emoji, { duration: 600, className: 'text-lg' })
     triggerHaptic('light')
 
-    if (!isDemoMode && db) {
+    if (!isDemoMode && db && firebaseUser?.uid) {
       try {
-        const { doc, updateDoc } = await import('firebase/firestore')
-        await updateDoc(doc(db, 'profilePosts', postId), { reactions: newReactions })
+        await persistPostReactionsInFirestore(db, postId, newReactions)
       } catch (e) {
-        console.warn('reaction persist failed, will sync on next load', e)
+        console.warn('reaction persist failed', e)
+        toast.error('No se pudo guardar la reacción', {
+          description: 'Revisa permisos o conexión e intenta de nuevo.',
+        })
       }
     }
   }

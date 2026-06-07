@@ -27,6 +27,39 @@ export function docToProfilePost(docSnap: { id: string; data: () => Record<strin
   }
 }
 
+export async function fetchProfilePostById(
+  db: Firestore,
+  postId: string
+): Promise<ProfilePost | null> {
+  const { doc, getDoc } = await import('firebase/firestore')
+  const snap = await getDoc(doc(db, 'profilePosts', postId))
+  if (!snap.exists()) return null
+  const post = docToProfilePost(snap)
+  post.comments = await fetchPostComments(db, postId, [])
+  return post
+}
+
+export async function togglePostLikeInFirestore(
+  db: Firestore,
+  postId: string,
+  userId: string,
+  currentlyLiked: boolean
+): Promise<void> {
+  const { doc, updateDoc, arrayUnion, arrayRemove } = await import('firebase/firestore')
+  await updateDoc(doc(db, 'profilePosts', postId), {
+    likes: currentlyLiked ? arrayRemove(userId) : arrayUnion(userId),
+  })
+}
+
+export async function persistPostReactionsInFirestore(
+  db: Firestore,
+  postId: string,
+  reactions: ProfilePost['reactions']
+): Promise<void> {
+  const { doc, updateDoc } = await import('firebase/firestore')
+  await updateDoc(doc(db, 'profilePosts', postId), { reactions: reactions || {} })
+}
+
 export async function fetchUserProfilePosts(
   db: Firestore,
   userId: string,

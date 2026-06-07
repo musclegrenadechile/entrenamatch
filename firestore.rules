@@ -38,13 +38,16 @@ service cloud.firestore {
       return data.participants is list && request.auth.uid in data.participants;
     }
 
+    /** Any authenticated user may toggle likes/reactions; only interaction fields may change. */
     function isPostInteractionUpdate() {
       return request.resource.data.userId == resource.data.userId
-        && request.resource.data.text == resource.data.text
-        && request.resource.data.photo == resource.data.photo
-        && request.resource.data.diff(resource.data).changedKeys().hasOnly(
-          ['likes', 'reactions', 'commentCount', 'updatedAt']
-        );
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly([
+          'likes',
+          'reactions',
+          'commentCount',
+          'lastCommentAt',
+          'updatedAt',
+        ]);
     }
 
     // Users collection - users can only read/write their own document
