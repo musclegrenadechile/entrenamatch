@@ -1,23 +1,20 @@
-// @ts-nocheck
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import {
-  ArrowLeft, Clock, Download, Dumbbell, Edit2, Heart, Mic, Pause, Play, RefreshCw, Send, Star, User, Users, Zap,
+  Clock, Dumbbell, Edit2, Heart, RefreshCw, Send, Star, Users, Zap,
 } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'
-import { APP_VERSION } from '../../constants'
 import { ProfileSectionNav } from './ProfileSectionNav'
 import { TuRedPowerCard } from './TuRedPowerCard'
 import { ProfileDailyPulseSection } from './ProfileDailyPulseSection'
 import { ProfileMuroSection } from './ProfileMuroSection'
 import { ProfileAccountSection } from './ProfileAccountSection'
-import type { ProfileSection } from './ProfileSectionNav'
+import { profileTabBindings } from './profileTabBindings'
+import type { ProfileTabProps } from './profileTabTypes'
 
-/** Context bag passed from App — typed loosely until App.tsx drops @ts-nocheck */
-export type ProfileTabProps = Record<string, any>
+export type { ProfileTabProps } from './profileTabTypes'
 
 export function ProfileTab(props: ProfileTabProps) {
-  const p = props
   const {
     currentUser,
     showDailyPulseBanner,
@@ -44,6 +41,7 @@ export function ProfileTab(props: ProfileTabProps) {
     setMapForceTick,
     saveUserWithRealSync,
     setActiveTab,
+    setShowLiveModal,
     matches,
     squads,
     liveCountForUI,
@@ -79,8 +77,9 @@ export function ProfileTab(props: ProfileTabProps) {
     handleMuroPhotoFile,
     deleteProfilePost,
     togglePinPost,
-    toggleLikePost,
-    addReactionToPost,
+    likeProfilePost,
+    boostReaction,
+    feedReactions,
     activeComment,
     commentDraft,
     setCommentDraft,
@@ -88,11 +87,16 @@ export function ProfileTab(props: ProfileTabProps) {
     submitComment,
     cancelComment,
     deleteCommentFromPost,
+    editingPost,
+    editDraft,
+    setEditDraft,
+    startEditPost,
+    saveEditPost,
+    recentlyPublishedPostId,
+    setFeedPhotoModal,
+    getRelativeTime,
     isEditingBio,
     setIsEditingBio,
-    editBioDraft,
-    setEditBioDraft,
-    saveBioEdit,
     testIntegrityNonce,
     setTestIntegrityNonce,
     checkPlayIntegrity,
@@ -117,13 +121,15 @@ export function ProfileTab(props: ProfileTabProps) {
     myFeedbacks,
     loadingMyFeedbacks,
     db,
+    storage,
     requestWebNotificationPermission,
     requestNativePushPermission,
     PushNotifications,
+    CapacitorCamera,
     notifPrefs,
     setNotifPrefs,
     setShowPwaInstall,
-  } = p
+  } = profileTabBindings(props)
 
   return (
     <div className="flex-1 overflow-auto bg-[#0D0D10] pb-28">
