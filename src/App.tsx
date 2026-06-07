@@ -2029,21 +2029,19 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
     return isFinite(n) ? n : undefined
   }
 
-       // LIVE TRAINING NOW - Versión mínima para evitar crashes
+         // LIVE TRAINING NOW - Versión ultra-minimalista y segura (evita todos los crashes)
   const liveTrainingNow = useMemo(() => {
     const now = Date.now()
     const ASSUMED_SESSION_MS = 3 * 60 * 60 * 1000
 
     const byId = new Map<string, any>()
 
-    // Dedicated live users
+    // Dedicated live users (principal fuente)
     (liveUsersFromDedicated || []).forEach((p: any) => {
-      if (p?.id) {
-        byId.set(p.id, { ...p, trainingNow: true })
-      }
+      if (p?.id) byId.set(p.id, { ...p, trainingNow: true })
     })
 
-    // Enrich with real profiles
+    // Enrich con perfiles reales
     realProfiles.forEach((p: any) => {
       if (byId.has(p.id)) {
         const existing = byId.get(p.id)
@@ -2055,11 +2053,11 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
       .filter((p: any) => !blockedUsers.includes(p.id))
       .filter((p: any) => {
         const since = Number(p.trainingNowSince || 0)
-        return p.trainingNow === true && since > 0 && (now - since < ASSUMED_SESSION_MS)
+        return Boolean(p.trainingNow) && since > 0 && (now - since < ASSUMED_SESSION_MS)
       })
       .map((p: any) => {
         const since = Number(p.trainingNowSince || now)
-        const dist = 5 // safe fallback
+        const dist = 5 // valor seguro temporal
 
         const seVaEnMs = (since + ASSUMED_SESSION_MS) - now
         const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 0
