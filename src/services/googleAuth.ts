@@ -132,6 +132,26 @@ export type GoogleSignInResult =
 
 let redirectResultOnce: Promise<FirebaseUser | null> | null = null;
 
+const AUTH_READY_TIMEOUT_MS = 8000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(new GoogleAuthError('auth/timeout', `${label} tardó demasiado (${ms / 1000}s). Revisa conexión o prueba recargar.`));
+    }, ms);
+    promise.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(timer);
+        reject(e);
+      }
+    );
+  });
+}
+
 async function signInWithGoogleNative(): Promise<FirebaseUser> {
   const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
   const result = await FirebaseAuthentication.signInWithGoogle({ skipNativeAuth: true });
@@ -200,7 +220,7 @@ export async function finishGoogleRedirectSignIn(): Promise<FirebaseUser | null>
   if (!redirectResultOnce) {
     redirectResultOnce = (async () => {
       try {
-        await auth.authStateReady();
+        await withTimeout(auth.authStateReady(), AUTH_READY_TIMEOUT_MS, 'Firebase Auth');
         const result = await getRedirectResult(auth);
         if (result?.user) {
           sessionStorage.removeItem('entrenamatch_google_redirect_pending');

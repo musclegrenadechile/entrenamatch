@@ -3,9 +3,15 @@ import {
   getAuth,
   initializeAuth,
   indexedDBLocalPersistence,
+  browserLocalPersistence,
   browserPopupRedirectResolver,
 } from 'firebase/auth';
-import { getFirestore, initializeFirestore, persistentLocalCache } from 'firebase/firestore';
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  memoryLocalCache,
+} from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
 
@@ -63,30 +69,52 @@ if (firebaseConfig) {
   app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
   // initializeAuth + redirect resolver — required for reliable Google OAuth redirect/popup (GH Pages + Capacitor).
+  // Fallback chain: IndexedDB (best) → localStorage → default getAuth (Safari private / storage-blocked).
   try {
     auth = initializeAuth(app, {
       persistence: indexedDBLocalPersistence,
       popupRedirectResolver: browserPopupRedirectResolver,
     });
-  } catch {
-    auth = getAuth(app);
+  } catch (indexedDbErr) {
+    console.warn('[Firebase] indexedDB auth persistence failed, trying localStorage', indexedDbErr);
+    try {
+      auth = initializeAuth(app, {
+        persistence: browserLocalPersistence,
+        popupRedirectResolver: browserPopupRedirectResolver,
+      });
+    } catch {
+      auth = getAuth(app);
+    }
   }
 
-  // Use initializeFirestore with long-polling forced.
-  // This is critical for stability of real-time 'Listen' streams (onSnapshot) inside Capacitor Android WebView.
-  // The default WebChannel transport frequently fails with "transport errored" + 404 on the /Listen/channel endpoint
-  // on mobile hybrid apps due to WebView + network stack quirks. Long polling is far more reliable.
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache(),
-    experimentalForceLongPolling: true,
-    experimentalAutoDetectLongPolling: false,
-  });
+  // Long-polling is critical for Capacitor WebView. persistentLocalCache needs IndexedDB — fall back on mobile Safari private mode.
+  try {
+    db = initializeFirestore(app, {
+      localCache: persistentLocalCache(),
+      experimentalForceLongPolling: true,
+      experimentalAutoDetectLongPolling: false,
+    });
+  } catch (persistErr) {
+    console.warn('[Firebase] persistent Firestore cache failed, using memory cache', persistErr);
+    try {
+      db = initializeFirestore(app, {
+        localCache: memoryLocalCache(),
+        experimentalForceLongPolling: true,
+        experimentalAutoDetectLongPolling: false,
+      });
+    } catch {
+      db = getFirestore(app);
+    }
+  }
 
-  // Explicit bucket helps ensure the correct auth token is attached for Storage uploads (fixes some 403/unauthorized cases on web + Capacitor)
   storage = getStorage(app, 'gs://entrenamatch.firebasestorage.app');
 
   if (firebaseConfig.measurementId) {
-    analytics = getAnalytics(app);
+    try {
+      analytics = getAnalytics(app);
+    } catch (analyticsErr) {
+      console.warn('[Firebase] Analytics unavailable on this device', analyticsErr);
+    }
   }
 }
 

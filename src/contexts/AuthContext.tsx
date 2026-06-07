@@ -62,14 +62,29 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     let cancelled = false;
     let unsubscribe = () => {};
+    let bootTimeout: ReturnType<typeof setTimeout> | undefined;
+
+    const finishBoot = () => {
+      if (!cancelled) setLoading(false);
+    };
+
+    // Never leave mobile users on a blank/dark screen if Auth hangs (Safari storage quirks, slow networks).
+    bootTimeout = setTimeout(() => {
+      if (cancelled) return;
+      console.warn('[Auth] Boot timeout — showing login');
+      finishBoot();
+    }, 10000);
 
     (async () => {
       setLoading(true);
 
-      // CRITICAL: finish redirect BEFORE onAuthStateChanged — otherwise getRedirectResult returns null
-      // and the user lands back on the login screen after choosing a Google account.
+      // CRITICAL: finish redirect BEFORE onAuthStateChanged — otherwise getRedirectResult returns null.
+      // Race with timeout so mobile Safari / slow networks never block the UI forever.
       try {
-        const redirectUser = await handleGoogleRedirectResult();
+        const redirectUser = await Promise.race([
+          handleGoogleRedirectResult(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
+        ]);
         if (cancelled) return;
 
         if (redirectUser) {
@@ -105,21 +120,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setCurrentUser(user);
 
         if (user) {
-          const profile = await getUserProfile(user.uid);
-          if (!cancelled) setUserProfile(profile);
+          try {
+            const profile = await getUserProfile(user.uid);
+            if (!cancelled) setUserProfile(profile);
+          } catch (e) {
+            console.warn('[Auth] getUserProfile failed', e);
+          }
         } else {
           setUserProfile(null);
         }
 
         if (firstAuthEvent) {
           firstAuthEvent = false;
-          if (!cancelled) setLoading(false);
+          finishBoot();
         }
       });
     })();
 
     return () => {
       cancelled = true;
+      if (bootTimeout) clearTimeout(bootTimeout);
       unsubscribe();
     };
   }, [isDemoMode]);
