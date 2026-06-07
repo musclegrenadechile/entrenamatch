@@ -332,7 +332,7 @@ function App() {
   } = useProfile()
 
   // Real Auth from Firebase + Demo Auth -- hoisted very early so that isDemoMode, firebaseUser are available for any early effects' deps (e.g. the daily offline effect at ~1188, and to avoid TDZ on open).
-  const { currentUser: firebaseUser, userProfile: firebaseProfile, isDemoMode, googleNewUser, clearGoogleNewUser } = useAuth()
+  const { currentUser: firebaseUser, userProfile: firebaseProfile, isDemoMode, googleNewUser, clearGoogleNewUser, loading: authBooting } = useAuth()
   const { 
     signInDemo, 
     signUpDemo, 
@@ -1212,6 +1212,11 @@ function App() {
     setOnboardingStepLocal(0)
     setShowOnboarding(true)
   }, [googleNewUser, firebaseUser, firebaseProfile, isDemoMode, clearGoogleNewUser, saveUser, setShowOnboarding])
+
+  // Keep ref in sync when Firebase user appears (Google redirect / email login)
+  useEffect(() => {
+    if (firebaseUser) lastSuccessfulAuthRef.current = firebaseUser
+  }, [firebaseUser?.uid])
 
   // Quick demo entry from AuthScreen
   useEffect(() => {
@@ -7499,6 +7504,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   const isAuthenticated = isDemoMode 
     ? !!currentUser 
     : !!firebaseUser || !!lastSuccessfulAuthRef.current
+
+  if (authBooting && !isDemoMode) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0c] text-white">
+        <div className="text-center">
+          <div className="text-2xl mb-2 animate-pulse">🏋️</div>
+          <p className="text-sm text-[#9CA3AF]">Verificando sesión…</p>
+        </div>
+      </div>
+    )
+  }
 
   if (!isAuthenticated) {
     return (

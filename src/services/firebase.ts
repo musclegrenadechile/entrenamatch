@@ -1,5 +1,10 @@
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { initializeApp, getApp, getApps } from 'firebase/app';
+import {
+  getAuth,
+  initializeAuth,
+  indexedDBLocalPersistence,
+  browserPopupRedirectResolver,
+} from 'firebase/auth';
 import { getFirestore, initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
@@ -55,8 +60,17 @@ let storage: any = null;
 let analytics: any = null;
 
 if (firebaseConfig) {
-  app = initializeApp(firebaseConfig);
-  auth = getAuth(app);
+  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+
+  // initializeAuth + redirect resolver — required for reliable Google OAuth redirect/popup (GH Pages + Capacitor).
+  try {
+    auth = initializeAuth(app, {
+      persistence: indexedDBLocalPersistence,
+      popupRedirectResolver: browserPopupRedirectResolver,
+    });
+  } catch {
+    auth = getAuth(app);
+  }
 
   // Use initializeFirestore with long-polling forced.
   // This is critical for stability of real-time 'Listen' streams (onSnapshot) inside Capacitor Android WebView.

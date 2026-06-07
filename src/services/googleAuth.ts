@@ -35,18 +35,18 @@ export function getCurrentAuthHostname(): string {
   return window.location.hostname;
 }
 
-/** Redirect is more reliable than popup in WebView, GH Pages, localhost, and mobile browsers. */
+/** Redirect is more reliable than popup in WebView and mobile browsers. Desktop GH Pages uses popup. */
 export function shouldUseGoogleRedirect(): boolean {
   if (typeof window === 'undefined') return false;
   if (Capacitor.isNativePlatform()) return true;
 
   const host = window.location.hostname;
   if (host === 'localhost' || host === '127.0.0.1') return true;
-  if (host.endsWith('.github.io') || host === 'github.io') return true;
 
   const ua = navigator.userAgent || '';
   if (/Android|iPhone|iPad|iPod|Mobile/i.test(ua)) return true;
 
+  // Desktop GH Pages / Firebase hosting: popup avoids redirect state loss (IndexedDB / COOP).
   return false;
 }
 
@@ -95,6 +95,8 @@ export type GoogleSignInResult =
   | { mode: 'redirect' }
   | { mode: 'popup'; user: FirebaseUser };
 
+let redirectResultOnce: Promise<FirebaseUser | null> | null = null;
+
 /** Start Google sign-in. Returns redirect mode when the page will navigate away. */
 export async function startGoogleSignIn(): Promise<GoogleSignInResult> {
   if (!isFirebaseConfigured || !auth) {
@@ -107,12 +109,14 @@ export async function startGoogleSignIn(): Promise<GoogleSignInResult> {
   const provider = buildGoogleProvider();
 
   if (shouldUseGoogleRedirect()) {
+    sessionStorage.setItem('entrenamatch_google_redirect_pending', '1');
     await signInWithRedirect(auth, provider);
     return { mode: 'redirect' };
   }
 
   try {
     const cred = await signInWithPopup(auth, provider);
+    sessionStorage.removeItem('entrenamatch_google_redirect_pending');
     return { mode: 'popup', user: cred.user };
   } catch (error: unknown) {
     const err = error as { code?: string };
@@ -121,6 +125,7 @@ export async function startGoogleSignIn(): Promise<GoogleSignInResult> {
       err?.code === 'auth/popup-closed-by-user' ||
       err?.code === 'auth/cancelled-popup-request'
     ) {
+      sessionStorage.setItem('entrenamatch_google_redirect_pending', '1');
       await signInWithRedirect(auth, provider);
       return { mode: 'redirect' };
     }
@@ -128,14 +133,21 @@ export async function startGoogleSignIn(): Promise<GoogleSignInResult> {
   }
 }
 
-/** Call on app load to finish redirect-based Google sign-in. */
+/** Call once on app load (singleton — safe with React StrictMode). */
 export async function finishGoogleRedirectSignIn(): Promise<FirebaseUser | null> {
   if (!isFirebaseConfigured || !auth) return null;
 
-  try {
-    const result = await getRedirectResult(auth);
-    return result?.user ?? null;
-  } catch (error) {
-    throw mapGoogleAuthError(error);
+  if (!redirectResultOnce) {
+    redirectResultOnce = (async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        return result?.user ?? null;
+      } catch (error) {
+        redirectResultOnce = null;
+        throw mapGoogleAuthError(error);
+      }
+    })();
   }
+
+  return redirectResultOnce;
 }
