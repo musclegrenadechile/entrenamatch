@@ -3,9 +3,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef, Component, type ReactNode, type ChangeEvent } from 'react'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
-
-// Fix Leaflet default icons for bundlers
-delete (L.Icon.Default.prototype as any)._getIconUrl
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
@@ -2032,126 +2029,121 @@ const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
     return isFinite(n) ? n : undefined
   }
 
-  // LIVE TRAINING NOW - the killer innovative feature. Real-time who is training right now near you. Green live indicator. Creates urgency, no fitness app does this well.
-  // Hoisted early after its data deps (realProfiles at ~1425, etc.) and before any effects/JSX that use it in deps or bodies.
+    // LIVE TRAINING NOW - the killer innovative feature.
   const liveTrainingNow = useMemo(() => {
-    const now = Date.now();
+    const now = Date.now()
+    const ASSUMED_SESSION_MS = 3 * 60 * 60 * 1000
 
-    // CRITICAL: Base live list on the dedicated 'where trainingNow==true' listener first.
-// This guarantees that when someone deactivates live, they are immediately dropped from
-// everyone else's view (map, radar, "live cerca") as soon as the server reflects trainingNow=false.
-const byId = new Map<string, any>()
+    const byId = new Map<string, any>()
 
-// 1. Dedicated listener first (authoritative source)
-(liveUsersFromDedicated || []).forEach(p => {
-  if (!byId.has(p.id)) {
-    byId.set(p.id, { ...p, trainingNow: true })
-  }
-})
+    // 1. Dedicated listener first (authoritative)
+    (liveUsersFromDedicated || []).forEach(p => {
+      if (p && p.id) {
+        byId.set(p.id, { ...p, trainingNow: true })
+      }
+    })
 
-// 2. Supplement with realProfiles (for fresher data) but respect dedicated status
-realProfiles.forEach(p => {
-  if (byId.has(p.id)) {
-    // Enrich existing live user with fresher profile data
-    const existing = byId.get(p.id)
-    byId.set(p.id, { ...existing, ...p, trainingNow: true })
-  }
-  // IMPORTANT: Do NOT add users from realProfiles that are not in dedicated listener
-})
+    // 2. Enrich with realProfiles
+    realProfiles.forEach(p => {
+      if (byId.has(p.id)) {
+        const existing = byId.get(p.id)
+        byId.set(p.id, { ...existing, ...p, trainingNow: true })
+      }
+    })
 
-// 3. Convert to array
-let candidateLives = Array.from(byId.values())
+    let lives = Array.from(byId.values())
+      .filter(p => !blockedUsers.includes(p.id))
+      .filter(p => {
+        const since = typeof normalizeTrainingSince === 'function' 
+          ? normalizeTrainingSince(p.trainingNowSince) 
+          : (p.trainingNowSince || 0)
+        return p.trainingNow && since > 0 && (now - since < ASSUMED_SESSION_MS)
+      })
+      .map(p => {
+        const since = typeof normalizeTrainingSince === 'function' 
+          ? normalizeTrainingSince(p.trainingNowSince) || now 
+          : (p.trainingNowSince || now)
 
-const ASSUMED_SESSION_MS = 3 * 60 * 60 * 1000 // 3 hours max assumed live
+        const dist = (typeof getDistanceKm === 'function' && userLocation) 
+          ? getDistanceKm(userLocation.lat, userLocation.lng, p.lat || -33, p.lng || -71) 
+          : 999
 
-let lives = candidateLives
-  .filter(p => !blockedUsers.includes(p.id))
-  .filter(p => {
-    const since = normalizeTrainingSince(p.trainingNowSince)
-    return p.trainingNow && since != null && (now - since < ASSUMED_SESSION_MS)
-  })
-  .map(p => {
-    const since = normalizeTrainingSince(p.trainingNowSince) || now
-    const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng) : 999
-    const seVaEnMs = (since + ASSUMED_SESSION_MS) - now
-    const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 0
+        const seVaEnMs = (since + ASSUMED_SESSION_MS) - now
+        const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 0
 
-    let joinCount = 0
-    const theirPosts = profilePosts[p.id] || []
-    const livePost = theirPosts.find((post: any) => (post.text || '').toLowerCase().includes('entrenando ahora')) || theirPosts[0]
-    if (livePost) {
-      const otherLikes = (livePost.likes || []).filter((id: string) => id !== p.id).length
-      joinCount = (livePost.comments || []).length + otherLikes
+        let joinCount = 0
+        const theirPosts = profilePosts?.[p.id] || []
+        const livePost = theirPosts.find((post: any) => (post?.text || '').toLowerCase().includes('entrenando')) || theirPosts[0]
+        if (livePost) {
+          const otherLikes = (livePost.likes || []).filter((id: string) => id !== p.id).length
+          joinCount = (livePost.comments || []).length + otherLikes
+        }
+
+        const bond = syncBonds?.[p.id]
+        const isLegend = !!bond && ((bond.totalMin || 0) >= 30 || (bond.bondLevel || 0) >= 2)
+
+        return { 
+          ...p, 
+          distance: dist, 
+          seVaEnMin, 
+          joinCount, 
+          isLegend, 
+          bondInfo: bond,
+          trainingNowSince: since 
+        }
+      })
+      .filter(p => !userLocation || p.distance < 10)
+      .sort((a, b) => {
+        const aSync = (a as any).trainingSyncWith ? 100 : 0
+        const bSync = (b as any).trainingSyncWith ? 100 : 0
+        if (aSync !== bSync) return bSync - aSync
+        if (userLocation) return (a.distance || 999) - (b.distance || 999)
+        return ((b.trainingNowSince as number) || 0) - ((a.trainingNowSince as number) || 0)
+      })
+
+    // Demo fallback
+    if (isDemoMode && lives.length === 0) {
+      lives = SEED_PROFILES.slice(0, 3).map((p, i) => ({ 
+        ...p, 
+        trainingNow: true, 
+        trainingNowSince: now - (i+1)*10*60000, 
+        distance: 1 + i*2, 
+        seVaEnMin: 40 - i*10, 
+        joinCount: 1 + i 
+      }))
     }
 
-    const bond = syncBonds[p.id]
-    const isLegend = !!bond && ((bond.totalMin || 0) >= 30 || (bond.bondLevel || 0) >= 2)
-
-    return { 
-      ...p, 
-      distance: dist, 
-      seVaEnMin, 
-      joinCount, 
-      isLegend, 
-      bondInfo: bond,
-      trainingNowSince: since 
-    }
-  })
-  .filter(p => !userLocation || p.distance < 10) // near only filter
-  .sort((a, b) => {
-    const aSync = (a as any).trainingSyncWith ? 100 : 0
-    const bSync = (b as any).trainingSyncWith ? 100 : 0
-    if (aSync !== bSync) return bSync - aSync
-    if (userLocation) return a.distance - b.distance
-    return (b.trainingNowSince as number) - (a.trainingNowSince as number)
-  })
-
-// Demo fallback
-if (isDemoMode && lives.length === 0) {
-  lives = SEED_PROFILES.slice(0, 3).map((p, i) => ({ 
-    ...p, 
-    trainingNow: true, 
-    trainingNowSince: now - (i+1)*10*60000, 
-    distance: 1 + i*2, 
-    seVaEnMin: 40 - i*10, 
-    joinCount: 1 + i 
-  }))
-}
-    // Exceptional onboarding: immediately surface the new user's own live if they opted in during the 60s flow.
-    // This way the banner + map + explore show "you are live" right after finishing, even before any FS roundtrip.
-    // NOTE: we still add the 'me' entry internally for own awareness, but we filter self out below so public lists/map never include self (fixes self-join, self-chat, duplication).
+    // Add self if currently live
     if (currentUser && currentUser.trainingNow) {
-      const selfSince = normalizeTrainingSince(currentUser.trainingNowSince) || now
-      if (selfSince && (now - selfSince < 3 * 60 * 60 * 1000)) {
+      const selfSince = typeof normalizeTrainingSince === 'function' 
+        ? normalizeTrainingSince(currentUser.trainingNowSince) || now 
+        : (currentUser.trainingNowSince || now)
+      
+      if (selfSince && (now - selfSince < ASSUMED_SESSION_MS)) {
         const already = lives.some((l: any) => l.id === 'me' || l.id === currentUser.id)
         if (!already) {
-          const dist = userLocation ? getDistanceKm(userLocation.lat, userLocation.lng, currentUser.lat || -33.0153, currentUser.lng || -71.5528) : 0.3
+          const dist = (typeof getDistanceKm === 'function' && userLocation) 
+            ? getDistanceKm(userLocation.lat, userLocation.lng, currentUser.lat || -33, currentUser.lng || -71) 
+            : 0.3
+          
           const seVaEnMs = (selfSince + ASSUMED_SESSION_MS) - now
           const seVaEnMin = seVaEnMs > 0 ? Math.floor(seVaEnMs / 60000) : 55
-          lives = [{ ...currentUser, id: 'me', distance: dist, seVaEnMin, joinCount: 0, isLegend: false, bondInfo: null, visibleLevel: (dailyPulse?.level || 1), trainingNowSince: selfSince }, ...lives]
+
+          lives = [{ 
+            ...currentUser, 
+            id: 'me', 
+            distance: dist, 
+            seVaEnMin, 
+            joinCount: 0, 
+            isLegend: false, 
+            trainingNowSince: selfSince 
+          }, ...lives]
         }
       }
     }
 
-    // CRITICAL FIX: never include self (or 'me') in the public liveTrainingNow list.
-    // This prevents:
-    // - Duplication (self profile + injected 'me')
-    // - Self appearing in live lists, map markers as joinable, urgent notifs, chat suggestions, etc.
-    // - You being able to "join" or "chat" with yourself.
-    // Own live status is handled via currentUser.trainingNow in UI (banners, profile, self marker on map).
-    const myIds = new Set([effectiveUserId, currentUser?.id, 'me'].filter(Boolean));
-    lives = lives.filter((l: any) => !myIds.has(l.id));
-
-    // Extra dedup by id (defensive, in case any leak from seeds or realProfiles)
-    const seenIds = new Set<string>();
-    lives = lives.filter((l: any) => {
-      if (seenIds.has(l.id)) return false;
-      seenIds.add(l.id);
-      return true;
-    });
-
-    return lives;
-  }, [realProfiles, userLocation, isDemoMode, profilePosts, currentUser, liveUsersFromDedicated]);
+    return lives
+  }, [liveUsersFromDedicated, realProfiles, blockedUsers, userLocation, profilePosts, syncBonds, currentUser, isDemoMode, SEED_PROFILES])
 
   // Only for the map widget in dev mode: augment with temporary test lives so devs can test GymPulse visuals,
   // near counts, popups, etc. without other real accounts being live. These do NOT pollute global liveTrainingNow used by lists/feeds/notifs.
@@ -13743,8 +13735,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 // ErrorBoundary restaurado (fue eliminado accidentalmente durante limpieza de código muerto del mapa).
 // Envuelve secciones críticas (Auth, Onboarding y el shell principal) para que crashes no dejen la app en blanco.
 // Integra con el sistema de debug logs expuesto en window.__addEntrenaDebugLog.
-class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
-  constructor(props: { children: ReactNode }) {
+
+// Types moved inline to avoid TSX parsing issues in this file section.
+;interface ErrorBoundaryState { hasError: boolean }
+class ErrorBoundary extends Component<any, ErrorBoundaryState> {
+  constructor(props: any) {
     super(props)
     this.state = { hasError: false }
   }
@@ -13787,3 +13782,4 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { hasError: boole
 }
 
 export default App
+
