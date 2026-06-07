@@ -35,11 +35,17 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
 })
 
-import { getDistanceKm } from '../../utils' // adjust if needed
+import { getDistanceKm } from '../../utils'
+import { filterMapLiveUsers, hasMapCoords } from '../../utils/gymPulseLive'
 
 export interface GymPulseMapProps {
   showLiveMap: boolean
+  /** All live users for map rendering (includes self when live). */
   liveTrainingNow: any[]
+  /** Precomputed live count from App pipeline (includes self). */
+  liveCount?: number
+  /** Current user id — used to avoid duplicate self pin (self uses premium marker). */
+  selfUserId?: string | null
   ritualRipples: any[]
   partnerLocations: any[]
   echoPins?: any[]
@@ -105,20 +111,24 @@ const ZONE_COLORS: Record<string, string> = {
   default: '#eab308'
 }
 
-/** Count live users on map, including self when selfIsLive (self marker is separate from live pins). */
-function countMapLiveUsers(
-  users: any[],
-  opts: { mapNearOnly?: boolean; userLocation?: { lat: number; lng: number } | null; selectedMapZone?: string | null; showOnlyLegends?: boolean; selfIsLive?: boolean }
-): number {
-  const { mapNearOnly, userLocation, selectedMapZone, showOnlyLegends, selfIsLive } = opts
-  const n = (users || []).filter((u: any) => {
-    if (!u.lat || !u.lng || !u.trainingNow) return false
-    if (mapNearOnly && userLocation && (u.distance || 999) >= 10) return false
-    if (selectedMapZone && u.city !== selectedMapZone) return false
-    if (showOnlyLegends && !u.isLegend) return false
-    return true
-  }).length
-  return n + (selfIsLive ? 1 : 0)
+function isSelfLiveUser(u: any, selfUserId?: string | null): boolean {
+  if (!u || !selfUserId) return false
+  return u.id === selfUserId || u.id === 'me' || !!u._isSelf
+}
+
+function resolveSelfMapPosition(
+  userLocation: { lat: number; lng: number; photo?: string } | null,
+  liveUsers: any[],
+  selfUserId?: string | null
+): { lat: number; lng: number; photo?: string } | null {
+  if (userLocation && hasMapCoords(userLocation)) {
+    return { lat: Number(userLocation.lat), lng: Number(userLocation.lng), photo: userLocation.photo }
+  }
+  const selfEntry = (liveUsers || []).find((u) => isSelfLiveUser(u, selfUserId))
+  if (selfEntry && hasMapCoords(selfEntry)) {
+    return { lat: Number(selfEntry.lat), lng: Number(selfEntry.lng), photo: selfEntry.photos?.[0] }
+  }
+  return null
 }
 
 const PARTNER_SEEDS = [ /* keep seeds here or import from constants if moved later */
@@ -131,6 +141,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   const {
     showLiveMap,
     liveTrainingNow,
+    liveCount,
+    selfUserId = null,
     ritualRipples,
     partnerLocations,
     echoPins = [],
@@ -348,13 +360,24 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       markersRef.current.forEach(m => { try { mapInstanceRef.current.removeLayer(m) } catch {} })
       markersRef.current = []
 
-      let liveUsers = [...liveTrainingNow].filter(u => u.lat && u.lng && u.trainingNow)
-      if (mapNearOnly && userLocation) liveUsers = liveUsers.filter(u => (u.distance || 999) < 10)
-      if (selectedMapZone) liveUsers = liveUsers.filter(u => u.city === selectedMapZone)
-      if (showOnlyLegends) liveUsers = liveUsers.filter(u => u.isLegend)
+      let liveUsers = filterMapLiveUsers(liveTrainingNow || [], {
+        mapNearOnly,
+        userLocation,
+        selectedMapZone,
+        showOnlyLegends,
+        getDistanceKm,
+      })
+      // Self gets the premium marker below — skip duplicate live pin
+      liveUsers = liveUsers.filter((u) => !isSelfLiveUser(u, selfUserId))
 
-      // Heartbeats when live count increases (include self when live — self marker is separate)
-      const currentLive = liveUsers.length + (selfIsLive ? 1 : 0)
+      const selfMapPos = resolveSelfMapPosition(userLocation, liveTrainingNow || [], selfUserId)
+      const selfInFilteredView = selfIsLive && selfMapPos && filterMapLiveUsers(
+        (liveTrainingNow || []).filter((u) => isSelfLiveUser(u, selfUserId)),
+        { mapNearOnly, userLocation, selectedMapZone, showOnlyLegends, getDistanceKm }
+      ).length > 0
+
+      // Heartbeats when live count increases (self counts when live + visible on map)
+      const currentLive = liveUsers.length + (selfInFilteredView ? 1 : 0)
       const prevLive = prevLiveCountRef.current
       if (currentLive > prevLive && currentLive > 0) {
         const candidates = liveUsers.length > 0 ? liveUsers : (userLocation ? [userLocation] : [])
@@ -438,7 +461,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       }
 
       // Self marker (in-place update, not in markersRef) — upgraded iconic premium presence
-      if (userLocation) {
+      if (selfMapPos) {
         const isLive = !!selfIsLive;
         const isAmp = (typeof (window as any) !== 'undefined' && (window as any).__selfAmplified) || false; // lightweight signal from parent if needed; we also accept via future prop
         const liveClass = isLive ? ' live-self iconic-self' : ' iconic-self';
@@ -449,27 +472,34 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           : `<div style="position:absolute;inset:-4px;border-radius:9999px;border:1.5px solid rgba(34,197,94,0.35);"></div>`;
         const ampAura = isAmp ? `<div class="self-pulso-stack" style="inset:-16px;border-color:#a855f7;opacity:0.28"></div>` : '';
         const liveBadgeSelf = isLive ? `<div style="position:absolute;top:-3px;right:-3px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#111;font-size:8px;font-weight:900;padding:1px 5px;border-radius:4px;line-height:10px;border:1px solid #111;box-shadow:0 0 0 1px rgba(0,0,0,0.6)">LIVE</div>` : '';
-        const photo = userLocation.photo || '';
+        const photo = selfMapPos.photo || '';
         const fallback = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;color:white;background:#22c55e;font-weight:700">TÚ</div>`;
         const selfIcon = L.divIcon({
           html: `<div class="self-iconic" style="position:relative;width:${size}px;height:${size}px"><div style="width:${size}px;height:${size}px;border-radius:9999px;overflow:hidden;border:3px solid ${borderC};box-shadow:0 0 0 3px rgba(0,0,0,0.65);">${photo ? `<img src="${photo}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='${fallback}'" />` : fallback}</div>${ring}${liveBadgeSelf}${ampAura}</div>`,
           className: `self-marker${liveClass}`, iconSize: [size, size], iconAnchor: [size/2, size/2]
         })
         if (!selfMarkerRef.current) {
-          selfMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], { icon: selfIcon }).addTo(mapInstanceRef.current)
-          selfMarkerRef.current.bindPopup('<strong>TÚ</strong><br/>Tu ubicación actual (GPS) — el centro de tu GymPulse')
+          selfMarkerRef.current = L.marker([selfMapPos.lat, selfMapPos.lng], { icon: selfIcon }).addTo(mapInstanceRef.current)
+          selfMarkerRef.current.bindPopup('<strong>TÚ</strong><br/>Tu ubicación en el GymPulse' + (isLive ? ' — <span style="color:#22c55e">🟢 EN VIVO</span>' : ''))
         } else {
-          selfMarkerRef.current.setLatLng([userLocation.lat, userLocation.lng])
+          selfMarkerRef.current.setLatLng([selfMapPos.lat, selfMapPos.lng])
           selfMarkerRef.current.setIcon(selfIcon)
         }
         if (!areaCircleRef.current) {
-          areaCircleRef.current = L.circle([userLocation.lat, userLocation.lng], {
+          areaCircleRef.current = L.circle([selfMapPos.lat, selfMapPos.lng], {
             radius: isLive ? 12000 : 9000, color: '#22c55e', weight: isLive ? 1.5 : 0.8, fillColor: '#22c55e', fillOpacity: isLive ? 0.09 : 0.05, opacity: isLive ? 0.35 : 0.2,
             className: isLive ? 'self-area-pulse' : ''
           }).addTo(mapInstanceRef.current)
         } else {
-          areaCircleRef.current.setLatLng([userLocation.lat, userLocation.lng])
+          areaCircleRef.current.setLatLng([selfMapPos.lat, selfMapPos.lng])
           areaCircleRef.current.setStyle({ radius: isLive ? 12000 : 9000, weight: isLive ? 1.5 : 0.8, fillOpacity: isLive ? 0.09 : 0.05, opacity: isLive ? 0.35 : 0.2 })
+        }
+      } else if (selfMarkerRef.current && mapInstanceRef.current) {
+        try { mapInstanceRef.current.removeLayer(selfMarkerRef.current) } catch {}
+        selfMarkerRef.current = null
+        if (areaCircleRef.current) {
+          try { mapInstanceRef.current.removeLayer(areaCircleRef.current) } catch {}
+          areaCircleRef.current = null
         }
       }
 
@@ -480,7 +510,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       // Enriched live markers for "Entrenando Ahora" (GymPulse) - makes the live status visually obvious
       // Uses data like seVaEnMin, joinCount, isLegend, visibleLevel from the parent liveTrainingNow computation.
       renderUsers.forEach((u: any) => {
-        if (!u.lat || !u.lng) return
+        if (!hasMapCoords(u)) return
         const isBond = !!syncBonds[u.id]
         const isHigh = (u.visibleLevel || 1) >= 15 || u.isLegend
         const hasPulso = (u.visibleLevel || 1) >= 20
@@ -618,7 +648,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       Object.entries(syncBonds || {}).forEach(([uid, bond]: [string, any]) => {
         if (!bond || !bond.partnerLat || !bond.partnerLng) return
         const u = (liveTrainingNow || []).find((x: any) => x.id === uid)
-        if (!u || !u.lat || !u.lng) return
+        if (!u || !hasMapCoords(u)) return
         try {
           const isStrong = (bond.bondLevel || 0) >= 2 || (bond.totalMin || 0) >= 20
           const line = L.polyline(
@@ -656,7 +686,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       // This fixes "el mapa no queda fijo / al hacer zoomout/zoomin se pierde".
       // Previously only fitted lives (markersRef) excluding self, and only once ever → view would drift or lose
       // the user's position + activity when zooming or on filter changes.
-      const shouldFit = markersRef.current.length > 0 || !!selfMarkerRef.current || !!userLocation;
+      const shouldFit = markersRef.current.length > 0 || !!selfMarkerRef.current || !!selfMapPos;
 
       if (shouldFit && !(mapInstanceRef.current as any)._hasDoneInitialFit) {
         try {
@@ -667,8 +697,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           if (selfMarkerRef.current) {
             const s = selfMarkerRef.current.getLatLng();
             bounds = bounds ? bounds.extend(s) : L.latLngBounds(s, s);
-          } else if (userLocation) {
-            const s = [userLocation.lat, userLocation.lng] as [number, number];
+          } else if (selfMapPos) {
+            const s = [selfMapPos.lat, selfMapPos.lng] as [number, number];
             bounds = bounds ? bounds.extend(s) : L.latLngBounds(s, s);
           }
 
@@ -695,7 +725,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       markersRef.current = []
     }
   }, [
-    showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone,
+    showLiveMap, liveTrainingNow, liveCount, selfUserId, userLocation, mapNearOnly, selectedMapZone,
     showOnlyLegends, showPartners, mapForceTick, ritualRipples, partnerLocations,
     echoPins, syncBonds, selfIsLive, isDeveloper, isPlacingPartner, isQuickAddPartner,
     onShowProfile, onStartSync, onPartnerPositionSelected, onPartnerMoved, onPartnerDelete,
@@ -741,11 +771,19 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     }
   }, [onStartSync, onPartnerDelete, onPartnerEdit, onAddPartnerAtCurrentCenter, onReloadPartners, onSpawnTestLives, onClearDevTestLives, onWitnessEchoPin, onWitnessRipple])
 
+  const mapFilterOpts = { mapNearOnly, userLocation, selectedMapZone, showOnlyLegends, getDistanceKm }
+  const filteredLiveUsers = useMemo(
+    () => filterMapLiveUsers(liveTrainingNow || [], mapFilterOpts),
+    [liveTrainingNow, mapNearOnly, userLocation, selectedMapZone, showOnlyLegends]
+  )
+  const totalLiveOnMap = typeof liveCount === 'number' ? liveCount : filteredLiveUsers.length
+  const filteredLiveOnMap = filteredLiveUsers.length
+
   // Small local computation for the zone legend (self contained)
   const zoneLiveCounts = useMemo(() => {
     const counts: Record<string, number> = {}
     ;(liveTrainingNow || []).forEach((u: any) => {
-      if (u.city && u.lat && u.lng && u.trainingNow) {
+      if (u.city && hasMapCoords(u) && u.trainingNow) {
         counts[u.city] = (counts[u.city] || 0) + 1
       }
     })
@@ -797,10 +835,6 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     default: '#eab308'
   }
 
-  const mapCountOpts = { mapNearOnly, userLocation, selectedMapZone, showOnlyLegends, selfIsLive }
-  const totalLiveOnMap = countMapLiveUsers(liveTrainingNow || [], mapCountOpts)
-  const filteredLiveOnMap = countMapLiveUsers(liveTrainingNow || [], { ...mapCountOpts, mapNearOnly: true })
-
   return (
     <div className="relative w-full" style={{ zIndex: 10 }}> {/* higher stacking context so custom controls can reliably sit above Leaflet */}
       {/* Floating "El Pulso está vivo" header — now owned by the component */}
@@ -808,11 +842,12 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         className="map-floating-pulse absolute top-2 left-2 z-[2000] px-3 py-1 rounded-2xl text-[10px] font-semibold text-[#22c55e] flex items-center gap-2 shadow-lg border border-[#22c55e]/20 cursor-pointer active:scale-[0.985] transition"
         onClick={() => {
           try { /* haptic if available */ } catch {}
-          const active = (liveTrainingNow || []).filter((u: any) => u.lat && u.lng && u.trainingNow)
+          const active = filterMapLiveUsers(liveTrainingNow || [], mapFilterOpts)
           if (active.length === 0) {
-            if (selfIsLive && userLocation) {
+            const selfPos = resolveSelfMapPosition(userLocation, liveTrainingNow || [], selfUserId)
+            if (selfIsLive && selfPos) {
               const handle = (ref as any)?.current
-              if (handle?.flyTo) handle.flyTo(userLocation.lat, userLocation.lng, 15)
+              if (handle?.flyTo) handle.flyTo(selfPos.lat, selfPos.lng, 15)
             }
             return
           }
@@ -854,7 +889,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       <div className="absolute bottom-2 right-2 flex items-center gap-1 z-[2000]">
         <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
           🟢 {mapNearOnly ? filteredLiveOnMap : totalLiveOnMap} en vivo
-          {selfIsLive && totalLiveOnMap <= 1 && <span className="ml-1 text-[7px] text-white/80">(tú)</span>}
+          {selfIsLive && totalLiveOnMap >= 1 && filteredLiveOnMap <= 1 && mapNearOnly && <span className="ml-1 text-[7px] text-white/80">(tú)</span>}
           {showPartners && partnerLocations.length > 0 && <span className="ml-1 text-[7px] bg-[#FF671F] text-black px-1 rounded font-bold">{partnerLocations.length} PARTNERS</span>}
           {isDeveloper && <span className="ml-1 text-[7px] bg-[#FFD700] text-black px-1 rounded font-extrabold cursor-pointer active:opacity-70" onClick={onLogoutDeveloper} title="Tap to logout dev mode">DEV ON</span>}
         </div>
@@ -989,8 +1024,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         </div>
       )}
 
-      {/* GPS prompt overlay */}
-      {!userLocation && (
+      {/* GPS prompt overlay — only when we cannot place self on map at all */}
+      {!resolveSelfMapPosition(userLocation, liveTrainingNow || [], selfUserId) && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/65 text-center p-5 rounded-2xl text-xs z-[4000]">
           <div>
             <div className="mb-1">📍 Ubicación real desactivada</div>
