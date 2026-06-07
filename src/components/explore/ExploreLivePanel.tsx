@@ -147,7 +147,11 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
               {user.syncStreak && <div className="text-[7px] text-[#22c55e] mb-1">🔄 SyncStreak {user.syncStreak}d</div>}
               <button 
                 disabled={joiningSyncWith === user.id}
-                onClick={(e)=>{e.stopPropagation(); handleSwipe(user.id,'right'); }} 
+                onClick={(e) => {
+                  e.stopPropagation()
+                  try { triggerHaptic('medium') } catch {}
+                  startSyncWith(user.id, user.name)
+                }} 
                 className={`w-full text-[9px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black py-1 rounded font-bold active:brightness-90 transition shadow-sm flex items-center justify-center gap-1 ${joiningSyncWith === user.id ? 'opacity-80 cursor-wait' : ''}`}
               >
                 {joiningSyncWith === user.id ? (

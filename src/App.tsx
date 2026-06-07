@@ -5989,7 +5989,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       return
     }
 
-    if (syncPartnerId || joiningSyncWith === partnerId) return
+    if (syncPartnerId) {
+      toast.info('Ya tienes un EntrenaSync activo', { description: 'Termina la sesión actual o abre la Arena.' })
+      return
+    }
+    if (joiningSyncWith === partnerId) return
 
     if (!isDemoMode && !firebaseUser?.uid) {
       console.warn('startSyncWith: no real firebaseUser uid, cannot start real EntrenaSync')
@@ -6027,12 +6031,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         await saveUserWithRealSync(updated as any)
 
         const { doc, setDoc } = await import('firebase/firestore')
-        const uids = [effectiveUserId, partnerId].sort()
+        const uids = [firebaseUser.uid, partnerId].sort()
         const sessionId = `sync_${uids[0]}_${uids[1]}`
         const sessionRef = doc(db, 'syncSessions', sessionId)
         const baseVibe = 12
         await setDoc(sessionRef, {
-          participants: [effectiveUserId, partnerId],
+          participants: uids,
           startedAt: syncAt,
           actions: [],
           vibe: baseVibe,
@@ -6054,12 +6058,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       })
       try { confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } }) } catch {}
       addDebugLog(`EntrenaSync started with ${partnerName}`)
-    } catch (e) {
+    } catch (e: any) {
       console.warn('startSyncWith failed', e)
+      const isPerm = e?.code === 'permission-denied' || `${e?.message || e}`.includes('permission')
       setSyncPartnerId(null)
       syncPartnerIdRef.current = null
       setShowSyncArena(false)
-      toast.error('No se pudo iniciar EntrenaSync', { description: 'Revisa tu conexión e intenta de nuevo.' })
+      toast.error('No se pudo iniciar EntrenaSync', {
+        description: isPerm
+          ? 'Permisos Firestore en syncSessions — avisa al admin o reintenta en unos segundos.'
+          : 'Revisa tu conexión e intenta de nuevo.',
+      })
     } finally {
       setJoiningSyncWith(null)
     }
@@ -8516,7 +8525,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     if (!profile) return
 
     if (direction === 'right') {
-      if (likedIds.includes(profileId)) return
+      const alreadyLiked = likedIds.includes(profileId)
+
+      if (!alreadyLiked) {
       const newLiked = [...likedIds, profileId]
       saveLiked(newLiked)
 
@@ -8569,6 +8580,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         } else {
           toast('Like enviado', { description: `A ${profile.name} le avisaremos si hay match` })
         }
+      }
       }
 
       // === KILLER LIVE FEATURE: "someone joined my live" flow ===
@@ -9191,7 +9203,15 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                     <div className="flex flex-col gap-1 self-center">
                       <button 
                         disabled={joiningSyncWith === user.id}
-                        onClick={(e) => { e.stopPropagation(); if (syncBonds[user.id]) { startSyncWith(user.id, user.name); setShowLiveModal(false); } else { handleSwipe(user.id, 'right'); setShowLiveModal(false); } }} 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setShowLiveModal(false)
+                          if (currentUser?.trainingNow && isUserLive(user.id)) {
+                            startSyncWith(user.id, user.name)
+                          } else {
+                            handleSwipe(user.id, 'right')
+                          }
+                        }} 
                         className={`text-[10px] ${syncBonds[user.id] ? 'bg-[#FFD700] text-black' : 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black'} px-3 py-1 rounded font-semibold active:brightness-90 flex items-center justify-center gap-1 ${joiningSyncWith === user.id ? 'opacity-80 cursor-wait' : ''}`}
                       >
                         {joiningSyncWith === user.id ? '⏳ Abriendo EntrenaSync...' : (syncBonds[user.id] ? `🔥 RE-SYNC RED (NP+)` : `🔥 Entrenar juntos (Sync) ${userLocation && user.distance < 900 ? `(${user.distance.toFixed(0)}km)` : ''}`)}
@@ -10876,7 +10896,15 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           <div className="absolute bottom-0 left-0 h-0.5 bg-white/30" style={{width: `${Math.max(5, Math.min(100, (90 - Math.floor((Date.now() - showFullProfile.trainingNowSince + 90*60*1000 - Date.now())/60000 ))/90 * 100))}%`}}></div>
                         )}
                       </div>
-                      <button onClick={() => { handleSwipe(showFullProfile.id, 'right'); setShowFullProfile(null); /* live join toast + auto muro comment handled inside handleSwipe for consistency */ }} className="mt-1 w-full py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-bold active:bg-[#16a34a]">🔥 Entrenar juntos — abrir EntrenaSync ahora</button>
+                      <button onClick={() => {
+                        const p = showFullProfile
+                        setShowFullProfile(null)
+                        if (currentUser?.trainingNow && isUserLive(p.id)) {
+                          startSyncWith(p.id, p.name)
+                        } else {
+                          handleSwipe(p.id, 'right')
+                        }
+                      }} className="mt-1 w-full py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-bold active:bg-[#16a34a]">🔥 Entrenar juntos — abrir EntrenaSync ahora</button>
                     </>
                   )}
                   {currentUser && (
