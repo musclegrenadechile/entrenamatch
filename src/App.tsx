@@ -1567,6 +1567,7 @@ useEffect(() => {
   const [isTogglingLive, setIsTogglingLive] = useState(false) // prevent double-tap and show loading on the live toggle button (fixes stuck click)
 
   // Dedicated source of truth for currently live users coming from a where('trainingNow'==true) listener.
+  const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
   // This guarantees that people who activated "Entrenando Ahora" appear for others on the GymPulse even if their
   // profile doc is not among the top-N most recently updatedAt (many other writes can push long-running lives out of a simple recent query).
   const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
@@ -2393,92 +2394,78 @@ useEffect(() => {
     return () => { if (unsub) unsub(); };
   }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, blockedUsers]); // blockedUsers to re-filter if changes
 
-  // DEDICATED REALTIME LISTENER FOR LIVE USERS ONLY (where trainingNow == true).
-  // This is the key fix so that "Entrenando Ahora" always propagates to other clients' GymPulse maps
-  // reliably, even if the user has been live for a long time and other profile writes have made their
-  // updatedAt fall out of a simple "top 150 recent" query.
-  useEffect(() => {
-    if (isDemoMode || !db || !isFirebaseConfigured) return undefined
+  // === DEDICATED REALTIME LISTENER FOR LIVE USERS (GymPulse Map Fix) ===
+const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
 
-    let unsubLive: any = null
-    ;(async () => {
-      try {
-        const { collection, onSnapshot, query, where, limit: fsLimit } = await import('firebase/firestore')
-        const profilesRef = collection(db, 'profiles')
-        // We intentionally do NOT orderBy here; the where gives us exactly the current lives.
-        // Limit high enough for pre-alpha / small city.
-        const q = query(profilesRef, where('trainingNow', '==', true), fsLimit(100))
+useEffect(() => {
+  if (isDemoMode || !db || !isFirebaseConfigured) return
 
-        unsubLive = onSnapshot(q, (snapshot) => {
-          const liveOnes: any[] = []
-          const currentUid = currentUidRef.current
+  let unsubLive: (() => void) | null = null
 
-          snapshot.forEach((doc) => {
-            if (doc.id === currentUid) return
-            if (blockedUsersRef.current.includes(doc.id)) return
-            const data = doc.data() as any
-            if (data && data.name) {
-              liveOnes.push({
-                id: doc.id,
-                name: data.name,
-                age: data.age || 25,
-                gender: data.gender || 'hombre',
-                city: data.city || '',
-                country: data.country || 'Chile',
-                lat: data.lat || -33.0,
-                lng: data.lng || -71.0,
-                bio: data.bio || '',
-                photos: data.photos || [],
-                trainingTypes: data.trainingTypes || [],
-                goals: data.goals || [],
-                level: data.level || 'Intermedio',
-                availability: data.availability || ['Tarde'],
-                intensity: data.intensity,
-                verificationStatus: data.verificationStatus,
-                trainingNow: true, // we know from the where
-                trainingNowSince: normalizeTrainingSince(data.trainingNowSince),
-                liveStreak: data.liveStreak != null ? data.liveStreak : undefined,
-                lastLiveDate: data.lastLiveDate != null ? data.lastLiveDate : undefined,
-                liveJoins: data.liveJoins != null ? data.liveJoins : undefined,
-                joinedLiveStreak: data.joinedLiveStreak != null ? data.joinedLiveStreak : undefined,
-                trainingSyncWith: data.trainingSyncWith || undefined,
-                syncStreak: data.syncStreak != null ? data.syncStreak : undefined,
-                syncBonds: data.syncBonds || {},
-                retentionLevel: data.retentionLevel || 1,
-              })
-            }
-          })
-          setLiveUsersFromDedicated(liveOnes)
+  ;(async () => {
+    try {
+      const { collection, onSnapshot, query, where, limit: fsLimit } = await import('firebase/firestore')
+      const profilesRef = collection(db, 'profiles')
+      
+      const q = query(
+        profilesRef, 
+        where('trainingNow', '==', true), 
+        fsLimit(100)
+      )
 
-          // Keep the general realProfiles list's trainingNow flags in sync with reality.
-          // This prevents stale "still live" entries from the recent-profiles listener
-          // from keeping people visible after they deactivated.
-          setRealProfiles(prev => prev.map(p => {
-            const stillLiveEntry = liveOnes.find(l => l.id === p.id)
-            const shouldBeLive = !!stillLiveEntry
-            if (shouldBeLive !== !!p.trainingNow) {
-              return {
-                ...p,
-                trainingNow: shouldBeLive,
-                trainingNowSince: shouldBeLive ? (stillLiveEntry.trainingNowSince || p.trainingNowSince) : null
-              }
-            }
-            return p
-          }))
-        }, (err) => {
-          console.warn('live-only onSnapshot error', err)
-          // Attempt recovery: re-enable network (helps after WebChannel death)
-          import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
-          // Fallback: reload profiles so at least poll + general listener keep things somewhat fresh
-          loadRealProfiles().catch(() => {})
+      unsubLive = onSnapshot(q, (snapshot) => {
+        const liveOnes: any[] = []
+        const currentUid = currentUidRef.current
+
+        snapshot.forEach((doc) => {
+          if (doc.id === currentUid) return
+          if (blockedUsersRef.current.includes(doc.id)) return
+
+          const data = doc.data() as any
+          if (data && data.name) {
+            liveOnes.push({
+              id: doc.id,
+              name: data.name,
+              age: data.age || 25,
+              gender: data.gender || 'hombre',
+              city: data.city || '',
+              country: data.country || 'Chile',
+              lat: data.lat || -33.0,
+              lng: data.lng || -71.0,
+              bio: data.bio || '',
+              photos: data.photos || [],
+              trainingTypes: data.trainingTypes || [],
+              goals: data.goals || [],
+              level: data.level || 'Intermedio',
+              availability: data.availability || ['Tarde'],
+              intensity: data.intensity,
+              verificationStatus: data.verificationStatus,
+              trainingNow: true,
+              trainingNowSince: normalizeTrainingSince?.(data.trainingNowSince) || Date.now(),
+              liveStreak: data.liveStreak ?? undefined,
+              lastLiveDate: data.lastLiveDate ?? undefined,
+              liveJoins: data.liveJoins ?? undefined,
+              joinedLiveStreak: data.joinedLiveStreak ?? undefined,
+              trainingSyncWith: data.trainingSyncWith || undefined,
+              syncStreak: data.syncStreak ?? undefined,
+              syncBonds: data.syncBonds || {},
+              retentionLevel: data.retentionLevel || 1,
+            })
+          }
         })
-      } catch (e) {
-        console.warn('Failed to setup dedicated live listener', e)
-      }
-    })()
 
-    return () => { if (unsubLive) unsubLive(); }
-  }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, blockedUsers])
+        console.log(`✅ Live users dedicated listener: ${liveOnes.length} personas entrenando ahora`)
+        setLiveUsersFromDedicated(liveOnes)
+      })
+    } catch (err) {
+      console.error('Failed to setup live users listener', err)
+    }
+  })()
+
+  return () => {
+    unsubLive?.()
+  }
+}, [isDemoMode, db, isFirebaseConfigured]) // Dependencias mínimas
 
   // Own profile doc listener - keeps currentUser.trainingNow / streaks etc in sync if changed on another device or by server.
   // Uses doc-level so we get our own live status even though collection listeners skip self.
@@ -6479,7 +6466,78 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     })
     prevRedSyncStateRef.current = { ...prevRedSyncStateRef.current, ...currentRedSyncs }
   }, [liveTrainingNow, syncBonds, addNotification])
+// === DEDICATED REALTIME LISTENER FOR LIVE USERS (GymPulse Map Fix) ===
+const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
 
+useEffect(() => {
+  if (isDemoMode || !db || !isFirebaseConfigured) return
+
+  let unsubLive: (() => void) | null = null
+
+  ;(async () => {
+    try {
+      const { collection, onSnapshot, query, where, limit: fsLimit } = await import('firebase/firestore')
+      const profilesRef = collection(db, 'profiles')
+      
+      const q = query(
+        profilesRef, 
+        where('trainingNow', '==', true), 
+        fsLimit(100)
+      )
+
+      unsubLive = onSnapshot(q, (snapshot) => {
+        const liveOnes: any[] = []
+        const currentUid = currentUidRef.current
+
+        snapshot.forEach((doc) => {
+          if (doc.id === currentUid) return
+          if (blockedUsersRef.current.includes(doc.id)) return
+
+          const data = doc.data() as any
+          if (data && data.name) {
+            liveOnes.push({
+              id: doc.id,
+              name: data.name,
+              age: data.age || 25,
+              gender: data.gender || 'hombre',
+              city: data.city || '',
+              country: data.country || 'Chile',
+              lat: data.lat || -33.0,
+              lng: data.lng || -71.0,
+              bio: data.bio || '',
+              photos: data.photos || [],
+              trainingTypes: data.trainingTypes || [],
+              goals: data.goals || [],
+              level: data.level || 'Intermedio',
+              availability: data.availability || ['Tarde'],
+              intensity: data.intensity,
+              verificationStatus: data.verificationStatus,
+              trainingNow: true,
+              trainingNowSince: normalizeTrainingSince?.(data.trainingNowSince) || Date.now(),
+              liveStreak: data.liveStreak ?? undefined,
+              lastLiveDate: data.lastLiveDate ?? undefined,
+              liveJoins: data.liveJoins ?? undefined,
+              joinedLiveStreak: data.joinedLiveStreak ?? undefined,
+              trainingSyncWith: data.trainingSyncWith || undefined,
+              syncStreak: data.syncStreak ?? undefined,
+              syncBonds: data.syncBonds || {},
+              retentionLevel: data.retentionLevel || 1,
+            })
+          }
+        })
+
+        console.log(`✅ Live users dedicated listener: ${liveOnes.length} personas entrenando ahora`, liveOnes)
+        setLiveUsersFromDedicated(liveOnes)
+      })
+    } catch (err) {
+      console.error('Failed to setup live users listener', err)
+    }
+  })()
+
+  return () => {
+    unsubLive?.()
+  }
+}, [isDemoMode, db, isFirebaseConfigured])
   // Real-time Live Map effect — MOVED to GymPulseMap component (modularization 2026-06-05).
   // The entire block (init + debounced marker/ripple/partner rendering) now lives in src/components/map/GymPulseMap.tsx
   // This useEffect is kept as a no-op stub during transition to avoid hook count / TDZ issues.
@@ -7106,59 +7164,59 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               </div>
 
               {showLiveMap && (
-                <div className="relative z-10" style={{ minHeight: '340px' }}>
-                  {/* Map widget owns its 340px inner + floating chrome; this wrapper ensures dev form overlays correctly at bottom of map area */}
-                  <GymPulseMap
-                    ref={gymPulseMapRef}
-                    showLiveMap={showLiveMap}
-                    liveTrainingNow={mapLiveTrainingNow}
-                    ritualRipples={ritualRipples}
-                    partnerLocations={partnerLocations}
-                    echoPins={echoPins || []}
-                    userLocation={userLocation}
-                    mapNearOnly={mapNearOnly}
-                    selectedMapZone={selectedMapZone}
-                    showOnlyLegends={showOnlyLegends}
-                    showPartners={showPartners}
-                    mapForceTick={mapForceTick}
-                    syncBonds={syncBonds}
-                    isDeveloper={isDeveloper}
-                    isPlacingPartner={isPlacingPartner}
-                    isQuickAddPartner={isQuickAddPartner}
-                    selfIsLive={!!currentUser?.trainingNow}
-                    devTestCount={devTestLives.length}
+  <div className="relative z-10" style={{ minHeight: '340px' }}>
+    <GymPulseMap
+      ref={gymPulseMapRef}
+      showLiveMap={showLiveMap}
+      liveTrainingNow={mapLiveTrainingNow}
+      liveUsersFromDedicated={liveUsersFromDedicated}
+      ritualRipples={ritualRipples}
+      partnerLocations={partnerLocations}
+      echoPins={echoPins || []}
+      userLocation={userLocation}
+      mapNearOnly={mapNearOnly}
+      selectedMapZone={selectedMapZone}
+      showOnlyLegends={showOnlyLegends}
+      showPartners={showPartners}
+      mapForceTick={mapForceTick}
+      syncBonds={syncBonds}
+      isDeveloper={isDeveloper}
+      isPlacingPartner={isPlacingPartner}
+      isQuickAddPartner={isQuickAddPartner}
+      selfIsLive={!!currentUser?.trainingNow}
+      devTestCount={devTestLives.length}
 
-                    // New control callbacks (widget now manages its own filter/legend/dev buttons)
-                    onMapNearOnlyChange={setMapNearOnly}
-                    onSelectedMapZoneChange={setSelectedMapZone}
-                    onShowOnlyLegendsChange={setShowOnlyLegends}
-                    onShowPartnersChange={(v) => { setShowPartners(v); setMapForceTick(t => t + 1) }}
-                    onOpenAddPartner={openAddPartner}
-                    onOpenManagePartners={openManagePartners}
-                    onToggleQuickAdd={(next) => { setIsQuickAddPartner(next); if (next) toast('Modo ADD RÁPIDO activado'); else toast('Modo add rápido OFF') }}
-                    onLogoutDeveloper={logoutDeveloper}
-                    onAddPartnerAtCurrentCenter={addPartnerAtCurrentCenter}
-                    onReloadPartners={reloadPartners}
-                    onSpawnTestLives={spawnDevTestLives}
-                    onClearDevTestLives={clearDevTestLives}
+      // New control callbacks (widget now manages its own filter/legend/dev buttons)
+      onMapNearOnlyChange={setMapNearOnly}
+      onSelectedMapZoneChange={setSelectedMapZone}
+      onShowOnlyLegendsChange={setShowOnlyLegends}
+      onShowPartnersChange={(v) => { setShowPartners(v); setMapForceTick(t => t + 1) }}
+      onOpenAddPartner={openAddPartner}
+      onOpenManagePartners={openManagePartners}
+      onToggleQuickAdd={(next) => { setIsQuickAddPartner(next); if (next) toast('Modo ADD RÁPIDO activado'); else toast('Modo add rápido OFF') }}
+      onLogoutDeveloper={logoutDeveloper}
+      onAddPartnerAtCurrentCenter={addPartnerAtCurrentCenter}
+      onReloadPartners={reloadPartners}
+      onSpawnTestLives={spawnDevTestLives}
+      onClearDevTestLives={clearDevTestLives}
 
-                    onShowProfile={setShowFullProfile}
-                    onStartSync={startSyncWith}
-                    onWitnessEchoPin={witnessEchoPin}
-                    onWitnessRipple={witnessRipple}
-                    onPartnerPositionSelected={async (lat, lng) => {
-                      if (isQuickAddPartnerRef.current && isDeveloper) {
-                        // Quick add mode: create minimal partner immediately on map click (great for rapid dev iteration)
-                        const pid = 'partner-' + Date.now()
-                        const minimal: any = {
-                          id: pid,
-                          name: 'Nueva Tienda ' + new Date().toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit'}),
-                          lat, lng,
-                          type: 'gym',
-                          address: 'Agregada rápido por dev',
-                          addedAt: new Date().toISOString(),
-                          updatedAt: new Date().toISOString(),
-                        }
+      onShowProfile={setShowFullProfile}
+      onStartSync={startSyncWith}
+      onWitnessEchoPin={witnessEchoPin}
+      onWitnessRipple={witnessRipple}
+      onPartnerPositionSelected={async (lat, lng) => {
+        if (isQuickAddPartnerRef.current && isDeveloper) {
+          // Quick add mode: create minimal partner immediately on map click (great for rapid dev iteration)
+          const pid = 'partner-' + Date.now()
+          const minimal: any = {
+            id: pid,
+            name: 'Nueva Tienda ' + new Date().toLocaleTimeString('es-CL', {hour:'2-digit', minute:'2-digit'}),
+            lat, lng,
+            type: 'gym',
+            address: 'Agregada rápido por dev',
+            addedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
                         // Never include logoUrl if no logo (Firestore rejects undefined)
                         // Will be added later when editing in the auto-opened form.
                         setPartnerLocations(prev => [...prev, minimal])
