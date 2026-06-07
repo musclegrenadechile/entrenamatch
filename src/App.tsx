@@ -3120,6 +3120,10 @@ const sanitizeForFirestore = (obj: any): any => {
         if (user.currentDailyChallenge !== undefined) {
           profileUpdate.currentDailyChallenge = user.currentDailyChallenge;
         }
+        // ✅ LIMPIEZA FINAL ANTES DE FIRESTORE
+        const cleanProfileUpdate = sanitizeForFirestore(profileUpdate);
+
+        await setDoc(doc(db, "profiles", firebaseUser.uid), cleanProfileUpdate, { merge: true });
 
         // Resilient write with one retry + network reset for the exact class of internal SDK crashes
         // ("mutations" undefined, b815 Unexpected state) that surface after transport errors.
