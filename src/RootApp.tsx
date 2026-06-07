@@ -7,14 +7,6 @@ import { PublicAuthPage } from './pages/PublicAuthPage';
 
 const LazyApp = lazy(() => import('./App'));
 
-function hasSessionStorageAuthOk(): boolean {
-  try {
-    return sessionStorage.getItem('entrenamatch_auth_ok') === '1';
-  } catch {
-    return false;
-  }
-}
-
 export default function RootApp() {
   const { currentUser: firebaseUser, loading: authBooting, isDemoMode } = useAuth();
   const { currentUser: localProfile } = useProfile();
@@ -22,7 +14,7 @@ export default function RootApp() {
 
   const isAuthenticated = useMemo(() => {
     if (isDemoMode) return !!localProfile || isDemoAuthenticated;
-    return !!firebaseUser || hasSessionStorageAuthOk();
+    return !!firebaseUser;
   }, [isDemoMode, localProfile, isDemoAuthenticated, firebaseUser]);
 
   if (authBooting && !isDemoMode) {

@@ -2913,7 +2913,7 @@ useEffect(() => {
         const data = d.data() as any
         const started = data.startedAt || 0
         const ended = data.endedAt || 0
-        const isActive = !ended && (now - started < 3 * 60 * 60 * 1000)
+        const isActive = !ended && (Date.now() - started < 3 * 60 * 60 * 1000)
         if (isActive) {
           count++
           if (pairs.length < 2 && data.participants?.length === 2) {
@@ -4430,7 +4430,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     if (savedNotifications) {
       let loaded = JSON.parse(savedNotifications)
       // Auto-clean old read notifications to keep panel tidy (keep recent read + all unread)
-      loaded = loaded.filter((n: any) => !n.read || (now - (n.timestamp || 0)) < 1000*60*60*24*7 ) // keep unread + last 7 days read
+      loaded = loaded.filter((n: any) => !n.read || (Date.now() - (n.timestamp || 0)) < 1000*60*60*24*7 ) // keep unread + last 7 days read
       setNotifications(loaded.slice(0, 30))
       if (loaded.length !== JSON.parse(savedNotifications).length) {
         localStorage.setItem('entrenamatch_notifications', JSON.stringify(loaded))
