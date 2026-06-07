@@ -27,6 +27,13 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
+    // GymPulse live presence — one doc per live user (deleted when offline)
+    match /livePresence/{userId} {
+      allow read: if true;
+      allow create, update: if isAuthenticated() && request.auth.uid == userId;
+      allow delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+
     // Likes (for real matching logic, written by the liker)
     match /likes/{likeId} {
       allow create, update: if isAuthenticated() && request.auth.uid == request.resource.data.liker;

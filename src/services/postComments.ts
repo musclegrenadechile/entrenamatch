@@ -75,7 +75,9 @@ export async function fetchPostComments(
     const fromSub = snap.docs
       .map((d) => normalizePostComment({ id: d.id, ...d.data() }))
       .filter(Boolean) as PostComment[]
-    if (fromSub.length > 0) return fromSub
+    if (fromSub.length > 0) {
+      return mergeCommentLists(fromSub, normalizeInlineComments(inlineFallback))
+    }
   } catch (e) {
     console.warn('fetchPostComments subcollection failed, using inline fallback', postId, e)
   }
@@ -89,7 +91,7 @@ export async function writeCommentToFirestore(
   sanitize: (obj: unknown) => unknown
 ): Promise<boolean> {
   try {
-    const { doc, setDoc, updateDoc, serverTimestamp } = await import('firebase/firestore')
+    const { doc, setDoc, updateDoc, serverTimestamp, increment } = await import('firebase/firestore')
     const payload = sanitize({
       userId: comment.userId,
       userName: comment.userName,
@@ -101,7 +103,7 @@ export async function writeCommentToFirestore(
     try {
       await updateDoc(doc(db, 'profilePosts', postId), {
         lastCommentAt: serverTimestamp(),
-        commentCount: (await import('firebase/firestore')).increment(1),
+        commentCount: increment(1),
       })
     } catch {
       // non-critical metadata
@@ -131,61 +133,7 @@ export async function deleteCommentFromFirestore(
   }
 }
 
-export function subscribePostComments(
-  db: Firestore,
-  postId: string,
-  onUpdate: (comments: PostComment[]) => void,
-  inlineFallback?: unknown
-): () => void {
-  let cancelled = false
-  ;(async () => {
-    try {
-      const { collection, onSnapshot, query, orderBy } = await import('firebase/firestore')
-      const q = query(
-        collection(db, 'profilePosts', postId, 'comments'),
-        orderBy('timestamp', 'asc')
-      )
-      const unsub = onSnapshot(
-        q,
-        (snap) => {
-          if (cancelled) return
-          const comments = snap.docs
-            .map((d) => normalizePostComment({ id: d.id, ...d.data() }))
-            .filter(Boolean) as PostComment[]
-          if (comments.length === 0 && inlineFallback) {
-            onUpdate(normalizeInlineComments(inlineFallback))
-          } else {
-            onUpdate(comments)
-          }
-        },
-        (err) => {
-          console.warn('subscribePostComments error', postId, err)
-          if (!cancelled && inlineFallback) {
-            onUpdate(normalizeInlineComments(inlineFallback))
-          }
-        }
-      )
-      return unsub
-    } catch (e) {
-      console.warn('subscribePostComments setup failed', e)
-      if (inlineFallback) onUpdate(normalizeInlineComments(inlineFallback))
-      return () => {}
-    }
-  })().then((unsub) => {
-    if (cancelled && unsub) unsub()
-    else if (unsub) {
-      ;(subscribePostComments as any)._lastUnsub = unsub
-    }
-  })
-
-  return () => {
-    cancelled = true
-    const u = (subscribePostComments as any)._lastUnsub
-    if (u) u()
-  }
-}
-
-/** Cleaner subscribe that returns unsub synchronously via callback pattern */
+/** Real-time listener for a post's comments subcollection. */
 export function attachPostCommentsListener(
   db: Firestore,
   postId: string,
@@ -196,31 +144,38 @@ export function attachPostCommentsListener(
   let cancelled = false
 
   ;(async () => {
-    const { collection, onSnapshot, query, orderBy } = await import('firebase/firestore')
-    const q = query(
-      collection(db, 'profilePosts', postId, 'comments'),
-      orderBy('timestamp', 'asc')
-    )
-    unsubFn = onSnapshot(
-      q,
-      (snap) => {
-        if (cancelled) return
-        const comments = snap.docs
-          .map((d) => normalizePostComment({ id: d.id, ...d.data() }))
-          .filter(Boolean) as PostComment[]
-        if (comments.length === 0 && inlineFallback) {
-          onUpdate(normalizeInlineComments(inlineFallback))
-        } else {
-          onUpdate(comments)
+    try {
+      const { collection, onSnapshot, query, orderBy } = await import('firebase/firestore')
+      const q = query(
+        collection(db, 'profilePosts', postId, 'comments'),
+        orderBy('timestamp', 'asc')
+      )
+      unsubFn = onSnapshot(
+        q,
+        (snap) => {
+          if (cancelled) return
+          const comments = snap.docs
+            .map((d) => normalizePostComment({ id: d.id, ...d.data() }))
+            .filter(Boolean) as PostComment[]
+          const inline = normalizeInlineComments(inlineFallback)
+          const merged = mergeCommentLists(comments, inline)
+          onUpdate(merged)
+        },
+        (err) => {
+          console.warn('post comments listener error', postId, err)
+          if (!cancelled && inlineFallback) {
+            onUpdate(normalizeInlineComments(inlineFallback))
+          }
         }
-      },
-      (err) => {
-        console.warn('post comments listener error', postId, err)
-        if (!cancelled && inlineFallback) {
-          onUpdate(normalizeInlineComments(inlineFallback))
-        }
+      )
+      if (cancelled) {
+        unsubFn()
+        unsubFn = null
       }
-    )
+    } catch (e) {
+      console.warn('attachPostCommentsListener setup failed', e)
+      if (inlineFallback) onUpdate(normalizeInlineComments(inlineFallback))
+    }
   })()
 
   return () => {

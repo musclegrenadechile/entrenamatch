@@ -37,10 +37,12 @@ export function mergeLiveUsersById(sources: LiveUserLike[][]): LiveUserLike[] {
     for (const p of list || []) {
       if (!p?.id) continue
       const prev = byId.get(p.id)
-      byId.set(p.id, { ...prev, ...p, trainingNow: true })
+      const merged = { ...prev, ...p }
+      merged.trainingNow = !!(p.trainingNow || prev?.trainingNow)
+      byId.set(p.id, merged)
     }
   }
-  return Array.from(byId.values())
+  return Array.from(byId.values()).filter((u) => u.trainingNow)
 }
 
 export function enrichLiveUser(
@@ -104,7 +106,12 @@ export function filterMapLiveUsers(
   })
 }
 
-export function profileDocToLiveUser(id: string, data: Record<string, any>): LiveUserLike {
+export function profileDocToLiveUser(
+  id: string,
+  data: Record<string, any>,
+  opts?: { forceLive?: boolean }
+): LiveUserLike {
+  const isLive = opts?.forceLive === true || data.trainingNow === true
   return {
     id,
     name: data.name || 'Usuario',
@@ -122,7 +129,7 @@ export function profileDocToLiveUser(id: string, data: Record<string, any>): Liv
     availability: data.availability || ['Tarde'],
     intensity: data.intensity,
     verificationStatus: data.verificationStatus,
-    trainingNow: true,
+    trainingNow: isLive,
     trainingNowSince: normalizeTrainingSince(data.trainingNowSince) || Date.now(),
     liveStreak: data.liveStreak,
     lastLiveDate: data.lastLiveDate,

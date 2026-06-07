@@ -87,6 +87,22 @@ import { AuthScreen } from './components/auth/AuthScreen'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { GymPulseMap } from './components/map' // Inicio de modularización 2026-06-05 (stub + estructura)
 import { db, isFirebaseConfigured } from './services/firebase'
+import {
+  attachPostCommentsListener,
+  createCommentId,
+  fetchPostComments,
+  mergeCommentLists,
+  writeCommentToFirestore,
+  deleteCommentFromFirestore,
+  type PostComment,
+} from './services/postComments'
+import { attachLiveUsersListener, patchRealProfilesWithLiveSnapshot } from './services/liveUsers'
+import {
+  attachLivePresenceListener,
+  writeLivePresence,
+  clearLivePresence,
+  buildLivePresencePayload,
+} from './services/livePresence'
 import { requestPlayIntegrityToken, hasPositiveIntegrity, getLastIntegrityResult } from './services/playIntegrity'
 import { Capacitor } from '@capacitor/core'
 import { collection, query, where, getDocs, orderBy, limit, doc, onSnapshot } from 'firebase/firestore'
@@ -1412,6 +1428,8 @@ useEffect(() => {
   // Profile Muro / Wall posts - makes profiles feel alive (like FB wall)
   const [profilePosts, setProfilePosts] = useState<Record<string, ProfilePost[]>>({}) // userId -> posts array
   const profilePostsRef = useRef<Record<string, ProfilePost[]>>({})
+  const postCommentUnsubsRef = useRef<Record<string, () => void>>({})
+  const postCommentInlineFallbackRef = useRef<Record<string, unknown>>({})
   useEffect(() => { profilePostsRef.current = profilePosts }, [profilePosts])
   const [muroComposerText, setMuroComposerText] = useState('')
   const [muroComposerPhoto, setMuroComposerPhoto] = useState<string | null>(null)
@@ -1579,6 +1597,13 @@ useEffect(() => {
 
   // Dedicated source of truth: where('trainingNow'==true) listener (real mode) or demo synthesis.
   const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
+  const liveUsersFromDedicatedRef = useRef<any[]>([])
+  const liveFromPresenceRef = useRef<any[]>([])
+  const liveFromProfilesQueryRef = useRef<any[]>([])
+  useEffect(() => { liveUsersFromDedicatedRef.current = liveUsersFromDedicated }, [liveUsersFromDedicated])
+
+  const userLocationRef = useRef(userLocation)
+  useEffect(() => { userLocationRef.current = userLocation }, [userLocation])
 
   // Refs for current auth uid and blocked to avoid stale closures in onSnapshot callbacks (critical for live status skip-self and filtering)
   const currentUidRef = useRef<string | null>(null)
@@ -2072,14 +2097,34 @@ useEffect(() => {
   }, [userLocation])
 
   // === GYMPULSE LIVE PIPELINE ===
-  // Source of truth order: dedicated FS listener → realProfiles w/ trainingNow → optimistic self
+  // Sources (merged): livePresence collection (primary RT) + profiles trainingNow query (fallback) + optimistic self
+  const publishLiveSnapshot = useCallback((presence: any[], profilesQuery: any[]) => {
+    liveFromPresenceRef.current = presence
+    liveFromProfilesQueryRef.current = profilesQuery
+    const merged = mergeLiveUsersById([presence, profilesQuery])
+    liveUsersFromDedicatedRef.current = merged
+    setLiveUsersFromDedicated(merged)
+    setMapForceTick((t) => t + 1)
+    setRealProfiles((prev) => {
+      const next = patchRealProfilesWithLiveSnapshot(prev, merged, {
+        selfUid: currentUidRef.current,
+      })
+      if (next === prev) return prev
+      latestRealProfilesRef.current = next
+      try { localStorage.setItem('entrenamatch_last_live', JSON.stringify(next)) } catch {}
+      return next
+    })
+  }, [])
+
   const liveUsersMerged = useMemo(() => {
-    const fromDedicated = liveUsersFromDedicated || []
-    const fromReal = (realProfiles || []).filter((p: any) => p?.trainingNow)
     const selfEntry = buildSelfLiveEntry()
+    const fromRealFallback =
+      liveUsersFromDedicated.length === 0
+        ? (realProfiles || []).filter((p: any) => p?.trainingNow === true)
+        : []
     return mergeLiveUsersById([
-      fromDedicated,
-      fromReal,
+      liveUsersFromDedicated || [],
+      fromRealFallback,
       selfEntry ? [selfEntry] : [],
     ])
   }, [liveUsersFromDedicated, realProfiles, buildSelfLiveEntry])
@@ -2354,53 +2399,56 @@ useEffect(() => {
     return () => { if (unsub) unsub(); };
   }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, blockedUsers]); // blockedUsers to re-filter if changes
 
- // === DEDICATED REALTIME LISTENER FOR LIVE USERS (GymPulse — primary source of truth) ===
+ // === DEDICATED REALTIME LISTENERS FOR LIVE USERS (GymPulse) ===
+  // Primary: livePresence/{uid} docs (instant cross-user visibility)
+  // Secondary: profiles where trainingNow==true (legacy / backup)
   useEffect(() => {
-    if (isDemoMode || !db || !isFirebaseConfigured) return
+    if (isDemoMode || !db || !isFirebaseConfigured) {
+      liveFromPresenceRef.current = []
+      liveFromProfilesQueryRef.current = []
+      setLiveUsersFromDedicated([])
+      return undefined
+    }
 
-    let unsubLive: (() => void) | null = null
-    let cancelled = false
+    const blocked = () => blockedUsersRef.current
+    const onErr = () => {
+      const fallback = mergeLiveUsersById([
+        liveFromPresenceRef.current,
+        (latestRealProfilesRef.current || [])
+          .filter((p: any) => p?.trainingNow === true)
+          .map((p: any) => profileDocToLiveUser(p.id, p, { forceLive: true })),
+      ])
+      publishLiveSnapshot(fallback, liveFromProfilesQueryRef.current)
+    }
 
-    ;(async () => {
-      try {
-        const { collection, onSnapshot, query, where, limit: fsLimit } = await import('firebase/firestore')
-        const q = query(
-          collection(db, 'profiles'),
-          where('trainingNow', '==', true),
-          fsLimit(100)
-        )
+    const unsubPresence = attachLivePresenceListener(
+      db,
+      (users) => publishLiveSnapshot(users, liveFromProfilesQueryRef.current),
+      { getBlockedIds: blocked, onError: onErr }
+    )
 
-        unsubLive = onSnapshot(
-          q,
-          (snapshot) => {
-            if (cancelled) return
-            const liveOnes: any[] = []
-            snapshot.forEach((docSnap) => {
-              if (blockedUsersRef.current.includes(docSnap.id)) return
-              const data = docSnap.data() as any
-              if (!data?.trainingNow) return
-              liveOnes.push(profileDocToLiveUser(docSnap.id, data))
-            })
-            setLiveUsersFromDedicated(liveOnes)
-          },
-          (err) => {
-            console.warn('liveUsers dedicated listener error (fallback: realProfiles)', err)
-            const fallback = (latestRealProfilesRef.current || [])
-              .filter((p: any) => p?.trainingNow)
-              .map((p: any) => ({ ...p, trainingNow: true }))
-            setLiveUsersFromDedicated(fallback)
-          }
-        )
-      } catch (err) {
-        console.error('Failed to setup live users listener', err)
-      }
-    })()
+    const unsubProfiles = attachLiveUsersListener(
+      db,
+      (users) => publishLiveSnapshot(liveFromPresenceRef.current, users),
+      { getBlockedIds: blocked, onError: onErr }
+    )
 
     return () => {
-      cancelled = true
-      unsubLive?.()
+      unsubPresence()
+      unsubProfiles()
     }
-  }, [isDemoMode, db, isFirebaseConfigured])
+  }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, publishLiveSnapshot])
+
+  // Recover live listener after network blips (live toggle disables/enables network aggressively)
+  useEffect(() => {
+    if (isDemoMode || !db) return undefined
+    const onOnline = () => {
+      import('./services/firebase').then((m) => m.enableFirestoreNetwork?.()).catch(() => {})
+      setMapForceTick((t) => t + 1)
+    }
+    window.addEventListener('online', onOnline)
+    return () => window.removeEventListener('online', onOnline)
+  }, [isDemoMode, db])
 
   // Demo mode: synthesize liveUsersFromDedicated locally (no Firestore query).
   useEffect(() => {
@@ -3008,8 +3056,10 @@ useEffect(() => {
 const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   saveUser(user);
 
-  if (!isDemoMode && firebaseUser?.uid) {
+  if (!isDemoMode && firebaseUser?.uid && db) {
     try {
+      const loc = userLocationRef.current
+      const goingLive = !!user.trainingNow
       const profileUpdate: any = {
         name: user.name,
         age: user.age,
@@ -3023,10 +3073,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         level: user.level,
         intensity: user.intensity,
         availability: user.availability,
-        lat: user.lat,
-        lng: user.lng,
-        trainingNow: !!user.trainingNow,
-        trainingNowSince: user.trainingNow ? (user.trainingNowSince ?? Date.now()) : null,
+        lat: user.lat ?? loc?.lat ?? -33.02,
+        lng: user.lng ?? loc?.lng ?? -71.55,
+        trainingNow: goingLive,
+        trainingNowSince: goingLive ? (user.trainingNowSince ?? Date.now()) : null,
         liveStreak: user.liveStreak ?? null,
         lastLiveDate: user.lastLiveDate ?? null,
         joinedLiveStreak: user.joinedLiveStreak ?? null,
@@ -3038,13 +3088,38 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
       const cleanProfileUpdate = sanitizeForFirestore(profileUpdate);
 
+      // Optimistic: publish self to live pipeline immediately (before Firestore round-trip)
+      if (goingLive) {
+        const optimistic = profileDocToLiveUser(firebaseUser.uid, cleanProfileUpdate as any, { forceLive: true })
+        const nextPresence = mergeLiveUsersById([
+          liveFromPresenceRef.current.filter((u) => u.id !== firebaseUser.uid),
+          [optimistic],
+        ])
+        publishLiveSnapshot(nextPresence, liveFromProfilesQueryRef.current)
+      } else {
+        const nextPresence = liveFromPresenceRef.current.filter((u) => u.id !== firebaseUser.uid)
+        publishLiveSnapshot(nextPresence, liveFromProfilesQueryRef.current)
+      }
+
       await updateUserProfile(firebaseUser.uid, cleanProfileUpdate);
-      console.log("✅ Profile synced to Firestore");
+
+      if (goingLive) {
+        await writeLivePresence(
+          db,
+          buildLivePresencePayload(firebaseUser.uid, { ...user, ...profileUpdate }, loc),
+          sanitizeForFirestore
+        )
+      } else {
+        await clearLivePresence(db, firebaseUser.uid)
+      }
+
+      console.log('✅ Profile synced to Firestore', goingLive ? '(LIVE ON)' : '');
+      setMapForceTick((t) => t + 1)
     } catch (e) {
       console.warn('Failed to sync profile to Firestore:', e);
     }
   }
-}, [saveUser, isDemoMode, firebaseUser?.uid, updateUserProfile]);
+}, [saveUser, isDemoMode, firebaseUser?.uid, db, updateUserProfile, publishLiveSnapshot]);
   // Native push notifications setup (only for real users in native APK)
   // NOTE: We no longer auto-request permission on every login to avoid unwanted prompts/crashes during "activation".
   // Users explicitly activate via the button in Profile. This effect only sets up listeners if plugin present.
@@ -3252,7 +3327,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       const next = { ...prev, [uid]: merged }
       delete next['me']
       profilePostsRef.current = next
-      try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(next)) } catch {}
+      saveProfilePosts(next, { persistLocal: true })
       return next
     })
   }, [isDemoMode, firebaseUser?.uid])
@@ -4163,12 +4238,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       localStorage.setItem('entrenamatch_squads', JSON.stringify(seedSquads))
     }
 
-    // Load profile muro posts (demo/local)
-    const savedPosts = localStorage.getItem('entrenamatch_profile_posts')
-    if (savedPosts) {
-      const parsed = JSON.parse(savedPosts)
-      profilePostsRef.current = parsed
-      setProfilePosts(parsed)
+    // Load profile muro posts (demo/local only — real mode loads from Firestore)
+    if (isDemoMode) {
+      const savedPosts = localStorage.getItem('entrenamatch_profile_posts')
+      if (savedPosts) {
+        const parsed = JSON.parse(savedPosts)
+        profilePostsRef.current = parsed
+        setProfilePosts(parsed)
+      }
     }
 
     const savedBlocked = localStorage.getItem('entrenamatch_blocked')
@@ -4285,76 +4362,133 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     setSquads(newSquads)
   }
 
-  const saveProfilePosts = (posts: Record<string, ProfilePost[]>) => {
+  const saveProfilePosts = (posts: Record<string, ProfilePost[]>, opts?: { persistLocal?: boolean }) => {
     profilePostsRef.current = posts
-    localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(posts))
     setProfilePosts(posts)
+    // Real mode: Firestore is source of truth; localStorage is optional offline cache only
+    if (isDemoMode || opts?.persistLocal === true) {
+      try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(posts)) } catch {}
+    }
   }
+
+  /** Normalize legacy 'me' key → real Firebase uid for post lookups */
+  const resolvePostOwnerId = useCallback((postUserId: string): string => {
+    if (postUserId === 'me' && effectiveUserId) return effectiveUserId
+    if (postUserId === 'me' && firebaseUser?.uid) return firebaseUser.uid
+    return postUserId
+  }, [effectiveUserId, firebaseUser?.uid])
+
+  const applyCommentsToPost = useCallback((postId: string, remoteComments: PostComment[]) => {
+    setProfilePosts((prev) => {
+      let changed = false
+      const next: Record<string, ProfilePost[]> = { ...prev }
+      for (const uid of Object.keys(next)) {
+        const posts = next[uid] || []
+        const idx = posts.findIndex((p) => p.id === postId)
+        if (idx < 0) continue
+        const localComments = (posts[idx].comments || []) as PostComment[]
+        const merged = mergeCommentLists(remoteComments, localComments)
+        const same =
+          merged.length === localComments.length &&
+          merged.every((c, i) => c.id === localComments[i]?.id && c.text === localComments[i]?.text)
+        if (same) return prev
+        const updatedPosts = [...posts]
+        updatedPosts[idx] = { ...posts[idx], comments: merged as ProfilePost['comments'] }
+        next[uid] = updatedPosts
+        changed = true
+        break
+      }
+      if (!changed) return prev
+      profilePostsRef.current = next
+      if (isDemoMode) {
+        try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(next)) } catch {}
+      }
+      return next
+    })
+  }, [isDemoMode])
+
+  const ensurePostCommentsListener = useCallback((postId: string, inlineFallback?: unknown) => {
+    if (isDemoMode || !db || !postId) return
+    if (inlineFallback !== undefined) {
+      postCommentInlineFallbackRef.current[postId] = inlineFallback
+    }
+    if (postCommentUnsubsRef.current[postId]) return
+    const fallback = postCommentInlineFallbackRef.current[postId]
+    postCommentUnsubsRef.current[postId] = attachPostCommentsListener(
+      db,
+      postId,
+      (comments) => applyCommentsToPost(postId, comments),
+      fallback
+    )
+  }, [isDemoMode, applyCommentsToPost])
+
+  const releasePostCommentsListener = useCallback((postId: string) => {
+    const unsub = postCommentUnsubsRef.current[postId]
+    if (unsub) {
+      unsub()
+      delete postCommentUnsubsRef.current[postId]
+    }
+    delete postCommentInlineFallbackRef.current[postId]
+  }, [])
+
+  const subscribeCommentsForPosts = useCallback((posts: ProfilePost[]) => {
+    if (isDemoMode || !db) return
+    for (const p of posts) {
+      if (p?.id) ensurePostCommentsListener(p.id, p.comments || [])
+    }
+  }, [isDemoMode, ensurePostCommentsListener])
 
   // Muro / Profile Posts helpers (demo + real Firestore)
   const loadProfilePosts = async (userId: string) => {
+    const resolvedUserId = resolvePostOwnerId(userId)
     if (isDemoMode || !db) {
-      const posts = (profilePosts[userId] || []).slice().sort((a, b) => b.timestamp - a.timestamp)
+      const posts = (profilePostsRef.current[resolvedUserId] || profilePosts[resolvedUserId] || [])
+        .slice()
+        .sort((a, b) => b.timestamp - a.timestamp)
       return posts
     }
     try {
-      // NOTE: Query uses only `where` (no orderBy) to avoid requiring a composite index immediately.
-      // Client-side sort by timestamp desc ensures newest first for any viewer (A viewing B's muro).
-      // Composite index (userId ASC + timestamp DESC) is defined in firestore.indexes.json and can be deployed with:
-      //   firebase deploy --only firestore:indexes   (or via CI firebase-deploy.yml when secret configured)
-      // This makes cross-profile muro loads work right now without waiting for index build.
       const { collection, query, where, getDocs, limit } = await import('firebase/firestore')
       const q = query(
         collection(db, 'profilePosts'),
-        where('userId', '==', userId),
+        where('userId', '==', resolvedUserId),
         limit(30)
       )
       const snap = await getDocs(q)
       const posts: ProfilePost[] = []
-      snap.forEach((doc) => {
-        const d = doc.data() as any
-        const rawComments = d.comments || []
-        posts.push({
-          id: doc.id,
-          userId: d.userId,
-          text: d.text || '',
-          photo: d.photo,
-          timestamp: d.timestamp || Date.now(),
-          likes: d.likes || [],
-          pinned: !!d.pinned,
-          reactions: d.reactions || {},
-          comments: rawComments.map((c: any) => ({
-            id: c.id || ('c' + Date.now() + Math.random().toString(36).slice(2)),
-            userId: c.userId || '',
-            userName: c.userName || 'Usuario',
-            text: c.text || '',
-            timestamp: c.timestamp || Date.now()
-          }))
+      await Promise.all(
+        snap.docs.map(async (docSnap) => {
+          const d = docSnap.data() as any
+          const comments = await fetchPostComments(db, docSnap.id, d.comments || [])
+          posts.push({
+            id: docSnap.id,
+            userId: d.userId,
+            text: d.text || '',
+            photo: d.photo,
+            timestamp: d.timestamp || Date.now(),
+            likes: d.likes || [],
+            pinned: !!d.pinned,
+            reactions: d.reactions || {},
+            comments: comments as ProfilePost['comments'],
+          })
         })
-      })
-      // Always return newest-first (client sort; works regardless of index)
+      )
       posts.sort((a, b) => b.timestamp - a.timestamp)
       const limited = posts.slice(0, 10)
       const prevStore = profilePostsRef.current
-      const localForUser = prevStore[userId] || []
-      const merged = limited.map((fsPost) => {
-        const local = localForUser.find((p) => p.id === fsPost.id)
-        if (!local) return fsPost
-        const localComments = local.comments || []
-        const fsComments = fsPost.comments || []
-        if (localComments.length > fsComments.length) {
-          return { ...fsPost, comments: localComments, likes: local.likes?.length ? local.likes : fsPost.likes, reactions: { ...fsPost.reactions, ...local.reactions } }
-        }
-        return fsPost
-      })
-      const fsIds = new Set(merged.map((p) => p.id))
+      const localForUser = prevStore[resolvedUserId] || []
+      // Firestore wins; keep local-only posts not yet synced (optimistic create failures)
+      const fsIds = new Set(limited.map((p) => p.id))
       const localOnly = localForUser.filter((p) => !fsIds.has(p.id))
-      const finalList = [...localOnly, ...merged].slice(0, 10)
-      saveProfilePosts({ ...prevStore, [userId]: finalList })
+      const finalList = [...localOnly, ...limited].slice(0, 10)
+      saveProfilePosts({ ...prevStore, [resolvedUserId]: finalList })
+      subscribeCommentsForPosts(finalList)
       return finalList
     } catch (e) {
       console.warn('loadProfilePosts error', e)
-      const posts = (profilePosts[userId] || []).slice().sort((a, b) => b.timestamp - a.timestamp)
+      const posts = (profilePostsRef.current[resolvedUserId] || [])
+        .slice()
+        .sort((a, b) => b.timestamp - a.timestamp)
       return posts
     }
   }
@@ -4437,30 +4571,25 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           const current = prev[effectiveUserId] || []
           const newList = [post, ...current].slice(0, 10)
           const newState = { ...prev, [effectiveUserId]: newList }
-          try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+          profilePostsRef.current = newState
           return newState
         })
+        subscribeCommentsForPosts([post])
 
         if (activeTab === 'feed') {
           setTimeout(() => loadGlobalFeed().catch(() => {}), 300)
         }
       } catch (e) {
-        setProfilePosts((prev) => {
-          const current = prev[effectiveUserId] || []
-          const newList = [post, ...current].slice(0, 10)
-          const newState = { ...prev, [effectiveUserId]: newList }
-          try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
-          return newState
+        saveProfilePosts({
+          ...profilePostsRef.current,
+          [effectiveUserId]: [post, ...(profilePostsRef.current[effectiveUserId] || [])].slice(0, 10),
         })
       }
     } else {
-      setProfilePosts((prev) => {
-        const current = prev[effectiveUserId] || []
-        const newList = [post, ...current].slice(0, 10)
-        const newState = { ...prev, [effectiveUserId]: newList }
-        try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
-        return newState
-      })
+      saveProfilePosts({
+        ...profilePostsRef.current,
+        [effectiveUserId]: [post, ...(profilePostsRef.current[effectiveUserId] || [])].slice(0, 10),
+      }, { persistLocal: true })
     }
 
     // Delightful UX: highlight the new post briefly in lists (feed or personal muro) so user sees the result instantly
@@ -4507,7 +4636,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         await updateDoc(doc(db, 'profilePosts', postId), { likes: newLikes })
         setProfilePosts((prev) => {
           const newState = { ...prev, [postUserId]: newPosts }
-          try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+          profilePostsRef.current = newState
           return newState
         })
       } catch (e) {
@@ -4515,7 +4644,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       }
     } else {
       const updated = { ...profilePosts, [postUserId]: newPosts }
-      saveProfilePosts(updated)
+      saveProfilePosts(updated, { persistLocal: isDemoMode })
     }
     if (!hasLiked && postUserId !== effectiveUserId) {
       addNotification({
@@ -5100,45 +5229,26 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
   const findPostInProfilePosts = (postId: string, postUserId: string, source?: Record<string, ProfilePost[]>): PostLocation | null => {
     const store = source || profilePostsRef.current
+    const resolved = resolvePostOwnerId(postUserId)
     const tryUser = (uid: string): PostLocation | null => {
       const posts = store[uid] || []
       const idx = posts.findIndex((p) => p.id === postId)
       return idx >= 0 ? { posts, idx, resolvedUserId: uid } : null
     }
-    return tryUser(postUserId) || Object.keys(store).map(tryUser).find(Boolean) || null
-  }
-
-  const syncCommentToFirestore = async (postId: string, comment: Record<string, unknown>): Promise<boolean> => {
-    if (isDemoMode || !db || !firebaseUser?.uid) return true
-    try {
-      const { doc, getDoc, updateDoc, arrayUnion } = await import('firebase/firestore')
-      const postRef = doc(db, 'profilePosts', postId)
-      const snap = await getDoc(postRef)
-      if (!snap.exists()) return false
-      const payload = sanitizeForFirestore(comment)
-      try {
-        await updateDoc(postRef, { comments: arrayUnion(payload) })
-      } catch {
-        const existing = Array.isArray((snap.data() as any)?.comments) ? (snap.data() as any).comments : []
-        await updateDoc(postRef, { comments: [...existing, payload] })
-      }
-      return true
-    } catch (e) {
-      console.warn('syncCommentToFirestore failed', e)
-      return false
-    }
+    return tryUser(resolved) || tryUser(postUserId) || Object.keys(store).map(tryUser).find(Boolean) || null
   }
 
   const addCommentToPost = async (postId: string, postUserId: string, text: string): Promise<boolean> => {
     const trimmed = text.trim()
     if (!trimmed) return false
 
-    const comment = {
-      id: 'c' + Date.now(),
+    const comment: PostComment = {
+      id: createCommentId(),
       userId: effectiveUserId,
       userName: currentUser?.name || 'Tú',
       text: trimmed,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      _pending: !isDemoMode,
     }
 
     let hit = findPostInProfilePosts(postId, postUserId)
@@ -5153,16 +5263,21 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
     const post = hit.posts[hit.idx]
     const newPosts = [...hit.posts]
-    newPosts[hit.idx] = { ...post, comments: [...(post.comments || []), comment] }
-    const newState = { ...profilePostsRef.current, [hit.resolvedUserId]: newPosts }
-    saveProfilePosts(newState)
+    newPosts[hit.idx] = { ...post, comments: [...(post.comments || []), comment as ProfilePost['comments'][0]] }
+    saveProfilePosts(
+      { ...profilePostsRef.current, [hit.resolvedUserId]: newPosts },
+      { persistLocal: isDemoMode }
+    )
+    ensurePostCommentsListener(postId, post.comments || [])
 
-    const fsOk = await syncCommentToFirestore(postId, comment)
-    if (!fsOk && !isDemoMode && db && firebaseUser?.uid) {
-      toast('Comentario visible localmente', {
-        description: 'No se pudo sincronizar con el servidor. Se reintentará al recargar.',
-        duration: 3500
-      })
+    if (!isDemoMode && db && firebaseUser?.uid) {
+      const fsOk = await writeCommentToFirestore(db, postId, comment, sanitizeForFirestore)
+      if (!fsOk) {
+        toast('Comentario visible localmente', {
+          description: 'No se pudo guardar en el servidor. Se reintentará al sincronizar.',
+          duration: 3500,
+        })
+      }
     }
 
     if (hit.resolvedUserId !== effectiveUserId) {
@@ -5170,7 +5285,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         type: 'message',
         title: 'Comentario en tu muro',
         body: `${currentUser?.name || 'Alguien'}: ${trimmed.substring(0, 60)}`,
-        relatedId: hit.resolvedUserId
+        relatedId: hit.resolvedUserId,
       })
     }
     return true
@@ -5189,7 +5304,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     const postToDelete = current.find(p => p.id === postId)
     const newList = current.filter(p => p.id !== postId)
     const updated = { ...profilePosts, [postUserId]: newList }
-    saveProfilePosts(updated)  // delete uses save (LS + state) - triggers AnimatePresence exit
+    saveProfilePosts(updated, { persistLocal: isDemoMode })  // delete uses save — triggers AnimatePresence exit
 
     // Spectacular UX: undo toast for delete
     toast.success('Publicación eliminada', {
@@ -5326,8 +5441,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
   const startComment = (postId: string, postUserId: string, ownerName?: string) => {
     const hit = findPostInProfilePosts(postId, postUserId)
-    setActiveComment({ postId, postUserId: hit?.resolvedUserId || postUserId, ownerName })
+    setActiveComment({ postId, postUserId: hit?.resolvedUserId || resolvePostOwnerId(postUserId), ownerName })
     setCommentDraft('')
+    if (hit) ensurePostCommentsListener(postId, hit.posts[hit.idx]?.comments || [])
   }
   const submitComment = async () => {
     const target = activeComment
@@ -5355,12 +5471,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     const hit = findPostInProfilePosts(postId, postUserId)
     setViewingPostComments({
       postId,
-      postUserId: hit?.resolvedUserId || postUserId,
+      postUserId: hit?.resolvedUserId || resolvePostOwnerId(postUserId),
       ownerName
     })
     setModalCommentDraft('')
     setActiveComment(null)
     setCommentDraft('')
+    if (hit) ensurePostCommentsListener(postId, hit.posts[hit.idx]?.comments || [])
+    else ensurePostCommentsListener(postId, [])
   }
 
   const submitModalComment = async () => {
@@ -5393,19 +5511,43 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     const newComments = (post.comments || []).filter((c: any) => c.id !== commentId)
     const newPosts = [...hit.posts]
     newPosts[hit.idx] = { ...post, comments: newComments }
-    saveProfilePosts({ ...profilePostsRef.current, [hit.resolvedUserId]: newPosts })
+    saveProfilePosts(
+      { ...profilePostsRef.current, [hit.resolvedUserId]: newPosts },
+      { persistLocal: isDemoMode }
+    )
 
     if (!isDemoMode && db && firebaseUser?.uid) {
-      try {
-        const { doc, updateDoc } = await import('firebase/firestore')
-        await updateDoc(doc(db, 'profilePosts', postId), { comments: newComments })
-      } catch (e) {
-        console.warn(e)
+      const ok = await deleteCommentFromFirestore(db, postId, commentId)
+      if (!ok) {
         toast.error('No se pudo eliminar en el servidor')
       }
     }
     toast.success('Comentario eliminado')
   }
+
+  // Cleanup Firestore comment listeners on unmount
+  useEffect(() => {
+    return () => {
+      Object.keys(postCommentUnsubsRef.current).forEach((postId) => {
+        postCommentUnsubsRef.current[postId]?.()
+      })
+      postCommentUnsubsRef.current = {}
+      postCommentInlineFallbackRef.current = {}
+    }
+  }, [])
+
+  // Real-time comments while modal or inline composer is open
+  useEffect(() => {
+    if (isDemoMode || !db) return
+    if (viewingPostComments?.postId) {
+      const hit = findPostInProfilePosts(viewingPostComments.postId, viewingPostComments.postUserId)
+      ensurePostCommentsListener(viewingPostComments.postId, hit?.posts[hit?.idx ?? -1]?.comments || [])
+    }
+    if (activeComment?.postId) {
+      const hit = findPostInProfilePosts(activeComment.postId, activeComment.postUserId)
+      ensurePostCommentsListener(activeComment.postId, hit?.posts[hit?.idx ?? -1]?.comments || [])
+    }
+  }, [isDemoMode, viewingPostComments, activeComment, ensurePostCommentsListener])
 
   // Edit own muro post (inline for spectacular UX, no prompt)
   const startEditPost = (postId: string, postUserId: string, currentText: string) => {
@@ -10417,17 +10559,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                       setIsTogglingLive(true);
                       const oldTrainingNow = currentUser.trainingNow;
                       try {
-                        // Same pre-write reset as terminate path: ensures clean Firestore write pipeline
-                        // so start live doesn't hit the mutations/b815 assertion after prior transport issues.
-                        try {
-                          const fb = await import('./services/firebase');
-                          await fb.disableFirestoreNetwork?.();
-                          await new Promise(r => setTimeout(r, 110));
-                          await fb.enableFirestoreNetwork?.();
-                          await new Promise(r => setTimeout(r, 70));
-                        } catch (resetErr) {
-                          console.warn('pre-start network reset non-fatal', resetErr);
-                        }
                         const newVal = !oldTrainingNow;
                         if (newVal) {
                           await requestUserLocation().catch(() => {});
@@ -10459,14 +10590,22 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           }
                           streakUpdate = { liveStreak: newStreak, lastLiveDate: Date.now(), joinedLiveStreak: (currentUser.joinedLiveStreak || 0) + (lastStr && lastStr !== todayStr ? 1 : (lastStr ? 0 : 1)) }
                         }
-                        const updated = { ...currentUser, trainingNow: newVal, trainingNowSince: newVal ? Date.now() : undefined, ...streakUpdate, ...( !newVal ? { trainingSyncWith: null, syncStartedAt: null } : {} ) }
+                        const loc = userLocationRef.current
+                        const updated = {
+                          ...currentUser,
+                          trainingNow: newVal,
+                          trainingNowSince: newVal ? Date.now() : undefined,
+                          ...(newVal && loc ? { lat: loc.lat, lng: loc.lng } : {}),
+                          ...streakUpdate,
+                          ...( !newVal ? { trainingSyncWith: null, syncStartedAt: null } : {} )
+                        }
                         
                         pendingLiveWriteRef.current = { trainingNow: !!newVal, at: Date.now() };
                         await saveUserWithRealSync(updated as CurrentUser)
-                        
+
+                        pendingLiveWriteRef.current = null
                         loadRealProfiles().catch(() => {})
                         setMapForceTick(t => t + 1)
-                        import('./services/firebase').then(m => m.enableFirestoreNetwork?.()).catch(() => {})
                         toast(newVal ? '🟢 ¡Entrenando Ahora (EN VIVO) activado!' : 'Entrenamiento finalizado')
                         checkAndUpdateDailyPulse(updated)
                         if (dailyPulse?.currentChallenge?.type === 'solo') {
