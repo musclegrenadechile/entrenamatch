@@ -1,4 +1,4 @@
-// ✅ Build limpio después de revert - 06/06/2026
+// ✅ Build limpio después de revert V2 - 06/06/2026
 // @ts-nocheck
 import { useState, useEffect, useMemo, useCallback, useRef, Component, type ReactNode, type ChangeEvent } from 'react'
 import * as L from 'leaflet'
