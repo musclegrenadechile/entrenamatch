@@ -1,0 +1,220 @@
+import { motion } from 'framer-motion'
+import {
+  buildDuelMetrics,
+  computeSyncDuel,
+  type SyncDuelAction,
+} from '../../utils/syncDuel'
+
+export interface SyncDuelSummaryProps {
+  open: boolean
+  selfName: string
+  selfPhoto?: string
+  partnerName: string
+  partnerPhoto?: string
+  partnerId: string
+  effectiveUserId: string
+  minutes: number
+  vibe: number
+  witnessCount: number
+  setsLogged: number
+  actions: SyncDuelAction[]
+  isNetworkBond?: boolean
+  bondLevel?: number
+  onClose: () => void
+  onResync: (partnerId: string) => void
+  onReplay: () => void
+  onRate?: (rating: number) => void
+}
+
+export function SyncDuelSummary({
+  open,
+  selfName,
+  selfPhoto,
+  partnerName,
+  partnerPhoto,
+  partnerId,
+  effectiveUserId,
+  minutes,
+  vibe,
+  witnessCount,
+  setsLogged,
+  actions,
+  isNetworkBond,
+  bondLevel = 1,
+  onClose,
+  onResync,
+  onReplay,
+  onRate,
+}: SyncDuelSummaryProps) {
+  if (!open) return null
+
+  const duel = computeSyncDuel(
+    actions,
+    effectiveUserId,
+    selfName,
+    partnerId,
+    partnerName
+  )
+  const metrics = buildDuelMetrics(duel)
+  const partnerFirst = partnerName.split(' ')[0] || 'Compañero'
+  const showRating = minutes >= 3 && !!onRate
+
+  return (
+    <div
+      className="sync-duel-overlay"
+      role="dialog"
+      aria-label="Resumen duelo EntrenaSync"
+      onClick={onClose}
+    >
+      <motion.div
+        className="sync-duel-card"
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.32, ease: 'easeOut' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="sync-duel-card__eyebrow">DUELO POST-SYNC</p>
+        <h2 className="sync-duel-card__headline">{duel.headline}</h2>
+        <p className="sync-duel-card__subline">{duel.subline}</p>
+
+        <div className="sync-duel-card__versus">
+          <div
+            className={`sync-duel-card__fighter ${
+              duel.winner === 'self' ? 'sync-duel-card__fighter--win' : ''
+            }`}
+          >
+            {selfPhoto ? (
+              <img src={selfPhoto} alt="" className="sync-duel-card__avatar" />
+            ) : (
+              <span className="sync-duel-card__avatar sync-duel-card__avatar--fallback">
+                {duel.self.name.charAt(0)}
+              </span>
+            )}
+            <span className="sync-duel-card__name">{duel.self.name}</span>
+            <span className="sync-duel-card__score">{duel.self.score}</span>
+            {duel.winner === 'self' && (
+              <span className="sync-duel-card__badge">Ganador</span>
+            )}
+          </div>
+
+          <div className="sync-duel-card__vs" aria-hidden>
+            VS
+          </div>
+
+          <div
+            className={`sync-duel-card__fighter ${
+              duel.winner === 'partner' ? 'sync-duel-card__fighter--win' : ''
+            }`}
+          >
+            {partnerPhoto ? (
+              <img src={partnerPhoto} alt="" className="sync-duel-card__avatar" />
+            ) : (
+              <span className="sync-duel-card__avatar sync-duel-card__avatar--fallback">
+                {duel.partner.name.charAt(0)}
+              </span>
+            )}
+            <span className="sync-duel-card__name">{duel.partner.name}</span>
+            <span className="sync-duel-card__score">{duel.partner.score}</span>
+            {duel.winner === 'partner' && (
+              <span className="sync-duel-card__badge">Ganador</span>
+            )}
+          </div>
+        </div>
+
+        <div className="sync-duel-card__session">
+          <span>{minutes} min</span>
+          <span>Sync {vibe}%</span>
+          {setsLogged > 0 && <span>{setsLogged} sets</span>}
+          {witnessCount > 0 && <span>{witnessCount} testigos</span>}
+          {isNetworkBond && (
+            <span className="text-[#FFD700]">⭐ RED LV{bondLevel}</span>
+          )}
+        </div>
+
+        <div className="sync-duel-card__metrics">
+          {metrics.map((row) => {
+            const total = row.self + row.partner
+            const selfPct = total > 0 ? (row.self / total) * 100 : 50
+            const partnerPct = total > 0 ? (row.partner / total) * 100 : 50
+            const selfLeads = row.self > row.partner
+            const partnerLeads = row.partner > row.self
+            return (
+              <div key={row.key} className="sync-duel-metric">
+                <div className="sync-duel-metric__labels">
+                  <span className={selfLeads ? 'sync-duel-metric__lead' : ''}>
+                    {row.self}
+                  </span>
+                  <span className="sync-duel-metric__title">{row.label}</span>
+                  <span className={partnerLeads ? 'sync-duel-metric__lead' : ''}>
+                    {row.partner}
+                  </span>
+                </div>
+                <div className="sync-duel-metric__bar" aria-hidden>
+                  <span
+                    className="sync-duel-metric__fill sync-duel-metric__fill--self"
+                    style={{ width: `${selfPct}%` }}
+                  />
+                  <span
+                    className="sync-duel-metric__fill sync-duel-metric__fill--partner"
+                    style={{ width: `${partnerPct}%` }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+
+        {showRating && (
+          <div className="sync-duel-card__rating">
+            <p className="text-[11px] text-[#9CA3AF] mb-2 text-center">
+              ¿Cómo estuvo el sync con {partnerFirst}?
+            </p>
+            <div className="flex justify-center gap-1.5">
+              {[1, 2, 3, 4, 5].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => onRate?.(r)}
+                  className="text-xl px-1.5 py-0.5 text-[#FF671F] hover:text-white active:scale-90 transition"
+                  aria-label={`${r} estrellas`}
+                >
+                  ★
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="sync-duel-card__actions">
+          <button
+            type="button"
+            onClick={() => onResync(partnerId)}
+            className="sync-duel-card__btn sync-duel-card__btn--primary"
+          >
+            🔄 Re-sync con {partnerFirst}
+          </button>
+          {actions.length > 0 && (
+            <button
+              type="button"
+              onClick={onReplay}
+              className="sync-duel-card__btn sync-duel-card__btn--ghost"
+            >
+              Ver timeline
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClose}
+            className="sync-duel-card__btn sync-duel-card__btn--ghost"
+          >
+            Cerrar
+          </button>
+        </div>
+
+        <p className="sync-duel-card__footer">
+          El duelo queda en vuestro historial — la revancha suma al bond.
+        </p>
+      </motion.div>
+    </div>
+  )
+}

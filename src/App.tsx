@@ -165,7 +165,7 @@ import {
 } from './utils/arenaWorkoutLog'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { GymPulseMap } from './components/map' // Inicio de modularización 2026-06-05 (stub + estructura)
-import { SyncArenaView, ArenaGlobalPulseBar } from './components/arena'
+import { SyncArenaView, ArenaGlobalPulseBar, SyncDuelSummary } from './components/arena'
 import { uploadArenaPhotoUrl, postPartnerSyncStory } from './services/arenaFormPhoto'
 import {
   attachPostCommentsListener,
@@ -914,6 +914,18 @@ function App() {
   }, [syncBonds])
 
   const [replaySession, setReplaySession] = useState<any>(null) // {partnerName, minutes, vibe, actions, rating?}
+  const [syncDuelSummary, setSyncDuelSummary] = useState<{
+    partnerId: string
+    partnerName: string
+    minutes: number
+    vibe: number
+    witnessCount: number
+    setsLogged: number
+    actions: any[]
+    isNetworkBond: boolean
+    bondLevel?: number
+    partnerPhoto?: string
+  } | null>(null)
 
   // =====================================================
   // GYMPULSE DIARIO - Core logic (innovative retention with your GymPartners)
@@ -6189,7 +6201,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         } catch (e) {}
       }
     }
-    createProfilePost(`Sync terminado con ${partnerName} - ${minutes}min juntos`, null).catch(() => {})
+    const capturedWitness = syncRealWitnessCount
+    const bondAtEnd = syncBonds[oldPartner]
+    const partnerProfileAtEnd = realProfiles.find((p) => p.id === oldPartner)
 
     if (
       minutes >= 2 &&
@@ -6249,28 +6263,42 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       }
     }
 
-    // Save replayable memory (unique persistence of the shared performance sync)
-    if (minutes >= 2 && capturedActions.length > 0) {
-      setReplaySession({ partnerName, minutes, vibe: capturedVibe, actions: capturedActions.slice(0,8), rating: null })
-    }
-    if (minutes > 5) {
-      setPendingSyncRating({ partnerId: oldPartner, partnerName, minutes })
-    } else {
-      toast(`Sync finalizado: ${minutes}min`, { description: '¡Buen trabajo en equipo! +1 sync streak' })
-    // Daily Pulse synergy
+    createProfilePost(`Sync terminado con ${partnerName} - ${minutes}min juntos`, null).catch(() => {})
+
     checkAndUpdateDailyPulse()
     if (dailyPulse?.currentChallenge?.type === 'bond' || dailyPulse?.currentChallenge?.type === 'network') {
       completeDailyChallenge(1)
     } else {
       awardConstancy(15, 'Synergy completada')
     }
+
+    if (minutes >= 1 || capturedActions.length > 0) {
+      setSyncDuelSummary({
+        partnerId: oldPartner,
+        partnerName,
+        minutes,
+        vibe: capturedVibe,
+        witnessCount: capturedWitness,
+        setsLogged: countLoggedSets(capturedWorkoutLog),
+        actions: capturedActions.slice(0, 12),
+        isNetworkBond: !!bondAtEnd,
+        bondLevel: bondAtEnd?.bondLevel,
+        partnerPhoto: partnerProfileAtEnd?.photos?.[0],
+      })
+    } else {
+      toast(`Sync finalizado: ${minutes}min`, { description: '¡Buen trabajo en equipo! +1 sync streak' })
     }
   }
 
-  const submitSyncRating = async (rating: number) => {
-    if (!pendingSyncRating) return
+  const submitSyncRating = async (
+    rating: number,
+    ctx?: { partnerId: string; partnerName: string; minutes: number; vibe?: number; actions?: any[] }
+  ) => {
+    const payload = ctx || pendingSyncRating
+    if (!payload) return
     triggerHaptic('success')
-    const { partnerId, partnerName, minutes } = pendingSyncRating
+    const { partnerId, partnerName, minutes } = payload
+    const sessionVibe = ctx?.vibe ?? syncVibe
     if (!isDemoMode && db && firebaseUser) {
       try {
         const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
@@ -6313,15 +6341,15 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         try { await updateUserProfile(firebaseUser.uid, { syncStreak: newStreak }) } catch {}
       }
       // Big vibe boost on good rating — makes the ending feel special and unique
-      if (!isDemoMode && db && syncPartnerId) {
+      if (!isDemoMode && db) {
         try {
           const { doc, updateDoc } = await import('firebase/firestore')
-          const uids = [effectiveUserId, syncPartnerId].sort()
+          const uids = [effectiveUserId, partnerId].sort()
           const sessionId = `sync_${uids[0]}_${uids[1]}`
           const bonus = Math.min(30, rating * 6 + Math.floor(minutes / 3))
-          const finalVibe = Math.min(100, (syncVibe || 50) + bonus)
+          const finalVibe = Math.min(100, (sessionVibe || 50) + bonus)
           await updateDoc(doc(db, 'syncSessions', sessionId), { vibe: finalVibe })
-          setSyncVibe(finalVibe)
+          if (syncPartnerId) setSyncVibe(finalVibe)
         } catch {}
       }
     }
@@ -6329,11 +6357,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     // THE UNIQUE MAGIC: Auto-generate rich "Session Story" post and publish to BOTH muros instantly.
     // This creates permanent shared memory + social proof that lives forever in each person's profile/feed.
     // Nobody else turns a live training session into a beautiful co-authored story post on both walls.
-    if (minutes >= 3 && (replaySession || syncActions.length > 1)) {
-      const actionsForStory = (replaySession?.actions || syncActions).slice(0, 6)
+    if (minutes >= 3 && (ctx?.actions?.length || replaySession || syncActions.length > 1)) {
+      const actionsForStory = (ctx?.actions || replaySession?.actions || syncActions).slice(0, 6)
       const actionSummary = actionsForStory.map((a: any) => `${a.emoji} ${a.label}${a.combo ? `x${a.combo}` : ''}`).join(' · ')
       const isNet = !!syncBonds[partnerId]
-      const storyText = `🔄 ENTRENASYNC COMPLETADO\n${minutes} min sincronizados con ${partnerName}\nSync Score final: ${syncVibe || 70}% • Calificación: ${rating}★\nAcciones clave: ${actionSummary}\n\nEntrenamos en sync real-time y subimos nuestro rendimiento. ${isNet ? `Esta fue una sesión de RED — Fuerza del equipo activada. Tu grafo gana +${Math.floor(minutes / 3)} de fuerza y visibilidad global.` : `Esta alianza ya genera +${Math.floor(minutes * 1.2)} min de alto rendimiento compartido.`} Queda en nuestra red para siempre. #EntrenaSync`
+      const storyText = `🔄 ENTRENASYNC COMPLETADO\n${minutes} min sincronizados con ${partnerName}\nSync Score final: ${sessionVibe || 70}% • Calificación: ${rating}★\nAcciones clave: ${actionSummary}\n\nEntrenamos en sync real-time y subimos nuestro rendimiento. ${isNet ? `Esta fue una sesión de RED — Fuerza del equipo activada. Tu grafo gana +${Math.floor(minutes / 3)} de fuerza y visibilidad global.` : `Esta alianza ya genera +${Math.floor(minutes * 1.2)} min de alto rendimiento compartido.`} Queda en nuestra red para siempre. #EntrenaSync`
       // Post to self (visible in my muro + feed)
       createProfilePost(storyText, null).catch(() => {})
       // Also post directly for the partner so BOTH get the beautiful shared story in their muro (true co-presence even after session ends)
@@ -6352,7 +6380,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           await (await import('firebase/firestore')).setDoc((await import('firebase/firestore')).doc(db, 'profilePosts', storyPost.id), storyPost)
         } catch {}
       }
-      setLastSyncStory({ partnerName, minutes, rating, vibe: syncVibe, summary: actionSummary })
+      setLastSyncStory({ partnerName, minutes, rating, vibe: sessionVibe, summary: actionSummary })
       confetti({ particleCount: 180, spread: 90, origin: { y: 0.7 } })
       toast.success('¡Historia del Sync guardada en AMBOS muros!', { description: 'Un recuerdo compartido que nadie más puede crear.' })
     }
@@ -6364,6 +6392,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
     toast.success(`Sync con ${partnerName} calificado ${rating}/5`, { description: '¡Gracias! Ayuda a mejorar el matching + tu alianza de sync creció.' })
     setPendingSyncRating(null)
+    setSyncDuelSummary(null)
   }
 
   const arenaPhotoInputRef = useRef<HTMLInputElement>(null)
@@ -12034,6 +12063,49 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     </div>
 
       {/* EntrenaSync end rating - disruptive accountability */}
+      {syncDuelSummary && (
+        <SyncDuelSummary
+          open
+          selfName={currentUser.name || 'Tú'}
+          selfPhoto={currentUser.photos?.[0]}
+          partnerName={syncDuelSummary.partnerName}
+          partnerPhoto={syncDuelSummary.partnerPhoto}
+          partnerId={syncDuelSummary.partnerId}
+          effectiveUserId={effectiveUserId}
+          minutes={syncDuelSummary.minutes}
+          vibe={syncDuelSummary.vibe}
+          witnessCount={syncDuelSummary.witnessCount}
+          setsLogged={syncDuelSummary.setsLogged}
+          actions={syncDuelSummary.actions}
+          isNetworkBond={syncDuelSummary.isNetworkBond}
+          bondLevel={syncDuelSummary.bondLevel}
+          onClose={() => setSyncDuelSummary(null)}
+          onResync={(partnerId) => {
+            setSyncDuelSummary(null)
+            tryAutoStartSync(partnerId)
+          }}
+          onReplay={() => {
+            setReplaySession({
+              partnerName: syncDuelSummary.partnerName,
+              minutes: syncDuelSummary.minutes,
+              vibe: syncDuelSummary.vibe,
+              actions: syncDuelSummary.actions,
+              rating: null,
+            })
+            setSyncDuelSummary(null)
+          }}
+          onRate={(rating) => {
+            submitSyncRating(rating, {
+              partnerId: syncDuelSummary.partnerId,
+              partnerName: syncDuelSummary.partnerName,
+              minutes: syncDuelSummary.minutes,
+              vibe: syncDuelSummary.vibe,
+              actions: syncDuelSummary.actions,
+            })
+          }}
+        />
+      )}
+
       {pendingSyncRating && (
         <div className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4" onClick={() => setPendingSyncRating(null)}>
           <div className="bg-[#1C1C20] rounded-3xl p-6 max-w-sm w-full text-center border border-[#22c55e]/30" onClick={e => e.stopPropagation()}>
