@@ -2231,14 +2231,22 @@ useEffect(() => {
 
   useEffect(() => { liveUsersActiveRef.current = liveUsersActive }, [liveUsersActive])
 
-  /** Unified live gate — reads GymPulse pipeline, not stale realProfiles.trainingNow */
+  /** Unified live gate — GymPulse pipeline + profile fallback (avoids silent EntrenaSync blocks). */
   const isUserLive = useCallback((userId: string): boolean => {
     if (!userId) return false
-    if (userId === effectiveUserId || userId === 'me') {
+    if (
+      userId === effectiveUserId ||
+      userId === 'me' ||
+      (firebaseUser?.uid && userId === firebaseUser.uid)
+    ) {
       return !!currentUserRef.current?.trainingNow
     }
-    return isUserLiveInSnapshot(userId, liveUsersActiveRef.current)
-  }, [effectiveUserId])
+    if (isUserLiveInSnapshot(userId, liveUsersActiveRef.current)) return true
+    const fromDedicated = (liveUsersFromDedicatedRef.current || []).find((p: any) => p.id === userId)
+    if (fromDedicated && isActiveLiveUser(fromDedicated)) return true
+    const fromProfiles = (latestRealProfilesRef.current || []).find((p: any) => p.id === userId)
+    return fromProfiles?.trainingNow === true
+  }, [effectiveUserId, firebaseUser?.uid])
 
   // Zone live counts for interactive legend (sigue con todo el mapa + visual polish iteration)
   const zoneLiveCounts = useMemo(() => {
@@ -3147,6 +3155,19 @@ const mergeUserForRealtimeSync = (incoming: CurrentUser, prev: CurrentUser | nul
     incoming.trainingNow === true &&
     typeof incoming.trainingNowSince === 'number' &&
     incoming.trainingNowSince > 0
+
+  const explicitSyncStart =
+    !!incoming.trainingSyncWith &&
+    typeof incoming.syncStartedAt === 'number' &&
+    incoming.syncStartedAt > 0
+
+  if (explicitSyncStart) {
+    return {
+      ...prev,
+      ...incoming,
+      trainingNow: incoming.trainingNow !== false ? (incoming.trainingNow ?? prev.trainingNow ?? true) : false,
+    }
+  }
 
   if (explicitLiveOff || explicitLiveOn) {
     return { ...prev, ...incoming }
@@ -4717,10 +4738,25 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   // === DISRUPTIVE EntrenaSync implementation (core of the top unique feature) ===
 
   const startSyncWith = async (partnerId: string, partnerName: string) => {
-    const myIds = [effectiveUserId, currentUser?.id, 'me'].filter(Boolean);
-    if (!partnerId || myIds.includes(partnerId)) return; // prevent self-join / self-sync
-    if (!currentUser?.trainingNow || !isUserLive(partnerId)) return
-    if (syncPartnerId || joiningSyncWith === partnerId) return // anti-spam guard
+    const myIds = [effectiveUserId, currentUser?.id, firebaseUser?.uid, 'me'].filter(Boolean)
+    if (!partnerId || myIds.includes(partnerId)) return
+
+    const me = currentUserRef.current ?? currentUser
+    if (!me?.trainingNow) {
+      toast.error('Activa "Entrenando Ahora (EN VIVO)" primero', {
+        description: 'Ve a Perfil y enciende tu live. EntrenaSync requiere que tú y tu compañero estén en vivo.',
+      })
+      return
+    }
+
+    if (!isUserLive(partnerId)) {
+      toast.error(`${partnerName || 'Tu compañero'} no está en vivo ahora`, {
+        description: 'Ambos deben tener live activo. Actualiza Explorar/mapa o espera a que encienda su GymPulse.',
+      })
+      return
+    }
+
+    if (syncPartnerId || joiningSyncWith === partnerId) return
 
     if (!isDemoMode && !firebaseUser?.uid) {
       console.warn('startSyncWith: no real firebaseUser uid, cannot start real EntrenaSync')
@@ -4730,16 +4766,28 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
     setJoiningSyncWith(partnerId)
     try {
+      const syncAt = Date.now()
       setSyncPartnerId(partnerId)
       syncPartnerIdRef.current = partnerId
-      setSyncStartedAt(now)
+      setSyncStartedAt(syncAt)
       setSyncActions([])
       setSyncCombo(0)
       setFlyingEmojis([])
       setShowSyncArena(true)
+      setActiveTab('explore')
       triggerHaptic('medium')
-      const updated = { ...currentUser, trainingSyncWith: partnerId, syncStartedAt: now, syncActions: [] }
+
+      const updated = {
+        ...me,
+        trainingNow: true,
+        trainingSyncWith: partnerId,
+        syncStartedAt: syncAt,
+        syncActions: [],
+      }
       saveUser(updated as any)
+      if (me.trainingNow) {
+        pendingLiveWriteRef.current = { trainingNow: true, at: Date.now() }
+      }
 
       if (!isDemoMode && db && firebaseUser) {
         await saveUserWithRealSync(updated as any)
@@ -4751,18 +4799,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         const baseVibe = 12
         await setDoc(sessionRef, {
           participants: [effectiveUserId, partnerId],
-          startedAt: now,
+          startedAt: syncAt,
           actions: [],
           vibe: baseVibe,
-          updatedAt: now,
+          updatedAt: syncAt,
         }, { merge: true })
         setSyncVibe(baseVibe)
+      } else {
+        setSyncVibe(12)
       }
 
       setTimeout(() => {
         createProfilePost(`¡Sincronizado con ${partnerName}! Entrenamos juntos ahora 🔥`, null).catch(() => {})
       }, 400)
-      toast.success(`EntrenaSync iniciado con ${partnerName}`, { description: 'Estado compartido en vivo + acciones conjuntas. Esto genera resultados reales.' })
+      toast.success(`EntrenaSync iniciado con ${partnerName}`, { description: 'Arena abierta — acciones compartidas en vivo.' })
       try { confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } }) } catch {}
       addDebugLog(`EntrenaSync started with ${partnerName}`)
     } catch (e) {
@@ -5275,14 +5325,24 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   // Auto-start sync UI when joining live (call from handleSwipe if both live)
   // Attractive + anti-spam: show loading on the specific join, disable multi-press, auto-nav to profile to see the beautiful sync panel
   const tryAutoStartSync = (targetId: string) => {
-    const target = realProfiles.find(p => p.id === targetId)
-    if (!target) return
-    if (currentUser?.trainingNow && isUserLive(targetId)) {
-      if (syncPartnerId || joiningSyncWith) return
-      startSyncWith(targetId, target.name)
-        .then(() => setActiveTab('profile'))
-        .catch(() => {})
+    const target = (latestRealProfilesRef.current || realProfiles).find(p => p.id === targetId)
+    if (!target) {
+      toast.error('Compañero no encontrado', { description: 'Actualiza perfiles reales e intenta de nuevo.' })
+      return
     }
+    const me = currentUserRef.current
+    if (!me?.trainingNow) {
+      toast.error('Activa tu live primero', { description: 'Perfil → "Entrenando Ahora (EN VIVO)" antes de EntrenaSync.' })
+      return
+    }
+    if (!isUserLive(targetId)) {
+      toast.error(`${target.name} no está en vivo`, { description: 'Espera a que active live en el GymPulse.' })
+      return
+    }
+    if (syncPartnerId || joiningSyncWith) return
+    startSyncWith(targetId, target.name)
+      .then(() => setActiveTab('explore'))
+      .catch(() => {})
   }
 
   type PostLocation = { posts: ProfilePost[]; idx: number; resolvedUserId: string }
@@ -13966,7 +14026,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         }}
       />
 
-      {currentUser?.trainingNow && syncPartnerId && showSyncArena && (() => {
+      {syncPartnerId && showSyncArena && (() => {
         const partner = realProfiles.find((p) => p.id === syncPartnerId)
         const dist =
           userLocation && partner?.lat != null && partner?.lng != null
