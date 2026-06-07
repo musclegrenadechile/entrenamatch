@@ -269,6 +269,12 @@ function classifyGeminiError(status, errText) {
   if (status === 429) return 'rate_limit';
   if (status === 403 || status === 401) return 'invalid_key';
   if (status === 400 && t.includes('api key')) return 'invalid_key';
+  if (
+    status === 404 &&
+    (t.includes('no longer available') || t.includes('not found') || t.includes('is not found'))
+  ) {
+    return 'model_unavailable';
+  }
   return 'unknown';
 }
 
@@ -280,15 +286,16 @@ function geminiUserMessage(reason) {
     return 'API key inválida. Usa una key AIzaSy… de Google AI Studio y vuelve a ejecutar setup-fuel-ai.ps1';
   }
   if (reason === 'rate_limit') return 'Límite de requests Gemini — espera un minuto e intenta de nuevo.';
+  if (reason === 'model_unavailable') {
+    return 'Modelos Gemini desactualizados en el servidor. Actualiza la app o intenta en unos minutos.';
+  }
   return 'Gemini no disponible ahora.';
 }
 
-/** Models to try (cheapest / free-tier friendly first after primary). */
+/** Models to try (cheapest / free-tier friendly first). Updated for 2.5 — 2.0/1.5 retired. */
 const GEMINI_FOOD_MODELS = [
-  'gemini-2.0-flash-lite',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash',
-  'gemini-1.5-flash-8b',
+  'gemini-2.5-flash-lite',
+  'gemini-2.5-flash',
 ];
 
 async function callGeminiModel(apiKey, model, parts, labelFallback) {
@@ -298,7 +305,11 @@ async function callGeminiModel(apiKey, model, parts, labelFallback) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       contents: [{ parts }],
-      generationConfig: { temperature: 0.2, maxOutputTokens: 256 },
+      generationConfig: {
+        temperature: 0.2,
+        maxOutputTokens: 256,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
     }),
   });
   if (!res.ok) {
