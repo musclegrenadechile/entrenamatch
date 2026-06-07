@@ -84,6 +84,10 @@ export default app;
 
 // Re-establish Listen/WebChannel streams after offline or transport errors.
 // Prefer this over disable+enable cycles — disabling tears down ALL active listeners.
+let lastNetworkRecoverAt = 0;
+let recoverInFlight: Promise<void> | null = null;
+const NETWORK_RECOVER_DEBOUNCE_MS = 4000;
+
 export async function enableFirestoreNetwork() {
   if (!db) return;
   try {
@@ -95,9 +99,19 @@ export async function enableFirestoreNetwork() {
   }
 }
 
-/** Safe recovery after transport glitches — enable only, never disable first. */
+/** Safe recovery after transport glitches — enable only, never disable first. Debounced to avoid SDK assertion churn. */
 export async function recoverFirestoreNetwork() {
-  await enableFirestoreNetwork();
+  if (!db) return;
+  const now = Date.now();
+  if (now - lastNetworkRecoverAt < NETWORK_RECOVER_DEBOUNCE_MS) return;
+  if (recoverInFlight) return recoverInFlight;
+
+  recoverInFlight = enableFirestoreNetwork()
+    .finally(() => {
+      lastNetworkRecoverAt = Date.now();
+      recoverInFlight = null;
+    });
+  return recoverInFlight;
 }
 
 /** @deprecated Avoid in normal flows — disables all RT listeners app-wide. Use recoverFirestoreNetwork. */

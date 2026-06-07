@@ -4,6 +4,7 @@
  */
 
 import type { Firestore } from 'firebase/firestore'
+import { syncLikeToProfileDeck } from './swipeState'
 
 export function likeDocId(liker: string, liked: string): string {
   return `${liker}_${liked}`
@@ -28,6 +29,9 @@ export async function writeLike(
     liked: likedId,
     createdAt: serverTimestamp(),
   })
+  await syncLikeToProfileDeck(db, likerId, likedId).catch((e) =>
+    console.warn('[matching] profile deck sync failed (like saved)', e)
+  )
 }
 
 /** True if `otherUid` already liked `myUid`. */

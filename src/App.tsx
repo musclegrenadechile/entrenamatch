@@ -3162,17 +3162,21 @@ useEffect(() => {
     loadRealMatches()
   }, [firebaseUser?.uid, isDemoMode])
 
-  // Fase 3: swipe deck state from Firestore (likes + passes) for real users
+  // Fase 3: swipe deck state from Firestore profile (swipeLikedIds / swipePassedIds)
   useEffect(() => {
     if (isDemoMode || !firebaseUser?.uid || !db) return
     let cancelled = false
-    loadSwipeStateForUser(db, firebaseUser.uid)
-      .then(({ liked, passed }) => {
+    ;(async () => {
+      try {
+        await firebaseUser.getIdToken()
+        const { liked, passed } = await loadSwipeStateForUser(db, firebaseUser.uid)
         if (cancelled) return
         setLikedIds(liked)
         setPassedIds(passed)
-      })
-      .catch((e) => console.warn('Could not load swipe state from Firestore', e))
+      } catch (e) {
+        console.warn('Could not load swipe state from Firestore', e)
+      }
+    })()
     return () => { cancelled = true }
   }, [firebaseUser?.uid, isDemoMode])
 
@@ -4470,9 +4474,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       try {
         await joinSquadInFirestore(db, squadId, firebaseUser.uid)
         toast.success('¡Te uniste al Squad!')
-      } catch (e) {
+      } catch (e: any) {
         console.warn('Could not join squad in Firestore', e)
-        toast.error('No se pudo unir al Squad')
+        const isPerm = e?.code === 'permission-denied' || `${e?.message || e}`.includes('permission')
+        toast.error(isPerm ? 'Permisos de Firestore' : 'No se pudo unir al Squad', {
+          description: isPerm
+            ? 'Despliega las reglas: firebase deploy --only firestore:rules'
+            : 'Revisa tu conexión e intenta de nuevo',
+        })
       }
       return
     }

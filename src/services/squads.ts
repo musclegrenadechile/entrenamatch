@@ -50,10 +50,14 @@ export async function joinSquadInFirestore(
   squadId: string,
   uid: string
 ): Promise<void> {
-  const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
-  await updateDoc(doc(db, 'squads', squadId), {
-    members: arrayUnion(uid),
-  })
+  const { doc, getDoc, updateDoc } = await import('firebase/firestore')
+  const ref = doc(db, 'squads', squadId)
+  const snap = await getDoc(ref)
+  if (!snap.exists()) throw new Error('Squad not found')
+  const members = Array.isArray(snap.data()?.members) ? snap.data()!.members : []
+  if (members.includes(uid)) return
+  // Explicit array (not arrayUnion) so security rules see uid in request.resource.data.members.
+  await updateDoc(ref, { members: [...members, uid] })
 }
 
 export async function leaveSquadInFirestore(
