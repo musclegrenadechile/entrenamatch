@@ -149,5 +149,6 @@ export function profileDocToLiveUser(
     syncStreak: data.syncStreak,
     syncBonds: data.syncBonds || {},
     retentionLevel: data.retentionLevel || 1,
+    gymCheckIn: data.gymCheckIn || undefined,
   }
 }

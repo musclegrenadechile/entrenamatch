@@ -37,6 +37,7 @@ L.Icon.Default.mergeOptions({
 
 import { getDistanceKm } from '../../utils'
 import { filterMapLiveUsers, hasMapCoords } from '../../utils/gymPulseLive'
+import { countLiveAtGym } from '../../services/localNetwork'
 
 export interface GymPulseMapProps {
   showLiveMap: boolean
@@ -545,6 +546,9 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
           const joinTxt = u.joinCount ? ` • ${u.joinCount} unidos` : ''
           const levelTxt = hasPulso ? ' • PULSO MAESTRO' : (isHigh ? ' • ALTO NIVEL' : '')
+          const gymTxt = u.gymCheckIn?.gymName
+            ? `<span style="font-size:10px;color:#22c55e;display:block;margin-top:2px">🏋️ ${u.gymCheckIn.gymName}</span>`
+            : ''
           marker.bindPopup(`
             <div style="min-width:178px;font-size:12px;line-height:1.35">
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
@@ -552,6 +556,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
                 <span style="color:#22c55e;font-size:10px;font-weight:700">🟢 EN VIVO</span>
               </div>
               <span style="font-size:10px;color:#9CA3AF">${u.trainingTypes?.[0] || 'Entreno'} • ${(u.distance || 0).toFixed(1)}km${joinTxt}${levelTxt}</span><br/>
+              ${gymTxt}
               ${u.seVaEnMin != null ? `<span style="font-size:10px;color:#f59e0b">⏱ Se va en ~${u.seVaEnMin} min — ¡únete ya!</span><br/>` : ''}
               <button style="margin-top:6px;background:linear-gradient(90deg,#22c55e,#16a34a);color:black;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;box-shadow:0 1px 4px rgba(34,197,94,0.4)" onclick="window.startSyncFromMap && window.startSyncFromMap('${u.id}', '${(u.name||'').replace(/'/g,'')}')">🔥 Entrenar juntos / Sync</button>
             </div>
@@ -584,6 +589,10 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
             }).addTo(mapInstanceRef.current)
 
             let popupContent = `<strong style="font-size:13px">${p.name}</strong><br/><span style="font-size:10px;color:#9CA3AF">${p.type || 'Partner'} • ${p.address || p.city || ''}</span>`
+            const liveAtGym = countLiveAtGym(liveTrainingNow || [], p.id)
+            if (liveAtGym > 0) {
+              popupContent += `<div style="font-size:10px;color:#22c55e;margin-top:4px;font-weight:700">🟢 ${liveAtGym} entrenando aquí ahora</div>`
+            }
             if (isHub) popupContent += `<div style="font-size:9px;color:#FFD700;margin-top:1px">⭐ Hub del GymPulse</div>`
             if (isDeveloper) {
               popupContent += `<br/><small style="color:#FFD700">DEV MODE</small><br/>`

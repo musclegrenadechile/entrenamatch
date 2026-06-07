@@ -9,6 +9,7 @@ function mapSquadDoc(id: string, data: any): Squad {
   const createdAt = data?.createdAt?.toMillis
     ? data.createdAt.toMillis()
     : (typeof data?.createdAt === 'number' ? data.createdAt : Date.now())
+  const routine = data?.weeklyRoutine
   return {
     id,
     name: data?.name || 'Squad',
@@ -16,6 +17,16 @@ function mapSquadDoc(id: string, data: any): Squad {
     members: Array.isArray(data?.members) ? data.members : [],
     createdBy: data?.createdBy || '',
     createdAt,
+    city: data?.city || undefined,
+    weeklyRoutine: routine
+      ? {
+          label: routine.label || '',
+          schedule: routine.schedule || '',
+          notes: routine.notes || undefined,
+          updatedAt: typeof routine.updatedAt === 'number' ? routine.updatedAt : Date.now(),
+          updatedBy: routine.updatedBy || '',
+        }
+      : undefined,
   }
 }
 
@@ -71,6 +82,24 @@ export async function leaveSquadInFirestore(
   if (!snap.exists()) return
   const members = (snap.data()?.members || []).filter((m: string) => m !== uid)
   await updateDoc(ref, { members })
+}
+
+export async function updateSquadRoutineInFirestore(
+  db: Firestore,
+  squadId: string,
+  uid: string,
+  routine: { label: string; schedule: string; notes?: string }
+): Promise<void> {
+  const { doc, updateDoc } = await import('firebase/firestore')
+  await updateDoc(doc(db, 'squads', squadId), {
+    weeklyRoutine: {
+      label: routine.label.trim(),
+      schedule: routine.schedule.trim(),
+      notes: routine.notes?.trim() || null,
+      updatedAt: Date.now(),
+      updatedBy: uid,
+    },
+  })
 }
 
 /** Real-time squads list (newest first). */

@@ -42,6 +42,8 @@
 export interface WeekStats {
   weekKey: string
   liveMinutes: number
+  /** EntrenaSync minutes — counts toward city challenge + leaderboard. */
+  syncMinutes?: number
   liveDays: number
   updatedAt: number
 }
@@ -106,6 +108,17 @@ export interface Squad {
   members: string[]
   createdBy: string
   createdAt: number
+  city?: string
+  /** Shared weekly training plan (Phase 4). */
+  weeklyRoutine?: SquadWeeklyRoutine
+}
+
+export interface SquadWeeklyRoutine {
+  label: string
+  schedule: string
+  notes?: string
+  updatedAt: number
+  updatedBy: string
 }
 
 export interface Report {

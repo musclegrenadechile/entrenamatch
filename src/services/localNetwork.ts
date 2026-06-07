@@ -17,24 +17,33 @@ export function mergeWeekStats(
   existing: WeekStats | undefined,
   weekKey: string,
   minutesAdded: number,
-  liveDaysCount: number
+  liveDaysCount: number,
+  syncMinutesAdded = 0
 ): WeekStats {
   const base =
     existing?.weekKey === weekKey
       ? existing
-      : { weekKey, liveMinutes: 0, liveDays: 0, updatedAt: Date.now() }
+      : { weekKey, liveMinutes: 0, syncMinutes: 0, liveDays: 0, updatedAt: Date.now() }
   return {
     weekKey,
     liveMinutes: base.liveMinutes + minutesAdded,
+    syncMinutes: (base.syncMinutes ?? 0) + syncMinutesAdded,
     liveDays: Math.max(base.liveDays, liveDaysCount),
     updatedAt: Date.now(),
   }
+}
+
+export function weekTotalMinutes(stats: WeekStats | null | undefined): number {
+  if (!stats) return 0
+  return stats.liveMinutes + (stats.syncMinutes ?? 0)
 }
 
 export type LeaderboardEntry = {
   userId: string
   name: string
   liveMinutes: number
+  syncMinutes: number
+  totalMinutes: number
   liveDays: number
   liveStreak: number
   isMe?: boolean
@@ -87,13 +96,17 @@ export function buildCityLeaderboard(
     if (normalizeCity(p.city) !== cityNorm) continue
     if (!isLeaderboardVisible(p)) continue
     const stats = statsForWeek(p.weekStats, weekKey)
-    const minutes = stats?.liveMinutes ?? 0
+    const liveMinutes = stats?.liveMinutes ?? 0
+    const syncMinutes = stats?.syncMinutes ?? 0
+    const totalMinutes = liveMinutes + syncMinutes
     const days = stats?.liveDays ?? 0
-    if (minutes === 0 && days === 0) continue
+    if (totalMinutes === 0 && days === 0) continue
     byId.set(p.id, {
       userId: p.id,
       name: p.name,
-      liveMinutes: minutes,
+      liveMinutes,
+      syncMinutes,
+      totalMinutes,
       liveDays: days,
       liveStreak: p.liveStreak ?? 0,
       isMe: p.id === self.userId,
@@ -102,13 +115,17 @@ export function buildCityLeaderboard(
 
   if (isLeaderboardVisible(self)) {
     const selfStats = statsForWeek(self.stats, weekKey)
-    const minutes = selfStats?.liveMinutes ?? 0
+    const liveMinutes = selfStats?.liveMinutes ?? 0
+    const syncMinutes = selfStats?.syncMinutes ?? 0
+    const totalMinutes = liveMinutes + syncMinutes
     const days = selfStats?.liveDays ?? 0
-    if (minutes > 0 || days > 0) {
+    if (totalMinutes > 0 || days > 0) {
       byId.set(self.userId, {
         userId: self.userId,
         name: self.name,
-        liveMinutes: minutes,
+        liveMinutes,
+        syncMinutes,
+        totalMinutes,
         liveDays: days,
         liveStreak: self.liveStreak ?? 0,
         isMe: true,
@@ -119,7 +136,7 @@ export function buildCityLeaderboard(
   return Array.from(byId.values())
     .sort(
       (a, b) =>
-        b.liveMinutes - a.liveMinutes ||
+        b.totalMinutes - a.totalMinutes ||
         b.liveDays - a.liveDays ||
         b.liveStreak - a.liveStreak
     )
@@ -144,16 +161,17 @@ export function buildCityChallenge(
     if (normalizeCity(p.city) !== cityNorm) continue
     if (!isLeaderboardVisible(p)) continue
     const stats = statsForWeek(p.weekStats, weekKey)
-    const mins = stats?.liveMinutes ?? 0
+    const mins = weekTotalMinutes(stats)
     if (mins <= 0) continue
     totalMinutes += mins
     counted.add(p.id)
     participants++
   }
 
-  if (selfUserId && selfStats?.weekKey === weekKey && selfStats.liveMinutes > 0) {
-    if (!counted.has(selfUserId)) {
-      totalMinutes += selfStats.liveMinutes
+  if (selfUserId && selfStats?.weekKey === weekKey) {
+    const selfTotal = weekTotalMinutes(selfStats)
+    if (selfTotal > 0 && !counted.has(selfUserId)) {
+      totalMinutes += selfTotal
       participants++
     }
   }
@@ -203,4 +221,26 @@ export function formatLeaderboardMinutes(minutes: number): string {
     return m > 0 ? `${h}h ${m}m` : `${h}h`
   }
   return `${minutes} min`
+}
+
+export type LiveUserWithGym = {
+  id?: string
+  gymCheckIn?: GymCheckIn | null
+  trainingNow?: boolean
+}
+
+/** How many live users checked in at a partner gym right now. */
+export function countLiveAtGym(liveUsers: LiveUserWithGym[], gymId: string): number {
+  if (!gymId) return 0
+  return (liveUsers || []).filter(
+    (u) => u.trainingNow !== false && u.gymCheckIn?.gymId === gymId
+  ).length
+}
+
+/** Live users at a gym (for map popups / squad invites). */
+export function listLiveAtGym(liveUsers: LiveUserWithGym[], gymId: string): LiveUserWithGym[] {
+  if (!gymId) return []
+  return (liveUsers || []).filter(
+    (u) => u.trainingNow !== false && u.gymCheckIn?.gymId === gymId
+  )
 }

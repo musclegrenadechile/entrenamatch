@@ -1,4 +1,4 @@
-import { MapPin, Trophy, Users } from 'lucide-react'
+import { MapPin, Trophy, Users, Zap } from 'lucide-react'
 import type { CityChallenge, LeaderboardEntry, PartnerGym } from '../../services/localNetwork'
 import { formatLeaderboardMinutes } from '../../services/localNetwork'
 import type { GymCheckIn } from '../../types'
@@ -9,6 +9,7 @@ export interface LocalNetworkCardProps {
   leaderboard: LeaderboardEntry[]
   nearestGym: (PartnerGym & { distanceKm: number }) | null
   gymCheckIn?: GymCheckIn | null
+  gymLiveCount?: number
   showOnLeaderboard: boolean
   onToggleLeaderboard: (visible: boolean) => void
   onGymCheckIn: (gym: PartnerGym) => void
@@ -21,6 +22,7 @@ export function LocalNetworkCard({
   leaderboard,
   nearestGym,
   gymCheckIn,
+  gymLiveCount = 0,
   showOnLeaderboard,
   onToggleLeaderboard,
   onGymCheckIn,
@@ -70,7 +72,7 @@ export function LocalNetworkCard({
             />
           </div>
           <p className="text-[10px] text-[#9CA3AF] leading-snug">
-            {challenge.currentMinutes} / {challenge.targetMinutes} min live en{' '}
+            {challenge.currentMinutes} / {challenge.targetMinutes} min (live + sync) en{' '}
             {challenge.cityLabel}
             {challenge.participants > 0 ? ` · ${challenge.participants} atletas` : ''}
           </p>
@@ -104,9 +106,12 @@ export function LocalNetworkCard({
                   {entry.isMe ? 'Tú' : entry.name.split(' ')[0]}
                 </span>
                 <span className="text-[#22c55e] font-bold shrink-0">
-                  {formatLeaderboardMinutes(entry.liveMinutes)}
+                  {formatLeaderboardMinutes(entry.totalMinutes)}
                 </span>
-                <span className="text-[9px] text-[#6B7280] shrink-0">{entry.liveDays}d</span>
+                <span className="text-[9px] text-[#6B7280] shrink-0">
+                  {entry.liveDays}d
+                  {entry.liveStreak > 1 ? ` · 🔥${entry.liveStreak}` : ''}
+                </span>
               </li>
             ))}
           </ul>
@@ -122,18 +127,26 @@ export function LocalNetworkCard({
       {(nearestGym || activeCheckIn) && (
         <div className="pt-1 border-t border-white/8">
           {activeCheckIn ? (
-            <div className="flex items-center justify-between gap-2 mt-2">
-              <p className="text-[10px] text-[#22c55e] font-semibold flex items-center gap-1.5 min-w-0">
-                <MapPin className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">En {gymCheckIn!.gymName}</span>
-              </p>
-              <button
-                type="button"
-                onClick={onOpenMap}
-                className="text-[9px] text-[#FF671F] font-bold underline shrink-0"
-              >
-                Mapa
-              </button>
+            <div className="mt-2 space-y-2">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[10px] text-[#22c55e] font-semibold flex items-center gap-1.5 min-w-0">
+                  <MapPin className="w-3.5 h-3.5 shrink-0" />
+                  <span className="truncate">En {gymCheckIn!.gymName}</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={onOpenMap}
+                  className="text-[9px] text-[#FF671F] font-bold underline shrink-0"
+                >
+                  Mapa
+                </button>
+              </div>
+              {gymLiveCount > 0 && (
+                <p className="text-[10px] text-[#FFD700] font-bold flex items-center gap-1.5">
+                  <Zap className="w-3 h-3" />
+                  {gymLiveCount} entrenando en este gym ahora
+                </p>
+              )}
             </div>
           ) : nearestGym ? (
             <button

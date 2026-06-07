@@ -109,6 +109,7 @@ import {
   mergeWeekStats,
   normalizeCity,
   isGymCheckInFresh,
+  countLiveAtGym,
 } from './services/localNetwork'
 import {
   formatLastLiveLabel,
@@ -175,6 +176,7 @@ import {
   createSquadInFirestore,
   joinSquadInFirestore,
   leaveSquadInFirestore,
+  updateSquadRoutineInFirestore,
 } from './services/squads'
 import { attachLiveUsersListener, patchRealProfilesWithLiveSnapshot } from './services/liveUsers'
 import {
@@ -1617,6 +1619,8 @@ useEffect(() => {
   const [modalCommentDraft, setModalCommentDraft] = useState('')
   const [showCreateSquad, setShowCreateSquad] = useState(false)
   const [selectedSquad, setSelectedSquad] = useState<string | null>(null) // for detail view
+  const [squadRoutineDraft, setSquadRoutineDraft] = useState({ label: '', schedule: '', notes: '' })
+  const [savingSquadRoutine, setSavingSquadRoutine] = useState(false)
 
   // Editing own post in muro (spectacular: inline edit without ugly prompts)
   const [editingPost, setEditingPost] = useState<{postId: string; postUserId: string; text: string} | null>(null)
@@ -2596,6 +2600,12 @@ useEffect(() => {
     }))
     return findNearestGym(gyms, Number(lat), Number(lng))
   }, [userLocation, currentUser?.lat, currentUser?.lng, partnerLocations])
+
+  const homeGymLiveCount = useMemo(() => {
+    const gymId = currentUser?.gymCheckIn?.gymId
+    if (!gymId || !isGymCheckInFresh(currentUser?.gymCheckIn)) return 0
+    return countLiveAtGym(liveUsersActive, gymId)
+  }, [currentUser?.gymCheckIn, liveUsersActive])
 
   // Beta Feedback enhanced (Phase 0 - structured + history)
   const [feedbackType, setFeedbackType] = useState<'bug' | 'idea' | 'ux' | 'other'>('idea')
@@ -4298,6 +4308,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     return unsub
   }, [selectedSquad, isDemoMode, firebaseUser?.uid, db])
 
+  useEffect(() => {
+    if (!selectedSquad) return
+    const squad = squads.find((s) => s.id === selectedSquad)
+    if (!squad) return
+    setSquadRoutineDraft({
+      label: squad.weeklyRoutine?.label || '',
+      schedule: squad.weeklyRoutine?.schedule || '',
+      notes: squad.weeklyRoutine?.notes || '',
+    })
+  }, [selectedSquad, squads])
+
   // Safe polling fallback for group messages (8s) while modal open - guarantees updates even if listener has rules/index hiccup
   useEffect(() => {
     if (!showGroupChatModalFor || isDemoMode || !firebaseUser?.uid || !db) return;
@@ -4703,6 +4724,45 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     saveSquads(updated)
     setSelectedSquad(null)
     toast('Saliste del Squad')
+  }
+
+  const handleSaveSquadRoutine = async (squadId: string) => {
+    if (!squadRoutineDraft.label.trim() || !squadRoutineDraft.schedule.trim()) {
+      toast.error('Completa el nombre de la rutina y los días')
+      return
+    }
+    const payload = {
+      label: squadRoutineDraft.label.trim(),
+      schedule: squadRoutineDraft.schedule.trim(),
+      notes: squadRoutineDraft.notes.trim() || undefined,
+    }
+    if (isDemoMode || !firebaseUser?.uid || !db) {
+      const updated = squads.map((sq) =>
+        sq.id === squadId
+          ? {
+              ...sq,
+              weeklyRoutine: {
+                ...payload,
+                updatedAt: Date.now(),
+                updatedBy: effectiveUserId,
+              },
+            }
+          : sq
+      )
+      saveSquads(updated)
+      toast.success('Rutina del squad guardada')
+      return
+    }
+    setSavingSquadRoutine(true)
+    try {
+      await updateSquadRoutineInFirestore(db, squadId, firebaseUser.uid, payload)
+      toast.success('Rutina del squad guardada')
+    } catch (e) {
+      console.warn('save squad routine failed', e)
+      toast.error('No se pudo guardar la rutina')
+    } finally {
+      setSavingSquadRoutine(false)
+    }
   }
 
   const saveProfilePosts = (posts: Record<string, ProfilePost[]>, opts?: { persistLocal?: boolean }) => {
@@ -5566,11 +5626,34 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             (lastStr && lastStr !== todayStr ? 1 : lastStr ? 0 : 1),
         }
         const loc = userLocationRef.current
+        let autoGymCheckIn = isGymCheckInFresh(me.gymCheckIn) ? me.gymCheckIn : undefined
+        if (!autoGymCheckIn && loc && (partnerLocationsRef.current || []).length > 0) {
+          const gyms = partnerLocationsRef.current.map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            lat: p.lat,
+            lng: p.lng,
+          }))
+          const nearGym = findNearestGym(gyms, loc.lat, loc.lng)
+          if (nearGym) {
+            autoGymCheckIn = {
+              gymId: nearGym.id,
+              gymName: nearGym.name,
+              lat: nearGym.lat,
+              lng: nearGym.lng,
+              checkedInAt: Date.now(),
+            }
+          }
+        }
         const updated = {
           ...me,
           trainingNow: true,
           trainingNowSince: Date.now(),
-          ...(loc ? { lat: loc.lat, lng: loc.lng } : {}),
+          ...(autoGymCheckIn
+            ? { gymCheckIn: autoGymCheckIn, lat: autoGymCheckIn.lat, lng: autoGymCheckIn.lng }
+            : loc
+              ? { lat: loc.lat, lng: loc.lng }
+              : {}),
           ...streakUpdate,
         } as CurrentUser
 
@@ -5579,7 +5662,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         await saveUserWithRealSync(updated)
         loadRealProfiles().catch(() => {})
         setMapForceTick((t) => t + 1)
-        toast('🟢 ¡Entrenando Ahora (EN VIVO) activado!')
+        toast('🟢 ¡Entrenando Ahora (EN VIVO) activado!', {
+          description: autoGymCheckIn
+            ? `Check-in en ${autoGymCheckIn.gymName} — apareces en el mapa del gym`
+            : undefined,
+        })
 
         const liveUserSnapshot = { ...updated }
         setTimeout(() => {
@@ -5767,7 +5854,26 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     const oldPartner = syncPartnerId
     // Boost syncStreak
     const newSyncStreak = ((currentUser as any).syncStreak || 0) + 1
-    const updated = { ...currentUser, trainingSyncWith: null, syncStartedAt: null, syncActions: [], syncStreak: newSyncStreak } as any
+    const weekKey = getWeekKey()
+    const syncMins = minutes >= 2 ? minutes : 0
+    const newWeekStats =
+      syncMins > 0
+        ? mergeWeekStats(
+            currentUser?.weekStats?.weekKey === weekKey ? currentUser.weekStats : undefined,
+            weekKey,
+            0,
+            weekLiveDays.length,
+            syncMins
+          )
+        : currentUser?.weekStats
+    const updated = {
+      ...currentUser,
+      trainingSyncWith: null,
+      syncStartedAt: null,
+      syncActions: [],
+      syncStreak: newSyncStreak,
+      ...(newWeekStats ? { weekStats: newWeekStats } : {}),
+    } as any
     saveUser(updated)
     setSyncPartnerId(null)
     syncPartnerIdRef.current = null
@@ -9486,6 +9592,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 gymCheckIn: isGymCheckInFresh(currentUser?.gymCheckIn)
                   ? currentUser.gymCheckIn
                   : null,
+                gymLiveCount: homeGymLiveCount,
                 showOnLeaderboard: currentUser?.showOnLeaderboard !== false,
                 onToggleLeaderboard: handleToggleLeaderboard,
                 onGymCheckIn: handleGymCheckIn,
@@ -10091,6 +10198,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                         <div>
                           <div className="font-semibold text-lg flex items-center gap-2 tracking-tight">{squad.name} <span className="text-[9px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded font-medium">SQUAD</span></div>
                           <div className="text-sm text-[#FF671F] font-medium mt-0.5">{squad.focus}</div>
+                          {squad.weeklyRoutine?.label && (
+                            <div className="text-[10px] text-[#9CA3AF] mt-1 leading-snug">
+                              📋 {squad.weeklyRoutine.label}
+                              {squad.weeklyRoutine.schedule ? ` · ${squad.weeklyRoutine.schedule}` : ''}
+                            </div>
+                          )}
                         </div>
                         <div className="text-right text-xs">
                           <div className="text-[#22c55e] font-medium">{squad.members.length}/4</div>
@@ -13376,6 +13489,48 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
                       {isMember && (
                         <>
+                          <div className="mb-4 p-3 rounded-2xl bg-white/[0.03] border border-white/10">
+                            <div className="text-sm font-bold text-white mb-2">Rutina semanal del squad</div>
+                            <p className="text-[10px] text-[#9CA3AF] mb-3 leading-snug">
+                              Plan compartido para entrenar juntos — visible para todos los miembros.
+                            </p>
+                            <input
+                              type="text"
+                              value={squadRoutineDraft.label}
+                              onChange={(e) =>
+                                setSquadRoutineDraft((d) => ({ ...d, label: e.target.value }))
+                              }
+                              placeholder="Ej. Push + core"
+                              className="w-full mb-2 px-3 py-2 rounded-xl bg-[#1C1C20] border border-[#2F2F35] text-sm text-white placeholder:text-[#6B7280]"
+                            />
+                            <input
+                              type="text"
+                              value={squadRoutineDraft.schedule}
+                              onChange={(e) =>
+                                setSquadRoutineDraft((d) => ({ ...d, schedule: e.target.value }))
+                              }
+                              placeholder="Días: Lun, Mié, Vie · 19:00"
+                              className="w-full mb-2 px-3 py-2 rounded-xl bg-[#1C1C20] border border-[#2F2F35] text-sm text-white placeholder:text-[#6B7280]"
+                            />
+                            <textarea
+                              value={squadRoutineDraft.notes}
+                              onChange={(e) =>
+                                setSquadRoutineDraft((d) => ({ ...d, notes: e.target.value }))
+                              }
+                              placeholder="Notas opcionales (ejercicios clave, progresión…)"
+                              rows={2}
+                              className="w-full mb-2 px-3 py-2 rounded-xl bg-[#1C1C20] border border-[#2F2F35] text-sm text-white placeholder:text-[#6B7280] resize-none"
+                            />
+                            <button
+                              type="button"
+                              disabled={savingSquadRoutine}
+                              onClick={() => handleSaveSquadRoutine(squad.id)}
+                              className="w-full py-2 rounded-xl bg-[#FF671F]/15 border border-[#FF671F]/35 text-[#FF671F] text-sm font-bold active:bg-[#FF671F]/25 disabled:opacity-60"
+                            >
+                              {savingSquadRoutine ? 'Guardando…' : 'Guardar rutina'}
+                            </button>
+                          </div>
+
                           <button 
                             onClick={() => {
                               // Pre-create a session linked to this squad
