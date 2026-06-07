@@ -1,0 +1,1 @@
+export { SquadsTab } from './SquadsTab'

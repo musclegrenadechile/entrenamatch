@@ -9,7 +9,7 @@ const LazyApp = lazy(() => import('./App'));
 
 export default function RootApp() {
   const { currentUser: firebaseUser, loading: authBooting, isDemoMode } = useAuth();
-  const { currentUser: localProfile } = useProfile();
+  const { currentUser: localProfile, profileHydrated } = useProfile();
   const { isDemoAuthenticated } = useDemoAuth();
 
   const isAuthenticated = useMemo(() => {
@@ -22,6 +22,15 @@ export default function RootApp() {
       <BootShell
         message="Verificando sesión…"
         submessage="Un momento — conectando con EntrenaMatch"
+      />
+    );
+  }
+
+  if (!isDemoMode && firebaseUser && !profileHydrated) {
+    return (
+      <BootShell
+        message="Cargando tu perfil…"
+        submessage="Sincronizando datos de entrenamiento"
       />
     );
   }

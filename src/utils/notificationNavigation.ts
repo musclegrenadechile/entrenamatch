@@ -5,12 +5,14 @@
 import type { Notification } from '../types'
 
 export interface NotificationNavTarget {
-  tab: 'messages' | 'sesiones' | 'squads' | 'profile' | 'explore'
+  tab: 'home' | 'messages' | 'sesiones' | 'squads' | 'profile' | 'explore'
   activeChat?: string
   groupChatId?: string
   selectedSquad?: string
   showDailyPulse?: boolean
   showSyncArena?: boolean
+  showLiveMap?: boolean
+  showLiveModal?: boolean
   startSyncWith?: { partnerId: string; partnerName?: string }
 }
 

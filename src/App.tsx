@@ -75,6 +75,7 @@ import {
   getAverageRating 
 } from './utils'
 import { resolveNotificationTarget, type NotificationNavTarget } from './utils/notificationNavigation'
+import { resolvePushNotificationData } from './utils/pushNavigation'
 import {
   ASSUMED_LIVE_SESSION_MS,
   normalizeTrainingSince as normalizeTrainingSinceMs,
@@ -87,10 +88,10 @@ import {
 import { useDemoAuth } from './hooks/useDemoAuth'
 import { useProfile } from './contexts/ProfileContext'
 import { useFilters } from './hooks/useFilters'
-import { useSquads } from './hooks/useSquads'
 import { useRealSessions } from './hooks/useRealSessions'
 import { useSwipeDeck } from './hooks/useSwipeDeck'
 import { ExploreTab } from './components/explore/ExploreTab'
+import { SquadsTab } from './components/squads'
 import { DailyRitualHome, LiveToggleFab } from './components/home'
 import { fetchGlobalProfilePosts } from './services/profilePosts'
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
@@ -149,7 +150,6 @@ import {
   formatSetLabel,
   type SyncWorkoutLogState,
 } from './utils/arenaWorkoutLog'
-import { AuthScreen } from './components/auth/AuthScreen'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { GymPulseMap } from './components/map' // Inicio de modularización 2026-06-05 (stub + estructura)
 import { SyncArenaView, ArenaGlobalPulseBar } from './components/arena'
@@ -761,13 +761,6 @@ function App() {
 
   // Extend sendSessionMessage to support voice (update call sites later)
   // (existing function at ~4328, we'll patch it below)
-
-  const { 
-    squads: _squadsFromHook, 
-    createSquad: _createSquad, 
-    joinSquad: _joinSquad, 
-    leaveSquad: _leaveSquad 
-  } = useSquads()
 
   const {
     likedIds,
@@ -2110,6 +2103,9 @@ useEffect(() => {
     default: '#eab308'
   }
   const startSyncRef = useRef<((partnerId: string, partnerName: string) => any) | null>(null)
+  const applyNotificationNavigationRef = useRef<
+    ((target: NotificationNavTarget, partnerNameHint?: string) => void) | null
+  >(null)
   const syncPartnerIdRef = useRef<string | null>(null)
   const currentUserRef = useRef<CurrentUser | null>(null)
   // Refs for dev map placement UX (click-to-place partner without leaving map view) + latest partners (passed down + used in quick add handler).
@@ -3303,6 +3299,12 @@ useEffect(() => {
               syncActions: realProfile.syncActions || [],
               syncStreak: realProfile.syncStreak != null ? realProfile.syncStreak : undefined,
               syncBonds: realProfile.syncBonds || {},
+              weekStats: realProfile.weekStats || currentUser?.weekStats,
+              showOnLeaderboard:
+                realProfile.showOnLeaderboard !== undefined
+                  ? realProfile.showOnLeaderboard
+                  : currentUser?.showOnLeaderboard,
+              gymCheckIn: realProfile.gymCheckIn || currentUser?.gymCheckIn,
             }
             if (merged.name) {
               saveUser(merged)
@@ -3766,36 +3768,18 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             const title = (notification && (notification.title || notification.notification?.title)) || 'Nueva notificación'
             const body = (notification && (notification.body || notification.notification?.body)) || 'Revisa la app'
             const data = notification && (notification.data || notification.notification?.data) || {}
-            const isNetwork = data.type === 'network_live' || data.type === 'network_sync'
+            const target = resolvePushNotificationData(data)
 
-            if (isNetwork) {
+            if (target) {
+              const isTeam = data.type === 'team_live' || data.type === 'team_sync' || data.type === 'network_live' || data.type === 'network_sync'
               toast.success(title, {
-                description: body + ' (tu red)',
+                description: body + (isTeam ? ' (tu equipo/red)' : ''),
                 className: 'legend-notif border-l-4 border-[#FFD700] bg-[#1a160f]',
                 duration: 6000,
-                action: data.userId ? {
-                  label: 'Ver / Unirme',
-                  onClick: () => {
-                    // Deep link: open live map or try to start sync with the partner
-                    setActiveTab('explore')
-                    setShowLiveModal(true)
-                    if (data.userId) {
-                      setTimeout(() => {
-                        const currentProfiles = latestRealProfilesRef.current || realProfiles
-                        const partner = currentProfiles.find((p: any) => p.id === data.userId)
-                        if (partner) {
-                          if (startSyncRef.current) {
-                            startSyncRef.current(partner.id, partner.name)
-                          } else {
-                            startSyncWith(partner.id, partner.name)
-                          }
-                        } else {
-                          setShowFullProfile({ id: data.userId, name: data.partnerName || 'Socio de red' } as any)
-                        }
-                      }, 300)
-                    }
-                  }
-                } : undefined
+                action: {
+                  label: target.showSyncArena ? 'Unirme' : target.tab === 'home' ? 'Ver reto' : 'Ver live',
+                  onClick: () => applyNotificationNavigationRef.current?.(target, data.partnerName),
+                },
               })
             } else {
               toast.info(title, { 
@@ -3809,24 +3793,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           PushNotifications.addListener('pushNotificationActionPerformed', (action: any) => {
             console.log('Push action performed (user tapped):', action)
             const data = action && action.notification && (action.notification.data || action.notification.notification?.data) || {}
-            const isNetwork = data.type === 'network_live' || data.type === 'network_sync'
+            const target = resolvePushNotificationData(data)
 
-            if (isNetwork && data.userId) {
-              setActiveTab('explore')
-              setShowLiveModal(true)
-              setTimeout(() => {
-                const currentProfiles = latestRealProfilesRef.current || realProfiles
-                const partner = currentProfiles.find((p: any) => p.id === data.userId)
-                if (partner) {
-                  if (partner.trainingNow && startSyncRef.current) {
-                    startSyncRef.current(partner.id, partner.name)
-                  } else if (partner.trainingNow) {
-                    startSyncWith(partner.id, partner.name)
-                  } else {
-                    setShowFullProfile(partner as any)
-                  }
-                }
-              }, 400)
+            if (target) {
+              applyNotificationNavigationRef.current?.(target, data.partnerName)
             } else {
               toast('Notificación tocada', { description: 'Abriendo app...' })
             }
@@ -7108,6 +7078,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     setShowNotifications(false)
     setActiveTab(target.tab)
     if (target.showDailyPulse) setShowDailyPulseBanner(true)
+    if (target.showLiveMap) setShowLiveMap(true)
+    if (target.showLiveModal) setShowLiveModal(true)
     if (target.activeChat) {
       setActiveChat(target.activeChat)
       setChatUnreads((prev) => {
@@ -7141,6 +7113,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       setTimeout(() => startSyncRef.current?.(partnerId, name), 80)
     }
   }, [realProfiles])
+
+  useEffect(() => {
+    applyNotificationNavigationRef.current = applyNotificationNavigation
+  }, [applyNotificationNavigation])
 
   const openMessageNotificationTarget = useCallback((chatId: string, senderName?: string, isGroupHint?: boolean) => {
     const target = resolveNotificationTarget(
@@ -8552,45 +8528,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     setFilters({ minAge: 20, maxAge: 40, gender: 'todos', trainingTypes: [], availability: [], maxDistanceKm: 100, onlyAvailableToday: false, onlyLiveTraining: false })
   })
 
-  // Gate for unauthenticated users and profile creation
-  // For real mode we also consider a just-successful auth (the hook can lag)
-  const isAuthenticated = isDemoMode 
-    ? !!currentUser 
-    : !!firebaseUser || !!lastSuccessfulAuthRef.current
-
-  if (authBooting && !isDemoMode) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0c] text-white">
-        <div className="text-center">
-          <div className="text-2xl mb-2 animate-pulse">🏋️</div>
-          <p className="text-sm text-[#9CA3AF]">Verificando sesión…</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <ErrorBoundary>
-        <AuthScreen
-          authMode={authMode}
-          setAuthMode={setAuthMode}
-          authEmail={authEmail}
-          setAuthEmail={setAuthEmail}
-          authPassword={authPassword}
-          setAuthPassword={setAuthPassword}
-          authLoading={authLoading}
-          authError={authError}
-          handleEmailAuth={handleEmailAuth}
-          handleGoogleAuth={handleGoogleAuth}
-          googleAuthEnabled={!isDemoMode && isFirebaseConfigured}
-          handleForgotPassword={handleForgotPassword}
-          isDemoMode={isDemoMode}
-          triggerHaptic={triggerHaptic}
-        />
-      </ErrorBoundary>
-    )
-  }
+  // Auth gate lives in RootApp → PublicAuthPage; App only renders for authenticated users.
 
   // For real users or demo users without full profile, show onboarding/creation flow
   // Only show onboarding when explicitly opened (register, profile editor, demo).
@@ -10260,107 +10198,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           </div>
         )}
 
-        {/* ===== SQUADS (Fixed training crews) - New unique feature ===== */}
         {activeTab === 'squads' && (
-          <div className="flex-1 overflow-auto p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <div className="section-header">Tus Squads</div>
-                <div className="text-[#9CA3AF] text-sm">
-                  {isDemoMode ? 'Grupos fijos de entrenamiento (demo)' : 'Grupos fijos en vivo — chat cross-device'}
-                </div>
-              </div>
-              <button 
-                onClick={() => setShowCreateSquad(true)}
-                className="flex items-center gap-2 bg-[#FF671F] text-black px-4 py-2 rounded-2xl text-sm font-semibold active:bg-[#E55A1A]"
-              >
-                <Plus size={16} /> Crear Squad
-              </button>
-            </div>
-
-            {squads.length === 0 ? (
-              <div className="card p-8 rounded-3xl text-center mt-8">
-                <Users className="mx-auto text-[#FF671F] mb-3" size={42} />
-                <div className="font-semibold mb-2">Sé el primero en crear un Squad</div>
-                <p className="text-sm text-[#9CA3AF] mb-4 max-w-[280px] mx-auto">
-                  Los squads son grupos fijos de 3-4 personas para entrenar consistentemente. 
-                  Esta es una de las features que más queremos probar.
-                </p>
-                <p className="text-xs text-[#9CA3AF] mb-4">Crea uno con foco (gym, running, calistenia...) e invita a otros testers. Cuéntanos cómo se siente el chat grupal.</p>
-                <button 
-                  onClick={() => setShowCreateSquad(true)}
-                  className="px-6 py-2.5 bg-[#FF671F] text-black rounded-2xl text-sm font-semibold active:bg-[#E55A1A]"
-                >
-                  Crear mi primer Squad
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {squads.map(squad => {
-                  const isMember = squad.members.includes(effectiveUserId)
-                  const spots = 4 - squad.members.length
-                  const membersLive = squad.members.filter((mid) => isUserLive(mid)).length
-
-                  return (
-                    <div key={squad.id} className="card card-glass session-card rounded-3xl p-4 active:bg-[#25252A] border border-[#FF671F]/20" onClick={() => setSelectedSquad(squad.id)}>
-                      <div className="flex justify-between">
-                        <div>
-                          <div className="font-semibold text-lg flex items-center gap-2 tracking-tight flex-wrap">
-                            {squad.name}
-                            <span className="text-[9px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded font-medium">SQUAD</span>
-                            {membersLive > 0 && (
-                              <span className="text-[9px] bg-[#22c55e] text-black px-1.5 py-0.5 rounded font-black animate-pulse">
-                                🟢 {membersLive} LIVE
-                              </span>
-                            )}
-                          </div>
-                          <div className="text-sm text-[#FF671F] font-medium mt-0.5">{squad.focus}</div>
-                          {squad.weeklyRoutine?.label && (
-                            <div className="text-[10px] text-[#9CA3AF] mt-1 leading-snug">
-                              📋 {squad.weeklyRoutine.label}
-                              {squad.weeklyRoutine.schedule ? ` · ${squad.weeklyRoutine.schedule}` : ''}
-                            </div>
-                          )}
-                        </div>
-                        <div className="text-right text-xs">
-                          <div className="text-[#22c55e] font-medium">{squad.members.length}/4</div>
-                          {!isMember && spots > 0 && <div className="text-[#9CA3AF] mt-0.5">cupos</div>}
-                        </div>
-                      </div>
-
-                      <div className="mt-3 flex justify-between items-center text-sm">
-                        <div className="text-[#9CA3AF] text-xs">
-                          Creado por {resolveMemberName(squad.createdBy)}
-                        </div>
-                        {!isMember && spots > 0 && (
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleJoinSquad(squad.id)
-                            }}
-                            className="bg-[#FF671F] text-black text-xs px-4 py-1.5 rounded-2xl font-medium active:bg-[#E55A1A]"
-                          >
-                            Unirme
-                          </button>
-                        )}
-                        {isMember && (
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setSelectedSquad(squad.id)
-                            }}
-                            className="text-xs border border-[#FF671F] text-[#FF671F] px-3 py-1.5 rounded-2xl font-medium active:bg-[#FF671F] active:text-black"
-                          >
-                            Abrir chat
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+          <SquadsTab
+            squads={squads}
+            isDemoMode={isDemoMode}
+            effectiveUserId={effectiveUserId}
+            isUserLive={isUserLive}
+            resolveMemberName={resolveMemberName}
+            onCreateSquad={() => setShowCreateSquad(true)}
+            onJoinSquad={handleJoinSquad}
+            onOpenSquad={setSelectedSquad}
+          />
         )}
 
         {/* ===== SESIONES DE ENTRENAMIENTO (Unique feature) ===== */}
