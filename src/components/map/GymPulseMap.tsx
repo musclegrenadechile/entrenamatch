@@ -640,13 +640,47 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         } catch {}
       })
 
-      // === Sync Tethers (visual connection between people currently in EntrenaSync) ===
-      // Golden lines showing who is bonded right now (high signal social graph on the map).
+      // === Active EntrenaSync tethers (live users linked via trainingSyncWith) ===
       syncLinesRef.current.forEach(l => { try { mapInstanceRef.current.removeLayer(l) } catch {} })
       syncLinesRef.current = []
 
+      const drawnSyncPairs = new Set<string>()
+      ;(liveTrainingNow || []).forEach((u: any) => {
+        const partnerId = u.trainingSyncWith
+        if (!partnerId || !hasMapCoords(u)) return
+        const pairKey = [u.id, partnerId].sort().join('|')
+        if (drawnSyncPairs.has(pairKey)) return
+        const partner = (liveTrainingNow || []).find((x: any) => x.id === partnerId)
+        if (!partner || !hasMapCoords(partner)) return
+        drawnSyncPairs.add(pairKey)
+        try {
+          const inRed = !!(syncBonds[u.id] || syncBonds[partnerId])
+          const bondLevel = Math.max(
+            syncBonds[u.id]?.bondLevel || 0,
+            syncBonds[partnerId]?.bondLevel || 0
+          )
+          const isStrong = inRed && (bondLevel >= 2 || (syncBonds[u.id]?.totalMin || 0) >= 20)
+          const line = L.polyline(
+            [[u.lat, u.lng], [partner.lat, partner.lng]],
+            {
+              color: isStrong ? '#FFD700' : '#22c55e',
+              weight: isStrong ? 3.5 : 2.5,
+              opacity: isStrong ? 0.8 : 0.6,
+              dashArray: inRed ? undefined : '6 8',
+              className: `sync-tether active-sync ${isStrong ? 'strong-tether' : ''}`
+            }
+          ).addTo(mapInstanceRef.current)
+          syncLinesRef.current.push(line)
+        } catch {}
+      })
+
+      // Legacy: bonds with stored partner coords (older persisted data)
       Object.entries(syncBonds || {}).forEach(([uid, bond]: [string, any]) => {
         if (!bond || !bond.partnerLat || !bond.partnerLng) return
+        if (drawnSyncPairs.size > 0) {
+          const u = (liveTrainingNow || []).find((x: any) => x.id === uid)
+          if (u?.trainingSyncWith) return
+        }
         const u = (liveTrainingNow || []).find((x: any) => x.id === uid)
         if (!u || !hasMapCoords(u)) return
         try {

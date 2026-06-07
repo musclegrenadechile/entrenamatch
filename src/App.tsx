@@ -70,6 +70,7 @@ import {
   getTrainingStreak, 
   getAverageRating 
 } from './utils'
+import { resolveNotificationTarget, type NotificationNavTarget } from './utils/notificationNavigation'
 import {
   ASSUMED_LIVE_SESSION_MS,
   normalizeTrainingSince as normalizeTrainingSinceMs,
@@ -2076,6 +2077,11 @@ useEffect(() => {
     return ids.join(',');
   }, [displaySessions, effectiveUserId]);
 
+  const knownSessionIds = useMemo(
+    () => new Set(displaySessions.map((s) => s.id)),
+    [displaySessions]
+  )
+
   // Remaining profiles (not swiped) - Real Firestore profiles + Seed profiles (hybrid for Pre-Alpha)
   // Hoisted early (right after real multi-user state + displaySessions) so that all later effects, JSX, and discovery logic (deck, map, feed, live notifs) see the declarations before any code that might reference them during render or effect setup. Prevents TDZ for remainingProfiles, liveTrainingNow, zoneLiveCounts, feedComputation.
   const remainingProfiles = useMemo(() => {
@@ -3320,11 +3326,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       setMapForceTick((t) => t + 1)
     } catch (e) {
       console.warn('Failed to sync profile to Firestore:', e);
-      if (merged.trainingNow) {
-        toast.error('Live activo localmente, pero falló sync a la nube', {
-          description: 'Revisa conexión. Otros pueden no verte hasta que se sincronice.',
-        })
-      }
+      toast.error('No se pudo sincronizar con el servidor', {
+        description: merged.trainingNow
+          ? 'Revisa conexión. Otros pueden no verte en live hasta que se sincronice.'
+          : 'Revisa tu conexión e intenta de nuevo.',
+      })
       throw e
     }
   }
@@ -5104,7 +5110,19 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     const newSessions = prevBond.sessions + 1
     const newAvg = Math.round(((prevBond.avgRating * prevBond.sessions) + rating) / newSessions)
     const newBondLevel = Math.min(5, Math.max(1, Math.floor(newTotalMin / 25) + (newAvg >= 4 ? 1 : 0)))
-    const updatedBonds = { ...syncBonds, [partnerId]: { totalMin: newTotalMin, sessions: newSessions, avgRating: newAvg, bondLevel: newBondLevel } }
+    const partnerProfile = realProfiles.find(p => p.id === partnerId) || liveUsersActive.find((p: any) => p.id === partnerId)
+    const updatedBonds = {
+      ...syncBonds,
+      [partnerId]: {
+        totalMin: newTotalMin,
+        sessions: newSessions,
+        avgRating: newAvg,
+        bondLevel: newBondLevel,
+        ...(partnerProfile?.lat != null && partnerProfile?.lng != null
+          ? { partnerLat: partnerProfile.lat, partnerLng: partnerProfile.lng }
+          : {}),
+      },
+    }
     setSyncBonds(updatedBonds)
     // Persist bonds lightly on profile (for cross device legend status)
     if (!isDemoMode && firebaseUser?.uid) {
@@ -5929,6 +5947,62 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   }
 
+  // Central helper: navigate from notification deep-link (panel, toast, browser notif)
+  const applyNotificationNavigation = useCallback((target: NotificationNavTarget, partnerNameHint?: string) => {
+    setShowNotifications(false)
+    setActiveTab(target.tab)
+    if (target.showDailyPulse) setShowDailyPulseBanner(true)
+    if (target.activeChat) {
+      setActiveChat(target.activeChat)
+      setChatUnreads((prev) => {
+        const c = { ...prev }
+        c[target.activeChat!] = 0
+        return c
+      })
+    }
+    if (target.groupChatId) {
+      setShowGroupChatModalFor(target.groupChatId)
+      setSessionUnreads((prev) => {
+        const c = { ...prev }
+        c[target.groupChatId!] = 0
+        return c
+      })
+    }
+    if (target.selectedSquad) {
+      setSelectedSquad(target.selectedSquad)
+    }
+    if (target.startSyncWith) {
+      const { partnerId, partnerName } = target.startSyncWith
+      const name =
+        partnerName ||
+        partnerNameHint ||
+        realProfiles.find((p) => p.id === partnerId)?.name ||
+        SEED_PROFILES.find((p) => p.id === partnerId)?.name ||
+        'Compañero'
+      setTimeout(() => startSyncRef.current?.(partnerId, name), 80)
+    }
+  }, [realProfiles])
+
+  const openMessageNotificationTarget = useCallback((chatId: string, senderName?: string, isGroupHint?: boolean) => {
+    const target = resolveNotificationTarget(
+      { type: isGroupHint ? 'group_message' : 'message', relatedId: chatId },
+      { sessionIds: knownSessionIds }
+    )
+    if (target) {
+      applyNotificationNavigation(target, senderName)
+      return
+    }
+    if (isGroupHint) {
+      setActiveTab('sesiones')
+      setShowGroupChatModalFor(chatId)
+      setSessionUnreads((prev) => { const c = { ...prev }; c[chatId] = 0; return c })
+    } else {
+      setActiveTab('messages')
+      setActiveChat(chatId)
+      setChatUnreads((prev) => { const c = { ...prev }; c[chatId] = 0; return c })
+    }
+  }, [knownSessionIds, applyNotificationNavigation])
+
   // Central helper: show in-app toast + central notif + browser notif (if hidden) + bump unread for a message arrival.
   // Safe to call from bg listeners. name = display name of sender, chatId for 1:1 or sessionId for group.
   const triggerMessageArrivalNotification = (chatId: string, name: string, text: string, isGroup: boolean, photoUrl?: string) => {
@@ -5967,17 +6041,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       ),
       action: {
         label: isLegendMsg ? 'Responder a tu Red' : 'Ver',
-        onClick: () => {
-          if (isGroup) {
-            setActiveTab('sesiones')
-            setShowGroupChatModalFor(chatId)
-            setSessionUnreads(prev => { const c = { ...prev }; c[chatId] = 0; return c })
-          } else {
-            setActiveTab('messages')
-            setActiveChat(chatId)
-            setChatUnreads(prev => { const c = { ...prev }; c[chatId] = 0; return c })
-          }
-        }
+        onClick: () => openMessageNotificationTarget(chatId, name, isGroup),
       },
       duration: 8000,
       className: toastClass
@@ -6000,16 +6064,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         })
         n.onclick = () => {
           window.focus()
-          // Defer state updates from notification click context (helps avoid timing/strict-mode issues in some browsers/PWAs)
-          setTimeout(() => {
-            if (isGroup) {
-              setActiveTab('sesiones')
-              setShowGroupChatModalFor(chatId)
-            } else {
-              setActiveTab('messages')
-              setActiveChat(chatId)
-            }
-          }, 0)
+          setTimeout(() => openMessageNotificationTarget(chatId, name, isGroup), 0)
         }
       } catch (e) {
         console.warn('Browser Notification failed', e)
@@ -13967,57 +14022,19 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                         className={`p-4 border-b border-[#2F2F35] flex items-start gap-3 active:bg-[#1C1C20] cursor-pointer ${!notif.read ? 'bg-[#1C1C20]' : ''} ${(isLegendNotif || isNetworkLive) ? 'legend-notif border-l-4 border-[#FFD700] bg-[#1a160f]' : ''} ${isDailyPulse ? 'border-l-4 border-[#FF671F] bg-[#1a140f]' : ''}`} 
                         // network notif gold for your red (legend-notif styling)
                         onClick={() => {
-                          const updated = notifications.map(n => 
-                            n.id === notif.id ? {...n, read: true} : n
+                          const updated = notifications.map(n =>
+                            n.id === notif.id ? { ...n, read: true } : n
                           )
                           saveNotifications(updated)
 
-                          // Navigate based on type
-                          if (notif.type === 'match' && notif.relatedId) {
-                            setShowNotifications(false)
-                            setActiveTab('messages')
-                            setActiveChat(notif.relatedId)
-                            setChatUnreads(prev => { const c = { ...prev }; if (notif.relatedId) c[notif.relatedId] = 0; return c })
-                          }
-                          if (notif.type === 'message' && notif.relatedId) {
-                            setShowNotifications(false)
-                            const isLikelyGroup = (notif.relatedId || '').startsWith('s')
-                            if (isLikelyGroup) {
-                              setActiveTab('sesiones')
-                              setShowGroupChatModalFor(notif.relatedId)
-                              setSessionUnreads(prev => { const c = { ...prev }; if (notif.relatedId) c[notif.relatedId] = 0; return c })
-                            } else {
-                              setActiveTab('messages')
-                              setActiveChat(notif.relatedId)
-                              setChatUnreads(prev => { const c = { ...prev }; if (notif.relatedId) c[notif.relatedId] = 0; return c })
-                            }
-                          }
-                          if (isDailyPulse) {
-                            setShowNotifications(false)
-                            setActiveTab('profile')
-                            setShowDailyPulseBanner(true)
-                            return
-                          }
-                          if (notif.type === 'session_join' && notif.relatedId) {
-                            setShowNotifications(false)
-                            const isNet = !!syncBonds[notif.relatedId]
-                            const person = realProfiles.find(p => p.id === notif.relatedId) || { id: notif.relatedId, name: isNet ? 'Tu socio de red' : 'Socio' }
-                            if (isNet) {
-                              // Direct to EntrenaSync to boost your graph power
-                              setTimeout(() => {
-                                if (startSyncRef.current) startSyncRef.current(person.id, person.name)
-                              }, 80)
-                            } else {
-                              setActiveTab('sesiones')
-                              setTimeout(() => {
-                                if (startSyncRef.current) startSyncRef.current(person.id, person.name)
-                              }, 150)
-                            }
-                          }
-                          if (notif.type === 'squad_join' && notif.relatedId) {
-                            setShowNotifications(false)
-                            setActiveTab('squads')
-                            setSelectedSquad(notif.relatedId)
+                          const target = resolveNotificationTarget(notif, { sessionIds: knownSessionIds })
+                          if (target) {
+                            const partnerHint =
+                              target.startSyncWith && notif.relatedId
+                                ? (realProfiles.find((p) => p.id === notif.relatedId)?.name ||
+                                   SEED_PROFILES.find((p) => p.id === notif.relatedId)?.name)
+                                : undefined
+                            applyNotificationNavigation(target, partnerHint)
                           }
                         }}
                       >
