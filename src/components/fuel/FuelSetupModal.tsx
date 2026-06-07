@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { X } from 'lucide-react'
 import { buildFuelProfile } from '../../utils/fuelCalculator'
 import type { FuelGoal, FuelProfile } from '../../types'
@@ -27,6 +27,23 @@ const ACTIVITY = [
   { id: 'very_active' as const, label: 'Muy activa (2× día)' },
 ]
 
+function clampInt(n: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, Math.round(n)))
+}
+
+/** Parse numeric text; empty/invalid → fallback (used for preview + save). */
+function parseMetric(text: string, fallback: number, min: number, max: number): number {
+  const trimmed = text.trim()
+  if (trimmed === '' || trimmed === '-' || trimmed === '.') return fallback
+  const n = Number(trimmed.replace(',', '.'))
+  if (!Number.isFinite(n)) return fallback
+  return clampInt(n, min, max)
+}
+
+function normalizeMetricText(text: string, fallback: number, min: number, max: number): string {
+  return String(parseMetric(text, fallback, min, max))
+}
+
 export function FuelSetupModal({
   open,
   initial,
@@ -36,15 +53,40 @@ export function FuelSetupModal({
   onSave,
   saving = false,
 }: FuelSetupModalProps) {
-  const [weightKg, setWeightKg] = useState(initial?.weightKg ?? 75)
-  const [heightCm, setHeightCm] = useState(initial?.heightCm ?? 175)
-  const [age, setAge] = useState(initial?.age ?? defaultAge)
+  const baseWeight = initial?.weightKg ?? 75
+  const baseHeight = initial?.heightCm ?? 175
+  const baseAge = initial?.age ?? defaultAge ?? 28
+
+  const [weightText, setWeightText] = useState(String(baseWeight))
+  const [heightText, setHeightText] = useState(String(baseHeight))
+  const [ageText, setAgeText] = useState(String(baseAge))
   const [gender, setGender] = useState<'hombre' | 'mujer'>(initial?.gender ?? defaultGender)
   const [goal, setGoal] = useState<FuelGoal>(initial?.goal ?? 'muscle')
   const [activityLevel, setActivityLevel] = useState<FuelProfile['activityLevel']>(
     initial?.activityLevel ?? 'moderate'
   )
   const [restrictions, setRestrictions] = useState(initial?.restrictions ?? '')
+
+  useEffect(() => {
+    if (!open) return
+    setWeightText(String(initial?.weightKg ?? 75))
+    setHeightText(String(initial?.heightCm ?? 175))
+    setAgeText(String(initial?.age ?? defaultAge ?? 28))
+    setGender(initial?.gender ?? defaultGender)
+    setGoal(initial?.goal ?? 'muscle')
+    setActivityLevel(initial?.activityLevel ?? 'moderate')
+    setRestrictions(initial?.restrictions ?? '')
+  }, [open, initial, defaultAge, defaultGender])
+
+  const weightKg = useMemo(
+    () => parseMetric(weightText, baseWeight, 30, 250),
+    [weightText, baseWeight]
+  )
+  const heightCm = useMemo(
+    () => parseMetric(heightText, baseHeight, 120, 230),
+    [heightText, baseHeight]
+  )
+  const age = useMemo(() => parseMetric(ageText, baseAge, 14, 99), [ageText, baseAge])
 
   if (!open) return null
 
@@ -60,6 +102,11 @@ export function FuelSetupModal({
 
   const handleSave = async () => {
     await onSave(preview)
+  }
+
+  const numericInputProps = {
+    inputMode: 'decimal' as const,
+    autoComplete: 'off',
   }
 
   return (
@@ -80,18 +127,26 @@ export function FuelSetupModal({
             <label className="block">
               <span className="text-[10px] text-[#9CA3AF] font-bold">Peso (kg)</span>
               <input
-                type="number"
-                value={weightKg}
-                onChange={(e) => setWeightKg(Number(e.target.value) || 70)}
+                type="text"
+                {...numericInputProps}
+                value={weightText}
+                onChange={(e) => setWeightText(e.target.value.replace(/[^\d.,]/g, ''))}
+                onBlur={() =>
+                  setWeightText(normalizeMetricText(weightText, baseWeight, 30, 250))
+                }
                 className="mt-1 w-full px-3 py-2 rounded-xl bg-[#1a1a22] border border-white/10 text-white"
               />
             </label>
             <label className="block">
               <span className="text-[10px] text-[#9CA3AF] font-bold">Altura (cm)</span>
               <input
-                type="number"
-                value={heightCm}
-                onChange={(e) => setHeightCm(Number(e.target.value) || 170)}
+                type="text"
+                {...numericInputProps}
+                value={heightText}
+                onChange={(e) => setHeightText(e.target.value.replace(/[^\d.,]/g, ''))}
+                onBlur={() =>
+                  setHeightText(normalizeMetricText(heightText, baseHeight, 120, 230))
+                }
                 className="mt-1 w-full px-3 py-2 rounded-xl bg-[#1a1a22] border border-white/10 text-white"
               />
             </label>
@@ -100,9 +155,12 @@ export function FuelSetupModal({
             <label className="block">
               <span className="text-[10px] text-[#9CA3AF] font-bold">Edad</span>
               <input
-                type="number"
-                value={age}
-                onChange={(e) => setAge(Number(e.target.value) || 25)}
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                value={ageText}
+                onChange={(e) => setAgeText(e.target.value.replace(/[^\d]/g, ''))}
+                onBlur={() => setAgeText(normalizeMetricText(ageText, baseAge, 14, 99))}
                 className="mt-1 w-full px-3 py-2 rounded-xl bg-[#1a1a22] border border-white/10 text-white"
               />
             </label>
