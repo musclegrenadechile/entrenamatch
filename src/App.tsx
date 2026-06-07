@@ -93,6 +93,10 @@ import { useRealSessions } from './hooks/useRealSessions'
 import { useSwipeDeck } from './hooks/useSwipeDeck'
 import { ExploreTab } from './components/explore/ExploreTab'
 import { SquadsTab } from './components/squads'
+import { MatchesTab } from './components/matches'
+import { ChatListPanel, ChatView } from './components/messages'
+import { ProfileSectionNav, TuRedPowerCard } from './components/profile'
+import type { ProfileSection } from './components/profile'
 import { DailyRitualHome, LiveToggleFab } from './components/home'
 import { fetchGlobalProfilePosts } from './services/profilePosts'
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
@@ -777,6 +781,7 @@ function App() {
 
   // UI state
   const [activeTab, setActiveTab] = useState<Tab>('home')
+  const [profileSection, setProfileSection] = useState<ProfileSection>('actividad')
   const [isLoadingFeed, setIsLoadingFeed] = useState(false)
   const [feedShowPinnedOnly, setFeedShowPinnedOnly] = useState(false)
   const [feedSearch, setFeedSearch] = useState('')
@@ -10490,471 +10495,191 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           </div>
         )}
 
-        {/* ===== MATCHES ===== */}
         {activeTab === 'matches' && (
-          <div className="flex-1 overflow-auto p-4">
-            <div className="flex items-center justify-between mb-1 px-1">
-              <div>
-                <div className="section-header">Tus matches</div>
-                <div className="text-[#9CA3AF] text-sm">Conexiones reales <span className="live-pill text-[8px]">en vivo</span></div>
-              </div>
-              {!isDemoMode && (
-                <button 
-                  onClick={async () => {
-                    setIsLoadingMatches(true)
-                    try { await loadRealProfiles() } finally { setIsLoadingMatches(false) }
-                  }} 
-                  disabled={isLoadingMatches}
-                  className="text-xs px-3 py-1 rounded-2xl bg-[#FF671F] text-black font-semibold active:bg-[#E55A1A] disabled:opacity-60"
-                >
-                  {isLoadingMatches ? '...' : 'Actualizar reales'}
-                </button>
-              )}
-              {lastSync && <span className="text-[10px] text-[#9CA3AF] ml-2">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
-            </div>
-            <div className="text-[#9CA3AF] px-1 mb-4 text-xs">Matches reales • en vivo cross-device</div>
-
-            {matchProfiles.length === 0 ? (
-              <div className="mt-10 px-4">
-                <div className="card p-8 rounded-3xl text-center">
-                  <div className="mx-auto w-16 h-16 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-4">
-                    <Heart className="text-[#FF671F]" size={36} />
-                  </div>
-                  <div className="font-semibold text-xl mb-2">Aún no tienes matches</div>
-                  <p className="text-sm text-[#9CA3AF] leading-snug mb-4 max-w-[300px] mx-auto">
-                    ¡Sigue explorando! Los matches con testers reales aparecen aquí al instante (cross-device). Prueba swipiar perfiles cercanos o con entrenamientos en común.
-                  </p>
-                  <div className="flex gap-2 justify-center">
-                    <button onClick={() => setActiveTab('explore')} className="btn-primary px-6">Ir a Explorar</button>
-                    {!isDemoMode && (
-                      <button onClick={async () => { setIsLoadingMatches(true); try { await loadRealProfiles(); await loadRealMatches(); } finally { setIsLoadingMatches(false); } }} className="px-4 py-2 border border-[#FF671F]/60 text-[#FF671F] rounded-2xl text-sm">Actualizar</button>
-                    )}
-                  </div>
-                  {lastSync && (
-                    <div className="text-[10px] text-[#9CA3AF] mt-2">Última sync real: hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                {matchProfiles
-                  .filter(p => !blockedUsers.includes(p.id))
-                  .sort((a,b)=> {
-                    const aInNet = !!syncBonds[a.id] ? -1 : 0;
-                    const bInNet = !!syncBonds[b.id] ? -1 : 0;
-                    if (aInNet !== bInNet) return aInNet - bInNet; // network priority in explore
-                    return 0;
-                  })
-                  .map(profile => (
-                  <div key={profile.id} onClick={() => openChat(profile.id)} className={`card card-glass rounded-3xl overflow-hidden active:opacity-80 cursor-pointer relative ring-1 ring-white/5 ${profile.trainingNow ? 'ring-2 ring-[#22c55e]/60 shadow-lg shadow-[#22c55e]/10' : ''}`} style={{transition: 'transform 0.2s'}}>
-                    <div className="relative">
-                      <img src={profile.photos[0]} className="w-full aspect-square object-cover" />
-                      <div className="absolute top-2 right-2 flex gap-1">
-                        {realProfiles.some(rp => rp.id === profile.id) && (
-                          <div className="text-[9px] bg-[#FF671F] text-black px-1.5 py-0.5 rounded-full font-bold">REAL</div>
-                        )}
-                        {profile.trainingNow && (
-                          <div className="text-[9px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-1.5 py-0.5 rounded-full font-bold shadow-sm ring-1 ring-[#22c55e]/50">🟢 LIVE {profile.liveStreak ? `🔥${profile.liveStreak}d` : ''}</div>
-                        )}
-                        {profile.verificationStatus === 'verified' && (
-                          <div className="text-[9px] bg-[#22c55e] text-black px-1 py-0.5 rounded-full">✓</div>
-                        )}
-                      </div>
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 p-3">
-                        <div className="font-semibold">{profile.name}, {profile.age}</div>
-                        <div className="text-xs text-[#FF4F79]">{profile.city}, {profile.country}</div>
-                        {userLocation && (
-                          <div className="text-[10px] text-[#FF671F]/80 mt-0.5">
-                            {getDistanceKm(userLocation.lat, userLocation.lng, profile.lat, profile.lng)} km
-                          </div>
-                        )}
-                        {getTrainingStreak(profile.id, reviews) > 1 && (
-                          <div className="text-[10px] text-orange-400 mt-0.5">🔥 {getTrainingStreak(profile.id, reviews)} seguidas</div>
-                        )}
-                        {(() => {
-                          const sharedSquads = squads.filter(sq => 
-                            sq.members.includes(effectiveUserId) && sq.members.includes(profile.id)
-                          )
-                          if (sharedSquads.length > 0) {
-                            return <div className="text-[10px] text-[#FF671F] mt-0.5">Squad: {sharedSquads[0].name}</div>
-                          }
-                          return null
-                        })()}
-                        {/* Spectacular muro teaser (1-2 latest) on match cards - improved progressive polish */}
-                        {(() => {
-                          const posts = profilePosts[profile.id] || []
-                          if (posts.length === 0) return null
-                          const sorted = [...posts].sort((a: any, b: any) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.timestamp - a.timestamp)
-                          const top = sorted.slice(0, 2)
-                          const str = top.map((p: any) => {
-                            let t = (p.text || '').trim()
-                            if (t.length > 35) t = t.slice(0, 32) + '...'
-                            const pre = p.photo ? '📷' : (p.pinned ? '📌' : '📝')
-                            return `${pre} ${t}`
-                          }).join(' • ')
-                          return <div className="text-[9px] text-[#FF671F]/90 mt-0.5 line-clamp-2 leading-tight">{str}</div>
-                        })()}
-                      </div>
-                    </div>
-                    <div className="p-3 text-xs text-[#9CA3AF] flex items-center gap-1">
-                      <MessageCircle size={14} /> Abrir chat
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <MatchesTab
+            matchProfiles={matchProfiles}
+            blockedUsers={blockedUsers}
+            syncBonds={syncBonds}
+            realProfiles={realProfiles}
+            userLocation={userLocation}
+            reviews={reviews}
+            squads={squads}
+            effectiveUserId={effectiveUserId}
+            profilePosts={profilePosts}
+            isDemoMode={isDemoMode}
+            isLoadingMatches={isLoadingMatches}
+            lastSync={lastSync}
+            onExplore={() => setActiveTab('explore')}
+            onOpenChat={openChat}
+            onRefreshReal={async () => {
+              setIsLoadingMatches(true)
+              try {
+                await loadRealProfiles()
+              } finally {
+                setIsLoadingMatches(false)
+              }
+            }}
+            onRefreshAll={async () => {
+              setIsLoadingMatches(true)
+              try {
+                await loadRealProfiles()
+                await loadRealMatches()
+              } finally {
+                setIsLoadingMatches(false)
+              }
+            }}
+          />
         )}
 
         {/* ===== MESSAGES ===== */}
         {activeTab === 'messages' && (
           <div className="flex-1 flex flex-col">
             {!activeChat ? (
-              // List of chats (perfiles) - scrollable with sticky header so you can scroll down to all profiles
-              <div className="overflow-auto flex-1 p-4 min-h-0">
-                <div className="sticky top-0 bg-[#0D0D10] z-10 pb-2 -mx-4 px-4">
-                  <div className="flex items-center justify-between mb-1 px-1">
-                    <div className="flex items-center gap-2">
-                      <div className="section-header">Mensajes</div>
-                      <span className="live-pill">● en vivo</span>
-                    </div>
-                    {!isDemoMode && (
-                      <button onClick={async () => {
-                        setIsLoadingChats(true);
-                        try {
-                          const currentMatches = await loadRealMatches(); // discover any new matches first
-                          for (const id of currentMatches) {
-                            await loadRealChatMessages(id);
-                          }
-                          setLastSync(new Date());
-                          setChatUnreads({}); // all "read" after manual full sync
-                          toast.success('Chats reales actualizados');
-                        } finally {
-                          setIsLoadingChats(false);
-                        }
-                      }} disabled={isLoadingChats} className="text-[10px] px-2 py-1 rounded-xl border border-[#FF671F]/50 text-[#FF671F] active:bg-[#FF671F] active:text-black disabled:opacity-60">{isLoadingChats ? '...' : 'Actualizar chats reales'}</button>
-                    )}
-                    {lastSync && <span className="text-[10px] text-[#9CA3AF] ml-2">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
-                  </div>
-                  <div className="text-[#9CA3AF] text-xs px-1 mb-3">Mensajes 1:1 reales • en vivo cross-device • notificaciones toast + navegador cuando llega un mensaje</div>
-                </div>
-
-                {matchProfiles.length === 0 && (
-                  <div className="mt-8 p-8 rounded-3xl text-center border border-[#FF671F]/15 bg-gradient-to-b from-[#1C1C20] to-[#0D0D10]">
-                    <div className="text-5xl mb-3 opacity-40">💬</div>
-                    <div className="font-black text-2xl tracking-[-1px] mb-2">Tu red de GymPartners</div>
-                    <p className="text-sm text-[#9CA3AF] max-w-[260px] mx-auto leading-relaxed">Aquí aparecen tus matches reales. Chats 1:1 en vivo cross-device con notas de voz y propuestas de entrenamiento. El lugar donde las conexiones del GymPulse se vuelven conversaciones que importan.</p>
-                  </div>
-                )}
-                {/* REMASTERED CHAT LIST — spectacular cards */}
-                {matchProfiles
-                  .filter(p => !blockedUsers.includes(p.id))
-                  .map(profile => {
-                  const chatMsgs = messages[profile.id] || []
-                  const last = chatMsgs[chatMsgs.length - 1]
-                  const unread = chatUnreads[profile.id] || 0
-                  const isLive = !!profile.trainingNow
-                  const isBond = !!syncBonds[profile.id]
-                  const lastText = last ? (last.voiceUrl ? '🎙️ Nota de voz' : last.text) : 'Match nuevo — rompe el hielo'
-                  return (
-                    <div 
-                      key={profile.id} 
-                      onClick={() => { setActiveChat(profile.id); setChatUnreads(prev => { const c = { ...prev }; c[profile.id] = 0; return c }) }} 
-                      className="chat-list-card flex items-center gap-4 p-4 rounded-3xl mb-3 active:bg-[#25252A] cursor-pointer"
-                    >
-                      <div className={`chat-avatar w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 relative ${isLive ? 'live' : ''}`}>
-                        <img src={profile.photos[0]} className="w-full h-full object-cover" />
-                        {isLive && <div className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-[#22c55e] rounded-full ring-2 ring-[#0D0D10]" />}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between">
-                          <div className="font-extrabold text-[15px] flex items-center gap-1.5 tracking-[-0.2px]">
-                            {profile.name}
-                            {isBond && <span className="text-[8px] px-1.5 py-px bg-[#FFD700] text-black rounded font-black tracking-wider">⭐ RED</span>}
-                          </div>
-                          <div className="text-[10px] text-[#9CA3AF] tabular-nums flex-shrink-0">{profile.city}</div>
-                        </div>
-
-                        {userLocation && (
-                          <div className="text-[10px] text-[#FF671F] mt-px font-medium">
-                            {getDistanceKm(userLocation.lat, userLocation.lng, profile.lat, profile.lng)} km
-                          </div>
-                        )}
-
-                        <div className="flex items-center gap-2 mt-1">
-                          <div className="text-[13px] text-[#9CA3AF] truncate flex-1 leading-snug">
-                            {lastText}
-                          </div>
-                          {last && last.timestamp && (
-                            <span className="text-[10px] text-[#6B7280] flex-shrink-0 tabular-nums">{getRelativeTime(last.timestamp)}</span>
-                          )}
-                          {unread > 0 && (
-                            <span className="chat-unread ml-0.5 inline-flex items-center justify-center min-w-[19px] h-[19px] px-1.5 text-[10px] font-black rounded-full text-white">
-                              {unread > 9 ? '9+' : unread}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              // Chat view — SPECTACULAR REMASTER
-              <div className="flex-1 flex flex-col">
-                {/* Premium chat header */}
-                <div className="chat-header h-16 px-4 flex items-center gap-3 z-10">
-                  <button onClick={() => setActiveChat(null)} className="p-1.5 -ml-1 text-[#9CA3AF] active:text-white"><ArrowLeft size={22} /></button>
-                  
-                  <div className={`chat-header-avatar w-11 h-11 rounded-2xl overflow-hidden flex-shrink-0 relative ${chatProfile?.trainingNow ? 'live' : ''}`} onClick={() => chatProfile && setShowFullProfile(chatProfile)}>
-                    <img src={chatProfile?.photos?.[0]} className="w-full h-full object-cover cursor-pointer" />
-                    {chatProfile?.trainingNow && <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#22c55e] rounded-full ring-[2.5px] ring-[#0D0D10]" />}
-                  </div>
-
-                  <div className="min-w-0 flex-1" onClick={() => chatProfile && setShowFullProfile(chatProfile)}>
-                    <div className="font-black text-[17px] tracking-[-0.3px] flex items-center gap-2 leading-none">
-                      {chatProfile?.name}
-                      {realMatches.includes(activeChat || '') && <span className="text-[8px] px-1.5 py-px bg-[#FF671F] text-black rounded font-black tracking-widest">REAL</span>}
-                    </div>
-                    <div className="text-[11px] text-[#FF671F] flex items-center gap-1.5 mt-1">
-                      {chatProfile?.city}, {chatProfile?.country}
-                      {chatProfile?.trainingNow && <span className="text-[#22c55e] font-bold">• EN VIVO AHORA</span>}
-                      {syncBonds[activeChat!] && <span className="px-1.5 py-px text-[8px] rounded bg-[#FFD700] text-black font-black tracking-wider">⭐ RED LV{syncBonds[activeChat!].bondLevel || 1}</span>}
-                    </div>
-                  </div>
-
-                  <div className="chat-header-actions flex items-center gap-1 flex-shrink-0">
-                    <button onClick={() => chatProfile && setShowFullProfile(chatProfile)} className="text-[10px] px-3 py-1 bg-[#1C1C20] hover:bg-[#25252A] rounded-full text-[#FF671F] border border-[#2F2F35]">Perfil</button>
-                    {!isDemoMode && (
-                      <button onClick={async () => { if (activeChat) { setIsLoadingChats(true); try { await loadRealChatMessages(activeChat); setLastSync(new Date()); setChatUnreads(prev => { const c = { ...prev }; if (activeChat) c[activeChat] = 0; return c }); toast.success('Chat actualizado'); } finally { setIsLoadingChats(false); } } }} disabled={isLoadingChats} className="text-[9px] px-2 py-1 border border-[#2F2F35] rounded-xl text-[#FF671F] active:bg-[#25252A] disabled:opacity-60">{isLoadingChats ? '...' : 'Sync'}</button>
-                    )}
-                    <button onClick={() => { if (activeChat) startSyncWith(activeChat, chatProfile?.name || ''); }} className="text-[9px] px-2.5 py-1 bg-[#22c55e]/10 text-[#22c55e] rounded-full active:bg-[#22c55e] active:text-black">Entrenar</button>
-                  </div>
-                </div>
-
-                {/* Safety in 1:1 chat */}
-                <div className="flex justify-end gap-2 px-4 py-1 bg-[#0f1115] text-xs">
-                  <button 
-                    onClick={() => {
-                      openReport(activeChat, '1v1_chat')
-                    }}
-                    className="text-red-400 hover:underline"
-                  >
-                    Reportar
-                  </button>
-                  <button 
-                    onClick={async () => {
-                      if (activeChat && confirm('¿Bloquear este usuario? No lo verás más.')) {
-                        await blockUser(activeChat)
-                        setActiveChat(null)
-                      }
-                    }}
-                    className="text-red-400 hover:underline"
-                  >
-                    Bloquear
-                  </button>
-                </div>
-
-                {/* Entrenamos Juntos - Enhanced with reviews */}
-                <div className="px-4 py-2 bg-[#1C1C20] border-b border-[#2F2F35] text-center">
-                  <button 
-                    onClick={() => {
-                      if (activeChat) {
-                        setShowReviewModalFor(activeChat)
-                        setReviewRating(5)
-                        setReviewComment('')
-                      }
-                    }}
-                    className="text-xs bg-[#FF671F]/10 text-[#FF671F] px-3 py-1 rounded-full hover:bg-[#FF671F] hover:text-black transition"
-                  >
-                    ★ Marcamos que entrenamos juntos (dejar reseña)
-                  </button>
-                </div>
-
-                {/* Messages area — SPECTACULAR remastered bubbles */}
-                <div ref={chatScrollRef} className="flex-1 overflow-auto px-3 py-4 space-y-1 pb-24 min-h-0 bg-[#0a0a0c]" id="chat-scroll">
-                  {((realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || []))).map((m, i, arr) => {
-                    const isMe = m.from === 'me'
-                    const time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''
-                    const prev = arr[i-1]
-                    const isGrouped = prev && prev.from === m.from && (m.timestamp - (prev.timestamp || 0)) < 1000 * 60 * 4
-                    return (
-                      <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${isGrouped ? 'mt-0.5' : 'mt-2.5'} group`}>
-                        <div className={`max-w-[84%] ${isMe ? 'text-right' : ''}`}>
-                          {!isGrouped && time && <div className="chat-timestamp px-1 mb-0.5">{time}</div>}
-                          <div className={`chat-bubble ${isMe ? 'chat-bubble-sent' : 'chat-bubble-received'} ${isGrouped ? 'chat-bubble-grouped' : ''}`}>
-                            {m.voiceUrl && !m.voiceUrl.startsWith('blob:') ? (
-                              <div className={`voice-bubble ${isMe ? 'sent' : 'received'}`}>
-                                <button 
-                                  onClick={() => {
-                                    try { triggerHaptic(playingVoiceId === m.id ? 'light' : 'medium') } catch {}
-                                    if (playingVoiceId === m.id) {
-                                      if (currentAudioRef.current) { currentAudioRef.current.pause(); currentAudioRef.current = null }
-                                      setPlayingVoiceId(null); setVoicePlayProgress(0)
-                                    } else {
-                                      if (currentAudioRef.current) { currentAudioRef.current.pause(); currentAudioRef.current = null }
-                                      setPlayingVoiceId(m.id); setVoicePlayProgress(0)
-                                      const audio = new Audio(m.voiceUrl)
-                                      currentAudioRef.current = audio
-                                      const dur = m.voiceDuration || 5
-                                      audio.onended = () => { setPlayingVoiceId(null); setVoicePlayProgress(0); currentAudioRef.current = null }
-                                      audio.ontimeupdate = () => {
-                                        if (audio.duration > 0) setVoicePlayProgress(Math.min(100, (audio.currentTime / audio.duration) * 100))
-                                      }
-                                      audio.play().catch(() => { setPlayingVoiceId(null); setVoicePlayProgress(0); currentAudioRef.current = null })
-                                    }
-                                  }}
-                                  className={`voice-play-btn ${playingVoiceId === m.id ? 'playing' : ''}`}
-                                >
-                                  {playingVoiceId === m.id ? <Pause size={15} /> : <Play size={15} />}
-                                </button>
-                                <div className="voice-wave-container">
-                                  <div className={`voice-wave ${playingVoiceId === m.id ? 'playing' : ''}`}>
-                                    {[4,7,3,9,5,8,4,6,3,7,5,9].map((h, idx) => (
-                                      <div key={idx} className="voice-bar" style={{ height: `${h * 1.55}px`, animationDelay: `${(idx % 6) * -120}ms` }} />
-                                    ))}
-                                  </div>
-                                  {playingVoiceId === m.id && <div className="voice-progress" style={{ width: `${voicePlayProgress}%` }} />}
-                                </div>
-                                <span className="voice-duration">🎙️ {m.voiceDuration || '?'}s</span>
-                              </div>
-                            ) : m.voiceUrl && m.voiceUrl.startsWith('blob:') ? (
-                              <span className="text-[10px] text-red-400">Nota de voz (sesión actual)</span>
-                            ) : (
-                              <span>{renderMessageText(m.text)}</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-
-                  {((realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || []))).length === 0 && (
-                    <div className="chat-empty">
-                      <div className="icon">💬</div>
-                      <div className="title">Conexión lista</div>
-                      <div className="text-[#9CA3AF] text-sm max-w-[240px] mx-auto">Este es tu GymPartner. Envía un mensaje, una nota de voz o una propuesta de entrenamiento. Los chats reales se sincronizan cross-device.</div>
-                      <div className="mt-4 text-[11px] text-[#FF671F]/70">Prueba una de las propuestas rápidas de abajo</div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Quick Training Proposals - Unique feature */}
-                <div className="px-3 pt-2 border-t border-[#2F2F35] bg-[#0D0D10]">
-                  <div className="text-[10px] text-[#9CA3AF] mb-1.5 px-1">Propuestas rápidas:</div>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {[
-                      '¿Vamos a correr el sábado?',
-                      'Gym esta semana?',
-                      'Calistenia en la playa mañana?',
-                      'Pesas mañana 19:00?',
-                      '¿Te tinca entrenar funcional?'
-                    ].map((proposal, i) => (
-                      <button
-                        key={i}
-                        onClick={() => sendMessage(proposal)}
-                        className="text-xs bg-[#1C1C20] hover:bg-[#25252A] border border-[#2F2F35] px-3 py-1 rounded-full text-[#cbd5e1] active:bg-[#FF671F] active:text-black"
-                      >
-                        {proposal}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Input */}
-                <div className="p-3 border-t border-[#2F2F35] bg-[#0D0D10]">
-                  {/* Quick share logros to chat + muro - makes chat feel alive and tied to your personal achievements */}
-                  {syncBonds[activeChat!] && (
-                    <div className="flex gap-1 mb-2 flex-wrap">
-                      {['🏆 Compartir nuestro último Sync Legendario', '⭐ Postear mi eco de este bond', '🌊 Mencionar ripples de nuestro Arena'].map((tpl, i) => (
-                        <button key={i} onClick={() => { sendMessage(tpl); /* also auto-post to muro as achievement */ createProfilePost(`En chat con mi socio de EntrenaSync: ${tpl}`, null).catch(()=>{}); }} className="text-[9px] px-2 py-0.5 rounded-full border border-[#FFD700]/40 text-[#FFD700] active:bg-[#FFD700]/10">
-                          {tpl.split(' ')[0]}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                  {/* Voice preview — spectacular ready-to-send card */}
-                  {pendingVoice && !isUploadingVoice && (
-                    <div className="mb-3 p-3 rounded-2xl bg-[#1a140f] border border-[#FF671F]/30 flex items-center gap-3">
-                      <button onClick={() => { try { triggerHaptic('medium') } catch {}; new Audio(pendingVoice.url).play().catch(()=>{}); }} className="w-11 h-11 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center text-black active:scale-90 shadow-lg flex-shrink-0">
-                        <Play size={20} />
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs font-bold text-[#FF671F] tracking-wider">NOTA DE VOZ LISTA</div>
-                        <div className="text-[11px] text-[#9CA3AF]">{pendingVoice.duration}s • +1 Voice Streak</div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null); }} className="text-[9px] px-2 py-0.5 text-red-400 border border-red-400/40 rounded active:bg-red-500/10">Cancelar</button>
-                        <button onClick={() => { if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current); voicePreviewUrlRef.current = null; setPendingVoice(null); setTimeout(() => startVoiceRecording(), 50); }} className="text-[9px] px-2 py-0.5 text-[#EAB308] border border-[#EAB308]/40 rounded active:bg-[#EAB308]/10">Re-grabar</button>
-                      </div>
-                      <button onClick={() => { if (activeChat && pendingVoice) sendVoiceNote(activeChat, false); }} className="ml-1 px-4 py-2 bg-[#FF671F] text-black rounded-2xl font-black text-sm active:bg-[#E55A1A] flex items-center gap-1.5 active:scale-[0.985]">
-                        ENVIAR <Send size={15} />
-                      </button>
-                    </div>
-                  )}
-                  {isUploadingVoice && (
-                    <div className="voice-uploading mb-2">
-                      <div className="label">TRANSMITIENDO A TUS GYMPARTNERS...</div>
-                      <div className="progress-track">
-                        <div className="progress-fill" style={{ width: `${voiceUploadProgress || 10}%` }} />
-                      </div>
-                      <div className="text-[10px] tabular-nums text-[#FF671F] font-mono w-8 text-right">{voiceUploadProgress || 0}%</div>
-                      <button 
-                        onClick={() => { setPendingVoice(null); setIsUploadingVoice(false); setVoiceUploadProgress(0) }}
-                        className="text-[9px] px-1.5 py-0.5 text-red-400 hover:text-red-500 ml-1"
-                      >
-                        cancelar
-                      </button>
-                    </div>
-                  )}
-
-                  <form onSubmit={(e) => { 
-                    e.preventDefault(); 
-                    const input = (e.currentTarget.elements[0] as HTMLInputElement); 
-                    if (pendingVoice) { sendVoiceNote(activeChat, false); } 
-                    else if (input.value.trim()) { sendMessage(input.value); }
-                    input.value = ''; setChatInputValue('');
-                  }} className="flex gap-2 items-center">
-                    <input 
-                      type="text" 
-                      placeholder={pendingVoice ? "Nota lista — presiona ENVIAR" : "Mensaje o nota de voz a tu GymPartner..."} 
-                      className="chat-input flex-1" 
-                      onChange={(e) => setChatInputValue(e.target.value)}
-                      value={chatInputValue}
-                    />
-                    
-                    {/* Voice recording — spectacular live state */}
-                    {isRecordingVoice ? (
-                      <div className="voice-recording flex-1" style={{minWidth: 175}}>
-                        <div className="dot" />
-                        <div className="flex-1">
-                          <div className="text-red-400 text-[9px] font-extrabold tracking-[1px]">GRABANDO NOTA</div>
-                          <div className="text-xs text-red-400/80 tabular-nums">{recordingTime}s / 60</div>
-                        </div>
-                        <div className="flex gap-1 items-end h-4 mx-1 bg-black/30 rounded px-1">
-                          {recordingLevels.map((h, i) => <div key={i} className="w-[2px] bg-red-400 rounded" style={{height: `${Math.max(3,h)}px`}} />)}
-                        </div>
-                        <button onClick={stopVoiceRecording} className="px-3.5 py-1 text-[10px] bg-red-600 text-white rounded-full font-extrabold active:bg-red-700">PARAR</button>
-                        <button onClick={cancelVoiceRecording} className="text-red-400 text-2xl leading-none px-1 hover:text-red-300">×</button>
-                      </div>
-                    ) : (
-                      <button type="button" onClick={startVoiceRecording} className="chat-mic-btn w-12 h-12 rounded-3xl flex items-center justify-center" title="Grabar nota de voz espectacular">
-                        <Mic size={20} />
-                      </button>
-                    )}
-
-                    <button type="submit" disabled={!chatInputValue.trim() && !pendingVoice} className="chat-send-btn w-12 h-12 rounded-3xl flex items-center justify-center active:scale-[0.93] disabled:bg-[#2F2F35] disabled:text-[#6B7280]">
-                      <Send size={18} />
-                    </button>
-                  </form>
-
-                  <div className="text-center text-[9px] text-[#6B7280] mt-2 tracking-wider">
-                    {!isDemoMode ? 'Mensajes reales cross-device • notas de voz que se sienten' : 'Demo local'}
-                  </div>
-                </div>
-              </div>
-            )}
+              <ChatListPanel
+                matchProfiles={matchProfiles}
+                blockedUsers={blockedUsers}
+                messages={messages}
+                chatUnreads={chatUnreads}
+                syncBonds={syncBonds}
+                userLocation={userLocation}
+                isDemoMode={isDemoMode}
+                isLoadingChats={isLoadingChats}
+                lastSync={lastSync}
+                getRelativeTime={getRelativeTime}
+                onSelectChat={(id) => {
+                  setActiveChat(id)
+                  setChatUnreads((prev) => {
+                    const c = { ...prev }
+                    c[id] = 0
+                    return c
+                  })
+                }}
+                onRefreshChats={async () => {
+                  setIsLoadingChats(true)
+                  try {
+                    const currentMatches = await loadRealMatches()
+                    for (const id of currentMatches) {
+                      await loadRealChatMessages(id)
+                    }
+                    setLastSync(new Date())
+                    setChatUnreads({})
+                    toast.success('Chats reales actualizados')
+                  } finally {
+                    setIsLoadingChats(false)
+                  }
+                }}
+              />
+            ) : activeChat ? (
+              <ChatView
+                activeChat={activeChat}
+                chatProfile={chatProfile}
+                isRealMatch={realMatches.includes(activeChat)}
+                chatMessages={realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || [])}
+                syncBond={syncBonds[activeChat]}
+                isDemoMode={isDemoMode}
+                isLoadingChats={isLoadingChats}
+                playingVoiceId={playingVoiceId}
+                voicePlayProgress={voicePlayProgress}
+                pendingVoice={pendingVoice}
+                isUploadingVoice={isUploadingVoice}
+                voiceUploadProgress={voiceUploadProgress}
+                isRecordingVoice={isRecordingVoice}
+                recordingTime={recordingTime}
+                recordingLevels={recordingLevels}
+                chatInputValue={chatInputValue}
+                chatScrollRef={chatScrollRef}
+                renderMessageText={renderMessageText}
+                onBack={() => setActiveChat(null)}
+                onShowProfile={() => chatProfile && setShowFullProfile(chatProfile)}
+                onRefreshChat={async () => {
+                  setIsLoadingChats(true)
+                  try {
+                    await loadRealChatMessages(activeChat)
+                    setLastSync(new Date())
+                    setChatUnreads((prev) => {
+                      const c = { ...prev }
+                      c[activeChat] = 0
+                      return c
+                    })
+                    toast.success('Chat actualizado')
+                  } finally {
+                    setIsLoadingChats(false)
+                  }
+                }}
+                onStartSync={() => startSyncWith(activeChat, chatProfile?.name || '')}
+                onReport={() => openReport(activeChat, '1v1_chat')}
+                onBlock={async () => {
+                  if (confirm('¿Bloquear este usuario? No lo verás más.')) {
+                    await blockUser(activeChat)
+                    setActiveChat(null)
+                  }
+                }}
+                onShowReviewModal={() => {
+                  setShowReviewModalFor(activeChat)
+                  setReviewRating(5)
+                  setReviewComment('')
+                }}
+                onToggleVoicePlay={(m) => {
+                  try { triggerHaptic(playingVoiceId === m.id ? 'light' : 'medium') } catch {}
+                  if (playingVoiceId === m.id) {
+                    if (currentAudioRef.current) { currentAudioRef.current.pause(); currentAudioRef.current = null }
+                    setPlayingVoiceId(null)
+                    setVoicePlayProgress(0)
+                  } else {
+                    if (currentAudioRef.current) { currentAudioRef.current.pause(); currentAudioRef.current = null }
+                    setPlayingVoiceId(m.id)
+                    setVoicePlayProgress(0)
+                    const audio = new Audio(m.voiceUrl!)
+                    currentAudioRef.current = audio
+                    audio.onended = () => { setPlayingVoiceId(null); setVoicePlayProgress(0); currentAudioRef.current = null }
+                    audio.ontimeupdate = () => {
+                      if (audio.duration > 0) setVoicePlayProgress(Math.min(100, (audio.currentTime / audio.duration) * 100))
+                    }
+                    audio.play().catch(() => { setPlayingVoiceId(null); setVoicePlayProgress(0); currentAudioRef.current = null })
+                  }
+                }}
+                onSendMessage={sendMessage}
+                onSendBondTemplate={(tpl) => {
+                  sendMessage(tpl)
+                  createProfilePost(`En chat con mi socio de EntrenaSync: ${tpl}`, null).catch(() => {})
+                }}
+                onPreviewPendingVoice={() => {
+                  try { triggerHaptic('medium') } catch {}
+                  if (pendingVoice) new Audio(pendingVoice.url).play().catch(() => {})
+                }}
+                onCancelPendingVoice={() => {
+                  if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current)
+                  voicePreviewUrlRef.current = null
+                  setPendingVoice(null)
+                }}
+                onReRecordVoice={() => {
+                  if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current)
+                  voicePreviewUrlRef.current = null
+                  setPendingVoice(null)
+                  setTimeout(() => startVoiceRecording(), 50)
+                }}
+                onSendPendingVoice={() => {
+                  if (pendingVoice) sendVoiceNote(activeChat, false)
+                }}
+                onCancelUpload={() => {
+                  setPendingVoice(null)
+                  setIsUploadingVoice(false)
+                  setVoiceUploadProgress(0)
+                }}
+                onChatInputChange={setChatInputValue}
+                onSubmitForm={(e) => {
+                  e.preventDefault()
+                  const input = (e.currentTarget.elements[0] as HTMLInputElement)
+                  if (pendingVoice) sendVoiceNote(activeChat, false)
+                  else if (input.value.trim()) sendMessage(input.value)
+                  input.value = ''
+                  setChatInputValue('')
+                }}
+                onStartVoiceRecording={startVoiceRecording}
+                onStopVoiceRecording={stopVoiceRecording}
+                onCancelVoiceRecording={cancelVoiceRecording}
+              />
+            ) : null}
           </div>
         )}
 
@@ -11044,6 +10769,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 <button onClick={openProfileEditor} className="text-[10px] px-3 py-1 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black font-semibold active:opacity-90 flex items-center gap-1"><Edit2 size={13} /> Personalizar</button>
               </div>
             </div>
+
+            <ProfileSectionNav active={profileSection} onChange={setProfileSection} />
 
             {/* HERO - FULL REMASTERED EPIC "MI RITUAL" PRESENCE - Attractive, unique, premium */}
             <div className="relative h-80 w-full overflow-hidden bg-[#0a0a0c] profile-hero">
@@ -11323,48 +11050,35 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               </div>
             </div>
 
-            {/* Unique attractive "Tu Poder en la Red" - remastered visual for profile creation/view */}
-            <div className="px-4 mt-3">
-              <div className="card p-3 bg-gradient-to-r from-[#1a160f] to-[#25252A] border border-[#FFD700]/20">
-                <div className="text-[10px] uppercase tracking-[1px] text-[#FFD700] mb-1">Tu Poder en la Red</div>
-                <div className="flex items-baseline gap-4 text-sm">
-                  <div><span className="font-mono text-lg font-bold text-[#FFD700]">{networkStats?.networkPower || 0}</span> <span className="text-[9px] text-[#9CA3AF]">Network Power</span></div>
-                  <div><span className="font-mono text-lg font-bold text-[#22c55e]">{Object.keys(syncBonds || {}).length}</span> <span className="text-[9px] text-[#9CA3AF]">Bonds</span></div>
-                  <div><span className="font-mono text-lg font-bold text-[#FF671F]">{currentUser?.liveStreak || 0}</span> <span className="text-[9px] text-[#9CA3AF]">Live Streak</span></div>
-                  <div><span className="font-mono text-lg font-bold text-[#EAB308]">{dailyPulse?.level || 1}</span> <span className="text-[9px] text-[#9CA3AF]">Nivel</span></div>
-                </div>
-                {dailyPulse && getUnlockedGadgets(dailyPulse.level || 1).length > 0 && (
-                  <div className="mt-1 text-[8px] text-[#FFD700]">Gadgets: {getUnlockedGadgets(dailyPulse.level || 1).map(g => g.icon).join(' ')}</div>
-                )}
-                <div className="text-[8px] text-[#9CA3AF] mt-1">Entrenar juntos multiplica tu peso en el GymPulse. Tu primer Sync lo activa.</div>
-                {/* Quick Momentum actions surfaced right in "Tu Poder" for instant gratification (full details + more spends in the Daily Pulse section below) */}
-                {dailyPulse && (dailyPulse.momentum || 0) >= 20 && (
-                  <div className="mt-2 flex gap-1 text-[8px]">
-                    {(dailyPulse.momentum || 0) >= 30 && (
-                      <button onClick={() => {
-                        const t = getTodayStr();
-                        const ap = { ...dailyPulse, pulseAmplifiedDate: t, momentum: (dailyPulse.momentum || 0) - 30 };
-                        setDailyPulse(ap);
-                        saveUserWithRealSync({ ...(currentUser as any), pulseAmplifiedDate: t, momentumPoints: ap.momentum } as any);
-                        toast.success('Pulso amplificado 24h');
-                      }} className="flex-1 py-1 rounded bg-purple-500/20 text-purple-300 active:bg-purple-500/30">📡 Amplificar 30M</button>
-                    )}
-                    {(dailyPulse.momentum || 0) >= 50 && (
-                      <button onClick={() => {
-                        const t = getTodayStr();
-                        const pp = { ...dailyPulse, streakProtectedDate: t, momentum: (dailyPulse.momentum || 0) - 50 };
-                        setDailyPulse(pp);
-                        saveUserWithRealSync({ ...(currentUser as any), streakProtectedDate: t, momentumPoints: pp.momentum } as any);
-                        toast.success('Racha protegida hoy');
-                      }} className="flex-1 py-1 rounded bg-yellow-500/20 text-yellow-300 active:bg-yellow-500/30">🛡️ Proteger 50M</button>
-                    )}
-                  </div>
-                )}
-              </div>
+            <div className={profileSection !== 'actividad' ? 'hidden' : undefined}>
+            <TuRedPowerCard
+              networkPower={networkStats?.networkPower || 0}
+              bondsCount={Object.keys(syncBonds || {}).length}
+              liveStreak={currentUser?.liveStreak || 0}
+              level={dailyPulse?.level || 1}
+              gadgets={dailyPulse ? getUnlockedGadgets(dailyPulse.level || 1).map((g) => g.icon) : []}
+              momentum={dailyPulse?.momentum}
+              onAmplifyPulse={() => {
+                if (!dailyPulse || (dailyPulse.momentum || 0) < 30) return
+                const t = getTodayStr()
+                const ap = { ...dailyPulse, pulseAmplifiedDate: t, momentum: (dailyPulse.momentum || 0) - 30 }
+                setDailyPulse(ap)
+                saveUserWithRealSync({ ...(currentUser as any), pulseAmplifiedDate: t, momentumPoints: ap.momentum } as any)
+                toast.success('Pulso amplificado 24h')
+              }}
+              onProtectStreak={() => {
+                if (!dailyPulse || (dailyPulse.momentum || 0) < 50) return
+                const t = getTodayStr()
+                const pp = { ...dailyPulse, streakProtectedDate: t, momentum: (dailyPulse.momentum || 0) - 50 }
+                setDailyPulse(pp)
+                saveUserWithRealSync({ ...(currentUser as any), streakProtectedDate: t, momentumPoints: pp.momentum } as any)
+                toast.success('Racha protegida hoy')
+              }}
+            />
             </div>
 
             {/* In-app debug logs export (phone-only crash reporting, no adb/PC needed) */}
-            <div className="px-4 mt-3">
+            <div className={`px-4 mt-3${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
               <details className="card p-3 text-xs">
                 <summary className="cursor-pointer font-semibold text-[#FF671F]">🐛 Debug logs (para reportar crashes desde el celular)</summary>
                 <div className="mt-2 max-h-40 overflow-auto text-[#9CA3AF] font-mono text-[10px] bg-black/30 p-2 rounded">
@@ -11387,7 +11101,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             </div>
 
             {/* Stats row - premium visual cards + LIVE count as global killer stat in header (urgency / FOMO) */}
-            <div className="px-4 mt-4 grid grid-cols-3 gap-2">
+            <div className={`px-4 mt-4 grid grid-cols-3 gap-2${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
               {[
                 { label: 'Matches', value: matches?.length || 0, icon: Heart, color: '#FF671F' },
                 { label: 'Sesiones', value: squads?.length || 0, icon: Star, color: '#00C4B4' },
@@ -11423,7 +11137,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             </div>
 
             {/* NEW: "Mi vida de entrenamiento" summary card - makes the whole profile feel VIVO y ATRACTIVO at a glance */}
-            <div className="px-4 mt-3">
+            <div className={`px-4 mt-3${profileSection !== 'actividad' ? ' hidden' : ''}`}>
               <div className="card p-4 border border-[#FF671F]/20 bg-gradient-to-br from-[#1a140f] to-[#0D0D10]">
                 <div className="uppercase text-[9px] tracking-[1.5px] text-[#FF671F] mb-1">Tu vida de entrenamiento</div>
                 <div className="flex items-center justify-between text-sm">
@@ -11529,7 +11243,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             ===================================================== */}
             {dailyPulse && (
               <motion.div 
-                className="px-4 mt-4"
+                className={`px-4 mt-4${profileSection !== 'rendimiento' ? ' hidden' : ''}`}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ type: 'spring', stiffness: 200, damping: 25 }}
@@ -11766,8 +11480,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               });
               if (recent.length === 0) return null;
               const sorted = recent.sort(() => Math.random() - 0.5).slice(0,5); // shuffle for freshness
-              return (
-                <div className="px-4 mt-3">
+                return (
+                  <div className={`px-4 mt-3${profileSection !== 'actividad' ? ' hidden' : ''}`}>
                   <div className="text-[9px] uppercase tracking-widest text-[#9CA3AF] mb-1 flex items-center gap-1">💥 ACTIVIDAD RECIENTE EN TU MURO <span className="text-[#22c55e] text-[8px]">¡vivo!</span></div>
                   <div className="card p-2.5 text-[10px] space-y-1 bg-gradient-to-r from-black/5 to-transparent">
                     {sorted.map((r,i) => <div key={i} className="flex items-center gap-1.5 text-[#9CA3AF]"><span className="font-medium text-white/80">{r.name}</span> {r.text}</div>)}
@@ -11781,7 +11495,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                This is the heart of EntrenaMatch as the first fitness social network:
                your alliances have real history, generate measurable results, and create visible status in the community. */}
             {Object.keys(syncBonds).length > 0 && (
-              <div className="px-4 mt-3">
+              <div className={`px-4 mt-3${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
                 <div className="text-[10px] uppercase tracking-[1px] text-[#9CA3AF] mb-1.5 flex items-center gap-1">🔥 TU RED DE ENTRENASYNC <span className="text-[8px] normal-case opacity-60">(tu grafo de rendimiento sincronizado — alianzas que generan resultados reales y estatus en la comunidad)</span></div>
                 {/* Spectacular visual power meter for profile */}
                 <div className="mb-3 h-2 bg-[#1C1C20] rounded-full overflow-hidden border border-[#FFD700]/20">
@@ -11857,7 +11571,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             ) : null}
 
             {/* Training Types - visual polish */}
-            <div className="px-4 mt-5">
+            <div className={`px-4 mt-5${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
               <div className="flex items-center gap-2 text-xs uppercase tracking-[1.5px] text-[#9CA3AF] mb-2 px-1">
                 <Dumbbell size={13} /> Tipos de entrenamiento
               </div>
@@ -11869,7 +11583,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             </div>
 
             {/* Goals */}
-            <div className="px-4 mt-4">
+            <div className={`px-4 mt-4${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
               <div className="flex items-center gap-2 text-xs uppercase tracking-[1.5px] text-[#9CA3AF] mb-2 px-1">
                 <Star size={13} /> Objetivos
               </div>
@@ -11881,7 +11595,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             </div>
 
             {/* Availability + Disponible hoy - nicer toggle visual */}
-            <div className="px-4 mt-4 card p-4 space-y-3">
+            <div className={`px-4 mt-4 card p-4 space-y-3${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
               <div className="flex justify-between text-sm items-center">
                 <span className="text-[#9CA3AF] flex items-center gap-1.5"><Clock size={14} /> Disponibilidad</span>
                 <span className="text-right text-white/90 text-xs">{(currentUser.availability || []).join(' • ') || 'No especificada'}</span>
@@ -11903,7 +11617,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             </div>
 
             {/* Google Play Integrity - working with the Google app (Play Integrity API) */}
-            <div className="px-4 mt-2">
+            <div className={`px-4 mt-2${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
               <div className="card p-5 border border-[#22c55e]/30">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="font-semibold text-sm flex items-center gap-2"><span>🛡️</span> Google Play Integrity</div>
@@ -11969,7 +11683,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             </div>
 
             {/* Entrenando Ahora - KILLER FEATURE real-time, live green indicator near you. Generates urgency, no other fitness app has it this well. */}
-            <div className="px-4 mt-2 card p-4 space-y-3">
+            <div className={`px-4 mt-2 card p-4 space-y-3${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
               <div>
                 {currentUser.trainingNow ? (
                   /* Clear deactivation option when live - explicit "terminar de entrenar" */
@@ -12069,7 +11783,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             </div>
 
             {/* MURO / WALL - attractive FB-style feed to make profile feel alive */}
-            <div className="px-4 mt-4">
+            <div className={`px-4 mt-4${profileSection !== 'actividad' ? ' hidden' : ''}`}>
               <div className="flex items-center justify-between mb-2 px-1">
                 <div className="flex items-center gap-2">
                   <div className="text-xs uppercase tracking-[1px] text-[#9CA3AF]">Muro</div>
@@ -12592,7 +12306,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             </div>
 
             {/* Verification status - visual upgrade */}
-            <div className="px-4 mt-4">
+            <div className={`px-4 mt-4${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
               <div className="card p-4 flex items-center gap-3">
                 <div className="flex-1">
                   <div className="font-medium flex items-center gap-2 text-sm">
@@ -12611,7 +12325,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             </div>
 
             {/* Legal & safety */}
-            <div className="px-4 mt-4 card p-4 text-sm">
+            <div className={`px-4 mt-4 card p-4 text-sm${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
               <div className="text-xs uppercase tracking-widest text-[#9CA3AF] mb-2">Legal y seguridad</div>
               <div className="flex flex-col gap-1 text-[#FF671F] text-sm">
                 <button onClick={() => setShowLegal('terms')} className="text-left py-0.5">Términos de Servicio</button>
@@ -12623,7 +12337,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             </div>
 
             {/* Micro guidance - kept minimal, no heavy Pre-Alpha branding to avoid clutter in profile view */}
-            <div className="px-4 mt-6 mb-8">
+            <div className={`px-4 mt-6 mb-8${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
               <div className="card p-4 text-xs text-[#9CA3AF] leading-snug">
                 Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
                 <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
@@ -12632,7 +12346,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             </div>
 
             {/* Mobile App Download - Prominent for Pre-Alpha testers */}
-            <div className="px-4 mt-2 mb-8">
+            <div className={`px-4 mt-2 mb-8${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
               <div className="card p-5 rounded-3xl border border-[#FF4F79]/30 bg-[#1C1C20]">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="text-2xl">📱</div>
@@ -12658,7 +12372,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             </div>
 
             {/* Beta Feedback ENHANCED (Phase 0 - structured, with history) - visual polish */}
-            <div className="px-4 mt-2 mb-8">
+            <div className={`px-4 mt-2 mb-8${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
               <div className="card p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="font-semibold text-sm flex items-center gap-2"><Star size={15} className="text-[#FF671F]" /> Feedback de Beta</div>
