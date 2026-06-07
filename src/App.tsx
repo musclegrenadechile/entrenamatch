@@ -107,6 +107,26 @@ import { requestPlayIntegrityToken, hasPositiveIntegrity, getLastIntegrityResult
 import { Capacitor } from '@capacitor/core'
 import { collection, query, where, getDocs, orderBy, limit, doc, onSnapshot } from 'firebase/firestore'
 
+/** Keys that must not leak between real accounts on the same browser */
+const ACCOUNT_SCOPED_STORAGE_KEYS = [
+  'fitvina_liked', 'fitvina_passed', 'fitvina_matches', 'fitvina_messages',
+  'entrenamatch_v1_profile',
+  'entrenamatch_blocked', 'entrenamatch_notifications', 'entrenamatch_reports',
+  'entrenamatch_chat_unreads', 'entrenamatch_session_unreads',
+  'entrenamatch_profile_posts', 'entrenamatch_squads', 'entrenamatch_reviews',
+  'entrenamatch_sessions', 'entrenamatch_session_messages',
+  'entrenamatch_last_live', 'entrenamatch_location',
+  'entrenamatch_seen_chat_msgs', 'entrenamatch_seen_group_msgs',
+  'entrenamatch_seen_live_users', 'entrenamatch_seen_live_joins',
+  'entrenamatch_demo_user',
+] as const
+
+function purgeAccountScopedStorage() {
+  for (const key of ACCOUNT_SCOPED_STORAGE_KEYS) {
+    try { localStorage.removeItem(key) } catch {}
+  }
+}
+
 // ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
 // Lanzamiento inicial fuerte en Chile + presencia en LatAm y España
 const SEED_PROFILES: Profile[] = [
@@ -1912,6 +1932,8 @@ useEffect(() => {
     default: '#eab308'
   }
   const startSyncRef = useRef<((partnerId: string, partnerName: string) => any) | null>(null)
+  const syncPartnerIdRef = useRef<string | null>(null)
+  const currentUserRef = useRef<CurrentUser | null>(null)
   // Refs for dev map placement UX (click-to-place partner without leaving map view) + latest partners (passed down + used in quick add handler).
   // The actual Leaflet markers/ripples/tethers live inside <GymPulseMap /> (first modularization step).
   const isPlacingPartnerRef = useRef(false)
@@ -2507,8 +2529,9 @@ useEffect(() => {
     return () => { if (unsubOwn) unsubOwn() }
   }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, currentUser?.id]) // depend on id to re-sub on user change
 
-  // EntrenaSync real-time mirror: when in sync, pull partner's latest syncActions and state from realProfiles (via periodic load or on change)
-  // Placed here AFTER all dependent states (realProfiles, effectiveUserId, currentUser local from saveUser) to avoid TDZ or init order issues in render/bundler.
+  // EntrenaSync profile mirror (fallback only): enrich from partner profile when both pointers match.
+  // Do NOT tear down sync when partner profile lacks trainingSyncWith — cross-user profile writes are blocked
+  // by rules; syncSessions is the source of truth (see incoming listener below).
   useEffect(() => {
     if (currentUser?.trainingSyncWith && currentUser.trainingNow) {
       const partner = realProfiles.find(p => p.id === currentUser.trainingSyncWith)
@@ -2517,14 +2540,78 @@ useEffect(() => {
         if (partner.syncActions && partner.syncActions.length > syncActions.length) {
           setSyncActions(partner.syncActions)
         }
-      } else if (partner && !partner.trainingSyncWith) {
-        // partner ended sync
-        setSyncPartnerId(null)
-        setSyncStartedAt(null)
-        setSyncActions([])
       }
     }
   }, [realProfiles, currentUser?.trainingSyncWith, currentUser?.trainingNow, effectiveUserId])
+
+  // Incoming EntrenaSync: when partner starts sync, syncSessions doc is created — join without writing their profile.
+  useEffect(() => {
+    if (
+      !firebaseUser?.uid ||
+      !db ||
+      isDemoMode ||
+      !isFirebaseConfigured ||
+      syncPartnerId
+    ) {
+      return undefined
+    }
+
+    const q = query(
+      collection(db, 'syncSessions'),
+      where('participants', 'array-contains', firebaseUser.uid)
+    )
+
+    const unsub = onSnapshot(q, (snap) => {
+      if (syncPartnerIdRef.current) return
+
+      for (const docSnap of snap.docs) {
+        const data = docSnap.data() as any
+        if (data.endedAt) continue
+        const started = data.startedAt || 0
+        if (Date.now() - started > 3 * 60 * 60 * 1000) continue
+
+        const otherId = (data.participants as string[] | undefined)?.find((p) => p !== firebaseUser.uid)
+        if (!otherId || otherId === effectiveUserId) continue
+        if (!currentUserRef.current?.trainingNow) continue
+
+        const partner = (latestRealProfilesRef.current || []).find((p) => p.id === otherId)
+        const partnerName = partner?.name || 'Compañero'
+
+        syncPartnerIdRef.current = otherId
+        setSyncPartnerId(otherId)
+        setSyncStartedAt(data.startedAt || Date.now())
+        if (Array.isArray(data.actions)) {
+          const recent = [...data.actions]
+            .sort((a: any, b: any) => (b.at || 0) - (a.at || 0))
+            .slice(0, 10)
+          setSyncActions(recent)
+        }
+        if (typeof data.vibe === 'number') {
+          setSyncVibe(Math.max(0, Math.min(100, data.vibe)))
+        }
+        setShowSyncArena(true)
+        triggerHaptic('medium')
+
+        const updated = {
+          ...currentUserRef.current,
+          trainingSyncWith: otherId,
+          syncStartedAt: data.startedAt || Date.now(),
+          syncActions: Array.isArray(data.actions) ? data.actions : [],
+        }
+        saveUser(updated as any)
+        saveUserWithRealSync(updated as any).catch(() => {})
+
+        toast.success(`EntrenaSync con ${partnerName}`, {
+          description: 'Tu compañero inició sync contigo',
+        })
+        break
+      }
+    }, (err) => {
+      console.warn('incoming syncSessions listener error:', err)
+    })
+
+    return () => { try { unsub() } catch {} }
+  }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId, syncPartnerId, isFirebaseConfigured])
 
   // === NEW: Dedicated syncSessions collection listener for INSTANT actions across devices ===
   // When we have an active EntrenaSync (syncPartnerId), we listen to a stable doc for the pair.
@@ -3396,10 +3483,26 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   // Logout handler - works for both demo and real Firebase
   const handleLogout = async () => {
     try {
+      const uid = firebaseUser?.uid
+      if (uid && db && !isDemoMode) {
+        try {
+          await clearLivePresence(db, uid)
+          await updateUserProfile(uid, {
+            trainingNow: false,
+            trainingNowSince: null,
+            trainingSyncWith: null,
+            syncStartedAt: null,
+          } as any)
+        } catch (liveErr) {
+          console.warn('logout live cleanup failed (non-fatal):', liveErr)
+        }
+      }
+
       await logout()
 
       // Critical: clear the ref that was keeping us authenticated after login
       lastSuccessfulAuthRef.current = null
+      syncPartnerIdRef.current = null
 
       // Clear all local state
       if (clearProfile) clearProfile()
@@ -3409,10 +3512,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       seenGroupMsgIdsRef.current = {}
       seenLiveUserIdsRef.current = new Set()
       seenLiveJoinInteractionIdsRef.current = new Set()
-      localStorage.removeItem('entrenamatch_seen_chat_msgs')
-      localStorage.removeItem('entrenamatch_seen_group_msgs')
-      localStorage.removeItem('entrenamatch_seen_live_users')
-      localStorage.removeItem('entrenamatch_seen_live_joins')
+      purgeAccountScopedStorage()
       
       setMatches([])
       setLikedIds([])
@@ -3424,11 +3524,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       setActiveChat(null)
       setActiveTab('explore')
       setIsEditingProfile(false)
-
-      // Clear any demo-specific data
-      try {
-        localStorage.removeItem('entrenamatch_demo_user')
-      } catch {}
+      setSyncPartnerId(null)
+      syncPartnerIdRef.current = null
+      setSyncStartedAt(null)
+      setSyncActions([])
 
       toast.success('Sesión cerrada correctamente')
 
@@ -4160,10 +4259,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     const savedMessages = localStorage.getItem('fitvina_messages')
     const savedLocation = localStorage.getItem('entrenamatch_location')
 
-    if (savedLiked) setLikedIds(JSON.parse(savedLiked))
-    if (savedPassed) setPassedIds(JSON.parse(savedPassed))
-    if (savedMatches) setMatches(JSON.parse(savedMatches))
-    if (savedMessages) setMessages(JSON.parse(savedMessages))
+    if (isDemoMode) {
+      if (savedLiked) setLikedIds(JSON.parse(savedLiked))
+      if (savedPassed) setPassedIds(JSON.parse(savedPassed))
+      if (savedMatches) setMatches(JSON.parse(savedMatches))
+      if (savedMessages) setMessages(JSON.parse(savedMessages))
+    }
     if (savedLocation) {
       setUserLocation(JSON.parse(savedLocation))
     }
@@ -4203,7 +4304,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
 
     const savedReviews = localStorage.getItem('entrenamatch_reviews')
-    if (savedReviews) setReviews(JSON.parse(savedReviews))
+    if (savedReviews && isDemoMode) setReviews(JSON.parse(savedReviews))
 
     const savedSessionMessages = localStorage.getItem('entrenamatch_session_messages')
     if (savedSessionMessages && isDemoMode) {
@@ -4212,30 +4313,32 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
 
     const savedSquads = localStorage.getItem('entrenamatch_squads')
-    if (savedSquads) {
-      setSquads(JSON.parse(savedSquads))
-    } else {
-      // Seed a couple of example squads for demo
-      const seedSquads: Squad[] = [
-        {
-          id: 'sq1',
-          name: 'Beasts de Reñaca',
-          focus: 'Pesas',
-          members: ['p1', 'p4', 'p12'],
-          createdBy: 'p4',
-          createdAt: Date.now() - 10000000
-        },
-        {
-          id: 'sq2',
-          name: 'Corredores de la Costa',
-          focus: 'Running',
-          members: ['p5', 'p6', 'p14'],
-          createdBy: 'p5',
-          createdAt: Date.now() - 5000000
-        }
-      ]
-      setSquads(seedSquads)
-      localStorage.setItem('entrenamatch_squads', JSON.stringify(seedSquads))
+    if (isDemoMode) {
+      if (savedSquads) {
+        setSquads(JSON.parse(savedSquads))
+      } else {
+        // Seed a couple of example squads for demo
+        const seedSquads: Squad[] = [
+          {
+            id: 'sq1',
+            name: 'Beasts de Reñaca',
+            focus: 'Pesas',
+            members: ['p1', 'p4', 'p12'],
+            createdBy: 'p4',
+            createdAt: Date.now() - 10000000
+          },
+          {
+            id: 'sq2',
+            name: 'Corredores de la Costa',
+            focus: 'Running',
+            members: ['p5', 'p6', 'p14'],
+            createdBy: 'p5',
+            createdAt: Date.now() - 5000000
+          }
+        ]
+        setSquads(seedSquads)
+        localStorage.setItem('entrenamatch_squads', JSON.stringify(seedSquads))
+      }
     }
 
     // Load profile muro posts (demo/local only — real mode loads from Firestore)
@@ -4310,11 +4413,26 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
   // Save helpers - now delegated to useProfile hook
   // (saveUser is already provided by the hook)
-  const saveLiked = (ids: string[]) => { localStorage.setItem('fitvina_liked', JSON.stringify(ids)); setLikedIds(ids) }
-  const savePassed = (ids: string[]) => { localStorage.setItem('fitvina_passed', JSON.stringify(ids)); setPassedIds(ids) }
-  const saveMatches = (ids: string[]) => { localStorage.setItem('fitvina_matches', JSON.stringify(ids)); setMatches(ids) }
-  const saveMessages = (msgs: Record<string, Message[]>) => { localStorage.setItem('fitvina_messages', JSON.stringify(msgs)); setMessages(msgs) }
-  const saveChatUnreads = (unreads: Record<string, number>) => { localStorage.setItem('entrenamatch_chat_unreads', JSON.stringify(unreads)); setChatUnreads(unreads) }
+  const saveLiked = (ids: string[]) => {
+    if (isDemoMode) localStorage.setItem('fitvina_liked', JSON.stringify(ids))
+    setLikedIds(ids)
+  }
+  const savePassed = (ids: string[]) => {
+    if (isDemoMode) localStorage.setItem('fitvina_passed', JSON.stringify(ids))
+    setPassedIds(ids)
+  }
+  const saveMatches = (ids: string[]) => {
+    if (isDemoMode) localStorage.setItem('fitvina_matches', JSON.stringify(ids))
+    setMatches(ids)
+  }
+  const saveMessages = (msgs: Record<string, Message[]>) => {
+    if (isDemoMode) localStorage.setItem('fitvina_messages', JSON.stringify(msgs))
+    setMessages(msgs)
+  }
+  const saveChatUnreads = (unreads: Record<string, number>) => {
+    if (isDemoMode) localStorage.setItem('entrenamatch_chat_unreads', JSON.stringify(unreads))
+    setChatUnreads(unreads)
+  }
 
   const saveSessions = (newSessions: TrainingSession[]) => {
     if (isDemoMode) {
@@ -4730,6 +4848,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       return
     }
     setSyncPartnerId(partnerId)
+    syncPartnerIdRef.current = partnerId
     setSyncStartedAt(now)
     setSyncActions([])
     setSyncCombo(0)
@@ -4759,15 +4878,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         // trainingSyncWith / syncStartedAt etc. are properly included via the payload builder.
         await saveUserWithRealSync(updated as any);
 
-        const { doc, updateDoc, setDoc } = await import('firebase/firestore')
-        // Partner side (so they see you requested sync) — best effort, wrapped
-        try {
-          await updateDoc(doc(db, 'profiles', partnerId), { trainingSyncWith: effectiveUserId, syncStartedAt: now, syncActions: [] });
-        } catch (partnerErr) {
-          console.warn('partner sync update failed (non-fatal for starter)', partnerErr);
-        }
-
-        // Dedicated instant session doc (for onSnapshot actions/timer, no poll dependency)
+        const { doc, setDoc } = await import('firebase/firestore')
+        // Dedicated instant session doc (for onSnapshot actions/timer; partner joins via incoming listener)
         const uids = [effectiveUserId, partnerId].sort()
         const sessionId = `sync_${uids[0]}_${uids[1]}`
         const sessionRef = doc(db, 'syncSessions', sessionId)
@@ -4800,6 +4912,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   useEffect(() => {
     startSyncRef.current = startSyncWith
   }, [startSyncWith])
+
+  useEffect(() => {
+    syncPartnerIdRef.current = syncPartnerId
+  }, [syncPartnerId])
+
+  useEffect(() => {
+    currentUserRef.current = currentUser
+  }, [currentUser])
 
   useEffect(() => {
     latestRealProfilesRef.current = realProfiles
@@ -4852,6 +4972,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     const updated = { ...currentUser, trainingSyncWith: null, syncStartedAt: null, syncActions: [], syncStreak: newSyncStreak } as any
     saveUser(updated)
     setSyncPartnerId(null)
+    syncPartnerIdRef.current = null
     setSyncStartedAt(null)
     setSyncActions([])
     setSyncVibe(0)
@@ -8052,11 +8173,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                     if (!isDemoMode && firebaseUser?.uid && db) {
                       (async () => {
                         try {
-                          const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
-                          await addDoc(collection(db, 'sessions'), {
+                          const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+                          await setDoc(doc(db, 'sessions', newGroupSession.id), {
                             ...newGroupSession,
-                            createdAt: serverTimestamp()
-                          })
+                            createdAt: serverTimestamp(),
+                          }, { merge: true })
                         } catch {}
                       })()
                     }
@@ -10476,7 +10597,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           // This prevents a listener callback from queuing something while the terminate write is in flight
                           // (one known trigger for the internal 'mutations' / b815 bad state).
                           if (syncPartnerId) {
-                            setSyncPartnerId(null);
+                            setSyncPartnerId(null)
+                            syncPartnerIdRef.current = null
                             setSyncStartedAt(null);
                             setSyncActions([]);
                             setSyncVibe(0);

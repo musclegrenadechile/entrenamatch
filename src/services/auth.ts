@@ -193,7 +193,7 @@ export const createUserProfile = async (firebaseUser: FirebaseUser, additionalDa
     } as any;
   }
 
-  const userRef = doc(db, 'users', firebaseUser.uid);
+  const userRef = doc(db, 'profiles', firebaseUser.uid);
   
   const userProfile: UserProfile = {
     uid: firebaseUser.uid,
