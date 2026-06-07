@@ -26,9 +26,13 @@ export function HomeTab(props: HomeTabProps) {
     fuelProfile,
     fuelTodayTotals,
     fuelTodayLogs,
+    fuelWeekDays,
     fuelPostWorkoutTip,
     setShowFuelSetupModal,
-    setShowFuelLogModal,
+    openFuelLogModal,
+    onEditFuelLog,
+    onDeleteFuelLog,
+    deletingFuelLogId,
     homeCityChallengeMerged,
     homeLocalLeaderboard,
     homeMyLeaderboardRank,
@@ -123,11 +127,15 @@ export function HomeTab(props: HomeTabProps) {
         fuelProfile={fuelProfile}
         fuelTotals={fuelTodayTotals}
         fuelTodayLogs={fuelTodayLogs}
+        fuelWeekDays={fuelWeekDays}
         fuelPostWorkoutTip={fuelPostWorkoutTip}
         onOpenFuelSetup={() => setShowFuelSetupModal(true)}
         onOpenFuelLog={() =>
-          fuelProfile ? setShowFuelLogModal(true) : setShowFuelSetupModal(true)
+          fuelProfile ? openFuelLogModal() : setShowFuelSetupModal(true)
         }
+        onEditFuelLog={onEditFuelLog}
+        onDeleteFuelLog={onDeleteFuelLog}
+        deletingFuelLogId={deletingFuelLogId}
         cityLabel={currentUser?.city}
         localNetwork={{
           challenge: homeCityChallengeMerged,

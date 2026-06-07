@@ -141,7 +141,11 @@ import {
   loadFuelProfile,
   saveFuelProfile,
   fetchFuelLogsForDate,
+  fetchFuelWeekSummary,
   saveFuelLog,
+  updateFuelLog,
+  deleteFuelLog,
+  computeFuelWeekFromDates,
   createNutritionPost,
   analyzeFoodWithAi,
   sumFuelLogs,
@@ -836,6 +840,9 @@ function App() {
   const [fuelProfile, setFuelProfile] = useState<FuelProfile | null>(null)
   const [fuelTodayLogs, setFuelTodayLogs] = useState<FuelLogEntry[]>([])
   const [fuelTodayTotals, setFuelTodayTotals] = useState<FuelDayTotals>(emptyFuelDayTotals())
+  const [fuelWeekDays, setFuelWeekDays] = useState<import('./services/fuel').FuelWeekDay[]>([])
+  const [editingFuelLog, setEditingFuelLog] = useState<FuelLogEntry | null>(null)
+  const [deletingFuelLogId, setDeletingFuelLogId] = useState<string | null>(null)
   const [fuelPostWorkoutTip, setFuelPostWorkoutTip] = useState<string | undefined>()
   // THE KILLER FEATURE: EntrenaSync - real-time synchronized training that turns two people into a high-performance unit with shared state, visible connection, joint impact, and lasting social capital. This is the foundation of the first true social network for fitness performance.
   const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
@@ -5220,14 +5227,16 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   const refreshFuelData = useCallback(async () => {
     if (isDemoMode || !db || !firebaseUser?.uid) return
     try {
-      const [profile, logs, workouts] = await Promise.all([
+      const [profile, logs, weekDays, workouts] = await Promise.all([
         loadFuelProfile(db, effectiveUserId),
         fetchFuelLogsForDate(db, effectiveUserId),
+        fetchFuelWeekSummary(db, effectiveUserId),
         fetchRecentWorkouts(db, effectiveUserId, 1).catch(() => [] as import('./types').Workout[]),
       ])
       setFuelProfile(profile)
       setFuelTodayLogs(logs)
       setFuelTodayTotals(sumFuelLogs(logs))
+      setFuelWeekDays(weekDays)
       setFuelPostWorkoutTip(
         workouts[0] ? getPostWorkoutFuelTip(workouts[0].type) : undefined
       )
@@ -5235,6 +5244,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       console.warn('refreshFuelData failed', e)
     }
   }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId])
+
+  const syncFuelDayState = (nextLogs: FuelLogEntry[]) => {
+    setFuelTodayLogs(nextLogs)
+    setFuelTodayTotals(sumFuelLogs(nextLogs))
+    const loggedDates = new Set(nextLogs.map((l) => l.date))
+    if (isDemoMode) {
+      const today = toLocalDateStr()
+      if (nextLogs.length > 0) loggedDates.add(today)
+      setFuelWeekDays(computeFuelWeekFromDates(loggedDates))
+    }
+  }
 
   useEffect(() => {
     if (!firebaseUser?.uid || isDemoMode) return
@@ -5298,6 +5318,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   }
 
   const handleSaveFuelLog = async (payload: {
+    editId?: string
     mealLabel: string
     kcal: number
     proteinG: number
@@ -5309,6 +5330,55 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   }) => {
     setSavingFuel(true)
     try {
+      if (payload.editId) {
+        if (!isDemoMode && db && firebaseUser?.uid) {
+          await updateFuelLog(db, payload.editId, {
+            mealLabel: payload.mealLabel,
+            kcal: payload.kcal,
+            proteinG: payload.proteinG,
+            carbsG: payload.carbsG,
+            fatG: payload.fatG,
+            source: payload.source,
+          })
+          const nextLogs = fuelTodayLogs.map((log) =>
+            log.id === payload.editId
+              ? {
+                  ...log,
+                  mealLabel: payload.mealLabel,
+                  kcal: payload.kcal,
+                  proteinG: payload.proteinG,
+                  carbsG: payload.carbsG,
+                  fatG: payload.fatG,
+                  source: payload.source,
+                }
+              : log
+          )
+          syncFuelDayState(nextLogs)
+          fetchFuelWeekSummary(db, effectiveUserId)
+            .then(setFuelWeekDays)
+            .catch(() => {})
+        } else {
+          const nextLogs = fuelTodayLogs.map((log) =>
+            log.id === payload.editId
+              ? {
+                  ...log,
+                  mealLabel: payload.mealLabel,
+                  kcal: payload.kcal,
+                  proteinG: payload.proteinG,
+                  carbsG: payload.carbsG,
+                  fatG: payload.fatG,
+                  source: payload.source,
+                }
+              : log
+          )
+          syncFuelDayState(nextLogs)
+        }
+        toast.success('Comida actualizada')
+        setEditingFuelLog(null)
+        setShowFuelLogModal(false)
+        return
+      }
+
       let photoUrl: string | undefined
       if (payload.photoDataUrl?.startsWith('data:') && storage && firebaseUser?.uid && !isDemoMode) {
         try {
@@ -5343,8 +5413,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           source: payload.source,
         })
         const nextLogs = [entry, ...fuelTodayLogs]
-        setFuelTodayLogs(nextLogs)
-        setFuelTodayTotals(sumFuelLogs(nextLogs))
+        syncFuelDayState(nextLogs)
+        fetchFuelWeekSummary(db, effectiveUserId)
+          .then(setFuelWeekDays)
+          .catch(() => {})
 
         if (payload.publishToMuro) {
           const postId = await createNutritionPost(db, effectiveUserId, preview, photoUrl)
@@ -5389,16 +5461,44 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           createdAt: Date.now(),
         }
         const nextLogs = [demoEntry, ...fuelTodayLogs]
-        setFuelTodayLogs(nextLogs)
-        setFuelTodayTotals(sumFuelLogs(nextLogs))
+        syncFuelDayState(nextLogs)
         toast.success('Comida registrada (demo)')
       }
+      setEditingFuelLog(null)
       setShowFuelLogModal(false)
     } catch (e) {
       console.error('Fuel log save failed', e)
       toast.error('No se pudo guardar la comida')
     } finally {
       setSavingFuel(false)
+    }
+  }
+
+  const handleEditFuelLog = (log: FuelLogEntry) => {
+    setEditingFuelLog(log)
+    setShowFuelLogModal(true)
+  }
+
+  const handleDeleteFuelLog = async (logId: string) => {
+    setDeletingFuelLogId(logId)
+    try {
+      if (!isDemoMode && db && firebaseUser?.uid) {
+        await deleteFuelLog(db, logId)
+        const nextLogs = fuelTodayLogs.filter((log) => log.id !== logId)
+        syncFuelDayState(nextLogs)
+        fetchFuelWeekSummary(db, effectiveUserId)
+          .then(setFuelWeekDays)
+          .catch(() => {})
+      } else {
+        const nextLogs = fuelTodayLogs.filter((log) => log.id !== logId)
+        syncFuelDayState(nextLogs)
+      }
+      toast.success('Comida eliminada')
+    } catch (e) {
+      console.error('Fuel log delete failed', e)
+      toast.error('No se pudo eliminar la comida')
+    } finally {
+      setDeletingFuelLogId(null)
     }
   }
 
@@ -9100,9 +9200,16 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             fuelProfile={fuelProfile}
             fuelTodayTotals={fuelTodayTotals}
             fuelTodayLogs={fuelTodayLogs}
+            fuelWeekDays={fuelWeekDays}
             fuelPostWorkoutTip={fuelPostWorkoutTip}
             setShowFuelSetupModal={setShowFuelSetupModal}
-            setShowFuelLogModal={setShowFuelLogModal}
+            openFuelLogModal={() => {
+              setEditingFuelLog(null)
+              setShowFuelLogModal(true)
+            }}
+            onEditFuelLog={handleEditFuelLog}
+            onDeleteFuelLog={handleDeleteFuelLog}
+            deletingFuelLogId={deletingFuelLogId}
             homeCityChallengeMerged={homeCityChallengeMerged}
             homeLocalLeaderboard={homeLocalLeaderboard}
             homeMyLeaderboardRank={homeMyLeaderboardRank}
@@ -9831,7 +9938,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       />
       <FuelLogModal
         open={showFuelLogModal}
-        onClose={() => setShowFuelLogModal(false)}
+        editEntry={editingFuelLog}
+        onClose={() => {
+          setEditingFuelLog(null)
+          setShowFuelLogModal(false)
+        }}
         onSave={handleSaveFuelLog}
         onAnalyzePhoto={handleAnalyzeFood}
         saving={savingFuel}

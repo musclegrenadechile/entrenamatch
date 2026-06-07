@@ -132,6 +132,36 @@ export function getFuelCoachingTip(
   return undefined
 }
 
+const MEAL_IDEAS_PROTEIN = [
+  'Pechuga de pollo + ensalada',
+  '3 huevos revueltos + tostadas integrales',
+  'Batido whey + plátano',
+  'Atún + arroz integral',
+]
+
+/** Actionable meal idea based on remaining macros (local, no API cost). */
+export function getFuelMealSuggestion(
+  profile: FuelProfile,
+  totals: { kcal: number; proteinG: number; entryCount: number }
+): string | undefined {
+  if (totals.entryCount === 0) return undefined
+  const remKcal = profile.targetKcal - totals.kcal
+  const remP = profile.targetProteinG - totals.proteinG
+  if (remKcal <= 0 && remP <= 5) return undefined
+
+  if (remP > 20) {
+    const idea = MEAL_IDEAS_PROTEIN[totals.entryCount % MEAL_IDEAS_PROTEIN.length]
+    return `💡 ${idea} · ~${Math.min(remP, 45)}g proteína que te faltan`
+  }
+  if (remKcal > 280 && profile.goal !== 'lose') {
+    return `💡 Arroz + proteína magra · ~${remKcal} kcal restantes para cerrar el día`
+  }
+  if (remKcal > 0 && remKcal <= 280) {
+    return `💡 Snack: yogur griego o frutos secos · ~${remKcal} kcal restantes`
+  }
+  return undefined
+}
+
 export function getPostWorkoutFuelTip(workoutType?: WorkoutType): string | undefined {
   if (!workoutType) return undefined
   if (workoutType === 'legs')

@@ -2,11 +2,14 @@ import { useRef, useState, useEffect } from 'react'
 import { Camera, Sparkles, X } from 'lucide-react'
 import { estimateMacrosFromDescription } from '../../utils/fuelCalculator'
 import type { AnalyzeFoodResult } from '../../services/fuel'
+import type { FuelLogEntry } from '../../types'
 
 export interface FuelLogModalProps {
   open: boolean
+  editEntry?: FuelLogEntry | null
   onClose: () => void
   onSave: (payload: {
+    editId?: string
     mealLabel: string
     kcal: number
     proteinG: number
@@ -37,6 +40,7 @@ const EMPTY = {
 
 export function FuelLogModal({
   open,
+  editEntry = null,
   onClose,
   onSave,
   onAnalyzePhoto,
@@ -59,20 +63,35 @@ export function FuelLogModal({
 
   useEffect(() => {
     if (!open) return
-    setMealLabel(EMPTY.mealLabel)
-    setDescription(EMPTY.description)
-    setKcal(EMPTY.kcal)
-    setProteinG(EMPTY.proteinG)
-    setCarbsG(EMPTY.carbsG)
-    setFatG(EMPTY.fatG)
-    setPhotoPreview(EMPTY.photoPreview)
-    setPhotoBase64(EMPTY.photoBase64)
-    setSource(EMPTY.source)
-    setAiTip(EMPTY.aiTip)
-    setAiSource(EMPTY.aiSource)
-    setPublishToMuro(EMPTY.publishToMuro)
+    if (editEntry) {
+      setMealLabel(editEntry.mealLabel)
+      setDescription('')
+      setKcal(editEntry.kcal)
+      setProteinG(editEntry.proteinG)
+      setCarbsG(editEntry.carbsG)
+      setFatG(editEntry.fatG)
+      setPhotoPreview(editEntry.photoUrl || null)
+      setPhotoBase64(null)
+      setSource(editEntry.source)
+      setAiTip(null)
+      setAiSource(null)
+      setPublishToMuro(false)
+    } else {
+      setMealLabel(EMPTY.mealLabel)
+      setDescription(EMPTY.description)
+      setKcal(EMPTY.kcal)
+      setProteinG(EMPTY.proteinG)
+      setCarbsG(EMPTY.carbsG)
+      setFatG(EMPTY.fatG)
+      setPhotoPreview(EMPTY.photoPreview)
+      setPhotoBase64(EMPTY.photoBase64)
+      setSource(EMPTY.source)
+      setAiTip(EMPTY.aiTip)
+      setAiSource(EMPTY.aiSource)
+      setPublishToMuro(EMPTY.publishToMuro)
+    }
     if (fileRef.current) fileRef.current.value = ''
-  }, [open])
+  }, [open, editEntry])
 
   if (!open) return null
 
@@ -143,8 +162,12 @@ export function FuelLogModal({
       <div className="w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-[#12121a] border border-[#a855f7]/30 shadow-2xl">
         <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 sticky top-0 bg-[#12121a] z-10">
           <div>
-            <p className="text-sm font-black text-white">Registrar comida</p>
-            <p className="text-[10px] text-[#9CA3AF]">Foto IA · texto · manual</p>
+            <p className="text-sm font-black text-white">
+              {editEntry ? 'Editar comida' : 'Registrar comida'}
+            </p>
+            <p className="text-[10px] text-[#9CA3AF]">
+              {editEntry ? 'Ajusta macros manualmente' : 'Foto IA · texto · manual'}
+            </p>
           </div>
           <button type="button" onClick={onClose} className="p-2 rounded-xl bg-white/5">
             <X className="w-4 h-4 text-[#9CA3AF]" />
@@ -164,47 +187,55 @@ export function FuelLogModal({
             }}
           />
 
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="w-full py-8 rounded-2xl border-2 border-dashed border-[#a855f7]/40 bg-[#a855f7]/5 flex flex-col items-center gap-2 active:bg-[#a855f7]/10"
-          >
-            {photoPreview ? (
-              <img src={photoPreview} alt="" className="max-h-32 rounded-xl object-cover" />
-            ) : (
-              <>
-                <Camera className="w-8 h-8 text-[#c084fc]" />
-                <span className="text-[11px] font-bold text-[#c084fc]">Foto de tu comida</span>
-              </>
-            )}
-          </button>
+          {!editEntry && (
+            <>
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="w-full py-8 rounded-2xl border-2 border-dashed border-[#a855f7]/40 bg-[#a855f7]/5 flex flex-col items-center gap-2 active:bg-[#a855f7]/10"
+              >
+                {photoPreview ? (
+                  <img src={photoPreview} alt="" className="max-h-32 rounded-xl object-cover" />
+                ) : (
+                  <>
+                    <Camera className="w-8 h-8 text-[#c084fc]" />
+                    <span className="text-[11px] font-bold text-[#c084fc]">Foto de tu comida</span>
+                  </>
+                )}
+              </button>
 
-          {photoBase64 && (
-            <button
-              type="button"
-              disabled={analyzing}
-              onClick={handleAnalyzePhoto}
-              className="w-full py-2.5 rounded-xl bg-[#a855f7]/20 text-[#c084fc] text-[11px] font-bold flex items-center justify-center gap-2 disabled:opacity-50"
-            >
-              <Sparkles className="w-4 h-4" />
-              {analyzing ? 'Analizando con IA…' : 'Analizar foto (Fuel AI)'}
-            </button>
+              {photoBase64 && (
+                <button
+                  type="button"
+                  disabled={analyzing}
+                  onClick={handleAnalyzePhoto}
+                  className="w-full py-2.5 rounded-xl bg-[#a855f7]/20 text-[#c084fc] text-[11px] font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {analyzing ? 'Analizando con IA…' : 'Analizar foto (Fuel AI)'}
+                </button>
+              )}
+
+              <input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe la comida (ej. pollo con arroz)…"
+                className="w-full px-3 py-2.5 rounded-xl bg-[#1a1a22] border border-white/10 text-white text-sm"
+              />
+              <button
+                type="button"
+                disabled={analyzing || !description.trim()}
+                onClick={() => void handleAnalyzeText()}
+                className="text-[10px] text-[#c084fc] font-bold underline disabled:opacity-50"
+              >
+                {analyzing ? 'Analizando texto…' : 'Estimar macros con Fuel AI'}
+              </button>
+            </>
           )}
 
-          <input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe la comida (ej. pollo con arroz)…"
-            className="w-full px-3 py-2.5 rounded-xl bg-[#1a1a22] border border-white/10 text-white text-sm"
-          />
-          <button
-            type="button"
-            disabled={analyzing || !description.trim()}
-            onClick={() => void handleAnalyzeText()}
-            className="text-[10px] text-[#c084fc] font-bold underline disabled:opacity-50"
-          >
-            {analyzing ? 'Analizando texto…' : 'Estimar macros con Fuel AI'}
-          </button>
+          {editEntry?.photoUrl && !photoBase64 && (
+            <img src={editEntry.photoUrl} alt="" className="max-h-32 rounded-xl object-cover w-full" />
+          )}
 
           <input
             value={mealLabel}
@@ -280,15 +311,17 @@ export function FuelLogModal({
             </div>
           )}
 
-          <label className="flex items-center gap-2 text-[11px] text-[#9CA3AF]">
-            <input
-              type="checkbox"
-              checked={publishToMuro}
-              onChange={(e) => setPublishToMuro(e.target.checked)}
-              className="rounded"
-            />
-            Publicar Fuel check en el muro
-          </label>
+          {!editEntry && (
+            <label className="flex items-center gap-2 text-[11px] text-[#9CA3AF]">
+              <input
+                type="checkbox"
+                checked={publishToMuro}
+                onChange={(e) => setPublishToMuro(e.target.checked)}
+                className="rounded"
+              />
+              Publicar Fuel check en el muro
+            </label>
+          )}
         </div>
 
         <div className="p-4 border-t border-white/8 flex gap-2">
@@ -304,6 +337,7 @@ export function FuelLogModal({
             disabled={saving || !mealLabel.trim()}
             onClick={() =>
               onSave({
+                editId: editEntry?.id,
                 mealLabel: mealLabel.trim(),
                 kcal,
                 proteinG,
@@ -316,7 +350,7 @@ export function FuelLogModal({
             }
             className="flex-1 py-3 rounded-2xl bg-[#a855f7] text-black font-extrabold text-sm disabled:opacity-50"
           >
-            {saving ? 'Guardando…' : 'Guardar'}
+            {saving ? 'Guardando…' : editEntry ? 'Guardar cambios' : 'Guardar'}
           </button>
         </div>
       </div>

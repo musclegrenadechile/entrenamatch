@@ -8,10 +8,15 @@ import {
   calculateTdee,
   estimateMacrosFromDescription,
   getFuelCoachingTip,
+  getFuelMealSuggestion,
   macroTargetsFromKcal,
   targetKcalFromGoal,
   toLocalDateStr,
 } from '../src/utils/fuelCalculator.ts'
+import {
+  buildLast7DaySlots,
+  computeFuelWeekFromDates,
+} from '../src/services/fuel.ts'
 
 // TDEE hombre 75kg, 175cm, 28a, moderate
 const tdee = calculateTdee({
@@ -57,5 +62,17 @@ assert.equal(ctx?.remainingKcal, profile.targetKcal - 800)
 
 const tip = getFuelCoachingTip(profile, { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 })
 assert.ok(tip?.includes('Objetivo hoy'))
+
+const suggestion = getFuelMealSuggestion(profile, {
+  kcal: 1200,
+  proteinG: 60,
+  entryCount: 2,
+})
+assert.ok(suggestion?.includes('proteína'))
+
+const week = computeFuelWeekFromDates(new Set([toLocalDateStr()]))
+assert.equal(week.length, 7)
+assert.equal(week[6].isToday, true)
+assert.ok(buildLast7DaySlots().length === 7)
 
 console.log('✅ Fuel AI smoke tests passed')

@@ -34,9 +34,13 @@ export interface DailyRitualHomeProps {
   fuelProfile?: import('../../types').FuelProfile | null
   fuelTotals?: import('../../types').FuelDayTotals
   fuelTodayLogs?: import('../../types').FuelLogEntry[]
+  fuelWeekDays?: import('../../services/fuel').FuelWeekDay[]
   fuelPostWorkoutTip?: string
   onOpenFuelSetup?: () => void
   onOpenFuelLog?: () => void
+  onEditFuelLog?: (log: import('../../types').FuelLogEntry) => void
+  onDeleteFuelLog?: (logId: string) => void
+  deletingFuelLogId?: string | null
   cityLabel?: string
   localNetwork?: Omit<LocalNetworkCardProps, 'cityLabel'> & { cityLabel?: string }
 }
@@ -67,9 +71,13 @@ export function DailyRitualHome({
   fuelProfile,
   fuelTotals,
   fuelTodayLogs,
+  fuelWeekDays,
   fuelPostWorkoutTip,
   onOpenFuelSetup,
   onOpenFuelLog,
+  onEditFuelLog,
+  onDeleteFuelLog,
+  deletingFuelLogId,
   cityLabel,
   localNetwork,
 }: DailyRitualHomeProps) {
@@ -209,9 +217,13 @@ export function DailyRitualHome({
             fuelTotals ?? { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 }
           }
           todayLogs={fuelTodayLogs}
+          weekDays={fuelWeekDays}
           postWorkoutTip={fuelPostWorkoutTip}
           onSetup={onOpenFuelSetup ?? (() => {})}
           onLogMeal={onOpenFuelLog ?? (() => {})}
+          onEditLog={onEditFuelLog}
+          onDeleteLog={onDeleteFuelLog}
+          deletingLogId={deletingFuelLogId}
         />
       )}
 

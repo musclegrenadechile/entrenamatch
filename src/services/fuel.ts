@@ -136,6 +136,72 @@ export async function saveFuelLog(
   return { ...entry, id: ref.id, createdAt }
 }
 
+export async function updateFuelLog(
+  db: Firestore,
+  logId: string,
+  patch: Pick<FuelLogEntry, 'mealLabel' | 'kcal' | 'proteinG' | 'carbsG' | 'fatG' | 'source'>
+): Promise<void> {
+  const { doc, updateDoc } = await import('firebase/firestore')
+  await updateDoc(doc(db, 'fuelLogs', logId), stripUndefined({ ...patch }))
+}
+
+export async function deleteFuelLog(db: Firestore, logId: string): Promise<void> {
+  const { doc, deleteDoc } = await import('firebase/firestore')
+  await deleteDoc(doc(db, 'fuelLogs', logId))
+}
+
+export type FuelWeekDay = {
+  label: string
+  date: string
+  logged: boolean
+  isToday: boolean
+}
+
+const WEEKDAY_LABELS = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
+
+export function buildLast7DaySlots(): Array<{ label: string; date: string; isToday: boolean }> {
+  const slots: Array<{ label: string; date: string; isToday: boolean }> = []
+  const today = new Date()
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today)
+    d.setDate(d.getDate() - i)
+    slots.push({
+      label: WEEKDAY_LABELS[d.getDay()],
+      date: toLocalDateStr(d),
+      isToday: i === 0,
+    })
+  }
+  return slots
+}
+
+export function computeFuelWeekFromDates(loggedDates: Set<string>): FuelWeekDay[] {
+  return buildLast7DaySlots().map((slot) => ({
+    ...slot,
+    logged: loggedDates.has(slot.date),
+  }))
+}
+
+export async function fetchFuelWeekSummary(
+  db: Firestore,
+  userId: string
+): Promise<FuelWeekDay[]> {
+  const slots = buildLast7DaySlots()
+  const startDate = slots[0].date
+  const { collection, query, where, getDocs } = await import('firebase/firestore')
+  const q = query(
+    collection(db, 'fuelLogs'),
+    where('userId', '==', userId),
+    where('date', '>=', startDate)
+  )
+  const snap = await getDocs(q)
+  const loggedDates = new Set<string>()
+  snap.forEach((docSnap) => {
+    const date = String(docSnap.data().date || '')
+    if (date) loggedDates.add(date)
+  })
+  return computeFuelWeekFromDates(loggedDates)
+}
+
 export function buildNutritionPostText(preview: NutritionPreview): string {
   return `🍽 Fuel check — ${preview.mealLabel}: ${preview.kcal} kcal · P${preview.proteinG} C${preview.carbsG} G${preview.fatG}`
 }
