@@ -258,6 +258,74 @@ function estimateFromDescription(text) {
   };
 }
 
+function classifyGeminiError(status, errText) {
+  const t = String(errText || '').toLowerCase();
+  if (
+    status === 429 &&
+    (t.includes('credit') || t.includes('billing') || t.includes('prepayment') || t.includes('quota'))
+  ) {
+    return 'billing_depleted';
+  }
+  if (status === 429) return 'rate_limit';
+  if (status === 403 || status === 401) return 'invalid_key';
+  if (status === 400 && t.includes('api key')) return 'invalid_key';
+  return 'unknown';
+}
+
+function geminiUserMessage(reason) {
+  if (reason === 'billing_depleted') {
+    return 'Créditos de Google AI Studio agotados. Crea una API key nueva en aistudio.google.com/apikey con billing activo.';
+  }
+  if (reason === 'invalid_key') {
+    return 'API key inválida. Usa una key AIzaSy… de Google AI Studio y vuelve a ejecutar setup-fuel-ai.ps1';
+  }
+  if (reason === 'rate_limit') return 'Límite de requests Gemini — espera un minuto e intenta de nuevo.';
+  return 'Gemini no disponible ahora.';
+}
+
+/** Models to try (cheapest / free-tier friendly first after primary). */
+const GEMINI_FOOD_MODELS = [
+  'gemini-2.0-flash-lite',
+  'gemini-2.0-flash',
+  'gemini-1.5-flash',
+  'gemini-1.5-flash-8b',
+];
+
+async function callGeminiModel(apiKey, model, parts, labelFallback) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts }],
+      generationConfig: { temperature: 0.2, maxOutputTokens: 256 },
+    }),
+  });
+  if (!res.ok) {
+    const errText = await res.text();
+    const reason = classifyGeminiError(res.status, errText);
+    const err = new Error(`Gemini error ${res.status}: ${errText.slice(0, 200)}`);
+    err.geminiReason = reason;
+    err.geminiStatus = res.status;
+    throw err;
+  }
+  const json = await res.json();
+  const raw = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const match = raw.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('No JSON in Gemini response');
+  const parsed = JSON.parse(match[0]);
+  return {
+    kcal: Math.round(Number(parsed.kcal) || 400),
+    proteinG: Math.round(Number(parsed.proteinG) || 30),
+    carbsG: Math.round(Number(parsed.carbsG) || 40),
+    fatG: Math.round(Number(parsed.fatG) || 12),
+    label: String(parsed.label || labelFallback || 'Comida').slice(0, 80),
+    tip: String(parsed.tip || 'Estimación IA — no es consejo médico.').slice(0, 200),
+    source: 'gemini',
+    geminiModel: model,
+  };
+}
+
 async function callGeminiFoodAnalysis(apiKey, imageBase64, mealDescription, fuelContext) {
   const ctx = fuelContext && typeof fuelContext === 'object' ? fuelContext : null;
   let contextBlock = '';
@@ -294,33 +362,21 @@ async function callGeminiFoodAnalysis(apiKey, imageBase64, mealDescription, fuel
       text: `Estima kcal y macros P/C/G de esta comida en español.${contextBlock} JSON only: {"kcal":number,"proteinG":number,"carbsG":number,"fatG":number,"label":string,"tip":string}. tip = consejo breve pre/post gym en español. No consejo médico.`,
     });
   }
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts }],
-      generationConfig: { temperature: 0.2, maxOutputTokens: 256 },
-    }),
-  });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`Gemini error ${res.status}: ${errText.slice(0, 200)}`);
+
+  let lastErr = null;
+  for (const model of GEMINI_FOOD_MODELS) {
+    try {
+      const result = await callGeminiModel(apiKey, model, parts, mealDescription || 'Comida');
+      console.log('analyzeFood: Gemini OK model=', model);
+      return result;
+    } catch (err) {
+      lastErr = err;
+      console.warn('analyzeFood: model failed', model, err.message || err);
+      // Billing depleted at project level — other models won't help
+      if (err.geminiReason === 'billing_depleted') break;
+    }
   }
-  const json = await res.json();
-  const raw = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  const match = raw.match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('No JSON in Gemini response');
-  const parsed = JSON.parse(match[0]);
-  return {
-    kcal: Math.round(Number(parsed.kcal) || 400),
-    proteinG: Math.round(Number(parsed.proteinG) || 30),
-    carbsG: Math.round(Number(parsed.carbsG) || 40),
-    fatG: Math.round(Number(parsed.fatG) || 12),
-    label: String(parsed.label || mealDescription || 'Comida').slice(0, 80),
-    tip: String(parsed.tip || 'Estimación IA — no es consejo médico.').slice(0, 200),
-    source: 'gemini',
-  };
+  throw lastErr || new Error('All Gemini models failed');
 }
 
 /** Callable: photo or text → estimated macros (Gemini Vision if GEMINI_API_KEY set). */
@@ -351,7 +407,13 @@ exports.analyzeFood = functions
   try {
     return await callGeminiFoodAnalysis(apiKey, imageBase64, mealDescription, fuelContext);
   } catch (err) {
-    console.warn('Gemini food analysis failed, using heuristic', err.message || err);
-    return estimateFromDescription(mealDescription || 'Comida con foto');
+    const reason = err.geminiReason || 'unknown';
+    console.warn('Gemini food analysis failed, using heuristic', reason, err.message || err);
+    const heuristic = estimateFromDescription(mealDescription || 'Comida con foto');
+    return {
+      ...heuristic,
+      geminiBlockedReason: reason,
+      geminiErrorMessage: geminiUserMessage(reason),
+    };
   }
 });

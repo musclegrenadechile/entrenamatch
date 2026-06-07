@@ -43,6 +43,18 @@ Fallback legacy (deprecated): `firebase functions:config:set gemini.key="AIza...
 
 Sin API key: la función devuelve estimación **heurística** (`source: heuristic`).
 
+## Error: Gemini no responde / solo heurística local
+
+Revisa logs: `firebase functions:log --only analyzeFood`
+
+| Código / mensaje | Causa | Solución |
+|------------------|-------|----------|
+| **429 prepayment credits depleted** | Créditos de Google AI Studio agotados en el proyecto de la API key | [aistudio.google.com/apikey](https://aistudio.google.com/apikey) → nuevo proyecto o activar billing → nueva key `AIzaSy…` → `.\scripts\setup-fuel-ai.ps1 -ApiKey "..."` |
+| **403 / invalid API key** | Key incorrecta o revocada | Crear key nueva en AI Studio |
+| **Debes iniciar sesión** | Usuario en demo sin Firebase Auth | Login con Google/email (no demo rápido) |
+
+La app ahora muestra un toast con el motivo exacto cuando Gemini falla.
+
 ## Checklist de prueba manual
 
 - [ ] Login real (no demo)

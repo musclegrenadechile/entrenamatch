@@ -20,6 +20,9 @@ export type AnalyzeFoodResult = {
   label: string
   tip: string
   source: 'gemini' | 'heuristic'
+  geminiModel?: string
+  geminiBlockedReason?: 'billing_depleted' | 'invalid_key' | 'rate_limit' | 'unknown'
+  geminiErrorMessage?: string
 }
 
 export type FuelAnalyzeContext = {

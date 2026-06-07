@@ -82,7 +82,7 @@ export function FuelLogModal({
     setCarbsG(est.carbsG)
     setFatG(est.fatG)
     if (!mealLabel) setMealLabel(est.label)
-    setAiTip(est.tip)
+    setAiTip(est.geminiErrorMessage ? `${est.geminiErrorMessage}\n\n${est.tip}` : est.tip)
     setAiSource(est.source)
     setSource(src)
   }

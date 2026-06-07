@@ -5278,9 +5278,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         toast.success('Fuel AI · Gemini', {
           description: `${result.kcal} kcal estimadas — revisa y guarda si cuadra.`,
         })
+      } else if (result.geminiErrorMessage) {
+        toast.error('Gemini no disponible', {
+          description: result.geminiErrorMessage,
+          duration: 8000,
+        })
       } else {
         toast.message('Estimación aproximada', {
-          description: 'Gemini no respondió — usando heurística local. Ajusta manualmente si hace falta.',
+          description: 'Usando heurística local. Ajusta manualmente si hace falta.',
         })
       }
       return result
