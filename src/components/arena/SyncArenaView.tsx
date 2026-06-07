@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Zap } from 'lucide-react'
 import { ARENA_HERO_ACTIONS, heroActionToSync } from './arenaActions'
+import { ArenaFomoStrip } from './ArenaFomoStrip'
 import { ArenaMiniMap } from './ArenaMiniMap'
+import { ArenaWitnessRow } from './ArenaWitnessRow'
 
 export interface SyncArenaFlyingEmoji {
   id: string
@@ -38,6 +40,11 @@ export interface SyncArenaViewProps {
   distanceKm?: number | null
   liveNearbyCount: number
   rippleCount: number
+  witnessCount: number
+  redLiveCount: number
+  waveCount: number
+  lastWaveLabel?: string
+  wavePulseKey?: number
   cityLabel?: string
   flyingEmojis: SyncArenaFlyingEmoji[]
   onSyncAction: (emoji: string, label: string) => void
@@ -73,6 +80,11 @@ export function SyncArenaView({
   distanceKm,
   liveNearbyCount,
   rippleCount,
+  witnessCount,
+  redLiveCount,
+  waveCount,
+  lastWaveLabel,
+  wavePulseKey = 0,
   cityLabel,
   flyingEmojis,
   onSyncAction,
@@ -91,6 +103,8 @@ export function SyncArenaView({
   const minutes = syncStartedAt ? Math.floor((now - syncStartedAt) / 60000) : 0
   const seconds = syncStartedAt ? Math.floor(((now - syncStartedAt) % 60000) / 1000) : 0
   const minsToStory = Math.max(0, STORY_MILESTONE_MIN - minutes)
+  const legendUnlocked = syncVibe >= 80
+  const vibeToLegend = Math.max(0, 80 - syncVibe)
 
   const latestPartnerAction = useMemo(() => {
     return syncActions.find((a) => a.userId && a.userId !== effectiveUserId) || null
@@ -131,6 +145,11 @@ export function SyncArenaView({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {legendUnlocked ? (
+            <span className="arena-legend-badge">⭐ HIGHLIGHT</span>
+          ) : syncVibe >= 60 ? (
+            <span className="arena-legend-badge arena-legend-badge--soon">⚡ {vibeToLegend}→80</span>
+          ) : null}
           {syncCombo >= 2 && (
             <span className="arena-combo-badge">COMBO ×{syncCombo}</span>
           )}
@@ -243,14 +262,42 @@ export function SyncArenaView({
             <>⭐ Historia compartida desbloqueada al terminar</>
           )}
         </p>
+        <div className="arena-vibe-milestones" aria-hidden>
+          {[60, 80, 100].map((tick) => (
+            <span
+              key={tick}
+              className={`arena-vibe-milestone ${syncVibe >= tick ? 'arena-vibe-milestone--hit' : ''}`}
+              style={{ left: `${tick}%` }}
+            >
+              {tick}
+            </span>
+          ))}
+        </div>
       </section>
 
-      <div className="px-4 mt-2">
+      <div className="px-4 mt-2 space-y-2">
+        <ArenaFomoStrip
+          witnessCount={witnessCount}
+          redLiveCount={redLiveCount}
+          waveCount={waveCount}
+          syncVibe={syncVibe}
+          minsToStory={minsToStory}
+          legendUnlocked={legendUnlocked}
+          lastWaveLabel={lastWaveLabel}
+          cityLabel={cityLabel}
+        />
+        <ArenaWitnessRow
+          witnessCount={witnessCount}
+          liveNearbyCount={liveNearbyCount}
+          redLiveCount={redLiveCount}
+        />
         <ArenaMiniMap
           liveNearbyCount={liveNearbyCount}
           rippleCount={rippleCount}
           cityLabel={cityLabel}
           vibe={syncVibe}
+          witnessCount={witnessCount}
+          wavePulseKey={wavePulseKey}
         />
       </div>
 
@@ -315,7 +362,9 @@ export function SyncArenaView({
         </button>
         <p className="text-[9px] text-center text-white/40 px-6 flex items-center justify-center gap-1">
           <Zap size={10} className="text-[#22c55e]" />
-          Cada acción se ve en su pantalla y ondea en el GymPulse
+          {witnessCount > 0
+            ? `Cada acción llega a ${partnerFirst} y ~${witnessCount} más pueden presenciarlo en el mapa`
+            : 'Cada acción se ve en su pantalla y ondea en el GymPulse'}
         </p>
       </footer>
     </div>

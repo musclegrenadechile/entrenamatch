@@ -782,6 +782,9 @@ function App() {
   // =====================================================
   const [syncCombo, setSyncCombo] = useState(0)
   const [flyingEmojis, setFlyingEmojis] = useState<any[]>([]) // {id, emoji, label}
+  const [arenaWaveCount, setArenaWaveCount] = useState(0)
+  const [lastArenaWaveLabel, setLastArenaWaveLabel] = useState('')
+  const [arenaWavePulseKey, setArenaWavePulseKey] = useState(0)
   const [showSyncArena, setShowSyncArena] = useState(false)  // EntrenaSync immersive view (the core synchronized training experience)
 
   // PERFORMANCE PROPAGATION: Strong EntrenaSync sessions send visible waves to the Live Map.
@@ -4737,6 +4740,114 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
   // === DISRUPTIVE EntrenaSync implementation (core of the top unique feature) ===
 
+  /** Every Arena action broadcasts a visible wave on GymPulse — core FOMO mechanic. */
+  const emitArenaMapRipple = (
+    label: string,
+    intensity: number,
+    opts?: {
+      vibe?: number
+      actionsSnapshot?: any[]
+      forceLegend?: boolean
+      notifyNearby?: boolean
+      skipCounter?: boolean
+    }
+  ) => {
+    if (!opts?.skipCounter) {
+      setArenaWaveCount((c) => c + 1)
+      setLastArenaWaveLabel(label)
+      setArenaWavePulseKey((k) => k + 1)
+    }
+
+    const partnerId = syncPartnerIdRef.current || syncPartnerId
+    if (!partnerId) return
+
+    const partner =
+      liveTrainingNow.find((u: any) => u.id === partnerId) ||
+      realProfiles.find((p: any) => p.id === partnerId)
+    if (!partner?.lat || !partner?.lng) return
+
+    const actionsSnap = opts?.actionsSnapshot ?? syncActions
+    const vibeNow = opts?.vibe ?? syncVibe
+    const partnerBond = syncBonds[partner.id]
+    const isLegendRipple =
+      opts?.forceLegend ||
+      !!partner.isLegend ||
+      (partnerBond && ((partnerBond.totalMin || 0) >= 30 || (partnerBond.bondLevel || 0) >= 2))
+    const finalIntensity = isLegendRipple ? Math.max(intensity, 2.4) : intensity
+    const rippleId = 'ritual-' + Date.now()
+    const rippleLabel = isLegendRipple
+      ? `⭐ HIGHLIGHT DE RED • ${label}`
+      : intensity >= 1.5
+        ? `⚡ Onda de Sync • ${label}`
+        : `🌊 Onda de Sync • ${label}`
+
+    setRitualRipples((prev) => [
+      ...prev,
+      {
+        id: rippleId,
+        lat: partner.lat,
+        lng: partner.lng,
+        label: rippleLabel,
+        intensity: finalIntensity,
+        witnessData: {
+          actions: actionsSnap.slice(0, 6).map((a: any) => ({ ...a })),
+          vibe: vibeNow,
+          partnerName: partner.name || partner.nombre || 'Compañero de ritual',
+          photoUrl: actionsSnap.find((a: any) => a.photoUrl)?.photoUrl || null,
+          label: isLegendRipple ? `⭐ ${label}` : `🌊 ${label}`,
+          timestamp: Date.now(),
+          minutes: syncStartedAt ? Math.floor((Date.now() - syncStartedAt) / 60000) : 0,
+        },
+      },
+    ])
+    setTimeout(
+      () => setRitualRipples((r) => r.filter((x) => x.id !== rippleId)),
+      isLegendRipple ? 5200 : 3200
+    )
+
+    if (isLegendRipple) {
+      const pinId = 'echo-pin-' + rippleId
+      setEchoPins((prev) => [
+        ...prev,
+        {
+          id: pinId,
+          lat: partner.lat,
+          lng: partner.lng,
+          label: `⭐ ${label}`,
+          witnessData: {
+            actions: actionsSnap.slice(0, 6).map((a: any) => ({ ...a })),
+            vibe: vibeNow,
+            partnerName: partner.name || partner.nombre || 'Compañero de ritual',
+            photoUrl: actionsSnap.find((a: any) => a.photoUrl)?.photoUrl || null,
+            label: `⭐ ${label}`,
+            timestamp: Date.now(),
+            minutes: syncStartedAt ? Math.floor((Date.now() - syncStartedAt) / 60000) : 0,
+          },
+        },
+      ])
+      setTimeout(() => setEchoPins((p) => p.filter((x) => x.id !== pinId)), 45 * 60 * 1000)
+    }
+
+    const shouldNotify = opts?.notifyNearby !== false && (isLegendRipple || intensity >= 1.4)
+    if (shouldNotify && userLocation) {
+      const distToEvent = getDistanceKm(userLocation.lat, userLocation.lng, partner.lat, partner.lng)
+      if (distToEvent < 8) {
+        try {
+          addNotification({
+            id: 'ripple-global-' + rippleId,
+            type: 'session_join' as any,
+            title: isLegendRipple ? '⭐ Highlight de Sync cerca' : '⚡ Energía de Sync cerca',
+            body: `${label} — alguien entrena en sync a ${distToEvent.toFixed(1)}km`,
+            relatedId: partnerId,
+          })
+          if (distToEvent < 5 && isLegendRipple) {
+            toast(`⚡ Onda de Arena cerca`, { description: `${label} se sintió en tu zona` })
+          }
+        } catch {}
+      }
+    }
+  }
+
   const startSyncWith = async (partnerId: string, partnerName: string) => {
     const myIds = [effectiveUserId, currentUser?.id, firebaseUser?.uid, 'me'].filter(Boolean)
     if (!partnerId || myIds.includes(partnerId)) return
@@ -4812,7 +4923,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       setTimeout(() => {
         createProfilePost(`¡Sincronizado con ${partnerName}! Entrenamos juntos ahora 🔥`, null).catch(() => {})
       }, 400)
-      toast.success(`EntrenaSync iniciado con ${partnerName}`, { description: 'Arena abierta — acciones compartidas en vivo.' })
+      const witnessHint = Math.max(0, liveTrainingNow.length - 2)
+      emitArenaMapRipple('Sync iniciado', 1.05, { vibe: 12, actionsSnapshot: [], notifyNearby: false })
+      toast.success(`EntrenaSync iniciado con ${partnerName}`, {
+        description:
+          witnessHint > 0
+            ? `Arena abierta — ~${witnessHint} personas pueden ver vuestra ola en el mapa`
+            : 'Arena abierta — vuestra sync ondea en el GymPulse en vivo',
+      })
       try { confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } }) } catch {}
       addDebugLog(`EntrenaSync started with ${partnerName}`)
     } catch (e) {
@@ -4898,6 +5016,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     setSyncVibe(0)
     setSyncCombo(0)
     setFlyingEmojis([])
+    setArenaWaveCount(0)
+    setLastArenaWaveLabel('')
+    setArenaWavePulseKey(0)
     setShowSyncArena(false)
     // Capture for replay (the unique "remember this session together" moment)
     const capturedActions = [...syncActions]
@@ -5104,6 +5225,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       toast.success('📸 Momento capturado', {
         description: 'Timeline + muros de ambos + onda en el mapa',
       })
+      emitArenaMapRipple('Foto en Arena', 1.65, {
+        vibe: syncVibe,
+        actionsSnapshot: [photoAction, ...syncActions].slice(0, 12),
+        notifyNearby: true,
+      })
       triggerHaptic('success')
     } catch {
       toast.error('No se pudo capturar la foto')
@@ -5174,6 +5300,24 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         })
         setSyncVibe(newVibe)
 
+        const prevVibe = syncVibe || 0
+        const crossedLegend = newVibe >= 80 && prevVibe < 80
+        const rippleIntensity = crossedLegend
+          ? newVibe > 90
+            ? 2.2
+            : 1.8
+          : newCombo >= 3
+            ? 1.55
+            : newCombo >= 2
+              ? 1.25
+              : 0.9
+        emitArenaMapRipple(`${emoji} ${label}`, rippleIntensity, {
+          vibe: newVibe,
+          actionsSnapshot: newActions,
+          forceLegend: crossedLegend,
+          notifyNearby: crossedLegend || newCombo >= 2,
+        })
+
         // Make the purpose *felt*: every action with a real bond from your red builds your Network Power visibly, and boosts the shared vibe — the social graph has real performance teeth.
         if (isBondedAction && (newCombo >= 2 || vibeGain > 10)) {
           const bondBoost = Math.max(1, Math.floor(vibeGain / 8))
@@ -5181,100 +5325,25 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         }
 
         // PEQUEÑO TOQUE DISRUPTIVO: auto-captura de "momento de alta vibe" cuando cruza 80.
-        // Agrega acción especial ⚡ al timeline (visible en replay y social proof).
-        // Si está en APK nativa, ofrece captura de foto rápida para inmortalizar el pico de energía.
-        if (newVibe >= 80 && (syncVibe || 0) < 80) {
-          const highAction = { 
-            id: 'hv' + Date.now(), 
-            emoji: '⚡', 
-            label: '¡Alta energía compartida!', 
-            userId: effectiveUserId, 
-            at: Date.now() 
+        if (crossedLegend) {
+          const highAction = {
+            id: 'hv' + Date.now(),
+            emoji: '⚡',
+            label: '¡Alta energía compartida!',
+            userId: effectiveUserId,
+            at: Date.now(),
           }
-          setSyncActions(prev => [highAction, ...prev].slice(0, 30))
-          toast.success('⚡ ¡Vibe alta alcanzada!', { description: 'Momento épico registrado en el sync y replay' })
+          setSyncActions((prev) => [highAction, ...prev].slice(0, 30))
+          toast.success('⚡ ¡Highlight legendario!', {
+            description: 'La ciudad puede presenciarlo — momento épico en mapa + replay',
+          })
           triggerHaptic('medium')
-          // Extra visual pop + multiple flying for high vibe (makes the peak feel spectacular and unique)
           setTimeout(() => {
-            setFlyingEmojis(prev => [...prev.slice(-2), { id: 'fly-high' + Date.now(), emoji: '⚡', label: 'Alta!' }])
-            try { triggerHaptic('heavy') } catch {}
+            setFlyingEmojis((prev) => [...prev.slice(-2), { id: 'fly-high' + Date.now(), emoji: '⚡', label: 'Alta!' }])
+            try {
+              triggerHaptic('heavy')
+            } catch {}
           }, 120)
-
-          // LEGENDARY RIPPLE: Broadcast the epic moment to the living map.
-          // This is the "Jobs/Musk moment" — the energy you create in the Arena becomes visible to the entire city.
-          // Other people see a wave on the map: "Something legendary just happened here".
-          // This single mechanic makes the product feel like a living, breathing world of synchronized human effort.
-          const partner = liveTrainingNow.find((u: any) => u.id === syncPartnerId) || realProfiles.find((p: any) => p.id === syncPartnerId)
-          if (partner && partner.lat && partner.lng) {
-            const rippleId = 'ritual-' + Date.now()
-            const partnerBond = syncBonds[partner.id]
-            const isLegendRipple = !!partner.isLegend || (partnerBond && ((partnerBond.totalMin || 0) >= 30 || (partnerBond.bondLevel || 0) >= 2))
-            const intensity = isLegendRipple ? 2.8 : (newVibe > 90 ? 2.2 : 1.6)
-            setRitualRipples(prev => [...prev, { 
-              id: rippleId, 
-              lat: partner.lat, 
-              lng: partner.lng, 
-              label: isLegendRipple ? `⭐ HIGHLIGHT DE RED • ${label}` : `⚡ Onda de Sync • ${label}`, 
-              intensity,
-              witnessData: {
-                actions: syncActions.slice(0, 6).map((a: any) => ({...a})),
-                vibe: newVibe,
-                partnerName: partner.name || partner.nombre || 'Compañero de ritual',
-                photoUrl: syncActions.find((a:any) => a.photoUrl)?.photoUrl || null,
-                label: isLegendRipple ? `⭐ ${label}` : `⚡ ${label}`,
-                timestamp: Date.now(),
-                minutes: syncStartedAt ? Math.floor((Date.now() - syncStartedAt)/60000) : 0
-              }
-            }])
-            // Auto-clean the ripple after it has "propagated"
-            setTimeout(() => {
-              setRitualRipples(r => r.filter(x => x.id !== rippleId))
-            }, 5200)
-
-            // If this is a legend ripple, leave a persistent Echo Pin on the map for a while (45min)
-            // so the community can discover and witness the mythology.
-            if (isLegendRipple) {
-              const pinId = 'echo-pin-' + rippleId;
-              setEchoPins(prev => [...prev, {
-                id: pinId,
-                lat: partner.lat,
-                lng: partner.lng,
-                label: `⭐ ${label}`,
-                witnessData: {
-                  actions: syncActions.slice(0, 6).map((a: any) => ({...a})),
-                  vibe: newVibe,
-                  partnerName: partner.name || partner.nombre || 'Compañero de ritual',
-                  photoUrl: syncActions.find((a:any) => a.photoUrl)?.photoUrl || null,
-                  label: `⭐ ${label}`,
-                  timestamp: Date.now(),
-                  minutes: syncStartedAt ? Math.floor((Date.now() - syncStartedAt)/60000) : 0
-                }
-              }]);
-              setTimeout(() => {
-                setEchoPins(p => p.filter(x => x.id !== pinId));
-              }, 45 * 60 * 1000);
-            }
-
-            // Extra "physics" awareness: even if map is closed, if the current user is geographically close
-            // to the high-vibe event, give them a personal mini-notification. This makes ripples feel real.
-            if (userLocation) {
-              const distToEvent = getDistanceKm(userLocation.lat, userLocation.lng, partner.lat, partner.lng)
-              if (distToEvent < 8) {
-                try {
-                  addNotification({
-                    id: 'ripple-global-' + rippleId,
-                    type: 'session_join' as any,
-                    title: '⚡ Energía de Sync cerca',
-                    body: `${label} — alguien tuvo un momento épico a ${distToEvent.toFixed(1)}km`,
-                    relatedId: syncPartnerId
-                  })
-                  if (distToEvent < 5) {
-                    toast(`⚡ Onda de Arena cerca`, { description: `${label} se sintió en tu zona` })
-                  }
-                } catch {}
-              }
-            }
-          }
 
           // Oferta auto de foto si en native (no fuerza cámara, solo invita)
           if (Capacitor.isNativePlatform() && CapacitorCamera) {
@@ -5284,24 +5353,48 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   label: 'Capturar',
                   onClick: async () => {
                     try {
-                      const photo = await CapacitorCamera.getPhoto({ quality: 70, allowEditing: true, resultType: 'base64' })
+                      const photo = await CapacitorCamera.getPhoto({
+                        quality: 70,
+                        allowEditing: true,
+                        resultType: 'base64',
+                      })
                       const dataUrl = `data:image/jpeg;base64,${photo.base64String}`
                       const path = `posts/${effectiveUserId}/arena-high-${Date.now()}.jpg`
                       const storageRef = ref(storage, path)
                       const snap = await uploadString(storageRef, dataUrl, 'data_url')
                       const url = await getDownloadURL(snap.ref)
-                      const photoAction = { id: 'sa' + Date.now(), emoji: '📸', label: 'Alta vibe capturada', userId: effectiveUserId, at: Date.now(), photoUrl: url }
-                      setSyncActions(prev => [photoAction, ...prev].slice(0, 30))
+                      const photoAction = {
+                        id: 'sa' + Date.now(),
+                        emoji: '📸',
+                        label: 'Alta vibe capturada',
+                        userId: effectiveUserId,
+                        at: Date.now(),
+                        photoUrl: url,
+                      }
+                      setSyncActions((prev) => [photoAction, ...prev].slice(0, 30))
                       await createProfilePost('⚡ Momento de alta energía en Arena', url)
                       toast.success('📸 Alta vibe inmortalizada')
-                    } catch (e) { toast('Captura cancelada') }
-                  }
-                }
+                    } catch {
+                      toast('Captura cancelada')
+                    }
+                  },
+                },
               })
             }, 800)
           }
         }
-      } catch (e) { console.warn('instant syncSession action failed (mirror will catch on next poll)', e) }
+      } catch (e) {
+        console.warn('instant syncSession action failed (mirror will catch on next poll)', e)
+      }
+    } else {
+      const newVibe = Math.min(100, (syncVibe || 0) + vibeGain)
+      setSyncVibe(newVibe)
+      const rippleIntensity = newCombo >= 2 ? 1.2 : 0.85
+      emitArenaMapRipple(`${emoji} ${label}`, rippleIntensity, {
+        vibe: newVibe,
+        actionsSnapshot: newActions,
+        notifyNearby: false,
+      })
     }
 
     // Auto social proof — richer when combo
@@ -5315,10 +5408,16 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     // Special toast + confetti pop for combos (the dopamine that makes it addictive and unique)
     if (newCombo >= 3) {
       confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } })
-      toast.success(`${emoji} COMBO x${newCombo}!`, { description: '¡Energía multiplicada — esto nadie más lo siente!' })
+      toast.success(`${emoji} COMBO x${newCombo}!`, {
+        description: 'Onda fuerte en el mapa — quien esté en GymPulse lo presencia',
+      })
       triggerHaptic('medium')
+    } else if (newCombo >= 2) {
+      toast.success(`${emoji} ${label} ×${newCombo}`, {
+        description: 'La red siente el combo en el GymPulse',
+      })
     } else {
-      toast.success(`${emoji} ${label}`)
+      toast.success(`${emoji} ${label}`, { description: 'Onda enviada al mapa en vivo' })
     }
   }
 
@@ -14033,6 +14132,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             ? getDistanceKm(userLocation.lat, userLocation.lng, partner.lat, partner.lng)
             : null
         const bond = syncBonds[syncPartnerId]
+        const excludeIds = new Set([effectiveUserId, syncPartnerId, 'me', firebaseUser?.uid].filter(Boolean))
+        let witnessCount = 0
+        liveTrainingNow.forEach((u: any) => {
+          if (excludeIds.has(u.id)) return
+          if (userLocation && u.lat != null && u.lng != null) {
+            if (getDistanceKm(userLocation.lat, userLocation.lng, u.lat, u.lng) <= 30) witnessCount++
+          } else {
+            witnessCount++
+          }
+        })
+        witnessCount = Math.max(witnessCount, Math.max(0, liveTrainingNow.length - 2))
+        const redLiveCount = Object.keys(syncBonds).filter(
+          (id) => !excludeIds.has(id) && isUserLive(id)
+        ).length
         return (
           <SyncArenaView
             open
@@ -14051,7 +14164,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             isNetworkBond={!!bond}
             distanceKm={dist}
             liveNearbyCount={liveTrainingNow.length}
-            rippleCount={Math.max(1, Math.floor(syncVibe / 25) + ritualRipples.length)}
+            rippleCount={Math.max(1, arenaWaveCount || Math.floor(syncVibe / 25) + ritualRipples.length)}
+            witnessCount={witnessCount}
+            redLiveCount={redLiveCount}
+            waveCount={arenaWaveCount}
+            lastWaveLabel={lastArenaWaveLabel}
+            wavePulseKey={arenaWavePulseKey}
             cityLabel={currentUser.city || partner?.city}
             flyingEmojis={flyingEmojis}
             onSyncAction={doSyncAction}
