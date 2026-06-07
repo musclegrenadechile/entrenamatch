@@ -1566,11 +1566,9 @@ useEffect(() => {
   const [mapForceTick, setMapForceTick] = useState(0) // tiny trigger so map re-renders when toggling partners layer
   const [isTogglingLive, setIsTogglingLive] = useState(false) // prevent double-tap and show loading on the live toggle button (fixes stuck click)
 
-  // Dedicated source of truth for currently live users coming from a where('trainingNow'==true) listener.
-  const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
-  // This guarantees that people who activated "Entrenando Ahora" appear for others on the GymPulse even if their
-  // profile doc is not among the top-N most recently updatedAt (many other writes can push long-running lives out of a simple recent query).
-  const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
+ // Dedicated source of truth for currently live users coming from a where('trainingNow'==true) listener.
+// This guarantees that people who activated "Entrenando Ahora" appear for others on the GymPulse...
+const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
 
   // Refs for current auth uid and blocked to avoid stale closures in onSnapshot callbacks (critical for live status skip-self and filtering)
   const currentUidRef = useRef<string | null>(null)
