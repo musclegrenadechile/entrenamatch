@@ -8837,17 +8837,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             setPartnerFormLat={setPartnerFormLat}
             setPartnerFormLng={setPartnerFormLng}
             setIsPlacingPartner={setIsPlacingPartner}
-            setEditingPartner={setEditingPartner}
-            setPartnerForm={setPartnerForm}
-            setShowPartnerForm={setShowPartnerForm}
             devTestLives={devTestLives}
             toast={toast}
-            partnerForm={partnerForm}
-            editingPartner={editingPartner}
-            showPartnerForm={showPartnerForm}
-            isSavingPartner={isSavingPartner}
-            savePartner={savePartner}
-            deletePartner={deletePartner}
             partnerFormLat={partnerFormLat}
             partnerFormLng={partnerFormLng}
             handlePartnerEditFromMap={handlePartnerEditFromMap}
@@ -9146,6 +9137,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             handleCopyWorkoutFromPost={handleCopyWorkoutFromPost}
             togglePinPost={togglePinPost}
             deleteProfilePost={deleteProfilePost}
+            likeProfilePost={likeProfilePost}
+            feedReactions={feedReactions}
+            userLocation={userLocation}
             toast={toast}
           />
         )}

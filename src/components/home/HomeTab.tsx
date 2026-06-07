@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { DailyRitualHome } from './DailyRitualHome'
 import { isGymCheckInFresh } from '../../services/localNetwork'
+import { WorkoutPostCard } from '../workout'
+import { NutritionPostCard } from '../fuel'
 
 export type HomeTabProps = Record<string, unknown>
 
@@ -85,6 +87,9 @@ export function HomeTab(props: HomeTabProps) {
     handleCopyWorkoutFromPost,
     togglePinPost,
     deleteProfilePost,
+    likeProfilePost,
+    feedReactions,
+    userLocation,
   } = props
 
   return (
