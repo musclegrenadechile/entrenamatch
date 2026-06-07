@@ -3,9 +3,6 @@ import {
   signInWithEmailAndPassword,
   signOut,
   onAuthStateChanged,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signInWithRedirect,
   sendPasswordResetEmail,
   type User as FirebaseUser
 } from 'firebase/auth';
@@ -105,60 +102,52 @@ export const signInWithEmail = async (email: string, password: string) => {
   return userCredential.user;
 };
 
-// Sign in with Google (disabled in public demo)
-export const signInWithGoogle = async () => {
-  if (!isFirebaseConfigured) {
-    throw new Error('Google Sign-In está deshabilitado en la versión pública de prueba. Usa email y contraseña.');
-  }
-  const provider = new GoogleAuthProvider();
-  
-  // Use redirect instead of popup on localhost (fixes redirect_uri_mismatch in development)
-  const isLocalhost = window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1';
-  
-  if (isLocalhost) {
-    await signInWithRedirect(auth, provider);
-    // The page will redirect, so we return null here
-    return null as any;
-  } else {
-    try {
-      const userCredential = await signInWithPopup(auth, provider);
-      return userCredential.user;
-    } catch (err: any) {
-      if (err.code === 'auth/unauthorized-domain') {
-        const domain = window.location.hostname;
-        throw new Error(`OAuth no autorizado en ${domain}. Agrega el dominio en Firebase Auth > Authorized domains.`);
-      }
-      throw err;
-    }
-  }
-};
+// Sign in with Google — delegates to googleAuth.ts (web + Capacitor + GH Pages)
+export {
+  startGoogleSignIn as signInWithGoogle,
+  finishGoogleRedirectSignIn as handleGoogleRedirectResult,
+  GoogleAuthError,
+  GOOGLE_AUTH_AUTHORIZED_DOMAINS,
+  shouldUseGoogleRedirect,
+} from './googleAuth';
+export type { GoogleSignInResult } from './googleAuth';
 
-// Handle redirect result (call this on app load if using redirect method)
-export const handleGoogleRedirectResult = async () => {
-  if (!isFirebaseConfigured) return null;
-  const { getRedirectResult } = await import('firebase/auth');
-  try {
-    const result = await getRedirectResult(auth);
-    if (result?.user) {
-      console.log('✅ Google redirect sign-in successful:', result.user.email);
-      return result.user;
+/** Create or enrich Firestore profile after Google OAuth. */
+export async function completeGoogleSignInProfile(
+  fbUser: FirebaseUser
+): Promise<{ profile: UserProfile | null; isNewUser: boolean }> {
+  let profile = await getUserProfile(fbUser.uid);
+  const isNewUser = !profile;
+
+  if (!profile) {
+    profile = await createUserProfile(fbUser, {
+      name: fbUser.displayName || '',
+      age: 25,
+      gender: 'hombre',
+      city: '',
+      country: 'Chile',
+      bio: '',
+      photos: fbUser.photoURL ? [fbUser.photoURL] : [],
+      trainingTypes: [],
+      goals: [],
+      level: 'Intermedio',
+      intensity: 'Moderado',
+      availability: ['Tarde'],
+    });
+  } else {
+    const patch: Partial<UserProfile> = {};
+    if (fbUser.displayName && !profile.name) patch.name = fbUser.displayName;
+    if (fbUser.photoURL && (!profile.photos || profile.photos.length === 0)) {
+      patch.photos = [fbUser.photoURL];
     }
-    return null;
-  } catch (error: any) {
-    console.error('❌ Google redirect sign-in error:', error);
-    // Show user-friendly message
-    if (error.code === 'auth/unauthorized-domain') {
-      const domain = window.location.hostname;
-      alert(`Dominio no autorizado para OAuth: ${domain}. Agrega "${domain}" (y musclegrenadechile.github.io si aplica) en Firebase Console > Authentication > Settings > Authorized domains.`);
-    } else if (error.code === 'auth/popup-blocked' || error.code === 'auth/redirect-cancelled-by-user') {
-      // Normal, user cancelled
-    } else {
-      alert('Error al iniciar sesión con Google: ' + (error.message || error.code));
+    if (Object.keys(patch).length > 0) {
+      await updateUserProfile(fbUser.uid, patch);
+      profile = { ...profile, ...patch };
     }
-    throw error;
   }
-};
+
+  return { profile, isNewUser };
+}
 
 // Sign out
 export const logout = async () => {

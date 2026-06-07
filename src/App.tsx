@@ -21,9 +21,12 @@ import {
   updateUserProfile,
   getUserProfile,
   logout,
-  sendPasswordReset
+  sendPasswordReset,
+  signInWithGoogle,
+  completeGoogleSignInProfile,
 } from './services/auth'
-import { storage } from './services/firebase'
+import { GoogleAuthError } from './services/googleAuth'
+import { storage, db, isFirebaseConfigured } from './services/firebase'
 import { useAuth } from './contexts/AuthContext'
 import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
@@ -90,9 +93,8 @@ import { ExploreTab } from './components/explore/ExploreTab'
 import { AuthScreen } from './components/auth/AuthScreen'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { GymPulseMap } from './components/map' // Inicio de modularización 2026-06-05 (stub + estructura)
-import { SyncArenaView } from './components/arena'
+import { SyncArenaView, ArenaGlobalPulseBar } from './components/arena'
 import { uploadArenaPhotoUrl, postPartnerSyncStory } from './services/arenaFormPhoto'
-import { db, isFirebaseConfigured } from './services/firebase'
 import {
   attachPostCommentsListener,
   createCommentId,
@@ -111,6 +113,7 @@ import {
   attachActiveSyncSessionListener,
   buildSyncSessionId,
 } from './services/syncSessions'
+import { countExternalWitnesses, registerSyncWitness } from './services/syncWitness'
 import { triggerHaptic } from './utils/haptics'
 import {
   attachGroupMessagesListener,
@@ -329,7 +332,7 @@ function App() {
   } = useProfile()
 
   // Real Auth from Firebase + Demo Auth -- hoisted very early so that isDemoMode, firebaseUser are available for any early effects' deps (e.g. the daily offline effect at ~1188, and to avoid TDZ on open).
-  const { currentUser: firebaseUser, userProfile: firebaseProfile, isDemoMode } = useAuth()
+  const { currentUser: firebaseUser, userProfile: firebaseProfile, isDemoMode, googleNewUser, clearGoogleNewUser } = useAuth()
   const { 
     signInDemo, 
     signUpDemo, 
@@ -785,6 +788,8 @@ function App() {
   const [arenaWaveCount, setArenaWaveCount] = useState(0)
   const [lastArenaWaveLabel, setLastArenaWaveLabel] = useState('')
   const [arenaWavePulseKey, setArenaWavePulseKey] = useState(0)
+  const [syncRealWitnessCount, setSyncRealWitnessCount] = useState(0)
+  const witnessedSessionsRef = useRef<Set<string>>(new Set())
   const [showSyncArena, setShowSyncArena] = useState(false)  // EntrenaSync immersive view (the core synchronized training experience)
 
   // PERFORMANCE PROPAGATION: Strong EntrenaSync sessions send visible waves to the Live Map.
@@ -1176,7 +1181,39 @@ function App() {
   // Onboarding step state (managed here so the flow actually advances)
   const [onboardingStep, setOnboardingStepLocal] = useState(0)
 
-  // Quick demo entry from AuthScreen "⚡ Probar demo al instante" (key for public GH Pages review + lets people hit the improved onboarding fast)
+  // After Google redirect sign-in — bootstrap local profile + onboarding
+  useEffect(() => {
+    if (!googleNewUser || isDemoMode || !firebaseUser?.uid) return
+
+    clearGoogleNewUser()
+
+    if (firebaseProfile) {
+      saveUser({ ...firebaseProfile, id: 'me' } as any)
+    } else {
+      saveUser({
+        id: 'me' as any,
+        name: firebaseUser.displayName || '',
+        age: 25,
+        gender: 'hombre' as const,
+        city: '',
+        country: 'Chile',
+        bio: '',
+        photos: firebaseUser.photoURL ? [firebaseUser.photoURL] : [],
+        trainingTypes: [],
+        goals: [],
+        level: 'Intermedio' as const,
+        intensity: 'Moderado' as const,
+        availability: ['Tarde'],
+      } as any)
+    }
+
+    lastSuccessfulAuthRef.current = firebaseUser
+    setIsEditingProfile(false)
+    setOnboardingStepLocal(0)
+    setShowOnboarding(true)
+  }, [googleNewUser, firebaseUser, firebaseProfile, isDemoMode, clearGoogleNewUser, saveUser, setShowOnboarding])
+
+  // Quick demo entry from AuthScreen
   useEffect(() => {
     try {
       if ((window as any).__ENTRENAMATCH_QUICK_DEMO__) {
@@ -2683,6 +2720,11 @@ useEffect(() => {
         if (typeof data.vibe === 'number') {
           setSyncVibe(Math.max(0, Math.min(100, data.vibe)))
         }
+        if (syncPartnerId) {
+          setSyncRealWitnessCount(
+            countExternalWitnesses(data.witnesses, effectiveUserId, syncPartnerId)
+          )
+        }
       },
       onPartnerAction: (latest) => {
         const key = `${latest.at || 0}-${latest.emoji || ''}-${latest.label || ''}`
@@ -2700,6 +2742,32 @@ useEffect(() => {
       },
     })
   }, [syncPartnerId, effectiveUserId, firebaseUser?.uid, db, isDemoMode, isFirebaseConfigured, realProfiles])
+
+  // Register as witness when viewing GymPulse/feed/explore while others are in EntrenaSync (real FOMO counter).
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid || effectiveUserId === 'me') return
+    const uid = firebaseUser.uid
+    const shouldScan = showLiveMap || activeTab === 'feed' || activeTab === 'explore'
+    if (!shouldScan) return
+
+    liveTrainingNow.forEach((u: any) => {
+      const partnerId = u.trainingSyncWith
+      if (!partnerId) return
+      if (uid === u.id || uid === partnerId) return
+      const sessionId = buildSyncSessionId(u.id, partnerId)
+      if (witnessedSessionsRef.current.has(sessionId)) return
+      witnessedSessionsRef.current.add(sessionId)
+      registerSyncWitness(db, sessionId, uid).catch(() => {})
+    })
+  }, [
+    liveTrainingNow,
+    showLiveMap,
+    activeTab,
+    isDemoMode,
+    db,
+    firebaseUser?.uid,
+    effectiveUserId,
+  ])
 
   const loadActiveSyncCount = async () => {
     if (!isFirebaseConfigured || !db) {
@@ -2733,6 +2801,13 @@ useEffect(() => {
       // non-fatal
     }
   }
+
+  useEffect(() => {
+    if (activeTab !== 'feed' && activeTab !== 'explore') return
+    loadActiveSyncCount().catch(() => {})
+    const t = setInterval(() => loadActiveSyncCount().catch(() => {}), 45000)
+    return () => clearInterval(t)
+  }, [activeTab])
 
   // Global "Actualizar todo" for testers - forces fresh real data + updates lastSync everywhere (makes "en vivo" feel stronger, live training, feed, etc.)
   const refreshAllReal = async () => {
@@ -4913,6 +4988,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           startedAt: syncAt,
           actions: [],
           vibe: baseVibe,
+          witnesses: [],
           updatedAt: syncAt,
         }, { merge: true })
         setSyncVibe(baseVibe)
@@ -5019,6 +5095,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     setArenaWaveCount(0)
     setLastArenaWaveLabel('')
     setArenaWavePulseKey(0)
+    setSyncRealWitnessCount(0)
     setShowSyncArena(false)
     // Capture for replay (the unique "remember this session together" moment)
     const capturedActions = [...syncActions]
@@ -6226,6 +6303,68 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   }
 
   // Real Authentication handlers (Phase 1)
+  const handleGoogleAuth = async () => {
+    if (isDemoMode || !isFirebaseConfigured) {
+      setAuthError('Google Sign-In requiere Firebase real. Usa email/contraseña en demo.')
+      return
+    }
+
+    setAuthLoading(true)
+    setAuthError('')
+
+    try {
+      const result = await signInWithGoogle()
+
+      if (result.mode === 'redirect') {
+        toast('Redirigiendo a Google…', { description: 'Vuelves a EntrenaMatch al terminar.' })
+        return
+      }
+
+      const { profile, isNewUser } = await completeGoogleSignInProfile(result.user)
+      lastSuccessfulAuthRef.current = result.user
+      toast.success('Sesión iniciada con Google')
+
+      if (profile) {
+        saveUser({ ...profile, id: 'me' } as any)
+      } else {
+        saveUser({
+          id: 'me' as any,
+          name: result.user.displayName || '',
+          age: 25,
+          gender: 'hombre' as const,
+          city: '',
+          country: 'Chile',
+          bio: '',
+          photos: result.user.photoURL ? [result.user.photoURL] : [],
+          trainingTypes: [],
+          goals: [],
+          level: 'Intermedio' as const,
+          intensity: 'Moderado' as const,
+          availability: ['Tarde'],
+        } as any)
+      }
+
+      if (isNewUser) {
+        setIsEditingProfile(false)
+        setOnboardingStepLocal(0)
+        setShowOnboarding(true)
+      }
+    } catch (error: unknown) {
+      console.error(error)
+      if (error instanceof GoogleAuthError) {
+        setAuthError(error.message)
+        if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+          toast.error(error.message)
+        }
+      } else {
+        setAuthError('No se pudo iniciar sesión con Google')
+        toast.error('No se pudo iniciar sesión con Google')
+      }
+    } finally {
+      setAuthLoading(false)
+    }
+  }
+
   const handleEmailAuth = async (isRegister: boolean) => {
     if (!authEmail || !authPassword) {
       setAuthError('Por favor completa email y contraseña')
@@ -7374,6 +7513,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           authLoading={authLoading}
           authError={authError}
           handleEmailAuth={handleEmailAuth}
+          handleGoogleAuth={handleGoogleAuth}
+          googleAuthEnabled={!isDemoMode && isFirebaseConfigured}
           handleForgotPassword={handleForgotPassword}
           isDemoMode={isDemoMode}
           triggerHaptic={triggerHaptic}
@@ -14166,6 +14307,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             liveNearbyCount={liveTrainingNow.length}
             rippleCount={Math.max(1, arenaWaveCount || Math.floor(syncVibe / 25) + ritualRipples.length)}
             witnessCount={witnessCount}
+            realWitnessCount={syncRealWitnessCount}
             redLiveCount={redLiveCount}
             waveCount={arenaWaveCount}
             lastWaveLabel={lastArenaWaveLabel}
@@ -14186,6 +14328,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           />
         )
       })()}
+
+      {syncPartnerId && !showSyncArena && (
+        <ArenaGlobalPulseBar
+          partnerName={realProfiles.find((p) => p.id === syncPartnerId)?.name || 'Compañero'}
+          syncVibe={syncVibe}
+          witnessCount={Math.max(
+            syncRealWitnessCount,
+            Math.max(0, liveTrainingNow.length - 2)
+          )}
+          waveCount={arenaWaveCount}
+          globalPairs={activeSyncPairs}
+          onOpenArena={() => setShowSyncArena(true)}
+        />
+      )}
 
     </ErrorBoundary>
   )

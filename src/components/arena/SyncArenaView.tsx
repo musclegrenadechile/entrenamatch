@@ -41,6 +41,7 @@ export interface SyncArenaViewProps {
   liveNearbyCount: number
   rippleCount: number
   witnessCount: number
+  realWitnessCount?: number
   redLiveCount: number
   waveCount: number
   lastWaveLabel?: string
@@ -81,6 +82,7 @@ export function SyncArenaView({
   liveNearbyCount,
   rippleCount,
   witnessCount,
+  realWitnessCount = 0,
   redLiveCount,
   waveCount,
   lastWaveLabel,
@@ -102,9 +104,15 @@ export function SyncArenaView({
 
   const minutes = syncStartedAt ? Math.floor((now - syncStartedAt) / 60000) : 0
   const seconds = syncStartedAt ? Math.floor(((now - syncStartedAt) % 60000) / 1000) : 0
-  const minsToStory = Math.max(0, STORY_MILESTONE_MIN - minutes)
+  const storyTargetMs = STORY_MILESTONE_MIN * 60 * 1000
+  const elapsedMs = syncStartedAt ? now - syncStartedAt : 0
+  const msToStory = Math.max(0, storyTargetMs - elapsedMs)
+  const minsToStory = Math.floor(msToStory / 60000)
+  const secsToStory = Math.floor((msToStory % 60000) / 1000)
   const legendUnlocked = syncVibe >= 80
   const vibeToLegend = Math.max(0, 80 - syncVibe)
+
+  const displayWitness = Math.max(witnessCount, realWitnessCount)
 
   const latestPartnerAction = useMemo(() => {
     return syncActions.find((a) => a.userId && a.userId !== effectiveUserId) || null
@@ -256,8 +264,14 @@ export function SyncArenaView({
           </div>
         </div>
         <p className="text-[10px] text-center text-[#22c55e]/80 mt-1">
-          {minsToStory > 0 ? (
-            <>En <strong>{minsToStory} min</strong> → Historia compartida en ambos muros</>
+          {msToStory > 0 ? (
+            <>
+              En{' '}
+              <strong>
+                {minsToStory}:{secsToStory.toString().padStart(2, '0')}
+              </strong>{' '}
+              → Historia compartida en ambos muros
+            </>
           ) : (
             <>⭐ Historia compartida desbloqueada al terminar</>
           )}
@@ -277,17 +291,18 @@ export function SyncArenaView({
 
       <div className="px-4 mt-2 space-y-2">
         <ArenaFomoStrip
-          witnessCount={witnessCount}
+          witnessCount={displayWitness}
           redLiveCount={redLiveCount}
           waveCount={waveCount}
           syncVibe={syncVibe}
           minsToStory={minsToStory}
+          secsToStory={secsToStory}
           legendUnlocked={legendUnlocked}
           lastWaveLabel={lastWaveLabel}
           cityLabel={cityLabel}
         />
         <ArenaWitnessRow
-          witnessCount={witnessCount}
+          witnessCount={displayWitness}
           liveNearbyCount={liveNearbyCount}
           redLiveCount={redLiveCount}
         />
@@ -296,7 +311,7 @@ export function SyncArenaView({
           rippleCount={rippleCount}
           cityLabel={cityLabel}
           vibe={syncVibe}
-          witnessCount={witnessCount}
+          witnessCount={displayWitness}
           wavePulseKey={wavePulseKey}
         />
       </div>
@@ -362,8 +377,8 @@ export function SyncArenaView({
         </button>
         <p className="text-[9px] text-center text-white/40 px-6 flex items-center justify-center gap-1">
           <Zap size={10} className="text-[#22c55e]" />
-          {witnessCount > 0
-            ? `Cada acción llega a ${partnerFirst} y ~${witnessCount} más pueden presenciarlo en el mapa`
+          {displayWitness > 0
+            ? `Cada acción llega a ${partnerFirst} y ${displayWitness} más pueden presenciarlo en el mapa`
             : 'Cada acción se ve en su pantalla y ondea en el GymPulse'}
         </p>
       </footer>

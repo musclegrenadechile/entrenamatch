@@ -7,6 +7,7 @@ export interface ArenaFomoStripProps {
   waveCount: number
   syncVibe: number
   minsToStory: number
+  secsToStory?: number
   legendUnlocked: boolean
   lastWaveLabel?: string
   cityLabel?: string
@@ -18,6 +19,7 @@ export function ArenaFomoStrip({
   waveCount,
   syncVibe,
   minsToStory,
+  secsToStory = 0,
   legendUnlocked,
   lastWaveLabel,
   cityLabel,
@@ -39,8 +41,12 @@ export function ArenaFomoStrip({
     } else if (syncVibe >= 60) {
       m.push(`⚡ A ${80 - syncVibe} pts del Highlight legendario — una acción más y explota`)
     }
-    if (minsToStory > 0) {
-      m.push(`⏳ ${minsToStory} min → Historia permanente en ambos muros + feed`)
+    if (minsToStory > 0 || secsToStory > 0) {
+      const label =
+        minsToStory > 0
+          ? `${minsToStory}:${secsToStory.toString().padStart(2, '0')}`
+          : `0:${secsToStory.toString().padStart(2, '0')}`
+      m.push(`⏳ ${label} → Historia permanente en ambos muros + feed`)
     } else {
       m.push('📜 Historia compartida lista — termina para publicarla en ambos perfiles')
     }
@@ -51,7 +57,7 @@ export function ArenaFomoStrip({
       m.push(`📍 ${cityLabel} — el pulso de esta sync es visible en tu zona`)
     }
     return m
-  }, [witnessCount, redLiveCount, waveCount, syncVibe, minsToStory, legendUnlocked, lastWaveLabel, cityLabel])
+  }, [witnessCount, redLiveCount, waveCount, syncVibe, minsToStory, secsToStory, legendUnlocked, lastWaveLabel, cityLabel])
 
   const [idx, setIdx] = useState(0)
 

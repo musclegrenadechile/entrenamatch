@@ -17,6 +17,8 @@ export interface SyncSessionData {
   endedAt?: number
   actions?: Array<{ at?: number; emoji?: string; label?: string; userId?: string; combo?: number }>
   vibe?: number
+  witnesses?: string[]
+  lastWitnessAt?: number
 }
 
 export interface IncomingSyncPayload {

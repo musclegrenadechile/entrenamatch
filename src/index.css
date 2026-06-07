@@ -1357,6 +1357,77 @@ input[type="range"]::-moz-range-thumb {
   margin-top: auto;
 }
 
+.arena-global-pulse-bar {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: calc(72px + env(safe-area-inset-bottom, 0));
+  z-index: 190;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, rgba(10, 42, 26, 0.96), rgba(5, 10, 8, 0.98));
+  border: 1px solid rgba(34, 197, 94, 0.45);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), 0 0 24px rgba(34, 197, 94, 0.15);
+  text-align: left;
+  color: #fff;
+}
+
+.arena-global-pulse-bar__live {
+  flex-shrink: 0;
+  font-size: 8px;
+  font-weight: 900;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: #22c55e;
+  color: #000;
+  letter-spacing: 0.08em;
+}
+
+.arena-global-pulse-bar__main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 11px;
+}
+
+.arena-global-pulse-bar__main strong {
+  font-size: 12px;
+}
+
+.arena-global-pulse-bar__witness,
+.arena-global-pulse-bar__wave {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.65);
+}
+
+.arena-global-pulse-bar__others {
+  display: none;
+  font-size: 8px;
+  color: rgba(255, 215, 0, 0.75);
+}
+
+@media (min-width: 380px) {
+  .arena-global-pulse-bar__others {
+    display: block;
+    max-width: 28%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.arena-global-pulse-bar__cta {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 800;
+  color: #22c55e;
+}
+
 .arena-end-btn {
   width: 100%;
   padding: 12px;

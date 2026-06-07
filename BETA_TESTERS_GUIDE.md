@@ -1,5 +1,8 @@
 ﻿# Guía para Beta Testers de EntrenaMatch (Hidden / Internal-Closed)
 
+**Versión actual en desarrollo:** `0.1.87` (Android `versionCode` 91) · Package `com.entrenamatch.app`  
+**Versión anterior en Play (closed):** `0.1.86-work` (`versionCode` 90) — ver `PLAY_RELEASE_REGISTRY.md`
+
 **Gracias por ayudar a probar la app antes de que sea pública.**
 
 ## Cómo empezar (5 minutos)
@@ -247,6 +250,10 @@ Esta es la feature que hace que la app sea completamente diferente a todo lo que
    - Debe deshabilitar el botón + mostrar "⏳ Iniciando..." (anti-spam).
    - Automáticamente te lleva a Perfil + abre la **Arena completa**.
 3. En la Arena (ambos deben ver **exactamente lo mismo en ~1s** gracias al listener dedicado):
+   - **FOMO 0.1.87:** ticker rotativo ("~N presenciando", countdown mm:ss a Historia, camino a Highlight 80%).
+   - **Barra flotante** si minimizas la Arena (SYNC en la parte inferior) — toca para volver.
+   - **Testigos reales:** una 3ª cuenta que abra Feed o GymPulse durante vuestro sync incrementa el contador en la Arena.
+   - Cada acción envía **onda al mapa** (no solo al llegar a 80% vibe).
    - Dos avatares (fotos o iniciales) con anillos de color + línea "tether" animada conectándolos (sensación de "estamos juntos").
    - Orbe central de Energía que crece y pulsa más fuerte cuanto más alto el % VIBE.
    - Timer grande dentro del orbe.
@@ -727,7 +734,8 @@ Si ves el error `storage/unauthorized` o 403 al subir foto en el muro (path `pos
  
  S i g u e   a   m i l .   P r u e b a   e l   f l u j o :   p e r f i l   r e d   c o n   p o w e r ,   f i l t r a   t u   r e d   e n   m a p a   ( m a r k e r s   m � s   g r a n d e s ,   n o t a   d e   p o w e r ) ,   p u b l i c a   s y n c   y   v e   e l   h i g h l i g h t   c u a n t i f i c a d o . 
  
-  
+ 
+ 
  
  
  * * N U E V O   -   L A   P R I M E R A   R E D   S O C I A L   D E L   F I T N E S S   ( v i s i � n   � p i c a ,   p o s t   b u r s t   s i g u e   a   m i l ) * * 
@@ -748,5 +756,6 @@ Si ves el error `storage/unauthorized` o 403 al subir foto en el muro (path `pos
  
  S i g u e   a   m i l .   E l   a p p   e s t �   t o m a n d o   f o r m a   d e   a l g o   q u e   n a d i e   h a   h e c h o :   l a   r e d   d o n d e   e n t r e n a r   j u n t o s   e s   e l   a c t o   s o c i a l   d e   a l t o   e s t a t u s   q u e   g e n e r a   p r o g r e s o   r e a l   y   v i s i b l e . 
  
-  
+ 
+ 
  

@@ -42,14 +42,19 @@ jobs:
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
-      - name: Deploy Firestore Rules & Indexes + Hosting
-        run: firebase deploy --only firestore:rules,firestore:indexes,hosting --non-interactive --project entrenamatch
+      - name: Deploy Firestore Rules, Indexes, Storage & Hosting
+        run: firebase deploy --only firestore:rules,firestore:indexes,storage,hosting --non-interactive --project entrenamatch
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
 
-      # Uncomment when we have Cloud Functions
-      # - name: Deploy Functions
-      #   run: firebase deploy --only functions --non-interactive
+      - name: Install Functions dependencies
+        run: npm ci
+        working-directory: functions
+
+      - name: Deploy Cloud Functions (FCM Red network push)
+        run: firebase deploy --only functions --non-interactive --project entrenamatch
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
 
   validate:
     if: github.event_name == 'pull_request'

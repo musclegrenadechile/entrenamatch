@@ -13,6 +13,8 @@ interface AuthScreenProps {
   authLoading: boolean;
   authError: string;
   handleEmailAuth: (isRegister: boolean) => void;
+  handleGoogleAuth?: () => void;
+  googleAuthEnabled?: boolean;
   handleForgotPassword?: (email: string) => void;
   isDemoMode: boolean;
   triggerHaptic?: (style?: 'light' | 'medium' | 'heavy' | 'success') => void;
@@ -28,6 +30,8 @@ export const AuthScreen = ({
   authLoading,
   authError,
   handleEmailAuth,
+  handleGoogleAuth,
+  googleAuthEnabled = false,
   handleForgotPassword,
   isDemoMode,
   triggerHaptic = () => {},
@@ -248,15 +252,32 @@ export const AuthScreen = ({
               </div>
             </div>
 
-            {/* Google — styled nicely even if disabled (feels premium) */}
+            {/* Google Sign-In — web (GH Pages) + APK nativa */}
             <button
-              disabled
-              className="w-full flex items-center justify-center gap-2.5 py-3.5 border border-white/10 rounded-2xl text-sm font-medium bg-white/5 text-white/70 cursor-not-allowed active:bg-white/10"
-              title="Google Sign-In disponible en la app nativa (Play Store)"
+              type="button"
+              disabled={authLoading || !googleAuthEnabled}
+              onClick={() => {
+                triggerHaptic('light');
+                handleGoogleAuth?.();
+              }}
+              className={`w-full flex items-center justify-center gap-2.5 py-3.5 border rounded-2xl text-sm font-medium transition active:scale-[0.985] ${
+                googleAuthEnabled
+                  ? 'border-white/15 bg-white text-[#1f1f1f] hover:bg-white/95 shadow-sm'
+                  : 'border-white/10 bg-white/5 text-white/50 cursor-not-allowed'
+              }`}
+              title={
+                googleAuthEnabled
+                  ? 'Iniciar sesión con tu cuenta Google'
+                  : 'Google Sign-In disponible con Firebase configurado'
+              }
             >
-              <span className="text-base">G</span>
-              <span>Continuar con Google</span>
-              <span className="text-[10px] text-[#9CA3AF]/60">(en la app)</span>
+              <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
+                <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.654 32.657 29.223 36 24 36c-5.522 0-10-4.478-10-10s4.478-10 10-10c2.837 0 5.402 1.192 7.207 3.093l5.657-5.657C34.046 10.053 29.268 8 24 8 12.955 8 4 16.955 4 28s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+                <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c5.268 0 9.868 2.683 12.542 6.762l-6.571-5.035C28.401 12.088 26.337 11 24 11c-5.223 0-9.637 3.317-11.283 7.946z"/>
+                <path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C7.718 39.614 15.366 44 24 44z"/>
+                <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.653-.389-3.917z"/>
+              </svg>
+              <span>{authLoading ? 'Conectando con Google...' : 'Continuar con Google'}</span>
             </button>
 
             {/* The exciting "feel it now" demo entry — this is the "never seen before" hook */}
