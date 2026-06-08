@@ -38,6 +38,7 @@ export function HomeTab(props: HomeTabProps) {
     fuelWeekDays,
     fuelWeekMacros,
     fuelPostWorkoutTip,
+    fuelEnergyBalance,
     setShowFuelSetupModal,
     openFuelLogModal,
     onEditFuelLog,
@@ -208,6 +209,7 @@ export function HomeTab(props: HomeTabProps) {
         fuelWeekDays={fuelWeekDays}
         fuelWeekMacros={fuelWeekMacros}
         fuelPostWorkoutTip={fuelPostWorkoutTip}
+        fuelEnergyBalance={fuelEnergyBalance}
         onOpenFuelSetup={() => setShowFuelSetupModal(true)}
         onOpenFuelLog={() =>
           fuelProfile ? openFuelLogModal() : setShowFuelSetupModal(true)

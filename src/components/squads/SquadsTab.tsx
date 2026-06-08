@@ -12,6 +12,8 @@ export interface SquadsTabProps {
   onOpenSquad: (squadId: string) => void
   onOpenSessions?: () => void
   sessionUnreads?: number
+  /** Phase 79 — user weekly fuel + burn summary for squad context */
+  squadFuelSummary?: { weeklyKcal: number; weeklyBurnKcal: number; targetKcal: number }
 }
 
 export function SquadsTab({
@@ -25,9 +27,19 @@ export function SquadsTab({
   onOpenSquad,
   onOpenSessions,
   sessionUnreads = 0,
+  squadFuelSummary,
 }: SquadsTabProps) {
   return (
     <div className="flex-1 overflow-auto p-4">
+      {squadFuelSummary && squadFuelSummary.weeklyKcal > 0 && (
+        <div className="mb-4 rounded-2xl border border-[#a855f7]/25 bg-[#1C1C20] p-3">
+          <p className="text-[10px] uppercase tracking-wider text-[#c084fc] font-bold">Squad Fuel · tu semana</p>
+          <p className="text-xs text-white mt-1">
+            {Math.round(squadFuelSummary.weeklyKcal)} kcal consumidas · ~{squadFuelSummary.weeklyBurnKcal} kcal en entrenos
+          </p>
+          <p className="text-[10px] text-[#9CA3AF]">Target dinámico hoy ~{squadFuelSummary.targetKcal} kcal</p>
+        </div>
+      )}
       <div className="flex items-center justify-between mb-4">
         <div>
           <div className="section-header">Tus Squads</div>

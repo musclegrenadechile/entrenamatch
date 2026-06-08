@@ -7,6 +7,7 @@ import {
 } from '../../utils/syncDuel'
 import { ArenaSyncReel } from './ArenaSyncReel'
 import { downloadSyncStory } from '../../utils/syncStoryShare'
+import { estimateSyncSessionBurn } from '../../domain/fuelBalance'
 
 export interface SyncDuelSummaryProps {
   open: boolean
@@ -31,6 +32,8 @@ export interface SyncDuelSummaryProps {
   onReplay: () => void
   onRate?: (rating: number) => void
   onInviteSquad?: (partnerId: string, partnerName: string) => void
+  fuelBurnKcal?: number
+  weightKg?: number
 }
 
 export function SyncDuelSummary({
@@ -56,6 +59,8 @@ export function SyncDuelSummary({
   onReplay,
   onRate,
   onInviteSquad,
+  fuelBurnKcal = 0,
+  weightKg = 75,
 }: SyncDuelSummaryProps) {
   if (!open) return null
 
@@ -75,6 +80,11 @@ export function SyncDuelSummary({
       : elapsedSec > 0
         ? `${Math.floor(elapsedSec / 60)}:${(elapsedSec % 60).toString().padStart(2, '0')}`
         : '<1 min'
+
+  const sessionBurn =
+    fuelBurnKcal > 0
+      ? fuelBurnKcal
+      : estimateSyncSessionBurn(weightKg, Math.max(1, minutes || Math.ceil(elapsedSec / 60)))
 
   const shareSummary = async () => {
     const text = `EntrenaSync con ${partnerName} — ${durationLabel}, vibe ${vibe}%, ${setsLogged} series. #EntrenaMatch`
@@ -178,6 +188,12 @@ export function SyncDuelSummary({
             <span className="text-[#FFD700]">⭐ RED · Fuerza {bondLevel}</span>
           )}
         </div>
+
+        {sessionBurn > 0 && (
+          <p className="text-[11px] text-[#22c55e] mx-4 mb-2 px-3 py-2 rounded-xl bg-[#22c55e]/10 border border-[#22c55e]/25 text-center">
+            🔥 FuelBalance · ~{sessionBurn} kcal quemadas juntos · suma al target de hoy
+          </p>
+        )}
 
         <details className="sync-duel-card__metrics-fold">
           <summary className="sync-duel-card__metrics-toggle">Ver marcador detallado</summary>

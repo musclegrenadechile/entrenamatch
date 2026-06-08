@@ -48,6 +48,7 @@ export interface DailyHomeProps {
   fuelWeekDays?: import('../../services/fuel').FuelWeekDay[]
   fuelWeekMacros?: import('../../services/fuel').FuelWeekMacroDay[]
   fuelPostWorkoutTip?: string
+  fuelEnergyBalance?: import('../../domain/fuelBalance').DailyEnergyBalance | null
   onOpenFuelSetup?: () => void
   onOpenFuelLog?: () => void
   onEditFuelLog?: (log: import('../../types').FuelLogEntry) => void
@@ -110,6 +111,7 @@ export function DailyHome({
   fuelWeekDays,
   fuelWeekMacros,
   fuelPostWorkoutTip,
+  fuelEnergyBalance = null,
   onOpenFuelSetup,
   onOpenFuelLog,
   onEditFuelLog,
@@ -497,6 +499,7 @@ export function DailyHome({
           totals={
             fuelTotals ?? { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 }
           }
+          energyBalance={fuelEnergyBalance}
           todayLogs={fuelTodayLogs}
           weekDays={fuelWeekDays}
           postWorkoutTip={fuelPostWorkoutTip}
@@ -509,7 +512,7 @@ export function DailyHome({
       )}
 
       {fuelWeekMacros && fuelWeekMacros.some((d) => d.logged) && (
-        <FuelWeekReport days={fuelWeekMacros} />
+        <FuelWeekReport days={fuelWeekMacros} adjustedTargetKcal={fuelEnergyBalance?.adjustedTargetKcal} />
       )}
 
       {localNetwork && <LocalNetworkCard cityLabel={cityLabel} {...localNetwork} />}

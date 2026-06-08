@@ -95,9 +95,7 @@ import { useFilters } from './hooks/useFilters'
 import { useRealSessions } from './hooks/useRealSessions'
 import { useSwipeDeck } from './hooks/useSwipeDeck'
 import { ExploreLivePanel } from './components/explore/ExploreLivePanel'
-import { SquadsTab } from './components/squads'
 import { RedTab } from './components/red'
-import { SessionsTab } from './components/sessions'
 import { ChatListPanel, ChatView } from './components/messages'
 import type { ProfileSection } from './components/profile'
 import { LiveToggleFab } from './components/home'
@@ -156,7 +154,7 @@ import {
   findNearbyDispatchTrainers,
 } from './services/trainerDispatch'
 import { createTrainerMpCheckout } from './services/trainerPayments'
-import { LazyHomeTab, LazyExploreTab, LazyProfileTab, LazyMatchesTab, TAB_LOADING } from './components/app/LazyTabs'
+import { LazyHomeTab, LazyExploreTab, LazyProfileTab, LazyMatchesTab, LazySquadsTab, LazySessionsTab, TAB_LOADING } from './components/app/LazyTabs'
 import { TabErrorBoundary } from './components/app/TabErrorBoundary'
 import { CityChallengeCelebrationModal } from './components/explore/CityChallengeCelebrationModal'
 import { parseReferralFromUrl } from './components/growth/ReferralInviteCard'
@@ -222,8 +220,10 @@ import {
   emptyFuelDayTotals,
 } from './services/fuel'
 import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr, buildFuelAnalyzeContext } from './utils/fuelCalculator'
-import { fetchRecentWorkouts } from './services/workouts'
-import { saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, buildWorkoutPreview, computeWorkoutStats } from './services/workouts'
+import { fetchRecentWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, buildWorkoutPreview, computeWorkoutStats } from './services/workouts'
+import { useFuelBalance } from './hooks/useFuelBalance'
+import { saveDailyEnergyCache } from './services/dailyEnergy'
+import { estimateSyncSessionBurn } from './domain/fuelBalance'
 import { EXERCISE_LIBRARY } from './data/exerciseLibrary'
 import {
   createEmptySyncWorkoutLog,
@@ -971,6 +971,7 @@ function App() {
   const [editingFuelLog, setEditingFuelLog] = useState<FuelLogEntry | null>(null)
   const [deletingFuelLogId, setDeletingFuelLogId] = useState<string | null>(null)
   const [fuelPostWorkoutTip, setFuelPostWorkoutTip] = useState<string | undefined>()
+  const [fuelTodayWorkouts, setFuelTodayWorkouts] = useState<import('./types').Workout[]>([])
   // THE KILLER FEATURE: EntrenaSync - real-time synchronized training that turns two people into a high-performance unit with shared state, visible connection, joint impact, and lasting social capital. This is the foundation of the first true social network for fitness performance.
   const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
   const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
@@ -5727,7 +5728,23 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         setRecentlyPublishedPostId(postId)
         setTimeout(() => setRecentlyPublishedPostId(null), 4000)
         if (activeTab === 'home') loadGlobalFeed().catch(() => {})
-        toast.success('Entreno registrado', { description: 'Publicado en tu muro y el feed' })
+        await refreshFuelData()
+        toast.success('Entreno registrado', {
+          description: 'Target Fuel ajustado — registra tu comida post-entreno',
+          action: fuelProfile
+            ? {
+                label: 'Abrir Fuel',
+                onClick: () => {
+                  setEditingFuelLog(null)
+                  setShowFuelLogModal(true)
+                },
+              }
+            : undefined,
+        })
+        if (fuelProfile) {
+          setEditingFuelLog(null)
+          setShowFuelLogModal(true)
+        }
       } else {
         await createProfilePost(
           `🏋️ ${payload.title} — ${payload.exercises.length} ejercicios, ${payload.durationMin} min (demo)`,
@@ -5747,18 +5764,27 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   const refreshFuelData = useCallback(async () => {
     if (isDemoMode || !db || !firebaseUser?.uid) return
     try {
+      const today = toLocalDateStr()
       const [profile, logs, weekDays, weekMacros, workouts] = await Promise.all([
         loadFuelProfile(db, effectiveUserId),
         fetchFuelLogsForDate(db, effectiveUserId),
         fetchFuelWeekSummary(db, effectiveUserId),
         fetchFuelWeekMacros(db, effectiveUserId),
-        fetchRecentWorkouts(db, effectiveUserId, 1).catch(() => [] as import('./types').Workout[]),
+        fetchWorkoutsForDate(db, effectiveUserId, today).catch(() =>
+          fetchRecentWorkouts(db, effectiveUserId, 5)
+        ),
       ])
       setFuelProfile(profile)
       setFuelTodayLogs(logs)
       setFuelTodayTotals(sumFuelLogs(logs))
       setFuelWeekDays(weekDays)
       setFuelWeekMacros(weekMacros)
+      setFuelTodayWorkouts(
+        workouts.filter((w) => {
+          const d = new Date(w.endedAt || w.startedAt)
+          return toLocalDateStr(d) === today
+        })
+      )
       setFuelPostWorkoutTip(
         workouts[0] ? getPostWorkoutFuelTip(workouts[0].type) : undefined
       )
@@ -5782,6 +5808,38 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     if (!firebaseUser?.uid || isDemoMode) return
     refreshFuelData().catch(() => {})
   }, [firebaseUser?.uid, isDemoMode, refreshFuelData])
+
+  const fuelEnergyBalance = useFuelBalance({
+    profile: fuelProfile,
+    fuelLogs: fuelTodayLogs,
+    workouts: fuelTodayWorkouts,
+    trainingNow: currentUser?.trainingNow,
+    trainingNowSince: currentUser?.trainingNowSince,
+  })
+
+  useEffect(() => {
+    if (!fuelEnergyBalance || isDemoMode || !db || !firebaseUser?.uid) return
+    const today = toLocalDateStr()
+    saveDailyEnergyCache(
+      db,
+      effectiveUserId,
+      today,
+      fuelEnergyBalance,
+      fuelTodayWorkouts.map((w) => w.id)
+    ).catch(() => {})
+  }, [fuelEnergyBalance, fuelTodayWorkouts, isDemoMode, db, firebaseUser?.uid, effectiveUserId])
+
+  const squadFuelSummary = useMemo(() => {
+    if (!fuelProfile) return undefined
+    const weeklyKcal = fuelWeekMacros?.reduce((s, d) => s + d.kcal, 0) ?? 0
+    const todayBurn =
+      (fuelEnergyBalance?.workoutBurnKcal ?? 0) + (fuelEnergyBalance?.liveBurnKcal ?? 0)
+    return {
+      weeklyKcal: Math.round(weeklyKcal),
+      weeklyBurnKcal: Math.round(todayBurn * Math.max(1, homeWeekTrainedCount)),
+      targetKcal: fuelEnergyBalance?.adjustedTargetKcal ?? fuelProfile.targetKcal,
+    }
+  }, [fuelProfile, fuelWeekMacros, fuelEnergyBalance, homeWeekTrainedCount])
 
   const handleSaveFuelProfile = async (profile: Omit<FuelProfile, 'updatedAt'>) => {
     setSavingFuel(true)
@@ -5814,7 +5872,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       const result = await analyzeFoodWithAi({
         imageBase64: imageBase64 || undefined,
         mealDescription,
-        fuelContext: buildFuelAnalyzeContext(fuelProfile, fuelTodayTotals),
+        fuelContext: buildFuelAnalyzeContext(fuelProfile, fuelTodayTotals, fuelEnergyBalance),
       })
       if (result.source === 'gemini') {
         toast.success('Fuel AI · Gemini', {
@@ -9969,6 +10027,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             fuelWeekDays={fuelWeekDays}
             fuelWeekMacros={fuelWeekMacros}
             fuelPostWorkoutTip={fuelPostWorkoutTip}
+            fuelEnergyBalance={fuelEnergyBalance}
             setShowFuelSetupModal={setShowFuelSetupModal}
             openFuelLogModal={() => {
               setEditingFuelLog(null)
@@ -10194,7 +10253,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         )}
 
         {activeTab === 'squads' && (
-          <SquadsTab
+          <Suspense fallback={TAB_LOADING}>
+          <LazySquadsTab
             squads={squads}
             isDemoMode={isDemoMode}
             effectiveUserId={effectiveUserId}
@@ -10205,11 +10265,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             onOpenSquad={setSelectedSquad}
             onOpenSessions={() => navigateTab('sesiones')}
             sessionUnreads={totalSessionUnreads}
+            squadFuelSummary={squadFuelSummary}
           />
+          </Suspense>
         )}
 
         {activeTab === 'sesiones' && (
-          <SessionsTab
+          <Suspense fallback={TAB_LOADING}>
+          <LazySessionsTab
             sessions={displaySessions}
             effectiveUserId={effectiveUserId}
             isDemoMode={isDemoMode}
@@ -10245,6 +10308,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             onLeaveSession={leaveSession}
             onReviewCreator={(creatorId) => setShowReviewModalFor(creatorId)}
           />
+          </Suspense>
         )}
 
         {(activeTab === 'red' || activeTab === 'matches' || activeTab === 'messages') && (
@@ -10904,6 +10968,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         }}
         clientDispatchHistory={clientDispatchHistory}
         trainerDispatchHistory={trainerDispatchHistory}
+        clientFuelBalance={fuelEnergyBalance}
       />
       <EntrenaLogModal
         open={showEntrenaLogModal}
@@ -13065,6 +13130,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               description: 'Crea un squad o ábrelo para añadir a tu compañero de sync',
             })
           }}
+          fuelBurnKcal={estimateSyncSessionBurn(
+            fuelProfile?.weightKg ?? 75,
+            syncDuelSummary.minutes || Math.max(1, Math.ceil((syncDuelSummary.elapsedSec || 0) / 60))
+          )}
+          weightKg={fuelProfile?.weightKg ?? 75}
         />
       )}
 
