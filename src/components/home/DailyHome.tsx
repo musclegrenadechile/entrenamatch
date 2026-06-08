@@ -5,6 +5,8 @@ import { LocalNetworkCard } from './LocalNetworkCard'
 import { FirstStepsGuide, isFirstStepsDismissed, dismissFirstSteps } from './FirstStepsGuide'
 import { HomeLoopStepper, resolveHomeLoopStep } from './HomeLoopStepper'
 import { formatRedSyncFomoLine } from '../../utils/syncFomo'
+import type { WeeklyPact, WeeklyPactProgress } from '../../services/weeklyPact'
+import { WeeklyPactCard } from './WeeklyPactCard'
 import type { LocalNetworkCardProps } from './LocalNetworkCard'
 
 export type TeamMemberStatus = 'live' | 'recent' | 'this_week' | 'inactive'
@@ -53,6 +55,11 @@ export interface DailyHomeProps {
   deletingFuelLogId?: string | null
   cityLabel?: string
   localNetwork?: Omit<LocalNetworkCardProps, 'cityLabel'> & { cityLabel?: string }
+  weeklyPact?: WeeklyPact | null
+  weeklyPactProgress: WeeklyPactProgress
+  onPledgeWeeklyPact?: (
+    partial: Omit<WeeklyPact, 'weekKey' | 'pledgedAt'> & { weekKey?: string }
+  ) => void
 }
 
 function statusLine(member: TeamMemberView): string {
@@ -108,6 +115,9 @@ export function DailyHome({
   deletingFuelLogId,
   cityLabel,
   localNetwork,
+  weeklyPact = null,
+  weeklyPactProgress,
+  onPledgeWeeklyPact,
 }: DailyHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
   const hour = new Date().getHours()
@@ -122,6 +132,8 @@ export function DailyHome({
     teamCount: teamMembers.length,
     liveTeamCount: liveTeamMembers.length,
     syncCount,
+    pactPledged: weeklyPactProgress.pledged,
+    pactComplete: weeklyPactProgress.isComplete,
   })
   const syncFomoLine = formatRedSyncFomoLine(redLiveCount, syncCount)
 
@@ -131,6 +143,7 @@ export function DailyHome({
         <FirstStepsGuide
           isLive={isLive}
           hasTeam={teamMembers.length > 0}
+          hasPact={weeklyPactProgress.pledged}
           onToggleLive={onToggleLive}
           onOpenMatches={onOpenMatches}
           onOpenExplore={onOpenExplore}
@@ -153,7 +166,7 @@ export function DailyHome({
           {greeting}, {firstName}
         </h2>
         <p className="text-[11px] text-[#9CA3AF] mt-1 leading-snug">
-          Live → Equipo → Sync: entrena visible, con tu red, en tiempo real.
+          Live → Equipo → Sync → Pacto: cierra tu semana con tu red.
         </p>
         <HomeLoopStepper activeStep={loopStep} />
       </div>
@@ -445,6 +458,43 @@ export function DailyHome({
           <p className="text-[10px] text-[#22c55e]/80 mt-3 text-center font-medium">
             {syncCount} persona{syncCount === 1 ? '' : 's'} en sync en la red
           </p>
+        )}
+      </section>
+
+      {/* 4 · PACTO SEMANAL */}
+      <section
+        className={`rounded-3xl p-4 border transition-colors ${
+          loopStep === 'pact'
+            ? 'bg-gradient-to-br from-[#1a1208] to-[#141418] border-[#FF671F]/45 ring-1 ring-[#FF671F]/25'
+            : weeklyPactProgress.isComplete
+              ? 'bg-gradient-to-br from-[#0a1f14]/80 to-[#141418] border-[#22c55e]/30'
+              : 'bg-gradient-to-br from-[#141418] to-[#0f0f12] border-[#2F2F35]'
+        }`}
+        aria-label="Paso Pacto semanal"
+      >
+        <SectionLabel
+          step={4}
+          title="Pacto semanal"
+          hint={
+            weeklyPactProgress.isComplete
+              ? 'Compromiso cumplido — sigue sumando constancia.'
+              : weeklyPactProgress.pledged
+                ? 'Tu meta de live + sync esta semana.'
+                : 'Define tu meta y cierra el loop con tu equipo.'
+          }
+        />
+        {onPledgeWeeklyPact && (
+          <WeeklyPactCard
+            progress={weeklyPactProgress}
+            pact={weeklyPact}
+            teamMembers={teamMembers}
+            isLoopActive={loopStep === 'pact'}
+            isLive={isLive}
+            onPledge={onPledgeWeeklyPact}
+            onSyncWithPartner={onJoinMember}
+            onMessagePartner={onMessageMember}
+            onToggleLive={onToggleLive}
+          />
         )}
       </section>
 

@@ -3643,3 +3643,73 @@ button:not(.live-pill):disabled {
 .profile-hero {
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 10px 40px -10px rgba(0,0,0,0.7);
 }
+
+/* Weekly pact — Home loop step 4 */
+.weekly-pact-card {
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.weekly-pact-card--setup {
+  background: linear-gradient(145deg, rgba(255, 103, 31, 0.08) 0%, rgba(20, 20, 24, 0.9) 100%);
+  border-color: rgba(255, 103, 31, 0.25);
+}
+.weekly-pact-card--active {
+  border-color: rgba(255, 103, 31, 0.45);
+  box-shadow: 0 0 0 1px rgba(255, 103, 31, 0.15), 0 8px 24px -8px rgba(255, 103, 31, 0.2);
+}
+.weekly-pact-card--done {
+  border-color: rgba(34, 197, 94, 0.35);
+  background: linear-gradient(145deg, rgba(34, 197, 94, 0.06) 0%, rgba(20, 20, 24, 0.92) 100%);
+}
+.weekly-pact-chip {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  transition: background 0.12s ease, transform 0.08s ease;
+}
+.weekly-pact-chip:hover {
+  background: rgba(34, 197, 94, 0.22);
+}
+.weekly-pact-chip--sync {
+  background: rgba(255, 103, 31, 0.12);
+  border-color: rgba(255, 103, 31, 0.4);
+}
+.weekly-pact-chip--sync:hover {
+  background: rgba(255, 103, 31, 0.22);
+}
+.weekly-pact-meter {
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+.weekly-pact-meter__fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.35s ease;
+}
+.weekly-pact-cta {
+  padding: 7px 12px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.weekly-pact-cta--primary {
+  color: #000;
+  background: linear-gradient(135deg, #FF671F 0%, #FF4F79 100%);
+  border-color: transparent;
+}
+.weekly-pact-cta--ghost {
+  background: transparent;
+  color: #9CA3AF;
+}

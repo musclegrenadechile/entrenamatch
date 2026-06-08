@@ -96,6 +96,9 @@ export function HomeTab(props: HomeTabProps) {
     likeProfilePost,
     feedReactions,
     userLocation,
+    weeklyPact,
+    weeklyPactProgress,
+    onPledgeWeeklyPact,
   } = props
 
   const redLiveCount = countRedLiveMembers(
@@ -165,6 +168,9 @@ export function HomeTab(props: HomeTabProps) {
           },
           onOpenGymMap: mapMyGymId ? handleOpenGymMap : undefined,
         }}
+        weeklyPact={weeklyPact}
+        weeklyPactProgress={weeklyPactProgress}
+        onPledgeWeeklyPact={onPledgeWeeklyPact}
       />
       {/* CINEMATIC REMASTERED FEED HEADER — the social heart of the GymPulse */}
       <div className="feed-header-cinematic sticky top-0 z-10 -mx-4 px-4 pt-3 pb-3">

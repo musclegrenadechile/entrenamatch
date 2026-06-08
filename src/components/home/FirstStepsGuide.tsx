@@ -1,4 +1,4 @@
-import { X, Radio, Users, RefreshCw } from 'lucide-react'
+import { X, Radio, Users, RefreshCw, Target } from 'lucide-react'
 
 const STORAGE_KEY = 'entrenamatch_first_steps_dismissed'
 
@@ -19,6 +19,7 @@ export function dismissFirstSteps(): void {
 export interface FirstStepsGuideProps {
   isLive: boolean
   hasTeam: boolean
+  hasPact?: boolean
   onToggleLive: () => void
   onOpenMatches?: () => void
   onOpenExplore: () => void
@@ -29,6 +30,7 @@ export interface FirstStepsGuideProps {
 export function FirstStepsGuide({
   isLive,
   hasTeam,
+  hasPact = false,
   onToggleLive,
   onOpenMatches,
   onOpenExplore,
@@ -63,6 +65,13 @@ export function FirstStepsGuide({
       action: onStartSync,
       actionLabel: 'Iniciar sync',
     },
+    {
+      id: 'pact',
+      icon: Target,
+      title: '4. Pacto',
+      desc: 'Define tu meta semanal de live + sync y cierra el loop con tu equipo.',
+      done: hasPact,
+    },
   ]
 
   return (
@@ -76,7 +85,7 @@ export function FirstStepsGuide({
         <X size={16} />
       </button>
       <p className="text-[10px] uppercase tracking-[0.16em] text-[#FF671F] font-bold mb-1">
-        Loop Live → Equipo → Sync
+        Loop Live → Equipo → Sync → Pacto
       </p>
       <p className="text-sm font-semibold text-white mb-3 pr-6">
         Tu rutina en EntrenaMatch

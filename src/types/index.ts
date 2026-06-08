@@ -37,6 +37,17 @@
   showOnLeaderboard?: boolean
   /** Last gym partner check-in (shown on map when live). */
   gymCheckIn?: GymCheckIn
+  /** Weekly commitment — closes Home loop (Phase D4). */
+  weeklyPact?: WeeklyPact
+}
+
+export interface WeeklyPact {
+  weekKey: string
+  liveDaysTarget: number
+  syncSessionsTarget: number
+  partnerId?: string
+  partnerName?: string
+  pledgedAt: number
 }
 
 export interface WeekStats {

@@ -1,4 +1,4 @@
-export type HomeLoopStep = 'live' | 'team' | 'sync'
+export type HomeLoopStep = 'live' | 'team' | 'sync' | 'pact'
 
 export interface HomeLoopStepperProps {
   activeStep: HomeLoopStep
@@ -8,6 +8,7 @@ const STEPS: { id: HomeLoopStep; label: string; num: number }[] = [
   { id: 'live', label: 'Live', num: 1 },
   { id: 'team', label: 'Equipo', num: 2 },
   { id: 'sync', label: 'Sync', num: 3 },
+  { id: 'pact', label: 'Pacto', num: 4 },
 ]
 
 export function HomeLoopStepper({ activeStep }: HomeLoopStepperProps) {
@@ -16,7 +17,7 @@ export function HomeLoopStepper({ activeStep }: HomeLoopStepperProps) {
   return (
     <div
       className="flex items-center gap-0.5 mb-3 mt-2"
-      aria-label="Tu loop: Live, Equipo, Sync"
+      aria-label="Tu loop: Live, Equipo, Sync, Pacto"
     >
       {STEPS.map((step, idx) => {
         const isActive = step.id === activeStep
@@ -52,8 +53,12 @@ export function resolveHomeLoopStep(opts: {
   teamCount: number
   liveTeamCount: number
   syncCount: number
+  pactComplete?: boolean
+  pactPledged?: boolean
 }): HomeLoopStep {
   if (!opts.isLive) return 'live'
   if (opts.teamCount === 0) return 'team'
-  return 'sync'
+  if (opts.liveTeamCount > 0 || opts.syncCount > 0) return 'sync'
+  if (!opts.pactPledged || !opts.pactComplete) return 'pact'
+  return 'pact'
 }

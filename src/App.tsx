@@ -186,6 +186,11 @@ import {
   buildSyncSessionId,
 } from './services/syncSessions'
 import { countExternalWitnesses, registerSyncWitness } from './services/syncWitness'
+import {
+  buildDefaultPact,
+  computeWeeklyPactProgress,
+  isPactForCurrentWeek,
+} from './services/weeklyPact'
 import { triggerHaptic } from './utils/haptics'
 import {
   attachGroupMessagesListener,
@@ -2608,6 +2613,64 @@ useEffect(() => {
 
   const homeWeekTrainedCount = weekLiveDays.length
 
+  const homeWeeklyPactProgress = useMemo(
+    () =>
+      computeWeeklyPactProgress(
+        (currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact,
+        homeWeekTrainedCount,
+        currentUser?.weekStats
+      ),
+    [(currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact, homeWeekTrainedCount, currentUser?.weekStats]
+  )
+
+  const pactCompleteToastRef = useRef(false)
+  useEffect(() => {
+    if (homeWeeklyPactProgress.isComplete && !pactCompleteToastRef.current) {
+      pactCompleteToastRef.current = true
+      toast.success('Pacto semanal cumplido', {
+        description: 'Live + Sync — loop cerrado con tu equipo',
+      })
+      try {
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.55 } })
+      } catch {}
+      awardConstancy(25, 'Pacto semanal')
+    }
+    if (!homeWeeklyPactProgress.isComplete) {
+      pactCompleteToastRef.current = false
+    }
+  }, [homeWeeklyPactProgress.isComplete])
+
+  const handleWeeklyPactPledge = useCallback(
+    async (partial: {
+      liveDaysTarget: number
+      syncSessionsTarget: number
+      partnerId?: string
+      partnerName?: string
+    }) => {
+      const pact = {
+        ...buildDefaultPact(partial.partnerId, partial.partnerName),
+        liveDaysTarget: partial.liveDaysTarget,
+        syncSessionsTarget: partial.syncSessionsTarget,
+        partnerId: partial.partnerId,
+        partnerName: partial.partnerName,
+      }
+      const updated = { ...currentUser, weeklyPact: pact } as CurrentUser & { weeklyPact: typeof pact }
+      saveUser(updated as CurrentUser)
+      if (!isDemoMode && firebaseUser?.uid) {
+        try {
+          await updateUserProfile(firebaseUser.uid, { weeklyPact: pact } as any)
+        } catch (e) {
+          console.warn('weeklyPact persist failed', e)
+        }
+      }
+      triggerHaptic('success')
+      toast.success('Pacto activado', {
+        description: `${pact.liveDaysTarget} días live · ${pact.syncSessionsTarget} sync esta semana`,
+      })
+    },
+    [currentUser, isDemoMode, firebaseUser?.uid, saveUser]
+  )
+
   const homeCityNorm = normalizeCity(currentUser?.city)
 
   const homeLocalLeaderboard = useMemo(() => {
@@ -3352,6 +3415,9 @@ useEffect(() => {
               syncStreak: realProfile.syncStreak != null ? realProfile.syncStreak : undefined,
               syncBonds: realProfile.syncBonds || {},
               weekStats: realProfile.weekStats || currentUser?.weekStats,
+              weeklyPact: isPactForCurrentWeek(realProfile.weeklyPact)
+                ? realProfile.weeklyPact
+                : currentUser?.weeklyPact,
               showOnLeaderboard:
                 realProfile.showOnLeaderboard !== undefined
                   ? realProfile.showOnLeaderboard
@@ -3626,6 +3692,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         syncStartedAt: merged.syncStartedAt ?? null,
         currentDailyChallenge: merged.currentDailyChallenge,
         weekStats: merged.weekStats ?? null,
+        weeklyPact: merged.weeklyPact ?? null,
         showOnLeaderboard: merged.showOnLeaderboard !== false,
         gymCheckIn: isGymCheckInFresh(merged.gymCheckIn) ? merged.gymCheckIn : null,
       };
@@ -9364,6 +9431,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             feedReactions={feedReactions}
             userLocation={userLocation}
             toast={toast}
+            weeklyPact={(currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact}
+            weeklyPactProgress={homeWeeklyPactProgress}
+            onPledgeWeeklyPact={handleWeeklyPactPledge}
           />
         )}
 
