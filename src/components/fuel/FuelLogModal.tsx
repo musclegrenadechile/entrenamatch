@@ -233,6 +233,16 @@ export function FuelLogModal({
             </>
           )}
 
+          {editEntry && (
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              className="w-full py-2 rounded-xl border border-[#a855f7]/40 text-[#c084fc] text-[11px] font-bold flex items-center justify-center gap-2"
+            >
+              <Camera className="w-4 h-4" /> Volver a tomar foto
+            </button>
+          )}
+
           {editEntry?.photoUrl && !photoBase64 && (
             <img src={editEntry.photoUrl} alt="" className="max-h-32 rounded-xl object-cover w-full" />
           )}

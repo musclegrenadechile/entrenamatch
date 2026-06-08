@@ -487,6 +487,7 @@ export type TrainerDispatchStatus =
   | 'searching'
   | 'offering'
   | 'matched'
+  | 'en_route'
   | 'no_trainers'
   | 'cancelled'
   | 'expired'
@@ -513,6 +514,7 @@ export interface TrainerDispatchRequest {
   offerExpiresAt?: number
   matchedTrainerId?: string
   bookingId?: string
+  etaMin?: number
   createdAt: number
   updatedAt: number
 }

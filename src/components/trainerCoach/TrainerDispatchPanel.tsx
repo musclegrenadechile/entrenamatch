@@ -236,14 +236,21 @@ export function TrainerDispatchPanel({
         : 0
     return (
       <div className="trainer-dispatch-wait">
-        {activeDispatch.status === 'matched' ? (
+        {activeDispatch.status === 'matched' || activeDispatch.status === 'en_route' ? (
           <>
             <div className="trainer-dispatch-wait__matched">✓</div>
-            <h2 className="trainer-dispatch-wait__title">¡Entrenador asignado!</h2>
+            <h2 className="trainer-dispatch-wait__title">
+              {activeDispatch.status === 'en_route' ? 'PT en camino' : '¡Entrenador asignado!'}
+            </h2>
             <p className="trainer-dispatch-wait__sub">
               {activeDispatch.currentTrainerName || 'Tu entrenador'} ·{' '}
               {formatTrainerRate(activeDispatch.offerPriceClp)}
             </p>
+            {activeDispatch.status === 'en_route' && activeDispatch.etaMin != null && (
+              <p className="trainer-dispatch-wait__hint text-[#22c55e] font-bold">
+                🗺️ ETA ~{activeDispatch.etaMin} min — visible en el GymPulse
+              </p>
+            )}
             <p className="trainer-dispatch-wait__hint">Ve a Sesiones para continuar.</p>
           </>
         ) : activeDispatch.status === 'no_trainers' ? (

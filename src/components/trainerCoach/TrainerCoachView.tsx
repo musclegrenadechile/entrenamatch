@@ -1,6 +1,8 @@
 import { TrainerDispatchPanel } from './TrainerDispatchPanel'
 import { TrainerCoachHero } from './TrainerCoachHero'
 import { TrainerAvailabilityEditor } from './TrainerAvailabilityEditor'
+import { TrainerBookingsCalendar } from './TrainerBookingsCalendar'
+import { TrainerEarningsPanel } from './TrainerEarningsPanel'
 import { TrainerPackagesEditor } from './TrainerPackagesEditor'
 import { TrainerDispatchHistory } from './TrainerDispatchHistory'
 import {
@@ -716,6 +718,12 @@ export function TrainerCoachView({
 
       {tab === 'sessions' && (
         <div className="trainer-coach__panel">
+          {bookings.length > 0 && (
+            <div className="mb-4">
+              <p className="text-[10px] uppercase tracking-wider text-[#6366f1] font-bold mb-2">Calendario</p>
+              <TrainerBookingsCalendar bookings={bookings} />
+            </div>
+          )}
           {bookings.length === 0 ? (
             <div className="trainer-coach__empty">
               <div className="trainer-coach__empty-icon">
@@ -916,6 +924,11 @@ export function TrainerCoachView({
 
       {tab === 'trainer' && (
         <form className="trainer-coach__panel marketplace-form" onSubmit={handleSaveProfile}>
+          {myTrainerProfile && (
+            <div className="mb-4">
+              <TrainerEarningsPanel bookings={bookings.filter((b) => b.trainerId === userUid)} />
+            </div>
+          )}
           <div className="trainer-coach__pt-hero">
             <BadgeCheck size={22} />
             <div>

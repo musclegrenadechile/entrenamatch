@@ -82,11 +82,11 @@ Sistema de implementación: ver **`SISTEMA_IMPLEMENTACION_FASES.md`**.
 
 | # | Fase | Área | P | Estado |
 |---|------|------|---|--------|
-| 56 | Fuel: retake foto + editar macros manual post-IA | Fuel | P1 | 🔲 |
-| 57 | Fuel × workout insight (“post pierna → más proteína”) | Fuel | P2 | 🔲 |
-| 58 | Coach: calendario reservas vista cliente | EntrenaCoach | P1 | 🔲 |
-| 59 | Dispatch: ETA PT en mapa (en camino) | EntrenaCoach | P2 | 🔲 |
-| 60 | PT dashboard ingresos + comisiones self-service | EntrenaCoach | P2 | 🔲 |
+| 56 | Fuel: retake foto + editar macros manual post-IA | Fuel | P1 | ✅ v0.1.190 |
+| 57 | Fuel × workout insight (“post pierna → más proteína”) | Fuel | P2 | ✅ v0.1.190 |
+| 58 | Coach: calendario reservas vista cliente | EntrenaCoach | P1 | ✅ v0.1.190 |
+| 59 | Dispatch: ETA PT en mapa (en camino) | EntrenaCoach | P2 | ✅ v0.1.190 |
+| 60 | PT dashboard ingresos + comisiones self-service | EntrenaCoach | P2 | ✅ v0.1.190 |
 
 ---
 
