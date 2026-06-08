@@ -3,14 +3,15 @@ import {
   ArrowLeft,
   Calendar,
   Check,
-  ChevronRight,
   Clock,
   CreditCard,
   Dumbbell,
+  ExternalLink,
   MapPin,
   Star,
   User,
   X,
+  Zap,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CHILE_REGIONS } from '../../data/chileRegions'
@@ -54,6 +55,8 @@ export interface TrainerCoachViewProps {
   onCreateBooking: (trainer: TrainerProfile, input: TrainerBookingInput) => Promise<string>
   onUpdateBookingStatus: (bookingId: string, status: TrainerBooking['status']) => Promise<void>
   onOpenPayment?: (url: string) => void
+  onPayWithMercadoPago?: (booking: TrainerBooking) => Promise<void>
+  onStartEntrenaSync?: (booking: TrainerBooking) => Promise<void>
   onRequestReview: (trainerId: string, bookingId: string) => void
 }
 
@@ -71,7 +74,14 @@ function TrainerCard({
           <Dumbbell size={20} />
         </div>
         <div className="trainer-card__info">
-          <h3 className="trainer-card__name">{trainer.displayName}</h3>
+          <h3 className="trainer-card__name">
+            {trainer.displayName}
+            {trainer.verified && (
+              <span className="trainer-card__verified" title="Entrenador verificado">
+                ✓
+              </span>
+            )}
+          </h3>
           <p className="trainer-card__meta">
             <MapPin size={12} /> {trainer.city || trainer.region || 'Chile'}
           </p>
@@ -223,6 +233,8 @@ export function TrainerCoachView({
   onCreateBooking,
   onUpdateBookingStatus,
   onOpenPayment,
+  onPayWithMercadoPago,
+  onStartEntrenaSync,
   onRequestReview,
 }: TrainerCoachViewProps) {
   const [tab, setTab] = useState<'explore' | 'sessions' | 'trainer'>('explore')
@@ -467,6 +479,17 @@ export function TrainerCoachView({
                       </button>
                     )}
                     {(isTrainer || isClient) &&
+                      ['accepted', 'in_progress'].includes(b.status) &&
+                      onStartEntrenaSync && (
+                        <button
+                          type="button"
+                          className="trainer-session-card__sync"
+                          onClick={() => void onStartEntrenaSync(b)}
+                        >
+                          <Zap size={14} /> EntrenaSync
+                        </button>
+                      )}
+                    {(isTrainer || isClient) &&
                       ['accepted', 'in_progress'].includes(b.status) && (
                         <button
                           type="button"
@@ -480,18 +503,26 @@ export function TrainerCoachView({
                       <button
                         type="button"
                         className="trainer-session-card__pay-btn"
-                        onClick={() => {
+                        onClick={async () => {
+                          if (onPayWithMercadoPago) {
+                            try {
+                              await onPayWithMercadoPago(b)
+                            } catch {
+                              /* toast in handler */
+                            }
+                            return
+                          }
                           const trainer = trainers.find((t) => t.userId === b.trainerId)
                           const url = trainer?.paymentUrl
                           if (url?.startsWith('https://')) {
                             onOpenPayment?.(url)
                             void onUpdateBookingStatus(b.id, 'paid_card')
                           } else {
-                            toast.error('El entrenador no configuró link de pago')
+                            toast.error('Pago con tarjeta no configurado')
                           }
                         }}
                       >
-                        Pagar con tarjeta
+                        <CreditCard size={14} /> Pagar con tarjeta
                       </button>
                     )}
                     {isClient && b.status === 'completed' && b.paymentMethod === 'cash' && (
@@ -523,6 +554,11 @@ export function TrainerCoachView({
                           <Star size={14} /> Calificar sesión
                         </button>
                       )}
+                    {b.status === 'paid_card' && (
+                      <span className="trainer-session-card__paid-badge">
+                        <Check size={12} /> Pagado
+                      </span>
+                    )}
                   </div>
                 </article>
               )

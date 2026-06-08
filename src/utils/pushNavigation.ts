@@ -17,6 +17,10 @@ export function resolvePushNotificationData(data: PushData): NotificationNavTarg
     return { tab: 'home' }
   }
 
+  if (type === 'trainer_booking_new' || type === 'trainer_booking_update') {
+    return { tab: 'profile', openTrainerCoach: true }
+  }
+
   const isLive = type === 'team_live' || type === 'network_live'
   const isSync = type === 'team_sync' || type === 'network_sync'
 

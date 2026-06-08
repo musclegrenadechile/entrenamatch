@@ -5425,6 +5425,17 @@ button:not(.live-pill):disabled {
   font-size: 14px;
   font-weight: 800;
   color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.trainer-card__verified {
+  font-size: 10px;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.15);
+  padding: 1px 5px;
+  border-radius: 999px;
 }
 
 .trainer-card__meta {
@@ -5571,5 +5582,27 @@ button:not(.live-pill):disabled {
 .trainer-session-card__review {
   background: rgba(251, 191, 36, 0.15);
   color: #fbbf24;
+}
+
+.trainer-session-card__sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255, 103, 31, 0.2);
+  color: #ff671f;
+}
+
+.trainer-session-card__paid-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #22c55e;
+  padding: 6px 10px;
 }
 

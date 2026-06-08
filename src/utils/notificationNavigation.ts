@@ -13,6 +13,7 @@ export interface NotificationNavTarget {
   showSyncArena?: boolean
   showLiveMap?: boolean
   showLiveModal?: boolean
+  openTrainerCoach?: boolean
   startSyncWith?: { partnerId: string; partnerName?: string }
 }
 

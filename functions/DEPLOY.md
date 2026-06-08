@@ -38,4 +38,23 @@ You can extend the function to also listen on syncSessions or other collections.
 
 After deploy, rebuild the AAB (the functions are server-side, client AAB is unchanged for this feature).
 
+## EntrenaCoach Fase 2 (v0.1.144+)
+
+Deploy:
+```bash
+firebase functions:config:set mercadopago.access_token="APP_USR-..."
+firebase deploy --only functions,firestore:rules --project entrenamatch
+```
+
+Functions added:
+- `onTrainerBookingCreated` — push al entrenador cuando llega solicitud
+- `onTrainerBookingUpdated` — push al cliente (aceptada/rechazada/pagada)
+- `onTrainingReviewForBooking` — agrega avgRating al perfil PT (seguro)
+- `createTrainerMpCheckout` — callable, crea preferencia MP (15% comisión metadata)
+- `mercadoPagoWebhook` — confirma `paid_card` automáticamente
+
+Sin `MERCADOPAGO_ACCESS_TOKEN` el cliente usa fallback al link MP del entrenador.
+
+Verificar entrenador (badge ✓): en Firestore `trainerProfiles/{uid}` set `verified: true` (solo marketplaceAdmins puede cambiar verified vía reglas).
+
 Sigue con todo.

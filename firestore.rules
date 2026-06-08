@@ -127,7 +127,30 @@ service cloud.firestore {
         && request.resource.data.clientId == resource.data.clientId
         && request.resource.data.priceClp == resource.data.priceClp
         && request.resource.data.scheduledAt == resource.data.scheduledAt
-        && request.resource.data.createdAt == resource.data.createdAt;
+        && request.resource.data.createdAt == resource.data.createdAt
+        && trainerBookingStatusTransition();
+    }
+
+    function trainerBookingStatusTransition() {
+      let from = resource.data.status;
+      let to = request.resource.data.status;
+      let isTrainer = request.auth.uid == resource.data.trainerId;
+      let isClient = request.auth.uid == resource.data.clientId;
+      return (from == to && bookingMetaFieldsOnly())
+        || (from == 'requested' && to == 'accepted' && isTrainer)
+        || (from == 'requested' && to == 'declined' && isTrainer)
+        || (from == 'requested' && to == 'cancelled' && isClient)
+        || (from == 'accepted' && to == 'cancelled' && isClient)
+        || (from == 'accepted' && to == 'in_progress' && isTrainer)
+        || (from == 'in_progress' && to == 'completed' && isTrainerBookingParty())
+        || (from == 'accepted' && to == 'completed' && isTrainerBookingParty())
+        || (from == 'completed' && to == 'paid_cash' && isTrainerBookingParty())
+        || (from == 'completed' && to == 'paid_card' && isClient);
+    }
+
+    function bookingMetaFieldsOnly() {
+      return request.resource.data.diff(resource.data).changedKeys()
+          .hasOnly(['reviewId', 'syncSessionId', 'updatedAt']);
     }
 
     function isSessionParticipant(sessionId) {
@@ -212,8 +235,13 @@ service cloud.firestore {
     match /trainerProfiles/{userId} {
       allow read: if isAuthenticated()
         && (resource.data.active == true || isOwner(userId) || isMarketplaceAdmin());
-      allow create, update: if isOwner(userId)
-        && validTrainerProfile(request.resource.data);
+      allow create: if isOwner(userId)
+        && validTrainerProfile(request.resource.data)
+        && (!('verified' in request.resource.data) || request.resource.data.verified == false);
+      allow update: if isMarketplaceAdmin()
+        || (isOwner(userId)
+          && validTrainerProfile(request.resource.data)
+          && request.resource.data.get('verified', false) == resource.data.get('verified', false));
       allow delete: if isOwner(userId) || isMarketplaceAdmin();
     }
 

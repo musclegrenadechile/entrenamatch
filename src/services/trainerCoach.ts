@@ -24,7 +24,8 @@ import type {
   TrainerSpecialty,
 } from '../types'
 
-const PROFILES = 'trainerProfiles'
+/** Comisión plataforma EntrenaCoach (Fase 2 — MP checkout). */
+export const TRAINER_PLATFORM_FEE_RATE = 0.15
 const BOOKINGS = 'trainerBookings'
 
 export const TRAINER_SPECIALTIES: { id: TrainerSpecialty; label: string }[] = [
@@ -62,6 +63,8 @@ function mapTrainerProfile(id: string, data: Record<string, unknown>): TrainerPr
       ? (data.paymentMethods as TrainerProfile['paymentMethods'])
       : ['cash'],
     paymentUrl: typeof data.paymentUrl === 'string' ? data.paymentUrl : undefined,
+    verified: data.verified === true,
+    mpCollectorId: typeof data.mpCollectorId === 'string' ? data.mpCollectorId : undefined,
     active: data.active !== false,
     avgRating: typeof data.avgRating === 'number' ? data.avgRating : 0,
     reviewCount: typeof data.reviewCount === 'number' ? data.reviewCount : 0,
@@ -86,6 +89,10 @@ function mapBooking(id: string, data: Record<string, unknown>): TrainerBooking |
     status: (data.status as TrainerBookingStatus) || 'requested',
     clientMessage: typeof data.clientMessage === 'string' ? data.clientMessage : undefined,
     reviewId: typeof data.reviewId === 'string' ? data.reviewId : undefined,
+    syncSessionId: typeof data.syncSessionId === 'string' ? data.syncSessionId : undefined,
+    mpPreferenceId: typeof data.mpPreferenceId === 'string' ? data.mpPreferenceId : undefined,
+    mpPaymentId: typeof data.mpPaymentId === 'string' ? data.mpPaymentId : undefined,
+    platformFeeClp: typeof data.platformFeeClp === 'number' ? data.platformFeeClp : undefined,
     createdAt: Number(data.createdAt) || 0,
     updatedAt: Number(data.updatedAt) || 0,
   }
@@ -241,6 +248,7 @@ export async function saveTrainerProfile(
     createdAt: typeof existingData?.createdAt === 'number' ? existingData.createdAt : now,
     avgRating: typeof existingData?.avgRating === 'number' ? existingData.avgRating : 0,
     reviewCount: typeof existingData?.reviewCount === 'number' ? existingData.reviewCount : 0,
+    verified: existingData?.verified === true,
   }
 
   await setDoc(doc(db, PROFILES, uid), payload, { merge: true })
@@ -293,6 +301,17 @@ export async function updateTrainerBookingStatus(
     status,
     updatedAt: Date.now(),
     ...(extra?.reviewId ? { reviewId: extra.reviewId } : {}),
+  })
+}
+
+export async function linkBookingSyncSession(
+  db: Firestore,
+  bookingId: string,
+  syncSessionId: string
+): Promise<void> {
+  await updateDoc(doc(db, BOOKINGS, bookingId), {
+    syncSessionId,
+    updatedAt: Date.now(),
   })
 }
 

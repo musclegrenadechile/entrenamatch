@@ -428,3 +428,364 @@ exports.analyzeFood = functions
     };
   }
 });
+
+// ─── EntrenaCoach Fase 2 ───────────────────────────────────────────────────
+
+const TRAINER_PLATFORM_FEE_RATE = 0.15;
+
+async function readFcmToken(uid) {
+  try {
+    const snap = await db.collection('userPushTokens').doc(uid).get();
+    if (snap.exists) {
+      const data = snap.data();
+      return data && data.token ? data.token : null;
+    }
+  } catch (e) {
+    console.warn('FCM token read failed', uid, e);
+  }
+  return null;
+}
+
+async function sendPushToUser(uid, { title, body, data }) {
+  const token = await readFcmToken(uid);
+  if (!token) {
+    console.log('No FCM token for', uid);
+    return false;
+  }
+  try {
+    await messaging.send({
+      token,
+      notification: { title, body },
+      data: { ...data, click_action: 'FLUTTER_NOTIFICATION_CLICK' },
+      android: {
+        priority: 'high',
+        notification: {
+          channelId: 'entrenacoach',
+          sound: 'default',
+          color: '#6366f1',
+        },
+      },
+    });
+    return true;
+  } catch (err) {
+    console.warn('FCM send failed', uid, err.message || err);
+    return false;
+  }
+}
+
+function formatBookingWhen(scheduledAt) {
+  try {
+    return new Date(scheduledAt).toLocaleString('es-CL', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    });
+  } catch {
+    return 'próximamente';
+  }
+}
+
+/** Nueva reserva → push al entrenador. */
+exports.onTrainerBookingCreated = functions.firestore
+  .document('trainerBookings/{bookingId}')
+  .onCreate(async (snap, context) => {
+    const b = snap.data() || {};
+    const trainerId = b.trainerId;
+    if (!trainerId) return null;
+
+    const when = formatBookingWhen(b.scheduledAt);
+    await sendPushToUser(trainerId, {
+      title: '🏋️ Nueva solicitud EntrenaCoach',
+      body: `${b.clientName || 'Un cliente'} quiere entrenar contigo — ${when}`,
+      data: {
+        type: 'trainer_booking_new',
+        bookingId: context.params.bookingId,
+        clientId: b.clientId || '',
+      },
+    });
+    return null;
+  });
+
+/** Cambio de estado → push a la otra parte. */
+exports.onTrainerBookingUpdated = functions.firestore
+  .document('trainerBookings/{bookingId}')
+  .onUpdate(async (change, context) => {
+    const before = change.before.data() || {};
+    const after = change.after.data() || {};
+    if (before.status === after.status) return null;
+
+    const bookingId = context.params.bookingId;
+    const when = formatBookingWhen(after.scheduledAt);
+
+    if (after.status === 'accepted') {
+      await sendPushToUser(after.clientId, {
+        title: '✅ Sesión confirmada',
+        body: `${after.trainerName || 'Tu entrenador'} aceptó — ${when}`,
+        data: { type: 'trainer_booking_update', bookingId, status: 'accepted' },
+      });
+    } else if (after.status === 'declined') {
+      await sendPushToUser(after.clientId, {
+        title: 'Reserva no disponible',
+        body: `${after.trainerName || 'El entrenador'} no pudo confirmar la sesión.`,
+        data: { type: 'trainer_booking_update', bookingId, status: 'declined' },
+      });
+    } else if (after.status === 'paid_card') {
+      await sendPushToUser(after.trainerId, {
+        title: '💳 Pago recibido',
+        body: `Pago con tarjeta confirmado — ${after.clientName || 'cliente'}.`,
+        data: { type: 'trainer_booking_update', bookingId, status: 'paid_card' },
+      });
+    }
+    return null;
+  });
+
+/** Reseña con bookingId → rating agregado en trainerProfiles (seguro, server-side). */
+exports.onTrainingReviewForBooking = functions.firestore
+  .document('trainingReviews/{reviewId}')
+  .onCreate(async (snap, context) => {
+    const data = snap.data() || {};
+    const bookingId = data.bookingId;
+    const profileId = data.profileId;
+    if (!bookingId || !profileId) return null;
+
+    const bookingRef = db.collection('trainerBookings').doc(bookingId);
+    const bookingSnap = await bookingRef.get();
+    if (!bookingSnap.exists) return null;
+    const booking = bookingSnap.data() || {};
+
+    if (booking.clientId !== data.reviewerId) {
+      console.warn('Review reviewer is not booking client', bookingId);
+      return null;
+    }
+
+    const rating = Number(data.rating) || 5;
+    const profileRef = db.collection('trainerProfiles').doc(profileId);
+
+    await db.runTransaction(async (tx) => {
+      const profileSnap = await tx.get(profileRef);
+      if (!profileSnap.exists) return;
+      const p = profileSnap.data() || {};
+      const prevCount = Number(p.reviewCount) || 0;
+      const prevAvg = Number(p.avgRating) || 0;
+      const count = prevCount + 1;
+      const avg = (prevAvg * prevCount + rating) / count;
+      tx.update(profileRef, {
+        avgRating: Math.round(avg * 10) / 10,
+        reviewCount: count,
+        updatedAt: Date.now(),
+      });
+      tx.update(bookingRef, {
+        reviewId: context.params.reviewId,
+        updatedAt: Date.now(),
+      });
+    });
+
+    return null;
+  });
+
+function getMpAccessToken() {
+  return (
+    process.env.MERCADOPAGO_ACCESS_TOKEN ||
+    (functions.config().mercadopago && functions.config().mercadopago.access_token) ||
+    ''
+  );
+}
+
+/** Callable: crea preferencia MP para booking completado (tarjeta). */
+exports.createTrainerMpCheckout = functions
+  .runWith({ timeoutSeconds: 30 })
+  .https.onCall(async (data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', 'Inicia sesión.');
+    }
+    const bookingId = data && data.bookingId ? String(data.bookingId) : '';
+    if (!bookingId) {
+      throw new functions.https.HttpsError('invalid-argument', 'bookingId requerido.');
+    }
+
+    const bookingRef = db.collection('trainerBookings').doc(bookingId);
+    const bookingSnap = await bookingRef.get();
+    if (!bookingSnap.exists) {
+      throw new functions.https.HttpsError('not-found', 'Reserva no encontrada.');
+    }
+    const booking = bookingSnap.data() || {};
+
+    if (booking.clientId !== context.auth.uid) {
+      throw new functions.https.HttpsError('permission-denied', 'Solo el cliente puede pagar.');
+    }
+    if (booking.paymentMethod !== 'card') {
+      throw new functions.https.HttpsError('failed-precondition', 'Esta reserva no es pago con tarjeta.');
+    }
+    if (booking.status !== 'completed' && booking.status !== 'paid_card') {
+      throw new functions.https.HttpsError('failed-precondition', 'Marca la sesión como completada antes de pagar.');
+    }
+    if (booking.status === 'paid_card') {
+      throw new functions.https.HttpsError('already-exists', 'Esta sesión ya está pagada.');
+    }
+
+    const priceClp = Math.round(Number(booking.priceClp) || 0);
+    if (priceClp < 1000) {
+      throw new functions.https.HttpsError('invalid-argument', 'Monto inválido.');
+    }
+
+    const platformFeeClp = Math.round(priceClp * TRAINER_PLATFORM_FEE_RATE);
+    const token = getMpAccessToken();
+
+    const trainerSnap = await db.collection('trainerProfiles').doc(booking.trainerId).get();
+    const trainer = trainerSnap.exists ? trainerSnap.data() || {} : {};
+    const fallbackPaymentUrl =
+      typeof trainer.paymentUrl === 'string' && trainer.paymentUrl.startsWith('https://')
+        ? trainer.paymentUrl
+        : undefined;
+
+    if (!token) {
+      if (!fallbackPaymentUrl) {
+        throw new functions.https.HttpsError(
+          'failed-precondition',
+          'Mercado Pago no configurado. El entrenador debe agregar link de pago.'
+        );
+      }
+      return {
+        initPoint: fallbackPaymentUrl,
+        preferenceId: '',
+        platformFeeClp,
+        fallbackPaymentUrl,
+        usedFallback: true,
+      };
+    }
+
+    const projectId = process.env.GCLOUD_PROJECT || 'entrenamatch';
+    const notificationUrl = `https://us-central1-${projectId}.cloudfunctions.net/mercadoPagoWebhook`;
+
+    const prefBody = {
+      items: [
+        {
+          title: `EntrenaCoach — ${booking.trainerName || 'Entrenador'}`,
+          quantity: 1,
+          currency_id: 'CLP',
+          unit_price: priceClp,
+        },
+      ],
+      external_reference: bookingId,
+      metadata: {
+        bookingId,
+        trainerId: booking.trainerId,
+        clientId: booking.clientId,
+        platformFeeClp: String(platformFeeClp),
+      },
+      notification_url: notificationUrl,
+      statement_descriptor: 'ENTRENAMATCH',
+    };
+
+    const mpRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(prefBody),
+    });
+
+    if (!mpRes.ok) {
+      const errText = await mpRes.text();
+      console.error('MP preference failed', mpRes.status, errText.slice(0, 300));
+      if (fallbackPaymentUrl) {
+        return {
+          initPoint: fallbackPaymentUrl,
+          preferenceId: '',
+          platformFeeClp,
+          fallbackPaymentUrl,
+          usedFallback: true,
+        };
+      }
+      throw new functions.https.HttpsError('internal', 'No se pudo crear el checkout de Mercado Pago.');
+    }
+
+    const pref = await mpRes.json();
+    const initPoint = pref.init_point || pref.sandbox_init_point;
+    if (!initPoint) {
+      throw new functions.https.HttpsError('internal', 'Respuesta MP sin init_point.');
+    }
+
+    await bookingRef.update({
+      mpPreferenceId: pref.id,
+      platformFeeClp,
+      updatedAt: Date.now(),
+    });
+
+    return {
+      initPoint,
+      preferenceId: pref.id,
+      platformFeeClp,
+      usedFallback: false,
+    };
+  });
+
+/** Webhook Mercado Pago — confirma paid_card en trainerBookings. */
+exports.mercadoPagoWebhook = functions.https.onRequest(async (req, res) => {
+  try {
+    let paymentId = req.query && req.query['data.id'] ? String(req.query['data.id']) : '';
+    if (!paymentId && req.body && req.body.data && req.body.data.id) {
+      paymentId = String(req.body.data.id);
+    }
+    if (!paymentId && req.query && req.query.id) {
+      paymentId = String(req.query.id);
+    }
+
+    if (!paymentId) {
+      res.status(200).send('ok');
+      return;
+    }
+
+    const token = getMpAccessToken();
+    if (!token) {
+      console.warn('MP webhook: no access token configured');
+      res.status(200).send('ok');
+      return;
+    }
+
+    const payRes = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!payRes.ok) {
+      console.warn('MP payment fetch failed', payRes.status);
+      res.status(200).send('ok');
+      return;
+    }
+
+    const payment = await payRes.json();
+    if (payment.status !== 'approved') {
+      res.status(200).send('ok');
+      return;
+    }
+
+    const bookingId =
+      payment.external_reference ||
+      (payment.metadata && payment.metadata.booking_id) ||
+      (payment.metadata && payment.metadata.bookingId);
+
+    if (!bookingId) {
+      console.warn('MP webhook: no bookingId in payment', paymentId);
+      res.status(200).send('ok');
+      return;
+    }
+
+    const bookingRef = db.collection('trainerBookings').doc(String(bookingId));
+    const bookingSnap = await bookingRef.get();
+    if (!bookingSnap.exists) {
+      res.status(200).send('ok');
+      return;
+    }
+
+    await bookingRef.update({
+      status: 'paid_card',
+      mpPaymentId: String(paymentId),
+      updatedAt: Date.now(),
+    });
+
+    console.log('MP webhook: booking paid', bookingId, paymentId);
+    res.status(200).send('ok');
+  } catch (err) {
+    console.error('mercadoPagoWebhook error', err);
+    res.status(500).send('error');
+  }
+});

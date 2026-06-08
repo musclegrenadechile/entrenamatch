@@ -367,6 +367,9 @@ export interface TrainerProfile {
   zones: string[]
   paymentMethods: TrainerPaymentMethod[]
   paymentUrl?: string
+  /** Set by admin (marketplaceAdmins) — badge Entrenador verificado */
+  verified?: boolean
+  mpCollectorId?: string
   active: boolean
   avgRating: number
   reviewCount: number
@@ -398,6 +401,10 @@ export interface TrainerBooking {
   status: TrainerBookingStatus
   clientMessage?: string
   reviewId?: string
+  syncSessionId?: string
+  mpPreferenceId?: string
+  mpPaymentId?: string
+  platformFeeClp?: number
   createdAt: number
   updatedAt: number
 }

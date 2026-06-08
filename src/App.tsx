@@ -122,7 +122,9 @@ import {
   updateTrainerBookingStatus,
   linkReviewToBooking,
   formatTrainerRate,
+  linkBookingSyncSession,
 } from './services/trainerCoach'
+import { createTrainerMpCheckout } from './services/trainerPayments'
 import { HomeTab } from './components/home/HomeTab'
 import { fetchGlobalProfilePosts, fetchProfilePostById, togglePostLikeInFirestore, persistPostReactionsInFirestore } from './services/profilePosts'
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
@@ -3931,6 +3933,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   lightColor: '#FF671F',
                   vibration: true,
                 })
+                await PushNotifications.createChannel({
+                  id: 'entrenacoach',
+                  name: 'EntrenaCoach',
+                  description: 'Reservas y pagos de entrenadores personales',
+                  importance: 5,
+                  visibility: 1,
+                  sound: 'default',
+                  lights: true,
+                  lightColor: '#6366f1',
+                  vibration: true,
+                })
                 console.log('✅ network_activity channel created for red pushes')
               } catch (chErr) {
                 console.warn('createChannel failed (may already exist)', chErr)
@@ -3968,12 +3981,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
             if (target) {
               const isTeam = data.type === 'team_live' || data.type === 'team_sync' || data.type === 'network_live' || data.type === 'network_sync'
+              const isCoach = data.type === 'trainer_booking_new' || data.type === 'trainer_booking_update'
               toast.success(title, {
                 description: body + (isTeam ? ' (tu equipo/red)' : ''),
-                className: 'network-notif border-l-4 border-[#FFD700] bg-[#1a160f]',
+                className: isCoach ? 'network-notif border-l-4 border-[#6366f1] bg-[#12121a]' : 'network-notif border-l-4 border-[#FFD700] bg-[#1a160f]',
                 duration: 6000,
                 action: {
-                  label: target.showSyncArena ? 'Unirme' : target.tab === 'home' ? 'Ver reto' : 'Ver live',
+                  label: target.openTrainerCoach ? 'Ver sesiones' : target.showSyncArena ? 'Unirme' : target.tab === 'home' ? 'Ver reto' : 'Ver live',
                   onClick: () => applyNotificationNavigationRef.current?.(target, data.partnerName),
                 },
               })
@@ -7629,6 +7643,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     if (target.showSyncArena) {
       setShowSyncArena(true)
     }
+    if (target.openTrainerCoach) {
+      setShowTrainerCoach(true)
+    }
     if (target.startSyncWith) {
       const { partnerId, partnerName } = target.startSyncWith
       const name =
@@ -10388,6 +10405,43 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           setPendingReviewBookingId(bookingId)
           setShowTrainerCoach(false)
           setShowReviewModalFor(trainerId)
+        }}
+        onStartEntrenaSync={async (booking) => {
+          if (!firebaseUser?.uid) return
+          const partnerId =
+            booking.trainerId === firebaseUser.uid ? booking.clientId : booking.trainerId
+          const partnerName =
+            booking.trainerId === firebaseUser.uid ? booking.clientName : booking.trainerName
+          setShowTrainerCoach(false)
+          await startSyncWith(partnerId, partnerName)
+          if (db) {
+            await linkBookingSyncSession(
+              db,
+              booking.id,
+              buildSyncSessionId(firebaseUser.uid, partnerId)
+            )
+          }
+        }}
+        onPayWithMercadoPago={async (booking) => {
+          try {
+            const result = await createTrainerMpCheckout(booking.id)
+            window.open(result.initPoint, '_blank', 'noopener,noreferrer')
+            if (result.usedFallback) {
+              toast.info('Link de pago del entrenador', {
+                description: 'Confirma el pago manualmente cuando hayas completado la transferencia.',
+              })
+            } else {
+              toast.success('Checkout Mercado Pago', {
+                description: `Comisión plataforma ${result.platformFeeClp.toLocaleString('es-CL')} CLP — el pago se confirmará automáticamente.`,
+              })
+            }
+          } catch (e) {
+            console.warn(e)
+            toast.error('No se pudo iniciar el pago', {
+              description: e instanceof Error ? e.message : 'Intenta de nuevo',
+            })
+            throw e
+          }
         }}
       />
       <EntrenaLogModal
