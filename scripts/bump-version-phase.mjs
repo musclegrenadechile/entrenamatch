@@ -5,7 +5,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const phase = Number(process.argv[2])
-if (!Number.isInteger(phase) || phase < 31) {
+if (!Number.isInteger(phase) || phase < 31 || phase > 120) {
   console.error('Usage: node scripts/bump-version-phase.mjs <phase>')
   process.exit(1)
 }

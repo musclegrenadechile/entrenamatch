@@ -3,6 +3,7 @@ import { TrainerCoachHero } from './TrainerCoachHero'
 import { TrainerAvailabilityEditor } from './TrainerAvailabilityEditor'
 import { TrainerBookingsCalendar } from './TrainerBookingsCalendar'
 import { TrainerEarningsPanel } from './TrainerEarningsPanel'
+import { TrainerClientFuelPanel } from './TrainerClientFuelPanel'
 import { TrainerPackagesEditor } from './TrainerPackagesEditor'
 import { TrainerDispatchHistory } from './TrainerDispatchHistory'
 import {
@@ -108,6 +109,7 @@ export interface TrainerCoachViewProps {
   initialTab?: 'explore' | 'now' | 'sessions' | 'trainer'
   clientDispatchHistory?: TrainerDispatchRequest[]
   trainerDispatchHistory?: TrainerDispatchRequest[]
+  clientFuelBalance?: import('../../domain/fuelBalance').DailyEnergyBalance | null
 }
 
 function TrainerCard({
@@ -402,6 +404,7 @@ export function TrainerCoachView({
   initialTab,
   clientDispatchHistory = [],
   trainerDispatchHistory = [],
+  clientFuelBalance = null,
 }: TrainerCoachViewProps) {
   const [tab, setTab] = useState<'explore' | 'now' | 'sessions' | 'trainer'>(initialTab || 'explore')
   const [verifiedOnly, setVerifiedOnly] = useState(false)
@@ -718,6 +721,19 @@ export function TrainerCoachView({
 
       {tab === 'sessions' && (
         <div className="trainer-coach__panel">
+          {clientFuelBalance && (
+            <div className="mb-4">
+              <TrainerClientFuelPanel
+                clientName={userName || 'Cliente'}
+                balance={clientFuelBalance}
+                onSuggestMacros={() =>
+                  toast.success('Plan macros', {
+                    description: `Sugerido: ${clientFuelBalance.remaining.proteinG}g proteína restantes hoy`,
+                  })
+                }
+              />
+            </div>
+          )}
           {bookings.length > 0 && (
             <div className="mb-4">
               <p className="text-[10px] uppercase tracking-wider text-[#6366f1] font-bold mb-2">Calendario</p>
