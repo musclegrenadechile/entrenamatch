@@ -1,5 +1,6 @@
 import type { Message, Profile } from '../../types'
 import { getDistanceKm } from '../../utils'
+import { SkeletonList } from '../ui/SkeletonLoaders'
 
 export interface ChatListPanelProps {
   matchProfiles: Profile[]
@@ -13,7 +14,6 @@ export interface ChatListPanelProps {
   lastSync: Date | null
   getRelativeTime: (ts?: number) => string
   onSelectChat: (profileId: string) => void
-  onRefreshChats: () => void | Promise<void>
 }
 
 export function ChatListPanel({
@@ -28,11 +28,21 @@ export function ChatListPanel({
   lastSync,
   getRelativeTime,
   onSelectChat,
-  onRefreshChats,
 }: ChatListPanelProps) {
   const syncAgeSec = lastSync
     ? Math.max(0, Math.floor((Date.now() - lastSync.getTime()) / 1000))
     : null
+
+  const visibleMatches = matchProfiles.filter((p) => !blockedUsers.includes(p.id))
+
+  if (isLoadingChats && visibleMatches.length === 0 && !isDemoMode) {
+    return (
+      <div className="overflow-auto flex-1 p-4 min-h-0">
+        <div className="section-header mb-4">Mensajes</div>
+        <SkeletonList count={5} variant="chat" />
+      </div>
+    )
+  }
 
   return (
     <div className="overflow-auto flex-1 p-4 min-h-0">
@@ -40,25 +50,13 @@ export function ChatListPanel({
         <div className="flex items-center justify-between mb-1 px-1">
           <div className="flex items-center gap-2">
             <div className="section-header">Mensajes</div>
-            <span className="live-pill">● en vivo</span>
           </div>
-          {!isDemoMode && (
-            <button
-              type="button"
-              onClick={() => void onRefreshChats()}
-              disabled={isLoadingChats}
-              className="text-[10px] px-2 py-1 rounded-xl border border-[#FF671F]/50 text-[#FF671F] active:bg-[#FF671F] active:text-black disabled:opacity-60"
-            >
-              {isLoadingChats ? '...' : 'Actualizar chats reales'}
-            </button>
-          )}
           {syncAgeSec != null && (
-            <span className="text-[10px] text-[#9CA3AF] ml-2">· hace {syncAgeSec}s</span>
+            <span className="text-[10px] text-[#9CA3AF] ml-2">Actualizado hace {syncAgeSec}s</span>
           )}
         </div>
         <div className="text-[#9CA3AF] text-xs px-1 mb-3">
-          Mensajes 1:1 reales • en vivo cross-device • notificaciones toast + navegador cuando llega
-          un mensaje
+          Chats con tu equipo · desliza abajo para actualizar
         </div>
       </div>
 
@@ -67,15 +65,12 @@ export function ChatListPanel({
           <div className="text-5xl mb-3 opacity-40">💬</div>
           <div className="font-black text-2xl tracking-[-1px] mb-2">Tu red de GymPartners</div>
           <p className="text-sm text-[#9CA3AF] max-w-[260px] mx-auto leading-relaxed">
-            Aquí aparecen tus matches reales. Chats 1:1 en vivo cross-device con notas de voz y
-            propuestas de entrenamiento.
+            Aquí aparecen tus matches. Chats 1:1 con notas de voz y propuestas de entrenamiento.
           </p>
         </div>
       )}
 
-      {matchProfiles
-        .filter((p) => !blockedUsers.includes(p.id))
-        .map((profile) => {
+      {visibleMatches.map((profile) => {
           const chatMsgs = messages[profile.id] || []
           const last = chatMsgs[chatMsgs.length - 1]
           const unread = chatUnreads[profile.id] || 0
@@ -111,7 +106,7 @@ export function ChatListPanel({
                     {profile.name}
                     {isBond && (
                       <span className="text-[8px] px-1.5 py-px bg-[#FFD700] text-black rounded font-black tracking-wider">
-                        ⭐ RED
+                        RED
                       </span>
                     )}
                   </div>

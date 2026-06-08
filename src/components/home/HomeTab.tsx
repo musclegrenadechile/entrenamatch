@@ -2,6 +2,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { DailyHome } from './DailyHome'
+import { SkeletonList } from '../ui/SkeletonLoaders'
 import { isGymCheckInFresh } from '../../services/localNetwork'
 import { countRedLiveMembers } from '../../utils/syncFomo'
 import { WorkoutPostCard } from '../workout'
@@ -101,8 +102,6 @@ export function HomeTab(props: HomeTabProps) {
     weeklyPact,
     weeklyPactProgress,
     onPledgeWeeklyPact,
-    showFirstSteps,
-    onDismissFirstSteps,
   } = props
 
   const redLiveCount = countRedLiveMembers(
@@ -180,8 +179,6 @@ export function HomeTab(props: HomeTabProps) {
         weeklyPact={weeklyPact}
         weeklyPactProgress={weeklyPactProgress}
         onPledgeWeeklyPact={onPledgeWeeklyPact}
-        showFirstSteps={!!showFirstSteps}
-        onDismissFirstSteps={onDismissFirstSteps}
       />
       {/* CINEMATIC REMASTERED FEED HEADER — the social heart of the GymPulse */}
       <div className="feed-header-cinematic sticky top-0 z-10 -mx-4 px-4 pt-3 pb-3">
@@ -354,13 +351,8 @@ export function HomeTab(props: HomeTabProps) {
 
         if (isLoadingFeed && feedPosts.length === 0) {
           return (
-            <div className="space-y-4 mt-4 px-1">
-              {[1,2,3].map(i => (
-                <div key={i} className="muro-post p-4 rounded-2xl animate-pulse">
-                  <div className="flex gap-2 mb-3"><div className="w-8 h-8 bg-[#2F2F35] rounded-full" /><div className="flex-1"><div className="h-3 bg-[#2F2F35] rounded w-2/5 mb-1"/><div className="h-2.5 bg-[#2F2F35] rounded w-1/3"/></div></div>
-                  <div className="h-3 bg-[#2F2F35] rounded w-4/5 mb-1.5"/><div className="h-3 bg-[#2F2F35] rounded w-3/5"/><div className="h-40 bg-[#2F2F35] rounded-2xl mt-3"/>
-                </div>
-              ))}
+            <div className="mt-4 px-1">
+              <SkeletonList count={3} variant="feed" />
             </div>
           );
         }

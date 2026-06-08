@@ -7546,6 +7546,97 @@ button:not(.live-pill):disabled {
   color: #fff;
 }
 
+.post-register-guide__card--wide {
+  max-width: 420px;
+}
+
+.pull-to-refresh {
+  position: relative;
+  touch-action: pan-y;
+}
+
+.pull-to-refresh__indicator {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  transition: height 0.15s ease;
+}
+
+.pull-to-refresh__icon {
+  color: #ff671f;
+  margin-bottom: 4px;
+}
+
+.pull-to-refresh__icon--spin {
+  animation: spin 0.8s linear infinite;
+}
+
+.skeleton-line {
+  height: 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.skeleton-line--lg {
+  height: 14px;
+}
+
+.skeleton-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.skeleton-avatar--rounded {
+  border-radius: 16px;
+  width: 56px;
+  height: 56px;
+}
+
+.skeleton-match-row,
+.skeleton-chat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.skeleton-feed-post {
+  padding: 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.skeleton-card--swipe {
+  width: min(100%, 340px);
+  border-radius: 24px;
+  overflow: hidden;
+  background: #141418;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.skeleton-card__photo {
+  height: 360px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.skeleton-card__photo--sm {
+  height: 160px;
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+.skeleton-card__body {
+  padding: 16px;
+}
+
 .marketplace-orders__card--shipped {
   border-color: rgba(99, 102, 241, 0.35);
 }

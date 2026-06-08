@@ -1,6 +1,7 @@
 import { Heart, MessageCircle } from 'lucide-react'
 import type { Profile, ProfilePost, Squad, TrainingReview } from '../../types'
 import { getDistanceKm, getTrainingStreak } from '../../utils'
+import { SkeletonList } from '../ui/SkeletonLoaders'
 
 export interface MatchesTabProps {
   matchProfiles: Profile[]
@@ -17,8 +18,6 @@ export interface MatchesTabProps {
   lastSync: Date | null
   onExplore: () => void
   onOpenChat: (profileId: string) => void
-  onRefreshReal: () => void | Promise<void>
-  onRefreshAll: () => void | Promise<void>
 }
 
 export function MatchesTab({
@@ -36,12 +35,19 @@ export function MatchesTab({
   lastSync,
   onExplore,
   onOpenChat,
-  onRefreshReal,
-  onRefreshAll,
 }: MatchesTabProps) {
   const syncAgeSec = lastSync
     ? Math.max(0, Math.floor((Date.now() - lastSync.getTime()) / 1000))
     : null
+
+  if (isLoadingMatches && matchProfiles.length === 0 && !isDemoMode) {
+    return (
+      <div className="flex-1 overflow-auto p-4">
+        <div className="section-header mb-4">Tus matches</div>
+        <SkeletonList count={4} variant="match" />
+      </div>
+    )
+  }
 
   return (
     <div className="flex-1 overflow-auto p-4">
@@ -49,24 +55,14 @@ export function MatchesTab({
         <div>
           <div className="section-header">Tus matches</div>
           <div className="text-[#9CA3AF] text-sm">
-            Conexiones reales <span className="live-pill text-[8px]">en vivo</span>
+            Tu red de gym partners
           </div>
         </div>
-        {!isDemoMode && (
-          <button
-            type="button"
-            onClick={() => void onRefreshReal()}
-            disabled={isLoadingMatches}
-            className="text-xs px-3 py-1 rounded-2xl bg-[#FF671F] text-black font-semibold active:bg-[#E55A1A] disabled:opacity-60"
-          >
-            {isLoadingMatches ? '...' : 'Actualizar reales'}
-          </button>
-        )}
         {syncAgeSec != null && (
-          <span className="text-[10px] text-[#9CA3AF] ml-2">· hace {syncAgeSec}s</span>
+          <span className="text-[10px] text-[#9CA3AF] ml-2">Actualizado hace {syncAgeSec}s</span>
         )}
       </div>
-      <div className="text-[#9CA3AF] px-1 mb-4 text-xs">Matches reales • en vivo cross-device</div>
+      <div className="text-[#9CA3AF] px-1 mb-4 text-xs">Desliza abajo para actualizar</div>
 
       {matchProfiles.length === 0 ? (
         <div className="mt-10 px-4">
@@ -76,25 +72,15 @@ export function MatchesTab({
             </div>
             <div className="font-semibold text-xl mb-2">Aún no tienes matches</div>
             <p className="text-sm text-[#9CA3AF] leading-snug mb-4 max-w-[300px] mx-auto">
-              ¡Sigue explorando! Los matches con testers reales aparecen aquí al instante
-              (cross-device). Prueba swipiar perfiles cercanos o con entrenamientos en común.
+              Sigue explorando partners compatibles cerca de ti.
             </p>
             <div className="flex gap-2 justify-center">
               <button type="button" onClick={onExplore} className="btn-primary px-6">
                 Ir a Explorar
               </button>
-              {!isDemoMode && (
-                <button
-                  type="button"
-                  onClick={() => void onRefreshAll()}
-                  className="px-4 py-2 border border-[#FF671F]/60 text-[#FF671F] rounded-2xl text-sm"
-                >
-                  Actualizar
-                </button>
-              )}
             </div>
             {syncAgeSec != null && (
-              <div className="text-[10px] text-[#9CA3AF] mt-2">Última sync real: hace {syncAgeSec}s</div>
+              <div className="text-[10px] text-[#9CA3AF] mt-2">Actualizado hace {syncAgeSec}s</div>
             )}
           </div>
         </div>
@@ -125,14 +111,9 @@ export function MatchesTab({
                 <div className="relative">
                   <img src={profile.photos[0]} alt="" className="w-full aspect-square object-cover" />
                   <div className="absolute top-2 right-2 flex gap-1">
-                    {realProfiles.some((rp) => rp.id === profile.id) && (
-                      <div className="text-[9px] bg-[#FF671F] text-black px-1.5 py-0.5 rounded-full font-bold">
-                        REAL
-                      </div>
-                    )}
                     {profile.trainingNow && (
                       <div className="text-[9px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-1.5 py-0.5 rounded-full font-bold shadow-sm ring-1 ring-[#22c55e]/50">
-                        🟢 LIVE {profile.liveStreak ? `🔥${profile.liveStreak}d` : ''}
+                        LIVE {profile.liveStreak ? `${profile.liveStreak}d` : ''}
                       </div>
                     )}
                     {profile.verificationStatus === 'verified' && (
@@ -155,7 +136,7 @@ export function MatchesTab({
                     )}
                     {getTrainingStreak(profile.id, reviews) > 1 && (
                       <div className="text-[10px] text-orange-400 mt-0.5">
-                        🔥 {getTrainingStreak(profile.id, reviews)} seguidas
+                        {getTrainingStreak(profile.id, reviews)} seguidas
                       </div>
                     )}
                     {(() => {

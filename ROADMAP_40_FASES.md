@@ -22,11 +22,11 @@ Sistema de implementación: ver **`SISTEMA_IMPLEMENTACION_FASES.md`**.
 
 | # | Fase | Área | P | Estado |
 |---|------|------|---|--------|
-| 31 | Retirar PRE-ALPHA badge + modal bienvenida beta | Release | P0 | 🔲 |
-| 32 | Pull-to-refresh + sync silencioso (eliminar “Actualizar reales”) | UX | P0 | 🔲 |
-| 33 | Boot screen: timeout 8s + CTA “Entrar demo / Reintentar” | UX | P0 | 🔲 |
-| 34 | Skeleton loaders: Explore, Matches, Feed, Chat list | UX | P0 | 🔲 |
-| 35 | Onboarding unificado: 1 flujo (merge PostRegister + FirstSteps) | UX | P0 | 🔲 |
+| 31 | Retirar PRE-ALPHA badge + modal bienvenida beta | Release | P0 | ✅ v0.1.165 |
+| 32 | Pull-to-refresh + sync silencioso (eliminar “Actualizar reales”) | UX | P0 | ✅ v0.1.165 |
+| 33 | Boot screen: timeout 8s + CTA “Entrar demo / Reintentar” | UX | P0 | ✅ v0.1.165 |
+| 34 | Skeleton loaders: Explore, Matches, Feed, Chat list | UX | P0 | ✅ v0.1.165 |
+| 35 | Onboarding unificado: 1 flujo (merge PostRegister + FirstSteps) | UX | P0 | ✅ v0.1.165 |
 
 ---
 

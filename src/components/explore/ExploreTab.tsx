@@ -7,6 +7,7 @@ import type { Profile, CurrentUser } from '../../types';
 import { computeMatchScore } from '../../services/matchingScore';
 import { getDistanceKm } from '../../utils';
 import { isSeedProfileId } from '../../utils/seedProfiles';
+import { SwipeCardSkeleton } from '../ui/SkeletonLoaders';
 
 interface ExploreTabProps {
   deck: Profile[];
@@ -21,7 +22,7 @@ interface ExploreTabProps {
   onShowProfile?: (profile: Profile) => void;
   onReport?: (profileId: string) => void;
   realProfiles?: Profile[];
-  onRefreshRealProfiles?: () => void;
+  isLoadingProfiles?: boolean;
   lastSync?: Date | null;
   profilePosts?: Record<string, any[]>; // for spectacular muro teaser on cards
   syncBonds?: Record<string, { totalMin: number; sessions: number; avgRating: number; bondLevel: number }>;
@@ -41,7 +42,7 @@ export const ExploreTab = ({
   onShowProfile,
   onReport,
   realProfiles = [],
-  onRefreshRealProfiles,
+  isLoadingProfiles = false,
   lastSync,
   profilePosts = {},
   syncBonds = {},
@@ -50,7 +51,6 @@ export const ExploreTab = ({
   // Local drag state + optimistic removal for snappy swipe/match feel
   const [dragX, setDragX] = useState(0);
   const [optimisticRemovedId, setOptimisticRemovedId] = useState<string | null>(null);
-  const [isRefreshingReals, setIsRefreshingReals] = useState(false);
 
   // Merge prop visibleCards with optimistic removal for instant visual feedback after swipe
   const visibleCards = optimisticRemovedId
@@ -423,25 +423,6 @@ export const ExploreTab = ({
           >
             <RefreshCw size={13}/> Reiniciar
           </button>
-          {realProfiles.length > 0 && onRefreshRealProfiles && (
-            <>
-              <button 
-                onClick={async () => {
-                  setIsRefreshingReals(true);
-                  try {
-                    await onRefreshRealProfiles();
-                    toast.success('Perfiles reales actualizados');
-                  } finally {
-                    setIsRefreshingReals(false);
-                  }
-                }} 
-                disabled={isRefreshingReals}
-                className="text-xs flex items-center gap-1 bg-[#FF671F] text-black px-3 py-1.5 rounded-2xl font-semibold active:bg-[#E55A1A] disabled:opacity-60"
-              >
-                <RefreshCw size={13} className={isRefreshingReals ? 'animate-spin' : ''}/> {isRefreshingReals ? '...' : 'Actualizar reales'}
-              </button>
-            </>
-          )}
           <button 
             onClick={() => setShowFilters(true)} 
             className="relative p-2 active:bg-[#25252A] rounded-2xl bg-[#1C1C20] border border-[#2F2F35]"
@@ -458,8 +439,11 @@ export const ExploreTab = ({
 
       {/* Cards Stack Area */}
       <div className="relative flex-1 flex items-center justify-center mt-0.5 mb-2 min-h-[460px]">
+        {isLoadingProfiles && visibleCards.length === 0 && (
+          <SwipeCardSkeleton />
+        )}
         <AnimatePresence>
-          {visibleCards.length === 0 && (
+          {!isLoadingProfiles && visibleCards.length === 0 && (
             <div className="text-center px-6">
               <div className="mx-auto w-16 h-16 bg-[#1C1C20] rounded-3xl flex items-center justify-center mb-4 ring-1 ring-[#FF671F]/20">
                 <div className="text-4xl">🏋️</div>
@@ -496,29 +480,9 @@ export const ExploreTab = ({
                 >
                   Reiniciar deck
                 </button>
-                {onRefreshRealProfiles && (
-                  <button 
-                    onClick={async () => {
-                      setIsRefreshingReals(true);
-                      try {
-                        await onRefreshRealProfiles();
-                        toast.success('Perfiles reales actualizados');
-                      } finally {
-                        setIsRefreshingReals(false);
-                      }
-                    }} 
-                    disabled={isRefreshingReals}
-                    className="px-5 py-2.5 border border-[#FF671F] text-[#FF671F] rounded-2xl text-sm active:bg-[#FF671F] active:text-black disabled:opacity-60 flex items-center gap-1"
-                  >
-                    <RefreshCw size={14} className={isRefreshingReals ? 'animate-spin' : ''} />
-                    {isRefreshingReals ? 'Actualizando...' : 'Actualizar reales'}
-                  </button>
-                )}
-                {/* Quick relax: show more by resetting some filters temporarily */}
                 <button 
                   onClick={() => {
-                    // Quick action: relax distance and training filters to see more
-                    setShowFilters(true); // open so user can fine tune, or could auto reset here
+                    setShowFilters(true);
                   }}
                   className="px-4 py-2.5 text-xs border border-[#2F2F35] rounded-2xl active:bg-[#25252A]"
                 >

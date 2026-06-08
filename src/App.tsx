@@ -122,10 +122,11 @@ import {
   attachAllTrainerBookingsListener,
   computeAdminMetrics,
 } from './services/adminAnalytics'
-import { PostRegisterGuide } from './components/onboarding/PostRegisterGuide'
+import { ActivationGuide } from './components/onboarding/ActivationGuide'
+import { PullToRefresh } from './components/ui/PullToRefresh'
 import {
-  hasSeenPostRegisterGuide,
-  markPostRegisterGuideSeen,
+  shouldShowActivationGuide,
+  markActivationGuideComplete,
   loadFirstStepsProgress,
   saveFirstStepsProgress,
   type FirstStepsProgress,
@@ -921,7 +922,7 @@ function App() {
   const [adminOrders, setAdminOrders] = useState<MarketplaceOrder[]>([])
   const [adminBookings, setAdminBookings] = useState<TrainerBooking[]>([])
   const [mpConfigured, setMpConfigured] = useState(false)
-  const [showPostRegisterGuide, setShowPostRegisterGuide] = useState(false)
+  const [showActivationGuide, setShowActivationGuide] = useState(false)
   const [myMarketplaceOrders, setMyMarketplaceOrders] = useState<MarketplaceOrder[]>([])
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([])
   const [isMarketplaceAdmin, setIsMarketplaceAdmin] = useState(false)
@@ -1395,10 +1396,6 @@ function App() {
   const [showFullProfile, setShowFullProfile] = useState<Profile | null>(null)
   const [isEditingProfile, setIsEditingProfile] = useState(false)
   const [isEditingBio, setIsEditingBio] = useState(false)
-  const [showPreAlphaWelcome, setShowPreAlphaWelcome] = useState(() => {
-    return !localStorage.getItem('entrenamatch_prealpha_welcome_shown')
-  })
-
   // Onboarding step state (managed here so the flow actually advances)
   const [onboardingStep, setOnboardingStepLocal] = useState(0)
 
@@ -3352,38 +3349,50 @@ useEffect(() => {
     return () => clearInterval(t)
   }, [activeTab])
 
-  // Global "Actualizar todo" for testers - forces fresh real data + updates lastSync everywhere (makes "en vivo" feel stronger, live training, feed, etc.)
-  const refreshAllReal = async () => {
-    if (isDemoMode) { toast('Actualizando (demo)...'); return; }
+  // Global silent sync — pull-to-refresh + tab focus (Fase 32)
+  const silentRefreshReal = async (opts?: { includeChats?: boolean; includeFeed?: boolean }) => {
+    if (isDemoMode) return
     setIsLoadingMatches(true)
+    if (opts?.includeChats) setIsLoadingChats(true)
     try {
       await Promise.all([
         loadRealProfiles(),
         loadRealMatches(),
         loadRealSessions(),
-        loadActiveSyncCount()
+        loadActiveSyncCount(),
       ])
-      if (currentUser?.trainingNow) {
-        await loadProfilePosts(effectiveUserId)
-        processIncomingLiveJoins()
+      if (opts?.includeChats) {
+        await loadRealMatches()
+        for (const id of prevRealMatchesRef.current) {
+          await loadRealChatMessages(id).catch(() => {})
+        }
       }
-      if (activeTab === 'home') {
-        await loadGlobalFeed()
+      if (opts?.includeFeed && activeTab === 'home') {
+        await loadGlobalFeed().catch(() => {})
       }
-      // Refresh personal muro if in profile
-      if (activeTab === 'profile') {
-        setLoadingPersonalMuro(true)
-        await loadProfilePosts(effectiveUserId).finally(() => setLoadingPersonalMuro(false))
-      }
-      const now = new Date()
-      setLastSync(now)
-      toast.success('Datos reales actualizados', { description: 'Perfiles, matches, sesiones, syncs y feed refrescados.' })
+      setLastSync(new Date())
     } finally {
       setIsLoadingMatches(false)
+      if (opts?.includeChats) setIsLoadingChats(false)
     }
   }
 
-  // Google Play Integrity check - "trabajar con la app de google"
+  const refreshAllReal = async () => {
+    await silentRefreshReal({ includeFeed: activeTab === 'home' })
+    toast.success('Datos actualizados')
+  }
+
+  // Silent sync al entrar en tabs clave (Fase 32)
+  useEffect(() => {
+    if (isDemoMode || showOnboarding) return
+    if (activeTab === 'explore' || activeTab === 'matches') {
+      silentRefreshReal().catch(() => {})
+    } else if (activeTab === 'messages' && !activeChat) {
+      silentRefreshReal({ includeChats: true }).catch(() => {})
+    }
+  }, [activeTab, activeChat, isDemoMode, showOnboarding])
+
+  // Google Play Integrity check
   // Call this on login, before sensitive actions (live toggle, profile create, etc.)
   // The raw token should go to a server for verification to produce the full verdict JSON you showed.
   const checkPlayIntegrity = async (showToast = true) => {
@@ -4660,8 +4669,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
   useEffect(() => {
     if (isDemoMode || !db || !firebaseUser?.uid || showOnboarding) return
-    void hasSeenPostRegisterGuide(db, firebaseUser.uid).then((seen) => {
-      if (!seen) setShowPostRegisterGuide(true)
+    void shouldShowActivationGuide(db, firebaseUser.uid).then((show) => {
+      if (show) setShowActivationGuide(true)
     })
     void loadFirstStepsProgress(db, firebaseUser.uid).then(setFirstStepsProgress)
   }, [isDemoMode, db, firebaseUser?.uid, showOnboarding])
@@ -9452,17 +9461,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       {/* PREMIUM TOP BAR - more attractive with better hierarchy, consistent buttons, subtle premium feel */}
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
-          <span className="live-pill !py-0.5 !px-2.5 !text-[8px] !bg-[#FF671F]/10 !border-0 ring-1 ring-[#FF671F]/20">PRE-ALPHA</span>
-          <span className="text-white/90 text-[11px]">Real backend • v{APP_VERSION}</span>
-          <button 
-            onClick={refreshAllReal} 
-            disabled={isLoadingMatches}
-            className="ml-1 text-[9px] px-2.5 py-1 rounded-full bg-[#FF671F]/10 text-[#FF671F] active:bg-[#FF671F]/20 disabled:opacity-60 border border-[#FF671F]/20 active:scale-[0.985] transition-all"
-            title="Refrescar perfiles, matches y sesiones reales ahora"
-          >
-            {isLoadingMatches ? '...' : 'Actualizar todo'}
-            {liveTrainingNow.length > 0 && <span className="ml-1 text-[8px] text-[#22c55e]">+{liveTrainingNow.length} live</span>}
-          </button>
+          <span className="text-white/90 text-[11px]">EntrenaMatch · v{APP_VERSION}</span>
           {liveTrainingNow.length > 0 && (
             <button 
               onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(true); }}
@@ -9673,6 +9672,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         )}
 
         {activeTab === 'explore' && (
+          <PullToRefresh
+            className="flex-1 flex flex-col min-h-0 overflow-auto"
+            disabled={isDemoMode}
+            onRefresh={async () => {
+              await silentRefreshReal()
+            }}
+          >
           <ExploreTab
             deck={deck}
             visibleCards={visibleCards}
@@ -9682,6 +9688,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             setShowFilters={setShowFilters}
             resetDeck={() => { resetSwipeDeck(); toast('Deck reiniciado'); }}
             requestUserLocation={requestUserLocation}
+            isLoadingProfiles={isLoadingMatches && realProfiles.length === 0}
             onSwipe={(direction, profileId) => {
               if (direction === 'right') {
                 handleSwipe(profileId, 'right');
@@ -9694,12 +9701,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               openReport(id, 'explore_rec')
             }}
             realProfiles={realProfiles}
-            onRefreshRealProfiles={async () => { await loadRealProfiles(); setLastSync(new Date()); }}
             lastSync={lastSync}
             profilePosts={profilePosts}
             syncBonds={syncBonds}
             networkPower={networkStats.networkPower}
           />
+          </PullToRefresh>
         )}
 
         {/* FULL LIVE MODAL - spectacular full list of live training near you. Enhanced with search, sort by dist/urgency, quick chat, simple visual "map" row (dots sorted by dist). Makes the killer feature even stronger. */}
@@ -9963,15 +9970,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             weeklyPact={(currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact}
             weeklyPactProgress={homeWeeklyPactProgress}
             onPledgeWeeklyPact={handleWeeklyPactPledge}
-            showFirstSteps={!!firstStepsProgress && !firstStepsProgress.dismissed}
-            onDismissFirstSteps={() => {
-              if (!db || !firebaseUser?.uid) return
-              void saveFirstStepsProgress(db, firebaseUser.uid, { dismissed: true }).then(() =>
-                setFirstStepsProgress((prev) =>
-                  prev ? { ...prev, dismissed: true, updatedAt: Date.now() } : prev
-                )
-              )
-            }}
           />
           </Suspense>
         )}
@@ -10160,6 +10158,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         )}
 
         {activeTab === 'matches' && (
+          <PullToRefresh
+            className="flex-1 flex flex-col min-h-0 overflow-auto"
+            disabled={isDemoMode}
+            onRefresh={async () => {
+              await silentRefreshReal()
+            }}
+          >
           <MatchesTab
             matchProfiles={matchProfiles}
             blockedUsers={blockedUsers}
@@ -10175,30 +10180,21 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             lastSync={lastSync}
             onExplore={() => setActiveTab('explore')}
             onOpenChat={openChat}
-            onRefreshReal={async () => {
-              setIsLoadingMatches(true)
-              try {
-                await loadRealProfiles()
-              } finally {
-                setIsLoadingMatches(false)
-              }
-            }}
-            onRefreshAll={async () => {
-              setIsLoadingMatches(true)
-              try {
-                await loadRealProfiles()
-                await loadRealMatches()
-              } finally {
-                setIsLoadingMatches(false)
-              }
-            }}
           />
+          </PullToRefresh>
         )}
 
         {/* ===== MESSAGES ===== */}
         {activeTab === 'messages' && (
           <div className="flex-1 flex flex-col">
             {!activeChat ? (
+              <PullToRefresh
+                className="flex-1 flex flex-col min-h-0"
+                disabled={isDemoMode}
+                onRefresh={async () => {
+                  await silentRefreshReal({ includeChats: true })
+                }}
+              >
               <ChatListPanel
                 matchProfiles={matchProfiles}
                 blockedUsers={blockedUsers}
@@ -10218,21 +10214,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                     return c
                   })
                 }}
-                onRefreshChats={async () => {
-                  setIsLoadingChats(true)
-                  try {
-                    const currentMatches = await loadRealMatches()
-                    for (const id of currentMatches) {
-                      await loadRealChatMessages(id)
-                    }
-                    setLastSync(new Date())
-                    setChatUnreads({})
-                    toast.success('Chats reales actualizados')
-                  } finally {
-                    setIsLoadingChats(false)
-                  }
-                }}
               />
+              </PullToRefresh>
             ) : activeChat ? (
               <ChatView
                 activeChat={activeChat}
@@ -10490,54 +10473,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         )}
             {/* DUPLICATE ORPHAN PROFILE JSX REMOVED — all rich Profile UI now lives cleanly inside the activeTab==='profile' conditional (prevents black screens, duplicate renders, and JSX imbalance) */}
 
-            {/* Pre-Alpha Welcome Modal */}
-            {showPreAlphaWelcome && (
-              <div className="absolute inset-0 z-[200] flex items-center justify-center bg-black/80 p-6" onClick={() => {
-                localStorage.setItem('entrenamatch_prealpha_welcome_shown', 'true')
-                setShowPreAlphaWelcome(false)
-              }}>
-                <div 
-                  onClick={e => e.stopPropagation()} 
-                  className="card w-full max-w-[380px] rounded-3xl p-7 text-center"
-                >
-                  <div className="text-2xl font-semibold mb-2">¡Bienvenido al prealpha!</div>
-                  <p className="text-sm text-[#9CA3AF] mb-4">
-                    Estás entre los primeros en probar <strong>Tu equipo de gym en vivo</strong> con perfiles reales. <span className="text-[#FF671F]">Mapa en vivo, EntrenaSync y tu red de gym partners.</span>
-                  </p>
-
-                  <div className="bg-[#1C1C20] rounded-2xl p-4 text-left text-sm mb-5">
-                    <div className="font-medium text-white mb-2">Lo que verás (ya real y en vivo):</div>
-                    <ul className="space-y-1.5 text-[#cbd5e1]">
-                      <li>→ Explora perfiles reales con "disponibles ahora", recs "reales primero" + motivos de compat, badges en vivo y lastSync</li>
-                      <li>→ Matches y chats 1:1 / grupal en sesiones (cross-device real-time)</li>
-                      <li>→ Crea y únete a sesiones con chat grupal (tú administras como creador)</li>
-                      <li>→ Tu feedback (en Perfil) da forma a lo que viene</li>
-                      <li>→ Nuevo diseño naranja/rosa atractivo (energía Dunkin' + diversión social)</li>
-                      <li>→ Banner para instalar como app (PWA) + botón "Actualizar todo" en la barra superior</li>
-                    </ul>
-                  </div>
-
-                  <div className="text-left text-sm mb-5">
-                    <div className="font-medium text-white mb-1.5">Regla de oro para estos primeros testers:</div>
-                    <div className="text-[#9CA3AF]">Si algo te molesta, no funciona o te encanta → cuéntanos en el formulario de Feedback en Perfil. Los problemas (y las alegrías) de los primeros usuarios reales son oro.</div>
-                  </div>
-
-                  <div className="text-[10px] text-[#9CA3AF] mb-4">Privacidad y Términos actualizados y enlazados en tu Perfil.</div>
-
-                  <button 
-                    onClick={() => {
-                      localStorage.setItem('entrenamatch_prealpha_welcome_shown', 'true')
-                      setShowPreAlphaWelcome(false)
-                    }} 
-                    className="btn-primary w-full"
-                  >
-                    Entendido — ¡a elegir perfiles reales!
-                  </button>
-
-                  <p className="text-[10px] text-[#9CA3AF] mt-4">Gracias de verdad por ser de los primeros ❤️</p>
-                </div>
-              </div>
-            )}
       </div>
 
       {/* Spectacular full comments modal for muro - rich thread view with live updates */}
@@ -10692,18 +10627,30 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           mpConfigured
         )}
       />
-      <PostRegisterGuide
-        open={showPostRegisterGuide}
+      <ActivationGuide
+        open={showActivationGuide}
+        isLive={!!currentUser?.trainingNow}
+        hasTeam={homeTeamMembers.length > 0}
+        hasPact={homeWeeklyPactProgress.pledged}
         onClose={() => {
-          setShowPostRegisterGuide(false)
+          setShowActivationGuide(false)
           if (db && firebaseUser?.uid) {
-            void markPostRegisterGuideSeen(db, firebaseUser.uid)
+            void markActivationGuideComplete(db, firebaseUser.uid).then(() =>
+              setFirstStepsProgress((prev) =>
+                prev ? { ...prev, dismissed: true, updatedAt: Date.now() } : prev
+              )
+            )
           }
         }}
         onStep={(step) => {
           if (step === 'profile') setActiveTab('profile')
           if (step === 'live') void toggleLiveTraining()
           if (step === 'explore') setActiveTab('explore')
+          if (step === 'sync') {
+            setActiveTab('explore')
+            setShowLiveMap(true)
+          }
+          if (step === 'pact') setActiveTab('home')
         }}
       />
       <TrainerCoachView

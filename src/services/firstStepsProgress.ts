@@ -61,11 +61,28 @@ export async function markPostRegisterGuideSeen(db: Firestore, uid: string): Pro
   })
 }
 
-export async function hasSeenPostRegisterGuide(db: Firestore, uid: string): Promise<boolean> {
+export async function markActivationGuideComplete(db: Firestore, uid: string): Promise<void> {
+  const current = await loadFirstStepsProgress(db, uid)
+  await updateDoc(doc(db, 'profiles', uid), {
+    postRegisterGuideSeen: true,
+    postRegisterGuideSeenAt: Date.now(),
+    firstSteps: { ...current, dismissed: true, updatedAt: Date.now() },
+  })
+}
+
+export async function shouldShowActivationGuide(db: Firestore, uid: string): Promise<boolean> {
   try {
     const snap = await getDoc(doc(db, 'profiles', uid))
-    return snap.data()?.postRegisterGuideSeen === true
+    const data = snap.data()
+    if (data?.postRegisterGuideSeen === true) return false
+    if (data?.firstSteps?.dismissed === true) return false
+    return true
   } catch {
-    return false
+    return true
   }
+}
+
+/** @deprecated use shouldShowActivationGuide */
+export async function hasSeenPostRegisterGuide(db: Firestore, uid: string): Promise<boolean> {
+  return !(await shouldShowActivationGuide(db, uid))
 }

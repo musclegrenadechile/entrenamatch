@@ -1,9 +1,7 @@
 import { MapPin, MessageCircle, RefreshCw, Users } from 'lucide-react'
-import { useState, useEffect } from 'react'
 import { FuelDayCard } from '../fuel/FuelDayCard'
 import { FuelWeekReport } from '../fuel/FuelWeekReport'
 import { LocalNetworkCard } from './LocalNetworkCard'
-import { FirstStepsGuide } from './FirstStepsGuide'
 import { HomeLoopStepper, resolveHomeLoopStep } from './HomeLoopStepper'
 import { formatRedSyncFomoLine } from '../../utils/syncFomo'
 import type { WeeklyPact, WeeklyPactProgress } from '../../services/weeklyPact'
@@ -62,8 +60,6 @@ export interface DailyHomeProps {
   onPledgeWeeklyPact?: (
     partial: Omit<WeeklyPact, 'weekKey' | 'pledgedAt'> & { weekKey?: string }
   ) => void
-  showFirstSteps?: boolean
-  onDismissFirstSteps?: () => void
 }
 
 function statusLine(member: TeamMemberView): string {
@@ -123,20 +119,11 @@ export function DailyHome({
   weeklyPact = null,
   weeklyPactProgress,
   onPledgeWeeklyPact,
-  showFirstSteps = false,
-  onDismissFirstSteps,
 }: DailyHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
   const hour = new Date().getHours()
   const greeting =
     hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches'
-
-  const [showFirstStepsLocal, setShowFirstStepsLocal] = useState(showFirstSteps)
-  const showGuide = showFirstStepsLocal && showFirstSteps
-
-  useEffect(() => {
-    if (showFirstSteps) setShowFirstStepsLocal(true)
-  }, [showFirstSteps])
 
   const liveTeamMembers = teamMembers.filter((m) => m.status === 'live')
   const loopStep = resolveHomeLoopStep({
@@ -151,26 +138,6 @@ export function DailyHome({
 
   return (
     <div className="daily-home mb-4 -mx-1 px-1 space-y-3">
-      {showGuide && (
-        <FirstStepsGuide
-          isLive={isLive}
-          hasTeam={teamMembers.length > 0}
-          hasPact={weeklyPactProgress.pledged}
-          onToggleLive={onToggleLive}
-          onOpenMatches={onOpenMatches}
-          onOpenExplore={onOpenExplore}
-          onStartSync={
-            liveTeamMembers[0] && onJoinMember
-              ? () => onJoinMember(liveTeamMembers[0].id, liveTeamMembers[0].name)
-              : onOpenMap
-          }
-          onDismiss={() => {
-            setShowFirstStepsLocal(false)
-            onDismissFirstSteps?.()
-          }}
-        />
-      )}
-
       {/* Header */}
       <div className="px-0.5">
         <p className="text-[10px] uppercase tracking-[0.18em] text-[#9CA3AF] font-bold">Hoy</p>
