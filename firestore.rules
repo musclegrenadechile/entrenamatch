@@ -499,6 +499,18 @@ service cloud.firestore {
         && resource.data.userId == request.auth.uid;
     }
 
+    match /dailyEnergy/{docId} {
+      allow read: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+      allow write: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /constanciaBalances/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
     match /cityWeeklyStats/{docId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated()
