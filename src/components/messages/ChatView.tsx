@@ -1,6 +1,8 @@
 import type { RefObject, ReactNode, FormEvent } from 'react'
-import { ArrowLeft, Mic, Pause, Play, Send } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowLeft, Mic, MoreVertical, Pause, Play, Send } from 'lucide-react'
 import type { Message, Profile } from '../../types'
+import { generateIcebreakers } from '../../utils/icebreakers'
 
 export interface ChatViewProps {
   activeChat: string
@@ -42,6 +44,8 @@ export interface ChatViewProps {
   onStartVoiceRecording: () => void
   onStopVoiceRecording: () => void
   onCancelVoiceRecording: () => void
+  currentUser?: Profile | null
+  voiceStreak?: number
 }
 
 const QUICK_PROPOSALS = [
@@ -98,7 +102,15 @@ export function ChatView({
   onStartVoiceRecording,
   onStopVoiceRecording,
   onCancelVoiceRecording,
+  currentUser,
+  voiceStreak = 0,
 }: ChatViewProps) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const icebreakers =
+    currentUser && chatProfile && chatMessages.length === 0
+      ? generateIcebreakers(currentUser, chatProfile)
+      : []
+
   return (
     <div className="flex-1 flex flex-col">
       <div className="chat-header h-16 px-4 flex items-center gap-3 z-10">
@@ -139,36 +151,35 @@ export function ChatView({
                 ⭐ RED · Fuerza {syncBond.bondLevel || 1}
               </span>
             )}
+            {voiceStreak > 0 && (
+              <span className="streak-badge px-1.5 py-px text-[8px] rounded bg-[#6366f1]/30 text-[#a5b4fc] font-bold">
+                🎙️ {voiceStreak}d voz
+              </span>
+            )}
           </div>
         </div>
 
-        <div className="chat-header-actions flex items-center gap-1 flex-shrink-0">
-          <button type="button" onClick={onShowProfile} className="text-[10px] px-3 py-1 bg-[#1C1C20] hover:bg-[#25252A] rounded-full text-[#FF671F] border border-[#2F2F35]">
-            Perfil
+        <div className="chat-header-actions flex items-center gap-1 flex-shrink-0 relative">
+          <button
+            type="button"
+            onClick={() => setMenuOpen((v) => !v)}
+            className="p-2 text-[#9CA3AF] active:text-white rounded-xl"
+            aria-label="Más opciones"
+          >
+            <MoreVertical size={20} />
           </button>
-          {!isDemoMode && (
-            <button
-              type="button"
-              onClick={() => void onRefreshChat()}
-              disabled={isLoadingChats}
-              className="text-[9px] px-2 py-1 border border-[#2F2F35] rounded-xl text-[#FF671F] active:bg-[#25252A] disabled:opacity-60"
-            >
-              {isLoadingChats ? '...' : 'Sync'}
-            </button>
+          {menuOpen && (
+            <div className="absolute top-full right-0 mt-1 w-40 rounded-xl bg-[#1C1C20] border border-[#2F2F35] shadow-lg z-20 py-1">
+              <button type="button" onClick={() => { onShowProfile(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-white active:bg-[#25252A]">Perfil</button>
+              <button type="button" onClick={() => { onStartSync(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-[#22c55e] active:bg-[#25252A]">Entrenar juntos</button>
+              {!isDemoMode && (
+                <button type="button" onClick={() => { void onRefreshChat(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-[#FF671F] active:bg-[#25252A]">Sync chat</button>
+              )}
+              <button type="button" onClick={() => { onReport(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-red-400 active:bg-[#25252A]">Reportar</button>
+              <button type="button" onClick={() => { void onBlock(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-red-400 active:bg-[#25252A]">Bloquear</button>
+            </div>
           )}
-          <button type="button" onClick={onStartSync} className="text-[9px] px-2.5 py-1 bg-[#22c55e]/10 text-[#22c55e] rounded-full active:bg-[#22c55e] active:text-black">
-            Entrenar
-          </button>
         </div>
-      </div>
-
-      <div className="flex justify-end gap-2 px-4 py-1 bg-[#0f1115] text-xs">
-        <button type="button" onClick={onReport} className="text-red-400 hover:underline">
-          Reportar
-        </button>
-        <button type="button" onClick={() => void onBlock()} className="text-red-400 hover:underline">
-          Bloquear
-        </button>
       </div>
 
       <div className="px-4 py-2 bg-[#1C1C20] border-b border-[#2F2F35] text-center">
@@ -230,6 +241,23 @@ export function ChatView({
       </div>
 
       <div className="px-3 pt-2 border-t border-[#2F2F35] bg-[#0D0D10]">
+        {icebreakers.length > 0 && (
+          <>
+            <div className="text-[10px] text-[#6366f1] mb-1.5 px-1 font-bold">Icebreakers para ustedes:</div>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {icebreakers.map((tip) => (
+                <button
+                  key={tip}
+                  type="button"
+                  onClick={() => onSendMessage(tip)}
+                  className="text-xs bg-[#6366f1]/10 border border-[#6366f1]/30 px-3 py-1 rounded-full text-[#a5b4fc] active:bg-[#6366f1] active:text-white"
+                >
+                  {tip}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
         <div className="text-[10px] text-[#9CA3AF] mb-1.5 px-1">Propuestas rápidas:</div>
         <div className="flex flex-wrap gap-1.5 mb-2">
           {QUICK_PROPOSALS.map((proposal) => (

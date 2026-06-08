@@ -70,11 +70,11 @@ Sistema de implementación: ver **`SISTEMA_IMPLEMENTACION_FASES.md`**.
 
 | # | Fase | Área | P | Estado |
 |---|------|------|---|--------|
-| 51 | Chat header: acciones secundarias en menú “…” | Mensajes | P1 | 🔲 |
-| 52 | Voice note: waveform polish + badge streak voz | Mensajes | P2 | 🔲 |
-| 53 | Match score breakdown expandible (objetivo, zona, distancia) | Matches | P1 | 🔲 |
-| 54 | Icebreakers IA desde overlap de perfil | Mensajes | P2 | 🔲 |
-| 55 | Report/block flow unificado + confirmación clara | Safety | P1 | 🔲 |
+| 51 | Chat header: acciones secundarias en menú “…” | Mensajes | P1 | ✅ v0.1.185 |
+| 52 | Voice note: waveform polish + badge streak voz | Mensajes | P2 | ✅ v0.1.185 |
+| 53 | Match score breakdown expandible (objetivo, zona, distancia) | Matches | P1 | ✅ v0.1.185 |
+| 54 | Icebreakers IA desde overlap de perfil | Mensajes | P2 | ✅ v0.1.185 |
+| 55 | Report/block flow unificado + confirmación clara | Safety | P1 | ✅ v0.1.185 |
 
 ---
 

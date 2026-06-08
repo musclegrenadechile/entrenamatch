@@ -2,12 +2,14 @@ import { Heart, MessageCircle } from 'lucide-react'
 import type { Profile, ProfilePost, Squad, TrainingReview } from '../../types'
 import { getDistanceKm, getTrainingStreak } from '../../utils'
 import { SkeletonList } from '../ui/SkeletonLoaders'
+import { MatchScoreBreakdown } from './MatchScoreBreakdown'
 
 export interface MatchesTabProps {
   matchProfiles: Profile[]
   blockedUsers: string[]
   syncBonds: Record<string, { bondLevel?: number }>
   realProfiles: Profile[]
+  currentUser: Profile | null
   userLocation: { lat: number; lng: number } | null
   reviews: Record<string, TrainingReview[]>
   squads: Squad[]
@@ -25,6 +27,7 @@ export function MatchesTab({
   blockedUsers,
   syncBonds,
   realProfiles,
+  currentUser,
   userLocation,
   reviews,
   squads,
@@ -178,6 +181,11 @@ export function MatchesTab({
                     })()}
                   </div>
                 </div>
+                {currentUser && (
+                  <div className="px-2 pb-2" onClick={(e) => e.stopPropagation()}>
+                    <MatchScoreBreakdown me={currentUser} them={profile} userLocation={userLocation} />
+                  </div>
+                )}
                 <div className="p-3 text-xs text-[#9CA3AF] flex items-center gap-1">
                   <MessageCircle size={14} /> Abrir chat
                 </div>
