@@ -41,6 +41,18 @@ if (nameMatch?.[1] !== version) {
 if (!ok) process.exit(1)
 console.log(`✓ versions aligned at ${version} (code ${code})`)
 
+const gymPulseMapSrc = readFileSync(join(root, 'src/components/map/GymPulseMap.tsx'), 'utf8')
+if (!gymPulseMapSrc.includes('Local aliases in effect scope')) {
+  console.error('GymPulseMap missing minifier collision guard (fase 191)')
+  ok = false
+}
+if (!gymPulseMapSrc.includes('import * as MarkerReg')) {
+  console.error('GymPulseMap missing namespace imports for minifier safety (fase 191)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ GymPulseMap minifier guards present')
+
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)
 console.log('✓ vitest passed')

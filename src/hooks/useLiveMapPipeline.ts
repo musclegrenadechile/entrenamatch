@@ -1,12 +1,12 @@
 /**
  * GymPulse live map pipeline (fases 121 + 126).
  *
- * Source-of-truth order for cross-user visibility:
- * 1. livePresence/{uid} — primary RT (attachLivePresenceListener)
- * 2. profiles where trainingNow==true — legacy fallback (attachLiveUsersListener)
+ * Source-of-truth order for cross-user visibility (fase 126 / oleada 4):
+ * 1. livePresence/{uid} — PRIMARY when listener is healthy (no duplicate pins)
+ * 2. profiles where trainingNow==true — fallback ONLY if livePresence listener errors
  * 3. Optimistic self entry while toggle write is in flight
  *
- * profiles.trainingNow remains for deck/feed filters; map uses merged pipeline below.
+ * profiles.trainingNow remains for deck/feed filters; map pins use livePresence when healthy.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState, type Dispatch, type RefObject, type SetStateAction } from 'react'
@@ -97,6 +97,9 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
 
   const liveFromPresenceRef = useRef<Profile[]>([])
   const liveFromProfilesQueryRef = useRef<Profile[]>([])
+  /** When true, profiles.trainingNow query is ignored for map merge (prevents duplicate pins). */
+  const presenceHealthyRef = useRef(false)
+  const presenceEverConnectedRef = useRef(false)
   const liveUsersFromDedicatedRef = useRef<Profile[]>([])
   const userLocationRef = useRef(userLocation)
 
@@ -182,7 +185,8 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
     (presence: Profile[], profilesQuery: Profile[]) => {
       liveFromPresenceRef.current = presence
       liveFromProfilesQueryRef.current = profilesQuery
-      const merged = mergeLiveUsersById([presence, profilesQuery])
+      const profilesForMerge = presenceHealthyRef.current ? [] : profilesQuery
+      const merged = mergeLiveUsersById([presence, profilesForMerge])
       liveUsersFromDedicatedRef.current = merged
       setLiveUsersFromDedicated(merged)
       setMapForceTick((t) => t + 1)
@@ -207,7 +211,8 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
     }
 
     const blocked = () => blockedUsersRef.current
-    const onErr = () => {
+    const onPresenceErr = () => {
+      presenceHealthyRef.current = false
       const fallback = mergeLiveUsersById([
         liveFromPresenceRef.current,
         (latestRealProfilesRef.current || [])
@@ -217,16 +222,28 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
       publishLiveSnapshot(fallback, liveFromProfilesQueryRef.current)
     }
 
+    const onProfilesErr = () => {
+      if (presenceHealthyRef.current) return
+      publishLiveSnapshot(liveFromPresenceRef.current, liveFromProfilesQueryRef.current)
+    }
+
     const unsubPresence = attachLivePresenceListener(
       db,
-      (users) => publishLiveSnapshot(users as Profile[], liveFromProfilesQueryRef.current),
-      { getBlockedIds: blocked, onError: onErr }
+      (users) => {
+        presenceHealthyRef.current = true
+        presenceEverConnectedRef.current = true
+        publishLiveSnapshot(users as Profile[], liveFromProfilesQueryRef.current)
+      },
+      { getBlockedIds: blocked, onError: onPresenceErr }
     )
 
     const unsubProfiles = attachLiveUsersListener(
       db,
-      (users) => publishLiveSnapshot(liveFromPresenceRef.current, users as Profile[]),
-      { getBlockedIds: blocked, onError: onErr }
+      (users) => {
+        if (presenceHealthyRef.current) return
+        publishLiveSnapshot(liveFromPresenceRef.current, users as Profile[])
+      },
+      { getBlockedIds: blocked, onError: onProfilesErr }
     )
 
     return () => {
@@ -317,7 +334,7 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
   const liveUsersMerged = useMemo(() => {
     const selfEntry = buildSelfLiveEntry()
     const fromRealFallback =
-      liveUsersFromDedicated.length === 0
+      !presenceEverConnectedRef.current && liveUsersFromDedicated.length === 0
         ? (realProfiles || []).filter((p) => p?.trainingNow === true)
         : []
     return mergeLiveUsersById([

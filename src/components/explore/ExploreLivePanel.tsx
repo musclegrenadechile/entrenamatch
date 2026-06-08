@@ -1,8 +1,13 @@
 // @ts-nocheck — P1 extract from App.tsx; tighten types incrementally
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { GymPulseMap, GymPulseMapShell, GymPulseBottomSheet } from '../map'
+import { GymPulseMapShell, GymPulseBottomSheet } from '../map'
 import { GymPulseTour, hasSeenGymPulseTour } from '../map/GymPulseTour'
+
+/** Lazy-load Leaflet + GymPulseMap only when Map tab opens (fase 198). */
+const GymPulseMap = lazy(() =>
+  import('../map/GymPulseMap').then((m) => ({ default: m.GymPulseMap }))
+)
 
 const MAP_FULLSCREEN_KEY = 'entrenamatch_map_fullscreen'
 
@@ -104,6 +109,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     uploadPartnerLogoIfNeeded,
     dedicatedMapTab = false,
     onActivateLive,
+    cityChallenge = null,
   } = props
 
   const [showGymPulseTour, setShowGymPulseTour] = useState(false)
@@ -281,7 +287,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
         className={`relative z-10 ${useFixedOverlay ? 'gym-pulse-fs-host flex-1' : dedicatedMapTab ? 'gym-pulse-tab-host' : ''}`}
         style={useFixedOverlay || dedicatedMapTab ? undefined : { minHeight: 'min(420px, 52vh)' }}
       >
-        {othersLiveCount === 0 && (
+        {othersLiveCount === 0 && !currentUser?.trainingNow && (
           <div className="absolute top-3 left-3 right-3 z-[600] rounded-2xl bg-[#0D0D10]/95 border border-[#22c55e]/30 p-3 text-center pointer-events-auto">
             <p className="text-xs font-semibold text-white mb-1">Aún no hay nadie entrenando cerca</p>
             <p className="text-[10px] text-[#9CA3AF] mb-2">Sé el primero en el mapa — activa LIVE mientras entrenas.</p>
@@ -295,6 +301,11 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
             >
               Activar LIVE
             </button>
+          </div>
+        )}
+        {othersLiveCount === 0 && currentUser?.trainingNow && (
+          <div className="absolute top-3 left-3 right-3 z-[600] rounded-2xl bg-[#0a2a1a]/95 border border-[#22c55e]/40 px-3 py-2 text-center pointer-events-none">
+            <p className="text-[11px] font-semibold text-[#22c55e]">🟢 Estás en vivo — eres el primero en el mapa</p>
           </div>
         )}
         <GymPulseMapShell
@@ -335,6 +346,13 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
             />
           }
         >
+        <Suspense
+          fallback={
+            <div className="flex-1 flex items-center justify-center min-h-[200px] text-[#22c55e] text-xs font-medium">
+              Cargando mapa…
+            </div>
+          }
+        >
         <GymPulseMap
           ref={gymPulseMapRef}
           showLiveMap={mapVisible}
@@ -359,6 +377,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           selfIsLive={!!currentUser?.trainingNow}
           devTestCount={devTestLives.length}
           layoutMode={dedicatedMapTab ? 'tab' : useFixedOverlay ? 'fullscreen' : 'embedded'}
+          cityChallenge={cityChallenge}
 
           // New control callbacks (widget now manages its own filter/legend/dev buttons)
           onMapNearOnlyChange={setMapNearOnly}
@@ -458,6 +477,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
                 ;(window as any).__gymPulseCentrar = fn
               }}
             />
+        </Suspense>
         </GymPulseMapShell>
             {!showAddPartnerForm && isDeveloper && showPartners && (
               <div className="text-[7px] text-[#FFD700]/70 px-1 mt-1">Modo dev: botón DEV en el mapa</div>

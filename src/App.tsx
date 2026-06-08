@@ -265,7 +265,6 @@ import {
   type SyncWorkoutLogState,
 } from './utils/arenaWorkoutLog'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
-import { GymPulseMap } from './components/map' // Inicio de modularización 2026-06-05 (stub + estructura)
 import { SyncArenaView, ArenaGlobalPulseBar, SyncDuelSummary } from './components/arena'
 import { uploadArenaPhotoUrl, postPartnerSyncStory } from './services/arenaFormPhoto'
 import {
@@ -1201,7 +1200,9 @@ function App() {
         streakProtectedDate: dailyPulse?.streakProtectedDate || (u as any).streakProtectedDate || null,
         pulseAmplifiedDate: dailyPulse?.pulseAmplifiedDate || (u as any).pulseAmplifiedDate || null
       }
-      saveUserWithRealSync({ ...u, ...update } as any)
+      saveUserWithRealSync({ ...u, ...update } as any).catch((e) =>
+        console.warn('[DailyPulse] sync failed', e)
+      )
 
       toast.success('¡Nuevo GymPulse Diario!', {
         description: `${challenge.icon} ${challenge.title} • +${challenge.reward} Constancia para tus GymPartners`
@@ -1345,7 +1346,9 @@ function App() {
     const newM = (dailyPulse.momentum || 0) + amount
     const up = { ...dailyPulse, momentum: newM }
     setDailyPulse(up)
-    saveUserWithRealSync({ ...(base as any), momentumPoints: newM, streakProtectedDate: dailyPulse?.streakProtectedDate, pulseAmplifiedDate: dailyPulse?.pulseAmplifiedDate } as any)
+    saveUserWithRealSync({ ...(base as any), momentumPoints: newM, streakProtectedDate: dailyPulse?.streakProtectedDate, pulseAmplifiedDate: dailyPulse?.pulseAmplifiedDate } as any).catch((e) =>
+      console.warn('[Constancy] sync failed', e)
+    )
     toast(`+${amount} Constancia`, { description: reason })
   }
   const [witnessData, setWitnessData] = useState<any>(null) // for shared session highlight replay: replay of a strong EntrenaSync (shared state, actions, vibe) that can be archived as co-authored performance memory
@@ -3303,6 +3306,11 @@ const mergeUserForRealtimeSync = (incoming: CurrentUser, prev: CurrentUser | nul
 
  // ✅ SOLUCIÓN SIMPLE Y ESTABLE - Sin dynamic import problemático
 const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
+  // Local aliases — avoid minifier name collisions in App chunk (fase 191)
+  const publishSnapshot = publishLiveSnapshot
+  const mergeLive = mergeLiveUsersById
+  const toLiveUser = profileDocToLiveUser
+
   const merged = mergeUserForRealtimeSync(user, currentUserRef.current)
   currentUserRef.current = merged
   saveUser(merged);
@@ -3345,16 +3353,18 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       const cleanProfileUpdate = sanitizeForFirestore(profileUpdate);
 
       // Optimistic: publish self to live pipeline immediately (before Firestore round-trip)
-      if (goingLive) {
-        const optimistic = profileDocToLiveUser(firebaseUser.uid, cleanProfileUpdate as any, { forceLive: true })
-        const nextPresence = mergeLiveUsersById([
-          liveFromPresenceRef.current.filter((u) => u.id !== firebaseUser.uid),
-          [optimistic],
-        ])
-        publishLiveSnapshot(nextPresence, liveFromProfilesQueryRef.current)
-      } else {
-        const nextPresence = liveFromPresenceRef.current.filter((u) => u.id !== firebaseUser.uid)
-        publishLiveSnapshot(nextPresence, liveFromProfilesQueryRef.current)
+      if (typeof publishSnapshot === 'function') {
+        if (goingLive) {
+          const optimistic = toLiveUser(firebaseUser.uid, cleanProfileUpdate as any, { forceLive: true })
+          const nextPresence = mergeLive(
+            liveFromPresenceRef.current.filter((u) => u.id !== firebaseUser.uid),
+            [optimistic],
+          )
+          publishSnapshot(nextPresence, liveFromProfilesQueryRef.current)
+        } else {
+          const nextPresence = liveFromPresenceRef.current.filter((u) => u.id !== firebaseUser.uid)
+          publishSnapshot(nextPresence, liveFromProfilesQueryRef.current)
+        }
       }
 
       await updateUserProfile(firebaseUser.uid, cleanProfileUpdate);
@@ -6125,17 +6135,26 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
         const liveUserSnapshot = { ...updated }
         setTimeout(() => {
-          checkAndUpdateDailyPulse(liveUserSnapshot)
-          if (dailyPulse?.currentChallenge?.type === 'solo') {
-            completeDailyChallenge(1, liveUserSnapshot as CurrentUser)
-          } else {
-            awardConstancy(8, 'Ancla del GymPulse', liveUserSnapshot as CurrentUser)
+          try {
+            checkAndUpdateDailyPulse(liveUserSnapshot)
+            if (dailyPulse?.currentChallenge?.type === 'solo') {
+              void completeDailyChallenge(1, liveUserSnapshot as CurrentUser).catch((e) =>
+                console.warn('[Live] completeDailyChallenge', e)
+              )
+            } else {
+              awardConstancy(8, 'Ancla del GymPulse', liveUserSnapshot as CurrentUser)
+            }
+            void createProfilePost(
+              '¡Entrenando ahora en el GymPulse! ¿Quién se une al pulso? 🏋️',
+              null
+            ).catch((e) => console.warn('[Live] createProfilePost', e))
+          } catch (e) {
+            console.warn('[Live] post-activate side effects', e)
           }
-          createProfilePost(
-            '¡Entrenando ahora en el GymPulse! ¿Quién se une al pulso? 🏋️',
-            null
-          ).catch(() => {})
         }, 600)
+        window.setTimeout(() => {
+          pendingLiveWriteRef.current = null
+        }, 4000)
       } catch (err) {
         console.error('Live activate failed', err)
         pendingLiveWriteRef.current = null
@@ -6143,6 +6162,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       } finally {
         setIsTogglingLive(false)
       }
+      return
+    }
+
+    if (wantOn && me.trainingNow) {
+      toast('Ya estás en LIVE', { description: 'Tu pin ya está visible en el mapa' })
+      setMapForceTick((t) => t + 1)
     }
   }
 
@@ -9371,6 +9396,16 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             CapacitorCamera={CapacitorCamera}
             uploadPartnerLogoIfNeeded={uploadPartnerLogoIfNeeded}
             onActivateLive={() => void toggleLiveTraining('on')}
+            cityChallenge={
+              homeCityChallengeMerged
+                ? {
+                    cityLabel: homeCityChallengeMerged.cityLabel,
+                    progressPct: homeCityChallengeMerged.progressPct,
+                    currentMinutes: homeCityChallengeMerged.currentMinutes,
+                    targetMinutes: homeCityChallengeMerged.targetMinutes,
+                  }
+                : null
+            }
           />
           </div>
         )}

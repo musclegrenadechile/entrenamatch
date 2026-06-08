@@ -45,6 +45,7 @@ interface OnboardData {
   intensity: 'Relajado' | 'Moderado' | 'Intenso';
   availability: string[];
   wantsToGoLive: boolean;
+  wantsGhostMode: boolean;
 }
 
 interface OnboardingFlowProps {
@@ -92,7 +93,8 @@ export const OnboardingFlow = ({
         level: currentUser.level || 'Intermedio',
         intensity: currentUser.intensity || 'Moderado',
         availability: currentUser.availability || [],
-        wantsToGoLive: !!currentUser?.trainingNow
+        wantsToGoLive: !!currentUser?.trainingNow,
+        wantsGhostMode: !!currentUser?.ghostMode,
       }
     }
     return {
@@ -107,7 +109,8 @@ export const OnboardingFlow = ({
       level: 'Intermedio',
       intensity: 'Moderado',
       availability: [],
-      wantsToGoLive: true // default excite new users with the killer live feature
+      wantsToGoLive: true,
+      wantsGhostMode: false,
     }
   });
 
@@ -385,6 +388,7 @@ export const OnboardingFlow = ({
         liveStreak: (currentUser?.liveStreak || 0) + 1,
         lastLiveDate: Date.now()
       } : {}),
+      ghostMode: !!onboardData.wantsGhostMode,
       legalConsents: {
         acceptedAt: Date.now(),
         termsVersion: 'v1.1',
@@ -580,6 +584,34 @@ export const OnboardingFlow = ({
               <div className="text-[9px] text-[#9CA3AF] mt-1.5">Fotos reales de tus sesiones. Esto te hace único en el GymPulse.</div>
             </div>
 
+            <div className="rounded-2xl border border-[#FF671F]/25 bg-[#111113] p-4 space-y-3">
+              <div>
+                <div className="text-sm font-semibold tracking-wide">Tu ciudad y ubicación</div>
+                <div className="text-[10px] text-[#9CA3AF] mt-0.5">Para matches cercanos y distancias en el mapa en vivo.</div>
+              </div>
+              <select
+                value={onboardData.city}
+                onChange={(e) => updateOnboard({ city: e.target.value })}
+                className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-xl px-3 py-2.5 text-sm"
+              >
+                {['Viña del Mar', 'Valparaíso', 'Santiago', 'Concon'].map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={() => { try { triggerHaptic('light') } catch {}; handleGpsRequest() }}
+                className="w-full py-3 rounded-xl border-2 border-[#22c55e]/50 text-[#22c55e] text-sm font-bold active:bg-[#22c55e]/10"
+              >
+                📍 Usar mi GPS ahora
+              </button>
+              {Number.isFinite(onboardData.lat) && Number.isFinite(onboardData.lng) && (
+                <div className="text-[9px] text-[#22c55e]/90 text-center">
+                  GPS listo · {onboardData.lat.toFixed(2)}, {onboardData.lng.toFixed(2)}
+                </div>
+              )}
+            </div>
+
             {/* Bio + Mantra - Unique & attractive */}
             <div>
               <div className="flex justify-between text-sm mb-1.5">
@@ -705,7 +737,30 @@ export const OnboardingFlow = ({
               </button>
               <div className="text-[10px] text-[#9CA3AF] mt-2 max-w-xs mx-auto leading-snug">
                 Apareces en el mapa para que otros te encuentren mientras entrenas.
-                Después puedes activar <span className="text-white font-medium">modo fantasma</span> en Perfil para ocultar tu ubicación exacta (~500 m de imprecisión).
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-[#a855f7]/35 bg-[#120a18] p-4">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-[#a855f7]">Modo fantasma</div>
+                  <div className="text-[10px] text-[#9CA3AF] mt-0.5 leading-snug">
+                    Privacidad ~500 m — tu pin aparece con imprecisión en el mapa
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={onboardData.wantsGhostMode}
+                  onClick={() => {
+                    const next = !onboardData.wantsGhostMode
+                    updateOnboard({ wantsGhostMode: next })
+                    try { triggerHaptic('light') } catch {}
+                  }}
+                  className={`shrink-0 w-11 h-6 rounded-full transition-colors ${onboardData.wantsGhostMode ? 'bg-[#a855f7]' : 'bg-[#3f3f46]'}`}
+                >
+                  <span className={`block w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5 ${onboardData.wantsGhostMode ? 'translate-x-5' : ''}`} />
+                </button>
               </div>
             </div>
           </div>

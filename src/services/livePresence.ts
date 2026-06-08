@@ -2,10 +2,10 @@
  * GymPulse live presence — dedicated collection for real-time cross-user visibility.
  * Path: livePresence/{userId}
  *
- * Why a separate collection?
- * - Smaller, always-live query (no boolean field drift on profiles)
- * - Instant onSnapshot for all clients when anyone toggles live
- * - profiles.trainingNow stays in sync for feed/deck filters
+ * SOURCE OF TRUTH (fase 126 / oleada 4):
+ * - Map pins and cross-user live list: livePresence collection ONLY when listener is healthy
+ * - profiles.trainingNow: deck/feed filters + fallback if livePresence listener errors
+ * - Never merge both sources when presence is healthy (prevents duplicate pins)
  */
 
 import type { Firestore } from 'firebase/firestore'

@@ -51,6 +51,15 @@ import * as MapConfig from '../../services/gymPulseMapConfig'
 import * as MapCluster from '../../services/gymPulseCluster'
 import * as LocalNetwork from '../../services/localNetwork'
 import { syncElapsedMinutes } from '../../utils/syncFomo'
+import { markMapGpsPromptShown, shouldShowMapGpsPrompt } from '../../utils/mapGpsPrompt'
+import { resolveCityZone } from '../../services/cityZoneBounds'
+
+export type CityChallengeMapInfo = {
+  cityLabel: string
+  progressPct: number
+  currentMinutes: number
+  targetMinutes: number
+}
 
 export interface GymPulseMapProps {
   showLiveMap: boolean
@@ -116,6 +125,8 @@ export interface GymPulseMapProps {
   userGymId?: string | null
   /** Fase 101 — embedded widget vs fullscreen shell */
   layoutMode?: 'embedded' | 'fullscreen' | 'tab'
+  /** Fase 200 — city challenge zone overlay */
+  cityChallenge?: CityChallengeMapInfo | null
 }
 
 export interface GymPulseMapHandle {
@@ -209,11 +220,14 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     devTestCount,
     onGymCheckIn,
     userGymId = null,
+    cityChallenge = null,
   } = props
 
   const [mapPopup, setMapPopup] = useState<GymPulsePopupState | null>(null)
   const [devToolsOpen, setDevToolsOpen] = useState(false)
   const [radarSweep, setRadarSweep] = useState(false)
+  const [gpsBannerDismissed, setGpsBannerDismissed] = useState(false)
+  const mapOpenLoggedRef = useRef(false)
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<any>(null)
   const markerPoolRef = useRef<MarkerPool>(new Map())
@@ -223,6 +237,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   const syncLinesRef = useRef<any[]>([])
   const selfMarkerRef = useRef<any>(null)
   const areaCircleRef = useRef<any>(null)
+  const cityChallengeLayerRef = useRef<any>(null)
   const prevLiveCountRef = useRef(0)
   const prevLiveIdsRef = useRef<Set<string>>(new Set())
   const lastZoomTimeRef = useRef(0)
@@ -327,8 +342,9 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     const bboxFromLeafletBounds = MapCluster.bboxFromLeafletBounds
     const getLiveClusters = MapCluster.getLiveClusters
 
-    // Request location the first time map opens (good UX)
-    if (!userLocation && onRequestLocation) {
+    // First map open: one-time GPS request (fase 193)
+    if (!userLocation && onRequestLocation && shouldShowMapGpsPrompt()) {
+      markMapGpsPromptShown()
       onRequestLocation().catch(() => {})
     }
 
@@ -913,8 +929,40 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   const filteredLiveOnMap = filteredLiveUsers.length
 
   useEffect(() => {
-    if (showLiveMap) logMapEvent('map_open', { layout: layoutMode })
+    if (showLiveMap && !mapOpenLoggedRef.current) {
+      mapOpenLoggedRef.current = true
+      logMapEvent('map_open', { layout: layoutMode })
+    }
   }, [showLiveMap, layoutMode])
+
+  // City challenge zone overlay (fase 200)
+  useEffect(() => {
+    if (!mapInstanceRef.current || !showLiveMap) return undefined
+    const map = mapInstanceRef.current
+    if (cityChallengeLayerRef.current) {
+      try { map.removeLayer(cityChallengeLayerRef.current) } catch { /* ignore */ }
+      cityChallengeLayerRef.current = null
+    }
+    const zone = resolveCityZone(cityChallenge?.cityLabel)
+    if (!zone) return undefined
+    const col = ZONE_COLORS[zone.label] || ZONE_COLORS.default
+    cityChallengeLayerRef.current = L.circle([zone.center.lat, zone.center.lng], {
+      radius: zone.radiusM,
+      color: col,
+      weight: 2,
+      dashArray: '8 6',
+      fillColor: col,
+      fillOpacity: 0.07,
+      opacity: 0.6,
+      interactive: false,
+    }).addTo(map)
+    return () => {
+      if (cityChallengeLayerRef.current && mapInstanceRef.current) {
+        try { mapInstanceRef.current.removeLayer(cityChallengeLayerRef.current) } catch { /* ignore */ }
+        cityChallengeLayerRef.current = null
+      }
+    }
+  }, [showLiveMap, cityChallenge, mapForceTick])
 
   const handleGymCheckInWithAnalytics = (gym: { id: string; name: string; lat: number; lng: number }) => {
     logMapEvent('partner_checkin', { gym_id: gym.id, gym_name: gym.name })
@@ -976,6 +1024,9 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     'Concon': '#a855f7',
     default: '#eab308'
   }
+
+  const selfOnMap = resolveSelfMapPosition(userLocation, liveTrainingNow || [], selfUserId)
+  const showGpsBanner = !selfOnMap && !gpsBannerDismissed
 
   return (
     <div
@@ -1147,6 +1198,46 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         </div>
       )}
 
+      {cityChallenge && cityChallenge.progressPct >= 0 && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[2100] max-w-[92%] pointer-events-none">
+          <div className="rounded-2xl bg-[#0D0D10]/92 border border-[#FF671F]/35 px-3 py-1.5 text-center shadow-lg">
+            <div className="text-[9px] uppercase tracking-wider text-[#FF671F] font-bold">Reto ciudad · {cityChallenge.cityLabel}</div>
+            <div className="text-[10px] text-white font-semibold">
+              {cityChallenge.currentMinutes}/{cityChallenge.targetMinutes} min · {Math.round(cityChallenge.progressPct)}%
+            </div>
+            <div className="h-1 bg-white/10 rounded-full mt-1 overflow-hidden">
+              <div className="h-full bg-gradient-to-r from-[#22c55e] to-[#FF671F] rounded-full" style={{ width: `${Math.min(100, cityChallenge.progressPct)}%` }} />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* GPS banner — map stays usable without location (fase 192) */}
+      {showGpsBanner && (
+        <div className="absolute top-12 left-2 right-2 z-[3500] pointer-events-auto">
+          <div className="flex items-center gap-2 rounded-xl bg-[#0D0D10]/95 border border-[#22c55e]/35 px-3 py-2 shadow-lg">
+            <span className="text-[10px] text-[#9CA3AF] flex-1 leading-snug">
+              Activa ubicación para distancias reales y tu pin en el mapa
+            </span>
+            <button
+              type="button"
+              onClick={() => onRequestLocation?.()}
+              className="shrink-0 px-2.5 py-1 rounded-full bg-[#22c55e] text-black text-[10px] font-bold active:brightness-90"
+            >
+              Activar GPS
+            </button>
+            <button
+              type="button"
+              onClick={() => setGpsBannerDismissed(true)}
+              className="shrink-0 text-[#666] text-xs px-1"
+              aria-label="Cerrar aviso GPS"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
       <GymPulsePopupLayer
         popup={mapPopup}
         syncBonds={syncBonds}
@@ -1166,21 +1257,6 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         onPartnerDelete={(id) => onPartnerDelete?.(id)}
         onExpandCluster={handleExpandCluster}
       />
-
-      {/* GPS prompt overlay — only when we cannot place self on map at all */}
-      {!resolveSelfMapPosition(userLocation, liveTrainingNow || [], selfUserId) && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/65 text-center p-5 rounded-2xl text-xs z-[4000]">
-          <div>
-            <div className="mb-1">📍 Ubicación real desactivada</div>
-            <button 
-              onClick={() => onRequestLocation && onRequestLocation()}
-              className="px-3 py-1 rounded-full bg-[#22c55e] text-black text-[10px] font-semibold active:brightness-90"
-            >
-              Activar GPS para ver distancias + tú en el mapa
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   )
 })
