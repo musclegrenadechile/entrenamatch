@@ -3719,7 +3719,51 @@ button:not(.live-pill):disabled {
    ===================================================== */
 
 .arena-sala-sync {
+  overflow: hidden;
+}
+
+.arena-sala-sync__content {
+  position: relative;
+  z-index: 5;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 8px;
+}
+
+.arena-sala-sync__set-wrap {
+  flex-shrink: 0;
+  padding: 0 14px 8px;
+}
+
+.arena-sala-sync__bottom {
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(3, 8, 6, 0.92) 12%, #030806 100%);
+  padding-top: 4px;
+}
+
+.arena-sala-sync .arena-fullscreen__footer {
+  margin-top: 0;
+  padding-top: 4px;
+}
+
+.arena-sala-sync__story-hint {
+  font-size: 9px;
+  text-align: center;
+  color: rgba(34, 197, 94, 0.75);
+  padding: 0 14px 6px;
+}
+
+.arena-sala-sync__presence {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 14px 8px;
 }
 
 .arena-sala-sync--witness-glow {
@@ -3757,17 +3801,18 @@ button:not(.live-pill):disabled {
   color: rgba(255, 255, 255, 0.45);
   text-align: center;
   margin-bottom: 6px;
+  padding: 0 14px;
 }
 
 .arena-sala-sync__stage {
   position: relative;
   z-index: 5;
   display: grid;
-  grid-template-columns: 1fr minmax(100px, 130px) 1fr;
+  grid-template-columns: 1fr minmax(88px, 110px) 1fr;
   align-items: center;
   gap: 4px;
-  padding: 8px 12px 12px;
-  min-height: 140px;
+  padding: 4px 12px 8px;
+  min-height: 96px;
 }
 
 .arena-sala-sync__athlete {
@@ -3855,13 +3900,13 @@ button:not(.live-pill):disabled {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  min-height: 120px;
+  gap: 4px;
+  min-height: 88px;
 }
 
 .arena-shared-pulse__ring {
-  width: 88px;
-  height: 88px;
+  width: 72px;
+  height: 72px;
   border-radius: 999px;
   border: 2px solid rgba(34, 197, 94, 0.45);
   display: flex;
@@ -3941,10 +3986,11 @@ button:not(.live-pill):disabled {
 
 .arena-set-card {
   border-radius: 16px;
-  border: 1px solid rgba(255, 103, 31, 0.22);
-  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 103, 31, 0.35);
+  background: rgba(8, 8, 12, 0.92);
   padding: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 .arena-set-card__grid {
@@ -4094,13 +4140,6 @@ button:not(.live-pill):disabled {
   border-color: rgba(239, 68, 68, 0.45);
   color: #f87171;
   animation: pulse 1s ease infinite;
-}
-
-.arena-sala-sync__presence {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
 }
 
 .arena-sala-sync__city {

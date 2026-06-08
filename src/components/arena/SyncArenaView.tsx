@@ -169,95 +169,89 @@ export function SyncArenaView({
       <div className="arena-fullscreen__bg" aria-hidden />
       <div className="arena-fullscreen__scanlines" aria-hidden />
 
-      <header className="arena-sala-sync__top">
-        <div className="arena-sala-sync__timer tabular-nums">
-          {minutes}:{seconds.toString().padStart(2, '0')}
-        </div>
-        <ArenaWeeklyMetaChip progress={weeklyPactProgress} sessionMinutes={minutes} />
-        <div className="arena-sala-sync__top-actions">
-          {syncCombo >= 2 && (
-            <span className="arena-combo-badge">RACHA ×{syncCombo}</span>
+      <div className="arena-sala-sync__content">
+        <header className="arena-sala-sync__top">
+          <div className="arena-sala-sync__timer tabular-nums">
+            {minutes}:{seconds.toString().padStart(2, '0')}
+          </div>
+          <ArenaWeeklyMetaChip progress={weeklyPactProgress} sessionMinutes={minutes} />
+          <div className="arena-sala-sync__top-actions">
+            {syncCombo >= 2 && (
+              <span className="arena-combo-badge">RACHA ×{syncCombo}</span>
+            )}
+            <button type="button" onClick={onMinimize} className="arena-icon-btn" aria-label="Minimizar">
+              <X size={18} />
+            </button>
+          </div>
+        </header>
+
+        <p className="arena-sala-sync__subtitle">
+          Sala Sync · {selfName.split(' ')[0]} × {partnerFirst}
+          {distanceKm != null ? ` · ${distanceKm.toFixed(1)} km` : ''}
+          {isNetworkBond && (
+            <span className="text-[#FFD700]"> · ⭐ RED F{bondLevel}</span>
           )}
-          <button type="button" onClick={onMinimize} className="arena-icon-btn" aria-label="Minimizar">
-            <X size={18} />
-          </button>
+        </p>
+
+        {/* Set card primero — siempre visible (ejercicio + reps/kg) */}
+        <div className="arena-sala-sync__set-wrap">
+          <ArenaSetCard
+            selfExercise={activeExercise}
+            selfReps={pendingReps}
+            selfWeightKg={pendingWeightKg}
+            selfSetCount={loggedSetCount}
+            exerciseOptions={exerciseOptions}
+            onExerciseChange={onActiveExerciseChange}
+            onRepsChange={onPendingRepsChange}
+            onWeightChange={onPendingWeightChange}
+            partnerState={partnerLiveState}
+            partnerFirst={partnerFirst}
+          />
         </div>
-      </header>
 
-      <p className="arena-sala-sync__subtitle px-4">
-        Sala Sync · {selfName.split(' ')[0]} × {partnerFirst}
-        {distanceKm != null ? ` · ${distanceKm.toFixed(1)} km` : ''}
-        {isNetworkBond && (
-          <span className="text-[#FFD700]"> · ⭐ RED F{bondLevel}</span>
-        )}
-      </p>
-
-      {/* Two athletes + central pulse */}
-      <section className="arena-sala-sync__stage">
-        <div className="arena-sala-sync__athlete arena-sala-sync__athlete--self">
-          <div className="arena-avatar__ring">
-            {selfPhoto ? (
-              <img src={selfPhoto} alt="" className="w-full h-full object-cover rounded-full" />
-            ) : (
-              <span className="arena-avatar__initial">{(selfName || 'T')[0]}</span>
-            )}
+        <section className="arena-sala-sync__stage">
+          <div className="arena-sala-sync__athlete arena-sala-sync__athlete--self">
+            <div className="arena-avatar__ring">
+              {selfPhoto ? (
+                <img src={selfPhoto} alt="" className="w-full h-full object-cover rounded-full" />
+              ) : (
+                <span className="arena-avatar__initial">{(selfName || 'T')[0]}</span>
+              )}
+            </div>
+            <span className="arena-sala-sync__athlete-label text-[#22c55e]">TÚ</span>
           </div>
-          <span className="arena-sala-sync__athlete-label text-[#22c55e]">TÚ</span>
-          <p className="arena-sala-sync__athlete-ex truncate max-w-[96px]">{activeExercise}</p>
-        </div>
 
-        <ArenaSharedPulse
-          syncVibe={syncVibe}
-          latestAction={latestAction}
-          partnerFirst={partnerFirst}
-          effectiveUserId={effectiveUserId}
-          isResting={isResting}
-          restSecondsLeft={restLeft}
-          handshakeLabel={handshakeLabel}
-        />
+          <ArenaSharedPulse
+            syncVibe={syncVibe}
+            latestAction={latestAction}
+            partnerFirst={partnerFirst}
+            effectiveUserId={effectiveUserId}
+            isResting={isResting}
+            restSecondsLeft={restLeft}
+            handshakeLabel={handshakeLabel}
+          />
 
-        <div className="arena-sala-sync__athlete arena-sala-sync__athlete--partner">
-          <div className="arena-avatar__ring arena-avatar__ring--partner">
-            {partnerPhoto ? (
-              <img src={partnerPhoto} alt="" className="w-full h-full object-cover rounded-full" />
-            ) : (
-              <span className="arena-avatar__initial">{(partnerName || 'C')[0]}</span>
-            )}
+          <div className="arena-sala-sync__athlete arena-sala-sync__athlete--partner">
+            <div className="arena-avatar__ring arena-avatar__ring--partner">
+              {partnerPhoto ? (
+                <img src={partnerPhoto} alt="" className="w-full h-full object-cover rounded-full" />
+              ) : (
+                <span className="arena-avatar__initial">{(partnerName || 'C')[0]}</span>
+              )}
+            </div>
+            <span className="arena-sala-sync__athlete-label text-[#FF671F]">{partnerFirst.toUpperCase()}</span>
           </div>
-          <span className="arena-sala-sync__athlete-label text-[#FF671F]">{partnerFirst.toUpperCase()}</span>
-          <p className="arena-sala-sync__athlete-ex truncate max-w-[96px]">
-            {partnerLiveState?.activeExercise || '—'}
-          </p>
-        </div>
-      </section>
+        </section>
 
-      <div className="px-4 mb-1">
-        <p className="text-[9px] text-center text-[#22c55e]/75">
+        <p className="arena-sala-sync__story-hint">
           {msToStory > 0 ? (
-            <>
-              Historia compartida en {minsToStory}:{secsToStory.toString().padStart(2, '0')}
-            </>
+            <>Historia compartida en {minsToStory}:{secsToStory.toString().padStart(2, '0')}</>
           ) : (
             <>Historia compartida lista al terminar</>
           )}
         </p>
-      </div>
 
-      <div className="px-4 flex-1 min-h-0 overflow-y-auto">
-        <ArenaSetCard
-          selfExercise={activeExercise}
-          selfReps={pendingReps}
-          selfWeightKg={pendingWeightKg}
-          selfSetCount={loggedSetCount}
-          exerciseOptions={exerciseOptions}
-          onExerciseChange={onActiveExerciseChange}
-          onRepsChange={onPendingRepsChange}
-          onWeightChange={onPendingWeightChange}
-          partnerState={partnerLiveState}
-          partnerFirst={partnerFirst}
-        />
-
-        <div className="arena-sala-sync__presence mt-2">
+        <div className="arena-sala-sync__presence">
           <ArenaWitnessRow
             witnessCount={witnessCount}
             witnessProfiles={witnessProfiles}
@@ -273,21 +267,23 @@ export function SyncArenaView({
         </div>
       </div>
 
-      <ArenaSyncDock
-        onSetReady={() => onSyncAction('set', '💪', 'Set listo')}
-        onRest={() => onSyncAction('rest', '💧', 'Descanso')}
-        onHype={() => onSyncAction('hype', '🔥', 'Ánimo')}
-        onVoicePing={onVoicePing}
-        onPr={() => onSyncAction('pr', '🏆', 'PR logrado')}
-        onPhoto={onCapturePhoto}
-        isRecordingVoice={isRecordingVoice}
-      />
+      <div className="arena-sala-sync__bottom">
+        <ArenaSyncDock
+          onSetReady={() => onSyncAction('set', '💪', 'Set listo')}
+          onRest={() => onSyncAction('rest', '💧', 'Descanso')}
+          onHype={() => onSyncAction('hype', '🔥', 'Ánimo')}
+          onVoicePing={onVoicePing}
+          onPr={() => onSyncAction('pr', '🏆', 'PR logrado')}
+          onPhoto={onCapturePhoto}
+          isRecordingVoice={isRecordingVoice}
+        />
 
-      <footer className="arena-fullscreen__footer arena-sala-sync__footer">
-        <button type="button" onClick={onEndSync} className="arena-end-btn">
-          Terminar EntrenaSync
-        </button>
-      </footer>
+        <footer className="arena-fullscreen__footer arena-sala-sync__footer">
+          <button type="button" onClick={onEndSync} className="arena-end-btn">
+            Terminar EntrenaSync
+          </button>
+        </footer>
+      </div>
 
       <AnimatePresence>
         {isResting && (
