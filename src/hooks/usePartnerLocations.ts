@@ -248,8 +248,7 @@ export function usePartnerLocations(opts: UsePartnerLocationsOptions) {
     (id: string) => {
       const p = (partnerLocationsRef.current || partnerLocations).find((pp) => pp.id === id)
       if (p) {
-        if (activeTab !== 'explore') setActiveTab('explore')
-        if (!showLiveMap) setShowLiveMap(true)
+        if (activeTab !== 'map') setActiveTab('map')
         startEditPartner(p)
       } else {
         console.warn('dev edit: partner not found in current list for id', id)
@@ -266,7 +265,7 @@ export function usePartnerLocations(opts: UsePartnerLocationsOptions) {
         setShowManagePartners(false)
       }
     },
-    [partnerLocations, activeTab, showLiveMap, setActiveTab, setShowLiveMap, startEditPartner]
+    [partnerLocations, activeTab, setActiveTab, startEditPartner]
   )
 
   const cancelPartnerForm = useCallback(() => {

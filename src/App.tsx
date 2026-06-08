@@ -1833,11 +1833,13 @@ useEffect(() => {
   const [showPwaInstall, setShowPwaInstall] = useState(false)
   const [pwaInstallDismissed] = useState(() => !!localStorage.getItem('entrenamatch_pwa_dismissed'))
 
-  const [showLiveMap, setShowLiveMap] = useState(() => {
-    try { return localStorage.getItem('entrenamatch_show_map') === '1' } catch { return false }
-  })
+  const [showLiveMap, setShowLiveMap] = useState(false)
 
-  // PWA manifest shortcuts: /entrenamatch/?tab=home | ?tab=map | ?tab=explore&map=1
+  useEffect(() => {
+    setShowLiveMap(activeTab === 'map')
+  }, [activeTab])
+
+  // PWA manifest shortcuts: /entrenamatch/?tab=home | ?tab=map | legacy ?tab=explore&map=1 → map tab
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search)
@@ -1850,9 +1852,12 @@ useEffect(() => {
         setRedSubTab('matches')
       } else {
         const tabFromUrl = parseTabFromUrl(window.location.search)
-        if (tabFromUrl) navigateTab(tabFromUrl)
+        if (params.get('map') === '1' && tabFromUrl !== 'map') {
+          navigateTab('map')
+        } else if (tabFromUrl) {
+          navigateTab(tabFromUrl)
+        }
       }
-      if (params.get('map') === '1') setShowLiveMap(true)
     } catch {}
   }, [])
 
@@ -1958,8 +1963,14 @@ useEffect(() => {
 
   // Persist map open preference (nice for power users who like the radar always visible)
   useEffect(() => {
-    try { localStorage.setItem('entrenamatch_show_map', showLiveMap ? '1' : '0') } catch {}
-  }, [showLiveMap])
+    try {
+      if (activeTab === 'map') {
+        localStorage.setItem('entrenamatch_show_map', '1')
+      } else {
+        localStorage.removeItem('entrenamatch_show_map')
+      }
+    } catch {}
+  }, [activeTab])
 
   const unreadNotifications = notifications.filter(n => !n.read).length
   const totalChatUnreads = Object.values(chatUnreads).reduce((sum, n) => sum + (n || 0), 0)
@@ -3432,8 +3443,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   )
 
   const handleOpenGymMap = useCallback(() => {
-    setActiveTab('explore')
-    setShowLiveMap(true)
+    navigateTab('map')
     if (mapMyGymId) setMapMyGymOnly(true)
     const gym = currentUser?.gymCheckIn
     if (gym?.lat != null && gym?.lng != null) {
@@ -6106,8 +6116,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             confetti({ particleCount: 200, spread: 90, origin: { y: 0.65 } })
           } catch { /* ignore */ }
           setTimeout(() => {
-            navigateTab('explore')
-            setShowLiveMap(true)
+            navigateTab('map')
           }, 700)
           toast.success('¡Tu primer LIVE está en el GymPulse!', {
             description: 'Abriendo el mapa para que veas tu pin en vivo',
@@ -7602,7 +7611,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     setActiveTab(resolved)
     if (sub) setRedSubTab(sub)
     if (target.showDailyPulse) setShowDailyPulseBanner(true)
-    if (target.showLiveMap) setShowLiveMap(true)
+    if (target.showLiveMap) navigateTab('map')
     if (target.showLiveModal) setShowLiveModal(true)
     if (target.activeChat) {
       setRedSubTab('messages')
@@ -9153,7 +9162,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           <span className="text-white/90 text-[11px]">EntrenaMatch · v{APP_VERSION}</span>
           {liveTrainingNow.length > 0 && (
             <button 
-              onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(true); }}
+              onClick={() => { try { triggerHaptic('light') } catch {}; navigateTab('map'); }}
               className="ml-1 text-[8px] px-2 py-1 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50 active:brightness-90 active:scale-[0.985] transition" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}
               title="Ver mapa en vivo"
             >
@@ -9267,7 +9276,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         )}
         {/* ===== MAP tab + EXPLORE live banner (ExploreLivePanel) ===== */}
         {(activeTab === 'map' || activeTab === 'explore') && (
-          <div className={activeTab === 'map' ? 'flex-1 min-h-0 flex flex-col overflow-hidden' : undefined}>
+          <div className={activeTab === 'map' ? 'flex-1 min-h-0 flex flex-col overflow-hidden' : 'flex-shrink-0'}>
           <ExploreLivePanel
             dedicatedMapTab={activeTab === 'map'}
             liveCountForUI={liveCountForUI}
@@ -9540,7 +9549,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                     <div className="text-3xl mb-2">🟢</div>
                     <div className="font-semibold text-[#22c55e] mb-1">Estás en vivo — visible en el GymPulse</div>
                     <div className="text-sm text-[#9CA3AF] mb-3">Aún no hay otros entrenando cerca. Tu marcador ya está en el mapa; cuando alguien más active live aparecerá aquí.</div>
-                    <button onClick={() => { setShowLiveModal(false); setShowLiveMap(true); }} className="text-xs px-4 py-1.5 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90">Ver mapa →</button>
+                    <button onClick={() => { setShowLiveModal(false); navigateTab('map'); }} className="text-xs px-4 py-1.5 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90">Ver mapa →</button>
                   </div>
                 ) : (
                   <div className="card card-glass p-6 text-center border border-[#22c55e]/30">
@@ -10471,8 +10480,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             void markActivationGuideComplete(db, firebaseUser.uid)
           }
           if (currentUser?.trainingNow) {
-            setShowLiveMap(true)
-            setActiveTab('explore')
+            navigateTab('map')
           } else {
             setActiveTab('explore')
           }
@@ -10482,8 +10490,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           if (step === 'live') void toggleLiveTraining()
           if (step === 'explore') setActiveTab('explore')
           if (step === 'sync') {
-            setActiveTab('explore')
-            setShowLiveMap(true)
+            navigateTab('map')
           }
           if (step === 'pact') {
             navigateTab('home')
@@ -10674,7 +10681,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         onNavigate={(tab) => {
           navigateTab(tab)
           setActiveChat(null)
-          if (tab === 'map') setShowLiveMap(true)
           if (tab === 'sesiones' && !isDemoMode) loadRealSessions()
         }}
         onRedNavigate={() => {

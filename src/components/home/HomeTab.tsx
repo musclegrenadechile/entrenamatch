@@ -244,11 +244,9 @@ export function HomeTab(props: HomeTabProps) {
         onToggleLive={() => toggleLiveTraining()}
         onOpenExplore={() => {
           setActiveTab('explore')
-          setShowLiveMap(true)
         }}
         onOpenMap={() => {
-          setActiveTab('explore')
-          setShowLiveMap(true)
+          setActiveTab('map')
         }}
         onJoinMember={(id, name) => startSyncWith(id, name)}
         onMessageMember={(id) => {
@@ -292,8 +290,7 @@ export function HomeTab(props: HomeTabProps) {
           onToggleLeaderboard: handleToggleLeaderboard,
           onGymCheckIn: handleGymCheckIn,
           onOpenMap: () => {
-            setActiveTab('explore')
-            setShowLiveMap(true)
+            setActiveTab('map')
           },
           onOpenGymMap: mapMyGymId ? handleOpenGymMap : undefined,
         }}

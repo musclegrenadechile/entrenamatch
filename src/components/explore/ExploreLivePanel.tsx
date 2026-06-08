@@ -161,8 +161,13 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     if (!showLiveMap && !dedicatedMapTab) setShowGymPulseTour(false)
   }, [showLiveMap, dedicatedMapTab])
 
-  const mapVisible = showLiveMap || dedicatedMapTab
-  const useFixedOverlay = mapFullscreen && !dedicatedMapTab
+  /** Map renders only on the dedicated Map tab — Explorar keeps the live strip + swipe deck. */
+  const mapVisible = dedicatedMapTab
+  const useFixedOverlay = false
+  const openMapTab = () => {
+    try { triggerHaptic('light') } catch { /* ignore */ }
+    setActiveTab('map')
+  }
   const othersLiveCount = (liveTrainingNow || []).filter(
     (u: { id?: string }) => u.id && u.id !== effectiveUserId
   ).length
@@ -236,20 +241,19 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           ))}
         </div>
       ) : currentUser?.trainingNow ? (
-        !showLiveMap ? (
         <div className="card card-glass p-4 text-center border border-[#22c55e]/50 relative overflow-hidden">
           <div className="text-3xl mb-2">🟢</div>
           <div className="font-semibold text-base mb-1 text-[#22c55e]">¡Tú estás en vivo en el GymPulse!</div>
           <div className="text-sm text-[#9CA3AF] mb-3 leading-snug">Tu marcador verde ya está en el mapa. Cuando alguien más active live cerca, aparecerá aquí para unirte o sync.</div>
-          <button onClick={() => setShowLiveMap(true)} className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90">Ver mapa en tiempo real →</button>
+          <button type="button" onClick={openMapTab} className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90">Ver mapa en tiempo real →</button>
         </div>
-        ) : null
-      ) : !showLiveMap ? (
+      ) : (
         <div className="card card-glass p-6 text-center border border-[#22c55e]/30 relative overflow-hidden">
           <div className="text-5xl mb-3 opacity-90">🏋️‍♂️</div>
           <div className="font-semibold text-base mb-1.5">Aún no hay nadie entrenando cerca</div>
           <div className="text-sm text-[#9CA3AF] mb-4 leading-snug">Sé el primero en aparecer en el mapa mientras entrenas. Otros te encontrarán al activar live.</div>
           <button
+            type="button"
             onClick={() => {
               if (onActivateLive) onActivateLive()
               else setActiveTab('profile')
@@ -260,43 +264,19 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           </button>
           <div className="absolute -bottom-6 -right-6 text-[70px] opacity-5">📡</div>
         </div>
-      ) : (
-        <p className="text-[11px] text-[#9CA3AF] px-1 py-2 text-center">
-          Mapa abierto — activa live en Perfil para ser el centro del GymPulse.
-        </p>
       )}
-      {!showLiveMap && (
-      <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between items-center">
-        <span>El mapa muestra el pulso vivo de la comunidad.</span>
-        <button onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline active:text-white">Ver todos live →</button>
+      <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between items-center gap-2">
+        <span>El mapa está en el tab Mapa.</span>
+        <button type="button" onClick={openMapTab} className="text-[#22c55e] underline active:text-white shrink-0">Abrir mapa →</button>
+        <button type="button" onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline active:text-white shrink-0">Ver todos live →</button>
       </div>
-      )}
 
       </>
       )}
 
-      {/* Map area */}
-      <div className={`relative z-10 ${dedicatedMapTab ? 'flex-1 flex flex-col min-h-0 mt-0' : 'mt-3'}`}>
-        {!dedicatedMapTab && (
-        <div className="flex items-center justify-between mb-1.5 px-1 gap-2">
-          <div className="text-[11px] font-semibold text-[#22c55e] truncate">
-            🗺️ GymPulse
-            {networkStats.numPartners > 0 && (
-              <span className="text-[9px] font-normal text-[#9CA3AF] ml-1">
-                · {networkStats.numPartners} en tu red
-              </span>
-            )}
-          </div>
-          <button 
-            onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(!showLiveMap) }} 
-            data-gympulse-tour={!mapMyGymId ? 'checkin' : undefined}
-            className={`text-[11px] px-3 py-1.5 rounded-full border shrink-0 transition ${showLiveMap ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
-          >
-            {showLiveMap ? 'Ocultar mapa' : 'Ver mapa'}
-          </button>
-        </div>
-        )}
-
+      {/* Map area — only on dedicated Map tab */}
+      {dedicatedMapTab && (
+      <div className="relative z-10 flex-1 flex flex-col min-h-0 mt-0">
         {mapVisible && (
       <div
         className={`relative z-10 ${useFixedOverlay ? 'gym-pulse-fs-host flex-1' : dedicatedMapTab ? 'gym-pulse-tab-host' : ''}`}
@@ -936,6 +916,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           </div>
         )}
       </div>
+      )}
 
       <GymPulseTour active={showGymPulseTour} onComplete={() => setShowGymPulseTour(false)} />
     </div>
