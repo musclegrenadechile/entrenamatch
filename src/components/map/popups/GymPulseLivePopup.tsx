@@ -1,0 +1,71 @@
+import { User, X } from 'lucide-react'
+
+export interface GymPulseLivePopupProps {
+  user: Record<string, unknown>
+  isBond: boolean
+  onClose: () => void
+  onShowProfile: () => void
+  onStartSync: () => void
+}
+
+export function GymPulseLivePopup({
+  user,
+  isBond,
+  onClose,
+  onShowProfile,
+  onStartSync,
+}: GymPulseLivePopupProps) {
+  const name = String(user.name || 'Atleta')
+  const photos = user.photos as string[] | undefined
+  const trainingTypes = user.trainingTypes as string[] | undefined
+  const distance = typeof user.distance === 'number' ? user.distance : 0
+  const seVaEnMin = user.seVaEnMin as number | null | undefined
+  const joinCount = user.joinCount as number | undefined
+  const gymName = (user.gymCheckIn as { gymName?: string } | undefined)?.gymName
+  const hasPulso = ((user.visibleLevel as number) || 1) >= 20
+  const isHigh = ((user.visibleLevel as number) || 1) >= 15 || isBond
+
+  return (
+    <div className="gym-pulse-live-popup">
+      <button type="button" className="gym-pulse-live-popup__close" onClick={onClose} aria-label="Cerrar">
+        <X size={18} />
+      </button>
+      <div className="gym-pulse-live-popup__row">
+        {photos?.[0] ? (
+          <img src={photos[0]} alt="" className="gym-pulse-live-popup__avatar" />
+        ) : (
+          <div className="gym-pulse-live-popup__avatar gym-pulse-live-popup__avatar--fallback">
+            {name[0]}
+          </div>
+        )}
+        <div>
+          <div className="gym-pulse-live-popup__name">
+            {name}
+            {isBond && <span className="gym-pulse-live-popup__bond">⭐ RED</span>}
+            <span className="gym-pulse-live-popup__live">🟢 EN VIVO</span>
+          </div>
+          <p className="gym-pulse-live-popup__sub">
+            {trainingTypes?.[0] || 'Entreno'} · {distance.toFixed(1)} km
+            {joinCount ? ` · ${joinCount} unidos` : ''}
+            {hasPulso ? ' · PULSO MAESTRO' : isHigh ? ' · ALTO NIVEL' : ''}
+          </p>
+          {gymName && (
+            <p className="gym-pulse-live-popup__gym">🏋️ {gymName}</p>
+          )}
+          {seVaEnMin != null && (
+            <p className="gym-pulse-live-popup__urgent">⏱ Se va en ~{seVaEnMin} min — ¡únete ya!</p>
+          )}
+        </div>
+      </div>
+      <div className="gym-pulse-live-popup__actions">
+        <button type="button" className="gym-pulse-live-popup__btn" onClick={onShowProfile}>
+          <User size={14} />
+          Ver perfil
+        </button>
+        <button type="button" className="gym-pulse-live-popup__btn gym-pulse-live-popup__btn--sync" onClick={onStartSync}>
+          🔥 Sync
+        </button>
+      </div>
+    </div>
+  )
+}

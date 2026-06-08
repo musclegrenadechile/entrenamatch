@@ -59,9 +59,46 @@ export function buildIconicLiveMarkerHtml(
 export function buildIconicClusterMarkerHtml(count: number, hasHighPulso = false): string {
   const size = count >= 10 ? 44 : count >= 5 ? 40 : 36
   const glow = hasHighPulso ? ' cluster-high-pulso' : ''
+  const heat = count >= 8 ? ' iconic-cluster--heat' : count >= 4 ? ' iconic-cluster--warm' : ''
   const abbrev = count >= 1000 ? `${Math.round(count / 100) / 10}k` : String(count)
-  return `<div class="iconic-cluster${glow}" style="position:relative;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center">
+  return `<div class="iconic-cluster${glow}${heat}" style="position:relative;width:${size}px;height:${size}px;display:flex;align-items:center;justify-content:center">
     <div class="cluster-node-glow"></div>
+    <div class="cluster-breathe-ring"></div>
     <div style="width:${size}px;height:${size}px;border-radius:9999px;background:linear-gradient(145deg,#14532d,#166534);border:2.5px solid #22c55e;box-shadow:0 0 0 3px rgba(0,0,0,0.65),0 0 18px rgba(34,197,94,0.35);display:flex;align-items:center;justify-content:center;font-size:${count >= 10 ? 13 : 12}px;font-weight:900;color:#ecfdf5">${abbrev}</div>
+  </div>`
+}
+
+export interface PartnerMarkerOpts {
+  logo?: string
+  isHub?: boolean
+  liveAtGym?: number
+  size?: number
+}
+
+/** Partner POI pin with optional live badge (Fase 106). */
+export function buildPartnerMarkerHtml(p: PartnerMarkerOpts): string {
+  const isHub = p.isHub ?? false
+  const liveAtGym = p.liveAtGym ?? 0
+  const size = p.size ?? (isHub ? 36 : 30)
+  const gold = isHub ? '#FFD700' : '#f4c95f'
+  const logo = p.logo || ''
+  const heatClass = liveAtGym >= 5 ? ' partner-marker--hot' : liveAtGym >= 2 ? ' partner-marker--warm' : ''
+  const aura = isHub || liveAtGym > 0
+    ? `<div class="partner-breathe-ring" style="border-color:${gold}"></div>`
+    : ''
+  const hubLabel = isHub
+    ? `<div class="partner-hub-label">HUB</div>`
+    : ''
+  const liveBadge =
+    liveAtGym > 0
+      ? `<div class="partner-live-badge">${liveAtGym >= 10 ? '9+' : liveAtGym}</div>`
+      : ''
+  const inner = logo
+    ? `<img src="${logo}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='<div class=\\'partner-fallback\\'>🏋️</div>'" />`
+    : `<div class="partner-fallback">🏋️</div>`
+
+  return `<div class="partner-marker-inner${heatClass}" style="position:relative;width:${size}px;height:${size}px">
+    <div class="partner-marker-disk" style="width:${size}px;height:${size}px;border-color:${gold}">${inner}</div>
+    ${aura}${hubLabel}${liveBadge}
   </div>`
 }

@@ -67,6 +67,26 @@ export interface GymCheckIn {
   checkedInAt: number
 }
 
+/** Partner gym / store on GymPulse map (Firestore `partnerLocations`). */
+export interface PartnerLocation {
+  id: string
+  name: string
+  lat: number
+  lng: number
+  type?: 'gym' | 'store' | 'crossfit' | string
+  address?: string
+  city?: string
+  logoUrl?: string
+  logo?: string
+  hubStrength?: number
+  /** Short promo for partner card (monetization). */
+  promoLabel?: string
+  promoCode?: string
+  promoUrl?: string
+  addedAt?: string
+  updatedAt?: string
+}
+
 export interface Message {
   id: string
   from: 'me' | 'them'

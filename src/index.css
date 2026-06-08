@@ -8319,3 +8319,395 @@ body.gym-pulse-fs-active {
   border-color: rgba(255, 255, 255, 0.15);
 }
 
+/* Fases 106–110 — React popups, partner cards, heat halos */
+.gym-pulse-popup-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 3500;
+  background: rgba(0, 0, 0, 0.45);
+  border: none;
+  cursor: default;
+}
+
+.gym-pulse-popup-layer {
+  position: absolute;
+  left: 0.5rem;
+  right: 0.5rem;
+  bottom: 3.5rem;
+  z-index: 3600;
+  max-height: min(52vh, 360px);
+  overflow: auto;
+  pointer-events: auto;
+}
+
+.gym-pulse-shell--fullscreen .gym-pulse-popup-layer {
+  bottom: calc(2.85rem + env(safe-area-inset-bottom, 0));
+}
+
+.gym-pulse-partner-card,
+.gym-pulse-live-popup,
+.gym-pulse-cluster-popup,
+.gym-pulse-sync-popup {
+  position: relative;
+  padding: 0.85rem;
+  border-radius: 1rem;
+  background: rgba(13, 13, 16, 0.96);
+  border: 1px solid rgba(34, 197, 94, 0.28);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
+  color: #e5e7eb;
+}
+
+.gym-pulse-partner-card__close,
+.gym-pulse-live-popup__close {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  color: #9ca3af;
+  padding: 0.15rem;
+  z-index: 1;
+}
+
+.gym-pulse-partner-card__hero {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  margin-bottom: 0.55rem;
+}
+
+.gym-pulse-partner-card__logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 9999px;
+  object-fit: cover;
+  border: 2px solid #ffd700;
+  flex-shrink: 0;
+}
+
+.gym-pulse-partner-card__logo--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  background: #1a1a1f;
+}
+
+.gym-pulse-partner-card__head h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.gym-pulse-partner-card__head p {
+  margin: 0.15rem 0 0;
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.gym-pulse-partner-card__dist {
+  font-size: 9px;
+  color: #22c55e;
+}
+
+.gym-pulse-partner-card__promo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.45rem 0.55rem;
+  margin-bottom: 0.5rem;
+  border-radius: 0.55rem;
+  background: linear-gradient(90deg, rgba(255, 215, 0, 0.15), rgba(34, 197, 94, 0.12));
+  border: 1px solid rgba(255, 215, 0, 0.35);
+  font-size: 11px;
+}
+
+.gym-pulse-partner-card__code {
+  font-family: ui-monospace, monospace;
+  font-size: 10px;
+  font-weight: 800;
+  color: #ffd700;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.35rem;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.gym-pulse-partner-card__live {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 11px;
+  margin-bottom: 0.55rem;
+}
+
+.gym-pulse-partner-card__live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.8);
+}
+
+.gym-pulse-partner-card__avatars {
+  display: flex;
+  margin-left: auto;
+}
+
+.gym-pulse-partner-card__avatars img,
+.gym-pulse-partner-card__avatars span {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid #111;
+  margin-left: -6px;
+  object-fit: cover;
+  background: #22c55e;
+  color: #111;
+  font-size: 9px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gym-pulse-partner-card__hub {
+  font-size: 9px;
+  color: #ffd700;
+  font-weight: 700;
+}
+
+.gym-pulse-partner-card__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.gym-pulse-partner-card__btn,
+.gym-pulse-live-popup__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.55rem;
+  border-radius: 0.55rem;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #e5e7eb;
+}
+
+.gym-pulse-partner-card__btn--primary,
+.gym-pulse-live-popup__btn--sync {
+  color: #111;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-color: transparent;
+}
+
+.gym-pulse-partner-card__qr-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.gym-pulse-partner-card__dev {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.45rem;
+}
+
+.gym-pulse-partner-card__dev button {
+  font-size: 9px;
+  padding: 0.2rem 0.45rem;
+  border-radius: 9999px;
+  background: rgba(255, 215, 0, 0.2);
+  color: #ffd700;
+  border: 1px solid rgba(255, 215, 0, 0.35);
+}
+
+.gym-pulse-partner-card__dev-del {
+  color: #f87171 !important;
+  border-color: rgba(248, 113, 113, 0.4) !important;
+}
+
+.gym-pulse-live-popup__row {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+}
+
+.gym-pulse-live-popup__avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  object-fit: cover;
+  border: 2px solid #22c55e;
+  flex-shrink: 0;
+}
+
+.gym-pulse-live-popup__avatar--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #22c55e;
+  color: #111;
+  font-weight: 800;
+}
+
+.gym-pulse-live-popup__name {
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.gym-pulse-live-popup__bond {
+  color: #ffd700;
+  font-size: 10px;
+}
+
+.gym-pulse-live-popup__live {
+  color: #22c55e;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.gym-pulse-live-popup__sub,
+.gym-pulse-live-popup__gym {
+  margin: 0.2rem 0 0;
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.gym-pulse-live-popup__urgent {
+  margin: 0.2rem 0 0;
+  font-size: 10px;
+  color: #f59e0b;
+}
+
+.gym-pulse-live-popup__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin-top: 0.55rem;
+}
+
+.gym-pulse-cluster-popup__count {
+  width: 48px;
+  height: 48px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 900;
+  color: #ecfdf5;
+  background: linear-gradient(145deg, #14532d, #166534);
+  border: 2px solid #22c55e;
+  margin-bottom: 0.35rem;
+}
+
+.partner-marker-disk {
+  border-radius: 9999px;
+  overflow: hidden;
+  border: 2.5px solid #f4c95f;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6);
+}
+
+.partner-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #1a1a1f;
+  font-size: 14px;
+}
+
+.partner-breathe-ring {
+  position: absolute;
+  inset: -7px;
+  border-radius: 9999px;
+  border: 2px solid #ffd700;
+  opacity: 0.2;
+  animation: partner-aura-breathe 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.partner-live-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 9999px;
+  background: #22c55e;
+  color: #111;
+  font-size: 8px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid #111;
+}
+
+.partner-hub-label {
+  position: absolute;
+  top: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111;
+  color: #ffd700;
+  font-size: 7px;
+  padding: 0 3px;
+  border-radius: 2px;
+  font-weight: 700;
+}
+
+.partner-marker--warm .partner-marker-disk {
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.35);
+}
+
+.partner-marker--hot .partner-marker-disk {
+  box-shadow: 0 0 16px rgba(34, 197, 94, 0.55);
+  animation: live-pulse-green 2.2s ease-in-out infinite;
+}
+
+.cluster-breathe-ring {
+  position: absolute;
+  inset: -5px;
+  border-radius: 9999px;
+  border: 1.5px solid rgba(34, 197, 94, 0.35);
+  animation: live-pulse-green 2.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.iconic-cluster--warm .cluster-breathe-ring {
+  opacity: 0.55;
+}
+
+.iconic-cluster--heat .cluster-breathe-ring {
+  opacity: 0.85;
+  border-color: rgba(34, 197, 94, 0.65);
+}
+
+.gym-pulse-heat-halo {
+  pointer-events: none;
+  animation: gym-pulse-heat-pulse 3.5s ease-in-out infinite;
+}
+
+.gym-pulse-heat-halo--hot {
+  animation-duration: 2.4s;
+}
+
+@keyframes gym-pulse-heat-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(1.04); }
+}
+

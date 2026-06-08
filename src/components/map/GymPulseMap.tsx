@@ -28,6 +28,16 @@ import 'leaflet/dist/leaflet.css'
 import { toast } from 'sonner'
 import { Crosshair } from 'lucide-react'
 import { GymPulseMapFilters } from './GymPulseMapFilters'
+import { GymPulsePopupLayer } from './popups/GymPulsePopupLayer'
+import type { GymPulsePopupState } from './gymPulsePopupTypes'
+import {
+  computeHeatCells,
+  liveMarkerSignature,
+  markerPoolKey,
+  partnerMarkerSignature,
+  pruneMarkerPool,
+  type MarkerPool,
+} from '../../services/gymPulseMarkerRegistry'
 
 // Fix Leaflet icons (same as before)
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -39,7 +49,7 @@ L.Icon.Default.mergeOptions({
 
 import { getDistanceKm } from '../../utils'
 import { filterMapLiveUsers, hasMapCoords } from '../../utils/gymPulseLive'
-import { buildIconicClusterMarkerHtml, buildIconicLiveMarkerHtml } from '../../utils/gymPulseMarkers'
+import { buildIconicClusterMarkerHtml, buildIconicLiveMarkerHtml, buildPartnerMarkerHtml } from '../../utils/gymPulseMarkers'
 import {
   GYMPULSE_MAP_SUBDOMAINS,
   GYMPULSE_MAP_TILE_ATTRIBUTION,
@@ -108,6 +118,9 @@ export interface GymPulseMapProps {
   // Witness for echo pins / ripples from map (connect to parent modal/replay)
   onWitnessEchoPin?: (id: string) => void
   onWitnessRipple?: (id: string) => void
+  /** Fase 106 — check-in desde partner card */
+  onGymCheckIn?: (gym: { id: string; name: string; lat: number; lng: number }) => void
+  userGymId?: string | null
   /** Fase 101 — embedded widget vs fullscreen shell */
   layoutMode?: 'embedded' | 'fullscreen'
 }
@@ -207,10 +220,17 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     onSpawnTestLives,
     onClearDevTestLives,
     devTestCount,
+    onGymCheckIn,
+    userGymId = null,
   } = props
 
+  const [mapPopup, setMapPopup] = useState<GymPulsePopupState | null>(null)
+  const [devToolsOpen, setDevToolsOpen] = useState(false)
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<any>(null)
+  const markerPoolRef = useRef<MarkerPool>(new Map())
+  const markerSigRef = useRef<Map<string, string>>(new Map())
+  const lastClusterIndexRef = useRef<any>(null)
   const markersRef = useRef<any[]>([])
   const syncLinesRef = useRef<any[]>([])
   const selfMarkerRef = useRef<any>(null)
@@ -223,7 +243,6 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   const isPlacingPartnerRef = useRef(false)
   const isQuickAddPartnerRef = useRef(false)
   const showAddPartnerFormRef = useRef(false)
-  const [devToolsOpen, setDevToolsOpen] = useState(false)
   const isEmbedded = layoutMode === 'embedded'
 
   // Keep latest values in refs for closures inside Leaflet handlers / debounced updates
@@ -289,6 +308,10 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       if (mapInstanceRef.current) {
         markersRef.current.forEach(m => { try { mapInstanceRef.current.removeLayer(m) } catch {} })
         markersRef.current = []
+        markerPoolRef.current.forEach(m => { try { mapInstanceRef.current.removeLayer(m) } catch {} })
+        markerPoolRef.current.clear()
+        markerSigRef.current.clear()
+        setMapPopup(null)
         if (selfMarkerRef.current) { try { mapInstanceRef.current.removeLayer(selfMarkerRef.current) } catch {}; selfMarkerRef.current = null }
         if (areaCircleRef.current) { try { mapInstanceRef.current.removeLayer(areaCircleRef.current) } catch {}; areaCircleRef.current = null }
         syncLinesRef.current.forEach(l => { try { mapInstanceRef.current.removeLayer(l) } catch {} })
@@ -384,9 +407,45 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     mapUpdateTimeoutRef.current = setTimeout(() => {
       if (!mapInstanceRef.current) return
 
-      // Nuke previous markers (except self/area which we manage separately)
+      // Clear ephemeral layers only (ripples, heat, echo) — pooled markers diff in place (Fase 110)
       markersRef.current.forEach(m => { try { mapInstanceRef.current.removeLayer(m) } catch {} })
       markersRef.current = []
+
+      const pool = markerPoolRef.current
+      const sigs = markerSigRef.current
+      const activeKeys = new Set<string>()
+      const map = mapInstanceRef.current
+      const allLive = liveTrainingNow || []
+
+      const upsertPooledMarker = (
+        key: string,
+        lat: number,
+        lng: number,
+        icon: L.DivIcon,
+        iconSig: string,
+        onClick: () => void,
+        opts?: { draggable?: boolean; onDragEnd?: () => void; className?: string }
+      ) => {
+        activeKeys.add(key)
+        let marker = pool.get(key)
+        if (!marker) {
+          marker = L.marker([lat, lng], {
+            icon,
+            draggable: !!opts?.draggable,
+            title: opts?.className,
+          }).addTo(map)
+          marker.on('click', onClick)
+          if (opts?.draggable && opts.onDragEnd) marker.on('dragend', opts.onDragEnd)
+          pool.set(key, marker)
+          sigs.set(key, iconSig)
+        } else {
+          marker.setLatLng([lat, lng])
+          if (sigs.get(key) !== iconSig) {
+            marker.setIcon(icon)
+            sigs.set(key, iconSig)
+          }
+        }
+      }
 
       let liveUsers = filterMapLiveUsers(liveTrainingNow || [], {
         mapNearOnly,
@@ -479,6 +538,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       // Fase 103 — supercluster (replaces grid buckets)
       const currentZoom = mapInstanceRef.current.getZoom()
       const clusterIndex = buildLiveClusterIndex(liveUsers as any[])
+      lastClusterIndexRef.current = clusterIndex
       const bounds = mapInstanceRef.current.getBounds()
       const bbox = bboxFromLeafletBounds(bounds)
       const clusterFeatures = getLiveClusters(clusterIndex, bbox, currentZoom)
@@ -496,6 +556,24 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           }
         }
         return { ...f.properties, lat, lng, isCluster: false }
+      })
+
+      // Fase 107 — density heat halos
+      computeHeatCells(liveUsers.filter((u: any) => u.lat && u.lng)).forEach((cell) => {
+        if (cell.count < 3) return
+        try {
+          const heat = L.circle([cell.lat, cell.lng], {
+            radius: 280 + cell.count * 90,
+            color: '#22c55e',
+            weight: 0,
+            fillColor: '#22c55e',
+            fillOpacity: Math.min(0.14, 0.04 + cell.count * 0.012),
+            opacity: 0,
+            className: `gym-pulse-heat-halo${cell.count >= 6 ? ' gym-pulse-heat-halo--hot' : ''}`,
+          }).addTo(map)
+          ;(heat as any)._isHeatHalo = true
+          markersRef.current.push(heat)
+        } catch { /* ignore */ }
       })
 
       // Self marker (in-place update, not in markersRef) — upgraded iconic premium presence
@@ -541,12 +619,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         }
       }
 
-      // Live user markers + tethers + partner markers (simplified version of the original for extraction - full details can be expanded)
-      // ... (the rest of the original marker creation for liveUsers, partners with logos, sync tethers, ritual ripples, echo pins, etc. would go here)
-      // For this step we keep a functional core and note that the full rich version (with all the beautiful icons, popups, tethers, partner logos, legend gold, etc.) lives in the original until fully ported.
-
-      // Enriched live markers for "Entrenando Ahora" (GymPulse) - makes the live status visually obvious
-      // Uses data like seVaEnMin, joinCount, isNetworkBond, visibleLevel from the parent liveTrainingNow computation.
+      // Fase 109/110 — live + cluster + partner markers (React popups, diffed pool)
       renderUsers.forEach((u: any) => {
         if (!hasMapCoords(u)) return
 
@@ -554,117 +627,81 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           const count = u.clusterCount || 2
           const size = count >= 10 ? 44 : count >= 5 ? 40 : 36
           const clusterHtml = buildIconicClusterMarkerHtml(count)
-          try {
-            const marker = L.marker([u.lat, u.lng], {
-              icon: L.divIcon({
-                html: clusterHtml,
-                className: 'iconic-cluster',
-                iconSize: [size, size],
-                iconAnchor: [size / 2, size / 2],
-              }),
-            }).addTo(mapInstanceRef.current)
-            marker.bindPopup(`<strong>${count} entrenando</strong><br/><span style="font-size:10px;color:#9CA3AF">Toca para acercar</span>`)
-            marker.on('click', () => {
-              if (u._clusterIndex && u.clusterId != null) {
-                try {
-                  const expansionZoom = u._clusterIndex.getClusterExpansionZoom(u.clusterId)
-                  mapInstanceRef.current.flyTo([u.lat, u.lng], Math.min(expansionZoom + 1, 18), {
-                    duration: 0.65,
-                  })
-                } catch {
-                  mapInstanceRef.current.setView([u.lat, u.lng], Math.min(currentZoom + 2, 16))
-                }
-              }
-            })
-            markersRef.current.push(marker)
-          } catch {}
+          const key = markerPoolKey('cluster', u.clusterId ?? u.id)
+          const icon = L.divIcon({
+            html: clusterHtml,
+            className: 'iconic-cluster',
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
+          })
+          upsertPooledMarker(key, u.lat, u.lng, icon, `c|${count}|${size}`, () => {
+            setMapPopup({ kind: 'cluster', count, lat: u.lat, lng: u.lng, clusterId: u.clusterId })
+          })
           return
         }
 
         const isBond = !!syncBonds[u.id]
-        const isHigh = (u.visibleLevel || 1) >= 15 || u.isNetworkBond
         const hasPulso = (u.visibleLevel || 1) >= 20
+        const isHigh = (u.visibleLevel || 1) >= 15 || u.isNetworkBond
         const size = hasPulso ? 36 : isHigh ? 32 : 28
         const iconHtml = buildIconicLiveMarkerHtml(u, { isBond, size })
-        try {
-          const marker = L.marker([u.lat, u.lng], {
-            icon: L.divIcon({
-              html: iconHtml,
-              className: 'iconic-live-marker',
-              iconSize: [size, size],
-              iconAnchor: [size / 2, size / 2],
-            }),
-          }).addTo(mapInstanceRef.current)
-
-          const joinTxt = u.joinCount ? ` • ${u.joinCount} unidos` : ''
-          const levelTxt = hasPulso ? ' • PULSO MAESTRO' : (isHigh ? ' • ALTO NIVEL' : '')
-          const gymTxt = u.gymCheckIn?.gymName
-            ? `<span style="font-size:10px;color:#22c55e;display:block;margin-top:2px">🏋️ ${u.gymCheckIn.gymName}</span>`
-            : ''
-          marker.bindPopup(`
-            <div style="min-width:178px;font-size:12px;line-height:1.35">
-              <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
-                <strong>${u.name}</strong> ${isBond ? '<span style="color:#FFD700">⭐ RED</span>' : ''} 
-                <span style="color:#22c55e;font-size:10px;font-weight:700">🟢 EN VIVO</span>
-              </div>
-              <span style="font-size:10px;color:#9CA3AF">${u.trainingTypes?.[0] || 'Entreno'} • ${(u.distance || 0).toFixed(1)}km${joinTxt}${levelTxt}</span><br/>
-              ${gymTxt}
-              ${u.seVaEnMin != null ? `<span style="font-size:10px;color:#f59e0b">⏱ Se va en ~${u.seVaEnMin} min — ¡únete ya!</span><br/>` : ''}
-              <button style="margin-top:6px;background:linear-gradient(90deg,#22c55e,#16a34a);color:black;border:none;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;box-shadow:0 1px 4px rgba(34,197,94,0.4)" onclick="window.startSyncFromMap && window.startSyncFromMap('${u.id}', '${(u.name||'').replace(/'/g,'')}')">🔥 Entrenar juntos / Sync</button>
-            </div>
-          `)
-
-          marker.on('click', () => onShowProfile && onShowProfile(u))
-          markersRef.current.push(marker)
-        } catch (e) {}
+        const key = markerPoolKey('live', u.id)
+        const icon = L.divIcon({
+          html: iconHtml,
+          className: 'iconic-live-marker',
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+        })
+        upsertPooledMarker(key, u.lat, u.lng, icon, liveMarkerSignature(u), () => {
+          setMapPopup({ kind: 'live', user: u })
+        })
       })
 
-      // Partner markers (logos if present). Premium hub look + dev tools.
       if (showPartners) {
         partnerLocationsRef.current.forEach((p: any) => {
           if (!p.lat || !p.lng) return
           const logo = p.logoUrl || p.logo || ''
-          const isHub = (p.hubStrength || 0) > 1 || (p.type === 'gym')
+          const isHub = (p.hubStrength || 0) > 1 || p.type === 'gym'
+          const liveAtGym = countLiveAtGym(allLive, p.id)
           const size = isHub ? 36 : 30
-          const gold = isHub ? '#FFD700' : '#f4c95f'
-          const aura = isHub ? `<div class="partner-hub-aura" style="position:absolute;inset:-7px;border-radius:9999px;border:2px solid ${gold};opacity:0.18;animation:partner-aura-breathe 4.2s ease-in-out infinite"></div>` : ''
-          const hubLabel = isHub ? `<div style="position:absolute;top:-2px;left:50%;transform:translateX(-50%);background:#111;color:${gold};font-size:7px;padding:0 3px;border-radius:2px;font-weight:700;border:1px solid ${gold}33">HUB</div>` : ''
-          const html = logo
-            ? `<div style="position:relative;width:${size}px;height:${size}px"><div style="width:${size}px;height:${size}px;border-radius:9999px;overflow:hidden;border:2.5px solid ${gold};box-shadow:0 0 0 2px rgba(0,0,0,0.6), 0 0 10px ${gold}33;"> <img src="${logo}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='<div style=\\'width:${size}px;height:${size}px;background:#1a1a1f;border:2.5px solid ${gold};border-radius:9999px;display:flex;align-items:center;justify-content:center;font-size:13px;color:${gold}\\'>🏋️</div>'" /> </div>${aura}${hubLabel}</div>`
-            : `<div style="position:relative;width:${size}px;height:${size}px"><div style="width:${size}px;height:${size}px;background:#1a1a1f;border:2.5px solid ${gold};border-radius:9999px;display:flex;align-items:center;justify-content:center;font-size:14px;color:${gold};box-shadow:0 0 0 2px rgba(0,0,0,0.6)">🏋️</div>${aura}${hubLabel}</div>`
-
-          try {
-            const pm = L.marker([p.lat, p.lng], {
-              icon: L.divIcon({ html, className: `partner-marker ${isHub ? 'partner-hub-strong' : ''}`, iconSize: [size, size], iconAnchor: [size/2, size/2] }),
+          const html = buildPartnerMarkerHtml({ logo, isHub, liveAtGym, size })
+          const key = markerPoolKey('partner', p.id)
+          const icon = L.divIcon({
+            html,
+            className: `partner-marker ${isHub ? 'partner-hub-strong' : ''}`,
+            iconSize: [size, size],
+            iconAnchor: [size / 2, size / 2],
+          })
+          upsertPooledMarker(
+            key,
+            p.lat,
+            p.lng,
+            icon,
+            partnerMarkerSignature({ ...p, liveAtGym }),
+            () => {
+              const checkedIn = allLive
+                .filter((lu: any) => lu.gymCheckIn?.gymId === p.id)
+                .map((lu: any) => ({ id: lu.id, name: lu.name, photos: lu.photos }))
+              setMapPopup({ kind: 'partner', partner: p, liveAtGym, checkedInUsers: checkedIn })
+            },
+            {
               draggable: !!isDeveloper,
-              title: isDeveloper ? 'DEV: drag to move, tap for actions' : p.name
-            }).addTo(mapInstanceRef.current)
-
-            let popupContent = `<strong style="font-size:13px">${p.name}</strong><br/><span style="font-size:10px;color:#9CA3AF">${p.type || 'Partner'} • ${p.address || p.city || ''}</span>`
-            const liveAtGym = countLiveAtGym(liveTrainingNow || [], p.id)
-            if (liveAtGym > 0) {
-              popupContent += `<div style="font-size:10px;color:#22c55e;margin-top:4px;font-weight:700">🟢 ${liveAtGym} entrenando aquí ahora</div>`
+              onDragEnd: isDeveloper
+                ? () => {
+                    const m = pool.get(key)
+                    if (!m || !onPartnerMoved) return
+                    const pos = m.getLatLng()
+                    onPartnerMoved(p.id, pos.lat, pos.lng)
+                  }
+                : undefined,
             }
-            if (isHub) popupContent += `<div style="font-size:9px;color:#FFD700;margin-top:1px">⭐ Hub del GymPulse</div>`
-            if (isDeveloper) {
-              popupContent += `<br/><small style="color:#FFD700">DEV MODE</small><br/>`
-              popupContent += `<button onclick="window.devEditPartner && window.devEditPartner('${p.id}')" style="font-size:10px;margin-right:4px;background:#222;color:#FFD700;border:1px solid #FFD70044;padding:1px 5px;border-radius:3px">✏️ Edit</button>`
-              popupContent += `<button onclick="window.devDeletePartner && window.devDeletePartner('${p.id}')" style="font-size:10px;color:#f55;background:#2a1515;border:1px solid #f55444;padding:1px 5px;border-radius:3px">🗑️ Borrar</button>`
-            }
-            pm.bindPopup(popupContent)
-
-            if (isDeveloper) {
-              pm.on('dragend', () => {
-                const pos = pm.getLatLng()
-                if (onPartnerMoved) onPartnerMoved(p.id, pos.lat, pos.lng)
-                try { /* haptic */ } catch {}
-              })
-            }
-
-            markersRef.current.push(pm)
-          } catch {}
+          )
         })
       }
+
+      pruneMarkerPool(pool, activeKeys, (m) => {
+        try { map.removeLayer(m) } catch { /* ignore */ }
+      })
 
       // === Ritual Ripples (performance waves from completed EntrenaSync) ===
       // These are the "the community felt that" visual layer.
@@ -735,17 +772,15 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           const syncMins = syncElapsedMinutes(startedAt)
           const nameA = (u.name || 'Atleta').split(' ')[0]
           const nameB = (partner.name || 'Atleta').split(' ')[0]
-          const bondTag = inRed
-            ? '<span style="color:#FFD700;font-size:10px;font-weight:700">⭐ Alianza de sync</span><br/>'
-            : ''
-          line.bindPopup(`
-            <div style="min-width:168px;font-size:12px;line-height:1.35">
-              ${bondTag}
-              <strong>${nameA} × ${nameB}</strong><br/>
-              <span style="font-size:10px;color:#22c55e;font-weight:700">🔄 EN SYNC${syncMins > 0 ? ` · ${syncMins} min` : ''}</span><br/>
-              <span style="font-size:10px;color:#9CA3AF">Tether activo en GymPulse — al ver el mapa cuentas como testigo</span>
-            </div>
-          `)
+          line.on('click', () => {
+            setMapPopup({
+              kind: 'sync',
+              nameA,
+              nameB,
+              syncMins,
+              inRed,
+            })
+          })
           syncLinesRef.current.push(line)
         } catch {}
       })
@@ -830,7 +865,6 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         markersRef.current.forEach(m => { try { mapInstanceRef.current.removeLayer(m) } catch {} })
         syncLinesRef.current.forEach(l => { try { mapInstanceRef.current.removeLayer(l) } catch {} })
         syncLinesRef.current = []
-        // self and area intentionally left alone (cleaned only in the !showLiveMap aggressive path or map destroy)
       }
       markersRef.current = []
     }
@@ -840,46 +874,23 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     echoPins, syncBonds, selfIsLive, isDeveloper, isPlacingPartner, isQuickAddPartner,
     onShowProfile, onStartSync, onPartnerPositionSelected, onPartnerMoved, onPartnerDelete,
     onPartnerEdit, onForceTick, onRequestLocation, onAddPartnerAtCurrentCenter, onReloadPartners,
-    onSpawnTestLives, onClearDevTestLives, devTestCount
+    onSpawnTestLives, onClearDevTestLives, devTestCount, onGymCheckIn, userGymId
   ])
 
-  // Global window helpers for popups (quick bridge until we use React portals or better event system)
-  // Also dev helpers for partner management from map popups
-  useEffect(() => {
-    ;(window as any).startSyncFromMap = (id: string, name: string) => {
-      onStartSync && onStartSync(id, name)
-    }
-    ;(window as any).witnessEchoPin = (id: string) => {
-      if (onWitnessEchoPin) {
-        onWitnessEchoPin(id)
+  const handleExpandCluster = (lat: number, lng: number, clusterId?: number) => {
+    if (!mapInstanceRef.current) return
+    const idx = lastClusterIndexRef.current
+    try {
+      if (idx && clusterId != null) {
+        const z = idx.getClusterExpansionZoom(clusterId)
+        mapInstanceRef.current.flyTo([lat, lng], Math.min(z + 1, 18), { duration: 0.65 })
       } else {
-        console.log('witness echo (no handler wired)', id)
+        mapInstanceRef.current.flyTo([lat, lng], Math.min(mapInstanceRef.current.getZoom() + 2, 16), { duration: 0.5 })
       }
+    } catch {
+      mapInstanceRef.current.setView([lat, lng], 15)
     }
-    ;(window as any).witnessRipple = (id: string) => { onWitnessRipple && onWitnessRipple(id) }
-    ;(window as any).devDeletePartner = (id: string) => {
-      if (onPartnerDelete) onPartnerDelete(id)
-    }
-    ;(window as any).devEditPartner = (id: string) => {
-      if (onPartnerEdit) onPartnerEdit(id)
-    }
-    // Extra dev tools exposed for console / quick calls
-    ;(window as any).devAddAtCenter = () => onAddPartnerAtCurrentCenter && onAddPartnerAtCurrentCenter()
-    ;(window as any).devReloadPartners = () => onReloadPartners && onReloadPartners()
-    ;(window as any).devSpawnTestLives = (n = 3) => onSpawnTestLives && onSpawnTestLives(n)
-    ;(window as any).devClearTestLives = () => onClearDevTestLives && onClearDevTestLives()
-    return () => {
-      delete (window as any).startSyncFromMap
-      delete (window as any).witnessEchoPin
-      delete (window as any).witnessRipple
-      delete (window as any).devDeletePartner
-      delete (window as any).devEditPartner
-      delete (window as any).devAddAtCenter
-      delete (window as any).devReloadPartners
-      delete (window as any).devSpawnTestLives
-      delete (window as any).devClearTestLives
-    }
-  }, [onStartSync, onPartnerDelete, onPartnerEdit, onAddPartnerAtCurrentCenter, onReloadPartners, onSpawnTestLives, onClearDevTestLives, onWitnessEchoPin, onWitnessRipple])
+  }
 
   const mapFilterOpts = {
     mapNearOnly,
@@ -1108,6 +1119,26 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           )}
         </div>
       )}
+
+      <GymPulsePopupLayer
+        popup={mapPopup}
+        syncBonds={syncBonds}
+        userGymId={userGymId}
+        isDeveloper={isDeveloper}
+        onClose={() => setMapPopup(null)}
+        onShowProfile={(u) => onShowProfile?.(u)}
+        onStartSync={(id, name) => {
+          setMapPopup(null)
+          onStartSync?.(id, name)
+        }}
+        onGymCheckIn={(gym) => {
+          setMapPopup(null)
+          onGymCheckIn?.(gym)
+        }}
+        onPartnerEdit={(id) => onPartnerEdit?.(id)}
+        onPartnerDelete={(id) => onPartnerDelete?.(id)}
+        onExpandCluster={handleExpandCluster}
+      />
 
       {/* GPS prompt overlay — only when we cannot place self on map at all */}
       {!resolveSelfMapPosition(userLocation, liveTrainingNow || [], selfUserId) && (

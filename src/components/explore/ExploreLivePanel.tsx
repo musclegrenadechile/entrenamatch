@@ -60,6 +60,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     startSyncWith,
     witnessEchoPin,
     witnessRipple,
+    handleGymCheckIn,
     isQuickAddPartnerRef,
     isDemoMode,
     db,
@@ -337,7 +338,10 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
 
           onShowProfile={setShowFullProfile}
           onStartSync={startSyncWith}
+          onGymCheckIn={handleGymCheckIn}
+          userGymId={mapMyGymId}
           onWitnessEchoPin={witnessEchoPin}
+          onWitnessRipple={witnessRipple}
           onWitnessRipple={witnessRipple}
           onPartnerPositionSelected={async (lat, lng) => {
             if (isQuickAddPartnerRef.current && isDeveloper) {

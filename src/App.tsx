@@ -2275,10 +2275,10 @@ useEffect(() => {
   // Partner businesses (gyms, stores etc that partner with the app). Devs can add them so they appear on the mapa en tiempo real (GymPulse map).
   // "ellos puedan ver": partners get prominent placement + nearby activity indicators (users training close get associated with the partner location).
   const PARTNER_SEEDS = [
-    { id: 'p-seed-1', name: 'Muscle Grenade Viña', lat: -33.015, lng: -71.55, type: 'gym', address: 'Viña del Mar, cerca del centro' },
-    { id: 'p-seed-2', name: 'Gym Partner Santiago', lat: -33.45, lng: -70.65, type: 'gym', address: 'Santiago, Providencia' },
-    { id: 'p-seed-3', name: 'Suplementos Elite Valpo', lat: -33.05, lng: -71.62, type: 'store', address: 'Valparaíso, Cerro Concepción' },
-    { id: 'p-seed-4', name: 'CrossFit Concon Hub', lat: -32.92, lng: -71.52, type: 'gym', address: 'Concón, zona costera' }
+    { id: 'p-seed-1', name: 'Muscle Grenade Viña', lat: -33.015, lng: -71.55, type: 'gym', address: 'Viña del Mar, cerca del centro', hubStrength: 1.5, promoLabel: '10% OFF primera visita', promoCode: 'MGVIÑA10' },
+    { id: 'p-seed-2', name: 'Gym Partner Santiago', lat: -33.45, lng: -70.65, type: 'gym', address: 'Santiago, Providencia', hubStrength: 1.2, promoLabel: 'Día guest gratis con check-in', promoCode: 'STGO-GUEST' },
+    { id: 'p-seed-3', name: 'Suplementos Elite Valpo', lat: -33.05, lng: -71.62, type: 'store', address: 'Valparaíso, Cerro Concepción', promoLabel: 'Shake post-entreno 2x1', promoCode: 'ELITE2X1' },
+    { id: 'p-seed-4', name: 'CrossFit Concon Hub', lat: -32.92, lng: -71.52, type: 'gym', address: 'Concón, zona costera', hubStrength: 1.3, promoLabel: 'Clase prueba gratis', promoCode: 'CONCON-WOD' }
   ]
 
   // Zone colors shared for map markers and interactive legend (sigue con todo el mapa)
@@ -9914,6 +9914,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             spawnDevTestLives={spawnDevTestLives}
             clearDevTestLives={clearDevTestLives}
             startSyncWith={startSyncWith}
+            handleGymCheckIn={handleGymCheckIn}
             witnessEchoPin={witnessEchoPin}
             witnessRipple={witnessRipple}
             isQuickAddPartnerRef={isQuickAddPartnerRef}
