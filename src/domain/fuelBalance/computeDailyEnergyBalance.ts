@@ -1,5 +1,6 @@
 import type { FuelLogEntry, FuelProfile, Workout } from '../../types'
 import { sumFuelLogs } from '../../services/fuel'
+import { mergeHealthBurnWithBalance } from '../../services/healthImport'
 import { toLocalDateStr } from '../../utils/fuelCalculator'
 import {
   estimateLiveBurn,
@@ -70,6 +71,7 @@ export function computeDailyEnergyBalance(input: {
   fuelLogs: FuelLogEntry[]
   workouts: Workout[]
   live?: LiveBurnInput
+  healthBurnKcal?: number
   dateStr?: string
 }): DailyEnergyBalance | null {
   const { profile, fuelLogs, workouts, live } = input
@@ -111,7 +113,12 @@ export function computeDailyEnergyBalance(input: {
   }
 
   const workoutBurnKcal = workoutInsights.reduce((s, i) => s + i.burnKcal, 0)
-  const totalBurn = workoutBurnKcal + liveBurnKcal
+  const metBurn = workoutBurnKcal + liveBurnKcal
+  const healthBurnKcal = Math.max(
+    0,
+    mergeHealthBurnWithBalance(metBurn, input.healthBurnKcal ?? 0) - metBurn
+  )
+  const totalBurn = metBurn + healthBurnKcal
 
   const dominantMuscle =
     inferDominantMuscle(
@@ -154,6 +161,7 @@ export function computeDailyEnergyBalance(input: {
     baseTargetKcal,
     workoutBurnKcal,
     liveBurnKcal,
+    healthBurnKcal,
     adjustedTargetKcal: macroTargets.targetKcal,
     consumed,
     remaining,

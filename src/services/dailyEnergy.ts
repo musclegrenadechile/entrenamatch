@@ -7,6 +7,7 @@ export interface DailyEnergyDoc {
   baseTargetKcal: number
   workoutBurnKcal: number
   liveBurnKcal: number
+  healthBurnKcal?: number
   adjustedTargetKcal: number
   consumed: DailyEnergyBalance['consumed']
   workoutIds: string[]
@@ -35,6 +36,7 @@ export async function saveDailyEnergyCache(
     baseTargetKcal: balance.baseTargetKcal,
     workoutBurnKcal: balance.workoutBurnKcal,
     liveBurnKcal: balance.liveBurnKcal,
+    healthBurnKcal: balance.healthBurnKcal,
     adjustedTargetKcal: balance.adjustedTargetKcal,
     consumed: balance.consumed,
     workoutIds,

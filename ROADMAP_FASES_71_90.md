@@ -49,7 +49,7 @@ Ver diagnóstico técnico: **`DIAGNOSTICO_FASES_71+.md`**
 | 86 | PT ve FuelBalance cliente | `TrainerClientFuelPanel` | P2 | ✅ |
 | 87 | Prescripción macros PT | CTA toast en panel | P2 | ✅ |
 | 88 | Constancia economy Firestore | `constanciaEconomy.ts` + rules | P2 | ✅ |
-| 89 | Partner gym check-ins | (hereda fase 67 — backend pendiente) | P3 | 🔲 |
+| 89 | Partner gym check-ins | `partnerGym.ts` + dashboard + rules | P3 | ✅ |
 | 90 | Open beta v1.0 + landing | `landing-en.html` + deploy | P1 | ✅ |
 
 ---

@@ -54,6 +54,8 @@ export interface DailyHomeProps {
   onEditFuelLog?: (log: import('../../types').FuelLogEntry) => void
   onDeleteFuelLog?: (logId: string) => void
   deletingFuelLogId?: string | null
+  onImportHealthBurn?: () => void | Promise<void>
+  healthImportHint?: string
   cityLabel?: string
   localNetwork?: Omit<LocalNetworkCardProps, 'cityLabel'> & { cityLabel?: string }
   weeklyPact?: WeeklyPact | null
@@ -117,6 +119,8 @@ export function DailyHome({
   onEditFuelLog,
   onDeleteFuelLog,
   deletingFuelLogId,
+  onImportHealthBurn,
+  healthImportHint,
   cityLabel,
   localNetwork,
   weeklyPact = null,
@@ -508,6 +512,8 @@ export function DailyHome({
           onEditLog={onEditFuelLog}
           onDeleteLog={onDeleteFuelLog}
           deletingLogId={deletingFuelLogId}
+          onImportHealth={onImportHealthBurn}
+          healthImportHint={healthImportHint}
         />
       )}
 

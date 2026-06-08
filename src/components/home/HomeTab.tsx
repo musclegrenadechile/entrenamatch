@@ -44,6 +44,8 @@ export function HomeTab(props: HomeTabProps) {
     onEditFuelLog,
     onDeleteFuelLog,
     deletingFuelLogId,
+    onImportHealthBurn,
+    healthImportHint,
     homeCityChallengeMerged,
     homeLocalLeaderboard,
     homeGymLeaderboard,
@@ -217,6 +219,8 @@ export function HomeTab(props: HomeTabProps) {
         onEditFuelLog={onEditFuelLog}
         onDeleteFuelLog={onDeleteFuelLog}
         deletingFuelLogId={deletingFuelLogId}
+        onImportHealthBurn={onImportHealthBurn}
+        healthImportHint={healthImportHint}
         cityLabel={currentUser?.city}
         localNetwork={{
           challenge: homeCityChallengeMerged,

@@ -189,4 +189,10 @@ export interface ProfileTabProps {
   onOpenTrainerCoach?: () => void
   isMarketplaceAdmin?: boolean
   onOpenAdminOps?: () => void
+  partnerGymStats?: import('../../services/partnerGym').PartnerGymStats | null
+  partnerGymLoading?: boolean
+  constanciaBalance?: number
+  onConstanciaProtect?: () => void | Promise<void>
+  onConstanciaInsurance?: () => void | Promise<void>
+  onImportHealthBurn?: () => void | Promise<void>
 }

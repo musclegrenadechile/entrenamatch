@@ -86,6 +86,17 @@ describe('computeDailyEnergyBalance', () => {
     })
     expect(balance!.liveBurnKcal).toBeGreaterThan(200)
   })
+
+  it('uses wearable burn when higher than MET total', () => {
+    const balance = computeDailyEnergyBalance({
+      profile,
+      fuelLogs: [],
+      workouts: [],
+      healthBurnKcal: 500,
+    })
+    expect(balance!.healthBurnKcal).toBeGreaterThan(0)
+    expect(balance!.adjustedTargetKcal).toBeGreaterThan(profile.targetKcal)
+  })
 })
 
 describe('liveMinutesFromSince', () => {

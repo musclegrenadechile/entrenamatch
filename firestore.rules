@@ -511,6 +511,32 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
+    match /partnerGymCheckIns/{checkInId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.gymId is string
+        && request.resource.data.date is string;
+      allow update, delete: if false;
+    }
+
+    match /partnerGymDaily/{dailyId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated()
+        && request.resource.data.gymId is string
+        && request.resource.data.date is string
+        && request.resource.data.checkInCount is number
+        && request.resource.data.checkInCount >= 1
+        && request.resource.data.checkInCount <= 10000;
+    }
+
+    match /partnerGyms/{gymId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated()
+        && request.resource.data.gymId is string
+        && request.resource.data.name is string;
+    }
+
     match /cityWeeklyStats/{docId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated()

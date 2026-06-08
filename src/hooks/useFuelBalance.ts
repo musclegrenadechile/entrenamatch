@@ -11,6 +11,7 @@ export interface UseFuelBalanceInput {
   workouts: Workout[]
   trainingNow?: boolean
   trainingNowSince?: number | null
+  healthBurnKcal?: number
   dateStr?: string
 }
 
@@ -22,6 +23,7 @@ export function useFuelBalance(input: UseFuelBalanceInput): DailyEnergyBalance |
     workouts,
     trainingNow,
     trainingNowSince,
+    healthBurnKcal = 0,
     dateStr,
   } = input
 
@@ -38,6 +40,7 @@ export function useFuelBalance(input: UseFuelBalanceInput): DailyEnergyBalance |
               weightKg: profile.weightKg,
             }
           : undefined,
+        healthBurnKcal,
         dateStr,
       }),
     [
@@ -46,6 +49,7 @@ export function useFuelBalance(input: UseFuelBalanceInput): DailyEnergyBalance |
       workouts,
       trainingNow,
       trainingNowSince,
+      healthBurnKcal,
       dateStr,
     ]
   )

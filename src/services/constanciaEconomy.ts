@@ -54,3 +54,30 @@ export async function spendConstancia(
   await saveConstanciaBalance(db, userId, next)
   return next
 }
+
+/** Phase 92 — reward Constancia after meaningful actions (workout, sync, etc.). */
+export async function earnConstancia(
+  db: Firestore,
+  userId: string,
+  amount: number,
+  seedIfMissing = 0
+): Promise<number> {
+  if (amount <= 0) return (await loadConstanciaBalance(db, userId))?.points ?? seedIfMissing
+  const current = (await loadConstanciaBalance(db, userId))?.points ?? seedIfMissing
+  const next = current + amount
+  await saveConstanciaBalance(db, userId, next)
+  return next
+}
+
+/** Phase 93 — one-time seed from legacy momentum field. */
+export async function ensureConstanciaBalance(
+  db: Firestore,
+  userId: string,
+  momentumFallback: number
+): Promise<number> {
+  const existing = await loadConstanciaBalance(db, userId)
+  if (existing) return existing.points
+  const seed = Math.max(0, momentumFallback)
+  await saveConstanciaBalance(db, userId, seed)
+  return seed
+}

@@ -21,6 +21,7 @@ export interface DailyEnergyBalance {
   baseTargetKcal: number
   workoutBurnKcal: number
   liveBurnKcal: number
+  healthBurnKcal: number
   adjustedTargetKcal: number
   consumed: { kcal: number; proteinG: number; carbsG: number; fatG: number }
   remaining: { kcal: number; proteinG: number; carbsG: number; fatG: number }

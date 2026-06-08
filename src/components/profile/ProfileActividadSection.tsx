@@ -16,7 +16,37 @@ export function ProfileActividadSection(props: ProfileTabProps) {
     getTodayStr,
     setDailyPulse,
     saveUserWithRealSync,
+    partnerGymStats,
+    partnerGymLoading,
+    constanciaBalance,
+    onConstanciaProtect,
+    onConstanciaInsurance,
   } = profileTabBindings(props)
+
+  const gymName =
+    currentUser?.gymCheckIn?.gymName || (currentUser as { gymName?: string }).gymName
+  const balance = constanciaBalance ?? dailyPulse?.momentum ?? 0
+
+  const handleProtect = onConstanciaProtect ?? (() => {
+    if (!dailyPulse || (dailyPulse.momentum || 0) < 50) return
+    const t = getTodayStr()
+    const pp = { ...dailyPulse, streakProtectedDate: t, momentum: (dailyPulse.momentum || 0) - 50 }
+    setDailyPulse(pp)
+    saveUserWithRealSync({ ...(currentUser as any), streakProtectedDate: t, momentumPoints: pp.momentum } as any)
+    toast.success('Racha protegida con Constancia')
+  })
+
+  const handleInsurance = onConstanciaInsurance ?? (() => {
+    if (!dailyPulse || (dailyPulse.momentum || 0) < 120) {
+      toast.error('Necesitas 120 pts de Constancia')
+      return
+    }
+    const t = getTodayStr()
+    const pp = { ...dailyPulse, streakInsuranceWeek: t, momentum: (dailyPulse.momentum || 0) - 120 }
+    setDailyPulse(pp)
+    saveUserWithRealSync({ ...(currentUser as any), streakInsuranceWeek: t, momentumPoints: pp.momentum } as any)
+    toast.success('Seguro semanal activado')
+  })
 
   return (
     <>
@@ -47,34 +77,19 @@ export function ProfileActividadSection(props: ProfileTabProps) {
 />
 <div className="px-4 mt-3">
   <ConstanciaStore
-    balance={dailyPulse?.momentum || 0}
-    onProtectStreak={() => {
-      if (!dailyPulse || (dailyPulse.momentum || 0) < 50) return
-      const t = getTodayStr()
-      const pp = { ...dailyPulse, streakProtectedDate: t, momentum: (dailyPulse.momentum || 0) - 50 }
-      setDailyPulse(pp)
-      saveUserWithRealSync({ ...(currentUser as any), streakProtectedDate: t, momentumPoints: pp.momentum } as any)
-      toast.success('Racha protegida con Constancia')
-    }}
-    onBuyInsurance={() => {
-      if (!dailyPulse || (dailyPulse.momentum || 0) < 120) {
-        toast.error('Necesitas 120 pts de Constancia')
-        return
-      }
-      const t = getTodayStr()
-      const pp = { ...dailyPulse, streakInsuranceWeek: t, momentum: (dailyPulse.momentum || 0) - 120 }
-      setDailyPulse(pp)
-      saveUserWithRealSync({ ...(currentUser as any), streakInsuranceWeek: t, momentumPoints: pp.momentum } as any)
-      toast.success('Seguro semanal activado')
-    }}
+    balance={balance}
+    onProtectStreak={handleProtect}
+    onBuyInsurance={handleInsurance}
   />
 </div>
-{currentUser?.gymName && (
+{gymName && (
   <div className="px-4 mt-3">
     <PartnerGymDashboard
-      gymName={currentUser.gymName}
-      checkInsToday={Math.max(1, Object.keys(syncBonds || {}).length % 12)}
-      liveNow={Math.max(0, (currentUser as { liveStreak?: number }).liveStreak || 0)}
+      gymName={gymName}
+      checkInsToday={partnerGymStats?.checkInsToday ?? 0}
+      liveNow={partnerGymStats?.liveNow ?? 0}
+      promos={partnerGymStats?.promos}
+      loading={partnerGymLoading}
     />
   </div>
 )}

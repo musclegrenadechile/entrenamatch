@@ -224,6 +224,19 @@ import { fetchRecentWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWo
 import { useFuelBalance } from './hooks/useFuelBalance'
 import { saveDailyEnergyCache } from './services/dailyEnergy'
 import { estimateSyncSessionBurn } from './domain/fuelBalance'
+import {
+  recordPartnerGymCheckIn,
+  fetchPartnerGymStats,
+  seedPartnerGymIfMissing,
+  type PartnerGymStats,
+} from './services/partnerGym'
+import {
+  spendConstancia,
+  earnConstancia,
+  ensureConstanciaBalance,
+} from './services/constanciaEconomy'
+import { importHealthCaloriesForDate } from './services/healthImport'
+import { loadDailyEnergyCache } from './services/dailyEnergy'
 import { EXERCISE_LIBRARY } from './data/exerciseLibrary'
 import {
   createEmptySyncWorkoutLog,
@@ -972,6 +985,11 @@ function App() {
   const [deletingFuelLogId, setDeletingFuelLogId] = useState<string | null>(null)
   const [fuelPostWorkoutTip, setFuelPostWorkoutTip] = useState<string | undefined>()
   const [fuelTodayWorkouts, setFuelTodayWorkouts] = useState<import('./types').Workout[]>([])
+  const [healthBurnBonus, setHealthBurnBonus] = useState(0)
+  const [healthImportHint, setHealthImportHint] = useState<string | undefined>()
+  const [partnerGymStats, setPartnerGymStats] = useState<PartnerGymStats | null>(null)
+  const [partnerGymLoading, setPartnerGymLoading] = useState(false)
+  const [constanciaBalance, setConstanciaBalance] = useState<number | null>(null)
   // THE KILLER FEATURE: EntrenaSync - real-time synchronized training that turns two people into a high-performance unit with shared state, visible connection, joint impact, and lasting social capital. This is the foundation of the first true social network for fitness performance.
   const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
   const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
@@ -3970,6 +3988,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       } as CurrentUser
       saveUser(updated)
       try {
+        if (!isDemoMode && db && firebaseUser?.uid) {
+          await seedPartnerGymIfMissing(db, {
+            id: gym.id,
+            name: gym.name,
+            city: currentUser.city,
+          })
+          await recordPartnerGymCheckIn(db, {
+            userId: effectiveUserId,
+            gymId: gym.id,
+            gymName: gym.name,
+            lat: gym.lat,
+            lng: gym.lng,
+          })
+        }
         await saveUserWithRealSync(updated)
         toast.success(`Check-in en ${gym.name}`, {
           description: 'Tu pin aparecerá en el mapa cuando entrenes en vivo',
@@ -3979,7 +4011,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         toast.error('No se pudo registrar el check-in')
       }
     },
-    [currentUser, saveUser, saveUserWithRealSync]
+    [currentUser, saveUser, saveUserWithRealSync, isDemoMode, db, firebaseUser?.uid, effectiveUserId]
   )
 
   const handleToggleLeaderboard = useCallback(
@@ -5729,6 +5761,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         setTimeout(() => setRecentlyPublishedPostId(null), 4000)
         if (activeTab === 'home') loadGlobalFeed().catch(() => {})
         await refreshFuelData()
+        if (!isDemoMode && db && firebaseUser?.uid) {
+          const reward = Math.min(15, Math.max(5, Math.floor(payload.durationMin / 10)))
+          try {
+            const left = await earnConstancia(
+              db,
+              effectiveUserId,
+              reward,
+              dailyPulse?.momentum ?? 0
+            )
+            setConstanciaBalance(left)
+          } catch {
+            /* non-blocking */
+          }
+        }
         toast.success('Entreno registrado', {
           description: 'Target Fuel ajustado — registra tu comida post-entreno',
           action: fuelProfile
@@ -5815,7 +5861,139 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     workouts: fuelTodayWorkouts,
     trainingNow: currentUser?.trainingNow,
     trainingNowSince: currentUser?.trainingNowSince,
+    healthBurnKcal: healthBurnBonus,
   })
+
+  const refreshPartnerGymStats = useCallback(async () => {
+    const gymId = currentUser?.gymCheckIn?.gymId
+    if (!gymId || isDemoMode || !db) {
+      setPartnerGymStats(null)
+      return
+    }
+    setPartnerGymLoading(true)
+    try {
+      const liveAtGym = liveTrainingNow.filter(
+        (u) => u.gymCheckIn?.gymId === gymId
+      ).length
+      const stats = await fetchPartnerGymStats(db, gymId, liveAtGym)
+      setPartnerGymStats(stats)
+    } catch {
+      setPartnerGymStats(null)
+    } finally {
+      setPartnerGymLoading(false)
+    }
+  }, [currentUser?.gymCheckIn?.gymId, isDemoMode, db, liveTrainingNow])
+
+  useEffect(() => {
+    refreshPartnerGymStats().catch(() => {})
+  }, [refreshPartnerGymStats])
+
+  useEffect(() => {
+    if (!firebaseUser?.uid || isDemoMode || !db) return
+    ensureConstanciaBalance(db, effectiveUserId, dailyPulse?.momentum ?? 0)
+      .then((pts) => setConstanciaBalance(pts))
+      .catch(() => setConstanciaBalance(dailyPulse?.momentum ?? 0))
+  }, [firebaseUser?.uid, isDemoMode, db, effectiveUserId, dailyPulse?.momentum])
+
+  useEffect(() => {
+    if (!firebaseUser?.uid || isDemoMode || !db) return
+    loadDailyEnergyCache(db, effectiveUserId, toLocalDateStr())
+      .then((doc) => {
+        if (doc?.healthBurnKcal && doc.healthBurnKcal > 0) {
+          setHealthBurnBonus(doc.healthBurnKcal)
+        }
+      })
+      .catch(() => {})
+  }, [firebaseUser?.uid, isDemoMode, db, effectiveUserId])
+
+  const handleImportHealthBurn = useCallback(async () => {
+    const result = await importHealthCaloriesForDate(toLocalDateStr())
+    setHealthImportHint(result.message)
+    if (result.totalBurnKcal > 0) {
+      setHealthBurnBonus(result.totalBurnKcal)
+      toast.success(`+${result.totalBurnKcal} kcal desde wearable`)
+    } else {
+      toast.info(result.message)
+    }
+  }, [])
+
+  const handleConstanciaProtect = useCallback(async () => {
+    if (!dailyPulse || (constanciaBalance ?? dailyPulse.momentum ?? 0) < 50) {
+      toast.error('Necesitas 50 Constancia')
+      return
+    }
+    const t = getTodayStr()
+    const nextMomentum = (dailyPulse.momentum || 0) - 50
+    const pp = { ...dailyPulse, streakProtectedDate: t, momentum: nextMomentum }
+    setDailyPulse(pp)
+    if (!isDemoMode && db && firebaseUser?.uid) {
+      try {
+        const left = await spendConstancia(db, effectiveUserId, 50)
+        setConstanciaBalance(left)
+      } catch {
+        toast.error('Saldo Constancia insuficiente')
+        return
+      }
+    }
+    if (currentUser) {
+      await saveUserWithRealSync({
+        ...currentUser,
+        streakProtectedDate: t,
+        momentumPoints: nextMomentum,
+      } as CurrentUser)
+    }
+    toast.success('Racha protegida con Constancia')
+  }, [
+    dailyPulse,
+    constanciaBalance,
+    isDemoMode,
+    db,
+    firebaseUser?.uid,
+    effectiveUserId,
+    currentUser,
+    saveUserWithRealSync,
+    getTodayStr,
+    setDailyPulse,
+  ])
+
+  const handleConstanciaInsurance = useCallback(async () => {
+    if (!dailyPulse || (constanciaBalance ?? dailyPulse.momentum ?? 0) < 120) {
+      toast.error('Necesitas 120 Constancia')
+      return
+    }
+    const t = getTodayStr()
+    const nextMomentum = (dailyPulse.momentum || 0) - 120
+    const pp = { ...dailyPulse, streakInsuranceWeek: t, momentum: nextMomentum }
+    setDailyPulse(pp)
+    if (!isDemoMode && db && firebaseUser?.uid) {
+      try {
+        const left = await spendConstancia(db, effectiveUserId, 120)
+        setConstanciaBalance(left)
+      } catch {
+        toast.error('Saldo Constancia insuficiente')
+        return
+      }
+    }
+    if (currentUser) {
+      await saveUserWithRealSync({
+        ...currentUser,
+        streakInsuranceWeek: t,
+        momentumPoints: nextMomentum,
+      } as CurrentUser)
+    }
+    toast.success('Seguro semanal activado')
+  }, [
+    dailyPulse,
+    constanciaBalance,
+    isDemoMode,
+    db,
+    firebaseUser?.uid,
+    effectiveUserId,
+    currentUser,
+    saveUserWithRealSync,
+    getTodayStr,
+    setDailyPulse,
+  ])
 
   useEffect(() => {
     if (!fuelEnergyBalance || isDemoMode || !db || !firebaseUser?.uid) return
@@ -5833,7 +6011,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     if (!fuelProfile) return undefined
     const weeklyKcal = fuelWeekMacros?.reduce((s, d) => s + d.kcal, 0) ?? 0
     const todayBurn =
-      (fuelEnergyBalance?.workoutBurnKcal ?? 0) + (fuelEnergyBalance?.liveBurnKcal ?? 0)
+      (fuelEnergyBalance?.workoutBurnKcal ?? 0) +
+      (fuelEnergyBalance?.liveBurnKcal ?? 0) +
+      (fuelEnergyBalance?.healthBurnKcal ?? 0)
     return {
       weeklyKcal: Math.round(weeklyKcal),
       weeklyBurnKcal: Math.round(todayBurn * Math.max(1, homeWeekTrainedCount)),
@@ -10116,7 +10296,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             profilePostsFeed={(profilePosts[effectiveUserId] || []).concat(
               Object.values(profilePosts).flat().filter((p: any) => p.postType === 'workout')
             ).slice(0, 20)}
-            effectiveUserId={effectiveUserId}
+            onImportHealthBurn={handleImportHealthBurn}
+            healthImportHint={healthImportHint}
           />
           </Suspense>
         )}
@@ -10641,6 +10822,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             }}
             isMarketplaceAdmin={isMarketplaceAdmin}
             onOpenAdminOps={() => setShowAdminOps(true)}
+            partnerGymStats={partnerGymStats}
+            partnerGymLoading={partnerGymLoading}
+            constanciaBalance={constanciaBalance}
+            onConstanciaProtect={handleConstanciaProtect}
+            onConstanciaInsurance={handleConstanciaInsurance}
+            onImportHealthBurn={handleImportHealthBurn}
           />
           </Suspense>
           </TabErrorBoundary>

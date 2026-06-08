@@ -16,6 +16,8 @@ export interface FuelDayCardProps {
   onEditLog?: (log: FuelLogEntry) => void
   onDeleteLog?: (logId: string) => void
   deletingLogId?: string | null
+  onImportHealth?: () => void | Promise<void>
+  healthImportHint?: string
 }
 
 function pct(current: number, target: number): number {
@@ -41,6 +43,8 @@ export function FuelDayCard({
   onEditLog,
   onDeleteLog,
   deletingLogId,
+  onImportHealth,
+  healthImportHint,
 }: FuelDayCardProps) {
   if (!profile) {
     return (
@@ -184,6 +188,12 @@ export function FuelDayCard({
         </p>
       ) : null}
 
+      {energyBalance?.healthBurnKcal ? (
+        <p className="text-[10px] text-[#6366f1] mb-2 leading-snug bg-[#6366f1]/8 rounded-xl px-2.5 py-1.5 border border-[#6366f1]/20">
+          ⌚ Wearable · +{energyBalance.healthBurnKcal} kcal en el balance
+        </p>
+      ) : null}
+
       {coachingTip && (
         <p className="text-[10px] text-[#c084fc] mb-2 leading-snug bg-[#a855f7]/8 rounded-xl px-2.5 py-2 border border-[#a855f7]/20">
           {coachingTip}
@@ -262,6 +272,19 @@ export function FuelDayCard({
       >
         + Registrar comida (Fuel AI)
       </button>
+
+      {onImportHealth && (
+        <button
+          type="button"
+          onClick={() => onImportHealth()}
+          className="mt-2 w-full py-2 rounded-xl border border-[#6366f1]/35 bg-[#6366f1]/10 text-[#a5b4fc] text-[10px] font-bold"
+        >
+          ⌚ Importar gasto wearable
+        </button>
+      )}
+      {healthImportHint && (
+        <p className="text-[8px] text-[#6B7280] mt-1 text-center">{healthImportHint}</p>
+      )}
 
       <p className="text-[8px] text-[#6B7280] mt-2 text-center leading-snug">
         Estimaciones IA — no es consejo médico. TDEE ref: {profile.tdee} kcal.
