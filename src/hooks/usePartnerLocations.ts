@@ -308,19 +308,20 @@ export function usePartnerLocations(opts: UsePartnerLocationsOptions) {
       }
       if (!firebaseUser?.uid) {
         toast.error(
-          'Para subir logo de partner necesitas Firebase Auth. El partner se guardará sin logo.'
+          'Para subir logo de partner necesitas estar sign-in con Firebase Auth. El partner se guardará sin logo.'
         )
         return undefined
       }
       try {
-        const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage')
-        const path = `partnerLogos/${pid}/${Date.now()}_${file.name}`
-        const storageRef = ref(storage, path)
-        await uploadBytes(storageRef, file)
-        return await getDownloadURL(storageRef)
+        const { ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage')
+        const storageRef = ref(storage, `partners/${pid}/logo-${Date.now()}`)
+        const task = uploadBytesResumable(storageRef, file)
+        await new Promise<void>((resolve, reject) => {
+          task.on('state_changed', () => {}, reject, () => resolve())
+        })
+        return await getDownloadURL(task.snapshot.ref)
       } catch (e) {
         console.warn('partner logo upload failed', e)
-        toast.error('No se pudo subir el logo')
         return undefined
       }
     },

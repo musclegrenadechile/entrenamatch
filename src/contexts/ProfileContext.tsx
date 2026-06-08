@@ -3,6 +3,7 @@ import { demoStorage, DEMO_KEYS } from '../services/demoStorage';
 import { getUserProfile } from '../services/auth';
 import { useAuth } from './AuthContext';
 import type { CurrentUser } from '../types';
+import { isProfileComplete } from '../utils/profileComplete';
 
 interface ProfileContextType {
   currentUser: CurrentUser | null;
@@ -60,11 +61,24 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         const fromFs =
           userProfile ||
           (await getUserProfile(firebaseUser.uid));
-        if (cancelled || !fromFs?.name) {
-          if (!cancelled) setProfileHydrated(true);
+        if (cancelled) return;
+
+        const cached = demoStorage.get<CurrentUser>(DEMO_KEYS.PROFILE);
+
+        if (!isProfileComplete(fromFs)) {
+          if (fromFs) {
+            const merged = profileFromFirestore({
+              ...(cached || {}),
+              ...fromFs,
+            });
+            demoStorage.set(DEMO_KEYS.PROFILE, merged);
+            setCurrentUser(merged);
+          }
+          setShowOnboarding(true);
+          setProfileHydrated(true);
           return;
         }
-        const cached = demoStorage.get<CurrentUser>(DEMO_KEYS.PROFILE);
+
         const merged = profileFromFirestore({
           ...(cached || {}),
           ...fromFs,

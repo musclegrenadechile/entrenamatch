@@ -166,13 +166,13 @@ export const AuthScreen = ({
 
         {/* The beautiful "portal" card */}
         <div className="auth-card rounded-3xl p-6">
-          {/* Premium tabs */}
-          <div className="flex mb-5 bg-[#161618] rounded-2xl p-1">
+          {/* Premium tabs — cuenta real vs registro */}
+          <div className="flex mb-2 bg-[#161618] rounded-2xl p-1">
             <button
               onClick={() => handleTab('login')}
               className={`auth-tab flex-1 py-2.5 rounded-[14px] text-sm font-semibold ${authMode === 'login' ? 'active text-white' : 'text-[#9CA3AF] hover:text-white/70'}`}
             >
-              Iniciar sesión
+              Cuenta real
             </button>
             <button
               onClick={() => handleTab('register')}
@@ -181,6 +181,11 @@ export const AuthScreen = ({
               Crear cuenta
             </button>
           </div>
+          <p className="text-[10px] text-[#6B7280] mb-4 leading-snug text-center">
+            {authMode === 'register'
+              ? 'Cuenta real: guarda tu perfil, matches y EntrenaSync en la nube.'
+              : 'Inicia sesión con email o Google para sincronizar en todos tus dispositivos.'}
+          </p>
 
           <AnimatePresence>
             {authError && (
@@ -288,12 +293,15 @@ export const AuthScreen = ({
               <span>{authLoading ? 'Conectando con Google...' : 'Continuar con Google'}</span>
             </button>
 
-            {/* The exciting "feel it now" demo entry — this is the "never seen before" hook */}
+            {/* Modo prueba — datos locales, sin sync ni chat real entre dispositivos */}
             <button
               onClick={handleDemo}
-              className="auth-demo-btn w-full flex items-center justify-center gap-2 py-3.5 border rounded-2xl text-sm font-semibold active:scale-[0.985]"
+              className="auth-demo-btn w-full flex flex-col items-center justify-center gap-0.5 py-3.5 border rounded-2xl text-sm font-semibold active:scale-[0.985]"
             >
-              ⚡ Probar ahora (demo sin cuenta)
+              <span>⚡ Modo prueba (solo este dispositivo)</span>
+              <span className="text-[10px] font-normal text-[#9CA3AF]">
+                Explora mapa y perfiles de ejemplo · EntrenaSync no sincroniza con otros
+              </span>
             </button>
           </div>
         </div>

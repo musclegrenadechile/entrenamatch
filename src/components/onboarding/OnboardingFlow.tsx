@@ -1,31 +1,63 @@
-// @ts-nocheck
 import { useState, type ChangeEvent } from 'react';
-import { Dumbbell, MapPin, Camera, Trash2, Star } from 'lucide-react';
+import { Dumbbell, MapPin, Camera, Users, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
-import { TRAINING_OPTIONS, TRAINING_GOALS, TRAINING_INTENSITIES } from '../../constants'; // resolves to index.ts
+import { motion } from 'framer-motion';
+import { TRAINING_OPTIONS, TRAINING_GOALS } from '../../constants';
+import type { CurrentUser } from '../../types';
 
-// Camera is provided by the loader loaded from App.tsx in CAP builds (via global side effect).
-// No direct dynamic import here to avoid module graph issues in bundler analysis.
-let CapacitorCamera: any = null
+const ONBOARDING_LAST_STEP = 4;
+const SHOW_DEV_FILL = import.meta.env.DEV;
 
-if (typeof window !== 'undefined' && (window as any).Capacitor) {
-  const plugins = (window as any).__CAPACITOR_PLUGINS__ || {}
-  CapacitorCamera = plugins.Camera || null
+interface CapacitorCameraPlugin {
+  getPhoto: (opts: {
+    quality: number;
+    allowEditing: boolean;
+    resultType: string;
+  }) => Promise<{ base64String?: string } | null>;
+}
+
+let CapacitorCamera: CapacitorCameraPlugin | null = null;
+
+if (typeof window !== 'undefined' && (window as Window & { Capacitor?: unknown }).Capacitor) {
+  const plugins = (window as Window & { __CAPACITOR_PLUGINS__?: { Camera?: CapacitorCameraPlugin } }).__CAPACITOR_PLUGINS__ || {};
+  CapacitorCamera = plugins.Camera || null;
+}
+
+interface OnboardingConsents {
+  is18: boolean;
+  isForTraining: boolean;
+  sharesLocation: boolean;
+}
+
+interface OnboardData {
+  name: string;
+  age: number;
+  gender: 'hombre' | 'mujer';
+  city: string;
+  country: string;
+  lat: number;
+  lng: number;
+  bio: string;
+  photos: string[];
+  trainingTypes: string[];
+  goals: string[];
+  level: 'Principiante' | 'Intermedio' | 'Avanzado';
+  intensity: 'Relajado' | 'Moderado' | 'Intenso';
+  availability: string[];
+  wantsToGoLive: boolean;
 }
 
 interface OnboardingFlowProps {
   onboardingStep: number;
   setOnboardingStep: (step: number | ((s: number) => number)) => void;
-  currentUser: any;
-  saveUser: (user: any) => void; // can be sync local or async saveUserWithRealSync
+  currentUser: CurrentUser | null;
+  saveUser: (user: CurrentUser) => void | Promise<void>;
   setShowOnboarding: (show: boolean) => void;
   requestUserLocation: () => void;
-  consents: any;
-  setConsents: (consents: any) => void;
+  consents: OnboardingConsents;
+  setConsents: (consents: OnboardingConsents) => void;
   triggerHaptic?: (style?: 'light' | 'medium' | 'success') => void;
   uploadPhotoIfNeeded?: (dataUrl: string) => Promise<string>;
-  /** create = new account ritual; edit = user opened from Profile to update */
   mode?: 'create' | 'edit';
 }
 
@@ -43,9 +75,7 @@ export const OnboardingFlow = ({
   mode = 'create',
 }) => {
   const isEditMode = mode === 'edit';
-  // Internal state (moved from App.tsx for better encapsulation)
-  // Seed from existing currentUser only in edit mode — create mode starts fresh
-  const [onboardData, setOnboardData] = useState<any>(() => {
+  const [onboardData, setOnboardData] = useState<OnboardData>(() => {
     if (mode === 'edit' && currentUser && currentUser.name) {
       return {
         name: currentUser.name || '',
@@ -83,7 +113,7 @@ export const OnboardingFlow = ({
 
   // Consents fully managed internally now (previous props were dummy)
   // For edit mode, pre-fill from existing legalConsents so user doesn't have to re-tap to save changes
-  const [localConsents, setLocalConsents] = useState(() => {
+  const [localConsents, setLocalConsents] = useState<OnboardingConsents>(() => {
     if (mode === 'edit' && currentUser && currentUser.legalConsents) {
       return {
         is18: !!currentUser.legalConsents.is18,
@@ -104,8 +134,8 @@ export const OnboardingFlow = ({
     return Promise.all(photos.map(p => uploadPhotoIfNeeded(p)));
   };
 
-  const updateOnboard = (patch: any) => {
-    setOnboardData((prev: any) => ({ ...prev, ...patch }));
+  const updateOnboard = (patch: Partial<OnboardData>) => {
+    setOnboardData((prev) => ({ ...prev, ...patch }));
   };
 
   const toggleConsent = (key: 'is18' | 'isForTraining' | 'sharesLocation') => {
@@ -114,6 +144,13 @@ export const OnboardingFlow = ({
   }
 
   const isEditingProfile = isEditMode;
+  const lastStep = isEditMode ? 3 : ONBOARDING_LAST_STEP;
+  const totalSteps = lastStep + 1;
+  const isPresenceStep = isEditMode ? onboardingStep === 0 : onboardingStep === 1;
+  const isEssenceStep = isEditMode ? onboardingStep === 1 : onboardingStep === 2;
+  const isPulseStep = isEditMode ? onboardingStep === 2 : onboardingStep === 3;
+  const isConsentsStep = isEditMode ? onboardingStep === 3 : onboardingStep === 4;
+  const showIntroStep = !isEditMode && onboardingStep === 0;
 
   // Live updating preview card (the key onboarding improvement - user sees exactly how they will appear in Explore + live lists)
   // Enhanced to preview the unique EntrenaSync and live features to build excitement from day 1
@@ -272,11 +309,11 @@ export const OnboardingFlow = ({
     }
   };
   const nextOnboarding = () => {
-    if (onboardingStep < 3) {
+    if (onboardingStep < lastStep) {
       try { triggerHaptic('light') } catch {}
       setOnboardingStep(s => s + 1);
     } else {
-      finishOnboarding(); // async but fire-and-forget is fine (it handles its own errors)
+      finishOnboarding();
     }
   };
 
@@ -324,8 +361,8 @@ export const OnboardingFlow = ({
     }
 
     // Preserve any extra fields the user may have (e.g. verificationStatus) when editing
-    const newUser: any = {
-      ...(currentUser || {}),
+    const newUser: CurrentUser = {
+      ...(currentUser || { id: 'me' }),
       id: 'me',
       name: onboardData.name!,
       age: onboardData.age!,
@@ -364,19 +401,7 @@ export const OnboardingFlow = ({
       await Promise.resolve(saveUser(newUser));
       setShowOnboarding(false);
       setOnboardingStep(0);
-
-      const liveDesc = onboardData.wantsToGoLive ? ' ¡Estás EN GYMPULSE VIVO ahora! Ve a Explorar y da like al primer perfil vivo cerca.' : ' Ve a Explorar y activa Live o da like a alguien cerca para tu primer match.';
-      toast.success(isEditingProfile ? '¡Perfil actualizado!' : '¡Iniciado! Tu primer GymPulse te espera.', { 
-        description: isEditingProfile 
-          ? 'Los cambios se guardaron y sincronizaron con el backend real.' 
-          : ('¡Conectado con tus GymPartners! ' + liveDesc + ' Crea un EntrenaSync en <60s más y sentirás la diferencia.')
-      });
       try { triggerHaptic('success') } catch {}
-
-      // Ceremonial touch: for new users who opt live, create a subtle "iniciación" post so their first presence is felt in the community
-      if (!isEditingProfile && onboardData.wantsToGoLive) {
-        // The save already triggers live, but we can hint at the first ripple opportunity
-      }
     } catch (err) {
       console.error('Error guardando perfil en onboarding:', err);
       toast.error('No se pudo guardar el perfil', { description: 'Revisa tu conexión e intenta de nuevo.' });
@@ -404,12 +429,12 @@ export const OnboardingFlow = ({
             <div className="font-black text-4xl tracking-[-2px] text-white">ENTRENAMATCH</div>
             <div className="text-[#FF671F] text-xs tracking-[3px] font-mono -mt-1">TU EQUIPO DE GYM EN VIVO</div>
           </div>
-          {!isEditingProfile && (
+          {!isEditingProfile && SHOW_DEV_FILL && (
             <button 
               onClick={fillExampleData} 
               className="text-[9px] px-4 py-2 rounded-2xl border-2 border-[#22c55e]/50 text-[#22c55e] active:bg-[#22c55e]/10 active:border-[#22c55e] font-semibold tracking-wider"
             >
-              ⚡ CARGAR EJEMPLO ÉPICO
+              Rellenar demo (dev)
             </button>
           )}
         </div>
@@ -428,16 +453,17 @@ export const OnboardingFlow = ({
         {/* Epic Ritual Progress - Visual path, not boring dots */}
         <div className="mb-4">
           <div className="flex items-center justify-between text-xs mb-2 px-1">
-            <div className="font-mono text-[#FF671F] tracking-[2px]">{isEditMode ? 'EDIT' : 'PASO'} {onboardingStep + 1} / 4 • {Math.round((onboardingStep+1)/4 * 100)}% EN EL PULSO</div>
+            <div className="font-mono text-[#FF671F] tracking-[2px]">{isEditMode ? 'EDIT' : 'PASO'} {onboardingStep + 1} / {totalSteps} • {Math.round((onboardingStep + 1) / totalSteps * 100)}%</div>
             <div className="text-[#9CA3AF] text-[10px] font-medium">
-              {onboardingStep === 0 && (isEditMode ? 'PRESENCIA' : 'PRESENCIA EN EL CÍRCULO')}
-              {onboardingStep === 1 && 'TU ESENCIA DE RENDIMIENTO'}
-              {onboardingStep === 2 && 'EL PULSO VIVO (LA MAGIA)'}
-              {onboardingStep === 3 && (isEditMode ? 'GUARDAR CAMBIOS' : 'LISTO • ENTRAR A LA RED')}
+              {showIntroStep && 'QUÉ ES ENTRENAMATCH'}
+              {isPresenceStep && (isEditMode ? 'PRESENCIA' : 'PRESENCIA EN EL CÍRCULO')}
+              {isEssenceStep && 'TU ESENCIA DE RENDIMIENTO'}
+              {isPulseStep && 'EL PULSO VIVO (LA MAGIA)'}
+              {isConsentsStep && (isEditMode ? 'GUARDAR CAMBIOS' : 'LISTO • ENTRAR A LA RED')}
             </div>
           </div>
           <div className="h-1.5 bg-[#1C1C20] rounded-full overflow-hidden flex">
-            {[0,1,2,3].map(i => (
+            {Array.from({ length: totalSteps }, (_, i) => i).map(i => (
               <div 
                 key={i} 
                 className={`flex-1 transition-all ${i <= onboardingStep ? 'bg-gradient-to-r from-[#FF671F] to-[#22c55e]' : 'bg-[#2F2F35]'}`} 
@@ -445,18 +471,55 @@ export const OnboardingFlow = ({
             ))}
           </div>
           <div className="flex justify-between text-[8px] text-[#9CA3AF]/60 mt-1 px-0.5 font-mono tracking-widest">
+            {!isEditMode && <div>INICIO</div>}
             <div>PRESENCIA</div><div>ESENCIA</div><div>PULSO</div><div>VOTOS</div>
           </div>
         </div>
 
         {/* LIVE PREVIEW — hidden on consent step so vows + buttons stay tappable */}
-        {onboardingStep !== 3 && renderProfilePreview()}
+        {!isConsentsStep && !showIntroStep && renderProfilePreview()}
 
         {/* Scrollable step content */}
         <div className="flex-1 overflow-auto -mx-1 px-1 pb-8 min-h-0">
 
-        {/* PASO 0: PRESENCIA - Remastered full premium. Unique ritual entry. */}
-        {onboardingStep === 0 && (
+        {/* PASO 0 (solo create): Qué es EntrenaMatch */}
+        {showIntroStep && (
+          <div className="space-y-5">
+            <div className="text-center mb-2">
+              <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-2 font-medium">BIENVENIDO</div>
+              <div className="text-2xl font-black tracking-[-1px] leading-tight">Encuentra compañeros de gym,<br />entrena en vivo y conecta</div>
+            </div>
+            <div className="space-y-3">
+              <div className="flex gap-3 bg-[#1C1C20] p-4 rounded-2xl border border-[#2F2F35]">
+                <MapPin className="text-[#FF671F] shrink-0 mt-0.5" size={22} />
+                <div>
+                  <div className="font-bold text-sm">Mapa en vivo</div>
+                  <div className="text-[#9CA3AF] text-xs mt-0.5">Ve quién entrena cerca de ti ahora y conéctate al instante.</div>
+                </div>
+              </div>
+              <div className="flex gap-3 bg-[#1C1C20] p-4 rounded-2xl border border-[#2F2F35]">
+                <RefreshCw className="text-[#22c55e] shrink-0 mt-0.5" size={22} />
+                <div>
+                  <div className="font-bold text-sm">EntrenaSync</div>
+                  <div className="text-[#9CA3AF] text-xs mt-0.5">Entrena a la par con alguien en tiempo real — como si estuvieran en el mismo gym.</div>
+                </div>
+              </div>
+              <div className="flex gap-3 bg-[#1C1C20] p-4 rounded-2xl border border-[#2F2F35]">
+                <Users className="text-[#FF671F] shrink-0 mt-0.5" size={22} />
+                <div>
+                  <div className="font-bold text-sm">Tu red de gym</div>
+                  <div className="text-[#9CA3AF] text-xs mt-0.5">Matches, chat y metas semanales con personas que entrenan como tú.</div>
+                </div>
+              </div>
+            </div>
+            <p className="text-[10px] text-[#9CA3AF] text-center leading-snug">
+              En 4 pasos creas tu perfil. Luego eliges si apareces en el mapa en vivo.
+            </p>
+          </div>
+        )}
+
+        {/* PASO PRESENCIA */}
+        {isPresenceStep && (
           <div className="space-y-6">
             <div>
               <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1 font-medium">PASO 1 • TU NOMBRE EN LA RED</div>
@@ -542,8 +605,8 @@ export const OnboardingFlow = ({
           </div>
         )}
 
-        {/* PASO 1: ESENCIA - Full remastered beautiful cards, unique explanations */}
-        {onboardingStep === 1 && (
+        {/* PASO ESENCIA */}
+        {isEssenceStep && (
           <div className="space-y-7">
             <div>
               <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1.5">TU ESENCIA • ELIGE TUS ENTRENOS (1-3)</div>
@@ -590,8 +653,8 @@ export const OnboardingFlow = ({
           </div>
         )}
 
-        {/* PASO 2: EL PULSO VIVO - Full remastered "Aha" with unique visuals, mock UI, epic explanation. The heart of what makes EntrenaMatch special. */}
-        {onboardingStep === 2 && (
+        {/* PASO PULSO VIVO */}
+        {isPulseStep && (
           <div className="space-y-6">
             <div className="rounded-3xl bg-[#0a120f] border-2 border-[#22c55e]/40 p-5 shadow-inner">
               <div className="uppercase text-[#22c55e] text-[9px] tracking-[2.5px] font-bold mb-1">LA MAGIA QUE NADIE MÁS TIENE EN EL FITNESS</div>
@@ -640,13 +703,16 @@ export const OnboardingFlow = ({
               >
                 {onboardData.wantsToGoLive ? '✅ SÍ, ACTIVA MI PRIMER PULSO VIVO AL TERMINAR' : '🚀 SÍ — QUIERO SENTIR EL PULSO VIVO AHORA'}
               </button>
-              <div className="text-[10px] text-[#9CA3AF] mt-2 max-w-xs mx-auto">Banner verde al instante. En mapa + explore. 30s después ya puedes dar tu primer like y crear tu primer EntrenaSync.</div>
+              <div className="text-[10px] text-[#9CA3AF] mt-2 max-w-xs mx-auto leading-snug">
+                Apareces en el mapa para que otros te encuentren mientras entrenas.
+                Después puedes activar <span className="text-white font-medium">modo fantasma</span> en Perfil para ocultar tu ubicación exacta (~500 m de imprecisión).
+              </div>
             </div>
           </div>
         )}
 
-        {/* PASO 3: LOS VOTOS - Full remastered solemn, attractive ritual ceremony. Unique and epic. */}
-        {onboardingStep === 3 && (
+        {/* PASO VOTOS */}
+        {isConsentsStep && (
           <div className="space-y-5">
             <div className="text-center">
               <div className="uppercase tracking-[2px] text-[#FF671F] text-xs mb-1">ÚLTIMO PASO</div>
@@ -705,11 +771,11 @@ export const OnboardingFlow = ({
             </button>
           )}
 
-          {onboardingStep === 1 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0) && (
+          {isEssenceStep && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0) && (
             <p className="text-center text-[9px] text-[#ef4444] font-medium tracking-wider">ELIGE AL MENOS UN TIPO DE ENTRENO Y TU FUEGO PRINCIPAL</p>
           )}
 
-          {onboardingStep === 3 && !Object.values(localConsents).every(Boolean) && (
+          {isConsentsStep && !Object.values(localConsents).every(Boolean) && (
             <p className="text-center text-[9px] text-[#FF671F] font-medium tracking-wider">
               Marca los 3 votos para sellar tu entrada ({Object.values(localConsents).filter(Boolean).length}/3)
             </p>
@@ -719,10 +785,10 @@ export const OnboardingFlow = ({
             onClick={nextOnboarding} 
             className="w-full py-4 text-base font-black tracking-[1.5px] rounded-3xl btn-primary active:scale-[0.985] bg-gradient-to-r from-[#FF671F] to-[#E55A1A] touch-manipulation"
             disabled={
-              onboardingStep === 1 && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0)
+              isEssenceStep && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0)
             }
           >
-            {onboardingStep < 3 ? 'CONTINUAR →' : '¡ENTRAR A ENTRENAMATCH!'}
+            {onboardingStep < lastStep ? 'CONTINUAR →' : '¡ENTRAR A ENTRENAMATCH!'}
           </button>
           <div className="text-center text-[8px] text-[#9CA3AF] tracking-[1px]">TU PERFIL EN LA RED • PRIMER LIVE EN &lt;90s</div>
         </div>

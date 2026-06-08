@@ -12,6 +12,7 @@ import { GoogleAuthError, getGoogleRedirectFailureMessage } from '../services/go
 import { isFirebaseConfigured } from '../services/firebase';
 import { isQuickDemoSession } from '../utils/quickDemo';
 import { toast } from 'sonner';
+import { BOOT_TIMEOUT_MS } from '../boot/bootConstants';
 
 interface AuthContextType {
   currentUser: FirebaseUser | null;
@@ -77,7 +78,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (cancelled) return;
       console.warn('[Auth] Boot timeout — showing login');
       finishBoot();
-    }, 10000);
+    }, BOOT_TIMEOUT_MS);
 
     (async () => {
       setLoading(true);

@@ -40,7 +40,7 @@ export function BootShell({
         ) : (
           <div className="mt-6 space-y-2">
             <p className="text-[11px] text-[#fca5a5] leading-snug">
-              La conexión está tardando más de lo usual. Puedes reintentar o probar el modo demo.
+              {submessage || 'La conexión está tardando más de lo usual. Puedes reintentar o probar el modo demo.'}
             </p>
             <div className="flex flex-col gap-2 pt-2">
               {onRetry && (
@@ -58,7 +58,7 @@ export function BootShell({
                   onClick={onDemo}
                   className="w-full py-2.5 rounded-xl border border-[#FF671F]/40 text-[#FF671F] font-bold text-sm active:bg-[#FF671F]/10"
                 >
-                  Entrar en demo
+                  Modo prueba (solo este dispositivo)
                 </button>
               )}
             </div>

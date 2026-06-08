@@ -30,6 +30,7 @@ import { storage, db, isFirebaseConfigured } from './services/firebase'
 import { useAuth } from './contexts/AuthContext'
 import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
+import { demoStorage, DEMO_KEYS } from './services/demoStorage'
 
 // ==================== REFACTORED IMPORTS ====================
 import type { 
@@ -41,7 +42,6 @@ import type { FuelProfile, FuelLogEntry, FuelDayTotals } from './types'
 import { 
   TRAINING_OPTIONS, AVAILABILITY, LEGAL_VERSIONS, AUTO_MATCH_IDS, APP_VERSION 
 } from './constants'
-import { verifyDevMapPassword, isDevPasswordConfigured } from './config/devGate'
 
 // Capacitor plugins are loaded via a separate module that is only analyzed in CAPACITOR builds.
 // This prevents Vite/Rolldown from ever trying to resolve @capacitor/* packages during pure web builds
@@ -80,6 +80,13 @@ import { resolvePushNotificationData } from './utils/pushNavigation'
 import { normalizeTabNavigation, resolveRedSubTab, isRedTabActive, type RedSubTab } from './utils/tabNavigation'
 import { filterSeedsForCity } from './utils/citySeeds'
 import { partnersForMap } from './utils/partnerLocations'
+import {
+  getTodayStr,
+  computeRetentionLevel,
+  getUnlockedGadgets,
+  getNextGadget,
+  generateDailyChallenge,
+} from './utils/dailyPulseCore'
 import { SyncLiveBlockerModal } from './components/sync/SyncLiveBlockerModal'
 import {
   ASSUMED_LIVE_SESSION_MS,
@@ -1108,116 +1115,6 @@ function App() {
     weeklyMetaLine?: string
   } | null>(null)
 
-  // =====================================================
-  // GYMPULSE DIARIO - Core logic (innovative retention with your GymPartners)
-  // dailyPulse state + ref + isOffline etc hoisted extremely early (before sendVoiceNote and daily helpers)
-  // so every closure sees the declaration before function def. Prevents TDZ on open (mount effects call check).
-  // =====================================================
-  const getTodayStr = () => new Date().toISOString().slice(0, 10)
-
-  // Retention progression: powerful levels system
-  const computeRetentionLevel = (mom: number, tStreak: number, sStreak: number, vStreak: number, pStreak: number, netPower: number) => {
-    const totalXp = mom + (tStreak * 40) + (sStreak * 70) + (vStreak * 25) + (pStreak * 35) + (netPower * 3)
-    const level = Math.floor(totalXp / 300) + 1
-    const xp = totalXp % 300
-    return { level, xp, totalXp }
-  }
-
-  // Niveles + Gadgets exclusivos para retención (mientras más entrenes / hagas streaks / bonds / voces / pulses, más XP y desbloqueos visuales)
-  // Gadgets atados a las 5 mecánicas para que se sientan "reales" y motivadores.
-  const GADGETS = [
-    { level: 5, name: 'Halo Élite', icon: '✨', desc: 'Tu marcador en el mapa brilla con halo dorado extra (más visible para la red)', effect: 'map-halo' },
-    { level: 10, name: 'Tether dorado Sync', icon: '🌟', desc: 'Tethers en EntrenaSync son dorados y más gruesos para ti', effect: 'golden-tether' },
-    { level: 15, name: 'Sync Elite', icon: '🔥', desc: 'Acciones y emojis especiales solo para niveles altos en EntrenaSync', effect: 'exclusive-emojis' },
-    { level: 20, name: 'Pulso Maestro', icon: '🌀', desc: 'Tus ripples/ondas en el mapa son más grandes y con color único', effect: 'map-ripple-boost' },
-    { level: 25, name: 'Aura de Campeón', icon: '👑', desc: 'Badge especial + prioridad en lista live y recomendaciones', effect: 'priority' },
-  ]
-
-  const getUnlockedGadgets = (level: number) => GADGETS.filter(g => level >= g.level)
-  const getNextGadget = (level: number) => GADGETS.find(g => level < g.level) || null
-
-  const generateDailyChallenge = (user: any, bonds: any, liveNow: any[], networkPower: number) => {
-    const bondCount = Object.keys(bonds || {}).length
-    const hasLiveRed = liveNow.some((u: any) => (bonds || {})[u.id])
-    const today = getTodayStr()
-    const seed = (user?.id || 'u') + today // deterministic per user/day
-
-    const options = [
-      {
-        id: 'anchor-' + seed,
-        type: 'solo',
-        title: 'Reto GymPulse: Ancla personal',
-        description: 'Entrena 20+ minutos hoy (solo o con quien quieras). Construye tu base de retención.',
-        target: 20,
-        progress: 0,
-        reward: 25,
-        icon: '🔥',
-        actionLabel: 'Marcar como entrenando'
-      },
-      {
-        id: 'bond-' + seed,
-        type: 'bond',
-        title: 'Reto GymPulse: Alianza activa',
-        description: bondCount > 0 
-          ? `Sincronízate o envía nota de voz a uno de tus ${bondCount} socios de Red hoy.` 
-          : 'Conecta con alguien nuevo o completa un Sync. Fortalece tu grafo.',
-        target: 1,
-        progress: 0,
-        reward: 40,
-        icon: '🔗',
-        actionLabel: bondCount > 0 ? 'Ir a tu Red' : 'Explorar'
-      },
-      {
-        id: 'ripple-' + seed,
-        type: 'network',
-        title: 'Reto GymPulse: Onda en la red',
-        description: hasLiveRed 
-          ? 'Completa tu sesión y publica un post o voz que impulse el GymPulse visible en el mapa para tus GymPartners.' 
-          : 'Entrena y deja un "GymPulse" (post o voz) que sea visto por tus GymPartners. +Impacto colectivo.',
-        target: 1,
-        progress: 0,
-        reward: 55,
-        icon: '🌊',
-        actionLabel: 'Completar y publicar en el GymPulse'
-      },
-      // New variety for more engagement
-      {
-        id: 'voice-weak-' + seed,
-        type: 'bond',
-        title: 'Reto GymPulse: Voz a tu alianza',
-        description: bondCount > 0 ? 'Envía una nota de voz a un GymPartner con menos interacción reciente.' : 'Envía tu primera nota de voz a un GymPartner y activa tu Voice Streak.',
-        target: 1,
-        progress: 0,
-        reward: 35,
-        icon: '🎙️',
-        actionLabel: 'Grabar voz para Red'
-      },
-      {
-        id: 'map-ripple-' + seed,
-        type: 'network',
-        title: 'Reto GymPulse: Pulso en el mapa',
-        description: 'Completa entrenamiento y asegúrate de que tu actividad aparezca como ripple en el GymPulse del mapa (post + live).',
-        target: 1,
-        progress: 0,
-        reward: 45,
-        icon: '🗺️',
-        actionLabel: 'Ir al GymPulse (mapa)'
-      }
-    ]
-
-    // Personalize choice intelligently: prefer bond/voice if Red exists, map ripple if live or high power, etc.
-    let chosen = options[0]
-    if (bondCount >= 1) {
-      chosen = Math.random() > 0.5 ? options[1] : options[3] // bond or voice-weak
-    }
-    if (hasLiveRed || networkPower > 25) {
-      chosen = options[4] // map ripple
-    }
-    if (networkPower > 40) chosen = options[2] // network ripple for high power users
-
-    return { ...chosen, expires: today + 'T23:59:59' }
-  }
-
   const checkAndUpdateDailyPulse = (forceUser?: any) => {
     const u = forceUser || currentUser
     if (!u) return
@@ -1539,35 +1436,6 @@ function App() {
       }
     } catch (e) { console.warn('quick demo', e); }
   }, [saveUser, setShowOnboarding]); // deps safe
-
-  // ==================== EXCEPTIONAL ONBOARDING GUIDANCE (post-finish) ====================
-  // Fires only once, right after OnboardingFlow sets showOnboarding=false for a brand-new user.
-  // Goal: user understands the 5 mechanics + does first Live (already activated in finish if opted) or first match in <30-60s total after close.
-  // Placed here unconditionally (after other early effects) to obey Rules of Hooks. Uses ref guard.
-  const hasFiredFirstActionGuidanceRef = useRef(false)
-  useEffect(() => {
-    if (hasFiredFirstActionGuidanceRef.current) return
-    if (showOnboarding === false && currentUser && !currentUser.hasCompletedFirstAction) {
-      const looksNew = !currentUser.liveJoins && !currentUser.syncStreak && (currentUser.trainingNow || (currentUser.photos?.length || 0) > 0)
-      if (looksNew) {
-        hasFiredFirstActionGuidanceRef.current = true
-        const t = setTimeout(() => {
-          // Switch to explore so the first action (like on nearby card) is obvious and one tap away
-          setActiveTab('explore')
-          // Strong, actionable toast
-          toast.success(currentUser.trainingNow ? '¡Tu primer LIVE está activo en el GymPulse!' : '¡Perfil listo!', {
-            description: 'Explora perfiles cerca. Toca ❤️ en uno que esté vivo o disponible. Tu primer match y chat en <20s. Luego crea EntrenaSync desde el chat.'
-          })
-          try { triggerHaptic('medium') } catch {}
-          // Mark to never repeat (use early saveUser to avoid TDZ; real writes already happened in OnboardingFlow finish)
-          const marked = { ...currentUser, hasCompletedFirstAction: true }
-          try { saveUser(marked as any) } catch {}
-          // Extra nudge: if they opted live, also flash the map button hint by briefly showing live count if any
-        }, 650)
-        return () => clearTimeout(t)
-      }
-    }
-  }, [showOnboarding, currentUser]) // safe: inside effect we guard with ref + looksNew
 
   // Auth UI state (restored for account creation)
   const [authMode, setAuthMode] = useState<'login' | 'register'>('register')
@@ -1974,20 +1842,6 @@ useEffect(() => {
   }, [])
 
   const [firestoreCityStats, setFirestoreCityStats] = useState<import('./services/cityWeeklyStats').CityWeeklyStatsDoc | null>(null)
-  const [partnerLocations, setPartnerLocations] = useState<any[]>([])
-  const [showPartners, setShowPartners] = useState(false)
-  const [showAddPartnerForm, setShowAddPartnerForm] = useState(false)
-  const [showManagePartners, setShowManagePartners] = useState(false)
-  const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null)
-  const [partnerFormName, setPartnerFormName] = useState('')
-  const [partnerFormType, setPartnerFormType] = useState<'gym' | 'store' | 'studio'>('gym')
-  const [partnerFormLat, setPartnerFormLat] = useState(-33.02)
-  const [partnerFormLng, setPartnerFormLng] = useState(-71.55)
-  const [partnerFormAddress, setPartnerFormAddress] = useState('')
-  const [partnerLogoFile, setPartnerLogoFile] = useState<File | null>(null)
-  const [partnerLogoPreview, setPartnerLogoPreview] = useState<string | null>(null)
-  const [isPlacingPartner, setIsPlacingPartner] = useState(false) // for click-to-place in dev form
-  const [isQuickAddPartner, setIsQuickAddPartner] = useState(false) // extra dev mode: click map = instantly create minimal tienda/partner (no form)
   const [mapForceTick, setMapForceTick] = useState(0) // tiny trigger so map re-renders when toggling partners layer
   const [isTogglingLive, setIsTogglingLive] = useState(false) // prevent double-tap and show loading on the live toggle button (fixes stuck click)
   const isTogglingLiveRef = useRef(false)
@@ -2001,242 +1855,75 @@ useEffect(() => {
   // Refs for current auth uid and blocked to avoid stale closures in onSnapshot callbacks (critical for live status skip-self and filtering)
   const currentUidRef = useRef<string | null>(null)
   const blockedUsersRef = useRef<string[]>([])
-
-  // Keep refs in sync for leaflet click handlers (closed over values would be stale)
-  useEffect(() => { isPlacingPartnerRef.current = isPlacingPartner }, [isPlacingPartner])
-  useEffect(() => { isQuickAddPartnerRef.current = isQuickAddPartner }, [isQuickAddPartner])
-  useEffect(() => { showAddPartnerFormRef.current = showAddPartnerForm }, [showAddPartnerForm])
-  // Developer gate for partner management (only devs can add/edit partner locations on the map)
-  const [isDeveloper, setIsDeveloper] = useState(() => {
-    try { return localStorage.getItem('entrenamatch_dev_mode') === '1' } catch { return false }
-  })
-  const [showDevLogin, setShowDevLogin] = useState(false)
-  const [devPassword, setDevPassword] = useState('')
   const gymPulseMapRef = useRef<any>(null) // extracted GymPulseMap handle (centrar, flyTo, getCenter, invalidate)
 
-  // Sync refs for listeners (prevents using stale uid/blocked in onSnapshot for live propagation)
   useEffect(() => { currentUidRef.current = firebaseUser?.uid || null }, [firebaseUser?.uid])
   useEffect(() => { blockedUsersRef.current = blockedUsers }, [blockedUsers])
 
-  // Developer login for gated partner management (only devs can add/edit locals on the GymPulse map)
-  const loginAsDeveloper = () => {
-    if (!isDevPasswordConfigured()) {
-      toast.error('Editor de mapa no configurado', {
-        description: 'Define VITE_DEV_MAP_PASSWORD en build local y añade tu UID en Firestore mapEditors/{uid}.',
-      })
-      return
-    }
-    if (verifyDevMapPassword(devPassword)) {
-      setIsDeveloper(true)
-      try { localStorage.setItem('entrenamatch_dev_mode', '1') } catch {}
-      setShowDevLogin(false)
-      setDevPassword('')
-      try { triggerHaptic('success') } catch {}
-      toast.success('Developer access granted', { description: 'You can now add and manage partner locations with logos' })
-    } else {
-      toast.error('Incorrect developer password')
-    }
-  }
-  const logoutDeveloper = () => {
-    setIsDeveloper(false)
-    try { localStorage.removeItem('entrenamatch_dev_mode') } catch {}
-    setShowManagePartners(false)
-    setShowAddPartnerForm(false)
-    setEditingPartnerId(null)
-    setPartnerLogoFile(null)
-    setPartnerLogoPreview(null)
-    setMapForceTick(t => t + 1)
-    toast('Developer mode disabled')
-  }
-
-  // Dev superpowers for fast iteration on the live map without other users.
-  const addPartnerAtCurrentCenter = async () => {
-    if (!isDeveloper || !gymPulseMapRef.current) { toast.error('Mapa dev no listo'); return }
-    const center = gymPulseMapRef.current.getCenter?.()
-    if (!center) { toast.error('No se pudo obtener centro del mapa'); return }
-    const { lat, lng } = center
-    const pid = 'partner-' + Date.now()
-    const minimal: any = {
-      id: pid,
-      name: 'Partner @centro ' + new Date().toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }),
-      lat, lng,
-      type: 'gym',
-      address: 'Agregado rápido por dev (centro mapa)',
-      addedAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    setPartnerLocations(prev => [...prev, minimal])
-    setMapForceTick(t => t + 1)
-    if (!isDemoMode && db) {
-      try {
-        const { setDoc, doc } = await import('firebase/firestore')
-        await setDoc(doc(db, 'partnerLocations', pid), minimal)
-      } catch (e) { console.warn('add@center fs', e) }
-    }
-    toast.success('Partner agregado en centro', { description: 'Abre Manage o Edit para logo/nombre' })
-    // auto open edit for convenience
-    setTimeout(() => startEditPartner(minimal), 80)
-  }
-
-  const reloadPartners = () => {
-    setMapForceTick(t => t + 1)
-    toast('Mapa y partners refrescados')
-  }
-
-  const openDevLogin = () => {
-    setShowDevLogin(true)
-    setDevPassword('')
-  }
-
-  const openAddPartner = () => {
-    if (!isDeveloper) { openDevLogin(); return }
-    setEditingPartnerId(null)
-    setPartnerFormName('Nuevo Partner Gym')
-    setPartnerFormType('gym')
-    setPartnerLogoFile(null)
-    setPartnerLogoPreview(null)
-    setPartnerFormAddress('')
-    // default to current map center (prefer the extracted GymPulseMap handle)
-    let center: { lat: number; lng: number } | null = null
-    try {
-      center = gymPulseMapRef.current?.getCenter?.() || null
-    } catch {}
-    if (center) {
-      setPartnerFormLat(center.lat)
-      setPartnerFormLng(center.lng)
-    } else if (userLocation) {
-      setPartnerFormLat(userLocation.lat)
-      setPartnerFormLng(userLocation.lng)
-    } else {
-      setPartnerFormLat(-33.02)
-      setPartnerFormLng(-71.55)
-    }
-    setIsPlacingPartner(false)
-    setShowAddPartnerForm(true)
-    setShowManagePartners(false)
-    setTimeout(() => { try { triggerHaptic('light') } catch {} }, 30)
-  }
-
-  const openManagePartners = () => {
-    if (!isDeveloper) { openDevLogin(); return }
-    setShowManagePartners(true)
-    setShowAddPartnerForm(false)
-  }
-
-  const startEditPartner = (p: any) => {
-    setEditingPartnerId(p.id)
-    setPartnerFormName(p.name || '')
-    setPartnerFormType((p.type as any) || 'gym')
-    setPartnerLogoFile(null)
-    setPartnerLogoPreview(p.logoUrl || null)
-    setPartnerFormLat(p.lat ?? -33.02)
-    setPartnerFormLng(p.lng ?? -71.55)
-    setPartnerFormAddress(p.address || '')
-    setIsPlacingPartner(false)
-    setShowAddPartnerForm(true)
-    setShowManagePartners(false)
-    // Center map on it using the new GymPulseMap handle (or legacy fallback) so dev sees exactly where it is
-    setTimeout(() => {
-      if (gymPulseMapRef.current && p.lat && p.lng) {
-        try { gymPulseMapRef.current.centerOn(p.lat, p.lng, 15) } catch {}
-      }
-      // legacy mapInstanceRef path removed (modularization)
-    }, 80)
-  }
-
-  // Stable handler for map popup "Edit" (dev). Must be a top-level useCallback (not created inside conditional JSX)
-  // to keep hook call count stable across renders when showLiveMap toggles (fixes React #310 on GH Pages prod build).
-  const handlePartnerEditFromMap = useCallback((id: string) => {
-    const p = (partnerLocationsRef.current || partnerLocations).find((pp: any) => pp.id === id)
-    if (p) {
-      // Make sure we are in the right view to see the edit form (which overlays the map)
-      if (activeTab !== 'explore') setActiveTab('explore')
-      if (!showLiveMap) setShowLiveMap(true)
-      startEditPartner(p)
-    } else {
-      console.warn('dev edit: partner not found in current list for id', id)
-      // Fallback: still open edit form with the id so dev can fix
-      setEditingPartnerId(id)
-      setPartnerFormName('Partner ' + id.slice(-6))
-      setPartnerFormType('gym')
-      setPartnerFormLat(-33.02)
-      setPartnerFormLng(-71.55)
-      setPartnerFormAddress('')
-      setPartnerLogoFile(null)
-      setPartnerLogoPreview(null)
-      setIsPlacingPartner(false)
-      setShowAddPartnerForm(true)
-      setShowManagePartners(false)
-    }
-  }, [partnerLocations, activeTab, showLiveMap, startEditPartner])
-
-  const cancelPartnerForm = () => {
-    setShowAddPartnerForm(false)
-    setEditingPartnerId(null)
-    setPartnerLogoFile(null)
-    if (partnerLogoPreview && partnerLogoPreview.startsWith('blob:')) {
-      URL.revokeObjectURL(partnerLogoPreview)
-    }
-    setPartnerLogoPreview(null)
-    setPartnerFormAddress('')
-    setIsPlacingPartner(false)
-    setPartnerFormLat(-33.02)
-    setPartnerFormLng(-71.55)
-  }
-
-  const handlePartnerLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setPartnerLogoFile(file)
-      if (partnerLogoPreview && partnerLogoPreview.startsWith('blob:')) URL.revokeObjectURL(partnerLogoPreview)
-      const preview = URL.createObjectURL(file)
-      setPartnerLogoPreview(preview)
-      try { triggerHaptic('light') } catch {}
-    }
-  }
-
-  const uploadPartnerLogoIfNeeded = async (file: File | null, pid: string): Promise<string | undefined> => {
-    if (!file) return undefined
-    if (isDemoMode || !storage) {
-      return URL.createObjectURL(file) // demo only
-    }
-    // Critical for 403: Storage rules require request.auth != null. The dev password only gates the UI form client-side.
-    // Real Firebase sign-in (Google/email via the app's auth) is mandatory for the upload to succeed with the isAuthenticated() rule.
-    if (!firebaseUser?.uid) {
-      try { toast.error('Para subir logo de partner necesitas estar sign-in con Firebase Auth (botón de Google o email en la app). El password dev solo muestra el formulario de devs, no otorga token de Storage. El partner se guardará sin logo.') } catch {}
-      console.warn('partner logo upload skipped: no firebaseUser (no auth token for storage rules)')
-      return undefined
-    }
-    try {
-      console.log('[partner-logo] uploading for pid=', pid, 'uid=', firebaseUser.uid, 'bucket=entrenamatch.firebasestorage.app')
-      const { ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage')
-      const storageRef = ref(storage, `partners/${pid}/logo-${Date.now()}`)
-      const task = uploadBytesResumable(storageRef, file)
-      await new Promise<void>((resolve, reject) => {
-        task.on('state_changed',
-          () => {}, // progress optional
-          (err) => reject(err),
-          () => resolve()
-        )
-      })
-      const url = await getDownloadURL(task.snapshot.ref)
-      console.log('[partner-logo] success https url length=', url?.length)
-      return url
-    } catch (e: any) {
-      console.warn('logo upload failed (403 often means rules not deployed or no Firebase Auth token)', e?.code || e?.message || e)
-      // Caller shows the detailed 403 toast with deploy + sign-in steps.
-      return undefined
-    }
-  }
-
-  // Partner businesses (gyms, stores etc that partner with the app). Devs can add them so they appear on the mapa en tiempo real (GymPulse map).
-  // "ellos puedan ver": partners get prominent placement + nearby activity indicators (users training close get associated with the partner location).
-  const PARTNER_SEEDS = [
-    { id: 'p-seed-1', name: 'Muscle Grenade Viña', lat: -33.015, lng: -71.55, type: 'gym', address: 'Viña del Mar, cerca del centro', promoLabel: '10% OFF primera visita', promoCode: 'MGVIÑA10' },
-    { id: 'p-seed-2', name: 'Gym Partner Santiago', lat: -33.45, lng: -70.65, type: 'gym', address: 'Santiago, Providencia', promoLabel: 'Día guest gratis con check-in', promoCode: 'STGO-GUEST' },
-    { id: 'p-seed-3', name: 'Suplementos Elite Valpo', lat: -33.05, lng: -71.62, type: 'store', address: 'Valparaíso, Cerro Concepción', promoLabel: 'Shake post-entreno 2x1', promoCode: 'ELITE2X1' },
-    { id: 'p-seed-4', name: 'CrossFit Concón', lat: -32.92, lng: -71.52, type: 'gym', address: 'Concón, zona costera', promoLabel: 'Clase prueba gratis', promoCode: 'CONCON-WOD' }
-  ]
+  const {
+    partnerLocations,
+    setPartnerLocations,
+    mapPartnerLocations,
+    partnerLocationsRef,
+    showPartners,
+    setShowPartners,
+    showAddPartnerForm,
+    setShowAddPartnerForm,
+    showManagePartners,
+    setShowManagePartners,
+    editingPartnerId,
+    setEditingPartnerId,
+    partnerFormName,
+    setPartnerFormName,
+    partnerFormType,
+    setPartnerFormType,
+    partnerFormLat,
+    setPartnerFormLat,
+    partnerFormLng,
+    setPartnerFormLng,
+    partnerFormAddress,
+    setPartnerFormAddress,
+    partnerLogoFile,
+    setPartnerLogoFile,
+    partnerLogoPreview,
+    setPartnerLogoPreview,
+    isPlacingPartner,
+    setIsPlacingPartner,
+    isQuickAddPartner,
+    setIsQuickAddPartner,
+    isPlacingPartnerRef,
+    isQuickAddPartnerRef,
+    showAddPartnerFormRef,
+    isDeveloper,
+    showDevLogin,
+    setShowDevLogin,
+    devPassword,
+    setDevPassword,
+    loginAsDeveloper,
+    logoutDeveloper,
+    openAddPartner,
+    openManagePartners,
+    startEditPartner,
+    cancelPartnerForm,
+    handlePartnerEditFromMap,
+    handlePartnerLogoSelect,
+    uploadPartnerLogoIfNeeded,
+    addPartnerAtCurrentCenter,
+    reloadPartners,
+  } = usePartnerLocations({
+    isDemoMode,
+    db,
+    storage,
+    firebaseUser,
+    userLocation,
+    activeTab,
+    showLiveMap,
+    setActiveTab,
+    setShowLiveMap,
+    setMapForceTick,
+    gymPulseMapRef,
+    triggerHaptic,
+  })
 
   // Zone colors shared for map markers and interactive legend (sigue con todo el mapa)
   const mapZoneColors: Record<string, string> = {
@@ -2251,67 +1938,8 @@ useEffect(() => {
     ((target: NotificationNavTarget, partnerNameHint?: string) => void) | null
   >(null)
   const currentUserRef = useRef<CurrentUser | null>(null)
-  // Refs for dev map placement UX (click-to-place partner without leaving map view) + latest partners (passed down + used in quick add handler).
-  // The actual Leaflet markers/ripples/tethers live inside <GymPulseMap /> (first modularization step).
-  const isPlacingPartnerRef = useRef(false)
-  const isQuickAddPartnerRef = useRef(false)
-  const showAddPartnerFormRef = useRef(false)
-  const partnerLocationsRef = useRef<any[]>([]) // latest partners always, to avoid stale closure in debounced map render (helps add-partner persistence)
-  useEffect(() => { partnerLocationsRef.current = partnerLocations }, [partnerLocations])
-
-  /** Partners visibles en mapa — sin seeds demo en Firebase real (fase 118). */
-  const mapPartnerLocations = useMemo(
-    () => partnersForMap(partnerLocations, isDemoMode),
-    [partnerLocations, isDemoMode]
-  )
-
-  // Load partner locations: demo = seeds; real = solo Firestore (devs agregan vía formulario).
-  useEffect(() => {
-    const demoSeeds = [...PARTNER_SEEDS]
-
-    if (isDemoMode || !db) {
-      setPartnerLocations(demoSeeds)
-      return
-    }
-
-    let unsub: any = null
-    ;(async () => {
-      try {
-        const firestoreMod = await import('firebase/firestore')
-        const { collection, onSnapshot, query, orderBy } = firestoreMod
-        const q = query(collection(db, 'partnerLocations'), orderBy('name'))
-        unsub = onSnapshot(q, (snap: any) => {
-          const fromFs: any[] = []
-          snap.forEach((d: any) => {
-            const data = d.data() || {}
-            Object.keys(data).forEach(k => { if (data[k] === undefined) delete data[k] })
-            fromFs.push({ id: d.id, ...data })
-          })
-          setPartnerLocations(fromFs)
-          setMapForceTick(t => t + 1)
-        }, (err: any) => {
-          console.warn('partnerLocations listener error', err)
-          setPartnerLocations([])
-          setMapForceTick(t => t + 1)
-        })
-      } catch (err: any) {
-        console.warn('partnerLocations listener error', err)
-        setPartnerLocations([])
-        setMapForceTick(t => t + 1)
-      }
-    })()
-
-    return () => { if (unsub) unsub() }
-  }, [isDemoMode, db])
   const showFullProfileRef = useRef<((profile: any) => void) | null>(null)
   const latestRealProfilesRef = useRef<any[]>([])
-
-// Dedicated unmount cleanup for the Leaflet map (now mostly no-op since GymPulseMap owns the instance; kept for safety on unmount/hot-reload)
-  useEffect(() => {
-    return () => {
-      // Legacy map refs removed during GymPulseMap extraction polish. Child component manages its own Leaflet lifecycle + cleanup.
-    }
-  }, [])
 
   // Persist map open preference (nice for power users who like the radar always visible)
   useEffect(() => {
@@ -4485,7 +4113,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   }, [showAdminOps, isMarketplaceAdmin, isDemoMode])
 
   useEffect(() => {
-    if (isDemoMode || !db || !firebaseUser?.uid || showOnboarding) return
+    if (showOnboarding) return
+    if (isDemoMode) {
+      const dismissed = demoStorage.get<boolean>(DEMO_KEYS.ACTIVATION_GUIDE_DISMISSED)
+      if (!dismissed) setShowActivationGuide(true)
+      return
+    }
+    if (!db || !firebaseUser?.uid) return
     void shouldShowActivationGuide(db, firebaseUser.uid).then((show) => {
       if (show) setShowActivationGuide(true)
     })
@@ -9047,24 +8681,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     })
     prevRedSyncStateRef.current = { ...prevRedSyncStateRef.current, ...currentRedSyncs }
   }, [liveTrainingNow, syncBonds, addNotification])
-  // Real-time Live Map effect — MOVED to GymPulseMap component (modularization 2026-06-05).
-  // The entire block (init + debounced marker/ripple/partner rendering) now lives in src/components/map/GymPulseMap.tsx
-  // This useEffect is kept as a no-op stub during transition to avoid hook count / TDZ issues.
-  useEffect(() => {
-    // === MAP LOGIC EXTRACTED ===
-    // All map creation, updates, markers, ripples, partners, tethers, clusters, self-marker, etc.
-    // are now inside <GymPulseMap />.
-    // We still keep this effect (empty) so hook ordering remains stable while we finish the cut-over.
-    if (!showLiveMap) return
-    // No more heavy work here.
-    return () => {}
-  // Keep similar deps so React doesn't complain during transition
-  }, [showLiveMap, liveTrainingNow, userLocation, mapNearOnly, selectedMapZone, syncRipples, echoPins, showPartners, mapForceTick, partnerLocations.length])
-
-  // OLD MAP EFFECT BODY FULLY DELETED (2026-06-05) — all live marker, cluster, ripple, partner hub, tether, self-area, heartbeat, ritual wave logic
-  // now lives exclusively inside <GymPulseMap ref=... /> (see src/components/map/GymPulseMap.tsx).
-  // The stub useEffect above preserves hook ordering. No top-level statements from the old body remain here.
-  // This excision fixes the TS1128 "Declaration or statement expected" at EOF that was breaking `npm run build` / CI APK generation.
 
   // Small relative time for message previews (e.g. "5m", "2h", "ahora")
   const getRelativeTime = (ts?: number) => {
@@ -9414,9 +9030,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
   // Auth gate lives in RootApp → PublicAuthPage; App only renders for authenticated users.
 
-  // For real users or demo users without full profile, show onboarding/creation flow
-  // Only show onboarding when explicitly opened (register, profile editor, demo).
-  // Avoid auto-trapping returning logins with incomplete profiles — they can finish via Perfil.
+  // For real users or demo users without full profile, show onboarding/creation flow.
+  // Incomplete Firestore profiles are forced via ProfileContext (fase 162).
   const shouldShowOnboarding = showOnboarding
 
   const closeOnboarding = (show: boolean) => {
@@ -10719,16 +10334,35 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       <ActivationGuide
         open={showActivationGuide}
         isLive={!!currentUser?.trainingNow}
+        isDemoMode={isDemoMode}
         hasTeam={homeTeamMembers.length > 0}
         hasPact={homeWeeklyPactProgress.pledged}
         onClose={() => {
           setShowActivationGuide(false)
+          if (isDemoMode) {
+            demoStorage.set(DEMO_KEYS.ACTIVATION_GUIDE_DISMISSED, true)
+            return
+          }
           if (db && firebaseUser?.uid) {
             void markActivationGuideComplete(db, firebaseUser.uid).then(() =>
               setFirstStepsProgress((prev) =>
                 prev ? { ...prev, dismissed: true, updatedAt: Date.now() } : prev
               )
             )
+          }
+        }}
+        onPrimaryAction={() => {
+          setShowActivationGuide(false)
+          if (isDemoMode) {
+            demoStorage.set(DEMO_KEYS.ACTIVATION_GUIDE_DISMISSED, true)
+          } else if (db && firebaseUser?.uid) {
+            void markActivationGuideComplete(db, firebaseUser.uid)
+          }
+          if (currentUser?.trainingNow) {
+            setShowLiveMap(true)
+            setActiveTab('explore')
+          } else {
+            setActiveTab('explore')
           }
         }}
         onStep={(step) => {

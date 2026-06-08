@@ -5,10 +5,9 @@ import { useDemoAuth } from './hooks/useDemoAuth'
 import { BootShell } from './boot/BootShell'
 import { PublicAuthPage } from './pages/PublicAuthPage'
 import { markQuickDemoSession, QUICK_DEMO_USER } from './utils/quickDemo'
+import { BOOT_TIMEOUT_MS, bootMessages, type BootPhase } from './boot/bootConstants'
 
 const LazyApp = lazy(() => import('./App'))
-
-const BOOT_TIMEOUT_MS = 8000
 
 export default function RootApp() {
   const { currentUser: firebaseUser, loading: authBooting, isDemoMode, setDemoMode } = useAuth()
@@ -21,9 +20,14 @@ export default function RootApp() {
     return !!firebaseUser
   }, [isDemoMode, localProfile, isDemoAuthenticated, firebaseUser])
 
-  const isBooting =
-    !isDemoMode &&
-    (authBooting || (!!firebaseUser && !profileHydrated))
+  const bootPhase: BootPhase | null = useMemo(() => {
+    if (isDemoMode) return null
+    if (authBooting) return 'auth'
+    if (firebaseUser && !profileHydrated) return 'profile'
+    return null
+  }, [isDemoMode, authBooting, firebaseUser, profileHydrated])
+
+  const isBooting = bootPhase !== null
 
   useEffect(() => {
     if (!isBooting) {
@@ -32,7 +36,7 @@ export default function RootApp() {
     }
     const t = setTimeout(() => setBootTimedOut(true), BOOT_TIMEOUT_MS)
     return () => clearTimeout(t)
-  }, [isBooting])
+  }, [isBooting, bootPhase])
 
   const handleBootRetry = useCallback(() => {
     setBootTimedOut(false)
@@ -42,28 +46,17 @@ export default function RootApp() {
   const handleBootDemo = useCallback(() => {
     markQuickDemoSession()
     setDemoMode(true)
-    saveUser(QUICK_DEMO_USER as any)
-    setShowOnboarding(false)
+    saveUser(QUICK_DEMO_USER)
+    setTimeout(() => setShowOnboarding(true), 80)
     setBootTimedOut(false)
   }, [setDemoMode, saveUser, setShowOnboarding])
 
-  if (authBooting && !isDemoMode) {
+  if (isBooting && bootPhase) {
+    const { message, submessage } = bootMessages(bootPhase, bootTimedOut)
     return (
       <BootShell
-        message="Verificando sesión…"
-        submessage="Conectando con EntrenaMatch"
-        timedOut={bootTimedOut}
-        onRetry={handleBootRetry}
-        onDemo={handleBootDemo}
-      />
-    )
-  }
-
-  if (!isDemoMode && firebaseUser && !profileHydrated) {
-    return (
-      <BootShell
-        message="Cargando tu perfil…"
-        submessage="Sincronizando datos de entrenamiento"
+        message={message}
+        submessage={submessage}
         timedOut={bootTimedOut}
         onRetry={handleBootRetry}
         onDemo={handleBootDemo}
@@ -75,13 +68,12 @@ export default function RootApp() {
     return <PublicAuthPage />
   }
 
+  const appBoot = bootMessages('app', false)
+
   return (
     <Suspense
       fallback={
-        <BootShell
-          message="Preparando tu arena…"
-          submessage="Mapa, live y tu equipo"
-        />
+        <BootShell message={appBoot.message} submessage={appBoot.submessage} />
       }
     >
       <LazyApp />

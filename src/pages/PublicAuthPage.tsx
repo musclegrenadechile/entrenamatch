@@ -41,8 +41,8 @@ export function PublicAuthPage() {
     setDemoMode(true);
     saveUser(QUICK_DEMO_USER);
     setTimeout(() => setShowOnboarding(true), 80);
-    toast.success('Demo rápido activado', {
-      description: 'Preview en vivo + opt-in EN VIVO en el paso final.',
+    toast.success('Modo prueba activado', {
+      description: 'Datos solo en este dispositivo. Completa el setup en 4 pasos.',
     });
   }, [saveUser, setShowOnboarding, setDemoMode]);
 

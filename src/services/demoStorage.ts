@@ -54,4 +54,5 @@ export const DEMO_KEYS = {
   REPORTS: 'reports',
   NOTIFICATIONS: 'notifications',
   DEMO_AUTH_USER: 'demo_auth_user',
+  ACTIVATION_GUIDE_DISMISSED: 'activation_guide_dismissed',
 } as const;

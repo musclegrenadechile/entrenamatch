@@ -61,8 +61,8 @@ npm run deploy
 | 9 | **121** | 0.1.247 | Hook `useLiveMapPipeline` (filters, mapForceTick, debounce) | ✅ | 128 |
 | 10 | **122** | 0.1.247 | Hook `useFuelState` + refreshFuelData | ✅ | — |
 | 11 | **123** | 0.1.247 | Hook `useSyncSession` (Arena, bonds, trainingSyncWith) | ✅ | — |
-| 12 | **124** | 0.1.247 | Partner dev CRUD → `usePartnerLocations` (hook listo) | 🔄 | 118 |
-| 13 | **125** | 0.1.246 | App.tsx < 8k líneas + LazyTabs sin imports rotos | 🔄 | 121–124 |
+| 12 | **124** | 0.1.247 | Partner dev CRUD → `usePartnerLocations` (hook listo) | ✅ | 118 |
+| 13 | **125** | 0.1.248 | App.tsx < 8k líneas + LazyTabs sin imports rotos | 🔄 | 121–124 |
 | 14 | **127** | 0.1.247 | E2E Playwright: login → live → mapa → sync → Fuel | ✅ | 121–123 |
 
 **Done cuando:** App.tsx no contiene `filterMapLiveUsers` inline; E2E verde.

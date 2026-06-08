@@ -31,14 +31,9 @@ import { GymPulseMapFilters } from './GymPulseMapFilters'
 import { GymPulseRadar } from './GymPulseRadar'
 import { GymPulsePopupLayer } from './popups/GymPulsePopupLayer'
 import type { GymPulsePopupState } from './gymPulsePopupTypes'
-import {
-  computeHeatCells,
-  liveMarkerSignature,
-  markerPoolKey,
-  partnerMarkerSignature,
-  pruneMarkerPool,
-  type MarkerPool,
-} from '../../services/gymPulseMarkerRegistry'
+// Namespace imports avoid minifier name collisions with App.tsx useState bindings in the same chunk (Fn/Mn/Bn overwrite bug).
+import * as MarkerReg from '../../services/gymPulseMarkerRegistry'
+import type { MarkerPool } from '../../services/gymPulseMarkerRegistry'
 
 // Fix Leaflet icons (same as before)
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -51,14 +46,10 @@ L.Icon.Default.mergeOptions({
 import { getDistanceKm } from '../../utils'
 import { filterMapLiveUsers, hasMapCoords } from '../../utils/gymPulseLive'
 import { logMapEvent } from '../../services/mapAnalytics'
-import { buildIconicClusterMarkerHtml, buildIconicLiveMarkerHtml, buildPartnerMarkerHtml } from '../../utils/gymPulseMarkers'
-import {
-  GYMPULSE_MAP_SUBDOMAINS,
-  GYMPULSE_MAP_TILE_ATTRIBUTION,
-  GYMPULSE_MAP_TILE_URL,
-} from '../../services/gymPulseMapConfig'
-import { bboxFromLeafletBounds, buildLiveClusterIndex, getLiveClusters } from '../../services/gymPulseCluster'
-import { countLiveAtGym } from '../../services/localNetwork'
+import * as MarkerHtml from '../../utils/gymPulseMarkers'
+import * as MapConfig from '../../services/gymPulseMapConfig'
+import * as MapCluster from '../../services/gymPulseCluster'
+import * as LocalNetwork from '../../services/localNetwork'
 import { syncElapsedMinutes } from '../../utils/syncFomo'
 
 export interface GymPulseMapProps {
@@ -319,6 +310,21 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       return
     }
 
+    // Local aliases in effect scope — avoids production bundle collisions when App.tsx useState
+    // overwrites module-level minified names (Fn/Mn/Bn) in the shared App chunk.
+    const markerPoolKey = MarkerReg.markerPoolKey
+    const liveMarkerSignature = MarkerReg.liveMarkerSignature
+    const partnerMarkerSignature = MarkerReg.partnerMarkerSignature
+    const pruneMarkerPool = MarkerReg.pruneMarkerPool
+    const computeHeatCells = MarkerReg.computeHeatCells
+    const buildIconicClusterMarkerHtml = MarkerHtml.buildIconicClusterMarkerHtml
+    const buildIconicLiveMarkerHtml = MarkerHtml.buildIconicLiveMarkerHtml
+    const buildPartnerMarkerHtml = MarkerHtml.buildPartnerMarkerHtml
+    const countLiveAtGym = LocalNetwork.countLiveAtGym
+    const buildLiveClusterIndex = MapCluster.buildLiveClusterIndex
+    const bboxFromLeafletBounds = MapCluster.bboxFromLeafletBounds
+    const getLiveClusters = MapCluster.getLiveClusters
+
     // Request location the first time map opens (good UX)
     if (!userLocation && onRequestLocation) {
       onRequestLocation().catch(() => {})
@@ -333,10 +339,10 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         attributionControl: false
       }).setView(initialCenter, initialZoom)
 
-      L.tileLayer(GYMPULSE_MAP_TILE_URL, {
+      L.tileLayer(MapConfig.GYMPULSE_MAP_TILE_URL, {
         maxZoom: 19,
-        subdomains: [...GYMPULSE_MAP_SUBDOMAINS],
-        attribution: GYMPULSE_MAP_TILE_ATTRIBUTION,
+        subdomains: [...MapConfig.GYMPULSE_MAP_SUBDOMAINS],
+        attribution: MapConfig.GYMPULSE_MAP_TILE_ATTRIBUTION,
       }).addTo(mapInstanceRef.current)
 
       // Move zoom control to bottom right so our overlays (Centrar top-right, dev toolbar) are not covered
