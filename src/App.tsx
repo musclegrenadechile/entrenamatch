@@ -195,6 +195,7 @@ import {
 } from './services/weeklyPact'
 import { ARENA_REST_MS, parseParticipantState } from './utils/arenaSyncState'
 import { triggerHaptic } from './utils/haptics'
+import { loadStoredNotifications, saveStoredNotifications } from './utils/safeLocalStorage'
 import {
   attachGroupMessagesListener,
   mapGroupMessageDoc,
@@ -4793,15 +4794,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     const savedReports = localStorage.getItem('entrenamatch_reports')
     if (savedReports) setReports(JSON.parse(savedReports))
 
-    const savedNotifications = localStorage.getItem('entrenamatch_notifications')
-    if (savedNotifications) {
-      let loaded = JSON.parse(savedNotifications)
-      // Auto-clean old read notifications to keep panel tidy (keep recent read + all unread)
-      loaded = loaded.filter((n: any) => !n.read || (Date.now() - (n.timestamp || 0)) < 1000*60*60*24*7 ) // keep unread + last 7 days read
-      setNotifications(loaded.slice(0, 30))
-      if (loaded.length !== JSON.parse(savedNotifications).length) {
-        localStorage.setItem('entrenamatch_notifications', JSON.stringify(loaded))
-      }
+    const savedNotifications = loadStoredNotifications()
+    if (savedNotifications.length > 0) {
+      setNotifications(savedNotifications)
     }
 
     // Restore persistent seen message IDs so we don't re-notify old messages after reload
@@ -7145,25 +7140,26 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     })
 
     let newJoinDetected = false
+    const pendingJoinNotifs: Notification[] = []
     livePosts.forEach((post: any) => {
-      // New comments on the live post
       ;(post.comments || []).forEach((c: any) => {
         if (c.userId && c.userId !== myId && !seenLiveJoinInteractionIdsRef.current.has(c.id)) {
           seenLiveJoinInteractionIdsRef.current.add(c.id)
           newJoinDetected = true
-          addNotification({
+          pendingJoinNotifs.push({
+            id: 'notif' + Date.now() + '-' + c.id,
             type: 'session_join',
             title: '🔥 ¡Alguien se unió a tu live!',
             body: `${c.userName || 'Un compañero'} se unió a tu entrenamiento en vivo`,
             relatedId: c.userId,
-            photoUrl: undefined
+            timestamp: Date.now(),
+            read: false,
           })
           toast(`🔥 ${c.userName || 'Alguien'} se unió a tu live`, {
             description: '¡Abre tu muro o chatea con ellos!',
             action: {
               label: 'Ver perfil',
               onClick: () => {
-                // Try to open the joiner's profile if we have them loaded
                 const joiner = [...realProfiles, ...SEED_PROFILES].find(p => p.id === c.userId)
                 if (joiner) setShowFullProfile(joiner as any)
                 else setActiveTab('home')
@@ -7173,7 +7169,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         }
       })
 
-      // Also treat new likes on the live post as joins (if not self)
       ;(post.likes || []).forEach((likerId: string) => {
         const likeKey = `${post.id}_like_${likerId}`
         if (likerId !== myId && !seenLiveJoinInteractionIdsRef.current.has(likeKey)) {
@@ -7181,16 +7176,23 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           newJoinDetected = true
           const likerProfile = [...realProfiles, ...SEED_PROFILES].find(p => p.id === likerId)
           const likerName = likerProfile?.name || 'Un compañero'
-          addNotification({
+          pendingJoinNotifs.push({
+            id: 'notif' + Date.now() + '-' + likeKey,
             type: 'session_join',
             title: '❤️ ¡Like en tu post live!',
             body: `${likerName} le dio like a tu "Entrenando ahora"`,
-            relatedId: likerId
+            relatedId: likerId,
+            timestamp: Date.now(),
+            read: false,
           })
           toast(`❤️ ${likerName} se sumó a tu live`, { description: '¡Tu post en vivo está generando movimiento!' })
         }
       })
     })
+
+    if (pendingJoinNotifs.length > 0) {
+      setNotifications((prev) => saveStoredNotifications([...pendingJoinNotifs, ...prev]))
+    }
 
     if (newJoinDetected) {
       try {
@@ -7416,8 +7418,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   }
 
   const saveNotifications = (newNotifications: Notification[]) => {
-    localStorage.setItem('entrenamatch_notifications', JSON.stringify(newNotifications))
-    setNotifications(newNotifications)
+    const pruned = saveStoredNotifications(newNotifications)
+    setNotifications(pruned)
   }
 
   const persistSeen = () => {
@@ -7460,7 +7462,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       timestamp: Date.now(),
       read: false
     }
-    const updated = [newNotif, ...notifications].slice(0, 50) // keep last 50
+    const updated = [newNotif, ...notifications].slice(0, 25)
     saveNotifications(updated)
   }
 
