@@ -1,6 +1,6 @@
 # Orden de ataque completo — Fases 111 → 160
 
-**Versión actual:** v0.1.235 · **Meta cierre fase 160:** v0.1.280  
+**Versión actual:** v0.1.247 · **Meta cierre fase 160:** v0.1.280  
 **Deploy:** https://entrenamatch.web.app  
 **Roadmap detalle:** `ROADMAP_FASES_111_160.md`
 
@@ -58,12 +58,12 @@ npm run deploy
 
 | # | Fase | Versión | Entregable | Estado | Depende de |
 |---|------|---------|------------|--------|------------|
-| 9 | **121** | 0.1.242 | Hook `useLiveMapPipeline` (filters, mapForceTick, debounce) | ⏳ | 128 |
-| 10 | **122** | 0.1.243 | Hook `useFuelState` + refreshFuelData | ⏳ | — |
-| 11 | **123** | 0.1.244 | Hook `useSyncSession` (Arena, bonds, trainingSyncWith) | ⏳ | — |
-| 12 | **124** | 0.1.245 | Partner dev CRUD → `usePartnerLocations` | ⏳ | 118 |
-| 13 | **125** | 0.1.246 | App.tsx < 8k líneas + LazyTabs sin imports rotos | ⏳ | 121–124 |
-| 14 | **127** | 0.1.247 | E2E Playwright: login → live → mapa → sync → Fuel | ⏳ | 121–123 |
+| 9 | **121** | 0.1.247 | Hook `useLiveMapPipeline` (filters, mapForceTick, debounce) | ✅ | 128 |
+| 10 | **122** | 0.1.247 | Hook `useFuelState` + refreshFuelData | ✅ | — |
+| 11 | **123** | 0.1.247 | Hook `useSyncSession` (Arena, bonds, trainingSyncWith) | ✅ | — |
+| 12 | **124** | 0.1.247 | Partner dev CRUD → `usePartnerLocations` (hook listo) | 🔄 | 118 |
+| 13 | **125** | 0.1.246 | App.tsx < 8k líneas + LazyTabs sin imports rotos | 🔄 | 121–124 |
+| 14 | **127** | 0.1.247 | E2E Playwright: login → live → mapa → sync → Fuel | ✅ | 121–123 |
 
 **Done cuando:** App.tsx no contiene `filterMapLiveUsers` inline; E2E verde.
 
@@ -257,8 +257,9 @@ flowchart TB
 2. ✅ **114** — ghost mode en Perfil + livePresence  
 3. ✅ **111** — radar + pill 2 km  
 4. ✅ **120** — eventos analytics mapa  
-5. ⏳ **126** — consolidar livePresence como fuente única  
-6. ⏳ **112** — city challenge overlay en mapa  
+5. ⏳ **126** — consolidar livePresence como fuente única (doc en useLiveMapPipeline)
+6. ⏳ **112** — city challenge overlay en mapa
+7. ⏳ **124–125** — wire usePartnerLocations + reducir App.tsx < 8k  
 
 ---
 

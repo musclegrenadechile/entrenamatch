@@ -224,6 +224,10 @@ import {
 import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr, buildFuelAnalyzeContext } from './utils/fuelCalculator'
 import { fetchRecentWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, buildWorkoutPreview, computeWorkoutStats } from './services/workouts'
 import { useFuelBalance } from './hooks/useFuelBalance'
+import { useFuelState } from './hooks/useFuelState'
+import { useSyncSession } from './hooks/useSyncSession'
+import { usePartnerLocations } from './hooks/usePartnerLocations'
+import { useLiveMapPipeline } from './hooks/useLiveMapPipeline'
 import { saveDailyEnergyCache } from './services/dailyEnergy'
 import { estimateSyncSessionBurn } from './domain/fuelBalance'
 import {
@@ -505,6 +509,8 @@ function App() {
     signUpDemo, 
     isAuthenticated: isDemoAuthenticated 
   } = useDemoAuth()
+
+  const effectiveUserId = !isDemoMode && firebaseUser?.uid ? firebaseUser.uid : 'me'
 
   // Used to break the "stuck on AuthScreen after successful real auth" race
   // because firebaseUser from the hook can lag behind the successful signIn/signUp call.
@@ -924,17 +930,61 @@ function App() {
   const [showFeedPublishSuccess, setShowFeedPublishSuccess] = useState(false)
   const [showEntrenaLogModal, setShowEntrenaLogModal] = useState(false)
   const [savingWorkout, setSavingWorkout] = useState(false)
-  const [syncWorkoutLog, setSyncWorkoutLog] = useState<SyncWorkoutLogState>(() =>
-    createEmptySyncWorkoutLog()
-  )
+  const syncSession = useSyncSession()
+  const {
+    syncPartnerId,
+    setSyncPartnerId,
+    syncStartedAt,
+    setSyncStartedAt,
+    syncActions,
+    setSyncActions,
+    syncVibe,
+    setSyncVibe,
+    pendingSyncRating,
+    setPendingSyncRating,
+    activeSyncCount,
+    setActiveSyncCount,
+    joiningSyncWith,
+    setJoiningSyncWith,
+    syncCombo,
+    setSyncCombo,
+    flyingEmojis,
+    setFlyingEmojis,
+    arenaWaveCount,
+    setArenaWaveCount,
+    lastArenaWaveLabel,
+    setLastArenaWaveLabel,
+    arenaWavePulseKey,
+    setArenaWavePulseKey,
+    syncRealWitnessCount,
+    setSyncRealWitnessCount,
+    showSyncArena,
+    setShowSyncArena,
+    syncRipples,
+    setSyncRipples,
+    syncBonds,
+    setSyncBonds,
+    lastSyncStory,
+    setLastSyncStory,
+    syncWorkoutLog,
+    setSyncWorkoutLog,
+    syncPartnerLiveState,
+    setSyncPartnerLiveState,
+    syncRestUntil,
+    setSyncRestUntil,
+    syncRestStartedBy,
+    setSyncRestStartedBy,
+    syncWitnessIds,
+    setSyncWitnessIds,
+    syncPartnerIdRef,
+    syncBondsRef,
+    witnessedSessionsRef,
+    networkStats,
+  } = syncSession
   const syncWorkoutLogRef = useRef<SyncWorkoutLogState>(syncWorkoutLog)
   useEffect(() => {
     syncWorkoutLogRef.current = syncWorkoutLog
   }, [syncWorkoutLog])
-  const [syncPartnerLiveState, setSyncPartnerLiveState] = useState<import('./utils/arenaSyncState').ArenaParticipantLiveState | null>(null)
-  const [syncRestUntil, setSyncRestUntil] = useState<number | null>(null)
-  const [syncRestStartedBy, setSyncRestStartedBy] = useState<string | null>(null)
-  const [syncWitnessIds, setSyncWitnessIds] = useState<string[]>([])
   const [isArenaVoiceRecording, setIsArenaVoiceRecording] = useState(false)
   const arenaVoiceRecorderRef = useRef<MediaRecorder | null>(null)
   const arenaVoiceChunksRef = useRef<Blob[]>([])
@@ -974,35 +1024,44 @@ function App() {
     'explore' | 'now' | 'sessions' | 'trainer' | undefined
   >(undefined)
   const [pendingReviewBookingId, setPendingReviewBookingId] = useState<string | null>(null)
-  const [savingFuel, setSavingFuel] = useState(false)
-  const [fuelProfile, setFuelProfile] = useState<FuelProfile | null>(null)
-  const [fuelTodayLogs, setFuelTodayLogs] = useState<FuelLogEntry[]>([])
-  const [fuelTodayTotals, setFuelTodayTotals] = useState<FuelDayTotals>(emptyFuelDayTotals())
-  const [fuelWeekDays, setFuelWeekDays] = useState<import('./services/fuel').FuelWeekDay[]>([])
-  const [fuelWeekMacros, setFuelWeekMacros] = useState<import('./services/fuel').FuelWeekMacroDay[]>([])
+  const {
+    savingFuel,
+    setSavingFuel,
+    fuelProfile,
+    setFuelProfile,
+    fuelTodayLogs,
+    setFuelTodayLogs,
+    fuelTodayTotals,
+    setFuelTodayTotals,
+    fuelWeekDays,
+    setFuelWeekDays,
+    fuelWeekMacros,
+    setFuelWeekMacros,
+    editingFuelLog,
+    setEditingFuelLog,
+    deletingFuelLogId,
+    setDeletingFuelLogId,
+    fuelPostWorkoutTip,
+    setFuelPostWorkoutTip,
+    fuelTodayWorkouts,
+    setFuelTodayWorkouts,
+    refreshFuelData,
+    syncFuelDayState,
+  } = useFuelState({
+    isDemoMode,
+    db,
+    firebaseUserUid: firebaseUser?.uid,
+    effectiveUserId,
+  })
   const [firstStepsProgress, setFirstStepsProgress] = useState<FirstStepsProgress | null>(null)
   const [chatPartnerTyping, setChatPartnerTyping] = useState(false)
   const chatTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [editingFuelLog, setEditingFuelLog] = useState<FuelLogEntry | null>(null)
-  const [deletingFuelLogId, setDeletingFuelLogId] = useState<string | null>(null)
-  const [fuelPostWorkoutTip, setFuelPostWorkoutTip] = useState<string | undefined>()
-  const [fuelTodayWorkouts, setFuelTodayWorkouts] = useState<import('./types').Workout[]>([])
   const [healthBurnBonus, setHealthBurnBonus] = useState(0)
   const [healthImportHint, setHealthImportHint] = useState<string | undefined>()
   const [partnerGymStats, setPartnerGymStats] = useState<PartnerGymStats | null>(null)
   const [partnerGymLoading, setPartnerGymLoading] = useState(false)
   const [constanciaBalance, setConstanciaBalance] = useState<number | null>(null)
-  // THE KILLER FEATURE: EntrenaSync - real-time synchronized training that turns two people into a high-performance unit with shared state, visible connection, joint impact, and lasting social capital. This is the foundation of the first true social network for fitness performance.
-  const [syncPartnerId, setSyncPartnerId] = useState<string | null>(null)
-  const [syncStartedAt, setSyncStartedAt] = useState<number | null>(null)
-  const [syncActions, setSyncActions] = useState<any[]>([]) // {id, emoji, userId, at, label}
-  const [syncVibe, setSyncVibe] = useState(0) // 0-100 shared energy built by actions + rating (the unique "together" feeling)
-  // For end-of-sync rating (disruptive accountability loop)
-  const [pendingSyncRating, setPendingSyncRating] = useState<{partnerId: string, partnerName: string, minutes: number} | null>(null)
-  // Community proof for the unique feature
-  const [activeSyncCount, setActiveSyncCount] = useState(0)
-  // Loading state for joining EntrenaSync (prevents spam + attractive feedback)
-  const [joiningSyncWith, setJoiningSyncWith] = useState<string | null>(null)
+  // THE KILLER FEATURE: EntrenaSync — see useSyncSession() hook (fase 123)
   // Live modal local UI: search + sort for better discovery in the full list (killer feature polish)
   const [liveModalSearch, setLiveModalSearch] = useState('')
   const [liveModalSort, setLiveModalSort] = useState<'distance' | 'urgency' | 'hot'>('distance')
@@ -1031,35 +1090,6 @@ function App() {
   // and the entire community (feed + map) feels more alive because real synchronized training is happening at scale and being recognized.
   // This is infrastructure for the future of fitness as a synchronized, social, high-performance activity.
   // =====================================================
-  const [syncCombo, setSyncCombo] = useState(0)
-  const [flyingEmojis, setFlyingEmojis] = useState<any[]>([]) // {id, emoji, label}
-  const [arenaWaveCount, setArenaWaveCount] = useState(0)
-  const [lastArenaWaveLabel, setLastArenaWaveLabel] = useState('')
-  const [arenaWavePulseKey, setArenaWavePulseKey] = useState(0)
-  const [syncRealWitnessCount, setSyncRealWitnessCount] = useState(0)
-  const witnessedSessionsRef = useRef<Set<string>>(new Set())
-  const [showSyncArena, setShowSyncArena] = useState(false)  // EntrenaSync immersive view (the core synchronized training experience)
-
-  // PERFORMANCE PROPAGATION: Strong EntrenaSync sessions send visible waves to the Live Map.
-  // This is the living social layer of the network — you see where synchronized high-performance training is happening and propagating right now.
-  // The map becomes the pulse of the fitness social graph.
-  const [syncRipples, setSyncRipples] = useState<any[]>([]) // {id, lat, lng, label, intensity}  // internal name only (performance waves / ripples from strong EntrenaSyncs). User-facing copy uses "onda de sync", "highlight de red", etc.
-  const [syncBonds, setSyncBonds] = useState<Record<string, {totalMin: number, sessions: number, avgRating: number, bondLevel: number}>>({})
-  const [lastSyncStory, setLastSyncStory] = useState<any>(null)
-
-  // Hoisted Network Power stats (used in live banner, map, ExploreTab, profile summary, red section).
-  // Previously this was only inside an IIFE in the red cards → caused "networkPower is not defined" ReferenceError on web render.
-  const networkStats = useMemo(() => {
-    const bonds = syncBonds || {}
-    const numPartners = Object.keys(bonds).length
-    if (numPartners === 0) return { networkPower: 0, totalMin: 0, totalSessions: 0, estimatedImpact: 0, numPartners: 0 }
-    const totalMin = Object.values(bonds).reduce((sum: number, b: any) => sum + (b.totalMin || 0), 0)
-    const totalSessions = Object.values(bonds).reduce((sum: number, b: any) => sum + (b.sessions || 0), 0)
-    const avgBond = Object.values(bonds).reduce((sum: number, b: any) => sum + (b.bondLevel || 1), 0) / numPartners
-    const estimatedImpact = Math.min(52, Math.floor(totalMin / 7))
-    const networkPower = Math.round(avgBond * totalSessions * 0.8)
-    return { networkPower, totalMin, totalSessions, estimatedImpact, numPartners }
-  }, [syncBonds])
 
   const [replaySession, setReplaySession] = useState<any>(null) // {partnerName, minutes, vibe, actions, rating?}
   const [syncDuelSummary, setSyncDuelSummary] = useState<{
@@ -1944,10 +1974,6 @@ useEffect(() => {
   }, [])
 
   const [firestoreCityStats, setFirestoreCityStats] = useState<import('./services/cityWeeklyStats').CityWeeklyStatsDoc | null>(null)
-  const [mapNearOnly, setMapNearOnly] = useState(false) // simple filter for map UX
-  const [mapMyGymOnly, setMapMyGymOnly] = useState(false)
-  const [selectedMapZone, setSelectedMapZone] = useState<string | null>(null) // interactive zone filter for "sigue con todo el mapa"
-  const [showOnlyNetwork, setShowOnlyNetwork] = useState(false) // filter to only high-performance sync partners (your real training network) on map
   const [partnerLocations, setPartnerLocations] = useState<any[]>([])
   const [showPartners, setShowPartners] = useState(false)
   const [showAddPartnerForm, setShowAddPartnerForm] = useState(false)
@@ -1969,13 +1995,6 @@ useEffect(() => {
   const pendingLiveWriteRef = useRef<{ trainingNow: boolean; at: number } | null>(null)
   useEffect(() => { isTogglingLiveRef.current = isTogglingLive }, [isTogglingLive])
 
-  // Dedicated source of truth: where('trainingNow'==true) listener (real mode) or demo synthesis.
-  const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<any[]>([])
-  const liveUsersFromDedicatedRef = useRef<any[]>([])
-  const liveFromPresenceRef = useRef<any[]>([])
-  const liveFromProfilesQueryRef = useRef<any[]>([])
-  useEffect(() => { liveUsersFromDedicatedRef.current = liveUsersFromDedicated }, [liveUsersFromDedicated])
-
   const userLocationRef = useRef(userLocation)
   useEffect(() => { userLocationRef.current = userLocation }, [userLocation])
 
@@ -1995,34 +2014,9 @@ useEffect(() => {
   const [devPassword, setDevPassword] = useState('')
   const gymPulseMapRef = useRef<any>(null) // extracted GymPulseMap handle (centrar, flyTo, getCenter, invalidate)
 
-  // Dev-only: temporary fake live users (for testing GymPulse markers, near counts, popups, ripples WITHOUT needing other real devices/accounts online).
-  // Only merged into the map prop (not global live lists or UI counts) and auto-expire or cleared by dev.
-  const [devTestLives, setDevTestLives] = useState<any[]>([])
-
   // Sync refs for listeners (prevents using stale uid/blocked in onSnapshot for live propagation)
   useEffect(() => { currentUidRef.current = firebaseUser?.uid || null }, [firebaseUser?.uid])
   useEffect(() => { blockedUsersRef.current = blockedUsers }, [blockedUsers])
-
-  // When partner visibility or list changes (or dev added one), nudge the extracted GymPulseMap (it reacts to mapForceTick + partnerLocations).
-  useEffect(() => {
-    if (!showLiveMap) return
-    // The child GymPulseMap owns the real map and already has partnerLocations + mapForceTick in its effect deps.
-    // Just ensure a tick so it re-renders markers promptly.
-    setMapForceTick(t => t + 1)
-  }, [showPartners, partnerLocations.length, showLiveMap])
-
-  // Ensure Leaflet recalcs size when the map is toggled or we switch tabs (prevents "map se pierde" / descuadre after layout change).
-  useEffect(() => {
-    if (showLiveMap && gymPulseMapRef.current) {
-      const force = () => {
-        try { gymPulseMapRef.current?.invalidateSize?.() } catch {}
-      }
-      force()
-      const t1 = setTimeout(force, 80)
-      const t2 = setTimeout(force, 220)
-      return () => { clearTimeout(t1); clearTimeout(t2) }
-    }
-  }, [showLiveMap, activeTab])
 
   // Developer login for gated partner management (only devs can add/edit locals on the GymPulse map)
   const loginAsDeveloper = () => {
@@ -2051,7 +2045,6 @@ useEffect(() => {
     setEditingPartnerId(null)
     setPartnerLogoFile(null)
     setPartnerLogoPreview(null)
-    setDevTestLives([]) // also clear any test lives on dev logout
     setMapForceTick(t => t + 1)
     toast('Developer mode disabled')
   }
@@ -2090,43 +2083,6 @@ useEffect(() => {
     toast('Mapa y partners refrescados')
   }
 
-  const spawnDevTestLives = (count = 3) => {
-    if (!isDeveloper || !userLocation) { toast.error('Necesitas GPS y modo dev'); return }
-    const fakes: any[] = []
-    for (let i = 0; i < count; i++) {
-      const angle = (i / count) * Math.PI * 2 + (Math.random() - 0.5) * 0.5
-      const distKm = 0.3 + Math.random() * 2.2
-      const dLat = (distKm / 111) * Math.cos(angle)
-      const dLng = (distKm / (111 * Math.cos((userLocation.lat * Math.PI) / 180))) * Math.sin(angle)
-      fakes.push({
-        id: 'devtest-' + Date.now() + '-' + i,
-        name: `TestDev${i + 1}`,
-        lat: userLocation.lat + dLat,
-        lng: userLocation.lng + dLng,
-        trainingNow: true,
-        trainingNowSince: Date.now() - (i + 1) * 4 * 60 * 1000,
-        trainingTypes: ['Pesas/Gym', 'Running'],
-        level: i % 2 === 0 ? 'Avanzado' : 'Intermedio',
-        _devTest: true,
-        distance: distKm,
-        seVaEnMin: 25 + i * 5,
-      })
-    }
-    setDevTestLives(prev => [...prev.filter((p: any) => !p._devTest), ...fakes])
-    setMapForceTick(t => t + 1)
-    toast.success(`+${count} test lives cerca de ti`, { description: 'Solo para testing del GymPulse en este mapa. Expira en ~5min.' })
-    // auto-clean after ~5min
-    setTimeout(() => {
-      setDevTestLives(prev => prev.filter((p: any) => !p._devTest))
-      setMapForceTick(t => t + 1)
-    }, 5 * 60 * 1000)
-  }
-
-  const clearDevTestLives = () => {
-    setDevTestLives([])
-    setMapForceTick(t => t + 1)
-    toast('Vidas de test limpiadas')
-  }
   const openDevLogin = () => {
     setShowDevLogin(true)
     setDevPassword('')
@@ -2294,7 +2250,6 @@ useEffect(() => {
   const applyNotificationNavigationRef = useRef<
     ((target: NotificationNavTarget, partnerNameHint?: string) => void) | null
   >(null)
-  const syncPartnerIdRef = useRef<string | null>(null)
   const currentUserRef = useRef<CurrentUser | null>(null)
   // Refs for dev map placement UX (click-to-place partner without leaving map view) + latest partners (passed down + used in quick add handler).
   // The actual Leaflet markers/ripples/tethers live inside <GymPulseMap /> (first modularization step).
@@ -2350,7 +2305,6 @@ useEffect(() => {
   }, [isDemoMode, db])
   const showFullProfileRef = useRef<((profile: any) => void) | null>(null)
   const latestRealProfilesRef = useRef<any[]>([])
-  const syncBondsRef = useRef<Record<string, { totalMin: number; sessions: number; avgRating: number; bondLevel: number }>>({})
 
 // Dedicated unmount cleanup for the Leaflet map (now mostly no-op since GymPulseMap owns the instance; kept for safety on unmount/hot-reload)
   useEffect(() => {
@@ -2373,9 +2327,62 @@ useEffect(() => {
   // ============================================================
   // REAL MULTI-USER STATE - DECLARED AS EARLY AS POSSIBLE TO AVOID TDZ
   // ============================================================
-  const effectiveUserId = !isDemoMode && firebaseUser?.uid ? firebaseUser.uid : 'me'
 
   const [realProfiles, setRealProfiles] = useState<Profile[]>([])
+
+  const {
+    mapNearOnly,
+    setMapNearOnly,
+    mapMyGymOnly,
+    setMapMyGymOnly,
+    selectedMapZone,
+    setSelectedMapZone,
+    showOnlyNetwork,
+    setShowOnlyNetwork,
+    devTestLives,
+    liveFromPresenceRef,
+    liveFromProfilesQueryRef,
+    publishLiveSnapshot,
+    buildSelfLiveEntry,
+    liveUsersActive,
+    liveTrainingNow,
+    mapLiveTrainingNow,
+    liveCountForUI,
+    isUserLive,
+    zoneLiveCounts,
+    spawnDevTestLives,
+    clearDevTestLives,
+  } = useLiveMapPipeline({
+    isDemoMode,
+    db,
+    isFirebaseConfigured,
+    firebaseUserUid: firebaseUser?.uid,
+    effectiveUserId,
+    currentUser,
+    userLocation,
+    blockedUsers,
+    syncBonds,
+    isDeveloper,
+    showLiveMap,
+    activeTab,
+    showPartners,
+    partnerLocationsLength: partnerLocations.length,
+    mapForceTick,
+    setMapForceTick,
+    realProfiles,
+    setRealProfiles,
+    SEED_PROFILES,
+    saveUser,
+    gymPulseMapRef,
+    latestRealProfilesRef,
+    currentUidRef,
+    blockedUsersRef,
+    liveUsersActiveRef,
+    isTogglingLiveRef,
+    pendingLiveWriteRef,
+    currentUserRef,
+  })
+
   const [realMatches, setRealMatches] = useState<string[]>([])
   const prevRealMatchesRef = useRef<string[]>([])
   const realMatchesInitializedRef = useRef(false)
@@ -2452,143 +2459,6 @@ useEffect(() => {
 
   // Prevents (now - Timestamp) producing NaN which would drop live users from GymPulse lists.
   const normalizeTrainingSince = (val: any): number | undefined => normalizeTrainingSinceMs(val)
-
-  const buildSelfLiveEntry = useCallback((): any | null => {
-    if (!currentUser?.trainingNow || !effectiveUserId) return null
-    return {
-      id: effectiveUserId,
-      name: currentUser.name,
-      age: currentUser.age,
-      gender: currentUser.gender,
-      city: currentUser.city,
-      country: currentUser.country,
-      lat: Number.isFinite(Number(currentUser.lat))
-        ? Number(currentUser.lat)
-        : (Number.isFinite(Number(userLocation?.lat)) ? Number(userLocation!.lat) : -33.02),
-      lng: Number.isFinite(Number(currentUser.lng))
-        ? Number(currentUser.lng)
-        : (Number.isFinite(Number(userLocation?.lng)) ? Number(userLocation!.lng) : -71.55),
-      bio: currentUser.bio,
-      photos: currentUser.photos,
-      trainingTypes: currentUser.trainingTypes,
-      goals: currentUser.goals,
-      level: currentUser.level,
-      trainingNow: true,
-      trainingNowSince: normalizeTrainingSince(currentUser.trainingNowSince) || Date.now(),
-      liveStreak: currentUser.liveStreak,
-      joinedLiveStreak: currentUser.joinedLiveStreak,
-      liveJoins: currentUser.liveJoins,
-      trainingSyncWith: currentUser.trainingSyncWith,
-      retentionLevel: (currentUser as any).retentionLevel || 1,
-      _isSelf: true,
-    }
-  }, [currentUser, effectiveUserId, userLocation])
-
-  const enrichLiveUser = useCallback((p: any, now: number, bonds: Record<string, any>) => {
-    return buildEnrichedLiveUser(p, now, {
-      userLocation,
-      syncBonds: bonds,
-      getDistanceKm,
-    })
-  }, [userLocation])
-
-  // === GYMPULSE LIVE PIPELINE ===
-  // Sources (merged): livePresence collection (primary RT) + profiles trainingNow query (fallback) + optimistic self
-  const publishLiveSnapshot = useCallback((presence: any[], profilesQuery: any[]) => {
-    liveFromPresenceRef.current = presence
-    liveFromProfilesQueryRef.current = profilesQuery
-    const merged = mergeLiveUsersById([presence, profilesQuery])
-    liveUsersFromDedicatedRef.current = merged
-    setLiveUsersFromDedicated(merged)
-    setMapForceTick((t) => t + 1)
-    setRealProfiles((prev) => {
-      const next = patchRealProfilesWithLiveSnapshot(prev, merged, {
-        selfUid: currentUidRef.current,
-      })
-      if (next === prev) return prev
-      latestRealProfilesRef.current = next
-      try { localStorage.setItem('entrenamatch_last_live', JSON.stringify(next)) } catch {}
-      return next
-    })
-  }, [])
-
-  const liveUsersMerged = useMemo(() => {
-    const selfEntry = buildSelfLiveEntry()
-    const fromRealFallback =
-      liveUsersFromDedicated.length === 0
-        ? (realProfiles || []).filter((p: any) => p?.trainingNow === true)
-        : []
-    return mergeLiveUsersById([
-      liveUsersFromDedicated || [],
-      fromRealFallback,
-      selfEntry ? [selfEntry] : [],
-    ])
-  }, [liveUsersFromDedicated, realProfiles, buildSelfLiveEntry])
-
-  const liveUsersActive = useMemo(() => {
-    const now = Date.now()
-    let active = liveUsersMerged
-      .filter((p) => isActiveLiveUser(p, now))
-      .filter((p) => !blockedUsers.includes(p.id))
-      .map((p) => enrichLiveUser(p, now, syncBonds))
-
-    if (isDemoMode && active.filter((p) => p.id !== effectiveUserId && p.id !== 'me').length === 0) {
-      active = [
-        ...active.filter((p) => p.id === effectiveUserId || p.id === 'me'),
-        ...SEED_PROFILES.slice(0, 5)
-          .filter((p) => p.id !== effectiveUserId)
-          .map((p, i) => enrichLiveUser({
-            ...p,
-            trainingNow: true,
-            trainingNowSince: now - (i + 1) * 12 * 60000,
-            joinCount: i + 1,
-          }, now, syncBonds)),
-      ]
-    }
-    return active.sort((a, b) => (a.distance || 999) - (b.distance || 999))
-  }, [liveUsersMerged, blockedUsers, isDemoMode, effectiveUserId, enrichLiveUser, syncBonds])
-
-  // Others-only (join / sync lists — no self)
-  const liveTrainingNow = useMemo(() => (
-    liveUsersActive.filter((p) => p.id !== effectiveUserId && p.id !== 'me')
-  ), [liveUsersActive, effectiveUserId])
-
-  // Map: ALL live users including self (GymPulse markers)
-  const mapLiveTrainingNow = useMemo(() => {
-    const all = [...liveUsersActive]
-    if (isDeveloper && devTestLives.length > 0) all.push(...devTestLives)
-    return all
-  }, [liveUsersActive, isDeveloper, devTestLives])
-
-  const liveCountForUI = liveUsersActive.length
-
-  useEffect(() => { liveUsersActiveRef.current = liveUsersActive }, [liveUsersActive])
-
-  /** Unified live gate — GymPulse pipeline + profile fallback (avoids silent EntrenaSync blocks). */
-  const isUserLive = useCallback((userId: string): boolean => {
-    if (!userId) return false
-    if (
-      userId === effectiveUserId ||
-      userId === 'me' ||
-      (firebaseUser?.uid && userId === firebaseUser.uid)
-    ) {
-      return !!currentUserRef.current?.trainingNow
-    }
-    if (isUserLiveInSnapshot(userId, liveUsersActiveRef.current)) return true
-    const fromDedicated = (liveUsersFromDedicatedRef.current || []).find((p: any) => p.id === userId)
-    if (fromDedicated && isActiveLiveUser(fromDedicated)) return true
-    const fromProfiles = (latestRealProfilesRef.current || []).find((p: any) => p.id === userId)
-    return fromProfiles?.trainingNow === true
-  }, [effectiveUserId, firebaseUser?.uid])
-
-  // Zone live counts for interactive legend (sigue con todo el mapa + visual polish iteration)
-  const zoneLiveCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    liveUsersActive.forEach((u: any) => {
-      if (u.city) counts[u.city] = (counts[u.city] || 0) + 1
-    })
-    return counts
-  }, [liveUsersActive])
 
   // Feed computation lifted to top-level useMemo so hook is ALWAYS called in the same order (fixes React #310 "Rendered more hooks than during the previous render" when switching tabs).
   // The previous inline IIFE inside {activeTab==='feed' && ...} was conditionally executing the useMemo hook → violation.
@@ -3047,112 +2917,6 @@ useEffect(() => {
 
     return () => { if (unsub) unsub(); };
   }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, blockedUsers]); // blockedUsers to re-filter if changes
-
- // === DEDICATED REALTIME LISTENERS FOR LIVE USERS (GymPulse) ===
-  // Primary: livePresence/{uid} docs (instant cross-user visibility)
-  // Secondary: profiles where trainingNow==true (legacy / backup)
-  useEffect(() => {
-    if (isDemoMode || !db || !isFirebaseConfigured) {
-      liveFromPresenceRef.current = []
-      liveFromProfilesQueryRef.current = []
-      setLiveUsersFromDedicated([])
-      return undefined
-    }
-
-    const blocked = () => blockedUsersRef.current
-    const onErr = () => {
-      const fallback = mergeLiveUsersById([
-        liveFromPresenceRef.current,
-        (latestRealProfilesRef.current || [])
-          .filter((p: any) => p?.trainingNow === true)
-          .map((p: any) => profileDocToLiveUser(p.id, p, { forceLive: true })),
-      ])
-      publishLiveSnapshot(fallback, liveFromProfilesQueryRef.current)
-    }
-
-    const unsubPresence = attachLivePresenceListener(
-      db,
-      (users) => publishLiveSnapshot(users, liveFromProfilesQueryRef.current),
-      { getBlockedIds: blocked, onError: onErr }
-    )
-
-    const unsubProfiles = attachLiveUsersListener(
-      db,
-      (users) => publishLiveSnapshot(liveFromPresenceRef.current, users),
-      { getBlockedIds: blocked, onError: onErr }
-    )
-
-    return () => {
-      unsubPresence()
-      unsubProfiles()
-    }
-  }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, publishLiveSnapshot])
-
-  // Firestore RT listeners auto-reconnect after network blips — no enableNetwork needed (da08).
-
-  // Demo mode: synthesize liveUsersFromDedicated locally (no Firestore query).
-  useEffect(() => {
-    if (!isDemoMode) return
-    const now = Date.now()
-    const demoLives: any[] = []
-    const self = buildSelfLiveEntry()
-    if (self) demoLives.push(self)
-    SEED_PROFILES.slice(0, 5).forEach((p, i) => {
-      if (p.id === effectiveUserId) return
-      demoLives.push({
-        ...p,
-        trainingNow: true,
-        trainingNowSince: now - (i + 1) * 12 * 60000,
-      })
-    })
-    setLiveUsersFromDedicated(demoLives)
-  }, [isDemoMode, buildSelfLiveEntry, effectiveUserId])
-
-  // Own profile doc listener - keeps currentUser.trainingNow in sync from other devices.
-  // Guards against stale cached snapshots reverting an in-flight toggle write.
-  useEffect(() => {
-    if (isDemoMode || !db || !isFirebaseConfigured || !firebaseUser?.uid) return undefined
-    let unsubOwn: any = null
-    ;(async () => {
-      try {
-        const { doc, onSnapshot } = await import('firebase/firestore')
-        const ownRef = doc(db, 'profiles', firebaseUser.uid)
-        unsubOwn = onSnapshot(ownRef, (snap) => {
-          if (!snap.exists()) return
-          const data = snap.data() as any
-          if (!data) return
-          if (isTogglingLiveRef.current) return
-
-          const newTrainingNow = !!data.trainingNow
-          const newSince = normalizeTrainingSince(data.trainingNowSince)
-          const pending = pendingLiveWriteRef.current
-          const base = currentUserRef.current
-
-          // Ignore snapshots that disagree with the last explicit user toggle.
-          // pending is overwritten only on the next toggle — never auto-cleared (stale cache was reverting live).
-          if (pending && newTrainingNow !== pending.trainingNow) return
-
-          if (
-            base &&
-            (base.trainingNow !== newTrainingNow ||
-              normalizeTrainingSince(base.trainingNowSince) !== newSince)
-          ) {
-            const merged = {
-              ...base,
-              trainingNow: newTrainingNow,
-              trainingNowSince: newSince,
-              liveStreak: data.liveStreak != null ? data.liveStreak : base.liveStreak,
-            }
-            saveUser(merged as any)
-            setMapForceTick((t) => t + 1)
-          }
-        })
-      } catch (e) {
-        console.warn('own profile listener failed', e)
-      }
-    })()
-    return () => { if (unsubOwn) unsubOwn() }
-  }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, currentUser?.id]) // depend on id to re-sub on user change
 
   // EntrenaSync profile mirror (fallback only): enrich from partner profile when both pointers match.
   // Do NOT tear down sync when partner profile lacks trainingSyncWith — cross-user profile writes are blocked
@@ -5791,57 +5555,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       setSavingWorkout(false)
     }
   }
-
-  const refreshFuelData = useCallback(async () => {
-    if (isDemoMode || !db || !firebaseUser?.uid) return
-    try {
-      const today = toLocalDateStr()
-      const results = await Promise.allSettled([
-        loadFuelProfile(db, effectiveUserId),
-        fetchFuelLogsForDate(db, effectiveUserId),
-        fetchFuelWeekSummary(db, effectiveUserId),
-        fetchFuelWeekMacros(db, effectiveUserId),
-        fetchWorkoutsForDate(db, effectiveUserId, today),
-      ])
-      const profile = results[0].status === 'fulfilled' ? results[0].value : null
-      const logs = results[1].status === 'fulfilled' ? results[1].value : []
-      const weekDays = results[2].status === 'fulfilled' ? results[2].value : []
-      const weekMacros = results[3].status === 'fulfilled' ? results[3].value : []
-      const workouts = results[4].status === 'fulfilled' ? results[4].value : []
-      results.forEach((r, i) => {
-        if (r.status === 'rejected') {
-          console.warn(`refreshFuelData partial fail [${i}]`, r.reason)
-        }
-      })
-      setFuelProfile(profile)
-      setFuelTodayLogs(logs)
-      setFuelTodayTotals(sumFuelLogs(logs))
-      setFuelWeekDays(weekDays)
-      setFuelWeekMacros(weekMacros)
-      setFuelTodayWorkouts(workouts)
-      setFuelPostWorkoutTip(
-        workouts[0] ? getPostWorkoutFuelTip(workouts[0].type) : undefined
-      )
-    } catch (e) {
-      console.warn('refreshFuelData failed', e)
-    }
-  }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId])
-
-  const syncFuelDayState = (nextLogs: FuelLogEntry[]) => {
-    setFuelTodayLogs(nextLogs)
-    setFuelTodayTotals(sumFuelLogs(nextLogs))
-    const loggedDates = new Set(nextLogs.map((l) => l.date))
-    if (isDemoMode) {
-      const today = toLocalDateStr()
-      if (nextLogs.length > 0) loggedDates.add(today)
-      setFuelWeekDays(computeFuelWeekFromDates(loggedDates))
-    }
-  }
-
-  useEffect(() => {
-    if (!firebaseUser?.uid || isDemoMode) return
-    refreshFuelData().catch(() => {})
-  }, [firebaseUser?.uid, isDemoMode, refreshFuelData])
 
   const fuelEnergyBalance = useFuelBalance({
     profile: fuelProfile,

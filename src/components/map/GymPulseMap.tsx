@@ -1,4 +1,4 @@
-// @ts-nocheck
+// @ts-nocheck — fase 128 incremental: strict types in gymPulsePopupTypes + props; full removal next pass.
 /**
  * GymPulseMap - Extracted Live Map Component (modularization started 2026-06-05)
  *
