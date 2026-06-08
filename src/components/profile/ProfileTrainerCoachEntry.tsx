@@ -1,4 +1,4 @@
-import { ChevronRight, Dumbbell } from 'lucide-react'
+import { ChevronRight, Dumbbell, Sparkles, Zap } from 'lucide-react'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
 
@@ -11,18 +11,27 @@ export function ProfileTrainerCoachEntry(props: ProfileTabProps) {
       <button
         type="button"
         onClick={onOpenTrainerCoach}
-        className="w-full flex items-center gap-3 p-4 rounded-2xl border border-[#6366f1]/35 bg-gradient-to-br from-[#6366f1]/12 to-transparent text-left active:scale-[0.99] transition-transform"
+        className="trainer-profile-entry"
       >
-        <div className="w-11 h-11 rounded-xl bg-[#6366f1]/25 flex items-center justify-center text-[#a5b4fc]">
+        <div className="trainer-profile-entry__glow" aria-hidden />
+        <div className="trainer-profile-entry__icon">
           <Dumbbell size={22} />
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-bold text-white text-sm">EntrenaCoach</p>
-          <p className="text-[11px] text-[#9CA3AF] mt-0.5">
-            Busca entrenador personal · reserva · califica
+        <div className="trainer-profile-entry__body">
+          <div className="trainer-profile-entry__title-row">
+            <p className="trainer-profile-entry__title">EntrenaCoach</p>
+            <span className="trainer-profile-entry__badge">
+              <Zap size={10} /> En vivo
+            </span>
+          </div>
+          <p className="trainer-profile-entry__sub">
+            Reserva PT premium o pide entrenador al instante con tarifa dinámica
+          </p>
+          <p className="trainer-profile-entry__tags">
+            <Sparkles size={10} /> Verificados · Mercado Pago · EntrenaSync
           </p>
         </div>
-        <ChevronRight size={18} className="text-[#a5b4fc] shrink-0" />
+        <ChevronRight size={18} className="trainer-profile-entry__chevron" />
       </button>
     </div>
   )

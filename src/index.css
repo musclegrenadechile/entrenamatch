@@ -5835,3 +5835,897 @@ button:not(.live-pill):disabled {
   color: #fff;
 }
 
+/* ─── EntrenaCoach visual refresh ─── */
+
+.trainer-coach-screen {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99, 102, 241, 0.22), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(139, 92, 246, 0.12), transparent),
+    #070709;
+}
+
+.trainer-coach__header {
+  border-bottom: none;
+  background: rgba(7, 7, 9, 0.88);
+}
+
+.trainer-coach__header--compact {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.trainer-coach__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.trainer-coach__brand-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(99, 102, 241, 0.35);
+}
+
+.trainer-coach__hero {
+  position: relative;
+  margin: 0 16px 12px;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+.trainer-coach__hero-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.25), rgba(139, 92, 246, 0.08));
+}
+
+.trainer-coach__hero-content {
+  position: relative;
+  padding: 18px 16px;
+}
+
+.trainer-coach__hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #c7d2fe;
+  background: rgba(255, 255, 255, 0.08);
+  padding: 4px 8px;
+  border-radius: 999px;
+  margin-bottom: 10px;
+}
+
+.trainer-coach__hero-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  line-height: 1.15;
+}
+
+.trainer-coach__hero-title span {
+  display: block;
+  background: linear-gradient(90deg, #a5b4fc, #c4b5fd);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.trainer-coach__hero-desc {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 8px;
+  line-height: 1.45;
+  max-width: 280px;
+}
+
+.trainer-coach__hero-stats {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+}
+
+.trainer-coach__hero-stat {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10px;
+  color: #94a3b8;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.trainer-coach__hero-stat strong {
+  color: #fff;
+  font-size: 12px;
+}
+
+.trainer-coach__hero-stat--live {
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #86efac;
+}
+
+.trainer-coach__hero-stat--live strong {
+  color: #86efac;
+}
+
+.trainer-coach__hero-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  border: none;
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+}
+
+.trainer-coach__tab,
+.trainer-coach__tab--active {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.trainer-coach__tab--live {
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+}
+
+.trainer-coach__tab--live-idle {
+  border: 1px solid rgba(99, 102, 241, 0.35);
+}
+
+.trainer-coach__tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.trainer-coach__tab-badge {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #f97316;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trainer-coach__now-promo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 14px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(99, 102, 241, 0.45);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18), rgba(124, 58, 237, 0.08));
+  text-align: left;
+  animation: pulse 3s ease-in-out infinite;
+}
+
+.trainer-coach__now-promo-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.trainer-coach__now-promo-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.trainer-coach__now-promo-text strong {
+  font-size: 13px;
+  color: #fff;
+}
+
+.trainer-coach__now-promo-text span {
+  font-size: 10px;
+  color: #a5b4fc;
+}
+
+.trainer-coach__now-promo-arrow {
+  font-size: 18px;
+  color: #a5b4fc;
+}
+
+.trainer-coach__list-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.trainer-coach__empty h3 {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+  margin: 12px 0 6px;
+}
+
+.trainer-coach__empty p {
+  font-size: 12px;
+  line-height: 1.45;
+  max-width: 260px;
+  margin: 0 auto;
+}
+
+.trainer-coach__empty-icon {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto;
+  border-radius: 18px;
+  background: rgba(99, 102, 241, 0.12);
+  color: #6366f1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trainer-card {
+  position: relative;
+  padding: 16px;
+  margin-bottom: 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.trainer-card__glow {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: var(--trainer-accent, #6366f1);
+  opacity: 0.12;
+  filter: blur(24px);
+  pointer-events: none;
+}
+
+.trainer-card__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.trainer-card__verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 800;
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.15);
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.trainer-card__rate-block {
+  text-align: right;
+}
+
+.trainer-card__rate {
+  font-size: 14px;
+}
+
+.trainer-card__rate-unit {
+  display: block;
+  font-size: 9px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.trainer-card__tag {
+  background: color-mix(in srgb, var(--tag-accent, #6366f1) 18%, transparent);
+  color: color-mix(in srgb, var(--tag-accent, #6366f1) 80%, #fff);
+  border: 1px solid color-mix(in srgb, var(--tag-accent, #6366f1) 30%, transparent);
+}
+
+.trainer-card__tag--live {
+  --tag-accent: #22c55e;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.trainer-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.trainer-card__rating {
+  margin-bottom: 0;
+  color: #fbbf24;
+}
+
+.trainer-card__rating strong {
+  color: #fff;
+}
+
+.trainer-card__rating span {
+  color: #64748b;
+}
+
+.trainer-card__rating--new {
+  color: #a5b4fc;
+  font-weight: 700;
+}
+
+.trainer-card__session-price {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.trainer-card__session-price strong {
+  color: #e2e8f0;
+}
+
+.trainer-card__book {
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1, #7c3aed);
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+}
+
+.trainer-book__summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 16px 16px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.trainer-book__summary-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  color: #fff;
+}
+
+.trainer-book__summary-name {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.trainer-book__summary-meta {
+  font-size: 11px;
+  color: #a5b4fc;
+  margin-top: 2px;
+}
+
+.trainer-session-card {
+  position: relative;
+  padding: 14px;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.trainer-session-card__accent {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #6366f1;
+}
+
+.trainer-session-card--amber .trainer-session-card__accent { background: #f59e0b; }
+.trainer-session-card--emerald .trainer-session-card__accent { background: #22c55e; }
+.trainer-session-card--rose .trainer-session-card__accent { background: #f43f5e; }
+.trainer-session-card--sky .trainer-session-card__accent { background: #0ea5e9; }
+.trainer-session-card--violet .trainer-session-card__accent { background: #8b5cf6; }
+.trainer-session-card--slate .trainer-session-card__accent { background: #64748b; }
+.trainer-session-card--lime .trainer-session-card__accent { background: #84cc16; }
+
+.trainer-session-card__status--amber { color: #fbbf24; }
+.trainer-session-card__status--emerald { color: #86efac; }
+.trainer-session-card__status--rose { color: #fda4af; }
+.trainer-session-card__status--sky { color: #7dd3fc; }
+.trainer-session-card__status--violet { color: #c4b5fd; }
+.trainer-session-card__status--slate { color: #94a3b8; }
+.trainer-session-card__status--lime { color: #bef264; }
+
+.trainer-session-card__partner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.trainer-session-card__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.trainer-session-card__who {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 0;
+}
+
+.trainer-session-card__name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.trainer-session-card__details {
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  margin-bottom: 4px;
+}
+
+.trainer-coach__pt-hero {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 14px;
+  margin-bottom: 14px;
+  border-radius: 16px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: #a5b4fc;
+}
+
+.trainer-coach__pt-hero-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.trainer-coach__pt-hero-sub {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.trainer-coach__dispatch-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.trainer-coach__dispatch-card--on {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.06);
+  box-shadow: 0 0 24px rgba(34, 197, 94, 0.12);
+}
+
+.trainer-coach__dispatch-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.trainer-coach__dispatch-card--on .trainer-coach__dispatch-card-icon {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+.trainer-coach__dispatch-card-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.trainer-coach__dispatch-card-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.trainer-coach__dispatch-card-desc {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
+.trainer-coach__dispatch-toggle {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.trainer-coach__dispatch-toggle input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.trainer-coach__dispatch-toggle-ui {
+  display: block;
+  width: 44px;
+  height: 26px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  position: relative;
+  transition: background 0.2s;
+}
+
+.trainer-coach__dispatch-toggle-ui::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+
+.trainer-coach__dispatch-toggle input:checked + .trainer-coach__dispatch-toggle-ui {
+  background: #22c55e;
+}
+
+.trainer-coach__dispatch-toggle input:checked + .trainer-coach__dispatch-toggle-ui::after {
+  transform: translateX(18px);
+}
+
+.trainer-coach__save-pt {
+  background: linear-gradient(135deg, #6366f1, #7c3aed) !important;
+}
+
+.trainer-profile-entry {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(99, 102, 241, 0.4);
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.14), rgba(124, 58, 237, 0.06));
+  text-align: left;
+  overflow: hidden;
+}
+
+.trainer-profile-entry__glow {
+  position: absolute;
+  top: -30px;
+  right: -20px;
+  width: 100px;
+  height: 100px;
+  background: #6366f1;
+  opacity: 0.15;
+  filter: blur(30px);
+  pointer-events: none;
+}
+
+.trainer-profile-entry__icon {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.trainer-profile-entry__body {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.trainer-profile-entry__title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trainer-profile-entry__title {
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.trainer-profile-entry__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9px;
+  font-weight: 800;
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.15);
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+.trainer-profile-entry__sub {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-top: 4px;
+  line-height: 1.35;
+}
+
+.trainer-profile-entry__tags {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  color: #a5b4fc;
+  margin-top: 6px;
+}
+
+.trainer-profile-entry__chevron {
+  position: relative;
+  color: #a5b4fc;
+  flex-shrink: 0;
+}
+
+.trainer-dispatch-form__hero-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.trainer-dispatch-form__section {
+  margin-bottom: 14px;
+}
+
+.trainer-dispatch-form__label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+.trainer-dispatch-form__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.trainer-dispatch-form__chip {
+  padding: 8px 11px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+}
+
+.trainer-dispatch-form__chip--on {
+  background: color-mix(in srgb, var(--chip-accent, #6366f1) 22%, transparent);
+  border-color: color-mix(in srgb, var(--chip-accent, #6366f1) 50%, transparent);
+  color: #fff;
+}
+
+.trainer-dispatch-form__durations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.trainer-dispatch-form__duration {
+  flex: 1;
+  min-width: 70px;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+  color: #94a3b8;
+}
+
+.trainer-dispatch-form__duration--on {
+  border-color: rgba(99, 102, 241, 0.5);
+  background: rgba(99, 102, 241, 0.2);
+  color: #fff;
+}
+
+.trainer-dispatch-form__live-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  margin-right: 4px;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.trainer-dispatch-form__cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
+}
+
+.trainer-dispatch-form__cta-spin {
+  animation: spin 1s linear infinite;
+}
+
+.trainer-dispatch-wait__radar {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 20px;
+}
+
+.trainer-dispatch-wait__radar-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(99, 102, 241, 0.4);
+  animation: trainer-radar 2s ease-out infinite;
+}
+
+.trainer-dispatch-wait__radar-ring:nth-child(2) {
+  animation-delay: 0.6s;
+}
+
+.trainer-dispatch-wait__radar-dot {
+  position: absolute;
+  inset: 30%;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@keyframes trainer-radar {
+  0% { transform: scale(0.4); opacity: 0.9; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+
+.trainer-dispatch-offer__badge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.15);
+  padding: 4px 10px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.trainer-dispatch-offer__client {
+  position: relative;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  margin-top: 4px;
+}
+
+.trainer-dispatch-offer__countdown {
+  position: relative;
+  margin: 16px auto;
+}
+
+.trainer-dispatch-offer__countdown-ring {
+  width: 72px;
+  height: 72px;
+  margin: 0 auto;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.trainer-dispatch-offer__countdown-ring::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: #0f0f14;
+}
+
+.trainer-dispatch-offer__countdown-ring span {
+  position: relative;
+  font-size: 18px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.trainer-dispatch-offer__timer-label {
+  font-size: 10px;
+  color: #94a3b8;
+  margin-top: 8px;
+}
+
+.trainer-coach__offer-banner {
+  padding: 0 16px !important;
+  margin-bottom: 4px;
+}
+

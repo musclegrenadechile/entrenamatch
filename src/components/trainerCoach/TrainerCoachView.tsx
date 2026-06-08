@@ -1,15 +1,17 @@
 import { TrainerDispatchPanel } from './TrainerDispatchPanel'
+import { TrainerCoachHero } from './TrainerCoachHero'
 import {
   ArrowLeft,
-  Calendar,
+  BadgeCheck,
+  CalendarDays,
   Check,
   Clock,
+  Compass,
   CreditCard,
   Dumbbell,
-  ExternalLink,
   MapPin,
+  Sparkles,
   Star,
-  User,
   X,
   Zap,
 } from 'lucide-react'
@@ -29,6 +31,19 @@ import {
   TRAINER_SPECIALTIES,
   formatTrainerRate,
 } from '../../services/trainerCoach'
+import {
+  BOOKING_STATUS_TONE,
+  SPECIALTY_UI,
+  trainerAvatarHue,
+  trainerInitials,
+} from './trainerCoachUi'
+
+const TAB_CONFIG = [
+  { id: 'explore' as const, label: 'Explorar', icon: Compass },
+  { id: 'now' as const, label: 'Ahora', icon: Zap, live: true },
+  { id: 'sessions' as const, label: 'Sesiones', icon: CalendarDays },
+  { id: 'trainer' as const, label: 'Modo PT', icon: BadgeCheck },
+]
 
 const EMPTY_TRAINER_FORM: TrainerProfileInput = {
   bio: '',
@@ -83,41 +98,86 @@ function TrainerCard({
   trainer: TrainerProfile
   onBook: () => void
 }) {
+  const hue = trainerAvatarHue(trainer.displayName)
+  const sessionPrice = Math.round(
+    (trainer.hourlyRateClp * (trainer.sessionDurationMin || 60)) / 60
+  )
+  const primarySpecialty = trainer.specialties[0]
+  const specialtyMeta = primarySpecialty ? SPECIALTY_UI[primarySpecialty] : null
+
   return (
-    <article className="trainer-card">
+    <article
+      className="trainer-card"
+      style={
+        specialtyMeta
+          ? ({ '--trainer-accent': specialtyMeta.accent } as React.CSSProperties)
+          : undefined
+      }
+    >
+      <div className="trainer-card__glow" aria-hidden />
       <div className="trainer-card__head">
-        <div className="trainer-card__avatar">
-          <Dumbbell size={20} />
+        <div
+          className="trainer-card__avatar"
+          style={{
+            background: `linear-gradient(135deg, hsl(${hue} 70% 45%), hsl(${(hue + 40) % 360} 65% 35%))`,
+          }}
+        >
+          {trainerInitials(trainer.displayName)}
         </div>
         <div className="trainer-card__info">
           <h3 className="trainer-card__name">
             {trainer.displayName}
             {trainer.verified && (
               <span className="trainer-card__verified" title="Entrenador verificado">
-                ✓
+                <Sparkles size={10} /> Verificado
               </span>
             )}
           </h3>
           <p className="trainer-card__meta">
             <MapPin size={12} /> {trainer.city || trainer.region || 'Chile'}
+            {trainer.zones.length > 0 && ` · ${trainer.zones.slice(0, 2).join(', ')}`}
           </p>
         </div>
-        <div className="trainer-card__rate">{formatTrainerRate(trainer.hourlyRateClp)}/h</div>
+        <div className="trainer-card__rate-block">
+          <div className="trainer-card__rate">{formatTrainerRate(trainer.hourlyRateClp)}</div>
+          <span className="trainer-card__rate-unit">/ hora</span>
+        </div>
       </div>
       {trainer.bio && <p className="trainer-card__bio">{trainer.bio}</p>}
       <div className="trainer-card__tags">
-        {trainer.specialties.slice(0, 4).map((s) => (
-          <span key={s} className="trainer-card__tag">
-            {TRAINER_SPECIALTIES.find((t) => t.id === s)?.label || s}
+        {trainer.specialties.slice(0, 4).map((s) => {
+          const meta = SPECIALTY_UI[s]
+          return (
+            <span
+              key={s}
+              className="trainer-card__tag"
+              style={{ '--tag-accent': meta.accent } as React.CSSProperties}
+            >
+              {meta.emoji} {meta.label}
+            </span>
+          )
+        })}
+        {trainer.availableForDispatch && (
+          <span className="trainer-card__tag trainer-card__tag--live">
+            <Zap size={10} /> En vivo
           </span>
-        ))}
+        )}
       </div>
-      {trainer.avgRating > 0 && (
-        <p className="trainer-card__rating">
-          <Star size={12} fill="#fbbf24" color="#fbbf24" /> {trainer.avgRating.toFixed(1)} (
-          {trainer.reviewCount})
+      <div className="trainer-card__footer">
+        {trainer.avgRating > 0 ? (
+          <p className="trainer-card__rating">
+            <Star size={13} fill="#fbbf24" color="#fbbf24" />
+            <strong>{trainer.avgRating.toFixed(1)}</strong>
+            <span>({trainer.reviewCount} reseñas)</span>
+          </p>
+        ) : (
+          <p className="trainer-card__rating trainer-card__rating--new">Nuevo en EntrenaCoach</p>
+        )}
+        <p className="trainer-card__session-price">
+          Sesión {trainer.sessionDurationMin || 60} min ·{' '}
+          <strong>{formatTrainerRate(sessionPrice)}</strong>
         </p>
-      )}
+      </div>
       <button type="button" className="trainer-card__book" onClick={onBook}>
         Reservar sesión
       </button>
@@ -167,17 +227,32 @@ function BookingForm({
 
   return (
     <div className="trainer-book">
-      <header className="trainer-coach__header">
+      <header className="trainer-coach__header trainer-coach__header--compact">
         <button type="button" onClick={onBack} className="trainer-coach__back" aria-label="Volver">
           <ArrowLeft size={22} />
         </button>
         <div>
-          <h2 className="trainer-coach__title">Reservar con {trainer.displayName}</h2>
-          <p className="trainer-coach__sub">
+          <h2 className="trainer-coach__title">Confirmar reserva</h2>
+          <p className="trainer-coach__sub">Último paso antes de enviar la solicitud</p>
+        </div>
+      </header>
+
+      <div className="trainer-book__summary">
+        <div
+          className="trainer-book__summary-avatar"
+          style={{
+            background: `linear-gradient(135deg, hsl(${trainerAvatarHue(trainer.displayName)} 70% 45%), hsl(${(trainerAvatarHue(trainer.displayName) + 40) % 360} 65% 35%))`,
+          }}
+        >
+          {trainerInitials(trainer.displayName)}
+        </div>
+        <div>
+          <p className="trainer-book__summary-name">{trainer.displayName}</p>
+          <p className="trainer-book__summary-meta">
             {trainer.sessionDurationMin} min · {formatTrainerRate(price)}
           </p>
         </div>
-      </header>
+      </div>
 
       <form className="trainer-book__form" onSubmit={handleSubmit}>
         <div className="marketplace-form__row">
@@ -300,13 +375,13 @@ export function TrainerCoachView({
     }
   }, [myTrainerProfile])
 
-  const myAsTrainer = useMemo(
-    () => bookings.filter((b) => b.trainerId === userUid),
-    [bookings, userUid]
+  const dispatchAvailableCount = useMemo(
+    () => trainers.filter((t) => t.active && t.availableForDispatch).length,
+    [trainers]
   )
-  const myAsClient = useMemo(
-    () => bookings.filter((b) => b.clientId === userUid),
-    [bookings, userUid]
+  const pendingSessions = useMemo(
+    () => bookings.filter((b) => !['declined', 'cancelled', 'paid_cash', 'paid_card'].includes(b.status)).length,
+    [bookings]
   )
 
   if (!open) return null
@@ -392,11 +467,23 @@ export function TrainerCoachView({
         <button type="button" onClick={onClose} className="trainer-coach__back" aria-label="Volver">
           <ArrowLeft size={22} />
         </button>
-        <div>
-          <h1 className="trainer-coach__title">EntrenaCoach</h1>
-          <p className="trainer-coach__sub">Entrenadores personales verificados</p>
+        <div className="trainer-coach__brand">
+          <div className="trainer-coach__brand-icon">
+            <Dumbbell size={18} />
+          </div>
+          <div>
+            <h1 className="trainer-coach__title">EntrenaCoach</h1>
+            <p className="trainer-coach__sub">Entrenadores premium · reserva o pide al instante</p>
+          </div>
         </div>
       </header>
+
+      <TrainerCoachHero
+        trainerCount={trainers.length}
+        dispatchCount={dispatchAvailableCount}
+        sessionCount={pendingSessions}
+        onGoNow={dispatchAvailableCount > 0 ? () => setTab('now') : undefined}
+      />
 
       {incomingDispatchOffer && tab !== 'now' && onCreateDispatch && onCancelDispatch && (
         <div className="trainer-coach__panel trainer-coach__offer-banner">
@@ -418,20 +505,25 @@ export function TrainerCoachView({
       )}
 
       <div className="trainer-coach__tabs">
-        {(['explore', 'now', 'sessions', 'trainer'] as const).map((t) => (
+        {TAB_CONFIG.map(({ id, label, icon: Icon, live }) => (
           <button
-            key={t}
+            key={id}
             type="button"
-            className={tab === t ? 'trainer-coach__tab--active' : 'trainer-coach__tab'}
-            onClick={() => setTab(t)}
+            className={
+              tab === id
+                ? `trainer-coach__tab--active${live ? ' trainer-coach__tab--live' : ''}`
+                : `trainer-coach__tab${live ? ' trainer-coach__tab--live-idle' : ''}`
+            }
+            onClick={() => setTab(id)}
           >
-            {t === 'explore'
-              ? 'Explorar'
-              : t === 'now'
-                ? 'Ahora'
-                : t === 'sessions'
-                  ? 'Mis sesiones'
-                  : 'Modo PT'}
+            <Icon size={14} />
+            {label}
+            {live && dispatchAvailableCount > 0 && (
+              <span className="trainer-coach__tab-dot" aria-hidden />
+            )}
+            {id === 'sessions' && pendingSessions > 0 && (
+              <span className="trainer-coach__tab-badge">{pendingSessions}</span>
+            )}
           </button>
         ))}
       </div>
@@ -468,18 +560,45 @@ export function TrainerCoachView({
 
       {tab === 'explore' && (
         <div className="trainer-coach__panel">
+          {dispatchAvailableCount > 0 && (
+            <button
+              type="button"
+              className="trainer-coach__now-promo"
+              onClick={() => setTab('now')}
+            >
+              <span className="trainer-coach__now-promo-icon">
+                <Zap size={20} />
+              </span>
+              <span className="trainer-coach__now-promo-text">
+                <strong>¿Lo necesitas ya?</strong>
+                <span>
+                  Entrenador en minutos · tarifa dinámica · {dispatchAvailableCount} cerca
+                </span>
+              </span>
+              <span className="trainer-coach__now-promo-arrow">→</span>
+            </button>
+          )}
           {trainers.length === 0 ? (
             <div className="trainer-coach__empty">
-              <Dumbbell size={40} className="opacity-40" />
-              <p>Aún no hay entrenadores activos</p>
+              <div className="trainer-coach__empty-icon">
+                <Dumbbell size={32} />
+              </div>
+              <h3>Sé el primero en tu zona</h3>
+              <p>Aún no hay entrenadores activos. Publica tu perfil PT y atrae clientes.</p>
               <button type="button" className="trainer-coach__cta" onClick={() => setTab('trainer')}>
                 Ofrecer servicios como entrenador
               </button>
             </div>
           ) : (
-            trainers.map((t) => (
-              <TrainerCard key={t.userId} trainer={t} onBook={() => startBook(t)} />
-            ))
+            <>
+              <p className="trainer-coach__list-label">
+                {trainers.length} entrenador{trainers.length !== 1 ? 'es' : ''} disponible
+                {trainers.length !== 1 ? 's' : ''}
+              </p>
+              {trainers.map((t) => (
+                <TrainerCard key={t.userId} trainer={t} onBook={() => startBook(t)} />
+              ))}
+            </>
           )}
         </div>
       )}
@@ -488,44 +607,72 @@ export function TrainerCoachView({
         <div className="trainer-coach__panel">
           {bookings.length === 0 ? (
             <div className="trainer-coach__empty">
-              <Calendar size={36} className="opacity-40" />
-              <p>Sin sesiones programadas</p>
+              <div className="trainer-coach__empty-icon">
+                <CalendarDays size={32} />
+              </div>
+              <h3>Sin sesiones aún</h3>
+              <p>Reserva un entrenador o pide uno al instante en la pestaña Ahora.</p>
+              <button type="button" className="trainer-coach__cta" onClick={() => setTab('explore')}>
+                Explorar entrenadores
+              </button>
             </div>
           ) : (
             bookings.map((b) => {
               const isTrainer = b.trainerId === userUid
               const isClient = b.clientId === userUid
               const partner = isTrainer ? b.clientName : b.trainerName
+              const statusTone = BOOKING_STATUS_TONE[b.status]
               return (
-                <article key={b.id} className="trainer-session-card">
+                <article
+                  key={b.id}
+                  className={`trainer-session-card trainer-session-card--${statusTone}`}
+                >
+                  <div className="trainer-session-card__accent" aria-hidden />
                   <div className="trainer-session-card__head">
-                    <span className="trainer-session-card__status">{BOOKING_STATUS_LABELS[b.status]}</span>
+                    <span className={`trainer-session-card__status trainer-session-card__status--${statusTone}`}>
+                      {BOOKING_STATUS_LABELS[b.status]}
+                    </span>
                     <span className="trainer-session-card__price">{formatTrainerRate(b.priceClp)}</span>
                   </div>
-                  <p className="trainer-session-card__who">
-                    <User size={14} /> {isTrainer ? `Cliente: ${partner}` : `Entrenador: ${partner}`}
-                  </p>
-                  <p className="trainer-session-card__when">
-                    <Clock size={14} />{' '}
-                    {new Date(b.scheduledAt).toLocaleString('es-CL', {
-                      dateStyle: 'medium',
-                      timeStyle: 'short',
-                    })}
-                  </p>
-                  <p className="trainer-session-card__where">
-                    <MapPin size={14} /> {b.locationNote}
-                  </p>
-                  <p className="trainer-session-card__pay">
-                    {b.paymentMethod === 'card' ? (
-                      <>
-                        <CreditCard size={14} /> Tarjeta
-                      </>
-                    ) : (
-                      <>💵 Efectivo</>
-                    )}
-                  </p>
+                  <div className="trainer-session-card__partner">
+                    <div
+                      className="trainer-session-card__avatar"
+                      style={{
+                        background: `linear-gradient(135deg, hsl(${trainerAvatarHue(partner)} 70% 45%), hsl(${(trainerAvatarHue(partner) + 40) % 360} 65% 35%))`,
+                      }}
+                    >
+                      {trainerInitials(partner)}
+                    </div>
+                    <div>
+                      <p className="trainer-session-card__who">
+                        {isTrainer ? 'Cliente' : 'Entrenador'}
+                      </p>
+                      <p className="trainer-session-card__name">{partner}</p>
+                    </div>
+                  </div>
+                  <div className="trainer-session-card__details">
+                    <p className="trainer-session-card__when">
+                      <Clock size={14} />{' '}
+                      {new Date(b.scheduledAt).toLocaleString('es-CL', {
+                        dateStyle: 'medium',
+                        timeStyle: 'short',
+                      })}
+                    </p>
+                    <p className="trainer-session-card__where">
+                      <MapPin size={14} /> {b.locationNote}
+                    </p>
+                    <p className="trainer-session-card__pay">
+                      {b.paymentMethod === 'card' ? (
+                        <>
+                          <CreditCard size={14} /> Tarjeta
+                        </>
+                      ) : (
+                        <>💵 Efectivo</>
+                      )}
+                    </p>
+                  </div>
                   <div className="trainer-session-card__actions">
-                    {isClient && ['requested', 'accepted'].includes(b.status) && (
+                    {b.clientId === userUid && ['requested', 'accepted'].includes(b.status) && (
                       <button
                         type="button"
                         className="trainer-session-card__decline"
@@ -652,11 +799,43 @@ export function TrainerCoachView({
 
       {tab === 'trainer' && (
         <form className="trainer-coach__panel marketplace-form" onSubmit={handleSaveProfile}>
-          <p className="trainer-coach__setup-hint">
-            {myTrainerProfile
-              ? 'Tu perfil está visible en Explorar. Actualiza tarifa y zonas.'
-              : 'Activa tu perfil profesional. Los clientes te encontrarán en EntrenaCoach.'}
-          </p>
+          <div className="trainer-coach__pt-hero">
+            <BadgeCheck size={22} />
+            <div>
+              <p className="trainer-coach__pt-hero-title">
+                {myTrainerProfile ? 'Tu perfil profesional' : 'Conviértete en entrenador'}
+              </p>
+              <p className="trainer-coach__pt-hero-sub">
+                {myTrainerProfile
+                  ? 'Visible en Explorar. Actualiza tarifa, zonas y modo en vivo.'
+                  : 'Publica tu perfil y empieza a recibir clientes en EntrenaCoach.'}
+              </p>
+            </div>
+          </div>
+
+          <div
+            className={`trainer-coach__dispatch-card${trainerForm.availableForDispatch ? ' trainer-coach__dispatch-card--on' : ''}`}
+          >
+            <div className="trainer-coach__dispatch-card-icon">
+              <Zap size={20} />
+            </div>
+            <div className="trainer-coach__dispatch-card-body">
+              <p className="trainer-coach__dispatch-card-title">Modo en vivo (Uber-mode)</p>
+              <p className="trainer-coach__dispatch-card-desc">
+                Recibe ofertas instantáneas de clientes cerca. Acepta o pasa en 90 segundos.
+              </p>
+            </div>
+            <label className="trainer-coach__dispatch-toggle">
+              <input
+                type="checkbox"
+                checked={trainerForm.availableForDispatch === true}
+                onChange={(e) =>
+                  setTrainerForm((f) => ({ ...f, availableForDispatch: e.target.checked }))
+                }
+              />
+              <span className="trainer-coach__dispatch-toggle-ui" />
+            </label>
+          </div>
           <label className="marketplace-form__field">
             Bio profesional
             <textarea
@@ -796,19 +975,9 @@ export function TrainerCoachView({
               checked={trainerForm.active}
               onChange={(e) => setTrainerForm((f) => ({ ...f, active: e.target.checked }))}
             />
-            Visible para clientes
+            Visible para clientes en Explorar
           </label>
-          <label className="marketplace-form__check">
-            <input
-              type="checkbox"
-              checked={trainerForm.availableForDispatch === true}
-              onChange={(e) =>
-                setTrainerForm((f) => ({ ...f, availableForDispatch: e.target.checked }))
-              }
-            />
-            Disponible para ofertas Uber-mode (recibo solicitudes en vivo cerca de mi GPS)
-          </label>
-          <button type="submit" className="marketplace-form__save" disabled={savingProfile}>
+          <button type="submit" className="marketplace-form__save trainer-coach__save-pt" disabled={savingProfile}>
             {savingProfile ? 'Guardando…' : myTrainerProfile ? 'Actualizar perfil PT' : 'Publicar como entrenador'}
           </button>
         </form>

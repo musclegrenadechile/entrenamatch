@@ -3,6 +3,7 @@ import {
   Loader2,
   MapPin,
   Navigation,
+  Radio,
   TrendingUp,
   Zap,
 } from 'lucide-react'
@@ -22,10 +23,36 @@ import {
   findNearbyDispatchTrainers,
   respondToDispatchOffer,
 } from '../../services/trainerDispatch'
-import {
-  TRAINER_SPECIALTIES,
-  formatTrainerRate,
-} from '../../services/trainerCoach'
+import { formatTrainerRate } from '../../services/trainerCoach'
+import { SPECIALTY_UI } from './trainerCoachUi'
+
+const DURATIONS = [45, 60, 75, 90] as const
+
+function OfferCountdown({ expiresAt }: { expiresAt: number }) {
+  const [secsLeft, setSecsLeft] = useState(() =>
+    Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000))
+  )
+  useEffect(() => {
+    const tick = () =>
+      setSecsLeft(Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000)))
+    tick()
+    const id = setInterval(tick, 250)
+    return () => clearInterval(id)
+  }, [expiresAt])
+  const total = DISPATCH_OFFER_MS / 1000
+  const pct = Math.max(0, Math.min(100, (secsLeft / total) * 100))
+  return (
+    <div className="trainer-dispatch-offer__countdown">
+      <div
+        className="trainer-dispatch-offer__countdown-ring"
+        style={{ background: `conic-gradient(#6366f1 ${pct}%, rgba(255,255,255,0.08) 0)` }}
+      >
+        <span>{secsLeft}s</span>
+      </div>
+      <p className="trainer-dispatch-offer__timer-label">Tiempo para responder</p>
+    </div>
+  )
+}
 
 export interface TrainerDispatchPanelProps {
   trainers: TrainerProfile[]
@@ -112,8 +139,8 @@ export function TrainerDispatchPanel({
       return
     }
     if (nearby.length === 0) {
-      toast.error('No hay entrenadores Uber-mode cerca', {
-        description: 'Prueba otra especialidad o amplía la zona.',
+      toast.error('No hay entrenadores en vivo cerca', {
+        description: 'Prueba otra especialidad o más tarde.',
       })
       return
     }
@@ -154,21 +181,20 @@ export function TrainerDispatchPanel({
   }
 
   if (incomingOffer) {
-    const secsLeft = incomingOffer.offerExpiresAt
-      ? Math.max(0, Math.ceil((incomingOffer.offerExpiresAt - Date.now()) / 1000))
-      : 0
+    const meta = SPECIALTY_UI[incomingOffer.specialty]
     return (
       <div className="trainer-dispatch-offer">
         <div className="trainer-dispatch-offer__pulse" />
-        <Zap size={32} className="text-[#6366f1] mb-3" />
-        <h2 className="trainer-dispatch-offer__title">Nueva oferta cerca tuyo</h2>
+        <div className="trainer-dispatch-offer__badge">
+          <Zap size={14} /> Oferta en vivo
+        </div>
         <p className="trainer-dispatch-offer__price">
           {formatTrainerRate(incomingOffer.offerPriceClp)}
         </p>
         <p className="trainer-dispatch-offer__meta">
-          {TRAINER_SPECIALTIES.find((s) => s.id === incomingOffer.specialty)?.label} ·{' '}
-          {incomingOffer.durationMin} min · {incomingOffer.clientName}
+          {meta.emoji} {meta.label} · {incomingOffer.durationMin} min
         </p>
+        <p className="trainer-dispatch-offer__client">{incomingOffer.clientName}</p>
         <p className="trainer-dispatch-offer__loc">
           <MapPin size={14} /> {incomingOffer.locationNote}
         </p>
@@ -177,7 +203,9 @@ export function TrainerDispatchPanel({
             <TrendingUp size={14} /> Alta demanda (+{Math.round((incomingOffer.surgeFactor - 1) * 100)}%)
           </p>
         )}
-        <p className="trainer-dispatch-offer__timer">{secsLeft}s para responder</p>
+        {incomingOffer.offerExpiresAt && (
+          <OfferCountdown expiresAt={incomingOffer.offerExpiresAt} />
+        )}
         <div className="trainer-dispatch-offer__actions">
           <button
             type="button"
@@ -193,7 +221,7 @@ export function TrainerDispatchPanel({
             disabled={responding}
             onClick={() => void handleRespond('accept')}
           >
-            {responding ? '…' : 'Aceptar'}
+            {responding ? '…' : 'Aceptar sesión'}
           </button>
         </div>
       </div>
@@ -216,7 +244,7 @@ export function TrainerDispatchPanel({
               {activeDispatch.currentTrainerName || 'Tu entrenador'} ·{' '}
               {formatTrainerRate(activeDispatch.offerPriceClp)}
             </p>
-            <p className="trainer-dispatch-wait__hint">Ve a Mis sesiones para continuar.</p>
+            <p className="trainer-dispatch-wait__hint">Ve a Sesiones para continuar.</p>
           </>
         ) : activeDispatch.status === 'no_trainers' ? (
           <>
@@ -234,7 +262,13 @@ export function TrainerDispatchPanel({
           </>
         ) : (
           <>
-            <Loader2 size={36} className="trainer-dispatch-wait__spin text-[#6366f1]" />
+            <div className="trainer-dispatch-wait__radar" aria-hidden>
+              <span className="trainer-dispatch-wait__radar-ring" />
+              <span className="trainer-dispatch-wait__radar-ring" />
+              <span className="trainer-dispatch-wait__radar-dot">
+                <Radio size={18} />
+              </span>
+            </div>
             <h2 className="trainer-dispatch-wait__title">
               {DISPATCH_STATUS_LABELS[activeDispatch.status]}
             </h2>
@@ -263,48 +297,73 @@ export function TrainerDispatchPanel({
   return (
     <div className="trainer-dispatch-form">
       <div className="trainer-dispatch-form__hero">
-        <Navigation size={22} className="text-[#6366f1]" />
+        <div className="trainer-dispatch-form__hero-icon">
+          <Navigation size={22} />
+        </div>
         <div>
           <h2 className="trainer-dispatch-form__title">Entrenador ahora</h2>
           <p className="trainer-dispatch-form__sub">
-            Tarifa dinámica según entrenadores cerca — estilo Uber
+            Precio de mercado en tu zona · ofertas en 90s · estilo Uber
           </p>
         </div>
       </div>
 
       {!userLat && (
         <button type="button" className="trainer-dispatch-form__gps" onClick={() => void onRequestLocation()}>
-          <MapPin size={16} /> Activar ubicación GPS
+          <MapPin size={16} /> Activar ubicación GPS para ver tarifa real
         </button>
       )}
 
-      <label className="marketplace-form__field">
-        Tipo de entrenamiento
-        <select value={specialty} onChange={(e) => setSpecialty(e.target.value as TrainerSpecialty)}>
-          {TRAINER_SPECIALTIES.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.label}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="trainer-dispatch-form__section">
+        <p className="trainer-dispatch-form__label">Tipo de entrenamiento</p>
+        <div className="trainer-dispatch-form__chips">
+          {(Object.keys(SPECIALTY_UI) as TrainerSpecialty[]).map((id) => {
+            const meta = SPECIALTY_UI[id]
+            return (
+              <button
+                key={id}
+                type="button"
+                className={
+                  specialty === id
+                    ? 'trainer-dispatch-form__chip trainer-dispatch-form__chip--on'
+                    : 'trainer-dispatch-form__chip'
+                }
+                style={
+                  specialty === id
+                    ? ({ '--chip-accent': meta.accent } as React.CSSProperties)
+                    : undefined
+                }
+                onClick={() => setSpecialty(id)}
+              >
+                {meta.emoji} {meta.label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
-      <label className="marketplace-form__field">
-        Duración (min)
-        <select
-          value={durationMin}
-          onChange={(e) => setDurationMin(Number(e.target.value))}
-        >
-          {[45, 60, 75, 90].map((m) => (
-            <option key={m} value={m}>
+      <div className="trainer-dispatch-form__section">
+        <p className="trainer-dispatch-form__label">Duración</p>
+        <div className="trainer-dispatch-form__durations">
+          {DURATIONS.map((m) => (
+            <button
+              key={m}
+              type="button"
+              className={
+                durationMin === m
+                  ? 'trainer-dispatch-form__duration trainer-dispatch-form__duration--on'
+                  : 'trainer-dispatch-form__duration'
+              }
+              onClick={() => setDurationMin(m)}
+            >
               {m} min
-            </option>
+            </button>
           ))}
-        </select>
-      </label>
+        </div>
+      </div>
 
       <label className="marketplace-form__field">
-        Lugar
+        Lugar de entrenamiento
         <input
           value={locationNote}
           onChange={(e) => setLocationNote(e.target.value)}
@@ -313,16 +372,25 @@ export function TrainerDispatchPanel({
         />
       </label>
 
-      <label className="marketplace-form__field">
-        Pago
-        <select
-          value={paymentMethod}
-          onChange={(e) => setPaymentMethod(e.target.value as TrainerPaymentMethod)}
-        >
-          <option value="card">Tarjeta</option>
-          <option value="cash">Efectivo</option>
-        </select>
-      </label>
+      <div className="trainer-dispatch-form__section">
+        <p className="trainer-dispatch-form__label">Método de pago</p>
+        <div className="trainer-dispatch-form__durations">
+          {(['card', 'cash'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              className={
+                paymentMethod === m
+                  ? 'trainer-dispatch-form__duration trainer-dispatch-form__duration--on'
+                  : 'trainer-dispatch-form__duration'
+              }
+              onClick={() => setPaymentMethod(m)}
+            >
+              {m === 'card' ? '💳 Tarjeta' : '💵 Efectivo'}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="trainer-dispatch-form__estimate">
         <div className="trainer-dispatch-form__estimate-row">
@@ -342,8 +410,14 @@ export function TrainerDispatchPanel({
           <strong>{formatTrainerRate(estimate.offerPriceClp)}</strong>
         </div>
         <p className="trainer-dispatch-form__estimate-meta">
-          {estimate.nearbyCount} entrenador{estimate.nearbyCount !== 1 ? 'es' : ''} Uber-mode en{' '}
-          {DISPATCH_OFFER_MS / 1000}s por oferta · comisión plataforma incluida en checkout
+          {estimate.nearbyCount > 0 ? (
+            <>
+              <span className="trainer-dispatch-form__live-dot" /> {estimate.nearbyCount}{' '}
+              entrenador{estimate.nearbyCount !== 1 ? 'es' : ''} en vivo cerca
+            </>
+          ) : (
+            'Sin entrenadores en vivo en tu zona para esta especialidad'
+          )}
         </p>
       </div>
 
@@ -353,7 +427,13 @@ export function TrainerDispatchPanel({
         disabled={submitting || estimate.nearbyCount === 0}
         onClick={() => void handleRequest()}
       >
-        {submitting ? 'Solicitando…' : `Pedir entrenador · ${formatTrainerRate(estimate.offerPriceClp)}`}
+        {submitting ? (
+          <>
+            <Loader2 size={16} className="trainer-dispatch-form__cta-spin" /> Buscando…
+          </>
+        ) : (
+          <>Pedir entrenador · {formatTrainerRate(estimate.offerPriceClp)}</>
+        )}
       </button>
     </div>
   )
