@@ -186,4 +186,5 @@ export interface ProfileTabProps {
   deleteExtraPhoto: (indexToRemove: number) => void | Promise<void>
   uploadProfilePhotoIfNeeded: (dataUrl: string) => Promise<string>
   onOpenMarketplace?: () => void
+  onOpenTrainerCoach?: () => void
 }

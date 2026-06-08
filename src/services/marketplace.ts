@@ -8,6 +8,7 @@ import {
   doc,
   onSnapshot,
   query,
+  where,
   orderBy,
   setDoc,
   updateDoc,
@@ -15,10 +16,12 @@ import {
   getDoc,
   type Firestore,
 } from 'firebase/firestore'
-import type { MarketplaceCategory, MarketplaceProduct } from '../types'
+import type { MarketplaceCategory, MarketplaceProduct, MarketplaceShippingInfo } from '../types'
 
 const COLLECTION = 'marketplaceProducts'
 const ADMIN_COLLECTION = 'marketplaceAdmins'
+const ORDERS_COLLECTION = 'marketplaceOrders'
+const SHIPPING_STORAGE_KEY = 'entrenamatch_marketplace_shipping_v1'
 
 export function formatClp(amount: number): string {
   return new Intl.NumberFormat('es-CL', {
@@ -26,6 +29,95 @@ export function formatClp(amount: number): string {
     currency: 'CLP',
     maximumFractionDigits: 0,
   }).format(amount)
+}
+
+export function productRequiresShipping(category: MarketplaceCategory): boolean {
+  return category !== 'digital'
+}
+
+export function loadSavedMarketplaceShipping(): Partial<MarketplaceShippingInfo> | null {
+  try {
+    const raw = localStorage.getItem(SHIPPING_STORAGE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as Partial<MarketplaceShippingInfo>
+  } catch {
+    return null
+  }
+}
+
+export function saveMarketplaceShipping(info: MarketplaceShippingInfo): void {
+  try {
+    localStorage.setItem(SHIPPING_STORAGE_KEY, JSON.stringify(info))
+  } catch {
+    /* quota / private mode */
+  }
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PHONE_RE = /^[\d\s+()-]{8,20}$/
+
+export function validateMarketplaceShipping(
+  info: MarketplaceShippingInfo,
+  requiresShipping: boolean
+): string | null {
+  if (!info.fullName.trim() || info.fullName.trim().length < 3) {
+    return 'Ingresa tu nombre completo'
+  }
+  if (!EMAIL_RE.test(info.email.trim())) {
+    return 'Correo electrónico inválido'
+  }
+  if (!PHONE_RE.test(info.phone.trim())) {
+    return 'Teléfono inválido (mín. 8 dígitos)'
+  }
+  if (info.altPhone?.trim() && !PHONE_RE.test(info.altPhone.trim())) {
+    return 'Teléfono alternativo inválido'
+  }
+  if (requiresShipping) {
+    if (!info.address.trim() || info.address.trim().length < 5) {
+      return 'Ingresa tu dirección de envío'
+    }
+    if (!info.city.trim()) {
+      return 'Ingresa tu ciudad'
+    }
+    if (!info.region.trim()) {
+      return 'Selecciona tu región'
+    }
+  }
+  return null
+}
+
+export async function createMarketplaceOrder(
+  db: Firestore,
+  uid: string,
+  product: MarketplaceProduct,
+  shipping: MarketplaceShippingInfo
+): Promise<string> {
+  const requiresShipping = productRequiresShipping(product.category)
+  const err = validateMarketplaceShipping(shipping, requiresShipping)
+  if (err) throw new Error(err)
+
+  const id = `mo_${Date.now()}_${uid.slice(0, 6)}`
+  const payload = {
+    userId: uid,
+    productId: product.id,
+    productTitle: product.title,
+    priceClp: product.priceClp,
+    category: product.category,
+    shipping: {
+      fullName: shipping.fullName.trim(),
+      email: shipping.email.trim().toLowerCase(),
+      phone: shipping.phone.trim(),
+      ...(shipping.altPhone?.trim() ? { altPhone: shipping.altPhone.trim() } : {}),
+      address: shipping.address.trim(),
+      city: shipping.city.trim(),
+      region: shipping.region.trim(),
+    },
+    status: 'pending_payment' as const,
+    createdAt: Date.now(),
+  }
+  await setDoc(doc(db, ORDERS_COLLECTION, id), payload)
+  saveMarketplaceShipping(shipping)
+  return id
 }
 
 export async function checkMarketplaceAdmin(
@@ -79,7 +171,13 @@ export function attachMarketplaceProductsListener(
   onUpdate: (products: MarketplaceProduct[]) => void,
   opts?: { includeInactive?: boolean }
 ): () => void {
-  const q = query(collection(db, COLLECTION), orderBy('createdAt', 'desc'))
+  // Non-admins may only read active products (firestore.rules). The query must
+  // filter active==true or Firestore rejects the whole list (permission-denied).
+  const col = collection(db, COLLECTION)
+  const q = opts?.includeInactive
+    ? query(col, orderBy('createdAt', 'desc'))
+    : query(col, where('active', '==', true), orderBy('createdAt', 'desc'))
+
   return onSnapshot(
     q,
     (snap) => {
@@ -93,7 +191,7 @@ export function attachMarketplaceProductsListener(
       onUpdate(list)
     },
     (err) => {
-      console.warn('marketplace listener error', err)
+      console.warn('marketplace products listener error', err)
       onUpdate([])
     }
   )
@@ -116,8 +214,11 @@ export async function createMarketplaceProduct(
 ): Promise<string> {
   const id = `mp_${Date.now()}`
   const now = Date.now()
+  const { imageUrl, ...rest } = input
   await setDoc(doc(db, COLLECTION, id), {
-    ...input,
+    ...rest,
+    ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}),
+    active: input.active !== false,
     createdBy: uid,
     createdAt: now,
     updatedAt: now,

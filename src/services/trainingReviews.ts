@@ -20,6 +20,7 @@ export function docToTrainingReview(docSnap: {
     comment: d.comment ? String(d.comment) : undefined,
     photo: d.photo ? String(d.photo) : undefined,
     timestamp: Number.isFinite(ts) ? ts : Date.now(),
+    bookingId: d.bookingId ? String(d.bookingId) : undefined,
   }
 }
 
@@ -53,6 +54,7 @@ export async function submitReviewToFirestore(
     comment: review.comment || null,
     photo: review.photo || null,
     timestamp: review.timestamp,
+    bookingId: review.bookingId || null,
     createdAt: serverTimestamp(),
   })
   return ref.id

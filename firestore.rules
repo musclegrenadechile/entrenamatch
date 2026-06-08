@@ -50,6 +50,86 @@ service cloud.firestore {
         && data.updatedAt is number;
     }
 
+    function validMarketplaceShipping(data) {
+      return data.fullName is string
+        && data.fullName.size() >= 3
+        && data.fullName.size() <= 120
+        && data.email is string
+        && data.email.size() >= 5
+        && data.email.size() <= 120
+        && data.phone is string
+        && data.phone.size() >= 8
+        && data.phone.size() <= 20
+        && data.address is string
+        && data.address.size() <= 200
+        && data.city is string
+        && data.city.size() <= 80
+        && data.region is string
+        && data.region.size() <= 80;
+    }
+
+    function validMarketplaceOrder(data) {
+      return data.userId == request.auth.uid
+        && data.productId is string
+        && data.productTitle is string
+        && data.productTitle.size() <= 120
+        && data.priceClp is number
+        && data.priceClp >= 0
+        && data.category is string
+        && data.status == 'pending_payment'
+        && validMarketplaceShipping(data.shipping)
+        && data.createdAt is number;
+    }
+
+    function validTrainerProfile(data) {
+      return data.displayName is string
+        && data.displayName.size() >= 2
+        && data.displayName.size() <= 80
+        && data.bio is string
+        && data.bio.size() <= 800
+        && data.hourlyRateClp is number
+        && data.hourlyRateClp >= 0
+        && data.hourlyRateClp <= 500000
+        && data.sessionDurationMin is number
+        && data.sessionDurationMin >= 30
+        && data.sessionDurationMin <= 180
+        && data.active is bool
+        && data.createdAt is number
+        && data.updatedAt is number;
+    }
+
+    function validTrainerBookingCreate(data) {
+      return data.clientId == request.auth.uid
+        && data.trainerId is string
+        && data.trainerId != request.auth.uid
+        && data.trainerName is string
+        && data.clientName is string
+        && data.scheduledAt is number
+        && data.durationMin is number
+        && data.locationNote is string
+        && data.locationNote.size() >= 3
+        && data.priceClp is number
+        && data.paymentMethod is string
+        && data.status == 'requested'
+        && data.createdAt is number
+        && data.updatedAt is number;
+    }
+
+    function isTrainerBookingParty() {
+      return isAuthenticated()
+        && (resource.data.clientId == request.auth.uid
+          || resource.data.trainerId == request.auth.uid);
+    }
+
+    function validTrainerBookingStatusUpdate() {
+      return isTrainerBookingParty()
+        && request.resource.data.trainerId == resource.data.trainerId
+        && request.resource.data.clientId == resource.data.clientId
+        && request.resource.data.priceClp == resource.data.priceClp
+        && request.resource.data.scheduledAt == resource.data.scheduledAt
+        && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
     function isSessionParticipant(sessionId) {
       let s = get(/databases/$(database)/documents/sessions/$(sessionId)).data;
       return isAuthenticated() && (
@@ -118,6 +198,33 @@ service cloud.firestore {
       allow update: if isMarketplaceAdmin()
         && request.resource.data.createdBy == resource.data.createdBy
         && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isMarketplaceAdmin();
+    }
+
+    match /marketplaceOrders/{orderId} {
+      allow create: if isAuthenticated()
+        && validMarketplaceOrder(request.resource.data);
+      allow read: if isAuthenticated()
+        && (resource.data.userId == request.auth.uid || isMarketplaceAdmin());
+      allow update, delete: if isMarketplaceAdmin();
+    }
+
+    match /trainerProfiles/{userId} {
+      allow read: if isAuthenticated()
+        && (resource.data.active == true || isOwner(userId) || isMarketplaceAdmin());
+      allow create, update: if isOwner(userId)
+        && validTrainerProfile(request.resource.data);
+      allow delete: if isOwner(userId) || isMarketplaceAdmin();
+    }
+
+    match /trainerBookings/{bookingId} {
+      allow create: if isAuthenticated()
+        && validTrainerBookingCreate(request.resource.data);
+      allow read: if isAuthenticated()
+        && (resource.data.clientId == request.auth.uid
+          || resource.data.trainerId == request.auth.uid
+          || isMarketplaceAdmin());
+      allow update: if validTrainerBookingStatusUpdate();
       allow delete: if isMarketplaceAdmin();
     }
 

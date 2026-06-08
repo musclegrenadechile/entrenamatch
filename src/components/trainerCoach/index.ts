@@ -1,0 +1,1 @@
+export { TrainerCoachView } from './TrainerCoachView'

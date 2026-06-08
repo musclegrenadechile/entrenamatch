@@ -98,6 +98,7 @@ export interface TrainingReview {
   comment?: string
   photo?: string
   timestamp: number
+  bookingId?: string
 }
 
 export interface SessionMessage {
@@ -316,6 +317,109 @@ export interface MarketplaceProduct {
   createdBy: string
   createdAt: number
   updatedAt: number
+}
+
+export interface MarketplaceShippingInfo {
+  fullName: string
+  email: string
+  phone: string
+  altPhone?: string
+  address: string
+  city: string
+  region: string
+}
+
+export type MarketplaceOrderStatus = 'pending_payment' | 'paid' | 'cancelled'
+
+export interface MarketplaceOrder {
+  id: string
+  userId: string
+  productId: string
+  productTitle: string
+  priceClp: number
+  category: MarketplaceCategory
+  shipping: MarketplaceShippingInfo
+  status: MarketplaceOrderStatus
+  createdAt: number
+}
+
+export type TrainerSpecialty =
+  | 'fuerza'
+  | 'hipertrofia'
+  | 'cardio'
+  | 'funcional'
+  | 'crossfit'
+  | 'rehab'
+  | 'nutricion'
+  | 'otro'
+
+export type TrainerPaymentMethod = 'card' | 'cash'
+
+export interface TrainerProfile {
+  userId: string
+  displayName: string
+  bio: string
+  specialties: TrainerSpecialty[]
+  hourlyRateClp: number
+  sessionDurationMin: number
+  city: string
+  region: string
+  zones: string[]
+  paymentMethods: TrainerPaymentMethod[]
+  paymentUrl?: string
+  active: boolean
+  avgRating: number
+  reviewCount: number
+  createdAt: number
+  updatedAt: number
+}
+
+export type TrainerBookingStatus =
+  | 'requested'
+  | 'accepted'
+  | 'declined'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled'
+  | 'paid_cash'
+  | 'paid_card'
+
+export interface TrainerBooking {
+  id: string
+  trainerId: string
+  trainerName: string
+  clientId: string
+  clientName: string
+  scheduledAt: number
+  durationMin: number
+  locationNote: string
+  priceClp: number
+  paymentMethod: TrainerPaymentMethod
+  status: TrainerBookingStatus
+  clientMessage?: string
+  reviewId?: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface TrainerProfileInput {
+  bio: string
+  specialties: TrainerSpecialty[]
+  hourlyRateClp: number
+  sessionDurationMin: number
+  city: string
+  region: string
+  zones: string
+  paymentMethods: TrainerPaymentMethod[]
+  paymentUrl?: string
+  active: boolean
+}
+
+export interface TrainerBookingInput {
+  scheduledAt: number
+  locationNote: string
+  paymentMethod: TrainerPaymentMethod
+  clientMessage?: string
 }
 
 export type {

@@ -107,10 +107,22 @@ import {
   createMarketplaceProduct,
   updateMarketplaceProduct,
   deleteMarketplaceProduct,
+  createMarketplaceOrder,
   DEMO_MARKETPLACE_PRODUCTS,
   type MarketplaceProductInput,
 } from './services/marketplace'
-import type { MarketplaceProduct } from './types'
+import type { MarketplaceProduct, TrainerBooking, TrainerProfile, TrainerProfileInput } from './types'
+import { TrainerCoachView } from './components/trainerCoach'
+import {
+  attachTrainerProfilesListener,
+  attachMyTrainerProfileListener,
+  attachTrainerBookingsListener,
+  saveTrainerProfile,
+  createTrainerBooking,
+  updateTrainerBookingStatus,
+  linkReviewToBooking,
+  formatTrainerRate,
+} from './services/trainerCoach'
 import { HomeTab } from './components/home/HomeTab'
 import { fetchGlobalProfilePosts, fetchProfilePostById, togglePostLikeInFirestore, persistPostReactionsInFirestore } from './services/profilePosts'
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
@@ -866,6 +878,12 @@ function App() {
   const [showMarketplace, setShowMarketplace] = useState(false)
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([])
   const [isMarketplaceAdmin, setIsMarketplaceAdmin] = useState(false)
+  const [showTrainerCoach, setShowTrainerCoach] = useState(false)
+  const [trainerCoachPreselect, setTrainerCoachPreselect] = useState<string | null>(null)
+  const [trainerProfiles, setTrainerProfiles] = useState<TrainerProfile[]>([])
+  const [myTrainerProfile, setMyTrainerProfile] = useState<TrainerProfile | null>(null)
+  const [trainerBookings, setTrainerBookings] = useState<TrainerBooking[]>([])
+  const [pendingReviewBookingId, setPendingReviewBookingId] = useState<string | null>(null)
   const [savingFuel, setSavingFuel] = useState(false)
   const [fuelProfile, setFuelProfile] = useState<FuelProfile | null>(null)
   const [fuelTodayLogs, setFuelTodayLogs] = useState<FuelLogEntry[]>([])
@@ -4479,6 +4497,24 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     })
   }, [isDemoMode, db, firebaseUser?.uid, isMarketplaceAdmin])
 
+  // EntrenaCoach — entrenadores personales (Fase 1 MVP)
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid) {
+      setTrainerProfiles([])
+      setMyTrainerProfile(null)
+      setTrainerBookings([])
+      return undefined
+    }
+    const unsubProfiles = attachTrainerProfilesListener(db, setTrainerProfiles)
+    const unsubMine = attachMyTrainerProfileListener(db, firebaseUser.uid, setMyTrainerProfile)
+    const unsubBookings = attachTrainerBookingsListener(db, firebaseUser.uid, setTrainerBookings)
+    return () => {
+      unsubProfiles()
+      unsubMine()
+      unsubBookings()
+    }
+  }, [isDemoMode, db, firebaseUser?.uid])
+
   // Auto-run disabled to keep cold launch fast and avoid unnecessary Play Integrity API calls (which can fail on sideloaded debug APKs).
   // Users can manually verify using the 🛡️ button in Profile (the checkPlayIntegrity function + UI section remain available for testers).
   // The live toggle still prompts to verify integrity first if PlayIntegrityNative is present.
@@ -7714,7 +7750,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       rating: reviewRating,
       comment: reviewComment.trim() || undefined,
       photo: reviewPhoto || undefined,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      bookingId: pendingReviewBookingId || undefined,
     }
 
     if (!isDemoMode && db && firebaseUser?.uid) {
@@ -7726,7 +7763,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           comment: newReview.comment,
           photo: newReview.photo,
           timestamp: newReview.timestamp,
+          bookingId: newReview.bookingId,
         })
+        if (pendingReviewBookingId) {
+          await linkReviewToBooking(db, pendingReviewBookingId, newReview.id, newReview.rating)
+        }
       } catch (e) {
         console.warn('Could not save review to Firestore', e)
       }
@@ -7740,6 +7781,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
     saveReviews(updatedReviews)
     setShowReviewModalFor(null)
+    setPendingReviewBookingId(null)
     setReviewComment('')
     setReviewPhoto(null)
     toast.success('¡Reseña enviada!', { description: 'Gracias por ayudar a la comunidad de EntrenaMatch' })
@@ -10122,6 +10164,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             deleteExtraPhoto={deleteExtraPhoto}
             uploadProfilePhotoIfNeeded={uploadProfilePhotoIfNeeded}
             onOpenMarketplace={() => setShowMarketplace(true)}
+            onOpenTrainerCoach={() => {
+              setTrainerCoachPreselect(null)
+              setShowTrainerCoach(true)
+            }}
           />
         )}
             {/* DUPLICATE ORPHAN PROFILE JSX REMOVED — all rich Profile UI now lives cleanly inside the activeTab==='profile' conditional (prevents black screens, duplicate renders, and JSX imbalance) */}
@@ -10284,6 +10330,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         products={marketplaceProducts}
         isAdmin={isMarketplaceAdmin}
         isDemoMode={isDemoMode}
+        userUid={firebaseUser?.uid}
+        userEmail={firebaseUser?.email ?? undefined}
         onCreateProduct={async (input: MarketplaceProductInput) => {
           if (!db || !firebaseUser?.uid) throw new Error('auth')
           await createMarketplaceProduct(db, firebaseUser.uid, input)
@@ -10295,6 +10343,51 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         onDeleteProduct={async (id) => {
           if (!db) throw new Error('db')
           await deleteMarketplaceProduct(db, id)
+        }}
+        onCheckout={async (product, shipping) => {
+          if (!db || !firebaseUser?.uid) throw new Error('auth')
+          await createMarketplaceOrder(db, firebaseUser.uid, product, shipping)
+        }}
+      />
+      <TrainerCoachView
+        open={showTrainerCoach}
+        onClose={() => {
+          setShowTrainerCoach(false)
+          setTrainerCoachPreselect(null)
+        }}
+        trainers={trainerProfiles}
+        myTrainerProfile={myTrainerProfile}
+        bookings={trainerBookings}
+        userUid={firebaseUser?.uid}
+        userName={currentUser?.name || firebaseUser?.email?.split('@')[0]}
+        isDemoMode={isDemoMode}
+        preselectedTrainerId={trainerCoachPreselect}
+        onSaveTrainerProfile={async (input: TrainerProfileInput) => {
+          if (!db || !firebaseUser?.uid) throw new Error('auth')
+          const name = currentUser?.name || firebaseUser.email?.split('@')[0] || 'Entrenador'
+          await saveTrainerProfile(db, firebaseUser.uid, name, input)
+        }}
+        onCreateBooking={async (trainer, input) => {
+          if (!db || !firebaseUser?.uid) throw new Error('auth')
+          const clientName = currentUser?.name || firebaseUser.email?.split('@')[0] || 'Cliente'
+          return createTrainerBooking(db, firebaseUser.uid, clientName, trainer, input)
+        }}
+        onUpdateBookingStatus={async (bookingId, status) => {
+          if (!db) throw new Error('db')
+          try {
+            await updateTrainerBookingStatus(db, bookingId, status)
+            toast.success('Sesión actualizada')
+          } catch (e) {
+            console.warn(e)
+            toast.error('No se pudo actualizar la sesión')
+            throw e
+          }
+        }}
+        onOpenPayment={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
+        onRequestReview={(trainerId, bookingId) => {
+          setPendingReviewBookingId(bookingId)
+          setShowTrainerCoach(false)
+          setShowReviewModalFor(trainerId)
         }}
       />
       <EntrenaLogModal
@@ -11082,7 +11175,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               </div>
 
               <div className="flex gap-3">
-                <button onClick={() => { setShowReviewModalFor(null); setReviewPhoto(null) }} className="flex-1 btn-secondary">Cancelar</button>
+                <button onClick={() => { setShowReviewModalFor(null); setReviewPhoto(null); setPendingReviewBookingId(null) }} className="flex-1 btn-secondary">Cancelar</button>
                 <button onClick={() => submitTrainingReview(showReviewModalFor)} className="flex-1 btn-primary">Enviar reseña</button>
               </div>
             </div>
@@ -11206,6 +11299,36 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                       )}
                     </div>
                   )}
+                  {(() => {
+                    const tp = trainerProfiles.find((t) => t.userId === showFullProfile.id)
+                    if (!tp) return null
+                    return (
+                      <div className="mt-3 p-3 rounded-xl border border-[#6366f1]/35 bg-[#6366f1]/10">
+                        <div className="text-xs font-bold text-[#a5b4fc] uppercase tracking-wider mb-1">
+                          Entrenador personal
+                        </div>
+                        <div className="text-sm text-white font-semibold">
+                          {formatTrainerRate(tp.hourlyRateClp)}/h · {tp.sessionDurationMin} min
+                        </div>
+                        {tp.avgRating > 0 && (
+                          <div className="text-xs text-[#cbd5e1] mt-1">★ {tp.avgRating} ({tp.reviewCount} sesiones)</div>
+                        )}
+                        {showFullProfile.id !== effectiveUserId && (
+                          <button
+                            type="button"
+                            className="mt-2 w-full py-2 rounded-xl bg-[#6366f1] text-white text-sm font-bold"
+                            onClick={() => {
+                              setTrainerCoachPreselect(tp.userId)
+                              setShowFullProfile(null)
+                              setShowTrainerCoach(true)
+                            }}
+                          >
+                            Reservar sesión EntrenaCoach
+                          </button>
+                        )}
+                      </div>
+                    )
+                  })()}
 
                   {/* Photos from past sessions */}
                   {reviews[showFullProfile.id]?.some(r => r.photo) && (

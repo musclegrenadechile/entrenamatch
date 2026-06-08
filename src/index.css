@@ -4829,6 +4829,62 @@ button:not(.live-pill):disabled {
   border: 1px solid rgba(255, 103, 31, 0.25);
 }
 
+.marketplace-screen__setup {
+  margin: 10px 16px 0;
+  padding: 12px;
+  border-radius: 12px;
+  font-size: 10px;
+  color: #cbd5e1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.marketplace-screen__setup-title {
+  font-weight: 800;
+  color: #fbbf24;
+  margin-bottom: 6px;
+}
+
+.marketplace-screen__setup-text {
+  line-height: 1.45;
+  margin-bottom: 8px;
+}
+
+.marketplace-screen__setup-code {
+  display: block;
+  padding: 8px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+  font-size: 9px;
+  word-break: break-all;
+  color: #93c5fd;
+  margin-bottom: 8px;
+}
+
+.marketplace-screen__setup-copy {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.marketplace-screen__setup-foot {
+  margin-top: 10px;
+  font-size: 9px;
+  color: #9ca3af;
+  line-height: 1.4;
+}
+
+.marketplace-screen__setup-foot code {
+  display: block;
+  margin-top: 4px;
+  word-break: break-all;
+  color: #86efac;
+}
+
 .marketplace-screen__filters {
   display: flex;
   gap: 6px;
@@ -5084,5 +5140,436 @@ button:not(.live-pill):disabled {
 
 .marketplace-form__save:disabled {
   opacity: 0.6;
+}
+
+.marketplace-checkout {
+  min-height: 100%;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
+.marketplace-checkout__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  background: rgba(10, 10, 12, 0.95);
+  backdrop-filter: blur(8px);
+  z-index: 2;
+}
+
+.marketplace-checkout__back {
+  color: #9ca3af;
+  padding: 4px;
+}
+
+.marketplace-checkout__title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.marketplace-checkout__sub {
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.marketplace-checkout__product {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 14px 16px 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 103, 31, 0.08);
+  border: 1px solid rgba(255, 103, 31, 0.25);
+}
+
+.marketplace-checkout__product-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(255, 103, 31, 0.2);
+  color: #ff671f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.marketplace-checkout__product-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.marketplace-checkout__product-price {
+  font-size: 12px;
+  font-weight: 800;
+  color: #ff671f;
+  margin-top: 2px;
+}
+
+.marketplace-checkout__form {
+  padding: 0 16px 16px;
+}
+
+.marketplace-checkout__section {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #ff671f;
+  margin: 16px 0 8px;
+}
+
+.marketplace-checkout__digital-note {
+  margin-top: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 10px;
+  line-height: 1.45;
+  color: #cbd5e1;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.marketplace-checkout__privacy {
+  margin-top: 12px;
+  font-size: 9px;
+  color: #6b7280;
+  line-height: 1.4;
+}
+
+.marketplace-checkout__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.marketplace-checkout__pay {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  background: #ff671f;
+  color: #000;
+}
+
+.marketplace-checkout__pay:disabled {
+  opacity: 0.6;
+}
+
+/* =====================================================
+   ENTRENACOACH — entrenadores personales MVP
+   ===================================================== */
+
+.trainer-coach-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 86;
+  background: #0a0a0c;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
+.trainer-coach__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  background: rgba(10, 10, 12, 0.95);
+  backdrop-filter: blur(8px);
+  z-index: 2;
+}
+
+.trainer-coach__back {
+  color: #9ca3af;
+  padding: 4px;
+}
+
+.trainer-coach__title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+}
+
+.trainer-coach__sub {
+  font-size: 10px;
+  color: #9ca3af;
+}
+
+.trainer-coach__tabs {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px;
+  overflow-x: auto;
+}
+
+.trainer-coach__tab,
+.trainer-coach__tab--active {
+  flex-shrink: 0;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.trainer-coach__tab {
+  background: rgba(255, 255, 255, 0.06);
+  color: #9ca3af;
+}
+
+.trainer-coach__tab--active {
+  background: #6366f1;
+  color: #fff;
+}
+
+.trainer-coach__panel {
+  padding: 0 16px 16px;
+}
+
+.trainer-coach__empty {
+  text-align: center;
+  padding: 48px 16px;
+  color: #9ca3af;
+}
+
+.trainer-coach__cta {
+  margin-top: 12px;
+  padding: 10px 16px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: #6366f1;
+  color: #fff;
+}
+
+.trainer-coach__setup-hint {
+  font-size: 10px;
+  color: #a5b4fc;
+  margin-bottom: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.trainer-coach__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.trainer-coach__chip,
+.trainer-coach__chip--on {
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.trainer-coach__chip {
+  background: rgba(255, 255, 255, 0.06);
+  color: #9ca3af;
+}
+
+.trainer-coach__chip--on {
+  background: #6366f1;
+  color: #fff;
+}
+
+.trainer-card {
+  padding: 14px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.trainer-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.trainer-card__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: rgba(99, 102, 241, 0.2);
+  color: #a5b4fc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trainer-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.trainer-card__name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.trainer-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.trainer-card__rate {
+  font-size: 12px;
+  font-weight: 800;
+  color: #a5b4fc;
+}
+
+.trainer-card__bio {
+  font-size: 11px;
+  color: #cbd5e1;
+  margin: 8px 0;
+  line-height: 1.4;
+}
+
+.trainer-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.trainer-card__tag {
+  font-size: 9px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.15);
+  color: #c7d2fe;
+}
+
+.trainer-card__rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #fbbf24;
+  margin-bottom: 8px;
+}
+
+.trainer-card__book {
+  width: 100%;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  background: #6366f1;
+  color: #fff;
+}
+
+.trainer-book__form {
+  padding: 0 16px 16px;
+}
+
+.trainer-book__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.trainer-session-card {
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trainer-session-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.trainer-session-card__status {
+  font-size: 10px;
+  font-weight: 800;
+  color: #a5b4fc;
+  text-transform: uppercase;
+}
+
+.trainer-session-card__price {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.trainer-session-card__who,
+.trainer-session-card__when,
+.trainer-session-card__where,
+.trainer-session-card__pay {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-bottom: 4px;
+}
+
+.trainer-session-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.trainer-session-card__accept,
+.trainer-session-card__decline,
+.trainer-session-card__pay-btn,
+.trainer-session-card__review {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.trainer-session-card__accept {
+  background: #22c55e;
+  color: #000;
+}
+
+.trainer-session-card__decline {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.trainer-session-card__pay-btn {
+  background: #6366f1;
+  color: #fff;
+}
+
+.trainer-session-card__review {
+  background: rgba(251, 191, 36, 0.15);
+  color: #fbbf24;
 }
 

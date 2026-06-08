@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
-import { ArrowLeft, ExternalLink, Pencil, Plus, ShoppingBag, Trash2 } from 'lucide-react'
+import { ArrowLeft, Pencil, Plus, ShoppingBag, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import type { MarketplaceCategory, MarketplaceProduct } from '../../types'
+import type { MarketplaceCategory, MarketplaceProduct, MarketplaceShippingInfo } from '../../types'
 import {
   formatClp,
   type MarketplaceProductInput,
 } from '../../services/marketplace'
+import { MarketplaceCheckout } from './MarketplaceCheckout'
 
 const CATEGORIES: { id: MarketplaceCategory; label: string }[] = [
   { id: 'suplemento', label: 'Suplemento' },
@@ -31,31 +32,28 @@ export interface MarketplaceViewProps {
   products: MarketplaceProduct[]
   isAdmin: boolean
   isDemoMode: boolean
+  userUid?: string
+  userEmail?: string
   onRefreshAdmin?: () => void
   onCreateProduct: (input: MarketplaceProductInput) => Promise<void>
   onUpdateProduct: (id: string, patch: Partial<MarketplaceProductInput>) => Promise<void>
   onDeleteProduct: (id: string) => Promise<void>
+  onCheckout: (product: MarketplaceProduct, shipping: MarketplaceShippingInfo) => Promise<void>
 }
 
 function ProductCard({
   product,
   isAdmin,
+  onBuy,
   onEdit,
   onDelete,
 }: {
   product: MarketplaceProduct
   isAdmin: boolean
+  onBuy: () => void
   onEdit: () => void
   onDelete: () => void
 }) {
-  const pay = () => {
-    if (!product.paymentUrl.startsWith('https://')) {
-      toast.error('Link de pago no configurado')
-      return
-    }
-    window.open(product.paymentUrl, '_blank', 'noopener,noreferrer')
-  }
-
   return (
     <article
       className={`marketplace-card ${!product.active ? 'marketplace-card--inactive' : ''}`}
@@ -80,8 +78,8 @@ function ProductCard({
         )}
         <p className="marketplace-card__price">{formatClp(product.priceClp)}</p>
         {product.active ? (
-          <button type="button" className="marketplace-card__pay" onClick={pay}>
-            Pagar <ExternalLink size={14} />
+          <button type="button" className="marketplace-card__pay" onClick={onBuy}>
+            Comprar
           </button>
         ) : (
           <p className="marketplace-card__unavailable">No disponible</p>
@@ -107,12 +105,16 @@ export function MarketplaceView({
   products,
   isAdmin,
   isDemoMode,
+  userUid,
+  userEmail,
   onCreateProduct,
   onUpdateProduct,
   onDeleteProduct,
+  onCheckout,
 }: MarketplaceViewProps) {
   const [filter, setFilter] = useState<MarketplaceCategory | 'all'>('all')
   const [showForm, setShowForm] = useState(false)
+  const [checkoutProduct, setCheckoutProduct] = useState<MarketplaceProduct | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<MarketplaceProductInput>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
@@ -124,6 +126,18 @@ export function MarketplaceView({
   }, [products, filter, isAdmin])
 
   if (!open) return null
+
+  const startCheckout = (product: MarketplaceProduct) => {
+    if (isDemoMode) {
+      toast.error('Inicia sesión real para comprar')
+      return
+    }
+    if (!userUid) {
+      toast.error('Debes iniciar sesión para comprar')
+      return
+    }
+    setCheckoutProduct(product)
+  }
 
   const openCreate = () => {
     setEditingId(null)
@@ -198,6 +212,16 @@ export function MarketplaceView({
 
   return (
     <div className="marketplace-screen" role="dialog" aria-label="Tienda EntrenaMatch">
+      {checkoutProduct ? (
+        <MarketplaceCheckout
+          product={checkoutProduct}
+          userEmail={userEmail}
+          isDemoMode={isDemoMode}
+          onClose={() => setCheckoutProduct(null)}
+          onSubmit={onCheckout}
+        />
+      ) : (
+        <>
       <header className="marketplace-screen__header">
         <button type="button" onClick={onClose} className="marketplace-screen__back" aria-label="Volver">
           <ArrowLeft size={22} />
@@ -218,6 +242,32 @@ export function MarketplaceView({
           Modo desarrollador — solo tú puedes publicar productos. Usa tu link de Mercado Pago o Stripe en
           &quot;Link de pago&quot;.
         </p>
+      )}
+
+      {!isAdmin && !isDemoMode && userUid && (
+        <div className="marketplace-screen__setup">
+          <p className="marketplace-screen__setup-title">Panel admin no activo</p>
+          <p className="marketplace-screen__setup-text">
+            La app no usa tu email para admin — necesitas un documento en Firestore con tu UID
+            {userEmail ? ` (${userEmail})` : ''}.
+          </p>
+          <code className="marketplace-screen__setup-code">marketplaceAdmins/{userUid}</code>
+          <button
+            type="button"
+            className="marketplace-screen__setup-copy"
+            onClick={() => {
+              void navigator.clipboard.writeText(userUid).then(() => {
+                toast.success('UID copiado')
+              })
+            }}
+          >
+            Copiar UID
+          </button>
+          <p className="marketplace-screen__setup-foot">
+            En tu PC:{' '}
+            <code>node scripts/write-marketplace-admin.mjs {userEmail || 'TU_EMAIL'}</code>
+          </p>
+        </div>
       )}
 
       <div className="marketplace-screen__filters">
@@ -353,12 +403,15 @@ export function MarketplaceView({
               key={p.id}
               product={p}
               isAdmin={isAdmin}
+              onBuy={() => startCheckout(p)}
               onEdit={() => openEdit(p)}
               onDelete={() => handleDelete(p.id)}
             />
           ))
         )}
       </div>
+        </>
+      )}
     </div>
   )
 }
