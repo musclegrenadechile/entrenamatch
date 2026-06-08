@@ -38,7 +38,7 @@ export interface MarketplaceViewProps {
   onCreateProduct: (input: MarketplaceProductInput) => Promise<void>
   onUpdateProduct: (id: string, patch: Partial<MarketplaceProductInput>) => Promise<void>
   onDeleteProduct: (id: string) => Promise<void>
-  onCheckout: (product: MarketplaceProduct, shipping: MarketplaceShippingInfo) => Promise<void>
+  onCheckout: (product: MarketplaceProduct, shipping: MarketplaceShippingInfo) => Promise<string>
 }
 
 function ProductCard({

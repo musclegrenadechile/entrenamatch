@@ -25,6 +25,24 @@ export function resolvePushNotificationData(data: PushData): NotificationNavTarg
     return { tab: 'profile', openTrainerCoach: true, trainerCoachTab: 'now' as const }
   }
 
+  if (type === 'message_new' && userId) {
+    return { tab: 'messages', activeChat: userId, partnerName }
+  }
+
+  if (type === 'match_new' && userId) {
+    return { tab: 'messages', activeChat: userId, partnerName }
+  }
+
+  if (type === 'group_message') {
+    const groupChatId = data.groupChatId
+    if (groupChatId?.startsWith('sq')) {
+      return { tab: 'squads', selectedSquad: groupChatId, partnerName }
+    }
+    if (groupChatId) {
+      return { tab: 'sesiones', groupChatId, partnerName }
+    }
+  }
+
   const isLive = type === 'team_live' || type === 'network_live'
   const isSync = type === 'team_sync' || type === 'network_sync'
 

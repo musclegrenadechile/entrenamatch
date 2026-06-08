@@ -11,7 +11,7 @@ Documento de referencia para el equipo. **No contiene secretos** (contraseñas/k
 | Track objetivo | **Closed testing** (beta cerrada, app oculta) |
 | Última subida conocida (repo) | `versionCode` **90** · `versionName` **0.1.86-work** |
 | Subida intermedia | `versionCode` **91** · `0.1.87` (ya en Play) |
-| **Próxima subida** | `versionCode` **104** · `versionName` **0.1.104** (P0 beta security) |
+| **Próxima subida** | `versionCode` **147** · `versionName` **0.1.147** (P0 beta + push + marketplace MP) |
 
 > Play Store exige que cada AAB tenga `versionCode` **estrictamente mayor** que el anterior. No subir 91 hasta confirmar que 90 ya está en Console.
 

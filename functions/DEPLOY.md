@@ -55,6 +55,18 @@ Functions added:
 
 Sin `MERCADOPAGO_ACCESS_TOKEN` el cliente usa fallback al link MP del entrenador.
 
-Verificar entrenador (badge ✓): en Firestore `trainerProfiles/{uid}` set `verified: true` (solo marketplaceAdmins puede cambiar verified vía reglas).
+## EntrenaCoach Fase 3 + P0 engagement (v0.1.147+)
 
-Sigue con todo.
+Functions added:
+- `onTrainerDispatchCreated`, `respondToTrainerDispatch`, `advanceTrainerDispatch`
+- `advanceExpiredDispatchesScheduled` — cron cada 1 min (ofertas expiradas)
+- `onDirectMessageCreated` — push mensaje 1:1
+- `onMatchCreated` — push nuevo match
+- `onSessionGroupMessageCreated` / `onSquadGroupMessageCreated` — push chat grupal
+- `createMarketplaceMpCheckout` — checkout tienda
+- `mercadoPagoWebhook` — confirma `paid_card` (bookings) y `paid` (marketplaceOrders)
+
+Deploy:
+```bash
+firebase deploy --only functions,firestore:indexes,firestore:rules --project entrenamatch
+```

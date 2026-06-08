@@ -9,6 +9,7 @@ import {
   productRequiresShipping,
   validateMarketplaceShipping,
 } from '../../services/marketplace'
+import { createMarketplaceMpCheckout } from '../../services/marketplacePayments'
 
 const EMPTY_SHIPPING: MarketplaceShippingInfo = {
   fullName: '',
@@ -25,7 +26,7 @@ export interface MarketplaceCheckoutProps {
   userEmail?: string
   isDemoMode: boolean
   onClose: () => void
-  onSubmit: (product: MarketplaceProduct, shipping: MarketplaceShippingInfo) => Promise<void>
+  onSubmit: (product: MarketplaceProduct, shipping: MarketplaceShippingInfo) => Promise<string>
 }
 
 export function MarketplaceCheckout({
@@ -80,11 +81,26 @@ export function MarketplaceCheckout({
     }
     setSaving(true)
     try {
-      await onSubmit(product, form)
-      window.open(product.paymentUrl, '_blank', 'noopener,noreferrer')
-      toast.success('Pedido registrado', {
-        description: 'Completa el pago en la ventana que se abrió.',
-      })
+      const orderId = await onSubmit(product, form)
+      try {
+        const mp = await createMarketplaceMpCheckout(orderId)
+        window.open(mp.initPoint, '_blank', 'noopener,noreferrer')
+        if (mp.usedFallback) {
+          toast.info('Link de pago del producto', {
+            description: 'Confirma manualmente si usaste el link alternativo.',
+          })
+        } else {
+          toast.success('Pedido registrado', {
+            description: 'Completa el pago en Mercado Pago — se confirmará automáticamente.',
+          })
+        }
+      } catch (mpErr) {
+        console.warn('MP checkout fallback', mpErr)
+        window.open(product.paymentUrl, '_blank', 'noopener,noreferrer')
+        toast.success('Pedido registrado', {
+          description: 'Completa el pago en la ventana que se abrió.',
+        })
+      }
       onClose()
     } catch (submitErr) {
       console.warn(submitErr)

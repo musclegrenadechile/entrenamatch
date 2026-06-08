@@ -758,31 +758,48 @@ exports.mercadoPagoWebhook = functions.https.onRequest(async (req, res) => {
       return;
     }
 
-    const bookingId =
+    const refId =
       payment.external_reference ||
       (payment.metadata && payment.metadata.booking_id) ||
-      (payment.metadata && payment.metadata.bookingId);
+      (payment.metadata && payment.metadata.bookingId) ||
+      (payment.metadata && payment.metadata.order_id);
 
-    if (!bookingId) {
-      console.warn('MP webhook: no bookingId in payment', paymentId);
+    if (!refId) {
+      console.warn('MP webhook: no reference in payment', paymentId);
       res.status(200).send('ok');
       return;
     }
 
-    const bookingRef = db.collection('trainerBookings').doc(String(bookingId));
+    const refStr = String(refId);
+
+    const bookingRef = db.collection('trainerBookings').doc(refStr);
     const bookingSnap = await bookingRef.get();
-    if (!bookingSnap.exists) {
+    if (bookingSnap.exists) {
+      await bookingRef.update({
+        status: 'paid_card',
+        mpPaymentId: String(paymentId),
+        updatedAt: Date.now(),
+      });
+      console.log('MP webhook: booking paid', refStr, paymentId);
       res.status(200).send('ok');
       return;
     }
 
-    await bookingRef.update({
-      status: 'paid_card',
-      mpPaymentId: String(paymentId),
-      updatedAt: Date.now(),
-    });
+    const orderRef = db.collection('marketplaceOrders').doc(refStr);
+    const orderSnap = await orderRef.get();
+    if (orderSnap.exists) {
+      await orderRef.update({
+        status: 'paid',
+        mpPaymentId: String(paymentId),
+        paidAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+      console.log('MP webhook: marketplace order paid', refStr, paymentId);
+      res.status(200).send('ok');
+      return;
+    }
 
-    console.log('MP webhook: booking paid', bookingId, paymentId);
+    console.warn('MP webhook: reference not found', refStr, paymentId);
     res.status(200).send('ok');
   } catch (err) {
     console.error('mercadoPagoWebhook error', err);
@@ -985,3 +1002,287 @@ exports.advanceTrainerDispatch = functions.https.onCall(async (data, context) =>
   await offerToNextTrainer(ref, updated);
   return { ok: true };
 });
+
+// ─── EntrenaMatch P0 — engagement push + ops ─────────────────────────────────
+
+async function readProfileName(uid) {
+  try {
+    const snap = await db.collection('profiles').doc(uid).get();
+    if (snap.exists) {
+      const d = snap.data() || {};
+      return d.name || d.displayName || null;
+    }
+  } catch (e) {
+    console.warn('profile name lookup', uid, e);
+  }
+  return null;
+}
+
+/** 1:1 chat — push al destinatario. */
+exports.onDirectMessageCreated = functions.firestore
+  .document('messages/{messageId}')
+  .onCreate(async (snap) => {
+    const m = snap.data() || {};
+    const to = m.to;
+    const from = m.from;
+    if (!to || !from || to === from) return null;
+
+    const senderName = (await readProfileName(from)) || 'Alguien';
+    let preview = 'Nuevo mensaje';
+    if (m.text && String(m.text).trim()) {
+      preview = String(m.text).trim().slice(0, 100);
+    } else if (m.voiceUrl) {
+      preview = '🎤 Nota de voz';
+    }
+
+    await sendPushToUser(to, {
+      title: `💬 ${senderName}`,
+      body: preview,
+      data: {
+        type: 'message_new',
+        userId: from,
+        partnerName: senderName,
+      },
+    });
+    return null;
+  });
+
+/** Nuevo match mutual — push a ambos. */
+exports.onMatchCreated = functions.firestore
+  .document('matches/{matchId}')
+  .onCreate(async (snap) => {
+    const m = snap.data() || {};
+    const u1 = m.user1;
+    const u2 = m.user2;
+    if (!u1 || !u2) return null;
+
+    const [name1, name2] = await Promise.all([readProfileName(u1), readProfileName(u2)]);
+
+    await sendPushToUser(u1, {
+      title: '🎉 ¡Nuevo match!',
+      body: `Tú y ${name2 || 'alguien'} pueden entrenar juntos — escríbele ahora.`,
+      data: { type: 'match_new', userId: u2, partnerName: name2 || '' },
+    });
+    await sendPushToUser(u2, {
+      title: '🎉 ¡Nuevo match!',
+      body: `Tú y ${name1 || 'alguien'} pueden entrenar juntos — escríbele ahora.`,
+      data: { type: 'match_new', userId: u1, partnerName: name1 || '' },
+    });
+    return null;
+  });
+
+/** Grupo sesión — push a participantes excepto sender. */
+exports.onSessionGroupMessageCreated = functions.firestore
+  .document('sessions/{sessionId}/messages/{messageId}')
+  .onCreate(async (snap, context) => {
+    const sessionId = context.params.sessionId;
+    const msg = snap.data() || {};
+    const senderId = msg.senderId;
+    if (!senderId) return null;
+
+    const sessionSnap = await db.collection('sessions').doc(sessionId).get();
+    if (!sessionSnap.exists) return null;
+    const participants = (sessionSnap.data() || {}).participants || [];
+    const targets = participants.filter((id) => id && id !== senderId);
+    if (targets.length === 0) return null;
+
+    const senderName = msg.senderName || (await readProfileName(senderId)) || 'Alguien';
+    const preview =
+      msg.text && String(msg.text).trim()
+        ? String(msg.text).trim().slice(0, 80)
+        : msg.photo
+          ? '📷 Foto'
+          : msg.voiceUrl
+            ? '🎤 Nota de voz'
+            : 'Nuevo mensaje en la sesión';
+
+    await Promise.all(
+      targets.map((uid) =>
+        sendPushToUser(uid, {
+          title: `👥 ${senderName} en la sesión`,
+          body: preview,
+          data: {
+            type: 'group_message',
+            groupChatId: sessionId,
+            partnerName: senderName,
+          },
+        })
+      )
+    );
+    return null;
+  });
+
+/** Squad chat — push a miembros excepto sender. */
+exports.onSquadGroupMessageCreated = functions.firestore
+  .document('squads/{squadId}/messages/{messageId}')
+  .onCreate(async (snap, context) => {
+    const squadId = context.params.squadId;
+    const msg = snap.data() || {};
+    const senderId = msg.senderId;
+    if (!senderId) return null;
+
+    const squadSnap = await db.collection('squads').doc(squadId).get();
+    if (!squadSnap.exists) return null;
+    const members = (squadSnap.data() || {}).members || [];
+    const targets = members.filter((id) => id && id !== senderId);
+    if (targets.length === 0) return null;
+
+    const senderName = msg.senderName || (await readProfileName(senderId)) || 'Alguien';
+    const preview =
+      msg.text && String(msg.text).trim()
+        ? String(msg.text).trim().slice(0, 80)
+        : msg.voiceUrl
+          ? '🎤 Nota de voz'
+          : 'Nuevo mensaje en el squad';
+
+    await Promise.all(
+      targets.map((uid) =>
+        sendPushToUser(uid, {
+          title: `🛡️ ${senderName} en tu squad`,
+          body: preview,
+          data: {
+            type: 'group_message',
+            groupChatId: squadId,
+            partnerName: senderName,
+          },
+        })
+      )
+    );
+    return null;
+  });
+
+/** Cron: expira ofertas dispatch sin respuesta (no depende del cliente). */
+exports.advanceExpiredDispatchesScheduled = functions.pubsub
+  .schedule('every 1 minutes')
+  .onRun(async () => {
+    const now = Date.now();
+    const snap = await db
+      .collection('trainerDispatchRequests')
+      .where('status', '==', 'offering')
+      .where('offerExpiresAt', '<=', now)
+      .limit(25)
+      .get();
+
+    for (const docSnap of snap.docs) {
+      const d = docSnap.data() || {};
+      const currentId = d.currentTrainerId;
+      if (currentId) {
+        await docSnap.ref.update({
+          passedTrainerIds: admin.firestore.FieldValue.arrayUnion(currentId),
+          updatedAt: Date.now(),
+        });
+      }
+      const updated = (await docSnap.ref.get()).data() || {};
+      await offerToNextTrainer(docSnap.ref, updated);
+    }
+    return null;
+  });
+
+/** Callable: checkout MP para pedido marketplace. */
+exports.createMarketplaceMpCheckout = functions
+  .runWith({ timeoutSeconds: 30 })
+  .https.onCall(async (data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', 'Inicia sesión.');
+    }
+    const orderId = data && data.orderId ? String(data.orderId) : '';
+    if (!orderId) {
+      throw new functions.https.HttpsError('invalid-argument', 'orderId requerido.');
+    }
+
+    const orderRef = db.collection('marketplaceOrders').doc(orderId);
+    const orderSnap = await orderRef.get();
+    if (!orderSnap.exists) {
+      throw new functions.https.HttpsError('not-found', 'Pedido no encontrado.');
+    }
+    const order = orderSnap.data() || {};
+
+    if (order.userId !== context.auth.uid) {
+      throw new functions.https.HttpsError('permission-denied', 'Solo el comprador puede pagar.');
+    }
+    if (order.status === 'paid') {
+      throw new functions.https.HttpsError('already-exists', 'Este pedido ya está pagado.');
+    }
+
+    const priceClp = Math.round(Number(order.priceClp) || 0);
+    if (priceClp < 1000) {
+      throw new functions.https.HttpsError('invalid-argument', 'Monto inválido.');
+    }
+
+    const productSnap = await db.collection('marketplaceProducts').doc(String(order.productId)).get();
+    const product = productSnap.exists ? productSnap.data() || {} : {};
+    const fallbackPaymentUrl =
+      typeof product.paymentUrl === 'string' && product.paymentUrl.startsWith('https://')
+        ? product.paymentUrl
+        : undefined;
+
+    const token = getMpAccessToken();
+    if (!token) {
+      if (!fallbackPaymentUrl) {
+        throw new functions.https.HttpsError(
+          'failed-precondition',
+          'Mercado Pago no configurado para la tienda.'
+        );
+      }
+      return { initPoint: fallbackPaymentUrl, preferenceId: '', usedFallback: true };
+    }
+
+    const projectId = process.env.GCLOUD_PROJECT || 'entrenamatch';
+    const notificationUrl = `https://us-central1-${projectId}.cloudfunctions.net/mercadoPagoWebhook`;
+    const title = order.productTitle || product.title || 'EntrenaMatch Tienda';
+
+    const prefBody = {
+      items: [
+        {
+          title: String(title).slice(0, 120),
+          quantity: 1,
+          currency_id: 'CLP',
+          unit_price: priceClp,
+        },
+      ],
+      external_reference: orderId,
+      metadata: {
+        order_id: orderId,
+        order_type: 'marketplace',
+        user_id: context.auth.uid,
+      },
+      notification_url: notificationUrl,
+      back_urls: {
+        success: 'https://entrenamatch.web.app',
+        failure: 'https://entrenamatch.web.app',
+        pending: 'https://entrenamatch.web.app',
+      },
+      auto_return: 'approved',
+    };
+
+    const mpRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(prefBody),
+    });
+
+    if (!mpRes.ok) {
+      const errText = await mpRes.text();
+      console.error('MP marketplace preference failed', mpRes.status, errText.slice(0, 300));
+      if (fallbackPaymentUrl) {
+        return { initPoint: fallbackPaymentUrl, preferenceId: '', usedFallback: true };
+      }
+      throw new functions.https.HttpsError('internal', 'No se pudo crear el checkout.');
+    }
+
+    const pref = await mpRes.json();
+    const initPoint = pref.init_point || pref.sandbox_init_point;
+    if (!initPoint) {
+      throw new functions.https.HttpsError('internal', 'Respuesta MP sin init_point.');
+    }
+
+    await orderRef.update({
+      mpPreferenceId: pref.id,
+      updatedAt: Date.now(),
+    });
+
+    return { initPoint, preferenceId: pref.id, usedFallback: false };
+  });

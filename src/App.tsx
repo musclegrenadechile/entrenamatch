@@ -3998,20 +3998,33 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 data.type === 'trainer_booking_new' ||
                 data.type === 'trainer_booking_update' ||
                 data.type === 'trainer_dispatch_offer'
+              const isSocial =
+                data.type === 'message_new' ||
+                data.type === 'match_new' ||
+                data.type === 'group_message'
               toast.success(title, {
                 description: body + (isTeam ? ' (tu equipo/red)' : ''),
-                className: isCoach ? 'network-notif border-l-4 border-[#6366f1] bg-[#12121a]' : 'network-notif border-l-4 border-[#FFD700] bg-[#1a160f]',
+                className:
+                  isCoach
+                    ? 'network-notif border-l-4 border-[#6366f1] bg-[#12121a]'
+                    : isSocial
+                      ? 'network-notif border-l-4 border-[#22c55e] bg-[#0f1a14]'
+                      : 'network-notif border-l-4 border-[#FFD700] bg-[#1a160f]',
                 duration: 6000,
                 action: {
                   label: target.openTrainerCoach
                     ? target.trainerCoachTab === 'now'
                       ? 'Ver oferta'
                       : 'Ver sesiones'
-                    : target.showSyncArena
-                      ? 'Unirme'
-                      : target.tab === 'home'
-                        ? 'Ver reto'
-                        : 'Ver live',
+                    : target.activeChat
+                      ? 'Abrir chat'
+                      : target.groupChatId
+                        ? 'Ver chat'
+                        : target.showSyncArena
+                          ? 'Unirme'
+                          : target.tab === 'home'
+                            ? 'Ver reto'
+                            : 'Ver live',
                   onClick: () => applyNotificationNavigationRef.current?.(target, data.partnerName),
                 },
               })
@@ -10417,7 +10430,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         }}
         onCheckout={async (product, shipping) => {
           if (!db || !firebaseUser?.uid) throw new Error('auth')
-          await createMarketplaceOrder(db, firebaseUser.uid, product, shipping)
+          return createMarketplaceOrder(db, firebaseUser.uid, product, shipping)
         }}
       />
       <TrainerCoachView

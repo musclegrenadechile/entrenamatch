@@ -1,4 +1,4 @@
-# P0 Beta Release — v0.1.104
+# P0 Beta Release — v0.1.147
 
 Checklist para cerrar Tier 0 antes de ampliar beta cerrada en Play Store.
 
@@ -6,10 +6,12 @@ Checklist para cerrar Tier 0 antes de ampliar beta cerrada en Play Store.
 
 | Artefacto | Valor |
 |-----------|-------|
-| Web / `APP_VERSION` | **0.1.104** |
-| `package.json` | 0.1.104 |
-| Android `versionCode` | **104** |
-| Android `versionName` | 0.1.104 |
+| Web / `APP_VERSION` | **0.1.147** |
+| `package.json` | 0.1.147 |
+| Android `versionCode` | **147** |
+| Android `versionName` | 0.1.147 |
+
+Verificar: `node scripts/version-check.mjs`
 
 ## 1. Deploy Firebase (obligatorio antes de testers)
 
