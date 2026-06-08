@@ -984,6 +984,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
         {mapMyGymId && (
           <button
+            data-gympulse-tour="checkin"
             onClick={() => onMapMyGymOnlyChange && onMapMyGymOnlyChange(!mapMyGymOnly)}
             className={`text-[8px] px-2 py-0.5 rounded-full border transition ${mapMyGymOnly ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'bg-black/70 text-[#22c55e] border-[#22c55e]/40 hover:bg-[#22c55e]/10'}`}
             title="Solo atletas con check-in en tu gym partner"

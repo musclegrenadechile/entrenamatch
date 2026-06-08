@@ -196,7 +196,15 @@ export interface CurrentUser extends Omit<Profile, 'id'> {
   }
 }
 
-export type Tab = 'home' | 'explore' | 'squads' | 'sesiones' | 'matches' | 'messages' | 'profile'
+export type Tab =
+  | 'home'
+  | 'explore'
+  | 'red'
+  | 'squads'
+  | 'sesiones'
+  | 'matches'
+  | 'messages'
+  | 'profile'
 
 export type WorkoutType = 'push' | 'pull' | 'legs' | 'full' | 'cardio' | 'other'
 

@@ -1,4 +1,5 @@
 // @ts-nocheck — P1 extract from App.tsx; tighten types incrementally
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { DailyHome } from './DailyHome'
@@ -7,6 +8,10 @@ import { isGymCheckInFresh } from '../../services/localNetwork'
 import { countRedLiveMembers } from '../../utils/syncFomo'
 import { WorkoutPostCard } from '../workout'
 import { NutritionPostCard } from '../fuel'
+import { HomeCoachBanner } from './HomeCoachBanner'
+import { HomeShopBanner } from './HomeShopBanner'
+
+export type HomeSubTab = 'day' | 'feed'
 
 export type HomeTabProps = Record<string, unknown>
 
@@ -102,7 +107,18 @@ export function HomeTab(props: HomeTabProps) {
     weeklyPact,
     weeklyPactProgress,
     onPledgeWeeklyPact,
+    homeCoachBanner,
+    onDismissCoachBanner,
+    onOpenTrainerCoach,
+    marketplaceOrders,
+    marketplaceProducts,
+    showShopBanner,
+    onDismissShopBanner,
+    onOpenMarketplace,
+    onOpenMarketplaceOrders,
   } = props
+
+  const [homeSubTab, setHomeSubTab] = useState<HomeSubTab>('day')
 
   const redLiveCount = countRedLiveMembers(
     syncBonds,
@@ -112,6 +128,49 @@ export function HomeTab(props: HomeTabProps) {
 
   return (
     <div className="flex-1 overflow-auto p-4">
+      <div className="flex gap-1 p-1 rounded-2xl bg-[#1C1C20] border border-[#2F2F35] mb-3 sticky top-0 z-20">
+        <button
+          type="button"
+          onClick={() => setHomeSubTab('day')}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+            homeSubTab === 'day'
+              ? 'bg-[#FF671F] text-black shadow-sm'
+              : 'text-[#9CA3AF] active:bg-[#25252A]'
+          }`}
+        >
+          Mi día
+        </button>
+        <button
+          type="button"
+          onClick={() => setHomeSubTab('feed')}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
+            homeSubTab === 'feed'
+              ? 'bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black shadow-sm'
+              : 'text-[#9CA3AF] active:bg-[#25252A]'
+          }`}
+        >
+          Muro
+        </button>
+      </div>
+
+      {homeSubTab === 'day' && (
+        <>
+      {homeCoachBanner && (
+        <HomeCoachBanner
+          context={homeCoachBanner}
+          onOpenCoach={onOpenTrainerCoach}
+          onDismiss={onDismissCoachBanner}
+        />
+      )}
+      {showShopBanner && (
+        <HomeShopBanner
+          orders={marketplaceOrders || []}
+          products={marketplaceProducts || []}
+          onOpenShop={onOpenMarketplace}
+          onOpenOrders={onOpenMarketplaceOrders}
+          onDismiss={onDismissShopBanner}
+        />
+      )}
       <DailyHome
         userName={currentUser?.name || 'Atleta'}
         weekDays={homeWeekDays}
@@ -134,10 +193,10 @@ export function HomeTab(props: HomeTabProps) {
         }}
         onJoinMember={(id, name) => startSyncWith(id, name)}
         onMessageMember={(id) => {
-          setActiveTab('messages')
+          setActiveTab('red')
           setActiveChat(id)
         }}
-        onOpenMatches={() => setActiveTab('matches')}
+        onOpenMatches={() => setActiveTab('red')}
         onOpenEntrenaLog={() => setShowEntrenaLogModal(true)}
         fuelProfile={fuelProfile}
         fuelTotals={fuelTodayTotals}
@@ -180,6 +239,11 @@ export function HomeTab(props: HomeTabProps) {
         weeklyPactProgress={weeklyPactProgress}
         onPledgeWeeklyPact={onPledgeWeeklyPact}
       />
+        </>
+      )}
+
+      {homeSubTab === 'feed' && (
+        <>
       {/* CINEMATIC REMASTERED FEED HEADER — the social heart of the GymPulse */}
       <div className="feed-header-cinematic sticky top-0 z-10 -mx-4 px-4 pt-3 pb-3">
         <div className="flex items-start justify-between gap-3 px-1">
@@ -591,6 +655,8 @@ export function HomeTab(props: HomeTabProps) {
           </>
         );
       })()}
+        </>
+      )}
     </div>
   )
 }

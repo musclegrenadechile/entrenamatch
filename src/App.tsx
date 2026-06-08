@@ -77,6 +77,7 @@ import {
 } from './utils'
 import { resolveNotificationTarget, type NotificationNavTarget } from './utils/notificationNavigation'
 import { resolvePushNotificationData } from './utils/pushNavigation'
+import { normalizeTabNavigation, resolveRedSubTab, isRedTabActive, type RedSubTab } from './utils/tabNavigation'
 import {
   ASSUMED_LIVE_SESSION_MS,
   normalizeTrainingSince as normalizeTrainingSinceMs,
@@ -94,6 +95,7 @@ import { useSwipeDeck } from './hooks/useSwipeDeck'
 import { ExploreTab } from './components/explore/ExploreTab'
 import { ExploreLivePanel } from './components/explore/ExploreLivePanel'
 import { SquadsTab } from './components/squads'
+import { RedTab } from './components/red'
 import { MatchesTab } from './components/matches'
 import { SessionsTab } from './components/sessions'
 import { ChatListPanel, ChatView } from './components/messages'
@@ -862,6 +864,15 @@ function App() {
 
   // UI state
   const [activeTab, setActiveTab] = useState<Tab>('home')
+  const [redSubTab, setRedSubTab] = useState<RedSubTab>('matches')
+  const [homeCoachBanner, setHomeCoachBanner] = useState<HomeCoachBannerContext | null>(null)
+  const [showHomeShopBanner, setShowHomeShopBanner] = useState(true)
+  const navigateTab = useCallback((tab: Tab) => {
+    const { tab: resolved, redSubTab: sub } = normalizeTabNavigation(tab)
+    setActiveTab(resolved)
+    if (sub) setRedSubTab(sub)
+    if (resolved !== 'red' && tab !== 'messages') setActiveChat(null)
+  }, [])
   const [profileSection, setProfileSection] = useState<ProfileSection>('actividad')
   const [isLoadingFeed, setIsLoadingFeed] = useState(false)
   const [feedShowPinnedOnly, setFeedShowPinnedOnly] = useState(false)
@@ -1896,8 +1907,8 @@ useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search)
       const tab = params.get('tab')
-      const validTabs: Tab[] = ['home', 'explore', 'squads', 'sesiones', 'matches', 'messages', 'profile']
-      if (tab && validTabs.includes(tab as Tab)) setActiveTab(tab as Tab)
+      const validTabs: Tab[] = ['home', 'explore', 'red', 'squads', 'sesiones', 'matches', 'messages', 'profile']
+      if (tab && validTabs.includes(tab as Tab)) navigateTab(tab as Tab)
       if (params.get('map') === '1') setShowLiveMap(true)
     } catch {}
   }, [])
@@ -3385,12 +3396,16 @@ useEffect(() => {
   // Silent sync al entrar en tabs clave (Fase 32)
   useEffect(() => {
     if (isDemoMode || showOnboarding) return
-    if (activeTab === 'explore' || activeTab === 'matches') {
+    const onRedMatches =
+      activeTab === 'red' ? redSubTab === 'matches' : activeTab === 'matches'
+    const onRedMessages =
+      activeTab === 'red' ? redSubTab === 'messages' : activeTab === 'messages'
+    if (activeTab === 'explore' || onRedMatches) {
       silentRefreshReal().catch(() => {})
-    } else if (activeTab === 'messages' && !activeChat) {
+    } else if (onRedMessages && !activeChat) {
       silentRefreshReal({ includeChats: true }).catch(() => {})
     }
-  }, [activeTab, activeChat, isDemoMode, showOnboarding])
+  }, [activeTab, activeChat, redSubTab, isDemoMode, showOnboarding])
 
   // Google Play Integrity check
   // Call this on login, before sensitive actions (live toggle, profile create, etc.)
@@ -6326,6 +6341,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             description: `${minutes} min. Entrena al menos ${MIN_LIVE_MINUTES_FOR_WEEK_DAY} min para marcar el día.`,
           })
         }
+        setHomeCoachBanner('post-live')
+        navigateTab('home')
       } catch (err) {
         console.error('Live deactivate failed', err)
         pendingLiveWriteRef.current = null
@@ -6795,6 +6812,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       })
     } else {
       toast(`Sync finalizado: ${minutes}min`, { description: '¡Buen trabajo en equipo! +1 sync streak' })
+    }
+    if (minutes >= 2) {
+      setHomeCoachBanner('post-sync')
+      if (activeTab !== 'home') navigateTab('home')
     }
   }
 
@@ -7895,11 +7916,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   // Central helper: navigate from notification deep-link (panel, toast, browser notif)
   const applyNotificationNavigation = useCallback((target: NotificationNavTarget, partnerNameHint?: string) => {
     setShowNotifications(false)
-    setActiveTab(target.tab)
+    const { tab: resolved, redSubTab: sub } = normalizeTabNavigation(target.tab)
+    setActiveTab(resolved)
+    if (sub) setRedSubTab(sub)
     if (target.showDailyPulse) setShowDailyPulseBanner(true)
     if (target.showLiveMap) setShowLiveMap(true)
     if (target.showLiveModal) setShowLiveModal(true)
     if (target.activeChat) {
+      setRedSubTab('messages')
       setActiveChat(target.activeChat)
       setChatUnreads((prev) => {
         const c = { ...prev }
@@ -7959,7 +7983,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       setShowGroupChatModalFor(chatId)
       setSessionUnreads((prev) => { const c = { ...prev }; c[chatId] = 0; return c })
     } else {
-      setActiveTab('messages')
+      navigateTab('red')
+      setRedSubTab('messages')
       setActiveChat(chatId)
       setChatUnreads((prev) => { const c = { ...prev }; c[chatId] = 0; return c })
     }
@@ -9301,7 +9326,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   // ==================== CHAT ====================
   const openChat = (profileId: string) => {
     setActiveChat(profileId)
-    setActiveTab('messages')
+    navigateTab('red')
+    setRedSubTab('messages')
     // mark as read when opening the conversation
     setChatUnreads(prev => { const c = { ...prev }; c[profileId] = 0; return c })
 
@@ -9893,10 +9919,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             activeSyncCount={activeSyncCount}
             isTogglingLive={isTogglingLive}
             toggleLiveTraining={toggleLiveTraining}
-            setActiveTab={setActiveTab}
+            setActiveTab={navigateTab}
             setShowLiveMap={setShowLiveMap}
             startSyncWith={startSyncWith}
-            setActiveChat={setActiveChat}
+            setActiveChat={(id) => {
+              setActiveChat(id)
+              setRedSubTab('messages')
+            }}
             setShowEntrenaLogModal={setShowEntrenaLogModal}
             fuelProfile={fuelProfile}
             fuelTodayTotals={fuelTodayTotals}
@@ -9970,6 +9999,24 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             weeklyPact={(currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact}
             weeklyPactProgress={homeWeeklyPactProgress}
             onPledgeWeeklyPact={handleWeeklyPactPledge}
+            homeCoachBanner={homeCoachBanner}
+            onDismissCoachBanner={() => setHomeCoachBanner(null)}
+            onOpenTrainerCoach={() => {
+              setTrainerCoachInitialTab('explore')
+              setShowTrainerCoach(true)
+            }}
+            marketplaceOrders={myMarketplaceOrders}
+            marketplaceProducts={marketplaceProducts}
+            showShopBanner={showHomeShopBanner}
+            onDismissShopBanner={() => setShowHomeShopBanner(false)}
+            onOpenMarketplace={() => {
+              setMarketplaceScreenMode('shop')
+              setShowMarketplace(true)
+            }}
+            onOpenMarketplaceOrders={() => {
+              setMarketplaceScreenMode('orders')
+              setShowMarketplace(true)
+            }}
           />
           </Suspense>
         )}
@@ -10115,6 +10162,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             onCreateSquad={() => setShowCreateSquad(true)}
             onJoinSquad={handleJoinSquad}
             onOpenSquad={setSelectedSquad}
+            onOpenSessions={() => navigateTab('sesiones')}
+            sessionUnreads={totalSessionUnreads}
           />
         )}
 
@@ -10157,7 +10206,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           />
         )}
 
-        {activeTab === 'matches' && (
+        {(activeTab === 'red' || activeTab === 'matches' || activeTab === 'messages') && (
+          <RedTab
+            subTab={resolveRedSubTab(activeTab, redSubTab)}
+            onSubTabChange={(sub) => {
+              setRedSubTab(sub)
+              if (activeTab !== 'red') setActiveTab('red')
+              if (sub === 'matches') setActiveChat(null)
+            }}
+            chatUnreads={totalChatUnreads}
+          >
+        {resolveRedSubTab(activeTab, redSubTab) === 'matches' && (
           <PullToRefresh
             className="flex-1 flex flex-col min-h-0 overflow-auto"
             disabled={isDemoMode}
@@ -10178,14 +10237,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             isDemoMode={isDemoMode}
             isLoadingMatches={isLoadingMatches}
             lastSync={lastSync}
-            onExplore={() => setActiveTab('explore')}
+            onExplore={() => navigateTab('explore')}
             onOpenChat={openChat}
           />
           </PullToRefresh>
         )}
 
-        {/* ===== MESSAGES ===== */}
-        {activeTab === 'messages' && (
+        {resolveRedSubTab(activeTab, redSubTab) === 'messages' && (
           <div className="flex-1 flex flex-col">
             {!activeChat ? (
               <PullToRefresh
@@ -10337,6 +10395,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               />
             ) : null}
           </div>
+        )}
+          </RedTab>
         )}
 
         {/* ===== PROFILE - Premium Pre-Alpha experience (self-contained to prevent black screens) */}
@@ -10816,30 +10876,30 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           showSyncArena ||
           showOnboarding ||
           authBooting ||
-          (activeTab === 'messages' && !!activeChat)
+          (activeTab === 'red' && redSubTab === 'messages' && !!activeChat)
         }
       />
-      <div className="bottom-nav h-[62px] grid grid-cols-7 z-50 text-[9px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_20px_-6px_rgb(0,0,0,0.4)]">
+      <div className="bottom-nav h-[62px] grid grid-cols-5 z-50 text-[9px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_20px_-6px_rgb(0,0,0,0.4)]">
         {[
           { id: 'explore' as Tab, label: 'Explorar', icon: Dumbbell, live: liveTrainingNow.length > 0 },
           { id: 'home' as Tab, label: 'Hoy', icon: Sparkles },
+          { id: 'red' as Tab, label: 'Red', icon: Heart, badge: totalChatUnreads },
           { id: 'squads' as Tab, label: 'Squads', icon: Users },
-          { id: 'sesiones' as Tab, label: 'Sesiones', icon: Star, badge: totalSessionUnreads },
-          { id: 'matches' as Tab, label: 'Matches', icon: Heart },
-          { id: 'messages' as Tab, label: 'Mensajes', icon: MessageCircle, badge: totalChatUnreads },
           { id: 'profile' as Tab, label: 'Perfil', icon: User },
         ].map(({ id, label, icon: Icon, badge, live }) => (
           <button key={id} onClick={() => { 
-            setActiveTab(id); 
-            if (id !== 'messages') setActiveChat(null);
+            navigateTab(id);
+            if (id === 'red') {
+              if (redSubTab === 'messages') setChatUnreads({});
+              bumpPwaEngagement();
+            } else {
+              setActiveChat(null);
+            }
             if (id === 'sesiones' && !isDemoMode) {
               loadRealSessions();
             }
-            if (id === 'messages') setChatUnreads({});
-            if (id === 'sesiones') setSessionUnreads({});
-            if (id === 'messages' || id === 'sesiones') bumpPwaEngagement();
           }}
-            className={`nav-item ${activeTab === id ? 'active' : ''} relative flex-1`}>
+            className={`nav-item ${(id === 'red' ? isRedTabActive(activeTab) : activeTab === id) ? 'active' : ''} relative flex-1`}>
             <Icon size={20} />
             <span className="mt-0.5">{label}</span>
             {badge && badge > 0 && (
@@ -13181,7 +13241,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           waveCount={arenaWaveCount}
           globalPairs={activeSyncPairs}
           onOpenArena={() => setShowSyncArena(true)}
-          preferCollapsed={activeTab === 'messages' && !!activeChat}
+          preferCollapsed={activeTab === 'red' && redSubTab === 'messages' && !!activeChat}
         />
       )}
 

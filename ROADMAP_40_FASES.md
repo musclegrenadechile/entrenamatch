@@ -34,11 +34,11 @@ Sistema de implementación: ver **`SISTEMA_IMPLEMENTACION_FASES.md`**.
 
 | # | Fase | Área | P | Estado |
 |---|------|------|---|--------|
-| 36 | Nav 5 tabs: Explorar · Hoy · Red (Matches+Chat) · Squads · Perfil | IA | P0 | 🔲 |
-| 37 | Separar Hoy: sub-tabs “Mi día” / “Muro” | IA | P1 | 🔲 |
-| 38 | Entrada contextual EntrenaCoach en Home (post-live, post-sync) | Monetización | P1 | 🔲 |
-| 39 | Banner Tienda en Home (pedidos activos, merch destacado) | Monetización | P1 | 🔲 |
-| 40 | GymPulse tour primer uso (3 tooltips: pins, check-in, sync) | Explore | P1 | 🔲 |
+| 36 | Nav 5 tabs: Explorar · Hoy · Red (Matches+Chat) · Squads · Perfil | IA | P0 | ✅ v0.1.170 |
+| 37 | Separar Hoy: sub-tabs “Mi día” / “Muro” | IA | P1 | ✅ v0.1.170 |
+| 38 | Entrada contextual EntrenaCoach en Home (post-live, post-sync) | Monetización | P1 | ✅ v0.1.170 |
+| 39 | Banner Tienda en Home (pedidos activos, merch destacado) | Monetización | P1 | ✅ v0.1.170 |
+| 40 | GymPulse tour primer uso (3 tooltips: pins, check-in, sync) | Explore | P1 | ✅ v0.1.170 |
 
 ---
 

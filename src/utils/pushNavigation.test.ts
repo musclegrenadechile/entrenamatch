@@ -25,7 +25,7 @@ describe('resolvePushNotificationData', () => {
     expect(
       resolvePushNotificationData({ type: 'message_new', userId: 'u1', partnerName: 'Ana' })
     ).toEqual({
-      tab: 'messages',
+      tab: 'red',
       activeChat: 'u1',
       partnerName: 'Ana',
     })

@@ -26,11 +26,11 @@ export function resolvePushNotificationData(data: PushData): NotificationNavTarg
   }
 
   if (type === 'message_new' && userId) {
-    return { tab: 'messages', activeChat: userId, partnerName }
+    return { tab: 'red', activeChat: userId, partnerName }
   }
 
   if (type === 'match_new' && userId) {
-    return { tab: 'messages', activeChat: userId, partnerName }
+    return { tab: 'red', activeChat: userId, partnerName }
   }
 
   if (type === 'group_message') {

@@ -1,4 +1,4 @@
-import { Plus, Users } from 'lucide-react'
+import { Plus, Users, Star } from 'lucide-react'
 import type { Squad } from '../../types'
 
 export interface SquadsTabProps {
@@ -10,6 +10,8 @@ export interface SquadsTabProps {
   onCreateSquad: () => void
   onJoinSquad: (squadId: string) => void
   onOpenSquad: (squadId: string) => void
+  onOpenSessions?: () => void
+  sessionUnreads?: number
 }
 
 export function SquadsTab({
@@ -21,6 +23,8 @@ export function SquadsTab({
   onCreateSquad,
   onJoinSquad,
   onOpenSquad,
+  onOpenSessions,
+  sessionUnreads = 0,
 }: SquadsTabProps) {
   return (
     <div className="flex-1 overflow-auto p-4">
@@ -33,6 +37,22 @@ export function SquadsTab({
               : 'Grupos fijos en vivo — chat cross-device'}
           </div>
         </div>
+        <div className="flex items-center gap-2">
+          {onOpenSessions && (
+            <button
+              type="button"
+              onClick={onOpenSessions}
+              className="relative flex items-center gap-1.5 bg-[#1C1C20] text-[#FFD700] px-3 py-2 rounded-2xl text-xs font-semibold border border-[#FFD700]/30 active:bg-[#25252A]"
+            >
+              <Star size={14} />
+              Sesiones
+              {sessionUnreads > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 text-[9px] font-extrabold rounded-full bg-[#FF4F79] text-black flex items-center justify-center">
+                  {sessionUnreads > 9 ? '9+' : sessionUnreads}
+                </span>
+              )}
+            </button>
+          )}
         <button
           type="button"
           onClick={onCreateSquad}
@@ -40,6 +60,7 @@ export function SquadsTab({
         >
           <Plus size={16} /> Crear Squad
         </button>
+        </div>
       </div>
 
       {squads.length === 0 ? (

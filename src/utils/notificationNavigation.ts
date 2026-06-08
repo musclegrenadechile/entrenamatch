@@ -5,7 +5,7 @@
 import type { Notification } from '../types'
 
 export interface NotificationNavTarget {
-  tab: 'home' | 'messages' | 'sesiones' | 'squads' | 'profile' | 'explore'
+  tab: 'home' | 'red' | 'messages' | 'sesiones' | 'squads' | 'profile' | 'explore'
   activeChat?: string
   groupChatId?: string
   selectedSquad?: string
@@ -42,7 +42,7 @@ export function resolveNotificationTarget(
   }
 
   if (notif.type === 'match' && id) {
-    return { tab: 'messages', activeChat: id }
+    return { tab: 'red', activeChat: id }
   }
 
   if (notif.type === 'squad_join' && id) {
@@ -56,7 +56,7 @@ export function resolveNotificationTarget(
     if (isSessionGroupChatId(id, ctx?.sessionIds)) {
       return { tab: 'sesiones', groupChatId: id }
     }
-    return { tab: 'messages', activeChat: id }
+    return { tab: 'red', activeChat: id }
   }
 
   if (notif.type === 'group_message' && id) {

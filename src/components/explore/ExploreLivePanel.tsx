@@ -1,6 +1,8 @@
 // @ts-nocheck — P1 extract from App.tsx; tighten types incrementally
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { GymPulseMap } from '../map'
+import { GymPulseTour, hasSeenGymPulseTour } from '../map/GymPulseTour'
 
 /** Props mirror App scope used by explore live banner + map block */
 export type ExploreLivePanelProps = Record<string, unknown>
@@ -98,6 +100,16 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     uploadPartnerLogoIfNeeded,
   } = props
 
+  const [showGymPulseTour, setShowGymPulseTour] = useState(false)
+
+  useEffect(() => {
+    if (showLiveMap && !hasSeenGymPulseTour()) {
+      const t = window.setTimeout(() => setShowGymPulseTour(true), 400)
+      return () => window.clearTimeout(t)
+    }
+    if (!showLiveMap) setShowGymPulseTour(false)
+  }, [showLiveMap])
+
   return (
     <div className="px-4 py-2.5 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden live-banner-glow transition-all duration-300" style={{boxShadow: '0 1px 0 rgba(34,197,94,0.1)'}}>
       <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
@@ -117,7 +129,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
             const bInNet = !!syncBonds[b.id] ? -1 : 0;
             if (aInNet !== bInNet) return aInNet - bInNet;
             return (a.distance||0)-(b.distance||0);
-          }).slice(0, 4).map(user => (
+          }).slice(0, 4).map((user, idx) => (
             <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className={`min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border active:scale-95 relative overflow-hidden shadow-lg shadow-[#22c55e]/10 ${ (user.joinCount||0) >= 3 ? 'border-[#FF671F]/60 shadow-[0_0_0_1px_#FF671F] animate-[pulse_2s_ease-in-out_infinite]' : 'border-[#22c55e]/70' }`} whileHover={{ scale: 1.04, y: -2, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(34 197 94 / 0.2)' }} whileTap={{ scale: 0.96 }} initial={{ opacity: 0.85, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
               <div className="flex justify-between items-start mb-1">
                 <div className="flex items-center gap-1">
@@ -147,6 +159,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
               {user.syncStreak && <div className="text-[7px] text-[#22c55e] mb-1">🔄 SyncStreak {user.syncStreak}d</div>}
               <button 
                 disabled={joiningSyncWith === user.id}
+                data-gympulse-tour={idx === 0 ? 'sync' : undefined}
                 onClick={(e) => {
                   e.stopPropagation()
                   try { triggerHaptic('medium') } catch {}
@@ -197,6 +210,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           </div>
           <button 
             onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(!showLiveMap) }} 
+            data-gympulse-tour={!mapMyGymId ? 'checkin' : undefined}
             className={`text-xs px-3 py-1 rounded-full border transition ${showLiveMap ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
           >
             {showLiveMap ? 'Ocultar el mapa en tiempo real' : 'Ver el mapa en tiempo real'}
@@ -204,7 +218,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
         </div>
 
         {showLiveMap && (
-      <div className="relative z-10" style={{ minHeight: '340px' }}>
+      <div className="relative z-10" style={{ minHeight: '340px' }} data-gympulse-tour="pins">
         <GymPulseMap
           ref={gymPulseMapRef}
           showLiveMap={showLiveMap}
@@ -798,6 +812,8 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           </div>
         )}
       </div>
+
+      <GymPulseTour active={showGymPulseTour} onComplete={() => setShowGymPulseTour(false)} />
     </div>
   )
 }
