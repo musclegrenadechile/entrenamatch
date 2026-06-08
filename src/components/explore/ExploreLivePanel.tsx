@@ -206,50 +206,61 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           ))}
         </div>
       ) : currentUser?.trainingNow ? (
+        !showLiveMap ? (
         <div className="card card-glass p-4 text-center border border-[#22c55e]/50 relative overflow-hidden">
           <div className="text-3xl mb-2">🟢</div>
           <div className="font-semibold text-base mb-1 text-[#22c55e]">¡Tú estás en vivo en el GymPulse!</div>
           <div className="text-sm text-[#9CA3AF] mb-3 leading-snug">Tu marcador verde ya está en el mapa. Cuando alguien más active live cerca, aparecerá aquí para unirte o sync.</div>
           <button onClick={() => setShowLiveMap(true)} className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90">Ver mapa en tiempo real →</button>
         </div>
-      ) : (
+        ) : null
+      ) : !showLiveMap ? (
         <div className="card card-glass p-6 text-center border border-[#22c55e]/30 relative overflow-hidden">
           <div className="text-5xl mb-3 opacity-90">🏋️‍♂️</div>
           <div className="font-semibold text-base mb-1.5">Nadie entrenando cerca todavía</div>
-          <div className="text-sm text-[#9CA3AF] mb-4 leading-snug">Activa "Entrenando Ahora (EN VIVO)" en tu Perfil para aparecer en el mapa en tiempo real (GymPulse). ¡La gente cerca te ve entrenando y siente urgencia real (FOMO) de unirse o sync antes de que termines!</div>
+          <div className="text-sm text-[#9CA3AF] mb-4 leading-snug">Activa &quot;Entrenando Ahora (EN VIVO)&quot; en tu Perfil para aparecer en el mapa.</div>
           <button onClick={() => setActiveTab('profile')} className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90 active:scale-[0.985] transition shadow-sm">Ir a Perfil y activar live →</button>
           <div className="absolute -bottom-6 -right-6 text-[70px] opacity-5">📡</div>
         </div>
+      ) : (
+        <p className="text-[11px] text-[#9CA3AF] px-1 py-2 text-center">
+          Mapa abierto — activa live en Perfil para ser el centro del GymPulse.
+        </p>
       )}
+      {!showLiveMap && (
       <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between items-center">
-        <span>¡FOMO real! Toca para ver o únete antes de que terminen. El mapa muestra el pulso vivo de la comunidad.</span>
+        <span>El mapa muestra el pulso vivo de la comunidad.</span>
         <button onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline active:text-white">Ver todos live →</button>
       </div>
+      )}
 
       {/* Map area - primer paso de modularización pulido.
           La mayoría del chrome (header flotante, filtros, leyenda de zonas, centrar, botones dev) ahora vive dentro de <GymPulseMap />.
           El padre mantiene el toggle + el form pesado de partners (por ahora).
       */}
       <div className="mt-3 relative z-10">
-        <div className="flex items-center justify-between mb-1.5 px-1">
-          <div className="text-[10px] font-semibold text-[#22c55e] flex items-center gap-1.5">
-            🗺️ Mapa en tiempo real • El GymPulse Global (Partners + GymPartners en vivo)
-            <span className="text-[8px] bg-[#22c55e]/20 px-1.5 rounded">LA RED EN VIVO</span>
-            {networkStats.numPartners > 0 && <span className="text-[7px] bg-[#FFD700]/90 text-black px-1 rounded font-bold">TU RED: {networkStats.numPartners} • NP {networkStats.networkPower}</span>}
+        <div className="flex items-center justify-between mb-1.5 px-1 gap-2">
+          <div className="text-[11px] font-semibold text-[#22c55e] truncate">
+            🗺️ GymPulse
+            {networkStats.numPartners > 0 && (
+              <span className="text-[9px] font-normal text-[#9CA3AF] ml-1">
+                · {networkStats.numPartners} en tu red
+              </span>
+            )}
           </div>
           <button 
             onClick={() => { try { triggerHaptic('light') } catch {}; setShowLiveMap(!showLiveMap) }} 
             data-gympulse-tour={!mapMyGymId ? 'checkin' : undefined}
-            className={`text-xs px-3 py-1 rounded-full border transition ${showLiveMap ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
+            className={`text-[11px] px-3 py-1.5 rounded-full border shrink-0 transition ${showLiveMap ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'border-[#22c55e]/40 text-[#22c55e] hover:bg-[#22c55e]/10'}`}
           >
-            {showLiveMap ? 'Ocultar el mapa en tiempo real' : 'Ver el mapa en tiempo real'}
+            {showLiveMap ? 'Ocultar mapa' : 'Ver mapa'}
           </button>
         </div>
 
         {showLiveMap && (
       <div
         className={`relative z-10 ${mapFullscreen ? 'gym-pulse-fs-host' : ''}`}
-        style={mapFullscreen ? undefined : { minHeight: '340px' }}
+        style={mapFullscreen ? undefined : { minHeight: 'min(420px, 52vh)' }}
       >
         <GymPulseMapShell
           fullscreen={mapFullscreen}
@@ -405,15 +416,8 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
               }}
             />
         </GymPulseMapShell>
-            {!showAddPartnerForm && (
-              <>
-                {showOnlyNetwork && (
-                  <div className="text-[7px] text-[#FFD700] px-1 mt-0.5">Tu Fuerza del equipo activa — tus GymPartners destacan en el GymPulse</div>
-                )}
-                {isDeveloper && showPartners && (
-                  <div className="text-[7px] text-[#FFD700]/80 px-1 mt-0.5">DEV: arrastra pins PARTNERS para mover • +Add rápido (click mapa crea tienda) • Manage para borrar/editar • popups tienen 🗑️ Borrar</div>
-                )}
-              </>
+            {!showAddPartnerForm && isDeveloper && showPartners && (
+              <div className="text-[7px] text-[#FFD700]/70 px-1 mt-1">Modo dev: botón DEV en el mapa</div>
             )}
 
             {/* DEV PARTNER FORM - attractive, with logo upload. Gated by developer login. Supports add + edit with logo for negocios. */}
@@ -865,16 +869,6 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
               </div>
             )}
 
-            {/* Beautiful empty state when map open but no one live (after near filter) */}
-            {showLiveMap && liveCountForUI === 0 && !currentUser?.trainingNow && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl text-center p-4 text-xs z-40 pointer-events-none">
-                <div>
-                  <div className="text-2xl mb-1">🗺️</div>
-                  <div className="font-semibold">Nadie entrenando cerca ahora</div>
-                  <div className="text-[#9CA3AF] mt-0.5">Activa &quot;Entrenando Ahora (EN VIVO)&quot; en tu perfil para aparecer aquí. ¡Serás el centro del mapa!</div>
-                </div>
-              </div>
-            )}
           </div>
         )}
       </div>

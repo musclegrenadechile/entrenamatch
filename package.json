@@ -1,14 +1,14 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.230",
+  "version": "0.1.232",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy": "firebase deploy --only hosting",
+    "deploy": "npm run build -- --base=/ && firebase deploy --only hosting --project entrenamatch",
     "deploy:pages": "npm run build -- --base=/entrenamatch/",
     "build:web": "tsc --noEmit && vite build",
     "cap:sync": "npx cap sync",

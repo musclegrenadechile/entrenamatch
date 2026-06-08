@@ -22,10 +22,12 @@
  * Next iterations can move even more (the partner listener, some filter state, the "Centrar" button logic).
  */
 
-import { useEffect, useRef, useImperativeHandle, forwardRef, useMemo } from 'react'
+import { useEffect, useRef, useImperativeHandle, forwardRef, useMemo, useState } from 'react'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { toast } from 'sonner'
+import { Crosshair } from 'lucide-react'
+import { GymPulseMapFilters } from './GymPulseMapFilters'
 
 // Fix Leaflet icons (same as before)
 delete (L.Icon.Default.prototype as any)._getIconUrl
@@ -221,6 +223,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   const isPlacingPartnerRef = useRef(false)
   const isQuickAddPartnerRef = useRef(false)
   const showAddPartnerFormRef = useRef(false)
+  const [devToolsOpen, setDevToolsOpen] = useState(false)
+  const isEmbedded = layoutMode === 'embedded'
 
   // Keep latest values in refs for closures inside Leaflet handlers / debounced updates
   useEffect(() => { partnerLocationsRef.current = partnerLocations }, [partnerLocations])
@@ -949,8 +953,9 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   }
 
   return (
-    <div className="relative w-full" style={{ zIndex: 10 }}> {/* higher stacking context so custom controls can reliably sit above Leaflet */}
-      {/* Floating "El Pulso está vivo" header — now owned by the component */}
+    <div className={`relative w-full gym-pulse-map-root ${isEmbedded ? 'gym-pulse-map-root--embedded' : ''}`} style={{ zIndex: 10 }}>
+      {/* Status pill — fullscreen only (embedded uses shell + filters bar) */}
+      {!isEmbedded && (
       <div
         className="map-floating-pulse absolute top-2 left-2 z-[2000] px-3 py-1 rounded-2xl text-[10px] font-semibold text-[#22c55e] flex items-center gap-2 shadow-lg border border-[#22c55e]/20 cursor-pointer active:scale-[0.985] transition"
         onClick={() => {
@@ -990,6 +995,14 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           return activeSyncs > 0 ? <span className="text-[#FFD700] font-bold text-[9px]">• {Math.floor(activeSyncs)} EN SYNC</span> : null
         })()}
       </div>
+      )}
+
+      {isEmbedded && totalLiveOnMap > 0 && (
+        <div className="gym-pulse-map-embedded-badge">
+          <span className="gym-pulse-map-embedded-badge__dot" />
+          {totalLiveOnMap} en vivo
+        </div>
+      )}
 
       {/* The actual Leaflet container */}
       <div
@@ -997,55 +1010,48 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         className={`w-full overflow-hidden border border-[#22c55e]/25 bg-[#0a0a0c] shadow-[0_0_0_1px_rgba(34,197,94,0.12),0_10px_40px_-12px_rgba(0,0,0,0.7)] ${
           layoutMode === 'fullscreen'
             ? 'gym-pulse-map-canvas gym-pulse-map-canvas--fs h-full min-h-0 rounded-none border-0'
-            : 'h-[340px] rounded-2xl'
+            : 'h-[min(420px,52vh)] min-h-[360px] rounded-2xl'
         }`}
         id="live-map-container"
       />
 
-      {/* Bottom-right filter cluster (self-contained) */}
-      <div className="absolute bottom-2 right-2 flex items-center gap-1 z-[2000]">
-        <div className="text-[8px] bg-black/75 text-[#22c55e] px-2 py-0.5 rounded-full font-medium flex items-center gap-1">
-          🟢 {mapNearOnly ? filteredLiveOnMap : totalLiveOnMap} en vivo
-          {selfIsLive && totalLiveOnMap >= 1 && filteredLiveOnMap <= 1 && mapNearOnly && <span className="ml-1 text-[7px] text-white/80">(tú)</span>}
-          {showPartners && partnerLocations.length > 0 && <span className="ml-1 text-[7px] bg-[#FF671F] text-black px-1 rounded font-bold">{partnerLocations.length} PARTNERS</span>}
-          {isDeveloper && <span className="ml-1 text-[7px] bg-[#FFD700] text-black px-1 rounded font-extrabold cursor-pointer active:opacity-70" onClick={onLogoutDeveloper} title="Tap to logout dev mode">DEV ON</span>}
-        </div>
-
-        <button
-          onClick={() => onMapNearOnlyChange && onMapNearOnlyChange(!mapNearOnly)}
-          className={`text-[8px] px-2 py-0.5 rounded-full border transition ${mapNearOnly ? 'bg-[#3b82f6] text-white border-[#3b82f6]' : 'bg-black/70 text-[#3b82f6] border-[#3b82f6]/40 hover:bg-[#3b82f6]/10'}`}
-        >
-          {mapNearOnly ? '✓ Cerca de mí (10km)' : 'Solo cerca de mí'}
-        </button>
-
-        {mapMyGymId && (
-          <button
-            data-gympulse-tour="checkin"
-            onClick={() => onMapMyGymOnlyChange && onMapMyGymOnlyChange(!mapMyGymOnly)}
-            className={`text-[8px] px-2 py-0.5 rounded-full border transition ${mapMyGymOnly ? 'bg-[#22c55e] text-black border-[#22c55e]' : 'bg-black/70 text-[#22c55e] border-[#22c55e]/40 hover:bg-[#22c55e]/10'}`}
-            title="Solo atletas con check-in en tu gym partner"
-          >
-            {mapMyGymOnly ? '✓ Mi gym' : 'Solo mi gym'}
-          </button>
-        )}
-
-        <button
-          onClick={() => onShowOnlyNetworkChange && onShowOnlyNetworkChange(!showOnlyNetwork)}
-          className={`text-[8px] px-2 py-0.5 rounded-full border transition ${showOnlyNetwork ? 'bg-[#FFD700] text-black border-[#FFD700]' : 'bg-black/70 text-[#FFD700] border-[#FFD700]/40 hover:bg-[#FFD700]/10'}`}
-        >
-          {showOnlyNetwork ? '✓ Mi Red (Fuerza del equipo)' : 'Solo mi red de sync'}
-        </button>
-
-        <button
-          onClick={() => onShowPartnersChange && onShowPartnersChange(!showPartners)}
-          className={`text-[8px] px-2 py-0.5 rounded-full border transition ${showPartners ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'bg-black/70 text-[#FF671F] border-[#FF671F]/40 hover:bg-[#FF671F]/10'}`}
-        >
-          {showPartners ? '✓ Partners (mapa)' : 'Mostrar Partners'}
-        </button>
+      {/* Bottom toolbar — filtros compactos (sin fila de 6 chips) */}
+      <div className={`absolute left-2 right-2 z-[2000] ${isEmbedded ? 'bottom-3' : 'bottom-2'}`}>
+        <GymPulseMapFilters
+          mapNearOnly={mapNearOnly}
+          showOnlyNetwork={showOnlyNetwork}
+          showPartners={showPartners}
+          mapMyGymOnly={mapMyGymOnly}
+          mapMyGymId={mapMyGymId}
+          filteredCount={filteredLiveOnMap}
+          totalCount={totalLiveOnMap}
+          partnerCount={partnerLocations.length}
+          onMapNearOnlyChange={onMapNearOnlyChange}
+          onShowOnlyNetworkChange={onShowOnlyNetworkChange}
+          onShowPartnersChange={onShowPartnersChange}
+          onMapMyGymOnlyChange={onMapMyGymOnlyChange}
+        />
       </div>
 
-      {/* Top-left interactive zone legend - positioned below the floating header to avoid overlap */}
-      <div className="absolute top-9 left-2 z-[2000] flex flex-col gap-1">
+      {/* Centrar — esquina inferior derecha (no compite con ⛶ arriba) */}
+      <button
+        type="button"
+        onClick={() => {
+          try {
+            const h = (ref as any)?.current
+            if (h?.flyToSelf) h.flyToSelf()
+            else if ((window as any).__gymPulseCentrar) (window as any).__gymPulseCentrar()
+          } catch { /* ignore */ }
+        }}
+        className="gym-pulse-map-centrar-btn"
+        aria-label="Centrar mapa"
+      >
+        <Crosshair size={14} />
+      </button>
+
+      {/* Zonas — solo fullscreen; en embebido van al panel de filtros en fase posterior */}
+      {!isEmbedded && (
+      <div className="absolute top-9 left-2 z-[2000] flex flex-col gap-1 max-h-[40%] overflow-y-auto">
         {['Viña del Mar', 'Santiago', 'Valparaíso', 'Concon'].map(city => {
           const col = zoneColors[city] || zoneColors.default
           const isActive = selectedMapZone === city
@@ -1070,85 +1076,36 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         })}
 
         {/* Mi zona quick filter */}
-        {/* Note: "currentUser city" is not passed; parent can still drive selectedMapZone */}
       </div>
+      )}
 
-      {/* Centrar button (uses our imperative handle) */}
-      <button
-        onClick={() => {
-          try {
-            const h = (ref as any)?.current
-            if (h?.flyToSelf) {
-              h.flyToSelf()
-            } else if ((window as any).__gymPulseCentrar) {
-              ;(window as any).__gymPulseCentrar()
-            }
-          } catch {}
-        }}
-        className="absolute top-2 right-2 text-[9px] px-2.5 py-0.5 rounded-full bg-black/70 hover:bg-black text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black transition z-[2000]"
-      >
-        Centrar
-      </button>
-
-      {/* Dev quick actions (inside the map widget) - compact + high z so they are always visible (was hidden behind zoom control or too small).
-          Zoom control moved to bottomright in map init. */}
+      {/* Dev tools — colapsado por defecto */}
       {isDeveloper && (
-        <div className="absolute top-9 right-2 flex flex-col gap-0.5 z-[3000]">
-          <div className="flex gap-1 justify-end">
-            <button
-              onClick={() => onOpenAddPartner && onOpenAddPartner()}
-              className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#FFD700] text-black font-bold border border-[#FFD700] active:scale-95"
-              title="Agregar local partner con logo (solo devs)"
-            >
-              +P
-            </button>
-            <button
-              onClick={() => onOpenManagePartners && onOpenManagePartners()}
-              className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#FFD700]/80 text-black font-bold border border-[#FFD700] active:scale-95"
-              title="Gestionar partners existentes"
-            >
-              M
-            </button>
-            <button
-              onClick={() => onToggleQuickAdd && onToggleQuickAdd(!isQuickAddPartner)}
-              className={`text-[8px] px-1.5 py-0.5 rounded-full font-bold border active:scale-95 ${isQuickAddPartner ? 'bg-red-500 text-white border-red-500' : 'bg-[#FFD700]/70 text-black border-[#FFD700]'}`}
-              title="Modo agregar rápido: click en mapa crea tienda mínima"
-            >
-              {isQuickAddPartner ? '✕' : '+Ráp'}
-            </button>
-            <button
-              onClick={() => onAddPartnerAtCurrentCenter && onAddPartnerAtCurrentCenter()}
-              className="text-[8px] px-1.5 py-0.5 rounded-full bg-[#FFD700]/60 text-black font-bold border border-[#FFD700] active:scale-95"
-              title="Agregar partner directamente en el centro actual del mapa (rápido para devs)"
-            >
-              @C
-            </button>
-          </div>
-          <div className="flex gap-1 justify-end">
-            <button
-              onClick={() => onReloadPartners && onReloadPartners()}
-              className="text-[8px] px-1.5 py-0.5 rounded-full bg-black/70 text-[#22c55e] border border-[#22c55e]/40 active:bg-[#22c55e] active:text-black"
-              title="Forzar refresh de partners y mapa"
-            >
-              ↻
-            </button>
-            <button
-              onClick={() => onSpawnTestLives && onSpawnTestLives(3)}
-              className="text-[8px] px-1.5 py-0.5 rounded-full bg-purple-600/80 text-white font-bold border border-purple-400 active:scale-95"
-              title="Spawnea 3 vidas de test cerca de ti (solo visibles en este mapa para probar GymPulse sin otras cuentas)"
-            >
-              🧪+3
-            </button>
-            {(devTestCount || 0) > 0 && (
-              <button
-                onClick={() => onClearDevTestLives && onClearDevTestLives()}
-                className="text-[8px] px-1.5 py-0.5 rounded-full bg-red-900/70 text-red-200 border border-red-500/50 active:bg-red-800"
-                title="Quitar las vidas de test"
-              >
-                🧹
+        <div className="gym-pulse-dev-tools">
+          <button
+            type="button"
+            className="gym-pulse-dev-tools__toggle"
+            onClick={() => setDevToolsOpen((o) => !o)}
+          >
+            {devToolsOpen ? '✕' : 'DEV'}
+          </button>
+          {devToolsOpen && (
+            <div className="gym-pulse-dev-tools__panel">
+              <button type="button" onClick={() => onOpenAddPartner?.()} className="gym-pulse-dev-tools__btn">+ Partner</button>
+              <button type="button" onClick={() => onOpenManagePartners?.()} className="gym-pulse-dev-tools__btn">Manage</button>
+              <button type="button" onClick={() => onToggleQuickAdd?.(!isQuickAddPartner)} className="gym-pulse-dev-tools__btn">
+                {isQuickAddPartner ? '✕ Rápido' : '+ Rápido'}
               </button>
-            )}
-          </div>
+              <button type="button" onClick={() => onReloadPartners?.()} className="gym-pulse-dev-tools__btn">↻</button>
+              <button type="button" onClick={() => onSpawnTestLives?.(3)} className="gym-pulse-dev-tools__btn">🧪+3</button>
+              {(devTestCount || 0) > 0 && (
+                <button type="button" onClick={() => onClearDevTestLives?.()} className="gym-pulse-dev-tools__btn">🧹</button>
+              )}
+              <button type="button" onClick={() => onLogoutDeveloper?.()} className="gym-pulse-dev-tools__btn gym-pulse-dev-tools__btn--muted">
+                Salir
+              </button>
+            </div>
+          )}
         </div>
       )}
 
