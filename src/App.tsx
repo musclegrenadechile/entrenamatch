@@ -82,7 +82,7 @@ import { parseTabFromUrl, syncTabToUrl } from './utils/tabUrlSync'
 import { BottomNav } from './components/app/BottomNav'
 import { AppFeatureTour, hasSeenAppFeatureTour, markAppFeatureTourSeen } from './components/onboarding/AppFeatureTour'
 import { useAndroidBackHandler } from './hooks/useAndroidBackHandler'
-import { filterSeedsForCity } from './utils/citySeeds'
+import { suggestedSquadName } from './utils/sparseCityDefaults'
 import { partnersForMap } from './utils/partnerLocations'
 import {
   getTodayStr,
@@ -295,7 +295,7 @@ import {
 } from './services/weeklyPact'
 import { ARENA_REST_MS, parseParticipantState } from './utils/arenaSyncState'
 import { triggerHaptic } from './utils/haptics'
-import { loadStoredNotifications, saveStoredNotifications } from './utils/safeLocalStorage'
+import { loadStoredNotifications, saveStoredNotifications, isQuotaError, reclaimLocalStorageSpace } from './utils/safeLocalStorage'
 import {
   attachGroupMessagesListener,
   mapGroupMessageDoc,
@@ -1699,6 +1699,7 @@ useEffect(() => {
   const [viewingPostComments, setViewingPostComments] = useState<{postId: string; postUserId: string; ownerName?: string} | null>(null)
   const [modalCommentDraft, setModalCommentDraft] = useState('')
   const [showCreateSquad, setShowCreateSquad] = useState(false)
+  const [squadNameDraft, setSquadNameDraft] = useState('')
   const [selectedSquad, setSelectedSquad] = useState<string | null>(null) // for detail view
   const [squadRoutineDraft, setSquadRoutineDraft] = useState({ label: '', schedule: '', notes: '' })
   const [savingSquadRoutine, setSavingSquadRoutine] = useState(false)
@@ -2079,9 +2080,9 @@ useEffect(() => {
   // Hoisted early (right after real multi-user state + displaySessions) so that all later effects, JSX, and discovery logic (deck, map, feed, live notifs) see the declarations before any code that might reference them during render or effect setup. Prevents TDZ for remainingProfiles, liveTrainingNow, zoneLiveCounts, feedComputation.
   const remainingProfiles = useMemo(() => {
     const swiped = new Set([...likedIds, ...passedIds])
-    
-    // Combine real profiles from Firestore + hardcoded seeds
-    const citySeeds = filterSeedsForCity(SEED_PROFILES, currentUser?.city)
+
+    // Real accounts: Firestore profiles only — seeds stay in demo/onboarding (fase 184).
+    const citySeeds = isDemoMode ? filterSeedsForCity(SEED_PROFILES, currentUser?.city) : []
     const allProfiles: Profile[] = [
       ...realProfiles,
       ...citySeeds.filter((s) => !realProfiles.some((r) => r.id === s.id)),
@@ -2097,7 +2098,7 @@ useEffect(() => {
       if (swiped.has(p.id)) return false
       return true
     })
-  }, [likedIds, passedIds, realProfiles, currentUser?.city])
+  }, [likedIds, passedIds, realProfiles, currentUser?.city, isDemoMode])
 
   // Prevents (now - Timestamp) producing NaN which would drop live users from GymPulse lists.
   const normalizeTrainingSince = (val: any): number | undefined => normalizeTrainingSinceMs(val)
@@ -2219,11 +2220,12 @@ useEffect(() => {
 
   // Matches profiles (supports real profiles from Firestore + seeds)
   const matchProfiles = useMemo(() => {
-    const all = [...SEED_PROFILES, ...realProfiles]
+    const seedPool = isDemoMode ? SEED_PROFILES : []
+    const all = [...seedPool, ...realProfiles]
     // Merge local matches + real matches loaded from Firestore + any pending real matches from current session
     const combinedMatchIds = Array.from(new Set([...matches, ...realMatches]))
     return all.filter(p => combinedMatchIds.includes(p.id))
-  }, [matches, realMatches, realProfiles])
+  }, [matches, realMatches, realProfiles, isDemoMode])
 
   const teamMatchIds = useMemo(
     () => Array.from(new Set([...matches, ...realMatches])),
@@ -2547,7 +2549,6 @@ useEffect(() => {
             }
           });
           setRealProfiles(profiles);
-          try { localStorage.setItem('entrenamatch_last_live', JSON.stringify(profiles)) } catch {}
         }, (err) => {
           console.warn('profiles onSnapshot error, falling back to polling', err);
           loadRealProfiles().catch(() => {})
@@ -2986,8 +2987,6 @@ useEffect(() => {
       setRealProfiles(profiles)
       const now = new Date()
       setLastSync(now)
-      // Cache last live for offline map fallback + fast cold start
-      try { localStorage.setItem('entrenamatch_last_live', JSON.stringify(profiles)) } catch {}
       // Spectacular: preload muro teasers for first few so cards show latest posts immediately
       profiles.slice(0, 5).forEach(p => { loadProfilePosts(p.id).catch(() => {}) })
       // console.log removed for cleaner prod (was spammy on every refresh)
@@ -3831,7 +3830,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   const sendRealMessage = async (text: string, toUserId: string, voice?: {voiceUrl: string, voiceDuration: number} | null) => {
     if ((!text.trim() && !voice) || !firebaseUser?.uid || !db) return
 
-    try {
+    const writeMessage = async () => {
       const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
       const msg: any = {
         from: firebaseUser.uid,
@@ -3845,16 +3844,35 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         msg.voiceDuration = voice.voiceDuration
       }
       await addDoc(collection(db, 'messages'), msg)
-      // console.log removed (debug)
-      // Force refresh our own view from server (keeps timestamps / ordering consistent)
+    }
+
+    try {
+      await writeMessage()
       loadRealChatMessages(toUserId).then(msgs => {
         if (msgs) setRealChatMessages(msgs)
       })
-      // replying counts as reading it
       setChatUnreads(prev => { const c = { ...prev }; c[toUserId] = 0; return c })
     } catch (e) {
+      if (isQuotaError(e)) {
+        reclaimLocalStorageSpace('hard')
+        try {
+          await writeMessage()
+          loadRealChatMessages(toUserId).then(msgs => {
+            if (msgs) setRealChatMessages(msgs)
+          })
+          setChatUnreads(prev => { const c = { ...prev }; c[toUserId] = 0; return c })
+          toast.success('Mensaje enviado', { description: 'Liberamos espacio en el navegador.' })
+          return
+        } catch (retryErr) {
+          console.error('Failed to send after storage reclaim:', retryErr)
+        }
+      }
       console.error('Failed to send real message:', e)
-      toast.error('No se pudo enviar el mensaje real')
+      toast.error('No se pudo enviar el mensaje', {
+        description: isQuotaError(e)
+          ? 'Almacenamiento del navegador lleno. Borra datos del sitio en ajustes o cierra otras pestañas.'
+          : 'Revisa tu conexión e intenta de nuevo.',
+      })
     }
   }
 
@@ -9249,6 +9267,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         )}
         {/* ===== MAP tab + EXPLORE live banner (ExploreLivePanel) ===== */}
         {(activeTab === 'map' || activeTab === 'explore') && (
+          <div className={activeTab === 'map' ? 'flex-1 min-h-0 flex flex-col overflow-hidden' : undefined}>
           <ExploreLivePanel
             dedicatedMapTab={activeTab === 'map'}
             liveCountForUI={liveCountForUI}
@@ -9342,7 +9361,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             handlePartnerLogoSelect={handlePartnerLogoSelect}
             CapacitorCamera={CapacitorCamera}
             uploadPartnerLogoIfNeeded={uploadPartnerLogoIfNeeded}
+            onActivateLive={() => void toggleLiveTraining('on')}
           />
+          </div>
         )}
 
         {activeTab === 'explore' && (
@@ -9381,6 +9402,26 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             profilePosts={profilePosts}
             syncBonds={syncBonds}
             networkPower={networkStats.networkPower}
+            poolSize={remainingProfiles.length}
+            cityActiveCount={firestoreCityStats?.participantCount ?? homeCityChallengeMerged?.participants ?? 0}
+            isDemoMode={isDemoMode}
+            db={db}
+            firebaseUid={firebaseUser?.uid ?? null}
+            onActivateLive={() => void toggleLiveTraining('on')}
+            onRelaxFilters={() => {
+              setFilters((f) => ({
+                ...f,
+                minAge: 18,
+                maxAge: 55,
+                gender: 'todos',
+                trainingTypes: [],
+                availability: [],
+                maxDistanceKm: 50,
+                onlyAvailableToday: false,
+                onlyLiveTraining: false,
+              }))
+              toast.success('Filtros ampliados — más perfiles visibles')
+            }}
           />
           </Suspense>
           </PullToRefresh>
@@ -9674,6 +9715,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             profilePostsFeed={(profilePosts[effectiveUserId] || []).concat(
               Object.values(profilePosts).flat().filter((p: any) => p.postType === 'workout')
             ).slice(0, 20)}
+            onQuickFeedTemplate={(text) => {
+              setFeedPostText(text)
+              setShowFeedPostModal(true)
+            }}
             onImportHealthBurn={handleImportHealthBurn}
             healthImportHint={healthImportHint}
           />
@@ -9819,11 +9864,19 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             effectiveUserId={effectiveUserId}
             isUserLive={isUserLive}
             resolveMemberName={resolveMemberName}
-            onCreateSquad={() => setShowCreateSquad(true)}
+            onCreateSquad={() => {
+              setSquadNameDraft(suggestedSquadName(currentUser?.city))
+              setShowCreateSquad(true)
+            }}
             onJoinSquad={handleJoinSquad}
             onOpenSquad={setSelectedSquad}
             onOpenSessions={() => navigateTab('sesiones')}
             sessionUnreads={totalSessionUnreads}
+            userCity={currentUser?.city}
+            onCreateSquadWithName={(name) => {
+              setSquadNameDraft(name)
+              setShowCreateSquad(true)
+            }}
             squadFuelSummary={squadFuelSummary}
           />
           </Suspense>
@@ -10922,7 +10975,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 setShowCreateSquad(false)
                 toast.success('Squad creado')
               }}>
-                <input name="name" placeholder="Nombre del Squad (ej: Beasts de Viña)" required className="form-input w-full mb-3" />
+                <input name="name" placeholder="Nombre del Squad (ej: Beasts de Viña)" required className="form-input w-full mb-3" defaultValue={squadNameDraft} key={squadNameDraft} />
                 <input name="focus" placeholder="Enfoque (Pesas, Running, Calistenia...)" required className="form-input w-full mb-4" />
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setShowCreateSquad(false)} className="flex-1 py-3 rounded-2xl border border-[#2F2F35] active:bg-[#25252A]">Cancelar</button>

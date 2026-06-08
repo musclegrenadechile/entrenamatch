@@ -1,5 +1,5 @@
 ﻿// @ts-nocheck
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
 
 export interface Filters {
@@ -28,6 +28,13 @@ const defaultFilters: Filters = {
 
 export function useFilters() {
   const [filters, setFilters] = useLocalStorage<Filters>('filters', defaultFilters);
+
+  // Migrate legacy 25 km default saved in older builds (fase 185).
+  useEffect(() => {
+    if (filters.maxDistanceKm === 25) {
+      setFilters((prev) => ({ ...prev, maxDistanceKm: 50 }));
+    }
+  }, [filters.maxDistanceKm, setFilters]);
 
   const resetFilters = useCallback(() => {
     setFilters(defaultFilters);

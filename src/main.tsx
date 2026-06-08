@@ -7,6 +7,7 @@ import { AuthProvider } from './contexts/AuthContext'
 import { ProfileProvider } from './contexts/ProfileContext'
 import { RootErrorBoundary } from './boot/RootErrorBoundary'
 import { initCrashReporting, reportError } from './services/crashReporting'
+import { ensureLocalStorageHeadroom, installStorageQuotaGuard } from './utils/safeLocalStorage'
 
 function showFatalBootError(message: string) {
   const root = document.getElementById('root')
@@ -23,6 +24,8 @@ function showFatalBootError(message: string) {
 }
 
 initCrashReporting()
+ensureLocalStorageHeadroom()
+installStorageQuotaGuard()
 
 window.addEventListener('error', (event) => {
   reportError(event.error || event.message, 'window.error', true)

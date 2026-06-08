@@ -68,7 +68,7 @@ export function MatchesTab({
       <div className="text-[#9CA3AF] px-1 mb-4 text-xs">Desliza abajo para actualizar</div>
 
       {matchProfiles.length === 0 ? (
-        <div className="mt-10 px-4">
+        <div className="mt-10 px-4 space-y-4">
           <div className="card p-8 rounded-3xl text-center">
             <div className="mx-auto w-16 h-16 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-4">
               <Heart className="text-[#FF671F]" size={36} />
@@ -85,6 +85,14 @@ export function MatchesTab({
             {syncAgeSec != null && (
               <div className="text-[10px] text-[#9CA3AF] mt-2">Actualizado hace {syncAgeSec}s</div>
             )}
+          </div>
+          <div className="card p-5 rounded-2xl border border-[#FF671F]/20 text-left">
+            <p className="text-[10px] uppercase tracking-wider text-[#FF671F] font-bold mb-2">¿Cómo funciona el match?</p>
+            <ol className="text-sm text-[#9CA3AF] space-y-2 list-decimal list-inside leading-snug">
+              <li>En <strong className="text-white">Explorar</strong>, desliza o toca ❤️ en perfiles compatibles.</li>
+              <li>Si la otra persona también te da like, hay <strong className="text-white">match</strong> y se abre el chat.</li>
+              <li>Desde el chat puedes iniciar <strong className="text-white">EntrenaSync</strong> y entrenar en vivo juntos.</li>
+            </ol>
           </div>
         </div>
       ) : (

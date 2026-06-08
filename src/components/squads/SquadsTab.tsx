@@ -12,6 +12,8 @@ export interface SquadsTabProps {
   onOpenSquad: (squadId: string) => void
   onOpenSessions?: () => void
   sessionUnreads?: number
+  userCity?: string
+  onCreateSquadWithName?: (suggestedName: string) => void
   /** Phase 79 — user weekly fuel + burn summary for squad context */
   squadFuelSummary?: { weeklyKcal: number; weeklyBurnKcal: number; targetKcal: number }
 }
@@ -27,8 +29,11 @@ export function SquadsTab({
   onOpenSquad,
   onOpenSessions,
   sessionUnreads = 0,
+  userCity,
+  onCreateSquadWithName,
   squadFuelSummary,
 }: SquadsTabProps) {
+  const suggestedName = userCity ? `Squad ${userCity}` : 'Squad Viña del Mar'
   return (
     <div className="flex-1 overflow-auto p-4">
       {squadFuelSummary && squadFuelSummary.weeklyKcal > 0 && (
@@ -82,13 +87,25 @@ export function SquadsTab({
           <p className="text-sm text-[#9CA3AF] mb-4 max-w-[280px] mx-auto">
             Los squads son grupos fijos de 3-4 personas para entrenar consistentemente.
           </p>
-          <button
-            type="button"
-            onClick={onCreateSquad}
-            className="px-6 py-2.5 bg-[#FF671F] text-black rounded-2xl text-sm font-semibold active:bg-[#E55A1A]"
-          >
-            Crear mi primer Squad
-          </button>
+          <div className="flex flex-col gap-2 max-w-[260px] mx-auto">
+            <button
+              type="button"
+              onClick={() => {
+                if (onCreateSquadWithName) onCreateSquadWithName(suggestedName)
+                else onCreateSquad()
+              }}
+              className="px-6 py-2.5 bg-[#FF671F] text-black rounded-2xl text-sm font-semibold active:bg-[#E55A1A]"
+            >
+              Crear {suggestedName}
+            </button>
+            <button
+              type="button"
+              onClick={onCreateSquad}
+              className="px-6 py-2 text-xs border border-[#2F2F35] rounded-2xl text-[#9CA3AF] active:bg-[#25252A]"
+            >
+              Otro nombre…
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">

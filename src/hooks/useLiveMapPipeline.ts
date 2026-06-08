@@ -113,7 +113,8 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
   }, [showPartners, partnerLocationsLength, showLiveMap])
 
   useEffect(() => {
-    if (showLiveMap && gymPulseMapRef.current) {
+    const mapActive = showLiveMap || activeTab === 'map'
+    if (mapActive && gymPulseMapRef.current) {
       const force = () => {
         try {
           gymPulseMapRef.current?.invalidateSize?.()
@@ -191,9 +192,6 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
         })
         if (next === prev) return prev
         latestRealProfilesRef.current = next
-        try {
-          localStorage.setItem('entrenamatch_last_live', JSON.stringify(next))
-        } catch {}
         return next
       })
     },

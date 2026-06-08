@@ -16,6 +16,7 @@ import {
 import { getStorage } from 'firebase/storage';
 import { getAnalytics } from 'firebase/analytics';
 import { APP_VERSION } from '../constants';
+import { ensureLocalStorageHeadroom } from '../utils/safeLocalStorage';
 
 interface FirebaseConfig {
   apiKey: string;
@@ -83,6 +84,7 @@ let analytics: any = null;
 
 if (firebaseConfig) {
   try {
+  ensureLocalStorageHeadroom();
   app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 
   // initializeAuth + redirect resolver — required for reliable Google OAuth redirect/popup (GH Pages + Capacitor).

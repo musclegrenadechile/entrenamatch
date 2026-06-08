@@ -123,6 +123,7 @@ export function HomeTab(props: HomeTabProps) {
     onOpenMarketplaceOrders,
     showPactWizard,
     profilePostsFeed,
+    onQuickFeedTemplate,
   } = props
 
   const [homeSubTab, setHomeSubTab] = useState<HomeSubTab>('day')
@@ -494,16 +495,33 @@ export function HomeTab(props: HomeTabProps) {
           );
         }
         if (feedPosts.length === 0) {
+          const cityLabel = currentUser?.city || 'tu ciudad'
           return (
             <div className="feed-empty-epic mx-1 mt-8 p-9 rounded-3xl text-center border">
               <div className="big-icon mb-1">🏋️</div>
-              <div className="font-black text-3xl tracking-[-1.5px] mb-2">El Muro está vivo</div>
-              <p className="text-sm text-[#9CA3AF] max-w-[300px] mx-auto mb-6 leading-relaxed">Este es el corazón social del GymPulse. Publica tu sesión, una foto épica o un "me uno". Las reacciones y los syncs reales aparecen aquí en tiempo real y construyen tu estatus en la red.</p>
-              <div className="flex flex-col gap-2.5 max-w-[240px] mx-auto">
-                <button onClick={() => setShowFeedPostModal(true)} className="feed-publish-btn py-3 rounded-2xl text-base">Publicar mi primer post en el Feed</button>
-                {!isDemoMode && <button onClick={() => { setFeedMaxProfiles(18); loadGlobalFeed(); }} className="py-2.5 border border-[#FF671F]/40 text-[#FF671F] rounded-2xl text-sm active:bg-[#FF671F]/10">Cargar comunidad real</button>}
+              <div className="font-black text-3xl tracking-[-1.5px] mb-2">Sé el primero en {cityLabel}</div>
+              <p className="text-sm text-[#9CA3AF] max-w-[300px] mx-auto mb-6 leading-relaxed">
+                El Muro de tu ciudad está esperando la primera voz. Publica en 1 toque y otros entrenadores te verán.
+              </p>
+              <div className="flex flex-col gap-2.5 max-w-[280px] mx-auto">
+                {onQuickFeedTemplate && (
+                  <button
+                    type="button"
+                    onClick={() => onQuickFeedTemplate(`¡Hola desde ${cityLabel}! Entrenando hoy — ¿quién se suma? 💪`)}
+                    className="feed-publish-btn py-3 rounded-2xl text-base"
+                  >
+                    Publicar plantilla en 1 toque
+                  </button>
+                )}
+                <button type="button" onClick={() => setShowFeedPostModal(true)} className="py-2.5 border border-[#FF671F]/40 text-[#FF671F] rounded-2xl text-sm active:bg-[#FF671F]/10">
+                  Escribir mi propio post
+                </button>
+                {!isDemoMode && (
+                  <button type="button" onClick={() => { setFeedMaxProfiles(18); loadGlobalFeed(); }} className="py-2.5 border border-[#2F2F35] text-[#9CA3AF] rounded-2xl text-sm active:bg-[#25252A]">
+                    Cargar comunidad real
+                  </button>
+                )}
               </div>
-              <div className="text-[10px] text-[#9CA3AF]/50 mt-6">Fija tus mejores posts • Las sesiones sync generan highlights automáticos</div>
             </div>
           );
         }

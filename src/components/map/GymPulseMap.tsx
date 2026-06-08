@@ -115,7 +115,7 @@ export interface GymPulseMapProps {
   onGymCheckIn?: (gym: { id: string; name: string; lat: number; lng: number }) => void
   userGymId?: string | null
   /** Fase 101 — embedded widget vs fullscreen shell */
-  layoutMode?: 'embedded' | 'fullscreen'
+  layoutMode?: 'embedded' | 'fullscreen' | 'tab'
 }
 
 export interface GymPulseMapHandle {
@@ -232,6 +232,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   const isQuickAddPartnerRef = useRef(false)
   const showAddPartnerFormRef = useRef(false)
   const isEmbedded = layoutMode === 'embedded'
+  const isTabFill = layoutMode === 'tab'
+  const isFullHeight = layoutMode === 'fullscreen' || isTabFill
 
   // Keep latest values in refs for closures inside Leaflet handlers / debounced updates
   useEffect(() => { partnerLocationsRef.current = partnerLocations }, [partnerLocations])
@@ -976,7 +978,10 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   }
 
   return (
-    <div className={`relative w-full gym-pulse-map-root ${isEmbedded ? 'gym-pulse-map-root--embedded' : ''}`} style={{ zIndex: 10 }}>
+    <div
+      className={`relative w-full gym-pulse-map-root ${isEmbedded ? 'gym-pulse-map-root--embedded' : ''} ${isFullHeight ? 'gym-pulse-map-root--fill' : ''}`}
+      style={{ zIndex: 10 }}
+    >
       {/* Status pill — fullscreen only (embedded uses shell + filters bar) */}
       {!isEmbedded && (
       <div
@@ -1033,8 +1038,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         className={`w-full overflow-hidden border border-[#22c55e]/25 bg-[#0a0a0c] shadow-[0_0_0_1px_rgba(34,197,94,0.12),0_10px_40px_-12px_rgba(0,0,0,0.7)] ${
           radarSweep ? 'gym-pulse-radar-sweep' : ''
         } ${
-          layoutMode === 'fullscreen'
-            ? 'gym-pulse-map-canvas gym-pulse-map-canvas--fs h-full min-h-0 rounded-none border-0'
+          isFullHeight
+            ? 'gym-pulse-map-canvas gym-pulse-map-canvas--fs h-full min-h-0 flex-1 rounded-none border-0'
             : 'h-[min(420px,52vh)] min-h-[360px] rounded-2xl'
         }`}
         id="live-map-container"

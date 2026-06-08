@@ -3,6 +3,8 @@ import type { ReactNode } from 'react'
 
 export interface GymPulseMapShellProps {
   fullscreen: boolean
+  /** Dedicated Map tab: fill flex column between app chrome and bottom nav (not fixed overlay). */
+  tabFill?: boolean
   liveCount: number
   cityLabel?: string
   onToggleFullscreen: () => void
@@ -14,6 +16,7 @@ export interface GymPulseMapShellProps {
 
 export function GymPulseMapShell({
   fullscreen,
+  tabFill = false,
   liveCount,
   cityLabel,
   onToggleFullscreen,
@@ -22,12 +25,18 @@ export function GymPulseMapShell({
   children,
   bottomSheet,
 }: GymPulseMapShellProps) {
+  const shellClass = tabFill
+    ? 'gym-pulse-shell--tab'
+    : fullscreen
+      ? 'gym-pulse-shell--fullscreen'
+      : 'gym-pulse-shell--embedded'
+
   return (
     <div
-      className={`gym-pulse-shell ${fullscreen ? 'gym-pulse-shell--fullscreen' : 'gym-pulse-shell--embedded'}`}
+      className={`gym-pulse-shell ${shellClass}`}
       data-gympulse-tour="pins"
     >
-      {fullscreen && (
+      {fullscreen && !tabFill && (
         <header className="gym-pulse-shell__header">
           {onClose && (
             <button type="button" className="gym-pulse-shell__icon-btn" onClick={onClose} aria-label="Cerrar mapa">
@@ -59,7 +68,7 @@ export function GymPulseMapShell({
       )}
 
       <div className="gym-pulse-shell__map-wrap">
-        {!fullscreen && (
+        {!fullscreen && !tabFill && (
           <button
             type="button"
             className="gym-pulse-shell__expand-fab"

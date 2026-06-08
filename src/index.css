@@ -7826,6 +7826,16 @@ body.gym-pulse-fs-active {
   background: #050506;
 }
 
+/** Map tab: fill main column (no fixed overlay — keeps bottom nav + correct Leaflet height). */
+.gym-pulse-tab-host {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  width: 100%;
+}
+
 .gym-pulse-shell {
   position: relative;
   display: flex;
@@ -7842,6 +7852,14 @@ body.gym-pulse-fs-active {
 .gym-pulse-shell--fullscreen {
   height: 100dvh;
   max-height: 100dvh;
+  background: linear-gradient(180deg, #0a0a0c 0%, #050506 100%);
+}
+
+.gym-pulse-shell--tab {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  max-height: none;
   background: linear-gradient(180deg, #0a0a0c 0%, #050506 100%);
 }
 
@@ -7922,6 +7940,16 @@ body.gym-pulse-fs-active {
   position: relative;
   flex: 1;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.gym-pulse-map-root--fill {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .gym-pulse-shell--embedded .gym-pulse-shell__map-wrap {

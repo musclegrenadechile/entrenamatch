@@ -1,7 +1,7 @@
 // Explore tab — typed props (Phase 63)
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, RefreshCw, MapPin, CheckCircle, X, Heart } from 'lucide-react';
+import { Filter, RefreshCw, MapPin, CheckCircle, X, Heart, Share2, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Profile, CurrentUser } from '../../types';
 import { computeMatchScore } from '../../services/matchingScore';
@@ -9,6 +9,9 @@ import { getDistanceKm } from '../../utils';
 import { isSeedProfileId } from '../../utils/seedProfiles';
 import { SwipeCardSkeleton } from '../ui/SkeletonLoaders';
 import { GeoPromptBanner, GEO_PROMPT_V2_KEY } from './GeoPromptBanner';
+import { buildInviteLink } from '../../utils/sparseCityDefaults';
+import { getLocalWaitlistEntry, saveCityWaitlist } from '../../services/cityWaitlist';
+import type { Firestore } from 'firebase/firestore';
 
 interface ExploreTabProps {
   deck: Profile[];
@@ -25,9 +28,16 @@ interface ExploreTabProps {
   realProfiles?: Profile[];
   isLoadingProfiles?: boolean;
   lastSync?: Date | null;
-  profilePosts?: Record<string, any[]>; // for spectacular muro teaser on cards
+  profilePosts?: Record<string, any[]>;
   syncBonds?: Record<string, { totalMin: number; sessions: number; avgRating: number; bondLevel: number }>;
   networkPower?: number;
+  poolSize?: number;
+  onRelaxFilters?: () => void;
+  cityActiveCount?: number;
+  isDemoMode?: boolean;
+  db?: Firestore | null;
+  firebaseUid?: string | null;
+  onActivateLive?: () => void;
 }
 
 export const ExploreTab = ({
@@ -48,11 +58,31 @@ export const ExploreTab = ({
   profilePosts = {},
   syncBonds = {},
   networkPower = 0,
+  poolSize = 0,
+  onRelaxFilters,
+  cityActiveCount = 0,
+  isDemoMode = false,
+  db = null,
+  firebaseUid = null,
+  onActivateLive,
 }) => {
-  // Local drag state + optimistic removal for snappy swipe/match feel
   const [dragX, setDragX] = useState(0);
   const [optimisticRemovedId, setOptimisticRemovedId] = useState<string | null>(null);
   const [showGeoPrompt, setShowGeoPrompt] = useState(false);
+  const [waitlistEmail, setWaitlistEmail] = useState('');
+  const [waitlistSaved, setWaitlistSaved] = useState(() => !!getLocalWaitlistEntry());
+
+  const referralCode = (currentUser?.id || firebaseUid || 'invite').slice(0, 8);
+  const inviteLink = buildInviteLink(referralCode);
+  const cityLabel = currentUser?.city || 'tu zona';
+  const showSparseBanner = deck.length > 0 && deck.length < 3 && poolSize > deck.length;
+  const filtersAreTight =
+    (filters.trainingTypes?.length || 0) > 0 ||
+    (filters.availability?.length || 0) > 0 ||
+    filters.gender !== 'todos' ||
+    (userLocation && filters.maxDistanceKm < 50) ||
+    filters.onlyAvailableToday ||
+    filters.onlyLiveTraining;
 
   useEffect(() => {
     if (userLocation) {
@@ -416,6 +446,12 @@ export const ExploreTab = ({
             {realProfiles && realProfiles.length > 0 && (
               <span className="text-[10px] text-[#FF671F] font-medium">+ {realProfiles.length} reales <span className="live-pill text-[8px]">en vivo</span></span>
             )}
+            {cityActiveCount > 0 && (
+              <span className="text-[10px] text-[#22c55e] font-medium flex items-center gap-1">
+                <Users size={11} aria-hidden />
+                {cityActiveCount} activos esta semana en {cityLabel}
+              </span>
+            )}
             <span className="text-[10px] text-[#FF671F]/70">• tu equipo de gym en vivo</span>
           </div>
         </div>
@@ -449,6 +485,24 @@ export const ExploreTab = ({
         </div>
       </div>
 
+      {showSparseBanner && (
+        <div className="mb-3 mx-1 p-3 rounded-2xl bg-[#FF671F]/10 border border-[#FF671F]/25 text-[11px] leading-snug">
+          <strong className="text-[#FF671F]">Pocos perfiles con tus filtros.</strong>{' '}
+          <span className="text-[#9CA3AF]">
+            Hay {poolSize} en total — prueba ampliar distancia (50 km) o relajar edad/horarios.
+          </span>
+          {onRelaxFilters && (
+            <button
+              type="button"
+              onClick={onRelaxFilters}
+              className="mt-2 block w-full py-2 rounded-xl bg-[#FF671F] text-black font-bold text-xs active:opacity-90"
+            >
+              Ampliar filtros automáticamente
+            </button>
+          )}
+        </div>
+      )}
+
       {showGeoPrompt && (
         <GeoPromptBanner
           onRequestLocation={() => {
@@ -474,12 +528,80 @@ export const ExploreTab = ({
               <div className="mx-auto w-16 h-16 bg-[#1C1C20] rounded-3xl flex items-center justify-center mb-4 ring-1 ring-[#FF671F]/20">
                 <div className="text-4xl">🏋️</div>
               </div>
-              <div className="text-2xl font-semibold tracking-tight mb-1">¡No más perfiles por hoy!</div>
+              <div className="text-2xl font-semibold tracking-tight mb-1">No hay más perfiles por ahora</div>
               <p className="text-[#9CA3AF] max-w-[300px] mx-auto mb-4 text-sm">
-                {currentUser?.city
-                  ? `Aún no hay más perfiles en ${currentUser.city}. Activa live para aparecer en el mapa e invita a tu gym.`
-                  : 'Ajusta filtros o activa live para que otros te encuentren en el GymPulse.'}
+                {isDemoMode
+                  ? 'En modo prueba puedes reiniciar el deck o invitar amigos a probar EntrenaMatch.'
+                  : `En ${cityLabel} la comunidad está creciendo. Invita a alguien de tu gym o activa live para que te encuentren.`}
               </p>
+
+              <div className="rounded-2xl border border-[#22c55e]/30 bg-[#0a2a1a]/40 p-4 mb-4 text-left max-w-[320px] mx-auto">
+                <p className="text-[10px] uppercase tracking-wider text-[#22c55e] font-bold mb-1">Invitar amigo</p>
+                <p className="text-[11px] text-[#9CA3AF] break-all mb-2">{inviteLink}</p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      if (navigator.share) {
+                        await navigator.share({
+                          title: 'EntrenaMatch',
+                          text: 'Entrena con gente cerca de ti — únete a EntrenaMatch',
+                          url: inviteLink,
+                        })
+                        return
+                      }
+                      await navigator.clipboard.writeText(inviteLink)
+                      toast.success('Enlace copiado — compártelo con tu gym')
+                    } catch {
+                      toast.error('No se pudo compartir')
+                    }
+                  }}
+                  className="w-full py-2.5 rounded-xl bg-[#22c55e] text-black font-bold text-sm flex items-center justify-center gap-2"
+                >
+                  <Share2 size={16} /> Invitar amigo
+                </button>
+              </div>
+
+              {!waitlistSaved && !isDemoMode && (
+                <div className="rounded-2xl border border-[#2F2F35] bg-[#1C1C20] p-4 mb-4 max-w-[320px] mx-auto text-left">
+                  <p className="text-[10px] text-[#9CA3AF] mb-2">Avísame cuando haya más gente en {cityLabel}</p>
+                  <input
+                    type="email"
+                    value={waitlistEmail}
+                    onChange={(e) => setWaitlistEmail(e.target.value)}
+                    placeholder="tu@email.com"
+                    className="w-full mb-2 px-3 py-2 rounded-xl bg-[#0D0D10] border border-[#2F2F35] text-sm"
+                  />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      if (!waitlistEmail.includes('@')) {
+                        toast.error('Ingresa un email válido')
+                        return
+                      }
+                      await saveCityWaitlist(waitlistEmail, cityLabel, {
+                        db,
+                        uid: firebaseUid,
+                      })
+                      setWaitlistSaved(true)
+                      toast.success('¡Listo! Te avisaremos cuando crezca la comunidad')
+                    }}
+                    className="w-full py-2 rounded-xl border border-[#FF671F]/40 text-[#FF671F] text-xs font-semibold"
+                  >
+                    Unirme a la lista de espera
+                  </button>
+                </div>
+              )}
+
+              {onActivateLive && (
+                <button
+                  type="button"
+                  onClick={onActivateLive}
+                  className="mb-3 px-5 py-2.5 bg-[#22c55e] text-black rounded-2xl text-sm font-semibold active:brightness-90"
+                >
+                  Activar LIVE — sé visible en el mapa
+                </button>
+              )}
 
               {/* Active filters summary for better UX */}
               {(filters.trainingTypes.length > 0 || filters.availability.length > 0 || filters.gender !== 'todos' || (userLocation && filters.maxDistanceKm < 100)) && (
@@ -508,11 +630,12 @@ export const ExploreTab = ({
                 </button>
                 <button 
                   onClick={() => {
-                    setShowFilters(true);
+                    if (onRelaxFilters) onRelaxFilters()
+                    else setShowFilters(true)
                   }}
                   className="px-4 py-2.5 text-xs border border-[#2F2F35] rounded-2xl active:bg-[#25252A]"
                 >
-                  Relajar filtros
+                  {filtersAreTight ? 'Relajar filtros' : 'Ver filtros'}
                 </button>
               </div>
               {lastSync && (

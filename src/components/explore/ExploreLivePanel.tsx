@@ -103,6 +103,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     CapacitorCamera,
     uploadPartnerLogoIfNeeded,
     dedicatedMapTab = false,
+    onActivateLive,
   } = props
 
   const [showGymPulseTour, setShowGymPulseTour] = useState(false)
@@ -132,15 +133,25 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
       document.body.classList.remove('gym-pulse-fs-active')
     }
     return () => document.body.classList.remove('gym-pulse-fs-active')
-  }, [mapFullscreen])
+  }, [mapFullscreen, dedicatedMapTab])
 
   useEffect(() => {
-    if (mapFullscreen && gymPulseMapRef?.current?.invalidateSize) {
-      setTimeout(() => {
+    const shouldResize = mapFullscreen || dedicatedMapTab
+    if (shouldResize && gymPulseMapRef?.current?.invalidateSize) {
+      const run = () => {
         try { gymPulseMapRef.current.invalidateSize() } catch { /* ignore */ }
-      }, 120)
+      }
+      run()
+      const t1 = window.setTimeout(run, 120)
+      const t2 = window.setTimeout(run, 320)
+      const t3 = window.setTimeout(run, 600)
+      return () => {
+        window.clearTimeout(t1)
+        window.clearTimeout(t2)
+        window.clearTimeout(t3)
+      }
     }
-  }, [mapFullscreen, dedicatedMapTab])
+  }, [mapFullscreen, dedicatedMapTab, gymPulseMapRef])
 
   useEffect(() => {
     if ((showLiveMap || dedicatedMapTab) && !hasSeenGymPulseTour()) {
@@ -151,6 +162,10 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
   }, [showLiveMap, dedicatedMapTab])
 
   const mapVisible = showLiveMap || dedicatedMapTab
+  const useFixedOverlay = mapFullscreen && !dedicatedMapTab
+  const othersLiveCount = (liveTrainingNow || []).filter(
+    (u: { id?: string }) => u.id && u.id !== effectiveUserId
+  ).length
 
   return (
     <div className={dedicatedMapTab ? 'flex-1 flex flex-col min-h-0 relative' : 'px-4 py-2.5 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden live-banner-glow transition-all duration-300'} style={dedicatedMapTab ? undefined : {boxShadow: '0 1px 0 rgba(34,197,94,0.1)'}}>
@@ -232,9 +247,17 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
       ) : !showLiveMap ? (
         <div className="card card-glass p-6 text-center border border-[#22c55e]/30 relative overflow-hidden">
           <div className="text-5xl mb-3 opacity-90">🏋️‍♂️</div>
-          <div className="font-semibold text-base mb-1.5">Nadie entrenando cerca todavía</div>
-          <div className="text-sm text-[#9CA3AF] mb-4 leading-snug">Activa &quot;Entrenando Ahora (EN VIVO)&quot; en tu Perfil para aparecer en el mapa.</div>
-          <button onClick={() => setActiveTab('profile')} className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90 active:scale-[0.985] transition shadow-sm">Ir a Perfil y activar live →</button>
+          <div className="font-semibold text-base mb-1.5">Aún no hay nadie entrenando cerca</div>
+          <div className="text-sm text-[#9CA3AF] mb-4 leading-snug">Sé el primero en aparecer en el mapa mientras entrenas. Otros te encontrarán al activar live.</div>
+          <button
+            onClick={() => {
+              if (onActivateLive) onActivateLive()
+              else setActiveTab('profile')
+            }}
+            className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90 active:scale-[0.985] transition shadow-sm"
+          >
+            Activar LIVE ahora →
+          </button>
           <div className="absolute -bottom-6 -right-6 text-[70px] opacity-5">📡</div>
         </div>
       ) : (
@@ -276,11 +299,28 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
 
         {mapVisible && (
       <div
-        className={`relative z-10 ${(mapFullscreen || dedicatedMapTab) ? 'gym-pulse-fs-host flex-1' : ''}`}
-        style={(mapFullscreen || dedicatedMapTab) ? undefined : { minHeight: 'min(420px, 52vh)' }}
+        className={`relative z-10 ${useFixedOverlay ? 'gym-pulse-fs-host flex-1' : dedicatedMapTab ? 'gym-pulse-tab-host' : ''}`}
+        style={useFixedOverlay || dedicatedMapTab ? undefined : { minHeight: 'min(420px, 52vh)' }}
       >
+        {othersLiveCount === 0 && (
+          <div className="absolute top-3 left-3 right-3 z-[600] rounded-2xl bg-[#0D0D10]/95 border border-[#22c55e]/30 p-3 text-center pointer-events-auto">
+            <p className="text-xs font-semibold text-white mb-1">Aún no hay nadie entrenando cerca</p>
+            <p className="text-[10px] text-[#9CA3AF] mb-2">Sé el primero en el mapa — activa LIVE mientras entrenas.</p>
+            <button
+              type="button"
+              onClick={() => {
+                if (onActivateLive) onActivateLive()
+                else setActiveTab('profile')
+              }}
+              className="text-[11px] px-4 py-1.5 rounded-xl bg-[#22c55e] text-black font-bold"
+            >
+              Activar LIVE
+            </button>
+          </div>
+        )}
         <GymPulseMapShell
-          fullscreen={mapFullscreen || dedicatedMapTab}
+          fullscreen={useFixedOverlay}
+          tabFill={dedicatedMapTab}
           liveCount={liveCountForUI}
           cityLabel={currentUser?.city || undefined}
           onToggleFullscreen={() => {
@@ -307,7 +347,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
               syncBonds={syncBonds}
               selfUserId={effectiveUserId}
               joiningSyncWith={joiningSyncWith}
-              expanded={mapFullscreen}
+              expanded={mapFullscreen || dedicatedMapTab}
               onShowProfile={setShowFullProfile}
               onStartSync={startSyncWith}
               onFlyToUser={(lat, lng) => {
@@ -339,7 +379,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           isQuickAddPartner={isQuickAddPartner}
           selfIsLive={!!currentUser?.trainingNow}
           devTestCount={devTestLives.length}
-          layoutMode={(mapFullscreen || dedicatedMapTab) ? 'fullscreen' : 'embedded'}
+          layoutMode={dedicatedMapTab ? 'tab' : useFixedOverlay ? 'fullscreen' : 'embedded'}
 
           // New control callbacks (widget now manages its own filter/legend/dev buttons)
           onMapNearOnlyChange={setMapNearOnly}
