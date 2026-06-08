@@ -1,5 +1,5 @@
 // @ts-nocheck
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Filter, RefreshCw, MapPin, CheckCircle, X, Heart } from 'lucide-react';
 import { toast } from 'sonner';
@@ -8,6 +8,7 @@ import { computeMatchScore } from '../../services/matchingScore';
 import { getDistanceKm } from '../../utils';
 import { isSeedProfileId } from '../../utils/seedProfiles';
 import { SwipeCardSkeleton } from '../ui/SkeletonLoaders';
+import { GeoPromptBanner, GEO_PROMPT_V2_KEY } from './GeoPromptBanner';
 
 interface ExploreTabProps {
   deck: Profile[];
@@ -51,6 +52,18 @@ export const ExploreTab = ({
   // Local drag state + optimistic removal for snappy swipe/match feel
   const [dragX, setDragX] = useState(0);
   const [optimisticRemovedId, setOptimisticRemovedId] = useState<string | null>(null);
+  const [showGeoPrompt, setShowGeoPrompt] = useState(false);
+
+  useEffect(() => {
+    if (userLocation) {
+      setShowGeoPrompt(false)
+      return
+    }
+    try {
+      if (localStorage.getItem(GEO_PROMPT_V2_KEY) === '1') return
+    } catch { /* ignore */ }
+    if (propVisibleCards.length > 0) setShowGeoPrompt(true)
+  }, [userLocation, propVisibleCards.length])
 
   // Merge prop visibleCards with optimistic removal for instant visual feedback after swipe
   const visibleCards = optimisticRemovedId
@@ -255,12 +268,7 @@ export const ExploreTab = ({
                 DEMO
               </div>
             )}
-            {isRealProfile && (
-              <div className="inline-flex items-center gap-1 bg-gradient-to-r from-[#FF671F] to-[#E55A1A] text-black text-[9px] font-extrabold px-2.5 py-0.5 rounded-full shadow ring-1 ring-white/70 animate-pulse">
-                ★ REAL TESTER
-              </div>
-            )}
-            {verified && (
+            {isRealProfile && verified && (
               <div className="inline-flex items-center gap-1 bg-[#FF671F] text-black text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
                 <CheckCircle size={12} /> VERIFICADO
               </div>
@@ -272,11 +280,15 @@ export const ExploreTab = ({
             )}
           </div>
 
-          {dist !== null && (
+          {dist !== null ? (
             <div className="bg-black/60 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
               <MapPin size={12} /> {dist} km
             </div>
-          )}
+          ) : !userLocation ? (
+            <div className="bg-black/50 text-[#3b82f6] text-[10px] px-2 py-1 rounded-full">
+              GPS → km
+            </div>
+          ) : null}
         </div>
 
         {/* Bottom info - Premium layout */}
@@ -437,6 +449,20 @@ export const ExploreTab = ({
         </div>
       </div>
 
+      {showGeoPrompt && (
+        <GeoPromptBanner
+          onRequestLocation={() => {
+            requestUserLocation()
+            try { localStorage.setItem(GEO_PROMPT_V2_KEY, '1') } catch { /* ignore */ }
+            setShowGeoPrompt(false)
+          }}
+          onDismiss={() => {
+            try { localStorage.setItem(GEO_PROMPT_V2_KEY, '1') } catch { /* ignore */ }
+            setShowGeoPrompt(false)
+          }}
+        />
+      )}
+
       {/* Cards Stack Area */}
       <div className="relative flex-1 flex items-center justify-center mt-0.5 mb-2 min-h-[460px]">
         {isLoadingProfiles && visibleCards.length === 0 && (
@@ -450,9 +476,9 @@ export const ExploreTab = ({
               </div>
               <div className="text-2xl font-semibold tracking-tight mb-1">¡No más perfiles por hoy!</div>
               <p className="text-[#9CA3AF] max-w-[300px] mx-auto mb-4 text-sm">
-                {realProfiles.length > 0 
-                  ? 'Ajusta filtros o crea una sesión para que otros te encuentren. ¡Sigue buscando tu equipo!'
-                  : 'Aún no hay perfiles reales. ¡Sé el primero en crear una sesión!'}
+                {currentUser?.city
+                  ? `Aún no hay más perfiles en ${currentUser.city}. Activa live para aparecer en el mapa e invita a tu gym.`
+                  : 'Ajusta filtros o activa live para que otros te encuentren en el GymPulse.'}
               </p>
 
               {/* Active filters summary for better UX */}
@@ -560,7 +586,7 @@ export const ExploreTab = ({
                 >
                   <img src={profile.photos[0]} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" alt="" />
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm truncate flex items-center gap-1">{profile.name} {isReal && <span className="text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>} {isNet && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED · F{bond}</span>}</div>
+                    <div className="font-medium text-sm truncate flex items-center gap-1">{profile.name} {isNet && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED · F{bond}</span>}</div>
                     {onReport && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onReport(profile.id); }}

@@ -46,11 +46,11 @@ Sistema de implementación: ver **`SISTEMA_IMPLEMENTACION_FASES.md`**.
 
 | # | Fase | Área | P | Estado |
 |---|------|------|---|--------|
-| 41 | Guided first Live: confetti + reveal mapa automático | Engagement | P0 | 🔲 |
-| 42 | Empty Explore sin label “REAL”; seeds contextuales por ciudad | Matches | P1 | 🔲 |
-| 43 | Sync blocker educativo: modal “Activa live primero” con CTA | Sync | P1 | 🔲 |
-| 44 | Geo prompt v2: valor claro + preview distancia en cards | Explore | P1 | 🔲 |
-| 45 | Weekly Pact inline wizard (primera meta en &lt;30s) | Engagement | P1 | 🔲 |
+| 41 | Guided first Live: confetti + reveal mapa automático | Engagement | P0 | ✅ v0.1.175 |
+| 42 | Empty Explore sin label “REAL”; seeds contextuales por ciudad | Matches | P1 | ✅ v0.1.175 |
+| 43 | Sync blocker educativo: modal “Activa live primero” con CTA | Sync | P1 | ✅ v0.1.175 |
+| 44 | Geo prompt v2: valor claro + preview distancia en cards | Explore | P1 | ✅ v0.1.175 |
+| 45 | Weekly Pact inline wizard (primera meta en &lt;30s) | Engagement | P1 | ✅ v0.1.175 |
 
 ---
 

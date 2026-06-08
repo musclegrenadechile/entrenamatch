@@ -116,6 +116,7 @@ export function HomeTab(props: HomeTabProps) {
     onDismissShopBanner,
     onOpenMarketplace,
     onOpenMarketplaceOrders,
+    showPactWizard,
   } = props
 
   const [homeSubTab, setHomeSubTab] = useState<HomeSubTab>('day')
@@ -238,6 +239,7 @@ export function HomeTab(props: HomeTabProps) {
         weeklyPact={weeklyPact}
         weeklyPactProgress={weeklyPactProgress}
         onPledgeWeeklyPact={onPledgeWeeklyPact}
+        forcePactWizard={showPactWizard}
       />
         </>
       )}

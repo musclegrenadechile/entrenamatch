@@ -78,6 +78,8 @@ import {
 import { resolveNotificationTarget, type NotificationNavTarget } from './utils/notificationNavigation'
 import { resolvePushNotificationData } from './utils/pushNavigation'
 import { normalizeTabNavigation, resolveRedSubTab, isRedTabActive, type RedSubTab } from './utils/tabNavigation'
+import { filterSeedsForCity } from './utils/citySeeds'
+import { SyncLiveBlockerModal } from './components/sync/SyncLiveBlockerModal'
 import {
   ASSUMED_LIVE_SESSION_MS,
   normalizeTrainingSince as normalizeTrainingSinceMs,
@@ -867,6 +869,8 @@ function App() {
   const [redSubTab, setRedSubTab] = useState<RedSubTab>('matches')
   const [homeCoachBanner, setHomeCoachBanner] = useState<HomeCoachBannerContext | null>(null)
   const [showHomeShopBanner, setShowHomeShopBanner] = useState(true)
+  const [showSyncLiveBlocker, setShowSyncLiveBlocker] = useState(false)
+  const [showPactWizard, setShowPactWizard] = useState(false)
   const navigateTab = useCallback((tab: Tab) => {
     const { tab: resolved, redSubTab: sub } = normalizeTabNavigation(tab)
     setActiveTab(resolved)
@@ -2409,9 +2413,10 @@ useEffect(() => {
     const swiped = new Set([...likedIds, ...passedIds])
     
     // Combine real profiles from Firestore + hardcoded seeds
+    const citySeeds = filterSeedsForCity(SEED_PROFILES, currentUser?.city)
     const allProfiles: Profile[] = [
       ...realProfiles,
-      ...SEED_PROFILES
+      ...citySeeds.filter((s) => !realProfiles.some((r) => r.id === s.id)),
     ]
     
     // Remove duplicates (if a real user has same id as a seed - unlikely but safe)
@@ -2424,7 +2429,7 @@ useEffect(() => {
       if (swiped.has(p.id)) return false
       return true
     })
-  }, [likedIds, passedIds, realProfiles])
+  }, [likedIds, passedIds, realProfiles, currentUser?.city])
 
   // Prevents (now - Timestamp) producing NaN which would drop live users from GymPulse lists.
   const normalizeTrainingSince = (val: any): number | undefined => normalizeTrainingSinceMs(val)
@@ -6430,6 +6435,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             : undefined,
         })
 
+        const isFirstLive = !me.lastLiveDate
+        if (isFirstLive) {
+          try {
+            confetti({ particleCount: 200, spread: 90, origin: { y: 0.65 } })
+          } catch { /* ignore */ }
+          setTimeout(() => {
+            navigateTab('explore')
+            setShowLiveMap(true)
+          }, 700)
+          toast.success('¡Tu primer LIVE está en el GymPulse!', {
+            description: 'Abriendo el mapa para que veas tu pin en vivo',
+          })
+        }
+
         const liveUserSnapshot = { ...updated }
         setTimeout(() => {
           checkAndUpdateDailyPulse(liveUserSnapshot)
@@ -6459,9 +6478,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
     const me = currentUserRef.current ?? currentUser
     if (!me?.trainingNow) {
-      toast.error('Activa "Entrenando Ahora (EN VIVO)" primero', {
-        description: 'Usa el botón IR LIVE (abajo a la derecha) o la pestaña Hoy.',
-      })
+      setShowSyncLiveBlocker(true)
       return
     }
 
@@ -10017,6 +10034,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               setMarketplaceScreenMode('orders')
               setShowMarketplace(true)
             }}
+            showPactWizard={showPactWizard}
           />
           </Suspense>
         )}
@@ -10687,6 +10705,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           mpConfigured
         )}
       />
+      <SyncLiveBlockerModal
+        open={showSyncLiveBlocker}
+        onClose={() => setShowSyncLiveBlocker(false)}
+        onActivateLive={() => void toggleLiveTraining('on')}
+        onGoHome={() => navigateTab('home')}
+      />
       <ActivationGuide
         open={showActivationGuide}
         isLive={!!currentUser?.trainingNow}
@@ -10710,7 +10734,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             setActiveTab('explore')
             setShowLiveMap(true)
           }
-          if (step === 'pact') setActiveTab('home')
+          if (step === 'pact') {
+            navigateTab('home')
+            setShowPactWizard(true)
+          }
         }}
       />
       <TrainerCoachView

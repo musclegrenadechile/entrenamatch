@@ -60,6 +60,7 @@ export interface DailyHomeProps {
   onPledgeWeeklyPact?: (
     partial: Omit<WeeklyPact, 'weekKey' | 'pledgedAt'> & { weekKey?: string }
   ) => void
+  forcePactWizard?: boolean
 }
 
 function statusLine(member: TeamMemberView): string {
@@ -119,6 +120,7 @@ export function DailyHome({
   weeklyPact = null,
   weeklyPactProgress,
   onPledgeWeeklyPact,
+  forcePactWizard = false,
 }: DailyHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
   const hour = new Date().getHours()
@@ -473,6 +475,7 @@ export function DailyHome({
             onSyncWithPartner={onJoinMember}
             onMessagePartner={onMessageMember}
             onToggleLive={onToggleLive}
+            forceWizard={forcePactWizard}
           />
         )}
       </section>
