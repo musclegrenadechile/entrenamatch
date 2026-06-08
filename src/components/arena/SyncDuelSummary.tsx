@@ -4,6 +4,7 @@ import {
   computeSyncDuel,
   type SyncDuelAction,
 } from '../../utils/syncDuel'
+import { ArenaSyncReel } from './ArenaSyncReel'
 
 export interface SyncDuelSummaryProps {
   open: boolean
@@ -21,6 +22,8 @@ export interface SyncDuelSummaryProps {
   actions: SyncDuelAction[]
   isNetworkBond?: boolean
   bondLevel?: number
+  weeklyMetaComplete?: boolean
+  weeklyMetaLine?: string
   onClose: () => void
   onResync: (partnerId: string) => void
   onReplay: () => void
@@ -43,6 +46,8 @@ export function SyncDuelSummary({
   actions,
   isNetworkBond,
   bondLevel = 1,
+  weeklyMetaComplete,
+  weeklyMetaLine,
   onClose,
   onResync,
   onReplay,
@@ -75,13 +80,31 @@ export function SyncDuelSummary({
       onClick={onClose}
     >
       <motion.div
-        className="sync-duel-card"
+        className="sync-duel-card sync-duel-card--sala"
         initial={{ opacity: 0, y: 24, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.32, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
       >
         <p className="sync-duel-card__eyebrow">CIERRE DE SYNC</p>
+
+        {weeklyMetaLine && (
+          <div
+            className={`sync-duel-meta-banner ${
+              weeklyMetaComplete ? 'sync-duel-meta-banner--done' : ''
+            }`}
+          >
+            {weeklyMetaComplete ? '🏁 Semana sellada' : '📊 Meta semanal'} · {weeklyMetaLine}
+          </div>
+        )}
+
+        <ArenaSyncReel
+          actions={actions}
+          selfUserId={effectiveUserId}
+          selfName={selfName}
+          partnerName={partnerName}
+        />
+
         <h2 className="sync-duel-card__headline">{duel.headline}</h2>
         <p className="sync-duel-card__subline">{duel.subline}</p>
 
@@ -139,38 +162,41 @@ export function SyncDuelSummary({
           )}
         </div>
 
-        <div className="sync-duel-card__metrics">
-          {metrics.map((row) => {
-            const total = row.self + row.partner
-            const selfPct = total > 0 ? (row.self / total) * 100 : 50
-            const partnerPct = total > 0 ? (row.partner / total) * 100 : 50
-            const selfLeads = row.self > row.partner
-            const partnerLeads = row.partner > row.self
-            return (
-              <div key={row.key} className="sync-duel-metric">
-                <div className="sync-duel-metric__labels">
-                  <span className={selfLeads ? 'sync-duel-metric__lead' : ''}>
-                    {row.self}
-                  </span>
-                  <span className="sync-duel-metric__title">{row.label}</span>
-                  <span className={partnerLeads ? 'sync-duel-metric__lead' : ''}>
-                    {row.partner}
-                  </span>
+        <details className="sync-duel-card__metrics-fold">
+          <summary className="sync-duel-card__metrics-toggle">Ver marcador detallado</summary>
+          <div className="sync-duel-card__metrics">
+            {metrics.map((row) => {
+              const total = row.self + row.partner
+              const selfPct = total > 0 ? (row.self / total) * 100 : 50
+              const partnerPct = total > 0 ? (row.partner / total) * 100 : 50
+              const selfLeads = row.self > row.partner
+              const partnerLeads = row.partner > row.self
+              return (
+                <div key={row.key} className="sync-duel-metric">
+                  <div className="sync-duel-metric__labels">
+                    <span className={selfLeads ? 'sync-duel-metric__lead' : ''}>
+                      {row.self}
+                    </span>
+                    <span className="sync-duel-metric__title">{row.label}</span>
+                    <span className={partnerLeads ? 'sync-duel-metric__lead' : ''}>
+                      {row.partner}
+                    </span>
+                  </div>
+                  <div className="sync-duel-metric__bar" aria-hidden>
+                    <span
+                      className="sync-duel-metric__fill sync-duel-metric__fill--self"
+                      style={{ width: `${selfPct}%` }}
+                    />
+                    <span
+                      className="sync-duel-metric__fill sync-duel-metric__fill--partner"
+                      style={{ width: `${partnerPct}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="sync-duel-metric__bar" aria-hidden>
-                  <span
-                    className="sync-duel-metric__fill sync-duel-metric__fill--self"
-                    style={{ width: `${selfPct}%` }}
-                  />
-                  <span
-                    className="sync-duel-metric__fill sync-duel-metric__fill--partner"
-                    style={{ width: `${partnerPct}%` }}
-                  />
-                </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        </details>
 
         {showRating && (
           <div className="sync-duel-card__rating">

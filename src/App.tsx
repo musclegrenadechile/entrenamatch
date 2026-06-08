@@ -191,6 +191,7 @@ import {
   computeWeeklyPactProgress,
   isPactForCurrentWeek,
 } from './services/weeklyPact'
+import { ARENA_REST_MS, parseParticipantState } from './utils/arenaSyncState'
 import { triggerHaptic } from './utils/haptics'
 import {
   attachGroupMessagesListener,
@@ -828,6 +829,12 @@ function App() {
   useEffect(() => {
     syncWorkoutLogRef.current = syncWorkoutLog
   }, [syncWorkoutLog])
+  const [syncPartnerLiveState, setSyncPartnerLiveState] = useState<import('./utils/arenaSyncState').ArenaParticipantLiveState | null>(null)
+  const [syncRestUntil, setSyncRestUntil] = useState<number | null>(null)
+  const [syncWitnessIds, setSyncWitnessIds] = useState<string[]>([])
+  const [isArenaVoiceRecording, setIsArenaVoiceRecording] = useState(false)
+  const arenaVoiceRecorderRef = useRef<MediaRecorder | null>(null)
+  const arenaVoiceChunksRef = useRef<Blob[]>([])
 
   const arenaExerciseNames = useMemo(
     () => EXERCISE_LIBRARY.slice(0, 12).map((e) => e.name),
@@ -931,6 +938,8 @@ function App() {
     bondLevel?: number
     partnerPhoto?: string
     elapsedSec?: number
+    weeklyMetaComplete?: boolean
+    weeklyMetaLine?: string
   } | null>(null)
 
   // =====================================================
@@ -3087,6 +3096,18 @@ useEffect(() => {
           setSyncRealWitnessCount(
             countExternalWitnesses(data.witnesses, effectiveUserId, syncPartnerId)
           )
+          const exclude = new Set([effectiveUserId, syncPartnerId, 'me'])
+          setSyncWitnessIds(
+            (Array.isArray(data.witnesses) ? data.witnesses : []).filter(
+              (w): w is string => typeof w === 'string' && !exclude.has(w)
+            )
+          )
+          setSyncPartnerLiveState(parseParticipantState(data.participantState, syncPartnerId))
+        }
+        if (typeof data.restUntil === 'number' && data.restUntil > Date.now()) {
+          setSyncRestUntil(data.restUntil)
+        } else {
+          setSyncRestUntil(null)
         }
         if (data.workoutLog?.exercises?.length) {
           setSyncWorkoutLog((prev) => ({
@@ -3112,6 +3133,33 @@ useEffect(() => {
       },
     })
   }, [syncPartnerId, effectiveUserId, firebaseUser?.uid, db, isDemoMode, isFirebaseConfigured, realProfiles])
+
+  // Arena 2.0 — sync live exercise/reps to partner via participantState
+  useEffect(() => {
+    if (!syncPartnerId || !syncStartedAt || isDemoMode || !db) return
+    const t = setTimeout(() => {
+      const log = syncWorkoutLogRef.current
+      void (async () => {
+        try {
+          const { doc, updateDoc } = await import('firebase/firestore')
+          const sessionId = buildSyncSessionId(effectiveUserId, syncPartnerId)
+          await updateDoc(doc(db, 'syncSessions', sessionId), {
+            [`participantState.${effectiveUserId}`]: {
+              activeExercise: log.activeExercise,
+              pendingReps: log.pendingReps,
+              pendingWeightKg: log.pendingWeightKg,
+              setCount: countLoggedSets(log),
+              updatedAt: Date.now(),
+            },
+            updatedAt: Date.now(),
+          })
+        } catch {
+          /* non-fatal */
+        }
+      })()
+    }, 450)
+    return () => clearTimeout(t)
+  }, [syncWorkoutLog, syncPartnerId, syncStartedAt, effectiveUserId, isDemoMode, db])
 
   // Register as witness when viewing GymPulse/feed/explore while others are in EntrenaSync (real FOMO counter).
   useEffect(() => {
@@ -6079,6 +6127,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       setSyncCombo(0)
       setFlyingEmojis([])
       setSyncWorkoutLog(createEmptySyncWorkoutLog())
+      setSyncPartnerLiveState(null)
+      setSyncRestUntil(null)
+      setSyncWitnessIds([])
       setShowSyncArena(true)
       setActiveTab('explore')
       triggerHaptic('medium')
@@ -6241,6 +6292,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     setLastArenaWaveLabel('')
     setArenaWavePulseKey(0)
     setSyncRealWitnessCount(0)
+    setSyncWitnessIds([])
+    setSyncPartnerLiveState(null)
+    setSyncRestUntil(null)
     setShowSyncArena(false)
     // Capture for replay (the unique "remember this session together" moment)
     const capturedActions = [...syncActions]
@@ -6350,6 +6404,22 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       const elapsedSec = syncStartedAtCapture
         ? Math.max(0, Math.floor((Date.now() - syncStartedAtCapture) / 1000))
         : 0
+      const pact = (currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact
+      const projectedStats =
+        syncMins > 0
+          ? mergeWeekStats(
+              currentUser?.weekStats?.weekKey === weekKey ? currentUser.weekStats : undefined,
+              weekKey,
+              0,
+              weekLiveDays.length,
+              syncMins
+            )
+          : currentUser?.weekStats
+      const projectedMeta = computeWeeklyPactProgress(
+        isPactForCurrentWeek(pact) ? pact : null,
+        homeWeekTrainedCount,
+        projectedStats
+      )
       setSyncDuelSummary({
         partnerId: oldPartner,
         partnerName,
@@ -6362,6 +6432,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         isNetworkBond: !!bondAtEnd,
         bondLevel: bondAtEnd?.bondLevel,
         partnerPhoto: partnerProfileAtEnd?.photos?.[0],
+        weeklyMetaComplete: projectedMeta.isComplete,
+        weeklyMetaLine: projectedMeta.pledged
+          ? projectedMeta.isComplete
+            ? 'Semana sellada — meta cumplida'
+            : `${projectedMeta.liveDaysDone}/${projectedMeta.liveDaysTarget} live · ${projectedMeta.syncSessionsDone}/${projectedMeta.syncSessionsTarget} sync`
+          : undefined,
       })
     } else {
       toast(`Sync finalizado: ${minutes}min`, { description: '¡Buen trabajo en equipo! +1 sync streak' })
@@ -6566,6 +6642,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           prs: log.prs,
           updatedAt: Date.now(),
         },
+        [`participantState.${effectiveUserId}`]: {
+          activeExercise: log.activeExercise,
+          pendingReps: log.pendingReps,
+          pendingWeightKg: log.pendingWeightKg,
+          setCount: countLoggedSets(log),
+          updatedAt: Date.now(),
+        },
         updatedAt: Date.now(),
       })
     } catch (e) {
@@ -6573,7 +6656,57 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   }
 
+  const startArenaVoicePing = async () => {
+    if (!syncPartnerId || isArenaVoiceRecording) return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const rec = new MediaRecorder(stream)
+      arenaVoiceRecorderRef.current = rec
+      arenaVoiceChunksRef.current = []
+      const started = Date.now()
+      rec.ondataavailable = (e) => {
+        if (e.data.size > 0) arenaVoiceChunksRef.current.push(e.data)
+      }
+      rec.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop())
+        setIsArenaVoiceRecording(false)
+        arenaVoiceRecorderRef.current = null
+        const duration = Math.min(3, Math.max(1, Math.round((Date.now() - started) / 1000)))
+        await doSyncAction('🎙️', `Voz · ${duration}s`)
+        triggerHaptic('light')
+        toast.success('Voz enviada', { description: `${duration}s a ${syncPartnerId ? 'tu compañero' : 'la sala'}` })
+      }
+      rec.start()
+      setIsArenaVoiceRecording(true)
+      triggerHaptic('medium')
+      setTimeout(() => {
+        if (rec.state === 'recording') rec.stop()
+      }, 3000)
+    } catch {
+      toast.error('Mic no disponible en este dispositivo')
+    }
+  }
+
   const handleArenaSyncAction = async (actionId: string, emoji: string, label: string) => {
+    if (actionId === 'rest' && syncPartnerId) {
+      const until = Date.now() + ARENA_REST_MS
+      setSyncRestUntil(until)
+      if (!isDemoMode && db) {
+        try {
+          const { doc, updateDoc } = await import('firebase/firestore')
+          const sessionId = buildSyncSessionId(effectiveUserId, syncPartnerId)
+          await updateDoc(doc(db, 'syncSessions', sessionId), {
+            restUntil: until,
+            restStartedBy: effectiveUserId,
+            updatedAt: Date.now(),
+          })
+        } catch {
+          /* non-fatal */
+        }
+      }
+      await doSyncAction(emoji, label)
+      return
+    }
     if ((actionId === 'set' || actionId === 'pr') && syncPartnerId && syncStartedAt) {
       const set = {
         reps: syncWorkoutLog.pendingReps,
@@ -12174,8 +12307,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           setsLogged={syncDuelSummary.setsLogged}
           actions={syncDuelSummary.actions}
           isNetworkBond={syncDuelSummary.isNetworkBond}
-          bondLevel={syncDuelSummary.bondLevel}
-          onClose={() => setSyncDuelSummary(null)}
+            bondLevel={syncDuelSummary.bondLevel}
+            weeklyMetaComplete={syncDuelSummary.weeklyMetaComplete}
+            weeklyMetaLine={syncDuelSummary.weeklyMetaLine}
+            onClose={() => setSyncDuelSummary(null)}
           onResync={(partnerId) => {
             setSyncDuelSummary(null)
             tryAutoStartSync(partnerId)
@@ -12378,6 +12513,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         const redLiveCount = Object.keys(syncBonds).filter(
           (id) => !excludeIds.has(id) && isUserLive(id)
         ).length
+        const witnessProfiles = syncWitnessIds
+          .slice(0, 5)
+          .map((id) => {
+            const p = realProfiles.find((pr) => pr.id === id)
+            return p ? { id, name: p.name, photo: p.photos?.[0] } : { id, name: 'Atleta' }
+          })
         return (
           <SyncArenaView
             open
@@ -12397,16 +12538,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             isNetworkBond={!!bond}
             distanceKm={dist}
             liveNearbyCount={liveTrainingNow.length}
-            rippleCount={Math.max(1, arenaWaveCount || Math.floor(syncVibe / 25) + syncRipples.length)}
             witnessCount={syncRealWitnessCount}
+            witnessProfiles={witnessProfiles}
             redLiveCount={redLiveCount}
-            waveCount={arenaWaveCount}
-            lastWaveLabel={lastArenaWaveLabel}
-            wavePulseKey={arenaWavePulseKey}
             cityLabel={currentUser.city || partner?.city}
-            flyingEmojis={flyingEmojis}
+            partnerLiveState={syncPartnerLiveState}
+            restUntil={syncRestUntil}
+            weeklyPactProgress={homeWeeklyPactProgress}
+            isRecordingVoice={isArenaVoiceRecording}
             onSyncAction={handleArenaSyncAction}
             onCapturePhoto={handleArenaCapturePhoto}
+            onVoicePing={startArenaVoicePing}
             activeExercise={syncWorkoutLog.activeExercise}
             pendingReps={syncWorkoutLog.pendingReps}
             pendingWeightKg={syncWorkoutLog.pendingWeightKg}
@@ -12420,15 +12562,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             }
             onPendingWeightChange={(kg) =>
               setSyncWorkoutLog((prev) => ({ ...prev, pendingWeightKg: kg }))
-            }
-            onReplay={() =>
-              setReplaySession({
-                partnerName: partner?.name,
-                minutes: syncStartedAt ? Math.floor((Date.now() - syncStartedAt) / 60000) : 0,
-                vibe: syncVibe,
-                actions: [...syncActions],
-                rating: null,
-              })
             }
           />
         )

@@ -16,10 +16,30 @@ export interface SyncSessionData {
   participants?: string[]
   startedAt?: number
   endedAt?: number
-  actions?: Array<{ at?: number; emoji?: string; label?: string; userId?: string; combo?: number }>
+  actions?: Array<{
+    at?: number
+    emoji?: string
+    label?: string
+    userId?: string
+    combo?: number
+    voiceUrl?: string
+    photoUrl?: string
+  }>
   vibe?: number
   witnesses?: string[]
   lastWitnessAt?: number
+  restUntil?: number | null
+  restStartedBy?: string
+  participantState?: Record<
+    string,
+    {
+      activeExercise?: string
+      pendingReps?: number
+      pendingWeightKg?: number
+      setCount?: number
+      updatedAt?: number
+    }
+  >
   workoutLog?: {
     exercises?: import('../types').WorkoutExercise[]
     prs?: Array<{ exercise: string; weightKg: number; reps: number; at: number }>
