@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.147",
+  "version": "0.1.148",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -19,7 +19,11 @@
     "publish:play": "publish-play.bat",
     "publish:play:internal": "publish-play.bat internal",
     "publish:play:closed": "publish-play.bat closed",
-    "test:fuel": "npx tsx scripts/test-fuel-ai.mjs"
+    "test:fuel": "npx tsx scripts/test-fuel-ai.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "qa:smoke": "node scripts/qa-smoke.mjs",
+    "version:check": "node scripts/version-check.mjs"
   },
   "dependencies": {
     "@capacitor-community/play-integrity": "^8.0.0",
@@ -57,6 +61,7 @@
     "tailwindcss": "^3.4.19",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.12"
+    "vite": "^8.0.12",
+    "vitest": "^3.2.4"
   }
 }

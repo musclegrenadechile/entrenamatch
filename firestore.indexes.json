@@ -96,6 +96,14 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "offerExpiresAt", "order": "ASCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "marketplaceOrders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

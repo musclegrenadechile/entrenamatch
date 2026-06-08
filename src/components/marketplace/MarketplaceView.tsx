@@ -1,11 +1,12 @@
 import { useMemo, useState } from 'react'
-import { ArrowLeft, Pencil, Plus, ShoppingBag, Trash2 } from 'lucide-react'
+import { ArrowLeft, Package, Pencil, Plus, ShoppingBag, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
-import type { MarketplaceCategory, MarketplaceProduct, MarketplaceShippingInfo } from '../../types'
+import type { MarketplaceCategory, MarketplaceOrder, MarketplaceProduct, MarketplaceShippingInfo } from '../../types'
 import {
   formatClp,
   type MarketplaceProductInput,
 } from '../../services/marketplace'
+import { ORDER_STATUS_LABELS } from '../../services/adminOps'
 import { MarketplaceCheckout } from './MarketplaceCheckout'
 
 const CATEGORIES: { id: MarketplaceCategory; label: string }[] = [
@@ -39,6 +40,7 @@ export interface MarketplaceViewProps {
   onUpdateProduct: (id: string, patch: Partial<MarketplaceProductInput>) => Promise<void>
   onDeleteProduct: (id: string) => Promise<void>
   onCheckout: (product: MarketplaceProduct, shipping: MarketplaceShippingInfo) => Promise<string>
+  myOrders?: MarketplaceOrder[]
 }
 
 function ProductCard({
@@ -111,8 +113,10 @@ export function MarketplaceView({
   onUpdateProduct,
   onDeleteProduct,
   onCheckout,
+  myOrders = [],
 }: MarketplaceViewProps) {
   const [filter, setFilter] = useState<MarketplaceCategory | 'all'>('all')
+  const [screenMode, setScreenMode] = useState<'shop' | 'orders'>('shop')
   const [showForm, setShowForm] = useState(false)
   const [checkoutProduct, setCheckoutProduct] = useState<MarketplaceProduct | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -230,14 +234,25 @@ export function MarketplaceView({
           <h1 className="marketplace-screen__title">Tienda</h1>
           <p className="marketplace-screen__sub">Productos oficiales EntrenaMatch</p>
         </div>
-        {isAdmin && (
-          <button type="button" className="marketplace-screen__add" onClick={openCreate}>
-            <Plus size={16} /> Nuevo
-          </button>
-        )}
+        <div className="marketplace-screen__header-actions">
+          {userUid && !isDemoMode && (
+            <button
+              type="button"
+              className={screenMode === 'orders' ? 'marketplace-screen__tab--active' : 'marketplace-screen__tab'}
+              onClick={() => setScreenMode(screenMode === 'orders' ? 'shop' : 'orders')}
+            >
+              <Package size={14} /> Mis pedidos{myOrders.length ? ` (${myOrders.length})` : ''}
+            </button>
+          )}
+          {isAdmin && screenMode === 'shop' && (
+            <button type="button" className="marketplace-screen__add" onClick={openCreate}>
+              <Plus size={16} /> Nuevo
+            </button>
+          )}
+        </div>
       </header>
 
-      {isAdmin && (
+      {isAdmin && screenMode === 'shop' && (
         <p className="marketplace-screen__admin-hint">
           Modo desarrollador — solo tú puedes publicar productos. Usa tu link de Mercado Pago o Stripe en
           &quot;Link de pago&quot;.
@@ -270,6 +285,35 @@ export function MarketplaceView({
         </div>
       )}
 
+      {screenMode === 'orders' ? (
+        <div className="marketplace-orders">
+          {myOrders.length === 0 ? (
+            <p className="marketplace-orders__empty">Aún no tienes pedidos</p>
+          ) : (
+            myOrders.map((o) => (
+              <article key={o.id} className={`marketplace-orders__card marketplace-orders__card--${o.status}`}>
+                <div className="marketplace-orders__head">
+                  <strong>{o.productTitle}</strong>
+                  <span>{formatClp(o.priceClp)}</span>
+                </div>
+                <p className="marketplace-orders__meta">
+                  {ORDER_STATUS_LABELS[o.status]} ·{' '}
+                  {new Date(o.createdAt).toLocaleString('es-CL', {
+                    dateStyle: 'short',
+                    timeStyle: 'short',
+                  })}
+                </p>
+                {o.shipping.address && (
+                  <p className="marketplace-orders__ship">
+                    Envío: {o.shipping.address}, {o.shipping.city}
+                  </p>
+                )}
+              </article>
+            ))
+          )}
+        </div>
+      ) : (
+        <>
       <div className="marketplace-screen__filters">
         <button
           type="button"
@@ -410,6 +454,8 @@ export function MarketplaceView({
           ))
         )}
       </div>
+        </>
+      )}
         </>
       )}
     </div>

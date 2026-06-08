@@ -6729,3 +6729,272 @@ button:not(.live-pill):disabled {
   margin-bottom: 4px;
 }
 
+/* =====================================================
+   ADMIN OPS — pedidos tienda + verificación PT
+   ===================================================== */
+
+.admin-ops-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 86;
+  background: #0a0a0c;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(24px, env(safe-area-inset-bottom));
+}
+
+.admin-ops__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: max(12px, env(safe-area-inset-top)) 16px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  position: sticky;
+  top: 0;
+  background: rgba(10, 10, 12, 0.95);
+  backdrop-filter: blur(8px);
+  z-index: 2;
+}
+
+.admin-ops__back {
+  background: rgba(255, 255, 255, 0.06);
+  border: none;
+  border-radius: 10px;
+  padding: 8px;
+  color: #fff;
+  cursor: pointer;
+}
+
+.admin-ops__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+}
+
+.admin-ops__sub {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 2px 0 0;
+}
+
+.admin-ops__stats {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+}
+
+.admin-ops__stat {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+.admin-ops__stat strong {
+  font-size: 20px;
+  color: #fff;
+}
+
+.admin-ops__tabs {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 12px;
+}
+
+.admin-ops__tab,
+.admin-ops__tab--active {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: #94a3b8;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.admin-ops__tab--active {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+}
+
+.admin-ops__panel {
+  padding: 0 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-ops__empty {
+  text-align: center;
+  color: #64748b;
+  padding: 32px 16px;
+  font-size: 13px;
+}
+
+.admin-ops__order,
+.admin-ops__trainer {
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-ops__order--paid {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.admin-ops__order--cancelled {
+  opacity: 0.6;
+}
+
+.admin-ops__order-head,
+.admin-ops__trainer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-ops__order-meta,
+.admin-ops__order-ship,
+.admin-ops__trainer-meta {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 4px 0 0;
+}
+
+.admin-ops__order-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.admin-ops__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: none;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-ops__btn--ok {
+  background: rgba(34, 197, 94, 0.2);
+  color: #86efac;
+}
+
+.admin-ops__btn--no {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+}
+
+.admin-ops__verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin-left: 8px;
+  font-size: 10px;
+  color: #86efac;
+  background: rgba(34, 197, 94, 0.15);
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.admin-entry__icon {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(168, 85, 247, 0.2)) !important;
+}
+
+/* Marketplace — mis pedidos + header tabs */
+
+.marketplace-screen__header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.marketplace-screen__tab,
+.marketplace-screen__tab--active {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: transparent;
+  color: #94a3b8;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.marketplace-screen__tab--active {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #fca5a5;
+}
+
+.marketplace-orders {
+  padding: 0 16px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.marketplace-orders__empty {
+  text-align: center;
+  color: #64748b;
+  padding: 40px 16px;
+  font-size: 13px;
+}
+
+.marketplace-orders__card {
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.marketplace-orders__card--paid {
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.marketplace-orders__card--cancelled {
+  opacity: 0.65;
+}
+
+.marketplace-orders__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 14px;
+  color: #fff;
+}
+
+.marketplace-orders__meta,
+.marketplace-orders__ship {
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 6px 0 0;
+}
+

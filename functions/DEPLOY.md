@@ -40,10 +40,15 @@ After deploy, rebuild the AAB (the functions are server-side, client AAB is unch
 
 ## EntrenaCoach Fase 2 (v0.1.144+)
 
-Deploy:
+**Mercado Pago** (elige uno):
 ```bash
+# Opción A — Firebase Secret (recomendado cuando tengas APP_USR-...)
+firebase functions:secrets:set MERCADOPAGO_ACCESS_TOKEN --project entrenamatch
+firebase deploy --only functions --project entrenamatch
+
+# Opción B — legacy config
 firebase functions:config:set mercadopago.access_token="APP_USR-..."
-firebase deploy --only functions,firestore:rules --project entrenamatch
+firebase deploy --only functions --project entrenamatch
 ```
 
 Functions added:

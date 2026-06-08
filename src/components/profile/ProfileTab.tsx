@@ -2,6 +2,7 @@ import { ProfileHeaderSection } from './ProfileHeaderSection'
 import { ProfileHeroSection } from './ProfileHeroSection'
 import { ProfileMarketplaceEntry } from './ProfileMarketplaceEntry'
 import { ProfileTrainerCoachEntry } from './ProfileTrainerCoachEntry'
+import { ProfileAdminOpsEntry } from './ProfileAdminOpsEntry'
 import { ProfileActividadSection } from './ProfileActividadSection'
 import { ProfileRendimientoSection } from './ProfileRendimientoSection'
 import { ProfileDailyPulseSection } from './ProfileDailyPulseSection'
@@ -20,6 +21,7 @@ export function ProfileTab(props: ProfileTabProps) {
       <ProfileHeroSection {...props} />
       <ProfileMarketplaceEntry {...props} />
       <ProfileTrainerCoachEntry {...props} />
+      <ProfileAdminOpsEntry {...props} />
       <ProfileActividadSection {...props} />
       <ProfileRendimientoSection {...props} />
       <ProfileDailyPulseSection {...props} />

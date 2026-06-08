@@ -187,4 +187,6 @@ export interface ProfileTabProps {
   uploadProfilePhotoIfNeeded: (dataUrl: string) => Promise<string>
   onOpenMarketplace?: () => void
   onOpenTrainerCoach?: () => void
+  isMarketplaceAdmin?: boolean
+  onOpenAdminOps?: () => void
 }

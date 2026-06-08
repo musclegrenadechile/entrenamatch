@@ -101,6 +101,7 @@ import { ProfileTab } from './components/profile'
 import type { ProfileSection } from './components/profile'
 import { LiveToggleFab } from './components/home'
 import { MarketplaceView } from './components/marketplace'
+import { AdminOpsPanel } from './components/admin'
 import {
   attachMarketplaceAdminListener,
   attachMarketplaceProductsListener,
@@ -111,7 +112,13 @@ import {
   DEMO_MARKETPLACE_PRODUCTS,
   type MarketplaceProductInput,
 } from './services/marketplace'
-import type { MarketplaceProduct, TrainerBooking, TrainerDispatchRequest, TrainerProfile, TrainerProfileInput } from './types'
+import {
+  attachAllMarketplaceOrdersListener,
+  attachMyMarketplaceOrdersListener,
+  updateMarketplaceOrderStatus,
+  setTrainerVerified,
+} from './services/adminOps'
+import type { MarketplaceProduct, TrainerBooking, TrainerDispatchRequest, TrainerProfile, TrainerProfileInput, MarketplaceOrder } from './types'
 import { TrainerCoachView } from './components/trainerCoach'
 import {
   attachTrainerProfilesListener,
@@ -886,6 +893,9 @@ function App() {
   const [showFuelSetupModal, setShowFuelSetupModal] = useState(false)
   const [showFuelLogModal, setShowFuelLogModal] = useState(false)
   const [showMarketplace, setShowMarketplace] = useState(false)
+  const [showAdminOps, setShowAdminOps] = useState(false)
+  const [adminOrders, setAdminOrders] = useState<MarketplaceOrder[]>([])
+  const [myMarketplaceOrders, setMyMarketplaceOrders] = useState<MarketplaceOrder[]>([])
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([])
   const [isMarketplaceAdmin, setIsMarketplaceAdmin] = useState(false)
   const [showTrainerCoach, setShowTrainerCoach] = useState(false)
@@ -4547,6 +4557,22 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       includeInactive: isMarketplaceAdmin,
     })
   }, [isDemoMode, db, firebaseUser?.uid, isMarketplaceAdmin])
+
+  useEffect(() => {
+    if (isDemoMode || !db || !isMarketplaceAdmin) {
+      setAdminOrders([])
+      return undefined
+    }
+    return attachAllMarketplaceOrdersListener(db, setAdminOrders)
+  }, [isDemoMode, db, isMarketplaceAdmin])
+
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid) {
+      setMyMarketplaceOrders([])
+      return undefined
+    }
+    return attachMyMarketplaceOrdersListener(db, firebaseUser.uid, setMyMarketplaceOrders)
+  }, [isDemoMode, db, firebaseUser?.uid])
 
   // EntrenaCoach — entrenadores personales (Fase 1 MVP)
   useEffect(() => {
@@ -10252,6 +10278,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               setTrainerCoachPreselect(null)
               setShowTrainerCoach(true)
             }}
+            isMarketplaceAdmin={isMarketplaceAdmin}
+            onOpenAdminOps={() => setShowAdminOps(true)}
           />
         )}
             {/* DUPLICATE ORPHAN PROFILE JSX REMOVED — all rich Profile UI now lives cleanly inside the activeTab==='profile' conditional (prevents black screens, duplicate renders, and JSX imbalance) */}
@@ -10431,6 +10459,21 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         onCheckout={async (product, shipping) => {
           if (!db || !firebaseUser?.uid) throw new Error('auth')
           return createMarketplaceOrder(db, firebaseUser.uid, product, shipping)
+        }}
+        myOrders={myMarketplaceOrders}
+      />
+      <AdminOpsPanel
+        open={showAdminOps}
+        onClose={() => setShowAdminOps(false)}
+        orders={adminOrders}
+        trainers={trainerProfiles}
+        onUpdateOrderStatus={async (orderId, status) => {
+          if (!db) throw new Error('db')
+          await updateMarketplaceOrderStatus(db, orderId, status)
+        }}
+        onSetTrainerVerified={async (trainerUserId, verified) => {
+          if (!db) throw new Error('db')
+          await setTrainerVerified(db, trainerUserId, verified)
         }}
       />
       <TrainerCoachView
