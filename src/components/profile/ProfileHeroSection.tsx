@@ -56,7 +56,22 @@ export function ProfileHeroSection(props: ProfileTabProps) {
   {/* Bottom hero content - rich & attractive */}
   <div className="absolute bottom-0 left-0 right-0 p-5">
     <div className="font-black text-4xl tracking-[-2.5px] text-white drop-shadow-lg">{currentUser.name}</div>
-    <div className="text-[#9CA3AF] text-sm tracking-wider -mt-1">{currentUser.age} • {currentUser.city}, {currentUser.country}</div>
+    <div className="text-[#9CA3AF] text-sm tracking-wider -mt-1 flex items-center gap-2 flex-wrap">
+      <span>{currentUser.age} • {currentUser.city}, {currentUser.country}</span>
+      {(() => {
+        try {
+          const key = `entrenamatch_city_done_${new Date().getFullYear()}_w_${currentUser.city}`
+          if (localStorage.getItem(key) || localStorage.getItem(`entrenamatch_city_badge_${currentUser.city}`)) {
+            return (
+              <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#FFD700]/20 text-[#FFD700] font-bold border border-[#FFD700]/40">
+                🌆 Campeón {currentUser.city}
+              </span>
+            )
+          }
+        } catch { /* ignore */ }
+        return null
+      })()}
+    </div>
 
     {/* Unique "Tu Poder" mini dashboard in hero - makes profile creation feel valuable immediately */}
     <div className="mt-3 flex gap-2 text-[10px]">

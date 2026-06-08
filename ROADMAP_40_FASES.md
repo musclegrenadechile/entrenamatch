@@ -58,11 +58,11 @@ Sistema de implementación: ver **`SISTEMA_IMPLEMENTACION_FASES.md`**.
 
 | # | Fase | Área | P | Estado |
 |---|------|------|---|--------|
-| 46 | Bond graph visual en perfil (Network Power dashboard) | Perfil | P1 | 🔲 |
-| 47 | Galería replays EntrenaSync en muro | Sync | P1 | 🔲 |
-| 48 | Share card post-sync formato story (1080×1920) | Sync | P2 | 🔲 |
-| 49 | Invitar a Squad desde resumen post-sync | Squads | P2 | 🔲 |
-| 50 | City Challenge: push + modal celebración + badge ciudad | Explore | P1 | 🔲 |
+| 46 | Bond graph visual en perfil (Network Power dashboard) | Perfil | P1 | ✅ v0.1.180 |
+| 47 | Galería replays EntrenaSync en muro | Sync | P1 | ✅ v0.1.180 |
+| 48 | Share card post-sync formato story (1080×1920) | Sync | P2 | ✅ v0.1.180 |
+| 49 | Invitar a Squad desde resumen post-sync | Squads | P2 | ✅ v0.1.180 |
+| 50 | City Challenge: push + modal celebración + badge ciudad | Explore | P1 | ✅ v0.1.180 |
 
 ---
 

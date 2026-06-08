@@ -1,4 +1,4 @@
-// @ts-nocheck — P1 extract from App.tsx; tighten types incrementally
+// Home tab — typed props (Phase 63)
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus } from 'lucide-react'
@@ -8,6 +8,8 @@ import { isGymCheckInFresh } from '../../services/localNetwork'
 import { countRedLiveMembers } from '../../utils/syncFomo'
 import { WorkoutPostCard } from '../workout'
 import { NutritionPostCard } from '../fuel'
+import { SyncReplayGallery } from '../sync/SyncReplayGallery'
+import { WeeklyMomentsReel } from '../engagement/WeeklyMomentsReel'
 import { HomeCoachBanner } from './HomeCoachBanner'
 import { HomeShopBanner } from './HomeShopBanner'
 
@@ -117,6 +119,7 @@ export function HomeTab(props: HomeTabProps) {
     onOpenMarketplace,
     onOpenMarketplaceOrders,
     showPactWizard,
+    profilePostsFeed,
   } = props
 
   const [homeSubTab, setHomeSubTab] = useState<HomeSubTab>('day')
@@ -246,6 +249,17 @@ export function HomeTab(props: HomeTabProps) {
 
       {homeSubTab === 'feed' && (
         <>
+      <WeeklyMomentsReel
+        highlights={[
+          ...(homeWeekDays >= 3 ? [{ label: `${homeWeekDays} días`, emoji: '🔥' }] : []),
+          ...(homeWeekTrainedCount > 0 ? [{ label: `${homeWeekTrainedCount} entrenos`, emoji: '💪' }] : []),
+          ...(activeSyncCount > 0 ? [{ label: `${activeSyncCount} syncs`, emoji: '🔄' }] : []),
+          ...(liveCountForUI > 0 ? [{ label: 'En vivo', emoji: '🟢' }] : []),
+        ]}
+      />
+      {(profilePostsFeed || []).length > 0 && (
+        <SyncReplayGallery posts={profilePostsFeed} />
+      )}
       {/* CINEMATIC REMASTERED FEED HEADER — the social heart of the GymPulse */}
       <div className="feed-header-cinematic sticky top-0 z-10 -mx-4 px-4 pt-3 pb-3">
         <div className="flex items-start justify-between gap-3 px-1">

@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import type { CurrentUser } from '../../types'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
+import { BondGraphView } from './BondGraphView'
 
 export function ProfileSyncNetworkSection(props: ProfileTabProps) {
   const p = profileTabBindings(props)
@@ -185,6 +186,21 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
         {networkStats.numPartners} socios • {networkStats.totalMin}min sincronizados • {networkStats.totalSessions} sesiones • Impacto colectivo en tu rendimiento: +{networkStats.estimatedImpact}%
       </div>
       <div className="mt-1 text-[8px] text-[#FFD700]/80">Tu red esta semana: ~{Math.floor(networkStats.totalMin / 4)} min de alto rendimiento compartido • Esto genera ondas que otros ven en el GymPulse global.</div>
+    </div>
+    <div className="mb-3">
+      <BondGraphView
+        selfName={currentUser.name || 'Tú'}
+        networkPower={networkStats.networkPower}
+        bonds={Object.entries(syncBonds).map(([id, b]: [string, any]) => {
+          const p = [...realProfiles, ...SEED_PROFILES].find((pp) => pp.id === id)
+          return {
+            id,
+            name: p?.name || 'Socio',
+            bondLevel: b.bondLevel || 1,
+            totalMin: b.totalMin || 0,
+          }
+        })}
+      />
     </div>
     <div className="grid grid-cols-2 gap-2">
       {Object.entries(syncBonds).slice(0,4).map(([pid, b]: any) => {

@@ -6,6 +6,7 @@ import {
   type SyncDuelAction,
 } from '../../utils/syncDuel'
 import { ArenaSyncReel } from './ArenaSyncReel'
+import { downloadSyncStory } from '../../utils/syncStoryShare'
 
 export interface SyncDuelSummaryProps {
   open: boolean
@@ -29,6 +30,7 @@ export interface SyncDuelSummaryProps {
   onResync: (partnerId: string) => void
   onReplay: () => void
   onRate?: (rating: number) => void
+  onInviteSquad?: (partnerId: string, partnerName: string) => void
 }
 
 export function SyncDuelSummary({
@@ -53,6 +55,7 @@ export function SyncDuelSummary({
   onResync,
   onReplay,
   onRate,
+  onInviteSquad,
 }: SyncDuelSummaryProps) {
   if (!open) return null
 
@@ -248,6 +251,30 @@ export function SyncDuelSummary({
               className="sync-duel-card__btn sync-duel-card__btn--ghost"
             >
               Ver timeline
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() =>
+              void downloadSyncStory({
+                selfName,
+                partnerName,
+                minutes,
+                vibe,
+                setsLogged,
+              })
+            }
+            className="sync-duel-card__btn sync-duel-card__btn--ghost"
+          >
+            📱 Story 1080×1920
+          </button>
+          {onInviteSquad && (
+            <button
+              type="button"
+              onClick={() => onInviteSquad(partnerId, partnerName)}
+              className="sync-duel-card__btn sync-duel-card__btn--ghost"
+            >
+              👥 Invitar a Squad
             </button>
           )}
           <button

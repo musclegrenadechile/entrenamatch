@@ -94,14 +94,11 @@ import { useProfile } from './contexts/ProfileContext'
 import { useFilters } from './hooks/useFilters'
 import { useRealSessions } from './hooks/useRealSessions'
 import { useSwipeDeck } from './hooks/useSwipeDeck'
-import { ExploreTab } from './components/explore/ExploreTab'
 import { ExploreLivePanel } from './components/explore/ExploreLivePanel'
 import { SquadsTab } from './components/squads'
 import { RedTab } from './components/red'
-import { MatchesTab } from './components/matches'
 import { SessionsTab } from './components/sessions'
 import { ChatListPanel, ChatView } from './components/messages'
-import { ProfileTab } from './components/profile'
 import type { ProfileSection } from './components/profile'
 import { LiveToggleFab } from './components/home'
 import { MarketplaceView } from './components/marketplace'
@@ -159,7 +156,12 @@ import {
   findNearbyDispatchTrainers,
 } from './services/trainerDispatch'
 import { createTrainerMpCheckout } from './services/trainerPayments'
-import { LazyHomeTab, TAB_LOADING } from './components/app/LazyTabs'
+import { LazyHomeTab, LazyExploreTab, LazyProfileTab, LazyMatchesTab, TAB_LOADING } from './components/app/LazyTabs'
+import { TabErrorBoundary } from './components/app/TabErrorBoundary'
+import { CityChallengeCelebrationModal } from './components/explore/CityChallengeCelebrationModal'
+import { parseReferralFromUrl } from './components/growth/ReferralInviteCard'
+import { SafetyActionSheet } from './components/safety/SafetyActionSheet'
+import { createEmptySyncArenaSnapshot } from './sync/syncArenaState'
 import { fetchGlobalProfilePosts, fetchProfilePostById, togglePostLikeInFirestore, persistPostReactionsInFirestore } from './services/profilePosts'
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
 import { isQuickDemoSession, clearQuickDemoSession } from './utils/quickDemo'
@@ -871,6 +873,9 @@ function App() {
   const [showHomeShopBanner, setShowHomeShopBanner] = useState(true)
   const [showSyncLiveBlocker, setShowSyncLiveBlocker] = useState(false)
   const [showPactWizard, setShowPactWizard] = useState(false)
+  const [showCityCelebration, setShowCityCelebration] = useState(false)
+  const [safetySheetTarget, setSafetySheetTarget] = useState<{ id: string; name: string } | null>(null)
+  const syncArenaSnapshotRef = useRef(createEmptySyncArenaSnapshot())
   const navigateTab = useCallback((tab: Tab) => {
     const { tab: resolved, redSubTab: sub } = normalizeTabNavigation(tab)
     setActiveTab(resolved)
@@ -2914,10 +2919,20 @@ useEffect(() => {
         description: `${homeCityChallengeMerged.targetMinutes} min live+sync esta semana — la ciudad lo logró 🏆`,
       })
       confetti({ particleCount: 90, spread: 75, origin: { y: 0.65 } })
+      setShowCityCelebration(true)
+      try {
+        localStorage.setItem(`entrenamatch_city_badge_${homeCityChallengeMerged.cityLabel}`, '1')
+      } catch { /* ignore */ }
     } catch {}
   }, [homeCityChallengeMerged, homeCityNorm])
 
-  // Beta Feedback enhanced (Phase 0 - structured + history)
+  useEffect(() => {
+    const ref = parseReferralFromUrl()
+    if (ref) {
+      try { localStorage.setItem('entrenamatch_referral', ref) } catch { /* ignore */ }
+      toast.success('Invitación de gym recibida', { description: `Código: ${ref}` })
+    }
+  }, [])
   const [feedbackType, setFeedbackType] = useState<'bug' | 'idea' | 'ux' | 'other'>('idea')
   const [feedbackRating, setFeedbackRating] = useState(5)
   const [feedbackText, setFeedbackText] = useState('')
@@ -9715,6 +9730,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         )}
 
         {activeTab === 'explore' && (
+          <TabErrorBoundary tabName="Explorar">
           <PullToRefresh
             className="flex-1 flex flex-col min-h-0 overflow-auto"
             disabled={isDemoMode}
@@ -9722,7 +9738,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               await silentRefreshReal()
             }}
           >
-          <ExploreTab
+          <Suspense fallback={TAB_LOADING}>
+          <LazyExploreTab
             deck={deck}
             visibleCards={visibleCards}
             userLocation={userLocation}
@@ -9749,7 +9766,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             syncBonds={syncBonds}
             networkPower={networkStats.networkPower}
           />
+          </Suspense>
           </PullToRefresh>
+          </TabErrorBoundary>
         )}
 
         {/* FULL LIVE MODAL - spectacular full list of live training near you. Enhanced with search, sort by dist/urgency, quick chat, simple visual "map" row (dots sorted by dist). Makes the killer feature even stronger. */}
@@ -10035,6 +10054,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               setShowMarketplace(true)
             }}
             showPactWizard={showPactWizard}
+            profilePostsFeed={(profilePosts[effectiveUserId] || []).concat(
+              Object.values(profilePosts).flat().filter((p: any) => p.postType === 'workout')
+            ).slice(0, 20)}
+            effectiveUserId={effectiveUserId}
           />
           </Suspense>
         )}
@@ -10242,11 +10265,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               await silentRefreshReal()
             }}
           >
-          <MatchesTab
+          <TabErrorBoundary tabName="Matches">
+          <Suspense fallback={TAB_LOADING}>
+          <LazyMatchesTab
             matchProfiles={matchProfiles}
             blockedUsers={blockedUsers}
             syncBonds={syncBonds}
             realProfiles={realProfiles}
+            currentUser={currentUser}
             userLocation={userLocation}
             reviews={reviews}
             squads={squads}
@@ -10258,6 +10284,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             onExplore={() => navigateTab('explore')}
             onOpenChat={openChat}
           />
+          </Suspense>
+          </TabErrorBoundary>
           </PullToRefresh>
         )}
 
@@ -10331,13 +10359,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   }
                 }}
                 onStartSync={() => startSyncWith(activeChat, chatProfile?.name || '')}
-                onReport={() => openReport(activeChat, '1v1_chat')}
+                onReport={() => setSafetySheetTarget({ id: activeChat, name: chatProfile?.name || 'Usuario' })}
                 onBlock={async () => {
-                  if (confirm('¿Bloquear este usuario? No lo verás más.')) {
-                    await blockUser(activeChat)
-                    setActiveChat(null)
-                  }
+                  await blockUser(activeChat)
+                  setActiveChat(null)
                 }}
+                currentUser={currentUser}
+                voiceStreak={dailyPulse?.voiceStreak || 0}
                 onShowReviewModal={() => {
                   setShowReviewModalFor(activeChat)
                   setReviewRating(5)
@@ -10419,7 +10447,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
         {/* ===== PROFILE - Premium Pre-Alpha experience (self-contained to prevent black screens) */}
         {activeTab === 'profile' && currentUser && (
-          <ProfileTab
+          <TabErrorBoundary tabName="Perfil">
+          <Suspense fallback={TAB_LOADING}>
+          <LazyProfileTab
             currentUser={currentUser}
             showDailyPulseBanner={showDailyPulseBanner}
             dailyPulse={dailyPulse}
@@ -10548,6 +10578,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             isMarketplaceAdmin={isMarketplaceAdmin}
             onOpenAdminOps={() => setShowAdminOps(true)}
           />
+          </Suspense>
+          </TabErrorBoundary>
         )}
             {/* DUPLICATE ORPHAN PROFILE JSX REMOVED — all rich Profile UI now lives cleanly inside the activeTab==='profile' conditional (prevents black screens, duplicate renders, and JSX imbalance) */}
 
@@ -10710,6 +10742,19 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         onClose={() => setShowSyncLiveBlocker(false)}
         onActivateLive={() => void toggleLiveTraining('on')}
         onGoHome={() => navigateTab('home')}
+      />
+      <CityChallengeCelebrationModal
+        open={showCityCelebration}
+        cityLabel={homeCityChallengeMerged?.cityLabel || currentUser?.city || 'Tu ciudad'}
+        targetMinutes={homeCityChallengeMerged?.targetMinutes || 500}
+        onClose={() => setShowCityCelebration(false)}
+      />
+      <SafetyActionSheet
+        open={!!safetySheetTarget}
+        targetName={safetySheetTarget?.name || ''}
+        onClose={() => setSafetySheetTarget(null)}
+        onReport={() => safetySheetTarget && openReport(safetySheetTarget.id, '1v1_chat')}
+        onBlock={() => safetySheetTarget && void blockUser(safetySheetTarget.id).then(() => setActiveChat(null))}
       />
       <ActivationGuide
         open={showActivationGuide}
@@ -13011,6 +13056,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               minutes: syncDuelSummary.minutes,
               vibe: syncDuelSummary.vibe,
               actions: syncDuelSummary.actions,
+            })
+          }}
+          onInviteSquad={(partnerId, partnerName) => {
+            setSyncDuelSummary(null)
+            navigateTab('squads')
+            toast.success(`Invita a ${partnerName.split(' ')[0]} a tu Squad`, {
+              description: 'Crea un squad o ábrelo para añadir a tu compañero de sync',
             })
           }}
         />
