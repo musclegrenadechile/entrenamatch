@@ -15,6 +15,8 @@ export interface NotificationNavTarget {
   showLiveModal?: boolean
   openTrainerCoach?: boolean
   trainerCoachTab?: 'explore' | 'now' | 'sessions' | 'trainer'
+  openMarketplace?: boolean
+  marketplaceOrdersTab?: boolean
   startSyncWith?: { partnerId: string; partnerName?: string }
 }
 

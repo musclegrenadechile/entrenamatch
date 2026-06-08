@@ -69,6 +69,7 @@ Functions added:
 - `onMatchCreated` — push nuevo match
 - `onSessionGroupMessageCreated` / `onSquadGroupMessageCreated` — push chat grupal
 - `createMarketplaceMpCheckout` — checkout tienda
+- `onMarketplaceOrderUpdated` — push al comprador (paid/shipped/delivered/cancelled)
 - `mercadoPagoWebhook` — confirma `paid_card` (bookings) y `paid` (marketplaceOrders)
 
 Deploy:

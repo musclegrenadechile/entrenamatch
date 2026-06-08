@@ -113,5 +113,14 @@ export async function setTrainerVerified(
 export const ORDER_STATUS_LABELS: Record<MarketplaceOrderStatus, string> = {
   pending_payment: 'Pendiente pago',
   paid: 'Pagado',
+  shipped: 'Enviado',
+  delivered: 'Entregado',
   cancelled: 'Cancelado',
 }
+
+export const ORDER_STATUS_FLOW: MarketplaceOrderStatus[] = [
+  'pending_payment',
+  'paid',
+  'shipped',
+  'delivered',
+]

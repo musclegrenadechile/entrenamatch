@@ -1,12 +1,13 @@
-import { useMemo, useState } from 'react'
-import { ArrowLeft, Package, Pencil, Plus, ShoppingBag, Trash2 } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { ArrowLeft, ExternalLink, Package, Pencil, Plus, ShoppingBag, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { MarketplaceCategory, MarketplaceOrder, MarketplaceProduct, MarketplaceShippingInfo } from '../../types'
 import {
   formatClp,
   type MarketplaceProductInput,
 } from '../../services/marketplace'
-import { ORDER_STATUS_LABELS } from '../../services/adminOps'
+import { ORDER_STATUS_LABELS, ORDER_STATUS_FLOW } from '../../services/adminOps'
+import { openMarketplacePayment } from '../../services/marketplacePayments'
 import { MarketplaceCheckout } from './MarketplaceCheckout'
 
 const CATEGORIES: { id: MarketplaceCategory; label: string }[] = [
@@ -41,6 +42,7 @@ export interface MarketplaceViewProps {
   onDeleteProduct: (id: string) => Promise<void>
   onCheckout: (product: MarketplaceProduct, shipping: MarketplaceShippingInfo) => Promise<string>
   myOrders?: MarketplaceOrder[]
+  initialScreenMode?: 'shop' | 'orders'
 }
 
 function ProductCard({
@@ -114,9 +116,15 @@ export function MarketplaceView({
   onDeleteProduct,
   onCheckout,
   myOrders = [],
+  initialScreenMode = 'shop',
 }: MarketplaceViewProps) {
   const [filter, setFilter] = useState<MarketplaceCategory | 'all'>('all')
-  const [screenMode, setScreenMode] = useState<'shop' | 'orders'>('shop')
+  const [screenMode, setScreenMode] = useState<'shop' | 'orders'>(initialScreenMode)
+  const [payingOrderId, setPayingOrderId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (open) setScreenMode(initialScreenMode)
+  }, [open, initialScreenMode])
   const [showForm, setShowForm] = useState(false)
   const [checkoutProduct, setCheckoutProduct] = useState<MarketplaceProduct | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -214,6 +222,28 @@ export function MarketplaceView({
     }
   }
 
+  const handleRetryPayment = async (order: MarketplaceOrder) => {
+    if (isDemoMode) {
+      toast.error('Inicia sesión real para pagar')
+      return
+    }
+    setPayingOrderId(order.id)
+    try {
+      const product = products.find((p) => p.id === order.productId)
+      const { usedFallback } = await openMarketplacePayment(order.id, product?.paymentUrl)
+      toast.success(usedFallback ? 'Link de pago abierto' : 'Completa el pago en Mercado Pago')
+    } catch {
+      toast.error('No se pudo abrir el checkout')
+    } finally {
+      setPayingOrderId(null)
+    }
+  }
+
+  const orderStepIndex = (status: MarketplaceOrder['status']) => {
+    const idx = ORDER_STATUS_FLOW.indexOf(status)
+    return idx >= 0 ? idx : -1
+  }
+
   return (
     <div className="marketplace-screen" role="dialog" aria-label="Tienda EntrenaMatch">
       {checkoutProduct ? (
@@ -303,10 +333,44 @@ export function MarketplaceView({
                     timeStyle: 'short',
                   })}
                 </p>
+                {o.status !== 'cancelled' && (
+                  <div className="marketplace-orders__steps" aria-label="Estado del pedido">
+                    {ORDER_STATUS_FLOW.map((step, i) => {
+                      const current = orderStepIndex(o.status)
+                      const done = current >= i
+                      const active = current === i
+                      return (
+                        <span
+                          key={step}
+                          className={
+                            done
+                              ? active
+                                ? 'marketplace-orders__step marketplace-orders__step--active'
+                                : 'marketplace-orders__step marketplace-orders__step--done'
+                              : 'marketplace-orders__step'
+                          }
+                        >
+                          {ORDER_STATUS_LABELS[step]}
+                        </span>
+                      )
+                    })}
+                  </div>
+                )}
                 {o.shipping.address && (
                   <p className="marketplace-orders__ship">
                     Envío: {o.shipping.address}, {o.shipping.city}
                   </p>
+                )}
+                {o.status === 'pending_payment' && (
+                  <button
+                    type="button"
+                    className="marketplace-orders__pay"
+                    disabled={payingOrderId === o.id}
+                    onClick={() => void handleRetryPayment(o)}
+                  >
+                    <ExternalLink size={14} />
+                    {payingOrderId === o.id ? 'Abriendo…' : 'Pagar ahora'}
+                  </button>
                 )}
               </article>
             ))

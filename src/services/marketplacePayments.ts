@@ -24,3 +24,21 @@ export async function createMarketplaceMpCheckout(
   const res = await fn({ orderId })
   return res.data
 }
+
+/** Abre checkout MP para pedido pendiente (Mis pedidos). */
+export async function openMarketplacePayment(
+  orderId: string,
+  fallbackPaymentUrl?: string
+): Promise<{ usedFallback: boolean }> {
+  try {
+    const mp = await createMarketplaceMpCheckout(orderId)
+    window.open(mp.initPoint, '_blank', 'noopener,noreferrer')
+    return { usedFallback: !!mp.usedFallback }
+  } catch (err) {
+    if (fallbackPaymentUrl?.startsWith('https://')) {
+      window.open(fallbackPaymentUrl, '_blank', 'noopener,noreferrer')
+      return { usedFallback: true }
+    }
+    throw err
+  }
+}

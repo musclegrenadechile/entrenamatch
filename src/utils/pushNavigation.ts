@@ -43,6 +43,10 @@ export function resolvePushNotificationData(data: PushData): NotificationNavTarg
     }
   }
 
+  if (type === 'marketplace_order_update') {
+    return { tab: 'profile', openMarketplace: true, marketplaceOrdersTab: true }
+  }
+
   const isLive = type === 'team_live' || type === 'network_live'
   const isSync = type === 'team_sync' || type === 'network_sync'
 

@@ -329,7 +329,12 @@ export interface MarketplaceShippingInfo {
   region: string
 }
 
-export type MarketplaceOrderStatus = 'pending_payment' | 'paid' | 'cancelled'
+export type MarketplaceOrderStatus =
+  | 'pending_payment'
+  | 'paid'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled'
 
 export interface MarketplaceOrder {
   id: string

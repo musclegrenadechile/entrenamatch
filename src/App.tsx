@@ -893,6 +893,7 @@ function App() {
   const [showFuelSetupModal, setShowFuelSetupModal] = useState(false)
   const [showFuelLogModal, setShowFuelLogModal] = useState(false)
   const [showMarketplace, setShowMarketplace] = useState(false)
+  const [marketplaceScreenMode, setMarketplaceScreenMode] = useState<'shop' | 'orders'>('shop')
   const [showAdminOps, setShowAdminOps] = useState(false)
   const [adminOrders, setAdminOrders] = useState<MarketplaceOrder[]>([])
   const [myMarketplaceOrders, setMyMarketplaceOrders] = useState<MarketplaceOrder[]>([])
@@ -7739,6 +7740,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       setTrainerCoachInitialTab(target.trainerCoachTab)
       setShowTrainerCoach(true)
     }
+    if (target.openMarketplace) {
+      setMarketplaceScreenMode(target.marketplaceOrdersTab ? 'orders' : 'shop')
+      setShowMarketplace(true)
+    }
     if (target.startSyncWith) {
       const { partnerId, partnerName } = target.startSyncWith
       const name =
@@ -10273,7 +10278,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             reorderGallery={reorderGallery}
             deleteExtraPhoto={deleteExtraPhoto}
             uploadProfilePhotoIfNeeded={uploadProfilePhotoIfNeeded}
-            onOpenMarketplace={() => setShowMarketplace(true)}
+            onOpenMarketplace={() => {
+              setMarketplaceScreenMode('shop')
+              setShowMarketplace(true)
+            }}
             onOpenTrainerCoach={() => {
               setTrainerCoachPreselect(null)
               setShowTrainerCoach(true)
@@ -10438,7 +10446,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       {/* Bottom Navigation - Premium, energetic feel (polished aesthetics) */}
       <MarketplaceView
         open={showMarketplace}
-        onClose={() => setShowMarketplace(false)}
+        onClose={() => {
+          setShowMarketplace(false)
+          setMarketplaceScreenMode('shop')
+        }}
+        initialScreenMode={marketplaceScreenMode}
         products={marketplaceProducts}
         isAdmin={isMarketplaceAdmin}
         isDemoMode={isDemoMode}

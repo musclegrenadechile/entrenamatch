@@ -339,6 +339,7 @@ export function TrainerCoachView({
   initialTab,
 }: TrainerCoachViewProps) {
   const [tab, setTab] = useState<'explore' | 'now' | 'sessions' | 'trainer'>(initialTab || 'explore')
+  const [verifiedOnly, setVerifiedOnly] = useState(false)
   const [bookingTrainer, setBookingTrainer] = useState<TrainerProfile | null>(null)
   const [trainerForm, setTrainerForm] = useState<TrainerProfileInput>(EMPTY_TRAINER_FORM)
   const [savingProfile, setSavingProfile] = useState(false)
@@ -383,6 +384,10 @@ export function TrainerCoachView({
     () => bookings.filter((b) => !['declined', 'cancelled', 'paid_cash', 'paid_card'].includes(b.status)).length,
     [bookings]
   )
+  const exploreTrainers = useMemo(() => {
+    const active = trainers.filter((t) => t.active)
+    return verifiedOnly ? active.filter((t) => t.verified) : active
+  }, [trainers, verifiedOnly])
 
   if (!open) return null
 
@@ -589,13 +594,36 @@ export function TrainerCoachView({
                 Ofrecer servicios como entrenador
               </button>
             </div>
+          ) : exploreTrainers.length === 0 ? (
+            <div className="trainer-coach__empty">
+              <BadgeCheck size={32} className="opacity-50" />
+              <h3>Sin verificados</h3>
+              <p>Ningún entrenador verificado aún. Prueba sin el filtro.</p>
+              <button type="button" className="trainer-coach__cta" onClick={() => setVerifiedOnly(false)}>
+                Ver todos
+              </button>
+            </div>
           ) : (
             <>
+              <div className="trainer-coach__explore-filters">
+                <button
+                  type="button"
+                  className={
+                    verifiedOnly
+                      ? 'trainer-coach__filter--active'
+                      : 'trainer-coach__filter'
+                  }
+                  onClick={() => setVerifiedOnly((v) => !v)}
+                >
+                  <BadgeCheck size={14} /> Solo verificados
+                </button>
+              </div>
               <p className="trainer-coach__list-label">
-                {trainers.length} entrenador{trainers.length !== 1 ? 'es' : ''} disponible
-                {trainers.length !== 1 ? 's' : ''}
+                {exploreTrainers.length} entrenador{exploreTrainers.length !== 1 ? 'es' : ''}{' '}
+                {verifiedOnly ? 'verificado' : 'disponible'}
+                {exploreTrainers.length !== 1 ? 's' : ''}
               </p>
-              {trainers.map((t) => (
+              {exploreTrainers.map((t) => (
                 <TrainerCard key={t.userId} trainer={t} onBook={() => startBook(t)} />
               ))}
             </>

@@ -32,12 +32,15 @@ export function AdminOpsPanel({
   onSetTrainerVerified,
 }: AdminOpsPanelProps) {
   const [tab, setTab] = useState<'orders' | 'trainers'>('orders')
+  const [orderFilter, setOrderFilter] = useState<MarketplaceOrder['status'] | 'all'>('all')
   const [busy, setBusy] = useState<string | null>(null)
 
   if (!open) return null
 
   const pendingOrders = orders.filter((o) => o.status === 'pending_payment')
   const unverifiedTrainers = trainers.filter((t) => t.active && !t.verified)
+  const filteredOrders =
+    orderFilter === 'all' ? orders : orders.filter((o) => o.status === orderFilter)
 
   const handleOrder = async (id: string, status: MarketplaceOrder['status']) => {
     setBusy(id)
@@ -110,10 +113,26 @@ export function AdminOpsPanel({
       <div className="admin-ops__panel">
         {tab === 'orders' && (
           <>
-            {orders.length === 0 ? (
-              <p className="admin-ops__empty">Sin pedidos aún</p>
+            <div className="admin-ops__filters">
+              {(['all', 'pending_payment', 'paid', 'shipped', 'delivered', 'cancelled'] as const).map(
+                (f) => (
+                  <button
+                    key={f}
+                    type="button"
+                    className={
+                      orderFilter === f ? 'admin-ops__filter--active' : 'admin-ops__filter'
+                    }
+                    onClick={() => setOrderFilter(f)}
+                  >
+                    {f === 'all' ? 'Todos' : ORDER_STATUS_LABELS[f]}
+                  </button>
+                )
+              )}
+            </div>
+            {filteredOrders.length === 0 ? (
+              <p className="admin-ops__empty">Sin pedidos en este filtro</p>
             ) : (
-              orders.map((o) => (
+              filteredOrders.map((o) => (
                 <article key={o.id} className={`admin-ops__order admin-ops__order--${o.status}`}>
                   <div className="admin-ops__order-head">
                     <strong>{o.productTitle}</strong>
@@ -151,6 +170,30 @@ export function AdminOpsPanel({
                         onClick={() => void handleOrder(o.id, 'cancelled')}
                       >
                         <X size={14} /> Cancelar
+                      </button>
+                    </div>
+                  )}
+                  {o.status === 'paid' && (
+                    <div className="admin-ops__order-actions">
+                      <button
+                        type="button"
+                        className="admin-ops__btn admin-ops__btn--ok"
+                        disabled={busy === o.id}
+                        onClick={() => void handleOrder(o.id, 'shipped')}
+                      >
+                        <Package size={14} /> Marcar enviado
+                      </button>
+                    </div>
+                  )}
+                  {o.status === 'shipped' && (
+                    <div className="admin-ops__order-actions">
+                      <button
+                        type="button"
+                        className="admin-ops__btn admin-ops__btn--ok"
+                        disabled={busy === o.id}
+                        onClick={() => void handleOrder(o.id, 'delivered')}
+                      >
+                        <Check size={14} /> Marcar entregado
                       </button>
                     </div>
                   )}

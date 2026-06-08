@@ -1178,6 +1178,52 @@ exports.advanceExpiredDispatchesScheduled = functions.pubsub
     return null;
   });
 
+/** Push al comprador cuando cambia el estado del pedido marketplace. */
+exports.onMarketplaceOrderUpdated = functions.firestore
+  .document('marketplaceOrders/{orderId}')
+  .onUpdate(async (change, context) => {
+    const before = change.before.data() || {};
+    const after = change.after.data() || {};
+    if (before.status === after.status) return null;
+
+    const userId = after.userId;
+    if (!userId) return null;
+
+    const title = after.productTitle || 'Tu pedido';
+    const messages = {
+      paid: {
+        title: '✅ Pedido pagado',
+        body: `"${title}" fue confirmado. Preparamos tu envío.`,
+      },
+      shipped: {
+        title: '📦 Pedido enviado',
+        body: `"${title}" está en camino.`,
+      },
+      delivered: {
+        title: '🎉 Pedido entregado',
+        body: `"${title}" fue entregado. ¡Disfrútalo!`,
+      },
+      cancelled: {
+        title: 'Pedido cancelado',
+        body: `Se canceló "${title}".`,
+      },
+    };
+
+    const msg = messages[after.status];
+    if (!msg) return null;
+
+    await sendPushToUser(userId, {
+      title: msg.title,
+      body: msg.body,
+      data: {
+        type: 'marketplace_order_update',
+        orderId: context.params.orderId,
+        status: String(after.status),
+      },
+    });
+    return null;
+  });
+
 /** Callable: checkout MP para pedido marketplace. */
 exports.createMarketplaceMpCheckout = functions
   .runWith({ timeoutSeconds: 30 })

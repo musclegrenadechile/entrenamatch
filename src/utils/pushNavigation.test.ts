@@ -41,13 +41,11 @@ describe('resolvePushNotificationData', () => {
     })
   })
 
-  it('opens sesiones on session group message', () => {
-    expect(
-      resolvePushNotificationData({ type: 'group_message', groupChatId: 'sess_1' })
-    ).toEqual({
-      tab: 'sesiones',
-      groupChatId: 'sess_1',
-      partnerName: undefined,
+  it('opens marketplace orders on order update push', () => {
+    expect(resolvePushNotificationData({ type: 'marketplace_order_update' })).toEqual({
+      tab: 'profile',
+      openMarketplace: true,
+      marketplaceOrdersTab: true,
     })
   })
 })
