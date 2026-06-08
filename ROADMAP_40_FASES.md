@@ -106,11 +106,11 @@ Sistema de implementación: ver **`SISTEMA_IMPLEMENTACION_FASES.md`**.
 
 | # | Fase | Área | P | Estado |
 |---|------|------|---|--------|
-| 66 | Referral “Invita a tu gym” + deep link | Growth | P2 | 🔲 |
-| 67 | Partner gym mini-dashboard (check-ins, promos) | B2B | P3 | 🔲 |
-| 68 | EntrenaMatch Moments — reel semanal auto highlights | Engagement | P2 | 🔲 |
-| 69 | Streak insurance (Constancia) UX completa + tienda | Engagement | P2 | 🔲 |
-| 70 | ASO Play Store + landing ES/EN + open beta pública | Release | P1 | 🔲 |
+| 66 | Referral “Invita a tu gym” + deep link | Growth | P2 | ✅ v0.1.200 |
+| 67 | Partner gym mini-dashboard (check-ins, promos) | B2B | P3 | ✅ v0.1.200 |
+| 68 | EntrenaMatch Moments — reel semanal auto highlights | Engagement | P2 | ✅ v0.1.200 |
+| 69 | Streak insurance (Constancia) UX completa + tienda | Engagement | P2 | ✅ v0.1.200 |
+| 70 | ASO Play Store + landing ES/EN + open beta pública | Release | P1 | ✅ v0.1.200 |
 
 ---
 

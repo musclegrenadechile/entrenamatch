@@ -2,6 +2,7 @@ import { Download, Star } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'
 import { APP_VERSION } from '../../constants'
+import { ReferralInviteCard } from '../growth/ReferralInviteCard'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
 
@@ -305,7 +306,6 @@ export function ProfileAccountSection(props: ProfileTabProps) {
   </div>
 )}
 
-{/* PWA / App install options - always offer for web, with clear APK for native notifications on phone */}
 {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor === 'undefined' && (
   <div className="px-4 pb-3 space-y-2">
     <button
@@ -320,6 +320,17 @@ export function ProfileAccountSection(props: ProfileTabProps) {
     <div className="text-[9px] text-center text-[#9CA3AF]">O usa el botón 📱 Instalar de la barra superior.</div>
   </div>
 )}
+
+<div className={`px-4 mt-3${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+  <ReferralInviteCard
+    referralCode={(currentUser?.id || 'demo').slice(0, 8)}
+    onShare={() => {
+      const code = (currentUser?.id || 'demo').slice(0, 8)
+      const link = `${window.location.origin}/?ref=${code}`
+      navigator.clipboard?.writeText(link).then(() => toast.success('Enlace copiado — invita a tu gym'))
+    }}
+  />
+</div>
 
     </>
   )
