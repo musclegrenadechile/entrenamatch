@@ -350,6 +350,17 @@ async function callGeminiFoodAnalysis(apiKey, imageBase64, mealDescription, fuel
     if (typeof ctx.remainingKcal === 'number') {
       parts.push(`Quedan ~${ctx.remainingKcal} kcal y ~${ctx.remainingProteinG || 0}g proteína`);
     }
+    if (typeof ctx.workoutBurnToday === 'number' && ctx.workoutBurnToday > 0) {
+      parts.push(`Entreno hoy: +${ctx.workoutBurnToday} kcal gastadas`);
+    }
+    if (typeof ctx.liveBurnToday === 'number' && ctx.liveBurnToday > 0) {
+      parts.push(`Live activo: +${ctx.liveBurnToday} kcal estimadas`);
+    }
+    if (ctx.adjustedTargetKcal && ctx.adjustedTargetKcal !== ctx.targetKcal) {
+      parts.push(`Target ajustado post-entreno: ${ctx.adjustedTargetKcal} kcal`);
+    }
+    if (ctx.dominantMuscle) parts.push(`Grupo muscular dominante hoy: ${ctx.dominantMuscle}`);
+    if (ctx.postWorkoutWindow) parts.push('Ventana post-entreno activa: prioriza proteína');
     if (ctx.restrictions) parts.push(`Restricciones: ${ctx.restrictions}`);
     if (parts.length) {
       contextBlock = `\nContexto del atleta (usa para el tip, no inventes alergias): ${parts.join('. ')}.`;

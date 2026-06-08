@@ -140,6 +140,23 @@ export async function saveWorkoutWithPost(
   return { workout, postId: postRef.id, postText }
 }
 
+function parseWorkoutDoc(id: string, d: Record<string, unknown>): Workout {
+  return {
+    id,
+    userId: String(d.userId || ''),
+    title: String(d.title || 'Entrenamiento'),
+    type: (d.type as WorkoutType) || 'other',
+    startedAt: Number(d.startedAt) || Date.now(),
+    endedAt: Number(d.endedAt) || Date.now(),
+    exercises: Array.isArray(d.exercises) ? d.exercises : [],
+    stats: d.stats as WorkoutStats,
+    source: (d.source as Workout['source']) || 'manual',
+    partnerId: d.partnerId as string | undefined,
+    syncSessionId: d.syncSessionId as string | undefined,
+    participantIds: Array.isArray(d.participantIds) ? d.participantIds : undefined,
+  }
+}
+
 export async function fetchRecentWorkouts(
   db: Firestore,
   userId: string,
@@ -157,22 +174,47 @@ export async function fetchRecentWorkouts(
   const snap = await getDocs(q)
   const list: Workout[] = []
   snap.forEach((docSnap) => {
-    const d = docSnap.data()
-    list.push({
-      id: docSnap.id,
-      userId: String(d.userId || ''),
-      title: String(d.title || 'Entrenamiento'),
-      type: (d.type as WorkoutType) || 'other',
-      startedAt: Number(d.startedAt) || Date.now(),
-      endedAt: Number(d.endedAt) || Date.now(),
-      exercises: Array.isArray(d.exercises) ? d.exercises : [],
-      stats: d.stats as WorkoutStats,
-      source: (d.source as Workout['source']) || 'manual',
-      partnerId: d.partnerId as string | undefined,
-      syncSessionId: d.syncSessionId as string | undefined,
-    })
+    list.push(parseWorkoutDoc(docSnap.id, docSnap.data() as Record<string, unknown>))
   })
   return list
+}
+
+/** Workouts whose endedAt falls on local date (FuelBalance phase 72). */
+export async function fetchWorkoutsForDate(
+  db: Firestore,
+  userId: string,
+  dateStr: string
+): Promise<Workout[]> {
+  const { collection, query, where, orderBy, limit, getDocs } = await import(
+    'firebase/firestore'
+  )
+  const dayStart = new Date(`${dateStr}T00:00:00`).getTime()
+  const dayEnd = dayStart + 86400000
+  const q = query(
+    collection(db, 'workouts'),
+    where('userId', '==', userId),
+    where('endedAt', '>=', dayStart),
+    where('endedAt', '<', dayEnd),
+    orderBy('endedAt', 'desc'),
+    limit(20)
+  )
+  try {
+    const snap = await getDocs(q)
+    const list: Workout[] = []
+    snap.forEach((docSnap) => {
+      list.push(parseWorkoutDoc(docSnap.id, docSnap.data() as Record<string, unknown>))
+    })
+    return list
+  } catch {
+    const recent = await fetchRecentWorkouts(db, userId, 15)
+    return recent.filter((w) => {
+      const d = new Date(w.endedAt || w.startedAt)
+      const y = d.getFullYear()
+      const m = String(d.getMonth() + 1).padStart(2, '0')
+      const day = String(d.getDate()).padStart(2, '0')
+      return `${y}-${m}-${day}` === dateStr
+    })
+  }
 }
 
 export async function fetchWorkoutById(

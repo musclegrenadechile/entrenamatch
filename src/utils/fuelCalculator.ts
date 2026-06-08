@@ -1,4 +1,5 @@
 import type { FuelGoal, FuelProfile, WorkoutType } from '../types'
+import type { DailyEnergyBalance } from '../domain/fuelBalance'
 
 export type ActivityLevel = FuelProfile['activityLevel']
 
@@ -91,32 +92,52 @@ const GOAL_LABELS: Record<FuelGoal, string> = {
 /** Context sent to Gemini for personalized meal analysis. */
 export function buildFuelAnalyzeContext(
   profile: FuelProfile | null | undefined,
-  totals: { kcal: number; proteinG: number; carbsG: number; fatG: number }
+  totals: { kcal: number; proteinG: number; carbsG: number; fatG: number },
+  balance?: DailyEnergyBalance | null
 ) {
   if (!profile) return undefined
+  const targetKcal = balance?.adjustedTargetKcal ?? profile.targetKcal
+  const targetProteinG = balance?.macroTargets.targetProteinG ?? profile.targetProteinG
+  const remainingKcal = balance?.remaining.kcal ?? Math.max(0, profile.targetKcal - totals.kcal)
+  const remainingProteinG =
+    balance?.remaining.proteinG ?? Math.max(0, profile.targetProteinG - totals.proteinG)
+
   return {
     goal: profile.goal,
     goalLabel: GOAL_LABELS[profile.goal],
     restrictions: profile.restrictions?.trim() || undefined,
-    targetKcal: profile.targetKcal,
-    targetProteinG: profile.targetProteinG,
+    targetKcal,
+    targetProteinG,
     consumedKcal: totals.kcal,
     consumedProteinG: totals.proteinG,
-    remainingKcal: Math.max(0, profile.targetKcal - totals.kcal),
-    remainingProteinG: Math.max(0, profile.targetProteinG - totals.proteinG),
+    remainingKcal: Math.max(0, remainingKcal),
+    remainingProteinG: Math.max(0, remainingProteinG),
+    workoutBurnToday: balance?.workoutBurnKcal ?? 0,
+    liveBurnToday: balance?.liveBurnKcal ?? 0,
+    adjustedTargetKcal: targetKcal,
+    dominantMuscle: balance?.dominantMuscle,
+    postWorkoutWindow: balance?.postWorkoutWindowActive ?? false,
   }
 }
 
 /** Short coaching line for FuelDayCard based on progress today. */
 export function getFuelCoachingTip(
   profile: FuelProfile,
-  totals: { kcal: number; proteinG: number; carbsG: number; fatG: number; entryCount: number }
+  totals: { kcal: number; proteinG: number; carbsG: number; fatG: number; entryCount: number },
+  balance?: DailyEnergyBalance | null
 ): string | undefined {
+  if (balance?.coachingLine) return balance.coachingLine
+  const targetKcal = balance?.adjustedTargetKcal ?? profile.targetKcal
+  const targetProteinG = balance?.macroTargets.targetProteinG ?? profile.targetProteinG
   if (totals.entryCount === 0) {
-    return `Objetivo hoy: ${profile.targetKcal} kcal · ${profile.targetProteinG}g proteína. Registra tu primera comida con Fuel AI.`
+    const burnNote =
+      balance && balance.workoutBurnKcal + balance.liveBurnKcal > 0
+        ? ` (+${balance.workoutBurnKcal + balance.liveBurnKcal} kcal entreno)`
+        : ''
+    return `Objetivo hoy: ${targetKcal} kcal${burnNote} · ${targetProteinG}g proteína. Registra tu primera comida con Fuel AI.`
   }
-  const remKcal = profile.targetKcal - totals.kcal
-  const remP = profile.targetProteinG - totals.proteinG
+  const remKcal = targetKcal - totals.kcal
+  const remP = targetProteinG - totals.proteinG
   if (remKcal < -150) {
     return 'Vas sobre el target de kcal — prioriza proteína magra y verduras en lo que queda del día.'
   }
@@ -142,11 +163,14 @@ const MEAL_IDEAS_PROTEIN = [
 /** Actionable meal idea based on remaining macros (local, no API cost). */
 export function getFuelMealSuggestion(
   profile: FuelProfile,
-  totals: { kcal: number; proteinG: number; entryCount: number }
+  totals: { kcal: number; proteinG: number; entryCount: number },
+  balance?: DailyEnergyBalance | null
 ): string | undefined {
   if (totals.entryCount === 0) return undefined
-  const remKcal = profile.targetKcal - totals.kcal
-  const remP = profile.targetProteinG - totals.proteinG
+  const targetKcal = balance?.adjustedTargetKcal ?? profile.targetKcal
+  const targetProteinG = balance?.macroTargets.targetProteinG ?? profile.targetProteinG
+  const remKcal = targetKcal - totals.kcal
+  const remP = targetProteinG - totals.proteinG
   if (remKcal <= 0 && remP <= 5) return undefined
 
   if (remP > 20) {

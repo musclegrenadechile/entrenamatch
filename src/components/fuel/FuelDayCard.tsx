@@ -1,11 +1,13 @@
 import { Pencil, Trash2 } from 'lucide-react'
 import type { FuelDayTotals, FuelLogEntry, FuelProfile } from '../../types'
 import type { FuelWeekDay } from '../../services/fuel'
+import type { DailyEnergyBalance } from '../../domain/fuelBalance'
 import { getFuelCoachingTip, getFuelMealSuggestion } from '../../utils/fuelCalculator'
 
 export interface FuelDayCardProps {
   profile: FuelProfile | null
   totals: FuelDayTotals
+  energyBalance?: DailyEnergyBalance | null
   todayLogs?: FuelLogEntry[]
   weekDays?: FuelWeekDay[]
   postWorkoutTip?: string
@@ -30,6 +32,7 @@ function sourceBadge(source?: FuelLogEntry['source']): string | null {
 export function FuelDayCard({
   profile,
   totals,
+  energyBalance = null,
   todayLogs = [],
   weekDays = [],
   postWorkoutTip,
@@ -59,24 +62,38 @@ export function FuelDayCard({
     )
   }
 
-  const kcalPct = pct(totals.kcal, profile.targetKcal)
-  const proteinPct = pct(totals.proteinG, profile.targetProteinG)
-  const coachingTip = getFuelCoachingTip(profile, totals)
-  const mealSuggestion = getFuelMealSuggestion(profile, totals)
-  const remKcal = profile.targetKcal - totals.kcal
-  const remProtein = profile.targetProteinG - totals.proteinG
+  const targetKcal = energyBalance?.adjustedTargetKcal ?? profile.targetKcal
+  const targetProteinG = energyBalance?.macroTargets.targetProteinG ?? profile.targetProteinG
+  const targetCarbsG = energyBalance?.macroTargets.targetCarbsG ?? profile.targetCarbsG
+  const targetFatG = energyBalance?.macroTargets.targetFatG ?? profile.targetFatG
+  const totalBurn =
+    (energyBalance?.workoutBurnKcal ?? 0) + (energyBalance?.liveBurnKcal ?? 0)
+
+  const kcalPct = pct(totals.kcal, targetKcal)
+  const proteinPct = pct(totals.proteinG, targetProteinG)
+  const coachingTip = getFuelCoachingTip(profile, totals, energyBalance)
+  const mealSuggestion = getFuelMealSuggestion(profile, totals, energyBalance)
+  const remKcal = targetKcal - totals.kcal
+  const remProtein = targetProteinG - totals.proteinG
   const weekLoggedCount = weekDays.filter((d) => d.logged).length
 
   return (
     <div className="rounded-3xl p-4 bg-gradient-to-br from-[#1a1520] via-[#141418] to-[#0f0f12] border border-[#a855f7]/25">
       <div className="flex items-start justify-between gap-2 mb-3">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.18em] text-[#c084fc] font-bold">Fuel del día</p>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-[#c084fc] font-bold">Balance del día</p>
           <p className="text-lg font-black text-white tabular-nums">
             {totals.kcal}{' '}
-            <span className="text-sm text-[#9CA3AF] font-semibold">/ {profile.targetKcal} kcal</span>
+            <span className="text-sm text-[#9CA3AF] font-semibold">/ {targetKcal} kcal</span>
           </p>
-          {totals.entryCount > 0 && (
+          {totalBurn > 0 && (
+            <p className="text-[9px] text-[#22c55e] mt-0.5 tabular-nums">
+              ↑ base {energyBalance?.baseTargetKcal ?? profile.targetKcal}
+              {energyBalance?.workoutBurnKcal ? ` + ${energyBalance.workoutBurnKcal} entreno` : ''}
+              {energyBalance?.liveBurnKcal ? ` + ${energyBalance.liveBurnKcal} live` : ''}
+            </p>
+          )}
+          {(totals.entryCount > 0 || totalBurn > 0) && (
             <p className="text-[9px] text-[#6B7280] mt-0.5 tabular-nums">
               Restan ~{Math.max(0, remKcal)} kcal · ~{Math.max(0, remProtein)}g proteína
             </p>
@@ -136,17 +153,36 @@ export function FuelDayCard({
             <div className="h-full bg-[#c084fc]" style={{ width: `${proteinPct}%` }} />
           </div>
           <div className="text-[#c084fc] font-black tabular-nums">{totals.proteinG}g</div>
-          <div className="text-[#6B7280]">Prot / {profile.targetProteinG}g</div>
+          <div className="text-[#6B7280]">Prot / {targetProteinG}g</div>
         </div>
         <div className="rounded-xl bg-white/5 py-2 px-1">
           <div className="text-white font-black tabular-nums">{totals.carbsG}g</div>
-          <div className="text-[#6B7280]">Carbs / {profile.targetCarbsG}g</div>
+          <div className="text-[#6B7280]">Carbs / {targetCarbsG}g</div>
         </div>
         <div className="rounded-xl bg-white/5 py-2 px-1">
           <div className="text-white font-black tabular-nums">{totals.fatG}g</div>
-          <div className="text-[#6B7280]">Grasa / {profile.targetFatG}g</div>
+          <div className="text-[#6B7280]">Grasa / {targetFatG}g</div>
         </div>
       </div>
+
+      {energyBalance?.workoutInsights && energyBalance.workoutInsights.length > 0 && (
+        <div className="mb-2 space-y-1">
+          {energyBalance.workoutInsights.map((ins) => (
+            <p
+              key={ins.workoutId || `${ins.label}-${ins.durationMin}`}
+              className="text-[10px] text-[#22c55e] leading-snug bg-[#22c55e]/8 rounded-xl px-2.5 py-1.5 border border-[#22c55e]/20"
+            >
+              🏋️ {ins.label} · {ins.durationMin} min · ~{ins.burnKcal} kcal
+            </p>
+          ))}
+        </div>
+      )}
+
+      {energyBalance?.liveBurnKcal ? (
+        <p className="text-[10px] text-[#22c55e] mb-2 leading-snug bg-[#22c55e]/8 rounded-xl px-2.5 py-1.5 border border-[#22c55e]/20">
+          🟢 Live activo · ~{energyBalance.liveBurnKcal} kcal extra estimadas
+        </p>
+      ) : null}
 
       {coachingTip && (
         <p className="text-[10px] text-[#c084fc] mb-2 leading-snug bg-[#a855f7]/8 rounded-xl px-2.5 py-2 border border-[#a855f7]/20">
