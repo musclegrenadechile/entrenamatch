@@ -121,6 +121,7 @@ import {
   attachAllTrainerBookingsListener,
   computeAdminMetrics,
 } from './services/adminAnalytics'
+import { fetchMpHealth, markTrainerPayoutStatus, type MpHealthResult } from './services/adminMp'
 import { ActivationGuide } from './components/onboarding/ActivationGuide'
 import { PullToRefresh } from './components/ui/PullToRefresh'
 import {
@@ -153,7 +154,7 @@ import {
   estimateDispatchPrice,
   findNearbyDispatchTrainers,
 } from './services/trainerDispatch'
-import { createTrainerMpCheckout } from './services/trainerPayments'
+import { payTrainerBooking, openTrainerPaymentCheckout } from './services/trainerPayments'
 import { LazyHomeTab, LazyExploreTab, LazyProfileTab, LazyMatchesTab, LazySquadsTab, LazySessionsTab, TAB_LOADING } from './components/app/LazyTabs'
 import { TabErrorBoundary } from './components/app/TabErrorBoundary'
 import { CityChallengeCelebrationModal } from './components/explore/CityChallengeCelebrationModal'
@@ -954,7 +955,7 @@ function App() {
   const [showAdminOps, setShowAdminOps] = useState(false)
   const [adminOrders, setAdminOrders] = useState<MarketplaceOrder[]>([])
   const [adminBookings, setAdminBookings] = useState<TrainerBooking[]>([])
-  const [mpConfigured, setMpConfigured] = useState(false)
+  const [mpHealth, setMpHealth] = useState<MpHealthResult | null>(null)
   const [showActivationGuide, setShowActivationGuide] = useState(false)
   const [myMarketplaceOrders, setMyMarketplaceOrders] = useState<MarketplaceOrder[]>([])
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([])
@@ -4718,21 +4719,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
   useEffect(() => {
     if (!showAdminOps || !isMarketplaceAdmin || isDemoMode) return
-    void (async () => {
-      try {
-        const { getFunctions, httpsCallable } = await import('firebase/functions')
-        const { app } = await import('./services/firebase')
-        if (!app) return
-        const fn = httpsCallable<unknown, { configured: boolean }>(
-          getFunctions(app, 'us-central1'),
-          'checkMpHealth'
-        )
-        const res = await fn({})
-        setMpConfigured(!!res.data?.configured)
-      } catch {
-        setMpConfigured(false)
-      }
-    })()
+    void fetchMpHealth()
+      .then(setMpHealth)
+      .catch(() => setMpHealth(null))
   }, [showAdminOps, isMarketplaceAdmin, isDemoMode])
 
   useEffect(() => {
@@ -5811,26 +5800,29 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     if (isDemoMode || !db || !firebaseUser?.uid) return
     try {
       const today = toLocalDateStr()
-      const [profile, logs, weekDays, weekMacros, workouts] = await Promise.all([
+      const results = await Promise.allSettled([
         loadFuelProfile(db, effectiveUserId),
         fetchFuelLogsForDate(db, effectiveUserId),
         fetchFuelWeekSummary(db, effectiveUserId),
         fetchFuelWeekMacros(db, effectiveUserId),
-        fetchWorkoutsForDate(db, effectiveUserId, today).catch(() =>
-          fetchRecentWorkouts(db, effectiveUserId, 5)
-        ),
+        fetchWorkoutsForDate(db, effectiveUserId, today),
       ])
+      const profile = results[0].status === 'fulfilled' ? results[0].value : null
+      const logs = results[1].status === 'fulfilled' ? results[1].value : []
+      const weekDays = results[2].status === 'fulfilled' ? results[2].value : []
+      const weekMacros = results[3].status === 'fulfilled' ? results[3].value : []
+      const workouts = results[4].status === 'fulfilled' ? results[4].value : []
+      results.forEach((r, i) => {
+        if (r.status === 'rejected') {
+          console.warn(`refreshFuelData partial fail [${i}]`, r.reason)
+        }
+      })
       setFuelProfile(profile)
       setFuelTodayLogs(logs)
       setFuelTodayTotals(sumFuelLogs(logs))
       setFuelWeekDays(weekDays)
       setFuelWeekMacros(weekMacros)
-      setFuelTodayWorkouts(
-        workouts.filter((w) => {
-          const d = new Date(w.endedAt || w.startedAt)
-          return toLocalDateStr(d) === today
-        })
-      )
+      setFuelTodayWorkouts(workouts)
       setFuelPostWorkoutTip(
         workouts[0] ? getPostWorkoutFuelTip(workouts[0].type) : undefined
       )
@@ -10972,6 +10964,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         open={showAdminOps}
         onClose={() => setShowAdminOps(false)}
         orders={adminOrders}
+        bookings={adminBookings}
         trainers={trainerProfiles}
         onUpdateOrderStatus={async (orderId, status) => {
           if (!db) throw new Error('db')
@@ -10981,11 +10974,16 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           if (!db) throw new Error('db')
           await setTrainerVerified(db, trainerUserId, verified)
         }}
+        onMarkTrainerPayout={async (bookingId, status) => {
+          await markTrainerPayoutStatus(bookingId, status)
+        }}
+        mpHealth={mpHealth}
         metrics={computeAdminMetrics(
           realProfiles,
           adminBookings,
           adminOrders,
-          mpConfigured
+          !!mpHealth?.configured,
+          !!mpHealth?.live
         )}
       />
       <SyncLiveBlockerModal
@@ -11134,21 +11132,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         }}
         onPayWithMercadoPago={async (booking) => {
           try {
-            const result = await createTrainerMpCheckout(booking.id)
-            window.open(result.initPoint, '_blank', 'noopener,noreferrer')
-            if (result.usedFallback) {
-              toast.info('Link de pago del entrenador', {
-                description: 'Confirma el pago manualmente cuando hayas completado la transferencia.',
-              })
-            } else {
-              toast.success('Checkout Mercado Pago', {
-                description: `Comisión plataforma ${result.platformFeeClp.toLocaleString('es-CL')} CLP — el pago se confirmará automáticamente.`,
-              })
-            }
+            const result = await payTrainerBooking(booking.id)
+            openTrainerPaymentCheckout(result)
+            toast.success('Pago seguro EntrenaMatch', {
+              description: `Pagas a EntrenaMatch. Tras confirmar, liquidamos ${(
+                booking.priceClp - result.platformFeeClp
+              ).toLocaleString('es-CL')} CLP al entrenador (comisión ${result.platformFeeClp.toLocaleString('es-CL')} CLP).`,
+            })
           } catch (e) {
             console.warn(e)
+            const msg = e instanceof Error ? e.message : 'Intenta de nuevo'
             toast.error('No se pudo iniciar el pago', {
-              description: e instanceof Error ? e.message : 'Intenta de nuevo',
+              description: msg.includes('EntrenaMatch') || msg.includes('Mercado Pago')
+                ? 'Los pagos con tarjeta los procesa EntrenaMatch. Intenta más tarde o elige efectivo.'
+                : msg,
             })
             throw e
           }
@@ -13569,7 +13566,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         )
       })()}
 
-      {syncPartnerId && !showSyncArena && (
+      {syncPartnerId && !showSyncArena && !showTrainerCoach && !showMarketplace && !showEntrenaLogModal && (
         <ArenaGlobalPulseBar
           partnerName={realProfiles.find((p) => p.id === syncPartnerId)?.name || 'Compañero'}
           syncVibe={syncVibe}

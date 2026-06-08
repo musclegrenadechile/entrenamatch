@@ -38,27 +38,32 @@ You can extend the function to also listen on syncSessions or other collections.
 
 After deploy, rebuild the AAB (the functions are server-side, client AAB is unchanged for this feature).
 
-## EntrenaCoach Fase 2 (v0.1.144+)
+## EntrenaCoach Fase 2 (v0.1.144+) — Marketplace Mercado Pago
 
-**Mercado Pago** (elige uno):
-```bash
-# Opción A — Firebase Secret (recomendado cuando tengas APP_USR-...)
+**Modelo:** el cliente paga a **EntrenaMatch** (cuenta plataforma). EntrenaMatch retiene 15% y liquida al entrenador desde Admin Ops.
+
+```powershell
+# Desde la raíz del repo (Windows)
+.\scripts\setup-mp-production.ps1 -AccessToken "APP_USR-..."
+
+# O manual:
 firebase functions:secrets:set MERCADOPAGO_ACCESS_TOKEN --project entrenamatch
-firebase deploy --only functions --project entrenamatch
-
-# Opción B — legacy config
-firebase functions:config:set mercadopago.access_token="APP_USR-..."
-firebase deploy --only functions --project entrenamatch
+firebase deploy --only functions:createTrainerMpCheckout,functions:mercadoPagoWebhook,functions:createMarketplaceMpCheckout,functions:checkMpHealth,functions:markTrainerPayoutStatus --project entrenamatch
 ```
 
-Functions added:
-- `onTrainerBookingCreated` — push al entrenador cuando llega solicitud
-- `onTrainerBookingUpdated` — push al cliente (aceptada/rechazada/pagada)
-- `onTrainingReviewForBooking` — agrega avgRating al perfil PT (seguro)
-- `createTrainerMpCheckout` — callable, crea preferencia MP (15% comisión metadata)
-- `mercadoPagoWebhook` — confirma `paid_card` automáticamente
+**Webhook Mercado Pago** (Developers → Webhooks → evento `payment`):
+```
+https://us-central1-entrenamatch.cloudfunctions.net/mercadoPagoWebhook
+```
 
-Sin `MERCADOPAGO_ACCESS_TOKEN` el cliente usa fallback al link MP del entrenador.
+Functions:
+- `createTrainerMpCheckout` — checkout EntrenaCoach (cuenta EntrenaMatch)
+- `mercadoPagoWebhook` — confirma `paid_card` + `payoutStatus: pending`
+- `createMarketplaceMpCheckout` — checkout tienda
+- `checkMpHealth` — admin: token + ping API MP
+- `markTrainerPayoutStatus` — admin: liquidación al PT
+
+Sin `MERCADOPAGO_ACCESS_TOKEN` los pagos con tarjeta no están disponibles (no hay pago directo al entrenador).
 
 ## EntrenaCoach Fase 3 + P0 engagement (v0.1.147+)
 

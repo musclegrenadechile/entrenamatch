@@ -108,6 +108,21 @@ export function filterMapLiveUsers(
   })
 }
 
+export function sortLiveUsersForSheet(
+  users: LiveUserLike[],
+  syncBonds: Record<string, { bondLevel?: number }> = {},
+  selfUserId?: string | null
+): LiveUserLike[] {
+  return [...(users || [])]
+    .filter((u) => isActiveLiveUser(u) && hasMapCoords(u) && u.id !== selfUserId)
+    .sort((a, b) => {
+      const aBond = syncBonds[a.id]?.bondLevel || 0
+      const bBond = syncBonds[b.id]?.bondLevel || 0
+      if (aBond !== bBond) return bBond - aBond
+      return (a.distance ?? 999) - (b.distance ?? 999)
+    })
+}
+
 export function isUserLiveInSnapshot(
   userId: string,
   liveUsers: LiveUserLike[],

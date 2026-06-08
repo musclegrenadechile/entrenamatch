@@ -331,6 +331,8 @@ export interface MarketplaceProduct {
   description: string
   priceClp: number
   imageUrl?: string
+  /** Up to 3 product images (first mirrors imageUrl). */
+  imageUrls?: string[]
   paymentUrl: string
   category: MarketplaceCategory
   active: boolean
@@ -452,6 +454,11 @@ export interface TrainerBooking {
   mpPreferenceId?: string
   mpPaymentId?: string
   platformFeeClp?: number
+  /** Monto neto a liquidar al entrenador (precio − comisión plataforma) */
+  trainerNetClp?: number
+  /** Estado de la transferencia al entrenador tras cobro en cuenta EntrenaMatch */
+  payoutStatus?: 'pending' | 'processing' | 'paid'
+  paidAt?: number
   packageId?: string
   packageSessions?: number
   packageDiscountPercent?: number

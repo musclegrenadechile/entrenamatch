@@ -194,18 +194,27 @@ export async function fetchFuelWeekSummary(
 ): Promise<FuelWeekDay[]> {
   const slots = buildLast7DaySlots()
   const startDate = slots[0].date
-  const { collection, query, where, getDocs } = await import('firebase/firestore')
-  const q = query(
-    collection(db, 'fuelLogs'),
-    where('userId', '==', userId),
-    where('date', '>=', startDate)
-  )
-  const snap = await getDocs(q)
+  const { collection, query, where, getDocs, limit } = await import('firebase/firestore')
   const loggedDates = new Set<string>()
-  snap.forEach((docSnap) => {
-    const date = String(docSnap.data().date || '')
-    if (date) loggedDates.add(date)
-  })
+  try {
+    const q = query(
+      collection(db, 'fuelLogs'),
+      where('userId', '==', userId),
+      where('date', '>=', startDate)
+    )
+    const snap = await getDocs(q)
+    snap.forEach((docSnap) => {
+      const date = String(docSnap.data().date || '')
+      if (date) loggedDates.add(date)
+    })
+  } catch {
+    const q = query(collection(db, 'fuelLogs'), where('userId', '==', userId), limit(200))
+    const snap = await getDocs(q)
+    snap.forEach((docSnap) => {
+      const date = String(docSnap.data().date || '')
+      if (date && date >= startDate) loggedDates.add(date)
+    })
+  }
   return computeFuelWeekFromDates(loggedDates)
 }
 
@@ -215,25 +224,30 @@ export async function fetchFuelWeekMacros(
 ): Promise<FuelWeekMacroDay[]> {
   const slots = buildLast7DaySlots()
   const startDate = slots[0].date
-  const { collection, query, where, getDocs } = await import('firebase/firestore')
-  const q = query(
-    collection(db, 'fuelLogs'),
-    where('userId', '==', userId),
-    where('date', '>=', startDate)
-  )
-  const snap = await getDocs(q)
+  const { collection, query, where, getDocs, limit } = await import('firebase/firestore')
   const byDate = new Map<string, { kcal: number; proteinG: number; carbsG: number; fatG: number }>()
-  snap.forEach((docSnap) => {
-    const d = docSnap.data()
-    const date = String(d.date || '')
-    if (!date) return
+  const ingest = (date: string, d: Record<string, unknown>) => {
+    if (!date || date < startDate) return
     const prev = byDate.get(date) || { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 }
     prev.kcal += Number(d.kcal) || 0
     prev.proteinG += Number(d.proteinG) || 0
     prev.carbsG += Number(d.carbsG) || 0
     prev.fatG += Number(d.fatG) || 0
     byDate.set(date, prev)
-  })
+  }
+  try {
+    const q = query(
+      collection(db, 'fuelLogs'),
+      where('userId', '==', userId),
+      where('date', '>=', startDate)
+    )
+    const snap = await getDocs(q)
+    snap.forEach((docSnap) => ingest(String(docSnap.data().date || ''), docSnap.data()))
+  } catch {
+    const q = query(collection(db, 'fuelLogs'), where('userId', '==', userId), limit(200))
+    const snap = await getDocs(q)
+    snap.forEach((docSnap) => ingest(String(docSnap.data().date || ''), docSnap.data()))
+  }
   return slots.map((slot) => {
     const m = byDate.get(slot.date)
     return {

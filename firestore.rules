@@ -193,7 +193,16 @@ service cloud.firestore {
     }
 
     function isSyncParticipantData(data) {
-      return data.participants is list && request.auth.uid in data.participants;
+      return data.participants is list
+        && data.participants.size() >= 1
+        && data.participants.hasAny([request.auth.uid]);
+    }
+
+    function validSyncSessionCreate(data) {
+      return data.participants is list
+        && data.participants.size() == 2
+        && request.auth.uid in data.participants
+        && data.startedAt is number;
     }
 
     function syncWitnesses(data) {
@@ -459,7 +468,7 @@ service cloud.firestore {
       allow read: if isAuthenticated()
         && isSyncParticipantData(resource.data);
       allow create: if isAuthenticated()
-        && isSyncParticipantData(request.resource.data);
+        && validSyncSessionCreate(request.resource.data);
       allow update: if isAuthenticated()
         && (isSyncParticipantData(resource.data) || isSyncWitnessUpdate());
       allow delete: if isAuthenticated()

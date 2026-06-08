@@ -44,6 +44,7 @@ import type {
 } from '../../types'
 import {
   BOOKING_STATUS_LABELS,
+  TRAINER_PLATFORM_FEE_RATE,
   TRAINER_SPECIALTIES,
   formatTrainerRate,
 } from '../../services/trainerCoach'
@@ -714,6 +715,27 @@ export function TrainerCoachView({
                   onBook={() => startBook(t)}
                 />
               ))}
+              <div className="trainer-coach__partner-footer">
+                <button
+                  type="button"
+                  className="trainer-coach__partner-btn"
+                  onClick={() => {
+                    window.open(
+                      'mailto:coach@entrenamatch.com?subject=Postulación%20socio%20EntrenaCoach',
+                      '_blank'
+                    )
+                  }}
+                >
+                  Postúlate como socio
+                </button>
+                <button
+                  type="button"
+                  className="trainer-coach__work-btn"
+                  onClick={() => setTab('trainer')}
+                >
+                  Trabaja con nosotros
+                </button>
+              </div>
             </>
           )}
         </div>
@@ -881,19 +903,14 @@ export function TrainerCoachView({
                             } catch {
                               /* toast in handler */
                             }
-                            return
-                          }
-                          const trainer = trainers.find((t) => t.userId === b.trainerId)
-                          const url = trainer?.paymentUrl
-                          if (url?.startsWith('https://')) {
-                            onOpenPayment?.(url)
-                            void onUpdateBookingStatus(b.id, 'paid_card')
                           } else {
-                            toast.error('Pago con tarjeta no configurado')
+                            toast.error('Pago con tarjeta no disponible', {
+                              description: 'EntrenaMatch procesa el cobro y transfiere al entrenador.',
+                            })
                           }
                         }}
                       >
-                        <CreditCard size={14} /> Pagar con tarjeta
+                        <CreditCard size={14} /> Pagar con tarjeta (EntrenaMatch)
                       </button>
                     )}
                     {isClient && b.status === 'completed' && b.paymentMethod === 'cash' && (
@@ -1115,15 +1132,14 @@ export function TrainerCoachView({
             </div>
           </div>
           {trainerForm.paymentMethods.includes('card') && (
-            <label className="marketplace-form__field">
-              Link de pago (Mercado Pago)
-              <input
-                type="url"
-                value={trainerForm.paymentUrl || ''}
-                onChange={(e) => setTrainerForm((f) => ({ ...f, paymentUrl: e.target.value }))}
-                placeholder="https://mpago.la/..."
-              />
-            </label>
+            <div className="text-[11px] text-[#9CA3AF] bg-[#6366f1]/10 border border-[#6366f1]/25 rounded-xl px-3 py-3 space-y-1">
+              <p className="font-semibold text-[#c7d2fe]">Pagos con tarjeta vía EntrenaMatch</p>
+              <p>
+                El cliente paga a la plataforma. EntrenaMatch retiene{' '}
+                {Math.round(TRAINER_PLATFORM_FEE_RATE * 100)}% de comisión y te transfiere el neto tras
+                confirmar el pago.
+              </p>
+            </div>
           )}
           <label className="marketplace-form__check">
             <input

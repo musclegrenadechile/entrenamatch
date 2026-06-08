@@ -31,6 +31,25 @@ export const TRAINER_PLATFORM_FEE_RATE = 0.15
 const PROFILES = 'trainerProfiles'
 const BOOKINGS = 'trainerBookings'
 
+export function isValidTrainerPaymentUrl(url?: string | null): url is string {
+  return typeof url === 'string' && url.trim().startsWith('https://')
+}
+
+/** Lee link MP del entrenador desde Firestore (fuente de verdad al pagar). */
+export async function fetchTrainerPaymentUrl(
+  db: Firestore,
+  trainerId: string
+): Promise<string | undefined> {
+  try {
+    const snap = await getDoc(doc(db, PROFILES, trainerId))
+    if (!snap.exists()) return undefined
+    const url = snap.data().paymentUrl
+    return isValidTrainerPaymentUrl(url) ? url.trim() : undefined
+  } catch {
+    return undefined
+  }
+}
+
 export const TRAINER_SPECIALTIES: { id: TrainerSpecialty; label: string }[] = [
   { id: 'fuerza', label: 'Fuerza' },
   { id: 'hipertrofia', label: 'Hipertrofia' },
@@ -105,6 +124,14 @@ function mapBooking(id: string, data: Record<string, unknown>): TrainerBooking |
     mpPreferenceId: typeof data.mpPreferenceId === 'string' ? data.mpPreferenceId : undefined,
     mpPaymentId: typeof data.mpPaymentId === 'string' ? data.mpPaymentId : undefined,
     platformFeeClp: typeof data.platformFeeClp === 'number' ? data.platformFeeClp : undefined,
+    trainerNetClp: typeof data.trainerNetClp === 'number' ? data.trainerNetClp : undefined,
+    payoutStatus:
+      data.payoutStatus === 'pending' ||
+      data.payoutStatus === 'processing' ||
+      data.payoutStatus === 'paid'
+        ? data.payoutStatus
+        : undefined,
+    paidAt: typeof data.paidAt === 'number' ? data.paidAt : undefined,
     packageId: typeof data.packageId === 'string' ? data.packageId : undefined,
     packageSessions: typeof data.packageSessions === 'number' ? data.packageSessions : undefined,
     packageDiscountPercent:

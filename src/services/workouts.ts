@@ -185,36 +185,14 @@ export async function fetchWorkoutsForDate(
   userId: string,
   dateStr: string
 ): Promise<Workout[]> {
-  const { collection, query, where, orderBy, limit, getDocs } = await import(
-    'firebase/firestore'
-  )
-  const dayStart = new Date(`${dateStr}T00:00:00`).getTime()
-  const dayEnd = dayStart + 86400000
-  const q = query(
-    collection(db, 'workouts'),
-    where('userId', '==', userId),
-    where('endedAt', '>=', dayStart),
-    where('endedAt', '<', dayEnd),
-    orderBy('endedAt', 'desc'),
-    limit(20)
-  )
-  try {
-    const snap = await getDocs(q)
-    const list: Workout[] = []
-    snap.forEach((docSnap) => {
-      list.push(parseWorkoutDoc(docSnap.id, docSnap.data() as Record<string, unknown>))
-    })
-    return list
-  } catch {
-    const recent = await fetchRecentWorkouts(db, userId, 15)
-    return recent.filter((w) => {
-      const d = new Date(w.endedAt || w.startedAt)
-      const y = d.getFullYear()
-      const m = String(d.getMonth() + 1).padStart(2, '0')
-      const day = String(d.getDate()).padStart(2, '0')
-      return `${y}-${m}-${day}` === dateStr
-    })
-  }
+  const recent = await fetchRecentWorkouts(db, userId, 30)
+  return recent.filter((w) => {
+    const d = new Date(w.endedAt || w.startedAt)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}` === dateStr
+  })
 }
 
 export async function fetchWorkoutById(

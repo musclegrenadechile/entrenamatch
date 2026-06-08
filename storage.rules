@@ -68,6 +68,12 @@ service firebase.storage {
       allow write: if isOwner(userId);
     }
 
+    // ===== MARKETPLACE PRODUCT IMAGES (admin uploads) =====
+    match /marketplace/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
     // ===== DEFAULT DENY (everything else is locked) =====
     // This must stay last. More specific rules above take precedence.
     match /{allPaths=**} {

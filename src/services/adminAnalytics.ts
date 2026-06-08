@@ -19,10 +19,13 @@ export interface AdminMetrics {
   bookingsPaid: number
   bookingVolumeClp: number
   platformFeesClp: number
+  pendingPayoutClp: number
+  pendingPayoutCount: number
   ordersTotal: number
   ordersPaid: number
   orderVolumeClp: number
   mpConfigured: boolean
+  mpLive: boolean
 }
 
 export function computePlatformFeeFromBooking(b: TrainerBooking): number {
@@ -35,14 +38,25 @@ export function computeAdminMetrics(
   profiles: Profile[],
   bookings: TrainerBooking[],
   orders: MarketplaceOrder[],
-  mpConfigured = false
+  mpConfigured = false,
+  mpLive = false
 ): AdminMetrics {
   const liveNow = profiles.filter((p) => p.trainingNow === true).length
   const paidBookings = bookings.filter((b) =>
     ['paid_card', 'paid_cash', 'completed'].includes(b.status)
   )
+  const cardPaid = bookings.filter((b) => b.status === 'paid_card')
+  const pendingPayouts = cardPaid.filter((b) => !b.payoutStatus || b.payoutStatus === 'pending')
+  const pendingPayoutClp = pendingPayouts.reduce(
+    (s, b) =>
+      s +
+      (b.trainerNetClp ??
+        (b.priceClp || 0) -
+          (b.platformFeeClp ?? Math.round((b.priceClp || 0) * TRAINER_PLATFORM_FEE_RATE))),
+    0
+  )
   const bookingVolumeClp = paidBookings.reduce((s, b) => s + (b.priceClp || 0), 0)
-  const platformFeesClp = paidBookings.reduce(
+  const platformFeesClp = cardPaid.reduce(
     (s, b) => s + computePlatformFeeFromBooking(b),
     0
   )
@@ -56,10 +70,13 @@ export function computeAdminMetrics(
     bookingsPaid: paidBookings.length,
     bookingVolumeClp,
     platformFeesClp,
+    pendingPayoutClp,
+    pendingPayoutCount: pendingPayouts.length,
     ordersTotal: orders.length,
     ordersPaid: paidOrders.length,
     orderVolumeClp,
     mpConfigured,
+    mpLive,
   }
 }
 
@@ -88,6 +105,14 @@ export function attachAllTrainerBookingsListener(
           paymentMethod: data.paymentMethod === 'card' ? 'card' : 'cash',
           status: (data.status as TrainerBooking['status']) || 'requested',
           platformFeeClp: typeof data.platformFeeClp === 'number' ? data.platformFeeClp : undefined,
+          trainerNetClp: typeof data.trainerNetClp === 'number' ? data.trainerNetClp : undefined,
+          payoutStatus:
+            data.payoutStatus === 'pending' ||
+            data.payoutStatus === 'processing' ||
+            data.payoutStatus === 'paid'
+              ? data.payoutStatus
+              : undefined,
+          paidAt: typeof data.paidAt === 'number' ? data.paidAt : undefined,
           createdAt: Number(data.createdAt) || 0,
           updatedAt: Number(data.updatedAt) || 0,
         })

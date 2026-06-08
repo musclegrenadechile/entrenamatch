@@ -4950,6 +4950,170 @@ button:not(.live-pill):disabled {
   object-fit: cover;
 }
 
+.marketplace-card__carousel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.marketplace-card__dots {
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+
+.marketplace-card__dot,
+.marketplace-card__dot--active {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.35);
+}
+
+.marketplace-card__dot--active {
+  background: #ff671f;
+  width: 14px;
+}
+
+.marketplace-card__nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0, 0, 0, 0.45);
+  color: white;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.marketplace-card__nav--prev { left: 4px; }
+.marketplace-card__nav--next { right: 4px; }
+
+.marketplace-card__buy-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.marketplace-card__pay-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #9ca3af;
+  text-decoration: none;
+  padding: 4px;
+}
+
+.marketplace-form__images {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.marketplace-form__images-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #9ca3af;
+}
+
+.marketplace-form__images-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.marketplace-form__thumb {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.marketplace-form__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.marketplace-form__thumb button {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0, 0, 0, 0.65);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.marketplace-form__upload {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 1px dashed rgba(255, 103, 31, 0.45);
+  background: rgba(255, 103, 31, 0.06);
+  color: #ff671f;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.marketplace-form__field--optional {
+  margin-top: 4px;
+}
+
+.trainer-coach__partner-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.trainer-coach__partner-btn,
+.trainer-coach__work-btn {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.trainer-coach__partner-btn {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.25), rgba(255, 103, 31, 0.15));
+  border: 1px solid rgba(168, 85, 247, 0.45);
+  color: #e9d5ff;
+}
+
+.trainer-coach__work-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #f8f8f8;
+}
+
 .marketplace-card__placeholder {
   width: 100%;
   height: 100%;
@@ -7643,5 +7807,300 @@ button:not(.live-pill):disabled {
 
 .marketplace-orders__card--delivered {
   border-color: rgba(34, 197, 94, 0.4);
+}
+
+/* ─── GymPulse Map 2.0 — Fases 101–105 ───────────────────────────────────── */
+
+body.gym-pulse-fs-active {
+  overflow: hidden;
+}
+
+.gym-pulse-fs-host {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0)
+    env(safe-area-inset-left, 0);
+  background: #050506;
+}
+
+.gym-pulse-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.gym-pulse-shell--embedded {
+  min-height: 340px;
+  border-radius: 1rem;
+  overflow: hidden;
+}
+
+.gym-pulse-shell--fullscreen {
+  height: 100dvh;
+  max-height: 100dvh;
+  background: linear-gradient(180deg, #0a0a0c 0%, #050506 100%);
+}
+
+.gym-pulse-shell__header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: calc(0.55rem + env(safe-area-inset-top, 0)) 0.75rem 0.55rem;
+  background: rgba(10, 10, 12, 0.82);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(34, 197, 94, 0.18);
+  z-index: 2100;
+}
+
+.gym-pulse-shell__brand {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.gym-pulse-shell__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: #22c55e;
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.65);
+  animation: live-pulse-green 2s ease-in-out infinite;
+}
+
+.gym-pulse-shell__title {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  color: #ecfdf5;
+}
+
+.gym-pulse-shell__pill {
+  font-size: 9px;
+  font-weight: 700;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 9999px;
+  padding: 0.1rem 0.45rem;
+}
+
+.gym-pulse-shell__city {
+  font-size: 9px;
+  color: #9ca3af;
+}
+
+.gym-pulse-shell__actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.gym-pulse-shell__icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.45);
+  color: #e5e7eb;
+}
+
+.gym-pulse-shell__icon-btn--accent {
+  border-color: rgba(34, 197, 94, 0.35);
+  color: #22c55e;
+}
+
+.gym-pulse-shell__map-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.gym-pulse-shell--embedded .gym-pulse-shell__map-wrap {
+  min-height: 340px;
+}
+
+.gym-pulse-shell__expand-fab {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
+  z-index: 2050;
+  width: 34px;
+  height: 34px;
+  border-radius: 9999px;
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  background: rgba(0, 0, 0, 0.72);
+  color: #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+.gym-pulse-map-canvas--fs {
+  height: 100% !important;
+}
+
+.gym-pulse-bottom-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2200;
+  background: rgba(13, 13, 16, 0.94);
+  backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(34, 197, 94, 0.22);
+  border-radius: 1rem 1rem 0 0;
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  max-height: 42vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.gym-pulse-shell--embedded .gym-pulse-bottom-sheet {
+  max-height: 38%;
+}
+
+.gym-pulse-bottom-sheet--collapsed {
+  max-height: 2.75rem;
+  overflow: hidden;
+}
+
+.gym-pulse-bottom-sheet__handle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  color: #d1d5db;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.gym-pulse-bottom-sheet__grab {
+  width: 36px;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.22);
+  flex-shrink: 0;
+}
+
+.gym-pulse-bottom-sheet__title {
+  flex: 1;
+  text-align: left;
+}
+
+.gym-pulse-bottom-sheet__chev {
+  transition: transform 0.2s ease;
+}
+
+.gym-pulse-bottom-sheet__chev--down {
+  transform: rotate(180deg);
+}
+
+.gym-pulse-bottom-sheet__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0.5rem 0.65rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.gym-pulse-bottom-sheet__row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.gym-pulse-bottom-sheet__main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.25rem;
+  text-align: left;
+  min-width: 0;
+}
+
+.gym-pulse-bottom-sheet__avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  object-fit: cover;
+  border: 2px solid rgba(34, 197, 94, 0.45);
+  flex-shrink: 0;
+}
+
+.gym-pulse-bottom-sheet__avatar--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #14532d;
+  color: #ecfdf5;
+  font-weight: 800;
+  font-size: 12px;
+}
+
+.gym-pulse-bottom-sheet__meta {
+  min-width: 0;
+}
+
+.gym-pulse-bottom-sheet__name {
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.gym-pulse-bottom-sheet__bond {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-size: 8px;
+  color: #111;
+  background: #ffd700;
+  border-radius: 4px;
+  padding: 0 4px;
+  font-weight: 800;
+}
+
+.gym-pulse-bottom-sheet__sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 9px;
+  color: #9ca3af;
+  margin-top: 0.1rem;
+}
+
+.gym-pulse-bottom-sheet__urgent {
+  color: #fb923c;
+}
+
+.gym-pulse-bottom-sheet__sync {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 10px;
+  font-weight: 800;
+  color: #111;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-radius: 9999px;
+  padding: 0.35rem 0.55rem;
+  flex-shrink: 0;
+}
+
+.gym-pulse-bottom-sheet__sync:disabled {
+  opacity: 0.65;
 }
 

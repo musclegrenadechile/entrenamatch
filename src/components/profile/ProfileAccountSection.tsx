@@ -37,7 +37,8 @@ export function ProfileAccountSection(props: ProfileTabProps) {
   } = profileTabBindings(props)
   return (
     <>
-{/* In-app debug logs export (phone-only crash reporting, no adb/PC needed) */}
+{/* Debug logs — solo en desarrollo */}
+{import.meta.env.DEV && (
 <div className={`px-4 mt-3${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
   <details className="card p-3 text-xs">
     <summary className="cursor-pointer font-semibold text-[#FF671F]">🐛 Debug logs (para reportar crashes desde el celular)</summary>
@@ -59,6 +60,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
     <div className="text-[9px] text-[#9CA3AF]/60 mt-1">Útil para Samsung Members / bug report. Incluye login, sync actions, publishes, crashes.</div>
   </details>
 </div>
+)}
 
 {/* Verification status - visual upgrade */}
 <div className={`px-4 mt-4${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
@@ -91,7 +93,8 @@ export function ProfileAccountSection(props: ProfileTabProps) {
   </div>
 </div>
 
-{/* Micro guidance - kept minimal, no heavy Pre-Alpha branding to avoid clutter in profile view */}
+{/* Micro guidance — oculto en producción */}
+{import.meta.env.DEV && (
 <div className={`px-4 mt-6 mb-8${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
   <div className="card p-4 text-xs text-[#9CA3AF] leading-snug">
     Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
@@ -99,6 +102,13 @@ export function ProfileAccountSection(props: ProfileTabProps) {
   </div>
   <div className="text-center text-[10px] text-[#6B7280] mt-4">v{APP_VERSION} • Solo +18 • Backend real</div>
 </div>
+)}
+
+{!import.meta.env.DEV && (
+<div className={`px-4 mt-4 mb-6${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+  <div className="text-center text-[10px] text-[#6B7280]">v{APP_VERSION} • Solo +18</div>
+</div>
+)}
 
 {/* Mobile App Download - Prominent for Pre-Alpha testers */}
 <div className={`px-4 mt-2 mb-8${profileSection !== 'cuenta' ? ' hidden' : ''}`}>

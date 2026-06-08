@@ -17,6 +17,7 @@ import {
   type Firestore,
 } from 'firebase/firestore'
 import type { MarketplaceCategory, MarketplaceProduct, MarketplaceShippingInfo } from '../types'
+import { storage } from './firebase'
 
 const COLLECTION = 'marketplaceProducts'
 const ADMIN_COLLECTION = 'marketplaceAdmins'
@@ -151,12 +152,20 @@ export function attachMarketplaceAdminListener(
 
 function mapProduct(id: string, data: Record<string, unknown>): MarketplaceProduct | null {
   if (typeof data.title !== 'string' || typeof data.paymentUrl !== 'string') return null
+  const imageUrls = Array.isArray(data.imageUrls)
+    ? data.imageUrls.map(String).filter(Boolean).slice(0, 3)
+    : undefined
+  const imageUrl =
+    typeof data.imageUrl === 'string'
+      ? data.imageUrl
+      : imageUrls?.[0]
   return {
     id,
     title: data.title,
     description: typeof data.description === 'string' ? data.description : '',
     priceClp: typeof data.priceClp === 'number' ? data.priceClp : 0,
-    imageUrl: typeof data.imageUrl === 'string' ? data.imageUrl : undefined,
+    imageUrl,
+    imageUrls: imageUrls?.length ? imageUrls : imageUrl ? [imageUrl] : undefined,
     paymentUrl: data.paymentUrl,
     category: (data.category as MarketplaceCategory) || 'otro',
     active: data.active !== false,
@@ -202,9 +211,44 @@ export interface MarketplaceProductInput {
   description: string
   priceClp: number
   imageUrl?: string
+  imageUrls?: string[]
   paymentUrl: string
   category: MarketplaceCategory
   active: boolean
+}
+
+/** Upload up to 3 product images to Storage (marketplace admin). */
+export async function uploadMarketplaceProductImages(
+  uid: string,
+  files: File[],
+  onProgress?: (pct: number) => void
+): Promise<string[]> {
+  if (!storage || files.length === 0) return []
+  const { ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage')
+  const urls: string[] = []
+  const batch = files.slice(0, 3)
+  for (let i = 0; i < batch.length; i++) {
+    const file = batch[i]
+    const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
+    const path = `marketplace/${uid}/${Date.now()}_${i}.${ext}`
+    const storageRef = ref(storage, path)
+    await new Promise<void>((resolve, reject) => {
+      const task = uploadBytesResumable(storageRef, file, {
+        contentType: file.type || 'image/jpeg',
+      })
+      task.on(
+        'state_changed',
+        (snap) => {
+          const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100)
+          onProgress?.(Math.round(((i + pct / 100) / batch.length) * 100))
+        },
+        reject,
+        () => resolve()
+      )
+    })
+    urls.push(await getDownloadURL(storageRef))
+  }
+  return urls
 }
 
 export async function createMarketplaceProduct(
@@ -214,11 +258,17 @@ export async function createMarketplaceProduct(
 ): Promise<string> {
   const id = `mp_${Date.now()}`
   const now = Date.now()
-  const { imageUrl, ...rest } = input
+  const imageUrls = (input.imageUrls || []).filter(Boolean).slice(0, 3)
+  const imageUrl = imageUrls[0] || input.imageUrl?.trim()
   await setDoc(doc(db, COLLECTION, id), {
-    ...rest,
-    ...(imageUrl?.trim() ? { imageUrl: imageUrl.trim() } : {}),
+    title: input.title,
+    description: input.description,
+    priceClp: input.priceClp,
+    paymentUrl: input.paymentUrl,
+    category: input.category,
     active: input.active !== false,
+    ...(imageUrl ? { imageUrl } : {}),
+    ...(imageUrls.length ? { imageUrls } : {}),
     createdBy: uid,
     createdAt: now,
     updatedAt: now,
@@ -231,10 +281,13 @@ export async function updateMarketplaceProduct(
   productId: string,
   patch: Partial<MarketplaceProductInput>
 ): Promise<void> {
-  await updateDoc(doc(db, COLLECTION, productId), {
-    ...patch,
-    updatedAt: Date.now(),
-  })
+  const imageUrls = patch.imageUrls?.filter(Boolean).slice(0, 3)
+  const payload: Record<string, unknown> = { ...patch, updatedAt: Date.now() }
+  if (imageUrls) {
+    payload.imageUrls = imageUrls
+    payload.imageUrl = imageUrls[0] || patch.imageUrl || null
+  }
+  await updateDoc(doc(db, COLLECTION, productId), payload)
 }
 
 export async function deleteMarketplaceProduct(

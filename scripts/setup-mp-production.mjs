@@ -1,33 +1,29 @@
 #!/usr/bin/env node
 /**
- * Fase 11 — guía + verificación Mercado Pago producción.
+ * EntrenaMatch — Mercado Pago marketplace (producción).
  * Uso: node scripts/setup-mp-production.mjs
  */
 console.log(`
 ╔══════════════════════════════════════════════════════════╗
-║  EntrenaMatch — Mercado Pago producción (Fase 11)        ║
+║  EntrenaMatch — Mercado Pago marketplace                 ║
 ╚══════════════════════════════════════════════════════════╝
 
-1. Obtén APP_USR-... desde https://www.mercadopago.cl/developers
+Modelo: Cliente paga → cuenta EntrenaMatch → liquidación al PT
 
-2. Configura el secret (recomendado):
+1. Obtén APP_USR-... en https://www.mercadopago.cl/developers
+
+2. Windows (recomendado):
+   .\\scripts\\setup-mp-production.ps1 -AccessToken "APP_USR-..."
+
+   O manual:
    firebase functions:secrets:set MERCADOPAGO_ACCESS_TOKEN --project entrenamatch
-
-   O legacy:
-   firebase functions:config:set mercadopago.access_token="APP_USR-..."
+   firebase deploy --only functions:createTrainerMpCheckout,functions:mercadoPagoWebhook,functions:createMarketplaceMpCheckout,functions:checkMpHealth,functions:markTrainerPayoutStatus --project entrenamatch
 
 3. Webhook en MP Developers → URL:
    https://us-central1-entrenamatch.cloudfunctions.net/mercadoPagoWebhook
    Eventos: payment
 
-4. Deploy functions:
-   firebase deploy --only functions --project entrenamatch
+4. Admin Ops → MP (estado cuenta) → Liquidaciones (transferir al PT)
 
-5. QA manual:
-   - EntrenaCoach → sesión completada → Pagar con MP
-   - Tienda → checkout → webhook marca paid
-   - Admin Ops → pestaña MP / Revenue
-
-6. Admin callable checkMpHealth (v0.1.160+):
-   Desde app admin o Firebase Console → Functions → checkMpHealth
+5. QA: EntrenaCoach → sesión completada → Pagar con tarjeta (EntrenaMatch)
 `)

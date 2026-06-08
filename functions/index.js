@@ -1,8 +1,11 @@
 const functions = require('firebase-functions');
 const { defineSecret } = require('firebase-functions/params');
+const crypto = require('crypto');
 const admin = require('firebase-admin');
 
 const geminiApiKey = defineSecret('GEMINI_API_KEY');
+const mercadopagoAccessToken = defineSecret('MERCADOPAGO_ACCESS_TOKEN');
+const mercadopagoWebhookSecret = defineSecret('MERCADOPAGO_WEBHOOK_SECRET');
 
 admin.initializeApp();
 
@@ -594,6 +597,12 @@ exports.onTrainingReviewForBooking = functions.firestore
   });
 
 function getMpAccessToken() {
+  try {
+    const fromSecret = mercadopagoAccessToken.value();
+    if (fromSecret && String(fromSecret).length > 8) return String(fromSecret);
+  } catch (_) {
+    /* secret not bound on this function */
+  }
   return (
     process.env.MERCADOPAGO_ACCESS_TOKEN ||
     (functions.config().mercadopago && functions.config().mercadopago.access_token) ||
@@ -601,9 +610,87 @@ function getMpAccessToken() {
   );
 }
 
+function getMpWebhookSecret() {
+  try {
+    const fromSecret = mercadopagoWebhookSecret.value();
+    if (fromSecret && String(fromSecret).length > 8) return String(fromSecret);
+  } catch (_) {
+    /* secret not bound on this function */
+  }
+  return process.env.MERCADOPAGO_WEBHOOK_SECRET || '';
+}
+
+function parseMpSignatureHeader(header) {
+  const out = { ts: '', v1: '' };
+  if (!header) return out;
+  String(header)
+    .split(',')
+    .forEach((part) => {
+      const eq = part.indexOf('=');
+      if (eq <= 0) return;
+      const key = part.slice(0, eq).trim();
+      const val = part.slice(eq + 1).trim();
+      if (key === 'ts') out.ts = val;
+      if (key === 'v1') out.v1 = val;
+    });
+  return out;
+}
+
+function extractMpWebhookDataId(req) {
+  let dataId = req.query && req.query['data.id'] ? String(req.query['data.id']) : '';
+  if (!dataId && req.body && req.body.data && req.body.data.id) {
+    dataId = String(req.body.data.id);
+  }
+  if (!dataId && req.query && req.query.id) {
+    dataId = String(req.query.id);
+  }
+  if (dataId && /^[a-z0-9-]+$/i.test(dataId)) {
+    dataId = dataId.toLowerCase();
+  }
+  return dataId;
+}
+
+/** Valida x-signature HMAC-SHA256 según docs Mercado Pago. */
+function verifyMercadoPagoWebhook(req, secret) {
+  if (!secret) return { ok: true, skipped: true };
+
+  const xSignature = req.headers['x-signature'] || req.headers['X-Signature'];
+  const xRequestId = req.headers['x-request-id'] || req.headers['X-Request-Id'];
+  const { ts, v1 } = parseMpSignatureHeader(xSignature);
+  if (!v1) return { ok: false, reason: 'missing x-signature v1' };
+
+  const dataId = extractMpWebhookDataId(req);
+  const manifestParts = [];
+  if (dataId) manifestParts.push(`id:${dataId}`);
+  if (xRequestId) manifestParts.push(`request-id:${xRequestId}`);
+  if (ts) manifestParts.push(`ts:${ts}`);
+  const manifest = manifestParts.length ? `${manifestParts.join(';')};` : '';
+
+  const expected = crypto.createHmac('sha256', secret).update(manifest).digest('hex');
+  try {
+    const a = Buffer.from(v1, 'utf8');
+    const b = Buffer.from(expected, 'utf8');
+    if (a.length !== b.length) return { ok: false, reason: 'signature mismatch' };
+    if (!crypto.timingSafeEqual(a, b)) return { ok: false, reason: 'signature mismatch' };
+  } catch (_) {
+    return { ok: false, reason: 'signature compare failed' };
+  }
+  return { ok: true };
+}
+
+async function assertMarketplaceAdmin(context) {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Inicia sesión.');
+  }
+  const adminSnap = await db.collection('marketplaceAdmins').doc(context.auth.uid).get();
+  if (!adminSnap.exists) {
+    throw new functions.https.HttpsError('permission-denied', 'Solo marketplaceAdmins.');
+  }
+}
+
 /** Callable: crea preferencia MP para booking completado (tarjeta). */
 exports.createTrainerMpCheckout = functions
-  .runWith({ timeoutSeconds: 30 })
+  .runWith({ secrets: [mercadopagoAccessToken], timeoutSeconds: 30 })
   .https.onCall(async (data, context) => {
     if (!context.auth) {
       throw new functions.https.HttpsError('unauthenticated', 'Inicia sesión.');
@@ -641,27 +728,11 @@ exports.createTrainerMpCheckout = functions
     const platformFeeClp = Math.round(priceClp * TRAINER_PLATFORM_FEE_RATE);
     const token = getMpAccessToken();
 
-    const trainerSnap = await db.collection('trainerProfiles').doc(booking.trainerId).get();
-    const trainer = trainerSnap.exists ? trainerSnap.data() || {} : {};
-    const fallbackPaymentUrl =
-      typeof trainer.paymentUrl === 'string' && trainer.paymentUrl.startsWith('https://')
-        ? trainer.paymentUrl
-        : undefined;
-
     if (!token) {
-      if (!fallbackPaymentUrl) {
-        throw new functions.https.HttpsError(
-          'failed-precondition',
-          'Mercado Pago no configurado. El entrenador debe agregar link de pago.'
-        );
-      }
-      return {
-        initPoint: fallbackPaymentUrl,
-        preferenceId: '',
-        platformFeeClp,
-        fallbackPaymentUrl,
-        usedFallback: true,
-      };
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'Pagos con tarjeta procesados por EntrenaMatch. El checkout no está disponible temporalmente.'
+      );
     }
 
     const projectId = process.env.GCLOUD_PROJECT || 'entrenamatch';
@@ -685,6 +756,12 @@ exports.createTrainerMpCheckout = functions
       },
       notification_url: notificationUrl,
       statement_descriptor: 'ENTRENAMATCH',
+      back_urls: {
+        success: 'https://entrenamatch.web.app',
+        failure: 'https://entrenamatch.web.app',
+        pending: 'https://entrenamatch.web.app',
+      },
+      auto_return: 'approved',
     };
 
     const mpRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
@@ -699,15 +776,6 @@ exports.createTrainerMpCheckout = functions
     if (!mpRes.ok) {
       const errText = await mpRes.text();
       console.error('MP preference failed', mpRes.status, errText.slice(0, 300));
-      if (fallbackPaymentUrl) {
-        return {
-          initPoint: fallbackPaymentUrl,
-          preferenceId: '',
-          platformFeeClp,
-          fallbackPaymentUrl,
-          usedFallback: true,
-        };
-      }
       throw new functions.https.HttpsError('internal', 'No se pudo crear el checkout de Mercado Pago.');
     }
 
@@ -727,20 +795,23 @@ exports.createTrainerMpCheckout = functions
       initPoint,
       preferenceId: pref.id,
       platformFeeClp,
-      usedFallback: false,
     };
   });
 
 /** Webhook Mercado Pago — confirma paid_card en trainerBookings. */
-exports.mercadoPagoWebhook = functions.https.onRequest(async (req, res) => {
+exports.mercadoPagoWebhook = functions
+  .runWith({ secrets: [mercadopagoAccessToken, mercadopagoWebhookSecret] })
+  .https.onRequest(async (req, res) => {
   try {
-    let paymentId = req.query && req.query['data.id'] ? String(req.query['data.id']) : '';
-    if (!paymentId && req.body && req.body.data && req.body.data.id) {
-      paymentId = String(req.body.data.id);
+    const webhookSecret = getMpWebhookSecret();
+    const sigCheck = verifyMercadoPagoWebhook(req, webhookSecret);
+    if (!sigCheck.ok) {
+      console.warn('MP webhook: invalid signature', sigCheck.reason);
+      res.status(401).send('invalid signature');
+      return;
     }
-    if (!paymentId && req.query && req.query.id) {
-      paymentId = String(req.query.id);
-    }
+
+    let paymentId = extractMpWebhookDataId(req);
 
     if (!paymentId) {
       res.status(200).send('ok');
@@ -786,10 +857,22 @@ exports.mercadoPagoWebhook = functions.https.onRequest(async (req, res) => {
     const bookingRef = db.collection('trainerBookings').doc(refStr);
     const bookingSnap = await bookingRef.get();
     if (bookingSnap.exists) {
+      const booking = bookingSnap.data() || {};
+      const priceClp = Math.round(Number(booking.priceClp) || 0);
+      const platformFeeClp =
+        typeof booking.platformFeeClp === 'number'
+          ? Math.round(booking.platformFeeClp)
+          : Math.round(priceClp * TRAINER_PLATFORM_FEE_RATE);
+      const trainerNetClp = Math.max(0, priceClp - platformFeeClp);
+      const now = Date.now();
       await bookingRef.update({
         status: 'paid_card',
         mpPaymentId: String(paymentId),
-        updatedAt: Date.now(),
+        platformFeeClp,
+        trainerNetClp,
+        payoutStatus: 'pending',
+        paidAt: now,
+        updatedAt: now,
       });
       console.log('MP webhook: booking paid', refStr, paymentId);
       res.status(200).send('ok');
@@ -1237,7 +1320,7 @@ exports.onMarketplaceOrderUpdated = functions.firestore
 
 /** Callable: checkout MP para pedido marketplace. */
 exports.createMarketplaceMpCheckout = functions
-  .runWith({ timeoutSeconds: 30 })
+  .runWith({ secrets: [mercadopagoAccessToken], timeoutSeconds: 30 })
   .https.onCall(async (data, context) => {
     if (!context.auth) {
       throw new functions.https.HttpsError('unauthenticated', 'Inicia sesión.');
@@ -1345,20 +1428,75 @@ exports.createMarketplaceMpCheckout = functions
   });
 
 /** Admin: verifica si MP token está configurado (Fase 11). */
-exports.checkMpHealth = functions.https.onCall(async (_data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Inicia sesión.');
-  }
-  const adminSnap = await db.collection('marketplaceAdmins').doc(context.auth.uid).get();
-  if (!adminSnap.exists) {
-    throw new functions.https.HttpsError('permission-denied', 'Solo marketplaceAdmins.');
-  }
+exports.checkMpHealth = functions
+  .runWith({ secrets: [mercadopagoAccessToken, mercadopagoWebhookSecret] })
+  .https.onCall(async (_data, context) => {
+  await assertMarketplaceAdmin(context);
   const token = getMpAccessToken();
-  return {
-    configured: !!(token && String(token).length > 8 && token !== 'UNCONFIGURED'),
+  const webhookSecret = getMpWebhookSecret();
+  const webhookUrl = `https://us-central1-${process.env.GCLOUD_PROJECT || 'entrenamatch'}.cloudfunctions.net/mercadoPagoWebhook`;
+  const base = {
+    configured: !!(token && String(token).length > 8),
+    webhookSecretConfigured: !!(webhookSecret && String(webhookSecret).length > 8),
     hasWebhook: true,
-    webhookUrl: `https://us-central1-${process.env.GCLOUD_PROJECT || 'entrenamatch'}.cloudfunctions.net/mercadoPagoWebhook`,
+    webhookUrl,
+    marketplaceModel: true,
   };
+  if (!token) return { ...base, live: false, mpUserId: null };
+
+  try {
+    const meRes = await fetch('https://api.mercadopago.com/users/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!meRes.ok) {
+      return { ...base, live: false, mpUserId: null, mpError: `HTTP ${meRes.status}` };
+    }
+    const me = await meRes.json();
+    return {
+      ...base,
+      live: true,
+      mpUserId: me.id != null ? String(me.id) : null,
+      mpNickname: me.nickname || me.email || null,
+    };
+  } catch (err) {
+    return { ...base, live: false, mpUserId: null, mpError: String(err.message || err) };
+  }
+});
+
+/** Admin: marca liquidación al entrenador (marketplace EntrenaCoach). */
+exports.markTrainerPayoutStatus = functions.https.onCall(async (data, context) => {
+  await assertMarketplaceAdmin(context);
+  const bookingId = data && data.bookingId ? String(data.bookingId) : '';
+  const status = data && data.status ? String(data.status) : '';
+  if (!bookingId) {
+    throw new functions.https.HttpsError('invalid-argument', 'bookingId requerido.');
+  }
+  if (status !== 'processing' && status !== 'paid') {
+    throw new functions.https.HttpsError('invalid-argument', 'status debe ser processing o paid.');
+  }
+
+  const bookingRef = db.collection('trainerBookings').doc(bookingId);
+  const bookingSnap = await bookingRef.get();
+  if (!bookingSnap.exists) {
+    throw new functions.https.HttpsError('not-found', 'Reserva no encontrada.');
+  }
+  const booking = bookingSnap.data() || {};
+  if (booking.status !== 'paid_card') {
+    throw new functions.https.HttpsError('failed-precondition', 'La sesión no está pagada con tarjeta.');
+  }
+
+  const now = Date.now();
+  const patch = {
+    payoutStatus: status,
+    payoutUpdatedAt: now,
+    updatedAt: now,
+  };
+  if (status === 'paid') {
+    patch.payoutPaidAt = now;
+    patch.payoutPaidBy = context.auth.uid;
+  }
+  await bookingRef.update(patch);
+  return { ok: true, bookingId, payoutStatus: status };
 });
 
 /** Fase 15 — Daily Pulse re-engagement (09:00 Chile). */

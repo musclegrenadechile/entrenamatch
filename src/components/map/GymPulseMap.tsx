@@ -37,6 +37,13 @@ L.Icon.Default.mergeOptions({
 
 import { getDistanceKm } from '../../utils'
 import { filterMapLiveUsers, hasMapCoords } from '../../utils/gymPulseLive'
+import { buildIconicClusterMarkerHtml, buildIconicLiveMarkerHtml } from '../../utils/gymPulseMarkers'
+import {
+  GYMPULSE_MAP_SUBDOMAINS,
+  GYMPULSE_MAP_TILE_ATTRIBUTION,
+  GYMPULSE_MAP_TILE_URL,
+} from '../../services/gymPulseMapConfig'
+import { bboxFromLeafletBounds, buildLiveClusterIndex, getLiveClusters } from '../../services/gymPulseCluster'
 import { countLiveAtGym } from '../../services/localNetwork'
 import { syncElapsedMinutes } from '../../utils/syncFomo'
 
@@ -99,6 +106,8 @@ export interface GymPulseMapProps {
   // Witness for echo pins / ripples from map (connect to parent modal/replay)
   onWitnessEchoPin?: (id: string) => void
   onWitnessRipple?: (id: string) => void
+  /** Fase 101 — embedded widget vs fullscreen shell */
+  layoutMode?: 'embedded' | 'fullscreen'
 }
 
 export interface GymPulseMapHandle {
@@ -189,8 +198,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
     onWitnessEchoPin,
     onWitnessRipple,
+    layoutMode = 'embedded',
 
-    // Dev tools props (passed from parent when isDeveloper)
     onAddPartnerAtCurrentCenter,
     onReloadPartners,
     onSpawnTestLives,
@@ -300,7 +309,11 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         attributionControl: false
       }).setView(initialCenter, initialZoom)
 
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 18 }).addTo(mapInstanceRef.current)
+      L.tileLayer(GYMPULSE_MAP_TILE_URL, {
+        maxZoom: 19,
+        subdomains: [...GYMPULSE_MAP_SUBDOMAINS],
+        attribution: GYMPULSE_MAP_TILE_ATTRIBUTION,
+      }).addTo(mapInstanceRef.current)
 
       // Move zoom control to bottom right so our overlays (Centrar top-right, dev toolbar) are not covered
       L.control.zoom({ position: 'bottomright' }).addTo(mapInstanceRef.current)
@@ -340,10 +353,12 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
       // Zoom listener for clusters + force tick
       if (mapInstanceRef.current && !(mapInstanceRef.current as any)._clusterZoomBound) {
-        mapInstanceRef.current.on('zoomend', () => {
+        const onMapViewChange = () => {
           lastZoomTimeRef.current = Date.now()
           if (onForceTick) onForceTick()
-        })
+        }
+        mapInstanceRef.current.on('zoomend', onMapViewChange)
+        mapInstanceRef.current.on('moveend', onMapViewChange)
         ;(mapInstanceRef.current as any)._clusterZoomBound = true
       }
     } else {
@@ -457,25 +472,27 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         } catch {}
       }
 
-      // Clustering at low zoom
-      let renderUsers = liveUsers
+      // Fase 103 — supercluster (replaces grid buckets)
       const currentZoom = mapInstanceRef.current.getZoom()
-      if (currentZoom < 11.5 && liveUsers.length > 3) {
-        const gridSize = 0.028
-        const buckets: Record<string, any[]> = {}
-        liveUsers.forEach(u => {
-          const k = `${Math.floor(u.lat / gridSize)}:${Math.floor(u.lng / gridSize)}`
-          if (!buckets[k]) buckets[k] = []
-          buckets[k].push(u)
-        })
-        renderUsers = Object.values(buckets).map(g => {
-          if (g.length <= 1) return g[0]
-          const avgLat = g.reduce((s, u) => s + u.lat, 0) / g.length
-          const avgLng = g.reduce((s, u) => s + u.lng, 0) / g.length
-          const maxLvl = Math.max(0, ...g.map((u: any) => u.visibleLevel || 1))
-          return { id: `cluster-${avgLat.toFixed(3)}-${avgLng.toFixed(3)}`, lat: avgLat, lng: avgLng, isCluster: true, clusterCount: g.length, clusterMembers: g, visibleLevel: maxLvl, city: g[0]?.city }
-        })
-      }
+      const clusterIndex = buildLiveClusterIndex(liveUsers as any[])
+      const bounds = mapInstanceRef.current.getBounds()
+      const bbox = bboxFromLeafletBounds(bounds)
+      const clusterFeatures = getLiveClusters(clusterIndex, bbox, currentZoom)
+      const renderUsers = clusterFeatures.map((f) => {
+        const [lng, lat] = f.geometry.coordinates
+        if (f.properties.cluster) {
+          return {
+            id: `cluster-${f.properties.cluster_id}`,
+            lat,
+            lng,
+            isCluster: true,
+            clusterCount: f.properties.point_count || 0,
+            clusterId: f.properties.cluster_id,
+            _clusterIndex: clusterIndex,
+          }
+        }
+        return { ...f.properties, lat, lng, isCluster: false }
+      })
 
       // Self marker (in-place update, not in markersRef) — upgraded iconic premium presence
       if (selfMapPos) {
@@ -528,36 +545,51 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       // Uses data like seVaEnMin, joinCount, isNetworkBond, visibleLevel from the parent liveTrainingNow computation.
       renderUsers.forEach((u: any) => {
         if (!hasMapCoords(u)) return
+
+        if (u.isCluster) {
+          const count = u.clusterCount || 2
+          const size = count >= 10 ? 44 : count >= 5 ? 40 : 36
+          const clusterHtml = buildIconicClusterMarkerHtml(count)
+          try {
+            const marker = L.marker([u.lat, u.lng], {
+              icon: L.divIcon({
+                html: clusterHtml,
+                className: 'iconic-cluster',
+                iconSize: [size, size],
+                iconAnchor: [size / 2, size / 2],
+              }),
+            }).addTo(mapInstanceRef.current)
+            marker.bindPopup(`<strong>${count} entrenando</strong><br/><span style="font-size:10px;color:#9CA3AF">Toca para acercar</span>`)
+            marker.on('click', () => {
+              if (u._clusterIndex && u.clusterId != null) {
+                try {
+                  const expansionZoom = u._clusterIndex.getClusterExpansionZoom(u.clusterId)
+                  mapInstanceRef.current.flyTo([u.lat, u.lng], Math.min(expansionZoom + 1, 18), {
+                    duration: 0.65,
+                  })
+                } catch {
+                  mapInstanceRef.current.setView([u.lat, u.lng], Math.min(currentZoom + 2, 16))
+                }
+              }
+            })
+            markersRef.current.push(marker)
+          } catch {}
+          return
+        }
+
         const isBond = !!syncBonds[u.id]
         const isHigh = (u.visibleLevel || 1) >= 15 || u.isNetworkBond
         const hasPulso = (u.visibleLevel || 1) >= 20
-        const lvl = u.visibleLevel || 1
-        const borderColor = isBond ? '#FFD700' : (hasPulso ? '#a855f7' : (isHigh ? '#eab308' : '#22c55e'))
-        const size = hasPulso ? 36 : (isHigh ? 32 : 28)
-        const ringExtra = hasPulso 
-          ? `<div class="live-pulso-ring" style="inset:-11px;border-color:#a855f7;opacity:0.28"></div><div style="position:absolute;inset:-15px;border-radius:9999px;border:1px solid #a855f7;opacity:0.12;animation:live-pulso-ring 3.2s ease-in-out infinite;"></div>`
-          : (isHigh ? `<div class="live-halo-ring" style="border-color:#eab308;opacity:0.38"></div>` : '')
-        const bondHalo = isBond ? `<div style="position:absolute;inset:-7px;border-radius:9999px;border:2px solid #FFD700;opacity:0.35;animation:live-pulse-green 1.4s ease-in-out infinite;"></div>` : ''
-        const liveBadge = `<div style="position:absolute;top:-3px;right:-3px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#111;font-size:7px;font-weight:900;padding:0 4px;border-radius:4px;line-height:9px;border:1px solid #111;box-shadow:0 0 0 1px rgba(0,0,0,.7)">LIVE</div>`
-        const timeBadge = u.seVaEnMin != null ? `<div style="position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);background:#0a0a0c;color:#22c55e;font-size:8px;padding:0 4px;border-radius:3px;border:1px solid #22c55e55;white-space:nowrap;font-weight:700">~${u.seVaEnMin}m</div>` : ''
-        const lvlBadge = (isHigh || hasPulso) ? `<div style="position:absolute;bottom:-1px;right:2px;background:${hasPulso?'#a855f7':'#eab308'};color:#111;font-size:7px;font-weight:800;padding:0 2px;border-radius:2px;line-height:8px;opacity:0.95">${lvl}</div>` : ''
-        const nameLabel = `<div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:rgba(10,10,12,0.85);color:#ddd;font-size:8px;padding:0 4px;border-radius:3px;white-space:nowrap;max-width:68px;overflow:hidden;text-overflow:ellipsis;border:1px solid rgba(255,255,255,0.1)">${(u.name||'').split(' ')[0]}</div>`
-        const iconHtml = `
-          <div class="iconic-live-marker" style="position:relative;width:${size}px;height:${size}px">
-            ${nameLabel}
-            <div style="width:${size}px;height:${size}px;border-radius:9999px;overflow:hidden;border:2.5px solid ${borderColor};box-shadow:0 0 0 2px rgba(0,0,0,0.75);">
-              <img src="${u.photos?.[0] || ''}" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='#22c55e';this.innerHTML='<div style=\\'font-size:9px;color:white;display:flex;align-items:center;justify-content:center;height:100%;font-weight:700\\'>LIVE</div>'" />
-            </div>
-            ${ringExtra}
-            ${bondHalo}
-            ${liveBadge}
-            ${timeBadge}
-            ${lvlBadge}
-            <div style="position:absolute;inset:-4px;border-radius:9999px;border:1.5px solid #22c55e;opacity:0.32;animation:live-pulse-green 1.9s ease-in-out infinite;"></div>
-          </div>`
+        const size = hasPulso ? 36 : isHigh ? 32 : 28
+        const iconHtml = buildIconicLiveMarkerHtml(u, { isBond, size })
         try {
           const marker = L.marker([u.lat, u.lng], {
-            icon: L.divIcon({ html: iconHtml, className: 'live-user-marker iconic-live-marker', iconSize: [size, size], iconAnchor: [size/2, size/2] })
+            icon: L.divIcon({
+              html: iconHtml,
+              className: 'iconic-live-marker',
+              iconSize: [size, size],
+              iconAnchor: [size / 2, size / 2],
+            }),
           }).addTo(mapInstanceRef.current)
 
           const joinTxt = u.joinCount ? ` • ${u.joinCount} unidos` : ''
@@ -962,7 +994,11 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       {/* The actual Leaflet container */}
       <div
         ref={mapContainerRef}
-        className="w-full h-[340px] rounded-2xl overflow-hidden border border-[#22c55e]/25 bg-[#0a0a0c] shadow-[0_0_0_1px_rgba(34,197,94,0.12),0_10px_40px_-12px_rgba(0,0,0,0.7)]"
+        className={`w-full overflow-hidden border border-[#22c55e]/25 bg-[#0a0a0c] shadow-[0_0_0_1px_rgba(34,197,94,0.12),0_10px_40px_-12px_rgba(0,0,0,0.7)] ${
+          layoutMode === 'fullscreen'
+            ? 'gym-pulse-map-canvas gym-pulse-map-canvas--fs h-full min-h-0 rounded-none border-0'
+            : 'h-[340px] rounded-2xl'
+        }`}
         id="live-map-container"
       />
 

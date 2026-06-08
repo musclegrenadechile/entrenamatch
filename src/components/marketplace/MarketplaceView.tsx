@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, ExternalLink, Package, Pencil, Plus, ShoppingBag, Trash2 } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowLeft, ExternalLink, ImagePlus, Package, Pencil, Plus, ShoppingBag, Trash2, X } from 'lucide-react'
 import { toast } from 'sonner'
 import type { MarketplaceCategory, MarketplaceOrder, MarketplaceProduct, MarketplaceShippingInfo } from '../../types'
 import {
   formatClp,
+  uploadMarketplaceProductImages,
   type MarketplaceProductInput,
 } from '../../services/marketplace'
 import { ORDER_STATUS_LABELS, ORDER_STATUS_FLOW } from '../../services/adminOps'
@@ -17,16 +18,6 @@ const CATEGORIES: { id: MarketplaceCategory; label: string }[] = [
   { id: 'digital', label: 'Digital' },
   { id: 'otro', label: 'Otro' },
 ]
-
-const EMPTY_FORM: MarketplaceProductInput = {
-  title: '',
-  description: '',
-  priceClp: 0,
-  imageUrl: '',
-  paymentUrl: '',
-  category: 'otro',
-  active: true,
-}
 
 export interface MarketplaceViewProps {
   open: boolean
@@ -45,6 +36,79 @@ export interface MarketplaceViewProps {
   initialScreenMode?: 'shop' | 'orders'
 }
 
+const EMPTY_FORM: MarketplaceProductInput = {
+  title: '',
+  description: '',
+  priceClp: 0,
+  imageUrl: '',
+  imageUrls: [],
+  paymentUrl: '',
+  category: 'otro',
+  active: true,
+}
+
+function productImages(product: MarketplaceProduct): string[] {
+  if (product.imageUrls?.length) return product.imageUrls.slice(0, 3)
+  return product.imageUrl ? [product.imageUrl] : []
+}
+
+function ProductImageCarousel({ images, title }: { images: string[]; title: string }) {
+  const [idx, setIdx] = useState(0)
+  useEffect(() => setIdx(0), [images.join('|')])
+  if (images.length === 0) {
+    return (
+      <div className="marketplace-card__placeholder">
+        <ShoppingBag size={28} />
+      </div>
+    )
+  }
+  return (
+    <div className="marketplace-card__carousel">
+      <img src={images[idx]} alt={title} className="marketplace-card__img" />
+      {images.length > 1 && (
+        <>
+          <div className="marketplace-card__dots">
+            {images.map((_, i) => (
+              <button
+                key={i}
+                type="button"
+                className={i === idx ? 'marketplace-card__dot--active' : 'marketplace-card__dot'}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIdx(i)
+                }}
+                aria-label={`Imagen ${i + 1}`}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            className="marketplace-card__nav marketplace-card__nav--prev"
+            onClick={(e) => {
+              e.stopPropagation()
+              setIdx((i) => (i - 1 + images.length) % images.length)
+            }}
+            aria-label="Anterior"
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            className="marketplace-card__nav marketplace-card__nav--next"
+            onClick={(e) => {
+              e.stopPropagation()
+              setIdx((i) => (i + 1) % images.length)
+            }}
+            aria-label="Siguiente"
+          >
+            ›
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
 function ProductCard({
   product,
   isAdmin,
@@ -58,18 +122,13 @@ function ProductCard({
   onEdit: () => void
   onDelete: () => void
 }) {
+  const images = productImages(product)
   return (
     <article
       className={`marketplace-card ${!product.active ? 'marketplace-card--inactive' : ''}`}
     >
       <div className="marketplace-card__media">
-        {product.imageUrl ? (
-          <img src={product.imageUrl} alt="" className="marketplace-card__img" />
-        ) : (
-          <div className="marketplace-card__placeholder">
-            <ShoppingBag size={28} />
-          </div>
-        )}
+        <ProductImageCarousel images={images} title={product.title} />
         {!product.active && <span className="marketplace-card__badge-off">Oculto</span>}
       </div>
       <div className="marketplace-card__body">
@@ -82,9 +141,22 @@ function ProductCard({
         )}
         <p className="marketplace-card__price">{formatClp(product.priceClp)}</p>
         {product.active ? (
-          <button type="button" className="marketplace-card__pay" onClick={onBuy}>
-            Comprar
-          </button>
+          <div className="marketplace-card__buy-row">
+            <button type="button" className="marketplace-card__pay" onClick={onBuy}>
+              Comprar
+            </button>
+            {product.paymentUrl.startsWith('https://') && (
+              <a
+                href={product.paymentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="marketplace-card__pay-link"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ExternalLink size={12} /> Pago directo
+              </a>
+            )}
+          </div>
         ) : (
           <p className="marketplace-card__unavailable">No disponible</p>
         )}
@@ -130,6 +202,9 @@ export function MarketplaceView({
   const [editingId, setEditingId] = useState<string | null>(null)
   const [form, setForm] = useState<MarketplaceProductInput>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
+  const [uploadingImages, setUploadingImages] = useState(false)
+  const [imageUploadPct, setImageUploadPct] = useState(0)
+  const imageInputRef = useRef<HTMLInputElement>(null)
 
   const visible = useMemo(() => {
     const list = isAdmin ? products : products.filter((p) => p.active)
@@ -164,11 +239,41 @@ export function MarketplaceView({
       description: p.description,
       priceClp: p.priceClp,
       imageUrl: p.imageUrl || '',
+      imageUrls: productImages(p),
       paymentUrl: p.paymentUrl,
       category: p.category,
       active: p.active,
     })
     setShowForm(true)
+  }
+
+  const handleImageFiles = async (files: FileList | null) => {
+    if (!files?.length || !userUid) return
+    const picked = Array.from(files).slice(0, 3)
+    setUploadingImages(true)
+    setImageUploadPct(0)
+    try {
+      const urls = await uploadMarketplaceProductImages(userUid, picked, setImageUploadPct)
+      setForm((f) => ({
+        ...f,
+        imageUrls: urls,
+        imageUrl: urls[0] || f.imageUrl,
+      }))
+      toast.success(`${urls.length} imagen${urls.length > 1 ? 'es' : ''} subida${urls.length > 1 ? 's' : ''}`)
+    } catch {
+      toast.error('No se pudieron subir las imágenes')
+    } finally {
+      setUploadingImages(false)
+      setImageUploadPct(0)
+      if (imageInputRef.current) imageInputRef.current.value = ''
+    }
+  }
+
+  const removeFormImage = (idx: number) => {
+    setForm((f) => {
+      const next = (f.imageUrls || []).filter((_, i) => i !== idx)
+      return { ...f, imageUrls: next, imageUrl: next[0] || '' }
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -187,7 +292,8 @@ export function MarketplaceView({
         ...form,
         title: form.title.trim(),
         description: form.description.trim(),
-        imageUrl: form.imageUrl?.trim() || undefined,
+        imageUrls: (form.imageUrls || []).filter(Boolean).slice(0, 3),
+        imageUrl: form.imageUrls?.[0] || form.imageUrl?.trim() || undefined,
         paymentUrl: form.paymentUrl.trim(),
       }
       if (editingId) {
@@ -287,32 +393,6 @@ export function MarketplaceView({
           Modo desarrollador — solo tú puedes publicar productos. Usa tu link de Mercado Pago o Stripe en
           &quot;Link de pago&quot;.
         </p>
-      )}
-
-      {!isAdmin && !isDemoMode && userUid && (
-        <div className="marketplace-screen__setup">
-          <p className="marketplace-screen__setup-title">Panel admin no activo</p>
-          <p className="marketplace-screen__setup-text">
-            La app no usa tu email para admin — necesitas un documento en Firestore con tu UID
-            {userEmail ? ` (${userEmail})` : ''}.
-          </p>
-          <code className="marketplace-screen__setup-code">marketplaceAdmins/{userUid}</code>
-          <button
-            type="button"
-            className="marketplace-screen__setup-copy"
-            onClick={() => {
-              void navigator.clipboard.writeText(userUid).then(() => {
-                toast.success('UID copiado')
-              })
-            }}
-          >
-            Copiar UID
-          </button>
-          <p className="marketplace-screen__setup-foot">
-            En tu PC:{' '}
-            <code>node scripts/write-marketplace-admin.mjs {userEmail || 'TU_EMAIL'}</code>
-          </p>
-        </div>
       )}
 
       {screenMode === 'orders' ? (
@@ -449,15 +529,47 @@ export function MarketplaceView({
               </select>
             </label>
           </div>
-          <label className="marketplace-form__field">
-            URL imagen (opcional)
+          <div className="marketplace-form__images">
+            <span className="marketplace-form__images-label">Imágenes del producto (máx. 3)</span>
+            <div className="marketplace-form__images-grid">
+              {(form.imageUrls || []).map((url, i) => (
+                <div key={url} className="marketplace-form__thumb">
+                  <img src={url} alt="" />
+                  <button type="button" onClick={() => removeFormImage(i)} aria-label="Quitar">
+                    <X size={12} />
+                  </button>
+                </div>
+              ))}
+              {(form.imageUrls?.length || 0) < 3 && (
+                <button
+                  type="button"
+                  className="marketplace-form__upload"
+                  disabled={uploadingImages || !userUid}
+                  onClick={() => imageInputRef.current?.click()}
+                >
+                  <ImagePlus size={18} />
+                  {uploadingImages ? `${imageUploadPct}%` : 'Subir'}
+                </button>
+              )}
+            </div>
             <input
-              type="url"
-              value={form.imageUrl || ''}
-              onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
-              placeholder="https://..."
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              className="hidden"
+              onChange={(e) => void handleImageFiles(e.target.files)}
             />
-          </label>
+            <label className="marketplace-form__field marketplace-form__field--optional">
+              O URL imagen externa
+              <input
+                type="url"
+                value={form.imageUrl || ''}
+                onChange={(e) => setForm((f) => ({ ...f, imageUrl: e.target.value }))}
+                placeholder="https://..."
+              />
+            </label>
+          </div>
           <label className="marketplace-form__field">
             Link de pago (Mercado Pago / Stripe)
             <input

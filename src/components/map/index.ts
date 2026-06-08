@@ -1,3 +1,5 @@
 export { GymPulseMap } from './GymPulseMap'
+export { GymPulseMapShell } from './GymPulseMapShell'
+export { GymPulseBottomSheet } from './GymPulseBottomSheet'
 export { GymPulseTour, hasSeenGymPulseTour, markGymPulseTourSeen, GYMPULSE_TOUR_KEY } from './GymPulseTour'
 export type { GymPulseMapProps } from './GymPulseMap'

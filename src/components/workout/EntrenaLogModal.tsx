@@ -3,6 +3,7 @@ import { Dumbbell, Plus, Trash2, X } from 'lucide-react'
 import {
   EXERCISE_LIBRARY,
   WORKOUT_TYPE_LABELS,
+  MUSCLE_GROUPS,
   filterExercises,
 } from '../../data/exerciseLibrary'
 import type { WorkoutExercise, WorkoutSet, WorkoutType } from '../../types'
@@ -33,6 +34,82 @@ function emptyExercise(name: string): WorkoutExercise {
   return { name, sets: [emptySet()] }
 }
 
+function SetInputs({
+  set,
+  setIdx,
+  exIdx,
+  canRemove,
+  onUpdate,
+  onRemove,
+}: {
+  set: WorkoutSet
+  setIdx: number
+  exIdx: number
+  canRemove: boolean
+  onUpdate: (exIdx: number, setIdx: number, patch: Partial<WorkoutSet>) => void
+  onRemove: (exIdx: number, setIdx: number) => void
+}) {
+  const [repsDraft, setRepsDraft] = useState(String(set.reps || ''))
+  const [weightDraft, setWeightDraft] = useState(
+    set.weightKg > 0 ? String(set.weightKg) : ''
+  )
+
+  useEffect(() => {
+    setRepsDraft(String(set.reps || ''))
+    setWeightDraft(set.weightKg > 0 ? String(set.weightKg) : '')
+  }, [set.reps, set.weightKg])
+
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <span className="w-6 text-[#6B7280] font-bold">{setIdx + 1}</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={repsDraft}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/\D/g, '')
+          setRepsDraft(raw)
+          onUpdate(exIdx, setIdx, { reps: raw === '' ? 0 : Math.max(0, parseInt(raw, 10) || 0) })
+        }}
+        className="w-14 px-2 py-1.5 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
+        placeholder="reps"
+        aria-label={`Reps set ${setIdx + 1}`}
+      />
+      <span className="text-[#6B7280]">×</span>
+      <input
+        type="text"
+        inputMode="decimal"
+        value={weightDraft}
+        onChange={(e) => {
+          const raw = e.target.value.replace(',', '.')
+          if (raw !== '' && !/^\d*\.?\d*$/.test(raw)) return
+          setWeightDraft(raw)
+          if (raw === '' || raw === '.') {
+            onUpdate(exIdx, setIdx, { weightKg: 0 })
+            return
+          }
+          const n = parseFloat(raw)
+          if (!Number.isNaN(n)) onUpdate(exIdx, setIdx, { weightKg: Math.max(0, n) })
+        }}
+        className="w-16 px-2 py-1.5 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
+        placeholder="kg"
+        aria-label={`Peso set ${setIdx + 1}`}
+      />
+      <span className="text-[#6B7280]">kg</span>
+      {canRemove && (
+        <button
+          type="button"
+          onClick={() => onRemove(exIdx, setIdx)}
+          className="ml-auto text-[#6B7280] active:text-red-400 px-1"
+          aria-label="Quitar set"
+        >
+          ×
+        </button>
+      )}
+    </div>
+  )
+}
+
 export function EntrenaLogModal({
   open,
   onClose,
@@ -48,6 +125,7 @@ export function EntrenaLogModal({
   const [durationMin, setDurationMin] = useState(45)
   const [exercises, setExercises] = useState<WorkoutExercise[]>([])
   const [search, setSearch] = useState('')
+  const [muscleFilter, setMuscleFilter] = useState<string | undefined>()
   const [showPicker, setShowPicker] = useState(false)
 
   useEffect(() => {
@@ -57,10 +135,14 @@ export function EntrenaLogModal({
     setDurationMin(initialDurationMin ?? 45)
     setExercises(initialExercises?.length ? initialExercises.map((e) => ({ ...e, sets: [...e.sets] })) : [])
     setSearch('')
+    setMuscleFilter(undefined)
     setShowPicker(false)
   }, [open, defaultTitle, initialExercises, initialType, initialDurationMin])
 
-  const suggestions = useMemo(() => filterExercises(search, 6), [search])
+  const suggestions = useMemo(
+    () => filterExercises(search, 14, muscleFilter),
+    [search, muscleFilter]
+  )
 
   if (!open) return null
 
@@ -86,9 +168,14 @@ export function EntrenaLogModal({
 
   const addSet = (exIdx: number) => {
     setExercises((prev) =>
-      prev.map((ex, i) =>
-        i !== exIdx ? ex : { ...ex, sets: [...ex.sets, { ...ex.sets[ex.sets.length - 1] }] }
-      )
+      prev.map((ex, i) => {
+        if (i !== exIdx) return ex
+        const last = ex.sets[ex.sets.length - 1]
+        return {
+          ...ex,
+          sets: [...ex.sets, { reps: last?.reps || 10, weightKg: last?.weightKg || 0 }],
+        }
+      })
     )
   }
 
@@ -119,7 +206,9 @@ export function EntrenaLogModal({
             <Dumbbell className="w-5 h-5 text-[#FF671F]" />
             <div>
               <p className="text-sm font-black text-white">EntrenaLog</p>
-              <p className="text-[10px] text-[#9CA3AF]">Registra tu rutina — se publica en el muro</p>
+              <p className="text-[10px] text-[#9CA3AF]">
+                {EXERCISE_LIBRARY.length} ejercicios · registra sets y peso
+              </p>
             </div>
           </div>
           <button
@@ -184,6 +273,29 @@ export function EntrenaLogModal({
             <label className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">
               Ejercicios
             </label>
+            <div className="flex gap-1.5 mt-1.5 overflow-x-auto pb-1 scrollbar-none">
+              <button
+                type="button"
+                onClick={() => setMuscleFilter(undefined)}
+                className={`shrink-0 text-[9px] px-2 py-1 rounded-full font-bold ${
+                  !muscleFilter ? 'bg-[#FF671F] text-black' : 'bg-white/5 text-[#9CA3AF]'
+                }`}
+              >
+                Todos
+              </button>
+              {MUSCLE_GROUPS.map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  onClick={() => setMuscleFilter(m === muscleFilter ? undefined : m)}
+                  className={`shrink-0 text-[9px] px-2 py-1 rounded-full font-bold ${
+                    muscleFilter === m ? 'bg-[#FF671F] text-black' : 'bg-white/5 text-[#9CA3AF]'
+                  }`}
+                >
+                  {m}
+                </button>
+              ))}
+            </div>
             <div className="mt-1.5 relative">
               <input
                 value={search}
@@ -195,20 +307,24 @@ export function EntrenaLogModal({
                 placeholder="Buscar ejercicio…"
                 className="w-full px-3 py-2.5 rounded-xl bg-[#1a1a22] border border-white/10 text-white text-sm"
               />
-              {showPicker && (search || suggestions.length > 0) && (
-                <ul className="absolute z-10 mt-1 w-full max-h-40 overflow-y-auto rounded-xl bg-[#1e1e28] border border-white/10 shadow-lg">
-                  {(search ? suggestions : EXERCISE_LIBRARY.slice(0, 6)).map((ex) => (
-                    <li key={ex.name}>
-                      <button
-                        type="button"
-                        onClick={() => addExercise(ex.name)}
-                        className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/5 flex justify-between"
-                      >
-                        <span>{ex.name}</span>
-                        <span className="text-[10px] text-[#9CA3AF]">{ex.muscle}</span>
-                      </button>
-                    </li>
-                  ))}
+              {showPicker && (
+                <ul className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-xl bg-[#1e1e28] border border-white/10 shadow-lg">
+                  {suggestions.length === 0 ? (
+                    <li className="px-3 py-2 text-xs text-[#9CA3AF]">Sin resultados</li>
+                  ) : (
+                    suggestions.map((ex) => (
+                      <li key={ex.name}>
+                        <button
+                          type="button"
+                          onClick={() => addExercise(ex.name)}
+                          className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/5 flex justify-between gap-2"
+                        >
+                          <span>{ex.name}</span>
+                          <span className="text-[10px] text-[#9CA3AF] shrink-0">{ex.muscle}</span>
+                        </button>
+                      </li>
+                    ))
+                  )}
                 </ul>
               )}
             </div>
@@ -237,43 +353,15 @@ export function EntrenaLogModal({
                   </div>
                   <div className="space-y-1.5">
                     {ex.sets.map((set, setIdx) => (
-                      <div key={setIdx} className="flex items-center gap-2 text-xs">
-                        <span className="w-6 text-[#6B7280] font-bold">{setIdx + 1}</span>
-                        <input
-                          type="number"
-                          min={0}
-                          value={set.reps}
-                          onChange={(e) =>
-                            updateSet(exIdx, setIdx, { reps: Math.max(0, Number(e.target.value) || 0) })
-                          }
-                          className="w-14 px-2 py-1 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
-                          placeholder="reps"
-                        />
-                        <span className="text-[#6B7280]">×</span>
-                        <input
-                          type="number"
-                          min={0}
-                          step={0.5}
-                          value={set.weightKg}
-                          onChange={(e) =>
-                            updateSet(exIdx, setIdx, {
-                              weightKg: Math.max(0, Number(e.target.value) || 0),
-                            })
-                          }
-                          className="w-16 px-2 py-1 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
-                          placeholder="kg"
-                        />
-                        <span className="text-[#6B7280]">kg</span>
-                        {ex.sets.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeSet(exIdx, setIdx)}
-                            className="ml-auto text-[#6B7280] active:text-red-400"
-                          >
-                            ×
-                          </button>
-                        )}
-                      </div>
+                      <SetInputs
+                        key={setIdx}
+                        set={set}
+                        setIdx={setIdx}
+                        exIdx={exIdx}
+                        canRemove={ex.sets.length > 1}
+                        onUpdate={updateSet}
+                        onRemove={removeSet}
+                      />
                     ))}
                   </div>
                   <button

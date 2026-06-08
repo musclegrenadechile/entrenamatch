@@ -1,8 +1,10 @@
 // @ts-nocheck — P1 extract from App.tsx; tighten types incrementally
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { GymPulseMap } from '../map'
+import { GymPulseMap, GymPulseMapShell, GymPulseBottomSheet } from '../map'
 import { GymPulseTour, hasSeenGymPulseTour } from '../map/GymPulseTour'
+
+const MAP_FULLSCREEN_KEY = 'entrenamatch_map_fullscreen'
 
 /** Props mirror App scope used by explore live banner + map block */
 export type ExploreLivePanelProps = Record<string, unknown>
@@ -101,6 +103,33 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
   } = props
 
   const [showGymPulseTour, setShowGymPulseTour] = useState(false)
+  const [mapFullscreen, setMapFullscreen] = useState(() => {
+    try {
+      return localStorage.getItem(MAP_FULLSCREEN_KEY) === '1'
+    } catch {
+      return false
+    }
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(MAP_FULLSCREEN_KEY, mapFullscreen ? '1' : '0')
+    } catch { /* ignore */ }
+    if (mapFullscreen) {
+      document.body.classList.add('gym-pulse-fs-active')
+    } else {
+      document.body.classList.remove('gym-pulse-fs-active')
+    }
+    return () => document.body.classList.remove('gym-pulse-fs-active')
+  }, [mapFullscreen])
+
+  useEffect(() => {
+    if (mapFullscreen && gymPulseMapRef?.current?.invalidateSize) {
+      setTimeout(() => {
+        try { gymPulseMapRef.current.invalidateSize() } catch { /* ignore */ }
+      }, 120)
+    }
+  }, [mapFullscreen, gymPulseMapRef])
 
   useEffect(() => {
     if (showLiveMap && !hasSeenGymPulseTour()) {
@@ -218,7 +247,43 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
         </div>
 
         {showLiveMap && (
-      <div className="relative z-10" style={{ minHeight: '340px' }} data-gympulse-tour="pins">
+      <div
+        className={`relative z-10 ${mapFullscreen ? 'gym-pulse-fs-host' : ''}`}
+        style={mapFullscreen ? undefined : { minHeight: '340px' }}
+      >
+        <GymPulseMapShell
+          fullscreen={mapFullscreen}
+          liveCount={liveCountForUI}
+          cityLabel={currentUser?.city || undefined}
+          onToggleFullscreen={() => {
+            try { triggerHaptic('light') } catch {}
+            setMapFullscreen((f) => !f)
+            setTimeout(() => {
+              try { gymPulseMapRef?.current?.invalidateSize?.() } catch { /* ignore */ }
+            }, 150)
+          }}
+          onClose={() => {
+            setMapFullscreen(false)
+            setShowLiveMap(false)
+          }}
+          onCentrar={() => {
+            try { (window as any).__gymPulseCentrar?.() } catch { /* ignore */ }
+          }}
+          bottomSheet={
+            <GymPulseBottomSheet
+              liveUsers={mapLiveTrainingNow || liveTrainingNow}
+              syncBonds={syncBonds}
+              selfUserId={effectiveUserId}
+              joiningSyncWith={joiningSyncWith}
+              expanded={mapFullscreen}
+              onShowProfile={setShowFullProfile}
+              onStartSync={startSyncWith}
+              onFlyToUser={(lat, lng) => {
+                try { gymPulseMapRef?.current?.flyTo?.(lat, lng, 15) } catch { /* ignore */ }
+              }}
+            />
+          }
+        >
         <GymPulseMap
           ref={gymPulseMapRef}
           showLiveMap={showLiveMap}
@@ -242,6 +307,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           isQuickAddPartner={isQuickAddPartner}
           selfIsLive={!!currentUser?.trainingNow}
           devTestCount={devTestLives.length}
+          layoutMode={mapFullscreen ? 'fullscreen' : 'embedded'}
 
           // New control callbacks (widget now manages its own filter/legend/dev buttons)
           onMapNearOnlyChange={setMapNearOnly}
@@ -335,10 +401,10 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
               onForceTick={() => setMapForceTick(t => t + 1)}
               onRequestLocation={() => requestUserLocation().catch(() => {})}
               onRegisterCentrar={(fn) => {
-                // store for the "Centrar" button below
                 ;(window as any).__gymPulseCentrar = fn
               }}
             />
+        </GymPulseMapShell>
             {!showAddPartnerForm && (
               <>
                 {showOnlyNetwork && (

@@ -12,16 +12,20 @@ import { toast } from 'sonner'
 import type { MarketplaceOrder, TrainerBooking, TrainerProfile } from '../../types'
 import { formatClp } from '../../services/marketplace'
 import { ORDER_STATUS_LABELS } from '../../services/adminOps'
-import { formatTrainerRate } from '../../services/trainerCoach'
+import { formatTrainerRate, TRAINER_PLATFORM_FEE_RATE } from '../../services/trainerCoach'
 import type { AdminMetrics } from '../../services/adminAnalytics'
+import type { MpHealthResult } from '../../services/adminMp'
 
 export interface AdminOpsPanelProps {
   open: boolean
   onClose: () => void
   orders: MarketplaceOrder[]
+  bookings: TrainerBooking[]
   trainers: TrainerProfile[]
   onUpdateOrderStatus: (orderId: string, status: MarketplaceOrder['status']) => Promise<void>
   onSetTrainerVerified: (trainerUserId: string, verified: boolean) => Promise<void>
+  onMarkTrainerPayout?: (bookingId: string, status: 'processing' | 'paid') => Promise<void>
+  mpHealth?: MpHealthResult | null
   metrics?: AdminMetrics
 }
 
@@ -29,12 +33,17 @@ export function AdminOpsPanel({
   open,
   onClose,
   orders,
+  bookings,
   trainers,
   onUpdateOrderStatus,
   onSetTrainerVerified,
+  onMarkTrainerPayout,
+  mpHealth,
   metrics,
 }: AdminOpsPanelProps) {
-  const [tab, setTab] = useState<'orders' | 'trainers' | 'revenue' | 'analytics' | 'mp'>('orders')
+  const [tab, setTab] = useState<'orders' | 'trainers' | 'revenue' | 'analytics' | 'mp' | 'payouts'>(
+    'orders'
+  )
   const [orderFilter, setOrderFilter] = useState<MarketplaceOrder['status'] | 'all'>('all')
   const [busy, setBusy] = useState<string | null>(null)
 
@@ -42,6 +51,10 @@ export function AdminOpsPanel({
 
   const pendingOrders = orders.filter((o) => o.status === 'pending_payment')
   const unverifiedTrainers = trainers.filter((t) => t.active && !t.verified)
+  const pendingPayoutBookings = bookings.filter(
+    (b) =>
+      b.status === 'paid_card' && (!b.payoutStatus || ['pending', 'processing'].includes(b.payoutStatus))
+  )
   const filteredOrders =
     orderFilter === 'all' ? orders : orders.filter((o) => o.status === orderFilter)
 
@@ -68,6 +81,23 @@ export function AdminOpsPanel({
       setBusy(null)
     }
   }
+
+  const handlePayout = async (bookingId: string, status: 'processing' | 'paid') => {
+    if (!onMarkTrainerPayout) return
+    setBusy(bookingId)
+    try {
+      await onMarkTrainerPayout(bookingId, status)
+      toast.success(status === 'paid' ? 'Liquidación marcada como pagada' : 'En proceso de transferencia')
+    } catch {
+      toast.error('No se pudo actualizar la liquidación')
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const trainerNet = (b: TrainerBooking) =>
+    b.trainerNetClp ??
+    (b.priceClp || 0) - (b.platformFeeClp ?? Math.round((b.priceClp || 0) * TRAINER_PLATFORM_FEE_RATE))
 
   return (
     <div className="admin-ops-screen" role="dialog" aria-label="Panel admin EntrenaMatch">
@@ -131,6 +161,13 @@ export function AdminOpsPanel({
           onClick={() => setTab('mp')}
         >
           MP
+        </button>
+        <button
+          type="button"
+          className={tab === 'payouts' ? 'admin-ops__tab--active' : 'admin-ops__tab'}
+          onClick={() => setTab('payouts')}
+        >
+          Liquidaciones ({pendingPayoutBookings.length})
         </button>
       </div>
 
@@ -268,6 +305,11 @@ export function AdminOpsPanel({
               <span>{formatClp(metrics.platformFeesClp)}</span>
             </article>
             <article className="admin-ops__metric-card">
+              <strong>Pendiente liquidar PT</strong>
+              <span>{formatClp(metrics.pendingPayoutClp)}</span>
+              <small>{metrics.pendingPayoutCount} sesiones</small>
+            </article>
+            <article className="admin-ops__metric-card">
               <strong>Volume EntrenaCoach</strong>
               <span>{formatClp(metrics.bookingVolumeClp)}</span>
               <small>{metrics.bookingsPaid} pagadas / {metrics.bookingsTotal} total</small>
@@ -305,17 +347,94 @@ export function AdminOpsPanel({
           <div className="admin-ops__mp">
             <p className="admin-ops__mp-status">
               Mercado Pago:{' '}
-              <strong className={metrics?.mpConfigured ? 'admin-ops__mp--ok' : 'admin-ops__mp--warn'}>
-                {metrics?.mpConfigured ? 'Token configurado' : 'Sin token — fallback manual'}
+              <strong
+                className={
+                  metrics?.mpLive ? 'admin-ops__mp--ok' : metrics?.mpConfigured ? 'admin-ops__mp--warn' : 'admin-ops__mp--warn'
+                }
+              >
+                {metrics?.mpLive
+                  ? 'Activo (cuenta EntrenaMatch)'
+                  : metrics?.mpConfigured
+                    ? 'Token presente — verificar API'
+                    : 'Sin token'}
               </strong>
             </p>
+            {mpHealth?.mpNickname && (
+              <p className="admin-ops__empty">Cuenta: {mpHealth.mpNickname}</p>
+            )}
+            {mpHealth?.mpError && (
+              <p className="admin-ops__empty" style={{ color: '#fbbf24' }}>
+                Error API: {mpHealth.mpError}
+              </p>
+            )}
             <p className="admin-ops__empty">
-              Setup: <code>node scripts/setup-mp-production.mjs</code>
+              Modelo: cliente paga a EntrenaMatch → comisión 15% → liquidación al entrenador
             </p>
             <p className="admin-ops__empty">
-              Webhook: <code>mercadoPagoWebhook</code> en us-central1
+              Setup:{' '}
+              <code>.\scripts\setup-mp-production.ps1 -AccessToken &quot;APP_USR-...&quot;</code>
+            </p>
+            <p className="admin-ops__empty">
+              Webhook MP (evento <strong>payment</strong>):
+              <br />
+              <code>{mpHealth?.webhookUrl || 'https://us-central1-entrenamatch.cloudfunctions.net/mercadoPagoWebhook'}</code>
+            </p>
+            <p className="admin-ops__empty">
+              Firma webhook:{' '}
+              <strong className={mpHealth?.webhookSecretConfigured ? 'admin-ops__mp--ok' : 'admin-ops__mp--warn'}>
+                {mpHealth?.webhookSecretConfigured ? 'Clave configurada' : 'Sin clave — validación desactivada'}
+              </strong>
             </p>
           </div>
+        )}
+
+        {tab === 'payouts' && (
+          <>
+            {pendingPayoutBookings.length === 0 ? (
+              <p className="admin-ops__empty">Sin liquidaciones pendientes</p>
+            ) : (
+              pendingPayoutBookings.map((b) => (
+                <article key={b.id} className="admin-ops__order">
+                  <div className="admin-ops__order-head">
+                    <strong>{b.trainerName}</strong>
+                    <span>{formatClp(trainerNet(b))} neto</span>
+                  </div>
+                  <p className="admin-ops__order-meta">
+                    Cliente: {b.clientName} · Bruto {formatClp(b.priceClp)} ·{' '}
+                    {b.payoutStatus === 'processing' ? 'En transferencia' : 'Pendiente'}
+                  </p>
+                  <p className="admin-ops__order-ship">
+                    {new Date(b.scheduledAt).toLocaleString('es-CL', {
+                      dateStyle: 'short',
+                      timeStyle: 'short',
+                    })}
+                  </p>
+                  {onMarkTrainerPayout && (
+                    <div className="admin-ops__order-actions">
+                      {b.payoutStatus !== 'processing' && (
+                        <button
+                          type="button"
+                          className="admin-ops__btn"
+                          disabled={busy === b.id}
+                          onClick={() => void handlePayout(b.id, 'processing')}
+                        >
+                          En transferencia
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="admin-ops__btn admin-ops__btn--ok"
+                        disabled={busy === b.id}
+                        onClick={() => void handlePayout(b.id, 'paid')}
+                      >
+                        <Check size={14} /> Liquidado al PT
+                      </button>
+                    </div>
+                  )}
+                </article>
+              ))
+            )}
+          </>
         )}
       </div>
     </div>

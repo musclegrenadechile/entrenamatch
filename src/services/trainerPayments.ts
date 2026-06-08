@@ -8,9 +8,6 @@ export interface TrainerMpCheckoutResult {
   initPoint: string
   preferenceId: string
   platformFeeClp: number
-  /** Si MP no está configurado en el servidor */
-  fallbackPaymentUrl?: string
-  usedFallback?: boolean
 }
 
 export async function createTrainerMpCheckout(bookingId: string): Promise<TrainerMpCheckoutResult> {
@@ -23,4 +20,13 @@ export async function createTrainerMpCheckout(bookingId: string): Promise<Traine
   )
   const res = await fn({ bookingId })
   return res.data
+}
+
+/** Checkout Mercado Pago — cobro en cuenta EntrenaMatch (marketplace). */
+export async function payTrainerBooking(bookingId: string): Promise<TrainerMpCheckoutResult> {
+  return createTrainerMpCheckout(bookingId)
+}
+
+export function openTrainerPaymentCheckout(result: TrainerMpCheckoutResult): void {
+  window.open(result.initPoint, '_blank', 'noopener,noreferrer')
 }
