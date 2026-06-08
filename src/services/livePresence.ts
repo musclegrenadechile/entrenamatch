@@ -19,6 +19,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { profileDocToLiveUser, type LiveUserLike } from '../utils/gymPulseLive'
+import { applyGhostModeIfEnabled } from '../utils/ghostMode'
 
 export type LivePresenceHandler = (users: LiveUserLike[]) => void
 
@@ -48,6 +49,7 @@ export interface LivePresenceWritePayload {
     lng: number
     checkedInAt: number
   } | null
+  ghostMode?: boolean
 }
 
 /** Write / refresh presence doc when user goes live. */
@@ -112,12 +114,18 @@ export function buildLivePresencePayload(
   user: Record<string, any>,
   loc?: { lat: number; lng: number } | null
 ): LivePresenceWritePayload {
-  const lat = Number.isFinite(Number(user.lat))
+  const rawLat = Number.isFinite(Number(user.lat))
     ? Number(user.lat)
     : (loc?.lat != null ? Number(loc.lat) : -33.02)
-  const lng = Number.isFinite(Number(user.lng))
+  const rawLng = Number.isFinite(Number(user.lng))
     ? Number(user.lng)
     : (loc?.lng != null ? Number(loc.lng) : -71.55)
+  const { lat, lng, ghostMode: fuzzy } = applyGhostModeIfEnabled(
+    rawLat,
+    rawLng,
+    !!user.ghostMode,
+    userId
+  )
   return {
     userId,
     name: user.name || 'Usuario',
@@ -127,6 +135,7 @@ export function buildLivePresencePayload(
     country: user.country,
     lat,
     lng,
+    ghostMode: fuzzy,
     bio: user.bio,
     photos: user.photos,
     trainingTypes: user.trainingTypes,

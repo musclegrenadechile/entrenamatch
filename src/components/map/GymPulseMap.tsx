@@ -28,6 +28,7 @@ import 'leaflet/dist/leaflet.css'
 import { toast } from 'sonner'
 import { Crosshair } from 'lucide-react'
 import { GymPulseMapFilters } from './GymPulseMapFilters'
+import { GymPulseRadar } from './GymPulseRadar'
 import { GymPulsePopupLayer } from './popups/GymPulsePopupLayer'
 import type { GymPulsePopupState } from './gymPulsePopupTypes'
 import {
@@ -49,6 +50,7 @@ L.Icon.Default.mergeOptions({
 
 import { getDistanceKm } from '../../utils'
 import { filterMapLiveUsers, hasMapCoords } from '../../utils/gymPulseLive'
+import { logMapEvent } from '../../services/mapAnalytics'
 import { buildIconicClusterMarkerHtml, buildIconicLiveMarkerHtml, buildPartnerMarkerHtml } from '../../utils/gymPulseMarkers'
 import {
   GYMPULSE_MAP_SUBDOMAINS,
@@ -161,12 +163,6 @@ function resolveSelfMapPosition(
   return null
 }
 
-const PARTNER_SEEDS = [ /* keep seeds here or import from constants if moved later */
-  { id: 'gym1', name: 'Power Gym Reñaca', type: 'gym', lat: -32.95, lng: -71.55, logo: null, city: 'Viña del Mar' },
-  { id: 'gym2', name: 'CrossFit Viña', type: 'crossfit', lat: -33.02, lng: -71.55, logo: null, city: 'Viña del Mar' },
-  { id: 'gym3', name: 'Iron Temple Santiago', type: 'gym', lat: -33.45, lng: -70.67, logo: null, city: 'Santiago' },
-]
-
 const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref) => {
   const {
     showLiveMap,
@@ -226,6 +222,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
   const [mapPopup, setMapPopup] = useState<GymPulsePopupState | null>(null)
   const [devToolsOpen, setDevToolsOpen] = useState(false)
+  const [radarSweep, setRadarSweep] = useState(false)
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<any>(null)
   const markerPoolRef = useRef<MarkerPool>(new Map())
@@ -661,14 +658,13 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         partnerLocationsRef.current.forEach((p: any) => {
           if (!p.lat || !p.lng) return
           const logo = p.logoUrl || p.logo || ''
-          const isHub = (p.hubStrength || 0) > 1 || p.type === 'gym'
           const liveAtGym = countLiveAtGym(allLive, p.id)
-          const size = isHub ? 36 : 30
-          const html = buildPartnerMarkerHtml({ logo, isHub, liveAtGym, size })
+          const size = 30
+          const html = buildPartnerMarkerHtml({ logo, liveAtGym, size })
           const key = markerPoolKey('partner', p.id)
           const icon = L.divIcon({
             html,
-            className: `partner-marker ${isHub ? 'partner-hub-strong' : ''}`,
+            className: 'partner-marker',
             iconSize: [size, size],
             iconAnchor: [size / 2, size / 2],
           })
@@ -878,6 +874,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   ])
 
   const handleExpandCluster = (lat: number, lng: number, clusterId?: number) => {
+    logMapEvent('cluster_expand', { cluster_id: clusterId ?? 'unknown' })
     if (!mapInstanceRef.current) return
     const idx = lastClusterIndexRef.current
     try {
@@ -906,6 +903,15 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   )
   const totalLiveOnMap = typeof liveCount === 'number' ? liveCount : filteredLiveUsers.length
   const filteredLiveOnMap = filteredLiveUsers.length
+
+  useEffect(() => {
+    if (showLiveMap) logMapEvent('map_open', { layout: layoutMode })
+  }, [showLiveMap, layoutMode])
+
+  const handleGymCheckInWithAnalytics = (gym: { id: string; name: string; lat: number; lng: number }) => {
+    logMapEvent('partner_checkin', { gym_id: gym.id, gym_name: gym.name })
+    onGymCheckIn?.(gym)
+  }
 
   // Small local computation for the zone legend (self contained)
   const zoneLiveCounts = useMemo(() => {
@@ -1019,6 +1025,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       <div
         ref={mapContainerRef}
         className={`w-full overflow-hidden border border-[#22c55e]/25 bg-[#0a0a0c] shadow-[0_0_0_1px_rgba(34,197,94,0.12),0_10px_40px_-12px_rgba(0,0,0,0.7)] ${
+          radarSweep ? 'gym-pulse-radar-sweep' : ''
+        } ${
           layoutMode === 'fullscreen'
             ? 'gym-pulse-map-canvas gym-pulse-map-canvas--fs h-full min-h-0 rounded-none border-0'
             : 'h-[min(420px,52vh)] min-h-[360px] rounded-2xl'
@@ -1026,8 +1034,16 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         id="live-map-container"
       />
 
-      {/* Bottom toolbar — filtros compactos (sin fila de 6 chips) */}
-      <div className={`absolute left-2 right-2 z-[2000] ${isEmbedded ? 'bottom-3' : 'bottom-2'}`}>
+      {/* Radar + filtros — barra inferior */}
+      <div className={`absolute left-2 right-2 z-[2000] flex flex-col gap-1.5 ${isEmbedded ? 'bottom-3' : 'bottom-2'}`}>
+        <div className="flex items-center gap-2 flex-wrap">
+          <GymPulseRadar
+            liveUsers={liveTrainingNow || []}
+            userLocation={userLocation}
+            onSweepStart={() => setRadarSweep(true)}
+            onSweepEnd={() => setRadarSweep(false)}
+          />
+        </div>
         <GymPulseMapFilters
           mapNearOnly={mapNearOnly}
           showOnlyNetwork={showOnlyNetwork}
@@ -1133,7 +1149,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         }}
         onGymCheckIn={(gym) => {
           setMapPopup(null)
-          onGymCheckIn?.(gym)
+          handleGymCheckInWithAnalytics(gym)
         }}
         onPartnerEdit={(id) => onPartnerEdit?.(id)}
         onPartnerDelete={(id) => onPartnerDelete?.(id)}

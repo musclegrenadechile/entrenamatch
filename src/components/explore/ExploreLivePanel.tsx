@@ -32,6 +32,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     effectiveUserId,
     syncRipples,
     partnerLocations,
+    mapPartnerLocations,
     echoPins,
     mapNearOnly,
     selectedMapZone,
@@ -303,7 +304,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           liveCount={liveCountForUI}
           selfUserId={effectiveUserId}
           syncRipples={syncRipples}
-          partnerLocations={partnerLocations}
+          partnerLocations={mapPartnerLocations ?? partnerLocations}
           echoPins={echoPins || []}
           userLocation={userLocation}
           mapNearOnly={mapNearOnly}

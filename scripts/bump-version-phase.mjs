@@ -5,12 +5,12 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const phase = Number(process.argv[2])
-if (!Number.isInteger(phase) || phase < 31 || phase > 120) {
+if (!Number.isInteger(phase) || phase < 31 || phase > 160) {
   console.error('Usage: node scripts/bump-version-phase.mjs <phase>')
   process.exit(1)
 }
 
-const patch = 160 + (phase - 30)
+const patch = phase >= 111 ? 120 + phase : 160 + (phase - 30)
 const version = `0.1.${patch}`
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
 

@@ -37,6 +37,8 @@
   showOnLeaderboard?: boolean
   /** Last gym partner check-in (shown on map when live). */
   gymCheckIn?: GymCheckIn
+  /** Fase 114 — fuzzy public location on GymPulse (~500 m). */
+  ghostMode?: boolean
   /** Weekly goal — closes Home loop (Meta semanal, Phase D4). */
   weeklyPact?: WeeklyPact
 }

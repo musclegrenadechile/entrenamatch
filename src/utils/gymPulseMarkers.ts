@@ -70,24 +70,19 @@ export function buildIconicClusterMarkerHtml(count: number, hasHighPulso = false
 
 export interface PartnerMarkerOpts {
   logo?: string
-  isHub?: boolean
   liveAtGym?: number
   size?: number
 }
 
 /** Partner POI pin with optional live badge (Fase 106). */
 export function buildPartnerMarkerHtml(p: PartnerMarkerOpts): string {
-  const isHub = p.isHub ?? false
   const liveAtGym = p.liveAtGym ?? 0
-  const size = p.size ?? (isHub ? 36 : 30)
-  const gold = isHub ? '#FFD700' : '#f4c95f'
+  const size = p.size ?? 30
+  const gold = '#f4c95f'
   const logo = p.logo || ''
   const heatClass = liveAtGym >= 5 ? ' partner-marker--hot' : liveAtGym >= 2 ? ' partner-marker--warm' : ''
-  const aura = isHub || liveAtGym > 0
+  const aura = liveAtGym > 0
     ? `<div class="partner-breathe-ring" style="border-color:${gold}"></div>`
-    : ''
-  const hubLabel = isHub
-    ? `<div class="partner-hub-label">HUB</div>`
     : ''
   const liveBadge =
     liveAtGym > 0
@@ -99,6 +94,6 @@ export function buildPartnerMarkerHtml(p: PartnerMarkerOpts): string {
 
   return `<div class="partner-marker-inner${heatClass}" style="position:relative;width:${size}px;height:${size}px">
     <div class="partner-marker-disk" style="width:${size}px;height:${size}px;border-color:${gold}">${inner}</div>
-    ${aura}${hubLabel}${liveBadge}
+    ${aura}${liveBadge}
   </div>`
 }

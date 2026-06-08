@@ -28,7 +28,6 @@ export function GymPulsePartnerCard({
   onDevDelete,
 }: GymPulsePartnerCardProps) {
   const logo = partner.logoUrl || partner.logo
-  const isHub = (partner.hubStrength || 0) > 1 || partner.type === 'gym'
 
   return (
     <div className="gym-pulse-partner-card">
@@ -83,7 +82,6 @@ export function GymPulsePartnerCard({
         ) : (
           <span className="gym-pulse-partner-card__live-empty">Sé el primero en aparecer aquí en vivo</span>
         )}
-        {isHub && <span className="gym-pulse-partner-card__hub">⭐ Hub GymPulse</span>}
       </div>
 
       <div className="gym-pulse-partner-card__actions">

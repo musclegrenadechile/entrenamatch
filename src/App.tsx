@@ -79,6 +79,7 @@ import { resolveNotificationTarget, type NotificationNavTarget } from './utils/n
 import { resolvePushNotificationData } from './utils/pushNavigation'
 import { normalizeTabNavigation, resolveRedSubTab, isRedTabActive, type RedSubTab } from './utils/tabNavigation'
 import { filterSeedsForCity } from './utils/citySeeds'
+import { partnersForMap } from './utils/partnerLocations'
 import { SyncLiveBlockerModal } from './components/sync/SyncLiveBlockerModal'
 import {
   ASSUMED_LIVE_SESSION_MS,
@@ -1948,7 +1949,7 @@ useEffect(() => {
   const [selectedMapZone, setSelectedMapZone] = useState<string | null>(null) // interactive zone filter for "sigue con todo el mapa"
   const [showOnlyNetwork, setShowOnlyNetwork] = useState(false) // filter to only high-performance sync partners (your real training network) on map
   const [partnerLocations, setPartnerLocations] = useState<any[]>([])
-  const [showPartners, setShowPartners] = useState(true)
+  const [showPartners, setShowPartners] = useState(false)
   const [showAddPartnerForm, setShowAddPartnerForm] = useState(false)
   const [showManagePartners, setShowManagePartners] = useState(false)
   const [editingPartnerId, setEditingPartnerId] = useState<string | null>(null)
@@ -2275,10 +2276,10 @@ useEffect(() => {
   // Partner businesses (gyms, stores etc that partner with the app). Devs can add them so they appear on the mapa en tiempo real (GymPulse map).
   // "ellos puedan ver": partners get prominent placement + nearby activity indicators (users training close get associated with the partner location).
   const PARTNER_SEEDS = [
-    { id: 'p-seed-1', name: 'Muscle Grenade Viña', lat: -33.015, lng: -71.55, type: 'gym', address: 'Viña del Mar, cerca del centro', hubStrength: 1.5, promoLabel: '10% OFF primera visita', promoCode: 'MGVIÑA10' },
-    { id: 'p-seed-2', name: 'Gym Partner Santiago', lat: -33.45, lng: -70.65, type: 'gym', address: 'Santiago, Providencia', hubStrength: 1.2, promoLabel: 'Día guest gratis con check-in', promoCode: 'STGO-GUEST' },
+    { id: 'p-seed-1', name: 'Muscle Grenade Viña', lat: -33.015, lng: -71.55, type: 'gym', address: 'Viña del Mar, cerca del centro', promoLabel: '10% OFF primera visita', promoCode: 'MGVIÑA10' },
+    { id: 'p-seed-2', name: 'Gym Partner Santiago', lat: -33.45, lng: -70.65, type: 'gym', address: 'Santiago, Providencia', promoLabel: 'Día guest gratis con check-in', promoCode: 'STGO-GUEST' },
     { id: 'p-seed-3', name: 'Suplementos Elite Valpo', lat: -33.05, lng: -71.62, type: 'store', address: 'Valparaíso, Cerro Concepción', promoLabel: 'Shake post-entreno 2x1', promoCode: 'ELITE2X1' },
-    { id: 'p-seed-4', name: 'CrossFit Concon Hub', lat: -32.92, lng: -71.52, type: 'gym', address: 'Concón, zona costera', hubStrength: 1.3, promoLabel: 'Clase prueba gratis', promoCode: 'CONCON-WOD' }
+    { id: 'p-seed-4', name: 'CrossFit Concón', lat: -32.92, lng: -71.52, type: 'gym', address: 'Concón, zona costera', promoLabel: 'Clase prueba gratis', promoCode: 'CONCON-WOD' }
   ]
 
   // Zone colors shared for map markers and interactive legend (sigue con todo el mapa)
@@ -2303,20 +2304,21 @@ useEffect(() => {
   const partnerLocationsRef = useRef<any[]>([]) // latest partners always, to avoid stale closure in debounced map render (helps add-partner persistence)
   useEffect(() => { partnerLocationsRef.current = partnerLocations }, [partnerLocations])
 
-  // Load partner locations: seeds (for immediate demo) + real Firestore (so devs can add persistent partners via the in-app tool).
-  // This makes the "devs put businesses on the map" easy and real-time visible to all users in the GymPulse (mapa en tiempo real).
+  /** Partners visibles en mapa — sin seeds demo en Firebase real (fase 118). */
+  const mapPartnerLocations = useMemo(
+    () => partnersForMap(partnerLocations, isDemoMode),
+    [partnerLocations, isDemoMode]
+  )
+
+  // Load partner locations: demo = seeds; real = solo Firestore (devs agregan vía formulario).
   useEffect(() => {
-    // Always start with seeds so the feature is visible even in demo / first run
-    let base = [...PARTNER_SEEDS]
+    const demoSeeds = [...PARTNER_SEEDS]
 
     if (isDemoMode || !db) {
-      setPartnerLocations(base)
+      setPartnerLocations(demoSeeds)
       return
     }
 
-    // Real mode: listen to partnerLocations collection (devs add via the form below)
-    // Use dynamic import (consistent with other firestore calls) to avoid bundle/TDZ issues that were causing
-    // "Expected first argument to collection() to be a CollectionReference, a DocumentReference or FirebaseFirestore"
     let unsub: any = null
     ;(async () => {
       try {
@@ -2327,27 +2329,19 @@ useEffect(() => {
           const fromFs: any[] = []
           snap.forEach((d: any) => {
             const data = d.data() || {}
-            // Sanitize: Firestore shouldn't have undefined but defensive (prevents bad data in state)
             Object.keys(data).forEach(k => { if (data[k] === undefined) delete data[k] })
             fromFs.push({ id: d.id, ...data })
           })
-          // merge seeds + fs (fs overrides if same id)
-          const merged = [...base]
-          fromFs.forEach(p => {
-            const idx = merged.findIndex(s => s.id === p.id)
-            if (idx >= 0) merged[idx] = p
-            else merged.push(p)
-          })
-          setPartnerLocations(merged)
+          setPartnerLocations(fromFs)
           setMapForceTick(t => t + 1)
         }, (err: any) => {
-          console.warn('partnerLocations listener error (using seeds only)', err)
-          setPartnerLocations(base)
+          console.warn('partnerLocations listener error', err)
+          setPartnerLocations([])
           setMapForceTick(t => t + 1)
         })
       } catch (err: any) {
-        console.warn('partnerLocations listener error (using seeds only)', err)
-        setPartnerLocations(base)
+        console.warn('partnerLocations listener error', err)
+        setPartnerLocations([])
         setMapForceTick(t => t + 1)
       }
     })()
@@ -2887,7 +2881,7 @@ useEffect(() => {
     const lat = userLocation?.lat ?? currentUser?.lat
     const lng = userLocation?.lng ?? currentUser?.lng
     if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng))) return null
-    const gyms = (partnerLocations || []).map((p: any) => ({
+    const gyms = partnersForMap(partnerLocations || [], isDemoMode).map((p: any) => ({
       id: p.id,
       name: p.name,
       lat: p.lat,
@@ -2896,7 +2890,7 @@ useEffect(() => {
       city: p.city,
     }))
     return findNearestGym(gyms, Number(lat), Number(lng))
-  }, [userLocation, currentUser?.lat, currentUser?.lng, partnerLocations])
+  }, [userLocation, currentUser?.lat, currentUser?.lng, partnerLocations, isDemoMode])
 
   const homeGymLiveCount = useMemo(() => {
     const gymId = currentUser?.gymCheckIn?.gymId
@@ -3656,6 +3650,7 @@ useEffect(() => {
                   ? realProfile.showOnLeaderboard
                   : currentUser?.showOnLeaderboard,
               gymCheckIn: realProfile.gymCheckIn || currentUser?.gymCheckIn,
+              ghostMode: realProfile.ghostMode ?? currentUser?.ghostMode,
             }
             if (merged.name) {
               saveUser(merged)
@@ -3928,6 +3923,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         weeklyPact: merged.weeklyPact ?? null,
         showOnLeaderboard: merged.showOnLeaderboard !== false,
         gymCheckIn: isGymCheckInFresh(merged.gymCheckIn) ? merged.gymCheckIn : null,
+        ghostMode: !!merged.ghostMode,
       };
 
       const cleanProfileUpdate = sanitizeForFirestore(profileUpdate);
@@ -6640,7 +6636,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         const loc = userLocationRef.current
         let autoGymCheckIn = isGymCheckInFresh(me.gymCheckIn) ? me.gymCheckIn : undefined
         if (!autoGymCheckIn && loc && (partnerLocationsRef.current || []).length > 0) {
-          const gyms = partnerLocationsRef.current.map((p: any) => ({
+          const gyms = partnersForMap(partnerLocationsRef.current, isDemoMode).map((p: any) => ({
             id: p.id,
             name: p.name,
             lat: p.lat,
@@ -9888,6 +9884,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             effectiveUserId={effectiveUserId}
             syncRipples={syncRipples}
             partnerLocations={partnerLocations}
+            mapPartnerLocations={mapPartnerLocations}
             echoPins={echoPins}
             mapNearOnly={mapNearOnly}
             selectedMapZone={selectedMapZone}

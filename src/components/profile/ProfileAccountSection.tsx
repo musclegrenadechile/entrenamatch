@@ -34,6 +34,8 @@ export function ProfileAccountSection(props: ProfileTabProps) {
     setNotifPrefs,
     setShowPwaInstall,
     handleLogout,
+    saveUserWithRealSync,
+    triggerHaptic,
   } = profileTabBindings(props)
   return (
     <>
@@ -78,6 +80,51 @@ export function ProfileAccountSection(props: ProfileTabProps) {
         {currentUser.verificationStatus === 'pending' ? 'Ver estado' : 'Verificar'}
       </button>
     )}
+  </div>
+</div>
+
+{/* Ghost mode — fase 114 */}
+<div className={`px-4 mt-4${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+  <div className="card p-4 flex items-center gap-3">
+    <div className="flex-1">
+      <div className="font-medium text-sm flex items-center gap-2">
+        👻 Modo fantasma
+        {currentUser.ghostMode && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#a855f7]/20 text-[#c084fc] font-semibold">ACTIVO</span>
+        )}
+      </div>
+      <div className="text-xs text-[#9CA3AF] mt-0.5">
+        En GymPulse otros ven tu ubicación aproximada (~500 m), no el punto exacto.
+      </div>
+    </div>
+    <button
+      type="button"
+      role="switch"
+      aria-checked={!!currentUser.ghostMode}
+      onClick={async () => {
+        const next = !currentUser.ghostMode
+        triggerHaptic('light')
+        try {
+          await saveUserWithRealSync({ ...currentUser, ghostMode: next })
+          toast.success(next ? 'Modo fantasma activado' : 'Modo fantasma desactivado', {
+            description: next
+              ? 'Tu pin en el mapa aparecerá difuminado para otros.'
+              : 'Tu ubicación en vivo será precisa otra vez.',
+          })
+        } catch {
+          toast.error('No se pudo guardar la preferencia')
+        }
+      }}
+      className={`shrink-0 w-12 h-7 rounded-full transition-colors relative ${
+        currentUser.ghostMode ? 'bg-[#a855f7]' : 'bg-[#3f3f46]'
+      }`}
+    >
+      <span
+        className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${
+          currentUser.ghostMode ? 'translate-x-5' : 'translate-x-0.5'
+        }`}
+      />
+    </button>
   </div>
 </div>
 
