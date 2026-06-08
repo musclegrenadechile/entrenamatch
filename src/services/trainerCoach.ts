@@ -24,6 +24,7 @@ import type {
   TrainerProfileInput,
   TrainerSpecialty,
 } from '../types'
+import { calcBookingPrice, isWithinAvailability } from './trainerAvailability'
 
 /** Comisión plataforma EntrenaCoach (Fase 2 — MP checkout). */
 export const TRAINER_PLATFORM_FEE_RATE = 0.15
@@ -70,6 +71,12 @@ function mapTrainerProfile(id: string, data: Record<string, unknown>): TrainerPr
     availableForDispatch: data.availableForDispatch === true,
     dispatchLat: typeof data.dispatchLat === 'number' ? data.dispatchLat : undefined,
     dispatchLng: typeof data.dispatchLng === 'number' ? data.dispatchLng : undefined,
+    availabilitySlots: Array.isArray(data.availabilitySlots)
+      ? (data.availabilitySlots as TrainerProfile['availabilitySlots'])
+      : undefined,
+    packages: Array.isArray(data.packages)
+      ? (data.packages as TrainerProfile['packages'])
+      : undefined,
     active: data.active !== false,
     avgRating: typeof data.avgRating === 'number' ? data.avgRating : 0,
     reviewCount: typeof data.reviewCount === 'number' ? data.reviewCount : 0,
@@ -98,6 +105,10 @@ function mapBooking(id: string, data: Record<string, unknown>): TrainerBooking |
     mpPreferenceId: typeof data.mpPreferenceId === 'string' ? data.mpPreferenceId : undefined,
     mpPaymentId: typeof data.mpPaymentId === 'string' ? data.mpPaymentId : undefined,
     platformFeeClp: typeof data.platformFeeClp === 'number' ? data.platformFeeClp : undefined,
+    packageId: typeof data.packageId === 'string' ? data.packageId : undefined,
+    packageSessions: typeof data.packageSessions === 'number' ? data.packageSessions : undefined,
+    packageDiscountPercent:
+      typeof data.packageDiscountPercent === 'number' ? data.packageDiscountPercent : undefined,
     createdAt: Number(data.createdAt) || 0,
     updatedAt: Number(data.updatedAt) || 0,
   }
@@ -256,6 +267,10 @@ export async function saveTrainerProfile(
       : input.availableForDispatch === false
         ? { dispatchLat: deleteField(), dispatchLng: deleteField() }
         : {}),
+    ...(input.availabilitySlots?.length
+      ? { availabilitySlots: input.availabilitySlots }
+      : { availabilitySlots: deleteField() }),
+    ...(input.packages?.length ? { packages: input.packages } : { packages: deleteField() }),
     updatedAt: now,
     createdAt: typeof existingData?.createdAt === 'number' ? existingData.createdAt : now,
     avgRating: typeof existingData?.avgRating === 'number' ? existingData.avgRating : 0,
@@ -278,11 +293,18 @@ export async function createTrainerBooking(
   if (!trainer.paymentMethods.includes(input.paymentMethod)) {
     throw new Error('Método de pago no disponible para este entrenador')
   }
+  if (!isWithinAvailability(trainer, input.scheduledAt)) {
+    throw new Error('El entrenador no está disponible en ese horario')
+  }
+
+  const selectedPackage = input.packageId
+    ? trainer.packages?.find((p) => p.id === input.packageId)
+    : undefined
+  const pricing = calcBookingPrice(trainer, selectedPackage ?? null)
 
   const id = `tb_${Date.now()}_${clientId.slice(0, 6)}`
   const now = Date.now()
   const durationMin = trainer.sessionDurationMin || 60
-  const priceClp = Math.round((trainer.hourlyRateClp * durationMin) / 60)
 
   await setDoc(doc(db, BOOKINGS, id), {
     trainerId: trainer.userId,
@@ -292,10 +314,17 @@ export async function createTrainerBooking(
     scheduledAt: input.scheduledAt,
     durationMin,
     locationNote: input.locationNote.trim(),
-    priceClp,
+    priceClp: pricing.totalPriceClp,
     paymentMethod: input.paymentMethod,
     status: 'requested' as TrainerBookingStatus,
     clientMessage: input.clientMessage?.trim() || null,
+    ...(pricing.packageId
+      ? {
+          packageId: pricing.packageId,
+          packageSessions: pricing.sessionCount,
+          packageDiscountPercent: pricing.discountPercent,
+        }
+      : {}),
     createdAt: now,
     updatedAt: now,
   })

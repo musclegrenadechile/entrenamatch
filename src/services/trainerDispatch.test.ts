@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest'
 import {
   estimateDispatchPrice,
   findNearbyDispatchTrainers,
+  formatDistanceKm,
   haversineKm,
+  trainerDistanceKm,
 } from './trainerDispatch'
 import type { TrainerProfile } from '../types'
 
@@ -85,5 +87,21 @@ describe('estimateDispatchPrice', () => {
     }))
     const est = estimateDispatchPrice(nearby, 60)
     expect(est.surgeFactor).toBe(1.08)
+  })
+})
+
+describe('formatDistanceKm', () => {
+  it('formats meters under 1km', () => {
+    expect(formatDistanceKm(0.5)).toBe('500 m')
+  })
+
+  it('formats km', () => {
+    expect(formatDistanceKm(2.34)).toBe('2.3 km')
+  })
+})
+
+describe('trainerDistanceKm', () => {
+  it('returns null without user coords', () => {
+    expect(trainerDistanceKm(makeTrainer(), {}, undefined, undefined)).toBeNull()
   })
 })

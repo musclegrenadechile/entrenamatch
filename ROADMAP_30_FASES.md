@@ -10,10 +10,10 @@ Plan maestro de evolución post-beta (v0.1.148+). Cada fase es entregable, teste
 | 4 | **Deep link marketplace** — push abre Tienda → Mis pedidos | Push | ✅ v0.1.149 |
 | 5 | **Admin filtros pedidos** — tabs por estado en Admin Ops | Admin | ✅ v0.1.149 |
 | 6 | **EntrenaCoach solo verificados** — filtro en Explorar PT | EntrenaCoach | ✅ v0.1.149 |
-| 7 | Distancia en cards PT (km desde tu ubicación) | EntrenaCoach | 🔲 |
-| 8 | Calendario disponibilidad entrenador (slots semanales) | EntrenaCoach | 🔲 |
-| 9 | Paquetes multi-sesión con descuento | EntrenaCoach | 🔲 |
-| 10 | Historial dispatch Uber-mode (cliente + PT) | EntrenaCoach | 🔲 |
+| 7 | Distancia en cards PT (km desde tu ubicación) | EntrenaCoach | ✅ v0.1.150 |
+| 8 | Calendario disponibilidad entrenador (slots semanales) | EntrenaCoach | ✅ v0.1.150 |
+| 9 | Paquetes multi-sesión con descuento | EntrenaCoach | ✅ v0.1.150 |
+| 10 | Historial dispatch Uber-mode (cliente + PT) | EntrenaCoach | ✅ v0.1.150 |
 | 11 | Mercado Pago producción (token + webhook QA) | Pagos | 🔲 |
 | 12 | Comisión plataforma dashboard admin | Admin | 🔲 |
 | 13 | Onboarding post-registro (3 pasos guiados) | UX | 🔲 |

@@ -134,6 +134,8 @@ import {
 import {
   attachClientDispatchListener,
   attachTrainerDispatchOfferListener,
+  attachClientDispatchHistoryListener,
+  attachTrainerDispatchHistoryListener,
   createTrainerDispatchRequest,
   cancelTrainerDispatch,
   estimateDispatchPrice,
@@ -906,6 +908,8 @@ function App() {
   const [trainerBookings, setTrainerBookings] = useState<TrainerBooking[]>([])
   const [activeTrainerDispatch, setActiveTrainerDispatch] = useState<TrainerDispatchRequest | null>(null)
   const [incomingDispatchOffer, setIncomingDispatchOffer] = useState<TrainerDispatchRequest | null>(null)
+  const [clientDispatchHistory, setClientDispatchHistory] = useState<TrainerDispatchRequest[]>([])
+  const [trainerDispatchHistory, setTrainerDispatchHistory] = useState<TrainerDispatchRequest[]>([])
   const [trainerCoachInitialTab, setTrainerCoachInitialTab] = useState<
     'explore' | 'now' | 'sessions' | 'trainer' | undefined
   >(undefined)
@@ -4608,6 +4612,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     if (isDemoMode || !db || !firebaseUser?.uid) {
       setActiveTrainerDispatch(null)
       setIncomingDispatchOffer(null)
+      setClientDispatchHistory([])
+      setTrainerDispatchHistory([])
       return undefined
     }
     const unsubClient = attachClientDispatchListener(db, firebaseUser.uid, setActiveTrainerDispatch)
@@ -4616,9 +4622,21 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       firebaseUser.uid,
       setIncomingDispatchOffer
     )
+    const unsubClientHist = attachClientDispatchHistoryListener(
+      db,
+      firebaseUser.uid,
+      setClientDispatchHistory
+    )
+    const unsubTrainerHist = attachTrainerDispatchHistoryListener(
+      db,
+      firebaseUser.uid,
+      setTrainerDispatchHistory
+    )
     return () => {
       unsubClient()
       unsubOffer()
+      unsubClientHist()
+      unsubTrainerHist()
     }
   }, [isDemoMode, db, firebaseUser?.uid])
 
@@ -10605,6 +10623,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             throw e
           }
         }}
+        clientDispatchHistory={clientDispatchHistory}
+        trainerDispatchHistory={trainerDispatchHistory}
       />
       <EntrenaLogModal
         open={showEntrenaLogModal}

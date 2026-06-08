@@ -360,6 +360,20 @@ export type TrainerSpecialty =
 
 export type TrainerPaymentMethod = 'card' | 'cash'
 
+/** Día de la semana 0=Dom … 6=Sáb, minutos desde medianoche. */
+export interface TrainerAvailabilitySlot {
+  dow: number
+  startMin: number
+  endMin: number
+}
+
+export interface TrainerSessionPackage {
+  id: string
+  sessions: number
+  discountPercent: number
+  label?: string
+}
+
 export interface TrainerProfile {
   userId: string
   displayName: string
@@ -379,6 +393,10 @@ export interface TrainerProfile {
   availableForDispatch?: boolean
   dispatchLat?: number
   dispatchLng?: number
+  /** Horarios semanales en los que acepta reservas */
+  availabilitySlots?: TrainerAvailabilitySlot[]
+  /** Paquetes multi-sesión con descuento */
+  packages?: TrainerSessionPackage[]
   active: boolean
   avgRating: number
   reviewCount: number
@@ -414,6 +432,9 @@ export interface TrainerBooking {
   mpPreferenceId?: string
   mpPaymentId?: string
   platformFeeClp?: number
+  packageId?: string
+  packageSessions?: number
+  packageDiscountPercent?: number
   createdAt: number
   updatedAt: number
 }
@@ -430,6 +451,8 @@ export interface TrainerProfileInput {
   paymentUrl?: string
   active: boolean
   availableForDispatch?: boolean
+  availabilitySlots?: TrainerAvailabilitySlot[]
+  packages?: TrainerSessionPackage[]
 }
 
 export interface TrainerBookingInput {
@@ -437,6 +460,7 @@ export interface TrainerBookingInput {
   locationNote: string
   paymentMethod: TrainerPaymentMethod
   clientMessage?: string
+  packageId?: string
 }
 
 export type TrainerDispatchStatus =

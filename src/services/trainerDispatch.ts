@@ -26,6 +26,38 @@ const DISPATCH = 'trainerDispatchRequests'
 const DISPATCH_MAX_RADIUS_KM = 25
 export const DISPATCH_OFFER_MS = 90_000
 
+const TERMINAL_DISPATCH_STATUSES = new Set([
+  'matched',
+  'no_trainers',
+  'cancelled',
+  'expired',
+])
+
+export function formatDistanceKm(km: number): string {
+  if (km < 1) return `${Math.round(km * 1000)} m`
+  return `${km.toFixed(1)} km`
+}
+
+/** Distancia cliente → entrenador (dispatch coords o perfil en mapa). */
+export function trainerDistanceKm(
+  trainer: TrainerProfile,
+  profileCoords: Record<string, { lat: number; lng: number }>,
+  userLat?: number,
+  userLng?: number
+): number | null {
+  if (typeof userLat !== 'number' || typeof userLng !== 'number') return null
+  const lat =
+    typeof trainer.dispatchLat === 'number'
+      ? trainer.dispatchLat
+      : profileCoords[trainer.userId]?.lat
+  const lng =
+    typeof trainer.dispatchLng === 'number'
+      ? trainer.dispatchLng
+      : profileCoords[trainer.userId]?.lng
+  if (typeof lat !== 'number' || typeof lng !== 'number') return null
+  return haversineKm(userLat, userLng, lat, lng)
+}
+
 export const DISPATCH_STATUS_LABELS: Record<string, string> = {
   searching: 'Calculando tarifa y buscando entrenadores…',
   offering: 'Oferta enviada — esperando entrenador',
@@ -271,4 +303,58 @@ export async function advanceExpiredDispatch(dispatchId: string): Promise<void> 
     'advanceTrainerDispatch'
   )
   await fn({ dispatchId })
+}
+
+/** Historial dispatch terminados — cliente. */
+export function attachClientDispatchHistoryListener(
+  db: Firestore,
+  clientId: string,
+  onUpdate: (items: TrainerDispatchRequest[]) => void
+): () => void {
+  const q = query(
+    collection(db, DISPATCH),
+    where('clientId', '==', clientId),
+    orderBy('createdAt', 'desc')
+  )
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list: TrainerDispatchRequest[] = []
+      snap.forEach((d) => {
+        const item = mapDispatch(d.id, d.data() as Record<string, unknown>)
+        if (item && TERMINAL_DISPATCH_STATUSES.has(item.status)) list.push(item)
+      })
+      onUpdate(list.slice(0, 20))
+    },
+    () => onUpdate([])
+  )
+}
+
+/** Historial dispatch donde el PT fue asignado (matched). */
+export function attachTrainerDispatchHistoryListener(
+  db: Firestore,
+  trainerId: string,
+  onUpdate: (items: TrainerDispatchRequest[]) => void
+): () => void {
+  if (!trainerId) {
+    onUpdate([])
+    return () => {}
+  }
+  const q = query(
+    collection(db, DISPATCH),
+    where('matchedTrainerId', '==', trainerId),
+    orderBy('createdAt', 'desc')
+  )
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list: TrainerDispatchRequest[] = []
+      snap.forEach((d) => {
+        const item = mapDispatch(d.id, d.data() as Record<string, unknown>)
+        if (item) list.push(item)
+      })
+      onUpdate(list.slice(0, 20))
+    },
+    () => onUpdate([])
+  )
 }

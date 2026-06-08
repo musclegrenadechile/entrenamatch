@@ -1,5 +1,18 @@
 import { TrainerDispatchPanel } from './TrainerDispatchPanel'
 import { TrainerCoachHero } from './TrainerCoachHero'
+import { TrainerAvailabilityEditor } from './TrainerAvailabilityEditor'
+import { TrainerPackagesEditor } from './TrainerPackagesEditor'
+import { TrainerDispatchHistory } from './TrainerDispatchHistory'
+import {
+  formatDistanceKm,
+  trainerDistanceKm,
+} from '../../services/trainerDispatch'
+import {
+  calcBookingPrice,
+  formatAvailabilitySlot,
+  formatPackageLabel,
+  isWithinAvailability,
+} from '../../services/trainerAvailability'
 import {
   ArrowLeft,
   BadgeCheck,
@@ -57,6 +70,8 @@ const EMPTY_TRAINER_FORM: TrainerProfileInput = {
   paymentUrl: '',
   active: true,
   availableForDispatch: false,
+  availabilitySlots: [],
+  packages: [],
 }
 
 export interface TrainerCoachViewProps {
@@ -89,13 +104,17 @@ export interface TrainerCoachViewProps {
   onCancelDispatch?: (dispatchId: string) => Promise<void>
   onDispatchMatched?: (dispatch: TrainerDispatchRequest) => void
   initialTab?: 'explore' | 'now' | 'sessions' | 'trainer'
+  clientDispatchHistory?: TrainerDispatchRequest[]
+  trainerDispatchHistory?: TrainerDispatchRequest[]
 }
 
 function TrainerCard({
   trainer,
+  distanceKm,
   onBook,
 }: {
   trainer: TrainerProfile
+  distanceKm?: number | null
   onBook: () => void
 }) {
   const hue = trainerAvatarHue(trainer.displayName)
@@ -135,8 +154,18 @@ function TrainerCard({
           </h3>
           <p className="trainer-card__meta">
             <MapPin size={12} /> {trainer.city || trainer.region || 'Chile'}
+            {typeof distanceKm === 'number' && (
+              <span className="trainer-card__distance"> · {formatDistanceKm(distanceKm)}</span>
+            )}
             {trainer.zones.length > 0 && ` · ${trainer.zones.slice(0, 2).join(', ')}`}
           </p>
+          {trainer.availabilitySlots && trainer.availabilitySlots.length > 0 && (
+            <p className="trainer-card__avail">
+              <Clock size={11} />{' '}
+              {trainer.availabilitySlots.slice(0, 3).map(formatAvailabilitySlot).join(' · ')}
+              {trainer.availabilitySlots.length > 3 ? '…' : ''}
+            </p>
+          )}
         </div>
         <div className="trainer-card__rate-block">
           <div className="trainer-card__rate">{formatTrainerRate(trainer.hourlyRateClp)}</div>
@@ -201,9 +230,13 @@ function BookingForm({
     trainer.paymentMethods.includes('cash') ? 'cash' : 'card'
   )
   const [message, setMessage] = useState('')
+  const [packageId, setPackageId] = useState<string>('')
   const [saving, setSaving] = useState(false)
 
-  const price = Math.round((trainer.hourlyRateClp * (trainer.sessionDurationMin || 60)) / 60)
+  const selectedPackage = packageId
+    ? trainer.packages?.find((p) => p.id === packageId)
+    : undefined
+  const pricing = calcBookingPrice(trainer, selectedPackage ?? null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -212,6 +245,10 @@ function BookingForm({
       return
     }
     const scheduledAt = new Date(`${date}T${time}`).getTime()
+    if (!isWithinAvailability(trainer, scheduledAt)) {
+      toast.error('Horario fuera de la disponibilidad del entrenador')
+      return
+    }
     setSaving(true)
     try {
       await onSubmit({
@@ -219,6 +256,7 @@ function BookingForm({
         locationNote,
         paymentMethod,
         clientMessage: message,
+        ...(packageId ? { packageId } : {}),
       })
     } finally {
       setSaving(false)
@@ -249,12 +287,35 @@ function BookingForm({
         <div>
           <p className="trainer-book__summary-name">{trainer.displayName}</p>
           <p className="trainer-book__summary-meta">
-            {trainer.sessionDurationMin} min · {formatTrainerRate(price)}
+            {trainer.sessionDurationMin} min · {formatTrainerRate(pricing.totalPriceClp)}
+            {pricing.sessionCount > 1 && (
+              <span className="trainer-book__package-tag">
+                {' '}
+                · Paquete {pricing.sessionCount} sesiones (−{pricing.discountPercent}%)
+              </span>
+            )}
           </p>
         </div>
       </div>
 
       <form className="trainer-book__form" onSubmit={handleSubmit}>
+        {trainer.packages && trainer.packages.length > 0 && (
+          <label className="marketplace-form__field">
+            Tipo de reserva
+            <select
+              value={packageId}
+              onChange={(e) => setPackageId(e.target.value)}
+            >
+              <option value="">Sesión individual</option>
+              {trainer.packages.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {formatPackageLabel(p)} —{' '}
+                  {formatTrainerRate(calcBookingPrice(trainer, p).totalPriceClp)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <div className="marketplace-form__row">
           <label className="marketplace-form__field">
             Fecha
@@ -337,6 +398,8 @@ export function TrainerCoachView({
   onCancelDispatch,
   onDispatchMatched,
   initialTab,
+  clientDispatchHistory = [],
+  trainerDispatchHistory = [],
 }: TrainerCoachViewProps) {
   const [tab, setTab] = useState<'explore' | 'now' | 'sessions' | 'trainer'>(initialTab || 'explore')
   const [verifiedOnly, setVerifiedOnly] = useState(false)
@@ -372,6 +435,8 @@ export function TrainerCoachView({
         paymentUrl: myTrainerProfile.paymentUrl || '',
         active: myTrainerProfile.active,
         availableForDispatch: myTrainerProfile.availableForDispatch === true,
+        availabilitySlots: myTrainerProfile.availabilitySlots || [],
+        packages: myTrainerProfile.packages || [],
       })
     }
   }, [myTrainerProfile])
@@ -385,9 +450,17 @@ export function TrainerCoachView({
     [bookings]
   )
   const exploreTrainers = useMemo(() => {
-    const active = trainers.filter((t) => t.active)
-    return verifiedOnly ? active.filter((t) => t.verified) : active
-  }, [trainers, verifiedOnly])
+    let active = trainers.filter((t) => t.active)
+    if (verifiedOnly) active = active.filter((t) => t.verified)
+    if (typeof userLat === 'number' && typeof userLng === 'number') {
+      return [...active].sort((a, b) => {
+        const da = trainerDistanceKm(a, profileCoords, userLat, userLng) ?? 9999
+        const db = trainerDistanceKm(b, profileCoords, userLat, userLng) ?? 9999
+        return da - db
+      })
+    }
+    return active
+  }, [trainers, verifiedOnly, userLat, userLng, profileCoords])
 
   if (!open) return null
 
@@ -553,6 +626,11 @@ export function TrainerCoachView({
               onDispatchMatched?.(d)
             }}
           />
+          <TrainerDispatchHistory
+            clientHistory={clientDispatchHistory}
+            trainerHistory={trainerDispatchHistory}
+            userUid={userUid}
+          />
         </div>
       )}
 
@@ -624,7 +702,12 @@ export function TrainerCoachView({
                 {exploreTrainers.length !== 1 ? 's' : ''}
               </p>
               {exploreTrainers.map((t) => (
-                <TrainerCard key={t.userId} trainer={t} onBook={() => startBook(t)} />
+                <TrainerCard
+                  key={t.userId}
+                  trainer={t}
+                  distanceKm={trainerDistanceKm(t, profileCoords, userLat, userLng)}
+                  onBook={() => startBook(t)}
+                />
               ))}
             </>
           )}
@@ -662,6 +745,12 @@ export function TrainerCoachView({
                     </span>
                     <span className="trainer-session-card__price">{formatTrainerRate(b.priceClp)}</span>
                   </div>
+                  {b.packageSessions && b.packageSessions > 1 && (
+                    <p className="trainer-session-card__package">
+                      Paquete {b.packageSessions} sesiones
+                      {b.packageDiscountPercent ? ` (−${b.packageDiscountPercent}%)` : ''}
+                    </p>
+                  )}
                   <div className="trainer-session-card__partner">
                     <div
                       className="trainer-session-card__avatar"
@@ -864,6 +953,16 @@ export function TrainerCoachView({
               <span className="trainer-coach__dispatch-toggle-ui" />
             </label>
           </div>
+          <TrainerAvailabilityEditor
+            slots={trainerForm.availabilitySlots || []}
+            onChange={(availabilitySlots) =>
+              setTrainerForm((f) => ({ ...f, availabilitySlots }))
+            }
+          />
+          <TrainerPackagesEditor
+            packages={trainerForm.packages || []}
+            onChange={(packages) => setTrainerForm((f) => ({ ...f, packages }))}
+          />
           <label className="marketplace-form__field">
             Bio profesional
             <textarea
