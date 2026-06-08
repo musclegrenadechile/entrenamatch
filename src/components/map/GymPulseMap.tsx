@@ -306,6 +306,22 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     }
   }, [onRegisterCentrar])
 
+  /** Always destroy Leaflet on unmount — switching Map → Explorar unmounts without showLiveMap=false first. */
+  useEffect(() => {
+    return () => {
+      if (mapInstanceRef.current) {
+        try { mapInstanceRef.current.remove() } catch { /* ignore */ }
+        mapInstanceRef.current = null
+      }
+      markersRef.current = []
+      markerPoolRef.current.clear()
+      markerSigRef.current.clear()
+      selfMarkerRef.current = null
+      areaCircleRef.current = null
+      cityChallengeLayerRef.current = null
+    }
+  }, [])
+
   // Main map effect - the heart of GymPulse (moved from App.tsx monolith)
   useEffect(() => {
     if (!showLiveMap || !mapContainerRef.current) {

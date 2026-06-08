@@ -7861,6 +7861,13 @@ body.gym-pulse-fs-active {
   height: 100%;
   max-height: none;
   background: linear-gradient(180deg, #0a0a0c 0%, #050506 100%);
+  isolation: isolate;
+}
+
+/* Leaflet panes must stay inside map tab — never overlay swipe deck */
+.gym-pulse-tab-host .leaflet-container,
+.gym-pulse-tab-host .leaflet-pane {
+  z-index: auto;
 }
 
 .gym-pulse-shell__header {

@@ -9299,11 +9299,113 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             <span>Sin conexión • usando caché • cambios se guardan y sincronizan al reconectar</span>
           </motion.div>
         )}
-        {/* ===== MAP tab + EXPLORE live banner (ExploreLivePanel) ===== */}
-        {(activeTab === 'map' || activeTab === 'explore') && (
-          <div className={activeTab === 'map' ? 'flex-1 min-h-0 flex flex-col overflow-hidden' : 'flex-shrink-0'}>
+        {/* ===== MAP tab (full) vs EXPLORE live banner only — separate mounts so Leaflet never bleeds into swipe deck ===== */}
+        {activeTab === 'explore' && (
+          <div className="flex-shrink-0 relative z-20">
           <ExploreLivePanel
-            dedicatedMapTab={activeTab === 'map'}
+            key="explore-live-banner"
+            dedicatedMapTab={false}
+            liveCountForUI={liveCountForUI}
+            liveTrainingNow={liveTrainingNow}
+            syncBonds={syncBonds}
+            dailyPulse={dailyPulse}
+            activeSyncCount={activeSyncCount}
+            currentUser={currentUser}
+            userLocation={userLocation}
+            joiningSyncWith={joiningSyncWith}
+            setShowFullProfile={setShowFullProfile}
+            handleSwipe={handleSwipe}
+            setShowLiveMap={setShowLiveMap}
+            setActiveTab={navigateTab}
+            setShowLiveModal={setShowLiveModal}
+            triggerHaptic={triggerHaptic}
+            showLiveMap={showLiveMap}
+            networkStats={networkStats}
+            gymPulseMapRef={gymPulseMapRef}
+            mapLiveTrainingNow={mapLiveTrainingNow}
+            effectiveUserId={effectiveUserId}
+            syncRipples={syncRipples}
+            partnerLocations={partnerLocations}
+            mapPartnerLocations={mapPartnerLocations}
+            echoPins={echoPins}
+            mapNearOnly={mapNearOnly}
+            selectedMapZone={selectedMapZone}
+            showOnlyNetwork={showOnlyNetwork}
+            showPartners={showPartners}
+            mapMyGymOnly={mapMyGymOnly}
+            mapMyGymId={mapMyGymId}
+            mapForceTick={mapForceTick}
+            isDeveloper={isDeveloper}
+            isPlacingPartner={isPlacingPartner}
+            isQuickAddPartner={isQuickAddPartner}
+            setMapNearOnly={setMapNearOnly}
+            setSelectedMapZone={setSelectedMapZone}
+            setShowOnlyNetwork={setShowOnlyNetwork}
+            setShowPartners={setShowPartners}
+            setMapForceTick={setMapForceTick}
+            setMapMyGymOnly={setMapMyGymOnly}
+            openAddPartner={openAddPartner}
+            openManagePartners={openManagePartners}
+            setIsQuickAddPartner={setIsQuickAddPartner}
+            logoutDeveloper={logoutDeveloper}
+            addPartnerAtCurrentCenter={addPartnerAtCurrentCenter}
+            reloadPartners={reloadPartners}
+            spawnDevTestLives={spawnDevTestLives}
+            clearDevTestLives={clearDevTestLives}
+            startSyncWith={startSyncWith}
+            handleGymCheckIn={handleGymCheckIn}
+            witnessEchoPin={witnessEchoPin}
+            witnessRipple={witnessRipple}
+            isQuickAddPartnerRef={isQuickAddPartnerRef}
+            isDemoMode={isDemoMode}
+            db={db}
+            setPartnerLocations={setPartnerLocations}
+            startEditPartner={startEditPartner}
+            setPartnerFormLat={setPartnerFormLat}
+            setPartnerFormLng={setPartnerFormLng}
+            setIsPlacingPartner={setIsPlacingPartner}
+            devTestLives={devTestLives}
+            toast={toast}
+            partnerFormLat={partnerFormLat}
+            partnerFormLng={partnerFormLng}
+            handlePartnerEditFromMap={handlePartnerEditFromMap}
+            cancelPartnerForm={cancelPartnerForm}
+            partnerFormName={partnerFormName}
+            partnerFormType={partnerFormType}
+            partnerFormAddress={partnerFormAddress}
+            setPartnerFormName={setPartnerFormName}
+            setPartnerFormType={setPartnerFormType}
+            setPartnerFormAddress={setPartnerFormAddress}
+            showAddPartnerForm={showAddPartnerForm}
+            editingPartnerId={editingPartnerId}
+            setEditingPartnerId={setEditingPartnerId}
+            setShowAddPartnerForm={setShowAddPartnerForm}
+            partnerLocationsRef={partnerLocationsRef}
+            requestUserLocation={requestUserLocation}
+            showDevLogin={showDevLogin}
+            setShowDevLogin={setShowDevLogin}
+            devPassword={devPassword}
+            setDevPassword={setDevPassword}
+            loginAsDeveloper={loginAsDeveloper}
+            showManagePartners={showManagePartners}
+            setShowManagePartners={setShowManagePartners}
+            partnerLogoPreview={partnerLogoPreview}
+            partnerLogoFile={partnerLogoFile}
+            setPartnerLogoFile={setPartnerLogoFile}
+            setPartnerLogoPreview={setPartnerLogoPreview}
+            handlePartnerLogoSelect={handlePartnerLogoSelect}
+            CapacitorCamera={CapacitorCamera}
+            uploadPartnerLogoIfNeeded={uploadPartnerLogoIfNeeded}
+            onActivateLive={() => void toggleLiveTraining('on')}
+          />
+          </div>
+        )}
+
+        {activeTab === 'map' && (
+          <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative z-10">
+          <ExploreLivePanel
+            key="map-full"
+            dedicatedMapTab={true}
             liveCountForUI={liveCountForUI}
             liveTrainingNow={liveTrainingNow}
             syncBonds={syncBonds}
@@ -9413,7 +9515,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         {activeTab === 'explore' && (
           <TabErrorBoundary tabName="Explorar">
           <PullToRefresh
-            className="flex-1 flex flex-col min-h-0 overflow-auto"
+            className="flex-1 flex flex-col min-h-0 overflow-auto relative z-20 isolate bg-[#0D0D10]"
             disabled={isDemoMode}
             onRefresh={async () => {
               await silentRefreshReal()

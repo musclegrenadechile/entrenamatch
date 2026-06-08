@@ -123,7 +123,11 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
   })
 
   useEffect(() => {
-    if (!dedicatedMapTab) return
+    if (!dedicatedMapTab) {
+      setMapFullscreen(false)
+      document.body.classList.remove('gym-pulse-fs-active')
+      return
+    }
     setShowLiveMap(true)
     setMapFullscreen(true)
   }, [dedicatedMapTab, setShowLiveMap])

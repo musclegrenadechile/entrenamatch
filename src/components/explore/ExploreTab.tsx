@@ -434,7 +434,7 @@ export const ExploreTab = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col p-3 pt-2 relative bg-[#0D0D10] min-h-0">
+    <div className="flex-1 flex flex-col p-3 pt-2 relative z-20 bg-[#0D0D10] min-h-0 isolate">
       {/* Header */}
       <div className="flex items-start justify-between gap-2 mb-1 px-0.5 shrink-0">
         <div className="min-w-0 flex-1">
@@ -511,8 +511,8 @@ export const ExploreTab = ({
         />
       )}
 
-      {/* Cards Stack Area */}
-      <div className="relative flex-1 flex items-center justify-center my-1 min-h-[240px] max-h-[min(48dvh,380px)] sm:max-h-[420px]">
+      {/* Cards Stack Area — solid bg + z-index so map tiles never bleed through */}
+      <div className="relative z-10 flex-1 flex items-center justify-center my-1 min-h-[240px] max-h-[min(48dvh,380px)] sm:max-h-[420px] bg-[#0D0D10]">
         {isLoadingProfiles && visibleCards.length === 0 && (
           <SwipeCardSkeleton />
         )}
