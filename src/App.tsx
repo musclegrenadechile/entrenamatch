@@ -10661,6 +10661,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           showSyncArena ||
           showOnboarding ||
           authBooting ||
+          activeTab === 'explore' ||
+          activeTab === 'map' ||
           (activeTab === 'red' && redSubTab === 'messages' && !!activeChat)
         }
       />

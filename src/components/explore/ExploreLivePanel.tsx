@@ -173,16 +173,22 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
   ).length
 
   return (
-    <div className={dedicatedMapTab ? 'flex-1 flex flex-col min-h-0 relative' : 'px-4 py-2.5 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden live-banner-glow transition-all duration-300'} style={dedicatedMapTab ? undefined : {boxShadow: '0 1px 0 rgba(34,197,94,0.1)'}}>
+    <div className={dedicatedMapTab ? 'flex-1 flex flex-col min-h-0 relative' : 'flex-shrink-0 px-3 py-2 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/30 relative overflow-hidden live-banner-glow'} style={dedicatedMapTab ? undefined : {boxShadow: '0 1px 0 rgba(34,197,94,0.08)'}}>
       {!dedicatedMapTab && (
       <>
       <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
-      <div className="flex items-center gap-2 mb-1.5 relative z-10">
-        <div className="live-pill green !px-2.5 !py-0.5 text-[9px]">🟢 EN VIVO AHORA</div>
-        <div className="text-sm font-semibold tracking-[-0.1px]">{liveCountForUI} entrenando cerca de ti {liveTrainingNow.some(u => u.seVaEnMin > 0) ? '· ¡se va pronto!' : ''} {liveCountForUI > 5 ? '· 🔥 HOT ZONE!' : ''} {liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0) > 0 ? `· +${liveTrainingNow.reduce((s,u)=>s+(u.joinCount||0),0)} unidos hoy` : ''}{activeSyncCount > 0 ? ` · 🔄 ${activeSyncCount} pares sincronizados ahora (único)` : ''}</div>
+      <div className="relative z-10 flex flex-wrap items-center gap-x-2 gap-y-1 mb-1.5">
+        <div className="live-pill green !px-2 !py-0.5 text-[8px] shrink-0">🟢 EN VIVO</div>
+        <div className="text-[11px] font-semibold leading-tight min-w-0 flex-1">
+          {liveCountForUI} cerca
+          {activeSyncCount > 0 ? ` · ${activeSyncCount} sync` : ''}
+        </div>
+        <button type="button" onClick={openMapTab} className="text-[10px] px-2.5 py-1 rounded-full bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/35 font-semibold shrink-0">
+          Mapa →
+        </button>
         {dailyPulse && (dailyPulse.trainingStreak > 0 || dailyPulse.synergyStreak > 0) && (
-          <div className="text-[10px] mt-1 text-[#22c55e] font-medium flex items-center gap-1">
-            🔥 Tu streak: {dailyPulse.trainingStreak}d train + {dailyPulse.synergyStreak}d synergy • Nivel {dailyPulse.level}
+          <div className="w-full text-[9px] text-[#22c55e]/90 font-medium">
+            🔥 {dailyPulse.trainingStreak}d train · nivel {dailyPulse.level}
           </div>
         )}
       </div>
@@ -241,34 +247,27 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           ))}
         </div>
       ) : currentUser?.trainingNow ? (
-        <div className="card card-glass p-4 text-center border border-[#22c55e]/50 relative overflow-hidden">
-          <div className="text-3xl mb-2">🟢</div>
-          <div className="font-semibold text-base mb-1 text-[#22c55e]">¡Tú estás en vivo en el GymPulse!</div>
-          <div className="text-sm text-[#9CA3AF] mb-3 leading-snug">Tu marcador verde ya está en el mapa. Cuando alguien más active live cerca, aparecerá aquí para unirte o sync.</div>
-          <button type="button" onClick={openMapTab} className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90">Ver mapa en tiempo real →</button>
+        <div className="relative z-10 flex items-center justify-between gap-2 py-2 px-3 rounded-xl border border-[#22c55e]/40 bg-[#0a2a1a]/60 mb-1">
+          <span className="text-[11px] text-[#22c55e] font-semibold leading-snug">🟢 Estás en vivo — visible en el mapa</span>
+          <button type="button" onClick={openMapTab} className="text-[10px] px-3 py-1 rounded-full bg-[#22c55e] text-black font-bold shrink-0">Ver mapa</button>
         </div>
       ) : (
-        <div className="card card-glass p-6 text-center border border-[#22c55e]/30 relative overflow-hidden">
-          <div className="text-5xl mb-3 opacity-90">🏋️‍♂️</div>
-          <div className="font-semibold text-base mb-1.5">Aún no hay nadie entrenando cerca</div>
-          <div className="text-sm text-[#9CA3AF] mb-4 leading-snug">Sé el primero en aparecer en el mapa mientras entrenas. Otros te encontrarán al activar live.</div>
+        <div className="relative z-10 flex items-center justify-between gap-2 py-2 px-3 rounded-xl border border-[#22c55e]/25 bg-black/20 mb-1">
+          <span className="text-[10px] text-[#9CA3AF] leading-snug">Nadie entrenando cerca aún</span>
           <button
             type="button"
             onClick={() => {
               if (onActivateLive) onActivateLive()
               else setActiveTab('profile')
             }}
-            className="text-xs px-5 py-2 rounded-2xl bg-[#22c55e] text-black font-bold active:brightness-90 active:scale-[0.985] transition shadow-sm"
+            className="text-[10px] px-3 py-1 rounded-full bg-[#22c55e] text-black font-bold shrink-0"
           >
-            Activar LIVE ahora →
+            Activar LIVE
           </button>
-          <div className="absolute -bottom-6 -right-6 text-[70px] opacity-5">📡</div>
         </div>
       )}
-      <div className="text-[9px] text-[#9CA3AF] mt-0.5 flex justify-between items-center gap-2">
-        <span>El mapa está en el tab Mapa.</span>
-        <button type="button" onClick={openMapTab} className="text-[#22c55e] underline active:text-white shrink-0">Abrir mapa →</button>
-        <button type="button" onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline active:text-white shrink-0">Ver todos live →</button>
+      <div className="relative z-10 text-[9px] text-[#9CA3AF] flex items-center gap-2 pb-0.5">
+        <button type="button" onClick={() => setShowLiveModal(true)} className="text-[#22c55e] underline active:text-white">Ver todos live</button>
       </div>
 
       </>

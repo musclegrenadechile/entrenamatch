@@ -252,7 +252,7 @@ export const ExploreTab = ({
     return (
       <motion.div
         key={profile.id}
-        className="absolute w-full max-w-[340px] aspect-[3/4] bg-white rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing swipe-card ring-1 ring-white/10"
+        className="absolute left-0 right-0 mx-auto w-full max-w-[320px] h-[min(46dvh,360px)] sm:h-[min(52dvh,400px)] bg-[#1C1C20] rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing swipe-card ring-1 ring-white/10"
         style={{ zIndex: z }}
         initial={false}
         animate={{
@@ -273,9 +273,10 @@ export const ExploreTab = ({
         {/* Photo */}
         <img 
           src={profile.photos[0]} 
-          className="w-full h-full object-cover" 
+          className="w-full h-full object-cover object-[center_20%] bg-[#1C1C20]" 
           alt={profile.name} 
           draggable={false}
+          loading="lazy"
         />
 
         {/* Gradient overlay - premium cinematic for fitness app */}
@@ -290,92 +291,106 @@ export const ExploreTab = ({
           />
         )}
 
-        {/* Top badges row - Premium with Real tester indicator */}
-        <div className="absolute top-4 left-4 right-4 flex items-start justify-between">
-          <div className="flex flex-col gap-1.5">
+        {/* Top badges row */}
+        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-start justify-between gap-2 pointer-events-none">
+          <div className="flex flex-col gap-1 min-w-0 pointer-events-auto">
             {isDemoSeed && (
-              <div className="inline-flex items-center gap-1 bg-[#6B7280]/90 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full ring-1 ring-white/30">
+              <div className="inline-flex items-center gap-1 bg-[#6B7280]/90 text-white text-[8px] font-bold px-2 py-0.5 rounded-full w-fit">
                 DEMO
               </div>
             )}
             {isRealProfile && verified && (
-              <div className="inline-flex items-center gap-1 bg-[#FF671F] text-black text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
-                <CheckCircle size={12} /> VERIFICADO
+              <div className="inline-flex items-center gap-1 bg-[#FF671F] text-black text-[9px] font-semibold px-2 py-0.5 rounded-full w-fit">
+                <CheckCircle size={11} /> VERIFICADO
               </div>
             )}
             {profile.intensity && (
-              <div className="inline-flex text-[10px] bg-black/60 text-white px-2 py-0.5 rounded-full w-fit">
+              <div className="inline-flex text-[9px] bg-black/60 text-white px-2 py-0.5 rounded-full w-fit">
                 {profile.intensity}
               </div>
             )}
           </div>
 
-          {dist !== null ? (
-            <div className="bg-black/60 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1">
-              <MapPin size={12} /> {dist} km
-            </div>
-          ) : !userLocation ? (
-            <div className="bg-black/50 text-[#3b82f6] text-[10px] px-2 py-1 rounded-full">
-              GPS → km
-            </div>
-          ) : null}
+          <div className="flex flex-col items-end gap-1 shrink-0 pointer-events-auto">
+            {onReport && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReport(profile.id);
+                }}
+                className="text-[8px] bg-black/55 px-2 py-0.5 rounded-full text-white/75 active:text-white"
+                title="Reportar perfil"
+              >
+                ⚠ Reportar
+              </button>
+            )}
+            {dist !== null ? (
+              <div className="bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
+                <MapPin size={11} /> {dist} km
+              </div>
+            ) : !userLocation ? (
+              <div className="bg-black/50 text-[#3b82f6] text-[9px] px-2 py-0.5 rounded-full">
+                GPS → km
+              </div>
+            ) : null}
+          </div>
         </div>
 
-        {/* Bottom info - Premium layout */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
-          <div className="flex items-end justify-between mb-2">
-            <div>
-              <div className="text-3xl font-semibold tracking-[-1px] flex items-center gap-2 drop-shadow">
-                {profile.name}, {profile.age}
-                {verified && <CheckCircle size={20} className="text-[#FF671F] -mb-0.5" />}
-                {isNetwork(profile) && (
-                  <span className="text-[10px] bg-[#FFD700] text-black px-1.5 py-0.5 rounded-full font-black tracking-[0.5px] ml-1 align-middle">⭐ RED · Fuerza {getBondLevel(profile)} +{getNetworkBoost(profile)}%</span>
-                )}
+        {/* Bottom info */}
+        <div className="absolute bottom-0 left-0 right-0 p-3.5 pb-3 text-white bg-gradient-to-t from-black/95 via-black/75 to-transparent pt-10">
+          <div className="flex items-end justify-between gap-2 mb-1.5">
+            <div className="min-w-0 flex-1">
+              <div className="text-lg sm:text-2xl font-semibold tracking-tight flex items-center gap-1.5 min-w-0">
+                <span className="truncate">{profile.name}</span>
+                <span className="shrink-0 text-white/90">, {profile.age}</span>
+                {verified && <CheckCircle size={16} className="text-[#FF671F] shrink-0" />}
               </div>
-              <div className="text-sm opacity-90 flex items-center gap-2 mt-0.5">
-                <span>{profile.city}</span>
+              {isNetwork(profile) && (
+                <div className="text-[9px] bg-[#FFD700] text-black px-1.5 py-0.5 rounded-full font-black w-fit mt-1">
+                  ⭐ RED · F{getBondLevel(profile)} +{getNetworkBoost(profile)}%
+                </div>
+              )}
+              <div className="text-xs opacity-90 flex items-center gap-2 mt-0.5 truncate">
+                <span className="truncate">{profile.city}</span>
                 {profile.availableToday && (
-                  <span className="text-[10px] bg-[#22c55e] text-black px-2 py-px rounded-full font-semibold tracking-wide">DISPONIBLE HOY</span>
+                  <span className="text-[9px] bg-[#22c55e] text-black px-1.5 py-px rounded-full font-semibold shrink-0">HOY</span>
                 )}
               </div>
             </div>
 
             {compat !== null && (
-              <div className="text-right">
-                {/* Unique: Compatibility as "match energy" with visual bar */}
-                <div className="flex items-end justify-end gap-1">
-                  <div className="text-4xl font-black text-[#FF671F] leading-none tracking-[-2px]">{compat}</div>
-                  <div className="text-[9px] text-[#FF671F]/70 font-bold mb-0.5">MATCH</div>
+              <div className="text-right shrink-0">
+                <div className="flex items-end justify-end gap-0.5">
+                  <div className="text-2xl sm:text-3xl font-black text-[#FF671F] leading-none">{compat}</div>
+                  <div className="text-[8px] text-[#FF671F]/70 font-bold mb-0.5">MATCH</div>
                 </div>
-                <div className="h-1 w-12 bg-white/20 rounded-full overflow-hidden mt-0.5 ml-auto">
+                <div className="h-1 w-10 bg-white/20 rounded-full overflow-hidden mt-0.5 ml-auto">
                   <div 
-                    className="h-full bg-gradient-to-r from-[#FF671F] to-[#E55A1A] transition-all" 
+                    className="h-full bg-gradient-to-r from-[#FF671F] to-[#E55A1A]" 
                     style={{ width: `${compat}%` }} 
                   />
                 </div>
-                <div className="text-[8px] text-[#FF671F]/70 mt-0.5 leading-none font-medium">
+                <div className="text-[7px] text-[#FF671F]/80 mt-0.5 leading-none max-w-[88px] truncate ml-auto">
                   {getCompatReasons(profile).join(' · ')}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Bio */}
-          <p className="text-sm leading-snug text-white/90 line-clamp-2 mb-3 pr-2 drop-shadow">
+          <p className="text-xs leading-snug text-white/90 line-clamp-2 mb-2 pr-1">
             {profile.bio}
           </p>
 
-          {/* Chips - More attractive */}
-          <div className="flex flex-wrap gap-1.5 mb-2.5">
-            {profile.trainingTypes.slice(0, 3).map(t => (
-              <div key={t} className="text-[10px] bg-white/20 backdrop-blur px-2.5 py-0.5 rounded-full font-medium">{t}</div>
+          <div className="flex flex-wrap gap-1 mb-1.5">
+            {profile.trainingTypes.slice(0, 2).map(t => (
+              <div key={t} className="text-[9px] bg-white/20 backdrop-blur px-2 py-0.5 rounded-full font-medium">{t}</div>
             ))}
           </div>
 
           {profile.goals.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-2">
+            <div className="hidden sm:flex flex-wrap gap-1 mb-1.5">
               {profile.goals.slice(0, 2).map(g => (
-                <div key={g} className="text-[9px] bg-[#FF671F]/70 text-black px-2 py-px rounded-full font-medium">{g}</div>
+                <div key={g} className="text-[8px] bg-[#FF671F]/70 text-black px-2 py-px rounded-full font-medium">{g}</div>
               ))}
             </div>
           )}
@@ -387,43 +402,31 @@ export const ExploreTab = ({
             return (
               <div 
                 onClick={(e) => { e.stopPropagation(); onShowProfile?.(profile) }}
-                className="mb-2 px-2 py-1 bg-[#111113]/70 backdrop-blur rounded-2xl text-[9px] text-white/90 line-clamp-2 border border-[#FF671F]/20 cursor-pointer active:bg-[#FF671F]/10 flex items-start gap-1 hover:border-[#FF671F]/40 transition"
+                className="hidden sm:flex mb-1.5 px-2 py-1 bg-[#111113]/70 backdrop-blur rounded-xl text-[9px] text-white/90 line-clamp-1 border border-[#FF671F]/20 cursor-pointer active:bg-[#FF671F]/10 items-center gap-1"
               >
-                <span className="mt-0.5 text-[#FF671F]">📝</span> <span className="leading-tight">{teaser}</span>
+                <span className="text-[#FF671F]">📝</span>
+                <span className="truncate">{teaser}</span>
               </div>
             )
           })()}
 
-          <div className="flex items-center gap-2 text-xs text-white/80 font-medium">
-            <span>Disponible:</span> {profile.availability.join(' • ')}
+          <div className="hidden sm:flex items-center gap-2 text-[10px] text-white/75 font-medium truncate">
+            <span className="shrink-0">Disponible:</span>
+            <span className="truncate">{profile.availability.join(' · ')}</span>
           </div>
         </div>
 
-        {/* VER PERFIL overlay button */}
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             if (onShowProfile) onShowProfile(profile);
             else toast.info('Ver perfil completo');
           }}
-          className="absolute bottom-4 right-4 text-[10px] bg-black/60 hover:bg-black/80 active:bg-black px-3 py-1 rounded-full border border-white/20 text-white font-medium transition"
+          className="absolute bottom-3 left-3 text-[9px] bg-black/55 active:bg-black/75 px-2.5 py-1 rounded-full border border-white/15 text-white font-medium z-10"
         >
-          VER PERFIL
+          Ver perfil
         </button>
-
-        {/* Report for safety / moderation polish (visible on hover/tap for testers) */}
-        {onReport && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onReport(profile.id);
-            }}
-            className="absolute top-4 right-4 text-[9px] bg-black/50 hover:bg-black/70 active:bg-red-900/70 px-2 py-0.5 rounded-full text-white/70 hover:text-white flex items-center gap-0.5 transition"
-            title="Reportar perfil"
-          >
-            ⚠ <span className="text-[8px]">REPORT</span>
-          </button>
-        )}
 
         {/* No text hint - clean for premium profile choosing (swipe or use buttons below) */}
       </motion.div>
@@ -431,28 +434,19 @@ export const ExploreTab = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col p-4 pt-3 relative bg-[#0D0D10]">
-      {/* Header - Cleaner and more premium, tight spacing */}
-      <div className="flex items-start justify-between mb-1.5 px-1">
-        <div>
-          <div className="section-header text-3xl">Explorar</div>
-          <div className="mt-0.5 flex items-center gap-x-2 text-xs leading-tight flex-wrap">
-            <span className="text-[#FF671F] font-semibold">
-              {deck.length} disponibles ahora {userLocation ? 'cerca de ti' : ''} · ordenados por compat
-            </span>
-            {lastSync && (
-              <span className="text-[9px] text-[#9CA3AF] bg-[#1C1C20] px-1.5 py-px rounded">sync hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>
-            )}
-            {realProfiles && realProfiles.length > 0 && (
-              <span className="text-[10px] text-[#FF671F] font-medium">+ {realProfiles.length} reales <span className="live-pill text-[8px]">en vivo</span></span>
-            )}
+    <div className="flex-1 flex flex-col p-3 pt-2 relative bg-[#0D0D10] min-h-0">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-2 mb-1 px-0.5 shrink-0">
+        <div className="min-w-0 flex-1">
+          <div className="text-xl sm:text-3xl font-extrabold tracking-tight leading-none">Explorar</div>
+          <div className="mt-1 text-[11px] leading-snug text-[#9CA3AF]">
+            <span className="text-[#FF671F] font-semibold">{deck.length} disponibles</span>
+            {userLocation ? ' cerca' : ''}
             {cityActiveCount > 0 && (
-              <span className="text-[10px] text-[#22c55e] font-medium flex items-center gap-1">
-                <Users size={11} aria-hidden />
-                {cityActiveCount} activos esta semana en {cityLabel}
+              <span className="block sm:inline sm:ml-1 text-[#22c55e]">
+                · {cityActiveCount} activos en {cityLabel}
               </span>
             )}
-            <span className="text-[10px] text-[#FF671F]/70">• tu equipo de gym en vivo</span>
           </div>
         </div>
 
@@ -518,7 +512,7 @@ export const ExploreTab = ({
       )}
 
       {/* Cards Stack Area */}
-      <div className="relative flex-1 flex items-center justify-center mt-0.5 mb-2 min-h-[460px]">
+      <div className="relative flex-1 flex items-center justify-center my-1 min-h-[240px] max-h-[min(48dvh,380px)] sm:max-h-[420px]">
         {isLoadingProfiles && visibleCards.length === 0 && (
           <SwipeCardSkeleton />
         )}
@@ -654,7 +648,7 @@ export const ExploreTab = ({
 
       {/* Action Buttons - Unique EntrenaMatch style */}
       {deck.length > 0 && topProfile && (
-        <div className="flex justify-center items-center gap-6 pb-2">
+        <div className="flex justify-center items-center gap-5 py-2 shrink-0">
           <button 
             onClick={handlePass}
             className="group w-14 h-14 rounded-full bg-[#1C1C20] border border-[#2F2F35] flex flex-col items-center justify-center active:scale-90 transition-all shadow-inner hover:border-red-500/50"
@@ -677,7 +671,7 @@ export const ExploreTab = ({
 
       {/* Recommendations - Más compatibles (unique discovery) */}
       {userLocation && currentUser && deck.length > 0 && (
-        <div className="mt-4 mb-2">
+        <div className="mt-3 mb-2 hidden md:block">
           <div className="flex items-center justify-between mb-2.5 px-1">
             <div>
               <div className="font-semibold text-sm flex items-center gap-1">Más compatibles (reales primero) <span className="live-pill text-[8px]">en vivo</span></div>
@@ -740,7 +734,7 @@ export const ExploreTab = ({
       {/* NEW HIGH IMPACT: RED GLOBAL / TOP NETWORK POWER LEADERBOARD + GLOBAL QUANTIFICATION */}
       {/* Makes the social graph visible and competitive at scale. High NP users get status. Your red's impact is quantified. */}
       {topNetworks.length > 0 && (
-        <div className="mt-4 mb-2 px-1">
+        <div className="mt-3 mb-2 px-1 hidden md:block">
           <div className="flex items-center justify-between mb-2 px-0.5">
             <div className="font-semibold text-sm flex items-center gap-1 text-[#FFD700]">🔥 TOP REDES (Fuerza del equipo global) <span className="text-[8px] bg-[#FFD700]/20 px-1 rounded text-black">LIVE</span></div>
             <div className="text-[8px] text-[#9CA3AF]">Tu grafo mueve el pulso</div>
