@@ -68,8 +68,8 @@ export function FirstStepsGuide({
     {
       id: 'pact',
       icon: Target,
-      title: '4. Pacto',
-      desc: 'Define tu meta semanal de live + sync y cierra el loop con tu equipo.',
+      title: '4. Semana',
+      desc: 'Define tu meta semanal de live + sync y cierra la semana con tu equipo.',
       done: hasPact,
     },
   ]
@@ -85,7 +85,7 @@ export function FirstStepsGuide({
         <X size={16} />
       </button>
       <p className="text-[10px] uppercase tracking-[0.16em] text-[#FF671F] font-bold mb-1">
-        Loop Live → Equipo → Sync → Pacto
+        Loop Live → Equipo → Sync → Semana
       </p>
       <p className="text-sm font-semibold text-white mb-3 pr-6">
         Tu rutina en EntrenaMatch

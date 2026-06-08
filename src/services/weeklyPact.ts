@@ -84,7 +84,7 @@ export function buildDefaultPact(
 }
 
 export function pactStatusLine(progress: WeeklyPactProgress): string {
-  if (!progress.pledged) return 'Cierra tu semana con un compromiso claro'
-  if (progress.isComplete) return 'Pacto cumplido — tu equipo lo siente'
+  if (!progress.pledged) return 'Cierra tu semana con una meta clara'
+  if (progress.isComplete) return 'Semana sellada — tu equipo lo siente'
   return `${progress.liveDaysDone}/${progress.liveDaysTarget} live · ${progress.syncSessionsDone}/${progress.syncSessionsTarget} sync`
 }

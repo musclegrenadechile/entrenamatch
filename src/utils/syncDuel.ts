@@ -73,14 +73,14 @@ export function computeSyncDuel(
 
   const headline =
     winner === 'self'
-      ? '¡Ganaste el duelo de sync!'
+      ? 'Llevaste la energía esta sesión'
       : winner === 'partner'
-        ? `${partner.name} lleva la delantera`
-        : 'Empate épico en la Arena'
+        ? `${partner.name} llevó más energía hoy`
+        : 'Misma energía — otra sesión pronto'
 
   const subline =
     self.actions + partner.actions === 0
-      ? 'Activad acciones en la próxima para desbloquear el duelo completo'
+      ? 'Activad acciones en la próxima para ver el resumen completo'
       : winner === 'tie'
         ? 'Misma energía — la revancha os espera'
         : `${Math.abs(self.score - partner.score)} pts de diferencia en el marcador`
@@ -98,7 +98,7 @@ export interface SyncDuelMetricRow {
 export function buildDuelMetrics(duel: SyncDuelResult): SyncDuelMetricRow[] {
   return [
     { key: 'actions', label: 'Acciones', self: duel.self.actions, partner: duel.partner.actions },
-    { key: 'combo', label: 'Combo máx', self: duel.self.maxCombo, partner: duel.partner.maxCombo },
+    { key: 'combo', label: 'Racha máx', self: duel.self.maxCombo, partner: duel.partner.maxCombo },
     { key: 'prs', label: 'PRs', self: duel.self.prs, partner: duel.partner.prs },
     { key: 'hype', label: 'Ánimo', self: duel.self.hype, partner: duel.partner.hype },
   ]

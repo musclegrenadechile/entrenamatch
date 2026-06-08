@@ -37,7 +37,7 @@
   showOnLeaderboard?: boolean
   /** Last gym partner check-in (shown on map when live). */
   gymCheckIn?: GymCheckIn
-  /** Weekly commitment — closes Home loop (Phase D4). */
+  /** Weekly goal — closes Home loop (Meta semanal, Phase D4). */
   weeklyPact?: WeeklyPact
 }
 

@@ -166,7 +166,7 @@ export function DailyHome({
           {greeting}, {firstName}
         </h2>
         <p className="text-[11px] text-[#9CA3AF] mt-1 leading-snug">
-          Live → Equipo → Sync → Pacto: cierra tu semana con tu red.
+          Live → Equipo → Sync → Semana: cierra tu semana con tu red.
         </p>
         <HomeLoopStepper activeStep={loopStep} />
       </div>
@@ -461,7 +461,7 @@ export function DailyHome({
         )}
       </section>
 
-      {/* 4 · PACTO SEMANAL */}
+      {/* 4 · META SEMANAL */}
       <section
         className={`rounded-3xl p-4 border transition-colors ${
           loopStep === 'pact'
@@ -470,17 +470,17 @@ export function DailyHome({
               ? 'bg-gradient-to-br from-[#0a1f14]/80 to-[#141418] border-[#22c55e]/30'
               : 'bg-gradient-to-br from-[#141418] to-[#0f0f12] border-[#2F2F35]'
         }`}
-        aria-label="Paso Pacto semanal"
+        aria-label="Paso Meta semanal"
       >
         <SectionLabel
           step={4}
-          title="Pacto semanal"
+          title="Meta semanal"
           hint={
             weeklyPactProgress.isComplete
-              ? 'Compromiso cumplido — sigue sumando constancia.'
+              ? 'Semana sellada — sigue sumando Constancia.'
               : weeklyPactProgress.pledged
                 ? 'Tu meta de live + sync esta semana.'
-                : 'Define tu meta y cierra el loop con tu equipo.'
+                : 'Define tu meta y cierra la semana con tu equipo.'
           }
         />
         {onPledgeWeeklyPact && (

@@ -171,7 +171,7 @@ export function SyncArenaView({
           <p className="text-[11px] text-white/55">
             {distanceKm != null ? `${distanceKm.toFixed(1)} km · ` : ''}
             {isNetworkBond && (
-              <span className="text-[#FFD700] font-bold">⭐ RED LV{bondLevel} · </span>
+              <span className="text-[#FFD700] font-bold">⭐ RED · Fuerza {bondLevel} · </span>
             )}
             Sync activo
           </p>
@@ -183,7 +183,7 @@ export function SyncArenaView({
             <span className="arena-highlight-badge arena-highlight-badge--soon">⚡ {vibeToHighlight}→80</span>
           ) : null}
           {syncCombo >= 2 && (
-            <span className="arena-combo-badge">COMBO ×{syncCombo}</span>
+            <span className="arena-combo-badge">RACHA ×{syncCombo}</span>
           )}
           <button type="button" onClick={onMinimize} className="arena-icon-btn" aria-label="Minimizar">
             <X size={18} />
@@ -297,7 +297,7 @@ export function SyncArenaView({
               → Historia compartida en ambos muros
             </>
           ) : (
-            <>⭐ Historia compartida desbloqueada al terminar</>
+            <>⭐ Historia compartida lista al terminar</>
           )}
         </p>
         <div className="arena-vibe-milestones" aria-hidden>
@@ -467,7 +467,7 @@ export function SyncArenaView({
           <Zap size={10} className="text-[#22c55e]" />
           {witnessCount > 0
             ? `Cada acción llega a ${partnerFirst} y ${witnessCount} más presencian en el mapa`
-            : 'Cada acción suma al duelo — al terminar verás el resumen VS'}
+            : 'Cada acción suma al marcador — al terminar verás el resumen VS'}
         </p>
       </footer>
     </div>

@@ -87,7 +87,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
           <div className="w-16 h-1.5 bg-white/10 rounded overflow-hidden ml-2">
             <div className={`h-1.5 bg-gradient-to-r from-[#FF671F] to-[#FF4F79] transition-all ${liveBondBonus > 0 || currentUser.trainingNow ? 'vibe-bar-live' : ''}`} style={{width: `${vibe}%`}} />
           </div>
-          {liveBondBonus > 0 && <span className="ml-1 text-[8px] text-[#22c55e] animate-pulse">+{liveBondBonus} live bonds 🔥</span>}
+          {liveBondBonus > 0 && <span className="ml-1 text-[8px] text-[#22c55e] animate-pulse">+{liveBondBonus} alianzas en vivo 🔥</span>}
         </div>
       );
     })()}
@@ -103,7 +103,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
               onClick={() => { try { triggerHaptic('medium') } catch {}; startSyncWith(livePartner.id, livePartner.name || livePartner.nombre) }}
               className="text-[8px] px-2 py-0.5 bg-[#FFD700]/20 hover:bg-[#FFD700]/30 text-[#FFD700] rounded-full active:scale-[0.95] transition flex items-center gap-1 border border-[#FFD700]/50 font-medium"
             >
-              <span>{(livePartner.name || livePartner.nombre || '?').split(' ')[0]}</span> <span className="text-[6px] opacity-70">LV{syncBonds[livePartner.id]?.bondLevel || 1}</span>
+              <span>{(livePartner.name || livePartner.nombre || '?').split(' ')[0]}</span> <span className="text-[6px] opacity-70">F{syncBonds[livePartner.id]?.bondLevel || 1}</span>
               <span className="text-[7px] opacity-80">🔄 Re-sync (sube Fuerza del equipo)</span>
             </button>
           ))}
@@ -124,7 +124,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
         {[
           { label: 'Host', val: Math.min(100, (currentUser.liveStreak || 0) * 8) },
           { label: 'Join', val: Math.min(100, (currentUser.joinedLiveStreak || 0) * 12) },
-          { label: 'Bonds', val: Math.min(100, Object.keys(syncBonds).length * 15) },
+          { label: 'Alianzas', val: Math.min(100, Object.keys(syncBonds).length * 15) },
           { label: 'Live+', val: Math.min(100, (currentUser.liveJoins || 0) * 4) },
           { label: 'Actual', val: Math.min(100, liveTrainingNow.some(u => Object.keys(syncBonds).includes(u.id)) ? 90 : 40) }
         ].map((bar, i) => (
@@ -199,7 +199,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
               <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#22c55e] rounded-full flex items-center justify-center text-[8px] ring-1 ring-[#0D0D10]">🔄</div>
             </div>
             <div className="min-w-0 flex-1">
-              <div className="font-semibold text-white/95 truncate flex items-center gap-1">{p?.name || 'Socio'} <span className="text-[8px] text-[#FF671F] font-mono">LV{b.bondLevel}</span>{liveTrainingNow.some(u => u.id === pid && u.trainingNow) && <span className="ml-1 text-[7px] px-1 bg-[#22c55e] text-black rounded font-bold animate-pulse">EN VIVO</span>}</div>
+              <div className="font-semibold text-white/95 truncate flex items-center gap-1">{p?.name || 'Socio'} <span className="text-[8px] text-[#FF671F] font-mono">F{b.bondLevel}</span>{liveTrainingNow.some(u => u.id === pid && u.trainingNow) && <span className="ml-1 text-[7px] px-1 bg-[#22c55e] text-black rounded font-bold animate-pulse">EN VIVO</span>}</div>
               <div className="text-[9px] text-[#9CA3AF]">{b.totalMin}min • {b.sessions} sesiones • {b.avgRating}★ • <span className="text-[#22c55e]">tu Fuerza del equipo sube con esta alianza</span></div>
               <div className="bond-flame text-[12px] leading-none mt-0.5">{flames}</div>
               {/* Visual bond progress bar */}
@@ -215,7 +215,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
         )
       })}
     </div>
-    <div className="text-[8px] text-center text-[#22c55e]/60 mt-1">Re-sync para subir tu Fuerza del equipo, fortalecer alianzas y desbloquear prioridad en el mapa + mejores recomendaciones</div>
+    <div className="text-[8px] text-center text-[#22c55e]/60 mt-1">Re-sync para subir tu Fuerza del equipo, fortalecer alianzas y ganar más visibilidad en el GymPulse</div>
     {Object.keys(syncBonds).length > 4 && (
       <div className="text-center mt-1">
         <button onClick={() => setActiveTab('profile')} className="text-[8px] text-[#FF671F] underline">Ver toda tu red ({Object.keys(syncBonds).length} socios) →</button>

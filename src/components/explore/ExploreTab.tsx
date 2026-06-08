@@ -283,7 +283,7 @@ export const ExploreTab = ({
                 {profile.name}, {profile.age}
                 {verified && <CheckCircle size={20} className="text-[#FF671F] -mb-0.5" />}
                 {isNetwork(profile) && (
-                  <span className="text-[10px] bg-[#FFD700] text-black px-1.5 py-0.5 rounded-full font-black tracking-[0.5px] ml-1 align-middle">⭐ RED LV{getBondLevel(profile)} +{getNetworkBoost(profile)}% NP</span>
+                  <span className="text-[10px] bg-[#FFD700] text-black px-1.5 py-0.5 rounded-full font-black tracking-[0.5px] ml-1 align-middle">⭐ RED · Fuerza {getBondLevel(profile)} +{getNetworkBoost(profile)}%</span>
                 )}
               </div>
               <div className="text-sm opacity-90 flex items-center gap-2 mt-0.5">
@@ -592,7 +592,7 @@ export const ExploreTab = ({
                 >
                   <img src={profile.photos[0]} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" alt="" />
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm truncate flex items-center gap-1">{profile.name} {isReal && <span className="text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>} {isNet && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED LV{bond}</span>}</div>
+                    <div className="font-medium text-sm truncate flex items-center gap-1">{profile.name} {isReal && <span className="text-[8px] bg-[#FF671F] text-black px-1 rounded">REAL</span>} {isNet && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED · F{bond}</span>}</div>
                     {onReport && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onReport(profile.id); }}

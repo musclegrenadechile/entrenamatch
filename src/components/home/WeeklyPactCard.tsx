@@ -31,9 +31,9 @@ export function WeeklyPactCard({
   if (!progress.pledged) {
     return (
       <div className="weekly-pact-card weekly-pact-card--setup">
-        <p className="text-[11px] text-white font-bold mb-1">Tu pacto de esta semana</p>
+        <p className="text-[11px] text-white font-bold mb-1">Tu meta de esta semana</p>
         <p className="text-[10px] text-[#9CA3AF] mb-3 leading-snug">
-          Cierra el loop: live visible + al menos un sync con tu equipo.
+          Live visible + al menos un sync con tu equipo — cierra la semana con tu red.
         </p>
         <div className="flex flex-wrap gap-2 mb-3">
           {PACT_LIVE_OPTIONS.map((n) => (
@@ -75,7 +75,7 @@ export function WeeklyPactCard({
         </div>
         {suggestedPartner && (
           <p className="text-[9px] text-[#FFD700]/90 mt-3 text-center">
-            Compromiso con {suggestedPartner.name.split(' ')[0]} de tu equipo
+            Esta semana con {suggestedPartner.name.split(' ')[0]} de tu equipo
           </p>
         )}
       </div>
@@ -93,7 +93,7 @@ export function WeeklyPactCard({
       <div className="flex items-start justify-between gap-2 mb-3">
         <div>
           <p className="text-[10px] uppercase tracking-wider text-[#FF671F] font-bold">
-            Pacto semanal
+            Meta semanal
           </p>
           <p className="text-[12px] font-bold text-white mt-0.5">
             {progress.isComplete ? '¡Semana sellada!' : 'En marcha esta semana'}
@@ -154,7 +154,7 @@ export function WeeklyPactCard({
 
       {progress.isComplete && (
         <p className="text-[10px] text-[#22c55e] text-center font-semibold">
-          Loop semanal completo — Live, Equipo, Sync y Pacto ✓
+          Loop semanal completo — Live, Equipo, Sync y Semana ✓
         </p>
       )}
     </div>

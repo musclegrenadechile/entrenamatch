@@ -971,7 +971,7 @@ function App() {
       {
         id: 'anchor-' + seed,
         type: 'solo',
-        title: 'Misión: Ancla Personal',
+        title: 'Reto GymPulse: Ancla personal',
         description: 'Entrena 20+ minutos hoy (solo o con quien quieras). Construye tu base de retención.',
         target: 20,
         progress: 0,
@@ -982,7 +982,7 @@ function App() {
       {
         id: 'bond-' + seed,
         type: 'bond',
-        title: 'Misión: Activación de Bond',
+        title: 'Reto GymPulse: Alianza activa',
         description: bondCount > 0 
           ? `Sincronízate o envía nota de voz a uno de tus ${bondCount} socios de Red hoy.` 
           : 'Conecta con alguien nuevo o completa un Sync. Fortalece tu grafo.',
@@ -995,7 +995,7 @@ function App() {
       {
         id: 'ripple-' + seed,
         type: 'network',
-        title: 'Misión: Ripple de Red',
+        title: 'Reto GymPulse: Onda en la red',
         description: hasLiveRed 
           ? 'Completa tu sesión y publica un post o voz que impulse el GymPulse visible en el mapa para tus GymPartners.' 
           : 'Entrena y deja un "GymPulse" (post o voz) que sea visto por tus GymPartners. +Impacto colectivo.',
@@ -1009,7 +1009,7 @@ function App() {
       {
         id: 'voice-weak-' + seed,
         type: 'bond',
-        title: 'Misión: Voz a Bond Débil',
+        title: 'Reto GymPulse: Voz a tu alianza',
         description: bondCount > 0 ? 'Envía una nota de voz a un GymPartner con menos interacción reciente.' : 'Envía tu primera nota de voz a un GymPartner y activa tu Voice Streak.',
         target: 1,
         progress: 0,
@@ -1020,7 +1020,7 @@ function App() {
       {
         id: 'map-ripple-' + seed,
         type: 'network',
-        title: 'Misión: GymPulse en el Mapa',
+        title: 'Reto GymPulse: Pulso en el mapa',
         description: 'Completa entrenamiento y asegúrate de que tu actividad aparezca como ripple en el GymPulse del mapa (post + live).',
         target: 1,
         progress: 0,
@@ -1192,7 +1192,7 @@ function App() {
       try { triggerHaptic('success') } catch {}
       try { triggerConfetti() } catch {}
       const newGadgets = getUnlockedGadgets(computedLevel).filter(g => g.level > prevLevel)
-      const gadgetText = newGadgets.length > 0 ? ` + ${newGadgets.map(g=>g.name).join(', ')} desbloqueado(s)!` : ''
+      const gadgetText = newGadgets.length > 0 ? ` + ${newGadgets.map(g=>g.name).join(', ')} disponible(s)!` : ''
       toast.success(`¡Subiste a NIVEL ${computedLevel}!`, { description: `Perk permanente: +8% Constancia en desafíos. ${gadgetText} ¡Tu constancia sube!` })
       createProfilePost(`⭐ ¡NIVEL ${computedLevel} DE RETENCIÓN! Mi constancia diaria hace fuerte a toda la Red.${newGadgets.length ? ' Gadget: ' + newGadgets[0].name : ''}`, null, 'dailyPulse').catch(() => {})
     }
@@ -2627,13 +2627,13 @@ useEffect(() => {
   useEffect(() => {
     if (homeWeeklyPactProgress.isComplete && !pactCompleteToastRef.current) {
       pactCompleteToastRef.current = true
-      toast.success('Pacto semanal cumplido', {
-        description: 'Live + Sync — loop cerrado con tu equipo',
+      toast.success('Semana sellada', {
+        description: 'Live + Sync — meta semanal cumplida con tu equipo',
       })
       try {
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.55 } })
       } catch {}
-      awardConstancy(25, 'Pacto semanal')
+      awardConstancy(25, 'Meta semanal')
     }
     if (!homeWeeklyPactProgress.isComplete) {
       pactCompleteToastRef.current = false
@@ -2664,7 +2664,7 @@ useEffect(() => {
         }
       }
       triggerHaptic('success')
-      toast.success('Pacto activado', {
+      toast.success('Meta fijada', {
         description: `${pact.liveDaysTarget} días live · ${pact.syncSessionsTarget} sync esta semana`,
       })
     },
@@ -6799,13 +6799,13 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     // Special toast + confetti pop for combos (the dopamine that makes it addictive and unique)
     if (newCombo >= 3) {
       confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } })
-      toast.success(`${emoji} COMBO x${newCombo}!`, {
+      toast.success(`${emoji} RACHA x${newCombo}!`, {
         description: 'Onda fuerte en el mapa — quien esté en GymPulse lo presencia',
       })
       triggerHaptic('medium')
     } else if (newCombo >= 2) {
       toast.success(`${emoji} ${label} ×${newCombo}`, {
-        description: 'La red siente el combo en el GymPulse',
+        description: 'La red siente la racha en el GymPulse',
       })
     } else {
       toast.success(`${emoji} ${label}`, { description: 'Visible en Arena y para tu compañero — no spam en el muro' })
@@ -9251,7 +9251,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   <div key={user.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(user); }} className="card card-glass p-3 mb-2 flex gap-3 cursor-pointer active:scale-95 border border-[#22c55e]/50 hover:border-[#22c55e]/80 transition-all group">
                     {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-12 h-12 rounded-xl object-cover border-2 border-[#22c55e]/40 group-hover:border-[#22c55e]/70 transition" />}
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold flex items-center gap-1.5 text-white">{user.name || 'Usuario'} <span className="text-[#9CA3AF] text-xs font-normal">· {userLocation && user.distance < 900 ? `${user.distance.toFixed(1)}km` : '— km'}</span>{!!syncBonds[user.id] && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED LV{syncBonds[user.id].bondLevel || 1}</span>}</div>
+                      <div className="font-semibold flex items-center gap-1.5 text-white">{user.name || 'Usuario'} <span className="text-[#9CA3AF] text-xs font-normal">· {userLocation && user.distance < 900 ? `${user.distance.toFixed(1)}km` : '— km'}</span>{!!syncBonds[user.id] && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED · F{syncBonds[user.id].bondLevel || 1}</span>}</div>
                       <div className="text-[#9CA3AF] text-sm truncate">{user.trainingTypes?.join(', ') || 'Entreno'}</div>
                       <div className="text-[#22c55e] text-xs flex items-center gap-1 mt-0.5">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m {user.seVaEnMin > 0 ? <span className={user.seVaEnMin < 15 ? 'text-red-400 font-bold' : 'text-orange-400'}>{user.seVaEnMin < 15 ? `· se va pronto en ${user.seVaEnMin}m 🔥` : `· se va en ${user.seVaEnMin}m`}</span> : ''}
                       </div>

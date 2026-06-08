@@ -32,7 +32,7 @@ export function TuRedPowerCard({
           </div>
           <div>
             <span className="font-mono text-lg font-bold text-[#22c55e]">{bondsCount}</span>{' '}
-            <span className="text-[9px] text-[#9CA3AF]">Bonds</span>
+            <span className="text-[9px] text-[#9CA3AF]">Alianzas</span>
           </div>
           <div>
             <span className="font-mono text-lg font-bold text-[#FF671F]">{liveStreak}</span>{' '}

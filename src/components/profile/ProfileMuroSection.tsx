@@ -126,10 +126,10 @@ export function ProfileMuroSection(props: ProfileTabProps) {
     {/* Quick achievement templates - makes posting logros frictionless and celebratory (IG story style but performance) */}
     <div className="flex flex-wrap gap-1.5 mb-3">
       {[
-        '🏆 PR del mes en mi bond',
+        '🏆 PR del mes con mi alianza',
         '💪 Entreno solo pero con mi red en mente',
         '🔥 Sync de 90+ vibe con @buddy',
-        '🌟 Nuevo nivel desbloqueado hoy',
+        '🌟 Nuevo hito en mi perfil hoy',
         '📸 Momento icónico del gym',
         '⚡ 3 syncs esta semana - en racha'
       ].map((tpl, i) => (

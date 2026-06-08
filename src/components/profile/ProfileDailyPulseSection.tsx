@@ -84,7 +84,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
         <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
           <div className="h-1.5 bg-gradient-to-r from-[#FFD700] to-[#FF671F]" style={{width: `${((dailyPulse.xp || 0) / 300) * 100}%`}} />
         </div>
-        <div className="text-[7px] text-[#9CA3AF] mt-0.5">Entrena más → +XP → sube de nivel y desbloquea GADGETS exclusivos (mapa, sync, ripples...)</div>
+        <div className="text-[7px] text-[#9CA3AF] mt-0.5">Entrena más → +XP → sube de nivel y accede a extras exclusivos (mapa, sync, ripples...)</div>
       </div>
 
       {/* Gadgets exclusivos - fuerte motivador de retención visual (mientras más entrenes, más efectos únicos) */}
@@ -104,7 +104,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
         </div>
       )}
 
-      {/* Misión Diaria / Daily Challenge - more potent retention */}
+      {/* Reto GymPulse diario */}
       {dailyPulse.currentChallenge && (
         <div className="bg-[#0D0D10] border border-[#FF671F]/40 rounded-2xl p-3 mb-2">
           <div className="flex items-start gap-3">
@@ -138,7 +138,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
                       completeDailyChallenge(1)
                     } else if (dailyPulse.currentChallenge.type === 'bond') {
                       setActiveTab('explore')
-                      toast('Ve a tu Red y activa un bond hoy')
+                      toast('Ve a tu Red y activa una alianza hoy')
                     } else {
                       setActiveTab('profile')
                       toast('Publica en el GymPulse para completar')

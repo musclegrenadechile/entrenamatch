@@ -53,7 +53,7 @@ const QUICK_PROPOSALS = [
 
 const BOND_TEMPLATES = [
   '🏆 Compartir nuestro último EntrenaSync',
-  '⭐ Postear mi eco de este bond',
+  '⭐ Postear mi eco de esta alianza',
   '🌊 Mencionar ripples de nuestro Arena',
 ]
 
@@ -131,7 +131,7 @@ export function ChatView({
             {chatProfile?.trainingNow && <span className="text-[#22c55e] font-bold">• EN VIVO AHORA</span>}
             {syncBond && (
               <span className="px-1.5 py-px text-[8px] rounded bg-[#FFD700] text-black font-black tracking-wider">
-                ⭐ RED LV{syncBond.bondLevel || 1}
+                ⭐ RED · Fuerza {syncBond.bondLevel || 1}
               </span>
             )}
           </div>

@@ -21,9 +21,9 @@ export function ArenaSyncDuelStrip({
   const partnerFirst = duel.partner.name
 
   return (
-    <div className="arena-sync-duel-strip mx-4 mt-2" aria-label="Duelo en vivo">
+    <div className="arena-sync-duel-strip mx-4 mt-2" aria-label="Marcador en vivo">
       <div className="arena-sync-duel-strip__head">
-        <span className="arena-sync-duel-strip__tag">⚔️ DUELO EN VIVO</span>
+        <span className="arena-sync-duel-strip__tag">📊 MARCADOR EN VIVO</span>
         <span className="arena-sync-duel-strip__hint">Al terminar → resumen completo</span>
       </div>
       <div className="arena-sync-duel-strip__row">
@@ -41,7 +41,7 @@ export function ArenaSyncDuelStrip({
       </div>
       {duel.self.actions + duel.partner.actions === 0 && (
         <p className="arena-sync-duel-strip__empty">
-          Toca Set listo, Ánimo o PR — cada acción suma al duelo
+          Toca Set listo, Ánimo o PR — cada acción suma al marcador
         </p>
       )}
     </div>

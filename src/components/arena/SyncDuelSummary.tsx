@@ -71,7 +71,7 @@ export function SyncDuelSummary({
     <div
       className="sync-duel-overlay"
       role="dialog"
-      aria-label="Resumen duelo EntrenaSync"
+      aria-label="Cierre de sync EntrenaSync"
       onClick={onClose}
     >
       <motion.div
@@ -81,7 +81,7 @@ export function SyncDuelSummary({
         transition={{ duration: 0.32, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="sync-duel-card__eyebrow">DUELO POST-SYNC</p>
+        <p className="sync-duel-card__eyebrow">CIERRE DE SYNC</p>
         <h2 className="sync-duel-card__headline">{duel.headline}</h2>
         <p className="sync-duel-card__subline">{duel.subline}</p>
 
@@ -135,7 +135,7 @@ export function SyncDuelSummary({
           {setsLogged > 0 && <span>{setsLogged} sets</span>}
           {witnessCount > 0 && <span>{witnessCount} testigos</span>}
           {isNetworkBond && (
-            <span className="text-[#FFD700]">⭐ RED LV{bondLevel}</span>
+            <span className="text-[#FFD700]">⭐ RED · Fuerza {bondLevel}</span>
           )}
         </div>
 
@@ -220,7 +220,7 @@ export function SyncDuelSummary({
         </div>
 
         <p className="sync-duel-card__footer">
-          El duelo queda en vuestro historial — la revancha suma al bond.
+          Queda en vuestro historial — re-sync suma a tu alianza y Fuerza del equipo.
         </p>
       </motion.div>
     </div>

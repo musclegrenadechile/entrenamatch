@@ -61,7 +61,7 @@ export function ProfileHeroSection(props: ProfileTabProps) {
     {/* Unique "Tu Poder" mini dashboard in hero - makes profile creation feel valuable immediately */}
     <div className="mt-3 flex gap-2 text-[10px]">
       <div className="bg-white/10 border border-white/20 px-2 py-1 rounded-xl font-mono"><span className="text-[#FFD700]">{networkStats?.networkPower || 0}</span> FE</div>
-      <div className="bg-white/10 border border-white/20 px-2 py-1 rounded-xl font-mono"><span className="text-[#22c55e]">{Object.keys(syncBonds || {}).length}</span> BONDS</div>
+      <div className="bg-white/10 border border-white/20 px-2 py-1 rounded-xl font-mono"><span className="text-[#22c55e]">{Object.keys(syncBonds || {}).length}</span> ALIANZAS</div>
       <div className="bg-white/10 border border-white/20 px-2 py-1 rounded-xl font-mono"><span className="text-[#FF671F]">{currentUser.photos?.length || 0}</span> FOTOS</div>
     </div>
   </div>
@@ -256,7 +256,7 @@ export function ProfileHeroSection(props: ProfileTabProps) {
       🟢 {currentUser.trainingNow ? 'Terminar Live' : 'Ir a Live'}
     </button>
     <button onClick={() => setActiveTab('explore')} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-[#FFD700]/30 text-[#FFD700] active:bg-[#FFD700]/10 flex items-center gap-1.5">
-      🔍 Buscar bonds
+      🔍 Buscar alianzas
     </button>
   </div>
 </div>
