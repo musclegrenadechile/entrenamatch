@@ -49,3 +49,15 @@ export function formatSetLabel(exercise: string, reps: number, weightKg: number)
   const w = weightKg > 0 ? ` · ${weightKg}kg` : ''
   return `${exercise} ${reps} reps${w}`
 }
+
+/** Payload written to syncSessions.participantState.{uid} */
+export function toParticipantSyncPayload(log: SyncWorkoutLogState) {
+  return {
+    activeExercise: log.activeExercise,
+    pendingReps: log.pendingReps,
+    pendingWeightKg: log.pendingWeightKg,
+    setCount: countLoggedSets(log),
+    exercises: log.exercises,
+    updatedAt: Date.now(),
+  }
+}

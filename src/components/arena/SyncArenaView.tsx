@@ -9,7 +9,8 @@ import { ArenaWitnessRow } from './ArenaWitnessRow'
 import type { ArenaParticipantLiveState } from '../../utils/arenaSyncState'
 import { restSecondsLeft as calcRestLeft } from '../../utils/arenaSyncState'
 import type { WeeklyPactProgress } from '../../services/weeklyPact'
-import type { ArenaWitnessProfile } from './ArenaWitnessRow'
+import { ArenaLiveRoutines } from './ArenaLiveRoutines'
+import type { WorkoutExercise } from '../../types'
 
 export interface SyncArenaFlyingEmoji {
   id: string
@@ -61,6 +62,7 @@ export interface SyncArenaViewProps {
   pendingReps: number
   pendingWeightKg: number
   loggedSetCount: number
+  selfExercises: WorkoutExercise[]
   exerciseSuggestions: string[]
   onActiveExerciseChange: (name: string) => void
   onPendingRepsChange: (reps: number) => void
@@ -102,6 +104,7 @@ export function SyncArenaView({
   pendingReps,
   pendingWeightKg,
   loggedSetCount,
+  selfExercises,
   exerciseSuggestions,
   onActiveExerciseChange,
   onPendingRepsChange,
@@ -220,6 +223,7 @@ export function SyncArenaView({
               )}
             </div>
             <span className="arena-sala-sync__athlete-label text-[#22c55e]">TÚ</span>
+            <span className="arena-sala-sync__athlete-ex">{activeExercise}</span>
           </div>
 
           <ArenaSharedPulse
@@ -241,8 +245,19 @@ export function SyncArenaView({
               )}
             </div>
             <span className="arena-sala-sync__athlete-label text-[#FF671F]">{partnerFirst.toUpperCase()}</span>
+            <span className="arena-sala-sync__athlete-ex">
+              {partnerLiveState?.activeExercise || '—'}
+            </span>
           </div>
         </section>
+
+        <ArenaLiveRoutines
+          partnerLabel={partnerFirst.toUpperCase()}
+          selfActiveExercise={activeExercise}
+          partnerActiveExercise={partnerLiveState?.activeExercise}
+          selfExercises={selfExercises}
+          partnerExercises={partnerLiveState?.exercises}
+        />
 
         <div className="arena-sala-sync__meta-row">
           <p className="arena-sala-sync__story-hint">

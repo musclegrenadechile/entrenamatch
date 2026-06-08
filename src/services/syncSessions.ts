@@ -37,6 +37,7 @@ export interface SyncSessionData {
       pendingReps?: number
       pendingWeightKg?: number
       setCount?: number
+      exercises?: import('../types').WorkoutExercise[]
       updatedAt?: number
     }
   >

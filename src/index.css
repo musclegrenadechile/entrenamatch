@@ -1357,75 +1357,152 @@ input[type="range"]::-moz-range-thumb {
   margin-top: auto;
 }
 
-.arena-global-pulse-bar {
+.arena-sync-bubble {
   position: fixed;
-  left: 12px;
   right: 12px;
-  bottom: calc(72px + env(safe-area-inset-bottom, 0));
+  bottom: calc(76px + env(safe-area-inset-bottom, 0));
   z-index: 190;
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 8px;
-  padding: 10px 12px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(10, 42, 26, 0.96), rgba(5, 10, 8, 0.98));
-  border: 1px solid rgba(34, 197, 94, 0.45);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.55), 0 0 24px rgba(34, 197, 94, 0.15);
-  text-align: left;
+  pointer-events: none;
+}
+
+.arena-sync-bubble--chat {
+  bottom: calc(148px + env(safe-area-inset-bottom, 0));
+}
+
+.arena-sync-bubble__fab,
+.arena-sync-bubble__panel {
+  pointer-events: auto;
+}
+
+.arena-sync-bubble__fab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(10, 42, 26, 0.98), rgba(5, 10, 8, 0.99));
+  border: 1.5px solid rgba(34, 197, 94, 0.55);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 16px rgba(34, 197, 94, 0.2);
+  color: #fff;
+  animation: arena-sync-bubble-pulse 2.4s ease-in-out infinite;
+}
+
+.arena-sync-bubble--expanded .arena-sync-bubble__fab {
+  animation: none;
+  border-color: rgba(34, 197, 94, 0.75);
+}
+
+.arena-sync-bubble__fab-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+  flex-shrink: 0;
+}
+
+.arena-sync-bubble__fab-label {
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #22c55e;
+}
+
+.arena-sync-bubble__fab-vibe {
+  font-size: 12px;
+  font-weight: 800;
   color: #fff;
 }
 
-.arena-global-pulse-bar__live {
+.arena-sync-bubble__fab-chevron {
+  color: rgba(255, 255, 255, 0.45);
   flex-shrink: 0;
+}
+
+.arena-sync-bubble__panel {
+  width: min(240px, calc(100vw - 24px));
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: linear-gradient(145deg, rgba(10, 42, 26, 0.98), rgba(5, 10, 8, 0.99));
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.55);
+  animation: arena-sync-panel-in 0.2s ease-out;
+}
+
+@keyframes arena-sync-bubble-pulse {
+  0%, 100% { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 12px rgba(34, 197, 94, 0.15); }
+  50% { box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 20px rgba(34, 197, 94, 0.35); }
+}
+
+@keyframes arena-sync-panel-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.arena-sync-bubble__panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.arena-sync-bubble__badge {
   font-size: 8px;
   font-weight: 900;
-  padding: 4px 6px;
+  padding: 3px 6px;
   border-radius: 6px;
   background: #22c55e;
   color: #000;
   letter-spacing: 0.08em;
 }
 
-.arena-global-pulse-bar__main {
-  flex: 1;
-  min-width: 0;
+.arena-sync-bubble__minimize {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
-  font-size: 11px;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.06);
 }
 
-.arena-global-pulse-bar__main strong {
-  font-size: 12px;
-}
-
-.arena-global-pulse-bar__witness,
-.arena-global-pulse-bar__wave {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.65);
-}
-
-.arena-global-pulse-bar__others {
-  display: none;
-  font-size: 8px;
-  color: rgba(255, 215, 0, 0.75);
-}
-
-@media (min-width: 380px) {
-  .arena-global-pulse-bar__others {
-    display: block;
-    max-width: 28%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-}
-
-.arena-global-pulse-bar__cta {
-  flex-shrink: 0;
-  font-size: 10px;
+.arena-sync-bubble__title {
+  font-size: 13px;
   font-weight: 800;
-  color: #22c55e;
+  color: #fff;
+  margin: 0 0 4px;
+}
+
+.arena-sync-bubble__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.65);
+  margin-bottom: 6px;
+}
+
+.arena-sync-bubble__others {
+  font-size: 9px;
+  color: rgba(255, 215, 0, 0.75);
+  margin: 0 0 8px;
+  line-height: 1.3;
+}
+
+.arena-sync-bubble__open {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #000;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border: none;
 }
 
 .arena-end-btn {
@@ -4006,6 +4083,94 @@ button:not(.live-pill):disabled {
   margin: 0;
 }
 
+.arena-sala-sync__athlete-ex {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.55);
+  text-align: center;
+  max-width: 88px;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.arena-live-routines {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 0 14px 8px;
+}
+
+.arena-live-routines__col {
+  border-radius: 12px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 64px;
+}
+
+.arena-live-routines__col--green {
+  border-color: rgba(34, 197, 94, 0.25);
+}
+
+.arena-live-routines__col--orange {
+  border-color: rgba(255, 103, 31, 0.25);
+}
+
+.arena-live-routines__who {
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  margin-bottom: 2px;
+}
+
+.arena-live-routines__col--green .arena-live-routines__who {
+  color: #22c55e;
+}
+
+.arena-live-routines__col--orange .arena-live-routines__who {
+  color: #FF671F;
+}
+
+.arena-live-routines__active {
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.arena-live-routines__empty {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.arena-live-routines__list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 88px;
+  overflow-y: auto;
+}
+
+.arena-live-routines__item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.arena-live-routines__name {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.2;
+}
+
+.arena-live-routines__sets {
+  font-size: 8px;
+  color: rgba(255, 255, 255, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+
 .arena-sala-sync__athlete {
   display: flex;
   flex-direction: column;
@@ -4032,12 +4197,6 @@ button:not(.live-pill):disabled {
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.08em;
-}
-
-.arena-sala-sync__athlete-ex {
-  font-size: 9px;
-  color: rgba(255, 255, 255, 0.5);
-  text-align: center;
 }
 
 .arena-meta-chip {

@@ -161,6 +161,7 @@ import {
   countLoggedSets,
   syncWorkoutHasData,
   formatSetLabel,
+  toParticipantSyncPayload,
   type SyncWorkoutLogState,
 } from './utils/arenaWorkoutLog'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
@@ -3022,6 +3023,8 @@ useEffect(() => {
         setSyncPartnerId(payload.partnerId)
         setSyncStartedAt(payload.startedAt)
         setSyncActions(payload.actions || [])
+        setSyncWorkoutLog(createEmptySyncWorkoutLog())
+        setSyncPartnerLiveState(null)
         if (typeof payload.vibe === 'number') {
           setSyncVibe(Math.max(0, Math.min(100, payload.vibe)))
         }
@@ -3109,13 +3112,6 @@ useEffect(() => {
         } else {
           setSyncRestUntil(null)
         }
-        if (data.workoutLog?.exercises?.length) {
-          setSyncWorkoutLog((prev) => ({
-            ...prev,
-            exercises: data.workoutLog.exercises,
-            prs: data.workoutLog.prs || prev.prs,
-          }))
-        }
       },
       onPartnerAction: (latest) => {
         const key = `${latest.at || 0}-${latest.emoji || ''}-${latest.label || ''}`
@@ -3144,13 +3140,7 @@ useEffect(() => {
           const { doc, updateDoc } = await import('firebase/firestore')
           const sessionId = buildSyncSessionId(effectiveUserId, syncPartnerId)
           await updateDoc(doc(db, 'syncSessions', sessionId), {
-            [`participantState.${effectiveUserId}`]: {
-              activeExercise: log.activeExercise,
-              pendingReps: log.pendingReps,
-              pendingWeightKg: log.pendingWeightKg,
-              setCount: countLoggedSets(log),
-              updatedAt: Date.now(),
-            },
+            [`participantState.${effectiveUserId}`]: toParticipantSyncPayload(log),
             updatedAt: Date.now(),
           })
         } catch {
@@ -6160,7 +6150,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           actions: [],
           vibe: baseVibe,
           witnesses: [],
-          workoutLog: { exercises: [], prs: [], updatedAt: syncAt },
+          participantState: {
+            [firebaseUser.uid]: toParticipantSyncPayload(createEmptySyncWorkoutLog()),
+          },
           updatedAt: syncAt,
         }, { merge: true })
         setSyncVibe(baseVibe)
@@ -6637,18 +6629,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       const { doc, updateDoc } = await import('firebase/firestore')
       const sessionId = buildSyncSessionId(effectiveUserId, syncPartnerId)
       await updateDoc(doc(db, 'syncSessions', sessionId), {
-        workoutLog: {
-          exercises: log.exercises,
-          prs: log.prs,
-          updatedAt: Date.now(),
-        },
-        [`participantState.${effectiveUserId}`]: {
-          activeExercise: log.activeExercise,
-          pendingReps: log.pendingReps,
-          pendingWeightKg: log.pendingWeightKg,
-          setCount: countLoggedSets(log),
-          updatedAt: Date.now(),
-        },
+        [`participantState.${effectiveUserId}`]: toParticipantSyncPayload(log),
         updatedAt: Date.now(),
       })
     } catch (e) {
@@ -12553,6 +12534,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             pendingReps={syncWorkoutLog.pendingReps}
             pendingWeightKg={syncWorkoutLog.pendingWeightKg}
             loggedSetCount={countLoggedSets(syncWorkoutLog)}
+            selfExercises={syncWorkoutLog.exercises}
             exerciseSuggestions={arenaExerciseNames}
             onActiveExerciseChange={(name) =>
               setSyncWorkoutLog((prev) => ({ ...prev, activeExercise: name }))
@@ -12575,6 +12557,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           waveCount={arenaWaveCount}
           globalPairs={activeSyncPairs}
           onOpenArena={() => setShowSyncArena(true)}
+          preferCollapsed={activeTab === 'messages' && !!activeChat}
         />
       )}
 
