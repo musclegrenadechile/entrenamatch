@@ -220,6 +220,7 @@ export interface CurrentUser extends Omit<Profile, 'id'> {
 
 export type Tab =
   | 'home'
+  | 'map'
   | 'explore'
   | 'red'
   | 'squads'

@@ -7,6 +7,7 @@ export function normalizeTabNavigation(
 ): { tab: Tab; redSubTab?: RedSubTab } {
   if (tab === 'messages') return { tab: 'red', redSubTab: 'messages' }
   if (tab === 'matches') return { tab: 'red', redSubTab: 'matches' }
+  if (tab === 'map') return { tab: 'map' }
   return { tab }
 }
 

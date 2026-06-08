@@ -1,5 +1,5 @@
 // Home tab — typed props (Phase 63)
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { DailyHome } from './DailyHome'
@@ -126,6 +126,26 @@ export function HomeTab(props: HomeTabProps) {
   } = props
 
   const [homeSubTab, setHomeSubTab] = useState<HomeSubTab>('day')
+  const [showHomeTabsHint, setShowHomeTabsHint] = useState(false)
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem('entrenamatch_home_tabs_hint') !== '1') {
+        setShowHomeTabsHint(true)
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [])
+
+  const dismissHomeTabsHint = () => {
+    setShowHomeTabsHint(false)
+    try {
+      localStorage.setItem('entrenamatch_home_tabs_hint', '1')
+    } catch {
+      /* ignore */
+    }
+  }
 
   const redLiveCount = countRedLiveMembers(
     syncBonds,
@@ -135,10 +155,36 @@ export function HomeTab(props: HomeTabProps) {
 
   return (
     <div className="flex-1 overflow-auto p-4">
-      <div className="flex gap-1 p-1 rounded-2xl bg-[#1C1C20] border border-[#2F2F35] mb-3 sticky top-0 z-20">
+      {showHomeTabsHint && (
+        <div className="mb-3 p-3 rounded-2xl bg-[#FF671F]/10 border border-[#FF671F]/30 text-[11px] leading-snug relative">
+          <button
+            type="button"
+            onClick={dismissHomeTabsHint}
+            className="absolute top-2 right-2 text-[#9CA3AF] text-xs px-1"
+            aria-label="Cerrar tip"
+          >
+            ✕
+          </button>
+          <strong className="text-[#FF671F] block mb-1">Dos vistas en Hoy</strong>
+          <span className="text-[#9CA3AF]">
+            <strong className="text-white">Mi día</strong> = tu rutina, equipo y metas.{' '}
+            <strong className="text-white">Muro</strong> = posts de la comunidad cerca de ti.
+          </span>
+        </div>
+      )}
+      <div
+        className="flex gap-1 p-1 rounded-2xl bg-[#1C1C20] border border-[#2F2F35] mb-3 sticky top-0 z-20"
+        role="tablist"
+        aria-label="Secciones de Hoy"
+      >
         <button
           type="button"
-          onClick={() => setHomeSubTab('day')}
+          role="tab"
+          aria-selected={homeSubTab === 'day'}
+          onClick={() => {
+            setHomeSubTab('day')
+            dismissHomeTabsHint()
+          }}
           className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
             homeSubTab === 'day'
               ? 'bg-[#FF671F] text-black shadow-sm'
@@ -149,7 +195,12 @@ export function HomeTab(props: HomeTabProps) {
         </button>
         <button
           type="button"
-          onClick={() => setHomeSubTab('feed')}
+          role="tab"
+          aria-selected={homeSubTab === 'feed'}
+          onClick={() => {
+            setHomeSubTab('feed')
+            dismissHomeTabsHint()
+          }}
           className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
             homeSubTab === 'feed'
               ? 'bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black shadow-sm'

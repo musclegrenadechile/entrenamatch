@@ -1,4 +1,5 @@
 import { lazy } from 'react'
+import { TabLoadingShell } from './TabLoadingShell'
 
 export const LazyHomeTab = lazy(() =>
   import('../home/HomeTab').then((m) => ({ default: m.HomeTab }))
@@ -19,6 +20,4 @@ export const LazyProfileTab = lazy(() =>
   import('../profile/ProfileTab').then((m) => ({ default: m.ProfileTab }))
 )
 
-export const TAB_LOADING = (
-  <div className="flex items-center justify-center p-8 text-sm text-[#9CA3AF]">Cargando…</div>
-)
+export const TAB_LOADING = <TabLoadingShell />

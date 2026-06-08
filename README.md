@@ -79,6 +79,21 @@ Abre http://localhost:5173
 
 Se recomienda abrirla en tamaño móvil (DevTools → Responsive).
 
+### Deep links (testers)
+
+La app acepta parámetros en la URL para abrir tabs directamente:
+
+| URL | Abre |
+|-----|------|
+| `?tab=map` | Tab **Mapa** (GymPulse fullscreen) |
+| `?tab=explore` | Explorar (swipe) |
+| `?tab=home` | Hoy (Mi día / Muro) |
+| `?tab=red` | Matches y chat |
+| `?tab=profile` | Perfil |
+| `?tab=explore&map=1` | Explorar con mapa embebido visible |
+
+Ejemplo en GitHub Pages: `https://musclegrenadechile.github.io/entrenamatch/?tab=map`
+
 ## Aspectos Legales importantes (incluidos en la app)
 
 - Verificación explícita de ser mayor de 18 años

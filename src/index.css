@@ -145,32 +145,34 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 1px;
-  padding: 10px 12px;
+  padding: 10px 4px;
   font-size: 10px;
   font-weight: 600;
-  color: var(--fit-muted);
+  color: #9CA3AF;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 12px;
   position: relative;
 }
 
 .nav-item.active {
-  color: var(--fit-accent);
+  color: #FF671F;
   font-weight: 700;
-  background: rgba(255, 103, 31, 0.08);
+  background: rgba(255, 103, 31, 0.14);
+  outline: 2px solid rgba(255, 103, 31, 0.35);
+  outline-offset: -2px;
 }
 
 .nav-item.active::after {
   content: '';
   position: absolute;
-  bottom: 4px;
+  bottom: 3px;
   left: 50%;
   transform: translateX(-50%);
-  width: 5px;
-  height: 5px;
-  background: var(--fit-accent);
-  border-radius: 50%;
-  box-shadow: 0 0 8px var(--fit-accent);
+  width: 20px;
+  height: 3px;
+  background: #FF671F;
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(255, 103, 31, 0.6);
 }
 
 .nav-item:hover:not(.active) {

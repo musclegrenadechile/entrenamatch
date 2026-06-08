@@ -78,6 +78,10 @@ import {
 import { resolveNotificationTarget, type NotificationNavTarget } from './utils/notificationNavigation'
 import { resolvePushNotificationData } from './utils/pushNavigation'
 import { normalizeTabNavigation, resolveRedSubTab, isRedTabActive, type RedSubTab } from './utils/tabNavigation'
+import { parseTabFromUrl, syncTabToUrl } from './utils/tabUrlSync'
+import { BottomNav } from './components/app/BottomNav'
+import { AppFeatureTour, hasSeenAppFeatureTour, markAppFeatureTourSeen } from './components/onboarding/AppFeatureTour'
+import { useAndroidBackHandler } from './hooks/useAndroidBackHandler'
 import { filterSeedsForCity } from './utils/citySeeds'
 import { partnersForMap } from './utils/partnerLocations'
 import {
@@ -909,6 +913,7 @@ function App() {
     setActiveTab(resolved)
     if (sub) setRedSubTab(sub)
     if (resolved !== 'red' && tab !== 'messages') setActiveChat(null)
+    syncTabToUrl(resolved, { map: resolved === 'map' })
   }, [])
   const [profileSection, setProfileSection] = useState<ProfileSection>('actividad')
   const [isLoadingFeed, setIsLoadingFeed] = useState(false)
@@ -1015,6 +1020,7 @@ function App() {
   const [adminBookings, setAdminBookings] = useState<TrainerBooking[]>([])
   const [mpHealth, setMpHealth] = useState<MpHealthResult | null>(null)
   const [showActivationGuide, setShowActivationGuide] = useState(false)
+  const [showFeatureTour, setShowFeatureTour] = useState(false)
   const [myMarketplaceOrders, setMyMarketplaceOrders] = useState<MarketplaceOrder[]>([])
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([])
   const [isMarketplaceAdmin, setIsMarketplaceAdmin] = useState(false)
@@ -1830,13 +1836,21 @@ useEffect(() => {
     try { return localStorage.getItem('entrenamatch_show_map') === '1' } catch { return false }
   })
 
-  // PWA manifest shortcuts: /entrenamatch/?tab=home | ?tab=explore&map=1
+  // PWA manifest shortcuts: /entrenamatch/?tab=home | ?tab=map | ?tab=explore&map=1
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search)
-      const tab = params.get('tab')
-      const validTabs: Tab[] = ['home', 'explore', 'red', 'squads', 'sesiones', 'matches', 'messages', 'profile']
-      if (tab && validTabs.includes(tab as Tab)) navigateTab(tab as Tab)
+      const rawTab = params.get('tab')
+      if (rawTab === 'messages') {
+        navigateTab('red')
+        setRedSubTab('messages')
+      } else if (rawTab === 'matches') {
+        navigateTab('red')
+        setRedSubTab('matches')
+      } else {
+        const tabFromUrl = parseTabFromUrl(window.location.search)
+        if (tabFromUrl) navigateTab(tabFromUrl)
+      }
       if (params.get('map') === '1') setShowLiveMap(true)
     } catch {}
   }, [])
@@ -2720,7 +2734,7 @@ useEffect(() => {
   useEffect(() => {
     if (isDemoMode || !db || !firebaseUser?.uid || effectiveUserId === 'me') return
     const uid = firebaseUser.uid
-    const shouldScan = showLiveMap || activeTab === 'home' || activeTab === 'explore'
+    const shouldScan = showLiveMap || activeTab === 'home' || activeTab === 'explore' || activeTab === 'map'
     if (!shouldScan) return
 
     liveTrainingNow.forEach((u: any) => {
@@ -2823,9 +2837,9 @@ useEffect(() => {
   useEffect(() => {
     if (isDemoMode || showOnboarding) return
     const onRedMatches =
-      activeTab === 'red' ? redSubTab === 'matches' : activeTab === 'matches'
+      activeTab === 'red' && redSubTab === 'matches'
     const onRedMessages =
-      activeTab === 'red' ? redSubTab === 'messages' : activeTab === 'messages'
+      activeTab === 'red' && redSubTab === 'messages'
     if (activeTab === 'explore' || onRedMatches) {
       silentRefreshReal().catch(() => {})
     } else if (onRedMessages && !activeChat) {
@@ -4125,6 +4139,51 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     })
     void loadFirstStepsProgress(db, firebaseUser.uid).then(setFirstStepsProgress)
   }, [isDemoMode, db, firebaseUser?.uid, showOnboarding])
+
+  useEffect(() => {
+    if (showOnboarding || showActivationGuide) return
+    if (!hasSeenAppFeatureTour()) {
+      const t = setTimeout(() => setShowFeatureTour(true), 1500)
+      return () => clearTimeout(t)
+    }
+  }, [showOnboarding, showActivationGuide])
+
+  const androidBackLayers = useMemo(
+    () => [
+      { id: 'syncArena', isOpen: !!showSyncArena, onClose: () => setShowSyncArena(false) },
+      { id: 'filters', isOpen: showFilters, onClose: () => setShowFilters(false) },
+      {
+        id: 'activation',
+        isOpen: showActivationGuide,
+        onClose: () => setShowActivationGuide(false),
+      },
+      {
+        id: 'featureTour',
+        isOpen: showFeatureTour,
+        onClose: () => {
+          markAppFeatureTourSeen()
+          setShowFeatureTour(false)
+        },
+      },
+      {
+        id: 'liveMapOverlay',
+        isOpen: showLiveMap && activeTab !== 'map',
+        onClose: () => setShowLiveMap(false),
+      },
+      { id: 'activeChat', isOpen: !!activeChat, onClose: () => setActiveChat(null) },
+    ],
+    [
+      showSyncArena,
+      showFilters,
+      showActivationGuide,
+      showFeatureTour,
+      showLiveMap,
+      activeTab,
+      activeChat,
+      setShowSyncArena,
+    ]
+  )
+  useAndroidBackHandler(androidBackLayers)
 
   useEffect(() => {
     if (isDemoMode || !db || !firebaseUser?.uid || !firstStepsProgress) return
@@ -9188,9 +9247,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             <span>Sin conexión • usando caché • cambios se guardan y sincronizan al reconectar</span>
           </motion.div>
         )}
-        {/* ===== EXPLORE live banner + map (ExploreLivePanel) ===== */}
-        {activeTab === 'explore' && (
+        {/* ===== MAP tab + EXPLORE live banner (ExploreLivePanel) ===== */}
+        {(activeTab === 'map' || activeTab === 'explore') && (
           <ExploreLivePanel
+            dedicatedMapTab={activeTab === 'map'}
             liveCountForUI={liveCountForUI}
             liveTrainingNow={liveTrainingNow}
             syncBonds={syncBonds}
@@ -9202,7 +9262,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             setShowFullProfile={setShowFullProfile}
             handleSwipe={handleSwipe}
             setShowLiveMap={setShowLiveMap}
-            setActiveTab={setActiveTab}
+            setActiveTab={navigateTab}
             setShowLiveModal={setShowLiveModal}
             triggerHaptic={triggerHaptic}
             showLiveMap={showLiveMap}
@@ -9810,17 +9870,16 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           </Suspense>
         )}
 
-        {(activeTab === 'red' || activeTab === 'matches' || activeTab === 'messages') && (
+        {activeTab === 'red' && (
           <RedTab
-            subTab={resolveRedSubTab(activeTab, redSubTab)}
+            subTab={redSubTab}
             onSubTabChange={(sub) => {
               setRedSubTab(sub)
-              if (activeTab !== 'red') setActiveTab('red')
               if (sub === 'matches') setActiveChat(null)
             }}
             chatUnreads={totalChatUnreads}
           >
-        {resolveRedSubTab(activeTab, redSubTab) === 'matches' && (
+        {redSubTab === 'matches' && (
           <PullToRefresh
             className="flex-1 flex flex-col min-h-0 overflow-auto"
             disabled={isDemoMode}
@@ -9852,7 +9911,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           </PullToRefresh>
         )}
 
-        {resolveRedSubTab(activeTab, redSubTab) === 'messages' && (
+        {redSubTab === 'messages' && (
           <div className="flex-1 flex flex-col">
             {!activeChat ? (
               <PullToRefresh
@@ -10545,42 +10604,32 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           (activeTab === 'red' && redSubTab === 'messages' && !!activeChat)
         }
       />
-      <div className="bottom-nav h-[62px] grid grid-cols-5 z-50 text-[9px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_20px_-6px_rgb(0,0,0,0.4)]">
-        {[
-          { id: 'explore' as Tab, label: 'Explorar', icon: Dumbbell, live: liveTrainingNow.length > 0 },
-          { id: 'home' as Tab, label: 'Hoy', icon: Sparkles },
-          { id: 'red' as Tab, label: 'Red', icon: Heart, badge: totalChatUnreads },
-          { id: 'squads' as Tab, label: 'Squads', icon: Users },
-          { id: 'profile' as Tab, label: 'Perfil', icon: User },
-        ].map(({ id, label, icon: Icon, badge, live }) => (
-          <button key={id} onClick={() => { 
-            navigateTab(id);
-            if (id === 'red') {
-              if (redSubTab === 'messages') setChatUnreads({});
-              bumpPwaEngagement();
-            } else {
-              setActiveChat(null);
-            }
-            if (id === 'sesiones' && !isDemoMode) {
-              loadRealSessions();
-            }
-          }}
-            className={`nav-item ${(id === 'red' ? isRedTabActive(activeTab) : activeTab === id) ? 'active' : ''} relative flex-1`}>
-            <Icon size={20} />
-            <span className="mt-0.5">{label}</span>
-            {badge && badge > 0 && (
-              <span className="absolute -top-0.5 right-3 min-w-[15px] h-[15px] px-1.5 text-[9px] font-extrabold rounded-full bg-[#FF4F79] text-black flex items-center justify-center ring-1 ring-black/30">
-                {badge > 9 ? '9+' : badge}
-              </span>
-            )}
-            {id === 'explore' && liveCountForUI > 0 && (
-              <span className="absolute -top-0.5 right-1 w-3 h-3 bg-[#22c55e] rounded-full animate-pulse ring-1 ring-black/30 flex items-center justify-center text-[6px] text-black font-bold" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}>
-                {currentUser?.trainingNow && currentUser.liveStreak ? Math.min(9, currentUser.liveStreak) : ''}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      <AppFeatureTour
+        open={showFeatureTour}
+        onClose={() => {
+          markAppFeatureTourSeen()
+          setShowFeatureTour(false)
+        }}
+      />
+      <BottomNav
+        activeTab={activeTab}
+        liveCountForUI={liveCountForUI}
+        currentUserIsLive={!!currentUser?.trainingNow}
+        currentUserLiveStreak={currentUser?.liveStreak}
+        chatUnreads={totalChatUnreads}
+        openSessionsCount={displaySessions.length}
+        onNavigate={(tab) => {
+          navigateTab(tab)
+          setActiveChat(null)
+          if (tab === 'map') setShowLiveMap(true)
+          if (tab === 'sesiones' && !isDemoMode) loadRealSessions()
+        }}
+        onRedNavigate={() => {
+          navigateTab('red')
+          if (redSubTab === 'messages') setChatUnreads({})
+          bumpPwaEngagement()
+        }}
+      />
 
       {/* FILTERS MODAL */}
       <AnimatePresence>

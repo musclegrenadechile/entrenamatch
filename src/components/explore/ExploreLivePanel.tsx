@@ -102,10 +102,12 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     handlePartnerLogoSelect,
     CapacitorCamera,
     uploadPartnerLogoIfNeeded,
+    dedicatedMapTab = false,
   } = props
 
   const [showGymPulseTour, setShowGymPulseTour] = useState(false)
   const [mapFullscreen, setMapFullscreen] = useState(() => {
+    if (dedicatedMapTab) return true
     try {
       return localStorage.getItem(MAP_FULLSCREEN_KEY) === '1'
     } catch {
@@ -114,6 +116,13 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
   })
 
   useEffect(() => {
+    if (!dedicatedMapTab) return
+    setShowLiveMap(true)
+    setMapFullscreen(true)
+  }, [dedicatedMapTab, setShowLiveMap])
+
+  useEffect(() => {
+    if (dedicatedMapTab) return
     try {
       localStorage.setItem(MAP_FULLSCREEN_KEY, mapFullscreen ? '1' : '0')
     } catch { /* ignore */ }
@@ -131,18 +140,22 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
         try { gymPulseMapRef.current.invalidateSize() } catch { /* ignore */ }
       }, 120)
     }
-  }, [mapFullscreen, gymPulseMapRef])
+  }, [mapFullscreen, dedicatedMapTab])
 
   useEffect(() => {
-    if (showLiveMap && !hasSeenGymPulseTour()) {
+    if ((showLiveMap || dedicatedMapTab) && !hasSeenGymPulseTour()) {
       const t = window.setTimeout(() => setShowGymPulseTour(true), 400)
       return () => window.clearTimeout(t)
     }
-    if (!showLiveMap) setShowGymPulseTour(false)
-  }, [showLiveMap])
+    if (!showLiveMap && !dedicatedMapTab) setShowGymPulseTour(false)
+  }, [showLiveMap, dedicatedMapTab])
+
+  const mapVisible = showLiveMap || dedicatedMapTab
 
   return (
-    <div className="px-4 py-2.5 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden live-banner-glow transition-all duration-300" style={{boxShadow: '0 1px 0 rgba(34,197,94,0.1)'}}>
+    <div className={dedicatedMapTab ? 'flex-1 flex flex-col min-h-0 relative' : 'px-4 py-2.5 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/40 relative overflow-hidden live-banner-glow transition-all duration-300'} style={dedicatedMapTab ? undefined : {boxShadow: '0 1px 0 rgba(34,197,94,0.1)'}}>
+      {!dedicatedMapTab && (
+      <>
       <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
       <div className="flex items-center gap-2 mb-1.5 relative z-10">
         <div className="live-pill green !px-2.5 !py-0.5 text-[9px]">🟢 EN VIVO AHORA</div>
@@ -236,11 +249,12 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
       </div>
       )}
 
-      {/* Map area - primer paso de modularización pulido.
-          La mayoría del chrome (header flotante, filtros, leyenda de zonas, centrar, botones dev) ahora vive dentro de <GymPulseMap />.
-          El padre mantiene el toggle + el form pesado de partners (por ahora).
-      */}
-      <div className="mt-3 relative z-10">
+      </>
+      )}
+
+      {/* Map area */}
+      <div className={`relative z-10 ${dedicatedMapTab ? 'flex-1 flex flex-col min-h-0 mt-0' : 'mt-3'}`}>
+        {!dedicatedMapTab && (
         <div className="flex items-center justify-between mb-1.5 px-1 gap-2">
           <div className="text-[11px] font-semibold text-[#22c55e] truncate">
             🗺️ GymPulse
@@ -258,14 +272,15 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
             {showLiveMap ? 'Ocultar mapa' : 'Ver mapa'}
           </button>
         </div>
+        )}
 
-        {showLiveMap && (
+        {mapVisible && (
       <div
-        className={`relative z-10 ${mapFullscreen ? 'gym-pulse-fs-host' : ''}`}
-        style={mapFullscreen ? undefined : { minHeight: 'min(420px, 52vh)' }}
+        className={`relative z-10 ${(mapFullscreen || dedicatedMapTab) ? 'gym-pulse-fs-host flex-1' : ''}`}
+        style={(mapFullscreen || dedicatedMapTab) ? undefined : { minHeight: 'min(420px, 52vh)' }}
       >
         <GymPulseMapShell
-          fullscreen={mapFullscreen}
+          fullscreen={mapFullscreen || dedicatedMapTab}
           liveCount={liveCountForUI}
           cityLabel={currentUser?.city || undefined}
           onToggleFullscreen={() => {
@@ -277,7 +292,11 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           }}
           onClose={() => {
             setMapFullscreen(false)
-            setShowLiveMap(false)
+            if (dedicatedMapTab) {
+              setActiveTab('explore')
+            } else {
+              setShowLiveMap(false)
+            }
           }}
           onCentrar={() => {
             try { (window as any).__gymPulseCentrar?.() } catch { /* ignore */ }
@@ -299,7 +318,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
         >
         <GymPulseMap
           ref={gymPulseMapRef}
-          showLiveMap={showLiveMap}
+          showLiveMap={mapVisible}
           liveTrainingNow={mapLiveTrainingNow}
           liveCount={liveCountForUI}
           selfUserId={effectiveUserId}
@@ -320,7 +339,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           isQuickAddPartner={isQuickAddPartner}
           selfIsLive={!!currentUser?.trainingNow}
           devTestCount={devTestLives.length}
-          layoutMode={mapFullscreen ? 'fullscreen' : 'embedded'}
+          layoutMode={(mapFullscreen || dedicatedMapTab) ? 'fullscreen' : 'embedded'}
 
           // New control callbacks (widget now manages its own filter/legend/dev buttons)
           onMapNearOnlyChange={setMapNearOnly}
