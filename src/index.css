@@ -1778,7 +1778,162 @@ input[type="range"]::-moz-range-thumb {
   color: #000;
   background: linear-gradient(90deg, #ff671f, #f59e0b);
   border-color: transparent;
-  box-shadow: 0 0 12px rgba(255, 103, 31, 0.25);
+}
+
+/* Arena exercise panel — grid + search (Sala Sync) */
+.arena-exercise-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.arena-exercise-panel__hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 103, 31, 0.12);
+  border: 1px solid rgba(255, 103, 31, 0.35);
+  text-align: left;
+}
+
+.arena-exercise-panel__hero-label {
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(255, 103, 31, 0.85);
+  margin-bottom: 2px;
+}
+
+.arena-exercise-panel__hero-name {
+  font-size: 14px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+.arena-exercise-panel__hero-muscle {
+  font-size: 9px;
+  color: rgba(255, 255, 255, 0.45);
+  margin-top: 2px;
+}
+
+.arena-exercise-panel__hero-toggle {
+  flex-shrink: 0;
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.arena-exercise-panel__search-wrap {
+  position: relative;
+}
+
+.arena-exercise-panel__search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.35);
+  pointer-events: none;
+}
+
+.arena-exercise-panel__search {
+  width: 100%;
+  padding: 9px 10px 9px 32px;
+  border-radius: 10px;
+  background: #1a1a22;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 12px;
+}
+
+.arena-exercise-panel__search::placeholder {
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.arena-exercise-panel__tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.arena-exercise-panel__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.arena-exercise-panel__tab {
+  flex-shrink: 0;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.arena-exercise-panel__tab--active {
+  color: #000;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  border-color: transparent;
+}
+
+.arena-exercise-panel__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  max-height: min(42vh, 280px);
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.arena-exercise-panel__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 52px;
+}
+
+.arena-exercise-panel__tile--active {
+  background: rgba(255, 103, 31, 0.18);
+  border-color: rgba(255, 103, 31, 0.55);
+  box-shadow: 0 0 12px rgba(255, 103, 31, 0.15);
+}
+
+.arena-exercise-panel__tile-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.25;
+  word-break: break-word;
+}
+
+.arena-exercise-panel__tile-muscle {
+  font-size: 8px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.arena-exercise-panel__empty {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.45);
+  text-align: center;
+  padding: 12px 0;
 }
 
 .sync-arena-compact {
@@ -3808,11 +3963,47 @@ button:not(.live-pill):disabled {
   position: relative;
   z-index: 5;
   display: grid;
-  grid-template-columns: 1fr minmax(88px, 110px) 1fr;
+  grid-template-columns: 1fr minmax(72px, 96px) 1fr;
   align-items: center;
   gap: 4px;
   padding: 4px 12px 8px;
   min-height: 96px;
+}
+
+.arena-sala-sync__stage--compact {
+  min-height: 72px;
+  padding: 2px 12px 4px;
+}
+
+.arena-sala-sync__stage--compact .arena-sala-sync__athlete .arena-avatar__ring {
+  width: 44px;
+  height: 44px;
+}
+
+.arena-sala-sync__stage--compact .arena-shared-pulse {
+  min-height: 64px;
+}
+
+.arena-sala-sync__stage--compact .arena-shared-pulse__ring {
+  width: 56px;
+  height: 56px;
+}
+
+.arena-sala-sync__stage--compact .arena-shared-pulse__vibe-num {
+  font-size: 20px;
+}
+
+.arena-sala-sync__meta-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 0 14px 6px;
+}
+
+.arena-sala-sync__meta-row .arena-sala-sync__story-hint {
+  padding: 0;
+  margin: 0;
 }
 
 .arena-sala-sync__athlete {
@@ -3991,6 +4182,101 @@ button:not(.live-pill):disabled {
   padding: 12px;
   margin-bottom: 0;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.arena-set-card__partner-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  background: rgba(255, 103, 31, 0.08);
+  border: 1px solid rgba(255, 103, 31, 0.2);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.3;
+}
+
+.arena-set-card__partner-bar strong {
+  color: #FF671F;
+}
+
+.arena-set-card__partner-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #FF671F;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(255, 103, 31, 0.6);
+}
+
+.arena-set-card__steppers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.arena-set-stepper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.arena-set-stepper__label {
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #9CA3AF;
+}
+
+.arena-set-stepper__controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.arena-set-stepper__btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+.arena-set-stepper__value {
+  min-width: 36px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+}
+
+.arena-set-card__footer-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.arena-set-card__footer-row .arena-set-card__hint {
+  margin-top: 0;
+  text-align: right;
+  flex: 1;
+  min-width: 0;
 }
 
 .arena-set-card__grid {

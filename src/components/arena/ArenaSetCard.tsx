@@ -1,3 +1,4 @@
+import { Minus, Plus } from 'lucide-react'
 import { ArenaExercisePicker } from './ArenaExercisePicker'
 import type { ArenaParticipantLiveState } from '../../utils/arenaSyncState'
 
@@ -14,6 +15,49 @@ export interface ArenaSetCardProps {
   partnerFirst: string
 }
 
+function Stepper({
+  label,
+  value,
+  onChange,
+  step,
+  min,
+  max,
+}: {
+  label: string
+  value: number
+  onChange: (n: number) => void
+  step: number
+  min: number
+  max: number
+}) {
+  return (
+    <div className="arena-set-stepper">
+      <span className="arena-set-stepper__label">{label}</span>
+      <div className="arena-set-stepper__controls">
+        <button
+          type="button"
+          className="arena-set-stepper__btn"
+          onClick={() => onChange(Math.max(min, value - step))}
+          aria-label={`Menos ${label}`}
+        >
+          <Minus size={16} />
+        </button>
+        <span className="arena-set-stepper__value tabular-nums">
+          {step % 1 !== 0 && value % 1 !== 0 ? value.toFixed(1) : value}
+        </span>
+        <button
+          type="button"
+          className="arena-set-stepper__btn"
+          onClick={() => onChange(Math.min(max, value + step))}
+          aria-label={`Más ${label}`}
+        >
+          <Plus size={16} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export function ArenaSetCard({
   selfExercise,
   selfReps,
@@ -28,58 +72,50 @@ export function ArenaSetCard({
 }: ArenaSetCardProps) {
   return (
     <section className="arena-set-card" aria-label="Set activo compartido">
-      <div className="arena-set-card__grid">
-        <div className="arena-set-card__self">
-          <p className="arena-set-card__who">Tu set</p>
-          <ArenaExercisePicker
-            options={exerciseOptions}
-            value={selfExercise}
-            onChange={onExerciseChange}
-          />
-          <div className="arena-set-card__inputs">
-            <label>
-              <span>Reps</span>
-              <input
-                type="number"
-                min={1}
-                max={100}
-                value={selfReps}
-                onChange={(e) => onRepsChange(Math.max(1, Number(e.target.value) || 10))}
-              />
-            </label>
-            <label>
-              <span>Kg</span>
-              <input
-                type="number"
-                min={0}
-                step={0.5}
-                value={selfWeightKg}
-                onChange={(e) => onWeightChange(Math.max(0, Number(e.target.value) || 0))}
-              />
-            </label>
-          </div>
-          {selfSetCount > 0 && (
-            <p className="arena-set-card__count">{selfSetCount} sets logueados</p>
-          )}
+      {partnerState && (
+        <div className="arena-set-card__partner-bar">
+          <span className="arena-set-card__partner-dot" aria-hidden />
+          <span>
+            <strong>{partnerFirst}</strong> · {partnerState.activeExercise || '—'} ·{' '}
+            {partnerState.pendingReps} reps
+            {partnerState.pendingWeightKg > 0 ? ` · ${partnerState.pendingWeightKg}kg` : ''}
+          </span>
         </div>
+      )}
 
-        {partnerState && (
-          <div className="arena-set-card__partner">
-            <p className="arena-set-card__who arena-set-card__who--partner">{partnerFirst}</p>
-            <p className="arena-set-card__partner-ex">{partnerState.activeExercise || '—'}</p>
-            <p className="arena-set-card__partner-meta">
-              {partnerState.pendingReps} reps
-              {partnerState.pendingWeightKg > 0 ? ` · ${partnerState.pendingWeightKg}kg` : ''}
-            </p>
-            {(partnerState.setCount ?? 0) > 0 && (
-              <p className="arena-set-card__partner-sets">{partnerState.setCount} sets</p>
-            )}
-          </div>
-        )}
+      <ArenaExercisePicker
+        value={selfExercise}
+        onChange={onExerciseChange}
+        extraOptions={exerciseOptions}
+      />
+
+      <div className="arena-set-card__steppers">
+        <Stepper
+          label="Reps"
+          value={selfReps}
+          onChange={onRepsChange}
+          step={1}
+          min={1}
+          max={100}
+        />
+        <Stepper
+          label="Kg"
+          value={selfWeightKg}
+          onChange={onWeightChange}
+          step={2.5}
+          min={0}
+          max={500}
+        />
       </div>
-      <p className="arena-set-card__hint">
-        <strong>Set listo</strong> envía tu serie por el canal — {partnerFirst} la ve al instante
-      </p>
+
+      <div className="arena-set-card__footer-row">
+        {selfSetCount > 0 && (
+          <span className="arena-set-card__count">{selfSetCount} sets logueados</span>
+        )}
+        <span className="arena-set-card__hint">
+          <strong>Set listo</strong> → {partnerFirst} lo ve al instante
+        </span>
+      </div>
     </section>
   )
 }

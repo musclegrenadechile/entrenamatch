@@ -837,7 +837,7 @@ function App() {
   const arenaVoiceChunksRef = useRef<Blob[]>([])
 
   const arenaExerciseNames = useMemo(
-    () => EXERCISE_LIBRARY.slice(0, 12).map((e) => e.name),
+    () => EXERCISE_LIBRARY.map((e) => e.name),
     []
   )
   const [entrenaLogPrefill, setEntrenaLogPrefill] = useState<{

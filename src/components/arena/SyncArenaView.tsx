@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { MapPin, X } from 'lucide-react'
+import { X } from 'lucide-react'
 import { ArenaWeeklyMetaChip } from './ArenaWeeklyMetaChip'
 import { ArenaSharedPulse } from './ArenaSharedPulse'
 import { ArenaSetCard } from './ArenaSetCard'
@@ -191,6 +191,7 @@ export function SyncArenaView({
           {isNetworkBond && (
             <span className="text-[#FFD700]"> · ⭐ RED F{bondLevel}</span>
           )}
+          {cityLabel && <span> · {cityLabel}</span>}
         </p>
 
         {/* Set card primero — siempre visible (ejercicio + reps/kg) */}
@@ -209,7 +210,7 @@ export function SyncArenaView({
           />
         </div>
 
-        <section className="arena-sala-sync__stage">
+        <section className="arena-sala-sync__stage arena-sala-sync__stage--compact">
           <div className="arena-sala-sync__athlete arena-sala-sync__athlete--self">
             <div className="arena-avatar__ring">
               {selfPhoto ? (
@@ -243,15 +244,14 @@ export function SyncArenaView({
           </div>
         </section>
 
-        <p className="arena-sala-sync__story-hint">
-          {msToStory > 0 ? (
-            <>Historia compartida en {minsToStory}:{secsToStory.toString().padStart(2, '0')}</>
-          ) : (
-            <>Historia compartida lista al terminar</>
-          )}
-        </p>
-
-        <div className="arena-sala-sync__presence">
+        <div className="arena-sala-sync__meta-row">
+          <p className="arena-sala-sync__story-hint">
+            {msToStory > 0 ? (
+              <>Historia en {minsToStory}:{secsToStory.toString().padStart(2, '0')}</>
+            ) : (
+              <>Historia lista al terminar</>
+            )}
+          </p>
           <ArenaWitnessRow
             witnessCount={witnessCount}
             witnessProfiles={witnessProfiles}
@@ -259,11 +259,6 @@ export function SyncArenaView({
             redLiveCount={redLiveCount}
             newWitnessGlow={witnessGlow}
           />
-          {cityLabel && (
-            <span className="arena-sala-sync__city">
-              <MapPin size={10} /> {cityLabel}
-            </span>
-          )}
         </div>
       </div>
 
