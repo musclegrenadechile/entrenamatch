@@ -94,11 +94,11 @@ Sistema de implementación: ver **`SISTEMA_IMPLEMENTACION_FASES.md`**.
 
 | # | Fase | Área | P | Estado |
 |---|------|------|---|--------|
-| 61 | Lazy load real ALL tabs (quitar imports estáticos) | Tech | P1 | 🔲 |
-| 62 | Extraer Arena/Sync state de App.tsx → `sync/` module | Tech | P1 | 🔲 |
-| 63 | TypeScript: quitar @ts-nocheck Explore + Home | Tech | P2 | 🔲 |
-| 64 | Playwright E2E: login → toggle live → abrir chat | QA | P0 | 🔲 |
-| 65 | Error boundaries por tab + retry automático | Tech | P1 | 🔲 |
+| 61 | Lazy load real ALL tabs (quitar imports estáticos) | Tech | P1 | ✅ v0.1.195 |
+| 62 | Extraer Arena/Sync state de App.tsx → `sync/` module | Tech | P1 | ✅ v0.1.195 |
+| 63 | TypeScript: quitar @ts-nocheck Explore + Home | Tech | P2 | ✅ v0.1.195 |
+| 64 | Playwright E2E: login → toggle live → abrir chat | QA | P0 | ✅ v0.1.195 |
+| 65 | Error boundaries por tab + retry automático | Tech | P1 | ✅ v0.1.195 |
 
 ---
 

@@ -1,4 +1,4 @@
-// @ts-nocheck
+// Explore tab — typed props (Phase 63)
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Filter, RefreshCw, MapPin, CheckCircle, X, Heart } from 'lucide-react';
