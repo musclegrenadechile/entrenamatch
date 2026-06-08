@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Filter, RefreshCw, MapPin, CheckCircle, X, Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Profile, CurrentUser } from '../../types';
-import { calculateCompatibility, getDistanceKm } from '../../utils';
+import { computeMatchScore } from '../../services/matchingScore';
+import { getDistanceKm } from '../../utils';
 import { isSeedProfileId } from '../../utils/seedProfiles';
 
 interface ExploreTabProps {
@@ -60,7 +61,10 @@ export const ExploreTab = ({
 
   const getCompatibility = (profile: Profile): number | null => {
     if (!currentUser || !userLocation) return null;
-    const base = calculateCompatibility(currentUser as any, profile, userLocation);
+    const base = computeMatchScore(currentUser as any, profile, userLocation, {
+      myTzOffsetMin: -new Date().getTimezoneOffset(),
+      profileTzOffsetMin: -new Date().getTimezoneOffset(),
+    });
     const boost = getNetworkBoost(profile);
     return Math.min(99, Math.round(base + boost)); // Network Power makes the % higher on card for your red
   };

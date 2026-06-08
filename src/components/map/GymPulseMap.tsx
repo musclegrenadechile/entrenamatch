@@ -461,7 +461,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       let renderUsers = liveUsers
       const currentZoom = mapInstanceRef.current.getZoom()
       if (currentZoom < 11.5 && liveUsers.length > 3) {
-        const gridSize = 0.04
+        const gridSize = 0.028
         const buckets: Record<string, any[]> = {}
         liveUsers.forEach(u => {
           const k = `${Math.floor(u.lat / gridSize)}:${Math.floor(u.lng / gridSize)}`

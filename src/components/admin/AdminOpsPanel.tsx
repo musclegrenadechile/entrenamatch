@@ -9,10 +9,11 @@ import {
   X,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import type { MarketplaceOrder, TrainerProfile } from '../../types'
+import type { MarketplaceOrder, TrainerBooking, TrainerProfile } from '../../types'
 import { formatClp } from '../../services/marketplace'
 import { ORDER_STATUS_LABELS } from '../../services/adminOps'
 import { formatTrainerRate } from '../../services/trainerCoach'
+import type { AdminMetrics } from '../../services/adminAnalytics'
 
 export interface AdminOpsPanelProps {
   open: boolean
@@ -21,6 +22,7 @@ export interface AdminOpsPanelProps {
   trainers: TrainerProfile[]
   onUpdateOrderStatus: (orderId: string, status: MarketplaceOrder['status']) => Promise<void>
   onSetTrainerVerified: (trainerUserId: string, verified: boolean) => Promise<void>
+  metrics?: AdminMetrics
 }
 
 export function AdminOpsPanel({
@@ -30,8 +32,9 @@ export function AdminOpsPanel({
   trainers,
   onUpdateOrderStatus,
   onSetTrainerVerified,
+  metrics,
 }: AdminOpsPanelProps) {
-  const [tab, setTab] = useState<'orders' | 'trainers'>('orders')
+  const [tab, setTab] = useState<'orders' | 'trainers' | 'revenue' | 'analytics' | 'mp'>('orders')
   const [orderFilter, setOrderFilter] = useState<MarketplaceOrder['status'] | 'all'>('all')
   const [busy, setBusy] = useState<string | null>(null)
 
@@ -106,7 +109,28 @@ export function AdminOpsPanel({
           className={tab === 'trainers' ? 'admin-ops__tab--active' : 'admin-ops__tab'}
           onClick={() => setTab('trainers')}
         >
-          <BadgeCheck size={14} /> Entrenadores
+          <BadgeCheck size={14} /> PT
+        </button>
+        <button
+          type="button"
+          className={tab === 'revenue' ? 'admin-ops__tab--active' : 'admin-ops__tab'}
+          onClick={() => setTab('revenue')}
+        >
+          💰 Revenue
+        </button>
+        <button
+          type="button"
+          className={tab === 'analytics' ? 'admin-ops__tab--active' : 'admin-ops__tab'}
+          onClick={() => setTab('analytics')}
+        >
+          📊 Analytics
+        </button>
+        <button
+          type="button"
+          className={tab === 'mp' ? 'admin-ops__tab--active' : 'admin-ops__tab'}
+          onClick={() => setTab('mp')}
+        >
+          MP
         </button>
       </div>
 
@@ -235,6 +259,63 @@ export function AdminOpsPanel({
               ))
             )}
           </>
+        )}
+
+        {tab === 'revenue' && metrics && (
+          <div className="admin-ops__metrics">
+            <article className="admin-ops__metric-card">
+              <strong>Comisión plataforma (15%)</strong>
+              <span>{formatClp(metrics.platformFeesClp)}</span>
+            </article>
+            <article className="admin-ops__metric-card">
+              <strong>Volume EntrenaCoach</strong>
+              <span>{formatClp(metrics.bookingVolumeClp)}</span>
+              <small>{metrics.bookingsPaid} pagadas / {metrics.bookingsTotal} total</small>
+            </article>
+            <article className="admin-ops__metric-card">
+              <strong>Volume Tienda</strong>
+              <span>{formatClp(metrics.orderVolumeClp)}</span>
+              <small>{metrics.ordersPaid} pagados / {metrics.ordersTotal} total</small>
+            </article>
+          </div>
+        )}
+
+        {tab === 'analytics' && metrics && (
+          <div className="admin-ops__metrics">
+            <article className="admin-ops__metric-card">
+              <strong>Live ahora</strong>
+              <span>{metrics.liveNow}</span>
+            </article>
+            <article className="admin-ops__metric-card">
+              <strong>Perfiles</strong>
+              <span>{metrics.totalProfiles}</span>
+            </article>
+            <article className="admin-ops__metric-card">
+              <strong>Reservas PT</strong>
+              <span>{metrics.bookingsTotal}</span>
+            </article>
+            <article className="admin-ops__metric-card">
+              <strong>Pedidos tienda</strong>
+              <span>{metrics.ordersTotal}</span>
+            </article>
+          </div>
+        )}
+
+        {tab === 'mp' && (
+          <div className="admin-ops__mp">
+            <p className="admin-ops__mp-status">
+              Mercado Pago:{' '}
+              <strong className={metrics?.mpConfigured ? 'admin-ops__mp--ok' : 'admin-ops__mp--warn'}>
+                {metrics?.mpConfigured ? 'Token configurado' : 'Sin token — fallback manual'}
+              </strong>
+            </p>
+            <p className="admin-ops__empty">
+              Setup: <code>node scripts/setup-mp-production.mjs</code>
+            </p>
+            <p className="admin-ops__empty">
+              Webhook: <code>mercadoPagoWebhook</code> en us-central1
+            </p>
+          </div>
         )}
       </div>
     </div>

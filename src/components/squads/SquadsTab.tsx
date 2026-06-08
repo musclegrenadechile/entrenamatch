@@ -95,6 +95,24 @@ export function SquadsTab({
                           : ''}
                       </div>
                     )}
+                    {squad.weeklyChallenge && (
+                      <div className="squad-challenge-bar mt-2">
+                        <div className="squad-challenge-bar__label">
+                          🎯 {squad.weeklyChallenge.label}
+                        </div>
+                        <div className="squad-challenge-bar__track">
+                          <div
+                            className="squad-challenge-bar__fill"
+                            style={{
+                              width: `${Math.min(100, Math.round((squad.weeklyChallenge.progressSessions / squad.weeklyChallenge.targetSessions) * 100))}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="squad-challenge-bar__count">
+                          {squad.weeklyChallenge.progressSessions}/{squad.weeklyChallenge.targetSessions}
+                        </span>
+                      </div>
+                    )}
                   </div>
                   <div className="text-right text-xs">
                     <div className="text-[#22c55e] font-medium">{squad.members.length}/4</div>

@@ -262,3 +262,133 @@ export function findLeaderboardRank(
   const idx = leaderboard.findIndex((e) => e.userId === userId || e.isMe)
   return idx >= 0 ? idx + 1 : null
 }
+
+/** Leaderboard scoped to one partner gym (Fase 21). */
+export function buildGymLeaderboard(
+  profiles: Profile[],
+  gymId: string,
+  self: {
+    userId: string
+    name: string
+    stats?: WeekStats
+    liveStreak?: number
+    gymCheckIn?: GymCheckIn
+    showOnLeaderboard?: boolean
+  },
+  weekKey = getWeekKey()
+): LeaderboardEntry[] {
+  if (!gymId) return []
+
+  const byId = new Map<string, LeaderboardEntry>()
+
+  const consider = (userId: string, name: string, stats: WeekStats | null | undefined, liveStreak: number, isMe: boolean) => {
+    if (!stats) return
+    const liveMinutes = stats.liveMinutes ?? 0
+    const syncMinutes = stats.syncMinutes ?? 0
+    const totalMinutes = liveMinutes + syncMinutes
+    if (totalMinutes === 0 && (stats.liveDays ?? 0) === 0) return
+    byId.set(userId, {
+      userId,
+      name,
+      liveMinutes,
+      syncMinutes,
+      totalMinutes,
+      liveDays: stats.liveDays ?? 0,
+      liveStreak,
+      isMe,
+    })
+  }
+
+  for (const p of profiles) {
+    if (p.gymCheckIn?.gymId !== gymId && p.id !== self.userId) continue
+    if (!isLeaderboardVisible(p)) continue
+    if (p.gymCheckIn?.gymId !== gymId) continue
+    consider(p.id, p.name, statsForWeek(p.weekStats, weekKey), p.liveStreak ?? 0, p.id === self.userId)
+  }
+
+  if (isLeaderboardVisible(self) && self.gymCheckIn?.gymId === gymId) {
+    consider(self.userId, self.name, statsForWeek(self.stats, weekKey), self.liveStreak ?? 0, true)
+  }
+
+  return Array.from(byId.values())
+    .sort((a, b) => b.totalMinutes - a.totalMinutes || b.liveDays - a.liveDays)
+    .slice(0, 10)
+}
+
+export type CityChallengeV2 = CityChallenge & {
+  cityRank: number
+  topCities: Array<{ city: string; minutes: number; rank: number }>
+  rewardTier: 'bronze' | 'silver' | 'gold' | null
+}
+
+/** City challenge v2 — ranking + tier premio (Fase 22). */
+export function buildCityChallengeV2(
+  profiles: Profile[],
+  cityNorm: string,
+  cityLabel: string,
+  allCityTotals: Array<{ cityNorm: string; cityLabel: string; minutes: number }>,
+  selfStats?: WeekStats,
+  selfUserId?: string,
+  weekKey = getWeekKey()
+): CityChallengeV2 | null {
+  const base = buildCityChallenge(profiles, cityNorm, cityLabel, selfStats, selfUserId, weekKey)
+  if (!base) return null
+
+  const sorted = [...allCityTotals].sort((a, b) => b.minutes - a.minutes)
+  const topCities = sorted.slice(0, 5).map((c, i) => ({
+    city: c.cityLabel || c.cityNorm,
+    minutes: c.minutes,
+    rank: i + 1,
+  }))
+  const cityRank = sorted.findIndex((c) => c.cityNorm === cityNorm) + 1
+
+  let rewardTier: CityChallengeV2['rewardTier'] = null
+  if (base.progressPct >= 100) rewardTier = 'gold'
+  else if (base.progressPct >= 75) rewardTier = 'silver'
+  else if (base.progressPct >= 50) rewardTier = 'bronze'
+
+  return { ...base, cityRank: cityRank > 0 ? cityRank : sorted.length + 1, topCities, rewardTier }
+}
+
+/** Aggregate live+sync minutes per city for ranking (Fase 22). */
+export function aggregateCityTotals(
+  profiles: Profile[],
+  weekKey = getWeekKey()
+): Array<{ cityNorm: string; cityLabel: string; minutes: number }> {
+  const map = new Map<string, { cityNorm: string; cityLabel: string; minutes: number }>()
+  for (const p of profiles) {
+    const norm = normalizeCity(p.city)
+    if (!norm) continue
+    const mins = weekTotalMinutes(statsForWeek(p.weekStats, weekKey))
+    if (mins <= 0) continue
+    const cur = map.get(norm)
+    if (cur) cur.minutes += mins
+    else map.set(norm, { cityNorm: norm, cityLabel: (p.city || norm).trim(), minutes: mins })
+  }
+  return Array.from(map.values())
+}
+
+/** Extend merged city challenge with v2 ranking fields. */
+export function enrichCityChallengeV2(
+  base: CityChallenge,
+  cityNorm: string,
+  allCityTotals: Array<{ cityNorm: string; cityLabel: string; minutes: number }>
+): CityChallengeV2 {
+  const sorted = [...allCityTotals].sort((a, b) => b.minutes - a.minutes)
+  const topCities = sorted.slice(0, 5).map((c, i) => ({
+    city: c.cityLabel || c.cityNorm,
+    minutes: c.minutes,
+    rank: i + 1,
+  }))
+  const cityRank = sorted.findIndex((c) => c.cityNorm === cityNorm) + 1
+  let rewardTier: CityChallengeV2['rewardTier'] = null
+  if (base.progressPct >= 100) rewardTier = 'gold'
+  else if (base.progressPct >= 75) rewardTier = 'silver'
+  else if (base.progressPct >= 50) rewardTier = 'bronze'
+  return {
+    ...base,
+    cityRank: cityRank > 0 ? cityRank : sorted.length + 1,
+    topCities,
+    rewardTier,
+  }
+}

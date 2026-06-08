@@ -1,12 +1,14 @@
 import { MapPin, Trophy, Users, Zap } from 'lucide-react'
-import type { CityChallenge, LeaderboardEntry, PartnerGym } from '../../services/localNetwork'
+import type { CityChallenge, LeaderboardEntry, PartnerGym, CityChallengeV2 } from '../../services/localNetwork'
 import { formatLeaderboardMinutes } from '../../services/localNetwork'
 import type { GymCheckIn } from '../../types'
 
 export interface LocalNetworkCardProps {
   cityLabel?: string
-  challenge: CityChallenge | null
+  challenge: CityChallenge | CityChallengeV2 | null
   leaderboard: LeaderboardEntry[]
+  gymLeaderboard?: LeaderboardEntry[]
+  gymLeaderboardTitle?: string
   myRank?: number | null
   cityLiveCount?: number
   nearestGym: (PartnerGym & { distanceKm: number }) | null
@@ -23,6 +25,8 @@ export function LocalNetworkCard({
   cityLabel,
   challenge,
   leaderboard,
+  gymLeaderboard = [],
+  gymLeaderboardTitle,
   myRank,
   cityLiveCount = 0,
   nearestGym,
@@ -89,6 +93,46 @@ export function LocalNetworkCard({
             {challenge.cityLabel}
             {challenge.participants > 0 ? ` · ${challenge.participants} atletas` : ''}
           </p>
+          {'rewardTier' in challenge && challenge.rewardTier && (
+            <p className="text-[10px] text-[#FFD700] font-bold mt-1.5">
+              Premio: {challenge.rewardTier === 'gold' ? '🥇 Oro' : challenge.rewardTier === 'silver' ? '🥈 Plata' : '🥉 Bronce'}
+              {'cityRank' in challenge && challenge.cityRank ? ` · Ciudad #${challenge.cityRank}` : ''}
+            </p>
+          )}
+          {'topCities' in challenge && challenge.topCities.length > 0 && (
+            <p className="text-[9px] text-[#6B7280] mt-1">
+              Top ciudades: {challenge.topCities.slice(0, 3).map((c) => c.city).join(' · ')}
+            </p>
+          )}
+        </div>
+      )}
+
+      {gymLeaderboard.length > 0 && (
+        <div className="mb-3">
+          <p className="text-[10px] font-bold text-[#9CA3AF] mb-2 flex items-center gap-1.5">
+            <Trophy className="w-3 h-3 text-[#FFD700]" />
+            {gymLeaderboardTitle || 'Top en tu gym'}
+          </p>
+          <ul className="space-y-1.5">
+            {gymLeaderboard.slice(0, 5).map((entry, idx) => (
+              <li
+                key={entry.userId}
+                className={`flex items-center gap-2 px-2.5 py-2 rounded-xl text-[11px] ${
+                  entry.isMe
+                    ? 'bg-[#FFD700]/10 border border-[#FFD700]/30'
+                    : 'bg-white/[0.03] border border-white/8'
+                }`}
+              >
+                <span className="w-5 text-center font-black shrink-0 text-[#FFD700]">{idx + 1}</span>
+                <span className="flex-1 font-bold text-white truncate">
+                  {entry.isMe ? 'Tú' : entry.name.split(' ')[0]}
+                </span>
+                <span className="text-[#22c55e] font-bold shrink-0">
+                  {formatLeaderboardMinutes(entry.totalMinutes)}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

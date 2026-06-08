@@ -27,6 +27,15 @@ function mapSquadDoc(id: string, data: any): Squad {
           updatedBy: routine.updatedBy || '',
         }
       : undefined,
+    weeklyChallenge: data?.weeklyChallenge
+      ? {
+          weekKey: data.weeklyChallenge.weekKey || '',
+          targetSessions: Number(data.weeklyChallenge.targetSessions) || 3,
+          progressSessions: Number(data.weeklyChallenge.progressSessions) || 0,
+          label: data.weeklyChallenge.label || '',
+          updatedAt: Number(data.weeklyChallenge.updatedAt) || Date.now(),
+        }
+      : undefined,
   }
 }
 

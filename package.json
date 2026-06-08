@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.150",
+  "version": "0.1.160",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -23,7 +23,10 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "qa:smoke": "node scripts/qa-smoke.mjs",
-    "version:check": "node scripts/version-check.mjs"
+    "version:check": "node scripts/version-check.mjs",
+    "test:e2e": "playwright test",
+    "setup:mp": "node scripts/setup-mp-production.mjs",
+    "phase": "node scripts/implement-phase.mjs"
   },
   "dependencies": {
     "@capacitor-community/play-integrity": "^8.0.0",
@@ -62,6 +65,7 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.2",
     "vite": "^8.0.12",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "@playwright/test": "^1.52.0"
   }
 }

@@ -19,6 +19,7 @@ export interface ChatViewProps {
   recordingTime: number
   recordingLevels: number[]
   chatInputValue: string
+  partnerTyping?: boolean
   chatScrollRef: RefObject<HTMLDivElement | null>
   renderMessageText: (text: string) => ReactNode
   onBack: () => void
@@ -74,6 +75,7 @@ export function ChatView({
   recordingTime,
   recordingLevels,
   chatInputValue,
+  partnerTyping = false,
   chatScrollRef,
   renderMessageText,
   onBack,
@@ -129,6 +131,9 @@ export function ChatView({
           <div className="text-[11px] text-[#FF671F] flex items-center gap-1.5 mt-1">
             {chatProfile?.city}, {chatProfile?.country}
             {chatProfile?.trainingNow && <span className="text-[#22c55e] font-bold">• EN VIVO AHORA</span>}
+            {partnerTyping && (
+              <span className="text-[#9CA3AF] italic animate-pulse">escribiendo…</span>
+            )}
             {syncBond && (
               <span className="px-1.5 py-px text-[8px] rounded bg-[#FFD700] text-black font-black tracking-wider">
                 ⭐ RED · Fuerza {syncBond.bondLevel || 1}
@@ -204,6 +209,9 @@ export function ChatView({
                     <span>{renderMessageText(m.text)}</span>
                   )}
                 </div>
+                {isMe && (m.read || m.readAt) && (
+                  <span className="text-[9px] text-[#6B7280] px-1 mt-0.5 inline-block">✓✓ leído</span>
+                )}
               </div>
             </div>
           )

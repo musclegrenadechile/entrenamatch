@@ -74,6 +74,8 @@ export interface Message {
   timestamp: number
   voiceUrl?: string
   voiceDuration?: number
+  read?: boolean
+  readAt?: number
 }
 
 export interface TrainingSession {
@@ -113,6 +115,14 @@ export interface SessionMessage {
   reactions?: Record<string, string[]>
 }
 
+export interface SquadWeeklyChallenge {
+  weekKey: string
+  targetSessions: number
+  progressSessions: number
+  label: string
+  updatedAt: number
+}
+
 export interface Squad {
   id: string
   name: string
@@ -123,6 +133,7 @@ export interface Squad {
   city?: string
   /** Shared weekly training plan (Phase 4). */
   weeklyRoutine?: SquadWeeklyRoutine
+  weeklyChallenge?: SquadWeeklyChallenge
 }
 
 export interface SquadWeeklyRoutine {
@@ -189,7 +200,7 @@ export type Tab = 'home' | 'explore' | 'squads' | 'sesiones' | 'matches' | 'mess
 
 export type WorkoutType = 'push' | 'pull' | 'legs' | 'full' | 'cardio' | 'other'
 
-export type ProfilePostType = 'text' | 'workout' | 'dailyPulse' | 'nutrition' | 'sync'
+export type ProfilePostType = 'text' | 'workout' | 'dailyPulse' | 'nutrition' | 'sync' | 'video'
 
 export type FuelGoal = 'lose' | 'maintain' | 'gain' | 'muscle'
 
@@ -286,6 +297,7 @@ export interface ProfilePost {
   userId: string
   text: string
   photo?: string
+  videoUrl?: string
   timestamp: number
   pinned?: boolean
   likes: string[] // list of userIds who liked

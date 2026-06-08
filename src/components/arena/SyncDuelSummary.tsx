@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { Share2 } from 'lucide-react'
 import {
   buildDuelMetrics,
   computeSyncDuel,
@@ -71,6 +72,19 @@ export function SyncDuelSummary({
       : elapsedSec > 0
         ? `${Math.floor(elapsedSec / 60)}:${(elapsedSec % 60).toString().padStart(2, '0')}`
         : '<1 min'
+
+  const shareSummary = async () => {
+    const text = `EntrenaSync con ${partnerName} — ${durationLabel}, vibe ${vibe}%, ${setsLogged} series. #EntrenaMatch`
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'EntrenaSync', text })
+        return
+      }
+      await navigator.clipboard.writeText(text)
+    } catch {
+      /* user cancelled */
+    }
+  }
 
   return (
     <div
@@ -236,6 +250,13 @@ export function SyncDuelSummary({
               Ver timeline
             </button>
           )}
+          <button
+            type="button"
+            onClick={() => void shareSummary()}
+            className="sync-duel-card__btn sync-duel-card__btn--ghost"
+          >
+            <Share2 size={14} /> Compartir
+          </button>
           <button
             type="button"
             onClick={onClose}

@@ -424,6 +424,15 @@ export function ProfileMuroSection(props: ProfileTabProps) {
                 {post.pinned && <div className="absolute top-3 right-3 text-[10px] bg-[#FF671F] text-black px-2 py-0.5 rounded-full font-bold tracking-wider z-10">📌 DESTACADA</div>}
               </div>
             )}
+            {post.videoUrl && (
+              <video
+                src={post.videoUrl}
+                className="w-full mt-2 rounded-xl max-h-64 object-cover bg-black"
+                controls
+                playsInline
+                preload="metadata"
+              />
+            )}
             <div className="flex items-center justify-between pt-2 border-t border-[#2F2F35]">
               <div className="flex items-center gap-4 text-sm">
                 <button 

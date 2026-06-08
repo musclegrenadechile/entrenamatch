@@ -47,6 +47,14 @@ export function resolvePushNotificationData(data: PushData): NotificationNavTarg
     return { tab: 'profile', openMarketplace: true, marketplaceOrdersTab: true }
   }
 
+  if (type === 'daily_pulse') {
+    return { tab: 'profile', showDailyPulse: true }
+  }
+
+  if (type === 'weekly_pact') {
+    return { tab: 'home' }
+  }
+
   const isLive = type === 'team_live' || type === 'network_live'
   const isSync = type === 'team_sync' || type === 'network_sync'
 

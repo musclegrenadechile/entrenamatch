@@ -1,6 +1,6 @@
 // ✅ Build limpio después de revert V2 - 06/06/2026
 // @ts-nocheck
-import { useState, useEffect, useMemo, useCallback, useRef, Component, type ReactNode, type ChangeEvent } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense, Component, type ReactNode, type ChangeEvent } from 'react'
 import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 L.Icon.Default.mergeOptions({
@@ -118,6 +118,18 @@ import {
   updateMarketplaceOrderStatus,
   setTrainerVerified,
 } from './services/adminOps'
+import {
+  attachAllTrainerBookingsListener,
+  computeAdminMetrics,
+} from './services/adminAnalytics'
+import { PostRegisterGuide } from './components/onboarding/PostRegisterGuide'
+import {
+  hasSeenPostRegisterGuide,
+  markPostRegisterGuideSeen,
+  loadFirstStepsProgress,
+  saveFirstStepsProgress,
+  type FirstStepsProgress,
+} from './services/firstStepsProgress'
 import type { MarketplaceProduct, TrainerBooking, TrainerDispatchRequest, TrainerProfile, TrainerProfileInput, MarketplaceOrder } from './types'
 import { TrainerCoachView } from './components/trainerCoach'
 import {
@@ -142,7 +154,7 @@ import {
   findNearbyDispatchTrainers,
 } from './services/trainerDispatch'
 import { createTrainerMpCheckout } from './services/trainerPayments'
-import { HomeTab } from './components/home/HomeTab'
+import { LazyHomeTab, TAB_LOADING } from './components/app/LazyTabs'
 import { fetchGlobalProfilePosts, fetchProfilePostById, togglePostLikeInFirestore, persistPostReactionsInFirestore } from './services/profilePosts'
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
 import { isQuickDemoSession, clearQuickDemoSession } from './utils/quickDemo'
@@ -156,6 +168,9 @@ import {
 import {
   buildCityChallenge,
   buildCityLeaderboard,
+  buildGymLeaderboard,
+  aggregateCityTotals,
+  enrichCityChallengeV2,
   findNearestGym,
   mergeWeekStats,
   normalizeCity,
@@ -164,6 +179,11 @@ import {
   countLiveInCity,
   findLeaderboardRank,
 } from './services/localNetwork'
+import {
+  attachPartnerTypingListener,
+  markDirectMessageRead,
+  setChatTyping,
+} from './services/chatPresence'
 import {
   attachCityWeeklyStatsListener,
   bumpCityWeeklyStats,
@@ -184,6 +204,7 @@ import {
   saveFuelProfile,
   fetchFuelLogsForDate,
   fetchFuelWeekSummary,
+  fetchFuelWeekMacros,
   saveFuelLog,
   updateFuelLog,
   deleteFuelLog,
@@ -259,7 +280,7 @@ import {
 } from './services/livePresence'
 import { requestPlayIntegrityToken, hasPositiveIntegrity, getLastIntegrityResult } from './services/playIntegrity'
 import { Capacitor } from '@capacitor/core'
-import { collection, query, where, getDocs, orderBy, limit, doc, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, getDocs, orderBy, limit, doc, onSnapshot, updateDoc } from 'firebase/firestore'
 
 /** Keys that must not leak between real accounts on the same browser */
 const ACCOUNT_SCOPED_STORAGE_KEYS = [
@@ -898,6 +919,9 @@ function App() {
   const [marketplaceScreenMode, setMarketplaceScreenMode] = useState<'shop' | 'orders'>('shop')
   const [showAdminOps, setShowAdminOps] = useState(false)
   const [adminOrders, setAdminOrders] = useState<MarketplaceOrder[]>([])
+  const [adminBookings, setAdminBookings] = useState<TrainerBooking[]>([])
+  const [mpConfigured, setMpConfigured] = useState(false)
+  const [showPostRegisterGuide, setShowPostRegisterGuide] = useState(false)
   const [myMarketplaceOrders, setMyMarketplaceOrders] = useState<MarketplaceOrder[]>([])
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([])
   const [isMarketplaceAdmin, setIsMarketplaceAdmin] = useState(false)
@@ -919,6 +943,10 @@ function App() {
   const [fuelTodayLogs, setFuelTodayLogs] = useState<FuelLogEntry[]>([])
   const [fuelTodayTotals, setFuelTodayTotals] = useState<FuelDayTotals>(emptyFuelDayTotals())
   const [fuelWeekDays, setFuelWeekDays] = useState<import('./services/fuel').FuelWeekDay[]>([])
+  const [fuelWeekMacros, setFuelWeekMacros] = useState<import('./services/fuel').FuelWeekMacroDay[]>([])
+  const [firstStepsProgress, setFirstStepsProgress] = useState<FirstStepsProgress | null>(null)
+  const [chatPartnerTyping, setChatPartnerTyping] = useState(false)
+  const chatTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [editingFuelLog, setEditingFuelLog] = useState<FuelLogEntry | null>(null)
   const [deletingFuelLogId, setDeletingFuelLogId] = useState<string | null>(null)
   const [fuelPostWorkoutTip, setFuelPostWorkoutTip] = useState<string | undefined>()
@@ -1836,12 +1864,19 @@ useEffect(() => {
   const [showNotifications, setShowNotifications] = useState(false)
 
   // Notification preferences (local per-device for user control - progressive improvement post-crash-fix)
-  const [notifPrefs, setNotifPrefs] = useState<{messages: boolean, live: boolean, muro: boolean}>(() => {
+  const [notifPrefs, setNotifPrefs] = useState<{messages: boolean, live: boolean, muro: boolean, dailyPulse: boolean, weeklyPact: boolean}>(() => {
     try {
       const saved = localStorage.getItem('entrenamatch_notif_prefs')
-      return saved ? JSON.parse(saved) : { messages: true, live: true, muro: true }
+      const p = saved ? JSON.parse(saved) : {}
+      return {
+        messages: p.messages !== false,
+        live: p.live !== false,
+        muro: p.muro !== false,
+        dailyPulse: p.dailyPulse !== false,
+        weeklyPact: p.weeklyPact !== false,
+      }
     } catch {
-      return { messages: true, live: true, muro: true }
+      return { messages: true, live: true, muro: true, dailyPulse: true, weeklyPact: true }
     }
   })
 
@@ -2782,6 +2817,33 @@ useEffect(() => {
     () => mergeCityChallengeWithFirestore(homeCityChallenge, firestoreCityStats),
     [homeCityChallenge, firestoreCityStats]
   )
+
+  const homeCityChallengeV2 = useMemo(() => {
+    if (!homeCityChallengeMerged || !homeCityNorm) return null
+    const totals = aggregateCityTotals(realProfiles as Profile[])
+    return enrichCityChallengeV2(homeCityChallengeMerged, homeCityNorm, totals)
+  }, [homeCityChallengeMerged, homeCityNorm, realProfiles])
+
+  const homeGymLeaderboard = useMemo(() => {
+    const gymId = currentUser?.gymCheckIn?.gymId
+    if (!gymId || !isGymCheckInFresh(currentUser?.gymCheckIn)) return []
+    return buildGymLeaderboard(realProfiles as Profile[], gymId, {
+      userId: effectiveUserId,
+      name: currentUser?.name || 'Tú',
+      stats: currentUser?.weekStats,
+      liveStreak: currentUser?.liveStreak,
+      gymCheckIn: currentUser?.gymCheckIn,
+      showOnLeaderboard: currentUser?.showOnLeaderboard,
+    })
+  }, [
+    realProfiles,
+    currentUser?.gymCheckIn,
+    effectiveUserId,
+    currentUser?.name,
+    currentUser?.weekStats,
+    currentUser?.liveStreak,
+    currentUser?.showOnLeaderboard,
+  ])
 
   const homeNearestGym = useMemo(() => {
     const lat = userLocation?.lat ?? currentUser?.lat
@@ -4566,10 +4628,87 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   useEffect(() => {
     if (isDemoMode || !db || !isMarketplaceAdmin) {
       setAdminOrders([])
+      setAdminBookings([])
       return undefined
     }
-    return attachAllMarketplaceOrdersListener(db, setAdminOrders)
+    const unsubOrders = attachAllMarketplaceOrdersListener(db, setAdminOrders)
+    const unsubBookings = attachAllTrainerBookingsListener(db, setAdminBookings)
+    return () => {
+      unsubOrders()
+      unsubBookings()
+    }
   }, [isDemoMode, db, isMarketplaceAdmin])
+
+  useEffect(() => {
+    if (!showAdminOps || !isMarketplaceAdmin || isDemoMode) return
+    void (async () => {
+      try {
+        const { getFunctions, httpsCallable } = await import('firebase/functions')
+        const { app } = await import('./services/firebase')
+        if (!app) return
+        const fn = httpsCallable<unknown, { configured: boolean }>(
+          getFunctions(app, 'us-central1'),
+          'checkMpHealth'
+        )
+        const res = await fn({})
+        setMpConfigured(!!res.data?.configured)
+      } catch {
+        setMpConfigured(false)
+      }
+    })()
+  }, [showAdminOps, isMarketplaceAdmin, isDemoMode])
+
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid || showOnboarding) return
+    void hasSeenPostRegisterGuide(db, firebaseUser.uid).then((seen) => {
+      if (!seen) setShowPostRegisterGuide(true)
+    })
+    void loadFirstStepsProgress(db, firebaseUser.uid).then(setFirstStepsProgress)
+  }, [isDemoMode, db, firebaseUser?.uid, showOnboarding])
+
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid || !firstStepsProgress) return
+    const patch: Partial<FirstStepsProgress> = {}
+    if (currentUser?.trainingNow) patch.live = true
+    if (homeTeamMembers.length > 0) patch.team = true
+    if (activeSyncCount > 0) patch.sync = true
+    if (homeWeeklyPactProgress.pledged) patch.pact = true
+    const changed = (Object.keys(patch) as (keyof FirstStepsProgress)[]).some(
+      (k) => patch[k] === true && !firstStepsProgress[k]
+    )
+    if (changed) {
+      void saveFirstStepsProgress(db, firebaseUser.uid, patch).then(() =>
+        setFirstStepsProgress((prev) => (prev ? { ...prev, ...patch, updatedAt: Date.now() } : prev))
+      )
+    }
+  }, [
+    isDemoMode,
+    db,
+    firebaseUser?.uid,
+    firstStepsProgress,
+    currentUser?.trainingNow,
+    homeTeamMembers.length,
+    activeSyncCount,
+    homeWeeklyPactProgress.pledged,
+  ])
+
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid || !activeChat) {
+      setChatPartnerTyping(false)
+      return undefined
+    }
+    return attachPartnerTypingListener(db, firebaseUser.uid, activeChat, setChatPartnerTyping)
+  }, [isDemoMode, db, firebaseUser?.uid, activeChat])
+
+  useEffect(() => {
+    if (isDemoMode || !db || !activeChat) return
+    const msgs = realChatMessages.length > 0 ? realChatMessages : messages[activeChat] || []
+    for (const m of msgs) {
+      if (m.from === 'them' && m.id && !m.read && !m.readAt) {
+        void markDirectMessageRead(db, m.id)
+      }
+    }
+  }, [isDemoMode, db, activeChat, realChatMessages, messages])
 
   useEffect(() => {
     if (isDemoMode || !db || !firebaseUser?.uid) {
@@ -4578,6 +4717,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
     return attachMyMarketplaceOrdersListener(db, firebaseUser.uid, setMyMarketplaceOrders)
   }, [isDemoMode, db, firebaseUser?.uid])
+
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid || !firebaseUser.uid) return
+    void updateDoc(doc(db, 'profiles', firebaseUser.uid), {
+      notifDailyPulse: notifPrefs.dailyPulse,
+      notifWeeklyPact: notifPrefs.weeklyPact,
+    }).catch(() => {})
+  }, [isDemoMode, db, firebaseUser?.uid, notifPrefs.dailyPulse, notifPrefs.weeklyPact])
 
   // EntrenaCoach — entrenadores personales (Fase 1 MVP)
   useEffect(() => {
@@ -5556,16 +5703,18 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   const refreshFuelData = useCallback(async () => {
     if (isDemoMode || !db || !firebaseUser?.uid) return
     try {
-      const [profile, logs, weekDays, workouts] = await Promise.all([
+      const [profile, logs, weekDays, weekMacros, workouts] = await Promise.all([
         loadFuelProfile(db, effectiveUserId),
         fetchFuelLogsForDate(db, effectiveUserId),
         fetchFuelWeekSummary(db, effectiveUserId),
+        fetchFuelWeekMacros(db, effectiveUserId),
         fetchRecentWorkouts(db, effectiveUserId, 1).catch(() => [] as import('./types').Workout[]),
       ])
       setFuelProfile(profile)
       setFuelTodayLogs(logs)
       setFuelTodayTotals(sumFuelLogs(logs))
       setFuelWeekDays(weekDays)
+      setFuelWeekMacros(weekMacros)
       setFuelPostWorkoutTip(
         workouts[0] ? getPostWorkoutFuelTip(workouts[0].type) : undefined
       )
@@ -5686,6 +5835,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           fetchFuelWeekSummary(db, effectiveUserId)
             .then(setFuelWeekDays)
             .catch(() => {})
+          fetchFuelWeekMacros(db, effectiveUserId)
+            .then(setFuelWeekMacros)
+            .catch(() => {})
         } else {
           const nextLogs = fuelTodayLogs.map((log) =>
             log.id === payload.editId
@@ -5745,6 +5897,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         syncFuelDayState(nextLogs)
         fetchFuelWeekSummary(db, effectiveUserId)
           .then(setFuelWeekDays)
+          .catch(() => {})
+        fetchFuelWeekMacros(db, effectiveUserId)
+          .then(setFuelWeekMacros)
           .catch(() => {})
 
         if (payload.publishToMuro) {
@@ -5817,6 +5972,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         syncFuelDayState(nextLogs)
         fetchFuelWeekSummary(db, effectiveUserId)
           .then(setFuelWeekDays)
+          .catch(() => {})
+        fetchFuelWeekMacros(db, effectiveUserId)
+          .then(setFuelWeekMacros)
           .catch(() => {})
       } else {
         const nextLogs = fuelTodayLogs.filter((log) => log.id !== logId)
@@ -9718,7 +9876,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
         {/* ===== HOME — DailyHome + Muro (HomeTab) ===== */}
         {activeTab === 'home' && (
-          <HomeTab
+          <Suspense fallback={TAB_LOADING}>
+          <LazyHomeTab
             currentUser={currentUser}
             homeWeekDays={homeWeekDays}
             homeWeekTrainedCount={homeWeekTrainedCount}
@@ -9736,6 +9895,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             fuelTodayTotals={fuelTodayTotals}
             fuelTodayLogs={fuelTodayLogs}
             fuelWeekDays={fuelWeekDays}
+            fuelWeekMacros={fuelWeekMacros}
             fuelPostWorkoutTip={fuelPostWorkoutTip}
             setShowFuelSetupModal={setShowFuelSetupModal}
             openFuelLogModal={() => {
@@ -9745,8 +9905,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             onEditFuelLog={handleEditFuelLog}
             onDeleteFuelLog={handleDeleteFuelLog}
             deletingFuelLogId={deletingFuelLogId}
-            homeCityChallengeMerged={homeCityChallengeMerged}
+            homeCityChallengeMerged={homeCityChallengeV2 ?? homeCityChallengeMerged}
             homeLocalLeaderboard={homeLocalLeaderboard}
+            homeGymLeaderboard={homeGymLeaderboard}
             homeMyLeaderboardRank={homeMyLeaderboardRank}
             homeCityLiveCount={homeCityLiveCount}
             homeNearestGym={homeNearestGym}
@@ -9802,7 +9963,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             weeklyPact={(currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact}
             weeklyPactProgress={homeWeeklyPactProgress}
             onPledgeWeeklyPact={handleWeeklyPactPledge}
+            showFirstSteps={!!firstStepsProgress && !firstStepsProgress.dismissed}
+            onDismissFirstSteps={() => {
+              if (!db || !firebaseUser?.uid) return
+              void saveFirstStepsProgress(db, firebaseUser.uid, { dismissed: true }).then(() =>
+                setFirstStepsProgress((prev) =>
+                  prev ? { ...prev, dismissed: true, updatedAt: Date.now() } : prev
+                )
+              )
+            }}
           />
+          </Suspense>
         )}
 
         {/* LUXURIOUS REMASTERED FEED COMPOSER MODAL — feels expensive and important */}
@@ -10080,6 +10251,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 recordingTime={recordingTime}
                 recordingLevels={recordingLevels}
                 chatInputValue={chatInputValue}
+                partnerTyping={chatPartnerTyping}
                 chatScrollRef={chatScrollRef}
                 renderMessageText={renderMessageText}
                 onBack={() => setActiveChat(null)}
@@ -10159,7 +10331,15 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   setIsUploadingVoice(false)
                   setVoiceUploadProgress(0)
                 }}
-                onChatInputChange={setChatInputValue}
+                onChatInputChange={(value) => {
+                  setChatInputValue(value)
+                  if (isDemoMode || !db || !firebaseUser?.uid || !activeChat) return
+                  if (chatTypingTimerRef.current) clearTimeout(chatTypingTimerRef.current)
+                  void setChatTyping(db, firebaseUser.uid, activeChat, value.trim().length > 0)
+                  chatTypingTimerRef.current = setTimeout(() => {
+                    void setChatTyping(db, firebaseUser.uid, activeChat, false)
+                  }, 4000)
+                }}
                 onSubmitForm={(e) => {
                   e.preventDefault()
                   const input = (e.currentTarget.elements[0] as HTMLInputElement)
@@ -10504,6 +10684,26 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         onSetTrainerVerified={async (trainerUserId, verified) => {
           if (!db) throw new Error('db')
           await setTrainerVerified(db, trainerUserId, verified)
+        }}
+        metrics={computeAdminMetrics(
+          realProfiles,
+          adminBookings,
+          adminOrders,
+          mpConfigured
+        )}
+      />
+      <PostRegisterGuide
+        open={showPostRegisterGuide}
+        onClose={() => {
+          setShowPostRegisterGuide(false)
+          if (db && firebaseUser?.uid) {
+            void markPostRegisterGuideSeen(db, firebaseUser.uid)
+          }
+        }}
+        onStep={(step) => {
+          if (step === 'profile') setActiveTab('profile')
+          if (step === 'live') void toggleLiveTraining()
+          if (step === 'explore') setActiveTab('explore')
         }}
       />
       <TrainerCoachView

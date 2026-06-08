@@ -1,8 +1,9 @@
 import { MapPin, MessageCircle, RefreshCw, Users } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { FuelDayCard } from '../fuel/FuelDayCard'
+import { FuelWeekReport } from '../fuel/FuelWeekReport'
 import { LocalNetworkCard } from './LocalNetworkCard'
-import { FirstStepsGuide, isFirstStepsDismissed, dismissFirstSteps } from './FirstStepsGuide'
+import { FirstStepsGuide } from './FirstStepsGuide'
 import { HomeLoopStepper, resolveHomeLoopStep } from './HomeLoopStepper'
 import { formatRedSyncFomoLine } from '../../utils/syncFomo'
 import type { WeeklyPact, WeeklyPactProgress } from '../../services/weeklyPact'
@@ -47,6 +48,7 @@ export interface DailyHomeProps {
   fuelTotals?: import('../../types').FuelDayTotals
   fuelTodayLogs?: import('../../types').FuelLogEntry[]
   fuelWeekDays?: import('../../services/fuel').FuelWeekDay[]
+  fuelWeekMacros?: import('../../services/fuel').FuelWeekMacroDay[]
   fuelPostWorkoutTip?: string
   onOpenFuelSetup?: () => void
   onOpenFuelLog?: () => void
@@ -60,6 +62,8 @@ export interface DailyHomeProps {
   onPledgeWeeklyPact?: (
     partial: Omit<WeeklyPact, 'weekKey' | 'pledgedAt'> & { weekKey?: string }
   ) => void
+  showFirstSteps?: boolean
+  onDismissFirstSteps?: () => void
 }
 
 function statusLine(member: TeamMemberView): string {
@@ -107,6 +111,7 @@ export function DailyHome({
   fuelTotals,
   fuelTodayLogs,
   fuelWeekDays,
+  fuelWeekMacros,
   fuelPostWorkoutTip,
   onOpenFuelSetup,
   onOpenFuelLog,
@@ -118,13 +123,20 @@ export function DailyHome({
   weeklyPact = null,
   weeklyPactProgress,
   onPledgeWeeklyPact,
+  showFirstSteps = false,
+  onDismissFirstSteps,
 }: DailyHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
   const hour = new Date().getHours()
   const greeting =
     hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches'
 
-  const [showFirstSteps, setShowFirstSteps] = useState(() => !isFirstStepsDismissed())
+  const [showFirstStepsLocal, setShowFirstStepsLocal] = useState(showFirstSteps)
+  const showGuide = showFirstStepsLocal && showFirstSteps
+
+  useEffect(() => {
+    if (showFirstSteps) setShowFirstStepsLocal(true)
+  }, [showFirstSteps])
 
   const liveTeamMembers = teamMembers.filter((m) => m.status === 'live')
   const loopStep = resolveHomeLoopStep({
@@ -139,7 +151,7 @@ export function DailyHome({
 
   return (
     <div className="daily-home mb-4 -mx-1 px-1 space-y-3">
-      {showFirstSteps && (
+      {showGuide && (
         <FirstStepsGuide
           isLive={isLive}
           hasTeam={teamMembers.length > 0}
@@ -153,8 +165,8 @@ export function DailyHome({
               : onOpenMap
           }
           onDismiss={() => {
-            dismissFirstSteps()
-            setShowFirstSteps(false)
+            setShowFirstStepsLocal(false)
+            onDismissFirstSteps?.()
           }}
         />
       )}
@@ -524,6 +536,10 @@ export function DailyHome({
           onDeleteLog={onDeleteFuelLog}
           deletingLogId={deletingFuelLogId}
         />
+      )}
+
+      {fuelWeekMacros && fuelWeekMacros.some((d) => d.logged) && (
+        <FuelWeekReport days={fuelWeekMacros} />
       )}
 
       {localNetwork && <LocalNetworkCard cityLabel={cityLabel} {...localNetwork} />}

@@ -157,6 +157,13 @@ export type FuelWeekDay = {
   isToday: boolean
 }
 
+export type FuelWeekMacroDay = FuelWeekDay & {
+  kcal: number
+  proteinG: number
+  carbsG: number
+  fatG: number
+}
+
 const WEEKDAY_LABELS = ['D', 'L', 'M', 'X', 'J', 'V', 'S']
 
 export function buildLast7DaySlots(): Array<{ label: string; date: string; isToday: boolean }> {
@@ -200,6 +207,44 @@ export async function fetchFuelWeekSummary(
     if (date) loggedDates.add(date)
   })
   return computeFuelWeekFromDates(loggedDates)
+}
+
+export async function fetchFuelWeekMacros(
+  db: Firestore,
+  userId: string
+): Promise<FuelWeekMacroDay[]> {
+  const slots = buildLast7DaySlots()
+  const startDate = slots[0].date
+  const { collection, query, where, getDocs } = await import('firebase/firestore')
+  const q = query(
+    collection(db, 'fuelLogs'),
+    where('userId', '==', userId),
+    where('date', '>=', startDate)
+  )
+  const snap = await getDocs(q)
+  const byDate = new Map<string, { kcal: number; proteinG: number; carbsG: number; fatG: number }>()
+  snap.forEach((docSnap) => {
+    const d = docSnap.data()
+    const date = String(d.date || '')
+    if (!date) return
+    const prev = byDate.get(date) || { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 }
+    prev.kcal += Number(d.kcal) || 0
+    prev.proteinG += Number(d.proteinG) || 0
+    prev.carbsG += Number(d.carbsG) || 0
+    prev.fatG += Number(d.fatG) || 0
+    byDate.set(date, prev)
+  })
+  return slots.map((slot) => {
+    const m = byDate.get(slot.date)
+    return {
+      ...slot,
+      logged: !!m && m.kcal > 0,
+      kcal: m?.kcal || 0,
+      proteinG: m?.proteinG || 0,
+      carbsG: m?.carbsG || 0,
+      fatG: m?.fatG || 0,
+    }
+  })
 }
 
 export function buildNutritionPostText(preview: NutritionPreview): string {

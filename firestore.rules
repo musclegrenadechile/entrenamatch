@@ -518,6 +518,14 @@ service cloud.firestore {
       allow write: if isOwner(uid);
     }
 
+    match /chatTyping/{docId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid;
+      allow delete: if isAuthenticated()
+        && resource.data.userId == request.auth.uid;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

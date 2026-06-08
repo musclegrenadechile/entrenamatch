@@ -1332,3 +1332,64 @@ exports.createMarketplaceMpCheckout = functions
 
     return { initPoint, preferenceId: pref.id, usedFallback: false };
   });
+
+/** Admin: verifica si MP token está configurado (Fase 11). */
+exports.checkMpHealth = functions.https.onCall(async (_data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Inicia sesión.');
+  }
+  const adminSnap = await db.collection('marketplaceAdmins').doc(context.auth.uid).get();
+  if (!adminSnap.exists) {
+    throw new functions.https.HttpsError('permission-denied', 'Solo marketplaceAdmins.');
+  }
+  const token = getMpAccessToken();
+  return {
+    configured: !!(token && String(token).length > 8 && token !== 'UNCONFIGURED'),
+    hasWebhook: true,
+    webhookUrl: `https://us-central1-${process.env.GCLOUD_PROJECT || 'entrenamatch'}.cloudfunctions.net/mercadoPagoWebhook`,
+  };
+});
+
+/** Fase 15 — Daily Pulse re-engagement (09:00 Chile). */
+exports.sendDailyPulseRemindersScheduled = functions.pubsub
+  .schedule('0 9 * * *')
+  .timeZone('America/Santiago')
+  .onRun(async () => {
+    const snap = await db.collection('userPushTokens').limit(80).get();
+    let sent = 0;
+    for (const docSnap of snap.docs) {
+      const uid = docSnap.id;
+      const prefs = (await db.collection('profiles').doc(uid).get()).data() || {};
+      if (prefs.notifDailyPulse === false) continue;
+      const ok = await sendPushToUser(uid, {
+        title: '⚡ Tu Daily Pulse',
+        body: 'Completa el reto de hoy y mantén tu racha.',
+        data: { type: 'daily_pulse' },
+      });
+      if (ok) sent++;
+    }
+    console.log('Daily pulse reminders sent', sent);
+    return null;
+  });
+
+/** Fase 16 — Weekly Pact domingo 10:00 Chile. */
+exports.sendWeeklyPactRemindersScheduled = functions.pubsub
+  .schedule('0 10 * * 0')
+  .timeZone('America/Santiago')
+  .onRun(async () => {
+    const snap = await db.collection('userPushTokens').limit(80).get();
+    let sent = 0;
+    for (const docSnap of snap.docs) {
+      const uid = docSnap.id;
+      const profile = (await db.collection('profiles').doc(uid).get()).data() || {};
+      if (profile.notifWeeklyPact === false) continue;
+      const ok = await sendPushToUser(uid, {
+        title: '🎯 Cierra tu semana',
+        body: 'Revisa tu pacto semanal y el progreso con tu equipo.',
+        data: { type: 'weekly_pact' },
+      });
+      if (ok) sent++;
+    }
+    console.log('Weekly pact reminders sent', sent);
+    return null;
+  });

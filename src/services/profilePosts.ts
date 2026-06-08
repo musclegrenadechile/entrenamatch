@@ -15,6 +15,7 @@ export function docToProfilePost(docSnap: { id: string; data: () => Record<strin
     userId: String(d.userId || ''),
     text: String(d.text || ''),
     photo: d.photo as string | undefined,
+    videoUrl: typeof d.videoUrl === 'string' ? d.videoUrl : undefined,
     timestamp: Number.isFinite(ts) ? ts : Date.now(),
     likes: Array.isArray(d.likes) ? (d.likes as string[]) : [],
     pinned: !!d.pinned,

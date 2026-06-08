@@ -28,6 +28,7 @@ export function HomeTab(props: HomeTabProps) {
     fuelTodayTotals,
     fuelTodayLogs,
     fuelWeekDays,
+    fuelWeekMacros,
     fuelPostWorkoutTip,
     setShowFuelSetupModal,
     openFuelLogModal,
@@ -36,6 +37,7 @@ export function HomeTab(props: HomeTabProps) {
     deletingFuelLogId,
     homeCityChallengeMerged,
     homeLocalLeaderboard,
+    homeGymLeaderboard,
     homeMyLeaderboardRank,
     homeCityLiveCount,
     homeNearestGym,
@@ -99,6 +101,8 @@ export function HomeTab(props: HomeTabProps) {
     weeklyPact,
     weeklyPactProgress,
     onPledgeWeeklyPact,
+    showFirstSteps,
+    onDismissFirstSteps,
   } = props
 
   const redLiveCount = countRedLiveMembers(
@@ -140,6 +144,7 @@ export function HomeTab(props: HomeTabProps) {
         fuelTotals={fuelTodayTotals}
         fuelTodayLogs={fuelTodayLogs}
         fuelWeekDays={fuelWeekDays}
+        fuelWeekMacros={fuelWeekMacros}
         fuelPostWorkoutTip={fuelPostWorkoutTip}
         onOpenFuelSetup={() => setShowFuelSetupModal(true)}
         onOpenFuelLog={() =>
@@ -152,6 +157,10 @@ export function HomeTab(props: HomeTabProps) {
         localNetwork={{
           challenge: homeCityChallengeMerged,
           leaderboard: homeLocalLeaderboard,
+          gymLeaderboard: homeGymLeaderboard,
+          gymLeaderboardTitle: currentUser?.gymCheckIn?.gymName
+            ? `Top en ${currentUser.gymCheckIn.gymName}`
+            : undefined,
           myRank: homeMyLeaderboardRank,
           cityLiveCount: homeCityLiveCount,
           nearestGym: homeNearestGym,
@@ -171,6 +180,8 @@ export function HomeTab(props: HomeTabProps) {
         weeklyPact={weeklyPact}
         weeklyPactProgress={weeklyPactProgress}
         onPledgeWeeklyPact={onPledgeWeeklyPact}
+        showFirstSteps={!!showFirstSteps}
+        onDismissFirstSteps={onDismissFirstSteps}
       />
       {/* CINEMATIC REMASTERED FEED HEADER — the social heart of the GymPulse */}
       <div className="feed-header-cinematic sticky top-0 z-10 -mx-4 px-4 pt-3 pb-3">
