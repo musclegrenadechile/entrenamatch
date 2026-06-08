@@ -67,6 +67,28 @@ function parseRecentActions(actions: SyncSessionData['actions']) {
     .slice(0, 10)
 }
 
+/** Firestore rejects undefined field values — never include optional keys when empty. */
+export function buildSyncSessionAction(params: {
+  emoji: string
+  label: string
+  userId: string
+  at?: number
+  combo?: number
+  voiceUrl?: string
+  photoUrl?: string
+}): NonNullable<SyncSessionData['actions']>[number] {
+  const action: NonNullable<SyncSessionData['actions']>[number] = {
+    emoji: params.emoji,
+    label: params.label,
+    userId: params.userId,
+    at: params.at ?? Date.now(),
+  }
+  if (params.combo != null && params.combo > 1) action.combo = params.combo
+  if (params.voiceUrl) action.voiceUrl = params.voiceUrl
+  if (params.photoUrl) action.photoUrl = params.photoUrl
+  return action
+}
+
 function isPermissionError(err: unknown): boolean {
   const code = (err as { code?: string })?.code
   return code === 'permission-denied' || code === 'PERMISSION_DENIED'

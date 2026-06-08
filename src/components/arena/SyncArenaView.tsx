@@ -53,6 +53,7 @@ export interface SyncArenaViewProps {
   cityLabel?: string
   partnerLiveState?: ArenaParticipantLiveState | null
   restUntil?: number | null
+  restStartedBy?: string | null
   weeklyPactProgress?: WeeklyPactProgress | null
   isRecordingVoice?: boolean
   onSyncAction: (actionId: string, emoji: string, label: string) => void
@@ -95,6 +96,7 @@ export function SyncArenaView({
   cityLabel,
   partnerLiveState = null,
   restUntil = null,
+  restStartedBy = null,
   weeklyPactProgress = null,
   isRecordingVoice = false,
   onSyncAction,
@@ -147,12 +149,12 @@ export function SyncArenaView({
   useEffect(() => {
     const a = latestAction
     if (!a || a.userId === effectiveUserId) return
-    if (!a.label?.includes('Set ·') && !a.label?.includes('PR ·')) return
     const partnerFirst = partnerName.split(' ')[0] || 'Compañero'
-    setHandshakeLabel(`${partnerFirst} · ${a.label.replace(/^(Set|PR) · /, '')}`)
-    const t = setTimeout(() => setHandshakeLabel(null), 2800)
+    const detail = a.label.replace(/^(Set|PR) · /, '')
+    setHandshakeLabel(`${partnerFirst} · ${a.emoji} ${detail}`)
+    const t = setTimeout(() => setHandshakeLabel(null), 3200)
     return () => clearTimeout(t)
-  }, [latestAction?.at, latestAction?.label, latestAction?.userId, effectiveUserId, partnerName])
+  }, [latestAction?.at, latestAction?.label, latestAction?.userId, latestAction?.voiceUrl, effectiveUserId, partnerName])
 
   if (!open) return null
 
@@ -233,6 +235,7 @@ export function SyncArenaView({
             effectiveUserId={effectiveUserId}
             isResting={isResting}
             restSecondsLeft={restLeft}
+            restStartedBy={restStartedBy}
             handshakeLabel={handshakeLabel}
           />
 

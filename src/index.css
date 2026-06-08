@@ -4328,6 +4328,20 @@ button:not(.live-pill):disabled {
   animation: handshake-pop 0.8s ease;
 }
 
+.arena-shared-pulse__voice-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #22d3ee;
+  background: rgba(34, 211, 238, 0.12);
+  border: 1px solid rgba(34, 211, 238, 0.35);
+}
+
 @keyframes handshake-pop {
   0% { opacity: 0; transform: translateX(-8px); }
   40% { opacity: 1; transform: translateX(4px); }

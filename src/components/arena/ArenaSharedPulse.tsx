@@ -1,4 +1,6 @@
+import { useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { Play } from 'lucide-react'
 import type { SyncArenaAction } from './SyncArenaView'
 
 export interface ArenaSharedPulseProps {
@@ -8,6 +10,7 @@ export interface ArenaSharedPulseProps {
   effectiveUserId: string
   isResting: boolean
   restSecondsLeft: number
+  restStartedBy?: string | null
   handshakeLabel?: string | null
 }
 
@@ -18,10 +21,30 @@ export function ArenaSharedPulse({
   effectiveUserId,
   isResting,
   restSecondsLeft,
+  restStartedBy = null,
   handshakeLabel,
 }: ArenaSharedPulseProps) {
   const ringScale = 0.92 + (syncVibe / 100) * 0.18
   const isPartner = latestAction?.userId && latestAction.userId !== effectiveUserId
+  const voiceRef = useRef<HTMLAudioElement | null>(null)
+
+  const restLabel =
+    restStartedBy === effectiveUserId
+      ? 'Tu descanso'
+      : restStartedBy
+        ? `${partnerFirst} · descanso`
+        : 'Descanso sync'
+
+  const playVoice = () => {
+    if (!latestAction?.voiceUrl) return
+    if (voiceRef.current) {
+      voiceRef.current.pause()
+      voiceRef.current = null
+    }
+    const audio = new Audio(latestAction.voiceUrl)
+    voiceRef.current = audio
+    void audio.play().catch(() => {})
+  }
 
   return (
     <div className="arena-shared-pulse" aria-live="polite">
@@ -34,7 +57,7 @@ export function ArenaSharedPulse({
         <div className="arena-shared-pulse__core">
           {isResting ? (
             <>
-              <span className="arena-shared-pulse__rest-label">Descanso</span>
+              <span className="arena-shared-pulse__rest-label">{restLabel}</span>
               <span className="arena-shared-pulse__rest-time">
                 {Math.floor(restSecondsLeft / 60)}:{(restSecondsLeft % 60).toString().padStart(2, '0')}
               </span>
@@ -66,6 +89,15 @@ export function ArenaSharedPulse({
                 <p className="arena-shared-pulse__event-text">
                   <strong>{isPartner ? partnerFirst : 'Tú'}</strong> · {latestAction.label}
                 </p>
+                {latestAction.voiceUrl && isPartner && (
+                  <button
+                    type="button"
+                    className="arena-shared-pulse__voice-btn"
+                    onClick={playVoice}
+                  >
+                    <Play size={12} /> Escuchar
+                  </button>
+                )}
               </>
             ) : null}
           </motion.div>
