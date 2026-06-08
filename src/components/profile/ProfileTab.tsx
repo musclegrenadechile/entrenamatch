@@ -1,5 +1,6 @@
 import { ProfileHeaderSection } from './ProfileHeaderSection'
 import { ProfileHeroSection } from './ProfileHeroSection'
+import { ProfileMarketplaceEntry } from './ProfileMarketplaceEntry'
 import { ProfileActividadSection } from './ProfileActividadSection'
 import { ProfileRendimientoSection } from './ProfileRendimientoSection'
 import { ProfileDailyPulseSection } from './ProfileDailyPulseSection'
@@ -16,6 +17,7 @@ export function ProfileTab(props: ProfileTabProps) {
     <div className="flex-1 overflow-auto bg-[#0D0D10] pb-28">
       <ProfileHeaderSection {...props} />
       <ProfileHeroSection {...props} />
+      <ProfileMarketplaceEntry {...props} />
       <ProfileActividadSection {...props} />
       <ProfileRendimientoSection {...props} />
       <ProfileDailyPulseSection {...props} />

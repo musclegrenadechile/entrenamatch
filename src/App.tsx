@@ -100,6 +100,17 @@ import { ChatListPanel, ChatView } from './components/messages'
 import { ProfileTab } from './components/profile'
 import type { ProfileSection } from './components/profile'
 import { LiveToggleFab } from './components/home'
+import { MarketplaceView } from './components/marketplace'
+import {
+  attachMarketplaceAdminListener,
+  attachMarketplaceProductsListener,
+  createMarketplaceProduct,
+  updateMarketplaceProduct,
+  deleteMarketplaceProduct,
+  DEMO_MARKETPLACE_PRODUCTS,
+  type MarketplaceProductInput,
+} from './services/marketplace'
+import type { MarketplaceProduct } from './types'
 import { HomeTab } from './components/home/HomeTab'
 import { fetchGlobalProfilePosts, fetchProfilePostById, togglePostLikeInFirestore, persistPostReactionsInFirestore } from './services/profilePosts'
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
@@ -852,6 +863,9 @@ function App() {
   } | null>(null)
   const [showFuelSetupModal, setShowFuelSetupModal] = useState(false)
   const [showFuelLogModal, setShowFuelLogModal] = useState(false)
+  const [showMarketplace, setShowMarketplace] = useState(false)
+  const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([])
+  const [isMarketplaceAdmin, setIsMarketplaceAdmin] = useState(false)
   const [savingFuel, setSavingFuel] = useState(false)
   const [fuelProfile, setFuelProfile] = useState<FuelProfile | null>(null)
   const [fuelTodayLogs, setFuelTodayLogs] = useState<FuelLogEntry[]>([])
@@ -4447,6 +4461,23 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       loadMyFeedbacks()
     }
   }, [activeTab, isDemoMode, firebaseUser?.uid])
+
+  // Marketplace — productos (lectura todos; escritura solo marketplaceAdmins/{uid})
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid) {
+      setMarketplaceProducts(DEMO_MARKETPLACE_PRODUCTS)
+      setIsMarketplaceAdmin(false)
+      return undefined
+    }
+    return attachMarketplaceAdminListener(db, firebaseUser.uid, setIsMarketplaceAdmin)
+  }, [isDemoMode, db, firebaseUser?.uid])
+
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid) return undefined
+    return attachMarketplaceProductsListener(db, setMarketplaceProducts, {
+      includeInactive: isMarketplaceAdmin,
+    })
+  }, [isDemoMode, db, firebaseUser?.uid, isMarketplaceAdmin])
 
   // Auto-run disabled to keep cold launch fast and avoid unnecessary Play Integrity API calls (which can fail on sideloaded debug APKs).
   // Users can manually verify using the 🛡️ button in Profile (the checkPlayIntegrity function + UI section remain available for testers).
@@ -10090,6 +10121,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             reorderGallery={reorderGallery}
             deleteExtraPhoto={deleteExtraPhoto}
             uploadProfilePhotoIfNeeded={uploadProfilePhotoIfNeeded}
+            onOpenMarketplace={() => setShowMarketplace(true)}
           />
         )}
             {/* DUPLICATE ORPHAN PROFILE JSX REMOVED — all rich Profile UI now lives cleanly inside the activeTab==='profile' conditional (prevents black screens, duplicate renders, and JSX imbalance) */}
@@ -10246,6 +10278,25 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
          Welcome guide modal can still be triggered if needed via other means or first-load. */}
 
       {/* Bottom Navigation - Premium, energetic feel (polished aesthetics) */}
+      <MarketplaceView
+        open={showMarketplace}
+        onClose={() => setShowMarketplace(false)}
+        products={marketplaceProducts}
+        isAdmin={isMarketplaceAdmin}
+        isDemoMode={isDemoMode}
+        onCreateProduct={async (input: MarketplaceProductInput) => {
+          if (!db || !firebaseUser?.uid) throw new Error('auth')
+          await createMarketplaceProduct(db, firebaseUser.uid, input)
+        }}
+        onUpdateProduct={async (id, patch) => {
+          if (!db) throw new Error('db')
+          await updateMarketplaceProduct(db, id, patch)
+        }}
+        onDeleteProduct={async (id) => {
+          if (!db) throw new Error('db')
+          await deleteMarketplaceProduct(db, id)
+        }}
+      />
       <EntrenaLogModal
         open={showEntrenaLogModal}
         onClose={() => {

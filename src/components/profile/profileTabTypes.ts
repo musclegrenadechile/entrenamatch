@@ -185,4 +185,5 @@ export interface ProfileTabProps {
   reorderGallery: (fromIndex: number, toIndex: number) => void
   deleteExtraPhoto: (indexToRemove: number) => void | Promise<void>
   uploadProfilePhotoIfNeeded: (dataUrl: string) => Promise<string>
+  onOpenMarketplace?: () => void
 }

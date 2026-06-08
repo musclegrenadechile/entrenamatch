@@ -302,6 +302,22 @@ export interface ProfilePost {
   }>
 }
 
+export type MarketplaceCategory = 'suplemento' | 'ropa' | 'equipo' | 'digital' | 'otro'
+
+export interface MarketplaceProduct {
+  id: string
+  title: string
+  description: string
+  priceClp: number
+  imageUrl?: string
+  paymentUrl: string
+  category: MarketplaceCategory
+  active: boolean
+  createdBy: string
+  createdAt: number
+  updatedAt: number
+}
+
 export type {
   DailyChallenge,
   DailyPulseState,

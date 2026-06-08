@@ -26,6 +26,30 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/mapEditors/$(request.auth.uid));
     }
 
+    function isMarketplaceAdmin() {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/marketplaceAdmins/$(request.auth.uid));
+    }
+
+    function validMarketplaceProduct(data) {
+      return data.title is string
+        && data.title.size() > 0
+        && data.title.size() <= 120
+        && data.description is string
+        && data.description.size() <= 2000
+        && data.priceClp is number
+        && data.priceClp >= 0
+        && data.priceClp <= 50000000
+        && data.paymentUrl is string
+        && data.paymentUrl.size() > 8
+        && data.paymentUrl.matches('https://.*')
+        && data.category is string
+        && data.active is bool
+        && data.createdBy == request.auth.uid
+        && data.createdAt is number
+        && data.updatedAt is number;
+    }
+
     function isSessionParticipant(sessionId) {
       let s = get(/databases/$(database)/documents/sessions/$(sessionId)).data;
       return isAuthenticated() && (
@@ -79,6 +103,22 @@ service cloud.firestore {
     match /mapEditors/{userId} {
       allow read: if isOwner(userId);
       allow write: if false;
+    }
+
+    match /marketplaceAdmins/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if false;
+    }
+
+    match /marketplaceProducts/{productId} {
+      allow read: if isAuthenticated()
+        && (resource.data.active == true || isMarketplaceAdmin());
+      allow create: if isMarketplaceAdmin()
+        && validMarketplaceProduct(request.resource.data);
+      allow update: if isMarketplaceAdmin()
+        && request.resource.data.createdBy == resource.data.createdBy
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isMarketplaceAdmin();
     }
 
     // Beta JS error breadcrumbs (non-fatal)
