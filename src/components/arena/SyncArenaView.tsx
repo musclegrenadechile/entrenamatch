@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { X, Zap } from 'lucide-react'
 import { ARENA_HERO_ACTIONS, heroActionToSync } from './arenaActions'
+import { ArenaSyncDuelStrip } from './ArenaSyncDuelStrip'
 import { ArenaFomoStrip } from './ArenaFomoStrip'
 import { ArenaMiniMap } from './ArenaMiniMap'
 import { ArenaWitnessRow } from './ArenaWitnessRow'
@@ -30,6 +31,7 @@ export interface SyncArenaViewProps {
   selfPhoto?: string
   partnerName: string
   partnerPhoto?: string
+  partnerId: string
   effectiveUserId: string
   syncStartedAt: number | null
   syncVibe: number
@@ -79,6 +81,7 @@ export function SyncArenaView({
   selfPhoto,
   partnerName,
   partnerPhoto,
+  partnerId,
   effectiveUserId,
   syncStartedAt,
   syncVibe,
@@ -381,6 +384,14 @@ export function SyncArenaView({
         />
       </div>
 
+      <ArenaSyncDuelStrip
+        actions={syncActions}
+        effectiveUserId={effectiveUserId}
+        partnerId={partnerId}
+        selfName={selfName}
+        partnerName={partnerName}
+      />
+
       {/* 5 hero actions */}
       <section className="arena-fullscreen__actions px-3">
         {ARENA_HERO_ACTIONS.map((hero) => (
@@ -444,7 +455,7 @@ export function SyncArenaView({
           <Zap size={10} className="text-[#22c55e]" />
           {witnessCount > 0
             ? `Cada acción llega a ${partnerFirst} y ${witnessCount} más presencian en el mapa`
-            : 'Cada acción se ve en su pantalla y ondea en el GymPulse'}
+            : 'Cada acción suma al duelo — al terminar verás el resumen VS'}
         </p>
       </footer>
     </div>

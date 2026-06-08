@@ -925,6 +925,7 @@ function App() {
     isNetworkBond: boolean
     bondLevel?: number
     partnerPhoto?: string
+    elapsedSec?: number
   } | null>(null)
 
   // =====================================================
@@ -6281,11 +6282,15 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       awardConstancy(15, 'Synergy completada')
     }
 
-    if (minutes >= 1 || capturedActions.length > 0) {
+    if (oldPartner) {
+      const elapsedSec = syncStartedAtCapture
+        ? Math.max(0, Math.floor((Date.now() - syncStartedAtCapture) / 1000))
+        : 0
       setSyncDuelSummary({
         partnerId: oldPartner,
         partnerName,
         minutes,
+        elapsedSec,
         vibe: capturedVibe,
         witnessCount: capturedWitness,
         setsLogged: countLoggedSets(capturedWorkoutLog),
@@ -12101,6 +12106,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           partnerId={syncDuelSummary.partnerId}
           effectiveUserId={effectiveUserId}
           minutes={syncDuelSummary.minutes}
+          elapsedSec={syncDuelSummary.elapsedSec}
           vibe={syncDuelSummary.vibe}
           witnessCount={syncDuelSummary.witnessCount}
           setsLogged={syncDuelSummary.setsLogged}
@@ -12319,6 +12325,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             selfPhoto={currentUser.photos?.[0]}
             partnerName={partner?.name || 'Compañero'}
             partnerPhoto={partner?.photos?.[0]}
+            partnerId={syncPartnerId}
             effectiveUserId={effectiveUserId}
             syncStartedAt={syncStartedAt}
             syncVibe={syncVibe}

@@ -14,6 +14,7 @@ export interface SyncDuelSummaryProps {
   partnerId: string
   effectiveUserId: string
   minutes: number
+  elapsedSec?: number
   vibe: number
   witnessCount: number
   setsLogged: number
@@ -35,6 +36,7 @@ export function SyncDuelSummary({
   partnerId,
   effectiveUserId,
   minutes,
+  elapsedSec = 0,
   vibe,
   witnessCount,
   setsLogged,
@@ -57,7 +59,13 @@ export function SyncDuelSummary({
   )
   const metrics = buildDuelMetrics(duel)
   const partnerFirst = partnerName.split(' ')[0] || 'Compañero'
-  const showRating = minutes >= 3 && !!onRate
+  const showRating = (minutes >= 3 || elapsedSec >= 180) && !!onRate
+  const durationLabel =
+    minutes >= 1
+      ? `${minutes} min`
+      : elapsedSec > 0
+        ? `${Math.floor(elapsedSec / 60)}:${(elapsedSec % 60).toString().padStart(2, '0')}`
+        : '<1 min'
 
   return (
     <div
@@ -122,7 +130,7 @@ export function SyncDuelSummary({
         </div>
 
         <div className="sync-duel-card__session">
-          <span>{minutes} min</span>
+          <span>{durationLabel}</span>
           <span>Sync {vibe}%</span>
           {setsLogged > 0 && <span>{setsLogged} sets</span>}
           {witnessCount > 0 && <span>{witnessCount} testigos</span>}
