@@ -6051,9 +6051,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       }
 
       setTimeout(() => {
-        createProfilePost(`¡Sincronizado con ${partnerName}! Entrenamos juntos ahora 🔥`, null).catch(() => {})
+        emitArenaMapRipple('Sync iniciado', 1.05, { vibe: 12, actionsSnapshot: [], notifyNearby: false })
       }, 400)
-      emitArenaMapRipple('Sync iniciado', 1.05, { vibe: 12, actionsSnapshot: [], notifyNearby: false })
       toast.success(`EntrenaSync iniciado con ${partnerName}`, {
         description: 'Arena abierta — vuestra sync ondea en el GymPulse en vivo',
       })
@@ -6272,8 +6271,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         console.warn('sync workout save failed', e)
       }
     }
-
-    createProfilePost(`Sync terminado con ${partnerName} - ${minutes}min juntos`, null).catch(() => {})
 
     checkAndUpdateDailyPulse()
     if (dailyPulse?.currentChallenge?.type === 'bond' || dailyPulse?.currentChallenge?.type === 'network') {
@@ -6729,12 +6726,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       })
     }
 
-    // Auto social proof — richer when combo
-    const partner = realProfiles.find(p => p.id === syncPartnerId)
-    const proofText = newCombo > 1 
-      ? `${emoji} ${label} x${newCombo} COMBO con ${partner?.name || 'sync buddy'} 🔥` 
-      : `${emoji} ${label} con ${partner?.name || 'sync buddy'}`
-    createProfilePost(proofText, null).catch(() => {})
+    // Acciones van a Arena + syncSessions — el muro solo en PR, foto o historia al terminar
     addDebugLog(`Sync action: ${emoji} ${label}${newCombo>1 ? ` x${newCombo}` : ''}`)
 
     // Special toast + confetti pop for combos (the dopamine that makes it addictive and unique)
@@ -6749,7 +6741,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         description: 'La red siente el combo en el GymPulse',
       })
     } else {
-      toast.success(`${emoji} ${label}`, { description: 'Onda enviada al mapa en vivo' })
+      toast.success(`${emoji} ${label}`, { description: 'Visible en Arena y para tu compañero — no spam en el muro' })
     }
   }
 

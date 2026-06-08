@@ -1,5 +1,6 @@
 export { SyncArenaView } from './SyncArenaView'
 export { SyncDuelSummary } from './SyncDuelSummary'
+export { ArenaExercisePicker } from './ArenaExercisePicker'
 export { ArenaSyncDuelStrip } from './ArenaSyncDuelStrip'
 export { ARENA_HERO_ACTIONS } from './arenaActions'
 export { ArenaMiniMap } from './ArenaMiniMap'

@@ -1746,6 +1746,41 @@ input[type="range"]::-moz-range-thumb {
   color: rgba(255, 255, 255, 0.5);
 }
 
+.arena-exercise-picker__scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.arena-exercise-picker__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.arena-exercise-picker__chip {
+  flex-shrink: 0;
+  max-width: 160px;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.75);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.arena-exercise-picker__chip--active {
+  color: #000;
+  background: linear-gradient(90deg, #ff671f, #f59e0b);
+  border-color: transparent;
+  box-shadow: 0 0 12px rgba(255, 103, 31, 0.25);
+}
+
 .sync-arena-compact {
   border-radius: 16px;
   background: linear-gradient(145deg, #0a2a1a 0%, #0d0d10 100%);

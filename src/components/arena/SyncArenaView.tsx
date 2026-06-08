@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { X, Zap } from 'lucide-react'
+import { ChevronDown, X, Zap } from 'lucide-react'
 import { ARENA_HERO_ACTIONS, heroActionToSync } from './arenaActions'
+import { ArenaExercisePicker } from './ArenaExercisePicker'
 import { ArenaSyncDuelStrip } from './ArenaSyncDuelStrip'
 import { ArenaFomoStrip } from './ArenaFomoStrip'
 import { ArenaMiniMap } from './ArenaMiniMap'
@@ -112,6 +113,7 @@ export function SyncArenaView({
   onPendingWeightChange,
 }: SyncArenaViewProps) {
   const [now, setNow] = useState(Date.now())
+  const [logExpanded, setLogExpanded] = useState(false)
   const [partnerFlash, setPartnerFlash] = useState<SyncArenaAction | null>(null)
 
   useEffect(() => {
@@ -311,50 +313,60 @@ export function SyncArenaView({
         </div>
       </section>
 
-      {/* EntrenaLog strip — active exercise + set inputs (Phase 2) */}
-      <section className="mx-4 mb-2 rounded-2xl border border-[#FF671F]/25 bg-[#FF671F]/5 p-3">
-        <div className="flex items-center justify-between mb-2">
+      {/* EntrenaLog — colapsado por defecto (evita viñeta nativa del select) */}
+      <section className="mx-4 mb-2 rounded-2xl border border-[#FF671F]/20 bg-black/30 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setLogExpanded((v) => !v)}
+          className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left"
+        >
           <span className="text-[10px] font-bold text-[#FF671F] uppercase tracking-wider">
             EntrenaLog en vivo
           </span>
-          {loggedSetCount > 0 && (
-            <span className="text-[10px] text-[#22c55e] font-bold">{loggedSetCount} sets</span>
-          )}
-        </div>
-        <select
-          value={activeExercise}
-          onChange={(e) => onActiveExerciseChange(e.target.value)}
-          className="w-full mb-2 px-2.5 py-2 rounded-xl bg-[#1a1a22] border border-white/10 text-white text-xs font-semibold"
-        >
-          {exerciseOptions.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
-        <div className="flex items-center gap-2 text-xs">
-          <label className="text-[#9CA3AF] shrink-0">Reps</label>
-          <input
-            type="number"
-            min={1}
-            max={100}
-            value={pendingReps}
-            onChange={(e) => onPendingRepsChange(Math.max(1, Number(e.target.value) || 10))}
-            className="w-14 px-2 py-1.5 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
-          />
-          <label className="text-[#9CA3AF] shrink-0 ml-1">Kg</label>
-          <input
-            type="number"
-            min={0}
-            step={0.5}
-            value={pendingWeightKg}
-            onChange={(e) => onPendingWeightChange(Math.max(0, Number(e.target.value) || 0))}
-            className="w-16 px-2 py-1.5 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
-          />
-          <span className="text-[9px] text-[#6B7280] ml-auto leading-tight text-right">
-            Set listo / PR registran aquí
+          <span className="flex items-center gap-2 text-[10px] text-[#9CA3AF]">
+            {loggedSetCount > 0 && (
+              <span className="text-[#22c55e] font-bold">{loggedSetCount} sets</span>
+            )}
+            {activeExercise && !logExpanded && (
+              <span className="truncate max-w-[120px]">{activeExercise}</span>
+            )}
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${logExpanded ? 'rotate-180' : ''}`}
+            />
           </span>
-        </div>
+        </button>
+        {logExpanded && (
+          <div className="px-3 pb-3 border-t border-white/5 pt-2">
+            <ArenaExercisePicker
+              options={exerciseOptions}
+              value={activeExercise}
+              onChange={onActiveExerciseChange}
+            />
+            <div className="flex items-center gap-2 text-xs mt-2">
+              <label className="text-[#9CA3AF] shrink-0">Reps</label>
+              <input
+                type="number"
+                min={1}
+                max={100}
+                value={pendingReps}
+                onChange={(e) => onPendingRepsChange(Math.max(1, Number(e.target.value) || 10))}
+                className="w-14 px-2 py-1.5 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
+              />
+              <label className="text-[#9CA3AF] shrink-0 ml-1">Kg</label>
+              <input
+                type="number"
+                min={0}
+                step={0.5}
+                value={pendingWeightKg}
+                onChange={(e) => onPendingWeightChange(Math.max(0, Number(e.target.value) || 0))}
+                className="w-16 px-2 py-1.5 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
+              />
+            </div>
+            <p className="text-[9px] text-[#6B7280] mt-2 text-center">
+              Usa <strong className="text-white/70">Set listo</strong> o <strong className="text-white/70">PR</strong> abajo — no publica en el muro hasta terminar o hacer PR/foto
+            </p>
+          </div>
+        )}
       </section>
 
       <div className="px-4 mt-2 space-y-2">
