@@ -5606,3 +5606,232 @@ button:not(.live-pill):disabled {
   padding: 6px 10px;
 }
 
+/* EntrenaCoach Uber-mode dispatch */
+.trainer-coach__offer-banner {
+  padding: 0 !important;
+  margin-bottom: 8px;
+}
+
+.trainer-dispatch-form__hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.trainer-dispatch-form__title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.trainer-dispatch-form__sub {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.trainer-dispatch-form__gps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  border-radius: 10px;
+  border: 1px dashed rgba(99, 102, 241, 0.5);
+  background: rgba(99, 102, 241, 0.08);
+  color: #a5b4fc;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.trainer-dispatch-form__estimate {
+  margin: 14px 0;
+  padding: 12px;
+  border-radius: 12px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.trainer-dispatch-form__estimate-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-bottom: 6px;
+}
+
+.trainer-dispatch-form__surge {
+  color: #fbbf24;
+}
+
+.trainer-dispatch-form__estimate-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 800;
+  color: #fff;
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.trainer-dispatch-form__estimate-meta {
+  font-size: 9px;
+  color: #6b7280;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+.trainer-dispatch-form__cta {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.trainer-dispatch-form__cta:disabled {
+  opacity: 0.45;
+}
+
+.trainer-dispatch-wait {
+  text-align: center;
+  padding: 32px 16px;
+}
+
+.trainer-dispatch-wait__spin {
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+.trainer-dispatch-wait__matched {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  font-size: 28px;
+  line-height: 56px;
+}
+
+.trainer-dispatch-wait__title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.trainer-dispatch-wait__sub {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 8px;
+}
+
+.trainer-dispatch-wait__price {
+  font-size: 14px;
+  font-weight: 800;
+  color: #a5b4fc;
+  margin-top: 12px;
+}
+
+.trainer-dispatch-wait__cancel {
+  margin-top: 20px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: transparent;
+  color: #f87171;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.trainer-dispatch-offer {
+  position: relative;
+  text-align: center;
+  padding: 28px 16px;
+  border-radius: 16px;
+  background: rgba(99, 102, 241, 0.12);
+  border: 2px solid rgba(99, 102, 241, 0.45);
+  overflow: hidden;
+}
+
+.trainer-dispatch-offer__pulse {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.2), transparent 70%);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.trainer-dispatch-offer__title {
+  position: relative;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+}
+
+.trainer-dispatch-offer__price {
+  position: relative;
+  font-size: 28px;
+  font-weight: 900;
+  color: #a5b4fc;
+  margin: 8px 0;
+}
+
+.trainer-dispatch-offer__meta,
+.trainer-dispatch-offer__loc {
+  position: relative;
+  font-size: 11px;
+  color: #cbd5e1;
+  margin-top: 6px;
+}
+
+.trainer-dispatch-offer__surge {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #fbbf24;
+  margin-top: 8px;
+}
+
+.trainer-dispatch-offer__timer {
+  position: relative;
+  font-size: 12px;
+  font-weight: 700;
+  color: #f87171;
+  margin: 12px 0;
+}
+
+.trainer-dispatch-offer__actions {
+  position: relative;
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.trainer-dispatch-offer__pass,
+.trainer-dispatch-offer__accept {
+  flex: 1;
+  padding: 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 800;
+  border: none;
+}
+
+.trainer-dispatch-offer__pass {
+  background: rgba(255, 255, 255, 0.08);
+  color: #9ca3af;
+}
+
+.trainer-dispatch-offer__accept {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { TrainerDispatchPanel } from './TrainerDispatchPanel'
 import {
   ArrowLeft,
   Calendar,
@@ -15,9 +15,11 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { CHILE_REGIONS } from '../../data/chileRegions'
+import { useEffect, useMemo, useState } from 'react'
 import type {
   TrainerBooking,
   TrainerBookingInput,
+  TrainerDispatchRequest,
   TrainerProfile,
   TrainerProfileInput,
   TrainerSpecialty,
@@ -39,6 +41,7 @@ const EMPTY_TRAINER_FORM: TrainerProfileInput = {
   paymentMethods: ['cash', 'card'],
   paymentUrl: '',
   active: true,
+  availableForDispatch: false,
 }
 
 export interface TrainerCoachViewProps {
@@ -58,6 +61,19 @@ export interface TrainerCoachViewProps {
   onPayWithMercadoPago?: (booking: TrainerBooking) => Promise<void>
   onStartEntrenaSync?: (booking: TrainerBooking) => Promise<void>
   onRequestReview: (trainerId: string, bookingId: string) => void
+  userLat?: number
+  userLng?: number
+  profileCoords?: Record<string, { lat: number; lng: number }>
+  activeDispatch?: TrainerDispatchRequest | null
+  incomingDispatchOffer?: TrainerDispatchRequest | null
+  onRequestLocation?: () => void | Promise<void>
+  onCreateDispatch?: (
+    input: import('../../types').TrainerDispatchInput,
+    candidateIds: string[]
+  ) => Promise<string>
+  onCancelDispatch?: (dispatchId: string) => Promise<void>
+  onDispatchMatched?: (dispatch: TrainerDispatchRequest) => void
+  initialTab?: 'explore' | 'now' | 'sessions' | 'trainer'
 }
 
 function TrainerCard({
@@ -236,14 +252,25 @@ export function TrainerCoachView({
   onPayWithMercadoPago,
   onStartEntrenaSync,
   onRequestReview,
+  userLat,
+  userLng,
+  profileCoords = {},
+  activeDispatch = null,
+  incomingDispatchOffer = null,
+  onRequestLocation,
+  onCreateDispatch,
+  onCancelDispatch,
+  onDispatchMatched,
+  initialTab,
 }: TrainerCoachViewProps) {
-  const [tab, setTab] = useState<'explore' | 'sessions' | 'trainer'>('explore')
+  const [tab, setTab] = useState<'explore' | 'now' | 'sessions' | 'trainer'>(initialTab || 'explore')
   const [bookingTrainer, setBookingTrainer] = useState<TrainerProfile | null>(null)
   const [trainerForm, setTrainerForm] = useState<TrainerProfileInput>(EMPTY_TRAINER_FORM)
   const [savingProfile, setSavingProfile] = useState(false)
 
   useEffect(() => {
     if (!open) return
+    if (initialTab) setTab(initialTab)
     if (preselectedTrainerId) {
       const t = trainers.find((p) => p.userId === preselectedTrainerId)
       if (t) {
@@ -251,7 +278,7 @@ export function TrainerCoachView({
         setTab('explore')
       }
     }
-  }, [open, preselectedTrainerId, trainers])
+  }, [open, initialTab, preselectedTrainerId, trainers])
 
   useEffect(() => {
     if (myTrainerProfile) {
@@ -268,6 +295,7 @@ export function TrainerCoachView({
         paymentMethods: myTrainerProfile.paymentMethods,
         paymentUrl: myTrainerProfile.paymentUrl || '',
         active: myTrainerProfile.active,
+        availableForDispatch: myTrainerProfile.availableForDispatch === true,
       })
     }
   }, [myTrainerProfile])
@@ -370,18 +398,73 @@ export function TrainerCoachView({
         </div>
       </header>
 
+      {incomingDispatchOffer && tab !== 'now' && onCreateDispatch && onCancelDispatch && (
+        <div className="trainer-coach__panel trainer-coach__offer-banner">
+          <TrainerDispatchPanel
+            trainers={trainers}
+            profileCoords={profileCoords}
+            userLat={userLat}
+            userLng={userLng}
+            userUid={userUid}
+            userName={userName}
+            isDemoMode={isDemoMode}
+            activeDispatch={null}
+            incomingOffer={incomingDispatchOffer}
+            onRequestLocation={() => void onRequestLocation?.()}
+            onCreateDispatch={onCreateDispatch}
+            onCancelDispatch={onCancelDispatch}
+          />
+        </div>
+      )}
+
       <div className="trainer-coach__tabs">
-        {(['explore', 'sessions', 'trainer'] as const).map((t) => (
+        {(['explore', 'now', 'sessions', 'trainer'] as const).map((t) => (
           <button
             key={t}
             type="button"
             className={tab === t ? 'trainer-coach__tab--active' : 'trainer-coach__tab'}
             onClick={() => setTab(t)}
           >
-            {t === 'explore' ? 'Explorar' : t === 'sessions' ? 'Mis sesiones' : 'Modo PT'}
+            {t === 'explore'
+              ? 'Explorar'
+              : t === 'now'
+                ? 'Ahora'
+                : t === 'sessions'
+                  ? 'Mis sesiones'
+                  : 'Modo PT'}
           </button>
         ))}
       </div>
+
+      {tab === 'now' && onCreateDispatch && onCancelDispatch && (
+        <div className="trainer-coach__panel">
+          <TrainerDispatchPanel
+            trainers={trainers}
+            profileCoords={profileCoords}
+            userLat={userLat}
+            userLng={userLng}
+            userUid={userUid}
+            userName={userName}
+            isDemoMode={isDemoMode}
+            activeDispatch={activeDispatch}
+            incomingOffer={incomingDispatchOffer}
+            onRequestLocation={() => void onRequestLocation?.()}
+            onCreateDispatch={onCreateDispatch}
+            onCancelDispatch={onCancelDispatch}
+            onDispatchMatched={(d) => {
+              setTab('sessions')
+              onDispatchMatched?.(d)
+            }}
+          />
+        </div>
+      )}
+
+      {tab === 'now' && !onCreateDispatch && (
+        <div className="trainer-coach__panel trainer-coach__empty">
+          <Zap size={40} className="opacity-40" />
+          <p>Entrenador ahora requiere sesión real</p>
+        </div>
+      )}
 
       {tab === 'explore' && (
         <div className="trainer-coach__panel">
@@ -714,6 +797,16 @@ export function TrainerCoachView({
               onChange={(e) => setTrainerForm((f) => ({ ...f, active: e.target.checked }))}
             />
             Visible para clientes
+          </label>
+          <label className="marketplace-form__check">
+            <input
+              type="checkbox"
+              checked={trainerForm.availableForDispatch === true}
+              onChange={(e) =>
+                setTrainerForm((f) => ({ ...f, availableForDispatch: e.target.checked }))
+              }
+            />
+            Disponible para ofertas Uber-mode (recibo solicitudes en vivo cerca de mi GPS)
           </label>
           <button type="submit" className="marketplace-form__save" disabled={savingProfile}>
             {savingProfile ? 'Guardando…' : myTrainerProfile ? 'Actualizar perfil PT' : 'Publicar como entrenador'}

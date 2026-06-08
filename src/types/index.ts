@@ -370,6 +370,10 @@ export interface TrainerProfile {
   /** Set by admin (marketplaceAdmins) — badge Entrenador verificado */
   verified?: boolean
   mpCollectorId?: string
+  /** Modo Uber — recibe ofertas en vivo cerca de su ubicación */
+  availableForDispatch?: boolean
+  dispatchLat?: number
+  dispatchLng?: number
   active: boolean
   avgRating: number
   reviewCount: number
@@ -420,6 +424,7 @@ export interface TrainerProfileInput {
   paymentMethods: TrainerPaymentMethod[]
   paymentUrl?: string
   active: boolean
+  availableForDispatch?: boolean
 }
 
 export interface TrainerBookingInput {
@@ -427,6 +432,57 @@ export interface TrainerBookingInput {
   locationNote: string
   paymentMethod: TrainerPaymentMethod
   clientMessage?: string
+}
+
+export type TrainerDispatchStatus =
+  | 'searching'
+  | 'offering'
+  | 'matched'
+  | 'no_trainers'
+  | 'cancelled'
+  | 'expired'
+
+export interface TrainerDispatchRequest {
+  id: string
+  clientId: string
+  clientName: string
+  specialty: TrainerSpecialty
+  durationMin: number
+  lat: number
+  lng: number
+  locationNote: string
+  paymentMethod: TrainerPaymentMethod
+  marketPriceClp: number
+  offerPriceClp: number
+  surgeFactor: number
+  platformFeeClp: number
+  status: TrainerDispatchStatus
+  candidateTrainerIds: string[]
+  passedTrainerIds: string[]
+  currentTrainerId?: string
+  currentTrainerName?: string
+  offerExpiresAt?: number
+  matchedTrainerId?: string
+  bookingId?: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface TrainerDispatchInput {
+  specialty: TrainerSpecialty
+  durationMin: number
+  lat: number
+  lng: number
+  locationNote: string
+  paymentMethod: TrainerPaymentMethod
+}
+
+export interface TrainerDispatchPriceEstimate {
+  marketPriceClp: number
+  offerPriceClp: number
+  surgeFactor: number
+  nearbyCount: number
+  platformFeeClp: number
 }
 
 export type {

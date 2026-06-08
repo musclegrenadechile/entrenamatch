@@ -72,6 +72,22 @@
         { "fieldPath": "trainerId", "order": "ASCENDING" },
         { "fieldPath": "scheduledAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "trainerDispatchRequests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "clientId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "trainerDispatchRequests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "currentTrainerId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": []

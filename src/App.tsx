@@ -111,7 +111,7 @@ import {
   DEMO_MARKETPLACE_PRODUCTS,
   type MarketplaceProductInput,
 } from './services/marketplace'
-import type { MarketplaceProduct, TrainerBooking, TrainerProfile, TrainerProfileInput } from './types'
+import type { MarketplaceProduct, TrainerBooking, TrainerDispatchRequest, TrainerProfile, TrainerProfileInput } from './types'
 import { TrainerCoachView } from './components/trainerCoach'
 import {
   attachTrainerProfilesListener,
@@ -124,6 +124,14 @@ import {
   formatTrainerRate,
   linkBookingSyncSession,
 } from './services/trainerCoach'
+import {
+  attachClientDispatchListener,
+  attachTrainerDispatchOfferListener,
+  createTrainerDispatchRequest,
+  cancelTrainerDispatch,
+  estimateDispatchPrice,
+  findNearbyDispatchTrainers,
+} from './services/trainerDispatch'
 import { createTrainerMpCheckout } from './services/trainerPayments'
 import { HomeTab } from './components/home/HomeTab'
 import { fetchGlobalProfilePosts, fetchProfilePostById, togglePostLikeInFirestore, persistPostReactionsInFirestore } from './services/profilePosts'
@@ -885,6 +893,11 @@ function App() {
   const [trainerProfiles, setTrainerProfiles] = useState<TrainerProfile[]>([])
   const [myTrainerProfile, setMyTrainerProfile] = useState<TrainerProfile | null>(null)
   const [trainerBookings, setTrainerBookings] = useState<TrainerBooking[]>([])
+  const [activeTrainerDispatch, setActiveTrainerDispatch] = useState<TrainerDispatchRequest | null>(null)
+  const [incomingDispatchOffer, setIncomingDispatchOffer] = useState<TrainerDispatchRequest | null>(null)
+  const [trainerCoachInitialTab, setTrainerCoachInitialTab] = useState<
+    'explore' | 'now' | 'sessions' | 'trainer' | undefined
+  >(undefined)
   const [pendingReviewBookingId, setPendingReviewBookingId] = useState<string | null>(null)
   const [savingFuel, setSavingFuel] = useState(false)
   const [fuelProfile, setFuelProfile] = useState<FuelProfile | null>(null)
@@ -3981,13 +3994,24 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
 
             if (target) {
               const isTeam = data.type === 'team_live' || data.type === 'team_sync' || data.type === 'network_live' || data.type === 'network_sync'
-              const isCoach = data.type === 'trainer_booking_new' || data.type === 'trainer_booking_update'
+              const isCoach =
+                data.type === 'trainer_booking_new' ||
+                data.type === 'trainer_booking_update' ||
+                data.type === 'trainer_dispatch_offer'
               toast.success(title, {
                 description: body + (isTeam ? ' (tu equipo/red)' : ''),
                 className: isCoach ? 'network-notif border-l-4 border-[#6366f1] bg-[#12121a]' : 'network-notif border-l-4 border-[#FFD700] bg-[#1a160f]',
                 duration: 6000,
                 action: {
-                  label: target.openTrainerCoach ? 'Ver sesiones' : target.showSyncArena ? 'Unirme' : target.tab === 'home' ? 'Ver reto' : 'Ver live',
+                  label: target.openTrainerCoach
+                    ? target.trainerCoachTab === 'now'
+                      ? 'Ver oferta'
+                      : 'Ver sesiones'
+                    : target.showSyncArena
+                      ? 'Unirme'
+                      : target.tab === 'home'
+                        ? 'Ver reto'
+                        : 'Ver live',
                   onClick: () => applyNotificationNavigationRef.current?.(target, data.partnerName),
                 },
               })
@@ -4526,6 +4550,35 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       unsubProfiles()
       unsubMine()
       unsubBookings()
+    }
+  }, [isDemoMode, db, firebaseUser?.uid])
+
+  const trainerProfileCoords = useMemo(() => {
+    const coords: Record<string, { lat: number; lng: number }> = {}
+    for (const p of realProfiles) {
+      if (typeof p.lat === 'number' && typeof p.lng === 'number') {
+        coords[p.id] = { lat: p.lat, lng: p.lng }
+      }
+    }
+    return coords
+  }, [realProfiles])
+
+  // EntrenaCoach Uber-mode — dispatch on-demand (Fase 3)
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid) {
+      setActiveTrainerDispatch(null)
+      setIncomingDispatchOffer(null)
+      return undefined
+    }
+    const unsubClient = attachClientDispatchListener(db, firebaseUser.uid, setActiveTrainerDispatch)
+    const unsubOffer = attachTrainerDispatchOfferListener(
+      db,
+      firebaseUser.uid,
+      setIncomingDispatchOffer
+    )
+    return () => {
+      unsubClient()
+      unsubOffer()
     }
   }, [isDemoMode, db, firebaseUser?.uid])
 
@@ -7644,6 +7697,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       setShowSyncArena(true)
     }
     if (target.openTrainerCoach) {
+      setTrainerCoachInitialTab(target.trainerCoachTab)
       setShowTrainerCoach(true)
     }
     if (target.startSyncWith) {
@@ -10371,6 +10425,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         onClose={() => {
           setShowTrainerCoach(false)
           setTrainerCoachPreselect(null)
+          setTrainerCoachInitialTab(undefined)
         }}
         trainers={trainerProfiles}
         myTrainerProfile={myTrainerProfile}
@@ -10379,10 +10434,49 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         userName={currentUser?.name || firebaseUser?.email?.split('@')[0]}
         isDemoMode={isDemoMode}
         preselectedTrainerId={trainerCoachPreselect}
+        initialTab={trainerCoachInitialTab}
+        userLat={userLocation?.lat}
+        userLng={userLocation?.lng}
+        profileCoords={trainerProfileCoords}
+        activeDispatch={activeTrainerDispatch}
+        incomingDispatchOffer={incomingDispatchOffer}
+        onRequestLocation={requestUserLocation}
+        onCreateDispatch={async (input, candidateIds) => {
+          if (!db || !firebaseUser?.uid) throw new Error('auth')
+          const clientName = currentUser?.name || firebaseUser.email?.split('@')[0] || 'Cliente'
+          const nearby = findNearbyDispatchTrainers(
+            trainerProfiles,
+            trainerProfileCoords,
+            input.specialty,
+            input.lat,
+            input.lng
+          )
+          const estimate = estimateDispatchPrice(nearby, input.durationMin)
+          return createTrainerDispatchRequest(
+            db,
+            firebaseUser.uid,
+            clientName,
+            input,
+            estimate,
+            candidateIds
+          )
+        }}
+        onCancelDispatch={async (dispatchId) => {
+          if (!db) throw new Error('db')
+          await cancelTrainerDispatch(db, dispatchId)
+        }}
+        onDispatchMatched={() => {
+          setTrainerCoachInitialTab('sessions')
+        }}
         onSaveTrainerProfile={async (input: TrainerProfileInput) => {
           if (!db || !firebaseUser?.uid) throw new Error('auth')
           const name = currentUser?.name || firebaseUser.email?.split('@')[0] || 'Entrenador'
-          await saveTrainerProfile(db, firebaseUser.uid, name, input)
+          const coords =
+            input.availableForDispatch && userLocation ? userLocation : null
+          if (input.availableForDispatch && !userLocation) {
+            toast.info('Activa GPS para recibir ofertas cerca de ti')
+          }
+          await saveTrainerProfile(db, firebaseUser.uid, name, input, coords)
         }}
         onCreateBooking={async (trainer, input) => {
           if (!db || !firebaseUser?.uid) throw new Error('auth')

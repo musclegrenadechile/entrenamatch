@@ -115,6 +115,37 @@ service cloud.firestore {
         && data.updatedAt is number;
     }
 
+    function validTrainerDispatchCreate(data) {
+      return data.clientId == request.auth.uid
+        && data.clientName is string
+        && data.specialty is string
+        && data.durationMin is number
+        && data.durationMin >= 30
+        && data.durationMin <= 180
+        && data.lat is number
+        && data.lng is number
+        && data.locationNote is string
+        && data.locationNote.size() >= 3
+        && data.paymentMethod is string
+        && data.marketPriceClp is number
+        && data.offerPriceClp is number
+        && data.surgeFactor is number
+        && data.platformFeeClp is number
+        && data.status == 'searching'
+        && data.candidateTrainerIds is list
+        && data.candidateTrainerIds.size() > 0
+        && data.passedTrainerIds is list
+        && data.createdAt is number
+        && data.updatedAt is number;
+    }
+
+    function dispatchCancelOnly() {
+      return request.resource.data.clientId == resource.data.clientId
+        && request.resource.data.offerPriceClp == resource.data.offerPriceClp
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']);
+    }
+
     function isTrainerBookingParty() {
       return isAuthenticated()
         && (resource.data.clientId == request.auth.uid
@@ -253,6 +284,23 @@ service cloud.firestore {
           || resource.data.trainerId == request.auth.uid
           || isMarketplaceAdmin());
       allow update: if validTrainerBookingStatusUpdate();
+      allow delete: if isMarketplaceAdmin();
+    }
+
+    match /trainerDispatchRequests/{dispatchId} {
+      allow create: if isAuthenticated()
+        && validTrainerDispatchCreate(request.resource.data);
+      allow read: if isAuthenticated()
+        && (resource.data.clientId == request.auth.uid
+          || resource.data.currentTrainerId == request.auth.uid
+          || resource.data.matchedTrainerId == request.auth.uid
+          || request.auth.uid in resource.data.candidateTrainerIds
+          || isMarketplaceAdmin());
+      allow update: if isAuthenticated()
+        && resource.data.clientId == request.auth.uid
+        && resource.data.status in ['searching', 'offering']
+        && request.resource.data.status == 'cancelled'
+        && dispatchCancelOnly();
       allow delete: if isMarketplaceAdmin();
     }
 

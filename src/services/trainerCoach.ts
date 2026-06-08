@@ -13,6 +13,7 @@ import {
   setDoc,
   updateDoc,
   getDoc,
+  deleteField,
   type Firestore,
 } from 'firebase/firestore'
 import type {
@@ -26,6 +27,7 @@ import type {
 
 /** Comisión plataforma EntrenaCoach (Fase 2 — MP checkout). */
 export const TRAINER_PLATFORM_FEE_RATE = 0.15
+const PROFILES = 'trainerProfiles'
 const BOOKINGS = 'trainerBookings'
 
 export const TRAINER_SPECIALTIES: { id: TrainerSpecialty; label: string }[] = [
@@ -65,6 +67,9 @@ function mapTrainerProfile(id: string, data: Record<string, unknown>): TrainerPr
     paymentUrl: typeof data.paymentUrl === 'string' ? data.paymentUrl : undefined,
     verified: data.verified === true,
     mpCollectorId: typeof data.mpCollectorId === 'string' ? data.mpCollectorId : undefined,
+    availableForDispatch: data.availableForDispatch === true,
+    dispatchLat: typeof data.dispatchLat === 'number' ? data.dispatchLat : undefined,
+    dispatchLng: typeof data.dispatchLng === 'number' ? data.dispatchLng : undefined,
     active: data.active !== false,
     avgRating: typeof data.avgRating === 'number' ? data.avgRating : 0,
     reviewCount: typeof data.reviewCount === 'number' ? data.reviewCount : 0,
@@ -222,7 +227,8 @@ export async function saveTrainerProfile(
   db: Firestore,
   uid: string,
   displayName: string,
-  input: TrainerProfileInput
+  input: TrainerProfileInput,
+  dispatchCoords?: { lat: number; lng: number } | null
 ): Promise<void> {
   const now = Date.now()
   const existing = await getDoc(doc(db, PROFILES, uid))
@@ -244,6 +250,12 @@ export async function saveTrainerProfile(
     paymentMethods: input.paymentMethods.length ? input.paymentMethods : ['cash'],
     ...(input.paymentUrl?.trim() ? { paymentUrl: input.paymentUrl.trim() } : {}),
     active: input.active !== false,
+    availableForDispatch: input.availableForDispatch === true,
+    ...(input.availableForDispatch && dispatchCoords
+      ? { dispatchLat: dispatchCoords.lat, dispatchLng: dispatchCoords.lng }
+      : input.availableForDispatch === false
+        ? { dispatchLat: deleteField(), dispatchLng: deleteField() }
+        : {}),
     updatedAt: now,
     createdAt: typeof existingData?.createdAt === 'number' ? existingData.createdAt : now,
     avgRating: typeof existingData?.avgRating === 'number' ? existingData.avgRating : 0,

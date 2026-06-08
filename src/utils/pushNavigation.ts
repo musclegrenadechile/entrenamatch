@@ -21,6 +21,10 @@ export function resolvePushNotificationData(data: PushData): NotificationNavTarg
     return { tab: 'profile', openTrainerCoach: true }
   }
 
+  if (type === 'trainer_dispatch_offer') {
+    return { tab: 'profile', openTrainerCoach: true, trainerCoachTab: 'now' as const }
+  }
+
   const isLive = type === 'team_live' || type === 'network_live'
   const isSync = type === 'team_sync' || type === 'network_sync'
 

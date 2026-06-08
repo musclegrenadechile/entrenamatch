@@ -789,3 +789,199 @@ exports.mercadoPagoWebhook = functions.https.onRequest(async (req, res) => {
     res.status(500).send('error');
   }
 });
+
+// ─── EntrenaCoach Fase 3 — Uber-mode dispatch ────────────────────────────────
+
+const DISPATCH_OFFER_MS = 90000;
+
+function formatClp(amount) {
+  try {
+    return `$${Math.round(Number(amount) || 0).toLocaleString('es-CL')} CLP`;
+  } catch {
+    return `$${amount} CLP`;
+  }
+}
+
+/** Ofrece la solicitud al siguiente entrenador candidato (o cierra sin match). */
+async function offerToNextTrainer(dispatchRef, data) {
+  const passed = new Set(data.passedTrainerIds || []);
+  if (data.currentTrainerId) passed.add(data.currentTrainerId);
+  const candidates = (data.candidateTrainerIds || []).filter((id) => id && !passed.has(id));
+
+  if (candidates.length === 0) {
+    await dispatchRef.update({
+      status: 'no_trainers',
+      currentTrainerId: admin.firestore.FieldValue.delete(),
+      currentTrainerName: admin.firestore.FieldValue.delete(),
+      offerExpiresAt: admin.firestore.FieldValue.delete(),
+      updatedAt: Date.now(),
+    });
+    if (data.clientId) {
+      await sendPushToUser(data.clientId, {
+        title: 'Sin entrenadores disponibles',
+        body: 'Nadie aceptó a tiempo. Prueba otra especialidad o más tarde.',
+        data: { type: 'trainer_dispatch_no_match', dispatchId: dispatchRef.id },
+      });
+    }
+    return null;
+  }
+
+  const nextId = candidates[0];
+  let trainerName = 'Entrenador';
+  try {
+    const profileSnap = await db.collection('trainerProfiles').doc(nextId).get();
+    if (profileSnap.exists) {
+      trainerName = profileSnap.data().displayName || trainerName;
+    }
+  } catch (e) {
+    console.warn('trainer profile lookup failed', nextId, e);
+  }
+
+  const now = Date.now();
+  await dispatchRef.update({
+    status: 'offering',
+    currentTrainerId: nextId,
+    currentTrainerName: trainerName,
+    offerExpiresAt: now + DISPATCH_OFFER_MS,
+    passedTrainerIds: Array.from(passed),
+    updatedAt: now,
+  });
+
+  await sendPushToUser(nextId, {
+    title: '⚡ Nueva oferta EntrenaCoach',
+    body: `${data.clientName || 'Cliente'} · ${formatClp(data.offerPriceClp)} · ${data.durationMin || 60} min`,
+    data: {
+      type: 'trainer_dispatch_offer',
+      dispatchId: dispatchRef.id,
+    },
+  });
+
+  return nextId;
+}
+
+/** Nueva solicitud Uber → primera oferta al PT más cercano. */
+exports.onTrainerDispatchCreated = functions.firestore
+  .document('trainerDispatchRequests/{dispatchId}')
+  .onCreate(async (snap) => {
+    const data = snap.data() || {};
+    if (data.status !== 'searching') return null;
+    await offerToNextTrainer(snap.ref, data);
+    return null;
+  });
+
+/** Callable: entrenador acepta o pasa la oferta. */
+exports.respondToTrainerDispatch = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Inicia sesión.');
+  }
+  const dispatchId = data && data.dispatchId ? String(data.dispatchId) : '';
+  const action = data && data.action === 'pass' ? 'pass' : data && data.action === 'accept' ? 'accept' : '';
+  if (!dispatchId || !action) {
+    throw new functions.https.HttpsError('invalid-argument', 'dispatchId y action requeridos.');
+  }
+
+  const uid = context.auth.uid;
+  const ref = db.collection('trainerDispatchRequests').doc(dispatchId);
+  const snap = await ref.get();
+  if (!snap.exists) {
+    throw new functions.https.HttpsError('not-found', 'Oferta no encontrada.');
+  }
+  const d = snap.data() || {};
+
+  if (d.currentTrainerId !== uid) {
+    throw new functions.https.HttpsError('permission-denied', 'Esta oferta no es para ti.');
+  }
+  if (d.status !== 'offering') {
+    throw new functions.https.HttpsError('failed-precondition', 'La oferta ya no está activa.');
+  }
+
+  if (action === 'pass') {
+    await ref.update({
+      passedTrainerIds: admin.firestore.FieldValue.arrayUnion(uid),
+      updatedAt: Date.now(),
+    });
+    const updated = (await ref.get()).data() || {};
+    await offerToNextTrainer(ref, updated);
+    return { ok: true };
+  }
+
+  const now = Date.now();
+  const bookingId = `tb_${now}_${String(d.clientId || 'x').slice(0, 6)}`;
+  let trainerName = 'Entrenador';
+  try {
+    const profileSnap = await db.collection('trainerProfiles').doc(uid).get();
+    if (profileSnap.exists) trainerName = profileSnap.data().displayName || trainerName;
+  } catch (e) {
+    console.warn('trainer profile for accept', e);
+  }
+
+  const scheduledAt = now + 15 * 60 * 1000;
+  const platformFeeClp =
+    typeof d.platformFeeClp === 'number'
+      ? d.platformFeeClp
+      : Math.round((Number(d.offerPriceClp) || 0) * TRAINER_PLATFORM_FEE_RATE);
+
+  await db.collection('trainerBookings').doc(bookingId).set({
+    trainerId: uid,
+    trainerName,
+    clientId: d.clientId,
+    clientName: d.clientName || 'Cliente',
+    scheduledAt,
+    durationMin: Number(d.durationMin) || 60,
+    locationNote: String(d.locationNote || ''),
+    priceClp: Number(d.offerPriceClp) || 0,
+    paymentMethod: d.paymentMethod === 'card' ? 'card' : 'cash',
+    status: 'accepted',
+    platformFeeClp,
+    dispatchId,
+    createdAt: now,
+    updatedAt: now,
+  });
+
+  await ref.update({
+    status: 'matched',
+    matchedTrainerId: uid,
+    bookingId,
+    currentTrainerId: uid,
+    currentTrainerName: trainerName,
+    offerExpiresAt: admin.firestore.FieldValue.delete(),
+    updatedAt: now,
+  });
+
+  if (d.clientId) {
+    await sendPushToUser(d.clientId, {
+      title: '✅ Entrenador asignado',
+      body: `${trainerName} aceptó · ${formatClp(d.offerPriceClp)}`,
+      data: { type: 'trainer_booking_update', bookingId, status: 'accepted' },
+    });
+  }
+
+  return { ok: true, bookingId };
+});
+
+/** Callable: avanza cuando expira el timer de 90s sin respuesta. */
+exports.advanceTrainerDispatch = functions.https.onCall(async (data, context) => {
+  const dispatchId = data && data.dispatchId ? String(data.dispatchId) : '';
+  if (!dispatchId) {
+    throw new functions.https.HttpsError('invalid-argument', 'dispatchId requerido.');
+  }
+
+  const ref = db.collection('trainerDispatchRequests').doc(dispatchId);
+  const snap = await ref.get();
+  if (!snap.exists) return { ok: false };
+
+  const d = snap.data() || {};
+  if (d.status !== 'offering') return { ok: true };
+  if (d.offerExpiresAt && d.offerExpiresAt > Date.now()) return { ok: true };
+
+  const currentId = d.currentTrainerId;
+  if (currentId) {
+    await ref.update({
+      passedTrainerIds: admin.firestore.FieldValue.arrayUnion(currentId),
+      updatedAt: Date.now(),
+    });
+  }
+  const updated = (await ref.get()).data() || {};
+  await offerToNextTrainer(ref, updated);
+  return { ok: true };
+});
