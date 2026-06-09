@@ -187,16 +187,17 @@ Priorizados por impacto en tracción y cierre de beta real.
 | 8 | E2E ampliado: demo → mapa → iniciar sync (mock) | QA | ✅ `e2eHarness` + `e2e/sync-mock.spec.ts` (v0.1.287) |
 | 9 | Activar **MapLibre** en build prod (`VITE_MAP_USE_MAPLIBRE=1`) | Producto | ✅ `build`/`build:web` + CI (v0.1.288) |
 | 10 | Post-sync share **opt-out** con métrica de publicación | Growth | ✅ `syncShareWeekly` + opt-in en `SyncDuelSummary` |
-| 11 | Simplificar tab **Hoy** — una historia: ciudad + LIVE + sync | UX | P1 |
-| 12 | Alinear filtro **EntrenaLog** con Arena (Cardio + Full body) | Bug | P1 |
-| 13 | QA matriz **P0_BETA_RELEASE** actualizada a v0.1.281 | QA | P1 |
-| 14 | Ocultar **marketplace / admin / coach** del nav principal | UX | P1 |
-| 15 | Actualizar **PLAY_OPEN_BETA.md** y listing Play ES+EN | Ops | P1 |
-| 16 | Push derby: "Tu rival te superó" 2×/semana | Growth | P2 |
-| 17 | Badge **Defensor de [ciudad]** por minutos aportados | Retención | P2 |
-| 18 | **Mercado Pago producción** — 1 producto test | Monetización | P2 |
-| 19 | Partner gym **dashboard real** (check-ins Firestore) | B2B | P2 |
-| 20 | Crear **`GESTION_FASES_101_120.md`** — derby + loop viral + métricas | Planificación | P2 |
+| 11 | **Verificación identidad IA** — selfie vs foto perfil (Gemini) | Trust & Safety | ✅ `verifyIdentity` + flujo Perfil (v0.1.289) |
+| 12 | Simplificar tab **Hoy** — una historia: ciudad + LIVE + sync | UX | P1 |
+| 13 | Alinear filtro **EntrenaLog** con Arena (Cardio + Full body) | Bug | P1 |
+| 14 | QA matriz **P0_BETA_RELEASE** actualizada a v0.1.281 | QA | P1 |
+| 15 | Ocultar **marketplace / admin / coach** del nav principal | UX | P1 |
+| 16 | Actualizar **PLAY_OPEN_BETA.md** y listing Play ES+EN | Ops | P1 |
+| 17 | Push derby: "Tu rival te superó" 2×/semana | Growth | P2 |
+| 18 | Badge **Defensor de [ciudad]** por minutos aportados | Retención | P2 |
+| 19 | **Mercado Pago producción** — 1 producto test | Monetización | P2 |
+| 20 | Partner gym **dashboard real** (check-ins Firestore) | B2B | P2 |
+| 21 | Crear **`GESTION_FASES_101_120.md`** — derby + loop viral + métricas | Planificación | P2 |
 
 ---
 

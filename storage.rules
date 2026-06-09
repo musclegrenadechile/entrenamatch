@@ -61,6 +61,18 @@ service firebase.storage {
       allow write: if isAuthenticated();
     }
 
+    // ===== PROFILE PHOTOS =====
+    match /profiles/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner(userId);
+    }
+
+    // ===== IDENTITY VERIFICATION (selfie + ID — owner only) =====
+    match /verification/{userId}/{allPaths=**} {
+      allow read: if isOwner(userId);
+      allow write: if isOwner(userId);
+    }
+
     // ===== FUEL AI (meal photos for macro logging) =====
     // Path: fuel/{userId}/{timestamp}.jpg — owner-only write, authenticated read
     match /fuel/{userId}/{allPaths=**} {

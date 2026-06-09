@@ -443,6 +443,213 @@ exports.analyzeFood = functions
   }
 });
 
+// ─── Identity verification (Gemini face match) ─────────────────────────────
+
+const GEMINI_IDENTITY_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+
+function stripDataUrlPrefix(b64) {
+  return String(b64 || '').replace(/^data:image\/\w+;base64,/, '');
+}
+
+async function fetchImageAsBase64(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`fetch image ${res.status}`);
+  const buf = Buffer.from(await res.arrayBuffer());
+  const mime = res.headers.get('content-type') || 'image/jpeg';
+  return { mime, data: buf.toString('base64') };
+}
+
+function parseIdentityGeminiJson(raw) {
+  const match = String(raw || '').match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('No JSON in Gemini identity response');
+  const parsed = JSON.parse(match[0]);
+  const confidence = Math.max(0, Math.min(1, Number(parsed.confidence) || 0));
+  return {
+    samePerson: !!parsed.samePerson,
+    confidence,
+    profileMatch: parsed.profileMatch !== false,
+    selfieHasFace: parsed.selfieHasFace !== false,
+    idDocumentReadable: !!parsed.idDocumentReadable,
+    reason: String(parsed.reason || 'Sin detalle').slice(0, 280),
+  };
+}
+
+async function callGeminiIdentity(apiKey, payload) {
+  const { profileB64, profileMime, selfieB64, selfieMime, idB64, idMime, displayName, age } =
+    payload;
+  const contextLine = [
+    displayName ? `Nombre perfil: ${displayName}` : null,
+    typeof age === 'number' ? `Edad perfil: ${age}` : null,
+  ]
+    .filter(Boolean)
+    .join('. ');
+
+  const parts = [
+    {
+      text:
+        'Eres un verificador de identidad para una app fitness. Compara si la PERSONA en la FOTO DE PERFIL (imagen 1) es la MISMA persona que en la SELFIE DE VERIFICACIÓN (imagen 2). ' +
+        (idB64
+          ? 'La imagen 3 es un documento de identidad: indica si es legible (idDocumentReadable). '
+          : '') +
+        (contextLine ? `${contextLine}. ` : '') +
+        'Responde SOLO JSON válido en español en "reason": {"samePerson":boolean,"confidence":number,"profileMatch":boolean,"selfieHasFace":boolean,"idDocumentReadable":boolean,"reason":string}. ' +
+        'confidence entre 0 y 1 (qué tan seguro estás de que es la misma persona). profileMatch=true si selfie coincide claramente con foto de perfil. ' +
+        'Si no hay rostro visible en selfie, selfieHasFace=false. No inventes — ante duda baja confidence.',
+    },
+    { inline_data: { mime_type: profileMime || 'image/jpeg', data: profileB64 } },
+    { inline_data: { mime_type: selfieMime || 'image/jpeg', data: selfieB64 } },
+  ];
+  if (idB64) {
+    parts.push({ inline_data: { mime_type: idMime || 'image/jpeg', data: idB64 } });
+  }
+
+  let lastErr = null;
+  for (const model of GEMINI_IDENTITY_MODELS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 384,
+            thinkingConfig: { thinkingBudget: 0 },
+          },
+        }),
+      });
+      if (!res.ok) {
+        const errText = await res.text();
+        const reason = classifyGeminiError(res.status, errText);
+        const err = new Error(`Gemini identity ${res.status}`);
+        err.geminiReason = reason;
+        throw err;
+      }
+      const json = await res.json();
+      const raw = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const parsed = parseIdentityGeminiJson(raw);
+      return { ...parsed, source: 'gemini', geminiModel: model };
+    } catch (err) {
+      lastErr = err;
+      console.warn('verifyIdentity: model failed', model, err.message || err);
+      if (err.geminiReason === 'billing_depleted') break;
+    }
+  }
+  throw lastErr || new Error('All Gemini identity models failed');
+}
+
+exports.verifyIdentity = functions
+  .runWith({ secrets: [geminiApiKey], timeoutSeconds: 45, memory: '512MB' })
+  .https.onCall(async (data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
+    }
+    const uid = context.auth.uid;
+    const selfieBase64 = data && data.selfieBase64 ? String(data.selfieBase64) : '';
+    if (!selfieBase64.trim()) {
+      throw new functions.https.HttpsError('invalid-argument', 'Selfie requerida.');
+    }
+
+    let profileB64 = data && data.profilePhotoBase64 ? stripDataUrlPrefix(data.profilePhotoBase64) : '';
+    let profileMime = 'image/jpeg';
+    const profilePhotoUrl = data && data.profilePhotoUrl ? String(data.profilePhotoUrl) : '';
+    if (!profileB64 && profilePhotoUrl) {
+      try {
+        const fetched = await fetchImageAsBase64(profilePhotoUrl);
+        profileB64 = fetched.data;
+        profileMime = fetched.mime.split(';')[0] || 'image/jpeg';
+      } catch (e) {
+        console.warn('verifyIdentity: profile fetch failed', e.message || e);
+      }
+    } else if (profileB64) {
+      profileB64 = stripDataUrlPrefix(profileB64);
+    }
+
+    if (!profileB64) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'Necesitas al menos una foto de perfil para comparar con tu selfie.'
+      );
+    }
+
+    const selfieB64 = stripDataUrlPrefix(selfieBase64);
+    const idPhotoBase64 = data && data.idPhotoBase64 ? stripDataUrlPrefix(data.idPhotoBase64) : '';
+    const displayName = data && data.displayName ? String(data.displayName).slice(0, 80) : '';
+    const age = data && typeof data.age === 'number' ? data.age : null;
+
+    const apiKey =
+      geminiApiKey.value() ||
+      process.env.GEMINI_API_KEY ||
+      (functions.config().gemini && functions.config().gemini.key) ||
+      '';
+
+    if (!apiKey) {
+      const fallback = {
+        samePerson: false,
+        confidence: 0,
+        profileMatch: false,
+        selfieHasFace: true,
+        idDocumentReadable: !!idPhotoBase64,
+        reason: 'IA no configurada — revisión manual pendiente.',
+        source: 'unavailable',
+        geminiErrorMessage: 'GEMINI_API_KEY no configurada en el servidor.',
+      };
+      await db
+        .collection('identityVerifications')
+        .doc(uid)
+        .collection('attempts')
+        .add({ at: Date.now(), ...fallback });
+      return fallback;
+    }
+
+    try {
+      const result = await callGeminiIdentity(apiKey, {
+        profileB64,
+        profileMime,
+        selfieB64,
+        selfieMime: 'image/jpeg',
+        idB64: idPhotoBase64 || null,
+        idMime: 'image/jpeg',
+        displayName,
+        age,
+      });
+      await db
+        .collection('identityVerifications')
+        .doc(uid)
+        .collection('attempts')
+        .add({
+          at: Date.now(),
+          samePerson: result.samePerson,
+          confidence: result.confidence,
+          profileMatch: result.profileMatch,
+          selfieHasFace: result.selfieHasFace,
+          source: result.source,
+          geminiModel: result.geminiModel,
+        });
+      return result;
+    } catch (err) {
+      const reason = err.geminiReason || 'unknown';
+      console.warn('verifyIdentity failed', reason, err.message || err);
+      const fallback = {
+        samePerson: false,
+        confidence: 0,
+        profileMatch: false,
+        selfieHasFace: true,
+        idDocumentReadable: !!idPhotoBase64,
+        reason: 'No pudimos analizar las fotos ahora — quedó en revisión manual.',
+        source: 'unavailable',
+        geminiErrorMessage: geminiUserMessage(reason),
+      };
+      await db
+        .collection('identityVerifications')
+        .doc(uid)
+        .collection('attempts')
+        .add({ at: Date.now(), ...fallback, geminiBlockedReason: reason });
+      return fallback;
+    }
+  });
+
 // ─── EntrenaCoach Fase 2 ───────────────────────────────────────────────────
 
 const TRAINER_PLATFORM_FEE_RATE = 0.15;

@@ -1,0 +1,58 @@
+/**
+ * Identity verification — Gemini face match via Cloud Function `verifyIdentity`.
+ */
+
+import type { FirebaseStorage } from 'firebase/storage'
+import type { IdentityAiVerdict } from '../utils/identityVerification'
+
+export type VerifyIdentityInput = {
+  profilePhotoBase64?: string
+  profilePhotoUrl?: string
+  selfieBase64: string
+  idPhotoBase64?: string
+  displayName?: string
+  age?: number
+}
+
+export async function imageRefToDataUrl(src: string): Promise<string | null> {
+  if (!src) return null
+  if (src.startsWith('data:')) return src
+  try {
+    const res = await fetch(src)
+    if (!res.ok) return null
+    const blob = await res.blob()
+    return await new Promise<string | null>((resolve) => {
+      const reader = new FileReader()
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : null)
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(blob)
+    })
+  } catch {
+    return null
+  }
+}
+
+export async function uploadVerificationImage(
+  storage: FirebaseStorage,
+  userId: string,
+  dataUrl: string,
+  kind: 'selfie' | 'id'
+): Promise<string> {
+  const { ref, uploadString, getDownloadURL } = await import('firebase/storage')
+  const path = `verification/${userId}/${kind}-${Date.now()}.jpg`
+  const storageRef = ref(storage, path)
+  const snap = await uploadString(storageRef, dataUrl, 'data_url')
+  return getDownloadURL(snap.ref)
+}
+
+export async function verifyIdentityWithAi(input: VerifyIdentityInput): Promise<IdentityAiVerdict> {
+  const { app: firebaseApp } = await import('./firebase')
+  if (!firebaseApp) throw new Error('Firebase not initialized')
+  if (!input.selfieBase64?.trim()) throw new Error('Selfie requerida para verificación')
+
+  const { getFunctions, httpsCallable } = await import('firebase/functions')
+  const functions = getFunctions(firebaseApp, 'us-central1')
+  const fn = httpsCallable<VerifyIdentityInput, IdentityAiVerdict>(functions, 'verifyIdentity')
+  const res = await fn(input)
+  return res.data
+}

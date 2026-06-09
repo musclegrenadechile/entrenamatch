@@ -1269,6 +1269,7 @@ const sanitizeForFirestore = (obj: any): any => {
   const [verificationStep, setVerificationStep] = useState(1)
   const [verificationIdPhoto, setVerificationIdPhoto] = useState<string | null>(null)
   const [verificationSelfie, setVerificationSelfie] = useState<string | null>(null)
+  const [verificationSubmitting, setVerificationSubmitting] = useState(false)
 
   // Group chat modal state
   const [showGroupChatModalFor, setShowGroupChatModalFor] = useState<string | null>(null) // sessionId
@@ -7059,52 +7060,111 @@ useEffect(() => {
 
 
 
-  // Multi-step verification submission - improved basic verification
+  // Multi-step verification — Gemini compares profile photo vs selfie
   const submitVerification = async () => {
-    if (!currentUser) return
+    if (!currentUser || verificationSubmitting) return
     if (!verificationIdPhoto || !verificationSelfie) {
-      toast.error('Faltan documentos', { description: 'Sube foto del documento y selfie para verificación básica.' })
+      toast.error('Faltan documentos', { description: 'Sube foto del documento y selfie para verificación.' })
+      return
+    }
+    if (!currentUser.photos?.length) {
+      toast.error('Falta foto de perfil', { description: 'Agrega al menos una foto en tu perfil antes de verificar.' })
       return
     }
 
-    // For basic verification: upload docs if data, set verified immediately (pre-alpha: basic self + photo check grants badge)
-    // In real: would upload to storage, set pending, admin review via moderation.
-    let idUrl = verificationIdPhoto
-    let selfieUrl = verificationSelfie
-
-    // Try to upload if data: (reuse photo logic)
-    try {
-      if (verificationIdPhoto.startsWith('data:')) {
-        // simple: for now keep data or use existing createProfilePost style, but for verif docs we store urls or data
-        // To keep simple for basic: accept and mark verified
-      }
-    } catch(e){}
-
-    const updated = {
-      ...currentUser,
-      verificationStatus: 'verified' as const, // basic: grant on submit for pre-alpha testing
-      verificationDate: Date.now(),
-      verificationDocuments: {
-        idPhoto: idUrl,
-        selfiePhoto: selfieUrl,
-      }
+    if (isDemoMode || !firebaseUser?.uid) {
+      toast('Verificación IA requiere cuenta real', {
+        description: 'Entra con Google o email para comparar tu selfie con tu foto de perfil.',
+      })
+      return
     }
 
-    saveUserWithRealSync(updated as CurrentUser)
-    setShowVerificationFlow(false)
-    setVerificationIdPhoto(null)
-    setVerificationSelfie(null)
-    setVerificationStep(1)
+    setVerificationSubmitting(true)
+    try {
+      const {
+        verifyIdentityWithAi,
+        uploadVerificationImage,
+        imageRefToDataUrl,
+      } = await import('./services/identityVerification')
+      const { resolveVerificationStatusFromAi } = await import('./utils/identityVerification')
 
-    addNotification({
-      type: 'verification',
-      title: '¡Perfil verificado (básico)!',
-      body: 'Badge visible. En producción se revisaría el documento + selfie.',
-    })
+      const profilePhoto = currentUser.photos[0]
+      const profilePhotoBase64 = profilePhoto.startsWith('data:')
+        ? profilePhoto
+        : await imageRefToDataUrl(profilePhoto)
 
-    toast.success('¡Verificación básica completada!', { 
-      description: 'Tu badge ✓ VERIFICADO ya aparece en tu perfil y para otros usuarios.' 
-    })
+      let idUrl = verificationIdPhoto
+      let selfieUrl = verificationSelfie
+      if (storage) {
+        try {
+          if (verificationIdPhoto.startsWith('data:')) {
+            idUrl = await uploadVerificationImage(storage, effectiveUserId, verificationIdPhoto, 'id')
+          }
+          if (verificationSelfie.startsWith('data:')) {
+            selfieUrl = await uploadVerificationImage(storage, effectiveUserId, verificationSelfie, 'selfie')
+          }
+        } catch (e) {
+          console.warn('[verify] storage upload failed', e)
+        }
+      }
+
+      const verdict = await verifyIdentityWithAi({
+        profilePhotoBase64: profilePhotoBase64 || undefined,
+        profilePhotoUrl: profilePhotoBase64 ? undefined : profilePhoto,
+        selfieBase64: verificationSelfie,
+        idPhotoBase64: verificationIdPhoto,
+        displayName: currentUser.name,
+        age: currentUser.age,
+      })
+
+      const verificationStatus = resolveVerificationStatusFromAi(verdict)
+      const updated = {
+        ...currentUser,
+        verificationStatus,
+        verificationDate: Date.now(),
+        verificationDocuments: {
+          idPhoto: idUrl,
+          selfiePhoto: selfieUrl,
+        },
+      }
+
+      await saveUserWithRealSync(updated as CurrentUser)
+      setShowVerificationFlow(false)
+      setVerificationIdPhoto(null)
+      setVerificationSelfie(null)
+      setVerificationStep(1)
+
+      if (verificationStatus === 'verified') {
+        addNotification({
+          type: 'verification',
+          title: '¡Perfil verificado!',
+          body: verdict.reason || 'La IA confirmó que tu selfie coincide con tu foto de perfil.',
+        })
+        toast.success('¡Verificación completada!', {
+          description: verdict.reason || 'Tu badge ✓ VERIFICADO ya es visible.',
+        })
+      } else if (verificationStatus === 'pending') {
+        addNotification({
+          type: 'verification',
+          title: 'Verificación en revisión',
+          body: verdict.reason || 'Revisaremos tus fotos manualmente si hace falta.',
+        })
+        toast('En revisión', {
+          description: verdict.reason || 'La IA no tuvo certeza suficiente — te avisamos pronto.',
+        })
+      } else {
+        toast.error('No pudimos verificar', {
+          description: verdict.reason || 'Prueba con mejor luz y una selfie clara de tu rostro.',
+        })
+      }
+    } catch (e: any) {
+      console.error('submitVerification failed', e)
+      toast.error('Error en verificación', {
+        description: e?.message || 'Revisa tu conexión e intenta de nuevo.',
+      })
+    } finally {
+      setVerificationSubmitting(false)
+    }
   }
 
   // Send message to a session group chat (supports text + optional photo)
@@ -10718,7 +10778,9 @@ useEffect(() => {
                 <div>
                   <div className="mb-4">
                     <div className="font-semibold mb-2">Paso 3: Selfie de verificación</div>
-                    <p className="text-sm text-[#9CA3AF] mb-4">Tómate una selfie sosteniendo tu documento (o solo tu rostro).</p>
+                    <p className="text-sm text-[#9CA3AF] mb-4">
+                      Selfie clara de tu rostro. La IA la comparará con tu foto de perfil para confirmar que eres tú.
+                    </p>
                   </div>
 
                   {!verificationSelfie ? (
@@ -10750,13 +10812,15 @@ useEffect(() => {
                     <button onClick={() => setVerificationStep(2)} className="btn-secondary flex-1">Atrás</button>
                     <button 
                       onClick={submitVerification} 
-                      disabled={!verificationSelfie}
+                      disabled={!verificationSelfie || verificationSubmitting}
                       className="btn-primary flex-1 disabled:opacity-50"
                     >
-                      Enviar para verificación
+                      {verificationSubmitting ? 'Analizando con IA…' : 'Verificar con IA'}
                     </button>
                   </div>
-                  <p className="text-[10px] text-center text-[#9CA3AF] mt-3">Tus documentos se revisarán de forma segura.</p>
+                  <p className="text-[10px] text-center text-[#9CA3AF] mt-3">
+                    Gemini compara tu selfie con tu foto de perfil. Tus archivos se guardan de forma privada.
+                  </p>
                 </div>
               )}
             </div>

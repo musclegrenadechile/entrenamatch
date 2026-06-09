@@ -328,6 +328,16 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
 
+    /** AI identity verification attempts — written by Cloud Functions only. */
+    match /identityVerifications/{userId} {
+      allow read: if isOwner(userId);
+      allow write: if false;
+      match /attempts/{attemptId} {
+        allow read: if isOwner(userId);
+        allow write: if false;
+      }
+    }
+
     match /livePresence/{userId} {
       allow read: if isAuthenticated();
       allow create, update: if isAuthenticated() && request.auth.uid == userId;
