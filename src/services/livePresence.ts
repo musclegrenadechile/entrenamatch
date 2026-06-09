@@ -54,6 +54,7 @@ export interface LivePresenceWritePayload {
   liveMotionAt?: number
   liveMotionIdle?: boolean
   liveActivityState?: 'active' | 'idle' | 'unknown'
+  verificationStatus?: 'unverified' | 'pending' | 'verified'
 }
 
 /** Write / refresh presence doc when user goes live. */
@@ -155,6 +156,7 @@ export function buildLivePresencePayload(
     liveMotionAt: user.liveMotionAt,
     liveMotionIdle: user.liveMotionIdle,
     liveActivityState: user.liveActivityState,
+    verificationStatus: user.verificationStatus,
   }
 }
 

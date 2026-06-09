@@ -2693,6 +2693,9 @@ useEffect(() => {
                   : currentUser?.showOnLeaderboard,
               gymCheckIn: realProfile.gymCheckIn || currentUser?.gymCheckIn,
               ghostMode: realProfile.ghostMode ?? currentUser?.ghostMode,
+              verificationStatus: realProfile.verificationStatus || currentUser?.verificationStatus,
+              verificationDate: (realProfile as any).verificationDate ?? currentUser?.verificationDate,
+              verificationDocuments: (realProfile as any).verificationDocuments ?? currentUser?.verificationDocuments,
             }
             if (merged.name) {
               saveUser(merged)

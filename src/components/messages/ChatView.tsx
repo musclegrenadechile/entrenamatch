@@ -1,5 +1,6 @@
 import type { RefObject, ReactNode, FormEvent } from 'react'
-import { VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto'
+import { VerifiedPhotoBadge, VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto'
+import { isProfileVerified } from '../../utils/identityVerification'
 import { useMemo, useState } from 'react'
 import {
   ArrowLeft,
@@ -166,15 +167,19 @@ export function ChatView({
         <button type="button" className="chat-lane-partner" onClick={onShowProfile}>
           <div className={`chat-lane-avatar ${chatProfile?.trainingNow ? 'live' : ''}`}>
             {chatProfile?.photos?.[0] ? (
-              <VerifiedProfilePhoto
-                src={chatProfile.photos[0]}
-                alt=""
-                className="w-full h-full"
-                imgClassName="w-full h-full object-cover"
-                verificationStatus={chatProfile.verificationStatus}
-                badgeSize="xs"
-                badgeCorner="top-right"
-              />
+              <>
+                <VerifiedProfilePhoto
+                  src={chatProfile.photos[0]}
+                  alt=""
+                  className="w-full h-full"
+                  imgClassName="w-full h-full object-cover"
+                  verificationStatus={chatProfile.verificationStatus}
+                  showBadge={false}
+                />
+                {isProfileVerified(chatProfile.verificationStatus) && (
+                  <VerifiedPhotoBadge size="xs" corner="top-right" className="top-0 right-0" />
+                )}
+              </>
             ) : (
               <span>👤</span>
             )}

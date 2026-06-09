@@ -116,7 +116,7 @@ export async function persistVerificationToProfile(
       verificationStatus: status,
       verificationDate: Date.now(),
       verificationDocuments: selfiePhotoUrl ? { selfiePhoto: selfiePhotoUrl } : undefined,
-    } as Record<string, unknown>),
+    }),
     PERSIST_TIMEOUT_MS,
     'Guardar verificación'
   )

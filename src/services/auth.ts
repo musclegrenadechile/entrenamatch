@@ -74,6 +74,11 @@ export interface UserProfile {
   intensity: 'Relajado' | 'Moderado' | 'Intenso';
   availability: string[];
   verificationStatus: 'unverified' | 'pending' | 'verified';
+  verificationDate?: number;
+  verificationDocuments?: {
+    selfiePhoto?: string;
+    idPhoto?: string;
+  };
   createdAt: any;
   updatedAt: any;
 }

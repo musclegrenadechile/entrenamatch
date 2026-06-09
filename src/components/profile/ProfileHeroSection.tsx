@@ -5,7 +5,8 @@ import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
-import { VerifiedProfilePhoto } from './VerifiedProfilePhoto'
+import { VerifiedPhotoBadge, VerifiedProfilePhoto } from './VerifiedProfilePhoto'
+import { isProfileVerified } from '../../utils/identityVerification'
 
 export function ProfileHeroSection(props: ProfileTabProps) {
   const p = profileTabBindings(props)
@@ -41,8 +42,7 @@ export function ProfileHeroSection(props: ProfileTabProps) {
     className="absolute inset-0"
     imgClassName="w-full h-full object-cover"
     verificationStatus={currentUser.verificationStatus}
-    badgeSize="lg"
-    badgeCorner="bottom-right"
+    showBadge={false}
     showRing
     onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
   />
@@ -82,10 +82,14 @@ export function ProfileHeroSection(props: ProfileTabProps) {
     </div>
   </div>
 
+  {isProfileVerified(currentUser.verificationStatus) && (
+    <VerifiedPhotoBadge size="lg" corner="bottom-right" className="bottom-24 right-5" />
+  )}
+
   {/* Edit CTA - prominent for creation/editing */}
   <button 
     onClick={openProfileEditor}
-    className="absolute top-4 right-4 text-xs px-4 py-2 rounded-2xl bg-black/70 border border-white/30 text-white flex items-center gap-1.5 active:bg-black tracking-wider"
+    className="absolute top-4 right-4 text-xs px-4 py-2 rounded-2xl bg-black/70 border border-white/30 text-white flex items-center gap-1.5 active:bg-black tracking-wider z-20"
   >
     <Edit2 size={13} /> EDITAR PERFIL
   </button>

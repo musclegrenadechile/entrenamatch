@@ -8,7 +8,8 @@ import type {
   Workout,
 } from '../../types'
 import { ProfileAthletePulse } from './ProfileAthletePulse'
-import { VerifiedProfilePhoto } from './VerifiedProfilePhoto'
+import { VerifiedPhotoBadge, VerifiedProfilePhoto } from './VerifiedProfilePhoto'
+import { isProfileVerified } from '../../utils/identityVerification'
 import { WorkoutPostCard } from '../workout/WorkoutPostCard'
 
 export interface TrainerProfileSummary {
@@ -139,9 +140,12 @@ export function FullProfileSheet({
             className="w-full aspect-square"
             imgClassName="w-full aspect-square object-cover"
             verificationStatus={profile.verificationStatus}
-            badgeSize="lg"
+            showBadge={false}
             showRing
           />
+          {isProfileVerified(profile.verificationStatus) && (
+            <VerifiedPhotoBadge size="lg" corner="top-right" className="top-4 right-4" />
+          )}
           {profile.photos.length > 1 && (
             <div className="absolute bottom-16 right-2 flex gap-1 overflow-x-auto max-w-[120px]">
               {profile.photos.slice(1, 4).map((p, i) => (

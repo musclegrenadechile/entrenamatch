@@ -3,7 +3,8 @@ import type { Profile, ProfilePost, Squad, TrainingReview } from '../../types'
 import { getDistanceKm, getTrainingStreak } from '../../utils'
 import { SkeletonList } from '../ui/SkeletonLoaders'
 import { MatchScoreBreakdown } from './MatchScoreBreakdown'
-import { VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto'
+import { VerifiedPhotoBadge, VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto'
+import { isProfileVerified } from '../../utils/identityVerification'
 
 export interface MatchesTabProps {
   matchProfiles: Profile[]
@@ -127,9 +128,12 @@ export function MatchesTab({
                     className="w-full aspect-square"
                     imgClassName="w-full aspect-square object-cover"
                     verificationStatus={profile.verificationStatus}
-                    badgeSize="md"
+                    showBadge={false}
                   />
-                  <div className="absolute top-2 right-2 flex gap-1 pointer-events-none">
+                  {isProfileVerified(profile.verificationStatus) && (
+                    <VerifiedPhotoBadge size="md" corner="top-left" className="top-2 left-2" />
+                  )}
+                  <div className="absolute top-2 right-2 flex gap-1 pointer-events-none z-20">
                     {profile.trainingNow && (
                       <div className="text-[9px] bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black px-1.5 py-0.5 rounded-full font-bold shadow-sm ring-1 ring-[#22c55e]/50">
                         LIVE {profile.liveStreak ? `${profile.liveStreak}d` : ''}

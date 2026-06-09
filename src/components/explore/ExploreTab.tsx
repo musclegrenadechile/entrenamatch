@@ -11,7 +11,8 @@ import { SwipeCardSkeleton } from '../ui/SkeletonLoaders';
 import { GeoPromptBanner, GEO_PROMPT_V2_KEY } from './GeoPromptBanner';
 import { buildInviteLink } from '../../utils/sparseCityDefaults';
 import { getLocalWaitlistEntry, saveCityWaitlist } from '../../services/cityWaitlist';
-import { VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto';
+import { VerifiedPhotoBadge, VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto';
+import { isProfileVerified } from '../../utils/identityVerification';
 import type { Firestore } from 'firebase/firestore';
 
 interface ExploreTabProps {
@@ -276,8 +277,7 @@ export const ExploreTab = ({
           imgClassName="w-full h-full object-cover object-[center_20%] bg-[#1C1C20]"
           alt={profile.name}
           verificationStatus={profile.verificationStatus}
-          badgeSize="lg"
-          badgeCorner="bottom-right"
+          showBadge={false}
         />
 
         {/* Gradient overlay - premium cinematic for fitness app */}
@@ -292,8 +292,12 @@ export const ExploreTab = ({
           />
         )}
 
+        {isProfileVerified(profile.verificationStatus) && (
+          <VerifiedPhotoBadge size="md" corner="bottom-right" className="bottom-28 right-3" />
+        )}
+
         {/* Top badges row */}
-        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-start justify-between gap-2 pointer-events-none">
+        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-start justify-between gap-2 pointer-events-none z-20">
           <div className="flex flex-col gap-1 min-w-0 pointer-events-auto">
             {isDemoSeed && (
               <div className="inline-flex items-center gap-1 bg-[#6B7280]/90 text-white text-[8px] font-bold px-2 py-0.5 rounded-full w-fit">
