@@ -11,6 +11,7 @@ import { SwipeCardSkeleton } from '../ui/SkeletonLoaders';
 import { GeoPromptBanner, GEO_PROMPT_V2_KEY } from './GeoPromptBanner';
 import { buildInviteLink } from '../../utils/sparseCityDefaults';
 import { getLocalWaitlistEntry, saveCityWaitlist } from '../../services/cityWaitlist';
+import { VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto';
 import type { Firestore } from 'firebase/firestore';
 
 interface ExploreTabProps {
@@ -269,12 +270,14 @@ export const ExploreTab = ({
         transition={{ type: 'spring', stiffness: 260, damping: 28 }}
       >
         {/* Photo */}
-        <img 
-          src={profile.photos[0]} 
-          className="w-full h-full object-cover object-[center_20%] bg-[#1C1C20]" 
-          alt={profile.name} 
-          draggable={false}
-          loading="lazy"
+        <VerifiedProfilePhoto
+          src={profile.photos[0]}
+          className="w-full h-full"
+          imgClassName="w-full h-full object-cover object-[center_20%] bg-[#1C1C20]"
+          alt={profile.name}
+          verificationStatus={profile.verificationStatus}
+          badgeSize="lg"
+          badgeCorner="bottom-right"
         />
 
         {/* Gradient overlay - premium cinematic for fitness app */}
@@ -694,7 +697,14 @@ export const ExploreTab = ({
                   onClick={() => onShowProfile?.(profile)}
                   className="card p-2.5 rounded-2xl flex gap-2.5 cursor-pointer active:scale-[0.985] transition"
                 >
-                  <img src={profile.photos[0]} className="w-12 h-12 rounded-xl object-cover flex-shrink-0" alt="" />
+                  <VerifiedProfilePhoto
+                    src={profile.photos[0]}
+                    className="w-12 h-12 rounded-xl flex-shrink-0"
+                    imgClassName="w-12 h-12 rounded-xl object-cover"
+                    verificationStatus={profile.verificationStatus}
+                    badgeSize="xs"
+                    badgeCorner="bottom-right"
+                  />
                   <div className="min-w-0 flex-1">
                     <div className="font-medium text-sm truncate flex items-center gap-1">{profile.name} {isNet && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED · F{bond}</span>}</div>
                     {onReport && (
@@ -739,7 +749,13 @@ export const ExploreTab = ({
                 onClick={() => onShowProfile?.(n.profile)}
                 className="card p-2.5 rounded-2xl flex gap-2.5 cursor-pointer active:scale-[0.985] border border-[#FFD700]/30 hover:border-[#FFD700]/60 transition"
               >
-                <img src={n.profile.photos?.[0]} className="w-11 h-11 rounded-xl object-cover flex-shrink-0" alt="" />
+                <VerifiedProfilePhoto
+                  src={n.profile.photos?.[0] || ''}
+                  className="w-11 h-11 rounded-xl flex-shrink-0"
+                  imgClassName="w-11 h-11 rounded-xl object-cover"
+                  verificationStatus={n.profile.verificationStatus}
+                  badgeSize="xs"
+                />
                 <div className="min-w-0 flex-1">
                   <div className="font-medium text-sm truncate flex items-center gap-1 text-[#FFD700]">{n.profile.name} <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">FE {n.np}</span></div>
                   <div className="text-[9px] text-[#9CA3AF] truncate">{n.numPartners} socios • {n.totalMin} min total • top con {n.topPartnerName}</div>

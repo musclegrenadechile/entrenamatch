@@ -1,4 +1,6 @@
 import { User, X } from 'lucide-react'
+import { VerifiedProfilePhoto } from '../../profile/VerifiedProfilePhoto'
+import type { IdentityVerificationStatus } from '../../../utils/identityVerification'
 
 export interface GymPulseLivePopupProps {
   user: Record<string, unknown>
@@ -32,7 +34,15 @@ export function GymPulseLivePopup({
       </button>
       <div className="gym-pulse-live-popup__row">
         {photos?.[0] ? (
-          <img src={photos[0]} alt="" className="gym-pulse-live-popup__avatar" />
+          <VerifiedProfilePhoto
+            src={photos[0]}
+            alt=""
+            className="gym-pulse-live-popup__avatar"
+            imgClassName="gym-pulse-live-popup__avatar w-full h-full object-cover"
+            verificationStatus={user.verificationStatus as IdentityVerificationStatus | undefined}
+            badgeSize="xs"
+            badgeCorner="bottom-right"
+          />
         ) : (
           <div className="gym-pulse-live-popup__avatar gym-pulse-live-popup__avatar--fallback">
             {name[0]}

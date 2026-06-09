@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'
 import type { CurrentUser } from '../../types'
 import type { ProfileTabProps } from './profileTabTypes'
+import { VerifiedProfilePhoto } from './VerifiedProfilePhoto'
 import { profileTabBindings } from './profileTabBindings'
 import { BondGraphView } from './BondGraphView'
 
@@ -211,7 +212,18 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
         return (
           <div key={pid} className="network-bond-card rounded-2xl p-3 text-xs flex gap-3 items-center active:scale-[0.985] border border-[#FF671F]/20 hover:border-[#FF671F]/50 transition-all" onClick={() => { const prof = p; if (prof) setShowFullProfile(prof as any); else toast('Compa no disponible ahora') }}>
             <div className="w-10 h-10 rounded-full bg-[#1C1C20] overflow-hidden ring-2 ring-[#FF671F]/40 flex-shrink-0 relative">
-              {p?.photos?.[0] ? <img src={p.photos[0]} className="w-full h-full object-cover" /> : <div className="text-center text-xl pt-1.5">{(p?.name||'?')[0]}</div>}
+              {p?.photos?.[0] ? (
+                <VerifiedProfilePhoto
+                  src={p.photos[0]}
+                  className="w-full h-full"
+                  imgClassName="w-full h-full object-cover"
+                  verificationStatus={p?.verificationStatus}
+                  badgeSize="xs"
+                  badgeCorner="top-right"
+                />
+              ) : (
+                <div className="text-center text-xl pt-1.5">{(p?.name||'?')[0]}</div>
+              )}
               <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#22c55e] rounded-full flex items-center justify-center text-[8px] ring-1 ring-[#0D0D10]">🔄</div>
             </div>
             <div className="min-w-0 flex-1">

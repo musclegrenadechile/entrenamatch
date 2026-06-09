@@ -1,6 +1,7 @@
 import type { Message, Profile } from '../../types'
 import { getDistanceKm } from '../../utils'
 import { SkeletonList } from '../ui/SkeletonLoaders'
+import { VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto'
 
 export interface ChatListPanelProps {
   matchProfiles: Profile[]
@@ -94,9 +95,17 @@ export function ChatListPanel({
               <div
                 className={`chat-avatar w-14 h-14 rounded-2xl overflow-hidden flex-shrink-0 relative ${isLive ? 'live' : ''}`}
               >
-                <img src={profile.photos[0]} alt="" className="w-full h-full object-cover" />
+                <VerifiedProfilePhoto
+                  src={profile.photos[0]}
+                  alt=""
+                  className="w-full h-full"
+                  imgClassName="w-full h-full object-cover"
+                  verificationStatus={profile.verificationStatus}
+                  badgeSize="xs"
+                  badgeCorner="top-right"
+                />
                 {isLive && (
-                  <div className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-[#22c55e] rounded-full ring-2 ring-[#0D0D10]" />
+                  <div className="absolute bottom-0.5 right-0.5 w-3.5 h-3.5 bg-[#22c55e] rounded-full ring-2 ring-[#0D0D10] z-20" />
                 )}
               </div>
 

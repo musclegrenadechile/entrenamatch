@@ -315,6 +315,7 @@ import { fetchGymRoutinesFromFirestore, mergeGymRoutineTemplates } from './servi
 import { estimateWorkoutBurn } from './domain/fuelBalance/estimateWorkoutBurn'
 import { FullProfileSheet } from './components/profile/FullProfileSheet'
 import { VerificationFaceCapture } from './components/profile/VerificationFaceCapture'
+import { VerifiedProfilePhoto } from './components/profile/VerifiedProfilePhoto'
 import { getYesterdayWorkout } from './utils/homeHero'
 import { triggerHaptic } from './utils/haptics'
 import { loadStoredNotifications, saveStoredNotifications, isQuotaError, reclaimLocalStorageSpace } from './utils/safeLocalStorage'
@@ -10459,8 +10460,20 @@ useEffect(() => {
                 <div className="text-3xl font-semibold tracking-tight mb-4">Tú y {showMatchModal.name} quieren entrenar juntos</div>
                 
                 <div className="flex justify-center -space-x-4 mb-6">
-                  <img src={currentUser?.photos?.[0] || 'https://picsum.photos/id/1005/80/80'} className="w-20 h-20 rounded-full border-4 border-[#1C1C20] object-cover z-10" />
-                  <img src={showMatchModal.photos[0]} className="w-20 h-20 rounded-full border-4 border-[#1C1C20] object-cover" />
+                  <VerifiedProfilePhoto
+                    src={currentUser?.photos?.[0] || 'https://picsum.photos/id/1005/80/80'}
+                    className="w-20 h-20 rounded-full border-4 border-[#1C1C20] z-10"
+                    imgClassName="w-full h-full rounded-full object-cover"
+                    verificationStatus={currentUser?.verificationStatus}
+                    badgeSize="sm"
+                  />
+                  <VerifiedProfilePhoto
+                    src={showMatchModal.photos[0]}
+                    className="w-20 h-20 rounded-full border-4 border-[#1C1C20]"
+                    imgClassName="w-full h-full rounded-full object-cover"
+                    verificationStatus={showMatchModal.verificationStatus}
+                    badgeSize="sm"
+                  />
                 </div>
 
                 <div className="text-sm text-[#9CA3AF] mb-4">Ambos están en {showMatchModal.city}, {showMatchModal.country}. ¡Escríbele ya!</div>

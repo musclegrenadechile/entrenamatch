@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
+import { VerifiedProfilePhoto } from './VerifiedProfilePhoto'
 
 export function ProfileHeroSection(props: ProfileTabProps) {
   const p = profileTabBindings(props)
@@ -35,9 +36,14 @@ export function ProfileHeroSection(props: ProfileTabProps) {
     <>
 {/* HERO - FULL REMASTERED EPIC "MI RITUAL" PRESENCE - Attractive, unique, premium */}
 <div className="relative h-80 w-full overflow-hidden bg-[#0a0a0c] profile-hero">
-  <img 
-    src={(currentUser.photos && currentUser.photos[0]) || 'https://picsum.photos/id/1005/600/800'} 
-    className="absolute inset-0 w-full h-full object-cover" 
+  <VerifiedProfilePhoto
+    src={(currentUser.photos && currentUser.photos[0]) || 'https://picsum.photos/id/1005/600/800'}
+    className="absolute inset-0"
+    imgClassName="w-full h-full object-cover"
+    verificationStatus={currentUser.verificationStatus}
+    badgeSize="lg"
+    badgeCorner="bottom-right"
+    showRing
     onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
   />
   <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/50 to-black/95" />

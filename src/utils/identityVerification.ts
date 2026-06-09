@@ -39,6 +39,10 @@ export function resolveVerificationStatusFromAi(
   return 'pending'
 }
 
+export function isProfileVerified(status: IdentityVerificationStatus | undefined): boolean {
+  return status === 'verified'
+}
+
 export function verificationStatusLabel(status: IdentityVerificationStatus | undefined): string {
   if (status === 'verified') return 'Verificado'
   if (status === 'pending') return 'En revisión'

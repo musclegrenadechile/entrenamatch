@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   IDENTITY_REJECT_MIN_CONFIDENCE,
   IDENTITY_VERIFY_MIN_CONFIDENCE,
+  isProfileVerified,
   resolveVerificationStatusFromAi,
   type IdentityAiVerdict,
 } from './identityVerification'
@@ -20,6 +21,12 @@ function verdict(partial: Partial<IdentityAiVerdict>): IdentityAiVerdict {
 }
 
 describe('identityVerification', () => {
+  it('isProfileVerified only for verified status', () => {
+    expect(isProfileVerified('verified')).toBe(true)
+    expect(isProfileVerified('pending')).toBe(false)
+    expect(isProfileVerified(undefined)).toBe(false)
+  })
+
   it('verifies high-confidence same-person match', () => {
     const status = resolveVerificationStatusFromAi(
       verdict({

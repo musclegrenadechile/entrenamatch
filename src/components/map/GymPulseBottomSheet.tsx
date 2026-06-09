@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { ChevronUp, MapPin, Star, Zap } from 'lucide-react'
 import { sortLiveUsersForSheet, type LiveUserLike } from '../../utils/gymPulseLive'
+import { VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto'
 
 export interface GymPulseBottomSheetProps {
   liveUsers: LiveUserLike[]
@@ -71,7 +72,14 @@ export function GymPulseBottomSheet({
                   }}
                 >
                   {u.photos?.[0] ? (
-                    <img src={u.photos[0]} alt="" className="gym-pulse-bottom-sheet__avatar" />
+                    <VerifiedProfilePhoto
+                      src={u.photos[0]}
+                      alt=""
+                      className="gym-pulse-bottom-sheet__avatar"
+                      imgClassName="gym-pulse-bottom-sheet__avatar w-full h-full object-cover"
+                      verificationStatus={u.verificationStatus}
+                      badgeSize="xs"
+                    />
                   ) : (
                     <div className="gym-pulse-bottom-sheet__avatar gym-pulse-bottom-sheet__avatar--fallback">
                       {(u.name || '?')[0]}
