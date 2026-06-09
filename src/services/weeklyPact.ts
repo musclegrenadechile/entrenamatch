@@ -132,3 +132,56 @@ export function pactStatusLine(progress: WeeklyPactProgress): string {
   if (progress.isComplete) return 'Semana sellada — tu equipo lo siente'
   return `${progress.liveDaysDone}/${progress.liveDaysTarget} live · ${progress.syncSessionsDone}/${progress.syncSessionsTarget} sync · ${progress.loggedSessionsDone}/${progress.loggedSessionsTarget} logs`
 }
+
+export interface PactReminderGap {
+  kind: 'live' | 'sync' | 'logs'
+  remaining: number
+  label: string
+}
+
+/** Gaps still open on an pledged weekly pact (oleada 4). */
+export function getPactReminderGaps(progress: WeeklyPactProgress): PactReminderGap[] {
+  if (!progress.pledged || progress.isComplete) return []
+  const gaps: PactReminderGap[] = []
+  const liveLeft = progress.liveDaysTarget - progress.liveDaysDone
+  if (liveLeft > 0) {
+    gaps.push({
+      kind: 'live',
+      remaining: liveLeft,
+      label: liveLeft === 1 ? '1 día live' : `${liveLeft} días live`,
+    })
+  }
+  const syncLeft = progress.syncSessionsTarget - progress.syncSessionsDone
+  if (syncLeft > 0) {
+    gaps.push({
+      kind: 'sync',
+      remaining: syncLeft,
+      label: syncLeft === 1 ? '1 sync' : `${syncLeft} syncs`,
+    })
+  }
+  const logsLeft = progress.loggedSessionsTarget - progress.loggedSessionsDone
+  if (logsLeft > 0) {
+    gaps.push({
+      kind: 'logs',
+      remaining: logsLeft,
+      label: logsLeft === 1 ? '1 log' : `${logsLeft} logs`,
+    })
+  }
+  return gaps
+}
+
+export function buildPactReminderMessage(progress: WeeklyPactProgress): string | null {
+  const gaps = getPactReminderGaps(progress)
+  if (gaps.length === 0) return null
+  const primary = gaps.find((g) => g.kind === 'logs') ?? gaps[0]
+  if (gaps.length === 1) {
+    return `Te falta ${primary.label} para sellar la semana`
+  }
+  const parts = gaps.map((g) => g.label).join(' · ')
+  return `Te faltan ${parts} para sellar la semana`
+}
+
+export function buildPostLiveFeedText(minutes: number, gymName?: string | null): string {
+  const place = gymName?.trim() || 'el gym'
+  return `🟢 Entrené en ${place} · ${minutes} min — sesión GymPulse live`
+}

@@ -1,11 +1,13 @@
 import { Activity, Dumbbell, Flame } from 'lucide-react'
-import type { Profile, ProfilePost } from '../../types'
+import type { Profile, ProfilePost, Workout } from '../../types'
 import { WORKOUT_TYPE_LABELS } from '../../data/exerciseLibrary'
+import { formatVolumeLabel } from '../../services/workouts'
 
 export interface ProfileAthletePulseProps {
   profile: Profile
   syncBond?: { sessions: number; bondLevel: number; totalMin: number } | null
   lastWorkoutPost?: ProfilePost | null
+  recentWorkouts?: Workout[]
   isSelf?: boolean
 }
 
@@ -13,6 +15,7 @@ export function ProfileAthletePulse({
   profile,
   syncBond,
   lastWorkoutPost,
+  recentWorkouts = [],
   isSelf = false,
 }: ProfileAthletePulseProps) {
   const ws = profile.weekStats
@@ -21,7 +24,13 @@ export function ProfileAthletePulse({
   const liveStreak = profile.liveStreak ?? 0
   const gymFresh = profile.gymCheckIn?.gymName
 
-  const hasPulse = liveDays > 0 || syncMin > 0 || liveStreak > 0 || !!lastWorkoutPost || !!syncBond
+  const hasPulse =
+    liveDays > 0 ||
+    syncMin > 0 ||
+    liveStreak > 0 ||
+    !!lastWorkoutPost ||
+    !!syncBond ||
+    recentWorkouts.length > 0
   if (!hasPulse && !gymFresh) return null
 
   const preview = lastWorkoutPost?.workoutPreview
@@ -75,6 +84,27 @@ export function ProfileAthletePulse({
                 {preview.prCount ? ` · ${preview.prCount} PR` : ''}
               </p>
             </div>
+          </div>
+        )}
+
+        {recentWorkouts.length > 0 && (
+          <div className="pt-2 mt-2 border-t border-white/8 space-y-1.5">
+            <p className="text-[9px] font-bold text-[#9CA3AF] uppercase tracking-wider">
+              Entreno de Hoy · reciente
+            </p>
+            {recentWorkouts.slice(0, 3).map((w) => {
+              const label = WORKOUT_TYPE_LABELS[w.type] || w.type
+              const vol = w.stats?.totalVolumeKg ?? 0
+              return (
+                <div key={w.id} className="flex items-center justify-between text-[10px] gap-2">
+                  <span className="text-white font-medium truncate">{w.title}</span>
+                  <span className="text-[#9CA3AF] shrink-0">
+                    {label} · {w.stats?.totalSets ?? 0} sets
+                    {vol > 0 ? ` · ${formatVolumeLabel(vol)}` : ''}
+                  </span>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>

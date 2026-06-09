@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { countLoggedSessionsInWeek, computeWeeklyPactProgress } from '../services/weeklyPact'
+import {
+  buildPactReminderMessage,
+  buildPostLiveFeedText,
+  countLoggedSessionsInWeek,
+  computeWeeklyPactProgress,
+  getPactReminderGaps,
+} from '../services/weeklyPact'
 import type { Workout } from '../types'
 
 describe('countLoggedSessionsInWeek', () => {
@@ -52,5 +58,34 @@ describe('computeWeeklyPactProgress', () => {
     )
     expect(progress.isComplete).toBe(true)
     expect(progress.loggedPct).toBe(100)
+  })
+})
+
+describe('getPactReminderGaps', () => {
+  it('returns logs gap when sessions missing', () => {
+    const ref = new Date('2026-06-07T12:00:00')
+    const progress = computeWeeklyPactProgress(
+      {
+        weekKey: '2026-06-01',
+        liveDaysTarget: 3,
+        syncSessionsTarget: 1,
+        loggedSessionsTarget: 3,
+        pledgedAt: Date.now(),
+      },
+      3,
+      { weekKey: '2026-06-01', liveMinutes: 120, syncMinutes: 20, liveDays: 3, updatedAt: Date.now() },
+      1,
+      ref
+    )
+    const gaps = getPactReminderGaps(progress)
+    expect(gaps.some((g) => g.kind === 'logs' && g.remaining === 2)).toBe(true)
+    expect(buildPactReminderMessage(progress)).toContain('2 logs')
+  })
+})
+
+describe('buildPostLiveFeedText', () => {
+  it('includes gym name and minutes', () => {
+    expect(buildPostLiveFeedText(52, 'Smart Fit Viña')).toContain('Smart Fit Viña')
+    expect(buildPostLiveFeedText(52, 'Smart Fit Viña')).toContain('52 min')
   })
 })

@@ -12,6 +12,8 @@ import { SyncReplayGallery } from '../sync/SyncReplayGallery'
 import { WeeklyMomentsReel } from '../engagement/WeeklyMomentsReel'
 import { HomeCoachBanner } from './HomeCoachBanner'
 import { HomeShopBanner } from './HomeShopBanner'
+import { PostLiveShareBanner, type PostLiveSession } from './PostLiveShareBanner'
+import { WeeklyPactReminderStrip } from './WeeklyPactReminderStrip'
 
 export type HomeSubTab = 'day' | 'feed'
 
@@ -120,6 +122,14 @@ export function HomeTab(props: HomeTabProps) {
     homeCoachBanner,
     onDismissCoachBanner,
     onOpenTrainerCoach,
+    postLiveSession,
+    postLivePublishing,
+    onPublishPostLive,
+    onPostLiveWithPhoto,
+    onPostLiveEntrenoLog,
+    onDismissPostLive,
+    pactReminderDismissed,
+    onDismissPactReminder,
     marketplaceOrders,
     marketplaceProducts,
     showShopBanner,
@@ -219,13 +229,35 @@ export function HomeTab(props: HomeTabProps) {
 
       {homeSubTab === 'day' && (
         <>
-      {homeCoachBanner && (
+      {postLiveSession && (
+        <PostLiveShareBanner
+          session={postLiveSession as PostLiveSession}
+          publishing={!!postLivePublishing}
+          onPublish={onPublishPostLive as (text: string) => void | Promise<void>}
+          onPublishWithPhoto={onPostLiveWithPhoto as () => void}
+          onOpenEntrenoLog={onPostLiveEntrenoLog as () => void}
+          onOpenCoach={onOpenTrainerCoach as (() => void) | undefined}
+          onDismiss={onDismissPostLive as () => void}
+        />
+      )}
+      {homeCoachBanner && !postLiveSession && (
         <HomeCoachBanner
           context={homeCoachBanner}
           onOpenCoach={onOpenTrainerCoach}
           onDismiss={onDismissCoachBanner}
         />
       )}
+      {!pactReminderDismissed &&
+        weeklyPactProgress?.pledged &&
+        !weeklyPactProgress.isComplete && (
+          <WeeklyPactReminderStrip
+            progress={weeklyPactProgress}
+            onOpenEntrenoLog={
+              onOpenEntrenoDeHoy ? () => onOpenEntrenoDeHoy() : undefined
+            }
+            onDismiss={onDismissPactReminder}
+          />
+        )}
       {showShopBanner && (
         <HomeShopBanner
           orders={marketplaceOrders || []}

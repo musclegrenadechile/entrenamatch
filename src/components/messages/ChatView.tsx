@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { ArrowLeft, Mic, MoreVertical, Pause, Play, Send } from 'lucide-react'
 import type { Message, Profile } from '../../types'
 import { generateIcebreakers } from '../../utils/icebreakers'
+import { ChatPactCompareStrip, type ChatPactCompareData } from './ChatPactCompareStrip'
 
 export interface ChatViewProps {
   activeChat: string
@@ -46,6 +47,8 @@ export interface ChatViewProps {
   onCancelVoiceRecording: () => void
   currentUser?: Profile | null
   voiceStreak?: number
+  pactCompare?: ChatPactCompareData | null
+  onOpenEntrenoLog?: () => void
 }
 
 const QUICK_PROPOSALS = [
@@ -104,6 +107,8 @@ export function ChatView({
   onCancelVoiceRecording,
   currentUser,
   voiceStreak = 0,
+  pactCompare = null,
+  onOpenEntrenoLog,
 }: ChatViewProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const icebreakers =
@@ -181,6 +186,10 @@ export function ChatView({
           )}
         </div>
       </div>
+
+      {pactCompare && (
+        <ChatPactCompareStrip compare={pactCompare} onOpenEntrenoLog={onOpenEntrenoLog} />
+      )}
 
       <div className="px-4 py-2 bg-[#1C1C20] border-b border-[#2F2F35] text-center">
         <button type="button" onClick={onShowReviewModal} className="text-xs bg-[#FF671F]/10 text-[#FF671F] px-3 py-1 rounded-full hover:bg-[#FF671F] hover:text-black transition">

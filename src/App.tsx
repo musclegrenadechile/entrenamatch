@@ -236,7 +236,7 @@ import {
   emptyFuelDayTotals,
 } from './services/fuel'
 import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr, buildFuelAnalyzeContext } from './utils/fuelCalculator'
-import { fetchRecentWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, buildWorkoutPreview, computeWorkoutStats } from './services/workouts'
+import { fetchRecentWorkouts, fetchUserWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, buildWorkoutPreview, computeWorkoutStats } from './services/workouts'
 import { useFuelBalance } from './hooks/useFuelBalance'
 import { useFuelState } from './hooks/useFuelState'
 import { useSyncSession } from './hooks/useSyncSession'
@@ -293,6 +293,8 @@ import {
 import { countExternalWitnesses, registerSyncWitness } from './services/syncWitness'
 import {
   buildDefaultPact,
+  buildPactReminderMessage,
+  buildPostLiveFeedText,
   computeWeeklyPactProgress,
   countLoggedSessionsInWeek,
   isPactForCurrentWeek,
@@ -910,6 +912,10 @@ function App() {
   const [activeTab, setActiveTab] = useState<Tab>('home')
   const [redSubTab, setRedSubTab] = useState<RedSubTab>('matches')
   const [homeCoachBanner, setHomeCoachBanner] = useState<HomeCoachBannerContext | null>(null)
+  const [postLiveSession, setPostLiveSession] = useState<{ minutes: number; gymName?: string | null } | null>(null)
+  const [postLivePublishing, setPostLivePublishing] = useState(false)
+  const [pactReminderDismissed, setPactReminderDismissed] = useState(false)
+  const [profileViewWorkouts, setProfileViewWorkouts] = useState<import('./types').Workout[]>([])
   const [showHomeShopBanner, setShowHomeShopBanner] = useState(true)
   const [showSyncLiveBlocker, setShowSyncLiveBlocker] = useState(false)
   const [showPactWizard, setShowPactWizard] = useState(false)
@@ -2332,6 +2338,29 @@ useEffect(() => {
       pactCompleteToastRef.current = false
     }
   }, [homeWeeklyPactProgress.isComplete])
+
+  const pactReminderToastRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (activeTab !== 'home') return
+    if (!homeWeeklyPactProgress.pledged || homeWeeklyPactProgress.isComplete) return
+    const msg = buildPactReminderMessage(homeWeeklyPactProgress)
+    if (!msg) return
+    const today = getTodayStr()
+    const key = `pact_reminder_${homeWeeklyPactProgress.weekKey}_${today}`
+    if (pactReminderToastRef.current === key) return
+    try {
+      if (localStorage.getItem(`entrenamatch_${key}`)) return
+      localStorage.setItem(`entrenamatch_${key}`, '1')
+    } catch {
+      /* ignore */
+    }
+    pactReminderToastRef.current = key
+    toast(msg, { description: 'Cierra la semana con live, sync y Entreno de Hoy' })
+  }, [activeTab, homeWeeklyPactProgress])
+
+  useEffect(() => {
+    setPactReminderDismissed(false)
+  }, [homeWeeklyPactProgress.weekKey, homeWeeklyPactProgress.isComplete])
 
   const handleWeeklyPactPledge = useCallback(
     async (partial: {
@@ -3809,13 +3838,23 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             } catch {}
           })
           .catch(() => {})
+        if (showFullProfile.id !== effectiveUserId) {
+          fetchUserWorkouts(db, showFullProfile.id, 5)
+            .then((list) => setProfileViewWorkouts(list))
+            .catch(() => setProfileViewWorkouts([]))
+        } else {
+          setProfileViewWorkouts([])
+        }
+      } else {
+        setProfileViewWorkouts([])
       }
     } else {
+      setProfileViewWorkouts([])
       // clean comment composer when closing full profile view
       setActiveComment(null)
       setCommentDraft('')
     }
-  }, [showFullProfile])
+  }, [showFullProfile, effectiveUserId, isDemoMode, db])
 
 
 
@@ -5334,6 +5373,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     realProfiles,
   ])
 
+  const chatPactCompare = useMemo(() => {
+    const pact = (currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact
+    if (!activeChat || !isPactForCurrentWeek(pact) || pact?.partnerId !== activeChat) return null
+    return entrenoPartnerCompare
+  }, [activeChat, entrenoPartnerCompare, (currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact])
+
   const entrenoGymRoutines = useMemo(() => {
     if (!isGymCheckInFresh(currentUser?.gymCheckIn)) return []
     const gymId = currentUser!.gymCheckIn!.gymId
@@ -6235,6 +6280,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             description: `${minutes} min. Entrena al menos ${MIN_LIVE_MINUTES_FOR_WEEK_DAY} min para marcar el día.`,
           })
         }
+        setPostLiveSession({
+          minutes,
+          gymName: isGymCheckInFresh(me.gymCheckIn) ? me.gymCheckIn!.gymName : null,
+        })
         setHomeCoachBanner('post-live')
         navigateTab('home')
       } catch (err) {
@@ -10107,6 +10156,42 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             onPledgeWeeklyPact={handleWeeklyPactPledge}
             homeCoachBanner={homeCoachBanner}
             onDismissCoachBanner={() => setHomeCoachBanner(null)}
+            postLiveSession={postLiveSession}
+            postLivePublishing={postLivePublishing}
+            onPublishPostLive={async (text: string) => {
+              setPostLivePublishing(true)
+              try {
+                await createProfilePost(text, null)
+                toast.success('¡Publicado en el Muro!', { description: 'Tu sesión live ya está en el GymPulse' })
+                setPostLiveSession(null)
+                loadGlobalFeed().catch(() => {})
+              } catch {
+                toast.error('No se pudo publicar')
+              } finally {
+                setPostLivePublishing(false)
+              }
+            }}
+            onPostLiveWithPhoto={() => {
+              const text = buildPostLiveFeedText(
+                postLiveSession?.minutes ?? 45,
+                postLiveSession?.gymName
+              )
+              setFeedPostText(text)
+              setShowFeedPostModal(true)
+            }}
+            onPostLiveEntrenoLog={() => {
+              void openEntrenoDeHoy({
+                durationMin: postLiveSession?.minutes ?? 45,
+                title: postLiveSession?.gymName
+                  ? `Sesión en ${postLiveSession.gymName}`
+                  : 'Sesión live',
+                type: 'strength',
+              })
+              setPostLiveSession(null)
+            }}
+            onDismissPostLive={() => setPostLiveSession(null)}
+            pactReminderDismissed={pactReminderDismissed}
+            onDismissPactReminder={() => setPactReminderDismissed(true)}
             onOpenTrainerCoach={() => {
               setTrainerCoachInitialTab('explore')
               setShowTrainerCoach(true)
@@ -10453,6 +10538,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 }}
                 currentUser={currentUser}
                 voiceStreak={dailyPulse?.voiceStreak || 0}
+                pactCompare={chatPactCompare}
+                onOpenEntrenoLog={() => void openEntrenoDeHoy()}
                 onShowReviewModal={() => {
                   setShowReviewModalFor(activeChat)
                   setReviewRating(5)
@@ -11986,6 +12073,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                   <ProfileAthletePulse
                     profile={showFullProfile}
                     syncBond={syncBonds[showFullProfile.id] ?? null}
+                    recentWorkouts={profileViewWorkouts}
                     lastWorkoutPost={
                       (profilePosts[showFullProfile.id] || []).find(
                         (p) => p.postType === 'workout' && p.workoutPreview

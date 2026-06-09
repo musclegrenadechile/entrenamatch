@@ -166,6 +166,7 @@ function parseWorkoutDoc(id: string, d: Record<string, unknown>): Workout {
   }
 }
 
+
 export async function fetchRecentWorkouts(
   db: Firestore,
   userId: string,
@@ -186,6 +187,15 @@ export async function fetchRecentWorkouts(
     list.push(parseWorkoutDoc(docSnap.id, docSnap.data() as Record<string, unknown>))
   })
   return list
+}
+
+/** Public workout history for any user (Firestore rules: authenticated read). */
+export async function fetchUserWorkouts(
+  db: Firestore,
+  userId: string,
+  limitCount = 7
+): Promise<Workout[]> {
+  return fetchRecentWorkouts(db, userId, limitCount)
 }
 
 /** Workouts whose endedAt falls on local date (FuelBalance phase 72). */
