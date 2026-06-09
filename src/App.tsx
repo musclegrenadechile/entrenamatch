@@ -90,6 +90,7 @@ import {
   getNextGadget,
 } from './utils/dailyPulseCore'
 import { WeeklyPactSetupSheet } from './components/home/WeeklyPactSetupSheet'
+import { SyncLiveBlockerModal } from './components/sync/SyncLiveBlockerModal'
 import {
   ASSUMED_LIVE_SESSION_MS,
   normalizeTrainingSince as normalizeTrainingSinceMs,
