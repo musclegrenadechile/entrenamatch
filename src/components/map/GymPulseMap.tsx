@@ -353,21 +353,6 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       return
     }
 
-    // Local aliases in effect scope — avoids production bundle collisions when App.tsx useState
-    // overwrites module-level minified names (Fn/Mn/Bn) in the shared App chunk.
-    const markerPoolKey = MarkerReg.markerPoolKey
-    const liveMarkerSignature = MarkerReg.liveMarkerSignature
-    const partnerMarkerSignature = MarkerReg.partnerMarkerSignature
-    const pruneMarkerPool = MarkerReg.pruneMarkerPool
-    const computeHeatCells = MarkerReg.computeHeatCells
-    const buildIconicClusterMarkerHtml = MarkerHtml.buildIconicClusterMarkerHtml
-    const buildIconicLiveMarkerHtml = MarkerHtml.buildIconicLiveMarkerHtml
-    const buildPartnerMarkerHtml = MarkerHtml.buildPartnerMarkerHtml
-    const countLiveAtGym = LocalNetwork.countLiveAtGym
-    const buildLiveClusterIndex = MapCluster.buildLiveClusterIndex
-    const bboxFromLeafletBounds = MapCluster.bboxFromLeafletBounds
-    const getLiveClusters = MapCluster.getLiveClusters
-
     // First map open: one-time GPS request (fase 193)
     if (!userLocation && onRequestLocation && shouldShowMapGpsPrompt()) {
       markMapGpsPromptShown()
@@ -487,6 +472,9 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     mapUpdateTimeoutRef.current = setTimeout(() => {
       if (!mapInstanceRef.current) return
 
+      // Namespace property access only — never alias to short names like `p` inside this callback
+      // (production minify collision: `const p = pulsoUser` shadowed `pruneMarkerPool` → p(...) is not a function).
+
       // Clear ephemeral layers only (ripples, heat, echo) — pooled markers diff in place (Fase 110)
       markersRef.current.forEach(m => { try { mapInstanceRef.current.removeLayer(m) } catch {} })
       markersRef.current = []
@@ -603,9 +591,9 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       // Ambient pulso for high level users
       const pulsoUsers = liveUsers.filter((u: any) => (u.visibleLevel || 1) >= 20 && u.lat && u.lng)
       if (pulsoUsers.length > 0 && Math.random() < 0.4) {
-        const p = pulsoUsers[Math.floor(Math.random() * pulsoUsers.length)]
+        const ambientPulsoUser = pulsoUsers[Math.floor(Math.random() * pulsoUsers.length)]
         try {
-          const amb = L.circle([p.lat, p.lng], {
+          const amb = L.circle([ambientPulsoUser.lat, ambientPulsoUser.lng], {
             radius: 180, color: '#a855f7', weight: 1.2, fillColor: '#a855f7', fillOpacity: 0.03, opacity: 0.25,
             className: 'pulso-maestro-ripple iconic-ripple ripple-pulso-master'
           }).addTo(mapInstanceRef.current)
@@ -617,11 +605,11 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
       // Fase 103 — supercluster (replaces grid buckets)
       const currentZoom = mapInstanceRef.current.getZoom()
-      const clusterIndex = buildLiveClusterIndex(liveUsers as any[])
+      const clusterIndex = MapCluster.buildLiveClusterIndex(liveUsers as any[])
       lastClusterIndexRef.current = clusterIndex
       const bounds = mapInstanceRef.current.getBounds()
-      const bbox = bboxFromLeafletBounds(bounds)
-      const clusterFeatures = getLiveClusters(clusterIndex, bbox, currentZoom)
+      const bbox = MapCluster.bboxFromLeafletBounds(bounds)
+      const clusterFeatures = MapCluster.getLiveClusters(clusterIndex, bbox, currentZoom)
       const renderUsers = clusterFeatures.map((f) => {
         const [lng, lat] = f.geometry.coordinates
         if (f.properties.cluster) {
@@ -639,7 +627,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       })
 
       // Fase 107 — density heat halos
-      computeHeatCells(liveUsers.filter((u: any) => u.lat && u.lng)).forEach((cell) => {
+      MarkerReg.computeHeatCells(liveUsers.filter((u: any) => u.lat && u.lng)).forEach((cell) => {
         if (cell.count < 3) return
         try {
           const heat = L.circle([cell.lat, cell.lng], {
@@ -706,8 +694,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         if (u.isCluster) {
           const count = u.clusterCount || 2
           const size = count >= 10 ? 44 : count >= 5 ? 40 : 36
-          const clusterHtml = buildIconicClusterMarkerHtml(count)
-          const key = markerPoolKey('cluster', u.clusterId ?? u.id)
+          const clusterHtml = MarkerHtml.buildIconicClusterMarkerHtml(count)
+          const key = MarkerReg.markerPoolKey('cluster', u.clusterId ?? u.id)
           const icon = L.divIcon({
             html: clusterHtml,
             className: 'iconic-cluster',
@@ -724,27 +712,27 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         const hasPulso = (u.visibleLevel || 1) >= 20
         const isHigh = (u.visibleLevel || 1) >= 15 || u.isNetworkBond
         const size = hasPulso ? 36 : isHigh ? 32 : 28
-        const iconHtml = buildIconicLiveMarkerHtml(u, { isBond, size })
-        const key = markerPoolKey('live', u.id)
+        const iconHtml = MarkerHtml.buildIconicLiveMarkerHtml(u, { isBond, size })
+        const key = MarkerReg.markerPoolKey('live', u.id)
         const icon = L.divIcon({
           html: iconHtml,
           className: 'iconic-live-marker',
           iconSize: [size, size],
           iconAnchor: [size / 2, size / 2],
         })
-        upsertPooledMarker(key, u.lat, u.lng, icon, liveMarkerSignature(u), () => {
+        upsertPooledMarker(key, u.lat, u.lng, icon, MarkerReg.liveMarkerSignature(u), () => {
           setMapPopup({ kind: 'live', user: u })
         })
       })
 
       if (showPartners) {
-        partnerLocationsRef.current.forEach((p: any) => {
-          if (!p.lat || !p.lng) return
-          const logo = p.logoUrl || p.logo || ''
-          const liveAtGym = countLiveAtGym(allLive, p.id)
+        partnerLocationsRef.current.forEach((partner: any) => {
+          if (!partner.lat || !partner.lng) return
+          const logo = partner.logoUrl || partner.logo || ''
+          const liveAtGym = LocalNetwork.countLiveAtGym(allLive, partner.id)
           const size = 30
-          const html = buildPartnerMarkerHtml({ logo, liveAtGym, size })
-          const key = markerPoolKey('partner', p.id)
+          const html = MarkerHtml.buildPartnerMarkerHtml({ logo, liveAtGym, size })
+          const key = MarkerReg.markerPoolKey('partner', partner.id)
           const icon = L.divIcon({
             html,
             className: 'partner-marker',
@@ -753,15 +741,15 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           })
           upsertPooledMarker(
             key,
-            p.lat,
-            p.lng,
+            partner.lat,
+            partner.lng,
             icon,
-            partnerMarkerSignature({ ...p, liveAtGym }),
+            MarkerReg.partnerMarkerSignature({ ...partner, liveAtGym }),
             () => {
               const checkedIn = allLive
-                .filter((lu: any) => lu.gymCheckIn?.gymId === p.id)
+                .filter((lu: any) => lu.gymCheckIn?.gymId === partner.id)
                 .map((lu: any) => ({ id: lu.id, name: lu.name, photos: lu.photos }))
-              setMapPopup({ kind: 'partner', partner: p, liveAtGym, checkedInUsers: checkedIn })
+              setMapPopup({ kind: 'partner', partner, liveAtGym, checkedInUsers: checkedIn })
             },
             {
               draggable: !!isDeveloper,
@@ -770,7 +758,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
                     const m = pool.get(key)
                     if (!m || !onPartnerMoved) return
                     const pos = m.getLatLng()
-                    onPartnerMoved(p.id, pos.lat, pos.lng)
+                    onPartnerMoved(partner.id, pos.lat, pos.lng)
                   }
                 : undefined,
             }
@@ -778,7 +766,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         })
       }
 
-      pruneMarkerPool(pool, activeKeys, (m) => {
+      MarkerReg.pruneMarkerPool(pool, activeKeys, (m) => {
         try { map.removeLayer(m) } catch { /* ignore */ }
       })
 
