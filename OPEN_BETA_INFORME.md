@@ -1,7 +1,7 @@
 # Informe de cierre — Open Beta v1 (Fases 75–100)
 
 **Proyecto:** EntrenaMatch  
-**Versión de referencia:** `0.1.285` (versionCode 285)  
+**Versión de referencia:** `0.1.286` (versionCode 286)  
 **Fecha del informe:** 9 de junio de 2026  
 **Rama:** `main`  
 **Deploy web:** https://entrenamatch.web.app · https://musclegrenadechile.github.io/entrenamatch/  
@@ -186,7 +186,7 @@ Priorizados por impacto en tracción y cierre de beta real.
 | 7 | Quitar `@ts-nocheck` de **GymPulseMap.tsx** (cerrar fase 76) | Técnico | P0 |
 | 8 | E2E ampliado: demo → mapa → iniciar sync (mock) | QA | P1 |
 | 9 | Activar **MapLibre** en build prod (`VITE_MAP_USE_MAPLIBRE=1`) | Producto | P1 |
-| 10 | Post-sync share **opt-out** con métrica de publicación | Growth | P1 |
+| 10 | Post-sync share **opt-out** con métrica de publicación | Growth | ✅ `syncShareWeekly` + opt-in en `SyncDuelSummary` |
 | 11 | Simplificar tab **Hoy** — una historia: ciudad + LIVE + sync | UX | P1 |
 | 12 | Alinear filtro **EntrenaLog** con Arena (Cardio + Full body) | Bug | P1 |
 | 13 | QA matriz **P0_BETA_RELEASE** actualizada a v0.1.281 | QA | P1 |

@@ -15,6 +15,8 @@ import { mergeWeekStats } from '../services/localNetwork'
 import { getWeekKey } from '../utils/weekLiveTracker'
 import { updateUserProfile } from '../services/auth'
 import { recordPilotSyncSession } from '../services/pilotSyncMetrics'
+import { recordSyncShareMetric } from '../services/syncShareMetrics'
+import { getSyncShareOptOut } from '../utils/syncSharePrefs'
 import {
   attachIncomingSyncListener,
   attachActiveSyncSessionListener,
@@ -868,6 +870,12 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
           : undefined,
         workoutCompare,
       })
+      void recordSyncShareMetric(o.db, {
+        uid: o.effectiveUserId,
+        kind: 'offer',
+        city: o.currentUser?.city,
+        isDemoMode: o.isDemoMode,
+      })
     } else {
       toast(`Sync finalizado: ${minutes}min`, {
         description: '¡Buen trabajo en equipo! +1 sync streak',
@@ -888,6 +896,7 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
         minutes: number
         vibe?: number
         actions?: any[]
+        publishToFeed?: boolean
       }
     ) => {
       const o = optsRef.current
@@ -963,7 +972,13 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
         }
       }
 
-      if (minutes >= 3 && (ctx?.actions?.length || replaySession || ss.syncActions.length > 1)) {
+      const wantsPublish =
+        ctx?.publishToFeed === true && !getSyncShareOptOut()
+      if (
+        wantsPublish &&
+        minutes >= 3 &&
+        (ctx?.actions?.length || replaySession || ss.syncActions.length > 1)
+      ) {
         const actionsForStory = (ctx?.actions || replaySession?.actions || ss.syncActions).slice(0, 6)
         const actionSummary = actionsForStory
           .map((a: any) => `${a.emoji} ${a.label}${a.combo ? `x${a.combo}` : ''}`)
@@ -971,28 +986,16 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
         const isNet = !!ss.syncBonds[partnerId]
         const storyText = `🔄 ENTRENASYNC COMPLETADO\n${minutes} min sincronizados con ${partnerName}\nSync Score final: ${sessionVibe || 70}% • Calificación: ${rating}★\nAcciones clave: ${actionSummary}\n\nEntrenamos en sync real-time y subimos nuestro rendimiento. ${isNet ? `Esta fue una sesión de RED — Fuerza del equipo activada. Tu grafo gana +${Math.floor(minutes / 3)} de fuerza y visibilidad global.` : `Esta alianza ya genera +${Math.floor(minutes * 1.2)} min de alto rendimiento compartido.`} Queda en nuestra red para siempre. #EntrenaSync`
         o.createProfilePostRef.current?.(storyText, null).catch(() => {})
-        if (!o.isDemoMode && o.db) {
-          try {
-            const storyPost = {
-              id: `post_syncstory_${Date.now()}`,
-              uid: partnerId,
-              text: storyText,
-              photo: null,
-              createdAt: Date.now(),
-              pinned: false,
-              isSyncStory: true,
-              syncPartnerId: o.effectiveUserId,
-            }
-            await (await import('firebase/firestore')).setDoc(
-              (await import('firebase/firestore')).doc(o.db, 'profilePosts', storyPost.id),
-              storyPost
-            )
-          } catch {}
-        }
+        void recordSyncShareMetric(o.db, {
+          uid: o.effectiveUserId,
+          kind: 'publish',
+          city: o.currentUser?.city,
+          isDemoMode: o.isDemoMode,
+        })
         ss.setLastSyncStory({ partnerName, minutes, rating, vibe: sessionVibe, summary: actionSummary })
-        confetti({ particleCount: 180, spread: 90, origin: { y: 0.7 } })
-        toast.success('¡Historia del Sync guardada en AMBOS muros!', {
-          description: 'Un recuerdo compartido que nadie más puede crear.',
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.7 } })
+        toast.success('Resumen del sync publicado en tu muro', {
+          description: 'Solo tú decidiste compartir — opt-out disponible en Perfil.',
         })
       }
 

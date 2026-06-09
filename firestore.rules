@@ -633,6 +633,34 @@ service cloud.firestore {
         && request.resource.data.totalSyncMinutes <= resource.data.totalSyncMinutes + 480;
     }
 
+    // Post-sync share funnel (offer / publish / skip / opt-out)
+    match /syncShareWeekly/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.weekKey is string
+        && request.resource.data.offers is number
+        && request.resource.data.publishes is number
+        && request.resource.data.skips is number
+        && request.resource.data.optOutSets is number;
+      allow update: if isAuthenticated()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.weekKey == resource.data.weekKey
+        && request.resource.data.offers is number
+        && request.resource.data.publishes is number
+        && request.resource.data.skips is number
+        && request.resource.data.optOutSets is number
+        && request.resource.data.offers >= resource.data.offers
+        && request.resource.data.offers <= resource.data.offers + 1
+        && request.resource.data.publishes >= resource.data.publishes
+        && request.resource.data.publishes <= resource.data.publishes + 1
+        && request.resource.data.skips >= resource.data.skips
+        && request.resource.data.skips <= resource.data.skips + 1
+        && request.resource.data.optOutSets >= resource.data.optOutSets
+        && request.resource.data.optOutSets <= resource.data.optOutSets + 1;
+    }
+
     match /chatTyping/{docId} {
       allow read: if isAuthenticated();
       allow create, update: if isAuthenticated()

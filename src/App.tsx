@@ -86,6 +86,7 @@ import {
 } from './utils/deepLinkGym'
 import { parseAppDeepLink, clearAppDeepLinkParams } from './utils/appDeepLinks'
 import { buildSyncPostText, syncStoryToDataUrl } from './utils/syncStoryShare'
+import { recordSyncShareMetric } from './services/syncShareMetrics'
 import { BottomNav } from './components/app/BottomNav'
 import { AppFeatureTour, hasSeenAppFeatureTour, markAppFeatureTourSeen } from './components/onboarding/AppFeatureTour'
 import { useAndroidBackHandler } from './hooks/useAndroidBackHandler'
@@ -11248,14 +11249,33 @@ useEffect(() => {
             })
             setSyncDuelSummary(null)
           }}
-          onRate={(rating) => {
+          onRate={(rating, rateOpts) => {
             submitSyncRating(rating, {
               partnerId: syncDuelSummary.partnerId,
               partnerName: syncDuelSummary.partnerName,
               minutes: syncDuelSummary.minutes,
               vibe: syncDuelSummary.vibe,
               actions: syncDuelSummary.actions,
+              publishToFeed: rateOpts?.publishToFeed,
             })
+          }}
+          onShareSkip={() => {
+            void recordSyncShareMetric(db, {
+              uid: effectiveUserId,
+              kind: 'skip',
+              city: currentUser?.city,
+              isDemoMode,
+            })
+          }}
+          onShareOptOutChange={(optOut) => {
+            if (optOut) {
+              void recordSyncShareMetric(db, {
+                uid: effectiveUserId,
+                kind: 'opt_out',
+                city: currentUser?.city,
+                isDemoMode,
+              })
+            }
           }}
           onInviteSquad={(partnerId, partnerName) => {
             setSyncDuelSummary(null)
@@ -11289,6 +11309,12 @@ useEffect(() => {
                 vibe: syncDuelSummary.vibe,
               })
               await createProfilePost(text, dataUrl)
+              void recordSyncShareMetric(db, {
+                uid: effectiveUserId,
+                kind: 'publish',
+                city: currentUser?.city,
+                isDemoMode,
+              })
               toast.success('Historia EntrenaSync en tu muro')
             } catch {
               toast.error('No se pudo publicar la historia')

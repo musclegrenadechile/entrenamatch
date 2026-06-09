@@ -30,6 +30,7 @@ Cualquier otra ciudad → **lista de espera** (`cityWaitlist` + formulario en Ex
 | `CityDerbyCard` (Tab Hoy) | Duelo semanal Viña vs Santiago — barras + CTA mapa/LIVE |
 | `GymPulseMap` overlay | Hex Costa (Viña/Valpo/Concón) vs Santiago — verde/azul/rojo según líder |
 | `cityDerby.ts` | Agrega `cityWeeklyStats` + minutos locales; listeners Firestore en tiempo real |
+| `syncShareWeekly` | Funnel post-sync: offers / publishes / skips / opt-out (`scripts/sync-share-report.mjs`) |
 
 ### Firestore
 

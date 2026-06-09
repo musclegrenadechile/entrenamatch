@@ -1,5 +1,7 @@
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Share2 } from 'lucide-react'
+import { getSyncShareOptOut, setSyncShareOptOut } from '../../utils/syncSharePrefs'
 import {
   buildDuelMetrics,
   computeSyncDuel,
@@ -32,9 +34,11 @@ export interface SyncDuelSummaryProps {
   onClose: () => void
   onResync: (partnerId: string) => void
   onReplay: () => void
-  onRate?: (rating: number) => void
+  onRate?: (rating: number, opts?: { publishToFeed: boolean }) => void
   onInviteSquad?: (partnerId: string, partnerName: string) => void
   onPublishToFeed?: () => void | Promise<void>
+  onShareSkip?: () => void
+  onShareOptOutChange?: (optOut: boolean) => void
   publishingFeed?: boolean
   fuelBurnKcal?: number
   weightKg?: number
@@ -65,12 +69,40 @@ export function SyncDuelSummary({
   onRate,
   onInviteSquad,
   onPublishToFeed,
+  onShareSkip,
+  onShareOptOutChange,
   publishingFeed = false,
   fuelBurnKcal = 0,
   weightKg = 75,
   workoutCompare = null,
 }: SyncDuelSummaryProps) {
+  const [shareToFeed, setShareToFeed] = useState(() => !getSyncShareOptOut())
+  const [globalOptOut, setGlobalOptOut] = useState(() => getSyncShareOptOut())
+  const publishedRef = useRef(false)
+
+  useEffect(() => {
+    if (!open) return
+    const opt = getSyncShareOptOut()
+    setGlobalOptOut(opt)
+    setShareToFeed(!opt)
+    publishedRef.current = false
+  }, [open, partnerId])
+
   if (!open) return null
+
+  const handleClose = () => {
+    if (!publishedRef.current) onShareSkip?.()
+    onClose()
+  }
+
+  const toggleGlobalOptOut = () => {
+    const next = !globalOptOut
+    setGlobalOptOut(next)
+    setSyncShareOptOut(next)
+    if (next) setShareToFeed(false)
+    else setShareToFeed(true)
+    onShareOptOutChange?.(next)
+  }
 
   const duel = computeSyncDuel(
     actions,
@@ -112,7 +144,7 @@ export function SyncDuelSummary({
       className="sync-duel-overlay"
       role="dialog"
       aria-label="Cierre de sync EntrenaSync"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <motion.div
         className="sync-duel-card sync-duel-card--sala"
@@ -247,6 +279,33 @@ export function SyncDuelSummary({
           </div>
         </details>
 
+        <div className="sync-duel-share-prefs mx-4 mb-3 p-3 rounded-xl border border-white/10 bg-black/30">
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={shareToFeed && !globalOptOut}
+              disabled={globalOptOut}
+              onChange={(e) => setShareToFeed(e.target.checked)}
+              className="mt-0.5 accent-[#FF671F]"
+            />
+            <span className="text-[11px] text-white leading-snug">
+              Publicar resumen en mi muro al cerrar
+              <span className="block text-[#9CA3AF] text-[10px] mt-0.5">
+                Opt-in — no spam automático en el feed
+              </span>
+            </span>
+          </label>
+          <button
+            type="button"
+            onClick={toggleGlobalOptOut}
+            className="mt-2 text-[10px] text-[#9CA3AF] underline underline-offset-2 hover:text-white"
+          >
+            {globalOptOut
+              ? 'Activar publicación post-sync (preferencia guardada)'
+              : 'No publicar syncs en el muro (opt-out global)'}
+          </button>
+        </div>
+
         {showRating && (
           <div className="sync-duel-card__rating">
             <p className="text-[11px] text-[#9CA3AF] mb-2 text-center">
@@ -257,7 +316,10 @@ export function SyncDuelSummary({
                 <button
                   key={r}
                   type="button"
-                  onClick={() => onRate?.(r)}
+                  onClick={() => {
+                    if (shareToFeed && !globalOptOut) publishedRef.current = true
+                    onRate?.(r, { publishToFeed: shareToFeed && !globalOptOut })
+                  }}
                   className="text-xl px-1.5 py-0.5 text-[#FF671F] hover:text-white active:scale-90 transition"
                   aria-label={`${r} estrellas`}
                 >
@@ -272,11 +334,18 @@ export function SyncDuelSummary({
           {onPublishToFeed && (
             <button
               type="button"
-              disabled={publishingFeed}
-              onClick={() => void onPublishToFeed()}
+              disabled={publishingFeed || globalOptOut}
+              onClick={() => {
+                publishedRef.current = true
+                void onPublishToFeed()
+              }}
               className="sync-duel-card__btn sync-duel-card__btn--primary"
             >
-              {publishingFeed ? 'Publicando…' : '📣 Publicar en muro 1-tap'}
+              {globalOptOut
+                ? 'Publicación desactivada (opt-out)'
+                : publishingFeed
+                  ? 'Publicando…'
+                  : '📣 Publicar en muro 1-tap'}
             </button>
           )}
           <button
@@ -328,10 +397,10 @@ export function SyncDuelSummary({
           </button>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             className="sync-duel-card__btn sync-duel-card__btn--ghost"
           >
-            Cerrar
+            Cerrar sin publicar
           </button>
         </div>
 

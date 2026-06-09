@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { Download, Star } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'
 import { APP_VERSION } from '../../constants'
+import { getSyncShareOptOut, setSyncShareOptOut } from '../../utils/syncSharePrefs'
 import { ReferralInviteCard } from '../growth/ReferralInviteCard'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
@@ -37,6 +39,8 @@ export function ProfileAccountSection(props: ProfileTabProps) {
     saveUserWithRealSync,
     triggerHaptic,
   } = profileTabBindings(props)
+  const [syncShareOptOut, setSyncShareOptOutState] = useState(getSyncShareOptOut)
+
   return (
     <>
 {/* Debug logs — solo en desarrollo */}
@@ -337,6 +341,31 @@ export function ProfileAccountSection(props: ProfileTabProps) {
         ⚠️ Esta build del APK no tiene google-services.json configurado. La app puede fallar al abrir en Android. Actualiza a v{APP_VERSION}+.
       </div>
     )}
+  </div>
+)}
+
+{/* Post-sync share opt-out (paso 10 open beta) */}
+{!isDemoMode && (
+  <div className="px-4 pb-3">
+    <div className="text-[10px] uppercase tracking-widest text-[#9CA3AF] mb-1.5">Publicación post-sync</div>
+    <button
+      type="button"
+      onClick={() => {
+        const next = !syncShareOptOut
+        setSyncShareOptOut(next)
+        setSyncShareOptOutState(next)
+        toast.success(next ? 'Opt-out activado' : 'Publicación post-sync habilitada', {
+          description: next
+            ? 'No publicaremos resúmenes en tu muro al cerrar sync'
+            : 'Puedes elegir publicar en cada cierre de EntrenaSync',
+        })
+      }}
+      className="w-full text-left text-xs py-2.5 px-3 rounded-2xl border border-[#2F2F35] text-[#9CA3AF] hover:border-[#FF671F]/40"
+    >
+      {syncShareOptOut
+        ? '🔕 No publicar syncs en el muro (activo) — tocar para habilitar'
+        : '📣 Publicar syncs: opt-in por sesión — tocar para opt-out global'}
+    </button>
   </div>
 )}
 
