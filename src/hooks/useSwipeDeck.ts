@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Firestore } from 'firebase/firestore'
 import type { User } from 'firebase/auth'
-import { loadSwipeStateForUser } from '../services/swipeState'
+import { clearSwipeDeckForUser, loadSwipeStateForUser } from '../services/swipeState'
 
 export function useSwipeDeck(
   opts: {
@@ -62,7 +62,12 @@ export function useSwipeDeck(
   const resetDeck = useCallback(() => {
     saveLiked([])
     savePassed([])
-  }, [saveLiked, savePassed])
+    if (!isDemoMode && db && firebaseUser?.uid) {
+      void clearSwipeDeckForUser(db, firebaseUser.uid).catch((e) =>
+        console.warn('clearSwipeDeckForUser failed', e)
+      )
+    }
+  }, [saveLiked, savePassed, isDemoMode, db, firebaseUser?.uid])
 
   return {
     likedIds,

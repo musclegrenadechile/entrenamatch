@@ -71,12 +71,40 @@ export async function loadSwipeStateForUser(
   db: Firestore,
   uid: string
 ): Promise<{ liked: string[]; passed: string[] }> {
-  const { doc, getDoc } = await import('firebase/firestore')
+  const { collection, doc, getDoc, getDocs, query, where } = await import('firebase/firestore')
   const snap = await getDoc(doc(db, 'profiles', uid))
-  if (!snap.exists()) return { liked: [], passed: [] }
-  const data = snap.data()
-  return {
-    liked: dedupeIds(data?.swipeLikedIds),
-    passed: dedupeIds(data?.swipePassedIds),
+  const data = snap.exists() ? snap.data() : {}
+  let liked = dedupeIds(data?.swipeLikedIds)
+  let passed = dedupeIds(data?.swipePassedIds)
+
+  // Merge passes collection (legacy writes) so deck stays consistent cross-device.
+  try {
+    const passSnap = await getDocs(query(collection(db, 'passes'), where('passer', '==', uid)))
+    const fromPasses = passSnap.docs
+      .map((d) => d.data()?.passed)
+      .filter((id): id is string => typeof id === 'string' && !!id)
+    passed = dedupeIds([...passed, ...fromPasses])
+  } catch (e) {
+    console.warn('[swipeState] passes query failed', e)
+  }
+
+  return { liked, passed }
+}
+
+/** Clear explore deck exclusions for the current user (pilot recovery / re-see partners). */
+export async function clearSwipeDeckForUser(db: Firestore, uid: string): Promise<void> {
+  if (!uid) return
+  const { collection, doc, getDocs, query, where, updateDoc, deleteDoc, serverTimestamp } =
+    await import('firebase/firestore')
+  await updateDoc(doc(db, 'profiles', uid), {
+    swipePassedIds: [],
+    swipeLikedIds: [],
+    swipeDeckUpdatedAt: serverTimestamp(),
+  })
+  try {
+    const passSnap = await getDocs(query(collection(db, 'passes'), where('passer', '==', uid)))
+    await Promise.all(passSnap.docs.map((d) => deleteDoc(d.ref).catch(() => {})))
+  } catch (e) {
+    console.warn('[swipeState] clear passes collection failed', e)
   }
 }

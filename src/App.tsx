@@ -42,6 +42,7 @@ import type { FuelProfile, FuelLogEntry, FuelDayTotals } from './types'
 import { 
   TRAINING_OPTIONS, AVAILABILITY, LEGAL_VERSIONS, AUTO_MATCH_IDS, APP_VERSION 
 } from './constants'
+import { BRAND_COPY } from './constants/brandCopy'
 
 // Capacitor plugins are loaded via a separate module that is only analyzed in CAPACITOR builds.
 // This prevents Vite/Rolldown from ever trying to resolve @capacitor/* packages during pure web builds
@@ -186,6 +187,10 @@ import { fetchGlobalProfilePosts, fetchProfilePostById, togglePostLikeInFirestor
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
 import { isQuickDemoSession, clearQuickDemoSession } from './utils/quickDemo'
 import { enrichReturningProfile, isProfileComplete } from './utils/profileComplete'
+import {
+  fetchProfilesByIds,
+  mergeProfileLists,
+} from './services/profileDiscovery'
 import { filterSeedsForCity } from './utils/citySeeds'
 import {
   buildWeekDayStatuses,
@@ -2223,9 +2228,30 @@ useEffect(() => {
   const matchProfiles = useMemo(() => {
     const seedPool = isDemoMode ? SEED_PROFILES : []
     const all = [...seedPool, ...realProfiles]
-    // Merge local matches + real matches loaded from Firestore + any pending real matches from current session
     const combinedMatchIds = Array.from(new Set([...matches, ...realMatches]))
-    return all.filter(p => combinedMatchIds.includes(p.id))
+    return combinedMatchIds
+      .map((id) => {
+        const found = all.find((p) => p.id === id)
+        if (found) return found
+        if (isDemoMode || isSeedProfileId(id)) return null
+        return {
+          id,
+          name: BRAND_COPY.partnerGeneric,
+          age: 25,
+          gender: 'hombre' as const,
+          city: '',
+          country: 'Chile',
+          lat: -33.0,
+          lng: -71.0,
+          bio: '',
+          photos: [],
+          trainingTypes: [],
+          goals: [],
+          level: 'Intermedio' as const,
+          availability: ['Tarde'],
+        } satisfies Profile
+      })
+      .filter((p): p is Profile => !!p)
   }, [matches, realMatches, realProfiles, isDemoMode])
 
   const teamMatchIds = useMemo(
@@ -3753,6 +3779,32 @@ useEffect(() => {
   useEffect(() => {
     loadRealProfiles()
   }, [firebaseUser?.uid])
+
+  // Ensure match/chat partners are loaded by UID even if outside the global snapshot.
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid) return undefined
+    const known = latestRealProfilesRef.current || realProfiles
+    const partnerIds = [...new Set([...matches, ...realMatches])].filter(
+      (id) => id && !isSeedProfileId(id) && !known.some((r) => r.id === id)
+    )
+    if (partnerIds.length === 0) return undefined
+
+    let cancelled = false
+    fetchProfilesByIds(db, partnerIds, { excludeUid: firebaseUser.uid })
+      .then((fetched) => {
+        if (cancelled || fetched.length === 0) return
+        setRealProfiles((prev) => {
+          const next = mergeProfileLists(prev, fetched)
+          latestRealProfilesRef.current = next
+          return next
+        })
+      })
+      .catch((e) => console.warn('fetchProfilesByIds (match partners)', e))
+
+    return () => {
+      cancelled = true
+    }
+  }, [isDemoMode, db, firebaseUser?.uid, matches, realMatches])
 
   // Rescue effect: if we have a real Firebase user but no local currentUser (hard refresh / new device / race),
   // synthesize a minimal usable profile immediately so Profile tab + logout + CTA are never missing.
