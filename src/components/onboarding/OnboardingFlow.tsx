@@ -1,5 +1,6 @@
 import { useState, type ChangeEvent } from 'react';
-import { Dumbbell, MapPin, Camera, Users, RefreshCw } from 'lucide-react';
+import { Dumbbell, MapPin, Camera, Users, RefreshCw, Crop, Sparkles, Quote } from 'lucide-react';
+import { PhotoCropModal } from '../photos/PhotoCropModal';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { TRAINING_OPTIONS, TRAINING_GOALS } from '../../constants';
@@ -117,6 +118,12 @@ export const OnboardingFlow = ({
 
   // Consents fully managed internally now (previous props were dummy)
   // For edit mode, pre-fill from existing legalConsents so user doesn't have to re-tap to save changes
+  const [cropSession, setCropSession] = useState<{
+    src: string
+    queue: string[]
+    replaceIndex?: number
+  } | null>(null)
+
   const [localConsents, setLocalConsents] = useState<OnboardingConsents>(() => {
     if (mode === 'edit' && currentUser && currentUser.legalConsents) {
       return {
@@ -208,12 +215,12 @@ export const OnboardingFlow = ({
         <div className="px-3 py-1.5 text-[9px] bg-[#0D0D10] text-[#22c55e] flex items-center gap-1 border-t border-[#22c55e]/20">
           <span>👁️ Tu presencia en el GymPulse y swipes</span>
           {isLive && <span className="ml-auto font-bold">¡VERDE EN EL MAPA AL TERMINAR!</span>}
-          <span className="ml-auto text-[8px] text-[#FF671F]">⚡ Red con peso • ripples visibles • syncs que se sienten</span>
+          <span className="ml-auto text-[8px] text-[#FF671F]">⚡ Red con peso • ondas en el mapa • syncs que se sienten</span>
         </div>
         {/* Unique ritual mock: small live map simulation for excitement - makes the first Live feel inevitable */}
         {isLive && (
           <div className="mx-3 -mt-1 mb-1 px-2 py-1 bg-[#0a120f] border border-[#22c55e]/20 rounded-b-2xl text-[7px] text-[#22c55e] flex items-center gap-1">
-            <span>🗺️</span> <span>GymPulse simulado: tú + 4 cerca • tether dorado listo • primer match en 20s</span>
+            <span>🗺️</span> <span>GymPulse simulado: tú + 4 cerca • línea de sync lista • primer match en 20s</span>
           </div>
         )}
       </div>
@@ -244,12 +251,29 @@ export const OnboardingFlow = ({
     toast.success('¡Datos de ejemplo cargados!', { description: 'Ajusta lo que quieras. La preview se actualiza en vivo.' });
   };
 
-  const suggestedBios = [
-    'Pesas 4x por semana + correr al atardecer. Busco compañero/a constante para motivarnos.',
-    'Calistenia y yoga en los cerros. Me encanta entrenar al aire libre y tomar algo después.',
-    'CrossFit y boxeo. Nivel avanzado, busco sparring serio sin excusas.',
-    'Running y pilates. Corro por la costanera 3 veces semana, ideal para sumar kms juntos.'
-  ];
+  const BIO_MAX = 160
+  const bioInspirations = [
+    {
+      emoji: '🏋️',
+      vibe: 'Constancia',
+      text: 'Pesas 4x + running costanera. Mantra: sin excusas, con mi Red.',
+    },
+    {
+      emoji: '🧘',
+      vibe: 'Flow outdoor',
+      text: 'Calistenia y yoga en los cerros. Mi Red me hace imparable.',
+    },
+    {
+      emoji: '🥊',
+      vibe: 'Intensidad',
+      text: 'CrossFit y boxeo. Sparring serio, energía compartida.',
+    },
+    {
+      emoji: '🏃',
+      vibe: 'Kms juntos',
+      text: 'Running y pilates 3x semana. Busco compañero/a para sumar kms.',
+    },
+  ] as const
 
   const toggleAvailability = (time: string) => {
     const curr = onboardData.availability || [];
@@ -257,10 +281,44 @@ export const OnboardingFlow = ({
     updateOnboard({ availability: next });
   };
 
+  const slotsLeft = () => Math.max(0, 6 - (onboardData.photos || []).length)
+
+  const startCropFlow = (sources: string[], replaceIndex?: number) => {
+    if (!sources.length) return
+    setCropSession({ src: sources[0], queue: sources.slice(1), replaceIndex })
+  }
+
+  const finishCroppedPhoto = async (cropped: string) => {
+    let final = cropped
+    if (uploadPhotoIfNeeded) {
+      final = await uploadPhotoIfNeeded(cropped)
+    }
+    const current = onboardData.photos || []
+    if (cropSession?.replaceIndex != null) {
+      const photos = [...current]
+      photos[cropSession.replaceIndex] = final
+      updateOnboard({ photos })
+    } else {
+      updateOnboard({ photos: [...current, final].slice(0, 6) })
+    }
+    try { triggerHaptic('light') } catch {}
+
+    if (cropSession?.queue.length) {
+      setCropSession({
+        src: cropSession.queue[0],
+        queue: cropSession.queue.slice(1),
+        replaceIndex: cropSession.replaceIndex,
+      })
+    } else {
+      setCropSession(null)
+    }
+  }
+
   const handlePhotoUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    const readers = Array.from(files).slice(0, 6).map(file => {
+    const maxNew = slotsLeft()
+    const readers = Array.from(files).slice(0, maxNew).map(file => {
       return new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result as string);
@@ -268,13 +326,12 @@ export const OnboardingFlow = ({
       });
     });
     const urls = await Promise.all(readers);
-    let finalUrls = urls;
-    if (uploadPhotoIfNeeded) {
-      finalUrls = await Promise.all(urls.map(u => uploadPhotoIfNeeded(u)));
+    e.target.value = ''
+    if (!urls.length) {
+      toast('Máximo 6 fotos')
+      return
     }
-    const current = onboardData.photos || [];
-    updateOnboard({ photos: [...current, ...finalUrls].slice(0, 6) });
-    try { triggerHaptic('light') } catch {}
+    startCropFlow(urls)
   };
 
   const removeOnboardPhoto = (index: number) => {
@@ -296,17 +353,11 @@ export const OnboardingFlow = ({
       });
       if (photo && photo.base64String) {
         const dataUrl = `data:image/jpeg;base64,${photo.base64String}`;
-        let final = dataUrl;
-        if (uploadPhotoIfNeeded) {
-          final = await uploadPhotoIfNeeded(dataUrl);
-        }
-        const current = onboardData.photos || [];
-        if (current.length < 6) {
-          updateOnboard({ photos: [...current, final] });
-          try { triggerHaptic('light') } catch {}
-        } else {
+        if (slotsLeft() <= 0) {
           toast('Máximo 6 fotos');
+          return
         }
+        startCropFlow([dataUrl])
       }
     } catch (err) {
       toast('No se pudo tomar la foto (permiso o cancelación)');
@@ -350,7 +401,7 @@ export const OnboardingFlow = ({
     }
     const allConsents = Object.values(localConsents).every(v => v === true);
     if (!allConsents) {
-      toast.error('Faltan aceptaciones', { description: 'Debes aceptar todos los consentimientos para continuar' });
+      toast.error('Faltan casillas', { description: 'Marca las 3 confirmaciones para entrar a EntrenaMatch' });
       return;
     }
     if ((onboardData.availability || []).length === 0) {
@@ -461,9 +512,9 @@ export const OnboardingFlow = ({
             <div className="font-mono text-[#FF671F] tracking-[2px]">{isEditMode ? 'EDIT' : 'PASO'} {onboardingStep + 1} / {totalSteps} • {Math.round((onboardingStep + 1) / totalSteps * 100)}%</div>
             <div className="text-[#9CA3AF] text-[10px] font-medium">
               {showIntroStep && 'QUÉ ES ENTRENAMATCH'}
-              {isPresenceStep && (isEditMode ? 'PRESENCIA' : 'PRESENCIA EN EL CÍRCULO')}
-              {isEssenceStep && 'TU ESENCIA DE RENDIMIENTO'}
-              {isPulseStep && 'EL PULSO VIVO (LA MAGIA)'}
+              {isPresenceStep && (isEditMode ? 'TU PERFIL' : 'CREA TU PERFIL')}
+              {isEssenceStep && 'TU ENTRENO Y OBJETIVO'}
+              {isPulseStep && '¿ENTRENAR EN VIVO?'}
               {isConsentsStep && (isEditMode ? 'GUARDAR CAMBIOS' : 'LISTO • ENTRAR A LA RED')}
             </div>
           </div>
@@ -476,8 +527,12 @@ export const OnboardingFlow = ({
             ))}
           </div>
           <div className="flex justify-between text-[8px] text-[#9CA3AF]/60 mt-1 px-0.5 font-mono tracking-widest">
-            {!isEditMode && <div>INICIO</div>}
-            <div>PRESENCIA</div><div>ESENCIA</div><div>PULSO</div><div>VOTOS</div>
+            {(!isEditMode
+              ? (['INICIO', 'PERFIL', 'ENTRENO', 'EN VIVO', 'ENTRAR'] as const)
+              : (['PERFIL', 'ENTRENO', 'EN VIVO', 'ENTRAR'] as const)
+            ).map((label) => (
+              <div key={label}>{label}</div>
+            ))}
           </div>
         </div>
 
@@ -553,6 +608,13 @@ export const OnboardingFlow = ({
                   <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-[#FF671F]/50 shadow group">
                     <img src={photo} className="w-full h-full object-cover" alt="" />
                     <button onClick={() => { removeOnboardPhoto(idx); try { triggerHaptic('light') } catch {} }} className="absolute top-1.5 right-1.5 bg-black/80 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center active:bg-red-500">×</button>
+                    <button
+                      type="button"
+                      onClick={() => { try { triggerHaptic('light') } catch {}; startCropFlow([photo], idx) }}
+                      className="absolute top-1.5 left-1.5 bg-black/75 text-white text-[8px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 active:bg-[#FF671F] active:text-black"
+                    >
+                      <Crop size={10} /> Encuadrar
+                    </button>
                     {idx === 0 && <div className="absolute bottom-0 left-0 right-0 bg-[#FF671F] text-black text-[8px] py-0.5 text-center font-bold tracking-widest">PRESENCIA PRINCIPAL</div>}
                     {idx > 0 && (
                       <button onClick={() => {
@@ -618,28 +680,102 @@ export const OnboardingFlow = ({
               )}
             </div>
 
-            {/* Bio + Mantra - Unique & attractive */}
-            <div>
-              <div className="flex justify-between text-sm mb-1.5">
-                <div className="font-semibold tracking-wider">TU BIO + MANTRA (corta, directa)</div>
-                <span className="text-[#FF671F] text-xs font-mono">{(onboardData.bio || '').length}/160</span>
-              </div>
-              <textarea 
-                value={onboardData.bio || ''} 
-                onChange={e => { updateOnboard({ bio: e.target.value.slice(0,160) }); try { triggerHaptic('light') } catch {} }}
-                className="w-full bg-[#1C1C20] border-2 border-[#2F2F35] focus:border-[#FF671F] rounded-2xl px-4 py-3 text-sm h-16 resize-y"
-                placeholder="Pesas 4x + running costanera. Mantra: 'Sin excusas, con mi Red.'"
-              />
-              <div className="flex flex-wrap gap-1 mt-1.5">
-                {[
-                  'Pesas 4x + running. Mantra: constancia sin excusas.',
-                  'Calistenia y yoga. Mi Red me hace imparable.',
-                  'CrossFit boxeo. Sparring serio, energía compartida.'
-                ].map((b,i) => (
-                  <button key={i} onClick={() => { updateOnboard({ bio: b }); try { triggerHaptic('light') } catch {} }} className="text-[8px] px-2 py-1 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10">{b.slice(0,42)}...</button>
-                ))}
-              </div>
-            </div>
+            {/* Bio + Mantra */}
+            {(() => {
+              const bioLen = (onboardData.bio || '').length
+              const bioProgress = Math.min(100, Math.round((bioLen / BIO_MAX) * 100))
+              const bioSweetSpot = bioLen >= 48 && bioLen <= 130
+              return (
+                <div className="rounded-3xl overflow-hidden border border-[#FF671F]/25 bg-gradient-to-br from-[#1a1208] via-[#111113] to-[#0a0a0c] shadow-lg shadow-[#FF671F]/5">
+                  <div className="px-4 pt-4 pb-3 border-b border-white/5 flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#FF671F] to-[#f59e0b] flex items-center justify-center shrink-0 shadow-md shadow-[#FF671F]/25">
+                      <Quote size={18} className="text-black" aria-hidden />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[9px] uppercase tracking-[2px] text-[#FF671F] font-bold">Tu voz en la Red</p>
+                      <p className="text-sm font-black text-white mt-0.5">Bio + mantra</p>
+                      <p className="text-[10px] text-[#9CA3AF] mt-0.5 leading-snug">
+                        Una línea que diga cómo entrenas y qué te mueve — aparece en swipes y tu perfil.
+                      </p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className={`text-xs font-mono font-bold ${bioSweetSpot ? 'text-[#22c55e]' : 'text-[#FF671F]'}`}>
+                        {bioLen}/{BIO_MAX}
+                      </span>
+                      {bioSweetSpot && (
+                        <p className="text-[8px] text-[#22c55e] mt-0.5">✓ longitud ideal</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="px-4 pt-3">
+                    <div className="h-1 rounded-full bg-[#2F2F35] overflow-hidden mb-3">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${
+                          bioSweetSpot ? 'bg-gradient-to-r from-[#22c55e] to-[#4ade80]' : 'bg-gradient-to-r from-[#FF671F] to-[#f59e0b]'
+                        }`}
+                        style={{ width: `${bioProgress}%` }}
+                      />
+                    </div>
+
+                    <div className="relative">
+                      <textarea
+                        value={onboardData.bio || ''}
+                        onChange={(e) => {
+                          updateOnboard({ bio: e.target.value.slice(0, BIO_MAX) })
+                          try { triggerHaptic('light') } catch {}
+                        }}
+                        rows={3}
+                        className="w-full bg-[#0D0D10]/80 border border-[#FF671F]/20 focus:border-[#FF671F]/60 focus:ring-2 focus:ring-[#FF671F]/15 rounded-2xl px-4 py-3.5 text-sm text-white placeholder:text-[#6B7280] resize-none leading-relaxed"
+                        placeholder="Ej: Pesas 4x + running costanera. Mantra: sin excusas, con mi Red."
+                      />
+                      {!onboardData.bio?.trim() && (
+                        <div className="pointer-events-none absolute bottom-3 right-3 flex items-center gap-1 text-[9px] text-[#6B7280]">
+                          <Sparkles size={11} className="text-[#FF671F]/70" aria-hidden />
+                          <span>+ mantra al final</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="px-4 pb-4 pt-2">
+                    <p className="text-[9px] uppercase tracking-wider text-[#9CA3AF] font-semibold mb-2 flex items-center gap-1.5">
+                      <Sparkles size={11} className="text-[#FF671F]" aria-hidden />
+                      Inspiración rápida — toca para usar
+                    </p>
+                    <div className="space-y-2">
+                      {bioInspirations.map((item) => {
+                        const selected = onboardData.bio === item.text
+                        return (
+                          <button
+                            key={item.vibe}
+                            type="button"
+                            onClick={() => {
+                              updateOnboard({ bio: item.text })
+                              try { triggerHaptic('light') } catch {}
+                            }}
+                            className={`w-full text-left p-3 rounded-2xl border transition active:scale-[0.99] ${
+                              selected
+                                ? 'border-[#FF671F] bg-[#FF671F]/15 ring-1 ring-[#FF671F]/30'
+                                : 'border-[#2F2F35] bg-[#1C1C20]/80 hover:border-[#FF671F]/35 active:bg-[#FF671F]/8'
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-base leading-none" aria-hidden>{item.emoji}</span>
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-[#FF671F]">{item.vibe}</span>
+                              {selected && (
+                                <span className="ml-auto text-[9px] text-[#22c55e] font-bold">EN USO</span>
+                              )}
+                            </div>
+                            <p className="text-[11px] text-[#d1d5db] leading-snug">{item.text}</p>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
           </div>
         )}
 
@@ -647,7 +783,7 @@ export const OnboardingFlow = ({
         {isEssenceStep && (
           <div className="space-y-7">
             <div>
-              <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1.5">TU ESENCIA • ELIGE TUS ENTRENOS (1-3)</div>
+              <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1.5">TU ENTRENO • ELIGE TUS DEPORTES (1-3)</div>
               <div className="grid grid-cols-2 gap-2">
                 {TRAINING_OPTIONS.map((type: string) => {
                   const selected = (onboardData.trainingTypes || []).includes(type);
@@ -681,7 +817,7 @@ export const OnboardingFlow = ({
                       try { triggerHaptic('light') } catch {} 
                     }} className={`p-3 rounded-2xl border-2 text-left active:scale-[0.985] flex justify-between items-center ${selected ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#2F2F35] bg-[#1C1C20]'}`}>
                       <span className="font-semibold text-sm">{goal}</span>
-                      {selected && <span className="text-xs bg-black/20 px-2 py-0.5 rounded">✓ TU FUEGO</span>}
+                      {selected && <span className="text-[10px] font-bold bg-black/25 px-2 py-0.5 rounded-full tracking-wide">✓ Objetivo principal</span>}
                     </button>
                   );
                 })}
@@ -709,11 +845,11 @@ export const OnboardingFlow = ({
                 </div>
                 <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
                   <div className="text-[#22c55e] text-xl font-black mt-0.5">03</div>
-                  <div><span className="font-bold">CREAS ENTRENASYNC</span><br/><span className="text-[#9CA3AF] text-xs">Acciones en vivo (flexiones juntos se sienten en ambos). Tether dorado en el mapa. +Fuerza del equipo real para tu Red.</span></div>
+                  <div><span className="font-bold">CREAS ENTRENASYNC</span><br/><span className="text-[#9CA3AF] text-xs">Acciones en vivo (flexiones juntos se sienten en ambos). En el mapa aparece una línea dorada entre ustedes. +Fuerza del equipo real para tu Red.</span></div>
                 </div>
                 <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
                   <div className="text-[#22c55e] text-xl font-black mt-0.5">04</div>
-                  <div><span className="font-bold">TODO QUEDA EN MUROS + FEED + RIPPLES</span><br/><span className="text-[#FF671F] text-xs font-bold">Entrenar juntos tiene consecuencias que otros presencian. Esto es único.</span></div>
+                  <div><span className="font-bold">QUEDA EN TU MURO, FEED Y ONDAS DEL MAPA</span><br/><span className="text-[#FF671F] text-xs font-bold">Cada EntrenaSync deja pulsos visibles en el GymPulse — quien entrena cerca ve que estuvieron juntos.</span></div>
                 </div>
               </div>
             </div>
@@ -724,7 +860,7 @@ export const OnboardingFlow = ({
               <div className="flex items-center justify-center gap-2 text-xs">
                 <div className="bg-[#22c55e] text-black px-2 py-0.5 rounded font-bold">🟢 TÚ EN PULSO VIVO</div>
                 <div className="text-[#FFD700]">⟷</div>
-                <div className="bg-[#FFD700] text-black px-2 py-0.5 rounded font-bold">TETHER DORADO CON TU RED</div>
+                <div className="bg-[#FFD700] text-black px-2 py-0.5 rounded font-bold">🔗 LÍNEA DORADA EN MAPA</div>
               </div>
               <div className="text-[9px] text-[#9CA3AF] mt-1">+25 Fuerza del equipo • ondas en el mapa • tu primer match en &lt;30s</div>
             </div>
@@ -772,52 +908,93 @@ export const OnboardingFlow = ({
           </div>
         )}
 
-        {/* PASO VOTOS */}
+        {/* PASO ENTRAR — confirmaciones */}
         {isConsentsStep && (
           <div className="space-y-5">
             <div className="text-center">
-              <div className="uppercase tracking-[2px] text-[#FF671F] text-xs mb-1">ÚLTIMO PASO</div>
-              <div className="text-2xl font-black tracking-[-1px]">LOS 3 VOTOS DEL CÍRCULO</div>
-              <div className="text-[#9CA3AF] text-sm mt-1">Sella tu entrada a la red de GymPartners donde el esfuerzo se comparte y tiene peso real.</div>
+              <div className="uppercase tracking-[2px] text-[#FF671F] text-xs mb-1">Último paso</div>
+              <div className="text-2xl font-black tracking-[-1px]">Confirma y entra</div>
+              <div className="text-[#9CA3AF] text-sm mt-1 leading-snug">
+                Marca las 3 casillas. Son los requisitos básicos para usar la red de gym.
+              </div>
             </div>
 
             {[
-              { key: 'is18' as const, label: 'Juro ser mayor de 18 y entrenar con respeto a mis GymPartners', desc: 'Respeto, seriedad y energía positiva siempre.' },
-              { key: 'isForTraining' as const, label: 'Juro entrenar en serio y con motivación real para mis GymPartners', desc: 'No excusas. Mi presencia construye la de otros.' },
-              { key: 'sharesLocation' as const, label: 'Juro aparecer en el GymPulse vivo para sincronizarme con mis GymPartners', desc: 'Mi energía es visible. Mis GymPartners me hacen más fuerte.' }
-            ].map(item => {
+              {
+                key: 'is18' as const,
+                tag: '1 · Edad',
+                label: 'Tengo 18 años o más',
+                desc: 'EntrenaMatch es solo para mayores de edad.',
+              },
+              {
+                key: 'isForTraining' as const,
+                tag: '2 · Comunidad',
+                label: 'Usaré la app para entrenar en serio y con respeto',
+                desc: 'Espacio para motivarnos — no para perder el tiempo.',
+              },
+              {
+                key: 'sharesLocation' as const,
+                tag: '3 · Mapa en vivo',
+                label: 'Entiendo que solo aparezco en el mapa si activo “Entrenando ahora”',
+                desc: 'Tú decides cuándo estar visible. Puedes apagar LIVE cuando quieras.',
+              },
+            ].map((item) => {
               const checked = localConsents[item.key]
               return (
-              <button
-                key={item.key}
-                type="button"
-                role="checkbox"
-                aria-checked={checked}
-                onClick={() => toggleConsent(item.key)}
-                className={`w-full text-left p-4 rounded-2xl border-2 transition touch-manipulation relative z-10 ${
-                  checked
-                    ? 'bg-[#FF671F]/15 border-[#FF671F] ring-1 ring-[#FF671F]/40'
-                    : 'bg-[#1C1C20] border-[#2F2F35] active:bg-[#25252A] active:border-[#FF671F]/40'
-                }`}
-              >
-                <div className="flex items-start gap-3 pointer-events-none">
-                  <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 text-xs font-bold ${
-                    checked ? 'bg-[#FF671F] border-[#FF671F] text-black' : 'border-[#9CA3AF] text-transparent'
-                  }`}>
-                    ✓
-                  </span>
-                  <div className="flex-1">
-                    <div className="font-bold text-sm leading-tight">{item.label}</div>
-                    <div className="text-[#9CA3AF] text-xs mt-1 leading-tight">{item.desc}</div>
+                <button
+                  key={item.key}
+                  type="button"
+                  role="checkbox"
+                  aria-checked={checked}
+                  onClick={() => toggleConsent(item.key)}
+                  className={`w-full text-left p-4 rounded-2xl border-2 transition touch-manipulation relative z-10 ${
+                    checked
+                      ? 'bg-[#FF671F]/15 border-[#FF671F] ring-1 ring-[#FF671F]/40'
+                      : 'bg-[#1C1C20] border-[#2F2F35] active:bg-[#25252A] active:border-[#FF671F]/40'
+                  }`}
+                >
+                  <div className="flex items-start gap-3 pointer-events-none">
+                    <span
+                      className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 text-xs font-bold ${
+                        checked ? 'bg-[#FF671F] border-[#FF671F] text-black' : 'border-[#9CA3AF] text-transparent'
+                      }`}
+                    >
+                      ✓
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[9px] font-bold uppercase tracking-wider text-[#FF671F] mb-0.5">{item.tag}</p>
+                      <div className="font-bold text-sm leading-tight text-white">{item.label}</div>
+                      <div className="text-[#9CA3AF] text-xs mt-1 leading-snug">{item.desc}</div>
+                    </div>
                   </div>
-                </div>
-              </button>
-            )})}
+                </button>
+              )
+            })}
 
-            <div className="mt-2 p-5 rounded-3xl bg-gradient-to-br from-[#0a120f] to-[#111113] border-2 border-[#22c55e]/50 text-center">
-              <div className="text-[#22c55e] font-black text-sm tracking-widest mb-1">AL SELLAR ESTOS VOTOS</div>
-              <div className="text-sm leading-snug text-white/90">Si activaste Live → tu punto verde pulsa en el mapa al instante.<br/>Ve a <span className="font-bold text-[#FF671F]">EXPLORAR</span> → ❤️ en el primero que veas cerca = chat + match en &lt;20s.<br/>Luego abre el chat y toca <span className="font-bold">"INICIAR ENTRENASYNC"</span> y siente el tether dorado.</div>
-              <div className="text-[9px] text-[#22c55e] mt-2 tracking-wider">BIENVENIDO A LA RED. TU PRIMER LIVE EMPIEZA AHORA.</div>
+            <div className="p-4 rounded-2xl bg-[#111113] border border-[#2F2F35]">
+              <p className="text-[10px] uppercase tracking-wider text-[#9CA3AF] font-semibold mb-3">
+                Qué puedes hacer al entrar
+              </p>
+              <ol className="space-y-2.5 text-sm text-[#d1d5db] leading-snug">
+                <li className="flex gap-2">
+                  <span className="text-[#22c55e] font-bold shrink-0">1.</span>
+                  <span>
+                    Si activaste LIVE, tu <strong className="text-white">punto verde</strong> aparece en el mapa del GymPulse.
+                  </span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#22c55e] font-bold shrink-0">2.</span>
+                  <span>
+                    Ve a <strong className="text-[#FF671F]">Explorar</strong> y dale ❤️ a alguien cerca → match y chat al instante.
+                  </span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#22c55e] font-bold shrink-0">3.</span>
+                  <span>
+                    En el chat, toca <strong className="text-white">Iniciar EntrenaSync</strong> para entrenar juntos — verán la línea dorada en el mapa.
+                  </span>
+                </li>
+              </ol>
             </div>
           </div>
         )}
@@ -833,20 +1010,21 @@ export const OnboardingFlow = ({
           )}
 
           {isEssenceStep && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0) && (
-            <p className="text-center text-[9px] text-[#ef4444] font-medium tracking-wider">ELIGE AL MENOS UN TIPO DE ENTRENO Y TU FUEGO PRINCIPAL</p>
+            <p className="text-center text-[9px] text-[#ef4444] font-medium tracking-wider">ELIGE AL MENOS UN TIPO DE ENTRENO Y UN OBJETIVO PRINCIPAL</p>
           )}
 
           {isConsentsStep && !Object.values(localConsents).every(Boolean) && (
             <p className="text-center text-[9px] text-[#FF671F] font-medium tracking-wider">
-              Marca los 3 votos para sellar tu entrada ({Object.values(localConsents).filter(Boolean).length}/3)
+              Marca las 3 casillas para entrar ({Object.values(localConsents).filter(Boolean).length}/3)
             </p>
           )}
 
           <button 
             onClick={nextOnboarding} 
-            className="w-full py-4 text-base font-black tracking-[1.5px] rounded-3xl btn-primary active:scale-[0.985] bg-gradient-to-r from-[#FF671F] to-[#E55A1A] touch-manipulation"
+            className="w-full py-4 text-base font-black tracking-[1.5px] rounded-3xl btn-primary active:scale-[0.985] bg-gradient-to-r from-[#FF671F] to-[#E55A1A] touch-manipulation disabled:opacity-45 disabled:pointer-events-none"
             disabled={
-              isEssenceStep && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0)
+              (isEssenceStep && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0)) ||
+              (isConsentsStep && !Object.values(localConsents).every(Boolean))
             }
           >
             {onboardingStep < lastStep ? 'CONTINUAR →' : '¡ENTRAR A ENTRENAMATCH!'}
@@ -854,6 +1032,15 @@ export const OnboardingFlow = ({
           <div className="text-center text-[8px] text-[#9CA3AF] tracking-[1px]">TU PERFIL EN LA RED • PRIMER LIVE EN &lt;90s</div>
         </div>
       </div>
+
+      <PhotoCropModal
+        open={!!cropSession}
+        imageSrc={cropSession?.src || ''}
+        title="Encuadra tu foto"
+        subtitle="Cuadra el recorte — así te verán en swipes, mapa y perfil."
+        onConfirm={finishCroppedPhoto}
+        onCancel={() => setCropSession(null)}
+      />
     </div>
   );
 };
