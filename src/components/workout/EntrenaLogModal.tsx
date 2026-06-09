@@ -142,6 +142,7 @@ export function EntrenoDeHoyModal({
   const [title, setTitle] = useState(defaultTitle)
   const [type, setType] = useState<WorkoutType>('full')
   const [durationMin, setDurationMin] = useState(45)
+  const [durationDraft, setDurationDraft] = useState('45')
   const [exercises, setExercises] = useState<WorkoutExercise[]>([])
   const [search, setSearch] = useState('')
   const [muscleFilter, setMuscleFilter] = useState<string | undefined>()
@@ -157,6 +158,7 @@ export function EntrenoDeHoyModal({
       (liveDurationMin && liveDurationMin >= 5 ? liveDurationMin : undefined) ??
       45
     setDurationMin(dur)
+    setDurationDraft(String(dur))
     setExercises(initialExercises?.length ? initialExercises.map((e) => ({ ...e, sets: [...e.sets] })) : [])
     setSearch('')
     setMuscleFilter(undefined)
@@ -168,6 +170,7 @@ export function EntrenoDeHoyModal({
     setTitle(tpl.label)
     setType(tpl.type)
     setDurationMin(tpl.durationMin)
+    setDurationDraft(String(tpl.durationMin))
     setExercises(cloneExercises(tpl.exercises))
   }
 
@@ -240,9 +243,18 @@ export function EntrenoDeHoyModal({
 
   const canSave = exercises.length > 0 && exercises.every((e) => e.sets.length > 0)
 
+  const parseDurationMin = (): number => {
+    const n = parseInt(durationDraft, 10)
+    if (Number.isNaN(n) || n < 5) return 5
+    return Math.min(240, n)
+  }
+
   const handleSave = async () => {
     if (!canSave || saving) return
-    await onSave({ title: title.trim() || defaultTitle, type, exercises, durationMin })
+    const dur = parseDurationMin()
+    setDurationMin(dur)
+    setDurationDraft(String(dur))
+    await onSave({ title: title.trim() || defaultTitle, type, exercises, durationMin: dur })
   }
 
   return (
@@ -345,12 +357,31 @@ export function EntrenoDeHoyModal({
               Duración (min)
             </label>
             <input
-              type="number"
-              min={5}
-              max={240}
-              value={durationMin}
-              onChange={(e) => setDurationMin(Math.max(5, Number(e.target.value) || 45))}
+              type="text"
+              inputMode="numeric"
+              value={durationDraft}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/\D/g, '')
+                setDurationDraft(raw)
+                if (raw !== '') {
+                  const n = parseInt(raw, 10)
+                  if (!Number.isNaN(n)) setDurationMin(Math.min(240, n))
+                }
+              }}
+              onBlur={() => {
+                const n = parseInt(durationDraft, 10)
+                if (durationDraft === '' || Number.isNaN(n) || n < 5) {
+                  setDurationMin(5)
+                  setDurationDraft('5')
+                } else {
+                  const clamped = Math.min(240, n)
+                  setDurationMin(clamped)
+                  setDurationDraft(String(clamped))
+                }
+              }}
               className="mt-1 w-full px-3 py-2.5 rounded-xl bg-[#1a1a22] border border-white/10 text-white text-sm"
+              placeholder="min"
+              aria-label="Duración en minutos"
             />
           </div>
 
