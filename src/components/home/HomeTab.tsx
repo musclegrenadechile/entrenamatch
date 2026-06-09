@@ -14,6 +14,7 @@ import { HomeCoachBanner } from './HomeCoachBanner'
 import { HomeShopBanner } from './HomeShopBanner'
 import { PostLiveShareBanner, type PostLiveSession } from './PostLiveShareBanner'
 import { WeeklyPactReminderStrip } from './WeeklyPactReminderStrip'
+import { getFeedRankBadges } from '../../utils/feedRanking'
 
 export type HomeSubTab = 'day' | 'feed'
 
@@ -535,7 +536,7 @@ export function HomeTab(props: HomeTabProps) {
 
       {(() => {
         // Use the top-level feedComputation (hook always called at top of component)
-        const { feedPosts, allCommunityPosts, hasActiveFilter } = feedComputation;
+        const { feedPosts, allCommunityPosts, hasActiveFilter, rankingCtx } = feedComputation;
 
         if (isLoadingFeed && feedPosts.length === 0) {
           return (
@@ -601,6 +602,7 @@ export function HomeTab(props: HomeTabProps) {
               const isLivePost = (post.text || '').toLowerCase().includes('entrenando ahora') || (post.text || '').includes('me uno al live');
               const isSyncPost = (post.text || '').toLowerCase().includes('sincronizado') || post.isSyncStory || (post.text || '').includes('ENTRENASYNC');
               const isEcho = (post.text || '').includes('HIGHLIGHT') || (post.text || '').includes('Destacado de Sesión Sync') || (post.text || '').includes('Fui testigo');
+              const rankBadges = rankingCtx ? getFeedRankBadges(post, rankingCtx) : null;
 
               return (
                 <motion.div 
@@ -655,6 +657,15 @@ export function HomeTab(props: HomeTabProps) {
                           {isSyncPost && <span className="feed-author-badge bg-[#22c55e] text-black">SYNC</span>}
                           {isEcho && <span className="feed-author-badge bg-[#FFD700] text-black">HIGHLIGHT</span>}
                           {ownerProfile?.trainingNow && <span className="feed-author-badge bg-[#22c55e] text-black">🟢 LIVE AHORA</span>}
+                          {!isMine && rankBadges?.live && !ownerProfile?.trainingNow && (
+                            <span className="feed-author-badge bg-[#22c55e]/90 text-black">🟢 LIVE</span>
+                          )}
+                          {!isMine && rankBadges?.near && (
+                            <span className="feed-author-badge bg-[#3b82f6] text-white">📍 CERCA</span>
+                          )}
+                          {!isMine && rankBadges?.bond && (
+                            <span className="feed-author-badge bg-[#FFD700]/20 text-[#FFD700]">RED</span>
+                          )}
                         </div>
                       </div>
                       <div className="text-right text-[10px] text-[#9CA3AF] tabular-nums whitespace-nowrap ml-auto">{getRelativeTime(post.timestamp)}</div>

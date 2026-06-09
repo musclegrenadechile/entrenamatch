@@ -86,10 +86,8 @@ import { suggestedSquadName } from './utils/sparseCityDefaults'
 import { partnersForMap } from './utils/partnerLocations'
 import {
   getTodayStr,
-  computeRetentionLevel,
   getUnlockedGadgets,
   getNextGadget,
-  generateDailyChallenge,
 } from './utils/dailyPulseCore'
 import { SyncLiveBlockerModal } from './components/sync/SyncLiveBlockerModal'
 import {
@@ -239,6 +237,8 @@ import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr, b
 import { fetchRecentWorkouts, fetchUserWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, buildWorkoutPreview, computeWorkoutStats } from './services/workouts'
 import { useFuelBalance } from './hooks/useFuelBalance'
 import { useFuelState } from './hooks/useFuelState'
+import { useDailyPulse, type DailyPulseBridge } from './hooks/useDailyPulse'
+import { computeGlobalFeed } from './utils/feedRanking'
 import { useSyncSession } from './hooks/useSyncSession'
 import { usePartnerLocations } from './hooks/usePartnerLocations'
 import { useLiveMapPipeline } from './hooks/useLiveMapPipeline'
@@ -607,28 +607,13 @@ function App() {
     }
   }, [])
 
-  // === GYMPULSE DIARIO DE TUS GYMPARTNERS (states + ref hoisted VERY early, before sendVoiceNote and daily helpers, to eliminate all TDZ for dailyPulse in any closure on initial open)
-  const [dailyPulse, setDailyPulse] = useState<{
-    trainingStreak: number
-    synergyStreak: number
-    voiceStreak: number
-    pulseStreak: number
-    momentum: number
-    lastDate: string | null
-    currentChallenge: any | null
-    longestTraining: number
-    longestSynergy: number
-    longestVoice: number
-    longestPulse: number
-    level: number
-    xp: number
-    streakProtectedDate?: string | null
-    pulseAmplifiedDate?: string | null
-  } | null>(null)
-  const [showDailyPulseBanner, setShowDailyPulseBanner] = useState(false)
+  const dailyPulseBridgeRef = useRef<DailyPulseBridge | null>(null)
+  const saveUserWithRealSyncRef = useRef<(user: CurrentUser) => Promise<unknown>>(async () => {})
+  const createProfilePostRef = useRef<(text: string, photo?: string | null) => Promise<unknown>>(
+    async () => {}
+  )
+  const triggerConfettiRef = useRef<(() => void) | undefined>(undefined)
   const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false)
-  const dailyPulseRef = useRef<any>(null)
-  useEffect(() => { dailyPulseRef.current = dailyPulse }, [dailyPulse])
 
   // Boost visibility of install banner on meaningful interaction (swipe or tab change to social)
   // More aggressive: show even without deferred (for manual guidance) if not dismissed
@@ -864,21 +849,22 @@ function App() {
       setVoiceUploadProgress(0)
       try { triggerHaptic('success') } catch {}
       // Voice streak update (before toast so accurate)
-      checkAndUpdateDailyPulse()
-      const dp = dailyPulseRef.current || dailyPulse || {}
+      const pulseApi = dailyPulseBridgeRef.current
+      pulseApi?.checkAndUpdateDailyPulse()
+      const dp = pulseApi?.dailyPulseRef.current || pulseApi?.dailyPulse || {}
       const vStreak = (dp.voiceStreak || 0) + 1
       const vUpdate = { ...dp, voiceStreak: vStreak, longestVoice: Math.max((dp.longestVoice || 0), vStreak) }
-      setDailyPulse(vUpdate)
-      saveUserWithRealSync({ ...(currentUser as any), dailyVoiceStreak: vStreak } as any)
+      pulseApi?.setDailyPulse(vUpdate)
+      saveUserWithRealSyncRef.current?.({ ...(currentUser as any), dailyVoiceStreak: vStreak } as CurrentUser)
       // Premium toast celebrating the ritual voice + streak
       toast.success('Nota enviada a tu GymPartner', { 
         description: `${duration}s • Racha de voz ${vStreak}d 🔥  +5 Constancia en el GymPulse` 
       })
       // Daily Pulse progress (voice is powerful for bond/ripple challenges)
       if (dp.currentChallenge?.type === 'bond' || dp.currentChallenge?.type === 'network') {
-        completeDailyChallenge(1)
+        pulseApi?.completeDailyChallenge(1)
       } else {
-        awardConstancy(5, 'Voz enviada al GymPulse')
+        pulseApi?.awardConstancy(5, 'Voz enviada al GymPulse')
       }
     } catch (e) {
       console.error('Send voice error', e)
@@ -1144,237 +1130,6 @@ function App() {
     workoutCompare?: import('./utils/workoutSyncCompare').SyncWorkoutCompare | null
   } | null>(null)
 
-  const checkAndUpdateDailyPulse = (forceUser?: any) => {
-    const u = forceUser || currentUser
-    if (!u) return
-
-    const today = getTodayStr()
-    const last = dailyPulse?.lastDate || (u as any).lastDailyPulseDate || null
-    const currentStreak = dailyPulse?.trainingStreak || (u as any).dailyTrainingStreak || 0
-    const currentSynergy = dailyPulse?.synergyStreak || (u as any).dailySynergyStreak || 0
-    const currentVoice = dailyPulse?.voiceStreak || (u as any).dailyVoiceStreak || 0
-    const currentPulse = dailyPulse?.pulseStreak || (u as any).dailyPulseStreak || 0
-    const mom = dailyPulse?.momentum || (u as any).momentumPoints || 0
-    const longTrain = dailyPulse?.longestTraining || (u as any).longestDailyTraining || 0
-    const longSyn = dailyPulse?.longestSynergy || (u as any).longestDailySynergy || 0
-    const longVoice = dailyPulse?.longestVoice || (u as any).longestDailyVoice || 0
-    const longPulse = dailyPulse?.longestPulse || (u as any).longestDailyPulse || 0
-
-    let newStreak = currentStreak
-    let newSynergy = currentSynergy
-    let newVoice = currentVoice
-    let newPulseStreak = currentPulse
-    let newLongTrain = longTrain
-    let newLongSyn = longSyn
-    let newLongVoice = longVoice
-    let newLongPulse = longPulse
-
-    if (last !== today) {
-      const isProtected = (dailyPulse?.streakProtectedDate || (u as any).streakProtectedDate) === today
-      if (last) {
-        const lastD = new Date(last)
-        const yest = new Date()
-        yest.setDate(yest.getDate() - 1)
-        if (lastD.toDateString() === yest.toDateString() && !isProtected) {
-          newStreak = currentStreak + 1
-        } else if (isProtected) {
-          newStreak = currentStreak // protected, no reset
-        } else {
-          newStreak = 1
-        }
-      } else {
-        newStreak = 1
-      }
-
-      const challenge = generateDailyChallenge(u, syncBonds, [], networkStats.networkPower) // liveNow omitted on initial daily calc to avoid TDZ (populated on next interactions)
-
-      const { level, xp } = computeRetentionLevel(mom, newStreak, newSynergy, newVoice, newPulseStreak, networkStats.networkPower)
-
-      const newPulse = {
-        trainingStreak: newStreak,
-        synergyStreak: newSynergy,
-        voiceStreak: newVoice,
-        pulseStreak: newPulseStreak,
-        momentum: mom,
-        lastDate: today,
-        currentChallenge: challenge,
-        longestTraining: Math.max(newLongTrain, newStreak),
-        longestSynergy: newLongSyn,
-        longestVoice: Math.max(newLongVoice, newVoice),
-        longestPulse: Math.max(newLongPulse, newPulseStreak),
-        level,
-        xp,
-        streakProtectedDate: dailyPulse?.streakProtectedDate || (u as any).streakProtectedDate || null,
-        pulseAmplifiedDate: dailyPulse?.pulseAmplifiedDate || (u as any).pulseAmplifiedDate || null
-      }
-
-      setDailyPulse(newPulse)
-
-      const update: any = {
-        dailyTrainingStreak: newStreak,
-        dailySynergyStreak: newSynergy,
-        dailyVoiceStreak: newVoice,
-        dailyPulseStreak: newPulseStreak,
-        momentumPoints: mom,
-        lastDailyPulseDate: today,
-        currentDailyChallenge: challenge,
-        // level/xp computed client, but persist for sync
-        retentionLevel: level,
-        retentionXp: xp,
-        streakProtectedDate: dailyPulse?.streakProtectedDate || (u as any).streakProtectedDate || null,
-        pulseAmplifiedDate: dailyPulse?.pulseAmplifiedDate || (u as any).pulseAmplifiedDate || null
-      }
-      saveUserWithRealSync({ ...u, ...update } as any).catch((e) =>
-        console.warn('[DailyPulse] sync failed', e)
-      )
-
-      toast.success('¡Nuevo GymPulse Diario!', {
-        description: `${challenge.icon} ${challenge.title} • +${challenge.reward} Constancia para tus GymPartners`
-      })
-
-      const notif = {
-        id: 'pulse-' + today,
-        type: 'daily_pulse',
-        title: 'GymPulse Diario listo',
-        body: `${challenge.icon} ${challenge.title} — completalo hoy para tu Red`,
-        timestamp: Date.now(),
-        read: false,
-        data: { challengeId: challenge.id }
-      }
-      setNotifications(prev => [notif, ...prev].slice(0, 50))
-    } else if (!dailyPulse) {
-      const existingChallenge = (u as any).currentDailyChallenge
-      const { level: hydLevel, xp: hydXp } = computeRetentionLevel(mom, currentStreak, currentSynergy, currentVoice, currentPulse, networkStats.networkPower)
-      setDailyPulse({
-        trainingStreak: currentStreak,
-        synergyStreak: currentSynergy,
-        voiceStreak: currentVoice,
-        pulseStreak: currentPulse,
-        momentum: mom,
-        lastDate: last,
-        currentChallenge: existingChallenge || generateDailyChallenge(u, syncBonds, [], networkStats.networkPower), // liveNow omitted to avoid early closure over late-declared liveTrainingNow const
-        longestTraining: longTrain,
-        longestSynergy: longSyn,
-        longestVoice: longVoice,
-        longestPulse: longPulse,
-        level: hydLevel,
-        xp: hydXp,
-        streakProtectedDate: (u as any).streakProtectedDate || null,
-        pulseAmplifiedDate: (u as any).pulseAmplifiedDate || null
-      })
-    }
-  }
-
-  const refreshDailyPulse = () => checkAndUpdateDailyPulse()
-
-  const completeDailyChallenge = async (progressInc = 1, baseUser?: CurrentUser) => {
-    if (!dailyPulse || !dailyPulse.currentChallenge) return
-
-    const ch = { ...dailyPulse.currentChallenge }
-    ch.progress = Math.min(ch.target, (ch.progress || 0) + progressInc)
-
-    const justCompleted = ch.progress >= ch.target && !ch.completed
-
-    const prevLevel = dailyPulse.level || 1
-    const levelBonus = justCompleted ? Math.round(ch.reward * (1 + ((dailyPulse.level || 1) - 1) * 0.08)) : 5
-    const newMomentum = dailyPulse.momentum + levelBonus
-
-    const updatedPulse = {
-      ...dailyPulse,
-      momentum: newMomentum,
-      currentChallenge: { ...ch, completed: justCompleted ? true : ch.completed }
-    }
-
-    const { level: computedLevel, xp: computedXp } = computeRetentionLevel(newMomentum, updatedPulse.trainingStreak, updatedPulse.synergyStreak, updatedPulse.voiceStreak, updatedPulse.pulseStreak, networkStats.networkPower)
-    updatedPulse.level = computedLevel
-    updatedPulse.xp = computedXp
-
-    setDailyPulse(updatedPulse)
-
-    if (justCompleted && computedLevel > prevLevel) {
-      try { triggerHaptic('success') } catch {}
-      try { triggerConfetti() } catch {}
-      const newGadgets = getUnlockedGadgets(computedLevel).filter(g => g.level > prevLevel)
-      const gadgetText = newGadgets.length > 0 ? ` + ${newGadgets.map(g=>g.name).join(', ')} disponible(s)!` : ''
-      toast.success(`¡Subiste a NIVEL ${computedLevel}!`, { description: `Perk permanente: +8% Constancia en desafíos. ${gadgetText} ¡Tu constancia sube!` })
-      createProfilePost(`⭐ ¡NIVEL ${computedLevel} DE RETENCIÓN! Mi constancia diaria hace fuerte a toda la Red.${newGadgets.length ? ' Gadget: ' + newGadgets[0].name : ''}`, null, 'dailyPulse').catch(() => {})
-    }
-
-    const u = (baseUser ?? currentUserRef.current ?? currentUser) as any
-    if (!u) return
-    const update: any = {
-      momentumPoints: newMomentum,
-      currentDailyChallenge: updatedPulse.currentChallenge,
-      dailyTrainingStreak: updatedPulse.trainingStreak,
-      dailySynergyStreak: updatedPulse.synergyStreak,
-      dailyVoiceStreak: updatedPulse.voiceStreak,
-      dailyPulseStreak: updatedPulse.pulseStreak,
-      retentionLevel: updatedPulse.level,
-      retentionXp: updatedPulse.xp,
-      streakProtectedDate: updatedPulse.streakProtectedDate || null,
-      pulseAmplifiedDate: updatedPulse.pulseAmplifiedDate || null
-    }
-    saveUserWithRealSync({ ...u, ...update } as any)
-
-    if (justCompleted) {
-      try { triggerHaptic('success') } catch {}
-      toast.success(`¡GymPulse completado! +${levelBonus} Constancia`, {
-        description: `${ch.icon} ${ch.title} • Nivel ${dailyPulse.level} • Tu Red se fortalece`
-      })
-
-      const postText = `✅ Completé mi GymPulse Diario: ${ch.title}. ${ch.description} — Constancia para mis GymPartners 🔥`
-      try {
-        await createProfilePost(postText, null, 'dailyPulse')
-      } catch (e) { /* non fatal */ }
-
-      if (ch.type === 'bond' || ch.type === 'network') {
-        const partnerId = Object.keys(syncBonds || {})[0]
-        if (partnerId) {
-          const bonus = Math.floor(ch.reward / 2)
-          toast(`+${bonus} Constancia compartida con tu Red`, { description: 'El impacto se multiplica' })
-        }
-      }
-
-      if (updatedPulse.synergyStreak < updatedPulse.trainingStreak) {
-        const newSyn = updatedPulse.synergyStreak + 1
-        const synUpdate = { ...updatedPulse, synergyStreak: newSyn }
-        setDailyPulse(synUpdate)
-        saveUserWithRealSync({ ...(currentUser as any), dailySynergyStreak: newSyn, streakProtectedDate: updatedPulse.streakProtectedDate, pulseAmplifiedDate: updatedPulse.pulseAmplifiedDate } as any)
-      }
-      // Pulse visibility streak for completing daily challenges that create visible impact
-      const newPulseSt = (updatedPulse.pulseStreak || 0) + 1
-      const pUpdate = { ...updatedPulse, pulseStreak: newPulseSt, longestPulse: Math.max(updatedPulse.longestPulse || 0, newPulseSt) }
-      setDailyPulse(pUpdate)
-      saveUserWithRealSync({ ...(currentUser as any), dailyPulseStreak: newPulseSt, streakProtectedDate: updatedPulse.streakProtectedDate, pulseAmplifiedDate: updatedPulse.pulseAmplifiedDate } as any)
-
-      // Milestone rewards - powerful retention
-      const streak = updatedPulse.trainingStreak
-      if (streak > 0 && streak % 7 === 0) {
-        const bonus = 150
-        const milUpdate = { ...updatedPulse, momentum: (updatedPulse.momentum || 0) + bonus }
-        setDailyPulse(milUpdate)
-        saveUserWithRealSync({ ...(currentUser as any), momentumPoints: milUpdate.momentum, streakProtectedDate: updatedPulse.streakProtectedDate, pulseAmplifiedDate: updatedPulse.pulseAmplifiedDate } as any)
-        toast.success(`¡Milestone de Streak! +${bonus} Constancia`, { description: `${streak}d de racha activa — ¡Sigue así!` })
-        // Special post
-        createProfilePost(`🔥 RACHA ${streak}d — Mis GymPartners me hacen imparable. GymPulse Diario completado.`, null, 'dailyPulse').catch(()=>{})
-      }
-    } else {
-      toast(`+${progressInc} progreso en el GymPulse`)
-    }
-  }
-
-  const awardConstancy = (amount: number, reason: string, baseUser?: CurrentUser) => {
-    if (!dailyPulse) return
-    const base = baseUser ?? currentUserRef.current ?? currentUser
-    if (!base) return
-    const newM = (dailyPulse.momentum || 0) + amount
-    const up = { ...dailyPulse, momentum: newM }
-    setDailyPulse(up)
-    saveUserWithRealSync({ ...(base as any), momentumPoints: newM, streakProtectedDate: dailyPulse?.streakProtectedDate, pulseAmplifiedDate: dailyPulse?.pulseAmplifiedDate } as any).catch((e) =>
-      console.warn('[Constancy] sync failed', e)
-    )
-    toast(`+${amount} Constancia`, { description: reason })
-  }
   const [witnessData, setWitnessData] = useState<any>(null) // for shared session highlight replay: replay of a strong EntrenaSync (shared state, actions, vibe) that can be archived as co-authored performance memory
 
   // Shared Performance Highlights & Discovery Pins
@@ -1569,37 +1324,6 @@ const sanitizeForFirestore = (obj: any): any => {
 
   // Voice notes recording (for 1:1 and group chats) - spectacular UX for fitness social
   const audioChunksRef = useRef<Blob[]>([])
-
-  // Daily pulse banner + risk effects. Defined after the hoisted dailyPulse state + helper functions.
-  // References to dailyPulse, checkAndUpdateDailyPulse etc. are safe (all declared earlier in render).
-
-    useEffect(() => {
-      if (currentUser) {
-        const t = setTimeout(() => {
-          checkAndUpdateDailyPulse()
-          const today = getTodayStr()
-          const last = dailyPulse?.lastDate
-          if (last !== today || (dailyPulse && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow)) {
-            setShowDailyPulseBanner(true)
-            setTimeout(() => setShowDailyPulseBanner(false), 8000)
-          }
-        }, 600)
-        return () => clearTimeout(t)
-      }
-    }, [currentUser?.id, Object.keys(syncBonds).length, dailyPulse?.lastDate])
-
-    useEffect(() => {
-      if (!dailyPulse || !currentUser) return
-      const hour = new Date().getHours()
-      if (hour >= 18 && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow && dailyPulse.streakProtectedDate !== getTodayStr()) {
-        const timer = setTimeout(() => {
-          toast.error('¡Streak en riesgo esta noche!', {
-            description: `Tu ${dailyPulse.trainingStreak}d training streak se resetea si no entrenas. Protege con Constancia o 20min ya.`
-          })
-        }, 1500)
-        return () => clearTimeout(timer)
-      }
-    }, [dailyPulse?.lastDate, currentUser?.trainingNow, dailyPulse?.trainingStreak])
 
     // === FIRESTORE GLOBAL RESILIENCE + LISTENER CLEANUP (Fix para INTERNAL ASSERTION) ===
 const listenersRef = useRef<(() => void)[]>([])
@@ -2064,6 +1788,28 @@ useEffect(() => {
     currentUserRef,
   })
 
+  const {
+    dailyPulse,
+    setDailyPulse,
+    dailyPulseRef,
+    showDailyPulseBanner,
+    setShowDailyPulseBanner,
+    checkAndUpdateDailyPulse,
+    refreshDailyPulse,
+    completeDailyChallenge,
+    awardConstancy,
+  } = useDailyPulse({
+    currentUser,
+    currentUserRef,
+    syncBonds,
+    networkPower: networkStats.networkPower,
+    saveUserWithRealSyncRef,
+    setNotifications,
+    createProfilePostRef,
+    triggerConfettiRef,
+    bridgeRef: dailyPulseBridgeRef,
+  })
+
   const [realMatches, setRealMatches] = useState<string[]>([])
   const prevRealMatchesRef = useRef<string[]>([])
   const realMatchesInitializedRef = useRef(false)
@@ -2144,45 +1890,22 @@ useEffect(() => {
   // Feed computation lifted to top-level useMemo so hook is ALWAYS called in the same order (fixes React #310 "Rendered more hooks than during the previous render" when switching tabs).
   // The previous inline IIFE inside {activeTab==='feed' && ...} was conditionally executing the useMemo hook → violation.
   const feedComputation = useMemo(() => {
-    const allCommunityPosts = Object.entries(profilePosts)
-      .filter(([uid]) => uid !== effectiveUserId)
-      .flatMap(([uid, posts]) => (posts || []).map((p: any) => ({ ...p, ownerId: uid })));
-
-    // Include a few of your own recent posts (from muro or "Publicar en el Feed") into the visible feed list.
-    // This fixes the "I published but don't see my post in the feed tab" disappointment.
-    // Own posts only mixed in default view; filters (Live/Reales/Fijados) stay pure community discovery.
-    // echoesSource always includes own so the "⭐ HIGHLIGHTS DE RED" strip shows your strong syncs immediately.
-    const myPostsRaw = (profilePosts[effectiveUserId] || []).map((p: any) => ({ ...p, ownerId: effectiveUserId, isMine: true }));
-    let feedPosts = [...allCommunityPosts, ...myPostsRaw];
-
-    feedPosts = feedPosts.sort((a: any, b: any) => {
-      const aIsLegend = !!syncBonds[a.ownerId];
-      const bIsLegend = !!syncBonds[b.ownerId];
-      if (bIsLegend && !aIsLegend) return -1; // High-performance network partners have real weight in global feed (your training graph gives status)
-      if (aIsLegend && !bIsLegend) return 1;
-      const aIsEcho = (a.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (a.text || '').includes('Destacado de Sesión Sync');
-      const bIsEcho = (b.text || '').includes('HIGHLIGHT DE ENTRENASYNC') || (b.text || '').includes('Destacado de Sesión Sync');
-      if (bIsEcho && !aIsEcho) return -1; // Network highlights (strong syncs) rise to the top - visible performance culture
-      if (aIsEcho && !bIsEcho) return 1;
-      if (b.pinned && !a.pinned) return 1;
-      if (a.pinned && !b.pinned) return -1;
-      return b.timestamp - a.timestamp;
-    });
-
-    const hasActiveFilter = feedShowPinnedOnly || feedOnlyReal || feedOnlyLive || !!feedSearch.trim();
-    if (feedShowPinnedOnly) feedPosts = feedPosts.filter((p: any) => p.pinned);
-    if (feedOnlyReal) feedPosts = feedPosts.filter((p: any) => p.isMine || !isSeedProfileId(p.ownerId));
-    if (feedOnlyLive) feedPosts = feedPosts.filter((p: any) => !p.isMine && isUserLiveInSnapshot(p.ownerId, liveUsersActive));
-    if (feedSearch.trim()) {
-      const q = feedSearch.toLowerCase().trim();
-      feedPosts = feedPosts.filter((p: any) => {
-        const ownerName = p.isMine ? (currentUser?.name || '') : ((realProfiles.find(r => r.id === p.ownerId) || { name: '' }).name);
-        return (p.text || '').toLowerCase().includes(q) || (ownerName || '').toLowerCase().includes(q);
-      });
-    }
-    feedPosts = feedPosts.slice(0, feedDisplayLimit);
-    return { feedPosts, allCommunityPosts, echoesSource: [...allCommunityPosts, ...myPostsRaw], hasActiveFilter };
-  }, [profilePosts, feedShowPinnedOnly, feedOnlyReal, feedOnlyLive, feedSearch, feedDisplayLimit, realProfiles, effectiveUserId, syncBonds, currentUser, liveUsersActive]);
+    return computeGlobalFeed({
+      profilePosts,
+      effectiveUserId,
+      syncBonds,
+      liveUsersActive,
+      userLocation,
+      realProfiles,
+      currentUser,
+      feedShowPinnedOnly,
+      feedOnlyReal,
+      feedOnlyLive,
+      feedSearch,
+      feedDisplayLimit,
+      isSeedProfileId,
+    })
+  }, [profilePosts, feedShowPinnedOnly, feedOnlyReal, feedOnlyLive, feedSearch, feedDisplayLimit, realProfiles, effectiveUserId, syncBonds, currentUser, liveUsersActive, userLocation]);
 
   // Filtered deck (with distance support + blocking)
   // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
@@ -3454,6 +3177,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   }
 }, [saveUser, isDemoMode, firebaseUser?.uid, db, updateUserProfile, publishLiveSnapshot]);
+
+useEffect(() => {
+  saveUserWithRealSyncRef.current = saveUserWithRealSync
+}, [saveUserWithRealSync])
 
   const handleLiveMotionSample = useCallback(
     async (result: {
@@ -5321,6 +5048,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     toast.success('Publicado en tu muro')
     return post
   }
+
+  useEffect(() => {
+    createProfilePostRef.current = createProfilePost
+  })
 
   const refreshEntrenoRecentWorkouts = useCallback(async () => {
     if (isDemoMode || !db || !firebaseUser?.uid) {
@@ -9409,6 +9140,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       confetti({ particleCount: 120, angle: 60, spread: 55, origin: { x: 0.1, y: 0.7 } })
     }, 180)
   }
+
+  useEffect(() => {
+    triggerConfettiRef.current = triggerConfetti
+  })
 
   // Manual button actions
   // (swipeLeft, swipeRight, handleDragEnd fully moved into ExploreTab)
