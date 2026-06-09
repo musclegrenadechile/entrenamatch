@@ -13,6 +13,7 @@ export function ProfileMuroSection(props: ProfileTabProps) {
     profilePosts,
     syncBonds,
     setActiveTab,
+    openCommunityMuro,
     loadingPersonalMuro,
     setLoadingPersonalMuro,
     loadProfilePosts,
@@ -60,8 +61,14 @@ export function ProfileMuroSection(props: ProfileTabProps) {
 <div className={`px-4 mt-4${profileSection !== 'actividad' ? ' hidden' : ''}`}>
   <div className="flex items-center justify-between mb-2 px-1">
     <div className="flex items-center gap-2">
-      <div className="text-xs uppercase tracking-[1px] text-[#9CA3AF]">Muro</div>
-      <button onClick={() => setActiveTab('home')} className="text-[9px] text-[#FF671F] underline active:opacity-70">Ver feed global →</button>
+      <div className="text-xs uppercase tracking-[1px] text-[#9CA3AF]">Mi muro</div>
+      <button
+        type="button"
+        onClick={() => (openCommunityMuro ? openCommunityMuro() : setActiveTab('home'))}
+        className="text-[9px] text-[#FF671F] underline active:opacity-70"
+      >
+        Muro por Comunidad →
+      </button>
     </div>
     <button 
       disabled={loadingPersonalMuro}
@@ -578,10 +585,14 @@ export function ProfileMuroSection(props: ProfileTabProps) {
 
   {/* Prominent link to global feed - makes the app feel like a living movement */}
   <div className="mt-3 px-1">
-    <button onClick={() => setActiveTab('home')} className="w-full text-left card card-glass p-3 text-sm flex items-center justify-between active:scale-[0.99]">
+    <button
+      type="button"
+      onClick={() => (openCommunityMuro ? openCommunityMuro() : setActiveTab('home'))}
+      className="w-full text-left card card-glass p-3 text-sm flex items-center justify-between active:scale-[0.99]"
+    >
       <div>
-        <div className="text-[#FF671F] font-medium">Explora el Feed Global →</div>
-        <div className="text-[10px] text-[#9CA3AF]">Muro completo de la comunidad, posts fijados y más</div>
+        <div className="text-[#FF671F] font-medium">Muro por Comunidad →</div>
+        <div className="text-[10px] text-[#9CA3AF]">Feed de tu zona, posts fijados y más</div>
       </div>
       <span className="text-[#FF671F]">→</span>
     </button>

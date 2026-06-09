@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { dedupeWithOptimistic, docToDirectChatMsg } from './chatMessages'
+import { applyReadReceiptInference, dedupeWithOptimistic, docToDirectChatMsg } from './chatMessages'
 
 describe('chatMessages', () => {
   it('docToDirectChatMsg maps read receipts', () => {
@@ -50,5 +50,26 @@ describe('chatMessages', () => {
     expect(merged).toHaveLength(1)
     expect(merged[0].id).toBe('fs1')
     expect(merged[0].read).toBeUndefined()
+  })
+
+  it('applyReadReceiptInference marks outgoing read when partner replied after', () => {
+    const inferred = applyReadReceiptInference([
+      {
+        id: '1',
+        from: 'me',
+        text: 'hola',
+        timestamp: 1000,
+        sendStatus: 'sent',
+      },
+      {
+        id: '2',
+        from: 'them',
+        text: 'voy',
+        timestamp: 2000,
+        sendStatus: 'sent',
+      },
+    ])
+    expect(inferred[0].read).toBe(true)
+    expect(inferred[0].readAt).toBe(2000)
   })
 })

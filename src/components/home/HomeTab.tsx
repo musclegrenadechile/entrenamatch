@@ -163,9 +163,10 @@ export function HomeTab(props: HomeTabProps) {
     showPactWizard,
     profilePostsFeed,
     onQuickFeedTemplate,
+    homeSubTab = 'day',
+    onHomeSubTabChange,
   } = props
 
-  const [homeSubTab, setHomeSubTab] = useState<HomeSubTab>('day')
   const [showHomeTabsHint, setShowHomeTabsHint] = useState(false)
 
   useEffect(() => {
@@ -208,7 +209,7 @@ export function HomeTab(props: HomeTabProps) {
           <strong className="text-[#FF671F] block mb-1">Dos vistas en Hoy</strong>
           <span className="text-[#9CA3AF]">
             <strong className="text-white">Mi día</strong> = tu rutina, equipo y metas.{' '}
-            <strong className="text-white">Muro</strong> = posts de la comunidad cerca de ti.
+            <strong className="text-white">Muro por Comunidad</strong> = posts de tu zona.
           </span>
         </div>
       )}
@@ -222,7 +223,7 @@ export function HomeTab(props: HomeTabProps) {
           role="tab"
           aria-selected={homeSubTab === 'day'}
           onClick={() => {
-            setHomeSubTab('day')
+            onHomeSubTabChange?.('day')
             dismissHomeTabsHint()
           }}
           className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
@@ -238,7 +239,7 @@ export function HomeTab(props: HomeTabProps) {
           role="tab"
           aria-selected={homeSubTab === 'feed'}
           onClick={() => {
-            setHomeSubTab('feed')
+            onHomeSubTabChange?.('feed')
             dismissHomeTabsHint()
           }}
           className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
@@ -247,7 +248,10 @@ export function HomeTab(props: HomeTabProps) {
               : 'text-[#9CA3AF] active:bg-[#25252A]'
           }`}
         >
-          Muro
+          <span className="flex flex-col items-center leading-tight">
+            <span>Muro</span>
+            <span className="text-[8px] font-semibold tracking-wide">por Comunidad</span>
+          </span>
         </button>
       </div>
 
@@ -413,8 +417,12 @@ export function HomeTab(props: HomeTabProps) {
             <div className="flex items-center gap-3">
               <div className="text-3xl drop-shadow">🔥</div>
               <div>
-                <div className="feed-title-gradient">EL MURO</div>
-                <div className="text-[11px] text-[#9CA3AF] -mt-0.5 tracking-[0.3px]">de la comunidad • donde entrenar acompañado/a se vuelve cultura</div>
+                <div className="feed-title-gradient">Muro por Comunidad</div>
+                <div className="text-[11px] text-[#9CA3AF] -mt-0.5 tracking-[0.3px]">
+                  {(currentUser as { city?: string } | null)?.city
+                    ? `${(currentUser as { city?: string }).city} y alrededores`
+                    : 'Posts de entrenadores cerca de ti'}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -589,7 +597,7 @@ export function HomeTab(props: HomeTabProps) {
               <div className="big-icon mb-1">🏋️</div>
               <div className="font-black text-3xl tracking-[-1.5px] mb-2">Sé el primero en {cityLabel}</div>
               <p className="text-sm text-[#9CA3AF] max-w-[300px] mx-auto mb-6 leading-relaxed">
-                El Muro de tu ciudad está esperando la primera voz. Publica en 1 toque y otros entrenadores te verán.
+                El Muro por Comunidad de tu ciudad está esperando la primera voz. Publica en 1 toque y otros entrenadores te verán.
               </p>
               <div className="flex flex-col gap-2.5 max-w-[280px] mx-auto">
                 {onQuickFeedTemplate && (

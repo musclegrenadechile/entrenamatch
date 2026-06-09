@@ -299,7 +299,7 @@ export function FullProfileSheet({
                   onClick={onOpenHomeFeed}
                   className="text-[9px] text-[#FF671F] underline active:opacity-70"
                 >
-                  Ver feed global
+                  Muro por Comunidad
                 </button>
                 <button
                   type="button"

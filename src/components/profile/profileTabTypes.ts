@@ -91,6 +91,7 @@ export interface ProfileTabProps {
   setMapForceTick: Dispatch<SetStateAction<number>>
   saveUserWithRealSync: (user: CurrentUser) => Promise<void>
   setActiveTab: Dispatch<SetStateAction<Tab>>
+  openCommunityMuro?: (opts?: { prefill?: string; openPublish?: boolean }) => void
   setShowLiveModal: Dispatch<SetStateAction<boolean>>
   matches: string[]
   squads: Squad[]

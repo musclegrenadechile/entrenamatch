@@ -18,9 +18,14 @@ import type { Message, Profile } from '../types'
 import {
   attachDirectChatListener,
   dedupeWithOptimistic,
+  docToDirectChatMsg,
   type DirectChatMsg,
 } from '../services/chatMessages'
-import { attachPartnerTypingListener, markDirectMessageRead } from '../services/chatPresence'
+import {
+  attachPartnerTypingListener,
+  markDirectMessageRead,
+  markPartnerThreadRead,
+} from '../services/chatPresence'
 import { BRAND_COPY } from '../constants/brandCopy'
 import {
   isQuotaError,
@@ -194,26 +199,10 @@ export function useChatSession(opts: UseChatSessionOptions) {
 
         const msgs: DirectChatMsg[] = []
         snap1.forEach((docSnap) => {
-          const data = docSnap.data() as Record<string, unknown>
-          msgs.push({
-            id: docSnap.id,
-            from: 'me',
-            text: String(data.text || ''),
-            timestamp: Number(data.timestamp) || Date.now(),
-            voiceUrl: data.voiceUrl as string | undefined,
-            voiceDuration: data.voiceDuration as number | undefined,
-          })
+          msgs.push(docToDirectChatMsg(docSnap, firebaseUserUid))
         })
         snap2.forEach((docSnap) => {
-          const data = docSnap.data() as Record<string, unknown>
-          msgs.push({
-            id: docSnap.id,
-            from: 'them',
-            text: String(data.text || ''),
-            timestamp: Number(data.timestamp) || Date.now(),
-            voiceUrl: data.voiceUrl as string | undefined,
-            voiceDuration: data.voiceDuration as number | undefined,
-          })
+          msgs.push(docToDirectChatMsg(docSnap, firebaseUserUid))
         })
         msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
         let mergedMsgs = msgs
@@ -301,6 +290,7 @@ export function useChatSession(opts: UseChatSessionOptions) {
       try {
         const serverId = await writeMessage()
         opts?.onAck?.(serverId)
+        void markPartnerThreadRead(db, firebaseUserUid, toUserId)
         setChatUnreads((prev) => {
           const c = { ...prev }
           c[toUserId] = 0
@@ -312,6 +302,7 @@ export function useChatSession(opts: UseChatSessionOptions) {
           try {
             const serverId = await writeMessage()
             opts?.onAck?.(serverId)
+            void markPartnerThreadRead(db, firebaseUserUid, toUserId)
             setChatUnreads((prev) => {
               const c = { ...prev }
               c[toUserId] = 0
@@ -508,13 +499,19 @@ export function useChatSession(opts: UseChatSessionOptions) {
 
   useEffect(() => {
     if (isDemoMode || !db || !activeChat || !firebaseUserUid) return
+    void markPartnerThreadRead(db, firebaseUserUid, activeChat)
+  }, [isDemoMode, db, activeChat, firebaseUserUid])
+
+  useEffect(() => {
+    if (isDemoMode || !db || !activeChat || !firebaseUserUid) return
     const msgs = realChatMessages.length > 0 ? realChatMessages : messages[activeChat] || []
     for (const m of msgs) {
       if (m.from !== 'them' || !m.id) continue
       if ((m as Message).read || (m as Message).readAt) continue
       if (markedReadIdsRef.current.has(m.id)) continue
-      markedReadIdsRef.current.add(m.id)
-      void markDirectMessageRead(db, m.id, firebaseUserUid)
+      void markDirectMessageRead(db, m.id, firebaseUserUid).then((ok) => {
+        if (ok) markedReadIdsRef.current.add(m.id)
+      })
     }
   }, [isDemoMode, db, activeChat, firebaseUserUid, realChatMessages, messages])
 

@@ -33,7 +33,7 @@ function ChatMessageStatus({ message }: { message: Message }) {
   if (isRead) {
     return (
       <span className="chat-msg-status chat-msg-status--read" title="Leído">
-        <CheckCheck size={16} strokeWidth={2.5} aria-hidden />
+        <CheckCheck size={18} strokeWidth={2.75} aria-hidden />
         <span className="chat-msg-status__label">Leído</span>
       </span>
     )

@@ -969,6 +969,7 @@ function App() {
     syncTabToUrl(resolved, { map: resolved === 'map' })
   }, [])
   const [profileSection, setProfileSection] = useState<ProfileSection>('actividad')
+  const [homeSubTab, setHomeSubTab] = useState<import('./components/home/HomeTab').HomeSubTab>('day')
   const profileSectionBootRef = useRef(false)
   // Feed UI — useFeedState (fase 80), declared after setLastSync below
   const [weekLiveDays, setWeekLiveDays] = useState<string[]>([])
@@ -1941,6 +1942,26 @@ useEffect(() => {
     loadProfilePostsRef,
     setLastSync,
   })
+
+  const openCommunityMuro = useCallback(
+    (opts?: { prefill?: string; openPublish?: boolean }) => {
+      navigateTab('home')
+      setHomeSubTab('feed')
+      setFeedMaxProfiles(15)
+      setFeedDisplayLimit(10)
+      void loadGlobalFeed()
+      if (opts?.prefill) setFeedPostText(opts.prefill)
+      if (opts?.openPublish) setShowFeedPostModal(true)
+    },
+    [
+      navigateTab,
+      loadGlobalFeed,
+      setFeedMaxProfiles,
+      setFeedDisplayLimit,
+      setFeedPostText,
+      setShowFeedPostModal,
+    ]
+  )
 
   const unreadNotifications = notifications.filter((n) => !n.read).length
   const totalSessionUnreads = Object.values(sessionUnreads).reduce(
@@ -9067,6 +9088,8 @@ useEffect(() => {
               setFeedPostText(text)
               setShowFeedPostModal(true)
             }}
+            homeSubTab={homeSubTab}
+            onHomeSubTabChange={setHomeSubTab}
             onImportHealthBurn={handleImportHealthBurn}
             healthImportHint={healthImportHint}
           />
@@ -9505,6 +9528,7 @@ useEffect(() => {
             setMapForceTick={setMapForceTick}
             saveUserWithRealSync={saveUserWithRealSync}
             setActiveTab={setActiveTab}
+            openCommunityMuro={openCommunityMuro}
             setShowLiveModal={setShowLiveModal}
             matches={matches}
             squads={squads}
@@ -10925,7 +10949,7 @@ useEffect(() => {
             getRelativeTime={getRelativeTime}
             onClose={() => setShowFullProfile(null)}
             onLoadPosts={() => loadProfilePosts(showFullProfile.id)}
-            onOpenHomeFeed={() => setActiveTab('home')}
+            onOpenHomeFeed={() => openCommunityMuro()}
             onTrainTogether={() => {
               const p = showFullProfile
               setShowFullProfile(null)

@@ -45,7 +45,33 @@ export function docToDirectChatMsg(
 export function mergeDirectChatMessages(a: DirectChatMsg[], b: DirectChatMsg[]): DirectChatMsg[] {
   const byId = new Map<string, DirectChatMsg>()
   for (const m of [...a, ...b]) byId.set(m.id, m)
-  return Array.from(byId.values()).sort((x, y) => x.timestamp - y.timestamp)
+  return applyReadReceiptInference(Array.from(byId.values())).sort(
+    (x, y) => x.timestamp - y.timestamp
+  )
+}
+
+/**
+ * When the partner replied after your message, treat it as read even if Firestore
+ * readAt was not persisted (legacy messages or failed mark-on-open).
+ */
+export function applyReadReceiptInference(msgs: DirectChatMsg[]): DirectChatMsg[] {
+  const incoming = msgs.filter((m) => m.from === 'them')
+  if (incoming.length === 0) return msgs
+
+  const latestIncomingTs = Math.max(...incoming.map((m) => m.timestamp || 0))
+
+  return msgs.map((m) => {
+    if (m.from !== 'me' || m.read || m.readAt) return m
+    const ts = m.timestamp || 0
+    const replyAfter = incoming.find((t) => (t.timestamp || 0) > ts)
+    if (replyAfter) {
+      return { ...m, read: true, readAt: replyAfter.timestamp }
+    }
+    if (ts <= latestIncomingTs && latestIncomingTs > 0) {
+      return { ...m, read: true, readAt: latestIncomingTs }
+    }
+    return m
+  })
 }
 
 /** Keep in-flight optimistic sends until Firestore confirms the same text/timestamp. */

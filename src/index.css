@@ -3572,12 +3572,12 @@ input[type="range"]::-moz-range-thumb {
 }
 
 .chat-msg-status--read svg {
-  color: #1e40af;
-  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.5));
+  color: #ffffff;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
 }
 
 .chat-msg-status--read .chat-msg-status__label {
-  color: #1e3a8a;
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .chat-msg-status--sending {

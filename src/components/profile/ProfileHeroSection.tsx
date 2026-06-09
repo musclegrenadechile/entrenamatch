@@ -21,6 +21,13 @@ export function ProfileHeroSection(props: ProfileTabProps) {
       p.muroComposerRef.current?.focus()
     }, 120)
   }
+  const openCommunityFeed = (prefill?: string) => {
+    if (p.openCommunityMuro) {
+      p.openCommunityMuro({ prefill, openPublish: !!prefill })
+      return
+    }
+    openMuroComposer(prefill)
+  }
   const {
     currentUser,
     networkStats,
@@ -315,7 +322,7 @@ export function ProfileHeroSection(props: ProfileTabProps) {
     <button
       type="button"
       onClick={() =>
-        openMuroComposer('🔥 Sumando a mi red de rendimiento en EntrenaMatch — ¿quién se une?')
+        openCommunityFeed('🔥 Sumando a mi red de rendimiento en EntrenaMatch — ¿quién se une?')
       }
       className="w-full py-2.5 text-sm rounded-2xl bg-[#FFD700] text-black font-extrabold active:brightness-90 tracking-wide"
     >
