@@ -46,10 +46,34 @@ export const CITY_ZONES: Record<string, CityZone> = {
     center: { lat: -32.923, lng: -71.522 },
     radiusM: 5500,
   },
+  /** Derby regional overlay — Región de Valparaíso */
+  'region valparaiso': {
+    label: 'Región de Valparaíso',
+    center: { lat: -33.08, lng: -71.55 },
+    radiusM: 58000,
+  },
+  /** Derby regional overlay — Región Metropolitana */
+  'region metropolitana': {
+    label: 'Región Metropolitana',
+    center: { lat: -33.456, lng: -70.648 },
+    radiusM: 72000,
+  },
 }
 
 export function resolveCityZone(cityLabel?: string | null): CityZone | null {
   if (!cityLabel?.trim()) return null
   const key = normalizeCity(cityLabel)
   return CITY_ZONES[key] ?? null
+}
+
+/** Derby map zones — Valparaíso (región) vs Santiago (solo comuna). */
+export function resolveDerbyMapZone(team: 'home' | 'away'): CityZone {
+  return team === 'home'
+    ? CITY_ZONES['region valparaiso']
+    : CITY_ZONES.santiago
+}
+
+/** @deprecated Use resolveDerbyMapZone */
+export function resolveDerbyRegionZone(team: 'home' | 'away'): CityZone {
+  return resolveDerbyMapZone(team)
 }

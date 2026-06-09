@@ -52,7 +52,7 @@ import * as MapCluster from '../../services/gymPulseCluster'
 import * as LocalNetwork from '../../services/localNetwork'
 import { syncElapsedMinutes } from '../../utils/syncFomo'
 import { markMapGpsPromptShown, shouldShowMapGpsPrompt } from '../../utils/mapGpsPrompt'
-import { resolveCityZone, cityZonePolygonLatLngs } from '../../services/cityZoneBounds'
+import { resolveCityZone, resolveDerbyMapZone, cityZonePolygonLatLngs } from '../../services/cityZoneBounds'
 import { DERBY_AWAY, DERBY_HOME, derbyStatusLine, type CityDerbyState } from '../../services/cityDerby'
 import { loadMapView, saveMapView } from '../../utils/mapViewCache'
 
@@ -131,7 +131,7 @@ export interface GymPulseMapProps {
   cityChallenge?: CityChallengeMapInfo | null
   /** Fase 85 — CTA when user taps reto banner */
   onCityChallengeCta?: () => void
-  /** Derby Viña vs Santiago — dual zone overlay */
+  /** Derby Valparaíso vs Metropolitana — dual regional zone overlay */
   cityDerby?: CityDerbyState | null
 }
 
@@ -1013,12 +1013,11 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
     if (cityDerby) {
       const sides = [
-        { label: DERBY_HOME.label, norm: DERBY_HOME.norm, minutes: cityDerby.home.totalMinutes, base: '#22c55e' },
-        { label: DERBY_AWAY.label, norm: DERBY_AWAY.norm, minutes: cityDerby.away.totalMinutes, base: '#3b82f6' },
+        { team: 'home' as const, label: DERBY_HOME.label, norm: DERBY_HOME.norm, minutes: cityDerby.home.totalMinutes, base: '#22c55e' },
+        { team: 'away' as const, label: DERBY_AWAY.label, norm: DERBY_AWAY.norm, minutes: cityDerby.away.totalMinutes, base: '#3b82f6' },
       ]
       for (const side of sides) {
-        const zone = resolveCityZone(side.label)
-        if (!zone) continue
+        const zone = resolveDerbyMapZone(side.team)
         const winning = cityDerby.leaderNorm === side.norm
         const losing = cityDerby.leaderNorm && cityDerby.leaderNorm !== side.norm
         const col = winning ? side.base : losing ? '#ef4444' : side.base
@@ -1297,12 +1296,17 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[2100] max-w-[92%] w-full max-w-md">
           <div className="rounded-2xl bg-[#0D0D10]/94 border border-[#FF671F]/45 px-3 py-2 shadow-lg pointer-events-auto">
             <div className="text-[9px] uppercase tracking-wider text-[#FF671F] font-bold text-center">
-              Derby · Viña vs Santiago
+              Derby · {DERBY_HOME.label} vs {DERBY_AWAY.label}
             </div>
             <div className="flex justify-between text-[10px] font-black mt-1 tabular-nums">
-              <span className="text-[#22c55e]">{cityDerby.home.totalMinutes} min</span>
-              <span className="text-[#9CA3AF] text-[9px] font-semibold">esta semana</span>
-              <span className="text-[#60a5fa]">{cityDerby.away.totalMinutes} min</span>
+              <span className="text-[#22c55e]">{cityDerby.home.indexPer100k}</span>
+              <span className="text-[#9CA3AF] text-[9px] font-semibold">índice/100k hab</span>
+              <span className="text-[#60a5fa]">{cityDerby.away.indexPer100k}</span>
+            </div>
+            <div className="flex justify-between text-[8px] text-white/50 tabular-nums mt-0.5">
+              <span>{cityDerby.home.totalMinutes} min</span>
+              <span>esta semana</span>
+              <span>{cityDerby.away.totalMinutes} min</span>
             </div>
             <div className="flex h-1.5 rounded-full overflow-hidden bg-black/50 mt-1">
               <div className="bg-[#22c55e]" style={{ width: `${cityDerby.homeBarPct}%` }} />
@@ -1315,7 +1319,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
                 onClick={onCityChallengeCta}
                 className="mt-2 w-full py-1.5 rounded-xl bg-[#FF671F] text-black text-[10px] font-black active:brightness-90"
               >
-                {selfIsLive ? 'Sigue sumando al derby' : 'LIVE → suma a tu ciudad'}
+                {selfIsLive ? 'Sigue sumando al derby' : 'LIVE → suma a tu región'}
               </button>
             )}
           </div>

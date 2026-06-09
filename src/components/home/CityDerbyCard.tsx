@@ -1,6 +1,6 @@
 import { MapPin, Swords, Trophy } from 'lucide-react'
 import type { CityDerbyState } from '../../services/cityDerby'
-import { derbyStatusLine, derbyTeamCta } from '../../services/cityDerby'
+import { DERBY_AWAY, DERBY_HOME, derbyStatusLine, derbyTeamCta } from '../../services/cityDerby'
 
 export interface CityDerbyCardProps {
   derby: CityDerbyState | null
@@ -18,7 +18,7 @@ export function CityDerbyCard({ derby, onOpenMap, onGoLive, isLive }: CityDerbyC
   return (
     <section
       className="city-derby-card rounded-2xl border border-[#FF671F]/40 bg-gradient-to-br from-[#1a0f08] via-[#141418] to-[#0a1218] p-4 mb-4"
-      aria-label="Derby Viña vs Santiago"
+      aria-label={`Derby ${DERBY_HOME.label} vs ${DERBY_AWAY.label}`}
     >
       <div className="flex items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
@@ -27,7 +27,10 @@ export function CityDerbyCard({ derby, onOpenMap, onGoLive, isLive }: CityDerbyC
             <p className="text-[10px] uppercase tracking-wider text-[#FF671F] font-bold">
               Derby semanal
             </p>
-            <p className="text-xs font-black text-white">Viña del Mar vs Santiago</p>
+            <p className="text-xs font-black text-white">
+              {DERBY_HOME.label} vs {DERBY_AWAY.label}
+            </p>
+            <p className="text-[9px] text-[#9CA3AF]">Índice por 100k habitantes</p>
           </div>
         </div>
         {derby.leaderLabel && !derby.isTie && (
@@ -45,8 +48,10 @@ export function CityDerbyCard({ derby, onOpenMap, onGoLive, isLive }: CityDerbyC
           }`}
         >
           <p className="text-[10px] font-bold text-white truncate">{derby.home.cityLabel}</p>
-          <p className="text-lg font-black text-[#22c55e] tabular-nums">{derby.home.totalMinutes}</p>
-          <p className="text-[9px] text-[#9CA3AF]">min · {derby.home.participantCount || 0} atletas</p>
+          <p className="text-lg font-black text-[#22c55e] tabular-nums">{derby.home.indexPer100k}</p>
+          <p className="text-[9px] text-[#9CA3AF]">
+            {derby.home.totalMinutes} min · {derby.home.participantCount || 0} atletas
+          </p>
         </div>
         <div
           className={`rounded-xl p-2.5 border text-right ${
@@ -54,8 +59,10 @@ export function CityDerbyCard({ derby, onOpenMap, onGoLive, isLive }: CityDerbyC
           }`}
         >
           <p className="text-[10px] font-bold text-white truncate">{derby.away.cityLabel}</p>
-          <p className="text-lg font-black text-[#60a5fa] tabular-nums">{derby.away.totalMinutes}</p>
-          <p className="text-[9px] text-[#9CA3AF]">{derby.away.participantCount || 0} atletas · min</p>
+          <p className="text-lg font-black text-[#60a5fa] tabular-nums">{derby.away.indexPer100k}</p>
+          <p className="text-[9px] text-[#9CA3AF]">
+            {derby.away.totalMinutes} min · {derby.away.participantCount || 0} atletas
+          </p>
         </div>
       </div>
 

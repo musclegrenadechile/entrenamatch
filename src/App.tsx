@@ -222,6 +222,7 @@ import {
   aggregateDerbyClientMinutes,
   attachCityDerbyListeners,
   buildCityDerby,
+  derbyRegionalBumpTarget,
 } from './services/cityDerby'
 import { buildInviteLink } from './utils/sparseCityDefaults'
 import {
@@ -3105,15 +3106,26 @@ useEffect(() => {
       if (isDemoMode || !db || !firebaseUser?.uid) return
       const cityNorm = normalizeCity(currentUser?.city)
       if (!cityNorm || liveMinutesDelta + syncMinutesDelta <= 0) return
+      const bumpPayload = {
+        weekKey: getWeekKey(),
+        uid: firebaseUser.uid,
+        liveMinutesDelta,
+        syncMinutesDelta,
+      }
       try {
         await bumpCityWeeklyStats(db, {
           cityNorm,
           cityLabel: currentUser?.city || cityNorm,
-          weekKey: getWeekKey(),
-          uid: firebaseUser.uid,
-          liveMinutesDelta,
-          syncMinutesDelta,
+          ...bumpPayload,
         })
+        const regional = derbyRegionalBumpTarget(currentUser?.city)
+        if (regional) {
+          await bumpCityWeeklyStats(db, {
+            cityNorm: regional.cityNorm,
+            cityLabel: regional.cityLabel,
+            ...bumpPayload,
+          })
+        }
       } catch (e) {
         console.warn('cityWeeklyStats bump failed', e)
       }
