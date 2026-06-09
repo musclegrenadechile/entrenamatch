@@ -98,7 +98,8 @@ Fase  100     🔄 Open beta v1 — informe ✅; métricas Play/sync pendientes
 - `@ts-nocheck` en `App.tsx` y `GymPulseMap.tsx`  
 - `livePresence` vs `profiles.trainingNow` — doble fuente  
 - CI vitest en PR — no obligatorio  
-- MP producción, MapLibre, tiles offline — no hecho  
+- MP producción, tiles offline — no hecho  
+- MapLibre prod — ✅ v0.1.288 (`VITE_MAP_USE_MAPLIBRE=1` en build/CI)  
 
 ---
 
@@ -133,7 +134,7 @@ Fase  100     🔄 Open beta v1 — informe ✅; métricas Play/sync pendientes
 |------|---------|------------|---|---------|--------|
 | **85** | 0.1.265 | **City challenge overlay** — polígono hex + CTA LIVE en mapa | P1 | 76 | ✅ v0.1.271 |
 | **86** | 0.1.266 | **QR / deep link check-in** — `?gym=id` → check-in automático | P1 | A8 | ✅ v0.1.271 |
-| **87** | 0.1.267 | **MapLibre GL vector dark** — opt-in `VITE_MAP_USE_MAPLIBRE=1` | P1 | 85 | ✅ v0.1.271 |
+| **87** | 0.1.267 | **MapLibre GL vector dark** — `VITE_MAP_USE_MAPLIBRE=1` en prod (v0.1.288) | P1 | 85 | ✅ v0.1.288 prod |
 | **88** | 0.1.268 | **Perfil progresivo** — secciones avanzadas colapsadas 7 días | P1 | — | ✅ v0.1.271 |
 | **89** | 0.1.269 | **Hero perfil** — `ProfileHeroPulse` LIVE + ghost + streak | P1 | 88 | ✅ v0.1.271 |
 | **90** | 0.1.270 | **Perfil sin ruido** — Tienda/Coach/Admin bajo colapsables | P1 | 88 | ✅ v0.1.271 |

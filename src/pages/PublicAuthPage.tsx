@@ -10,6 +10,7 @@ import {
   markQuickDemoSession,
   QUICK_DEMO_USER,
 } from '../utils/quickDemo';
+import { isE2EHarnessActive } from '../utils/e2eHarness';
 
 function triggerHaptic(_style?: 'light' | 'medium' | 'heavy' | 'success') {
   try {
@@ -40,7 +41,9 @@ export function PublicAuthPage() {
     markQuickDemoSession();
     setDemoMode(true);
     saveUser(QUICK_DEMO_USER);
-    setTimeout(() => setShowOnboarding(true), 80);
+    if (!isE2EHarnessActive()) {
+      setTimeout(() => setShowOnboarding(true), 80);
+    }
     toast.success('Modo prueba activado', {
       description: 'Datos solo en este dispositivo. Completa el setup en 4 pasos.',
     });

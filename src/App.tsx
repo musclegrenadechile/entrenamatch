@@ -79,6 +79,7 @@ import { resolveNotificationTarget, type NotificationNavTarget } from './utils/n
 import { resolvePushNotificationData } from './utils/pushNavigation'
 import { normalizeTabNavigation, resolveRedSubTab, isRedTabActive, type RedSubTab } from './utils/tabNavigation'
 import { parseTabFromUrl, syncTabToUrl } from './utils/tabUrlSync'
+import { installE2EHarness, isE2EHarnessActive } from './utils/e2eHarness'
 import {
   parseGymIdFromSearch,
   resolvePartnerGymById,
@@ -183,6 +184,7 @@ import { createEmptySyncArenaSnapshot } from './sync/syncArenaState'
 import { fetchGlobalProfilePosts, fetchProfilePostById, togglePostLikeInFirestore, persistPostReactionsInFirestore } from './services/profilePosts'
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
 import { isQuickDemoSession, clearQuickDemoSession } from './utils/quickDemo'
+import { filterSeedsForCity } from './utils/citySeeds'
 import {
   buildWeekDayStatuses,
   loadWeekLiveDays,
@@ -3586,6 +3588,7 @@ useEffect(() => {
 
   useEffect(() => {
     if (showOnboarding) return
+    if (isE2EHarnessActive()) return
     if (isDemoMode) {
       const dismissed = demoStorage.get<boolean>(DEMO_KEYS.ACTIVATION_GUIDE_DISMISSED)
       if (!dismissed) setShowActivationGuide(true)
@@ -3599,7 +3602,7 @@ useEffect(() => {
   }, [isDemoMode, db, firebaseUser?.uid, showOnboarding])
 
   useEffect(() => {
-    if (showOnboarding || showActivationGuide) return
+    if (showOnboarding || showActivationGuide || isE2EHarnessActive()) return
     if (!hasSeenAppFeatureTour()) {
       const t = setTimeout(() => setShowFeatureTour(true), 1500)
       return () => clearTimeout(t)
@@ -4689,6 +4692,33 @@ useEffect(() => {
     })
   }, [entrenoRecentWorkouts, openEntrenoDeHoy])
 
+  const handleCopyWorkoutFromPost = async (workoutId: string, title?: string) => {
+    if (!workoutId) return
+    if (isDemoMode || !db) {
+      toast('Copiar rutina disponible con cuenta real')
+      return
+    }
+    try {
+      const w = await fetchWorkoutById(db, workoutId)
+      if (!w?.exercises?.length) {
+        toast.error('Rutina no encontrada')
+        return
+      }
+      void openEntrenoDeHoy({
+        title: title ? `Copia · ${title}` : 'Rutina copiada',
+        exercises: w.exercises.map((e) => ({
+          ...e,
+          sets: e.sets.map((s) => ({ ...s })),
+        })),
+        type: w.type,
+        durationMin: w.stats?.durationMin || 45,
+      })
+      toast.success('Rutina cargada', { description: 'Edita y guarda en Entreno de Hoy' })
+    } catch {
+      toast.error('No se pudo cargar la rutina')
+    }
+  }
+
   const applyEntrenoSaveSideEffects = useCallback(
     async (
       durationMin: number,
@@ -4757,6 +4787,222 @@ useEffect(() => {
       currentUser,
     ]
   )
+
+  /** Global live toggle — used by FAB, Daily home, Profile, and E2E harness. */
+  const toggleLiveTraining = async (mode?: 'on' | 'off' | 'toggle') => {
+    if (isTogglingLive || !currentUser) return
+    const me = currentUser
+    const wantOff =
+      mode === 'off' || (mode !== 'on' && !!me.trainingNow)
+    const wantOn = mode === 'on' || (mode !== 'off' && !me.trainingNow)
+
+    if (wantOff && me.trainingNow) {
+      setIsTogglingLive(true)
+      try {
+        const durationMs = me.trainingNowSince ? Date.now() - me.trainingNowSince : 30 * 60 * 1000
+        const minutes = Math.max(5, Math.floor(durationMs / 60000))
+        const momentumBonus = Math.floor(minutes / 3) + 5
+        const xpBonus = Math.floor(minutes * 1.5)
+        const currentMom = dailyPulse?.momentum ?? (me as any).momentumPoints ?? 0
+        const currentXp = dailyPulse?.xp ?? (me as any).retentionXp ?? 0
+        const newMom = currentMom + momentumBonus
+        const newXp = Math.min(299, currentXp + xpBonus)
+        const weekKey = getWeekKey()
+        const nextLiveDays =
+          minutes >= MIN_LIVE_MINUTES_FOR_WEEK_DAY
+            ? recordWeekLiveDay(effectiveUserId)
+            : weekLiveDays
+        const newWeekStats = mergeWeekStats(
+          me.weekStats?.weekKey === weekKey ? me.weekStats : undefined,
+          weekKey,
+          minutes,
+          nextLiveDays.length
+        )
+
+        const updated = {
+          ...me,
+          trainingNow: false,
+          trainingNowSince: null,
+          trainingSyncWith: null,
+          syncStartedAt: null,
+          momentumPoints: newMom,
+          retentionXp: newXp,
+          weekStats: newWeekStats,
+          liveMotionScore: undefined,
+          liveMotionAt: undefined,
+          liveMotionIdle: undefined,
+          liveActivityState: undefined,
+        } as CurrentUser
+
+        if (syncPartnerId) {
+          setSyncPartnerId(null)
+          syncPartnerIdRef.current = null
+          setSyncStartedAt(null)
+          setSyncActions([])
+          setSyncVibe(0)
+          setSyncCombo(0)
+        }
+        if (dailyPulse) setDailyPulse({ ...dailyPulse, momentum: newMom, xp: newXp })
+
+        pendingLiveWriteRef.current = { trainingNow: false, at: Date.now() }
+        saveUser(updated)
+        await saveUserWithRealSync(updated)
+        loadRealProfiles().catch(() => {})
+        syncCityStatsBump(minutes, 0).catch(() => {})
+        setMapForceTick((t) => t + 1)
+        if (minutes >= MIN_LIVE_MINUTES_FOR_WEEK_DAY) {
+          setWeekLiveDays(nextLiveDays)
+          toast('Entrenamiento finalizado', { description: `${minutes} min — cuenta para tu semana ✓` })
+        } else {
+          toast('Sesión finalizada', {
+            description: `${minutes} min. Entrena al menos ${MIN_LIVE_MINUTES_FOR_WEEK_DAY} min para marcar el día.`,
+          })
+        }
+        setPostLiveSession({
+          minutes,
+          gymName: isGymCheckInFresh(me.gymCheckIn) ? me.gymCheckIn!.gymName : null,
+        })
+        setHomeCoachBanner('post-live')
+        navigateTab('home')
+      } catch (err) {
+        console.error('Live deactivate failed', err)
+        pendingLiveWriteRef.current = null
+        toast.error('No se pudo desactivar el live')
+      } finally {
+        setIsTogglingLive(false)
+      }
+      return
+    }
+
+    if (wantOn && !me.trainingNow) {
+      setIsTogglingLive(true)
+      try {
+        await requestUserLocation().catch(() => {})
+        if (!isDemoMode && PlayIntegrityNative) {
+          const current = getLastIntegrityResult() || lastIntegrity
+          if (!hasPositiveIntegrity(current)) {
+            toast('🛡️ Verifica integridad para full visibilidad en prod', {
+              description:
+                'Usa el botón 🛡️ Google Play Integrity arriba. El live se activa localmente de todas formas.',
+            })
+          }
+        }
+        const todayStr = new Date().toDateString()
+        const lastStr = me.lastLiveDate ? new Date(me.lastLiveDate).toDateString() : null
+        let newStreak = me.liveStreak || 0
+        if (!lastStr || lastStr === todayStr) {
+          if (!lastStr) newStreak = 1
+        } else {
+          const lastDate = new Date(lastStr)
+          const yesterday = new Date()
+          yesterday.setDate(yesterday.getDate() - 1)
+          newStreak =
+            lastDate.toDateString() === yesterday.toDateString()
+              ? (me.liveStreak || 0) + 1
+              : 1
+        }
+        const streakUpdate = {
+          liveStreak: newStreak,
+          lastLiveDate: Date.now(),
+          joinedLiveStreak:
+            (me.joinedLiveStreak || 0) +
+            (lastStr && lastStr !== todayStr ? 1 : lastStr ? 0 : 1),
+        }
+        const loc = userLocationRef.current
+        let autoGymCheckIn = isGymCheckInFresh(me.gymCheckIn) ? me.gymCheckIn : undefined
+        if (!autoGymCheckIn && loc && (partnerLocationsRef.current || []).length > 0) {
+          const gyms = partnersForMap(partnerLocationsRef.current, isDemoMode).map((p: any) => ({
+            id: p.id,
+            name: p.name,
+            lat: p.lat,
+            lng: p.lng,
+          }))
+          const nearGym = findNearestGym(gyms, loc.lat, loc.lng)
+          if (nearGym) {
+            autoGymCheckIn = {
+              gymId: nearGym.id,
+              gymName: nearGym.name,
+              lat: nearGym.lat,
+              lng: nearGym.lng,
+              checkedInAt: Date.now(),
+            }
+          }
+        }
+        const updated = {
+          ...me,
+          trainingNow: true,
+          trainingNowSince: Date.now(),
+          liveMotionScore: undefined,
+          liveMotionAt: undefined,
+          liveMotionIdle: false,
+          liveActivityState: 'unknown' as const,
+          ...(autoGymCheckIn
+            ? { gymCheckIn: autoGymCheckIn, lat: autoGymCheckIn.lat, lng: autoGymCheckIn.lng }
+            : loc
+              ? { lat: loc.lat, lng: loc.lng }
+              : {}),
+          ...streakUpdate,
+        } as CurrentUser
+
+        pendingLiveWriteRef.current = { trainingNow: true, at: Date.now() }
+        saveUser(updated)
+        await saveUserWithRealSync(updated)
+        loadRealProfiles().catch(() => {})
+        setMapForceTick((t) => t + 1)
+        toast('🟢 ¡Entrenando Ahora (EN VIVO) activado!', {
+          description: autoGymCheckIn
+            ? `Check-in en ${autoGymCheckIn.gymName} — apareces en el mapa del gym`
+            : undefined,
+        })
+
+        const isFirstLive = !me.lastLiveDate
+        if (isFirstLive) {
+          try {
+            confetti({ particleCount: 200, spread: 90, origin: { y: 0.65 } })
+          } catch { /* ignore */ }
+          toast.success('¡Tu primer LIVE está en el GymPulse!', {
+            description: 'Apareces en el mapa. Toca GymPulse abajo cuando quieras ver quién entrena cerca.',
+            duration: 6000,
+          })
+        }
+
+        const liveUserSnapshot = { ...updated }
+        setTimeout(() => {
+          try {
+            checkAndUpdateDailyPulse(liveUserSnapshot)
+            if (dailyPulse?.currentChallenge?.type === 'solo') {
+              void completeDailyChallenge(1, liveUserSnapshot as CurrentUser).catch((e) =>
+                console.warn('[Live] completeDailyChallenge', e)
+              )
+            } else {
+              awardConstancy(8, 'Ancla del GymPulse', liveUserSnapshot as CurrentUser)
+            }
+            void createProfilePost(
+              '¡Entrenando ahora en el GymPulse! ¿Quién se une al pulso? 🏋️',
+              null
+            ).catch((e) => console.warn('[Live] createProfilePost', e))
+          } catch (e) {
+            console.warn('[Live] post-activate side effects', e)
+          }
+        }, 600)
+        window.setTimeout(() => {
+          pendingLiveWriteRef.current = null
+        }, 4000)
+      } catch (err) {
+        console.error('Live activate failed', err)
+        pendingLiveWriteRef.current = null
+        toast.error('No se pudo activar el live')
+      } finally {
+        setIsTogglingLive(false)
+      }
+      return
+    }
+
+    if (wantOn && me.trainingNow) {
+      toast('Ya estás en LIVE', { description: 'Tu pin ya está visible en el mapa' })
+      setMapForceTick((t) => t + 1)
+    }
+  }
 
   const arenaSync = useArenaSyncController({
     syncSession,
@@ -4838,6 +5084,23 @@ useEffect(() => {
   useEffect(() => {
     loadActiveSyncCountRef.current = loadActiveSyncCount
   }, [loadActiveSyncCount])
+
+  useEffect(() => {
+    if (!isE2EHarnessActive()) return
+    setShowOnboarding(false)
+    setShowActivationGuide(false)
+    setShowFeatureTour(false)
+    installE2EHarness({
+      enableLive: async () => {
+        await toggleLiveTraining('on')
+      },
+      startMockSync: async (partnerId, partnerName) => {
+        await startSyncWith(partnerId, partnerName)
+      },
+      isArenaOpen: () => !!showSyncArena,
+      openMapTab: () => navigateTab('map'),
+    })
+  }, [showSyncArena, navigateTab, startSyncWith, setShowOnboarding])
 
   const handleSaveEntrenaLog = async (payload: {
     title: string

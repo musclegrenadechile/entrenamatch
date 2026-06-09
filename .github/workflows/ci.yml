@@ -36,6 +36,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build -- --base=/entrenamatch/
+        env:
+          VITE_MAP_USE_MAPLIBRE: '1'
       - name: Bundle size budget (fase 82)
         run: node scripts/check-bundle-size.mjs
 
@@ -52,8 +54,10 @@ jobs:
       - run: npm ci
       - run: npx playwright install chromium --with-deps
       - run: npm run build -- --base=/entrenamatch/
+        env:
+          VITE_MAP_USE_MAPLIBRE: '1'
       - name: Preview + smoke E2E (fase 84)
         run: |
           npx vite preview --host 127.0.0.1 --port 4173 &
           sleep 10
-          CI=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173/entrenamatch/ npx playwright test e2e/smoke.spec.ts
+          CI=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173/entrenamatch/ npx playwright test e2e/smoke.spec.ts e2e/sync-mock.spec.ts

@@ -1,12 +1,17 @@
 /**
  * GymPulse Map 2.0 — basemap (Fases 102 + 87).
- * Default: Carto Dark raster.
- * Set VITE_MAP_USE_MAPLIBRE=1 for MapLibre GL vector (dark demo style).
+ * Prod builds set VITE_MAP_USE_MAPLIBRE=1 (npm run build / CI).
+ * Dev defaults to Carto Dark raster unless .env.local sets VITE_MAP_USE_MAPLIBRE=1.
  */
 
+export function resolveGymPulseUseMaplibre(
+  env: { VITE_MAP_USE_MAPLIBRE?: string } | undefined
+): boolean {
+  return env?.VITE_MAP_USE_MAPLIBRE === '1'
+}
+
 export const GYMPULSE_USE_MAPLIBRE =
-  typeof import.meta !== 'undefined' &&
-  import.meta.env?.VITE_MAP_USE_MAPLIBRE === '1'
+  typeof import.meta !== 'undefined' && resolveGymPulseUseMaplibre(import.meta.env)
 
 export const GYMPULSE_MAPLIBRE_STYLE_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MAPLIBRE_STYLE_URL) ||

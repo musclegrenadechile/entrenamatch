@@ -65,7 +65,7 @@ La **Fase 100 (open beta v1)** queda **parcialmente cerrada en código** pero **
 |------|------------|--------------|----------------|
 | 85 | City challenge overlay (hex) | v0.1.271 | ✅ Mapa + `cityZoneBounds.ts` |
 | 86 | Deep link check-in `?gym=id` | v0.1.271 | ✅ Código; QA dispositivo pendiente |
-| 87 | MapLibre GL opt-in | v0.1.271 | 🔄 Código listo; **no activo en build prod** (`VITE_MAP_USE_MAPLIBRE=1`) |
+| 87 | MapLibre GL opt-in | v0.1.271 | ✅ Activo en build prod desde v0.1.288 (`VITE_MAP_USE_MAPLIBRE=1`) |
 | 88–90 | Perfil progresivo / hero / sin ruido | v0.1.271 | ✅ |
 | 91 | Map view cache | v0.1.271 | ✅ |
 
@@ -102,7 +102,7 @@ La **Fase 100 (open beta v1)** queda **parcialmente cerrada en código** pero **
 |---|----------|------|--------|-----------------|
 | 1 | Crash-free sessions | >99% (7 días Play internal) | 🔄 | AAB **v0.1.281** publicado en track `internal` (9 jun 2026); medir Crashlytics 7 días — ver `PLAY_INTERNAL_v0.1.281.md` |
 | 2 | Sync real piloto | ≥1 sync/semana entre 2 usuarios distintos (Viña o Santiago) | 🔄 | Instrumentado en `pilotSyncMetrics` (v0.1.282+) — consultar `pilotWeeklyMetrics` / `scripts/pilot-sync-report.mjs` |
-| 3 | CI verde | vitest + E2E smoke + rules emulator | 🔄 | CI en PR/push `main` ✅; E2E = smoke superficial; rules en vitest ✅ |
+| 3 | CI verde | vitest + E2E smoke + rules emulator | 🔄 | CI en PR/push `main` ✅; E2E smoke + sync-mock (v0.1.287); rules en vitest ✅ |
 | 4 | `App.tsx` < 8.000 líneas | <8.000 | ❌ | **13.059** líneas |
 | 5 | `OPEN_BETA_INFORME.md` | Este documento + 20 pasos post-100 | ✅ | Completado jun 2026 |
 
@@ -116,9 +116,9 @@ La **Fase 100 (open beta v1)** queda **parcialmente cerrada en código** pero **
 Tests:           118 passed / 118
 Test files:      30
 Build:           OK (Vite 8 + tsc)
-CI jobs:         vitest → build → bundle budget → e2e-smoke
+CI jobs:         vitest → build → bundle budget → e2e-smoke + sync-mock
 Firestore rules: contract tests (livePresence, posts, messages, cityWeeklyStats)
-E2E:             e2e/smoke.spec.ts (shell, demo login, nav Hoy, Fuel card)
+E2E:             e2e/smoke.spec.ts + e2e/sync-mock.spec.ts (demo → mapa → Arena mock via __entrenamatchE2E)
 App.tsx:         13.059 LOC
 @ts-nocheck:     App.tsx, GymPulseMap.tsx, ExploreLivePanel, useFilters, useSquads, useSessions, constants, capacitor-plugins
 ```
@@ -136,7 +136,7 @@ App.tsx:         13.059 LOC
 
 | Área | Madurez | Notas |
 |------|---------|-------|
-| **GymPulse / mapa** | Alta | Map 2.0 completo; MapLibre opt-in sin activar en prod |
+| **GymPulse / mapa** | Alta | Map 2.0 + MapLibre vector dark en prod (v0.1.288) |
 | **EntrenaSync** | Media-alta | Estable tras fixes; falta QA 2 dispositivos sistemático |
 | **Fuel / FuelBalance** | Alta | Wizard + dominio `computeDailyEnergyBalance` + tests |
 | **EntrenoLog / PRs** | Media | Biblioteca ejercicios; EntrenaLog sin filtro Cardio+Full body unificado |
@@ -153,7 +153,7 @@ App.tsx:         13.059 LOC
 1. **`App.tsx` monolito** — bloquea fase 81 y criterio fase 100.
 2. **`@ts-nocheck`** en 8 archivos — fase 76 incompleta.
 3. **Documentación dispersa** — `CURRENT_ROADMAP`, `ORDEN_ATAQUE_111_160`, `P0_BETA_RELEASE` con versiones antiguas.
-4. **E2E insuficiente** — no protege flujo sync ni mapa LIVE.
+4. **E2E sync** — smoke + sync-mock en CI (v0.1.287); falta matriz 2 dispositivos real.
 5. **Métricas de producto** — sin dashboard DAU/D1/D7/syncs por ciudad.
 6. **`livePresence` vs `trainingNow`** — consolidación fase 75 requiere auditoría final en `gymPulseLive.ts`.
 
@@ -184,8 +184,8 @@ Priorizados por impacto en tracción y cierre de beta real.
 | 5 | **Derby Viña vs Santiago** — UI duelo semanal (barras + mapa) | Producto | ✅ `cityDerby` + `CityDerbyCard` + overlay mapa |
 | 6 | Extraer bloque **EntrenaSync/Arena** de `App.tsx` | Técnico | ✅ `useArenaSyncController` + `SyncArenaHost` |
 | 7 | Quitar `@ts-nocheck` de **GymPulseMap.tsx** (cerrar fase 76) | Técnico | P0 |
-| 8 | E2E ampliado: demo → mapa → iniciar sync (mock) | QA | P1 |
-| 9 | Activar **MapLibre** en build prod (`VITE_MAP_USE_MAPLIBRE=1`) | Producto | P1 |
+| 8 | E2E ampliado: demo → mapa → iniciar sync (mock) | QA | ✅ `e2eHarness` + `e2e/sync-mock.spec.ts` (v0.1.287) |
+| 9 | Activar **MapLibre** en build prod (`VITE_MAP_USE_MAPLIBRE=1`) | Producto | ✅ `build`/`build:web` + CI (v0.1.288) |
 | 10 | Post-sync share **opt-out** con métrica de publicación | Growth | ✅ `syncShareWeekly` + opt-in en `SyncDuelSummary` |
 | 11 | Simplificar tab **Hoy** — una historia: ciudad + LIVE + sync | UX | P1 |
 | 12 | Alinear filtro **EntrenaLog** con Arena (Cardio + Full body) | Bug | P1 |
