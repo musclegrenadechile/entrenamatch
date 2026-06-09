@@ -83,6 +83,7 @@ export type SaveWorkoutInput = {
   syncSessionId?: string
   prSummary?: string
   prCount?: number
+  pinned?: boolean
 }
 
 export type SaveWorkoutResult = {
@@ -138,7 +139,7 @@ export async function saveWorkoutWithPost(
     timestamp: now,
     likes: [],
     reactions: {},
-    pinned: false,
+    pinned: input.pinned ?? false,
     postType: 'workout',
     workoutId: workoutRef.id,
     workoutPreview: preview,
@@ -290,7 +291,7 @@ export async function saveSyncWorkoutWithPost(
     timestamp: now,
     likes: [],
     reactions: {},
-    pinned: false,
+    pinned: input.pinned ?? false,
     postType: 'workout',
     workoutId: workoutRef.id,
     workoutPreview: preview,

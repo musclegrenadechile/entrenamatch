@@ -45,6 +45,14 @@ export interface DailyHomeProps {
   onOpenEntrenaLog?: () => void
   entrenoWeekSummary?: import('../../utils/workoutProgress').WeekWorkoutSummary | null
   entrenoExerciseHighlights?: Array<{ name: string; bestWeightKg: number; trend: 'up' | 'flat' | 'down' }>
+  entrenoPactProgress?: WeeklyPactProgress | null
+  entrenoPartnerCompare?: {
+    partnerName: string
+    selfSessions: number
+    partnerSessions: number
+    selfSets: number
+    partnerSets: number
+  } | null
   fuelProfile?: import('../../types').FuelProfile | null
   fuelTotals?: import('../../types').FuelDayTotals
   fuelTodayLogs?: import('../../types').FuelLogEntry[]
@@ -112,6 +120,8 @@ export function DailyHome({
   onOpenEntrenaLog,
   entrenoWeekSummary = null,
   entrenoExerciseHighlights = [],
+  entrenoPactProgress = null,
+  entrenoPartnerCompare = null,
   fuelProfile,
   fuelTotals,
   fuelTodayLogs,
@@ -517,6 +527,8 @@ export function DailyHome({
           summary={entrenoWeekSummary}
           onOpenEntrenoDeHoy={onOpenEntrenaLog}
           exerciseHighlights={entrenoExerciseHighlights}
+          pactProgress={entrenoPactProgress}
+          partnerCompare={entrenoPartnerCompare}
         />
       )}
 

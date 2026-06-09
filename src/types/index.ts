@@ -52,6 +52,8 @@ export interface WeeklyPact {
   weekKey: string
   liveDaysTarget: number
   syncSessionsTarget: number
+  /** Entreno de Hoy sessions logged this week (oleada 3). */
+  loggedSessionsTarget?: number
   partnerId?: string
   partnerName?: string
   pledgedAt: number

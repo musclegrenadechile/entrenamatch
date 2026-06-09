@@ -63,7 +63,7 @@ export function WeeklyPactCard({
               onClick={() => commitPledge(3, 1)}
               className="w-full mb-3 py-2.5 rounded-xl bg-[#FF671F] text-black font-bold text-sm active:brightness-90"
             >
-              Meta recomendada: 3 live + 1 sync
+              Meta recomendada: 3 live + 1 sync + 3 logs
             </button>
             <div className="flex flex-wrap gap-2">
               {PACT_LIVE_OPTIONS.map((n) => (
@@ -111,7 +111,7 @@ export function WeeklyPactCard({
             <p className="text-[10px] text-[#9CA3AF] mb-2">Confirma tu meta</p>
             <div className="p-3 rounded-xl bg-black/30 border border-[#FF671F]/20 mb-3 text-center">
               <p className="text-sm font-bold text-white">
-                {pickLive} live · {pickSync} sync
+                {pickLive} live · {pickSync} sync · 3 logs
               </p>
               {suggestedPartner && (
                 <p className="text-[10px] text-[#FFD700]/90 mt-1">
@@ -189,6 +189,13 @@ export function WeeklyPactCard({
           target={progress.syncSessionsTarget}
           pct={progress.syncPct}
           color="#FFD700"
+        />
+        <PactMeter
+          label="Logs"
+          done={progress.loggedSessionsDone}
+          target={progress.loggedSessionsTarget}
+          pct={progress.loggedPct}
+          color="#FF671F"
         />
       </div>
 

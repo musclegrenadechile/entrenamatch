@@ -8,6 +8,8 @@ import {
 import { ArenaSyncReel } from './ArenaSyncReel'
 import { downloadSyncStory } from '../../utils/syncStoryShare'
 import { estimateSyncSessionBurn } from '../../domain/fuelBalance'
+import { SyncWorkoutCompareStrip } from '../workout/SyncWorkoutCompareStrip'
+import type { SyncWorkoutCompare } from '../../utils/workoutSyncCompare'
 
 export interface SyncDuelSummaryProps {
   open: boolean
@@ -34,6 +36,7 @@ export interface SyncDuelSummaryProps {
   onInviteSquad?: (partnerId: string, partnerName: string) => void
   fuelBurnKcal?: number
   weightKg?: number
+  workoutCompare?: SyncWorkoutCompare | null
 }
 
 export function SyncDuelSummary({
@@ -61,6 +64,7 @@ export function SyncDuelSummary({
   onInviteSquad,
   fuelBurnKcal = 0,
   weightKg = 75,
+  workoutCompare = null,
 }: SyncDuelSummaryProps) {
   if (!open) return null
 
@@ -193,6 +197,14 @@ export function SyncDuelSummary({
           <p className="text-[11px] text-[#22c55e] mx-4 mb-2 px-3 py-2 rounded-xl bg-[#22c55e]/10 border border-[#22c55e]/25 text-center">
             🔥 FuelBalance · ~{sessionBurn} kcal quemadas juntos · suma al target de hoy
           </p>
+        )}
+
+        {workoutCompare && (
+          <SyncWorkoutCompareStrip
+            compare={workoutCompare}
+            selfName={selfName}
+            partnerName={partnerName}
+          />
         )}
 
         <details className="sync-duel-card__metrics-fold">

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Dumbbell, Plus, Trash2, X, Copy, Star } from 'lucide-react'
+import { Dumbbell, Plus, Trash2, X, Copy, Star, MapPin } from 'lucide-react'
 import {
   EXERCISE_LIBRARY,
   WORKOUT_TYPE_LABELS,
@@ -32,6 +32,8 @@ export interface EntrenoDeHoyModalProps {
   initialDurationMin?: number
   lastWorkout?: Workout | null
   liveDurationMin?: number
+  gymRoutineTemplates?: WorkoutQuickTemplate[]
+  gymRoutineLabel?: string
 }
 
 /** @deprecated use EntrenoDeHoyModalProps */
@@ -134,6 +136,8 @@ export function EntrenoDeHoyModal({
   initialDurationMin,
   lastWorkout,
   liveDurationMin,
+  gymRoutineTemplates = [],
+  gymRoutineLabel,
 }: EntrenoDeHoyModalProps) {
   const [title, setTitle] = useState(defaultTitle)
   const [type, setType] = useState<WorkoutType>('full')
@@ -172,12 +176,15 @@ export function EntrenoDeHoyModal({
     if (lastWorkout?.exercises?.length) {
       items.push(workoutToTemplate(lastWorkout, 'Último entreno'))
     }
+    for (const g of gymRoutineTemplates) {
+      if (!items.some((t) => t.id === g.id)) items.push(g)
+    }
     items.push(...favorites)
     for (const b of BUILTIN_WORKOUT_TEMPLATES) {
       if (!items.some((t) => t.id === b.id)) items.push(b)
     }
-    return items.slice(0, 6)
-  }, [lastWorkout, favorites])
+    return items.slice(0, 8)
+  }, [lastWorkout, favorites, gymRoutineTemplates])
 
   const suggestions = useMemo(
     () => filterExercises(search, 14, muscleFilter),
@@ -261,6 +268,15 @@ export function EntrenoDeHoyModal({
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+          {gymRoutineLabel && gymRoutineTemplates.length > 0 && (
+            <div className="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-[#22c55e]/10 border border-[#22c55e]/25 text-[10px] text-[#22c55e]">
+              <MapPin className="w-3.5 h-3.5 shrink-0" />
+              <span>
+                Rutina del gym · <strong className="text-white">{gymRoutineLabel}</strong>
+              </span>
+            </div>
+          )}
+
           {quickTemplates.length > 0 && (
             <div>
               <label className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">
@@ -272,9 +288,15 @@ export function EntrenoDeHoyModal({
                     key={tpl.id}
                     type="button"
                     onClick={() => applyTemplate(tpl)}
-                    className="shrink-0 text-[10px] px-2.5 py-1.5 rounded-full font-bold bg-white/5 text-white border border-white/10 active:bg-[#FF671F]/20 active:border-[#FF671F]/40 flex items-center gap-1"
+                    className={`shrink-0 text-[10px] px-2.5 py-1.5 rounded-full font-bold border active:bg-[#FF671F]/20 active:border-[#FF671F]/40 flex items-center gap-1 ${
+                      tpl.id.startsWith('gym-')
+                        ? 'bg-[#22c55e]/15 text-[#22c55e] border-[#22c55e]/30'
+                        : 'bg-white/5 text-white border-white/10'
+                    }`}
                   >
-                    {tpl.id.startsWith('copy-') || tpl.id.startsWith('fav-') ? (
+                    {tpl.id.startsWith('gym-') ? (
+                      <MapPin className="w-3 h-3" />
+                    ) : tpl.id.startsWith('copy-') || tpl.id.startsWith('fav-') ? (
                       <Copy className="w-3 h-3 text-[#FF671F]" />
                     ) : null}
                     {tpl.label}

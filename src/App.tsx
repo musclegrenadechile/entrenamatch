@@ -294,8 +294,12 @@ import { countExternalWitnesses, registerSyncWitness } from './services/syncWitn
 import {
   buildDefaultPact,
   computeWeeklyPactProgress,
+  countLoggedSessionsInWeek,
   isPactForCurrentWeek,
 } from './services/weeklyPact'
+import { compareSyncWorkoutLogs, summarizePartnerWeekFromPosts } from './utils/workoutSyncCompare'
+import { getGymRoutineTemplates } from './utils/gymPartnerRoutines'
+import { ProfileAthletePulse } from './components/profile/ProfileAthletePulse'
 import { ARENA_REST_MS, parseParticipantState } from './utils/arenaSyncState'
 import { triggerHaptic } from './utils/haptics'
 import { loadStoredNotifications, saveStoredNotifications, isQuotaError, reclaimLocalStorageSpace } from './utils/safeLocalStorage'
@@ -1125,6 +1129,7 @@ function App() {
     elapsedSec?: number
     weeklyMetaComplete?: boolean
     weeklyMetaLine?: string
+    workoutCompare?: import('./utils/workoutSyncCompare').SyncWorkoutCompare | null
   } | null>(null)
 
   const checkAndUpdateDailyPulse = (forceUser?: any) => {
@@ -2290,14 +2295,25 @@ useEffect(() => {
 
   const homeWeekTrainedCount = weekLiveDays.length
 
+  const homeLoggedSessionsCount = useMemo(
+    () => countLoggedSessionsInWeek(entrenoRecentWorkouts),
+    [entrenoRecentWorkouts]
+  )
+
   const homeWeeklyPactProgress = useMemo(
     () =>
       computeWeeklyPactProgress(
         (currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact,
         homeWeekTrainedCount,
-        currentUser?.weekStats
+        currentUser?.weekStats,
+        homeLoggedSessionsCount
       ),
-    [(currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact, homeWeekTrainedCount, currentUser?.weekStats]
+    [
+      (currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact,
+      homeWeekTrainedCount,
+      currentUser?.weekStats,
+      homeLoggedSessionsCount,
+    ]
   )
 
   const pactCompleteToastRef = useRef(false)
@@ -2305,7 +2321,7 @@ useEffect(() => {
     if (homeWeeklyPactProgress.isComplete && !pactCompleteToastRef.current) {
       pactCompleteToastRef.current = true
       toast.success('Semana sellada', {
-        description: 'Live + Sync — meta semanal cumplida con tu equipo',
+        description: 'Live + Sync + Logs — meta semanal cumplida con tu equipo',
       })
       try {
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.55 } })
@@ -2342,7 +2358,7 @@ useEffect(() => {
       }
       triggerHaptic('success')
       toast.success('Meta fijada', {
-        description: `${pact.liveDaysTarget} días live · ${pact.syncSessionsTarget} sync esta semana`,
+        description: `${pact.liveDaysTarget} días live · ${pact.syncSessionsTarget} sync · ${pact.loggedSessionsTarget ?? 3} logs esta semana`,
       })
     },
     [currentUser, isDemoMode, firebaseUser?.uid, saveUser]
@@ -5298,6 +5314,36 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     [entrenoRecentWorkouts]
   )
 
+  const entrenoPartnerCompare = useMemo(() => {
+    const pact = (currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact
+    if (!isPactForCurrentWeek(pact) || !pact?.partnerId) return null
+    const partnerWeek = summarizePartnerWeekFromPosts(profilePosts[pact.partnerId])
+    if (entrenoWeekSummary.totalSessions === 0 && partnerWeek.sessions === 0) return null
+    const partner = realProfiles.find((p) => p.id === pact.partnerId)
+    return {
+      partnerName: pact.partnerName || partner?.name || 'Compañero',
+      selfSessions: entrenoWeekSummary.totalSessions,
+      partnerSessions: partnerWeek.sessions,
+      selfSets: entrenoWeekSummary.totalSets,
+      partnerSets: partnerWeek.totalSets,
+    }
+  }, [
+    (currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact,
+    profilePosts,
+    entrenoWeekSummary,
+    realProfiles,
+  ])
+
+  const entrenoGymRoutines = useMemo(() => {
+    if (!isGymCheckInFresh(currentUser?.gymCheckIn)) return []
+    const gymId = currentUser!.gymCheckIn!.gymId
+    const partner = (partnerLocations || []).find((p) => p.id === gymId)
+    return getGymRoutineTemplates({
+      gymName: currentUser!.gymCheckIn!.gymName,
+      partnerType: partner?.type,
+    })
+  }, [currentUser?.gymCheckIn, partnerLocations])
+
   const openEntrenoDeHoy = useCallback(
     async (prefill?: {
       title?: string
@@ -5391,6 +5437,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           source: 'manual',
           prSummary: prSummary || undefined,
           prCount: prs.length || undefined,
+          pinned: prs.length > 0,
         })
         const preview = buildWorkoutPreview(
           workout.title,
@@ -5404,7 +5451,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           userId: effectiveUserId,
           text: postText,
           timestamp: Date.now(),
-          pinned: false,
+          pinned: prs.length > 0,
           likes: [],
           comments: [],
           postType: 'workout',
@@ -6540,6 +6587,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     setArenaWavePulseKey(0)
     setSyncRealWitnessCount(0)
     setSyncWitnessIds([])
+    const capturedPartnerExercises = syncPartnerLiveState?.exercises?.length
+      ? syncPartnerLiveState.exercises.map((e) => ({
+          name: e.name,
+          sets: e.sets.map((s) => ({ reps: s.reps, weightKg: s.weightKg ?? 0 })),
+        }))
+      : []
     setSyncPartnerLiveState(null)
     setSyncRestUntil(null)
     setSyncRestStartedBy(null)
@@ -6610,6 +6663,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           startedAt: syncStartedAtCapture || undefined,
           prSummary: prSummary || undefined,
           prCount: prs.length || undefined,
+          pinned: prs.length > 0,
         })
         const preview = buildWorkoutPreview(
           workout.title,
@@ -6623,7 +6677,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           userId: effectiveUserId,
           text: postText,
           timestamp: Date.now(),
-          pinned: false,
+          pinned: prs.length > 0,
           likes: [],
           comments: [],
           postType: 'workout',
@@ -6677,10 +6731,27 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               syncMins
             )
           : currentUser?.weekStats
+      const projectedLogged = (() => {
+        let n = homeLoggedSessionsCount
+        if (syncWorkoutHasData(capturedWorkoutLog)) {
+          const today = toLocalDateStr()
+          const hasToday = entrenoRecentWorkouts.some(
+            (w) => toLocalDateStr(w.endedAt || w.startedAt) === today
+          )
+          if (!hasToday) n += 1
+        }
+        return n
+      })()
       const projectedMeta = computeWeeklyPactProgress(
         isPactForCurrentWeek(pact) ? pact : null,
         homeWeekTrainedCount,
-        projectedStats
+        projectedStats,
+        projectedLogged
+      )
+      const workoutCompare = compareSyncWorkoutLogs(
+        capturedWorkoutLog.exercises,
+        capturedPartnerExercises,
+        Math.max(1, minutes)
       )
       setSyncDuelSummary({
         partnerId: oldPartner,
@@ -6698,8 +6769,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         weeklyMetaLine: projectedMeta.pledged
           ? projectedMeta.isComplete
             ? 'Semana sellada — meta cumplida'
-            : `${projectedMeta.liveDaysDone}/${projectedMeta.liveDaysTarget} live · ${projectedMeta.syncSessionsDone}/${projectedMeta.syncSessionsTarget} sync`
+            : `${projectedMeta.liveDaysDone}/${projectedMeta.liveDaysTarget} live · ${projectedMeta.syncSessionsDone}/${projectedMeta.syncSessionsTarget} sync · ${projectedMeta.loggedSessionsDone}/${projectedMeta.loggedSessionsTarget} logs`
           : undefined,
+        workoutCompare,
       })
     } else {
       toast(`Sync finalizado: ${minutes}min`, { description: '¡Buen trabajo en equipo! +1 sync streak' })
@@ -9958,6 +10030,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             onOpenEntrenoDeHoy={() => void openEntrenoDeHoy()}
             entrenoWeekSummary={!isDemoMode ? entrenoWeekSummary : null}
             entrenoExerciseHighlights={entrenoExerciseHighlights}
+            entrenoPactProgress={homeWeeklyPactProgress.pledged ? homeWeeklyPactProgress : null}
+            entrenoPartnerCompare={entrenoPartnerCompare}
             fuelProfile={fuelProfile}
             fuelTodayTotals={fuelTodayTotals}
             fuelTodayLogs={fuelTodayLogs}
@@ -10969,6 +11043,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             ? Math.max(5, Math.floor((Date.now() - currentUser.trainingNowSince) / 60_000))
             : undefined
         }
+        gymRoutineTemplates={entrenoGymRoutines}
+        gymRoutineLabel={
+          isGymCheckInFresh(currentUser?.gymCheckIn)
+            ? currentUser?.gymCheckIn?.gymName
+            : undefined
+        }
       />
       <FuelSetupModal
         open={showFuelSetupModal}
@@ -11902,6 +11982,17 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 </div>
               </div>
               <div className="p-5 space-y-6">
+                {showFullProfile.id !== effectiveUserId && (
+                  <ProfileAthletePulse
+                    profile={showFullProfile}
+                    syncBond={syncBonds[showFullProfile.id] ?? null}
+                    lastWorkoutPost={
+                      (profilePosts[showFullProfile.id] || []).find(
+                        (p) => p.postType === 'workout' && p.workoutPreview
+                      ) ?? null
+                    }
+                  />
+                )}
                 {showFullProfile.bio?.trim() && (
                 <div>
                   <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-1.5">BIOGRAFÍA</div>
@@ -13138,6 +13229,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             syncDuelSummary.minutes || Math.max(1, Math.ceil((syncDuelSummary.elapsedSec || 0) / 60))
           )}
           weightKg={fuelProfile?.weightKg ?? 75}
+          workoutCompare={syncDuelSummary.workoutCompare}
         />
       )}
 

@@ -1,17 +1,28 @@
-import { Dumbbell, TrendingUp } from 'lucide-react'
+import { Dumbbell, TrendingUp, Users } from 'lucide-react'
 import type { WeekWorkoutSummary } from '../../utils/workoutProgress'
 import { formatWeekVolume } from '../../utils/workoutProgress'
+import type { WeeklyPactProgress } from '../../services/weeklyPact'
 
 export interface EntrenoDeHoyWeekSummaryProps {
   summary: WeekWorkoutSummary | null
   onOpenEntrenoDeHoy?: () => void
   exerciseHighlights?: Array<{ name: string; bestWeightKg: number; trend: 'up' | 'flat' | 'down' }>
+  pactProgress?: WeeklyPactProgress | null
+  partnerCompare?: {
+    partnerName: string
+    selfSessions: number
+    partnerSessions: number
+    selfSets: number
+    partnerSets: number
+  } | null
 }
 
 export function EntrenoDeHoyWeekSummary({
   summary,
   onOpenEntrenoDeHoy,
   exerciseHighlights = [],
+  pactProgress = null,
+  partnerCompare = null,
 }: EntrenoDeHoyWeekSummaryProps) {
   if (!summary) return null
 
@@ -67,6 +78,37 @@ export function EntrenoDeHoyWeekSummary({
           )
         })}
       </div>
+
+      {pactProgress?.pledged && (
+        <div className="mb-2 px-2 py-1.5 rounded-lg bg-black/25 border border-[#FF671F]/20 text-[10px] flex items-center justify-between">
+          <span className="text-[#9CA3AF]">Meta semanal · logs</span>
+          <span className="font-bold text-[#FF671F] tabular-nums">
+            {pactProgress.loggedSessionsDone}/{pactProgress.loggedSessionsTarget} sesiones
+          </span>
+        </div>
+      )}
+
+      {partnerCompare && (
+        <div className="mb-2 px-2 py-2 rounded-lg bg-[#FFD700]/8 border border-[#FFD700]/20">
+          <p className="text-[9px] uppercase tracking-wider text-[#FFD700] font-bold flex items-center gap-1 mb-1">
+            <Users className="w-3 h-3" /> vs {partnerCompare.partnerName.split(' ')[0]}
+          </p>
+          <div className="grid grid-cols-2 gap-2 text-[10px]">
+            <div>
+              <p className="text-[#9CA3AF]">Tú</p>
+              <p className="font-bold text-white">
+                {partnerCompare.selfSessions} ses · {partnerCompare.selfSets} sets
+              </p>
+            </div>
+            <div>
+              <p className="text-[#9CA3AF]">{partnerCompare.partnerName.split(' ')[0]}</p>
+              <p className="font-bold text-white">
+                {partnerCompare.partnerSessions} ses · {partnerCompare.partnerSets} sets
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {exerciseHighlights.length > 0 && (
         <div className="pt-2 border-t border-white/8 space-y-1.5">

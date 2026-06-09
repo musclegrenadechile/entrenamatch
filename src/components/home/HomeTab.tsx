@@ -35,6 +35,8 @@ export function HomeTab(props: HomeTabProps) {
     onOpenEntrenoDeHoy,
     entrenoWeekSummary,
     entrenoExerciseHighlights,
+    entrenoPactProgress,
+    entrenoPartnerCompare,
     fuelProfile,
     fuelTodayTotals,
     fuelTodayLogs,
@@ -266,6 +268,8 @@ export function HomeTab(props: HomeTabProps) {
         }
         entrenoWeekSummary={entrenoWeekSummary}
         entrenoExerciseHighlights={entrenoExerciseHighlights}
+        entrenoPactProgress={entrenoPactProgress}
+        entrenoPartnerCompare={entrenoPartnerCompare}
         fuelProfile={fuelProfile}
         fuelTotals={fuelTodayTotals}
         fuelTodayLogs={fuelTodayLogs}
