@@ -100,7 +100,7 @@ La **Fase 100 (open beta v1)** queda **parcialmente cerrada en código** pero **
 
 | # | Criterio | Meta | Estado | Evidencia / gap |
 |---|----------|------|--------|-----------------|
-| 1 | Crash-free sessions | >99% (7 días Play internal) | ❌ | Sin AAB v0.1.281 en track internal ni dashboard Crashlytics poblado |
+| 1 | Crash-free sessions | >99% (7 días Play internal) | 🔄 | AAB **v0.1.281** publicado en track `internal` (9 jun 2026); medir Crashlytics 7 días — ver `PLAY_INTERNAL_v0.1.281.md` |
 | 2 | Sync real piloto | ≥1 sync/semana entre 2 usuarios distintos (Viña o Santiago) | ❌ | Sin métrica instrumentada ni cohorte piloto cerrada |
 | 3 | CI verde | vitest + E2E smoke + rules emulator | 🔄 | CI en PR/push `main` ✅; E2E = smoke superficial; rules en vitest ✅ |
 | 4 | `App.tsx` < 8.000 líneas | <8.000 | ❌ | **13.059** líneas |
@@ -177,8 +177,8 @@ Priorizados por impacto en tracción y cierre de beta real.
 
 | # | Paso | Tipo | Prioridad |
 |---|------|------|-----------|
-| 1 | Subir **AAB v0.1.281** a Play **internal** | Ops | P0 |
-| 2 | Activar monitoreo **Crashlytics** 7 días; registrar crash-free % | Ops | P0 |
+| 1 | Subir **AAB v0.1.281** a Play **internal** | Ops | ✅ 9 jun 2026 |
+| 2 | Activar monitoreo **Crashlytics** 7 días; registrar crash-free % | Ops | 🔄 En curso — ver `PLAY_INTERNAL_v0.1.281.md` |
 | 3 | Instrumentar métrica **syncs reales/semana** por ciudad (Firestore o Analytics) | Producto | P0 |
 | 4 | Lanzar piloto cerrado **Viña + Santiago** (50–200 usuarios) | Growth | P0 |
 | 5 | **Derby Viña vs Santiago** — UI duelo semanal (barras + mapa) | Producto | P0 |

@@ -181,7 +181,7 @@ Fase  100     🔄 Open beta v1 — informe ✅; métricas Play/sync pendientes
 
 ### Criterios de salida fase 100
 
-- [ ] Crash-free sessions > **99%** (7 días Play internal)  
+- [ ] Crash-free sessions > **99%** (7 días Play internal) — AAB 281 en track `internal` ✅ (9 jun 2026)  
 - [ ] ≥ **1 sync real** entre 2 usuarios distintos por semana en Viña **o** Santiago (piloto)  
 - [x] CI: vitest + E2E smoke + rules emulator en verde  
 - [ ] `App.tsx` **< 8.000** líneas (actual: **~13.059**)  
@@ -263,7 +263,7 @@ flowchart TB
 
 ## Próxima acción
 
-1. **Fase 100 ops:** AAB v0.1.281 → Play internal + Crashlytics 7 días (ver `OPEN_BETA_INFORME.md` §9 pasos 1–4)  
+1. **Fase 100 ops:** Monitorear Crashlytics 7 días + testers internal (ver `PLAY_INTERNAL_v0.1.281.md`)  
 2. **Piloto:** Viña + Santiago — medir syncs reales/semana  
 3. **Fases 🔄:** 76 (quitar `@ts-nocheck` GymPulseMap) · 81 (extraer Arena de App.tsx)  
 4. **Post-100 P0:** Derby Viña vs Santiago (UI duelo sobre `cityWeeklyStats`)  
