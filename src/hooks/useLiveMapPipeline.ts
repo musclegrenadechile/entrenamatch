@@ -417,6 +417,13 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
     return counts
   }, [liveUsersActive])
 
+  // Re-derive motion-idle pins as timestamps age (fase B).
+  useEffect(() => {
+    if (!showLiveMap || activeTab !== 'map') return
+    const id = setInterval(() => setMapForceTick((t) => t + 1), 60_000)
+    return () => clearInterval(id)
+  }, [showLiveMap, activeTab, setMapForceTick])
+
   const spawnDevTestLives = useCallback(
     (count = 3) => {
       if (!isDeveloper || !userLocation) {

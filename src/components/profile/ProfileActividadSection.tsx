@@ -2,6 +2,7 @@ import { toast } from 'sonner'
 import { TuRedPowerCard } from './TuRedPowerCard'
 import { ConstanciaStore } from './ConstanciaStore'
 import { PartnerGymDashboard } from '../partner/PartnerGymDashboard'
+import { ProfileEntrenoDeHoySection } from './ProfileEntrenoDeHoySection'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
 
@@ -21,6 +22,10 @@ export function ProfileActividadSection(props: ProfileTabProps) {
     constanciaBalance,
     onConstanciaProtect,
     onConstanciaInsurance,
+    entrenoRecentWorkouts = [],
+    entrenoRecentLoading = false,
+    onOpenEntrenoDeHoy,
+    onCopyEntrenoWorkout,
   } = profileTabBindings(props)
 
   const gymName =
@@ -51,6 +56,14 @@ export function ProfileActividadSection(props: ProfileTabProps) {
   return (
     <>
 <div className={profileSection !== 'actividad' ? 'hidden' : undefined}>
+{onOpenEntrenoDeHoy && onCopyEntrenoWorkout && (
+  <ProfileEntrenoDeHoySection
+    recentWorkouts={entrenoRecentWorkouts}
+    loading={entrenoRecentLoading}
+    onOpenEntrenoDeHoy={onOpenEntrenoDeHoy}
+    onCopyWorkout={onCopyEntrenoWorkout}
+  />
+)}
 <TuRedPowerCard
   networkPower={networkStats?.networkPower || 0}
   bondsCount={Object.keys(syncBonds || {}).length}

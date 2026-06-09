@@ -110,6 +110,8 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     dedicatedMapTab = false,
     onActivateLive,
     cityChallenge = null,
+    cityActiveCount = 0,
+    cityLabel = 'tu zona',
   } = props
 
   const [showGymPulseTour, setShowGymPulseTour] = useState(false)
@@ -183,15 +185,20 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
   ).length
 
   return (
-    <div className={dedicatedMapTab ? 'flex-1 flex flex-col min-h-0 relative' : 'flex-shrink-0 px-3 py-2 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/30 relative overflow-hidden live-banner-glow'} style={dedicatedMapTab ? undefined : {boxShadow: '0 1px 0 rgba(34,197,94,0.08)'}}>
+    <div className={dedicatedMapTab ? 'flex-1 flex flex-col min-h-0 relative' : 'flex-shrink-0 px-3 py-2 bg-gradient-to-r from-[#0D0D10] via-[#0a2a1a] to-[#0D0D10] border-b border-[#22c55e]/30 relative overflow-hidden live-banner-glow z-30'} style={dedicatedMapTab ? undefined : {boxShadow: '0 4px 12px rgba(0,0,0,0.45)'}}>
       {!dedicatedMapTab && (
       <>
       <div className="absolute inset-0 bg-[radial-gradient(#22c55e_0.5px,transparent_1px)] bg-[length:4px_4px] opacity-10 pointer-events-none"></div>
       <div className="relative z-10 flex flex-wrap items-center gap-x-2 gap-y-1 mb-1.5">
         <div className="live-pill green !px-2 !py-0.5 text-[8px] shrink-0">🟢 EN VIVO</div>
         <div className="text-[11px] font-semibold leading-tight min-w-0 flex-1">
-          {liveCountForUI} cerca
+          {liveCountForUI} en vivo cerca
           {activeSyncCount > 0 ? ` · ${activeSyncCount} sync` : ''}
+          {cityActiveCount > 0 && (
+            <span className="block text-[10px] font-medium text-[#86efac]/90 mt-0.5">
+              {cityActiveCount} activos en {cityLabel} esta semana
+            </span>
+          )}
         </div>
         <button type="button" onClick={openMapTab} className="text-[10px] px-2.5 py-1 rounded-full bg-[#22c55e]/15 text-[#22c55e] border border-[#22c55e]/35 font-semibold shrink-0">
           Mapa →

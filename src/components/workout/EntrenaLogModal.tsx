@@ -1,14 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Dumbbell, Plus, Trash2, X } from 'lucide-react'
+import { Dumbbell, Plus, Trash2, X, Copy, Star } from 'lucide-react'
 import {
   EXERCISE_LIBRARY,
   WORKOUT_TYPE_LABELS,
   MUSCLE_GROUPS,
   filterExercises,
 } from '../../data/exerciseLibrary'
-import type { WorkoutExercise, WorkoutSet, WorkoutType } from '../../types'
+import type { Workout, WorkoutExercise, WorkoutSet, WorkoutType } from '../../types'
+import {
+  BUILTIN_WORKOUT_TEMPLATES,
+  cloneExercises,
+  loadFavoriteTemplates,
+  saveFavoriteTemplate,
+  type WorkoutQuickTemplate,
+  workoutToTemplate,
+} from '../../utils/workoutTemplates'
 
-export interface EntrenaLogModalProps {
+export interface EntrenoDeHoyModalProps {
   open: boolean
   onClose: () => void
   onSave: (payload: {
@@ -22,7 +30,12 @@ export interface EntrenaLogModalProps {
   initialExercises?: WorkoutExercise[]
   initialType?: WorkoutType
   initialDurationMin?: number
+  lastWorkout?: Workout | null
+  liveDurationMin?: number
 }
+
+/** @deprecated use EntrenoDeHoyModalProps */
+export type EntrenaLogModalProps = EntrenoDeHoyModalProps
 
 const WORKOUT_TYPES: WorkoutType[] = ['push', 'pull', 'legs', 'full', 'cardio', 'other']
 
@@ -110,16 +123,18 @@ function SetInputs({
   )
 }
 
-export function EntrenaLogModal({
+export function EntrenoDeHoyModal({
   open,
   onClose,
   onSave,
-  defaultTitle = 'Entrenamiento de hoy',
+  defaultTitle = 'Entreno de hoy',
   saving = false,
   initialExercises,
   initialType,
   initialDurationMin,
-}: EntrenaLogModalProps) {
+  lastWorkout,
+  liveDurationMin,
+}: EntrenoDeHoyModalProps) {
   const [title, setTitle] = useState(defaultTitle)
   const [type, setType] = useState<WorkoutType>('full')
   const [durationMin, setDurationMin] = useState(45)
@@ -127,17 +142,42 @@ export function EntrenaLogModal({
   const [search, setSearch] = useState('')
   const [muscleFilter, setMuscleFilter] = useState<string | undefined>()
   const [showPicker, setShowPicker] = useState(false)
+  const [favorites, setFavorites] = useState<WorkoutQuickTemplate[]>(() => loadFavoriteTemplates())
 
   useEffect(() => {
     if (!open) return
     setTitle(defaultTitle)
     setType(initialType || 'full')
-    setDurationMin(initialDurationMin ?? 45)
+    const dur =
+      initialDurationMin ??
+      (liveDurationMin && liveDurationMin >= 5 ? liveDurationMin : undefined) ??
+      45
+    setDurationMin(dur)
     setExercises(initialExercises?.length ? initialExercises.map((e) => ({ ...e, sets: [...e.sets] })) : [])
     setSearch('')
     setMuscleFilter(undefined)
     setShowPicker(false)
-  }, [open, defaultTitle, initialExercises, initialType, initialDurationMin])
+    setFavorites(loadFavoriteTemplates())
+  }, [open, defaultTitle, initialExercises, initialType, initialDurationMin, liveDurationMin])
+
+  const applyTemplate = (tpl: WorkoutQuickTemplate) => {
+    setTitle(tpl.label)
+    setType(tpl.type)
+    setDurationMin(tpl.durationMin)
+    setExercises(cloneExercises(tpl.exercises))
+  }
+
+  const quickTemplates = useMemo(() => {
+    const items: WorkoutQuickTemplate[] = []
+    if (lastWorkout?.exercises?.length) {
+      items.push(workoutToTemplate(lastWorkout, 'Último entreno'))
+    }
+    items.push(...favorites)
+    for (const b of BUILTIN_WORKOUT_TEMPLATES) {
+      if (!items.some((t) => t.id === b.id)) items.push(b)
+    }
+    return items.slice(0, 6)
+  }, [lastWorkout, favorites])
 
   const suggestions = useMemo(
     () => filterExercises(search, 14, muscleFilter),
@@ -205,9 +245,9 @@ export function EntrenaLogModal({
           <div className="flex items-center gap-2">
             <Dumbbell className="w-5 h-5 text-[#FF671F]" />
             <div>
-              <p className="text-sm font-black text-white">EntrenaLog</p>
+              <p className="text-sm font-black text-white">Entreno de Hoy</p>
               <p className="text-[10px] text-[#9CA3AF]">
-                {EXERCISE_LIBRARY.length} ejercicios · registra sets y peso
+                {EXERCISE_LIBRARY.length} ejercicios · registra sets en vivo
               </p>
             </div>
           </div>
@@ -221,6 +261,29 @@ export function EntrenaLogModal({
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
+          {quickTemplates.length > 0 && (
+            <div>
+              <label className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">
+                Inicio rápido
+              </label>
+              <div className="flex gap-1.5 mt-1.5 overflow-x-auto pb-1 scrollbar-none">
+                {quickTemplates.map((tpl) => (
+                  <button
+                    key={tpl.id}
+                    type="button"
+                    onClick={() => applyTemplate(tpl)}
+                    className="shrink-0 text-[10px] px-2.5 py-1.5 rounded-full font-bold bg-white/5 text-white border border-white/10 active:bg-[#FF671F]/20 active:border-[#FF671F]/40 flex items-center gap-1"
+                  >
+                    {tpl.id.startsWith('copy-') || tpl.id.startsWith('fav-') ? (
+                      <Copy className="w-3 h-3 text-[#FF671F]" />
+                    ) : null}
+                    {tpl.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <label className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">
               Nombre
@@ -377,7 +440,25 @@ export function EntrenaLogModal({
           )}
         </div>
 
-        <div className="px-4 py-3 border-t border-white/8 shrink-0 flex gap-2">
+        <div className="px-4 py-3 border-t border-white/8 shrink-0 space-y-2">
+          {canSave && (
+            <button
+              type="button"
+              onClick={() => {
+                const next = saveFavoriteTemplate({
+                  label: title.trim() || 'Mi rutina',
+                  type,
+                  durationMin,
+                  exercises,
+                })
+                setFavorites(next)
+              }}
+              className="w-full py-2 rounded-xl border border-[#FFD700]/30 text-[10px] font-bold text-[#FFD700] flex items-center justify-center gap-1 active:bg-[#FFD700]/10"
+            >
+              <Star className="w-3.5 h-3.5" /> Guardar como favorita (máx. 3)
+            </button>
+          )}
+          <div className="flex gap-2">
           <button
             type="button"
             onClick={onClose}
@@ -391,10 +472,14 @@ export function EntrenaLogModal({
             onClick={handleSave}
             className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#e85a10] text-black font-extrabold text-sm disabled:opacity-40"
           >
-            {saving ? 'Guardando…' : 'Guardar y publicar'}
+            {saving ? 'Guardando…' : 'Guardar entreno'}
           </button>
+          </div>
         </div>
       </div>
     </div>
   )
 }
+
+/** @deprecated use EntrenoDeHoyModal */
+export const EntrenaLogModal = EntrenoDeHoyModal

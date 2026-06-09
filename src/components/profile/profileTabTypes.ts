@@ -195,4 +195,8 @@ export interface ProfileTabProps {
   onConstanciaProtect?: () => void | Promise<void>
   onConstanciaInsurance?: () => void | Promise<void>
   onImportHealthBurn?: () => void | Promise<void>
+  entrenoRecentWorkouts?: import('../../types').Workout[]
+  entrenoRecentLoading?: boolean
+  onOpenEntrenoDeHoy?: () => void
+  onCopyEntrenoWorkout?: (workout: import('../../types').Workout) => void
 }

@@ -215,7 +215,9 @@ import {
 } from './utils/homeTeam'
 import { isTeamMemberId } from './utils/teamMembers'
 import { isSeedProfileId } from './utils/seedProfiles'
-import { EntrenaLogModal, WorkoutPostCard } from './components/workout'
+import { EntrenoDeHoyModal, WorkoutPostCard } from './components/workout'
+import { detectWorkoutPRs, formatWorkoutPRSummary } from './utils/workoutPR'
+import { cloneExercises, workoutToTemplate } from './utils/workoutTemplates'
 import { FuelSetupModal, FuelLogModal, NutritionPostCard } from './components/fuel'
 import {
   loadFuelProfile,
@@ -239,6 +241,7 @@ import { useFuelState } from './hooks/useFuelState'
 import { useSyncSession } from './hooks/useSyncSession'
 import { usePartnerLocations } from './hooks/usePartnerLocations'
 import { useLiveMapPipeline } from './hooks/useLiveMapPipeline'
+import { useLiveMotionMonitor } from './hooks/useLiveMotionMonitor'
 import { saveDailyEnergyCache } from './services/dailyEnergy'
 import { estimateSyncSessionBurn } from './domain/fuelBalance'
 import {
@@ -313,6 +316,7 @@ import {
   writeLivePresence,
   clearLivePresence,
   buildLivePresencePayload,
+  patchLivePresenceMotion,
 } from './services/livePresence'
 import { requestPlayIntegrityToken, hasPositiveIntegrity, getLastIntegrityResult } from './services/playIntegrity'
 import { Capacitor } from '@capacitor/core'
@@ -940,6 +944,8 @@ function App() {
   const [feedPublishing, setFeedPublishing] = useState(false)
   const [showFeedPublishSuccess, setShowFeedPublishSuccess] = useState(false)
   const [showEntrenaLogModal, setShowEntrenaLogModal] = useState(false)
+  const [entrenoRecentWorkouts, setEntrenoRecentWorkouts] = useState<import('./types').Workout[]>([])
+  const [entrenoRecentLoading, setEntrenoRecentLoading] = useState(false)
   const [savingWorkout, setSavingWorkout] = useState(false)
   const syncSession = useSyncSession()
   const {
@@ -3348,6 +3354,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         showOnLeaderboard: merged.showOnLeaderboard !== false,
         gymCheckIn: isGymCheckInFresh(merged.gymCheckIn) ? merged.gymCheckIn : null,
         ghostMode: !!merged.ghostMode,
+        liveMotionScore: goingLive ? (merged.liveMotionScore ?? null) : null,
+        liveMotionAt: goingLive ? (merged.liveMotionAt ?? null) : null,
+        liveMotionIdle: goingLive ? (merged.liveMotionIdle ?? null) : null,
+        liveActivityState: goingLive ? (merged.liveActivityState ?? null) : null,
       };
 
       const cleanProfileUpdate = sanitizeForFirestore(profileUpdate);
@@ -3392,6 +3402,69 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
   }
 }, [saveUser, isDemoMode, firebaseUser?.uid, db, updateUserProfile, publishLiveSnapshot]);
+
+  const handleLiveMotionSample = useCallback(
+    async (result: {
+      score: number
+      lastAt: number
+      idle: boolean
+      state: 'active' | 'idle' | 'unknown'
+    }) => {
+      const base = currentUserRef.current
+      if (!base?.trainingNow) return
+      const updated = {
+        ...base,
+        liveMotionScore: result.score,
+        liveMotionAt: result.lastAt,
+        liveMotionIdle: result.idle,
+        liveActivityState: result.state,
+      } as CurrentUser
+      currentUserRef.current = updated
+      saveUser(updated)
+      if (isDemoMode || !firebaseUser?.uid || !db) {
+        setMapForceTick((t) => t + 1)
+        return
+      }
+      try {
+        const motionPatch = {
+          liveMotionScore: result.score,
+          liveMotionAt: result.lastAt,
+          liveMotionIdle: result.idle,
+          liveActivityState: result.state,
+        }
+        await patchLivePresenceMotion(db, firebaseUser.uid, motionPatch, sanitizeForFirestore)
+        await updateUserProfile(firebaseUser.uid, sanitizeForFirestore(motionPatch) as any)
+        const optimistic = profileDocToLiveUser(
+          firebaseUser.uid,
+          { ...updated, trainingNow: true },
+          { forceLive: true }
+        )
+        const nextPresence = mergeLiveUsersById(
+          liveFromPresenceRef.current.filter((u) => u.id !== firebaseUser.uid),
+          [optimistic]
+        )
+        if (typeof publishLiveSnapshot === 'function') {
+          publishLiveSnapshot(nextPresence, liveFromProfilesQueryRef.current)
+        }
+        setMapForceTick((t) => t + 1)
+      } catch (e) {
+        console.warn('[LiveMotion] sync failed', e)
+      }
+    },
+    [saveUser, isDemoMode, firebaseUser?.uid, db, updateUserProfile, publishLiveSnapshot]
+  )
+
+  const getMotionLocation = useCallback(
+    () => userLocationRef.current,
+    []
+  )
+
+  useLiveMotionMonitor({
+    enabled: !!currentUser?.trainingNow,
+    prevScore: currentUser?.liveMotionScore,
+    getLocation: getMotionLocation,
+    onSample: handleLiveMotionSample,
+  })
 
   const handleGymCheckIn = useCallback(
     async (gym: { id: string; name: string; lat: number; lng: number }) => {
@@ -5186,6 +5259,100 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     toast.success('Publicado en tu muro')
     return post
   }
+
+  const refreshEntrenoRecentWorkouts = useCallback(async () => {
+    if (isDemoMode || !db || !firebaseUser?.uid) {
+      setEntrenoRecentWorkouts([])
+      return
+    }
+    setEntrenoRecentLoading(true)
+    try {
+      const list = await fetchRecentWorkouts(db, effectiveUserId, 8)
+      setEntrenoRecentWorkouts(list)
+    } catch {
+      /* ignore */
+    } finally {
+      setEntrenoRecentLoading(false)
+    }
+  }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId])
+
+  useEffect(() => {
+    if (activeTab === 'profile' || showEntrenaLogModal) {
+      void refreshEntrenoRecentWorkouts()
+    }
+  }, [activeTab, showEntrenaLogModal, refreshEntrenoRecentWorkouts])
+
+  const openEntrenoDeHoy = useCallback(
+    async (prefill?: {
+      title?: string
+      exercises?: import('./types').WorkoutExercise[]
+      type?: import('./types').WorkoutType
+      durationMin?: number
+    }) => {
+      await refreshEntrenoRecentWorkouts()
+      if (prefill) {
+        setEntrenaLogPrefill({
+          title: prefill.title,
+          exercises: prefill.exercises,
+          type: prefill.type,
+          durationMin: prefill.durationMin,
+        })
+      } else {
+        setEntrenaLogPrefill(null)
+      }
+      setShowEntrenaLogModal(true)
+    },
+    [refreshEntrenoRecentWorkouts]
+  )
+
+  const applyEntrenoSaveSideEffects = useCallback(
+    async (durationMin: number, prSummary?: string) => {
+      await refreshEntrenoRecentWorkouts()
+      await refreshFuelData()
+      if (!isDemoMode && db && firebaseUser?.uid) {
+        const reward = Math.min(15, Math.max(5, Math.floor(durationMin / 10)))
+        try {
+          const left = await earnConstancia(
+            db,
+            effectiveUserId,
+            reward,
+            dailyPulse?.momentum ?? 0
+          )
+          setConstanciaBalance(left)
+        } catch {
+          /* non-blocking */
+        }
+      }
+      const prLine = prSummary ? ` · ${prSummary}` : ''
+      toast.success('Entreno de Hoy guardado', {
+        description: `Target Fuel ajustado${prLine}`,
+        action: fuelProfile
+          ? {
+              label: 'Abrir Fuel',
+              onClick: () => {
+                setEditingFuelLog(null)
+                setShowFuelLogModal(true)
+              },
+            }
+          : undefined,
+      })
+      if (fuelProfile) {
+        setEditingFuelLog(null)
+        setShowFuelLogModal(true)
+      }
+    },
+    [
+      refreshEntrenoRecentWorkouts,
+      refreshFuelData,
+      isDemoMode,
+      db,
+      firebaseUser?.uid,
+      effectiveUserId,
+      dailyPulse?.momentum,
+      fuelProfile,
+    ]
+  )
+
   const handleSaveEntrenaLog = async (payload: {
     title: string
     type: import('./types').WorkoutType
@@ -5196,6 +5363,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     setSavingWorkout(true)
     try {
       if (!isDemoMode && firebaseUser?.uid && db) {
+        const history = await fetchRecentWorkouts(db, effectiveUserId, 20)
+        const prs = detectWorkoutPRs(payload.exercises, history)
+        const prSummary = formatWorkoutPRSummary(prs)
         const { workout, postId, postText } = await saveWorkoutWithPost(db, {
           userId: effectiveUserId,
           title: payload.title,
@@ -5203,20 +5373,16 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           exercises: payload.exercises,
           durationMin: payload.durationMin,
           source: 'manual',
+          prSummary: prSummary || undefined,
+          prCount: prs.length || undefined,
         })
-        const preview = {
-          title: workout.title,
-          type: workout.type,
-          exerciseCount: workout.stats.exerciseCount,
-          totalSets: workout.stats.totalSets,
-          volumeLabel: `${workout.stats.totalVolumeKg >= 1000 ? (workout.stats.totalVolumeKg / 1000).toFixed(1) + 'k kg' : workout.stats.totalVolumeKg + ' kg'}`,
-          durationMin: workout.stats.durationMin,
-          exercises: payload.exercises.map((ex) => ({
-            name: ex.name,
-            setCount: ex.sets.length,
-            topWeightKg: ex.sets.reduce((m, s) => Math.max(m, s.weightKg || 0), 0) || undefined,
-          })),
-        }
+        const preview = buildWorkoutPreview(
+          workout.title,
+          workout.type,
+          payload.exercises,
+          workout.stats,
+          { prCount: prs.length || undefined }
+        )
         const post: ProfilePost = {
           id: postId,
           userId: effectiveUserId,
@@ -5240,47 +5406,18 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         setRecentlyPublishedPostId(postId)
         setTimeout(() => setRecentlyPublishedPostId(null), 4000)
         if (activeTab === 'home') loadGlobalFeed().catch(() => {})
-        await refreshFuelData()
-        if (!isDemoMode && db && firebaseUser?.uid) {
-          const reward = Math.min(15, Math.max(5, Math.floor(payload.durationMin / 10)))
-          try {
-            const left = await earnConstancia(
-              db,
-              effectiveUserId,
-              reward,
-              dailyPulse?.momentum ?? 0
-            )
-            setConstanciaBalance(left)
-          } catch {
-            /* non-blocking */
-          }
-        }
-        toast.success('Entreno registrado', {
-          description: 'Target Fuel ajustado — registra tu comida post-entreno',
-          action: fuelProfile
-            ? {
-                label: 'Abrir Fuel',
-                onClick: () => {
-                  setEditingFuelLog(null)
-                  setShowFuelLogModal(true)
-                },
-              }
-            : undefined,
-        })
-        if (fuelProfile) {
-          setEditingFuelLog(null)
-          setShowFuelLogModal(true)
-        }
+        await applyEntrenoSaveSideEffects(payload.durationMin, prSummary || undefined)
       } else {
         await createProfilePost(
-          `🏋️ ${payload.title} — ${payload.exercises.length} ejercicios, ${payload.durationMin} min (demo)`,
+          `🏋️ Entreno de Hoy · ${payload.title} — ${payload.exercises.length} ejercicios, ${payload.durationMin} min (demo)`,
           null
         )
-        toast.success('Entreno guardado (demo)')
+        toast.success('Entreno de Hoy guardado (demo)')
       }
       setShowEntrenaLogModal(false)
+      setEntrenaLogPrefill(null)
     } catch (e) {
-      console.error('EntrenaLog save failed', e)
+      console.error('Entreno de Hoy save failed', e)
       toast.error('No se pudo guardar el entreno')
     } finally {
       setSavingWorkout(false)
@@ -6005,6 +6142,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           momentumPoints: newMom,
           retentionXp: newXp,
           weekStats: newWeekStats,
+          liveMotionScore: undefined,
+          liveMotionAt: undefined,
+          liveMotionIdle: undefined,
+          liveActivityState: undefined,
         } as CurrentUser
 
         if (syncPartnerId) {
@@ -6101,6 +6242,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           ...me,
           trainingNow: true,
           trainingNowSince: Date.now(),
+          liveMotionScore: undefined,
+          liveMotionAt: undefined,
+          liveMotionIdle: false,
+          liveActivityState: 'unknown' as const,
           ...(autoGymCheckIn
             ? { gymCheckIn: autoGymCheckIn, lat: autoGymCheckIn.lat, lng: autoGymCheckIn.lng }
             : loc
@@ -6433,6 +6578,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       try {
         const uids = [effectiveUserId, oldPartner].sort()
         const sid = `sync_${uids[0]}_${uids[1]}`
+        const history = await fetchRecentWorkouts(db, effectiveUserId, 20)
+        const prs = detectWorkoutPRs(capturedWorkoutLog.exercises, history)
+        const prSummary = formatWorkoutPRSummary(prs)
         const { workout, postId, postText } = await saveSyncWorkoutWithPost(db, {
           userId: effectiveUserId,
           partnerId: oldPartner,
@@ -6444,12 +6592,15 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           durationMin: Math.max(1, minutes),
           source: 'sync',
           startedAt: syncStartedAtCapture || undefined,
+          prSummary: prSummary || undefined,
+          prCount: prs.length || undefined,
         })
         const preview = buildWorkoutPreview(
           workout.title,
           workout.type,
           capturedWorkoutLog.exercises,
-          workout.stats
+          workout.stats,
+          { prCount: prs.length || undefined }
         )
         const post: ProfilePost = {
           id: postId,
@@ -6472,12 +6623,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         })
         subscribeCommentsForPosts([post])
         if (activeTab === 'home') loadGlobalFeed().catch(() => {})
-        toast.success('EntrenoSync guardado en el muro', {
-          description: `${workout.stats.totalSets} sets registrados juntos`,
-        })
+        await applyEntrenoSaveSideEffects(Math.max(1, minutes), prSummary || undefined)
       } catch (e) {
         console.warn('sync workout save failed', e)
       }
+    } else if (syncWorkoutHasData(capturedWorkoutLog)) {
+      void openEntrenoDeHoy({
+        title: `Sync con ${partnerName.split(' ')[0]}`,
+        exercises: cloneExercises(capturedWorkoutLog.exercises),
+        type: 'full',
+        durationMin: Math.max(1, minutes),
+      })
+      toast.info('Confirma tu Entreno de Hoy', {
+        description: 'Revisa los sets del Sync y guarda la sesión',
+      })
     }
 
     checkAndUpdateDailyPulse()
@@ -6845,6 +7004,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     await doSyncAction(emoji, label)
   }
 
+  const handleCopyEntrenoWorkout = useCallback(
+    (w: import('./types').Workout) => {
+      const tpl = workoutToTemplate(w, `Repetir · ${w.title}`)
+      void openEntrenoDeHoy({
+        title: tpl.label,
+        exercises: tpl.exercises,
+        type: tpl.type,
+        durationMin: tpl.durationMin,
+      })
+      toast.success('Rutina cargada', { description: 'Edita y guarda en Entreno de Hoy' })
+    },
+    [openEntrenoDeHoy]
+  )
+
   const handleCopyWorkoutFromPost = async (workoutId: string, title?: string) => {
     if (!workoutId) return
     if (isDemoMode || !db) {
@@ -6857,7 +7030,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         toast.error('Rutina no encontrada')
         return
       }
-      setEntrenaLogPrefill({
+      void openEntrenoDeHoy({
         title: title ? `Copia · ${title}` : 'Rutina copiada',
         exercises: w.exercises.map((e) => ({
           ...e,
@@ -6866,8 +7039,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         type: w.type,
         durationMin: w.stats?.durationMin || 45,
       })
-      setShowEntrenaLogModal(true)
-      toast.success('Rutina cargada', { description: 'Edita y guarda en EntrenaLog' })
+      toast.success('Rutina cargada', { description: 'Edita y guarda en Entreno de Hoy' })
     } catch {
       toast.error('No se pudo cargar la rutina')
     }
@@ -9301,10 +9473,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         )}
         {/* ===== MAP tab (full) vs EXPLORE live banner only — separate mounts so Leaflet never bleeds into swipe deck ===== */}
         {activeTab === 'explore' && (
-          <div className="flex-shrink-0 relative z-20">
+          <div className="flex-shrink-0 relative z-30">
           <ExploreLivePanel
             key="explore-live-banner"
             dedicatedMapTab={false}
+            cityActiveCount={firestoreCityStats?.participantCount ?? homeCityChallengeMerged?.participants ?? 0}
+            cityLabel={currentUser?.city || 'tu zona'}
             liveCountForUI={liveCountForUI}
             liveTrainingNow={liveTrainingNow}
             syncBonds={syncBonds}
@@ -9515,7 +9689,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         {activeTab === 'explore' && (
           <TabErrorBoundary tabName="Explorar">
           <PullToRefresh
-            className="flex-1 flex flex-col min-h-0 overflow-auto relative z-20 isolate bg-[#0D0D10]"
+            className="flex-1 flex flex-col min-h-0 overflow-auto relative z-10 isolate bg-[#0D0D10]"
             disabled={isDemoMode}
             onRefresh={async () => {
               await silentRefreshReal()
@@ -9549,7 +9723,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             syncBonds={syncBonds}
             networkPower={networkStats.networkPower}
             poolSize={remainingProfiles.length}
-            cityActiveCount={firestoreCityStats?.participantCount ?? homeCityChallengeMerged?.participants ?? 0}
             isDemoMode={isDemoMode}
             db={db}
             firebaseUid={firebaseUser?.uid ?? null}
@@ -9766,6 +9939,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
               setRedSubTab('messages')
             }}
             setShowEntrenaLogModal={setShowEntrenaLogModal}
+            onOpenEntrenoDeHoy={() => void openEntrenoDeHoy()}
             fuelProfile={fuelProfile}
             fuelTodayTotals={fuelTodayTotals}
             fuelTodayLogs={fuelTodayLogs}
@@ -10404,6 +10578,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             onConstanciaProtect={handleConstanciaProtect}
             onConstanciaInsurance={handleConstanciaInsurance}
             onImportHealthBurn={handleImportHealthBurn}
+            entrenoRecentWorkouts={entrenoRecentWorkouts}
+            entrenoRecentLoading={entrenoRecentLoading}
+            onOpenEntrenoDeHoy={() => void openEntrenoDeHoy()}
+            onCopyEntrenoWorkout={handleCopyEntrenoWorkout}
           />
           </Suspense>
           </TabErrorBoundary>
@@ -10755,7 +10933,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         trainerDispatchHistory={trainerDispatchHistory}
         clientFuelBalance={fuelEnergyBalance}
       />
-      <EntrenaLogModal
+      <EntrenoDeHoyModal
         open={showEntrenaLogModal}
         onClose={() => {
           setShowEntrenaLogModal(false)
@@ -10763,10 +10941,16 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         }}
         onSave={handleSaveEntrenaLog}
         saving={savingWorkout}
-        defaultTitle={entrenaLogPrefill?.title || 'Entrenamiento de hoy'}
+        defaultTitle={entrenaLogPrefill?.title || 'Entreno de hoy'}
         initialExercises={entrenaLogPrefill?.exercises}
         initialType={entrenaLogPrefill?.type}
         initialDurationMin={entrenaLogPrefill?.durationMin}
+        lastWorkout={entrenoRecentWorkouts[0] ?? null}
+        liveDurationMin={
+          currentUser?.trainingNow && currentUser.trainingNowSince
+            ? Math.max(5, Math.floor((Date.now() - currentUser.trainingNowSince) / 60_000))
+            : undefined
+        }
       />
       <FuelSetupModal
         open={showFuelSetupModal}
@@ -13003,7 +13187,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 <WorkoutPostCard preview={witnessData.workoutPreview} compact />
                 {witnessData.loggedSets > 0 && (
                   <p className="text-[10px] text-center text-[#22c55e] mt-2 font-medium">
-                    {witnessData.loggedSets} sets reales registrados en EntrenaLog
+                    {witnessData.loggedSets} sets en Entreno de Hoy
                   </p>
                 )}
               </div>

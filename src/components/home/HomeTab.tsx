@@ -32,6 +32,7 @@ export function HomeTab(props: HomeTabProps) {
     startSyncWith,
     setActiveChat,
     setShowEntrenaLogModal,
+    onOpenEntrenoDeHoy,
     fuelProfile,
     fuelTodayTotals,
     fuelTodayLogs,
@@ -254,7 +255,13 @@ export function HomeTab(props: HomeTabProps) {
           setActiveChat(id)
         }}
         onOpenMatches={() => setActiveTab('red')}
-        onOpenEntrenaLog={() => setShowEntrenaLogModal(true)}
+        onOpenEntrenaLog={
+          onOpenEntrenoDeHoy
+            ? () => onOpenEntrenoDeHoy()
+            : setShowEntrenaLogModal
+              ? () => setShowEntrenaLogModal(true)
+              : undefined
+        }
         fuelProfile={fuelProfile}
         fuelTotals={fuelTodayTotals}
         fuelTodayLogs={fuelTodayLogs}

@@ -24,7 +24,7 @@ export function WorkoutPostCard({ preview, text, compact = false, onCopyRoutine,
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[10px] uppercase tracking-wider text-[#FF671F] font-bold">
-              EntrenaLog · {typeLabel}
+              Entreno de Hoy · {typeLabel}
             </p>
             <p className="text-sm font-black text-white truncate">{preview.title}</p>
             <div className="flex flex-wrap gap-2 mt-1.5 text-[10px] text-[#9CA3AF] font-medium">
@@ -35,6 +35,12 @@ export function WorkoutPostCard({ preview, text, compact = false, onCopyRoutine,
               <span>{preview.durationMin} min</span>
               <span>·</span>
               <span className="text-[#FFD700]">{preview.volumeLabel}</span>
+              {(preview.prCount ?? 0) > 0 && (
+                <>
+                  <span>·</span>
+                  <span className="text-[#FFD700]">🏆 {preview.prCount} PR</span>
+                </>
+              )}
             </div>
           </div>
           {preview.exercises && preview.exercises.length > 0 && (

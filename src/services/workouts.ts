@@ -42,7 +42,8 @@ export function buildWorkoutPreview(
   title: string,
   type: WorkoutType,
   exercises: WorkoutExercise[],
-  stats: WorkoutStats
+  stats: WorkoutStats,
+  opts?: { prCount?: number }
 ): WorkoutPreview {
   return {
     title,
@@ -51,6 +52,7 @@ export function buildWorkoutPreview(
     totalSets: stats.totalSets,
     volumeLabel: formatVolumeLabel(stats.totalVolumeKg),
     durationMin: stats.durationMin,
+    prCount: opts?.prCount,
     exercises: exercises.map((ex) => ({
       name: ex.name,
       setCount: ex.sets.length,
@@ -62,10 +64,12 @@ export function buildWorkoutPreview(
 export function buildWorkoutPostText(
   title: string,
   type: WorkoutType,
-  stats: WorkoutStats
+  stats: WorkoutStats,
+  prSummary?: string
 ): string {
   const typeLabel = WORKOUT_TYPE_LABELS[type] || type
-  return `🏋️ ${title} · ${typeLabel} — ${stats.exerciseCount} ejercicios, ${stats.totalSets} sets, ${stats.durationMin} min (${formatVolumeLabel(stats.totalVolumeKg)})`
+  const base = `🏋️ ${title} · ${typeLabel} — ${stats.exerciseCount} ejercicios, ${stats.totalSets} sets, ${stats.durationMin} min (${formatVolumeLabel(stats.totalVolumeKg)})`
+  return prSummary ? `${base}\n${prSummary}` : base
 }
 
 export type SaveWorkoutInput = {
@@ -77,6 +81,8 @@ export type SaveWorkoutInput = {
   source?: Workout['source']
   partnerId?: string
   syncSessionId?: string
+  prSummary?: string
+  prCount?: number
 }
 
 export type SaveWorkoutResult = {
@@ -92,8 +98,10 @@ export async function saveWorkoutWithPost(
   const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
   const now = Date.now()
   const stats = computeWorkoutStats(input.exercises, input.durationMin)
-  const preview = buildWorkoutPreview(input.title, input.type, input.exercises, stats)
-  const postText = buildWorkoutPostText(input.title, input.type, stats)
+  const preview = buildWorkoutPreview(input.title, input.type, input.exercises, stats, {
+    prCount: input.prCount,
+  })
+  const postText = buildWorkoutPostText(input.title, input.type, stats, input.prSummary)
 
   const workoutData = {
     userId: input.userId,
@@ -237,9 +245,12 @@ export async function saveSyncWorkoutWithPost(
   const title =
     input.title.trim() ||
     `Sync con ${input.partnerName.split(' ')[0]}`
-  const preview = buildWorkoutPreview(title, input.type, input.exercises, stats)
+  const preview = buildWorkoutPreview(title, input.type, input.exercises, stats, {
+    prCount: input.prCount,
+  })
   const typeLabel = WORKOUT_TYPE_LABELS[input.type] || input.type
-  const postText = `🏋️ EntrenaSync · ${title} (${typeLabel}) — ${stats.exerciseCount} ejercicios, ${stats.totalSets} sets, ${stats.durationMin} min con @${input.partnerName.split(' ')[0]}`
+  const basePost = `🏋️ Entreno de Hoy · ${title} (${typeLabel}) — ${stats.exerciseCount} ejercicios, ${stats.totalSets} sets, ${stats.durationMin} min con @${input.partnerName.split(' ')[0]}`
+  const postText = input.prSummary ? `${basePost}\n${input.prSummary}` : basePost
 
   const participantIds = [input.userId, input.partnerId].sort()
 

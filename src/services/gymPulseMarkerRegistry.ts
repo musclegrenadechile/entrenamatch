@@ -37,6 +37,7 @@ export function liveMarkerSignature(u: {
   seVaEnMin?: number
   joinCount?: number
   gymCheckIn?: { gymName?: string }
+  liveMotionIdle?: boolean
 }): string {
   return [
     u.lat,
@@ -47,6 +48,7 @@ export function liveMarkerSignature(u: {
     u.seVaEnMin,
     u.joinCount,
     u.gymCheckIn?.gymName,
+    u.liveMotionIdle,
   ].join('|')
 }
 

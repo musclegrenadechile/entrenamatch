@@ -3,6 +3,8 @@
  * Single place for session TTL, coords checks, and enrichment.
  */
 
+import { deriveLiveMotionIdle } from './liveMotionScore'
+
 export const ASSUMED_LIVE_SESSION_MS = 3 * 60 * 60 * 1000
 
 export function normalizeTrainingSince(val: unknown): number | undefined {
@@ -67,6 +69,10 @@ export function enrichLiveUser(
   }
   const bond = opts.syncBonds?.[p.id]
   const visibleLevel = p.retentionLevel || bond?.bondLevel || 1
+  const liveMotionScore =
+    typeof p.liveMotionScore === 'number' ? p.liveMotionScore : undefined
+  const liveMotionAt = typeof p.liveMotionAt === 'number' ? p.liveMotionAt : undefined
+  const liveMotionIdle = deriveLiveMotionIdle(liveMotionScore, liveMotionAt, now)
   return {
     ...p,
     lat,
@@ -78,6 +84,10 @@ export function enrichLiveUser(
     joinCount: p.liveJoins ?? p.joinCount ?? 0,
     isNetworkBond: !!bond && (bond.bondLevel || 0) >= 3,
     visibleLevel,
+    liveMotionScore,
+    liveMotionAt,
+    liveMotionIdle,
+    liveActivityState: p.liveActivityState,
   }
 }
 
@@ -167,5 +177,9 @@ export function profileDocToLiveUser(
     syncBonds: data.syncBonds || {},
     retentionLevel: data.retentionLevel || 1,
     gymCheckIn: data.gymCheckIn || undefined,
+    liveMotionScore: typeof data.liveMotionScore === 'number' ? data.liveMotionScore : undefined,
+    liveMotionAt: typeof data.liveMotionAt === 'number' ? data.liveMotionAt : undefined,
+    liveMotionIdle: data.liveMotionIdle === true,
+    liveActivityState: data.liveActivityState,
   }
 }

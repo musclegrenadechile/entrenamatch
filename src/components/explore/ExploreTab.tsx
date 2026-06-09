@@ -33,7 +33,6 @@ interface ExploreTabProps {
   networkPower?: number;
   poolSize?: number;
   onRelaxFilters?: () => void;
-  cityActiveCount?: number;
   isDemoMode?: boolean;
   db?: Firestore | null;
   firebaseUid?: string | null;
@@ -60,7 +59,6 @@ export const ExploreTab = ({
   networkPower = 0,
   poolSize = 0,
   onRelaxFilters,
-  cityActiveCount = 0,
   isDemoMode = false,
   db = null,
   firebaseUid = null,
@@ -252,7 +250,7 @@ export const ExploreTab = ({
     return (
       <motion.div
         key={profile.id}
-        className="absolute left-0 right-0 mx-auto w-full max-w-[320px] h-[min(46dvh,360px)] sm:h-[min(52dvh,400px)] bg-[#1C1C20] rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing swipe-card ring-1 ring-white/10"
+        className="absolute left-0 right-0 mx-auto w-full max-w-[320px] h-[min(44dvh,340px)] sm:h-[min(50dvh,380px)] bg-[#1C1C20] rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing swipe-card ring-1 ring-white/10"
         style={{ zIndex: z }}
         initial={false}
         animate={{
@@ -434,19 +432,14 @@ export const ExploreTab = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col p-3 pt-2 relative z-20 bg-[#0D0D10] min-h-0 isolate">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-2 mb-1 px-0.5 shrink-0">
+    <div className="flex-1 flex flex-col p-3 pt-2 relative bg-[#0D0D10] min-h-0">
+      {/* Header — above card stack in paint order */}
+      <div className="relative z-30 flex items-start justify-between gap-2 mb-2 px-0.5 shrink-0 bg-[#0D0D10]">
         <div className="min-w-0 flex-1">
           <div className="text-xl sm:text-3xl font-extrabold tracking-tight leading-none">Explorar</div>
           <div className="mt-1 text-[11px] leading-snug text-[#9CA3AF]">
             <span className="text-[#FF671F] font-semibold">{deck.length} disponibles</span>
-            {userLocation ? ' cerca' : ''}
-            {cityActiveCount > 0 && (
-              <span className="block sm:inline sm:ml-1 text-[#22c55e]">
-                · {cityActiveCount} activos en {cityLabel}
-              </span>
-            )}
+            {userLocation ? ' cerca' : ' en tu zona'}
           </div>
         </div>
 
@@ -480,7 +473,7 @@ export const ExploreTab = ({
       </div>
 
       {showSparseBanner && (
-        <div className="mb-3 mx-1 p-3 rounded-2xl bg-[#FF671F]/10 border border-[#FF671F]/25 text-[11px] leading-snug">
+        <div className="relative z-20 mb-3 mx-1 p-3 rounded-2xl bg-[#FF671F]/10 border border-[#FF671F]/25 text-[11px] leading-snug shrink-0">
           <strong className="text-[#FF671F]">Pocos perfiles con tus filtros.</strong>{' '}
           <span className="text-[#9CA3AF]">
             Hay {poolSize} en total — prueba ampliar distancia (50 km) o relajar edad/horarios.
@@ -511,14 +504,14 @@ export const ExploreTab = ({
         />
       )}
 
-      {/* Cards Stack Area — solid bg + z-index so map tiles never bleed through */}
-      <div className="relative z-10 flex-1 flex items-center justify-center my-1 min-h-[240px] max-h-[min(48dvh,380px)] sm:max-h-[420px] bg-[#0D0D10]">
+      {/* Cards Stack Area — clipped so absolute cards never paint over header */}
+      <div className="relative z-0 flex-1 flex items-center justify-center my-1 min-h-[220px] max-h-[min(46dvh,360px)] sm:max-h-[400px] bg-[#0D0D10] overflow-hidden">
         {isLoadingProfiles && visibleCards.length === 0 && (
           <SwipeCardSkeleton />
         )}
         <AnimatePresence>
           {!isLoadingProfiles && visibleCards.length === 0 && (
-            <div className="text-center px-6">
+            <div className="text-center px-6 py-2 max-h-full overflow-y-auto overscroll-contain">
               <div className="mx-auto w-16 h-16 bg-[#1C1C20] rounded-3xl flex items-center justify-center mb-4 ring-1 ring-[#FF671F]/20">
                 <div className="text-4xl">🏋️</div>
               </div>

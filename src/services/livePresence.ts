@@ -50,6 +50,10 @@ export interface LivePresenceWritePayload {
     checkedInAt: number
   } | null
   ghostMode?: boolean
+  liveMotionScore?: number
+  liveMotionAt?: number
+  liveMotionIdle?: boolean
+  liveActivityState?: 'active' | 'idle' | 'unknown'
 }
 
 /** Write / refresh presence doc when user goes live. */
@@ -147,5 +151,30 @@ export function buildLivePresencePayload(
     trainingSyncWith: user.trainingSyncWith ?? null,
     retentionLevel: user.retentionLevel,
     gymCheckIn: user.gymCheckIn ?? null,
+    liveMotionScore: user.liveMotionScore,
+    liveMotionAt: user.liveMotionAt,
+    liveMotionIdle: user.liveMotionIdle,
+    liveActivityState: user.liveActivityState,
   }
+}
+
+/** Lightweight motion-only patch while staying LIVE (fase B). */
+export async function patchLivePresenceMotion(
+  db: Firestore,
+  userId: string,
+  motion: Pick<
+    LivePresenceWritePayload,
+    'liveMotionScore' | 'liveMotionAt' | 'liveMotionIdle' | 'liveActivityState'
+  >,
+  sanitize: (obj: unknown) => unknown
+): Promise<void> {
+  const ref = doc(db, 'livePresence', userId)
+  await setDoc(
+    ref,
+    sanitize({
+      ...motion,
+      updatedAt: serverTimestamp(),
+    }),
+    { merge: true }
+  )
 }

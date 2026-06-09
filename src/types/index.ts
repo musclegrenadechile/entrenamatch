@@ -39,6 +39,11 @@
   gymCheckIn?: GymCheckIn
   /** Fase 114 — fuzzy public location on GymPulse (~500 m). */
   ghostMode?: boolean
+  /** Fase B — accelerometer/GPS motion score while LIVE (0–100). */
+  liveMotionScore?: number
+  liveMotionAt?: number
+  liveMotionIdle?: boolean
+  liveActivityState?: 'active' | 'idle' | 'unknown'
   /** Weekly goal — closes Home loop (Meta semanal, Phase D4). */
   weeklyPact?: WeeklyPact
 }
@@ -321,6 +326,7 @@ export interface WorkoutPreview {
   volumeLabel: string
   durationMin: number
   exercises?: Array<{ name: string; setCount: number; topWeightKg?: number }>
+  prCount?: number
 }
 
 export interface ProfilePost {

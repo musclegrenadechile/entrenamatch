@@ -235,6 +235,26 @@ export function DailyHome({
         </button>
       </section>
 
+      {/* Entreno de Hoy — visible mientras LIVE o como acceso rápido */}
+      {onOpenEntrenaLog && isLive && (
+        <section
+          className="rounded-2xl p-3.5 border border-[#FF671F]/45 bg-gradient-to-r from-[#FF671F]/15 via-[#141418] to-[#141418] ring-1 ring-[#FF671F]/20"
+          aria-label="Entreno de Hoy en vivo"
+        >
+          <p className="text-xs font-black text-white">Entreno de Hoy</p>
+          <p className="text-[10px] text-[#9CA3AF] mt-1 leading-snug">
+            Estás en LIVE — registra sets y peso mientras entrenas. Al guardar ajustamos Fuel y tu muro.
+          </p>
+          <button
+            type="button"
+            onClick={onOpenEntrenaLog}
+            className="mt-2.5 w-full py-3 rounded-xl bg-[#FF671F] text-black font-extrabold text-xs active:brightness-95 shadow-lg shadow-[#FF671F]/25"
+          >
+            Abrir Entreno de Hoy
+          </button>
+        </section>
+      )}
+
       {/* 2 · EQUIPO */}
       <section
         className={`rounded-3xl p-4 border ${
@@ -487,13 +507,13 @@ export function DailyHome({
       </section>
 
       {/* Secundario — después del loop */}
-      {onOpenEntrenaLog && (
+      {onOpenEntrenaLog && !isLive && (
         <button
           type="button"
           onClick={onOpenEntrenaLog}
-          className="w-full py-2.5 rounded-xl border border-[#FF671F]/35 bg-[#FF671F]/10 text-[11px] font-bold text-[#FF671F] active:bg-[#FF671F]/20"
+          className="w-full py-3 rounded-xl border border-[#FF671F]/35 bg-[#FF671F]/10 text-xs font-bold text-[#FF671F] active:bg-[#FF671F]/20 flex items-center justify-center gap-2"
         >
-          🏋️ Registrar entreno (EntrenaLog)
+          <span>🏋️</span> Entreno de Hoy — registrar sesión
         </button>
       )}
 
