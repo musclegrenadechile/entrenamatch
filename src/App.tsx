@@ -306,6 +306,7 @@ import {
   attachActiveSyncSessionListener,
   buildSyncSessionId,
   buildSyncSessionAction,
+  normalizeSyncActionsForUi,
 } from './services/syncSessions'
 import { countExternalWitnesses, registerSyncWitness } from './services/syncWitness'
 import {
@@ -2479,7 +2480,7 @@ useEffect(() => {
         syncPartnerIdRef.current = payload.partnerId
         setSyncPartnerId(payload.partnerId)
         setSyncStartedAt(payload.startedAt)
-        setSyncActions(payload.actions || [])
+        setSyncActions(normalizeSyncActionsForUi(payload.actions))
         setSyncWorkoutLog(createEmptySyncWorkoutLog())
         setSyncPartnerLiveState(null)
         if (typeof payload.vibe === 'number') {
@@ -2542,11 +2543,8 @@ useEffect(() => {
     const sessionId = buildSyncSessionId(effectiveUserId, syncPartnerId)
     return attachActiveSyncSessionListener(db, sessionId, effectiveUserId, {
       onUpdate: (data) => {
-        if (Array.isArray(data.actions)) {
-          const recent = [...data.actions]
-            .sort((a: any, b: any) => (b.at || 0) - (a.at || 0))
-            .slice(0, 10)
-          setSyncActions(recent)
+        if (data.actions != null) {
+          setSyncActions(normalizeSyncActionsForUi(data.actions))
         }
         if (data.startedAt) setSyncStartedAt(data.startedAt)
         if (typeof data.vibe === 'number') {
@@ -3130,10 +3128,10 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       if (typeof publishSnapshot === 'function') {
         if (goingLive) {
           const optimistic = toLiveUser(firebaseUser.uid, cleanProfileUpdate as any, { forceLive: true })
-          const nextPresence = mergeLive(
+          const nextPresence = mergeLive([
             liveFromPresenceRef.current.filter((u) => u.id !== firebaseUser.uid),
             [optimistic],
-          )
+          ])
           publishSnapshot(nextPresence, liveFromProfilesQueryRef.current)
         } else {
           const nextPresence = liveFromPresenceRef.current.filter((u) => u.id !== firebaseUser.uid)
@@ -3207,10 +3205,10 @@ useEffect(() => {
           { ...updated, trainingNow: true },
           { forceLive: true }
         )
-        const nextPresence = mergeLiveUsersById(
+        const nextPresence = mergeLiveUsersById([
           liveFromPresenceRef.current.filter((u) => u.id !== firebaseUser.uid),
-          [optimistic]
-        )
+          [optimistic],
+        ])
         if (typeof publishLiveSnapshot === 'function') {
           publishLiveSnapshot(nextPresence, liveFromProfilesQueryRef.current)
         }

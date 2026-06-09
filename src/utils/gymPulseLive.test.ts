@@ -28,6 +28,15 @@ describe('gymPulseLive (fase 78)', () => {
     expect(merged[0].trainingNow).toBe(true)
   })
 
+  it('mergeLiveUsersById accepts flat user[] (legacy wrong call — no iterable crash)', () => {
+    const merged = mergeLiveUsersById([
+      { id: 'a', trainingNow: true, lat: 1, lng: 1 },
+      { id: 'b', trainingNow: true, lat: 2, lng: 2 },
+    ] as any)
+    expect(merged).toHaveLength(2)
+    expect(merged.map((u) => u.id).sort()).toEqual(['a', 'b'])
+  })
+
   it('isActiveLiveUser respects session TTL', () => {
     const now = Date.now()
     expect(isActiveLiveUser({ trainingNow: true, trainingNowSince: now - 1000 }, now)).toBe(true)

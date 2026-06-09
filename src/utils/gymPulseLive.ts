@@ -33,10 +33,23 @@ export function isActiveLiveUser(p: any, now = Date.now()): boolean {
 
 export type LiveUserLike = Record<string, any>
 
-export function mergeLiveUsersById(sources: LiveUserLike[][]): LiveUserLike[] {
+function looksLikeLiveUser(row: unknown): row is LiveUserLike {
+  return !!row && typeof row === 'object' && typeof (row as LiveUserLike).id === 'string'
+}
+
+/** Normalize legacy calls that passed a flat user[] instead of LiveUserLike[][]. */
+function normalizeMergeSources(sources: LiveUserLike[][] | LiveUserLike[]): LiveUserLike[][] {
+  if (!sources || !Array.isArray(sources) || sources.length === 0) return []
+  if (looksLikeLiveUser(sources[0])) {
+    return [sources as LiveUserLike[]]
+  }
+  return (sources as LiveUserLike[][]).map((list) => (Array.isArray(list) ? list : []))
+}
+
+export function mergeLiveUsersById(sources: LiveUserLike[][] | LiveUserLike[]): LiveUserLike[] {
   const byId = new Map<string, LiveUserLike>()
-  for (const list of sources) {
-    for (const p of list || []) {
+  for (const list of normalizeMergeSources(sources)) {
+    for (const p of list) {
       if (!p?.id) continue
       const prev = byId.get(p.id)
       const merged = { ...prev, ...p }

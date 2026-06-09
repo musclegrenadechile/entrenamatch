@@ -60,11 +60,27 @@ export interface IncomingSyncPayload {
 const INCOMING_MAX_AGE_MS = 3 * 60 * 60 * 1000
 const MAX_AUTH_WAIT_ATTEMPTS = 12
 
-function parseRecentActions(actions: SyncSessionData['actions']) {
+export type SyncActionView = {
+  id: string
+  emoji: string
+  userId: string
+  at: number
+  label?: string
+}
+
+export function normalizeSyncActionsForUi(actions: SyncSessionData['actions']): SyncActionView[] {
   if (!Array.isArray(actions)) return []
   return [...actions]
+    .filter((a) => a && typeof a === 'object')
     .sort((a, b) => (b.at || 0) - (a.at || 0))
     .slice(0, 10)
+    .map((a, i) => ({
+      id: `sa_${a.at || 0}_${i}`,
+      emoji: typeof a.emoji === 'string' ? a.emoji : '💪',
+      userId: typeof a.userId === 'string' ? a.userId : '',
+      at: typeof a.at === 'number' ? a.at : Date.now(),
+      label: typeof a.label === 'string' ? a.label : undefined,
+    }))
 }
 
 /** Firestore rejects undefined field values — never include optional keys when empty. */
@@ -151,7 +167,7 @@ export function attachIncomingSyncListener(
               partnerId: otherId,
               partnerName: handlers.findPartnerName(otherId),
               startedAt: started || Date.now(),
-              actions: parseRecentActions(data.actions),
+              actions: normalizeSyncActionsForUi(data.actions),
               vibe: typeof data.vibe === 'number' ? data.vibe : undefined,
             })
             break
@@ -220,7 +236,7 @@ export function attachActiveSyncSessionListener(
           const data = snap.data() as SyncSessionData
           handlers.onUpdate(data)
 
-          const recent = parseRecentActions(data.actions)
+          const recent = normalizeSyncActionsForUi(data.actions)
           const latest = recent[0]
           if (latest && latest.userId && latest.userId !== myUid) {
             handlers.onPartnerAction?.(latest)
