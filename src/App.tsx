@@ -214,7 +214,6 @@ import {
   cityStatsDocId,
   mergeCityChallengeWithFirestore,
 } from './services/cityWeeklyStats'
-import { recordPilotSyncSession } from './services/pilotSyncMetrics'
 import { registerPilotMember, touchPilotActivity } from './services/pilotCohort'
 import {
   aggregateDerbyClientMinutes,
@@ -265,6 +264,7 @@ import { useChatSession } from './hooks/useChatSession'
 import { useFeedState } from './hooks/useFeedState'
 import { computeGlobalFeed } from './utils/feedRanking'
 import { useSyncSession } from './hooks/useSyncSession'
+import { useArenaSyncController } from './hooks/useArenaSyncController'
 import { usePartnerLocations } from './hooks/usePartnerLocations'
 import { useLiveMapPipeline } from './hooks/useLiveMapPipeline'
 import { useLiveMotionMonitor } from './hooks/useLiveMotionMonitor'
@@ -283,18 +283,8 @@ import {
 } from './services/constanciaEconomy'
 import { importHealthCaloriesForDate } from './services/healthImport'
 import { loadDailyEnergyCache } from './services/dailyEnergy'
-import {
-  createEmptySyncWorkoutLog,
-  appendSetToLog,
-  countLoggedSets,
-  syncWorkoutHasData,
-  formatSetLabel,
-  toParticipantSyncPayload,
-  type SyncWorkoutLogState,
-} from './utils/arenaWorkoutLog'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
-import { SyncArenaView, ArenaGlobalPulseBar, SyncDuelSummary } from './components/arena'
-import { uploadArenaPhotoUrl, postPartnerSyncStory } from './services/arenaFormPhoto'
+import { SyncArenaHost, SyncDuelSummary } from './components/arena'
 import {
   attachPostCommentsListener,
   createCommentId,
@@ -308,14 +298,7 @@ import { attachUserPostsListener } from './services/profilePosts'
 import { attachDirectChatListener, type DirectChatMsg } from './services/chatMessages'
 import { processLikeAndMaybeMatch } from './services/matching'
 import { writePass } from './services/swipeState'
-import {
-  attachIncomingSyncListener,
-  attachActiveSyncSessionListener,
-  buildSyncSessionId,
-  buildSyncSessionAction,
-  normalizeSyncActionsForUi,
-} from './services/syncSessions'
-import { countExternalWitnesses, registerSyncWitness } from './services/syncWitness'
+import { buildSyncSessionId } from './services/syncSessions'
 import {
   buildDefaultPact,
   buildPactReminderMessage,
@@ -329,7 +312,6 @@ import { fetchGymRoutinesFromFirestore, mergeGymRoutineTemplates } from './servi
 import { estimateWorkoutBurn } from './domain/fuelBalance/estimateWorkoutBurn'
 import { FullProfileSheet } from './components/profile/FullProfileSheet'
 import { getYesterdayWorkout } from './utils/homeHero'
-import { ARENA_REST_MS, parseParticipantState } from './utils/arenaSyncState'
 import { triggerHaptic } from './utils/haptics'
 import { loadStoredNotifications, saveStoredNotifications, isQuotaError, reclaimLocalStorageSpace } from './utils/safeLocalStorage'
 import {
@@ -1005,13 +987,6 @@ function App() {
     witnessedSessionsRef,
     networkStats,
   } = syncSession
-  const syncWorkoutLogRef = useRef<SyncWorkoutLogState>(syncWorkoutLog)
-  useEffect(() => {
-    syncWorkoutLogRef.current = syncWorkoutLog
-  }, [syncWorkoutLog])
-  const [isArenaVoiceRecording, setIsArenaVoiceRecording] = useState(false)
-  const arenaVoiceRecorderRef = useRef<MediaRecorder | null>(null)
-  const arenaVoiceChunksRef = useRef<Blob[]>([])
 
   const [entrenaLogPrefill, setEntrenaLogPrefill] = useState<{
     title?: string
@@ -1115,25 +1090,6 @@ function App() {
   // This is infrastructure for the future of fitness as a synchronized, social, high-performance activity.
   // =====================================================
 
-  const [replaySession, setReplaySession] = useState<any>(null) // {partnerName, minutes, vibe, actions, rating?}
-  const [syncDuelSummary, setSyncDuelSummary] = useState<{
-    partnerId: string
-    partnerName: string
-    minutes: number
-    vibe: number
-    witnessCount: number
-    setsLogged: number
-    actions: any[]
-    isNetworkBond: boolean
-    bondLevel?: number
-    partnerPhoto?: string
-    elapsedSec?: number
-    weeklyMetaComplete?: boolean
-    weeklyMetaLine?: string
-    workoutCompare?: import('./utils/workoutSyncCompare').SyncWorkoutCompare | null
-  } | null>(null)
-  const [publishingSyncFeed, setPublishingSyncFeed] = useState(false)
-
   const [witnessData, setWitnessData] = useState<any>(null) // for shared session highlight replay: replay of a strong EntrenaSync (shared state, actions, vibe) that can be archived as co-authored performance memory
 
   // Shared Performance Highlights & Discovery Pins
@@ -1141,7 +1097,6 @@ function App() {
   // This builds real culture and status in the network: great synchronized training becomes discoverable and inspires others.
   // Training together compounds into visible performance capital for both people.
   const [echoPins, setEchoPins] = useState<any[]>([]); // persistent tappable highlight pins on map from strong sync sessions
-  const [activeSyncPairs, setActiveSyncPairs] = useState<any[]>([]) // lightweight for global FOMO teasers
 
   // Auto-refresh real sessions on tab DISABLED to fix TDZ.
   // Manual button remains.
@@ -1438,7 +1393,6 @@ useEffect(() => {
   const postCommentUnsubsRef = useRef<Record<string, () => void>>({})
   const userPostsUnsubsRef = useRef<Record<string, () => void>>({})
   const liveUsersActiveRef = useRef<any[]>([])
-  const lastSyncActionToastRef = useRef<{ at: number; key: string } | null>(null)
   const postCommentInlineFallbackRef = useRef<Record<string, unknown>>({})
   useEffect(() => { profilePostsRef.current = profilePosts }, [profilePosts])
   const [muroComposerText, setMuroComposerText] = useState('')
@@ -1722,6 +1676,7 @@ useEffect(() => {
     default: '#eab308'
   }
   const startSyncRef = useRef<((partnerId: string, partnerName: string) => any) | null>(null)
+  const loadActiveSyncCountRef = useRef<() => Promise<void>>(async () => {})
   const applyNotificationNavigationRef = useRef<
     ((target: NotificationNavTarget, partnerNameHint?: string) => void) | null
   >(null)
@@ -2478,243 +2433,6 @@ useEffect(() => {
     return () => { if (unsub) unsub(); };
   }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, blockedUsers]); // blockedUsers to re-filter if changes
 
-  // EntrenaSync profile mirror (fallback only): enrich from partner profile when both pointers match.
-  // Do NOT tear down sync when partner profile lacks trainingSyncWith — cross-user profile writes are blocked
-  // by rules; syncSessions is the source of truth (see incoming listener below).
-  useEffect(() => {
-    if (currentUser?.trainingSyncWith && currentUser.trainingNow) {
-      const partner = realProfiles.find(p => p.id === currentUser.trainingSyncWith)
-      if (partner && partner.trainingSyncWith === effectiveUserId) {
-        if (partner.syncStartedAt) setSyncStartedAt(partner.syncStartedAt)
-        if (partner.syncActions && partner.syncActions.length > syncActions.length) {
-          setSyncActions(partner.syncActions)
-        }
-      }
-    }
-  }, [realProfiles, currentUser?.trainingSyncWith, currentUser?.trainingNow, effectiveUserId])
-
-  // Incoming EntrenaSync: when partner starts sync, syncSessions doc is created — join + open Arena.
-  // Keep listener stable (ref guard) — do NOT tear down when syncPartnerId changes to avoid SDK listener churn (da08).
-  useEffect(() => {
-    if (
-      authBooting ||
-      !firebaseUser?.uid ||
-      !db ||
-      isDemoMode ||
-      !isFirebaseConfigured
-    ) {
-      return undefined
-    }
-
-    return attachIncomingSyncListener(db, firebaseUser.uid, {
-      getHasActivePartner: () => !!syncPartnerIdRef.current,
-      getTrainingNow: () => !!currentUserRef.current?.trainingNow,
-      findPartnerName: (partnerId) =>
-        (latestRealProfilesRef.current || []).find((p) => p.id === partnerId)?.name || 'Compañero',
-      onIncoming: (payload) => {
-        syncPartnerIdRef.current = payload.partnerId
-        setSyncPartnerId(payload.partnerId)
-        setSyncStartedAt(payload.startedAt)
-        setSyncActions(normalizeSyncActionsForUi(payload.actions))
-        setSyncWorkoutLog(createEmptySyncWorkoutLog())
-        setSyncPartnerLiveState(null)
-        if (typeof payload.vibe === 'number') {
-          setSyncVibe(Math.max(0, Math.min(100, payload.vibe)))
-        }
-        setShowSyncArena(true)
-        setActiveTab('explore')
-        triggerHaptic('medium')
-
-        const updated = {
-          ...currentUserRef.current,
-          trainingSyncWith: payload.partnerId,
-          syncStartedAt: payload.startedAt,
-          syncActions: payload.actions || [],
-        }
-        saveUser(updated as any)
-        saveUserWithRealSync(updated as any).catch(() => {})
-
-        addNotification({
-          type: 'sync_invite',
-          title: syncBondsRef.current[payload.partnerId]
-            ? `${payload.partnerName} inició sync contigo`
-            : `EntrenaSync con ${payload.partnerName}`,
-          body: syncBondsRef.current[payload.partnerId]
-            ? 'Tu alianza de sync está en vivo — Arena abierta'
-            : 'Tu compañero inició sync contigo — Arena abierta',
-          relatedId: payload.partnerId,
-        })
-
-        toast.success(
-          syncBondsRef.current[payload.partnerId]
-            ? `⭐ ${payload.partnerName} te invitó a sync`
-            : `EntrenaSync con ${payload.partnerName}`,
-          {
-            description: syncBondsRef.current[payload.partnerId]
-              ? 'Tu alianza está en vivo — abrimos la Arena'
-              : 'Tu compañero inició sync contigo',
-          }
-        )
-      },
-      onError: () => {
-        // Listener will retry automatically; enableNetwork when already online causes da08.
-      },
-    })
-  }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId, isFirebaseConfigured, authBooting])
-
-  // Dedicated syncSessions listener for INSTANT actions across devices
-  useEffect(() => {
-    if (
-      !syncPartnerId ||
-      effectiveUserId === 'me' ||
-      !firebaseUser?.uid ||
-      !db ||
-      isDemoMode ||
-      !isFirebaseConfigured
-    ) {
-      return undefined
-    }
-
-    const sessionId = buildSyncSessionId(effectiveUserId, syncPartnerId)
-    return attachActiveSyncSessionListener(db, sessionId, effectiveUserId, {
-      onUpdate: (data) => {
-        if (data.actions != null) {
-          setSyncActions(normalizeSyncActionsForUi(data.actions))
-        }
-        if (data.startedAt) setSyncStartedAt(data.startedAt)
-        if (typeof data.vibe === 'number') {
-          setSyncVibe(Math.max(0, Math.min(100, data.vibe)))
-        }
-        if (syncPartnerId) {
-          setSyncRealWitnessCount(
-            countExternalWitnesses(data.witnesses, effectiveUserId, syncPartnerId)
-          )
-          const exclude = new Set([effectiveUserId, syncPartnerId, 'me'])
-          setSyncWitnessIds(
-            (Array.isArray(data.witnesses) ? data.witnesses : []).filter(
-              (w): w is string => typeof w === 'string' && !exclude.has(w)
-            )
-          )
-          setSyncPartnerLiveState(parseParticipantState(data.participantState, syncPartnerId))
-        }
-        if (typeof data.restUntil === 'number' && data.restUntil > Date.now()) {
-          setSyncRestUntil(data.restUntil)
-          setSyncRestStartedBy(
-            typeof data.restStartedBy === 'string' ? data.restStartedBy : null
-          )
-        } else {
-          setSyncRestUntil(null)
-          setSyncRestStartedBy(null)
-        }
-      },
-      onPartnerAction: (latest) => {
-        const key = `${latest.at || 0}-${latest.emoji || ''}-${latest.label || ''}`
-        const prevToast = lastSyncActionToastRef.current
-        if (prevToast?.key === key && Date.now() - prevToast.at < 4000) return
-        lastSyncActionToastRef.current = { at: Date.now(), key }
-        toast(`${latest.emoji} ${latest.label}`, {
-          description: `${realProfiles.find(p => p.id === syncPartnerId)?.name || 'Tu compañero'} lo hizo ahora`,
-          duration: 2200,
-        })
-        triggerHaptic('light')
-      },
-      onError: () => {
-        // Non-fatal — active session listener falls back to profile mirror.
-      },
-    })
-  }, [syncPartnerId, effectiveUserId, firebaseUser?.uid, db, isDemoMode, isFirebaseConfigured, realProfiles])
-
-  // Arena 2.0 — sync live exercise/reps to partner via participantState
-  useEffect(() => {
-    if (!syncPartnerId || !syncStartedAt || isDemoMode || !db) return
-    const t = setTimeout(() => {
-      const log = syncWorkoutLogRef.current
-      void (async () => {
-        try {
-          const { doc, updateDoc } = await import('firebase/firestore')
-          const sessionId = buildSyncSessionId(effectiveUserId, syncPartnerId)
-          await updateDoc(doc(db, 'syncSessions', sessionId), {
-            [`participantState.${effectiveUserId}`]: toParticipantSyncPayload(log),
-            updatedAt: Date.now(),
-          })
-        } catch {
-          /* non-fatal */
-        }
-      })()
-    }, 200)
-    return () => clearTimeout(t)
-  }, [syncWorkoutLog, syncPartnerId, syncStartedAt, effectiveUserId, isDemoMode, db])
-
-  // Register as witness when viewing GymPulse/feed/explore while others are in EntrenaSync (real FOMO counter).
-  useEffect(() => {
-    if (isDemoMode || !db || !firebaseUser?.uid || effectiveUserId === 'me') return
-    const uid = firebaseUser.uid
-    const shouldScan = showLiveMap || activeTab === 'home' || activeTab === 'explore' || activeTab === 'map'
-    if (!shouldScan) return
-
-    liveTrainingNow.forEach((u: any) => {
-      const partnerId = u.trainingSyncWith
-      if (!partnerId) return
-      if (uid === u.id || uid === partnerId) return
-      const sessionId = buildSyncSessionId(u.id, partnerId)
-      if (witnessedSessionsRef.current.has(sessionId)) return
-      witnessedSessionsRef.current.add(sessionId)
-      registerSyncWitness(db, sessionId, uid).catch(() => {})
-    })
-  }, [
-    liveTrainingNow,
-    showLiveMap,
-    activeTab,
-    isDemoMode,
-    db,
-    firebaseUser?.uid,
-    effectiveUserId,
-  ])
-
-  const loadActiveSyncCount = async () => {
-    if (!isFirebaseConfigured) {
-      setActiveSyncCount(0)
-      setActiveSyncPairs([])
-      return
-    }
-    // Rules allow read only on syncSessions where user is a participant — derive global
-    // active pairs from live profile snapshots instead of an unscoped collection query.
-    const seen = new Set<string>()
-    let count = 0
-    const pairs: any[] = []
-    for (const p of realProfiles) {
-      if (!p.trainingNow || !p.trainingSyncWith) continue
-      const partner = realProfiles.find((pp) => pp.id === p.trainingSyncWith)
-      if (!partner?.trainingNow || partner.trainingSyncWith !== p.id) continue
-      const pairKey = [p.id, partner.id].sort().join('_')
-      if (seen.has(pairKey)) continue
-      seen.add(pairKey)
-      count++
-      if (pairs.length < 2) {
-        const startedAt = p.syncStartedAt || partner.syncStartedAt
-        const minutes =
-          startedAt && startedAt > 0
-            ? Math.max(0, Math.floor((Date.now() - startedAt) / 60000))
-            : undefined
-        pairs.push({
-          names: `${(p.name || 'U').split(' ')[0]} + ${(partner.name || 'U').split(' ')[0]}`,
-          vibe: 50,
-          minutes,
-        })
-      }
-    }
-    setActiveSyncCount(count)
-    if (pairs.length) setActiveSyncPairs(pairs)
-    else setActiveSyncPairs([])
-  }
-
-  useEffect(() => {
-    if (activeTab !== 'home' && activeTab !== 'explore') return
-    loadActiveSyncCount().catch(() => {})
-    const t = setInterval(() => loadActiveSyncCount().catch(() => {}), 45000)
-    return () => clearInterval(t)
-  }, [activeTab])
-
   // Global silent sync — pull-to-refresh + tab focus (Fase 32)
   const silentRefreshReal = async (opts?: { includeChats?: boolean; includeFeed?: boolean }) => {
     if (isDemoMode) return
@@ -2725,7 +2443,7 @@ useEffect(() => {
         loadRealProfiles(),
         loadRealMatches(),
         loadRealSessions(),
-        loadActiveSyncCount(),
+        loadActiveSyncCountRef.current(),
       ])
       if (opts?.includeChats) {
         await loadRealMatches()
@@ -3676,7 +3394,7 @@ useEffect(() => {
           // force sync mirror for EntrenaSync actions/timer
           loadRealProfiles().catch(() => {})
         }
-        loadActiveSyncCount().catch(() => {})
+        loadActiveSyncCountRef.current().catch(() => {})
       }, 60000);
       return () => clearInterval(id);
     }
@@ -5039,6 +4757,87 @@ useEffect(() => {
     ]
   )
 
+  const arenaSync = useArenaSyncController({
+    syncSession,
+    isDemoMode,
+    db,
+    isFirebaseConfigured,
+    firebaseUser,
+    authBooting,
+    effectiveUserId,
+    currentUser,
+    currentUserRef,
+    realProfiles,
+    latestRealProfilesRef,
+    saveUser,
+    pendingLiveWriteRef,
+    activeTab,
+    setActiveTab,
+    navigateTab,
+    showLiveMap,
+    liveTrainingNow,
+    isUserLive,
+    userLocation,
+    liveUsersActive,
+    storage,
+    saveUserWithRealSyncRef,
+    createProfilePostRef,
+    addNotificationRef,
+    startSyncRef,
+    setSyncBlockerPartnerName,
+    setShowSyncLiveBlocker,
+    setWitnessData,
+    echoPins,
+    setEchoPins,
+    dailyPulse,
+    checkAndUpdateDailyPulse,
+    completeDailyChallenge,
+    awardConstancy,
+    openEntrenoDeHoy,
+    applyEntrenoSaveSideEffects,
+    weekLiveDays,
+    homeLoggedSessionsCount,
+    homeWeekTrainedCount,
+    entrenoRecentWorkouts,
+    setProfilePosts,
+    profilePostsRef,
+    subscribeCommentsForPosts,
+    loadGlobalFeed,
+    setExercisePRRecords,
+    setHomeCoachBanner,
+    syncCityStatsBump,
+    addDebugLog,
+    capacitorCamera: CapacitorCamera,
+  })
+
+  const {
+    startSyncWith,
+    endSync,
+    submitSyncRating,
+    tryAutoStartSync,
+    witnessRipple,
+    witnessEchoPin,
+    handleArenaSyncAction,
+    handleArenaCapturePhoto,
+    startArenaVoicePing,
+    persistSyncWorkoutLogToSession,
+    loadActiveSyncCount,
+    arenaPhotoInputRef,
+    arenaPhotoResolverRef,
+    isArenaVoiceRecording,
+    syncDuelSummary,
+    setSyncDuelSummary,
+    replaySession,
+    setReplaySession,
+    activeSyncPairs,
+    publishingSyncFeed,
+    setPublishingSyncFeed,
+  } = arenaSync
+
+  useEffect(() => {
+    loadActiveSyncCountRef.current = loadActiveSyncCount
+  }, [loadActiveSyncCount])
+
   const handleSaveEntrenaLog = async (payload: {
     title: string
     type: import('./types').WorkoutType
@@ -5698,465 +5497,6 @@ useEffect(() => {
     }
   }
 
-  // === DISRUPTIVE EntrenaSync implementation (core of the top unique feature) ===
-
-  /** Every Arena action broadcasts a visible wave on GymPulse — core FOMO mechanic. */
-  const emitArenaMapRipple = (
-    label: string,
-    intensity: number,
-    opts?: {
-      vibe?: number
-      actionsSnapshot?: any[]
-      forceLegend?: boolean
-      notifyNearby?: boolean
-      skipCounter?: boolean
-    }
-  ) => {
-    if (!opts?.skipCounter) {
-      setArenaWaveCount((c) => c + 1)
-      setLastArenaWaveLabel(label)
-      setArenaWavePulseKey((k) => k + 1)
-    }
-
-    const partnerId = syncPartnerIdRef.current || syncPartnerId
-    if (!partnerId) return
-
-    const partner =
-      liveTrainingNow.find((u: any) => u.id === partnerId) ||
-      realProfiles.find((p: any) => p.id === partnerId)
-    if (!partner?.lat || !partner?.lng) return
-
-    const actionsSnap = opts?.actionsSnapshot ?? syncActions
-    const vibeNow = opts?.vibe ?? syncVibe
-    const logSnap = syncWorkoutLogRef.current
-    const workoutWitness =
-      syncWorkoutHasData(logSnap) && logSnap.exercises.length > 0
-        ? buildWorkoutPreview(
-            'EntrenaSync en vivo',
-            'full',
-            logSnap.exercises,
-            computeWorkoutStats(logSnap.exercises, syncStartedAt ? Math.max(1, Math.floor((Date.now() - syncStartedAt) / 60000)) : 1)
-          )
-        : undefined
-    const partnerBond = syncBonds[partner.id]
-    const isHighlightRipple =
-      opts?.forceLegend ||
-      !!partner.isNetworkBond ||
-      (partnerBond && ((partnerBond.totalMin || 0) >= 30 || (partnerBond.bondLevel || 0) >= 2))
-    const finalIntensity = isHighlightRipple ? Math.max(intensity, 2.4) : intensity
-    const rippleId = 'sync-' + Date.now()
-    const rippleLabel = isHighlightRipple
-      ? `⭐ HIGHLIGHT DE RED • ${label}`
-      : intensity >= 1.5
-        ? `⚡ Onda de Sync • ${label}`
-        : `🌊 Onda de Sync • ${label}`
-
-    setSyncRipples((prev) => [
-      ...prev,
-      {
-        id: rippleId,
-        lat: partner.lat,
-        lng: partner.lng,
-        label: rippleLabel,
-        intensity: finalIntensity,
-        witnessData: {
-          actions: actionsSnap.slice(0, 6).map((a: any) => ({ ...a })),
-          vibe: vibeNow,
-          partnerName: partner.name || partner.nombre || 'Gym partner',
-          photoUrl: actionsSnap.find((a: any) => a.photoUrl)?.photoUrl || null,
-          label: isHighlightRipple ? `⭐ ${label}` : `🌊 ${label}`,
-          timestamp: Date.now(),
-          minutes: syncStartedAt ? Math.floor((Date.now() - syncStartedAt) / 60000) : 0,
-          workoutPreview: workoutWitness,
-          loggedSets: countLoggedSets(logSnap),
-        },
-      },
-    ])
-    setTimeout(
-      () => setSyncRipples((r) => r.filter((x) => x.id !== rippleId)),
-      isHighlightRipple ? 5200 : 3200
-    )
-
-    if (isHighlightRipple) {
-      const pinId = 'echo-pin-' + rippleId
-      setEchoPins((prev) => [
-        ...prev,
-        {
-          id: pinId,
-          lat: partner.lat,
-          lng: partner.lng,
-          label: `⭐ ${label}`,
-          witnessData: {
-            actions: actionsSnap.slice(0, 6).map((a: any) => ({ ...a })),
-            vibe: vibeNow,
-            partnerName: partner.name || partner.nombre || 'Gym partner',
-            photoUrl: actionsSnap.find((a: any) => a.photoUrl)?.photoUrl || null,
-            label: `⭐ ${label}`,
-            timestamp: Date.now(),
-            minutes: syncStartedAt ? Math.floor((Date.now() - syncStartedAt) / 60000) : 0,
-            workoutPreview: workoutWitness,
-            loggedSets: countLoggedSets(logSnap),
-          },
-        },
-      ])
-      setTimeout(() => setEchoPins((p) => p.filter((x) => x.id !== pinId)), 45 * 60 * 1000)
-    }
-
-    const shouldNotify = opts?.notifyNearby !== false && (isHighlightRipple || intensity >= 1.4)
-    if (shouldNotify && userLocation) {
-      const distToEvent = getDistanceKm(userLocation.lat, userLocation.lng, partner.lat, partner.lng)
-      if (distToEvent < 8) {
-        try {
-          addNotification({
-            id: 'ripple-global-' + rippleId,
-            type: 'session_join' as any,
-            title: isHighlightRipple ? '⭐ Highlight de Sync cerca' : '⚡ Energía de Sync cerca',
-            body: `${label} — alguien entrena en sync a ${distToEvent.toFixed(1)}km`,
-            relatedId: partnerId,
-          })
-          if (distToEvent < 5 && isHighlightRipple) {
-            toast(`⚡ Onda de Arena cerca`, { description: `${label} se sintió en tu zona` })
-          }
-        } catch {}
-      }
-    }
-  }
-
-  /** Global live toggle — used by FAB, Daily home, and Profile (Phase 0). */
-  const toggleLiveTraining = async (mode?: 'on' | 'off' | 'toggle') => {
-    if (isTogglingLive || !currentUser) return
-    const me = currentUser
-    const wantOff =
-      mode === 'off' || (mode !== 'on' && !!me.trainingNow)
-    const wantOn = mode === 'on' || (mode !== 'off' && !me.trainingNow)
-
-    if (wantOff && me.trainingNow) {
-      setIsTogglingLive(true)
-      try {
-        const durationMs = me.trainingNowSince ? Date.now() - me.trainingNowSince : 30 * 60 * 1000
-        const minutes = Math.max(5, Math.floor(durationMs / 60000))
-        const momentumBonus = Math.floor(minutes / 3) + 5
-        const xpBonus = Math.floor(minutes * 1.5)
-        const currentMom = dailyPulse?.momentum ?? (me as any).momentumPoints ?? 0
-        const currentXp = dailyPulse?.xp ?? (me as any).retentionXp ?? 0
-        const newMom = currentMom + momentumBonus
-        const newXp = Math.min(299, currentXp + xpBonus)
-        const weekKey = getWeekKey()
-        const nextLiveDays =
-          minutes >= MIN_LIVE_MINUTES_FOR_WEEK_DAY
-            ? recordWeekLiveDay(effectiveUserId)
-            : weekLiveDays
-        const newWeekStats = mergeWeekStats(
-          me.weekStats?.weekKey === weekKey ? me.weekStats : undefined,
-          weekKey,
-          minutes,
-          nextLiveDays.length
-        )
-
-        const updated = {
-          ...me,
-          trainingNow: false,
-          trainingNowSince: null,
-          trainingSyncWith: null,
-          syncStartedAt: null,
-          momentumPoints: newMom,
-          retentionXp: newXp,
-          weekStats: newWeekStats,
-          liveMotionScore: undefined,
-          liveMotionAt: undefined,
-          liveMotionIdle: undefined,
-          liveActivityState: undefined,
-        } as CurrentUser
-
-        if (syncPartnerId) {
-          setSyncPartnerId(null)
-          syncPartnerIdRef.current = null
-          setSyncStartedAt(null)
-          setSyncActions([])
-          setSyncVibe(0)
-          setSyncCombo(0)
-        }
-        if (dailyPulse) setDailyPulse({ ...dailyPulse, momentum: newMom, xp: newXp })
-
-        pendingLiveWriteRef.current = { trainingNow: false, at: Date.now() }
-        saveUser(updated)
-        await saveUserWithRealSync(updated)
-        loadRealProfiles().catch(() => {})
-        syncCityStatsBump(minutes, 0).catch(() => {})
-        setMapForceTick((t) => t + 1)
-        if (minutes >= MIN_LIVE_MINUTES_FOR_WEEK_DAY) {
-          setWeekLiveDays(nextLiveDays)
-          toast('Entrenamiento finalizado', { description: `${minutes} min — cuenta para tu semana ✓` })
-        } else {
-          toast('Sesión finalizada', {
-            description: `${minutes} min. Entrena al menos ${MIN_LIVE_MINUTES_FOR_WEEK_DAY} min para marcar el día.`,
-          })
-        }
-        setPostLiveSession({
-          minutes,
-          gymName: isGymCheckInFresh(me.gymCheckIn) ? me.gymCheckIn!.gymName : null,
-        })
-        setHomeCoachBanner('post-live')
-        navigateTab('home')
-      } catch (err) {
-        console.error('Live deactivate failed', err)
-        pendingLiveWriteRef.current = null
-        toast.error('No se pudo desactivar el live')
-      } finally {
-        setIsTogglingLive(false)
-      }
-      return
-    }
-
-    if (wantOn && !me.trainingNow) {
-      setIsTogglingLive(true)
-      try {
-        await requestUserLocation().catch(() => {})
-        if (!isDemoMode && PlayIntegrityNative) {
-          const current = getLastIntegrityResult() || lastIntegrity
-          if (!hasPositiveIntegrity(current)) {
-            toast('🛡️ Verifica integridad para full visibilidad en prod', {
-              description:
-                'Usa el botón 🛡️ Google Play Integrity arriba. El live se activa localmente de todas formas.',
-            })
-          }
-        }
-        const todayStr = new Date().toDateString()
-        const lastStr = me.lastLiveDate ? new Date(me.lastLiveDate).toDateString() : null
-        let newStreak = me.liveStreak || 0
-        if (!lastStr || lastStr === todayStr) {
-          if (!lastStr) newStreak = 1
-        } else {
-          const lastDate = new Date(lastStr)
-          const yesterday = new Date()
-          yesterday.setDate(yesterday.getDate() - 1)
-          newStreak =
-            lastDate.toDateString() === yesterday.toDateString()
-              ? (me.liveStreak || 0) + 1
-              : 1
-        }
-        const streakUpdate = {
-          liveStreak: newStreak,
-          lastLiveDate: Date.now(),
-          joinedLiveStreak:
-            (me.joinedLiveStreak || 0) +
-            (lastStr && lastStr !== todayStr ? 1 : lastStr ? 0 : 1),
-        }
-        const loc = userLocationRef.current
-        let autoGymCheckIn = isGymCheckInFresh(me.gymCheckIn) ? me.gymCheckIn : undefined
-        if (!autoGymCheckIn && loc && (partnerLocationsRef.current || []).length > 0) {
-          const gyms = partnersForMap(partnerLocationsRef.current, isDemoMode).map((p: any) => ({
-            id: p.id,
-            name: p.name,
-            lat: p.lat,
-            lng: p.lng,
-          }))
-          const nearGym = findNearestGym(gyms, loc.lat, loc.lng)
-          if (nearGym) {
-            autoGymCheckIn = {
-              gymId: nearGym.id,
-              gymName: nearGym.name,
-              lat: nearGym.lat,
-              lng: nearGym.lng,
-              checkedInAt: Date.now(),
-            }
-          }
-        }
-        const updated = {
-          ...me,
-          trainingNow: true,
-          trainingNowSince: Date.now(),
-          liveMotionScore: undefined,
-          liveMotionAt: undefined,
-          liveMotionIdle: false,
-          liveActivityState: 'unknown' as const,
-          ...(autoGymCheckIn
-            ? { gymCheckIn: autoGymCheckIn, lat: autoGymCheckIn.lat, lng: autoGymCheckIn.lng }
-            : loc
-              ? { lat: loc.lat, lng: loc.lng }
-              : {}),
-          ...streakUpdate,
-        } as CurrentUser
-
-        pendingLiveWriteRef.current = { trainingNow: true, at: Date.now() }
-        saveUser(updated)
-        await saveUserWithRealSync(updated)
-        loadRealProfiles().catch(() => {})
-        setMapForceTick((t) => t + 1)
-        toast('🟢 ¡Entrenando Ahora (EN VIVO) activado!', {
-          description: autoGymCheckIn
-            ? `Check-in en ${autoGymCheckIn.gymName} — apareces en el mapa del gym`
-            : undefined,
-        })
-
-        const isFirstLive = !me.lastLiveDate
-        if (isFirstLive) {
-          try {
-            confetti({ particleCount: 200, spread: 90, origin: { y: 0.65 } })
-          } catch { /* ignore */ }
-          toast.success('¡Tu primer LIVE está en el GymPulse!', {
-            description: 'Apareces en el mapa. Toca GymPulse abajo cuando quieras ver quién entrena cerca.',
-            duration: 6000,
-          })
-        }
-
-        const liveUserSnapshot = { ...updated }
-        setTimeout(() => {
-          try {
-            checkAndUpdateDailyPulse(liveUserSnapshot)
-            if (dailyPulse?.currentChallenge?.type === 'solo') {
-              void completeDailyChallenge(1, liveUserSnapshot as CurrentUser).catch((e) =>
-                console.warn('[Live] completeDailyChallenge', e)
-              )
-            } else {
-              awardConstancy(8, 'Ancla del GymPulse', liveUserSnapshot as CurrentUser)
-            }
-            void createProfilePost(
-              '¡Entrenando ahora en el GymPulse! ¿Quién se une al pulso? 🏋️',
-              null
-            ).catch((e) => console.warn('[Live] createProfilePost', e))
-          } catch (e) {
-            console.warn('[Live] post-activate side effects', e)
-          }
-        }, 600)
-        window.setTimeout(() => {
-          pendingLiveWriteRef.current = null
-        }, 4000)
-      } catch (err) {
-        console.error('Live activate failed', err)
-        pendingLiveWriteRef.current = null
-        toast.error('No se pudo activar el live')
-      } finally {
-        setIsTogglingLive(false)
-      }
-      return
-    }
-
-    if (wantOn && me.trainingNow) {
-      toast('Ya estás en LIVE', { description: 'Tu pin ya está visible en el mapa' })
-      setMapForceTick((t) => t + 1)
-    }
-  }
-
-  const startSyncWith = async (partnerId: string, partnerName: string) => {
-    const myIds = [effectiveUserId, currentUser?.id, firebaseUser?.uid, 'me'].filter(Boolean)
-    if (!partnerId || myIds.includes(partnerId)) return
-
-    const me = currentUserRef.current ?? currentUser
-    if (!me?.trainingNow) {
-      setSyncBlockerPartnerName(partnerName)
-      setShowSyncLiveBlocker(true)
-      return
-    }
-
-    if (!isUserLive(partnerId)) {
-      toast.error(`${partnerName || 'Tu compañero'} no está en vivo ahora`, {
-        description: 'Ambos deben tener live activo. Actualiza Explorar/mapa o espera a que encienda su GymPulse.',
-      })
-      return
-    }
-
-    if (syncPartnerId) {
-      toast.info('Ya tienes un EntrenaSync activo', { description: 'Termina la sesión actual o abre la Arena.' })
-      return
-    }
-    if (joiningSyncWith === partnerId) return
-
-    if (!isDemoMode && !firebaseUser?.uid) {
-      console.warn('startSyncWith: no real firebaseUser uid, cannot start real EntrenaSync')
-      toast.error('Inicia sesión con cuenta real para usar EntrenaSync')
-      return
-    }
-
-    setJoiningSyncWith(partnerId)
-    try {
-      const syncAt = Date.now()
-      setSyncPartnerId(partnerId)
-      syncPartnerIdRef.current = partnerId
-      setSyncStartedAt(syncAt)
-      setSyncActions([])
-      setSyncCombo(0)
-      setFlyingEmojis([])
-      setSyncWorkoutLog(createEmptySyncWorkoutLog())
-      setSyncPartnerLiveState(null)
-      setSyncRestUntil(null)
-      setSyncRestStartedBy(null)
-      setSyncWitnessIds([])
-      setShowSyncArena(true)
-      setActiveTab('explore')
-      triggerHaptic('medium')
-
-      const updated = {
-        ...me,
-        trainingNow: true,
-        trainingSyncWith: partnerId,
-        syncStartedAt: syncAt,
-        syncActions: [],
-      }
-      saveUser(updated as any)
-      if (me.trainingNow) {
-        pendingLiveWriteRef.current = { trainingNow: true, at: Date.now() }
-      }
-
-      if (!isDemoMode && db && firebaseUser) {
-        await saveUserWithRealSync(updated as any)
-
-        const { doc, setDoc } = await import('firebase/firestore')
-        const uids = [firebaseUser.uid, partnerId].sort()
-        const sessionId = `sync_${uids[0]}_${uids[1]}`
-        const sessionRef = doc(db, 'syncSessions', sessionId)
-        const baseVibe = 12
-        await setDoc(sessionRef, {
-          participants: uids,
-          startedAt: syncAt,
-          actions: [],
-          vibe: baseVibe,
-          witnesses: [],
-          participantState: {
-            [firebaseUser.uid]: toParticipantSyncPayload(createEmptySyncWorkoutLog()),
-          },
-          updatedAt: syncAt,
-        }, { merge: true })
-        setSyncVibe(baseVibe)
-      } else {
-        setSyncVibe(12)
-      }
-
-      setTimeout(() => {
-        emitArenaMapRipple('Sync iniciado', 1.05, { vibe: 12, actionsSnapshot: [], notifyNearby: false })
-      }, 400)
-      toast.success(`EntrenaSync iniciado con ${partnerName}`, {
-        description: 'Arena abierta — vuestra sync ondea en el GymPulse en vivo',
-      })
-      try { confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } }) } catch {}
-      addDebugLog(`EntrenaSync started with ${partnerName}`)
-    } catch (e: any) {
-      console.warn('startSyncWith failed', e)
-      const isPerm = e?.code === 'permission-denied' || `${e?.message || e}`.includes('permission')
-      setSyncPartnerId(null)
-      syncPartnerIdRef.current = null
-      setShowSyncArena(false)
-      toast.error('No se pudo iniciar EntrenaSync', {
-        description: isPerm
-          ? 'Permisos Firestore en syncSessions — avisa al admin o reintenta en unos segundos.'
-          : 'Revisa tu conexión e intenta de nuevo.',
-      })
-    } finally {
-      setJoiningSyncWith(null)
-    }
-  }
-
-  // Keep startSyncRef always pointing to the freshest startSyncWith implementation.
-  // This lets the Leaflet popup buttons (plain DOM onclicks created in the map effect)
-  // call the current version that has up-to-date closures (currentUser, realProfiles, joining guard etc).
-  useEffect(() => {
-    startSyncRef.current = startSyncWith
-  }, [startSyncWith])
-
-  useEffect(() => {
-    syncPartnerIdRef.current = syncPartnerId
-  }, [syncPartnerId])
-
   useEffect(() => {
     currentUserRef.current = currentUser
   }, [currentUser])
@@ -6169,868 +5509,9 @@ useEffect(() => {
     syncBondsRef.current = syncBonds
   }, [syncBonds])
 
-  // Witness mode for ripples: anyone who sees a ripple on the map (or gets notified) can view a short replay
-  // of the epic high-vibe moment in the Arena that generated the wave.
-  // This is the social proof layer of the network — your strong syncs become discoverable highlights that the community can see and be inspired by. Your training graph builds culture and status in the first fitness social network.
-  const witnessRipple = useCallback((rippleId: string) => {
-    const r = syncRipples.find((rr: any) => rr.id === rippleId)
-    if (r && r.witnessData) {
-      setWitnessData(r.witnessData)
-      triggerHaptic('medium')
-    } else {
-      toast('El highlight de esta sesión ya no está disponible. Crea uno nuevo con un EntrenaSync fuerte.')
-    }
-  }, [syncRipples, triggerHaptic])
-
-  // Expose globally so Leaflet popup HTML onclick can call it (same pattern as map join buttons)
-  useEffect(() => {
-    ;(window as any).witnessRipple = witnessRipple
-  }, [witnessRipple])
-
-  // For highlight pins on map (persistent strong sync moments from the network graph)
-  const witnessEchoPin = useCallback((pinId: string) => {
-    const pin = echoPins.find((p: any) => p.id === pinId);
-    if (pin && pin.witnessData) {
-      setWitnessData(pin.witnessData);
-      triggerHaptic('medium');
-    }
-  }, [echoPins, triggerHaptic]);
-
-  useEffect(() => {
-    ;(window as any).witnessEchoPin = witnessEchoPin;
-  }, [witnessEchoPin]);
-
-  // Same for profile modal – marker clicks and "Ver perfil" in popups can reliably open the rich profile.
   useEffect(() => {
     showFullProfileRef.current = setShowFullProfile
   }, [setShowFullProfile])
-
-  const endSync = async () => {
-    if (!syncPartnerId) return
-    const partnerName = realProfiles.find(p => p.id === syncPartnerId)?.name || 'compañero'
-    const minutes = syncStartedAt ? Math.floor((Date.now() - syncStartedAt) / 60000) : 0
-    const syncStartedAtCapture = syncStartedAt
-    // Clear local
-    const oldPartner = syncPartnerId
-    // Boost syncStreak
-    const newSyncStreak = ((currentUser as any).syncStreak || 0) + 1
-    const weekKey = getWeekKey()
-    const syncMins = minutes >= 2 ? minutes : 0
-    const newWeekStats =
-      syncMins > 0
-        ? mergeWeekStats(
-            currentUser?.weekStats?.weekKey === weekKey ? currentUser.weekStats : undefined,
-            weekKey,
-            0,
-            weekLiveDays.length,
-            syncMins
-          )
-        : currentUser?.weekStats
-    const updated = {
-      ...currentUser,
-      trainingSyncWith: null,
-      syncStartedAt: null,
-      syncActions: [],
-      syncStreak: newSyncStreak,
-      ...(newWeekStats ? { weekStats: newWeekStats } : {}),
-    } as any
-    saveUser(updated)
-    setSyncPartnerId(null)
-    syncPartnerIdRef.current = null
-    setSyncStartedAt(null)
-    setSyncActions([])
-    setSyncVibe(0)
-    setSyncCombo(0)
-    setFlyingEmojis([])
-    setArenaWaveCount(0)
-    setLastArenaWaveLabel('')
-    setArenaWavePulseKey(0)
-    setSyncRealWitnessCount(0)
-    setSyncWitnessIds([])
-    const capturedPartnerExercises = syncPartnerLiveState?.exercises?.length
-      ? syncPartnerLiveState.exercises.map((e) => ({
-          name: e.name,
-          sets: e.sets.map((s) => ({ reps: s.reps, weightKg: s.weightKg ?? 0 })),
-        }))
-      : []
-    setSyncPartnerLiveState(null)
-    setSyncRestUntil(null)
-    setSyncRestStartedBy(null)
-    setShowSyncArena(false)
-    // Capture for replay (the unique "remember this session together" moment)
-    const capturedActions = [...syncActions]
-    const capturedVibe = syncVibe
-    const capturedWorkoutLog = {
-      ...syncWorkoutLogRef.current,
-      exercises: syncWorkoutLogRef.current.exercises.map((e) => ({
-        ...e,
-        sets: [...e.sets],
-      })),
-    }
-    setSyncWorkoutLog(createEmptySyncWorkoutLog())
-    // Clear FS (use resilient saveUserWithRealSync for self so we get the mutations/b815 retry+reset protection)
-    if (!isDemoMode && firebaseUser) {
-      try {
-        await saveUserWithRealSync(updated as any);
-      } catch (e) {
-        console.warn('endSync self clear via resilient path failed', e);
-      }
-      if (syncMins > 0) syncCityStatsBump(0, syncMins).catch(() => {})
-      if (minutes >= 2 && oldPartner) {
-        const uids = [effectiveUserId, oldPartner].sort() as [string, string]
-        const sid = `sync_${uids[0]}_${uids[1]}`
-        const partnerCity = realProfiles.find((p) => p.id === oldPartner)?.city
-        void recordPilotSyncSession(db, {
-          sessionId: sid,
-          weekKey,
-          participantIds: uids,
-          recorderUid: effectiveUserId,
-          selfCity: currentUser?.city,
-          partnerCity,
-          durationMin: minutes,
-        }).then((r) => {
-          if (r.recorded) {
-            console.info('[pilot] sync session recorded', sid, currentUser?.city)
-          }
-        })
-      }
-      // Partner + session ended are cross-doc; best-effort but with recovery reset first.
-      // Direct updateDoc after a session full of action writes can hit the bad mutations state
-      // if previous transport left the pipeline unhealthy.
-      if (db) {
-        try {
-          const { doc, updateDoc } = await import('firebase/firestore')
-          if (oldPartner) await updateDoc(doc(db, 'profiles', oldPartner), { trainingSyncWith: null, syncStartedAt: null }).catch(() => {});
-          try {
-            const { doc: doc2, updateDoc: upd2 } = await import('firebase/firestore')
-            const uids = [effectiveUserId, oldPartner].sort()
-            const sid = `sync_${uids[0]}_${uids[1]}`
-            await upd2(doc2(db, 'syncSessions', sid), { endedAt: Date.now() }).catch(() => {});
-          } catch {}
-        } catch (e) {}
-      }
-    }
-    const capturedWitness = syncRealWitnessCount
-    const bondAtEnd = syncBonds[oldPartner]
-    const partnerProfileAtEnd = realProfiles.find((p) => p.id === oldPartner)
-
-    if (
-      minutes >= 2 &&
-      syncWorkoutHasData(capturedWorkoutLog) &&
-      !isDemoMode &&
-      db &&
-      firebaseUser &&
-      oldPartner
-    ) {
-      try {
-        const uids = [effectiveUserId, oldPartner].sort()
-        const sid = `sync_${uids[0]}_${uids[1]}`
-        const history = await fetchRecentWorkouts(db, effectiveUserId, 20)
-        const prs = detectWorkoutPRs(capturedWorkoutLog.exercises, history)
-        const prSummary = formatWorkoutPRSummary(prs)
-        const { workout, postId, postText } = await saveSyncWorkoutWithPost(db, {
-          userId: effectiveUserId,
-          partnerId: oldPartner,
-          partnerName,
-          syncSessionId: sid,
-          title: `Sync con ${partnerName.split(' ')[0]}`,
-          type: 'full',
-          exercises: capturedWorkoutLog.exercises,
-          durationMin: Math.max(1, minutes),
-          source: 'sync',
-          startedAt: syncStartedAtCapture || undefined,
-          prSummary: prSummary || undefined,
-          prCount: prs.length || undefined,
-          pinned: prs.length > 0,
-        })
-        if (prs.length) {
-          await syncExercisePRs(db, effectiveUserId, prs, workout.id)
-          setExercisePRRecords(topExercisePRs(await loadExercisePRs(db, effectiveUserId), 5))
-        }
-        const preview = buildWorkoutPreview(
-          workout.title,
-          workout.type,
-          capturedWorkoutLog.exercises,
-          workout.stats,
-          { prCount: prs.length || undefined }
-        )
-        const post: ProfilePost = {
-          id: postId,
-          userId: effectiveUserId,
-          text: postText,
-          timestamp: Date.now(),
-          pinned: prs.length > 0,
-          likes: [],
-          comments: [],
-          postType: 'workout',
-          workoutId: workout.id,
-          workoutPreview: preview,
-          reactions: {},
-        }
-        setProfilePosts((prev) => {
-          const current = prev[effectiveUserId] || []
-          const newState = { ...prev, [effectiveUserId]: [post, ...current].slice(0, 10) }
-          profilePostsRef.current = newState
-          return newState
-        })
-        subscribeCommentsForPosts([post])
-        if (activeTab === 'home') loadGlobalFeed().catch(() => {})
-        await applyEntrenoSaveSideEffects(Math.max(1, minutes), {
-          prSummary: prSummary || undefined,
-          workoutType: 'full',
-          exercises: capturedWorkoutLog.exercises,
-        })
-      } catch (e) {
-        console.warn('sync workout save failed', e)
-      }
-    } else if (syncWorkoutHasData(capturedWorkoutLog)) {
-      void openEntrenoDeHoy({
-        title: `Sync con ${partnerName.split(' ')[0]}`,
-        exercises: cloneExercises(capturedWorkoutLog.exercises),
-        type: 'full',
-        durationMin: Math.max(1, minutes),
-      })
-      toast.info('Confirma tu Entreno de Hoy', {
-        description: 'Revisa los sets del Sync y guarda la sesión',
-      })
-    }
-
-    checkAndUpdateDailyPulse()
-    if (dailyPulse?.currentChallenge?.type === 'bond' || dailyPulse?.currentChallenge?.type === 'network') {
-      completeDailyChallenge(1)
-    } else {
-      awardConstancy(15, 'Synergy completada')
-    }
-
-    if (oldPartner) {
-      const elapsedSec = syncStartedAtCapture
-        ? Math.max(0, Math.floor((Date.now() - syncStartedAtCapture) / 1000))
-        : 0
-      const pact = (currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact
-      const projectedStats =
-        syncMins > 0
-          ? mergeWeekStats(
-              currentUser?.weekStats?.weekKey === weekKey ? currentUser.weekStats : undefined,
-              weekKey,
-              0,
-              weekLiveDays.length,
-              syncMins
-            )
-          : currentUser?.weekStats
-      const projectedLogged = (() => {
-        let n = homeLoggedSessionsCount
-        if (syncWorkoutHasData(capturedWorkoutLog)) {
-          const today = toLocalDateStr()
-          const hasToday = entrenoRecentWorkouts.some(
-            (w) => toLocalDateStr(w.endedAt || w.startedAt) === today
-          )
-          if (!hasToday) n += 1
-        }
-        return n
-      })()
-      const projectedMeta = computeWeeklyPactProgress(
-        isPactForCurrentWeek(pact) ? pact : null,
-        homeWeekTrainedCount,
-        projectedStats,
-        projectedLogged
-      )
-      const workoutCompare = compareSyncWorkoutLogs(
-        capturedWorkoutLog.exercises,
-        capturedPartnerExercises,
-        Math.max(1, minutes)
-      )
-      setSyncDuelSummary({
-        partnerId: oldPartner,
-        partnerName,
-        minutes,
-        elapsedSec,
-        vibe: capturedVibe,
-        witnessCount: capturedWitness,
-        setsLogged: countLoggedSets(capturedWorkoutLog),
-        actions: capturedActions.slice(0, 12),
-        isNetworkBond: !!bondAtEnd,
-        bondLevel: bondAtEnd?.bondLevel,
-        partnerPhoto: partnerProfileAtEnd?.photos?.[0],
-        weeklyMetaComplete: projectedMeta.isComplete,
-        weeklyMetaLine: projectedMeta.pledged
-          ? projectedMeta.isComplete
-            ? 'Semana sellada — meta cumplida'
-            : `${projectedMeta.liveDaysDone}/${projectedMeta.liveDaysTarget} live · ${projectedMeta.syncSessionsDone}/${projectedMeta.syncSessionsTarget} sync · ${projectedMeta.loggedSessionsDone}/${projectedMeta.loggedSessionsTarget} logs`
-          : undefined,
-        workoutCompare,
-      })
-    } else {
-      toast(`Sync finalizado: ${minutes}min`, { description: '¡Buen trabajo en equipo! +1 sync streak' })
-    }
-    if (minutes >= 2) {
-      setHomeCoachBanner('post-sync')
-      if (activeTab !== 'home') navigateTab('home')
-    }
-  }
-
-  const submitSyncRating = async (
-    rating: number,
-    ctx?: { partnerId: string; partnerName: string; minutes: number; vibe?: number; actions?: any[] }
-  ) => {
-    const payload = ctx || pendingSyncRating
-    if (!payload) return
-    triggerHaptic('success')
-    const { partnerId, partnerName, minutes } = payload
-    const sessionVibe = ctx?.vibe ?? syncVibe
-    if (!isDemoMode && db && firebaseUser) {
-      try {
-        const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
-        await updateDoc(doc(db, 'profiles', effectiveUserId), { 
-          syncRatings: arrayUnion({ partnerId, rating, minutes, ts: Date.now() }) 
-        })
-      } catch (e) {}
-    }
-    // NEVER-SEEN: accumulate persistent Sync Bond / Legend (unlocks future visibility + special feel)
-    const prevBond = syncBonds[partnerId] || { totalMin: 0, sessions: 0, avgRating: 0, bondLevel: 1 }
-    const newTotalMin = prevBond.totalMin + minutes
-    const newSessions = prevBond.sessions + 1
-    const newAvg = Math.round(((prevBond.avgRating * prevBond.sessions) + rating) / newSessions)
-    const newBondLevel = Math.min(5, Math.max(1, Math.floor(newTotalMin / 25) + (newAvg >= 4 ? 1 : 0)))
-    const partnerProfile = realProfiles.find(p => p.id === partnerId) || liveUsersActive.find((p: any) => p.id === partnerId)
-    const updatedBonds = {
-      ...syncBonds,
-      [partnerId]: {
-        totalMin: newTotalMin,
-        sessions: newSessions,
-        avgRating: newAvg,
-        bondLevel: newBondLevel,
-        ...(partnerProfile?.lat != null && partnerProfile?.lng != null
-          ? { partnerLat: partnerProfile.lat, partnerLng: partnerProfile.lng }
-          : {}),
-      },
-    }
-    setSyncBonds(updatedBonds)
-    // Persist bonds lightly on profile (for cross device legend status)
-    if (!isDemoMode && firebaseUser?.uid) {
-      try { await updateUserProfile(firebaseUser.uid, { syncBonds: updatedBonds } as any) } catch {}
-    }
-
-    if (rating >= 4) {
-      const boost = Math.min(2, Math.floor(minutes / 10))
-      const newStreak = ((currentUser as any).syncStreak || 0) + boost
-      const updated = { ...currentUser, syncStreak: newStreak }
-      saveUser(updated as any)
-      if (!isDemoMode && firebaseUser?.uid) {
-        try { await updateUserProfile(firebaseUser.uid, { syncStreak: newStreak }) } catch {}
-      }
-      // Big vibe boost on good rating — makes the ending feel special and unique
-      if (!isDemoMode && db) {
-        try {
-          const { doc, updateDoc } = await import('firebase/firestore')
-          const uids = [effectiveUserId, partnerId].sort()
-          const sessionId = `sync_${uids[0]}_${uids[1]}`
-          const bonus = Math.min(30, rating * 6 + Math.floor(minutes / 3))
-          const finalVibe = Math.min(100, (sessionVibe || 50) + bonus)
-          await updateDoc(doc(db, 'syncSessions', sessionId), { vibe: finalVibe })
-          if (syncPartnerId) setSyncVibe(finalVibe)
-        } catch {}
-      }
-    }
-
-    // THE UNIQUE MAGIC: Auto-generate rich "Session Story" post and publish to BOTH muros instantly.
-    // This creates permanent shared memory + social proof that lives forever in each person's profile/feed.
-    // Nobody else turns a live training session into a beautiful co-authored story post on both walls.
-    if (minutes >= 3 && (ctx?.actions?.length || replaySession || syncActions.length > 1)) {
-      const actionsForStory = (ctx?.actions || replaySession?.actions || syncActions).slice(0, 6)
-      const actionSummary = actionsForStory.map((a: any) => `${a.emoji} ${a.label}${a.combo ? `x${a.combo}` : ''}`).join(' · ')
-      const isNet = !!syncBonds[partnerId]
-      const storyText = `🔄 ENTRENASYNC COMPLETADO\n${minutes} min sincronizados con ${partnerName}\nSync Score final: ${sessionVibe || 70}% • Calificación: ${rating}★\nAcciones clave: ${actionSummary}\n\nEntrenamos en sync real-time y subimos nuestro rendimiento. ${isNet ? `Esta fue una sesión de RED — Fuerza del equipo activada. Tu grafo gana +${Math.floor(minutes / 3)} de fuerza y visibilidad global.` : `Esta alianza ya genera +${Math.floor(minutes * 1.2)} min de alto rendimiento compartido.`} Queda en nuestra red para siempre. #EntrenaSync`
-      // Post to self (visible in my muro + feed)
-      createProfilePost(storyText, null).catch(() => {})
-      // Also post directly for the partner so BOTH get the beautiful shared story in their muro (true co-presence even after session ends)
-      if (!isDemoMode && db) {
-        try {
-          const storyPost = {
-            id: `post_syncstory_${Date.now()}`,
-            uid: partnerId,
-            text: storyText,
-            photo: null,
-            createdAt: Date.now(),
-            pinned: false,
-            isSyncStory: true,
-            syncPartnerId: effectiveUserId,
-          }
-          await (await import('firebase/firestore')).setDoc((await import('firebase/firestore')).doc(db, 'profilePosts', storyPost.id), storyPost)
-        } catch {}
-      }
-      setLastSyncStory({ partnerName, minutes, rating, vibe: sessionVibe, summary: actionSummary })
-      confetti({ particleCount: 180, spread: 90, origin: { y: 0.7 } })
-      toast.success('¡Historia del Sync guardada en AMBOS muros!', { description: 'Un recuerdo compartido que nadie más puede crear.' })
-    }
-
-    // Update replay with rating for nice replay modal later
-    if (replaySession) {
-      setReplaySession({ ...replaySession, rating })
-    }
-
-    toast.success(`Sync con ${partnerName} calificado ${rating}/5`, { description: '¡Gracias! Ayuda a mejorar el matching + tu alianza de sync creció.' })
-    setPendingSyncRating(null)
-    setSyncDuelSummary(null)
-  }
-
-  const arenaPhotoInputRef = useRef<HTMLInputElement>(null)
-  const arenaPhotoResolverRef = useRef<((url: string | null) => void) | null>(null)
-
-  const handleArenaCapturePhoto = useCallback(async () => {
-    if (!syncPartnerId || !currentUser) return
-    const partner = realProfiles.find((p) => p.id === syncPartnerId)
-    const partnerName = partner?.name || 'Compañero'
-
-    try {
-      let dataUrl: string | null = null
-      if (Capacitor.isNativePlatform() && CapacitorCamera) {
-        const photo = await CapacitorCamera.getPhoto({
-          quality: 75,
-          allowEditing: true,
-          resultType: 'base64',
-        })
-        dataUrl = `data:image/jpeg;base64,${photo.base64String}`
-      } else {
-        dataUrl = await new Promise<string | null>((resolve) => {
-          arenaPhotoResolverRef.current = resolve
-          arenaPhotoInputRef.current?.click()
-        })
-      }
-      if (!dataUrl) return
-
-      let url = dataUrl
-      if (!isDemoMode && storage && firebaseUser?.uid && dataUrl.startsWith('data:')) {
-        url = await uploadArenaPhotoUrl(storage, effectiveUserId, dataUrl)
-      }
-
-      const caption = 'Momento en Arena'
-      const photoAction = {
-        id: 'sa' + Date.now(),
-        emoji: '📸',
-        label: caption,
-        userId: effectiveUserId,
-        at: Date.now(),
-        photoUrl: url,
-      }
-      setSyncActions((prev) => [photoAction, ...prev].slice(0, 30))
-
-      const photoText = `📸 ${caption} — con ${partnerName} en Arena (vibe ${syncVibe}%)`
-      await createProfilePost(photoText, url)
-      if (!isDemoMode && db && syncPartnerId) {
-        await postPartnerSyncStory(db, syncPartnerId, photoText, url).catch(() => {})
-        const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
-        const sessionId = buildSyncSessionId(effectiveUserId, syncPartnerId)
-        await updateDoc(doc(db, 'syncSessions', sessionId), {
-          actions: arrayUnion({
-            emoji: '📸',
-            label: caption,
-            userId: effectiveUserId,
-            at: Date.now(),
-            photoUrl: url,
-          }),
-        }).catch(() => {})
-      }
-
-      toast.success('📸 Momento capturado', {
-        description: 'Timeline + muros de ambos + onda en el mapa',
-      })
-      emitArenaMapRipple('Foto en Arena', 1.65, {
-        vibe: syncVibe,
-        actionsSnapshot: [photoAction, ...syncActions].slice(0, 12),
-        notifyNearby: true,
-      })
-      triggerHaptic('success')
-    } catch {
-      toast.error('No se pudo capturar la foto')
-    }
-  }, [
-    syncPartnerId,
-    currentUser,
-    realProfiles,
-    isDemoMode,
-    storage,
-    firebaseUser?.uid,
-    effectiveUserId,
-    syncVibe,
-    db,
-  ])
-
-  const persistSyncWorkoutLogToSession = async (log: SyncWorkoutLogState) => {
-    if (isDemoMode || !db || !syncPartnerId) return
-    try {
-      const { doc, updateDoc } = await import('firebase/firestore')
-      const sessionId = buildSyncSessionId(effectiveUserId, syncPartnerId)
-      await updateDoc(doc(db, 'syncSessions', sessionId), {
-        [`participantState.${effectiveUserId}`]: toParticipantSyncPayload(log),
-        updatedAt: Date.now(),
-      })
-    } catch (e) {
-      console.warn('workoutLog persist failed', e)
-    }
-  }
-
-  const startArenaVoicePing = async () => {
-    if (!syncPartnerId || isArenaVoiceRecording) return
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      const rec = new MediaRecorder(stream)
-      arenaVoiceRecorderRef.current = rec
-      arenaVoiceChunksRef.current = []
-      const started = Date.now()
-      rec.ondataavailable = (e) => {
-        if (e.data.size > 0) arenaVoiceChunksRef.current.push(e.data)
-      }
-      rec.onstop = async () => {
-        stream.getTracks().forEach((t) => t.stop())
-        setIsArenaVoiceRecording(false)
-        arenaVoiceRecorderRef.current = null
-        const duration = Math.min(3, Math.max(1, Math.round((Date.now() - started) / 1000)))
-        let voiceUrl: string | undefined
-        const blob = new Blob(arenaVoiceChunksRef.current, { type: rec.mimeType || 'audio/webm' })
-        if (!isDemoMode && storage && firebaseUser?.uid && syncPartnerId && blob.size > 0) {
-          try {
-            const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage')
-            const sessionId = buildSyncSessionId(effectiveUserId, syncPartnerId)
-            const storageRef = ref(storage, `arena-voice/${sessionId}/${Date.now()}.webm`)
-            await uploadBytes(storageRef, blob)
-            voiceUrl = await getDownloadURL(storageRef)
-          } catch (e) {
-            console.warn('arena voice upload failed', e)
-          }
-        }
-        await doSyncAction('🎙️', `Voz · ${duration}s`, voiceUrl ? { voiceUrl } : undefined)
-        triggerHaptic('light')
-        toast.success('Voz enviada', {
-          description: voiceUrl
-            ? `${duration}s — tu compañero puede reproducirla en la Arena`
-            : `${duration}s enviado (sin URL de audio)`,
-        })
-      }
-      rec.start()
-      setIsArenaVoiceRecording(true)
-      triggerHaptic('medium')
-      setTimeout(() => {
-        if (rec.state === 'recording') rec.stop()
-      }, 3000)
-    } catch {
-      toast.error('Mic no disponible en este dispositivo')
-    }
-  }
-
-  const handleArenaSyncAction = async (actionId: string, emoji: string, label: string) => {
-    if (actionId === 'rest' && syncPartnerId) {
-      const until = Date.now() + ARENA_REST_MS
-      setSyncRestUntil(until)
-      setSyncRestStartedBy(effectiveUserId)
-      if (!isDemoMode && db) {
-        try {
-          const { doc, updateDoc } = await import('firebase/firestore')
-          const sessionId = buildSyncSessionId(effectiveUserId, syncPartnerId)
-          await updateDoc(doc(db, 'syncSessions', sessionId), {
-            restUntil: until,
-            restStartedBy: effectiveUserId,
-            updatedAt: Date.now(),
-          })
-        } catch {
-          /* non-fatal */
-        }
-      }
-      await doSyncAction(emoji, label)
-      return
-    }
-    if ((actionId === 'set' || actionId === 'pr') && syncPartnerId && syncStartedAt) {
-      const set = {
-        reps: syncWorkoutLog.pendingReps,
-        weightKg: syncWorkoutLog.pendingWeightKg,
-      }
-      let nextLog = appendSetToLog(syncWorkoutLog, syncWorkoutLog.activeExercise, set)
-      if (actionId === 'pr') {
-        nextLog = {
-          ...nextLog,
-          prs: [
-            ...nextLog.prs,
-            {
-              exercise: syncWorkoutLog.activeExercise,
-              weightKg: syncWorkoutLog.pendingWeightKg,
-              reps: syncWorkoutLog.pendingReps,
-              at: Date.now(),
-            },
-          ],
-        }
-      }
-      setSyncWorkoutLog(nextLog)
-      await persistSyncWorkoutLogToSession(nextLog)
-      const detail = formatSetLabel(syncWorkoutLog.activeExercise, set.reps, set.weightKg)
-      const actionLabel = actionId === 'pr' ? `PR · ${detail}` : `Set · ${detail}`
-      await doSyncAction(emoji, actionLabel)
-      if (actionId === 'pr') {
-        try {
-          confetti({ particleCount: 160, spread: 90, origin: { y: 0.65 } })
-        } catch {}
-        createProfilePost(
-          `🏆 PR en ${syncWorkoutLog.activeExercise}: ${set.reps}×${set.weightKg}kg — EntrenaSync en vivo`,
-          null
-        ).catch(() => {})
-        toast.success('PR registrado', { description: detail })
-      }
-      return
-    }
-    await doSyncAction(emoji, label)
-  }
-
-  const handleCopyEntrenoWorkout = useCallback(
-    (w: import('./types').Workout) => {
-      const tpl = workoutToTemplate(w, `Repetir · ${w.title}`)
-      void openEntrenoDeHoy({
-        title: tpl.label,
-        exercises: tpl.exercises,
-        type: tpl.type,
-        durationMin: tpl.durationMin,
-      })
-      toast.success('Rutina cargada', { description: 'Edita y guarda en Entreno de Hoy' })
-    },
-    [openEntrenoDeHoy]
-  )
-
-  const handleCopyWorkoutFromPost = async (workoutId: string, title?: string) => {
-    if (!workoutId) return
-    if (isDemoMode || !db) {
-      toast('Copiar rutina disponible con cuenta real')
-      return
-    }
-    try {
-      const w = await fetchWorkoutById(db, workoutId)
-      if (!w?.exercises?.length) {
-        toast.error('Rutina no encontrada')
-        return
-      }
-      void openEntrenoDeHoy({
-        title: title ? `Copia · ${title}` : 'Rutina copiada',
-        exercises: w.exercises.map((e) => ({
-          ...e,
-          sets: e.sets.map((s) => ({ ...s })),
-        })),
-        type: w.type,
-        durationMin: w.stats?.durationMin || 45,
-      })
-      toast.success('Rutina cargada', { description: 'Edita y guarda en Entreno de Hoy' })
-    } catch {
-      toast.error('No se pudo cargar la rutina')
-    }
-  }
-
-  const doSyncAction = async (
-    emoji: string,
-    label: string,
-    extras?: { voiceUrl?: string; photoUrl?: string }
-  ) => {
-    if (!syncPartnerId || !syncStartedAt) return
-    triggerHaptic('light')
-
-    const isCombo = syncActions.length > 0 && syncActions[0].label === label
-    const newCombo = isCombo ? Math.min(5, syncCombo + 1) : 1
-    setSyncCombo(newCombo)
-    const baseGain = 7
-    const comboBonus = (newCombo - 1) * 6
-    const vibeGain = baseGain + comboBonus
-
-    const action = {
-      id: 'sa' + Date.now(),
-      ...buildSyncSessionAction({
-        emoji,
-        label,
-        userId: effectiveUserId,
-        combo: newCombo,
-        voiceUrl: extras?.voiceUrl,
-        photoUrl: extras?.photoUrl,
-      }),
-    }
-    const newActions = [action, ...syncActions].slice(0, 12)
-    setSyncActions(newActions)
-
-    // Flying emoji wave — the magic "we are moving together" visual that both see instantly thanks to listener
-    const flyId = 'fly' + Date.now()
-    setFlyingEmojis(prev => [...prev.slice(-3), { id: flyId, emoji, label }])
-    setTimeout(() => {
-      setFlyingEmojis(prev => prev.filter(f => f.id !== flyId))
-    }, 1400)
-
-    // Update currentUser so save picks it for FS sync (partner will mirror via realProfiles)
-    const updatedUser = { ...currentUser, syncActions: newActions }
-    saveUser(updatedUser as any)
-    if (!isDemoMode && firebaseUser?.uid) {
-      try {
-        await updateUserProfile(firebaseUser.uid, { syncActions: newActions.slice(-10) })
-      } catch (e) { console.warn('sync action persist failed', e) }
-    }
-
-    // INSTANT: also write to dedicated syncSessions collection so partner gets it via onSnapshot immediately (true co-presence)
-    if (!isDemoMode && db) {
-      try {
-        const { doc, updateDoc, arrayUnion } = await import('firebase/firestore')
-        const uids = [effectiveUserId, syncPartnerId].sort()
-        const sessionId = `sync_${uids[0]}_${uids[1]}`
-        const actionForSession = buildSyncSessionAction({
-          emoji,
-          label,
-          userId: effectiveUserId,
-          combo: newCombo,
-          voiceUrl: extras?.voiceUrl,
-          photoUrl: extras?.photoUrl,
-        })
-        let newVibe = Math.min(100, (syncVibe || 0) + vibeGain)
-        // Network Power bonus: when syncing with a high-bond partner from your red, extra vibe — the graph rewards real alliances with higher shared energy.
-        const isBondedAction = !!syncBonds[syncPartnerId]
-        if (isBondedAction) {
-          const bond = syncBonds[syncPartnerId]
-          const netBonus = Math.floor((bond.bondLevel || 1) * 0.8)
-          newVibe = Math.min(100, newVibe + netBonus)
-        }
-        await updateDoc(doc(db, 'syncSessions', sessionId), {
-          actions: arrayUnion(actionForSession),
-          vibe: newVibe,
-          updatedAt: Date.now(),
-        })
-        setSyncVibe(newVibe)
-
-        const prevVibe = syncVibe || 0
-        const crossedLegend = newVibe >= 80 && prevVibe < 80
-        const rippleIntensity = crossedLegend
-          ? newVibe > 90
-            ? 2.2
-            : 1.8
-          : newCombo >= 3
-            ? 1.55
-            : newCombo >= 2
-              ? 1.25
-              : 0.9
-        emitArenaMapRipple(`${emoji} ${label}`, rippleIntensity, {
-          vibe: newVibe,
-          actionsSnapshot: newActions,
-          forceLegend: crossedLegend,
-          notifyNearby: crossedLegend || newCombo >= 2,
-        })
-
-        // Make the purpose *felt*: every action with a real bond from your red builds your Network Power visibly, and boosts the shared vibe — the social graph has real performance teeth.
-        if (isBondedAction && (newCombo >= 2 || vibeGain > 10)) {
-          const bondBoost = Math.max(1, Math.floor(vibeGain / 8))
-          toast.success(`❤️ Alianza fortalecida +${bondBoost} con tu socio de sync`, { description: 'Tu Fuerza del equipo sube. Se propaga en tu red, mapa y feed – la red te hace más fuerte.' })
-        }
-
-        // PEQUEÑO TOQUE DISRUPTIVO: auto-captura de "momento de alta vibe" cuando cruza 80.
-        if (crossedLegend) {
-          const highAction = {
-            id: 'hv' + Date.now(),
-            emoji: '⚡',
-            label: '¡Alta energía compartida!',
-            userId: effectiveUserId,
-            at: Date.now(),
-          }
-          setSyncActions((prev) => [highAction, ...prev].slice(0, 30))
-          toast.success('⚡ ¡Highlight de sync!', {
-            description: 'La ciudad puede presenciarlo — momento destacado en mapa + replay',
-          })
-          triggerHaptic('medium')
-          setTimeout(() => {
-            setFlyingEmojis((prev) => [...prev.slice(-2), { id: 'fly-high' + Date.now(), emoji: '⚡', label: 'Alta!' }])
-            try {
-              triggerHaptic('heavy')
-            } catch {}
-          }, 120)
-
-          // Oferta auto de foto si en native (no fuerza cámara, solo invita)
-          if (Capacitor.isNativePlatform() && CapacitorCamera) {
-            setTimeout(() => {
-              toast('📸 ¿Capturar el pico de alta vibe?', {
-                action: {
-                  label: 'Capturar',
-                  onClick: async () => {
-                    try {
-                      const photo = await CapacitorCamera.getPhoto({
-                        quality: 70,
-                        allowEditing: true,
-                        resultType: 'base64',
-                      })
-                      const dataUrl = `data:image/jpeg;base64,${photo.base64String}`
-                      const path = `posts/${effectiveUserId}/arena-high-${Date.now()}.jpg`
-                      const storageRef = ref(storage, path)
-                      const snap = await uploadString(storageRef, dataUrl, 'data_url')
-                      const url = await getDownloadURL(snap.ref)
-                      const photoAction = {
-                        id: 'sa' + Date.now(),
-                        emoji: '📸',
-                        label: 'Alta vibe capturada',
-                        userId: effectiveUserId,
-                        at: Date.now(),
-                        photoUrl: url,
-                      }
-                      setSyncActions((prev) => [photoAction, ...prev].slice(0, 30))
-                      await createProfilePost('⚡ Momento de alta energía en Arena', url)
-                      toast.success('📸 Alta vibe inmortalizada')
-                    } catch {
-                      toast('Captura cancelada')
-                    }
-                  },
-                },
-              })
-            }, 800)
-          }
-        }
-      } catch (e) {
-        console.warn('instant syncSession action failed (mirror will catch on next poll)', e)
-      }
-    } else {
-      const newVibe = Math.min(100, (syncVibe || 0) + vibeGain)
-      setSyncVibe(newVibe)
-      const rippleIntensity = newCombo >= 2 ? 1.2 : 0.85
-      emitArenaMapRipple(`${emoji} ${label}`, rippleIntensity, {
-        vibe: newVibe,
-        actionsSnapshot: newActions,
-        notifyNearby: false,
-      })
-    }
-
-    // Acciones van a Arena + syncSessions — el muro solo en PR, foto o historia al terminar
-    addDebugLog(`Sync action: ${emoji} ${label}${newCombo>1 ? ` x${newCombo}` : ''}`)
-
-    // Special toast + confetti pop for combos (the dopamine that makes it addictive and unique)
-    if (newCombo >= 3) {
-      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } })
-      toast.success(`${emoji} RACHA x${newCombo}!`, {
-        description: 'Onda fuerte en el mapa — quien esté en GymPulse lo presencia',
-      })
-      triggerHaptic('medium')
-    } else if (newCombo >= 2) {
-      toast.success(`${emoji} ${label} ×${newCombo}`, {
-        description: 'La red siente la racha en el GymPulse',
-      })
-    } else {
-      toast.success(`${emoji} ${label}`, { description: 'Visible en Arena y para tu compañero — no spam en el muro' })
-    }
-  }
-
-  // Auto-start sync UI when joining live (call from handleSwipe if both live)
-  // Attractive + anti-spam: show loading on the specific join, disable multi-press, auto-nav to profile to see the beautiful sync panel
-  const tryAutoStartSync = (targetId: string) => {
-    const target = (latestRealProfilesRef.current || realProfiles).find(p => p.id === targetId)
-    if (!target) {
-      toast.error('Compañero no encontrado', { description: 'Actualiza perfiles reales e intenta de nuevo.' })
-      return
-    }
-    const me = currentUserRef.current
-    if (!me?.trainingNow) {
-      toast.error('Activa tu live primero', { description: 'Perfil → "Entrenando Ahora (EN VIVO)" antes de EntrenaSync.' })
-      return
-    }
-    if (!isUserLive(targetId)) {
-      toast.error(`${target.name} no está en vivo`, { description: 'Espera a que active live en el GymPulse.' })
-      return
-    }
-    if (syncPartnerId || joiningSyncWith) return
-    startSyncWith(targetId, target.name)
-      .then(() => setActiveTab('explore'))
-      .catch(() => {})
-  }
 
   type PostLocation = { posts: ProfilePost[]; idx: number; resolvedUserId: string }
 
@@ -12955,123 +11436,48 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Hidden input — Arena form photo on web */}
-      <input
-        ref={arenaPhotoInputRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0]
-          const resolve = arenaPhotoResolverRef.current
-          arenaPhotoResolverRef.current = null
-          if (!file || !resolve) {
-            resolve?.(null)
-            return
-          }
-          const reader = new FileReader()
-          reader.onload = () => {
-            resolve(typeof reader.result === 'string' ? reader.result : null)
-            e.target.value = ''
-          }
-          reader.onerror = () => {
-            resolve(null)
-            e.target.value = ''
-          }
-          reader.readAsDataURL(file)
-        }}
+      <SyncArenaHost
+        syncPartnerId={syncPartnerId}
+        showSyncArena={showSyncArena}
+        showTrainerCoach={showTrainerCoach}
+        showMarketplace={showMarketplace}
+        showEntrenaLogModal={showEntrenaLogModal}
+        currentUser={currentUser}
+        effectiveUserId={effectiveUserId}
+        firebaseUserUid={firebaseUser?.uid}
+        realProfiles={realProfiles}
+        userLocation={userLocation}
+        syncStartedAt={syncStartedAt}
+        syncVibe={syncVibe}
+        syncCombo={syncCombo}
+        syncActions={syncActions}
+        syncBonds={syncBonds}
+        syncRealWitnessCount={syncRealWitnessCount}
+        syncWitnessIds={syncWitnessIds}
+        syncPartnerLiveState={syncPartnerLiveState}
+        syncRestUntil={syncRestUntil}
+        syncRestStartedBy={syncRestStartedBy}
+        syncWorkoutLog={syncWorkoutLog}
+        liveTrainingNow={liveTrainingNow}
+        arenaWaveCount={arenaWaveCount}
+        activeSyncPairs={activeSyncPairs}
+        homeWeeklyPactProgress={homeWeeklyPactProgress}
+        activeTab={activeTab}
+        redSubTab={redSubTab}
+        activeChat={activeChat}
+        isArenaVoiceRecording={isArenaVoiceRecording}
+        isUserLive={isUserLive}
+        onMinimizeArena={() => setShowSyncArena(false)}
+        onOpenArena={() => setShowSyncArena(true)}
+        onEndSync={endSync}
+        onSyncAction={handleArenaSyncAction}
+        onCapturePhoto={handleArenaCapturePhoto}
+        onVoicePing={startArenaVoicePing}
+        onWorkoutLogChange={(patch) => setSyncWorkoutLog((prev) => ({ ...prev, ...patch }))}
+        persistSyncWorkoutLogToSession={persistSyncWorkoutLogToSession}
+        arenaPhotoInputRef={arenaPhotoInputRef}
+        arenaPhotoResolverRef={arenaPhotoResolverRef}
       />
-
-      {syncPartnerId && showSyncArena && (() => {
-        const partner = realProfiles.find((p) => p.id === syncPartnerId)
-        const dist =
-          userLocation && partner?.lat != null && partner?.lng != null
-            ? getDistanceKm(userLocation.lat, userLocation.lng, partner.lat, partner.lng)
-            : null
-        const bond = syncBonds[syncPartnerId]
-        const excludeIds = new Set([effectiveUserId, syncPartnerId, 'me', firebaseUser?.uid].filter(Boolean))
-        const redLiveCount = Object.keys(syncBonds).filter(
-          (id) => !excludeIds.has(id) && isUserLive(id)
-        ).length
-        const witnessProfiles = syncWitnessIds
-          .slice(0, 5)
-          .map((id) => {
-            const p = realProfiles.find((pr) => pr.id === id)
-            return p ? { id, name: p.name, photo: p.photos?.[0] } : { id, name: 'Atleta' }
-          })
-        return (
-          <SyncArenaView
-            open
-            onMinimize={() => setShowSyncArena(false)}
-            onEndSync={endSync}
-            selfName={currentUser.name || 'Tú'}
-            selfPhoto={currentUser.photos?.[0]}
-            partnerName={partner?.name || 'Compañero'}
-            partnerPhoto={partner?.photos?.[0]}
-            partnerId={syncPartnerId}
-            effectiveUserId={effectiveUserId}
-            syncStartedAt={syncStartedAt}
-            syncVibe={syncVibe}
-            syncCombo={syncCombo}
-            syncActions={syncActions}
-            bondLevel={bond?.bondLevel ?? 1}
-            isNetworkBond={!!bond}
-            distanceKm={dist}
-            liveNearbyCount={liveTrainingNow.length}
-            witnessCount={syncRealWitnessCount}
-            witnessProfiles={witnessProfiles}
-            redLiveCount={redLiveCount}
-            cityLabel={currentUser.city || partner?.city}
-            partnerLiveState={syncPartnerLiveState}
-            restUntil={syncRestUntil}
-            restStartedBy={syncRestStartedBy}
-            weeklyPactProgress={homeWeeklyPactProgress}
-            isRecordingVoice={isArenaVoiceRecording}
-            onSyncAction={handleArenaSyncAction}
-            onCapturePhoto={handleArenaCapturePhoto}
-            onVoicePing={startArenaVoicePing}
-            activeExercise={syncWorkoutLog.activeExercise}
-            pendingReps={syncWorkoutLog.pendingReps}
-            pendingWeightKg={syncWorkoutLog.pendingWeightKg}
-            loggedSetCount={countLoggedSets(syncWorkoutLog)}
-            selfExercises={syncWorkoutLog.exercises}
-            onActiveExerciseChange={(name) => {
-              setSyncWorkoutLog((prev) => {
-                const next = { ...prev, activeExercise: name }
-                void persistSyncWorkoutLogToSession(next)
-                return next
-              })
-            }}
-            onPendingRepsChange={(reps) => {
-              setSyncWorkoutLog((prev) => {
-                const next = { ...prev, pendingReps: reps }
-                void persistSyncWorkoutLogToSession(next)
-                return next
-              })
-            }}
-            onPendingWeightChange={(kg) => {
-              setSyncWorkoutLog((prev) => {
-                const next = { ...prev, pendingWeightKg: kg }
-                void persistSyncWorkoutLogToSession(next)
-                return next
-              })
-            }}
-          />
-        )
-      })()}
-
-      {syncPartnerId && !showSyncArena && !showTrainerCoach && !showMarketplace && !showEntrenaLogModal && (
-        <ArenaGlobalPulseBar
-          partnerName={realProfiles.find((p) => p.id === syncPartnerId)?.name || 'Compañero'}
-          syncVibe={syncVibe}
-          witnessCount={syncRealWitnessCount}
-          waveCount={arenaWaveCount}
-          globalPairs={activeSyncPairs}
-          onOpenArena={() => setShowSyncArena(true)}
-          preferCollapsed={activeTab === 'red' && redSubTab === 'messages' && !!activeChat}
-        />
-      )}
 
     </ErrorBoundary>
   )

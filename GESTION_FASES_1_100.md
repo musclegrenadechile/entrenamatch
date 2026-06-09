@@ -265,7 +265,7 @@ flowchart TB
 
 1. **Fase 100 ops:** Monitorear Crashlytics 7 días + testers internal (ver `PLAY_INTERNAL_v0.1.281.md`)  
 2. **Piloto:** Viña + Santiago — `PILOTO_VINA_SANTIAGO.md` + reportes `pilot-cohort-report` / `pilot-sync-report`  
-3. **Fases 🔄:** 76 (quitar `@ts-nocheck` GymPulseMap) · 81 (extraer Arena de App.tsx)  
+3. **Fases 🔄:** 76 (quitar `@ts-nocheck` GymPulseMap) · 81 (extraer Arena de App.tsx) ✅ v0.1.285  
 4. **Post-100 P0:** Derby Viña vs Santiago ✅ v0.1.284 — `cityDerby.ts`, `CityDerbyCard`, overlay mapa  
 
 ---
