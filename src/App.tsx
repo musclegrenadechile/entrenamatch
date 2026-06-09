@@ -263,7 +263,18 @@ import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr, b
 import { fetchRecentWorkouts, fetchUserWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, buildWorkoutPreview, computeWorkoutStats } from './services/workouts'
 import { useFuelBalance } from './hooks/useFuelBalance'
 import { useFuelState } from './hooks/useFuelState'
+import { useWeeklyPlan } from './hooks/useWeeklyPlan'
 import { buildFuelWeekBalanceDays } from './utils/fuelWeekBalance'
+import {
+  buildPlanExercises,
+  formatWeeklyPlanShareText,
+  type WeeklyPlanResult,
+} from './domain/weeklyPlan'
+import {
+  enrichWeeklyPlanWithAi,
+  saveWeeklyPlanCache,
+} from './services/weeklyPlan'
+import { maybeSendWeeklyPlanNotification } from './utils/weeklyPlanNotify'
 import {
   loadExercisePRs,
   syncExercisePRs,
@@ -1537,7 +1548,14 @@ useEffect(() => {
   const [showNotifications, setShowNotifications] = useState(false)
 
   // Notification preferences (local per-device for user control - progressive improvement post-crash-fix)
-  const [notifPrefs, setNotifPrefs] = useState<{messages: boolean, live: boolean, muro: boolean, dailyPulse: boolean, weeklyPact: boolean}>(() => {
+  const [notifPrefs, setNotifPrefs] = useState<{
+    messages: boolean
+    live: boolean
+    muro: boolean
+    dailyPulse: boolean
+    weeklyPact: boolean
+    weeklyPlan: boolean
+  }>(() => {
     try {
       const saved = localStorage.getItem('entrenamatch_notif_prefs')
       const p = saved ? JSON.parse(saved) : {}
@@ -1547,11 +1565,21 @@ useEffect(() => {
         muro: p.muro !== false,
         dailyPulse: p.dailyPulse !== false,
         weeklyPact: p.weeklyPact !== false,
+        weeklyPlan: p.weeklyPlan !== false,
       }
     } catch {
-      return { messages: true, live: true, muro: true, dailyPulse: true, weeklyPact: true }
+      return {
+        messages: true,
+        live: true,
+        muro: true,
+        dailyPulse: true,
+        weeklyPact: true,
+        weeklyPlan: true,
+      }
     }
   })
+  const [weeklyPlan, setWeeklyPlan] = useState<WeeklyPlanResult | null>(null)
+  const [weeklyPlanEnriching, setWeeklyPlanEnriching] = useState(false)
 
   // Persist notif prefs when they change
   useEffect(() => {
@@ -4821,8 +4849,11 @@ useEffect(() => {
       const fuelTip = getPostWorkoutFuelTip(opts?.workoutType)
       const burnLine = burn > 0 ? `~${burn} kcal estimadas` : undefined
       const description = [burnLine, fuelTip].filter(Boolean).join(' · ') || 'Registrado en tu semana'
+      const planHint = weeklyPlan?.headline
+        ? ` · Mañana: ${weeklyPlan.recommendation.title} (${weeklyPlan.recommendation.durationMin} min)`
+        : ''
       toast.success('Entreno de Hoy guardado', {
-        description: `${description}${prLine}`,
+        description: `${description}${prLine}${planHint}`,
         action: fuelProfile
           ? {
               label: 'Abrir Fuel',
@@ -4844,6 +4875,7 @@ useEffect(() => {
       dailyPulse?.momentum,
       fuelProfile,
       currentUser,
+      weeklyPlan,
     ]
   )
 
@@ -5265,6 +5297,86 @@ useEffect(() => {
       fuelProfile.weightKg
     )
   }, [fuelProfile, fuelWeekMacros, fuelWeekWorkouts, fuelEnergyBalance?.adjustedTargetKcal])
+
+  const weeklyPlanBase = useWeeklyPlan({
+    fuelProfile,
+    fuelWeekMacros,
+    fuelWeekBalanceDays,
+    fuelWeekWorkouts,
+    fuelEnergyBalance,
+    userLevel: currentUser?.level,
+  })
+
+  useEffect(() => {
+    setWeeklyPlan(weeklyPlanBase)
+    if (!weeklyPlanBase) return undefined
+    let cancelled = false
+    setWeeklyPlanEnriching(true)
+    void enrichWeeklyPlanWithAi(weeklyPlanBase)
+      .then((enriched) => {
+        if (cancelled) return
+        setWeeklyPlan(enriched)
+        if (!isDemoMode && db && firebaseUser?.uid) {
+          void saveWeeklyPlanCache(db, firebaseUser.uid, enriched).catch(() => {})
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setWeeklyPlanEnriching(false)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [weeklyPlanBase, isDemoMode, db, firebaseUser?.uid])
+
+  useEffect(() => {
+    maybeSendWeeklyPlanNotification(weeklyPlan, notifPrefs.weeklyPlan)
+  }, [weeklyPlan, notifPrefs.weeklyPlan])
+
+  const handleStartWeeklyPlan = useCallback(
+    (plan: WeeklyPlanResult) => {
+      const rec = plan.recommendation
+      const level = currentUser?.level || 'Intermedio'
+      if (rec.workoutType && (rec.type === 'strength' || rec.type === 'cardio')) {
+        setEntrenaLogPrefill({
+          title: rec.title,
+          type: rec.workoutType,
+          durationMin: rec.durationMin,
+          exercises: buildPlanExercises(rec.workoutType, level),
+        })
+      } else {
+        setEntrenaLogPrefill({
+          title: rec.title,
+          type: 'other',
+          durationMin: rec.durationMin,
+          exercises: rec.exercises.map((name) => ({
+            name,
+            sets: [{ reps: 10, weightKg: 0 }],
+          })),
+        })
+      }
+      setShowEntrenaLogModal(true)
+    },
+    [currentUser?.level]
+  )
+
+  const handleShareWeeklyPlan = useCallback(
+    async (plan: WeeklyPlanResult) => {
+      const text = formatWeeklyPlanShareText(plan, currentUser?.name)
+      try {
+        if (isDemoMode) {
+          await navigator.clipboard?.writeText(text)
+          toast.success('Plan copiado')
+          return
+        }
+        await createProfilePost(text, null)
+        toast.success('Plan compartido en el Muro')
+        loadGlobalFeed().catch(() => {})
+      } catch {
+        toast.error('No se pudo compartir el plan')
+      }
+    },
+    [currentUser?.name, isDemoMode, createProfilePost, loadGlobalFeed]
+  )
 
   useEffect(() => {
     if (isDemoMode || !db || !firebaseUser?.uid) {
@@ -8774,6 +8886,10 @@ useEffect(() => {
             weeklyPact={(currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact}
             weeklyPactProgress={homeWeeklyPactProgress}
             onPledgeWeeklyPact={handleWeeklyPactPledge}
+            weeklyPlan={weeklyPlan}
+            weeklyPlanEnriching={weeklyPlanEnriching}
+            onStartWeeklyPlan={handleStartWeeklyPlan}
+            onShareWeeklyPlan={handleShareWeeklyPlan}
             homeCoachBanner={homeCoachBanner}
             onDismissCoachBanner={() => setHomeCoachBanner(null)}
             postLiveSession={postLiveSession}
@@ -9733,6 +9849,7 @@ useEffect(() => {
         clientDispatchHistory={clientDispatchHistory}
         trainerDispatchHistory={trainerDispatchHistory}
         clientFuelBalance={fuelEnergyBalance}
+        clientWeeklyPlan={weeklyPlan}
       />
       <EntrenoDeHoyModal
         open={showEntrenaLogModal}

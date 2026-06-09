@@ -22,6 +22,7 @@ export interface FuelDayCardProps {
   deletingLogId?: string | null
   onImportHealth?: () => void | Promise<void>
   healthImportHint?: string
+  weeklyDeltaKcal?: number
 }
 
 function pct(current: number, target: number): number {
@@ -51,6 +52,7 @@ export function FuelDayCard({
   deletingLogId,
   onImportHealth,
   healthImportHint,
+  weeklyDeltaKcal,
 }: FuelDayCardProps) {
   if (!profile) {
     return (
@@ -119,7 +121,17 @@ export function FuelDayCard({
       </div>
 
       {weekBalanceDays.length > 0 ? (
-        <FuelWeekBalanceChart days={weekBalanceDays} />
+        <>
+          <FuelWeekBalanceChart days={weekBalanceDays} />
+          {typeof weeklyDeltaKcal === 'number' && (
+            <p
+              className={`text-[9px] mb-2 -mt-1 ${weeklyDeltaKcal > 200 ? 'text-[#f97316]' : weeklyDeltaKcal < -200 ? 'text-[#38bdf8]' : 'text-[#6B7280]'}`}
+            >
+              Balance semanal: {weeklyDeltaKcal > 0 ? '+' : ''}
+              {weeklyDeltaKcal} kcal vs objetivo
+            </p>
+          )}
+        </>
       ) : (
         weekDays.length > 0 && (
         <div className="mb-3">

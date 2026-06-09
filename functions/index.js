@@ -443,6 +443,74 @@ exports.analyzeFood = functions
   }
 });
 
+/** Callable: enrich EntrenaPlan copy from rules-based JSON (Gemini optional). */
+exports.recommendPlan = functions
+  .runWith({ secrets: [geminiApiKey], timeoutSeconds: 20, memory: '256MB' })
+  .https.onCall(async (data, context) => {
+    if (!context.auth) {
+      throw new functions.https.HttpsError('unauthenticated', 'Debes iniciar sesión.');
+    }
+    const plan = data && data.plan ? data.plan : null;
+    if (!plan || !plan.recommendation) {
+      throw new functions.https.HttpsError('invalid-argument', 'Plan base requerido.');
+    }
+
+    const apiKey =
+      geminiApiKey.value() ||
+      process.env.GEMINI_API_KEY ||
+      (functions.config().gemini && functions.config().gemini.key) ||
+      '';
+
+    if (!apiKey) {
+      return { source: 'rules' };
+    }
+
+    const rec = plan.recommendation;
+    const energy = plan.energySummary || {};
+    const prompt = `Eres coach fitness de EntrenaMatch (Chile). Reescribe en español cercano (máx 2 frases cada campo) este plan YA calculado por reglas. NO cambies duración, tipo ni kcal.
+Escenario: ${plan.scenario}
+Headline actual: ${plan.headline}
+Detalle actual: ${plan.detail}
+Entreno: ${rec.title}, ${rec.durationMin} min, ~${rec.estimatedBurnKcal} kcal, intensidad ${rec.intensity}
+Balance semanal delta: ${energy.weeklyDeltaKcal || 0} kcal
+Nota nutrición actual: ${plan.nutritionNote || 'ninguna'}
+JSON only: {"headline":string,"detail":string,"nutritionNote":string}`;
+
+    const models = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];
+    for (const model of models) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.35,
+              maxOutputTokens: 280,
+              thinkingConfig: { thinkingBudget: 0 },
+            },
+          }),
+        });
+        if (!res.ok) continue;
+        const json = await res.json();
+        const raw = json.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        const match = raw.match(/\{[\s\S]*\}/);
+        if (!match) continue;
+        const parsed = JSON.parse(match[0]);
+        return {
+          headline: String(parsed.headline || plan.headline).slice(0, 120),
+          detail: String(parsed.detail || plan.detail).slice(0, 280),
+          nutritionNote: String(parsed.nutritionNote || plan.nutritionNote || '').slice(0, 160),
+          source: 'ai',
+        };
+      } catch (err) {
+        console.warn('recommendPlan: model failed', model, err.message || err);
+      }
+    }
+    return { source: 'rules' };
+  });
+
 // ─── Identity verification (Gemini face match) ─────────────────────────────
 
 const GEMINI_IDENTITY_MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash'];

@@ -2,6 +2,8 @@ import { EntrenoDeHoyWeekSummary } from '../workout/EntrenoDeHoyWeekSummary'
 import { ExercisePRStrip } from '../workout/ExercisePRStrip'
 import { MapPin, MessageCircle, RefreshCw, Users } from 'lucide-react'
 import { FuelDayCard } from '../fuel/FuelDayCard'
+import { WeeklyPlanCard } from '../plan/WeeklyPlanCard'
+import type { WeeklyPlanResult } from '../../domain/weeklyPlan'
 import { LocalNetworkCard } from './LocalNetworkCard'
 import { HomeLoopStepper, resolveHomeLoopStep } from './HomeLoopStepper'
 import { formatRedSyncFomoLine } from '../../utils/syncFomo'
@@ -95,6 +97,10 @@ export interface DailyHomeProps {
   /** Fase 101 — día 1: solo piloto, derby, hero y live. */
   compactDayOne?: boolean
   userGender?: ProfileGender
+  weeklyPlan?: WeeklyPlanResult | null
+  weeklyPlanEnriching?: boolean
+  onStartWeeklyPlan?: (plan: WeeklyPlanResult) => void
+  onShareWeeklyPlan?: (plan: WeeklyPlanResult) => void
 }
 
 function statusLine(member: TeamMemberView): string {
@@ -175,6 +181,10 @@ export function DailyHome({
   onOpenDerbyMap,
   compactDayOne = false,
   userGender,
+  weeklyPlan = null,
+  weeklyPlanEnriching = false,
+  onStartWeeklyPlan,
+  onShareWeeklyPlan,
 }: DailyHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
   const hour = new Date().getHours()
@@ -235,6 +245,14 @@ export function DailyHome({
 
       {!compactDayOne && (
       <>
+      <WeeklyPlanCard
+        plan={weeklyPlan}
+        enriching={weeklyPlanEnriching}
+        onStartWorkout={onStartWeeklyPlan}
+        onSharePlan={onShareWeeklyPlan}
+        onOpenFuelSetup={onOpenFuelSetup}
+      />
+
       {/* Fase 93 — Fuel (oculto día 1) */}
       <FuelDayCard
         profile={fuelProfile ?? null}
@@ -252,6 +270,7 @@ export function DailyHome({
         deletingLogId={deletingFuelLogId}
         onImportHealth={onImportHealthBurn}
         healthImportHint={healthImportHint}
+        weeklyDeltaKcal={weeklyPlan?.energySummary.weeklyDeltaKcal}
       />
 
       {exercisePRRecords.length > 0 && (

@@ -4,9 +4,15 @@ export interface FuelWeekReportProps {
   days: FuelWeekMacroDay[]
   adjustedTargetKcal?: number
   weeklyBurnKcal?: number
+  weeklyDeltaKcal?: number
 }
 
-export function FuelWeekReport({ days, adjustedTargetKcal, weeklyBurnKcal = 0 }: FuelWeekReportProps) {
+export function FuelWeekReport({
+  days,
+  adjustedTargetKcal,
+  weeklyBurnKcal = 0,
+  weeklyDeltaKcal,
+}: FuelWeekReportProps) {
   const totals = days.reduce(
     (acc, d) => ({
       kcal: acc.kcal + d.kcal,
@@ -32,6 +38,14 @@ export function FuelWeekReport({ days, adjustedTargetKcal, weeklyBurnKcal = 0 }:
       )}
       {weeklyBurnKcal > 0 && (
         <p className="text-[10px] text-[#22c55e] mb-2">~{weeklyBurnKcal} kcal estimadas en entrenos esta semana</p>
+      )}
+      {typeof weeklyDeltaKcal === 'number' && (
+        <p
+          className={`text-[10px] mb-2 ${weeklyDeltaKcal > 200 ? 'text-[#f97316]' : weeklyDeltaKcal < -200 ? 'text-[#38bdf8]' : 'text-[#9CA3AF]'}`}
+        >
+          Balance semanal: {weeklyDeltaKcal > 0 ? '+' : ''}
+          {weeklyDeltaKcal} kcal vs objetivo (consumo − quema − target)
+        </p>
       )}
       <div className="fuel-week-report__totals">
         <span>{Math.round(totals.kcal)} kcal</span>

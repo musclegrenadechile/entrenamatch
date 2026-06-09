@@ -111,6 +111,7 @@ export interface TrainerCoachViewProps {
   clientDispatchHistory?: TrainerDispatchRequest[]
   trainerDispatchHistory?: TrainerDispatchRequest[]
   clientFuelBalance?: import('../../domain/fuelBalance').DailyEnergyBalance | null
+  clientWeeklyPlan?: import('../../domain/weeklyPlan').WeeklyPlanResult | null
 }
 
 function TrainerCard({
@@ -406,6 +407,7 @@ export function TrainerCoachView({
   clientDispatchHistory = [],
   trainerDispatchHistory = [],
   clientFuelBalance = null,
+  clientWeeklyPlan = null,
 }: TrainerCoachViewProps) {
   const [tab, setTab] = useState<'explore' | 'now' | 'sessions' | 'trainer'>(initialTab || 'explore')
   const [verifiedOnly, setVerifiedOnly] = useState(false)
@@ -754,6 +756,21 @@ export function TrainerCoachView({
                   })
                 }
               />
+            </div>
+          )}
+          {clientWeeklyPlan && (
+            <div className="mb-4 rounded-2xl border border-[#FF671F]/25 bg-[#FF671F]/8 p-3">
+              <p className="text-[10px] uppercase tracking-wider text-[#FF671F] font-bold">
+                EntrenaPlan del cliente
+              </p>
+              <p className="text-[12px] font-bold text-white mt-1">{clientWeeklyPlan.headline}</p>
+              <p className="text-[10px] text-[#9CA3AF] mt-1 leading-snug">
+                {clientWeeklyPlan.recommendation.title} · {clientWeeklyPlan.recommendation.durationMin}{' '}
+                min · ~{clientWeeklyPlan.recommendation.estimatedBurnKcal} kcal
+              </p>
+              {clientWeeklyPlan.nutritionNote && (
+                <p className="text-[10px] text-[#c084fc] mt-2">{clientWeeklyPlan.nutritionNote}</p>
+              )}
             </div>
           )}
           {bookings.length > 0 && (

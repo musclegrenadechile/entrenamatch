@@ -131,6 +131,10 @@ export function HomeTab(props: HomeTabProps) {
     weeklyPact,
     weeklyPactProgress,
     onPledgeWeeklyPact,
+    weeklyPlan,
+    weeklyPlanEnriching,
+    onStartWeeklyPlan,
+    onShareWeeklyPlan,
     homeCoachBanner,
     onDismissCoachBanner,
     onOpenTrainerCoach,
@@ -370,6 +374,10 @@ export function HomeTab(props: HomeTabProps) {
         weeklyPactProgress={weeklyPactProgress}
         onPledgeWeeklyPact={onPledgeWeeklyPact}
         forcePactWizard={showPactWizard}
+        weeklyPlan={weeklyPlan as import('../../domain/weeklyPlan').WeeklyPlanResult | null | undefined}
+        weeklyPlanEnriching={weeklyPlanEnriching as boolean | undefined}
+        onStartWeeklyPlan={onStartWeeklyPlan as ((plan: import('../../domain/weeklyPlan').WeeklyPlanResult) => void) | undefined}
+        onShareWeeklyPlan={onShareWeeklyPlan as ((plan: import('../../domain/weeklyPlan').WeeklyPlanResult) => void) | undefined}
       />
         </>
       )}
