@@ -64,7 +64,6 @@ export interface SyncArenaViewProps {
   pendingWeightKg: number
   loggedSetCount: number
   selfExercises: WorkoutExercise[]
-  exerciseSuggestions: string[]
   onActiveExerciseChange: (name: string) => void
   onPendingRepsChange: (reps: number) => void
   onPendingWeightChange: (kg: number) => void
@@ -107,7 +106,6 @@ export function SyncArenaView({
   pendingWeightKg,
   loggedSetCount,
   selfExercises,
-  exerciseSuggestions,
   onActiveExerciseChange,
   onPendingRepsChange,
   onPendingWeightChange,
@@ -139,10 +137,12 @@ export function SyncArenaView({
   const isResting = restLeft > 0
 
   const exerciseOptions = useMemo(() => {
-    const set = new Set(exerciseSuggestions)
+    const set = new Set<string>()
+    selfExercises.forEach((e) => set.add(e.name))
     if (activeExercise) set.add(activeExercise)
+    if (partnerLiveState?.activeExercise) set.add(partnerLiveState.activeExercise)
     return Array.from(set)
-  }, [exerciseSuggestions, activeExercise])
+  }, [selfExercises, activeExercise, partnerLiveState?.activeExercise])
 
   const latestAction = syncActions[0] ?? null
 

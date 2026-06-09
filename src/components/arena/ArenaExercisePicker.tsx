@@ -1,6 +1,12 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
-import { EXERCISE_LIBRARY, filterExercises, type LibraryExercise } from '../../data/exerciseLibrary'
+import {
+  EXERCISE_LIBRARY,
+  exerciseMatchesMuscleTab,
+  filterExercises,
+  filterLibraryByMuscleTab,
+  type LibraryExercise,
+} from '../../data/exerciseLibrary'
 
 const MUSCLE_TABS = [
   'Todos',
@@ -34,27 +40,34 @@ export function ArenaExercisePicker({ value, onChange, extraOptions = [] }: Aren
 
   const gridItems = useMemo(() => {
     const q = search.trim().toLowerCase()
-    let pool: LibraryExercise[] = EXERCISE_LIBRARY
+    let pool: LibraryExercise[]
 
     if (q) {
-      pool = filterExercises(q, 24)
-    } else if (muscle !== 'Todos') {
-      pool = EXERCISE_LIBRARY.filter((e) => e.muscle === muscle)
+      pool = filterExercises(q, 48)
+      if (muscle !== 'Todos') {
+        pool = pool.filter((e) => exerciseMatchesMuscleTab(e, muscle))
+      }
+    } else {
+      pool = filterLibraryByMuscleTab(muscle)
     }
 
     const names = new Set(pool.map((e) => e.name))
-    extraOptions.forEach((n) => {
-      if (n && !names.has(n)) {
-        names.add(n)
-        pool = [{ name: n, muscle: 'Otro', type: 'compound' }, ...pool]
-      }
-    })
+    for (const n of extraOptions) {
+      if (!n || names.has(n)) continue
 
-    if (!q && muscle === 'Todos' && !search) {
-      return pool.slice(0, 16)
+      const libEntry = EXERCISE_LIBRARY.find((e) => e.name === n)
+      if (libEntry) {
+        if (muscle !== 'Todos' && !q && !exerciseMatchesMuscleTab(libEntry, muscle)) continue
+        pool.unshift(libEntry)
+      } else if (muscle === 'Todos' || q || n === value) {
+        pool.unshift({ name: n, muscle: 'Otro', type: 'compound' })
+      }
+      names.add(n)
     }
-    return pool.slice(0, 20)
-  }, [muscle, search, extraOptions])
+
+    const limit = !q && muscle === 'Todos' ? 16 : 20
+    return pool.slice(0, limit)
+  }, [muscle, search, extraOptions, value])
 
   return (
     <div className="arena-exercise-panel" role="listbox" aria-label="Elegir ejercicio">

@@ -119,11 +119,23 @@ export const MUSCLE_GROUPS = [
   'Full body',
 ] as const
 
+/** Muscle tab in Arena picker — Cardio includes functional full-body moves. */
+export function exerciseMatchesMuscleTab(exercise: LibraryExercise, tab: string): boolean {
+  if (tab === 'Todos') return true
+  if (tab === 'Cardio') return exercise.muscle === 'Cardio' || exercise.muscle === 'Full body'
+  return exercise.muscle === tab
+}
+
+export function filterLibraryByMuscleTab(tab: string): LibraryExercise[] {
+  if (tab === 'Todos') return EXERCISE_LIBRARY
+  return EXERCISE_LIBRARY.filter((e) => exerciseMatchesMuscleTab(e, tab))
+}
+
 export function filterExercises(query: string, limit = 12, muscle?: string): LibraryExercise[] {
   const q = query.trim().toLowerCase()
   let list = EXERCISE_LIBRARY
   if (muscle) {
-    list = list.filter((e) => e.muscle === muscle)
+    list = filterLibraryByMuscleTab(muscle)
   }
   if (!q) return list.slice(0, limit)
   return list

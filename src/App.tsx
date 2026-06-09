@@ -275,7 +275,6 @@ import {
 } from './services/constanciaEconomy'
 import { importHealthCaloriesForDate } from './services/healthImport'
 import { loadDailyEnergyCache } from './services/dailyEnergy'
-import { EXERCISE_LIBRARY } from './data/exerciseLibrary'
 import {
   createEmptySyncWorkoutLog,
   appendSetToLog,
@@ -1006,10 +1005,6 @@ function App() {
   const arenaVoiceRecorderRef = useRef<MediaRecorder | null>(null)
   const arenaVoiceChunksRef = useRef<Blob[]>([])
 
-  const arenaExerciseNames = useMemo(
-    () => EXERCISE_LIBRARY.map((e) => e.name),
-    []
-  )
   const [entrenaLogPrefill, setEntrenaLogPrefill] = useState<{
     title?: string
     exercises?: import('./types').WorkoutExercise[]
@@ -12970,7 +12965,6 @@ useEffect(() => {
             pendingWeightKg={syncWorkoutLog.pendingWeightKg}
             loggedSetCount={countLoggedSets(syncWorkoutLog)}
             selfExercises={syncWorkoutLog.exercises}
-            exerciseSuggestions={arenaExerciseNames}
             onActiveExerciseChange={(name) => {
               setSyncWorkoutLog((prev) => {
                 const next = { ...prev, activeExercise: name }
