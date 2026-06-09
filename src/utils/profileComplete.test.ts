@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isProfileComplete } from './profileComplete'
+import { enrichReturningProfile, hasCoreProfileFields, isProfileComplete } from './profileComplete'
 
 const complete = {
   name: 'Ana',
@@ -26,5 +26,19 @@ describe('isProfileComplete', () => {
 
   it('rejects name-only google stub profiles', () => {
     expect(isProfileComplete({ name: 'Ana', photos: ['x'] })).toBe(false)
+  })
+
+  it('grandfathers returning users missing only legalConsents', () => {
+    const legacy = {
+      name: 'Ana',
+      photos: ['https://example.com/p.jpg'],
+      bio: 'Entreno fuerza',
+      city: 'Viña del Mar',
+      trainingTypes: ['Fuerza'],
+    }
+    expect(hasCoreProfileFields(legacy)).toBe(true)
+    expect(isProfileComplete(legacy)).toBe(true)
+    const enriched = enrichReturningProfile(legacy)
+    expect(enriched?.legalConsents?.is18).toBe(true)
   })
 })

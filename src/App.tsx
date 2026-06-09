@@ -185,6 +185,7 @@ import { createEmptySyncArenaSnapshot } from './sync/syncArenaState'
 import { fetchGlobalProfilePosts, fetchProfilePostById, togglePostLikeInFirestore, persistPostReactionsInFirestore } from './services/profilePosts'
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
 import { isQuickDemoSession, clearQuickDemoSession } from './utils/quickDemo'
+import { enrichReturningProfile, isProfileComplete } from './utils/profileComplete'
 import { filterSeedsForCity } from './utils/citySeeds'
 import {
   buildWeekDayStatuses,
@@ -1267,30 +1268,31 @@ function App() {
 
     clearGoogleNewUser()
 
-    if (firebaseProfile) {
-      saveUser({ ...firebaseProfile, id: 'me' } as any)
-    } else {
-      saveUser({
-        id: 'me' as any,
-        name: firebaseUser.displayName || '',
-        age: 25,
-        gender: 'hombre' as const,
-        city: '',
-        country: 'Chile',
-        bio: '',
-        photos: firebaseUser.photoURL ? [firebaseUser.photoURL] : [],
-        trainingTypes: [],
-        goals: [],
-        level: 'Intermedio' as const,
-        intensity: 'Moderado' as const,
-        availability: ['Tarde'],
-      } as any)
-    }
+    const profilePayload = firebaseProfile
+      ? ({ ...firebaseProfile, id: 'me' } as any)
+      : ({
+          id: 'me' as any,
+          name: firebaseUser.displayName || '',
+          age: 25,
+          gender: 'hombre' as const,
+          city: '',
+          country: 'Chile',
+          bio: '',
+          photos: firebaseUser.photoURL ? [firebaseUser.photoURL] : [],
+          trainingTypes: [],
+          goals: [],
+          level: 'Intermedio' as const,
+          intensity: 'Moderado' as const,
+          availability: ['Tarde'],
+        } as any)
+    saveUser(profilePayload)
 
     lastSuccessfulAuthRef.current = firebaseUser
     setIsEditingProfile(false)
     setOnboardingStepLocal(0)
-    setShowOnboarding(true)
+    if (!isProfileComplete(enrichReturningProfile(profilePayload))) {
+      setShowOnboarding(true)
+    }
   }, [googleNewUser, firebaseUser?.uid, firebaseProfile, isDemoMode, clearGoogleNewUser, saveUser, setShowOnboarding, firebaseUser])
 
   // Keep ref in sync when Firebase user appears (Google redirect / email login)

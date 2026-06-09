@@ -1,9 +1,9 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { demoStorage, DEMO_KEYS } from '../services/demoStorage';
-import { getUserProfile } from '../services/auth';
+import { getUserProfile, updateUserProfile } from '../services/auth';
 import { useAuth } from './AuthContext';
 import type { CurrentUser } from '../types';
-import { isProfileComplete } from '../utils/profileComplete';
+import { enrichReturningProfile, isProfileComplete } from '../utils/profileComplete';
 
 interface ProfileContextType {
   currentUser: CurrentUser | null;
@@ -79,13 +79,20 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     (async () => {
       try {
-        const fromFs =
+        const rawFromFs =
           userProfileRef.current ||
           (await getUserProfile(uid));
         if (cancelled) return;
 
+        const fromFs = enrichReturningProfile(rawFromFs);
         const cachedNow = demoStorage.get<CurrentUser>(DEMO_KEYS.PROFILE);
         hydratedUidRef.current = uid;
+
+        if (fromFs && rawFromFs && !rawFromFs.legalConsents && fromFs.legalConsents) {
+          void updateUserProfile(uid, { legalConsents: fromFs.legalConsents }).catch((e) =>
+            console.warn('[ProfileContext] legalConsents backfill failed', e)
+          );
+        }
 
         if (!isProfileComplete(fromFs)) {
           if (fromFs) {
@@ -129,13 +136,14 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     const cached = demoStorage.get<CurrentUser>(DEMO_KEYS.PROFILE);
     if (cached?.name && isProfileComplete(cached)) return;
 
+    const enriched = enrichReturningProfile(userProfile);
     const merged = profileFromFirestore({
       ...(cached || {}),
-      ...userProfile,
+      ...enriched,
     });
     demoStorage.set(DEMO_KEYS.PROFILE, merged);
     setCurrentUser(merged);
-    if (!isProfileComplete(userProfile)) {
+    if (!isProfileComplete(enriched)) {
       setShowOnboarding(true);
     }
     setProfileHydrated(true);

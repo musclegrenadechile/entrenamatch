@@ -86,26 +86,28 @@ export const OnboardingFlow = ({
   isDemoMode = false,
 }) => {
   const isEditMode = mode === 'edit';
+  const prefillFromUser = (user: CurrentUser): OnboardData => ({
+    name: user.name || '',
+    age: user.age || 26,
+    gender: user.gender || 'mujer',
+    city: user.city || 'Viña del Mar',
+    country: user.country || 'Chile',
+    lat: user.lat || -33.0153,
+    lng: user.lng || -71.5528,
+    bio: user.bio || '',
+    photos: user.photos || [],
+    trainingTypes: user.trainingTypes || [],
+    goals: user.goals || [],
+    level: user.level || 'Intermedio',
+    intensity: user.intensity || 'Moderado',
+    availability: user.availability || [],
+    wantsToGoLive: !!user.trainingNow,
+    wantsGhostMode: !!user.ghostMode,
+  })
+
   const [onboardData, setOnboardData] = useState<OnboardData>(() => {
-    if (mode === 'edit' && currentUser && currentUser.name) {
-      return {
-        name: currentUser.name || '',
-        age: currentUser.age || 26,
-        gender: currentUser.gender || 'mujer',
-        city: currentUser.city || 'Viña del Mar',
-        country: currentUser.country || 'Chile',
-        lat: currentUser.lat || -33.0153,
-        lng: currentUser.lng || -71.5528,
-        bio: currentUser.bio || '',
-        photos: currentUser.photos || [],
-        trainingTypes: currentUser.trainingTypes || [],
-        goals: currentUser.goals || [],
-        level: currentUser.level || 'Intermedio',
-        intensity: currentUser.intensity || 'Moderado',
-        availability: currentUser.availability || [],
-        wantsToGoLive: !!currentUser?.trainingNow,
-        wantsGhostMode: !!currentUser?.ghostMode,
-      }
+    if (currentUser?.name?.trim()) {
+      return prefillFromUser(currentUser)
     }
     return {
       name: '',
@@ -133,7 +135,7 @@ export const OnboardingFlow = ({
   } | null>(null)
 
   const [localConsents, setLocalConsents] = useState<OnboardingConsents>(() => {
-    if (mode === 'edit' && currentUser && currentUser.legalConsents) {
+    if (currentUser?.legalConsents) {
       return {
         is18: !!currentUser.legalConsents.is18,
         isForTraining: !!currentUser.legalConsents.isForTraining,
