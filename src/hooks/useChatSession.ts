@@ -276,10 +276,21 @@ export function useChatSession(opts: UseChatSessionOptions) {
         return ref.id
       }
 
+      const isPermissionDenied = (err: unknown) => {
+        const code = (err as { code?: string })?.code
+        return code === 'permission-denied' || code === 'PERMISSION_DENIED'
+      }
+
       const handleFail = (e: unknown, afterReclaim = false) => {
         console.error('Failed to send real message:', e)
         opts?.onFail?.()
         if (afterReclaim) return
+        if (isPermissionDenied(e)) {
+          toast.error('Aún no pueden chatear', {
+            description: 'Necesitan match mutuo antes de enviar mensajes.',
+          })
+          return
+        }
         toast.error('No se pudo enviar el mensaje', {
           description: isQuotaError(e)
             ? 'Espacio del navegador casi lleno. Recarga la página o borra datos del sitio en ajustes.'

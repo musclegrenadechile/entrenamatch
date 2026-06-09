@@ -8,7 +8,7 @@ export function ProfileHeroPulse(props: ProfileTabProps) {
     currentUser,
     saveUserWithRealSync,
     setMapForceTick,
-    setShowLiveModal,
+    toggleLiveTraining,
     triggerHaptic,
   } = profileTabBindings(props)
 
@@ -19,19 +19,7 @@ export function ProfileHeroPulse(props: ProfileTabProps) {
   const toggleLive = async () => {
     try {
       triggerHaptic('medium')
-      if (live) {
-        await saveUserWithRealSync({
-          ...currentUser,
-          trainingNow: false,
-          trainingNowSince: undefined,
-          trainingSyncWith: null,
-          syncStartedAt: null,
-        } as typeof currentUser)
-        setMapForceTick((t) => t + 1)
-        toast('Live terminado')
-      } else {
-        setShowLiveModal(true)
-      }
+      await toggleLiveTraining(live ? 'off' : 'on')
     } catch {
       toast.error('No se pudo actualizar Live')
     }

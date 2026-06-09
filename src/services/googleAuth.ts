@@ -43,8 +43,17 @@ export function isMobileWebBrowser(): boolean {
   return /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
 }
 
+/** Production hosts where popup OAuth is unreliable (GH Pages base path, Firebase Hosting). */
+function isProductionWebHost(host: string): boolean {
+  return (
+    host.endsWith('.github.io') ||
+    host.endsWith('.web.app') ||
+    host.endsWith('.firebaseapp.com')
+  );
+}
+
 /**
- * Redirect only on desktop localhost — mobile browsers and WebViews lose OAuth redirect state.
+ * Prefer redirect on mobile web and production hosting — popups often fail on GH Pages.
  * APK uses native Google Sign-In via @capacitor-firebase/authentication.
  */
 export function shouldUseGoogleRedirect(): boolean {
@@ -55,6 +64,8 @@ export function shouldUseGoogleRedirect(): boolean {
   if (host === 'localhost' || host === '127.0.0.1') {
     return !isMobileWebBrowser();
   }
+
+  if (isMobileWebBrowser() || isProductionWebHost(host)) return true;
 
   return false;
 }
@@ -204,7 +215,10 @@ export async function startGoogleSignIn(): Promise<GoogleSignInResult> {
     if (err?.code === 'auth/popup-closed-by-user' || err?.code === 'auth/cancelled-popup-request') {
       throw mapGoogleAuthError(error);
     }
-    if (err?.code === 'auth/popup-blocked' && !isMobileWebBrowser()) {
+    if (
+      err?.code === 'auth/popup-blocked' ||
+      (isMobileWebBrowser() && err?.code === 'auth/popup-closed-by-user')
+    ) {
       sessionStorage.setItem('entrenamatch_google_redirect_pending', '1');
       await signInWithRedirect(auth, provider);
       return { mode: 'redirect' };

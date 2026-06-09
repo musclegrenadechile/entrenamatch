@@ -2942,6 +2942,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         verificationStatus: merged.verificationStatus ?? null,
         verificationDate: merged.verificationDate ?? null,
         verificationDocuments: merged.verificationDocuments ?? null,
+        legalConsents: merged.legalConsents ?? null,
       };
 
       const cleanProfileUpdate = sanitizeForFirestore(profileUpdate);
@@ -9714,7 +9715,7 @@ useEffect(() => {
           if (currentUser?.trainingNow) {
             navigateTab('map')
           } else {
-            setActiveTab('explore')
+            void toggleLiveTraining('on')
           }
         }}
         onStep={(step) => {
@@ -9932,8 +9933,6 @@ useEffect(() => {
           authBooting ||
           activeTab === 'explore' ||
           activeTab === 'map' ||
-          (activeTab === 'home' && !currentUser?.trainingNow) ||
-          (activeTab === 'profile' && !currentUser?.trainingNow) ||
           (activeTab === 'red' && redSubTab === 'messages' && !!activeChat)
         }
       />

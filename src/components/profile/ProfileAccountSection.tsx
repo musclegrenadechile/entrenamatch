@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'
 import { APP_VERSION } from '../../constants'
 import { getSyncShareOptOut, setSyncShareOptOut } from '../../utils/syncSharePrefs'
+import { buildInviteLink } from '../../utils/sparseCityDefaults'
 import { ReferralInviteCard } from '../growth/ReferralInviteCard'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
@@ -419,7 +420,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
     referralCode={(currentUser?.id || 'demo').slice(0, 8)}
     onShare={() => {
       const code = (currentUser?.id || 'demo').slice(0, 8)
-      const link = `${window.location.origin}/?ref=${code}`
+      const link = buildInviteLink(code)
       navigator.clipboard?.writeText(link).then(() => toast.success('Enlace copiado — invita a tu gym'))
     }}
   />

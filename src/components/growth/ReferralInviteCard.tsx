@@ -1,10 +1,12 @@
+import { buildInviteLink } from '../../utils/sparseCityDefaults'
+
 export interface ReferralInviteCardProps {
   referralCode: string
   onShare: () => void
 }
 
 export function ReferralInviteCard({ referralCode, onShare }: ReferralInviteCardProps) {
-  const link = `${typeof window !== 'undefined' ? window.location.origin : 'https://entrenamatch.web.app'}/?ref=${referralCode}`
+  const link = buildInviteLink(referralCode)
 
   return (
     <div className="rounded-2xl border border-[#22c55e]/30 bg-gradient-to-r from-[#0a2a1a] to-[#1C1C20] p-4">
