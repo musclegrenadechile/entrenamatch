@@ -4693,6 +4693,20 @@ useEffect(() => {
     })
   }, [entrenoRecentWorkouts, openEntrenoDeHoy])
 
+  const handleCopyEntrenoWorkout = useCallback(
+    (w: import('./types').Workout) => {
+      const tpl = workoutToTemplate(w, `Repetir · ${w.title}`)
+      void openEntrenoDeHoy({
+        title: tpl.label,
+        exercises: tpl.exercises,
+        type: tpl.type,
+        durationMin: tpl.durationMin,
+      })
+      toast.success('Rutina cargada', { description: 'Edita y guarda en Entreno de Hoy' })
+    },
+    [openEntrenoDeHoy]
+  )
+
   const handleCopyWorkoutFromPost = async (workoutId: string, title?: string) => {
     if (!workoutId) return
     if (isDemoMode || !db) {
