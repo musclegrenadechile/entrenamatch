@@ -42,7 +42,7 @@ export function SyncLiveBlockerModal({
           {firstName ? (
             <>
               Para entrenar en sync con <strong className="text-white">{firstName}</strong>, ambos deben
-              estar <strong className="text-[#22c55e]">en vivo</strong> en el GymPulse.
+              estar <strong className="text-[#22c55e]">en vivo</strong> en el mapa.
             </>
           ) : (
             <>
@@ -59,7 +59,7 @@ export function SyncLiveBlockerModal({
           </li>
           <li>
             <span className="sync-live-blocker-step-num">2</span>
-            <span>Tu pin aparece en GymPulse</span>
+            <span>Tu pin aparece en el mapa LIVE</span>
           </li>
           <li>
             <span className="sync-live-blocker-step-num">3</span>

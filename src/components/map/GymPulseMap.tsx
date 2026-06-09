@@ -1124,7 +1124,9 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     >
       {/* Status pill — fullscreen only (embedded uses shell + filters bar) */}
       {!isEmbedded && (
-      <div
+      <button
+        type="button"
+        aria-label="Ir al pin más activo en el mapa"
         className="map-floating-pulse absolute top-2 left-2 z-[2000] px-3 py-1 rounded-2xl text-[10px] font-semibold text-[#22c55e] flex items-center gap-2 shadow-lg border border-[#22c55e]/20 cursor-pointer active:scale-[0.985] transition"
         onClick={() => {
           try { /* haptic if available */ } catch {}
@@ -1162,7 +1164,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           const activeSyncs = (liveTrainingNow || []).filter((u: any) => u.trainingSyncWith).length / 2
           return activeSyncs > 0 ? <span className="text-[#FFD700] font-bold text-[9px]">• {Math.floor(activeSyncs)} EN SYNC</span> : null
         })()}
-      </div>
+      </button>
       )}
 
       {isEmbedded && totalLiveOnMap > 0 && (
@@ -1229,7 +1231,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
       {/* Zonas — solo fullscreen; en embebido van al panel de filtros en fase posterior */}
       {!isEmbedded && (
-      <div className="absolute top-9 left-2 z-[2000] flex flex-col gap-1 max-h-[40%] overflow-y-auto">
+      <div className={`absolute left-2 z-[2000] flex flex-col gap-1.5 max-h-[40%] overflow-y-auto ${cityDerby || cityChallenge ? 'top-28' : 'top-10'}`}>
         {['Viña del Mar', 'Santiago', 'Valparaíso', 'Concon'].map(city => {
           const col = zoneColors[city] || zoneColors.default
           const isActive = selectedMapZone === city
@@ -1238,7 +1240,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
             <button
               key={city}
               onClick={() => onSelectedMapZoneChange && onSelectedMapZoneChange(isActive ? null : city)}
-              className={`map-zone-pill flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-medium border transition-all active:scale-[0.96] ${isActive ? 'ring-1 ring-white/70 shadow-md scale-[1.02] active' : 'hover:scale-[1.03] opacity-90 hover:opacity-100'}`}
+              className={`map-zone-pill flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium border transition-all active:scale-[0.96] ${isActive ? 'ring-1 ring-white/70 shadow-md scale-[1.02] active' : 'hover:scale-[1.03] opacity-90 hover:opacity-100'}`}
               style={{ 
                 background: isActive ? `${col}22` : 'rgba(0,0,0,0.65)', 
                 borderColor: isActive ? col : 'rgba(255,255,255,0.15)',
@@ -1352,7 +1354,11 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
       {/* GPS banner — map stays usable without location (fase 192) */}
       {showGpsBanner && (
-        <div className="absolute top-12 left-2 right-2 z-[3500] pointer-events-auto">
+        <div
+          className={`absolute left-2 right-2 z-[3500] pointer-events-auto ${
+            cityDerby || cityChallenge ? 'top-[6.75rem]' : 'top-12'
+          }`}
+        >
           <div className="flex items-center gap-2 rounded-xl bg-[#0D0D10]/95 border border-[#22c55e]/35 px-3 py-2 shadow-lg">
             <span className="text-[10px] text-[#9CA3AF] flex-1 leading-snug">
               Activa ubicación para distancias reales y tu pin en el mapa

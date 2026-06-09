@@ -4177,6 +4177,12 @@ button:not(.live-pill):disabled {
 
 .arena-sala-sync {
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.arena-sala-sync .arena-fullscreen__scanlines {
+  opacity: 0.015;
 }
 
 .arena-sala-sync__content {
@@ -4192,7 +4198,11 @@ button:not(.live-pill):disabled {
 
 .arena-sala-sync__set-wrap {
   flex-shrink: 0;
-  padding: 0 14px 8px;
+  padding: 10px 12px;
+  margin: 0 12px 8px;
+  border-radius: 16px;
+  border: 1px solid rgba(34, 197, 94, 0.18);
+  background: rgba(13, 13, 16, 0.72);
 }
 
 .arena-sala-sync__bottom {
@@ -4273,8 +4283,8 @@ button:not(.live-pill):disabled {
 }
 
 .arena-sala-sync__stage--compact {
-  min-height: 72px;
-  padding: 2px 12px 4px;
+  min-height: 84px;
+  padding: 6px 12px 8px;
 }
 
 .arena-sala-sync__stage--compact .arena-sala-sync__athlete .arena-avatar__ring {

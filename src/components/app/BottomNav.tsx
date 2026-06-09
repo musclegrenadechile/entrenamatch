@@ -22,6 +22,8 @@ type BottomNavProps = {
   currentUserIsLive?: boolean
   chatUnreads: number
   openSessionsCount: number
+  /** Fase 109 — oculta Squads en FTUE (5 tabs). */
+  compactNav?: boolean
   onNavigate: (tab: Tab) => void
   onRedNavigate: () => void
 }
@@ -33,10 +35,11 @@ export function BottomNav({
   currentUserIsLive,
   chatUnreads,
   openSessionsCount,
+  compactNav = false,
   onNavigate,
   onRedNavigate,
 }: BottomNavProps) {
-  const items: BottomNavItem[] = [
+  const allItems: BottomNavItem[] = [
     { id: 'home', label: 'Hoy', icon: Sparkles, tourId: 'bottom-nav-home', ariaLabel: 'Hoy — mi día y muro' },
     {
       id: 'map',
@@ -80,9 +83,12 @@ export function BottomNav({
     },
   ]
 
+  const items = compactNav ? allItems.filter((i) => i.id !== 'squads') : allItems
+  const colClass = items.length === 5 ? 'grid-cols-5' : 'grid-cols-6'
+
   return (
     <nav
-      className="bottom-nav h-[62px] grid grid-cols-6 z-50 text-[10px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_20px_-6px_rgb(0,0,0,0.4)]"
+      className={`bottom-nav h-[62px] grid ${colClass} z-50 text-[10px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_20px_-6px_rgb(0,0,0,0.4)]`}
       aria-label="Navegación principal"
     >
       {items.map(({ id, label, sublabel, icon: Icon, badge, liveDot, tourId, ariaLabel }) => {

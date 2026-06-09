@@ -232,7 +232,7 @@ import {
 import { saveUserPushToken } from './services/userPushTokens'
 import { enrichProfileFromDirectory } from './utils/profileVerification'
 import { buildInviteLink } from './utils/sparseCityDefaults'
-import { isHomeDayOneMode } from './utils/profileProgressive'
+import { isHomeDayOneMode, isProfileProgressiveMode } from './utils/profileProgressive'
 import {
   formatLastLiveLabel,
   getTeamMemberStatus,
@@ -9974,9 +9974,11 @@ useEffect(() => {
           if (tab === 'sesiones' && !isDemoMode) loadRealSessions()
         }}
         onRedNavigate={() => {
+          setRedSubTab('matches')
           navigateTab('red')
           bumpPwaEngagement()
         }}
+        compactNav={isProfileProgressiveMode(currentUser)}
       />
 
       {/* FILTERS MODAL */}

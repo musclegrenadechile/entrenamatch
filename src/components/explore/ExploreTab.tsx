@@ -14,6 +14,7 @@ import { getLocalWaitlistEntry, saveCityWaitlist } from '../../services/cityWait
 import { VerifiedPhotoBadge, VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto';
 import { isProfileVerified } from '../../utils/identityVerification';
 import type { Firestore } from 'firebase/firestore';
+import { WhyEntrenaMatchStrip } from '../growth/WhyEntrenaMatchStrip';
 
 interface ExploreTabProps {
   deck: Profile[];
@@ -394,7 +395,7 @@ export const ExploreTab = ({
           </div>
 
           {profile.goals.length > 0 && (
-            <div className="hidden sm:flex flex-wrap gap-1 mb-1.5">
+            <div className="flex flex-wrap gap-1 mb-1.5">
               {profile.goals.slice(0, 2).map(g => (
                 <div key={g} className="text-[8px] bg-[#FF671F]/70 text-black px-2 py-px rounded-full font-medium">{g}</div>
               ))}
@@ -408,7 +409,7 @@ export const ExploreTab = ({
             return (
               <div 
                 onClick={(e) => { e.stopPropagation(); onShowProfile?.(profile) }}
-                className="hidden sm:flex mb-1.5 px-2 py-1 bg-[#111113]/70 backdrop-blur rounded-xl text-[9px] text-white/90 line-clamp-1 border border-[#FF671F]/20 cursor-pointer active:bg-[#FF671F]/10 items-center gap-1"
+                className="flex mb-1.5 px-2 py-1 bg-[#111113]/70 backdrop-blur rounded-xl text-[9px] text-white/90 line-clamp-1 border border-[#FF671F]/20 cursor-pointer active:bg-[#FF671F]/10 items-center gap-1"
               >
                 <span className="text-[#FF671F]">📝</span>
                 <span className="truncate">{teaser}</span>
@@ -416,7 +417,7 @@ export const ExploreTab = ({
             )
           })()}
 
-          <div className="hidden sm:flex items-center gap-2 text-[10px] text-white/75 font-medium truncate">
+          <div className="flex items-center gap-2 text-[10px] text-white/75 font-medium truncate">
             <span className="shrink-0">Disponible:</span>
             <span className="truncate">{profile.availability.join(' · ')}</span>
           </div>
@@ -531,6 +532,8 @@ export const ExploreTab = ({
                   ? 'En modo prueba puedes reiniciar el deck o invitar amigos a probar EntrenaMatch.'
                   : `En ${cityLabel} la comunidad está creciendo. Invita a alguien de tu gym o activa live para que te encuentren.`}
               </p>
+
+              <WhyEntrenaMatchStrip compact />
 
               <div className="rounded-2xl border border-[#22c55e]/30 bg-[#0a2a1a]/40 p-4 mb-4 text-left max-w-[320px] mx-auto">
                 <p className="text-[10px] uppercase tracking-wider text-[#22c55e] font-bold mb-1">Invitar amigo</p>

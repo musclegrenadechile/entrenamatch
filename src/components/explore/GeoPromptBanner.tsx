@@ -14,7 +14,7 @@ export function GeoPromptBanner({ onRequestLocation, onDismiss }: GeoPromptBanne
       <div className="flex-1 min-w-0">
         <p className="text-xs font-bold text-white">Ver quién está cerca</p>
         <p className="text-[10px] text-[#9CA3AF] mt-0.5 leading-snug">
-          Activa ubicación para ordenar por distancia real y ver km en cada card del GymPulse.
+          Activa ubicación para ordenar por distancia real y ver km en cada perfil.
         </p>
         <button
           type="button"

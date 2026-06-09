@@ -4,6 +4,7 @@ import { APP_VERSION } from '../../constants'; // use centralized version (no mo
 import { BRAND_COPY } from '../../constants/brandCopy';
 import { markQuickDemoSession } from '../../utils/quickDemo';
 import entrenamatchLogo from '../../assets/brand/entrenamatch-logo.png';
+import { WhyEntrenaMatchStrip } from '../growth/WhyEntrenaMatchStrip';
 
 interface AuthScreenProps {
   authMode: 'login' | 'register';
@@ -143,6 +144,15 @@ export const AuthScreen = ({
             <li className="px-2.5 py-1 rounded-full bg-[#1C1C20] border border-[#2F2F35]">❤️ Matches</li>
             <li className="px-2.5 py-1 rounded-full bg-[#1C1C20] border border-[#2F2F35]">💬 Chat + sync</li>
           </motion.ul>
+
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.34 }}
+            className="mt-4"
+          >
+            <WhyEntrenaMatchStrip compact />
+          </motion.div>
         </div>
 
         {/* The beautiful "portal" card */}
