@@ -97,3 +97,26 @@ export function summarizePartnerWeekFromPosts(
 
   return { sessions, totalSets }
 }
+
+/** Partner activity from structured workouts (oleada 5 — more reliable than muro posts). */
+export function summarizePartnerWeekFromWorkouts(
+  workouts: import('../types').Workout[] | undefined | null,
+  now = Date.now()
+): { sessions: number; totalSets: number } {
+  const dayKeys = new Set<string>()
+  for (let i = 6; i >= 0; i--) {
+    dayKeys.add(localDateStr(now - i * 86_400_000))
+  }
+
+  let sessions = 0
+  let totalSets = 0
+
+  for (const w of workouts || []) {
+    const key = localDateStr(w.endedAt || w.startedAt)
+    if (!dayKeys.has(key)) continue
+    sessions += 1
+    totalSets += w.stats?.totalSets ?? 0
+  }
+
+  return { sessions, totalSets }
+}

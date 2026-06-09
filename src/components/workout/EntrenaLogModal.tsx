@@ -289,6 +289,17 @@ export function EntrenoDeHoyModal({
             </div>
           )}
 
+          {lastWorkout?.exercises?.length ? (
+            <button
+              type="button"
+              onClick={() => applyTemplate(workoutToTemplate(lastWorkout, 'Copiar último entreno'))}
+              className="w-full py-2.5 rounded-xl bg-[#FF671F]/15 border border-[#FF671F]/35 text-xs font-bold text-[#FF671F] active:bg-[#FF671F]/25 flex items-center justify-center gap-2"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              Copiar último entreno — 1 toque
+            </button>
+          ) : null}
+
           {quickTemplates.length > 0 && (
             <div>
               <label className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">

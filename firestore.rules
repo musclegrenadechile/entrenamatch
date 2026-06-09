@@ -494,6 +494,11 @@ service cloud.firestore {
         && resource.data.userId == request.auth.uid;
     }
 
+    match /gymRoutines/{gymId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isMapEditor();
+    }
+
     match /fuelProfiles/{userId} {
       allow read: if isOwner(userId);
       allow write: if isOwner(userId);

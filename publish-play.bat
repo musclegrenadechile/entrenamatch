@@ -13,13 +13,14 @@ set "PATH=%JAVA_HOME%\bin;%ANDROID_HOME%\platform-tools;%ANDROID_HOME%\cmdline-t
 
 echo ==========================================
 echo EntrenaMatch - PUBLISH to Google Play
-echo Track: closed / internal beta
+echo Track: alpha (closed) / internal beta
 echo ==========================================
 
 set "TRACK=%~1"
-if "%TRACK%"=="" set "TRACK=closed"
-if /i "%TRACK%"=="close" set "TRACK=closed"
-if /i "%TRACK%"=="cerrada" set "TRACK=closed"
+if "%TRACK%"=="" set "TRACK=alpha"
+if /i "%TRACK%"=="close" set "TRACK=alpha"
+if /i "%TRACK%"=="closed" set "TRACK=alpha"
+if /i "%TRACK%"=="cerrada" set "TRACK=alpha"
 echo Target track = %TRACK%
 
 if not exist "android\keystore.properties" goto missing_keystore
@@ -46,9 +47,9 @@ set "PUBLISH_ERR=!ERRORLEVEL!"
 cd /d "%~dp0"
 
 if not "!PUBLISH_ERR!"=="0" (
-  if /i "%TRACK%"=="closed" (
+  if /i "%TRACK%"=="alpha" (
     echo.
-    echo [WARN] Track "closed" failed — retrying on "internal" ...
+    echo [WARN] Track "alpha" failed — retrying on "internal" ...
     cd /d "%~dp0android"
     call gradlew.bat publishBundle "-Pplay.track=internal" --stacktrace
     set "PUBLISH_ERR=!ERRORLEVEL!"

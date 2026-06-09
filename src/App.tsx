@@ -299,8 +299,9 @@ import {
   countLoggedSessionsInWeek,
   isPactForCurrentWeek,
 } from './services/weeklyPact'
-import { compareSyncWorkoutLogs, summarizePartnerWeekFromPosts } from './utils/workoutSyncCompare'
-import { getGymRoutineTemplates } from './utils/gymPartnerRoutines'
+import { compareSyncWorkoutLogs, summarizePartnerWeekFromPosts, summarizePartnerWeekFromWorkouts } from './utils/workoutSyncCompare'
+import { fetchGymRoutinesFromFirestore, mergeGymRoutineTemplates } from './services/gymRoutines'
+import { estimateWorkoutBurn } from './domain/fuelBalance/estimateWorkoutBurn'
 import { ProfileAthletePulse } from './components/profile/ProfileAthletePulse'
 import { ARENA_REST_MS, parseParticipantState } from './utils/arenaSyncState'
 import { triggerHaptic } from './utils/haptics'
@@ -956,6 +957,10 @@ function App() {
   const [showFeedPublishSuccess, setShowFeedPublishSuccess] = useState(false)
   const [showEntrenaLogModal, setShowEntrenaLogModal] = useState(false)
   const [entrenoRecentWorkouts, setEntrenoRecentWorkouts] = useState<import('./types').Workout[]>([])
+  const [entrenoFirestoreGymRoutines, setEntrenoFirestoreGymRoutines] = useState<
+    import('./utils/workoutTemplates').WorkoutQuickTemplate[]
+  >([])
+  const [pactPartnerWorkouts, setPactPartnerWorkouts] = useState<import('./types').Workout[]>([])
   const [entrenoRecentLoading, setEntrenoRecentLoading] = useState(false)
   const [savingWorkout, setSavingWorkout] = useState(false)
   const syncSession = useSyncSession()
@@ -5356,19 +5361,26 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   const entrenoPartnerCompare = useMemo(() => {
     const pact = (currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact
     if (!isPactForCurrentWeek(pact) || !pact?.partnerId) return null
-    const partnerWeek = summarizePartnerWeekFromPosts(profilePosts[pact.partnerId])
-    if (entrenoWeekSummary.totalSessions === 0 && partnerWeek.sessions === 0) return null
+    const partnerWeekPosts = summarizePartnerWeekFromPosts(profilePosts[pact.partnerId])
+    const partnerWeekWorkouts = summarizePartnerWeekFromWorkouts(pactPartnerWorkouts)
+    const useWorkouts = partnerWeekWorkouts.sessions > 0
+    const partnerSessions = useWorkouts
+      ? partnerWeekWorkouts.sessions
+      : partnerWeekPosts.sessions
+    const partnerSets = useWorkouts ? partnerWeekWorkouts.totalSets : partnerWeekPosts.totalSets
+    if (entrenoWeekSummary.totalSessions === 0 && partnerSessions === 0) return null
     const partner = realProfiles.find((p) => p.id === pact.partnerId)
     return {
       partnerName: pact.partnerName || partner?.name || 'Compañero',
       selfSessions: entrenoWeekSummary.totalSessions,
-      partnerSessions: partnerWeek.sessions,
+      partnerSessions,
       selfSets: entrenoWeekSummary.totalSets,
-      partnerSets: partnerWeek.totalSets,
+      partnerSets,
     }
   }, [
     (currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact,
     profilePosts,
+    pactPartnerWorkouts,
     entrenoWeekSummary,
     realProfiles,
   ])
@@ -5383,11 +5395,38 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     if (!isGymCheckInFresh(currentUser?.gymCheckIn)) return []
     const gymId = currentUser!.gymCheckIn!.gymId
     const partner = (partnerLocations || []).find((p) => p.id === gymId)
-    return getGymRoutineTemplates({
+    return mergeGymRoutineTemplates(entrenoFirestoreGymRoutines, {
       gymName: currentUser!.gymCheckIn!.gymName,
       partnerType: partner?.type,
     })
-  }, [currentUser?.gymCheckIn, partnerLocations])
+  }, [currentUser?.gymCheckIn, partnerLocations, entrenoFirestoreGymRoutines])
+
+  useEffect(() => {
+    if (!isGymCheckInFresh(currentUser?.gymCheckIn) || isDemoMode || !db) {
+      setEntrenoFirestoreGymRoutines([])
+      return
+    }
+    const gymId = currentUser!.gymCheckIn!.gymId
+    fetchGymRoutinesFromFirestore(db, gymId)
+      .then(setEntrenoFirestoreGymRoutines)
+      .catch(() => setEntrenoFirestoreGymRoutines([]))
+  }, [currentUser?.gymCheckIn?.gymId, isDemoMode, db])
+
+  useEffect(() => {
+    const pact = (currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact
+    if (!isPactForCurrentWeek(pact) || !pact?.partnerId || isDemoMode || !db) {
+      setPactPartnerWorkouts([])
+      return
+    }
+    fetchUserWorkouts(db, pact.partnerId, 15)
+      .then(setPactPartnerWorkouts)
+      .catch(() => setPactPartnerWorkouts([]))
+  }, [
+    (currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact?.partnerId,
+    (currentUser as { weeklyPact?: import('./types').WeeklyPact })?.weeklyPact?.weekKey,
+    isDemoMode,
+    db,
+  ])
 
   const openEntrenoDeHoy = useCallback(
     async (prefill?: {
@@ -5413,7 +5452,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   )
 
   const applyEntrenoSaveSideEffects = useCallback(
-    async (durationMin: number, prSummary?: string) => {
+    async (
+      durationMin: number,
+      opts?: {
+        prSummary?: string
+        workoutType?: import('./types').WorkoutType
+        exercises?: import('./types').WorkoutExercise[]
+      }
+    ) => {
       await refreshEntrenoRecentWorkouts()
       await refreshFuelData()
       if (!isDemoMode && db && firebaseUser?.uid) {
@@ -5430,9 +5476,26 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           /* non-blocking */
         }
       }
-      const prLine = prSummary ? ` · ${prSummary}` : ''
+      const prLine = opts?.prSummary ? ` · ${opts.prSummary}` : ''
+      const weightKg =
+        fuelProfile?.weightKg ??
+        (currentUser as { weightKg?: number })?.weightKg ??
+        75
+      const stats = opts?.exercises?.length
+        ? computeWorkoutStats(opts.exercises, durationMin)
+        : undefined
+      const burn =
+        opts?.workoutType && stats
+          ? estimateWorkoutBurn(
+              { type: opts.workoutType, stats, exercises: opts.exercises },
+              weightKg
+            )
+          : 0
+      const fuelTip = getPostWorkoutFuelTip(opts?.workoutType)
+      const burnLine = burn > 0 ? `~${burn} kcal estimadas` : undefined
+      const description = [burnLine, fuelTip].filter(Boolean).join(' · ') || 'Registrado en tu semana'
       toast.success('Entreno de Hoy guardado', {
-        description: `Target Fuel ajustado${prLine}`,
+        description: `${description}${prLine}`,
         action: fuelProfile
           ? {
               label: 'Abrir Fuel',
@@ -5443,10 +5506,6 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             }
           : undefined,
       })
-      if (fuelProfile) {
-        setEditingFuelLog(null)
-        setShowFuelLogModal(true)
-      }
     },
     [
       refreshEntrenoRecentWorkouts,
@@ -5457,6 +5516,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       effectiveUserId,
       dailyPulse?.momentum,
       fuelProfile,
+      currentUser,
     ]
   )
 
@@ -5514,7 +5574,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         setRecentlyPublishedPostId(postId)
         setTimeout(() => setRecentlyPublishedPostId(null), 4000)
         if (activeTab === 'home') loadGlobalFeed().catch(() => {})
-        await applyEntrenoSaveSideEffects(payload.durationMin, prSummary || undefined)
+        await applyEntrenoSaveSideEffects(payload.durationMin, {
+          prSummary: prSummary || undefined,
+          workoutType: payload.type,
+          exercises: payload.exercises,
+        })
       } else {
         await createProfilePost(
           `🏋️ Entreno de Hoy · ${payload.title} — ${payload.exercises.length} ejercicios, ${payload.durationMin} min (demo)`,
@@ -6742,7 +6806,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         })
         subscribeCommentsForPosts([post])
         if (activeTab === 'home') loadGlobalFeed().catch(() => {})
-        await applyEntrenoSaveSideEffects(Math.max(1, minutes), prSummary || undefined)
+        await applyEntrenoSaveSideEffects(Math.max(1, minutes), {
+          prSummary: prSummary || undefined,
+          workoutType: 'full',
+          exercises: capturedWorkoutLog.exercises,
+        })
       } catch (e) {
         console.warn('sync workout save failed', e)
       }
