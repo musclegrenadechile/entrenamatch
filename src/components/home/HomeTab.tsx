@@ -15,6 +15,7 @@ import { HomeShopBanner } from './HomeShopBanner'
 import { PostLiveShareBanner, type PostLiveSession } from './PostLiveShareBanner'
 import { WeeklyPactReminderStrip } from './WeeklyPactReminderStrip'
 import { getFeedRankBadges } from '../../utils/feedRanking'
+import { isHomeDayOneMode } from '../../utils/profileProgressive'
 
 export type HomeSubTab = 'day' | 'feed'
 
@@ -321,6 +322,7 @@ export function HomeTab(props: HomeTabProps) {
         isDemoMode={isDemoMode as boolean | undefined}
         cityDerby={cityDerby as import('../../services/cityDerby').CityDerbyState | null | undefined}
         onOpenDerbyMap={onOpenDerbyMap as (() => void) | undefined}
+        compactDayOne={isHomeDayOneMode(currentUser as { legalConsents?: { acceptedAt?: number } })}
         fuelProfile={fuelProfile}
         fuelTotals={fuelTodayTotals}
         fuelTodayLogs={fuelTodayLogs}

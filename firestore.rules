@@ -237,6 +237,12 @@ service cloud.firestore {
       allow read, write: if isOwner(userId);
     }
 
+    match /derbyWeeklyWinners/{weekKey} {
+      allow read: if true;
+      allow create, update: if request.auth != null;
+      allow delete: if false;
+    }
+
     match /userPushTokens/{userId} {
       allow write: if isOwner(userId);
       allow read: if false;

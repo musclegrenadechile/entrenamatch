@@ -224,6 +224,12 @@ import {
   buildCityDerby,
   derbyRegionalBumpTarget,
 } from './services/cityDerby'
+import { notifyDerbyLeaderChange } from './services/derbyLeaderNotify'
+import {
+  persistDerbyWeekToFirestore,
+  recordDerbyWeekSnapshot,
+} from './services/derbyWeeklyHistory'
+import { saveUserPushToken } from './services/userPushTokens'
 import { buildInviteLink } from './utils/sparseCityDefaults'
 import {
   formatLastLiveLabel,
@@ -599,12 +605,7 @@ function App() {
     }
     window.addEventListener('beforeinstallprompt', handler)
 
-    // Force show early on load for visibility (helps when beforeinstallprompt is slow or not fired)
-    if (!localStorage.getItem('entrenamatch_pwa_dismissed')) {
-      setTimeout(() => {
-        setShowPwaInstall(true)
-      }, 3000)
-    }
+    // Fase 101 — PWA solo tras beforeinstallprompt (sin popup a los 3s)
 
     // Also listen for successful install
     const installedHandler = () => {
@@ -2230,6 +2231,14 @@ useEffect(() => {
     )
   }, [derbyHomeStats, derbyAwayStats, realProfiles, currentUser?.city])
 
+  useEffect(() => {
+    notifyDerbyLeaderChange(homeCityDerby)
+    const snap = recordDerbyWeekSnapshot(homeCityDerby)
+    if (snap && db && !isDemoMode) {
+      void persistDerbyWeekToFirestore(db, snap)
+    }
+  }, [homeCityDerby, db, isDemoMode])
+
   const homeGymLeaderboard = useMemo(() => {
     const gymId = currentUser?.gymCheckIn?.gymId
     if (!gymId || !isGymCheckInFresh(currentUser?.gymCheckIn)) return []
@@ -3198,13 +3207,9 @@ useEffect(() => {
             console.log('Push registration token (send this to server for this uid):', token?.value || token)
             // FCM stub: save token for this uid (for server-side sends). In real: update profile or dedicated /userTokens collection.
             if (!isDemoMode && firebaseUser?.uid && db && token?.value) {
-              (async () => {
-                try {
-                  const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
-                  await setDoc(doc(db, 'userPushTokens', firebaseUser.uid), { token: token.value, updatedAt: serverTimestamp() }, { merge: true })
-                  console.log('[FCM] Token saved for uid', firebaseUser.uid)
-                } catch (e) { console.warn('[FCM] token save failed', e) }
-              })()
+              void saveUserPushToken(db, firebaseUser.uid, token.value)
+                .then(() => console.log('[FCM] Token saved for uid', firebaseUser.uid))
+                .catch((e) => console.warn('[FCM] token save failed', e))
             }
           })
 
@@ -3621,13 +3626,7 @@ useEffect(() => {
     void loadFirstStepsProgress(db, firebaseUser.uid).then(setFirstStepsProgress)
   }, [isDemoMode, db, firebaseUser?.uid, showOnboarding])
 
-  useEffect(() => {
-    if (showOnboarding || showActivationGuide || isE2EHarnessActive()) return
-    if (!hasSeenAppFeatureTour()) {
-      const t = setTimeout(() => setShowFeatureTour(true), 1500)
-      return () => clearTimeout(t)
-    }
-  }, [showOnboarding, showActivationGuide])
+  // Fase 101 — guía unificada en ActivationGuide; tour desactivado.
 
   const androidBackLayers = useMemo(
     () => [
@@ -8037,12 +8036,6 @@ useEffect(() => {
               className="bg-black/90 hover:bg-black text-white px-3 py-1 rounded-2xl text-[10px] font-semibold active:bg-white active:text-black border border-black/50 active:scale-[0.985] transition-all"
             >
               Cerrar sesión
-            </button>
-            <button 
-              onClick={handleLogout}
-              className="bg-white hover:bg-gray-100 text-black px-3 py-1 rounded-2xl text-[10px] font-bold active:bg-gray-200 border border-black/20 shadow-sm active:scale-[0.985] transition-all"
-            >
-              Cambiar cuenta
             </button>
             {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor === 'undefined' && (
               <button

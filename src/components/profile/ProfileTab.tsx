@@ -15,12 +15,16 @@ import { ProfileFooterSection } from './ProfileFooterSection'
 import { ProfileCollapsibleSection } from './ProfileCollapsibleSection'
 import { TrainingNetworkGraph } from './TrainingNetworkGraph'
 import { isProfileProgressiveMode } from '../../utils/profileProgressive'
+import { isMonetizationUnlocked } from '../../utils/pilotFeatureFlags'
 import type { ProfileTabProps } from './profileTabTypes'
 
 export type { ProfileTabProps } from './profileTabTypes'
 
 export function ProfileTab(props: ProfileTabProps) {
   const progressive = isProfileProgressiveMode(props.currentUser)
+  const monetization = isMonetizationUnlocked(props.currentUser, {
+    syncSessionCount: Object.keys(props.syncBonds || {}).length,
+  })
   const bondEntries = Object.entries(props.syncBonds || {})
   const livePartnerIds = (props.liveTrainingNow || [])
     .filter((u) => props.syncBonds?.[u.id])
@@ -61,15 +65,16 @@ export function ProfileTab(props: ProfileTabProps) {
           />
         </div>
       )}
-      {advancedWrap(
-        'Tienda y extras',
-        'Marketplace, coach y herramientas avanzadas',
-        <>
-          <ProfileMarketplaceEntry {...props} />
-          <ProfileTrainerCoachEntry {...props} />
-          <ProfileAdminOpsEntry {...props} />
-        </>
-      )}
+      {monetization &&
+        advancedWrap(
+          'Tienda y extras',
+          'Marketplace, coach y herramientas avanzadas',
+          <>
+            <ProfileMarketplaceEntry {...props} />
+            <ProfileTrainerCoachEntry {...props} />
+            <ProfileAdminOpsEntry {...props} />
+          </>
+        )}
       <ProfileActividadSection {...props} />
       {advancedWrap(
         'Rendimiento y red',

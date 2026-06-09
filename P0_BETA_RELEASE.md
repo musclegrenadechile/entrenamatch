@@ -1,86 +1,57 @@
-# P0 Beta Release — v0.1.147
+# P0 Beta Release — v0.1.300
 
-Checklist para cerrar Tier 0 antes de ampliar beta cerrada en Play Store.
+Checklist para cerrar Fase 100 + piloto Viña × Santiago.
 
 ## Versiones alineadas
 
 | Artefacto | Valor |
 |-----------|-------|
-| Web / `APP_VERSION` | **0.1.147** |
-| `package.json` | 0.1.147 |
-| Android `versionCode` | **147** |
-| Android `versionName` | 0.1.147 |
+| Web / `APP_VERSION` | **0.1.300** |
+| `package.json` | 0.1.300 |
+| Android `versionCode` | **300** |
+| Android `versionName` | 0.1.300 |
 
 Verificar: `node scripts/version-check.mjs`
 
-## 1. Deploy Firebase (obligatorio antes de testers)
+## 1. Deploy (CI en push a `main`)
+
+- GitHub Pages: `deploy.yml`
+- Firebase Hosting + rules: `firebase-deploy.yml`
+
+Manual si hace falta:
 
 ```powershell
 cd C:\Users\muscl\fitvina
-firebase deploy --only firestore:rules
+firebase deploy --only firestore:rules,hosting
 ```
 
-### Nuevas colecciones / reglas
-
-- **`mapEditors/{uid}`** — añade manualmente en Firebase Console el UID de quien puede editar partners en el mapa. Sin este doc, `partnerLocations` write falla (intencional).
-- **`clientErrorReports`** — errores JS de usuarios autenticados (solo create; lectura admin vía Console).
-
-## 2. Editor de mapa (dev)
-
-1. Crea `.env.local` (no commitear):
-
-   ```
-   VITE_DEV_MAP_PASSWORD=tu_password_largo_aqui
-   ```
-
-2. En Firestore Console → `mapEditors` → doc ID = tu Firebase UID → campo opcional `{ role: "map" }`.
-
-3. Build local con env; **GH Pages no incluye password** → testers no pueden abrir editor de partners.
-
-## 3. Build AAB y subir a Play Closed
-
-```powershell
-cd C:\Users\muscl\fitvina
-# Requiere: android\keystore.properties + android\play-service-account.json + google-services.json
-publish-play.bat closed
-```
-
-Si falla por `versionCode` ya usado en Play, sube a **105** en `android/app/build.gradle` y repite.
-
-### What's new (copy-paste Play Console)
-
-```
-v0.1.104 — Beta seguridad + estabilidad
-• Reglas Firestore reforzadas (chat solo entre matches, sync solo participantes)
-• Reportes de errores JS para debugging en beta
-• Deep links push team_live/sync (0.1.103)
-• Red local: reto ciudad, gym check-in, squads LIVE
-• Perfil hidratado más rápido al abrir la app
-```
-
-## 4. Matriz QA mínima (2 dispositivos)
+## 2. Matriz QA mínima (2 dispositivos) — v0.1.300
 
 | # | Flujo | Pass |
 |---|-------|------|
-| 1 | Registro → onboarding → Tab Hoy | ☐ |
-| 2 | LIVE → visible en mapa otro usuario | ☐ |
-| 3 | Match → chat 1:1 (verificar rules: sin match no envía) | ☐ |
-| 4 | EntrenaSync → Arena → post en muro | ☐ |
-| 5 | Push team_live → abre mapa (APK) | ☐ |
-| 6 | Squad chat | ☐ |
-| 7 | Foto muro → Storage | ☐ |
-| 8 | Gym check-in + filtro "solo mi gym" | ☐ |
-| 9 | Logout / login sin pantalla negra | ☐ |
-| 10 | Crash nativo aparece en Firebase Crashlytics | ☐ |
+| 1 | Registro → onboarding completo → Tab Hoy (v0.1.300) | ☐ |
+| 2 | LIVE **no** se activa solo al terminar onboarding | ☐ |
+| 3 | Una sola guía (3 pasos), sin tour apilado | ☐ |
+| 4 | CityDerbyCard visible 0 vs 0 + índice población | ☐ |
+| 5 | LIVE → visible en mapa otro usuario | ☐ |
+| 6 | EntrenaSync ≥2 min → minutos al derby | ☐ |
+| 7 | Matches tab carga (sin error chunk tras hard refresh) | ☐ |
+| 8 | Invitar amigo desde piloto strip | ☐ |
+| 9 | Toast derby si rival supera (simular minutos) | ☐ |
+| 10 | Crashlytics nativo (APK) | ☐ |
 
-## 5. Crashlytics
+## 3. Scripts piloto (lunes)
 
-- **Nativo:** ya habilitado en `MainActivity.java` + Gradle.
-- **JS:** breadcrumbs en `clientErrorReports` (Firestore).
-- Verificar en [Firebase Console → Crashlytics](https://console.firebase.google.com/project/entrenamatch/crashlytics) tras instalar AAB.
+```bash
+node scripts/pilot-cohort-report.mjs
+node scripts/pilot-sync-report.mjs
+node scripts/pilot-retention-report.mjs
+```
 
-## 6. Post-release
+## 4. Criterios Fase 100
 
-- [ ] Actualizar `PLAY_RELEASE_REGISTRY.md` con code 104
-- [ ] Hard refresh web testers (Ctrl+Shift+R)
-- [ ] Confirmar `GEMINI_API_KEY` en Functions para Fuel AI
+- Crash-free >99% (7 días post-AAB)
+- ≥1 sync real/semana documentado
+- ≥10 testers por ciudad piloto
+
+Ver `GESTION_FASES_101_120.md` para fases 101–106.

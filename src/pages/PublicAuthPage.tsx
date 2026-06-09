@@ -10,6 +10,7 @@ import {
   markQuickDemoSession,
   QUICK_DEMO_USER,
 } from '../utils/quickDemo';
+import { isProfileComplete } from '../utils/profileComplete';
 import { isE2EHarnessActive } from '../utils/e2eHarness';
 
 function triggerHaptic(_style?: 'light' | 'medium' | 'heavy' | 'success') {
@@ -41,11 +42,13 @@ export function PublicAuthPage() {
     markQuickDemoSession();
     setDemoMode(true);
     saveUser(QUICK_DEMO_USER);
-    if (!isE2EHarnessActive()) {
+    if (!isE2EHarnessActive() && !isProfileComplete(QUICK_DEMO_USER)) {
       setTimeout(() => setShowOnboarding(true), 80);
     }
     toast.success('Modo prueba activado', {
-      description: 'Datos solo en este dispositivo. Completa el setup en 4 pasos.',
+      description: isProfileComplete(QUICK_DEMO_USER)
+        ? 'Perfil demo listo — explora mapa, explore y derby.'
+        : 'Datos solo en este dispositivo. Completa el setup.',
     });
   }, [saveUser, setShowOnboarding, setDemoMode]);
 

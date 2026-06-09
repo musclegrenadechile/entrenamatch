@@ -17,7 +17,16 @@ export const QUICK_DEMO_USER: CurrentUser = {
   level: 'Intermedio',
   intensity: 'Moderado',
   availability: ['Tarde'],
-  wantsToGoLive: true,
+  wantsToGoLive: false,
+  legalConsents: {
+    acceptedAt: Date.now(),
+    termsVersion: 'v1.1',
+    privacyVersion: 'v1.1',
+    communityVersion: 'v1.0',
+    is18: true,
+    isForTraining: true,
+    sharesLocation: true,
+  },
 };
 
 export const QUICK_DEMO_SESSION_KEY = 'entrenamatch_quick_demo';

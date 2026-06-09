@@ -1,6 +1,9 @@
-import { MapPin, Swords, Trophy } from 'lucide-react'
+import { MapPin, Share2, Swords, Trophy } from 'lucide-react'
+import { toast } from 'sonner'
 import type { CityDerbyState } from '../../services/cityDerby'
 import { DERBY_AWAY, DERBY_HOME, derbyStatusLine, derbyTeamCta } from '../../services/cityDerby'
+import { DerbyDefenderBadge } from './DerbyDefenderBadge'
+import { downloadDerbyStory } from '../../utils/derbyStoryShare'
 
 export interface CityDerbyCardProps {
   derby: CityDerbyState | null
@@ -12,8 +15,15 @@ export interface CityDerbyCardProps {
 export function CityDerbyCard({ derby, onOpenMap, onGoLive, isLive }: CityDerbyCardProps) {
   if (!derby) return null
 
+  const isEmpty = derby.home.totalMinutes === 0 && derby.away.totalMinutes === 0
   const homeWin = derby.leaderNorm === derby.home.cityNorm
   const awayWin = derby.leaderNorm === derby.away.cityNorm
+
+  const shareStory = async () => {
+    const ok = await downloadDerbyStory(derby)
+    if (ok) toast.success('Story del derby guardada')
+    else toast.error('No se pudo generar la imagen')
+  }
 
   return (
     <section
@@ -33,13 +43,22 @@ export function CityDerbyCard({ derby, onOpenMap, onGoLive, isLive }: CityDerbyC
             <p className="text-[9px] text-[#9CA3AF]">Índice por 100k habitantes</p>
           </div>
         </div>
-        {derby.leaderLabel && !derby.isTie && (
-          <span className="text-[9px] px-2 py-1 rounded-lg bg-[#FFD700]/15 text-[#FFD700] font-bold shrink-0 flex items-center gap-1">
-            <Trophy size={10} />
-            {derby.leaderLabel.split(' ')[0]}
-          </span>
-        )}
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          {derby.leaderLabel && !derby.isTie && (
+            <span className="text-[9px] px-2 py-1 rounded-lg bg-[#FFD700]/15 text-[#FFD700] font-bold flex items-center gap-1">
+              <Trophy size={10} />
+              {derby.leaderLabel.split(' ')[0]}
+            </span>
+          )}
+          <DerbyDefenderBadge />
+        </div>
       </div>
+
+      {isEmpty && (
+        <p className="text-[11px] text-[#22c55e] font-semibold mb-3 bg-[#22c55e]/10 border border-[#22c55e]/25 rounded-xl px-3 py-2">
+          0 vs 0 — sé el primero en entrenar LIVE y marcar la zona
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-3 mb-3">
         <div
@@ -98,6 +117,16 @@ export function CityDerbyCard({ derby, onOpenMap, onGoLive, isLive }: CityDerbyC
             className="flex-1 py-2 rounded-xl bg-[#FF671F] text-black text-[10px] font-black"
           >
             Sumar con LIVE
+          </button>
+        )}
+        {!isEmpty && (
+          <button
+            type="button"
+            onClick={() => void shareStory()}
+            className="py-2 px-3 rounded-xl border border-white/15 text-[10px] font-bold text-white"
+            aria-label="Compartir story del derby"
+          >
+            <Share2 size={12} />
           </button>
         )}
       </div>

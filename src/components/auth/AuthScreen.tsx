@@ -155,12 +155,12 @@ export const AuthScreen = ({
           </motion.p>
         </div>
 
-        {/* Live people teaser — makes the app feel alive the second you open it */}
         <div className="flex justify-center gap-2 mb-5 text-[12px]">
-          <div className="flex items-center gap-1.5 bg-[#1C1C20]/70 border border-white/10 px-3 py-1 rounded-2xl">
-            <div className="live-dot w-1.5 h-1.5 rounded-full bg-[#22c55e]" />
-            <span className="font-medium text-[#22c55e]">142</span>
-            <span className="text-[#9CA3AF]">entrenando en vivo ahora</span>
+          <div className="flex items-center gap-1.5 bg-[#1C1C20]/70 border border-[#FF671F]/25 px-3 py-1.5 rounded-2xl max-w-[300px]">
+            <div className="live-dot w-1.5 h-1.5 rounded-full bg-[#FF671F]" />
+            <span className="text-[#9CA3AF] leading-snug">
+              Piloto cerrado · <span className="text-white font-semibold">Viña × Santiago</span>
+            </span>
           </div>
         </div>
 

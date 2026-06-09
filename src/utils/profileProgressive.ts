@@ -1,4 +1,4 @@
-/** Fase 88 — progressive profile: collapse advanced blocks first N days. */
+/** Fase 88 / 101 / 103 — progressive profile & home. */
 
 export const PROFILE_PROGRESSIVE_DAYS = 7
 
@@ -10,7 +10,12 @@ export function getAccountAgeDays(user: {
   return Math.floor((Date.now() - at) / (24 * 60 * 60 * 1000))
 }
 
-/** True when marketplace/coach/admin/advanced stats should start collapsed. */
+/** True when marketplace/coach/advanced stats should start collapsed. */
 export function isProfileProgressiveMode(user: Parameters<typeof getAccountAgeDays>[0]): boolean {
   return getAccountAgeDays(user) < PROFILE_PROGRESSIVE_DAYS
+}
+
+/** Tab Hoy día 1 — solo loop piloto + derby + live. */
+export function isHomeDayOneMode(user: Parameters<typeof getAccountAgeDays>[0]): boolean {
+  return getAccountAgeDays(user) < 1
 }

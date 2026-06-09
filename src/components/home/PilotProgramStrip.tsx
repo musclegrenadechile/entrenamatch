@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Share2, Users } from 'lucide-react'
+import { MapPin, Share2, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   isOpenPilotCity,
@@ -19,6 +19,7 @@ export interface PilotProgramStripProps {
   db: Firestore | null
   isDemoMode?: boolean
   inviteLink?: string
+  onOpenMap?: () => void
 }
 
 export function PilotProgramStrip({
@@ -26,6 +27,7 @@ export function PilotProgramStrip({
   db,
   isDemoMode,
   inviteLink,
+  onOpenMap,
 }: PilotProgramStripProps) {
   const [cohort, setCohort] = useState<PilotCohortDoc | null>(null)
   const cityNorm = normalizeCity(cityLabel)
@@ -41,6 +43,9 @@ export function PilotProgramStrip({
   )
 
   if (!isOpenPilotCity(cityLabel)) return null
+
+  const day = new Date().getDay()
+  const isWeekendPush = day === 5 || day === 6 || day === 0
 
   const shareInvite = async () => {
     const url = inviteLink || (typeof window !== 'undefined' ? window.location.origin : '')
@@ -88,11 +93,22 @@ export function PilotProgramStrip({
         Meta piloto: {PILOT_TARGET_MAU_MIN}–200 usuarios por ciudad · sync real semanal
       </p>
 
+      {isWeekendPush && onOpenMap && (
+        <button
+          type="button"
+          onClick={onOpenMap}
+          className="mt-3 w-full py-2.5 rounded-xl bg-[#FF671F] text-black text-xs font-black flex items-center justify-center gap-2 active:brightness-90"
+        >
+          <MapPin size={14} />
+          Sábado LIVE — abre el mapa y suma a tu zona
+        </button>
+      )}
+
       {!isDemoMode && (
         <button
           type="button"
           onClick={() => void shareInvite()}
-          className="mt-3 w-full py-2.5 rounded-xl bg-[#22c55e] text-black text-xs font-bold flex items-center justify-center gap-2 active:brightness-90"
+          className="mt-2 w-full py-2.5 rounded-xl bg-[#22c55e] text-black text-xs font-bold flex items-center justify-center gap-2 active:brightness-90"
         >
           <Share2 size={14} />
           Invitar del gym — suma a {cityLabel?.split(' ')[0] || 'tu ciudad'}

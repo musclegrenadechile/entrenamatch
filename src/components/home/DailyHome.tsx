@@ -91,6 +91,8 @@ export interface DailyHomeProps {
   isDemoMode?: boolean
   cityDerby?: CityDerbyState | null
   onOpenDerbyMap?: () => void
+  /** Fase 101 — día 1: solo piloto, derby, hero y live. */
+  compactDayOne?: boolean
 }
 
 function statusLine(member: TeamMemberView): string {
@@ -169,6 +171,7 @@ export function DailyHome({
   isDemoMode = false,
   cityDerby = null,
   onOpenDerbyMap,
+  compactDayOne = false,
 }: DailyHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
   const hour = new Date().getHours()
@@ -205,6 +208,7 @@ export function DailyHome({
         db={pilotDb}
         isDemoMode={isDemoMode}
         inviteLink={pilotInviteLink}
+        onOpenMap={onOpenDerbyMap}
       />
 
       <CityDerbyCard
@@ -225,7 +229,9 @@ export function DailyHome({
         onOpenPact={onOpenPactWizard}
       />
 
-      {/* Fase 93 — Fuel siempre visible en Hoy (wizard si falta perfil) */}
+      {!compactDayOne && (
+      <>
+      {/* Fase 93 — Fuel (oculto día 1) */}
       <FuelDayCard
         profile={fuelProfile ?? null}
         totals={fuelTotals ?? { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 }}
@@ -246,6 +252,8 @@ export function DailyHome({
 
       {exercisePRRecords.length > 0 && (
         <ExercisePRStrip records={exercisePRRecords} onOpenEntrenoLog={onOpenEntrenaLog} />
+      )}
+      </>
       )}
 
       {/* 1 · LIVE */}
@@ -558,6 +566,8 @@ export function DailyHome({
         )}
       </section>
 
+      {!compactDayOne && (
+      <>
       {/* 4 · META SEMANAL */}
       <section
         className={`rounded-3xl p-4 border transition-colors ${
@@ -619,6 +629,8 @@ export function DailyHome({
       )}
 
       {localNetwork && <LocalNetworkCard cityLabel={cityLabel} {...localNetwork} />}
+      </>
+      )}
     </div>
   )
 }

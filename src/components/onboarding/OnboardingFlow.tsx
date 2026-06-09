@@ -110,7 +110,7 @@ export const OnboardingFlow = ({
       level: 'Intermedio',
       intensity: 'Moderado',
       availability: [],
-      wantsToGoLive: true,
+      wantsToGoLive: false,
       wantsGhostMode: false,
     }
   });
@@ -234,7 +234,7 @@ export const OnboardingFlow = ({
       level: 'Intermedio',
       intensity: 'Moderado',
       availability: ['Tarde', 'Noche'],
-      wantsToGoLive: true,
+      wantsToGoLive: false,
       photos: [ // unique demo photos for attractive preview
         'https://picsum.photos/id/1011/600/800',
         'https://picsum.photos/id/1005/600/800',
