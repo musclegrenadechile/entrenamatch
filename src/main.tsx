@@ -8,6 +8,12 @@ import { ProfileProvider } from './contexts/ProfileContext'
 import { RootErrorBoundary } from './boot/RootErrorBoundary'
 import { initCrashReporting, reportError } from './services/crashReporting'
 import { ensureLocalStorageHeadroom, installStorageQuotaGuard } from './utils/safeLocalStorage'
+import {
+  clearChunkReloadFlag,
+  installChunkReloadHandlers,
+  isStaleChunkError,
+  reloadForNewBuild,
+} from './utils/chunkReload'
 
 function showFatalBootError(message: string) {
   const root = document.getElementById('root')
@@ -26,6 +32,8 @@ function showFatalBootError(message: string) {
 initCrashReporting()
 ensureLocalStorageHeadroom()
 installStorageQuotaGuard()
+installChunkReloadHandlers()
+clearChunkReloadFlag()
 
 window.addEventListener('error', (event) => {
   reportError(event.error || event.message, 'window.error', true)
@@ -34,6 +42,11 @@ window.addEventListener('error', (event) => {
   }
 })
 window.addEventListener('unhandledrejection', (event) => {
+  if (isStaleChunkError(event.reason)) {
+    event.preventDefault()
+    reloadForNewBuild()
+    return
+  }
   reportError(event.reason, 'unhandledrejection', false)
 })
 
