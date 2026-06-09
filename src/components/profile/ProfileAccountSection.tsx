@@ -68,23 +68,30 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 </div>
 )}
 
-{/* Verification status - visual upgrade */}
+{/* Verification — premio identidad */}
 <div className={`px-4 mt-4${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
-  <div className="card p-4 flex items-center gap-3">
-    <div className="flex-1">
-      <div className="font-medium flex items-center gap-2 text-sm">
-        Verificación biométrica
-        {currentUser.verificationStatus === 'verified' && <span className="chip-health text-[10px] px-2 py-0 !font-bold">✓ VERIFICADO</span>}
-        {currentUser.verificationStatus === 'pending' && <span className="text-[#facc15] text-xs font-medium">EN REVISIÓN</span>}
+  {currentUser.verificationStatus === 'verified' ? (
+    <div className="card p-0 overflow-hidden border border-[#FF671F]/40">
+      <div className="p-4 bg-gradient-to-br from-[#FF671F]/15 to-transparent">
+        <p className="text-[10px] uppercase tracking-wider text-[#FF671F] font-bold">Premio desbloqueado</p>
+        <p className="text-sm font-black text-white mt-1">Identidad verificada</p>
+        <p className="text-[11px] text-[#9CA3AF] mt-1">Tu badge es visible para todos — más confianza en mapa, matches y sync.</p>
       </div>
-      <div className="text-xs text-[#9CA3AF] mt-0.5">Selfie en vivo vs tu foto de perfil — sin documento</div>
     </div>
-    {currentUser.verificationStatus !== 'verified' && (
+  ) : (
+    <div className="card p-4 flex items-center gap-3">
+      <div className="flex-1">
+        <div className="font-medium flex items-center gap-2 text-sm">
+          Desbloquea el premio Verificado
+          {currentUser.verificationStatus === 'pending' && <span className="text-[#facc15] text-xs font-medium">EN REVISIÓN</span>}
+        </div>
+        <div className="text-xs text-[#9CA3AF] mt-0.5">Selfie en vivo → badge + señal de confianza en toda la app</div>
+      </div>
       <button onClick={() => { setShowVerificationFlow(true); setVerificationStep(1); }} className="shrink-0 text-xs px-4 py-2 bg-[#FF671F] text-black rounded-2xl font-semibold active:bg-[#E55A1A]">
-        {currentUser.verificationStatus === 'pending' ? 'Ver estado' : 'Verificar'}
+        {currentUser.verificationStatus === 'pending' ? 'Ver estado' : 'Obtener premio'}
       </button>
-    )}
-  </div>
+    </div>
+  )}
 </div>
 
 {/* Ghost mode — fase 114 */}

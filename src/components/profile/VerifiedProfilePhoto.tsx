@@ -12,7 +12,7 @@ const BADGE_SIZE: Record<VerifiedPhotoBadgeSize, { box: string; icon: number }> 
   xs: { box: 'w-5 h-5', icon: 11 },
   sm: { box: 'w-6 h-6', icon: 13 },
   md: { box: 'w-8 h-8', icon: 17 },
-  lg: { box: 'w-10 h-10', icon: 22 },
+  lg: { box: 'w-11 h-11', icon: 24 },
 }
 
 const BADGE_CORNER: Record<VerifiedPhotoBadgeCorner, string> = {
@@ -37,7 +37,7 @@ export function VerifiedPhotoBadge({
   const badge = BADGE_SIZE[size]
   return (
     <div
-      className={`absolute ${BADGE_CORNER[corner]} z-[60] flex items-center justify-center rounded-full bg-[#FF671F] text-black shadow-lg shadow-black/60 ring-2 ring-white/90 ${badge.box} ${className}`}
+      className={`absolute ${BADGE_CORNER[corner]} z-[60] flex items-center justify-center rounded-full bg-gradient-to-br from-[#FF671F] to-[#f59e0b] text-black shadow-lg shadow-black/70 ring-2 ring-white ${badge.box} ${className}`}
       title="Persona verificada"
       aria-label="Persona verificada"
     >

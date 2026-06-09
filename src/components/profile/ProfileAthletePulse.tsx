@@ -1,5 +1,7 @@
 import { Activity, Dumbbell, Flame } from 'lucide-react'
 import type { Profile, ProfilePost, Workout } from '../../types'
+import { isPubliclyVerified } from '../../utils/profileVerification'
+import { VerifiedIdentityPrize } from './VerifiedIdentityPrize'
 import { WORKOUT_TYPE_LABELS } from '../../data/exerciseLibrary'
 import { formatVolumeLabel } from '../../services/workouts'
 
@@ -47,6 +49,9 @@ export function ProfileAthletePulse({
         </div>
 
         <div className="flex flex-wrap gap-2 mb-2">
+          {isPubliclyVerified(profile) && (
+            <VerifiedIdentityPrize variant="compact" />
+          )}
           {liveDays > 0 && (
             <span className="text-[10px] px-2 py-1 rounded-full bg-[#22c55e]/15 text-[#22c55e] font-bold border border-[#22c55e]/25">
               {liveDays} días live

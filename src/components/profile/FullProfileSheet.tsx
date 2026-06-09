@@ -9,7 +9,9 @@ import type {
 } from '../../types'
 import { ProfileAthletePulse } from './ProfileAthletePulse'
 import { VerifiedPhotoBadge, VerifiedProfilePhoto } from './VerifiedProfilePhoto'
+import { VerifiedIdentityPrize } from './VerifiedIdentityPrize'
 import { isProfileVerified } from '../../utils/identityVerification'
+import { isPubliclyVerified } from '../../utils/profileVerification'
 import { WorkoutPostCard } from '../workout/WorkoutPostCard'
 
 export interface TrainerProfileSummary {
@@ -115,6 +117,8 @@ export function FullProfileSheet({
   const userSquads = squads.filter((sq) => sq.members.includes(profile.id))
   const isMatch = matches.includes(profile.id) || realMatches.includes(profile.id)
   const profileReviews = reviews[profile.id] || []
+  const verified = isPubliclyVerified(profile)
+  const verifiedAt = (profile as Profile & { verificationDate?: number }).verificationDate
 
   return (
     <div className="absolute inset-0 z-[90] bg-[#0D0D10] flex flex-col" onClick={onClose}>
@@ -143,7 +147,7 @@ export function FullProfileSheet({
             showBadge={false}
             showRing
           />
-          {isProfileVerified(profile.verificationStatus) && (
+          {verified && (
             <VerifiedPhotoBadge size="lg" corner="top-right" className="top-4 right-4" />
           )}
           {profile.photos.length > 1 && (
@@ -153,15 +157,15 @@ export function FullProfileSheet({
               ))}
             </div>
           )}
-          <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black">
-            <div className="text-4xl font-semibold tracking-[-1.5px]">
-              {profile.name}, {profile.age}
+          <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black via-black/95 to-transparent">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <div className="text-4xl font-semibold tracking-[-1.5px]">
+                {profile.name}, {profile.age}
+              </div>
+              {verified && <VerifiedIdentityPrize variant="inline" />}
             </div>
-            <div className="flex gap-2 mt-1 text-[#FF671F]">
+            <div className="flex gap-2 mt-1 text-[#FF671F] items-center">
               <MapPin size={18} /> {profile.city?.trim() || 'Tu zona'}, {profile.country}
-              {profile.verificationStatus === 'verified' && (
-                <span className="text-[#22c55e] text-sm">✓ Verificado</span>
-              )}
             </div>
             {distanceKm != null && userLocation && (
               <div className="mt-1 text-sm text-[#FF671F] font-medium">A {distanceKm} km de ti</div>
@@ -242,6 +246,9 @@ export function FullProfileSheet({
           </div>
         </div>
         <div className="p-5 space-y-6">
+          {verified && (
+            <VerifiedIdentityPrize variant="banner" showPerks verifiedAt={verifiedAt} />
+          )}
           {profile.id !== effectiveUserId && (
             <ProfileAthletePulse
               profile={profile}

@@ -230,6 +230,7 @@ import {
   recordDerbyWeekSnapshot,
 } from './services/derbyWeeklyHistory'
 import { saveUserPushToken } from './services/userPushTokens'
+import { enrichProfileFromDirectory } from './utils/profileVerification'
 import { buildInviteLink } from './utils/sparseCityDefaults'
 import {
   formatLastLiveLabel,
@@ -2417,21 +2418,21 @@ useEffect(() => {
                 level: data.level || 'Intermedio',
                 availability: data.availability || ['Tarde'],
                 intensity: data.intensity,
-                verificationStatus: data.verificationStatus,
-                trainingNow: data.trainingNow || false,
-                trainingNowSince: normalizeTrainingSince(data.trainingNowSince),
-                liveStreak: data.liveStreak != null ? data.liveStreak : undefined,
-                lastLiveDate: data.lastLiveDate != null ? data.lastLiveDate : undefined,
-                liveJoins: data.liveJoins != null ? data.liveJoins : undefined,
-                joinedLiveStreak: data.joinedLiveStreak != null ? data.joinedLiveStreak : undefined,
-                trainingSyncWith: data.trainingSyncWith || undefined,
-                syncStreak: data.syncStreak != null ? data.syncStreak : undefined,
-                syncBonds: data.syncBonds || {},
-                weekStats: data.weekStats || undefined,
-                showOnLeaderboard: data.showOnLeaderboard,
-                gymCheckIn: data.gymCheckIn || undefined,
-                // add other fields as needed for map (level etc)
-                retentionLevel: data.retentionLevel || 1,
+            verificationStatus: data.verificationStatus,
+            verificationDate: data.verificationDate ?? undefined,
+            trainingNow: data.trainingNow || false,
+            trainingNowSince: normalizeTrainingSince(data.trainingNowSince),
+            liveStreak: data.liveStreak != null ? data.liveStreak : undefined,
+            lastLiveDate: data.lastLiveDate != null ? data.lastLiveDate : undefined,
+            liveJoins: data.liveJoins != null ? data.liveJoins : undefined,
+            joinedLiveStreak: data.joinedLiveStreak != null ? data.joinedLiveStreak : undefined,
+            trainingSyncWith: data.trainingSyncWith || undefined,
+            syncStreak: data.syncStreak != null ? data.syncStreak : undefined,
+            syncBonds: data.syncBonds || {},
+            weekStats: data.weekStats || undefined,
+            showOnLeaderboard: data.showOnLeaderboard,
+            gymCheckIn: data.gymCheckIn || undefined,
+            retentionLevel: data.retentionLevel || 1,
               } as any);
             }
           });
@@ -2605,6 +2606,7 @@ useEffect(() => {
             availability: data.availability || ['Tarde'],
             intensity: data.intensity,
             verificationStatus: data.verificationStatus,
+            verificationDate: data.verificationDate ?? undefined,
             trainingNow: data.trainingNow || false,
             trainingNowSince: normalizeTrainingSince(data.trainingNowSince),
             liveStreak: data.liveStreak != null ? data.liveStreak : undefined,
@@ -7158,6 +7160,16 @@ useEffect(() => {
       setVerificationStep(1)
 
       if (firebaseUser?.uid && !isDemoMode) {
+        try {
+          await saveUserWithRealSync(updated as CurrentUser)
+        } catch (syncErr) {
+          console.warn('[verify] saveUserWithRealSync failed, fallback persist', syncErr)
+          await persistVerificationToProfile(
+            firebaseUser.uid,
+            verificationStatus,
+            undefined
+          )
+        }
         void (async () => {
           try {
             let selfieUrl = capturedSelfie
@@ -7173,11 +7185,6 @@ useEffect(() => {
                 console.warn('[verify] storage upload failed', e)
               }
             }
-            await persistVerificationToProfile(
-              firebaseUser.uid,
-              verificationStatus,
-              selfieUrl.startsWith('data:') ? undefined : selfieUrl
-            )
             if (!selfieUrl.startsWith('data:')) {
               const withUrl = {
                 ...updated,
@@ -7185,9 +7192,10 @@ useEffect(() => {
               }
               currentUserRef.current = withUrl as CurrentUser
               saveUser(withUrl as CurrentUser)
+              await saveUserWithRealSync(withUrl as CurrentUser)
             }
           } catch (e) {
-            console.warn('[verify] background persist failed', e)
+            console.warn('[verify] background selfie persist failed', e)
           }
         })()
       }
@@ -10518,7 +10526,7 @@ useEffect(() => {
       <AnimatePresence>
         {showFullProfile && (
           <FullProfileSheet
-            profile={showFullProfile}
+            profile={enrichProfileFromDirectory(showFullProfile, realProfiles as Profile[])}
             isRealTester={realProfiles.some((rp) => rp.id === showFullProfile.id)}
             userLocation={userLocation}
             currentUser={currentUser}
