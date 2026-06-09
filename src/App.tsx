@@ -302,7 +302,8 @@ import {
 import { compareSyncWorkoutLogs, summarizePartnerWeekFromPosts, summarizePartnerWeekFromWorkouts } from './utils/workoutSyncCompare'
 import { fetchGymRoutinesFromFirestore, mergeGymRoutineTemplates } from './services/gymRoutines'
 import { estimateWorkoutBurn } from './domain/fuelBalance/estimateWorkoutBurn'
-import { ProfileAthletePulse } from './components/profile/ProfileAthletePulse'
+import { FullProfileSheet } from './components/profile/FullProfileSheet'
+import { getYesterdayWorkout } from './utils/homeHero'
 import { ARENA_REST_MS, parseParticipantState } from './utils/arenaSyncState'
 import { triggerHaptic } from './utils/haptics'
 import { loadStoredNotifications, saveStoredNotifications, isQuotaError, reclaimLocalStorageSpace } from './utils/safeLocalStorage'
@@ -5451,6 +5452,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     [refreshEntrenoRecentWorkouts]
   )
 
+  const handleRepeatYesterday = useCallback(() => {
+    const yesterday = getYesterdayWorkout(entrenoRecentWorkouts)
+    if (!yesterday) {
+      void openEntrenoDeHoy()
+      return
+    }
+    void openEntrenoDeHoy({
+      title: yesterday.title,
+      exercises: yesterday.exercises,
+      type: yesterday.type,
+      durationMin: yesterday.stats?.durationMin ?? 45,
+    })
+  }, [entrenoRecentWorkouts, openEntrenoDeHoy])
+
   const applyEntrenoSaveSideEffects = useCallback(
     async (
       durationMin: number,
@@ -10149,6 +10164,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             entrenoExerciseHighlights={entrenoExerciseHighlights}
             entrenoPactProgress={homeWeeklyPactProgress.pledged ? homeWeeklyPactProgress : null}
             entrenoPartnerCompare={entrenoPartnerCompare}
+            entrenoRecentWorkouts={entrenoRecentWorkouts}
+            onRepeatYesterday={handleRepeatYesterday}
+            onOpenPactWizard={() => setShowPactWizard(true)}
             fuelProfile={fuelProfile}
             fuelTodayTotals={fuelTodayTotals}
             fuelTodayLogs={fuelTodayLogs}
@@ -12024,330 +12042,111 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       {/* FULL PROFILE VIEW */}
       <AnimatePresence>
         {showFullProfile && (
-          <div className="absolute inset-0 z-[90] bg-[#0D0D10] flex flex-col" onClick={() => setShowFullProfile(null)}>
-            <div className="p-4 flex items-center justify-between border-b border-[#2F2F35]">
-              <button onClick={() => setShowFullProfile(null)}><ArrowLeft /></button>
-              <div className="font-medium flex items-center gap-2">Perfil completo {realProfiles.some(rp => rp.id === showFullProfile.id) && <span className="text-[10px] bg-[#FF4F79] text-black px-1.5 py-0.5 rounded-full font-bold">REAL TESTER</span>}</div>
-              <div />
-            </div>
-            <div className="overflow-auto flex-1">
-              <div className="relative">
-                <img src={showFullProfile.photos[0]} className="w-full aspect-square object-cover" />
-                {/* Small additional photos strip in full profile too */}
-                {showFullProfile.photos.length > 1 && (
-                  <div className="absolute bottom-16 right-2 flex gap-1 overflow-x-auto max-w-[120px]">
-                    {showFullProfile.photos.slice(1, 4).map((p, i) => (
-                      <img key={i} src={p} className="w-8 h-8 rounded object-cover border border-white/50" />
-                    ))}
-                  </div>
-                )}
-                <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black">
-                  <div className="text-4xl font-semibold tracking-[-1.5px]">{showFullProfile.name}, {showFullProfile.age}</div>
-                  <div className="flex gap-2 mt-1 text-[#FF671F]">
-                    <MapPin size={18} /> {showFullProfile.city?.trim() || 'Tu zona'}, {showFullProfile.country}
-                    {showFullProfile.verificationStatus === 'verified' && <span className="text-[#22c55e] text-sm">✓ Verificado</span>}
-                  </div>
-                  {userLocation && (
-                    <div className="mt-1 text-sm text-[#FF671F] font-medium">
-                      A {getDistanceKm(userLocation.lat, userLocation.lng, showFullProfile.lat, showFullProfile.lng)} km de ti
-                    </div>
-                  )}
-                  {showFullProfile.trainingNow && showFullProfile.trainingNowSince && (
-                    <>
-                      <div className="mt-2 inline-flex items-center gap-2 bg-[#22c55e] text-black px-3 py-1 rounded-full text-sm font-bold relative overflow-hidden shadow-md shadow-[#22c55e]/30">
-                        🟢 ENTRENANDO AHORA • en vivo hace {Math.floor((Date.now() - showFullProfile.trainingNowSince)/60000)}m
-                        {showFullProfile.trainingNowSince && <span className="text-xs">· se va pronto</span>}
-                        {(() => {
-                          const posts = profilePosts[showFullProfile.id] || [];
-                          const lp = posts.find((p: any) => (p.text || '').toLowerCase().includes('entrenando ahora')) || posts[0];
-                          const jc = lp ? (lp.comments || []).length + (lp.likes || []).filter((id: string) => id !== showFullProfile.id).length : 0;
-                          return jc > 0 ? <span className="text-xs ml-1">+{jc} unidos</span> : null;
-                        })()}
-                        {showFullProfile.liveStreak && showFullProfile.liveStreak > 0 && <span className="text-xs ml-1">🔥{showFullProfile.liveStreak}d</span>}
-                        {showFullProfile.trainingNowSince && (
-                          <div className="absolute bottom-0 left-0 h-0.5 bg-white/30" style={{width: `${Math.max(5, Math.min(100, (90 - Math.floor((Date.now() - showFullProfile.trainingNowSince + 90*60*1000 - Date.now())/60000 ))/90 * 100))}%`}}></div>
-                        )}
-                      </div>
-                      <button onClick={() => {
-                        const p = showFullProfile
-                        setShowFullProfile(null)
-                        if (currentUser?.trainingNow && isUserLive(p.id)) {
-                          startSyncWith(p.id, p.name)
-                        } else {
-                          handleSwipe(p.id, 'right')
-                        }
-                      }} className="mt-1 w-full py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-bold active:bg-[#16a34a]">🔥 Entrenar juntos — abrir EntrenaSync ahora</button>
-                    </>
-                  )}
-                  {currentUser && (
-                    <div className="mt-2 inline-block bg-[#FF671F] text-black px-3 py-1 rounded-full text-sm font-bold">
-                      {calculateCompatibility(currentUser, showFullProfile, userLocation)}% compatible para entrenar juntos
-                    </div>
-                  )}
-                  {getAverageRating(showFullProfile.id, reviews).count > 0 && (
-                    <div className="mt-2 text-sm">
-                      ★ {getAverageRating(showFullProfile.id, reviews).avg} promedio de {getAverageRating(showFullProfile.id, reviews).count} reseñas
-                      {getTrainingStreak(showFullProfile.id, reviews) > 1 && (
-                        <span className="ml-2 text-orange-400">🔥 {getTrainingStreak(showFullProfile.id, reviews)} seguidas</span>
-                      )}
-                    </div>
-                  )}
-                  {(() => {
-                    const tp = trainerProfiles.find((t) => t.userId === showFullProfile.id)
-                    if (!tp) return null
-                    return (
-                      <div className="mt-3 p-3 rounded-xl border border-[#6366f1]/35 bg-[#6366f1]/10">
-                        <div className="text-xs font-bold text-[#a5b4fc] uppercase tracking-wider mb-1">
-                          Entrenador personal
-                        </div>
-                        <div className="text-sm text-white font-semibold">
-                          {formatTrainerRate(tp.hourlyRateClp)}/h · {tp.sessionDurationMin} min
-                        </div>
-                        {tp.avgRating > 0 && (
-                          <div className="text-xs text-[#cbd5e1] mt-1">★ {tp.avgRating} ({tp.reviewCount} sesiones)</div>
-                        )}
-                        {showFullProfile.id !== effectiveUserId && (
-                          <button
-                            type="button"
-                            className="mt-2 w-full py-2 rounded-xl bg-[#6366f1] text-white text-sm font-bold"
-                            onClick={() => {
-                              setTrainerCoachPreselect(tp.userId)
-                              setShowFullProfile(null)
-                              setShowTrainerCoach(true)
-                            }}
-                          >
-                            Reservar sesión EntrenaCoach
-                          </button>
-                        )}
-                      </div>
-                    )
-                  })()}
-
-                  {/* Photos from past sessions */}
-                  {reviews[showFullProfile.id]?.some(r => r.photo) && (
-                    <div className="mt-3">
-                      <div className="text-xs text-[#9CA3AF] mb-1">Sesiones juntos</div>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {reviews[showFullProfile.id]?.filter(r => r.photo).map((r, idx) => (
-                          <img key={idx} src={r.photo} className="w-16 h-16 object-cover rounded-xl flex-shrink-0 border border-[#2F2F35]" />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              <div className="p-5 space-y-6">
-                {showFullProfile.id !== effectiveUserId && (
-                  <ProfileAthletePulse
-                    profile={showFullProfile}
-                    syncBond={syncBonds[showFullProfile.id] ?? null}
-                    recentWorkouts={profileViewWorkouts}
-                    lastWorkoutPost={
-                      (profilePosts[showFullProfile.id] || []).find(
-                        (p) => p.postType === 'workout' && p.workoutPreview
-                      ) ?? null
-                    }
-                  />
-                )}
-                {showFullProfile.bio?.trim() && (
-                <div>
-                  <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-1.5">BIOGRAFÍA</div>
-                  <p className="leading-snug">{showFullProfile.bio}</p>
-                </div>
-                )}
-                {(showFullProfile.trainingTypes?.length ?? 0) > 0 && (
-                <div>
-                  <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-2">ENTRENA</div>
-                  <div className="flex flex-wrap gap-2">{showFullProfile.trainingTypes.map(t => <div key={t} className="chip">{t}</div>)}</div>
-                </div>
-                )}
-                {(showFullProfile.goals?.length ?? 0) > 0 && (
-                <div>
-                  <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-2">OBJETIVOS</div>
-                  <div className="flex flex-wrap gap-2">{showFullProfile.goals.map(g => <div key={g} className="chip chip-active">{g}</div>)}</div>
-                </div>
-                )}
-
-                {/* Muro for viewed profile - attractive read-only feed with interactions (now loads reliably for other accounts) */}
-                <div className="mt-4">
-                  <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-2 flex justify-between items-center px-1">
-                    <span>MURO DE {showFullProfile.name.toUpperCase()}</span>
-                    <div className="flex gap-1">
-                      <button onClick={() => setActiveTab('home')} className="text-[9px] text-[#FF671F] underline active:opacity-70">Ver feed global</button>
-                      <button onClick={() => loadProfilePosts(showFullProfile.id)} className="text-[10px] px-2 py-0.5 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10">Refrescar</button>
-                    </div>
-                  </div>
-                  <AnimatePresence>
-                    {(profilePosts[showFullProfile.id] || []).length > 0 ? (
-                      [...(profilePosts[showFullProfile.id] || [])].sort((a,b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || b.timestamp - a.timestamp).slice(0, 6).map((post) => (
-                        <motion.div
-                          key={post.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0 }}
-                          whileHover={{ scale: 1.01 }}
-                          transition={{ duration: 0.2 }}
-                          className="card card-glass p-3 mb-2 border-[#2F2F35]/80 hover:border-[#FF671F]/30"
-                        >
-                          {post.postType === 'workout' && post.workoutPreview ? (
-                            <WorkoutPostCard
-                              preview={post.workoutPreview}
-                              compact
-                              postId={post.id}
-                              reactions={post.reactions}
-                              feedReactions={feedReactions[post.id]}
-                              effectiveUserId={effectiveUserId}
-                              onReact={(emo) => boostReaction(post.id, emo, showFullProfile.id)}
-                              onCopyRoutine={
-                                post.workoutId && showFullProfile.id !== effectiveUserId
-                                  ? () => handleCopyWorkoutFromPost(post.workoutId!, post.workoutPreview?.title)
-                                  : undefined
-                              }
-                            />
-                          ) : (
-                          <>
-                          <div className="text-[13px] leading-snug mb-2 text-white/95">
-                            {post.pinned ? '📌 ' : ''}
-                            {(post.text || '').includes('Fui testigo') || (post.text || '').includes('RITUAL LEGENDARIO') || (post.text || '').includes('Echo') ? (
-                              <span className="text-[#FFD700] font-semibold">👁️ Highlight de EntrenaSync</span>
-                            ) : null}
-                            <div>{post.text}</div>
-                          </div>
-                          {post.photo && (
-                            <div className="relative mb-3 -mx-1 rounded-2xl overflow-hidden ring-1 ring-[#2F2F35]">
-                              <img src={post.photo} className="w-full max-h-[200px] object-cover transition-transform hover:scale-[1.02]" />
-                              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/30 to-transparent" />
-                            </div>
-                          )}
-                          </>
-                          )}
-                          <div className="flex items-center gap-4 text-xs text-[#9CA3AF] mt-2">
-                            <span title={new Date(post.timestamp).toLocaleString('es-CL')}>{getRelativeTime(post.timestamp)}</span>
-                            <span onClick={() => likeProfilePost(post.id, showFullProfile.id)} className="cursor-pointer active:text-[#FF671F]">❤️ {(post.likes || []).length}</span>
-                            <span onClick={() => openFullComments(post.id, showFullProfile.id, showFullProfile.name)} className="cursor-pointer active:text-[#FF671F]">💬 {(post.comments || []).length}</span>
-                          </div>
-                          {post.comments && post.comments.length > 0 && (
-                            <div 
-                              onClick={() => openFullComments(post.id, showFullProfile.id, showFullProfile.name)}
-                              className="mt-1.5 text-[11px] text-[#9CA3AF] pl-1 border-l border-[#2F2F35] cursor-pointer active:bg-[#1A1A1E]/40 rounded"
-                              title="Ver hilo completo de comentarios"
-                            >
-                              {post.comments.slice(-2).map(c => (
-                                <div key={c.id} className="flex gap-1 items-start">
-                                  <span className="text-white/70">{c.userName}:</span> {c.text}
-                                  {c.userId === effectiveUserId && (
-                                    <button 
-                                      onClick={(e) => { e.stopPropagation(); deleteCommentFromPost(post.id, showFullProfile.id, c.id); }}
-                                      className="ml-1 text-red-400 text-[10px] active:text-red-500"
-                                      title="Eliminar comentario"
-                                    >
-                                      ×
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
-                              {(post.comments || []).length > 2 && <div className="text-[#FF671F]/70 mt-0.5">+{(post.comments || []).length-2} más... toca para ver todo</div>}
-                            </div>
-                          )}
-                          {/* Inline comment input for viewed profile too */}
-                          {activeComment?.postId === post.id && (
-                            <div className="mt-2 pt-2 border-t border-[#2F2F35] flex items-center gap-2">
-                              <input 
-                                type="text" 
-                                value={commentDraft} 
-                                onChange={e => setCommentDraft(e.target.value)}
-                                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submitComment() } }}
-                                placeholder={`Comentar en el muro de ${showFullProfile.name}...`}
-                                className="flex-1 bg-[#1A1A1E] border border-[#2F2F35] rounded-2xl px-3 py-1.5 text-sm focus:outline-none focus:border-[#FF671F]"
-                                maxLength={200}
-                              />
-                              <button 
-                                onClick={submitComment} 
-                                disabled={!commentDraft.trim()} 
-                                className="text-[#FF671F] text-sm font-medium px-3 disabled:opacity-40 active:scale-95"
-                              >
-                                Enviar
-                              </button>
-                              <button onClick={cancelComment} className="text-[#9CA3AF] text-xs px-1">✕</button>
-                            </div>
-                          )}
-                        </motion.div>
-                      ))
-                    ) : (
-                      <div className="text-xs text-[#9CA3AF] italic">Este perfil aún no tiene publicaciones en el muro. ¡Anímalo a publicar!</div>
-                    )}
-                  </AnimatePresence>
-                  {(profilePosts[showFullProfile.id] || []).length > 6 && (
-                    <div className="text-[10px] text-[#FF671F]/70 text-center mt-1">Mostrando los 6 más recientes — usa Refrescar para actualizar</div>
-                  )}
-                </div>
-
-                {/* Squads membership - Polished feature */}
-                {(() => {
-                  const userSquads = squads.filter(sq => sq.members.includes(showFullProfile.id))
-                  if (userSquads.length === 0) return null
-                  return (
-                    <div>
-                      <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-2">SQUADS</div>
-                      <div className="flex flex-wrap gap-2">
-                        {userSquads.map(sq => (
-                          <div 
-                            key={sq.id} 
-                            onClick={() => { setSelectedSquad(sq.id); setActiveTab('squads') }}
-                            className="chip cursor-pointer hover:bg-[#FF671F] hover:text-black active:scale-95 transition"
-                          >
-                            {sq.name}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                })()}
-                <div className="grid grid-cols-2 gap-x-4 text-sm">
-                  <div>
-                    <span className="text-[#9CA3AF] text-[10px]">Nivel</span><br />
-                    <span className="text-[11px] px-1.5 py-px rounded-full bg-[#FF4F79]/10 text-[#FF4F79] font-semibold inline-block mt-0.5">{showFullProfile.level}</span>
-                  </div>
-                  <div><span className="text-[#9CA3AF]">Disponible</span><br />{showFullProfile.availability.join(', ')}</div>
-                </div>
-              </div>
-            </div>
-            <div className="p-4 border-t border-[#2F2F35] flex gap-3">
-              {matches.includes(showFullProfile.id) || realMatches.includes(showFullProfile.id) ? (
-                <button onClick={() => { setShowFullProfile(null); openChat(showFullProfile.id) }} className="flex-1 btn-primary">Abrir chat con {(showFullProfile.name||'Usuario').split(' ')[0]}</button>
-              ) : (
-                <>
-                  <button onClick={() => { setShowFullProfile(null); handleSwipe(showFullProfile.id, 'left') }} className="flex-1 btn-secondary">Pasar</button>
-                  <button onClick={() => { setShowFullProfile(null); handleSwipe(showFullProfile.id, 'right') }} className="flex-1 btn-primary">Me interesa</button>
-                </>
-              )}
-            </div>
-
-            {/* Safety actions - Critical for launch */}
-            <div className="p-4 border-t border-[#2F2F35] flex gap-3 text-sm">
-              <button 
-                onClick={() => {
-                  openReport(showFullProfile.id, 'profile')
-                  setShowFullProfile(null)
-                }}
-                className="flex-1 py-2 text-red-400 border border-red-900 rounded-2xl hover:bg-red-950"
-              >
-                Reportar
-              </button>
-              <button 
-                onClick={async () => {
-                  if (confirm(`¿Bloquear a ${showFullProfile.name}? No volverás a verlo en ningún lado.`)) {
-                    await blockUser(showFullProfile.id)
-                    setShowFullProfile(null)
+          <FullProfileSheet
+            profile={showFullProfile}
+            isRealTester={realProfiles.some((rp) => rp.id === showFullProfile.id)}
+            userLocation={userLocation}
+            currentUser={currentUser}
+            effectiveUserId={effectiveUserId}
+            profilePosts={profilePosts[showFullProfile.id] || []}
+            profileViewWorkouts={profileViewWorkouts}
+            syncBond={syncBonds[showFullProfile.id] ?? null}
+            reviews={reviews}
+            trainerProfile={(() => {
+              const tp = trainerProfiles.find((t) => t.userId === showFullProfile.id)
+              return tp
+                ? {
+                    userId: tp.userId,
+                    hourlyRateClp: tp.hourlyRateClp,
+                    sessionDurationMin: tp.sessionDurationMin,
+                    avgRating: tp.avgRating,
+                    reviewCount: tp.reviewCount,
                   }
-                }}
-                className="flex-1 py-2 text-red-400 border border-red-900 rounded-2xl hover:bg-red-950"
-              >
-                Bloquear
-              </button>
-            </div>
-            <div className="p-2 text-center text-[9px] text-[#9CA3AF]">Perfiles reales se sincronizan entre dispositivos</div>
-          </div>
+                : null
+            })()}
+            squads={squads}
+            matches={matches}
+            realMatches={realMatches}
+            feedReactions={feedReactions}
+            activeComment={activeComment}
+            commentDraft={commentDraft}
+            distanceKm={
+              userLocation
+                ? getDistanceKm(
+                    userLocation.lat,
+                    userLocation.lng,
+                    showFullProfile.lat,
+                    showFullProfile.lng
+                  )
+                : null
+            }
+            compatibilityPct={
+              currentUser
+                ? calculateCompatibility(currentUser, showFullProfile, userLocation)
+                : null
+            }
+            ratingAvg={getAverageRating(showFullProfile.id, reviews).avg}
+            ratingCount={getAverageRating(showFullProfile.id, reviews).count}
+            trainingStreak={getTrainingStreak(showFullProfile.id, reviews)}
+            formatTrainerRate={formatTrainerRate}
+            getRelativeTime={getRelativeTime}
+            onClose={() => setShowFullProfile(null)}
+            onLoadPosts={() => loadProfilePosts(showFullProfile.id)}
+            onOpenHomeFeed={() => setActiveTab('home')}
+            onTrainTogether={() => {
+              const p = showFullProfile
+              setShowFullProfile(null)
+              if (currentUser?.trainingNow && isUserLive(p.id)) {
+                startSyncWith(p.id, p.name)
+              } else {
+                handleSwipe(p.id, 'right')
+              }
+            }}
+            onOpenChat={() => {
+              setShowFullProfile(null)
+              openChat(showFullProfile.id)
+            }}
+            onSwipeLeft={() => {
+              setShowFullProfile(null)
+              handleSwipe(showFullProfile.id, 'left')
+            }}
+            onSwipeRight={() => {
+              setShowFullProfile(null)
+              handleSwipe(showFullProfile.id, 'right')
+            }}
+            onBookTrainer={(trainerUserId) => {
+              setTrainerCoachPreselect(trainerUserId)
+              setShowFullProfile(null)
+              setShowTrainerCoach(true)
+            }}
+            onOpenSquad={(squadId) => {
+              setSelectedSquad(squadId)
+              setShowFullProfile(null)
+              setActiveTab('squads')
+            }}
+            onReport={() => {
+              openReport(showFullProfile.id, 'profile')
+              setShowFullProfile(null)
+            }}
+            onBlock={async () => {
+              if (confirm(`¿Bloquear a ${showFullProfile.name}? No volverás a verlo en ningún lado.`)) {
+                await blockUser(showFullProfile.id)
+                setShowFullProfile(null)
+              }
+            }}
+            onBoostReaction={(postId, emo) => boostReaction(postId, emo, showFullProfile.id)}
+            onCopyWorkout={(workoutId, title) => handleCopyWorkoutFromPost(workoutId, title)}
+            onLikePost={(postId) => likeProfilePost(postId, showFullProfile.id)}
+            onOpenComments={(postId) =>
+              openFullComments(postId, showFullProfile.id, showFullProfile.name)
+            }
+            onDeleteComment={(postId, commentId) =>
+              deleteCommentFromPost(postId, showFullProfile.id, commentId)
+            }
+            onCommentDraftChange={setCommentDraft}
+            onSubmitComment={submitComment}
+            onCancelComment={cancelComment}
+          />
         )}
       </AnimatePresence>
 

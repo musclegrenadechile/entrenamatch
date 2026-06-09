@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { GymPulseMapShell, GymPulseBottomSheet } from '../map'
 import { GymPulseTour, hasSeenGymPulseTour } from '../map/GymPulseTour'
+import { seedGymRoutinesForPartner } from '../../services/gymRoutines'
 
 /** Lazy-load Leaflet + GymPulseMap only when Map tab opens (fase 198). */
 const GymPulseMap = lazy(() =>
@@ -808,6 +809,27 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
                           <div className="text-[9px] text-[#9CA3AF] truncate">{p.address || p.type} • {p.lat?.toFixed(3)},{p.lng?.toFixed(3)}</div>
                         </div>
                         <button onClick={() => startEditPartner(p)} className="text-[9px] px-1.5 py-0.5 border border-[#FFD700]/50 rounded text-[#FFD700] active:bg-[#FFD700]/10" title="Editar nombre, logo, dirección, coords">Edit</button>
+                        <button
+                          onClick={async () => {
+                            if (isDemoMode || !db) {
+                              toast.error('Solo en modo real')
+                              return
+                            }
+                            try {
+                              const n = await seedGymRoutinesForPartner(db, p.id, p.name, p.type)
+                              toast.success('Rutinas gym seed', {
+                                description: `${n} plantillas en gymRoutines/${p.id}`,
+                              })
+                            } catch (e) {
+                              console.warn('seed gymRoutines', e)
+                              toast.error('No se pudo seedear rutinas (revisa reglas mapEditor)')
+                            }
+                          }}
+                          className="text-[9px] px-1.5 py-0.5 border border-[#22c55e]/50 rounded text-[#22c55e] active:bg-[#22c55e]/10"
+                          title="Escribe rutinas Entreno de Hoy en Firestore gymRoutines/{id}"
+                        >
+                          Rutinas
+                        </button>
                         {/* Instant move tools — core of "facil mover un local" for devs */}
                         <button 
                           onClick={() => {
@@ -952,3 +974,4 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     </div>
   )
 }
+                                                                                                                

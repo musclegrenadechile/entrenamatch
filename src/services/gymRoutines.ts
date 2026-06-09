@@ -69,3 +69,32 @@ export function mergeGymRoutineTemplates(
   }
   return merged.slice(0, 6)
 }
+
+/** Dev/ partner seed — writes default or custom routines for a gym (oleada 6). */
+export async function seedGymRoutinesForPartner(
+  db: Firestore,
+  gymId: string,
+  gymName: string,
+  partnerType?: string
+): Promise<number> {
+  const templates = getGymRoutineTemplates({ gymName, partnerType })
+  const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+  const routines: GymRoutineEntry[] = templates.map((t, i) => ({
+    id: t.id.replace(/^gym-(fs-)?/, '') || String(i),
+    label: t.label,
+    type: t.type,
+    durationMin: t.durationMin,
+    exercises: t.exercises,
+  }))
+  await setDoc(
+    doc(db, 'gymRoutines', gymId),
+    {
+      gymId,
+      gymName,
+      routines,
+      updatedAt: serverTimestamp(),
+    },
+    { merge: true }
+  )
+  return routines.length
+}

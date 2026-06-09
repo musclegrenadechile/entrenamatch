@@ -7,6 +7,7 @@ import { HomeLoopStepper, resolveHomeLoopStep } from './HomeLoopStepper'
 import { formatRedSyncFomoLine } from '../../utils/syncFomo'
 import type { WeeklyPact, WeeklyPactProgress } from '../../services/weeklyPact'
 import { WeeklyPactCard } from './WeeklyPactCard'
+import { DailyHomeHeroCard } from './DailyHomeHeroCard'
 import type { LocalNetworkCardProps } from './LocalNetworkCard'
 
 export type TeamMemberStatus = 'live' | 'recent' | 'this_week' | 'inactive'
@@ -75,6 +76,9 @@ export interface DailyHomeProps {
     partial: Omit<WeeklyPact, 'weekKey' | 'pledgedAt'> & { weekKey?: string }
   ) => void
   forcePactWizard?: boolean
+  entrenoRecentWorkouts?: import('../../types').Workout[]
+  onRepeatYesterday?: () => void
+  onOpenPactWizard?: () => void
 }
 
 function statusLine(member: TeamMemberView): string {
@@ -142,6 +146,9 @@ export function DailyHome({
   weeklyPactProgress,
   onPledgeWeeklyPact,
   forcePactWizard = false,
+  entrenoRecentWorkouts = [],
+  onRepeatYesterday,
+  onOpenPactWizard,
 }: DailyHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
   const hour = new Date().getHours()
@@ -172,6 +179,17 @@ export function DailyHome({
         </p>
         <HomeLoopStepper activeStep={loopStep} />
       </div>
+
+      <DailyHomeHeroCard
+        isLive={isLive}
+        weeklyPactProgress={weeklyPactProgress}
+        entrenoRecentWorkouts={entrenoRecentWorkouts}
+        weekTrainedCount={weekTrainedCount}
+        onToggleLive={onToggleLive}
+        onOpenEntrenoLog={onOpenEntrenaLog}
+        onRepeatYesterday={onRepeatYesterday}
+        onOpenPact={onOpenPactWizard}
+      />
 
       {/* 1 · LIVE */}
       <section
