@@ -8015,6 +8015,7 @@ useEffect(() => {
           triggerHaptic={triggerHaptic}
           uploadPhotoIfNeeded={uploadProfilePhotoIfNeeded}
           mode="create"
+          onExitToLogin={handleLogout}
         />
       </ErrorBoundary>
     )

@@ -1,5 +1,5 @@
 import { useState, type ChangeEvent } from 'react';
-import { Dumbbell, MapPin, Camera, Users, RefreshCw, Crop, Sparkles, Quote } from 'lucide-react';
+import { Dumbbell, MapPin, Camera, Users, RefreshCw, Crop, Sparkles, Quote, X } from 'lucide-react';
 import { PhotoCropModal } from '../photos/PhotoCropModal';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -62,6 +62,8 @@ interface OnboardingFlowProps {
   triggerHaptic?: (style?: 'light' | 'medium' | 'success') => void;
   uploadPhotoIfNeeded?: (dataUrl: string) => Promise<string>;
   mode?: 'create' | 'edit';
+  /** Create mode only — logs out and returns to the login screen */
+  onExitToLogin?: () => void;
 }
 
 export const OnboardingFlow = ({
@@ -76,6 +78,7 @@ export const OnboardingFlow = ({
   triggerHaptic = () => { try { navigator.vibrate && navigator.vibrate(20) } catch {} },
   uploadPhotoIfNeeded,
   mode = 'create',
+  onExitToLogin,
 }) => {
   const isEditMode = mode === 'edit';
   const [onboardData, setOnboardData] = useState<OnboardData>(() => {
@@ -371,6 +374,14 @@ export const OnboardingFlow = ({
     }
   };
 
+  const handleExitToLogin = () => {
+    if (!onExitToLogin || isEditMode) return
+    const ok = window.confirm(
+      '¿Volver al login?\n\nSi ya creaste cuenta, podrás iniciar sesión después y terminar tu perfil.'
+    )
+    if (ok) onExitToLogin()
+  }
+
   // Local GPS wrapper: syncs directly to onboardData (fixes previous disconnect) + calls parent for global
   const handleGpsRequest = () => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
@@ -485,14 +496,27 @@ export const OnboardingFlow = ({
             <div className="font-black text-4xl tracking-[-2px] text-white">ENTRENAMATCH</div>
             <div className="text-[#FF671F] text-xs tracking-[3px] font-mono -mt-1">TU EQUIPO DE GYM EN VIVO</div>
           </div>
-          {!isEditingProfile && SHOW_DEV_FILL && (
-            <button 
-              onClick={fillExampleData} 
-              className="text-[9px] px-4 py-2 rounded-2xl border-2 border-[#22c55e]/50 text-[#22c55e] active:bg-[#22c55e]/10 active:border-[#22c55e] font-semibold tracking-wider"
-            >
-              Rellenar demo (dev)
-            </button>
-          )}
+          <div className="flex flex-col items-end gap-1.5 shrink-0">
+            {!isEditMode && onExitToLogin && (
+              <button
+                type="button"
+                onClick={handleExitToLogin}
+                className="w-9 h-9 rounded-full bg-[#1C1C20] border border-[#2F2F35] flex items-center justify-center text-[#9CA3AF] active:bg-[#25252A] active:text-white"
+                aria-label="Volver al login"
+                title="Volver al login"
+              >
+                <X size={18} />
+              </button>
+            )}
+            {!isEditingProfile && SHOW_DEV_FILL && (
+              <button
+                onClick={fillExampleData}
+                className="text-[9px] px-4 py-2 rounded-2xl border-2 border-[#22c55e]/50 text-[#22c55e] active:bg-[#22c55e]/10 active:border-[#22c55e] font-semibold tracking-wider"
+              >
+                Rellenar demo (dev)
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="mb-4">
@@ -1030,6 +1054,15 @@ export const OnboardingFlow = ({
           <div className="text-center text-[8px] text-[#9CA3AF] tracking-[1px]">
             {isEditMode ? 'GUARDA CAMBIOS AL TERMINAR' : 'TU PERFIL EN LA RED • PRIMER LIVE EN <90s'}
           </div>
+          {!isEditMode && onExitToLogin && (
+            <button
+              type="button"
+              onClick={handleExitToLogin}
+              className="w-full py-1 text-[10px] text-[#9CA3AF] underline active:text-[#FF671F]"
+            >
+              ¿Entraste por error? Volver al login
+            </button>
+          )}
         </div>
 
       <PhotoCropModal
