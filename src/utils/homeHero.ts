@@ -99,7 +99,7 @@ export function resolveHomeHero(opts: {
       title: 'Enciende live',
       subtitle: `${weekTrainedCount}/${weeklyPactProgress.liveDaysTarget} días live esta semana.`,
       action: 'live',
-      cta: 'Activar GymPulse live →',
+      cta: 'Activar LIVE en el mapa →',
       progressPct: weeklyPactProgress.overallPct,
     }
   }

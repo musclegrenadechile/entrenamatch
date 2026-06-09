@@ -182,7 +182,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
     {/* Network summary — epic social graph value. This is what makes EntrenaMatch the first real fitness social network: your sync alliances are a visible, compounding performance asset. */}
     <div className="mb-2 px-0.5">
       <div className="text-[11px] font-bold text-[#FFD700] mb-0.5">Fuerza del equipo: {networkStats.networkPower} — tu red de sync te hace más fuerte, más consistente y más visible</div>
-      {networkStats.networkPower > 30 && <div className="text-[8px] text-[#22c55e] mt-0.5">¡Tu red te da prioridad en el GymPulse del mapa, recomendaciones de alto rendimiento y +visibilidad global entre GymPartners!</div>}
+      {networkStats.networkPower > 30 && <div className="text-[8px] text-[#22c55e] mt-0.5">¡Tu red te da prioridad en el mapa en vivo, mejores recomendaciones y más visibilidad en la comunidad fitness!</div>}
       <div className="text-[9px] text-[#22c55e]">
         {networkStats.numPartners} socios • {networkStats.totalMin}min sincronizados • {networkStats.totalSessions} sesiones • Impacto colectivo en tu rendimiento: +{networkStats.estimatedImpact}%
       </div>
@@ -254,7 +254,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
       <button onClick={() => setActiveTab('explore')} className="text-[8px] px-2 py-0.5 bg-[#22c55e]/10 text-[#22c55e] rounded active:bg-[#22c55e]/20">Explora más socios para expandir tu red →</button>
       <button 
         onClick={() => {
-          const msg = `🔥 Entreno en EntrenaMatch con mis GymPartners. Syncs reales dan +Fuerza del equipo, prioridad en el GymPulse y resultados que se propagan. ¿Entrenamos juntos? https://musclegrenadechile.github.io/entrenamatch/`;
+          const msg = `🔥 Entreno en EntrenaMatch con mi red fitness. Syncs reales, mapa en vivo y constancia compartida. ¿Entrenamos juntos? https://musclegrenadechile.github.io/entrenamatch/`;
           navigator.clipboard?.writeText(msg).then(() => toast.success('Mensaje copiado', { description: 'Comparte con tu red para invitarlos a construir el grafo de alto rendimiento.' })).catch(() => toast('Invita a tu red abriendo el app con ellos.'));
         }}
         className="text-[8px] px-2 py-0.5 bg-[#FFD700]/20 text-[#FFD700] rounded active:bg-[#FFD700]/30 font-medium"

@@ -13,6 +13,7 @@ import { CityDerbyCard } from './CityDerbyCard'
 import type { CityDerbyState } from '../../services/cityDerby'
 import type { LocalNetworkCardProps } from './LocalNetworkCard'
 import type { Firestore } from 'firebase/firestore'
+import type { ProfileGender } from '../../utils/genderedCopy'
 
 export type TeamMemberStatus = 'live' | 'recent' | 'this_week' | 'inactive'
 
@@ -93,6 +94,7 @@ export interface DailyHomeProps {
   onOpenDerbyMap?: () => void
   /** Fase 101 — día 1: solo piloto, derby, hero y live. */
   compactDayOne?: boolean
+  userGender?: ProfileGender
 }
 
 function statusLine(member: TeamMemberView): string {
@@ -172,6 +174,7 @@ export function DailyHome({
   cityDerby = null,
   onOpenDerbyMap,
   compactDayOne = false,
+  userGender,
 }: DailyHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
   const hour = new Date().getHours()
@@ -216,6 +219,7 @@ export function DailyHome({
         onOpenMap={onOpenDerbyMap}
         onGoLive={onToggleLive}
         isLive={isLive}
+        userGender={userGender}
       />
 
       <DailyHomeHeroCard
@@ -328,7 +332,7 @@ export function DailyHome({
           className="mt-2 w-full py-2.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-semibold text-white/90 active:bg-white/10 flex items-center justify-center gap-1.5"
         >
           <MapPin className="w-3.5 h-3.5 text-[#22c55e]" />
-          Ver GymPulse {liveCount > 0 ? `· ${liveCount} en vivo` : ''}
+          Ver mapa LIVE {liveCount > 0 ? `· ${liveCount} en vivo` : ''}
           {cityLabel ? ` · ${cityLabel}` : ''}
         </button>
       </section>

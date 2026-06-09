@@ -12,13 +12,16 @@ import { downloadSyncStory } from '../../utils/syncStoryShare'
 import { estimateSyncSessionBurn } from '../../domain/fuelBalance'
 import { SyncWorkoutCompareStrip } from '../workout/SyncWorkoutCompareStrip'
 import type { SyncWorkoutCompare } from '../../utils/workoutSyncCompare'
+import { winnerLabel, type ProfileGender } from '../../utils/genderedCopy'
 
 export interface SyncDuelSummaryProps {
   open: boolean
   selfName: string
   selfPhoto?: string
+  selfGender?: ProfileGender
   partnerName: string
   partnerPhoto?: string
+  partnerGender?: ProfileGender
   partnerId: string
   effectiveUserId: string
   minutes: number
@@ -49,8 +52,10 @@ export function SyncDuelSummary({
   open,
   selfName,
   selfPhoto,
+  selfGender,
   partnerName,
   partnerPhoto,
+  partnerGender,
   partnerId,
   effectiveUserId,
   minutes,
@@ -191,7 +196,7 @@ export function SyncDuelSummary({
             <span className="sync-duel-card__name">{duel.self.name}</span>
             <span className="sync-duel-card__score">{duel.self.score}</span>
             {duel.winner === 'self' && (
-              <span className="sync-duel-card__badge">Ganador</span>
+              <span className="sync-duel-card__badge">{winnerLabel(selfGender)}</span>
             )}
           </div>
 
@@ -214,7 +219,7 @@ export function SyncDuelSummary({
             <span className="sync-duel-card__name">{duel.partner.name}</span>
             <span className="sync-duel-card__score">{duel.partner.score}</span>
             {duel.winner === 'partner' && (
-              <span className="sync-duel-card__badge">Ganador</span>
+              <span className="sync-duel-card__badge">{winnerLabel(partnerGender)}</span>
             )}
           </div>
         </div>

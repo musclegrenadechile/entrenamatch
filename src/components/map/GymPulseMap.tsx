@@ -27,6 +27,7 @@ import * as L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { toast } from 'sonner'
 import { Crosshair } from 'lucide-react'
+import { BRAND_COPY } from '../../constants/brandCopy'
 import { GymPulseMapFilters } from './GymPulseMapFilters'
 import { GymPulseRadar } from './GymPulseRadar'
 import { GymPulsePopupLayer } from './popups/GymPulsePopupLayer'
@@ -675,7 +676,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         })
         if (!selfMarkerRef.current) {
           selfMarkerRef.current = L.marker([selfMapPos.lat, selfMapPos.lng], { icon: selfIcon }).addTo(mapInstanceRef.current)
-          selfMarkerRef.current.bindPopup('<strong>TÚ</strong><br/>Tu ubicación en el GymPulse' + (isLive ? ' — <span style="color:#22c55e">🟢 EN VIVO</span>' : ''))
+          selfMarkerRef.current.bindPopup('<strong>TÚ</strong><br/>' + BRAND_COPY.liveMap.selfPopupLocation + (isLive ? ' — <span style="color:#22c55e">🟢 EN VIVO</span>' : ''))
         } else {
           selfMarkerRef.current.setLatLng([selfMapPos.lat, selfMapPos.lng])
           selfMarkerRef.current.setIcon(selfIcon)
@@ -1156,10 +1157,10 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
             }
           }
         }}
-        title="Click para volar al punto más caliente del GymPulse"
+        title={BRAND_COPY.liveMap.globalPillTitle}
       >
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
-        EL GYMPULSE GLOBAL
+        {BRAND_COPY.liveMap.globalPill}
         <span className="text-[#22c55e]/70 font-mono text-[9px] tabular-nums">
           • {totalLiveOnMap} EN VIVO
         </span>
@@ -1319,7 +1320,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
                 onClick={onCityChallengeCta}
                 className="mt-2 w-full py-1.5 rounded-xl bg-[#FF671F] text-black text-[10px] font-black active:brightness-90"
               >
-                {selfIsLive ? 'Sigue sumando al derby' : 'LIVE → suma a tu región'}
+                {selfIsLive ? BRAND_COPY.liveMap.derbyCtaActive : BRAND_COPY.liveMap.derbyCta}
               </button>
             )}
           </div>

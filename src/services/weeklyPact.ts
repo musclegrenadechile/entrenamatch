@@ -183,5 +183,5 @@ export function buildPactReminderMessage(progress: WeeklyPactProgress): string |
 
 export function buildPostLiveFeedText(minutes: number, gymName?: string | null): string {
   const place = gymName?.trim() || 'el gym'
-  return `🟢 Entrené en ${place} · ${minutes} min — sesión GymPulse live`
+  return `🟢 Entrené en ${place} · ${minutes} min — sesión en vivo`
 }

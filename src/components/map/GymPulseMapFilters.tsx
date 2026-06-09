@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { SlidersHorizontal, X } from 'lucide-react'
+import { BRAND_COPY } from '../../constants/brandCopy'
 
 export interface GymPulseMapFiltersProps {
   mapNearOnly: boolean
@@ -47,7 +48,7 @@ export function GymPulseMapFilters({
       </button>
       <span className="gym-pulse-filters__count">
         {mapNearOnly ? filteredCount : totalCount} en vivo
-        {showPartners && partnerCount > 0 && ` · ${partnerCount} gyms`}
+        {showPartners && partnerCount > 0 && ` · ${partnerCount} spots`}
       </span>
 
       {open && (
@@ -55,7 +56,7 @@ export function GymPulseMapFilters({
           <button type="button" className="gym-pulse-filters__backdrop" onClick={() => setOpen(false)} aria-label="Cerrar filtros" />
           <div className="gym-pulse-filters__panel" role="dialog" aria-label="Filtros del mapa">
             <div className="gym-pulse-filters__panel-head">
-              <strong>Filtros GymPulse</strong>
+              <strong>{BRAND_COPY.liveMap.filtersTitle}</strong>
               <button type="button" onClick={() => setOpen(false)} aria-label="Cerrar">
                 <X size={16} />
               </button>
@@ -80,7 +81,7 @@ export function GymPulseMapFilters({
                 className={showPartners ? 'gym-pulse-filters__opt--on' : 'gym-pulse-filters__opt'}
                 onClick={() => onShowPartnersChange?.(!showPartners)}
               >
-                Gyms partners
+                {BRAND_COPY.liveMap.partnersFilter}
               </button>
               {mapMyGymId && (
                 <button

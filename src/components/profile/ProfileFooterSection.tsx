@@ -15,8 +15,9 @@ export function ProfileFooterSection(props: ProfileTabProps) {
     <span>·</span>
     <a href="/entrenamatch/terms.html" target="_blank" className="underline active:text-[#FF671F]">Términos</a>
   </div>
-  <button 
-    onClick={handleLogout} 
+  <button
+    type="button"
+    onClick={() => { void handleLogout() }}
     className="text-xs text-[#9CA3AF] active:text-[#f87171] underline"
   >
     Cerrar sesión / Cambiar de cuenta

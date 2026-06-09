@@ -105,6 +105,8 @@ export interface Message {
   voiceDuration?: number
   read?: boolean
   readAt?: number
+  clientId?: string
+  sendStatus?: 'sending' | 'sent' | 'failed'
 }
 
 export interface TrainingSession {

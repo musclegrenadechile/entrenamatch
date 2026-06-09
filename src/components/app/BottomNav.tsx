@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
 import { Dumbbell, Heart, MapPin, Sparkles, User, Users } from 'lucide-react'
 import type { Tab } from '../../types'
+import { BRAND_COPY } from '../../constants/brandCopy'
 import { isRedTabActive } from '../../utils/tabNavigation'
 
 export type BottomNavItem = {
@@ -38,11 +39,11 @@ export function BottomNav({
   const items: BottomNavItem[] = [
     {
       id: 'map',
-      label: 'GymPulse',
+      label: BRAND_COPY.liveMapLabel,
       icon: MapPin,
       liveDot: liveCountForUI > 0,
       tourId: 'bottom-nav-map',
-      ariaLabel: 'GymPulse — mapa en vivo de entrenamiento',
+      ariaLabel: 'Mapa en vivo — quién entrena cerca ahora',
     },
     {
       id: 'explore',

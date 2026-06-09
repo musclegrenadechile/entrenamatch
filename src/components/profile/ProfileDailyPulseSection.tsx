@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
+import { gadgetDisplayName } from '../../utils/genderedCopy'
 
 export function ProfileDailyPulseSection(props: ProfileTabProps) {
   const {
@@ -31,8 +32,8 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
     <div className="rounded-3xl bg-gradient-to-br from-[#0f0a08] via-[#1a140f] to-[#0D0D10] border border-[#FF671F]/30 p-4 shadow-inner hover:shadow-2xl transition-all duration-300">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <div className="text-[#FF671F] text-[10px] font-bold tracking-[1px] uppercase">EL GYMPULSE DE TUS GYMPARTNERS</div>
-          <div className="text-white text-xl font-black tracking-[-0.5px]">GymPulse Diario</div>
+          <div className="text-[#FF671F] text-[10px] font-bold tracking-[1px] uppercase">RETO DIARIO · TU RED FITNESS</div>
+          <div className="text-white text-xl font-black tracking-[-0.5px]">Constancia de hoy</div>
         </div>
         <div className="text-right flex items-center gap-3">
           <div>
@@ -94,12 +95,18 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
           <div className="flex gap-1 flex-wrap">
             {getUnlockedGadgets(dailyPulse.level || 1).map((g, i) => (
               <div key={i} className="text-[9px] bg-black/40 border border-[#FFD700]/30 rounded px-1.5 py-0.5 flex items-center gap-1" title={g.desc}>
-                <span>{g.icon}</span> <span className="font-medium text-white/90">{g.name}</span>
+                <span>{g.icon}</span>{' '}
+                <span className="font-medium text-white/90">
+                  {gadgetDisplayName(g.name, currentUser.gender)}
+                </span>
               </div>
             ))}
           </div>
           {getNextGadget(dailyPulse.level || 1) && (
-            <div className="text-[7px] text-[#9CA3AF] mt-0.5">Siguiente: {getNextGadget(dailyPulse.level || 1)!.name} (nivel {getNextGadget(dailyPulse.level || 1)!.level})</div>
+            <div className="text-[7px] text-[#9CA3AF] mt-0.5">
+              Siguiente: {gadgetDisplayName(getNextGadget(dailyPulse.level || 1)!.name, currentUser.gender)} (nivel{' '}
+              {getNextGadget(dailyPulse.level || 1)!.level})
+            </div>
           )}
         </div>
       )}
@@ -176,7 +183,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
               const ampPulse = { ...dailyPulse, pulseAmplifiedDate: todayStr, momentum: (dailyPulse.momentum || 0) - 30 }
               setDailyPulse(ampPulse)
               saveUserWithRealSync({ ...(currentUser as any), pulseAmplifiedDate: todayStr, momentumPoints: ampPulse.momentum } as any)
-              toast.success('GymPulse amplificado', { description: 'Tu actividad ahora tiene más peso en el GymPulse de tus GymPartners por 24h' })
+              toast.success('Actividad amplificada', { description: 'Tu actividad tiene más visibilidad en el mapa y tu red fitness por 24h' })
             } else {
               toast('Necesitas 30 Constancia')
             }

@@ -154,13 +154,22 @@ export async function completeGoogleSignInProfile(
   return { profile, isNewUser };
 }
 
-// Sign out
-export const logout = async () => {
+// Sign out — must not hang; callers run Firestore cleanup in parallel (non-blocking).
+export const logout = async (): Promise<void> => {
   if (!isFirebaseConfigured) {
     clearDemoUser();
     return;
   }
-  await signOut(auth);
+  if (!auth) {
+    console.warn('[Auth] logout skipped — auth not initialized');
+    return;
+  }
+  try {
+    await signOut(auth);
+  } catch (e) {
+    console.warn('[Auth] signOut failed', e);
+    throw e;
+  }
 };
 
 // Create user profile in Firestore after signup

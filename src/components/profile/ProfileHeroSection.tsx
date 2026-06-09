@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
 import { VerifiedPhotoBadge, VerifiedProfilePhoto } from './VerifiedProfilePhoto'
+import { cityChampionLabel } from '../../utils/genderedCopy'
 import { isProfileVerified } from '../../utils/identityVerification'
 
 export function ProfileHeroSection(props: ProfileTabProps) {
@@ -65,7 +66,7 @@ export function ProfileHeroSection(props: ProfileTabProps) {
           if (localStorage.getItem(key) || localStorage.getItem(`entrenamatch_city_badge_${currentUser.city}`)) {
             return (
               <span className="text-[9px] px-2 py-0.5 rounded-full bg-[#FFD700]/20 text-[#FFD700] font-bold border border-[#FFD700]/40">
-                🌆 Campeón {currentUser.city}
+                🌆 {cityChampionLabel(currentUser.gender, currentUser.city)}
               </span>
             )
           }

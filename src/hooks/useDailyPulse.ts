@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
 import { toast } from 'sonner'
 import type { CurrentUser } from '../types'
 import { getTodayStr, getUnlockedGadgets } from '../utils/dailyPulseCore'
+import { gadgetDisplayName } from '../utils/genderedCopy'
 import {
   advanceChallengeProgress,
   buildNewDayPulse,
@@ -78,7 +79,7 @@ export function useDailyPulse({
         )
 
         toast.success('¡Nuevo GymPulse Diario!', {
-          description: `${pulse.currentChallenge?.icon || '🔥'} ${pulse.currentChallenge?.title} • +${pulse.currentChallenge?.reward} Constancia para tus GymPartners`,
+          description: `${pulse.currentChallenge?.icon || '🔥'} ${pulse.currentChallenge?.title} • +${pulse.currentChallenge?.reward} Constancia para tu red fitness`,
         })
 
         const notif = {
@@ -138,15 +139,16 @@ export function useDailyPulse({
           triggerConfettiRef?.current?.()
         } catch {}
         const newGadgets = getUnlockedGadgets(computedLevel).filter((g) => g.level > prevLevel)
+        const gender = user.gender
         const gadgetText =
           newGadgets.length > 0
-            ? ` + ${newGadgets.map((g) => g.name).join(', ')} disponible(s)!`
+            ? ` + ${newGadgets.map((g) => gadgetDisplayName(g.name, gender)).join(', ')} disponible(s)!`
             : ''
         toast.success(`¡Subiste a NIVEL ${computedLevel}!`, {
           description: `Perk permanente: +8% Constancia en desafíos. ${gadgetText} ¡Tu constancia sube!`,
         })
         createProfilePostRef.current?.(
-          `⭐ ¡NIVEL ${computedLevel} DE RETENCIÓN! Mi constancia diaria hace fuerte a toda la Red.${newGadgets.length ? ' Gadget: ' + newGadgets[0].name : ''}`,
+          `⭐ ¡NIVEL ${computedLevel} DE RETENCIÓN! Mi constancia diaria hace fuerte a toda la Red.${newGadgets.length ? ' Gadget: ' + gadgetDisplayName(newGadgets[0].name, gender) : ''}`,
           null,
           'dailyPulse'
         ).catch(() => {})
@@ -177,7 +179,7 @@ export function useDailyPulse({
           description: `${ch.icon || '✅'} ${ch.title} • Nivel ${dailyPulse.level} • Tu Red se fortalece`,
         })
 
-        const postText = `✅ Completé mi GymPulse Diario: ${ch.title}. ${ch.description || ''} — Constancia para mis GymPartners 🔥`
+        const postText = `✅ Completé mi reto diario: ${ch.title}. ${ch.description || ''} — Constancia para mi red fitness 🔥`
         try {
           await createProfilePostRef.current?.(postText, null, 'dailyPulse')
         } catch {}
@@ -234,7 +236,7 @@ export function useDailyPulse({
             description: `${streak}d de racha activa — ¡Sigue así!`,
           })
           createProfilePostRef.current?.(
-            `🔥 RACHA ${streak}d — Mis GymPartners me hacen imparable. GymPulse Diario completado.`,
+            `🔥 RACHA ${streak}d — Mi red fitness me hace imparable. Reto diario completado.`,
             null,
             'dailyPulse'
           ).catch(() => {})

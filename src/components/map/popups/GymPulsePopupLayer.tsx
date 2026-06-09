@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { BRAND_COPY } from '../../../constants/brandCopy'
 import type { GymPulsePopupState } from '../gymPulsePopupTypes'
 import { GymPulseLivePopup } from './GymPulseLivePopup'
 import { GymPulsePartnerCard } from './GymPulsePartnerCard'
@@ -92,7 +93,7 @@ export function GymPulsePopupLayer({
             {popup.inRed && <span className="gym-pulse-live-popup__bond">⭐ Alianza de sync</span>}
             <strong>{popup.nameA} × {popup.nameB}</strong>
             <p className="gym-pulse-live-popup__live">🔄 EN SYNC{popup.syncMins > 0 ? ` · ${popup.syncMins} min` : ''}</p>
-            <p className="gym-pulse-live-popup__sub">Tether activo en GymPulse</p>
+            <p className="gym-pulse-live-popup__sub">{BRAND_COPY.liveMap.tetherSub}</p>
           </div>
         )}
       </div>

@@ -21,7 +21,15 @@ import {
   type DirectChatMsg,
 } from '../services/chatMessages'
 import { attachPartnerTypingListener, markDirectMessageRead } from '../services/chatPresence'
-import { isQuotaError, reclaimLocalStorageSpace } from '../utils/safeLocalStorage'
+import { BRAND_COPY } from '../constants/brandCopy'
+import {
+  isQuotaError,
+  MAX_SEEN_IDS_PER_CHAT,
+  pruneSeenIdMap,
+  reclaimLocalStorageSpace,
+  safeSetJSON,
+  trimSetToMax,
+} from '../utils/safeLocalStorage'
 
 export interface UseChatSessionOptions {
   isDemoMode: boolean
@@ -77,24 +85,32 @@ export function useChatSession(opts: UseChatSessionOptions) {
   const prevActiveChatForLoadRef = useRef<string | null>(null)
   const realMatchesInitializedRef = useRef(false)
   const justMatchedLocallyRef = useRef<Set<string>>(new Set())
+  const markedReadIdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     currentActiveChatRef.current = activeChat || null
   }, [activeChat])
 
   const persistSeen = useCallback(() => {
-    try {
-      const chatObj: Record<string, string[]> = {}
-      Object.keys(seenChatMsgIdsRef.current).forEach((k) => {
-        chatObj[k] = Array.from(seenChatMsgIdsRef.current[k])
-      })
-      localStorage.setItem('entrenamatch_seen_chat_msgs', JSON.stringify(chatObj))
-    } catch {}
+    Object.keys(seenChatMsgIdsRef.current).forEach((k) => {
+      trimSetToMax(seenChatMsgIdsRef.current[k], MAX_SEEN_IDS_PER_CHAT)
+    })
+    const chatObj: Record<string, string[]> = {}
+    Object.keys(seenChatMsgIdsRef.current).forEach((k) => {
+      chatObj[k] = Array.from(seenChatMsgIdsRef.current[k])
+    })
+    safeSetJSON('entrenamatch_seen_chat_msgs', pruneSeenIdMap(chatObj))
   }, [])
 
   useEffect(() => {
-    localStorage.setItem('entrenamatch_chat_unreads', JSON.stringify(chatUnreads))
-  }, [chatUnreads])
+    if (isDemoMode) {
+      try {
+        localStorage.setItem('entrenamatch_chat_unreads', JSON.stringify(chatUnreads))
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [chatUnreads, isDemoMode])
 
   const isRealChatId = useCallback(
     (chatId: string | null): boolean => {
@@ -138,10 +154,10 @@ export function useChatSession(opts: UseChatSessionOptions) {
           addNotification.current({
             type: 'match',
             title: '¡Nuevo Match!',
-            body: `Hiciste match con ${prof?.name || 'un GymPartner'}`,
+            body: `Hiciste match con ${prof?.name || BRAND_COPY.partnerGeneric}`,
             relatedId: id,
           })
-          toast.success(`¡Match con ${prof?.name || 'un GymPartner'}!`, {
+          toast.success(`¡Match con ${prof?.name || BRAND_COPY.partnerGeneric}!`, {
             description: 'Ambos se dieron like — ya pueden chatear',
           })
         }
@@ -232,7 +248,12 @@ export function useChatSession(opts: UseChatSessionOptions) {
     async (
       text: string,
       toUserId: string,
-      voice?: { voiceUrl: string; voiceDuration: number } | null
+      voice?: { voiceUrl: string; voiceDuration: number } | null,
+      opts?: {
+        clientId?: string
+        onAck?: (serverId: string) => void
+        onFail?: () => void
+      }
     ) => {
       if ((!text.trim() && !voice) || !firebaseUserUid || !db) return
 
@@ -244,16 +265,31 @@ export function useChatSession(opts: UseChatSessionOptions) {
           text: text.trim() || '',
           timestamp: Date.now(),
           createdAt: serverTimestamp(),
+          read: false,
         }
+        if (opts?.clientId) msg.clientId = opts.clientId
         if (voice) {
           msg.voiceUrl = voice.voiceUrl
           msg.voiceDuration = voice.voiceDuration
         }
-        await addDoc(collection(db, 'messages'), msg)
+        const ref = await addDoc(collection(db, 'messages'), msg)
+        return ref.id
+      }
+
+      const handleFail = (e: unknown, afterReclaim = false) => {
+        console.error('Failed to send real message:', e)
+        opts?.onFail?.()
+        if (afterReclaim) return
+        toast.error('No se pudo enviar el mensaje', {
+          description: isQuotaError(e)
+            ? 'Espacio del navegador casi lleno. Recarga la página o borra datos del sitio en ajustes.'
+            : 'Revisa tu conexión e intenta de nuevo.',
+        })
       }
 
       try {
-        await writeMessage()
+        const serverId = await writeMessage()
+        opts?.onAck?.(serverId)
         setChatUnreads((prev) => {
           const c = { ...prev }
           c[toUserId] = 0
@@ -263,7 +299,8 @@ export function useChatSession(opts: UseChatSessionOptions) {
         if (isQuotaError(e)) {
           reclaimLocalStorageSpace('hard')
           try {
-            await writeMessage()
+            const serverId = await writeMessage()
+            opts?.onAck?.(serverId)
             setChatUnreads((prev) => {
               const c = { ...prev }
               c[toUserId] = 0
@@ -272,15 +309,11 @@ export function useChatSession(opts: UseChatSessionOptions) {
             toast.success('Mensaje enviado', { description: 'Liberamos espacio en el navegador.' })
             return
           } catch (retryErr) {
-            console.error('Failed to send after storage reclaim:', retryErr)
+            handleFail(retryErr, true)
           }
+        } else {
+          handleFail(e)
         }
-        console.error('Failed to send real message:', e)
-        toast.error('No se pudo enviar el mensaje', {
-          description: isQuotaError(e)
-            ? 'Almacenamiento del navegador lleno. Borra datos del sitio en ajustes o cierra otras pestañas.'
-            : 'Revisa tu conexión e intenta de nuevo.',
-        })
       }
     },
     [firebaseUserUid, db]
@@ -463,14 +496,16 @@ export function useChatSession(opts: UseChatSessionOptions) {
   }, [isDemoMode, db, firebaseUserUid, activeChat])
 
   useEffect(() => {
-    if (isDemoMode || !db || !activeChat) return
+    if (isDemoMode || !db || !activeChat || !firebaseUserUid) return
     const msgs = realChatMessages.length > 0 ? realChatMessages : messages[activeChat] || []
     for (const m of msgs) {
-      if (m.from === 'them' && m.id && !(m as Message & { read?: boolean }).read && !(m as Message & { readAt?: number }).readAt) {
-        void markDirectMessageRead(db, m.id)
-      }
+      if (m.from !== 'them' || !m.id) continue
+      if ((m as Message).read || (m as Message).readAt) continue
+      if (markedReadIdsRef.current.has(m.id)) continue
+      markedReadIdsRef.current.add(m.id)
+      void markDirectMessageRead(db, m.id, firebaseUserUid)
     }
-  }, [isDemoMode, db, activeChat, realChatMessages, messages])
+  }, [isDemoMode, db, activeChat, firebaseUserUid, realChatMessages, messages])
 
   const totalChatUnreads = useMemo(
     () => Object.values(chatUnreads).reduce((sum, n) => sum + (n || 0), 0),
@@ -501,6 +536,7 @@ export function useChatSession(opts: UseChatSessionOptions) {
     setActiveChat(null)
     setChatUnreads({})
     seenChatMsgIdsRef.current = {}
+    markedReadIdsRef.current = new Set()
     realMatchesInitializedRef.current = false
     prevRealMatchesRef.current = []
   }, [])

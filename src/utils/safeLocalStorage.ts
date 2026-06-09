@@ -7,16 +7,33 @@ export const MAX_STORED_NOTIFICATIONS = 25
 
 /** Browsers typically allow ~5–10MB per origin; Firestore mutations also use localStorage. */
 const SOFT_LIMIT_BYTES = 4 * 1024 * 1024
+const PROACTIVE_PRUNE_BYTES = 2.5 * 1024 * 1024
+
+export const MAX_SEEN_IDS_PER_CHAT = 80
+export const MAX_SEEN_CHAT_THREADS = 40
+export const MAX_SEEN_STRING_IDS = 300
 
 const BULKY_KEYS_TO_EVICT = [
   'entrenamatch_last_live',
   'entrenamatch_profile_posts',
   'entrenamatch_seen_chat_msgs',
   'entrenamatch_seen_group_msgs',
+  'entrenamatch_seen_live_users',
   'entrenamatch_seen_live_joins',
   'entrenamatch_sessions',
   'entrenamatch_squads',
+  'entrenamatch_reviews',
   'fitvina_messages',
+] as const
+
+const SEEN_ID_STORAGE_KEYS = [
+  'entrenamatch_seen_chat_msgs',
+  'entrenamatch_seen_group_msgs',
+] as const
+
+const SEEN_LIST_STORAGE_KEYS = [
+  'entrenamatch_seen_live_users',
+  'entrenamatch_seen_live_joins',
 ] as const
 
 const FIRESTORE_OVERLAY_PREFIXES = ['firestore_targets_', 'firestore_online_state_'] as const
@@ -71,6 +88,89 @@ function evictBulkyLocalStorageKeys() {
   }
 }
 
+/** Keep the tail of an ID list (assumes append-only / chronological). */
+export function pruneIdArray(ids: string[], max: number): string[] {
+  if (!Array.isArray(ids) || ids.length <= max) return ids || []
+  return ids.slice(-max)
+}
+
+export function pruneSeenIdMap(
+  raw: Record<string, string[]>,
+  maxPerKey = MAX_SEEN_IDS_PER_CHAT,
+  maxKeys = MAX_SEEN_CHAT_THREADS
+): Record<string, string[]> {
+  const keys = Object.keys(raw || {}).slice(-maxKeys)
+  const out: Record<string, string[]> = {}
+  for (const k of keys) {
+    const pruned = pruneIdArray(raw[k] || [], maxPerKey)
+    if (pruned.length > 0) out[k] = pruned
+  }
+  return out
+}
+
+export function pruneStringIdList(ids: string[], max = MAX_SEEN_STRING_IDS): string[] {
+  return pruneIdArray(ids, max)
+}
+
+/** Trim in-memory Set by dropping oldest entries (insertion order). */
+export function trimSetToMax<T>(set: Set<T>, max: number): void {
+  if (set.size <= max) return
+  const excess = set.size - max
+  const iter = set.values()
+  for (let i = 0; i < excess; i++) {
+    const v = iter.next().value
+    if (v !== undefined) set.delete(v)
+  }
+}
+
+function pruneSeenLocalStorageKeys(): boolean {
+  if (typeof localStorage === 'undefined') return false
+  const before = estimateLocalStorageBytes()
+  let changed = false
+
+  for (const key of SEEN_ID_STORAGE_KEYS) {
+    try {
+      const raw = safeGetJSON<Record<string, string[]>>(key)
+      if (!raw) continue
+      const pruned = pruneSeenIdMap(raw)
+      const beforeLen = JSON.stringify(raw).length
+      const afterLen = JSON.stringify(pruned).length
+      if (afterLen < beforeLen) {
+        localStorage.setItem(key, JSON.stringify(pruned))
+        changed = true
+      }
+    } catch {
+      try {
+        localStorage.removeItem(key)
+        changed = true
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  for (const key of SEEN_LIST_STORAGE_KEYS) {
+    try {
+      const raw = safeGetJSON<string[]>(key)
+      if (!Array.isArray(raw)) continue
+      const pruned = pruneStringIdList(raw)
+      if (pruned.length < raw.length) {
+        localStorage.setItem(key, JSON.stringify(pruned))
+        changed = true
+      }
+    } catch {
+      try {
+        localStorage.removeItem(key)
+        changed = true
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  return changed || estimateLocalStorageBytes() < before
+}
+
 /**
  * Free localStorage so Firestore can persist offline mutations (chat, writes).
  * soft — app caches only; hard — also Firestore overlay keys (+ mutations as last resort).
@@ -78,6 +178,7 @@ function evictBulkyLocalStorageKeys() {
 export function reclaimLocalStorageSpace(level: 'soft' | 'hard' = 'soft'): boolean {
   if (typeof localStorage === 'undefined') return false
   const before = estimateLocalStorageBytes()
+  pruneSeenLocalStorageKeys()
   evictBulkyLocalStorageKeys()
 
   if (level === 'hard') {
@@ -96,17 +197,21 @@ export function reclaimLocalStorageSpace(level: 'soft' | 'hard' = 'soft'): boole
 export function ensureLocalStorageHeadroom(): void {
   if (typeof localStorage === 'undefined') return
   try {
-    if (estimateLocalStorageBytes() > SOFT_LIMIT_BYTES) {
-      reclaimLocalStorageSpace('soft')
-    }
+    const bytes = estimateLocalStorageBytes()
+    pruneSeenLocalStorageKeys()
     // Dead weight: full profile snapshots were written but never read.
     localStorage.removeItem('entrenamatch_last_live')
+    if (bytes > PROACTIVE_PRUNE_BYTES) {
+      reclaimLocalStorageSpace(bytes > SOFT_LIMIT_BYTES ? 'hard' : 'soft')
+    }
   } catch {
     /* ignore */
   }
 }
 
 let quotaGuardInstalled = false
+let lastQuotaToastAt = 0
+const QUOTA_TOAST_COOLDOWN_MS = 3 * 60 * 1000
 
 /** Catch Firestore mutation quota failures so chat does not spam uncaught rejections. */
 export function installStorageQuotaGuard(): void {
@@ -119,14 +224,22 @@ export function installStorageQuotaGuard(): void {
     const firestoreRelated =
       msg.includes('firestore') || msg.includes('setItem') || msg.includes('Storage')
 
+    const before = estimateLocalStorageBytes()
     reclaimLocalStorageSpace(firestoreRelated ? 'hard' : 'soft')
     event.preventDefault()
 
+    const after = estimateLocalStorageBytes()
+    const now = Date.now()
+    if (now - lastQuotaToastAt < QUOTA_TOAST_COOLDOWN_MS) return
+    if (after < before * 0.85 && after < SOFT_LIMIT_BYTES) return
+
+    lastQuotaToastAt = now
     import('sonner')
       .then(({ toast }) => {
-        toast.warning('Almacenamiento del navegador lleno', {
-          description: 'Liberamos espacio automáticamente. Reintenta enviar el mensaje.',
-          duration: 6000,
+        toast.warning('Espacio del navegador casi lleno', {
+          description:
+            'Liberamos caché local automáticamente. Si algo falla, recarga la página o borra datos del sitio en ajustes.',
+          duration: 5000,
         })
       })
       .catch(() => {})

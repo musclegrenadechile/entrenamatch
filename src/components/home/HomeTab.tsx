@@ -281,6 +281,7 @@ export function HomeTab(props: HomeTabProps) {
       )}
       <DailyHome
         userName={currentUser?.name || 'Atleta'}
+        userGender={currentUser?.gender}
         weekDays={homeWeekDays}
         weekTrainedCount={homeWeekTrainedCount}
         teamMembers={homeTeamMembers}
@@ -394,7 +395,7 @@ export function HomeTab(props: HomeTabProps) {
               <div className="text-3xl drop-shadow">🔥</div>
               <div>
                 <div className="feed-title-gradient">EL MURO</div>
-                <div className="text-[11px] text-[#9CA3AF] -mt-0.5 tracking-[0.3px]">del GymPulse • donde el esfuerzo sincronizado se vuelve cultura y estatus real</div>
+                <div className="text-[11px] text-[#9CA3AF] -mt-0.5 tracking-[0.3px]">de la comunidad • donde entrenar acompañado/a se vuelve cultura</div>
               </div>
             </div>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -471,7 +472,7 @@ export function HomeTab(props: HomeTabProps) {
 
       {showFeedPublishSuccess && (
         <div className="feed-publish-success mb-3 mx-1 p-3 rounded-2xl text-center text-sm font-semibold flex items-center justify-center gap-2">
-          ✨ ¡Publicado en el Muro del GymPulse! Tu post ya está vivo para toda la comunidad.
+          ✨ ¡Publicado en el Muro! Tu post ya está vivo para toda la comunidad fitness.
         </div>
       )}
 
@@ -538,7 +539,7 @@ export function HomeTab(props: HomeTabProps) {
         if (recentEchoes.length === 0) return null;
         return (
           <div className="mb-4 -mx-1 px-1">
-            <div className="text-[8px] uppercase tracking-[1.5px] text-[#FFD700] font-black mb-1.5 flex items-center gap-1">⭐ HIGHLIGHTS DE LA RED — momentos que construyen la cultura del GymPulse</div>
+            <div className="text-[8px] uppercase tracking-[1.5px] text-[#FFD700] font-black mb-1.5 flex items-center gap-1">⭐ HIGHLIGHTS DE LA RED — momentos de la comunidad fitness</div>
             <div className="flex gap-2 overflow-x-auto pb-1 snap-x">
               {recentEchoes.map((e: any) => (
                 <div key={e.id} className="min-w-[158px] snap-start p-3 rounded-2xl text-[10px] border border-[#FFD700]/40 bg-gradient-to-br from-[#1a160f] to-[#111] text-[#f5e8c7]">

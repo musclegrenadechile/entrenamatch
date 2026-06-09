@@ -60,7 +60,7 @@ export function MatchesTab({
         <div>
           <div className="section-header">Tus matches</div>
           <div className="text-[#9CA3AF] text-sm">
-            Tu red de gym partners
+            Tu red fitness
           </div>
         </div>
         {syncAgeSec != null && (

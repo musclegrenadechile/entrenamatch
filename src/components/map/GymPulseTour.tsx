@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { BRAND_COPY } from '../../constants/brandCopy'
 
 export const GYMPULSE_TOUR_KEY = 'entrenamatch_gympulse_tour_seen'
 
@@ -11,8 +12,8 @@ const STEPS = [
   },
   {
     selector: '[data-gympulse-tour="checkin"]',
-    title: 'Check-in en tu gym',
-    body: 'Activa "Mi gym" cuando haces check-in. Apareces con tu gym y conectas con quien entrena ahí.',
+    title: 'Check-in en tu spot',
+    body: 'Activa "Mi gym" si entrenas en un gimnasio. Conectas con quien entrena en el mismo lugar.',
   },
   {
     selector: '[data-gympulse-tour="sync"]',
@@ -141,7 +142,7 @@ export function GymPulseTour({ active, onComplete }: GymPulseTourProps) {
           style={{ top: tooltipTop, left: tooltipLeft }}
         >
           <p className="text-[10px] uppercase tracking-wider text-[#22c55e] font-bold">
-            GymPulse · {step + 1}/{STEPS.length}
+            {BRAND_COPY.liveMap.tourHeader} · {step + 1}/{STEPS.length}
           </p>
           <p className="text-sm font-bold text-white mt-1">{current.title}</p>
           <p className="text-[11px] text-[#9CA3AF] mt-1 leading-snug">{current.body}</p>

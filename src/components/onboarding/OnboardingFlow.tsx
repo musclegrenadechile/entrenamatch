@@ -4,6 +4,7 @@ import { PhotoCropModal } from '../photos/PhotoCropModal';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { TRAINING_OPTIONS, TRAINING_GOALS } from '../../constants';
+import { BRAND_COPY } from '../../constants/brandCopy';
 import { PILOT_CITY_OPTIONS, PILOT_PROGRAM_TITLE } from '../../constants/pilotProgram';
 import type { CurrentUser } from '../../types';
 
@@ -222,7 +223,7 @@ export const OnboardingFlow = ({
         {/* Unique ritual mock: small live map simulation for excitement - makes the first Live feel inevitable */}
         {isLive && (
           <div className="mx-3 -mt-1 mb-1 px-2 py-1 bg-[#0a120f] border border-[#22c55e]/20 rounded-b-2xl text-[7px] text-[#22c55e] flex items-center gap-1">
-            <span>🗺️</span> <span>GymPulse simulado: tú + 4 cerca • línea de sync lista • primer match en 20s</span>
+            <span>🗺️</span> <span>Mapa LIVE simulado: tú + 4 cerca • sync listo • primer match en 20s</span>
           </div>
         )}
       </div>
@@ -494,7 +495,7 @@ export const OnboardingFlow = ({
           </motion.div>
           <div className="flex-1">
             <div className="font-black text-4xl tracking-[-2px] text-white">ENTRENAMATCH</div>
-            <div className="text-[#FF671F] text-xs tracking-[3px] font-mono -mt-1">TU EQUIPO DE GYM EN VIVO</div>
+            <div className="text-[#FF671F] text-xs tracking-[3px] font-mono -mt-1">{BRAND_COPY.taglineMono}</div>
           </div>
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             {!isEditMode && onExitToLogin && (
@@ -525,7 +526,7 @@ export const OnboardingFlow = ({
               <div className="text-4xl font-black tracking-[-1.5px] leading-none mb-1 text-white">
                 {isEditMode ? 'REMASTERIZA TU PRESENCIA' : 'CREA TU PERFIL'}
               </div>
-              <div className="text-[#9CA3AF] text-base max-w-md">Tu perfil es tu entrada a la red de GymPartners. Entrena en vivo, sincronízate y deja historial compartido en el GymPulse.</div>
+              <div className="text-[#9CA3AF] text-base max-w-md">Tu perfil es tu entrada a la {BRAND_COPY.community}. Entrena en vivo, sincronízate y deja historial compartido en el mapa.</div>
             </div>
           </div>
         </div>
@@ -572,7 +573,7 @@ export const OnboardingFlow = ({
           <div className="space-y-5">
             <div className="text-center mb-2">
               <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-2 font-medium">BIENVENIDO</div>
-              <div className="text-2xl font-black tracking-[-1px] leading-tight">Encuentra compañeros de gym,<br />entrena en vivo y conecta</div>
+              <div className="text-2xl font-black tracking-[-1px] leading-tight">Encuentra quien entrena como tú,<br />en vivo y conecta</div>
             </div>
             <div className="space-y-3">
               <div className="flex gap-3 bg-[#1C1C20] p-4 rounded-2xl border border-[#2F2F35]">
@@ -586,14 +587,14 @@ export const OnboardingFlow = ({
                 <RefreshCw className="text-[#22c55e] shrink-0 mt-0.5" size={22} />
                 <div>
                   <div className="font-bold text-sm">EntrenaSync</div>
-                  <div className="text-[#9CA3AF] text-xs mt-0.5">Entrena a la par con alguien en tiempo real — como si estuvieran en el mismo gym.</div>
+                  <div className="text-[#9CA3AF] text-xs mt-0.5">Entrena a la par con alguien en tiempo real — mismo ritmo, distinta ubicación.</div>
                 </div>
               </div>
               <div className="flex gap-3 bg-[#1C1C20] p-4 rounded-2xl border border-[#2F2F35]">
                 <Users className="text-[#FF671F] shrink-0 mt-0.5" size={22} />
                 <div>
-                  <div className="font-bold text-sm">Tu red de gym</div>
-                  <div className="text-[#9CA3AF] text-xs mt-0.5">Matches, chat y metas semanales con personas que entrenan como tú.</div>
+                  <div className="font-bold text-sm">{BRAND_COPY.networkTitle}</div>
+                  <div className="text-[#9CA3AF] text-xs mt-0.5">Matches, chat y metas semanales con tu {BRAND_COPY.community}.</div>
                 </div>
               </div>
             </div>
@@ -669,7 +670,7 @@ export const OnboardingFlow = ({
                   </div>
                 )}
               </div>
-              <div className="text-[9px] text-[#9CA3AF] mt-1.5">Fotos reales de tus sesiones. Esto te hace único en el GymPulse.</div>
+              <div className="text-[9px] text-[#9CA3AF] mt-1.5">Fotos reales de tus sesiones. Así te ven en Explorar y el mapa.</div>
             </div>
 
             <div className="rounded-2xl border border-[#FF671F]/25 bg-[#111113] p-4 space-y-3">
@@ -817,7 +818,7 @@ export const OnboardingFlow = ({
                       <span className="text-2xl mt-0.5">{emoji}</span>
                       <div>
                         <div className="font-bold text-sm tracking-wider">{type}</div>
-                        <div className="text-[9px] opacity-70 mt-0.5">Apareces en el GymPulse correcto + matches de alto valor</div>
+                        <div className="text-[9px] opacity-70 mt-0.5">Apareces en el mapa correcto + matches de alto valor</div>
                       </div>
                     </button>
                   );
@@ -841,7 +842,7 @@ export const OnboardingFlow = ({
                   );
                 })}
               </div>
-              <div className="text-[9px] text-[#9CA3AF] mt-1.5">Esto alimenta tu GymPulse, matches precisos y Daily Challenges que realmente importan.</div>
+              <div className="text-[9px] text-[#9CA3AF] mt-1.5">Esto mejora tus matches, el mapa en vivo y los retos diarios que importan.</div>
             </div>
           </div>
         )}
@@ -856,11 +857,11 @@ export const OnboardingFlow = ({
               <div className="space-y-4 text-sm">
                 <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
                   <div className="text-[#22c55e] text-xl font-black mt-0.5">01</div>
-                  <div><span className="font-bold">MARCA "ENTRENANDO AHORA"</span><br/><span className="text-[#9CA3AF] text-xs">Apareces en el GymPulse mapa con urgencia verde. Otros cerca te ven sudando en tiempo real.</span></div>
+                  <div><span className="font-bold">MARCA "ENTRENANDO AHORA"</span><br/><span className="text-[#9CA3AF] text-xs">Apareces en el mapa en vivo con punto verde. Otros cerca te ven entrenando en tiempo real.</span></div>
                 </div>
                 <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
                   <div className="text-[#22c55e] text-xl font-black mt-0.5">02</div>
-                  <div><span className="font-bold">DAN LIKE → CHAT INSTANTÁNEO</span><br/><span className="text-[#9CA3AF] text-xs">Estás a un toque de conectar con un GymPartner que está en el mismo entrenamiento que tú ahora.</span></div>
+                  <div><span className="font-bold">DAN LIKE → CHAT INSTANTÁNEO</span><br/><span className="text-[#9CA3AF] text-xs">Estás a un toque de conectar con {BRAND_COPY.partnerGeneric} que entrena ahora como tú.</span></div>
                 </div>
                 <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
                   <div className="text-[#22c55e] text-xl font-black mt-0.5">03</div>
@@ -868,7 +869,7 @@ export const OnboardingFlow = ({
                 </div>
                 <div className="flex gap-4 bg-[#111113] p-3 rounded-2xl border border-[#22c55e]/20">
                   <div className="text-[#22c55e] text-xl font-black mt-0.5">04</div>
-                  <div><span className="font-bold">QUEDA EN TU MURO, FEED Y ONDAS DEL MAPA</span><br/><span className="text-[#FF671F] text-xs font-bold">Cada EntrenaSync deja pulsos visibles en el GymPulse — quien entrena cerca ve que estuvieron juntos.</span></div>
+                  <div><span className="font-bold">QUEDA EN TU MURO, FEED Y MAPA</span><br/><span className="text-[#FF671F] text-xs font-bold">Cada EntrenaSync deja actividad visible — quien entrena cerca ve que estuvieron juntos.</span></div>
                 </div>
               </div>
             </div>
@@ -934,7 +935,7 @@ export const OnboardingFlow = ({
               <div className="uppercase tracking-[2px] text-[#FF671F] text-xs mb-1">Último paso</div>
               <div className="text-2xl font-black tracking-[-1px]">Confirma y entra</div>
               <div className="text-[#9CA3AF] text-sm mt-1 leading-snug">
-                Marca las 3 casillas. Son los requisitos básicos para usar la red de gym.
+                Marca las 3 casillas. Son los requisitos básicos para usar la {BRAND_COPY.community}.
               </div>
             </div>
 
@@ -998,7 +999,7 @@ export const OnboardingFlow = ({
                 <li className="flex gap-2">
                   <span className="text-[#22c55e] font-bold shrink-0">1.</span>
                   <span>
-                    Si activaste LIVE, tu <strong className="text-white">punto verde</strong> aparece en el mapa del GymPulse.
+                    Si activaste LIVE, tu <strong className="text-white">punto verde</strong> aparece en el mapa en vivo.
                   </span>
                 </li>
                 <li className="flex gap-2">

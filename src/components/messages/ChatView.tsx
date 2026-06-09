@@ -16,6 +16,7 @@ import {
   Zap,
 } from 'lucide-react'
 import type { Message, Profile } from '../../types'
+import { BRAND_COPY } from '../../constants/brandCopy'
 import { generateIcebreakers } from '../../utils/icebreakers'
 import { ChatPactCompareStrip, type ChatPactCompareData } from './ChatPactCompareStrip'
 
@@ -201,7 +202,7 @@ export function ChatView({
               ) : partnerTyping ? (
                 <span className="text-[#FF671F] italic"> · escribiendo…</span>
               ) : (
-                <span> · GymPartner</span>
+                <span> · {BRAND_COPY.partner}</span>
               )}
             </p>
           </div>
@@ -384,12 +385,31 @@ export function ChatView({
                       <span>{renderMessageText(m.text)}</span>
                     )}
                   </div>
-                  {isMe && (m.read || m.readAt) && (
-                    <span className="text-[9px] text-[#6B7280] px-1 mt-0.5 inline-block">
-                      ✓✓ leído
-                      {m.readAt
-                        ? ` · ${new Date(m.readAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                        : ''}
+                  {isMe && (
+                    <span
+                      className={`text-[9px] px-1 mt-0.5 inline-block ${
+                        m.read || m.readAt
+                          ? 'text-[#FF671F]'
+                          : m.sendStatus === 'failed'
+                            ? 'text-red-400'
+                            : 'text-[#6B7280]'
+                      }`}
+                    >
+                      {m.sendStatus === 'sending' && '○ Enviando…'}
+                      {m.sendStatus === 'failed' && '✗ No enviado · reintenta'}
+                      {m.sendStatus !== 'sending' && m.sendStatus !== 'failed' && (m.read || m.readAt) && (
+                        <>
+                          ✓✓ Leído
+                          {m.readAt
+                            ? ` · ${new Date(m.readAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                            : ''}
+                        </>
+                      )}
+                      {m.sendStatus !== 'sending' &&
+                        m.sendStatus !== 'failed' &&
+                        !(m.read || m.readAt) && (
+                          <span className="text-[#9CA3AF]">✓ Enviado</span>
+                        )}
                     </span>
                   )}
                 </div>
@@ -498,7 +518,7 @@ export function ChatView({
 
         {isUploadingVoice && (
           <div className="voice-uploading mb-2">
-            <div className="label">TRANSMITIENDO A TUS GYMPARTNERS...</div>
+            <div className="label">TRANSMITIENDO A TU MATCH...</div>
             <div className="progress-track">
               <div className="progress-fill" style={{ width: `${voiceUploadProgress || 10}%` }} />
             </div>
@@ -539,7 +559,7 @@ export function ChatView({
             <>
               <input
                 type="text"
-                placeholder="Mensaje a tu GymPartner…"
+                placeholder={`Mensaje a tu ${BRAND_COPY.partner}…`}
                 className="chat-input flex-1"
                 onChange={(e) => onChatInputChange(e.target.value)}
                 value={chatInputValue}
@@ -563,7 +583,7 @@ export function ChatView({
           )}
         </form>
         <p className="text-center text-[9px] text-[#6B7280] mt-2">
-          {!isDemoMode ? 'Canal GymPartner · voz + sync + logs' : 'Demo local'}
+          {!isDemoMode ? `Canal ${BRAND_COPY.partner} · voz + sync + logs` : 'Demo local'}
         </p>
       </div>
     </div>

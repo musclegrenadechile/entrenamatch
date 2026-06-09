@@ -327,7 +327,17 @@ import { VerificationFaceCapture } from './components/profile/VerificationFaceCa
 import { VerifiedProfilePhoto } from './components/profile/VerifiedProfilePhoto'
 import { getYesterdayWorkout } from './utils/homeHero'
 import { triggerHaptic } from './utils/haptics'
-import { loadStoredNotifications, saveStoredNotifications, isQuotaError, reclaimLocalStorageSpace } from './utils/safeLocalStorage'
+import {
+  loadStoredNotifications,
+  saveStoredNotifications,
+  isQuotaError,
+  reclaimLocalStorageSpace,
+  pruneSeenIdMap,
+  pruneStringIdList,
+  MAX_SEEN_IDS_PER_CHAT,
+  MAX_SEEN_STRING_IDS,
+  trimSetToMax,
+} from './utils/safeLocalStorage'
 import {
   attachGroupMessagesListener,
   mapGroupMessageDoc,
@@ -559,6 +569,8 @@ function App() {
   // Used to break the "stuck on AuthScreen after successful real auth" race
   // because firebaseUser from the hook can lag behind the successful signIn/signUp call.
   const lastSuccessfulAuthRef = useRef(null)
+  const loggingOutRef = useRef(false)
+  const [loggingOut, setLoggingOut] = useState(false)
   const chatScrollRef = useRef<HTMLDivElement>(null)
   const groupChatScrollRef = useRef<HTMLDivElement>(null)
   const groupChatInputRef = useRef<HTMLInputElement>(null)
@@ -761,7 +773,7 @@ function App() {
         })
       }, 1000)
 
-      toast('🎙️ Grabando nota de voz', { description: 'Para tu GymPartner. Máx 60s. PARAR para escucharla y decidir enviar.' })
+      toast('🎙️ Grabando nota de voz', { description: 'Para tu EntrenaPartner. Máx 60s. PARAR para escucharla y decidir enviar.' })
     } catch (err) {
       console.error('Mic error', err)
       toast.error('No se pudo acceder al micrófono', { description: 'Revisa permisos del navegador o app.' })
@@ -874,7 +886,7 @@ function App() {
       pulseApi?.setDailyPulse(vUpdate)
       saveUserWithRealSyncRef.current?.({ ...(currentUser as any), dailyVoiceStreak: vStreak } as CurrentUser)
       // Premium toast celebrating the ritual voice + streak
-      toast.success('Nota enviada a tu GymPartner', { 
+      toast.success('Nota enviada a tu EntrenaPartner', { 
         description: `${duration}s • Racha de voz ${vStreak}d 🔥  +5 Constancia en el GymPulse` 
       })
       // Daily Pulse progress (voice is powerful for bond/ripple challenges)
@@ -1596,6 +1608,11 @@ useEffect(() => {
   const [mapForceTick, setMapForceTick] = useState(0) // tiny trigger so map re-renders when toggling partners layer
   const [isTogglingLive, setIsTogglingLive] = useState(false) // prevent double-tap and show loading on the live toggle button (fixes stuck click)
   const isTogglingLiveRef = useRef(false)
+  useEffect(() => {
+    if (!isTogglingLive) return
+    const t = window.setTimeout(() => setIsTogglingLive(false), 8000)
+    return () => window.clearTimeout(t)
+  }, [isTogglingLive])
   // Ignore stale own-profile snapshots right after we write trainingNow (prevents instant revert)
   const pendingLiveWriteRef = useRef<{ trainingNow: boolean; at: number } | null>(null)
   useEffect(() => { isTogglingLiveRef.current = isTogglingLive }, [isTogglingLive])
@@ -3448,60 +3465,66 @@ useEffect(() => {
     setCommentDraft('')
   }, [activeTab, showFullProfile, viewingPostComments])
 
-  // Logout handler - works for both demo and real Firebase
+  const resetLocalSessionState = useCallback(() => {
+    lastSuccessfulAuthRef.current = null
+    syncPartnerIdRef.current = null
+    if (clearProfile) clearProfile()
+    clearQuickDemoSession()
+    setDemoMode(false)
+    clearChatOnLogout()
+    setSessionUnreads({})
+    seenGroupMsgIdsRef.current = {}
+    seenLiveUserIdsRef.current = new Set()
+    seenLiveJoinInteractionIdsRef.current = new Set()
+    purgeAccountScopedStorage()
+    resetSwipeDeck()
+    setRealProfiles([])
+    setActiveTab('explore')
+    setIsEditingProfile(false)
+    setSyncPartnerId(null)
+    syncPartnerIdRef.current = null
+    setSyncStartedAt(null)
+    setSyncActions([])
+  }, [clearProfile, clearChatOnLogout, resetSwipeDeck, setDemoMode])
+
+  // Logout — signOut first; Firestore live cleanup is best-effort (must not block UI).
   const handleLogout = async () => {
+    if (loggingOutRef.current) return
+    loggingOutRef.current = true
+    setLoggingOut(true)
+    const loadingToast = toast.loading('Cerrando sesión…')
+
+    const uid = firebaseUser?.uid
+    if (uid && db && !isDemoMode) {
+      void clearLivePresence(db, uid).catch((e) =>
+        console.warn('logout live presence cleanup (non-fatal):', e)
+      )
+      void updateUserProfile(uid, {
+        trainingNow: false,
+        trainingNowSince: null,
+        trainingSyncWith: null,
+        syncStartedAt: null,
+      } as any).catch((e) => console.warn('logout profile cleanup (non-fatal):', e))
+    }
+
     try {
-      const uid = firebaseUser?.uid
-      if (uid && db && !isDemoMode) {
-        try {
-          await clearLivePresence(db, uid)
-          await updateUserProfile(uid, {
-            trainingNow: false,
-            trainingNowSince: null,
-            trainingSyncWith: null,
-            syncStartedAt: null,
-          } as any)
-        } catch (liveErr) {
-          console.warn('logout live cleanup failed (non-fatal):', liveErr)
-        }
-      }
-
-      await logout()
-
-      // Critical: clear the ref that was keeping us authenticated after login
-      lastSuccessfulAuthRef.current = null
-      syncPartnerIdRef.current = null
-
-      // Clear all local state
-      if (clearProfile) clearProfile()
-      clearQuickDemoSession()
-      setDemoMode(false)
-      clearChatOnLogout()
-      setSessionUnreads({})
-      seenGroupMsgIdsRef.current = {}
-      seenLiveUserIdsRef.current = new Set()
-      seenLiveJoinInteractionIdsRef.current = new Set()
-      purgeAccountScopedStorage()
-      
-      resetSwipeDeck()
-      setRealProfiles([])
-      setActiveTab('explore')
-      setIsEditingProfile(false)
-      setSyncPartnerId(null)
-      syncPartnerIdRef.current = null
-      setSyncStartedAt(null)
-      setSyncActions([])
-
+      await Promise.race([
+        logout(),
+        new Promise<void>((resolve) => window.setTimeout(resolve, 5000)),
+      ])
+      resetLocalSessionState()
+      toast.dismiss(loadingToast)
       toast.success('Sesión cerrada correctamente')
-
-      // For Pre-Alpha testing: full reload guarantees we hit the AuthScreen cleanly
-      // so the user can immediately register or login with another account.
-      setTimeout(() => {
-        window.location.reload()
-      }, 600)
+      window.setTimeout(() => window.location.reload(), 400)
     } catch (error) {
       console.error('Error al cerrar sesión:', error)
-      toast.error('Hubo un problema al cerrar la sesión')
+      resetLocalSessionState()
+      toast.dismiss(loadingToast)
+      toast.error('Cerramos la sesión localmente — recargando…')
+      window.setTimeout(() => window.location.reload(), 600)
+    } finally {
+      loggingOutRef.current = false
+      setLoggingOut(false)
     }
   }
 
@@ -4126,7 +4149,7 @@ useEffect(() => {
     const savedSeenChat = localStorage.getItem('entrenamatch_seen_chat_msgs')
     if (savedSeenChat) {
       try {
-        const parsed = JSON.parse(savedSeenChat)
+        const parsed = pruneSeenIdMap(JSON.parse(savedSeenChat))
         Object.keys(parsed).forEach(k => {
           seenChatMsgIdsRef.current[k] = new Set(parsed[k])
         })
@@ -4135,7 +4158,7 @@ useEffect(() => {
     const savedSeenGroup = localStorage.getItem('entrenamatch_seen_group_msgs')
     if (savedSeenGroup) {
       try {
-        const parsed = JSON.parse(savedSeenGroup)
+        const parsed = pruneSeenIdMap(JSON.parse(savedSeenGroup))
         Object.keys(parsed).forEach(k => {
           seenGroupMsgIdsRef.current[k] = new Set(parsed[k])
         })
@@ -4145,7 +4168,7 @@ useEffect(() => {
     const savedSeenLive = localStorage.getItem('entrenamatch_seen_live_users')
     if (savedSeenLive) {
       try {
-        const arr = JSON.parse(savedSeenLive)
+        const arr = pruneStringIdList(JSON.parse(savedSeenLive))
         seenLiveUserIdsRef.current = new Set(arr)
       } catch {}
     }
@@ -4153,7 +4176,7 @@ useEffect(() => {
     const savedSeenLiveJoins = localStorage.getItem('entrenamatch_seen_live_joins')
     if (savedSeenLiveJoins) {
       try {
-        const arr = JSON.parse(savedSeenLiveJoins)
+        const arr = pruneStringIdList(JSON.parse(savedSeenLiveJoins))
         seenLiveJoinInteractionIdsRef.current = new Set(arr)
       } catch {}
     }
@@ -4882,10 +4905,11 @@ useEffect(() => {
 
         pendingLiveWriteRef.current = { trainingNow: false, at: Date.now() }
         saveUser(updated)
-        await saveUserWithRealSync(updated)
-        loadRealProfiles().catch(() => {})
-        syncCityStatsBump(minutes, 0).catch(() => {})
         setMapForceTick((t) => t + 1)
+        void saveUserWithRealSync(updated)
+          .then(() => loadRealProfiles().catch(() => {}))
+          .catch((err) => console.warn('Live off Firestore sync (non-fatal):', err))
+        syncCityStatsBump(minutes, 0).catch(() => {})
         if (minutes >= MIN_LIVE_MINUTES_FOR_WEEK_DAY) {
           setWeekLiveDays(nextLiveDays)
           toast('Entrenamiento finalizado', { description: `${minutes} min — cuenta para tu semana ✓` })
@@ -4982,9 +5006,10 @@ useEffect(() => {
 
         pendingLiveWriteRef.current = { trainingNow: true, at: Date.now() }
         saveUser(updated)
-        await saveUserWithRealSync(updated)
-        loadRealProfiles().catch(() => {})
         setMapForceTick((t) => t + 1)
+        void saveUserWithRealSync(updated)
+          .then(() => loadRealProfiles().catch(() => {}))
+          .catch((err) => console.warn('Live on Firestore sync (non-fatal):', err))
         toast('🟢 ¡Entrenando Ahora (EN VIVO) activado!', {
           description: autoGymCheckIn
             ? `Check-in en ${autoGymCheckIn.gymName} — apareces en el mapa del gym`
@@ -6018,9 +6043,15 @@ useEffect(() => {
     }
 
     if (newJoinDetected) {
+      trimSetToMax(seenLiveJoinInteractionIdsRef.current, MAX_SEEN_STRING_IDS)
       try {
-        localStorage.setItem('entrenamatch_seen_live_joins', JSON.stringify(Array.from(seenLiveJoinInteractionIdsRef.current)))
-      } catch {}
+        localStorage.setItem(
+          'entrenamatch_seen_live_joins',
+          JSON.stringify(pruneStringIdList(Array.from(seenLiveJoinInteractionIdsRef.current)))
+        )
+      } catch {
+        reclaimLocalStorageSpace('soft')
+      }
     }
   }
 
@@ -6181,7 +6212,9 @@ useEffect(() => {
       const posts = prev[postUserId] || []
       const updatedPosts = posts.map(p => p.id === postId ? { ...p, text: newText } : p)
       const newState = { ...prev, [postUserId]: updatedPosts }
-      try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+      if (isDemoMode) {
+        try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+      }
       return newState
     })
 
@@ -6210,7 +6243,9 @@ useEffect(() => {
       const posts = prev[postUserId] || [];
       const updatedPosts = posts.map(p => p.id === postId ? { ...p, pinned: newPinned } : p);
       const newState = { ...prev, [postUserId]: updatedPosts };
-      try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+      if (isDemoMode) {
+        try { localStorage.setItem('entrenamatch_profile_posts', JSON.stringify(newState)) } catch {}
+      }
       return newState;
     });
 
@@ -6246,13 +6281,18 @@ useEffect(() => {
   }
 
   const persistGroupSeenIds = () => {
+    Object.keys(seenGroupMsgIdsRef.current).forEach((k) => {
+      trimSetToMax(seenGroupMsgIdsRef.current[k], MAX_SEEN_IDS_PER_CHAT)
+    })
+    const groupObj: Record<string, string[]> = {}
+    Object.keys(seenGroupMsgIdsRef.current).forEach((k) => {
+      groupObj[k] = Array.from(seenGroupMsgIdsRef.current[k])
+    })
     try {
-      const groupObj: Record<string, string[]> = {}
-      Object.keys(seenGroupMsgIdsRef.current).forEach((k) => {
-        groupObj[k] = Array.from(seenGroupMsgIdsRef.current[k])
-      })
-      localStorage.setItem('entrenamatch_seen_group_msgs', JSON.stringify(groupObj))
-    } catch {}
+      localStorage.setItem('entrenamatch_seen_group_msgs', JSON.stringify(pruneSeenIdMap(groupObj)))
+    } catch {
+      reclaimLocalStorageSpace('soft')
+    }
   }
 
   // Add a new notification (gated by user prefs for progressive control)
@@ -7579,9 +7619,15 @@ useEffect(() => {
       }
     })
     if (addedNew) {
+      trimSetToMax(seenLiveUserIdsRef.current, MAX_SEEN_STRING_IDS)
       try {
-        localStorage.setItem('entrenamatch_seen_live_users', JSON.stringify(Array.from(seenLiveUserIdsRef.current)))
-      } catch {}
+        localStorage.setItem(
+          'entrenamatch_seen_live_users',
+          JSON.stringify(pruneStringIdList(Array.from(seenLiveUserIdsRef.current)))
+        )
+      } catch {
+        reclaimLocalStorageSpace('soft')
+      }
     }
   }, [liveTrainingNow, addNotification, syncBonds, teamMatchIds])
 
@@ -7876,23 +7922,46 @@ useEffect(() => {
     const isRealChat = isRealChatId(activeChat)
 
     if (isRealChat) {
-      // Real cross-device chat
-      sendRealMessage(text || '', activeChat, voice)
-
-      // Optimistic update for both local messages and realChatMessages for instant feel
+      const clientId = `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
       const newMsg: Message = {
-        id: Date.now().toString(36) + Math.random(),
+        id: clientId,
+        clientId,
         from: 'me',
         text: text.trim() || '',
         timestamp: Date.now(),
-        ...(voice ? { voiceUrl: voice.voiceUrl, voiceDuration: voice.voiceDuration } : {})
+        sendStatus: 'sending',
+        ...(voice ? { voiceUrl: voice.voiceUrl, voiceDuration: voice.voiceDuration } : {}),
       }
-      const currentChat = messages[activeChat] || []
-      const updated = { ...messages, [activeChat]: [...currentChat, newMsg] }
-      saveMessages(updated)
 
-      // Also update the real messages state immediately
-      setRealChatMessages(prev => [...prev, newMsg])
+      const patchOutgoing = (patch: Partial<Message>) => {
+        const matchId = (m: Message) => m.id === clientId || m.clientId === clientId
+        setRealChatMessages((prev) => prev.map((m) => (matchId(m) ? { ...m, ...patch } : m)))
+        setMessages((prev) => {
+          const chat = prev[activeChat] || []
+          const next = chat.map((m) => (matchId(m) ? { ...m, ...patch } : m))
+          const updated = { ...prev, [activeChat]: next }
+          if (isDemoMode) {
+            try {
+              localStorage.setItem('fitvina_messages', JSON.stringify(updated))
+            } catch {}
+          }
+          return updated
+        })
+      }
+
+      const currentChat = messages[activeChat] || []
+      saveMessages({ ...messages, [activeChat]: [...currentChat, newMsg] })
+      setRealChatMessages((prev) => [...prev, newMsg])
+
+      void sendRealMessage(text || '', activeChat, voice, {
+        clientId,
+        onAck: (serverId) => {
+          patchOutgoing({ id: serverId, clientId, sendStatus: 'sent' })
+        },
+        onFail: () => {
+          patchOutgoing({ sendStatus: 'failed' })
+        },
+      })
       return
     }
 
@@ -8056,11 +8125,13 @@ useEffect(() => {
                 </span>
               )}
             </button>
-            <button 
-              onClick={handleLogout}
-              className="bg-black/90 hover:bg-black text-white px-3 py-1 rounded-2xl text-[10px] font-semibold active:bg-white active:text-black border border-black/50 active:scale-[0.985] transition-all"
+            <button
+              type="button"
+              onClick={() => void handleLogout()}
+              disabled={loggingOut}
+              className="bg-black/90 hover:bg-black text-white px-3 py-1 rounded-2xl text-[10px] font-semibold active:bg-white active:text-black border border-black/50 active:scale-[0.985] transition-all disabled:opacity-50 disabled:pointer-events-none"
             >
-              Cerrar sesión
+              {loggingOut ? 'Saliendo…' : 'Cerrar sesión'}
             </button>
             {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor === 'undefined' && (
               <button
@@ -9487,6 +9558,7 @@ useEffect(() => {
         open={showCityCelebration}
         cityLabel={homeCityChallengeMerged?.cityLabel || currentUser?.city || 'Tu ciudad'}
         targetMinutes={homeCityChallengeMerged?.targetMinutes || 500}
+        gender={currentUser?.gender}
         onClose={() => setShowCityCelebration(false)}
       />
       <SafetyActionSheet
@@ -9743,6 +9815,8 @@ useEffect(() => {
           authBooting ||
           activeTab === 'explore' ||
           activeTab === 'map' ||
+          (activeTab === 'home' && !currentUser?.trainingNow) ||
+          (activeTab === 'profile' && !currentUser?.trainingNow) ||
           (activeTab === 'red' && redSubTab === 'messages' && !!activeChat)
         }
       />
@@ -11221,7 +11295,7 @@ useEffect(() => {
                                         }
                                       }}
                                       className={`voice-play-btn ${playingVoiceId === msg.id ? 'playing' : ''}`}
-                                      title={playingVoiceId === msg.id ? "Pausar nota de voz" : "Reproducir nota de voz de tu GymPartner"}
+                                      title={playingVoiceId === msg.id ? "Pausar nota de voz" : "Reproducir nota de voz de tu EntrenaPartner"}
                                     >
                                       {playingVoiceId === msg.id ? <Pause size={15} /> : <Play size={15} />}
                                     </button>
@@ -11321,7 +11395,7 @@ useEffect(() => {
                         </div>
                         <div className="meta">
                           <div className="title">🎙️ NOTA DE VOZ LISTA PARA TU SQUAD</div>
-                          <div className="sub">{pendingVoice.duration}s • +1 Voice Streak • para el squad de GymPartners</div>
+                          <div className="sub">{pendingVoice.duration}s • +1 Voice Streak • para tu squad</div>
                         </div>
                         <div className="actions flex-col gap-1 items-end">
                           <button 
@@ -11362,7 +11436,7 @@ useEffect(() => {
                     )}
                     {isUploadingVoice && (
                       <div className="voice-uploading mb-2">
-                        <div className="label">TRANSMITIENDO A TUS GYMPARTNERS...</div>
+                        <div className="label">TRANSMITIENDO AL SQUAD...</div>
                         <div className="progress-track">
                           <div className="progress-fill" style={{ width: `${voiceUploadProgress || 10}%` }} />
                         </div>
@@ -11397,7 +11471,7 @@ useEffect(() => {
                         type="text" 
                         value={chatInputValue}
                         onChange={(e) => setChatInputValue(e.target.value)}
-                        placeholder={pendingVoice ? "Nota lista — ENVIAR AL SQUAD" : "Mensaje o voz para tu squad de GymPartners..."}
+                        placeholder={pendingVoice ? "Nota lista — ENVIAR AL SQUAD" : "Mensaje o voz para tu squad..."}
                         enterKeyHint="send"
                         className="flex-1 bg-[#0D0D10] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none placeholder:text-[#9CA3AF] min-w-0 focus:border-[#FF671F]/50" 
                       />
@@ -11444,7 +11518,7 @@ useEffect(() => {
                           type="button"
                           onClick={startVoiceRecording}
                           className="w-11 h-11 rounded-3xl flex items-center justify-center transition active:scale-95 bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A] hover:border-[#FF671F]/50"
-                          title="Grabar nota de voz para el squad de GymPartners"
+                          title="Grabar nota de voz para tu squad"
                         >
                           <Mic size={19} />
                         </button>
@@ -11574,8 +11648,13 @@ useEffect(() => {
           open
           selfName={currentUser.name || 'Tú'}
           selfPhoto={currentUser.photos?.[0]}
+          selfGender={currentUser.gender}
           partnerName={syncDuelSummary.partnerName}
           partnerPhoto={syncDuelSummary.partnerPhoto}
+          partnerGender={
+            realProfiles.find((p) => p.id === syncDuelSummary.partnerId)?.gender ||
+            SEED_PROFILES.find((p) => p.id === syncDuelSummary.partnerId)?.gender
+          }
           partnerId={syncDuelSummary.partnerId}
           effectiveUserId={effectiveUserId}
           minutes={syncDuelSummary.minutes}

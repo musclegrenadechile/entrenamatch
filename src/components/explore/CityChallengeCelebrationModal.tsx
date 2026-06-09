@@ -1,7 +1,10 @@
+import { cityChampionLabel, type ProfileGender } from '../../utils/genderedCopy'
+
 export interface CityChallengeCelebrationModalProps {
   open: boolean
   cityLabel: string
   targetMinutes: number
+  gender?: ProfileGender
   onClose: () => void
 }
 
@@ -9,6 +12,7 @@ export function CityChallengeCelebrationModal({
   open,
   cityLabel,
   targetMinutes,
+  gender,
   onClose,
 }: CityChallengeCelebrationModalProps) {
   if (!open) return null
@@ -27,7 +31,7 @@ export function CityChallengeCelebrationModal({
         </p>
         <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#FFD700]/15 border border-[#FFD700]/40">
           <span className="text-2xl">🌆</span>
-          <span className="text-sm font-bold text-[#FFD700]">Campeón {cityLabel}</span>
+          <span className="text-sm font-bold text-[#FFD700]">{cityChampionLabel(gender, cityLabel)}</span>
         </div>
         <button
           type="button"

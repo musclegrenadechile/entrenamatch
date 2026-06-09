@@ -1,6 +1,7 @@
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { APP_VERSION } from '../../constants'; // use centralized version (no more stale 0.1.37)
+import { BRAND_COPY } from '../../constants/brandCopy';
 import { markQuickDemoSession } from '../../utils/quickDemo';
 import entrenamatchLogo from '../../assets/brand/entrenamatch-logo.png';
 
@@ -120,7 +121,7 @@ export const AuthScreen = ({
             transition={{ delay: 0.12 }}
             className="text-xl font-black tracking-tight text-white"
           >
-            Tu equipo de gym en vivo
+            {BRAND_COPY.tagline}
           </motion.h1>
 
           <motion.p
@@ -129,8 +130,7 @@ export const AuthScreen = ({
             transition={{ delay: 0.2 }}
             className="mt-2 text-[#9CA3AF] text-[15px] leading-relaxed max-w-[320px] mx-auto"
           >
-            Encuentra quién entrena cerca, haz match con tu GymPartner y sincroniza sesiones con{' '}
-            <span className="text-white font-semibold">EntrenaSync</span>.
+            {BRAND_COPY.pitch}
           </motion.p>
 
           <motion.ul

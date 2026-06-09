@@ -61,10 +61,13 @@ export function attachPartnerTypingListener(
 
 export async function markDirectMessageRead(
   db: Firestore,
-  messageId: string
+  messageId: string,
+  myUid: string
 ): Promise<void> {
-  await updateDoc(doc(db, 'messages', messageId), {
+  const ref = doc(db, 'messages', messageId)
+  await updateDoc(ref, {
     readAt: Date.now(),
     read: true,
+    readBy: myUid,
   }).catch(() => {})
 }

@@ -51,7 +51,7 @@ export function FirstStepsGuide({
       id: 'team',
       icon: Users,
       title: '2. Equipo',
-      desc: 'Matches y socios con los que ya entrenaste — tu red de gym.',
+      desc: 'Matches y socios con los que ya entrenaste — tu red fitness.',
       done: hasTeam,
       action: hasTeam ? onOpenMatches : onOpenExplore,
       actionLabel: hasTeam ? 'Ver mi equipo' : 'Buscar partner',

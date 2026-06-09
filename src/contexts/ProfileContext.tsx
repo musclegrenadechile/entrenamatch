@@ -109,6 +109,16 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     setProfileHydrated(isDemoMode);
   }, [isDemoMode]);
 
+  // Real mode: drop cached profile when Firebase session ends (logout / expired token).
+  useEffect(() => {
+    if (isDemoMode) return;
+    if (!firebaseUser?.uid && currentUser) {
+      demoStorage.remove(DEMO_KEYS.PROFILE);
+      setCurrentUser(null);
+      setShowOnboarding(false);
+    }
+  }, [firebaseUser?.uid, isDemoMode, currentUser]);
+
   return (
     <ProfileContext.Provider
       value={{

@@ -1,6 +1,7 @@
 // @ts-nocheck — P1 extract from App.tsx; tighten types incrementally
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { BRAND_COPY } from '../../constants/brandCopy'
 import { GymPulseMapShell, GymPulseBottomSheet } from '../map'
 import { GymPulseTour, hasSeenGymPulseTour } from '../map/GymPulseTour'
 import { seedGymRoutinesForPartner } from '../../services/gymRoutines'
@@ -268,12 +269,12 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
         </div>
       ) : currentUser?.trainingNow ? (
         <div className="relative z-10 flex items-center justify-between gap-2 py-2 px-3 rounded-xl border border-[#22c55e]/40 bg-[#0a2a1a]/60 mb-1">
-          <span className="text-[11px] text-[#22c55e] font-semibold leading-snug">🟢 Estás en vivo — visible en el mapa</span>
+          <span className="text-[11px] text-[#22c55e] font-semibold leading-snug">🟢 {BRAND_COPY.liveMap.liveBanner}</span>
           <button type="button" onClick={openMapTab} className="text-[10px] px-3 py-1 rounded-full bg-[#22c55e] text-black font-bold shrink-0">Ver mapa</button>
         </div>
       ) : (
         <div className="relative z-10 flex items-center justify-between gap-2 py-2 px-3 rounded-xl border border-[#22c55e]/25 bg-black/20 mb-1">
-          <span className="text-[10px] text-[#9CA3AF] leading-snug">Nadie entrenando cerca aún</span>
+          <span className="text-[10px] text-[#9CA3AF] leading-snug">{BRAND_COPY.liveMap.emptyBanner}</span>
           <button
             type="button"
             onClick={() => {
@@ -282,7 +283,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
             }}
             className="text-[10px] px-3 py-1 rounded-full bg-[#22c55e] text-black font-bold shrink-0"
           >
-            Activar LIVE
+            {BRAND_COPY.liveMap.activateLive}
           </button>
         </div>
       )}
@@ -303,8 +304,8 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
       >
         {othersLiveCount === 0 && !currentUser?.trainingNow && (
           <div className="absolute top-3 left-3 right-3 z-[600] rounded-2xl bg-[#0D0D10]/95 border border-[#22c55e]/30 p-3 text-center pointer-events-auto">
-            <p className="text-xs font-semibold text-white mb-1">Aún no hay nadie entrenando cerca</p>
-            <p className="text-[10px] text-[#9CA3AF] mb-2">Sé el primero en el mapa — activa LIVE mientras entrenas.</p>
+            <p className="text-xs font-semibold text-white mb-1">{BRAND_COPY.liveMap.emptyTitle}</p>
+            <p className="text-[10px] text-[#9CA3AF] mb-2">{BRAND_COPY.liveMap.emptyBody}</p>
             <button
               type="button"
               onClick={() => {
@@ -313,13 +314,13 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
               }}
               className="text-[11px] px-4 py-1.5 rounded-xl bg-[#22c55e] text-black font-bold"
             >
-              Activar LIVE
+              {BRAND_COPY.liveMap.activateLive}
             </button>
           </div>
         )}
         {othersLiveCount === 0 && currentUser?.trainingNow && (
           <div className="absolute top-3 left-3 right-3 z-[600] rounded-2xl bg-[#0a2a1a]/95 border border-[#22c55e]/40 px-3 py-2.5 text-center pointer-events-auto flex flex-col gap-2">
-            <p className="text-[11px] font-semibold text-[#22c55e]">🟢 Estás en vivo — visible en el mapa</p>
+            <p className="text-[11px] font-semibold text-[#22c55e]">🟢 {BRAND_COPY.liveMap.liveBanner}</p>
             <p className="text-[9px] text-[#9CA3AF] leading-snug">
               El botón <strong className="text-white/90">Cerca</strong> abajo cuenta personas a 2 km. Usa{' '}
               <strong className="text-white/90">Hoy</strong> en la barra inferior para volver a tu día.

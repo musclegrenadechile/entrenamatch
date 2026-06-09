@@ -3,6 +3,7 @@ import { toast } from 'sonner'
 import type { CityDerbyState } from '../../services/cityDerby'
 import { DERBY_AWAY, DERBY_HOME, derbyStatusLine, derbyTeamCta } from '../../services/cityDerby'
 import { DerbyDefenderBadge } from './DerbyDefenderBadge'
+import type { ProfileGender } from '../../utils/genderedCopy'
 import { downloadDerbyStory } from '../../utils/derbyStoryShare'
 
 export interface CityDerbyCardProps {
@@ -10,9 +11,10 @@ export interface CityDerbyCardProps {
   onOpenMap?: () => void
   onGoLive?: () => void
   isLive?: boolean
+  userGender?: ProfileGender
 }
 
-export function CityDerbyCard({ derby, onOpenMap, onGoLive, isLive }: CityDerbyCardProps) {
+export function CityDerbyCard({ derby, onOpenMap, onGoLive, isLive, userGender }: CityDerbyCardProps) {
   if (!derby) return null
 
   const isEmpty = derby.home.totalMinutes === 0 && derby.away.totalMinutes === 0
@@ -50,7 +52,7 @@ export function CityDerbyCard({ derby, onOpenMap, onGoLive, isLive }: CityDerbyC
               {derby.leaderLabel.split(' ')[0]}
             </span>
           )}
-          <DerbyDefenderBadge />
+          <DerbyDefenderBadge gender={userGender} />
         </div>
       </div>
 

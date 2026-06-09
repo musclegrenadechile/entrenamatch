@@ -4,6 +4,8 @@
 
 import type { Firestore } from 'firebase/firestore'
 
+export type DirectChatSendStatus = 'sending' | 'sent' | 'failed'
+
 export interface DirectChatMsg {
   id: string
   from: 'me' | 'them'
@@ -11,6 +13,12 @@ export interface DirectChatMsg {
   timestamp: number
   voiceUrl?: string
   voiceDuration?: number
+  read?: boolean
+  readAt?: number
+  /** Client-generated id written to Firestore for fast optimistic ↔ server matching */
+  clientId?: string
+  /** Local-only until Firestore ack */
+  sendStatus?: DirectChatSendStatus
 }
 
 export function docToDirectChatMsg(
@@ -19,6 +27,7 @@ export function docToDirectChatMsg(
 ): DirectChatMsg {
   const data = docSnap.data()
   const ts = Number(data.timestamp)
+  const readAt = Number(data.readAt)
   return {
     id: docSnap.id,
     from: data.from === myUid ? 'me' : 'them',
@@ -26,6 +35,10 @@ export function docToDirectChatMsg(
     timestamp: Number.isFinite(ts) ? ts : Date.now(),
     voiceUrl: data.voiceUrl as string | undefined,
     voiceDuration: data.voiceDuration as number | undefined,
+    read: data.read === true,
+    readAt: Number.isFinite(readAt) ? readAt : undefined,
+    clientId: typeof data.clientId === 'string' ? data.clientId : undefined,
+    sendStatus: 'sent',
   }
 }
 
@@ -45,12 +58,21 @@ export function dedupeWithOptimistic(
     timestamp?: number
     voiceUrl?: string
     voiceDuration?: number
+    clientId?: string
+    sendStatus?: DirectChatSendStatus
+    read?: boolean
+    readAt?: number
   }>
 ): DirectChatMsg[] {
   const serverIds = new Set(serverMsgs.map((m) => m.id))
+  const serverClientIds = new Set(
+    serverMsgs.map((m) => m.clientId).filter((id): id is string => !!id)
+  )
   const pendingOptimistic = localMsgs
     .filter((m) => m.from === 'me' && !serverIds.has(m.id))
     .filter((m) => {
+      const cid = (m as { clientId?: string }).clientId || m.id
+      if (serverClientIds.has(cid)) return false
       const ts = m.timestamp || 0
       const text = String(m.text || '')
       return !serverMsgs.some(
@@ -67,6 +89,10 @@ export function dedupeWithOptimistic(
       timestamp: m.timestamp || Date.now(),
       voiceUrl: m.voiceUrl,
       voiceDuration: m.voiceDuration,
+      clientId: (m as { clientId?: string }).clientId || m.id,
+      sendStatus: (m as { sendStatus?: DirectChatSendStatus }).sendStatus || 'sending',
+      read: m.read,
+      readAt: m.readAt,
     }))
   return mergeDirectChatMessages(serverMsgs, pendingOptimistic)
 }

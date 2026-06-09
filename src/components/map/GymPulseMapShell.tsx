@@ -1,4 +1,5 @@
 import { Maximize2, Minimize2, Crosshair, X } from 'lucide-react'
+import { BRAND_COPY } from '../../constants/brandCopy'
 import type { ReactNode } from 'react'
 
 export interface GymPulseMapShellProps {
@@ -45,7 +46,7 @@ export function GymPulseMapShell({
           )}
           <div className="gym-pulse-shell__brand">
             <span className="gym-pulse-shell__dot" />
-            <span className="gym-pulse-shell__title">GYMPULSE</span>
+            <span className="gym-pulse-shell__title">{BRAND_COPY.liveMapLabel.toUpperCase()}</span>
             <span className="gym-pulse-shell__pill">{liveCount} en vivo</span>
             {cityLabel && <span className="gym-pulse-shell__city">{cityLabel}</span>}
           </div>

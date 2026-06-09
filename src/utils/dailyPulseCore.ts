@@ -100,8 +100,8 @@ export function generateDailyChallenge(
       type: 'network' as const,
       title: 'Reto GymPulse: Onda en la red',
       description: hasLiveRed
-        ? 'Completa tu sesión y publica un post o voz que impulse el GymPulse visible en el mapa para tus GymPartners.'
-        : 'Entrena y deja un "GymPulse" (post o voz) que sea visto por tus GymPartners. +Impacto colectivo.',
+        ? 'Completa tu sesión y publica un post o voz visible en el mapa para tu red fitness.'
+        : 'Entrena y deja un post o nota de voz que vea tu red fitness. +Impacto colectivo.',
       target: 1,
       progress: 0,
       reward: 55,
@@ -114,8 +114,8 @@ export function generateDailyChallenge(
       title: 'Reto GymPulse: Voz a tu alianza',
       description:
         bondCount > 0
-          ? 'Envía una nota de voz a un GymPartner con menos interacción reciente.'
-          : 'Envía tu primera nota de voz a un GymPartner y activa tu Voice Streak.',
+          ? 'Envía una nota de voz a un EntrenaPartner con menos interacción reciente.'
+          : 'Envía tu primera nota de voz a un EntrenaPartner y activa tu Voice Streak.',
       target: 1,
       progress: 0,
       reward: 35,
