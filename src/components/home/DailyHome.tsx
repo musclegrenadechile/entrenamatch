@@ -175,7 +175,7 @@ export function DailyHome({
           {greeting}, {firstName}
         </h2>
         <p className="text-[11px] text-[#9CA3AF] mt-1 leading-snug">
-          Live → Equipo → Sync → Semana: cierra tu semana con tu red.
+          Live → Equipo → Sync → Meta: cierra tu semana con tu red.
         </p>
         <HomeLoopStepper activeStep={loopStep} />
       </div>
@@ -510,11 +510,11 @@ export function DailyHome({
               ? 'bg-gradient-to-br from-[#0a1f14]/80 to-[#141418] border-[#22c55e]/30'
               : 'bg-gradient-to-br from-[#141418] to-[#0f0f12] border-[#2F2F35]'
         }`}
-        aria-label="Paso Meta semanal"
+        aria-label="Paso Meta de la semana"
       >
         <SectionLabel
           step={4}
-          title="Meta semanal"
+          title="Meta de la semana"
           hint={
             weeklyPactProgress.isComplete
               ? 'Semana sellada — sigue sumando Constancia.'

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
-import { Radar } from 'lucide-react'
+import { MapPin, Radar } from 'lucide-react'
 import { getDistanceKm } from '../../utils'
 import { hasMapCoords } from '../../utils/gymPulseLive'
 
@@ -23,6 +23,9 @@ export function GymPulseRadar({
   const [sweeping, setSweeping] = useState(false)
   const [lastCount, setLastCount] = useState<number | null>(null)
   const pillTimerRef = useRef<number | null>(null)
+  const sweepTimerRef = useRef<number | null>(null)
+  const onSweepEndRef = useRef(onSweepEnd)
+  onSweepEndRef.current = onSweepEnd
 
   const countInRadius = useMemo(() => {
     if (!userLocation) return 0
@@ -33,19 +36,24 @@ export function GymPulseRadar({
     }).length
   }, [liveUsers, userLocation])
 
+  const endSweep = () => {
+    setSweeping(false)
+    onSweepEndRef.current?.()
+  }
+
   const schedulePillHide = () => {
     if (pillTimerRef.current) window.clearTimeout(pillTimerRef.current)
     pillTimerRef.current = window.setTimeout(() => setLastCount(null), PILL_AUTO_HIDE_MS)
   }
 
-  const handleRadar = () => {
+  const handleNearbyScan = () => {
     if (sweeping) return
     setLastCount(countInRadius)
     setSweeping(true)
     onSweepStart?.()
-    window.setTimeout(() => {
-      setSweeping(false)
-      onSweepEnd?.()
+    if (sweepTimerRef.current) window.clearTimeout(sweepTimerRef.current)
+    sweepTimerRef.current = window.setTimeout(() => {
+      endSweep()
       schedulePillHide()
     }, SWEEP_MS)
   }
@@ -53,6 +61,8 @@ export function GymPulseRadar({
   useEffect(() => {
     return () => {
       if (pillTimerRef.current) window.clearTimeout(pillTimerRef.current)
+      if (sweepTimerRef.current) window.clearTimeout(sweepTimerRef.current)
+      if (sweeping) endSweep()
     }
   }, [])
 
@@ -63,16 +73,23 @@ export function GymPulseRadar({
       <button
         type="button"
         className={`gym-pulse-radar-btn${sweeping ? ' gym-pulse-radar-btn--active' : ''}`}
-        onClick={handleRadar}
-        aria-label="Radar GymPulse — personas cerca"
-        title="Radar: escanea 2 km a tu alrededor"
+        onClick={handleNearbyScan}
+        aria-label="Buscar entrenadores cerca — radio 2 km"
+        title="Busca quién entrena a 2 km de ti (no cambia de pantalla)"
       >
         <Radar size={14} className={sweeping ? 'gym-pulse-radar-btn__spin' : ''} />
-        Radar
+        Cerca
       </button>
       {pillVisible && (
         <span className={`gym-pulse-radar-pill${sweeping ? ' gym-pulse-radar-pill--pulse' : ''}`}>
-          {sweeping ? 'Escaneando…' : `${lastCount ?? countInRadius} en ${RADAR_RADIUS_KM} km`}
+          {sweeping ? (
+            'Buscando cerca…'
+          ) : (
+            <>
+              <MapPin size={10} className="inline mr-0.5 opacity-80" aria-hidden />
+              {lastCount ?? countInRadius} a {RADAR_RADIUS_KM} km
+            </>
+          )}
         </span>
       )}
     </>

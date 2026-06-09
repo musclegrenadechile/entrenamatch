@@ -33,7 +33,7 @@ export function ChatPactCompareStrip({ compare, onOpenEntrenoLog }: ChatPactComp
       <div className="flex items-center gap-2">
         <BarChart3 className="w-3.5 h-3.5 text-[#FFD700] shrink-0" />
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-bold text-white truncate">{headline} · pacto semanal</p>
+          <p className="text-[10px] font-bold text-white truncate">{headline} · meta semanal</p>
           <p className="text-[9px] text-[#9CA3AF]">
             Tú {compare.selfSessions} ses · {compare.selfSets} sets ·{' '}
             {compare.partnerName.split(' ')[0]} {compare.partnerSessions} ses · {compare.partnerSets}{' '}

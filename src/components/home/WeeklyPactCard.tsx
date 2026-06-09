@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { WeeklyPact, WeeklyPactProgress } from '../../services/weeklyPact'
 import { PACT_LIVE_OPTIONS, PACT_SYNC_OPTIONS } from '../../services/weeklyPact'
 import type { TeamMemberView } from './DailyHome'
@@ -34,6 +34,10 @@ export function WeeklyPactCard({
   const [pickLive, setPickLive] = useState(3)
   const [pickSync, setPickSync] = useState(1)
 
+  useEffect(() => {
+    if (forceWizard && !progress.pledged) setWizardStep(0)
+  }, [forceWizard, progress.pledged])
+
   const showWizard = !progress.pledged && (wizardStep >= 0 || forceWizard)
 
   const commitPledge = (live: number, sync: number) => {
@@ -51,7 +55,7 @@ export function WeeklyPactCard({
     return (
       <div className="weekly-pact-card weekly-pact-card--setup">
         <div className="flex items-center justify-between mb-2">
-          <p className="text-[11px] text-white font-bold">Meta semanal</p>
+          <p className="text-[11px] text-white font-bold">Meta de la semana</p>
           <span className="text-[9px] text-[#FF671F] font-bold">{step + 1}/3</span>
         </div>
 
@@ -135,7 +139,7 @@ export function WeeklyPactCard({
   if (!progress.pledged) {
     return (
       <div className="weekly-pact-card weekly-pact-card--setup">
-        <p className="text-[11px] text-white font-bold mb-1">Tu meta de esta semana</p>
+        <p className="text-[11px] text-white font-bold mb-1">Tu meta de la semana</p>
         <p className="text-[10px] text-[#9CA3AF] mb-3 leading-snug">
           Live visible + al menos un sync — cierra la semana con tu red.
         </p>

@@ -1,6 +1,18 @@
 import type { RefObject, ReactNode, FormEvent } from 'react'
-import { useState } from 'react'
-import { ArrowLeft, Mic, MoreVertical, Pause, Play, Send } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  Dumbbell,
+  Mic,
+  MoreVertical,
+  Pause,
+  Play,
+  Send,
+  Sparkles,
+  Zap,
+} from 'lucide-react'
 import type { Message, Profile } from '../../types'
 import { generateIcebreakers } from '../../utils/icebreakers'
 import { ChatPactCompareStrip, type ChatPactCompareData } from './ChatPactCompareStrip'
@@ -51,12 +63,12 @@ export interface ChatViewProps {
   onOpenEntrenoLog?: () => void
 }
 
-const QUICK_PROPOSALS = [
-  '¿Vamos a correr el sábado?',
-  'Gym esta semana?',
-  'Calistenia en la playa mañana?',
-  'Pesas mañana 19:00?',
-  '¿Te tinca entrenar funcional?',
+const TRAINING_CHIPS = [
+  '🏃 Correr sábado AM',
+  '🏋️ Gym esta semana',
+  '🌊 Calistenia playa',
+  '💪 Pesas 19:00',
+  '⚡ Funcional juntos',
 ]
 
 const BOND_TEMPLATES = [
@@ -65,14 +77,27 @@ const BOND_TEMPLATES = [
   '🌊 Mencionar ripples de nuestro Arena',
 ]
 
+function dayKey(ts: number): string {
+  const d = new Date(ts)
+  return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
+}
+
+function dayLabel(ts: number): string {
+  const d = new Date(ts)
+  const today = new Date()
+  const yest = new Date()
+  yest.setDate(yest.getDate() - 1)
+  if (d.toDateString() === today.toDateString()) return 'Hoy'
+  if (d.toDateString() === yest.toDateString()) return 'Ayer'
+  return d.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })
+}
+
 export function ChatView({
-  activeChat,
   chatProfile,
   isRealMatch,
   chatMessages,
   syncBond,
   isDemoMode,
-  isLoadingChats,
   playingVoiceId,
   voicePlayProgress,
   pendingVoice,
@@ -111,77 +136,136 @@ export function ChatView({
   onOpenEntrenoLog,
 }: ChatViewProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [chipsOpen, setChipsOpen] = useState(chatMessages.length === 0)
+
   const icebreakers =
     currentUser && chatProfile && chatMessages.length === 0
       ? generateIcebreakers(currentUser, chatProfile)
       : []
 
+  const messagesWithDividers = useMemo(() => {
+    let lastDay = ''
+    return chatMessages.map((m, i) => {
+      const ts = m.timestamp || Date.now()
+      const dk = dayKey(ts)
+      const showDay = dk !== lastDay
+      if (showDay) lastDay = dk
+      return { m, i, showDay, day: dayLabel(ts) }
+    })
+  }, [chatMessages])
+
   return (
-    <div className="flex-1 flex flex-col">
-      <div className="chat-header h-16 px-4 flex items-center gap-3 z-10">
-        <button type="button" onClick={onBack} className="p-1.5 -ml-1 text-[#9CA3AF] active:text-white">
-          <ArrowLeft size={22} />
+    <div className="flex-1 flex flex-col chat-v2 min-h-0">
+      {/* Lane — partner + estado de entreno */}
+      <div className="chat-lane-header">
+        <button type="button" onClick={onBack} className="chat-lane-back" aria-label="Volver">
+          <ArrowLeft size={20} />
         </button>
 
-        <div
-          className={`chat-header-avatar w-11 h-11 rounded-2xl overflow-hidden flex-shrink-0 relative ${chatProfile?.trainingNow ? 'live' : ''}`}
-          onClick={onShowProfile}
-          onKeyDown={(e) => e.key === 'Enter' && onShowProfile()}
-          role="button"
-          tabIndex={0}
-        >
-          <img src={chatProfile?.photos?.[0]} alt="" className="w-full h-full object-cover cursor-pointer" />
-          {chatProfile?.trainingNow && (
-            <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-[#22c55e] rounded-full ring-[2.5px] ring-[#0D0D10]" />
-          )}
-        </div>
-
-        <div className="min-w-0 flex-1" onClick={onShowProfile} onKeyDown={(e) => e.key === 'Enter' && onShowProfile()} role="button" tabIndex={0}>
-          <div className="font-black text-[17px] tracking-[-0.3px] flex items-center gap-2 leading-none">
-            {chatProfile?.name}
-            {isRealMatch && (
-              <span className="text-[8px] px-1.5 py-px bg-[#FF671F] text-black rounded font-black tracking-widest">
-                REAL
-              </span>
+        <button type="button" className="chat-lane-partner" onClick={onShowProfile}>
+          <div className={`chat-lane-avatar ${chatProfile?.trainingNow ? 'live' : ''}`}>
+            {chatProfile?.photos?.[0] ? (
+              <img src={chatProfile.photos[0]} alt="" />
+            ) : (
+              <span>👤</span>
             )}
           </div>
-          <div className="text-[11px] text-[#FF671F] flex items-center gap-1.5 mt-1">
-            {chatProfile?.city}, {chatProfile?.country}
-            {chatProfile?.trainingNow && <span className="text-[#22c55e] font-bold">• EN VIVO AHORA</span>}
-            {partnerTyping && (
-              <span className="text-[#9CA3AF] italic animate-pulse">escribiendo…</span>
-            )}
-            {syncBond && (
-              <span className="px-1.5 py-px text-[8px] rounded bg-[#FFD700] text-black font-black tracking-wider">
-                ⭐ RED · Fuerza {syncBond.bondLevel || 1}
-              </span>
-            )}
-            {voiceStreak > 0 && (
-              <span className="streak-badge px-1.5 py-px text-[8px] rounded bg-[#6366f1]/30 text-[#a5b4fc] font-bold">
-                🎙️ {voiceStreak}d voz
-              </span>
-            )}
+          <div className="min-w-0 text-left">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="font-black text-[15px] text-white truncate">{chatProfile?.name}</span>
+              {isRealMatch && <span className="chat-lane-badge chat-lane-badge--real">REAL</span>}
+              {syncBond && (
+                <span className="chat-lane-badge chat-lane-badge--bond">
+                  RED · {syncBond.bondLevel || 1}
+                </span>
+              )}
+            </div>
+            <p className="text-[10px] text-[#9CA3AF] mt-0.5 truncate">
+              {chatProfile?.city}
+              {chatProfile?.trainingNow ? (
+                <span className="text-[#22c55e] font-bold"> · EN VIVO AHORA</span>
+              ) : partnerTyping ? (
+                <span className="text-[#FF671F] italic"> · escribiendo…</span>
+              ) : (
+                <span> · GymPartner</span>
+              )}
+            </p>
           </div>
-        </div>
+        </button>
 
-        <div className="chat-header-actions flex items-center gap-1 flex-shrink-0 relative">
+        <div className="relative">
           <button
             type="button"
             onClick={() => setMenuOpen((v) => !v)}
-            className="p-2 text-[#9CA3AF] active:text-white rounded-xl"
+            className="p-2 text-[#9CA3AF]"
             aria-label="Más opciones"
           >
             <MoreVertical size={20} />
           </button>
           {menuOpen && (
-            <div className="absolute top-full right-0 mt-1 w-40 rounded-xl bg-[#1C1C20] border border-[#2F2F35] shadow-lg z-20 py-1">
-              <button type="button" onClick={() => { onShowProfile(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-white active:bg-[#25252A]">Perfil</button>
-              <button type="button" onClick={() => { onStartSync(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-[#22c55e] active:bg-[#25252A]">Entrenar juntos</button>
+            <div className="absolute top-full right-0 mt-1 w-44 rounded-xl bg-[#1C1C20] border border-[#2F2F35] shadow-lg z-20 py-1">
+              <button
+                type="button"
+                onClick={() => {
+                  onShowReviewModal()
+                  setMenuOpen(false)
+                }}
+                className="w-full text-left px-3 py-2 text-xs text-[#FF671F] active:bg-[#25252A]"
+              >
+                ★ Marcar entreno juntos
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onShowProfile()
+                  setMenuOpen(false)
+                }}
+                className="w-full text-left px-3 py-2 text-xs text-white active:bg-[#25252A]"
+              >
+                Perfil
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onStartSync()
+                  setMenuOpen(false)
+                }}
+                className="w-full text-left px-3 py-2 text-xs text-[#22c55e] active:bg-[#25252A]"
+              >
+                Entrenar juntos (Sync)
+              </button>
               {!isDemoMode && (
-                <button type="button" onClick={() => { void onRefreshChat(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-[#FF671F] active:bg-[#25252A]">Sync chat</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    void onRefreshChat()
+                    setMenuOpen(false)
+                  }}
+                  className="w-full text-left px-3 py-2 text-xs text-[#FF671F] active:bg-[#25252A]"
+                >
+                  Sync chat
+                </button>
               )}
-              <button type="button" onClick={() => { onReport(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-red-400 active:bg-[#25252A]">Reportar</button>
-              <button type="button" onClick={() => { void onBlock(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-red-400 active:bg-[#25252A]">Bloquear</button>
+              <button
+                type="button"
+                onClick={() => {
+                  onReport()
+                  setMenuOpen(false)
+                }}
+                className="w-full text-left px-3 py-2 text-xs text-red-400 active:bg-[#25252A]"
+              >
+                Reportar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void onBlock()
+                  setMenuOpen(false)
+                }}
+                className="w-full text-left px-3 py-2 text-xs text-red-400 active:bg-[#25252A]"
+              >
+                Bloquear
+              </button>
             </div>
           )}
         </div>
@@ -191,132 +275,190 @@ export function ChatView({
         <ChatPactCompareStrip compare={pactCompare} onOpenEntrenoLog={onOpenEntrenoLog} />
       )}
 
-      <div className="px-4 py-2 bg-[#1C1C20] border-b border-[#2F2F35] text-center">
-        <button type="button" onClick={onShowReviewModal} className="text-xs bg-[#FF671F]/10 text-[#FF671F] px-3 py-1 rounded-full hover:bg-[#FF671F] hover:text-black transition">
-          ★ Marcamos que entrenamos juntos (dejar reseña)
+      {/* Dock de acciones — único EntrenaMatch */}
+      <div className="chat-action-dock">
+        <button type="button" className="chat-dock-btn chat-dock-btn--sync" onClick={onStartSync}>
+          <Zap size={15} />
+          Sync
+        </button>
+        <button
+          type="button"
+          className="chat-dock-btn chat-dock-btn--voice"
+          onClick={onStartVoiceRecording}
+          disabled={isRecordingVoice}
+        >
+          <Mic size={15} />
+          Voz{voiceStreak > 0 ? ` · ${voiceStreak}d` : ''}
+        </button>
+        {onOpenEntrenoLog && (
+          <button type="button" className="chat-dock-btn chat-dock-btn--log" onClick={onOpenEntrenoLog}>
+            <Dumbbell size={15} />
+            Log
+          </button>
+        )}
+        <button
+          type="button"
+          className="chat-dock-btn chat-dock-btn--chip"
+          onClick={() => setChipsOpen((v) => !v)}
+        >
+          <Sparkles size={15} />
+          Propuesta
+          {chipsOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
         </button>
       </div>
 
-      <div ref={chatScrollRef} className="flex-1 overflow-auto px-3 py-4 space-y-1 pb-24 min-h-0 bg-[#0a0a0c]" id="chat-scroll">
-        {chatMessages.map((m, i, arr) => {
+      <div
+        ref={chatScrollRef}
+        className="flex-1 overflow-auto px-3 py-3 space-y-0.5 min-h-0 chat-v2-thread"
+        id="chat-scroll"
+      >
+        {messagesWithDividers.map(({ m, i, showDay, day }) => {
           const isMe = m.from === 'me'
-          const time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''
-          const prev = arr[i - 1]
-          const isGrouped = prev && prev.from === m.from && m.timestamp - (prev.timestamp || 0) < 1000 * 60 * 4
+          const time = m.timestamp
+            ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : ''
+          const prev = chatMessages[i - 1]
+          const isGrouped =
+            prev && prev.from === m.from && m.timestamp - (prev.timestamp || 0) < 1000 * 60 * 4
+
           return (
-            <div key={m.id || i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${isGrouped ? 'mt-0.5' : 'mt-2.5'} group`}>
-              <div className={`max-w-[84%] ${isMe ? 'text-right' : ''}`}>
-                {!isGrouped && time && <div className="chat-timestamp px-1 mb-0.5">{time}</div>}
-                <div className={`chat-bubble ${isMe ? 'chat-bubble-sent' : 'chat-bubble-received'} ${isGrouped ? 'chat-bubble-grouped' : ''}`}>
-                  {m.voiceUrl && !m.voiceUrl.startsWith('blob:') ? (
-                    <div className={`voice-bubble ${isMe ? 'sent' : 'received'}`}>
-                      <button type="button" onClick={() => onToggleVoicePlay(m)} className={`voice-play-btn ${playingVoiceId === m.id ? 'playing' : ''}`}>
-                        {playingVoiceId === m.id ? <Pause size={15} /> : <Play size={15} />}
-                      </button>
-                      <div className="voice-wave-container">
-                        <div className={`voice-wave ${playingVoiceId === m.id ? 'playing' : ''}`}>
-                          {[4, 7, 3, 9, 5, 8, 4, 6, 3, 7, 5, 9].map((h, idx) => (
-                            <div key={idx} className="voice-bar" style={{ height: `${h * 1.55}px`, animationDelay: `${(idx % 6) * -120}ms` }} />
-                          ))}
+            <div key={m.id || i}>
+              {showDay && (
+                <div className="chat-day-divider">
+                  <span>{day}</span>
+                </div>
+              )}
+              <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${isGrouped ? 'mt-0.5' : 'mt-2'}`}>
+                <div className={`max-w-[86%] ${isMe ? 'text-right' : ''}`}>
+                  {!isGrouped && time && <div className="chat-timestamp px-1 mb-0.5">{time}</div>}
+                  <div
+                    className={`chat-bubble ${isMe ? 'chat-bubble-sent' : 'chat-bubble-received'} ${
+                      isGrouped ? 'chat-bubble-grouped' : ''
+                    } ${m.voiceUrl ? 'chat-bubble--voice' : ''}`}
+                  >
+                    {m.voiceUrl && !m.voiceUrl.startsWith('blob:') ? (
+                      <div className={`voice-bubble ${isMe ? 'sent' : 'received'}`}>
+                        <button
+                          type="button"
+                          onClick={() => onToggleVoicePlay(m)}
+                          className={`voice-play-btn ${playingVoiceId === m.id ? 'playing' : ''}`}
+                        >
+                          {playingVoiceId === m.id ? <Pause size={15} /> : <Play size={15} />}
+                        </button>
+                        <div className="voice-wave-container">
+                          <div className={`voice-wave ${playingVoiceId === m.id ? 'playing' : ''}`}>
+                            {[4, 7, 3, 9, 5, 8, 4, 6, 3, 7, 5, 9].map((h, idx) => (
+                              <div
+                                key={idx}
+                                className="voice-bar"
+                                style={{
+                                  height: `${h * 1.55}px`,
+                                  animationDelay: `${(idx % 6) * -120}ms`,
+                                }}
+                              />
+                            ))}
+                          </div>
+                          {playingVoiceId === m.id && (
+                            <div className="voice-progress" style={{ width: `${voicePlayProgress}%` }} />
+                          )}
                         </div>
-                        {playingVoiceId === m.id && <div className="voice-progress" style={{ width: `${voicePlayProgress}%` }} />}
+                        <span className="voice-duration">🎙️ {m.voiceDuration || '?'}s</span>
                       </div>
-                      <span className="voice-duration">🎙️ {m.voiceDuration || '?'}s</span>
-                    </div>
-                  ) : m.voiceUrl && m.voiceUrl.startsWith('blob:') ? (
-                    <span className="text-[10px] text-red-400">Nota de voz (sesión actual)</span>
-                  ) : (
-                    <span>{renderMessageText(m.text)}</span>
+                    ) : m.voiceUrl && m.voiceUrl.startsWith('blob:') ? (
+                      <span className="text-[10px] text-red-400">Nota de voz (sesión actual)</span>
+                    ) : (
+                      <span>{renderMessageText(m.text)}</span>
+                    )}
+                  </div>
+                  {isMe && (m.read || m.readAt) && (
+                    <span className="text-[9px] text-[#6B7280] px-1 mt-0.5 inline-block">✓✓ leído</span>
                   )}
                 </div>
-                {isMe && (m.read || m.readAt) && (
-                  <span className="text-[9px] text-[#6B7280] px-1 mt-0.5 inline-block">✓✓ leído</span>
-                )}
               </div>
             </div>
           )
         })}
 
         {chatMessages.length === 0 && (
-          <div className="chat-empty">
-            <div className="icon">💬</div>
-            <div className="title">Conexión lista</div>
-            <div className="text-[#9CA3AF] text-sm max-w-[240px] mx-auto">
-              Este es tu GymPartner. Envía un mensaje, una nota de voz o una propuesta de entrenamiento. Los chats reales se sincronizan cross-device.
-            </div>
-            <div className="mt-4 text-[11px] text-[#FF671F]/70">Prueba una de las propuestas rápidas de abajo</div>
+          <div className="chat-empty chat-empty--v2">
+            <div className="chat-empty-ring">💪</div>
+            <div className="title">Canal de entreno listo</div>
+            <p className="text-[#9CA3AF] text-sm max-w-[260px] mx-auto leading-snug">
+              Propón un horario, manda una nota de voz o arranca un EntrenaSync. Todo queda sincronizado
+              entre dispositivos.
+            </p>
           </div>
         )}
       </div>
 
-      <div className="px-3 pt-2 border-t border-[#2F2F35] bg-[#0D0D10]">
-        {icebreakers.length > 0 && (
-          <>
-            <div className="text-[10px] text-[#6366f1] mb-1.5 px-1 font-bold">Icebreakers para ustedes:</div>
-            <div className="flex flex-wrap gap-1.5 mb-2">
-              {icebreakers.map((tip) => (
-                <button
-                  key={tip}
-                  type="button"
-                  onClick={() => onSendMessage(tip)}
-                  className="text-xs bg-[#6366f1]/10 border border-[#6366f1]/30 px-3 py-1 rounded-full text-[#a5b4fc] active:bg-[#6366f1] active:text-white"
-                >
-                  {tip}
-                </button>
-              ))}
-            </div>
-          </>
-        )}
-        <div className="text-[10px] text-[#9CA3AF] mb-1.5 px-1">Propuestas rápidas:</div>
-        <div className="flex flex-wrap gap-1.5 mb-2">
-          {QUICK_PROPOSALS.map((proposal) => (
-            <button
-              key={proposal}
-              type="button"
-              onClick={() => onSendMessage(proposal)}
-              className="text-xs bg-[#1C1C20] hover:bg-[#25252A] border border-[#2F2F35] px-3 py-1 rounded-full text-[#cbd5e1] active:bg-[#FF671F] active:text-black"
-            >
-              {proposal}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="p-3 border-t border-[#2F2F35] bg-[#0D0D10]">
-        {syncBond && (
-          <div className="flex gap-1 mb-2 flex-wrap">
-            {BOND_TEMPLATES.map((tpl) => (
+      {/* Propuestas colapsables */}
+      {chipsOpen && (
+        <div className="chat-chips-panel">
+          {icebreakers.length > 0 && (
+            <>
+              <p className="chat-chips-label">Para romper el hielo</p>
+              <div className="chat-chips-row">
+                {icebreakers.map((tip) => (
+                  <button key={tip} type="button" className="chat-chip chat-chip--ice" onClick={() => onSendMessage(tip)}>
+                    {tip}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+          <p className="chat-chips-label">Propuestas de entreno</p>
+          <div className="chat-chips-row">
+            {TRAINING_CHIPS.map((proposal) => (
               <button
-                key={tpl}
+                key={proposal}
                 type="button"
-                onClick={() => onSendBondTemplate(tpl)}
-                className="text-[9px] px-2 py-0.5 rounded-full border border-[#FFD700]/40 text-[#FFD700] active:bg-[#FFD700]/10"
+                className="chat-chip"
+                onClick={() => onSendMessage(proposal.replace(/^[^\s]+\s/, ''))}
               >
-                {tpl.split(' ')[0]}
+                {proposal}
               </button>
             ))}
           </div>
-        )}
+          {syncBond && (
+            <>
+              <p className="chat-chips-label">Red · plantillas</p>
+              <div className="chat-chips-row">
+                {BOND_TEMPLATES.map((tpl) => (
+                  <button
+                    key={tpl}
+                    type="button"
+                    className="chat-chip chat-chip--bond"
+                    onClick={() => onSendBondTemplate(tpl)}
+                  >
+                    {tpl}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
+      <div className="chat-composer chat-composer--v2">
         {pendingVoice && !isUploadingVoice && (
-          <div className="mb-3 p-3 rounded-2xl bg-[#1a140f] border border-[#FF671F]/30 flex items-center gap-3">
-            <button type="button" onClick={onPreviewPendingVoice} className="w-11 h-11 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center text-black active:scale-90 shadow-lg flex-shrink-0">
-              <Play size={20} />
+          <div className="chat-voice-ready">
+            <button type="button" onClick={onPreviewPendingVoice} className="chat-voice-ready-play">
+              <Play size={18} />
             </button>
             <div className="flex-1 min-w-0">
-              <div className="text-xs font-bold text-[#FF671F] tracking-wider">NOTA DE VOZ LISTA</div>
-              <div className="text-[11px] text-[#9CA3AF]">{pendingVoice.duration}s • +1 Voice Streak</div>
+              <p className="text-[10px] font-black text-[#FF671F] tracking-wider">RITUAL DE VOZ</p>
+              <p className="text-[11px] text-[#9CA3AF]">
+                {pendingVoice.duration}s · +1 racha de voz
+              </p>
             </div>
-            <div className="flex flex-col gap-1">
-              <button type="button" onClick={onCancelPendingVoice} className="text-[9px] px-2 py-0.5 text-red-400 border border-red-400/40 rounded active:bg-red-500/10">
-                Cancelar
-              </button>
-              <button type="button" onClick={onReRecordVoice} className="text-[9px] px-2 py-0.5 text-[#EAB308] border border-[#EAB308]/40 rounded active:bg-[#EAB308]/10">
-                Re-grabar
-              </button>
-            </div>
-            <button type="button" onClick={onSendPendingVoice} className="ml-1 px-4 py-2 bg-[#FF671F] text-black rounded-2xl font-black text-sm active:bg-[#E55A1A] flex items-center gap-1.5 active:scale-[0.985]">
-              ENVIAR <Send size={15} />
+            <button type="button" onClick={onCancelPendingVoice} className="text-[9px] text-red-400 px-2">
+              ✕
+            </button>
+            <button type="button" onClick={onReRecordVoice} className="text-[9px] text-[#EAB308] px-2">
+              Otra
+            </button>
+            <button type="button" onClick={onSendPendingVoice} className="chat-voice-send">
+              Enviar
             </button>
           </div>
         )}
@@ -327,27 +469,21 @@ export function ChatView({
             <div className="progress-track">
               <div className="progress-fill" style={{ width: `${voiceUploadProgress || 10}%` }} />
             </div>
-            <div className="text-[10px] tabular-nums text-[#FF671F] font-mono w-8 text-right">{voiceUploadProgress || 0}%</div>
-            <button type="button" onClick={onCancelUpload} className="text-[9px] px-1.5 py-0.5 text-red-400 hover:text-red-500 ml-1">
+            <div className="text-[10px] tabular-nums text-[#FF671F] font-mono w-8 text-right">
+              {voiceUploadProgress || 0}%
+            </div>
+            <button type="button" onClick={onCancelUpload} className="text-[9px] px-1.5 py-0.5 text-red-400 ml-1">
               cancelar
             </button>
           </div>
         )}
 
         <form onSubmit={onSubmitForm} className="flex gap-2 items-center">
-          <input
-            type="text"
-            placeholder={pendingVoice ? 'Nota lista — presiona ENVIAR' : 'Mensaje o nota de voz a tu GymPartner...'}
-            className="chat-input flex-1"
-            onChange={(e) => onChatInputChange(e.target.value)}
-            value={chatInputValue}
-          />
-
           {isRecordingVoice ? (
             <div className="voice-recording flex-1" style={{ minWidth: 175 }}>
               <div className="dot" />
               <div className="flex-1">
-                <div className="text-red-400 text-[9px] font-extrabold tracking-[1px]">GRABANDO NOTA</div>
+                <div className="text-red-400 text-[9px] font-extrabold tracking-[1px]">GRABANDO</div>
                 <div className="text-xs text-red-400/80 tabular-nums">{recordingTime}s / 60</div>
               </div>
               <div className="flex gap-1 items-end h-4 mx-1 bg-black/30 rounded px-1">
@@ -355,31 +491,47 @@ export function ChatView({
                   <div key={i} className="w-[2px] bg-red-400 rounded" style={{ height: `${Math.max(3, h)}px` }} />
                 ))}
               </div>
-              <button type="button" onClick={onStopVoiceRecording} className="px-3.5 py-1 text-[10px] bg-red-600 text-white rounded-full font-extrabold active:bg-red-700">
+              <button
+                type="button"
+                onClick={onStopVoiceRecording}
+                className="px-3 py-1 text-[10px] bg-red-600 text-white rounded-full font-extrabold"
+              >
                 PARAR
               </button>
-              <button type="button" onClick={onCancelVoiceRecording} className="text-red-400 text-2xl leading-none px-1 hover:text-red-300">
+              <button type="button" onClick={onCancelVoiceRecording} className="text-red-400 text-xl px-1">
                 ×
               </button>
             </div>
           ) : (
-            <button type="button" onClick={onStartVoiceRecording} className="chat-mic-btn w-12 h-12 rounded-3xl flex items-center justify-center" title="Grabar nota de voz">
-              <Mic size={20} />
-            </button>
+            <>
+              <input
+                type="text"
+                placeholder="Mensaje a tu GymPartner…"
+                className="chat-input flex-1"
+                onChange={(e) => onChatInputChange(e.target.value)}
+                value={chatInputValue}
+              />
+              <button
+                type="button"
+                onClick={onStartVoiceRecording}
+                className="chat-mic-btn w-11 h-11 rounded-2xl flex items-center justify-center"
+                title="Nota de voz"
+              >
+                <Mic size={18} />
+              </button>
+              <button
+                type="submit"
+                disabled={!chatInputValue.trim() && !pendingVoice}
+                className="chat-send-btn w-11 h-11 rounded-2xl flex items-center justify-center disabled:bg-[#2F2F35] disabled:text-[#6B7280]"
+              >
+                <Send size={17} />
+              </button>
+            </>
           )}
-
-          <button
-            type="submit"
-            disabled={!chatInputValue.trim() && !pendingVoice}
-            className="chat-send-btn w-12 h-12 rounded-3xl flex items-center justify-center active:scale-[0.93] disabled:bg-[#2F2F35] disabled:text-[#6B7280]"
-          >
-            <Send size={18} />
-          </button>
         </form>
-
-        <div className="text-center text-[9px] text-[#6B7280] mt-2 tracking-wider">
-          {!isDemoMode ? 'Mensajes reales cross-device • notas de voz que se sienten' : 'Demo local'}
-        </div>
+        <p className="text-center text-[9px] text-[#6B7280] mt-2">
+          {!isDemoMode ? 'Canal GymPartner · voz + sync + logs' : 'Demo local'}
+        </p>
       </div>
     </div>
   )

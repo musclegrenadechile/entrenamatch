@@ -38,11 +38,11 @@ export function BottomNav({
   const items: BottomNavItem[] = [
     {
       id: 'map',
-      label: 'Mapa',
+      label: 'GymPulse',
       icon: MapPin,
       liveDot: liveCountForUI > 0,
       tourId: 'bottom-nav-map',
-      ariaLabel: 'Mapa en vivo GymPulse',
+      ariaLabel: 'GymPulse — mapa en vivo de entrenamiento',
     },
     {
       id: 'explore',

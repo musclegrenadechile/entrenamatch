@@ -8,7 +8,7 @@ const STEPS: { id: HomeLoopStep; label: string; num: number }[] = [
   { id: 'live', label: 'Live', num: 1 },
   { id: 'team', label: 'Equipo', num: 2 },
   { id: 'sync', label: 'Sync', num: 3 },
-  { id: 'pact', label: 'Semana', num: 4 },
+  { id: 'pact', label: 'Meta', num: 4 },
 ]
 
 export function HomeLoopStepper({ activeStep }: HomeLoopStepperProps) {
@@ -17,7 +17,7 @@ export function HomeLoopStepper({ activeStep }: HomeLoopStepperProps) {
   return (
     <div
       className="flex items-center gap-0.5 mb-3 mt-2"
-      aria-label="Tu loop: Live, Equipo, Sync, Semana"
+      aria-label="Tu loop: Live, Equipo, Sync, Meta"
     >
       {STEPS.map((step, idx) => {
         const isActive = step.id === activeStep

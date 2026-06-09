@@ -316,8 +316,12 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           </div>
         )}
         {othersLiveCount === 0 && currentUser?.trainingNow && (
-          <div className="absolute top-3 left-3 right-3 z-[600] rounded-2xl bg-[#0a2a1a]/95 border border-[#22c55e]/40 px-3 py-2 text-center pointer-events-none">
-            <p className="text-[11px] font-semibold text-[#22c55e]">🟢 Estás en vivo — eres el primero en el mapa</p>
+          <div className="absolute top-3 left-3 right-3 z-[600] rounded-2xl bg-[#0a2a1a]/95 border border-[#22c55e]/40 px-3 py-2.5 text-center pointer-events-auto flex flex-col gap-2">
+            <p className="text-[11px] font-semibold text-[#22c55e]">🟢 Estás en vivo — visible en el mapa</p>
+            <p className="text-[9px] text-[#9CA3AF] leading-snug">
+              El botón <strong className="text-white/90">Cerca</strong> abajo cuenta personas a 2 km. Usa{' '}
+              <strong className="text-white/90">Hoy</strong> en la barra inferior para volver a tu día.
+            </p>
           </div>
         )}
         <GymPulseMapShell
@@ -335,7 +339,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           onClose={() => {
             setMapFullscreen(false)
             if (dedicatedMapTab) {
-              setActiveTab('explore')
+              setActiveTab('home')
             } else {
               setShowLiveMap(false)
             }

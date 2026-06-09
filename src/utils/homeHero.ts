@@ -62,10 +62,10 @@ export function resolveHomeHero(opts: {
 
   if (!weeklyPactProgress.pledged) {
     return {
-      title: 'Reto del día',
-      subtitle: 'Fija tu meta semanal con live + sync + logs.',
+      title: 'Meta de la semana',
+      subtitle: 'Live + Sync + Logs — fija tu objetivo en menos de 30 segundos.',
       action: 'pact',
-      cta: 'Activar pacto semanal →',
+      cta: 'Fijar mi meta →',
     }
   }
 
@@ -86,7 +86,7 @@ export function resolveHomeHero(opts: {
       title: 'Tu log de hoy',
       subtitle:
         logsLeft > 0
-          ? `Te faltan ${logsLeft} log${logsLeft === 1 ? '' : 's'} para el pacto esta semana.`
+          ? `Te faltan ${logsLeft} log${logsLeft === 1 ? '' : 's'} para tu meta esta semana.`
           : 'Cierra el día con un Entreno de Hoy.',
       action: 'log',
       cta: 'Abrir Entreno de Hoy →',
@@ -107,7 +107,7 @@ export function resolveHomeHero(opts: {
   if (!weeklyPactProgress.isComplete) {
     return {
       title: 'Cierra la semana',
-      subtitle: `${weeklyPactProgress.overallPct}% del pacto — sigue sumando.`,
+      subtitle: `${weeklyPactProgress.overallPct}% de tu meta — sigue sumando.`,
       action: 'log',
       cta: 'Registrar otro entreno →',
       progressPct: weeklyPactProgress.overallPct,

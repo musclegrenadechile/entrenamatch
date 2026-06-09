@@ -89,7 +89,7 @@ import {
   getUnlockedGadgets,
   getNextGadget,
 } from './utils/dailyPulseCore'
-import { SyncLiveBlockerModal } from './components/sync/SyncLiveBlockerModal'
+import { WeeklyPactSetupSheet } from './components/home/WeeklyPactSetupSheet'
 import {
   ASSUMED_LIVE_SESSION_MS,
   normalizeTrainingSince as normalizeTrainingSinceMs,
@@ -2107,6 +2107,8 @@ useEffect(() => {
       }
       const updated = { ...currentUser, weeklyPact: pact } as CurrentUser & { weeklyPact: typeof pact }
       saveUser(updated as CurrentUser)
+      currentUserRef.current = updated
+      setShowPactWizard(false)
       if (!isDemoMode && firebaseUser?.uid) {
         try {
           await updateUserProfile(firebaseUser.uid, { weeklyPact: pact } as any)
@@ -6192,11 +6194,9 @@ useEffect(() => {
           try {
             confetti({ particleCount: 200, spread: 90, origin: { y: 0.65 } })
           } catch { /* ignore */ }
-          setTimeout(() => {
-            navigateTab('map')
-          }, 700)
           toast.success('¡Tu primer LIVE está en el GymPulse!', {
-            description: 'Abriendo el mapa para que veas tu pin en vivo',
+            description: 'Apareces en el mapa. Toca GymPulse abajo cuando quieras ver quién entrena cerca.',
+            duration: 6000,
           })
         }
 
@@ -10966,6 +10966,14 @@ useEffect(() => {
         onClose={() => setShowFuelSetupModal(false)}
         onSave={handleSaveFuelProfile}
         saving={savingFuel}
+      />
+      <WeeklyPactSetupSheet
+        open={showPactWizard}
+        partnerName={
+          homeTeamMembers.find((m) => m.isBond)?.name || homeTeamMembers[0]?.name
+        }
+        onClose={() => setShowPactWizard(false)}
+        onPledge={handleWeeklyPactPledge}
       />
       <FuelLogModal
         open={showFuelLogModal}
