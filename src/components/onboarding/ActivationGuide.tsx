@@ -31,8 +31,8 @@ const STEPS = [
   {
     id: 'sync' as const,
     icon: RefreshCw,
-    title: '3. Suma al derby',
-    desc: 'EntrenaSync con tu equipo — Valparaíso vs Santiago por índice/100k habitantes.',
+    title: '3. EntrenaSync en el mapa',
+    desc: 'Sincroniza con un match en el mapa LIVE — tus minutos suman al derby Valparaíso vs Santiago.',
     demoDesc: 'Prueba EntrenaSync con perfiles demo.',
   },
 ]

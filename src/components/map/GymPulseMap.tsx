@@ -52,7 +52,7 @@ import * as MapConfig from '../../services/gymPulseMapConfig'
 import * as MapCluster from '../../services/gymPulseCluster'
 import * as LocalNetwork from '../../services/localNetwork'
 import { syncElapsedMinutes } from '../../utils/syncFomo'
-import { markMapGpsPromptShown, shouldShowMapGpsPrompt } from '../../utils/mapGpsPrompt'
+import { markMapGpsPromptResolved, shouldShowMapGpsPrompt } from '../../utils/mapGpsPrompt'
 import { resolveCityZone, resolveDerbyMapZone, cityZonePolygonLatLngs } from '../../services/cityZoneBounds'
 import { DERBY_AWAY, DERBY_HOME, derbyStatusLine, type CityDerbyState } from '../../services/cityDerby'
 import { loadMapView, saveMapView } from '../../utils/mapViewCache'
@@ -116,7 +116,9 @@ export interface GymPulseMapProps {
   onPartnerDelete?: (id: string) => void
   onPartnerEdit?: (id: string) => void
   onForceTick?: () => void
-  onRequestLocation?: () => void
+  onRequestLocation?: () => void | Promise<unknown>
+  /** Fase 108 — only auto-prompt GPS if user consented to map visibility in onboarding. */
+  locationSharingAllowed?: boolean
 
   onRegisterCentrar?: (fn: () => void) => void
 
@@ -214,6 +216,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     onPartnerEdit,
     onForceTick,
     onRequestLocation,
+    locationSharingAllowed,
     onRegisterCentrar,
 
     onWitnessEchoPin,
@@ -353,10 +356,13 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       return
     }
 
-    // First map open: one-time GPS request (fase 193)
-    if (!userLocation && onRequestLocation && shouldShowMapGpsPrompt()) {
-      markMapGpsPromptShown()
-      onRequestLocation().catch(() => {})
+    // First map open: one-time GPS request after consent (fase 108)
+    if (
+      !userLocation &&
+      onRequestLocation &&
+      shouldShowMapGpsPrompt({ sharesLocation: locationSharingAllowed })
+    ) {
+      void Promise.resolve(onRequestLocation()).finally(() => markMapGpsPromptResolved())
     }
 
     // Initialize map if needed

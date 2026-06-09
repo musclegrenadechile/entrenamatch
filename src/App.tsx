@@ -232,6 +232,7 @@ import {
 import { saveUserPushToken } from './services/userPushTokens'
 import { enrichProfileFromDirectory } from './utils/profileVerification'
 import { buildInviteLink } from './utils/sparseCityDefaults'
+import { isHomeDayOneMode } from './utils/profileProgressive'
 import {
   formatLastLiveLabel,
   getTeamMemberStatus,
@@ -957,6 +958,7 @@ function App() {
     syncTabToUrl(resolved, { map: resolved === 'map' })
   }, [])
   const [profileSection, setProfileSection] = useState<ProfileSection>('actividad')
+  const profileSectionBootRef = useRef(false)
   // Feed UI — useFeedState (fase 80), declared after setLastSync below
   const [weekLiveDays, setWeekLiveDays] = useState<string[]>([])
   const [showLiveModal, setShowLiveModal] = useState(false)
@@ -1037,6 +1039,12 @@ function App() {
   const [mpHealth, setMpHealth] = useState<MpHealthResult | null>(null)
   const [showActivationGuide, setShowActivationGuide] = useState(false)
   const [showFeatureTour, setShowFeatureTour] = useState(false)
+  const maybeScheduleFeatureTour = useCallback(() => {
+    if (isE2EHarnessActive() || hasSeenAppFeatureTour()) return
+    window.setTimeout(() => {
+      if (!hasSeenAppFeatureTour()) setShowFeatureTour(true)
+    }, 2000)
+  }, [])
   const [myMarketplaceOrders, setMyMarketplaceOrders] = useState<MarketplaceOrder[]>([])
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([])
   const [isMarketplaceAdmin, setIsMarketplaceAdmin] = useState(false)
@@ -3681,7 +3689,13 @@ useEffect(() => {
     void loadFirstStepsProgress(db, firebaseUser.uid).then(setFirstStepsProgress)
   }, [isDemoMode, db, firebaseUser?.uid, showOnboarding])
 
-  // Fase 101 — guía unificada en ActivationGuide; tour desactivado.
+  useEffect(() => {
+    if (!currentUser || profileSectionBootRef.current) return
+    if (isHomeDayOneMode(currentUser)) {
+      setProfileSection('rendimiento')
+      profileSectionBootRef.current = true
+    }
+  }, [currentUser])
 
   const androidBackLayers = useMemo(
     () => [
@@ -9227,6 +9241,7 @@ useEffect(() => {
                     return c
                   })
                 }}
+                onOpenExplore={() => navigateTab('explore')}
               />
               </PullToRefresh>
             ) : activeChat ? (
@@ -9695,6 +9710,7 @@ useEffect(() => {
           setShowActivationGuide(false)
           if (isDemoMode) {
             demoStorage.set(DEMO_KEYS.ACTIVATION_GUIDE_DISMISSED, true)
+            maybeScheduleFeatureTour()
             return
           }
           if (db && firebaseUser?.uid) {
@@ -9704,6 +9720,7 @@ useEffect(() => {
               )
             )
           }
+          maybeScheduleFeatureTour()
         }}
         onPrimaryAction={() => {
           setShowActivationGuide(false)
@@ -9717,6 +9734,7 @@ useEffect(() => {
           } else {
             void toggleLiveTraining('on')
           }
+          maybeScheduleFeatureTour()
         }}
         onStep={(step) => {
           if (step === 'profile') setActiveTab('profile')
@@ -9957,7 +9975,6 @@ useEffect(() => {
         }}
         onRedNavigate={() => {
           navigateTab('red')
-          if (redSubTab === 'messages') setChatUnreads({})
           bumpPwaEngagement()
         }}
       />

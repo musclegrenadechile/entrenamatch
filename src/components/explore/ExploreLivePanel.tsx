@@ -493,6 +493,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
                 try { triggerHaptic('light') } catch {}
               }}
               onForceTick={() => setMapForceTick(t => t + 1)}
+              locationSharingAllowed={!!(currentUser as { legalConsents?: { sharesLocation?: boolean } })?.legalConsents?.sharesLocation}
               onRequestLocation={() => requestUserLocation().catch(() => {})}
               onRegisterCentrar={(fn) => {
                 ;(window as any).__gymPulseCentrar = fn

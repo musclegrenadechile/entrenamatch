@@ -37,6 +37,7 @@ export function BottomNav({
   onRedNavigate,
 }: BottomNavProps) {
   const items: BottomNavItem[] = [
+    { id: 'home', label: 'Hoy', icon: Sparkles, tourId: 'bottom-nav-home', ariaLabel: 'Hoy — mi día y muro' },
     {
       id: 'map',
       label: BRAND_COPY.liveMapLabel,
@@ -52,7 +53,6 @@ export function BottomNav({
       tourId: 'bottom-nav-explore',
       ariaLabel: 'Explorar perfiles y swipe',
     },
-    { id: 'home', label: 'Hoy', icon: Sparkles, ariaLabel: 'Hoy — mi día y muro' },
     {
       id: 'red',
       label: 'Matches',
@@ -82,7 +82,7 @@ export function BottomNav({
 
   return (
     <nav
-      className="bottom-nav h-[62px] grid grid-cols-6 z-50 text-[9px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_20px_-6px_rgb(0,0,0,0.4)]"
+      className="bottom-nav h-[62px] grid grid-cols-6 z-50 text-[10px] pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_20px_-6px_rgb(0,0,0,0.4)]"
       aria-label="Navegación principal"
     >
       {items.map(({ id, label, sublabel, icon: Icon, badge, liveDot, tourId, ariaLabel }) => {
@@ -103,7 +103,7 @@ export function BottomNav({
             <Icon size={20} aria-hidden />
             <span className="mt-0.5 leading-none truncate max-w-full px-0.5">{label}</span>
             {sublabel && (
-              <span className="text-[7px] text-[#6B7280] leading-none -mt-0.5">{sublabel}</span>
+              <span className="text-[8px] text-[#6B7280] leading-none -mt-0.5">{sublabel}</span>
             )}
             {badge != null && badge > 0 && (
               <span className="absolute -top-0.5 right-1 min-w-[15px] h-[15px] px-1 text-[9px] font-extrabold rounded-full bg-[#FF4F79] text-black flex items-center justify-center ring-1 ring-black/30">

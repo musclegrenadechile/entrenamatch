@@ -184,6 +184,15 @@ body {
   transform: scale(0.92);
 }
 
+[data-tour].tour-highlight {
+  outline: 2px solid #FF671F;
+  outline-offset: 2px;
+  border-radius: 12px;
+  box-shadow: 0 0 18px rgba(255, 103, 31, 0.55);
+  z-index: 201;
+  position: relative;
+}
+
 .bottom-nav {
   background: rgba(13, 13, 16, 0.95);
   backdrop-filter: blur(20px);

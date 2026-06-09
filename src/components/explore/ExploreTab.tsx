@@ -92,8 +92,9 @@ export const ExploreTab = ({
     try {
       if (localStorage.getItem(GEO_PROMPT_V2_KEY) === '1') return
     } catch { /* ignore */ }
-    if (propVisibleCards.length > 0) setShowGeoPrompt(true)
-  }, [userLocation, propVisibleCards.length])
+    const sharesLocation = !!(currentUser as { legalConsents?: { sharesLocation?: boolean } })?.legalConsents?.sharesLocation
+    if (sharesLocation) setShowGeoPrompt(true)
+  }, [userLocation, propVisibleCards.length, currentUser])
 
   // Merge prop visibleCards with optimistic removal for instant visual feedback after swipe
   const visibleCards = optimisticRemovedId
@@ -465,11 +466,13 @@ export const ExploreTab = ({
           >
             <RefreshCw size={13}/> Reiniciar
           </button>
-          <button 
-            onClick={() => setShowFilters(true)} 
+          <button
+            type="button"
+            onClick={() => setShowFilters(true)}
+            aria-label="Abrir filtros de búsqueda"
             className="relative p-2 active:bg-[#25252A] rounded-2xl bg-[#1C1C20] border border-[#2F2F35]"
           >
-            <Filter size={18} />
+            <Filter size={18} aria-hidden />
             {(filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0) > 0 && (
               <div className="absolute -top-1 -right-1 bg-[#FF671F] text-black text-[9px] font-bold min-w-[14px] h-[14px] flex items-center justify-center rounded-full px-1">
                 {(filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0)}

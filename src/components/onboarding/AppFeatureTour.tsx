@@ -5,9 +5,15 @@ const TOUR_KEY = 'entrenamatch_feature_tour_seen'
 
 const STEPS = [
   {
+    id: 'home',
+    title: 'Hoy — tu día',
+    body: 'Empieza aquí: piloto, derby regional y el botón LIVE flotante cuando entrenes.',
+    anchor: 'bottom-nav-home',
+  },
+  {
     id: 'map',
     title: 'Mapa en vivo',
-    body: 'Ve quién entrena cerca de ti. Toca el pin Mapa en la barra inferior.',
+    body: 'Ve quién entrena cerca. Toca el pin Mapa en la barra inferior.',
     anchor: 'bottom-nav-map',
   },
   {
@@ -15,12 +21,6 @@ const STEPS = [
     title: 'Explorar y swipe',
     body: 'Desliza perfiles compatibles. ❤️ = match instantáneo y chat.',
     anchor: 'bottom-nav-explore',
-  },
-  {
-    id: 'live',
-    title: 'Live en Perfil',
-    body: 'Activa “Entrenando ahora” para aparecer en el mapa mientras entrenas.',
-    anchor: 'bottom-nav-profile',
   },
 ] as const
 
@@ -45,7 +45,13 @@ type AppFeatureTourProps = {
   onClose: () => void
 }
 
-/** Optional 30s discovery tour — 3 hotspots (fase 180). */
+function clearTourHighlights() {
+  document.querySelectorAll('[data-tour].tour-highlight').forEach((el) => {
+    el.classList.remove('tour-highlight')
+  })
+}
+
+/** Optional discovery tour — 3 steps anchored to bottom nav (fase 108). */
 export function AppFeatureTour({ open, onClose }: AppFeatureTourProps) {
   const [step, setStep] = useState(0)
 
@@ -53,23 +59,37 @@ export function AppFeatureTour({ open, onClose }: AppFeatureTourProps) {
     if (open) setStep(0)
   }, [open])
 
+  useEffect(() => {
+    if (!open) {
+      clearTourHighlights()
+      return
+    }
+    clearTourHighlights()
+    const anchor = STEPS[step]?.anchor
+    if (anchor) {
+      document.querySelector(`[data-tour="${anchor}"]`)?.classList.add('tour-highlight')
+    }
+    return clearTourHighlights
+  }, [open, step])
+
   if (!open) return null
 
   const current = STEPS[step]
   const isLast = step >= STEPS.length - 1
 
   const finish = () => {
+    clearTourHighlights()
     markAppFeatureTourSeen()
     onClose()
   }
 
   return (
     <div
-      className="fixed inset-0 z-[200] bg-black/75 flex items-end sm:items-center justify-center p-4 pb-24"
+      className="fixed inset-0 z-[200] bg-black/60 flex items-end sm:items-center justify-center p-4 pb-24 pointer-events-none"
       role="dialog"
       aria-label="Tour rápido de EntrenaMatch"
     >
-      <div className="w-full max-w-sm bg-[#1C1C20] border border-[#FF671F]/30 rounded-3xl p-5 shadow-2xl relative">
+      <div className="w-full max-w-sm bg-[#1C1C20] border border-[#FF671F]/30 rounded-3xl p-5 shadow-2xl relative pointer-events-auto">
         <button
           type="button"
           onClick={finish}

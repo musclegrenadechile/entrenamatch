@@ -16,6 +16,7 @@ export interface ChatListPanelProps {
   lastSync: Date | null
   getRelativeTime: (ts?: number) => string
   onSelectChat: (profileId: string) => void
+  onOpenExplore?: () => void
 }
 
 export function ChatListPanel({
@@ -30,6 +31,7 @@ export function ChatListPanel({
   lastSync,
   getRelativeTime,
   onSelectChat,
+  onOpenExplore,
 }: ChatListPanelProps) {
   const syncAgeSec = lastSync
     ? Math.max(0, Math.floor((Date.now() - lastSync.getTime()) / 1000))
@@ -69,6 +71,15 @@ export function ChatListPanel({
           <p className="text-sm text-[#9CA3AF] max-w-[260px] mx-auto leading-relaxed">
             Aquí aparecen tus matches. Chats 1:1 con notas de voz y propuestas de entrenamiento.
           </p>
+          {onOpenExplore && (
+            <button
+              type="button"
+              onClick={onOpenExplore}
+              className="mt-4 px-5 py-2.5 rounded-xl bg-[#FF671F] text-black text-sm font-bold active:brightness-90"
+            >
+              Ir a Explorar
+            </button>
+          )}
         </div>
       )}
 
