@@ -1,9 +1,10 @@
 # Gestión de fases 1–100 — EntrenaMatch (documento maestro v2)
 
-**Versión actual en producción:** `0.1.279` (versionCode 279)  
-**Meta cierre fase 100:** `0.1.280` — open beta con informe + CI verde  
-**Deploy web:** https://musclegrenadechile.github.io/entrenamatch/  
-**Última actualización:** junio 2026
+**Versión actual en producción:** `0.1.281` (versionCode 281)  
+**Meta cierre fase 100:** open beta v1 — informe + métricas Play internal  
+**Deploy web:** https://entrenamatch.web.app · https://musclegrenadechile.github.io/entrenamatch/  
+**Informe de cierre:** `OPEN_BETA_INFORME.md` (jun 2026)  
+**Última actualización:** 9 junio 2026
 
 Este documento **unifica** los roadmaps anteriores (`ROADMAP_30/40`, `111–160`, `PLAN_POLISH 161–260`, oleadas Entreno de Hoy) en **una sola numeración 1–100** para planificar, commitear y desplegar.
 
@@ -60,7 +61,7 @@ Fases 75–84   ✅ Oleada A — Confianza técnica (CI, mapa, hooks App)
 Fases 85–91   ✅ Oleada B — Mapa hero + Perfil humano
 Fases 92–95   ✅ Oleada C — Fuel + EntrenoLog
 Fases 96–99   ✅ Oleada D — Social viral + red
-Fase  100     ⏳ Open beta v1 + informe de salida
+Fase  100     🔄 Open beta v1 — informe ✅; métricas Play/sync pendientes
 ```
 
 ---
@@ -176,15 +177,17 @@ Fase  100     ⏳ Open beta v1 + informe de salida
 
 | Fase | Versión | Entregable | P | Depende | Estado |
 |------|---------|------------|---|---------|--------|
-| **100** | **0.1.280** | **Open beta v1** — informe cierre fases 75–99; Crashlytics APK; Play internal track; criterios D1/D7/crash-free; deploy GH+Firebase | P0 | 77, 84, 96 | ⏳ |
+| **100** | **0.1.281** | **Open beta v1** — informe cierre fases 75–99; Crashlytics APK; Play internal track; criterios D1/D7/crash-free; deploy GH+Firebase | P0 | 77, 84, 96 | 🔄 |
 
 ### Criterios de salida fase 100
 
 - [ ] Crash-free sessions > **99%** (7 días Play internal)  
 - [ ] ≥ **1 sync real** entre 2 usuarios distintos por semana en Viña **o** Santiago (piloto)  
-- [ ] CI: vitest + E2E smoke + rules emulator en verde  
-- [ ] `App.tsx` **< 8.000** líneas  
-- [ ] Documento `OPEN_BETA_INFORME.md` con métricas y próximos 20 pasos post-100  
+- [x] CI: vitest + E2E smoke + rules emulator en verde  
+- [ ] `App.tsx` **< 8.000** líneas (actual: **~13.059**)  
+- [x] Documento `OPEN_BETA_INFORME.md` con métricas y próximos 20 pasos post-100  
+
+> Detalle completo: **`OPEN_BETA_INFORME.md`** · Fixes recientes: v0.1.280 (crash sync), v0.1.281 (filtro ejercicios Arena).
 
 ---
 
@@ -260,9 +263,10 @@ flowchart TB
 
 ## Próxima acción
 
-1. **Oleada C:** Fase **92** (Fuel wizard ≤3 preguntas) + **93** (Fuel card siempre en Hoy)  
-2. Activar MapLibre en prod: `VITE_MAP_USE_MAPLIBRE=1` en build  
-3. Probar deep link gym: `/entrenamatch/?tab=map&gym=<partnerId>`  
+1. **Fase 100 ops:** AAB v0.1.281 → Play internal + Crashlytics 7 días (ver `OPEN_BETA_INFORME.md` §9 pasos 1–4)  
+2. **Piloto:** Viña + Santiago — medir syncs reales/semana  
+3. **Fases 🔄:** 76 (quitar `@ts-nocheck` GymPulseMap) · 81 (extraer Arena de App.tsx)  
+4. **Post-100 P0:** Derby Viña vs Santiago (UI duelo sobre `cityWeeklyStats`)  
 
 ---
 
