@@ -52,6 +52,7 @@ export function useDailyPulse({
   const [dailyPulse, setDailyPulse] = useState<DailyPulseState | null>(null)
   const [showDailyPulseBanner, setShowDailyPulseBanner] = useState(false)
   const dailyPulseRef = useRef<DailyPulseState | null>(null)
+  const startupPulseInitRef = useRef(false)
   useEffect(() => {
     dailyPulseRef.current = dailyPulse
   }, [dailyPulse])
@@ -66,6 +67,18 @@ export function useDailyPulse({
         dailyPulse?.lastDate || (u as any).lastDailyPulseDate || null
 
       if (last !== today) {
+        const existingChallenge = (u as any).currentDailyChallenge
+        if (!last && existingChallenge && !existingChallenge.completed) {
+          const hydrated = hydrateDailyPulseFromUser(u as any, syncBonds, networkPower)
+          const pulse = { ...hydrated, lastDate: today }
+          setDailyPulse(pulse)
+          saveUserWithRealSyncRef.current?.({ ...u, lastDailyPulseDate: today } as CurrentUser).catch(
+            (e) => console.warn('[DailyPulse] backfill sync failed', e)
+          )
+          return
+        }
+
+        const isRealNewCalendarDay = !!last && last !== today
         const { pulse, userUpdate } = buildNewDayPulse(
           u as any,
           dailyPulse,
@@ -78,20 +91,21 @@ export function useDailyPulse({
           console.warn('[DailyPulse] sync failed', e)
         )
 
-        toast.success('¡Nuevo GymPulse Diario!', {
-          description: `${pulse.currentChallenge?.icon || '🔥'} ${pulse.currentChallenge?.title} • +${pulse.currentChallenge?.reward} Constancia para tu red fitness`,
-        })
-
-        const notif = {
-          id: 'pulse-' + today,
-          type: 'daily_pulse',
-          title: 'GymPulse Diario listo',
-          body: `${pulse.currentChallenge?.icon || '🔥'} ${pulse.currentChallenge?.title} — completalo hoy para tu Red`,
-          timestamp: Date.now(),
-          read: false,
-          data: { challengeId: pulse.currentChallenge?.id },
+        if (isRealNewCalendarDay) {
+          const notif = {
+            id: 'pulse-' + today,
+            type: 'daily_pulse',
+            title: 'Reto diario listo',
+            body: `${pulse.currentChallenge?.icon || '🔥'} ${pulse.currentChallenge?.title} — completalo hoy para tu Red`,
+            timestamp: Date.now(),
+            read: false,
+            data: { challengeId: pulse.currentChallenge?.id },
+          }
+          setNotifications((prev) => {
+            if (prev.some((n) => n.id === notif.id)) return prev
+            return [notif, ...prev].slice(0, 50)
+          })
         }
-        setNotifications((prev) => [notif, ...prev].slice(0, 50))
       } else if (!dailyPulse) {
         setDailyPulse(hydrateDailyPulseFromUser(u as any, syncBonds, networkPower))
       }
@@ -257,22 +271,21 @@ export function useDailyPulse({
   )
 
   useEffect(() => {
-    if (currentUser) {
-      const t = setTimeout(() => {
-        checkAndUpdateDailyPulse()
-        const today = getTodayStr()
-        const last = dailyPulse?.lastDate
-        if (
-          last !== today ||
-          (dailyPulse && dailyPulse.trainingStreak > 0 && !currentUser.trainingNow)
-        ) {
-          setShowDailyPulseBanner(true)
-          setTimeout(() => setShowDailyPulseBanner(false), 8000)
-        }
-      }, 600)
-      return () => clearTimeout(t)
-    }
-  }, [currentUser?.id, Object.keys(syncBonds).length, dailyPulse?.lastDate, checkAndUpdateDailyPulse])
+    if (!currentUser?.id || startupPulseInitRef.current) return
+    const t = setTimeout(() => {
+      startupPulseInitRef.current = true
+      const today = getTodayStr()
+      const last =
+        dailyPulseRef.current?.lastDate || (currentUser as any).lastDailyPulseDate || null
+      const isRealNewCalendarDay = !!last && last !== today
+      checkAndUpdateDailyPulse()
+      if (isRealNewCalendarDay) {
+        setShowDailyPulseBanner(true)
+        setTimeout(() => setShowDailyPulseBanner(false), 8000)
+      }
+    }, 600)
+    return () => clearTimeout(t)
+  }, [currentUser?.id, checkAndUpdateDailyPulse])
 
   useEffect(() => {
     if (!dailyPulse || !currentUser) return

@@ -4,11 +4,26 @@
 
 import type { WorkoutQuickTemplate } from './workoutTemplates'
 import { cloneExercises } from './workoutTemplates'
+import { isTimedCardioExercise } from '../data/exerciseLibrary'
+import { emptyCardioSet } from './workoutSetFields'
 
-function ex(name: string, sets: Array<{ reps: number; weightKg?: number }>) {
+function ex(
+  name: string,
+  sets: Array<{ reps?: number; weightKg?: number; minutesMin?: number; intensity?: number }>
+) {
+  if (isTimedCardioExercise(name)) {
+    return {
+      name,
+      sets: sets.map((s) => ({
+        ...emptyCardioSet(),
+        minutesMin: s.minutesMin ?? s.reps ?? 15,
+        intensity: s.intensity ?? 6,
+      })),
+    }
+  }
   return {
     name,
-    sets: sets.map((s) => ({ reps: s.reps, weightKg: s.weightKg ?? 0 })),
+    sets: sets.map((s) => ({ reps: s.reps ?? 10, weightKg: s.weightKg ?? 0 })),
   }
 }
 
@@ -60,8 +75,8 @@ const STORE_CARDIO: WorkoutQuickTemplate = {
   durationMin: 30,
   builtin: true,
   exercises: [
-    ex('Cinta / elíptica', [{ reps: 15 }, { reps: 12 }]),
-    ex('Estiramientos dinámicos', [{ reps: 10 }, { reps: 10 }]),
+    ex('Cinta / caminadora', [{ minutesMin: 15, intensity: 6 }, { minutesMin: 10, intensity: 7 }]),
+    ex('Elíptica', [{ minutesMin: 12, intensity: 6 }]),
   ],
 }
 

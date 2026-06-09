@@ -231,6 +231,16 @@ export async function startGoogleSignIn(): Promise<GoogleSignInResult> {
 export async function finishGoogleRedirectSignIn(): Promise<FirebaseUser | null> {
   if (!isFirebaseConfigured || !auth) return null;
 
+  // Native APK uses @capacitor-firebase/authentication — no OAuth redirect to drain.
+  if (Capacitor.isNativePlatform()) {
+    try {
+      await withTimeout(auth.authStateReady(), 3000, 'Firebase Auth');
+    } catch {
+      /* onAuthStateChanged will still deliver currentUser */
+    }
+    return auth.currentUser;
+  }
+
   if (!redirectResultOnce) {
     redirectResultOnce = (async () => {
       try {

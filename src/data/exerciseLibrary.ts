@@ -126,6 +126,17 @@ export function exerciseMatchesMuscleTab(exercise: LibraryExercise, tab: string)
   return exercise.muscle === tab
 }
 
+export function getLibraryExercise(name: string): LibraryExercise | undefined {
+  const q = name.trim().toLowerCase()
+  return EXERCISE_LIBRARY.find((e) => e.name.toLowerCase() === q)
+}
+
+/** Machine / aerobic cardio — logged by minutes + intensity, not reps × kg. */
+export function isTimedCardioExercise(name: string): boolean {
+  const ex = getLibraryExercise(name)
+  return ex?.type === 'cardio' && ex.muscle === 'Cardio'
+}
+
 export function filterLibraryByMuscleTab(tab: string): LibraryExercise[] {
   if (tab === 'Todos') return EXERCISE_LIBRARY
   return EXERCISE_LIBRARY.filter((e) => exerciseMatchesMuscleTab(e, tab))

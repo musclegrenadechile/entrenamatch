@@ -18,7 +18,7 @@ export function ReferralInviteCard({ referralCode, onShare }: ReferralInviteCard
         onClick={onShare}
         className="mt-3 w-full py-2 rounded-xl bg-[#22c55e] text-black font-bold text-sm"
       >
-        Copiar enlace de invitación
+        Compartir invitación
       </button>
     </div>
   )

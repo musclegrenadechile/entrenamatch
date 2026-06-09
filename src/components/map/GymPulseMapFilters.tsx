@@ -39,6 +39,7 @@ export function GymPulseMapFilters({
       <button
         type="button"
         className={`gym-pulse-filters__trigger ${open ? 'gym-pulse-filters__trigger--open' : ''}`}
+        data-gympulse-tour="checkin"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >

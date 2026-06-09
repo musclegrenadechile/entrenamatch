@@ -1,4 +1,5 @@
 import type { WorkoutExercise } from '../../types'
+import { formatSetDisplay } from '../../utils/workoutSetFields'
 
 export interface ArenaLiveRoutinesProps {
   selfLabel?: string
@@ -32,9 +33,7 @@ function ExerciseColumn({
             <li key={ex.name} className="arena-live-routines__item">
               <span className="arena-live-routines__name">{ex.name}</span>
               <span className="arena-live-routines__sets">
-                {ex.sets
-                  .map((s) => (s.weightKg > 0 ? `${s.reps}×${s.weightKg}kg` : `${s.reps}`))
-                  .join(' · ')}
+                {ex.sets.map((s) => formatSetDisplay(ex.name, s)).join(' · ')}
               </span>
             </li>
           ))}

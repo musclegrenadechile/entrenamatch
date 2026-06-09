@@ -1,5 +1,7 @@
 /** Render 1080×1920 branded story PNG for post-EntrenaSync share */
 
+import { sharePngBlob, type ShareImageOutcome } from './shareImageBlob'
+
 export const SYNC_STORY_APP_URL = 'entrenamatch.web.app'
 
 export type SyncStoryOpts = {
@@ -349,13 +351,28 @@ export async function syncStoryToDataUrl(opts: SyncStoryOpts): Promise<string | 
   })
 }
 
-export async function downloadSyncStory(opts: SyncStoryOpts): Promise<void> {
+function syncStoryFilename(): string {
+  return `entrenamatch-sync-${Date.now()}.png`
+}
+
+export async function shareSyncStory(opts: SyncStoryOpts): Promise<ShareImageOutcome> {
   const blob = await renderSyncStoryPng(opts)
-  if (!blob) return
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `entrenamatch-sync-${Date.now()}.png`
-  a.click()
-  URL.revokeObjectURL(url)
+  if (!blob) return 'failed'
+  const text = buildSyncPostText({
+    selfName: opts.selfName,
+    partnerName: opts.partnerName,
+    minutes: opts.minutes,
+    vibe: opts.vibe,
+  })
+  return sharePngBlob(blob, syncStoryFilename(), {
+    title: 'EntrenaSync · EntrenaMatch',
+    text,
+    dialogTitle: 'Compartir story EntrenaSync',
+  })
+}
+
+/** @deprecated Prefer shareSyncStory */
+export async function downloadSyncStory(opts: SyncStoryOpts): Promise<boolean> {
+  const outcome = await shareSyncStory(opts)
+  return outcome === 'shared' || outcome === 'downloaded'
 }

@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef, type ReactNode } from 'react';
 import { demoStorage, DEMO_KEYS } from '../services/demoStorage';
 import { getUserProfile } from '../services/auth';
 import { useAuth } from './AuthContext';
@@ -26,14 +26,23 @@ function profileFromFirestore(raw: Record<string, unknown>): CurrentUser {
 }
 
 export function ProfileProvider({ children }: { children: ReactNode }) {
-  const { currentUser: firebaseUser, userProfile, isDemoMode } = useAuth();
+  const { currentUser: firebaseUser, userProfile, isDemoMode, loading: authLoading } = useAuth();
 
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(() => {
     return demoStorage.get<CurrentUser>(DEMO_KEYS.PROFILE);
   });
 
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [profileHydrated, setProfileHydrated] = useState(isDemoMode);
+  const [profileHydrated, setProfileHydrated] = useState(() => {
+    if (isDemoMode) return true;
+    const cached = demoStorage.get<CurrentUser>(DEMO_KEYS.PROFILE);
+    return !!cached?.name;
+  });
+  const hydratedUidRef = useRef<string | null>(null);
+  const userProfileRef = useRef(userProfile);
+  useEffect(() => {
+    userProfileRef.current = userProfile;
+  }, [userProfile]);
 
   useEffect(() => {
     const saved = demoStorage.get<CurrentUser>(DEMO_KEYS.PROFILE);
@@ -44,31 +53,44 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Real users: hydrate profile from AuthContext / Firestore before App lazy-loads
+  // Real users: hydrate profile from Firestore once per uid (avoid Android remount loops).
   useEffect(() => {
     if (isDemoMode) {
       setProfileHydrated(true);
       return;
     }
-    if (!firebaseUser?.uid) {
-      setProfileHydrated(false);
+
+    const uid = firebaseUser?.uid;
+    if (!uid) {
       return;
+    }
+
+    if (hydratedUidRef.current === uid) {
+      return;
+    }
+
+    const cached = demoStorage.get<CurrentUser>(DEMO_KEYS.PROFILE);
+    if (cached?.name) {
+      hydratedUidRef.current = uid;
+      setCurrentUser(cached);
+      setProfileHydrated(true);
     }
 
     let cancelled = false;
     (async () => {
       try {
         const fromFs =
-          userProfile ||
-          (await getUserProfile(firebaseUser.uid));
+          userProfileRef.current ||
+          (await getUserProfile(uid));
         if (cancelled) return;
 
-        const cached = demoStorage.get<CurrentUser>(DEMO_KEYS.PROFILE);
+        const cachedNow = demoStorage.get<CurrentUser>(DEMO_KEYS.PROFILE);
+        hydratedUidRef.current = uid;
 
         if (!isProfileComplete(fromFs)) {
           if (fromFs) {
             const merged = profileFromFirestore({
-              ...(cached || {}),
+              ...(cachedNow || {}),
               ...fromFs,
             });
             demoStorage.set(DEMO_KEYS.PROFILE, merged);
@@ -80,21 +102,43 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         }
 
         const merged = profileFromFirestore({
-          ...(cached || {}),
+          ...(cachedNow || {}),
           ...fromFs,
         });
         demoStorage.set(DEMO_KEYS.PROFILE, merged);
         setCurrentUser(merged);
+        setProfileHydrated(true);
       } catch (e) {
         console.warn('[ProfileContext] Firestore hydrate failed', e);
-      } finally {
-        if (!cancelled) setProfileHydrated(true);
+        if (!cancelled) {
+          hydratedUidRef.current = uid;
+          setProfileHydrated(true);
+        }
       }
     })();
 
     return () => {
       cancelled = true;
     };
+  }, [firebaseUser?.uid, isDemoMode, authLoading]);
+
+  // Recover when AuthContext fetched profile after a failed local hydrate.
+  useEffect(() => {
+    if (isDemoMode || !firebaseUser?.uid || !userProfile) return;
+    if (hydratedUidRef.current !== firebaseUser.uid) return;
+    const cached = demoStorage.get<CurrentUser>(DEMO_KEYS.PROFILE);
+    if (cached?.name && isProfileComplete(cached)) return;
+
+    const merged = profileFromFirestore({
+      ...(cached || {}),
+      ...userProfile,
+    });
+    demoStorage.set(DEMO_KEYS.PROFILE, merged);
+    setCurrentUser(merged);
+    if (!isProfileComplete(userProfile)) {
+      setShowOnboarding(true);
+    }
+    setProfileHydrated(true);
   }, [firebaseUser?.uid, userProfile, isDemoMode]);
 
   const saveUser = useCallback((user: CurrentUser) => {
@@ -103,21 +147,12 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const clearProfile = useCallback(() => {
+    hydratedUidRef.current = null;
     demoStorage.remove(DEMO_KEYS.PROFILE);
     setCurrentUser(null);
     setShowOnboarding(false);
     setProfileHydrated(isDemoMode);
   }, [isDemoMode]);
-
-  // Real mode: drop cached profile when Firebase session ends (logout / expired token).
-  useEffect(() => {
-    if (isDemoMode) return;
-    if (!firebaseUser?.uid && currentUser) {
-      demoStorage.remove(DEMO_KEYS.PROFILE);
-      setCurrentUser(null);
-      setShowOnboarding(false);
-    }
-  }, [firebaseUser?.uid, isDemoMode, currentUser]);
 
   return (
     <ProfileContext.Provider

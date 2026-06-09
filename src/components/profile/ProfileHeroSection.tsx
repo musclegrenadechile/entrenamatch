@@ -8,9 +8,19 @@ import { profileTabBindings } from './profileTabBindings'
 import { VerifiedPhotoBadge, VerifiedProfilePhoto } from './VerifiedProfilePhoto'
 import { cityChampionLabel } from '../../utils/genderedCopy'
 import { isProfileVerified } from '../../utils/identityVerification'
+import { DerbyDefenderBadge } from '../home/DerbyDefenderBadge'
 
 export function ProfileHeroSection(props: ProfileTabProps) {
   const p = profileTabBindings(props)
+  const openMuroComposer = (prefill?: string) => {
+    p.setProfileSection('actividad')
+    p.setActiveTab('profile')
+    if (prefill) p.setMuroComposerText(prefill)
+    window.setTimeout(() => {
+      p.muroComposerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      p.muroComposerRef.current?.focus()
+    }, 120)
+  }
   const {
     currentUser,
     networkStats,
@@ -32,6 +42,8 @@ export function ProfileHeroSection(props: ProfileTabProps) {
     isEditingBio,
     setIsEditingBio,
     setLastSync,
+    toggleLiveTraining,
+    isTogglingLive,
   } = p
 
   return (
@@ -73,6 +85,7 @@ export function ProfileHeroSection(props: ProfileTabProps) {
         } catch { /* ignore */ }
         return null
       })()}
+      <DerbyDefenderBadge city={currentUser.city} gender={currentUser.gender} />
     </div>
 
     {/* Unique "Tu Poder" mini dashboard in hero - makes profile creation feel valuable immediately */}
@@ -102,7 +115,7 @@ export function ProfileHeroSection(props: ProfileTabProps) {
     <div className="flex items-center justify-between mb-1.5 px-0.5">
       <div>
         <span className="text-[10px] uppercase tracking-[1px] text-[#FFD700]">GALERÍA DE RENDIMIENTO</span>
-        <span className="ml-2 text-[11px] text-[#FF671F] font-semibold">{currentUser.photos.length} sesiones • tu peso en el GymPulse</span>
+        <span className="ml-2 text-[11px] text-[#FF671F] font-semibold">{currentUser.photos.length} sesiones • tu presencia en el mapa</span>
       </div>
       <div className="text-[8px] text-[#9CA3AF]/60">Arrastra • reordena • la 1ª es tu presencia</div>
     </div>
@@ -197,7 +210,7 @@ export function ProfileHeroSection(props: ProfileTabProps) {
   <div className="flex items-center justify-between mb-2 px-1">
     <div className="text-[11px] uppercase tracking-[1.5px] text-[#FFD700] font-bold">Tus momentos de rendimiento</div>
     <button 
-      onClick={() => muroComposerRef.current?.focus()} 
+      onClick={() => openMuroComposer()} 
       className="text-[10px] text-[#FF671F] flex items-center gap-1 active:opacity-80"
     >
       + Agregar momento <span className="text-lg leading-none">→</span>
@@ -208,8 +221,7 @@ export function ProfileHeroSection(props: ProfileTabProps) {
     <div 
       onClick={() => { 
         try { triggerHaptic('medium') } catch {}; 
-        muroComposerRef.current?.focus(); 
-        setActiveTab('profile'); 
+        openMuroComposer()
         toast('¡Cuéntale a tu red! +Constancia por posts con foto'); 
       }} 
       className="flex-shrink-0 w-16 h-16 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex flex-col items-center justify-center text-black text-[10px] font-black cursor-pointer active:scale-95 border-2 border-white/30 shadow-lg snap-start"
@@ -242,8 +254,8 @@ export function ProfileHeroSection(props: ProfileTabProps) {
       });
       // Fallback demo highlights to encourage
       if (items.length < 3) {
-        items.push({ type: 'demo', label: 'PR 100kg', emoji: '🏋️', onClick: () => muroComposerRef.current?.focus() });
-        items.push({ type: 'demo', label: 'Sync épico', emoji: '⚡', onClick: () => muroComposerRef.current?.focus() });
+        items.push({ type: 'demo', label: 'PR 100kg', emoji: '🏋️', onClick: () => openMuroComposer() });
+        items.push({ type: 'demo', label: 'Sync épico', emoji: '⚡', onClick: () => openMuroComposer() });
       }
       return items.slice(0,6).map((item, idx) => (
         <div 
@@ -267,14 +279,19 @@ export function ProfileHeroSection(props: ProfileTabProps) {
 {/* Quick friendly actions bar - more options, encourages content like IG/FB */}
 <div className="px-4 py-2 bg-[#0D0D10] border-b border-[#2F2F35]">
   <div className="flex gap-2 overflow-x-auto pb-1">
-    <button onClick={() => muroComposerRef.current?.focus()} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl bg-[#FF671F] text-black font-bold active:opacity-90 flex items-center gap-1.5 shadow">
+    <button onClick={() => openMuroComposer()} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl bg-[#FF671F] text-black font-bold active:opacity-90 flex items-center gap-1.5 shadow">
       <Send size={14} /> Publicar en muro
     </button>
     <button onClick={openProfileEditor} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-white/20 text-white active:bg-white/10 flex items-center gap-1.5">
       <Camera size={14} /> Agregar foto
     </button>
-    <button onClick={() => { if (currentUser.trainingNow) { /* deactivate */ } else { /* hint activate */ setActiveTab('profile'); toast('Activa Live más abajo para aparecer en el Pulso'); } }} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10 flex items-center gap-1.5">
-      🟢 {currentUser.trainingNow ? 'Terminar Live' : 'Ir a Live'}
+    <button
+      type="button"
+      disabled={isTogglingLive}
+      onClick={() => void toggleLiveTraining(currentUser.trainingNow ? 'off' : 'on')}
+      className={`flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10 flex items-center gap-1.5 ${isTogglingLive ? 'opacity-70 cursor-wait' : ''}`}
+    >
+      🟢 {isTogglingLive ? 'Sincronizando…' : currentUser.trainingNow ? 'Terminar Live' : 'Activar Live'}
     </button>
     <button onClick={() => setActiveTab('explore')} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-[#FFD700]/30 text-[#FFD700] active:bg-[#FFD700]/10 flex items-center gap-1.5">
       🔍 Buscar alianzas
@@ -286,7 +303,7 @@ export function ProfileHeroSection(props: ProfileTabProps) {
 {(!currentUser.photos?.length || (currentUser.photos?.length || 0) < 3 || !currentUser.bio || (profilePosts[effectiveUserId] || []).filter((p:any)=>p.photo).length === 0) && (
   <div className="mx-4 mt-4 p-5 rounded-3xl bg-gradient-to-br from-[#1a160f] via-[#25252A] to-[#1a160f] border border-[#FFD700]/40 shadow-inner">
     <div className="flex items-center gap-2 text-[#FFD700] font-bold mb-1.5 text-sm tracking-wide">
-      <span>⭐</span> CONSTRUYE TU LEGADO EN EL GYMPULSE
+      <span>⭐</span> CONSTRUYE TU LEGADO EN ENTRENAMATCH
     </div>
     <p className="text-sm text-[#f5e8c7] mb-3 leading-snug">Tu galería y tus EntrenaSyncs son tu capital único. Hazlos visibles: otros verán tu progreso real y querrán sincronizarse para multiplicar poder.</p>
     <div className="text-[10px] space-y-0.5 mb-4 text-[#9CA3AF]">
@@ -295,7 +312,15 @@ export function ProfileHeroSection(props: ProfileTabProps) {
       {!currentUser.bio && <div>• Bio con propósito = matches de alto valor</div>}
       {(profilePosts[effectiveUserId] || []).filter((p:any)=>p.photo).length === 0 && <div>• Publica 1 foto de Sync compartido (tu primer ripple)</div>}
     </div>
-    <button onClick={() => { setActiveTab('profile'); setTimeout(()=> muroComposerRef.current?.focus(), 60); }} className="w-full py-2.5 text-sm rounded-2xl bg-[#FFD700] text-black font-extrabold active:brightness-90 tracking-wide">CONSTRUIR MI RED DE RENDIMIENTO AHORA</button>
+    <button
+      type="button"
+      onClick={() =>
+        openMuroComposer('🔥 Sumando a mi red de rendimiento en EntrenaMatch — ¿quién se une?')
+      }
+      className="w-full py-2.5 text-sm rounded-2xl bg-[#FFD700] text-black font-extrabold active:brightness-90 tracking-wide"
+    >
+      CONSTRUIR MI RED DE RENDIMIENTO AHORA
+    </button>
     <button onClick={openProfileEditor} className="mt-2 w-full text-[10px] text-[#9CA3AF] underline active:text-[#FF671F]">Editar perfil completo</button>
   </div>
 )}

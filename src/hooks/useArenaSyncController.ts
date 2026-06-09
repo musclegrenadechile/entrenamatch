@@ -1135,7 +1135,9 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
         if (rec.state === 'recording') rec.stop()
       }, 3000)
     } catch {
-      toast.error('Mic no disponible en este dispositivo')
+      toast.error('No se pudo acceder al micrófono', {
+        description: 'Activa el permiso de micrófono para EntrenaMatch en Ajustes del celular.',
+      })
     }
   }, [isArenaVoiceRecording])
 

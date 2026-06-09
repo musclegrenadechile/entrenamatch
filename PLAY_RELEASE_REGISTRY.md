@@ -9,9 +9,10 @@ Documento de referencia para el equipo. **No contiene secretos** (contraseñas/k
 | Package | `com.entrenamatch.app` |
 | App name | EntrenaMatch |
 | Track objetivo | **Closed testing** (beta cerrada, app oculta) |
-| Última subida conocida (repo) | `versionCode` **90** · `versionName` **0.1.86-work** |
-| Subida intermedia | `versionCode` **91** · `0.1.87` (ya en Play) |
-| **Próxima subida** | `versionCode` **147** · `versionName` **0.1.147** (P0 beta + push + marketplace MP) |
+| Última subida conocida (dispositivo) | `versionCode` **249** · `versionName` **0.1.249** |
+| **Próxima subida (preparada)** | `versionCode` **320** · `versionName` **0.1.320** (FTUE Sprints 1–6) |
+| Doc release | `PLAY_INTERNAL_v0.1.320.md` |
+| Script build | `build-play-store.bat` |
 
 > Play Store exige que cada AAB tenga `versionCode` **estrictamente mayor** que el anterior. No subir 91 hasta confirmar que 90 ya está en Console.
 
@@ -48,9 +49,11 @@ publish-play.bat closed
 
 | Script | Qué hace |
 |--------|----------|
-| `build-release.bat` | Crea/configura keystore + AAB firmado local |
+| `build-play-store.bat` | **Recomendado** — version check + web + AAB firmado (`EntrenaMatch-release.aab`) |
+| `build-play-store.bat publish internal` | Igual + subida automática vía Play API |
+| `build-release.bat` | Solo Gradle bundleRelease (sin rebuild web) |
 | `publish-play.bat closed` | Build web + Cap sync + `gradlew publishBundle` → track closed |
-| `build-aab-now.bat` | Solo AAB sin subir |
+| `build-aab-now.bat` | Solo AAB debug sin subir |
 
 ## URLs legales (Play Console)
 

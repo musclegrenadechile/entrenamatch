@@ -15,13 +15,20 @@ import { HomeShopBanner } from './HomeShopBanner'
 import { PostLiveShareBanner, type PostLiveSession } from './PostLiveShareBanner'
 import { WeeklyPactReminderStrip } from './WeeklyPactReminderStrip'
 import { getFeedRankBadges } from '../../utils/feedRanking'
-import { isHomeDayOneMode } from '../../utils/profileProgressive'
+import { isHomeDayOneMode, shouldHideCoachAndMarketplace } from '../../utils/profileProgressive'
 
 export type HomeSubTab = 'day' | 'feed'
 
 export type HomeTabProps = Record<string, unknown>
 
 export function HomeTab(props: HomeTabProps) {
+  const completedSyncCount = Object.keys(
+    (props.syncBonds as Record<string, unknown> | undefined) || {}
+  ).length
+  const hideCoachAndShop = shouldHideCoachAndMarketplace(
+    props.currentUser as { legalConsents?: { acceptedAt?: number } } | null | undefined,
+    completedSyncCount
+  )
   const {
     currentUser,
     homeWeekDays,
@@ -134,7 +141,8 @@ export function HomeTab(props: HomeTabProps) {
     weeklyPlan,
     weeklyPlanEnriching,
     onStartWeeklyPlan,
-    onShareWeeklyPlan,
+    onPublishWeeklyPlanToFeed,
+    onShareWeeklyPlanExternally,
     homeCoachBanner,
     onDismissCoachBanner,
     onOpenTrainerCoach,
@@ -252,11 +260,13 @@ export function HomeTab(props: HomeTabProps) {
           onPublish={onPublishPostLive as (text: string) => void | Promise<void>}
           onPublishWithPhoto={onPostLiveWithPhoto as () => void}
           onOpenEntrenoLog={onPostLiveEntrenoLog as () => void}
-          onOpenCoach={onOpenTrainerCoach as (() => void) | undefined}
+          onOpenCoach={
+            hideCoachAndShop ? undefined : (onOpenTrainerCoach as (() => void) | undefined)
+          }
           onDismiss={onDismissPostLive as () => void}
         />
       )}
-      {homeCoachBanner && !postLiveSession && (
+      {homeCoachBanner && !postLiveSession && !hideCoachAndShop && (
         <HomeCoachBanner
           context={homeCoachBanner}
           onOpenCoach={onOpenTrainerCoach}
@@ -274,7 +284,7 @@ export function HomeTab(props: HomeTabProps) {
             onDismiss={onDismissPactReminder}
           />
         )}
-      {showShopBanner && (
+      {showShopBanner && !hideCoachAndShop && (
         <HomeShopBanner
           orders={marketplaceOrders || []}
           products={marketplaceProducts || []}
@@ -377,7 +387,8 @@ export function HomeTab(props: HomeTabProps) {
         weeklyPlan={weeklyPlan as import('../../domain/weeklyPlan').WeeklyPlanResult | null | undefined}
         weeklyPlanEnriching={weeklyPlanEnriching as boolean | undefined}
         onStartWeeklyPlan={onStartWeeklyPlan as ((plan: import('../../domain/weeklyPlan').WeeklyPlanResult) => void) | undefined}
-        onShareWeeklyPlan={onShareWeeklyPlan as ((plan: import('../../domain/weeklyPlan').WeeklyPlanResult) => void) | undefined}
+        onPublishWeeklyPlanToFeed={onPublishWeeklyPlanToFeed as ((plan: import('../../domain/weeklyPlan').WeeklyPlanResult) => void) | undefined}
+        onShareWeeklyPlanExternally={onShareWeeklyPlanExternally as ((plan: import('../../domain/weeklyPlan').WeeklyPlanResult) => void) | undefined}
       />
         </>
       )}
@@ -489,7 +500,7 @@ export function HomeTab(props: HomeTabProps) {
         <div className="mb-4 -mx-1 px-1">
           <div className="flex items-center justify-between mb-1.5 px-1">
             <div className="text-[9px] uppercase tracking-[1.5px] text-[#22c55e] font-black flex items-center gap-1.5">
-              🔥 EN EL GYMPULSE AHORA <span className="text-[10px] text-[#22c55e]/70 font-normal">({liveTrainingNow.length})</span>
+              🔥 ENTRENANDO EN VIVO <span className="text-[10px] text-[#22c55e]/70 font-normal">({liveTrainingNow.length})</span>
               {liveTrainingNow.length > 5 && <span className="text-red-400 text-[8px] font-bold tracking-wider">HOT ZONE</span>}
             </div>
             <div className="text-[8px] text-[#9CA3AF]">Toca para unirte o re-sync</div>

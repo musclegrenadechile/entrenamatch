@@ -11,7 +11,8 @@ import type {
   WorkoutStats,
   WorkoutType,
 } from '../types'
-import { WORKOUT_TYPE_LABELS } from '../data/exerciseLibrary'
+import { WORKOUT_TYPE_LABELS, isTimedCardioExercise } from '../data/exerciseLibrary'
+import { formatSetDisplay } from '../utils/workoutSetFields'
 
 /** Firestore rejects undefined at any depth — strip before addDoc/setDoc. */
 export function stripUndefinedDeep<T>(value: T): T {
@@ -38,6 +39,7 @@ export function computeWorkoutStats(
   for (const ex of exercises) {
     for (const set of ex.sets) {
       totalSets++
+      if (isTimedCardioExercise(ex.name)) continue
       totalVolumeKg += (set.reps || 0) * (set.weightKg || 0)
     }
   }
@@ -69,12 +71,16 @@ export function buildWorkoutPreview(
     volumeLabel: formatVolumeLabel(stats.totalVolumeKg),
     durationMin: stats.durationMin,
     exercises: exercises.map((ex) => {
-      const topW = ex.sets.reduce((m, s) => Math.max(m, s.weightKg || 0), 0)
       const row: WorkoutPreview['exercises'][number] = {
         name: ex.name,
         setCount: ex.sets.length,
       }
-      if (topW > 0) row.topWeightKg = topW
+      if (isTimedCardioExercise(ex.name)) {
+        row.setSummary = ex.sets.map((s) => formatSetDisplay(ex.name, s)).join(' · ')
+      } else {
+        const topW = ex.sets.reduce((m, s) => Math.max(m, s.weightKg || 0), 0)
+        if (topW > 0) row.topWeightKg = topW
+      }
       return row
     }),
   }
@@ -89,7 +95,11 @@ export function buildWorkoutPostText(
   prSummary?: string
 ): string {
   const typeLabel = WORKOUT_TYPE_LABELS[type] || type
-  const base = `🏋️ ${title} · ${typeLabel} — ${stats.exerciseCount} ejercicios, ${stats.totalSets} sets, ${stats.durationMin} min (${formatVolumeLabel(stats.totalVolumeKg)})`
+  const volumePart =
+    type === 'cardio' || stats.totalVolumeKg <= 0
+      ? `${stats.durationMin} min`
+      : formatVolumeLabel(stats.totalVolumeKg)
+  const base = `🏋️ ${title} · ${typeLabel} — ${stats.exerciseCount} ejercicios, ${stats.totalSets} bloques, ${stats.durationMin} min (${volumePart})`
   return prSummary ? `${base}\n${prSummary}` : base
 }
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import type { UserProfile } from '../services/auth';
 import {
@@ -49,9 +49,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return isQuickDemoSession()
   })
   const [googleNewUser, setGoogleNewUser] = useState(false);
+  const bootFinishedRef = useRef(false);
 
   useEffect(() => {
     if (isDemoMode) {
+      bootFinishedRef.current = true;
       setLoading(false);
       setCurrentUser(getDemoUser());
 
@@ -68,9 +70,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     let cancelled = false;
     let unsubscribe = () => {};
     let bootTimeout: ReturnType<typeof setTimeout> | undefined;
+    bootFinishedRef.current = false;
+    setLoading(true);
 
     const finishBoot = () => {
-      if (!cancelled) setLoading(false);
+      if (!cancelled && !bootFinishedRef.current) {
+        bootFinishedRef.current = true;
+        if (bootTimeout) {
+          clearTimeout(bootTimeout);
+          bootTimeout = undefined;
+        }
+        setLoading(false);
+      }
     };
 
     // Never leave mobile users on a blank/dark screen if Auth hangs (Safari storage quirks, slow networks).
@@ -80,16 +91,32 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       finishBoot();
     }, BOOT_TIMEOUT_MS);
 
-    (async () => {
-      setLoading(true);
+    // Subscribe FIRST — do not block on Google redirect / authStateReady (Android boot loop).
+    let firstAuthEvent = true;
+    unsubscribe = onAuthStateChange(async (user) => {
+      if (cancelled) return;
+      setCurrentUser(user);
 
-      // CRITICAL: finish redirect BEFORE onAuthStateChanged — otherwise getRedirectResult returns null.
-      // Race with timeout so mobile Safari / slow networks never block the UI forever.
+      if (user) {
+        try {
+          const profile = await getUserProfile(user.uid);
+          if (!cancelled) setUserProfile(profile);
+        } catch (e) {
+          console.warn('[Auth] getUserProfile failed', e);
+        }
+      } else {
+        setUserProfile(null);
+      }
+
+      if (firstAuthEvent) {
+        firstAuthEvent = false;
+        finishBoot();
+      }
+    });
+
+    void (async () => {
       try {
-        const redirectUser = await Promise.race([
-          handleGoogleRedirectResult(),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 8000)),
-        ]);
+        const redirectUser = await handleGoogleRedirectResult();
         if (cancelled) return;
 
         if (redirectUser) {
@@ -116,30 +143,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.error('Google redirect sign-in failed:', error);
         toast.error(msg);
       }
-
-      if (cancelled) return;
-
-      let firstAuthEvent = true;
-      unsubscribe = onAuthStateChange(async (user) => {
-        if (cancelled) return;
-        setCurrentUser(user);
-
-        if (user) {
-          try {
-            const profile = await getUserProfile(user.uid);
-            if (!cancelled) setUserProfile(profile);
-          } catch (e) {
-            console.warn('[Auth] getUserProfile failed', e);
-          }
-        } else {
-          setUserProfile(null);
-        }
-
-        if (firstAuthEvent) {
-          firstAuthEvent = false;
-          finishBoot();
-        }
-      });
     })();
 
     return () => {

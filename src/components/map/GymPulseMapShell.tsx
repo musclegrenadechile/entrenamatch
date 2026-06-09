@@ -33,10 +33,7 @@ export function GymPulseMapShell({
       : 'gym-pulse-shell--embedded'
 
   return (
-    <div
-      className={`gym-pulse-shell ${shellClass}`}
-      data-gympulse-tour="pins"
-    >
+    <div className={`gym-pulse-shell ${shellClass}`}>
       {fullscreen && !tabFill && (
         <header className="gym-pulse-shell__header">
           {onClose && (
@@ -68,7 +65,7 @@ export function GymPulseMapShell({
         </header>
       )}
 
-      <div className="gym-pulse-shell__map-wrap">
+      <div className="gym-pulse-shell__map-wrap" data-gympulse-tour="pins">
         {!fullscreen && !tabFill && (
           <button
             type="button"

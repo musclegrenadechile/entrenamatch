@@ -62,6 +62,7 @@ export function BottomNav({
       sublabel: 'y chat',
       icon: Heart,
       badge: chatUnreads,
+      tourId: 'bottom-nav-red',
       ariaLabel: 'Matches y chat',
     },
     {

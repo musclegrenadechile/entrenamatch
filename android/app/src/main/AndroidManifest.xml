@@ -48,6 +48,8 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Voice notes in chat and Arena sync pings -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- For Android 13+ (API 33) runtime notification permission -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

@@ -254,12 +254,27 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
       <button onClick={() => setActiveTab('explore')} className="text-[8px] px-2 py-0.5 bg-[#22c55e]/10 text-[#22c55e] rounded active:bg-[#22c55e]/20">Explora más socios para expandir tu red →</button>
       <button 
         onClick={() => {
-          const msg = `🔥 Entreno en EntrenaMatch con mi red fitness. Syncs reales, mapa en vivo y constancia compartida. ¿Entrenamos juntos? https://musclegrenadechile.github.io/entrenamatch/`;
-          navigator.clipboard?.writeText(msg).then(() => toast.success('Mensaje copiado', { description: 'Comparte con tu red para invitarlos a construir el grafo de alto rendimiento.' })).catch(() => toast('Invita a tu red abriendo el app con ellos.'));
+          void (async () => {
+            const { shareNativeMessage } = await import('../../utils/shareNative')
+            const { buildInviteLink } = await import('../../utils/sparseCityDefaults')
+            const url = buildInviteLink(effectiveUserId)
+            const outcome = await shareNativeMessage({
+              title: 'EntrenaMatch',
+              text: '🔥 Entreno en EntrenaMatch con mi red fitness. Syncs reales, mapa en vivo y constancia compartida. ¿Entrenamos juntos?',
+              url,
+            })
+            if (outcome === 'copied') {
+              toast.success('Invitación copiada', {
+                description: 'Pégala en WhatsApp o Instagram para invitar a tu red.',
+              })
+            } else if (outcome === 'failed') {
+              toast.error('No se pudo compartir la invitación')
+            }
+          })()
         }}
         className="text-[8px] px-2 py-0.5 bg-[#FFD700]/20 text-[#FFD700] rounded active:bg-[#FFD700]/30 font-medium"
       >
-        Invitar a tu red (copiar link)
+        Invitar a tu red
       </button>
     </div>
   </div>

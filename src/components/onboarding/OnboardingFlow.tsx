@@ -7,6 +7,7 @@ import { TRAINING_OPTIONS, TRAINING_GOALS } from '../../constants';
 import { BRAND_COPY } from '../../constants/brandCopy';
 import { PILOT_CITY_OPTIONS, PILOT_PROGRAM_TITLE } from '../../constants/pilotProgram';
 import type { CurrentUser } from '../../types';
+import { QUICK_DEMO_USER } from '../../utils/quickDemo';
 
 const ONBOARDING_LAST_STEP = 4;
 const SHOW_DEV_FILL = import.meta.env.DEV;
@@ -65,6 +66,8 @@ interface OnboardingFlowProps {
   mode?: 'create' | 'edit';
   /** Create mode only — logs out and returns to the login screen */
   onExitToLogin?: () => void;
+  /** Modo prueba — atajo para testers internos */
+  isDemoMode?: boolean;
 }
 
 export const OnboardingFlow = ({
@@ -80,6 +83,7 @@ export const OnboardingFlow = ({
   uploadPhotoIfNeeded,
   mode = 'create',
   onExitToLogin,
+  isDemoMode = false,
 }) => {
   const isEditMode = mode === 'edit';
   const [onboardData, setOnboardData] = useState<OnboardData>(() => {
@@ -401,6 +405,19 @@ export const OnboardingFlow = ({
     );
   };
 
+  const enterDemoNow = async () => {
+    try {
+      await Promise.resolve(saveUser({ ...QUICK_DEMO_USER, id: currentUser?.id || 'me' }));
+      setShowOnboarding(false);
+      setOnboardingStep(0);
+      toast.success('Perfil demo listo — explora sin Firebase');
+      try { triggerHaptic('success') } catch {}
+    } catch (err) {
+      console.error('demo enter failed:', err);
+      toast.error('No se pudo cargar el perfil demo');
+    }
+  };
+
   const finishOnboarding = async () => {
     if (!onboardData.name || !onboardData.bio || onboardData.photos?.length === 0 || onboardData.trainingTypes?.length === 0 || (onboardData.goals?.length || 0) === 0) {
       toast.error('Faltan datos', { description: 'Nombre, bio, foto, tipos de entrenamiento y al menos un objetivo son obligatorios' });
@@ -507,6 +524,15 @@ export const OnboardingFlow = ({
                 title="Volver al login"
               >
                 <X size={18} />
+              </button>
+            )}
+            {isDemoMode && !isEditMode && (
+              <button
+                type="button"
+                onClick={() => void enterDemoNow()}
+                className="text-[9px] px-3 py-1.5 rounded-xl bg-[#FFD700]/20 text-[#FFD700] border border-[#FFD700]/40 font-bold active:bg-[#FFD700]/30"
+              >
+                Entrar ya
               </button>
             )}
             {!isEditingProfile && SHOW_DEV_FILL && (
@@ -632,7 +658,7 @@ export const OnboardingFlow = ({
               <div className="grid grid-cols-3 gap-2.5">
                 {(onboardData.photos || []).slice(0,6).map((photo: string, idx: number) => (
                   <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-[#FF671F]/50 shadow group">
-                    <img src={photo} className="w-full h-full object-cover" alt="" />
+                    <img src={photo} className="w-full h-full object-cover" alt={`Foto de perfil ${idx + 1}`} />
                     <button onClick={() => { removeOnboardPhoto(idx); try { triggerHaptic('light') } catch {} }} className="absolute top-1.5 right-1.5 bg-black/80 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center active:bg-red-500">×</button>
                     <button
                       type="button"
@@ -677,7 +703,7 @@ export const OnboardingFlow = ({
               <div>
                 <div className="text-sm font-semibold tracking-wide">Tu ciudad y ubicación</div>
                 <div className="text-[10px] text-[#9CA3AF] mt-0.5">
-                  {PILOT_PROGRAM_TITLE} — beta cerrada solo en estas ciudades.
+                  {PILOT_PROGRAM_TITLE} — acceso anticipado solo en estas ciudades.
                 </div>
               </div>
               <select

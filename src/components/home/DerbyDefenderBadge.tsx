@@ -1,5 +1,5 @@
 import { Shield } from 'lucide-react'
-import { getLatestDerbyWeekResult } from '../../services/derbyWeeklyHistory'
+import { getLatestDerbyWeekResult, isUserDerbyDefender } from '../../services/derbyWeeklyHistory'
 import { winnerLabel, type ProfileGender } from '../../utils/genderedCopy'
 
 export function DerbyDefenderBadge({
@@ -9,6 +9,7 @@ export function DerbyDefenderBadge({
   city?: string | null
   gender?: ProfileGender
 }) {
+  if (!isUserDerbyDefender(city)) return null
   const latest = getLatestDerbyWeekResult()
   if (!latest) return null
 

@@ -64,7 +64,12 @@ export async function markDirectMessageRead(
   messageId: string,
   myUid: string
 ): Promise<void> {
+  const { getDoc } = await import('firebase/firestore')
   const ref = doc(db, 'messages', messageId)
+  const snap = await getDoc(ref)
+  if (!snap.exists()) return
+  const data = snap.data()
+  if (data.to !== myUid || data.read === true) return
   await updateDoc(ref, {
     readAt: Date.now(),
     read: true,

@@ -7,6 +7,7 @@ import { PARTNER_SEEDS } from '../constants/partnerSeeds'
 import type { PartnerLocation, Tab } from '../types'
 import { partnersForMap } from '../utils/partnerLocations'
 import { isDevPasswordConfigured, verifyDevMapPassword } from '../config/devGate'
+import { partnerLocationsSignature } from '../utils/liveMapSnapshot'
 
 export interface UsePartnerLocationsOptions {
   isDemoMode: boolean
@@ -65,6 +66,7 @@ export function usePartnerLocations(opts: UsePartnerLocationsOptions) {
   const [devPassword, setDevPassword] = useState('')
 
   const partnerLocationsRef = useRef<PartnerLocation[]>([])
+  const lastPartnerSigRef = useRef('')
   const isPlacingPartnerRef = useRef(false)
   const isQuickAddPartnerRef = useRef(false)
   const showAddPartnerFormRef = useRef(false)
@@ -111,19 +113,29 @@ export function usePartnerLocations(opts: UsePartnerLocationsOptions) {
               })
               fromFs.push({ id: d.id, ...data } as PartnerLocation)
             })
-            setPartnerLocations(fromFs)
-            setMapForceTick((t) => t + 1)
+            const sig = partnerLocationsSignature(fromFs)
+            if (sig !== lastPartnerSigRef.current) {
+              lastPartnerSigRef.current = sig
+              setPartnerLocations(fromFs)
+              setMapForceTick((t) => t + 1)
+            }
           },
           (err) => {
             console.warn('partnerLocations listener error', err)
-            setPartnerLocations([])
-            setMapForceTick((t) => t + 1)
+            if (lastPartnerSigRef.current !== '') {
+              lastPartnerSigRef.current = ''
+              setPartnerLocations([])
+              setMapForceTick((t) => t + 1)
+            }
           }
         )
       } catch (err) {
         console.warn('partnerLocations listener error', err)
-        setPartnerLocations([])
-        setMapForceTick((t) => t + 1)
+        if (lastPartnerSigRef.current !== '') {
+          lastPartnerSigRef.current = ''
+          setPartnerLocations([])
+          setMapForceTick((t) => t + 1)
+        }
       }
     })()
 

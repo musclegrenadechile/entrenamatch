@@ -254,6 +254,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   const prevLiveCountRef = useRef(0)
   const prevLiveIdsRef = useRef<Set<string>>(new Set())
   const lastZoomTimeRef = useRef(0)
+  const suppressForceTickRef = useRef(false)
   const partnerLocationsRef = useRef<any[]>([])
   const mapUpdateTimeoutRef = useRef<any>(null)
   const isPlacingPartnerRef = useRef(false)
@@ -445,18 +446,18 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       // Zoom listener for clusters + force tick
       if (mapInstanceRef.current && !(mapInstanceRef.current as any)._clusterZoomBound) {
         const onMapViewChange = () => {
+          if (suppressForceTickRef.current) return
           lastZoomTimeRef.current = Date.now()
-          if (onForceTick) onForceTick()
+          onForceTick?.()
         }
         mapInstanceRef.current.on('zoomend', onMapViewChange)
         mapInstanceRef.current.on('moveend', () => {
-          onMapViewChange()
           try {
             const c = mapInstanceRef.current.getCenter()
             saveMapView(c.lat, c.lng, mapInstanceRef.current.getZoom())
           } catch { /* ignore */ }
+          onMapViewChange()
         })
-        mapInstanceRef.current.on('moveend', onMapViewChange)
         ;(mapInstanceRef.current as any)._clusterZoomBound = true
       }
     } else {
@@ -921,8 +922,12 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           }
 
           if (bounds && bounds.isValid()) {
+            suppressForceTickRef.current = true
             mapInstanceRef.current.fitBounds(bounds.pad(0.18));
             ;(mapInstanceRef.current as any)._hasDoneInitialFit = true;
+            window.setTimeout(() => {
+              suppressForceTickRef.current = false
+            }, 600)
           }
         } catch {}
       }

@@ -219,7 +219,7 @@ export function SyncArenaView({
           <div className="arena-sala-sync__athlete arena-sala-sync__athlete--self">
             <div className="arena-avatar__ring">
               {selfPhoto ? (
-                <img src={selfPhoto} alt="" className="w-full h-full object-cover rounded-full" />
+                <img src={selfPhoto} alt={`Foto de ${selfName || 'tú'}`} className="w-full h-full object-cover rounded-full" />
               ) : (
                 <span className="arena-avatar__initial">{(selfName || 'T')[0]}</span>
               )}
@@ -242,7 +242,7 @@ export function SyncArenaView({
           <div className="arena-sala-sync__athlete arena-sala-sync__athlete--partner">
             <div className="arena-avatar__ring arena-avatar__ring--partner">
               {partnerPhoto ? (
-                <img src={partnerPhoto} alt="" className="w-full h-full object-cover rounded-full" />
+                <img src={partnerPhoto} alt={`Foto de ${partnerName || 'partner'}`} className="w-full h-full object-cover rounded-full" />
               ) : (
                 <span className="arena-avatar__initial">{(partnerName || 'C')[0]}</span>
               )}

@@ -73,7 +73,7 @@ export function PilotProgramStrip({
             {PILOT_PROGRAM_TITLE}
           </p>
           <p className="text-sm font-semibold text-white mt-0.5">
-            {cityLabel} · beta cerrada
+            {cityLabel} · acceso anticipado
           </p>
           <p className="text-[11px] text-[#9CA3AF] mt-1">{progress.label}</p>
         </div>
@@ -97,10 +97,10 @@ export function PilotProgramStrip({
         <button
           type="button"
           onClick={onOpenMap}
-          className="mt-3 w-full py-2.5 rounded-xl bg-[#FF671F] text-black text-xs font-black flex items-center justify-center gap-2 active:brightness-90"
+          className="mt-3 w-full py-2 rounded-xl border border-white/15 text-white text-[11px] font-semibold flex items-center justify-center gap-2 active:bg-white/10"
         >
-          <MapPin size={14} />
-          Sábado LIVE — abre el mapa y suma a tu zona
+          <MapPin size={14} className="text-[#22c55e]" />
+          Ver mapa del piloto →
         </button>
       )}
 

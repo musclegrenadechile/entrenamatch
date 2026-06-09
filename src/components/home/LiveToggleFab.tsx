@@ -6,6 +6,8 @@ interface LiveToggleFabProps {
   liveCount: number
   onToggle: () => void
   hidden?: boolean
+  /** Extra bottom offset class (e.g. map tab above filter bar). */
+  bottomClass?: string
 }
 
 /** Global live toggle — visible on all main tabs (Phase 0). */
@@ -15,8 +17,12 @@ export function LiveToggleFab({
   liveCount,
   onToggle,
   hidden,
+  bottomClass,
 }: LiveToggleFabProps) {
   if (hidden) return null
+
+  const bottom =
+    bottomClass || 'bottom-[calc(74px+env(safe-area-inset-bottom))]'
 
   return (
     <button
@@ -25,10 +31,10 @@ export function LiveToggleFab({
       disabled={isTogglingLive}
       aria-label={isLive ? 'Terminar entrenamiento en vivo' : 'Activar entrenamiento en vivo'}
       aria-busy={isTogglingLive}
-      className={`fixed z-[45] right-4 flex items-center gap-2 rounded-full shadow-lg font-bold text-xs transition active:scale-95 max-w-[calc(100vw-2rem)] ${
+      className={`fixed z-[45] right-4 flex items-center gap-2 rounded-full shadow-lg font-bold text-xs transition active:scale-95 max-w-[calc(100vw-2rem)] ${bottom} ${
         isLive
-          ? 'bg-[#E11D48] text-white ring-2 ring-[#E11D48]/40 bottom-[calc(74px+env(safe-area-inset-bottom))] pl-3 pr-4 py-2.5'
-          : 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black ring-2 ring-[#22c55e]/40 bottom-[calc(74px+env(safe-area-inset-bottom))] pl-3 pr-4 py-2.5'
+          ? 'bg-[#E11D48] text-white ring-2 ring-[#E11D48]/40 pl-3 pr-4 py-2.5'
+          : 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black ring-2 ring-[#22c55e]/40 pl-3 pr-4 py-2.5'
       } ${isTogglingLive ? 'opacity-80 cursor-wait' : ''}`}
     >
       <Radio className={`w-4 h-4 shrink-0 ${isLive ? 'animate-pulse' : ''}`} />

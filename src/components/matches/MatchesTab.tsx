@@ -124,7 +124,7 @@ export function MatchesTab({
                 <div className="relative">
                   <VerifiedProfilePhoto
                     src={profile.photos[0]}
-                    alt=""
+                    alt={`Foto de ${profile.name}`}
                     className="w-full aspect-square"
                     imgClassName="w-full aspect-square object-cover"
                     verificationStatus={profile.verificationStatus}

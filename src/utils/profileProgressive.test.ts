@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { getAccountAgeDays, isHomeDayOneMode, isProfileProgressiveMode } from './profileProgressive'
+import {
+  getAccountAgeDays,
+  isHomeDayOneMode,
+  isProfileProgressiveMode,
+  shouldHideCoachAndMarketplace,
+} from './profileProgressive'
 
 describe('profileProgressive (fase 88)', () => {
   it('treats missing consent as veteran (not progressive)', () => {
@@ -20,5 +25,14 @@ describe('profileProgressive (fase 88)', () => {
   it('home day one mode for accounts <24h', () => {
     const user = { legalConsents: { acceptedAt: Date.now() - 12 * 60 * 60 * 1000 } }
     expect(isHomeDayOneMode(user)).toBe(true)
+  })
+
+  it('hides coach/shop until 2 syncs or 7 days', () => {
+    const young = { legalConsents: { acceptedAt: Date.now() - 2 * 24 * 60 * 60 * 1000 } }
+    expect(shouldHideCoachAndMarketplace(young, 0)).toBe(true)
+    expect(shouldHideCoachAndMarketplace(young, 1)).toBe(true)
+    expect(shouldHideCoachAndMarketplace(young, 2)).toBe(false)
+    const veteran = { legalConsents: { acceptedAt: Date.now() - 8 * 24 * 60 * 60 * 1000 } }
+    expect(shouldHideCoachAndMarketplace(veteran, 0)).toBe(false)
   })
 })

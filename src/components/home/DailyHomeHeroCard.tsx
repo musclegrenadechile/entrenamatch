@@ -1,4 +1,4 @@
-import { Flame, Target, Dumbbell, Radio } from 'lucide-react'
+import { Flame, Target, Dumbbell, Radio, MapPin } from 'lucide-react'
 import type { WeeklyPactProgress } from '../../services/weeklyPact'
 import type { Workout } from '../../types'
 import { resolveHomeHero } from '../../utils/homeHero'
@@ -8,7 +8,7 @@ export interface DailyHomeHeroCardProps {
   weeklyPactProgress: WeeklyPactProgress
   entrenoRecentWorkouts?: Workout[]
   weekTrainedCount: number
-  onToggleLive: () => void
+  onOpenMap?: () => void
   onOpenEntrenoLog?: () => void
   onRepeatYesterday?: () => void
   onOpenPact?: () => void
@@ -19,6 +19,7 @@ const ACTION_ICON = {
   log: Dumbbell,
   pact: Target,
   repeat: Flame,
+  map: MapPin,
 } as const
 
 export function DailyHomeHeroCard({
@@ -26,7 +27,7 @@ export function DailyHomeHeroCard({
   weeklyPactProgress,
   entrenoRecentWorkouts = [],
   weekTrainedCount,
-  onToggleLive,
+  onOpenMap,
   onOpenEntrenoLog,
   onRepeatYesterday,
   onOpenPact,
@@ -40,7 +41,7 @@ export function DailyHomeHeroCard({
   const Icon = ACTION_ICON[hero.action]
 
   const handleCta = () => {
-    if (hero.action === 'live') onToggleLive()
+    if (hero.action === 'map') onOpenMap?.()
     else if (hero.action === 'pact') onOpenPact?.()
     else if (hero.action === 'repeat') onRepeatYesterday?.()
     else onOpenEntrenoLog?.()

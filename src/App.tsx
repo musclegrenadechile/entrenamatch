@@ -232,7 +232,11 @@ import {
 import { saveUserPushToken } from './services/userPushTokens'
 import { enrichProfileFromDirectory } from './utils/profileVerification'
 import { buildInviteLink } from './utils/sparseCityDefaults'
-import { isHomeDayOneMode, isProfileProgressiveMode } from './utils/profileProgressive'
+import {
+  isHomeDayOneMode,
+  isProfileProgressiveMode,
+  shouldHideCoachAndMarketplace,
+} from './utils/profileProgressive'
 import {
   formatLastLiveLabel,
   getTeamMemberStatus,
@@ -276,6 +280,8 @@ import {
   saveWeeklyPlanCache,
 } from './services/weeklyPlan'
 import { maybeSendWeeklyPlanNotification } from './utils/weeklyPlanNotify'
+import { shareWeeklyPlanExternally } from './utils/weeklyPlanShare'
+import { shareNativeMessage } from './utils/shareNative'
 import {
   loadExercisePRs,
   syncExercisePRs,
@@ -649,6 +655,9 @@ function App() {
   }, [])
 
   const dailyPulseBridgeRef = useRef<DailyPulseBridge | null>(null)
+  const pushNativeSetupUidRef = useRef<string | null>(null)
+  const googleNewUserBootstrappedRef = useRef(false)
+  const realProfileSyncedUidRef = useRef<string | null>(null)
   const saveUserWithRealSyncRef = useRef<(user: CurrentUser) => Promise<unknown>>(async () => {})
   const createProfilePostRef = useRef<(text: string, photo?: string | null) => Promise<unknown>>(
     async () => {}
@@ -788,7 +797,9 @@ function App() {
       toast('🎙️ Grabando nota de voz', { description: 'Para tu EntrenaPartner. Máx 60s. PARAR para escucharla y decidir enviar.' })
     } catch (err) {
       console.error('Mic error', err)
-      toast.error('No se pudo acceder al micrófono', { description: 'Revisa permisos del navegador o app.' })
+      toast.error('No se pudo acceder al micrófono', {
+        description: 'Activa el permiso de micrófono para EntrenaMatch en Ajustes del celular.',
+      })
     }
   }
 
@@ -1154,9 +1165,11 @@ function App() {
   // Onboarding step state (managed here so the flow actually advances)
   const [onboardingStep, setOnboardingStepLocal] = useState(0)
 
-  // After Google redirect sign-in — bootstrap local profile + onboarding
+  // After Google redirect sign-in — bootstrap local profile + onboarding (once per new-user flag)
   useEffect(() => {
     if (!googleNewUser || isDemoMode || !firebaseUser?.uid) return
+    if (googleNewUserBootstrappedRef.current) return
+    googleNewUserBootstrappedRef.current = true
 
     clearGoogleNewUser()
 
@@ -1184,7 +1197,7 @@ function App() {
     setIsEditingProfile(false)
     setOnboardingStepLocal(0)
     setShowOnboarding(true)
-  }, [googleNewUser, firebaseUser, firebaseProfile, isDemoMode, clearGoogleNewUser, saveUser, setShowOnboarding])
+  }, [googleNewUser, firebaseUser?.uid, firebaseProfile, isDemoMode, clearGoogleNewUser, saveUser, setShowOnboarding, firebaseUser])
 
   // Keep ref in sync when Firebase user appears (Google redirect / email login)
   useEffect(() => {
@@ -2128,7 +2141,7 @@ useEffect(() => {
     })
 
     return sortTeamMembers(members).slice(0, 6)
-  }, [syncBonds, matchProfiles, realProfiles, liveUsersActive, isUserLive])
+  }, [syncBonds, matchProfiles, realProfiles, isUserLive])
 
   const homeWeekDays = useMemo(
     () => buildWeekDayStatuses(weekLiveDays).map(({ label, trained, isToday }) => ({ label, trained, isToday })),
@@ -2702,7 +2715,15 @@ useEffect(() => {
   // Real profile sync effect: when we have a real Firebase user, load their rich profile from Firestore
   // and ensure we push any rich local data up if Firestore is minimal
   useEffect(() => {
+    if (!firebaseUser?.uid) {
+      realProfileSyncedUidRef.current = null
+      return
+    }
+    if (!isDemoMode && realProfileSyncedUidRef.current === firebaseUser.uid) {
+      return
+    }
     if (!isDemoMode && firebaseUser?.uid) {
+      realProfileSyncedUidRef.current = firebaseUser.uid;
       (async () => {
         try {
           const realProfile = await getUserProfile(firebaseUser.uid)
@@ -2938,6 +2959,16 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         trainingSyncWith: merged.trainingSyncWith ?? null,
         syncStartedAt: merged.syncStartedAt ?? null,
         currentDailyChallenge: merged.currentDailyChallenge,
+        lastDailyPulseDate: (merged as any).lastDailyPulseDate ?? null,
+        dailyTrainingStreak: (merged as any).dailyTrainingStreak ?? null,
+        dailySynergyStreak: (merged as any).dailySynergyStreak ?? null,
+        dailyVoiceStreak: (merged as any).dailyVoiceStreak ?? null,
+        dailyPulseStreak: (merged as any).dailyPulseStreak ?? null,
+        momentumPoints: (merged as any).momentumPoints ?? null,
+        retentionLevel: (merged as any).retentionLevel ?? null,
+        retentionXp: (merged as any).retentionXp ?? null,
+        streakProtectedDate: (merged as any).streakProtectedDate ?? null,
+        pulseAmplifiedDate: (merged as any).pulseAmplifiedDate ?? null,
         weekStats: merged.weekStats ?? null,
         weeklyPact: merged.weeklyPact ?? null,
         showOnLeaderboard: merged.showOnLeaderboard !== false,
@@ -3204,6 +3235,8 @@ useEffect(() => {
   // Users explicitly activate via the button in Profile. This effect only sets up listeners if plugin present.
   useEffect(() => {
     if (isDemoMode || !firebaseUser?.uid || !PushNotifications || !isFirebaseConfigured) return
+    if (pushNativeSetupUidRef.current === firebaseUser.uid) return
+    pushNativeSetupUidRef.current = firebaseUser.uid;
 
     (async () => {
       try {
@@ -3342,7 +3375,10 @@ useEffect(() => {
     })()
 
     return () => {
-      // Listeners are long-lived; plugin usually cleans on app close
+      pushNativeSetupUidRef.current = null
+      try {
+        PushNotifications?.removeAllListeners?.()
+      } catch {}
     }
   }, [isDemoMode, firebaseUser?.uid])
 
@@ -5322,9 +5358,18 @@ useEffect(() => {
     userLevel: currentUser?.level,
   })
 
+  const weeklyPlanBaseSigRef = useRef('')
   useEffect(() => {
+    if (!weeklyPlanBase) {
+      weeklyPlanBaseSigRef.current = ''
+      setWeeklyPlan(null)
+      setWeeklyPlanEnriching(false)
+      return undefined
+    }
+    const sig = `${weeklyPlanBase.headline}|${weeklyPlanBase.recommendation.title}|${weeklyPlanBase.recommendation.type}`
+    if (sig === weeklyPlanBaseSigRef.current) return undefined
+    weeklyPlanBaseSigRef.current = sig
     setWeeklyPlan(weeklyPlanBase)
-    if (!weeklyPlanBase) return undefined
     let cancelled = false
     setWeeklyPlanEnriching(true)
     void enrichWeeklyPlanWithAi(weeklyPlanBase)
@@ -5374,7 +5419,7 @@ useEffect(() => {
     [currentUser?.level]
   )
 
-  const handleShareWeeklyPlan = useCallback(
+  const handlePublishWeeklyPlanToFeed = useCallback(
     async (plan: WeeklyPlanResult) => {
       const text = formatWeeklyPlanShareText(plan, currentUser?.name)
       try {
@@ -5384,13 +5429,25 @@ useEffect(() => {
           return
         }
         await createProfilePost(text, null)
-        toast.success('Plan compartido en el Muro')
+        toast.success('Plan publicado en el Muro')
         loadGlobalFeed().catch(() => {})
       } catch {
-        toast.error('No se pudo compartir el plan')
+        toast.error('No se pudo publicar el plan')
       }
     },
     [currentUser?.name, isDemoMode, createProfilePost, loadGlobalFeed]
+  )
+
+  const handleShareWeeklyPlanExternally = useCallback(
+    async (plan: WeeklyPlanResult) => {
+      const outcome = await shareWeeklyPlanExternally(plan, {
+        userName: currentUser?.name,
+        inviteUrl: buildInviteLink(effectiveUserId),
+      })
+      if (outcome === 'copied') toast.success('Plan copiado — pégalo en WhatsApp o Instagram')
+      else if (outcome === 'failed') toast.error('No se pudo compartir el plan')
+    },
+    [currentUser?.name, effectiveUserId]
   )
 
   useEffect(() => {
@@ -7834,9 +7891,46 @@ useEffect(() => {
     bumpPwaEngagement()
     setShowMatchModal(profile)
     triggerConfetti()
+    const isFirstRealMatch =
+      isReal && !realMatches.includes(profileId) && realMatches.length === 0
+
     toast.success(`¡Match con ${profile.name}!`, {
       description: isReal ? '¡Ambos se dieron like!' : 'Tienen ganas de entrenar juntos 🔥',
     })
+
+    if (isFirstRealMatch) {
+      try {
+        if (!localStorage.getItem('em_invite_nudge_shown')) {
+          localStorage.setItem('em_invite_nudge_shown', '1')
+          const inviteUrl = buildInviteLink(effectiveUserId)
+          const inviteText = `Únete a EntrenaMatch — entrena en sync con gente de ${currentUser?.city || 'tu ciudad'}`
+          setTimeout(() => {
+            toast('¿Alguien de tu gym?', {
+              description: 'Invítalo al piloto para entrenar juntos',
+              action: {
+                label: 'Compartir',
+                onClick: () => {
+                  void (async () => {
+                    try {
+                      if (navigator.share) {
+                        await navigator.share({ title: 'EntrenaMatch', text: inviteText, url: inviteUrl })
+                      } else {
+                        await navigator.clipboard.writeText(`${inviteText}\n${inviteUrl}`)
+                        toast.success('Invitación copiada')
+                      }
+                    } catch {
+                      toast.error('No se pudo compartir')
+                    }
+                  })()
+                },
+              },
+            })
+          }, 2500)
+        }
+      } catch {
+        /* ignore storage */
+      }
+    }
   }
 
   const handleSwipe = (profileId: string, direction: 'left' | 'right') => {
@@ -8211,6 +8305,7 @@ useEffect(() => {
           triggerHaptic={triggerHaptic}
           uploadPhotoIfNeeded={uploadProfilePhotoIfNeeded}
           mode="create"
+          isDemoMode={isDemoMode}
           onExitToLogin={handleLogout}
         />
       </ErrorBoundary>
@@ -8225,7 +8320,7 @@ useEffect(() => {
       {/* PREMIUM TOP BAR - more attractive with better hierarchy, consistent buttons, subtle premium feel */}
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
-          <span className="text-white/90 text-[11px]">EntrenaMatch · v{APP_VERSION}</span>
+          <span className="text-white/90 text-[11px]">EntrenaMatch</span>
           {liveTrainingNow.length > 0 && (
             <button 
               onClick={() => { try { triggerHaptic('light') } catch {}; navigateTab('map'); }}
@@ -8252,14 +8347,6 @@ useEffect(() => {
                 </span>
               )}
             </button>
-            <button
-              type="button"
-              onClick={() => void handleLogout()}
-              disabled={loggingOut}
-              className="bg-black/90 hover:bg-black text-white px-3 py-1 rounded-2xl text-[10px] font-semibold active:bg-white active:text-black border border-black/50 active:scale-[0.985] transition-all disabled:opacity-50 disabled:pointer-events-none"
-            >
-              {loggingOut ? 'Saliendo…' : 'Cerrar sesión'}
-            </button>
             {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor === 'undefined' && (
               <button
                 onClick={() => { 
@@ -8278,6 +8365,15 @@ useEffect(() => {
           <div className="text-[10px] opacity-90 font-medium">Inicia sesión para probar</div>
         )}
       </div>
+
+      {isDemoMode && currentUser && !showOnboarding && (
+        <div
+          className="sticky top-0 z-[48] bg-[#FFD700]/12 border-b border-[#FFD700]/35 px-3 py-1.5 text-center text-[10px] text-[#FFD700] font-semibold flex-shrink-0"
+          role="status"
+        >
+          Modo prueba — datos locales; no cruzan con cuentas reales ni otros dispositivos
+        </div>
+      )}
 
       {/* PWA INSTALL BANNER - attractive, non-nagging. Shows reliably now (5s or on engagement). Exhaustive visual + functional review done. */}
       <AnimatePresence>
@@ -8904,7 +9000,8 @@ useEffect(() => {
             weeklyPlan={weeklyPlan}
             weeklyPlanEnriching={weeklyPlanEnriching}
             onStartWeeklyPlan={handleStartWeeklyPlan}
-            onShareWeeklyPlan={handleShareWeeklyPlan}
+            onPublishWeeklyPlanToFeed={handlePublishWeeklyPlanToFeed}
+            onShareWeeklyPlanExternally={handleShareWeeklyPlanExternally}
             homeCoachBanner={homeCoachBanner}
             onDismissCoachBanner={() => setHomeCoachBanner(null)}
             postLiveSession={postLiveSession}
@@ -8949,7 +9046,10 @@ useEffect(() => {
             }}
             marketplaceOrders={myMarketplaceOrders}
             marketplaceProducts={marketplaceProducts}
-            showShopBanner={showHomeShopBanner}
+            showShopBanner={
+              showHomeShopBanner &&
+              !shouldHideCoachAndMarketplace(currentUser, Object.keys(syncBonds || {}).length)
+            }
             onDismissShopBanner={() => setShowHomeShopBanner(false)}
             onOpenMarketplace={() => {
               setMarketplaceScreenMode('shop')
@@ -9292,6 +9392,10 @@ useEffect(() => {
                 voiceStreak={dailyPulse?.voiceStreak || 0}
                 pactCompare={chatPactCompare}
                 onOpenEntrenoLog={() => void openEntrenoDeHoy()}
+                onOpenExplore={() => {
+                  setActiveChat(null)
+                  navigateTab('explore')
+                }}
                 onShowReviewModal={() => {
                   setShowReviewModalFor(activeChat)
                   setReviewRating(5)
@@ -9748,6 +9852,22 @@ useEffect(() => {
             setShowPactWizard(true)
           }
         }}
+        onShareInvite={() => {
+          const inviteUrl = buildInviteLink(effectiveUserId)
+          const inviteText = `Únete a EntrenaMatch — entrena en sync con gente de ${currentUser?.city || 'tu ciudad'}`
+          void (async () => {
+            try {
+              if (navigator.share) {
+                await navigator.share({ title: 'EntrenaMatch', text: inviteText, url: inviteUrl })
+              } else {
+                await navigator.clipboard.writeText(`${inviteText}\n${inviteUrl}`)
+                toast.success('Invitación copiada')
+              }
+            } catch {
+              toast.error('No se pudo compartir')
+            }
+          })()
+        }}
       />
       <TrainerCoachView
         open={showTrainerCoach}
@@ -9944,13 +10064,17 @@ useEffect(() => {
         isTogglingLive={isTogglingLive}
         liveCount={liveCountForUI}
         onToggle={() => toggleLiveTraining()}
+        bottomClass={
+          activeTab === 'map'
+            ? 'bottom-[calc(7.5rem+env(safe-area-inset-bottom))]'
+            : undefined
+        }
         hidden={
           !currentUser ||
           showSyncArena ||
           showOnboarding ||
           authBooting ||
           activeTab === 'explore' ||
-          activeTab === 'map' ||
           (activeTab === 'red' && redSubTab === 'messages' && !!activeChat)
         }
       />
@@ -11763,7 +11887,7 @@ useEffect(() => {
                           {isNetworkNotif && <div className="mt-1 text-[9px] text-[#FFD700] font-bold">⭐ De tu Red (Fuerza del equipo)</div>}
                         </div>
                         {notif.photoUrl && (
-                          <img src={notif.photoUrl} alt="" className="w-9 h-9 rounded-xl object-cover flex-shrink-0 border border-[#2F2F35]" />
+                          <img src={notif.photoUrl} alt={notif.title || 'Notificación'} className="w-9 h-9 rounded-xl object-cover flex-shrink-0 border border-[#2F2F35]" />
                         )}
                       </div>
                     )
@@ -11845,12 +11969,23 @@ useEffect(() => {
               })
             }
           }}
-          onInviteSquad={(partnerId, partnerName) => {
+          shareInviteUrl={buildInviteLink(effectiveUserId)}
+          onInviteSquad={(_partnerId, partnerName) => {
+            const first = partnerName.split(' ')[0] || 'tu compañero'
+            const inviteUrl = buildInviteLink(effectiveUserId)
             setSyncDuelSummary(null)
-            navigateTab('squads')
-            toast.success(`Invita a ${partnerName.split(' ')[0]} a tu Squad`, {
-              description: 'Crea un squad o ábrelo para añadir a tu compañero de sync',
-            })
+            void (async () => {
+              const outcome = await shareNativeMessage({
+                title: 'Invitar a Squad · EntrenaMatch',
+                text: `Acabamos de hacer EntrenaSync. ¿Te sumas a nuestro Squad con ${first}?`,
+                url: inviteUrl,
+              })
+              if (outcome === 'copied') toast.success('Invitación copiada — envíasela a tu compañero')
+              else if (outcome === 'failed') toast.error('No se pudo compartir la invitación')
+              setSquadNameDraft(`Squad ${first}`)
+              navigateTab('squads')
+              setShowCreateSquad(true)
+            })()
           }}
           fuelBurnKcal={estimateSyncSessionBurn(
             fuelProfile?.weightKg ?? 75,

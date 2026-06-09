@@ -1,4 +1,4 @@
-import { Brain, Dumbbell, Share2, Sparkles, Footprints, Moon } from 'lucide-react'
+import { Brain, Dumbbell, Megaphone, Share2, Sparkles, Footprints, Moon } from 'lucide-react'
 import type { WeeklyPlanResult } from '../../domain/weeklyPlan'
 
 const SCENARIO_STYLES: Record<string, string> = {
@@ -21,7 +21,8 @@ export interface WeeklyPlanCardProps {
   plan: WeeklyPlanResult | null
   enriching?: boolean
   onStartWorkout?: (plan: WeeklyPlanResult) => void
-  onSharePlan?: (plan: WeeklyPlanResult) => void
+  onPublishPlanToFeed?: (plan: WeeklyPlanResult) => void
+  onSharePlanExternally?: (plan: WeeklyPlanResult) => void
   onOpenFuelSetup?: () => void
 }
 
@@ -29,7 +30,8 @@ export function WeeklyPlanCard({
   plan,
   enriching = false,
   onStartWorkout,
-  onSharePlan,
+  onPublishPlanToFeed,
+  onSharePlanExternally,
   onOpenFuelSetup,
 }: WeeklyPlanCardProps) {
   if (!plan) {
@@ -56,8 +58,6 @@ export function WeeklyPlanCard({
 
   const rec = plan.recommendation
   const style = SCENARIO_STYLES[plan.scenario] || SCENARIO_STYLES.on_track
-  const confidenceLabel =
-    plan.confidence === 'high' ? 'Alta' : plan.confidence === 'medium' ? 'Media' : 'Baja'
 
   return (
     <div
@@ -76,9 +76,6 @@ export function WeeklyPlanCard({
           </p>
           <h3 className="text-sm font-black text-white mt-0.5">{plan.headline}</h3>
         </div>
-        <span className="text-[9px] text-[#9CA3AF] tabular-nums shrink-0">
-          conf. {confidenceLabel}
-        </span>
       </div>
 
       <p className="text-[11px] text-[#d1d5db] mt-2 leading-snug">{plan.detail}</p>
@@ -133,17 +130,32 @@ export function WeeklyPlanCard({
             Registrar movilidad
           </button>
         )}
-        {onSharePlan && (
-          <button
-            type="button"
-            onClick={() => onSharePlan(plan)}
-            className="px-3 py-2.5 rounded-xl bg-white/5 border border-white/10 text-[#9CA3AF]"
-            aria-label="Compartir plan"
-          >
-            <Share2 size={16} />
-          </button>
-        )}
       </div>
+
+      {(onPublishPlanToFeed || onSharePlanExternally) && (
+        <div className="flex gap-2 mt-2">
+          {onPublishPlanToFeed && (
+            <button
+              type="button"
+              onClick={() => onPublishPlanToFeed(plan)}
+              className="flex-1 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold text-white flex items-center justify-center gap-1.5"
+            >
+              <Megaphone size={12} />
+              Publicar en muro
+            </button>
+          )}
+          {onSharePlanExternally && (
+            <button
+              type="button"
+              onClick={() => onSharePlanExternally(plan)}
+              className="flex-1 py-2 rounded-xl bg-[#FF671F]/15 border border-[#FF671F]/35 text-[10px] font-bold text-[#FF671F] flex items-center justify-center gap-1.5"
+            >
+              <Share2 size={12} />
+              Compartir fuera
+            </button>
+          )}
+        </div>
+      )}
 
       <p className="text-[8px] text-[#4B5563] mt-2 leading-snug">{plan.disclaimer}</p>
     </div>

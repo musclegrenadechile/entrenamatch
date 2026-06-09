@@ -123,8 +123,9 @@ export function recommendNextSessions(ctx: WeeklyPlanContext): WeeklyPlanResult 
       durationMin = durationForLevel(profile.level, 50)
       intensity = profile.goal === 'muscle' ? 'intense' : 'moderate'
       headline = 'Fuerza con buen aporte'
-      detail = `Te faltan ~${Math.abs(energy.weeklyDeltaKcal)} kcal vs objetivo semanal. Prioriza entreno de fuerza y cierra proteína.`
-      nutritionNote = 'Evita cardio largo; suma carbs + proteína post-entreno.'
+      detail =
+        'Buen momento para entrenar fuerza y cerrar proteína — tu cuerpo necesita combustible para rendir esta semana.'
+      nutritionNote = 'Prioriza carbs + proteína post-entreno; evita cardio largo de más.'
       break
 
     case 'on_track':
@@ -212,4 +213,11 @@ export function formatWeeklyPlanShareText(plan: WeeklyPlanResult, userName?: str
   const who = userName ? `${userName} · ` : ''
   const rec = plan.recommendation
   return `${who}EntrenaPlan: ${plan.headline} — ${rec.title}, ${rec.durationMin} min (~${rec.estimatedBurnKcal} kcal). ${plan.detail}`
+}
+
+/** Copy for WhatsApp, Instagram, etc. — includes invite CTA. */
+export function formatWeeklyPlanExternalShareText(plan: WeeklyPlanResult, userName?: string): string {
+  const who = userName ? `${userName} comparte su plan en EntrenaMatch` : 'Mi plan en EntrenaMatch'
+  const rec = plan.recommendation
+  return `${who}: ${plan.headline} — ${rec.title}, ${rec.durationMin} min (~${rec.estimatedBurnKcal} kcal). ${plan.detail} ¿Te sumas? #EntrenaMatch #EntrenaPlan`
 }

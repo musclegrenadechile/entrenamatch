@@ -12,7 +12,6 @@ export interface WeeklyPactCardProps {
   onPledge: (pact: Omit<WeeklyPact, 'weekKey' | 'pledgedAt'> & { weekKey?: string }) => void
   onSyncWithPartner?: (partnerId: string, partnerName: string) => void
   onMessagePartner?: (partnerId: string) => void
-  onToggleLive?: () => void
   isLive?: boolean
 }
 
@@ -25,7 +24,6 @@ export function WeeklyPactCard({
   onPledge,
   onSyncWithPartner,
   onMessagePartner,
-  onToggleLive,
   isLive,
 }: WeeklyPactCardProps) {
   const bondMembers = teamMembers.filter((m) => m.isBond)
@@ -205,14 +203,10 @@ export function WeeklyPactCard({
 
       {!progress.isComplete && (
         <div className="flex flex-wrap gap-2">
-          {!isLive && onToggleLive && (
-            <button
-              type="button"
-              onClick={onToggleLive}
-              className="text-[10px] px-3 py-1.5 rounded-full bg-[#22c55e]/15 text-[#22c55e] font-bold border border-[#22c55e]/30"
-            >
-              Activar live
-            </button>
+          {!isLive && (
+            <span className="text-[10px] px-3 py-1.5 rounded-full bg-white/5 text-[#9CA3AF] border border-white/10">
+              Días live: usa <span className="text-[#22c55e] font-bold">IR LIVE</span>
+            </span>
           )}
           {pact?.partnerId && onSyncWithPartner && (
             <button

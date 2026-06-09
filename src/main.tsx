@@ -9,10 +9,10 @@ import { RootErrorBoundary } from './boot/RootErrorBoundary'
 import { initCrashReporting, reportError } from './services/crashReporting'
 import { ensureLocalStorageHeadroom, installStorageQuotaGuard } from './utils/safeLocalStorage'
 import {
-  clearChunkReloadFlag,
   installChunkReloadHandlers,
   isStaleChunkError,
   reloadForNewBuild,
+  shouldAutoReloadForChunks,
 } from './utils/chunkReload'
 
 function showFatalBootError(message: string) {
@@ -33,18 +33,27 @@ initCrashReporting()
 ensureLocalStorageHeadroom()
 installStorageQuotaGuard()
 installChunkReloadHandlers()
-clearChunkReloadFlag()
+
+let reactMounted = false
 
 window.addEventListener('error', (event) => {
+  if (isStaleChunkError(event.error || event.message)) {
+    event.preventDefault()
+    return
+  }
   reportError(event.error || event.message, 'window.error', true)
-  if (!document.getElementById('root')?.innerHTML?.includes('EntrenaMatch')) {
+  if (!reactMounted) {
     showFatalBootError(String(event.error?.message || event.message || 'Error de JavaScript'))
   }
 })
 window.addEventListener('unhandledrejection', (event) => {
   if (isStaleChunkError(event.reason)) {
     event.preventDefault()
-    reloadForNewBuild()
+    if (shouldAutoReloadForChunks()) {
+      reloadForNewBuild()
+    } else {
+      console.warn('[boot] Stale chunk error on native (no auto-reload):', event.reason)
+    }
     return
   }
   reportError(event.reason, 'unhandledrejection', false)
@@ -67,3 +76,4 @@ createRoot(mountEl).render(
     </RootErrorBoundary>
   </StrictMode>,
 )
+reactMounted = true

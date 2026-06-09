@@ -21,7 +21,12 @@ export default defineConfig({
 
   // Force Vite to know about the Capacitor plugins (for CAPACITOR builds).
   optimizeDeps: {
-    include: ['@capacitor/camera', '@capacitor/push-notifications'],
+    include: [
+      '@capacitor/camera',
+      '@capacitor/push-notifications',
+      '@capacitor/share',
+      '@capacitor/filesystem',
+    ],
   },
 
   build: {
@@ -29,7 +34,12 @@ export default defineConfig({
 
     rollupOptions: {
       external: !process.env.CAPACITOR
-        ? ['@capacitor/camera', '@capacitor/push-notifications']
+        ? [
+            '@capacitor/camera',
+            '@capacitor/push-notifications',
+            '@capacitor/share',
+            '@capacitor/filesystem',
+          ]
         : [],
       output: {
         manualChunks(id) {

@@ -5,7 +5,7 @@
 import type { WeeklyPactProgress } from '../services/weeklyPact'
 import type { Workout } from '../types'
 
-export type HomeHeroAction = 'live' | 'log' | 'pact' | 'repeat'
+export type HomeHeroAction = 'live' | 'log' | 'pact' | 'repeat' | 'map'
 
 export interface HomeHeroState {
   title: string
@@ -96,10 +96,10 @@ export function resolveHomeHero(opts: {
 
   if (weekTrainedCount < weeklyPactProgress.liveDaysTarget) {
     return {
-      title: 'Enciende live',
-      subtitle: `${weekTrainedCount}/${weeklyPactProgress.liveDaysTarget} días live esta semana.`,
-      action: 'live',
-      cta: 'Activar LIVE en el mapa →',
+      title: 'Sumar día live',
+      subtitle: `${weekTrainedCount}/${weeklyPactProgress.liveDaysTarget} días live — usa el botón IR LIVE flotante.`,
+      action: 'map',
+      cta: 'Ver mapa LIVE →',
       progressPct: weeklyPactProgress.overallPct,
     }
   }

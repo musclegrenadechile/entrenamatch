@@ -326,6 +326,7 @@ export const ExploreTab = ({
                   onReport(profile.id);
                 }}
                 className="text-[8px] bg-black/55 px-2 py-0.5 rounded-full text-white/75 active:text-white"
+                aria-label="Reportar perfil"
                 title="Reportar perfil"
               >
                 ⚠ Reportar

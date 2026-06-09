@@ -74,7 +74,7 @@ export function GymPulseBottomSheet({
                   {u.photos?.[0] ? (
                     <VerifiedProfilePhoto
                       src={u.photos[0]}
-                      alt=""
+                      alt={`Foto de ${u.name || 'atleta'}`}
                       className="gym-pulse-bottom-sheet__avatar"
                       imgClassName="gym-pulse-bottom-sheet__avatar w-full h-full object-cover"
                       verificationStatus={u.verificationStatus}
@@ -112,6 +112,7 @@ export function GymPulseBottomSheet({
                 <button
                   type="button"
                   className="gym-pulse-bottom-sheet__sync"
+                  data-gympulse-tour={sorted[0]?.id === u.id ? 'sync' : undefined}
                   disabled={joiningSyncWith === u.id}
                   onClick={(e) => {
                     e.stopPropagation()

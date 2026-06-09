@@ -4,6 +4,8 @@ import { isProfileVerified } from '../../utils/identityVerification'
 import { useMemo, useState } from 'react'
 import {
   ArrowLeft,
+  Check,
+  CheckCheck,
   ChevronDown,
   ChevronUp,
   Dumbbell,
@@ -19,6 +21,30 @@ import type { Message, Profile } from '../../types'
 import { BRAND_COPY } from '../../constants/brandCopy'
 import { generateIcebreakers } from '../../utils/icebreakers'
 import { ChatPactCompareStrip, type ChatPactCompareData } from './ChatPactCompareStrip'
+
+function ChatMessageStatus({ message }: { message: Message }) {
+  const isRead = !!(message.read || message.readAt)
+  if (message.sendStatus === 'sending') {
+    return <span className="chat-msg-status chat-msg-status--sending">Enviando…</span>
+  }
+  if (message.sendStatus === 'failed') {
+    return <span className="chat-msg-status chat-msg-status--failed">No enviado</span>
+  }
+  if (isRead) {
+    return (
+      <span className="chat-msg-status chat-msg-status--read" title="Leído">
+        <CheckCheck size={16} strokeWidth={2.5} aria-hidden />
+        <span className="chat-msg-status__label">Leído</span>
+      </span>
+    )
+  }
+  return (
+    <span className="chat-msg-status chat-msg-status--sent" title="Enviado">
+      <Check size={16} strokeWidth={2.5} aria-hidden />
+      <span className="chat-msg-status__label">Enviado</span>
+    </span>
+  )
+}
 
 export interface ChatViewProps {
   activeChat: string
@@ -64,6 +90,7 @@ export interface ChatViewProps {
   voiceStreak?: number
   pactCompare?: ChatPactCompareData | null
   onOpenEntrenoLog?: () => void
+  onOpenExplore?: () => void
 }
 
 const TRAINING_CHIPS = [
@@ -137,6 +164,7 @@ export function ChatView({
   voiceStreak = 0,
   pactCompare = null,
   onOpenEntrenoLog,
+  onOpenExplore,
 }: ChatViewProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [chipsOpen, setChipsOpen] = useState(chatMessages.length === 0)
@@ -171,7 +199,7 @@ export function ChatView({
               <>
                 <VerifiedProfilePhoto
                   src={chatProfile.photos[0]}
-                  alt=""
+                  alt={`Foto de ${chatProfile.name}`}
                   className="w-full h-full"
                   imgClassName="w-full h-full object-cover"
                   verificationStatus={chatProfile.verificationStatus}
@@ -257,8 +285,9 @@ export function ChatView({
                     setMenuOpen(false)
                   }}
                   className="w-full text-left px-3 py-2 text-xs text-[#FF671F] active:bg-[#25252A]"
+                  aria-label="Actualizar mensajes del chat"
                 >
-                  Sync chat
+                  Actualizar mensajes
                 </button>
               )}
               <button
@@ -384,34 +413,20 @@ export function ChatView({
                     ) : (
                       <span>{renderMessageText(m.text)}</span>
                     )}
+                    {isMe && (
+                      <div className="chat-msg-status-row">
+                        <ChatMessageStatus message={m} />
+                        {m.readAt ? (
+                          <time className="chat-msg-status__time" dateTime={new Date(m.readAt).toISOString()}>
+                            {new Date(m.readAt).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </time>
+                        ) : null}
+                      </div>
+                    )}
                   </div>
-                  {isMe && (
-                    <span
-                      className={`text-[9px] px-1 mt-0.5 inline-block ${
-                        m.read || m.readAt
-                          ? 'text-[#FF671F]'
-                          : m.sendStatus === 'failed'
-                            ? 'text-red-400'
-                            : 'text-[#6B7280]'
-                      }`}
-                    >
-                      {m.sendStatus === 'sending' && '○ Enviando…'}
-                      {m.sendStatus === 'failed' && '✗ No enviado · reintenta'}
-                      {m.sendStatus !== 'sending' && m.sendStatus !== 'failed' && (m.read || m.readAt) && (
-                        <>
-                          ✓✓ Leído
-                          {m.readAt
-                            ? ` · ${new Date(m.readAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                            : ''}
-                        </>
-                      )}
-                      {m.sendStatus !== 'sending' &&
-                        m.sendStatus !== 'failed' &&
-                        !(m.read || m.readAt) && (
-                          <span className="text-[#9CA3AF]">✓ Enviado</span>
-                        )}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -440,6 +455,15 @@ export function ChatView({
               Propón un horario, manda una nota de voz o arranca un EntrenaSync. Todo queda sincronizado
               entre dispositivos.
             </p>
+            {onOpenExplore && (
+              <button
+                type="button"
+                onClick={onOpenExplore}
+                className="mt-3 text-xs font-bold text-[#FF671F] underline active:opacity-80"
+              >
+                Buscar más gym partners →
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -568,6 +592,7 @@ export function ChatView({
                 type="button"
                 onClick={onStartVoiceRecording}
                 className="chat-mic-btn w-11 h-11 rounded-2xl flex items-center justify-center"
+                aria-label="Grabar nota de voz"
                 title="Nota de voz"
               >
                 <Mic size={18} />
@@ -575,6 +600,7 @@ export function ChatView({
               <button
                 type="submit"
                 disabled={!chatInputValue.trim() && !pendingVoice}
+                aria-label="Enviar mensaje"
                 className="chat-send-btn w-11 h-11 rounded-2xl flex items-center justify-center disabled:bg-[#2F2F35] disabled:text-[#6B7280]"
               >
                 <Send size={17} />

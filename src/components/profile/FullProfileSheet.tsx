@@ -140,7 +140,7 @@ export function FullProfileSheet({
         <div className="relative">
           <VerifiedProfilePhoto
             src={profile.photos[0]}
-            alt=""
+            alt={`Foto de ${profile.name}`}
             className="w-full aspect-square"
             imgClassName="w-full aspect-square object-cover"
             verificationStatus={profile.verificationStatus}
@@ -153,7 +153,7 @@ export function FullProfileSheet({
           {profile.photos.length > 1 && (
             <div className="absolute bottom-16 right-2 flex gap-1 overflow-x-auto max-w-[120px]">
               {profile.photos.slice(1, 4).map((p, i) => (
-                <img key={i} src={p} alt="" className="w-8 h-8 rounded object-cover border border-white/50" />
+                <img key={i} src={p} alt={`Galería de ${profile.name} ${i + 2}`} className="w-8 h-8 rounded object-cover border border-white/50" />
               ))}
             </div>
           )}

@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { APP_VERSION } from '../../constants'
 import { getSyncShareOptOut, setSyncShareOptOut } from '../../utils/syncSharePrefs'
 import { buildInviteLink } from '../../utils/sparseCityDefaults'
+import { shareNativeMessage } from '../../utils/shareNative'
 import { ReferralInviteCard } from '../growth/ReferralInviteCard'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
@@ -106,7 +107,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
         )}
       </div>
       <div className="text-xs text-[#9CA3AF] mt-0.5">
-        En GymPulse otros ven tu ubicación aproximada (~500 m), no el punto exacto.
+        En el mapa LIVE otros ven tu ubicación aproximada (~500 m), no el punto exacto.
       </div>
     </div>
     <button
@@ -156,44 +157,28 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 {import.meta.env.DEV && (
 <div className={`px-4 mt-6 mb-8${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
   <div className="card p-4 text-xs text-[#9CA3AF] leading-snug">
-    Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cambiar cuenta" en la barra superior (siempre visible) o el botón del encabezado. ¡Gracias por testear!
+    Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cerrar sesión" en esta sección o "Cambiar cuenta" en el encabezado del perfil.
     <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
   </div>
   <div className="text-center text-[10px] text-[#6B7280] mt-4">v{APP_VERSION} • Solo +18 • Backend real</div>
 </div>
 )}
 
+<div className={`px-4 mt-6${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+  <button
+    type="button"
+    onClick={() => void handleLogout()}
+    className="w-full py-3 rounded-2xl border border-[#3f2a2a] text-[#f87171] text-sm font-semibold active:bg-[#1f1616] active:text-white"
+  >
+    Cerrar sesión
+  </button>
+</div>
+
 {!import.meta.env.DEV && (
 <div className={`px-4 mt-4 mb-6${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
   <div className="text-center text-[10px] text-[#6B7280]">v{APP_VERSION} • Solo +18</div>
 </div>
 )}
-
-{/* Mobile App Download - Prominent for Pre-Alpha testers */}
-<div className={`px-4 mt-2 mb-8${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
-  <div className="card p-5 rounded-3xl border border-[#FF4F79]/30 bg-[#1C1C20]">
-    <div className="flex items-center gap-3 mb-3">
-      <div className="text-2xl">📱</div>
-      <div>
-        <div className="font-semibold text-[#FF671F]">App Móvil Android</div>
-        <div className="text-xs text-[#9CA3AF]">Experiencia nativa con notificaciones y mejor cámara</div>
-      </div>
-    </div>
-    <div className="text-sm text-[#F8F8F8] mb-4">
-      Descarga la versión nativa de EntrenaMatch (APK) para tener <strong>notificaciones push reales en tu celular</strong> (mejor que web PWA), cámara nativa y experiencia completa offline. Se actualiza vía GitHub Releases. Para pruebas beta, instala el APK (activa "orígenes desconocidos").
-    </div>
-    <a 
-      href="https://github.com/musclegrenadechile/entrenamatch/releases/tag/android-prealpha" 
-      target="_blank"
-      className="btn-primary w-full block text-center text-sm py-2.5"
-    >
-      Descargar APK más reciente (Gratis)
-    </a>
-    <div className="text-[10px] text-center text-[#9CA3AF] mt-2">
-      También disponible automáticamente en GitHub Actions → Artifacts
-    </div>
-  </div>
-</div>
 
 {/* Beta Feedback ENHANCED (Phase 0 - structured, with history) - visual polish */}
 <div className={`px-4 mt-2 mb-8${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
@@ -421,7 +406,15 @@ export function ProfileAccountSection(props: ProfileTabProps) {
     onShare={() => {
       const code = (currentUser?.id || 'demo').slice(0, 8)
       const link = buildInviteLink(code)
-      navigator.clipboard?.writeText(link).then(() => toast.success('Enlace copiado — invita a tu gym'))
+      void (async () => {
+        const outcome = await shareNativeMessage({
+          title: 'EntrenaMatch',
+          text: 'Únete a EntrenaMatch — entrena en sync con gente cerca de ti.',
+          url: link,
+        })
+        if (outcome === 'copied') toast.success('Enlace copiado — invita a tu gym')
+        else if (outcome === 'failed') toast.error('No se pudo compartir')
+      })()
     }}
   />
 </div>

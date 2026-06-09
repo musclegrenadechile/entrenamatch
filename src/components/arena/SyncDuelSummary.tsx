@@ -8,7 +8,9 @@ import {
   type SyncDuelAction,
 } from '../../utils/syncDuel'
 import { ArenaSyncReel } from './ArenaSyncReel'
-import { downloadSyncStory } from '../../utils/syncStoryShare'
+import { shareSyncStory } from '../../utils/syncStoryShare'
+import { shareNativeMessage } from '../../utils/shareNative'
+import { toast } from 'sonner'
 import { estimateSyncSessionBurn } from '../../domain/fuelBalance'
 import { SyncWorkoutCompareStrip } from '../workout/SyncWorkoutCompareStrip'
 import type { SyncWorkoutCompare } from '../../utils/workoutSyncCompare'
@@ -42,6 +44,7 @@ export interface SyncDuelSummaryProps {
   onPublishToFeed?: () => void | Promise<void>
   onShareSkip?: () => void
   onShareOptOutChange?: (optOut: boolean) => void
+  shareInviteUrl?: string
   publishingFeed?: boolean
   fuelBurnKcal?: number
   weightKg?: number
@@ -76,6 +79,7 @@ export function SyncDuelSummary({
   onPublishToFeed,
   onShareSkip,
   onShareOptOutChange,
+  shareInviteUrl,
   publishingFeed = false,
   fuelBurnKcal = 0,
   weightKg = 75,
@@ -132,15 +136,35 @@ export function SyncDuelSummary({
       : estimateSyncSessionBurn(weightKg, Math.max(1, minutes || Math.ceil(elapsedSec / 60)))
 
   const shareSummary = async () => {
-    const text = `EntrenaSync con ${partnerName} — ${durationLabel}, vibe ${vibe}%, ${setsLogged} series. #EntrenaMatch`
-    try {
-      if (navigator.share) {
-        await navigator.share({ title: 'EntrenaSync', text })
-        return
-      }
-      await navigator.clipboard.writeText(text)
-    } catch {
-      /* user cancelled */
+    const text = `EntrenaSync con ${partnerName} — ${durationLabel}, vibe ${vibe}%, ${setsLogged} series. #EntrenaMatch #EntrenaSync`
+    const outcome = await shareNativeMessage({
+      title: 'EntrenaSync · EntrenaMatch',
+      text,
+      url: shareInviteUrl,
+    })
+    if (outcome === 'copied') {
+      toast.success('Resumen copiado — pégalo en WhatsApp o Instagram')
+    } else if (outcome === 'failed') {
+      toast.error('No se pudo compartir')
+    }
+  }
+
+  const shareStory = async () => {
+    const outcome = await shareSyncStory({
+      selfName,
+      partnerName,
+      minutes,
+      vibe,
+      setsLogged,
+      selfPhoto,
+      partnerPhoto,
+      witnessCount,
+      isNetworkBond,
+    })
+    if (outcome === 'downloaded') {
+      toast.success('Imagen guardada — compártela desde tu galería')
+    } else if (outcome === 'failed') {
+      toast.error('No se pudo generar la story')
     }
   }
 
@@ -187,7 +211,7 @@ export function SyncDuelSummary({
             }`}
           >
             {selfPhoto ? (
-              <img src={selfPhoto} alt="" className="sync-duel-card__avatar" />
+              <img src={selfPhoto} alt={`Foto de ${duel.self.name}`} className="sync-duel-card__avatar" />
             ) : (
               <span className="sync-duel-card__avatar sync-duel-card__avatar--fallback">
                 {duel.self.name.charAt(0)}
@@ -210,7 +234,7 @@ export function SyncDuelSummary({
             }`}
           >
             {partnerPhoto ? (
-              <img src={partnerPhoto} alt="" className="sync-duel-card__avatar" />
+              <img src={partnerPhoto} alt={`Foto de ${duel.partner.name}`} className="sync-duel-card__avatar" />
             ) : (
               <span className="sync-duel-card__avatar sync-duel-card__avatar--fallback">
                 {duel.partner.name.charAt(0)}
@@ -371,22 +395,10 @@ export function SyncDuelSummary({
           )}
           <button
             type="button"
-            onClick={() =>
-              void downloadSyncStory({
-                selfName,
-                partnerName,
-                minutes,
-                vibe,
-                setsLogged,
-                selfPhoto,
-                partnerPhoto,
-                witnessCount,
-                isNetworkBond,
-              })
-            }
+            onClick={() => void shareStory()}
             className="sync-duel-card__btn sync-duel-card__btn--ghost"
           >
-            📱 Guardar story para Instagram
+            📱 Compartir story
           </button>
           {onInviteSquad && (
             <button

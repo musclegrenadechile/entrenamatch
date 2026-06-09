@@ -12,11 +12,20 @@ import { Camera } from '@capacitor/camera'
 import { PushNotifications } from '@capacitor/push-notifications'
 import { PlayIntegrity } from '@capacitor-community/play-integrity'
 import { Geolocation } from '@capacitor/geolocation'
+import { Share } from '@capacitor/share'
+import { Filesystem } from '@capacitor/filesystem'
 
 // Side-effect: make available via global so components can pick it up after dynamic load.
 // This avoids direct export issues in conditional loading.
 if (typeof window !== 'undefined') {
-  (window as any).__CAPACITOR_PLUGINS__ = { Camera, PushNotifications, PlayIntegrity, Geolocation }
+  (window as any).__CAPACITOR_PLUGINS__ = {
+    Camera,
+    PushNotifications,
+    PlayIntegrity,
+    Geolocation,
+    Share,
+    Filesystem,
+  }
 }
 
-export { Camera, PushNotifications, PlayIntegrity, Geolocation }
+export { Camera, PushNotifications, PlayIntegrity, Geolocation, Share, Filesystem }

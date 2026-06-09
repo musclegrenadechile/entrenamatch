@@ -24,6 +24,7 @@ import {
 import { attachLivePresenceListener } from '../services/livePresence'
 import { attachLiveUsersListener, patchRealProfilesWithLiveSnapshot } from '../services/liveUsers'
 import { resolveLiveMapMerge } from '../utils/liveMapSources'
+import { liveUsersSnapshotSignature } from '../utils/liveMapSnapshot'
 import { toast } from 'sonner'
 
 export interface UseLiveMapPipelineOptions {
@@ -103,6 +104,9 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
   const presenceEverConnectedRef = useRef(false)
   const liveUsersFromDedicatedRef = useRef<Profile[]>([])
   const userLocationRef = useRef(userLocation)
+  const showLiveMapRef = useRef(showLiveMap)
+  const activeTabRef = useRef(activeTab)
+  const lastLiveSnapshotSigRef = useRef('')
 
   useEffect(() => {
     liveUsersFromDedicatedRef.current = liveUsersFromDedicated
@@ -110,11 +114,17 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
   useEffect(() => {
     userLocationRef.current = userLocation
   }, [userLocation])
+  useEffect(() => {
+    showLiveMapRef.current = showLiveMap
+  }, [showLiveMap])
+  useEffect(() => {
+    activeTabRef.current = activeTab
+  }, [activeTab])
 
   useEffect(() => {
     if (!showLiveMap) return
     setMapForceTick((t) => t + 1)
-  }, [showPartners, partnerLocationsLength, showLiveMap])
+  }, [showPartners, partnerLocationsLength, showLiveMap, setMapForceTick])
 
   useEffect(() => {
     const mapActive = showLiveMap || activeTab === 'map'
@@ -194,9 +204,16 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
       if (import.meta.env.DEV && mode !== 'presence' && presenceHealthyRef.current) {
         console.debug('[LiveMap] merge mode:', mode)
       }
+
+      const sig = liveUsersSnapshotSignature(merged)
+      if (sig === lastLiveSnapshotSigRef.current) return
+      lastLiveSnapshotSigRef.current = sig
+
       liveUsersFromDedicatedRef.current = merged
       setLiveUsersFromDedicated(merged)
-      setMapForceTick((t) => t + 1)
+      if (showLiveMapRef.current || activeTabRef.current === 'map') {
+        setMapForceTick((t) => t + 1)
+      }
       setRealProfiles((prev) => {
         const next = patchRealProfilesWithLiveSnapshot(prev, merged, {
           selfUid: currentUidRef.current,
@@ -214,6 +231,7 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
     if (isDemoMode || !db || !isFirebaseConfigured) {
       liveFromPresenceRef.current = []
       liveFromProfilesQueryRef.current = []
+      lastLiveSnapshotSigRef.current = ''
       setLiveUsersFromDedicated([])
       return undefined
     }

@@ -202,7 +202,7 @@ export function ProfileRendimientoSection(props: ProfileTabProps) {
       /* Clear deactivation option when live - explicit "terminar de entrenar" */
       <>
         <div className="mb-2 px-3 py-1.5 rounded-2xl bg-[#22c55e]/10 border border-[#22c55e]/40 flex items-center gap-2">
-          <div className="text-[#22c55e] font-extrabold text-sm tracking-tight">🟢 ESTÁS ENTRENANDO EN VIVO EN EL GYMPULSE</div>
+          <div className="text-[#22c55e] font-extrabold text-sm tracking-tight">🟢 ESTÁS ENTRENANDO EN VIVO EN EL MAPA</div>
         </div>
         <button 
           onClick={() => toggleLiveTraining('off')}
@@ -222,15 +222,15 @@ export function ProfileRendimientoSection(props: ProfileTabProps) {
         disabled={isTogglingLive}
         className={`btn-live w-full py-3.5 rounded-2xl text-sm font-bold transition flex items-center justify-center gap-2 shadow-sm ${isTogglingLive ? 'opacity-70 cursor-wait' : ''} bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black ring-1 ring-[#22c55e]/60 active:brightness-90 active:scale-[0.985]`}
       >
-        {isTogglingLive ? '⚡ Sincronizando en el GymPulse...' : 'Activar "Entrenando Ahora (EN VIVO)"'}
+        {isTogglingLive ? '⚡ Sincronizando en el mapa...' : 'Activar "Entrenando Ahora (EN VIVO)"'}
       </button>
     )}
 
     {/* Common description and links */}
     <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">
       {currentUser.trainingNow 
-        ? 'Cuando termines de entrenar, usa el botón de arriba para desactivar tu presencia en el mapa del GymPulse.'
-        : 'Al activar apareces en el mapa en tiempo real (GymPulse). Usuarios cerca te ven entrenando y sienten urgencia real (FOMO) de unirse o hacer sync contigo.'}
+        ? 'Cuando termines de entrenar, usa el botón de arriba para desactivar tu presencia en el mapa LIVE.'
+        : 'Al activar apareces en el mapa en tiempo real. Usuarios cerca te ven entrenando y pueden unirse o hacer EntrenaSync contigo.'}
     </div>
     <button onClick={() => setActiveTab('explore')} className="mt-2 w-full text-xs text-[#22c55e] underline active:opacity-70">Ver el mapa en tiempo real y quién está live cerca →</button>
     {currentUser.trainingNow && ((currentUser.liveStreak || 0) + (currentUser.joinedLiveStreak || 0) + (currentUser.liveJoins || 0) > 0) && (
@@ -261,7 +261,7 @@ export function ProfileRendimientoSection(props: ProfileTabProps) {
       </div>
       {liveTrainingNow.length > 0 && (
         <p className="text-[9px] text-[#FF671F]/90 mt-2">
-          🌊 {liveTrainingNow.length} personas live cerca sienten el pulso del GymPulse
+          🌊 {liveTrainingNow.length} personas live cerca — buen momento para invitarlas a un EntrenaSync
         </p>
       )}
     </button>

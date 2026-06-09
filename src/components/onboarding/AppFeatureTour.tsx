@@ -22,6 +22,12 @@ const STEPS = [
     body: 'Desliza perfiles compatibles. ❤️ = match instantáneo y chat.',
     anchor: 'bottom-nav-explore',
   },
+  {
+    id: 'red',
+    title: 'Matches y chat',
+    body: 'Tus matches viven aquí. Rompe el hielo y agenda un EntrenaSync.',
+    anchor: 'bottom-nav-red',
+  },
 ] as const
 
 export function hasSeenAppFeatureTour(): boolean {

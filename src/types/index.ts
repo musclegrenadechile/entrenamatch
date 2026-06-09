@@ -293,6 +293,10 @@ export interface NutritionPreview {
 export interface WorkoutSet {
   reps: number
   weightKg: number
+  /** Timed cardio (elíptica, cinta, bici…): minutes in this block */
+  minutesMin?: number
+  /** Timed cardio: perceived intensity or machine level (1–10) */
+  intensity?: number
 }
 
 export interface WorkoutExercise {
@@ -329,7 +333,7 @@ export interface WorkoutPreview {
   totalSets: number
   volumeLabel: string
   durationMin: number
-  exercises?: Array<{ name: string; setCount: number; topWeightKg?: number }>
+  exercises?: Array<{ name: string; setCount: number; topWeightKg?: number; setSummary?: string }>
   prCount?: number
 }
 

@@ -36,7 +36,7 @@ export function GymPulseLivePopup({
         {photos?.[0] ? (
           <VerifiedProfilePhoto
             src={photos[0]}
-            alt=""
+            alt={`Foto de ${name}`}
             className="gym-pulse-live-popup__avatar"
             imgClassName="gym-pulse-live-popup__avatar w-full h-full object-cover"
             verificationStatus={user.verificationStatus as IdentityVerificationStatus | undefined}

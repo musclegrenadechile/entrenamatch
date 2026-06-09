@@ -5,8 +5,16 @@ import {
   WORKOUT_TYPE_LABELS,
   MUSCLE_GROUPS,
   filterExercises,
+  isTimedCardioExercise,
 } from '../../data/exerciseLibrary'
 import type { Workout, WorkoutExercise, WorkoutSet, WorkoutType } from '../../types'
+import {
+  clampIntensity,
+  emptyCardioSet,
+  emptyExerciseEntry,
+  normalizeWorkoutExercise,
+  normalizeWorkoutSet,
+} from '../../utils/workoutSetFields'
 import {
   BUILTIN_WORKOUT_TEMPLATES,
   cloneExercises,
@@ -41,12 +49,90 @@ export type EntrenaLogModalProps = EntrenoDeHoyModalProps
 
 const WORKOUT_TYPES: WorkoutType[] = ['push', 'pull', 'legs', 'full', 'cardio', 'other']
 
-function emptySet(): WorkoutSet {
-  return { reps: 10, weightKg: 0 }
-}
+function CardioSetInputs({
+  exerciseName,
+  set,
+  setIdx,
+  exIdx,
+  canRemove,
+  onUpdate,
+  onRemove,
+}: {
+  exerciseName: string
+  set: WorkoutSet
+  setIdx: number
+  exIdx: number
+  canRemove: boolean
+  onUpdate: (exIdx: number, setIdx: number, patch: Partial<WorkoutSet>) => void
+  onRemove: (exIdx: number, setIdx: number) => void
+}) {
+  const normalized = normalizeWorkoutSet(exerciseName, set)
+  const [minutesDraft, setMinutesDraft] = useState(String(normalized.minutesMin || ''))
+  const [intensityDraft, setIntensityDraft] = useState(
+    normalized.intensity ? String(normalized.intensity) : ''
+  )
 
-function emptyExercise(name: string): WorkoutExercise {
-  return { name, sets: [emptySet()] }
+  useEffect(() => {
+    const n = normalizeWorkoutSet(exerciseName, set)
+    setMinutesDraft(String(n.minutesMin || ''))
+    setIntensityDraft(n.intensity ? String(n.intensity) : '')
+  }, [exerciseName, set.minutesMin, set.intensity, set.reps])
+
+  return (
+    <div className="flex items-center gap-2 text-xs">
+      <span className="w-6 text-[#6B7280] font-bold">{setIdx + 1}</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={minutesDraft}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/\D/g, '')
+          setMinutesDraft(raw)
+          onUpdate(exIdx, setIdx, {
+            minutesMin: raw === '' ? 0 : Math.max(0, parseInt(raw, 10) || 0),
+            reps: 0,
+            weightKg: 0,
+          })
+        }}
+        className="w-14 px-2 py-1.5 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
+        placeholder="min"
+        aria-label={`Minutos intervalo ${setIdx + 1}`}
+      />
+      <span className="text-[#6B7280]">min</span>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={intensityDraft}
+        onChange={(e) => {
+          const raw = e.target.value.replace(/\D/g, '')
+          setIntensityDraft(raw)
+          if (raw === '') {
+            onUpdate(exIdx, setIdx, { intensity: 0, reps: 0, weightKg: 0 })
+            return
+          }
+          onUpdate(exIdx, setIdx, {
+            intensity: clampIntensity(parseInt(raw, 10) || 0),
+            reps: 0,
+            weightKg: 0,
+          })
+        }}
+        className="w-14 px-2 py-1.5 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
+        placeholder="1-10"
+        aria-label={`Intensidad intervalo ${setIdx + 1}`}
+      />
+      <span className="text-[#6B7280]">/10</span>
+      {canRemove && (
+        <button
+          type="button"
+          onClick={() => onRemove(exIdx, setIdx)}
+          className="ml-auto text-[#6B7280] active:text-red-400 px-1"
+          aria-label="Quitar intervalo"
+        >
+          ×
+        </button>
+      )}
+    </div>
+  )
 }
 
 function SetInputs({
@@ -159,7 +245,11 @@ export function EntrenoDeHoyModal({
       45
     setDurationMin(dur)
     setDurationDraft(String(dur))
-    setExercises(initialExercises?.length ? initialExercises.map((e) => ({ ...e, sets: [...e.sets] })) : [])
+    setExercises(
+      initialExercises?.length
+        ? initialExercises.map((e) => normalizeWorkoutExercise({ ...e, sets: [...e.sets] }))
+        : []
+    )
     setSearch('')
     setMuscleFilter(undefined)
     setShowPicker(false)
@@ -171,7 +261,7 @@ export function EntrenoDeHoyModal({
     setType(tpl.type)
     setDurationMin(tpl.durationMin)
     setDurationDraft(String(tpl.durationMin))
-    setExercises(cloneExercises(tpl.exercises))
+    setExercises(cloneExercises(tpl.exercises).map(normalizeWorkoutExercise))
   }
 
   const quickTemplates = useMemo(() => {
@@ -198,7 +288,7 @@ export function EntrenoDeHoyModal({
 
   const addExercise = (name: string) => {
     if (exercises.some((e) => e.name === name)) return
-    setExercises((prev) => [...prev, emptyExercise(name)])
+    setExercises((prev) => [...prev, emptyExerciseEntry(name)])
     setSearch('')
     setShowPicker(false)
   }
@@ -221,6 +311,21 @@ export function EntrenoDeHoyModal({
       prev.map((ex, i) => {
         if (i !== exIdx) return ex
         const last = ex.sets[ex.sets.length - 1]
+        if (isTimedCardioExercise(ex.name)) {
+          const base = last ? normalizeWorkoutSet(ex.name, last) : emptyCardioSet()
+          return {
+            ...ex,
+            sets: [
+              ...ex.sets,
+              {
+                reps: 0,
+                weightKg: 0,
+                minutesMin: base.minutesMin || 15,
+                intensity: base.intensity || 6,
+              },
+            ],
+          }
+        }
         return {
           ...ex,
           sets: [...ex.sets, { reps: last?.reps || 10, weightKg: last?.weightKg || 0 }],
@@ -266,7 +371,8 @@ export function EntrenoDeHoyModal({
             <div>
               <p className="text-sm font-black text-white">Entreno de Hoy</p>
               <p className="text-[10px] text-[#9CA3AF]">
-                {EXERCISE_LIBRARY.length} ejercicios · registra sets en vivo
+                {EXERCISE_LIBRARY.length} ejercicios ·{' '}
+                {type === 'cardio' ? 'minutos e intensidad' : 'sets en vivo'}
               </p>
             </div>
           </div>
@@ -479,24 +585,38 @@ export function EntrenoDeHoyModal({
                     </button>
                   </div>
                   <div className="space-y-1.5">
-                    {ex.sets.map((set, setIdx) => (
-                      <SetInputs
-                        key={setIdx}
-                        set={set}
-                        setIdx={setIdx}
-                        exIdx={exIdx}
-                        canRemove={ex.sets.length > 1}
-                        onUpdate={updateSet}
-                        onRemove={removeSet}
-                      />
-                    ))}
+                    {ex.sets.map((set, setIdx) =>
+                      isTimedCardioExercise(ex.name) ? (
+                        <CardioSetInputs
+                          key={setIdx}
+                          exerciseName={ex.name}
+                          set={set}
+                          setIdx={setIdx}
+                          exIdx={exIdx}
+                          canRemove={ex.sets.length > 1}
+                          onUpdate={updateSet}
+                          onRemove={removeSet}
+                        />
+                      ) : (
+                        <SetInputs
+                          key={setIdx}
+                          set={set}
+                          setIdx={setIdx}
+                          exIdx={exIdx}
+                          canRemove={ex.sets.length > 1}
+                          onUpdate={updateSet}
+                          onRemove={removeSet}
+                        />
+                      )
+                    )}
                   </div>
                   <button
                     type="button"
                     onClick={() => addSet(exIdx)}
                     className="mt-2 text-[10px] text-[#FF671F] font-bold flex items-center gap-1"
                   >
-                    <Plus className="w-3 h-3" /> Añadir set
+                    <Plus className="w-3 h-3" />{' '}
+                    {isTimedCardioExercise(ex.name) ? 'Añadir intervalo' : 'Añadir set'}
                   </button>
                 </li>
               ))}

@@ -2,6 +2,7 @@
 
 import type { CityDerbyState } from '../services/cityDerby'
 import { DERBY_AWAY, DERBY_HOME } from '../services/cityDerby'
+import { sharePngBlob, type ShareImageOutcome } from './shareImageBlob'
 
 const W = 1080
 const H = 1920
@@ -372,14 +373,26 @@ export async function renderDerbyStoryPng(derby: CityDerbyState): Promise<Blob |
   })
 }
 
-export async function downloadDerbyStory(derby: CityDerbyState): Promise<boolean> {
+function derbyStoryFilename(weekKey: string): string {
+  return `entrenamatch-derby-${weekKey}.png`
+}
+
+function derbyStoryShareText(derby: CityDerbyState): string {
+  return `${derbyShareLeaderLine(derby)} — ${DERBY_HOME.label} vs ${DERBY_AWAY.label}. #EntrenaMatch\nhttps://${APP_URL}`
+}
+
+export async function shareDerbyStory(derby: CityDerbyState): Promise<ShareImageOutcome> {
   const blob = await renderDerbyStoryPng(derby)
-  if (!blob) return false
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = `entrenamatch-derby-${derby.weekKey}.png`
-  a.click()
-  URL.revokeObjectURL(url)
-  return true
+  if (!blob) return 'failed'
+  return sharePngBlob(blob, derbyStoryFilename(derby.weekKey), {
+    title: 'Derby EntrenaMatch',
+    text: derbyStoryShareText(derby),
+    dialogTitle: 'Compartir story del derby',
+  })
+}
+
+/** @deprecated Prefer shareDerbyStory — kept for callers that only need a file save. */
+export async function downloadDerbyStory(derby: CityDerbyState): Promise<boolean> {
+  const outcome = await shareDerbyStory(derby)
+  return outcome === 'shared' || outcome === 'downloaded'
 }

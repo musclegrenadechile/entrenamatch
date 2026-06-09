@@ -197,16 +197,20 @@ export function buildCityDerby(
 
 export function derbyStatusLine(derby: CityDerbyState): string {
   if (derby.isTie && derby.home.totalMinutes === 0 && derby.away.totalMinutes === 0) {
-    return 'Primera zona en entrenar lleva la delantera'
+    return 'La semana empieza en cero — el primer live marca la zona'
   }
   if (derby.isTie) return 'Empate ajustado por población — el próximo sync define'
   const leader = derby.leaderLabel || '—'
   return `${leader} lidera · +${derby.marginIndex} índice/100k hab`
 }
 
-export function derbyTeamCta(derby: CityDerbyState): string {
+export function derbyTeamCta(derby: CityDerbyState, userCity?: string | null): string {
   if (!derby.myTeam) return 'Entrena en vivo y suma índice a tu zona'
   const my = derby.myTeam === 'home' ? derby.home : derby.away
+  if (my.participantCount === 0) {
+    const place = userCity?.trim() || my.cityLabel
+    return `Sé el primero en representar ${place}`
+  }
   const rival = derby.myTeam === 'home' ? derby.away : derby.home
   if (derby.myTeam === 'home' && derby.leaderNorm === DERBY_AWAY.norm) {
     return `${DERBY_HOME.label} va abajo ${derby.marginIndex} índice — activa LIVE hoy`

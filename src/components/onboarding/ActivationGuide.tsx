@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { ArrowRight, MapPin, Radio, RefreshCw, Users, X } from 'lucide-react'
+import { ArrowRight, MapPin, Radio, RefreshCw, Share2, Users, X } from 'lucide-react'
 
 export interface ActivationGuideProps {
   open: boolean
@@ -10,6 +10,7 @@ export interface ActivationGuideProps {
   onClose: () => void
   onPrimaryAction: () => void
   onStep: (step: 'profile' | 'live' | 'explore' | 'sync' | 'pact') => void
+  onShareInvite?: () => void
 }
 
 /** Fase 101 — una sola guía, máximo 3 pasos. */
@@ -45,6 +46,7 @@ export function ActivationGuide({
   onClose,
   onPrimaryAction,
   onStep,
+  onShareInvite,
 }: ActivationGuideProps) {
   const done = useMemo(
     () =>
@@ -85,13 +87,25 @@ export function ActivationGuide({
                   <p>{desc}</p>
                 </div>
                 {!isDone && (
-                  <button
-                    type="button"
-                    className="post-register-guide__go"
-                    onClick={() => onStep(s.id)}
-                  >
-                    Ir <ArrowRight size={14} />
-                  </button>
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <button
+                      type="button"
+                      className="post-register-guide__go"
+                      onClick={() => onStep(s.id)}
+                    >
+                      Ir <ArrowRight size={14} />
+                    </button>
+                    {s.id === 'explore' && onShareInvite && (
+                      <button
+                        type="button"
+                        className="text-[9px] font-bold text-[#22c55e] px-2 py-1 rounded-lg border border-[#22c55e]/40 active:bg-[#22c55e]/10"
+                        onClick={onShareInvite}
+                      >
+                        <Share2 size={10} className="inline -mt-0.5 mr-0.5" aria-hidden />
+                        Invitar gym
+                      </button>
+                    )}
+                  </div>
                 )}
                 {isDone && (
                   <span className="text-[10px] font-bold text-[#22c55e] shrink-0">Hecho</span>

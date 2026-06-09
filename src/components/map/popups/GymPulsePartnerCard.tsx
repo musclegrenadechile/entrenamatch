@@ -37,7 +37,7 @@ export function GymPulsePartnerCard({
 
       <div className="gym-pulse-partner-card__hero">
         {logo ? (
-          <img src={logo} alt="" className="gym-pulse-partner-card__logo" />
+          <img src={logo} alt={`Logo de ${partner.name}`} className="gym-pulse-partner-card__logo" />
         ) : (
           <div className="gym-pulse-partner-card__logo gym-pulse-partner-card__logo--fallback">🏋️</div>
         )}
@@ -70,7 +70,7 @@ export function GymPulsePartnerCard({
             <div className="gym-pulse-partner-card__avatars">
               {checkedInUsers.slice(0, 5).map((u) =>
                 u.photos?.[0] ? (
-                  <img key={u.id} src={u.photos[0]} alt="" title={u.name} />
+                  <img key={u.id} src={u.photos[0]} alt={`Foto de ${u.name}`} title={u.name} />
                 ) : (
                   <span key={u.id} title={u.name}>
                     {(u.name || '?')[0]}

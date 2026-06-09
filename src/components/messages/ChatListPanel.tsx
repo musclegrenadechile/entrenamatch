@@ -109,7 +109,7 @@ export function ChatListPanel({
               >
                 <VerifiedProfilePhoto
                   src={profile.photos[0]}
-                  alt=""
+                  alt={`Foto de ${profile.name}`}
                   className="w-full h-full"
                   imgClassName="w-full h-full object-cover"
                   verificationStatus={profile.verificationStatus}

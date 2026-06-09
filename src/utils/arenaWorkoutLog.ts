@@ -1,4 +1,5 @@
 import type { WorkoutExercise, WorkoutSet } from '../types'
+import { formatSetDisplay } from './workoutSetFields'
 
 export interface SyncWorkoutLogState {
   activeExercise: string
@@ -45,7 +46,15 @@ export function syncWorkoutHasData(log: SyncWorkoutLogState): boolean {
   return countLoggedSets(log) > 0
 }
 
-export function formatSetLabel(exercise: string, reps: number, weightKg: number): string {
+export function formatSetLabel(
+  exercise: string,
+  reps: number,
+  weightKg: number,
+  set?: WorkoutSet
+): string {
+  if (set) {
+    return `${exercise} ${formatSetDisplay(exercise, set)}`
+  }
   const w = weightKg > 0 ? ` · ${weightKg}kg` : ''
   return `${exercise} ${reps} reps${w}`
 }

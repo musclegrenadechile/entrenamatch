@@ -100,7 +100,8 @@ export interface DailyHomeProps {
   weeklyPlan?: WeeklyPlanResult | null
   weeklyPlanEnriching?: boolean
   onStartWeeklyPlan?: (plan: WeeklyPlanResult) => void
-  onShareWeeklyPlan?: (plan: WeeklyPlanResult) => void
+  onPublishWeeklyPlanToFeed?: (plan: WeeklyPlanResult) => void
+  onShareWeeklyPlanExternally?: (plan: WeeklyPlanResult) => void
 }
 
 function statusLine(member: TeamMemberView): string {
@@ -184,7 +185,8 @@ export function DailyHome({
   weeklyPlan = null,
   weeklyPlanEnriching = false,
   onStartWeeklyPlan,
-  onShareWeeklyPlan,
+  onPublishWeeklyPlanToFeed,
+  onShareWeeklyPlanExternally,
 }: DailyHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
   const hour = new Date().getHours()
@@ -227,9 +229,8 @@ export function DailyHome({
       <CityDerbyCard
         derby={cityDerby}
         onOpenMap={onOpenDerbyMap}
-        onGoLive={onToggleLive}
-        isLive={isLive}
         userGender={userGender}
+        userCity={cityLabel}
       />
 
       <DailyHomeHeroCard
@@ -237,7 +238,7 @@ export function DailyHome({
         weeklyPactProgress={weeklyPactProgress}
         entrenoRecentWorkouts={entrenoRecentWorkouts}
         weekTrainedCount={weekTrainedCount}
-        onToggleLive={onToggleLive}
+        onOpenMap={onOpenMap}
         onOpenEntrenoLog={onOpenEntrenaLog}
         onRepeatYesterday={onRepeatYesterday}
         onOpenPact={onOpenPactWizard}
@@ -249,7 +250,8 @@ export function DailyHome({
         plan={weeklyPlan}
         enriching={weeklyPlanEnriching}
         onStartWorkout={onStartWeeklyPlan}
-        onSharePlan={onShareWeeklyPlan}
+        onPublishPlanToFeed={onPublishWeeklyPlanToFeed}
+        onSharePlanExternally={onShareWeeklyPlanExternally}
         onOpenFuelSetup={onOpenFuelSetup}
       />
 
@@ -328,22 +330,15 @@ export function DailyHome({
         </div>
         <p className="text-[9px] text-[#6B7280] mb-3">20+ min en live cuentan para tu semana.</p>
 
-        <button
-          type="button"
-          onClick={onToggleLive}
-          disabled={isTogglingLive}
-          className={`w-full py-3.5 rounded-2xl font-extrabold text-sm flex items-center justify-center gap-2 transition active:scale-[0.985] ${
-            isLive
-              ? 'bg-[#E11D48] text-white ring-1 ring-[#E11D48]/60'
-              : 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black ring-1 ring-[#22c55e]/50'
-          } ${isTogglingLive ? 'opacity-70 cursor-wait' : ''}`}
-        >
-          {isTogglingLive
-            ? 'Un momento…'
-            : isLive
-              ? '⏹ Terminar live'
-              : '🟢 Empezar live'}
-        </button>
+        {isLive ? (
+          <p className="text-[11px] text-[#22c55e] font-semibold text-center py-2 mb-1 leading-snug">
+            Estás en el mapa — usa <span className="font-black">EN VIVO</span> abajo a la derecha para terminar.
+          </p>
+        ) : (
+          <p className="text-[11px] text-[#9CA3AF] text-center py-2 mb-1 leading-snug">
+            Cuando empieces, toca <span className="text-[#22c55e] font-black">IR LIVE</span> (botón flotante abajo a la derecha).
+          </p>
+        )}
 
         <button
           type="button"
@@ -508,15 +503,9 @@ export function DailyHome({
 
         {!isLive && (
           <div className="mb-3 p-3 rounded-2xl bg-black/30 border border-white/10 text-center">
-            <p className="text-[11px] text-[#9CA3AF]">Activa live para iniciar un EntrenaSync.</p>
-            <button
-              type="button"
-              onClick={onToggleLive}
-              disabled={isTogglingLive}
-              className="mt-2 text-[11px] px-4 py-2 rounded-xl bg-[#22c55e] text-black font-bold active:scale-95"
-            >
-              Ir a Live →
-            </button>
+            <p className="text-[11px] text-[#9CA3AF] leading-snug">
+              Activa live con <span className="text-[#22c55e] font-bold">IR LIVE</span> para iniciar un EntrenaSync.
+            </p>
           </div>
         )}
 
@@ -623,7 +612,6 @@ export function DailyHome({
             onPledge={onPledgeWeeklyPact}
             onSyncWithPartner={onJoinMember}
             onMessagePartner={onMessageMember}
-            onToggleLive={onToggleLive}
             forceWizard={forcePactWizard}
           />
         )}

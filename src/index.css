@@ -3533,6 +3533,61 @@ input[type="range"]::-moz-range-thumb {
   color: rgba(0,0,0,0.55);
 }
 
+.chat-msg-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 6px;
+  padding-top: 2px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.chat-msg-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.chat-msg-status__label {
+  letter-spacing: 0.02em;
+}
+
+.chat-msg-status__time {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.5);
+  font-variant-numeric: tabular-nums;
+}
+
+.chat-msg-status--sent svg {
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.chat-msg-status--sent .chat-msg-status__label {
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.chat-msg-status--read svg {
+  color: #1e40af;
+  filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.5));
+}
+
+.chat-msg-status--read .chat-msg-status__label {
+  color: #1e3a8a;
+}
+
+.chat-msg-status--sending {
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.chat-msg-status--failed {
+  color: #b91c1c;
+}
+
 /* Chat v2 — GymPartner lane + action dock */
 .chat-v2 {
   background: linear-gradient(180deg, #0a0a0c 0%, #0d0d10 100%);

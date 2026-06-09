@@ -1,5 +1,6 @@
 import type { WorkoutExercise, WorkoutType } from '../../types'
-import { EXERCISE_LIBRARY } from '../../data/exerciseLibrary'
+import { EXERCISE_LIBRARY, isTimedCardioExercise } from '../../data/exerciseLibrary'
+import { emptyCardioSet, emptyStrengthSet } from '../../utils/workoutSetFields'
 
 const PRESETS: Record<WorkoutType, string[]> = {
   push: ['Press banca', 'Press inclinado con mancuernas', 'Fondos en paralelas', 'Aperturas con mancuernas'],
@@ -16,10 +17,14 @@ const LEVEL_SETS: Record<string, number> = {
   Avanzado: 5,
 }
 
-function emptyExercise(name: string, sets: number): WorkoutExercise {
+function emptyExercise(name: string, sets: number, workoutType: WorkoutType): WorkoutExercise {
+  const resolved = resolveName(name)
+  if (workoutType === 'cardio' && isTimedCardioExercise(resolved)) {
+    return { name: resolved, sets: [emptyCardioSet()] }
+  }
   return {
-    name,
-    sets: Array.from({ length: sets }, () => ({ reps: 10, weightKg: 0 })),
+    name: resolved,
+    sets: Array.from({ length: sets }, () => emptyStrengthSet()),
   }
 }
 
@@ -37,7 +42,7 @@ export function buildPlanExercises(
 ): WorkoutExercise[] {
   const sets = LEVEL_SETS[level] ?? 3
   const names = (PRESETS[workoutType] || PRESETS.full).slice(0, maxExercises)
-  return names.map((n) => emptyExercise(resolveName(n), sets))
+  return names.map((n) => emptyExercise(n, sets, workoutType))
 }
 
 export function planTitleForType(type: WorkoutType, intensity: string): string {

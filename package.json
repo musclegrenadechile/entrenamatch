@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.317",
+  "version": "0.1.320",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -15,6 +15,8 @@
     "cap:open:android": "npx cap open android",
     "android:build": "cross-env CAPACITOR=1 npm run build:web && npm run cap:sync",
     "android:apk": "npm run android:build && cd android && gradlew.bat assembleDebug",
+    "android:device": "cross-env CAP_DEV=1 CAPACITOR=1 npm run build:web && cross-env CAP_DEV=1 npx cap sync android && cd android && gradlew.bat assembleDebug",
+    "version:check": "node scripts/version-check.mjs",
     "build:release": "cd android && .\\gradlew.bat bundleRelease",
     "build:release:win": "build-release.bat",
     "publish:play": "publish-play.bat",
@@ -24,7 +26,6 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "qa:smoke": "node scripts/qa-smoke.mjs",
-    "version:check": "node scripts/version-check.mjs",
     "test:e2e": "playwright test",
     "setup:mp": "node scripts/setup-mp-production.mjs",
     "phase": "node scripts/implement-phase.mjs"
@@ -36,8 +37,10 @@
     "@capacitor/camera": "^8.2.0",
     "@capacitor/cli": "^8.3.4",
     "@capacitor/core": "^8.3.4",
+    "@capacitor/filesystem": "^8.1.2",
     "@capacitor/geolocation": "^8.2.0",
     "@capacitor/push-notifications": "^8.1.1",
+    "@capacitor/share": "^8.0.1",
     "@maplibre/maplibre-gl-leaflet": "^0.1.3",
     "canvas-confetti": "^1.9.4",
     "firebase": "^12.14.0",
