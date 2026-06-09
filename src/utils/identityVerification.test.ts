@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  IDENTITY_PENDING_MIN_CONFIDENCE,
+  IDENTITY_REJECT_MIN_CONFIDENCE,
   IDENTITY_VERIFY_MIN_CONFIDENCE,
   resolveVerificationStatusFromAi,
   type IdentityAiVerdict,
@@ -32,22 +32,26 @@ describe('identityVerification', () => {
     expect(status).toBe('verified')
   })
 
-  it('pending on medium confidence', () => {
+  it('pending on ambiguous same-person match', () => {
     const status = resolveVerificationStatusFromAi(
       verdict({
         samePerson: true,
-        profileMatch: true,
+        profileMatch: false,
         selfieHasFace: true,
-        confidence: IDENTITY_PENDING_MIN_CONFIDENCE,
+        confidence: 0.5,
       })
     )
     expect(status).toBe('pending')
   })
 
-  it('rejects low confidence or different person', () => {
+  it('rejects only high-confidence mismatch or missing face', () => {
     expect(
       resolveVerificationStatusFromAi(
-        verdict({ samePerson: false, selfieHasFace: true, confidence: 0.9 })
+        verdict({
+          samePerson: false,
+          selfieHasFace: true,
+          confidence: IDENTITY_REJECT_MIN_CONFIDENCE,
+        })
       )
     ).toBe('unverified')
     expect(
@@ -55,6 +59,11 @@ describe('identityVerification', () => {
         verdict({ samePerson: true, selfieHasFace: false, confidence: 0.95 })
       )
     ).toBe('unverified')
+    expect(
+      resolveVerificationStatusFromAi(
+        verdict({ samePerson: false, selfieHasFace: true, confidence: 0.4 })
+      )
+    ).toBe('pending')
   })
 
   it('pending when Gemini unavailable', () => {

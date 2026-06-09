@@ -14,29 +14,29 @@ export type IdentityAiVerdict = {
   geminiErrorMessage?: string
 }
 
-export const IDENTITY_VERIFY_MIN_CONFIDENCE = 0.82
-export const IDENTITY_PENDING_MIN_CONFIDENCE = 0.55
+export const IDENTITY_VERIFY_MIN_CONFIDENCE = 0.72
+/** High-confidence mismatch — only then hard-reject with a visible face. */
+export const IDENTITY_REJECT_MIN_CONFIDENCE = 0.72
 
 export function resolveVerificationStatusFromAi(
   verdict: IdentityAiVerdict
 ): IdentityVerificationStatus {
   if (verdict.source !== 'gemini') return 'pending'
+  if (!verdict.selfieHasFace) return 'unverified'
+
   if (
     verdict.samePerson &&
-    verdict.profileMatch &&
-    verdict.selfieHasFace &&
-    verdict.confidence >= IDENTITY_VERIFY_MIN_CONFIDENCE
+    verdict.confidence >= IDENTITY_VERIFY_MIN_CONFIDENCE &&
+    (verdict.profileMatch || verdict.confidence >= 0.78)
   ) {
     return 'verified'
   }
-  if (
-    verdict.selfieHasFace &&
-    verdict.samePerson &&
-    verdict.confidence >= IDENTITY_PENDING_MIN_CONFIDENCE
-  ) {
-    return 'pending'
+
+  if (!verdict.samePerson && verdict.confidence >= IDENTITY_REJECT_MIN_CONFIDENCE) {
+    return 'unverified'
   }
-  return 'unverified'
+
+  return 'pending'
 }
 
 export function verificationStatusLabel(status: IdentityVerificationStatus | undefined): string {

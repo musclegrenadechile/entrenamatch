@@ -7099,13 +7099,19 @@ useEffect(() => {
         verifyIdentityWithAi,
         uploadVerificationImage,
         imageRefToDataUrl,
+        compressImageDataUrl,
       } = await import('./services/identityVerification')
       const { resolveVerificationStatusFromAi } = await import('./utils/identityVerification')
 
       const profilePhoto = currentUser.photos[0]
-      const profilePhotoBase64 = profilePhoto.startsWith('data:')
+      let profilePhotoBase64 = profilePhoto.startsWith('data:')
         ? profilePhoto
         : await imageRefToDataUrl(profilePhoto)
+      if (profilePhotoBase64) {
+        profilePhotoBase64 = await compressImageDataUrl(profilePhotoBase64)
+      }
+
+      const selfieForAi = await compressImageDataUrl(verificationSelfie)
 
       let selfieUrl = verificationSelfie
       if (storage) {
@@ -7121,7 +7127,7 @@ useEffect(() => {
       const verdict = await verifyIdentityWithAi({
         profilePhotoBase64: profilePhotoBase64 || undefined,
         profilePhotoUrl: profilePhotoBase64 ? undefined : profilePhoto,
-        selfieBase64: verificationSelfie,
+        selfieBase64: selfieForAi,
         displayName: currentUser.name,
         age: currentUser.age,
       })
@@ -7161,7 +7167,9 @@ useEffect(() => {
         })
       } else {
         toast.error('No pudimos verificar', {
-          description: verdict.reason || 'Prueba con mejor luz y una selfie clara de tu rostro.',
+          description:
+            verdict.reason ||
+            'Usa buena luz, mira a la cámara y pon como foto principal un retrato claro de tu rostro.',
         })
       }
     } catch (e: any) {

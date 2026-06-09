@@ -459,17 +459,47 @@ async function fetchImageAsBase64(url) {
   return { mime, data: buf.toString('base64') };
 }
 
+async function fetchProfileImageAsBase64(profilePhotoUrl) {
+  if (!profilePhotoUrl) throw new Error('no profile url');
+  try {
+    return await fetchImageAsBase64(profilePhotoUrl);
+  } catch (fetchErr) {
+    const pathMatch = String(profilePhotoUrl).match(/\/o\/([^?]+)/);
+    if (!pathMatch) throw fetchErr;
+    const filePath = decodeURIComponent(pathMatch[1]);
+    const bucket = admin.storage().bucket();
+    const [buf] = await bucket.file(filePath).download();
+    return { mime: 'image/jpeg', data: buf.toString('base64') };
+  }
+}
+
+function parseBoolField(parsed, ...keys) {
+  for (const key of keys) {
+    if (parsed[key] === true || parsed[key] === 'true') return true;
+    if (parsed[key] === false || parsed[key] === 'false') return false;
+  }
+  return null;
+}
+
 function parseIdentityGeminiJson(raw) {
-  const match = String(raw || '').match(/\{[\s\S]*\}/);
-  if (!match) throw new Error('No JSON in Gemini identity response');
-  const parsed = JSON.parse(match[0]);
+  const trimmed = String(raw || '').trim();
+  const match = trimmed.match(/\{[\s\S]*\}/);
+  let parsed;
+  try {
+    parsed = JSON.parse(match ? match[0] : trimmed);
+  } catch {
+    throw new Error('No JSON in Gemini identity response');
+  }
   const confidence = Math.max(0, Math.min(1, Number(parsed.confidence) || 0));
+  const samePerson = parseBoolField(parsed, 'samePerson', 'same_person', 'isSamePerson');
+  const profileMatch = parseBoolField(parsed, 'profileMatch', 'profile_match');
+  const selfieHasFace = parseBoolField(parsed, 'selfieHasFace', 'selfie_has_face', 'hasFace');
   return {
-    samePerson: !!parsed.samePerson,
+    samePerson: samePerson === true,
     confidence,
-    profileMatch: parsed.profileMatch !== false,
-    selfieHasFace: parsed.selfieHasFace !== false,
-    idDocumentReadable: !!parsed.idDocumentReadable,
+    profileMatch: profileMatch !== false,
+    selfieHasFace: selfieHasFace !== false,
+    idDocumentReadable: false,
     reason: String(parsed.reason || 'Sin detalle').slice(0, 280),
   };
 }
@@ -487,11 +517,13 @@ async function callGeminiIdentity(apiKey, payload) {
   const parts = [
     {
       text:
-        'Verificación biométrica facial para app fitness. Compara si la PERSONA en la FOTO DE PERFIL (imagen 1) es la MISMA persona que en la SELFIE EN VIVO (imagen 2). ' +
+        'Verificación biométrica facial (app fitness). Imagen 1 = foto de perfil. Imagen 2 = selfie en vivo. ' +
+        '¿Es la MISMA persona? Compara rasgos faciales (ojos, nariz, mandíbula, forma de cara). ' +
         (contextLine ? `${contextLine}. ` : '') +
-        'Responde SOLO JSON válido en español en "reason": {"samePerson":boolean,"confidence":number,"profileMatch":boolean,"selfieHasFace":boolean,"idDocumentReadable":false,"reason":string}. ' +
-        'confidence 0-1. profileMatch=true si el rostro de la selfie coincide claramente con la foto de perfil. ' +
-        'selfieHasFace=false si no hay rostro humano claro. Ignora fondo, ropa o iluminación distinta. Ante duda, baja confidence.',
+        'Ignora pelo distinto, barba, gafas, maquillaje, ropa, fondo e iluminación. ' +
+        'selfieHasFace=false solo si no hay rostro humano nítido. ' +
+        'samePerson=true si los rasgos coinciden razonablemente aunque el ángulo o luz cambien. ' +
+        'confidence 0-1 (0.7+ = muy probable misma persona). reason en español, breve.',
     },
     { inline_data: { mime_type: profileMime || 'image/jpeg', data: profileB64 } },
     { inline_data: { mime_type: selfieMime || 'image/jpeg', data: selfieB64 } },
@@ -513,6 +545,18 @@ async function callGeminiIdentity(apiKey, payload) {
             temperature: 0.1,
             maxOutputTokens: 384,
             thinkingConfig: { thinkingBudget: 0 },
+            responseMimeType: 'application/json',
+            responseSchema: {
+              type: 'object',
+              properties: {
+                samePerson: { type: 'boolean' },
+                confidence: { type: 'number' },
+                profileMatch: { type: 'boolean' },
+                selfieHasFace: { type: 'boolean' },
+                reason: { type: 'string' },
+              },
+              required: ['samePerson', 'confidence', 'profileMatch', 'selfieHasFace', 'reason'],
+            },
           },
         }),
       });
@@ -553,7 +597,7 @@ exports.verifyIdentity = functions
     const profilePhotoUrl = data && data.profilePhotoUrl ? String(data.profilePhotoUrl) : '';
     if (!profileB64 && profilePhotoUrl) {
       try {
-        const fetched = await fetchImageAsBase64(profilePhotoUrl);
+        const fetched = await fetchProfileImageAsBase64(profilePhotoUrl);
         profileB64 = fetched.data;
         profileMime = fetched.mime.split(';')[0] || 'image/jpeg';
       } catch (e) {
@@ -610,6 +654,14 @@ exports.verifyIdentity = functions
         idMime: 'image/jpeg',
         displayName,
         age,
+      });
+      console.info('verifyIdentity verdict', {
+        uid,
+        samePerson: result.samePerson,
+        confidence: result.confidence,
+        profileMatch: result.profileMatch,
+        selfieHasFace: result.selfieHasFace,
+        model: result.geminiModel,
       });
       await db
         .collection('identityVerifications')

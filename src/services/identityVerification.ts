@@ -14,6 +14,36 @@ export type VerifyIdentityInput = {
   age?: number
 }
 
+/** Resize/compress before sending to Cloud Function (smaller payload, better vision). */
+export async function compressImageDataUrl(
+  dataUrl: string,
+  maxSide = 1280,
+  quality = 0.82
+): Promise<string> {
+  if (!dataUrl?.startsWith('data:') || typeof document === 'undefined') return dataUrl
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      let { width, height } = img
+      const scale = Math.min(1, maxSide / Math.max(width, height, 1))
+      width = Math.max(1, Math.round(width * scale))
+      height = Math.max(1, Math.round(height * scale))
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) {
+        resolve(dataUrl)
+        return
+      }
+      ctx.drawImage(img, 0, 0, width, height)
+      resolve(canvas.toDataURL('image/jpeg', quality))
+    }
+    img.onerror = () => resolve(dataUrl)
+    img.src = dataUrl
+  })
+}
+
 export async function imageRefToDataUrl(src: string): Promise<string | null> {
   if (!src) return null
   if (src.startsWith('data:')) return src
