@@ -11622,6 +11622,10 @@ useEffect(() => {
                 minutes: syncDuelSummary.minutes,
                 vibe: syncDuelSummary.vibe,
                 setsLogged: syncDuelSummary.setsLogged,
+                selfPhoto: currentUser.photos?.[0],
+                partnerPhoto: syncDuelSummary.partnerPhoto,
+                witnessCount: syncDuelSummary.witnessCount,
+                isNetworkBond: syncDuelSummary.isNetworkBond,
               })
               const text = buildSyncPostText({
                 selfName: currentUser.name || 'Tú',

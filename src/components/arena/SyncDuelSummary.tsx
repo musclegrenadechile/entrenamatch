@@ -373,11 +373,15 @@ export function SyncDuelSummary({
                 minutes,
                 vibe,
                 setsLogged,
+                selfPhoto,
+                partnerPhoto,
+                witnessCount,
+                isNetworkBond,
               })
             }
             className="sync-duel-card__btn sync-duel-card__btn--ghost"
           >
-            📱 Story 1080×1920
+            📱 Guardar story para Instagram
           </button>
           {onInviteSquad && (
             <button
