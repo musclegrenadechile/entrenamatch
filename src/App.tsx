@@ -907,6 +907,7 @@ function App() {
   const [profileViewWorkouts, setProfileViewWorkouts] = useState<import('./types').Workout[]>([])
   const [showHomeShopBanner, setShowHomeShopBanner] = useState(true)
   const [showSyncLiveBlocker, setShowSyncLiveBlocker] = useState(false)
+  const [syncBlockerPartnerName, setSyncBlockerPartnerName] = useState<string | undefined>()
   const [showPactWizard, setShowPactWizard] = useState(false)
   const [showCityCelebration, setShowCityCelebration] = useState(false)
   const [safetySheetTarget, setSafetySheetTarget] = useState<{ id: string; name: string } | null>(null)
@@ -6245,6 +6246,7 @@ useEffect(() => {
 
     const me = currentUserRef.current ?? currentUser
     if (!me?.trainingNow) {
+      setSyncBlockerPartnerName(partnerName)
       setShowSyncLiveBlocker(true)
       return
     }
@@ -10751,6 +10753,7 @@ useEffect(() => {
       />
       <SyncLiveBlockerModal
         open={showSyncLiveBlocker}
+        partnerName={syncBlockerPartnerName}
         onClose={() => setShowSyncLiveBlocker(false)}
         onActivateLive={() => void toggleLiveTraining('on')}
         onGoHome={() => navigateTab('home')}
