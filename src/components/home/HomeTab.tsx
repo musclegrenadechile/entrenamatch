@@ -86,6 +86,8 @@ export function HomeTab(props: HomeTabProps) {
     setFeedDisplayLimit,
     loadGlobalFeed,
     isDemoMode,
+    pilotDb,
+    pilotInviteLink,
     loadRealProfiles,
     isLoadingFeed,
     activeSyncPairs,
@@ -312,6 +314,9 @@ export function HomeTab(props: HomeTabProps) {
         entrenoRecentWorkouts={entrenoRecentWorkouts}
         onRepeatYesterday={onRepeatYesterday}
         onOpenPactWizard={onOpenPactWizard}
+        pilotDb={pilotDb as import('firebase/firestore').Firestore | null | undefined}
+        pilotInviteLink={pilotInviteLink as string | undefined}
+        isDemoMode={isDemoMode as boolean | undefined}
         fuelProfile={fuelProfile}
         fuelTotals={fuelTodayTotals}
         fuelTodayLogs={fuelTodayLogs}

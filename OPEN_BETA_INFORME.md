@@ -180,7 +180,7 @@ Priorizados por impacto en tracción y cierre de beta real.
 | 1 | Subir **AAB v0.1.281** a Play **internal** | Ops | ✅ 9 jun 2026 |
 | 2 | Activar monitoreo **Crashlytics** 7 días; registrar crash-free % | Ops | 🔄 En curso — ver `PLAY_INTERNAL_v0.1.281.md` |
 | 3 | Instrumentar métrica **syncs reales/semana** por ciudad (Firestore o Analytics) | Producto | ✅ `pilotSyncSessions` + `pilotWeeklyMetrics` |
-| 4 | Lanzar piloto cerrado **Viña + Santiago** (50–200 usuarios) | Growth | P0 |
+| 4 | Lanzar piloto cerrado **Viña + Santiago** (50–200 usuarios) | Growth | ✅ Ver `PILOTO_VINA_SANTIAGO.md` + `PilotProgramStrip` |
 | 5 | **Derby Viña vs Santiago** — UI duelo semanal (barras + mapa) | Producto | P0 |
 | 6 | Extraer bloque **EntrenaSync/Arena** de `App.tsx` | Técnico | P0 |
 | 7 | Quitar `@ts-nocheck` de **GymPulseMap.tsx** (cerrar fase 76) | Técnico | P0 |

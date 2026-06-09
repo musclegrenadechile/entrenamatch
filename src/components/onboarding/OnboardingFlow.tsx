@@ -3,6 +3,7 @@ import { Dumbbell, MapPin, Camera, Users, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { TRAINING_OPTIONS, TRAINING_GOALS } from '../../constants';
+import { PILOT_CITY_OPTIONS, PILOT_PROGRAM_TITLE } from '../../constants/pilotProgram';
 import type { CurrentUser } from '../../types';
 
 const ONBOARDING_LAST_STEP = 4;
@@ -587,17 +588,22 @@ export const OnboardingFlow = ({
             <div className="rounded-2xl border border-[#FF671F]/25 bg-[#111113] p-4 space-y-3">
               <div>
                 <div className="text-sm font-semibold tracking-wide">Tu ciudad y ubicación</div>
-                <div className="text-[10px] text-[#9CA3AF] mt-0.5">Para matches cercanos y distancias en el mapa en vivo.</div>
+                <div className="text-[10px] text-[#9CA3AF] mt-0.5">
+                  {PILOT_PROGRAM_TITLE} — beta cerrada solo en estas ciudades.
+                </div>
               </div>
               <select
                 value={onboardData.city}
                 onChange={(e) => updateOnboard({ city: e.target.value })}
                 className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-xl px-3 py-2.5 text-sm"
               >
-                {['Viña del Mar', 'Valparaíso', 'Santiago', 'Concon'].map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                {PILOT_CITY_OPTIONS.map((c) => (
+                  <option key={c.norm} value={c.label}>{c.label}</option>
                 ))}
               </select>
+              <p className="text-[9px] text-[#FF671F]/90">
+                Otras ciudades: lista de espera desde Explorar cuando lancemos tu zona.
+              </p>
               <button
                 type="button"
                 onClick={() => { try { triggerHaptic('light') } catch {}; handleGpsRequest() }}

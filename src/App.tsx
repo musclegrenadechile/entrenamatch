@@ -215,6 +215,8 @@ import {
   mergeCityChallengeWithFirestore,
 } from './services/cityWeeklyStats'
 import { recordPilotSyncSession } from './services/pilotSyncMetrics'
+import { registerPilotMember, touchPilotActivity } from './services/pilotCohort'
+import { buildInviteLink } from './utils/sparseCityDefaults'
 import {
   formatLastLiveLabel,
   getTeamMemberStatus,
@@ -2314,6 +2316,11 @@ useEffect(() => {
     return attachCityWeeklyStatsListener(db, docId, setFirestoreCityStats)
   }, [isDemoMode, db, homeCityNorm])
 
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid || !currentUser?.city) return
+    void touchPilotActivity(db, { uid: firebaseUser.uid, city: currentUser.city })
+  }, [isDemoMode, db, firebaseUser?.uid, currentUser?.city])
+
   // Celebrate city challenge completion once per week (client-side)
   useEffect(() => {
     if (!homeCityChallengeMerged || homeCityChallengeMerged.progressPct < 100 || !homeCityNorm) return
@@ -3136,6 +3143,14 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       }
 
       await updateUserProfile(firebaseUser.uid, cleanProfileUpdate);
+
+      if (merged.city && db) {
+        void registerPilotMember(db, {
+          uid: firebaseUser.uid,
+          city: merged.city,
+          displayName: merged.name,
+        })
+      }
 
       if (goingLive) {
         await writeLivePresence(
@@ -9735,6 +9750,8 @@ useEffect(() => {
             setFeedDisplayLimit={setFeedDisplayLimit}
             loadGlobalFeed={loadGlobalFeed}
             isDemoMode={isDemoMode}
+            pilotDb={db}
+            pilotInviteLink={buildInviteLink(effectiveUserId)}
             loadRealProfiles={loadRealProfiles}
             isLoadingFeed={isLoadingFeed}
             activeSyncPairs={activeSyncPairs}

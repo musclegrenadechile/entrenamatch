@@ -586,6 +586,35 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    match /cityWaitlist/{docId} {
+      allow read: if false;
+      allow create: if isAuthenticated()
+        && request.resource.data.email is string
+        && request.resource.data.city is string;
+      allow update, delete: if false;
+    }
+
+    match /pilotCohort/{cityNorm} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.memberCount == 1
+        && request.resource.data.cityNorm is string;
+      allow update: if isAuthenticated()
+        && request.resource.data.cityNorm == resource.data.cityNorm
+        && request.resource.data.memberCount is number
+        && request.resource.data.memberCount >= resource.data.memberCount
+        && request.resource.data.memberCount <= resource.data.memberCount + 1;
+    }
+
+    match /pilotCohort/{cityNorm}/members/{uid} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(uid)
+        && request.resource.data.uid == uid;
+      allow update: if isOwner(uid)
+        && request.resource.data.uid == uid;
+      allow delete: if false;
+    }
+
     match /pilotWeeklyMetrics/{docId} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated()

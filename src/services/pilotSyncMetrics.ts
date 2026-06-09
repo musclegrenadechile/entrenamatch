@@ -6,17 +6,12 @@
 
 import type { Firestore } from 'firebase/firestore'
 import { normalizeCity } from './localNetwork'
+import { PILOT_CITY_NORMS } from '../constants/pilotProgram'
 import { getWeekKey } from '../utils/weekLiveTracker'
 
-/** Cities in the Viña / Santiago pilot. */
-export const PILOT_CITY_NORMS = [
-  'vina del mar',
-  'santiago',
-  'valparaiso',
-  'concon',
-] as const
-
 export type PilotCityNorm = (typeof PILOT_CITY_NORMS)[number]
+
+export { PILOT_CITY_NORMS }
 
 export const MIN_PILOT_SYNC_MINUTES = 2
 

@@ -264,7 +264,7 @@ flowchart TB
 ## Próxima acción
 
 1. **Fase 100 ops:** Monitorear Crashlytics 7 días + testers internal (ver `PLAY_INTERNAL_v0.1.281.md`)  
-2. **Piloto:** Viña + Santiago — medir syncs reales/semana  
+2. **Piloto:** Viña + Santiago — `PILOTO_VINA_SANTIAGO.md` + reportes `pilot-cohort-report` / `pilot-sync-report`  
 3. **Fases 🔄:** 76 (quitar `@ts-nocheck` GymPulseMap) · 81 (extraer Arena de App.tsx)  
 4. **Post-100 P0:** Derby Viña vs Santiago (UI duelo sobre `cityWeeklyStats`)  
 

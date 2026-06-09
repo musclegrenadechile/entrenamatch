@@ -8,7 +8,9 @@ import { formatRedSyncFomoLine } from '../../utils/syncFomo'
 import type { WeeklyPact, WeeklyPactProgress } from '../../services/weeklyPact'
 import { WeeklyPactCard } from './WeeklyPactCard'
 import { DailyHomeHeroCard } from './DailyHomeHeroCard'
+import { PilotProgramStrip } from './PilotProgramStrip'
 import type { LocalNetworkCardProps } from './LocalNetworkCard'
+import type { Firestore } from 'firebase/firestore'
 
 export type TeamMemberStatus = 'live' | 'recent' | 'this_week' | 'inactive'
 
@@ -82,6 +84,9 @@ export interface DailyHomeProps {
   entrenoRecentWorkouts?: import('../../types').Workout[]
   onRepeatYesterday?: () => void
   onOpenPactWizard?: () => void
+  pilotDb?: Firestore | null
+  pilotInviteLink?: string
+  isDemoMode?: boolean
 }
 
 function statusLine(member: TeamMemberView): string {
@@ -155,6 +160,9 @@ export function DailyHome({
   entrenoRecentWorkouts = [],
   onRepeatYesterday,
   onOpenPactWizard,
+  pilotDb = null,
+  pilotInviteLink,
+  isDemoMode = false,
 }: DailyHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
   const hour = new Date().getHours()
@@ -185,6 +193,13 @@ export function DailyHome({
         </p>
         <HomeLoopStepper activeStep={loopStep} />
       </div>
+
+      <PilotProgramStrip
+        cityLabel={cityLabel}
+        db={pilotDb}
+        isDemoMode={isDemoMode}
+        inviteLink={pilotInviteLink}
+      />
 
       <DailyHomeHeroCard
         isLive={isLive}
