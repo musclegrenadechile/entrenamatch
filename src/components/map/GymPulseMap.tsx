@@ -1,4 +1,4 @@
-// @ts-nocheck — fase 128 incremental: strict types in gymPulsePopupTypes + props; full removal next pass.
+// @ts-nocheck — fase 76 deferred: strict pass after marker registry split (build green via props types).
 /**
  * GymPulseMap - Extracted Live Map Component (modularization started 2026-06-05)
  *
@@ -52,7 +52,8 @@ import * as MapCluster from '../../services/gymPulseCluster'
 import * as LocalNetwork from '../../services/localNetwork'
 import { syncElapsedMinutes } from '../../utils/syncFomo'
 import { markMapGpsPromptShown, shouldShowMapGpsPrompt } from '../../utils/mapGpsPrompt'
-import { resolveCityZone } from '../../services/cityZoneBounds'
+import { resolveCityZone, cityZonePolygonLatLngs } from '../../services/cityZoneBounds'
+import { loadMapView, saveMapView } from '../../utils/mapViewCache'
 
 export type CityChallengeMapInfo = {
   cityLabel: string
@@ -127,6 +128,8 @@ export interface GymPulseMapProps {
   layoutMode?: 'embedded' | 'fullscreen' | 'tab'
   /** Fase 200 — city challenge zone overlay */
   cityChallenge?: CityChallengeMapInfo | null
+  /** Fase 85 — CTA when user taps reto banner */
+  onCityChallengeCta?: () => void
 }
 
 export interface GymPulseMapHandle {
@@ -221,6 +224,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     onGymCheckIn,
     userGymId = null,
     cityChallenge = null,
+    onCityChallengeCta,
   } = props
 
   const [mapPopup, setMapPopup] = useState<GymPulsePopupState | null>(null)
@@ -366,18 +370,44 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
     // Initialize map if needed
     if (!mapInstanceRef.current) {
-      const initialCenter = userLocation ? [userLocation.lat, userLocation.lng] : [-33.0, -71.5]
-      const initialZoom = userLocation ? 13 : 10
+      const cached = loadMapView()
+      const initialCenter = userLocation
+        ? [userLocation.lat, userLocation.lng]
+        : cached
+          ? [cached.lat, cached.lng]
+          : [-33.0, -71.5]
+      const initialZoom = userLocation ? 13 : cached?.zoom ?? 10
       mapInstanceRef.current = L.map(mapContainerRef.current, {
-        zoomControl: false, // we place it bottomright to free top-right for our Centrar + dev tools (prevents "dev no se ve" overlap)
-        attributionControl: false
-      }).setView(initialCenter, initialZoom)
+        zoomControl: false,
+        attributionControl: false,
+      }).setView(initialCenter as [number, number], initialZoom)
 
-      L.tileLayer(MapConfig.GYMPULSE_MAP_TILE_URL, {
-        maxZoom: 19,
-        subdomains: [...MapConfig.GYMPULSE_MAP_SUBDOMAINS],
-        attribution: MapConfig.GYMPULSE_MAP_TILE_ATTRIBUTION,
-      }).addTo(mapInstanceRef.current)
+      const attachRaster = () => {
+        L.tileLayer(MapConfig.GYMPULSE_MAP_TILE_URL, {
+          maxZoom: 19,
+          subdomains: [...MapConfig.GYMPULSE_MAP_SUBDOMAINS],
+          attribution: MapConfig.GYMPULSE_MAP_TILE_ATTRIBUTION,
+        }).addTo(mapInstanceRef.current)
+      }
+
+      if (MapConfig.GYMPULSE_USE_MAPLIBRE) {
+        import('@maplibre/maplibre-gl-leaflet')
+          .then(() => import('maplibre-gl/dist/maplibre-gl.css'))
+          .then(() => {
+            if (!mapInstanceRef.current) return
+            try {
+              ;(L as any).maplibreGL({
+                style: MapConfig.GYMPULSE_MAPLIBRE_STYLE_URL,
+                attribution: MapConfig.GYMPULSE_MAP_TILE_ATTRIBUTION,
+              }).addTo(mapInstanceRef.current)
+            } catch {
+              attachRaster()
+            }
+          })
+          .catch(() => attachRaster())
+      } else {
+        attachRaster()
+      }
 
       // Move zoom control to bottom right so our overlays (Centrar top-right, dev toolbar) are not covered
       L.control.zoom({ position: 'bottomright' }).addTo(mapInstanceRef.current)
@@ -422,6 +452,13 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           if (onForceTick) onForceTick()
         }
         mapInstanceRef.current.on('zoomend', onMapViewChange)
+        mapInstanceRef.current.on('moveend', () => {
+          onMapViewChange()
+          try {
+            const c = mapInstanceRef.current.getCenter()
+            saveMapView(c.lat, c.lng, mapInstanceRef.current.getZoom())
+          } catch { /* ignore */ }
+        })
         mapInstanceRef.current.on('moveend', onMapViewChange)
         ;(mapInstanceRef.current as any)._clusterZoomBound = true
       }
@@ -962,14 +999,14 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     const zone = resolveCityZone(cityChallenge?.cityLabel)
     if (!zone) return undefined
     const col = ZONE_COLORS[zone.label] || ZONE_COLORS.default
-    cityChallengeLayerRef.current = L.circle([zone.center.lat, zone.center.lng], {
-      radius: zone.radiusM,
+    const poly = cityZonePolygonLatLngs(zone)
+    cityChallengeLayerRef.current = L.polygon(poly, {
       color: col,
       weight: 2,
       dashArray: '8 6',
       fillColor: col,
-      fillOpacity: 0.07,
-      opacity: 0.6,
+      fillOpacity: 0.09,
+      opacity: 0.65,
       interactive: false,
     }).addTo(map)
     return () => {
@@ -1215,15 +1252,30 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       )}
 
       {cityChallenge && cityChallenge.progressPct >= 0 && (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[2100] max-w-[92%] pointer-events-none">
-          <div className="rounded-2xl bg-[#0D0D10]/92 border border-[#FF671F]/35 px-3 py-1.5 text-center shadow-lg">
-            <div className="text-[9px] uppercase tracking-wider text-[#FF671F] font-bold">Reto ciudad · {cityChallenge.cityLabel}</div>
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[2100] max-w-[92%]">
+          <div className="rounded-2xl bg-[#0D0D10]/92 border border-[#FF671F]/35 px-3 py-2 text-center shadow-lg pointer-events-auto">
+            <div className="text-[9px] uppercase tracking-wider text-[#FF671F] font-bold">
+              Reto ciudad · {cityChallenge.cityLabel}
+            </div>
             <div className="text-[10px] text-white font-semibold">
-              {cityChallenge.currentMinutes}/{cityChallenge.targetMinutes} min · {Math.round(cityChallenge.progressPct)}%
+              {cityChallenge.currentMinutes}/{cityChallenge.targetMinutes} min ·{' '}
+              {Math.round(cityChallenge.progressPct)}%
             </div>
             <div className="h-1 bg-white/10 rounded-full mt-1 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-[#22c55e] to-[#FF671F] rounded-full" style={{ width: `${Math.min(100, cityChallenge.progressPct)}%` }} />
+              <div
+                className="h-full bg-gradient-to-r from-[#22c55e] to-[#FF671F] rounded-full"
+                style={{ width: `${Math.min(100, cityChallenge.progressPct)}%` }}
+              />
             </div>
+            {onCityChallengeCta && (
+              <button
+                type="button"
+                onClick={onCityChallengeCta}
+                className="mt-2 w-full py-1.5 rounded-xl bg-[#FF671F] text-black text-[10px] font-black active:brightness-90"
+              >
+                {selfIsLive ? 'Sigue sumando minutos' : 'Entrenar en vivo → sumar al reto'}
+              </button>
+            )}
           </div>
         </div>
       )}

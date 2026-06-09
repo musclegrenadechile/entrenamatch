@@ -1,7 +1,7 @@
 import { EntrenoDeHoyWeekSummary } from '../workout/EntrenoDeHoyWeekSummary'
+import { ExercisePRStrip } from '../workout/ExercisePRStrip'
 import { MapPin, MessageCircle, RefreshCw, Users } from 'lucide-react'
 import { FuelDayCard } from '../fuel/FuelDayCard'
-import { FuelWeekReport } from '../fuel/FuelWeekReport'
 import { LocalNetworkCard } from './LocalNetworkCard'
 import { HomeLoopStepper, resolveHomeLoopStep } from './HomeLoopStepper'
 import { formatRedSyncFomoLine } from '../../utils/syncFomo'
@@ -59,10 +59,13 @@ export interface DailyHomeProps {
   fuelTodayLogs?: import('../../types').FuelLogEntry[]
   fuelWeekDays?: import('../../services/fuel').FuelWeekDay[]
   fuelWeekMacros?: import('../../services/fuel').FuelWeekMacroDay[]
+  fuelWeekBalanceDays?: import('../../utils/fuelWeekBalance').FuelWeekBalanceDay[]
   fuelPostWorkoutTip?: string
   fuelEnergyBalance?: import('../../domain/fuelBalance').DailyEnergyBalance | null
   onOpenFuelSetup?: () => void
+  onOpenFuelEdit?: () => void
   onOpenFuelLog?: () => void
+  exercisePRRecords?: import('../../services/exercisePRs').ExercisePRRecord[]
   onEditFuelLog?: (log: import('../../types').FuelLogEntry) => void
   onDeleteFuelLog?: (logId: string) => void
   deletingFuelLogId?: string | null
@@ -131,10 +134,13 @@ export function DailyHome({
   fuelTodayLogs,
   fuelWeekDays,
   fuelWeekMacros,
+  fuelWeekBalanceDays = [],
   fuelPostWorkoutTip,
   fuelEnergyBalance = null,
   onOpenFuelSetup,
+  onOpenFuelEdit,
   onOpenFuelLog,
+  exercisePRRecords = [],
   onEditFuelLog,
   onDeleteFuelLog,
   deletingFuelLogId,
@@ -190,6 +196,29 @@ export function DailyHome({
         onRepeatYesterday={onRepeatYesterday}
         onOpenPact={onOpenPactWizard}
       />
+
+      {/* Fase 93 — Fuel siempre visible en Hoy (wizard si falta perfil) */}
+      <FuelDayCard
+        profile={fuelProfile ?? null}
+        totals={fuelTotals ?? { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 }}
+        energyBalance={fuelEnergyBalance}
+        todayLogs={fuelTodayLogs}
+        weekDays={fuelWeekDays}
+        weekBalanceDays={fuelWeekBalanceDays}
+        postWorkoutTip={fuelPostWorkoutTip}
+        onSetup={onOpenFuelSetup ?? (() => {})}
+        onEditProfile={onOpenFuelEdit}
+        onLogMeal={onOpenFuelLog ?? (() => {})}
+        onEditLog={onEditFuelLog}
+        onDeleteLog={onDeleteFuelLog}
+        deletingLogId={deletingFuelLogId}
+        onImportHealth={onImportHealthBurn}
+        healthImportHint={healthImportHint}
+      />
+
+      {exercisePRRecords.length > 0 && (
+        <ExercisePRStrip records={exercisePRRecords} onOpenEntrenoLog={onOpenEntrenaLog} />
+      )}
 
       {/* 1 · LIVE */}
       <section
@@ -559,30 +588,6 @@ export function DailyHome({
         >
           <span>🏋️</span> Entreno de Hoy — registrar sesión
         </button>
-      )}
-
-      {(onOpenFuelSetup || onOpenFuelLog) && (
-        <FuelDayCard
-          profile={fuelProfile ?? null}
-          totals={
-            fuelTotals ?? { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 }
-          }
-          energyBalance={fuelEnergyBalance}
-          todayLogs={fuelTodayLogs}
-          weekDays={fuelWeekDays}
-          postWorkoutTip={fuelPostWorkoutTip}
-          onSetup={onOpenFuelSetup ?? (() => {})}
-          onLogMeal={onOpenFuelLog ?? (() => {})}
-          onEditLog={onEditFuelLog}
-          onDeleteLog={onDeleteFuelLog}
-          deletingLogId={deletingFuelLogId}
-          onImportHealth={onImportHealthBurn}
-          healthImportHint={healthImportHint}
-        />
-      )}
-
-      {fuelWeekMacros && fuelWeekMacros.some((d) => d.logged) && (
-        <FuelWeekReport days={fuelWeekMacros} adjustedTargetKcal={fuelEnergyBalance?.adjustedTargetKcal} />
       )}
 
       {localNetwork && <LocalNetworkCard cityLabel={cityLabel} {...localNetwork} />}

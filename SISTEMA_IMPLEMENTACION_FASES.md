@@ -9,13 +9,13 @@ Playbook operativo para ejecutar las **40 fases (31–70)** de forma autónoma, 
 ```
 PLAN → BRANCH → IMPLEMENT → TEST → BUMP → DEPLOY → DOC → (COMMIT)
   │        │          │         │       │        │      │
-  │        │          │         │       │        │      └─ Marcar ✅ en ROADMAP_40_FASES.md
+  │        │          │         │       │        │      └─ Marcar ✅ en **`GESTION_FASES_1_100.md`**
   │        │          │         │       │        └─ firebase deploy
   │        │          │         │       └─ APP_VERSION + versionCode + package.json
   │        │          │         └─ vitest + qa:smoke + build (+ e2e si aplica)
   │        │          └─ Código mínimo, 1 objetivo claro
   │        └─ feat/fase-XX-slug (opcional)
-  └─ Leer fase + dependencias en ROADMAP_40_FASES.md
+  └─ Leer fase + dependencias en **`GESTION_FASES_1_100.md`**
 ```
 
 **Regla de oro:** 1 fase = 1 PR/commit lógico = 1 deploy = 1 bump de patch (`0.1.161`, `0.1.162`, …).
@@ -45,8 +45,11 @@ Una fase está **✅** solo si cumple **todos**:
 | `src/constants/index.ts` | `APP_VERSION` |
 | `android/app/build.gradle` | `versionCode`, `versionName` |
 
-**Convención:** fase N → versión `0.1.(160 + (N - 30))`  
-Ejemplo: fase 35 → `0.1.165`, code `165`.
+**Convención versión (legacy fases 31–70):** fase N → `0.1.(160 + (N - 30))`  
+**Convención activa (fases 75–100):** ver **`GESTION_FASES_1_100.md`** — fase N → `0.1.(254 + (N - 74))`
+
+Ejemplo legacy: fase 35 → `0.1.165`, code `165`.  
+Ejemplo activo: fase 75 → `0.1.255`, fase 100 → `0.1.280`.
 
 ---
 

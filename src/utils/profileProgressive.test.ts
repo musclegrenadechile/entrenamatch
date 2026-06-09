@@ -1,0 +1,19 @@
+import { describe, expect, it } from 'vitest'
+import { getAccountAgeDays, isProfileProgressiveMode } from './profileProgressive'
+
+describe('profileProgressive (fase 88)', () => {
+  it('treats missing consent as veteran (not progressive)', () => {
+    expect(isProfileProgressiveMode(null)).toBe(false)
+  })
+
+  it('progressive within 7 days of signup', () => {
+    const user = { legalConsents: { acceptedAt: Date.now() - 2 * 24 * 60 * 60 * 1000 } }
+    expect(getAccountAgeDays(user)).toBe(2)
+    expect(isProfileProgressiveMode(user)).toBe(true)
+  })
+
+  it('full profile after 7 days', () => {
+    const user = { legalConsents: { acceptedAt: Date.now() - 8 * 24 * 60 * 60 * 1000 } }
+    expect(isProfileProgressiveMode(user)).toBe(false)
+  })
+})

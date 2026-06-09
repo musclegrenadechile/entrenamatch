@@ -1,4 +1,6 @@
 export { FuelDayCard } from './FuelDayCard'
 export { FuelSetupModal } from './FuelSetupModal'
+export { FuelSetupWizard } from './FuelSetupWizard'
+export { FuelWeekBalanceChart } from './FuelWeekBalanceChart'
 export { FuelLogModal } from './FuelLogModal'
 export { NutritionPostCard } from './NutritionPostCard'

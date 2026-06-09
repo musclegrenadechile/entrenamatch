@@ -2,7 +2,9 @@ import { Pencil, Trash2 } from 'lucide-react'
 import type { FuelDayTotals, FuelLogEntry, FuelProfile } from '../../types'
 import type { FuelWeekDay } from '../../services/fuel'
 import type { DailyEnergyBalance } from '../../domain/fuelBalance'
+import type { FuelWeekBalanceDay } from '../../utils/fuelWeekBalance'
 import { getFuelCoachingTip, getFuelMealSuggestion } from '../../utils/fuelCalculator'
+import { FuelWeekBalanceChart } from './FuelWeekBalanceChart'
 
 export interface FuelDayCardProps {
   profile: FuelProfile | null
@@ -10,8 +12,10 @@ export interface FuelDayCardProps {
   energyBalance?: DailyEnergyBalance | null
   todayLogs?: FuelLogEntry[]
   weekDays?: FuelWeekDay[]
+  weekBalanceDays?: FuelWeekBalanceDay[]
   postWorkoutTip?: string
   onSetup: () => void
+  onEditProfile?: () => void
   onLogMeal: () => void
   onEditLog?: (log: FuelLogEntry) => void
   onDeleteLog?: (logId: string) => void
@@ -37,8 +41,10 @@ export function FuelDayCard({
   energyBalance = null,
   todayLogs = [],
   weekDays = [],
+  weekBalanceDays = [],
   postWorkoutTip,
   onSetup,
+  onEditProfile,
   onLogMeal,
   onEditLog,
   onDeleteLog,
@@ -50,17 +56,17 @@ export function FuelDayCard({
     return (
       <div className="rounded-3xl p-4 bg-gradient-to-br from-[#1a1520] via-[#141418] to-[#0f0f12] border border-[#a855f7]/25">
         <p className="text-[10px] uppercase tracking-[0.18em] text-[#c084fc] font-bold">Fuel AI</p>
-        <h3 className="text-sm font-black text-white mt-1">Configura tu fuel del día</h3>
+        <h3 className="text-sm font-black text-white mt-1">Configura en 1 min</h3>
         <p className="text-[11px] text-[#9CA3AF] mt-1 leading-snug">
-          TDEE + macros según tu objetivo. Luego registra comidas con foto o texto — Gemini estima
-          kcal y macros.
+          3 preguntas — objetivo, actividad y peso. Calculamos TDEE y macros; luego registra
+          comidas con foto o texto.
         </p>
         <button
           type="button"
           onClick={onSetup}
-          className="mt-3 w-full py-2.5 rounded-xl bg-[#a855f7]/20 border border-[#a855f7]/40 text-[11px] font-bold text-[#c084fc] active:bg-[#a855f7]/30"
+          className="mt-3 w-full py-2.5 rounded-xl bg-gradient-to-r from-[#a855f7] to-[#9333ea] text-black text-[11px] font-extrabold active:opacity-90"
         >
-          Configurar Fuel →
+          Empezar Fuel →
         </button>
       </div>
     )
@@ -105,14 +111,17 @@ export function FuelDayCard({
         </div>
         <button
           type="button"
-          onClick={onSetup}
+          onClick={onEditProfile ?? onSetup}
           className="text-[9px] text-[#9CA3AF] underline shrink-0"
         >
           Editar
         </button>
       </div>
 
-      {weekDays.length > 0 && (
+      {weekBalanceDays.length > 0 ? (
+        <FuelWeekBalanceChart days={weekBalanceDays} />
+      ) : (
+        weekDays.length > 0 && (
         <div className="mb-3">
           <div className="flex items-center justify-between mb-1.5">
             <span className="text-[9px] uppercase tracking-wider text-[#6B7280] font-bold">
@@ -142,6 +151,7 @@ export function FuelDayCard({
             ))}
           </div>
         </div>
+        )
       )}
 
       <div className="h-2 rounded-full bg-white/10 overflow-hidden mb-2">

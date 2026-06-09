@@ -12,7 +12,7 @@ import {
   type FuelWeekDay,
   type FuelWeekMacroDay,
 } from '../services/fuel'
-import { fetchWorkoutsForDate } from '../services/workouts'
+import { fetchWorkoutsForDate, fetchRecentWorkouts } from '../services/workouts'
 import { getPostWorkoutFuelTip, toLocalDateStr } from '../utils/fuelCalculator'
 
 export interface UseFuelStateOptions {
@@ -39,6 +39,7 @@ export function useFuelState({
   const [deletingFuelLogId, setDeletingFuelLogId] = useState<string | null>(null)
   const [fuelPostWorkoutTip, setFuelPostWorkoutTip] = useState<string | undefined>()
   const [fuelTodayWorkouts, setFuelTodayWorkouts] = useState<Workout[]>([])
+  const [fuelWeekWorkouts, setFuelWeekWorkouts] = useState<Workout[]>([])
 
   const refreshFuelData = useCallback(async () => {
     if (isDemoMode || !db || !firebaseUserUid) return
@@ -50,12 +51,14 @@ export function useFuelState({
         fetchFuelWeekSummary(db, effectiveUserId),
         fetchFuelWeekMacros(db, effectiveUserId),
         fetchWorkoutsForDate(db, effectiveUserId, today),
+        fetchRecentWorkouts(db, effectiveUserId, 30),
       ])
       const profile = results[0].status === 'fulfilled' ? results[0].value : null
       const logs = results[1].status === 'fulfilled' ? results[1].value : []
       const weekDays = results[2].status === 'fulfilled' ? results[2].value : []
       const weekMacros = results[3].status === 'fulfilled' ? results[3].value : []
       const workouts = results[4].status === 'fulfilled' ? results[4].value : []
+      const weekWorkouts = results[5].status === 'fulfilled' ? results[5].value : []
       results.forEach((r, i) => {
         if (r.status === 'rejected') {
           console.warn(`refreshFuelData partial fail [${i}]`, r.reason)
@@ -67,6 +70,7 @@ export function useFuelState({
       setFuelWeekDays(weekDays)
       setFuelWeekMacros(weekMacros)
       setFuelTodayWorkouts(workouts)
+      setFuelWeekWorkouts(weekWorkouts)
       setFuelPostWorkoutTip(workouts[0] ? getPostWorkoutFuelTip(workouts[0].type) : undefined)
     } catch (e) {
       console.warn('refreshFuelData failed', e)
@@ -113,6 +117,8 @@ export function useFuelState({
     setFuelPostWorkoutTip,
     fuelTodayWorkouts,
     setFuelTodayWorkouts,
+    fuelWeekWorkouts,
+    setFuelWeekWorkouts,
     refreshFuelData,
     syncFuelDayState,
   }

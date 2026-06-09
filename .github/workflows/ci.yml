@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vitest:
+    name: Vitest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run qa:smoke
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: vitest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build -- --base=/entrenamatch/
+      - name: Bundle size budget (fase 82)
+        run: node scripts/check-bundle-size.mjs
+
+  e2e-smoke:
+    name: E2E smoke
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium --with-deps
+      - run: npm run build -- --base=/entrenamatch/
+      - name: Preview + smoke E2E (fase 84)
+        run: |
+          npx vite preview --host 127.0.0.1 --port 4173 &
+          sleep 10
+          CI=true PLAYWRIGHT_BASE_URL=http://127.0.0.1:4173/entrenamatch/ npx playwright test e2e/smoke.spec.ts

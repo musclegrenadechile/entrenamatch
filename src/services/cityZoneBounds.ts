@@ -7,6 +7,23 @@ export type CityZone = {
   radiusM: number
 }
 
+/** Approximate hex polygon for map overlay (fase 85). */
+export function cityZonePolygonLatLngs(
+  zone: CityZone,
+  sides = 6
+): [number, number][] {
+  const pts: [number, number][] = []
+  for (let i = 0; i < sides; i++) {
+    const angle = (i / sides) * Math.PI * 2 - Math.PI / 2
+    const dLat = (zone.radiusM / 111_000) * Math.cos(angle)
+    const dLng =
+      (zone.radiusM / (111_000 * Math.cos((zone.center.lat * Math.PI) / 180))) *
+      Math.sin(angle)
+    pts.push([zone.center.lat + dLat, zone.center.lng + dLng])
+  }
+  return pts
+}
+
 /** Approximate city challenge zones for map overlay (fase 112 / 200). */
 export const CITY_ZONES: Record<string, CityZone> = {
   'vina del mar': {

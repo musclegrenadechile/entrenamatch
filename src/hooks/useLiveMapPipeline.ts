@@ -23,6 +23,7 @@ import {
 } from '../utils/gymPulseLive'
 import { attachLivePresenceListener } from '../services/livePresence'
 import { attachLiveUsersListener, patchRealProfilesWithLiveSnapshot } from '../services/liveUsers'
+import { resolveLiveMapMerge } from '../utils/liveMapSources'
 import { toast } from 'sonner'
 
 export interface UseLiveMapPipelineOptions {
@@ -185,8 +186,14 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
     (presence: Profile[], profilesQuery: Profile[]) => {
       liveFromPresenceRef.current = presence
       liveFromProfilesQueryRef.current = profilesQuery
-      const profilesForMerge = presenceHealthyRef.current ? [] : profilesQuery
-      const merged = mergeLiveUsersById([presence, profilesForMerge])
+      const { mode, profilesForMerge, merged } = resolveLiveMapMerge({
+        presenceHealthy: presenceHealthyRef.current,
+        presenceUsers: presence,
+        profilesQueryUsers: profilesQuery,
+      })
+      if (import.meta.env.DEV && mode !== 'presence' && presenceHealthyRef.current) {
+        console.debug('[LiveMap] merge mode:', mode)
+      }
       liveUsersFromDedicatedRef.current = merged
       setLiveUsersFromDedicated(merged)
       setMapForceTick((t) => t + 1)
@@ -198,8 +205,9 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
         latestRealProfilesRef.current = next
         return next
       })
+      void profilesForMerge
     },
-    [setRealProfiles, latestRealProfilesRef, currentUidRef]
+    [setRealProfiles, latestRealProfilesRef, currentUidRef, setMapForceTick]
   )
 
   useEffect(() => {

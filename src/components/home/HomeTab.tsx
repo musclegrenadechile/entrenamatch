@@ -48,9 +48,12 @@ export function HomeTab(props: HomeTabProps) {
     fuelTodayLogs,
     fuelWeekDays,
     fuelWeekMacros,
+    fuelWeekBalanceDays,
     fuelPostWorkoutTip,
     fuelEnergyBalance,
+    openFuelWizard,
     setShowFuelSetupModal,
+    exercisePRRecords,
     openFuelLogModal,
     onEditFuelLog,
     onDeleteFuelLog,
@@ -314,12 +317,15 @@ export function HomeTab(props: HomeTabProps) {
         fuelTodayLogs={fuelTodayLogs}
         fuelWeekDays={fuelWeekDays}
         fuelWeekMacros={fuelWeekMacros}
+        fuelWeekBalanceDays={fuelWeekBalanceDays}
         fuelPostWorkoutTip={fuelPostWorkoutTip}
         fuelEnergyBalance={fuelEnergyBalance}
-        onOpenFuelSetup={() => setShowFuelSetupModal(true)}
+        onOpenFuelSetup={() => openFuelWizard()}
+        onOpenFuelEdit={() => setShowFuelSetupModal(true)}
         onOpenFuelLog={() =>
-          fuelProfile ? openFuelLogModal() : setShowFuelSetupModal(true)
+          fuelProfile ? openFuelLogModal() : openFuelWizard()
         }
+        exercisePRRecords={exercisePRRecords}
         onEditFuelLog={onEditFuelLog}
         onDeleteFuelLog={onDeleteFuelLog}
         deletingFuelLogId={deletingFuelLogId}

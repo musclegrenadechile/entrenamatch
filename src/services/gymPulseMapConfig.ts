@@ -1,8 +1,16 @@
 /**
- * GymPulse Map 2.0 — tile layer (Fase 102).
- * Default: Carto Dark (vector-style dark basemap, free, no API key).
- * Override: VITE_MAP_TILE_URL in .env.local (e.g. MapTiler dark style as raster tiles).
+ * GymPulse Map 2.0 — basemap (Fases 102 + 87).
+ * Default: Carto Dark raster.
+ * Set VITE_MAP_USE_MAPLIBRE=1 for MapLibre GL vector (dark demo style).
  */
+
+export const GYMPULSE_USE_MAPLIBRE =
+  typeof import.meta !== 'undefined' &&
+  import.meta.env?.VITE_MAP_USE_MAPLIBRE === '1'
+
+export const GYMPULSE_MAPLIBRE_STYLE_URL =
+  (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MAPLIBRE_STYLE_URL) ||
+  'https://demotiles.maplibre.org/style.json'
 
 export const GYMPULSE_MAP_TILE_URL =
   (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MAP_TILE_URL) ||

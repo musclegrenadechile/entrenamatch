@@ -161,4 +161,5 @@ publish-play.bat internal
 | Doc | Fases | Estado |
 |-----|-------|--------|
 | `ROADMAP_30_FASES.md` | 1–30 | ✅ Completado v0.1.160 |
-| **`ROADMAP_40_FASES.md`** | **31–70** | 🔲 Nuevo — pulido + escala |
+| `ROADMAP_40_FASES.md` | 31–70 | ✅ Completado v0.1.200 |
+| **`GESTION_FASES_1_100.md`** | **1–100 maestro v2** | **1–74 ✅ · 75–100 activo** |

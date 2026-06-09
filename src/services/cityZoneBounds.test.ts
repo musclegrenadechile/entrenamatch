@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { resolveCityZone, CITY_ZONES } from './cityZoneBounds'
+import { resolveCityZone, CITY_ZONES, cityZonePolygonLatLngs } from './cityZoneBounds'
 import { normalizeCity } from './localNetwork'
 
 describe('cityZoneBounds', () => {
@@ -15,5 +15,12 @@ describe('cityZoneBounds', () => {
 
   it('returns null for unknown city', () => {
     expect(resolveCityZone('Tokyo')).toBeNull()
+  })
+
+  it('builds hex polygon for overlay', () => {
+    const zone = resolveCityZone('Viña del Mar')
+    expect(zone).not.toBeNull()
+    const poly = cityZonePolygonLatLngs(zone!)
+    expect(poly.length).toBe(6)
   })
 })

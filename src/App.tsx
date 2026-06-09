@@ -79,6 +79,11 @@ import { resolveNotificationTarget, type NotificationNavTarget } from './utils/n
 import { resolvePushNotificationData } from './utils/pushNavigation'
 import { normalizeTabNavigation, resolveRedSubTab, isRedTabActive, type RedSubTab } from './utils/tabNavigation'
 import { parseTabFromUrl, syncTabToUrl } from './utils/tabUrlSync'
+import {
+  parseGymIdFromSearch,
+  resolvePartnerGymById,
+  clearGymDeepLinkParam,
+} from './utils/deepLinkGym'
 import { BottomNav } from './components/app/BottomNav'
 import { AppFeatureTour, hasSeenAppFeatureTour, markAppFeatureTourSeen } from './components/onboarding/AppFeatureTour'
 import { useAndroidBackHandler } from './hooks/useAndroidBackHandler'
@@ -218,7 +223,7 @@ import { EntrenoDeHoyModal, WorkoutPostCard } from './components/workout'
 import { detectWorkoutPRs, formatWorkoutPRSummary } from './utils/workoutPR'
 import { cloneExercises, workoutToTemplate } from './utils/workoutTemplates'
 import { buildWeekWorkoutSummary, getTopExerciseProgress } from './utils/workoutProgress'
-import { FuelSetupModal, FuelLogModal, NutritionPostCard } from './components/fuel'
+import { FuelSetupModal, FuelSetupWizard, FuelLogModal, NutritionPostCard } from './components/fuel'
 import {
   loadFuelProfile,
   saveFuelProfile,
@@ -237,8 +242,16 @@ import {
 import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr, buildFuelAnalyzeContext } from './utils/fuelCalculator'
 import { fetchRecentWorkouts, fetchUserWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, buildWorkoutPreview, computeWorkoutStats } from './services/workouts'
 import { useFuelBalance } from './hooks/useFuelBalance'
-import { useFuelState } from './hooks/useFuelState'
+import { buildFuelWeekBalanceDays } from './utils/fuelWeekBalance'
+import {
+  loadExercisePRs,
+  syncExercisePRs,
+  topExercisePRs,
+  type ExercisePRRecord,
+} from './services/exercisePRs'
 import { useDailyPulse, type DailyPulseBridge } from './hooks/useDailyPulse'
+import { useChatSession } from './hooks/useChatSession'
+import { useFeedState } from './hooks/useFeedState'
 import { computeGlobalFeed } from './utils/feedRanking'
 import { useSyncSession } from './hooks/useSyncSession'
 import { usePartnerLocations } from './hooks/usePartnerLocations'
@@ -543,10 +556,17 @@ function App() {
   const groupChatScrollRef = useRef<HTMLDivElement>(null)
   const groupChatInputRef = useRef<HTMLInputElement>(null)
   const groupMessageUnsubsRef = useRef<Record<string, () => void>>({})
-  const realChatUnsubsRef = useRef<Record<string, () => void>>({})
-  const currentActiveChatRef = useRef<string | null>(null)
-  // For deduping message arrival notifications (only notify on 'added' after initial snapshot per chat/session)
-  const seenChatMsgIdsRef = useRef<Record<string, Set<string>>>({})
+  const setActiveChatBridgeRef = useRef<(id: string | null) => void>(() => {})
+  const activeChatRuntimeRef = useRef<string | null>(null)
+  const addNotificationRef = useRef<
+    (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void
+  >(() => {})
+  const chatIncomingRef = useRef<
+    ((matchId: string, name: string, text: string, photo?: string) => void) | null
+  >(null)
+  const loadProfilePostsRef = useRef<
+    ((userId: string) => Promise<ProfilePost[] | undefined>) | null
+  >(null)
   const seenGroupMsgIdsRef = useRef<Record<string, Set<string>>>({})
   // For live training urgency notifs: track seen live users so we only notify on *new* nearby lives (prevents spam on refresh)
   const seenLiveUserIdsRef = useRef<Set<string>>(new Set())
@@ -555,13 +575,7 @@ function App() {
   // Track previous trainingSyncWith for members of *your red* so we can notify when they start a strong sync (Network Power propagation moment)
   const prevRedSyncStateRef = useRef<Record<string, string | null>>({})
   // Per-chat and per-session unread counts for badges + list dots (local, cleared on open)
-  const [chatUnreads, setChatUnreads] = useState<Record<string, number>>({})
   const [sessionUnreads, setSessionUnreads] = useState<Record<string, number>>({})
-
-  // Persist chat unreads across refreshes (for better "new message" experience)
-  useEffect(() => {
-    localStorage.setItem('entrenamatch_chat_unreads', JSON.stringify(chatUnreads))
-  }, [chatUnreads])
 
   // Same for session group unreads
   useEffect(() => {
@@ -836,7 +850,7 @@ function App() {
 
       if (isGroup && showGroupChatModalFor) {
         sendSessionMessage(showGroupChatModalFor, '', null, voiceDescriptor)
-      } else if (activeChat) {
+      } else if (activeChatRuntimeRef.current) {
         sendMessage('', voiceDescriptor)
       }
 
@@ -893,9 +907,7 @@ function App() {
     resetDeck: resetSwipeDeck,
   } = useSwipeDeck({ isDemoMode, db, firebaseUser })
 
-  const [matches, setMatches] = useState<string[]>([]) // profile ids you matched with
-  const [messages, setMessages] = useState<Record<string, Message[]>>({})
-  const [activeChat, setActiveChat] = useState<string | null>(null)
+  // Chat + matches — useChatSession (fase 79), declared after realProfiles below
 
   // UI state
   const [activeTab, setActiveTab] = useState<Tab>('home')
@@ -916,34 +928,13 @@ function App() {
     const { tab: resolved, redSubTab: sub } = normalizeTabNavigation(tab)
     setActiveTab(resolved)
     if (sub) setRedSubTab(sub)
-    if (resolved !== 'red' && tab !== 'messages') setActiveChat(null)
+    if (resolved !== 'red' && tab !== 'messages') setActiveChatBridgeRef.current(null)
     syncTabToUrl(resolved, { map: resolved === 'map' })
   }, [])
   const [profileSection, setProfileSection] = useState<ProfileSection>('actividad')
-  const [isLoadingFeed, setIsLoadingFeed] = useState(false)
-  const [feedShowPinnedOnly, setFeedShowPinnedOnly] = useState(false)
-  const [feedSearch, setFeedSearch] = useState('')
-  const [feedOnlyReal, setFeedOnlyReal] = useState(false)
-  const [feedOnlyLive, setFeedOnlyLive] = useState(false)
-  const [feedMaxProfiles, setFeedMaxProfiles] = useState(15)
-  const [feedDisplayLimit, setFeedDisplayLimit] = useState(10)
-  const globalFeedLastDocRef = useRef<any>(null)
-  const [hasMoreGlobalFeed, setHasMoreGlobalFeed] = useState(true)
+  // Feed UI — useFeedState (fase 80), declared after setLastSync below
   const [weekLiveDays, setWeekLiveDays] = useState<string[]>([])
   const [showLiveModal, setShowLiveModal] = useState(false)
-  // TOP UPDATE: Feed 2.0 - photo lightbox + quick reactions (optimistic, attractive social feel)
-  const [feedPhotoModal, setFeedPhotoModal] = useState<{url: string, postId?: string} | null>(null)
-  const [feedReactions, setFeedReactions] = useState<Record<string, Record<string, number>>>({}) // postId -> { '🔥': count, ... } optimistic per session
-  // Attractive direct publish from Feed (no disappointing redirect to profile)
-  const [showFeedPostModal, setShowFeedPostModal] = useState(false)
-  const [feedPostText, setFeedPostText] = useState('')
-  const [feedPostPhoto, setFeedPostPhoto] = useState<string | null>(null)
-  const [feedPhotoUploading, setFeedPhotoUploading] = useState(false)
-  const [feedPhotoUploadProgress, setFeedPhotoUploadProgress] = useState(0)
-  // For delightful "just published" highlight in feed/muro lists (no giant re-render, just temp visual cue)
-  const [recentlyPublishedPostId, setRecentlyPublishedPostId] = useState<string | null>(null)
-  const [feedPublishing, setFeedPublishing] = useState(false)
-  const [showFeedPublishSuccess, setShowFeedPublishSuccess] = useState(false)
   const [showEntrenaLogModal, setShowEntrenaLogModal] = useState(false)
   const [entrenoRecentWorkouts, setEntrenoRecentWorkouts] = useState<import('./types').Workout[]>([])
   const [entrenoFirestoreGymRoutines, setEntrenoFirestoreGymRoutines] = useState<
@@ -1022,6 +1013,7 @@ function App() {
     durationMin?: number
   } | null>(null)
   const [showFuelSetupModal, setShowFuelSetupModal] = useState(false)
+  const [showFuelSetupWizard, setShowFuelSetupWizard] = useState(false)
   const [showFuelLogModal, setShowFuelLogModal] = useState(false)
   const [showMarketplace, setShowMarketplace] = useState(false)
   const [marketplaceScreenMode, setMarketplaceScreenMode] = useState<'shop' | 'orders'>('shop')
@@ -1068,6 +1060,8 @@ function App() {
     setFuelPostWorkoutTip,
     fuelTodayWorkouts,
     setFuelTodayWorkouts,
+    fuelWeekWorkouts,
+    setFuelWeekWorkouts,
     refreshFuelData,
     syncFuelDayState,
   } = useFuelState({
@@ -1077,9 +1071,9 @@ function App() {
     effectiveUserId,
   })
   const [firstStepsProgress, setFirstStepsProgress] = useState<FirstStepsProgress | null>(null)
-  const [chatPartnerTyping, setChatPartnerTyping] = useState(false)
   const chatTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [healthBurnBonus, setHealthBurnBonus] = useState(0)
+  const [exercisePRRecords, setExercisePRRecords] = useState<ExercisePRRecord[]>([])
   const [healthImportHint, setHealthImportHint] = useState<string | undefined>()
   const [partnerGymStats, setPartnerGymStats] = useState<PartnerGymStats | null>(null)
   const [partnerGymLoading, setPartnerGymLoading] = useState(false)
@@ -1725,12 +1719,6 @@ useEffect(() => {
     } catch {}
   }, [activeTab])
 
-  const unreadNotifications = notifications.filter(n => !n.read).length
-  const totalChatUnreads = Object.values(chatUnreads).reduce((sum, n) => sum + (n || 0), 0)
-  const totalSessionUnreads = Object.values(sessionUnreads).reduce((sum, n) => sum + (n || 0), 0)
-
-
-
   // ============================================================
   // REAL MULTI-USER STATE - DECLARED AS EARLY AS POSSIBLE TO AVOID TDZ
   // ============================================================
@@ -1812,23 +1800,102 @@ useEffect(() => {
     bridgeRef: dailyPulseBridgeRef,
   })
 
-  const [realMatches, setRealMatches] = useState<string[]>([])
-  const prevRealMatchesRef = useRef<string[]>([])
-  const realMatchesInitializedRef = useRef(false)
-  const justMatchedLocallyRef = useRef<Set<string>>(new Set())
-  const [realChatMessages, setRealChatMessages] = useState<any[]>([])
-
-  // Helper: treat a chatId as "real cross-device" if it's in our discovered realMatches,
-  // or if it's a known real user profile (non-seed pXX). This ensures send/load/listeners activate
-  // even if the match doc hasn't been discovered in realMatches yet on this device (e.g. passive side
-  // of a swipe, or list entry came from local 'matches' state).
-  const isRealChatId = (chatId: string | null): boolean => {
-    if (!chatId || isDemoMode || !firebaseUser?.uid) return false
-    if (chatId.startsWith('p')) return true // seeds use real backend when in real auth mode
-    const isKnownRealProfile = realProfiles.some(r => r.id === chatId)
-    return realMatches.includes(chatId) || isKnownRealProfile
-  }
   const [lastSync, setLastSync] = useState<Date | null>(null)
+
+  const {
+    matches,
+    setMatches,
+    messages,
+    setMessages,
+    activeChat,
+    setActiveChat,
+    realMatches,
+    setRealMatches,
+    realChatMessages,
+    setRealChatMessages,
+    chatUnreads,
+    setChatUnreads,
+    chatPartnerTyping,
+    totalChatUnreads,
+    isRealChatId,
+    sendRealMessage,
+    loadRealChatMessages,
+    loadRealMatches,
+    saveMessages,
+    saveMatches,
+    seenChatMsgIdsRef,
+    justMatchedLocallyRef,
+    clearChatOnLogout,
+    persistSeen,
+  } = useChatSession({
+    isDemoMode,
+    db,
+    firebaseUserUid: firebaseUser?.uid,
+    realProfiles,
+    SEED_PROFILES,
+    latestRealProfilesRef,
+    chatScrollRef,
+    setLastSync,
+    addNotification: addNotificationRef,
+    onIncomingMessageRef: chatIncomingRef,
+    onLoadProfilePostsRef: loadProfilePostsRef,
+  })
+
+  useEffect(() => {
+    setActiveChatBridgeRef.current = setActiveChat
+    activeChatRuntimeRef.current = activeChat
+  }, [setActiveChat, activeChat])
+
+  const {
+    isLoadingFeed,
+    feedShowPinnedOnly,
+    setFeedShowPinnedOnly,
+    feedSearch,
+    setFeedSearch,
+    feedOnlyReal,
+    setFeedOnlyReal,
+    feedOnlyLive,
+    setFeedOnlyLive,
+    feedMaxProfiles,
+    setFeedMaxProfiles,
+    feedDisplayLimit,
+    setFeedDisplayLimit,
+    hasMoreGlobalFeed,
+    feedPhotoModal,
+    setFeedPhotoModal,
+    feedReactions,
+    setFeedReactions,
+    showFeedPostModal,
+    setShowFeedPostModal,
+    feedPostText,
+    setFeedPostText,
+    feedPostPhoto,
+    setFeedPostPhoto,
+    feedPhotoUploading,
+    setFeedPhotoUploading,
+    feedPhotoUploadProgress,
+    setFeedPhotoUploadProgress,
+    recentlyPublishedPostId,
+    setRecentlyPublishedPostId,
+    feedPublishing,
+    setFeedPublishing,
+    showFeedPublishSuccess,
+    setShowFeedPublishSuccess,
+    loadGlobalFeed,
+  } = useFeedState({
+    isDemoMode,
+    db,
+    realProfiles,
+    setProfilePosts,
+    loadProfilePostsRef,
+    setLastSync,
+  })
+
+  const unreadNotifications = notifications.filter((n) => !n.read).length
+  const totalSessionUnreads = Object.values(sessionUnreads).reduce(
+    (sum, n) => sum + (n || 0),
+    0
+  )
 
   const { realSessions, setRealSessions, loadRealSessions } = useRealSessions(db, {
     isDemoMode,
@@ -2614,7 +2681,7 @@ useEffect(() => {
       ])
       if (opts?.includeChats) {
         await loadRealMatches()
-        for (const id of prevRealMatchesRef.current) {
+        for (const id of realMatches) {
           await loadRealChatMessages(id).catch(() => {})
         }
       }
@@ -2932,109 +2999,12 @@ useEffect(() => {
     }
   }, [firebaseUser?.uid, isDemoMode])
 
-  // Reusable load for real matches (called on login, periodically, and on manual refresh)
-  const loadRealMatches = async () => {
-    if (!isDemoMode && firebaseUser?.uid && db) {
-      try {
-        const { collection, query, where, getDocs } = await import('firebase/firestore')
-        const matchesRef = collection(db, 'matches')
-        const q1 = query(matchesRef, where('user1', '==', firebaseUser.uid))
-        const q2 = query(matchesRef, where('user2', '==', firebaseUser.uid))
-        
-        const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)])
-        
-        const matchedUserIds = new Set<string>()
-        snap1.forEach(d => {
-          const data = d.data() as any
-          if (data.user2 && data.user2 !== firebaseUser.uid) matchedUserIds.add(data.user2)
-        })
-        snap2.forEach(d => {
-          const data = d.data() as any
-          if (data.user1 && data.user1 !== firebaseUser.uid) matchedUserIds.add(data.user1)
-        })
-        
-        const ids = Array.from(matchedUserIds)
-        if (realMatchesInitializedRef.current) {
-          const prev = prevRealMatchesRef.current
-          for (const id of ids) {
-            if (prev.includes(id) || justMatchedLocallyRef.current.has(id)) {
-              if (justMatchedLocallyRef.current.has(id)) justMatchedLocallyRef.current.delete(id)
-              continue
-            }
-            const prof = (latestRealProfilesRef.current || []).find((p) => p.id === id)
-            addNotification({
-              type: 'match',
-              title: '¡Nuevo Match!',
-              body: `Hiciste match con ${prof?.name || 'un GymPartner'}`,
-              relatedId: id,
-            })
-            toast.success(`¡Match con ${prof?.name || 'un GymPartner'}!`, {
-              description: 'Ambos se dieron like — ya pueden chatear',
-            })
-          }
-        }
-        realMatchesInitializedRef.current = true
-        prevRealMatchesRef.current = ids
-        setRealMatches(ids)
-        // Preload muro teasers for spectacular cards in Matches tab
-        ids.slice(0, 6).forEach(id => { loadProfilePosts(id).catch(()=>{}) })
-        // console.log removed
-        return ids;
-      } catch (e) {
-        console.warn('Could not load real matches yet:', e)
-        return [];
-      }
-    }
-    return [];
-  }
-
-  // Load real matches from Firestore for the current user (so they appear on any device)
-  useEffect(() => {
-    loadRealMatches()
-  }, [firebaseUser?.uid, isDemoMode])
-
   // Fase 3: squads from Firestore (real-time)
   useEffect(() => {
     if (isDemoMode || !db) return
     const unsub = attachSquadsListener(db, (list) => setSquads(list))
     return unsub
   }, [isDemoMode])
-
-  // Safe polling for real matches (so new likes/matches from others appear without full reload)
-  useEffect(() => {
-    if (!isDemoMode && firebaseUser?.uid) {
-      const interval = setInterval(() => {
-        loadRealMatches()
-      }, 30000)
-      return () => clearInterval(interval)
-    }
-  }, [isDemoMode, firebaseUser?.uid])
-
-  // Keep a fresh ref to current activeChat so async loads can decide whether to also refresh realChatMessages
-  useEffect(() => {
-    currentActiveChatRef.current = activeChat || null
-  }, [activeChat])
-
-  // Real-time onSnapshot for matches (new matches from other users' likes appear instantly, no 30s wait)
-  useEffect(() => {
-    if (isDemoMode || !firebaseUser?.uid || !db) return;
-    let unsubs: (() => void)[] = [];
-    (async () => {
-      try {
-        const { collection, query, where, onSnapshot } = await import('firebase/firestore');
-        const matchesRef = collection(db, 'matches');
-        const q1 = query(matchesRef, where('user1', '==', firebaseUser.uid));
-        const q2 = query(matchesRef, where('user2', '==', firebaseUser.uid));
-        const reloadMatches = () => loadRealMatches();
-        const u1 = onSnapshot(q1, reloadMatches, (e) => console.warn('matches listener q1', e));
-        const u2 = onSnapshot(q2, reloadMatches, (e) => console.warn('matches listener q2', e));
-        unsubs = [u1, u2];
-      } catch (e) {
-        console.warn('matches onSnapshot setup error', e);
-      }
-    })();
-    return () => { unsubs.forEach(u => u()); };
-  }, [isDemoMode, firebaseUser?.uid, db]);
 
  // Merge partial profile patches without accidentally killing an active live session
  // (e.g. awardConstancy spreading stale currentUser with trainingNow:false right after going live).
@@ -3292,6 +3262,30 @@ useEffect(() => {
     },
     [currentUser, saveUser, saveUserWithRealSync, isDemoMode, db, firebaseUser?.uid, effectiveUserId]
   )
+
+  const gymDeepLinkHandledRef = useRef(false)
+  useEffect(() => {
+    if (gymDeepLinkHandledRef.current) return
+    const gymId = parseGymIdFromSearch(window.location.search)
+    if (!gymId) return
+    const partner = resolvePartnerGymById(gymId, partnerLocations || [])
+    if (!partner || partner.lat == null || partner.lng == null) return
+    gymDeepLinkHandledRef.current = true
+    navigateTab('map')
+    void handleGymCheckIn({
+      id: partner.id,
+      name: partner.name,
+      lat: Number(partner.lat),
+      lng: Number(partner.lng),
+    }).then(() => {
+      clearGymDeepLinkParam()
+      setTimeout(() => {
+        try {
+          gymPulseMapRef.current?.flyTo?.(Number(partner.lat), Number(partner.lng), 16)
+        } catch {}
+      }, 500)
+    })
+  }, [partnerLocations, handleGymCheckIn, navigateTab])
 
   const handleToggleLeaderboard = useCallback(
     async (visible: boolean) => {
@@ -3677,21 +3671,15 @@ useEffect(() => {
       if (clearProfile) clearProfile()
       clearQuickDemoSession()
       setDemoMode(false)
-      setChatUnreads({})
+      clearChatOnLogout()
       setSessionUnreads({})
-      seenChatMsgIdsRef.current = {}
       seenGroupMsgIdsRef.current = {}
       seenLiveUserIdsRef.current = new Set()
       seenLiveJoinInteractionIdsRef.current = new Set()
       purgeAccountScopedStorage()
       
-      setMatches([])
       resetSwipeDeck()
-      setMessages({})
       setRealProfiles([])
-      setRealMatches([])
-      setRealChatMessages([])
-      setActiveChat(null)
       setActiveTab('explore')
       setIsEditingProfile(false)
       setSyncPartnerId(null)
@@ -3711,215 +3699,6 @@ useEffect(() => {
       toast.error('Hubo un problema al cerrar la sesión')
     }
   }
-
-  // Real message sender (writes to Firestore so the other user sees it on any device)
-  const sendRealMessage = async (text: string, toUserId: string, voice?: {voiceUrl: string, voiceDuration: number} | null) => {
-    if ((!text.trim() && !voice) || !firebaseUser?.uid || !db) return
-
-    const writeMessage = async () => {
-      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
-      const msg: any = {
-        from: firebaseUser.uid,
-        to: toUserId,
-        text: text.trim() || '',
-        timestamp: Date.now(),
-        createdAt: serverTimestamp(),
-      }
-      if (voice) {
-        msg.voiceUrl = voice.voiceUrl
-        msg.voiceDuration = voice.voiceDuration
-      }
-      await addDoc(collection(db, 'messages'), msg)
-    }
-
-    try {
-      await writeMessage()
-      loadRealChatMessages(toUserId).then(msgs => {
-        if (msgs) setRealChatMessages(msgs)
-      })
-      setChatUnreads(prev => { const c = { ...prev }; c[toUserId] = 0; return c })
-    } catch (e) {
-      if (isQuotaError(e)) {
-        reclaimLocalStorageSpace('hard')
-        try {
-          await writeMessage()
-          loadRealChatMessages(toUserId).then(msgs => {
-            if (msgs) setRealChatMessages(msgs)
-          })
-          setChatUnreads(prev => { const c = { ...prev }; c[toUserId] = 0; return c })
-          toast.success('Mensaje enviado', { description: 'Liberamos espacio en el navegador.' })
-          return
-        } catch (retryErr) {
-          console.error('Failed to send after storage reclaim:', retryErr)
-        }
-      }
-      console.error('Failed to send real message:', e)
-      toast.error('No se pudo enviar el mensaje', {
-        description: isQuotaError(e)
-          ? 'Almacenamiento del navegador lleno. Borra datos del sitio en ajustes o cierra otras pestañas.'
-          : 'Revisa tu conexión e intenta de nuevo.',
-      })
-    }
-  }
-
-  // Load real 1:1 chat messages (two queries to avoid complex 'in' index issues)
-  const loadRealChatMessages = async (otherUserId: string) => {
-    if (!db || !firebaseUser?.uid) return;
-    try {
-      const { collection, query, where, getDocs } = await import('firebase/firestore');
-      const messagesRef = collection(db, 'messages');
-
-      // Query 1: from me to other
-      const q1 = query(messagesRef, where('from', '==', firebaseUser.uid), where('to', '==', otherUserId));
-      // Query 2: from other to me
-      const q2 = query(messagesRef, where('from', '==', otherUserId), where('to', '==', firebaseUser.uid));
-
-      const [snap1, snap2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-
-      const msgs: any[] = [];
-      snap1.forEach((doc) => {
-        const data = doc.data() as any;
-        msgs.push({
-          id: doc.id,
-          from: 'me',
-          text: data.text || '',
-          timestamp: data.timestamp || Date.now(),
-          voiceUrl: data.voiceUrl,
-          voiceDuration: data.voiceDuration,
-        });
-      });
-      snap2.forEach((doc) => {
-        const data = doc.data() as any;
-        msgs.push({
-          id: doc.id,
-          from: 'them',
-          text: data.text || '',
-          timestamp: data.timestamp || Date.now(),
-          voiceUrl: data.voiceUrl,
-          voiceDuration: data.voiceDuration,
-        });
-      });
-      msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-      setMessages(prev => {
-        const updated = { ...prev, [otherUserId]: msgs };
-        if (isDemoMode) {
-          localStorage.setItem('fitvina_messages', JSON.stringify(updated));
-        }
-        return updated;
-      });
-      console.log(`✅ Loaded ${msgs.length} real 1:1 messages for ${otherUserId}`);
-      setLastSync(new Date());
-
-      // If this load is for the currently open chat, also refresh the array used by the open chat render
-      if (currentActiveChatRef.current === otherUserId && msgs) {
-        setRealChatMessages(msgs)
-        setChatUnreads(prev => { const c = { ...prev }; c[otherUserId] = 0; return c })
-      }
-
-      return msgs;
-    } catch (e) {
-      console.warn('Could not load real chat messages:', e);
-      return null;
-    }
-  };
-
-  const applyDirectChatMessages = useCallback((otherUserId: string, msgs: DirectChatMsg[]) => {
-    setMessages(prev => {
-      const updated = { ...prev, [otherUserId]: msgs }
-      if (isDemoMode) {
-        try { localStorage.setItem('fitvina_messages', JSON.stringify(updated)) } catch {}
-      }
-      return updated
-    })
-    if (currentActiveChatRef.current === otherUserId) {
-      setRealChatMessages(msgs)
-      setChatUnreads(prev => { const c = { ...prev }; c[otherUserId] = 0; return c })
-    }
-    setLastSync(new Date())
-  }, [isDemoMode])
-
-  // Real-time 1:1 chat — one attachDirectChatListener per match (cancelled-flag cleanup, no polling)
-  useEffect(() => {
-    if (isDemoMode || !firebaseUser?.uid || !db) {
-      return undefined
-    }
-
-    const myMatchIds = realMatches || []
-
-    Object.keys(realChatUnsubsRef.current).forEach((id) => {
-      if (!myMatchIds.includes(id)) {
-        try { realChatUnsubsRef.current[id]?.() } catch {}
-        delete realChatUnsubsRef.current[id]
-      }
-    })
-
-    myMatchIds.forEach((matchId) => {
-      if (realChatUnsubsRef.current[matchId]) return
-
-      realChatUnsubsRef.current[matchId] = attachDirectChatListener(
-        db,
-        firebaseUser.uid,
-        matchId,
-        {
-          onMessages: (msgs) => applyDirectChatMessages(matchId, msgs),
-          onIncoming: (msg) => {
-            if (!seenChatMsgIdsRef.current[matchId]) seenChatMsgIdsRef.current[matchId] = new Set()
-            if (seenChatMsgIdsRef.current[matchId].has(msg.id)) return
-            seenChatMsgIdsRef.current[matchId].add(msg.id)
-            persistSeen()
-            if (currentActiveChatRef.current === matchId) return
-            const prof = (realProfiles || []).find((p: any) => p.id === matchId) || SEED_PROFILES.find((p: any) => p.id === matchId)
-            triggerMessageArrivalNotification(matchId, prof?.name || 'Usuario', msg.text, false, prof?.photos?.[0])
-          },
-          onError: (err) => console.warn(`1:1 chat listener error for ${matchId}:`, err),
-        }
-      )
-    })
-
-    return undefined
-  }, [realMatches, isDemoMode, firebaseUser?.uid, db, applyDirectChatMessages, realProfiles])
-
-  useEffect(() => {
-    return () => {
-      Object.values(realChatUnsubsRef.current).forEach((u) => { try { u() } catch {} })
-      realChatUnsubsRef.current = {}
-    }
-  }, [isDemoMode, firebaseUser?.uid])
-
-  // Refresh matches when opening a real chat (no auto-create — mutual like required)
-  useEffect(() => {
-    if (!activeChat || isDemoMode || !firebaseUser?.uid || !db) return
-    if (!isRealChatId(activeChat)) return
-    loadRealMatches().catch(() => {})
-  }, [activeChat, isDemoMode, firebaseUser?.uid, db])
-
-  // Clear realChatMessages when leaving a real chat tab
-  useEffect(() => {
-    if (!activeChat || isDemoMode || !firebaseUser?.uid || !db) {
-      setRealChatMessages([])
-    }
-  }, [activeChat, isDemoMode, firebaseUser?.uid, db])
-
-  // Note: Real-time 1:1 chat uses attachDirectChatListener per match (see chatMessages.ts).
-
-  // Auto-scroll chat to bottom when new messages arrive (1:1 real or demo) or chat opens
-  // Robust for opening from perfiles/matches list + real async load + mobile
-  useEffect(() => {
-    const scrollToBottom = () => {
-      const el = chatScrollRef.current
-      if (el) {
-        // Multiple rAF + timeouts to handle render, images, layout, keyboard
-        const doScroll = () => { el.scrollTop = el.scrollHeight }
-        requestAnimationFrame(doScroll)
-        requestAnimationFrame(() => requestAnimationFrame(doScroll))
-        setTimeout(doScroll, 50)
-        setTimeout(doScroll, 150)
-        setTimeout(doScroll, 350)
-      }
-    }
-    scrollToBottom()
-    return () => {}
-  }, [activeChat, realChatMessages.length, (messages[activeChat || ''] || []).length])
 
   // Auto-scroll group/session chat to bottom on new messages
   useEffect(() => {
@@ -4114,24 +3893,6 @@ useEffect(() => {
     activeSyncCount,
     homeWeeklyPactProgress.pledged,
   ])
-
-  useEffect(() => {
-    if (isDemoMode || !db || !firebaseUser?.uid || !activeChat) {
-      setChatPartnerTyping(false)
-      return undefined
-    }
-    return attachPartnerTypingListener(db, firebaseUser.uid, activeChat, setChatPartnerTyping)
-  }, [isDemoMode, db, firebaseUser?.uid, activeChat])
-
-  useEffect(() => {
-    if (isDemoMode || !db || !activeChat) return
-    const msgs = realChatMessages.length > 0 ? realChatMessages : messages[activeChat] || []
-    for (const m of msgs) {
-      if (m.from === 'them' && m.id && !m.read && !m.readAt) {
-        void markDirectMessageRead(db, m.id)
-      }
-    }
-  }, [isDemoMode, db, activeChat, realChatMessages, messages])
 
   useEffect(() => {
     if (isDemoMode || !db || !firebaseUser?.uid) {
@@ -4387,7 +4148,7 @@ useEffect(() => {
                 })
               }
             }
-            persistSeen()
+            persistGroupSeenIds()
 
             setSessionMessages((prev) => ({
               ...prev,
@@ -4606,14 +4367,7 @@ useEffect(() => {
 
   // Save helpers - now delegated to useProfile hook
   // (saveUser is already provided by the hook)
-  const saveMatches = (ids: string[]) => {
-    if (isDemoMode) localStorage.setItem('fitvina_matches', JSON.stringify(ids))
-    setMatches(ids)
-  }
-  const saveMessages = (msgs: Record<string, Message[]>) => {
-    if (isDemoMode) localStorage.setItem('fitvina_messages', JSON.stringify(msgs))
-    setMessages(msgs)
-  }
+  // saveMatches / saveMessages from useChatSession (fase 79)
   const saveChatUnreads = (unreads: Record<string, number>) => {
     if (isDemoMode) localStorage.setItem('entrenamatch_chat_unreads', JSON.stringify(unreads))
     setChatUnreads(unreads)
@@ -4930,48 +4684,7 @@ useEffect(() => {
     }
   }
 
-  // Global feed loader — Firestore query by timestamp (Phase 0)
-  const loadGlobalFeed = async (more: boolean = false) => {
-    setIsLoadingFeed(true)
-    try {
-      if (!isDemoMode && db) {
-        const { posts, lastDoc, hasMore } = await fetchGlobalProfilePosts(db, {
-          pageSize: 25,
-          lastDoc: more ? globalFeedLastDocRef.current : null,
-        })
-        if (!more) globalFeedLastDocRef.current = null
-        globalFeedLastDocRef.current = lastDoc
-        setHasMoreGlobalFeed(hasMore)
-
-        setProfilePosts((prev) => {
-          const next = { ...prev }
-          for (const post of posts) {
-            const uid = post.userId
-            const existing = next[uid] || []
-            const merged = [...existing.filter((x) => x.id !== post.id), post].sort(
-              (a, b) => b.timestamp - a.timestamp
-            )
-            next[uid] = merged.slice(0, 30)
-          }
-          return next
-        })
-      } else {
-        const max = more ? Math.min(feedMaxProfiles + 10, realProfiles.length) : feedMaxProfiles
-        if (more) setFeedMaxProfiles(max)
-        const toLoad = realProfiles.slice(0, max)
-        await Promise.all(toLoad.map((p) => loadProfilePosts(p.id).catch(() => {})))
-      }
-      setLastSync(new Date())
-    } catch (e) {
-      console.warn('loadGlobalFeed error', e)
-      if (realProfiles.length) {
-        const toLoad = realProfiles.slice(0, feedMaxProfiles)
-        await Promise.all(toLoad.map((p) => loadProfilePosts(p.id).catch(() => {})))
-      }
-    } finally {
-      setIsLoadingFeed(false)
-    }
-  }
+  loadProfilePostsRef.current = loadProfilePosts
 
   const createProfilePost = async (text: string, photo: string | null = null) => {
     if (!text.trim()) return
@@ -5294,6 +5007,12 @@ useEffect(() => {
           prCount: prs.length || undefined,
           pinned: prs.length > 0,
         })
+        if (prs.length) {
+          const synced = await syncExercisePRs(db, effectiveUserId, prs, workout.id)
+          if (synced.length) {
+            setExercisePRRecords(topExercisePRs(await loadExercisePRs(db, effectiveUserId), 5))
+          }
+        }
         const preview = buildWorkoutPreview(
           workout.title,
           workout.type,
@@ -5354,6 +5073,28 @@ useEffect(() => {
     trainingNowSince: currentUser?.trainingNowSince,
     healthBurnKcal: healthBurnBonus,
   })
+
+  const fuelWeekBalanceDays = useMemo(() => {
+    if (!fuelProfile || !fuelWeekMacros?.length) return []
+    const target =
+      fuelEnergyBalance?.adjustedTargetKcal ?? fuelProfile.targetKcal
+    return buildFuelWeekBalanceDays(
+      fuelWeekMacros,
+      fuelWeekWorkouts,
+      target,
+      fuelProfile.weightKg
+    )
+  }, [fuelProfile, fuelWeekMacros, fuelWeekWorkouts, fuelEnergyBalance?.adjustedTargetKcal])
+
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid) {
+      setExercisePRRecords([])
+      return
+    }
+    loadExercisePRs(db, effectiveUserId)
+      .then((map) => setExercisePRRecords(topExercisePRs(map, 5)))
+      .catch(() => setExercisePRRecords([]))
+  }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId, entrenoRecentWorkouts.length])
 
   const refreshPartnerGymStats = useCallback(async () => {
     const gymId = currentUser?.gymCheckIn?.gymId
@@ -5528,6 +5269,7 @@ useEffect(() => {
       }
       setFuelProfile(saved)
       setShowFuelSetupModal(false)
+      setShowFuelSetupWizard(false)
     } catch (e) {
       console.error('Fuel profile save failed', e)
       toast.error('No se pudo guardar el perfil Fuel', {
@@ -6527,6 +6269,10 @@ useEffect(() => {
           prCount: prs.length || undefined,
           pinned: prs.length > 0,
         })
+        if (prs.length) {
+          await syncExercisePRs(db, effectiveUserId, prs, workout.id)
+          setExercisePRRecords(topExercisePRs(await loadExercisePRs(db, effectiveUserId), 5))
+        }
         const preview = buildWorkoutPreview(
           workout.title,
           workout.type,
@@ -7644,16 +7390,10 @@ useEffect(() => {
     setNotifications(pruned)
   }
 
-  const persistSeen = () => {
+  const persistGroupSeenIds = () => {
     try {
-      const chatObj: Record<string, string[]> = {}
-      Object.keys(seenChatMsgIdsRef.current).forEach(k => {
-        chatObj[k] = Array.from(seenChatMsgIdsRef.current[k])
-      })
-      localStorage.setItem('entrenamatch_seen_chat_msgs', JSON.stringify(chatObj))
-
       const groupObj: Record<string, string[]> = {}
-      Object.keys(seenGroupMsgIdsRef.current).forEach(k => {
+      Object.keys(seenGroupMsgIdsRef.current).forEach((k) => {
         groupObj[k] = Array.from(seenGroupMsgIdsRef.current[k])
       })
       localStorage.setItem('entrenamatch_seen_group_msgs', JSON.stringify(groupObj))
@@ -7687,6 +7427,8 @@ useEffect(() => {
     const updated = [newNotif, ...notifications].slice(0, 25)
     saveNotifications(updated)
   }
+
+  addNotificationRef.current = addNotification
 
   // Request browser Notification permission for web (real users). Safe no-op on native or denied.
   const requestWebNotificationPermission = async () => {
@@ -7906,6 +7648,9 @@ useEffect(() => {
       setChatUnreads(prev => ({ ...prev, [chatId]: (prev[chatId] || 0) + 1 }))
     }
   }
+
+  chatIncomingRef.current = (matchId, name, text, photo) =>
+    triggerMessageArrivalNotification(matchId, name, text, false, photo)
 
   const submitTrainingReview = async (profileId: string) => {
     if (!currentUser) return
@@ -9630,6 +9375,14 @@ useEffect(() => {
             CapacitorCamera={CapacitorCamera}
             uploadPartnerLogoIfNeeded={uploadPartnerLogoIfNeeded}
             onActivateLive={() => void toggleLiveTraining('on')}
+            onCityChallengeCta={() => {
+              if (currentUser?.trainingNow) {
+                navigateTab('home')
+                toast('Cada minuto LIVE suma al reto de tu ciudad')
+              } else {
+                void toggleLiveTraining('on')
+              }
+            }}
             cityChallenge={
               homeCityChallengeMerged
                 ? {
@@ -9912,7 +9665,10 @@ useEffect(() => {
             fuelWeekMacros={fuelWeekMacros}
             fuelPostWorkoutTip={fuelPostWorkoutTip}
             fuelEnergyBalance={fuelEnergyBalance}
+            fuelWeekBalanceDays={fuelWeekBalanceDays}
+            openFuelWizard={() => setShowFuelSetupWizard(true)}
             setShowFuelSetupModal={setShowFuelSetupModal}
+            exercisePRRecords={exercisePRRecords}
             openFuelLogModal={() => {
               setEditingFuelLog(null)
               setShowFuelLogModal(true)
@@ -10961,6 +10717,22 @@ useEffect(() => {
             ? currentUser?.gymCheckIn?.gymName
             : undefined
         }
+      />
+      <FuelSetupWizard
+        open={showFuelSetupWizard}
+        hints={{
+          age: currentUser?.age,
+          gender: currentUser?.gender,
+          weekTrainedCount: homeWeekTrainedCount,
+          goals: currentUser?.goals,
+        }}
+        onClose={() => setShowFuelSetupWizard(false)}
+        onSave={handleSaveFuelProfile}
+        onAdvancedSetup={() => {
+          setShowFuelSetupWizard(false)
+          setShowFuelSetupModal(true)
+        }}
+        saving={savingFuel}
       />
       <FuelSetupModal
         open={showFuelSetupModal}

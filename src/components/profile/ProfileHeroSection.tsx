@@ -43,13 +43,8 @@ export function ProfileHeroSection(props: ProfileTabProps) {
   <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/50 to-black/95" />
   <div className="absolute inset-0 border-b-2 border-[#FF671F]/20" />
 
-  {/* Top status bar - unique + quick live action */}
-  <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-start text-xs">
-    {currentUser.trainingNow ? (
-      <div className="bg-[#22c55e] text-black font-black px-3 py-1 rounded-2xl tracking-widest shadow-[0_0_15px_rgba(34,197,94,0.5)] flex items-center gap-2">🟢 EN GYMPULSE VIVO • {currentUser.liveStreak || 0}D <button onClick={async () => { /* quick deactivate from hero */ try{ const u={...currentUser,trainingNow:false,trainingNowSince:undefined,trainingSyncWith:null,syncStartedAt:null}; await saveUserWithRealSync(u as any); setMapForceTick(t=>t+1); toast('Live terminado'); }catch(e){} }} className="text-[9px] px-1.5 py-0 bg-black/30 rounded">Terminar</button></div>
-    ) : (
-      <button onClick={() => { /* quick activate */ setActiveTab('profile'); /* the main activate is lower, but hint */ toast('Activa "Entrenando Ahora" más abajo en el perfil'); }} className="bg-white/10 text-white/70 px-2 py-0.5 rounded text-[10px]">Activar GymPulse</button>
-    )}
+  // Top status — hero pulse block below handles LIVE/ghost (fase 89)
+  <div className="absolute top-0 left-0 right-0 p-4 flex justify-end items-start text-xs">
     <div className="text-right font-mono text-white/50 tracking-widest">{currentUser.level} • {currentUser.intensity}</div>
   </div>
 
