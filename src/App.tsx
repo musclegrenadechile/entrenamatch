@@ -295,6 +295,7 @@ import {
 import { importHealthCaloriesForDate } from './services/healthImport'
 import { loadDailyEnergyCache } from './services/dailyEnergy'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
+import { ProfileEditFlow } from './components/profile/ProfileEditFlow'
 import { SyncArenaHost, SyncDuelSummary } from './components/arena'
 import {
   attachPostCommentsListener,
@@ -7979,9 +7980,24 @@ useEffect(() => {
   }
 
   const openProfileEditor = () => {
-    setIsEditingProfile(true)
     setOnboardingStepLocal(0)
+    setIsEditingProfile(true)
     setShowOnboarding(true)
+  }
+
+  if (shouldShowOnboarding && isEditingProfile) {
+    return (
+      <ErrorBoundary>
+        <ProfileEditFlow
+          currentUser={currentUser}
+          saveUser={saveUserWithRealSync}
+          onClose={() => closeOnboarding(false)}
+          requestUserLocation={requestUserLocation}
+          triggerHaptic={triggerHaptic}
+          uploadPhotoIfNeeded={uploadProfilePhotoIfNeeded}
+        />
+      </ErrorBoundary>
+    )
   }
 
   if (shouldShowOnboarding) {
@@ -7998,7 +8014,7 @@ useEffect(() => {
           setConsents={() => {}}
           triggerHaptic={triggerHaptic}
           uploadPhotoIfNeeded={uploadProfilePhotoIfNeeded}
-          mode={isEditingProfile ? 'edit' : 'create'}
+          mode="create"
         />
       </ErrorBoundary>
     )

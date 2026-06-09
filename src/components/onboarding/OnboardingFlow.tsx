@@ -213,9 +213,8 @@ export const OnboardingFlow = ({
           </div>
         </div>
         <div className="px-3 py-1.5 text-[9px] bg-[#0D0D10] text-[#22c55e] flex items-center gap-1 border-t border-[#22c55e]/20">
-          <span>👁️ Tu presencia en el GymPulse y swipes</span>
-          {isLive && <span className="ml-auto font-bold">¡VERDE EN EL MAPA AL TERMINAR!</span>}
-          <span className="ml-auto text-[8px] text-[#FF671F]">⚡ Red con peso • ondas en el mapa • syncs que se sienten</span>
+          <span>👁️ Así te verán en Explorar y en tu perfil</span>
+          {isLive && <span className="ml-auto font-bold text-[#22c55e]">Punto verde en el mapa</span>}
         </div>
         {/* Unique ritual mock: small live map simulation for excitement - makes the first Live feel inevitable */}
         {isLive && (
@@ -256,7 +255,7 @@ export const OnboardingFlow = ({
     {
       emoji: '🏋️',
       vibe: 'Constancia',
-      text: 'Pesas 4x + running costanera. Mantra: sin excusas, con mi Red.',
+      text: 'Pesas 4x + running costanera. Busco constancia y buena vibra.',
     },
     {
       emoji: '🧘',
@@ -466,8 +465,9 @@ export const OnboardingFlow = ({
   };
 
   return (
-    <div className="app-container flex flex-col bg-[#0D0D10] text-white">
-      <div className="flex-1 flex flex-col p-6 pt-8">
+    <div className="app-container flex flex-col bg-[#0D0D10] text-white h-[100svh] max-h-[100svh]">
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-shrink-0 px-6 pt-6 pb-2">
         {/* Epic Remastered Header - Unique ritual vibe */}
         <div className="flex items-center gap-4 mb-5">
           <motion.div 
@@ -535,12 +535,13 @@ export const OnboardingFlow = ({
             ))}
           </div>
         </div>
+      </div>
 
-        {/* LIVE PREVIEW — hidden on consent step so vows + buttons stay tappable */}
+        {/* Scrollable step content + preview */}
+        <div className="flex-1 overflow-y-auto overscroll-y-contain px-6 min-h-0 pb-36">
         {!isConsentsStep && !showIntroStep && renderProfilePreview()}
 
-        {/* Scrollable step content */}
-        <div className="flex-1 overflow-auto -mx-1 px-1 pb-8 min-h-0">
+        <div className="-mx-1 px-1">
 
         {/* PASO 0 (solo create): Qué es EntrenaMatch */}
         {showIntroStep && (
@@ -680,7 +681,7 @@ export const OnboardingFlow = ({
               )}
             </div>
 
-            {/* Bio + Mantra */}
+            {/* Bio */}
             {(() => {
               const bioLen = (onboardData.bio || '').length
               const bioProgress = Math.min(100, Math.round((bioLen / BIO_MAX) * 100))
@@ -693,9 +694,9 @@ export const OnboardingFlow = ({
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-[9px] uppercase tracking-[2px] text-[#FF671F] font-bold">Tu voz en la Red</p>
-                      <p className="text-sm font-black text-white mt-0.5">Bio + mantra</p>
+                      <p className="text-sm font-black text-white mt-0.5">Tu bio</p>
                       <p className="text-[10px] text-[#9CA3AF] mt-0.5 leading-snug">
-                        Una línea que diga cómo entrenas y qué te mueve — aparece en swipes y tu perfil.
+                        Una línea sobre cómo entrenas — aparece en swipes y tu perfil.
                       </p>
                     </div>
                     <div className="text-right shrink-0">
@@ -727,14 +728,8 @@ export const OnboardingFlow = ({
                         }}
                         rows={3}
                         className="w-full bg-[#0D0D10]/80 border border-[#FF671F]/20 focus:border-[#FF671F]/60 focus:ring-2 focus:ring-[#FF671F]/15 rounded-2xl px-4 py-3.5 text-sm text-white placeholder:text-[#6B7280] resize-none leading-relaxed"
-                        placeholder="Ej: Pesas 4x + running costanera. Mantra: sin excusas, con mi Red."
+                        placeholder="Ej: Pesas 4x + running costanera. Busco compañero/a con buena energía."
                       />
-                      {!onboardData.bio?.trim() && (
-                        <div className="pointer-events-none absolute bottom-3 right-3 flex items-center gap-1 text-[9px] text-[#6B7280]">
-                          <Sparkles size={11} className="text-[#FF671F]/70" aria-hidden />
-                          <span>+ mantra al final</span>
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -999,10 +994,13 @@ export const OnboardingFlow = ({
           </div>
         )}
 
+        </div>
         </div> {/* end scrollable step content */}
 
-        {/* Fixed bottom — ritual navigation */}
-        <div className="flex-shrink-0 pt-2 pb-3 flex flex-col gap-2 bg-[#0D0D10] border-t-2 border-[#2F2F35]">
+      </div>
+
+        {/* Fixed bottom — always visible (overflow:hidden on app-container was clipping this) */}
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[420px] px-6 pt-2 pb-4 flex flex-col gap-2 bg-[#0D0D10]/98 border-t-2 border-[#2F2F35] z-30">
           {onboardingStep > 0 && (
             <button onClick={() => { try { triggerHaptic('light') } catch {}; setOnboardingStep(onboardingStep - 1) }} className="w-full py-2.5 text-xs uppercase tracking-[1.5px] rounded-2xl border border-[#2F2F35] active:bg-[#1f242b] text-[#9CA3AF]">
               ← VOLVER AL PASO ANTERIOR
@@ -1027,11 +1025,12 @@ export const OnboardingFlow = ({
               (isConsentsStep && !Object.values(localConsents).every(Boolean))
             }
           >
-            {onboardingStep < lastStep ? 'CONTINUAR →' : '¡ENTRAR A ENTRENAMATCH!'}
+            {onboardingStep < lastStep ? 'CONTINUAR →' : isEditMode ? 'GUARDAR CAMBIOS' : '¡ENTRAR A ENTRENAMATCH!'}
           </button>
-          <div className="text-center text-[8px] text-[#9CA3AF] tracking-[1px]">TU PERFIL EN LA RED • PRIMER LIVE EN &lt;90s</div>
+          <div className="text-center text-[8px] text-[#9CA3AF] tracking-[1px]">
+            {isEditMode ? 'GUARDA CAMBIOS AL TERMINAR' : 'TU PERFIL EN LA RED • PRIMER LIVE EN <90s'}
+          </div>
         </div>
-      </div>
 
       <PhotoCropModal
         open={!!cropSession}

@@ -74,9 +74,9 @@ const TRAINING_CHIPS = [
 ]
 
 const BOND_TEMPLATES = [
-  '🏆 Compartir nuestro último EntrenaSync',
-  '⭐ Postear mi eco de esta alianza',
-  '🌊 Mencionar ripples de nuestro Arena',
+  '🏋️ ¿Entrenamos esta semana?',
+  '💪 ¿Cómo te fue el último entreno?',
+  '📅 ¿Qué día te acomoda para gym?',
 ]
 
 function dayKey(ts: number): string {
@@ -454,7 +454,7 @@ export function ChatView({
           </div>
           {syncBond && (
             <>
-              <p className="chat-chips-label">Red · plantillas</p>
+              <p className="chat-chips-label">Para coordinar</p>
               <div className="chat-chips-row">
                 {BOND_TEMPLATES.map((tpl) => (
                   <button

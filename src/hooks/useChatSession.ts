@@ -15,7 +15,11 @@ import {
 import type { Firestore } from 'firebase/firestore'
 import { toast } from 'sonner'
 import type { Message, Profile } from '../types'
-import { attachDirectChatListener, type DirectChatMsg } from '../services/chatMessages'
+import {
+  attachDirectChatListener,
+  dedupeWithOptimistic,
+  type DirectChatMsg,
+} from '../services/chatMessages'
 import { attachPartnerTypingListener, markDirectMessageRead } from '../services/chatPresence'
 import { isQuotaError, reclaimLocalStorageSpace } from '../utils/safeLocalStorage'
 
@@ -70,6 +74,7 @@ export function useChatSession(opts: UseChatSessionOptions) {
   const currentActiveChatRef = useRef<string | null>(null)
   const seenChatMsgIdsRef = useRef<Record<string, Set<string>>>({})
   const prevRealMatchesRef = useRef<string[]>([])
+  const prevActiveChatForLoadRef = useRef<string | null>(null)
   const realMatchesInitializedRef = useRef(false)
   const justMatchedLocallyRef = useRef<Set<string>>(new Set())
 
@@ -195,8 +200,11 @@ export function useChatSession(opts: UseChatSessionOptions) {
           })
         })
         msgs.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+        let mergedMsgs = msgs
         setMessages((prev) => {
-          const updated = { ...prev, [otherUserId]: msgs as unknown as Message[] }
+          const local = prev[otherUserId] || []
+          mergedMsgs = dedupeWithOptimistic(msgs, local)
+          const updated = { ...prev, [otherUserId]: mergedMsgs as unknown as Message[] }
           if (isDemoMode) {
             localStorage.setItem('fitvina_messages', JSON.stringify(updated))
           }
@@ -204,7 +212,7 @@ export function useChatSession(opts: UseChatSessionOptions) {
         })
         setLastSync(new Date())
         if (currentActiveChatRef.current === otherUserId) {
-          setRealChatMessages(msgs)
+          setRealChatMessages(mergedMsgs)
           setChatUnreads((prev) => {
             const c = { ...prev }
             c[otherUserId] = 0
@@ -246,9 +254,6 @@ export function useChatSession(opts: UseChatSessionOptions) {
 
       try {
         await writeMessage()
-        loadRealChatMessages(toUserId).then((msgs) => {
-          if (msgs) setRealChatMessages(msgs)
-        })
         setChatUnreads((prev) => {
           const c = { ...prev }
           c[toUserId] = 0
@@ -259,9 +264,6 @@ export function useChatSession(opts: UseChatSessionOptions) {
           reclaimLocalStorageSpace('hard')
           try {
             await writeMessage()
-            loadRealChatMessages(toUserId).then((msgs) => {
-              if (msgs) setRealChatMessages(msgs)
-            })
             setChatUnreads((prev) => {
               const c = { ...prev }
               c[toUserId] = 0
@@ -281,13 +283,16 @@ export function useChatSession(opts: UseChatSessionOptions) {
         })
       }
     },
-    [firebaseUserUid, db, loadRealChatMessages]
+    [firebaseUserUid, db]
   )
 
   const applyDirectChatMessages = useCallback(
     (otherUserId: string, msgs: DirectChatMsg[]) => {
+      let mergedMsgs = msgs
       setMessages((prev) => {
-        const updated = { ...prev, [otherUserId]: msgs as unknown as Message[] }
+        const local = prev[otherUserId] || []
+        mergedMsgs = dedupeWithOptimistic(msgs, local)
+        const updated = { ...prev, [otherUserId]: mergedMsgs as unknown as Message[] }
         if (isDemoMode) {
           try {
             localStorage.setItem('fitvina_messages', JSON.stringify(updated))
@@ -296,7 +301,7 @@ export function useChatSession(opts: UseChatSessionOptions) {
         return updated
       })
       if (currentActiveChatRef.current === otherUserId) {
-        setRealChatMessages(msgs)
+        setRealChatMessages(mergedMsgs)
         setChatUnreads((prev) => {
           const c = { ...prev }
           c[otherUserId] = 0
@@ -308,12 +313,17 @@ export function useChatSession(opts: UseChatSessionOptions) {
     [isDemoMode, setLastSync]
   )
 
+  const chatListenIds = useMemo(() => {
+    const ids = new Set<string>(realMatches || [])
+    if (activeChat && isRealChatId(activeChat)) ids.add(activeChat)
+    return Array.from(ids)
+  }, [realMatches, activeChat, isRealChatId])
+
   useEffect(() => {
     if (isDemoMode || !firebaseUserUid || !db) return undefined
 
-    const myMatchIds = realMatches || []
     Object.keys(realChatUnsubsRef.current).forEach((id) => {
-      if (!myMatchIds.includes(id)) {
+      if (!chatListenIds.includes(id)) {
         try {
           realChatUnsubsRef.current[id]?.()
         } catch {}
@@ -321,7 +331,7 @@ export function useChatSession(opts: UseChatSessionOptions) {
       }
     })
 
-    myMatchIds.forEach((matchId) => {
+    chatListenIds.forEach((matchId) => {
       if (realChatUnsubsRef.current[matchId]) return
       realChatUnsubsRef.current[matchId] = attachDirectChatListener(db, firebaseUserUid, matchId, {
         onMessages: (msgs) => applyDirectChatMessages(matchId, msgs),
@@ -347,7 +357,7 @@ export function useChatSession(opts: UseChatSessionOptions) {
 
     return undefined
   }, [
-    realMatches,
+    chatListenIds,
     isDemoMode,
     firebaseUserUid,
     db,
@@ -413,8 +423,19 @@ export function useChatSession(opts: UseChatSessionOptions) {
   useEffect(() => {
     if (!activeChat || isDemoMode || !firebaseUserUid || !db) {
       setRealChatMessages([])
+      return
     }
-  }, [activeChat, isDemoMode, firebaseUserUid, db])
+    if (!isRealChatId(activeChat)) {
+      setRealChatMessages([])
+      prevActiveChatForLoadRef.current = null
+      return
+    }
+    if (prevActiveChatForLoadRef.current !== activeChat) {
+      setRealChatMessages([])
+      prevActiveChatForLoadRef.current = activeChat
+    }
+    void loadRealChatMessages(activeChat)
+  }, [activeChat, isDemoMode, firebaseUserUid, db, isRealChatId, loadRealChatMessages])
 
   useEffect(() => {
     const scrollToBottom = () => {

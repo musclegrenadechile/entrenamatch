@@ -35,6 +35,42 @@ export function mergeDirectChatMessages(a: DirectChatMsg[], b: DirectChatMsg[]):
   return Array.from(byId.values()).sort((x, y) => x.timestamp - y.timestamp)
 }
 
+/** Keep in-flight optimistic sends until Firestore confirms the same text/timestamp. */
+export function dedupeWithOptimistic(
+  serverMsgs: DirectChatMsg[],
+  localMsgs: Array<{
+    id: string
+    from: string
+    text?: string
+    timestamp?: number
+    voiceUrl?: string
+    voiceDuration?: number
+  }>
+): DirectChatMsg[] {
+  const serverIds = new Set(serverMsgs.map((m) => m.id))
+  const pendingOptimistic = localMsgs
+    .filter((m) => m.from === 'me' && !serverIds.has(m.id))
+    .filter((m) => {
+      const ts = m.timestamp || 0
+      const text = String(m.text || '')
+      return !serverMsgs.some(
+        (s) =>
+          s.from === 'me' &&
+          s.text === text &&
+          Math.abs(s.timestamp - ts) < 20000
+      )
+    })
+    .map((m) => ({
+      id: m.id,
+      from: 'me' as const,
+      text: String(m.text || ''),
+      timestamp: m.timestamp || Date.now(),
+      voiceUrl: m.voiceUrl,
+      voiceDuration: m.voiceDuration,
+    }))
+  return mergeDirectChatMessages(serverMsgs, pendingOptimistic)
+}
+
 export interface AttachDirectChatListenerOptions {
   onMessages: (msgs: DirectChatMsg[]) => void
   /** Fired for new incoming messages after initial snapshot population */

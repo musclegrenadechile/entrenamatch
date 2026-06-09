@@ -1,8 +1,8 @@
 import { toast } from 'sonner';
-import { Dumbbell } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { APP_VERSION } from '../../constants'; // use centralized version (no more stale 0.1.37)
 import { markQuickDemoSession } from '../../utils/quickDemo';
+import entrenamatchLogo from '../../assets/brand/entrenamatch-logo.png';
 
 interface AuthScreenProps {
   authMode: 'login' | 'register';
@@ -90,78 +90,59 @@ export const AuthScreen = ({
 
       <div className="relative z-10 w-full max-w-[380px]">
         {/* Top exclusive badge - makes you feel you're entering something special */}
-        <div className="flex justify-center mb-5">
-          <div className="inline-flex items-center gap-2 text-[10px] font-bold tracking-[1.5px] bg-white/5 text-[#FF671F] border border-[#FF671F]/30 px-4 py-1 rounded-full">
-            <span className="w-1.5 h-1.5 bg-[#FF671F] rounded-full animate-pulse" />
-            ACCESO EXCLUSIVO • TU EQUIPO TE ESPERA
+        <div className="flex justify-center mb-4">
+          <div className="inline-flex items-center gap-2 text-[10px] font-bold tracking-[1px] bg-white/5 text-[#FF671F] border border-[#FF671F]/30 px-4 py-1 rounded-full">
+            <span className="w-1.5 h-1.5 bg-[#22c55e] rounded-full animate-pulse" />
+            Piloto cerrado · Viña del Mar y Santiago
           </div>
         </div>
 
-        {/* Hero — the "opening something never seen before" moment */}
-        <div className="text-center mb-7">
+        <div className="text-center mb-6">
           <motion.div
-            initial={{ scale: 0.7, opacity: 0 }}
+            initial={{ scale: 0.92, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 140, damping: 18, delay: 0.05 }}
-            className="flex justify-center mb-5"
+            className="mb-4"
           >
-            <div className="relative">
-              {/* Main logo orb — feels like an energy core / arena entrance */}
-              <motion.div
-                animate={{ 
-                  boxShadow: [
-                    '0 0 0 8px rgba(255,103,31,0.1), 0 0 0 18px rgba(255,103,31,0.04)',
-                    '0 0 0 14px rgba(255,103,31,0.18), 0 0 0 32px rgba(255,103,31,0.06)',
-                    '0 0 0 8px rgba(255,103,31,0.1), 0 0 0 18px rgba(255,103,31,0.04)'
-                  ] 
-                }}
-                transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
-                className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#FF671F] via-[#FF4F79] to-[#FF671F] flex items-center justify-center shadow-2xl"
-              >
-                <Dumbbell className="w-10 h-10 text-black drop-shadow" />
-              </motion.div>
-
-              {/* Subtle flowing tether hint (the unique thing nobody has seen) */}
-              <div className="auth-tether-preview" />
-            </div>
+            <img
+              src={entrenamatchLogo}
+              alt="EntrenaMatch"
+              className="w-full max-w-[300px] h-auto mx-auto drop-shadow-[0_12px_40px_rgba(255,103,31,0.25)]"
+              width={600}
+              height={338}
+              decoding="async"
+            />
           </motion.div>
 
-          <motion.h1 
-            initial={{ opacity: 0, y: 12 }}
+          <motion.h1
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.12 }}
-            className="text-[46px] leading-[0.92] font-black tracking-[-3.2px] text-white"
+            className="text-xl font-black tracking-tight text-white"
           >
-            ENTRENAMATCH
+            Tu equipo de gym en vivo
           </motion.h1>
 
-          <motion.p 
+          <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.22 }}
-            className="mt-1.5 text-2xl font-semibold tracking-[-0.6px] bg-gradient-to-r from-[#FF671F] to-[#FF4F79] bg-clip-text text-transparent"
+            transition={{ delay: 0.2 }}
+            className="mt-2 text-[#9CA3AF] text-[15px] leading-relaxed max-w-[320px] mx-auto"
           >
-            Estamos inventando cómo dos personas entrenan como una sola.
+            Encuentra quién entrena cerca, haz match con tu GymPartner y sincroniza sesiones con{' '}
+            <span className="text-white font-semibold">EntrenaSync</span>.
           </motion.p>
 
-          <motion.p 
-            initial={{ opacity: 0, y: 8 }}
+          <motion.ul
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.32 }}
-            className="mt-2 text-[#9CA3AF] text-[15px] leading-snug max-w-[280px] mx-auto"
+            transition={{ delay: 0.28 }}
+            className="mt-3 flex flex-wrap justify-center gap-2 text-[10px] text-[#d1d5db]"
           >
-            Entra y siente a tu compañero entrenando<br />exactamente al mismo tiempo que tú.<br />
-            <span className="text-[#FF671F]/80 text-xs tracking-widest">ESTO NO EXISTÍA HASTA AHORA.</span>
-          </motion.p>
-        </div>
-
-        <div className="flex justify-center gap-2 mb-5 text-[12px]">
-          <div className="flex items-center gap-1.5 bg-[#1C1C20]/70 border border-[#FF671F]/25 px-3 py-1.5 rounded-2xl max-w-[300px]">
-            <div className="live-dot w-1.5 h-1.5 rounded-full bg-[#FF671F]" />
-            <span className="text-[#9CA3AF] leading-snug">
-              Piloto cerrado · <span className="text-white font-semibold">Viña × Santiago</span>
-            </span>
-          </div>
+            <li className="px-2.5 py-1 rounded-full bg-[#1C1C20] border border-[#2F2F35]">🗺️ Mapa LIVE</li>
+            <li className="px-2.5 py-1 rounded-full bg-[#1C1C20] border border-[#2F2F35]">❤️ Matches</li>
+            <li className="px-2.5 py-1 rounded-full bg-[#1C1C20] border border-[#2F2F35]">💬 Chat + sync</li>
+          </motion.ul>
         </div>
 
         {/* The beautiful "portal" card */}
