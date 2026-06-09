@@ -1,3 +1,4 @@
+import { EntrenoDeHoyWeekSummary } from '../workout/EntrenoDeHoyWeekSummary'
 import { MapPin, MessageCircle, RefreshCw, Users } from 'lucide-react'
 import { FuelDayCard } from '../fuel/FuelDayCard'
 import { FuelWeekReport } from '../fuel/FuelWeekReport'
@@ -42,6 +43,8 @@ export interface DailyHomeProps {
   onMessageMember?: (id: string) => void
   onOpenMatches?: () => void
   onOpenEntrenaLog?: () => void
+  entrenoWeekSummary?: import('../../utils/workoutProgress').WeekWorkoutSummary | null
+  entrenoExerciseHighlights?: Array<{ name: string; bestWeightKg: number; trend: 'up' | 'flat' | 'down' }>
   fuelProfile?: import('../../types').FuelProfile | null
   fuelTotals?: import('../../types').FuelDayTotals
   fuelTodayLogs?: import('../../types').FuelLogEntry[]
@@ -107,6 +110,8 @@ export function DailyHome({
   onMessageMember,
   onOpenMatches,
   onOpenEntrenaLog,
+  entrenoWeekSummary = null,
+  entrenoExerciseHighlights = [],
   fuelProfile,
   fuelTotals,
   fuelTodayLogs,
@@ -505,6 +510,15 @@ export function DailyHome({
           />
         )}
       </section>
+
+      {/* Resumen semanal Entreno de Hoy (oleada 2) */}
+      {entrenoWeekSummary && (
+        <EntrenoDeHoyWeekSummary
+          summary={entrenoWeekSummary}
+          onOpenEntrenoDeHoy={onOpenEntrenaLog}
+          exerciseHighlights={entrenoExerciseHighlights}
+        />
+      )}
 
       {/* Secundario — después del loop */}
       {onOpenEntrenaLog && !isLive && (

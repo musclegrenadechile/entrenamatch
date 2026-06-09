@@ -218,6 +218,7 @@ import { isSeedProfileId } from './utils/seedProfiles'
 import { EntrenoDeHoyModal, WorkoutPostCard } from './components/workout'
 import { detectWorkoutPRs, formatWorkoutPRSummary } from './utils/workoutPR'
 import { cloneExercises, workoutToTemplate } from './utils/workoutTemplates'
+import { buildWeekWorkoutSummary, getTopExerciseProgress } from './utils/workoutProgress'
 import { FuelSetupModal, FuelLogModal, NutritionPostCard } from './components/fuel'
 import {
   loadFuelProfile,
@@ -5267,7 +5268,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
     }
     setEntrenoRecentLoading(true)
     try {
-      const list = await fetchRecentWorkouts(db, effectiveUserId, 8)
+      const list = await fetchRecentWorkouts(db, effectiveUserId, 20)
       setEntrenoRecentWorkouts(list)
     } catch {
       /* ignore */
@@ -5277,10 +5278,25 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId])
 
   useEffect(() => {
-    if (activeTab === 'profile' || showEntrenaLogModal) {
+    if (activeTab === 'profile' || activeTab === 'home' || showEntrenaLogModal) {
       void refreshEntrenoRecentWorkouts()
     }
   }, [activeTab, showEntrenaLogModal, refreshEntrenoRecentWorkouts])
+
+  const entrenoWeekSummary = useMemo(
+    () => buildWeekWorkoutSummary(entrenoRecentWorkouts),
+    [entrenoRecentWorkouts]
+  )
+
+  const entrenoExerciseHighlights = useMemo(
+    () =>
+      getTopExerciseProgress(entrenoRecentWorkouts, 3).map((e) => ({
+        name: e.name,
+        bestWeightKg: e.bestWeightKg,
+        trend: e.trend,
+      })),
+    [entrenoRecentWorkouts]
+  )
 
   const openEntrenoDeHoy = useCallback(
     async (prefill?: {
@@ -9940,6 +9956,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
             }}
             setShowEntrenaLogModal={setShowEntrenaLogModal}
             onOpenEntrenoDeHoy={() => void openEntrenoDeHoy()}
+            entrenoWeekSummary={!isDemoMode ? entrenoWeekSummary : null}
+            entrenoExerciseHighlights={entrenoExerciseHighlights}
             fuelProfile={fuelProfile}
             fuelTodayTotals={fuelTodayTotals}
             fuelTodayLogs={fuelTodayLogs}
@@ -11791,7 +11809,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 <div className="absolute bottom-0 left-0 right-0 p-5 bg-gradient-to-t from-black">
                   <div className="text-4xl font-semibold tracking-[-1.5px]">{showFullProfile.name}, {showFullProfile.age}</div>
                   <div className="flex gap-2 mt-1 text-[#FF671F]">
-                    <MapPin size={18} /> {showFullProfile.city}, {showFullProfile.country}
+                    <MapPin size={18} /> {showFullProfile.city?.trim() || 'Tu zona'}, {showFullProfile.country}
                     {showFullProfile.verificationStatus === 'verified' && <span className="text-[#22c55e] text-sm">✓ Verificado</span>}
                   </div>
                   {userLocation && (
@@ -11884,18 +11902,24 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                 </div>
               </div>
               <div className="p-5 space-y-6">
+                {showFullProfile.bio?.trim() && (
                 <div>
                   <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-1.5">BIOGRAFÍA</div>
                   <p className="leading-snug">{showFullProfile.bio}</p>
                 </div>
+                )}
+                {(showFullProfile.trainingTypes?.length ?? 0) > 0 && (
                 <div>
                   <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-2">ENTRENA</div>
                   <div className="flex flex-wrap gap-2">{showFullProfile.trainingTypes.map(t => <div key={t} className="chip">{t}</div>)}</div>
                 </div>
+                )}
+                {(showFullProfile.goals?.length ?? 0) > 0 && (
                 <div>
                   <div className="uppercase text-xs tracking-widest text-[#9CA3AF] mb-2">OBJETIVOS</div>
                   <div className="flex flex-wrap gap-2">{showFullProfile.goals.map(g => <div key={g} className="chip chip-active">{g}</div>)}</div>
                 </div>
+                )}
 
                 {/* Muro for viewed profile - attractive read-only feed with interactions (now loads reliably for other accounts) */}
                 <div className="mt-4">
@@ -11918,6 +11942,23 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                           transition={{ duration: 0.2 }}
                           className="card card-glass p-3 mb-2 border-[#2F2F35]/80 hover:border-[#FF671F]/30"
                         >
+                          {post.postType === 'workout' && post.workoutPreview ? (
+                            <WorkoutPostCard
+                              preview={post.workoutPreview}
+                              compact
+                              postId={post.id}
+                              reactions={post.reactions}
+                              feedReactions={feedReactions[post.id]}
+                              effectiveUserId={effectiveUserId}
+                              onReact={(emo) => boostReaction(post.id, emo, showFullProfile.id)}
+                              onCopyRoutine={
+                                post.workoutId && showFullProfile.id !== effectiveUserId
+                                  ? () => handleCopyWorkoutFromPost(post.workoutId!, post.workoutPreview?.title)
+                                  : undefined
+                              }
+                            />
+                          ) : (
+                          <>
                           <div className="text-[13px] leading-snug mb-2 text-white/95">
                             {post.pinned ? '📌 ' : ''}
                             {(post.text || '').includes('Fui testigo') || (post.text || '').includes('RITUAL LEGENDARIO') || (post.text || '').includes('Echo') ? (
@@ -11931,7 +11972,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
                               <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/30 to-transparent" />
                             </div>
                           )}
-                          <div className="flex items-center gap-4 text-xs text-[#9CA3AF]">
+                          </>
+                          )}
+                          <div className="flex items-center gap-4 text-xs text-[#9CA3AF] mt-2">
                             <span title={new Date(post.timestamp).toLocaleString('es-CL')}>{getRelativeTime(post.timestamp)}</span>
                             <span onClick={() => likeProfilePost(post.id, showFullProfile.id)} className="cursor-pointer active:text-[#FF671F]">❤️ {(post.likes || []).length}</span>
                             <span onClick={() => openFullComments(post.id, showFullProfile.id, showFullProfile.name)} className="cursor-pointer active:text-[#FF671F]">💬 {(post.comments || []).length}</span>

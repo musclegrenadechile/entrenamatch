@@ -1,7 +1,8 @@
-import { Dumbbell, Copy, ChevronRight } from 'lucide-react'
+import { Dumbbell, Copy, ChevronRight, TrendingUp } from 'lucide-react'
 import { WORKOUT_TYPE_LABELS } from '../../data/exerciseLibrary'
 import type { Workout } from '../../types'
 import { formatVolumeLabel } from '../../services/workouts'
+import { getTopExerciseProgress } from '../../utils/workoutProgress'
 
 export interface ProfileEntrenoDeHoySectionProps {
   recentWorkouts: Workout[]
@@ -16,6 +17,8 @@ export function ProfileEntrenoDeHoySection({
   onOpenEntrenoDeHoy,
   onCopyWorkout,
 }: ProfileEntrenoDeHoySectionProps) {
+  const exerciseProgress = getTopExerciseProgress(recentWorkouts, 3)
+
   return (
     <div className="px-4 mt-4">
       <div className="rounded-2xl border border-[#FF671F]/25 bg-gradient-to-br from-[#FF671F]/8 via-[#141418] to-[#0f0f12] overflow-hidden">
@@ -84,6 +87,42 @@ export function ProfileEntrenoDeHoySection({
               )
             })}
           </ul>
+        )}
+
+        {!loading && exerciseProgress.length > 0 && (
+          <div className="px-4 py-3 border-t border-white/8 bg-black/20">
+            <p className="text-[9px] uppercase tracking-wider text-[#9CA3AF] font-bold mb-2 flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" /> Progreso por ejercicio
+            </p>
+            <ul className="space-y-2">
+              {exerciseProgress.map((ex) => {
+                const maxW = Math.max(1, ...ex.points.map((p) => p.weightKg))
+                return (
+                  <li key={ex.name}>
+                    <div className="flex items-center justify-between text-[10px] mb-1">
+                      <span className="text-white font-semibold truncate pr-2">{ex.name}</span>
+                      <span className="text-[#FFD700] font-bold shrink-0">
+                        {ex.trend === 'up' ? '↑' : ex.trend === 'down' ? '↓' : '→'}{' '}
+                        {ex.bestWeightKg > 0 ? `${ex.bestWeightKg} kg` : `${ex.bestReps} reps`}
+                      </span>
+                    </div>
+                    <div className="flex items-end gap-0.5 h-6">
+                      {ex.points.map((p, i) => (
+                        <div
+                          key={i}
+                          className="flex-1 rounded-t bg-[#FF671F]/70 min-h-[3px]"
+                          style={{
+                            height: `${Math.max(15, Math.round((p.weightKg / maxW) * 100))}%`,
+                          }}
+                          title={`${p.weightKg}kg × ${p.reps}`}
+                        />
+                      ))}
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          </div>
         )}
 
         {recentWorkouts.length > 0 && (

@@ -33,6 +33,8 @@ export function HomeTab(props: HomeTabProps) {
     setActiveChat,
     setShowEntrenaLogModal,
     onOpenEntrenoDeHoy,
+    entrenoWeekSummary,
+    entrenoExerciseHighlights,
     fuelProfile,
     fuelTodayTotals,
     fuelTodayLogs,
@@ -262,6 +264,8 @@ export function HomeTab(props: HomeTabProps) {
               ? () => setShowEntrenaLogModal(true)
               : undefined
         }
+        entrenoWeekSummary={entrenoWeekSummary}
+        entrenoExerciseHighlights={entrenoExerciseHighlights}
         fuelProfile={fuelProfile}
         fuelTotals={fuelTodayTotals}
         fuelTodayLogs={fuelTodayLogs}
@@ -620,6 +624,14 @@ export function HomeTab(props: HomeTabProps) {
                         <WorkoutPostCard
                           preview={post.workoutPreview}
                           compact
+                          postId={post.id}
+                          reactions={post.reactions}
+                          feedReactions={feedReactions[post.id]}
+                          effectiveUserId={effectiveUserId}
+                          onReact={(emo) => {
+                            boostReaction(post.id, emo, post.ownerId || post.userId)
+                            triggerHaptic('light')
+                          }}
                           onCopyRoutine={
                             post.workoutId && !isMine
                               ? () =>

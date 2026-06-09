@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ChevronDown, ChevronUp, Dumbbell } from 'lucide-react'
 import { WORKOUT_TYPE_LABELS } from '../../data/exerciseLibrary'
 import type { WorkoutPreview } from '../../types'
+import { WorkoutReactionBar } from './WorkoutReactionBar'
 
 export interface WorkoutPostCardProps {
   preview: WorkoutPreview
@@ -9,9 +10,27 @@ export interface WorkoutPostCardProps {
   compact?: boolean
   onCopyRoutine?: () => void
   copyLabel?: string
+  postId?: string
+  reactions?: Record<string, string[]>
+  feedReactions?: Record<string, number>
+  effectiveUserId?: string
+  onReact?: (emoji: string) => void
+  showReactions?: boolean
 }
 
-export function WorkoutPostCard({ preview, text, compact = false, onCopyRoutine, copyLabel = 'Copiar rutina' }: WorkoutPostCardProps) {
+export function WorkoutPostCard({
+  preview,
+  text,
+  compact = false,
+  onCopyRoutine,
+  copyLabel = 'Copiar rutina',
+  postId,
+  reactions,
+  feedReactions,
+  effectiveUserId,
+  onReact,
+  showReactions = true,
+}: WorkoutPostCardProps) {
   const [expanded, setExpanded] = useState(!compact)
   const typeLabel = WORKOUT_TYPE_LABELS[preview.type] || preview.type
 
@@ -84,6 +103,16 @@ export function WorkoutPostCard({ preview, text, compact = false, onCopyRoutine,
           >
             📋 {copyLabel}
           </button>
+        )}
+
+        {showReactions && onReact && postId && (
+          <WorkoutReactionBar
+            postId={postId}
+            reactions={reactions}
+            optimisticCounts={feedReactions}
+            effectiveUserId={effectiveUserId}
+            onReact={onReact}
+          />
         )}
       </div>
     </div>
