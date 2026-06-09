@@ -214,6 +214,7 @@ import {
   cityStatsDocId,
   mergeCityChallengeWithFirestore,
 } from './services/cityWeeklyStats'
+import { recordPilotSyncSession } from './services/pilotSyncMetrics'
 import {
   formatLastLiveLabel,
   getTeamMemberStatus,
@@ -6228,6 +6229,24 @@ useEffect(() => {
         console.warn('endSync self clear via resilient path failed', e);
       }
       if (syncMins > 0) syncCityStatsBump(0, syncMins).catch(() => {})
+      if (minutes >= 2 && oldPartner) {
+        const uids = [effectiveUserId, oldPartner].sort() as [string, string]
+        const sid = `sync_${uids[0]}_${uids[1]}`
+        const partnerCity = realProfiles.find((p) => p.id === oldPartner)?.city
+        void recordPilotSyncSession(db, {
+          sessionId: sid,
+          weekKey,
+          participantIds: uids,
+          recorderUid: effectiveUserId,
+          selfCity: currentUser?.city,
+          partnerCity,
+          durationMin: minutes,
+        }).then((r) => {
+          if (r.recorded) {
+            console.info('[pilot] sync session recorded', sid, currentUser?.city)
+          }
+        })
+      }
       // Partner + session ended are cross-doc; best-effort but with recovery reset first.
       // Direct updateDoc after a session full of action writes can hit the bad mutations state
       // if previous transport left the pipeline unhealthy.

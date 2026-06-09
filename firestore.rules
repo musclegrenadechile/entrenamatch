@@ -570,6 +570,40 @@ service cloud.firestore {
       allow write: if isOwner(uid);
     }
 
+    // Pilot — real EntrenaSync sessions (Fase 100 metric)
+    match /pilotSyncSessions/{sessionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.sessionId == sessionId
+        && request.resource.data.weekKey is string
+        && request.resource.data.durationMin is number
+        && request.resource.data.durationMin >= 2
+        && request.resource.data.durationMin <= 480
+        && request.resource.data.participants is list
+        && request.resource.data.participants.size() == 2
+        && request.auth.uid in request.resource.data.participants
+        && request.resource.data.recordedBy == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    match /pilotWeeklyMetrics/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.realSyncCount == 1
+        && request.resource.data.totalSyncMinutes is number
+        && request.resource.data.totalSyncMinutes >= 2
+        && request.resource.data.totalSyncMinutes <= 480;
+      allow update: if isAuthenticated()
+        && request.resource.data.weekKey == resource.data.weekKey
+        && request.resource.data.cityNorm == resource.data.cityNorm
+        && request.resource.data.realSyncCount is number
+        && request.resource.data.realSyncCount >= resource.data.realSyncCount
+        && request.resource.data.realSyncCount <= resource.data.realSyncCount + 1
+        && request.resource.data.totalSyncMinutes is number
+        && request.resource.data.totalSyncMinutes >= resource.data.totalSyncMinutes
+        && request.resource.data.totalSyncMinutes <= resource.data.totalSyncMinutes + 480;
+    }
+
     match /chatTyping/{docId} {
       allow read: if isAuthenticated();
       allow create, update: if isAuthenticated()

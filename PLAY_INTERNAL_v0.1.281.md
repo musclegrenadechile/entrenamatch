@@ -88,3 +88,34 @@ npm run publish:play:internal
 | Ciudad piloto activa | | | Viña o Santiago |
 
 Registrar resultados en `OPEN_BETA_INFORME.md` (revisión jun 2026 +7 días).
+
+## Syncs reales — instrumentación (v0.1.282+)
+
+Cada EntrenaSync **≥2 min** entre **2 usuarios Firebase reales** en ciudad piloto (Viña, Santiago, Valparaíso, Concón) registra:
+
+| Colección | Contenido |
+|-----------|-----------|
+| `pilotSyncSessions/{sessionId}` | Sesión idempotente (`sync_uidA_uidB`) |
+| `pilotWeeklyMetrics/{city__weekKey}` | Contador semanal `realSyncCount` + minutos |
+
+### Consultar en Firebase Console
+
+```
+pilotWeeklyMetrics  →  filtrar weekKey == "2026-06-09"
+pilotSyncSessions   →  filtrar weekKey == "2026-06-09"  →  order by endedAt desc
+```
+
+### Reporte CLI
+
+```powershell
+node scripts/pilot-sync-report.mjs
+node scripts/pilot-sync-report.mjs --week=2026-06-09
+```
+
+**Meta Fase 100:** `realSyncCount >= 1` en Viña o Santiago en la semana actual.
+
+Desplegar reglas antes de probar:
+
+```powershell
+npx -y firebase-tools@latest deploy --only firestore:rules --project entrenamatch
+```
