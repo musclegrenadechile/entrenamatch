@@ -88,6 +88,8 @@ export function HomeTab(props: HomeTabProps) {
     isDemoMode,
     pilotDb,
     pilotInviteLink,
+    cityDerby,
+    onOpenDerbyMap,
     loadRealProfiles,
     isLoadingFeed,
     activeSyncPairs,
@@ -317,6 +319,8 @@ export function HomeTab(props: HomeTabProps) {
         pilotDb={pilotDb as import('firebase/firestore').Firestore | null | undefined}
         pilotInviteLink={pilotInviteLink as string | undefined}
         isDemoMode={isDemoMode as boolean | undefined}
+        cityDerby={cityDerby as import('../../services/cityDerby').CityDerbyState | null | undefined}
+        onOpenDerbyMap={onOpenDerbyMap as (() => void) | undefined}
         fuelProfile={fuelProfile}
         fuelTotals={fuelTodayTotals}
         fuelTodayLogs={fuelTodayLogs}

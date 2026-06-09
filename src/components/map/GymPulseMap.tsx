@@ -53,6 +53,7 @@ import * as LocalNetwork from '../../services/localNetwork'
 import { syncElapsedMinutes } from '../../utils/syncFomo'
 import { markMapGpsPromptShown, shouldShowMapGpsPrompt } from '../../utils/mapGpsPrompt'
 import { resolveCityZone, cityZonePolygonLatLngs } from '../../services/cityZoneBounds'
+import { DERBY_AWAY, DERBY_HOME, derbyStatusLine, type CityDerbyState } from '../../services/cityDerby'
 import { loadMapView, saveMapView } from '../../utils/mapViewCache'
 
 export type CityChallengeMapInfo = {
@@ -130,6 +131,8 @@ export interface GymPulseMapProps {
   cityChallenge?: CityChallengeMapInfo | null
   /** Fase 85 — CTA when user taps reto banner */
   onCityChallengeCta?: () => void
+  /** Derby Viña vs Santiago — dual zone overlay */
+  cityDerby?: CityDerbyState | null
 }
 
 export interface GymPulseMapHandle {
@@ -225,6 +228,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     userGymId = null,
     cityChallenge = null,
     onCityChallengeCta,
+    cityDerby = null,
   } = props
 
   const [mapPopup, setMapPopup] = useState<GymPulsePopupState | null>(null)
@@ -242,6 +246,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   const selfMarkerRef = useRef<any>(null)
   const areaCircleRef = useRef<any>(null)
   const cityChallengeLayerRef = useRef<any>(null)
+  const cityDerbyLayersRef = useRef<any[]>([])
   const prevLiveCountRef = useRef(0)
   const prevLiveIdsRef = useRef<Set<string>>(new Set())
   const lastZoomTimeRef = useRef(0)
@@ -988,19 +993,55 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     }
   }, [showLiveMap, layoutMode])
 
-  // City challenge zone overlay (fase 200)
+  // City derby / challenge zone overlays (fase 200 + derby)
   useEffect(() => {
     if (!mapInstanceRef.current || !showLiveMap) return undefined
     const map = mapInstanceRef.current
+
+    const clearDerbyLayers = () => {
+      for (const layer of cityDerbyLayersRef.current) {
+        try { map.removeLayer(layer) } catch { /* ignore */ }
+      }
+      cityDerbyLayersRef.current = []
+    }
+
     if (cityChallengeLayerRef.current) {
       try { map.removeLayer(cityChallengeLayerRef.current) } catch { /* ignore */ }
       cityChallengeLayerRef.current = null
     }
+    clearDerbyLayers()
+
+    if (cityDerby) {
+      const sides = [
+        { label: DERBY_HOME.label, norm: DERBY_HOME.norm, minutes: cityDerby.home.totalMinutes, base: '#22c55e' },
+        { label: DERBY_AWAY.label, norm: DERBY_AWAY.norm, minutes: cityDerby.away.totalMinutes, base: '#3b82f6' },
+      ]
+      for (const side of sides) {
+        const zone = resolveCityZone(side.label)
+        if (!zone) continue
+        const winning = cityDerby.leaderNorm === side.norm
+        const losing = cityDerby.leaderNorm && cityDerby.leaderNorm !== side.norm
+        const col = winning ? side.base : losing ? '#ef4444' : side.base
+        const layer = L.polygon(cityZonePolygonLatLngs(zone), {
+          color: col,
+          weight: winning ? 3 : 2,
+          dashArray: winning ? undefined : '8 6',
+          fillColor: col,
+          fillOpacity: winning ? 0.14 : 0.06,
+          opacity: 0.75,
+          interactive: false,
+        }).addTo(map)
+        cityDerbyLayersRef.current.push(layer)
+      }
+      return () => {
+        clearDerbyLayers()
+      }
+    }
+
     const zone = resolveCityZone(cityChallenge?.cityLabel)
     if (!zone) return undefined
     const col = ZONE_COLORS[zone.label] || ZONE_COLORS.default
-    const poly = cityZonePolygonLatLngs(zone)
-    cityChallengeLayerRef.current = L.polygon(poly, {
+    cityChallengeLayerRef.current = L.polygon(cityZonePolygonLatLngs(zone), {
       color: col,
       weight: 2,
       dashArray: '8 6',
@@ -1014,8 +1055,9 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         try { mapInstanceRef.current.removeLayer(cityChallengeLayerRef.current) } catch { /* ignore */ }
         cityChallengeLayerRef.current = null
       }
+      clearDerbyLayers()
     }
-  }, [showLiveMap, cityChallenge, mapForceTick])
+  }, [showLiveMap, cityChallenge, cityDerby, mapForceTick])
 
   const handleGymCheckInWithAnalytics = (gym: { id: string; name: string; lat: number; lng: number }) => {
     logMapEvent('partner_checkin', { gym_id: gym.id, gym_name: gym.name })
@@ -1251,7 +1293,36 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         </div>
       )}
 
-      {cityChallenge && cityChallenge.progressPct >= 0 && (
+      {cityDerby && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[2100] max-w-[92%] w-full max-w-md">
+          <div className="rounded-2xl bg-[#0D0D10]/94 border border-[#FF671F]/45 px-3 py-2 shadow-lg pointer-events-auto">
+            <div className="text-[9px] uppercase tracking-wider text-[#FF671F] font-bold text-center">
+              Derby · Viña vs Santiago
+            </div>
+            <div className="flex justify-between text-[10px] font-black mt-1 tabular-nums">
+              <span className="text-[#22c55e]">{cityDerby.home.totalMinutes} min</span>
+              <span className="text-[#9CA3AF] text-[9px] font-semibold">esta semana</span>
+              <span className="text-[#60a5fa]">{cityDerby.away.totalMinutes} min</span>
+            </div>
+            <div className="flex h-1.5 rounded-full overflow-hidden bg-black/50 mt-1">
+              <div className="bg-[#22c55e]" style={{ width: `${cityDerby.homeBarPct}%` }} />
+              <div className="bg-[#3b82f6]" style={{ width: `${cityDerby.awayBarPct}%` }} />
+            </div>
+            <p className="text-[9px] text-white/90 text-center mt-1">{derbyStatusLine(cityDerby)}</p>
+            {onCityChallengeCta && (
+              <button
+                type="button"
+                onClick={onCityChallengeCta}
+                className="mt-2 w-full py-1.5 rounded-xl bg-[#FF671F] text-black text-[10px] font-black active:brightness-90"
+              >
+                {selfIsLive ? 'Sigue sumando al derby' : 'LIVE → suma a tu ciudad'}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {!cityDerby && cityChallenge && cityChallenge.progressPct >= 0 && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[2100] max-w-[92%]">
           <div className="rounded-2xl bg-[#0D0D10]/92 border border-[#FF671F]/35 px-3 py-2 text-center shadow-lg pointer-events-auto">
             <div className="text-[9px] uppercase tracking-wider text-[#FF671F] font-bold">

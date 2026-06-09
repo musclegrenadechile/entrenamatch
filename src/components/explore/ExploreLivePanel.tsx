@@ -111,6 +111,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     dedicatedMapTab = false,
     onActivateLive,
     cityChallenge = null,
+    cityDerby = null,
     onCityChallengeCta,
     cityActiveCount = 0,
     cityLabel = 'tu zona',
@@ -395,6 +396,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           devTestCount={devTestLives.length}
           layoutMode={dedicatedMapTab ? 'tab' : useFixedOverlay ? 'fullscreen' : 'embedded'}
           cityChallenge={cityChallenge}
+          cityDerby={cityDerby}
           onCityChallengeCta={onCityChallengeCta}
 
           // New control callbacks (widget now manages its own filter/legend/dev buttons)

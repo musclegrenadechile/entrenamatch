@@ -216,6 +216,11 @@ import {
 } from './services/cityWeeklyStats'
 import { recordPilotSyncSession } from './services/pilotSyncMetrics'
 import { registerPilotMember, touchPilotActivity } from './services/pilotCohort'
+import {
+  aggregateDerbyClientMinutes,
+  attachCityDerbyListeners,
+  buildCityDerby,
+} from './services/cityDerby'
 import { buildInviteLink } from './utils/sparseCityDefaults'
 import {
   formatLastLiveLabel,
@@ -1623,6 +1628,8 @@ useEffect(() => {
   }, [])
 
   const [firestoreCityStats, setFirestoreCityStats] = useState<import('./services/cityWeeklyStats').CityWeeklyStatsDoc | null>(null)
+  const [derbyHomeStats, setDerbyHomeStats] = useState<import('./services/cityWeeklyStats').CityWeeklyStatsDoc | null>(null)
+  const [derbyAwayStats, setDerbyAwayStats] = useState<import('./services/cityWeeklyStats').CityWeeklyStatsDoc | null>(null)
   const [mapForceTick, setMapForceTick] = useState(0) // tiny trigger so map re-renders when toggling partners layer
   const [isTogglingLive, setIsTogglingLive] = useState(false) // prevent double-tap and show loading on the live toggle button (fixes stuck click)
   const isTogglingLiveRef = useRef(false)
@@ -2250,6 +2257,18 @@ useEffect(() => {
     return enrichCityChallengeV2(homeCityChallengeMerged, homeCityNorm, totals)
   }, [homeCityChallengeMerged, homeCityNorm, realProfiles])
 
+  const homeCityDerby = useMemo(() => {
+    const totals = aggregateCityTotals(realProfiles as Profile[])
+    const client = aggregateDerbyClientMinutes(totals)
+    return buildCityDerby(
+      derbyHomeStats,
+      derbyAwayStats,
+      client,
+      currentUser?.city,
+      getWeekKey()
+    )
+  }, [derbyHomeStats, derbyAwayStats, realProfiles, currentUser?.city])
+
   const homeGymLeaderboard = useMemo(() => {
     const gymId = currentUser?.gymCheckIn?.gymId
     if (!gymId || !isGymCheckInFresh(currentUser?.gymCheckIn)) return []
@@ -2315,6 +2334,19 @@ useEffect(() => {
     const docId = cityStatsDocId(homeCityNorm, getWeekKey())
     return attachCityWeeklyStatsListener(db, docId, setFirestoreCityStats)
   }, [isDemoMode, db, homeCityNorm])
+
+  useEffect(() => {
+    if (isDemoMode || !db) {
+      setDerbyHomeStats(null)
+      setDerbyAwayStats(null)
+      return undefined
+    }
+    const weekKey = getWeekKey()
+    return attachCityDerbyListeners(db, weekKey, (home, away) => {
+      setDerbyHomeStats(home)
+      setDerbyAwayStats(away)
+    })
+  }, [isDemoMode, db])
 
   useEffect(() => {
     if (isDemoMode || !db || !firebaseUser?.uid || !currentUser?.city) return
@@ -9441,6 +9473,7 @@ useEffect(() => {
                   }
                 : null
             }
+            cityDerby={homeCityDerby}
           />
           </div>
         )}
@@ -9752,6 +9785,8 @@ useEffect(() => {
             isDemoMode={isDemoMode}
             pilotDb={db}
             pilotInviteLink={buildInviteLink(effectiveUserId)}
+            cityDerby={homeCityDerby}
+            onOpenDerbyMap={() => navigateTab('map')}
             loadRealProfiles={loadRealProfiles}
             isLoadingFeed={isLoadingFeed}
             activeSyncPairs={activeSyncPairs}

@@ -9,6 +9,8 @@ import type { WeeklyPact, WeeklyPactProgress } from '../../services/weeklyPact'
 import { WeeklyPactCard } from './WeeklyPactCard'
 import { DailyHomeHeroCard } from './DailyHomeHeroCard'
 import { PilotProgramStrip } from './PilotProgramStrip'
+import { CityDerbyCard } from './CityDerbyCard'
+import type { CityDerbyState } from '../../services/cityDerby'
 import type { LocalNetworkCardProps } from './LocalNetworkCard'
 import type { Firestore } from 'firebase/firestore'
 
@@ -87,6 +89,8 @@ export interface DailyHomeProps {
   pilotDb?: Firestore | null
   pilotInviteLink?: string
   isDemoMode?: boolean
+  cityDerby?: CityDerbyState | null
+  onOpenDerbyMap?: () => void
 }
 
 function statusLine(member: TeamMemberView): string {
@@ -163,6 +167,8 @@ export function DailyHome({
   pilotDb = null,
   pilotInviteLink,
   isDemoMode = false,
+  cityDerby = null,
+  onOpenDerbyMap,
 }: DailyHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
   const hour = new Date().getHours()
@@ -199,6 +205,13 @@ export function DailyHome({
         db={pilotDb}
         isDemoMode={isDemoMode}
         inviteLink={pilotInviteLink}
+      />
+
+      <CityDerbyCard
+        derby={cityDerby}
+        onOpenMap={onOpenDerbyMap}
+        onGoLive={onToggleLive}
+        isLive={isLive}
       />
 
       <DailyHomeHeroCard

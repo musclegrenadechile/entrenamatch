@@ -1,6 +1,6 @@
 # Piloto cerrado — Viña del Mar × Santiago
 
-**Versión:** `0.1.283+`  
+**Versión:** `0.1.284+`  
 **Meta:** 50–200 MAU por ciudad piloto antes de abrir más comunas  
 **Programa:** `PILOT_PROGRAM_TITLE` en app = **Piloto Viña × Santiago**
 
@@ -27,6 +27,9 @@ Cualquier otra ciudad → **lista de espera** (`cityWaitlist` + formulario en Ex
 | `pilotCohort` Firestore | Registro automático al guardar perfil en ciudad piloto |
 | `pilotSyncSessions` | Syncs reales ≥2 min entre 2 usuarios Firebase |
 | Onboarding | Solo ciudades piloto en el selector |
+| `CityDerbyCard` (Tab Hoy) | Duelo semanal Viña vs Santiago — barras + CTA mapa/LIVE |
+| `GymPulseMap` overlay | Hex Costa (Viña/Valpo/Concón) vs Santiago — verde/azul/rojo según líder |
+| `cityDerby.ts` | Agrega `cityWeeklyStats` + minutos locales; listeners Firestore en tiempo real |
 
 ### Firestore
 
@@ -104,7 +107,7 @@ No abrir Concepción / La Serena hasta:
 - [ ] ≥50 MAU en **Viña** o **Santiago**
 - [ ] ≥1 sync real/semana sostenido 4 semanas
 - [ ] Crash-free ≥99% (7 días)
-- [ ] Derby Viña vs Santiago lanzado (fase 101)
+- [x] Derby Viña vs Santiago lanzado (v0.1.284 — `CityDerbyCard` en Hoy + banner/hex en mapa LIVE)
 
 ---
 
