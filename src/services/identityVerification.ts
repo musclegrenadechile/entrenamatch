@@ -3,7 +3,23 @@
  */
 
 import type { FirebaseStorage } from 'firebase/storage'
-import type { IdentityAiVerdict } from '../utils/identityVerification'
+import type {
+  IdentityAiVerdict,
+  IdentityVerificationStatus,
+} from '../utils/identityVerification'
+
+const VERIFY_CALLABLE_TIMEOUT_MS = 50_000
+const COMPRESS_TIMEOUT_MS = 12_000
+const PERSIST_TIMEOUT_MS = 18_000
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error(`${label} tardó demasiado — intenta de nuevo.`)), ms)
+    }),
+  ])
+}
 
 export type VerifyIdentityInput = {
   profilePhotoBase64?: string
@@ -21,8 +37,9 @@ export async function compressImageDataUrl(
   quality = 0.82
 ): Promise<string> {
   if (!dataUrl?.startsWith('data:') || typeof document === 'undefined') return dataUrl
-  return new Promise((resolve) => {
+  const work = new Promise<string>((resolve) => {
     const img = new Image()
+    const done = (out: string) => resolve(out)
     img.onload = () => {
       let { width, height } = img
       const scale = Math.min(1, maxSide / Math.max(width, height, 1))
@@ -33,15 +50,16 @@ export async function compressImageDataUrl(
       canvas.height = height
       const ctx = canvas.getContext('2d')
       if (!ctx) {
-        resolve(dataUrl)
+        done(dataUrl)
         return
       }
       ctx.drawImage(img, 0, 0, width, height)
-      resolve(canvas.toDataURL('image/jpeg', quality))
+      done(canvas.toDataURL('image/jpeg', quality))
     }
-    img.onerror = () => resolve(dataUrl)
+    img.onerror = () => done(dataUrl)
     img.src = dataUrl
   })
+  return withTimeout(work, COMPRESS_TIMEOUT_MS, 'Procesar imagen')
 }
 
 export async function imageRefToDataUrl(src: string): Promise<string | null> {
@@ -83,6 +101,23 @@ export async function verifyIdentityWithAi(input: VerifyIdentityInput): Promise<
   const { getFunctions, httpsCallable } = await import('firebase/functions')
   const functions = getFunctions(firebaseApp, 'us-central1')
   const fn = httpsCallable<VerifyIdentityInput, IdentityAiVerdict>(functions, 'verifyIdentity')
-  const res = await fn(input)
+  const res = await withTimeout(fn(input), VERIFY_CALLABLE_TIMEOUT_MS, 'Análisis facial')
   return res.data
+}
+
+export async function persistVerificationToProfile(
+  uid: string,
+  status: IdentityVerificationStatus,
+  selfiePhotoUrl?: string
+): Promise<void> {
+  const { updateUserProfile } = await import('./auth')
+  await withTimeout(
+    updateUserProfile(uid, {
+      verificationStatus: status,
+      verificationDate: Date.now(),
+      verificationDocuments: selfiePhotoUrl ? { selfiePhoto: selfiePhotoUrl } : undefined,
+    } as Record<string, unknown>),
+    PERSIST_TIMEOUT_MS,
+    'Guardar verificación'
+  )
 }

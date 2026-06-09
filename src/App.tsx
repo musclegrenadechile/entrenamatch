@@ -2877,6 +2877,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         liveMotionAt: goingLive ? (merged.liveMotionAt ?? null) : null,
         liveMotionIdle: goingLive ? (merged.liveMotionIdle ?? null) : null,
         liveActivityState: goingLive ? (merged.liveActivityState ?? null) : null,
+        verificationStatus: merged.verificationStatus ?? null,
+        verificationDate: merged.verificationDate ?? null,
+        verificationDocuments: merged.verificationDocuments ?? null,
       };
 
       const cleanProfileUpdate = sanitizeForFirestore(profileUpdate);
@@ -7094,12 +7097,14 @@ useEffect(() => {
     }
 
     setVerificationSubmitting(true)
+    const capturedSelfie = verificationSelfie
     try {
       const {
         verifyIdentityWithAi,
         uploadVerificationImage,
         imageRefToDataUrl,
         compressImageDataUrl,
+        persistVerificationToProfile,
       } = await import('./services/identityVerification')
       const { resolveVerificationStatusFromAi } = await import('./utils/identityVerification')
 
@@ -7111,18 +7116,7 @@ useEffect(() => {
         profilePhotoBase64 = await compressImageDataUrl(profilePhotoBase64)
       }
 
-      const selfieForAi = await compressImageDataUrl(verificationSelfie)
-
-      let selfieUrl = verificationSelfie
-      if (storage) {
-        try {
-          if (verificationSelfie.startsWith('data:')) {
-            selfieUrl = await uploadVerificationImage(storage, effectiveUserId, verificationSelfie, 'selfie')
-          }
-        } catch (e) {
-          console.warn('[verify] storage upload failed', e)
-        }
-      }
+      const selfieForAi = await compressImageDataUrl(capturedSelfie)
 
       const verdict = await verifyIdentityWithAi({
         profilePhotoBase64: profilePhotoBase64 || undefined,
@@ -7138,14 +7132,50 @@ useEffect(() => {
         verificationStatus,
         verificationDate: Date.now(),
         verificationDocuments: {
-          selfiePhoto: selfieUrl,
+          selfiePhoto: capturedSelfie,
         },
       }
 
-      await saveUserWithRealSync(updated as CurrentUser)
+      currentUserRef.current = updated as CurrentUser
+      saveUser(updated as CurrentUser)
       setShowVerificationFlow(false)
       setVerificationSelfie(null)
       setVerificationStep(1)
+
+      if (firebaseUser?.uid && !isDemoMode) {
+        void (async () => {
+          try {
+            let selfieUrl = capturedSelfie
+            if (storage && capturedSelfie.startsWith('data:')) {
+              try {
+                selfieUrl = await uploadVerificationImage(
+                  storage,
+                  effectiveUserId,
+                  selfieForAi,
+                  'selfie'
+                )
+              } catch (e) {
+                console.warn('[verify] storage upload failed', e)
+              }
+            }
+            await persistVerificationToProfile(
+              firebaseUser.uid,
+              verificationStatus,
+              selfieUrl.startsWith('data:') ? undefined : selfieUrl
+            )
+            if (!selfieUrl.startsWith('data:')) {
+              const withUrl = {
+                ...updated,
+                verificationDocuments: { selfiePhoto: selfieUrl },
+              }
+              currentUserRef.current = withUrl as CurrentUser
+              saveUser(withUrl as CurrentUser)
+            }
+          } catch (e) {
+            console.warn('[verify] background persist failed', e)
+          }
+        })()
+      }
 
       if (verificationStatus === 'verified') {
         addNotification({
