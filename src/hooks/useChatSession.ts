@@ -27,6 +27,7 @@ import {
   markPartnerThreadRead,
 } from '../services/chatPresence'
 import { BRAND_COPY } from '../constants/brandCopy'
+import { attachIncomingLikesListener } from '../services/incomingLikes'
 import {
   isQuotaError,
   MAX_SEEN_IDS_PER_CHAT,
@@ -156,14 +157,15 @@ export function useChatSession(opts: UseChatSessionOptions) {
             continue
           }
           const prof = (latestRealProfilesRef.current || []).find((p) => p.id === id)
+          const partnerName = prof?.name || BRAND_COPY.partnerGeneric
           addNotification.current({
             type: 'match',
-            title: '¡Nuevo Match!',
-            body: `Hiciste match con ${prof?.name || BRAND_COPY.partnerGeneric}`,
+            title: '¡Nuevo match!',
+            body: `${partnerName} te dio match — ya pueden chatear`,
             relatedId: id,
           })
-          toast.success(`¡Match con ${prof?.name || BRAND_COPY.partnerGeneric}!`, {
-            description: 'Ambos se dieron like — ya pueden chatear',
+          toast.success(`¡${partnerName} te dio match!`, {
+            description: 'Devuélvelo ya estaba — abre el chat',
           })
         }
       }
@@ -238,13 +240,14 @@ export function useChatSession(opts: UseChatSessionOptions) {
       text: string,
       toUserId: string,
       voice?: { voiceUrl: string; voiceDuration: number } | null,
+      photoUrl?: string | null,
       opts?: {
         clientId?: string
         onAck?: (serverId: string) => void
         onFail?: () => void
       }
     ) => {
-      if ((!text.trim() && !voice) || !firebaseUserUid || !db) return
+      if ((!text.trim() && !voice && !photoUrl) || !firebaseUserUid || !db) return
 
       const writeMessage = async () => {
         const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
@@ -261,6 +264,7 @@ export function useChatSession(opts: UseChatSessionOptions) {
           msg.voiceUrl = voice.voiceUrl
           msg.voiceDuration = voice.voiceDuration
         }
+        if (photoUrl) msg.photoUrl = photoUrl
         const ref = await addDoc(collection(db, 'messages'), msg)
         return ref.id
       }
@@ -448,6 +452,34 @@ export function useChatSession(opts: UseChatSessionOptions) {
       unsubs.forEach((u) => u())
     }
   }, [isDemoMode, firebaseUserUid, db, loadRealMatches])
+
+  const realMatchesRef = useRef<string[]>([])
+  useEffect(() => {
+    realMatchesRef.current = realMatches
+  }, [realMatches])
+
+  useEffect(() => {
+    if (isDemoMode || !firebaseUserUid || !db) return
+
+    return attachIncomingLikesListener(db, firebaseUserUid, {
+      getLikerName: (likerId) =>
+        (latestRealProfilesRef.current || []).find((p) => p.id === likerId)?.name ||
+        realProfiles.find((p) => p.id === likerId)?.name,
+      isAlreadyMatched: (likerId) => realMatchesRef.current.includes(likerId),
+      onIncomingLike: (_like, likerName) => {
+        addNotification.current({
+          type: 'like_received',
+          title: '¡Alguien te dio like!',
+          body: `${likerName} quiere entrenar contigo — devuélvelo en Explorar para hacer match`,
+          relatedId: _like.likerId,
+        })
+        toast(`${likerName} te dio like`, {
+          description: 'Explora su perfil y devuélvelo para hacer match',
+          duration: 6000,
+        })
+      },
+    })
+  }, [isDemoMode, firebaseUserUid, db, realProfiles, latestRealProfilesRef, addNotification])
 
   useEffect(() => {
     if (!activeChat || isDemoMode || !firebaseUserUid || !db) return

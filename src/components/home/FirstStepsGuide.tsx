@@ -1,4 +1,5 @@
 import { X, Radio, Users, RefreshCw, Target } from 'lucide-react'
+import { BRAND_COPY } from '../../constants/brandCopy'
 
 const STORAGE_KEY = 'entrenamatch_first_steps_dismissed'
 
@@ -51,7 +52,7 @@ export function FirstStepsGuide({
       id: 'team',
       icon: Users,
       title: '2. Equipo',
-      desc: 'Matches y socios con los que ya entrenaste — tu red fitness.',
+      desc: `Matches y socios con los que ya entrenaste — ${BRAND_COPY.network}.`,
       done: hasTeam,
       action: hasTeam ? onOpenMatches : onOpenExplore,
       actionLabel: hasTeam ? 'Ver mi equipo' : 'Buscar partner',

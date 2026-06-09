@@ -1,5 +1,3 @@
-import { APP_VERSION } from '../../constants'
-
 /** Unified tab lazy-load skeleton (fase 179) — matches BootShell branding. */
 export function TabLoadingShell({ message = 'Cargando…' }: { message?: string }) {
   return (
@@ -13,7 +11,7 @@ export function TabLoadingShell({ message = 'Cargando…' }: { message?: string 
         🏋️
       </div>
       <p className="text-sm font-semibold text-white mb-1">{message}</p>
-      <p className="text-xs text-[#9CA3AF]">EntrenaMatch · v{APP_VERSION}</p>
+      <p className="text-xs text-[#9CA3AF]">EntrenaMatch</p>
       <div className="mt-5 h-1 w-20 rounded-full bg-[#2F2F35] overflow-hidden">
         <div
           className="h-full w-1/2 bg-[#FF671F] rounded-full"

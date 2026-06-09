@@ -100,8 +100,8 @@ export function generateDailyChallenge(
       type: 'network' as const,
       title: 'Reto GymPulse: Onda en la red',
       description: hasLiveRed
-        ? 'Completa tu sesión y publica un post o voz visible en el mapa para tu red fitness.'
-        : 'Entrena y deja un post o nota de voz que vea tu red fitness. +Impacto colectivo.',
+        ? 'Completa tu sesión y publica un post o voz visible en el mapa para tu Comunidad.'
+        : 'Entrena y deja un post o nota de voz que vea tu Comunidad. +Impacto colectivo.',
       target: 1,
       progress: 0,
       reward: 55,

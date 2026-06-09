@@ -49,6 +49,8 @@ export function markAppFeatureTourSeen(): void {
 type AppFeatureTourProps = {
   open: boolean
   onClose: () => void
+  /** Navigate to the tab that matches the current tour step. */
+  onGoToStep?: (stepId: (typeof STEPS)[number]['id']) => void
 }
 
 function clearTourHighlights() {
@@ -58,12 +60,15 @@ function clearTourHighlights() {
 }
 
 /** Optional discovery tour — 3 steps anchored to bottom nav (fase 108). */
-export function AppFeatureTour({ open, onClose }: AppFeatureTourProps) {
+export function AppFeatureTour({ open, onClose, onGoToStep }: AppFeatureTourProps) {
   const [step, setStep] = useState(0)
 
   useEffect(() => {
-    if (open) setStep(0)
-  }, [open])
+    if (open) {
+      setStep(0)
+      onGoToStep?.('home')
+    }
+  }, [open, onGoToStep])
 
   useEffect(() => {
     if (!open) {
@@ -120,8 +125,13 @@ export function AppFeatureTour({ open, onClose }: AppFeatureTourProps) {
           <button
             type="button"
             onClick={() => {
-              if (isLast) finish()
-              else setStep((s) => s + 1)
+              if (isLast) {
+                finish()
+                return
+              }
+              const next = step + 1
+              setStep(next)
+              onGoToStep?.(STEPS[next].id)
             }}
             className="flex-1 py-2.5 rounded-xl bg-[#FF671F] text-black text-xs font-bold active:opacity-90"
           >

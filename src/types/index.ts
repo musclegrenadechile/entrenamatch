@@ -103,6 +103,7 @@ export interface Message {
   timestamp: number
   voiceUrl?: string
   voiceDuration?: number
+  photoUrl?: string
   read?: boolean
   readAt?: number
   clientId?: string
@@ -189,7 +190,7 @@ export interface Report {
 
 export interface Notification {
   id: string
-  type: 'match' | 'session_join' | 'squad_join' | 'sync_invite' | 'verification' | 'group_message' | 'report' | 'message' | 'daily_pulse'
+  type: 'match' | 'like_received' | 'session_join' | 'squad_join' | 'sync_invite' | 'verification' | 'group_message' | 'report' | 'message' | 'daily_pulse'
   title: string
   body: string
   timestamp: number

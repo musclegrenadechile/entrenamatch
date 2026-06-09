@@ -1,11 +1,11 @@
 /**
  * EntrenaMatch — lenguaje visible para el usuario.
- * Comunidad fitness amplia (gym, running, funcional, calistenia, etc.).
+ * Comunidad amplia (gym, running, funcional, calistenia, etc.).
  * Los identificadores internos del código (GymPulseMap, etc.) no cambian aquí.
  */
 export const BRAND_COPY = {
-  tagline: 'Tu comunidad fitness en vivo',
-  taglineMono: 'TU COMUNIDAD FITNESS EN VIVO',
+  tagline: 'Tu Comunidad en vivo',
+  taglineMono: 'TU COMUNIDAD EN VIVO',
   pitch:
     'Encuentra quién entrena cerca — gym, running, funcional o lo que muevas — haz match y entrena acompañado/a con EntrenaSync.',
   pitchShort:
@@ -13,12 +13,14 @@ export const BRAND_COPY = {
   partner: 'EntrenaPartner',
   partnerPlural: 'EntrenaPartners',
   partnerGeneric: 'un compañero de entreno',
-  community: 'comunidad fitness',
-  network: 'tu red fitness',
-  networkTitle: 'Tu red fitness',
+  community: 'Comunidad',
+  /** Feed social de la zona — nunca "por Comunidad". */
+  communityWallTitle: 'Muro de la Comunidad',
+  network: 'tu red en Comunidad',
+  networkTitle: 'Tu Comunidad',
   liveMapLabel: 'Mapa LIVE',
   metaDescription:
-    'EntrenaMatch — Tu comunidad fitness en vivo. Ve quién entrena ahora, sincronízate en tiempo real y guarda historial compartido. Lanzamiento inicial en Chile.',
+    'EntrenaMatch — Tu Comunidad en vivo. Ve quién entrena ahora, sincronízate en tiempo real y guarda historial compartido. Lanzamiento inicial en Chile.',
   manifestDescription:
     'Conecta con personas que entrenan cerca de ti. Gym, running, funcional y más. Solo para mayores de 18 años. Piloto en Chile.',
   /** Copy visible en la pestaña Mapa LIVE */
@@ -34,7 +36,7 @@ export const BRAND_COPY = {
     derbyCtaActive: 'Sigue sumando al derby',
     selfPopupLocation: 'Tu ubicación en el mapa LIVE',
     filtersTitle: 'Filtros del mapa',
-    partnersFilter: 'Spots fitness',
+    partnersFilter: 'Spots de entreno',
     tourHeader: 'Mapa LIVE',
     tetherSub: 'Tether activo en el mapa LIVE',
   },

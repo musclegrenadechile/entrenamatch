@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "deploy": "npm run build -- --base=/ && firebase deploy --only hosting --project entrenamatch",
-    "deploy:pages": "npm run build -- --base=/entrenamatch/",
+    "deploy:pages": "echo GH Pages deprecated — use npm run deploy (Firebase entrenamatch.web.app)",
     "build:web": "cross-env VITE_MAP_USE_MAPLIBRE=1 tsc --noEmit && cross-env VITE_MAP_USE_MAPLIBRE=1 vite build",
     "cap:sync": "npx cap sync",
     "cap:open:android": "npx cap open android",

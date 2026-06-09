@@ -92,6 +92,7 @@ import { BottomNav } from './components/app/BottomNav'
 import { AppFeatureTour, hasSeenAppFeatureTour, markAppFeatureTourSeen } from './components/onboarding/AppFeatureTour'
 import { useAndroidBackHandler } from './hooks/useAndroidBackHandler'
 import { suggestedSquadName } from './utils/sparseCityDefaults'
+import { formatLiveDistanceKm } from './utils/formatLiveDistance'
 import { partnersForMap } from './utils/partnerLocations'
 import {
   getTodayStr,
@@ -933,6 +934,98 @@ function App() {
     }
   }
 
+  const pickChatPhoto = async () => {
+    try {
+      if (typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform() && CapacitorCamera) {
+        const photo = await CapacitorCamera.getPhoto({
+          quality: 82,
+          allowEditing: true,
+          resultType: 'base64',
+          source: 'prompt',
+        })
+        if (!photo.base64String) return
+        const blob = await (await fetch(`data:image/jpeg;base64,${photo.base64String}`)).blob()
+        const url = URL.createObjectURL(blob)
+        if (chatPhotoPreviewRef.current) URL.revokeObjectURL(chatPhotoPreviewRef.current)
+        chatPhotoPreviewRef.current = url
+        setPendingChatPhoto({ blob, url })
+        return
+      }
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'image/*'
+      input.onchange = () => {
+        void (async () => {
+          const file = input.files?.[0]
+          if (!file) return
+          const url = URL.createObjectURL(file)
+          if (chatPhotoPreviewRef.current) URL.revokeObjectURL(chatPhotoPreviewRef.current)
+          chatPhotoPreviewRef.current = url
+          setPendingChatPhoto({ blob: file, url })
+        })()
+      }
+      input.click()
+    } catch (err) {
+      console.warn('pickChatPhoto', err)
+      toast.error('No se pudo abrir la cámara o galería')
+    }
+  }
+
+  const sendChatPhoto = async (chatId: string) => {
+    if (!pendingChatPhoto) return
+    setIsUploadingChatPhoto(true)
+    setChatPhotoUploadProgress(0)
+    try {
+      let photoUrl = ''
+      const { blob, url: previewUrl } = pendingChatPhoto
+      if (isDemoMode) {
+        for (let p = 25; p <= 100; p += 25) {
+          setChatPhotoUploadProgress(p)
+          await new Promise((r) => setTimeout(r, 60))
+        }
+        photoUrl = previewUrl
+      } else {
+        if (!firebaseUser?.uid || !storage) throw new Error('Firebase Storage no disponible')
+        const { ref, uploadBytesResumable, getDownloadURL } = await import('firebase/storage')
+        const ext = blob.type.includes('png') ? 'png' : 'jpg'
+        const storageRef = ref(storage, `chat-photos/${chatId}/${Date.now()}.${ext}`)
+        const uploadTask = uploadBytesResumable(storageRef, blob)
+        await new Promise<void>((resolve, reject) => {
+          uploadTask.on(
+            'state_changed',
+            (snapshot) => {
+              setChatPhotoUploadProgress(
+                Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
+              )
+            },
+            reject,
+            async () => {
+              photoUrl = await getDownloadURL(uploadTask.snapshot.ref)
+              resolve()
+            }
+          )
+        })
+      }
+      sendMessage('', null, photoUrl)
+      if (chatPhotoPreviewRef.current) {
+        URL.revokeObjectURL(chatPhotoPreviewRef.current)
+        chatPhotoPreviewRef.current = null
+      }
+      setPendingChatPhoto(null)
+      setIsUploadingChatPhoto(false)
+      setChatPhotoUploadProgress(0)
+      try { triggerHaptic('success') } catch {}
+      toast.success('Foto enviada')
+    } catch (e) {
+      console.error('sendChatPhoto', e)
+      toast.error('No se pudo enviar la foto', {
+        description: isDemoMode ? 'Error local' : 'Revisa conexión y reglas de Storage (chat-photos).',
+      })
+      setIsUploadingChatPhoto(false)
+      setChatPhotoUploadProgress(0)
+    }
+  }
+
   // Extend sendSessionMessage to support voice (update call sites later)
   // (existing function at ~4328, we'll patch it below)
 
@@ -1052,11 +1145,11 @@ function App() {
   const [showActivationGuide, setShowActivationGuide] = useState(false)
   const [showFeatureTour, setShowFeatureTour] = useState(false)
   const maybeScheduleFeatureTour = useCallback(() => {
-    if (isE2EHarnessActive() || hasSeenAppFeatureTour()) return
+    if (isE2EHarnessActive() || hasSeenAppFeatureTour() || showActivationGuide) return
     window.setTimeout(() => {
-      if (!hasSeenAppFeatureTour()) setShowFeatureTour(true)
-    }, 2000)
-  }, [])
+      if (!hasSeenAppFeatureTour() && !showActivationGuide) setShowFeatureTour(true)
+    }, 2500)
+  }, [showActivationGuide])
   const [myMarketplaceOrders, setMyMarketplaceOrders] = useState<MarketplaceOrder[]>([])
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([])
   const [isMarketplaceAdmin, setIsMarketplaceAdmin] = useState(false)
@@ -1333,6 +1426,10 @@ const sanitizeForFirestore = (obj: any): any => {
   const [pendingVoice, setPendingVoice] = useState<{blob: Blob, duration: number, url: string} | null>(null)
   const [isUploadingVoice, setIsUploadingVoice] = useState(false)
   const [voiceUploadProgress, setVoiceUploadProgress] = useState(0)
+  const [pendingChatPhoto, setPendingChatPhoto] = useState<{ blob: Blob; url: string } | null>(null)
+  const [isUploadingChatPhoto, setIsUploadingChatPhoto] = useState(false)
+  const [chatPhotoUploadProgress, setChatPhotoUploadProgress] = useState(0)
+  const chatPhotoPreviewRef = useRef<string | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
 
   // Voice notes recording (for 1:1 and group chats) - spectacular UX for fitness social
@@ -3340,6 +3437,7 @@ useEffect(() => {
               const isSocial =
                 data.type === 'message_new' ||
                 data.type === 'match_new' ||
+                data.type === 'like_received' ||
                 data.type === 'group_message'
               toast.success(title, {
                 description: body + (isTeam ? ' (tu equipo/red)' : ''),
@@ -3363,7 +3461,9 @@ useEffect(() => {
                           ? 'Unirme'
                           : target.tab === 'home'
                             ? 'Ver reto'
-                            : 'Ver live',
+                            : target.openProfileId
+                              ? 'Ver perfil'
+                              : 'Ver live',
                   onClick: () => applyNotificationNavigationRef.current?.(target, data.partnerName),
                 },
               })
@@ -6505,7 +6605,7 @@ useEffect(() => {
     const type = notification.type || 'message'
     // Gate by prefs (messages covers 1:1/group/match/muro activity; live for joins)
     const shouldAdd = 
-      (type.includes('message') || type === 'match' || type === 'verification' || type === 'report') ? notifPrefs.messages :
+      (type.includes('message') || type === 'match' || type === 'like_received' || type === 'verification' || type === 'report') ? notifPrefs.messages :
       (type === 'session_join' || type === 'squad_join') ? notifPrefs.live :
       true
     if (!shouldAdd) return
@@ -8158,8 +8258,12 @@ useEffect(() => {
     }, 180)
   }
 
-  const sendMessage = (text: string, voice?: {voiceUrl: string, voiceDuration: number} | null) => {
-    if (!activeChat || (!text.trim() && !voice)) return
+  const sendMessage = (
+    text: string,
+    voice?: { voiceUrl: string; voiceDuration: number } | null,
+    photoUrl?: string | null
+  ) => {
+    if (!activeChat || (!text.trim() && !voice && !photoUrl)) return
 
     const isRealChat = isRealChatId(activeChat)
 
@@ -8173,6 +8277,7 @@ useEffect(() => {
         timestamp: Date.now(),
         sendStatus: 'sending',
         ...(voice ? { voiceUrl: voice.voiceUrl, voiceDuration: voice.voiceDuration } : {}),
+        ...(photoUrl ? { photoUrl } : {}),
       }
 
       const patchOutgoing = (patch: Partial<Message>) => {
@@ -8195,7 +8300,7 @@ useEffect(() => {
       saveMessages({ ...messages, [activeChat]: [...currentChat, newMsg] })
       setRealChatMessages((prev) => [...prev, newMsg])
 
-      void sendRealMessage(text || '', activeChat, voice, {
+      void sendRealMessage(text || '', activeChat, voice, photoUrl, {
         clientId,
         onAck: (serverId) => {
           patchOutgoing({ id: serverId, clientId, sendStatus: 'sent' })
@@ -8213,7 +8318,8 @@ useEffect(() => {
       from: 'me',
       text: text.trim() || '',
       timestamp: Date.now(),
-      ...(voice ? { voiceUrl: voice.voiceUrl, voiceDuration: voice.voiceDuration } : {})
+      ...(voice ? { voiceUrl: voice.voiceUrl, voiceDuration: voice.voiceDuration } : {}),
+      ...(photoUrl ? { photoUrl } : {}),
     }
 
     const currentChat = messages[activeChat] || []
@@ -8813,7 +8919,7 @@ useEffect(() => {
                   <div key={user.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(user); }} className="card card-glass p-3 mb-2 flex gap-3 cursor-pointer active:scale-95 border border-[#22c55e]/50 hover:border-[#22c55e]/80 transition-all group">
                     {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-12 h-12 rounded-xl object-cover border-2 border-[#22c55e]/40 group-hover:border-[#22c55e]/70 transition" />}
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold flex items-center gap-1.5 text-white">{user.name || 'Usuario'} <span className="text-[#9CA3AF] text-xs font-normal">· {userLocation && user.distance < 900 ? `${user.distance.toFixed(1)}km` : '— km'}</span>{!!syncBonds[user.id] && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED · F{syncBonds[user.id].bondLevel || 1}</span>}</div>
+                      <div className="font-semibold flex items-center gap-1.5 text-white">{user.name || 'Usuario'} {formatLiveDistanceKm(user.distance) ? <span className="text-[#9CA3AF] text-xs font-normal">· {formatLiveDistanceKm(user.distance)}</span> : null}{!!syncBonds[user.id] && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED · F{syncBonds[user.id].bondLevel || 1}</span>}</div>
                       <div className="text-[#9CA3AF] text-sm truncate">{user.trainingTypes?.join(', ') || 'Entreno'}</div>
                       <div className="text-[#22c55e] text-xs flex items-center gap-1 mt-0.5">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m {user.seVaEnMin > 0 ? <span className={user.seVaEnMin < 15 ? 'text-red-400 font-bold' : 'text-orange-400'}>{user.seVaEnMin < 15 ? `· se va pronto en ${user.seVaEnMin}m 🔥` : `· se va en ${user.seVaEnMin}m`}</span> : ''}
                       </div>
@@ -8840,7 +8946,7 @@ useEffect(() => {
                         }} 
                         className={`text-[10px] ${syncBonds[user.id] ? 'bg-[#FFD700] text-black' : 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black'} px-3 py-1 rounded font-semibold active:brightness-90 flex items-center justify-center gap-1 ${joiningSyncWith === user.id ? 'opacity-80 cursor-wait' : ''}`}
                       >
-                        {joiningSyncWith === user.id ? '⏳ Abriendo EntrenaSync...' : (syncBonds[user.id] ? `🔥 RE-SYNC RED (NP+)` : `🔥 Entrenar juntos (Sync) ${userLocation && user.distance < 900 ? `(${user.distance.toFixed(0)}km)` : ''}`)}
+                        {joiningSyncWith === user.id ? '⏳ Abriendo EntrenaSync...' : (syncBonds[user.id] ? `🔥 RE-SYNC RED (NP+)` : `🔥 Entrenar juntos (Sync)${formatLiveDistanceKm(user.distance) ? ` (${formatLiveDistanceKm(user.distance)})` : ''}`)}
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); setShowLiveModal(false); openChat(user.id); if (!matches.includes(user.id) && !realMatches.includes(user.id)) handleSwipe(user.id, 'right'); }} className="text-[9px] border border-[#22c55e]/60 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10 hover:bg-[#22c55e]/5">Chatear ya</button>
                     </div>
@@ -9297,6 +9403,7 @@ useEffect(() => {
         {activeTab === 'red' && (
           <RedTab
             subTab={redSubTab}
+            hideSubNav={redSubTab === 'messages' && !!activeChat}
             onSubTabChange={(sub) => {
               setRedSubTab(sub)
               if (sub === 'matches') setActiveChat(null)
@@ -9336,7 +9443,7 @@ useEffect(() => {
         )}
 
         {redSubTab === 'messages' && (
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {!activeChat ? (
               <PullToRefresh
                 className="flex-1 flex flex-col min-h-0"
@@ -9381,6 +9488,9 @@ useEffect(() => {
                 pendingVoice={pendingVoice}
                 isUploadingVoice={isUploadingVoice}
                 voiceUploadProgress={voiceUploadProgress}
+                pendingPhoto={pendingChatPhoto ? { url: pendingChatPhoto.url } : null}
+                isUploadingPhoto={isUploadingChatPhoto}
+                photoUploadProgress={chatPhotoUploadProgress}
                 isRecordingVoice={isRecordingVoice}
                 recordingTime={recordingTime}
                 recordingLevels={recordingLevels}
@@ -9471,6 +9581,15 @@ useEffect(() => {
                   setIsUploadingVoice(false)
                   setVoiceUploadProgress(0)
                 }}
+                onPickPhoto={() => { void pickChatPhoto() }}
+                onCancelPendingPhoto={() => {
+                  if (chatPhotoPreviewRef.current) URL.revokeObjectURL(chatPhotoPreviewRef.current)
+                  chatPhotoPreviewRef.current = null
+                  setPendingChatPhoto(null)
+                }}
+                onSendPendingPhoto={() => {
+                  if (activeChat) void sendChatPhoto(activeChat)
+                }}
                 onChatInputChange={(value) => {
                   setChatInputValue(value)
                   if (isDemoMode || !db || !firebaseUser?.uid || !activeChat) return
@@ -9482,10 +9601,15 @@ useEffect(() => {
                 }}
                 onSubmitForm={(e) => {
                   e.preventDefault()
-                  const input = (e.currentTarget.elements[0] as HTMLInputElement)
-                  if (pendingVoice) sendVoiceNote(activeChat, false)
-                  else if (input.value.trim()) sendMessage(input.value)
-                  input.value = ''
+                  if (pendingChatPhoto) {
+                    void sendChatPhoto(activeChat)
+                    return
+                  }
+                  if (pendingVoice) {
+                    sendVoiceNote(activeChat, false)
+                    return
+                  }
+                  if (chatInputValue.trim()) sendMessage(chatInputValue)
                   setChatInputValue('')
                 }}
                 onStartVoiceRecording={startVoiceRecording}
@@ -10107,6 +10231,11 @@ useEffect(() => {
         onClose={() => {
           markAppFeatureTourSeen()
           setShowFeatureTour(false)
+        }}
+        onGoToStep={(stepId) => {
+          const tab =
+            stepId === 'home' ? 'home' : stepId === 'map' ? 'map' : stepId === 'explore' ? 'explore' : 'red'
+          navigateTab(tab as typeof activeTab)
         }}
       />
       <BottomNav
@@ -11052,7 +11181,7 @@ useEffect(() => {
                   <p><strong>Reglas obligatorias:</strong></p>
                   <ul className="list-disc pl-5 space-y-1.5 text-[13px]">
                     <li><strong>Respeto y profesionalismo:</strong> Sé motivador y respetuoso. Cero acoso, insultos, discriminación, mensajes sexuales o románticos no solicitados.</li>
-                    <li><strong>Enfoque fitness:</strong> Solo para sync de entrenos (gym, running, etc.). Nada de citas, spam, ventas o contenido off-topic.</li>
+                    <li><strong>Enfoque Comunidad:</strong> Solo para sync de entrenos (gym, running, etc.). Nada de citas, spam, ventas o contenido off-topic.</li>
                     <li><strong>Seguridad:</strong> Encuentros SOLO en lugares públicos. Verifica perfiles, informa a terceros, nunca compartas datos bancarios o sensibles.</li>
                     <li><strong>Perfiles auténticos:</strong> Fotos y datos reales. Prohibido perfiles falsos, bots, cuentas múltiples o impersonación.</li>
                     <li><strong>Contenido limpio:</strong> Posts, voces y fotos deben ser de entrenamiento. Nada explícito, violento, de odio o que viole leyes.</li>
@@ -11874,7 +12003,7 @@ useEffect(() => {
                     const isNetworkNotif = notif.type === 'message' && notif.relatedId && !!syncBonds[notif.relatedId] // from your training network
                     const isNetworkLive = (notif.type === 'session_join' || notif.type === 'squad_join') && notif.relatedId && !!syncBonds[notif.relatedId]
                     const isDailyPulse = notif.type === 'daily_pulse'
-                    const typeIcon = notif.type === 'message' ? (isNetworkNotif ? '⭐' : '💬') : notif.type === 'match' ? '❤️' : notif.type === 'session_join' ? (isNetworkLive ? '🔥' : '👥') : notif.type === 'squad_join' ? '🏋️' : isDailyPulse ? '🌅' : '🔔'
+                    const typeIcon = notif.type === 'message' ? (isNetworkNotif ? '⭐' : '💬') : notif.type === 'match' || notif.type === 'like_received' ? '❤️' : notif.type === 'session_join' ? (isNetworkLive ? '🔥' : '👥') : notif.type === 'squad_join' ? '🏋️' : isDailyPulse ? '🌅' : '🔔'
                     const time = notif.timestamp ? getRelativeTime(notif.timestamp) : ''
                     return (
                       <div 

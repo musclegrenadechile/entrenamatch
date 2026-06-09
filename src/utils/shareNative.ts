@@ -1,3 +1,5 @@
+import { sanitizeShareUrl } from './sparseCityDefaults'
+
 export type ShareNativeOutcome = 'shared' | 'copied' | 'cancelled' | 'failed'
 
 function isUserCancelled(err: unknown): boolean {
@@ -11,7 +13,7 @@ export async function shareNativeMessage(opts: {
   text: string
   url?: string
 }): Promise<ShareNativeOutcome> {
-  const url = opts.url?.trim()
+  const url = opts.url ? sanitizeShareUrl(opts.url) : undefined
 
   try {
     if (typeof navigator !== 'undefined' && navigator.share) {

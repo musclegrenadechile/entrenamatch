@@ -33,6 +33,10 @@ export function resolvePushNotificationData(data: PushData): NotificationNavTarg
     return { tab: 'red', activeChat: userId, partnerName }
   }
 
+  if (type === 'like_received' && userId) {
+    return { tab: 'explore', openProfileId: userId, partnerName }
+  }
+
   if (type === 'group_message') {
     const groupChatId = data.groupChatId
     if (groupChatId?.startsWith('sq')) {

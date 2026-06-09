@@ -46,6 +46,10 @@ export function resolveNotificationTarget(
     return { tab: 'red', activeChat: id }
   }
 
+  if (notif.type === 'like_received' && id) {
+    return { tab: 'explore', openProfileId: id }
+  }
+
   if (notif.type === 'squad_join' && id) {
     return { tab: 'squads', selectedSquad: id }
   }

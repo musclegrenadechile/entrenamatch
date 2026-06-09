@@ -12,6 +12,7 @@ import { VerifiedPhotoBadge, VerifiedProfilePhoto } from './VerifiedProfilePhoto
 import { VerifiedIdentityPrize } from './VerifiedIdentityPrize'
 import { isProfileVerified } from '../../utils/identityVerification'
 import { isPubliclyVerified } from '../../utils/profileVerification'
+import { BRAND_COPY } from '../../constants/brandCopy'
 import { WorkoutPostCard } from '../workout/WorkoutPostCard'
 
 export interface TrainerProfileSummary {
@@ -299,7 +300,7 @@ export function FullProfileSheet({
                   onClick={onOpenHomeFeed}
                   className="text-[9px] text-[#FF671F] underline active:opacity-70"
                 >
-                  Muro por Comunidad
+                  {BRAND_COPY.communityWallTitle}
                 </button>
                 <button
                   type="button"

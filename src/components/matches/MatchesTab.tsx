@@ -1,4 +1,5 @@
 import { Heart, MessageCircle } from 'lucide-react'
+import { BRAND_COPY } from '../../constants/brandCopy'
 import type { Profile, ProfilePost, Squad, TrainingReview } from '../../types'
 import { getDistanceKm, getTrainingStreak } from '../../utils'
 import { SkeletonList } from '../ui/SkeletonLoaders'
@@ -60,7 +61,7 @@ export function MatchesTab({
         <div>
           <div className="section-header">Tus matches</div>
           <div className="text-[#9CA3AF] text-sm">
-            Tu red fitness
+            {BRAND_COPY.networkTitle}
           </div>
         </div>
         {syncAgeSec != null && (

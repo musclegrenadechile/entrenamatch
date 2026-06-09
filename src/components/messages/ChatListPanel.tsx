@@ -1,3 +1,4 @@
+import { BRAND_COPY } from '../../constants/brandCopy'
 import type { Message, Profile } from '../../types'
 import { getDistanceKm } from '../../utils'
 import { SkeletonList } from '../ui/SkeletonLoaders'
@@ -67,7 +68,7 @@ export function ChatListPanel({
       {matchProfiles.length === 0 && (
         <div className="mt-8 p-8 rounded-3xl text-center border border-[#FF671F]/15 bg-gradient-to-b from-[#1C1C20] to-[#0D0D10]">
           <div className="text-5xl mb-3 opacity-40">💬</div>
-          <div className="font-black text-2xl tracking-[-1px] mb-2">Tu red fitness</div>
+          <div className="font-black text-2xl tracking-[-1px] mb-2">{BRAND_COPY.networkTitle}</div>
           <p className="text-sm text-[#9CA3AF] max-w-[260px] mx-auto leading-relaxed">
             Aquí aparecen tus matches. Chats 1:1 con notas de voz y propuestas de entrenamiento.
           </p>

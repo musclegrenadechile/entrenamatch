@@ -6,12 +6,15 @@ export interface RedTabProps {
   subTab: RedSubTab
   onSubTabChange: (tab: RedSubTab) => void
   chatUnreads: number
+  /** Full-screen chat — hide Matches/Mensajes switcher (WhatsApp-style). */
+  hideSubNav?: boolean
   children: ReactNode
 }
 
-export function RedTab({ subTab, onSubTabChange, chatUnreads, children }: RedTabProps) {
+export function RedTab({ subTab, onSubTabChange, chatUnreads, hideSubNav, children }: RedTabProps) {
   return (
     <div className="flex-1 flex flex-col min-h-0">
+      {!hideSubNav && (
       <div className="flex-shrink-0 px-4 pt-3 pb-2 border-b border-[#2F2F35] bg-[#0D0D10]/95">
         <p className="text-[10px] uppercase tracking-[0.18em] text-[#9CA3AF] font-bold mb-2">Tu red</p>
         <div
@@ -54,6 +57,7 @@ export function RedTab({ subTab, onSubTabChange, chatUnreads, children }: RedTab
           </button>
         </div>
       </div>
+      )}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">{children}</div>
     </div>
   )

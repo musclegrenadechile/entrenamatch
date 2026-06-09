@@ -14,6 +14,15 @@ describe('derbyStoryShare', () => {
     })
   })
 
+  it('never uses long regional labels that overlap on story canvas', () => {
+    const home = derbyShareTeamCopy(DERBY_HOME.norm)
+    const away = derbyShareTeamCopy(DERBY_AWAY.norm)
+    // "Región de Valparaíso" was the overlapping culprit in layout v1.
+    expect(home.title).not.toBe(DERBY_HOME.label)
+    expect(home.title.length).toBeLessThan(DERBY_HOME.label.length)
+    expect(away.title.length).toBeLessThan(20)
+  })
+
   it('formats leader line with short city name', () => {
     const derby = buildCityDerby(
       {

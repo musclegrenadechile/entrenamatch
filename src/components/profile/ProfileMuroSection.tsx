@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
+import { BRAND_COPY } from '../../constants/brandCopy'
 
 export function ProfileMuroSection(props: ProfileTabProps) {
   const {
@@ -67,7 +68,7 @@ export function ProfileMuroSection(props: ProfileTabProps) {
         onClick={() => (openCommunityMuro ? openCommunityMuro() : setActiveTab('home'))}
         className="text-[9px] text-[#FF671F] underline active:opacity-70"
       >
-        Muro por Comunidad →
+        {BRAND_COPY.communityWallTitle} →
       </button>
     </div>
     <button 
@@ -335,7 +336,7 @@ export function ProfileMuroSection(props: ProfileTabProps) {
         </>
       );
     })()}
-    <div className="text-center text-[7px] text-[#FFD700]/50 -mt-1 mb-1">Tu red de sync = tu estatus y resultados en la primera red social del fitness de verdad.</div>
+    <div className="text-center text-[7px] text-[#FFD700]/50 -mt-1 mb-1">Tu red de sync = tu estatus y resultados en la primera red social de Comunidad de verdad.</div>
   </div>
   <AnimatePresence>
     {loadingPersonalMuro && (profilePosts[effectiveUserId] || []).length === 0 ? (
@@ -591,7 +592,7 @@ export function ProfileMuroSection(props: ProfileTabProps) {
       className="w-full text-left card card-glass p-3 text-sm flex items-center justify-between active:scale-[0.99]"
     >
       <div>
-        <div className="text-[#FF671F] font-medium">Muro por Comunidad →</div>
+        <div className="text-[#FF671F] font-medium">{BRAND_COPY.communityWallTitle} →</div>
         <div className="text-[10px] text-[#9CA3AF]">Feed de tu zona, posts fijados y más</div>
       </div>
       <span className="text-[#FF671F]">→</span>

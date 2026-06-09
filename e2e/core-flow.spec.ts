@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test'
 async function enterDemoIfNeeded(page: import('@playwright/test').Page) {
   await page.goto('./')
   await page.waitForTimeout(2000)
-  const demoBtn = page.getByRole('button', { name: /demo|entrar/i }).first()
+  const demoBtn = page.getByRole('button', { name: /modo prueba/i })
   if (await demoBtn.isVisible().catch(() => false)) {
     await demoBtn.click()
     await page.waitForTimeout(2000)

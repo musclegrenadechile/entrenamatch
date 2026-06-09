@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ChevronUp, MapPin, Star, Zap } from 'lucide-react'
+import { formatLiveDistanceKm } from '../../utils/formatLiveDistance'
 import { sortLiveUsersForSheet, type LiveUserLike } from '../../utils/gymPulseLive'
 import { VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto'
 
@@ -59,6 +60,7 @@ export function GymPulseBottomSheet({
           {sorted.map((u) => {
             const inNet = !!syncBonds[u.id]
             const minsLive = Math.max(0, Math.floor((Date.now() - (u.trainingNowSince || Date.now())) / 60000))
+            const distLabel = formatLiveDistanceKm(u.distance)
             return (
               <li key={u.id} className="gym-pulse-bottom-sheet__row">
                 <button
@@ -95,11 +97,13 @@ export function GymPulseBottomSheet({
                       )}
                     </div>
                     <div className="gym-pulse-bottom-sheet__sub">
-                      <MapPin size={10} />
-                      {typeof u.distance === 'number' && u.distance < 900
-                        ? `${u.distance.toFixed(1)} km`
-                        : '— km'}
-                      <span>·</span>
+                      {distLabel ? (
+                        <>
+                          <MapPin size={10} />
+                          {distLabel}
+                          <span>·</span>
+                        </>
+                      ) : null}
                       {u.trainingTypes?.[0] || 'Entreno'}
                       <span>·</span>
                       {minsLive}m live

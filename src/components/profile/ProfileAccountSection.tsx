@@ -236,9 +236,8 @@ export function ProfileAccountSection(props: ProfileTabProps) {
       placeholder="Cuéntanos qué pasó, qué te gustó, qué duele o qué mejorarías..."
     />
 
-    {/* APK screenshot note */}
     <div className="text-[10px] text-[#9CA3AF] mt-1 mb-2">
-      En la APK nativa puedes adjuntar capturas al reportar por el mismo canal de invitación.
+      Cuanto más específico, más rápido lo arreglamos para la beta.
     </div>
 
     <button 
@@ -328,10 +327,10 @@ export function ProfileAccountSection(props: ProfileTabProps) {
     >
       🔔 Activar notificaciones push nativas (reales en Android, incluso app cerrada)
     </button>
-    <div className="text-[9px] text-center text-[#9CA3AF] mt-1">Mejor que PWA. Requiere build con google-services.json correcto.</div>
-    {!PushNotifications && (
+    <div className="text-[9px] text-center text-[#9CA3AF] mt-1">Recibirás avisos de matches y mensajes aunque cierres la app.</div>
+    {import.meta.env.DEV && !PushNotifications && (
       <div className="mt-1.5 text-[9px] bg-red-950/50 border border-red-500/50 text-red-400 p-1.5 rounded-xl text-center">
-        ⚠️ Esta build del APK no tiene google-services.json configurado. La app puede fallar al abrir en Android. Actualiza a v{APP_VERSION}+.
+        Dev: plugin push no cargado en esta build.
       </div>
     )}
   </div>

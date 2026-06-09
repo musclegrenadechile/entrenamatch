@@ -76,7 +76,8 @@ export function enrichLiveUser(
   let lng = Number(p.lng)
   if (!Number.isFinite(lat)) lat = -33.02
   if (!Number.isFinite(lng)) lng = -71.55
-  let distance = typeof p.distance === 'number' ? p.distance : 999
+  let distance: number | undefined =
+    typeof p.distance === 'number' && p.distance < 900 ? p.distance : undefined
   if (opts.userLocation && opts.getDistanceKm && hasMapCoords({ lat, lng })) {
     distance = opts.getDistanceKm(opts.userLocation.lat, opts.userLocation.lng, lat, lng)
   }

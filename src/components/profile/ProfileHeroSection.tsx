@@ -292,14 +292,16 @@ export function ProfileHeroSection(props: ProfileTabProps) {
     <button onClick={openProfileEditor} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-white/20 text-white active:bg-white/10 flex items-center gap-1.5">
       <Camera size={14} /> Agregar foto
     </button>
-    <button
-      type="button"
-      disabled={isTogglingLive}
-      onClick={() => void toggleLiveTraining(currentUser.trainingNow ? 'off' : 'on')}
-      className={`flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10 flex items-center gap-1.5 ${isTogglingLive ? 'opacity-70 cursor-wait' : ''}`}
-    >
-      🟢 {isTogglingLive ? 'Sincronizando…' : currentUser.trainingNow ? 'Terminar Live' : 'Activar Live'}
-    </button>
+    {currentUser.trainingNow && (
+      <button
+        type="button"
+        disabled={isTogglingLive}
+        onClick={() => void toggleLiveTraining('off')}
+        className={`flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-[#ef4444]/40 text-[#f87171] active:bg-[#ef4444]/10 flex items-center gap-1.5 ${isTogglingLive ? 'opacity-70 cursor-wait' : ''}`}
+      >
+        {isTogglingLive ? 'Sincronizando…' : 'Terminar Live'}
+      </button>
+    )}
     <button onClick={() => setActiveTab('explore')} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-[#FFD700]/30 text-[#FFD700] active:bg-[#FFD700]/10 flex items-center gap-1.5">
       🔍 Buscar alianzas
     </button>

@@ -13,6 +13,7 @@ export interface DirectChatMsg {
   timestamp: number
   voiceUrl?: string
   voiceDuration?: number
+  photoUrl?: string
   read?: boolean
   readAt?: number
   /** Client-generated id written to Firestore for fast optimistic ↔ server matching */
@@ -35,6 +36,7 @@ export function docToDirectChatMsg(
     timestamp: Number.isFinite(ts) ? ts : Date.now(),
     voiceUrl: data.voiceUrl as string | undefined,
     voiceDuration: data.voiceDuration as number | undefined,
+    photoUrl: data.photoUrl as string | undefined,
     read: data.read === true,
     readAt: Number.isFinite(readAt) ? readAt : undefined,
     clientId: typeof data.clientId === 'string' ? data.clientId : undefined,
@@ -84,6 +86,7 @@ export function dedupeWithOptimistic(
     timestamp?: number
     voiceUrl?: string
     voiceDuration?: number
+    photoUrl?: string
     clientId?: string
     sendStatus?: DirectChatSendStatus
     read?: boolean
@@ -115,6 +118,7 @@ export function dedupeWithOptimistic(
       timestamp: m.timestamp || Date.now(),
       voiceUrl: m.voiceUrl,
       voiceDuration: m.voiceDuration,
+      photoUrl: m.photoUrl,
       clientId: (m as { clientId?: string }).clientId || m.id,
       sendStatus: (m as { sendStatus?: DirectChatSendStatus }).sendStatus || 'sending',
       read: m.read,

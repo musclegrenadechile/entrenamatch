@@ -45,7 +45,13 @@ service firebase.storage {
     match /chat-voice/{chatId}/{allPaths=**} {
       allow read: if isAuthenticated();
       allow create: if isAuthenticated();
-      // We also allow update/delete in case of retries or cleanup (harmless for voice notes)
+      allow update, delete: if isAuthenticated();
+    }
+
+    // ===== CHAT PHOTOS (1:1 and group session folders) =====
+    match /chat-photos/{chatId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
       allow update, delete: if isAuthenticated();
     }
 

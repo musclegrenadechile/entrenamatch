@@ -182,7 +182,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
     {/* Network summary — epic social graph value. This is what makes EntrenaMatch the first real fitness social network: your sync alliances are a visible, compounding performance asset. */}
     <div className="mb-2 px-0.5">
       <div className="text-[11px] font-bold text-[#FFD700] mb-0.5">Fuerza del equipo: {networkStats.networkPower} — tu red de sync te hace más fuerte, más consistente y más visible</div>
-      {networkStats.networkPower > 30 && <div className="text-[8px] text-[#22c55e] mt-0.5">¡Tu red te da prioridad en el mapa en vivo, mejores recomendaciones y más visibilidad en la comunidad fitness!</div>}
+      {networkStats.networkPower > 30 && <div className="text-[8px] text-[#22c55e] mt-0.5">¡Tu red te da prioridad en el mapa en vivo, mejores recomendaciones y más visibilidad en la Comunidad!</div>}
       <div className="text-[9px] text-[#22c55e]">
         {networkStats.numPartners} socios • {networkStats.totalMin}min sincronizados • {networkStats.totalSessions} sesiones • Impacto colectivo en tu rendimiento: +{networkStats.estimatedImpact}%
       </div>
@@ -260,7 +260,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
             const url = buildInviteLink(effectiveUserId)
             const outcome = await shareNativeMessage({
               title: 'EntrenaMatch',
-              text: '🔥 Entreno en EntrenaMatch con mi red fitness. Syncs reales, mapa en vivo y constancia compartida. ¿Entrenamos juntos?',
+              text: '🔥 Entreno en EntrenaMatch con mi Comunidad. Syncs reales, mapa en vivo y constancia compartida. ¿Entrenamos juntos?',
               url,
             })
             if (outcome === 'copied') {

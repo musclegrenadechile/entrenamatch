@@ -1465,6 +1465,33 @@ exports.onDirectMessageCreated = functions.firestore
     return null;
   });
 
+function likeDocId(liker, liked) {
+  return `${liker}_${liked}`;
+}
+
+/** Like recibido (aún sin match mutuo) — avisa al destinatario. */
+exports.onLikeCreated = functions.firestore
+  .document('likes/{likeId}')
+  .onCreate(async (snap) => {
+    const d = snap.data() || {};
+    const liker = d.liker;
+    const liked = d.liked;
+    if (!liker || !liked || liker === liked) return null;
+
+    const reciprocal = await db.collection('likes').doc(likeDocId(liked, liker)).get();
+    if (reciprocal.exists) {
+      return null;
+    }
+
+    const likerName = (await readProfileName(liker)) || 'Alguien';
+    await sendPushToUser(liked, {
+      title: '❤️ ¡Alguien te dio like!',
+      body: `${likerName} quiere entrenar contigo — devuélvelo en Explorar para hacer match.`,
+      data: { type: 'like_received', userId: liker, partnerName: likerName },
+    });
+    return null;
+  });
+
 /** Nuevo match mutual — push a ambos. */
 exports.onMatchCreated = functions.firestore
   .document('matches/{matchId}')
@@ -1478,12 +1505,12 @@ exports.onMatchCreated = functions.firestore
 
     await sendPushToUser(u1, {
       title: '🎉 ¡Nuevo match!',
-      body: `Tú y ${name2 || 'alguien'} pueden entrenar juntos — escríbele ahora.`,
+      body: `${name2 || 'Alguien'} te dio match — ya pueden chatear.`,
       data: { type: 'match_new', userId: u2, partnerName: name2 || '' },
     });
     await sendPushToUser(u2, {
       title: '🎉 ¡Nuevo match!',
-      body: `Tú y ${name1 || 'alguien'} pueden entrenar juntos — escríbele ahora.`,
+      body: `${name1 || 'Alguien'} te dio match — ya pueden chatear.`,
       data: { type: 'match_new', userId: u1, partnerName: name1 || '' },
     });
     return null;

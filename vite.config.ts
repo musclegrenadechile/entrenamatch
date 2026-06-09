@@ -1,12 +1,21 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url))
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // GitHub Pages: /entrenamatch/
+  resolve: {
+    alias: !process.env.CAPACITOR
+      ? { '@capacitor/app': path.resolve(projectRoot, 'src/stubs/capacitor-app-stub.ts') }
+      : undefined,
+  },
+  // Firebase Hosting (official): /
   // Capacitor / native Android APK: relative '' so assets load inside WebView
-  base: process.env.CAPACITOR ? '' : '/entrenamatch/',
+  base: process.env.CAPACITOR ? '' : '/',
 
   define: {
     // Used to decide at build time whether to load the real loader or a dummy.
@@ -35,6 +44,7 @@ export default defineConfig({
     rollupOptions: {
       external: !process.env.CAPACITOR
         ? [
+            '@capacitor/app',
             '@capacitor/camera',
             '@capacitor/push-notifications',
             '@capacitor/share',

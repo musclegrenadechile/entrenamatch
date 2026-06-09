@@ -35,3 +35,17 @@ export const AUTO_MATCH_IDS = ['p1', 'p3', 'p5', 'p6', 'p9', 'p11', 'p13']
 
 // Centralized app version (used in UI footers, auth screen, crash reports, APK, etc.)
 export const APP_VERSION = '0.1.320'
+
+/** Firebase Hosting — canonical origin for APK shares and deep links. */
+export const PUBLIC_APP_URL = 'https://entrenamatch.web.app'
+export const PUBLIC_APP_URL_FIREBASE_ALT = 'https://entrenamatch.firebaseapp.com'
+/** @deprecated GH Pages — redirects to PUBLIC_APP_URL; do not share. */
+export const PUBLIC_APP_URL_GITHUB = 'https://musclegrenadechile.github.io/entrenamatch'
+
+/** Firebase Hosting origins only (official web + APK shares). */
+export const SHAREABLE_APP_HOSTS = [
+  'entrenamatch.web.app',
+  'entrenamatch.firebaseapp.com',
+] as const
+
+export const LEGACY_GITHUB_HOST = 'musclegrenadechile.github.io'

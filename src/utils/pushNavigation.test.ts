@@ -21,6 +21,16 @@ describe('resolvePushNotificationData', () => {
     })
   })
 
+  it('opens explore on incoming like push', () => {
+    expect(
+      resolvePushNotificationData({ type: 'like_received', userId: 'u9', partnerName: 'Cote' })
+    ).toEqual({
+      tab: 'explore',
+      openProfileId: 'u9',
+      partnerName: 'Cote',
+    })
+  })
+
   it('opens chat on new message', () => {
     expect(
       resolvePushNotificationData({ type: 'message_new', userId: 'u1', partnerName: 'Ana' })

@@ -1,8 +1,7 @@
-name: Deploy to GitHub Pages
+# Legacy GH Pages URL — redirect only to https://entrenamatch.web.app (official).
+name: GitHub Pages redirect (deprecated app)
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
 
 permissions:
@@ -27,26 +26,13 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Ensure Capacitor plugins are present (for loader in mixed builds)
-        run: npm install @capacitor/push-notifications@8.1.1 @capacitor/camera@8.2.0 --no-save
-
-      - name: Clean build artifacts (avoid stale Vite/Rolldown cache)
-        run: rm -rf node_modules/.vite dist
-
-      - name: Build
-        run: |
-          npm run build -- --base=/entrenamatch/
-
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
-      - name: Upload artifact
+      - name: Upload redirect stub
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: ./gh-pages-redirect
 
   deploy:
     environment:

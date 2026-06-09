@@ -1,7 +1,9 @@
 /** Render 1080×1920 branded story PNG for post-EntrenaSync share */
 
 import { sharePngBlob, type ShareImageOutcome } from './shareImageBlob'
+import { shareableAppHostname } from './sparseCityDefaults'
 
+/** @deprecated Use shareableAppHostname() — kept for tests expecting a string label. */
 export const SYNC_STORY_APP_URL = 'entrenamatch.web.app'
 
 export type SyncStoryOpts = {
@@ -316,7 +318,7 @@ export async function renderSyncStoryPng(opts: SyncStoryOpts): Promise<Blob | nu
   ctx.textAlign = 'center'
   ctx.fillText('¿Entrenamos juntos?', W / 2, ctaY + 46)
   ctx.font = '600 30px system-ui, sans-serif'
-  ctx.fillText(`Descarga gratis · ${SYNC_STORY_APP_URL}`, W / 2, ctaY + 88)
+  ctx.fillText(`Descarga gratis · ${shareableAppHostname()}`, W / 2, ctaY + 88)
 
   ctx.fillStyle = C.muted
   ctx.font = '500 28px system-ui, sans-serif'
@@ -336,7 +338,7 @@ export function buildSyncPostText(opts: {
   return (
     `🔥 ENTRENASYNC con ${b} — ${opts.minutes} min · Sync ${opts.vibe}%\n` +
     `${a} × ${b} entrenaron en vivo en EntrenaMatch.\n` +
-    `Únete en ${SYNC_STORY_APP_URL} · #EntrenaMatch #GymPulse #EntrenaSync`
+    `Únete en ${shareableAppHostname()} · #EntrenaMatch #GymPulse #EntrenaSync`
   )
 }
 

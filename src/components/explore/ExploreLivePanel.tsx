@@ -5,6 +5,7 @@ import { BRAND_COPY } from '../../constants/brandCopy'
 import { GymPulseMapShell, GymPulseBottomSheet } from '../map'
 import { GymPulseTour, hasSeenGymPulseTour } from '../map/GymPulseTour'
 import { seedGymRoutinesForPartner } from '../../services/gymRoutines'
+import { formatLiveDistanceKm } from '../../utils/formatLiveDistance'
 
 /** Lazy-load Leaflet + GymPulseMap only when Map tab opens (fase 198). */
 const GymPulseMap = lazy(() =>
@@ -230,7 +231,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
                 </div>
                 <div className="w-3 h-3 bg-[#22c55e] rounded-full flex-shrink-0 ring-2 ring-[#22c55e]/40" style={{animation: user.seVaEnMin < 10 ? 'live-pulse-green-urgent 1.1s ease-in-out infinite' : 'live-pulse-green 2.0s ease-in-out infinite'}}></div>
               </div>
-              <div className="text-[#9CA3AF] text-[9px] mb-0.5 flex items-center gap-1">{userLocation && user.distance < 900 ? `${user.distance.toFixed(1)}km` : '— km'} <span className="text-[#22c55e]/70">·</span> {user.trainingTypes?.[0] || 'Entreno'}</div>
+              <div className="text-[#9CA3AF] text-[9px] mb-0.5 flex items-center gap-1">{formatLiveDistanceKm(user.distance) ? <>{formatLiveDistanceKm(user.distance)} <span className="text-[#22c55e]/70">·</span> </> : null}{user.trainingTypes?.[0] || 'Entreno'}</div>
               <div className="flex items-center gap-1 text-[#22c55e] text-[9px] mb-1">
                 <span>En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m</span>
                 {user.seVaEnMin > 0 && <span className={`text-orange-400 ${user.seVaEnMin < 20 ? 'font-bold text-red-400 animate-pulse' : ''}`}>{user.seVaEnMin < 15 ? '· se va pronto' : '· se va en'} {user.seVaEnMin}m {user.seVaEnMin < 10 ? '¡ya!' : ''}</span>}

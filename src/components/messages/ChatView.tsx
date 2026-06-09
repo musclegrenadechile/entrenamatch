@@ -1,20 +1,20 @@
 import type { RefObject, ReactNode, FormEvent } from 'react'
-import { VerifiedPhotoBadge, VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto'
-import { isProfileVerified } from '../../utils/identityVerification'
-import { useMemo, useState } from 'react'
+import { VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import {
   ArrowLeft,
+  Camera,
   Check,
   CheckCheck,
-  ChevronDown,
-  ChevronUp,
-  Dumbbell,
+  Image as ImageIcon,
   Mic,
   MoreVertical,
+  Paperclip,
   Pause,
   Play,
   Send,
   Sparkles,
+  X,
   Zap,
 } from 'lucide-react'
 import type { Message, Profile } from '../../types'
@@ -25,23 +25,21 @@ import { ChatPactCompareStrip, type ChatPactCompareData } from './ChatPactCompar
 function ChatMessageStatus({ message }: { message: Message }) {
   const isRead = !!(message.read || message.readAt)
   if (message.sendStatus === 'sending') {
-    return <span className="chat-msg-status chat-msg-status--sending">Enviando…</span>
+    return <span className="chat-wa-status chat-wa-status--sending">· · ·</span>
   }
   if (message.sendStatus === 'failed') {
-    return <span className="chat-msg-status chat-msg-status--failed">No enviado</span>
+    return <span className="chat-wa-status chat-wa-status--failed">!</span>
   }
   if (isRead) {
     return (
-      <span className="chat-msg-status chat-msg-status--read" title="Leído">
-        <CheckCheck size={18} strokeWidth={2.75} aria-hidden />
-        <span className="chat-msg-status__label">Leído</span>
+      <span className="chat-wa-status chat-wa-status--read" title="Leído">
+        <CheckCheck size={14} strokeWidth={2.75} aria-hidden />
       </span>
     )
   }
   return (
-    <span className="chat-msg-status chat-msg-status--sent" title="Enviado">
-      <Check size={16} strokeWidth={2.5} aria-hidden />
-      <span className="chat-msg-status__label">Enviado</span>
+    <span className="chat-wa-status chat-wa-status--sent" title="Enviado">
+      <Check size={12} strokeWidth={2.5} aria-hidden />
     </span>
   )
 }
@@ -59,6 +57,9 @@ export interface ChatViewProps {
   pendingVoice: { url: string; duration: number } | null
   isUploadingVoice: boolean
   voiceUploadProgress: number
+  pendingPhoto?: { url: string } | null
+  isUploadingPhoto?: boolean
+  photoUploadProgress?: number
   isRecordingVoice: boolean
   recordingTime: number
   recordingLevels: number[]
@@ -81,6 +82,9 @@ export interface ChatViewProps {
   onReRecordVoice: () => void
   onSendPendingVoice: () => void
   onCancelUpload: () => void
+  onPickPhoto: () => void
+  onCancelPendingPhoto: () => void
+  onSendPendingPhoto: () => void
   onChatInputChange: (value: string) => void
   onSubmitForm: (e: FormEvent<HTMLFormElement>) => void
   onStartVoiceRecording: () => void
@@ -98,7 +102,6 @@ const TRAINING_CHIPS = [
   '🏋️ Gym esta semana',
   '🌊 Calistenia playa',
   '💪 Pesas 19:00',
-  '⚡ Funcional juntos',
 ]
 
 const BOND_TEMPLATES = [
@@ -122,6 +125,11 @@ function dayLabel(ts: number): string {
   return d.toLocaleDateString('es-CL', { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
+function formatMsgTime(ts?: number): string {
+  if (!ts) return ''
+  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+}
+
 export function ChatView({
   chatProfile,
   isRealMatch,
@@ -133,6 +141,9 @@ export function ChatView({
   pendingVoice,
   isUploadingVoice,
   voiceUploadProgress,
+  pendingPhoto,
+  isUploadingPhoto,
+  photoUploadProgress = 0,
   isRecordingVoice,
   recordingTime,
   recordingLevels,
@@ -155,6 +166,9 @@ export function ChatView({
   onReRecordVoice,
   onSendPendingVoice,
   onCancelUpload,
+  onPickPhoto,
+  onCancelPendingPhoto,
+  onSendPendingPhoto,
   onChatInputChange,
   onSubmitForm,
   onStartVoiceRecording,
@@ -167,7 +181,10 @@ export function ChatView({
   onOpenExplore,
 }: ChatViewProps) {
   const [menuOpen, setMenuOpen] = useState(false)
-  const [chipsOpen, setChipsOpen] = useState(chatMessages.length === 0)
+  const [attachOpen, setAttachOpen] = useState(false)
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const icebreakers =
     currentUser && chatProfile && chatMessages.length === 0
@@ -181,251 +198,148 @@ export function ChatView({
       const dk = dayKey(ts)
       const showDay = dk !== lastDay
       if (showDay) lastDay = dk
-      return { m, i, showDay, day: dayLabel(ts) }
+      const prev = chatMessages[i - 1]
+      const next = chatMessages[i + 1]
+      const isGroupedWithPrev =
+        prev && prev.from === m.from && ts - (prev.timestamp || 0) < 1000 * 60 * 4
+      const isGroupedWithNext =
+        next && next.from === m.from && (next.timestamp || 0) - ts < 1000 * 60 * 4
+      return { m, i, showDay, day: dayLabel(ts), isGroupedWithPrev, isGroupedWithNext }
     })
   }, [chatMessages])
 
-  return (
-    <div className="flex-1 flex flex-col chat-v2 min-h-0">
-      {/* Lane — partner + estado de entreno */}
-      <div className="chat-lane-header">
-        <button type="button" onClick={onBack} className="chat-lane-back" aria-label="Volver">
-          <ArrowLeft size={20} />
-        </button>
+  const scrollToBottom = (smooth = false) => {
+    bottomRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'end' })
+    const el = chatScrollRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }
 
-        <button type="button" className="chat-lane-partner" onClick={onShowProfile}>
-          <div className={`chat-lane-avatar ${chatProfile?.trainingNow ? 'live' : ''}`}>
+  useLayoutEffect(() => {
+    scrollToBottom(false)
+  }, [chatMessages.length, partnerTyping, pendingPhoto, pendingVoice, attachOpen])
+
+  useEffect(() => {
+    const ta = textareaRef.current
+    if (!ta) return
+    ta.style.height = 'auto'
+    ta.style.height = `${Math.min(ta.scrollHeight, 120)}px`
+    scrollToBottom(false)
+  }, [chatInputValue])
+
+  const canSend = !!(chatInputValue.trim() || pendingVoice || pendingPhoto)
+
+  return (
+    <div className="chat-wa flex-1 flex flex-col min-h-0 h-full overflow-hidden">
+      <header className="chat-wa-header">
+        <button type="button" onClick={onBack} className="chat-wa-header-btn" aria-label="Volver">
+          <ArrowLeft size={22} />
+        </button>
+        <button type="button" className="chat-wa-header-profile" onClick={onShowProfile}>
+          <div className={`chat-wa-avatar ${chatProfile?.trainingNow ? 'live' : ''}`}>
             {chatProfile?.photos?.[0] ? (
-              <>
-                <VerifiedProfilePhoto
-                  src={chatProfile.photos[0]}
-                  alt={`Foto de ${chatProfile.name}`}
-                  className="w-full h-full"
-                  imgClassName="w-full h-full object-cover"
-                  verificationStatus={chatProfile.verificationStatus}
-                  showBadge={false}
-                />
-                {isProfileVerified(chatProfile.verificationStatus) && (
-                  <VerifiedPhotoBadge size="xs" corner="top-right" className="top-0 right-0" />
-                )}
-              </>
+              <VerifiedProfilePhoto
+                src={chatProfile.photos[0]}
+                alt={chatProfile.name || 'Atleta'}
+                className="w-full h-full"
+                imgClassName="w-full h-full object-cover"
+                verificationStatus={chatProfile.verificationStatus}
+                showBadge={false}
+              />
             ) : (
               <span>👤</span>
             )}
           </div>
           <div className="min-w-0 text-left">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="font-black text-[15px] text-white truncate">{chatProfile?.name}</span>
-              {isRealMatch && <span className="chat-lane-badge chat-lane-badge--real">REAL</span>}
-              {syncBond && (
-                <span className="chat-lane-badge chat-lane-badge--bond">
-                  RED · {syncBond.bondLevel || 1}
-                </span>
+            <div className="chat-wa-name">{chatProfile?.name || 'Chat'}</div>
+            <div className="chat-wa-sub">
+              {partnerTyping ? (
+                <span className="text-[#25D366]">escribiendo…</span>
+              ) : chatProfile?.trainingNow ? (
+                <span className="text-[#22c55e]">en vivo ahora</span>
+              ) : (
+                <span>{chatProfile?.city || BRAND_COPY.partner}</span>
               )}
             </div>
-            <p className="text-[10px] text-[#9CA3AF] mt-0.5 truncate">
-              {chatProfile?.city}
-              {chatProfile?.trainingNow ? (
-                <span className="text-[#22c55e] font-bold"> · EN VIVO AHORA</span>
-              ) : partnerTyping ? (
-                <span className="text-[#FF671F] italic"> · escribiendo…</span>
-              ) : (
-                <span> · {BRAND_COPY.partner}</span>
-              )}
-            </p>
           </div>
         </button>
-
+        <button type="button" className="chat-wa-header-btn text-[#22c55e]" onClick={onStartSync} aria-label="EntrenaSync">
+          <Zap size={20} />
+        </button>
         <div className="relative">
-          <button
-            type="button"
-            onClick={() => setMenuOpen((v) => !v)}
-            className="p-2 text-[#9CA3AF]"
-            aria-label="Más opciones"
-          >
+          <button type="button" onClick={() => setMenuOpen((v) => !v)} className="chat-wa-header-btn" aria-label="Más">
             <MoreVertical size={20} />
           </button>
           {menuOpen && (
-            <div className="absolute top-full right-0 mt-1 w-44 rounded-xl bg-[#1C1C20] border border-[#2F2F35] shadow-lg z-20 py-1">
-              <button
-                type="button"
-                onClick={() => {
-                  onShowReviewModal()
-                  setMenuOpen(false)
-                }}
-                className="w-full text-left px-3 py-2 text-xs text-[#FF671F] active:bg-[#25252A]"
-              >
-                ★ Marcar entreno juntos
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onShowProfile()
-                  setMenuOpen(false)
-                }}
-                className="w-full text-left px-3 py-2 text-xs text-white active:bg-[#25252A]"
-              >
-                Perfil
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  onStartSync()
-                  setMenuOpen(false)
-                }}
-                className="w-full text-left px-3 py-2 text-xs text-[#22c55e] active:bg-[#25252A]"
-              >
-                Entrenar juntos (Sync)
-              </button>
+            <div className="absolute top-full right-0 mt-1 w-44 rounded-xl bg-[#1C1C20] border border-[#2F2F35] shadow-lg z-30 py-1">
+              <button type="button" onClick={() => { onShowReviewModal(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-[#FF671F]">★ Marcar entreno</button>
+              <button type="button" onClick={() => { onShowProfile(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-white">Perfil</button>
               {!isDemoMode && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    void onRefreshChat()
-                    setMenuOpen(false)
-                  }}
-                  className="w-full text-left px-3 py-2 text-xs text-[#FF671F] active:bg-[#25252A]"
-                  aria-label="Actualizar mensajes del chat"
-                >
-                  Actualizar mensajes
-                </button>
+                <button type="button" onClick={() => { void onRefreshChat(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-[#FF671F]">Actualizar</button>
               )}
-              <button
-                type="button"
-                onClick={() => {
-                  onReport()
-                  setMenuOpen(false)
-                }}
-                className="w-full text-left px-3 py-2 text-xs text-red-400 active:bg-[#25252A]"
-              >
-                Reportar
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  void onBlock()
-                  setMenuOpen(false)
-                }}
-                className="w-full text-left px-3 py-2 text-xs text-red-400 active:bg-[#25252A]"
-              >
-                Bloquear
-              </button>
+              <button type="button" onClick={() => { onReport(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-red-400">Reportar</button>
+              <button type="button" onClick={() => { void onBlock(); setMenuOpen(false) }} className="w-full text-left px-3 py-2 text-xs text-red-400">Bloquear</button>
             </div>
           )}
         </div>
-      </div>
+      </header>
 
-      {pactCompare && (
-        <ChatPactCompareStrip compare={pactCompare} onOpenEntrenoLog={onOpenEntrenoLog} />
-      )}
+      {pactCompare && <ChatPactCompareStrip compare={pactCompare} onOpenEntrenoLog={onOpenEntrenoLog} />}
 
-      {/* Dock de acciones — único EntrenaMatch */}
-      <div className="chat-action-dock">
-        <button type="button" className="chat-dock-btn chat-dock-btn--sync" onClick={onStartSync}>
-          <Zap size={15} />
-          Sync
-        </button>
-        <button
-          type="button"
-          className="chat-dock-btn chat-dock-btn--voice"
-          onClick={onStartVoiceRecording}
-          disabled={isRecordingVoice}
-        >
-          <Mic size={15} />
-          Voz{voiceStreak > 0 ? ` · ${voiceStreak}d` : ''}
-        </button>
-        {onOpenEntrenoLog && (
-          <button type="button" className="chat-dock-btn chat-dock-btn--log" onClick={onOpenEntrenoLog}>
-            <Dumbbell size={15} />
-            Log
-          </button>
+      <div ref={chatScrollRef} className="chat-wa-thread flex-1 min-h-0 overflow-y-auto overscroll-contain" id="chat-scroll">
+        {chatMessages.length === 0 && !partnerTyping && (
+          <div className="chat-wa-empty">
+            <div className="chat-wa-empty-icon">💬</div>
+            <p className="font-bold text-white">Canal de entreno</p>
+            <p className="text-sm text-[#9CA3AF] max-w-[260px] mx-auto mt-1">
+              Manda texto, foto o nota de voz. Propón un EntrenaSync cuando quieras.
+            </p>
+            {onOpenExplore && (
+              <button type="button" onClick={onOpenExplore} className="mt-3 text-xs font-bold text-[#FF671F] underline">
+                Buscar más partners →
+              </button>
+            )}
+          </div>
         )}
-        <button
-          type="button"
-          className="chat-dock-btn chat-dock-btn--chip"
-          onClick={() => setChipsOpen((v) => !v)}
-        >
-          <Sparkles size={15} />
-          Propuesta
-          {chipsOpen ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-        </button>
-      </div>
 
-      <div
-        ref={chatScrollRef}
-        className="flex-1 overflow-auto px-3 py-3 space-y-0.5 min-h-0 chat-v2-thread"
-        id="chat-scroll"
-      >
-        {messagesWithDividers.map(({ m, i, showDay, day }) => {
+        {messagesWithDividers.map(({ m, i, showDay, day, isGroupedWithPrev, isGroupedWithNext }) => {
           const isMe = m.from === 'me'
-          const time = m.timestamp
-            ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            : ''
-          const prev = chatMessages[i - 1]
-          const isGrouped =
-            prev && prev.from === m.from && m.timestamp - (prev.timestamp || 0) < 1000 * 60 * 4
+          const time = formatMsgTime(m.timestamp)
+          const tailClass = isMe
+            ? isGroupedWithNext ? 'chat-wa-bubble--sent-mid' : 'chat-wa-bubble--sent-last'
+            : isGroupedWithNext ? 'chat-wa-bubble--recv-mid' : 'chat-wa-bubble--recv-last'
 
           return (
             <div key={m.id || i}>
               {showDay && (
-                <div className="chat-day-divider">
-                  <span>{day}</span>
-                </div>
+                <div className="chat-day-divider"><span>{day}</span></div>
               )}
-              <div className={`flex ${isMe ? 'justify-end' : 'justify-start'} ${isGrouped ? 'mt-0.5' : 'mt-2'}`}>
-                <div className={`max-w-[86%] ${isMe ? 'text-right' : ''}`}>
-                  {!isGrouped && time && <div className="chat-timestamp px-1 mb-0.5">{time}</div>}
-                  <div
-                    className={`chat-bubble ${isMe ? 'chat-bubble-sent' : 'chat-bubble-received'} ${
-                      isGrouped ? 'chat-bubble-grouped' : ''
-                    } ${m.voiceUrl ? 'chat-bubble--voice' : ''}`}
-                  >
-                    {m.voiceUrl && !m.voiceUrl.startsWith('blob:') ? (
-                      <div className={`voice-bubble ${isMe ? 'sent' : 'received'}`}>
-                        <button
-                          type="button"
-                          onClick={() => onToggleVoicePlay(m)}
-                          className={`voice-play-btn ${playingVoiceId === m.id ? 'playing' : ''}`}
-                        >
-                          {playingVoiceId === m.id ? <Pause size={15} /> : <Play size={15} />}
-                        </button>
-                        <div className="voice-wave-container">
-                          <div className={`voice-wave ${playingVoiceId === m.id ? 'playing' : ''}`}>
-                            {[4, 7, 3, 9, 5, 8, 4, 6, 3, 7, 5, 9].map((h, idx) => (
-                              <div
-                                key={idx}
-                                className="voice-bar"
-                                style={{
-                                  height: `${h * 1.55}px`,
-                                  animationDelay: `${(idx % 6) * -120}ms`,
-                                }}
-                              />
-                            ))}
-                          </div>
-                          {playingVoiceId === m.id && (
-                            <div className="voice-progress" style={{ width: `${voicePlayProgress}%` }} />
-                          )}
+              <div className={`chat-wa-row ${isMe ? 'chat-wa-row--me' : 'chat-wa-row--them'} ${isGroupedWithPrev ? 'chat-wa-row--tight' : ''}`}>
+                <div className={`chat-wa-bubble ${isMe ? 'chat-wa-bubble--sent' : 'chat-wa-bubble--recv'} ${tailClass}`}>
+                  {m.photoUrl && (
+                    <button type="button" className="chat-wa-photo" onClick={() => setLightboxUrl(m.photoUrl!)}>
+                      <img src={m.photoUrl} alt="Foto enviada" loading="lazy" />
+                    </button>
+                  )}
+                  {m.voiceUrl && !m.voiceUrl.startsWith('blob:') ? (
+                    <div className={`voice-bubble ${isMe ? 'sent' : 'received'}`}>
+                      <button type="button" onClick={() => onToggleVoicePlay(m)} className={`voice-play-btn ${playingVoiceId === m.id ? 'playing' : ''}`}>
+                        {playingVoiceId === m.id ? <Pause size={15} /> : <Play size={15} />}
+                      </button>
+                      <div className="voice-wave-container">
+                        <div className={`voice-wave ${playingVoiceId === m.id ? 'playing' : ''}`}>
+                          {[4, 7, 3, 9, 5, 8, 4, 6, 3, 7, 5, 9].map((h, idx) => (
+                            <div key={idx} className="voice-bar" style={{ height: `${h * 1.55}px`, animationDelay: `${(idx % 6) * -120}ms` }} />
+                          ))}
                         </div>
-                        <span className="voice-duration">🎙️ {m.voiceDuration || '?'}s</span>
+                        {playingVoiceId === m.id && <div className="voice-progress" style={{ width: `${voicePlayProgress}%` }} />}
                       </div>
-                    ) : m.voiceUrl && m.voiceUrl.startsWith('blob:') ? (
-                      <span className="text-[10px] text-red-400">Nota de voz (sesión actual)</span>
-                    ) : (
-                      <span>{renderMessageText(m.text)}</span>
-                    )}
-                    {isMe && (
-                      <div className="chat-msg-status-row">
-                        <ChatMessageStatus message={m} />
-                        {m.readAt ? (
-                          <time className="chat-msg-status__time" dateTime={new Date(m.readAt).toISOString()}>
-                            {new Date(m.readAt).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                          </time>
-                        ) : null}
-                      </div>
-                    )}
+                      <span className="voice-duration">{m.voiceDuration || '?'}″</span>
+                    </div>
+                  ) : null}
+                  {m.text ? <div className="chat-wa-text">{renderMessageText(m.text)}</div> : null}
+                  <div className="chat-wa-meta">
+                    <time>{time}</time>
+                    {isMe && <ChatMessageStatus message={m} />}
                   </div>
                 </div>
               </div>
@@ -434,184 +348,142 @@ export function ChatView({
         })}
 
         {partnerTyping && (
-          <div className="flex justify-start mt-2 px-1">
-            <div className="chat-bubble chat-bubble-received px-3 py-2.5 flex items-center gap-1">
+          <div className="chat-wa-row chat-wa-row--them">
+            <div className="chat-wa-bubble chat-wa-bubble--recv chat-wa-bubble--recv-last px-3 py-2 flex gap-1">
               {[0, 150, 300].map((delay) => (
-                <span
-                  key={delay}
-                  className="w-1.5 h-1.5 rounded-full bg-[#FF671F]/80 animate-bounce"
-                  style={{ animationDelay: `${delay}ms` }}
-                />
+                <span key={delay} className="w-2 h-2 rounded-full bg-[#9CA3AF] animate-bounce" style={{ animationDelay: `${delay}ms` }} />
               ))}
             </div>
           </div>
         )}
-
-        {chatMessages.length === 0 && !partnerTyping && (
-          <div className="chat-empty chat-empty--v2">
-            <div className="chat-empty-ring">💪</div>
-            <div className="title">Canal de entreno listo</div>
-            <p className="text-[#9CA3AF] text-sm max-w-[260px] mx-auto leading-snug">
-              Propón un horario, manda una nota de voz o arranca un EntrenaSync. Todo queda sincronizado
-              entre dispositivos.
-            </p>
-            {onOpenExplore && (
-              <button
-                type="button"
-                onClick={onOpenExplore}
-                className="mt-3 text-xs font-bold text-[#FF671F] underline active:opacity-80"
-              >
-                Buscar más gym partners →
-              </button>
-            )}
-          </div>
-        )}
+        <div ref={bottomRef} className="h-px shrink-0" aria-hidden />
       </div>
 
-      {/* Propuestas colapsables */}
-      {chipsOpen && (
-        <div className="chat-chips-panel">
-          {icebreakers.length > 0 && (
-            <>
-              <p className="chat-chips-label">Para romper el hielo</p>
-              <div className="chat-chips-row">
-                {icebreakers.map((tip) => (
-                  <button key={tip} type="button" className="chat-chip chat-chip--ice" onClick={() => onSendMessage(tip)}>
-                    {tip}
-                  </button>
-                ))}
-              </div>
-            </>
+      {attachOpen && (
+        <div className="chat-wa-attach-panel">
+          <button type="button" className="chat-wa-attach-item" onClick={() => { onPickPhoto(); setAttachOpen(false) }}>
+            <span className="chat-wa-attach-icon chat-wa-attach-icon--photo"><Camera size={20} /></span>
+            Foto
+          </button>
+          <button type="button" className="chat-wa-attach-item" onClick={() => { onStartVoiceRecording(); setAttachOpen(false) }}>
+            <span className="chat-wa-attach-icon chat-wa-attach-icon--voice"><Mic size={20} /></span>
+            Nota de voz{voiceStreak > 0 ? ` · ${voiceStreak}d` : ''}
+          </button>
+          {onOpenEntrenoLog && (
+            <button type="button" className="chat-wa-attach-item" onClick={() => { onOpenEntrenoLog(); setAttachOpen(false) }}>
+              <span className="chat-wa-attach-icon"><Sparkles size={20} /></span>
+              Log
+            </button>
           )}
-          <p className="chat-chips-label">Propuestas de entreno</p>
-          <div className="chat-chips-row">
-            {TRAINING_CHIPS.map((proposal) => (
-              <button
-                key={proposal}
-                type="button"
-                className="chat-chip"
-                onClick={() => onSendMessage(proposal.replace(/^[^\s]+\s/, ''))}
-              >
-                {proposal}
-              </button>
-            ))}
-          </div>
-          {syncBond && (
-            <>
-              <p className="chat-chips-label">Para coordinar</p>
-              <div className="chat-chips-row">
-                {BOND_TEMPLATES.map((tpl) => (
-                  <button
-                    key={tpl}
-                    type="button"
-                    className="chat-chip chat-chip--bond"
-                    onClick={() => onSendBondTemplate(tpl)}
-                  >
-                    {tpl}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+          {icebreakers.slice(0, 2).map((tip) => (
+            <button key={tip} type="button" className="chat-wa-attach-chip" onClick={() => { onSendMessage(tip); setAttachOpen(false) }}>
+              {tip}
+            </button>
+          ))}
+          {TRAINING_CHIPS.slice(0, 2).map((p) => (
+            <button key={p} type="button" className="chat-wa-attach-chip" onClick={() => { onSendMessage(p.replace(/^[^\s]+\s/, '')); setAttachOpen(false) }}>
+              {p}
+            </button>
+          ))}
+          {syncBond && BOND_TEMPLATES.slice(0, 1).map((tpl) => (
+            <button key={tpl} type="button" className="chat-wa-attach-chip chat-wa-attach-chip--bond" onClick={() => { onSendBondTemplate(tpl); setAttachOpen(false) }}>
+              {tpl}
+            </button>
+          ))}
         </div>
       )}
 
-      <div className="chat-composer chat-composer--v2">
+      <footer className="chat-wa-composer">
+        {pendingPhoto && !isUploadingPhoto && (
+          <div className="chat-wa-pending-photo">
+            <img src={pendingPhoto.url} alt="Vista previa" />
+            <button type="button" onClick={onCancelPendingPhoto} className="chat-wa-pending-photo-x"><X size={16} /></button>
+            <button type="button" onClick={onSendPendingPhoto} className="chat-wa-pending-photo-send">Enviar foto</button>
+          </div>
+        )}
+        {isUploadingPhoto && (
+          <div className="voice-uploading mb-2">
+            <div className="label">SUBIENDO FOTO…</div>
+            <div className="progress-track"><div className="progress-fill" style={{ width: `${photoUploadProgress || 12}%` }} /></div>
+          </div>
+        )}
         {pendingVoice && !isUploadingVoice && (
           <div className="chat-voice-ready">
-            <button type="button" onClick={onPreviewPendingVoice} className="chat-voice-ready-play">
-              <Play size={18} />
-            </button>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-black text-[#FF671F] tracking-wider">RITUAL DE VOZ</p>
-              <p className="text-[11px] text-[#9CA3AF]">
-                {pendingVoice.duration}s · +1 racha de voz
-              </p>
-            </div>
-            <button type="button" onClick={onCancelPendingVoice} className="text-[9px] text-red-400 px-2">
-              ✕
-            </button>
-            <button type="button" onClick={onReRecordVoice} className="text-[9px] text-[#EAB308] px-2">
-              Otra
-            </button>
-            <button type="button" onClick={onSendPendingVoice} className="chat-voice-send">
-              Enviar
-            </button>
+            <button type="button" onClick={onPreviewPendingVoice} className="chat-voice-ready-play"><Play size={18} /></button>
+            <div className="flex-1 min-w-0 text-[11px] text-[#9CA3AF]">{pendingVoice.duration}s de voz</div>
+            <button type="button" onClick={onCancelPendingVoice} className="text-[9px] text-red-400 px-2">✕</button>
+            <button type="button" onClick={onReRecordVoice} className="text-[9px] text-[#EAB308] px-2">Otra</button>
+            <button type="button" onClick={onSendPendingVoice} className="chat-voice-send">Enviar</button>
           </div>
         )}
-
         {isUploadingVoice && (
           <div className="voice-uploading mb-2">
-            <div className="label">TRANSMITIENDO A TU MATCH...</div>
-            <div className="progress-track">
-              <div className="progress-fill" style={{ width: `${voiceUploadProgress || 10}%` }} />
-            </div>
-            <div className="text-[10px] tabular-nums text-[#FF671F] font-mono w-8 text-right">
-              {voiceUploadProgress || 0}%
-            </div>
-            <button type="button" onClick={onCancelUpload} className="text-[9px] px-1.5 py-0.5 text-red-400 ml-1">
-              cancelar
-            </button>
+            <div className="label">ENVIANDO VOZ…</div>
+            <div className="progress-track"><div className="progress-fill" style={{ width: `${voiceUploadProgress || 10}%` }} /></div>
+            <button type="button" onClick={onCancelUpload} className="text-[9px] text-red-400 ml-1">cancelar</button>
           </div>
         )}
 
-        <form onSubmit={onSubmitForm} className="flex gap-2 items-center">
+        <form onSubmit={onSubmitForm} className="chat-wa-composer-row">
           {isRecordingVoice ? (
-            <div className="voice-recording flex-1" style={{ minWidth: 175 }}>
+            <div className="voice-recording flex-1">
               <div className="dot" />
-              <div className="flex-1">
-                <div className="text-red-400 text-[9px] font-extrabold tracking-[1px]">GRABANDO</div>
-                <div className="text-xs text-red-400/80 tabular-nums">{recordingTime}s / 60</div>
-              </div>
-              <div className="flex gap-1 items-end h-4 mx-1 bg-black/30 rounded px-1">
-                {recordingLevels.map((h, i) => (
-                  <div key={i} className="w-[2px] bg-red-400 rounded" style={{ height: `${Math.max(3, h)}px` }} />
+              <div className="flex-1 text-xs text-red-400 tabular-nums">{recordingTime}s / 60</div>
+              <div className="flex gap-0.5 items-end h-4">
+                {recordingLevels.map((h, idx) => (
+                  <div key={idx} className="w-[2px] bg-red-400 rounded" style={{ height: `${Math.max(3, h)}px` }} />
                 ))}
               </div>
-              <button
-                type="button"
-                onClick={onStopVoiceRecording}
-                className="px-3 py-1 text-[10px] bg-red-600 text-white rounded-full font-extrabold"
-              >
-                PARAR
-              </button>
-              <button type="button" onClick={onCancelVoiceRecording} className="text-red-400 text-xl px-1">
-                ×
-              </button>
+              <button type="button" onClick={onStopVoiceRecording} className="px-3 py-1 text-[10px] bg-red-600 text-white rounded-full font-bold">Listo</button>
+              <button type="button" onClick={onCancelVoiceRecording} className="text-red-400 text-xl px-1">×</button>
             </div>
           ) : (
             <>
-              <input
-                type="text"
-                placeholder={`Mensaje a tu ${BRAND_COPY.partner}…`}
-                className="chat-input flex-1"
-                onChange={(e) => onChatInputChange(e.target.value)}
-                value={chatInputValue}
-              />
               <button
                 type="button"
-                onClick={onStartVoiceRecording}
-                className="chat-mic-btn w-11 h-11 rounded-2xl flex items-center justify-center"
-                aria-label="Grabar nota de voz"
-                title="Nota de voz"
+                className={`chat-wa-composer-btn ${attachOpen ? 'active' : ''}`}
+                onClick={() => setAttachOpen((v) => !v)}
+                aria-label="Adjuntar"
               >
-                <Mic size={18} />
+                <Paperclip size={20} />
               </button>
-              <button
-                type="submit"
-                disabled={!chatInputValue.trim() && !pendingVoice}
-                aria-label="Enviar mensaje"
-                className="chat-send-btn w-11 h-11 rounded-2xl flex items-center justify-center disabled:bg-[#2F2F35] disabled:text-[#6B7280]"
-              >
-                <Send size={17} />
+              <button type="button" className="chat-wa-composer-btn" onClick={onPickPhoto} aria-label="Cámara">
+                <ImageIcon size={20} />
               </button>
+              <textarea
+                ref={textareaRef}
+                rows={1}
+                placeholder="Mensaje"
+                className="chat-wa-input"
+                value={chatInputValue}
+                onChange={(e) => onChatInputChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    if (canSend) e.currentTarget.form?.requestSubmit()
+                  }
+                }}
+              />
+              {canSend ? (
+                <button type="submit" className="chat-wa-send" aria-label="Enviar">
+                  <Send size={18} />
+                </button>
+              ) : (
+                <button type="button" className="chat-wa-composer-btn chat-wa-composer-btn--mic" onClick={onStartVoiceRecording} aria-label="Grabar voz">
+                  <Mic size={20} />
+                </button>
+              )}
             </>
           )}
         </form>
-        <p className="text-center text-[9px] text-[#6B7280] mt-2">
-          {!isDemoMode ? `Canal ${BRAND_COPY.partner} · voz + sync + logs` : 'Demo local'}
-        </p>
-      </div>
+      </footer>
+
+      {lightboxUrl && (
+        <div className="chat-wa-lightbox" onClick={() => setLightboxUrl(null)} role="dialog" aria-modal>
+          <img src={lightboxUrl} alt="Foto ampliada" onClick={(e) => e.stopPropagation()} />
+          <button type="button" className="chat-wa-lightbox-close" onClick={() => setLightboxUrl(null)}><X size={24} /></button>
+        </div>
+      )}
     </div>
   )
 }

@@ -3,10 +3,10 @@
 import type { CityDerbyState } from '../services/cityDerby'
 import { DERBY_AWAY, DERBY_HOME } from '../services/cityDerby'
 import { sharePngBlob, type ShareImageOutcome } from './shareImageBlob'
+import { resolveShareableAppBase, shareableAppHostname } from './sparseCityDefaults'
 
 const W = 1080
 const H = 1920
-const APP_URL = 'entrenamatch.web.app'
 
 const C = {
   orange: '#FF671F',
@@ -361,7 +361,7 @@ export async function renderDerbyStoryPng(derby: CityDerbyState): Promise<Blob |
   ctx.textBaseline = 'middle'
   ctx.fillText('Suma minutos por tu ciudad', W / 2, ctaY + 40)
   ctx.font = '600 28px system-ui, sans-serif'
-  ctx.fillText(`Activa LIVE · ${APP_URL}`, W / 2, ctaY + 82)
+  ctx.fillText(`Activa LIVE · ${shareableAppHostname()}`, W / 2, ctaY + 82)
 
   ctx.fillStyle = C.muted
   ctx.font = '500 24px system-ui, sans-serif'
@@ -378,7 +378,7 @@ function derbyStoryFilename(weekKey: string): string {
 }
 
 function derbyStoryShareText(derby: CityDerbyState): string {
-  return `${derbyShareLeaderLine(derby)} — ${DERBY_HOME.label} vs ${DERBY_AWAY.label}. #EntrenaMatch\nhttps://${APP_URL}`
+  return `${derbyShareLeaderLine(derby)} — ${DERBY_HOME.label} vs ${DERBY_AWAY.label}. #EntrenaMatch\n${resolveShareableAppBase()}`
 }
 
 export async function shareDerbyStory(derby: CityDerbyState): Promise<ShareImageOutcome> {

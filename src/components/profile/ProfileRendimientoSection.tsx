@@ -129,7 +129,7 @@ export function ProfileRendimientoSection(props: ProfileTabProps) {
   </div>
 </div>
 
-{/* Google Play Integrity - working with the Google app (Play Integrity API) */}
+{import.meta.env.DEV && (
 <div className={`px-4 mt-2${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
   <div className="card p-5 border border-[#22c55e]/30">
     <div className="flex items-center gap-2 mb-2">
@@ -189,11 +189,11 @@ export function ProfileRendimientoSection(props: ProfileTabProps) {
     )}
 
     <div className="text-[9px] text-[#9CA3AF] mt-2">
-      Package esperado: <span className="font-mono text-[#22c55e]">com.entrenamatch.app</span>. 
-      El JSON que me pasaste usaba placeholder "com.package.name" — en la app real usamos el correcto.
+      Package esperado: <span className="font-mono text-[#22c55e]">com.entrenamatch.app</span>.
     </div>
   </div>
 </div>
+)}
 
 {/* Entrenando Ahora - KILLER FEATURE real-time, live green indicator near you. Generates urgency, no other fitness app has it this well. */}
 <div className={`px-4 mt-2 card p-4 space-y-3${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>

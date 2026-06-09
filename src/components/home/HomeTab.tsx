@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus } from 'lucide-react'
+import { BRAND_COPY } from '../../constants/brandCopy'
 import { DailyHome } from './DailyHome'
 import { SkeletonList } from '../ui/SkeletonLoaders'
 import { isGymCheckInFresh } from '../../services/localNetwork'
@@ -209,7 +210,7 @@ export function HomeTab(props: HomeTabProps) {
           <strong className="text-[#FF671F] block mb-1">Dos vistas en Hoy</strong>
           <span className="text-[#9CA3AF]">
             <strong className="text-white">Mi día</strong> = tu rutina, equipo y metas.{' '}
-            <strong className="text-white">Muro por Comunidad</strong> = posts de tu zona.
+            <strong className="text-white">{BRAND_COPY.communityWallTitle}</strong> = posts de tu zona.
           </span>
         </div>
       )}
@@ -250,7 +251,7 @@ export function HomeTab(props: HomeTabProps) {
         >
           <span className="flex flex-col items-center leading-tight">
             <span>Muro</span>
-            <span className="text-[8px] font-semibold tracking-wide">por Comunidad</span>
+            <span className="text-[8px] font-semibold tracking-wide">de la Comunidad</span>
           </span>
         </button>
       </div>
@@ -417,7 +418,7 @@ export function HomeTab(props: HomeTabProps) {
             <div className="flex items-center gap-3">
               <div className="text-3xl drop-shadow">🔥</div>
               <div>
-                <div className="feed-title-gradient">Muro por Comunidad</div>
+                <div className="feed-title-gradient">{BRAND_COPY.communityWallTitle}</div>
                 <div className="text-[11px] text-[#9CA3AF] -mt-0.5 tracking-[0.3px]">
                   {(currentUser as { city?: string } | null)?.city
                     ? `${(currentUser as { city?: string }).city} y alrededores`
@@ -499,7 +500,7 @@ export function HomeTab(props: HomeTabProps) {
 
       {showFeedPublishSuccess && (
         <div className="feed-publish-success mb-3 mx-1 p-3 rounded-2xl text-center text-sm font-semibold flex items-center justify-center gap-2">
-          ✨ ¡Publicado en el Muro! Tu post ya está vivo para toda la comunidad fitness.
+          ✨ ¡Publicado en el Muro! Tu post ya está vivo para toda la {BRAND_COPY.community}.
         </div>
       )}
 
@@ -566,7 +567,7 @@ export function HomeTab(props: HomeTabProps) {
         if (recentEchoes.length === 0) return null;
         return (
           <div className="mb-4 -mx-1 px-1">
-            <div className="text-[8px] uppercase tracking-[1.5px] text-[#FFD700] font-black mb-1.5 flex items-center gap-1">⭐ HIGHLIGHTS DE LA RED — momentos de la comunidad fitness</div>
+            <div className="text-[8px] uppercase tracking-[1.5px] text-[#FFD700] font-black mb-1.5 flex items-center gap-1">⭐ HIGHLIGHTS DE LA RED — momentos de la {BRAND_COPY.community}</div>
             <div className="flex gap-2 overflow-x-auto pb-1 snap-x">
               {recentEchoes.map((e: any) => (
                 <div key={e.id} className="min-w-[158px] snap-start p-3 rounded-2xl text-[10px] border border-[#FFD700]/40 bg-gradient-to-br from-[#1a160f] to-[#111] text-[#f5e8c7]">
@@ -597,7 +598,7 @@ export function HomeTab(props: HomeTabProps) {
               <div className="big-icon mb-1">🏋️</div>
               <div className="font-black text-3xl tracking-[-1.5px] mb-2">Sé el primero en {cityLabel}</div>
               <p className="text-sm text-[#9CA3AF] max-w-[300px] mx-auto mb-6 leading-relaxed">
-                El Muro por Comunidad de tu ciudad está esperando la primera voz. Publica en 1 toque y otros entrenadores te verán.
+                El {BRAND_COPY.communityWallTitle} de tu ciudad está esperando la primera voz. Publica en 1 toque y otros entrenadores te verán.
               </p>
               <div className="flex flex-col gap-2.5 max-w-[280px] mx-auto">
                 {onQuickFeedTemplate && (

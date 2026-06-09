@@ -183,7 +183,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
               const ampPulse = { ...dailyPulse, pulseAmplifiedDate: todayStr, momentum: (dailyPulse.momentum || 0) - 30 }
               setDailyPulse(ampPulse)
               saveUserWithRealSync({ ...(currentUser as any), pulseAmplifiedDate: todayStr, momentumPoints: ampPulse.momentum } as any)
-              toast.success('Actividad amplificada', { description: 'Tu actividad tiene más visibilidad en el mapa y tu red fitness por 24h' })
+              toast.success('Actividad amplificada', { description: 'Tu actividad tiene más visibilidad en el mapa y tu Comunidad por 24h' })
             } else {
               toast('Necesitas 30 Constancia')
             }

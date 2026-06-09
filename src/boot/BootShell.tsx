@@ -1,5 +1,3 @@
-import { APP_VERSION } from '../constants'
-
 type BootShellProps = {
   message?: string
   submessage?: string
@@ -25,11 +23,9 @@ export function BootShell({
           🏋️
         </div>
         <p className="text-base font-semibold text-white mb-1">{message}</p>
-        {submessage ? (
-          <p className="text-sm text-[#9CA3AF] leading-relaxed">{submessage}</p>
-        ) : (
-          <p className="text-sm text-[#9CA3AF]">v{APP_VERSION}</p>
-        )}
+        <p className="text-sm text-[#9CA3AF] leading-relaxed">
+          {submessage || 'Preparando mapa, live y tu Comunidad…'}
+        </p>
         {!timedOut ? (
           <div className="mt-6 h-1 w-24 mx-auto rounded-full bg-[#2F2F35] overflow-hidden">
             <div

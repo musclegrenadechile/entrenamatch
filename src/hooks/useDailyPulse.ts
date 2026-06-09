@@ -193,7 +193,7 @@ export function useDailyPulse({
           description: `${ch.icon || '✅'} ${ch.title} • Nivel ${dailyPulse.level} • Tu Red se fortalece`,
         })
 
-        const postText = `✅ Completé mi reto diario: ${ch.title}. ${ch.description || ''} — Constancia para mi red fitness 🔥`
+        const postText = `✅ Completé mi reto diario: ${ch.title}. ${ch.description || ''} — Constancia para mi Comunidad 🔥`
         try {
           await createProfilePostRef.current?.(postText, null, 'dailyPulse')
         } catch {}
@@ -250,7 +250,7 @@ export function useDailyPulse({
             description: `${streak}d de racha activa — ¡Sigue así!`,
           })
           createProfilePostRef.current?.(
-            `🔥 RACHA ${streak}d — Mi red fitness me hace imparable. Reto diario completado.`,
+            `🔥 RACHA ${streak}d — Mi Comunidad me hace imparable. Reto diario completado.`,
             null,
             'dailyPulse'
           ).catch(() => {})

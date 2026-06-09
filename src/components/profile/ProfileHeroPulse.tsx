@@ -41,17 +41,19 @@ export function ProfileHeroPulse(props: ProfileTabProps) {
     <div className="mx-4 -mt-6 relative z-10">
       <div className="rounded-2xl border border-[#2F2F35] bg-[#0D0D10]/95 backdrop-blur-md p-3 shadow-xl">
         <div className="flex items-center gap-2 flex-wrap">
-          <button
-            type="button"
-            onClick={() => void toggleLive()}
-            className={`px-3 py-1.5 rounded-xl text-xs font-black tracking-wide ${
-              live
-                ? 'bg-[#22c55e] text-black shadow-[0_0_12px_rgba(34,197,94,0.45)]'
-                : 'bg-white/10 text-white border border-white/20'
-            }`}
-          >
-            {live ? `🟢 LIVE · ${streak}d` : 'Activar LIVE'}
-          </button>
+          {live ? (
+            <button
+              type="button"
+              onClick={() => void toggleLive()}
+              className="px-3 py-1.5 rounded-xl text-xs font-black tracking-wide bg-[#22c55e] text-black shadow-[0_0_12px_rgba(34,197,94,0.45)]"
+            >
+              🟢 LIVE · {streak}d
+            </button>
+          ) : (
+            <span className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white/5 text-[#9CA3AF] border border-white/10">
+              Sin LIVE · usa IR LIVE ↓
+            </span>
+          )}
           <button
             type="button"
             onClick={() => void toggleGhost()}

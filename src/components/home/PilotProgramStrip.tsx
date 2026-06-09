@@ -6,6 +6,7 @@ import {
   PILOT_PROGRAM_TITLE,
   PILOT_TARGET_MAU_MIN,
 } from '../../constants/pilotProgram'
+import { resolveShareableAppBase, sanitizeShareUrl } from '../../utils/sparseCityDefaults'
 import {
   attachPilotCohortListener,
   pilotCohortProgress,
@@ -48,7 +49,7 @@ export function PilotProgramStrip({
   const isWeekendPush = day === 5 || day === 6 || day === 0
 
   const shareInvite = async () => {
-    const url = inviteLink || (typeof window !== 'undefined' ? window.location.origin : '')
+    const url = sanitizeShareUrl(inviteLink || resolveShareableAppBase())
     const text = `Únete al piloto ${PILOT_PROGRAM_TITLE} en EntrenaMatch — entrena en sync con gente de ${cityLabel || 'tu ciudad'}`
     try {
       if (navigator.share) {

@@ -1,5 +1,52 @@
+import { LEGACY_GITHUB_HOST, PUBLIC_APP_URL, SHAREABLE_APP_HOSTS } from '../constants'
+
 /** Default search radius for sparse Chilean metros (fase 185). */
 export const SPARSE_CITY_DEFAULT_KM = 50
+
+function isShareableHost(hostname: string): boolean {
+  return SHAREABLE_APP_HOSTS.some((h) => hostname === h || hostname.endsWith(`.${h}`))
+}
+
+function isLegacyGithubHost(hostname: string): boolean {
+  return hostname === LEGACY_GITHUB_HOST || hostname.endsWith(`.${LEGACY_GITHUB_HOST}`)
+}
+
+/** Base URL safe to paste in WhatsApp/IG — always Firebase (official), never localhost/GH. */
+export function resolveShareableAppBase(): string {
+  const envUrl =
+    typeof import.meta !== 'undefined' && import.meta.env?.VITE_PUBLIC_APP_URL
+  if (typeof envUrl === 'string' && envUrl.startsWith('http')) {
+    return envUrl.replace(/\/$/, '')
+  }
+
+  if (typeof window === 'undefined') {
+    return PUBLIC_APP_URL
+  }
+
+  const { hostname, origin, pathname } = window.location
+  if (isLegacyGithubHost(hostname)) {
+    return PUBLIC_APP_URL
+  }
+  if (isShareableHost(hostname)) {
+    const path = pathname.replace(/\/index\.html$/, '').replace(/\/$/, '') || ''
+    return `${origin}${path}`
+  }
+
+  return PUBLIC_APP_URL
+}
+
+/** Host (+ GitHub path) for story watermarks — never localhost. */
+export function shareableAppHostname(): string {
+  const base = resolveShareableAppBase()
+  try {
+    const u = new URL(base)
+    const path = u.pathname.replace(/\/index\.html$/, '').replace(/\/$/, '')
+    if (path && path !== '/') return `${u.hostname}${path}`
+    return u.hostname
+  } catch {
+    return 'entrenamatch.web.app'
+  }
+}
 
 const LEGACY_DEFAULT_KM = 25
 
@@ -20,9 +67,30 @@ export function feedTemplatePost(city?: string | null): string {
 }
 
 export function buildInviteLink(referralCode: string): string {
-  const base =
-    typeof window !== 'undefined'
-      ? `${window.location.origin}${window.location.pathname}`
-      : 'https://musclegrenadechile.github.io/entrenamatch/'
-  return `${base}?ref=${encodeURIComponent(referralCode)}`
+  const base = resolveShareableAppBase()
+  const sep = base.includes('?') ? '&' : '?'
+  return `${base}${sep}ref=${encodeURIComponent(referralCode)}`
+}
+
+const NON_SHAREABLE_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0'])
+
+/** Rewrites localhost/file URLs to the public app origin (keeps ?ref= when present). */
+export function sanitizeShareUrl(url?: string): string {
+  const fallback = resolveShareableAppBase()
+  const trimmed = url?.trim()
+  if (!trimmed) return fallback
+  try {
+    const parsed = new URL(trimmed)
+    if (
+      parsed.protocol === 'file:' ||
+      NON_SHAREABLE_HOSTS.has(parsed.hostname) ||
+      isLegacyGithubHost(parsed.hostname)
+    ) {
+      const ref = parsed.searchParams.get('ref')
+      return ref ? buildInviteLink(ref) : fallback
+    }
+    return trimmed
+  } catch {
+    return fallback
+  }
 }
