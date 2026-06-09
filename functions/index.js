@@ -487,14 +487,11 @@ async function callGeminiIdentity(apiKey, payload) {
   const parts = [
     {
       text:
-        'Eres un verificador de identidad para una app fitness. Compara si la PERSONA en la FOTO DE PERFIL (imagen 1) es la MISMA persona que en la SELFIE DE VERIFICACIÓN (imagen 2). ' +
-        (idB64
-          ? 'La imagen 3 es un documento de identidad: indica si es legible (idDocumentReadable). '
-          : '') +
+        'Verificación biométrica facial para app fitness. Compara si la PERSONA en la FOTO DE PERFIL (imagen 1) es la MISMA persona que en la SELFIE EN VIVO (imagen 2). ' +
         (contextLine ? `${contextLine}. ` : '') +
-        'Responde SOLO JSON válido en español en "reason": {"samePerson":boolean,"confidence":number,"profileMatch":boolean,"selfieHasFace":boolean,"idDocumentReadable":boolean,"reason":string}. ' +
-        'confidence entre 0 y 1 (qué tan seguro estás de que es la misma persona). profileMatch=true si selfie coincide claramente con foto de perfil. ' +
-        'Si no hay rostro visible en selfie, selfieHasFace=false. No inventes — ante duda baja confidence.',
+        'Responde SOLO JSON válido en español en "reason": {"samePerson":boolean,"confidence":number,"profileMatch":boolean,"selfieHasFace":boolean,"idDocumentReadable":false,"reason":string}. ' +
+        'confidence 0-1. profileMatch=true si el rostro de la selfie coincide claramente con la foto de perfil. ' +
+        'selfieHasFace=false si no hay rostro humano claro. Ignora fondo, ropa o iluminación distinta. Ante duda, baja confidence.',
     },
     { inline_data: { mime_type: profileMime || 'image/jpeg', data: profileB64 } },
     { inline_data: { mime_type: selfieMime || 'image/jpeg', data: selfieB64 } },

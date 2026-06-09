@@ -314,6 +314,7 @@ import { compareSyncWorkoutLogs, summarizePartnerWeekFromPosts, summarizePartner
 import { fetchGymRoutinesFromFirestore, mergeGymRoutineTemplates } from './services/gymRoutines'
 import { estimateWorkoutBurn } from './domain/fuelBalance/estimateWorkoutBurn'
 import { FullProfileSheet } from './components/profile/FullProfileSheet'
+import { VerificationFaceCapture } from './components/profile/VerificationFaceCapture'
 import { getYesterdayWorkout } from './utils/homeHero'
 import { triggerHaptic } from './utils/haptics'
 import { loadStoredNotifications, saveStoredNotifications, isQuotaError, reclaimLocalStorageSpace } from './utils/safeLocalStorage'
@@ -1267,7 +1268,6 @@ const sanitizeForFirestore = (obj: any): any => {
   // Verification flow state (multi-step)
   const [showVerificationFlow, setShowVerificationFlow] = useState(false)
   const [verificationStep, setVerificationStep] = useState(1)
-  const [verificationIdPhoto, setVerificationIdPhoto] = useState<string | null>(null)
   const [verificationSelfie, setVerificationSelfie] = useState<string | null>(null)
   const [verificationSubmitting, setVerificationSubmitting] = useState(false)
 
@@ -7077,8 +7077,8 @@ useEffect(() => {
   // Multi-step verification — Gemini compares profile photo vs selfie
   const submitVerification = async () => {
     if (!currentUser || verificationSubmitting) return
-    if (!verificationIdPhoto || !verificationSelfie) {
-      toast.error('Faltan documentos', { description: 'Sube foto del documento y selfie para verificación.' })
+    if (!verificationSelfie) {
+      toast.error('Falta selfie', { description: 'Captura tu rostro con la cámara frontal para verificar.' })
       return
     }
     if (!currentUser.photos?.length) {
@@ -7107,13 +7107,9 @@ useEffect(() => {
         ? profilePhoto
         : await imageRefToDataUrl(profilePhoto)
 
-      let idUrl = verificationIdPhoto
       let selfieUrl = verificationSelfie
       if (storage) {
         try {
-          if (verificationIdPhoto.startsWith('data:')) {
-            idUrl = await uploadVerificationImage(storage, effectiveUserId, verificationIdPhoto, 'id')
-          }
           if (verificationSelfie.startsWith('data:')) {
             selfieUrl = await uploadVerificationImage(storage, effectiveUserId, verificationSelfie, 'selfie')
           }
@@ -7126,7 +7122,6 @@ useEffect(() => {
         profilePhotoBase64: profilePhotoBase64 || undefined,
         profilePhotoUrl: profilePhotoBase64 ? undefined : profilePhoto,
         selfieBase64: verificationSelfie,
-        idPhotoBase64: verificationIdPhoto,
         displayName: currentUser.name,
         age: currentUser.age,
       })
@@ -7137,14 +7132,12 @@ useEffect(() => {
         verificationStatus,
         verificationDate: Date.now(),
         verificationDocuments: {
-          idPhoto: idUrl,
           selfiePhoto: selfieUrl,
         },
       }
 
       await saveUserWithRealSync(updated as CurrentUser)
       setShowVerificationFlow(false)
-      setVerificationIdPhoto(null)
       setVerificationSelfie(null)
       setVerificationStep(1)
 
@@ -10712,8 +10705,8 @@ useEffect(() => {
             >
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <div className="font-bold text-2xl">Verificación de identidad</div>
-                  <div className="text-sm text-[#9CA3AF]">Paso {verificationStep} de 3</div>
+                  <div className="font-bold text-2xl">Verificación biométrica</div>
+                  <div className="text-sm text-[#9CA3AF]">Paso {verificationStep} de 2</div>
                 </div>
                 <button onClick={() => setShowVerificationFlow(false)} className="text-2xl">×</button>
               </div>
@@ -10723,7 +10716,8 @@ useEffect(() => {
                 <div>
                   <div className="mb-6">
                     <p className="text-[#cbd5e1] mb-4">
-                      Para generar confianza en la comunidad, necesitamos verificar que eres una persona real que entrena.
+                      Comprobamos que eres la misma persona de tu foto de perfil con una selfie en vivo por cámara frontal.
+                      No pedimos documento de identidad.
                     </p>
                     <div className="bg-[#1C1C20] p-4 rounded-2xl text-sm space-y-2">
                       <div>✓ Nombre: <span className="font-medium">{currentUser.name}</span></div>
@@ -10740,100 +10734,35 @@ useEffect(() => {
                 </div>
               )}
 
-              {/* Step 2: ID Document */}
+              {/* Step 2: Live face capture */}
               {verificationStep === 2 && (
                 <div>
                   <div className="mb-4">
-                    <div className="font-semibold mb-2">Paso 2: Documento de identidad</div>
-                    <p className="text-sm text-[#9CA3AF] mb-4">Sube una foto de tu cédula, pasaporte o licencia (solo el frente).</p>
-                  </div>
-
-                  {!verificationIdPhoto ? (
-                    <label className="block border-2 border-dashed border-[#2F2F35] rounded-3xl p-8 text-center cursor-pointer mb-6">
-                      <div className="text-4xl mb-2">🪪</div>
-                      <div className="font-medium">Subir documento</div>
-                      <div className="text-xs text-[#9CA3AF]">JPG o PNG</div>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) {
-                            const reader = new FileReader()
-                            reader.onload = () => setVerificationIdPhoto(reader.result as string)
-                            reader.readAsDataURL(file)
-                          }
-                        }} 
-                      />
-                    </label>
-                  ) : (
-                    <div className="mb-6">
-                      <img src={verificationIdPhoto} className="w-full rounded-2xl mb-3" />
-                      <button onClick={() => setVerificationIdPhoto(null)} className="text-sm text-red-400">Cambiar documento</button>
-                    </div>
-                  )}
-
-                  <div className="flex gap-3">
-                    <button onClick={() => setVerificationStep(1)} className="btn-secondary flex-1">Atrás</button>
-                    <button 
-                      onClick={() => setVerificationStep(3)} 
-                      disabled={!verificationIdPhoto}
-                      className="btn-primary flex-1 disabled:opacity-50"
-                    >
-                      Continuar
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 3: Selfie */}
-              {verificationStep === 3 && (
-                <div>
-                  <div className="mb-4">
-                    <div className="font-semibold mb-2">Paso 3: Selfie de verificación</div>
+                    <div className="font-semibold mb-2">Paso 2: Selfie en vivo</div>
                     <p className="text-sm text-[#9CA3AF] mb-4">
-                      Selfie clara de tu rostro. La IA la comparará con tu foto de perfil para confirmar que eres tú.
+                      Usa la cámara frontal. La IA compara tu rostro con tu foto de perfil principal.
                     </p>
                   </div>
 
-                  {!verificationSelfie ? (
-                    <label className="block border-2 border-dashed border-[#2F2F35] rounded-3xl p-8 text-center cursor-pointer mb-6">
-                      <div className="text-4xl mb-2">🤳</div>
-                      <div className="font-medium">Subir selfie</div>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) {
-                            const reader = new FileReader()
-                            reader.onload = () => setVerificationSelfie(reader.result as string)
-                            reader.readAsDataURL(file)
-                          }
-                        }} 
-                      />
-                    </label>
-                  ) : (
-                    <div className="mb-6">
-                      <img src={verificationSelfie} className="w-full rounded-2xl mb-3" />
-                      <button onClick={() => setVerificationSelfie(null)} className="text-sm text-red-400">Cambiar selfie</button>
-                    </div>
-                  )}
+                  <VerificationFaceCapture
+                    value={verificationSelfie}
+                    onChange={setVerificationSelfie}
+                    capacitorCamera={CapacitorCamera}
+                    disabled={verificationSubmitting}
+                  />
 
                   <div className="flex gap-3">
-                    <button onClick={() => setVerificationStep(2)} className="btn-secondary flex-1">Atrás</button>
-                    <button 
-                      onClick={submitVerification} 
+                    <button onClick={() => setVerificationStep(1)} className="btn-secondary flex-1">Atrás</button>
+                    <button
+                      onClick={submitVerification}
                       disabled={!verificationSelfie || verificationSubmitting}
                       className="btn-primary flex-1 disabled:opacity-50"
                     >
-                      {verificationSubmitting ? 'Analizando con IA…' : 'Verificar con IA'}
+                      {verificationSubmitting ? 'Analizando rostro…' : 'Verificar rostro'}
                     </button>
                   </div>
                   <p className="text-[10px] text-center text-[#9CA3AF] mt-3">
-                    Gemini compara tu selfie con tu foto de perfil. Tus archivos se guardan de forma privada.
+                    Solo verificación facial — sin documento. La selfie se guarda de forma privada.
                   </p>
                 </div>
               )}

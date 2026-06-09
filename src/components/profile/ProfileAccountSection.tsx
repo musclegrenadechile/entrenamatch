@@ -73,11 +73,11 @@ export function ProfileAccountSection(props: ProfileTabProps) {
   <div className="card p-4 flex items-center gap-3">
     <div className="flex-1">
       <div className="font-medium flex items-center gap-2 text-sm">
-        Verificación de identidad
+        Verificación biométrica
         {currentUser.verificationStatus === 'verified' && <span className="chip-health text-[10px] px-2 py-0 !font-bold">✓ VERIFICADO</span>}
         {currentUser.verificationStatus === 'pending' && <span className="text-[#facc15] text-xs font-medium">EN REVISIÓN</span>}
       </div>
-      <div className="text-xs text-[#9CA3AF] mt-0.5">Aumenta la confianza de otros usuarios reales</div>
+      <div className="text-xs text-[#9CA3AF] mt-0.5">Selfie en vivo vs tu foto de perfil — sin documento</div>
     </div>
     {currentUser.verificationStatus !== 'verified' && (
       <button onClick={() => { setShowVerificationFlow(true); setVerificationStep(1); }} className="shrink-0 text-xs px-4 py-2 bg-[#FF671F] text-black rounded-2xl font-semibold active:bg-[#E55A1A]">
