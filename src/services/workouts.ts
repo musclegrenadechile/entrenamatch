@@ -13,6 +13,22 @@ import type {
 } from '../types'
 import { WORKOUT_TYPE_LABELS } from '../data/exerciseLibrary'
 
+/** Firestore rejects undefined at any depth — strip before addDoc/setDoc. */
+export function stripUndefinedDeep<T>(value: T): T {
+  if (value === undefined) return value
+  if (Array.isArray(value)) {
+    return value.map((item) => stripUndefinedDeep(item)) as T
+  }
+  if (value !== null && typeof value === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+      if (val !== undefined) out[key] = stripUndefinedDeep(val)
+    }
+    return out as T
+  }
+  return value
+}
+
 export function computeWorkoutStats(
   exercises: WorkoutExercise[],
   durationMin: number
@@ -45,20 +61,25 @@ export function buildWorkoutPreview(
   stats: WorkoutStats,
   opts?: { prCount?: number }
 ): WorkoutPreview {
-  return {
+  const preview: WorkoutPreview = {
     title,
     type,
     exerciseCount: stats.exerciseCount,
     totalSets: stats.totalSets,
     volumeLabel: formatVolumeLabel(stats.totalVolumeKg),
     durationMin: stats.durationMin,
-    prCount: opts?.prCount,
-    exercises: exercises.map((ex) => ({
-      name: ex.name,
-      setCount: ex.sets.length,
-      topWeightKg: ex.sets.reduce((m, s) => Math.max(m, s.weightKg || 0), 0) || undefined,
-    })),
+    exercises: exercises.map((ex) => {
+      const topW = ex.sets.reduce((m, s) => Math.max(m, s.weightKg || 0), 0)
+      const row: WorkoutPreview['exercises'][number] = {
+        name: ex.name,
+        setCount: ex.sets.length,
+      }
+      if (topW > 0) row.topWeightKg = topW
+      return row
+    }),
   }
+  if (opts?.prCount != null && opts.prCount > 0) preview.prCount = opts.prCount
+  return preview
 }
 
 export function buildWorkoutPostText(
@@ -133,18 +154,21 @@ export async function saveWorkoutWithPost(
     syncSessionId: input.syncSessionId,
   }
 
-  const postRef = await addDoc(collection(db, 'profilePosts'), {
-    userId: input.userId,
-    text: postText,
-    timestamp: now,
-    likes: [],
-    reactions: {},
-    pinned: input.pinned ?? false,
-    postType: 'workout',
-    workoutId: workoutRef.id,
-    workoutPreview: preview,
-    createdAt: serverTimestamp(),
-  })
+  const postRef = await addDoc(
+    collection(db, 'profilePosts'),
+    stripUndefinedDeep({
+      userId: input.userId,
+      text: postText,
+      timestamp: now,
+      likes: [],
+      reactions: {},
+      pinned: input.pinned ?? false,
+      postType: 'workout',
+      workoutId: workoutRef.id,
+      workoutPreview: preview,
+      createdAt: serverTimestamp(),
+    })
+  )
 
   return { workout, postId: postRef.id, postText }
 }
@@ -295,18 +319,21 @@ export async function saveSyncWorkoutWithPost(
     participantIds,
   }
 
-  const postRef = await addDoc(collection(db, 'profilePosts'), {
-    userId: input.userId,
-    text: postText,
-    timestamp: now,
-    likes: [],
-    reactions: {},
-    pinned: input.pinned ?? false,
-    postType: 'workout',
-    workoutId: workoutRef.id,
-    workoutPreview: preview,
-    createdAt: serverTimestamp(),
-  })
+  const postRef = await addDoc(
+    collection(db, 'profilePosts'),
+    stripUndefinedDeep({
+      userId: input.userId,
+      text: postText,
+      timestamp: now,
+      likes: [],
+      reactions: {},
+      pinned: input.pinned ?? false,
+      postType: 'workout',
+      workoutId: workoutRef.id,
+      workoutPreview: preview,
+      createdAt: serverTimestamp(),
+    })
+  )
 
   return { workout, postId: postRef.id, postText }
 }

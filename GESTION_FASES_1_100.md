@@ -1,6 +1,6 @@
 # Gestión de fases 1–100 — EntrenaMatch (documento maestro v2)
 
-**Versión actual en producción:** `0.1.275` (versionCode 275)  
+**Versión actual en producción:** `0.1.279` (versionCode 279)  
 **Meta cierre fase 100:** `0.1.280` — open beta con informe + CI verde  
 **Deploy web:** https://musclegrenadechile.github.io/entrenamatch/  
 **Última actualización:** junio 2026
@@ -59,7 +59,7 @@ Fases  1–74   ✅ Legado cerrado (MVP → open beta v1 → GymPulse → Entren
 Fases 75–84   ✅ Oleada A — Confianza técnica (CI, mapa, hooks App)
 Fases 85–91   ✅ Oleada B — Mapa hero + Perfil humano
 Fases 92–95   ✅ Oleada C — Fuel + EntrenoLog
-Fases 96–99   ⏳ Oleada D — Social viral + red
+Fases 96–99   ✅ Oleada D — Social viral + red
 Fase  100     ⏳ Open beta v1 + informe de salida
 ```
 
@@ -163,10 +163,12 @@ Fase  100     ⏳ Open beta v1 + informe de salida
 
 | Fase | Versión | Entregable | P | Depende | Estado |
 |------|---------|------------|---|---------|--------|
-| **96** | 0.1.276 | **Share card post-sync** — imagen 1080×1920 + publicar muro 1-tap | P1 | A8 | ⏳ |
-| **97** | 0.1.277 | **Deep links notificaciones** — tap → chat / sesión / mapa / perfil | P1 | 86 | ⏳ |
-| **98** | 0.1.278 | **Chat: read receipts + typing** — polish sobre GymPartner v2 | P2 | 79 | ⏳ |
-| **99** | 0.1.279 | **Training Network grafo** — alianzas sync visuales en perfil | P2 | A6 parcial | ⏳ |
+| **96** | 0.1.276 | **Share card post-sync** — imagen 1080×1920 + publicar muro 1-tap | P1 | A8 | ✅ v0.1.279 |
+| **97** | 0.1.277 | **Deep links notificaciones** — tap → chat / sesión / mapa / perfil | P1 | 86 | ✅ v0.1.279 |
+| **98** | 0.1.278 | **Chat: read receipts + typing** — polish sobre GymPartner v2 | P2 | 79 | ✅ v0.1.279 |
+| **99** | 0.1.279 | **Training Network grafo** — alianzas sync visuales en perfil | P2 | A6 parcial | ✅ v0.1.279 |
+
+**Done oleada D:** share post-sync viral; deep links; chat polish; grafo RED visible.
 
 ---
 

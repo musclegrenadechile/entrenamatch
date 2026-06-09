@@ -5,7 +5,7 @@
 import type { Notification } from '../types'
 
 export interface NotificationNavTarget {
-  tab: 'home' | 'red' | 'messages' | 'sesiones' | 'squads' | 'profile' | 'explore'
+  tab: 'home' | 'red' | 'messages' | 'sesiones' | 'squads' | 'profile' | 'explore' | 'map'
   activeChat?: string
   groupChatId?: string
   selectedSquad?: string
@@ -17,6 +17,7 @@ export interface NotificationNavTarget {
   trainerCoachTab?: 'explore' | 'now' | 'sessions' | 'trainer'
   openMarketplace?: boolean
   marketplaceOrdersTab?: boolean
+  openProfileId?: string
   startSyncWith?: { partnerId: string; partnerName?: string }
 }
 

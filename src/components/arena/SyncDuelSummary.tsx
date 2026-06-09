@@ -34,6 +34,8 @@ export interface SyncDuelSummaryProps {
   onReplay: () => void
   onRate?: (rating: number) => void
   onInviteSquad?: (partnerId: string, partnerName: string) => void
+  onPublishToFeed?: () => void | Promise<void>
+  publishingFeed?: boolean
   fuelBurnKcal?: number
   weightKg?: number
   workoutCompare?: SyncWorkoutCompare | null
@@ -62,6 +64,8 @@ export function SyncDuelSummary({
   onReplay,
   onRate,
   onInviteSquad,
+  onPublishToFeed,
+  publishingFeed = false,
   fuelBurnKcal = 0,
   weightKg = 75,
   workoutCompare = null,
@@ -265,10 +269,20 @@ export function SyncDuelSummary({
         )}
 
         <div className="sync-duel-card__actions">
+          {onPublishToFeed && (
+            <button
+              type="button"
+              disabled={publishingFeed}
+              onClick={() => void onPublishToFeed()}
+              className="sync-duel-card__btn sync-duel-card__btn--primary"
+            >
+              {publishingFeed ? 'Publicando…' : '📣 Publicar en muro 1-tap'}
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onResync(partnerId)}
-            className="sync-duel-card__btn sync-duel-card__btn--primary"
+            className={`sync-duel-card__btn ${onPublishToFeed ? 'sync-duel-card__btn--ghost' : 'sync-duel-card__btn--primary'}`}
           >
             🔄 Re-sync con {partnerFirst}
           </button>

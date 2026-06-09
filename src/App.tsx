@@ -84,6 +84,8 @@ import {
   resolvePartnerGymById,
   clearGymDeepLinkParam,
 } from './utils/deepLinkGym'
+import { parseAppDeepLink, clearAppDeepLinkParams } from './utils/appDeepLinks'
+import { buildSyncPostText, syncStoryToDataUrl } from './utils/syncStoryShare'
 import { BottomNav } from './components/app/BottomNav'
 import { AppFeatureTour, hasSeenAppFeatureTour, markAppFeatureTourSeen } from './components/onboarding/AppFeatureTour'
 import { useAndroidBackHandler } from './hooks/useAndroidBackHandler'
@@ -242,6 +244,7 @@ import {
 import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr, buildFuelAnalyzeContext } from './utils/fuelCalculator'
 import { fetchRecentWorkouts, fetchUserWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, buildWorkoutPreview, computeWorkoutStats } from './services/workouts'
 import { useFuelBalance } from './hooks/useFuelBalance'
+import { useFuelState } from './hooks/useFuelState'
 import { buildFuelWeekBalanceDays } from './utils/fuelWeekBalance'
 import {
   loadExercisePRs,
@@ -1125,6 +1128,7 @@ function App() {
     weeklyMetaLine?: string
     workoutCompare?: import('./utils/workoutSyncCompare').SyncWorkoutCompare | null
   } | null>(null)
+  const [publishingSyncFeed, setPublishingSyncFeed] = useState(false)
 
   const [witnessData, setWitnessData] = useState<any>(null) // for shared session highlight replay: replay of a strong EntrenaSync (shared state, actions, vibe) that can be archived as co-authored performance memory
 
@@ -1605,6 +1609,17 @@ useEffect(() => {
           navigateTab(tabFromUrl)
         }
       }
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    try {
+      const target = parseAppDeepLink(window.location.search)
+      if (!target) return
+      setTimeout(() => {
+        applyNotificationNavigationRef.current?.(target)
+        clearAppDeepLinkParams(['chat', 'sync', 'session', 'profile', 'push', 'name', 'userId', 'groupChatId'])
+      }, 400)
     } catch {}
   }, [])
 
@@ -7547,6 +7562,12 @@ useEffect(() => {
         'Compañero'
       setTimeout(() => startSyncRef.current?.(partnerId, name), 80)
     }
+    if (target.openProfileId) {
+      const prof =
+        realProfiles.find((p) => p.id === target.openProfileId) ||
+        SEED_PROFILES.find((p) => p.id === target.openProfileId)
+      if (prof) setShowFullProfile(prof)
+    }
   }, [realProfiles])
 
   useEffect(() => {
@@ -12704,6 +12725,32 @@ useEffect(() => {
           )}
           weightKg={fuelProfile?.weightKg ?? 75}
           workoutCompare={syncDuelSummary.workoutCompare}
+          publishingFeed={publishingSyncFeed}
+          onPublishToFeed={async () => {
+            if (!syncDuelSummary || !currentUser) return
+            setPublishingSyncFeed(true)
+            try {
+              const dataUrl = await syncStoryToDataUrl({
+                selfName: currentUser.name || 'Tú',
+                partnerName: syncDuelSummary.partnerName,
+                minutes: syncDuelSummary.minutes,
+                vibe: syncDuelSummary.vibe,
+                setsLogged: syncDuelSummary.setsLogged,
+              })
+              const text = buildSyncPostText({
+                selfName: currentUser.name || 'Tú',
+                partnerName: syncDuelSummary.partnerName,
+                minutes: syncDuelSummary.minutes,
+                vibe: syncDuelSummary.vibe,
+              })
+              await createProfilePost(text, dataUrl)
+              toast.success('Historia EntrenaSync en tu muro')
+            } catch {
+              toast.error('No se pudo publicar la historia')
+            } finally {
+              setPublishingSyncFeed(false)
+            }
+          }}
         />
       )}
 

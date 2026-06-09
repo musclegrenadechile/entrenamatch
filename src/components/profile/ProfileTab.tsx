@@ -13,6 +13,7 @@ import { ProfileMuroSection } from './ProfileMuroSection'
 import { ProfileAccountSection } from './ProfileAccountSection'
 import { ProfileFooterSection } from './ProfileFooterSection'
 import { ProfileCollapsibleSection } from './ProfileCollapsibleSection'
+import { TrainingNetworkGraph } from './TrainingNetworkGraph'
 import { isProfileProgressiveMode } from '../../utils/profileProgressive'
 import type { ProfileTabProps } from './profileTabTypes'
 
@@ -20,6 +21,10 @@ export type { ProfileTabProps } from './profileTabTypes'
 
 export function ProfileTab(props: ProfileTabProps) {
   const progressive = isProfileProgressiveMode(props.currentUser)
+  const bondEntries = Object.entries(props.syncBonds || {})
+  const livePartnerIds = (props.liveTrainingNow || [])
+    .filter((u) => props.syncBonds?.[u.id])
+    .map((u) => u.id)
 
   const advancedWrap = (title: string, subtitle: string, node: ReactNode) =>
     progressive ? (
@@ -35,6 +40,27 @@ export function ProfileTab(props: ProfileTabProps) {
       <ProfileHeaderSection {...props} />
       <ProfileHeroSection {...props} />
       <ProfileHeroPulse {...props} />
+      {bondEntries.length > 0 && (
+        <div className="mx-4 mb-3">
+          <TrainingNetworkGraph
+            compact
+            selfName={props.currentUser.name || 'Tú'}
+            networkPower={props.networkStats?.networkPower ?? 0}
+            livePartnerIds={livePartnerIds}
+            bonds={bondEntries.map(([id, b]) => {
+              const p = [...(props.realProfiles || []), ...(props.SEED_PROFILES || [])].find(
+                (pp) => pp.id === id
+              )
+              return {
+                id,
+                name: p?.name || 'Socio',
+                bondLevel: b.bondLevel || 1,
+                totalMin: b.totalMin || 0,
+              }
+            })}
+          />
+        </div>
+      )}
       {advancedWrap(
         'Tienda y extras',
         'Marketplace, coach y herramientas avanzadas',

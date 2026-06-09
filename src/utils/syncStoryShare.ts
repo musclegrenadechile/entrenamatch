@@ -41,6 +41,30 @@ export async function renderSyncStoryPng(opts: {
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'))
 }
 
+export function buildSyncPostText(opts: {
+  selfName: string
+  partnerName: string
+  minutes: number
+  vibe: number
+}): string {
+  const a = opts.selfName.split(' ')[0]
+  const b = opts.partnerName.split(' ')[0]
+  return `🔥 ENTRENASYNC COMPLETADO con ${b} — ${opts.minutes} min · Vibe ${opts.vibe}%\n${a} × ${b} · #EntrenaMatch #GymPulse`
+}
+
+export async function syncStoryToDataUrl(
+  opts: Parameters<typeof renderSyncStoryPng>[0]
+): Promise<string | null> {
+  const blob = await renderSyncStoryPng(opts)
+  if (!blob) return null
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(blob)
+  })
+}
+
 export async function downloadSyncStory(opts: Parameters<typeof renderSyncStoryPng>[0]): Promise<void> {
   const blob = await renderSyncStoryPng(opts)
   if (!blob) return

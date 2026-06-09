@@ -371,7 +371,12 @@ export function ChatView({
                     )}
                   </div>
                   {isMe && (m.read || m.readAt) && (
-                    <span className="text-[9px] text-[#6B7280] px-1 mt-0.5 inline-block">✓✓ leído</span>
+                    <span className="text-[9px] text-[#6B7280] px-1 mt-0.5 inline-block">
+                      ✓✓ leído
+                      {m.readAt
+                        ? ` · ${new Date(m.readAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                        : ''}
+                    </span>
                   )}
                 </div>
               </div>
@@ -379,7 +384,21 @@ export function ChatView({
           )
         })}
 
-        {chatMessages.length === 0 && (
+        {partnerTyping && (
+          <div className="flex justify-start mt-2 px-1">
+            <div className="chat-bubble chat-bubble-received px-3 py-2.5 flex items-center gap-1">
+              {[0, 150, 300].map((delay) => (
+                <span
+                  key={delay}
+                  className="w-1.5 h-1.5 rounded-full bg-[#FF671F]/80 animate-bounce"
+                  style={{ animationDelay: `${delay}ms` }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {chatMessages.length === 0 && !partnerTyping && (
           <div className="chat-empty chat-empty--v2">
             <div className="chat-empty-ring">💪</div>
             <div className="title">Canal de entreno listo</div>

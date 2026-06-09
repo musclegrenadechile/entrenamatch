@@ -55,6 +55,21 @@ export function resolvePushNotificationData(data: PushData): NotificationNavTarg
     return { tab: 'home' }
   }
 
+  if (type === 'session_reminder' && data.groupChatId) {
+    if (data.groupChatId.startsWith('sq')) {
+      return { tab: 'squads', selectedSquad: data.groupChatId }
+    }
+    return { tab: 'sesiones', groupChatId: data.groupChatId }
+  }
+
+  if (type === 'profile_view' && userId) {
+    return { tab: 'explore', openProfileId: userId }
+  }
+
+  if (type === 'map_live') {
+    return { tab: 'map', showLiveMap: true, showLiveModal: true }
+  }
+
   const isLive = type === 'team_live' || type === 'network_live'
   const isSync = type === 'team_sync' || type === 'network_sync'
 
