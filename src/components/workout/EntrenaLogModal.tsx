@@ -40,6 +40,7 @@ import {
   workoutToTemplate,
 } from '../../utils/workoutTemplates'
 import {
+  allowWorkoutDraftPersistence,
   clearWorkoutDraft,
   elapsedWorkoutMinutes,
   loadRecentExerciseNames,
@@ -288,6 +289,8 @@ export function EntrenoDeHoyModal({
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
   const searchRef = useRef<HTMLInputElement>(null)
   const restTimerRef = useRef<GymRestTimerRef>(null)
+  /** Evita que flushDraft en cleanup re-guarde tras descartar sesión. */
+  const persistDraftRef = useRef(true)
 
   const buildDraft = useCallback(
     () => ({
@@ -302,7 +305,7 @@ export function EntrenoDeHoyModal({
   )
 
   const flushDraft = useCallback(() => {
-    if (!userId || !exercises.length) return
+    if (!persistDraftRef.current || !userId || !exercises.length) return
     saveWorkoutDraft(userId, buildDraft())
   }, [userId, exercises.length, buildDraft])
 
@@ -331,8 +334,10 @@ export function EntrenoDeHoyModal({
 
   useEffect(() => {
     if (!open) return
+    persistDraftRef.current = true
 
     if (skipDraftRestore) {
+      if (userId) allowWorkoutDraftPersistence(userId)
       const dur =
         initialDurationMin ??
         (liveDurationMin && liveDurationMin >= 5 ? liveDurationMin : undefined) ??
@@ -353,6 +358,7 @@ export function EntrenoDeHoyModal({
 
     const stored = userId ? loadWorkoutDraft(userId) : null
     if (stored?.exercises?.length) {
+      if (userId) allowWorkoutDraftPersistence(userId)
       const { startedAt: resolvedStart, timerReset } = resolveDraftStartedAt(stored)
       applyState({
         title: stored.title || defaultTitle,
@@ -366,6 +372,7 @@ export function EntrenoDeHoyModal({
       return
     }
 
+    if (userId) allowWorkoutDraftPersistence(userId)
     const dur =
       initialDurationMin ??
       (liveDurationMin && liveDurationMin >= 5 ? liveDurationMin : undefined) ??
@@ -468,7 +475,17 @@ export function EntrenoDeHoyModal({
   const handleDiscardSession = () => {
     if (!exercises.length) return
     if (!window.confirm('¿Descartar esta sesión? Se borrará el borrador y el cronómetro.')) return
+    persistDraftRef.current = false
     if (userId) clearWorkoutDraft(userId)
+    applyState({
+      title: defaultTitle,
+      type: 'full',
+      durationMin: 45,
+      exercises: [],
+      startedAt: null,
+    })
+    setDraftRecovered(false)
+    setTimerWasReset(false)
     if (onDiscardSession) onDiscardSession()
     else onClose()
   }

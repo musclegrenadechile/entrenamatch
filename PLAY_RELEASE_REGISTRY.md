@@ -9,9 +9,9 @@ Documento de referencia para el equipo. **No contiene secretos** (contraseñas/k
 | Package | `com.entrenamatch.app` |
 | App name | EntrenaMatch |
 | Track objetivo | **Closed testing** (beta cerrada, app oculta) |
-| Última subida conocida (dispositivo) | `versionCode` **323** · `versionName` **0.1.323** |
-| **Próxima subida (preparada)** | `versionCode` **324** · `versionName` **0.1.324** (sesión activa + entreno + Copa Zona) |
-| Doc release | `PLAY_INTERNAL_v0.1.324.md` |
+| Última subida conocida (dispositivo) | `versionCode` **324** · `versionName` **0.1.324** |
+| **Próxima subida (preparada)** | `versionCode` **325** · `versionName` **0.1.325** (fix descartar sesión / gadget fantasma) |
+| Doc release | `PLAY_INTERNAL_v0.1.325.md` |
 | AAB para subir | `EntrenaMatch-release.aab` (raíz del repo) |
 | Script build | `build-play-store.bat` |
 

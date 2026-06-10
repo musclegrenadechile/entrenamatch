@@ -24,6 +24,30 @@ function draftStorageKey(userId: string): string {
   return `${DRAFT_KEY}_${userId}`
 }
 
+function discardStorageKey(userId: string): string {
+  return `${DRAFT_KEY}_discarded_${userId}`
+}
+
+/** Tras descartar sesión — bloquea re-guardados accidentales (p. ej. cleanup del modal). */
+export function isWorkoutDraftPersistenceBlocked(userId: string): boolean {
+  if (!userId) return false
+  try {
+    return localStorage.getItem(discardStorageKey(userId)) != null
+  } catch {
+    return false
+  }
+}
+
+/** Permite volver a persistir cuando el usuario abre una sesión nueva. */
+export function allowWorkoutDraftPersistence(userId: string): void {
+  if (!userId) return
+  try {
+    localStorage.removeItem(discardStorageKey(userId))
+  } catch {
+    /* ignore */
+  }
+}
+
 function recentStorageKey(userId: string): string {
   return `${RECENT_KEY}_${userId}`
 }
@@ -35,6 +59,14 @@ export function isWorkoutDraftFresh(draft: WorkoutDraft | null): boolean {
 
 export function loadWorkoutDraft(userId: string): WorkoutDraft | null {
   if (!userId) return null
+  if (isWorkoutDraftPersistenceBlocked(userId)) {
+    try {
+      localStorage.removeItem(draftStorageKey(userId))
+    } catch {
+      /* ignore */
+    }
+    return null
+  }
   try {
     const raw = localStorage.getItem(draftStorageKey(userId))
     if (!raw) return null
@@ -48,6 +80,7 @@ export function loadWorkoutDraft(userId: string): WorkoutDraft | null {
 
 export function saveWorkoutDraft(userId: string, draft: WorkoutDraft): void {
   if (!userId || !draft.exercises.length) return
+  if (isWorkoutDraftPersistenceBlocked(userId)) return
   try {
     localStorage.setItem(
       draftStorageKey(userId),
@@ -62,6 +95,7 @@ export function clearWorkoutDraft(userId: string): void {
   if (!userId) return
   try {
     localStorage.removeItem(draftStorageKey(userId))
+    localStorage.setItem(discardStorageKey(userId), String(Date.now()))
   } catch {
     /* ignore */
   }

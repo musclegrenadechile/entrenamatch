@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ==========================================
-echo EntrenaMatch - PLAY STORE RELEASE (v0.1.324)
+echo EntrenaMatch - PLAY STORE RELEASE (v0.1.325)
 echo ==========================================
 
 set "MODE=%~1"
@@ -66,10 +66,10 @@ echo SUCCESS — Signed AAB ready for Play Store
 echo   File: %CD%\EntrenaMatch-release.aab
 echo   Also: %CD%\%AAB%
 echo   Size: !AAB_SIZE! bytes
-echo   versionCode 324 / versionName 0.1.324
+echo   versionCode 325 / versionName 0.1.325
 echo.
 echo Manual upload: Play Console ^> Testing ^> Create release
-echo Release notes: PLAY_INTERNAL_v0.1.324.md
+echo Release notes: PLAY_INTERNAL_v0.1.325.md
 echo ************************************************
 
 if /i "%MODE%"=="publish" (

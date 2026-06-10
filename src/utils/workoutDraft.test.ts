@@ -4,6 +4,8 @@ import {
   saveWorkoutDraft,
   loadWorkoutDraft,
   clearWorkoutDraft,
+  isWorkoutDraftPersistenceBlocked,
+  allowWorkoutDraftPersistence,
 } from './workoutDraft'
 
 const USER = 'test-user-quick-set'
@@ -26,6 +28,7 @@ describe('quickAddSetToWorkoutDraft', () => {
   beforeEach(() => {
     installMemoryLocalStorage()
     clearWorkoutDraft(USER)
+    allowWorkoutDraftPersistence(USER)
   })
 
   it('duplicates last strength set on current exercise', () => {
@@ -52,5 +55,46 @@ describe('quickAddSetToWorkoutDraft', () => {
 
   it('returns false when no draft', () => {
     expect(quickAddSetToWorkoutDraft(USER).ok).toBe(false)
+  })
+})
+
+describe('clearWorkoutDraft discard tombstone', () => {
+  beforeEach(() => {
+    installMemoryLocalStorage()
+    clearWorkoutDraft(USER)
+    allowWorkoutDraftPersistence(USER)
+  })
+
+  const sampleDraft = {
+    title: 'Push',
+    type: 'push' as const,
+    durationMin: 45,
+    startedAt: Date.now(),
+    updatedAt: Date.now(),
+    exercises: [{ name: 'Press banca', sets: [{ reps: 8, weightKg: 60 }] }],
+  }
+
+  it('blocks save and load after discard', () => {
+    saveWorkoutDraft(USER, sampleDraft)
+    clearWorkoutDraft(USER)
+    expect(isWorkoutDraftPersistenceBlocked(USER)).toBe(true)
+    expect(loadWorkoutDraft(USER)).toBeNull()
+    saveWorkoutDraft(USER, sampleDraft)
+    expect(loadWorkoutDraft(USER)).toBeNull()
+  })
+
+  it('allows persist again after allowWorkoutDraftPersistence', () => {
+    clearWorkoutDraft(USER)
+    allowWorkoutDraftPersistence(USER)
+    saveWorkoutDraft(USER, sampleDraft)
+    expect(loadWorkoutDraft(USER)?.exercises).toHaveLength(1)
+  })
+
+  it('removes stale draft on load while blocked', () => {
+    saveWorkoutDraft(USER, sampleDraft)
+    clearWorkoutDraft(USER)
+    localStorage.setItem(`workout_draft_${USER}`, JSON.stringify(sampleDraft))
+    expect(loadWorkoutDraft(USER)).toBeNull()
+    expect(localStorage.getItem(`workout_draft_${USER}`)).toBeNull()
   })
 })
