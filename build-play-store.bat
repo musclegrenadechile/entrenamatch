@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ==========================================
-echo EntrenaMatch - PLAY STORE RELEASE (v0.1.325)
+echo EntrenaMatch - PLAY STORE RELEASE (v0.1.327)
 echo ==========================================
 
 set "MODE=%~1"
@@ -40,7 +40,7 @@ echo.
 echo [2/4] Production web build + Capacitor sync (no CAP_DEV)...
 set CAP_DEV=
 set CAPACITOR=1
-call npm run build:web
+call npm run build:web:native
 if errorlevel 1 goto :fail
 call npx cap sync android
 if errorlevel 1 goto :fail
@@ -66,10 +66,10 @@ echo SUCCESS — Signed AAB ready for Play Store
 echo   File: %CD%\EntrenaMatch-release.aab
 echo   Also: %CD%\%AAB%
 echo   Size: !AAB_SIZE! bytes
-echo   versionCode 325 / versionName 0.1.325
+echo   versionCode 327 / versionName 0.1.327
 echo.
 echo Manual upload: Play Console ^> Testing ^> Create release
-echo Release notes: PLAY_INTERNAL_v0.1.325.md
+echo Release notes: PLAY_INTERNAL_v0.1.327.md
 echo ************************************************
 
 if /i "%MODE%"=="publish" (

@@ -665,8 +665,9 @@ function App() {
     localStorage.setItem('entrenamatch_session_unreads', JSON.stringify(sessionUnreads))
   }, [sessionUnreads])
 
-  // PWA install prompt wiring (beforeinstallprompt + nice banner after engagement)
+  // PWA install prompt wiring (beforeinstallprompt + nice banner after engagement) — web only
   useEffect(() => {
+    if (Capacitor.isNativePlatform()) return undefined
     const handler = (e: any) => {
       // Note: we intentionally do NOT call preventDefault here to avoid the "Banner not shown" browser info message.
       // We still capture the event if available for our custom "Instalar" button (which will call .prompt()).
@@ -714,6 +715,7 @@ function App() {
   // Boost visibility of install banner on meaningful interaction (swipe or tab change to social)
   // More aggressive: show even without deferred (for manual guidance) if not dismissed
   const bumpPwaEngagement = () => {
+    if (Capacitor.isNativePlatform()) return
     if (!pwaInstallDismissed && !showPwaInstall) {
       setShowPwaInstall(true)
     }
@@ -1537,10 +1539,12 @@ useEffect(() => {
 
     ;(async () => {
       try {
-        if (typeof window !== 'undefined' && (window as any).Capacitor && Capacitor.isNativePlatform()) {
-          const AppPlugin = await import(/* @vite-ignore */ '@capacitor/app').catch(() => null as any)
-          if (AppPlugin?.App) {
-            const listener = await AppPlugin.App.addListener('appStateChange', async (state: any) => {
+        if (typeof window !== 'undefined' && Capacitor.isNativePlatform()) {
+          const { ensureCapacitorPlugins, getCapacitorApp } = await import('./utils/capacitorRuntimePlugins')
+          await ensureCapacitorPlugins()
+          const AppPlugin = getCapacitorApp()
+          if (AppPlugin) {
+            const listener = await AppPlugin.addListener('appStateChange', async (state: any) => {
               if (state.isActive) {
                 // App resumed — reload data; Firestore RT listeners auto-reconnect (no enableNetwork).
                 setTimeout(() => {
@@ -9138,7 +9142,7 @@ useEffect(() => {
 
       {/* PWA INSTALL BANNER - attractive, non-nagging. Shows reliably now (5s or on engagement). Exhaustive visual + functional review done. */}
       <AnimatePresence>
-        {showPwaInstall && !pwaInstallDismissed && (
+        {showPwaInstall && !pwaInstallDismissed && !Capacitor.isNativePlatform() && (
           <motion.div 
             initial={{ opacity: 0, y: -8 }} 
             animate={{ opacity: 1, y: 0 }} 

@@ -49,6 +49,11 @@ window.addEventListener('error', (event) => {
 window.addEventListener('unhandledrejection', (event) => {
   const reasonMsg =
     event.reason instanceof Error ? event.reason.message : String(event.reason ?? '')
+  if (/Failed to resolve module specifier '@capacitor\//i.test(reasonMsg)) {
+    event.preventDefault()
+    console.warn('[boot] Capacitor plugin load failed (stale web bundle?):', event.reason)
+    return
+  }
   if (/PushNotifications.*not implemented on web/i.test(reasonMsg)) {
     event.preventDefault()
     return

@@ -36,9 +36,13 @@ if not exist "android\app\google-services.json" (
 
 echo.
 echo Preparing full release - web + Capacitor sync + publish...
-call npm run android:build
+call npm run build:web:native
 if errorlevel 1 goto build_failed
-
+call npx cap sync android
+if errorlevel 1 goto build_failed
+cd /d "%~dp0android"
+call gradlew.bat bundleRelease
+if errorlevel 1 goto build_failed
 cd /d "%~dp0android"
 echo.
 echo Publishing AAB to Play track=%TRACK%

@@ -181,7 +181,9 @@ export async function startSpotifyAuth(): Promise<void> {
     await ensureCapacitorPlugins()
     const Browser = getCapacitorBrowser()
     if (!Browser) {
-      throw new Error('Plugin Browser no disponible. Actualiza la app e inténtalo de nuevo.')
+      throw new Error(
+        'No se pudo abrir Spotify en la app. Actualiza desde Play Store (v0.1.327+) e inténtalo de nuevo.'
+      )
     }
     if (typeof Browser.addListener === 'function') {
       void Browser.addListener('browserFinished', () => {

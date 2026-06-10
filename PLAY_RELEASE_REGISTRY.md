@@ -9,8 +9,8 @@ Documento de referencia para el equipo. **No contiene secretos** (contraseñas/k
 | Package | `com.entrenamatch.app` |
 | App name | EntrenaMatch |
 | Track objetivo | **Closed testing** (beta cerrada, app oculta) |
-| Última subida conocida (dispositivo) | `versionCode` **325** · `versionName` **0.1.325** |
-| **Próxima subida (preparada)** | `versionCode` **326** · `versionName` **0.1.326** (Admin, Muro F1/F2, reportes, GymSound) |
+| Última subida conocida (dispositivo) | `versionCode` **326** · `versionName` **0.1.326** (track **alpha** / prueba cerrada) |
+| **Próxima subida (preparada)** | `versionCode` **327** · bump en `package.json` + `build.gradle` |
 | Doc release | `PLAY_INTERNAL_v0.1.326.md` |
 | AAB para subir | `EntrenaMatch-release.aab` (raíz del repo) |
 | Script build | `build-play-store.bat` |
