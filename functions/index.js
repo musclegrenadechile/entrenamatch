@@ -12,6 +12,27 @@ admin.initializeApp();
 const db = admin.firestore();
 const messaging = admin.messaging();
 
+const betaBotsModule = require('./betaBots');
+const betaBots = betaBotsModule.register({
+  db,
+  admin,
+  geminiApiKey: () => {
+    try {
+      return geminiApiKey.value();
+    } catch {
+      return process.env.GEMINI_API_KEY || '';
+    }
+  },
+});
+exports.betaBotTick = betaBots.betaBotTick;
+exports.bootstrapBetaBots = betaBots.bootstrapBetaBotsHttp;
+
+const appAdminModule = require('./appAdmin');
+const appAdminFns = appAdminModule.register({ db, admin });
+exports.adminDeleteUserAccount = appAdminFns.adminDeleteUserAccount;
+exports.grantCommunityAdmin = appAdminFns.grantCommunityAdmin;
+exports.bootstrapAppAdmin = appAdminFns.bootstrapAppAdminHttp;
+
 /** Sync bonds + mutual matches — who gets "tu equipo está live" push. */
 async function getTeamPartnerIds(uid, syncBonds) {
   const partnerIds = new Set(Object.keys(syncBonds || {}));
@@ -1462,6 +1483,8 @@ exports.onDirectMessageCreated = functions.firestore
         partnerName: senderName,
       },
     });
+
+    betaBots.maybeReplyToMessage(m).catch((e) => console.warn('betaBot reply failed', e));
     return null;
   });
 
@@ -1480,6 +1503,13 @@ exports.onLikeCreated = functions.firestore
 
     const reciprocal = await db.collection('likes').doc(likeDocId(liked, liker)).get();
     if (reciprocal.exists) {
+      return null;
+    }
+
+    await betaBots.maybeAutoMatchBot(liker, liked);
+
+    const reciprocalAfter = await db.collection('likes').doc(likeDocId(liked, liker)).get();
+    if (reciprocalAfter.exists) {
       return null;
     }
 

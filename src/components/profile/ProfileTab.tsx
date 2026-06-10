@@ -5,6 +5,7 @@ import { ProfileHeroPulse } from './ProfileHeroPulse'
 import { ProfileMarketplaceEntry } from './ProfileMarketplaceEntry'
 import { ProfileTrainerCoachEntry } from './ProfileTrainerCoachEntry'
 import { ProfileAdminOpsEntry } from './ProfileAdminOpsEntry'
+import { ProfileCommunityAdminEntry } from './ProfileCommunityAdminEntry'
 import { ProfileActividadSection } from './ProfileActividadSection'
 import { ProfileRendimientoSection } from './ProfileRendimientoSection'
 import { ProfileDailyPulseSection } from './ProfileDailyPulseSection'
@@ -42,6 +43,7 @@ export function ProfileTab(props: ProfileTabProps) {
   return (
     <div className="flex-1 overflow-auto bg-[#0D0D10] pb-28">
       <ProfileHeaderSection {...props} />
+      <ProfileCommunityAdminEntry {...props} />
       <ProfileHeroSection {...props} />
       <ProfileHeroPulse {...props} />
       {bondEntries.length > 0 && (

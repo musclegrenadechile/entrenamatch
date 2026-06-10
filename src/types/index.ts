@@ -43,6 +43,10 @@
   liveMotionScore?: number
   liveMotionAt?: number
   liveMotionIdle?: boolean
+  /** Persona de ambiente beta (IA) — visible para testers. */
+  isBetaBot?: boolean
+  /** Moderador de comunidad — badge Admin en perfil. */
+  communityAdmin?: boolean
   liveActivityState?: 'active' | 'idle' | 'unknown'
   /** Weekly goal — closes Home loop (Meta semanal, Phase D4). */
   weeklyPact?: WeeklyPact
@@ -212,12 +216,15 @@ export interface Report {
   id: string
   reporterId: string
   reportedUserId: string
+  reporterName?: string
+  reportedUserName?: string
   reason: string
   details?: string
   context: 'profile' | '1v1_chat' | 'group_chat' | 'session' | 'squad'
   contextId?: string
   timestamp: number
   status: 'pending' | 'reviewed' | 'resolved'
+  reviewedAt?: number
 }
 
 export interface Notification {

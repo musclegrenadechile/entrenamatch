@@ -19,6 +19,28 @@ describe('resolveLiveMapMerge (fase 75)', () => {
     expect(r.mode).toBe('presence')
     expect(r.profilesForMerge).toEqual([])
     expect(r.merged.map((x) => x.id)).toEqual(['a'])
+    expect(r.merged[0].lat).toBe(-33)
+  })
+
+  it('enriches presence with GymSound from profiles query', () => {
+    const r = resolveLiveMapMerge({
+      presenceHealthy: true,
+      presenceUsers: [{ ...u('a'), spotifyShareLive: false }],
+      profilesQueryUsers: [
+        {
+          ...u('a'),
+          spotifyShareLive: true,
+          spotifyNowPlaying: {
+            trackName: 'Live Track',
+            artistName: 'DJ',
+            isPlaying: true,
+            updatedAt: Date.now(),
+          },
+        },
+      ],
+    })
+    expect(r.merged[0].spotifyShareLive).toBe(true)
+    expect(r.merged[0].spotifyNowPlaying?.trackName).toBe('Live Track')
   })
 
   it('merges profiles query when presence unhealthy', () => {

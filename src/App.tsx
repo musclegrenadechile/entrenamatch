@@ -36,7 +36,8 @@ import { demoStorage, DEMO_KEYS } from './services/demoStorage'
 import type { 
   Profile, Message, TrainingSession, TrainingReview, 
   SessionMessage, Squad, Report, Notification, CurrentUser, Tab,
-  ProfilePost
+  ProfilePost,
+  ProfilePostType,
 } from './types'
 import type { FuelProfile, FuelLogEntry, FuelDayTotals } from './types'
 import { 
@@ -120,7 +121,12 @@ import { ChatListPanel, ChatView } from './components/messages'
 import type { ProfileSection } from './components/profile'
 import { LiveToggleFab } from './components/home'
 import { MarketplaceView } from './components/marketplace'
-import { AdminOpsPanel } from './components/admin'
+import { AdminOpsPanel, CommunityAdminPanel } from './components/admin'
+import {
+  attachAppAdminListener,
+  persistUserBlock,
+  type AppAdminRecord,
+} from './services/appAdmin'
 import {
   attachMarketplaceAdminListener,
   attachMarketplaceProductsListener,
@@ -310,12 +316,19 @@ import { useDailyPulse, type DailyPulseBridge } from './hooks/useDailyPulse'
 import { useChatSession } from './hooks/useChatSession'
 import { useFeedState } from './hooks/useFeedState'
 import { computeGlobalFeed } from './utils/feedRanking'
+import { pickLivePostText, userHasRecentAutoLivePost } from './utils/feedPostMeta'
 import { useSyncSession } from './hooks/useSyncSession'
 import { useArenaSyncController } from './hooks/useArenaSyncController'
 import { usePartnerLocations } from './hooks/usePartnerLocations'
 import { useLiveMapPipeline } from './hooks/useLiveMapPipeline'
 import { useLiveMotionMonitor } from './hooks/useLiveMotionMonitor'
 import { useSpotifyLiveSync } from './hooks/useSpotifyLiveSync'
+import {
+  fetchSpotifyNowPlaying,
+  getValidSpotifyAccessToken,
+  isSpotifyConnected,
+  toProfileNowPlaying,
+} from './services/spotify'
 import type { SpotifyNowPlaying } from './types'
 import { saveDailyEnergyCache } from './services/dailyEnergy'
 import { estimateSyncSessionBurn } from './domain/fuelBalance'
@@ -692,9 +705,9 @@ function App() {
   const googleNewUserBootstrappedRef = useRef(false)
   const realProfileSyncedUidRef = useRef<string | null>(null)
   const saveUserWithRealSyncRef = useRef<(user: CurrentUser) => Promise<unknown>>(async () => {})
-  const createProfilePostRef = useRef<(text: string, photo?: string | null) => Promise<unknown>>(
-    async () => {}
-  )
+  const createProfilePostRef = useRef<
+    (text: string, photo?: string | null, postType?: ProfilePostType) => Promise<unknown>
+  >(async () => {})
   const triggerConfettiRef = useRef<(() => void) | undefined>(undefined)
   const [isOffline, setIsOffline] = useState(typeof navigator !== 'undefined' ? !navigator.onLine : false)
 
@@ -1189,6 +1202,8 @@ function App() {
   const [myMarketplaceOrders, setMyMarketplaceOrders] = useState<MarketplaceOrder[]>([])
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([])
   const [isMarketplaceAdmin, setIsMarketplaceAdmin] = useState(false)
+  const [appAdminRecord, setAppAdminRecord] = useState<AppAdminRecord | null>(null)
+  const [showCommunityAdmin, setShowCommunityAdmin] = useState(false)
   const [showTrainerCoach, setShowTrainerCoach] = useState(false)
   const [trainerCoachPreselect, setTrainerCoachPreselect] = useState<string | null>(null)
   const [trainerProfiles, setTrainerProfiles] = useState<TrainerProfile[]>([])
@@ -1691,6 +1706,7 @@ useEffect(() => {
   const [reportTargetId, setReportTargetId] = useState<string | null>(null)
   const [reportContext, setReportContext] = useState<Report['context']>('profile')
   const [reportReason, setReportReason] = useState('')
+  const [reportDetails, setReportDetails] = useState('')
 
   // Moderation Panel state
   const [showModerationPanel, setShowModerationPanel] = useState(false)
@@ -2886,6 +2902,8 @@ useEffect(() => {
             weekStats: data.weekStats || undefined,
             showOnLeaderboard: data.showOnLeaderboard,
             gymCheckIn: data.gymCheckIn || undefined,
+            isBetaBot: data.isBetaBot === true,
+            communityAdmin: data.communityAdmin === true,
           })
         }
       })
@@ -3214,6 +3232,18 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
           buildLivePresencePayload(firebaseUser.uid, { ...merged, ...profileUpdate }, loc),
           sanitizeForFirestore
         )
+        await patchLivePresenceGymSound(
+          db,
+          firebaseUser.uid,
+          {
+            spotifyShareLive: !!merged.spotifyShareLive,
+            spotifyNowPlaying:
+              merged.spotifyShareLive && merged.spotifyNowPlaying ? merged.spotifyNowPlaying : null,
+            gymSoundAnthem:
+              merged.spotifyShareLive && merged.gymSoundAnthem ? merged.gymSoundAnthem : null,
+          },
+          sanitizeForFirestore
+        )
       } else {
         await clearLivePresence(db, firebaseUser.uid)
       }
@@ -3326,10 +3356,49 @@ useEffect(() => {
         ...cu,
         spotifyNowPlaying: nowPlaying ?? undefined,
       } as CurrentUser
-      await saveUserWithRealSync(updated)
-      await syncGymSoundToLivePresence(updated)
+      currentUserRef.current = updated
+      saveUser(updated)
+
+      if (isDemoMode || !firebaseUser?.uid || !db) return
+
+      try {
+        const gymPatch = {
+          spotifyShareLive: !!updated.spotifyShareLive,
+          spotifyNowPlaying:
+            updated.spotifyShareLive && nowPlaying ? nowPlaying : null,
+          gymSoundAnthem:
+            updated.spotifyShareLive && updated.gymSoundAnthem ? updated.gymSoundAnthem : null,
+        }
+        await updateUserProfile(
+          firebaseUser.uid,
+          sanitizeForFirestore({ spotifyNowPlaying: gymPatch.spotifyNowPlaying }) as any
+        )
+        if (updated.trainingNow) {
+          await patchLivePresenceGymSound(db, firebaseUser.uid, gymPatch, sanitizeForFirestore)
+          const optimistic = profileDocToLiveUser(
+            firebaseUser.uid,
+            { ...updated, trainingNow: true },
+            { forceLive: true }
+          )
+          const nextPresence = mergeLiveUsersById([
+            liveFromPresenceRef.current.filter((u) => u.id !== firebaseUser.uid),
+            [optimistic],
+          ])
+          publishLiveSnapshot(nextPresence, liveFromProfilesQueryRef.current)
+          setMapForceTick((t) => t + 1)
+        }
+      } catch (e) {
+        console.warn('[GymSound] now playing sync failed', e)
+      }
     },
-    [saveUserWithRealSync, syncGymSoundToLivePresence]
+    [
+      saveUser,
+      isDemoMode,
+      firebaseUser?.uid,
+      db,
+      updateUserProfile,
+      publishLiveSnapshot,
+    ]
   )
 
   const handleGymSoundProfileSave = useCallback(
@@ -3981,6 +4050,14 @@ useEffect(() => {
       return undefined
     }
     return attachMarketplaceAdminListener(db, firebaseUser.uid, setIsMarketplaceAdmin)
+  }, [isDemoMode, db, firebaseUser?.uid])
+
+  useEffect(() => {
+    if (isDemoMode || !db || !firebaseUser?.uid) {
+      setAppAdminRecord(null)
+      return undefined
+    }
+    return attachAppAdminListener(db, firebaseUser.uid, setAppAdminRecord)
   }, [isDemoMode, db, firebaseUser?.uid])
 
   useEffect(() => {
@@ -4928,7 +5005,11 @@ useEffect(() => {
 
   loadProfilePostsRef.current = loadProfilePosts
 
-  const createProfilePost = async (text: string, photo: string | null = null) => {
+  const createProfilePost = async (
+    text: string,
+    photo: string | null = null,
+    postType?: ProfilePostType
+  ) => {
     if (!text.trim()) return
     // === GIANT FIX: Real Storage upload for photos (was the main cause of "update gigante" + broken-feeling photo flow) ===
     let finalPhoto = photo || undefined
@@ -4953,7 +5034,8 @@ useEffect(() => {
       pinned: false,
       likes: [],
       comments: [],
-      reactions: {}
+      reactions: {},
+      ...(postType ? { postType } : {}),
     }
     if (!isDemoMode && firebaseUser?.uid && db) {
       try {
@@ -4970,6 +5052,7 @@ useEffect(() => {
         if (post.photo) {
           data.photo = post.photo // small URL
         }
+        if (post.postType) data.postType = post.postType
         data.createdAt = serverTimestamp()
         const ref = await addDoc(collection(db, 'profilePosts'), data)
         post.id = ref.id
@@ -5437,6 +5520,21 @@ useEffect(() => {
             }
           }
         }
+        let spotifyShareLive = me.spotifyShareLive
+        let spotifyNowPlaying = me.spotifyNowPlaying
+        const hasAnthem = !!me.gymSoundAnthem?.trackName
+        const hasSpotify = isSpotifyConnected()
+        if (hasSpotify || hasAnthem) {
+          spotifyShareLive = true
+          if (hasSpotify) {
+            const token = await getValidSpotifyAccessToken()
+            if (token) {
+              const data = await fetchSpotifyNowPlaying(token)
+              if (data) spotifyNowPlaying = toProfileNowPlaying(data)
+            }
+          }
+        }
+
         const updated = {
           ...me,
           trainingNow: true,
@@ -5445,6 +5543,8 @@ useEffect(() => {
           liveMotionAt: undefined,
           liveMotionIdle: false,
           liveActivityState: 'unknown' as const,
+          spotifyShareLive,
+          spotifyNowPlaying,
           ...(autoGymCheckIn
             ? { gymCheckIn: autoGymCheckIn, lat: autoGymCheckIn.lat, lng: autoGymCheckIn.lng }
             : loc
@@ -5462,7 +5562,9 @@ useEffect(() => {
         toast('🟢 ¡Entrenando Ahora (EN VIVO) activado!', {
           description: autoGymCheckIn
             ? `Check-in en ${autoGymCheckIn.gymName} — apareces en el mapa del gym`
-            : undefined,
+            : spotifyShareLive
+              ? '🎧 Tu música se comparte en el mapa si está sonando'
+              : undefined,
         })
 
         const isFirstLive = !me.lastLiveDate
@@ -5487,10 +5589,15 @@ useEffect(() => {
             } else {
               awardConstancy(8, 'Ancla del GymPulse', liveUserSnapshot as CurrentUser)
             }
-            void createProfilePost(
-              `${BRAND_COPY.toasts.livePost} 🏋️`,
-              null
-            ).catch((e) => console.warn('[Live] createProfilePost', e))
+            if (
+              !userHasRecentAutoLivePost(effectiveUserId, profilePostsRef.current)
+            ) {
+              void createProfilePost(
+                `${pickLivePostText(Date.now())} 🏋️`,
+                null,
+                'dailyPulse'
+              ).catch((e) => console.warn('[Live] createProfilePost', e))
+            }
           } catch (e) {
             console.warn('[Live] post-activate side effects', e)
           }
@@ -7272,31 +7379,48 @@ useEffect(() => {
   const reportUser = async (userId: string, reason: string, details?: string, context: Report['context'] = 'profile', contextId?: string) => {
     if (!currentUser || userId === 'me') return
 
+    const reportedProfile = realProfiles.find((p) => p.id === userId)
+    const reportId = `rep_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     const newReport: Report = {
-      id: 'rep' + Date.now(),
+      id: reportId,
       reporterId: firebaseUser?.uid || 'me',
       reportedUserId: userId,
-      reason,
-      details,
+      reporterName: currentUser.name,
+      reportedUserName: reportedProfile?.name,
+      reason: reason.trim() || 'Otra violación de las reglas de comunidad',
+      details: details?.trim() || undefined,
       context,
       contextId,
       timestamp: Date.now(),
-      status: 'pending'
+      status: 'pending',
     }
 
     const updatedReports = [...reports, newReport]
     saveReports(updatedReports)
 
-    // Persist report to Firestore for real moderation/audit
+    let firestoreOk = false
     if (!isDemoMode && db && firebaseUser) {
       try {
-        const { addDoc, collection } = await import('firebase/firestore')
-        await addDoc(collection(db, 'reports'), {
-          ...newReport,
-          reporterId: firebaseUser.uid
+        const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
+        await setDoc(doc(db, 'reports', reportId), {
+          reporterId: firebaseUser.uid,
+          reportedUserId: userId,
+          reporterName: newReport.reporterName || null,
+          reportedUserName: newReport.reportedUserName || null,
+          reason: newReport.reason,
+          details: newReport.details || null,
+          context: newReport.context,
+          contextId: newReport.contextId || null,
+          timestamp: newReport.timestamp,
+          status: 'pending',
+          createdAt: serverTimestamp(),
         })
+        firestoreOk = true
       } catch (e) {
         console.warn('Could not save report to FS', e)
+        toast.error('No se pudo guardar el reporte en el servidor', {
+          description: 'Reintenta con conexión estable. El bloqueo local sí se aplicó.',
+        })
       }
     }
 
@@ -7304,10 +7428,28 @@ useEffect(() => {
     if (!blockedUsers.includes(userId)) {
       const newBlocked = [...blockedUsers, userId]
       saveBlockedUsers(newBlocked)
+      if (!isDemoMode && db && firebaseUser?.uid) {
+        void persistUserBlock(db, {
+          blockerId: firebaseUser.uid,
+          blockedId: userId,
+          blockerName: currentUser?.name,
+          blockedName: reportedProfile?.name,
+          source: 'report',
+          reportReason: newReport.reason,
+          reportDetails: newReport.details,
+          reportId: firestoreOk ? reportId : undefined,
+        }).catch(() => {})
+        try {
+          const { doc, updateDoc } = await import('firebase/firestore')
+          await updateDoc(doc(db, 'profiles', firebaseUser.uid), { blockedUsers: newBlocked })
+        } catch { /* ignore */ }
+      }
     }
 
-    toast.success('Reporte enviado', { 
-      description: 'Gracias por reportar. Revisaremos y el usuario ha sido bloqueado automáticamente para ti.' 
+    toast.success('Reporte enviado', {
+      description: firestoreOk
+        ? 'Gracias por reportar. El equipo Admin lo revisará y el usuario fue bloqueado para ti.'
+        : 'Reporte guardado localmente. El usuario fue bloqueado para ti.',
     })
   }
 
@@ -7330,6 +7472,14 @@ useEffect(() => {
       try {
         const { doc, updateDoc } = await import('firebase/firestore')
         await updateDoc(doc(db, 'profiles', firebaseUser.uid), { blockedUsers: newBlocked })
+        const blockedProfile = realProfiles.find((p) => p.id === userId)
+        await persistUserBlock(db, {
+          blockerId: firebaseUser.uid,
+          blockedId: userId,
+          blockerName: currentUser?.name,
+          blockedName: blockedProfile?.name,
+          source: 'manual',
+        })
       } catch (e) { console.warn('persist block failed', e) }
     }
 
@@ -10168,6 +10318,7 @@ useEffect(() => {
             syncBonds={syncBonds}
             setMapForceTick={setMapForceTick}
             saveUserWithRealSync={saveUserWithRealSync}
+            onGymSoundSave={handleGymSoundProfileSave}
             setActiveTab={setActiveTab}
             openCommunityMuro={openCommunityMuro}
             setShowLiveModal={setShowLiveModal}
@@ -10272,6 +10423,8 @@ useEffect(() => {
             }}
             isMarketplaceAdmin={isMarketplaceAdmin}
             onOpenAdminOps={() => setShowAdminOps(true)}
+            appAdminRecord={appAdminRecord}
+            onOpenCommunityAdmin={() => setShowCommunityAdmin(true)}
             partnerGymStats={partnerGymStats}
             partnerGymLoading={partnerGymLoading}
             constanciaBalance={constanciaBalance}
@@ -10423,6 +10576,15 @@ useEffect(() => {
         }}
         myOrders={myMarketplaceOrders}
       />
+      {appAdminRecord && (
+        <CommunityAdminPanel
+          open={showCommunityAdmin}
+          onClose={() => setShowCommunityAdmin(false)}
+          db={db}
+          admin={appAdminRecord}
+          realProfiles={realProfiles}
+        />
+      )}
       <AdminOpsPanel
         open={showAdminOps}
         onClose={() => setShowAdminOps(false)}
@@ -11803,8 +11965,8 @@ useEffect(() => {
             </div>
 
             <textarea 
-              value={reportReason} 
-              onChange={e => setReportReason(e.target.value)}
+              value={reportDetails} 
+              onChange={e => setReportDetails(e.target.value)}
               placeholder="Detalles adicionales (opcional)..."
               className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-xl p-3 text-sm mb-4 min-h-[80px]"
             />
@@ -11819,10 +11981,16 @@ useEffect(() => {
               <button 
                 onClick={async () => {
                   if (reportTargetId) {
-                    await reportUser(reportTargetId, reportReason || 'Otra violación', undefined, reportContext)
+                    await reportUser(
+                      reportTargetId,
+                      reportReason || 'Otra violación de las reglas de comunidad',
+                      reportDetails.trim() || undefined,
+                      reportContext
+                    )
                     setShowReportModal(false)
                     setReportTargetId(null)
                     setReportReason('')
+                    setReportDetails('')
                   }
                 }}
                 disabled={!reportReason}

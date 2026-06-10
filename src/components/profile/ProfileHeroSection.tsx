@@ -9,6 +9,7 @@ import { VerifiedPhotoBadge, VerifiedProfilePhoto } from './VerifiedProfilePhoto
 import { cityChampionLabel } from '../../utils/genderedCopy'
 import { isProfileVerified } from '../../utils/identityVerification'
 import { DerbyDefenderBadge } from '../home/DerbyDefenderBadge'
+import { COMMUNITY_ADMIN_BADGE_LABEL } from '../../utils/appAdmin'
 
 export function ProfileHeroSection(props: ProfileTabProps) {
   const p = profileTabBindings(props)
@@ -76,7 +77,14 @@ export function ProfileHeroSection(props: ProfileTabProps) {
 
   {/* Bottom hero content - rich & attractive */}
   <div className="absolute bottom-0 left-0 right-0 p-5">
-    <div className="font-black text-4xl tracking-[-2.5px] text-white drop-shadow-lg">{currentUser.name}</div>
+    <div className="font-black text-4xl tracking-[-2.5px] text-white drop-shadow-lg flex items-center gap-2 flex-wrap">
+      {currentUser.name}
+      {p.appAdminRecord && (
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-200 font-bold border border-sky-400/40 tracking-normal">
+          {p.appAdminRecord.displayLabel || COMMUNITY_ADMIN_BADGE_LABEL}
+        </span>
+      )}
+    </div>
     <div className="text-[#9CA3AF] text-sm tracking-wider -mt-1 flex items-center gap-2 flex-wrap">
       <span>{currentUser.age} • {currentUser.city}, {currentUser.country}</span>
       {(() => {

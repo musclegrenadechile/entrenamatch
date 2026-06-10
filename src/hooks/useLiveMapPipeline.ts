@@ -266,7 +266,7 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
     const unsubProfiles = attachLiveUsersListener(
       db,
       (users) => {
-        if (presenceHealthyRef.current) return
+        // Always keep profiles query for GymSound enrichment on livePresence rows.
         publishLiveSnapshot(liveFromPresenceRef.current, users as Profile[])
       },
       { getBlockedIds: blocked, onError: onProfilesErr }

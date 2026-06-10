@@ -3,6 +3,8 @@ import {
   computeFeedPostScore,
   computeGlobalFeed,
   isEchoPost,
+  limitConsecutiveSameAuthor,
+  pickFeedDisplayBadges,
   sortFeedPosts,
 } from './feedRanking'
 import type { LiveUserLike } from './gymPulseLive'
@@ -52,6 +54,18 @@ describe('computeFeedPostScore', () => {
     )
   })
 
+  it('prefers photo and comments over auto templates', () => {
+    const auto = basePost({ text: '¡Entrenando ahora en el Mapa LIVE! ¿Quién se une?' })
+    const social = basePost({
+      id: 'p2',
+      text: 'Terminé pierna con el equipo',
+      photo: 'https://example.com/gym.jpg',
+      comments: [{ id: 'c1' }, { id: 'c2' }],
+    })
+    const ctx = { syncBonds: {}, liveUsersActive: [], now }
+    expect(computeFeedPostScore(social, ctx)).toBeGreaterThan(computeFeedPostScore(auto, ctx))
+  })
+
   it('boosts proximity when owner is near', () => {
     const far = basePost({ ownerId: 'far' })
     const near = basePost({ id: 'p2', ownerId: 'near' })
@@ -81,6 +95,42 @@ describe('sortFeedPosts', () => {
     ]
     const sorted = sortFeedPosts(posts, { syncBonds: {}, liveUsersActive: [], now })
     expect(sorted[0].id).toBe('echo')
+  })
+})
+
+describe('limitConsecutiveSameAuthor', () => {
+  it('breaks runs of more than two posts from the same owner', () => {
+    const posts = [
+      basePost({ id: 'a1', ownerId: 'jorge' }),
+      basePost({ id: 'a2', ownerId: 'jorge' }),
+      basePost({ id: 'a3', ownerId: 'jorge' }),
+      basePost({ id: 'b1', ownerId: 'maria' }),
+    ]
+    const mixed = limitConsecutiveSameAuthor(posts)
+    for (let i = 0; i < mixed.length - 2; i++) {
+      const trio = mixed.slice(i, i + 3)
+      const sameOwner = trio.every((p) => p.ownerId === trio[0].ownerId)
+      expect(sameOwner).toBe(false)
+    }
+    expect(mixed.map((p) => p.id).sort()).toEqual(['a1', 'a2', 'a3', 'b1'].sort())
+  })
+})
+
+describe('pickFeedDisplayBadges', () => {
+  it('returns at most two badges prioritizing live and proximity', () => {
+    const badges = pickFeedDisplayBadges({
+      isMine: false,
+      isReal: true,
+      isPinned: false,
+      isNew: true,
+      isSyncPost: true,
+      isEcho: false,
+      ownerTrainingNow: true,
+      rankBadges: { live: true, near: true, bond: true, echo: false },
+    })
+    expect(badges).toHaveLength(2)
+    expect(badges[0].label).toBe('🟢 LIVE AHORA')
+    expect(badges[1].label).toBe('SYNC')
   })
 })
 

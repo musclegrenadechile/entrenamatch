@@ -12,6 +12,8 @@ import { VerifiedPhotoBadge, VerifiedProfilePhoto } from './VerifiedProfilePhoto
 import { VerifiedIdentityPrize } from './VerifiedIdentityPrize'
 import { isProfileVerified } from '../../utils/identityVerification'
 import { isPubliclyVerified } from '../../utils/profileVerification'
+import { BETA_BOT_BADGE_LABEL, isBetaBotProfile } from '../../utils/betaBots'
+import { COMMUNITY_ADMIN_BADGE_LABEL, isCommunityAdminProfile } from '../../utils/appAdmin'
 import { BRAND_COPY } from '../../constants/brandCopy'
 import { WorkoutPostCard } from '../workout/WorkoutPostCard'
 
@@ -191,6 +193,22 @@ export function FullProfileSheet({
                 </span>
               )}
               {verified && <VerifiedIdentityPrize variant="inline" />}
+              {isBetaBotProfile(profile) && (
+                <span
+                  className="text-[10px] px-2 py-0.5 rounded-full bg-violet-500/20 text-violet-200 font-semibold border border-violet-400/40"
+                  title="Persona de ambiente para la beta — no es un usuario real"
+                >
+                  {BETA_BOT_BADGE_LABEL}
+                </span>
+              )}
+              {isCommunityAdminProfile(profile) && (
+                <span
+                  className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-200 font-semibold border border-sky-400/40"
+                  title="Administrador de la comunidad"
+                >
+                  {COMMUNITY_ADMIN_BADGE_LABEL}
+                </span>
+              )}
             </div>
           </div>
         </div>

@@ -2066,6 +2066,28 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* Special legendary treatment for auto-generated EntrenaSync story posts in feed/muro - makes the unique shared memories stand out */
+/* Phase 2 — low-signal auto posts (live templates, sync pings) stay readable but quieter */
+.muro-post--auto {
+  border-color: rgba(255, 255, 255, 0.06);
+  background: linear-gradient(160deg, rgba(20, 20, 24, 0.96), rgba(14, 14, 18, 0.98));
+  box-shadow: none;
+  margin-bottom: 0.65rem;
+}
+.muro-post--auto::before {
+  display: none;
+}
+.muro-post--auto:hover {
+  transform: none;
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: none;
+}
+.muro-post-body--auto {
+  font-size: 13px;
+}
+.muro-post-auto-group {
+  box-shadow: 0 4px 16px -8px rgb(0 0 0 / 0.45);
+}
+
 .muro-post--sync-story {
   border-color: #22c55e;
   background: linear-gradient(160deg, rgba(10,42,26,0.92), rgba(18,18,22,0.99));

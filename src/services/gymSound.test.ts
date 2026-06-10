@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getPublicGymSound, getPublicGymSoundAnthem } from './gymSound'
+import { enrichLiveUsersWithProfileGymSound, getPublicGymSound, getPublicGymSoundAnthem } from './gymSound'
 
 describe('gymSound service', () => {
   it('getPublicGymSound prefers Spotify over manual anthem', () => {
@@ -38,6 +38,27 @@ describe('gymSound service', () => {
     })
     expect(result?.provider).toBe('youtube-music')
     expect(result?.trackName).toBe('Gym Banger')
+  })
+
+  it('enrichLiveUsersWithProfileGymSound overlays profile music onto presence', () => {
+    const now = Date.now()
+    const enriched = enrichLiveUsersWithProfileGymSound(
+      [{ id: 'a', spotifyShareLive: false }],
+      [
+        {
+          id: 'a',
+          spotifyShareLive: true,
+          spotifyNowPlaying: {
+            trackName: 'Track A',
+            artistName: 'Artist',
+            isPlaying: true,
+            updatedAt: now,
+          },
+        },
+      ]
+    )
+    expect(enriched[0].spotifyShareLive).toBe(true)
+    expect(enriched[0].spotifyNowPlaying?.trackName).toBe('Track A')
   })
 
   it('getPublicGymSoundAnthem requires live + opt-in', () => {

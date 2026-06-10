@@ -26,6 +26,12 @@ service firebase.storage {
       allow write: if isOwner(userId);
     }
 
+    // ===== BETA BOT PORTRAITS (Admin SDK upload; testers read) =====
+    match /beta-bots/{botId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
     // ===== CHAT VOICE NOTES (the important one for "notas de voz") =====
     // Paths used in code (sendVoiceNote):
     //   chat-voice/${chatId}/${timestamp}.webm

@@ -90,6 +90,7 @@ export interface ProfileTabProps {
   syncBonds: Record<string, SyncBond>
   setMapForceTick: Dispatch<SetStateAction<number>>
   saveUserWithRealSync: (user: CurrentUser) => Promise<void>
+  onGymSoundSave?: (user: CurrentUser) => void | Promise<void>
   setActiveTab: Dispatch<SetStateAction<Tab>>
   openCommunityMuro?: (opts?: { prefill?: string; openPublish?: boolean }) => void
   setShowLiveModal: Dispatch<SetStateAction<boolean>>
@@ -190,6 +191,8 @@ export interface ProfileTabProps {
   onOpenTrainerCoach?: () => void
   isMarketplaceAdmin?: boolean
   onOpenAdminOps?: () => void
+  appAdminRecord?: import('../../services/appAdmin').AppAdminRecord | null
+  onOpenCommunityAdmin?: () => void
   partnerGymStats?: import('../../services/partnerGym').PartnerGymStats | null
   partnerGymLoading?: boolean
   constanciaBalance?: number

@@ -44,3 +44,48 @@ export function getPublicGymSound(
   if (!anthem) return undefined
   return anthemToDisplay(anthem)
 }
+
+type GymSoundFields = Pick<Profile, 'spotifyShareLive' | 'spotifyNowPlaying' | 'gymSoundAnthem'>
+
+function pickFresherNowPlaying(
+  presence?: Profile['spotifyNowPlaying'],
+  profile?: Profile['spotifyNowPlaying']
+): Profile['spotifyNowPlaying'] | undefined {
+  if (!profile?.trackName) return presence?.trackName ? presence : undefined
+  if (!presence?.trackName) return profile
+  const pAt = profile.updatedAt ?? 0
+  const rAt = presence.updatedAt ?? 0
+  return pAt >= rAt ? profile : presence
+}
+
+/** Overlay GymSound from profiles onto livePresence rows (presence can lag profile writes). */
+export function enrichLiveUsersWithProfileGymSound<T extends { id: string } & GymSoundFields>(
+  presenceUsers: T[],
+  profileUsers: Array<{ id: string } & GymSoundFields>
+): T[] {
+  if (!profileUsers.length) return presenceUsers
+  const byId = new Map(profileUsers.map((p) => [p.id, p]))
+  return presenceUsers.map((u) => {
+    const prof = byId.get(u.id)
+    if (!prof) return u
+    const share = prof.spotifyShareLive === true || u.spotifyShareLive === true
+    if (!share) return u
+    const spotifyNowPlaying = pickFresherNowPlaying(u.spotifyNowPlaying, prof.spotifyNowPlaying)
+    const gymSoundAnthem = prof.gymSoundAnthem?.trackName
+      ? prof.gymSoundAnthem
+      : u.gymSoundAnthem
+    if (
+      u.spotifyShareLive === share &&
+      u.spotifyNowPlaying === spotifyNowPlaying &&
+      u.gymSoundAnthem === gymSoundAnthem
+    ) {
+      return u
+    }
+    return {
+      ...u,
+      spotifyShareLive: true,
+      spotifyNowPlaying: share ? spotifyNowPlaying : u.spotifyNowPlaying,
+      gymSoundAnthem: share ? gymSoundAnthem : u.gymSoundAnthem,
+    }
+  })
+}

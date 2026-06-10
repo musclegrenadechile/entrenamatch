@@ -54,6 +54,8 @@ export function mapFirestoreProfileDoc(
     weekStats: d.weekStats || undefined,
     showOnLeaderboard: d.showOnLeaderboard,
     gymCheckIn: d.gymCheckIn || undefined,
+    isBetaBot: d.isBetaBot === true,
+    communityAdmin: d.communityAdmin === true,
   }
 }
 

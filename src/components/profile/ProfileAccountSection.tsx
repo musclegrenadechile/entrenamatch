@@ -40,6 +40,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
     setShowPwaInstall,
     handleLogout,
     saveUserWithRealSync,
+    onGymSoundSave,
     triggerHaptic,
   } = profileTabBindings(props)
   const [syncShareOptOut, setSyncShareOptOutState] = useState(getSyncShareOptOut)
@@ -101,7 +102,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 <div className={`px-4 mt-4${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
   <GymSoundCard
     currentUser={currentUser}
-    saveUserWithRealSync={saveUserWithRealSync}
+    saveUserWithRealSync={onGymSoundSave || saveUserWithRealSync}
     triggerHaptic={triggerHaptic}
   />
 </div>
