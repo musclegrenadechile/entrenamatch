@@ -69,12 +69,15 @@ export function resolveHomeHero(opts: {
     }
   }
 
-  if (!loggedToday && yesterday) {
+  if (!loggedToday && entrenoRecentWorkouts.length > 0) {
+    const count = entrenoRecentWorkouts.length
     return {
-      title: 'Repetir ayer',
-      subtitle: `${yesterday.title} — mismo plan, nuevo día.`,
+      title: 'Vuelve a entrenar',
+      subtitle: yesterday
+        ? `${yesterday.title} fue ayer — repite o elige otra rutina.`
+        : `${count} rutina${count === 1 ? '' : 's'} guardada${count === 1 ? '' : 's'} — arranca en un toque.`,
       action: 'repeat',
-      cta: 'Copiar entreno de ayer →',
+      cta: 'Elegir entreno →',
       progressPct: weeklyPactProgress.overallPct,
     }
   }

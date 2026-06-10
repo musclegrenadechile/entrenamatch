@@ -11,6 +11,8 @@ import { restSecondsLeft as calcRestLeft } from '../../utils/arenaSyncState'
 import type { WeeklyPactProgress } from '../../services/weeklyPact'
 import { ArenaLiveRoutines } from './ArenaLiveRoutines'
 import type { WorkoutExercise } from '../../types'
+import type { GymSoundSyncMatch } from '../../services/gymSoundSyncMatch'
+import { GymSoundSyncChip } from '../music/GymSoundSyncChip'
 
 export interface SyncArenaFlyingEmoji {
   id: string
@@ -56,6 +58,7 @@ export interface SyncArenaViewProps {
   restStartedBy?: string | null
   weeklyPactProgress?: WeeklyPactProgress | null
   isRecordingVoice?: boolean
+  gymSoundSyncMatch?: GymSoundSyncMatch | null
   onSyncAction: (actionId: string, emoji: string, label: string) => void
   onCapturePhoto: () => void
   onVoicePing?: () => void
@@ -98,6 +101,7 @@ export function SyncArenaView({
   restStartedBy = null,
   weeklyPactProgress = null,
   isRecordingVoice = false,
+  gymSoundSyncMatch = null,
   onSyncAction,
   onCapturePhoto,
   onVoicePing,
@@ -261,6 +265,10 @@ export function SyncArenaView({
           selfExercises={selfExercises}
           partnerExercises={partnerLiveState?.exercises}
         />
+
+        {gymSoundSyncMatch && (
+          <GymSoundSyncChip match={gymSoundSyncMatch} partnerFirst={partnerFirst} />
+        )}
 
         <div className="arena-sala-sync__meta-row">
           <p className="arena-sala-sync__story-hint">

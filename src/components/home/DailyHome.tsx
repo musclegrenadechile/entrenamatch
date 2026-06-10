@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { EntrenoDeHoyWeekSummary } from '../workout/EntrenoDeHoyWeekSummary'
 import { ExercisePRStrip } from '../workout/ExercisePRStrip'
 import { MapPin, MessageCircle, RefreshCw, Users } from 'lucide-react'
@@ -10,12 +11,20 @@ import { formatRedSyncFomoLine } from '../../utils/syncFomo'
 import type { WeeklyPact, WeeklyPactProgress } from '../../services/weeklyPact'
 import { WeeklyPactCard } from './WeeklyPactCard'
 import { DailyHomeHeroCard } from './DailyHomeHeroCard'
+import { WorkoutDraftResumeBanner } from '../workout/WorkoutDraftResumeBanner'
+import { isWorkoutDraftFresh, loadWorkoutDraft } from '../../utils/workoutDraft'
 import { PilotProgramStrip } from './PilotProgramStrip'
 import { CityDerbyCard } from './CityDerbyCard'
+import { SyncHourBanner } from './SyncHourBanner'
+import { BRAND_COPY } from '../../constants/brandCopy'
+import { GymInviteQrSheet } from '../growth/GymInviteQrSheet'
+import { buildGymInviteLink } from '../../utils/sparseCityDefaults'
 import type { CityDerbyState } from '../../services/cityDerby'
 import type { LocalNetworkCardProps } from './LocalNetworkCard'
 import type { Firestore } from 'firebase/firestore'
 import type { ProfileGender } from '../../utils/genderedCopy'
+import type { GymSoundDisplay } from '../../types'
+import { GymSoundLiveStrip } from '../music/GymSoundLiveStrip'
 
 export type TeamMemberStatus = 'live' | 'recent' | 'this_week' | 'inactive'
 
@@ -51,6 +60,10 @@ export interface DailyHomeProps {
   onMessageMember?: (id: string) => void
   onOpenMatches?: () => void
   onOpenEntrenaLog?: () => void
+  workoutDraftUserId?: string | null
+  workoutDraftRefresh?: number
+  onResumeWorkoutDraft?: () => void
+  onDiscardWorkoutDraft?: () => void
   entrenoWeekSummary?: import('../../utils/workoutProgress').WeekWorkoutSummary | null
   entrenoExerciseHighlights?: Array<{ name: string; bestWeightKg: number; trend: 'up' | 'flat' | 'down' }>
   entrenoPactProgress?: WeeklyPactProgress | null
@@ -94,7 +107,7 @@ export interface DailyHomeProps {
   isDemoMode?: boolean
   cityDerby?: CityDerbyState | null
   onOpenDerbyMap?: () => void
-  /** Fase 101 — día 1: solo piloto, derby, hero y live. */
+  /** Fase 101 — día 1: oculta plan semanal y meta; Fuel AI queda visible. */
   compactDayOne?: boolean
   userGender?: ProfileGender
   weeklyPlan?: WeeklyPlanResult | null
@@ -102,6 +115,9 @@ export interface DailyHomeProps {
   onStartWeeklyPlan?: (plan: WeeklyPlanResult) => void
   onPublishWeeklyPlanToFeed?: (plan: WeeklyPlanResult) => void
   onShareWeeklyPlanExternally?: (plan: WeeklyPlanResult) => void
+  /** GymSound Phase 2 — strip while LIVE + share enabled */
+  gymSoundLive?: boolean
+  gymSoundNowPlaying?: GymSoundDisplay | null
 }
 
 function statusLine(member: TeamMemberView): string {
@@ -145,6 +161,10 @@ export function DailyHome({
   onMessageMember,
   onOpenMatches,
   onOpenEntrenaLog,
+  workoutDraftUserId = null,
+  workoutDraftRefresh = 0,
+  onResumeWorkoutDraft,
+  onDiscardWorkoutDraft,
   entrenoWeekSummary = null,
   entrenoExerciseHighlights = [],
   entrenoPactProgress = null,
@@ -187,6 +207,8 @@ export function DailyHome({
   onStartWeeklyPlan,
   onPublishWeeklyPlanToFeed,
   onShareWeeklyPlanExternally,
+  gymSoundLive = false,
+  gymSoundNowPlaying = null,
 }: DailyHomeProps) {
   const firstName = (userName || 'Atleta').split(' ')[0]
   const hour = new Date().getHours()
@@ -203,6 +225,33 @@ export function DailyHome({
     pactComplete: weeklyPactProgress.isComplete,
   })
   const syncFomoLine = formatRedSyncFomoLine(redLiveCount, syncCount)
+  void workoutDraftRefresh
+  const workoutDraft =
+    workoutDraftUserId && onResumeWorkoutDraft && onDiscardWorkoutDraft
+      ? loadWorkoutDraft(workoutDraftUserId)
+      : null
+  /** El gadget flotante de sesión reemplaza este banner (Fase A). */
+  const showWorkoutDraftBanner = false
+  const [showGymQr, setShowGymQr] = useState(false)
+
+  const referralCode = (() => {
+    if (!pilotInviteLink) return 'invite'
+    try {
+      return new URL(pilotInviteLink).searchParams.get('ref') || 'invite'
+    } catch {
+      return 'invite'
+    }
+  })()
+
+  const gymForInvite =
+    localNetwork?.nearestGym ||
+    (localNetwork?.gymCheckIn
+      ? { id: localNetwork.gymCheckIn.gymId, name: localNetwork.gymCheckIn.gymName }
+      : null)
+
+  const gymInviteUrl = pilotInviteLink
+    ? buildGymInviteLink(referralCode, gymForInvite)
+    : ''
 
   return (
     <div className="daily-home mb-4 -mx-1 px-1 space-y-3">
@@ -213,7 +262,8 @@ export function DailyHome({
           {greeting}, {firstName}
         </h2>
         <p className="text-[11px] text-[#9CA3AF] mt-1 leading-snug">
-          Live → Equipo → Sync → Meta: cierra tu semana con tu red.
+          Fuel AI → LIVE → Explorar → EntrenaSync → Meta: cierra tu semana con tu{' '}
+          {BRAND_COPY.community.toLowerCase()}.
         </p>
         <HomeLoopStepper activeStep={loopStep} />
       </div>
@@ -224,6 +274,16 @@ export function DailyHome({
         isDemoMode={isDemoMode}
         inviteLink={pilotInviteLink}
         onOpenMap={onOpenDerbyMap}
+        liveCount={liveCount}
+      />
+
+      <SyncHourBanner
+        isLive={isLive}
+        onOpenMap={onOpenDerbyMap ?? onOpenMap}
+        onActivateLive={onToggleLive}
+        db={pilotDb}
+        city={cityLabel}
+        isDemoMode={isDemoMode}
       />
 
       <CityDerbyCard
@@ -231,6 +291,9 @@ export function DailyHome({
         onOpenMap={onOpenDerbyMap}
         userGender={userGender}
         userCity={cityLabel}
+        inviteLink={pilotInviteLink}
+        db={pilotDb}
+        isDemoMode={isDemoMode}
       />
 
       <DailyHomeHeroCard
@@ -244,18 +307,15 @@ export function DailyHome({
         onOpenPact={onOpenPactWizard}
       />
 
-      {!compactDayOne && (
-      <>
-      <WeeklyPlanCard
-        plan={weeklyPlan}
-        enriching={weeklyPlanEnriching}
-        onStartWorkout={onStartWeeklyPlan}
-        onPublishPlanToFeed={onPublishWeeklyPlanToFeed}
-        onSharePlanExternally={onShareWeeklyPlanExternally}
-        onOpenFuelSetup={onOpenFuelSetup}
-      />
+      {showWorkoutDraftBanner && workoutDraft && (
+        <WorkoutDraftResumeBanner
+          draft={workoutDraft}
+          onResume={onResumeWorkoutDraft!}
+          onDiscard={onDiscardWorkoutDraft!}
+        />
+      )}
 
-      {/* Fase 93 — Fuel (oculto día 1) */}
+      {/* Fuel AI — siempre visible: registro diario de comidas */}
       <FuelDayCard
         profile={fuelProfile ?? null}
         totals={fuelTotals ?? { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 }}
@@ -273,6 +333,17 @@ export function DailyHome({
         onImportHealth={onImportHealthBurn}
         healthImportHint={healthImportHint}
         weeklyDeltaKcal={weeklyPlan?.energySummary.weeklyDeltaKcal}
+      />
+
+      {!compactDayOne && (
+      <>
+      <WeeklyPlanCard
+        plan={weeklyPlan}
+        enriching={weeklyPlanEnriching}
+        onStartWorkout={onStartWeeklyPlan}
+        onPublishPlanToFeed={onPublishWeeklyPlanToFeed}
+        onSharePlanExternally={onShareWeeklyPlanExternally}
+        onOpenFuelSetup={onOpenFuelSetup}
       />
 
       {exercisePRRecords.length > 0 && (
@@ -349,6 +420,10 @@ export function DailyHome({
           Ver mapa LIVE {liveCount > 0 ? `· ${liveCount} en vivo` : ''}
           {cityLabel ? ` · ${cityLabel}` : ''}
         </button>
+
+        {isLive && gymSoundLive && (
+          <GymSoundLiveStrip nowPlaying={gymSoundNowPlaying} />
+        )}
       </section>
 
       {/* Entreno de Hoy — visible mientras LIVE o como acceso rápido */}
@@ -639,9 +714,26 @@ export function DailyHome({
         </button>
       )}
 
-      {localNetwork && <LocalNetworkCard cityLabel={cityLabel} {...localNetwork} />}
+      {localNetwork && (
+        <LocalNetworkCard
+          cityLabel={cityLabel}
+          {...localNetwork}
+          inviteUrl={gymInviteUrl}
+          onShowGymQr={gymInviteUrl ? () => setShowGymQr(true) : undefined}
+        />
+      )}
       </>
       )}
+
+      <GymInviteQrSheet
+        open={showGymQr}
+        inviteUrl={gymInviteUrl}
+        gymName={gymForInvite?.name || cityLabel}
+        onClose={() => setShowGymQr(false)}
+        db={pilotDb}
+        city={cityLabel}
+        isDemoMode={isDemoMode}
+      />
     </div>
   )
 }

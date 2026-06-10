@@ -18,6 +18,10 @@ export function liveUsersSnapshotSignature(users: Array<Profile | { id: string }
         p.trainingNowSince ?? '',
         p.liveMotionAt ?? '',
         (p as Profile & { liveMotionIdle?: boolean }).liveMotionIdle ? 1 : 0,
+        p.spotifyShareLive ? 1 : 0,
+        p.spotifyNowPlaying?.trackName ?? '',
+        p.spotifyNowPlaying?.updatedAt ?? '',
+        p.gymSoundAnthem?.trackName ?? '',
       ].join(':')
     })
     .sort()

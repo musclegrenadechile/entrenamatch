@@ -30,6 +30,7 @@ import { BRAND_COPY } from '../constants/brandCopy'
 import { attachIncomingLikesListener } from '../services/incomingLikes'
 import {
   isQuotaError,
+  loadPersistedSeenIdMap,
   MAX_SEEN_IDS_PER_CHAT,
   pruneSeenIdMap,
   reclaimLocalStorageSpace,
@@ -86,7 +87,7 @@ export function useChatSession(opts: UseChatSessionOptions) {
 
   const realChatUnsubsRef = useRef<Record<string, () => void>>({})
   const currentActiveChatRef = useRef<string | null>(null)
-  const seenChatMsgIdsRef = useRef<Record<string, Set<string>>>({})
+  const seenChatMsgIdsRef = useRef(loadPersistedSeenIdMap('entrenamatch_seen_chat_msgs'))
   const prevRealMatchesRef = useRef<string[]>([])
   const prevActiveChatForLoadRef = useRef<string | null>(null)
   const realMatchesInitializedRef = useRef(false)
@@ -243,11 +244,14 @@ export function useChatSession(opts: UseChatSessionOptions) {
       photoUrl?: string | null,
       opts?: {
         clientId?: string
+        workoutId?: string
+        workoutPreview?: import('../types').WorkoutPreview
         onAck?: (serverId: string) => void
         onFail?: () => void
       }
     ) => {
-      if ((!text.trim() && !voice && !photoUrl) || !firebaseUserUid || !db) return
+      const hasWorkout = !!(opts?.workoutId && opts?.workoutPreview)
+      if ((!text.trim() && !voice && !photoUrl && !hasWorkout) || !firebaseUserUid || !db) return
 
       const writeMessage = async () => {
         const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
@@ -265,6 +269,8 @@ export function useChatSession(opts: UseChatSessionOptions) {
           msg.voiceDuration = voice.voiceDuration
         }
         if (photoUrl) msg.photoUrl = photoUrl
+        if (opts?.workoutId) msg.workoutId = opts.workoutId
+        if (opts?.workoutPreview) msg.workoutPreview = opts.workoutPreview
         const ref = await addDoc(collection(db, 'messages'), msg)
         return ref.id
       }

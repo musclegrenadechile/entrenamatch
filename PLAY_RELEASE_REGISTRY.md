@@ -9,9 +9,10 @@ Documento de referencia para el equipo. **No contiene secretos** (contraseñas/k
 | Package | `com.entrenamatch.app` |
 | App name | EntrenaMatch |
 | Track objetivo | **Closed testing** (beta cerrada, app oculta) |
-| Última subida conocida (dispositivo) | `versionCode` **249** · `versionName` **0.1.249** |
-| **Próxima subida (preparada)** | `versionCode` **320** · `versionName` **0.1.320** (FTUE Sprints 1–6) |
-| Doc release | `PLAY_INTERNAL_v0.1.320.md` |
+| Última subida conocida (dispositivo) | `versionCode` **323** · `versionName` **0.1.323** |
+| **Próxima subida (preparada)** | `versionCode` **324** · `versionName` **0.1.324** (sesión activa + entreno + Copa Zona) |
+| Doc release | `PLAY_INTERNAL_v0.1.324.md` |
+| AAB para subir | `EntrenaMatch-release.aab` (raíz del repo) |
 | Script build | `build-play-store.bat` |
 
 > Play Store exige que cada AAB tenga `versionCode` **estrictamente mayor** que el anterior. No subir 91 hasta confirmar que 90 ya está en Console.

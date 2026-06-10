@@ -12,12 +12,14 @@ const MUSCLE_TABS = [
   'Todos',
   'Pecho',
   'Espalda',
-  'Piernas',
   'Hombros',
+  'Piernas',
+  'Glúteos',
   'Bíceps',
   'Tríceps',
+  'Antebrazos',
+  'Trapecio',
   'Core',
-  'Glúteos',
   'Cardio',
 ] as const
 
@@ -43,7 +45,7 @@ export function ArenaExercisePicker({ value, onChange, extraOptions = [] }: Aren
     let pool: LibraryExercise[]
 
     if (q) {
-      pool = filterExercises(q, 48)
+      pool = filterExercises(q, 64)
       if (muscle !== 'Todos') {
         pool = pool.filter((e) => exerciseMatchesMuscleTab(e, muscle))
       }

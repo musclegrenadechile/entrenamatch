@@ -52,17 +52,15 @@ let PushNotifications: any = null
 let PlayIntegrityNative: any = null
 let GeolocationNative: any = null
 
-if (__CAPACITOR_BUILD__) {
-  // The specifier is a define placeholder replaced at build time with the real path only for CAP builds.
-  // Web builds get a dummy data URL, so no loader module is ever analyzed/resolved in web builds.
-  import(CAPACITOR_PLUGINS_LOADER).then(() => {
-    const plugins = (typeof window !== 'undefined' && (window as any).__CAPACITOR_PLUGINS__) || {}
-    CapacitorCamera = plugins.Camera || null
-    PushNotifications = plugins.PushNotifications || null
-    PlayIntegrityNative = plugins.PlayIntegrity || null
-    GeolocationNative = plugins.Geolocation || null
-  })
-}
+import { loadCapacitorPlugins } from '@capacitor-plugins-loader'
+
+void loadCapacitorPlugins().then(() => {
+  const plugins = (typeof window !== 'undefined' && (window as any).__CAPACITOR_PLUGINS__) || {}
+  CapacitorCamera = plugins.Camera || null
+  PushNotifications = plugins.PushNotifications || null
+  PlayIntegrityNative = plugins.PlayIntegrity || null
+  GeolocationNative = plugins.Geolocation || null
+})
 
 // Fallback runtime guard (in case the async load hasn't completed yet when code runs).
 // In web builds the vars stay null forever, which is correct.
@@ -233,12 +231,19 @@ import {
 } from './services/cityDerby'
 import { notifyDerbyLeaderChange } from './services/derbyLeaderNotify'
 import {
+  freezeWarDerbyState,
+  loadFrozenWarDerby,
   persistDerbyWeekToFirestore,
   recordDerbyWeekSnapshot,
 } from './services/derbyWeeklyHistory'
+import {
+  getWarEventKey,
+  isZoneScoringActive,
+} from './services/zoneEventPhase'
 import { saveUserPushToken } from './services/userPushTokens'
 import { enrichProfileFromDirectory } from './utils/profileVerification'
 import { buildInviteLink } from './utils/sparseCityDefaults'
+import { shouldFireSyncHourNotif } from './services/syncHour'
 import {
   isHomeDayOneMode,
   isProfileProgressiveMode,
@@ -251,9 +256,15 @@ import {
 } from './utils/homeTeam'
 import { isTeamMemberId } from './utils/teamMembers'
 import { isSeedProfileId } from './utils/seedProfiles'
-import { EntrenoDeHoyModal, WorkoutPostCard } from './components/workout'
+import { EntrenoDeHoyModal, WorkoutPostCard, WorkoutSessionFab } from './components/workout'
 import { detectWorkoutPRs, formatWorkoutPRSummary } from './utils/workoutPR'
 import { cloneExercises, workoutToTemplate } from './utils/workoutTemplates'
+import {
+  clearWorkoutDraft,
+  isWorkoutDraftFresh,
+  loadWorkoutDraft,
+  quickAddSetToWorkoutDraft,
+} from './utils/workoutDraft'
 import { buildWeekWorkoutSummary, getTopExerciseProgress } from './utils/workoutProgress'
 import { FuelSetupModal, FuelSetupWizard, FuelLogModal, NutritionPostCard } from './components/fuel'
 import {
@@ -272,7 +283,7 @@ import {
   emptyFuelDayTotals,
 } from './services/fuel'
 import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr, buildFuelAnalyzeContext } from './utils/fuelCalculator'
-import { fetchRecentWorkouts, fetchUserWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, buildWorkoutPreview, computeWorkoutStats } from './services/workouts'
+import { fetchRecentWorkouts, fetchUserWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, deleteWorkoutWithLinkedPost, buildWorkoutPreview, computeWorkoutStats, workoutToPreview, workoutShareText } from './services/workouts'
 import { useFuelBalance } from './hooks/useFuelBalance'
 import { useFuelState } from './hooks/useFuelState'
 import { useWeeklyPlan } from './hooks/useWeeklyPlan'
@@ -304,6 +315,8 @@ import { useArenaSyncController } from './hooks/useArenaSyncController'
 import { usePartnerLocations } from './hooks/usePartnerLocations'
 import { useLiveMapPipeline } from './hooks/useLiveMapPipeline'
 import { useLiveMotionMonitor } from './hooks/useLiveMotionMonitor'
+import { useSpotifyLiveSync } from './hooks/useSpotifyLiveSync'
+import type { SpotifyNowPlaying } from './types'
 import { saveDailyEnergyCache } from './services/dailyEnergy'
 import { estimateSyncSessionBurn } from './domain/fuelBalance'
 import {
@@ -350,7 +363,6 @@ import { estimateWorkoutBurn } from './domain/fuelBalance/estimateWorkoutBurn'
 import { FullProfileSheet } from './components/profile/FullProfileSheet'
 import { VerificationFaceCapture } from './components/profile/VerificationFaceCapture'
 import { VerifiedProfilePhoto } from './components/profile/VerifiedProfilePhoto'
-import { getYesterdayWorkout } from './utils/homeHero'
 import { triggerHaptic } from './utils/haptics'
 import {
   loadStoredNotifications,
@@ -359,6 +371,14 @@ import {
   reclaimLocalStorageSpace,
   pruneSeenIdMap,
   pruneStringIdList,
+  loadPersistedSeenIdMap,
+  loadPersistedStringIdSet,
+  loadPersistedRedSyncState,
+  savePersistedRedSyncState,
+  SEEN_LIVE_USERS_KEY,
+  SEEN_LIVE_JOINS_KEY,
+  PREV_RED_SYNC_STATE_KEY,
+  SESSION_TOAST_GRACE_MS,
   MAX_SEEN_IDS_PER_CHAT,
   MAX_SEEN_STRING_IDS,
   trimSetToMax,
@@ -382,6 +402,7 @@ import {
   clearLivePresence,
   buildLivePresencePayload,
   patchLivePresenceMotion,
+  patchLivePresenceGymSound,
 } from './services/livePresence'
 import { requestPlayIntegrityToken, hasPositiveIntegrity, getLastIntegrityResult } from './services/playIntegrity'
 import { Capacitor } from '@capacitor/core'
@@ -611,13 +632,18 @@ function App() {
   const loadProfilePostsRef = useRef<
     ((userId: string) => Promise<ProfilePost[] | undefined>) | null
   >(null)
-  const seenGroupMsgIdsRef = useRef<Record<string, Set<string>>>({})
+  const seenGroupMsgIdsRef = useRef(loadPersistedSeenIdMap('entrenamatch_seen_group_msgs'))
   // For live training urgency notifs: track seen live users so we only notify on *new* nearby lives (prevents spam on refresh)
-  const seenLiveUserIdsRef = useRef<Set<string>>(new Set())
+  const seenLiveUserIdsRef = useRef(loadPersistedStringIdSet(SEEN_LIVE_USERS_KEY))
   // For "someone joined my live" notifs: dedup incoming comments/likes on the live posts we created when trainingNow
-  const seenLiveJoinInteractionIdsRef = useRef<Set<string>>(new Set())
+  const seenLiveJoinInteractionIdsRef = useRef(loadPersistedStringIdSet(SEEN_LIVE_JOINS_KEY))
   // Track previous trainingSyncWith for members of *your red* so we can notify when they start a strong sync (Network Power propagation moment)
-  const prevRedSyncStateRef = useRef<Record<string, string | null>>({})
+  const prevRedSyncStateRef = useRef(loadPersistedRedSyncState())
+  // First live snapshot per session: seed seen state without toasts (prevents burst on app open)
+  const liveSessionAlertsReadyRef = useRef(false)
+  const liveJoinsBootstrappedRef = useRef(false)
+  const appStartedAtRef = useRef(Date.now())
+  const recentPushToastKeysRef = useRef<Set<string>>(new Set())
   // Per-chat and per-session unread counts for badges + list dots (local, cleared on open)
   const [sessionUnreads, setSessionUnreads] = useState<Record<string, number>>({})
 
@@ -917,7 +943,7 @@ function App() {
       saveUserWithRealSyncRef.current?.({ ...(currentUser as any), dailyVoiceStreak: vStreak } as CurrentUser)
       // Premium toast celebrating the ritual voice + streak
       toast.success('Nota enviada a tu EntrenaPartner', { 
-        description: `${duration}s • Racha de voz ${vStreak}d 🔥  +5 Constancia en el GymPulse` 
+        description: `${duration}s • Racha de voz ${vStreak}d 🔥  ${BRAND_COPY.toasts.voiceConstancy}` 
       })
       // Daily Pulse progress (voice is powerful for bond/ripple challenges)
       if (dp.currentChallenge?.type === 'bond' || dp.currentChallenge?.type === 'network') {
@@ -1139,6 +1165,10 @@ function App() {
     type?: import('./types').WorkoutType
     durationMin?: number
   } | null>(null)
+  const [entrenaLogSkipDraft, setEntrenaLogSkipDraft] = useState(false)
+  const [entrenaLogExpandPastWorkouts, setEntrenaLogExpandPastWorkouts] = useState(false)
+  const [entrenaLogShareToChat, setEntrenaLogShareToChat] = useState<string | null>(null)
+  const [workoutDraftRefresh, setWorkoutDraftRefresh] = useState(0)
   const [showFuelSetupModal, setShowFuelSetupModal] = useState(false)
   const [showFuelSetupWizard, setShowFuelSetupWizard] = useState(false)
   const [showFuelLogModal, setShowFuelLogModal] = useState(false)
@@ -2433,7 +2463,7 @@ useEffect(() => {
     return enrichCityChallengeV2(homeCityChallengeMerged, homeCityNorm, totals)
   }, [homeCityChallengeMerged, homeCityNorm, realProfiles])
 
-  const homeCityDerby = useMemo(() => {
+  const homeCityDerbyLive = useMemo(() => {
     const totals = aggregateCityTotals(realProfiles as Profile[])
     const client = aggregateDerbyClientMinutes(totals)
     return buildCityDerby(
@@ -2441,17 +2471,30 @@ useEffect(() => {
       derbyAwayStats,
       client,
       currentUser?.city,
-      getWeekKey()
+      getWarEventKey()
     )
   }, [derbyHomeStats, derbyAwayStats, realProfiles, currentUser?.city])
 
+  const homeCityDerby = useMemo(() => {
+    if (isZoneScoringActive()) return homeCityDerbyLive
+    const warKey = getWarEventKey()
+    return loadFrozenWarDerby(warKey) ?? homeCityDerbyLive
+  }, [homeCityDerbyLive])
+
   useEffect(() => {
-    notifyDerbyLeaderChange(homeCityDerby)
-    const snap = recordDerbyWeekSnapshot(homeCityDerby)
-    if (snap && db && !isDemoMode) {
-      void persistDerbyWeekToFirestore(db, snap)
+    if (isZoneScoringActive()) {
+      notifyDerbyLeaderChange(homeCityDerbyLive)
+      return
     }
-  }, [homeCityDerby, db, isDemoMode])
+    const warKey = getWarEventKey()
+    if (!loadFrozenWarDerby(warKey)) {
+      freezeWarDerbyState(homeCityDerbyLive)
+      const snap = recordDerbyWeekSnapshot(homeCityDerbyLive)
+      if (snap && db && !isDemoMode) {
+        void persistDerbyWeekToFirestore(db, snap)
+      }
+    }
+  }, [homeCityDerbyLive, db, isDemoMode])
 
   const homeGymLeaderboard = useMemo(() => {
     const gymId = currentUser?.gymCheckIn?.gymId
@@ -2525,7 +2568,7 @@ useEffect(() => {
       setDerbyAwayStats(null)
       return undefined
     }
-    const weekKey = getWeekKey()
+    const weekKey = getWarEventKey()
     return attachCityDerbyListeners(db, weekKey, (home, away) => {
       setDerbyHomeStats(home)
       setDerbyAwayStats(away)
@@ -2675,8 +2718,8 @@ useEffect(() => {
         loadActiveSyncCountRef.current(),
       ])
       if (opts?.includeChats) {
-        await loadRealMatches()
-        for (const id of realMatches) {
+        const matchIds = await loadRealMatches()
+        for (const id of matchIds) {
           await loadRealChatMessages(id).catch(() => {})
         }
       }
@@ -2926,6 +2969,9 @@ useEffect(() => {
                   : currentUser?.showOnLeaderboard,
               gymCheckIn: realProfile.gymCheckIn || currentUser?.gymCheckIn,
               ghostMode: realProfile.ghostMode ?? currentUser?.ghostMode,
+              spotifyShareLive: realProfile.spotifyShareLive ?? currentUser?.spotifyShareLive,
+              spotifyNowPlaying: realProfile.spotifyNowPlaying ?? currentUser?.spotifyNowPlaying,
+              gymSoundAnthem: realProfile.gymSoundAnthem ?? currentUser?.gymSoundAnthem,
               verificationStatus: realProfile.verificationStatus || currentUser?.verificationStatus,
               verificationDate: (realProfile as any).verificationDate ?? currentUser?.verificationDate,
               verificationDocuments: (realProfile as any).verificationDocuments ?? currentUser?.verificationDocuments,
@@ -3120,6 +3166,11 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         showOnLeaderboard: merged.showOnLeaderboard !== false,
         gymCheckIn: isGymCheckInFresh(merged.gymCheckIn) ? merged.gymCheckIn : null,
         ghostMode: !!merged.ghostMode,
+        spotifyShareLive: !!merged.spotifyShareLive,
+        spotifyNowPlaying:
+          goingLive && merged.spotifyShareLive ? (merged.spotifyNowPlaying ?? null) : null,
+        gymSoundAnthem:
+          goingLive && merged.spotifyShareLive ? (merged.gymSoundAnthem ?? null) : null,
         liveMotionScore: goingLive ? (merged.liveMotionScore ?? null) : null,
         liveMotionAt: goingLive ? (merged.liveMotionAt ?? null) : null,
         liveMotionIdle: goingLive ? (merged.liveMotionIdle ?? null) : null,
@@ -3248,6 +3299,54 @@ useEffect(() => {
     onSample: handleLiveMotionSample,
   })
 
+  const syncGymSoundToLivePresence = useCallback(
+    async (user: CurrentUser) => {
+      if (!db || !firebaseUser?.uid || !user.trainingNow) return
+      await patchLivePresenceGymSound(
+        db,
+        firebaseUser.uid,
+        {
+          spotifyShareLive: !!user.spotifyShareLive,
+          spotifyNowPlaying:
+            user.spotifyShareLive && user.spotifyNowPlaying ? user.spotifyNowPlaying : null,
+          gymSoundAnthem:
+            user.spotifyShareLive && user.gymSoundAnthem ? user.gymSoundAnthem : null,
+        },
+        sanitizeForFirestore
+      )
+    },
+    [db, firebaseUser?.uid]
+  )
+
+  const handleSpotifyNowPlaying = useCallback(
+    async (nowPlaying: SpotifyNowPlaying | null) => {
+      const cu = currentUserRef.current
+      if (!cu) return
+      const updated = {
+        ...cu,
+        spotifyNowPlaying: nowPlaying ?? undefined,
+      } as CurrentUser
+      await saveUserWithRealSync(updated)
+      await syncGymSoundToLivePresence(updated)
+    },
+    [saveUserWithRealSync, syncGymSoundToLivePresence]
+  )
+
+  const handleGymSoundProfileSave = useCallback(
+    async (user: Profile) => {
+      await saveUserWithRealSync(user as CurrentUser)
+      await syncGymSoundToLivePresence(user as CurrentUser)
+    },
+    [saveUserWithRealSync, syncGymSoundToLivePresence]
+  )
+
+  useSpotifyLiveSync({
+    enabled: !isDemoMode && !!firebaseUser?.uid,
+    isLive: !!currentUser?.trainingNow,
+    shareWhileLive: !!currentUser?.spotifyShareLive,
+    onNowPlayingChange: handleSpotifyNowPlaying,
+  })
+
   const handleGymCheckIn = useCallback(
     async (gym: { id: string; name: string; lat: number; lng: number }) => {
       if (!currentUser) return
@@ -3347,10 +3446,11 @@ useEffect(() => {
   const syncCityStatsBump = useCallback(
     async (liveMinutesDelta: number, syncMinutesDelta: number) => {
       if (isDemoMode || !db || !firebaseUser?.uid) return
+      if (!isZoneScoringActive()) return
       const cityNorm = normalizeCity(currentUser?.city)
       if (!cityNorm || liveMinutesDelta + syncMinutesDelta <= 0) return
       const bumpPayload = {
-        weekKey: getWeekKey(),
+        weekKey: getWarEventKey(),
         uid: firebaseUser.uid,
         liveMinutesDelta,
         syncMinutesDelta,
@@ -3380,7 +3480,15 @@ useEffect(() => {
   // NOTE: We no longer auto-request permission on every login to avoid unwanted prompts/crashes during "activation".
   // Users explicitly activate via the button in Profile. This effect only sets up listeners if plugin present.
   useEffect(() => {
-    if (isDemoMode || !firebaseUser?.uid || !PushNotifications || !isFirebaseConfigured) return
+    if (
+      isDemoMode ||
+      !firebaseUser?.uid ||
+      !PushNotifications ||
+      !isFirebaseConfigured ||
+      !Capacitor.isNativePlatform()
+    ) {
+      return
+    }
     if (pushNativeSetupUidRef.current === firebaseUser.uid) return
     pushNativeSetupUidRef.current = firebaseUser.uid;
 
@@ -3454,6 +3562,14 @@ useEffect(() => {
             const title = (notification && (notification.title || notification.notification?.title)) || 'Nueva notificación'
             const body = (notification && (notification.body || notification.notification?.body)) || 'Revisa la app'
             const data = notification && (notification.data || notification.notification?.data) || {}
+            const pushKey =
+              String(notification?.id || notification?.notification?.id || '') ||
+              `${title}:${body}:${JSON.stringify(data)}`
+            if (recentPushToastKeysRef.current.has(pushKey)) return
+            recentPushToastKeysRef.current.add(pushKey)
+            trimSetToMax(recentPushToastKeysRef.current, 40)
+            if (Date.now() - appStartedAtRef.current < SESSION_TOAST_GRACE_MS) return
+
             const target = resolvePushNotificationData(data)
 
             if (target) {
@@ -3698,6 +3814,16 @@ useEffect(() => {
     seenGroupMsgIdsRef.current = {}
     seenLiveUserIdsRef.current = new Set()
     seenLiveJoinInteractionIdsRef.current = new Set()
+    prevRedSyncStateRef.current = {}
+    liveSessionAlertsReadyRef.current = false
+    liveJoinsBootstrappedRef.current = false
+    try {
+      localStorage.removeItem(SEEN_LIVE_USERS_KEY)
+      localStorage.removeItem(SEEN_LIVE_JOINS_KEY)
+      localStorage.removeItem(PREV_RED_SYNC_STATE_KEY)
+    } catch {
+      /* ignore */
+    }
     purgeAccountScopedStorage()
     resetSwipeDeck()
     setRealProfiles([])
@@ -3890,12 +4016,18 @@ useEffect(() => {
     if (isE2EHarnessActive()) return
     if (isDemoMode) {
       const dismissed = demoStorage.get<boolean>(DEMO_KEYS.ACTIVATION_GUIDE_DISMISSED)
-      if (!dismissed) setShowActivationGuide(true)
+      if (!dismissed) {
+        markAppFeatureTourSeen()
+        setShowActivationGuide(true)
+      }
       return
     }
     if (!db || !firebaseUser?.uid) return
     void shouldShowActivationGuide(db, firebaseUser.uid).then((show) => {
-      if (show) setShowActivationGuide(true)
+      if (show) {
+        markAppFeatureTourSeen()
+        setShowActivationGuide(true)
+      }
     })
     void loadFirstStepsProgress(db, firebaseUser.uid).then(setFirstStepsProgress)
   }, [isDemoMode, db, firebaseUser?.uid, showOnboarding])
@@ -3910,6 +4042,7 @@ useEffect(() => {
 
   const androidBackLayers = useMemo(
     () => [
+      { id: 'nonHomeTab', isOpen: activeTab !== 'home', onClose: () => setActiveTab('home') },
       { id: 'syncArena', isOpen: !!showSyncArena, onClose: () => setShowSyncArena(false) },
       { id: 'filters', isOpen: showFilters, onClose: () => setShowFilters(false) },
       {
@@ -3931,16 +4064,84 @@ useEffect(() => {
         onClose: () => setShowLiveMap(false),
       },
       { id: 'activeChat', isOpen: !!activeChat, onClose: () => setActiveChat(null) },
+      {
+        id: 'redMessages',
+        isOpen: activeTab === 'red' && redSubTab === 'messages',
+        onClose: () => setRedSubTab('matches'),
+      },
+      { id: 'marketplace', isOpen: showMarketplace, onClose: () => setShowMarketplace(false) },
+      { id: 'trainerCoach', isOpen: showTrainerCoach, onClose: () => setShowTrainerCoach(false) },
+      { id: 'liveModal', isOpen: showLiveModal, onClose: () => setShowLiveModal(false) },
+      {
+        id: 'entrenaLog',
+        isOpen: showEntrenaLogModal,
+        onClose: () => {
+          const uid = firebaseUser?.uid
+          const draft = uid ? loadWorkoutDraft(uid) : null
+          if (draft?.exercises?.length) {
+            setShowEntrenaLogModal(false)
+            setWorkoutDraftRefresh((n) => n + 1)
+          } else {
+            setShowEntrenaLogModal(false)
+            setEntrenaLogPrefill(null)
+            setEntrenaLogSkipDraft(false)
+            setEntrenaLogShareToChat(null)
+            setWorkoutDraftRefresh((n) => n + 1)
+          }
+        },
+      },
+      { id: 'fuelLog', isOpen: showFuelLogModal, onClose: () => setShowFuelLogModal(false) },
+      { id: 'fuelSetup', isOpen: showFuelSetupModal, onClose: () => setShowFuelSetupModal(false) },
+      { id: 'report', isOpen: showReportModal, onClose: () => setShowReportModal(false) },
+      { id: 'notifications', isOpen: showNotifications, onClose: () => setShowNotifications(false) },
+      {
+        id: 'verification',
+        isOpen: showVerificationFlow,
+        onClose: () => setShowVerificationFlow(false),
+      },
+      { id: 'editProfile', isOpen: isEditingProfile, onClose: () => setIsEditingProfile(false) },
+      { id: 'matchModal', isOpen: !!showMatchModal, onClose: () => setShowMatchModal(null) },
+      {
+        id: 'postComments',
+        isOpen: !!viewingPostComments,
+        onClose: () => setViewingPostComments(null),
+      },
+      { id: 'feedPost', isOpen: showFeedPostModal, onClose: () => setShowFeedPostModal(false) },
+      { id: 'feedPhoto', isOpen: !!feedPhotoModal, onClose: () => setFeedPhotoModal(null) },
+      {
+        id: 'groupChat',
+        isOpen: !!showGroupChatModalFor,
+        onClose: () => setShowGroupChatModalFor(null),
+      },
+      { id: 'fullProfile', isOpen: !!showFullProfile, onClose: () => setShowFullProfile(null) },
     ],
     [
+      activeTab,
       showSyncArena,
       showFilters,
       showActivationGuide,
       showFeatureTour,
       showLiveMap,
-      activeTab,
       activeChat,
+      redSubTab,
+      showMarketplace,
+      showTrainerCoach,
+      showLiveModal,
+      showEntrenaLogModal,
+      showFuelLogModal,
+      showFuelSetupModal,
+      showReportModal,
+      showNotifications,
+      showVerificationFlow,
+      isEditingProfile,
+      showMatchModal,
+      viewingPostComments,
+      showFeedPostModal,
+      feedPhotoModal,
+      showGroupChatModalFor,
+      showFullProfile,
       setShowSyncArena,
+      firebaseUser?.uid,
     ]
   )
   useAndroidBackHandler(androidBackLayers)
@@ -4397,42 +4598,6 @@ useEffect(() => {
     const savedNotifications = loadStoredNotifications()
     if (savedNotifications.length > 0) {
       setNotifications(savedNotifications)
-    }
-
-    // Restore persistent seen message IDs so we don't re-notify old messages after reload
-    const savedSeenChat = localStorage.getItem('entrenamatch_seen_chat_msgs')
-    if (savedSeenChat) {
-      try {
-        const parsed = pruneSeenIdMap(JSON.parse(savedSeenChat))
-        Object.keys(parsed).forEach(k => {
-          seenChatMsgIdsRef.current[k] = new Set(parsed[k])
-        })
-      } catch {}
-    }
-    const savedSeenGroup = localStorage.getItem('entrenamatch_seen_group_msgs')
-    if (savedSeenGroup) {
-      try {
-        const parsed = pruneSeenIdMap(JSON.parse(savedSeenGroup))
-        Object.keys(parsed).forEach(k => {
-          seenGroupMsgIdsRef.current[k] = new Set(parsed[k])
-        })
-      } catch {}
-    }
-    // Restore seen live users (so we don't spam "new live" notifs for the same people every app open)
-    const savedSeenLive = localStorage.getItem('entrenamatch_seen_live_users')
-    if (savedSeenLive) {
-      try {
-        const arr = pruneStringIdList(JSON.parse(savedSeenLive))
-        seenLiveUserIdsRef.current = new Set(arr)
-      } catch {}
-    }
-    // Restore seen live join interactions (comments/likes on our live posts) so we don't renotify old joins on reload
-    const savedSeenLiveJoins = localStorage.getItem('entrenamatch_seen_live_joins')
-    if (savedSeenLiveJoins) {
-      try {
-        const arr = pruneStringIdList(JSON.parse(savedSeenLiveJoins))
-        seenLiveJoinInteractionIdsRef.current = new Set(arr)
-      } catch {}
     }
 
     const savedChatUnreads = localStorage.getItem('entrenamatch_chat_unreads')
@@ -4955,41 +5120,40 @@ useEffect(() => {
   ])
 
   const openEntrenoDeHoy = useCallback(
-    async (prefill?: {
+    async (opts?: {
       title?: string
       exercises?: import('./types').WorkoutExercise[]
       type?: import('./types').WorkoutType
       durationMin?: number
+      /** When set, saved workout is also sent to this chat partner */
+      shareToChat?: string
+      /** Abre el historial plegable para elegir un entreno pasado */
+      expandPastWorkouts?: boolean
     }) => {
       await refreshEntrenoRecentWorkouts()
-      if (prefill) {
+      if (opts?.title || opts?.exercises?.length || opts?.type || opts?.durationMin) {
         setEntrenaLogPrefill({
-          title: prefill.title,
-          exercises: prefill.exercises,
-          type: prefill.type,
-          durationMin: prefill.durationMin,
+          title: opts.title,
+          exercises: opts.exercises,
+          type: opts.type,
+          durationMin: opts.durationMin,
         })
+        setEntrenaLogSkipDraft(true)
+        setEntrenaLogExpandPastWorkouts(false)
       } else {
         setEntrenaLogPrefill(null)
+        setEntrenaLogSkipDraft(false)
+        setEntrenaLogExpandPastWorkouts(!!opts?.expandPastWorkouts)
       }
+      setEntrenaLogShareToChat(opts?.shareToChat ?? null)
       setShowEntrenaLogModal(true)
     },
     [refreshEntrenoRecentWorkouts]
   )
 
   const handleRepeatYesterday = useCallback(() => {
-    const yesterday = getYesterdayWorkout(entrenoRecentWorkouts)
-    if (!yesterday) {
-      void openEntrenoDeHoy()
-      return
-    }
-    void openEntrenoDeHoy({
-      title: yesterday.title,
-      exercises: yesterday.exercises,
-      type: yesterday.type,
-      durationMin: yesterday.stats?.durationMin ?? 45,
-    })
-  }, [entrenoRecentWorkouts, openEntrenoDeHoy])
+    void openEntrenoDeHoy({ expandPastWorkouts: true })
+  }, [openEntrenoDeHoy])
 
   const handleCopyEntrenoWorkout = useCallback(
     (w: import('./types').Workout) => {
@@ -5003,6 +5167,33 @@ useEffect(() => {
       toast.success('Rutina cargada', { description: 'Edita y guarda en Entreno de Hoy' })
     },
     [openEntrenoDeHoy]
+  )
+
+  const handleDeleteEntrenoWorkout = useCallback(
+    async (w: import('./types').Workout) => {
+      if (!w.id) return
+      if (!window.confirm(`¿Eliminar "${w.title}"? Se quitará de tu historial y del muro si estaba publicado.`)) return
+      if (isDemoMode || !db) {
+        setEntrenoRecentWorkouts((prev) => prev.filter((x) => x.id !== w.id))
+        toast.success('Entreno eliminado')
+        return
+      }
+      try {
+        await deleteWorkoutWithLinkedPost(db, w.id, effectiveUserId)
+        setEntrenoRecentWorkouts((prev) => prev.filter((x) => x.id !== w.id))
+        const updated: typeof profilePosts = { ...profilePosts }
+        for (const uid of Object.keys(updated)) {
+          updated[uid] = (updated[uid] || []).filter((p) => p.workoutId !== w.id)
+        }
+        saveProfilePosts(updated, { persistLocal: false })
+        loadGlobalFeed().catch(() => {})
+        void refreshFuelData()
+        toast.success('Entreno eliminado')
+      } catch {
+        toast.error('No se pudo eliminar el entreno')
+      }
+    },
+    [isDemoMode, db, effectiveUserId, profilePosts, saveProfilePosts, loadGlobalFeed, refreshFuelData]
   )
 
   const handleCopyWorkoutFromPost = async (workoutId: string, title?: string) => {
@@ -5279,8 +5470,8 @@ useEffect(() => {
           try {
             confetti({ particleCount: 200, spread: 90, origin: { y: 0.65 } })
           } catch { /* ignore */ }
-          toast.success('¡Tu primer LIVE está en el GymPulse!', {
-            description: 'Apareces en el mapa. Toca GymPulse abajo cuando quieras ver quién entrena cerca.',
+          toast.success(BRAND_COPY.toasts.firstLiveTitle, {
+            description: BRAND_COPY.toasts.firstLiveDesc,
             duration: 6000,
           })
         }
@@ -5297,7 +5488,7 @@ useEffect(() => {
               awardConstancy(8, 'Ancla del GymPulse', liveUserSnapshot as CurrentUser)
             }
             void createProfilePost(
-              '¡Entrenando ahora en el GymPulse! ¿Quién se une al pulso? 🏋️',
+              `${BRAND_COPY.toasts.livePost} 🏋️`,
               null
             ).catch((e) => console.warn('[Live] createProfilePost', e))
           } catch (e) {
@@ -5421,6 +5612,60 @@ useEffect(() => {
     })
   }, [showSyncArena, navigateTab, startSyncWith, setShowOnboarding])
 
+  useEffect(() => {
+    if (isDemoMode || !firebaseUser?.uid) return
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      const draft = loadWorkoutDraft(firebaseUser.uid!)
+      if (isWorkoutDraftFresh(draft) && !showEntrenaLogModal) {
+        setWorkoutDraftRefresh((n) => n + 1)
+        toast('Recuperamos tu entreno', {
+          description: 'Toca el gadget naranja para volver a Modo Entreno',
+        })
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [isDemoMode, firebaseUser?.uid, showEntrenaLogModal])
+
+  const handleEntrenaLogMinimize = useCallback(() => {
+    setShowEntrenaLogModal(false)
+    setWorkoutDraftRefresh((n) => n + 1)
+  }, [])
+
+  const handleWorkoutQuickAddSet = useCallback(() => {
+    const uid = firebaseUser?.uid
+    if (!uid) return
+    const result = quickAddSetToWorkoutDraft(uid)
+    if (result.ok) {
+      setWorkoutDraftRefresh((n) => n + 1)
+      toast.success('Serie añadida', {
+        description: result.exerciseName,
+      })
+    }
+  }, [firebaseUser?.uid])
+
+  const handleWorkoutOpenChat = useCallback(() => {
+    const topUnread = Object.entries(chatUnreads)
+      .filter(([, count]) => count > 0)
+      .sort((a, b) => b[1] - a[1])[0]
+    setActiveTab('red')
+    setRedSubTab('messages')
+    if (topUnread) setActiveChat(topUnread[0])
+  }, [chatUnreads])
+
+  const handleWorkoutOpenFuel = useCallback(() => {
+    setEditingFuelLog(null)
+    setShowFuelLogModal(true)
+  }, [])
+
+  const workoutSessionDraft = useMemo(() => {
+    const uid = !isDemoMode && firebaseUser?.uid ? firebaseUser.uid : null
+    if (!uid || showEntrenaLogModal) return null
+    const draft = loadWorkoutDraft(uid)
+    return isWorkoutDraftFresh(draft) ? draft : null
+  }, [isDemoMode, firebaseUser?.uid, showEntrenaLogModal, workoutDraftRefresh])
+
   const handleSaveEntrenaLog = async (payload: {
     title: string
     type: import('./types').WorkoutType
@@ -5486,15 +5731,46 @@ useEffect(() => {
           workoutType: payload.type,
           exercises: payload.exercises,
         })
+        const shareTarget = entrenaLogShareToChat
+        if (shareTarget) {
+          sendMessage(postText, null, null, {
+            toUserId: shareTarget,
+            workoutId: workout.id,
+            workoutPreview: preview,
+          })
+          toast.success('Entreno compartido en el chat', {
+            description: `Enviado a ${chatProfile?.name?.split(' ')[0] || 'tu partner'}`,
+          })
+        }
       } else {
-        await createProfilePost(
-          `🏋️ Entreno de Hoy · ${payload.title} — ${payload.exercises.length} ejercicios, ${payload.durationMin} min (demo)`,
-          null
+        const demoStats = computeWorkoutStats(payload.exercises, payload.durationMin)
+        const demoPreview = buildWorkoutPreview(
+          payload.title,
+          payload.type,
+          payload.exercises,
+          demoStats
         )
-        toast.success('Entreno de Hoy guardado (demo)')
+        const demoPostText = `🏋️ Entreno de Hoy · ${payload.title} — ${payload.exercises.length} ejercicios, ${payload.durationMin} min (demo)`
+        await createProfilePost(demoPostText, null)
+        if (entrenaLogShareToChat) {
+          sendMessage(demoPostText, null, null, {
+            toUserId: entrenaLogShareToChat,
+            workoutId: `demo-${Date.now()}`,
+            workoutPreview: demoPreview,
+          })
+          toast.success('Entreno compartido en el chat (demo)')
+        } else {
+          toast.success('Entreno de Hoy guardado (demo)')
+        }
       }
+      if (!isDemoMode && firebaseUser?.uid) {
+        clearWorkoutDraft(firebaseUser.uid)
+      }
+      setWorkoutDraftRefresh((n) => n + 1)
       setShowEntrenaLogModal(false)
       setEntrenaLogPrefill(null)
+      setEntrenaLogSkipDraft(false)
+      setEntrenaLogShareToChat(null)
     } catch (e) {
       console.error('Entreno de Hoy save failed', e)
       toast.error('No se pudo guardar el entreno')
@@ -6265,15 +6541,20 @@ useEffect(() => {
 
   const deleteProfilePost = async (postId: string, postUserId: string) => {
     if (postUserId !== effectiveUserId) return;
+    const current = profilePosts[postUserId] || []
+    const postToDelete = current.find(p => p.id === postId)
     // Optimistic delete + undo (no ugly confirm - better UX, rely on spectacular undo toast)
     if (!isDemoMode && db) {
       try {
-        const { doc, deleteDoc } = await import('firebase/firestore')
-        await deleteDoc(doc(db, 'profilePosts', postId))
+        if (postToDelete?.workoutId) {
+          await deleteWorkoutWithLinkedPost(db, postToDelete.workoutId, effectiveUserId)
+          setEntrenoRecentWorkouts((prev) => prev.filter((x) => x.id !== postToDelete.workoutId))
+        } else {
+          const { doc, deleteDoc } = await import('firebase/firestore')
+          await deleteDoc(doc(db, 'profilePosts', postId))
+        }
       } catch (e) { console.warn(e) }
     }
-    const current = profilePosts[postUserId] || []
-    const postToDelete = current.find(p => p.id === postId)
     const newList = current.filter(p => p.id !== postId)
     const updated = { ...profilePosts, [postUserId]: newList }
     saveProfilePosts(updated, { persistLocal: isDemoMode })  // delete uses save — triggers AnimatePresence exit
@@ -6346,6 +6627,28 @@ useEffect(() => {
       return t.includes('entrenando ahora') || t.includes('live') || t.includes('entreno ahora')
     })
 
+    if (!liveJoinsBootstrappedRef.current) {
+      liveJoinsBootstrappedRef.current = true
+      livePosts.forEach((post: any) => {
+        ;(post.comments || []).forEach((c: any) => {
+          if (c.id) seenLiveJoinInteractionIdsRef.current.add(c.id)
+        })
+        ;(post.likes || []).forEach((likerId: string) => {
+          seenLiveJoinInteractionIdsRef.current.add(`${post.id}_like_${likerId}`)
+        })
+      })
+      trimSetToMax(seenLiveJoinInteractionIdsRef.current, MAX_SEEN_STRING_IDS)
+      try {
+        localStorage.setItem(
+          SEEN_LIVE_JOINS_KEY,
+          JSON.stringify(pruneStringIdList(Array.from(seenLiveJoinInteractionIdsRef.current)))
+        )
+      } catch {
+        reclaimLocalStorageSpace('soft')
+      }
+      return
+    }
+
     let newJoinDetected = false
     const pendingJoinNotifs: Notification[] = []
     livePosts.forEach((post: any) => {
@@ -6405,7 +6708,7 @@ useEffect(() => {
       trimSetToMax(seenLiveJoinInteractionIdsRef.current, MAX_SEEN_STRING_IDS)
       try {
         localStorage.setItem(
-          'entrenamatch_seen_live_joins',
+          SEEN_LIVE_JOINS_KEY,
           JSON.stringify(pruneStringIdList(Array.from(seenLiveJoinInteractionIdsRef.current)))
         )
       } catch {
@@ -6416,9 +6719,11 @@ useEffect(() => {
 
   // Call the processor whenever own posts update while live (catches real joins via FS comments)
   useEffect(() => {
-    if (currentUser?.trainingNow) {
-      processIncomingLiveJoins()
+    if (!currentUser?.trainingNow) {
+      liveJoinsBootstrappedRef.current = false
+      return
     }
+    processIncomingLiveJoins()
   }, [profilePosts, currentUser?.trainingNow])
 
   // Attractive inline comment composer (no more prompt dialogs on muro)
@@ -6660,7 +6965,7 @@ useEffect(() => {
     // Gate by prefs (messages covers 1:1/group/match/muro activity; live for joins)
     const shouldAdd = 
       (type.includes('message') || type === 'match' || type === 'like_received' || type === 'verification' || type === 'report') ? notifPrefs.messages :
-      (type === 'session_join' || type === 'squad_join') ? notifPrefs.live :
+      (type === 'session_join' || type === 'squad_join' || type === 'live_nearby') ? notifPrefs.live :
       true
     if (!shouldAdd) return
 
@@ -6704,6 +7009,10 @@ useEffect(() => {
 
   // Explicit activation for native push (called from Profile button). Robust against missing config.
   const requestNativePushPermission = async () => {
+    if (!Capacitor.isNativePlatform()) {
+      await requestWebNotificationPermission()
+      return
+    }
     if (!PushNotifications) {
       toast.error('Notificaciones nativas no disponibles', {
         description: 'Esta build del APK no tiene google-services.json configurado o el plugin no cargó. Revisa la consola para detalles.'
@@ -7941,58 +8250,136 @@ useEffect(() => {
   }
 
 
-  // Phase B: in-app alerts only when someone from YOUR TEAM (matches + sync bonds) goes live.
+  const persistSeenLiveUsers = () => {
+    trimSetToMax(seenLiveUserIdsRef.current, MAX_SEEN_STRING_IDS)
+    try {
+      localStorage.setItem(
+        SEEN_LIVE_USERS_KEY,
+        JSON.stringify(pruneStringIdList(Array.from(seenLiveUserIdsRef.current)))
+      )
+    } catch {
+      reclaimLocalStorageSpace('soft')
+    }
+  }
+
+  const bootstrapLiveSessionAlerts = (users: any[]) => {
+    if (liveSessionAlertsReadyRef.current || !users?.length) return false
+    liveSessionAlertsReadyRef.current = true
+    users.forEach((u: any) => {
+      seenLiveUserIdsRef.current.add(u.id)
+      if (syncBonds[u.id]) {
+        prevRedSyncStateRef.current[u.id] = u.trainingSyncWith || null
+      }
+    })
+    persistSeenLiveUsers()
+    savePersistedRedSyncState(prevRedSyncStateRef.current)
+    return true
+  }
+
+  // Fase 121 — alertas LIVE: equipo + alguien cerca (≤8 km) si tienes ubicación.
+  const NEARBY_LIVE_KM = 8
   useEffect(() => {
     if (!liveTrainingNow || liveTrainingNow.length === 0) return
+    if (bootstrapLiveSessionAlerts(liveTrainingNow)) return
+
     let addedNew = false
     liveTrainingNow.forEach((liveUser: any) => {
+      if (liveUser.id === effectiveUserId) return
       if (seenLiveUserIdsRef.current.has(liveUser.id)) return
       seenLiveUserIdsRef.current.add(liveUser.id)
       addedNew = true
 
       const inMyTeam = isTeamMemberId(liveUser.id, syncBonds, teamMatchIds)
-      if (!inMyTeam) return
+      const isBond = !!syncBonds[liveUser.id]
+      const dist = typeof liveUser.distance === 'number' ? liveUser.distance : null
+      const firstName = String(liveUser.name || 'Alguien').split(' ')[0]
 
-      if (seenLiveUserIdsRef.current.size > 1) {
-        const isBond = !!syncBonds[liveUser.id]
+      if (inMyTeam) {
         addNotification({
           type: 'session_join',
-          title: isBond ? `${liveUser.name.split(' ')[0]} está en vivo` : `${liveUser.name.split(' ')[0]} de tu equipo está entrenando`,
+          title: isBond ? `${firstName} está en vivo` : `${firstName} de tu equipo está entrenando`,
           body: isBond
             ? 'Tu socio de sync activó live — únete desde Hoy.'
-            : `Match activo a ${(liveUser.distance || 0).toFixed(1)}km — ¿te sumas?`,
+            : `Match activo a ${(dist ?? 0).toFixed(1)}km — ¿te sumas?`,
           relatedId: liveUser.id,
           photoUrl: liveUser.photos?.[0],
           isNetwork: isBond,
         } as any)
-        toast(`${isBond ? '🔥' : '🟢'} ${liveUser.name.split(' ')[0]} está en vivo`, {
+        toast(`${isBond ? '🔥' : '🟢'} ${firstName} está en vivo`, {
           description: isBond
             ? 'Tu equipo — toca para unirte al sync'
-            : `Match · ${(liveUser.distance || 0).toFixed(1)}km`,
+            : `Match · ${(dist ?? 0).toFixed(1)}km`,
           action: {
             label: isBond ? 'Unirme' : 'Ver',
             onClick: () =>
               isBond ? startSyncWith(liveUser.id, liveUser.name) : setShowFullProfile(liveUser as any),
           },
         })
+        return
+      }
+
+      if (
+        userLocation &&
+        !currentUser?.trainingSyncWith &&
+        dist != null &&
+        dist > 0 &&
+        dist <= NEARBY_LIVE_KM
+      ) {
+        addNotification({
+          type: 'live_nearby',
+          title: BRAND_COPY.nearbyLive.notifTitle(firstName),
+          body: BRAND_COPY.nearbyLive.notifBody(dist),
+          relatedId: liveUser.id,
+          photoUrl: liveUser.photos?.[0],
+        } as any)
+        toast(`🟢 ${BRAND_COPY.nearbyLive.notifTitle(firstName)}`, {
+          description: BRAND_COPY.nearbyLive.notifBody(dist),
+          action: {
+            label: BRAND_COPY.nearbyLive.toastAction,
+            onClick: () => navigateTab('map'),
+          },
+        })
       }
     })
-    if (addedNew) {
-      trimSetToMax(seenLiveUserIdsRef.current, MAX_SEEN_STRING_IDS)
-      try {
-        localStorage.setItem(
-          'entrenamatch_seen_live_users',
-          JSON.stringify(pruneStringIdList(Array.from(seenLiveUserIdsRef.current)))
-        )
-      } catch {
-        reclaimLocalStorageSpace('soft')
-      }
+    if (addedNew) persistSeenLiveUsers()
+  }, [
+    liveTrainingNow,
+    addNotification,
+    syncBonds,
+    teamMatchIds,
+    effectiveUserId,
+    userLocation,
+    currentUser?.trainingSyncWith,
+    navigateTab,
+  ])
+
+  // Fase 121 — notificación al iniciar Sync Hour (una vez por ventana).
+  useEffect(() => {
+    const tick = () => {
+      if (!shouldFireSyncHourNotif()) return
+      addNotification({
+        type: 'session_join',
+        title: BRAND_COPY.syncHour.notifTitle,
+        body: BRAND_COPY.syncHour.notifBody,
+      } as any)
+      toast(BRAND_COPY.syncHour.notifTitle, {
+        description: BRAND_COPY.syncHour.notifBody,
+        action: {
+          label: BRAND_COPY.syncHour.cta,
+          onClick: () => navigateTab('map'),
+        },
+      })
     }
-  }, [liveTrainingNow, addNotification, syncBonds, teamMatchIds])
+    tick()
+    const id = window.setInterval(tick, 60_000)
+    return () => window.clearInterval(id)
+  }, [addNotification, navigateTab])
 
   // Phase B: sync-start alerts — team bonds only (matches get live alert above).
   useEffect(() => {
     if (!liveTrainingNow || liveTrainingNow.length === 0) return
+    if (!liveSessionAlertsReadyRef.current) return
+
     const currentRedSyncs: Record<string, string | null> = {}
     liveTrainingNow.forEach((u: any) => {
       if (syncBonds[u.id]) {
@@ -8002,7 +8389,8 @@ useEffect(() => {
     Object.keys(currentRedSyncs).forEach(uid => {
       const prev = prevRedSyncStateRef.current[uid]
       const now = currentRedSyncs[uid]
-      if (prev !== now && now && !prev) {
+      if (prev === now) return
+      if (now && !prev) {
         const partner = liveTrainingNow.find((x: any) => x.id === uid)
         if (partner) {
           addNotification({
@@ -8021,6 +8409,7 @@ useEffect(() => {
       }
     })
     prevRedSyncStateRef.current = { ...prevRedSyncStateRef.current, ...currentRedSyncs }
+    savePersistedRedSyncState(prevRedSyncStateRef.current)
   }, [liveTrainingNow, syncBonds, addNotification])
 
   // Small relative time for message previews (e.g. "5m", "2h", "ahora")
@@ -8315,11 +8704,18 @@ useEffect(() => {
   const sendMessage = (
     text: string,
     voice?: { voiceUrl: string; voiceDuration: number } | null,
-    photoUrl?: string | null
+    photoUrl?: string | null,
+    extras?: {
+      toUserId?: string
+      workoutId?: string
+      workoutPreview?: import('./types').WorkoutPreview
+    }
   ) => {
-    if (!activeChat || (!text.trim() && !voice && !photoUrl)) return
+    const chatId = extras?.toUserId || activeChat
+    const hasWorkout = !!(extras?.workoutId && extras?.workoutPreview)
+    if (!chatId || (!text.trim() && !voice && !photoUrl && !hasWorkout)) return
 
-    const isRealChat = isRealChatId(activeChat)
+    const isRealChat = isRealChatId(chatId)
 
     if (isRealChat) {
       const clientId = `c_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`
@@ -8332,15 +8728,17 @@ useEffect(() => {
         sendStatus: 'sending',
         ...(voice ? { voiceUrl: voice.voiceUrl, voiceDuration: voice.voiceDuration } : {}),
         ...(photoUrl ? { photoUrl } : {}),
+        ...(extras?.workoutId ? { workoutId: extras.workoutId } : {}),
+        ...(extras?.workoutPreview ? { workoutPreview: extras.workoutPreview } : {}),
       }
 
       const patchOutgoing = (patch: Partial<Message>) => {
         const matchId = (m: Message) => m.id === clientId || m.clientId === clientId
         setRealChatMessages((prev) => prev.map((m) => (matchId(m) ? { ...m, ...patch } : m)))
         setMessages((prev) => {
-          const chat = prev[activeChat] || []
+          const chat = prev[chatId] || []
           const next = chat.map((m) => (matchId(m) ? { ...m, ...patch } : m))
-          const updated = { ...prev, [activeChat]: next }
+          const updated = { ...prev, [chatId]: next }
           if (isDemoMode) {
             try {
               localStorage.setItem('fitvina_messages', JSON.stringify(updated))
@@ -8350,12 +8748,16 @@ useEffect(() => {
         })
       }
 
-      const currentChat = messages[activeChat] || []
-      saveMessages({ ...messages, [activeChat]: [...currentChat, newMsg] })
-      setRealChatMessages((prev) => [...prev, newMsg])
+      const currentChat = messages[chatId] || []
+      saveMessages({ ...messages, [chatId]: [...currentChat, newMsg] })
+      if (chatId === activeChat) {
+        setRealChatMessages((prev) => [...prev, newMsg])
+      }
 
-      void sendRealMessage(text || '', activeChat, voice, photoUrl, {
+      void sendRealMessage(text || '', chatId, voice, photoUrl, {
         clientId,
+        workoutId: extras?.workoutId,
+        workoutPreview: extras?.workoutPreview,
         onAck: (serverId) => {
           patchOutgoing({ id: serverId, clientId, sendStatus: 'sent' })
         },
@@ -8374,10 +8776,12 @@ useEffect(() => {
       timestamp: Date.now(),
       ...(voice ? { voiceUrl: voice.voiceUrl, voiceDuration: voice.voiceDuration } : {}),
       ...(photoUrl ? { photoUrl } : {}),
+      ...(extras?.workoutId ? { workoutId: extras.workoutId } : {}),
+      ...(extras?.workoutPreview ? { workoutPreview: extras.workoutPreview } : {}),
     }
 
-    const currentChat = messages[activeChat] || []
-    const updated = { ...messages, [activeChat]: [...currentChat, newMsg] }
+    const currentChat = messages[chatId] || []
+    const updated = { ...messages, [chatId]: [...currentChat, newMsg] }
     saveMessages(updated)
 
     // Simulate realistic reply sometimes (only for seeds)
@@ -8400,12 +8804,34 @@ useEffect(() => {
           text: replyText,
           timestamp: Date.now()
         }
-        const newChat = [...(updated[activeChat] || []), reply]
-        const final = { ...updated, [activeChat]: newChat }
+        const newChat = [...(updated[chatId] || []), reply]
+        const final = { ...updated, [chatId]: newChat }
         saveMessages(final)
       }
     }, 850 + Math.random() * 600)
   }
+
+  const fetchTodayWorkoutsForShare = useCallback(async () => {
+    if (isDemoMode || !db || !firebaseUser?.uid) return []
+    return fetchWorkoutsForDate(db, effectiveUserId, toLocalDateStr())
+  }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId])
+
+  const handleShareWorkoutToChat = useCallback(
+    async (workout: import('./types').Workout, chatId: string) => {
+      const preview = workoutToPreview(workout)
+      const text = workoutShareText(workout)
+      sendMessage(text, null, null, {
+        toUserId: chatId,
+        workoutId: workout.id,
+        workoutPreview: preview,
+      })
+      const name =
+        matchProfiles.find((p) => p.id === chatId)?.name?.split(' ')[0] ||
+        'tu partner'
+      toast.success('Entreno compartido en el chat', { description: `Enviado a ${name}` })
+    },
+    [sendMessage, matchProfiles]
+  )
 
   // ==================== MATCH MODAL ACTIONS ====================
   const closeMatchModal = (goToChat = false) => {
@@ -8495,10 +8921,13 @@ useEffect(() => {
 
   // Post-onboarding guidance moved to early unconditional useEffect below (see "exceptional onboarding guidance effect").
 
+  const inFullScreenChat = activeTab === 'red' && redSubTab === 'messages' && !!activeChat
+
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-[#0D0D10] text-white flex flex-col overflow-hidden relative app-container">
-      {/* PREMIUM TOP BAR - more attractive with better hierarchy, consistent buttons, subtle premium feel */}
+      <div className={`bg-[#0D0D10] text-white flex flex-col overflow-hidden relative app-container${inFullScreenChat ? ' app-container--chat-active' : ''}`}>
+      {/* PREMIUM TOP BAR — hidden in 1:1 chat (WhatsApp-style full bleed) */}
+      {!inFullScreenChat && (
       <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
         <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
           <span className="text-white/90 text-[11px]">EntrenaMatch</span>
@@ -8546,8 +8975,9 @@ useEffect(() => {
           <div className="text-[10px] opacity-90 font-medium">Inicia sesión para probar</div>
         )}
       </div>
+      )}
 
-      {isDemoMode && currentUser && !showOnboarding && (
+      {isDemoMode && currentUser && !showOnboarding && !inFullScreenChat && (
         <div
           className="sticky top-0 z-[48] bg-[#FFD700]/12 border-b border-[#FFD700]/35 px-3 py-1.5 text-center text-[10px] text-[#FFD700] font-semibold flex-shrink-0"
           role="status"
@@ -8601,9 +9031,9 @@ useEffect(() => {
       </AnimatePresence>
 
       {/* MAIN CONTENT AREA */}
-      <div className="flex-1 overflow-hidden relative flex flex-col">
+      <div className="app-main flex-1 overflow-hidden relative flex flex-col min-h-0">
         {/* Global offline indicator - visible on all tabs for good UX when no connectivity (Firebase queues + cache) */}
-        {isOffline && (
+        {isOffline && !inFullScreenChat && (
           <motion.div 
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -8641,6 +9071,7 @@ useEffect(() => {
             mapLiveTrainingNow={mapLiveTrainingNow}
             effectiveUserId={effectiveUserId}
             syncRipples={syncRipples}
+            setSyncRipples={setSyncRipples}
             partnerLocations={partnerLocations}
             mapPartnerLocations={mapPartnerLocations}
             echoPins={echoPins}
@@ -8742,6 +9173,7 @@ useEffect(() => {
             mapLiveTrainingNow={mapLiveTrainingNow}
             effectiveUserId={effectiveUserId}
             syncRipples={syncRipples}
+            setSyncRipples={setSyncRipples}
             partnerLocations={partnerLocations}
             mapPartnerLocations={mapPartnerLocations}
             echoPins={echoPins}
@@ -9091,6 +9523,13 @@ useEffect(() => {
             }}
             setShowEntrenaLogModal={setShowEntrenaLogModal}
             onOpenEntrenoDeHoy={() => void openEntrenoDeHoy()}
+            workoutDraftUserId={!isDemoMode && firebaseUser?.uid ? firebaseUser.uid : null}
+            workoutDraftRefresh={workoutDraftRefresh}
+            onResumeWorkoutDraft={() => void openEntrenoDeHoy()}
+            onDiscardWorkoutDraft={() => {
+              if (firebaseUser?.uid) clearWorkoutDraft(firebaseUser.uid)
+              setWorkoutDraftRefresh((n) => n + 1)
+            }}
             entrenoWeekSummary={!isDemoMode ? entrenoWeekSummary : null}
             entrenoExerciseHighlights={entrenoExerciseHighlights}
             entrenoPactProgress={homeWeeklyPactProgress.pledged ? homeWeeklyPactProgress : null}
@@ -9497,7 +9936,7 @@ useEffect(() => {
         )}
 
         {redSubTab === 'messages' && (
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
             {!activeChat ? (
               <PullToRefresh
                 className="flex-1 flex flex-col min-h-0"
@@ -9529,6 +9968,18 @@ useEffect(() => {
               />
               </PullToRefresh>
             ) : activeChat ? (
+              <>
+              {workoutSessionDraft && !showEntrenaLogModal && (
+                <WorkoutSessionFab
+                  draft={workoutSessionDraft}
+                  onResume={() => void openEntrenoDeHoy()}
+                  onQuickAddSet={handleWorkoutQuickAddSet}
+                  onOpenChat={handleWorkoutOpenChat}
+                  onOpenFuel={handleWorkoutOpenFuel}
+                  chatUnreadCount={totalChatUnreads}
+                  layout="chat-strip"
+                />
+              )}
               <ChatView
                 activeChat={activeChat}
                 chatProfile={chatProfile}
@@ -9578,7 +10029,18 @@ useEffect(() => {
                 currentUser={currentUser}
                 voiceStreak={dailyPulse?.voiceStreak || 0}
                 pactCompare={chatPactCompare}
-                onOpenEntrenoLog={() => void openEntrenoDeHoy()}
+                onOpenEntrenoLog={() =>
+                  void openEntrenoDeHoy(
+                    activeChat ? { shareToChat: activeChat } : undefined
+                  )
+                }
+                fetchTodayWorkouts={fetchTodayWorkoutsForShare}
+                onShareWorkoutToChat={
+                  activeChat
+                    ? (workout) => handleShareWorkoutToChat(workout, activeChat)
+                    : undefined
+                }
+                onCopyWorkout={(workoutId, title) => handleCopyWorkoutFromPost(workoutId, title)}
                 onOpenExplore={() => {
                   setActiveChat(null)
                   navigateTab('explore')
@@ -9670,6 +10132,7 @@ useEffect(() => {
                 onStopVoiceRecording={stopVoiceRecording}
                 onCancelVoiceRecording={cancelVoiceRecording}
               />
+              </>
             ) : null}
           </div>
         )}
@@ -9819,6 +10282,7 @@ useEffect(() => {
             entrenoRecentLoading={entrenoRecentLoading}
             onOpenEntrenoDeHoy={() => void openEntrenoDeHoy()}
             onCopyEntrenoWorkout={handleCopyEntrenoWorkout}
+            onDeleteEntrenoWorkout={(w) => void handleDeleteEntrenoWorkout(w)}
           />
           </Suspense>
           </TabErrorBoundary>
@@ -9984,6 +10448,8 @@ useEffect(() => {
           !!mpHealth?.configured,
           !!mpHealth?.live
         )}
+        db={db}
+        liveNowTotal={liveCountForUI}
       />
       <SyncLiveBlockerModal
         open={showSyncLiveBlocker}
@@ -10014,9 +10480,9 @@ useEffect(() => {
         hasPact={homeWeeklyPactProgress.pledged}
         onClose={() => {
           setShowActivationGuide(false)
+          markAppFeatureTourSeen()
           if (isDemoMode) {
             demoStorage.set(DEMO_KEYS.ACTIVATION_GUIDE_DISMISSED, true)
-            maybeScheduleFeatureTour()
             return
           }
           if (db && firebaseUser?.uid) {
@@ -10026,10 +10492,10 @@ useEffect(() => {
               )
             )
           }
-          maybeScheduleFeatureTour()
         }}
         onPrimaryAction={() => {
           setShowActivationGuide(false)
+          markAppFeatureTourSeen()
           if (isDemoMode) {
             demoStorage.set(DEMO_KEYS.ACTIVATION_GUIDE_DISMISSED, true)
           } else if (db && firebaseUser?.uid) {
@@ -10040,7 +10506,6 @@ useEffect(() => {
           } else {
             void toggleLiveTraining('on')
           }
-          maybeScheduleFeatureTour()
         }}
         onStep={(step) => {
           if (step === 'profile') setActiveTab('profile')
@@ -10197,14 +10662,31 @@ useEffect(() => {
         onClose={() => {
           setShowEntrenaLogModal(false)
           setEntrenaLogPrefill(null)
+          setEntrenaLogSkipDraft(false)
+          setEntrenaLogExpandPastWorkouts(false)
+          setEntrenaLogShareToChat(null)
+          setWorkoutDraftRefresh((n) => n + 1)
+        }}
+        onMinimize={handleEntrenaLogMinimize}
+        onDiscardSession={() => {
+          if (firebaseUser?.uid) clearWorkoutDraft(firebaseUser.uid)
+          setShowEntrenaLogModal(false)
+          setEntrenaLogPrefill(null)
+          setEntrenaLogSkipDraft(false)
+          setEntrenaLogExpandPastWorkouts(false)
+          setEntrenaLogShareToChat(null)
+          setWorkoutDraftRefresh((n) => n + 1)
         }}
         onSave={handleSaveEntrenaLog}
+        userId={!isDemoMode && firebaseUser?.uid ? firebaseUser.uid : null}
+        skipDraftRestore={entrenaLogSkipDraft}
         saving={savingWorkout}
         defaultTitle={entrenaLogPrefill?.title || 'Entreno de hoy'}
         initialExercises={entrenaLogPrefill?.exercises}
         initialType={entrenaLogPrefill?.type}
         initialDurationMin={entrenaLogPrefill?.durationMin}
-        lastWorkout={entrenoRecentWorkouts[0] ?? null}
+        recentWorkouts={entrenoRecentWorkouts}
+        expandPastWorkouts={entrenaLogExpandPastWorkouts}
         liveDurationMin={
           currentUser?.trainingNow && currentUser.trainingNowSince
             ? Math.max(5, Math.floor((Date.now() - currentUser.trainingNowSince) / 60_000))
@@ -10214,6 +10696,16 @@ useEffect(() => {
         gymRoutineLabel={
           isGymCheckInFresh(currentUser?.gymCheckIn)
             ? currentUser?.gymCheckIn?.gymName
+            : undefined
+        }
+        gymSoundUser={currentUser ?? undefined}
+        isLive={!!currentUser?.trainingNow}
+        onGymSoundSave={handleGymSoundProfileSave}
+        shareToChatName={
+          entrenaLogShareToChat
+            ? (chatProfile?.name || matchProfiles.find((p) => p.id === entrenaLogShareToChat)?.name || 'tu partner').split(
+                ' '
+              )[0]
             : undefined
         }
       />
@@ -10261,6 +10753,30 @@ useEffect(() => {
         onAnalyzePhoto={handleAnalyzeFood}
         saving={savingFuel}
       />
+      {workoutSessionDraft &&
+        !(activeTab === 'red' && redSubTab === 'messages' && !!activeChat) && (
+        <WorkoutSessionFab
+          draft={workoutSessionDraft}
+          onResume={() => void openEntrenoDeHoy()}
+          onQuickAddSet={handleWorkoutQuickAddSet}
+          onOpenChat={handleWorkoutOpenChat}
+          onOpenFuel={handleWorkoutOpenFuel}
+          chatUnreadCount={totalChatUnreads}
+          liveActive={!!currentUser?.trainingNow}
+          bottomClass={
+            activeTab === 'map'
+              ? 'bottom-[calc(7.5rem+env(safe-area-inset-bottom))]'
+              : undefined
+          }
+          hidden={
+            !currentUser ||
+            showSyncArena ||
+            showOnboarding ||
+            authBooting ||
+            showEntrenaLogModal
+          }
+        />
+      )}
       <LiveToggleFab
         isLive={!!currentUser?.trainingNow}
         isTogglingLive={isTogglingLive}
@@ -10276,7 +10792,6 @@ useEffect(() => {
           showSyncArena ||
           showOnboarding ||
           authBooting ||
-          activeTab === 'explore' ||
           (activeTab === 'red' && redSubTab === 'messages' && !!activeChat)
         }
       />
@@ -10292,6 +10807,7 @@ useEffect(() => {
           navigateTab(tab as typeof activeTab)
         }}
       />
+      {!inFullScreenChat && (
       <BottomNav
         activeTab={activeTab}
         liveCountForUI={liveCountForUI}
@@ -10311,6 +10827,7 @@ useEffect(() => {
         }}
         compactNav={isProfileProgressiveMode(currentUser)}
       />
+      )}
 
       {/* FILTERS MODAL */}
       <AnimatePresence>
@@ -11542,10 +12059,10 @@ useEffect(() => {
               animate={{ y: 0, opacity: 1 }} 
               exit={{ y: 100, opacity: 0 }}
               onClick={e => e.stopPropagation()}
-              className="w-full max-w-[420px] bg-[#0D0D10] rounded-t-3xl md:rounded-3xl overflow-hidden flex flex-col h-[85dvh] md:h-[620px] max-h-[85dvh] border border-[#2F2F35] shadow-2xl"
+              className="w-full max-w-[420px] bg-[#0b141a] rounded-t-2xl md:rounded-3xl overflow-hidden flex flex-col h-[92dvh] md:h-[620px] max-h-[92dvh] border border-[#2a3942] shadow-2xl"
             >
-              {/* Modal Header - Premium */}
-              <div className="p-4 border-b border-[#2F2F35] bg-[#1C1C20] flex items-center justify-between">
+              {/* Modal Header */}
+              <div className="chat-wa-header px-3 py-2.5 flex items-center justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="section-header text-lg truncate pr-2 tracking-tight">
                     {sessions.find(s => s.id === showGroupChatModalFor)?.title || 'Sesión grupal'}
@@ -11583,7 +12100,7 @@ useEffect(() => {
                       </button>
                     ) : null
                   })()}
-                  <a href="/entrenamatch/privacy.html" target="_blank" className="text-[9px] md:text-[10px] text-[#9CA3AF] underline">Privacidad</a>
+                  <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hidden sm:inline text-[9px] md:text-[10px] text-[#8696a0] underline">Privacidad</a>
                   <button onClick={() => {
                     if (confirm('¿Reportar problema en esta sesión?')) {
                       if (showGroupChatModalFor && db) {
@@ -11699,7 +12216,7 @@ useEffect(() => {
                     })()}
                   </div>
 
-                  <div ref={groupChatScrollRef} className="flex-1 overflow-auto p-3 sm:p-4 space-y-2 text-sm bg-[#0D0D10] w-full" id="group-chat-scroll">
+                  <div ref={groupChatScrollRef} className="chat-wa-thread flex-1 overflow-auto p-3 sm:p-4 space-y-1 text-sm w-full" id="group-chat-scroll">
                     {(sessionMessages[showGroupChatModalFor] || []).length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full text-center text-[#9CA3AF] px-6">
                         <div className="w-14 h-14 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-4 text-3xl">💬</div>
@@ -11714,19 +12231,21 @@ useEffect(() => {
                         const isCreator = session?.creatorId === msg.senderId
                         const time = msg.timestamp ? new Date(msg.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : ''
                         return (
-                          <div key={i} className={`flex ${isMe ? 'justify-end' : 'justify-start'} group`}>
-                            <div className={`max-w-[85%] sm:max-w-[78%] ${isMe ? 'text-right' : ''} w-full`}>
+                          <div key={i} className={`chat-wa-row ${isMe ? 'chat-wa-row--me' : 'chat-wa-row--them'} group`}>
+                            <div className={`max-w-[85%] sm:max-w-[78%] ${isMe ? '' : ''} w-full`}>
                               {!isMe && (
-                                <div className="text-[9px] text-[#9CA3AF] mb-0.5 px-0.5 flex items-center gap-1 leading-tight">
+                                <div className="text-[10px] text-[#8696a0] mb-0.5 px-1 flex items-center gap-1 leading-tight">
                                   {isCreator && <span className="text-[#FF671F]">★ </span>}
-                                  <span>{msg.senderName}</span>
-                                  {time && <span className="text-[#6B7280] ml-1">· {time}</span>}
+                                  <span className="font-semibold text-[#aebac1]">{msg.senderName}</span>
                                 </div>
                               )}
-                              {isMe && time && <div className="text-[10px] text-[#6B7280] mb-0.5 px-1 text-right">{time}</div>}
-                              <div className={`message-bubble inline-block ${isMe ? 'sent' : 'received'} ${msg.voiceUrl && !msg.voiceUrl.startsWith('blob:') ? '!p-1' : ''}`}>
-                                {renderMessageText(msg.text)}
-                                {msg.photo && <img src={msg.photo} className="mt-2 max-w-[200px] rounded-xl border border-white/10" />}
+                              <div className={`chat-wa-bubble ${isMe ? 'chat-wa-bubble--sent chat-wa-bubble--sent-last' : 'chat-wa-bubble--recv chat-wa-bubble--recv-last'}`}>
+                                {msg.text ? <div className="chat-wa-text">{renderMessageText(msg.text)}</div> : null}
+                                {msg.photo && (
+                                  <button type="button" className="chat-wa-photo">
+                                    <img src={msg.photo} alt="Foto grupal" loading="lazy" />
+                                  </button>
+                                )}
                                 {msg.voiceUrl && !msg.voiceUrl.startsWith('blob:') ? (
                                   <div className={`voice-bubble mt-1 ${isMe ? 'sent' : 'received'}`}>
                                     <button 
@@ -11780,6 +12299,11 @@ useEffect(() => {
                                 ) : msg.voiceUrl && msg.voiceUrl.startsWith('blob:') ? (
                                   <span className="text-[10px] text-red-400">Nota de voz no disponible en esta sesión</span>
                                 ) : null}
+                                {time && (
+                                  <div className="chat-wa-meta">
+                                    <time>{time}</time>
+                                  </div>
+                                )}
                               </div>
 
                               {/* Reactions row - align with bubble side */}
@@ -11832,8 +12356,8 @@ useEffect(() => {
                     )}
                   </div>
 
-                  {/* Input area - Premium modern */}
-                  <div className="p-3 border-t border-[#2F2F35] bg-[#1C1C20] pb-[env(safe-area-inset-bottom)]">
+                  {/* Input area */}
+                  <div className="chat-wa-composer">
                     {groupChatPhoto && (
                       <div className="mb-2 flex items-center gap-2 bg-[#0D0D10] p-2 rounded-2xl border border-[#2F2F35]">
                         <img src={groupChatPhoto} className="w-10 h-10 object-cover rounded-xl" />
@@ -11930,19 +12454,19 @@ useEffect(() => {
                           setGroupChatPhoto(null)
                         }
                       }}
-                      className="flex gap-2 items-center"
+                      className="chat-wa-composer-row"
                     >
                       <input 
                         ref={groupChatInputRef}
                         type="text" 
                         value={chatInputValue}
                         onChange={(e) => setChatInputValue(e.target.value)}
-                        placeholder={pendingVoice ? "Nota lista — ENVIAR AL SQUAD" : "Mensaje o voz para tu squad..."}
+                        placeholder={pendingVoice ? "Nota lista — ENVIAR AL SQUAD" : "Mensaje al grupo..."}
                         enterKeyHint="send"
-                        className="flex-1 bg-[#0D0D10] border border-[#2F2F35] rounded-3xl px-5 py-3 text-sm outline-none placeholder:text-[#9CA3AF] min-w-0 focus:border-[#FF671F]/50" 
+                        className="chat-wa-input" 
                       />
 
-                      <label className="cursor-pointer flex items-center justify-center w-11 h-11 bg-[#1C1C20] border border-[#2F2F35] rounded-3xl text-xl hover:bg-[#25252A] active:bg-[#FF671F]/10 active:text-[#FF671F] active:scale-95 transition">📷
+                      <label className="chat-wa-composer-btn cursor-pointer text-lg">📷
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                           const file = e.target.files?.[0]
                           if (file) {
@@ -11983,14 +12507,14 @@ useEffect(() => {
                         <button 
                           type="button"
                           onClick={startVoiceRecording}
-                          className="w-11 h-11 rounded-3xl flex items-center justify-center transition active:scale-95 bg-[#1C1C20] border border-[#2F2F35] text-[#FF671F] hover:bg-[#25252A] hover:border-[#FF671F]/50"
+                          className="chat-wa-composer-btn chat-wa-composer-btn--mic"
                           title="Grabar nota de voz para tu squad"
                         >
                           <Mic size={19} />
                         </button>
                       )}
 
-                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto && !pendingVoice} title={pendingVoice ? 'Enviar la nota de voz grabada al squad' : 'Enviar mensaje'} className={`${pendingVoice ? 'bg-[#22c55e] text-black' : 'bg-[#FF671F]'} disabled:bg-[#2F2F35] disabled:text-[#9CA3AF] text-black px-3 rounded-3xl font-semibold h-11 w-11 flex items-center justify-center active:scale-95 transition`} aria-label="Enviar">
+                      <button type="submit" disabled={!chatInputValue.trim() && !groupChatPhoto && !pendingVoice} title={pendingVoice ? 'Enviar la nota de voz grabada al squad' : 'Enviar mensaje'} className="chat-wa-send disabled:opacity-40" aria-label="Enviar">
                         <Send size={18} />
                       </button>
                     </form>
@@ -12177,6 +12701,9 @@ useEffect(() => {
             }
           }}
           shareInviteUrl={buildInviteLink(effectiveUserId)}
+          db={db}
+          userCity={currentUser?.city}
+          isDemoMode={isDemoMode}
           onInviteSquad={(_partnerId, partnerName) => {
             const first = partnerName.split(' ')[0] || 'tu compañero'
             const inviteUrl = buildInviteLink(effectiveUserId)

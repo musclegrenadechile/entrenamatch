@@ -21,6 +21,11 @@ import type { Message, Profile } from '../../types'
 import { BRAND_COPY } from '../../constants/brandCopy'
 import { generateIcebreakers } from '../../utils/icebreakers'
 import { ChatPactCompareStrip, type ChatPactCompareData } from './ChatPactCompareStrip'
+import { WorkoutPostCard } from '../workout/WorkoutPostCard'
+import { getPublicGymSound } from '../../services/gymSound'
+import { NowPlayingBadge } from '../music/NowPlayingBadge'
+import { ShareWorkoutPickerSheet } from '../workout/ShareWorkoutPickerSheet'
+import type { Workout } from '../../types'
 
 function ChatMessageStatus({ message }: { message: Message }) {
   const isRead = !!(message.read || message.readAt)
@@ -95,6 +100,9 @@ export interface ChatViewProps {
   pactCompare?: ChatPactCompareData | null
   onOpenEntrenoLog?: () => void
   onOpenExplore?: () => void
+  onCopyWorkout?: (workoutId: string, title?: string) => void
+  fetchTodayWorkouts?: () => Promise<Workout[]>
+  onShareWorkoutToChat?: (workout: Workout) => void | Promise<void>
 }
 
 const TRAINING_CHIPS = [
@@ -179,9 +187,15 @@ export function ChatView({
   pactCompare = null,
   onOpenEntrenoLog,
   onOpenExplore,
+  onCopyWorkout,
+  fetchTodayWorkouts,
+  onShareWorkoutToChat,
 }: ChatViewProps) {
   const [menuOpen, setMenuOpen] = useState(false)
   const [attachOpen, setAttachOpen] = useState(false)
+  const [shareWorkoutOpen, setShareWorkoutOpen] = useState(false)
+  const [todayWorkouts, setTodayWorkouts] = useState<Workout[]>([])
+  const [loadingTodayWorkouts, setLoadingTodayWorkouts] = useState(false)
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -227,10 +241,23 @@ export function ChatView({
   }, [chatInputValue])
 
   const canSend = !!(chatInputValue.trim() || pendingVoice || pendingPhoto)
+  const partnerMusic = getPublicGymSound(chatProfile)
+  const canShareWorkout = !!(onOpenEntrenoLog || (fetchTodayWorkouts && onShareWorkoutToChat))
+
+  const openShareWorkoutPicker = () => {
+    setAttachOpen(false)
+    setShareWorkoutOpen(true)
+    if (!fetchTodayWorkouts) return
+    setLoadingTodayWorkouts(true)
+    void fetchTodayWorkouts()
+      .then((list) => setTodayWorkouts(list))
+      .catch(() => setTodayWorkouts([]))
+      .finally(() => setLoadingTodayWorkouts(false))
+  }
 
   return (
-    <div className="chat-wa flex-1 flex flex-col min-h-0 h-full overflow-hidden">
-      <header className="chat-wa-header">
+    <div className="chat-wa chat-wa--fullscreen flex-1 flex flex-col min-h-0 overflow-hidden">
+      <header className="chat-wa-header chat-wa-header--fullscreen shrink-0">
         <button type="button" onClick={onBack} className="chat-wa-header-btn" aria-label="Volver">
           <ArrowLeft size={22} />
         </button>
@@ -254,6 +281,8 @@ export function ChatView({
             <div className="chat-wa-sub">
               {partnerTyping ? (
                 <span className="text-[#25D366]">escribiendo…</span>
+              ) : partnerMusic ? (
+                <span className="text-[#1DB954] truncate">🎧 {partnerMusic.trackName}</span>
               ) : chatProfile?.trainingNow ? (
                 <span className="text-[#22c55e]">en vivo ahora</span>
               ) : (
@@ -285,6 +314,12 @@ export function ChatView({
 
       {pactCompare && <ChatPactCompareStrip compare={pactCompare} onOpenEntrenoLog={onOpenEntrenoLog} />}
 
+      {partnerMusic && (
+        <div className="chat-wa-music-strip shrink-0">
+          <NowPlayingBadge nowPlaying={partnerMusic} size="sm" />
+        </div>
+      )}
+
       <div ref={chatScrollRef} className="chat-wa-thread flex-1 min-h-0 overflow-y-auto overscroll-contain" id="chat-scroll">
         {chatMessages.length === 0 && !partnerTyping && (
           <div className="chat-wa-empty">
@@ -315,6 +350,21 @@ export function ChatView({
               )}
               <div className={`chat-wa-row ${isMe ? 'chat-wa-row--me' : 'chat-wa-row--them'} ${isGroupedWithPrev ? 'chat-wa-row--tight' : ''}`}>
                 <div className={`chat-wa-bubble ${isMe ? 'chat-wa-bubble--sent' : 'chat-wa-bubble--recv'} ${tailClass}`}>
+                  {m.workoutPreview && (
+                    <div className="chat-wa-workout-share">
+                      <WorkoutPostCard
+                        preview={m.workoutPreview}
+                        compact
+                        onCopyRoutine={
+                          !isMe && m.workoutId && onCopyWorkout
+                            ? () => onCopyWorkout(m.workoutId!, m.workoutPreview?.title)
+                            : undefined
+                        }
+                        copyLabel="Copiar rutina"
+                        showReactions={false}
+                      />
+                    </div>
+                  )}
                   {m.photoUrl && (
                     <button type="button" className="chat-wa-photo" onClick={() => setLightboxUrl(m.photoUrl!)}>
                       <img src={m.photoUrl} alt="Foto enviada" loading="lazy" />
@@ -336,7 +386,9 @@ export function ChatView({
                       <span className="voice-duration">{m.voiceDuration || '?'}″</span>
                     </div>
                   ) : null}
-                  {m.text ? <div className="chat-wa-text">{renderMessageText(m.text)}</div> : null}
+                  {m.text && !m.workoutPreview ? (
+                    <div className="chat-wa-text">{renderMessageText(m.text)}</div>
+                  ) : null}
                   <div className="chat-wa-meta">
                     <time>{time}</time>
                     {isMe && <ChatMessageStatus message={m} />}
@@ -369,10 +421,10 @@ export function ChatView({
             <span className="chat-wa-attach-icon chat-wa-attach-icon--voice"><Mic size={20} /></span>
             Nota de voz{voiceStreak > 0 ? ` · ${voiceStreak}d` : ''}
           </button>
-          {onOpenEntrenoLog && (
-            <button type="button" className="chat-wa-attach-item" onClick={() => { onOpenEntrenoLog(); setAttachOpen(false) }}>
+          {canShareWorkout && (
+            <button type="button" className="chat-wa-attach-item" onClick={openShareWorkoutPicker}>
               <span className="chat-wa-attach-icon"><Sparkles size={20} /></span>
-              Log
+              Entreno
             </button>
           )}
           {icebreakers.slice(0, 2).map((tip) => (
@@ -392,6 +444,16 @@ export function ChatView({
           ))}
         </div>
       )}
+
+      <ShareWorkoutPickerSheet
+        open={shareWorkoutOpen}
+        partnerName={chatProfile?.name}
+        loading={loadingTodayWorkouts}
+        workouts={todayWorkouts}
+        onClose={() => setShareWorkoutOpen(false)}
+        onLogNew={() => onOpenEntrenoLog?.()}
+        onShareWorkout={(workout) => onShareWorkoutToChat?.(workout) ?? Promise.resolve()}
+      />
 
       <footer className="chat-wa-composer">
         {pendingPhoto && !isUploadingPhoto && (

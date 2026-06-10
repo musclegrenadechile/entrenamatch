@@ -9,6 +9,7 @@ import { shareNativeMessage } from '../../utils/shareNative'
 import { ReferralInviteCard } from '../growth/ReferralInviteCard'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
+import { GymSoundCard } from '../music/GymSoundCard'
 
 export function ProfileAccountSection(props: ProfileTabProps) {
   const {
@@ -94,6 +95,15 @@ export function ProfileAccountSection(props: ProfileTabProps) {
       </button>
     </div>
   )}
+</div>
+
+{/* GymSound — Phase 2 */}
+<div className={`px-4 mt-4${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+  <GymSoundCard
+    currentUser={currentUser}
+    saveUserWithRealSync={saveUserWithRealSync}
+    triggerHaptic={triggerHaptic}
+  />
 </div>
 
 {/* Ghost mode — fase 114 */}

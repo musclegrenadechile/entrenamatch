@@ -54,7 +54,7 @@ export function notifyDerbyLeaderChange(derby: CityDerbyState): void {
     /* ignore */
   }
 
-  toast(`${rival} te superó en el derby`, {
+  toast(`${rival} te superó en la Copa Zona`, {
     description: `+${derby.marginIndex} índice/100k hab — activa LIVE y recupera la zona`,
     duration: 6000,
   })

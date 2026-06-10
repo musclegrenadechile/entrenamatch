@@ -33,7 +33,7 @@ export function derbyShareTeamCopy(cityNorm: string): DerbyShareTeamCopy {
     return { title: 'Santiago', subtitle: 'Comuna RM' }
   }
   const short = cityNorm.length > 14 ? `${cityNorm.slice(0, 12)}…` : cityNorm
-  return { title: short, subtitle: 'Equipo derby' }
+  return { title: short, subtitle: 'Copa Zona' }
 }
 
 export function derbyShareLeaderLine(derby: CityDerbyState): string {
@@ -259,7 +259,7 @@ export async function renderDerbyStoryPng(derby: CityDerbyState): Promise<Blob |
   ctx.font = 'bold 28px system-ui, sans-serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText('🏆 DERBY SEMANAL · ÍNDICE / 100K HAB', 332, 330)
+  ctx.fillText('🏆 COPA ZONA · ÍNDICE / 100K HAB', 332, 330)
 
   // Main duel card
   const cardX = 56
@@ -342,7 +342,7 @@ export async function renderDerbyStoryPng(derby: CityDerbyState): Promise<Blob |
   ctx.fillStyle = C.muted
   ctx.font = '500 28px system-ui, sans-serif'
   ctx.fillText(
-    `${derby.home.totalMinutes} vs ${derby.away.totalMinutes} min brutos esta semana`,
+    `${derby.home.totalMinutes} vs ${derby.away.totalMinutes} min brutos en la guerra`,
     W / 2,
     barY + 108
   )
@@ -366,7 +366,7 @@ export async function renderDerbyStoryPng(derby: CityDerbyState): Promise<Blob |
   ctx.fillStyle = C.muted
   ctx.font = '500 24px system-ui, sans-serif'
   ctx.textBaseline = 'bottom'
-  ctx.fillText('#EntrenaMatch #DerbyRegional', W / 2, H - 72)
+  ctx.fillText('#EntrenaMatch #CopaZona', W / 2, H - 72)
 
   return new Promise((resolve) => {
     canvas.toBlob((b) => resolve(b), 'image/png', 0.92)
@@ -385,9 +385,9 @@ export async function shareDerbyStory(derby: CityDerbyState): Promise<ShareImage
   const blob = await renderDerbyStoryPng(derby)
   if (!blob) return 'failed'
   return sharePngBlob(blob, derbyStoryFilename(derby.weekKey), {
-    title: 'Derby EntrenaMatch',
+    title: 'Copa Zona EntrenaMatch',
     text: derbyStoryShareText(derby),
-    dialogTitle: 'Compartir story del derby',
+    dialogTitle: 'Compartir story Copa Zona',
   })
 }
 

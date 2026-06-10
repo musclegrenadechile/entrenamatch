@@ -1,4 +1,4 @@
-import { Dumbbell, Copy, ChevronRight, TrendingUp } from 'lucide-react'
+import { Dumbbell, Copy, ChevronRight, TrendingUp, Trash2 } from 'lucide-react'
 import { WORKOUT_TYPE_LABELS } from '../../data/exerciseLibrary'
 import type { Workout } from '../../types'
 import { formatVolumeLabel } from '../../services/workouts'
@@ -9,6 +9,7 @@ export interface ProfileEntrenoDeHoySectionProps {
   loading?: boolean
   onOpenEntrenoDeHoy: () => void
   onCopyWorkout: (workout: Workout) => void
+  onDeleteWorkout?: (workout: Workout) => void
 }
 
 export function ProfileEntrenoDeHoySection({
@@ -16,6 +17,7 @@ export function ProfileEntrenoDeHoySection({
   loading = false,
   onOpenEntrenoDeHoy,
   onCopyWorkout,
+  onDeleteWorkout,
 }: ProfileEntrenoDeHoySectionProps) {
   const exerciseProgress = getTopExerciseProgress(recentWorkouts, 3)
 
@@ -75,14 +77,26 @@ export function ProfileEntrenoDeHoySection({
                       {w.source === 'sync' ? ' · Sync' : ''}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => onCopyWorkout(w)}
-                    className="shrink-0 p-2 rounded-xl bg-white/5 text-[#FF671F] active:bg-[#FF671F]/15"
-                    title="Repetir rutina"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => onCopyWorkout(w)}
+                      className="p-2 rounded-xl bg-white/5 text-[#FF671F] active:bg-[#FF671F]/15"
+                      title="Repetir rutina"
+                    >
+                      <Copy className="w-4 h-4" />
+                    </button>
+                    {onDeleteWorkout && (
+                      <button
+                        type="button"
+                        onClick={() => onDeleteWorkout(w)}
+                        className="p-2 rounded-xl bg-white/5 text-red-400 active:bg-red-500/15"
+                        title="Eliminar entreno"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </li>
               )
             })}

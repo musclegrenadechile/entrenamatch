@@ -1,12 +1,17 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
+  loadPersistedStringIdSet,
   pruneIdArray,
   pruneSeenIdMap,
   pruneStringIdList,
+  SEEN_LIVE_USERS_KEY,
   trimSetToMax,
 } from './safeLocalStorage'
 
 describe('safeLocalStorage pruning', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
   it('pruneIdArray keeps the most recent ids', () => {
     const ids = Array.from({ length: 100 }, (_, i) => `m${i}`)
     expect(pruneIdArray(ids, 80)).toEqual(ids.slice(-80))
@@ -32,5 +37,20 @@ describe('safeLocalStorage pruning', () => {
     const set = new Set(['a', 'b', 'c', 'd', 'e'])
     trimSetToMax(set, 3)
     expect(Array.from(set)).toEqual(['c', 'd', 'e'])
+  })
+
+  it('loadPersistedStringIdSet reads pruned id lists from localStorage', () => {
+    const storage: Record<string, string> = {}
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => storage[k] ?? null,
+      setItem: (k: string, v: string) => {
+        storage[k] = v
+      },
+      removeItem: (k: string) => {
+        delete storage[k]
+      },
+    })
+    storage[SEEN_LIVE_USERS_KEY] = JSON.stringify(['u1', 'u2', 'u3'])
+    expect(loadPersistedStringIdSet(SEEN_LIVE_USERS_KEY)).toEqual(new Set(['u1', 'u2', 'u3']))
   })
 })

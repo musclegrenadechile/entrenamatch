@@ -26,6 +26,7 @@ export function ProfileActividadSection(props: ProfileTabProps) {
     entrenoRecentLoading = false,
     onOpenEntrenoDeHoy,
     onCopyEntrenoWorkout,
+    onDeleteEntrenoWorkout,
   } = profileTabBindings(props)
 
   const gymName =
@@ -62,6 +63,7 @@ export function ProfileActividadSection(props: ProfileTabProps) {
     loading={entrenoRecentLoading}
     onOpenEntrenoDeHoy={onOpenEntrenoDeHoy}
     onCopyWorkout={onCopyEntrenoWorkout}
+    onDeleteWorkout={onDeleteEntrenoWorkout}
   />
 )}
 <TuRedPowerCard

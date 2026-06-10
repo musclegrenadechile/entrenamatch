@@ -46,6 +46,36 @@
   liveActivityState?: 'active' | 'idle' | 'unknown'
   /** Weekly goal — closes Home loop (Meta semanal, Phase D4). */
   weeklyPact?: WeeklyPact
+  /** GymSound — opt-in to share music while LIVE (Spotify or manual anthem). */
+  spotifyShareLive?: boolean
+  /** GymSound — public Spotify track (no tokens). Cleared when not live. */
+  spotifyNowPlaying?: SpotifyNowPlaying
+  /** GymSound Phase 2 — manual YouTube / YouTube Music anthem while LIVE. */
+  gymSoundAnthem?: GymSoundAnthem
+}
+
+export type SpotifyNowPlaying = {
+  trackName: string
+  artistName: string
+  albumArtUrl?: string
+  trackUrl?: string
+  isPlaying: boolean
+  updatedAt: number
+}
+
+export type GymSoundProvider = 'spotify' | 'youtube' | 'youtube-music'
+
+export type GymSoundDisplay = SpotifyNowPlaying & {
+  provider?: GymSoundProvider
+}
+
+export type GymSoundAnthem = {
+  trackName: string
+  artistName?: string
+  albumArtUrl?: string
+  trackUrl: string
+  provider: 'youtube' | 'youtube-music'
+  updatedAt: number
 }
 
 export interface WeeklyPact {
@@ -104,6 +134,8 @@ export interface Message {
   voiceUrl?: string
   voiceDuration?: number
   photoUrl?: string
+  workoutId?: string
+  workoutPreview?: WorkoutPreview
   read?: boolean
   readAt?: number
   clientId?: string

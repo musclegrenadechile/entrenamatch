@@ -45,7 +45,11 @@ export function isStaleChunkError(reason: unknown): boolean {
     /Loading chunk [\d]+ failed/i.test(msg) ||
     /Importing a module script failed/i.test(msg) ||
     /error loading dynamically imported module/i.test(msg) ||
-    /Unable to preload CSS/i.test(msg)
+    /Unable to preload CSS/i.test(msg) ||
+    /module script.*MIME type/i.test(msg) ||
+    /Expected a JavaScript-or-Wasm module script/i.test(msg) ||
+    /text\/html/i.test(msg) ||
+    /Cannot read properties of undefined \(reading ['"]ProfileTab['"]\)/i.test(msg)
   )
 }
 
@@ -80,4 +84,15 @@ export function installChunkReloadHandlers(): void {
     event.preventDefault()
     reloadForNewBuild()
   })
+  // Script tags that 404 → SPA rewrite serves index.html (MIME text/html).
+  window.addEventListener(
+    'error',
+    (event) => {
+      const target = event.target
+      if (!(target instanceof HTMLScriptElement) || target.type !== 'module') return
+      if (hasReloadLatch()) return
+      reloadForNewBuild()
+    },
+    true
+  )
 }

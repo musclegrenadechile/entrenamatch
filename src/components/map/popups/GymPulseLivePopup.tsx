@@ -1,6 +1,12 @@
 import { User, X } from 'lucide-react'
 import { VerifiedProfilePhoto } from '../../profile/VerifiedProfilePhoto'
 import type { IdentityVerificationStatus } from '../../../utils/identityVerification'
+import { getPublicGymSound } from '../../../services/gymSound'
+import { NowPlayingBadge } from '../../music/NowPlayingBadge'
+import { GymSoundReactionBar } from '../../music/GymSoundReactionBar'
+import type { GymSoundAnthem, SpotifyNowPlaying } from '../../../types'
+import type { SyncRipple } from '../../../services/gymSoundReactions'
+import type { GymSoundDisplay } from '../../../types'
 
 export interface GymPulseLivePopupProps {
   user: Record<string, unknown>
@@ -8,6 +14,10 @@ export interface GymPulseLivePopupProps {
   onClose: () => void
   onShowProfile: () => void
   onStartSync: () => void
+  selfName?: string
+  selfNowPlaying?: GymSoundDisplay | null
+  setSyncRipples?: (updater: SyncRipple[] | ((prev: SyncRipple[]) => SyncRipple[])) => void
+  onHaptic?: () => void
 }
 
 export function GymPulseLivePopup({
@@ -16,6 +26,10 @@ export function GymPulseLivePopup({
   onClose,
   onShowProfile,
   onStartSync,
+  selfName,
+  selfNowPlaying,
+  setSyncRipples,
+  onHaptic,
 }: GymPulseLivePopupProps) {
   const name = String(user.name || 'Atleta')
   const photos = user.photos as string[] | undefined
@@ -26,6 +40,12 @@ export function GymPulseLivePopup({
   const gymName = (user.gymCheckIn as { gymName?: string } | undefined)?.gymName
   const hasPulso = ((user.visibleLevel as number) || 1) >= 20
   const isHigh = ((user.visibleLevel as number) || 1) >= 15 || isBond
+  const nowPlaying = getPublicGymSound({
+    trainingNow: true,
+    spotifyShareLive: user.spotifyShareLive === true,
+    spotifyNowPlaying: user.spotifyNowPlaying as SpotifyNowPlaying | undefined,
+    gymSoundAnthem: user.gymSoundAnthem as GymSoundAnthem | undefined,
+  })
 
   return (
     <div className="gym-pulse-live-popup">
@@ -64,6 +84,25 @@ export function GymPulseLivePopup({
           )}
           {seVaEnMin != null && (
             <p className="gym-pulse-live-popup__urgent">⏱ Se va en ~{seVaEnMin} min — ¡únete ya!</p>
+          )}
+          {nowPlaying && (
+            <div className="gym-pulse-live-popup__music">
+              <NowPlayingBadge nowPlaying={nowPlaying} size="sm" />
+              <GymSoundReactionBar
+                compact
+                target={{
+                  userId: String(user.id || ''),
+                  userName: name,
+                  lat: typeof user.lat === 'number' ? user.lat : undefined,
+                  lng: typeof user.lng === 'number' ? user.lng : undefined,
+                  nowPlaying,
+                }}
+                selfName={selfName}
+                selfNowPlaying={selfNowPlaying}
+                setSyncRipples={setSyncRipples}
+                onHaptic={onHaptic}
+              />
+            </div>
           )}
         </div>
       </div>

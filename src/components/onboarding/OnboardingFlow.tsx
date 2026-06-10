@@ -9,7 +9,9 @@ import { PILOT_CITY_OPTIONS, PILOT_PROGRAM_TITLE } from '../../constants/pilotPr
 import type { CurrentUser } from '../../types';
 import { QUICK_DEMO_USER } from '../../utils/quickDemo';
 
-const ONBOARDING_LAST_STEP = 4;
+/** Create: 3 pasos (perfil → entreno → entrar). Edit mantiene flujo completo. */
+const ONBOARDING_CREATE_LAST_STEP = 2;
+const ONBOARDING_EDIT_LAST_STEP = 3;
 const SHOW_DEV_FILL = import.meta.env.DEV;
 
 interface CapacitorCameraPlugin {
@@ -165,13 +167,13 @@ export const OnboardingFlow = ({
   }
 
   const isEditingProfile = isEditMode;
-  const lastStep = isEditMode ? 3 : ONBOARDING_LAST_STEP;
+  const lastStep = isEditMode ? ONBOARDING_EDIT_LAST_STEP : ONBOARDING_CREATE_LAST_STEP;
   const totalSteps = lastStep + 1;
-  const isPresenceStep = isEditMode ? onboardingStep === 0 : onboardingStep === 1;
-  const isEssenceStep = isEditMode ? onboardingStep === 1 : onboardingStep === 2;
-  const isPulseStep = isEditMode ? onboardingStep === 2 : onboardingStep === 3;
-  const isConsentsStep = isEditMode ? onboardingStep === 3 : onboardingStep === 4;
-  const showIntroStep = !isEditMode && onboardingStep === 0;
+  const isPresenceStep = onboardingStep === 0;
+  const isEssenceStep = onboardingStep === 1;
+  const isPulseStep = isEditMode && onboardingStep === 2;
+  const isConsentsStep = isEditMode ? onboardingStep === 3 : onboardingStep === 2;
+  const showIntroStep = false;
 
   // Live updating preview card (the key onboarding improvement - user sees exactly how they will appear in Explore + live lists)
   // Enhanced to preview the unique EntrenaSync and live features to build excitement from day 1
@@ -421,8 +423,14 @@ export const OnboardingFlow = ({
   };
 
   const finishOnboarding = async () => {
-    if (!onboardData.name || !onboardData.bio || onboardData.photos?.length === 0 || onboardData.trainingTypes?.length === 0 || (onboardData.goals?.length || 0) === 0) {
-      toast.error('Faltan datos', { description: 'Nombre, bio, foto, tipos de entrenamiento y al menos un objetivo son obligatorios' });
+    const missingPhoto = (onboardData.photos?.length || 0) === 0;
+    const missingTrain = (onboardData.trainingTypes?.length || 0) === 0;
+    if (!onboardData.name?.trim() || missingPhoto || missingTrain) {
+      toast.error('Faltan datos', {
+        description: isEditMode
+          ? 'Nombre, foto y al menos un tipo de entrenamiento son obligatorios'
+          : 'Nombre, una foto y un tipo de entrenamiento — listo para entrar',
+      });
       return;
     }
     if ((onboardData.age || 0) < 18) {
@@ -456,10 +464,15 @@ export const OnboardingFlow = ({
       country: onboardData.country || 'Chile',
       lat: onboardData.lat || -33.0153,
       lng: onboardData.lng || -71.5528,
-      bio: onboardData.bio!,
+      bio:
+        onboardData.bio?.trim() ||
+        `Entreno ${(onboardData.trainingTypes || [])[0] || 'cerca de ti'} en ${onboardData.city || 'mi zona'}.`,
       photos: finalPhotos,
       trainingTypes: onboardData.trainingTypes!,
-      goals: onboardData.goals || [],
+      goals:
+        (onboardData.goals?.length || 0) > 0
+          ? onboardData.goals!
+          : ['Socializar y motivación'],
       level: onboardData.level!,
       intensity: onboardData.intensity || 'Moderado',
       availability: (onboardData.availability || []).length ? onboardData.availability : ['Tarde'],
@@ -564,11 +577,10 @@ export const OnboardingFlow = ({
           <div className="flex items-center justify-between text-xs mb-2 px-1">
             <div className="font-mono text-[#FF671F] tracking-[2px]">{isEditMode ? 'EDIT' : 'PASO'} {onboardingStep + 1} / {totalSteps} • {Math.round((onboardingStep + 1) / totalSteps * 100)}%</div>
             <div className="text-[#9CA3AF] text-[10px] font-medium">
-              {showIntroStep && 'QUÉ ES ENTRENAMATCH'}
-              {isPresenceStep && (isEditMode ? 'TU PERFIL' : 'CREA TU PERFIL')}
-              {isEssenceStep && 'TU ENTRENO Y OBJETIVO'}
+              {isPresenceStep && (isEditMode ? 'TU PERFIL' : 'FOTO Y CIUDAD')}
+              {isEssenceStep && (isEditMode ? 'TU ENTRENO Y OBJETIVO' : 'TU ENTRENO')}
               {isPulseStep && '¿ENTRENAR EN VIVO?'}
-              {isConsentsStep && (isEditMode ? 'GUARDAR CAMBIOS' : 'LISTO • ENTRAR A LA RED')}
+              {isConsentsStep && (isEditMode ? 'GUARDAR CAMBIOS' : 'LISTO • ENTRAR')}
             </div>
           </div>
           <div className="h-1.5 bg-[#1C1C20] rounded-full overflow-hidden flex">
@@ -581,7 +593,7 @@ export const OnboardingFlow = ({
           </div>
           <div className="flex justify-between text-[8px] text-[#9CA3AF]/60 mt-1 px-0.5 font-mono tracking-widest">
             {(!isEditMode
-              ? (['INICIO', 'PERFIL', 'ENTRENO', 'EN VIVO', 'ENTRAR'] as const)
+              ? (['PERFIL', 'ENTRENO', 'ENTRAR'] as const)
               : (['PERFIL', 'ENTRENO', 'EN VIVO', 'ENTRAR'] as const)
             ).map((label) => (
               <div key={label}>{label}</div>
@@ -734,8 +746,8 @@ export const OnboardingFlow = ({
               )}
             </div>
 
-            {/* Bio */}
-            {(() => {
+            {/* Bio — solo en edición de perfil (MVP create omite este paso) */}
+            {isEditMode && (() => {
               const bioLen = (onboardData.bio || '').length
               const bioProgress = Math.min(100, Math.round((bioLen / BIO_MAX) * 100))
               const bioSweetSpot = bioLen >= 48 && bioLen <= 130
@@ -831,7 +843,9 @@ export const OnboardingFlow = ({
         {isEssenceStep && (
           <div className="space-y-7">
             <div>
-              <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1.5">TU ENTRENO • ELIGE TUS DEPORTES (1-3)</div>
+              <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1.5">
+                {isEditMode ? 'TU ENTRENO • ELIGE TUS DEPORTES (1-3)' : 'ELIGE UN TIPO DE ENTRENO'}
+              </div>
               <div className="grid grid-cols-2 gap-2">
                 {TRAINING_OPTIONS.map((type: string) => {
                   const selected = (onboardData.trainingTypes || []).includes(type);
@@ -854,6 +868,7 @@ export const OnboardingFlow = ({
               </div>
             </div>
 
+            {isEditMode && (
             <div>
               <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1.5">TU PROPÓSITO EN EL CÍRCULO (ELIGE EL PRINCIPAL)</div>
               <div className="grid grid-cols-1 gap-2">
@@ -872,6 +887,12 @@ export const OnboardingFlow = ({
               </div>
               <div className="text-[9px] text-[#9CA3AF] mt-1.5">Esto mejora tus matches, el mapa en vivo y los retos diarios que importan.</div>
             </div>
+            )}
+            {!isEditMode && (
+              <p className="text-[10px] text-[#9CA3AF] leading-snug">
+                Con un tipo de entreno basta para empezar. Podrás afinar bio y objetivos después en Perfil.
+              </p>
+            )}
           </div>
         )}
 
@@ -956,7 +977,7 @@ export const OnboardingFlow = ({
           </div>
         )}
 
-        {/* PASO ENTRAR — confirmaciones */}
+        {/* PASO ENTRAR — confirmaciones (+ LIVE opcional en create) */}
         {isConsentsStep && (
           <div className="space-y-5">
             <div className="text-center">
@@ -966,6 +987,32 @@ export const OnboardingFlow = ({
                 Marca las 3 casillas. Son los requisitos básicos para usar la {BRAND_COPY.community}.
               </div>
             </div>
+
+            {!isEditMode && (
+              <div className="rounded-2xl border border-[#22c55e]/35 bg-[#0a120f] p-4">
+                <p className="text-[10px] uppercase tracking-wider text-[#22c55e] font-bold mb-2">
+                  Opcional · {BRAND_COPY.liveMapLabel}
+                </p>
+                <p className="text-[11px] text-[#9CA3AF] mb-3 leading-snug">
+                  {BRAND_COPY.liveMap.emptyBody}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !onboardData.wantsToGoLive
+                    updateOnboard({ wantsToGoLive: next })
+                    try { triggerHaptic(next ? 'success' : 'light') } catch {}
+                  }}
+                  className={`w-full py-3 rounded-xl text-sm font-black tracking-wide transition active:scale-[0.985] ${
+                    onboardData.wantsToGoLive
+                      ? 'bg-[#22c55e] text-black'
+                      : 'border-2 border-[#22c55e] text-[#22c55e]'
+                  }`}
+                >
+                  {onboardData.wantsToGoLive ? '✓ LIVE al entrar' : BRAND_COPY.liveMap.activateLive}
+                </button>
+              </div>
+            )}
 
             {[
               {
@@ -1060,8 +1107,13 @@ export const OnboardingFlow = ({
             </button>
           )}
 
-          {isEssenceStep && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0) && (
-            <p className="text-center text-[9px] text-[#ef4444] font-medium tracking-wider">ELIGE AL MENOS UN TIPO DE ENTRENO Y UN OBJETIVO PRINCIPAL</p>
+          {isEssenceStep && (onboardData.trainingTypes || []).length === 0 && (
+            <p className="text-center text-[9px] text-[#ef4444] font-medium tracking-wider">
+              {isEditMode ? 'ELIGE AL MENOS UN TIPO DE ENTRENO Y UN OBJETIVO' : 'ELIGE UN TIPO DE ENTRENO'}
+            </p>
+          )}
+          {isEssenceStep && isEditMode && (onboardData.goals || []).length === 0 && (
+            <p className="text-center text-[9px] text-[#ef4444] font-medium tracking-wider">ELIGE UN OBJETIVO PRINCIPAL</p>
           )}
 
           {isConsentsStep && !Object.values(localConsents).every(Boolean) && (
@@ -1074,14 +1126,16 @@ export const OnboardingFlow = ({
             onClick={nextOnboarding} 
             className="w-full py-4 text-base font-black tracking-[1.5px] rounded-3xl btn-primary active:scale-[0.985] bg-gradient-to-r from-[#FF671F] to-[#E55A1A] touch-manipulation disabled:opacity-45 disabled:pointer-events-none"
             disabled={
-              (isEssenceStep && ((onboardData.trainingTypes || []).length === 0 || (onboardData.goals || []).length === 0)) ||
+              (isEssenceStep &&
+                ((onboardData.trainingTypes || []).length === 0 ||
+                  (isEditMode && (onboardData.goals || []).length === 0))) ||
               (isConsentsStep && !Object.values(localConsents).every(Boolean))
             }
           >
             {onboardingStep < lastStep ? 'CONTINUAR →' : isEditMode ? 'GUARDAR CAMBIOS' : '¡ENTRAR A ENTRENAMATCH!'}
           </button>
           <div className="text-center text-[8px] text-[#9CA3AF] tracking-[1px]">
-            {isEditMode ? 'GUARDA CAMBIOS AL TERMINAR' : 'TU PERFIL EN LA RED • PRIMER LIVE EN <90s'}
+            {isEditMode ? 'GUARDA CAMBIOS AL TERMINAR' : '3 PASOS • ENTRA A TU COMUNIDAD'}
           </div>
           {!isEditMode && onExitToLogin && (
             <button

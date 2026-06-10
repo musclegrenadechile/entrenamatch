@@ -4,6 +4,14 @@ import { getDistanceKm } from '../utils'
 
 export const WEEKLY_CITY_CHALLENGE_TARGET_MINUTES = 500
 
+/** Fase 121 — meta escalada mientras la Comunidad crece (piloto baja densidad). */
+export function scaledCityChallengeTarget(participants: number): number {
+  if (participants < 5) return 60
+  if (participants < 15) return 150
+  if (participants < 30) return 300
+  return WEEKLY_CITY_CHALLENGE_TARGET_MINUTES
+}
+
 export function normalizeCity(city?: string | null): string {
   if (!city?.trim()) return ''
   return city
@@ -176,7 +184,7 @@ export function buildCityChallenge(
     }
   }
 
-  const target = WEEKLY_CITY_CHALLENGE_TARGET_MINUTES
+  const target = scaledCityChallengeTarget(participants)
   const progressPct = Math.min(100, Math.round((totalMinutes / target) * 100))
 
   return {

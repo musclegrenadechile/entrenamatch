@@ -55,6 +55,9 @@ export interface LivePresenceWritePayload {
   liveMotionIdle?: boolean
   liveActivityState?: 'active' | 'idle' | 'unknown'
   verificationStatus?: 'unverified' | 'pending' | 'verified'
+  spotifyShareLive?: boolean
+  spotifyNowPlaying?: Record<string, unknown> | null
+  gymSoundAnthem?: Record<string, unknown> | null
 }
 
 /** Write / refresh presence doc when user goes live. */
@@ -157,7 +160,33 @@ export function buildLivePresencePayload(
     liveMotionIdle: user.liveMotionIdle,
     liveActivityState: user.liveActivityState,
     verificationStatus: user.verificationStatus,
+    spotifyShareLive: user.spotifyShareLive === true,
+    spotifyNowPlaying:
+      user.spotifyShareLive && user.spotifyNowPlaying ? user.spotifyNowPlaying : null,
+    gymSoundAnthem:
+      user.spotifyShareLive && user.gymSoundAnthem ? user.gymSoundAnthem : null,
   }
+}
+
+/** Patch GymSound fields on livePresence while user stays LIVE (map + sheet). */
+export async function patchLivePresenceGymSound(
+  db: Firestore,
+  userId: string,
+  gymSound: Pick<
+    LivePresenceWritePayload,
+    'spotifyShareLive' | 'spotifyNowPlaying' | 'gymSoundAnthem'
+  >,
+  sanitize: (obj: unknown) => unknown
+): Promise<void> {
+  const ref = doc(db, 'livePresence', userId)
+  await setDoc(
+    ref,
+    sanitize({
+      ...gymSound,
+      updatedAt: serverTimestamp(),
+    }),
+    { merge: true }
+  )
 }
 
 /** Lightweight motion-only patch while staying LIVE (fase B). */

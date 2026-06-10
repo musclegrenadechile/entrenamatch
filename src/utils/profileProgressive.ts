@@ -15,7 +15,7 @@ export function isProfileProgressiveMode(user: Parameters<typeof getAccountAgeDa
   return getAccountAgeDays(user) < PROFILE_PROGRESSIVE_DAYS
 }
 
-/** Tab Hoy día 1 — solo loop piloto + derby + live. */
+/** Tab Hoy día 1 — plan semanal y meta ocultos; Fuel AI siempre visible. */
 export function isHomeDayOneMode(user: Parameters<typeof getAccountAgeDays>[0]): boolean {
   return getAccountAgeDays(user) < 1
 }

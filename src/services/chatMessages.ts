@@ -14,6 +14,8 @@ export interface DirectChatMsg {
   voiceUrl?: string
   voiceDuration?: number
   photoUrl?: string
+  workoutId?: string
+  workoutPreview?: import('../types').WorkoutPreview
   read?: boolean
   readAt?: number
   /** Client-generated id written to Firestore for fast optimistic ↔ server matching */
@@ -37,6 +39,8 @@ export function docToDirectChatMsg(
     voiceUrl: data.voiceUrl as string | undefined,
     voiceDuration: data.voiceDuration as number | undefined,
     photoUrl: data.photoUrl as string | undefined,
+    workoutId: data.workoutId as string | undefined,
+    workoutPreview: data.workoutPreview as DirectChatMsg['workoutPreview'],
     read: data.read === true,
     readAt: Number.isFinite(readAt) ? readAt : undefined,
     clientId: typeof data.clientId === 'string' ? data.clientId : undefined,

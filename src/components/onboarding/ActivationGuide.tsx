@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import { ArrowRight, MapPin, Radio, RefreshCw, Share2, Users, X } from 'lucide-react'
+import { BRAND_COPY } from '../../constants/brandCopy'
 
 export interface ActivationGuideProps {
   open: boolean
@@ -13,27 +14,27 @@ export interface ActivationGuideProps {
   onShareInvite?: () => void
 }
 
-/** Fase 101 — una sola guía, máximo 3 pasos. */
+/** Fase 121 — guía única post-registro (sin tour duplicado). */
 const STEPS = [
   {
     id: 'live' as const,
     icon: Radio,
-    title: '1. Activa LIVE',
-    desc: 'Al entrenar, enciende live. Apareces en el mapa y sumas minutos a tu zona.',
-    demoDesc: 'Prueba live en modo demo — visible solo en este dispositivo.',
+    title: BRAND_COPY.activation.stepLive,
+    desc: BRAND_COPY.activation.stepLiveDesc,
+    demoDesc: 'Prueba LIVE en modo demo — visible solo en este dispositivo.',
   },
   {
     id: 'explore' as const,
     icon: Users,
-    title: '2. Arma tu equipo',
-    desc: 'Explora partners compatibles e invita a alguien de tu gym al piloto.',
+    title: BRAND_COPY.activation.stepExplore,
+    desc: BRAND_COPY.activation.stepExploreDesc,
     demoDesc: 'Explora perfiles demo y simula un match.',
   },
   {
     id: 'sync' as const,
     icon: RefreshCw,
-    title: '3. EntrenaSync en el mapa',
-    desc: 'Sincroniza con un match en el mapa LIVE — tus minutos suman al derby Valparaíso vs Santiago.',
+    title: BRAND_COPY.activation.stepSync,
+    desc: BRAND_COPY.activation.stepSyncDesc,
     demoDesc: 'Prueba EntrenaSync con perfiles demo.',
   },
 ]
@@ -64,12 +65,10 @@ export function ActivationGuide({
         <button type="button" className="post-register-guide__close" onClick={onClose} aria-label="Cerrar">
           <X size={18} />
         </button>
-        <p className="post-register-guide__kicker">Bienvenido a EntrenaMatch</p>
-        <h2 className="post-register-guide__title">Tu rutina en 3 pasos</h2>
+        <p className="post-register-guide__kicker">{BRAND_COPY.activation.kicker}</p>
+        <h2 className="post-register-guide__title">{BRAND_COPY.activation.title}</h2>
         <p className="text-[11px] text-[#9CA3AF] mb-3 pr-6">
-          {isDemoMode
-            ? 'Modo prueba: mismos pasos que una cuenta real, con datos locales.'
-            : 'Beta cerrada Viña × Santiago. Live → Equipo → Derby regional.'}
+          {isDemoMode ? BRAND_COPY.activation.subtitleDemo : BRAND_COPY.activation.subtitle}
         </p>
         <div className="post-register-guide__steps">
           {STEPS.map((s) => {
@@ -102,7 +101,7 @@ export function ActivationGuide({
                         onClick={onShareInvite}
                       >
                         <Share2 size={10} className="inline -mt-0.5 mr-0.5" aria-hidden />
-                        Invitar gym
+                        {BRAND_COPY.explore.inviteTitle}
                       </button>
                     )}
                   </div>

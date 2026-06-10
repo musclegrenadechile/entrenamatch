@@ -3,3 +3,7 @@ export type { EntrenoDeHoyModalProps, EntrenaLogModalProps } from './EntrenaLogM
 export { WorkoutPostCard } from './WorkoutPostCard'
 export { WorkoutReactionBar } from './WorkoutReactionBar'
 export { EntrenoDeHoyWeekSummary } from './EntrenoDeHoyWeekSummary'
+export { WorkoutDraftResumeBanner } from './WorkoutDraftResumeBanner'
+export { WorkoutSessionFab } from './WorkoutSessionFab'
+export { GymRestTimer } from './GymRestTimer'
+export type { GymRestTimerRef } from './GymRestTimer'

@@ -15,6 +15,9 @@ import { estimateSyncSessionBurn } from '../../domain/fuelBalance'
 import { SyncWorkoutCompareStrip } from '../workout/SyncWorkoutCompareStrip'
 import type { SyncWorkoutCompare } from '../../utils/workoutSyncCompare'
 import { winnerLabel, type ProfileGender } from '../../utils/genderedCopy'
+import { BRAND_COPY } from '../../constants/brandCopy'
+import { recordPilotDensityEvent } from '../../services/pilotDensityMetrics'
+import type { Firestore } from 'firebase/firestore'
 
 export interface SyncDuelSummaryProps {
   open: boolean
@@ -46,6 +49,9 @@ export interface SyncDuelSummaryProps {
   onShareOptOutChange?: (optOut: boolean) => void
   shareInviteUrl?: string
   publishingFeed?: boolean
+  db?: Firestore | null
+  userCity?: string | null
+  isDemoMode?: boolean
   fuelBurnKcal?: number
   weightKg?: number
   workoutCompare?: SyncWorkoutCompare | null
@@ -81,6 +87,9 @@ export function SyncDuelSummary({
   onShareOptOutChange,
   shareInviteUrl,
   publishingFeed = false,
+  db = null,
+  userCity = null,
+  isDemoMode = false,
   fuelBurnKcal = 0,
   weightKg = 75,
   workoutCompare = null,
@@ -96,6 +105,29 @@ export function SyncDuelSummary({
     setShareToFeed(!opt)
     publishedRef.current = false
   }, [open, partnerId])
+
+  useEffect(() => {
+    if (!open || minutes < 3) return
+    const dayKey = new Date().toISOString().slice(0, 10)
+    const promptKey = `entrenamatch_sync_story_prompt_${partnerId}_${dayKey}`
+    try {
+      if (sessionStorage.getItem(promptKey) === '1') return
+      sessionStorage.setItem(promptKey, '1')
+    } catch {
+      /* ignore */
+    }
+    const t = window.setTimeout(() => {
+      toast(BRAND_COPY.syncStory.promptTitle, {
+        description: BRAND_COPY.syncStory.promptBody,
+        duration: 8000,
+        action: {
+          label: 'Story',
+          onClick: () => void shareStory(),
+        },
+      })
+    }, 600)
+    return () => window.clearTimeout(t)
+  }, [open, minutes, partnerId])
 
   if (!open) return null
 
@@ -161,8 +193,13 @@ export function SyncDuelSummary({
       witnessCount,
       isNetworkBond,
     })
-    if (outcome === 'downloaded') {
+    if (outcome === 'downloaded' || outcome === 'shared') {
       toast.success('Imagen guardada — compártela desde tu galería')
+      void recordPilotDensityEvent(db, {
+        city: userCity,
+        kind: 'sync_story_shared',
+        isDemoMode,
+      })
     } else if (outcome === 'failed') {
       toast.error('No se pudo generar la story')
     }
@@ -396,9 +433,9 @@ export function SyncDuelSummary({
           <button
             type="button"
             onClick={() => void shareStory()}
-            className="sync-duel-card__btn sync-duel-card__btn--ghost"
+            className="sync-duel-card__btn sync-duel-card__btn--primary"
           >
-            📱 Compartir story
+            📱 {BRAND_COPY.syncStory.cta}
           </button>
           {onInviteSquad && (
             <button

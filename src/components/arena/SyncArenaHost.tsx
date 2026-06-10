@@ -1,5 +1,7 @@
 import type { RefObject } from 'react'
+import { useMemo } from 'react'
 import { getDistanceKm } from '../../utils'
+import { buildGymSoundSyncMatch } from '../../services/gymSoundSyncMatch'
 import { countLoggedSets } from '../../utils/arenaWorkoutLog'
 import type { SyncWorkoutLogState } from '../../utils/arenaWorkoutLog'
 import type { CurrentUser, Profile, Tab } from '../../types'
@@ -108,6 +110,20 @@ export function SyncArenaHost(props: SyncArenaHostProps) {
     return p ? { id, name: p.name, photo: p.photos?.[0] } : { id, name: 'Atleta' }
   })
 
+  const gymSoundSyncMatch = useMemo(
+    () => buildGymSoundSyncMatch(currentUser, partner),
+    [
+      currentUser?.spotifyNowPlaying,
+      currentUser?.gymSoundAnthem,
+      currentUser?.spotifyShareLive,
+      currentUser?.trainingNow,
+      partner?.spotifyNowPlaying,
+      partner?.gymSoundAnthem,
+      partner?.spotifyShareLive,
+      partner?.trainingNow,
+    ]
+  )
+
   return (
     <>
       <input
@@ -165,6 +181,7 @@ export function SyncArenaHost(props: SyncArenaHostProps) {
           restStartedBy={syncRestStartedBy}
           weeklyPactProgress={homeWeeklyPactProgress}
           isRecordingVoice={isArenaVoiceRecording}
+          gymSoundSyncMatch={gymSoundSyncMatch}
           onSyncAction={onSyncAction}
           onCapturePhoto={onCapturePhoto}
           onVoicePing={onVoicePing}

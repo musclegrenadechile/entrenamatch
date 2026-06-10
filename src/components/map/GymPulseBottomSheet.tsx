@@ -2,7 +2,12 @@ import { useMemo, useState } from 'react'
 import { ChevronUp, MapPin, Star, Zap } from 'lucide-react'
 import { formatLiveDistanceKm } from '../../utils/formatLiveDistance'
 import { sortLiveUsersForSheet, type LiveUserLike } from '../../utils/gymPulseLive'
+import { getPublicGymSound } from '../../services/gymSound'
 import { VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto'
+import { NowPlayingBadge } from '../music/NowPlayingBadge'
+import { GymSoundReactionBar } from '../music/GymSoundReactionBar'
+import type { SyncRipple } from '../../services/gymSoundReactions'
+import type { GymSoundDisplay } from '../../types'
 
 export interface GymPulseBottomSheetProps {
   liveUsers: LiveUserLike[]
@@ -14,6 +19,10 @@ export interface GymPulseBottomSheetProps {
   onShowProfile: (user: LiveUserLike) => void
   onStartSync: (userId: string, userName: string) => void
   onFlyToUser?: (lat: number, lng: number) => void
+  selfName?: string
+  selfNowPlaying?: GymSoundDisplay | null
+  setSyncRipples?: (updater: SyncRipple[] | ((prev: SyncRipple[]) => SyncRipple[])) => void
+  onHaptic?: () => void
 }
 
 export function GymPulseBottomSheet({
@@ -26,6 +35,10 @@ export function GymPulseBottomSheet({
   onShowProfile,
   onStartSync,
   onFlyToUser,
+  selfName,
+  selfNowPlaying,
+  setSyncRipples,
+  onHaptic,
 }: GymPulseBottomSheetProps) {
   const [collapsed, setCollapsed] = useState(!expanded)
 
@@ -61,6 +74,12 @@ export function GymPulseBottomSheet({
             const inNet = !!syncBonds[u.id]
             const minsLive = Math.max(0, Math.floor((Date.now() - (u.trainingNowSince || Date.now())) / 60000))
             const distLabel = formatLiveDistanceKm(u.distance)
+            const gymSound = getPublicGymSound({
+              trainingNow: true,
+              spotifyShareLive: u.spotifyShareLive === true,
+              spotifyNowPlaying: u.spotifyNowPlaying,
+              gymSoundAnthem: u.gymSoundAnthem,
+            })
             return (
               <li key={u.id} className="gym-pulse-bottom-sheet__row">
                 <button
@@ -111,6 +130,31 @@ export function GymPulseBottomSheet({
                         <span className="gym-pulse-bottom-sheet__urgent"> · ~{u.seVaEnMin}m restantes</span>
                       )}
                     </div>
+                    {gymSound && (
+                      <>
+                        <NowPlayingBadge
+                          nowPlaying={gymSound}
+                          size="sm"
+                          className="gym-pulse-bottom-sheet__music"
+                        />
+                        {u.id !== selfUserId && (
+                          <GymSoundReactionBar
+                            compact
+                            target={{
+                              userId: u.id,
+                              userName: u.name || 'Atleta',
+                              lat: Number.isFinite(u.lat) ? Number(u.lat) : undefined,
+                              lng: Number.isFinite(u.lng) ? Number(u.lng) : undefined,
+                              nowPlaying: gymSound,
+                            }}
+                            selfName={selfName}
+                            selfNowPlaying={selfNowPlaying}
+                            setSyncRipples={setSyncRipples}
+                            onHaptic={onHaptic}
+                          />
+                        )}
+                      </>
+                    )}
                   </div>
                 </button>
                 <button

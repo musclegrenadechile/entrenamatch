@@ -47,6 +47,12 @@ window.addEventListener('error', (event) => {
   }
 })
 window.addEventListener('unhandledrejection', (event) => {
+  const reasonMsg =
+    event.reason instanceof Error ? event.reason.message : String(event.reason ?? '')
+  if (/PushNotifications.*not implemented on web/i.test(reasonMsg)) {
+    event.preventDefault()
+    return
+  }
   if (isStaleChunkError(event.reason)) {
     event.preventDefault()
     if (shouldAutoReloadForChunks()) {
@@ -70,7 +76,7 @@ createRoot(mountEl).render(
       <AuthProvider>
         <ProfileProvider>
           <RootApp />
-          <Toaster position="top-center" richColors closeButton />
+          <Toaster position="top-center" richColors closeButton visibleToasts={3} />
         </ProfileProvider>
       </AuthProvider>
     </RootErrorBoundary>

@@ -9,7 +9,12 @@ function lazyTab<T extends Record<string, ComponentType<unknown>>>(
   return lazy(async () => {
     try {
       const mod = await importer()
-      return { default: mod[exportName] }
+      const component = mod?.[exportName]
+      if (!component) {
+        if (reloadForNewBuild()) return new Promise(() => {})
+        throw new Error(`Lazy tab export missing: ${String(exportName)}`)
+      }
+      return { default: component }
     } catch (err) {
       if (isStaleChunkError(err)) reloadForNewBuild()
       throw err

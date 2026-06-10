@@ -1,5 +1,6 @@
 // @ts-nocheck — P1 extract from App.tsx; tighten types incrementally
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
+import { getPublicGymSound } from '../../services/gymSound'
 import { motion } from 'framer-motion'
 import { BRAND_COPY } from '../../constants/brandCopy'
 import { GymPulseMapShell, GymPulseBottomSheet } from '../map'
@@ -39,6 +40,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     mapLiveTrainingNow,
     effectiveUserId,
     syncRipples,
+    setSyncRipples,
     partnerLocations,
     mapPartnerLocations,
     echoPins,
@@ -118,6 +120,11 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     cityActiveCount = 0,
     cityLabel = 'tu zona',
   } = props
+
+  const selfNowPlaying = useMemo(
+    () => (currentUser ? getPublicGymSound(currentUser) ?? null : null),
+    [currentUser?.spotifyNowPlaying, currentUser?.gymSoundAnthem, currentUser?.spotifyShareLive, currentUser?.trainingNow]
+  )
 
   const [showGymPulseTour, setShowGymPulseTour] = useState(false)
   const [mapFullscreen, setMapFullscreen] = useState(() => {
@@ -319,15 +326,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
             </button>
           </div>
         )}
-        {othersLiveCount === 0 && currentUser?.trainingNow && (
-          <div className="absolute top-3 left-3 right-3 z-[600] rounded-2xl bg-[#0a2a1a]/95 border border-[#22c55e]/40 px-3 py-2.5 text-center pointer-events-auto flex flex-col gap-2">
-            <p className="text-[11px] font-semibold text-[#22c55e]">🟢 {BRAND_COPY.liveMap.liveBanner}</p>
-            <p className="text-[9px] text-[#9CA3AF] leading-snug">
-              El botón <strong className="text-white/90">Cerca</strong> abajo cuenta personas a 2 km. Usa{' '}
-              <strong className="text-white/90">Hoy</strong> en la barra inferior para volver a tu día.
-            </p>
-          </div>
-        )}
+        {/* En pestaña Mapa LIVE el estado live va en la tarjeta derby del mapa — evita solapar overlays */}
         <GymPulseMapShell
           fullscreen={useFixedOverlay}
           tabFill={dedicatedMapTab}
@@ -363,6 +362,10 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
               onFlyToUser={(lat, lng) => {
                 try { gymPulseMapRef?.current?.flyTo?.(lat, lng, 15) } catch { /* ignore */ }
               }}
+              selfName={currentUser?.name}
+              selfNowPlaying={selfNowPlaying}
+              setSyncRipples={setSyncRipples}
+              onHaptic={() => { try { triggerHaptic('light') } catch { /* ignore */ } }}
             />
           }
         >
@@ -400,6 +403,12 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
           cityChallenge={cityChallenge}
           cityDerby={cityDerby}
           onCityChallengeCta={onCityChallengeCta}
+          selfName={currentUser?.name}
+          selfNowPlaying={selfNowPlaying}
+          setSyncRipples={setSyncRipples}
+          selfCity={currentUser?.city}
+          inviteReferralCode={effectiveUserId?.slice(0, 8)}
+          onHaptic={() => { try { triggerHaptic('light') } catch { /* ignore */ } }}
 
           // New control callbacks (widget now manages its own filter/legend/dev buttons)
           onMapNearOnlyChange={setMapNearOnly}

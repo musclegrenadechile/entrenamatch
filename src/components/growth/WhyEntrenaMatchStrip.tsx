@@ -16,7 +16,7 @@ export function WhyEntrenaMatchStrip({ compact = false }: { compact?: boolean })
     {
       icon: MessageCircle,
       title: 'EntrenaSync',
-      desc: 'Entrenan juntos con minutos que suman al derby de tu zona.',
+      desc: 'Entrenan juntos con minutos que suman a la Copa Zona de tu región.',
     },
   ]
 

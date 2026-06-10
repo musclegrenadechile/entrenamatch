@@ -51,10 +51,22 @@ import * as MarkerHtml from '../../utils/gymPulseMarkers'
 import * as MapConfig from '../../services/gymPulseMapConfig'
 import * as MapCluster from '../../services/gymPulseCluster'
 import * as LocalNetwork from '../../services/localNetwork'
+import { getPublicGymSound } from '../../services/gymSound'
+import { buildGymVibeSummary } from '../../services/gymSoundVibe'
+import { GymVibeDetail } from '../music/GymVibeDetail'
+import { openCityGymAnthem, resolveCityGymAnthem, resolveDerbyAnthem } from '../../services/cityGymAnthems'
+import type { SyncRipple } from '../../services/gymSoundReactions'
+import type { GymSoundDisplay } from '../../types'
 import { syncElapsedMinutes } from '../../utils/syncFomo'
 import { markMapGpsPromptResolved, shouldShowMapGpsPrompt } from '../../utils/mapGpsPrompt'
 import { resolveCityZone, resolveDerbyMapZone, cityZonePolygonLatLngs } from '../../services/cityZoneBounds'
-import { DERBY_AWAY, DERBY_HOME, derbyStatusLine, type CityDerbyState } from '../../services/cityDerby'
+import { DERBY_AWAY, DERBY_HOME, type CityDerbyState } from '../../services/cityDerby'
+import {
+  getZoneEventCountdown,
+  getZoneEventPhase,
+  isZoneScoringActive,
+  zoneEventStatusLine,
+} from '../../services/zoneEventPhase'
 import { loadMapView, saveMapView } from '../../utils/mapViewCache'
 
 export type CityChallengeMapInfo = {
@@ -136,6 +148,13 @@ export interface GymPulseMapProps {
   onCityChallengeCta?: () => void
   /** Derby Valparaíso vs Metropolitana — dual regional zone overlay */
   cityDerby?: CityDerbyState | null
+  selfName?: string
+  selfNowPlaying?: GymSoundDisplay | null
+  setSyncRipples?: (updater: SyncRipple[] | ((prev: SyncRipple[]) => SyncRipple[])) => void
+  onHaptic?: () => void
+  selfCity?: string | null
+  /** Fase 121 — QR invitación en partner gyms */
+  inviteReferralCode?: string
 }
 
 export interface GymPulseMapHandle {
@@ -233,9 +252,16 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     cityChallenge = null,
     onCityChallengeCta,
     cityDerby = null,
+    selfName,
+    selfNowPlaying,
+    setSyncRipples,
+    onHaptic,
+    selfCity,
+    inviteReferralCode,
   } = props
 
   const [mapPopup, setMapPopup] = useState<GymPulsePopupState | null>(null)
+  const [gymVibeOpen, setGymVibeOpen] = useState(false)
   const [devToolsOpen, setDevToolsOpen] = useState(false)
   const [radarSweep, setRadarSweep] = useState(false)
   const [gpsBannerDismissed, setGpsBannerDismissed] = useState(false)
@@ -719,7 +745,20 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         const hasPulso = (u.visibleLevel || 1) >= 20
         const isHigh = (u.visibleLevel || 1) >= 15 || u.isNetworkBond
         const size = hasPulso ? 36 : isHigh ? 32 : 28
-        const iconHtml = MarkerHtml.buildIconicLiveMarkerHtml(u, { isBond, size })
+        const gymSound = getPublicGymSound({
+          trainingNow: true,
+          spotifyShareLive: u.spotifyShareLive === true,
+          spotifyNowPlaying: u.spotifyNowPlaying,
+          gymSoundAnthem: u.gymSoundAnthem,
+        })
+        const iconHtml = MarkerHtml.buildIconicLiveMarkerHtml(
+          {
+            ...u,
+            hasGymSound: !!gymSound,
+            gymSoundArtUrl: gymSound?.albumArtUrl,
+          },
+          { isBond, size }
+        )
         const key = MarkerReg.markerPoolKey('live', u.id)
         const icon = L.divIcon({
           html: iconHtml,
@@ -1122,13 +1161,27 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   const selfOnMap = resolveSelfMapPosition(userLocation, liveTrainingNow || [], selfUserId)
   const showGpsBanner = !selfOnMap && !gpsBannerDismissed
 
+  const gymVibe = useMemo(() => {
+    if (!mapMyGymId) return null
+    const name =
+      (liveTrainingNow || []).find((u: any) => u.gymCheckIn?.gymId === mapMyGymId)?.gymCheckIn
+        ?.gymName || null
+    return buildGymVibeSummary(liveTrainingNow || [], mapMyGymId, name)
+  }, [liveTrainingNow, mapMyGymId])
+
+  const cityAnthem = useMemo(() => {
+    const derby = resolveDerbyAnthem(cityDerby?.myTeam ?? null)
+    if (derby) return derby
+    return resolveCityGymAnthem(selfCity)
+  }, [cityDerby?.myTeam, selfCity])
+
   return (
     <div
       className={`relative w-full gym-pulse-map-root ${isEmbedded ? 'gym-pulse-map-root--embedded' : ''} ${isFullHeight ? 'gym-pulse-map-root--fill' : ''}`}
       style={{ zIndex: 10 }}
     >
-      {/* Status pill — fullscreen only (embedded uses shell + filters bar) */}
-      {!isEmbedded && (
+      {/* Status pill — fullscreen overlay; oculto en pestaña Mapa LIVE (ya estás ahí) */}
+      {!isEmbedded && !isTabFill && (
       <button
         type="button"
         aria-label="Ir al pin más activo en el mapa"
@@ -1170,6 +1223,32 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           return activeSyncs > 0 ? <span className="text-[#FFD700] font-bold text-[9px]">• {Math.floor(activeSyncs)} EN SYNC</span> : null
         })()}
       </button>
+      )}
+
+      {gymVibe && (
+        <div className="absolute top-2 right-2 z-[2000] max-w-[min(92vw,300px)]">
+          <GymVibeDetail
+            vibe={gymVibe}
+            expanded={gymVibeOpen}
+            onToggle={() => setGymVibeOpen((o) => !o)}
+          />
+        </div>
+      )}
+
+      {cityAnthem && !gymVibe && (
+        <button
+          type="button"
+          className="city-anthem-pill absolute top-2 right-2 z-[2000] max-w-[min(92vw,280px)] px-3 py-2 rounded-2xl text-[10px] font-semibold text-[#fde68a] shadow-lg border border-[#fbbf24]/35 bg-[#1f1a0a]/95 text-left active:scale-[0.98] transition"
+          aria-label={`Himno de ${cityAnthem.cityLabel}`}
+          onClick={() => void openCityGymAnthem(cityAnthem)}
+        >
+          <span className="text-[#fbbf24] font-black tracking-wide">
+            {cityAnthem.emoji} HIMNO {cityAnthem.cityLabel.toUpperCase()}
+          </span>
+          <span className="block text-white/90 mt-0.5 truncate">
+            {cityAnthem.trackName} · {cityAnthem.artistName}
+          </span>
+        </button>
       )}
 
       {isEmbedded && totalLiveOnMap > 0 && (
@@ -1236,7 +1315,11 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
       {/* Zonas — solo fullscreen; en embebido van al panel de filtros en fase posterior */}
       {!isEmbedded && (
-      <div className={`absolute left-2 z-[2000] flex flex-col gap-1.5 max-h-[40%] overflow-y-auto ${cityDerby || cityChallenge ? 'top-28' : 'top-10'}`}>
+      <div
+        className={`absolute left-2 z-[2000] flex flex-col gap-1.5 max-h-[40%] overflow-y-auto ${
+          cityDerby || cityChallenge ? (selfIsLive && isTabFill ? 'top-32' : 'top-28') : selfIsLive && isTabFill ? 'top-20' : 'top-10'
+        }`}
+      >
         {['Viña del Mar', 'Santiago', 'Valparaíso', 'Concon'].map(city => {
           const col = zoneColors[city] || zoneColors.default
           const isActive = selectedMapZone === city
@@ -1294,11 +1377,55 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         </div>
       )}
 
-      {cityDerby && (
+      {isTabFill && selfIsLive && !cityDerby && !cityChallenge && (
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[2100] max-w-[92%]">
+          <div className="rounded-2xl bg-[#0D0D10] border border-[#22c55e]/40 px-3 py-2 shadow-lg pointer-events-none text-center">
+            <div className="flex items-center justify-center gap-1.5">
+              <span className="inline-block w-2 h-2 rounded-full bg-[#22c55e] animate-pulse shrink-0" />
+              <span className="text-[10px] font-semibold text-[#22c55e]">{BRAND_COPY.liveMap.liveBanner}</span>
+            </div>
+            <p className="text-[9px] text-[#9CA3AF] mt-1 leading-snug">
+              Usa <strong className="text-white/90">Cerca</strong> abajo para ver quién está a 2 km.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {cityDerby && (() => {
+        const zonePhase = getZoneEventPhase()
+        const zoneCountdown = getZoneEventCountdown()
+        const zoneScoring = isZoneScoringActive()
+        const mapCta =
+          zonePhase === 'celebration'
+            ? BRAND_COPY.liveMap.zoneCtaCelebrate
+            : selfIsLive
+              ? BRAND_COPY.liveMap.zoneCtaActive
+              : BRAND_COPY.liveMap.zoneCta
+        const periodLabel =
+          zonePhase === 'war' ? 'esta guerra' : zonePhase === 'celebration' ? 'marcador final' : 'armisticio'
+        const borderClass =
+          zonePhase === 'celebration'
+            ? 'border-[#FFD700]/45'
+            : zonePhase === 'armistice'
+              ? 'border-[#60a5fa]/35'
+              : 'border-[#FF671F]/45'
+        return (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[2100] max-w-[92%] w-full max-w-md">
-          <div className="rounded-2xl bg-[#0D0D10]/94 border border-[#FF671F]/45 px-3 py-2 shadow-lg pointer-events-auto">
-            <div className="text-[9px] uppercase tracking-wider text-[#FF671F] font-bold text-center">
-              Derby · {DERBY_HOME.label} vs {DERBY_AWAY.label}
+          <div className={`rounded-2xl bg-[#0D0D10] border px-3 py-2 shadow-lg pointer-events-auto ${borderClass}`}>
+            {selfIsLive && zoneScoring && (
+              <div className="flex items-center justify-center gap-1.5 mb-1.5 pb-1.5 border-b border-[#22c55e]/20">
+                <span className="inline-block w-2 h-2 rounded-full bg-[#22c55e] animate-pulse shrink-0" />
+                <span className="text-[10px] font-semibold text-[#22c55e]">{BRAND_COPY.liveMap.liveBanner}</span>
+              </div>
+            )}
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <div className="text-[9px] uppercase tracking-wider text-[#FF671F] font-bold">
+                {BRAND_COPY.copaZona.weeklyLabel}
+              </div>
+              <div className="text-[8px] text-[#9CA3AF] tabular-nums">{zoneCountdown.shortLabel}</div>
+            </div>
+            <div className="text-[9px] text-white/80 text-center font-semibold">
+              {DERBY_HOME.label} vs {DERBY_AWAY.label}
             </div>
             <div className="flex justify-between text-[10px] font-black mt-1 tabular-nums">
               <span className="text-[#22c55e]">{cityDerby.home.indexPer100k}</span>
@@ -1307,26 +1434,32 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
             </div>
             <div className="flex justify-between text-[8px] text-white/50 tabular-nums mt-0.5">
               <span>{cityDerby.home.totalMinutes} min</span>
-              <span>esta semana</span>
+              <span>{periodLabel}</span>
               <span>{cityDerby.away.totalMinutes} min</span>
             </div>
             <div className="flex h-1.5 rounded-full overflow-hidden bg-black/50 mt-1">
               <div className="bg-[#22c55e]" style={{ width: `${cityDerby.homeBarPct}%` }} />
               <div className="bg-[#3b82f6]" style={{ width: `${cityDerby.awayBarPct}%` }} />
             </div>
-            <p className="text-[9px] text-white/90 text-center mt-1">{derbyStatusLine(cityDerby)}</p>
-            {onCityChallengeCta && (
+            <p className="text-[9px] text-white/90 text-center mt-1">{zoneEventStatusLine(cityDerby, zonePhase)}</p>
+            {!zoneScoring && (
+              <p className="text-[8px] text-[#FFD700]/80 text-center mt-0.5">{BRAND_COPY.copaZona.frozenHint}</p>
+            )}
+            {onCityChallengeCta && zonePhase !== 'armistice' && (
               <button
                 type="button"
                 onClick={onCityChallengeCta}
-                className="mt-2 w-full py-1.5 rounded-xl bg-[#FF671F] text-black text-[10px] font-black active:brightness-90"
+                className={`mt-2 w-full py-1.5 rounded-xl text-black text-[10px] font-black active:brightness-90 ${
+                  zonePhase === 'celebration' ? 'bg-[#FFD700]' : 'bg-[#FF671F]'
+                }`}
               >
-                {selfIsLive ? BRAND_COPY.liveMap.derbyCtaActive : BRAND_COPY.liveMap.derbyCta}
+                {mapCta}
               </button>
             )}
           </div>
         </div>
-      )}
+        )
+      })()}
 
       {!cityDerby && cityChallenge && cityChallenge.progressPct >= 0 && (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[2100] max-w-[92%]">
@@ -1405,6 +1538,11 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         onPartnerEdit={(id) => onPartnerEdit?.(id)}
         onPartnerDelete={(id) => onPartnerDelete?.(id)}
         onExpandCluster={handleExpandCluster}
+        selfName={selfName}
+        selfNowPlaying={selfNowPlaying}
+        setSyncRipples={setSyncRipples}
+        onHaptic={onHaptic}
+        inviteReferralCode={inviteReferralCode}
       />
     </div>
   )

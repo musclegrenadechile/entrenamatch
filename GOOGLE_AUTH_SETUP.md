@@ -79,6 +79,13 @@ Archivos:
 2. **Continuar con Google**
 3. Browser in-app o redirect → vuelve a la app logueado
 
+### iOS (TestFlight / Xcode)
+
+1. Registrar app iOS en Firebase con bundle `com.entrenamatch.app`
+2. Colocar `GoogleService-Info.plist` en `ios/App/App/`
+3. Agregar URL scheme `REVERSED_CLIENT_ID` en Xcode (ver `IOS_SETUP.md`)
+4. **Continuar con Google** usa el mismo plugin nativo que Android
+
 ### Errores comunes
 
 | Error | Solución |

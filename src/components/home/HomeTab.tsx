@@ -17,6 +17,8 @@ import { PostLiveShareBanner, type PostLiveSession } from './PostLiveShareBanner
 import { WeeklyPactReminderStrip } from './WeeklyPactReminderStrip'
 import { getFeedRankBadges } from '../../utils/feedRanking'
 import { isHomeDayOneMode, shouldHideCoachAndMarketplace } from '../../utils/profileProgressive'
+import { getPublicGymSound } from '../../services/gymSound'
+import { isSpotifyConnected } from '../../services/spotify'
 
 export type HomeSubTab = 'day' | 'feed'
 
@@ -45,6 +47,10 @@ export function HomeTab(props: HomeTabProps) {
     setActiveChat,
     setShowEntrenaLogModal,
     onOpenEntrenoDeHoy,
+    workoutDraftUserId,
+    workoutDraftRefresh,
+    onResumeWorkoutDraft,
+    onDiscardWorkoutDraft,
     entrenoWeekSummary,
     entrenoExerciseHighlights,
     entrenoPactProgress,
@@ -209,7 +215,7 @@ export function HomeTab(props: HomeTabProps) {
           </button>
           <strong className="text-[#FF671F] block mb-1">Dos vistas en Hoy</strong>
           <span className="text-[#9CA3AF]">
-            <strong className="text-white">Mi día</strong> = tu rutina, equipo y metas.{' '}
+            <strong className="text-white">Mi día</strong> = Fuel AI, rutina, equipo y metas.{' '}
             <strong className="text-white">{BRAND_COPY.communityWallTitle}</strong> = posts de tu zona.
           </span>
         </div>
@@ -330,6 +336,10 @@ export function HomeTab(props: HomeTabProps) {
               ? () => setShowEntrenaLogModal(true)
               : undefined
         }
+        workoutDraftUserId={workoutDraftUserId as string | null | undefined}
+        workoutDraftRefresh={workoutDraftRefresh as number | undefined}
+        onResumeWorkoutDraft={onResumeWorkoutDraft as (() => void) | undefined}
+        onDiscardWorkoutDraft={onDiscardWorkoutDraft as (() => void) | undefined}
         entrenoWeekSummary={entrenoWeekSummary}
         entrenoExerciseHighlights={entrenoExerciseHighlights}
         entrenoPactProgress={entrenoPactProgress}
@@ -363,6 +373,16 @@ export function HomeTab(props: HomeTabProps) {
         onImportHealthBurn={onImportHealthBurn}
         healthImportHint={healthImportHint}
         cityLabel={currentUser?.city}
+        gymSoundLive={
+          !!currentUser?.trainingNow &&
+          !!currentUser?.spotifyShareLive &&
+          (!!getPublicGymSound(currentUser) || isSpotifyConnected())
+        }
+        gymSoundNowPlaying={
+          currentUser?.trainingNow && currentUser?.spotifyShareLive
+            ? getPublicGymSound(currentUser) ?? null
+            : null
+        }
         localNetwork={{
           challenge: homeCityChallengeMerged,
           leaderboard: homeLocalLeaderboard,

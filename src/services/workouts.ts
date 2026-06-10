@@ -56,6 +56,21 @@ export function formatVolumeLabel(kg: number): string {
   return `${kg} kg`
 }
 
+export function workoutToPreview(workout: Workout, opts?: { prCount?: number }): WorkoutPreview {
+  const durationMin =
+    workout.stats?.durationMin ??
+    Math.max(1, Math.round(((workout.endedAt || Date.now()) - (workout.startedAt || Date.now())) / 60_000))
+  const stats = workout.stats || computeWorkoutStats(workout.exercises, durationMin)
+  return buildWorkoutPreview(workout.title, workout.type, workout.exercises, stats, opts)
+}
+
+export function workoutShareText(workout: Workout, prSummary?: string): string {
+  const stats =
+    workout.stats ||
+    computeWorkoutStats(workout.exercises, 1)
+  return buildWorkoutPostText(workout.title, workout.type, stats, prSummary)
+}
+
 export function buildWorkoutPreview(
   title: string,
   type: WorkoutType,
@@ -277,6 +292,23 @@ export type SaveSyncWorkoutInput = SaveWorkoutInput & {
   syncSessionId: string
   partnerName: string
   startedAt?: number
+}
+
+/** Elimina el entreno guardado y cualquier publicación del muro que lo referencie. */
+export async function deleteWorkoutWithLinkedPost(
+  db: Firestore,
+  workoutId: string,
+  userId: string
+): Promise<void> {
+  const { doc, deleteDoc, collection, query, where, getDocs } = await import('firebase/firestore')
+  const postsQ = query(collection(db, 'profilePosts'), where('workoutId', '==', workoutId))
+  const postsSnap = await getDocs(postsQ)
+  await Promise.all(
+    postsSnap.docs
+      .filter((d) => d.data().userId === userId)
+      .map((d) => deleteDoc(d.ref))
+  )
+  await deleteDoc(doc(db, 'workouts', workoutId))
 }
 
 /** Shared EntrenaSync workout — one log, post on finisher's muro (Phase 2). */

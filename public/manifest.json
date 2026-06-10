@@ -2,8 +2,8 @@
   "name": "EntrenaMatch - Tu Comunidad en vivo",
   "short_name": "EntrenaMatch",
   "description": "Conecta con personas que entrenan cerca de ti. Gym, running, funcional y más. Solo para mayores de 18 años. Piloto en Chile.",
-  "start_url": "/entrenamatch/",
-  "scope": "/entrenamatch/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0D0D10",
   "theme_color": "#FF671F",
@@ -11,13 +11,13 @@
   "categories": ["health", "fitness", "social"],
   "icons": [
     {
-      "src": "/entrenamatch/favicon.svg",
+      "src": "/favicon.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "/entrenamatch/icons/icon-512.jpg",
+      "src": "/icons/icon-512.jpg",
       "sizes": "192x192 512x512",
       "type": "image/jpeg",
       "purpose": "any maskable"
@@ -28,22 +28,22 @@
       "name": "Tu zona — Hoy",
       "short_name": "Hoy",
       "description": "Tu día, reto de ciudad y ranking local",
-      "url": "/entrenamatch/?tab=home",
-      "icons": [{ "src": "/entrenamatch/favicon.svg", "sizes": "96x96" }]
+      "url": "/?tab=home",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
     },
     {
       "name": "Mapa GymPulse",
       "short_name": "Mapa",
       "description": "Ver quién entrena en vivo cerca",
-      "url": "/entrenamatch/?tab=explore&map=1",
-      "icons": [{ "src": "/entrenamatch/favicon.svg", "sizes": "96x96" }]
+      "url": "/?tab=explore&map=1",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
     },
     {
       "name": "Mis Squads",
       "short_name": "Squads",
       "description": "Grupos fijos y rutina semanal",
-      "url": "/entrenamatch/?tab=squads",
-      "icons": [{ "src": "/entrenamatch/favicon.svg", "sizes": "96x96" }]
+      "url": "/?tab=squads",
+      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
     }
   ]
 }

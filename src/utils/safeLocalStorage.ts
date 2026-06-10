@@ -12,6 +12,14 @@ const PROACTIVE_PRUNE_BYTES = 2.5 * 1024 * 1024
 export const MAX_SEEN_IDS_PER_CHAT = 80
 export const MAX_SEEN_CHAT_THREADS = 40
 export const MAX_SEEN_STRING_IDS = 300
+export const MAX_PERSISTED_RED_SYNC_ENTRIES = 80
+
+export const SEEN_LIVE_USERS_KEY = 'entrenamatch_seen_live_users'
+export const SEEN_LIVE_JOINS_KEY = 'entrenamatch_seen_live_joins'
+export const PREV_RED_SYNC_STATE_KEY = 'entrenamatch_prev_red_sync_state'
+
+/** Skip foreground push/live toasts briefly after cold start (avoids burst on app open). */
+export const SESSION_TOAST_GRACE_MS = 4000
 
 const BULKY_KEYS_TO_EVICT = [
   'entrenamatch_last_live',
@@ -110,6 +118,68 @@ export function pruneSeenIdMap(
 
 export function pruneStringIdList(ids: string[], max = MAX_SEEN_STRING_IDS): string[] {
   return pruneIdArray(ids, max)
+}
+
+/** Load a persisted string-id list into a Set (sync, safe for ref init before effects). */
+export function loadPersistedStringIdSet(key: string): Set<string> {
+  if (typeof localStorage === 'undefined') return new Set()
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return new Set()
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return new Set()
+    return new Set(pruneStringIdList(parsed))
+  } catch {
+    return new Set()
+  }
+}
+
+/** Load per-thread seen message ids (sync, safe for ref init before effects). */
+export function loadPersistedSeenIdMap(key: string): Record<string, Set<string>> {
+  if (typeof localStorage === 'undefined') return {}
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return {}
+    const parsed = pruneSeenIdMap(JSON.parse(raw))
+    const out: Record<string, Set<string>> = {}
+    for (const k of Object.keys(parsed)) {
+      out[k] = new Set(parsed[k])
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+export function loadPersistedRedSyncState(): Record<string, string | null> {
+  if (typeof localStorage === 'undefined') return {}
+  try {
+    const raw = localStorage.getItem(PREV_RED_SYNC_STATE_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as Record<string, unknown>
+    if (!parsed || typeof parsed !== 'object') return {}
+    const keys = Object.keys(parsed).slice(-MAX_PERSISTED_RED_SYNC_ENTRIES)
+    const out: Record<string, string | null> = {}
+    for (const k of keys) {
+      const v = parsed[k]
+      out[k] = typeof v === 'string' ? v : v == null ? null : null
+    }
+    return out
+  } catch {
+    return {}
+  }
+}
+
+export function savePersistedRedSyncState(state: Record<string, string | null>): void {
+  if (typeof localStorage === 'undefined') return
+  try {
+    const keys = Object.keys(state).slice(-MAX_PERSISTED_RED_SYNC_ENTRIES)
+    const trimmed: Record<string, string | null> = {}
+    for (const k of keys) trimmed[k] = state[k] ?? null
+    localStorage.setItem(PREV_RED_SYNC_STATE_KEY, JSON.stringify(trimmed))
+  } catch {
+    reclaimLocalStorageSpace('soft')
+  }
 }
 
 /** Trim in-memory Set by dropping oldest entries (insertion order). */

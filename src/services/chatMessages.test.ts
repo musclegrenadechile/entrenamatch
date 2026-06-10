@@ -2,6 +2,32 @@ import { describe, expect, it } from 'vitest'
 import { applyReadReceiptInference, dedupeWithOptimistic, docToDirectChatMsg } from './chatMessages'
 
 describe('chatMessages', () => {
+  it('docToDirectChatMsg maps workout share payload', () => {
+    const msg = docToDirectChatMsg(
+      {
+        id: 'w1',
+        data: () => ({
+          from: 'u1',
+          to: 'u2',
+          text: '🏋️ Push',
+          timestamp: 1000,
+          workoutId: 'wk1',
+          workoutPreview: {
+            title: 'Push',
+            type: 'push',
+            exerciseCount: 2,
+            totalSets: 6,
+            volumeLabel: '1.2t',
+            durationMin: 45,
+          },
+        }),
+      },
+      'u1'
+    )
+    expect(msg.workoutId).toBe('wk1')
+    expect(msg.workoutPreview?.title).toBe('Push')
+  })
+
   it('docToDirectChatMsg maps read receipts', () => {
     const msg = docToDirectChatMsg(
       {

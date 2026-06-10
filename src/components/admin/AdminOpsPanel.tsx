@@ -15,6 +15,8 @@ import { ORDER_STATUS_LABELS } from '../../services/adminOps'
 import { formatTrainerRate, TRAINER_PLATFORM_FEE_RATE } from '../../services/trainerCoach'
 import type { AdminMetrics } from '../../services/adminAnalytics'
 import type { MpHealthResult } from '../../services/adminMp'
+import { PilotMetricsPanel } from './PilotMetricsPanel'
+import type { Firestore } from 'firebase/firestore'
 
 export interface AdminOpsPanelProps {
   open: boolean
@@ -27,6 +29,8 @@ export interface AdminOpsPanelProps {
   onMarkTrainerPayout?: (bookingId: string, status: 'processing' | 'paid') => Promise<void>
   mpHealth?: MpHealthResult | null
   metrics?: AdminMetrics
+  db?: Firestore | null
+  liveNowTotal?: number
 }
 
 export function AdminOpsPanel({
@@ -40,10 +44,12 @@ export function AdminOpsPanel({
   onMarkTrainerPayout,
   mpHealth,
   metrics,
+  db = null,
+  liveNowTotal = 0,
 }: AdminOpsPanelProps) {
-  const [tab, setTab] = useState<'orders' | 'trainers' | 'revenue' | 'analytics' | 'mp' | 'payouts'>(
-    'orders'
-  )
+  const [tab, setTab] = useState<
+    'orders' | 'trainers' | 'revenue' | 'analytics' | 'pilot' | 'mp' | 'payouts'
+  >('orders')
   const [orderFilter, setOrderFilter] = useState<MarketplaceOrder['status'] | 'all'>('all')
   const [busy, setBusy] = useState<string | null>(null)
 
@@ -154,6 +160,13 @@ export function AdminOpsPanel({
           onClick={() => setTab('analytics')}
         >
           📊 Analytics
+        </button>
+        <button
+          type="button"
+          className={tab === 'pilot' ? 'admin-ops__tab--active' : 'admin-ops__tab'}
+          onClick={() => setTab('pilot')}
+        >
+          🏋️ Piloto
         </button>
         <button
           type="button"
@@ -342,6 +355,8 @@ export function AdminOpsPanel({
             </article>
           </div>
         )}
+
+        {tab === 'pilot' && <PilotMetricsPanel db={db} liveNowTotal={liveNowTotal} />}
 
         {tab === 'mp' && (
           <div className="admin-ops__mp">

@@ -649,6 +649,37 @@ service cloud.firestore {
         && request.resource.data.totalSyncMinutes <= resource.data.totalSyncMinutes + 480;
     }
 
+    // Fase 121 — densidad piloto (invites, QR, stories, Sync Hour)
+    match /pilotDensityWeekly/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated()
+        && request.resource.data.weekKey is string
+        && request.resource.data.cityNorm is string
+        && request.resource.data.invitesShared is number
+        && request.resource.data.gymQrOpens is number
+        && request.resource.data.syncStoriesShared is number
+        && request.resource.data.syncHourClicks is number
+        && request.resource.data.invitesShared <= 1
+        && request.resource.data.gymQrOpens <= 1
+        && request.resource.data.syncStoriesShared <= 1
+        && request.resource.data.syncHourClicks <= 1;
+      allow update: if isAuthenticated()
+        && request.resource.data.weekKey == resource.data.weekKey
+        && request.resource.data.cityNorm == resource.data.cityNorm
+        && request.resource.data.invitesShared is number
+        && request.resource.data.gymQrOpens is number
+        && request.resource.data.syncStoriesShared is number
+        && request.resource.data.syncHourClicks is number
+        && request.resource.data.invitesShared >= resource.data.invitesShared
+        && request.resource.data.invitesShared <= resource.data.invitesShared + 1
+        && request.resource.data.gymQrOpens >= resource.data.gymQrOpens
+        && request.resource.data.gymQrOpens <= resource.data.gymQrOpens + 1
+        && request.resource.data.syncStoriesShared >= resource.data.syncStoriesShared
+        && request.resource.data.syncStoriesShared <= resource.data.syncStoriesShared + 1
+        && request.resource.data.syncHourClicks >= resource.data.syncHourClicks
+        && request.resource.data.syncHourClicks <= resource.data.syncHourClicks + 1;
+    }
+
     // Post-sync share funnel (offer / publish / skip / opt-out)
     match /syncShareWeekly/{docId} {
       allow read: if isAuthenticated();

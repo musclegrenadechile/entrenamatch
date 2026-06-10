@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { MapPin, Share2, Users } from 'lucide-react'
+import { MapPin, Share2, Users, RefreshCw, Activity } from 'lucide-react'
 import { toast } from 'sonner'
 import {
   isOpenPilotCity,
@@ -14,6 +14,17 @@ import {
 } from '../../services/pilotCohort'
 import { normalizeCity } from '../../services/localNetwork'
 import type { Firestore } from 'firebase/firestore'
+import { getWeekKey } from '../../utils/weekLiveTracker'
+import {
+  attachPilotDensityListener,
+  computePilotDensityHealth,
+  recordPilotDensityEvent,
+  type PilotDensityWeeklyDoc,
+} from '../../services/pilotDensityMetrics'
+import {
+  attachPilotWeeklyMetricsListener,
+  type PilotWeeklyMetricsDoc,
+} from '../../services/pilotSyncMetrics'
 
 export interface PilotProgramStripProps {
   cityLabel?: string
@@ -21,6 +32,7 @@ export interface PilotProgramStripProps {
   isDemoMode?: boolean
   inviteLink?: string
   onOpenMap?: () => void
+  liveCount?: number
 }
 
 export function PilotProgramStrip({
@@ -29,18 +41,40 @@ export function PilotProgramStrip({
   isDemoMode,
   inviteLink,
   onOpenMap,
+  liveCount = 0,
 }: PilotProgramStripProps) {
   const [cohort, setCohort] = useState<PilotCohortDoc | null>(null)
+  const [weeklySync, setWeeklySync] = useState<PilotWeeklyMetricsDoc | null>(null)
+  const [density, setDensity] = useState<PilotDensityWeeklyDoc | null>(null)
   const cityNorm = normalizeCity(cityLabel)
+  const weekKey = getWeekKey()
 
   useEffect(() => {
     if (!db || !cityNorm || !isOpenPilotCity(cityLabel)) return
-    return attachPilotCohortListener(db, cityNorm, setCohort)
-  }, [db, cityNorm, cityLabel])
+    const u1 = attachPilotCohortListener(db, cityNorm, setCohort)
+    const u2 = attachPilotWeeklyMetricsListener(db, cityNorm, weekKey, setWeeklySync)
+    const u3 = attachPilotDensityListener(db, cityNorm, weekKey, setDensity)
+    return () => {
+      u1()
+      u2()
+      u3()
+    }
+  }, [db, cityNorm, cityLabel, weekKey])
 
   const progress = useMemo(
     () => pilotCohortProgress(cohort?.memberCount ?? 0),
     [cohort?.memberCount]
+  )
+
+  const health = useMemo(
+    () =>
+      computePilotDensityHealth({
+        memberCount: cohort?.memberCount ?? 0,
+        weeklySyncs: weeklySync?.realSyncCount ?? 0,
+        weeklyInvites: density?.invitesShared ?? 0,
+        liveNow: liveCount,
+      }),
+    [cohort?.memberCount, weeklySync?.realSyncCount, density?.invitesShared, liveCount]
   )
 
   if (!isOpenPilotCity(cityLabel)) return null
@@ -54,10 +88,15 @@ export function PilotProgramStrip({
     try {
       if (navigator.share) {
         await navigator.share({ title: 'EntrenaMatch Piloto', text, url })
-        return
+      } else {
+        await navigator.clipboard.writeText(`${text}\n${url}`)
+        toast.success('Invitación copiada')
       }
-      await navigator.clipboard.writeText(`${text}\n${url}`)
-      toast.success('Invitación copiada')
+      void recordPilotDensityEvent(db, {
+        city: cityLabel,
+        kind: 'invite_shared',
+        isDemoMode,
+      })
     } catch {
       toast.error('No se pudo compartir')
     }
@@ -90,6 +129,41 @@ export function PilotProgramStrip({
           style={{ width: `${progress.pct}%` }}
         />
       </div>
+
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <div className="rounded-xl bg-black/25 border border-white/8 px-2 py-2">
+          <RefreshCw size={12} className="mx-auto text-[#60a5fa] mb-0.5" aria-hidden />
+          <p className="text-sm font-black text-white tabular-nums">
+            {weeklySync?.realSyncCount ?? 0}
+          </p>
+          <p className="text-[8px] text-[#9CA3AF]">syncs sem.</p>
+        </div>
+        <div className="rounded-xl bg-black/25 border border-white/8 px-2 py-2">
+          <Share2 size={12} className="mx-auto text-[#22c55e] mb-0.5" aria-hidden />
+          <p className="text-sm font-black text-white tabular-nums">
+            {density?.invitesShared ?? 0}
+          </p>
+          <p className="text-[8px] text-[#9CA3AF]">invites</p>
+        </div>
+        <div className="rounded-xl bg-black/25 border border-white/8 px-2 py-2">
+          <Activity size={12} className="mx-auto text-[#FF671F] mb-0.5" aria-hidden />
+          <p className="text-sm font-black text-white tabular-nums">{liveCount}</p>
+          <p className="text-[8px] text-[#9CA3AF]">LIVE ahora</p>
+        </div>
+      </div>
+
+      <p
+        className={`text-[10px] mt-2 font-semibold ${
+          health.health === 'active'
+            ? 'text-[#22c55e]'
+            : health.health === 'warming'
+              ? 'text-[#FF671F]'
+              : 'text-[#9CA3AF]'
+        }`}
+      >
+        {health.label}
+      </p>
+
       <p className="text-[9px] text-[#6B7280] mt-1">
         Meta piloto: {PILOT_TARGET_MAU_MIN}–200 usuarios por ciudad · sync real semanal
       </p>

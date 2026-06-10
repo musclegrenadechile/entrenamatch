@@ -153,6 +153,48 @@ export async function recordPilotSyncSession(
   }
 }
 
+export function attachPilotWeeklyMetricsListener(
+  db: Firestore,
+  cityNorm: string,
+  weekKey: string,
+  onData: (doc: PilotWeeklyMetricsDoc | null) => void
+): () => void {
+  let cancelled = false
+  let unsub: (() => void) | null = null
+
+  ;(async () => {
+    const { doc, onSnapshot } = await import('firebase/firestore')
+    if (cancelled) return
+    unsub = onSnapshot(
+      doc(db, 'pilotWeeklyMetrics', pilotWeeklyDocId(cityNorm, weekKey)),
+      (snap) => {
+        if (cancelled) return
+        if (!snap.exists()) {
+          onData(null)
+          return
+        }
+        const d = snap.data() as Record<string, unknown>
+        onData({
+          cityNorm: String(d.cityNorm || cityNorm),
+          cityLabel: String(d.cityLabel || cityNorm),
+          weekKey: String(d.weekKey || weekKey),
+          realSyncCount: Number(d.realSyncCount) || 0,
+          totalSyncMinutes: Number(d.totalSyncMinutes) || 0,
+          lastSyncAt: Number(d.lastSyncAt) || 0,
+        })
+      },
+      () => {
+        if (!cancelled) onData(null)
+      }
+    )
+  })()
+
+  return () => {
+    cancelled = true
+    unsub?.()
+  }
+}
+
 /** Sum real sync counts across pilot cities for a week (client-side rollup). */
 export function sumPilotWeeklyMetrics(
   docs: PilotWeeklyMetricsDoc[],

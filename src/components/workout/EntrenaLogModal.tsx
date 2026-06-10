@@ -1,10 +1,24 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Dumbbell, Plus, Trash2, X, Copy, Star, MapPin } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  EXERCISE_LIBRARY,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Dumbbell,
+  Plus,
+  Search,
+  Timer,
+  Trash2,
+  X,
+  Star,
+  MapPin,
+} from 'lucide-react'
+import { GymRestTimer, type GymRestTimerRef } from './GymRestTimer'
+import {
   WORKOUT_TYPE_LABELS,
   MUSCLE_GROUPS,
+  countExercisesByMuscle,
   filterExercises,
+  filterLibraryByMuscleTab,
   isTimedCardioExercise,
 } from '../../data/exerciseLibrary'
 import type { Workout, WorkoutExercise, WorkoutSet, WorkoutType } from '../../types'
@@ -15,6 +29,8 @@ import {
   normalizeWorkoutExercise,
   normalizeWorkoutSet,
 } from '../../utils/workoutSetFields'
+import { GymSoundWorkoutBar } from '../music/GymSoundWorkoutBar'
+import { PastWorkoutPicker } from './PastWorkoutPicker'
 import {
   BUILTIN_WORKOUT_TEMPLATES,
   cloneExercises,
@@ -23,31 +39,65 @@ import {
   type WorkoutQuickTemplate,
   workoutToTemplate,
 } from '../../utils/workoutTemplates'
+import {
+  clearWorkoutDraft,
+  elapsedWorkoutMinutes,
+  loadRecentExerciseNames,
+  loadWorkoutDraft,
+  pushRecentExerciseNames,
+  resolveDraftStartedAt,
+  saveWorkoutDraft,
+} from '../../utils/workoutDraft'
 
 export interface EntrenoDeHoyModalProps {
   open: boolean
   onClose: () => void
+  /** Minimiza la sesión — borrador queda activo y aparece el gadget flotante. */
+  onMinimize?: () => void
   onSave: (payload: {
     title: string
     type: WorkoutType
     exercises: WorkoutExercise[]
     durationMin: number
   }) => Promise<void>
+  userId?: string | null
+  /** When true (copy/repeat), ignore stored draft */
+  skipDraftRestore?: boolean
+  /** Descarta borrador activo y cierra la sesión */
+  onDiscardSession?: () => void
   defaultTitle?: string
   saving?: boolean
   initialExercises?: WorkoutExercise[]
   initialType?: WorkoutType
   initialDurationMin?: number
-  lastWorkout?: Workout | null
+  /** Entrenos recientes del usuario — para repetir desde historial */
+  recentWorkouts?: Workout[]
+  /** Abre el selector de historial al entrar (p. ej. desde Reto del día) */
+  expandPastWorkouts?: boolean
   liveDurationMin?: number
   gymRoutineTemplates?: WorkoutQuickTemplate[]
   gymRoutineLabel?: string
+  /** Partner name when logging from chat — workout is sent on save */
+  shareToChatName?: string
+  /** GymSound — connect / share while logging exercises */
+  gymSoundUser?: import('../../types').Profile
+  isLive?: boolean
+  onGymSoundSave?: (user: import('../../types').Profile) => void | Promise<void>
 }
 
 /** @deprecated use EntrenoDeHoyModalProps */
 export type EntrenaLogModalProps = EntrenoDeHoyModalProps
 
 const WORKOUT_TYPES: WorkoutType[] = ['push', 'pull', 'legs', 'full', 'cardio', 'other']
+
+function formatTimer(ms: number): string {
+  const totalSec = Math.max(0, Math.floor(ms / 1000))
+  const h = Math.floor(totalSec / 3600)
+  const m = Math.floor((totalSec % 3600) / 60)
+  const s = totalSec % 60
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `${m}:${String(s).padStart(2, '0')}`
+}
 
 function CardioSetInputs({
   exerciseName,
@@ -79,8 +129,8 @@ function CardioSetInputs({
   }, [exerciseName, set.minutesMin, set.intensity, set.reps])
 
   return (
-    <div className="flex items-center gap-2 text-xs">
-      <span className="w-6 text-[#6B7280] font-bold">{setIdx + 1}</span>
+    <div className="gym-set-row">
+      <span className="gym-set-num">{setIdx + 1}</span>
       <input
         type="text"
         inputMode="numeric"
@@ -94,11 +144,11 @@ function CardioSetInputs({
             weightKg: 0,
           })
         }}
-        className="w-14 px-2 py-1.5 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
+        className="gym-set-input"
         placeholder="min"
         aria-label={`Minutos intervalo ${setIdx + 1}`}
       />
-      <span className="text-[#6B7280]">min</span>
+      <span className="gym-set-unit">min</span>
       <input
         type="text"
         inputMode="numeric"
@@ -116,18 +166,12 @@ function CardioSetInputs({
             weightKg: 0,
           })
         }}
-        className="w-14 px-2 py-1.5 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
+        className="gym-set-input"
         placeholder="1-10"
         aria-label={`Intensidad intervalo ${setIdx + 1}`}
       />
-      <span className="text-[#6B7280]">/10</span>
       {canRemove && (
-        <button
-          type="button"
-          onClick={() => onRemove(exIdx, setIdx)}
-          className="ml-auto text-[#6B7280] active:text-red-400 px-1"
-          aria-label="Quitar intervalo"
-        >
+        <button type="button" onClick={() => onRemove(exIdx, setIdx)} className="gym-set-remove" aria-label="Quitar">
           ×
         </button>
       )}
@@ -151,9 +195,7 @@ function SetInputs({
   onRemove: (exIdx: number, setIdx: number) => void
 }) {
   const [repsDraft, setRepsDraft] = useState(String(set.reps || ''))
-  const [weightDraft, setWeightDraft] = useState(
-    set.weightKg > 0 ? String(set.weightKg) : ''
-  )
+  const [weightDraft, setWeightDraft] = useState(set.weightKg > 0 ? String(set.weightKg) : '')
 
   useEffect(() => {
     setRepsDraft(String(set.reps || ''))
@@ -161,8 +203,8 @@ function SetInputs({
   }, [set.reps, set.weightKg])
 
   return (
-    <div className="flex items-center gap-2 text-xs">
-      <span className="w-6 text-[#6B7280] font-bold">{setIdx + 1}</span>
+    <div className="gym-set-row">
+      <span className="gym-set-num">{setIdx + 1}</span>
       <input
         type="text"
         inputMode="numeric"
@@ -172,11 +214,11 @@ function SetInputs({
           setRepsDraft(raw)
           onUpdate(exIdx, setIdx, { reps: raw === '' ? 0 : Math.max(0, parseInt(raw, 10) || 0) })
         }}
-        className="w-14 px-2 py-1.5 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
+        className="gym-set-input"
         placeholder="reps"
         aria-label={`Reps set ${setIdx + 1}`}
       />
-      <span className="text-[#6B7280]">×</span>
+      <span className="gym-set-unit">×</span>
       <input
         type="text"
         inputMode="decimal"
@@ -192,18 +234,12 @@ function SetInputs({
           const n = parseFloat(raw)
           if (!Number.isNaN(n)) onUpdate(exIdx, setIdx, { weightKg: Math.max(0, n) })
         }}
-        className="w-16 px-2 py-1.5 rounded-lg bg-[#1a1a22] border border-white/10 text-white text-center"
+        className="gym-set-input gym-set-input--wide"
         placeholder="kg"
         aria-label={`Peso set ${setIdx + 1}`}
       />
-      <span className="text-[#6B7280]">kg</span>
       {canRemove && (
-        <button
-          type="button"
-          onClick={() => onRemove(exIdx, setIdx)}
-          className="ml-auto text-[#6B7280] active:text-red-400 px-1"
-          aria-label="Quitar set"
-        >
+        <button type="button" onClick={() => onRemove(exIdx, setIdx)} className="gym-set-remove" aria-label="Quitar">
           ×
         </button>
       )}
@@ -214,61 +250,236 @@ function SetInputs({
 export function EntrenoDeHoyModal({
   open,
   onClose,
+  onMinimize,
   onSave,
+  userId = null,
+  skipDraftRestore = false,
+  onDiscardSession,
   defaultTitle = 'Entreno de hoy',
   saving = false,
   initialExercises,
   initialType,
   initialDurationMin,
-  lastWorkout,
+  recentWorkouts = [],
+  expandPastWorkouts = false,
   liveDurationMin,
   gymRoutineTemplates = [],
   gymRoutineLabel,
+  shareToChatName,
+  gymSoundUser,
+  isLive = false,
+  onGymSoundSave,
 }: EntrenoDeHoyModalProps) {
   const [title, setTitle] = useState(defaultTitle)
   const [type, setType] = useState<WorkoutType>('full')
   const [durationMin, setDurationMin] = useState(45)
-  const [durationDraft, setDurationDraft] = useState('45')
+  const [durationTouched, setDurationTouched] = useState(false)
   const [exercises, setExercises] = useState<WorkoutExercise[]>([])
+  const [startedAt, setStartedAt] = useState<number | null>(null)
   const [search, setSearch] = useState('')
   const [muscleFilter, setMuscleFilter] = useState<string | undefined>()
   const [showPicker, setShowPicker] = useState(false)
+  const [detailsOpen, setDetailsOpen] = useState(false)
+  const [draftRecovered, setDraftRecovered] = useState(false)
+  const [timerWasReset, setTimerWasReset] = useState(false)
+  const [pastWorkoutsOpen, setPastWorkoutsOpen] = useState(false)
+  const [tick, setTick] = useState(0)
   const [favorites, setFavorites] = useState<WorkoutQuickTemplate[]>(() => loadFavoriteTemplates())
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const restTimerRef = useRef<GymRestTimerRef>(null)
+
+  const buildDraft = useCallback(
+    () => ({
+      title,
+      type,
+      durationMin,
+      exercises,
+      startedAt,
+      updatedAt: Date.now(),
+    }),
+    [title, type, durationMin, exercises, startedAt]
+  )
+
+  const flushDraft = useCallback(() => {
+    if (!userId || !exercises.length) return
+    saveWorkoutDraft(userId, buildDraft())
+  }, [userId, exercises.length, buildDraft])
+
+  const applyState = useCallback(
+    (opts: {
+      title: string
+      type: WorkoutType
+      durationMin: number
+      exercises: WorkoutExercise[]
+      startedAt: number | null
+    }) => {
+      setTitle(opts.title)
+      setType(opts.type)
+      setDurationMin(opts.durationMin)
+      setExercises(opts.exercises.map((e) => normalizeWorkoutExercise({ ...e, sets: [...e.sets] })))
+      setStartedAt(opts.startedAt)
+      setDurationTouched(false)
+      setSearch('')
+      setMuscleFilter(undefined)
+      setShowPicker(false)
+      setDetailsOpen(false)
+      setFavorites(loadFavoriteTemplates())
+    },
+    []
+  )
 
   useEffect(() => {
     if (!open) return
-    setTitle(defaultTitle)
-    setType(initialType || 'full')
+
+    if (skipDraftRestore) {
+      const dur =
+        initialDurationMin ??
+        (liveDurationMin && liveDurationMin >= 5 ? liveDurationMin : undefined) ??
+        45
+      applyState({
+        title: defaultTitle,
+        type: initialType || 'full',
+        durationMin: dur,
+        exercises: initialExercises?.length
+          ? initialExercises.map((e) => normalizeWorkoutExercise({ ...e, sets: [...e.sets] }))
+          : [],
+        startedAt: initialExercises?.length ? Date.now() : null,
+      })
+      setDraftRecovered(false)
+      setTimerWasReset(false)
+      return
+    }
+
+    const stored = userId ? loadWorkoutDraft(userId) : null
+    if (stored?.exercises?.length) {
+      const { startedAt: resolvedStart, timerReset } = resolveDraftStartedAt(stored)
+      applyState({
+        title: stored.title || defaultTitle,
+        type: stored.type || 'full',
+        durationMin: stored.durationMin || 45,
+        exercises: stored.exercises,
+        startedAt: resolvedStart,
+      })
+      setDraftRecovered(true)
+      setTimerWasReset(timerReset)
+      return
+    }
+
     const dur =
       initialDurationMin ??
       (liveDurationMin && liveDurationMin >= 5 ? liveDurationMin : undefined) ??
       45
-    setDurationMin(dur)
-    setDurationDraft(String(dur))
-    setExercises(
-      initialExercises?.length
+    applyState({
+      title: defaultTitle,
+      type: initialType || 'full',
+      durationMin: dur,
+      exercises: initialExercises?.length
         ? initialExercises.map((e) => normalizeWorkoutExercise({ ...e, sets: [...e.sets] }))
-        : []
-    )
-    setSearch('')
-    setMuscleFilter(undefined)
-    setShowPicker(false)
-    setFavorites(loadFavoriteTemplates())
-  }, [open, defaultTitle, initialExercises, initialType, initialDurationMin, liveDurationMin])
+        : [],
+      startedAt: null,
+    })
+    setDraftRecovered(false)
+    setTimerWasReset(false)
+  }, [
+    open,
+    skipDraftRestore,
+    userId,
+    defaultTitle,
+    initialExercises,
+    initialType,
+    initialDurationMin,
+    liveDurationMin,
+    applyState,
+  ])
+
+  useEffect(() => {
+    if (!open) {
+      setPastWorkoutsOpen(false)
+      return
+    }
+    if (expandPastWorkouts && recentWorkouts.some((w) => w.exercises?.length)) {
+      setPastWorkoutsOpen(true)
+    }
+  }, [open, expandPastWorkouts, recentWorkouts])
+
+  useEffect(() => {
+    if (!open) return
+    const id = window.setInterval(() => setTick((t) => t + 1), 1000)
+    return () => clearInterval(id)
+  }, [open])
+
+  useEffect(() => {
+    if (!open || !userId || !exercises.length) return
+    const t = window.setTimeout(flushDraft, 350)
+    return () => clearTimeout(t)
+  }, [open, userId, title, type, durationMin, exercises, startedAt, flushDraft])
+
+  useEffect(() => {
+    if (!open || !userId) return
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') flushDraft()
+    }
+    document.addEventListener('visibilitychange', onHide)
+    window.addEventListener('pagehide', flushDraft)
+    return () => {
+      document.removeEventListener('visibilitychange', onHide)
+      window.removeEventListener('pagehide', flushDraft)
+      flushDraft()
+    }
+  }, [open, userId, flushDraft])
+
+  useEffect(() => {
+    if (!open || exercises.length === 0) {
+      void wakeLockRef.current?.release()
+      wakeLockRef.current = null
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLockRef.current = await navigator.wakeLock.request('screen')
+        }
+      } catch {
+        /* unsupported or denied */
+      }
+      if (cancelled) void wakeLockRef.current?.release()
+    })()
+    return () => {
+      cancelled = true
+      void wakeLockRef.current?.release()
+      wakeLockRef.current = null
+    }
+  }, [open, exercises.length])
 
   const applyTemplate = (tpl: WorkoutQuickTemplate) => {
-    setTitle(tpl.label)
-    setType(tpl.type)
-    setDurationMin(tpl.durationMin)
-    setDurationDraft(String(tpl.durationMin))
-    setExercises(cloneExercises(tpl.exercises).map(normalizeWorkoutExercise))
+    applyState({
+      title: tpl.label,
+      type: tpl.type,
+      durationMin: tpl.durationMin,
+      exercises: cloneExercises(tpl.exercises).map(normalizeWorkoutExercise),
+      startedAt: Date.now(),
+    })
+    setDraftRecovered(false)
+    setTimerWasReset(false)
+  }
+
+  const handleDiscardSession = () => {
+    if (!exercises.length) return
+    if (!window.confirm('¿Descartar esta sesión? Se borrará el borrador y el cronómetro.')) return
+    if (userId) clearWorkoutDraft(userId)
+    if (onDiscardSession) onDiscardSession()
+    else onClose()
+  }
+
+  const repeatFromWorkout = (w: Workout) => {
+    applyTemplate(workoutToTemplate(w, `Repetir · ${w.title}`))
+    setPastWorkoutsOpen(false)
   }
 
   const quickTemplates = useMemo(() => {
     const items: WorkoutQuickTemplate[] = []
-    if (lastWorkout?.exercises?.length) {
-      items.push(workoutToTemplate(lastWorkout, 'Último entreno'))
-    }
     for (const g of gymRoutineTemplates) {
       if (!items.some((t) => t.id === g.id)) items.push(g)
     }
@@ -276,19 +487,45 @@ export function EntrenoDeHoyModal({
     for (const b of BUILTIN_WORKOUT_TEMPLATES) {
       if (!items.some((t) => t.id === b.id)) items.push(b)
     }
-    return items.slice(0, 8)
-  }, [lastWorkout, favorites, gymRoutineTemplates])
+    return items.slice(0, 6)
+  }, [favorites, gymRoutineTemplates])
 
+  const quickExerciseNames = useMemo(() => {
+    const names: string[] = []
+    const source = recentWorkouts.find((w) => w.exercises?.length)
+    if (source?.exercises?.length) {
+      for (const ex of source.exercises) {
+        if (!names.includes(ex.name)) names.push(ex.name)
+      }
+    }
+    if (userId) {
+      for (const n of loadRecentExerciseNames(userId)) {
+        if (!names.includes(n)) names.push(n)
+      }
+    }
+    return names.slice(0, 8)
+  }, [recentWorkouts, userId, open])
+
+  const suggestionLimit = search.trim() ? 32 : muscleFilter ? 48 : 20
   const suggestions = useMemo(
-    () => filterExercises(search, 14, muscleFilter),
-    [search, muscleFilter]
+    () => filterExercises(search, suggestionLimit, muscleFilter),
+    [search, muscleFilter, suggestionLimit]
   )
+
+  const muscleBrowse = useMemo(
+    () => (muscleFilter && !search.trim() ? filterLibraryByMuscleTab(muscleFilter) : []),
+    [muscleFilter, search]
+  )
+
+  const timerLabel = startedAt ? formatTimer(Date.now() - startedAt) : null
+  void tick
 
   if (!open) return null
 
   const addExercise = (name: string) => {
     if (exercises.some((e) => e.name === name)) return
     setExercises((prev) => [...prev, emptyExerciseEntry(name)])
+    if (!startedAt) setStartedAt(Date.now())
     setSearch('')
     setShowPicker(false)
   }
@@ -298,12 +535,13 @@ export function EntrenoDeHoyModal({
       prev.map((ex, i) =>
         i !== exIdx
           ? ex
-          : {
-              ...ex,
-              sets: ex.sets.map((s, j) => (j === setIdx ? { ...s, ...patch } : s)),
-            }
+          : { ...ex, sets: ex.sets.map((s, j) => (j === setIdx ? { ...s, ...patch } : s)) }
       )
     )
+  }
+
+  const startRestAfterSet = () => {
+    restTimerRef.current?.startCountdown()
   }
 
   const addSet = (exIdx: number) => {
@@ -326,12 +564,10 @@ export function EntrenoDeHoyModal({
             ],
           }
         }
-        return {
-          ...ex,
-          sets: [...ex.sets, { reps: last?.reps || 10, weightKg: last?.weightKg || 0 }],
-        }
+        return { ...ex, sets: [...ex.sets, { reps: last?.reps || 10, weightKg: last?.weightKg || 0 }] }
       })
     )
+    startRestAfterSet()
   }
 
   const removeSet = (exIdx: number, setIdx: number) => {
@@ -348,243 +584,244 @@ export function EntrenoDeHoyModal({
 
   const canSave = exercises.length > 0 && exercises.every((e) => e.sets.length > 0)
 
-  const parseDurationMin = (): number => {
-    const n = parseInt(durationDraft, 10)
-    if (Number.isNaN(n) || n < 5) return 5
-    return Math.min(240, n)
+  const resolveDurationMin = (): number => {
+    if (!durationTouched && startedAt) {
+      return Math.min(240, Math.max(5, elapsedWorkoutMinutes(startedAt)))
+    }
+    return Math.min(240, Math.max(5, durationMin))
   }
 
   const handleSave = async () => {
     if (!canSave || saving) return
-    const dur = parseDurationMin()
-    setDurationMin(dur)
-    setDurationDraft(String(dur))
-    await onSave({ title: title.trim() || defaultTitle, type, exercises, durationMin: dur })
+    const dur = resolveDurationMin()
+    if (userId) {
+      pushRecentExerciseNames(
+        userId,
+        exercises.map((e) => e.name)
+      )
+      clearWorkoutDraft(userId)
+    }
+    await onSave({
+      title: title.trim() || defaultTitle,
+      type,
+      exercises,
+      durationMin: dur,
+    })
+  }
+
+  const handleDismiss = () => {
+    if (exercises.length > 0) {
+      const at = startedAt ?? Date.now()
+      if (userId) {
+        saveWorkoutDraft(userId, {
+          title,
+          type,
+          durationMin,
+          exercises,
+          startedAt: at,
+          updatedAt: Date.now(),
+        })
+      }
+      if (onMinimize) onMinimize()
+      else onClose()
+      return
+    }
+    onClose()
   }
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-0 sm:p-4">
-      <div className="w-full max-w-lg max-h-[92vh] overflow-hidden flex flex-col rounded-t-3xl sm:rounded-3xl bg-[#12121a] border border-[#2F2F35] shadow-2xl">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-white/8 shrink-0">
-          <div className="flex items-center gap-2">
-            <Dumbbell className="w-5 h-5 text-[#FF671F]" />
-            <div>
-              <p className="text-sm font-black text-white">Entreno de Hoy</p>
-              <p className="text-[10px] text-[#9CA3AF]">
-                {EXERCISE_LIBRARY.length} ejercicios ·{' '}
-                {type === 'cardio' ? 'minutos e intensidad' : 'sets en vivo'}
-              </p>
-            </div>
-          </div>
+    <div className="gym-log-overlay">
+      <div className="gym-log-sheet">
+        <header className="gym-log-header">
           <button
             type="button"
-            onClick={onClose}
-            className="p-2 rounded-xl bg-white/5 text-[#9CA3AF] active:bg-white/10"
+            onClick={handleDismiss}
+            className="gym-log-icon-btn"
+            aria-label={exercises.length > 0 ? 'Minimizar sesión' : 'Cerrar'}
           >
-            <X className="w-4 h-4" />
+            {exercises.length > 0 ? <ChevronDown className="w-5 h-5" /> : <X className="w-5 h-5" />}
           </button>
-        </div>
+          <div className="flex-1 min-w-0">
+            <p className="gym-log-title">Modo Entreno</p>
+            <p className="gym-log-sub">
+              {exercises.length === 0
+                ? 'Añade ejercicios sobre la marcha'
+                : `${exercises.length} ejercicio${exercises.length !== 1 ? 's' : ''} · guardado automático`}
+            </p>
+          </div>
+          {timerLabel && (
+            <div className="gym-log-timer" title="Tiempo de sesión">
+              <Clock className="w-3.5 h-3.5" />
+              {timerLabel}
+            </div>
+          )}
+        </header>
 
-        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-4">
-          {gymRoutineLabel && gymRoutineTemplates.length > 0 && (
-            <div className="flex items-center gap-2 px-2.5 py-2 rounded-xl bg-[#22c55e]/10 border border-[#22c55e]/25 text-[10px] text-[#22c55e]">
-              <MapPin className="w-3.5 h-3.5 shrink-0" />
+        <div className="gym-log-body">
+          {draftRecovered && (
+            <div className="gym-log-recovered flex items-center justify-between gap-2">
               <span>
-                Rutina del gym · <strong className="text-white">{gymRoutineLabel}</strong>
+                {timerWasReset
+                  ? 'Recuperamos tus ejercicios — el cronómetro empezó de cero'
+                  : 'Recuperamos tu sesión — sigue donde la dejaste'}
               </span>
+              {onDiscardSession && (
+                <button
+                  type="button"
+                  onClick={handleDiscardSession}
+                  className="shrink-0 text-[10px] font-bold text-red-400 underline"
+                >
+                  Descartar
+                </button>
+              )}
             </div>
           )}
 
-          {lastWorkout?.exercises?.length ? (
-            <button
-              type="button"
-              onClick={() => applyTemplate(workoutToTemplate(lastWorkout, 'Copiar último entreno'))}
-              className="w-full py-2.5 rounded-xl bg-[#FF671F]/15 border border-[#FF671F]/35 text-xs font-bold text-[#FF671F] active:bg-[#FF671F]/25 flex items-center justify-center gap-2"
-            >
-              <Copy className="w-3.5 h-3.5" />
-              Copiar último entreno — 1 toque
-            </button>
-          ) : null}
+          {shareToChatName && (
+            <div className="gym-log-share-chat">
+              Se enviará a <strong>{shareToChatName}</strong> al terminar
+            </div>
+          )}
 
-          {quickTemplates.length > 0 && (
-            <div>
-              <label className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">
-                Inicio rápido
-              </label>
-              <div className="flex gap-1.5 mt-1.5 overflow-x-auto pb-1 scrollbar-none">
-                {quickTemplates.map((tpl) => (
+          {gymRoutineLabel && gymRoutineTemplates.length > 0 && (
+            <div className="gym-log-gym-badge">
+              <MapPin className="w-3.5 h-3.5 shrink-0" />
+              Rutina de <strong>{gymRoutineLabel}</strong>
+            </div>
+          )}
+
+          {gymSoundUser && onGymSoundSave && (
+            <GymSoundWorkoutBar
+              currentUser={gymSoundUser}
+              isLive={isLive}
+              saveUser={onGymSoundSave}
+            />
+          )}
+
+          {recentWorkouts.some((w) => w.exercises?.length) && (
+            <PastWorkoutPicker
+              workouts={recentWorkouts}
+              open={pastWorkoutsOpen}
+              onToggle={() => setPastWorkoutsOpen((v) => !v)}
+              onSelect={repeatFromWorkout}
+            />
+          )}
+
+          {quickExerciseNames.length > 0 && (
+            <div className="gym-log-quick">
+              <p className="gym-log-quick-label">Añadir rápido</p>
+              <div className="gym-log-quick-row">
+                {quickExerciseNames.map((name) => (
                   <button
-                    key={tpl.id}
+                    key={name}
                     type="button"
-                    onClick={() => applyTemplate(tpl)}
-                    className={`shrink-0 text-[10px] px-2.5 py-1.5 rounded-full font-bold border active:bg-[#FF671F]/20 active:border-[#FF671F]/40 flex items-center gap-1 ${
-                      tpl.id.startsWith('gym-')
-                        ? 'bg-[#22c55e]/15 text-[#22c55e] border-[#22c55e]/30'
-                        : 'bg-white/5 text-white border-white/10'
-                    }`}
+                    disabled={exercises.some((e) => e.name === name)}
+                    onClick={() => addExercise(name)}
+                    className="gym-log-quick-chip"
                   >
-                    {tpl.id.startsWith('gym-') ? (
-                      <MapPin className="w-3 h-3" />
-                    ) : tpl.id.startsWith('copy-') || tpl.id.startsWith('fav-') ? (
-                      <Copy className="w-3 h-3 text-[#FF671F]" />
-                    ) : null}
-                    {tpl.label}
+                    + {name}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          <div>
-            <label className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">
-              Nombre
-            </label>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 w-full px-3 py-2.5 rounded-xl bg-[#1a1a22] border border-white/10 text-white text-sm"
-              placeholder="Ej. Push con @socio"
-            />
-          </div>
-
-          <div>
-            <label className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">
-              Tipo
-            </label>
-            <div className="flex flex-wrap gap-1.5 mt-1.5">
-              {WORKOUT_TYPES.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => setType(t)}
-                  className={`text-[10px] px-2.5 py-1.5 rounded-full font-bold transition ${
-                    type === t
-                      ? 'bg-[#FF671F] text-black'
-                      : 'bg-white/5 text-[#9CA3AF] border border-white/10'
-                  }`}
-                >
-                  {WORKOUT_TYPE_LABELS[t]}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">
-              Duración (min)
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              value={durationDraft}
-              onChange={(e) => {
-                const raw = e.target.value.replace(/\D/g, '')
-                setDurationDraft(raw)
-                if (raw !== '') {
-                  const n = parseInt(raw, 10)
-                  if (!Number.isNaN(n)) setDurationMin(Math.min(240, n))
-                }
+          <div className="gym-log-muscle-filters">
+            <button
+              type="button"
+              onClick={() => {
+                setMuscleFilter(undefined)
+                setShowPicker(true)
               }}
-              onBlur={() => {
-                const n = parseInt(durationDraft, 10)
-                if (durationDraft === '' || Number.isNaN(n) || n < 5) {
-                  setDurationMin(5)
-                  setDurationDraft('5')
-                } else {
-                  const clamped = Math.min(240, n)
-                  setDurationMin(clamped)
-                  setDurationDraft(String(clamped))
-                }
-              }}
-              className="mt-1 w-full px-3 py-2.5 rounded-xl bg-[#1a1a22] border border-white/10 text-white text-sm"
-              placeholder="min"
-              aria-label="Duración en minutos"
-            />
-          </div>
-
-          <div>
-            <label className="text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">
-              Ejercicios
-            </label>
-            <div className="flex gap-1.5 mt-1.5 overflow-x-auto pb-1 scrollbar-none">
+              className={`gym-log-muscle-chip ${!muscleFilter ? 'active' : ''}`}
+            >
+              Todos
+            </button>
+            {MUSCLE_GROUPS.map((m) => (
               <button
+                key={m}
                 type="button"
-                onClick={() => setMuscleFilter(undefined)}
-                className={`shrink-0 text-[9px] px-2 py-1 rounded-full font-bold ${
-                  !muscleFilter ? 'bg-[#FF671F] text-black' : 'bg-white/5 text-[#9CA3AF]'
-                }`}
-              >
-                Todos
-              </button>
-              {MUSCLE_GROUPS.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setMuscleFilter(m === muscleFilter ? undefined : m)}
-                  className={`shrink-0 text-[9px] px-2 py-1 rounded-full font-bold ${
-                    muscleFilter === m ? 'bg-[#FF671F] text-black' : 'bg-white/5 text-[#9CA3AF]'
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
-            </div>
-            <div className="mt-1.5 relative">
-              <input
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value)
+                onClick={() => {
+                  setMuscleFilter(m === muscleFilter ? undefined : m)
                   setShowPicker(true)
                 }}
-                onFocus={() => setShowPicker(true)}
-                placeholder="Buscar ejercicio…"
-                className="w-full px-3 py-2.5 rounded-xl bg-[#1a1a22] border border-white/10 text-white text-sm"
-              />
-              {showPicker && (
-                <ul className="absolute z-10 mt-1 w-full max-h-48 overflow-y-auto rounded-xl bg-[#1e1e28] border border-white/10 shadow-lg">
-                  {suggestions.length === 0 ? (
-                    <li className="px-3 py-2 text-xs text-[#9CA3AF]">Sin resultados</li>
-                  ) : (
-                    suggestions.map((ex) => (
-                      <li key={ex.name}>
-                        <button
-                          type="button"
-                          onClick={() => addExercise(ex.name)}
-                          className="w-full text-left px-3 py-2 text-sm text-white hover:bg-white/5 flex justify-between gap-2"
-                        >
-                          <span>{ex.name}</span>
-                          <span className="text-[10px] text-[#9CA3AF] shrink-0">{ex.muscle}</span>
-                        </button>
-                      </li>
-                    ))
-                  )}
-                </ul>
-              )}
-            </div>
+                className={`gym-log-muscle-chip ${muscleFilter === m ? 'active' : ''}`}
+              >
+                {m}
+                <span className="gym-log-muscle-count">{countExercisesByMuscle(m)}</span>
+              </button>
+            ))}
           </div>
 
-          {exercises.length === 0 ? (
-            <p className="text-center text-sm text-[#9CA3AF] py-6">
-              Añade al menos un ejercicio para guardar tu rutina.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {exercises.map((ex, exIdx) => (
-                <li
-                  key={`${ex.name}-${exIdx}`}
-                  className="rounded-2xl border border-white/8 bg-white/[0.03] p-3"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-bold text-white">{ex.name}</span>
+          <div className="gym-log-search-wrap">
+            <Search className="w-4 h-4 text-[#9CA3AF] shrink-0" />
+            <input
+              ref={searchRef}
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value)
+                setShowPicker(true)
+              }}
+              onFocus={() => setShowPicker(true)}
+              placeholder={muscleFilter ? `Buscar en ${muscleFilter}…` : 'Buscar ejercicio…'}
+              className="gym-log-search"
+            />
+            {showPicker && search.trim() && suggestions.length > 0 && (
+              <ul className="gym-log-suggestions">
+                {suggestions.map((ex) => (
+                  <li key={ex.name}>
+                    <button type="button" onClick={() => addExercise(ex.name)} className="gym-log-suggestion-item">
+                      <span>{ex.name}</span>
+                      <span className="text-[10px] text-[#9CA3AF]">{ex.muscle}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          {muscleBrowse.length > 0 && (
+            <div className="gym-log-browse">
+              <p className="gym-log-quick-label">
+                {muscleFilter} · {muscleBrowse.length} ejercicios
+              </p>
+              <ul className="gym-log-browse-list">
+                {muscleBrowse.map((ex) => (
+                  <li key={ex.name}>
                     <button
                       type="button"
-                      onClick={() => removeExercise(exIdx)}
-                      className="p-1 text-red-400/80 active:text-red-400"
+                      disabled={exercises.some((e) => e.name === ex.name)}
+                      onClick={() => addExercise(ex.name)}
+                      className="gym-log-browse-item"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>{ex.name}</span>
+                      <Plus className="w-3.5 h-3.5 shrink-0 text-[#FF671F]" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {exercises.length === 0 ? (
+            <div className="gym-log-empty">
+              <Dumbbell className="w-10 h-10 text-[#FF671F]/50 mb-2" />
+              <p className="text-sm font-bold text-white">Empieza ahora</p>
+              <p className="text-xs text-[#9CA3AF] mt-1 max-w-[240px]">
+                Toca un ejercicio arriba o búscalo. No necesitas planificar antes — registra cada serie entre descansos.
+              </p>
+            </div>
+          ) : (
+            <ul className="gym-log-exercises">
+              {exercises.map((ex, exIdx) => (
+                <li key={`${ex.name}-${exIdx}`} className="gym-log-exercise-card">
+                  <div className="gym-log-exercise-head">
+                    <span className="gym-log-exercise-name">{ex.name}</span>
+                    <button type="button" onClick={() => removeExercise(exIdx)} className="text-red-400/80 p-1">
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="space-y-1.5">
+                  <div className="gym-log-sets">
                     {ex.sets.map((set, setIdx) =>
                       isTimedCardioExercise(ex.name) ? (
                         <CardioSetInputs
@@ -610,56 +847,150 @@ export function EntrenoDeHoyModal({
                       )
                     )}
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => addSet(exIdx)}
-                    className="mt-2 text-[10px] text-[#FF671F] font-bold flex items-center gap-1"
-                  >
-                    <Plus className="w-3 h-3" />{' '}
-                    {isTimedCardioExercise(ex.name) ? 'Añadir intervalo' : 'Añadir set'}
-                  </button>
+                  <div className="gym-log-set-actions">
+                    <button type="button" onClick={() => addSet(exIdx)} className="gym-log-add-set">
+                      <Plus className="w-3.5 h-3.5" />
+                      {isTimedCardioExercise(ex.name) ? 'Otro intervalo' : 'Otra serie'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={startRestAfterSet}
+                      className="gym-log-rest-btn"
+                      title="Cronometrar descanso"
+                    >
+                      <Timer className="w-3.5 h-3.5" />
+                      Descanso
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
           )}
+
+          {quickTemplates.length > 0 && exercises.length === 0 && (
+            <div className="gym-log-templates">
+              <p className="gym-log-quick-label">Plantillas</p>
+              <div className="gym-log-quick-row">
+                {quickTemplates.map((tpl) => (
+                  <button key={tpl.id} type="button" onClick={() => applyTemplate(tpl)} className="gym-log-tpl-chip">
+                    {tpl.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setDetailsOpen((v) => !v)}
+            className="gym-log-details-toggle"
+          >
+            {detailsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            Detalles del entreno
+            {!durationTouched && startedAt && (
+              <span className="text-[#9CA3AF] font-normal ml-1">
+                · {resolveDurationMin()} min auto
+              </span>
+            )}
+          </button>
+
+          {detailsOpen && (
+            <div className="gym-log-details space-y-3">
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="gym-log-field"
+                placeholder="Nombre del entreno"
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {WORKOUT_TYPES.map((t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setType(t)}
+                    className={`gym-log-type-chip ${type === t ? 'active' : ''}`}
+                  >
+                    {WORKOUT_TYPE_LABELS[t]}
+                  </button>
+                ))}
+              </div>
+              <label className="text-[10px] text-[#9CA3AF] font-bold uppercase">Duración (min)</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={String(durationMin)}
+                onChange={(e) => {
+                  setDurationTouched(true)
+                  const raw = e.target.value.replace(/\D/g, '')
+                  if (raw === '') return
+                  const n = parseInt(raw, 10)
+                  if (!Number.isNaN(n)) setDurationMin(Math.min(240, n))
+                }}
+                className="gym-log-field"
+              />
+            </div>
+          )}
         </div>
 
-        <div className="px-4 py-3 border-t border-white/8 shrink-0 space-y-2">
-          {canSave && (
+        {exercises.length > 0 && (
+          <GymRestTimer ref={restTimerRef} className="gym-rest-timer--dock" />
+        )}
+
+        <footer className="gym-log-footer">
+          <button
+            type="button"
+            onClick={() => {
+              setShowPicker(true)
+              searchRef.current?.focus()
+            }}
+            className="gym-log-add-exercise"
+          >
+            <Plus className="w-5 h-5" />
+            Añadir ejercicio
+          </button>
+          <div className="flex gap-2 items-center">
+            {exercises.length > 0 && onDiscardSession && (
+              <button
+                type="button"
+                onClick={handleDiscardSession}
+                className="gym-log-discard-btn"
+                title="Descartar sesión"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+            {canSave && (
+              <button
+                type="button"
+                onClick={() => {
+                  const next = saveFavoriteTemplate({
+                    label: title.trim() || 'Mi rutina',
+                    type,
+                    durationMin: resolveDurationMin(),
+                    exercises,
+                  })
+                  setFavorites(next)
+                }}
+                className="gym-log-fav-btn"
+                title="Guardar como favorita"
+              >
+                <Star className="w-4 h-4" />
+              </button>
+            )}
             <button
               type="button"
-              onClick={() => {
-                const next = saveFavoriteTemplate({
-                  label: title.trim() || 'Mi rutina',
-                  type,
-                  durationMin,
-                  exercises,
-                })
-                setFavorites(next)
-              }}
-              className="w-full py-2 rounded-xl border border-[#FFD700]/30 text-[10px] font-bold text-[#FFD700] flex items-center justify-center gap-1 active:bg-[#FFD700]/10"
+              disabled={!canSave || saving}
+              onClick={handleSave}
+              className="gym-log-save"
             >
-              <Star className="w-3.5 h-3.5" /> Guardar como favorita (máx. 3)
+              {saving
+                ? 'Guardando…'
+                : shareToChatName
+                  ? 'Terminar y compartir'
+                  : 'Terminar y publicar'}
             </button>
-          )}
-          <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex-1 py-3 rounded-2xl border border-white/15 text-[#9CA3AF] font-semibold text-sm"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            disabled={!canSave || saving}
-            onClick={handleSave}
-            className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-[#FF671F] to-[#e85a10] text-black font-extrabold text-sm disabled:opacity-40"
-          >
-            {saving ? 'Guardando…' : 'Guardar entreno'}
-          </button>
           </div>
-        </div>
+        </footer>
       </div>
     </div>
   )

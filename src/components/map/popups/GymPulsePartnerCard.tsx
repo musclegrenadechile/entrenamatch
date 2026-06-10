@@ -1,6 +1,10 @@
+import { useState } from 'react'
 import { MapPin, Navigation, QrCode, X } from 'lucide-react'
 import type { PartnerLocation } from '../../types'
 import { openMapsNavigation } from '../../../utils/gymPulseNavigation'
+import { GymInviteQrSheet } from '../../growth/GymInviteQrSheet'
+import { buildGymInviteLink } from '../../../utils/sparseCityDefaults'
+import { BRAND_COPY } from '../../../constants/brandCopy'
 
 export interface GymPulsePartnerCardProps {
   partner: PartnerLocation
@@ -13,6 +17,7 @@ export interface GymPulsePartnerCardProps {
   onClose: () => void
   onDevEdit?: () => void
   onDevDelete?: () => void
+  inviteReferralCode?: string
 }
 
 export function GymPulsePartnerCard({
@@ -26,8 +31,13 @@ export function GymPulsePartnerCard({
   onClose,
   onDevEdit,
   onDevDelete,
+  inviteReferralCode,
 }: GymPulsePartnerCardProps) {
+  const [showQr, setShowQr] = useState(false)
   const logo = partner.logoUrl || partner.logo
+  const gymInviteUrl = inviteReferralCode
+    ? buildGymInviteLink(inviteReferralCode, { id: partner.id, name: partner.name })
+    : ''
 
   return (
     <div className="gym-pulse-partner-card">
@@ -101,6 +111,16 @@ export function GymPulsePartnerCard({
           <Navigation size={14} />
           Cómo llegar
         </button>
+        {gymInviteUrl && (
+          <button
+            type="button"
+            className="gym-pulse-partner-card__btn gym-pulse-partner-card__btn--primary"
+            onClick={() => setShowQr(true)}
+          >
+            <QrCode size={14} />
+            {BRAND_COPY.gymInvite.title}
+          </button>
+        )}
       </div>
 
       {partner.promoCode && (
@@ -118,6 +138,13 @@ export function GymPulsePartnerCard({
           </button>
         </div>
       )}
+
+      <GymInviteQrSheet
+        open={showQr}
+        inviteUrl={gymInviteUrl}
+        gymName={partner.name}
+        onClose={() => setShowQr(false)}
+      />
     </div>
   )
 }

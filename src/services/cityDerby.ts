@@ -10,6 +10,7 @@ import {
   type CityWeeklyStatsDoc,
 } from './cityWeeklyStats'
 import { getWeekKey } from '../utils/weekLiveTracker'
+import { zoneEventStatusLine } from './zoneEventPhase'
 
 /** Firestore aggregate key (legacy doc id); UI label is regional. */
 export const DERBY_HOME = { norm: 'vina del mar', label: 'Región de Valparaíso' } as const
@@ -196,12 +197,17 @@ export function buildCityDerby(
 }
 
 export function derbyStatusLine(derby: CityDerbyState): string {
-  if (derby.isTie && derby.home.totalMinutes === 0 && derby.away.totalMinutes === 0) {
-    return 'La semana empieza en cero — el primer live marca la zona'
-  }
-  if (derby.isTie) return 'Empate ajustado por población — el próximo sync define'
-  const leader = derby.leaderLabel || '—'
-  return `${leader} lidera · +${derby.marginIndex} índice/100k hab`
+  return zoneEventStatusLine(derby, 'war')
+}
+
+export type DerbyCityTooltipKind = 'home' | 'away' | 'neutral'
+
+/** Fase 121 — qué equipo derby aplica según comuna del usuario. */
+export function derbyCityTooltipKind(city?: string | null): DerbyCityTooltipKind {
+  const team = resolveDerbyTeam(city)
+  if (team === 'home') return 'home'
+  if (team === 'away') return 'away'
+  return 'neutral'
 }
 
 export function derbyTeamCta(derby: CityDerbyState, userCity?: string | null): string {

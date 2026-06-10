@@ -48,7 +48,8 @@ describe('resolveHomeHero', () => {
       now: ref.getTime(),
     })
     expect(hero.action).toBe('repeat')
-    expect(hero.title).toContain('Repetir')
+    expect(hero.title).toContain('Vuelve')
+    expect(hero.cta).toContain('Elegir')
   })
 
   it('suggests live when live is active', () => {

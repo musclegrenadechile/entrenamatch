@@ -13,6 +13,29 @@ export type DerbyWeekResult = {
 }
 
 const LOCAL_KEY = 'em-derby-weekly-history'
+const FROZEN_KEY = 'em-copa-zona-frozen'
+
+export function freezeWarDerbyState(derby: CityDerbyState): void {
+  try {
+    const raw = localStorage.getItem(FROZEN_KEY)
+    const map = raw ? (JSON.parse(raw) as Record<string, CityDerbyState>) : {}
+    map[derby.weekKey] = derby
+    localStorage.setItem(FROZEN_KEY, JSON.stringify(map))
+  } catch {
+    /* ignore */
+  }
+}
+
+export function loadFrozenWarDerby(weekKey: string): CityDerbyState | null {
+  try {
+    const raw = localStorage.getItem(FROZEN_KEY)
+    if (!raw) return null
+    const map = JSON.parse(raw) as Record<string, CityDerbyState>
+    return map[weekKey] ?? null
+  } catch {
+    return null
+  }
+}
 
 function readLocal(): Record<string, DerbyWeekResult> {
   try {

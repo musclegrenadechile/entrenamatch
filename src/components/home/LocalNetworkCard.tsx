@@ -1,4 +1,5 @@
-import { MapPin, Trophy, Users, Zap } from 'lucide-react'
+import { MapPin, QrCode, Trophy, Users, Zap } from 'lucide-react'
+import { BRAND_COPY } from '../../constants/brandCopy'
 import type { CityChallenge, LeaderboardEntry, PartnerGym, CityChallengeV2 } from '../../services/localNetwork'
 import { formatLeaderboardMinutes } from '../../services/localNetwork'
 import type { GymCheckIn } from '../../types'
@@ -19,6 +20,8 @@ export interface LocalNetworkCardProps {
   onGymCheckIn: (gym: PartnerGym) => void
   onOpenMap: () => void
   onOpenGymMap?: () => void
+  inviteUrl?: string
+  onShowGymQr?: () => void
 }
 
 export function LocalNetworkCard({
@@ -37,6 +40,8 @@ export function LocalNetworkCard({
   onGymCheckIn,
   onOpenMap,
   onOpenGymMap,
+  inviteUrl,
+  onShowGymQr,
 }: LocalNetworkCardProps) {
   if (!cityLabel && !challenge && leaderboard.length === 0 && !nearestGym) return null
 
@@ -50,7 +55,7 @@ export function LocalNetworkCard({
             Tu zona
           </p>
           <h3 className="text-sm font-black text-white mt-0.5">
-            {cityLabel ? `Red en ${cityLabel}` : 'Red local'}
+            {cityLabel ? BRAND_COPY.localZone.title(cityLabel) : BRAND_COPY.localZone.fallbackTitle}
           </h3>
           {(cityLiveCount > 0 || (myRank != null && myRank > 0)) && (
             <p className="text-[10px] text-[#9CA3AF] mt-1 leading-snug">
@@ -179,6 +184,17 @@ export function LocalNetworkCard({
         <p className="text-[10px] text-[#6B7280] mb-3 leading-snug">
           Sé el primero en aparecer: entrena en vivo ≥20 min y suma minutos para tu ciudad.
         </p>
+      )}
+
+      {inviteUrl && onShowGymQr && (
+        <button
+          type="button"
+          onClick={onShowGymQr}
+          className="mb-3 w-full py-2.5 rounded-xl bg-[#22c55e]/10 border border-[#22c55e]/30 text-[11px] font-bold text-[#22c55e] flex items-center justify-center gap-2 active:bg-[#22c55e]/20"
+        >
+          <QrCode size={14} aria-hidden />
+          {BRAND_COPY.gymInvite.title}
+        </button>
       )}
 
       {(nearestGym || activeCheckIn) && (

@@ -1,7 +1,7 @@
 // Explore tab — typed props (Phase 63)
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Filter, RefreshCw, MapPin, CheckCircle, X, Heart, Share2, Users } from 'lucide-react';
+import { Filter, RefreshCw, MapPin, CheckCircle, X, Heart, Share2, Users, QrCode } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Profile, CurrentUser } from '../../types';
 import { computeMatchScore } from '../../services/matchingScore';
@@ -15,6 +15,10 @@ import { VerifiedPhotoBadge, VerifiedProfilePhoto } from '../profile/VerifiedPro
 import { isProfileVerified } from '../../utils/identityVerification';
 import type { Firestore } from 'firebase/firestore';
 import { WhyEntrenaMatchStrip } from '../growth/WhyEntrenaMatchStrip';
+import { BRAND_COPY } from '../../constants/brandCopy';
+import { SyncHourBanner } from '../home/SyncHourBanner';
+import { GymInviteQrSheet } from '../growth/GymInviteQrSheet';
+import { recordPilotDensityEvent } from '../../services/pilotDensityMetrics';
 
 interface ExploreTabProps {
   deck: Profile[];
@@ -72,6 +76,7 @@ export const ExploreTab = ({
   const [showGeoPrompt, setShowGeoPrompt] = useState(false);
   const [waitlistEmail, setWaitlistEmail] = useState('');
   const [waitlistSaved, setWaitlistSaved] = useState(() => !!getLocalWaitlistEntry());
+  const [showGymQr, setShowGymQr] = useState(false);
 
   const referralCode = (currentUser?.id || firebaseUid || 'invite').slice(0, 8);
   const inviteLink = buildInviteLink(referralCode);
@@ -254,7 +259,7 @@ export const ExploreTab = ({
     return (
       <motion.div
         key={profile.id}
-        className="absolute left-0 right-0 mx-auto w-full max-w-[320px] h-[min(44dvh,340px)] sm:h-[min(50dvh,380px)] bg-[#1C1C20] rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing swipe-card ring-1 ring-white/10"
+        className="absolute left-0 right-0 mx-auto w-full max-w-[320px] h-[min(36dvh,300px)] sm:h-[min(44dvh,340px)] bg-[#1C1C20] rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing swipe-card ring-1 ring-white/10"
         style={{ zIndex: z }}
         initial={false}
         animate={{
@@ -442,7 +447,7 @@ export const ExploreTab = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col p-3 pt-2 relative bg-[#0D0D10] min-h-0">
+    <div className="flex flex-col p-3 pt-2 pb-4 relative bg-[#0D0D10]">
       {/* Header — above card stack in paint order */}
       <div className="relative z-30 flex items-start justify-between gap-2 mb-2 px-0.5 shrink-0 bg-[#0D0D10]">
         <div className="min-w-0 flex-1">
@@ -484,6 +489,14 @@ export const ExploreTab = ({
         </div>
       </div>
 
+      <SyncHourBanner
+        compact
+        onActivateLive={onActivateLive}
+        db={db}
+        city={cityLabel}
+        isDemoMode={isDemoMode}
+      />
+
       {showSparseBanner && (
         <div className="relative z-20 mb-3 mx-1 p-3 rounded-2xl bg-[#FF671F]/10 border border-[#FF671F]/25 text-[11px] leading-snug shrink-0">
           <strong className="text-[#FF671F]">Pocos perfiles con tus filtros.</strong>{' '}
@@ -516,8 +529,8 @@ export const ExploreTab = ({
         />
       )}
 
-      {/* Cards Stack Area — clipped so absolute cards never paint over header */}
-      <div className="relative z-0 flex-1 flex items-center justify-center my-1 min-h-[220px] max-h-[min(46dvh,360px)] sm:max-h-[400px] bg-[#0D0D10] overflow-hidden">
+      {/* Cards Stack Area — fixed height so recs below stay reachable on scroll */}
+      <div className="relative z-0 flex items-center justify-center my-1 h-[min(38dvh,320px)] sm:h-[min(44dvh,380px)] bg-[#0D0D10] overflow-hidden shrink-0">
         {isLoadingProfiles && visibleCards.length === 0 && (
           <SwipeCardSkeleton />
         )}
@@ -527,17 +540,17 @@ export const ExploreTab = ({
               <div className="mx-auto w-16 h-16 bg-[#1C1C20] rounded-3xl flex items-center justify-center mb-4 ring-1 ring-[#FF671F]/20">
                 <div className="text-4xl">🏋️</div>
               </div>
-              <div className="text-2xl font-semibold tracking-tight mb-1">No hay más perfiles por ahora</div>
+              <div className="text-2xl font-semibold tracking-tight mb-1">{BRAND_COPY.explore.emptyTitle}</div>
               <p className="text-[#9CA3AF] max-w-[300px] mx-auto mb-4 text-sm">
                 {isDemoMode
                   ? 'En modo prueba puedes reiniciar el deck o invitar amigos a probar EntrenaMatch.'
-                  : `En ${cityLabel} la comunidad está creciendo. Invita a alguien de tu gym o activa live para que te encuentren.`}
+                  : BRAND_COPY.explore.emptyBody(cityLabel)}
               </p>
 
               <WhyEntrenaMatchStrip compact />
 
               <div className="rounded-2xl border border-[#22c55e]/30 bg-[#0a2a1a]/40 p-4 mb-4 text-left max-w-[320px] mx-auto">
-                <p className="text-[10px] uppercase tracking-wider text-[#22c55e] font-bold mb-1">Invitar amigo</p>
+                <p className="text-[10px] uppercase tracking-wider text-[#22c55e] font-bold mb-1">{BRAND_COPY.explore.inviteTitle}</p>
                 <p className="text-[11px] text-[#9CA3AF] break-all mb-2">{inviteLink}</p>
                 <button
                   type="button"
@@ -546,20 +559,37 @@ export const ExploreTab = ({
                       if (navigator.share) {
                         await navigator.share({
                           title: 'EntrenaMatch',
-                          text: 'Entrena con gente cerca de ti — únete a EntrenaMatch',
+                          text: BRAND_COPY.explore.inviteShareText,
                           url: inviteLink,
+                        })
+                        void recordPilotDensityEvent(db, {
+                          city: cityLabel,
+                          kind: 'invite_shared',
+                          isDemoMode,
                         })
                         return
                       }
                       await navigator.clipboard.writeText(inviteLink)
-                      toast.success('Enlace copiado — compártelo con tu gym')
+                      toast.success(BRAND_COPY.explore.inviteToastCopied)
+                      void recordPilotDensityEvent(db, {
+                        city: cityLabel,
+                        kind: 'invite_shared',
+                        isDemoMode,
+                      })
                     } catch {
                       toast.error('No se pudo compartir')
                     }
                   }}
                   className="w-full py-2.5 rounded-xl bg-[#22c55e] text-black font-bold text-sm flex items-center justify-center gap-2"
                 >
-                  <Share2 size={16} /> Invitar amigo
+                  <Share2 size={16} /> {BRAND_COPY.explore.inviteTitle}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowGymQr(true)}
+                  className="w-full mt-2 py-2 rounded-xl border border-[#22c55e]/40 text-[#22c55e] text-xs font-bold flex items-center justify-center gap-2"
+                >
+                  <QrCode size={14} /> QR para tu gym
                 </button>
               </div>
 
@@ -600,7 +630,7 @@ export const ExploreTab = ({
                   onClick={onActivateLive}
                   className="mb-3 px-5 py-2.5 bg-[#22c55e] text-black rounded-2xl text-sm font-semibold active:brightness-90"
                 >
-                  Activar LIVE — sé visible en el mapa
+                  {BRAND_COPY.explore.activateLiveCta}
                 </button>
               )}
 
@@ -676,16 +706,23 @@ export const ExploreTab = ({
       )}
       {/* "Desliza o usa los botones" guide text removed - was cluttering the profile choice / swipe area */}
 
-      {/* Recommendations - Más compatibles (unique discovery) */}
+      {/* Recommendations - Más compatibles */}
       {userLocation && currentUser && deck.length > 0 && (
-        <div className="mt-3 mb-2 hidden md:block">
-          <div className="flex items-center justify-between mb-2.5 px-1">
+        <div className="mt-2 mb-2 shrink-0">
+          <div className="flex items-center justify-between mb-2 px-1">
             <div>
-              <div className="font-semibold text-sm flex items-center gap-1">Más compatibles (reales primero) <span className="live-pill text-[8px]">en vivo</span></div>
-              {lastSync && <span className="text-[9px] text-[#9CA3AF] ml-1">· hace {Math.max(0, Math.floor((Date.now()-lastSync.getTime())/1000))}s</span>}
+              <div className="font-semibold text-sm flex items-center gap-1 flex-wrap">
+                Más compatibles
+                <span className="live-pill text-[8px]">en vivo</span>
+              </div>
+              {lastSync && (
+                <span className="text-[9px] text-[#9CA3AF]">
+                  Actualizado hace {Math.max(0, Math.floor((Date.now() - lastSync.getTime()) / 1000))}s
+                </span>
+              )}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="explore-recs-scroll flex gap-2.5 overflow-x-auto pb-1 snap-x snap-mandatory md:grid md:grid-cols-2 md:overflow-visible md:snap-none">
             {deck
               .slice(0, 8)
               .map(p => ({ 
@@ -706,7 +743,7 @@ export const ExploreTab = ({
                 <div 
                   key={profile.id}
                   onClick={() => onShowProfile?.(profile)}
-                  className="card p-2.5 rounded-2xl flex gap-2.5 cursor-pointer active:scale-[0.985] transition"
+                  className="card p-2.5 rounded-2xl flex gap-2.5 cursor-pointer active:scale-[0.985] transition min-w-[168px] max-w-[168px] md:min-w-0 md:max-w-none snap-start shrink-0 md:shrink"
                 >
                   <VerifiedProfilePhoto
                     src={profile.photos[0]}
@@ -748,17 +785,20 @@ export const ExploreTab = ({
       {/* NEW HIGH IMPACT: RED GLOBAL / TOP NETWORK POWER LEADERBOARD + GLOBAL QUANTIFICATION */}
       {/* Makes the social graph visible and competitive at scale. High NP users get status. Your red's impact is quantified. */}
       {topNetworks.length > 0 && (
-        <div className="mt-3 mb-2 px-1 hidden md:block">
-          <div className="flex items-center justify-between mb-2 px-0.5">
-            <div className="font-semibold text-sm flex items-center gap-1 text-[#FFD700]">🔥 TOP REDES (Fuerza del equipo global) <span className="text-[8px] bg-[#FFD700]/20 px-1 rounded text-black">LIVE</span></div>
-            <div className="text-[8px] text-[#9CA3AF]">Tu grafo mueve el pulso</div>
+        <div className="mt-2 mb-2 px-1 shrink-0">
+          <div className="flex items-center justify-between mb-2 px-0.5 gap-2">
+            <div className="font-semibold text-sm flex items-center gap-1 text-[#FFD700] min-w-0">
+              <span className="truncate">🔥 TOP REDES</span>
+              <span className="text-[8px] bg-[#FFD700]/20 px-1 rounded text-black shrink-0">LIVE</span>
+            </div>
+            <div className="text-[8px] text-[#9CA3AF] shrink-0">Tu grafo mueve el pulso</div>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {topNetworks.map((n, i) => (
+          <div className="explore-recs-scroll flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory md:grid md:grid-cols-2 md:overflow-visible md:snap-none">
+            {topNetworks.map((n) => (
               <div
                 key={n.profile.id}
                 onClick={() => onShowProfile?.(n.profile)}
-                className="card p-2.5 rounded-2xl flex gap-2.5 cursor-pointer active:scale-[0.985] border border-[#FFD700]/30 hover:border-[#FFD700]/60 transition"
+                className="card p-2.5 rounded-2xl flex gap-2.5 cursor-pointer active:scale-[0.985] border border-[#FFD700]/30 hover:border-[#FFD700]/60 transition min-w-[168px] max-w-[168px] md:min-w-0 md:max-w-none snap-start shrink-0 md:shrink"
               >
                 <VerifiedProfilePhoto
                   src={n.profile.photos?.[0] || ''}
@@ -778,6 +818,15 @@ export const ExploreTab = ({
           <div className="text-[8px] text-center text-[#FFD700]/60 mt-1">Las redes más fuertes dominan el pulso y las recomendaciones. Construye la tuya →</div>
         </div>
       )}
+      <GymInviteQrSheet
+        open={showGymQr}
+        inviteUrl={inviteLink}
+        gymName={cityLabel}
+        onClose={() => setShowGymQr(false)}
+        db={db}
+        city={cityLabel}
+        isDemoMode={isDemoMode}
+      />
     </div>
   );
 };

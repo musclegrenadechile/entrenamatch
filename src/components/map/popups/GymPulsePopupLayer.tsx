@@ -3,6 +3,8 @@ import { BRAND_COPY } from '../../../constants/brandCopy'
 import type { GymPulsePopupState } from '../gymPulsePopupTypes'
 import { GymPulseLivePopup } from './GymPulseLivePopup'
 import { GymPulsePartnerCard } from './GymPulsePartnerCard'
+import type { SyncRipple } from '../../../services/gymSoundReactions'
+import type { GymSoundDisplay } from '../../../types'
 
 export interface GymPulsePopupLayerProps {
   popup: GymPulsePopupState | null
@@ -16,6 +18,11 @@ export interface GymPulsePopupLayerProps {
   onPartnerEdit?: (partnerId: string) => void
   onPartnerDelete?: (partnerId: string) => void
   onExpandCluster?: (lat: number, lng: number, clusterId?: number) => void
+  selfName?: string
+  selfNowPlaying?: GymSoundDisplay | null
+  setSyncRipples?: (updater: SyncRipple[] | ((prev: SyncRipple[]) => SyncRipple[])) => void
+  onHaptic?: () => void
+  inviteReferralCode?: string
 }
 
 export function GymPulsePopupLayer({
@@ -30,6 +37,11 @@ export function GymPulsePopupLayer({
   onPartnerEdit,
   onPartnerDelete,
   onExpandCluster,
+  selfName,
+  selfNowPlaying,
+  setSyncRipples,
+  onHaptic,
+  inviteReferralCode,
 }: GymPulsePopupLayerProps) {
   if (!popup) return null
 
@@ -44,6 +56,10 @@ export function GymPulsePopupLayer({
             onClose={onClose}
             onShowProfile={() => onShowProfile(popup.user)}
             onStartSync={() => onStartSync(String(popup.user.id), String(popup.user.name || ''))}
+            selfName={selfName}
+            selfNowPlaying={selfNowPlaying}
+            setSyncRipples={setSyncRipples}
+            onHaptic={onHaptic}
           />
         )}
         {popup.kind === 'partner' && (
@@ -64,6 +80,7 @@ export function GymPulsePopupLayer({
             isDeveloper={isDeveloper}
             onDevEdit={() => onPartnerEdit?.(popup.partner.id)}
             onDevDelete={() => onPartnerDelete?.(popup.partner.id)}
+            inviteReferralCode={inviteReferralCode}
           />
         )}
         {popup.kind === 'cluster' && (

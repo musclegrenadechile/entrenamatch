@@ -26,6 +26,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- GymSound — Spotify OAuth returns from spotify-callback.html -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="com.entrenamatch.app"
+                    android:host="spotify-auth" />
+            </intent-filter>
+
         </activity>
 
         <provider

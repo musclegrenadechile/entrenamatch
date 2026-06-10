@@ -72,6 +72,23 @@ export function buildInviteLink(referralCode: string): string {
   return `${base}${sep}ref=${encodeURIComponent(referralCode)}`
 }
 
+/** Fase 121 — enlace con contexto de gym partner (QR en recepción). */
+export function buildGymInviteLink(
+  referralCode: string,
+  gym?: { id?: string; name?: string } | null
+): string {
+  const link = buildInviteLink(referralCode)
+  if (!gym?.id && !gym?.name) return link
+  try {
+    const u = new URL(link)
+    if (gym.id) u.searchParams.set('gym', gym.id)
+    if (gym.name) u.searchParams.set('gymName', gym.name.slice(0, 48))
+    return u.toString()
+  } catch {
+    return link
+  }
+}
+
 const NON_SHAREABLE_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0'])
 
 /** Rewrites localhost/file URLs to the public app origin (keeps ?ref= when present). */

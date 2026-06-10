@@ -200,4 +200,5 @@ export interface ProfileTabProps {
   entrenoRecentLoading?: boolean
   onOpenEntrenoDeHoy?: () => void
   onCopyEntrenoWorkout?: (workout: import('../../types').Workout) => void
+  onDeleteEntrenoWorkout?: (workout: import('../../types').Workout) => void
 }

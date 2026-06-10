@@ -195,5 +195,14 @@ export function profileDocToLiveUser(
     liveMotionAt: typeof data.liveMotionAt === 'number' ? data.liveMotionAt : undefined,
     liveMotionIdle: data.liveMotionIdle === true,
     liveActivityState: data.liveActivityState,
+    spotifyShareLive: data.spotifyShareLive === true,
+    spotifyNowPlaying:
+      data.spotifyNowPlaying && typeof data.spotifyNowPlaying === 'object'
+        ? data.spotifyNowPlaying
+        : undefined,
+    gymSoundAnthem:
+      data.gymSoundAnthem && typeof data.gymSoundAnthem === 'object'
+        ? data.gymSoundAnthem
+        : undefined,
   }
 }

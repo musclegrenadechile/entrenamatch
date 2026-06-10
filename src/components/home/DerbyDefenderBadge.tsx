@@ -16,7 +16,7 @@ export function DerbyDefenderBadge({
   return (
     <span
       className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#FFD700]/15 text-[#FFD700] text-[9px] font-bold"
-      title={`${winnerLabel(gender)} derby semana ${latest.weekKey}`}
+      title={`${winnerLabel(gender)} Copa Zona · guerra ${latest.weekKey}`}
     >
       <Shield size={10} aria-hidden />
       Defensor · {latest.winnerLabel.split(' ').slice(-1)[0] || latest.winnerLabel}

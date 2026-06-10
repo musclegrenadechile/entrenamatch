@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>EntrenaMatch · Spotify</title>
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, sans-serif;
+      background: #0d0d10;
+      color: #e9edef;
+      text-align: center;
+      padding: 24px;
+    }
+  </style>
+</head>
+<body>
+  <p id="msg">Volviendo a EntrenaMatch…</p>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var code = params.get('code');
+      var state = params.get('state');
+      var err = params.get('error');
+      var msg = document.getElementById('msg');
+      if (err) {
+        msg.textContent = 'Spotify cancelado: ' + err;
+        return;
+      }
+      if (!code || !state) {
+        msg.textContent = 'Falta el código de Spotify. Cierra esta pestaña y vuelve a intentar en la app.';
+        return;
+      }
+      var deep =
+        'com.entrenamatch.app://spotify-auth?code=' +
+        encodeURIComponent(code) +
+        '&state=' +
+        encodeURIComponent(state);
+      location.replace(deep);
+      setTimeout(function () {
+        msg.textContent = 'Si la app no abrió, vuelve a EntrenaMatch manualmente.';
+      }, 2500);
+    })();
+  </script>
+</body>
+</html>

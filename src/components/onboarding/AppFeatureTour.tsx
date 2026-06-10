@@ -7,7 +7,7 @@ const STEPS = [
   {
     id: 'home',
     title: 'Hoy — tu día',
-    body: 'Empieza aquí: piloto, derby regional y el botón LIVE flotante cuando entrenes.',
+    body: 'Empieza aquí: Copa Zona, piloto regional y el botón LIVE flotante cuando entrenes.',
     anchor: 'bottom-nav-home',
   },
   {

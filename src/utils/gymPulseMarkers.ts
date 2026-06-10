@@ -17,6 +17,8 @@ export interface LiveMarkerUser {
   trainingSyncWith?: string
   liveMotionIdle?: boolean
   liveMotionScore?: number
+  hasGymSound?: boolean
+  gymSoundArtUrl?: string
 }
 
 export function buildIconicLiveMarkerHtml(
@@ -65,13 +67,18 @@ export function buildIconicLiveMarkerHtml(
       ? `<div style="position:absolute;bottom:-1px;right:2px;background:${hasPulso ? '#a855f7' : '#eab308'};color:#111;font-size:7px;font-weight:800;padding:0 2px;border-radius:2px">${lvl}</div>`
       : ''
   const nameLabel = `<div style="position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:rgba(10,10,12,0.85);color:#ddd;font-size:8px;padding:0 4px;border-radius:3px;white-space:nowrap;max-width:68px;overflow:hidden;text-overflow:ellipsis;border:1px solid rgba(255,255,255,0.1)">${(u.name || '').split(' ')[0]}</div>`
+  const musicBadge = u.hasGymSound
+    ? u.gymSoundArtUrl
+      ? `<div style="position:absolute;bottom:-4px;left:-4px;width:14px;height:14px;border-radius:4px;overflow:hidden;border:1.5px solid #1DB954;box-shadow:0 0 0 1px #000"><img src="${u.gymSoundArtUrl}" alt="" style="width:100%;height:100%;object-fit:cover" /></div>`
+      : `<div style="position:absolute;bottom:-4px;left:-4px;width:14px;height:14px;border-radius:9999px;background:#1DB954;color:#000;font-size:8px;display:flex;align-items:center;justify-content:center;border:1.5px solid #111">♪</div>`
+    : ''
 
   return `<div class="iconic-live-marker${isIdle ? ' iconic-live-marker--idle' : ''}" style="position:relative;width:${size}px;height:${size}px;${idleWrap}">
     ${idleHint}${nameLabel}
     <div style="width:${size}px;height:${size}px;border-radius:9999px;overflow:hidden;border:2.5px solid ${borderColor};box-shadow:0 0 0 2px rgba(0,0,0,0.75);">
       <img src="${u.photos?.[0] || ''}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.style.background='${isIdle ? '#6b7280' : '#22c55e'}';this.innerHTML='<div style=\\'font-size:9px;color:white;display:flex;align-items:center;justify-content:center;height:100%;font-weight:700\\'>${isIdle ? '⏸' : 'LIVE'}</div>'" />
     </div>
-    ${ringExtra}${bondHalo}${liveBadge}${timeBadge}${lvlBadge}
+    ${ringExtra}${bondHalo}${liveBadge}${timeBadge}${lvlBadge}${musicBadge}
     ${
       isIdle
         ? ''
