@@ -2336,14 +2336,22 @@ input[type="range"]::-moz-range-thumb {
 }
 
 /* Premium segmented tabs */
+.auth-tab-track {
+  background: #121214;
+  border: 1px solid #2a2a30;
+}
 .auth-tab {
   position: relative;
-  transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+  color: #9ca3af;
+  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+.auth-tab:hover:not(.active) {
+  color: #e5e7eb;
 }
 .auth-tab.active {
-  background: #1f242b;
-  color: white;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  background: linear-gradient(135deg, rgba(255, 103, 31, 0.22) 0%, rgba(255, 79, 121, 0.14) 100%);
+  color: #fff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 103, 31, 0.35);
 }
 
 /* Beautiful inputs that feel special */
@@ -2356,6 +2364,10 @@ input[type="range"]::-moz-range-thumb {
   border-color: #FF671F;
   box-shadow: 0 0 0 3px rgba(255, 103, 31, 0.1);
   outline: none;
+}
+.auth-input-with-toggle:focus + .auth-password-toggle,
+.auth-password-toggle:hover {
+  color: #e5e7eb;
 }
 
 /* The entry button - feels like opening the doors to something sacred */

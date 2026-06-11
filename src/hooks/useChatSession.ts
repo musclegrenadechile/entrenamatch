@@ -37,6 +37,10 @@ import {
   safeSetJSON,
   trimSetToMax,
 } from '../utils/safeLocalStorage'
+import { bumpRealtimeStat } from '../utils/realtimeStats'
+
+/** Max simultaneous 1:1 chat listeners (perf on devices with many bot matches). */
+export const MAX_CHAT_LISTENERS = 5
 
 export interface UseChatSessionOptions {
   isDemoMode: boolean
@@ -359,8 +363,12 @@ export function useChatSession(opts: UseChatSessionOptions) {
   )
 
   const chatListenIds = useMemo(() => {
-    const ids = new Set<string>(realMatches || [])
+    const ids = new Set<string>()
     if (activeChat && isRealChatId(activeChat)) ids.add(activeChat)
+    for (const matchId of realMatches || []) {
+      if (ids.size >= MAX_CHAT_LISTENERS) break
+      if (isRealChatId(matchId)) ids.add(matchId)
+    }
     return Array.from(ids)
   }, [realMatches, activeChat, isRealChatId])
 
@@ -373,11 +381,13 @@ export function useChatSession(opts: UseChatSessionOptions) {
           realChatUnsubsRef.current[id]?.()
         } catch {}
         delete realChatUnsubsRef.current[id]
+        bumpRealtimeStat('chatListeners', -1)
       }
     })
 
     chatListenIds.forEach((matchId) => {
       if (realChatUnsubsRef.current[matchId]) return
+      bumpRealtimeStat('chatListeners', 1)
       realChatUnsubsRef.current[matchId] = attachDirectChatListener(db, firebaseUserUid, matchId, {
         onMessages: (msgs) => applyDirectChatMessages(matchId, msgs),
         onIncoming: (msg) => {
@@ -415,12 +425,14 @@ export function useChatSession(opts: UseChatSessionOptions) {
 
   useEffect(() => {
     return () => {
+      const count = Object.keys(realChatUnsubsRef.current).length
       Object.values(realChatUnsubsRef.current).forEach((u) => {
         try {
           u()
         } catch {}
       })
       realChatUnsubsRef.current = {}
+      if (count > 0) bumpRealtimeStat('chatListeners', -count)
     }
   }, [isDemoMode, firebaseUserUid])
 

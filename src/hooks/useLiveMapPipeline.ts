@@ -22,7 +22,8 @@ import {
   profileDocToLiveUser,
 } from '../utils/gymPulseLive'
 import { attachLivePresenceListener } from '../services/livePresence'
-import { attachLiveUsersListener, patchRealProfilesWithLiveSnapshot } from '../services/liveUsers'
+import { attachLiveUsersListener } from '../services/liveUsers'
+import { bumpRealtimeStat } from '../utils/realtimeStats'
 import { resolveLiveMapMerge } from '../utils/liveMapSources'
 import { liveUsersSnapshotSignature } from '../utils/liveMapSnapshot'
 import { toast } from 'sonner'
@@ -107,6 +108,8 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
   const showLiveMapRef = useRef(showLiveMap)
   const activeTabRef = useRef(activeTab)
   const lastLiveSnapshotSigRef = useRef('')
+  const lastLiveStatePublishRef = useRef(0)
+  const LIVE_IDLE_THROTTLE_MS = 2000
 
   useEffect(() => {
     liveUsersFromDedicatedRef.current = liveUsersFromDedicated
@@ -210,21 +213,20 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
       lastLiveSnapshotSigRef.current = sig
 
       liveUsersFromDedicatedRef.current = merged
-      setLiveUsersFromDedicated(merged)
-      if (showLiveMapRef.current || activeTabRef.current === 'map') {
+      const mapActive = showLiveMapRef.current || activeTabRef.current === 'map'
+      const now = Date.now()
+      const throttleOk =
+        mapActive || now - lastLiveStatePublishRef.current >= LIVE_IDLE_THROTTLE_MS
+      if (throttleOk) {
+        lastLiveStatePublishRef.current = now
+        setLiveUsersFromDedicated(merged)
+      }
+      if (mapActive) {
         setMapForceTick((t) => t + 1)
       }
-      setRealProfiles((prev) => {
-        const next = patchRealProfilesWithLiveSnapshot(prev, merged, {
-          selfUid: currentUidRef.current,
-        })
-        if (next === prev) return prev
-        latestRealProfilesRef.current = next
-        return next
-      })
       void profilesForMerge
     },
-    [setRealProfiles, latestRealProfilesRef, currentUidRef, setMapForceTick]
+    [setMapForceTick]
   )
 
   useEffect(() => {
@@ -253,6 +255,8 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
       publishLiveSnapshot(liveFromPresenceRef.current, liveFromProfilesQueryRef.current)
     }
 
+    bumpRealtimeStat('liveListeners', 2)
+
     const unsubPresence = attachLivePresenceListener(
       db,
       (users) => {
@@ -266,13 +270,13 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
     const unsubProfiles = attachLiveUsersListener(
       db,
       (users) => {
-        // Always keep profiles query for GymSound enrichment on livePresence rows.
         publishLiveSnapshot(liveFromPresenceRef.current, users as Profile[])
       },
       { getBlockedIds: blocked, onError: onProfilesErr }
     )
 
     return () => {
+      bumpRealtimeStat('liveListeners', -2)
       unsubPresence()
       unsubProfiles()
     }

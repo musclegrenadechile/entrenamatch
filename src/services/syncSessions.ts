@@ -46,6 +46,8 @@ export interface SyncSessionData {
     prs?: Array<{ exercise: string; weightKg: number; reps: number; at: number }>
     updatedAt?: number
   }
+  /** W1b — per-participant wearable summary at session end (no raw HR series). */
+  wearableSnapshot?: Record<string, import('../types').WearableSessionSnapshot>
 }
 
 export interface IncomingSyncPayload {

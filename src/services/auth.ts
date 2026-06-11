@@ -63,11 +63,12 @@ export interface UserProfile {
   uid: string;
   name: string;
   age: number;
-  gender: 'hombre' | 'mujer';
+  gender: import('../types').ProfileGender;
   city: string;
   country: string;
   bio: string;
   photos: string[];
+  photosUpdatedAt?: number;
   trainingTypes: string[];
   goals: string[];
   level: 'Principiante' | 'Intermedio' | 'Avanzado';

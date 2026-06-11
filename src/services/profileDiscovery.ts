@@ -5,13 +5,14 @@
 
 import type { Firestore } from 'firebase/firestore'
 import type { Profile } from '../types'
+import { isDeletedProfileData } from '../utils/deletedProfile'
 import { normalizeTrainingSince } from '../utils/gymPulseLive'
 
 export function mapFirestoreProfileDoc(
   id: string,
   data: Record<string, unknown> | null | undefined
 ): Profile | null {
-  if (!data || !data.name) return null
+  if (!data || !data.name || isDeletedProfileData(data)) return null
   const d = data as Record<string, any>
   return {
     id,
@@ -56,6 +57,7 @@ export function mapFirestoreProfileDoc(
     gymCheckIn: d.gymCheckIn || undefined,
     isBetaBot: d.isBetaBot === true,
     communityAdmin: d.communityAdmin === true,
+    accountStatus: d.accountStatus === 'deleted' ? 'deleted' : undefined,
   }
 }
 

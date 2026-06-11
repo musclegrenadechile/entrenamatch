@@ -93,6 +93,14 @@ import { AppFeatureTour, hasSeenAppFeatureTour, markAppFeatureTourSeen } from '.
 import { useAndroidBackHandler } from './hooks/useAndroidBackHandler'
 import { suggestedSquadName } from './utils/sparseCityDefaults'
 import { formatLiveDistanceKm } from './utils/formatLiveDistance'
+import {
+  ensurePersistableProfilePhotos,
+  filterPersistablePhotos,
+  isDataUrlPhoto,
+  latestPhotosUpdatedAt,
+  profilePhotosChanged,
+  resolveProfilePhotos,
+} from './utils/profilePhotos'
 import { partnersForMap } from './utils/partnerLocations'
 import {
   getTodayStr,
@@ -187,7 +195,13 @@ import { CityChallengeCelebrationModal } from './components/explore/CityChalleng
 import { parseReferralFromUrl } from './components/growth/ReferralInviteCard'
 import { SafetyActionSheet } from './components/safety/SafetyActionSheet'
 import { createEmptySyncArenaSnapshot } from './sync/syncArenaState'
-import { fetchGlobalProfilePosts, fetchProfilePostById, togglePostLikeInFirestore, persistPostReactionsInFirestore } from './services/profilePosts'
+import {
+  attachGlobalFeedListener,
+  fetchGlobalProfilePosts,
+  fetchProfilePostById,
+  togglePostLikeInFirestore,
+  persistPostReactionsInFirestore,
+} from './services/profilePosts'
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
 import { isQuickDemoSession, clearQuickDemoSession } from './utils/quickDemo'
 import { enrichReturningProfile, isProfileComplete } from './utils/profileComplete'
@@ -195,6 +209,7 @@ import {
   fetchProfilesByIds,
   mergeProfileLists,
 } from './services/profileDiscovery'
+import { isDeletedProfile, isDeletedProfileData } from './utils/deletedProfile'
 import { filterSeedsForCity } from './utils/citySeeds'
 import {
   buildWeekDayStatuses,
@@ -358,6 +373,9 @@ import {
   type PostComment,
 } from './services/postComments'
 import { attachUserPostsListener } from './services/profilePosts'
+import { parseProfileFromFirestoreDoc, PROFILE_LIST_LIMIT } from './utils/profileFirestoreParse'
+import { bumpRealtimeStat, realtimeStats } from './utils/realtimeStats'
+import { PerfOverlay } from './components/dev/PerfOverlay'
 import { attachDirectChatListener, type DirectChatMsg } from './services/chatMessages'
 import { processLikeAndMaybeMatch } from './services/matching'
 import { writePass } from './services/swipeState'
@@ -1599,6 +1617,8 @@ useEffect(() => {
   const profilePostsRef = useRef<Record<string, ProfilePost[]>>({})
   const postCommentUnsubsRef = useRef<Record<string, () => void>>({})
   const userPostsUnsubsRef = useRef<Record<string, () => void>>({})
+  const globalFeedUnsubRef = useRef<(() => void) | null>(null)
+  const homeCityRef = useRef(currentUser?.city || '')
   const liveUsersActiveRef = useRef<any[]>([])
   const postCommentInlineFallbackRef = useRef<Record<string, unknown>>({})
   useEffect(() => { profilePostsRef.current = profilePosts }, [profilePosts])
@@ -2175,6 +2195,7 @@ useEffect(() => {
     
     return Array.from(unique.values()).filter(p => {
       if (swiped.has(p.id)) return false
+      if (isDeletedProfile(p)) return false
       return true
     })
   }, [likedIds, passedIds, realProfiles, currentUser?.city, isDemoMode])
@@ -2185,7 +2206,8 @@ useEffect(() => {
   // Feed computation lifted to top-level useMemo so hook is ALWAYS called in the same order (fixes React #310 "Rendered more hooks than during the previous render" when switching tabs).
   // The previous inline IIFE inside {activeTab==='feed' && ...} was conditionally executing the useMemo hook → violation.
   const feedComputation = useMemo(() => {
-    return computeGlobalFeed({
+    const t0 = performance.now()
+    const result = computeGlobalFeed({
       profilePosts,
       effectiveUserId,
       syncBonds,
@@ -2200,6 +2222,8 @@ useEffect(() => {
       feedDisplayLimit,
       isSeedProfileId,
     })
+    realtimeStats.lastFeedComputeMs = Math.round(performance.now() - t0)
+    return result
   }, [profilePosts, feedShowPinnedOnly, feedOnlyReal, feedOnlyLive, feedSearch, feedDisplayLimit, realProfiles, effectiveUserId, syncBonds, currentUser, liveUsersActive, userLocation]);
 
   // Filtered deck (with distance support + blocking)
@@ -2207,6 +2231,7 @@ useEffect(() => {
   // Hoisted early with the other discovery memos.
   const deck = useMemo(() => {
     const filtered = remainingProfiles.filter(p => {
+      if (isDeletedProfile(p)) return false
       // Block filter (critical safety)
       if (blockedUsers.includes(p.id)) return false
 
@@ -2301,7 +2326,7 @@ useEffect(() => {
           availability: ['Tarde'],
         } satisfies Profile
       })
-      .filter((p): p is Profile => !!p)
+      .filter((p): p is Profile => !!p && !isDeletedProfile(p))
   }, [matches, realMatches, realProfiles, isDemoMode])
 
   const teamMatchIds = useMemo(
@@ -2655,75 +2680,64 @@ useEffect(() => {
     return () => clearInterval(id);
   }, [isDemoMode]);
 
-  // REAL-TIME PROFILES LISTENER for live status (fixes "no aparece para otros en el mapa" when someone toggles Entrenando Ahora)
-  // When any profile updates (including trainingNow + updatedAt), all connected clients get pushed the change instantly.
-  // This makes the GymPulse map update for everyone in near real-time without waiting for the 45s poller.
-  // We still keep the poller as fallback + for the "Actualizar todo" button.
   useEffect(() => {
-    if (isDemoMode || !db || !isFirebaseConfigured) return undefined;
+    homeCityRef.current = (currentUser?.city || '').trim()
+  }, [currentUser?.city])
 
-    let unsub: any = null;
-    (async () => {
+  // Scoped profiles listener — city + limit (perf: was 300 global docs).
+  useEffect(() => {
+    if (isDemoMode || !db || !isFirebaseConfigured) return undefined
+
+    let unsub: (() => void) | null = null
+    const city = homeCityRef.current
+
+    ;(async () => {
       try {
-        const { collection, onSnapshot, query, orderBy, limit } = await import('firebase/firestore');
-        const profilesRef = collection(db, 'profiles');
-        const q = query(profilesRef, orderBy('updatedAt', 'desc'), limit(300));
+        const { collection, onSnapshot, query, orderBy, limit, where } = await import(
+          'firebase/firestore'
+        )
+        const profilesRef = collection(db, 'profiles')
+        const q = city
+          ? query(
+              profilesRef,
+              where('city', '==', city),
+              orderBy('updatedAt', 'desc'),
+              limit(PROFILE_LIST_LIMIT)
+            )
+          : query(profilesRef, orderBy('updatedAt', 'desc'), limit(PROFILE_LIST_LIMIT))
 
-        unsub = onSnapshot(q, (snapshot) => {
-          const profiles: Profile[] = [];
-          const currentUid = currentUidRef.current;
+        bumpRealtimeStat('profileListeners', 1)
+        unsub = onSnapshot(
+          q,
+          (snapshot) => {
+            const profiles: Profile[] = []
+            const currentUid = currentUidRef.current
 
-          snapshot.forEach((doc) => {
-            if (doc.id === currentUid) return;
-            if (blockedUsersRef.current.includes(doc.id)) return;
-            const data = doc.data() as any;
-            if (data && data.name) {
-              profiles.push({
-                id: doc.id,
-                name: data.name,
-                age: data.age || 25,
-                gender: data.gender || 'hombre',
-                city: data.city || '',
-                country: data.country || 'Chile',
-                lat: data.lat || -33.0,
-                lng: data.lng || -71.0,
-                bio: data.bio || '',
-                photos: data.photos || [],
-                trainingTypes: data.trainingTypes || [],
-                goals: data.goals || [],
-                level: data.level || 'Intermedio',
-                availability: data.availability || ['Tarde'],
-                intensity: data.intensity,
-            verificationStatus: data.verificationStatus,
-            verificationDate: data.verificationDate ?? undefined,
-            trainingNow: data.trainingNow || false,
-            trainingNowSince: normalizeTrainingSince(data.trainingNowSince),
-            liveStreak: data.liveStreak != null ? data.liveStreak : undefined,
-            lastLiveDate: data.lastLiveDate != null ? data.lastLiveDate : undefined,
-            liveJoins: data.liveJoins != null ? data.liveJoins : undefined,
-            joinedLiveStreak: data.joinedLiveStreak != null ? data.joinedLiveStreak : undefined,
-            trainingSyncWith: data.trainingSyncWith || undefined,
-            syncStreak: data.syncStreak != null ? data.syncStreak : undefined,
-            syncBonds: data.syncBonds || {},
-            weekStats: data.weekStats || undefined,
-            showOnLeaderboard: data.showOnLeaderboard,
-            gymCheckIn: data.gymCheckIn || undefined,
-            retentionLevel: data.retentionLevel || 1,
-              } as any);
-            }
-          });
-          setRealProfiles(profiles);
-        }, (err) => {
-          console.warn('profiles onSnapshot error, falling back to polling', err);
-          loadRealProfiles().catch(() => {})
-        });
+            snapshot.forEach((doc) => {
+              if (doc.id === currentUid) return
+              if (blockedUsersRef.current.includes(doc.id)) return
+              const parsed = parseProfileFromFirestoreDoc(doc.id, doc.data() as Record<string, unknown>)
+              if (parsed) profiles.push(parsed)
+            })
+            setRealProfiles(profiles)
+          },
+          (err) => {
+            console.warn('profiles onSnapshot error, falling back to polling', err)
+            loadRealProfiles().catch(() => {})
+          }
+        )
       } catch (e) {
-        console.warn('Failed to setup profiles listener', e);
+        console.warn('Failed to setup profiles listener', e)
       }
-    })();
+    })()
 
-    return () => { if (unsub) unsub(); };
-  }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, blockedUsers]); // blockedUsers to re-filter if changes
+    return () => {
+      if (unsub) {
+        unsub()
+        bumpRealtimeStat('profileListeners', -1)
+      }
+    }
+  }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, blockedUsers, currentUser?.city])
 
   // Global silent sync — pull-to-refresh + tab focus (Fase 32)
   const silentRefreshReal = async (opts?: { includeChats?: boolean; includeFeed?: boolean }) => {
@@ -2854,62 +2868,25 @@ useEffect(() => {
     }
     try {
       const profilesRef = collection(db, 'profiles')
-      const q = query(profilesRef, orderBy('updatedAt', 'desc'), limit(300)) // order by recent updates so people who just toggled live are likely in the results; 300 for safety on live visibility
+      const city = (currentUser?.city || homeCityRef.current || '').trim()
+      const q = city
+        ? query(
+            profilesRef,
+            where('city', '==', city),
+            orderBy('updatedAt', 'desc'),
+            limit(PROFILE_LIST_LIMIT)
+          )
+        : query(profilesRef, orderBy('updatedAt', 'desc'), limit(PROFILE_LIST_LIMIT))
       const snapshot = await getDocs(q)
-      
+
       const profiles: Profile[] = []
       const currentUid = currentUidRef.current || firebaseUser?.uid
 
       snapshot.forEach((doc) => {
         if (doc.id === currentUid) return
         if (blockedUsersRef.current.includes(doc.id)) return
-        const data = doc.data() as any
-        if (data && data.name) {
-          profiles.push({
-            id: doc.id,
-            name: data.name,
-            age: data.age || 25,
-            gender: data.gender || 'hombre',
-            city: data.city || '',
-            country: data.country || 'Chile',
-            lat: data.lat || -33.0,
-            lng: data.lng || -71.0,
-            bio: data.bio || '',
-            photos: data.photos || [],
-            trainingTypes: data.trainingTypes || [],
-            goals: data.goals || [],
-            level: data.level || 'Intermedio',
-            availability: data.availability || ['Tarde'],
-            intensity: data.intensity,
-            verificationStatus: data.verificationStatus,
-            verificationDate: data.verificationDate ?? undefined,
-            trainingNow: data.trainingNow || false,
-            trainingNowSince: normalizeTrainingSince(data.trainingNowSince),
-            liveStreak: data.liveStreak != null ? data.liveStreak : undefined,
-            lastLiveDate: data.lastLiveDate != null ? data.lastLiveDate : undefined,
-            liveJoins: data.liveJoins != null ? data.liveJoins : undefined,
-            joinedLiveStreak: data.joinedLiveStreak != null ? data.joinedLiveStreak : undefined,
-            dailyTrainingStreak: data.dailyTrainingStreak != null ? data.dailyTrainingStreak : undefined,
-            dailySynergyStreak: data.dailySynergyStreak != null ? data.dailySynergyStreak : undefined,
-            dailyVoiceStreak: data.dailyVoiceStreak != null ? data.dailyVoiceStreak : undefined,
-            dailyPulseStreak: data.dailyPulseStreak != null ? data.dailyPulseStreak : undefined,
-            momentumPoints: data.momentumPoints != null ? data.momentumPoints : undefined,
-            lastDailyPulseDate: data.lastDailyPulseDate != null ? data.lastDailyPulseDate : undefined,
-            streakProtectedDate: data.streakProtectedDate || null,
-            pulseAmplifiedDate: data.pulseAmplifiedDate || null,
-            currentDailyChallenge: data.currentDailyChallenge || undefined,
-            retentionLevel: data.retentionLevel || 1,
-            retentionXp: data.retentionXp || 0,
-            trainingSyncWith: data.trainingSyncWith || undefined,
-            syncStreak: data.syncStreak != null ? data.syncStreak : undefined,
-            syncBonds: data.syncBonds || {},
-            weekStats: data.weekStats || undefined,
-            showOnLeaderboard: data.showOnLeaderboard,
-            gymCheckIn: data.gymCheckIn || undefined,
-            isBetaBot: data.isBetaBot === true,
-            communityAdmin: data.communityAdmin === true,
-          })
-        }
+        const parsed = parseProfileFromFirestoreDoc(doc.id, doc.data() as Record<string, unknown>)
+        if (parsed) profiles.push(parsed)
       })
       setRealProfiles(profiles)
       const now = new Date()
@@ -2940,6 +2917,12 @@ useEffect(() => {
           const realProfile = await getUserProfile(firebaseUser.uid)
           
           if (realProfile && realProfile.name) {
+            const resolvedPhotos = resolveProfilePhotos(
+              currentUser?.photos,
+              realProfile.photos,
+              currentUser?.photosUpdatedAt,
+              realProfile.photosUpdatedAt
+            )
             const merged: CurrentUser = {
               ...currentUser,
               id: 'me' as any,
@@ -2949,7 +2932,11 @@ useEffect(() => {
               city: realProfile.city,
               country: realProfile.country,
               bio: realProfile.bio,
-              photos: realProfile.photos || [],
+              photos: resolvedPhotos,
+              photosUpdatedAt: latestPhotosUpdatedAt(
+                currentUser?.photosUpdatedAt,
+                realProfile.photosUpdatedAt
+              ),
               trainingTypes: realProfile.trainingTypes || [],
               goals: realProfile.goals || [],
               level: realProfile.level || 'Intermedio',
@@ -2994,6 +2981,12 @@ useEffect(() => {
               spotifyShareLive: realProfile.spotifyShareLive ?? currentUser?.spotifyShareLive,
               spotifyNowPlaying: realProfile.spotifyNowPlaying ?? currentUser?.spotifyNowPlaying,
               gymSoundAnthem: realProfile.gymSoundAnthem ?? currentUser?.gymSoundAnthem,
+              wearableHealthConnected:
+                realProfile.wearableHealthConnected ?? currentUser?.wearableHealthConnected,
+              wearableHealthPlatform:
+                realProfile.wearableHealthPlatform ?? currentUser?.wearableHealthPlatform,
+              wearableHealthConnectedAt:
+                realProfile.wearableHealthConnectedAt ?? currentUser?.wearableHealthConnectedAt,
               verificationStatus: realProfile.verificationStatus || currentUser?.verificationStatus,
               verificationDate: (realProfile as any).verificationDate ?? currentUser?.verificationDate,
               verificationDocuments: (realProfile as any).verificationDocuments ?? currentUser?.verificationDocuments,
@@ -3134,6 +3127,24 @@ const mergeUserForRealtimeSync = (incoming: CurrentUser, prev: CurrentUser | nul
   return { ...prev, ...incoming }
 }
 
+  const uploadProfilePhotoIfNeeded = useCallback(async (dataUrl: string): Promise<string> => {
+    if (!dataUrl || !dataUrl.startsWith('data:')) return dataUrl
+    if (isDemoMode) return dataUrl
+    if (!firebaseUser?.uid || !storage) {
+      throw new Error('No se pudo subir la foto: sesión o Storage no disponible')
+    }
+    try {
+      const { ref, uploadString, getDownloadURL } = await import('firebase/storage')
+      const path = `profiles/${firebaseUser.uid}/${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`
+      const storageRef = ref(storage, path)
+      const snap = await uploadString(storageRef, dataUrl, 'data_url')
+      return await getDownloadURL(snap.ref)
+    } catch (e) {
+      console.warn('profile photo storage upload failed', e)
+      throw new Error('No se pudo subir la foto de perfil. Revisa conexión y permisos.')
+    }
+  }, [isDemoMode, firebaseUser?.uid])
+
  // ✅ SOLUCIÓN SIMPLE Y ESTABLE - Sin dynamic import problemático
 const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   // Local aliases — avoid minifier name collisions in App chunk (fase 191)
@@ -3141,7 +3152,34 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   const mergeLive = mergeLiveUsersById
   const toLiveUser = profileDocToLiveUser
 
-  const merged = mergeUserForRealtimeSync(user, currentUserRef.current)
+  let merged = mergeUserForRealtimeSync(user, currentUserRef.current)
+  const priorPhotos = currentUserRef.current?.photos
+  const needsPhotoUpload = (merged.photos || []).some(isDataUrlPhoto)
+  const photosChanged =
+    needsPhotoUpload || profilePhotosChanged(priorPhotos, merged.photos)
+
+  if (!isDemoMode && firebaseUser?.uid && db) {
+    if (needsPhotoUpload) {
+      merged = {
+        ...merged,
+        photos: await ensurePersistableProfilePhotos(
+          merged.photos || [],
+          uploadProfilePhotoIfNeeded
+        ),
+      }
+    }
+    if (photosChanged) {
+      merged = { ...merged, photosUpdatedAt: Date.now() }
+    }
+  }
+
+  if (!isDemoMode && firebaseUser?.uid) {
+    merged = {
+      ...merged,
+      photos: filterPersistablePhotos(merged.photos),
+    }
+  }
+
   currentUserRef.current = merged
   saveUser(merged);
 
@@ -3157,6 +3195,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         country: merged.country,
         bio: merged.bio,
         photos: merged.photos,
+        photosUpdatedAt: merged.photosUpdatedAt ?? null,
         trainingTypes: merged.trainingTypes,
         goals: merged.goals,
         level: merged.level,
@@ -3201,6 +3240,9 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         verificationDate: merged.verificationDate ?? null,
         verificationDocuments: merged.verificationDocuments ?? null,
         legalConsents: merged.legalConsents ?? null,
+        wearableHealthConnected: merged.wearableHealthConnected ?? null,
+        wearableHealthPlatform: merged.wearableHealthPlatform ?? null,
+        wearableHealthConnectedAt: merged.wearableHealthConnectedAt ?? null,
       };
 
       const cleanProfileUpdate = sanitizeForFirestore(profileUpdate);
@@ -3264,7 +3306,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       throw e
     }
   }
-}, [saveUser, isDemoMode, firebaseUser?.uid, db, updateUserProfile, publishLiveSnapshot]);
+}, [saveUser, isDemoMode, firebaseUser?.uid, db, updateUserProfile, publishLiveSnapshot, uploadProfilePhotoIfNeeded]);
 
 useEffect(() => {
   saveUserWithRealSyncRef.current = saveUserWithRealSync
@@ -4886,6 +4928,7 @@ useEffect(() => {
     }
     if (postCommentUnsubsRef.current[postId]) return
     const fallback = postCommentInlineFallbackRef.current[postId]
+    bumpRealtimeStat('commentListeners', 1)
     postCommentUnsubsRef.current[postId] = attachPostCommentsListener(
       db,
       postId,
@@ -4899,6 +4942,7 @@ useEffect(() => {
     if (unsub) {
       unsub()
       delete postCommentUnsubsRef.current[postId]
+      bumpRealtimeStat('commentListeners', -1)
     }
     delete postCommentInlineFallbackRef.current[postId]
   }, [])
@@ -4910,10 +4954,26 @@ useEffect(() => {
     }
   }, [isDemoMode, ensurePostCommentsListener])
 
+  const mergeGlobalFeedPosts = useCallback((posts: ProfilePost[]) => {
+    const prevStore = profilePostsRef.current
+    const next = { ...prevStore }
+    for (const post of posts) {
+      const uid = post.userId
+      if (!uid) continue
+      const existing = next[uid] || []
+      const merged = [...existing.filter((x) => x.id !== post.id), post].sort(
+        (a, b) => b.timestamp - a.timestamp
+      )
+      next[uid] = merged.slice(0, 10)
+    }
+    saveProfilePosts(next)
+  }, [saveProfilePosts])
+
   const ensureUserPostsListener = useCallback((userId: string) => {
     if (isDemoMode || !db || !userId) return
     const resolved = resolvePostOwnerId(userId)
     if (userPostsUnsubsRef.current[resolved]) return
+    bumpRealtimeStat('feedUserListeners', 1)
     userPostsUnsubsRef.current[resolved] = attachUserPostsListener(
       db,
       resolved,
@@ -4924,26 +4984,72 @@ useEffect(() => {
         const localOnly = localForUser.filter((p) => !fsIds.has(p.id))
         const finalList = [...localOnly, ...posts].slice(0, 10)
         saveProfilePosts({ ...prevStore, [resolved]: finalList })
-        subscribeCommentsForPosts(finalList)
       },
       { maxResults: 10 }
     )
-  }, [isDemoMode, resolvePostOwnerId, subscribeCommentsForPosts])
+  }, [isDemoMode, resolvePostOwnerId, saveProfilePosts])
 
-  // Real-time muro posts for self + feed-visible profiles
+  const releaseUserPostsListener = useCallback((userId: string) => {
+    const resolved = resolvePostOwnerId(userId)
+    const unsub = userPostsUnsubsRef.current[resolved]
+    if (unsub) {
+      try {
+        unsub()
+      } catch {}
+      delete userPostsUnsubsRef.current[resolved]
+      bumpRealtimeStat('feedUserListeners', -1)
+    }
+  }, [resolvePostOwnerId])
+
+  // Feed: 1 global listener on Home + own profile only (perf).
   useEffect(() => {
     if (isDemoMode || !db || !firebaseUser?.uid) return undefined
+
     ensureUserPostsListener(effectiveUserId)
     if (showFullProfile?.id) ensureUserPostsListener(showFullProfile.id)
-    if (activeTab === 'home') {
-      realProfiles.slice(0, feedMaxProfiles).forEach((p) => ensureUserPostsListener(p.id))
+
+    if (activeTab === 'home' && !globalFeedUnsubRef.current) {
+      bumpRealtimeStat('feedGlobalListeners', 1)
+      globalFeedUnsubRef.current = attachGlobalFeedListener(db, mergeGlobalFeedPosts, {
+        maxResults: 40,
+      })
     }
+
+    if (activeTab !== 'home') {
+      if (globalFeedUnsubRef.current) {
+        globalFeedUnsubRef.current()
+        globalFeedUnsubRef.current = null
+        bumpRealtimeStat('feedGlobalListeners', -1)
+      }
+      Object.keys(userPostsUnsubsRef.current).forEach((uid) => {
+        if (uid !== effectiveUserId && uid !== showFullProfile?.id) {
+          releaseUserPostsListener(uid)
+        }
+      })
+    }
+
     return undefined
-  }, [isDemoMode, db, firebaseUser?.uid, effectiveUserId, showFullProfile?.id, activeTab, feedMaxProfiles, realProfiles.length, ensureUserPostsListener])
+  }, [
+    isDemoMode,
+    db,
+    firebaseUser?.uid,
+    effectiveUserId,
+    showFullProfile?.id,
+    activeTab,
+    ensureUserPostsListener,
+    mergeGlobalFeedPosts,
+    releaseUserPostsListener,
+  ])
 
   useEffect(() => {
     return () => {
-      Object.values(userPostsUnsubsRef.current).forEach((u) => { try { u() } catch {} })
+      globalFeedUnsubRef.current?.()
+      globalFeedUnsubRef.current = null
+      Object.values(userPostsUnsubsRef.current).forEach((u) => {
+        try {
+          u()
+        } catch {}
+      })
       userPostsUnsubsRef.current = {}
     }
   }, [])
@@ -5676,6 +5782,13 @@ useEffect(() => {
     syncCityStatsBump,
     addDebugLog,
     capacitorCamera: CapacitorCamera,
+    refreshWearableDayBurn: async () => {
+      if (!currentUser?.wearableHealthConnected) return
+      const result = await importHealthCaloriesForDate(toLocalDateStr())
+      if (result.totalBurnKcal > 0) {
+        setHealthBurnBonus(result.totalBurnKcal)
+      }
+    },
   })
 
   const {
@@ -6066,10 +6179,19 @@ useEffect(() => {
 
   const handleImportHealthBurn = useCallback(async () => {
     const result = await importHealthCaloriesForDate(toLocalDateStr())
-    setHealthImportHint(result.message)
+    const hint =
+      result.exerciseMinutes && result.exerciseMinutes > 0
+        ? `${result.message} · ${result.exerciseMinutes} min ejercicio`
+        : result.message
+    setHealthImportHint(hint)
     if (result.totalBurnKcal > 0) {
       setHealthBurnBonus(result.totalBurnKcal)
-      toast.success(`+${result.totalBurnKcal} kcal desde wearable`)
+      toast.success(`+${result.totalBurnKcal} kcal desde wearable`, {
+        description:
+          result.exerciseMinutes && result.exerciseMinutes > 0
+            ? `${result.exerciseMinutes} min detectados en tu reloj`
+            : undefined,
+      })
     } else {
       toast.info(result.message)
     }
@@ -6429,24 +6551,6 @@ useEffect(() => {
       setDeletingFuelLogId(null)
     }
   }
-
-  // Shared helper: upload data: URL photo to Storage for profile photos (onboarding + gallery).
-  // Returns https URL or original (demo/fallback). Fixes bloat in Firestore profile docs.
-  const uploadProfilePhotoIfNeeded = async (dataUrl: string): Promise<string> => {
-    if (!dataUrl || !dataUrl.startsWith('data:') || isDemoMode || !firebaseUser?.uid || !storage) {
-      return dataUrl;
-    }
-    try {
-      const { ref, uploadString, getDownloadURL } = await import('firebase/storage');
-      const path = `profiles/${effectiveUserId}/${Date.now()}.jpg`;
-      const storageRef = ref(storage, path);
-      const snap = await uploadString(storageRef, dataUrl, 'data_url');
-      return await getDownloadURL(snap.ref);
-    } catch (e) {
-      console.warn('profile photo storage upload failed, fallback to data URL (may bloat doc)', e);
-      return dataUrl;
-    }
-  };
 
   const likeProfilePost = async (postId: string, postUserId: string) => {
     let posts = profilePosts[postUserId] || []
@@ -6950,26 +7054,49 @@ useEffect(() => {
     }
   }, [isDemoMode, viewingPostComments, activeComment, ensurePostCommentsListener])
 
-  // Fase 4: prune comment listeners when leaving feed (avoid unbounded growth)
+  // Comment listeners: visible feed posts only on Home; prune elsewhere (perf).
   useEffect(() => {
-    if (isDemoMode || activeTab === 'home') return
+    if (isDemoMode) return
 
     const keepIds = new Set<string>()
     if (viewingPostComments?.postId) keepIds.add(viewingPostComments.postId)
     if (activeComment?.postId) keepIds.add(activeComment.postId)
-    for (const p of profilePostsRef.current[effectiveUserId] || []) {
-      if (p?.id) keepIds.add(p.id)
-    }
-    if (showFullProfile?.id) {
-      for (const p of profilePostsRef.current[showFullProfile.id] || []) {
+
+    if (activeTab === 'home') {
+      for (const row of feedComputation.feedPosts.slice(0, feedDisplayLimit)) {
+        const postId = row.id as string | undefined
+        if (!postId) continue
+        keepIds.add(postId)
+        const ownerId = row.ownerId as string
+        const hit = findPostInProfilePosts(postId, ownerId)
+        ensurePostCommentsListener(postId, hit?.posts[hit.idx]?.comments || [])
+      }
+    } else {
+      for (const p of profilePostsRef.current[effectiveUserId] || []) {
         if (p?.id) keepIds.add(p.id)
+      }
+      if (showFullProfile?.id) {
+        for (const p of profilePostsRef.current[showFullProfile.id] || []) {
+          if (p?.id) keepIds.add(p.id)
+        }
       }
     }
 
     Object.keys(postCommentUnsubsRef.current).forEach((postId) => {
       if (!keepIds.has(postId)) releasePostCommentsListener(postId)
     })
-  }, [activeTab, isDemoMode, effectiveUserId, showFullProfile?.id, viewingPostComments?.postId, activeComment?.postId, releasePostCommentsListener])
+  }, [
+    isDemoMode,
+    activeTab,
+    feedComputation.feedPosts,
+    feedDisplayLimit,
+    effectiveUserId,
+    showFullProfile?.id,
+    viewingPostComments?.postId,
+    activeComment?.postId,
+    ensurePostCommentsListener,
+    releasePostCommentsListener,
+  ])
 
   // Edit own muro post (inline for spectacular UX, no prompt)
   const startEditPost = (postId: string, postUserId: string, currentText: string) => {
@@ -9752,6 +9879,7 @@ useEffect(() => {
             setShowFullProfile={setShowFullProfile}
             boostReaction={boostReaction}
             openFullComments={openFullComments}
+            startComment={startComment}
             activeComment={activeComment}
             commentDraft={commentDraft}
             setCommentDraft={setCommentDraft}
@@ -10973,6 +11101,7 @@ useEffect(() => {
           navigateTab(tab as typeof activeTab)
         }}
       />
+      <PerfOverlay />
       {!inFullScreenChat && (
       <BottomNav
         activeTab={activeTab}
@@ -12893,12 +13022,18 @@ useEffect(() => {
               setShowCreateSquad(true)
             })()
           }}
-          fuelBurnKcal={estimateSyncSessionBurn(
-            fuelProfile?.weightKg ?? 75,
-            syncDuelSummary.minutes || Math.max(1, Math.ceil((syncDuelSummary.elapsedSec || 0) / 60))
-          )}
+          fuelBurnKcal={
+            syncDuelSummary.fuelBurnKcal ??
+            estimateSyncSessionBurn(
+              fuelProfile?.weightKg ?? 75,
+              syncDuelSummary.minutes ||
+                Math.max(1, Math.ceil((syncDuelSummary.elapsedSec || 0) / 60))
+            )
+          }
           weightKg={fuelProfile?.weightKg ?? 75}
           workoutCompare={syncDuelSummary.workoutCompare}
+          selfWearable={syncDuelSummary.selfWearable}
+          partnerWearable={syncDuelSummary.partnerWearable}
           publishingFeed={publishingSyncFeed}
           onPublishToFeed={async () => {
             if (!syncDuelSummary || !currentUser) return

@@ -3,6 +3,7 @@
  */
 
 const functions = require('firebase-functions');
+const { recalculateAllSyncStreaks } = require('./syncStreakRecalc');
 
 const APP_ADMINS = 'appAdmins';
 const BETA_BOT_PREFIX = 'beta_bot_';
@@ -84,6 +85,74 @@ function register(deps) {
     return { ok: true, message: `Cuenta ${profileName} marcada como eliminada.` };
   });
 
+  /** Self-service account deletion — requires exact confirm phrase (Play / GDPR). */
+  const deleteMyAccount = functions.https.onCall(async (data, context) => {
+    const uid = context.auth && context.auth.uid;
+    if (!uid) {
+      throw new functions.https.HttpsError('unauthenticated', 'Inicia sesión.');
+    }
+
+    const confirmPhrase = data && data.confirmPhrase ? String(data.confirmPhrase).trim() : '';
+    if (confirmPhrase !== 'ELIMINAR MI CUENTA') {
+      throw new functions.https.HttpsError(
+        'invalid-argument',
+        'Escribe exactamente: ELIMINAR MI CUENTA'
+      );
+    }
+
+    const reason = data && data.reason ? String(data.reason).slice(0, 500) : '';
+    const profileRef = db.collection('profiles').doc(uid);
+    const profileSnap = await profileRef.get();
+    const profileName = profileSnap.exists ? profileSnap.data().name : uid;
+
+    const appAdminSnap = await db.collection(APP_ADMINS).doc(uid).get();
+    if (appAdminSnap.exists) {
+      throw new functions.https.HttpsError(
+        'failed-precondition',
+        'Las cuentas de administrador no pueden auto-eliminarse. Contacta soporte.'
+      );
+    }
+
+    try {
+      await admin.auth().deleteUser(uid);
+    } catch (e) {
+      if (e.code !== 'auth/user-not-found') {
+        console.warn('deleteMyAccount auth', uid, e.message);
+        throw new functions.https.HttpsError('internal', 'No se pudo eliminar la cuenta de acceso.');
+      }
+    }
+
+    await profileRef.set(
+      {
+        uid,
+        name: 'Cuenta eliminada',
+        bio: '',
+        photos: [],
+        accountStatus: 'deleted',
+        deletedAt: admin.firestore.FieldValue.serverTimestamp(),
+        deletedBy: uid,
+        deleteReason: reason || null,
+        selfDeleted: true,
+        trainingNow: false,
+        isBetaBot: false,
+        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+      },
+      { merge: true }
+    );
+
+    await db.collection('adminAudit').add({
+      action: 'self_delete_user',
+      targetUserId: uid,
+      targetName: profileName,
+      reason: reason || null,
+      adminId: uid,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    console.log('deleteMyAccount', uid);
+    return { ok: true, message: 'Cuenta eliminada.' };
+  });
+
   const grantCommunityAdmin = functions.https.onCall(async (data, context) => {
     const callerUid = context.auth && context.auth.uid;
     if (!callerUid) {
@@ -162,10 +231,44 @@ function register(deps) {
     }
   });
 
+  const adminRecalculateSyncStreaks = functions.https.onCall(async (data, context) => {
+    await assertAppAdmin(db, context.auth && context.auth.uid);
+
+    const dryRun = data && data.apply === true ? false : true;
+    const targetUserId = data && data.targetUserId ? String(data.targetUserId) : '';
+
+    const result = await recalculateAllSyncStreaks(db, admin, {
+      dryRun,
+      targetUserId: targetUserId || undefined,
+      adminId: context.auth.uid,
+    });
+
+    console.log(
+      'adminRecalculateSyncStreaks',
+      context.auth.uid,
+      dryRun ? 'dry-run' : 'apply',
+      result.totalChanges,
+      'changes'
+    );
+
+    return {
+      ok: true,
+      dryRun: result.dryRun,
+      totalChanges: result.totalChanges,
+      profilesUpdated: result.profilesUpdated,
+      totalRemoved: result.totalRemoved,
+      minVerifiedMinutes: result.minVerifiedMinutes,
+      changes: result.changes,
+      changesTruncated: result.changesTruncated,
+    };
+  });
+
   return {
     adminDeleteUserAccount,
+    deleteMyAccount,
     grantCommunityAdmin,
     bootstrapAppAdminHttp,
+    adminRecalculateSyncStreaks,
     assertAppAdmin,
   };
 }

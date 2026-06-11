@@ -1,5 +1,11 @@
 // @ts-nocheck
-import type { Profile } from '../types'
+import type { Profile, ProfileGender } from '../types'
+
+export const PROFILE_GENDER_OPTIONS: ReadonlyArray<{ value: ProfileGender; label: string }> = [
+  { value: 'hombre', label: 'Hombre' },
+  { value: 'mujer', label: 'Mujer' },
+  { value: 'otro', label: 'Otros' },
+]
 
 export const TRAINING_OPTIONS = [
   'Pesas/Gym', 'Running', 'Calistenia', 'CrossFit', 'Yoga', 
@@ -34,7 +40,7 @@ export const LEGAL_VERSIONS = {
 export const AUTO_MATCH_IDS = ['p1', 'p3', 'p5', 'p6', 'p9', 'p11', 'p13']
 
 // Centralized app version (used in UI footers, auth screen, crash reports, APK, etc.)
-export const APP_VERSION = '0.1.327'
+export const APP_VERSION = '0.1.329'
 
 /** Firebase Hosting — canonical origin for APK shares and deep links. */
 export const PUBLIC_APP_URL = 'https://entrenamatch.web.app'

@@ -12,6 +12,8 @@ export interface CommunityActiveMember {
 export interface CommunityActiveStripProps {
   members: CommunityActiveMember[]
   cityLabel?: string
+  /** Total unique people active in feed/LIVE today (Fase 3 Muro). */
+  activeTodayCount?: number
   onOpenProfile: (member: CommunityActiveMember) => void
   onOpenMap?: () => void
 }
@@ -19,18 +21,28 @@ export interface CommunityActiveStripProps {
 export function CommunityActiveStrip({
   members,
   cityLabel,
+  activeTodayCount,
   onOpenProfile,
   onOpenMap,
 }: CommunityActiveStripProps) {
-  if (members.length === 0) return null
+  if (members.length === 0 && !activeTodayCount) return null
 
   const liveCount = members.filter((m) => m.trainingNow).length
+  const todayTotal = activeTodayCount ?? members.length
 
   return (
     <div className="mb-3 -mx-1 px-1">
       <div className="flex items-center justify-between mb-2 px-0.5">
         <p className="text-[10px] uppercase tracking-wider text-[#9CA3AF] font-bold">
-          Activos {cityLabel ? `en ${cityLabel}` : 'cerca'}
+          {todayTotal > 0 && (
+            <span className="text-white">{todayTotal} activos hoy</span>
+          )}
+          {cityLabel && (
+            <span>
+              {todayTotal > 0 ? ' · ' : ''}
+              {cityLabel}
+            </span>
+          )}
           {liveCount > 0 && <span className="text-[#22c55e]"> · {liveCount} LIVE</span>}
         </p>
         {onOpenMap && liveCount > 0 && (

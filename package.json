@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.327",
+  "version": "0.1.329",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -32,7 +32,9 @@
     "qa:smoke": "node scripts/qa-smoke.mjs",
     "test:e2e": "playwright test",
     "setup:mp": "node scripts/setup-mp-production.mjs",
-    "phase": "node scripts/implement-phase.mjs"
+    "phase": "node scripts/implement-phase.mjs",
+    "recalculate:sync-streaks": "npx tsx scripts/recalculate-sync-streaks.ts",
+    "recalculate:sync-streaks:apply": "npx tsx scripts/recalculate-sync-streaks.ts --apply"
   },
   "dependencies": {
     "@capacitor-community/play-integrity": "^8.0.0",
@@ -48,6 +50,7 @@
     "@capacitor/ios": "^8.4.0",
     "@capacitor/push-notifications": "^8.1.1",
     "@capacitor/share": "^8.0.1",
+    "@capgo/capacitor-health": "^8.6.3",
     "@maplibre/maplibre-gl-leaflet": "^0.1.3",
     "canvas-confetti": "^1.9.4",
     "firebase": "^12.14.0",

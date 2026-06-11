@@ -4,6 +4,7 @@ import { getUserProfile, updateUserProfile } from '../services/auth';
 import { useAuth } from './AuthContext';
 import type { CurrentUser } from '../types';
 import { enrichReturningProfile, isProfileComplete } from '../utils/profileComplete';
+import { latestPhotosUpdatedAt, resolveProfilePhotos } from '../utils/profilePhotos';
 
 interface ProfileContextType {
   currentUser: CurrentUser | null;
@@ -94,11 +95,24 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
           );
         }
 
+        const resolvedPhotos = resolveProfilePhotos(
+          cachedNow?.photos,
+          fromFs?.photos,
+          cachedNow?.photosUpdatedAt,
+          fromFs?.photosUpdatedAt
+        );
+        const resolvedPhotosUpdatedAt = latestPhotosUpdatedAt(
+          cachedNow?.photosUpdatedAt,
+          fromFs?.photosUpdatedAt
+        );
+
         if (!isProfileComplete(fromFs)) {
           if (fromFs) {
             const merged = profileFromFirestore({
               ...(cachedNow || {}),
               ...fromFs,
+              photos: resolvedPhotos,
+              photosUpdatedAt: resolvedPhotosUpdatedAt,
             });
             demoStorage.set(DEMO_KEYS.PROFILE, merged);
             setCurrentUser(merged);
@@ -111,6 +125,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
         const merged = profileFromFirestore({
           ...(cachedNow || {}),
           ...fromFs,
+          photos: resolvedPhotos,
+          photosUpdatedAt: resolvedPhotosUpdatedAt,
         });
         demoStorage.set(DEMO_KEYS.PROFILE, merged);
         setCurrentUser(merged);

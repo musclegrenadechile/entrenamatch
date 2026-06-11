@@ -10,6 +10,7 @@ import { cityChampionLabel } from '../../utils/genderedCopy'
 import { isProfileVerified } from '../../utils/identityVerification'
 import { DerbyDefenderBadge } from '../home/DerbyDefenderBadge'
 import { COMMUNITY_ADMIN_BADGE_LABEL } from '../../utils/appAdmin'
+import { primaryProfilePhoto } from '../../utils/profilePhotos'
 
 export function ProfileHeroSection(props: ProfileTabProps) {
   const p = profileTabBindings(props)
@@ -54,19 +55,28 @@ export function ProfileHeroSection(props: ProfileTabProps) {
     isTogglingLive,
   } = p
 
+  const heroPhoto = primaryProfilePhoto(currentUser.photos)
+
   return (
     <>
 {/* HERO - FULL REMASTERED EPIC "MI RITUAL" PRESENCE - Attractive, unique, premium */}
 <div className="relative h-80 w-full overflow-hidden bg-[#0a0a0c] profile-hero">
-  <VerifiedProfilePhoto
-    src={(currentUser.photos && currentUser.photos[0]) || 'https://picsum.photos/id/1005/600/800'}
-    className="absolute inset-0"
-    imgClassName="w-full h-full object-cover"
-    verificationStatus={currentUser.verificationStatus}
-    showBadge={false}
-    showRing
-    onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
-  />
+  {heroPhoto ? (
+    <VerifiedProfilePhoto
+      src={heroPhoto}
+      className="absolute inset-0"
+      imgClassName="w-full h-full object-cover"
+      verificationStatus={currentUser.verificationStatus}
+      showBadge={false}
+      showRing
+      onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+    />
+  ) : (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-gradient-to-br from-[#1a1a1f] via-[#111113] to-[#0a0a0c]">
+      <Camera size={40} className="text-[#FF671F]/50" aria-hidden />
+      <span className="text-[11px] text-[#9CA3AF] tracking-wide">Añade tu foto principal</span>
+    </div>
+  )}
   <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/50 to-black/95" />
   <div className="absolute inset-0 border-b-2 border-[#FF671F]/20" />
 

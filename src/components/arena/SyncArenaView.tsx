@@ -59,6 +59,8 @@ export interface SyncArenaViewProps {
   weeklyPactProgress?: WeeklyPactProgress | null
   isRecordingVoice?: boolean
   gymSoundSyncMatch?: GymSoundSyncMatch | null
+  /** W1b — live BPM from connected wearable during sync. */
+  liveHeartRateBpm?: number | null
   onSyncAction: (actionId: string, emoji: string, label: string) => void
   onCapturePhoto: () => void
   onVoicePing?: () => void
@@ -102,6 +104,7 @@ export function SyncArenaView({
   weeklyPactProgress = null,
   isRecordingVoice = false,
   gymSoundSyncMatch = null,
+  liveHeartRateBpm = null,
   onSyncAction,
   onCapturePhoto,
   onVoicePing,
@@ -241,6 +244,7 @@ export function SyncArenaView({
             restSecondsLeft={restLeft}
             restStartedBy={restStartedBy}
             handshakeLabel={handshakeLabel}
+            liveHeartRateBpm={liveHeartRateBpm}
           />
 
           <div className="arena-sala-sync__athlete arena-sala-sync__athlete--partner">

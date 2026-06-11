@@ -1,5 +1,6 @@
 import type { RefObject } from 'react'
 import { useMemo } from 'react'
+import { useWearableLiveHr } from '../../hooks/useWearableLiveHr'
 import { getDistanceKm } from '../../utils'
 import { buildGymSoundSyncMatch } from '../../services/gymSoundSyncMatch'
 import { countLoggedSets } from '../../utils/arenaWorkoutLog'
@@ -110,6 +111,11 @@ export function SyncArenaHost(props: SyncArenaHostProps) {
     return p ? { id, name: p.name, photo: p.photos?.[0] } : { id, name: 'Atleta' }
   })
 
+  const liveHeartRateBpm = useWearableLiveHr(
+    !!syncPartnerId && showSyncArena && !!currentUser.wearableHealthConnected,
+    syncStartedAt
+  )
+
   const gymSoundSyncMatch = useMemo(
     () => buildGymSoundSyncMatch(currentUser, partner),
     [
@@ -182,6 +188,7 @@ export function SyncArenaHost(props: SyncArenaHostProps) {
           weeklyPactProgress={homeWeeklyPactProgress}
           isRecordingVoice={isArenaVoiceRecording}
           gymSoundSyncMatch={gymSoundSyncMatch}
+          liveHeartRateBpm={liveHeartRateBpm}
           onSyncAction={onSyncAction}
           onCapturePhoto={onCapturePhoto}
           onVoicePing={onVoicePing}

@@ -1,4 +1,4 @@
-import type { FuelGoal, FuelProfile, WorkoutType } from '../types'
+import type { FuelGoal, FuelProfile, ProfileGender, WorkoutType } from '../types'
 import type { DailyEnergyBalance } from '../domain/fuelBalance'
 
 export type ActivityLevel = FuelProfile['activityLevel']
@@ -15,16 +15,20 @@ export function calculateTdee(input: {
   weightKg: number
   heightCm: number
   age: number
-  gender: 'hombre' | 'mujer'
+  gender: ProfileGender
   activityLevel: ActivityLevel
 }): number {
   const w = input.weightKg
   const h = input.heightCm
   const a = input.age
+  const maleBmr = 10 * w + 6.25 * h - 5 * a + 5
+  const femaleBmr = 10 * w + 6.25 * h - 5 * a - 161
   const bmr =
-    input.gender === 'hombre'
-      ? 10 * w + 6.25 * h - 5 * a + 5
-      : 10 * w + 6.25 * h - 5 * a - 161
+    input.gender === 'mujer'
+      ? femaleBmr
+      : input.gender === 'otro'
+        ? (maleBmr + femaleBmr) / 2
+        : maleBmr
   return Math.round(bmr * ACTIVITY_MULTIPLIERS[input.activityLevel])
 }
 
@@ -52,7 +56,7 @@ export function buildFuelProfile(input: {
   weightKg: number
   heightCm: number
   age: number
-  gender: 'hombre' | 'mujer'
+  gender: ProfileGender
   goal: FuelGoal
   activityLevel: ActivityLevel
   restrictions?: string

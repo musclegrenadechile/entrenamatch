@@ -16,6 +16,7 @@ import { PlayIntegrity } from '@capacitor-community/play-integrity'
 import { Geolocation } from '@capacitor/geolocation'
 import { Share } from '@capacitor/share'
 import { Filesystem } from '@capacitor/filesystem'
+import { Health } from '@capgo/capacitor-health'
 
 // Side-effect: make available via global so components can pick it up after dynamic load.
 // This avoids direct export issues in conditional loading.
@@ -29,7 +30,18 @@ if (typeof window !== 'undefined') {
     Geolocation,
     Share,
     Filesystem,
+    Health,
   }
 }
 
-export { App, Browser, Camera, PushNotifications, PlayIntegrity, Geolocation, Share, Filesystem }
+export {
+  App,
+  Browser,
+  Camera,
+  PushNotifications,
+  PlayIntegrity,
+  Geolocation,
+  Share,
+  Filesystem,
+  Health,
+}

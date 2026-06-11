@@ -2,6 +2,16 @@ import { describe, expect, it } from 'vitest'
 import { mapFirestoreProfileDoc, mergeProfileLists } from './profileDiscovery'
 
 describe('profileDiscovery', () => {
+  it('skips soft-deleted accounts', () => {
+    expect(
+      mapFirestoreProfileDoc('uid-del', {
+        name: 'Cuenta eliminada',
+        accountStatus: 'deleted',
+        photos: [],
+      })
+    ).toBeNull()
+  })
+
   it('maps Firestore profile docs', () => {
     const p = mapFirestoreProfileDoc('uid1', {
       name: 'Jorge Erpel',

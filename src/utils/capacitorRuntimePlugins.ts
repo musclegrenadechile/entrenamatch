@@ -35,6 +35,32 @@ export function getCapacitorBrowser(): {
   }
 }
 
+export function getCapacitorHealth(): {
+  isAvailable: () => Promise<{ available: boolean; reason?: string; platform?: string }>
+  requestAuthorization: (opts: {
+    read?: string[]
+    write?: string[]
+  }) => Promise<{ readAuthorized: string[]; readDenied: string[] }>
+  checkAuthorization: (opts: {
+    read?: string[]
+    write?: string[]
+  }) => Promise<{ readAuthorized: string[]; readDenied: string[] }>
+  queryAggregated: (opts: Record<string, unknown>) => Promise<{ samples: Array<{ value: number; unit?: string }> }>
+  queryWorkouts: (opts: Record<string, unknown>) => Promise<{
+    workouts: Array<{ sourceName?: string }>
+  }>
+  showPrivacyPolicy: () => Promise<void>
+  openHealthConnectSettings: () => Promise<void>
+} | null {
+  const Health = pluginBag()?.Health
+  if (!Health || typeof Health !== 'object') return null
+  const h = Health as { isAvailable?: unknown; requestAuthorization?: unknown }
+  if (typeof h.isAvailable !== 'function' || typeof h.requestAuthorization !== 'function') {
+    return null
+  }
+  return Health as ReturnType<typeof getCapacitorHealth>
+}
+
 export function getCapacitorApp(): {
   addListener: (
     event: string,

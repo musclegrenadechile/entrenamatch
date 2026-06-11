@@ -7,6 +7,7 @@ import { ProfileTrainerCoachEntry } from './ProfileTrainerCoachEntry'
 import { ProfileAdminOpsEntry } from './ProfileAdminOpsEntry'
 import { ProfileCommunityAdminEntry } from './ProfileCommunityAdminEntry'
 import { ProfileActividadSection } from './ProfileActividadSection'
+import { ProfileWearableSection } from './ProfileWearableSection'
 import { ProfileRendimientoSection } from './ProfileRendimientoSection'
 import { ProfileDailyPulseSection } from './ProfileDailyPulseSection'
 import { ProfileSyncNetworkSection } from './ProfileSyncNetworkSection'
@@ -46,6 +47,7 @@ export function ProfileTab(props: ProfileTabProps) {
       <ProfileCommunityAdminEntry {...props} />
       <ProfileHeroSection {...props} />
       <ProfileHeroPulse {...props} />
+      <ProfileWearableSection {...props} />
       {bondEntries.length > 0 && (
         <div className="mx-4 mb-3">
           <TrainingNetworkGraph

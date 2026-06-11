@@ -9,7 +9,8 @@ import type { FirebaseStorage } from 'firebase/storage'
 import { Capacitor } from '@capacitor/core'
 import confetti from 'canvas-confetti'
 import { toast } from 'sonner'
-import type { CurrentUser, Profile, ProfilePost, Tab } from '../types'
+import type { CurrentUser, Profile, ProfilePost, Tab, WearableSessionSnapshot } from '../types'
+import { fetchWearableSessionSummary } from '../services/wearableHealth'
 import { getDistanceKm } from '../utils'
 import { mergeWeekStats } from '../services/localNetwork'
 import { getWeekKey } from '../utils/weekLiveTracker'
@@ -48,6 +49,12 @@ import {
   toParticipantSyncPayload,
   type SyncWorkoutLogState,
 } from '../utils/arenaWorkoutLog'
+import {
+  MIN_VERIFIED_SYNC_MINUTES,
+  isVerifiedSyncDuration,
+  nextSyncStreakAfterSession,
+  syncStreakBoostForRating,
+} from '../utils/syncStreak'
 import { triggerHaptic } from '../utils/haptics'
 import type { SyncWorkoutCompare } from '../utils/workoutSyncCompare'
 import { useSyncSession } from './useSyncSession'
@@ -67,6 +74,9 @@ export type SyncDuelSummary = {
   weeklyMetaComplete?: boolean
   weeklyMetaLine?: string
   workoutCompare?: SyncWorkoutCompare | null
+  selfWearable?: WearableSessionSnapshot | null
+  partnerWearable?: WearableSessionSnapshot | null
+  fuelBurnKcal?: number
 }
 
 export type SyncDuelSummaryState = SyncDuelSummary | null
@@ -122,6 +132,8 @@ export interface UseArenaSyncControllerOptions {
   syncCityStatsBump: (liveMin: number, syncMin: number) => Promise<void>
   addDebugLog: (msg: string) => void
   capacitorCamera?: any
+  /** W1b — refresh day burn from wearable after EntrenaSync ends. */
+  refreshWearableDayBurn?: () => Promise<void>
 }
 
 export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
@@ -622,7 +634,10 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
       : 0
     const syncStartedAtCapture = ss.syncStartedAt
     const oldPartner = ss.syncPartnerId
-    const newSyncStreak = ((o.currentUser as any).syncStreak || 0) + 1
+    const newSyncStreak = nextSyncStreakAfterSession(
+      (o.currentUser as any).syncStreak || 0,
+      minutes
+    )
     const weekKey = getWeekKey()
     const syncMins = minutes >= 2 ? minutes : 0
     const newWeekStats =
@@ -813,6 +828,23 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
       o.awardConstancy(15, 'Synergy completada')
     }
 
+    let selfWearable: WearableSessionSnapshot | null = null
+    let partnerWearable: WearableSessionSnapshot | null = null
+    if ((o.currentUser as CurrentUser)?.wearableHealthConnected && syncStartedAtCapture) {
+      try {
+        selfWearable = await fetchWearableSessionSummary(syncStartedAtCapture, Date.now())
+        if (
+          selfWearable.activeCaloriesKcal > 0 ||
+          selfWearable.workoutDetected ||
+          (selfWearable.heartRateAvg ?? 0) > 0
+        ) {
+          void o.refreshWearableDayBurn?.()
+        }
+      } catch (e) {
+        console.warn('[W1b] wearable session summary failed', e)
+      }
+    }
+
     if (oldPartner) {
       const elapsedSec = syncStartedAtCapture
         ? Math.max(0, Math.floor((Date.now() - syncStartedAtCapture) / 1000))
@@ -850,6 +882,31 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
         capturedPartnerExercises,
         Math.max(1, minutes)
       )
+
+      if (!o.isDemoMode && o.db && oldPartner && selfWearable) {
+        try {
+          const { doc, updateDoc, getDoc } = await import('firebase/firestore')
+          const uids = [o.effectiveUserId, oldPartner].sort()
+          const sid = `sync_${uids[0]}_${uids[1]}`
+          await updateDoc(doc(o.db, 'syncSessions', sid), {
+            endedAt: Date.now(),
+            [`wearableSnapshot.${o.effectiveUserId}`]: selfWearable,
+          }).catch(() => {})
+          const sessionSnap = await getDoc(doc(o.db, 'syncSessions', sid)).catch(() => null)
+          const remote = sessionSnap?.data()?.wearableSnapshot as
+            | Record<string, WearableSessionSnapshot>
+            | undefined
+          partnerWearable = remote?.[oldPartner] ?? null
+        } catch (e) {
+          console.warn('[W1b] wearable snapshot write failed', e)
+        }
+      }
+
+      const fuelFromWatch =
+        selfWearable && selfWearable.activeCaloriesKcal > 0
+          ? selfWearable.activeCaloriesKcal
+          : undefined
+
       setSyncDuelSummary({
         partnerId: oldPartner,
         partnerName,
@@ -869,6 +926,9 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
             : `${projectedMeta.liveDaysDone}/${projectedMeta.liveDaysTarget} live · ${projectedMeta.syncSessionsDone}/${projectedMeta.syncSessionsTarget} sync · ${projectedMeta.loggedSessionsDone}/${projectedMeta.loggedSessionsTarget} logs`
           : undefined,
         workoutCompare,
+        selfWearable,
+        partnerWearable,
+        fuelBurnKcal: fuelFromWatch,
       })
       void recordSyncShareMetric(o.db, {
         uid: o.effectiveUserId,
@@ -878,7 +938,9 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
       })
     } else {
       toast(`Sync finalizado: ${minutes}min`, {
-        description: '¡Buen trabajo en equipo! +1 sync streak',
+        description: isVerifiedSyncDuration(minutes)
+          ? '¡Buen trabajo en equipo! +1 sync'
+          : `Mínimo ${MIN_VERIFIED_SYNC_MINUTES} min para sumar al contador de syncs`,
       })
     }
     if (minutes >= 2) {
@@ -949,8 +1011,8 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
         } catch {}
       }
 
-      if (rating >= 4) {
-        const boost = Math.min(2, Math.floor(minutes / 10))
+      const boost = syncStreakBoostForRating(rating, minutes)
+      if (boost > 0) {
         const newStreak = ((o.currentUser as any).syncStreak || 0) + boost
         const updated = { ...o.currentUser, syncStreak: newStreak }
         o.saveUser(updated as any)
@@ -959,17 +1021,18 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
             await updateUserProfile(o.firebaseUser.uid, { syncStreak: newStreak })
           } catch {}
         }
-        if (!o.isDemoMode && o.db) {
-          try {
-            const { doc, updateDoc } = await import('firebase/firestore')
-            const uids = [o.effectiveUserId, partnerId].sort()
-            const sessionId = `sync_${uids[0]}_${uids[1]}`
-            const bonus = Math.min(30, rating * 6 + Math.floor(minutes / 3))
-            const finalVibe = Math.min(100, (sessionVibe || 50) + bonus)
-            await updateDoc(doc(o.db, 'syncSessions', sessionId), { vibe: finalVibe })
-            if (ss.syncPartnerId) ss.setSyncVibe(finalVibe)
-          } catch {}
-        }
+      }
+
+      if (rating >= 4 && !o.isDemoMode && o.db) {
+        try {
+          const { doc, updateDoc } = await import('firebase/firestore')
+          const uids = [o.effectiveUserId, partnerId].sort()
+          const sessionId = `sync_${uids[0]}_${uids[1]}`
+          const bonus = Math.min(30, rating * 6 + Math.floor(minutes / 3))
+          const finalVibe = Math.min(100, (sessionVibe || 50) + bonus)
+          await updateDoc(doc(o.db, 'syncSessions', sessionId), { vibe: finalVibe })
+          if (ss.syncPartnerId) ss.setSyncVibe(finalVibe)
+        } catch {}
       }
 
       const wantsPublish =

@@ -174,6 +174,43 @@ export async function adminDeleteUserAccount(
   return res.data
 }
 
+export type SyncStreakRecalcChange = {
+  uid: string
+  name: string
+  stored: number
+  recalculated: number
+  ratings: number
+  workouts: number
+  pilot: number
+}
+
+export type SyncStreakRecalcResult = {
+  ok: boolean
+  dryRun: boolean
+  totalChanges: number
+  profilesUpdated: number
+  totalRemoved: number
+  minVerifiedMinutes: number
+  changes: SyncStreakRecalcChange[]
+  changesTruncated?: boolean
+}
+
+export async function adminRecalculateSyncStreaks(opts?: {
+  apply?: boolean
+  targetUserId?: string
+}): Promise<SyncStreakRecalcResult> {
+  const fn = getFunctions()
+  const call = httpsCallable<
+    { apply?: boolean; targetUserId?: string },
+    SyncStreakRecalcResult
+  >(fn, 'adminRecalculateSyncStreaks')
+  const res = await call({
+    apply: opts?.apply === true,
+    targetUserId: opts?.targetUserId,
+  })
+  return res.data
+}
+
 export async function persistUserBlock(
   db: Firestore,
   opts: {

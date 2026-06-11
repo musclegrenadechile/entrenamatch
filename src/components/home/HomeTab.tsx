@@ -133,6 +133,7 @@ export function HomeTab(props: HomeTabProps) {
     toast,
     boostReaction,
     openFullComments,
+    startComment,
     activeComment,
     commentDraft,
     setCommentDraft,
@@ -182,6 +183,7 @@ export function HomeTab(props: HomeTabProps) {
 
   const [showHomeTabsHint, setShowHomeTabsHint] = useState(false)
   const [expandedAutoGroups, setExpandedAutoGroups] = useState<Record<string, boolean>>({})
+  const [expandedInlineComments, setExpandedInlineComments] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     try {
@@ -242,6 +244,24 @@ export function HomeTab(props: HomeTabProps) {
     })
     return members.slice(0, 14)
   }, [liveTrainingNow, realProfiles, effectiveUserId, syncBonds])
+
+  const activeTodayCount = useMemo(() => {
+    const since = Date.now() - 86_400_000
+    const ids = new Set<string>()
+    ;(liveTrainingNow || []).forEach((u) => {
+      if (u.id && u.id !== effectiveUserId) ids.add(u.id)
+    })
+    const allPosts = (feedComputation as { allCommunityPosts?: Array<{ ownerId?: string; timestamp?: number }> })
+      ?.allCommunityPosts
+    if (allPosts) {
+      for (const p of allPosts) {
+        if (p.ownerId && p.ownerId !== effectiveUserId && (p.timestamp || 0) >= since) {
+          ids.add(p.ownerId)
+        }
+      }
+    }
+    return ids.size
+  }, [liveTrainingNow, feedComputation, effectiveUserId])
 
   return (
     <div className="flex-1 overflow-auto p-4">
@@ -478,6 +498,9 @@ export function HomeTab(props: HomeTabProps) {
           <div className="flex-1 min-w-0">
             <h2 className="text-sm font-bold text-white truncate">
               {(currentUser as { city?: string } | null)?.city || 'Tu zona'}
+              {activeTodayCount > 0 && (
+                <span className="text-white/80 font-semibold"> · {activeTodayCount} activos hoy</span>
+              )}
               {liveCountForUI > 0 && (
                 <span className="text-[#22c55e] font-semibold"> · {liveCountForUI} en vivo</span>
               )}
@@ -541,6 +564,7 @@ export function HomeTab(props: HomeTabProps) {
       <CommunityActiveStrip
         members={communityActiveMembers}
         cityLabel={(currentUser as { city?: string } | null)?.city}
+        activeTodayCount={activeTodayCount}
         onOpenProfile={(m) => {
           const profile =
             realProfiles.find((r) => r.id === m.id) ||
@@ -763,7 +787,7 @@ export function HomeTab(props: HomeTabProps) {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.98 }}
                   whileHover={isAutoCompact ? undefined : { y: -4 }}
-                  transition={{ type: 'spring', stiffness: 280, damping: 22, delay: Math.min(idx * 0.012, 0.18) }}
+                  transition={{ type: 'spring', stiffness: 320, damping: 28, delay: Math.min(idx * 0.004, 0.06) }}
                 >
                   {/* HERO MEDIA — dominant, cinematic when photo exists */}
                   {post.photo && (
@@ -868,8 +892,16 @@ export function HomeTab(props: HomeTabProps) {
                       </button>
                       <button
                         type="button"
-                        onClick={() => openFullComments(post.id, post.ownerId, owner.name)}
-                        className={`feed-reaction ${(post.comments || []).length > 0 ? 'active' : ''}`}
+                        onClick={() => {
+                          const next = !expandedInlineComments[post.id]
+                          setExpandedInlineComments((s) => ({ ...s, [post.id]: next }))
+                          if (next && startComment) {
+                            startComment(post.id, post.ownerId, owner.name)
+                          } else if (!next) {
+                            cancelComment?.()
+                          }
+                        }}
+                        className={`feed-reaction ${(post.comments || []).length > 0 || expandedInlineComments[post.id] ? 'active' : ''}`}
                       >
                         <span className="text-base">💬</span>
                         {(post.comments || []).length > 0 && (
@@ -932,20 +964,46 @@ export function HomeTab(props: HomeTabProps) {
                       </div>
                     )}
 
-                    {/* COMMENTS PREVIEW — elegant and tappable to open full thread */}
-                    {(post.comments || []).length > 0 && (
-                      <div onClick={() => openFullComments(post.id, post.ownerId, owner.name)} className="feed-comments-preview cursor-pointer">
-                        {(post.comments || []).slice(-2).map((c: any) => (
-                          <div key={c.id} className="feed-comment-row">
-                            <span className="font-semibold text-white/85 text-[10px] mt-px flex-shrink-0">{c.userName}</span> 
-                            <span className="truncate text-[10px] text-white/70 leading-snug">{c.text}</span>
-                          </div>
-                        ))}
-                        {(post.comments || []).length > 2 && <div className="feed-comment-more">+{(post.comments || []).length-2} comentarios más — ver hilo completo</div>}
+                    {/* Inline thread — Fase 3: responder sin salir del Muro */}
+                    {(expandedInlineComments[post.id] || (post.comments || []).length > 0) && (
+                      <div className="feed-comments-preview">
+                        {(post.comments || [])
+                          .slice(expandedInlineComments[post.id] ? 0 : -2)
+                          .map((c: any) => (
+                            <div key={c.id} className="feed-comment-row">
+                              <span className="font-semibold text-white/85 text-[10px] mt-px flex-shrink-0">
+                                {c.userName}
+                              </span>
+                              <span className="text-[10px] text-white/70 leading-snug break-words">
+                                {c.text}
+                              </span>
+                            </div>
+                          ))}
+                        {!expandedInlineComments[post.id] && (post.comments || []).length > 2 && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setExpandedInlineComments((s) => ({ ...s, [post.id]: true }))
+                              startComment?.(post.id, post.ownerId, owner.name)
+                            }}
+                            className="feed-comment-more text-left w-full active:text-[#FF671F]"
+                          >
+                            +{(post.comments || []).length - 2} comentarios más
+                          </button>
+                        )}
+                        {expandedInlineComments[post.id] && (post.comments || []).length > 4 && (
+                          <button
+                            type="button"
+                            onClick={() => openFullComments(post.id, post.ownerId, owner.name)}
+                            className="feed-comment-more text-left w-full text-[#FF671F] active:underline"
+                          >
+                            Ver hilo completo →
+                          </button>
+                        )}
                       </div>
                     )}
 
-                    {activeComment?.postId === post.id && (
+                    {activeComment?.postId === post.id && expandedInlineComments[post.id] && (
                       <div className="mt-2 pt-2 border-t border-[#2F2F35]/60 flex items-center gap-2">
                         <input
                           type="text"

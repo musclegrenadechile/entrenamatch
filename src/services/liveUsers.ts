@@ -11,6 +11,7 @@ import {
   limit,
   type Unsubscribe,
 } from 'firebase/firestore'
+import { isDeletedProfileData } from '../utils/deletedProfile'
 import { profileDocToLiveUser, type LiveUserLike } from '../utils/gymPulseLive'
 
 export type LiveUsersSnapshotHandler = (users: LiveUserLike[]) => void
@@ -49,6 +50,7 @@ export function attachLiveUsersListener(
         const data = docSnap.data() as Record<string, unknown>
         // Strict boolean — ignore string/truthy legacy values that break queries on write
         if (data.trainingNow !== true) return
+        if (isDeletedProfileData(data)) return
         live.push(profileDocToLiveUser(docSnap.id, data, { forceLive: true }))
       })
       onUpdate(live)

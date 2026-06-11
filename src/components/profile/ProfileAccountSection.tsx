@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Download, Star } from 'lucide-react'
 import { Capacitor } from '@capacitor/core'
 import { toast } from 'sonner'
@@ -10,6 +10,8 @@ import { ReferralInviteCard } from '../growth/ReferralInviteCard'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
 import { GymSoundCard } from '../music/GymSoundCard'
+import { DeleteAccountFlow } from './DeleteAccountFlow'
+import { BRAND_COPY } from '../../constants/brandCopy'
 
 export function ProfileAccountSection(props: ProfileTabProps) {
   const {
@@ -44,6 +46,8 @@ export function ProfileAccountSection(props: ProfileTabProps) {
     triggerHaptic,
   } = profileTabBindings(props)
   const [syncShareOptOut, setSyncShareOptOutState] = useState(getSyncShareOptOut)
+  const [showDeleteAccount, setShowDeleteAccount] = useState(false)
+  const feedbackSectionRef = useRef<HTMLDivElement | null>(null)
 
   return (
     <>
@@ -175,7 +179,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 </div>
 )}
 
-<div className={`px-4 mt-6${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-6 space-y-3${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
   <button
     type="button"
     onClick={() => void handleLogout()}
@@ -183,7 +187,31 @@ export function ProfileAccountSection(props: ProfileTabProps) {
   >
     Cerrar sesión
   </button>
+  <button
+    type="button"
+    onClick={() => setShowDeleteAccount(true)}
+    className="w-full py-2 text-[11px] text-[#6B7280] underline underline-offset-2 hover:text-[#9CA3AF]"
+  >
+    {BRAND_COPY.deleteAccount.entryLabel}
+  </button>
 </div>
+
+<DeleteAccountFlow
+  open={showDeleteAccount}
+  onClose={() => setShowDeleteAccount(false)}
+  userName={currentUser.name}
+  ghostMode={!!currentUser.ghostMode}
+  isDemoMode={isDemoMode}
+  onEnableGhost={async () => {
+    await saveUserWithRealSync({ ...currentUser, ghostMode: true })
+    try { triggerHaptic('light') } catch {}
+  }}
+  onLogout={handleLogout}
+  onScrollToFeedback={() => {
+    feedbackSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }}
+  onDeleted={handleLogout}
+/>
 
 {!import.meta.env.DEV && (
 <div className={`px-4 mt-4 mb-6${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
@@ -192,7 +220,10 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 )}
 
 {/* Beta Feedback ENHANCED (Phase 0 - structured, with history) - visual polish */}
-<div className={`px-4 mt-2 mb-8${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+<div
+  ref={feedbackSectionRef}
+  className={`px-4 mt-2 mb-8${profileSection !== 'cuenta' ? ' hidden' : ''}`}
+>
   <div className="card p-5">
     <div className="flex items-center justify-between mb-3">
       <div className="font-semibold text-sm flex items-center gap-2"><Star size={15} className="text-[#FF671F]" /> Feedback de Beta</div>

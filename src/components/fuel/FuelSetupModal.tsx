@@ -1,13 +1,14 @@
 import { useState, useEffect, useMemo } from 'react'
 import { X } from 'lucide-react'
 import { buildFuelProfile } from '../../utils/fuelCalculator'
-import type { FuelGoal, FuelProfile } from '../../types'
+import { PROFILE_GENDER_OPTIONS } from '../../constants'
+import type { FuelGoal, FuelProfile, ProfileGender } from '../../types'
 
 export interface FuelSetupModalProps {
   open: boolean
   initial?: FuelProfile | null
   defaultAge?: number
-  defaultGender?: 'hombre' | 'mujer'
+  defaultGender?: ProfileGender
   onClose: () => void
   onSave: (profile: Omit<FuelProfile, 'updatedAt'>) => Promise<void>
   saving?: boolean
@@ -60,7 +61,7 @@ export function FuelSetupModal({
   const [weightText, setWeightText] = useState(String(baseWeight))
   const [heightText, setHeightText] = useState(String(baseHeight))
   const [ageText, setAgeText] = useState(String(baseAge))
-  const [gender, setGender] = useState<'hombre' | 'mujer'>(initial?.gender ?? defaultGender)
+  const [gender, setGender] = useState<ProfileGender>(initial?.gender ?? defaultGender ?? 'hombre')
   const [goal, setGoal] = useState<FuelGoal>(initial?.goal ?? 'muscle')
   const [activityLevel, setActivityLevel] = useState<FuelProfile['activityLevel']>(
     initial?.activityLevel ?? 'moderate'
@@ -166,17 +167,17 @@ export function FuelSetupModal({
             </label>
             <div>
               <span className="text-[10px] text-[#9CA3AF] font-bold">Género</span>
-              <div className="flex gap-1 mt-1">
-                {(['hombre', 'mujer'] as const).map((g) => (
+              <div className="grid grid-cols-3 gap-1 mt-1">
+                {PROFILE_GENDER_OPTIONS.map(({ value, label }) => (
                   <button
-                    key={g}
+                    key={value}
                     type="button"
-                    onClick={() => setGender(g)}
-                    className={`flex-1 py-2 rounded-xl text-[10px] font-bold capitalize ${
-                      gender === g ? 'bg-[#a855f7] text-black' : 'bg-white/5 text-[#9CA3AF]'
+                    onClick={() => setGender(value)}
+                    className={`py-2 rounded-xl text-[10px] font-bold ${
+                      gender === value ? 'bg-[#a855f7] text-black' : 'bg-white/5 text-[#9CA3AF]'
                     }`}
                   >
-                    {g}
+                    {label}
                   </button>
                 ))}
               </div>

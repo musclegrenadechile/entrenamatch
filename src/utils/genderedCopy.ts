@@ -1,6 +1,8 @@
-/** Spanish copy that adapts to profile gender (hombre / mujer). */
+/** Spanish copy that adapts to profile gender (hombre / mujer / otro). */
 
-export type ProfileGender = 'hombre' | 'mujer' | string | null | undefined
+import type { ProfileGender as ProfileGenderValue } from '../types'
+
+export type ProfileGender = ProfileGenderValue | string | null | undefined
 
 export function isFeminineGender(gender: ProfileGender): boolean {
   return gender === 'mujer'

@@ -1,11 +1,11 @@
 /** Fase 92 — Fuel wizard: ≤3 preguntas + defaults desde perfil EntrenaMatch. */
 
-import type { FuelGoal, FuelProfile } from '../types'
+import type { FuelGoal, FuelProfile, ProfileGender } from '../types'
 import { buildFuelProfile } from './fuelCalculator'
 
 export interface FuelWizardHints {
   age?: number
-  gender?: 'hombre' | 'mujer'
+  gender?: ProfileGender
   weekTrainedCount?: number
   goals?: string[]
 }
@@ -39,7 +39,8 @@ export function defaultWizardAnswers(hints: FuelWizardHints = {}): FuelWizardAns
   return {
     goal: inferGoalFromProfile(hints.goals),
     activityLevel: inferActivityFromTraining(hints.weekTrainedCount),
-    weightKg: hints.gender === 'mujer' ? 62 : 75,
+    weightKg:
+      hints.gender === 'mujer' ? 62 : hints.gender === 'otro' ? 68 : 75,
   }
 }
 
@@ -50,7 +51,7 @@ export function buildFuelProfileFromWizard(
   const gender = hints.gender ?? 'hombre'
   return buildFuelProfile({
     weightKg: answers.weightKg,
-    heightCm: gender === 'mujer' ? 163 : 175,
+    heightCm: gender === 'mujer' ? 163 : gender === 'otro' ? 169 : 175,
     age: hints.age ?? 28,
     gender,
     goal: answers.goal,

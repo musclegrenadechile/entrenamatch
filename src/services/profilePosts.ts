@@ -85,6 +85,55 @@ export async function fetchUserProfilePosts(
   return posts.slice(0, 10)
 }
 
+/** Community-wide feed — single listener (perf: replaces N per-user listeners). */
+export function attachGlobalFeedListener(
+  db: Firestore,
+  onUpdate: (posts: ProfilePost[]) => void,
+  options: { maxResults?: number; onError?: (err: unknown) => void } = {}
+): () => void {
+  const { maxResults = 40, onError } = options
+  let unsubFn: (() => void) | null = null
+  let cancelled = false
+
+  ;(async () => {
+    try {
+      const { collection, query, orderBy, limit, onSnapshot } = await import('firebase/firestore')
+      const q = query(
+        collection(db, 'profilePosts'),
+        orderBy('timestamp', 'desc'),
+        limit(maxResults)
+      )
+
+      unsubFn = onSnapshot(
+        q,
+        (snap) => {
+          if (cancelled) return
+          const posts = snap.docs.map((docSnap) => docToProfilePost(docSnap))
+          posts.sort((a, b) => b.timestamp - a.timestamp)
+          onUpdate(posts)
+        },
+        (err) => {
+          console.warn('[ProfilePosts] global feed listener error', err)
+          onError?.(err)
+        }
+      )
+
+      if (cancelled) {
+        unsubFn()
+        unsubFn = null
+      }
+    } catch (e) {
+      console.warn('[ProfilePosts] attachGlobalFeedListener setup failed', e)
+      onError?.(e)
+    }
+  })()
+
+  return () => {
+    cancelled = true
+    unsubFn?.()
+  }
+}
+
 /** Real-time listener for one user's muro posts (orderBy timestamp desc). */
 export function attachUserPostsListener(
   db: Firestore,
@@ -108,17 +157,11 @@ export function attachUserPostsListener(
 
       unsubFn = onSnapshot(
         q,
-        async (snap) => {
+        (snap) => {
           if (cancelled) return
-          const posts: ProfilePost[] = []
-          await Promise.all(
-            snap.docs.map(async (docSnap) => {
-              const post = docToProfilePost(docSnap)
-              post.comments = await fetchPostComments(db, docSnap.id, [])
-              posts.push(post)
-            })
-          )
-          posts.sort((a, b) => b.timestamp - a.timestamp)
+          const posts = snap.docs
+            .map((docSnap) => docToProfilePost(docSnap))
+            .sort((a, b) => b.timestamp - a.timestamp)
           onUpdate(posts.slice(0, maxResults))
         },
         (err) => {

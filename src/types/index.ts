@@ -1,14 +1,20 @@
-﻿export interface Profile {
+﻿export type ProfileGender = 'hombre' | 'mujer' | 'otro'
+
+export type ProfileAccountStatus = 'active' | 'deleted'
+
+export interface Profile {
   id: string
   name: string
   age: number
-  gender: 'hombre' | 'mujer'
+  gender: ProfileGender
   city: string
   country: string
   lat: number
   lng: number
   bio: string
   photos: string[]
+  /** Set when gallery changes — used to resolve cache vs Firestore on login. */
+  photosUpdatedAt?: number
   trainingTypes: string[]
   goals: string[]
   level: 'Principiante' | 'Intermedio' | 'Avanzado'
@@ -29,6 +35,7 @@
   joinedLiveStreak?: number // consecutive days participating in live training (join or host)
   // EntrenaSync (dedicated collection + profile pointer for discovery)
   trainingSyncWith?: string
+  /** Completed EntrenaSync sessions (≥15 min); not consecutive days. */
   syncStreak?: number
   syncStartedAt?: number
   /** Weekly live stats for local leaderboard (Phase 4). */
@@ -39,6 +46,10 @@
   gymCheckIn?: GymCheckIn
   /** Fase 114 — fuzzy public location on GymPulse (~500 m). */
   ghostMode?: boolean
+  /** W1a — user linked Apple Health / Health Connect for Fuel + EntrenaSync. */
+  wearableHealthConnected?: boolean
+  wearableHealthPlatform?: 'ios' | 'android'
+  wearableHealthConnectedAt?: number
   /** Fase B — accelerometer/GPS motion score while LIVE (0–100). */
   liveMotionScore?: number
   liveMotionAt?: number
@@ -47,6 +58,8 @@
   isBetaBot?: boolean
   /** Moderador de comunidad — badge Admin en perfil. */
   communityAdmin?: boolean
+  /** Set by admin soft-delete — hidden from explore, map, matches UI */
+  accountStatus?: ProfileAccountStatus
   liveActivityState?: 'active' | 'idle' | 'unknown'
   /** Weekly goal — closes Home loop (Meta semanal, Phase D4). */
   weeklyPact?: WeeklyPact
@@ -56,6 +69,17 @@
   spotifyNowPlaying?: SpotifyNowPlaying
   /** GymSound Phase 2 — manual YouTube / YouTube Music anthem while LIVE. */
   gymSoundAnthem?: GymSoundAnthem
+}
+
+/** W1b — summary metrics from wearable during an EntrenaSync session (no raw HR series). */
+export interface WearableSessionSnapshot {
+  activeCaloriesKcal: number
+  exerciseMinutes: number
+  heartRateAvg?: number
+  heartRateMax?: number
+  workoutDetected: boolean
+  source: 'apple_health' | 'health_connect' | 'none'
+  capturedAt: number
 }
 
 export type SpotifyNowPlaying = {
@@ -248,6 +272,7 @@ export interface CurrentUser extends Omit<Profile, 'id'> {
   liveJoins?: number // total times joined others' live
   joinedLiveStreak?: number // consecutive days participating in live training (join or host)
   trainingSyncWith?: string
+  /** Completed EntrenaSync sessions (≥15 min); not consecutive days. */
   syncStreak?: number
   syncStartedAt?: number
   verificationStatus?: 'unverified' | 'pending' | 'verified'
@@ -288,7 +313,7 @@ export interface FuelProfile {
   weightKg: number
   heightCm: number
   age: number
-  gender: 'hombre' | 'mujer'
+  gender: ProfileGender
   goal: FuelGoal
   activityLevel: 'light' | 'moderate' | 'active' | 'very_active'
   restrictions?: string

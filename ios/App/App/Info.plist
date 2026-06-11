@@ -66,5 +66,9 @@
 	<string>EntrenaMatch accede a tu galería para subir fotos de perfil y entrenos.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>EntrenaMatch usa el micrófono para notas de voz en chat y pings en EntrenaSync.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>EntrenaMatch lee calorías activas y minutos de ejercicio desde Apple Health para Fuel y tu seguimiento con wearable.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>EntrenaMatch puede guardar entrenos que registres en la app en Apple Health, si lo activas.</string>
 </dict>
 </plist>

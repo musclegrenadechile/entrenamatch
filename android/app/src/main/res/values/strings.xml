@@ -4,4 +4,5 @@
     <string name="title_activity_main">EntrenaMatch</string>
     <string name="package_name">com.entrenamatch.app</string>
     <string name="custom_url_scheme">com.entrenamatch.app</string>
+    <string name="health_connect_privacy_policy_url">https://entrenamatch.web.app</string>
 </resources>

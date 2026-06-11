@@ -255,7 +255,11 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
                 <div className="text-[8px] text-[#22c55e] mb-1">🔥{(user.liveStreak||0)}h +{(user.joinedLiveStreak||0)}j streak</div>
               )}
               {user.trainingSyncWith && <div className="text-[7px] text-[#22c55e] mb-1">🔄 En Sync ahora</div>}
-              {user.syncStreak && <div className="text-[7px] text-[#22c55e] mb-1">🔄 SyncStreak {user.syncStreak}d</div>}
+              {user.syncStreak ? (
+                <div className="text-[7px] text-[#22c55e] mb-1">
+                  🔄 {user.syncStreak === 1 ? '1 sync' : `${user.syncStreak} syncs`}
+                </div>
+              ) : null}
               <button 
                 disabled={joiningSyncWith === user.id}
                 data-gympulse-tour={idx === 0 ? 'sync' : undefined}

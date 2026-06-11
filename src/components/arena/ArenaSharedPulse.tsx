@@ -12,6 +12,7 @@ export interface ArenaSharedPulseProps {
   restSecondsLeft: number
   restStartedBy?: string | null
   handshakeLabel?: string | null
+  liveHeartRateBpm?: number | null
 }
 
 export function ArenaSharedPulse({
@@ -23,6 +24,7 @@ export function ArenaSharedPulse({
   restSecondsLeft,
   restStartedBy = null,
   handshakeLabel,
+  liveHeartRateBpm = null,
 }: ArenaSharedPulseProps) {
   const ringScale = 0.92 + (syncVibe / 100) * 0.18
   const isPartner = latestAction?.userId && latestAction.userId !== effectiveUserId
@@ -61,6 +63,11 @@ export function ArenaSharedPulse({
               <span className="arena-shared-pulse__rest-time">
                 {Math.floor(restSecondsLeft / 60)}:{(restSecondsLeft % 60).toString().padStart(2, '0')}
               </span>
+            </>
+          ) : liveHeartRateBpm ? (
+            <>
+              <span className="arena-shared-pulse__vibe-num">{liveHeartRateBpm}</span>
+              <span className="arena-shared-pulse__vibe-label">bpm ⌚</span>
             </>
           ) : (
             <>

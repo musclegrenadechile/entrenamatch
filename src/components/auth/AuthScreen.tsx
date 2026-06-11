@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Eye, EyeOff } from 'lucide-react';
 import { APP_VERSION } from '../../constants'; // use centralized version (no more stale 0.1.37)
 import { BRAND_COPY } from '../../constants/brandCopy';
 import { markQuickDemoSession } from '../../utils/quickDemo';
@@ -41,9 +43,12 @@ export const AuthScreen = ({
   triggerHaptic = () => {},
   onQuickDemo,
 }: AuthScreenProps) => {
+  const [showPassword, setShowPassword] = useState(false);
+
   const handleTab = (mode: 'login' | 'register') => {
     triggerHaptic('light');
     setAuthMode(mode);
+    setShowPassword(false);
   };
 
   const handlePrimary = () => {
@@ -65,7 +70,7 @@ export const AuthScreen = ({
   };
 
   return (
-    <div className="auth-screen min-h-screen flex items-center justify-center p-5 relative">
+    <div className="auth-screen min-h-screen flex flex-col items-center justify-start py-6 sm:py-8 px-5 overflow-y-auto relative">
       {/* Cinematic background: subtle constellation of people training right now + hero glow */}
       <div className="auth-live-constellation">
         {Array.from({ length: 8 }).map((_, i) => (
@@ -90,26 +95,26 @@ export const AuthScreen = ({
       </div>
       <div className="auth-hero-glow" />
 
-      <div className="relative z-10 w-full max-w-[380px]">
-        {/* Top exclusive badge - makes you feel you're entering something special */}
-        <div className="flex justify-center mb-4">
-          <div className="inline-flex items-center gap-2 text-[10px] font-bold tracking-[1px] bg-white/5 text-[#FF671F] border border-[#FF671F]/30 px-4 py-1 rounded-full">
-            <span className="w-1.5 h-1.5 bg-[#22c55e] rounded-full animate-pulse" />
-            Piloto cerrado · Viña del Mar y Santiago
+      <div className="relative z-10 w-full max-w-[400px]">
+        {/* Compact hero — login card stays visible without scrolling */}
+        <div className="text-center mb-5">
+          <div className="flex justify-center mb-3">
+            <div className="inline-flex items-center gap-2 text-[10px] font-bold tracking-[1px] bg-white/5 text-[#FF671F] border border-[#FF671F]/30 px-3 py-1 rounded-full">
+              <span className="w-1.5 h-1.5 bg-[#22c55e] rounded-full animate-pulse" />
+              Piloto cerrado · Viña y Santiago
+            </div>
           </div>
-        </div>
 
-        <div className="text-center mb-6">
           <motion.div
-            initial={{ scale: 0.92, opacity: 0 }}
+            initial={{ scale: 0.96, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 140, damping: 18, delay: 0.05 }}
-            className="mb-4"
+            className="mb-3"
           >
             <img
               src={entrenamatchLogo}
               alt="EntrenaMatch"
-              className="w-full max-w-[300px] h-auto mx-auto drop-shadow-[0_12px_40px_rgba(255,103,31,0.25)]"
+              className="w-full max-w-[220px] sm:max-w-[260px] h-auto mx-auto drop-shadow-[0_12px_40px_rgba(255,103,31,0.25)]"
               width={600}
               height={338}
               decoding="async"
@@ -117,10 +122,10 @@ export const AuthScreen = ({
           </motion.div>
 
           <motion.h1
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.12 }}
-            className="text-xl font-black tracking-tight text-white"
+            transition={{ delay: 0.1 }}
+            className="text-lg sm:text-xl font-black tracking-tight text-white"
           >
             {BRAND_COPY.tagline}
           </motion.h1>
@@ -128,54 +133,39 @@ export const AuthScreen = ({
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="mt-2 text-[#9CA3AF] text-[15px] leading-relaxed max-w-[320px] mx-auto"
+            transition={{ delay: 0.16 }}
+            className="mt-1.5 text-[#9CA3AF] text-[13px] sm:text-[14px] leading-snug max-w-[320px] mx-auto line-clamp-2"
           >
-            {BRAND_COPY.pitch}
+            {BRAND_COPY.pitchShort}
           </motion.p>
-
-          <motion.ul
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.28 }}
-            className="mt-3 flex flex-wrap justify-center gap-2 text-[10px] text-[#d1d5db]"
-          >
-            <li className="px-2.5 py-1 rounded-full bg-[#1C1C20] border border-[#2F2F35]">🗺️ Mapa LIVE</li>
-            <li className="px-2.5 py-1 rounded-full bg-[#1C1C20] border border-[#2F2F35]">❤️ Matches</li>
-            <li className="px-2.5 py-1 rounded-full bg-[#1C1C20] border border-[#2F2F35]">💬 Chat + sync</li>
-          </motion.ul>
-
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.34 }}
-            className="mt-4"
-          >
-            <WhyEntrenaMatchStrip compact />
-          </motion.div>
         </div>
 
-        {/* The beautiful "portal" card */}
-        <div className="auth-card rounded-3xl p-6">
-          {/* Premium tabs — cuenta real vs registro */}
-          <div className="flex mb-2 bg-[#161618] rounded-2xl p-1">
+        {/* Login card — primary focus */}
+        <div className="auth-card rounded-3xl p-5 sm:p-6">
+          <p className="text-[11px] font-semibold text-white/90 mb-3 text-center tracking-wide">
+            {authMode === 'register' ? 'Crea tu cuenta' : 'Inicia sesión'}
+          </p>
+
+          <div className="auth-tab-track flex mb-3 rounded-2xl p-1">
             <button
+              type="button"
               onClick={() => handleTab('login')}
-              className={`auth-tab flex-1 py-2.5 rounded-[14px] text-sm font-semibold ${authMode === 'login' ? 'active text-white' : 'text-[#9CA3AF] hover:text-white/70'}`}
+              className={`auth-tab flex-1 py-2.5 rounded-xl text-[13px] font-semibold ${authMode === 'login' ? 'active' : ''}`}
             >
-              Cuenta real
+              Iniciar sesión
             </button>
             <button
+              type="button"
               onClick={() => handleTab('register')}
-              className={`auth-tab flex-1 py-2.5 rounded-[14px] text-sm font-semibold ${authMode === 'register' ? 'active text-white' : 'text-[#9CA3AF] hover:text-white/70'}`}
+              className={`auth-tab flex-1 py-2.5 rounded-xl text-[13px] font-semibold ${authMode === 'register' ? 'active' : ''}`}
             >
               Crear cuenta
             </button>
           </div>
-          <p className="text-[10px] text-[#6B7280] mb-4 leading-snug text-center">
+          <p className="text-[11px] text-[#9CA3AF] mb-4 leading-snug text-center">
             {authMode === 'register'
-              ? 'Cuenta real: guarda tu perfil, matches y EntrenaSync en la nube.'
-              : 'Inicia sesión con email o Google para sincronizar en todos tus dispositivos.'}
+              ? 'Tu perfil, matches y EntrenaSync se guardan en la nube.'
+              : 'Email o Google — sincroniza en todos tus dispositivos.'}
           </p>
 
           <AnimatePresence>
@@ -198,13 +188,28 @@ export const AuthScreen = ({
               onChange={(e) => setAuthEmail(e.target.value)}
               className="auth-input w-full rounded-2xl px-5 py-3.5 text-sm placeholder:text-[#6B7280]"
             />
-            <input
-              type="password"
-              placeholder="Contraseña"
-              value={authPassword}
-              onChange={(e) => setAuthPassword(e.target.value)}
-              className="auth-input w-full rounded-2xl px-5 py-3.5 text-sm placeholder:text-[#6B7280]"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                placeholder="Contraseña"
+                value={authPassword}
+                onChange={(e) => setAuthPassword(e.target.value)}
+                autoComplete={authMode === 'register' ? 'new-password' : 'current-password'}
+                className="auth-input auth-input-with-toggle w-full rounded-2xl px-5 py-3.5 pr-12 text-sm placeholder:text-[#6B7280]"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic('light');
+                  setShowPassword((v) => !v);
+                }}
+                className="auth-password-toggle absolute right-3 top-1/2 -translate-y-1/2 p-1.5 rounded-lg text-[#9CA3AF] hover:text-white transition"
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff size={18} aria-hidden /> : <Eye size={18} aria-hidden />}
+              </button>
+            </div>
 
             {/* The big "open the doors" button */}
             <motion.button
@@ -297,8 +302,22 @@ export const AuthScreen = ({
           </div>
         </div>
 
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.24 }}
+          className="mt-5 space-y-4"
+        >
+          <ul className="flex flex-wrap justify-center gap-2 text-[10px] text-[#d1d5db]">
+            <li className="px-2.5 py-1 rounded-full bg-[#1C1C20] border border-[#2F2F35]">🗺️ Mapa LIVE</li>
+            <li className="px-2.5 py-1 rounded-full bg-[#1C1C20] border border-[#2F2F35]">❤️ Matches</li>
+            <li className="px-2.5 py-1 rounded-full bg-[#1C1C20] border border-[#2F2F35]">💬 Chat + sync</li>
+          </ul>
+          <WhyEntrenaMatchStrip compact />
+        </motion.div>
+
         {/* Trust + legal — elegant and minimal */}
-        <p className="text-center text-[10px] text-[#6B7280] mt-6 leading-snug">
+        <p className="text-center text-[10px] text-[#6B7280] mt-5 leading-snug">
           Al entrar aceptas nuestros{' '}
           <a href="/entrenamatch/terms.html" target="_blank" className="underline hover:text-[#FF671F]">Términos</a>{' '}
           y{' '}

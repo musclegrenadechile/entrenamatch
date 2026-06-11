@@ -1,15 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
-import { ArrowLeft, Ban, Flag, Shield, Trash2 } from 'lucide-react'
+import { ArrowLeft, Ban, Flag, RefreshCw, Shield, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Firestore } from 'firebase/firestore'
 import type { Profile, Report } from '../../types'
 import { isBetaBotProfile } from '../../utils/betaBots'
 import {
   adminDeleteUserAccount,
+  adminRecalculateSyncStreaks,
   attachAllReportsListener,
   attachUserBlocksListener,
   updateReportStatus,
   type AppAdminRecord,
+  type SyncStreakRecalcResult,
   type UserBlockRecord,
 } from '../../services/appAdmin'
 
@@ -21,7 +23,7 @@ export interface CommunityAdminPanelProps {
   realProfiles: Profile[]
 }
 
-type Tab = 'reports' | 'blocks' | 'delete'
+type Tab = 'reports' | 'blocks' | 'delete' | 'maintenance'
 
 function displayName(
   id: string,
@@ -45,6 +47,7 @@ export function CommunityAdminPanel({
   const [deleteUid, setDeleteUid] = useState('')
   const [deleteReason, setDeleteReason] = useState('')
   const [busy, setBusy] = useState<string | null>(null)
+  const [syncRecalcPreview, setSyncRecalcPreview] = useState<SyncStreakRecalcResult | null>(null)
 
   useEffect(() => {
     if (!open || !db) return
@@ -115,6 +118,29 @@ export function CommunityAdminPanel({
     setTab('delete')
   }
 
+  const runSyncStreakRecalc = async (apply: boolean) => {
+    if (apply && !window.confirm('¿Aplicar la limpieza de syncStreak en todos los perfiles afectados?')) {
+      return
+    }
+    setBusy(apply ? 'sync-apply' : 'sync-preview')
+    try {
+      const res = await adminRecalculateSyncStreaks({ apply })
+      setSyncRecalcPreview(res)
+      if (apply) {
+        toast.success(`Limpieza aplicada: ${res.profilesUpdated} perfiles actualizados`)
+      } else if (res.totalChanges === 0) {
+        toast.success('Nada que corregir — syncStreak ya coincide con evidencia ≥15 min')
+      } else {
+        toast.info(`Vista previa: ${res.totalChanges} perfiles a corregir`)
+      }
+    } catch (e: unknown) {
+      const msg = e && typeof e === 'object' && 'message' in e ? String((e as Error).message) : 'Error'
+      toast.error(msg)
+    } finally {
+      setBusy(null)
+    }
+  }
+
   return (
     <div className="admin-ops-screen" role="dialog" aria-label="Panel admin comunidad">
       <header className="admin-ops__header">
@@ -137,6 +163,7 @@ export function CommunityAdminPanel({
             { key: 'reports' as Tab, label: `Reportes (${reports.length})` },
             { key: 'blocks' as Tab, label: `Bloqueos (${blocks.length})` },
             { key: 'delete' as Tab, label: 'Eliminar cuenta' },
+            { key: 'maintenance' as Tab, label: 'Mantenimiento' },
           ] as const
         ).map((t) => (
           <button
@@ -295,6 +322,65 @@ export function CommunityAdminPanel({
                   </div>
                 </div>
               ))
+            )}
+          </div>
+        )}
+
+        {tab === 'maintenance' && (
+          <div className="space-y-4">
+            <p className="text-sm text-[#9CA3AF]">
+              Recalcula <code className="text-[#E5E7EB]">syncStreak</code> desde evidencia real (ratings,
+              workouts sync y pilot) con mínimo de 15 minutos. Corrige contadores inflados del bug anterior.
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                type="button"
+                disabled={busy === 'sync-preview' || busy === 'sync-apply'}
+                onClick={() => runSyncStreakRecalc(false)}
+                className="flex-1 min-w-[140px] py-3 rounded-xl bg-[#25252A] text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <RefreshCw size={16} className={busy === 'sync-preview' ? 'animate-spin' : ''} />
+                {busy === 'sync-preview' ? 'Analizando…' : 'Vista previa'}
+              </button>
+              <button
+                type="button"
+                disabled={
+                  busy === 'sync-preview' ||
+                  busy === 'sync-apply' ||
+                  !syncRecalcPreview ||
+                  syncRecalcPreview.totalChanges === 0
+                }
+                onClick={() => runSyncStreakRecalc(true)}
+                className="flex-1 min-w-[140px] py-3 rounded-xl bg-[#22c55e]/20 text-[#22c55e] text-sm font-semibold border border-[#22c55e]/40 disabled:opacity-50"
+              >
+                {busy === 'sync-apply' ? 'Aplicando…' : 'Aplicar limpieza'}
+              </button>
+            </div>
+            {syncRecalcPreview && (
+              <div className="card p-3 rounded-2xl text-sm border border-[#2F2F35] space-y-2">
+                <p className="text-xs text-[#9CA3AF]">
+                  {syncRecalcPreview.dryRun ? 'Vista previa' : 'Aplicado'} ·{' '}
+                  {syncRecalcPreview.totalChanges} cambio(s) · −{syncRecalcPreview.totalRemoved} syncs
+                  inflados · mín. {syncRecalcPreview.minVerifiedMinutes} min
+                </p>
+                {syncRecalcPreview.changes.length === 0 ? (
+                  <p className="text-[#9CA3AF] text-xs">Sin diferencias detectadas.</p>
+                ) : (
+                  <ul className="text-xs space-y-1 max-h-48 overflow-y-auto">
+                    {syncRecalcPreview.changes.map((c) => (
+                      <li key={c.uid} className="flex justify-between gap-2 font-mono">
+                        <span className="truncate text-[#E5E7EB]">{c.name}</span>
+                        <span className="text-[#22c55e] shrink-0">
+                          {c.stored} → {c.recalculated}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {syncRecalcPreview.changesTruncated && (
+                  <p className="text-[10px] text-[#6B7280]">Mostrando los primeros 50 cambios.</p>
+                )}
+              </div>
             )}
           </div>
         )}

@@ -59,7 +59,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
       </div>
       <div className="text-right">
         <div className="text-lg font-bold text-[#22c55e]">{(currentUser as any).syncStreak || 0}</div>
-        <div className="text-[10px] text-[#9CA3AF]">syncs</div>
+        <div className="text-[10px] text-[#9CA3AF]">syncs (≥15 min)</div>
       </div>
       <div className="text-right">
         <div className="text-lg font-bold text-[#FFD700]">{(profilePosts[effectiveUserId] || []).filter((p: any) => (p.text || '').includes('ENTRENASYNC') || (p.text || '').includes('HIGHLIGHT')).length}</div>

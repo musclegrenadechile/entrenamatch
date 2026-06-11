@@ -2,7 +2,8 @@ import { useState, type ChangeEvent, type ReactNode } from 'react'
 import { ArrowLeft, Camera, Crop, Quote } from 'lucide-react'
 import { toast } from 'sonner'
 import type { CurrentUser } from '../../types'
-import { TRAINING_OPTIONS, TRAINING_GOALS } from '../../constants'
+import { TRAINING_OPTIONS, TRAINING_GOALS, PROFILE_GENDER_OPTIONS } from '../../constants'
+import type { ProfileGender } from '../../types'
 import { PILOT_CITY_OPTIONS, PILOT_PROGRAM_TITLE } from '../../constants/pilotProgram'
 import { PhotoCropModal } from '../photos/PhotoCropModal'
 
@@ -26,7 +27,7 @@ if (typeof window !== 'undefined' && (window as Window & { Capacitor?: unknown }
 type EditData = {
   name: string
   age: number
-  gender: 'hombre' | 'mujer'
+  gender: ProfileGender
   city: string
   country: string
   lat: number
@@ -207,6 +208,10 @@ export function ProfileEditFlow({
       toast.error('Faltan datos', { description: 'Elige al menos un deporte y un objetivo principal.' })
       return
     }
+    if ((editData.age || 0) < 18) {
+      toast.error('Debes ser mayor de 18 años')
+      return
+    }
 
     setSaving(true)
     try {
@@ -214,6 +219,9 @@ export function ProfileEditFlow({
       if (uploadPhotoIfNeeded && finalPhotos.some((p) => p.startsWith('data:'))) {
         finalPhotos = await Promise.all(finalPhotos.map((p) => uploadPhotoIfNeeded(p)))
       }
+
+      const photosChanged =
+        JSON.stringify(finalPhotos) !== JSON.stringify(currentUser.photos || [])
 
       const updated: CurrentUser = {
         ...currentUser,
@@ -226,6 +234,7 @@ export function ProfileEditFlow({
         lng: editData.lng,
         bio: editData.bio.trim(),
         photos: finalPhotos,
+        ...(photosChanged ? { photosUpdatedAt: Date.now() } : {}),
         trainingTypes: editData.trainingTypes,
         goals: editData.goals,
         level: editData.level,
@@ -265,7 +274,7 @@ export function ProfileEditFlow({
       </header>
 
       <div className="flex-1 overflow-auto px-4 py-4 space-y-4 pb-28">
-        <EditSection title="Datos básicos" subtitle="Nombre y ciudad visibles en tu perfil y matches">
+        <EditSection title="Datos básicos" subtitle="Nombre, edad y género visibles en tu perfil y matches">
           <input
             type="text"
             value={editData.name}
@@ -273,6 +282,46 @@ export function ProfileEditFlow({
             className="w-full bg-[#1C1C20] border border-[#2F2F35] focus:border-[#FF671F] rounded-xl px-4 py-3 text-lg font-bold"
             placeholder="Tu nombre"
           />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="edit-age" className="block text-[11px] font-semibold text-[#9CA3AF] mb-1.5">
+                Edad
+              </label>
+              <input
+                id="edit-age"
+                type="number"
+                inputMode="numeric"
+                min={18}
+                max={99}
+                value={editData.age || ''}
+                onChange={(e) => {
+                  const raw = e.target.value.replace(/[^\d]/g, '')
+                  const next = raw === '' ? 0 : Math.min(99, parseInt(raw, 10))
+                  patch({ age: next })
+                }}
+                className="w-full bg-[#1C1C20] border border-[#2F2F35] focus:border-[#FF671F] rounded-xl px-3 py-2.5 text-base"
+              />
+            </div>
+            <div>
+              <span className="block text-[11px] font-semibold text-[#9CA3AF] mb-1.5">Género</span>
+              <div className="grid grid-cols-3 gap-1.5">
+                {PROFILE_GENDER_OPTIONS.map(({ value, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => patch({ gender: value })}
+                    className={`py-2.5 rounded-xl text-[11px] sm:text-xs font-semibold transition ${
+                      editData.gender === value
+                        ? 'bg-[#FF671F] text-black'
+                        : 'bg-[#1C1C20] border border-[#2F2F35] text-[#9CA3AF]'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
           <select
             value={editData.city}
             onChange={(e) => patch({ city: e.target.value })}

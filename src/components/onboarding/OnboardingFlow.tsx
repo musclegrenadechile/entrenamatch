@@ -3,7 +3,8 @@ import { Dumbbell, MapPin, Camera, Users, RefreshCw, Crop, Sparkles, Quote, X } 
 import { PhotoCropModal } from '../photos/PhotoCropModal';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { TRAINING_OPTIONS, TRAINING_GOALS } from '../../constants';
+import { TRAINING_OPTIONS, TRAINING_GOALS, PROFILE_GENDER_OPTIONS, TRAINING_INTENSITIES } from '../../constants';
+import type { ProfileGender } from '../../types';
 import { BRAND_COPY } from '../../constants/brandCopy';
 import { PILOT_CITY_OPTIONS, PILOT_PROGRAM_TITLE } from '../../constants/pilotProgram';
 import type { CurrentUser } from '../../types';
@@ -13,6 +14,7 @@ import { QUICK_DEMO_USER } from '../../utils/quickDemo';
 const ONBOARDING_CREATE_LAST_STEP = 2;
 const ONBOARDING_EDIT_LAST_STEP = 3;
 const SHOW_DEV_FILL = import.meta.env.DEV;
+const TRAINING_LEVELS = ['Principiante', 'Intermedio', 'Avanzado'] as const;
 
 interface CapacitorCameraPlugin {
   getPhoto: (opts: {
@@ -38,7 +40,7 @@ interface OnboardingConsents {
 interface OnboardData {
   name: string;
   age: number;
-  gender: 'hombre' | 'mujer';
+  gender: ProfileGender;
   city: string;
   country: string;
   lat: number;
@@ -184,56 +186,67 @@ export const OnboardingFlow = ({
     const previewTraining = (d.trainingTypes || []).slice(0, 2).join(' · ') || 'Entrenamiento';
     const previewGoals = (d.goals || []).slice(0, 1);
     const isLive = !!d.wantsToGoLive;
-    const mockNetworkPower = Math.max(12, Math.floor(((d.trainingTypes?.length || 1) * 8) + (isLive ? 25 : 0)));
     return (
-      <div className="mb-5 rounded-3xl overflow-hidden border-2 border-[#22c55e]/40 bg-gradient-to-b from-[#0a0a0c] to-[#111113] shadow-2xl ring-1 ring-white/5">
-        <div className="relative h-36">
+      <div className="mb-6 rounded-2xl overflow-hidden border border-[#22c55e]/30 bg-[#111113] shadow-lg">
+        <div className="relative h-28 sm:h-32">
           {mainPhoto ? (
-            <img src={mainPhoto} className="absolute inset-0 w-full h-full object-cover" alt="preview" />
+            <>
+              <img src={mainPhoto} className="absolute inset-0 w-full h-full object-cover" alt="preview" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/5 via-black/25 to-black/70" />
+              {isLive && (
+                <div
+                  className="absolute top-2 left-2 live-pill green text-[9px] px-2 py-0.5 flex items-center gap-1"
+                  style={{ animation: 'live-pulse-green 1.8s ease-in-out infinite' }}
+                >
+                  🟢 EN VIVO
+                </div>
+              )}
+              {d.level && (
+                <div className="absolute top-2 right-2 text-[9px] px-2 py-0.5 rounded-full bg-white/90 text-black font-semibold">
+                  {d.level}
+                </div>
+              )}
+            </>
           ) : (
-            <div className="absolute inset-0 bg-gradient-to-br from-[#1C1C20] to-black flex items-center justify-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#1C1C20] to-[#0a0a0c] flex items-center justify-center px-4">
               <div className="text-center text-[#9CA3AF]">
-                <Dumbbell className="mx-auto mb-1 opacity-50" size={28} />
-                <div className="text-xs">Sube tu primera foto para previsualizar</div>
+                <Camera className="mx-auto mb-1.5 opacity-40" size={22} />
+                <div className="text-[11px] leading-snug">Vista previa — sube tu primera foto abajo</div>
               </div>
             </div>
           )}
-          {/* Gradient overlays like real swipe cards */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/90" />
-          <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/80 to-transparent" />
+        </div>
 
-          {/* LIVE badge if opted - sells the killer feature right in preview */}
-          {isLive && (
-            <div className="absolute top-2 left-2 live-pill green text-[9px] px-2 py-0.5 flex items-center gap-1" style={{animation: 'live-pulse-green 1.8s ease-in-out infinite'}}>
-              🟢 EN VIVO AHORA
+        <div className="px-3.5 py-3 border-t border-[#2F2F35] space-y-2">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="font-bold text-base tracking-tight text-white truncate">
+                {d.name || 'Tu nombre'}{' '}
+                <span className="text-sm font-normal text-[#9CA3AF]">· {d.age || 26}</span>
+              </div>
+              <div className="text-[11px] text-[#9CA3AF] line-clamp-2 mt-0.5">
+                {d.bio || 'Tu bio aparecerá aquí cuando la completes en Perfil.'}
+              </div>
             </div>
-          )}
-          {d.level && <div className="absolute top-2 right-2 text-[9px] px-2 py-0.5 rounded-full bg-white/90 text-black font-semibold">{d.level}</div>}
-
-          {/* Bottom info overlay */}
-          <div className="absolute bottom-0 left-0 right-0 p-3 text-white">
-            <div className="flex items-baseline gap-2">
-              <div className="font-bold text-xl tracking-tighter">{d.name || 'Tu nombre'} <span className="text-sm font-normal text-white/70">· {d.age || 26}</span></div>
-              <div className="text-xs text-white/70 ml-auto">{d.city || 'Viña del Mar'}</div>
-            </div>
-            <div className="text-xs text-white/80 line-clamp-1 mt-0.5 pr-6">{d.bio || 'Tu bio aparecerá aquí...'}</div>
-            <div className="flex flex-wrap gap-1 mt-1.5">
-              {previewTraining && <span className="text-[9px] bg-white/25 px-1.5 py-px rounded-full">{previewTraining}</span>}
-              {previewGoals.map((g: string) => <span key={g} className="text-[8px] bg-[#FF671F]/80 text-black px-1 py-px rounded-full">{g}</span>)}
-              {d.intensity && <span className="text-[8px] bg-white/20 px-1 py-px rounded">{d.intensity}</span>}
-            </div>
+            <div className="text-[10px] text-[#9CA3AF] shrink-0 text-right">{d.city || 'Viña del Mar'}</div>
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            <span className="text-[9px] bg-[#2F2F35] text-[#d1d5db] px-2 py-0.5 rounded-full">{previewTraining}</span>
+            {previewGoals.map((g: string) => (
+              <span key={g} className="text-[9px] bg-[#FF671F]/85 text-black px-2 py-0.5 rounded-full">
+                {g}
+              </span>
+            ))}
+            {d.intensity && (
+              <span className="text-[9px] bg-[#2F2F35] text-[#d1d5db] px-2 py-0.5 rounded-full">{d.intensity}</span>
+            )}
           </div>
         </div>
-        <div className="px-3 py-1.5 text-[9px] bg-[#0D0D10] text-[#22c55e] flex items-center gap-1 border-t border-[#22c55e]/20">
-          <span>👁️ Así te verán en Explorar y en tu perfil</span>
-          {isLive && <span className="ml-auto font-bold text-[#22c55e]">Punto verde en el mapa</span>}
+
+        <div className="px-3.5 py-2 text-[10px] bg-[#0D0D10] text-[#22c55e] border-t border-[#22c55e]/15">
+          👁️ Así te verán en Explorar y en tu perfil
+          {isLive && <span className="float-right font-semibold">Punto verde en el mapa</span>}
         </div>
-        {/* Unique ritual mock: small live map simulation for excitement - makes the first Live feel inevitable */}
-        {isLive && (
-          <div className="mx-3 -mt-1 mb-1 px-2 py-1 bg-[#0a120f] border border-[#22c55e]/20 rounded-b-2xl text-[7px] text-[#22c55e] flex items-center gap-1">
-            <span>🗺️</span> <span>Mapa LIVE simulado: tú + 4 cerca • sync listo • primer match en 20s</span>
-          </div>
-        )}
       </div>
     );
   };
@@ -511,23 +524,22 @@ export const OnboardingFlow = ({
   return (
     <div className="app-container flex flex-col bg-[#0D0D10] text-white h-[100svh] max-h-[100svh]">
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-      <div className="flex-shrink-0 px-6 pt-6 pb-2">
-        {/* Epic Remastered Header - Unique ritual vibe */}
-        <div className="flex items-center gap-4 mb-5">
+      <div className="flex-shrink-0 px-5 sm:px-6 pt-4 sm:pt-5 pb-1">
+        {/* Compact header — más aire para el formulario */}
+        <div className="flex items-center gap-3 mb-4">
           <motion.div 
             animate={{ 
-              scale: [1, 1.1, 1], 
-              rotate: [0, 5, -5, 0],
-              boxShadow: ['0 0 0 0 rgba(255,103,31,0.5)', '0 0 0 20px rgba(255,103,31,0.2)', '0 0 0 0 rgba(255,103,31,0.5)'] 
+              scale: [1, 1.05, 1], 
+              boxShadow: ['0 0 0 0 rgba(255,103,31,0.35)', '0 0 0 12px rgba(255,103,31,0.12)', '0 0 0 0 rgba(255,103,31,0.35)'] 
             }}
             transition={{ duration: 3, repeat: Infinity }}
-            className="w-14 h-14 rounded-3xl bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center ring-4 ring-[#FF671F]/20 shadow-2xl"
+            className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex items-center justify-center ring-2 ring-[#FF671F]/20 shadow-lg shrink-0"
           >
-            <Dumbbell className="w-8 h-8 text-black" />
+            <Dumbbell className="w-6 h-6 text-black" />
           </motion.div>
-          <div className="flex-1">
-            <div className="font-black text-4xl tracking-[-2px] text-white">ENTRENAMATCH</div>
-            <div className="text-[#FF671F] text-xs tracking-[3px] font-mono -mt-1">{BRAND_COPY.taglineMono}</div>
+          <div className="flex-1 min-w-0">
+            <div className="font-black text-2xl sm:text-3xl tracking-[-1px] text-white truncate">ENTRENAMATCH</div>
+            <div className="text-[#FF671F] text-[10px] sm:text-xs tracking-[2px] font-mono">{BRAND_COPY.taglineMono}</div>
           </div>
           <div className="flex flex-col items-end gap-1.5 shrink-0">
             {!isEditMode && onExitToLogin && (
@@ -561,19 +573,19 @@ export const OnboardingFlow = ({
           </div>
         </div>
 
-        <div className="mb-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="text-4xl font-black tracking-[-1.5px] leading-none mb-1 text-white">
-                {isEditMode ? 'REMASTERIZA TU PRESENCIA' : 'CREA TU PERFIL'}
-              </div>
-              <div className="text-[#9CA3AF] text-base max-w-md">Tu perfil es tu entrada a la {BRAND_COPY.community}. Entrena en vivo, sincronízate y deja historial compartido en el mapa.</div>
-            </div>
+        <div className="mb-3">
+          <div className="text-2xl sm:text-3xl font-black tracking-[-0.5px] leading-tight text-white">
+            {isEditMode ? 'Remasteriza tu perfil' : 'Crea tu perfil'}
+          </div>
+          <div className="text-[#9CA3AF] text-[13px] sm:text-sm mt-1 leading-snug max-w-md">
+            {isEditMode
+              ? 'Actualiza cómo te ven en Explorar y en el mapa.'
+              : `3 pasos rápidos para entrar a ${BRAND_COPY.community}.`}
           </div>
         </div>
 
-        {/* Epic Ritual Progress - Visual path, not boring dots */}
-        <div className="mb-4">
+        {/* Progress */}
+        <div className="mb-3">
           <div className="flex items-center justify-between text-xs mb-2 px-1">
             <div className="font-mono text-[#FF671F] tracking-[2px]">{isEditMode ? 'EDIT' : 'PASO'} {onboardingStep + 1} / {totalSteps} • {Math.round((onboardingStep + 1) / totalSteps * 100)}%</div>
             <div className="text-[#9CA3AF] text-[10px] font-medium">
@@ -603,10 +615,10 @@ export const OnboardingFlow = ({
       </div>
 
         {/* Scrollable step content + preview */}
-        <div className="flex-1 overflow-y-auto overscroll-y-contain px-6 min-h-0 pb-36">
+        <div className="flex-1 overflow-y-auto overscroll-y-contain px-5 sm:px-6 min-h-0 pb-44">
         {!isConsentsStep && !showIntroStep && renderProfilePreview()}
 
-        <div className="-mx-1 px-1">
+        <div className="space-y-1">
 
         {/* PASO 0 (solo create): Qué es EntrenaMatch */}
         {showIntroStep && (
@@ -646,74 +658,133 @@ export const OnboardingFlow = ({
 
         {/* PASO PRESENCIA */}
         {isPresenceStep && (
-          <div className="space-y-6">
-            <div>
-              <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1 font-medium">PASO 1 • TU NOMBRE EN LA RED</div>
-              <input 
-                type="text" 
-                value={onboardData.name} 
-                onChange={e => { updateOnboard({ name: e.target.value }); try { triggerHaptic('light') } catch {} }}
-                placeholder="ALEX RIVERA • GUERRERO DEL PULSO" 
-                className="w-full bg-[#1C1C20] border-2 border-[#FF671F]/30 focus:border-[#FF671F] rounded-2xl px-5 py-4 text-2xl font-black tracking-[-1px]" 
+          <div className="space-y-5">
+            <section className="rounded-2xl border border-[#2F2F35] bg-[#111113] p-4">
+              <label htmlFor="onboard-name" className="block text-sm font-semibold text-white mb-1">
+                ¿Cómo te llamas?
+              </label>
+              <p className="text-[11px] text-[#9CA3AF] mb-3 leading-snug">
+                Tu nombre real — sin apodos, rangos ni títulos de juego.
+              </p>
+              <input
+                id="onboard-name"
+                type="text"
+                value={onboardData.name}
+                onChange={(e) => {
+                  updateOnboard({ name: e.target.value })
+                  try { triggerHaptic('light') } catch {}
+                }}
+                placeholder="Ej: María González"
+                autoComplete="name"
+                maxLength={48}
+                className="w-full bg-[#1C1C20] border border-[#2F2F35] focus:border-[#FF671F] rounded-xl px-4 py-3 text-base font-medium text-white placeholder:text-[#6B7280] placeholder:font-normal"
               />
-              <div className="text-[9px] text-[#9CA3AF] mt-1">Este nombre te representa en el mapa vivo y en tu Red.</div>
-            </div>
+              <div className="text-[10px] text-[#9CA3AF] mt-2">Así te verán en Explorar y en el mapa en vivo.</div>
 
-            {/* Photo Gallery Creator - Attractive & unique curation experience */}
-            <div>
-              <div className="flex justify-between items-end mb-2">
+              <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-[#2F2F35]">
                 <div>
-                  <div className="text-sm font-semibold tracking-wider">TUS FOTOS DE ENTRENO (hasta 6)</div>
-                  <div className="text-[10px] text-[#9CA3AF]">La primera es tu presencia principal. Arrastra/reordena después en Perfil.</div>
+                  <label htmlFor="onboard-age" className="block text-[11px] font-semibold text-[#9CA3AF] mb-1.5">
+                    Edad
+                  </label>
+                  <input
+                    id="onboard-age"
+                    type="number"
+                    inputMode="numeric"
+                    min={18}
+                    max={99}
+                    value={onboardData.age || ''}
+                    onChange={(e) => {
+                      const raw = e.target.value.replace(/[^\d]/g, '')
+                      const next = raw === '' ? 0 : Math.min(99, parseInt(raw, 10))
+                      updateOnboard({ age: next })
+                      try { triggerHaptic('light') } catch {}
+                    }}
+                    className="w-full bg-[#1C1C20] border border-[#2F2F35] focus:border-[#FF671F] rounded-xl px-3 py-2.5 text-base text-white"
+                  />
                 </div>
-                <div className="text-[10px] text-[#FF671F] font-mono">{(onboardData.photos || []).length}/6</div>
+                <div>
+                  <span className="block text-[11px] font-semibold text-[#9CA3AF] mb-1.5">Género</span>
+                  <div className="grid grid-cols-3 gap-1.5">
+                    {PROFILE_GENDER_OPTIONS.map(({ value, label }) => (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => {
+                          updateOnboard({ gender: value })
+                          try { triggerHaptic('light') } catch {}
+                        }}
+                        className={`py-2.5 rounded-xl text-[11px] sm:text-xs font-semibold transition ${
+                          onboardData.gender === value
+                            ? 'bg-[#FF671F] text-black'
+                            : 'bg-[#1C1C20] border border-[#2F2F35] text-[#9CA3AF]'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <p className="text-[10px] text-[#9CA3AF]">Solo mayores de 18 años pueden usar EntrenaMatch.</p>
+            </section>
+
+            <section className="rounded-2xl border border-[#2F2F35] bg-[#111113] p-4 space-y-3">
+              <div className="flex justify-between items-start gap-3">
+                <div>
+                  <div className="text-sm font-semibold">Tus fotos de entreno</div>
+                  <div className="text-[10px] text-[#9CA3AF] mt-0.5">La primera es tu foto principal (hasta 6).</div>
+                </div>
+                <div className="text-[11px] text-[#FF671F] font-mono shrink-0">{(onboardData.photos || []).length}/6</div>
               </div>
               
-              <div className="grid grid-cols-3 gap-2.5">
-                {(onboardData.photos || []).slice(0,6).map((photo: string, idx: number) => (
-                  <div key={idx} className="relative aspect-square rounded-2xl overflow-hidden border-2 border-[#FF671F]/50 shadow group">
-                    <img src={photo} className="w-full h-full object-cover" alt={`Foto de perfil ${idx + 1}`} />
-                    <button onClick={() => { removeOnboardPhoto(idx); try { triggerHaptic('light') } catch {} }} className="absolute top-1.5 right-1.5 bg-black/80 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center active:bg-red-500">×</button>
-                    <button
-                      type="button"
-                      onClick={() => { try { triggerHaptic('light') } catch {}; startCropFlow([photo], idx) }}
-                      className="absolute top-1.5 left-1.5 bg-black/75 text-white text-[8px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 active:bg-[#FF671F] active:text-black"
-                    >
-                      <Crop size={10} /> Encuadrar
-                    </button>
-                    {idx === 0 && <div className="absolute bottom-0 left-0 right-0 bg-[#FF671F] text-black text-[8px] py-0.5 text-center font-bold tracking-widest">PRESENCIA PRINCIPAL</div>}
-                    {idx > 0 && (
-                      <button onClick={() => {
-                        const photos = [...(onboardData.photos || [])];
-                        const [moved] = photos.splice(idx, 1);
-                        photos.unshift(moved);
-                        updateOnboard({ photos });
-                        try { triggerHaptic('medium') } catch {}
-                      }} className="absolute bottom-1.5 left-1.5 bg-black/70 text-[8px] px-1.5 py-0.5 rounded text-white active:bg-[#FF671F]">★ PRINCIPAL</button>
-                    )}
-                  </div>
-                ))}
-                
-                {(onboardData.photos || []).length < 6 && (
-                  <div className="grid grid-rows-2 gap-2.5">
-                    <button onClick={() => { try { triggerHaptic('medium') } catch {}; takeNativePhoto() }} className="border-2 border-[#FF671F] rounded-2xl flex flex-col items-center justify-center text-[#FF671F] text-xs active:bg-[#FF671F]/10 active:scale-[0.985] transition">
-                      <Camera size={22} className="mb-1" />
-                      <span className="font-bold tracking-wider">CÁMARA</span>
-                      <span className="text-[8px] opacity-60">NATIVA • RÁPIDA</span>
-                    </button>
-                    <label className="border-2 border-dashed border-[#FF671F]/40 rounded-2xl flex flex-col items-center justify-center text-xs cursor-pointer active:bg-[#1C1C20] text-[#9CA3AF]">
-                      <Camera size={18} className="mb-1" />
-                      <span className="font-medium">SUBIR FOTOS</span>
-                      <span className="text-[8px]">HASTA 6 • DATA URL → STORAGE</span>
-                      <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
-                    </label>
-                  </div>
-                )}
-              </div>
-              <div className="text-[9px] text-[#9CA3AF] mt-1.5">Fotos reales de tus sesiones. Así te ven en Explorar y el mapa.</div>
-            </div>
+              {(onboardData.photos || []).length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {(onboardData.photos || []).slice(0, 6).map((photo: string, idx: number) => (
+                    <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-[#FF671F]/40">
+                      <img src={photo} className="w-full h-full object-cover" alt={`Foto de perfil ${idx + 1}`} />
+                      <button onClick={() => { removeOnboardPhoto(idx); try { triggerHaptic('light') } catch {} }} className="absolute top-1 right-1 bg-black/80 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center active:bg-red-500">×</button>
+                      <button
+                        type="button"
+                        onClick={() => { try { triggerHaptic('light') } catch {}; startCropFlow([photo], idx) }}
+                        className="absolute top-1 left-1 bg-black/75 text-white text-[8px] px-1.5 py-0.5 rounded-full flex items-center gap-0.5 active:bg-[#FF671F] active:text-black"
+                      >
+                        <Crop size={10} /> Recortar
+                      </button>
+                      {idx === 0 && <div className="absolute bottom-0 left-0 right-0 bg-[#FF671F] text-black text-[7px] py-0.5 text-center font-bold">PRINCIPAL</div>}
+                      {idx > 0 && (
+                        <button onClick={() => {
+                          const photos = [...(onboardData.photos || [])];
+                          const [moved] = photos.splice(idx, 1);
+                          photos.unshift(moved);
+                          updateOnboard({ photos });
+                          try { triggerHaptic('medium') } catch {}
+                        }} className="absolute bottom-1 left-1 bg-black/70 text-[7px] px-1.5 py-0.5 rounded text-white active:bg-[#FF671F]">★ Principal</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
 
-            <div className="rounded-2xl border border-[#FF671F]/25 bg-[#111113] p-4 space-y-3">
+              {(onboardData.photos || []).length < 6 && (
+                <div className="grid grid-cols-2 gap-2.5">
+                  <button
+                    type="button"
+                    onClick={() => { try { triggerHaptic('medium') } catch {}; takeNativePhoto() }}
+                    className="min-h-[88px] border border-[#FF671F]/50 rounded-xl flex flex-col items-center justify-center text-[#FF671F] text-xs active:bg-[#FF671F]/10 active:scale-[0.985] transition"
+                  >
+                    <Camera size={20} className="mb-1" />
+                    <span className="font-semibold">Cámara</span>
+                  </button>
+                  <label className="min-h-[88px] border border-dashed border-[#FF671F]/35 rounded-xl flex flex-col items-center justify-center text-xs cursor-pointer active:bg-[#1C1C20] text-[#9CA3AF]">
+                    <Camera size={18} className="mb-1" />
+                    <span className="font-medium">Subir fotos</span>
+                    <input type="file" accept="image/*" multiple className="hidden" onChange={handlePhotoUpload} />
+                  </label>
+                </div>
+              )}
+            </section>
+
+            <section className="rounded-2xl border border-[#FF671F]/25 bg-[#111113] p-4 space-y-3">
               <div>
                 <div className="text-sm font-semibold tracking-wide">Tu ciudad y ubicación</div>
                 <div className="text-[10px] text-[#9CA3AF] mt-0.5">
@@ -744,7 +815,7 @@ export const OnboardingFlow = ({
                   GPS listo · {onboardData.lat.toFixed(2)}, {onboardData.lng.toFixed(2)}
                 </div>
               )}
-            </div>
+            </section>
 
             {/* Bio — solo en edición de perfil (MVP create omite este paso) */}
             {isEditMode && (() => {
@@ -868,6 +939,61 @@ export const OnboardingFlow = ({
               </div>
             </div>
 
+            <section className="rounded-2xl border border-[#2F2F35] bg-[#111113] p-4 space-y-4">
+              <div>
+                <div className="text-sm font-semibold text-white">Nivel e intensidad</div>
+                <p className="text-[10px] text-[#9CA3AF] mt-0.5 leading-snug">
+                  Así te emparejamos con personas de ritmo y experiencia similares.
+                </p>
+              </div>
+
+              <div>
+                <div className="text-[11px] font-semibold text-[#9CA3AF] mb-2">Nivel</div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {TRAINING_LEVELS.map((level) => (
+                    <button
+                      key={level}
+                      type="button"
+                      onClick={() => {
+                        updateOnboard({ level })
+                        try { triggerHaptic('light') } catch {}
+                      }}
+                      className={`py-2.5 rounded-xl text-[11px] sm:text-xs font-semibold transition ${
+                        onboardData.level === level
+                          ? 'bg-[#FF671F] text-black'
+                          : 'bg-[#1C1C20] border border-[#2F2F35] text-[#9CA3AF]'
+                      }`}
+                    >
+                      {level}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <div className="text-[11px] font-semibold text-[#9CA3AF] mb-2">Intensidad</div>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {TRAINING_INTENSITIES.map((intensity) => (
+                    <button
+                      key={intensity}
+                      type="button"
+                      onClick={() => {
+                        updateOnboard({ intensity })
+                        try { triggerHaptic('light') } catch {}
+                      }}
+                      className={`py-2.5 rounded-xl text-[11px] sm:text-xs font-semibold transition ${
+                        onboardData.intensity === intensity
+                          ? 'bg-[#22c55e] text-black'
+                          : 'bg-[#1C1C20] border border-[#2F2F35] text-[#9CA3AF]'
+                      }`}
+                    >
+                      {intensity}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </section>
+
             {isEditMode && (
             <div>
               <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-1.5">TU PROPÓSITO EN EL CÍRCULO (ELIGE EL PRINCIPAL)</div>
@@ -890,7 +1016,7 @@ export const OnboardingFlow = ({
             )}
             {!isEditMode && (
               <p className="text-[10px] text-[#9CA3AF] leading-snug">
-                Con un tipo de entreno basta para empezar. Podrás afinar bio y objetivos después en Perfil.
+                Con un tipo de entreno, nivel e intensidad basta para empezar. Bio y objetivos los afinas después en Perfil.
               </p>
             )}
           </div>
@@ -1100,7 +1226,7 @@ export const OnboardingFlow = ({
       </div>
 
         {/* Fixed bottom — always visible (overflow:hidden on app-container was clipping this) */}
-        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[420px] px-6 pt-2 pb-4 flex flex-col gap-2 bg-[#0D0D10]/98 border-t-2 border-[#2F2F35] z-30">
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[420px] px-5 sm:px-6 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] flex flex-col gap-2 bg-[#0D0D10]/98 backdrop-blur-sm border-t border-[#2F2F35] z-30 shadow-[0_-12px_40px_rgba(0,0,0,0.45)]">
           {onboardingStep > 0 && (
             <button onClick={() => { try { triggerHaptic('light') } catch {}; setOnboardingStep(onboardingStep - 1) }} className="w-full py-2.5 text-xs uppercase tracking-[1.5px] rounded-2xl border border-[#2F2F35] active:bg-[#1f242b] text-[#9CA3AF]">
               ← VOLVER AL PASO ANTERIOR
@@ -1124,7 +1250,7 @@ export const OnboardingFlow = ({
 
           <button 
             onClick={nextOnboarding} 
-            className="w-full py-4 text-base font-black tracking-[1.5px] rounded-3xl btn-primary active:scale-[0.985] bg-gradient-to-r from-[#FF671F] to-[#E55A1A] touch-manipulation disabled:opacity-45 disabled:pointer-events-none"
+            className="w-full py-3.5 text-sm font-black tracking-[1px] rounded-2xl btn-primary active:scale-[0.985] bg-gradient-to-r from-[#FF671F] to-[#E55A1A] touch-manipulation disabled:opacity-45 disabled:pointer-events-none"
             disabled={
               (isEssenceStep &&
                 ((onboardData.trainingTypes || []).length === 0 ||

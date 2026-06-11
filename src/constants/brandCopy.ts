@@ -51,6 +51,51 @@ export const BRAND_COPY = {
     inviteToastCopied: 'Enlace copiado — compártelo con tu gym',
     activateLiveCta: 'Activar LIVE ahora',
   },
+  /** Eliminación de cuenta — retención honesta (proyecto en beta, fundador solo). */
+  deleteAccount: {
+    entryLabel: 'Eliminar mi cuenta',
+    storyTitle: 'Antes de irte, déjame contarte algo',
+    storyLead: (name: string) =>
+      `${name ? name.split(' ')[0] + ', ' : ''}EntrenaMatch está recién naciendo.`,
+    storyBody:
+      'No es una app de una corporación con cientos de ingenieros. La estoy construyendo yo, con mucho cuidado, para que quien entrena solo/a pueda encontrar compañía de verdad en el gym, en la calle o donde sea que te muevas. Cada persona que prueba la app, reporta un bug o se queda un día más, cambia el rumbo del proyecto. Para mí, eres muy valioso/a.',
+    storyThanks: 'Gracias por haber confiado en este experimento.',
+    alternativesTitle: '¿Y si probamos otra cosa primero?',
+    ghostCta: 'Activar modo fantasma',
+    ghostHint: 'Sigue entrenando sin aparecer en el mapa LIVE.',
+    logoutCta: 'Solo cerrar sesión',
+    logoutHint: 'Tu perfil queda guardado — vuelves cuando quieras.',
+    feedbackCta: 'Contar qué no funcionó',
+    feedbackHint: 'Tu feedback llega directo y ayuda a mejorar la app.',
+    stayCta: 'Me quedo — seguir explorando',
+    consequencesTitle: 'Si eliminas la cuenta, se pierde para siempre',
+    consequences: [
+      'Tu perfil, fotos y bio en la red',
+      'Matches, chats y alianzas de EntrenaSync',
+      'Rachas, constancia y progreso semanal',
+      'Historial de entrenos y publicaciones en el muro',
+    ],
+    consequencesNote:
+      'La eliminación es definitiva. No podemos recuperar tu cuenta después.',
+    reasonTitle: '¿Qué fue lo principal? (opcional)',
+    reasons: [
+      { id: 'not_useful', label: 'No me resultó útil' },
+      { id: 'privacy', label: 'Privacidad / datos' },
+      { id: 'bugs', label: 'Muchos errores o fallos' },
+      { id: 'empty', label: 'Poca gente cerca' },
+      { id: 'other', label: 'Otro motivo' },
+    ],
+    confirmTitle: 'Último paso — solo si estás seguro/a',
+    confirmHint:
+      'Escribe exactamente la frase de abajo. Tómate tu tiempo; no hay prisa.',
+    confirmPhrase: 'ELIMINAR MI CUENTA',
+    confirmWait: (sec: number) =>
+      sec > 0 ? `Podrás confirmar en ${sec}s…` : 'Puedes confirmar ahora',
+    deleteButton: 'Eliminar mi cuenta para siempre',
+    deleting: 'Eliminando cuenta…',
+    deletedToast: 'Tu cuenta fue eliminada. Gracias por haber probado EntrenaMatch.',
+    demoBlocked: 'En modo demo no hay cuenta real que eliminar.',
+  },
   /** Copa Zona — guerra Vie–Dom, victoria Lun–Mar, armisticio Mié–Jue */
   copaZona: {
     title: '¿Qué zona entrena más?',

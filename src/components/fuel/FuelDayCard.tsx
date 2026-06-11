@@ -301,7 +301,7 @@ export function FuelDayCard({
           onClick={() => onImportHealth()}
           className="mt-2 w-full py-2 rounded-xl border border-[#6366f1]/35 bg-[#6366f1]/10 text-[#a5b4fc] text-[10px] font-bold"
         >
-          ⌚ Importar gasto wearable
+          ⌚ Importar desde wearable
         </button>
       )}
       {healthImportHint && (
