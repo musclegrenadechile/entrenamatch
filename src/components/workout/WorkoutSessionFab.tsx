@@ -52,9 +52,10 @@ export function WorkoutSessionFab({
   })
 
   useEffect(() => {
+    if (drag.isDragging) return undefined
     const id = window.setInterval(() => setTick((t) => t + 1), 1000)
     return () => clearInterval(id)
-  }, [])
+  }, [drag.isDragging])
 
   if (hidden) return null
 
@@ -148,6 +149,7 @@ export function WorkoutSessionFab({
 
   return (
     <div
+      ref={drag.containerRef}
       className={`workout-session-fab fixed z-[44] flex flex-col items-start gap-1 max-w-[min(72vw,240px)] ${
         drag.useCssDefault ? `left-4 ${bottom}` : ''
       }`}

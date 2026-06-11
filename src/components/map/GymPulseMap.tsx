@@ -24,7 +24,7 @@
 
 import { useEffect, useRef, useImperativeHandle, forwardRef, useMemo, useState } from 'react'
 import * as L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+import '../../utils/leafletIconFix'
 import { toast } from 'sonner'
 import { Crosshair } from 'lucide-react'
 import { BRAND_COPY } from '../../constants/brandCopy'
@@ -35,14 +35,6 @@ import type { GymPulsePopupState } from './gymPulsePopupTypes'
 // Namespace imports avoid minifier name collisions with App.tsx useState bindings in the same chunk (Fn/Mn/Bn overwrite bug).
 import * as MarkerReg from '../../services/gymPulseMarkerRegistry'
 import type { MarkerPool } from '../../services/gymPulseMarkerRegistry'
-
-// Fix Leaflet icons (same as before)
-delete (L.Icon.Default.prototype as any)._getIconUrl
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-})
 
 import { getDistanceKm } from '../../utils'
 import { filterMapLiveUsers, hasMapCoords } from '../../utils/gymPulseLive'

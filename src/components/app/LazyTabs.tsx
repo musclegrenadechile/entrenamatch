@@ -28,5 +28,9 @@ export const LazySquadsTab = lazyTab(() => import('../squads/SquadsTab'), 'Squad
 export const LazySessionsTab = lazyTab(() => import('../sessions/SessionsTab'), 'SessionsTab')
 export const LazyMatchesTab = lazyTab(() => import('../matches/MatchesTab'), 'MatchesTab')
 export const LazyProfileTab = lazyTab(() => import('../profile/ProfileTab'), 'ProfileTab')
+export const LazyExploreLivePanel = lazyTab(
+  () => import('../explore/ExploreLivePanel'),
+  'ExploreLivePanel'
+)
 
 export const TAB_LOADING = <TabLoadingShell />

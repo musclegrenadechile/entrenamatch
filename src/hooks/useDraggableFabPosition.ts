@@ -8,6 +8,40 @@ const BOTTOM_NAV_PX = 74
 
 export type FabPosition = { left: number; top: number }
 
+type SafeAreaInsets = { top: number; bottom: number }
+
+let cachedSafeArea: SafeAreaInsets | null = null
+
+/** Measured once per session / resize — never per pointermove (was causing drag jank). */
+export function measureSafeAreaInsets(): SafeAreaInsets {
+  if (typeof document === 'undefined') return { top: 0, bottom: 0 }
+
+  const read = (edge: 'top' | 'bottom'): number => {
+    const el = document.createElement('div')
+    el.style.position = 'fixed'
+    el.style.visibility = 'hidden'
+    el.style.pointerEvents = 'none'
+    if (edge === 'bottom') {
+      el.style.bottom = '0'
+      el.style.height = 'env(safe-area-inset-bottom)'
+    } else {
+      el.style.top = '0'
+      el.style.height = 'env(safe-area-inset-top)'
+    }
+    document.body.appendChild(el)
+    const px = el.getBoundingClientRect().height
+    document.body.removeChild(el)
+    return Number.isFinite(px) ? px : 0
+  }
+
+  cachedSafeArea = { top: read('top'), bottom: read('bottom') }
+  return cachedSafeArea
+}
+
+function getSafeAreaInsets(): SafeAreaInsets {
+  return cachedSafeArea ?? measureSafeAreaInsets()
+}
+
 function loadStoredFabPosition(storageKey: string): FabPosition | null {
   if (typeof localStorage === 'undefined') return null
   try {
@@ -31,23 +65,11 @@ function saveFabPosition(storageKey: string, pos: FabPosition): void {
   }
 }
 
-function readSafeAreaInset(edge: 'top' | 'bottom'): number {
-  if (typeof document === 'undefined') return 0
-  const el = document.createElement('div')
-  el.style.position = 'fixed'
-  el.style.visibility = 'hidden'
-  el.style.pointerEvents = 'none'
-  if (edge === 'bottom') {
-    el.style.bottom = '0'
-    el.style.height = 'env(safe-area-inset-bottom)'
-  } else {
-    el.style.top = '0'
-    el.style.height = 'env(safe-area-inset-top)'
-  }
-  document.body.appendChild(el)
-  const px = el.getBoundingClientRect().height
-  document.body.removeChild(el)
-  return Number.isFinite(px) ? px : 0
+function applyFabPosition(el: HTMLElement, pos: FabPosition): void {
+  el.style.left = `${pos.left}px`
+  el.style.top = `${pos.top}px`
+  el.style.right = 'auto'
+  el.style.bottom = 'auto'
 }
 
 export interface UseDraggableFabPositionOptions {
@@ -60,6 +82,8 @@ export interface UseDraggableFabPositionOptions {
 
 export interface DraggableFabBindings {
   elRef: RefObject<HTMLButtonElement | null>
+  /** Element that receives left/top positioning (wrapper or same as elRef). */
+  containerRef: RefObject<HTMLElement | null>
   position: FabPosition | null
   isDragging: boolean
   useCssDefault: boolean
@@ -81,6 +105,9 @@ export function useDraggableFabPosition(
   const [position, setPosition] = useState<FabPosition | null>(() => loadStoredFabPosition(storageKey))
   const [isDragging, setIsDragging] = useState(false)
   const elRef = useRef<HTMLButtonElement | null>(null)
+  const containerRef = useRef<HTMLElement | null>(null)
+  const positionRef = useRef<FabPosition | null>(position)
+  const dragFrameRef = useRef<number | null>(null)
   const dragRef = useRef({
     active: false,
     moved: false,
@@ -90,12 +117,26 @@ export function useDraggableFabPosition(
     originTop: 0,
   })
 
+  useEffect(() => {
+    positionRef.current = position
+  }, [position])
+
+  useEffect(() => {
+    measureSafeAreaInsets()
+    const refresh = () => measureSafeAreaInsets()
+    window.addEventListener('resize', refresh)
+    window.visualViewport?.addEventListener('resize', refresh)
+    return () => {
+      window.removeEventListener('resize', refresh)
+      window.visualViewport?.removeEventListener('resize', refresh)
+    }
+  }, [])
+
   const clampPosition = useCallback((left: number, top: number): FabPosition => {
-    const el = elRef.current
-    const w = el?.offsetWidth ?? 128
-    const h = el?.offsetHeight ?? 40
-    const safeTop = readSafeAreaInset('top')
-    const safeBottom = readSafeAreaInset('bottom')
+    const measureEl = containerRef.current ?? elRef.current
+    const w = measureEl?.offsetWidth ?? 128
+    const h = measureEl?.offsetHeight ?? 40
+    const { top: safeTop, bottom: safeBottom } = getSafeAreaInsets()
     const minTop = TOP_RESERVED_PX + safeTop
     const maxTop = window.innerHeight - h - BOTTOM_NAV_PX - defaultBottomExtraPx - safeBottom - EDGE_PAD_PX
     const maxLeft = window.innerWidth - w - EDGE_PAD_PX
@@ -106,12 +147,13 @@ export function useDraggableFabPosition(
   }, [defaultBottomExtraPx])
 
   const resolveCurrentPosition = useCallback((): FabPosition => {
-    if (position) return position
-    const rect = elRef.current?.getBoundingClientRect()
+    if (positionRef.current) return positionRef.current
+    const rect = (containerRef.current ?? elRef.current)?.getBoundingClientRect()
     if (rect) return { left: rect.left, top: rect.top }
-    const w = elRef.current?.offsetWidth ?? 128
-    const h = elRef.current?.offsetHeight ?? 40
-    const safeBottom = readSafeAreaInset('bottom')
+    const measureEl = containerRef.current ?? elRef.current
+    const w = measureEl?.offsetWidth ?? 128
+    const h = measureEl?.offsetHeight ?? 40
+    const { bottom: safeBottom } = getSafeAreaInsets()
     return {
       left:
         defaultHorizontal === 'left'
@@ -119,7 +161,18 @@ export function useDraggableFabPosition(
           : window.innerWidth - w - 16,
       top: window.innerHeight - h - BOTTOM_NAV_PX - defaultBottomExtraPx - safeBottom,
     }
-  }, [position, defaultBottomExtraPx, defaultHorizontal])
+  }, [defaultBottomExtraPx, defaultHorizontal])
+
+  const schedulePositionPaint = useCallback((pos: FabPosition) => {
+    positionRef.current = pos
+    if (dragFrameRef.current != null) return
+    dragFrameRef.current = requestAnimationFrame(() => {
+      dragFrameRef.current = null
+      const target = containerRef.current ?? elRef.current
+      const next = positionRef.current
+      if (target && next) applyFabPosition(target, next)
+    })
+  }, [])
 
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLButtonElement>) => {
@@ -133,6 +186,9 @@ export function useDraggableFabPosition(
         originLeft: current.left,
         originTop: current.top,
       }
+      positionRef.current = current
+      const target = containerRef.current ?? elRef.current
+      if (target) applyFabPosition(target, current)
       setPosition(current)
       setIsDragging(true)
       e.currentTarget.setPointerCapture(e.pointerId)
@@ -148,35 +204,49 @@ export function useDraggableFabPosition(
       if (Math.abs(dx) + Math.abs(dy) > DRAG_THRESHOLD_PX) {
         dragRef.current.moved = true
       }
-      setPosition(clampPosition(dragRef.current.originLeft + dx, dragRef.current.originTop + dy))
+      schedulePositionPaint(
+        clampPosition(dragRef.current.originLeft + dx, dragRef.current.originTop + dy)
+      )
     },
-    [clampPosition]
+    [clampPosition, schedulePositionPaint]
   )
 
   const onPointerUp = useCallback(
     (e: React.PointerEvent<HTMLButtonElement>, onTap: () => void) => {
       if (!dragRef.current.active) return
       const moved = dragRef.current.moved
-      const finalPos = position
+      const finalPos = positionRef.current
       dragRef.current.active = false
       setIsDragging(false)
+      if (dragFrameRef.current != null) {
+        cancelAnimationFrame(dragFrameRef.current)
+        dragFrameRef.current = null
+      }
       try {
         e.currentTarget.releasePointerCapture(e.pointerId)
       } catch {
         /* ignore */
       }
       if (moved && finalPos) {
+        setPosition(finalPos)
         saveFabPosition(storageKey, finalPos)
       } else if (!moved) {
         onTap()
       }
     },
-    [position]
+    [storageKey]
   )
 
   useEffect(() => {
     if (!position) return
-    const reclamp = () => setPosition((prev) => (prev ? clampPosition(prev.left, prev.top) : prev))
+    const reclamp = () => {
+      setPosition((prev) => {
+        if (!prev) return prev
+        const next = clampPosition(prev.left, prev.top)
+        positionRef.current = next
+        return next
+      })
+    }
     window.addEventListener('resize', reclamp)
     window.visualViewport?.addEventListener('resize', reclamp)
     return () => {
@@ -192,6 +262,7 @@ export function useDraggableFabPosition(
 
   return {
     elRef,
+    containerRef,
     position,
     isDragging,
     useCssDefault,

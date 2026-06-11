@@ -30,9 +30,14 @@ export function LiveToggleFab({
   const bottom =
     bottomClass || 'bottom-[calc(74px+env(safe-area-inset-bottom))]'
 
+  const setFabRef = (node: HTMLButtonElement | null) => {
+    drag.elRef.current = node
+    drag.containerRef.current = node
+  }
+
   return (
     <button
-      ref={drag.elRef}
+      ref={setFabRef}
       type="button"
       onPointerDown={drag.onPointerDown}
       onPointerMove={drag.onPointerMove}

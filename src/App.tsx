@@ -1,13 +1,6 @@
 // ✅ Build limpio después de revert V2 - 06/06/2026
 // @ts-nocheck
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense, Component, type ReactNode, type ChangeEvent } from 'react'
-import * as L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-})
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, MessageCircle, User, MapPin, Dumbbell, 
@@ -123,7 +116,7 @@ import { useProfile } from './contexts/ProfileContext'
 import { useFilters } from './hooks/useFilters'
 import { useRealSessions } from './hooks/useRealSessions'
 import { useSwipeDeck } from './hooks/useSwipeDeck'
-import { ExploreLivePanel } from './components/explore/ExploreLivePanel'
+import { MapExplorePanelMount } from './components/map/MapExplorePanelMount'
 import { RedTab } from './components/red'
 import { ChatListPanel, ChatView } from './components/messages'
 import type { ProfileSection } from './components/profile'
@@ -9349,9 +9342,7 @@ useEffect(() => {
         )}
         {/* ===== MAP tab (full) vs EXPLORE live banner only — separate mounts so Leaflet never bleeds into swipe deck ===== */}
         {activeTab === 'explore' && (
-          <div className="flex-shrink-0 relative z-30">
-          <ExploreLivePanel
-            key="explore-live-banner"
+          <MapExplorePanelMount
             dedicatedMapTab={false}
             cityActiveCount={firestoreCityStats?.participantCount ?? homeCityChallengeMerged?.participants ?? 0}
             cityLabel={currentUser?.city || 'tu zona'}
@@ -9449,13 +9440,10 @@ useEffect(() => {
             uploadPartnerLogoIfNeeded={uploadPartnerLogoIfNeeded}
             onActivateLive={() => void toggleLiveTraining('on')}
           />
-          </div>
         )}
 
         {activeTab === 'map' && (
-          <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative z-10">
-          <ExploreLivePanel
-            key="map-full"
+          <MapExplorePanelMount
             dedicatedMapTab={true}
             liveCountForUI={liveCountForUI}
             liveTrainingNow={liveTrainingNow}
@@ -9570,7 +9558,6 @@ useEffect(() => {
             }
             cityDerby={homeCityDerby}
           />
-          </div>
         )}
 
         {activeTab === 'explore' && (
