@@ -33,6 +33,8 @@
     "test:e2e": "playwright test",
     "setup:mp": "node scripts/setup-mp-production.mjs",
     "phase": "node scripts/implement-phase.mjs",
+    "bots:pause": "node scripts/pause-beta-bots.mjs",
+    "bots:resume": "node scripts/pause-beta-bots.mjs --resume",
     "recalculate:sync-streaks": "npx tsx scripts/recalculate-sync-streaks.ts",
     "recalculate:sync-streaks:apply": "npx tsx scripts/recalculate-sync-streaks.ts --apply"
   },

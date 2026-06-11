@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { isBetaBotId, isBetaBotProfile, BETA_BOT_BADGE_LABEL } from './betaBots'
+import {
+  isBetaBotId,
+  isBetaBotProfile,
+  BETA_BOT_BADGE_LABEL,
+  shouldHideBetaBot,
+  BETA_BOTS_PAUSED,
+} from './betaBots'
 
 describe('betaBots', () => {
   it('detects beta bot uids', () => {
@@ -15,5 +21,11 @@ describe('betaBots', () => {
 
   it('exports badge label', () => {
     expect(BETA_BOT_BADGE_LABEL).toContain('Beta')
+  })
+
+  it('hides bots when paused', () => {
+    expect(BETA_BOTS_PAUSED).toBe(true)
+    expect(shouldHideBetaBot('beta_bot_01')).toBe(true)
+    expect(shouldHideBetaBot('real_user')).toBe(false)
   })
 })

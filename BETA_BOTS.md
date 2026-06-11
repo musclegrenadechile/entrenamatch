@@ -80,9 +80,26 @@ La lógica de chat y auto-match va en `onDirectMessageCreated` y `onLikeCreated`
 }
 ```
 
-## Desactivar
+## Desactivar (pausa temporal — lag / perf)
 
-En Firestore: `config/betaBots` → `{ "enabled": false }`
+**Rápido (recomendado):**
+
+```bash
+npm run bots:pause
+```
+
+Eso pone `config/betaBots.enabled = false`, apaga LIVE de los 15 bots y borra `livePresence/beta_bot_XX`.
+
+**Cliente:** `BETA_BOTS_PAUSED = true` en `src/utils/betaBots.ts` oculta bots en mapa, muro y perfiles hasta reactivar.
+
+**Reactivar:**
+
+```bash
+npm run bots:resume
+# y en código: BETA_BOTS_PAUSED = false
+```
+
+Manual en Firestore: `config/betaBots` → `{ "enabled": false, "batchSize": 0 }`
 
 Solo vida entre bots: `{ "botBotSocialEnabled": false }`
 

@@ -12,6 +12,7 @@ import {
   type Unsubscribe,
 } from 'firebase/firestore'
 import { isDeletedProfileData } from '../utils/deletedProfile'
+import { shouldHideBetaBot } from '../utils/betaBots'
 import { profileDocToLiveUser, type LiveUserLike } from '../utils/gymPulseLive'
 
 export type LiveUsersSnapshotHandler = (users: LiveUserLike[]) => void
@@ -47,6 +48,7 @@ export function attachLiveUsersListener(
       const live: LiveUserLike[] = []
       snapshot.forEach((docSnap) => {
         if (blocked.has(docSnap.id)) return
+        if (shouldHideBetaBot(docSnap.id)) return
         const data = docSnap.data() as Record<string, unknown>
         // Strict boolean — ignore string/truthy legacy values that break queries on write
         if (data.trainingNow !== true) return

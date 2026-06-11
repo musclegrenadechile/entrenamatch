@@ -374,6 +374,7 @@ import {
 } from './services/postComments'
 import { attachUserPostsListener } from './services/profilePosts'
 import { parseProfileFromFirestoreDoc, PROFILE_LIST_LIMIT } from './utils/profileFirestoreParse'
+import { shouldHideBetaBot } from './utils/betaBots'
 import { bumpRealtimeStat, realtimeStats } from './utils/realtimeStats'
 import { PerfOverlay } from './components/dev/PerfOverlay'
 import { attachDirectChatListener, type DirectChatMsg } from './services/chatMessages'
@@ -2716,6 +2717,7 @@ useEffect(() => {
             snapshot.forEach((doc) => {
               if (doc.id === currentUid) return
               if (blockedUsersRef.current.includes(doc.id)) return
+              if (shouldHideBetaBot(doc.id)) return
               const parsed = parseProfileFromFirestoreDoc(doc.id, doc.data() as Record<string, unknown>)
               if (parsed) profiles.push(parsed)
             })
@@ -2885,6 +2887,7 @@ useEffect(() => {
       snapshot.forEach((doc) => {
         if (doc.id === currentUid) return
         if (blockedUsersRef.current.includes(doc.id)) return
+        if (shouldHideBetaBot(doc.id)) return
         const parsed = parseProfileFromFirestoreDoc(doc.id, doc.data() as Record<string, unknown>)
         if (parsed) profiles.push(parsed)
       })
@@ -4959,7 +4962,7 @@ useEffect(() => {
     const next = { ...prevStore }
     for (const post of posts) {
       const uid = post.userId
-      if (!uid) continue
+      if (!uid || shouldHideBetaBot(uid)) continue
       const existing = next[uid] || []
       const merged = [...existing.filter((x) => x.id !== post.id), post].sort(
         (a, b) => b.timestamp - a.timestamp
