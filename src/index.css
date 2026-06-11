@@ -550,6 +550,8 @@ input[type="range"]::-moz-range-thumb {
 
 /* ===== ICONIC MURO / FEED POST CARDS - more premium, beautiful, signature look ===== */
 .muro-post {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 280px;
   background: linear-gradient(160deg, rgba(28,28,32,0.98) 0%, rgba(18,18,22,0.99) 100%);
   border: 1px solid rgba(255,255,255,0.08);
   box-shadow: 0 8px 25px -8px rgb(0 0 0 / 0.5), 

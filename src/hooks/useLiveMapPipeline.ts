@@ -27,6 +27,10 @@ import { bumpRealtimeStat } from '../utils/realtimeStats'
 import { resolveLiveMapMerge } from '../utils/liveMapSources'
 import { liveUsersSnapshotSignature } from '../utils/liveMapSnapshot'
 import { toast } from 'sonner'
+import {
+  shouldRunLiveListeners,
+  shouldRunOwnProfileListener,
+} from '../utils/tabRealtimePolicy'
 
 export interface UseLiveMapPipelineOptions {
   isDemoMode: boolean
@@ -57,6 +61,8 @@ export interface UseLiveMapPipelineOptions {
   isTogglingLiveRef: RefObject<boolean>
   pendingLiveWriteRef: RefObject<{ trainingNow: boolean; at: number } | null>
   currentUserRef: RefObject<CurrentUser | null>
+  /** Pause heavy live listeners when tab/background does not need them. */
+  appVisible?: boolean
 }
 
 export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
@@ -89,7 +95,20 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
     isTogglingLiveRef,
     pendingLiveWriteRef,
     currentUserRef,
+    appVisible = true,
   } = opts
+
+  const liveListenersEnabled = shouldRunLiveListeners(
+    activeTab,
+    showLiveMap,
+    !!currentUser?.trainingNow,
+    appVisible
+  )
+  const ownProfileListenerEnabled = shouldRunOwnProfileListener(
+    activeTab,
+    !!currentUser?.trainingNow,
+    appVisible
+  )
 
   const [mapNearOnly, setMapNearOnly] = useState(false)
   const [mapMyGymOnly, setMapMyGymOnly] = useState(false)
@@ -230,11 +249,13 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
   )
 
   useEffect(() => {
-    if (isDemoMode || !db || !isFirebaseConfigured) {
-      liveFromPresenceRef.current = []
-      liveFromProfilesQueryRef.current = []
-      lastLiveSnapshotSigRef.current = ''
-      setLiveUsersFromDedicated([])
+    if (isDemoMode || !db || !isFirebaseConfigured || !liveListenersEnabled) {
+      if (isDemoMode || !db || !isFirebaseConfigured) {
+        liveFromPresenceRef.current = []
+        liveFromProfilesQueryRef.current = []
+        lastLiveSnapshotSigRef.current = ''
+        setLiveUsersFromDedicated([])
+      }
       return undefined
     }
 
@@ -288,6 +309,7 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
     publishLiveSnapshot,
     blockedUsersRef,
     latestRealProfilesRef,
+    liveListenersEnabled,
   ])
 
   useEffect(() => {
@@ -308,7 +330,15 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
   }, [isDemoMode, buildSelfLiveEntry, effectiveUserId, SEED_PROFILES])
 
   useEffect(() => {
-    if (isDemoMode || !db || !isFirebaseConfigured || !firebaseUserUid) return undefined
+    if (
+      isDemoMode ||
+      !db ||
+      !isFirebaseConfigured ||
+      !firebaseUserUid ||
+      !ownProfileListenerEnabled
+    ) {
+      return undefined
+    }
     let unsubOwn: (() => void) | null = null
     ;(async () => {
       try {
@@ -359,6 +389,7 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
     isTogglingLiveRef,
     pendingLiveWriteRef,
     currentUserRef,
+    ownProfileListenerEnabled,
   ])
 
   const liveUsersMerged = useMemo(() => {

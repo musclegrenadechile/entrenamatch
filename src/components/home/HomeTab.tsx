@@ -245,6 +245,13 @@ export function HomeTab(props: HomeTabProps) {
     return members.slice(0, 14)
   }, [liveTrainingNow, realProfiles, effectiveUserId, syncBonds])
 
+  const feedDisplayItems = useMemo(() => {
+    if (homeSubTab !== 'feed') return []
+    const posts = (feedComputation as { feedPosts?: unknown[] } | undefined)?.feedPosts
+    if (!posts?.length) return []
+    return buildFeedDisplayItems(posts as Parameters<typeof buildFeedDisplayItems>[0])
+  }, [homeSubTab, feedComputation])
+
   const activeTodayCount = useMemo(() => {
     const since = Date.now() - 86_400_000
     const ids = new Set<string>()
@@ -714,17 +721,13 @@ export function HomeTab(props: HomeTabProps) {
               return null;
             })()}
 
-            <AnimatePresence>
-            {buildFeedDisplayItems(feedPosts).map((item: any, idx: number) => {
+            {feedDisplayItems.map((item: any, idx: number) => {
               if (item.kind === 'autoGroup') {
                 const expanded = !!expandedAutoGroups[item.id]
                 return (
-                  <motion.div
+                  <div
                     key={item.id}
                     className="muro-post-auto-group mb-3 rounded-2xl border border-[#2F2F35] bg-[#141418]/90 overflow-hidden"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: Math.min(idx * 0.012, 0.18) }}
                   >
                     <button
                       type="button"
@@ -753,7 +756,7 @@ export function HomeTab(props: HomeTabProps) {
                         })}
                       </ul>
                     )}
-                  </motion.div>
+                  </div>
                 )
               }
 
@@ -779,16 +782,10 @@ export function HomeTab(props: HomeTabProps) {
                 rankBadges,
               });
 
+              const postClassName = `muro-post mb-4 ${isAutoCompact ? 'muro-post--auto' : ''} ${post.pinned ? 'muro-post--pinned' : ''} ${!isAutoCompact && isSyncPost ? 'muro-post--sync' : !isAutoCompact && isLivePost ? 'muro-post--live' : !isAutoCompact && isEcho ? 'muro-post--echo' : ''} ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-[0_0_0_1px_#FF671F,0_20px_50px_-12px_rgba(255,103,31,0.3)]' : ''} ${post.ownerId && syncBonds[post.ownerId] ? 'border-[#FFD700]/40' : ''}`
+
               return (
-                <motion.div 
-                  key={post.id} 
-                  className={`muro-post mb-4 ${isAutoCompact ? 'muro-post--auto' : ''} ${post.pinned ? 'muro-post--pinned' : ''} ${!isAutoCompact && isSyncPost ? 'muro-post--sync' : !isAutoCompact && isLivePost ? 'muro-post--live' : !isAutoCompact && isEcho ? 'muro-post--echo' : ''} ${recentlyPublishedPostId === post.id ? 'ring-2 ring-[#FF671F] shadow-[0_0_0_1px_#FF671F,0_20px_50px_-12px_rgba(255,103,31,0.3)]' : ''} ${post.ownerId && syncBonds[post.ownerId] ? 'border-[#FFD700]/40' : ''}`}
-                  initial={{ opacity: 0, y: 18, scale: 0.985 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                  whileHover={isAutoCompact ? undefined : { y: -4 }}
-                  transition={{ type: 'spring', stiffness: 320, damping: 28, delay: Math.min(idx * 0.004, 0.06) }}
-                >
+                  <div key={post.id} className={postClassName}>
                   {/* HERO MEDIA — dominant, cinematic when photo exists */}
                   {post.photo && (
                     <div 
@@ -1026,10 +1023,9 @@ export function HomeTab(props: HomeTabProps) {
                       </div>
                     )}
                   </div>
-                </motion.div>
+                </div>
               );
             })}
-            </AnimatePresence>
 
             {feedPosts.length < allCommunityPosts.length && (
               <div className="text-center mt-2 mb-4">

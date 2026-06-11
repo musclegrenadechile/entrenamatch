@@ -377,6 +377,14 @@ import { parseProfileFromFirestoreDoc, PROFILE_LIST_LIMIT } from './utils/profil
 import { shouldHideBetaBot } from './utils/betaBots'
 import { bumpRealtimeStat, realtimeStats } from './utils/realtimeStats'
 import { PerfOverlay } from './components/dev/PerfOverlay'
+import { useAppVisibility } from './hooks/useAppVisibility'
+import { REALTIME_HUB_POLICY } from './hooks/useRealtimeHub'
+import {
+  shouldRunBackgroundProfilePoll,
+  shouldRunCityEngagementListeners,
+  shouldRunProfilesListener,
+  shouldRunSquadsListener,
+} from './utils/tabRealtimePolicy'
 import { attachDirectChatListener, type DirectChatMsg } from './services/chatMessages'
 import { processLikeAndMaybeMatch } from './services/matching'
 import { writePass } from './services/swipeState'
@@ -1107,6 +1115,7 @@ function App() {
 
   // UI state
   const [activeTab, setActiveTab] = useState<Tab>('home')
+  const appVisible = useAppVisibility()
   const [redSubTab, setRedSubTab] = useState<RedSubTab>('matches')
   const [homeCoachBanner, setHomeCoachBanner] = useState<HomeCoachBannerContext | null>(null)
   const [postLiveSession, setPostLiveSession] = useState<{ minutes: number; gymName?: string | null } | null>(null)
@@ -2003,6 +2012,7 @@ useEffect(() => {
     isTogglingLiveRef,
     pendingLiveWriteRef,
     currentUserRef,
+    appVisible,
   })
 
   const {
@@ -2066,6 +2076,8 @@ useEffect(() => {
     addNotification: addNotificationRef,
     onIncomingMessageRef: chatIncomingRef,
     onLoadProfilePostsRef: loadProfilePostsRef,
+    activeTab,
+    appVisible,
   })
 
   useEffect(() => {
@@ -2598,20 +2610,24 @@ useEffect(() => {
     ? currentUser?.gymCheckIn?.gymId ?? null
     : null
 
-  // Real-time city challenge aggregate (Firestore)
+  const cityEngagementRealtime = shouldRunCityEngagementListeners(activeTab, appVisible)
+
+  // Real-time city challenge aggregate (Firestore) — Home tab only
   useEffect(() => {
-    if (isDemoMode || !db || !homeCityNorm) {
-      setFirestoreCityStats(null)
+    if (isDemoMode || !db || !homeCityNorm || !cityEngagementRealtime) {
+      if (!cityEngagementRealtime) setFirestoreCityStats(null)
       return undefined
     }
     const docId = cityStatsDocId(homeCityNorm, getWeekKey())
     return attachCityWeeklyStatsListener(db, docId, setFirestoreCityStats)
-  }, [isDemoMode, db, homeCityNorm])
+  }, [isDemoMode, db, homeCityNorm, cityEngagementRealtime])
 
   useEffect(() => {
-    if (isDemoMode || !db) {
-      setDerbyHomeStats(null)
-      setDerbyAwayStats(null)
+    if (isDemoMode || !db || !cityEngagementRealtime) {
+      if (!cityEngagementRealtime) {
+        setDerbyHomeStats(null)
+        setDerbyAwayStats(null)
+      }
       return undefined
     }
     const weekKey = getWarEventKey()
@@ -2619,7 +2635,7 @@ useEffect(() => {
       setDerbyHomeStats(home)
       setDerbyAwayStats(away)
     })
-  }, [isDemoMode, db])
+  }, [isDemoMode, db, cityEngagementRealtime])
 
   useEffect(() => {
     if (isDemoMode || !db || !firebaseUser?.uid || !currentUser?.city) return
@@ -2671,23 +2687,15 @@ useEffect(() => {
     return () => clearInterval(id)
   }, [])
 
-  // Global poller for real profiles (so live trainingNow status propagates to everyone even if not in Explore tab)
-  // This ensures that when someone toggles "entrenando en vivo", others will see them appear in lists within ~45s without manual refresh.
-  useEffect(() => {
-    if (isDemoMode) return;
-    const id = setInterval(() => {
-      loadRealProfiles().catch(() => {});
-    }, 45000);
-    return () => clearInterval(id);
-  }, [isDemoMode]);
-
   useEffect(() => {
     homeCityRef.current = (currentUser?.city || '').trim()
   }, [currentUser?.city])
 
-  // Scoped profiles listener — city + limit (perf: was 300 global docs).
+  const profilesRealtime = shouldRunProfilesListener(activeTab, appVisible)
+
+  // Scoped profiles listener — city + limit; paused on Profile tab / background.
   useEffect(() => {
-    if (isDemoMode || !db || !isFirebaseConfigured) return undefined
+    if (isDemoMode || !db || !isFirebaseConfigured || !profilesRealtime) return undefined
 
     let unsub: (() => void) | null = null
     const city = homeCityRef.current
@@ -2739,7 +2747,15 @@ useEffect(() => {
         bumpRealtimeStat('profileListeners', -1)
       }
     }
-  }, [isDemoMode, db, isFirebaseConfigured, firebaseUser?.uid, blockedUsers, currentUser?.city])
+  }, [
+    isDemoMode,
+    db,
+    isFirebaseConfigured,
+    firebaseUser?.uid,
+    blockedUsers,
+    currentUser?.city,
+    profilesRealtime,
+  ])
 
   // Global silent sync — pull-to-refresh + tab focus (Fase 32)
   const silentRefreshReal = async (opts?: { includeChats?: boolean; includeFeed?: boolean }) => {
@@ -3070,12 +3086,14 @@ useEffect(() => {
     }
   }, [firebaseUser?.uid, isDemoMode])
 
-  // Fase 3: squads from Firestore (real-time)
+  const squadsRealtime = shouldRunSquadsListener(activeTab, appVisible)
+
+  // Squads listener — only on Squads tab (perf).
   useEffect(() => {
-    if (isDemoMode || !db) return
+    if (isDemoMode || !db || !squadsRealtime) return undefined
     const unsub = attachSquadsListener(db, (list) => setSquads(list))
     return unsub
-  }, [isDemoMode])
+  }, [isDemoMode, db, squadsRealtime])
 
  // Merge partial profile patches without accidentally killing an active live session
  // (e.g. awardConstancy spreading stale currentUser with trainingNow:false right after going live).
@@ -3882,36 +3900,38 @@ useEffect(() => {
     }
   }, [effectiveUserId])
 
-  // Live refresh for "Entrenando Ahora" to keep real-time urgency (every 60s in explore)
-  // Also reloads *own* profilePosts when we are the one training live, so processIncomingLiveJoins can detect new join comments/likes from others in near real-time.
-  useEffect(() => {
-    if (activeTab === 'explore' && !isDemoMode) {
-      if (!userLocation) {
-        requestUserLocation().catch(() => {});
-      }
-      const id = setInterval(() => {
-        loadRealProfiles().catch(() => {});
-        if (currentUser?.trainingNow) {
-          loadProfilePosts(effectiveUserId).then(() => processIncomingLiveJoins()).catch(() => {})
-        }
-        if (currentUser?.trainingSyncWith) {
-          // force sync mirror for EntrenaSync actions/timer
-          loadRealProfiles().catch(() => {})
-        }
-        loadActiveSyncCountRef.current().catch(() => {})
-      }, 60000);
-      return () => clearInterval(id);
-    }
-  }, [activeTab, isDemoMode, currentUser?.trainingNow, currentUser?.trainingSyncWith])
+  const exploreProfilePoll = shouldRunBackgroundProfilePoll(
+    activeTab,
+    !!currentUser?.trainingNow,
+    appVisible
+  )
 
-  // Extra: when we are the one training live (any tab), poll our own muro posts every 45s so we catch "joins" (new comments on our live post) promptly and processIncomingLiveJoins fires the notif/toast.
+  // Fallback poll on Explore only (onSnapshot handles most tabs).
   useEffect(() => {
-    if (!currentUser?.trainingNow) return
+    if (!exploreProfilePoll || isDemoMode) return undefined
+    if (!userLocation) {
+      requestUserLocation().catch(() => {})
+    }
+    const ms = REALTIME_HUB_POLICY.backgroundProfilePollMs
+    const id = setInterval(() => {
+      loadRealProfiles().catch(() => {})
+      if (currentUser?.trainingSyncWith) {
+        loadRealProfiles().catch(() => {})
+      }
+      loadActiveSyncCountRef.current().catch(() => {})
+    }, ms)
+    return () => clearInterval(id)
+  }, [exploreProfilePoll, isDemoMode, currentUser?.trainingSyncWith, userLocation])
+
+  // Live join comments — only while LIVE on Home/Map/Explore.
+  useEffect(() => {
+    if (!currentUser?.trainingNow || !appVisible) return undefined
+    if (activeTab !== 'home' && activeTab !== 'map' && activeTab !== 'explore') return undefined
     const id = setInterval(() => {
       loadProfilePosts(effectiveUserId).then(() => processIncomingLiveJoins()).catch(() => {})
-    }, 45000)
+    }, 60_000)
     return () => clearInterval(id)
-  }, [currentUser?.trainingNow])
+  }, [currentUser?.trainingNow, activeTab, appVisible, effectiveUserId])
 
   // Clear inline comment composer when changing tabs — but keep it while viewing another profile or the comments modal
   useEffect(() => {

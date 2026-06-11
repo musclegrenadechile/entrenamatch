@@ -15,6 +15,18 @@ export const REALTIME_HUB_POLICY = {
   chatListenersMax: MAX_CHAT_LISTENERS,
   livePatchRealProfiles: false,
   liveIdleThrottleMs: 2000,
+  tabGatedListeners: true,
+  pauseWhenBackground: true,
+  backgroundProfilePollMs: 90_000,
 } as const
+
+export {
+  shouldRunProfilesListener,
+  shouldRunLiveListeners,
+  shouldRunOwnProfileListener,
+  shouldRunCityEngagementListeners,
+  shouldRunSquadsListener,
+  shouldRunBackgroundProfilePoll,
+} from '../utils/tabRealtimePolicy'
 
 export type RealtimeHubPolicy = typeof REALTIME_HUB_POLICY

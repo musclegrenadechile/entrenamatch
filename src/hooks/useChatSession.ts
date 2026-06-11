@@ -14,7 +14,8 @@ import {
 } from 'react'
 import type { Firestore } from 'firebase/firestore'
 import { toast } from 'sonner'
-import type { Message, Profile } from '../types'
+import type { Message, Profile, Tab } from '../types'
+import { shouldRunIncomingLikesListener } from '../utils/tabRealtimePolicy'
 import {
   attachDirectChatListener,
   dedupeWithOptimistic,
@@ -61,6 +62,8 @@ export interface UseChatSessionOptions {
   initialMessages?: Record<string, Message[]>
   initialMatches?: string[]
   initialUnreads?: Record<string, number>
+  activeTab?: Tab
+  appVisible?: boolean
 }
 
 export function useChatSession(opts: UseChatSessionOptions) {
@@ -79,7 +82,11 @@ export function useChatSession(opts: UseChatSessionOptions) {
     initialMessages = {},
     initialMatches = [],
     initialUnreads = {},
+    activeTab = 'home',
+    appVisible = true,
   } = opts
+
+  const incomingLikesEnabled = shouldRunIncomingLikesListener(activeTab, appVisible)
 
   const [matches, setMatches] = useState<string[]>(initialMatches)
   const [messages, setMessages] = useState<Record<string, Message[]>>(initialMessages)
@@ -477,7 +484,7 @@ export function useChatSession(opts: UseChatSessionOptions) {
   }, [realMatches])
 
   useEffect(() => {
-    if (isDemoMode || !firebaseUserUid || !db) return
+    if (isDemoMode || !firebaseUserUid || !db || !incomingLikesEnabled) return undefined
 
     return attachIncomingLikesListener(db, firebaseUserUid, {
       getLikerName: (likerId) =>
@@ -497,7 +504,15 @@ export function useChatSession(opts: UseChatSessionOptions) {
         })
       },
     })
-  }, [isDemoMode, firebaseUserUid, db, realProfiles, latestRealProfilesRef, addNotification])
+  }, [
+    isDemoMode,
+    firebaseUserUid,
+    db,
+    realProfiles,
+    latestRealProfilesRef,
+    addNotification,
+    incomingLikesEnabled,
+  ])
 
   useEffect(() => {
     if (!activeChat || isDemoMode || !firebaseUserUid || !db) return
