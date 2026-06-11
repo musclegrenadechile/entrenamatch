@@ -68,6 +68,19 @@ publish-play.bat closed
 | Web (principal testers) | https://musclegrenadechile.github.io/entrenamatch/ |
 | APK closed | Link privado Play Console |
 
+## Bloqueo Play API (jun 2026) — Health features
+
+Si `publishBundle` falla con:
+
+> `You must let us know whether your app includes any health features.`
+
+1. Play Console → **Contenido de la app** → **Funciones de salud** (Health apps).
+2. Declarar que la app **sí** incluye funciones de salud (wearables / `@capgo/capacitor-health`, entreno, pasos, etc.).
+3. Completar el cuestionario y guardar.
+4. Reintentar: `publish-play.bat alpha`
+
+El AAB firmado puede subirse **manualmente** mientras tanto: `EntrenaMatch-release.aab` (v330).
+
 ## Troubleshooting `publish-play.bat`
 
 ### "No se esperaba . en este momento"
