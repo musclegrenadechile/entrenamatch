@@ -10658,6 +10658,7 @@ useEffect(() => {
             setEditDraft={setEditDraft}
             startEditPost={startEditPost}
             saveEditPost={saveEditPost}
+            cancelEditPost={cancelEditPost}
             recentlyPublishedPostId={recentlyPublishedPostId}
             setFeedPhotoModal={setFeedPhotoModal}
             getRelativeTime={getRelativeTime}

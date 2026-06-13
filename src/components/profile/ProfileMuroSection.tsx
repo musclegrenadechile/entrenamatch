@@ -46,6 +46,7 @@ export function ProfileMuroSection(props: ProfileTabProps) {
     setEditDraft,
     startEditPost,
     saveEditPost,
+    cancelEditPost,
     recentlyPublishedPostId,
     setFeedPhotoModal,
     getRelativeTime,

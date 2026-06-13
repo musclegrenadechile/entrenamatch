@@ -145,6 +145,7 @@ export interface ProfileTabProps {
   setEditDraft: Dispatch<SetStateAction<string>>
   startEditPost: (postId: string, postUserId: string, currentText: string) => void
   saveEditPost: () => void | Promise<void>
+  cancelEditPost: () => void
   recentlyPublishedPostId: string | null
   setFeedPhotoModal: Dispatch<SetStateAction<FeedPhotoModalState | null>>
   getRelativeTime: (ts?: number) => string
