@@ -141,11 +141,10 @@ import {
   attachAllTrainerBookingsListener,
 } from './services/adminAnalytics'
 import { fetchMpHealth, type MpHealthResult } from './services/adminMp'
-import { ActivationGuide } from './components/onboarding/ActivationGuide'
+import { ActivationGuideMount } from './components/onboarding/ActivationGuideMount'
 import { PullToRefresh } from './components/ui/PullToRefresh'
 import {
   shouldShowActivationGuide,
-  markActivationGuideComplete,
   loadFirstStepsProgress,
   saveFirstStepsProgress,
   type FirstStepsProgress,
@@ -362,6 +361,10 @@ import {
   type PostComment,
 } from './services/postComments'
 import { attachUserPostsListener } from './services/profilePosts'
+import {
+  fetchDiscoveryProfiles,
+  primaryDiscoveryCityForListener,
+} from './services/profileDiscoveryQuery'
 import { parseProfileFromFirestoreDoc, PROFILE_LIST_LIMIT } from './utils/profileFirestoreParse'
 import { shouldHideBetaBot } from './utils/betaBots'
 import { bumpRealtimeStat, realtimeStats } from './utils/realtimeStats'
@@ -2819,7 +2822,7 @@ useEffect(() => {
     if (isDemoMode || !db || !isFirebaseConfigured || !profilesRealtime) return undefined
 
     let unsub: (() => void) | null = null
-    const city = homeCityRef.current
+    const city = primaryDiscoveryCityForListener(homeCityRef.current)
 
     ;(async () => {
       try {
@@ -3009,70 +3012,26 @@ useEffect(() => {
       return
     }
     try {
-      const profilesRef = collection(db, 'profiles')
-      const city = (currentUser?.city || homeCityRef.current || '').trim()
-      const q = city
-        ? query(
-            profilesRef,
-            where('city', '==', city),
-            orderBy('updatedAt', 'desc'),
-            limit(PROFILE_LIST_LIMIT)
-          )
-        : query(profilesRef, orderBy('updatedAt', 'desc'), limit(PROFILE_LIST_LIMIT))
-      let snapshot = await getDocs(q)
-
-      const profiles: Profile[] = []
       const currentUid = currentUidRef.current || firebaseUser?.uid
-
-      const collectFromSnapshot = (snap: typeof snapshot) => {
-        snap.forEach((doc) => {
-          if (doc.id === currentUid) return
-          if (blockedUsersRef.current.includes(doc.id)) return
-          if (shouldHideBetaBot(doc.id)) return
-          const parsed = parseProfileFromFirestoreDoc(doc.id, doc.data() as Record<string, unknown>)
-          if (parsed) profiles.push(parsed)
-        })
-      }
-
-      collectFromSnapshot(snapshot)
-
-      // City filter can empty the deck (typo, sparse city, missing index). Widen once.
-      if (profiles.length === 0 && city) {
-        const fallbackQ = query(profilesRef, orderBy('updatedAt', 'desc'), limit(PROFILE_LIST_LIMIT))
-        snapshot = await getDocs(fallbackQ)
-        collectFromSnapshot(snapshot)
-      }
+      const profiles = await fetchDiscoveryProfiles(db, {
+        city: currentUser?.city || homeCityRef.current || '',
+        country: currentUser?.country || '',
+        limit: PROFILE_LIST_LIMIT,
+        excludeUid: currentUid,
+        blockedIds: blockedUsersRef.current,
+        hideBetaBot: shouldHideBetaBot,
+      })
 
       setRealProfiles((prev) =>
         mergeDiscoveryWithPinnedPartners(profiles, prev, getPinnedPartnerIds())
       )
       const now = new Date()
       setLastSync(now)
-      // Spectacular: preload muro teasers for first few so cards show latest posts immediately
-      profiles.slice(0, 5).forEach(p => { loadProfilePosts(p.id).catch(() => {}) })
-      // console.log removed for cleaner prod (was spammy on every refresh)
+      profiles.slice(0, 5).forEach((p) => {
+        loadProfilePosts(p.id).catch(() => {})
+      })
     } catch (err) {
       console.warn('Could not load real profiles (Firestore may not have data yet):', err)
-      try {
-        const profilesRef = collection(db, 'profiles')
-        const fallbackQ = query(profilesRef, orderBy('updatedAt', 'desc'), limit(PROFILE_LIST_LIMIT))
-        const snapshot = await getDocs(fallbackQ)
-        const profiles: Profile[] = []
-        const currentUid = currentUidRef.current || firebaseUser?.uid
-        snapshot.forEach((doc) => {
-          if (doc.id === currentUid) return
-          const parsed = parseProfileFromFirestoreDoc(doc.id, doc.data() as Record<string, unknown>)
-          if (parsed) profiles.push(parsed)
-        })
-        if (profiles.length > 0) {
-          setRealProfiles((prev) =>
-            mergeDiscoveryWithPinnedPartners(profiles, prev, getPinnedPartnerIds())
-          )
-          return
-        }
-      } catch {
-        /* ignore fallback */
-      }
       setRealProfiles([])
     }
   }
@@ -10886,69 +10845,30 @@ useEffect(() => {
         onReport={() => safetySheetTarget && openReport(safetySheetTarget.id, '1v1_chat')}
         onBlock={() => safetySheetTarget && void blockUser(safetySheetTarget.id).then(() => setActiveChat(null))}
       />
-      <ActivationGuide
+      <ActivationGuideMount
         open={showActivationGuide}
         isLive={!!currentUser?.trainingNow}
         isDemoMode={isDemoMode}
         hasTeam={homeTeamMembers.length > 0}
         hasPact={homeWeeklyPactProgress.pledged}
-        onClose={() => {
-          setShowActivationGuide(false)
-          markAppFeatureTourSeen()
-          if (isDemoMode) {
-            demoStorage.set(DEMO_KEYS.ACTIVATION_GUIDE_DISMISSED, true)
-            return
-          }
-          if (db && firebaseUser?.uid) {
-            void markActivationGuideComplete(db, firebaseUser.uid).then(() =>
-              setFirstStepsProgress((prev) =>
-                prev ? { ...prev, dismissed: true, updatedAt: Date.now() } : prev
-              )
-            )
-          }
+        cityLabel={currentUser?.city}
+        effectiveUserId={effectiveUserId}
+        db={db}
+        firebaseUid={firebaseUser?.uid}
+        onClose={() => setShowActivationGuide(false)}
+        onMarkFeatureTourSeen={markAppFeatureTourSeen}
+        onDismissDemo={() => demoStorage.set(DEMO_KEYS.ACTIVATION_GUIDE_DISMISSED, true)}
+        onFirstStepsDismissed={() =>
+          setFirstStepsProgress((prev) =>
+            prev ? { ...prev, dismissed: true, updatedAt: Date.now() } : prev
+          )
+        }
+        onNavigateTab={(tab) => {
+          if (tab === 'map') navigateTab('map')
+          else setActiveTab(tab)
         }}
-        onPrimaryAction={() => {
-          setShowActivationGuide(false)
-          markAppFeatureTourSeen()
-          if (isDemoMode) {
-            demoStorage.set(DEMO_KEYS.ACTIVATION_GUIDE_DISMISSED, true)
-          } else if (db && firebaseUser?.uid) {
-            void markActivationGuideComplete(db, firebaseUser.uid)
-          }
-          if (currentUser?.trainingNow) {
-            navigateTab('map')
-          } else {
-            void toggleLiveTraining('on')
-          }
-        }}
-        onStep={(step) => {
-          if (step === 'profile') setActiveTab('profile')
-          if (step === 'live') void toggleLiveTraining()
-          if (step === 'explore') setActiveTab('explore')
-          if (step === 'sync') {
-            navigateTab('map')
-          }
-          if (step === 'pact') {
-            navigateTab('home')
-            setShowPactWizard(true)
-          }
-        }}
-        onShareInvite={() => {
-          const inviteUrl = buildInviteLink(effectiveUserId)
-          const inviteText = `Únete a EntrenaMatch — entrena en sync con gente de ${currentUser?.city || 'tu ciudad'}`
-          void (async () => {
-            try {
-              if (navigator.share) {
-                await navigator.share({ title: 'EntrenaMatch', text: inviteText, url: inviteUrl })
-              } else {
-                await navigator.clipboard.writeText(`${inviteText}\n${inviteUrl}`)
-                toast.success('Invitación copiada')
-              }
-            } catch {
-              toast.error('No se pudo compartir')
-            }
-          })()
-        }}
+        onToggleLive={toggleLiveTraining}
+        onOpenPactWizard={() => setShowPactWizard(true)}
       />
       <TrainerCoachViewMount
         open={showTrainerCoach}

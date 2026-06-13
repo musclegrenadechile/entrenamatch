@@ -1,20 +1,26 @@
-# P0 Beta Release — v0.1.377
+# P0 Beta Release — v0.1.382
 
-Checklist para cerrar piloto Viña × Santiago (oleada 377).
+Checklist para cerrar piloto multi-país (CL · PE · MX · US).
 
 ## Versiones alineadas
 
 | Artefacto | Valor |
 |-----------|-------|
-| Web / `APP_VERSION` | **0.1.377** |
-| `package.json` | 0.1.377 |
-| Android `versionCode` | **377** |
-| Android `versionName` | 0.1.377 |
+| Web / `APP_VERSION` | **0.1.382** |
+| `package.json` | 0.1.382 |
+| Android `versionCode` | **382** |
+| Android `versionName` | 0.1.382 |
 
 Verificar: `node scripts/version-check.mjs`
 
-Código: `src/utils/p0BetaQaMatrix.ts` (12 filas) + `src/utils/betaReleaseChecklist.ts` (17 ítems con LIVE pilot).
+Código: `src/utils/p0BetaQaMatrix.ts` (12 filas) + `src/utils/betaReleaseChecklist.ts` (17 ítems) + `BETA_QA_382.md`
 
+## Cambios v0.1.381–382
+
+- Registro/edición: Chile, Perú, México, USA (selector país + ciudad)
+- Filtros Explorar: edad 18–70, distancia sin límite, orden por cercanía
+- Discovery normalizado (`profileDiscoveryQuery`)
+- `ActivationGuideMount` extraído de App.tsx
 ## 1. Deploy
 
 ```powershell
