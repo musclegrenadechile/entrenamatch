@@ -1,6 +1,6 @@
 import type { Firestore } from 'firebase/firestore'
 import { toast } from 'sonner'
-import { buildInviteLink } from '../../utils/appDeepLinks'
+import { buildInviteLink } from '../../utils/sparseCityDefaults'
 import { markActivationGuideComplete } from '../../services/firstStepsProgress'
 import { ActivationGuide } from './ActivationGuide'
 
