@@ -11138,9 +11138,16 @@ useEffect(() => {
       {/* FILTERS MODAL */}
       <AnimatePresence>
         {showFilters && (
-          <div className="absolute inset-0 z-[70] flex items-end bg-black/70" onClick={() => setShowFilters(false)}>
-            <motion.div initial={{ y: 80 }} animate={{ y: 0 }} exit={{ y: 80 }} transition={{ type: 'spring', bounce: 0.05 }}
-              onClick={e => e.stopPropagation()} className="w-full card rounded-t-3xl p-6 pb-10">
+          <div className="absolute inset-0 z-[70] flex items-end bg-black/70 overscroll-none" onClick={() => setShowFilters(false)}>
+            <motion.div
+              initial={{ y: 80 }}
+              animate={{ y: 0 }}
+              exit={{ y: 80 }}
+              transition={{ type: 'spring', bounce: 0.05 }}
+              onClick={e => e.stopPropagation()}
+              className="w-full card rounded-t-3xl flex flex-col max-h-[min(92dvh,920px)] overflow-hidden"
+            >
+              <div className="shrink-0 px-6 pt-6 pb-3 border-b border-[#2F2F35]/60">
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-2">
                   <div className="font-semibold text-2xl tracking-tight">Filtros</div>
@@ -11158,7 +11165,9 @@ useEffect(() => {
                 <span className="text-[#9CA3AF]">Disponibles ahora</span>
                 <span className="font-bold text-[#FF671F] text-lg tabular-nums">{deck.length}{liveTrainingNow.length > 0 ? ` + ${liveTrainingNow.length} en vivo` : ''}</span>
               </div>
+              </div>
 
+              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4 [-webkit-overflow-scrolling:touch]">
               {/* Active filters summary - tappable to remove */}
               <AnimatePresence>
               {(filters.trainingTypes.length > 0 || filters.availability.length > 0 || filters.gender !== 'todos' || filters.onlyAvailableToday || filters.onlyLiveTraining) && (
@@ -11378,13 +11387,16 @@ useEffect(() => {
                   })}
                 </div>
               </div>
+              </div>
 
+              <div className="shrink-0 px-6 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] border-t border-[#2F2F35]/60 bg-[#141418]">
               <button 
                 onClick={() => setShowFilters(false)} 
                 className="btn-primary w-full shadow-lg shadow-[#FF671F]/20 flex items-center justify-center gap-2 text-base"
               >
                 Ver {deck.length} disponibles <span className="text-lg leading-none">→</span>
               </button>
+              </div>
             </motion.div>
           </div>
         )}
