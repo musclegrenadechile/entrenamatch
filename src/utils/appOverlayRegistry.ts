@@ -12,6 +12,8 @@ export const APP_GLOBAL_OVERLAY_IDS = [
   'syncArena',
   'entrenaLog',
   'fuelSetup',
+  'fuelWizard',
+  'fuelLog',
   'activationGuide',
   'adminOps',
   'communityAdmin',

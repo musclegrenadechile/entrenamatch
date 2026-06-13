@@ -265,7 +265,7 @@ import {
   quickAddSetToWorkoutDraft,
 } from './utils/workoutDraft'
 import { buildWeekWorkoutSummary, getTopExerciseProgress } from './utils/workoutProgress'
-import { FuelSetupModal, FuelSetupWizard, FuelLogModal, NutritionPostCard } from './components/fuel'
+import { FuelOverlaysMount, NutritionPostCard } from './components/fuel'
 import {
   loadFuelProfile,
   saveFuelProfile,
@@ -11011,30 +11011,28 @@ useEffect(() => {
         matchProfiles={matchProfiles}
         onGymSoundSave={handleGymSoundProfileSave}
       />
-      <FuelSetupWizard
-        open={showFuelSetupWizard}
-        hints={{
-          age: currentUser?.age,
-          gender: currentUser?.gender,
-          weekTrainedCount: homeWeekTrainedCount,
-          goals: currentUser?.goals,
+      <FuelOverlaysMount
+        showFuelSetupWizard={showFuelSetupWizard}
+        showFuelSetupModal={showFuelSetupModal}
+        showFuelLogModal={showFuelLogModal}
+        onCloseFuelSetupWizard={() => setShowFuelSetupWizard(false)}
+        onCloseFuelSetupModal={() => setShowFuelSetupModal(false)}
+        onCloseFuelLogModal={() => {
+          setEditingFuelLog(null)
+          setShowFuelLogModal(false)
         }}
-        onClose={() => setShowFuelSetupWizard(false)}
-        onSave={handleSaveFuelProfile}
-        onAdvancedSetup={() => {
+        onOpenAdvancedFuelSetup={() => {
           setShowFuelSetupWizard(false)
           setShowFuelSetupModal(true)
         }}
-        saving={savingFuel}
-      />
-      <FuelSetupModal
-        open={showFuelSetupModal}
-        initial={fuelProfile}
-        defaultAge={currentUser?.age}
-        defaultGender={currentUser?.gender}
-        onClose={() => setShowFuelSetupModal(false)}
-        onSave={handleSaveFuelProfile}
-        saving={savingFuel}
+        fuelProfile={fuelProfile}
+        editingFuelLog={editingFuelLog}
+        currentUser={currentUser}
+        homeWeekTrainedCount={homeWeekTrainedCount}
+        onSaveFuelProfile={handleSaveFuelProfile}
+        onSaveFuelLog={handleSaveFuelLog}
+        onAnalyzeFood={handleAnalyzeFood}
+        savingFuel={savingFuel}
       />
       <WeeklyPactSetupSheet
         open={showPactWizard}
@@ -11043,17 +11041,6 @@ useEffect(() => {
         }
         onClose={() => setShowPactWizard(false)}
         onPledge={handleWeeklyPactPledge}
-      />
-      <FuelLogModal
-        open={showFuelLogModal}
-        editEntry={editingFuelLog}
-        onClose={() => {
-          setEditingFuelLog(null)
-          setShowFuelLogModal(false)
-        }}
-        onSave={handleSaveFuelLog}
-        onAnalyzePhoto={handleAnalyzeFood}
-        saving={savingFuel}
       />
       {workoutSessionDraft &&
         !(activeTab === 'red' && redSubTab === 'messages' && !!activeChat) && (

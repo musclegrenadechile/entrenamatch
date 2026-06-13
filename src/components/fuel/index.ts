@@ -1,3 +1,4 @@
+export { FuelOverlaysMount } from './FuelOverlaysMount'
 export { FuelDayCard } from './FuelDayCard'
 export { FuelSetupModal } from './FuelSetupModal'
 export { FuelSetupWizard } from './FuelSetupWizard'
