@@ -7,9 +7,12 @@ import {
 } from './pilotCohort'
 
 describe('pilotCohort', () => {
-  it('registers only open pilot cities', () => {
+  it('registers open launch cities in Chile and LATAM', () => {
     expect(shouldRegisterPilotMember('Viña del Mar')).toBe(true)
     expect(shouldRegisterPilotMember('Santiago')).toBe(true)
+    expect(shouldRegisterPilotMember('Lima')).toBe(true)
+    expect(shouldRegisterPilotMember('Ciudad de México')).toBe(true)
+    expect(shouldRegisterPilotMember('Miami')).toBe(true)
     expect(shouldRegisterPilotMember('Concepción')).toBe(false)
     expect(isOpenPilotCity('Valparaíso')).toBe(true)
   })

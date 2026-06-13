@@ -6,7 +6,8 @@ import { motion } from 'framer-motion';
 import { TRAINING_OPTIONS, TRAINING_GOALS, PROFILE_GENDER_OPTIONS, TRAINING_INTENSITIES } from '../../constants';
 import type { ProfileGender } from '../../types';
 import { BRAND_COPY } from '../../constants/brandCopy';
-import { PILOT_CITY_OPTIONS, PILOT_PROGRAM_TITLE } from '../../constants/pilotProgram';
+import { REGISTRATION_REGION_HINT, PILOT_PROGRAM_TITLE } from '../../constants/pilotProgram';
+import { RegistrationRegionSelect } from '../profile/RegistrationRegionSelect';
 import type { CurrentUser } from '../../types';
 import { QUICK_DEMO_USER } from '../../utils/quickDemo';
 
@@ -786,23 +787,21 @@ export const OnboardingFlow = ({
 
             <section className="rounded-2xl border border-[#FF671F]/25 bg-[#111113] p-4 space-y-3">
               <div>
-                <div className="text-sm font-semibold tracking-wide">Tu ciudad y ubicación</div>
+                <div className="text-sm font-semibold tracking-wide">Tu país y ciudad</div>
                 <div className="text-[10px] text-[#9CA3AF] mt-0.5">
-                  {PILOT_PROGRAM_TITLE} — acceso anticipado solo en estas ciudades.
+                  {PILOT_PROGRAM_TITLE} — {REGISTRATION_REGION_HINT}
                 </div>
               </div>
-              <select
-                value={onboardData.city}
-                onChange={(e) => updateOnboard({ city: e.target.value })}
-                className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-xl px-3 py-2.5 text-sm"
-              >
-                {PILOT_CITY_OPTIONS.map((c) => (
-                  <option key={c.norm} value={c.label}>{c.label}</option>
-                ))}
-              </select>
-              <p className="text-[9px] text-[#FF671F]/90">
-                Otras ciudades: lista de espera desde Explorar cuando lancemos tu zona.
-              </p>
+              <RegistrationRegionSelect
+                value={{
+                  country: onboardData.country,
+                  city: onboardData.city,
+                  lat: onboardData.lat,
+                  lng: onboardData.lng,
+                }}
+                onChange={(next) => updateOnboard(next)}
+                showHint={false}
+              />
               <button
                 type="button"
                 onClick={() => { try { triggerHaptic('light') } catch {}; handleGpsRequest() }}

@@ -4,7 +4,8 @@ import { toast } from 'sonner'
 import type { CurrentUser } from '../../types'
 import { TRAINING_OPTIONS, TRAINING_GOALS, PROFILE_GENDER_OPTIONS } from '../../constants'
 import type { ProfileGender } from '../../types'
-import { PILOT_CITY_OPTIONS, PILOT_PROGRAM_TITLE } from '../../constants/pilotProgram'
+import { REGISTRATION_REGION_HINT } from '../../constants/pilotProgram'
+import { RegistrationRegionSelect } from './RegistrationRegionSelect'
 import { PhotoCropModal } from '../photos/PhotoCropModal'
 
 const BIO_MAX = 160
@@ -322,16 +323,16 @@ export function ProfileEditFlow({
               </div>
             </div>
           </div>
-          <select
-            value={editData.city}
-            onChange={(e) => patch({ city: e.target.value })}
-            className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-xl px-3 py-2.5 text-sm"
-          >
-            {PILOT_CITY_OPTIONS.map((c) => (
-              <option key={c.norm} value={c.label}>{c.label}</option>
-            ))}
-          </select>
-          <p className="text-[9px] text-[#9CA3AF]">{PILOT_PROGRAM_TITLE} — beta en estas ciudades.</p>
+          <RegistrationRegionSelect
+            value={{
+              country: editData.country,
+              city: editData.city,
+              lat: editData.lat,
+              lng: editData.lng,
+            }}
+            onChange={(next) => patch(next)}
+          />
+          <p className="text-[9px] text-[#9CA3AF]">{REGISTRATION_REGION_HINT}</p>
           <button
             type="button"
             onClick={handleGpsRequest}

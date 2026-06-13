@@ -105,7 +105,7 @@ export const ExploreTab = ({
     (filters.trainingTypes?.length || 0) > 0 ||
     (filters.availability?.length || 0) > 0 ||
     filters.gender !== 'todos' ||
-    (userLocation && filters.maxDistanceKm < 50) ||
+    (userLocation && filters.maxDistanceKm < 100) ||
     filters.onlyAvailableToday ||
     filters.onlyLiveTraining;
 
@@ -335,7 +335,7 @@ export const ExploreTab = ({
         <div className="relative z-20 mb-3 mx-1 p-3 rounded-2xl bg-[#FF671F]/10 border border-[#FF671F]/25 text-[11px] leading-snug shrink-0">
           <strong className="text-[#FF671F]">Pocos perfiles con tus filtros.</strong>{' '}
           <span className="text-[#9CA3AF]">
-            Hay {poolSize} en total — prueba ampliar distancia (50 km) o relajar edad/horarios.
+            Hay {poolSize} en total — prueba quitar límite de distancia o ampliar el rango de edad.
           </span>
           {onRelaxFilters && (
             <button

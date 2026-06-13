@@ -14,30 +14,46 @@ export interface Filters {
   onlyRealProfiles: boolean;
 }
 
-const defaultFilters: Filters = {
-  minAge: 18,
-  maxAge: 50,
+export const DISCOVERY_AGE_MIN = 18
+export const DISCOVERY_AGE_MAX = 70
+/** Slider value ≥ this means “sin límite” in Explorar. */
+export const DISCOVERY_DISTANCE_UNLIMITED_KM = 100
+
+export const defaultDiscoveryFilters: Filters = {
+  minAge: DISCOVERY_AGE_MIN,
+  maxAge: DISCOVERY_AGE_MAX,
   gender: 'todos',
   trainingTypes: [],
   availability: [],
-  maxDistanceKm: 50,
+  maxDistanceKm: DISCOVERY_DISTANCE_UNLIMITED_KM,
   onlyAvailableToday: false,
   onlyLiveTraining: false,
   onlyRealProfiles: false,
 };
 
 export function useFilters() {
-  const [filters, setFilters] = useLocalStorage<Filters>('filters', defaultFilters);
+  const [filters, setFilters] = useLocalStorage<Filters>('filters', defaultDiscoveryFilters);
 
-  // Migrate legacy 25 km default saved in older builds (fase 185).
+  // One-time migration from pre-v0.1.381 defaults (50 km cap, edad máx 45–50).
   useEffect(() => {
-    if (filters.maxDistanceKm === 25) {
-      setFilters((prev) => ({ ...prev, maxDistanceKm: 50 }));
-    }
-  }, [filters.maxDistanceKm, setFilters]);
+    try {
+      if (localStorage.getItem('filters_v381_migrated') === '1') return
+      setFilters((prev) => {
+        let next = prev
+        if (prev.maxDistanceKm === 25 || prev.maxDistanceKm === 50) {
+          next = { ...next, maxDistanceKm: DISCOVERY_DISTANCE_UNLIMITED_KM }
+        }
+        if (prev.maxAge <= 50) {
+          next = { ...next, maxAge: DISCOVERY_AGE_MAX }
+        }
+        return next === prev ? prev : next
+      })
+      localStorage.setItem('filters_v381_migrated', '1')
+    } catch { /* ignore */ }
+  }, [setFilters]);
 
   const resetFilters = useCallback(() => {
-    setFilters(defaultFilters);
+    setFilters(defaultDiscoveryFilters);
   }, [setFilters]);
 
   const toggleTrainingType = useCallback((type: string) => {

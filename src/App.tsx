@@ -2411,15 +2411,15 @@ useEffect(() => {
           if (lb !== la) return lb - la
         }
 
-        const ca = calculateCompatibility(currentUser, a, userLocation) + (isNetA ? 75 : 0) // massive Network Power boost to compat score
-        const cb = calculateCompatibility(currentUser, b, userLocation) + (isNetB ? 75 : 0)
-        if (cb !== ca) return cb - ca
-
         if (userLocation) {
           const da = getDistanceKm(userLocation.lat, userLocation.lng, a.lat, a.lng)
           const db = getDistanceKm(userLocation.lat, userLocation.lng, b.lat, b.lng)
           if (da !== db) return da - db
         }
+
+        const ca = calculateCompatibility(currentUser, a, userLocation) + (isNetA ? 75 : 0) // massive Network Power boost to compat score
+        const cb = calculateCompatibility(currentUser, b, userLocation) + (isNetB ? 75 : 0)
+        if (cb !== ca) return cb - ca
 
         // Verified / real tester slight priority
         const va = (a.verificationStatus === 'verified' || !a.id.startsWith('p')) ? 1 : 0
@@ -9346,7 +9346,7 @@ useEffect(() => {
   // resetFilters is now provided by useFilters hook
   // Keeping a fallback for compatibility during refactor
   const resetFilters = resetFiltersHook || (() => {
-    setFilters({ minAge: 20, maxAge: 40, gender: 'todos', trainingTypes: [], availability: [], maxDistanceKm: 100, onlyAvailableToday: false, onlyLiveTraining: false })
+    setFilters({ minAge: 18, maxAge: 70, gender: 'todos', trainingTypes: [], availability: [], maxDistanceKm: 100, onlyAvailableToday: false, onlyLiveTraining: false })
   })
 
   // Auth gate lives in RootApp → PublicAuthPage; App only renders for authenticated users.
@@ -9831,15 +9831,15 @@ useEffect(() => {
               setFilters((f) => ({
                 ...f,
                 minAge: 18,
-                maxAge: 55,
+                maxAge: 70,
                 gender: 'todos',
                 trainingTypes: [],
                 availability: [],
-                maxDistanceKm: 50,
+                maxDistanceKm: 100,
                 onlyAvailableToday: false,
                 onlyLiveTraining: false,
               }))
-              toast.success('Filtros ampliados — más perfiles visibles')
+              toast.success('Filtros ampliados — todos visibles, más cerca primero')
             }}
           />
           </Suspense>
@@ -11220,13 +11220,13 @@ useEffect(() => {
                     <div className="flex justify-between text-[10px] text-[#9CA3AF] mb-1.5">
                       <span>Mínimo</span><span>{filters.minAge}</span>
                     </div>
-                    <input type="range" min="18" max="45" value={filters.minAge} onChange={e => setFilters(f => ({...f, minAge: Math.min(parseInt(e.target.value), f.maxAge - 1)}))} className="w-full accent-[#FF671F]" />
+                    <input type="range" min="18" max="70" value={filters.minAge} onChange={e => setFilters(f => ({...f, minAge: Math.min(parseInt(e.target.value), f.maxAge - 1)}))} className="w-full accent-[#FF671F]" />
                   </div>
                   <div>
                     <div className="flex justify-between text-[10px] text-[#9CA3AF] mb-1.5">
                       <span>Máximo</span><span>{filters.maxAge}</span>
                     </div>
-                    <input type="range" min="18" max="45" value={filters.maxAge} onChange={e => setFilters(f => ({...f, maxAge: Math.max(parseInt(e.target.value), f.minAge + 1)}))} className="w-full accent-[#FF671F]" />
+                    <input type="range" min="18" max="70" value={filters.maxAge} onChange={e => setFilters(f => ({...f, maxAge: Math.max(parseInt(e.target.value), f.minAge + 1)}))} className="w-full accent-[#FF671F]" />
                   </div>
                 </div>
               </div>
@@ -11252,8 +11252,13 @@ useEffect(() => {
                   disabled={!userLocation}
                 />
                 <div className="flex justify-between text-[10px] text-[#9CA3AF] mt-1">
-                  <span>5 km</span><span>100+ km</span>
+                  <span>5 km</span><span>100+ km (todos)</span>
                 </div>
+                {userLocation && filters.maxDistanceKm >= 100 && (
+                  <p className="text-[10px] text-[#9CA3AF] mt-2 leading-snug">
+                    Sin límite: ves a todos en tu zona, ordenados de más cerca a más lejos.
+                  </p>
+                )}
                 {!userLocation && (
                   <button 
                     onClick={requestUserLocation}
