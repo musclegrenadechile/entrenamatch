@@ -323,7 +323,7 @@ import { useNotificationsState } from './hooks/useNotificationsState'
 import { NotificationsPanel } from './components/notifications/NotificationsPanel'
 import { getRelativeTime } from './utils/relativeTime'
 import { useFeedState } from './hooks/useFeedState'
-import { computeGlobalFeed } from './utils/feedRanking'
+import { useFeedPipeline } from './hooks/useFeedPipeline'
 import { pickLivePostText, userHasRecentAutoLivePost } from './utils/feedPostMeta'
 import { useSyncSession } from './hooks/useSyncSession'
 import { useArenaSyncController } from './hooks/useArenaSyncController'
@@ -2351,27 +2351,23 @@ useEffect(() => {
 
   // Feed computation lifted to top-level useMemo so hook is ALWAYS called in the same order (fixes React #310 "Rendered more hooks than during the previous render" when switching tabs).
   // The previous inline IIFE inside {activeTab==='feed' && ...} was conditionally executing the useMemo hook → violation.
-  const feedComputation = useMemo(() => {
-    const t0 = performance.now()
-    const result = computeGlobalFeed({
-      profilePosts,
-      effectiveUserId,
-      syncBonds,
-      liveUsersActive,
-      userLocation,
-      realProfiles,
-      currentUser,
-      feedShowPinnedOnly,
-      feedOnlyReal,
-      feedOnlyLive,
-      feedSearch,
-      feedDisplayLimit,
-      isSeedProfileId,
-      recentlyPublishedPostId,
-    })
-    realtimeStats.lastFeedComputeMs = Math.round(performance.now() - t0)
-    return result
-  }, [profilePosts, feedShowPinnedOnly, feedOnlyReal, feedOnlyLive, feedSearch, feedDisplayLimit, realProfiles, effectiveUserId, syncBonds, currentUser, liveUsersActive, userLocation, recentlyPublishedPostId]);
+  const feedComputation = useFeedPipeline({
+    profilePosts,
+    effectiveUserId,
+    syncBonds,
+    liveUsersActive,
+    userLocation,
+    realProfiles,
+    currentUser,
+    feedShowPinnedOnly,
+    feedOnlyReal,
+    feedOnlyLive,
+    feedSearch,
+    feedDisplayLimit,
+    isSeedProfileId,
+    recentlyPublishedPostId,
+  })
+  realtimeStats.lastFeedComputeMs = feedComputation.computeMs
 
   // Filtered deck (with distance support + blocking)
   // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)

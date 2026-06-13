@@ -19,6 +19,7 @@ export const APP_GLOBAL_OVERLAY_IDS = [
   'exploreFilters',
   'liveNearModal',
   'matchCelebration',
+  'safetyActionSheet',
   'adminOps',
   'communityAdmin',
 ] as const

@@ -1,6 +1,6 @@
 # EntrenaMatch — Roadmap 381–450
 
-**Versión actual:** v0.1.384 · **Meta:** open beta multi-país (CL · PE · MX · US)
+**Versión actual:** v0.1.385 · **Meta:** open beta multi-país (CL · PE · MX · US)
 
 Cada fase = entregable + test + deploy. Oleadas de 10 fases.
 
@@ -33,10 +33,10 @@ Cada fase = entregable + test + deploy. Oleadas de 10 fases.
 | **396** | `useExploreDeck` hook | Deck filtrado + ordenado | ✅ v0.1.383 |
 | **393** | `LiveNearModalMount` | Lista LIVE full-screen | ✅ v0.1.384 |
 | **395** | `SafetyActionSheetMount` | Sheet reportar/bloquear | ✅ v0.1.384 |
-| **397** | `useFeedPipeline` hook | feed ranking + filters | ☐ |
-| **398** | App.tsx < 12k líneas | Medición + extracción batch | ☐ |
-| **399** | `appOverlayRegistry` v2 | Todos los mounts registrados | ☐ |
-| **400** | Tests mounts batch | Vitest por overlay | ☐ |
+| **397** | `useFeedPipeline` hook | feed ranking + filters | ✅ v0.1.385 |
+| **398** | App.tsx < 12k líneas | Medición + extracción batch | 🔄 ~12.6k |
+| **399** | `appOverlayRegistry` v2 | Todos los mounts registrados | ✅ v0.1.385 |
+| **400** | Tests mounts batch | Vitest por overlay | ✅ v0.1.385 |
 
 ---
 

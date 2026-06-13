@@ -3,7 +3,7 @@ import { APP_GLOBAL_OVERLAY_IDS, countAppOverlays } from './appOverlayRegistry'
 
 describe('appOverlayRegistry', () => {
   it('lists 12 global overlay ids including marketplace and trainerCoach', () => {
-    expect(countAppOverlays()).toBe(18)
+    expect(countAppOverlays()).toBe(19)
     expect(APP_GLOBAL_OVERLAY_IDS).toContain('marketplace')
     expect(APP_GLOBAL_OVERLAY_IDS).toContain('trainerCoach')
   })
