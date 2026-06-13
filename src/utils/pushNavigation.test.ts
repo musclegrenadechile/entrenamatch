@@ -58,4 +58,28 @@ describe('resolvePushNotificationData', () => {
       marketplaceOrdersTab: true,
     })
   })
+
+  it('opens live map + modal on team_live push', () => {
+    expect(
+      resolvePushNotificationData({ type: 'team_live', userId: 'u2', partnerName: 'Leo' })
+    ).toEqual({
+      tab: 'explore',
+      showLiveMap: true,
+      showLiveModal: true,
+      showSyncArena: false,
+      startSyncWith: { partnerId: 'u2', partnerName: 'Leo' },
+    })
+  })
+
+  it('opens sync arena on team_sync push', () => {
+    expect(
+      resolvePushNotificationData({ type: 'team_sync', userId: 'u3', partnerName: 'Mia' })
+    ).toEqual({
+      tab: 'explore',
+      showLiveMap: true,
+      showLiveModal: false,
+      showSyncArena: true,
+      startSyncWith: { partnerId: 'u3', partnerName: 'Mia' },
+    })
+  })
 })

@@ -15,9 +15,11 @@ export function isProfileProgressiveMode(user: Parameters<typeof getAccountAgeDa
   return getAccountAgeDays(user) < PROFILE_PROGRESSIVE_DAYS
 }
 
-/** Tab Hoy día 1 — plan semanal y meta ocultos; Fuel AI siempre visible. */
+/** Tab Hoy compacto — primeros 3 días: menos widgets, foco LIVE + Explorar. */
+export const HOME_COMPACT_DAYS = 3
+
 export function isHomeDayOneMode(user: Parameters<typeof getAccountAgeDays>[0]): boolean {
-  return getAccountAgeDays(user) < 1
+  return getAccountAgeDays(user) < HOME_COMPACT_DAYS
 }
 
 /** EntrenaSync bonds needed to unlock coach/marketplace before day 7. */

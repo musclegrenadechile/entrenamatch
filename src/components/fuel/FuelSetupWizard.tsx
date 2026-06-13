@@ -45,11 +45,13 @@ export function FuelSetupWizard({
   const [step, setStep] = useState(0)
   const [answers, setAnswers] = useState<FuelWizardAnswers>(defaults)
 
+  // Reset solo al abrir — hints inline en App.tsx cambia referencia cada render y
+  // volvía a step 0 al elegir objetivo / pulsar Siguiente.
   useEffect(() => {
     if (!open) return
     setStep(0)
     setAnswers(defaultWizardAnswers(hints))
-  }, [open, hints])
+  }, [open])
 
   if (!open) return null
 
@@ -97,7 +99,10 @@ export function FuelSetupWizard({
                   <button
                     key={g.id}
                     type="button"
-                    onClick={() => setAnswers((a) => ({ ...a, goal: g.id }))}
+                    onClick={() => {
+                      setAnswers((a) => ({ ...a, goal: g.id }))
+                      setStep(1)
+                    }}
                     className={`py-3 px-2 rounded-2xl text-left border ${
                       answers.goal === g.id
                         ? 'bg-[#a855f7]/25 border-[#a855f7]/60 text-white'
@@ -120,7 +125,10 @@ export function FuelSetupWizard({
                   <button
                     key={a.id}
                     type="button"
-                    onClick={() => setAnswers((a0) => ({ ...a0, activityLevel: a.id }))}
+                    onClick={() => {
+                      setAnswers((a0) => ({ ...a0, activityLevel: a.id }))
+                      setStep(2)
+                    }}
                     className={`w-full text-left px-3 py-2.5 rounded-xl text-[11px] font-bold ${
                       answers.activityLevel === a.id
                         ? 'bg-[#a855f7]/20 border border-[#a855f7]/50 text-white'
@@ -180,7 +188,7 @@ export function FuelSetupWizard({
             )}
             <button
               type="button"
-              disabled={saving || answers.weightKg < 30}
+              disabled={saving || (isLast && answers.weightKg < 30)}
               onClick={() => void handleNext()}
               className="flex-1 py-3 rounded-2xl bg-[#a855f7] text-black font-extrabold text-sm disabled:opacity-50"
             >

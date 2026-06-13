@@ -17,6 +17,34 @@ import { Geolocation } from '@capacitor/geolocation'
 import { Share } from '@capacitor/share'
 import { Filesystem } from '@capacitor/filesystem'
 import { Health } from '@capgo/capacitor-health'
+import { registerPlugin } from '@capacitor/core'
+
+const EntrenamatchHealth = registerPlugin<{
+  hasGrantedHealthPermissions: () => Promise<{
+    granted: boolean
+    canReadActivity?: boolean
+    steps?: boolean
+    exercise?: boolean
+    calories?: boolean
+    totalCalories?: boolean
+    heartRate?: boolean
+  }>
+  probeWearableDay: (opts: {
+    startDate: string
+    endDate: string
+  }) => Promise<{
+    steps: number
+    activeCaloriesKcal: number
+    exerciseMinutes: number
+    workoutCount: number
+    sources: string[]
+    exerciseError?: string
+    stepsError?: string
+    caloriesError?: string
+  }>
+  openHealthConnectSettings: () => Promise<void>
+  openAppHealthPermissions: () => Promise<void>
+}>('EntrenamatchHealth')
 
 // Side-effect: make available via global so components can pick it up after dynamic load.
 // This avoids direct export issues in conditional loading.
@@ -31,6 +59,7 @@ if (typeof window !== 'undefined') {
     Share,
     Filesystem,
     Health,
+    EntrenamatchHealth,
   }
 }
 
@@ -44,4 +73,5 @@ export {
   Share,
   Filesystem,
   Health,
+  EntrenamatchHealth,
 }

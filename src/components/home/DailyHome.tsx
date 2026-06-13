@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { EntrenoDeHoyWeekSummary } from '../workout/EntrenoDeHoyWeekSummary'
 import { ExercisePRStrip } from '../workout/ExercisePRStrip'
-import { MapPin, MessageCircle, RefreshCw, Users } from 'lucide-react'
+import { MessageCircle, RefreshCw, Users } from 'lucide-react'
 import { FuelDayCard } from '../fuel/FuelDayCard'
 import { WeeklyPlanCard } from '../plan/WeeklyPlanCard'
 import type { WeeklyPlanResult } from '../../domain/weeklyPlan'
@@ -14,7 +14,7 @@ import { DailyHomeHeroCard } from './DailyHomeHeroCard'
 import { WorkoutDraftResumeBanner } from '../workout/WorkoutDraftResumeBanner'
 import { isWorkoutDraftFresh, loadWorkoutDraft } from '../../utils/workoutDraft'
 import { PilotProgramStrip } from './PilotProgramStrip'
-import { CityDerbyCard } from './CityDerbyCard'
+import { CityDerbyCard, CityDerbyCompactStrip } from './CityDerbyCard'
 import { SyncHourBanner } from './SyncHourBanner'
 import { BRAND_COPY } from '../../constants/brandCopy'
 import { GymInviteQrSheet } from '../growth/GymInviteQrSheet'
@@ -25,6 +25,8 @@ import type { Firestore } from 'firebase/firestore'
 import type { ProfileGender } from '../../utils/genderedCopy'
 import type { GymSoundDisplay } from '../../types'
 import { GymSoundLiveStrip } from '../music/GymSoundLiveStrip'
+import { WearableActivityCard } from './WearableActivityCard'
+import type { WearableDayActivity } from '../../services/wearableSync'
 
 export type TeamMemberStatus = 'live' | 'recent' | 'this_week' | 'inactive'
 
@@ -91,6 +93,10 @@ export interface DailyHomeProps {
   deletingFuelLogId?: string | null
   onImportHealthBurn?: () => void | Promise<void>
   healthImportHint?: string
+  wearableActivity?: WearableDayActivity | null
+  wearableSyncing?: boolean
+  onRefreshWearableActivity?: () => void | Promise<void>
+  onOpenWearableConnect?: () => void
   cityLabel?: string
   localNetwork?: Omit<LocalNetworkCardProps, 'cityLabel'> & { cityLabel?: string }
   weeklyPact?: WeeklyPact | null
@@ -186,6 +192,10 @@ export function DailyHome({
   deletingFuelLogId,
   onImportHealthBurn,
   healthImportHint,
+  wearableActivity = null,
+  wearableSyncing = false,
+  onRefreshWearableActivity,
+  onOpenWearableConnect,
   cityLabel,
   localNetwork,
   weeklyPact = null,
@@ -254,28 +264,69 @@ export function DailyHome({
     : ''
 
   return (
-    <div className="daily-home mb-4 -mx-1 px-1 space-y-3">
-      {/* Header */}
+    <div className="daily-home em-v2-home mb-4 -mx-1 px-1 space-y-3">
       <div className="px-0.5">
-        <p className="text-[10px] uppercase tracking-[0.18em] text-[#9CA3AF] font-bold">Hoy</p>
-        <h2 className="text-xl font-black text-white mt-0.5 tracking-tight">
-          {greeting}, {firstName}
-        </h2>
-        <p className="text-[11px] text-[#9CA3AF] mt-1 leading-snug">
-          Fuel AI → LIVE → Explorar → EntrenaSync → Meta: cierra tu semana con tu{' '}
-          {BRAND_COPY.community.toLowerCase()}.
+        <p className="em-v2-home__eyebrow">Hoy</p>
+        <h2 className="em-v2-home__hero-title">¿Quién entrena cerca?</h2>
+        <p className="em-v2-home__hero-sub">
+          <strong>{greeting}, {firstName}</strong>
+          {liveCount > 0 ? (
+            <>
+              {' · '}
+              <span className="em-v2-home__live-count">
+                {liveCount} en {BRAND_COPY.liveMapLabel}
+              </span>
+            </>
+          ) : (
+            <> · Activa LIVE para aparecer en el mapa</>
+          )}
         </p>
+
+        <button
+          type="button"
+          onClick={onOpenMap}
+          className="em-v2-map-cta w-full mt-2.5"
+        >
+          <span className="em-v2-map-cta__title">
+            {liveCount > 0
+              ? `🟢 ${liveCount} entrenando ahora`
+              : `Abre el ${BRAND_COPY.liveMapLabel}`}
+            {cityLabel ? ` · ${cityLabel}` : ''}
+          </span>
+          <span className="em-v2-map-cta__arrow">Mapa →</span>
+        </button>
+
         <HomeLoopStepper activeStep={loopStep} />
       </div>
 
-      <PilotProgramStrip
-        cityLabel={cityLabel}
-        db={pilotDb}
-        isDemoMode={isDemoMode}
-        inviteLink={pilotInviteLink}
-        onOpenMap={onOpenDerbyMap}
-        liveCount={liveCount}
-      />
+      {compactDayOne ? (
+        <CityDerbyCompactStrip
+          derby={cityDerby}
+          onOpenMap={onOpenDerbyMap ?? onOpenMap}
+          userCity={cityLabel}
+        />
+      ) : (
+        <>
+          <PilotProgramStrip
+            cityLabel={cityLabel}
+            db={pilotDb}
+            isDemoMode={isDemoMode}
+            inviteLink={pilotInviteLink}
+            onOpenMap={onOpenDerbyMap}
+            liveCount={liveCount}
+          />
+
+          <CityDerbyCard
+            derby={cityDerby}
+            onOpenMap={onOpenDerbyMap}
+            userGender={userGender}
+            userCity={cityLabel}
+            inviteLink={pilotInviteLink}
+            db={pilotDb}
+            isDemoMode={isDemoMode}
+          />
+        </>
+      )}
 
       <SyncHourBanner
         isLive={isLive}
@@ -283,16 +334,6 @@ export function DailyHome({
         onActivateLive={onToggleLive}
         db={pilotDb}
         city={cityLabel}
-        isDemoMode={isDemoMode}
-      />
-
-      <CityDerbyCard
-        derby={cityDerby}
-        onOpenMap={onOpenDerbyMap}
-        userGender={userGender}
-        userCity={cityLabel}
-        inviteLink={pilotInviteLink}
-        db={pilotDb}
         isDemoMode={isDemoMode}
       />
 
@@ -307,11 +348,31 @@ export function DailyHome({
         onOpenPact={onOpenPactWizard}
       />
 
+      {onOpenEntrenaLog && compactDayOne && (
+        <button
+          type="button"
+          onClick={onOpenEntrenaLog}
+          className="w-full py-3 rounded-xl border border-[#FF671F]/35 bg-[#FF671F]/10 text-xs font-bold text-[#FF671F] active:bg-[#FF671F]/20 flex items-center justify-center gap-2"
+        >
+          <span>🏋️</span> Entreno de Hoy — registrar sesión
+        </button>
+      )}
+
       {showWorkoutDraftBanner && workoutDraft && (
         <WorkoutDraftResumeBanner
           draft={workoutDraft}
           onResume={onResumeWorkoutDraft!}
           onDiscard={onDiscardWorkoutDraft!}
+        />
+      )}
+
+      {(wearableActivity || onRefreshWearableActivity) && (
+        <WearableActivityCard
+          activity={wearableActivity}
+          syncing={wearableSyncing}
+          needsConnect={!!wearableActivity?.needsConnect}
+          onRefresh={onRefreshWearableActivity}
+          onConnect={onOpenWearableConnect}
         />
       )}
 
@@ -332,6 +393,7 @@ export function DailyHome({
         deletingLogId={deletingFuelLogId}
         onImportHealth={onImportHealthBurn}
         healthImportHint={healthImportHint}
+        wearableActivity={wearableActivity}
         weeklyDeltaKcal={weeklyPlan?.energySummary.weeklyDeltaKcal}
       />
 
@@ -352,13 +414,8 @@ export function DailyHome({
       </>
       )}
 
-      {/* 1 · LIVE */}
       <section
-        className={`rounded-3xl p-4 border shadow-lg transition-colors ${
-          loopStep === 'live'
-            ? 'bg-gradient-to-br from-[#141418] via-[#12121a] to-[#0f0f12] border-[#22c55e]/40 ring-1 ring-[#22c55e]/20'
-            : 'bg-gradient-to-br from-[#141418] via-[#12121a] to-[#0f0f12] border-[#2F2F35]'
-        }`}
+        className={`em-v2-home-live ${loopStep === 'live' || isLive ? 'em-v2-home-live--active' : ''}`}
         aria-label="Paso Live"
       >
         <SectionLabel
@@ -411,14 +468,14 @@ export function DailyHome({
           </p>
         )}
 
-        <button
-          type="button"
-          onClick={onOpenMap}
-          className="mt-2 w-full py-2.5 rounded-xl bg-white/5 border border-white/10 text-[11px] font-semibold text-white/90 active:bg-white/10 flex items-center justify-center gap-1.5"
-        >
-          <MapPin className="w-3.5 h-3.5 text-[#22c55e]" />
-          Ver mapa LIVE {liveCount > 0 ? `· ${liveCount} en vivo` : ''}
-          {cityLabel ? ` · ${cityLabel}` : ''}
+        <button type="button" onClick={onOpenMap} className="em-v2-map-cta w-full mt-2">
+          <span className="em-v2-map-cta__title">
+            {liveCount > 0
+              ? `🟢 ${liveCount} en ${BRAND_COPY.liveMapLabel}`
+              : `Ver ${BRAND_COPY.liveMapLabel}`}
+            {cityLabel ? ` · ${cityLabel}` : ''}
+          </span>
+          <span className="em-v2-map-cta__arrow">Mapa →</span>
         </button>
 
         {isLive && gymSoundLive && (

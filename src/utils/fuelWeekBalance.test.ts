@@ -37,5 +37,25 @@ describe('fuelWeekBalance (fase 94)', () => {
     expect(days[0].consumedKcal).toBe(1800)
     expect(days[0].burnKcal).toBeGreaterThan(0)
     expect(days[0].targetKcal).toBe(2400)
+    expect(days[0].healthBurnKcal).toBe(0)
+  })
+
+  it('adds wearable burn per day when provided', () => {
+    const today = toLocalDateStr()
+    const macros: FuelWeekMacroDay[] = [
+      {
+        label: 'Hoy',
+        date: today,
+        isToday: true,
+        logged: false,
+        kcal: 0,
+        proteinG: 0,
+        carbsG: 0,
+        fatG: 0,
+      },
+    ]
+    const days = buildFuelWeekBalanceDays(macros, [], 2200, 70, { [today]: 420 })
+    expect(days[0].healthBurnKcal).toBe(420)
+    expect(days[0].burnKcal).toBe(0)
   })
 })

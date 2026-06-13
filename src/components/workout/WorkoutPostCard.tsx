@@ -4,11 +4,14 @@ import { WORKOUT_TYPE_LABELS } from '../../data/exerciseLibrary'
 import type { WorkoutPreview } from '../../types'
 import { WorkoutReactionBar } from './WorkoutReactionBar'
 
+const FEED_EXERCISE_PREVIEW = 4
+
 export interface WorkoutPostCardProps {
   preview: WorkoutPreview
   text?: string
   compact?: boolean
   onCopyRoutine?: () => void
+  onShareStory?: () => void
   copyLabel?: string
   postId?: string
   reactions?: Record<string, string[]>
@@ -23,6 +26,7 @@ export function WorkoutPostCard({
   text,
   compact = false,
   onCopyRoutine,
+  onShareStory,
   copyLabel = 'Copiar rutina',
   postId,
   reactions,
@@ -31,7 +35,11 @@ export function WorkoutPostCard({
   onReact,
   showReactions = true,
 }: WorkoutPostCardProps) {
-  const [expanded, setExpanded] = useState(!compact)
+  const exercises = preview.exercises ?? []
+  const hasWorkoutContent = exercises.length > 0 || (preview.exerciseCount ?? 0) > 0
+  const hasMoreExercises = exercises.length > FEED_EXERCISE_PREVIEW
+  const [expanded, setExpanded] = useState(!compact || !hasMoreExercises)
+  const visibleExercises = expanded ? exercises : exercises.slice(0, FEED_EXERCISE_PREVIEW)
   const typeLabel = WORKOUT_TYPE_LABELS[preview.type] || preview.type
 
   return (
@@ -62,21 +70,21 @@ export function WorkoutPostCard({
               )}
             </div>
           </div>
-          {preview.exercises && preview.exercises.length > 0 && (
+          {hasMoreExercises && (
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
               className="p-1.5 rounded-lg bg-white/5 text-[#9CA3AF] shrink-0"
-              aria-label={expanded ? 'Colapsar rutina' : 'Ver rutina'}
+              aria-label={expanded ? 'Colapsar rutina' : 'Ver rutina completa'}
             >
               {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
           )}
         </div>
 
-        {expanded && preview.exercises && preview.exercises.length > 0 && (
+        {visibleExercises.length > 0 && (
           <ul className="mt-3 space-y-1.5 border-t border-white/8 pt-3">
-            {preview.exercises.map((ex) => (
+            {visibleExercises.map((ex) => (
               <li
                 key={ex.name}
                 className="flex items-center justify-between text-[11px] text-white/90"
@@ -85,24 +93,49 @@ export function WorkoutPostCard({
                 <span className="text-[#9CA3AF] shrink-0 tabular-nums">
                   {ex.setCount}×
                   {ex.topWeightKg && ex.topWeightKg > 0 ? ` · ${ex.topWeightKg} kg` : ''}
+                  {ex.setSummary ? ` · ${ex.setSummary}` : ''}
                 </span>
               </li>
             ))}
+            {!expanded && hasMoreExercises && (
+              <li className="text-[10px] text-[#9CA3AF] font-medium pt-0.5">
+                +{exercises.length - FEED_EXERCISE_PREVIEW} ejercicios más
+              </li>
+            )}
           </ul>
         )}
 
-        {text && !compact && (
-          <p className="mt-2 text-[11px] text-[#9CA3AF] leading-snug line-clamp-2">{text}</p>
+        {text && (
+          <p className="mt-2 text-[11px] text-[#9CA3AF] leading-snug line-clamp-3 whitespace-pre-wrap">
+            {text}
+          </p>
         )}
 
-        {onCopyRoutine && preview.exercises && preview.exercises.length > 0 && (
-          <button
-            type="button"
-            onClick={onCopyRoutine}
-            className="mt-3 w-full py-2 rounded-xl border border-[#FF671F]/40 text-[10px] font-bold text-[#FF671F] active:bg-[#FF671F]/10"
-          >
-            📋 {copyLabel}
-          </button>
+        {(onCopyRoutine || onShareStory) && hasWorkoutContent && (
+          <div className="mt-3 flex gap-2">
+            {onCopyRoutine && (
+              <button
+                type="button"
+                onClick={onCopyRoutine}
+                className={`py-2 rounded-xl border border-[#FF671F]/40 text-[10px] font-bold text-[#FF671F] active:bg-[#FF671F]/10 ${
+                  onShareStory ? 'flex-1' : 'w-full'
+                }`}
+              >
+                📋 {copyLabel}
+              </button>
+            )}
+            {onShareStory && (
+              <button
+                type="button"
+                onClick={onShareStory}
+                className={`py-2 rounded-xl border border-[#FFD700]/35 text-[10px] font-bold text-[#FFD700] active:bg-[#FFD700]/10 ${
+                  onCopyRoutine ? 'flex-1' : 'w-full'
+                }`}
+              >
+                📸 Instagram
+              </button>
+            )}
+          </div>
         )}
 
         {showReactions && onReact && postId && (

@@ -26,15 +26,21 @@ import { useEffect, useRef, useImperativeHandle, forwardRef, useMemo, useState }
 import * as L from 'leaflet'
 import '../../utils/leafletIconFix'
 import { toast } from 'sonner'
-import { Crosshair } from 'lucide-react'
+import { ChevronDown, Crosshair } from 'lucide-react'
 import { BRAND_COPY } from '../../constants/brandCopy'
 import { GymPulseMapFilters } from './GymPulseMapFilters'
 import { GymPulseRadar } from './GymPulseRadar'
+import { MapLiveLegend } from './MapLiveLegend'
 import { GymPulsePopupLayer } from './popups/GymPulsePopupLayer'
 import type { GymPulsePopupState } from './gymPulsePopupTypes'
-// Namespace imports avoid minifier name collisions with App.tsx useState bindings in the same chunk (Fn/Mn/Bn overwrite bug).
-import * as MarkerReg from '../../services/gymPulseMarkerRegistry'
-import type { MarkerPool } from '../../services/gymPulseMarkerRegistry'
+import {
+  computeHeatCells,
+  liveMarkerSignature,
+  markerPoolKey,
+  partnerMarkerSignature,
+  pruneMarkerPool,
+  type MarkerPool,
+} from '../../services/gymPulseMarkerRegistry'
 
 import { getDistanceKm } from '../../utils'
 import { filterMapLiveUsers, hasMapCoords } from '../../utils/gymPulseLive'
@@ -257,6 +263,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
   const [devToolsOpen, setDevToolsOpen] = useState(false)
   const [radarSweep, setRadarSweep] = useState(false)
   const [gpsBannerDismissed, setGpsBannerDismissed] = useState(false)
+  const [derbyPanelOpen, setDerbyPanelOpen] = useState(false)
   const mapOpenLoggedRef = useRef(false)
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const mapInstanceRef = useRef<any>(null)
@@ -652,7 +659,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       })
 
       // Fase 107 — density heat halos
-      MarkerReg.computeHeatCells(liveUsers.filter((u: any) => u.lat && u.lng)).forEach((cell) => {
+      computeHeatCells(liveUsers.filter((u: any) => u.lat && u.lng)).forEach((cell) => {
         if (cell.count < 3) return
         try {
           const heat = L.circle([cell.lat, cell.lng], {
@@ -672,6 +679,8 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       // Self marker (in-place update, not in markersRef) — upgraded iconic premium presence
       if (selfMapPos) {
         const isLive = !!selfIsLive;
+        const othersOnMap = liveUsers.length
+        const areaRadiusM = isLive ? (othersOnMap > 0 ? 12000 : 3000) : othersOnMap > 0 ? 9000 : 2500
         const isAmp = (typeof (window as any) !== 'undefined' && (window as any).__selfAmplified) || false; // lightweight signal from parent if needed; we also accept via future prop
         const liveClass = isLive ? ' live-self iconic-self' : ' iconic-self';
         const size = isLive ? 34 : 30;
@@ -696,12 +705,12 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         }
         if (!areaCircleRef.current) {
           areaCircleRef.current = L.circle([selfMapPos.lat, selfMapPos.lng], {
-            radius: isLive ? 12000 : 9000, color: '#22c55e', weight: isLive ? 1.5 : 0.8, fillColor: '#22c55e', fillOpacity: isLive ? 0.09 : 0.05, opacity: isLive ? 0.35 : 0.2,
+            radius: areaRadiusM, color: '#22c55e', weight: isLive ? 1.5 : 0.8, fillColor: '#22c55e', fillOpacity: isLive ? 0.09 : 0.05, opacity: isLive ? 0.35 : 0.2,
             className: isLive ? 'self-area-pulse' : ''
           }).addTo(mapInstanceRef.current)
         } else {
           areaCircleRef.current.setLatLng([selfMapPos.lat, selfMapPos.lng])
-          areaCircleRef.current.setStyle({ radius: isLive ? 12000 : 9000, weight: isLive ? 1.5 : 0.8, fillOpacity: isLive ? 0.09 : 0.05, opacity: isLive ? 0.35 : 0.2 })
+          areaCircleRef.current.setStyle({ radius: areaRadiusM, weight: isLive ? 1.5 : 0.8, fillOpacity: isLive ? 0.09 : 0.05, opacity: isLive ? 0.35 : 0.2 })
         }
       } else if (selfMarkerRef.current && mapInstanceRef.current) {
         try { mapInstanceRef.current.removeLayer(selfMarkerRef.current) } catch {}
@@ -720,7 +729,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           const count = u.clusterCount || 2
           const size = count >= 10 ? 44 : count >= 5 ? 40 : 36
           const clusterHtml = MarkerHtml.buildIconicClusterMarkerHtml(count)
-          const key = MarkerReg.markerPoolKey('cluster', u.clusterId ?? u.id)
+          const key = markerPoolKey('cluster', u.clusterId ?? u.id)
           const icon = L.divIcon({
             html: clusterHtml,
             className: 'iconic-cluster',
@@ -751,14 +760,14 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           },
           { isBond, size }
         )
-        const key = MarkerReg.markerPoolKey('live', u.id)
+        const key = markerPoolKey('live', u.id)
         const icon = L.divIcon({
           html: iconHtml,
           className: 'iconic-live-marker',
           iconSize: [size, size],
           iconAnchor: [size / 2, size / 2],
         })
-        upsertPooledMarker(key, u.lat, u.lng, icon, MarkerReg.liveMarkerSignature(u), () => {
+        upsertPooledMarker(key, u.lat, u.lng, icon, liveMarkerSignature(u), () => {
           setMapPopup({ kind: 'live', user: u })
         })
       })
@@ -770,7 +779,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           const liveAtGym = LocalNetwork.countLiveAtGym(allLive, partner.id)
           const size = 30
           const html = MarkerHtml.buildPartnerMarkerHtml({ logo, liveAtGym, size })
-          const key = MarkerReg.markerPoolKey('partner', partner.id)
+          const key = markerPoolKey('partner', partner.id)
           const icon = L.divIcon({
             html,
             className: 'partner-marker',
@@ -782,7 +791,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
             partner.lat,
             partner.lng,
             icon,
-            MarkerReg.partnerMarkerSignature({ ...partner, liveAtGym }),
+            partnerMarkerSignature({ ...partner, liveAtGym }),
             () => {
               const checkedIn = allLive
                 .filter((lu: any) => lu.gymCheckIn?.gymId === partner.id)
@@ -804,7 +813,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         })
       }
 
-      MarkerReg.pruneMarkerPool(pool, activeKeys, (m) => {
+      pruneMarkerPool(pool, activeKeys, (m) => {
         try { map.removeLayer(m) } catch { /* ignore */ }
       })
 
@@ -1105,6 +1114,14 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     return counts
   }, [liveTrainingNow])
 
+  const othersLiveCount = useMemo(
+    () =>
+      (liveTrainingNow || []).filter(
+        (u: any) => u.trainingNow && hasMapCoords(u) && !isSelfLiveUser(u, selfUserId)
+      ).length,
+    [liveTrainingNow, selfUserId]
+  )
+
   // Keep map crisp on container size changes (tab switch, keyboard, parent layout, orientation, form open/close).
   // Prevents "map se descuadra" / tiles misaligned / wrong center / black areas after any layout shift.
   // Observe the container as soon as it exists; the callback safely checks for mapInstance (which may be created slightly later).
@@ -1149,6 +1166,17 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
     'Concon': '#a855f7',
     default: '#eab308'
   }
+
+  const mapZoneCities = ['Viña del Mar', 'Santiago', 'Valparaíso', 'Concon'] as const
+  const zoneFiltersForPanel = useMemo(
+    () =>
+      mapZoneCities.map((city) => ({
+        city,
+        color: zoneColors[city] || zoneColors.default,
+        count: zoneLiveCounts[city] || 0,
+      })),
+    [zoneLiveCounts]
+  )
 
   const selfOnMap = resolveSelfMapPosition(userLocation, liveTrainingNow || [], selfUserId)
   const showGpsBanner = !selfOnMap && !gpsBannerDismissed
@@ -1286,6 +1314,9 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
           onShowOnlyNetworkChange={onShowOnlyNetworkChange}
           onShowPartnersChange={onShowPartnersChange}
           onMapMyGymOnlyChange={onMapMyGymOnlyChange}
+          zoneFilters={isTabFill ? zoneFiltersForPanel : undefined}
+          selectedMapZone={selectedMapZone}
+          onSelectedMapZoneChange={onSelectedMapZoneChange}
         />
       </div>
 
@@ -1305,14 +1336,47 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
         <Crosshair size={14} />
       </button>
 
-      {/* Zonas — solo fullscreen; en embebido van al panel de filtros en fase posterior */}
-      {!isEmbedded && (
+      {/* Leyenda — pestaña Mapa LIVE */}
+      {isTabFill && (
+        <div className="absolute left-2 bottom-[5.25rem] z-[1990] max-w-[11rem]">
+          <MapLiveLegend
+            selfIsLive={selfIsLive}
+            othersLiveCount={othersLiveCount}
+            compact
+            collapsible
+          />
+        </div>
+      )}
+
+      {/* Sin nadie más en vivo — solo si TÚ tampoco estás LIVE (evita popup central redundante) */}
+      {isTabFill && othersLiveCount === 0 && !selfIsLive && (
+        <div className="absolute inset-x-8 top-[42%] z-[1500] pointer-events-none flex justify-center">
+          <div className="rounded-2xl border border-[#22c55e]/25 bg-[#0D0D10]/88 backdrop-blur-sm px-4 py-3 max-w-[260px] text-center shadow-xl">
+            <p className="text-[11px] font-bold text-white/95">{BRAND_COPY.liveMap.emptyOverlayTitle}</p>
+            <p className="text-[10px] text-[#9CA3AF] mt-1.5 leading-snug">{BRAND_COPY.liveMap.emptyOverlayBody}</p>
+          </div>
+        </div>
+      )}
+
+      {isTabFill && selfIsLive && othersLiveCount === 0 && (
+        <div className="absolute left-1/2 -translate-x-1/2 bottom-[4.75rem] z-[1995] pointer-events-none max-w-[92%]">
+          <div className="rounded-full border border-[#22c55e]/30 bg-[#0D0D10]/88 px-3 py-1.5 text-[9px] text-[#86efac] text-center shadow-md backdrop-blur-sm">
+            {BRAND_COPY.liveMap.soloLiveHint}
+          </div>
+        </div>
+      )}
+
+      {/* Zonas — fullscreen overlay; en pestaña Mapa van al panel Filtros */}
+      {!isEmbedded && !isTabFill && (
       <div
         className={`absolute left-2 z-[2000] flex flex-col gap-1.5 max-h-[40%] overflow-y-auto ${
           cityDerby || cityChallenge ? (selfIsLive && isTabFill ? 'top-32' : 'top-28') : selfIsLive && isTabFill ? 'top-20' : 'top-10'
         }`}
       >
-        {['Viña del Mar', 'Santiago', 'Valparaíso', 'Concon'].map(city => {
+        <div className="text-[8px] uppercase tracking-wider text-white/40 px-1 font-semibold">
+          {BRAND_COPY.liveMap.legendZones}
+        </div>
+        {mapZoneCities.map(city => {
           const col = zoneColors[city] || zoneColors.default
           const isActive = selectedMapZone === city
           const cnt = zoneLiveCounts[city] || 0
@@ -1377,7 +1441,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
               <span className="text-[10px] font-semibold text-[#22c55e]">{BRAND_COPY.liveMap.liveBanner}</span>
             </div>
             <p className="text-[9px] text-[#9CA3AF] mt-1 leading-snug">
-              Usa <strong className="text-white/90">Cerca</strong> abajo para ver quién está a 2 km.
+              Pulsa <strong className="text-white/90">Buscar 2 km</strong> abajo para escanear tu radio.
             </p>
           </div>
         </div>
@@ -1401,9 +1465,39 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
             : zonePhase === 'armistice'
               ? 'border-[#60a5fa]/35'
               : 'border-[#FF671F]/45'
+        const derbyCollapsed = isTabFill && !derbyPanelOpen
         return (
         <div className="absolute top-2 left-1/2 -translate-x-1/2 z-[2100] max-w-[92%] w-full max-w-md">
-          <div className={`rounded-2xl bg-[#0D0D10] border px-3 py-2 shadow-lg pointer-events-auto ${borderClass}`}>
+          {derbyCollapsed ? (
+            <button
+              type="button"
+              onClick={() => setDerbyPanelOpen(true)}
+              className={`w-full rounded-2xl bg-[#0D0D10]/95 border px-3 py-2 shadow-lg pointer-events-auto flex items-center gap-2 text-left active:scale-[0.99] ${borderClass}`}
+              aria-expanded={false}
+            >
+              <span className="text-[9px] uppercase tracking-wider text-[#FF671F] font-bold shrink-0">
+                {BRAND_COPY.copaZona.weeklyLabel}
+              </span>
+              <span className="text-[10px] text-white/90 font-semibold flex-1 truncate">
+                {DERBY_HOME.label} {cityDerby.home.indexPer100k} · {DERBY_AWAY.label} {cityDerby.away.indexPer100k}
+              </span>
+              {selfIsLive && (
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse shrink-0" />
+              )}
+              <ChevronDown size={14} className="text-white/50 shrink-0" aria-hidden />
+            </button>
+          ) : (
+          <div className={`relative rounded-2xl bg-[#0D0D10] border px-3 py-2 shadow-lg pointer-events-auto ${borderClass}`}>
+            {isTabFill && (
+              <button
+                type="button"
+                onClick={() => setDerbyPanelOpen(false)}
+                className="absolute top-2 right-2 z-10 text-white/40 text-xs px-1 active:text-white"
+                aria-label="Minimizar Copa Zona"
+              >
+                ✕
+              </button>
+            )}
             {selfIsLive && zoneScoring && (
               <div className="flex items-center justify-center gap-1.5 mb-1.5 pb-1.5 border-b border-[#22c55e]/20">
                 <span className="inline-block w-2 h-2 rounded-full bg-[#22c55e] animate-pulse shrink-0" />
@@ -1449,6 +1543,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
               </button>
             )}
           </div>
+          )}
         </div>
         )
       })()}

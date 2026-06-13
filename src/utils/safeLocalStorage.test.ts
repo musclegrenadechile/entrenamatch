@@ -1,9 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   loadPersistedStringIdSet,
+  seenLiveJoinsStorageKey,
   pruneIdArray,
   pruneSeenIdMap,
   pruneStringIdList,
+  SEEN_LIVE_JOINS_KEY,
   SEEN_LIVE_USERS_KEY,
   trimSetToMax,
 } from './safeLocalStorage'
@@ -52,5 +54,10 @@ describe('safeLocalStorage pruning', () => {
     })
     storage[SEEN_LIVE_USERS_KEY] = JSON.stringify(['u1', 'u2', 'u3'])
     expect(loadPersistedStringIdSet(SEEN_LIVE_USERS_KEY)).toEqual(new Set(['u1', 'u2', 'u3']))
+  })
+
+  it('seenLiveJoinsStorageKey scopes dedup per account', () => {
+    expect(seenLiveJoinsStorageKey('uid-abc')).toBe(`${SEEN_LIVE_JOINS_KEY}_uid-abc`)
+    expect(seenLiveJoinsStorageKey(null)).toBe(SEEN_LIVE_JOINS_KEY)
   })
 })

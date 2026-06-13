@@ -11,10 +11,18 @@ import {
   orderBy,
   query,
   updateDoc,
+  where,
   type Firestore,
 } from 'firebase/firestore'
 import { getFunctions, httpsCallable } from 'firebase/functions'
+import app from './firebase'
 import type { Report } from '../types'
+
+const FUNCTIONS_REGION = 'us-central1'
+
+function getCallableFunctions() {
+  return getFunctions(app, FUNCTIONS_REGION)
+}
 
 const APP_ADMINS = 'appAdmins'
 const REPORTS = 'reports'
@@ -161,15 +169,118 @@ export async function updateReportStatus(
   })
 }
 
+export type AdminModerateAction = 'end_live' | 'suspend' | 'unsuspend'
+
+export type AdminAuditRecord = {
+  id: string
+  action: string
+  targetUserId?: string
+  targetName?: string
+  reason?: string
+  adminId?: string
+  createdAt: number
+}
+
+export type SuspendedProfileRecord = {
+  id: string
+  name: string
+  city?: string
+  suspendReason?: string
+  suspendedAt?: number
+}
+
+export async function adminModerateUser(
+  targetUserId: string,
+  action: AdminModerateAction,
+  reason?: string
+): Promise<{ ok: boolean; message?: string }> {
+  const call = httpsCallable<
+    { targetUserId: string; action: AdminModerateAction; reason?: string },
+    { ok: boolean; message?: string }
+  >(getCallableFunctions(), 'adminModerateUser')
+  const res = await call({ targetUserId, action, reason })
+  return res.data
+}
+
+export function attachAdminAuditListener(
+  db: Firestore,
+  onUpdate: (rows: AdminAuditRecord[]) => void
+): () => void {
+  const q = query(collection(db, 'adminAudit'), orderBy('createdAt', 'desc'), limit(80))
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list: AdminAuditRecord[] = []
+      snap.forEach((d) => {
+        const data = d.data() as Record<string, unknown>
+        const createdAt =
+          typeof data.createdAt === 'object' &&
+          data.createdAt &&
+          'toMillis' in (data.createdAt as object) &&
+          typeof (data.createdAt as { toMillis: () => number }).toMillis === 'function'
+            ? (data.createdAt as { toMillis: () => number }).toMillis()
+            : Number(data.createdAt) || Date.now()
+        list.push({
+          id: d.id,
+          action: String(data.action || ''),
+          targetUserId: typeof data.targetUserId === 'string' ? data.targetUserId : undefined,
+          targetName: typeof data.targetName === 'string' ? data.targetName : undefined,
+          reason: typeof data.reason === 'string' ? data.reason : undefined,
+          adminId: typeof data.adminId === 'string' ? data.adminId : undefined,
+          createdAt,
+        })
+      })
+      onUpdate(list)
+    },
+    () => onUpdate([])
+  )
+}
+
+export function attachSuspendedProfilesListener(
+  db: Firestore,
+  onUpdate: (rows: SuspendedProfileRecord[]) => void
+): () => void {
+  const q = query(
+    collection(db, 'profiles'),
+    where('accountStatus', '==', 'suspended'),
+    limit(100)
+  )
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list: SuspendedProfileRecord[] = []
+      snap.forEach((d) => {
+        const data = d.data() as Record<string, unknown>
+        const suspendedAt =
+          typeof data.suspendedAt === 'object' &&
+          data.suspendedAt &&
+          'toMillis' in (data.suspendedAt as object) &&
+          typeof (data.suspendedAt as { toMillis: () => number }).toMillis === 'function'
+            ? (data.suspendedAt as { toMillis: () => number }).toMillis()
+            : undefined
+        list.push({
+          id: d.id,
+          name: String(data.name || d.id),
+          city: typeof data.city === 'string' ? data.city : undefined,
+          suspendReason: typeof data.suspendReason === 'string' ? data.suspendReason : undefined,
+          suspendedAt,
+        })
+      })
+      list.sort((a, b) => (b.suspendedAt || 0) - (a.suspendedAt || 0))
+      onUpdate(list)
+    },
+    () => onUpdate([])
+  )
+}
+
 export async function adminDeleteUserAccount(
   targetUserId: string,
   reason?: string
 ): Promise<{ ok: boolean; message?: string }> {
-  const fn = getFunctions()
   const call = httpsCallable<
     { targetUserId: string; reason?: string },
     { ok: boolean; message?: string }
-  >(fn, 'adminDeleteUserAccount')
+  >(getCallableFunctions(), 'adminDeleteUserAccount')
   const res = await call({ targetUserId, reason })
   return res.data
 }
@@ -199,11 +310,10 @@ export async function adminRecalculateSyncStreaks(opts?: {
   apply?: boolean
   targetUserId?: string
 }): Promise<SyncStreakRecalcResult> {
-  const fn = getFunctions()
   const call = httpsCallable<
     { apply?: boolean; targetUserId?: string },
     SyncStreakRecalcResult
-  >(fn, 'adminRecalculateSyncStreaks')
+  >(getCallableFunctions(), 'adminRecalculateSyncStreaks')
   const res = await call({
     apply: opts?.apply === true,
     targetUserId: opts?.targetUserId,

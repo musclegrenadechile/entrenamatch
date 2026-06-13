@@ -86,6 +86,30 @@ export async function saveFuelProfile(
   )
 }
 
+export function parseFuelLogDoc(
+  docSnap: { id: string; data: () => Record<string, unknown> },
+  fallbackDate: string
+): FuelLogEntry {
+  const d = docSnap.data()
+  return {
+    id: docSnap.id,
+    userId: String(d.userId || ''),
+    date: String(d.date || fallbackDate),
+    mealLabel: String(d.mealLabel || 'Comida'),
+    kcal: Number(d.kcal) || 0,
+    proteinG: Number(d.proteinG) || 0,
+    carbsG: Number(d.carbsG) || 0,
+    fatG: Number(d.fatG) || 0,
+    photoUrl: d.photoUrl as string | undefined,
+    source: (d.source as FuelLogEntry['source']) || 'manual',
+    createdAt: Number(d.createdAt) || Date.now(),
+  }
+}
+
+export function sortFuelLogsNewestFirst(entries: FuelLogEntry[]): FuelLogEntry[] {
+  return [...entries].sort((a, b) => b.createdAt - a.createdAt)
+}
+
 export async function fetchFuelLogsForDate(
   db: Firestore,
   userId: string,
@@ -94,32 +118,40 @@ export async function fetchFuelLogsForDate(
   const { collection, query, where, getDocs, orderBy, limit } = await import(
     'firebase/firestore'
   )
-  const q = query(
-    collection(db, 'fuelLogs'),
-    where('userId', '==', userId),
-    where('date', '==', date),
-    orderBy('createdAt', 'desc'),
-    limit(20)
-  )
-  const snap = await getDocs(q)
-  const list: FuelLogEntry[] = []
-  snap.forEach((docSnap) => {
-    const d = docSnap.data()
-    list.push({
-      id: docSnap.id,
-      userId: String(d.userId || ''),
-      date: String(d.date || date),
-      mealLabel: String(d.mealLabel || 'Comida'),
-      kcal: Number(d.kcal) || 0,
-      proteinG: Number(d.proteinG) || 0,
-      carbsG: Number(d.carbsG) || 0,
-      fatG: Number(d.fatG) || 0,
-      photoUrl: d.photoUrl as string | undefined,
-      source: (d.source as FuelLogEntry['source']) || 'manual',
-      createdAt: Number(d.createdAt) || Date.now(),
-    })
-  })
-  return list
+  try {
+    const q = query(
+      collection(db, 'fuelLogs'),
+      where('userId', '==', userId),
+      where('date', '==', date),
+      orderBy('createdAt', 'desc'),
+      limit(20)
+    )
+    const snap = await getDocs(q)
+    return snap.docs.map((docSnap) => parseFuelLogDoc(docSnap, date))
+  } catch (indexedErr) {
+    console.warn('fetchFuelLogsForDate indexed query failed, using fallback', indexedErr)
+    try {
+      const q = query(
+        collection(db, 'fuelLogs'),
+        where('userId', '==', userId),
+        where('date', '==', date),
+        limit(40)
+      )
+      const snap = await getDocs(q)
+      return sortFuelLogsNewestFirst(snap.docs.map((docSnap) => parseFuelLogDoc(docSnap, date))).slice(
+        0,
+        20
+      )
+    } catch {
+      const q = query(collection(db, 'fuelLogs'), where('userId', '==', userId), limit(120))
+      const snap = await getDocs(q)
+      return sortFuelLogsNewestFirst(
+        snap.docs
+          .map((docSnap) => parseFuelLogDoc(docSnap, date))
+          .filter((entry) => entry.date === date)
+      ).slice(0, 20)
+    }
+  }
 }
 
 export async function saveFuelLog(

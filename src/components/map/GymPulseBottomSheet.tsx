@@ -72,7 +72,8 @@ export function GymPulseBottomSheet({
         <ul className="gym-pulse-bottom-sheet__list">
           {sorted.map((u) => {
             const inNet = !!syncBonds[u.id]
-            const minsLive = Math.max(0, Math.floor((Date.now() - (u.trainingNowSince || Date.now())) / 60000))
+            const since = u.trainingNowSince && u.trainingNowSince > 0 ? u.trainingNowSince : Date.now()
+            const minsLive = Math.max(0, Math.floor((Date.now() - since) / 60000))
             const distLabel = formatLiveDistanceKm(u.distance)
             const gymSound = getPublicGymSound({
               trainingNow: true,

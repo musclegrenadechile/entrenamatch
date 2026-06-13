@@ -5,6 +5,7 @@ export function isEchoPost(post: FeedPostRow): boolean {
   return (
     text.includes('HIGHLIGHT DE ENTRENASYNC') ||
     text.includes('Destacado de Sesión Sync') ||
+    text.includes('Vi un EntrenaSync') ||
     text.includes('HIGHLIGHT') ||
     text.includes('Fui testigo')
   )
@@ -80,7 +81,7 @@ export function getAutoPostSummary(post: FeedPostRow, ownerName?: string): strin
     case 'dailyPulse':
       return `${who} completó un reto diario`
     case 'echo':
-      return `${who} — highlight de la red`
+      return `${who} vio un EntrenaSync en el mapa`
     default:
       return (post.text || '').slice(0, 72)
   }

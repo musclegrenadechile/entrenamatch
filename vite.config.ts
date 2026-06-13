@@ -37,6 +37,7 @@ export default defineConfig({
       '@capacitor/push-notifications',
       '@capacitor/share',
       '@capacitor/filesystem',
+      ...(process.env.CAPACITOR ? ['@capgo/capacitor-health'] : []),
     ],
   },
 

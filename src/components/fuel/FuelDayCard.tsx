@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Pencil, Trash2 } from 'lucide-react'
 import type { FuelDayTotals, FuelLogEntry, FuelProfile } from '../../types'
 import type { FuelWeekDay } from '../../services/fuel'
@@ -5,6 +6,7 @@ import type { DailyEnergyBalance } from '../../domain/fuelBalance'
 import type { FuelWeekBalanceDay } from '../../utils/fuelWeekBalance'
 import { getFuelCoachingTip, getFuelMealSuggestion } from '../../utils/fuelCalculator'
 import { FuelWeekBalanceChart } from './FuelWeekBalanceChart'
+import type { WearableDayActivity } from '../../services/wearableSync'
 
 export interface FuelDayCardProps {
   profile: FuelProfile | null
@@ -22,6 +24,7 @@ export interface FuelDayCardProps {
   deletingLogId?: string | null
   onImportHealth?: () => void | Promise<void>
   healthImportHint?: string
+  wearableActivity?: WearableDayActivity | null
   weeklyDeltaKcal?: number
 }
 
@@ -52,8 +55,23 @@ export function FuelDayCard({
   deletingLogId,
   onImportHealth,
   healthImportHint,
+  wearableActivity = null,
   weeklyDeltaKcal,
 }: FuelDayCardProps) {
+  const [importingHealth, setImportingHealth] = useState(false)
+
+  const handleImportHealth = async () => {
+    if (!onImportHealth || importingHealth) return
+    setImportingHealth(true)
+    try {
+      await onImportHealth()
+    } catch {
+      /* parent shows toast */
+    } finally {
+      setImportingHealth(false)
+    }
+  }
+
   if (!profile) {
     return (
       <div className="rounded-3xl p-4 bg-gradient-to-br from-[#1a1520] via-[#141418] to-[#0f0f12] border border-[#a855f7]/25">
@@ -213,6 +231,15 @@ export function FuelDayCard({
       {energyBalance?.healthBurnKcal ? (
         <p className="text-[10px] text-[#6366f1] mb-2 leading-snug bg-[#6366f1]/8 rounded-xl px-2.5 py-1.5 border border-[#6366f1]/20">
           ⌚ Wearable · +{energyBalance.healthBurnKcal} kcal en el balance
+          {wearableActivity && wearableActivity.steps > 0
+            ? ` · ${wearableActivity.steps.toLocaleString('es-CL')} pasos`
+            : ''}
+          {wearableActivity && wearableActivity.exerciseMinutes > 0
+            ? ` · ${wearableActivity.exerciseMinutes} min ejercicio`
+            : ''}
+          {wearableActivity && wearableActivity.workoutCount > 0
+            ? ` · ${wearableActivity.workoutCount} entreno${wearableActivity.workoutCount === 1 ? '' : 's'}`
+            : ''}
         </p>
       ) : null}
 
@@ -298,10 +325,11 @@ export function FuelDayCard({
       {onImportHealth && (
         <button
           type="button"
-          onClick={() => onImportHealth()}
-          className="mt-2 w-full py-2 rounded-xl border border-[#6366f1]/35 bg-[#6366f1]/10 text-[#a5b4fc] text-[10px] font-bold"
+          disabled={importingHealth}
+          onClick={() => { void handleImportHealth() }}
+          className="mt-2 w-full py-2 rounded-xl border border-[#6366f1]/35 bg-[#6366f1]/10 text-[#a5b4fc] text-[10px] font-bold disabled:opacity-50"
         >
-          ⌚ Importar desde wearable
+          {importingHealth ? '⌚ Importando…' : '⌚ Importar desde wearable'}
         </button>
       )}
       {healthImportHint && (

@@ -231,6 +231,113 @@ function register(deps) {
     }
   });
 
+  const LIVE_CLEAR_FIELDS = {
+    trainingNow: false,
+    trainingNowSince: null,
+    gymCheckIn: null,
+    spotifyNowPlaying: null,
+    spotifyShareLive: false,
+    gymSoundAnthem: null,
+    liveMotionScore: null,
+    liveMotionAt: null,
+    liveMotionIdle: null,
+    liveActivityState: null,
+  };
+
+  const adminModerateUser = functions.https.onCall(async (data, context) => {
+    await assertAppAdmin(db, context.auth && context.auth.uid);
+
+    const targetUserId = data && data.targetUserId ? String(data.targetUserId).trim() : '';
+    const action = data && data.action ? String(data.action).trim() : '';
+    const reason = data && data.reason ? String(data.reason).slice(0, 500) : '';
+
+    if (!targetUserId) {
+      throw new functions.https.HttpsError('invalid-argument', 'targetUserId requerido.');
+    }
+    if (!['end_live', 'suspend', 'unsuspend'].includes(action)) {
+      throw new functions.https.HttpsError('invalid-argument', 'action inválida.');
+    }
+    if (targetUserId === context.auth.uid) {
+      throw new functions.https.HttpsError('failed-precondition', 'No puedes moderarte a ti mismo.');
+    }
+    if (targetUserId.startsWith(BETA_BOT_PREFIX) && action !== 'end_live') {
+      throw new functions.https.HttpsError('failed-precondition', 'No se pueden suspender personas beta.');
+    }
+
+    const targetAdmin = await db.collection(APP_ADMINS).doc(targetUserId).get();
+    if (targetAdmin.exists && action === 'suspend') {
+      throw new functions.https.HttpsError('failed-precondition', 'No se puede suspender otro administrador.');
+    }
+
+    const profileRef = db.collection('profiles').doc(targetUserId);
+    const profileSnap = await profileRef.get();
+    const profileName = profileSnap.exists ? profileSnap.data().name : targetUserId;
+
+    const patch = {
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    let auditAction = action;
+    let message = '';
+
+    if (action === 'end_live') {
+      Object.assign(patch, LIVE_CLEAR_FIELDS);
+      message = `LIVE apagado para ${profileName}.`;
+    } else if (action === 'suspend') {
+      Object.assign(patch, LIVE_CLEAR_FIELDS, {
+        accountStatus: 'suspended',
+        suspendedAt: admin.firestore.FieldValue.serverTimestamp(),
+        suspendedBy: context.auth.uid,
+        suspendReason: reason || null,
+      });
+      try {
+        await admin.auth().updateUser(targetUserId, { disabled: true });
+      } catch (e) {
+        if (e.code !== 'auth/user-not-found') {
+          console.warn('adminModerateUser disable auth', targetUserId, e.message);
+        }
+      }
+      auditAction = 'suspend_user';
+      message = `${profileName} suspendido/a.`;
+    } else if (action === 'unsuspend') {
+      Object.assign(patch, {
+        accountStatus: 'active',
+        suspendedAt: null,
+        suspendedBy: null,
+        suspendReason: null,
+      });
+      try {
+        await admin.auth().updateUser(targetUserId, { disabled: false });
+      } catch (e) {
+        if (e.code !== 'auth/user-not-found') {
+          console.warn('adminModerateUser enable auth', targetUserId, e.message);
+        }
+      }
+      auditAction = 'unsuspend_user';
+      message = `${profileName} reactivado/a.`;
+    }
+
+    await profileRef.set(patch, { merge: true });
+
+    try {
+      await db.collection('livePresence').doc(targetUserId).delete();
+    } catch (e) {
+      console.warn('adminModerateUser livePresence', targetUserId, e.message);
+    }
+
+    await db.collection('adminAudit').add({
+      action: auditAction,
+      targetUserId,
+      targetName: profileName,
+      reason: reason || null,
+      adminId: context.auth.uid,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    console.log('adminModerateUser', context.auth.uid, action, targetUserId);
+    return { ok: true, message };
+  });
+
   const adminRecalculateSyncStreaks = functions.https.onCall(async (data, context) => {
     await assertAppAdmin(db, context.auth && context.auth.uid);
 
@@ -265,6 +372,7 @@ function register(deps) {
 
   return {
     adminDeleteUserAccount,
+    adminModerateUser,
     deleteMyAccount,
     grantCommunityAdmin,
     bootstrapAppAdminHttp,

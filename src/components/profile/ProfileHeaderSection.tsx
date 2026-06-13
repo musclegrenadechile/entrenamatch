@@ -5,6 +5,7 @@ import type { CurrentUser } from '../../types'
 import { ProfileSectionNav } from './ProfileSectionNav'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
+import { BRAND_COPY } from '../../constants/brandCopy'
 
 export function ProfileHeaderSection(props: ProfileTabProps) {
   const {
@@ -32,7 +33,6 @@ export function ProfileHeaderSection(props: ProfileTabProps) {
 
   return (
     <>
-{/* Daily Pulse Banner - strong reason to engage immediately on open */}
 {showDailyPulseBanner && dailyPulse && (
   <motion.div 
     initial={{ opacity: 0, y: -10, scale: 0.98 }}
@@ -43,7 +43,9 @@ export function ProfileHeaderSection(props: ProfileTabProps) {
   >
     <div className="text-2xl">🌅</div>
     <div className="flex-1">
-      <div className="text-sm font-bold text-[#FF671F] tracking-tight">¡GymPulse Diario activado!</div>
+      <div className="text-sm font-bold text-[#FF671F] tracking-tight">
+        {BRAND_COPY.profile.dailyChallengeActivated}
+      </div>
       <div className="text-xs text-[#9CA3AF]">Streak {dailyPulse.trainingStreak}d • {dailyPulse.currentChallenge?.title}</div>
     </div>
     <button 
@@ -53,17 +55,17 @@ export function ProfileHeaderSection(props: ProfileTabProps) {
       }} 
       className="text-xs px-3.5 py-1.5 bg-[#FF671F] text-black rounded-full font-bold active:bg-[#E55A1A] active:scale-95 transition-transform shadow"
     >
-      Ver Pulso
+      {BRAND_COPY.profile.seeDailyChallenge}
     </button>
   </motion.div>
 )}
-{/* Sticky header with escape hatches - polished aesthetics */}
 <div className="sticky top-0 z-20 bg-[#0D0D10]/95 backdrop-blur-xl border-b border-[#2F2F35] px-4 py-3 flex items-center justify-between">
   <div className="flex items-center gap-2">
     <div>
-      <div className="section-header text-xl">Tu legado 🔥</div>
-      <div className="text-[10px] text-[#9CA3AF] -mt-1">Tu red de rendimiento • comparte y crece</div>
-      {!isDemoMode && <div className="live-pill !text-[8px] !py-0.5 !mt-0.5">REAL • Firebase</div>}
+      <div className="section-header text-xl">{BRAND_COPY.profile.headerTitle}</div>
+      <div className="text-[10px] text-[#9CA3AF] -mt-1">
+        {BRAND_COPY.profile.headerSubtitle}
+      </div>
     </div>
     {!isDemoMode && (
       <button onClick={async () => { 

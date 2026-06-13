@@ -22,9 +22,13 @@ describe('profileProgressive (fase 88)', () => {
     expect(isProfileProgressiveMode(user)).toBe(false)
   })
 
-  it('home day one mode for accounts <24h', () => {
-    const user = { legalConsents: { acceptedAt: Date.now() - 12 * 60 * 60 * 1000 } }
-    expect(isHomeDayOneMode(user)).toBe(true)
+  it('home compact mode for accounts under 3 days', () => {
+    const day1 = { legalConsents: { acceptedAt: Date.now() - 12 * 60 * 60 * 1000 } }
+    const day2 = { legalConsents: { acceptedAt: Date.now() - 2 * 24 * 60 * 60 * 1000 } }
+    const day4 = { legalConsents: { acceptedAt: Date.now() - 4 * 24 * 60 * 60 * 1000 } }
+    expect(isHomeDayOneMode(day1)).toBe(true)
+    expect(isHomeDayOneMode(day2)).toBe(true)
+    expect(isHomeDayOneMode(day4)).toBe(false)
   })
 
   it('hides coach/shop until 2 syncs or 7 days', () => {

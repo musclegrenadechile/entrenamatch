@@ -255,6 +255,7 @@ flowchart TB
 
 | Tema | Entregable |
 |------|------------|
+| **Marketing GTM** | **Oleada 331–340** — ver `PREPARACION_FASE_MARKETING_GTM.md` |
 | Pagos | Mercado Pago producción + checkout marketplace + fee split |
 | Coach | PT onboarding self-service + pin mapa “en camino” |
 | IA | Icebreakers / coach LLM (fuera de scope oleada 7) |

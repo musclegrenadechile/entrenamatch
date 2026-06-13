@@ -43,8 +43,15 @@ Suggested screenshots (generate or take from emulator/device with current build)
 Prompt example for mock: "Android phone screenshot of EntrenaMatch app, Explore tab, modern dark UI teal accents, header 'Explorar' '12 disponibles ahora cerca de ti' + 'en vivo' lastSync, real profiles recs 'Más compatibles (reales primero)' with en vivo badge, cards showing name age city REAL badge distance compat% bio chips, clean premium fitness social app style, realistic"
 
 ### 4. Other
-- Short description: "El match del movimiento. Elige perfiles reales cerca de ti, chatea en vivo y coordina sesiones de entrenamiento. Solo 18+."
-- Full description: Expand with current features (real cross-device, en vivo, etc.), benefits for fitness community in Chile.
+- **Short description (80 chars, ES v0.1.340):** `Quien entrena cerca, ahora. Match, chat y EntrenaSync. Fútbol, pádel, gym y más. +18.`
+- **Full description — párrafo 1 (ES v0.1.340):**
+  ```
+  EntrenaMatch es la red donde ves quién entrena ahora cerca de ti — en la cancha, la pista, el gym o la costanera — y puedes conectar con personas compatibles por deporte, horario e intensidad.
+
+  No es dating. Es entrenamiento en serio: Mapa LIVE, match por compatibilidad y EntrenaSync para moverse juntos con minutos que suman a tu Comunidad y la Copa Zona de tu región.
+
+  Piloto en Chile (Viña del Mar y Santiago). Beta cerrada.
+  ```
 - Category: Social / Health & Fitness.
 - Content rating: 18+ (dating, social, fitness).
 - Contact: soporte@entrenamatch.app

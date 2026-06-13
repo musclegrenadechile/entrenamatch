@@ -457,7 +457,7 @@ export function SyncDuelSummary({
               onClick={onReplay}
               className="sync-duel-card__btn sync-duel-card__btn--ghost"
             >
-              Ver timeline
+              Ver resumen de la sesión
             </button>
           )}
           <button

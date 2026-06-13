@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   ChevronDown,
   ChevronUp,
@@ -646,7 +647,7 @@ export function EntrenoDeHoyModal({
     onClose()
   }
 
-  return (
+  const modal = (
     <div className="gym-log-overlay">
       <div className="gym-log-sheet">
         <header className="gym-log-header">
@@ -1011,6 +1012,8 @@ export function EntrenoDeHoyModal({
       </div>
     </div>
   )
+
+  return typeof document !== 'undefined' ? createPortal(modal, document.body) : modal
 }
 
 /** @deprecated use EntrenoDeHoyModal */

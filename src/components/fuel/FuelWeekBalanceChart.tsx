@@ -8,8 +8,10 @@ export interface FuelWeekBalanceChartProps {
 export function FuelWeekBalanceChart({ days }: FuelWeekBalanceChartProps) {
   if (!days.length) return null
 
+  const totalBurn = (d: FuelWeekBalanceDay) => d.burnKcal + (d.healthBurnKcal || 0)
+
   const maxVal = Math.max(
-    ...days.map((d) => Math.max(d.consumedKcal, d.burnKcal, d.targetKcal, 1)),
+    ...days.map((d) => Math.max(d.consumedKcal, totalBurn(d), d.targetKcal, 1)),
     1
   )
 
@@ -23,17 +25,39 @@ export function FuelWeekBalanceChart({ days }: FuelWeekBalanceChartProps) {
       </div>
       <div className="flex justify-between gap-1 items-end h-20">
         {days.map((day) => {
+          const healthBurn = day.healthBurnKcal || 0
+          const workoutBurn = day.burnKcal
+          const totalBurnKcal = workoutBurn + healthBurn
           const consumedH = `${Math.round((day.consumedKcal / maxVal) * 100)}%`
-          const burnH = `${Math.round((day.burnKcal / maxVal) * 100)}%`
+          const totalBurnH = `${Math.round((totalBurnKcal / maxVal) * 100)}%`
           const targetH = `${Math.round((day.targetKcal / maxVal) * 100)}%`
           return (
             <div key={day.date} className="flex flex-col items-center gap-1 flex-1 min-w-0">
               <div className="relative w-full h-14 flex items-end justify-center gap-0.5">
                 <div
-                  className="w-[38%] rounded-t-sm bg-[#22c55e]/70"
-                  style={{ height: burnH, minHeight: day.burnKcal > 0 ? 2 : 0 }}
-                  title={`Quema ~${day.burnKcal} kcal`}
-                />
+                  className="w-[38%] flex flex-col justify-end rounded-t-sm overflow-hidden"
+                  style={{ height: totalBurnH, minHeight: totalBurnKcal > 0 ? 2 : 0 }}
+                  title={
+                    totalBurnKcal > 0
+                      ? `Quema ~${totalBurnKcal} kcal (entreno ${workoutBurn} + reloj ${healthBurn})`
+                      : undefined
+                  }
+                >
+                  {healthBurn > 0 && (
+                    <div
+                      className="w-full bg-[#6366f1]/80"
+                      style={{ flex: healthBurn }}
+                      title={`⌚ Wearable +${healthBurn} kcal`}
+                    />
+                  )}
+                  {workoutBurn > 0 && (
+                    <div
+                      className="w-full bg-[#22c55e]/70"
+                      style={{ flex: workoutBurn }}
+                      title={`Entreno ~${workoutBurn} kcal`}
+                    />
+                  )}
+                </div>
                 <div
                   className="w-[38%] rounded-t-sm bg-gradient-to-t from-[#9333ea] to-[#c084fc]"
                   style={{ height: consumedH, minHeight: day.consumedKcal > 0 ? 2 : 0 }}
@@ -56,9 +80,12 @@ export function FuelWeekBalanceChart({ days }: FuelWeekBalanceChartProps) {
           )
         })}
       </div>
-      <div className="flex gap-3 mt-1.5 text-[8px] text-[#6B7280]">
+      <div className="flex flex-wrap gap-x-3 gap-y-1 mt-1.5 text-[8px] text-[#6B7280]">
         <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-sm bg-[#22c55e]/70" /> Quema
+          <span className="w-2 h-2 rounded-sm bg-[#22c55e]/70" /> Entreno
+        </span>
+        <span className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-sm bg-[#6366f1]/80" /> Reloj
         </span>
         <span className="flex items-center gap-1">
           <span className="w-2 h-2 rounded-sm bg-[#a855f7]" /> Consumo

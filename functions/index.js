@@ -30,6 +30,7 @@ exports.bootstrapBetaBots = betaBots.bootstrapBetaBotsHttp;
 const appAdminModule = require('./appAdmin');
 const appAdminFns = appAdminModule.register({ db, admin });
 exports.adminDeleteUserAccount = appAdminFns.adminDeleteUserAccount;
+exports.adminModerateUser = appAdminFns.adminModerateUser;
 exports.deleteMyAccount = appAdminFns.deleteMyAccount;
 exports.grantCommunityAdmin = appAdminFns.grantCommunityAdmin;
 exports.bootstrapAppAdmin = appAdminFns.bootstrapAppAdminHttp;

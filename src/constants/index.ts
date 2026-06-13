@@ -8,8 +8,8 @@ export const PROFILE_GENDER_OPTIONS: ReadonlyArray<{ value: ProfileGender; label
 ]
 
 export const TRAINING_OPTIONS = [
-  'Pesas/Gym', 'Running', 'Calistenia', 'CrossFit', 'Yoga', 
-  'Funcional', 'Boxeo', 'Ciclismo', 'Natación', 'Pilates'
+  'Pesas/Gym', 'Running', 'Fútbol', 'Pádel', 'Rugby', 'Básquet', 'Tenis',
+  'Calistenia', 'CrossFit', 'Yoga', 'Funcional', 'Boxeo', 'Ciclismo', 'Natación', 'Pilates', 'Otro',
 ]
 
 export const AVAILABILITY = ['Mañana', 'Tarde', 'Noche']
@@ -40,7 +40,7 @@ export const LEGAL_VERSIONS = {
 export const AUTO_MATCH_IDS = ['p1', 'p3', 'p5', 'p6', 'p9', 'p11', 'p13']
 
 // Centralized app version (used in UI footers, auth screen, crash reports, APK, etc.)
-export const APP_VERSION = '0.1.330'
+export const APP_VERSION = '0.1.377'
 
 /** Firebase Hosting — canonical origin for APK shares and deep links. */
 export const PUBLIC_APP_URL = 'https://entrenamatch.web.app'

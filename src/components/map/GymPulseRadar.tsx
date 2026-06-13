@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useMemo } from 'react'
 import { MapPin, Radar } from 'lucide-react'
+import { BRAND_COPY } from '../../constants/brandCopy'
 import { getDistanceKm } from '../../utils'
 import { hasMapCoords } from '../../utils/gymPulseLive'
 
@@ -74,20 +75,20 @@ export function GymPulseRadar({
         type="button"
         className={`gym-pulse-radar-btn${sweeping ? ' gym-pulse-radar-btn--active' : ''}`}
         onClick={handleNearbyScan}
-        aria-label="Buscar entrenadores cerca — radio 2 km"
-        title="Busca quién entrena a 2 km de ti (no cambia de pantalla)"
+        aria-label="Buscar entrenadores en un radio de 2 km"
+        title="Pulsa para contar quién entrena a 2 km de ti. El barrido verde dura 3 segundos."
       >
         <Radar size={14} className={sweeping ? 'gym-pulse-radar-btn__spin' : ''} />
-        Cerca
+        {BRAND_COPY.liveMap.radarBtn}
       </button>
       {pillVisible && (
         <span className={`gym-pulse-radar-pill${sweeping ? ' gym-pulse-radar-pill--pulse' : ''}`}>
           {sweeping ? (
-            'Buscando cerca…'
+            BRAND_COPY.liveMap.radarScanning
           ) : (
             <>
               <MapPin size={10} className="inline mr-0.5 opacity-80" aria-hidden />
-              {lastCount ?? countInRadius} a {RADAR_RADIUS_KM} km
+              {BRAND_COPY.liveMap.radarResult(lastCount ?? countInRadius)}
             </>
           )}
         </span>

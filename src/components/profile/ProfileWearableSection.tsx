@@ -7,100 +7,234 @@ import {
   connectWearableHealth,
   fetchWearableDaySummary,
   getWearableConnectionStatus,
+  openHealthConnectInstall,
   openWearableSettings,
   type WearableConnectionStatus,
 } from '../../services/wearableHealth'
-import { importHealthCaloriesForDate } from '../../services/healthImport'
+import { ensureHealthPluginReady, getCapacitorApp } from '../../utils/capacitorRuntimePlugins'
 import { toLocalDateStr } from '../../utils/fuelCalculator'
 
 export function ProfileWearableSection(props: ProfileTabProps) {
-  const { currentUser, saveUserWithRealSync, triggerHaptic } = props
+  const { currentUser, saveUserWithRealSync, triggerHaptic, onImportHealthBurn } = props
   const [status, setStatus] = useState<WearableConnectionStatus | null>(null)
   const [busy, setBusy] = useState(false)
   const [previewKcal, setPreviewKcal] = useState<number | null>(null)
   const [previewMin, setPreviewMin] = useState<number | null>(null)
   const isNative = Capacitor.isNativePlatform()
 
+  const persistConnected = useCallback(
+    async (connected: boolean, platform?: string) => {
+      const patch = {
+        ...currentUser,
+        wearableHealthConnected: connected,
+        wearableHealthPlatform: connected ? platform : undefined,
+        wearableHealthConnectedAt: connected ? Date.now() : undefined,
+      } as typeof currentUser
+      await saveUserWithRealSync(patch)
+    },
+    [currentUser, saveUserWithRealSync]
+  )
+
   const refresh = useCallback(async () => {
-    const next = await getWearableConnectionStatus()
+    if (!isNative) {
+      setStatus({
+        platform: 'web',
+        available: false,
+        connected: false,
+        reason: 'Solo en la app nativa (iOS / Android).',
+        authorizedTypes: [],
+      })
+      return
+    }
+    try {
+      await ensureHealthPluginReady()
+    } catch (e) {
+      const msg = e && typeof e === 'object' && 'message' in e ? String((e as Error).message) : ''
+      setStatus({
+        platform: Capacitor.getPlatform() as 'ios' | 'android',
+        available: false,
+        connected: false,
+        reason: msg || 'Plugin de salud no cargado.',
+        authorizedTypes: [],
+        needsHealthConnectInstall: Capacitor.getPlatform() === 'android',
+      })
+      return
+    }
+    const next = await getWearableConnectionStatus({ skipTodayProbe: false })
     setStatus(next)
     if (next.connected) {
-      const summary = await fetchWearableDaySummary(toLocalDateStr())
+      if (!currentUser.wearableHealthConnected) {
+        try {
+          await persistConnected(true, next.platform)
+        } catch {
+          /* offline */
+        }
+      }
+      const summary = await fetchWearableDaySummary(toLocalDateStr(), {
+        assumeConnected: true,
+        platform: next.platform,
+        fastImport: true,
+        workoutLimit: 5,
+      })
       setPreviewKcal(summary.activeCaloriesKcal > 0 ? summary.activeCaloriesKcal : null)
       setPreviewMin(summary.exerciseMinutes > 0 ? summary.exerciseMinutes : null)
     } else {
       setPreviewKcal(null)
       setPreviewMin(null)
+      // Do not clear profile flag when HC SDK falsely reports disconnected on Samsung.
     }
-  }, [])
+  }, [isNative, currentUser.wearableHealthConnected, persistConnected])
 
   useEffect(() => {
     void refresh()
   }, [refresh])
 
-  const persistConnected = async (connected: boolean, platform?: string) => {
-    const patch = {
-      ...currentUser,
-      wearableHealthConnected: connected,
-      wearableHealthPlatform: connected ? platform : undefined,
-      wearableHealthConnectedAt: connected ? Date.now() : undefined,
-    } as typeof currentUser
+  useEffect(() => {
+    if (!isNative) return undefined
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void refresh()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+
+    const App = getCapacitorApp()
+    let resumeHandle: { remove: () => void } | null = null
+    if (App) {
+      void App.addListener('resume', () => {
+        void refresh()
+      }).then((h) => {
+        resumeHandle = h
+      })
+    }
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible)
+      resumeHandle?.remove()
+    }
+  }, [isNative, refresh])
+
+  const handleConnect = async () => {
+    setBusy(true)
+    let next: WearableConnectionStatus | null = null
     try {
-      await saveUserWithRealSync(patch)
-    } catch {
-      /* demo / offline */
+      try {
+        triggerHaptic('medium')
+      } catch {}
+      await ensureHealthPluginReady()
+      next = await connectWearableHealth()
+      setStatus(next)
+      if (next.connected) {
+        if (next.hasTodayWearableData) {
+          toast.success('Wearable conectado', {
+            description: 'Datos del reloj detectados en Health Connect.',
+          })
+        } else {
+          toast.info('Permisos de salud activos', {
+            description:
+              next.reason ||
+              'Falta que el reloj envíe calorías (Health Sync si usas Huawei).',
+            duration: 8000,
+          })
+        }
+      } else {
+        const androidHint =
+          'Tus permisos en Health Connect pueden estar OK. Abre Health Connect → Permisos de apps → EntrenaMatch. Luego Samsung Health o Health Sync (Huawei) debe enviar calorías.'
+        toast.info(next.reason || 'Permite acceso a calorías y ejercicio en Salud.', {
+          description: next.platform === 'ios'
+            ? 'Ajustes → Salud → EntrenaMatch → activa Calorías activas y Frecuencia cardíaca.'
+            : androidHint,
+          duration: 10000,
+        })
+        if (next.platform === 'android') {
+          try {
+            await openWearableSettings()
+          } catch {
+            /* user can open manually */
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('wearable connect failed', e)
+      const msg = e && typeof e === 'object' && 'message' in e ? String((e as Error).message) : ''
+      toast.error('No se pudo conectar el wearable', {
+        description: msg || 'Actualiza la app o instala Health Connect desde Play Store.',
+      })
+      if (Capacitor.getPlatform() === 'android') {
+        try {
+          await openWearableSettings()
+        } catch (openErr) {
+          console.warn('open health connect failed', openErr)
+          toast.info('Abre Health Connect manualmente', {
+            description: 'Ajustes → Health Connect → Permisos de apps → EntrenaMatch.',
+            duration: 10000,
+          })
+        }
+      }
+    } finally {
+      setBusy(false)
+    }
+
+    if (next?.connected) {
+      void persistConnected(true, next.platform).catch(() => {})
+      // Keep connected UI — full refresh can be slow on Samsung HC.
+      void (async () => {
+        try {
+          const summary = await fetchWearableDaySummary(toLocalDateStr(), {
+            assumeConnected: true,
+            platform: next!.platform,
+            fastImport: true,
+          })
+          setPreviewKcal(summary.activeCaloriesKcal > 0 ? summary.activeCaloriesKcal : null)
+          setPreviewMin(summary.exerciseMinutes > 0 ? summary.exerciseMinutes : null)
+        } catch {
+          /* preview optional */
+        }
+      })()
     }
   }
 
-  const handleConnect = async () => {
+  const handleImport = async () => {
+    if (!onImportHealthBurn) {
+      toast.error('Importación no disponible')
+      return
+    }
     setBusy(true)
     try {
       try {
         triggerHaptic('medium')
       } catch {}
-      const next = await connectWearableHealth()
-      setStatus(next)
-      if (next.connected) {
-        await persistConnected(true, next.platform)
-        await refresh()
-        toast.success('Wearable conectado', {
-          description: 'Apple Health / Health Connect listo para Fuel y EntrenaSync.',
-        })
-      } else {
-        toast.info(next.reason || 'Permite acceso a calorías y ejercicio en Salud.')
-      }
+      await onImportHealthBurn()
+      await refresh()
     } catch (e) {
-      console.warn('wearable connect failed', e)
-      toast.error('No se pudo conectar el wearable')
+      console.warn('wearable import failed', e)
+      const msg = e && typeof e === 'object' && 'message' in e ? String((e as Error).message) : ''
+      toast.error('No se pudo importar desde el wearable', {
+        description: msg || 'Revisa Health Connect y que el reloj haya sincronizado hoy.',
+        duration: 8000,
+      })
     } finally {
       setBusy(false)
     }
   }
 
-  const handleImport = async () => {
-    setBusy(true)
+  const handleOpenSettings = async () => {
+    if (status?.platform === 'ios') {
+      toast.info('Permisos en iOS', {
+        description: 'Ajustes → Salud → EntrenaMatch → activa Calorías activas y Frecuencia cardíaca.',
+      })
+      return
+    }
     try {
-      const result = await importHealthCaloriesForDate(toLocalDateStr())
-      if (result.totalBurnKcal > 0) {
-        toast.success(`+${result.totalBurnKcal} kcal activas importadas`, {
-          description: result.exerciseMinutes
-            ? `${result.exerciseMinutes} min de ejercicio detectados`
-            : result.message,
-        })
-        await refresh()
-      } else if (result.needsConnect) {
-        await handleConnect()
-      } else {
-        toast.info(result.message)
-      }
+      await openWearableSettings()
     } catch {
-      toast.error('No se pudo importar desde el wearable')
-    } finally {
-      setBusy(false)
+      toast.error('No se pudo abrir Health Connect')
     }
   }
 
-  const connected = !!status?.connected
+  const permissionsOk = !!status?.connected
+  const hasWatchData = !!(status?.hasTodayWearableData || previewKcal || previewMin)
+  const connected = permissionsOk
+  const pluginReady = status != null && status.available !== false
+  const needsHealthConnect = status?.needsHealthConnectInstall || (status?.platform === 'android' && status?.available === false)
   const platformLabel =
     status?.platform === 'ios'
       ? 'Apple Health'
@@ -116,12 +250,18 @@ export function ProfileWearableSection(props: ProfileTabProps) {
         </div>
         <div className="min-w-0 flex-1">
           <div className="text-[10px] uppercase tracking-[1.5px] text-[#a5b4fc] mb-0.5">
-            Salud conectada
+            {permissionsOk
+              ? hasWatchData
+                ? 'Reloj sincronizado'
+                : 'Permisos OK · sin datos hoy'
+              : 'Salud conectada'}
           </div>
-          <h3 className="text-sm font-bold text-white leading-tight">Conecta tu reloj</h3>
+          <h3 className="text-sm font-bold text-white leading-tight">
+            {permissionsOk ? 'Wearable vinculado' : 'Conecta tu reloj'}
+          </h3>
           <p className="text-[11px] text-[#9CA3AF] mt-1 leading-snug">
             Apple Watch, Samsung, Garmin* y más vía {isNative ? platformLabel : 'app nativa'}.
-            Importa calorías a Fuel y registra pulso/kcal automáticamente en EntrenaSync.
+            Importa calorías a Fuel y sincroniza pasos al abrir EntrenaMatch (Hoy → Actividad del reloj).
           </p>
           {!isNative && (
             <p className="text-[10px] text-amber-300/90 mt-2">
@@ -129,7 +269,20 @@ export function ProfileWearableSection(props: ProfileTabProps) {
             </p>
           )}
           {isNative && status && !status.available && (
-            <p className="text-[10px] text-amber-300/90 mt-2">{status.reason}</p>
+            <p className="text-[10px] text-amber-300/90 mt-2 whitespace-pre-line">{status.reason}</p>
+          )}
+          {isNative && status?.platform === 'android' && !connected && status.available && (
+            <p className="text-[10px] text-[#9CA3AF] mt-2 leading-snug">
+              Samsung / Garmin / Fitbit: vía Health Connect.{' '}
+              <strong className="text-[#a5b4fc]">Huawei:</strong> Huawei Health no enlaza directo —
+              usa la app <strong className="text-[#E5E7EB]">Health Sync</strong> (origen: Huawei Health
+              → destino: Health Connect), luego conecta aquí.
+            </p>
+          )}
+          {permissionsOk && status?.reason && !hasWatchData && (
+            <p className="text-[10px] text-amber-300/90 mt-2 leading-snug whitespace-pre-line">
+              {status.reason}
+            </p>
           )}
           {connected && (previewKcal || previewMin) && (
             <div className="mt-2 flex flex-wrap gap-2 text-[10px]">
@@ -145,6 +298,11 @@ export function ProfileWearableSection(props: ProfileTabProps) {
               ) : null}
             </div>
           )}
+          {permissionsOk && status?.authorizedTypes.length > 0 && (
+            <p className="text-[10px] text-[#6B7280] mt-2">
+              Permisos: {status.authorizedTypes.join(', ')}
+            </p>
+          )}
           {currentUser.wearableHealthConnected && !connected && isNative && (
             <p className="text-[10px] text-[#6B7280] mt-2">
               Antes estaba vinculado — vuelve a autorizar en Ajustes de salud.
@@ -155,30 +313,56 @@ export function ProfileWearableSection(props: ProfileTabProps) {
 
       {isNative && (
         <div className="flex gap-2 mt-3 flex-wrap">
-          {!connected ? (
+          {needsHealthConnect && (
             <button
               type="button"
-              disabled={busy || status?.available === false}
-              onClick={handleConnect}
-              className="flex-1 min-w-[140px] py-2.5 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white text-[11px] font-bold disabled:opacity-50"
+              disabled={busy}
+              onClick={() => { void openHealthConnectInstall() }}
+              className="w-full py-2.5 rounded-xl bg-amber-900/30 text-amber-100 border border-amber-700/40 text-[11px] font-bold"
             >
-              {busy ? 'Conectando…' : 'Conectar wearable'}
+              Instalar Health Connect (Play Store)
             </button>
+          )}
+          {!connected ? (
+            <>
+              <button
+                type="button"
+                disabled={busy || (status != null && status.available === false && !needsHealthConnect)}
+                onClick={() => { void handleConnect() }}
+                className="flex-1 min-w-[140px] py-2.5 rounded-xl bg-gradient-to-r from-[#6366f1] to-[#4f46e5] text-white text-[11px] font-bold disabled:opacity-50"
+              >
+                {busy ? 'Conectando…' : status == null ? 'Cargando…' : 'Conectar wearable'}
+              </button>
+              {status?.platform === 'android' && status.available && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => { void handleOpenSettings() }}
+                  className="py-2.5 px-3 rounded-xl border border-[#6366f1]/40 text-[#a5b4fc] text-[11px] font-semibold"
+                >
+                  Health Connect
+                </button>
+              )}
+            </>
           ) : (
             <>
               <button
                 type="button"
-                disabled={busy}
-                onClick={handleImport}
-                className="flex-1 min-w-[140px] py-2.5 rounded-xl bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/40 text-[11px] font-bold flex items-center justify-center gap-1"
+                disabled={busy || !onImportHealthBurn}
+                onClick={() => { void handleImport() }}
+                className={`flex-1 min-w-[140px] py-2.5 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1 border ${
+                  hasWatchData
+                    ? 'bg-[#22c55e]/20 text-[#22c55e] border-[#22c55e]/40'
+                    : 'bg-amber-900/20 text-amber-200 border-amber-700/40'
+                }`}
               >
                 <Activity size={14} />
-                {busy ? 'Importando…' : 'Importar a Fuel'}
+                {busy ? 'Importando…' : hasWatchData ? 'Importar a Fuel' : 'Revisar / importar'}
               </button>
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => openWearableSettings().catch(() => {})}
+                onClick={() => { void handleOpenSettings() }}
                 className="py-2.5 px-3 rounded-xl border border-[#2F2F35] text-[#9CA3AF] text-[11px] font-medium flex items-center gap-1"
                 aria-label="Ajustes de salud"
               >
@@ -186,12 +370,21 @@ export function ProfileWearableSection(props: ProfileTabProps) {
               </button>
             </>
           )}
+          {!pluginReady && status != null && (
+            <button
+              type="button"
+              onClick={() => { void refresh() }}
+              className="w-full py-2 rounded-xl border border-[#6366f1]/30 text-[#a5b4fc] text-[10px] font-semibold"
+            >
+              Reintentar carga del plugin
+            </button>
+          )}
         </div>
       )}
 
       <p className="text-[8px] text-[#6B7280] mt-2 leading-snug">
-        *Garmin, Fitbit y otros sincronizan vía Apple Health o Health Connect. Solo lectura — no
-        compartimos series de FC con otros usuarios.
+        *Garmin, Fitbit, Huawei (con Health Sync) y otros vía Apple Health o Health Connect. Solo
+        lectura — no compartimos series de FC con otros usuarios.
       </p>
     </div>
   )

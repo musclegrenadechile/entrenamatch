@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { BRAND_COPY } from '../../constants/brandCopy'
 import { ProfileHeaderSection } from './ProfileHeaderSection'
 import { ProfileHeroSection } from './ProfileHeroSection'
 import { ProfileHeroPulse } from './ProfileHeroPulse'
@@ -82,7 +83,7 @@ export function ProfileTab(props: ProfileTabProps) {
       <ProfileActividadSection {...props} />
       {advancedWrap(
         'Rendimiento y red',
-        'Stats, GymPulse diario y alianzas Sync',
+        BRAND_COPY.profile.tabSummary,
         <>
           <ProfileRendimientoSection {...props} />
           <ProfileDailyPulseSection {...props} />

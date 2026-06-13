@@ -1,11 +1,19 @@
-import { Heart, MessageCircle } from 'lucide-react'
+import { Heart, MessageCircle, Users } from 'lucide-react'
 import { BRAND_COPY } from '../../constants/brandCopy'
 import type { Profile, ProfilePost, Squad, TrainingReview } from '../../types'
 import { getDistanceKm, getTrainingStreak } from '../../utils'
 import { SkeletonList } from '../ui/SkeletonLoaders'
 import { MatchScoreBreakdown } from './MatchScoreBreakdown'
-import { VerifiedPhotoBadge, VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto'
+import { VerifiedPhotoBadge } from '../profile/VerifiedProfilePhoto'
 import { isProfileVerified } from '../../utils/identityVerification'
+import { MatchProfilePhoto } from './MatchProfilePhoto'
+import {
+  displayMatchName,
+  formatProfileLocation,
+  hasDisplayableMatchPhoto,
+  hasReliableMapCoords,
+  isIncompleteMatchProfile,
+} from '../../utils/matchProfileDisplay'
 
 export interface MatchesTabProps {
   matchProfiles: Profile[]
@@ -20,9 +28,13 @@ export interface MatchesTabProps {
   profilePosts: Record<string, ProfilePost[]>
   isDemoMode: boolean
   isLoadingMatches: boolean
+  /** Partner UIDs still fetching from Firestore (outside city snapshot). */
+  loadingPartnerIds?: string[]
   lastSync: Date | null
   onExplore: () => void
   onOpenChat: (profileId: string) => void
+  /** Fase 331 — crew opcional post-sync (no tab fijo) */
+  onOpenSquads?: () => void
 }
 
 export function MatchesTab({
@@ -38,15 +50,28 @@ export function MatchesTab({
   profilePosts,
   isDemoMode,
   isLoadingMatches,
+  loadingPartnerIds = [],
   lastSync,
   onExplore,
   onOpenChat,
+  onOpenSquads,
 }: MatchesTabProps) {
+  const syncPartnerCount = Object.keys(syncBonds).length
   const syncAgeSec = lastSync
     ? Math.max(0, Math.floor((Date.now() - lastSync.getTime()) / 1000))
     : null
 
-  if (isLoadingMatches && matchProfiles.length === 0 && !isDemoMode) {
+  const blockedFiltered = matchProfiles.filter((p) => !blockedUsers.includes(p.id))
+  const readyProfiles = blockedFiltered.filter((p) => !isIncompleteMatchProfile(p))
+  const pendingPartnerIds = [
+    ...new Set([
+      ...loadingPartnerIds,
+      ...blockedFiltered.filter((p) => isIncompleteMatchProfile(p)).map((p) => p.id),
+    ]),
+  ].filter((id) => !readyProfiles.some((p) => p.id === id))
+  const partnersStillLoading = !isDemoMode && pendingPartnerIds.length > 0
+
+  if ((isLoadingMatches || partnersStillLoading) && readyProfiles.length === 0 && !isDemoMode) {
     return (
       <div className="flex-1 overflow-auto p-4">
         <div className="section-header mb-4">Tus matches</div>
@@ -70,7 +95,24 @@ export function MatchesTab({
       </div>
       <div className="text-[#9CA3AF] px-1 mb-4 text-xs">Desliza abajo para actualizar</div>
 
-      {matchProfiles.length === 0 ? (
+      {onOpenSquads && syncPartnerCount > 0 && (
+        <button
+          type="button"
+          onClick={onOpenSquads}
+          className="w-full mb-4 flex items-center justify-between gap-2 px-3 py-2.5 rounded-2xl border border-[#a855f7]/35 bg-[#a855f7]/10 active:bg-[#a855f7]/20 text-left"
+        >
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold text-[#c084fc] uppercase tracking-wide">Crew opcional</p>
+            <p className="text-[11px] text-white font-semibold mt-0.5">
+              {syncPartnerCount} EntrenaSync{syncPartnerCount === 1 ? '' : 's'} — crear Squad fijo
+            </p>
+            <p className="text-[10px] text-[#9CA3AF] mt-0.5">Para tu gym o equipo; el mapa LIVE sigue siendo el centro</p>
+          </div>
+          <Users className="w-4 h-4 text-[#c084fc] shrink-0" aria-hidden />
+        </button>
+      )}
+
+      {readyProfiles.length === 0 && pendingPartnerIds.length === 0 ? (
         <div className="mt-10 px-4 space-y-4">
           <div className="card p-8 rounded-3xl text-center">
             <div className="mx-auto w-16 h-16 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-4">
@@ -100,8 +142,7 @@ export function MatchesTab({
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          {matchProfiles
-            .filter((p) => !blockedUsers.includes(p.id))
+          {readyProfiles
             .sort((a, b) => {
               const aInNet = syncBonds[a.id] ? -1 : 0
               const bInNet = syncBonds[b.id] ? -1 : 0
@@ -123,15 +164,8 @@ export function MatchesTab({
                 style={{ transition: 'transform 0.2s' }}
               >
                 <div className="relative">
-                  <VerifiedProfilePhoto
-                    src={profile.photos[0]}
-                    alt={`Foto de ${profile.name}`}
-                    className="w-full aspect-square"
-                    imgClassName="w-full aspect-square object-cover"
-                    verificationStatus={profile.verificationStatus}
-                    showBadge={false}
-                  />
-                  {isProfileVerified(profile.verificationStatus) && (
+                  <MatchProfilePhoto profile={profile} />
+                  {isProfileVerified(profile.verificationStatus) && hasDisplayableMatchPhoto(profile.photos) && (
                     <VerifiedPhotoBadge size="md" corner="top-left" className="top-2 left-2" />
                   )}
                   <div className="absolute top-2 right-2 flex gap-1 pointer-events-none z-20">
@@ -143,12 +177,13 @@ export function MatchesTab({
                   </div>
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 p-3">
                     <div className="font-semibold">
-                      {profile.name}, {profile.age}
+                      {displayMatchName(profile)}
+                      {profile.age ? `, ${profile.age}` : ''}
                     </div>
                     <div className="text-xs text-[#FF4F79]">
-                      {profile.city}, {profile.country}
+                      {formatProfileLocation(profile.city, profile.country)}
                     </div>
-                    {userLocation && (
+                    {userLocation && hasReliableMapCoords(profile) && (
                       <div className="text-[10px] text-[#FF671F]/80 mt-0.5">
                         {getDistanceKm(userLocation.lat, userLocation.lng, profile.lat, profile.lng)} km
                       </div>
@@ -204,6 +239,19 @@ export function MatchesTab({
                 )}
                 <div className="p-3 text-xs text-[#9CA3AF] flex items-center gap-1">
                   <MessageCircle size={14} /> Abrir chat
+                </div>
+              </div>
+            ))}
+          {partnersStillLoading &&
+            pendingPartnerIds.map((id) => (
+              <div
+                key={`loading-${id}`}
+                className="card card-glass rounded-3xl overflow-hidden ring-1 ring-white/5 animate-pulse"
+              >
+                <div className="w-full aspect-square bg-[#1C1C20]" />
+                <div className="p-3 space-y-2">
+                  <div className="h-3 bg-[#2F2F35] rounded w-3/4" />
+                  <div className="h-2 bg-[#2F2F35] rounded w-1/2" />
                 </div>
               </div>
             ))}

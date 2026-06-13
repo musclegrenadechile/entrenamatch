@@ -1,46 +1,48 @@
-# P0 Beta Release — v0.1.300
+# P0 Beta Release — v0.1.377
 
-Checklist para cerrar Fase 100 + piloto Viña × Santiago.
+Checklist para cerrar piloto Viña × Santiago (oleada 377).
 
 ## Versiones alineadas
 
 | Artefacto | Valor |
 |-----------|-------|
-| Web / `APP_VERSION` | **0.1.300** |
-| `package.json` | 0.1.300 |
-| Android `versionCode` | **300** |
-| Android `versionName` | 0.1.300 |
+| Web / `APP_VERSION` | **0.1.377** |
+| `package.json` | 0.1.377 |
+| Android `versionCode` | **377** |
+| Android `versionName` | 0.1.377 |
 
 Verificar: `node scripts/version-check.mjs`
 
-## 1. Deploy (CI en push a `main`)
+Código: `src/utils/p0BetaQaMatrix.ts` (12 filas) + `src/utils/betaReleaseChecklist.ts` (17 ítems con LIVE pilot).
 
-- GitHub Pages: `deploy.yml`
-- Firebase Hosting + rules: `firebase-deploy.yml`
-
-Manual si hace falta:
+## 1. Deploy
 
 ```powershell
 cd C:\Users\muscl\fitvina
+npm run deploy
 firebase deploy --only firestore:rules,hosting
 ```
 
-## 2. Matriz QA mínima (2 dispositivos) — v0.1.300
+## 2. Matriz QA mínima (2 dispositivos) — v0.1.377
 
 | # | Flujo | Pass |
 |---|-------|------|
-| 1 | Registro → onboarding completo → Tab Hoy (v0.1.300) | ☐ |
+| 1 | Registro → onboarding completo → Tab Hoy | ☐ |
 | 2 | LIVE **no** se activa solo al terminar onboarding | ☐ |
 | 3 | Una sola guía (3 pasos), sin tour apilado | ☐ |
 | 4 | CityDerbyCard visible 0 vs 0 + índice población | ☐ |
-| 5 | LIVE → visible en mapa otro usuario | ☐ |
+| 5 | LIVE → visible en mapa otro usuario (<60 s) | ☐ |
 | 6 | EntrenaSync ≥2 min → minutos al derby | ☐ |
 | 7 | Matches tab carga (sin error chunk tras hard refresh) | ☐ |
 | 8 | Invitar amigo desde piloto strip | ☐ |
 | 9 | Toast derby si rival supera (simular minutos) | ☐ |
-| 10 | Crashlytics nativo (APK) | ☐ |
+| 10 | Panel notificaciones → deep link chat/map | ☐ |
+| 11 | Publicar en Muro (texto + foto) desde Home | ☐ |
+| 12 | Crashlytics nativo (APK internal) | ☐ |
+| 13 | Guardar entreno → toast **Compartir** → imagen Instagram | ☐ |
+| 14 | Muro + perfil propio → botón 📸 Instagram | ☐ |
 
-## 3. Scripts piloto (lunes)
+## 3. Scripts piloto
 
 ```bash
 node scripts/pilot-cohort-report.mjs
@@ -48,10 +50,8 @@ node scripts/pilot-sync-report.mjs
 node scripts/pilot-retention-report.mjs
 ```
 
-## 4. Criterios Fase 100
+## 4. Criterios beta
 
 - Crash-free >99% (7 días post-AAB)
 - ≥1 sync real/semana documentado
 - ≥10 testers por ciudad piloto
-
-Ver `GESTION_FASES_101_120.md` para fases 101–106.

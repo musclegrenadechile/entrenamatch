@@ -304,8 +304,11 @@ export function ProfileHeroSection(props: ProfileTabProps) {
 {/* Quick friendly actions bar - more options, encourages content like IG/FB */}
 <div className="px-4 py-2 bg-[#0D0D10] border-b border-[#2F2F35]">
   <div className="flex gap-2 overflow-x-auto pb-1">
-    <button onClick={() => openMuroComposer()} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl bg-[#FF671F] text-black font-bold active:opacity-90 flex items-center gap-1.5 shadow">
-      <Send size={14} /> Publicar en muro
+    <button
+      onClick={() => openCommunityFeed()}
+      className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl bg-[#FF671F] text-black font-bold active:opacity-90 flex items-center gap-1.5 shadow"
+    >
+      <Send size={14} /> Publicar en el Muro
     </button>
     <button onClick={openProfileEditor} className="flex-shrink-0 px-4 py-2 text-xs rounded-2xl border border-white/20 text-white active:bg-white/10 flex items-center gap-1.5">
       <Camera size={14} /> Agregar foto

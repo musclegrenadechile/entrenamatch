@@ -48,20 +48,15 @@ export function DailyHomeHeroCard({
   }
 
   return (
-    <section
-      className="rounded-2xl border border-[#FF671F]/35 bg-gradient-to-br from-[#FF671F]/12 via-[#141418] to-[#0f0f12] p-4"
-      aria-label="Reto del día"
-    >
+    <section className="em-v2-hero-card" aria-label="Reto del día">
       <div className="flex items-start gap-3">
-        <div className="w-10 h-10 rounded-xl bg-[#FF671F]/20 flex items-center justify-center shrink-0">
+        <div className="em-v2-hero-card__icon">
           <Icon className="w-5 h-5 text-[#FF671F]" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-wider text-[#FF671F]">
-            Reto del día
-          </p>
-          <p className="text-sm font-black text-white mt-0.5">{hero.title}</p>
-          <p className="text-[11px] text-[#9CA3AF] mt-1 leading-snug">{hero.subtitle}</p>
+          <p className="em-v2-hero-card__kicker">Reto del día</p>
+          <p className="em-v2-hero-card__title">{hero.title}</p>
+          <p className="em-v2-hero-card__sub">{hero.subtitle}</p>
           {hero.progressPct != null && weeklyPactProgress.pledged && (
             <div className="mt-2 h-1.5 rounded-full bg-white/10 overflow-hidden">
               <div
@@ -70,11 +65,7 @@ export function DailyHomeHeroCard({
               />
             </div>
           )}
-          <button
-            type="button"
-            onClick={handleCta}
-            className="mt-3 text-[11px] font-bold px-4 py-2 rounded-full bg-[#FF671F] text-black active:brightness-90"
-          >
+          <button type="button" onClick={handleCta} className="em-v2-hero-card__cta">
             {hero.cta}
           </button>
         </div>

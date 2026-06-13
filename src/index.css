@@ -16,6 +16,17 @@
   --fit-success: #10B981;
   --fit-danger: #EF4444;
   --fit-highlight: #FBBF24;
+  /* Oleada visual — semántica unificada */
+  --em-brand: var(--fit-accent);
+  --em-live: #22c55e;
+  --em-live-end: #16a34a;
+  --em-live-danger: #E11D48;
+  --em-sync: #FFD700;
+  --em-surface: var(--fit-card);
+  --em-bg: var(--fit-dark);
+  --em-text-muted: var(--fit-muted);
+  --em-type-min: 10px;
+  --em-type-nav: 12px;
 }
 
 body {
@@ -2247,22 +2258,19 @@ input[type="range"]::-moz-range-thumb {
   font-weight: bold;
   opacity: 1;
 }
+/* Sin barrido permanente — solo al pulsar «Buscar 2 km» (.gym-pulse-radar-sweep) */
 #live-map-container::after {
   content: '';
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(34, 197, 94, 0.15) 40%,
-    rgba(34, 197, 94, 0.25) 50%,
-    transparent 60%
-  );
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   pointer-events: none;
   z-index: 2;
-  animation: radar-sweep 4s linear infinite;
   border-radius: 16px;
-  opacity: 0.6;
+  opacity: 0;
+  background: transparent;
 }
 
 @keyframes radar-sweep {
@@ -2860,17 +2868,15 @@ input[type="range"]::-moz-range-thumb {
     0 0 0 1px rgba(34,197,94,0.2);
 }
 
-/* Make the radar sweep even more subtle and premium */
-#live-map-container::after {
-  background: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(34, 197, 94, 0.08) 35%,
-    rgba(34, 197, 94, 0.18) 52%,
-    transparent 68%
-  );
-  opacity: 0.45;
-  animation: radar-sweep 5.5s linear infinite;
+/* Vignette sutil — mapa legible, sin efecto «radar» confuso */
+#live-map-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+  box-shadow: inset 0 0 48px rgba(0, 0, 0, 0.35);
 }
 
 /* Soft permanent aura under real partner hubs — makes them feel like important social centers */
@@ -8516,6 +8522,29 @@ button:not(.live-pill):disabled {
   padding: 0 16px 12px;
 }
 
+.admin-ops__tabs--scroll {
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.admin-ops__tabs--scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.admin-ops__tabs--scroll .admin-ops__tab,
+.admin-ops__tabs--scroll .admin-ops__tab--active {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  padding: 8px 12px;
+  font-size: 11px;
+}
+
+.admin-ops__body {
+  padding: 0 16px 24px;
+}
+
 .admin-ops__tab,
 .admin-ops__tab--active {
   flex: 1;
@@ -9401,7 +9430,12 @@ button:not(.live-pill):disabled {
 
 .pull-to-refresh {
   position: relative;
-  touch-action: pan-y;
+  /* pan-y blocked horizontal swipe on Explore cards (framer-motion drag). */
+  touch-action: manipulation;
+}
+
+.pull-to-refresh--explore {
+  padding-bottom: calc(7.5rem + env(safe-area-inset-bottom, 0));
 }
 
 .pull-to-refresh__indicator {
@@ -9987,6 +10021,65 @@ body.gym-pulse-fs-active {
   background: rgba(34, 197, 94, 0.12);
 }
 
+.gym-pulse-filters__zones {
+  margin-top: 0.55rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.gym-pulse-filters__zones-label {
+  margin: 0 0 0.4rem;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.gym-pulse-filters__zones-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.gym-pulse-filters__zone-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.55rem;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.gym-pulse-filters__zone-pill--on {
+  font-weight: 700;
+}
+
+.gym-pulse-filters__zone-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.gym-pulse-filters__zone-count {
+  font-size: 8px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Map tab: slightly brighter basemap for readability */
+.gym-pulse-tab-host #live-map-container .leaflet-tile-pane {
+  filter: brightness(1.18) contrast(1.06) saturate(0.95);
+}
+
 /* Fase 111 — Radar mode */
 .gym-pulse-radar-btn {
   display: inline-flex;
@@ -10491,7 +10584,7 @@ body.gym-pulse-fs-active {
 .gym-log-overlay {
   position: fixed;
   inset: 0;
-  z-index: 200;
+  z-index: 220;
   background: rgba(0, 0, 0, 0.72);
   display: flex;
   flex-direction: column;

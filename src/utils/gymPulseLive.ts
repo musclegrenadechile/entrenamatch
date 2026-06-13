@@ -4,8 +4,14 @@
  */
 
 import { deriveLiveMotionIdle } from './liveMotionScore'
+import {
+  ASSUMED_LIVE_SESSION_MS,
+  isLiveSessionActive,
+  liveSessionRemainingMs,
+  resolveLiveSessionStartMs,
+} from './liveSessionPolicy'
 
-export const ASSUMED_LIVE_SESSION_MS = 3 * 60 * 60 * 1000
+export { ASSUMED_LIVE_SESSION_MS }
 
 export function normalizeTrainingSince(val: unknown): number | undefined {
   if (val == null) return undefined
@@ -25,10 +31,17 @@ export function hasMapCoords(u: { lat?: unknown; lng?: unknown } | null | undefi
 }
 
 export function isActiveLiveUser(p: any, now = Date.now()): boolean {
-  if (!p?.trainingNow) return false
-  const since = Number(normalizeTrainingSince(p.trainingNowSince) || 0)
-  if (since <= 0) return true // grace: live flag set but since not yet written
-  return now - since < ASSUMED_LIVE_SESSION_MS
+  return isLiveSessionActive(
+    {
+      trainingNow: p?.trainingNow,
+      trainingNowSince: p?.trainingNowSince,
+      liveMotionAt: p?.liveMotionAt,
+      liveMotionIdle: p?.liveMotionIdle,
+      liveActivityState: p?.liveActivityState,
+      presenceUpdatedAt: p?.presenceUpdatedAt ?? p?.updatedAt,
+    },
+    now
+  )
 }
 
 export type LiveUserLike = Record<string, any>
@@ -69,8 +82,23 @@ export function enrichLiveUser(
     getDistanceKm?: (lat1: number, lng1: number, lat2: number, lng2: number) => number
   } = {}
 ): LiveUserLike {
-  const since = Number(normalizeTrainingSince(p.trainingNowSince) || now)
-  const remainingMs = Math.max(0, ASSUMED_LIVE_SESSION_MS - (now - since))
+  const since = resolveLiveSessionStartMs(
+    {
+      trainingNow: true,
+      trainingNowSince: p.trainingNowSince,
+      presenceUpdatedAt: p.presenceUpdatedAt ?? p.updatedAt,
+    },
+    now
+  ) || now
+  const remainingMs = liveSessionRemainingMs(
+    {
+      trainingNow: true,
+      trainingNowSince: since,
+      liveMotionAt: p.liveMotionAt,
+      presenceUpdatedAt: p.presenceUpdatedAt ?? p.updatedAt,
+    },
+    now
+  )
   const seVaEnMin = Math.ceil(remainingMs / 60_000)
   let lat = Number(p.lat)
   let lng = Number(p.lng)
@@ -181,7 +209,11 @@ export function profileDocToLiveUser(
     intensity: data.intensity,
     verificationStatus: data.verificationStatus,
     trainingNow: isLive,
-    trainingNowSince: normalizeTrainingSince(data.trainingNowSince) || Date.now(),
+    trainingNowSince: resolveLiveSessionStartMs({
+      trainingNow: isLive,
+      trainingNowSince: data.trainingNowSince,
+      presenceUpdatedAt: data.updatedAt ?? data.presenceUpdatedAt,
+    }),
     liveStreak: data.liveStreak,
     lastLiveDate: data.lastLiveDate,
     liveJoins: data.liveJoins,

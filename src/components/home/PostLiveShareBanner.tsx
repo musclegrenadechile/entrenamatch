@@ -12,6 +12,7 @@ export interface PostLiveShareBannerProps {
   onPublish: (text: string) => void | Promise<void>
   onPublishWithPhoto: () => void
   onOpenEntrenoLog: () => void
+  onShareStory?: () => void
   onOpenCoach?: () => void
   onDismiss: () => void
 }
@@ -22,6 +23,7 @@ export function PostLiveShareBanner({
   onPublish,
   onPublishWithPhoto,
   onOpenEntrenoLog,
+  onShareStory,
   onOpenCoach,
   onDismiss,
 }: PostLiveShareBannerProps) {
@@ -70,6 +72,15 @@ export function PostLiveShareBanner({
             >
               <Dumbbell size={12} /> Entreno de Hoy
             </button>
+            {onShareStory && (
+              <button
+                type="button"
+                onClick={onShareStory}
+                className="text-[10px] font-bold px-3 py-1.5 rounded-full border border-[#FFD700]/35 text-[#FFD700] active:bg-[#FFD700]/10"
+              >
+                📸 Instagram
+              </button>
+            )}
           </div>
           {onOpenCoach && (
             <button

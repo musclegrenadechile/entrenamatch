@@ -1,8 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
 
+for /f "delims=" %%v in ('node -p "require('./package.json').version"') do set APP_VER=%%v
 echo ==========================================
-echo EntrenaMatch - PLAY STORE RELEASE (v0.1.327)
+echo EntrenaMatch - PLAY STORE RELEASE (v!APP_VER!)
 echo ==========================================
 
 set "MODE=%~1"
@@ -66,10 +67,11 @@ echo SUCCESS — Signed AAB ready for Play Store
 echo   File: %CD%\EntrenaMatch-release.aab
 echo   Also: %CD%\%AAB%
 echo   Size: !AAB_SIZE! bytes
-echo   versionCode 327 / versionName 0.1.327
+echo   version: !APP_VER!
 echo.
 echo Manual upload: Play Console ^> Testing ^> Create release
-echo Release notes: PLAY_INTERNAL_v0.1.327.md
+echo Release notes: PLAY_INTERNAL_v!APP_VER!.md
+echo Checklist: docs\RELEASE_CHECKLIST.md
 echo ************************************************
 
 if /i "%MODE%"=="publish" (

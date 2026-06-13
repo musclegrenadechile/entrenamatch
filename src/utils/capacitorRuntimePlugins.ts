@@ -4,6 +4,7 @@
  */
 
 import { loadCapacitorPlugins } from '@capacitor-plugins-loader'
+import { withTimeout } from './withTimeout'
 
 type PluginBag = Record<string, unknown>
 
@@ -12,9 +13,20 @@ function pluginBag(): PluginBag | undefined {
   return (window as Window & { __CAPACITOR_PLUGINS__?: PluginBag }).__CAPACITOR_PLUGINS__
 }
 
+const PLUGIN_LOAD_TIMEOUT_MS = 5_000
+
 export async function ensureCapacitorPlugins(): Promise<void> {
-  if (pluginBag()?.App) return
-  await loadCapacitorPlugins()
+  if (pluginBag()?.App && pluginBag()?.Health) return
+  await withTimeout(loadCapacitorPlugins(), PLUGIN_LOAD_TIMEOUT_MS, 'capacitor plugins load')
+}
+
+/** Ensures @capgo/capacitor-health is loaded before wearable import/connect. */
+export async function ensureHealthPluginReady(): Promise<void> {
+  if (getCapacitorHealth()) return
+  await ensureCapacitorPlugins()
+  if (!getCapacitorHealth()) {
+    throw new Error('Plugin de salud no cargado. Cierra y abre EntrenaMatch.')
+  }
 }
 
 type PluginListener = { remove: () => void }
@@ -45,6 +57,9 @@ export function getCapacitorHealth(): {
     read?: string[]
     write?: string[]
   }) => Promise<{ readAuthorized: string[]; readDenied: string[] }>
+  readSamples: (opts: Record<string, unknown>) => Promise<{
+    samples: Array<{ value: number; startDate?: string }>
+  }>
   queryAggregated: (opts: Record<string, unknown>) => Promise<{ samples: Array<{ value: number; unit?: string }> }>
   queryWorkouts: (opts: Record<string, unknown>) => Promise<{
     workouts: Array<{ sourceName?: string }>
@@ -54,11 +69,72 @@ export function getCapacitorHealth(): {
 } | null {
   const Health = pluginBag()?.Health
   if (!Health || typeof Health !== 'object') return null
-  const h = Health as { isAvailable?: unknown; requestAuthorization?: unknown }
-  if (typeof h.isAvailable !== 'function' || typeof h.requestAuthorization !== 'function') {
+  const h = Health as {
+    isAvailable?: unknown
+    requestAuthorization?: unknown
+    checkAuthorization?: unknown
+    readSamples?: unknown
+    queryAggregated?: unknown
+    queryWorkouts?: unknown
+  }
+  if (
+    typeof h.isAvailable !== 'function' ||
+    typeof h.requestAuthorization !== 'function' ||
+    typeof h.checkAuthorization !== 'function' ||
+    typeof h.readSamples !== 'function' ||
+    typeof h.queryAggregated !== 'function' ||
+    typeof h.queryWorkouts !== 'function'
+  ) {
     return null
   }
   return Health as ReturnType<typeof getCapacitorHealth>
+}
+
+export type WearableDayProbeResult = {
+  steps: number
+  activeCaloriesKcal: number
+  exerciseMinutes: number
+  workoutCount: number
+  sources: string[]
+  exerciseError?: string
+  stepsError?: string
+  caloriesError?: string
+}
+
+export function getEntrenamatchHealth(): {
+  hasGrantedHealthPermissions: () => Promise<{
+    granted: boolean
+    canReadActivity?: boolean
+    steps?: boolean
+    exercise?: boolean
+    calories?: boolean
+    totalCalories?: boolean
+    heartRate?: boolean
+  }>
+  probeWearableDay: (opts: {
+    startDate: string
+    endDate: string
+  }) => Promise<WearableDayProbeResult>
+  openHealthConnectSettings: () => Promise<void>
+  openAppHealthPermissions: () => Promise<void>
+} | null {
+  const plugin = pluginBag()?.EntrenamatchHealth
+  if (!plugin || typeof plugin !== 'object') return null
+  const p = plugin as {
+    hasGrantedHealthPermissions?: unknown
+    probeWearableDay?: unknown
+    openHealthConnectSettings?: unknown
+    openAppHealthPermissions?: unknown
+  }
+  if (
+    typeof p.hasGrantedHealthPermissions !== 'function' ||
+    typeof p.probeWearableDay !== 'function' ||
+    typeof p.openHealthConnectSettings !== 'function' ||
+    typeof p.openAppHealthPermissions !== 'function'
+  ) {
+    return null
+  }
+  return plugin as ReturnType<typeof getEntrenamatchHealth>
 }
 
 export function getCapacitorApp(): {

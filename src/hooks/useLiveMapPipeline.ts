@@ -21,6 +21,7 @@ import {
   normalizeTrainingSince,
   profileDocToLiveUser,
 } from '../utils/gymPulseLive'
+import { LIVE_SESSION_TICK_MS } from '../utils/liveSessionPolicy'
 import { attachLivePresenceListener } from '../services/livePresence'
 import { attachLiveUsersListener } from '../services/liveUsers'
 import { bumpRealtimeStat } from '../utils/realtimeStats'
@@ -31,6 +32,11 @@ import {
   shouldRunLiveListeners,
   shouldRunOwnProfileListener,
 } from '../utils/tabRealtimePolicy'
+import {
+  isPendingLiveGuardActive,
+  shouldIgnoreConflictingLiveSnapshot,
+  shouldRejectStaleLiveOn,
+} from '../utils/liveToggleGuard'
 
 export interface UseLiveMapPipelineOptions {
   isDemoMode: boolean
@@ -116,6 +122,8 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
   const [showOnlyNetwork, setShowOnlyNetwork] = useState(false)
   const [devTestLives, setDevTestLives] = useState<Profile[]>([])
   const [liveUsersFromDedicated, setLiveUsersFromDedicated] = useState<Profile[]>([])
+  /** Fuerza re-evaluación del TTL LIVE cada minuto (el memo no recalcula solo con el tiempo). */
+  const [liveSessionTick, setLiveSessionTick] = useState(0)
 
   const liveFromPresenceRef = useRef<Profile[]>([])
   const liveFromProfilesQueryRef = useRef<Profile[]>([])
@@ -147,6 +155,14 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
     if (!showLiveMap) return
     setMapForceTick((t) => t + 1)
   }, [showPartners, partnerLocationsLength, showLiveMap, setMapForceTick])
+
+  useEffect(() => {
+    if (isDemoMode || !liveListenersEnabled) return undefined
+    const id = window.setInterval(() => {
+      setLiveSessionTick((t) => t + 1)
+    }, LIVE_SESSION_TICK_MS)
+    return () => window.clearInterval(id)
+  }, [isDemoMode, liveListenersEnabled])
 
   useEffect(() => {
     const mapActive = showLiveMap || activeTab === 'map'
@@ -354,8 +370,16 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
           const newSince = normalizeTrainingSince(data.trainingNowSince)
           const pending = pendingLiveWriteRef.current
           const base = currentUserRef.current
+          const now = Date.now()
 
-          if (pending && newTrainingNow !== pending.trainingNow) return
+          if (shouldIgnoreConflictingLiveSnapshot(pending, newTrainingNow, now)) return
+          if (shouldRejectStaleLiveOn(base?.trainingNow, newTrainingNow, pending, now)) return
+
+          if (pending && newTrainingNow === pending.trainingNow) {
+            pendingLiveWriteRef.current = null
+          } else if (pending && !isPendingLiveGuardActive(pending, now)) {
+            pendingLiveWriteRef.current = null
+          }
 
           if (
             base &&
@@ -368,6 +392,7 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
               trainingNowSince: newSince,
               liveStreak: data.liveStreak != null ? (data.liveStreak as number) : base.liveStreak,
             }
+            currentUserRef.current = merged as CurrentUser
             saveUser(merged as CurrentUser)
             setMapForceTick((t) => t + 1)
           }
@@ -432,7 +457,7 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
       ]
     }
     return active.sort((a, b) => ((a as Profile & { distance?: number }).distance || 999) - ((b as Profile & { distance?: number }).distance || 999))
-  }, [liveUsersMerged, blockedUsers, isDemoMode, effectiveUserId, enrichLiveUser, syncBonds, SEED_PROFILES])
+  }, [liveUsersMerged, blockedUsers, isDemoMode, effectiveUserId, enrichLiveUser, syncBonds, SEED_PROFILES, liveSessionTick])
 
   const liveTrainingNow = useMemo(
     () => liveUsersActive.filter((p) => p.id !== effectiveUserId && p.id !== 'me'),
@@ -465,7 +490,7 @@ export function useLiveMapPipeline(opts: UseLiveMapPipelineOptions) {
       const fromDedicated = (liveUsersFromDedicatedRef.current || []).find((p) => p.id === userId)
       if (fromDedicated && isActiveLiveUser(fromDedicated)) return true
       const fromProfiles = (latestRealProfilesRef.current || []).find((p) => p.id === userId)
-      return fromProfiles?.trainingNow === true
+      return fromProfiles ? isActiveLiveUser(fromProfiles) : false
     },
     [effectiveUserId, firebaseUserUid, liveUsersActiveRef, latestRealProfilesRef, currentUserRef]
   )

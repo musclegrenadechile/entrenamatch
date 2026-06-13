@@ -1,6 +1,7 @@
 // Explore tab — typed props (Phase 63)
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ExploreSwipeCard } from './ExploreSwipeCard';
 import { Filter, RefreshCw, MapPin, CheckCircle, X, Heart, Share2, Users, QrCode } from 'lucide-react';
 import { toast } from 'sonner';
 import type { Profile, CurrentUser } from '../../types';
@@ -12,7 +13,6 @@ import { GeoPromptBanner, GEO_PROMPT_V2_KEY } from './GeoPromptBanner';
 import { buildInviteLink } from '../../utils/sparseCityDefaults';
 import { getLocalWaitlistEntry, saveCityWaitlist } from '../../services/cityWaitlist';
 import { VerifiedPhotoBadge, VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto';
-import { isProfileVerified } from '../../utils/identityVerification';
 import type { Firestore } from 'firebase/firestore';
 import { WhyEntrenaMatchStrip } from '../growth/WhyEntrenaMatchStrip';
 import { BRAND_COPY } from '../../constants/brandCopy';
@@ -27,7 +27,8 @@ interface ExploreTabProps {
   filters: any;
   currentUser: CurrentUser | null;
   setShowFilters: (show: boolean) => void;
-  resetDeck: () => void;
+  resetDeck: () => void | Promise<void>;
+  isResettingDeck?: boolean;
   requestUserLocation: () => void;
   onSwipe: (direction: 'left' | 'right', profileId: string) => void;
   onShowProfile?: (profile: Profile) => void;
@@ -44,6 +45,10 @@ interface ExploreTabProps {
   db?: Firestore | null;
   firebaseUid?: string | null;
   onActivateLive?: () => void;
+  liveCountForUI?: number;
+  onOpenMap?: () => void;
+  /** When live banner is shown above, skip duplicate promos (SyncHour + map CTA). */
+  compactHeader?: boolean;
 }
 
 export const ExploreTab = ({
@@ -54,6 +59,7 @@ export const ExploreTab = ({
   currentUser,
   setShowFilters,
   resetDeck,
+  isResettingDeck = false,
   requestUserLocation,
   onSwipe,
   onShowProfile,
@@ -70,13 +76,26 @@ export const ExploreTab = ({
   db = null,
   firebaseUid = null,
   onActivateLive,
+  liveCountForUI = 0,
+  onOpenMap,
+  compactHeader = false,
 }) => {
-  const [dragX, setDragX] = useState(0);
-  const [optimisticRemovedId, setOptimisticRemovedId] = useState<string | null>(null);
+  const [buttonExit, setButtonExit] = useState<'left' | 'right' | null>(null);
+  const swipeBusy = buttonExit !== null;
   const [showGeoPrompt, setShowGeoPrompt] = useState(false);
   const [waitlistEmail, setWaitlistEmail] = useState('');
   const [waitlistSaved, setWaitlistSaved] = useState(() => !!getLocalWaitlistEntry());
   const [showGymQr, setShowGymQr] = useState(false);
+
+  const handleResetDeck = async () => {
+    if (isResettingDeck) return
+    setButtonExit(null)
+    try {
+      await resetDeck()
+    } catch {
+      /* parent shows toast */
+    }
+  }
 
   const referralCode = (currentUser?.id || firebaseUid || 'invite').slice(0, 8);
   const inviteLink = buildInviteLink(referralCode);
@@ -102,11 +121,7 @@ export const ExploreTab = ({
     if (sharesLocation) setShowGeoPrompt(true)
   }, [userLocation, propVisibleCards.length, currentUser])
 
-  // Merge prop visibleCards with optimistic removal for instant visual feedback after swipe
-  const visibleCards = optimisticRemovedId
-    ? propVisibleCards.filter(p => p.id !== optimisticRemovedId)
-    : propVisibleCards;
-
+  const visibleCards = propVisibleCards;
   const topProfile = visibleCards[0] || null;
 
   const getCompatibility = (profile: Profile): number | null => {
@@ -205,279 +220,81 @@ export const ExploreTab = ({
     }).join(' • ')
   }
 
-  const handleDragEnd = (_: any, info: any) => {
-    const threshold = 110;
-    const velocity = info.velocity.x;
-    if (!topProfile) return;
-
-    const direction = (info.offset.x > threshold || velocity > 550) ? 'right' : 
-                      (info.offset.x < -threshold || velocity < -550) ? 'left' : null;
-
-    if (direction) {
-      setOptimisticRemovedId(topProfile.id); // instant visual pop
-      onSwipe(direction, topProfile.id);
-      setDragX(0);
-      // Clear optimistic after parent has time to update
-      setTimeout(() => setOptimisticRemovedId(null), 400);
-    } else {
-      setDragX(0);
+  const cardMetaById = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        compat: number | null
+        dist: number | null
+        verified: boolean
+        isRealProfile: boolean
+        isDemoSeed: boolean
+        isNetwork: boolean
+        bondMinutes: number
+        compatReasons: string[]
+        muroTeaser: string | null
+      }
+    >()
+    for (const profile of visibleCards) {
+      map.set(profile.id, {
+        compat: getCompatibility(profile),
+        dist: getDistance(profile),
+        verified: isVerified(profile),
+        isRealProfile: realProfiles.some((rp) => rp.id === profile.id),
+        isDemoSeed: isSeedProfileId(profile.id) && !realProfiles.some((rp) => rp.id === profile.id),
+        isNetwork: isNetwork(profile),
+        bondMinutes: syncBonds[profile.id]?.totalMin ?? 0,
+        compatReasons: getCompatReasons(profile),
+        muroTeaser: getMuroTeaser(profile.id),
+      })
     }
-  };
+    return map
+  }, [visibleCards, currentUser, userLocation, realProfiles, syncBonds, profilePosts])
 
   const handleLike = () => {
-    if (topProfile) {
-      setOptimisticRemovedId(topProfile.id);
-      onSwipe('right', topProfile.id);
-      setDragX(0);
-      setTimeout(() => setOptimisticRemovedId(null), 350);
-    }
-  };
+    if (!topProfile || swipeBusy) return
+    setButtonExit('right')
+  }
 
   const handlePass = () => {
-    if (topProfile) {
-      setOptimisticRemovedId(topProfile.id);
-      onSwipe('left', topProfile.id);
-      setDragX(0);
-      setTimeout(() => setOptimisticRemovedId(null), 350);
-    }
-  };
-
-  // Stack rendering: top card is draggable, others are visual stack
-  const renderCard = (profile: Profile, index: number) => {
-    const isTop = index === 0;
-    const compat = getCompatibility(profile);
-    const dist = getDistance(profile);
-    const verified = isVerified(profile);
-    const isRealProfile = realProfiles.some(rp => rp.id === profile.id);
-    const isDemoSeed = isSeedProfileId(profile.id) && !isRealProfile;
-
-    const scale = isTop ? 1 : index === 1 ? 0.955 : 0.91;
-    const yOffset = isTop ? 0 : index === 1 ? 14 : 28;
-    const opacity = isTop ? 1 : index === 1 ? 0.82 : 0.55;
-    const z = 30 - index;
-
-    return (
-      <motion.div
-        key={profile.id}
-        className="absolute left-0 right-0 mx-auto w-full max-w-[320px] h-[min(36dvh,300px)] sm:h-[min(44dvh,340px)] bg-[#1C1C20] rounded-3xl overflow-hidden shadow-2xl cursor-grab active:cursor-grabbing swipe-card ring-1 ring-white/10"
-        style={{ zIndex: z }}
-        initial={false}
-        animate={{
-          scale,
-          y: yOffset,
-          opacity,
-          x: isTop ? dragX : 0,
-          rotate: isTop ? dragX * 0.08 : 0,
-        }}
-        drag={isTop ? 'x' : false}
-        dragConstraints={{ left: -280, right: 280 }}
-        dragElastic={0.2}
-        onDrag={(_, info) => setDragX(info.offset.x)}
-        onDragEnd={handleDragEnd}
-        whileTap={{ scale: isTop ? 1.01 : scale }}
-        transition={{ type: 'spring', stiffness: 260, damping: 28 }}
-      >
-        {/* Photo */}
-        <VerifiedProfilePhoto
-          src={profile.photos[0]}
-          className="w-full h-full"
-          imgClassName="w-full h-full object-cover object-[center_20%] bg-[#1C1C20]"
-          alt={profile.name}
-          verificationStatus={profile.verificationStatus}
-          showBadge={false}
-        />
-
-        {/* Gradient overlay - premium cinematic for fitness app */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/30 to-black/95" />
-        <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/70 to-transparent" />
-
-        {/* Unique: Dynamic swipe feedback overlay (green for like/train, red for pass) */}
-        {isTop && Math.abs(dragX) > 20 && (
-          <div 
-            className={`absolute inset-0 rounded-3xl transition-opacity ${dragX > 0 ? 'bg-[#22c55e]/20' : 'bg-red-500/20'}`}
-            style={{ opacity: Math.min(Math.abs(dragX) / 150, 0.6) }}
-          />
-        )}
-
-        {isProfileVerified(profile.verificationStatus) && (
-          <VerifiedPhotoBadge size="md" corner="bottom-right" className="bottom-28 right-3" />
-        )}
-
-        {/* Top badges row */}
-        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-start justify-between gap-2 pointer-events-none z-20">
-          <div className="flex flex-col gap-1 min-w-0 pointer-events-auto">
-            {isDemoSeed && (
-              <div className="inline-flex items-center gap-1 bg-[#6B7280]/90 text-white text-[8px] font-bold px-2 py-0.5 rounded-full w-fit">
-                DEMO
-              </div>
-            )}
-            {isRealProfile && verified && (
-              <div className="inline-flex items-center gap-1 bg-[#FF671F] text-black text-[9px] font-semibold px-2 py-0.5 rounded-full w-fit">
-                <CheckCircle size={11} /> VERIFICADO
-              </div>
-            )}
-            {profile.intensity && (
-              <div className="inline-flex text-[9px] bg-black/60 text-white px-2 py-0.5 rounded-full w-fit">
-                {profile.intensity}
-              </div>
-            )}
-          </div>
-
-          <div className="flex flex-col items-end gap-1 shrink-0 pointer-events-auto">
-            {onReport && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onReport(profile.id);
-                }}
-                className="text-[8px] bg-black/55 px-2 py-0.5 rounded-full text-white/75 active:text-white"
-                aria-label="Reportar perfil"
-                title="Reportar perfil"
-              >
-                ⚠ Reportar
-              </button>
-            )}
-            {dist !== null ? (
-              <div className="bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
-                <MapPin size={11} /> {dist} km
-              </div>
-            ) : !userLocation ? (
-              <div className="bg-black/50 text-[#3b82f6] text-[9px] px-2 py-0.5 rounded-full">
-                GPS → km
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        {/* Bottom info */}
-        <div className="absolute bottom-0 left-0 right-0 p-3.5 pb-3 text-white bg-gradient-to-t from-black/95 via-black/75 to-transparent pt-10">
-          <div className="flex items-end justify-between gap-2 mb-1.5">
-            <div className="min-w-0 flex-1">
-              <div className="text-lg sm:text-2xl font-semibold tracking-tight flex items-center gap-1.5 min-w-0">
-                <span className="truncate">{profile.name}</span>
-                <span className="shrink-0 text-white/90">, {profile.age}</span>
-                {verified && <CheckCircle size={16} className="text-[#FF671F] shrink-0" />}
-              </div>
-              {isNetwork(profile) && (
-                <div className="text-[9px] bg-[#FFD700] text-black px-1.5 py-0.5 rounded-full font-black w-fit mt-1">
-                  ⭐ RED · F{getBondLevel(profile)} +{getNetworkBoost(profile)}%
-                </div>
-              )}
-              <div className="text-xs opacity-90 flex items-center gap-2 mt-0.5 truncate">
-                <span className="truncate">{profile.city}</span>
-                {profile.availableToday && (
-                  <span className="text-[9px] bg-[#22c55e] text-black px-1.5 py-px rounded-full font-semibold shrink-0">HOY</span>
-                )}
-              </div>
-            </div>
-
-            {compat !== null && (
-              <div className="text-right shrink-0">
-                <div className="flex items-end justify-end gap-0.5">
-                  <div className="text-2xl sm:text-3xl font-black text-[#FF671F] leading-none">{compat}</div>
-                  <div className="text-[8px] text-[#FF671F]/70 font-bold mb-0.5">MATCH</div>
-                </div>
-                <div className="h-1 w-10 bg-white/20 rounded-full overflow-hidden mt-0.5 ml-auto">
-                  <div 
-                    className="h-full bg-gradient-to-r from-[#FF671F] to-[#E55A1A]" 
-                    style={{ width: `${compat}%` }} 
-                  />
-                </div>
-                <div className="text-[7px] text-[#FF671F]/80 mt-0.5 leading-none max-w-[88px] truncate ml-auto">
-                  {getCompatReasons(profile).join(' · ')}
-                </div>
-              </div>
-            )}
-          </div>
-
-          <p className="text-xs leading-snug text-white/90 line-clamp-2 mb-2 pr-1">
-            {profile.bio}
-          </p>
-
-          <div className="flex flex-wrap gap-1 mb-1.5">
-            {profile.trainingTypes.slice(0, 2).map(t => (
-              <div key={t} className="text-[9px] bg-white/20 backdrop-blur px-2 py-0.5 rounded-full font-medium">{t}</div>
-            ))}
-          </div>
-
-          {profile.goals.length > 0 && (
-            <div className="flex flex-wrap gap-1 mb-1.5">
-              {profile.goals.slice(0, 2).map(g => (
-                <div key={g} className="text-[8px] bg-[#FF671F]/70 text-black px-2 py-px rounded-full font-medium">{g}</div>
-              ))}
-            </div>
-          )}
-
-          {/* Spectacular muro teaser (1-2 latest posts) - makes profiles feel alive while swiping - feed attractive polish */}
-          {(() => {
-            const teaser = getMuroTeaser(profile.id)
-            if (!teaser) return null
-            return (
-              <div 
-                onClick={(e) => { e.stopPropagation(); onShowProfile?.(profile) }}
-                className="flex mb-1.5 px-2 py-1 bg-[#111113]/70 backdrop-blur rounded-xl text-[9px] text-white/90 line-clamp-1 border border-[#FF671F]/20 cursor-pointer active:bg-[#FF671F]/10 items-center gap-1"
-              >
-                <span className="text-[#FF671F]">📝</span>
-                <span className="truncate">{teaser}</span>
-              </div>
-            )
-          })()}
-
-          <div className="flex items-center gap-2 text-[10px] text-white/75 font-medium truncate">
-            <span className="shrink-0">Disponible:</span>
-            <span className="truncate">{profile.availability.join(' · ')}</span>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (onShowProfile) onShowProfile(profile);
-            else toast.info('Ver perfil completo');
-          }}
-          className="absolute bottom-3 left-3 text-[9px] bg-black/55 active:bg-black/75 px-2.5 py-1 rounded-full border border-white/15 text-white font-medium z-10"
-        >
-          Ver perfil
-        </button>
-
-        {/* No text hint - clean for premium profile choosing (swipe or use buttons below) */}
-      </motion.div>
-    );
-  };
+    if (!topProfile || swipeBusy) return
+    setButtonExit('left')
+  }
 
   return (
-    <div className="flex flex-col p-3 pt-2 pb-4 relative bg-[#0D0D10]">
-      {/* Header — above card stack in paint order */}
-      <div className="relative z-30 flex items-start justify-between gap-2 mb-2 px-0.5 shrink-0 bg-[#0D0D10]">
+    <div className="em-v2-explore flex flex-col p-3 pt-2 pb-4 relative">
+      <div className="relative z-30 flex items-start justify-between gap-2 mb-2 px-0.5 shrink-0">
         <div className="min-w-0 flex-1">
-          <div className="text-xl sm:text-3xl font-extrabold tracking-tight leading-none">Explorar</div>
-          <div className="mt-1 text-[11px] leading-snug text-[#9CA3AF]">
-            <span className="text-[#FF671F] font-semibold">{deck.length} disponibles</span>
-            {userLocation ? ' cerca' : ' en tu zona'}
-          </div>
+          <h1 className="em-v2-explore__header-title">Explorar</h1>
+          <p className="em-v2-explore__header-sub">
+            <strong>{deck.length} disponibles</strong>
+            {userLocation ? ' cerca de ti' : ' en tu zona'}
+          </p>
         </div>
 
         <div className="flex items-center gap-1.5">
           {!userLocation && (
-            <button 
+            <button
+              type="button"
               onClick={requestUserLocation}
-              className="text-xs flex items-center gap-1 bg-[#FF671F]/10 text-[#FF671F] px-3 py-1.5 rounded-2xl active:bg-[#FF671F] active:text-black"
+              className="em-v2-chip-btn em-v2-chip-btn--brand"
             >
               <MapPin size={13}/> GPS
             </button>
           )}
-          <button 
-            onClick={() => { setOptimisticRemovedId(null); setDragX(0); resetDeck(); }} 
-            className="text-xs flex items-center gap-1 text-[#9CA3AF] active:text-white px-3 py-1.5 rounded-2xl active:bg-[#25252A]"
+          <button
+            type="button"
+            onClick={() => { void handleResetDeck() }}
+            disabled={isResettingDeck}
+            className="em-v2-chip-btn disabled:opacity-50"
           >
-            <RefreshCw size={13}/> Reiniciar
+            <RefreshCw size={13} className={isResettingDeck ? 'animate-spin' : ''}/> {isResettingDeck ? 'Reiniciando…' : 'Reiniciar'}
           </button>
           <button
             type="button"
             onClick={() => setShowFilters(true)}
             aria-label="Abrir filtros de búsqueda"
-            className="relative p-2 active:bg-[#25252A] rounded-2xl bg-[#1C1C20] border border-[#2F2F35]"
+            className="em-v2-chip-btn em-v2-chip-btn--icon relative"
           >
             <Filter size={18} aria-hidden />
             {(filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0) > 0 && (
@@ -489,13 +306,30 @@ export const ExploreTab = ({
         </div>
       </div>
 
-      <SyncHourBanner
-        compact
-        onActivateLive={onActivateLive}
-        db={db}
-        city={cityLabel}
-        isDemoMode={isDemoMode}
-      />
+      {!compactHeader && (
+        <SyncHourBanner
+          compact
+          onActivateLive={onActivateLive}
+          db={db}
+          city={cityLabel}
+          isDemoMode={isDemoMode}
+        />
+      )}
+
+      {onOpenMap && (
+        <button
+          type="button"
+          onClick={onOpenMap}
+          className={`em-v2-map-cta relative z-20 mb-2 shrink-0 ${compactHeader ? 'em-v2-map-cta--compact py-2' : ''}`}
+        >
+          <span className="em-v2-map-cta__title">
+            {liveCountForUI > 0
+              ? `🟢 ${liveCountForUI} en ${BRAND_COPY.liveMapLabel} ahora`
+              : `Abre el ${BRAND_COPY.liveMapLabel}`}
+          </span>
+          <span className="em-v2-map-cta__arrow">Mapa →</span>
+        </button>
+      )}
 
       {showSparseBanner && (
         <div className="relative z-20 mb-3 mx-1 p-3 rounded-2xl bg-[#FF671F]/10 border border-[#FF671F]/25 text-[11px] leading-snug shrink-0">
@@ -530,7 +364,7 @@ export const ExploreTab = ({
       )}
 
       {/* Cards Stack Area — fixed height so recs below stay reachable on scroll */}
-      <div className="relative z-0 flex items-center justify-center my-1 h-[min(38dvh,320px)] sm:h-[min(44dvh,380px)] bg-[#0D0D10] overflow-hidden shrink-0">
+      <div className="em-v2-swipe-stack relative z-0 flex items-center justify-center my-1.5 h-[min(40dvh,340px)] sm:h-[min(44dvh,380px)] overflow-hidden shrink-0">
         {isLoadingProfiles && visibleCards.length === 0 && (
           <SwipeCardSkeleton />
         )}
@@ -654,10 +488,12 @@ export const ExploreTab = ({
                   Cambiar filtros
                 </button>
                 <button 
-                  onClick={() => { setOptimisticRemovedId(null); setDragX(0); resetDeck(); }}
-                  className="px-5 py-2.5 bg-[#FF671F] text-black rounded-2xl text-sm font-semibold active:bg-[#E55A1A]"
+                  type="button"
+                  onClick={() => { void handleResetDeck() }}
+                  disabled={isResettingDeck}
+                  className="px-5 py-2.5 bg-[#FF671F] text-black rounded-2xl text-sm font-semibold active:bg-[#E55A1A] disabled:opacity-50"
                 >
-                  Reiniciar deck
+                  {isResettingDeck ? 'Reiniciando…' : 'Reiniciar deck'}
                 </button>
                 <button 
                   onClick={() => {
@@ -676,31 +512,63 @@ export const ExploreTab = ({
           )}
 
           {/* Render stack from back to front */}
-          {visibleCards.slice().reverse().map((profile, revIndex) => {
-            const realIndex = visibleCards.length - 1 - revIndex;
-            return renderCard(profile, realIndex);
-          })}
+          {visibleCards
+            .slice()
+            .reverse()
+            .map((profile, revIndex) => {
+              const stackIndex = visibleCards.length - 1 - revIndex
+              const meta = cardMetaById.get(profile.id)
+              if (!meta) return null
+              return (
+                <ExploreSwipeCard
+                  key={profile.id}
+                  profile={profile}
+                  stackIndex={stackIndex}
+                  isInteractive={stackIndex === 0 && !swipeBusy}
+                  buttonExit={stackIndex === 0 ? buttonExit : null}
+                  onButtonExitHandled={() => setButtonExit(null)}
+                  onSwipe={onSwipe}
+                  onShowProfile={onShowProfile}
+                  onReport={onReport}
+                  compat={meta.compat}
+                  dist={meta.dist}
+                  verified={meta.verified}
+                  isRealProfile={meta.isRealProfile}
+                  isDemoSeed={meta.isDemoSeed}
+                  isNetwork={meta.isNetwork}
+                  bondMinutes={meta.bondMinutes}
+                  compatReasons={meta.compatReasons}
+                  muroTeaser={meta.muroTeaser}
+                  hasUserLocation={!!userLocation}
+                  stackPromoting={swipeBusy}
+                />
+              )
+            })}
         </AnimatePresence>
       </div>
 
       {/* Action Buttons - Unique EntrenaMatch style */}
       {deck.length > 0 && topProfile && (
-        <div className="flex justify-center items-center gap-5 py-2 shrink-0">
-          <button 
+        <div className="em-v2-swipe-actions shrink-0">
+          <button
+            type="button"
             onClick={handlePass}
-            className="group w-14 h-14 rounded-full bg-[#1C1C20] border border-[#2F2F35] flex flex-col items-center justify-center active:scale-90 transition-all shadow-inner hover:border-red-500/50"
+            disabled={swipeBusy}
+            className="em-v2-action-pass disabled:opacity-50"
             aria-label="Pasar"
           >
-            <X size={28} className="text-red-400 group-active:text-red-500" />
-            <span className="text-[8px] text-red-400/70 -mt-0.5 tracking-widest">PASAR</span>
+            <X size={26} className="text-red-400" />
+            <span className="em-v2-action-label text-red-400/80">PASAR</span>
           </button>
-          <button 
+          <button
+            type="button"
             onClick={handleLike}
-            className="group w-20 h-20 rounded-full bg-gradient-to-br from-[#FF671F] to-[#E55A1A] flex flex-col items-center justify-center active:scale-90 transition-all shadow-xl shadow-[#FF671F]/50 ring-1 ring-white/20"
+            disabled={swipeBusy}
+            className="em-v2-action-like disabled:opacity-50"
             aria-label="Entrenar juntos"
           >
-            <Heart size={32} className="text-black" />
-            <span className="text-[9px] text-black/80 -mt-1 font-bold tracking-[1px]">ENTRENAR</span>
+            <Heart size={30} className="text-black" fill="black" />
+            <span className="em-v2-action-label text-black/85">ENTRENAR</span>
           </button>
         </div>
       )}
@@ -789,9 +657,9 @@ export const ExploreTab = ({
           <div className="flex items-center justify-between mb-2 px-0.5 gap-2">
             <div className="font-semibold text-sm flex items-center gap-1 text-[#FFD700] min-w-0">
               <span className="truncate">🔥 TOP REDES</span>
-              <span className="text-[8px] bg-[#FFD700]/20 px-1 rounded text-black shrink-0">LIVE</span>
+              <span className="text-[10px] bg-[#FFD700]/20 px-1 rounded text-black shrink-0">LIVE</span>
             </div>
-            <div className="text-[8px] text-[#9CA3AF] shrink-0">Tu grafo mueve el pulso</div>
+            <div className="text-[10px] text-[#9CA3AF] shrink-0">Tu red en el mapa LIVE</div>
           </div>
           <div className="explore-recs-scroll flex gap-2 overflow-x-auto pb-1 snap-x snap-mandatory md:grid md:grid-cols-2 md:overflow-visible md:snap-none">
             {topNetworks.map((n) => (
@@ -808,14 +676,14 @@ export const ExploreTab = ({
                   badgeSize="xs"
                 />
                 <div className="min-w-0 flex-1">
-                  <div className="font-medium text-sm truncate flex items-center gap-1 text-[#FFD700]">{n.profile.name} <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">FE {n.np}</span></div>
-                  <div className="text-[9px] text-[#9CA3AF] truncate">{n.numPartners} socios • {n.totalMin} min total • top con {n.topPartnerName}</div>
-                  <div className="text-[8px] text-[#22c55e] mt-0.5">+{Math.floor(n.totalMin / 10)}% impacto colectivo en la red</div>
+                  <div className="font-medium text-sm truncate flex items-center gap-1 text-[#FFD700]">{n.profile.name} <span className="text-[10px] bg-[#FFD700] text-black px-1 rounded font-bold">FE {n.np}</span></div>
+                  <div className="text-[10px] text-[#9CA3AF] truncate">{n.numPartners} socios • {n.totalMin} min total • top con {n.topPartnerName}</div>
+                  <div className="text-[10px] text-[#22c55e] mt-0.5">+{Math.floor(n.totalMin / 10)}% impacto en el mapa LIVE</div>
                 </div>
               </div>
             ))}
           </div>
-          <div className="text-[8px] text-center text-[#FFD700]/60 mt-1">Las redes más fuertes dominan el pulso y las recomendaciones. Construye la tuya →</div>
+          <div className="text-[10px] text-center text-[#FFD700]/60 mt-1">Las redes más fuertes destacan en Explorar. Construye la tuya →</div>
         </div>
       )}
       <GymInviteQrSheet

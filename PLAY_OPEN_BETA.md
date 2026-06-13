@@ -17,9 +17,11 @@
 **Full description:**
 EntrenaMatch connects lifters in real time. Go LIVE on the map, match with training partners, run EntrenaSync sessions, join squads, book EntrenaCoach trainers, and track nutrition with Fuel AI. Built for Chile — Spanish-first, CLP payments via Mercado Pago.
 
-## Listing ES
+## Listing ES (v0.1.340)
 
-Ver `PLAY_STORE_ASSETS.md` para copy en español.
+**Short (80 chars):** `Quien entrena cerca, ahora. Match, chat y EntrenaSync. Fútbol, pádel, gym y más. +18.`
+
+**Full — ver** `assets/play-store/ASSETS.md` (párrafo piloto Viña × Santiago, sin métricas inventadas).
 
 ## Comandos
 

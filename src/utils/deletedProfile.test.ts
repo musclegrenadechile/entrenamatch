@@ -7,6 +7,11 @@ describe('deletedProfile', () => {
     expect(isDeletedProfile({ name: 'Ana', accountStatus: 'deleted' })).toBe(true)
   })
 
+  it('detects suspended accounts as hidden', () => {
+    expect(isDeletedProfileData({ name: 'Ana', accountStatus: 'suspended' })).toBe(true)
+    expect(isDeletedProfile({ name: 'Ana', accountStatus: 'suspended' })).toBe(true)
+  })
+
   it('detects placeholder name', () => {
     expect(isDeletedProfileData({ name: 'Cuenta eliminada' })).toBe(true)
   })

@@ -212,10 +212,10 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
     const finalIntensity = isHighlightRipple ? Math.max(intensity, 2.4) : intensity
     const rippleId = 'sync-' + Date.now()
     const rippleLabel = isHighlightRipple
-      ? `⭐ HIGHLIGHT DE RED • ${label}`
+      ? `⭐ EntrenaSync destacado · ${label}`
       : intensity >= 1.5
-        ? `⚡ Onda de Sync • ${label}`
-        : `🌊 Onda de Sync • ${label}`
+        ? `⚡ EntrenaSync activo · ${label}`
+        : `🌊 EntrenaSync en vivo · ${label}`
 
     ss.setSyncRipples((prev) => [
       ...prev,
@@ -489,12 +489,12 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
     if (newCombo >= 3) {
       confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } })
       toast.success(`${emoji} RACHA x${newCombo}!`, {
-        description: 'Onda fuerte en el mapa — quien esté en GymPulse lo presencia',
+        description: 'Onda fuerte en el Mapa LIVE — quien esté cerca lo presencia',
       })
       triggerHaptic('medium')
     } else if (newCombo >= 2) {
       toast.success(`${emoji} ${label} ×${newCombo}`, {
-        description: 'La red siente la racha en el GymPulse',
+        description: 'La red siente la racha en el Mapa LIVE',
       })
     } else {
       toast.success(`${emoji} ${label}`, {
@@ -519,7 +519,7 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
     if (!o.isUserLive(partnerId)) {
       toast.error(`${partnerName || 'Tu compañero'} no está en vivo ahora`, {
         description:
-          'Ambos deben tener live activo. Actualiza Explorar/mapa o espera a que encienda su GymPulse.',
+          'Ambos deben tener LIVE activo. Actualiza Explorar/Mapa o espera a que encienda su LIVE.',
       })
       return
     }
@@ -600,7 +600,7 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
         emitArenaMapRipple('Sync iniciado', 1.05, { vibe: 12, actionsSnapshot: [], notifyNearby: false })
       }, 400)
       toast.success(`EntrenaSync iniciado con ${partnerName}`, {
-        description: 'Arena abierta — vuestra sync ondea en el GymPulse en vivo',
+        description: 'Arena abierta — vuestra sync ondea en el Mapa LIVE',
       })
       try {
         confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } })
@@ -1291,7 +1291,7 @@ export function useArenaSyncController(opts: UseArenaSyncControllerOptions) {
     }
     if (!o.isUserLive(targetId)) {
       toast.error(`${target.name} no está en vivo`, {
-        description: 'Espera a que active live en el GymPulse.',
+        description: 'Espera a que active LIVE en el Mapa LIVE.',
       })
       return
     }

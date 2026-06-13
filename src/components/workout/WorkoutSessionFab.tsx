@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Dumbbell, MessageCircle, Plus, UtensilsCrossed } from 'lucide-react'
+import { Dumbbell, MessageCircle, Plus, Radio, UtensilsCrossed } from 'lucide-react'
 import { useDraggableFabPosition } from '../../hooks/useDraggableFabPosition'
 import {
   summarizeWorkoutDraft,
@@ -19,15 +19,17 @@ export interface WorkoutSessionFabProps {
   bottomClass?: string
   /** Fase B — pill fina arriba en chat activo */
   layout?: WorkoutSessionFabLayout
-  /** Apila el FAB un poco más arriba si LIVE también está visible */
-  liveActive?: boolean
+  /** LIVE integrado en el gadget (un solo FAB visible) */
+  onToggleLive?: () => void
+  isLive?: boolean
+  isTogglingLive?: boolean
 }
 
 function stopPointer(e: React.PointerEvent) {
   e.stopPropagation()
 }
 
-/** Gadget de sesión activa — Fases A–D */
+/** Gadget de sesión activa — absorbe LIVE cuando hay entreno en curso */
 export function WorkoutSessionFab({
   draft,
   onResume,
@@ -38,11 +40,13 @@ export function WorkoutSessionFab({
   hidden,
   bottomClass,
   layout = 'fab',
-  liveActive = false,
+  onToggleLive,
+  isLive = false,
+  isTogglingLive = false,
 }: WorkoutSessionFabProps) {
   const [, setTick] = useState(0)
   const mapTab = bottomClass?.includes('7.5rem')
-  const defaultBottomExtraPx = (mapTab ? 46 : 0) + (liveActive ? 52 : 0)
+  const defaultBottomExtraPx = mapTab ? 46 : 0
 
   const drag = useDraggableFabPosition({
     defaultBottomExtraPx,
@@ -63,6 +67,28 @@ export function WorkoutSessionFab({
   const bottom =
     bottomClass || 'bottom-[calc(74px+env(safe-area-inset-bottom))]'
   const showActions = !!(onQuickAddSet || onOpenChat || onOpenFuel)
+
+  const liveChip =
+    onToggleLive && layout === 'fab' ? (
+      <button
+        type="button"
+        onPointerDown={stopPointer}
+        onClick={(e) => {
+          e.stopPropagation()
+          onToggleLive()
+        }}
+        disabled={isTogglingLive}
+        className={`workout-session-fab-live flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${
+          isLive
+            ? 'bg-[#E11D48] text-white'
+            : 'bg-[#22c55e] text-black'
+        } ${isTogglingLive ? 'opacity-70' : 'active:scale-95'}`}
+        title={isLive ? 'Terminar LIVE' : 'Activar LIVE'}
+      >
+        <Radio className={`w-3 h-3 ${isLive ? 'animate-pulse' : ''}`} />
+        {isTogglingLive ? '…' : isLive ? 'EN VIVO' : 'IR LIVE'}
+      </button>
+    ) : null
 
   const actionButtons = showActions ? (
     <div className="workout-session-fab-actions">
@@ -150,7 +176,7 @@ export function WorkoutSessionFab({
   return (
     <div
       ref={drag.containerRef}
-      className={`workout-session-fab fixed z-[44] flex flex-col items-start gap-1 max-w-[min(72vw,240px)] ${
+      className={`workout-session-fab fixed z-[45] flex flex-col items-start gap-1 max-w-[min(72vw,240px)] ${
         drag.useCssDefault ? `left-4 ${bottom}` : ''
       }`}
       style={drag.style}
@@ -169,10 +195,13 @@ export function WorkoutSessionFab({
           drag.isDragging ? 'cursor-grabbing scale-[1.02] ring-2 ring-white/30' : 'cursor-grab active:scale-95'
         }`}
       >
-        <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide opacity-90">
-          <Dumbbell className="w-3.5 h-3.5 shrink-0" />
-          Sesión activa
-        </span>
+        <div className="flex items-center justify-between gap-2 mb-0.5">
+          <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-wide opacity-90">
+            <Dumbbell className="w-3.5 h-3.5 shrink-0" />
+            Sesión activa
+          </span>
+          {liveChip}
+        </div>
         <span className="text-xs font-black truncate max-w-full leading-tight text-left">
           {summary.currentExerciseName}
         </span>

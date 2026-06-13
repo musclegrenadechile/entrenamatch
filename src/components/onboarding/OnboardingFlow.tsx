@@ -11,7 +11,7 @@ import type { CurrentUser } from '../../types';
 import { QUICK_DEMO_USER } from '../../utils/quickDemo';
 
 /** Create: 3 pasos (perfil → entreno → entrar). Edit mantiene flujo completo. */
-const ONBOARDING_CREATE_LAST_STEP = 2;
+const ONBOARDING_CREATE_LAST_STEP = 3;
 const ONBOARDING_EDIT_LAST_STEP = 3;
 const SHOW_DEV_FILL = import.meta.env.DEV;
 const TRAINING_LEVELS = ['Principiante', 'Intermedio', 'Avanzado'] as const;
@@ -171,11 +171,11 @@ export const OnboardingFlow = ({
   const isEditingProfile = isEditMode;
   const lastStep = isEditMode ? ONBOARDING_EDIT_LAST_STEP : ONBOARDING_CREATE_LAST_STEP;
   const totalSteps = lastStep + 1;
-  const isPresenceStep = onboardingStep === 0;
-  const isEssenceStep = onboardingStep === 1;
+  const showIntroStep = !isEditMode && onboardingStep === 0;
+  const isPresenceStep = isEditMode ? onboardingStep === 0 : onboardingStep === 1;
+  const isEssenceStep = isEditMode ? onboardingStep === 1 : onboardingStep === 2;
   const isPulseStep = isEditMode && onboardingStep === 2;
-  const isConsentsStep = isEditMode ? onboardingStep === 3 : onboardingStep === 2;
-  const showIntroStep = false;
+  const isConsentsStep = isEditMode ? onboardingStep === 3 : onboardingStep === 3;
 
   // Live updating preview card (the key onboarding improvement - user sees exactly how they will appear in Explore + live lists)
   // Enhanced to preview the unique EntrenaSync and live features to build excitement from day 1
@@ -625,14 +625,14 @@ export const OnboardingFlow = ({
           <div className="space-y-5">
             <div className="text-center mb-2">
               <div className="uppercase text-[9px] tracking-[2px] text-[#FF671F] mb-2 font-medium">BIENVENIDO</div>
-              <div className="text-2xl font-black tracking-[-1px] leading-tight">Encuentra quien entrena como tú,<br />en vivo y conecta</div>
+              <div className="text-2xl font-black tracking-[-1px] leading-tight">Fútbol, pádel, gym, running…<br />quien entrena cerca, ahora</div>
             </div>
             <div className="space-y-3">
               <div className="flex gap-3 bg-[#1C1C20] p-4 rounded-2xl border border-[#2F2F35]">
                 <MapPin className="text-[#FF671F] shrink-0 mt-0.5" size={22} />
                 <div>
-                  <div className="font-bold text-sm">Mapa en vivo</div>
-                  <div className="text-[#9CA3AF] text-xs mt-0.5">Ve quién entrena cerca de ti ahora y conéctate al instante.</div>
+                  <div className="font-bold text-sm">{BRAND_COPY.liveMapLabel}</div>
+                  <div className="text-[#9CA3AF] text-xs mt-0.5">Ve quién entrena en la cancha, pista o gym cerca de ti — ahora.</div>
                 </div>
               </div>
               <div className="flex gap-3 bg-[#1C1C20] p-4 rounded-2xl border border-[#2F2F35]">
@@ -651,7 +651,7 @@ export const OnboardingFlow = ({
               </div>
             </div>
             <p className="text-[10px] text-[#9CA3AF] text-center leading-snug">
-              En 4 pasos creas tu perfil. Luego eliges si apareces en el mapa en vivo.
+              En 4 pasos creas tu perfil. Luego eliges si apareces en el Mapa LIVE.
             </p>
           </div>
         )}

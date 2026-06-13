@@ -3,8 +3,6 @@ import { toast } from 'sonner';
 import {
   signUpWithEmail,
   signInWithEmail,
-  createUserProfile,
-  getUserProfile,
   sendPasswordReset,
   signInWithGoogle,
   completeGoogleSignInProfile,
@@ -120,20 +118,6 @@ export function useAuthActions() {
           markAuthSuccess(true);
         } else if (isRegister) {
           const fbUser = await signUpWithEmail(authEmail, authPassword);
-          await createUserProfile(fbUser, {
-            name: '',
-            age: 25,
-            gender: 'hombre',
-            city: '',
-            country: 'Chile',
-            bio: '',
-            photos: [],
-            trainingTypes: [],
-            goals: [],
-            level: 'Intermedio',
-            intensity: 'Moderado',
-            availability: ['Tarde'],
-          });
           toast.success('Cuenta creada exitosamente');
           loggedInUser = fbUser;
           markAuthSuccess(fbUser);
@@ -167,49 +151,8 @@ export function useAuthActions() {
       } finally {
         setAuthLoading(false);
 
-        if (!isDemoMode && loggedInUser && loggedInUser !== true) {
-          try {
-            const profile = await getUserProfile(loggedInUser.uid);
-            if (profile) {
-              saveUser({ ...profile, id: 'me' } as any);
-              if (isRegister) setShowOnboarding(true);
-            } else {
-              saveUser({
-                id: 'me' as any,
-                name: '',
-                age: 25,
-                gender: 'hombre' as const,
-                city: '',
-                country: 'Chile',
-                bio: '',
-                photos: [],
-                trainingTypes: [],
-                goals: [],
-                level: 'Intermedio' as const,
-                intensity: 'Moderado' as const,
-                availability: ['Tarde'],
-              } as any);
-              setShowOnboarding(true);
-            }
-          } catch (e) {
-            console.warn('Profile load after real auth failed', e);
-            saveUser({
-              id: 'me' as any,
-              name: '',
-              age: 25,
-              gender: 'hombre' as const,
-              city: '',
-              country: 'Chile',
-              bio: '',
-              photos: [],
-              trainingTypes: [],
-              goals: [],
-              level: 'Intermedio' as const,
-              intensity: 'Moderado' as const,
-              availability: ['Tarde'],
-            } as any);
-            setShowOnboarding(true);
-          }
+        if (!isDemoMode && loggedInUser && loggedInUser !== true && isRegister) {
+          setShowOnboarding(true);
         } else if (isDemoMode && loggedInUser) {
           const hasLocalProfile = demoStorage.get(DEMO_KEYS.PROFILE);
           if (!hasLocalProfile) {

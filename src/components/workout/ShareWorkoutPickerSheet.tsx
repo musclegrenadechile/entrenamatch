@@ -64,7 +64,14 @@ export function ShareWorkoutPickerSheet({
           </button>
         </div>
 
-        <button type="button" className="share-workout-sheet__new" onClick={() => { onLogNew(); onClose() }}>
+        <button
+          type="button"
+          className="share-workout-sheet__new"
+          onClick={() => {
+            onClose()
+            onLogNew()
+          }}
+        >
           <Plus size={18} />
           Registrar entreno nuevo
         </button>

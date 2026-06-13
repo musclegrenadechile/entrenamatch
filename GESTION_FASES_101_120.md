@@ -1,6 +1,6 @@
 # Gestión fases 101–120 — EntrenaMatch
 
-**Versión actual:** v0.1.300  
+**Versión actual:** v0.1.345  
 **Deploy:** https://entrenamatch.web.app · https://musclegrenadechile.github.io/entrenamatch/
 
 ---
@@ -88,9 +88,19 @@ node scripts/pilot-sync-report.mjs
 node scripts/pilot-retention-report.mjs
 ```
 
+## Oleada 341–345 ✅ (v0.1.345)
+
+| Entregable | Estado |
+|------------|--------|
+| `useFuelBalancePipeline` + chart wearable | ✅ |
+| CTA Mapa LIVE siempre en Explorar | ✅ |
+| Spec screenshots Play | ✅ |
+| `PLAY_INTERNAL_v0.1.345.md` | ✅ |
+
 ## Próximo sprint
 
-1. Ejecutar QA matriz 2 dispositivos (P0_BETA)
-2. Convocar sábado LIVE piloto
-3. Medir Crashlytics 7 días
-4. Extracción `App.tsx` (chat shell)
+1. `.\build-play-store.bat` → AAB 345 → Play internal
+2. QA matriz 2 dispositivos (`P0_BETA_RELEASE.md`)
+3. Capturar 8 screenshots (`SCREENSHOTS_v0.1.345.md`)
+4. Sábado LIVE piloto + `pilot-retention-report.mjs`
+5. Extracción `App.tsx` (chat shell)

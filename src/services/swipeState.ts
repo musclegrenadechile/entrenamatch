@@ -67,25 +67,38 @@ export async function writePass(
   }).catch((e) => console.warn('[swipeState] passes collection write failed (deck synced on profile)', e))
 }
 
+/** After an explicit deck reset, profile arrays are empty + swipeDeckUpdatedAt set — ignore legacy passes. */
+export function shouldMergeLegacyPasses(data: Record<string, unknown> | undefined | null): boolean {
+  if (!data) return true
+  const liked = dedupeIds(data.swipeLikedIds)
+  const passed = dedupeIds(data.swipePassedIds)
+  if (passed.length === 0 && liked.length === 0 && data.swipeDeckUpdatedAt != null) {
+    return false
+  }
+  return true
+}
+
 export async function loadSwipeStateForUser(
   db: Firestore,
   uid: string
 ): Promise<{ liked: string[]; passed: string[] }> {
   const { collection, doc, getDoc, getDocs, query, where } = await import('firebase/firestore')
   const snap = await getDoc(doc(db, 'profiles', uid))
-  const data = snap.exists() ? snap.data() : {}
+  const data = snap.exists() ? (snap.data() as Record<string, unknown>) : {}
   let liked = dedupeIds(data?.swipeLikedIds)
   let passed = dedupeIds(data?.swipePassedIds)
 
-  // Merge passes collection (legacy writes) so deck stays consistent cross-device.
-  try {
-    const passSnap = await getDocs(query(collection(db, 'passes'), where('passer', '==', uid)))
-    const fromPasses = passSnap.docs
-      .map((d) => d.data()?.passed)
-      .filter((id): id is string => typeof id === 'string' && !!id)
-    passed = dedupeIds([...passed, ...fromPasses])
-  } catch (e) {
-    console.warn('[swipeState] passes query failed', e)
+  // Merge passes collection (legacy writes) unless the owner explicitly reset the deck.
+  if (shouldMergeLegacyPasses(data)) {
+    try {
+      const passSnap = await getDocs(query(collection(db, 'passes'), where('passer', '==', uid)))
+      const fromPasses = passSnap.docs
+        .map((d) => d.data()?.passed)
+        .filter((id): id is string => typeof id === 'string' && !!id)
+      passed = dedupeIds([...passed, ...fromPasses])
+    } catch (e) {
+      console.warn('[swipeState] passes query failed', e)
+    }
   }
 
   return { liked, passed }

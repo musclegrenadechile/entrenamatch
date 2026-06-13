@@ -274,18 +274,25 @@ export function ProfileMuroSection(props: ProfileTabProps) {
           if (!muroComposerText.trim()) return
           setMuroPublishing(true)
           try {
-            await createProfilePost(muroComposerText, muroComposerPhoto)
+            await createProfilePost(muroComposerText, muroComposerPhoto, undefined, {
+              skipToast: true,
+            })
             setMuroComposerText('')
             setMuroComposerPhoto(null)
-            setMuroPublishing(false)
+            openCommunityMuro?.()
+            toast.success(BRAND_COPY.feed.publishedTitle, {
+              description: BRAND_COPY.feed.publishedDesc,
+            })
           } catch (e) {
+            toast.error('No se pudo publicar', { description: 'Inténtalo de nuevo.' })
+          } finally {
             setMuroPublishing(false)
           }
         }}
         disabled={!muroComposerText.trim() || muroPublishing}
         className="flex-1 btn-primary text-sm py-2 disabled:opacity-50 flex items-center justify-center gap-2"
       >
-        {muroPublishing ? 'Publicando...' : 'Publicar'}
+        {muroPublishing ? BRAND_COPY.feed.publishingLabel : BRAND_COPY.feed.publishButton}
       </motion.button>
     </div>
     <div className="text-[10px] text-center text-[#9CA3AF] mt-1.5">Se vuelve parte de tu red de rendimiento en EntrenaMatch • visible en tu perfil y para la comunidad</div>

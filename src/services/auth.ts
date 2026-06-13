@@ -8,6 +8,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db, isFirebaseConfigured } from './firebase';
+import { isDeletedProfileData } from '../utils/deletedProfile';
 
 // ==================== DEMO MODE (GitHub Pages public demo) ====================
 const DEMO_USER_KEY = 'entrenamatch_demo_user';
@@ -230,10 +231,10 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
   const userRef = doc(db, 'profiles', uid); // We use /profiles for the rich app profile
   const docSnap = await getDoc(userRef);
 
-  if (docSnap.exists()) {
-    return docSnap.data() as UserProfile;
-  }
-  return null;
+  if (!docSnap.exists()) return null;
+  const data = docSnap.data() as Record<string, unknown>;
+  if (isDeletedProfileData(data)) return null;
+  return data as UserProfile;
 };
 
 // Listen to auth state changes

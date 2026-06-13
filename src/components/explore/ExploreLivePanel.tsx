@@ -7,6 +7,7 @@ import { GymPulseMapShell, GymPulseBottomSheet } from '../map'
 import { GymPulseTour, hasSeenGymPulseTour } from '../map/GymPulseTour'
 import { seedGymRoutinesForPartner } from '../../services/gymRoutines'
 import { formatLiveDistanceKm } from '../../utils/formatLiveDistance'
+import { getAccountAgeDays } from '../../utils/profileProgressive'
 
 /** Lazy-load Leaflet + GymPulseMap only when Map tab opens (fase 198). */
 const GymPulseMap = lazy(() =>
@@ -178,12 +179,17 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
   }, [mapFullscreen, dedicatedMapTab, gymPulseMapRef])
 
   useEffect(() => {
-    if ((showLiveMap || dedicatedMapTab) && !hasSeenGymPulseTour()) {
-      const t = window.setTimeout(() => setShowGymPulseTour(true), 400)
+    const accountAgeDays = getAccountAgeDays(currentUser)
+    if (
+      (showLiveMap || dedicatedMapTab) &&
+      !hasSeenGymPulseTour() &&
+      accountAgeDays >= 2
+    ) {
+      const t = window.setTimeout(() => setShowGymPulseTour(true), 3000)
       return () => window.clearTimeout(t)
     }
     if (!showLiveMap && !dedicatedMapTab) setShowGymPulseTour(false)
-  }, [showLiveMap, dedicatedMapTab])
+  }, [showLiveMap, dedicatedMapTab, currentUser])
 
   /** Map renders only on the dedicated Map tab — Explorar keeps the live strip + swipe deck. */
   const mapVisible = dedicatedMapTab
@@ -228,7 +234,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
             const bInNet = !!syncBonds[b.id] ? -1 : 0;
             if (aInNet !== bInNet) return aInNet - bInNet;
             return (a.distance||0)-(b.distance||0);
-          }).slice(0, 4).map((user, idx) => (
+          }).slice(0, 2).map((user, idx) => (
             <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className={`min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border active:scale-95 relative overflow-hidden shadow-lg shadow-[#22c55e]/10 ${ (user.joinCount||0) >= 3 ? 'border-[#FF671F]/60 shadow-[0_0_0_1px_#FF671F] animate-[pulse_2s_ease-in-out_infinite]' : 'border-[#22c55e]/70' }`} whileHover={{ scale: 1.04, y: -2, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(34 197 94 / 0.2)' }} whileTap={{ scale: 0.96 }} initial={{ opacity: 0.85, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
               <div className="flex justify-between items-start mb-1">
                 <div className="flex items-center gap-1">

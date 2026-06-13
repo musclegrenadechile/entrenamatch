@@ -34,7 +34,12 @@ export function parseProfileFromFirestoreDoc(
     liveJoins: data.liveJoins != null ? (data.liveJoins as number) : undefined,
     joinedLiveStreak:
       data.joinedLiveStreak != null ? (data.joinedLiveStreak as number) : undefined,
-    accountStatus: data.accountStatus === 'deleted' ? 'deleted' : undefined,
+    accountStatus:
+      data.accountStatus === 'deleted'
+        ? 'deleted'
+        : data.accountStatus === 'suspended'
+          ? 'suspended'
+          : undefined,
     dailyTrainingStreak:
       data.dailyTrainingStreak != null ? (data.dailyTrainingStreak as number) : undefined,
     dailySynergyStreak:

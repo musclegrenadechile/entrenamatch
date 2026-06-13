@@ -48,6 +48,12 @@ describe('gymPulseLive (fase 78)', () => {
     ).toBe(false)
   })
 
+  it('isActiveLiveUser rejects live flag without valid since', () => {
+    const now = Date.now()
+    expect(isActiveLiveUser({ trainingNow: true }, now)).toBe(false)
+    expect(isActiveLiveUser({ trainingNow: true, trainingNowSince: null }, now)).toBe(false)
+  })
+
   it('hasMapCoords rejects invalid coords', () => {
     expect(hasMapCoords({ lat: -33, lng: -71 })).toBe(true)
     expect(hasMapCoords({ lat: NaN, lng: -71 })).toBe(false)

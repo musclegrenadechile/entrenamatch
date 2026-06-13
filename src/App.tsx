@@ -1,6 +1,6 @@
 // ✅ Build limpio después de revert V2 - 06/06/2026
 // @ts-nocheck
-import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense, Component, type ReactNode, type ChangeEvent } from 'react'
+import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense, Component, startTransition, type ReactNode, type ChangeEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, MessageCircle, User, MapPin, Dumbbell, 
@@ -10,7 +10,6 @@ import {
 import { 
   signUpWithEmail, 
   signInWithEmail, 
-  createUserProfile,
   updateUserProfile,
   getUserProfile,
   logout,
@@ -93,6 +92,7 @@ import {
   latestPhotosUpdatedAt,
   profilePhotosChanged,
   resolveProfilePhotos,
+  resolvePhotosForFirestoreSave,
 } from './utils/profilePhotos'
 import { partnersForMap } from './utils/partnerLocations'
 import {
@@ -111,18 +111,18 @@ import {
   isUserLiveInSnapshot,
   profileDocToLiveUser,
 } from './utils/gymPulseLive'
+import { LIVE_PENDING_GUARD_MS, stripStaleLiveReactivation } from './utils/liveToggleGuard'
 import { useDemoAuth } from './hooks/useDemoAuth'
 import { useProfile } from './contexts/ProfileContext'
 import { useFilters } from './hooks/useFilters'
 import { useRealSessions } from './hooks/useRealSessions'
 import { useSwipeDeck } from './hooks/useSwipeDeck'
 import { MapExplorePanelMount } from './components/map/MapExplorePanelMount'
-import { RedTab } from './components/red'
-import { ChatListPanel, ChatView } from './components/messages'
+import { RedTab, RedMessagesPanel } from './components/red'
 import type { ProfileSection } from './components/profile'
 import { LiveToggleFab } from './components/home'
-import { MarketplaceView } from './components/marketplace'
-import { AdminOpsPanel, CommunityAdminPanel } from './components/admin'
+import { MarketplaceViewMount } from './components/marketplace/MarketplaceViewMount'
+import { AdminOpsPanelMount, CommunityAdminPanelMount } from './components/admin'
 import {
   attachAppAdminListener,
   persistUserBlock,
@@ -131,24 +131,16 @@ import {
 import {
   attachMarketplaceAdminListener,
   attachMarketplaceProductsListener,
-  createMarketplaceProduct,
-  updateMarketplaceProduct,
-  deleteMarketplaceProduct,
-  createMarketplaceOrder,
   DEMO_MARKETPLACE_PRODUCTS,
-  type MarketplaceProductInput,
 } from './services/marketplace'
 import {
   attachAllMarketplaceOrdersListener,
   attachMyMarketplaceOrdersListener,
-  updateMarketplaceOrderStatus,
-  setTrainerVerified,
 } from './services/adminOps'
 import {
   attachAllTrainerBookingsListener,
-  computeAdminMetrics,
 } from './services/adminAnalytics'
-import { fetchMpHealth, markTrainerPayoutStatus, type MpHealthResult } from './services/adminMp'
+import { fetchMpHealth, type MpHealthResult } from './services/adminMp'
 import { ActivationGuide } from './components/onboarding/ActivationGuide'
 import { PullToRefresh } from './components/ui/PullToRefresh'
 import {
@@ -158,30 +150,20 @@ import {
   saveFirstStepsProgress,
   type FirstStepsProgress,
 } from './services/firstStepsProgress'
-import type { MarketplaceProduct, TrainerBooking, TrainerDispatchRequest, TrainerProfile, TrainerProfileInput, MarketplaceOrder } from './types'
-import { TrainerCoachView } from './components/trainerCoach'
+import type { MarketplaceProduct, TrainerBooking, TrainerDispatchRequest, TrainerProfile, MarketplaceOrder } from './types'
+import { TrainerCoachViewMount } from './components/trainerCoach/TrainerCoachViewMount'
 import {
   attachTrainerProfilesListener,
   attachMyTrainerProfileListener,
   attachTrainerBookingsListener,
-  saveTrainerProfile,
-  createTrainerBooking,
-  updateTrainerBookingStatus,
   linkReviewToBooking,
-  formatTrainerRate,
-  linkBookingSyncSession,
 } from './services/trainerCoach'
 import {
   attachClientDispatchListener,
   attachTrainerDispatchOfferListener,
   attachClientDispatchHistoryListener,
   attachTrainerDispatchHistoryListener,
-  createTrainerDispatchRequest,
-  cancelTrainerDispatch,
-  estimateDispatchPrice,
-  findNearbyDispatchTrainers,
 } from './services/trainerDispatch'
-import { payTrainerBooking, openTrainerPaymentCheckout } from './services/trainerPayments'
 import { LazyHomeTab, LazyExploreTab, LazyProfileTab, LazyMatchesTab, LazySquadsTab, LazySessionsTab, TAB_LOADING } from './components/app/LazyTabs'
 import { TabErrorBoundary } from './components/app/TabErrorBoundary'
 import { CityChallengeCelebrationModal } from './components/explore/CityChallengeCelebrationModal'
@@ -197,11 +179,13 @@ import {
 } from './services/profilePosts'
 import { fetchReviewsForProfile, submitReviewToFirestore } from './services/trainingReviews'
 import { isQuickDemoSession, clearQuickDemoSession } from './utils/quickDemo'
-import { enrichReturningProfile, isProfileComplete } from './utils/profileComplete'
+import { enrichReturningProfile, hasCoreProfileFields, isProfileComplete } from './utils/profileComplete'
 import {
   fetchProfilesByIds,
+  mergeDiscoveryWithPinnedPartners,
   mergeProfileLists,
 } from './services/profileDiscovery'
+import { isIncompleteMatchProfile } from './utils/matchProfileDisplay'
 import { isDeletedProfile, isDeletedProfileData } from './utils/deletedProfile'
 import { filterSeedsForCity } from './utils/citySeeds'
 import {
@@ -255,7 +239,7 @@ import {
   isZoneScoringActive,
 } from './services/zoneEventPhase'
 import { saveUserPushToken } from './services/userPushTokens'
-import { enrichProfileFromDirectory } from './utils/profileVerification'
+import { isPubliclyVerified } from './utils/profileVerification'
 import { buildInviteLink } from './utils/sparseCityDefaults'
 import { shouldFireSyncHourNotif } from './services/syncHour'
 import {
@@ -270,7 +254,8 @@ import {
 } from './utils/homeTeam'
 import { isTeamMemberId } from './utils/teamMembers'
 import { isSeedProfileId } from './utils/seedProfiles'
-import { EntrenoDeHoyModal, WorkoutPostCard, WorkoutSessionFab } from './components/workout'
+import { EntrenoDeHoyModalMount } from './components/workout/EntrenoDeHoyModalMount'
+import { WorkoutPostCard, WorkoutSessionFab } from './components/workout'
 import { detectWorkoutPRs, formatWorkoutPRSummary } from './utils/workoutPR'
 import { cloneExercises, workoutToTemplate } from './utils/workoutTemplates'
 import {
@@ -298,10 +283,9 @@ import {
 } from './services/fuel'
 import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr, buildFuelAnalyzeContext } from './utils/fuelCalculator'
 import { fetchRecentWorkouts, fetchUserWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, deleteWorkoutWithLinkedPost, buildWorkoutPreview, computeWorkoutStats, workoutToPreview, workoutShareText } from './services/workouts'
-import { useFuelBalance } from './hooks/useFuelBalance'
+import { useFuelBalancePipeline } from './hooks/useFuelBalancePipeline'
 import { useFuelState } from './hooks/useFuelState'
 import { useWeeklyPlan } from './hooks/useWeeklyPlan'
-import { buildFuelWeekBalanceDays } from './utils/fuelWeekBalance'
 import {
   buildPlanExercises,
   formatWeeklyPlanShareText,
@@ -314,6 +298,12 @@ import {
 import { maybeSendWeeklyPlanNotification } from './utils/weeklyPlanNotify'
 import { shareWeeklyPlanExternally } from './utils/weeklyPlanShare'
 import { shareNativeMessage } from './utils/shareNative'
+import { shareWorkoutStory, toastWorkoutShareOutcome } from './utils/workoutStoryShare'
+import {
+  SYNC_REPLAY_COPY,
+  buildWitnessEchoPostText,
+  formatSyncVibeLabel,
+} from './utils/syncReplayCopy'
 import {
   loadExercisePRs,
   syncExercisePRs,
@@ -322,6 +312,12 @@ import {
 } from './services/exercisePRs'
 import { useDailyPulse, type DailyPulseBridge } from './hooks/useDailyPulse'
 import { useChatSession } from './hooks/useChatSession'
+import { useChatVoicePlayer } from './hooks/useChatVoicePlayer'
+import { useNotificationRouter } from './hooks/useNotificationRouter'
+import { HomeFeedOverlays, FeedPhotoLightbox } from './components/home/HomeFeedOverlays'
+import { useNotificationsState } from './hooks/useNotificationsState'
+import { NotificationsPanel } from './components/notifications/NotificationsPanel'
+import { getRelativeTime } from './utils/relativeTime'
 import { useFeedState } from './hooks/useFeedState'
 import { computeGlobalFeed } from './utils/feedRanking'
 import { pickLivePostText, userHasRecentAutoLivePost } from './utils/feedPostMeta'
@@ -329,6 +325,7 @@ import { useSyncSession } from './hooks/useSyncSession'
 import { useArenaSyncController } from './hooks/useArenaSyncController'
 import { usePartnerLocations } from './hooks/usePartnerLocations'
 import { useLiveMapPipeline } from './hooks/useLiveMapPipeline'
+import { useLiveSessionGuard } from './hooks/useLiveSessionGuard'
 import { useLiveMotionMonitor } from './hooks/useLiveMotionMonitor'
 import { useSpotifyLiveSync } from './hooks/useSpotifyLiveSync'
 import {
@@ -351,8 +348,7 @@ import {
   earnConstancia,
   ensureConstanciaBalance,
 } from './services/constanciaEconomy'
-import { importHealthCaloriesForDate } from './services/healthImport'
-import { loadDailyEnergyCache } from './services/dailyEnergy'
+import { useWearableFuelIntegration } from './hooks/useWearableFuelIntegration'
 import { OnboardingFlow } from './components/onboarding/OnboardingFlow'
 import { ProfileEditFlow } from './components/profile/ProfileEditFlow'
 import { SyncArenaHost, SyncDuelSummary } from './components/arena'
@@ -381,7 +377,6 @@ import {
 import { attachDirectChatListener, type DirectChatMsg } from './services/chatMessages'
 import { processLikeAndMaybeMatch } from './services/matching'
 import { writePass } from './services/swipeState'
-import { buildSyncSessionId } from './services/syncSessions'
 import {
   buildDefaultPact,
   buildPactReminderMessage,
@@ -393,13 +388,11 @@ import {
 import { compareSyncWorkoutLogs, summarizePartnerWeekFromPosts, summarizePartnerWeekFromWorkouts } from './utils/workoutSyncCompare'
 import { fetchGymRoutinesFromFirestore, mergeGymRoutineTemplates } from './services/gymRoutines'
 import { estimateWorkoutBurn } from './domain/fuelBalance/estimateWorkoutBurn'
-import { FullProfileSheet } from './components/profile/FullProfileSheet'
+import { FullProfileSheetMount } from './components/profile/FullProfileSheetMount'
 import { VerificationFaceCapture } from './components/profile/VerificationFaceCapture'
 import { VerifiedProfilePhoto } from './components/profile/VerifiedProfilePhoto'
 import { triggerHaptic } from './utils/haptics'
 import {
-  loadStoredNotifications,
-  saveStoredNotifications,
   isQuotaError,
   reclaimLocalStorageSpace,
   pruneSeenIdMap,
@@ -412,6 +405,7 @@ import {
   SEEN_LIVE_JOINS_KEY,
   PREV_RED_SYNC_STATE_KEY,
   SESSION_TOAST_GRACE_MS,
+  seenLiveJoinsStorageKey,
   MAX_SEEN_IDS_PER_CHAT,
   MAX_SEEN_STRING_IDS,
   trimSetToMax,
@@ -656,9 +650,6 @@ function App() {
   const groupMessageUnsubsRef = useRef<Record<string, () => void>>({})
   const setActiveChatBridgeRef = useRef<(id: string | null) => void>(() => {})
   const activeChatRuntimeRef = useRef<string | null>(null)
-  const addNotificationRef = useRef<
-    (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => void
-  >(() => {})
   const chatIncomingRef = useRef<
     ((matchId: string, name: string, text: string, photo?: string) => void) | null
   >(null)
@@ -984,7 +975,7 @@ function App() {
       if (dp.currentChallenge?.type === 'bond' || dp.currentChallenge?.type === 'network') {
         pulseApi?.completeDailyChallenge(1)
       } else {
-        pulseApi?.awardConstancy(5, 'Voz enviada al GymPulse')
+        pulseApi?.awardConstancy(5, BRAND_COPY.toasts.voiceConstancy)
       }
     } catch (e) {
       console.error('Send voice error', e)
@@ -1099,6 +1090,7 @@ function App() {
   const {
     likedIds,
     passedIds,
+    isResettingDeck,
     saveLiked,
     savePassed,
     resetDeck: resetSwipeDeck,
@@ -1220,7 +1212,7 @@ function App() {
     if (isE2EHarnessActive() || hasSeenAppFeatureTour() || showActivationGuide) return
     window.setTimeout(() => {
       if (!hasSeenAppFeatureTour() && !showActivationGuide) setShowFeatureTour(true)
-    }, 2500)
+    }, 8000)
   }, [showActivationGuide])
   const [myMarketplaceOrders, setMyMarketplaceOrders] = useState<MarketplaceOrder[]>([])
   const [marketplaceProducts, setMarketplaceProducts] = useState<MarketplaceProduct[]>([])
@@ -1273,9 +1265,7 @@ function App() {
   })
   const [firstStepsProgress, setFirstStepsProgress] = useState<FirstStepsProgress | null>(null)
   const chatTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [healthBurnBonus, setHealthBurnBonus] = useState(0)
   const [exercisePRRecords, setExercisePRRecords] = useState<ExercisePRRecord[]>([])
-  const [healthImportHint, setHealthImportHint] = useState<string | undefined>()
   const [partnerGymStats, setPartnerGymStats] = useState<PartnerGymStats | null>(null)
   const [partnerGymLoading, setPartnerGymLoading] = useState(false)
   const [constanciaBalance, setConstanciaBalance] = useState<number | null>(null)
@@ -1372,6 +1362,19 @@ function App() {
   useEffect(() => {
     if (firebaseUser) lastSuccessfulAuthRef.current = firebaseUser
   }, [firebaseUser?.uid])
+
+  // Live-join dedup: per-account persistence + fresh session clock (no toast burst on login).
+  useEffect(() => {
+    appStartedAtRef.current = Date.now()
+    liveJoinsBootstrappedRef.current = false
+    if (!firebaseUser?.uid || isDemoMode) {
+      seenLiveJoinInteractionIdsRef.current = new Set()
+      return
+    }
+    seenLiveJoinInteractionIdsRef.current = loadPersistedStringIdSet(
+      seenLiveJoinsStorageKey(firebaseUser.uid)
+    )
+  }, [firebaseUser?.uid, isDemoMode])
 
   // Quick demo entry from AuthScreen
   useEffect(() => {
@@ -1600,16 +1603,28 @@ useEffect(() => {
     }
   }, [])
 
-  // For attractive voice message playback animation
-  const [playingVoiceId, setPlayingVoiceId] = useState<string | null>(null)
+  // For attractive voice message playback animation (fase 349 — useChatVoicePlayer)
+  const {
+    playingVoiceId,
+    voicePlayProgress,
+    currentAudioRef,
+    toggleVoicePlay,
+    stopVoice,
+  } = useChatVoicePlayer({
+    onHaptic: (kind) => {
+      try {
+        triggerHaptic(kind)
+      } catch {
+        /* ignore */
+      }
+    },
+  })
 
-  // Live visualizer for PREMIUM recording UX (real mic levels) + synced playback progress
-  const [recordingLevels, setRecordingLevels] = useState<number[]>([4,7,5,9,3,8,4,6,5,7])
-  const [voicePlayProgress, setVoicePlayProgress] = useState(0)
+  // Live visualizer for PREMIUM recording UX (real mic levels)
+  const [recordingLevels, setRecordingLevels] = useState<number[]>([4, 7, 5, 9, 3, 8, 4, 6, 5, 7])
   const audioContextRef = useRef<AudioContext | null>(null)
   const analyserRef = useRef<AnalyserNode | null>(null)
   const rafRef = useRef<number | null>(null)
-  const currentAudioRef = useRef<HTMLAudioElement | null>(null)
   const isRecordingRef = useRef(false)
 
   // Squads feature (fixed small training groups)
@@ -1714,15 +1729,108 @@ useEffect(() => {
   const handleFeedPhotoFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    e.target.value = ''
+
+    const applyDataUrl = (dataUrl: string) => setFeedPostPhoto(dataUrl)
+
+    if (!isDemoMode && storage && firebaseUser?.uid) {
+      setFeedPhotoUploading(true)
+      setFeedPhotoUploadProgress(0)
+      void (async () => {
+        try {
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader()
+            reader.onload = (event) => {
+              const result = event.target?.result
+              if (typeof result === 'string') resolve(result)
+              else reject(new Error('read failed'))
+            }
+            reader.onerror = () => reject(reader.error)
+            reader.readAsDataURL(file)
+          })
+          setFeedPhotoUploadProgress(35)
+          const { ref, uploadString, getDownloadURL } = await import('firebase/storage')
+          const path = `posts/${effectiveUserId}/feed-${Date.now()}.jpg`
+          const storageRef = ref(storage, path)
+          const snap = await uploadString(storageRef, dataUrl, 'data_url')
+          setFeedPhotoUploadProgress(90)
+          const url = await getDownloadURL(snap.ref)
+          setFeedPostPhoto(url)
+          setFeedPhotoUploadProgress(100)
+        } catch (uploadErr) {
+          try {
+            const dataUrl = await new Promise<string>((resolve, reject) => {
+              const reader = new FileReader()
+              reader.onload = (event) => {
+                const result = event.target?.result
+                if (typeof result === 'string') resolve(result)
+                else reject(new Error('read failed'))
+              }
+              reader.onerror = () => reject(reader.error)
+              reader.readAsDataURL(file)
+            })
+            applyDataUrl(dataUrl)
+            toast(
+              (uploadErr as { code?: string })?.code === 'storage/unauthorized'
+                ? 'Storage sin permisos — foto se subirá al publicar'
+                : 'Foto lista — se subirá al publicar'
+            )
+          } catch {
+            toast.error('No se pudo cargar la foto')
+          }
+        } finally {
+          setFeedPhotoUploading(false)
+        }
+      })()
+      return
+    }
+
     const reader = new FileReader()
     reader.onload = (event) => {
-      if (event.target?.result) {
-        setFeedPostPhoto(event.target.result as string)
-      }
+      if (event.target?.result) applyDataUrl(event.target.result as string)
     }
     reader.readAsDataURL(file)
-    e.target.value = ''
   }
+
+  const handlePickFeedNativePhoto = useCallback(async () => {
+    if (!CapacitorCamera) return
+    try {
+      const photo = await CapacitorCamera.getPhoto({
+        quality: 82,
+        allowEditing: true,
+        resultType: 'base64',
+      })
+      if (photo?.base64String) {
+        const dataUrl = `data:image/jpeg;base64,${photo.base64String}`
+        if (!isDemoMode && storage) {
+          setFeedPhotoUploading(true)
+          setFeedPhotoUploadProgress(0)
+          try {
+            const { ref, uploadString, getDownloadURL } = await import('firebase/storage')
+            const path = `posts/${effectiveUserId}/feed-${Date.now()}.jpg`
+            const storageRef = ref(storage, path)
+            const snap = await uploadString(storageRef, dataUrl, 'data_url')
+            const url = await getDownloadURL(snap.ref)
+            setFeedPostPhoto(url)
+            setFeedPhotoUploading(false)
+          } catch (uploadErr) {
+            setFeedPostPhoto(dataUrl)
+            setFeedPhotoUploading(false)
+            toast(
+              (uploadErr as { code?: string })?.code === 'storage/unauthorized'
+                ? 'Storage sin permisos — revisa reglas'
+                : 'Foto embebida'
+            )
+          }
+        } else {
+          setFeedPostPhoto(dataUrl)
+        }
+      }
+    } catch {
+      toast('No se pudo usar cámara')
+      setFeedPhotoUploading(false)
+    }
+  }, [isDemoMode, effectiveUserId, storage])
 
   // Safety & Moderation (critical for launch)
   const [blockedUsers, setBlockedUsers] = useState<string[]>([])
@@ -1742,48 +1850,24 @@ useEffect(() => {
   // Auth flow state (default to register in public demo for easy "Crear Cuenta")
   // (local auth state moved into AuthScreen + useDemoAuth)
 
-  // Notifications system (simulated for launch readiness)
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [showNotifications, setShowNotifications] = useState(false)
+  // Notifications system (fase 361 — useNotificationsState)
+  const {
+    notifications,
+    setNotifications,
+    showNotifications,
+    setShowNotifications,
+    notifPrefs,
+    setNotifPrefs,
+    saveNotifications,
+    addNotification,
+    addNotificationRef,
+    markNotificationRead,
+    clearReadNotifications,
+    markAllNotificationsRead,
+  } = useNotificationsState()
 
-  // Notification preferences (local per-device for user control - progressive improvement post-crash-fix)
-  const [notifPrefs, setNotifPrefs] = useState<{
-    messages: boolean
-    live: boolean
-    muro: boolean
-    dailyPulse: boolean
-    weeklyPact: boolean
-    weeklyPlan: boolean
-  }>(() => {
-    try {
-      const saved = localStorage.getItem('entrenamatch_notif_prefs')
-      const p = saved ? JSON.parse(saved) : {}
-      return {
-        messages: p.messages !== false,
-        live: p.live !== false,
-        muro: p.muro !== false,
-        dailyPulse: p.dailyPulse !== false,
-        weeklyPact: p.weeklyPact !== false,
-        weeklyPlan: p.weeklyPlan !== false,
-      }
-    } catch {
-      return {
-        messages: true,
-        live: true,
-        muro: true,
-        dailyPulse: true,
-        weeklyPact: true,
-        weeklyPlan: true,
-      }
-    }
-  })
   const [weeklyPlan, setWeeklyPlan] = useState<WeeklyPlanResult | null>(null)
   const [weeklyPlanEnriching, setWeeklyPlanEnriching] = useState(false)
-
-  // Persist notif prefs when they change
-  useEffect(() => {
-    try { localStorage.setItem('entrenamatch_notif_prefs', JSON.stringify(notifPrefs)) } catch {}
-  }, [notifPrefs])
 
   // PWA install prompt (attractive banner for web testers on mobile - uses Dunkin palette)
   const [deferredInstallPrompt, setDeferredInstallPrompt] = useState<any>(null)
@@ -1842,6 +1926,7 @@ useEffect(() => {
   }, [isTogglingLive])
   // Ignore stale own-profile snapshots right after we write trainingNow (prevents instant revert)
   const pendingLiveWriteRef = useRef<{ trainingNow: boolean; at: number } | null>(null)
+  const postLiveSideEffectsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   useEffect(() => { isTogglingLiveRef.current = isTogglingLive }, [isTogglingLive])
 
   const userLocationRef = useRef(userLocation)
@@ -2078,6 +2163,26 @@ useEffect(() => {
     activeChatRuntimeRef.current = activeChat
   }, [setActiveChat, activeChat])
 
+  const matchesRef = useRef<string[]>([])
+  const realMatchesRef = useRef<string[]>([])
+  useEffect(() => {
+    matchesRef.current = matches
+  }, [matches])
+  useEffect(() => {
+    realMatchesRef.current = realMatches
+  }, [realMatches])
+
+  const getPinnedPartnerIds = useCallback((): string[] => {
+    const ids = new Set<string>([
+      ...matchesRef.current,
+      ...realMatchesRef.current,
+      ...Object.keys(syncBondsRef.current || {}),
+    ])
+    const chatId = activeChatRuntimeRef.current
+    if (chatId && !isSeedProfileId(chatId)) ids.add(chatId)
+    return Array.from(ids).filter(Boolean)
+  }, [])
+
   const {
     isLoadingFeed,
     feedShowPinnedOnly,
@@ -2181,6 +2286,33 @@ useEffect(() => {
     [displaySessions]
   )
 
+  const { applyNotificationNavigation, openMessageNotificationTarget } = useNotificationRouter({
+    realProfiles,
+    seedProfiles: SEED_PROFILES,
+    knownSessionIds,
+    startSyncRef,
+    navigationRef: applyNotificationNavigationRef,
+    actions: {
+      setShowNotifications,
+      setActiveTab,
+      setRedSubTab,
+      navigateTab,
+      setShowDailyPulseBanner,
+      setShowLiveModal,
+      setActiveChat,
+      setChatUnreads,
+      setShowGroupChatModalFor,
+      setSessionUnreads,
+      setSelectedSquad,
+      setShowSyncArena,
+      setTrainerCoachInitialTab,
+      setShowTrainerCoach,
+      setMarketplaceScreenMode,
+      setShowMarketplace,
+      setShowFullProfile,
+    },
+  })
+
   // Remaining profiles (not swiped) - Real Firestore profiles + Seed profiles (hybrid for Pre-Alpha)
   // Hoisted early (right after real multi-user state + displaySessions) so that all later effects, JSX, and discovery logic (deck, map, feed, live notifs) see the declarations before any code that might reference them during render or effect setup. Prevents TDZ for remainingProfiles, liveTrainingNow, zoneLiveCounts, feedComputation.
   const remainingProfiles = useMemo(() => {
@@ -2227,10 +2359,11 @@ useEffect(() => {
       feedSearch,
       feedDisplayLimit,
       isSeedProfileId,
+      recentlyPublishedPostId,
     })
     realtimeStats.lastFeedComputeMs = Math.round(performance.now() - t0)
     return result
-  }, [profilePosts, feedShowPinnedOnly, feedOnlyReal, feedOnlyLive, feedSearch, feedDisplayLimit, realProfiles, effectiveUserId, syncBonds, currentUser, liveUsersActive, userLocation]);
+  }, [profilePosts, feedShowPinnedOnly, feedOnlyReal, feedOnlyLive, feedSearch, feedDisplayLimit, realProfiles, effectiveUserId, syncBonds, currentUser, liveUsersActive, userLocation, recentlyPublishedPostId]);
 
   // Filtered deck (with distance support + blocking)
   // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
@@ -2305,6 +2438,16 @@ useEffect(() => {
     ? [...SEED_PROFILES, ...realProfiles].find(p => p.id === activeChat) 
     : null
 
+  const missingMatchPartnerIds = useMemo(() => {
+    const byId = new Map(realProfiles.map((p) => [p.id, p]))
+    return [...new Set([...matches, ...realMatches])].filter((id) => {
+      if (!id || isDemoMode || isSeedProfileId(id)) return false
+      const profile = byId.get(id)
+      if (!profile) return true
+      return isIncompleteMatchProfile(profile)
+    })
+  }, [matches, realMatches, realProfiles, isDemoMode])
+
   // Matches profiles (supports real profiles from Firestore + seeds)
   const matchProfiles = useMemo(() => {
     const seedPool = isDemoMode ? SEED_PROFILES : []
@@ -2315,22 +2458,7 @@ useEffect(() => {
         const found = all.find((p) => p.id === id)
         if (found) return found
         if (isDemoMode || isSeedProfileId(id)) return null
-        return {
-          id,
-          name: BRAND_COPY.partnerGeneric,
-          age: 25,
-          gender: 'hombre' as const,
-          city: '',
-          country: 'Chile',
-          lat: -33.0,
-          lng: -71.0,
-          bio: '',
-          photos: [],
-          trainingTypes: [],
-          goals: [],
-          level: 'Intermedio' as const,
-          availability: ['Tarde'],
-        } satisfies Profile
+        return null
       })
       .filter((p): p is Profile => !!p && !isDeletedProfile(p))
   }, [matches, realMatches, realProfiles, isDemoMode])
@@ -2722,7 +2850,9 @@ useEffect(() => {
               const parsed = parseProfileFromFirestoreDoc(doc.id, doc.data() as Record<string, unknown>)
               if (parsed) profiles.push(parsed)
             })
-            setRealProfiles(profiles)
+            setRealProfiles((prev) =>
+              mergeDiscoveryWithPinnedPartners(profiles, prev, getPinnedPartnerIds())
+            )
           },
           (err) => {
             console.warn('profiles onSnapshot error, falling back to polling', err)
@@ -2761,6 +2891,7 @@ useEffect(() => {
         loadRealMatches(),
         loadRealSessions(),
         loadActiveSyncCountRef.current(),
+        fetchMissingMatchPartners(),
       ])
       if (opts?.includeChats) {
         const matchIds = await loadRealMatches()
@@ -2888,19 +3019,33 @@ useEffect(() => {
             limit(PROFILE_LIST_LIMIT)
           )
         : query(profilesRef, orderBy('updatedAt', 'desc'), limit(PROFILE_LIST_LIMIT))
-      const snapshot = await getDocs(q)
+      let snapshot = await getDocs(q)
 
       const profiles: Profile[] = []
       const currentUid = currentUidRef.current || firebaseUser?.uid
 
-      snapshot.forEach((doc) => {
-        if (doc.id === currentUid) return
-        if (blockedUsersRef.current.includes(doc.id)) return
-        if (shouldHideBetaBot(doc.id)) return
-        const parsed = parseProfileFromFirestoreDoc(doc.id, doc.data() as Record<string, unknown>)
-        if (parsed) profiles.push(parsed)
-      })
-      setRealProfiles(profiles)
+      const collectFromSnapshot = (snap: typeof snapshot) => {
+        snap.forEach((doc) => {
+          if (doc.id === currentUid) return
+          if (blockedUsersRef.current.includes(doc.id)) return
+          if (shouldHideBetaBot(doc.id)) return
+          const parsed = parseProfileFromFirestoreDoc(doc.id, doc.data() as Record<string, unknown>)
+          if (parsed) profiles.push(parsed)
+        })
+      }
+
+      collectFromSnapshot(snapshot)
+
+      // City filter can empty the deck (typo, sparse city, missing index). Widen once.
+      if (profiles.length === 0 && city) {
+        const fallbackQ = query(profilesRef, orderBy('updatedAt', 'desc'), limit(PROFILE_LIST_LIMIT))
+        snapshot = await getDocs(fallbackQ)
+        collectFromSnapshot(snapshot)
+      }
+
+      setRealProfiles((prev) =>
+        mergeDiscoveryWithPinnedPartners(profiles, prev, getPinnedPartnerIds())
+      )
       const now = new Date()
       setLastSync(now)
       // Spectacular: preload muro teasers for first few so cards show latest posts immediately
@@ -2908,6 +3053,26 @@ useEffect(() => {
       // console.log removed for cleaner prod (was spammy on every refresh)
     } catch (err) {
       console.warn('Could not load real profiles (Firestore may not have data yet):', err)
+      try {
+        const profilesRef = collection(db, 'profiles')
+        const fallbackQ = query(profilesRef, orderBy('updatedAt', 'desc'), limit(PROFILE_LIST_LIMIT))
+        const snapshot = await getDocs(fallbackQ)
+        const profiles: Profile[] = []
+        const currentUid = currentUidRef.current || firebaseUser?.uid
+        snapshot.forEach((doc) => {
+          if (doc.id === currentUid) return
+          const parsed = parseProfileFromFirestoreDoc(doc.id, doc.data() as Record<string, unknown>)
+          if (parsed) profiles.push(parsed)
+        })
+        if (profiles.length > 0) {
+          setRealProfiles((prev) =>
+            mergeDiscoveryWithPinnedPartners(profiles, prev, getPinnedPartnerIds())
+          )
+          return
+        }
+      } catch {
+        /* ignore fallback */
+      }
       setRealProfiles([])
     }
   }
@@ -2928,7 +3093,8 @@ useEffect(() => {
         try {
           const realProfile = await getUserProfile(firebaseUser.uid)
           
-          if (realProfile && realProfile.name) {
+          const returning = realProfile ? enrichReturningProfile(realProfile) : null
+          if (returning && (returning.name || hasCoreProfileFields(returning))) {
             const resolvedPhotos = resolveProfilePhotos(
               currentUser?.photos,
               realProfile.photos,
@@ -2938,22 +3104,22 @@ useEffect(() => {
             const merged: CurrentUser = {
               ...currentUser,
               id: 'me' as any,
-              name: realProfile.name,
-              age: realProfile.age,
-              gender: realProfile.gender,
-              city: realProfile.city,
-              country: realProfile.country,
-              bio: realProfile.bio,
+              name: returning.name || currentUser?.name || '',
+              age: returning.age ?? currentUser?.age ?? 25,
+              gender: returning.gender || currentUser?.gender || 'hombre',
+              city: returning.city || currentUser?.city || '',
+              country: returning.country || currentUser?.country || 'Chile',
+              bio: returning.bio || currentUser?.bio || '',
               photos: resolvedPhotos,
               photosUpdatedAt: latestPhotosUpdatedAt(
                 currentUser?.photosUpdatedAt,
                 realProfile.photosUpdatedAt
               ),
-              trainingTypes: realProfile.trainingTypes || [],
-              goals: realProfile.goals || [],
-              level: realProfile.level || 'Intermedio',
-              intensity: realProfile.intensity || 'Moderado',
-              availability: realProfile.availability || ['Tarde'],
+              trainingTypes: returning.trainingTypes || currentUser?.trainingTypes || [],
+              goals: returning.goals || currentUser?.goals || [],
+              level: returning.level || currentUser?.level || 'Intermedio',
+              intensity: returning.intensity || currentUser?.intensity || 'Moderado',
+              availability: returning.availability || currentUser?.availability || ['Tarde'],
               lat: realProfile.lat || currentUser?.lat || -33.0153,
               lng: realProfile.lng || currentUser?.lng || -71.5528,
               legalConsents: realProfile.legalConsents || currentUser?.legalConsents,
@@ -3003,9 +3169,9 @@ useEffect(() => {
               verificationDate: (realProfile as any).verificationDate ?? currentUser?.verificationDate,
               verificationDocuments: (realProfile as any).verificationDocuments ?? currentUser?.verificationDocuments,
             }
-            if (merged.name) {
+            if (merged.name || hasCoreProfileFields(merged)) {
               saveUser(merged)
-              addDebugLog(`Real login: ${merged.name}`)
+              addDebugLog(`Real login: ${merged.name || 'returning'}`)
               // Mirror sync state from self profile
               if (merged.trainingSyncWith) {
                 setSyncPartnerId(merged.trainingSyncWith)
@@ -3022,8 +3188,27 @@ useEffect(() => {
                 loadRealProfiles().catch(() => {})
               }
             }
-          } else if (currentUser && currentUser.name && firebaseUser?.uid) {
-            // New real user with local rich data but no Firestore profile yet → push it up immediately
+          } else if (
+            currentUser &&
+            firebaseUser?.uid &&
+            isProfileComplete(enrichReturningProfile(currentUser))
+          ) {
+            // New real user with a completed local profile but no Firestore doc yet → push it up once
+            let pushPhotos = filterPersistablePhotos(currentUser.photos)
+            if (
+              pushPhotos.length === 0 &&
+              (currentUser.photos || []).some(isDataUrlPhoto) &&
+              db
+            ) {
+              try {
+                pushPhotos = await ensurePersistableProfilePhotos(
+                  currentUser.photos || [],
+                  uploadProfilePhotoIfNeeded
+                )
+              } catch (e) {
+                console.warn('pushProfile photo upload failed', e)
+              }
+            }
             const pushProfile: any = {
               name: currentUser.name,
               age: currentUser.age,
@@ -3031,7 +3216,7 @@ useEffect(() => {
               city: currentUser.city,
               country: currentUser.country,
               bio: currentUser.bio,
-              photos: currentUser.photos,
+              photos: pushPhotos,
               trainingTypes: currentUser.trainingTypes,
               goals: currentUser.goals,
               level: currentUser.level,
@@ -3121,10 +3306,34 @@ const mergeUserForRealtimeSync = (incoming: CurrentUser, prev: CurrentUser | nul
     return { ...prev, ...incoming }
   }
 
+  if (!prev.trainingNow) {
+    if (
+      incoming.trainingNow === true &&
+      explicitLiveOn &&
+      pendingLiveWriteRef.current?.trainingNow === true
+    ) {
+      return { ...prev, ...incoming }
+    }
+    return {
+      ...prev,
+      ...incoming,
+      trainingNow: false,
+      trainingNowSince: incoming.trainingNowSince === undefined ? null : incoming.trainingNowSince,
+    }
+  }
+
   if (prev.trainingNow && incoming.trainingNow === false) {
+    const explicitOffFields =
+      incoming.trainingNowSince === null ||
+      incoming.trainingSyncWith === null ||
+      incoming.syncStartedAt === null
+    if (explicitOffFields) {
+      return { ...prev, ...incoming }
+    }
     const isStalePartial =
-      incoming.trainingNowSince === undefined ||
-      (incoming.trainingSyncWith === undefined && incoming.syncStartedAt === undefined)
+      incoming.trainingNowSince === undefined &&
+      incoming.trainingSyncWith === undefined &&
+      incoming.syncStartedAt === undefined
     if (isStalePartial) {
       return {
         ...prev,
@@ -3136,6 +3345,7 @@ const mergeUserForRealtimeSync = (incoming: CurrentUser, prev: CurrentUser | nul
         syncActions: prev.syncActions ?? incoming.syncActions,
       }
     }
+    return { ...prev, ...incoming }
   }
 
   return { ...prev, ...incoming }
@@ -3166,11 +3376,34 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
   const mergeLive = mergeLiveUsersById
   const toLiveUser = profileDocToLiveUser
 
-  let merged = mergeUserForRealtimeSync(user, currentUserRef.current)
+  const sanitizedUser = stripStaleLiveReactivation(
+    user,
+    currentUserRef.current?.trainingNow,
+    pendingLiveWriteRef.current
+  ) as CurrentUser
+
+  let merged = mergeUserForRealtimeSync(sanitizedUser, currentUserRef.current)
+  const pendingLive = pendingLiveWriteRef.current
+  if (
+    pendingLive &&
+    Date.now() - pendingLive.at < LIVE_PENDING_GUARD_MS &&
+    pendingLive.trainingNow === false &&
+    merged.trainingNow
+  ) {
+    merged = {
+      ...merged,
+      trainingNow: false,
+      trainingNowSince: null,
+      trainingSyncWith: null,
+      syncStartedAt: null,
+      liveMotionScore: undefined,
+      liveMotionAt: undefined,
+      liveMotionIdle: undefined,
+      liveActivityState: undefined,
+    }
+  }
   const priorPhotos = currentUserRef.current?.photos
   const needsPhotoUpload = (merged.photos || []).some(isDataUrlPhoto)
-  const photosChanged =
-    needsPhotoUpload || profilePhotosChanged(priorPhotos, merged.photos)
 
   if (!isDemoMode && firebaseUser?.uid && db) {
     if (needsPhotoUpload) {
@@ -3182,16 +3415,20 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         ),
       }
     }
-    if (photosChanged) {
-      merged = { ...merged, photosUpdatedAt: Date.now() }
-    }
   }
 
-  if (!isDemoMode && firebaseUser?.uid) {
-    merged = {
-      ...merged,
-      photos: filterPersistablePhotos(merged.photos),
-    }
+  const resolvedPhotosForSave = !isDemoMode && firebaseUser?.uid
+    ? resolvePhotosForFirestoreSave(merged.photos, priorPhotos)
+    : merged.photos || []
+
+  const photosPersistedChanged = profilePhotosChanged(priorPhotos, resolvedPhotosForSave)
+
+  merged = {
+    ...merged,
+    photos: resolvedPhotosForSave,
+    ...(photosPersistedChanged
+      ? { photosUpdatedAt: Date.now() }
+      : {}),
   }
 
   currentUserRef.current = merged
@@ -3309,6 +3546,12 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       }
 
       console.log('✅ Profile synced to Firestore', goingLive ? '(LIVE ON)' : '');
+      if (
+        pendingLiveWriteRef.current &&
+        pendingLiveWriteRef.current.trainingNow === merged.trainingNow
+      ) {
+        pendingLiveWriteRef.current = null
+      }
       setMapForceTick((t) => t + 1)
     } catch (e) {
       console.warn('Failed to sync profile to Firestore:', e);
@@ -3326,6 +3569,23 @@ useEffect(() => {
   saveUserWithRealSyncRef.current = saveUserWithRealSync
 }, [saveUserWithRealSync])
 
+  const {
+    healthBurnBonus,
+    wearableActivity,
+    wearableSyncing,
+    healthImportHint,
+    syncWearableNow,
+    handleImportHealthBurn,
+    refreshWearableDayBurn,
+  } = useWearableFuelIntegration({
+    enabled: !isDemoMode && !!firebaseUser?.uid && Capacitor.isNativePlatform(),
+    userId: effectiveUserId,
+    db: db || null,
+    isDemoMode,
+    currentUser,
+    saveUserWithRealSync,
+  })
+
   const handleLiveMotionSample = useCallback(
     async (result: {
       score: number
@@ -3334,7 +3594,13 @@ useEffect(() => {
       state: 'active' | 'idle' | 'unknown'
     }) => {
       const base = currentUserRef.current
-      if (!base?.trainingNow) return
+      const pendingLive = pendingLiveWriteRef.current
+      if (
+        !base?.trainingNow ||
+        (pendingLive?.trainingNow === false && Date.now() - pendingLive.at < LIVE_PENDING_GUARD_MS)
+      ) {
+        return
+      }
       const updated = {
         ...base,
         liveMotionScore: result.score,
@@ -3950,7 +4216,6 @@ useEffect(() => {
     liveJoinsBootstrappedRef.current = false
     try {
       localStorage.removeItem(SEEN_LIVE_USERS_KEY)
-      localStorage.removeItem(SEEN_LIVE_JOINS_KEY)
       localStorage.removeItem(PREV_RED_SYNC_STATE_KEY)
     } catch {
       /* ignore */
@@ -4037,65 +4302,49 @@ useEffect(() => {
     loadRealProfiles()
   }, [firebaseUser?.uid])
 
+  const fetchMissingMatchPartners = useCallback(async () => {
+    if (isDemoMode || !db || !firebaseUser?.uid) return
+    const pool = latestRealProfilesRef.current || realProfiles
+    const partnerIds = [...new Set([...matchesRef.current, ...realMatchesRef.current])].filter(
+      (id) => {
+        if (!id || isSeedProfileId(id)) return false
+        const profile = pool.find((p) => p.id === id)
+        if (!profile) return true
+        return isIncompleteMatchProfile(profile)
+      }
+    )
+    if (partnerIds.length === 0) return
+    try {
+      const fetched = await fetchProfilesByIds(db, partnerIds, { excludeUid: firebaseUser.uid })
+      if (fetched.length === 0) return
+      setRealProfiles((prev) => {
+        const next = mergeProfileLists(prev, fetched)
+        latestRealProfilesRef.current = next
+        return next
+      })
+      fetched.forEach((p) => {
+        loadProfilePosts(p.id).catch(() => {})
+      })
+    } catch (e) {
+      console.warn('fetchProfilesByIds (match partners)', e)
+    }
+  }, [isDemoMode, db, firebaseUser?.uid, realProfiles])
+
   // Ensure match/chat partners are loaded by UID even if outside the global snapshot.
   useEffect(() => {
-    if (isDemoMode || !db || !firebaseUser?.uid) return undefined
-    const known = latestRealProfilesRef.current || realProfiles
-    const partnerIds = [...new Set([...matches, ...realMatches])].filter(
-      (id) => id && !isSeedProfileId(id) && !known.some((r) => r.id === id)
-    )
-    if (partnerIds.length === 0) return undefined
-
+    if (missingMatchPartnerIds.length === 0) return undefined
     let cancelled = false
-    fetchProfilesByIds(db, partnerIds, { excludeUid: firebaseUser.uid })
-      .then((fetched) => {
-        if (cancelled || fetched.length === 0) return
-        setRealProfiles((prev) => {
-          const next = mergeProfileLists(prev, fetched)
-          latestRealProfilesRef.current = next
-          return next
-        })
-      })
-      .catch((e) => console.warn('fetchProfilesByIds (match partners)', e))
-
+    void (async () => {
+      await fetchMissingMatchPartners()
+      if (cancelled) return
+    })()
     return () => {
       cancelled = true
     }
-  }, [isDemoMode, db, firebaseUser?.uid, matches, realMatches])
+  }, [missingMatchPartnerIds, fetchMissingMatchPartners])
 
-  // Rescue effect: if we have a real Firebase user but no local currentUser (hard refresh / new device / race),
-  // synthesize a minimal usable profile immediately so Profile tab + logout + CTA are never missing.
-  useEffect(() => {
-    if (!isDemoMode && firebaseUser?.uid && !currentUser) {
-      // Try to hydrate from Firestore first (non-blocking)
-      ;(async () => {
-        try {
-          const existing = await getUserProfile(firebaseUser.uid)
-          if (existing && existing.name) {
-            saveUser({ ...existing, id: 'me' } as any)
-            return
-          }
-        } catch {}
-        // Fallback to minimal skeleton (user will be forced through onboarding by the gate above)
-        const skeleton = {
-          id: 'me' as any,
-          name: firebaseUser.email?.split('@')[0] || 'Usuario',
-          age: 25,
-          gender: 'hombre' as const,
-          city: '',
-          country: 'Chile',
-          bio: '',
-          photos: [],
-          trainingTypes: [],
-          goals: [],
-          level: 'Intermedio' as const,
-          intensity: 'Moderado' as const,
-          availability: ['Tarde'],
-        }
-        saveUser(skeleton as any)
-      })()
-    }
-  }, [firebaseUser?.uid, isDemoMode, currentUser])
+  // Profile hydration on login is handled exclusively by ProfileContext (never synthesize a skeleton here —
+  // it raced with Firestore and could push empty local data over a real profile).
 
   // Load my previous beta feedbacks when viewing Profile (real users only)
   useEffect(() => {
@@ -4734,11 +4983,6 @@ useEffect(() => {
     const savedReports = localStorage.getItem('entrenamatch_reports')
     if (savedReports) setReports(JSON.parse(savedReports))
 
-    const savedNotifications = loadStoredNotifications()
-    if (savedNotifications.length > 0) {
-      setNotifications(savedNotifications)
-    }
-
     const savedChatUnreads = localStorage.getItem('entrenamatch_chat_unreads')
     if (savedChatUnreads) setChatUnreads(JSON.parse(savedChatUnreads))
 
@@ -5134,28 +5378,17 @@ useEffect(() => {
   const createProfilePost = async (
     text: string,
     photo: string | null = null,
-    postType?: ProfilePostType
-  ) => {
-    if (!text.trim()) return
-    // === GIANT FIX: Real Storage upload for photos (was the main cause of "update gigante" + broken-feeling photo flow) ===
-    let finalPhoto = photo || undefined
-    if (!isDemoMode && photo && photo.startsWith('data:') && firebaseUser?.uid && storage) {
-      try {
-        const { ref, uploadString, getDownloadURL } = await import('firebase/storage')
-        const path = `posts/${effectiveUserId}/${Date.now()}.jpg`
-        const storageRef = ref(storage, path)
-        const snap = await uploadString(storageRef, photo, 'data_url')
-        finalPhoto = await getDownloadURL(snap.ref)
-      } catch (e) {
-        console.warn('photo storage upload failed, using data URL fallback (slow/large doc)', e)
-      }
-    }
+    postType?: ProfilePostType,
+    opts?: { skipToast?: boolean }
+  ): Promise<ProfilePost | null> => {
+    if (!text.trim()) return null
 
+    const optimisticId = `post${Date.now()}`
     const post: ProfilePost = {
-      id: 'post' + Date.now(),
+      id: optimisticId,
       userId: effectiveUserId,
       text: text.trim(),
-      photo: finalPhoto,
+      photo: photo || undefined,
       timestamp: Date.now(),
       pinned: false,
       likes: [],
@@ -5163,57 +5396,96 @@ useEffect(() => {
       reactions: {},
       ...(postType ? { postType } : {}),
     }
-    if (!isDemoMode && firebaseUser?.uid && db) {
-      try {
-        const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
-        const data: any = {
-          userId: post.userId,
-          text: post.text,
-          timestamp: post.timestamp,
-          likes: post.likes || [],
-          comments: post.comments || [],
-          reactions: post.reactions || {},
-          pinned: false
-        }
-        if (post.photo) {
-          data.photo = post.photo // small URL
-        }
-        if (post.postType) data.postType = post.postType
-        data.createdAt = serverTimestamp()
-        const ref = await addDoc(collection(db, 'profilePosts'), data)
-        post.id = ref.id
 
-        // Targeted optimistic — only this user's posts. This + Storage upload = no more "update gigante".
-        setProfilePosts((prev) => {
-          const current = prev[effectiveUserId] || []
-          const newList = [post, ...current].slice(0, 10)
-          const newState = { ...prev, [effectiveUserId]: newList }
-          profilePostsRef.current = newState
-          return newState
-        })
-        subscribeCommentsForPosts([post])
+    setHomeSubTab('feed')
+    setFeedOnlyLive(false)
+    setFeedShowPinnedOnly(false)
+    setFeedOnlyReal(false)
+    setFeedSearch('')
 
-        if (activeTab === 'home') {
-          setTimeout(() => loadGlobalFeed().catch(() => {}), 300)
-        }
-      } catch (e) {
-        saveProfilePosts({
-          ...profilePostsRef.current,
-          [effectiveUserId]: [post, ...(profilePostsRef.current[effectiveUserId] || [])].slice(0, 10),
-        })
-      }
-    } else {
-      saveProfilePosts({
-        ...profilePostsRef.current,
-        [effectiveUserId]: [post, ...(profilePostsRef.current[effectiveUserId] || [])].slice(0, 10),
-      }, { persistLocal: true })
+    // Optimistic — el post aparece al instante en el Muro de la Comunidad
+    setProfilePosts((prev) => {
+      const current = prev[effectiveUserId] || []
+      const newList = [post, ...current].slice(0, 10)
+      const newState = { ...prev, [effectiveUserId]: newList }
+      profilePostsRef.current = newState
+      return newState
+    })
+    setRecentlyPublishedPostId(optimisticId)
+    setTimeout(() => setRecentlyPublishedPostId(null), 30_000)
+    addDebugLog(`Publicado (optimista): ${post.text.slice(0, 50)}${post.photo ? ' +foto' : ''}`)
+
+    if (!opts?.skipToast) {
+      toast.success(BRAND_COPY.feed.publishedTitle, {
+        description: BRAND_COPY.feed.publishedDesc,
+      })
     }
 
-    // Delightful UX: highlight the new post briefly in lists (feed or personal muro) so user sees the result instantly
-    setRecentlyPublishedPostId(post.id)
-    setTimeout(() => setRecentlyPublishedPostId(null), 4000)
-    addDebugLog(`Publicado: ${post.text.slice(0,50)}${post.photo ? ' +foto' : ''}`)
-    toast.success('Publicado en tu muro')
+    const persistToBackend = async () => {
+      let finalPhoto = photo || undefined
+      if (photo && photo.startsWith('data:') && firebaseUser?.uid && storage) {
+        try {
+          const { ref, uploadString, getDownloadURL } = await import('firebase/storage')
+          const path = `posts/${effectiveUserId}/${Date.now()}.jpg`
+          const storageRef = ref(storage, path)
+          const snap = await uploadString(storageRef, photo, 'data_url')
+          finalPhoto = await getDownloadURL(snap.ref)
+        } catch (e) {
+          console.warn('photo storage upload failed, using data URL fallback', e)
+        }
+      }
+
+      const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
+      const data: Record<string, unknown> = {
+        userId: post.userId,
+        text: post.text,
+        timestamp: post.timestamp,
+        likes: [],
+        comments: [],
+        reactions: {},
+        pinned: false,
+        createdAt: serverTimestamp(),
+      }
+      if (finalPhoto) data.photo = finalPhoto
+      if (post.postType) data.postType = post.postType
+
+      const docRef = await addDoc(collection(db!, 'profilePosts'), data)
+      const saved: ProfilePost = { ...post, id: docRef.id, photo: finalPhoto }
+      setProfilePosts((prev) => {
+        const list = (prev[effectiveUserId] || []).map((p) =>
+          p.id === optimisticId ? saved : p
+        )
+        const newState = { ...prev, [effectiveUserId]: list }
+        profilePostsRef.current = newState
+        return newState
+      })
+      setRecentlyPublishedPostId(docRef.id)
+      setTimeout(() => setRecentlyPublishedPostId(null), 30_000)
+      subscribeCommentsForPosts([saved])
+      void loadGlobalFeed()
+    }
+
+    if (!isDemoMode && firebaseUser?.uid && db) {
+      void persistToBackend().catch((e) => {
+        console.warn('createProfilePost persist failed', e)
+        setProfilePosts((prev) => ({
+          ...prev,
+          [effectiveUserId]: (prev[effectiveUserId] || []).filter((p) => p.id !== optimisticId),
+        }))
+        toast.error('No se pudo guardar en el Muro', {
+          description: 'Revisa tu conexión e inténtalo de nuevo.',
+        })
+      })
+    } else {
+      saveProfilePosts(
+        {
+          ...profilePostsRef.current,
+          [effectiveUserId]: profilePostsRef.current[effectiveUserId] || [],
+        },
+        { persistLocal: true }
+      )
+    }
+
     return post
   }
 
@@ -5329,7 +5601,7 @@ useEffect(() => {
   ])
 
   const openEntrenoDeHoy = useCallback(
-    async (opts?: {
+    (opts?: {
       title?: string
       exercises?: import('./types').WorkoutExercise[]
       type?: import('./types').WorkoutType
@@ -5339,7 +5611,6 @@ useEffect(() => {
       /** Abre el historial plegable para elegir un entreno pasado */
       expandPastWorkouts?: boolean
     }) => {
-      await refreshEntrenoRecentWorkouts()
       if (opts?.title || opts?.exercises?.length || opts?.type || opts?.durationMin) {
         setEntrenaLogPrefill({
           title: opts.title,
@@ -5356,6 +5627,7 @@ useEffect(() => {
       }
       setEntrenaLogShareToChat(opts?.shareToChat ?? null)
       setShowEntrenaLogModal(true)
+      void refreshEntrenoRecentWorkouts()
     },
     [refreshEntrenoRecentWorkouts]
   )
@@ -5439,6 +5711,7 @@ useEffect(() => {
         prSummary?: string
         workoutType?: import('./types').WorkoutType
         exercises?: import('./types').WorkoutExercise[]
+        toastAction?: { label: string; onClick: () => void }
       }
     ) => {
       await refreshEntrenoRecentWorkouts()
@@ -5480,15 +5753,18 @@ useEffect(() => {
         : ''
       toast.success('Entreno de Hoy guardado', {
         description: `${description}${prLine}${planHint}`,
-        action: fuelProfile
-          ? {
-              label: 'Abrir Fuel',
-              onClick: () => {
-                setEditingFuelLog(null)
-                setShowFuelLogModal(true)
-              },
-            }
-          : undefined,
+        duration: 8000,
+        action:
+          opts?.toastAction ??
+          (fuelProfile
+            ? {
+                label: 'Abrir Fuel',
+                onClick: () => {
+                  setEditingFuelLog(null)
+                  setShowFuelLogModal(true)
+                },
+              }
+            : undefined),
       })
     },
     [
@@ -5561,12 +5837,24 @@ useEffect(() => {
         }
         if (dailyPulse) setDailyPulse({ ...dailyPulse, momentum: newMom, xp: newXp })
 
+        if (postLiveSideEffectsTimerRef.current) {
+          clearTimeout(postLiveSideEffectsTimerRef.current)
+          postLiveSideEffectsTimerRef.current = null
+        }
+
         pendingLiveWriteRef.current = { trainingNow: false, at: Date.now() }
+        currentUserRef.current = updated
         saveUser(updated)
         setMapForceTick((t) => t + 1)
-        void saveUserWithRealSync(updated)
-          .then(() => loadRealProfiles().catch(() => {}))
-          .catch((err) => console.warn('Live off Firestore sync (non-fatal):', err))
+        try {
+          await saveUserWithRealSync(updated)
+          loadRealProfiles().catch(() => {})
+        } catch (err) {
+          console.warn('Live off Firestore sync failed', err)
+          toast.error('Live apagado localmente', {
+            description: 'No se sincronizó con el servidor — reintenta si sigues visible en el mapa.',
+          })
+        }
         syncCityStatsBump(minutes, 0).catch(() => {})
         if (minutes >= MIN_LIVE_MINUTES_FOR_WEEK_DAY) {
           setWeekLiveDays(nextLiveDays)
@@ -5680,6 +5968,7 @@ useEffect(() => {
         } as CurrentUser
 
         pendingLiveWriteRef.current = { trainingNow: true, at: Date.now() }
+        currentUserRef.current = updated
         saveUser(updated)
         setMapForceTick((t) => t + 1)
         void saveUserWithRealSync(updated)
@@ -5704,33 +5993,31 @@ useEffect(() => {
           })
         }
 
-        const liveUserSnapshot = { ...updated }
-        setTimeout(() => {
+        if (postLiveSideEffectsTimerRef.current) {
+          clearTimeout(postLiveSideEffectsTimerRef.current)
+        }
+        postLiveSideEffectsTimerRef.current = setTimeout(() => {
+          postLiveSideEffectsTimerRef.current = null
           try {
-            checkAndUpdateDailyPulse(liveUserSnapshot)
+            if (!currentUserRef.current?.trainingNow) return
+            const liveUser = currentUserRef.current
+            checkAndUpdateDailyPulse(liveUser)
             if (dailyPulse?.currentChallenge?.type === 'solo') {
-              void completeDailyChallenge(1, liveUserSnapshot as CurrentUser).catch((e) =>
+              void completeDailyChallenge(1, liveUser).catch((e) =>
                 console.warn('[Live] completeDailyChallenge', e)
               )
             } else {
-              awardConstancy(8, 'Ancla del GymPulse', liveUserSnapshot as CurrentUser)
+              awardConstancy(8, 'Ancla del Mapa LIVE', liveUser)
             }
-            if (
-              !userHasRecentAutoLivePost(effectiveUserId, profilePostsRef.current)
-            ) {
-              void createProfilePost(
-                `${pickLivePostText(Date.now())} 🏋️`,
-                null,
-                'dailyPulse'
-              ).catch((e) => console.warn('[Live] createProfilePost', e))
+            if (!userHasRecentAutoLivePost(effectiveUserId, profilePostsRef.current)) {
+              void createProfilePost(`${pickLivePostText(Date.now())} 🏋️`, null, 'dailyPulse').catch(
+                (e) => console.warn('[Live] createProfilePost', e)
+              )
             }
           } catch (e) {
             console.warn('[Live] post-activate side effects', e)
           }
         }, 600)
-        window.setTimeout(() => {
-          pendingLiveWriteRef.current = null
-        }, 4000)
       } catch (err) {
         console.error('Live activate failed', err)
         pendingLiveWriteRef.current = null
@@ -5746,6 +6033,18 @@ useEffect(() => {
       setMapForceTick((t) => t + 1)
     }
   }
+
+  useLiveSessionGuard({
+    enabled: !isDemoMode && !!firebaseUser?.uid && !isTogglingLive,
+    trainingNow: !!currentUser?.trainingNow,
+    trainingNowSince: currentUser?.trainingNowSince,
+    liveMotionAt: currentUser?.liveMotionAt,
+    appVisible,
+    onAutoOff: async (reason) => {
+      toast.info(reason, { duration: 6000 })
+      await toggleLiveTraining('off')
+    },
+  })
 
   const arenaSync = useArenaSyncController({
     syncSession,
@@ -5798,13 +6097,7 @@ useEffect(() => {
     syncCityStatsBump,
     addDebugLog,
     capacitorCamera: CapacitorCamera,
-    refreshWearableDayBurn: async () => {
-      if (!currentUser?.wearableHealthConnected) return
-      const result = await importHealthCaloriesForDate(toLocalDateStr())
-      if (result.totalBurnKcal > 0) {
-        setHealthBurnBonus(result.totalBurnKcal)
-      }
-    },
+    refreshWearableDayBurn,
   })
 
   const {
@@ -5870,6 +6163,14 @@ useEffect(() => {
 
   const handleEntrenaLogMinimize = useCallback(() => {
     setShowEntrenaLogModal(false)
+    setWorkoutDraftRefresh((n) => n + 1)
+  }, [])
+
+  const resetEntrenaLogModalState = useCallback(() => {
+    setEntrenaLogPrefill(null)
+    setEntrenaLogSkipDraft(false)
+    setEntrenaLogExpandPastWorkouts(false)
+    setEntrenaLogShareToChat(null)
     setWorkoutDraftRefresh((n) => n + 1)
   }, [])
 
@@ -5966,10 +6267,25 @@ useEffect(() => {
         setRecentlyPublishedPostId(postId)
         setTimeout(() => setRecentlyPublishedPostId(null), 4000)
         if (activeTab === 'home') loadGlobalFeed().catch(() => {})
+        const storyOpts = {
+          userName: currentUser?.name || 'Atleta',
+          userPhoto: currentUser?.photo || currentUser?.photos?.[0],
+          userId: effectiveUserId,
+          preview,
+          prSummary: prSummary || undefined,
+        }
         await applyEntrenoSaveSideEffects(payload.durationMin, {
           prSummary: prSummary || undefined,
           workoutType: payload.type,
           exercises: payload.exercises,
+          toastAction: {
+            label: 'Compartir',
+            onClick: () => {
+              void shareWorkoutStory(storyOpts).then((outcome) =>
+                toastWorkoutShareOutcome(toast, outcome)
+              )
+            },
+          },
         })
         const shareTarget = entrenaLogShareToChat
         if (shareTarget) {
@@ -5992,6 +6308,12 @@ useEffect(() => {
         )
         const demoPostText = `🏋️ Entreno de Hoy · ${payload.title} — ${payload.exercises.length} ejercicios, ${payload.durationMin} min (demo)`
         await createProfilePost(demoPostText, null)
+        const demoStoryOpts = {
+          userName: currentUser?.name || 'Atleta',
+          userPhoto: currentUser?.photo || currentUser?.photos?.[0],
+          userId: effectiveUserId,
+          preview: demoPreview,
+        }
         if (entrenaLogShareToChat) {
           sendMessage(demoPostText, null, null, {
             toUserId: entrenaLogShareToChat,
@@ -6000,7 +6322,17 @@ useEffect(() => {
           })
           toast.success('Entreno compartido en el chat (demo)')
         } else {
-          toast.success('Entreno de Hoy guardado (demo)')
+          toast.success('Entreno de Hoy guardado (demo)', {
+            duration: 8000,
+            action: {
+              label: 'Compartir',
+              onClick: () => {
+                void shareWorkoutStory(demoStoryOpts).then((outcome) =>
+                  toastWorkoutShareOutcome(toast, outcome)
+                )
+              },
+            },
+          })
         }
       }
       if (!isDemoMode && firebaseUser?.uid) {
@@ -6019,26 +6351,18 @@ useEffect(() => {
     }
   }
 
-  const fuelEnergyBalance = useFuelBalance({
-    profile: fuelProfile,
-    fuelLogs: fuelTodayLogs,
-    workouts: fuelTodayWorkouts,
-    trainingNow: currentUser?.trainingNow,
-    trainingNowSince: currentUser?.trainingNowSince,
-    healthBurnKcal: healthBurnBonus,
+  const { fuelEnergyBalance, fuelWeekBalanceDays } = useFuelBalancePipeline({
+    isDemoMode,
+    db,
+    effectiveUserId,
+    fuelProfile,
+    fuelTodayLogs,
+    fuelTodayWorkouts,
+    fuelWeekMacros,
+    fuelWeekWorkouts,
+    currentUser,
+    healthBurnBonus,
   })
-
-  const fuelWeekBalanceDays = useMemo(() => {
-    if (!fuelProfile || !fuelWeekMacros?.length) return []
-    const target =
-      fuelEnergyBalance?.adjustedTargetKcal ?? fuelProfile.targetKcal
-    return buildFuelWeekBalanceDays(
-      fuelWeekMacros,
-      fuelWeekWorkouts,
-      target,
-      fuelProfile.weightKg
-    )
-  }, [fuelProfile, fuelWeekMacros, fuelWeekWorkouts, fuelEnergyBalance?.adjustedTargetKcal])
 
   const weeklyPlanBase = useWeeklyPlan({
     fuelProfile,
@@ -6105,6 +6429,9 @@ useEffect(() => {
           })),
         })
       }
+      setEntrenaLogSkipDraft(true)
+      setEntrenaLogExpandPastWorkouts(false)
+      setEntrenaLogShareToChat(null)
       setShowEntrenaLogModal(true)
     },
     [currentUser?.level]
@@ -6181,37 +6508,6 @@ useEffect(() => {
       .then((pts) => setConstanciaBalance(pts))
       .catch(() => setConstanciaBalance(dailyPulse?.momentum ?? 0))
   }, [firebaseUser?.uid, isDemoMode, db, effectiveUserId, dailyPulse?.momentum])
-
-  useEffect(() => {
-    if (!firebaseUser?.uid || isDemoMode || !db) return
-    loadDailyEnergyCache(db, effectiveUserId, toLocalDateStr())
-      .then((doc) => {
-        if (doc?.healthBurnKcal && doc.healthBurnKcal > 0) {
-          setHealthBurnBonus(doc.healthBurnKcal)
-        }
-      })
-      .catch(() => {})
-  }, [firebaseUser?.uid, isDemoMode, db, effectiveUserId])
-
-  const handleImportHealthBurn = useCallback(async () => {
-    const result = await importHealthCaloriesForDate(toLocalDateStr())
-    const hint =
-      result.exerciseMinutes && result.exerciseMinutes > 0
-        ? `${result.message} · ${result.exerciseMinutes} min ejercicio`
-        : result.message
-    setHealthImportHint(hint)
-    if (result.totalBurnKcal > 0) {
-      setHealthBurnBonus(result.totalBurnKcal)
-      toast.success(`+${result.totalBurnKcal} kcal desde wearable`, {
-        description:
-          result.exerciseMinutes && result.exerciseMinutes > 0
-            ? `${result.exerciseMinutes} min detectados en tu reloj`
-            : undefined,
-      })
-    } else {
-      toast.info(result.message)
-    }
-  }, [])
 
   const handleConstanciaProtect = useCallback(async () => {
     if (!dailyPulse || (constanciaBalance ?? dailyPulse.momentum ?? 0) < 50) {
@@ -6334,6 +6630,9 @@ useEffect(() => {
       setFuelProfile(saved)
       setShowFuelSetupModal(false)
       setShowFuelSetupWizard(false)
+      if (!isDemoMode && db && firebaseUser?.uid) {
+        void refreshFuelData()
+      }
     } catch (e) {
       console.error('Fuel profile save failed', e)
       toast.error('No se pudo guardar el perfil Fuel', {
@@ -6417,6 +6716,7 @@ useEffect(() => {
           fetchFuelWeekMacros(db, effectiveUserId)
             .then(setFuelWeekMacros)
             .catch(() => {})
+          void refreshFuelData()
         } else {
           const nextLogs = fuelTodayLogs.map((log) =>
             log.id === payload.editId
@@ -6481,35 +6781,49 @@ useEffect(() => {
           .then(setFuelWeekMacros)
           .catch(() => {})
 
+        let publishedToMuro = false
         if (payload.publishToMuro) {
-          const postId = await createNutritionPost(db, effectiveUserId, preview, photoUrl)
-          const post: ProfilePost = {
-            id: postId,
-            userId: effectiveUserId,
-            text: `🍽 Fuel check — ${preview.mealLabel}: ${preview.kcal} kcal · P${preview.proteinG} C${preview.carbsG} G${preview.fatG}`,
-            photo: photoUrl,
-            timestamp: Date.now(),
-            pinned: false,
-            likes: [],
-            comments: [],
-            postType: 'nutrition',
-            nutritionPreview: preview,
-            reactions: {},
+          try {
+            const postId = await createNutritionPost(db, effectiveUserId, preview, photoUrl)
+            const post: ProfilePost = {
+              id: postId,
+              userId: effectiveUserId,
+              text: `🍽 Fuel check — ${preview.mealLabel}: ${preview.kcal} kcal · P${preview.proteinG} C${preview.carbsG} G${preview.fatG}`,
+              photo: photoUrl,
+              timestamp: Date.now(),
+              pinned: false,
+              likes: [],
+              comments: [],
+              postType: 'nutrition',
+              nutritionPreview: preview,
+              reactions: {},
+            }
+            setProfilePosts((prev) => {
+              const current = prev[effectiveUserId] || []
+              const newState = { ...prev, [effectiveUserId]: [post, ...current].slice(0, 10) }
+              profilePostsRef.current = newState
+              return newState
+            })
+            subscribeCommentsForPosts([post])
+            setRecentlyPublishedPostId(postId)
+            setTimeout(() => setRecentlyPublishedPostId(null), 4000)
+            if (activeTab === 'home') loadGlobalFeed().catch(() => {})
+            publishedToMuro = true
+          } catch (muroErr) {
+            console.warn('Fuel muro publish failed (meal saved)', muroErr)
+            toast.message('Comida guardada', {
+              description: 'No se pudo publicar en el muro — el registro Fuel sí quedó.',
+            })
           }
-          setProfilePosts((prev) => {
-            const current = prev[effectiveUserId] || []
-            const newState = { ...prev, [effectiveUserId]: [post, ...current].slice(0, 10) }
-            profilePostsRef.current = newState
-            return newState
-          })
-          subscribeCommentsForPosts([post])
-          setRecentlyPublishedPostId(postId)
-          setTimeout(() => setRecentlyPublishedPostId(null), 4000)
-          if (activeTab === 'home') loadGlobalFeed().catch(() => {})
         }
-        toast.success('Comida registrada', {
-          description: payload.publishToMuro ? 'Publicada en el muro' : `${payload.kcal} kcal sumadas hoy`,
-        })
+        if (!payload.publishToMuro || publishedToMuro) {
+          toast.success('Comida registrada', {
+            description: publishedToMuro
+              ? 'Publicada en el muro'
+              : `${payload.kcal} kcal sumadas hoy`,
+          })
+        }
+        void refreshFuelData()
       } else {
         const demoEntry: FuelLogEntry = {
           id: 'fuel' + Date.now(),
@@ -6531,7 +6845,9 @@ useEffect(() => {
       setShowFuelLogModal(false)
     } catch (e) {
       console.error('Fuel log save failed', e)
-      toast.error('No se pudo guardar la comida')
+      toast.error('No se pudo guardar la comida', {
+        description: e instanceof Error ? e.message : 'Revisa conexión e inicio de sesión',
+      })
     } finally {
       setSavingFuel(false)
     }
@@ -6842,109 +7158,155 @@ useEffect(() => {
     toast('Galería reordenada', { description: 'El orden se guarda en tu perfil real' })
   }
 
+  const persistSeenLiveJoinInteractions = useCallback(() => {
+    trimSetToMax(seenLiveJoinInteractionIdsRef.current, MAX_SEEN_STRING_IDS)
+    const uid = firebaseUser?.uid
+    if (!uid || isDemoMode) return
+    try {
+      localStorage.setItem(
+        seenLiveJoinsStorageKey(uid),
+        JSON.stringify(pruneStringIdList(Array.from(seenLiveJoinInteractionIdsRef.current)))
+      )
+    } catch {
+      reclaimLocalStorageSpace('soft')
+    }
+  }, [firebaseUser?.uid, isDemoMode])
+
+  const markLiveJoinInteractionsAsSeen = useCallback((livePosts: ProfilePost[]) => {
+    livePosts.forEach((post) => {
+      ;(post.comments || []).forEach((c) => {
+        if (c.id) seenLiveJoinInteractionIdsRef.current.add(c.id)
+      })
+      ;(post.likes || []).forEach((likerId) => {
+        seenLiveJoinInteractionIdsRef.current.add(`${post.id}_like_${likerId}`)
+      })
+    })
+  }, [])
+
+  const isRecentLiveJoinComment = useCallback((timestamp: number | undefined): boolean => {
+    const ts = Number(timestamp)
+    if (!Number.isFinite(ts)) return false
+    return ts >= appStartedAtRef.current - 3000
+  }, [])
+
+  const canShowLiveJoinToast = useCallback((): boolean => {
+    return Date.now() - appStartedAtRef.current >= SESSION_TOAST_GRACE_MS
+  }, [])
+
   // === LIVE JOIN NOTIFS (owner side) ===
   // Called after loading own profilePosts (or updates). Scans live "Entrenando ahora" posts for *new* comments/likes
   // from other people. Fires special urgency notif + toast so the live trainer knows people are joining in real time.
-  // Deduped with seenLiveJoinInteractionIdsRef + persisted to LS. Works for both demo (after auto-comment on join) and real (FS comments written by joiners).
+  // Deduped with seenLiveJoinInteractionIdsRef + persisted per uid. No burst on login/open.
   const processIncomingLiveJoins = () => {
     if (!currentUser?.trainingNow) return
     const myId = effectiveUserId
     const myPosts = profilePosts[myId] || []
     if (myPosts.length === 0) return
 
-    // Find posts that look like live announcements (the ones we auto-create on toggle)
-    const livePosts = myPosts.filter((p: any) => {
+    const livePosts = myPosts.filter((p) => {
       const t = (p.text || '').toLowerCase()
       return t.includes('entrenando ahora') || t.includes('live') || t.includes('entreno ahora')
     })
 
-    if (!liveJoinsBootstrappedRef.current) {
-      liveJoinsBootstrappedRef.current = true
-      livePosts.forEach((post: any) => {
-        ;(post.comments || []).forEach((c: any) => {
-          if (c.id) seenLiveJoinInteractionIdsRef.current.add(c.id)
-        })
-        ;(post.likes || []).forEach((likerId: string) => {
-          seenLiveJoinInteractionIdsRef.current.add(`${post.id}_like_${likerId}`)
-        })
-      })
-      trimSetToMax(seenLiveJoinInteractionIdsRef.current, MAX_SEEN_STRING_IDS)
-      try {
-        localStorage.setItem(
-          SEEN_LIVE_JOINS_KEY,
-          JSON.stringify(pruneStringIdList(Array.from(seenLiveJoinInteractionIdsRef.current)))
-        )
-      } catch {
-        reclaimLocalStorageSpace('soft')
-      }
-      return
-    }
-
-    let newJoinDetected = false
-    const pendingJoinNotifs: Notification[] = []
-    livePosts.forEach((post: any) => {
-      ;(post.comments || []).forEach((c: any) => {
-        if (c.userId && c.userId !== myId && !seenLiveJoinInteractionIdsRef.current.has(c.id)) {
+    // Silently mark historical joins so async comment loads never re-toast on session open.
+    let sweptStale = false
+    livePosts.forEach((post) => {
+      ;(post.comments || []).forEach((c) => {
+        if (!c.id || seenLiveJoinInteractionIdsRef.current.has(c.id)) return
+        if (!isRecentLiveJoinComment(c.timestamp)) {
           seenLiveJoinInteractionIdsRef.current.add(c.id)
-          newJoinDetected = true
-          pendingJoinNotifs.push({
-            id: 'notif' + Date.now() + '-' + c.id,
-            type: 'session_join',
-            title: '🔥 ¡Alguien se unió a tu live!',
-            body: `${c.userName || 'Un compañero'} se unió a tu entrenamiento en vivo`,
-            relatedId: c.userId,
-            timestamp: Date.now(),
-            read: false,
-          })
-          toast(`🔥 ${c.userName || 'Alguien'} se unió a tu live`, {
-            description: '¡Abre tu muro o chatea con ellos!',
-            action: {
-              label: 'Ver perfil',
-              onClick: () => {
-                const joiner = [...realProfiles, ...SEED_PROFILES].find(p => p.id === c.userId)
-                if (joiner) setShowFullProfile(joiner as any)
-                else setActiveTab('home')
-              }
-            }
-          })
+          sweptStale = true
         }
       })
-
-      ;(post.likes || []).forEach((likerId: string) => {
+      const postIsRecent = isRecentLiveJoinComment(post.timestamp)
+      ;(post.likes || []).forEach((likerId) => {
         const likeKey = `${post.id}_like_${likerId}`
-        if (likerId !== myId && !seenLiveJoinInteractionIdsRef.current.has(likeKey)) {
+        if (seenLiveJoinInteractionIdsRef.current.has(likeKey)) return
+        if (!postIsRecent) {
           seenLiveJoinInteractionIdsRef.current.add(likeKey)
-          newJoinDetected = true
-          const likerProfile = [...realProfiles, ...SEED_PROFILES].find(p => p.id === likerId)
-          const likerName = likerProfile?.name || 'Un compañero'
-          pendingJoinNotifs.push({
-            id: 'notif' + Date.now() + '-' + likeKey,
-            type: 'session_join',
-            title: '❤️ ¡Like en tu post live!',
-            body: `${likerName} le dio like a tu "Entrenando ahora"`,
-            relatedId: likerId,
-            timestamp: Date.now(),
-            read: false,
-          })
-          toast(`❤️ ${likerName} se sumó a tu live`, { description: '¡Tu post en vivo está generando movimiento!' })
+          sweptStale = true
         }
       })
     })
 
+    if (!liveJoinsBootstrappedRef.current) {
+      liveJoinsBootstrappedRef.current = true
+      markLiveJoinInteractionsAsSeen(livePosts)
+      persistSeenLiveJoinInteractions()
+      return
+    }
+
+    if (sweptStale) {
+      persistSeenLiveJoinInteractions()
+    }
+
+    if (!canShowLiveJoinToast()) return
+
+    let newJoinDetected = false
+    const pendingJoinNotifs: Notification[] = []
+    livePosts.forEach((post) => {
+      ;(post.comments || []).forEach((c) => {
+        if (!c.userId || c.userId === myId || !c.id) return
+        if (seenLiveJoinInteractionIdsRef.current.has(c.id)) return
+        if (!isRecentLiveJoinComment(c.timestamp)) {
+          seenLiveJoinInteractionIdsRef.current.add(c.id)
+          newJoinDetected = true
+          return
+        }
+        seenLiveJoinInteractionIdsRef.current.add(c.id)
+        newJoinDetected = true
+        pendingJoinNotifs.push({
+          id: 'notif' + Date.now() + '-' + c.id,
+          type: 'session_join',
+          title: '🔥 ¡Alguien se unió a tu live!',
+          body: `${c.userName || 'Un compañero'} se unió a tu entrenamiento en vivo`,
+          relatedId: c.userId,
+          timestamp: Date.now(),
+          read: false,
+        })
+        toast(`🔥 ${c.userName || 'Alguien'} se unió a tu live`, {
+          description: '¡Abre tu muro o chatea con ellos!',
+          action: {
+            label: 'Ver perfil',
+            onClick: () => {
+              const joiner = [...realProfiles, ...SEED_PROFILES].find((p) => p.id === c.userId)
+              if (joiner) setShowFullProfile(joiner as any)
+              else setActiveTab('home')
+            },
+          },
+        })
+      })
+
+      if (!isRecentLiveJoinComment(post.timestamp)) return
+
+      ;(post.likes || []).forEach((likerId) => {
+        const likeKey = `${post.id}_like_${likerId}`
+        if (likerId === myId || seenLiveJoinInteractionIdsRef.current.has(likeKey)) return
+        seenLiveJoinInteractionIdsRef.current.add(likeKey)
+        newJoinDetected = true
+        const likerProfile = [...realProfiles, ...SEED_PROFILES].find((p) => p.id === likerId)
+        const likerName = likerProfile?.name || 'Un compañero'
+        pendingJoinNotifs.push({
+          id: 'notif' + Date.now() + '-' + likeKey,
+          type: 'session_join',
+          title: '❤️ ¡Like en tu post live!',
+          body: `${likerName} le dio like a tu "Entrenando ahora"`,
+          relatedId: likerId,
+          timestamp: Date.now(),
+          read: false,
+        })
+        toast(`❤️ ${likerName} se sumó a tu live`, {
+          description: '¡Tu post en vivo está generando movimiento!',
+        })
+      })
+    })
+
     if (pendingJoinNotifs.length > 0) {
-      setNotifications((prev) => saveStoredNotifications([...pendingJoinNotifs, ...prev]))
+      saveNotifications([...pendingJoinNotifs, ...notifications])
     }
 
     if (newJoinDetected) {
-      trimSetToMax(seenLiveJoinInteractionIdsRef.current, MAX_SEEN_STRING_IDS)
-      try {
-        localStorage.setItem(
-          SEEN_LIVE_JOINS_KEY,
-          JSON.stringify(pruneStringIdList(Array.from(seenLiveJoinInteractionIdsRef.current)))
-        )
-      } catch {
-        reclaimLocalStorageSpace('soft')
-      }
+      persistSeenLiveJoinInteractions()
     }
   }
 
@@ -7193,11 +7555,6 @@ useEffect(() => {
     setReports(newReports)
   }
 
-  const saveNotifications = (newNotifications: Notification[]) => {
-    const pruned = saveStoredNotifications(newNotifications)
-    setNotifications(pruned)
-  }
-
   const persistGroupSeenIds = () => {
     Object.keys(seenGroupMsgIdsRef.current).forEach((k) => {
       trimSetToMax(seenGroupMsgIdsRef.current[k], MAX_SEEN_IDS_PER_CHAT)
@@ -7213,35 +7570,22 @@ useEffect(() => {
     }
   }
 
-  // Add a new notification (gated by user prefs for progressive control)
-  const addNotification = (notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
-    const type = notification.type || 'message'
-    // Gate by prefs (messages covers 1:1/group/match/muro activity; live for joins)
-    const shouldAdd = 
-      (type.includes('message') || type === 'match' || type === 'like_received' || type === 'verification' || type === 'report') ? notifPrefs.messages :
-      (type === 'session_join' || type === 'squad_join' || type === 'live_nearby') ? notifPrefs.live :
-      true
-    if (!shouldAdd) return
+  const handleNotificationClick = useCallback(
+    (notif: Notification) => {
+      markNotificationRead(notif.id)
 
-    // Simple dedup: don't add duplicate recent notification for same relatedId + type (prevents repeats on reloads/listener glitches)
-    const isDuplicate = notifications.some(n => 
-      n.relatedId === notification.relatedId && 
-      n.type === notification.type && 
-      (Date.now() - (n.timestamp || 0)) < 1000 * 60 * 5 // within last 5 min
-    );
-    if (isDuplicate) return;
-
-    const newNotif: Notification = {
-      ...notification,
-      id: 'notif' + Date.now(),
-      timestamp: Date.now(),
-      read: false
-    }
-    const updated = [newNotif, ...notifications].slice(0, 25)
-    saveNotifications(updated)
-  }
-
-  addNotificationRef.current = addNotification
+      const target = resolveNotificationTarget(notif, { sessionIds: knownSessionIds })
+      if (target) {
+        const partnerHint =
+          target.startSyncWith && notif.relatedId
+            ? realProfiles.find((p) => p.id === notif.relatedId)?.name ||
+              SEED_PROFILES.find((p) => p.id === notif.relatedId)?.name
+            : undefined
+        applyNotificationNavigation(target, partnerHint)
+      }
+    },
+    [markNotificationRead, knownSessionIds, realProfiles, applyNotificationNavigation]
+  )
 
   // Request browser Notification permission for web (real users). Safe no-op on native or denied.
   const requestWebNotificationPermission = async () => {
@@ -7313,89 +7657,6 @@ useEffect(() => {
       })
     }
   }
-
-  // Central helper: navigate from notification deep-link (panel, toast, browser notif)
-  const applyNotificationNavigation = useCallback((target: NotificationNavTarget, partnerNameHint?: string) => {
-    setShowNotifications(false)
-    const { tab: resolved, redSubTab: sub } = normalizeTabNavigation(target.tab)
-    setActiveTab(resolved)
-    if (sub) setRedSubTab(sub)
-    if (target.showDailyPulse) setShowDailyPulseBanner(true)
-    if (target.showLiveMap) navigateTab('map')
-    if (target.showLiveModal) setShowLiveModal(true)
-    if (target.activeChat) {
-      setRedSubTab('messages')
-      setActiveChat(target.activeChat)
-      setChatUnreads((prev) => {
-        const c = { ...prev }
-        c[target.activeChat!] = 0
-        return c
-      })
-    }
-    if (target.groupChatId) {
-      setShowGroupChatModalFor(target.groupChatId)
-      setSessionUnreads((prev) => {
-        const c = { ...prev }
-        c[target.groupChatId!] = 0
-        return c
-      })
-    }
-    if (target.selectedSquad) {
-      setSelectedSquad(target.selectedSquad)
-    }
-    if (target.showSyncArena) {
-      setShowSyncArena(true)
-    }
-    if (target.openTrainerCoach) {
-      setTrainerCoachInitialTab(target.trainerCoachTab)
-      setShowTrainerCoach(true)
-    }
-    if (target.openMarketplace) {
-      setMarketplaceScreenMode(target.marketplaceOrdersTab ? 'orders' : 'shop')
-      setShowMarketplace(true)
-    }
-    if (target.startSyncWith) {
-      const { partnerId, partnerName } = target.startSyncWith
-      const name =
-        partnerName ||
-        partnerNameHint ||
-        realProfiles.find((p) => p.id === partnerId)?.name ||
-        SEED_PROFILES.find((p) => p.id === partnerId)?.name ||
-        'Compañero'
-      setTimeout(() => startSyncRef.current?.(partnerId, name), 80)
-    }
-    if (target.openProfileId) {
-      const prof =
-        realProfiles.find((p) => p.id === target.openProfileId) ||
-        SEED_PROFILES.find((p) => p.id === target.openProfileId)
-      if (prof) setShowFullProfile(prof)
-    }
-  }, [realProfiles])
-
-  useEffect(() => {
-    applyNotificationNavigationRef.current = applyNotificationNavigation
-  }, [applyNotificationNavigation])
-
-  const openMessageNotificationTarget = useCallback((chatId: string, senderName?: string, isGroupHint?: boolean) => {
-    const target = resolveNotificationTarget(
-      { type: isGroupHint ? 'group_message' : 'message', relatedId: chatId },
-      { sessionIds: knownSessionIds }
-    )
-    if (target) {
-      applyNotificationNavigation(target, senderName)
-      return
-    }
-    if (isGroupHint) {
-      setActiveTab('sesiones')
-      setShowGroupChatModalFor(chatId)
-      setSessionUnreads((prev) => { const c = { ...prev }; c[chatId] = 0; return c })
-    } else {
-      navigateTab('red')
-      setRedSubTab('messages')
-      setActiveChat(chatId)
-      setChatUnreads((prev) => { const c = { ...prev }; c[chatId] = 0; return c })
-    }
-  }, [knownSessionIds, applyNotificationNavigation])
 
   // Central helper: show in-app toast + central notif + browser notif (if hidden) + bump unread for a message arrival.
   // Safe to call from bg listeners. name = display name of sender, chatId for 1:1 or sessionId for group.
@@ -7737,20 +7998,6 @@ useEffect(() => {
       } else {
         if (isRegister) {
           const fbUser = await signUpWithEmail(authEmail, authPassword)
-          await createUserProfile(fbUser, {
-            name: '',
-            age: 25,
-            gender: 'hombre',
-            city: '',
-            country: 'Chile',
-            bio: '',
-            photos: [],
-            trainingTypes: [],
-            goals: [],
-            level: 'Intermedio',
-            intensity: 'Moderado',
-            availability: ['Tarde'],
-          })
           toast.success('Cuenta creada exitosamente')
           loggedInUser = fbUser
           lastSuccessfulAuthRef.current = fbUser
@@ -7789,63 +8036,11 @@ useEffect(() => {
     } finally {
       setAuthLoading(false)
 
-      // After successful real auth, load or create local profile and decide onboarding
-      if (!isDemoMode && loggedInUser) {
-        try {
-          const profile = await getUserProfile(loggedInUser.uid)
-
-          if (profile) {
-            saveUser({ ...profile, id: 'me' } as any)
-
-            if (isRegister) {
-              setIsEditingProfile(false)
-              setOnboardingStepLocal(0)
-              setShowOnboarding(true)
-            }
-            // Returning logins with incomplete profile can finish via Profile tab CTA
-          } else {
-            const minimalUser = {
-              id: 'me' as any,
-              name: '',
-              age: 25,
-              gender: 'hombre' as const,
-              city: '',
-              country: 'Chile',
-              bio: '',
-              photos: [],
-              trainingTypes: [],
-              goals: [],
-              level: 'Intermedio' as const,
-              intensity: 'Moderado' as const,
-              availability: ['Tarde'],
-            }
-            saveUser(minimalUser as any)
-            setIsEditingProfile(false)
-            setOnboardingStepLocal(0)
-            setShowOnboarding(true)
-          }
-        } catch (e) {
-          console.warn('Profile load after real auth failed', e)
-          const fallbackUser = {
-            id: 'me' as any,
-            name: '',
-            age: 25,
-            gender: 'hombre' as const,
-            city: '',
-            country: 'Chile',
-            bio: '',
-            photos: [],
-            trainingTypes: [],
-            goals: [],
-            level: 'Intermedio' as const,
-            intensity: 'Moderado' as const,
-            availability: ['Tarde'],
-          }
-          saveUser(fallbackUser as any)
-          setIsEditingProfile(false)
-          setOnboardingStepLocal(0)
-          setShowOnboarding(true)
-        }
+      // Profile hydration + onboarding gate: ProfileContext only (never wipe on login).
+      if (!isDemoMode && loggedInUser && isRegister) {
+        setIsEditingProfile(false)
+        setOnboardingStepLocal(0)
+        setShowOnboarding(true)
       } else if (isDemoMode && loggedInUser) {
         const hasLocalProfile = localStorage.getItem('fitvina_user')
         if (!hasLocalProfile) {
@@ -8709,18 +8904,6 @@ useEffect(() => {
     savePersistedRedSyncState(prevRedSyncStateRef.current)
   }, [liveTrainingNow, syncBonds, addNotification])
 
-  // Small relative time for message previews (e.g. "5m", "2h", "ahora")
-  const getRelativeTime = (ts?: number) => {
-    if (!ts) return ''
-    const diff = Date.now() - ts
-    if (diff < 60000) return 'ahora'
-    const mins = Math.floor(diff / 60000)
-    if (mins < 60) return `${mins}m`
-    const hrs = Math.floor(mins / 60)
-    if (hrs < 24) return `${hrs}h`
-    return new Date(ts).toLocaleDateString('es-CL', { day: 'numeric', month: 'short' })
-  }
-
   // ==================== SWIPE LOGIC ====================
   const celebrateNewMatch = (profile: Profile, isReal = false) => {
     const profileId = profile.id
@@ -8804,7 +8987,9 @@ useEffect(() => {
 
       if (!alreadyLiked) {
       const newLiked = [...likedIds, profileId]
-      saveLiked(newLiked)
+      startTransition(() => {
+        saveLiked(newLiked)
+      })
 
       // Network Power priority in action: swiping right on your red gives immediate feedback that the graph is strengthening
       if (syncBonds[profileId]) {
@@ -8948,7 +9133,9 @@ useEffect(() => {
       }
     } else {
       const newPassed = [...passedIds, profileId]
-      savePassed(newPassed)
+      startTransition(() => {
+        savePassed(newPassed)
+      })
       const isRealProfile = !profileId.startsWith('p') && realProfiles.some(r => r.id === profileId)
       if (isRealProfile && !isDemoMode && firebaseUser?.uid && db) {
         writePass(db, firebaseUser.uid, profileId).catch((e) =>
@@ -9222,29 +9409,42 @@ useEffect(() => {
 
   return (
     <ErrorBoundary>
-      <div className={`bg-[#0D0D10] text-white flex flex-col overflow-hidden relative app-container${inFullScreenChat ? ' app-container--chat-active' : ''}`}>
+      <div className={`bg-[#0D0D10] text-white flex flex-col overflow-hidden relative app-container em-visual-v2${inFullScreenChat ? ' app-container--chat-active' : ''}`}>
       {/* PREMIUM TOP BAR — hidden in 1:1 chat (WhatsApp-style full bleed) */}
       {!inFullScreenChat && (
-      <div className="bg-[#1C1C20] border-b border-[#2F2F35] z-50 flex items-center justify-between px-4 py-2 text-[10px] font-medium shadow-sm">
-        <div className="font-semibold tracking-[-0.2px] flex items-center gap-2 text-[#FF671F]">
-          <span className="text-white/90 text-[11px]">EntrenaMatch</span>
+      <div className="em-v2-topbar flex items-center justify-between px-4 py-2 text-[10px] font-medium">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="em-v2-topbar__logo shrink-0">EntrenaMatch</span>
           {liveTrainingNow.length > 0 && (
-            <button 
+            <button
+              type="button"
               onClick={() => { try { triggerHaptic('light') } catch {}; navigateTab('map'); }}
-              className="ml-1 text-[8px] px-2 py-1 rounded-full bg-[#22c55e] text-black font-bold shadow-sm ring-1 ring-[#22c55e]/50 active:brightness-90 active:scale-[0.985] transition" style={{animation: 'live-pulse-green 2.2s ease-in-out infinite'}}
-              title="Ver mapa en vivo"
+              className="em-v2-live-chip-btn min-w-0"
+              title={`Ver ${BRAND_COPY.liveMapLabel}`}
             >
-              🟢 {liveCountForUI} LIVE {currentUser?.trainingNow && currentUser.liveStreak ? `🔥${currentUser.liveStreak}d` : ''}{syncPartnerId ? ' 🔄SYNC' : ''}{activeSyncCount > 0 ? ` · 🔄${activeSyncCount} PARES EN SYNC` : ''}
+              <span
+                className="em-v2-live-chip"
+                style={{ animation: 'live-pulse-green 2.2s ease-in-out infinite' }}
+              >
+                🟢 {liveCountForUI} en {BRAND_COPY.liveMapLabel}
+              </span>
+              {(currentUser?.trainingNow && currentUser.liveStreak) || syncPartnerId || activeSyncCount > 0 ? (
+                <span className="em-v2-live-chip__meta">
+                  {currentUser?.trainingNow && currentUser.liveStreak ? `🔥 ${currentUser.liveStreak}d racha` : ''}
+                  {syncPartnerId ? `${currentUser?.trainingNow && currentUser.liveStreak ? ' · ' : ''}🔄 Sync activo` : ''}
+                  {activeSyncCount > 0 ? `${syncPartnerId || (currentUser?.trainingNow && currentUser.liveStreak) ? ' · ' : ''}🔄 ${activeSyncCount} pares` : ''}
+                </span>
+              ) : null}
             </button>
           )}
         </div>
 
         {(currentUser || firebaseUser) ? (
-          <div className="flex items-center gap-1.5">
-            {/* Bell for notifications */}
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
+              type="button"
               onClick={() => setShowNotifications(true)}
-              className={`relative p-1.5 rounded-xl bg-black/70 active:bg-black text-white transition-all active:scale-[0.95] ${ (unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 ? 'ring-1 ring-[#FF4F79]/70' : '' }`}
+              className={`em-v2-topbar-icon-btn ${ (unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 ? 'em-v2-topbar-icon-btn--alert' : '' }`}
               aria-label="Notificaciones"
             >
               <Bell size={15} />
@@ -9256,12 +9456,13 @@ useEffect(() => {
             </button>
             {!isDemoMode && typeof window !== 'undefined' && typeof (window as any).Capacitor === 'undefined' && (
               <button
+                type="button"
                 onClick={() => { 
                   localStorage.removeItem('entrenamatch_pwa_dismissed');
                   setShowPwaInstall(true); 
                   bumpPwaEngagement(); 
                 }}
-                className="ml-1 text-[9px] px-2 py-0.5 rounded-full bg-[#FF671F]/10 text-[#FF671F] active:bg-[#FF671F]/20 border border-[#FF671F]/20 active:scale-[0.985] flex-shrink-0"
+                className="em-v2-topbar-pwa active:scale-[0.985] flex-shrink-0"
                 title="Instalar como app en pantalla de inicio"
               >
                 📱 Instalar
@@ -9269,7 +9470,7 @@ useEffect(() => {
             )}
           </div>
         ) : (
-          <div className="text-[10px] opacity-90 font-medium">Inicia sesión para probar</div>
+          <div className="text-[10px] opacity-90 font-medium shrink-0">Inicia sesión para probar</div>
         )}
       </div>
       )}
@@ -9443,6 +9644,7 @@ useEffect(() => {
         )}
 
         {activeTab === 'map' && (
+          <TabErrorBoundary tabName="Mapa LIVE">
           <MapExplorePanelMount
             dedicatedMapTab={true}
             liveCountForUI={liveCountForUI}
@@ -9558,12 +9760,13 @@ useEffect(() => {
             }
             cityDerby={homeCityDerby}
           />
+          </TabErrorBoundary>
         )}
 
         {activeTab === 'explore' && (
           <TabErrorBoundary tabName="Explorar">
           <PullToRefresh
-            className="flex-1 flex flex-col min-h-0 overflow-auto relative z-10 isolate bg-[#0D0D10]"
+            className="pull-to-refresh--explore flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden relative z-10 isolate bg-[#0D0D10]"
             disabled={isDemoMode}
             onRefresh={async () => {
               await silentRefreshReal()
@@ -9571,13 +9774,34 @@ useEffect(() => {
           >
           <Suspense fallback={TAB_LOADING}>
           <LazyExploreTab
+            compactHeader={liveCountForUI > 0 || liveTrainingNow.length > 0}
             deck={deck}
             visibleCards={visibleCards}
             userLocation={userLocation}
             filters={filters}
             currentUser={currentUser}
             setShowFilters={setShowFilters}
-            resetDeck={() => { resetSwipeDeck(); toast('Deck reiniciado'); }}
+            resetDeck={async () => {
+              try {
+                const { clearedSwipes } = await resetSwipeDeck()
+                await loadRealProfiles()
+                if (clearedSwipes > 0) {
+                  toast.success(
+                    `Deck reiniciado — ${clearedSwipes} perfil${clearedSwipes === 1 ? '' : 'es'} desbloqueado${clearedSwipes === 1 ? '' : 's'}`,
+                    { description: 'Si no ves tarjetas, prueba ampliar filtros con el botón de abajo' }
+                  )
+                } else {
+                  toast.success('Deck reiniciado', {
+                    description: 'Si sigue vacío, amplía filtros o invita a alguien de tu gym',
+                  })
+                }
+              } catch {
+                toast.error('No se pudo reiniciar el deck', {
+                  description: 'Revisa tu conexión e inténtalo de nuevo',
+                })
+              }
+            }}
+            isResettingDeck={isResettingDeck}
             requestUserLocation={requestUserLocation}
             isLoadingProfiles={isLoadingMatches && realProfiles.length === 0}
             onSwipe={(direction, profileId) => {
@@ -9601,6 +9825,8 @@ useEffect(() => {
             db={db}
             firebaseUid={firebaseUser?.uid ?? null}
             onActivateLive={() => void toggleLiveTraining('on')}
+            liveCountForUI={liveCountForUI}
+            onOpenMap={() => navigateTab('map')}
             onRelaxFilters={() => {
               setFilters((f) => ({
                 ...f,
@@ -9731,7 +9957,7 @@ useEffect(() => {
                 )) : currentUser?.trainingNow ? (
                   <div className="card card-glass p-6 text-center border border-[#22c55e]/40">
                     <div className="text-3xl mb-2">🟢</div>
-                    <div className="font-semibold text-[#22c55e] mb-1">Estás en vivo — visible en el GymPulse</div>
+                    <div className="font-semibold text-[#22c55e] mb-1">Estás en vivo — visible en el mapa LIVE</div>
                     <div className="text-sm text-[#9CA3AF] mb-3">Aún no hay otros entrenando cerca. Tu marcador ya está en el mapa; cuando alguien más active live aparecerá aquí.</div>
                     <button onClick={() => { setShowLiveModal(false); navigateTab('map'); }} className="text-xs px-4 py-1.5 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90">Ver mapa →</button>
                   </div>
@@ -9795,6 +10021,7 @@ useEffect(() => {
 
         {/* ===== HOME — DailyHome + Muro (HomeTab) ===== */}
         {activeTab === 'home' && (
+          <TabErrorBoundary tabName="Inicio">
           <Suspense fallback={TAB_LOADING}>
           <LazyHomeTab
             currentUser={currentUser}
@@ -9883,6 +10110,7 @@ useEffect(() => {
             syncBonds={syncBonds}
             triggerHaptic={triggerHaptic}
             showFeedPublishSuccess={showFeedPublishSuccess}
+            feedPublishing={feedPublishing}
             feedComputation={feedComputation}
             hasMoreGlobalFeed={hasMoreGlobalFeed}
             effectiveUserId={effectiveUserId}
@@ -9920,11 +10148,14 @@ useEffect(() => {
             postLivePublishing={postLivePublishing}
             onPublishPostLive={async (text: string) => {
               setPostLivePublishing(true)
+              setHomeSubTab('feed')
               try {
-                await createProfilePost(text, null)
-                toast.success('¡Publicado en el Muro!', { description: 'Tu sesión live ya está en el GymPulse' })
+                await createProfilePost(text, null, undefined, { skipToast: true })
+                toast.success(BRAND_COPY.feed.publishedTitle, {
+                  description: BRAND_COPY.feed.liveSessionDesc,
+                })
                 setPostLiveSession(null)
-                loadGlobalFeed().catch(() => {})
+                void loadGlobalFeed()
               } catch {
                 toast.error('No se pudo publicar')
               } finally {
@@ -9983,139 +10214,73 @@ useEffect(() => {
             onHomeSubTabChange={setHomeSubTab}
             onImportHealthBurn={handleImportHealthBurn}
             healthImportHint={healthImportHint}
+            wearableActivity={Capacitor.isNativePlatform() ? wearableActivity : undefined}
+            wearableSyncing={Capacitor.isNativePlatform() ? wearableSyncing : undefined}
+            onRefreshWearableActivity={
+              Capacitor.isNativePlatform() ? syncWearableNow : undefined
+            }
+            onOpenWearableConnect={
+              Capacitor.isNativePlatform() ? () => setActiveTab('profile') : undefined
+            }
           />
           </Suspense>
+          </TabErrorBoundary>
         )}
 
-        {/* LUXURIOUS REMASTERED FEED COMPOSER MODAL — feels expensive and important */}
-        {activeTab === 'home' && showFeedPostModal && (
-          <div className="absolute inset-0 z-[95] bg-black/90 flex items-end md:items-center justify-center p-0 md:p-6" onClick={() => setShowFeedPostModal(false)}>
-            <div 
-              className="feed-composer-modal w-full md:w-[520px] rounded-t-3xl md:rounded-3xl p-6 md:p-7 text-white"
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <div className="text-3xl">🔥</div>
-                    <div className="font-black text-2xl tracking-[-1px]">Publicar en el Muro</div>
-                  </div>
-                  <div className="text-sm text-[#9CA3AF] mt-0.5">Tu momento aparecerá en el GymPulse de toda la comunidad</div>
-                </div>
-                <button onClick={() => { setShowFeedPostModal(false); setFeedPostText(''); setFeedPostPhoto(null); }} className="text-3xl text-[#9CA3AF] leading-none mt-[-6px] active:text-white">×</button>
-              </div>
-
-              <textarea
-                value={feedPostText}
-                onChange={e => setFeedPostText(e.target.value)}
-                placeholder={feedPostPhoto ? "Añade un caption épico para tu foto..." : "Comparte tu entreno, un PR, una foto del gym, un \"me uno al pulso\" o lo que quieras que inspire a la red..."}
-                className="feed-composer-textarea form-input w-full h-32 text-[15px] resize-y mb-4 rounded-2xl p-4"
-                maxLength={280}
-                autoFocus
-              />
-
-              {feedPostPhoto && <div className="text-[10px] text-[#FF671F]/70 -mt-3 mb-3 tracking-wide">Foto + texto se publican juntos en el Muro</div>}
-
-              {feedPhotoUploading && (
-                <div className="mb-4">
-                  <div className="text-xs text-[#9CA3AF] mb-1 flex justify-between"><span>Subiendo foto al GymPulse...</span><span className="text-[#FF671F]">{feedPhotoUploadProgress}%</span></div>
-                  <div className="w-full h-1.5 bg-[#222] rounded-full overflow-hidden"><div className="h-1.5 bg-gradient-to-r from-[#FF671F] via-[#FF4F79] to-[#FF671F] transition-all" style={{ width: `${feedPhotoUploadProgress}%` }} /></div>
-                </div>
-              )}
-
-              {feedPostPhoto && !feedPhotoUploading && (
-                <div className="mb-4">
-                  <div className="text-xs text-[#9CA3AF] mb-1.5 flex items-center justify-between px-0.5">Foto del entreno <span className="text-[#FF671F]/60">toca para previsualizar</span></div>
-                  <div className="relative inline-block w-full group" onClick={() => setFeedPhotoModal({url: feedPostPhoto})}>
-                    <img src={feedPostPhoto} className="feed-composer-photo w-full max-h-[210px] rounded-2xl object-cover cursor-zoom-in" />
-                    <button onClick={(e) => { e.stopPropagation(); setFeedPostPhoto(null); }} className="absolute -top-2.5 -right-2.5 bg-black/90 hover:bg-red-600 text-white w-7 h-7 rounded-full flex items-center justify-center border border-white/20 z-10 active:scale-90">×</button>
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-3">
-                <button 
-                  onClick={() => {
-                    if (Capacitor.isNativePlatform() && CapacitorCamera) {
-                      (async () => {
-                        try {
-                          const photo = await CapacitorCamera.getPhoto({ quality: 82, allowEditing: true, resultType: 'base64' });
-                          if (photo?.base64String) {
-                            const dataUrl = `data:image/jpeg;base64,${photo.base64String}`;
-                            if (!isDemoMode && storage) {
-                              setFeedPhotoUploading(true); setFeedPhotoUploadProgress(0);
-                              try {
-                                const { ref, uploadString, getDownloadURL } = await import('firebase/storage');
-                                const path = `posts/${effectiveUserId}/feed-${Date.now()}.jpg`;
-                                const storageRef = ref(storage, path);
-                                const snap = await uploadString(storageRef, dataUrl, 'data_url');
-                                const url = await getDownloadURL(snap.ref);
-                                setFeedPostPhoto(url); setFeedPhotoUploading(false);
-                              } catch (uploadErr) {
-                                setFeedPostPhoto(dataUrl); setFeedPhotoUploading(false);
-                                toast((uploadErr as any)?.code === 'storage/unauthorized' ? 'Storage sin permisos — revisa reglas' : 'Foto embebida');
-                              }
-                            } else {
-                              setFeedPostPhoto(dataUrl);
-                            }
-                          }
-                        } catch { toast('No se pudo usar cámara'); setFeedPhotoUploading(false); }
-                      })();
-                    } else {
-                      feedPhotoInputRef.current?.click();
-                    }
-                  }}
-                  className="flex-1 py-3 text-sm border border-[#333] rounded-2xl active:bg-[#25252A] flex items-center justify-center gap-2 hover:border-[#FF671F]/50 transition"
-                >
-                  <Camera size={16} /> {feedPostPhoto ? 'Cambiar foto' : 'Añadir foto del entreno'}
-                </button>
-                <input ref={feedPhotoInputRef} type="file" accept="image/*" onChange={handleFeedPhotoFile} className="hidden" />
-
-                <button 
-                  onClick={async () => {
-                    if (!feedPostText.trim()) return;
-                    const text = feedPostText.trim();
-                    const photo = feedPostPhoto;
-                    setFeedPublishing(true);
-                    try {
-                      await createProfilePost(text, photo);
-                      setShowFeedPostModal(false);
-                      setFeedPostText(''); setFeedPostPhoto(null); setFeedPublishing(false);
-                      setShowFeedPublishSuccess(true); setTimeout(() => setShowFeedPublishSuccess(false), 4200);
-                      toast.success('¡Publicado en el Muro del GymPulse!', { description: 'Toda la comunidad ya puede verlo y reaccionar.' });
-                      if (activeTab === 'home') loadGlobalFeed().catch(() => {});
-                      try { confetti({ particleCount: 140, spread: 70, origin: { y: 0.65 } }); } catch {}
-                    } catch (e) { setFeedPublishing(false); toast.error('Error al publicar'); }
-                  }}
-                  disabled={!feedPostText.trim() || feedPublishing}
-                  className="flex-1 feed-publish-btn py-3 rounded-2xl text-base disabled:opacity-60 flex items-center justify-center gap-2"
-                >
-                  {feedPublishing ? 'PUBLICANDO EN EL PULSO...' : 'PUBLICAR EN EL MURO'}
-                </button>
-              </div>
-
-              <div className="text-center text-[10px] text-[#9CA3AF]/70 mt-4">Visible para toda la comunidad • reacciones y comentarios en tiempo real • los mejores posts se propagan como highlights</div>
-            </div>
-          </div>
+        {activeTab === 'home' && (
+          <HomeFeedOverlays
+            showComposer={showFeedPostModal}
+            text={feedPostText}
+            photo={feedPostPhoto}
+            photoUploading={feedPhotoUploading}
+            photoUploadProgress={feedPhotoUploadProgress}
+            publishing={feedPublishing}
+            onCloseComposer={() => {
+              setShowFeedPostModal(false)
+              setFeedPostText('')
+              setFeedPostPhoto(null)
+            }}
+            onTextChange={setFeedPostText}
+            onPhotoRemove={() => setFeedPostPhoto(null)}
+            onPhotoPreview={(url) => setFeedPhotoModal({ url })}
+            onPhotoFile={handleFeedPhotoFile}
+            onPickNativePhoto={handlePickFeedNativePhoto}
+            photoInputRef={feedPhotoInputRef}
+            onPublish={() => {
+              if (!feedPostText.trim() || feedPublishing || feedPhotoUploading) return
+              const text = feedPostText.trim()
+              const photo = feedPostPhoto
+              setFeedPostText('')
+              setFeedPostPhoto(null)
+              setShowFeedPostModal(false)
+              openCommunityMuro()
+              setFeedPublishing(true)
+              void (async () => {
+                try {
+                  await createProfilePost(text, photo, undefined, { skipToast: true })
+                  setShowFeedPublishSuccess(true)
+                  setTimeout(() => setShowFeedPublishSuccess(false), 4200)
+                  toast.success(BRAND_COPY.feed.publishedTitle, {
+                    description: BRAND_COPY.feed.publishedDesc,
+                  })
+                  try {
+                    confetti({ particleCount: 140, spread: 70, origin: { y: 0.65 } })
+                  } catch {}
+                } catch {
+                  toast.error('Error al publicar', { description: 'Inténtalo de nuevo.' })
+                } finally {
+                  setFeedPublishing(false)
+                }
+              })()
+            }}
+          />
         )}
 
-        {/* TOP UPDATE v0.1.7: Global beautiful photo lightbox (works from feed posts - makes the social wall feel premium and top-tier) */}
         {feedPhotoModal && (
-          <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-3" onClick={() => setFeedPhotoModal(null)}>
-            <div className="relative w-full max-w-[96vw] max-h-[96vh] flex items-center justify-center" onClick={e => e.stopPropagation()}>
-              <img 
-                src={feedPhotoModal.url} 
-                className="max-w-full max-h-[90vh] rounded-3xl object-contain shadow-[0_0_80px_rgba(255,103,31,0.15)]" 
-              />
-              <button 
-                onClick={() => setFeedPhotoModal(null)}
-                className="absolute -top-2 -right-2 bg-[#FF671F] text-black w-10 h-10 rounded-full flex items-center justify-center text-2xl font-black shadow-lg active:scale-95"
-              >
-                ×
-              </button>
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] bg-black/70 text-white/90 px-4 py-1 rounded-full tracking-widest">TOCA FUERA PARA CERRAR • FEED POST</div>
-            </div>
-          </div>
+          <FeedPhotoLightbox
+            url={feedPhotoModal.url}
+            onClose={() => setFeedPhotoModal(null)}
+          />
         )}
 
         {activeTab === 'squads' && (
@@ -10218,9 +10383,11 @@ useEffect(() => {
             profilePosts={profilePosts}
             isDemoMode={isDemoMode}
             isLoadingMatches={isLoadingMatches}
+            loadingPartnerIds={missingMatchPartnerIds}
             lastSync={lastSync}
             onExplore={() => navigateTab('explore')}
             onOpenChat={openChat}
+            onOpenSquads={() => navigateTab('squads')}
           />
           </Suspense>
           </TabErrorBoundary>
@@ -10228,205 +10395,181 @@ useEffect(() => {
         )}
 
         {redSubTab === 'messages' && (
-          <div className="flex-1 flex flex-col min-h-0 overflow-hidden relative">
-            {!activeChat ? (
-              <PullToRefresh
-                className="flex-1 flex flex-col min-h-0"
-                disabled={isDemoMode}
-                onRefresh={async () => {
-                  await silentRefreshReal({ includeChats: true })
-                }}
-              >
-              <ChatListPanel
-                matchProfiles={matchProfiles}
-                blockedUsers={blockedUsers}
-                messages={messages}
-                chatUnreads={chatUnreads}
-                syncBonds={syncBonds}
-                userLocation={userLocation}
-                isDemoMode={isDemoMode}
-                isLoadingChats={isLoadingChats}
-                lastSync={lastSync}
-                getRelativeTime={getRelativeTime}
-                onSelectChat={(id) => {
-                  setActiveChat(id)
+          <RedMessagesPanel
+            activeChat={activeChat}
+            isDemoMode={isDemoMode}
+            matchProfiles={matchProfiles}
+            blockedUsers={blockedUsers}
+            messages={messages}
+            chatUnreads={chatUnreads}
+            syncBonds={syncBonds}
+            userLocation={userLocation}
+            isLoadingChats={isLoadingChats}
+            lastSync={lastSync}
+            getRelativeTime={getRelativeTime}
+            onSelectChat={(id) => {
+              setActiveChat(id)
+              setChatUnreads((prev) => {
+                const c = { ...prev }
+                c[id] = 0
+                return c
+              })
+            }}
+            onOpenExplore={() => navigateTab('explore')}
+            onRefreshList={async () => {
+              await silentRefreshReal({ includeChats: true })
+            }}
+            chatProfile={chatProfile}
+            isRealMatch={!!activeChat && realMatches.includes(activeChat)}
+            chatMessages={
+              activeChat
+                ? realChatMessages.length > 0
+                  ? realChatMessages
+                  : messages[activeChat] || []
+                : []
+            }
+            syncBond={activeChat ? syncBonds[activeChat] : undefined}
+            workoutSessionDraft={workoutSessionDraft}
+            showEntrenaLogModal={showEntrenaLogModal}
+            onResumeWorkout={() => void openEntrenoDeHoy()}
+            onQuickAddSet={handleWorkoutQuickAddSet}
+            onOpenChatFromFab={handleWorkoutOpenChat}
+            onOpenFuelFromFab={handleWorkoutOpenFuel}
+            totalChatUnreads={totalChatUnreads}
+            chatViewProps={{
+              playingVoiceId,
+              voicePlayProgress,
+              pendingVoice,
+              isUploadingVoice,
+              voiceUploadProgress,
+              pendingPhoto: pendingChatPhoto ? { url: pendingChatPhoto.url } : null,
+              isUploadingPhoto: isUploadingChatPhoto,
+              photoUploadProgress: chatPhotoUploadProgress,
+              isRecordingVoice,
+              recordingTime,
+              recordingLevels,
+              chatInputValue,
+              partnerTyping: chatPartnerTyping,
+              chatScrollRef,
+              renderMessageText,
+              onBack: () => setActiveChat(null),
+              onShowProfile: () => chatProfile && setShowFullProfile(chatProfile),
+              onRefreshChat: async () => {
+                if (!activeChat) return
+                setIsLoadingChats(true)
+                try {
+                  await loadRealChatMessages(activeChat)
+                  setLastSync(new Date())
                   setChatUnreads((prev) => {
                     const c = { ...prev }
-                    c[id] = 0
+                    c[activeChat] = 0
                     return c
                   })
-                }}
-                onOpenExplore={() => navigateTab('explore')}
-              />
-              </PullToRefresh>
-            ) : activeChat ? (
-              <>
-              {workoutSessionDraft && !showEntrenaLogModal && (
-                <WorkoutSessionFab
-                  draft={workoutSessionDraft}
-                  onResume={() => void openEntrenoDeHoy()}
-                  onQuickAddSet={handleWorkoutQuickAddSet}
-                  onOpenChat={handleWorkoutOpenChat}
-                  onOpenFuel={handleWorkoutOpenFuel}
-                  chatUnreadCount={totalChatUnreads}
-                  layout="chat-strip"
-                />
-              )}
-              <ChatView
-                activeChat={activeChat}
-                chatProfile={chatProfile}
-                isRealMatch={realMatches.includes(activeChat)}
-                chatMessages={realChatMessages.length > 0 ? realChatMessages : (messages[activeChat] || [])}
-                syncBond={syncBonds[activeChat]}
-                isDemoMode={isDemoMode}
-                isLoadingChats={isLoadingChats}
-                playingVoiceId={playingVoiceId}
-                voicePlayProgress={voicePlayProgress}
-                pendingVoice={pendingVoice}
-                isUploadingVoice={isUploadingVoice}
-                voiceUploadProgress={voiceUploadProgress}
-                pendingPhoto={pendingChatPhoto ? { url: pendingChatPhoto.url } : null}
-                isUploadingPhoto={isUploadingChatPhoto}
-                photoUploadProgress={chatPhotoUploadProgress}
-                isRecordingVoice={isRecordingVoice}
-                recordingTime={recordingTime}
-                recordingLevels={recordingLevels}
-                chatInputValue={chatInputValue}
-                partnerTyping={chatPartnerTyping}
-                chatScrollRef={chatScrollRef}
-                renderMessageText={renderMessageText}
-                onBack={() => setActiveChat(null)}
-                onShowProfile={() => chatProfile && setShowFullProfile(chatProfile)}
-                onRefreshChat={async () => {
-                  setIsLoadingChats(true)
-                  try {
-                    await loadRealChatMessages(activeChat)
-                    setLastSync(new Date())
-                    setChatUnreads((prev) => {
-                      const c = { ...prev }
-                      c[activeChat] = 0
-                      return c
-                    })
-                    toast.success('Chat actualizado')
-                  } finally {
-                    setIsLoadingChats(false)
-                  }
-                }}
-                onStartSync={() => startSyncWith(activeChat, chatProfile?.name || '')}
-                onReport={() => setSafetySheetTarget({ id: activeChat, name: chatProfile?.name || 'Usuario' })}
-                onBlock={async () => {
-                  await blockUser(activeChat)
-                  setActiveChat(null)
-                }}
-                currentUser={currentUser}
-                voiceStreak={dailyPulse?.voiceStreak || 0}
-                pactCompare={chatPactCompare}
-                onOpenEntrenoLog={() =>
-                  void openEntrenoDeHoy(
-                    activeChat ? { shareToChat: activeChat } : undefined
-                  )
+                  toast.success('Chat actualizado')
+                } finally {
+                  setIsLoadingChats(false)
                 }
-                fetchTodayWorkouts={fetchTodayWorkoutsForShare}
-                onShareWorkoutToChat={
-                  activeChat
-                    ? (workout) => handleShareWorkoutToChat(workout, activeChat)
-                    : undefined
+              },
+              onStartSync: () =>
+                activeChat && startSyncWith(activeChat, chatProfile?.name || ''),
+              onReport: () =>
+                activeChat &&
+                setSafetySheetTarget({ id: activeChat, name: chatProfile?.name || 'Usuario' }),
+              onBlock: async () => {
+                if (!activeChat) return
+                await blockUser(activeChat)
+                setActiveChat(null)
+              },
+              currentUser,
+              voiceStreak: dailyPulse?.voiceStreak || 0,
+              pactCompare: chatPactCompare,
+              onOpenEntrenoLog: () =>
+                void openEntrenoDeHoy(activeChat ? { shareToChat: activeChat } : undefined),
+              fetchTodayWorkouts: fetchTodayWorkoutsForShare,
+              onShareWorkoutToChat: activeChat
+                ? (workout) => handleShareWorkoutToChat(workout, activeChat)
+                : undefined,
+              onCopyWorkout: (workoutId, title) => handleCopyWorkoutFromPost(workoutId, title),
+              onOpenExplore: () => {
+                setActiveChat(null)
+                navigateTab('explore')
+              },
+              onShowReviewModal: () => {
+                if (!activeChat) return
+                setShowReviewModalFor(activeChat)
+                setReviewRating(5)
+                setReviewComment('')
+              },
+              onToggleVoicePlay: toggleVoicePlay,
+              onSendMessage: sendMessage,
+              onSendBondTemplate: (tpl) => {
+                sendMessage(tpl)
+                createProfilePost(`En chat con mi socio de EntrenaSync: ${tpl}`, null).catch(() => {})
+              },
+              onPreviewPendingVoice: () => {
+                try {
+                  triggerHaptic('medium')
+                } catch {}
+                if (pendingVoice) new Audio(pendingVoice.url).play().catch(() => {})
+              },
+              onCancelPendingVoice: () => {
+                if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current)
+                voicePreviewUrlRef.current = null
+                setPendingVoice(null)
+              },
+              onReRecordVoice: () => {
+                if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current)
+                voicePreviewUrlRef.current = null
+                setPendingVoice(null)
+                setTimeout(() => startVoiceRecording(), 50)
+              },
+              onSendPendingVoice: () => {
+                if (pendingVoice && activeChat) sendVoiceNote(activeChat, false)
+              },
+              onCancelUpload: () => {
+                setPendingVoice(null)
+                setIsUploadingVoice(false)
+                setVoiceUploadProgress(0)
+              },
+              onPickPhoto: () => {
+                void pickChatPhoto()
+              },
+              onCancelPendingPhoto: () => {
+                if (chatPhotoPreviewRef.current) URL.revokeObjectURL(chatPhotoPreviewRef.current)
+                chatPhotoPreviewRef.current = null
+                setPendingChatPhoto(null)
+              },
+              onSendPendingPhoto: () => {
+                if (activeChat) void sendChatPhoto(activeChat)
+              },
+              onChatInputChange: (value) => {
+                setChatInputValue(value)
+                if (isDemoMode || !db || !firebaseUser?.uid || !activeChat) return
+                if (chatTypingTimerRef.current) clearTimeout(chatTypingTimerRef.current)
+                void setChatTyping(db, firebaseUser.uid, activeChat, value.trim().length > 0)
+                chatTypingTimerRef.current = setTimeout(() => {
+                  void setChatTyping(db, firebaseUser.uid, activeChat, false)
+                }, 4000)
+              },
+              onSubmitForm: (e) => {
+                e.preventDefault()
+                if (!activeChat) return
+                if (pendingChatPhoto) {
+                  void sendChatPhoto(activeChat)
+                  return
                 }
-                onCopyWorkout={(workoutId, title) => handleCopyWorkoutFromPost(workoutId, title)}
-                onOpenExplore={() => {
-                  setActiveChat(null)
-                  navigateTab('explore')
-                }}
-                onShowReviewModal={() => {
-                  setShowReviewModalFor(activeChat)
-                  setReviewRating(5)
-                  setReviewComment('')
-                }}
-                onToggleVoicePlay={(m) => {
-                  try { triggerHaptic(playingVoiceId === m.id ? 'light' : 'medium') } catch {}
-                  if (playingVoiceId === m.id) {
-                    if (currentAudioRef.current) { currentAudioRef.current.pause(); currentAudioRef.current = null }
-                    setPlayingVoiceId(null)
-                    setVoicePlayProgress(0)
-                  } else {
-                    if (currentAudioRef.current) { currentAudioRef.current.pause(); currentAudioRef.current = null }
-                    setPlayingVoiceId(m.id)
-                    setVoicePlayProgress(0)
-                    const audio = new Audio(m.voiceUrl!)
-                    currentAudioRef.current = audio
-                    audio.onended = () => { setPlayingVoiceId(null); setVoicePlayProgress(0); currentAudioRef.current = null }
-                    audio.ontimeupdate = () => {
-                      if (audio.duration > 0) setVoicePlayProgress(Math.min(100, (audio.currentTime / audio.duration) * 100))
-                    }
-                    audio.play().catch(() => { setPlayingVoiceId(null); setVoicePlayProgress(0); currentAudioRef.current = null })
-                  }
-                }}
-                onSendMessage={sendMessage}
-                onSendBondTemplate={(tpl) => {
-                  sendMessage(tpl)
-                  createProfilePost(`En chat con mi socio de EntrenaSync: ${tpl}`, null).catch(() => {})
-                }}
-                onPreviewPendingVoice={() => {
-                  try { triggerHaptic('medium') } catch {}
-                  if (pendingVoice) new Audio(pendingVoice.url).play().catch(() => {})
-                }}
-                onCancelPendingVoice={() => {
-                  if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current)
-                  voicePreviewUrlRef.current = null
-                  setPendingVoice(null)
-                }}
-                onReRecordVoice={() => {
-                  if (voicePreviewUrlRef.current) URL.revokeObjectURL(voicePreviewUrlRef.current)
-                  voicePreviewUrlRef.current = null
-                  setPendingVoice(null)
-                  setTimeout(() => startVoiceRecording(), 50)
-                }}
-                onSendPendingVoice={() => {
-                  if (pendingVoice) sendVoiceNote(activeChat, false)
-                }}
-                onCancelUpload={() => {
-                  setPendingVoice(null)
-                  setIsUploadingVoice(false)
-                  setVoiceUploadProgress(0)
-                }}
-                onPickPhoto={() => { void pickChatPhoto() }}
-                onCancelPendingPhoto={() => {
-                  if (chatPhotoPreviewRef.current) URL.revokeObjectURL(chatPhotoPreviewRef.current)
-                  chatPhotoPreviewRef.current = null
-                  setPendingChatPhoto(null)
-                }}
-                onSendPendingPhoto={() => {
-                  if (activeChat) void sendChatPhoto(activeChat)
-                }}
-                onChatInputChange={(value) => {
-                  setChatInputValue(value)
-                  if (isDemoMode || !db || !firebaseUser?.uid || !activeChat) return
-                  if (chatTypingTimerRef.current) clearTimeout(chatTypingTimerRef.current)
-                  void setChatTyping(db, firebaseUser.uid, activeChat, value.trim().length > 0)
-                  chatTypingTimerRef.current = setTimeout(() => {
-                    void setChatTyping(db, firebaseUser.uid, activeChat, false)
-                  }, 4000)
-                }}
-                onSubmitForm={(e) => {
-                  e.preventDefault()
-                  if (pendingChatPhoto) {
-                    void sendChatPhoto(activeChat)
-                    return
-                  }
-                  if (pendingVoice) {
-                    sendVoiceNote(activeChat, false)
-                    return
-                  }
-                  if (chatInputValue.trim()) sendMessage(chatInputValue)
-                  setChatInputValue('')
-                }}
-                onStartVoiceRecording={startVoiceRecording}
-                onStopVoiceRecording={stopVoiceRecording}
-                onCancelVoiceRecording={cancelVoiceRecording}
-              />
-              </>
-            ) : null}
-          </div>
+                if (pendingVoice) {
+                  sendVoiceNote(activeChat, false)
+                  return
+                }
+                if (chatInputValue.trim()) sendMessage(chatInputValue)
+                setChatInputValue('')
+              },
+              onStartVoiceRecording: startVoiceRecording,
+              onStopVoiceRecording: stopVoiceRecording,
+              onCancelVoiceRecording: cancelVoiceRecording,
+            }}
+          />
         )}
           </RedTab>
         )}
@@ -10688,71 +10831,37 @@ useEffect(() => {
          Welcome guide modal can still be triggered if needed via other means or first-load. */}
 
       {/* Bottom Navigation - Premium, energetic feel (polished aesthetics) */}
-      <MarketplaceView
+      <MarketplaceViewMount
         open={showMarketplace}
         onClose={() => {
           setShowMarketplace(false)
           setMarketplaceScreenMode('shop')
         }}
-        initialScreenMode={marketplaceScreenMode}
+        screenMode={marketplaceScreenMode}
         products={marketplaceProducts}
         isAdmin={isMarketplaceAdmin}
         isDemoMode={isDemoMode}
         userUid={firebaseUser?.uid}
         userEmail={firebaseUser?.email ?? undefined}
-        onCreateProduct={async (input: MarketplaceProductInput) => {
-          if (!db || !firebaseUser?.uid) throw new Error('auth')
-          await createMarketplaceProduct(db, firebaseUser.uid, input)
-        }}
-        onUpdateProduct={async (id, patch) => {
-          if (!db) throw new Error('db')
-          await updateMarketplaceProduct(db, id, patch)
-        }}
-        onDeleteProduct={async (id) => {
-          if (!db) throw new Error('db')
-          await deleteMarketplaceProduct(db, id)
-        }}
-        onCheckout={async (product, shipping) => {
-          if (!db || !firebaseUser?.uid) throw new Error('auth')
-          return createMarketplaceOrder(db, firebaseUser.uid, product, shipping)
-        }}
         myOrders={myMarketplaceOrders}
+        db={db}
       />
-      {appAdminRecord && (
-        <CommunityAdminPanel
-          open={showCommunityAdmin}
-          onClose={() => setShowCommunityAdmin(false)}
-          db={db}
-          admin={appAdminRecord}
-          realProfiles={realProfiles}
-        />
-      )}
-      <AdminOpsPanel
+      <CommunityAdminPanelMount
+        open={showCommunityAdmin}
+        onClose={() => setShowCommunityAdmin(false)}
+        db={db}
+        admin={appAdminRecord}
+        realProfiles={realProfiles}
+      />
+      <AdminOpsPanelMount
         open={showAdminOps}
         onClose={() => setShowAdminOps(false)}
+        db={db}
         orders={adminOrders}
         bookings={adminBookings}
         trainers={trainerProfiles}
-        onUpdateOrderStatus={async (orderId, status) => {
-          if (!db) throw new Error('db')
-          await updateMarketplaceOrderStatus(db, orderId, status)
-        }}
-        onSetTrainerVerified={async (trainerUserId, verified) => {
-          if (!db) throw new Error('db')
-          await setTrainerVerified(db, trainerUserId, verified)
-        }}
-        onMarkTrainerPayout={async (bookingId, status) => {
-          await markTrainerPayoutStatus(bookingId, status)
-        }}
+        realProfiles={realProfiles}
         mpHealth={mpHealth}
-        metrics={computeAdminMetrics(
-          realProfiles,
-          adminBookings,
-          adminOrders,
-          !!mpHealth?.configured,
-          !!mpHealth?.live
-        )}
-        db={db}
         liveNowTotal={liveCountForUI}
       />
       <SyncLiveBlockerModal
@@ -10840,13 +10949,14 @@ useEffect(() => {
           })()
         }}
       />
-      <TrainerCoachView
+      <TrainerCoachViewMount
         open={showTrainerCoach}
         onClose={() => {
           setShowTrainerCoach(false)
           setTrainerCoachPreselect(null)
           setTrainerCoachInitialTab(undefined)
         }}
+        onDispatchMatched={() => setTrainerCoachInitialTab('sessions')}
         trainers={trainerProfiles}
         myTrainerProfile={myTrainerProfile}
         bookings={trainerBookings}
@@ -10860,158 +10970,45 @@ useEffect(() => {
         profileCoords={trainerProfileCoords}
         activeDispatch={activeTrainerDispatch}
         incomingDispatchOffer={incomingDispatchOffer}
+        clientDispatchHistory={clientDispatchHistory}
+        trainerDispatchHistory={trainerDispatchHistory}
+        clientFuelBalance={fuelEnergyBalance}
+        clientWeeklyPlan={weeklyPlan}
+        userLocation={userLocation}
+        db={db}
         onRequestLocation={requestUserLocation}
-        onCreateDispatch={async (input, candidateIds) => {
-          if (!db || !firebaseUser?.uid) throw new Error('auth')
-          const clientName = currentUser?.name || firebaseUser.email?.split('@')[0] || 'Cliente'
-          const nearby = findNearbyDispatchTrainers(
-            trainerProfiles,
-            trainerProfileCoords,
-            input.specialty,
-            input.lat,
-            input.lng
-          )
-          const estimate = estimateDispatchPrice(nearby, input.durationMin)
-          return createTrainerDispatchRequest(
-            db,
-            firebaseUser.uid,
-            clientName,
-            input,
-            estimate,
-            candidateIds
-          )
-        }}
-        onCancelDispatch={async (dispatchId) => {
-          if (!db) throw new Error('db')
-          await cancelTrainerDispatch(db, dispatchId)
-        }}
-        onDispatchMatched={() => {
-          setTrainerCoachInitialTab('sessions')
-        }}
-        onSaveTrainerProfile={async (input: TrainerProfileInput) => {
-          if (!db || !firebaseUser?.uid) throw new Error('auth')
-          const name = currentUser?.name || firebaseUser.email?.split('@')[0] || 'Entrenador'
-          const coords =
-            input.availableForDispatch && userLocation ? userLocation : null
-          if (input.availableForDispatch && !userLocation) {
-            toast.info('Activa GPS para recibir ofertas cerca de ti')
-          }
-          await saveTrainerProfile(db, firebaseUser.uid, name, input, coords)
-        }}
-        onCreateBooking={async (trainer, input) => {
-          if (!db || !firebaseUser?.uid) throw new Error('auth')
-          const clientName = currentUser?.name || firebaseUser.email?.split('@')[0] || 'Cliente'
-          return createTrainerBooking(db, firebaseUser.uid, clientName, trainer, input)
-        }}
-        onUpdateBookingStatus={async (bookingId, status) => {
-          if (!db) throw new Error('db')
-          try {
-            await updateTrainerBookingStatus(db, bookingId, status)
-            toast.success('Sesión actualizada')
-          } catch (e) {
-            console.warn(e)
-            toast.error('No se pudo actualizar la sesión')
-            throw e
-          }
-        }}
-        onOpenPayment={(url) => window.open(url, '_blank', 'noopener,noreferrer')}
         onRequestReview={(trainerId, bookingId) => {
           setPendingReviewBookingId(bookingId)
           setShowTrainerCoach(false)
           setShowReviewModalFor(trainerId)
         }}
-        onStartEntrenaSync={async (booking) => {
-          if (!firebaseUser?.uid) return
-          const partnerId =
-            booking.trainerId === firebaseUser.uid ? booking.clientId : booking.trainerId
-          const partnerName =
-            booking.trainerId === firebaseUser.uid ? booking.clientName : booking.trainerName
-          setShowTrainerCoach(false)
-          await startSyncWith(partnerId, partnerName)
-          if (db) {
-            await linkBookingSyncSession(
-              db,
-              booking.id,
-              buildSyncSessionId(firebaseUser.uid, partnerId)
-            )
-          }
-        }}
-        onPayWithMercadoPago={async (booking) => {
-          try {
-            const result = await payTrainerBooking(booking.id)
-            openTrainerPaymentCheckout(result)
-            toast.success('Pago seguro EntrenaMatch', {
-              description: `Pagas a EntrenaMatch. Tras confirmar, liquidamos ${(
-                booking.priceClp - result.platformFeeClp
-              ).toLocaleString('es-CL')} CLP al entrenador (comisión ${result.platformFeeClp.toLocaleString('es-CL')} CLP).`,
-            })
-          } catch (e) {
-            console.warn(e)
-            const msg = e instanceof Error ? e.message : 'Intenta de nuevo'
-            toast.error('No se pudo iniciar el pago', {
-              description: msg.includes('EntrenaMatch') || msg.includes('Mercado Pago')
-                ? 'Los pagos con tarjeta los procesa EntrenaMatch. Intenta más tarde o elige efectivo.'
-                : msg,
-            })
-            throw e
-          }
-        }}
-        clientDispatchHistory={clientDispatchHistory}
-        trainerDispatchHistory={trainerDispatchHistory}
-        clientFuelBalance={fuelEnergyBalance}
-        clientWeeklyPlan={weeklyPlan}
+        onStartSync={startSyncWith}
       />
-      <EntrenoDeHoyModal
+      <EntrenoDeHoyModalMount
         open={showEntrenaLogModal}
         onClose={() => {
           setShowEntrenaLogModal(false)
-          setEntrenaLogPrefill(null)
-          setEntrenaLogSkipDraft(false)
-          setEntrenaLogExpandPastWorkouts(false)
-          setEntrenaLogShareToChat(null)
-          setWorkoutDraftRefresh((n) => n + 1)
+          resetEntrenaLogModalState()
         }}
         onMinimize={handleEntrenaLogMinimize}
         onDiscardSession={() => {
           if (firebaseUser?.uid) clearWorkoutDraft(firebaseUser.uid)
           setShowEntrenaLogModal(false)
-          setEntrenaLogPrefill(null)
-          setEntrenaLogSkipDraft(false)
-          setEntrenaLogExpandPastWorkouts(false)
-          setEntrenaLogShareToChat(null)
-          setWorkoutDraftRefresh((n) => n + 1)
+          resetEntrenaLogModalState()
         }}
         onSave={handleSaveEntrenaLog}
         userId={!isDemoMode && firebaseUser?.uid ? firebaseUser.uid : null}
         skipDraftRestore={entrenaLogSkipDraft}
         saving={savingWorkout}
-        defaultTitle={entrenaLogPrefill?.title || 'Entreno de hoy'}
-        initialExercises={entrenaLogPrefill?.exercises}
-        initialType={entrenaLogPrefill?.type}
-        initialDurationMin={entrenaLogPrefill?.durationMin}
-        recentWorkouts={entrenoRecentWorkouts}
+        prefill={entrenaLogPrefill}
         expandPastWorkouts={entrenaLogExpandPastWorkouts}
-        liveDurationMin={
-          currentUser?.trainingNow && currentUser.trainingNowSince
-            ? Math.max(5, Math.floor((Date.now() - currentUser.trainingNowSince) / 60_000))
-            : undefined
-        }
+        recentWorkouts={entrenoRecentWorkouts}
         gymRoutineTemplates={entrenoGymRoutines}
-        gymRoutineLabel={
-          isGymCheckInFresh(currentUser?.gymCheckIn)
-            ? currentUser?.gymCheckIn?.gymName
-            : undefined
-        }
-        gymSoundUser={currentUser ?? undefined}
-        isLive={!!currentUser?.trainingNow}
+        currentUser={currentUser}
+        shareToChatId={entrenaLogShareToChat}
+        chatPartnerName={chatProfile?.name}
+        matchProfiles={matchProfiles}
         onGymSoundSave={handleGymSoundProfileSave}
-        shareToChatName={
-          entrenaLogShareToChat
-            ? (chatProfile?.name || matchProfiles.find((p) => p.id === entrenaLogShareToChat)?.name || 'tu partner').split(
-                ' '
-              )[0]
-            : undefined
-        }
       />
       <FuelSetupWizard
         open={showFuelSetupWizard}
@@ -11066,7 +11063,9 @@ useEffect(() => {
           onOpenChat={handleWorkoutOpenChat}
           onOpenFuel={handleWorkoutOpenFuel}
           chatUnreadCount={totalChatUnreads}
-          liveActive={!!currentUser?.trainingNow}
+          onToggleLive={() => toggleLiveTraining()}
+          isLive={!!currentUser?.trainingNow}
+          isTogglingLive={isTogglingLive}
           bottomClass={
             activeTab === 'map'
               ? 'bottom-[calc(7.5rem+env(safe-area-inset-bottom))]'
@@ -11096,6 +11095,7 @@ useEffect(() => {
           showSyncArena ||
           showOnboarding ||
           authBooting ||
+          !!workoutSessionDraft ||
           (activeTab === 'red' && redSubTab === 'messages' && !!activeChat)
         }
       />
@@ -11901,116 +11901,80 @@ useEffect(() => {
         )}
       </AnimatePresence>
 
-      {/* FULL PROFILE VIEW */}
-      <AnimatePresence>
-        {showFullProfile && (
-          <FullProfileSheet
-            profile={enrichProfileFromDirectory(showFullProfile, realProfiles as Profile[])}
-            isRealTester={realProfiles.some((rp) => rp.id === showFullProfile.id)}
-            userLocation={userLocation}
-            currentUser={currentUser}
-            effectiveUserId={effectiveUserId}
-            profilePosts={profilePosts[showFullProfile.id] || []}
-            profileViewWorkouts={profileViewWorkouts}
-            syncBond={syncBonds[showFullProfile.id] ?? null}
-            reviews={reviews}
-            trainerProfile={(() => {
-              const tp = trainerProfiles.find((t) => t.userId === showFullProfile.id)
-              return tp
-                ? {
-                    userId: tp.userId,
-                    hourlyRateClp: tp.hourlyRateClp,
-                    sessionDurationMin: tp.sessionDurationMin,
-                    avgRating: tp.avgRating,
-                    reviewCount: tp.reviewCount,
-                  }
-                : null
-            })()}
-            squads={squads}
-            matches={matches}
-            realMatches={realMatches}
-            feedReactions={feedReactions}
-            activeComment={activeComment}
-            commentDraft={commentDraft}
-            distanceKm={
-              userLocation
-                ? getDistanceKm(
-                    userLocation.lat,
-                    userLocation.lng,
-                    showFullProfile.lat,
-                    showFullProfile.lng
-                  )
-                : null
-            }
-            compatibilityPct={
-              currentUser
-                ? calculateCompatibility(currentUser, showFullProfile, userLocation)
-                : null
-            }
-            ratingAvg={getAverageRating(showFullProfile.id, reviews).avg}
-            ratingCount={getAverageRating(showFullProfile.id, reviews).count}
-            trainingStreak={getTrainingStreak(showFullProfile.id, reviews)}
-            formatTrainerRate={formatTrainerRate}
-            getRelativeTime={getRelativeTime}
-            onClose={() => setShowFullProfile(null)}
-            onLoadPosts={() => loadProfilePosts(showFullProfile.id)}
-            onOpenHomeFeed={() => openCommunityMuro()}
-            onTrainTogether={() => {
-              const p = showFullProfile
-              setShowFullProfile(null)
-              if (currentUser?.trainingNow && isUserLive(p.id)) {
-                startSyncWith(p.id, p.name)
-              } else {
-                handleSwipe(p.id, 'right')
-              }
-            }}
-            onOpenChat={() => {
-              setShowFullProfile(null)
-              openChat(showFullProfile.id)
-            }}
-            onSwipeLeft={() => {
-              setShowFullProfile(null)
-              handleSwipe(showFullProfile.id, 'left')
-            }}
-            onSwipeRight={() => {
-              setShowFullProfile(null)
-              handleSwipe(showFullProfile.id, 'right')
-            }}
-            onBookTrainer={(trainerUserId) => {
-              setTrainerCoachPreselect(trainerUserId)
-              setShowFullProfile(null)
-              setShowTrainerCoach(true)
-            }}
-            onOpenSquad={(squadId) => {
-              setSelectedSquad(squadId)
-              setShowFullProfile(null)
-              setActiveTab('squads')
-            }}
-            onReport={() => {
-              openReport(showFullProfile.id, 'profile')
-              setShowFullProfile(null)
-            }}
-            onBlock={async () => {
-              if (confirm(`¿Bloquear a ${showFullProfile.name}? No volverás a verlo en ningún lado.`)) {
-                await blockUser(showFullProfile.id)
-                setShowFullProfile(null)
-              }
-            }}
-            onBoostReaction={(postId, emo) => boostReaction(postId, emo, showFullProfile.id)}
-            onCopyWorkout={(workoutId, title) => handleCopyWorkoutFromPost(workoutId, title)}
-            onLikePost={(postId) => likeProfilePost(postId, showFullProfile.id)}
-            onOpenComments={(postId) =>
-              openFullComments(postId, showFullProfile.id, showFullProfile.name)
-            }
-            onDeleteComment={(postId, commentId) =>
-              deleteCommentFromPost(postId, showFullProfile.id, commentId)
-            }
-            onCommentDraftChange={setCommentDraft}
-            onSubmitComment={submitComment}
-            onCancelComment={cancelComment}
-          />
-        )}
-      </AnimatePresence>
+      <FullProfileSheetMount
+        profile={showFullProfile}
+        realProfiles={realProfiles as Profile[]}
+        userLocation={userLocation}
+        currentUser={currentUser}
+        effectiveUserId={effectiveUserId}
+        profilePosts={profilePosts}
+        profileViewWorkouts={profileViewWorkouts}
+        syncBonds={syncBonds}
+        reviews={reviews}
+        trainerProfiles={trainerProfiles}
+        squads={squads}
+        matches={matches}
+        realMatches={realMatches}
+        feedReactions={feedReactions}
+        activeComment={activeComment}
+        commentDraft={commentDraft}
+        getRelativeTime={getRelativeTime}
+        onClose={() => setShowFullProfile(null)}
+        onLoadPosts={(profileId) => loadProfilePosts(profileId)}
+        onOpenHomeFeed={() => openCommunityMuro()}
+        onTrainTogether={(p) => {
+          setShowFullProfile(null)
+          if (currentUser?.trainingNow && isUserLive(p.id)) {
+            startSyncWith(p.id, p.name)
+          } else {
+            handleSwipe(p.id, 'right')
+          }
+        }}
+        onOpenChat={(profileId) => {
+          setShowFullProfile(null)
+          openChat(profileId)
+        }}
+        onSwipeLeft={(profileId) => {
+          setShowFullProfile(null)
+          handleSwipe(profileId, 'left')
+        }}
+        onSwipeRight={(profileId) => {
+          setShowFullProfile(null)
+          handleSwipe(profileId, 'right')
+        }}
+        onBookTrainer={(trainerUserId) => {
+          setTrainerCoachPreselect(trainerUserId)
+          setShowFullProfile(null)
+          setShowTrainerCoach(true)
+        }}
+        onOpenSquad={(squadId) => {
+          setSelectedSquad(squadId)
+          setShowFullProfile(null)
+          setActiveTab('squads')
+        }}
+        onReport={(profileId) => {
+          openReport(profileId, 'profile')
+          setShowFullProfile(null)
+        }}
+        onBlock={async (p) => {
+          if (confirm(`¿Bloquear a ${p.name}? No volverás a verlo en ningún lado.`)) {
+            await blockUser(p.id)
+            setShowFullProfile(null)
+          }
+        }}
+        onBoostReaction={(postId, emo, profileId) => boostReaction(postId, emo, profileId)}
+        onCopyWorkout={(workoutId, title) => handleCopyWorkoutFromPost(workoutId, title)}
+        onLikePost={(postId, profileId) => likeProfilePost(postId, profileId)}
+        onOpenComments={(postId, profileId, ownerName) =>
+          openFullComments(postId, profileId, ownerName)
+        }
+        onDeleteComment={(postId, profileId, commentId) =>
+          deleteCommentFromPost(postId, profileId, commentId)
+        }
+        onCommentDraftChange={setCommentDraft}
+        onSubmitComment={submitComment}
+        onCancelComment={cancelComment}
+      />
 
       {/* LEGAL PAGES */}
       <AnimatePresence>
@@ -12560,36 +12524,7 @@ useEffect(() => {
                                 {msg.voiceUrl && !msg.voiceUrl.startsWith('blob:') ? (
                                   <div className={`voice-bubble mt-1 ${isMe ? 'sent' : 'received'}`}>
                                     <button 
-                                      onClick={() => {
-                                        try { triggerHaptic(playingVoiceId === msg.id ? 'light' : 'medium') } catch {}
-                                        if (playingVoiceId === msg.id) {
-                                          if (currentAudioRef.current) {
-                                            currentAudioRef.current.pause()
-                                            currentAudioRef.current = null
-                                          }
-                                          setPlayingVoiceId(null)
-                                          setVoicePlayProgress(0)
-                                        } else {
-                                          if (currentAudioRef.current) {
-                                            currentAudioRef.current.pause()
-                                            currentAudioRef.current = null
-                                          }
-                                          setPlayingVoiceId(msg.id)
-                                          setVoicePlayProgress(0)
-                                          const audio = new Audio(msg.voiceUrl)
-                                          currentAudioRef.current = audio
-                                          const dur = msg.voiceDuration || 5
-                                          audio.onended = () => { 
-                                            setPlayingVoiceId(null); 
-                                            setVoicePlayProgress(0); 
-                                            currentAudioRef.current = null 
-                                          }
-                                          audio.ontimeupdate = () => {
-                                            if (audio.duration > 0) setVoicePlayProgress(Math.min(100, (audio.currentTime / audio.duration) * 100))
-                                          }
-                                          audio.play().catch((e) => { console.warn('audio play error', e); setPlayingVoiceId(null); setVoicePlayProgress(0); currentAudioRef.current = null })
-                                        }
-                                      }}
+                                      onClick={() => toggleVoicePlay(msg)}
                                       className={`voice-play-btn ${playingVoiceId === msg.id ? 'playing' : ''}`}
                                       title={playingVoiceId === msg.id ? "Pausar nota de voz" : "Reproducir nota de voz de tu EntrenaPartner"}
                                     >
@@ -12838,108 +12773,18 @@ useEffect(() => {
         )}
       </AnimatePresence>
 
-      {/* NOTIFICATIONS PANEL */}
-      <AnimatePresence>
-        {showNotifications && (
-          <div className="absolute inset-0 z-[150] flex flex-col" onClick={() => setShowNotifications(false)}>
-            <div 
-              onClick={e => e.stopPropagation()} 
-              className="flex-1 bg-[#0D0D10] max-w-[420px] mx-auto w-full mt-[42px] rounded-t-3xl border border-[#2F2F35] overflow-hidden flex flex-col"
-            >
-              <div className="p-4 border-b border-[#2F2F35] flex justify-between items-center bg-[#1C1C20]">
-                <div className="section-header text-base flex items-center gap-2">
-                  Notificaciones 
-                  { (unreadNotifications + totalChatUnreads + totalSessionUnreads) > 0 && (
-                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FF671F] text-black font-bold animate-pulse">
-                      {unreadNotifications + totalChatUnreads + totalSessionUnreads} nuevas
-                    </span>
-                  )}
-                </div>
-                {notifications.length > 0 && (
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => {
-                        const hasRead = notifications.some(n => n.read)
-                        if (hasRead) {
-                          const cleaned = notifications.filter(n => !n.read)
-                          saveNotifications(cleaned)
-                        }
-                      }}
-                      className="text-xs text-[#9CA3AF] active:text-white"
-                    >
-                      Limpiar leídas
-                    </button>
-                    <button 
-                      onClick={() => {
-                        const allRead = notifications.map(n => ({...n, read: true}))
-                        saveNotifications(allRead)
-                      }}
-                      className="text-xs text-[#FF671F] font-medium"
-                    >
-                      Marcar todo leído
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex-1 overflow-auto">
-                {notifications.length === 0 ? (
-                  <div className="p-8 text-center text-[#9CA3AF]">
-                    No tienes notificaciones aún.
-                  </div>
-                ) : (
-                  notifications.map(notif => {
-                    const isNetworkNotif = notif.type === 'message' && notif.relatedId && !!syncBonds[notif.relatedId] // from your training network
-                    const isNetworkLive = (notif.type === 'session_join' || notif.type === 'squad_join') && notif.relatedId && !!syncBonds[notif.relatedId]
-                    const isDailyPulse = notif.type === 'daily_pulse'
-                    const typeIcon = notif.type === 'message' ? (isNetworkNotif ? '⭐' : '💬') : notif.type === 'match' || notif.type === 'like_received' ? '❤️' : notif.type === 'session_join' ? (isNetworkLive ? '🔥' : '👥') : notif.type === 'squad_join' ? '🏋️' : isDailyPulse ? '🌅' : '🔔'
-                    const time = notif.timestamp ? getRelativeTime(notif.timestamp) : ''
-                    return (
-                      <div 
-                        key={notif.id} 
-                        className={`p-4 border-b border-[#2F2F35] flex items-start gap-3 active:bg-[#1C1C20] cursor-pointer ${!notif.read ? 'bg-[#1C1C20]' : ''} ${(isNetworkNotif || isNetworkLive) ? 'network-notif border-l-4 border-[#FFD700] bg-[#1a160f]' : ''} ${isDailyPulse ? 'border-l-4 border-[#FF671F] bg-[#1a140f]' : ''}`} 
-                        // network notif gold for your red (network-notif styling)
-                        onClick={() => {
-                          const updated = notifications.map(n =>
-                            n.id === notif.id ? { ...n, read: true } : n
-                          )
-                          saveNotifications(updated)
-
-                          const target = resolveNotificationTarget(notif, { sessionIds: knownSessionIds })
-                          if (target) {
-                            const partnerHint =
-                              target.startSyncWith && notif.relatedId
-                                ? (realProfiles.find((p) => p.id === notif.relatedId)?.name ||
-                                   SEED_PROFILES.find((p) => p.id === notif.relatedId)?.name)
-                                : undefined
-                            applyNotificationNavigation(target, partnerHint)
-                          }
-                        }}
-                      >
-                        <div className="text-xl mt-0.5 flex-shrink-0">{typeIcon}</div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-baseline">
-                            <div className="font-medium text-sm truncate pr-2">{notif.title}</div>
-                            <div className="text-[10px] text-[#9CA3AF] flex-shrink-0">{time}</div>
-                          </div>
-                          <div className="text-sm text-[#cbd5e1] mt-0.5 line-clamp-2">{notif.body}</div>
-                          {!notif.read && (
-                            <div className="mt-1.5 inline-block w-1.5 h-1.5 bg-[#FF671F] rounded-full"></div>
-                          )}
-                          {isNetworkNotif && <div className="mt-1 text-[9px] text-[#FFD700] font-bold">⭐ De tu Red (Fuerza del equipo)</div>}
-                        </div>
-                        {notif.photoUrl && (
-                          <img src={notif.photoUrl} alt={notif.title || 'Notificación'} className="w-9 h-9 rounded-xl object-cover flex-shrink-0 border border-[#2F2F35]" />
-                        )}
-                      </div>
-                    )
-                  })
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
+      <NotificationsPanel
+        open={showNotifications}
+        notifications={notifications}
+        unreadNotifications={unreadNotifications}
+        totalChatUnreads={totalChatUnreads}
+        totalSessionUnreads={totalSessionUnreads}
+        syncBonds={syncBonds}
+        onClose={() => setShowNotifications(false)}
+        onClearRead={clearReadNotifications}
+        onMarkAllRead={markAllNotificationsRead}
+        onNotificationClick={handleNotificationClick}
+      />
 
     </div>
 
@@ -13105,13 +12950,19 @@ useEffect(() => {
         <div className="fixed inset-0 z-[120] bg-black/85 flex items-center justify-center p-4" onClick={() => setReplaySession(null)}>
           <div className="bg-[#1C1C20] rounded-3xl p-5 max-w-sm w-full border border-[#22c55e]/30" onClick={e=>e.stopPropagation()}>
             <div className="text-center mb-3">
-              <div className="text-[#22c55e] text-xs tracking-[2px]">RECUERDO COMPARTIDO</div>
-              <div className="font-bold text-xl">Sync con {replaySession.partnerName}</div>
-              <div className="text-sm text-[#9CA3AF]">{replaySession.minutes} min • Vibe {replaySession.vibe}% {replaySession.rating ? `• ${replaySession.rating}★` : ''}</div>
+              <div className="text-[#22c55e] text-xs tracking-[2px]">{SYNC_REPLAY_COPY.modalEyebrow}</div>
+              <div className="font-bold text-xl">{SYNC_REPLAY_COPY.modalTitle(replaySession.partnerName)}</div>
+              <div className="text-sm text-[#9CA3AF]">
+                {SYNC_REPLAY_COPY.modalStats(
+                  replaySession.minutes,
+                  replaySession.vibe,
+                  replaySession.rating
+                )}
+              </div>
             </div>
 
-            {/* Animated replay timeline */}
             <div className="bg-black/40 rounded-2xl p-3 mb-3 min-h-[132px] relative overflow-hidden">
+              <p className="text-[9px] text-[#9CA3AF] mb-2 text-center">Lo que hicieron juntos en la sesión</p>
               <AnimatePresence>
                 {(replaySession.actions || []).map((a: any, idx: number) => (
                   <motion.div 
@@ -13128,14 +12979,18 @@ useEffect(() => {
                   </motion.div>
                 ))}
               </AnimatePresence>
-              {(!replaySession.actions || replaySession.actions.length === 0) && <div className="text-[#9CA3AF] text-xs text-center py-6">Sin acciones registradas en este sync.</div>}
+              {(!replaySession.actions || replaySession.actions.length === 0) && (
+                <div className="text-[#9CA3AF] text-xs text-center py-6">{SYNC_REPLAY_COPY.emptyActions}</div>
+              )}
             </div>
 
             <div className="flex gap-2">
-              <button onClick={() => { setReplaySession(null); if (replaySession.partnerName) { /* quick re-sync CTA */ const p = realProfiles.find(pp => pp.name?.includes(replaySession.partnerName.split(' ')[0])); if (p) tryAutoStartSync(p.id) } }} className="flex-1 py-2.5 rounded-2xl bg-[#22c55e] text-black font-semibold text-sm active:bg-[#16a34a]">🔄 Re-Sync con {replaySession.partnerName?.split(' ')[0]}</button>
+              <button onClick={() => { setReplaySession(null); if (replaySession.partnerName) { const p = realProfiles.find(pp => pp.name?.includes(replaySession.partnerName.split(' ')[0])); if (p) tryAutoStartSync(p.id) } }} className="flex-1 py-2.5 rounded-2xl bg-[#22c55e] text-black font-semibold text-sm active:bg-[#16a34a]">
+                🔄 {SYNC_REPLAY_COPY.resync(replaySession.partnerName?.split(' ')[0] || 'tu partner')}
+              </button>
               <button onClick={() => setReplaySession(null)} className="flex-1 py-2.5 rounded-2xl border border-white/15 text-sm">Cerrar</button>
             </div>
-            <div className="text-center text-[9px] text-[#9CA3AF] mt-2">Este recuerdo vive en tus dos muros. Nadie más tiene esto.</div>
+            <div className="text-center text-[9px] text-[#9CA3AF] mt-2">{SYNC_REPLAY_COPY.modalFooter}</div>
           </div>
         </div>
       )}
@@ -13147,13 +13002,14 @@ useEffect(() => {
         <div className="fixed inset-0 z-[130] bg-black/90 flex items-center justify-center p-4" onClick={() => setWitnessData(null)}>
           <div className="bg-[#1C1C20] rounded-3xl p-5 max-w-sm w-full border border-[#FF671F]/40" onClick={e=>e.stopPropagation()}>
             <div className="text-center mb-4">
-              <div className="text-[#FF671F] text-xs tracking-[2.5px] font-bold">HIGHLIGHT DE LA RED — ENTRENASYNC FUERTE</div>
-              <div className="font-black text-2xl mt-1">Sync con {witnessData.partnerName}</div>
-              <div className="text-sm text-[#9CA3AF]">{witnessData.minutes} min • Sync Score {witnessData.vibe}%</div>
-              <div className="text-[10px] text-[#FF671F]/70 mt-1">Esta sesión fortalece el grafo de la red</div>
+              <div className="text-[#FF671F] text-xs tracking-[2.5px] font-bold">{SYNC_REPLAY_COPY.witnessEyebrow}</div>
+              <div className="font-black text-2xl mt-1">{SYNC_REPLAY_COPY.modalTitle(witnessData.partnerName)}</div>
+              <div className="text-sm text-[#9CA3AF]">
+                {witnessData.minutes} min · {formatSyncVibeLabel(witnessData.vibe)}
+              </div>
+              <div className="text-[10px] text-[#FF671F]/80 mt-1">{SYNC_REPLAY_COPY.witnessSubtitle}</div>
             </div>
 
-            {/* Compact epic actions timeline */}
             <div className="bg-black/50 rounded-2xl p-3 mb-4 border border-[#FF671F]/20">
               {(witnessData.actions || []).slice(0,5).map((a: any, idx: number) => (
                 <div key={idx} className="flex items-center gap-2 py-1 text-sm border-b border-white/10 last:border-none">
@@ -13163,7 +13019,7 @@ useEffect(() => {
                 </div>
               ))}
               {(!witnessData.actions || witnessData.actions.length === 0) && (
-                <div className="text-[#9CA3AF] text-xs py-4 text-center">Momento de alto rendimiento capturado en el sync de la red.</div>
+                <div className="text-[#9CA3AF] text-xs py-4 text-center">{SYNC_REPLAY_COPY.witnessEmpty}</div>
               )}
             </div>
 
@@ -13189,33 +13045,37 @@ useEffect(() => {
               <button 
                 onClick={() => { 
                   setWitnessData(null); 
-                  // Nice touch: offer to create your own network highlight
-                  toast('¿Listo para crear tu propio sync que fortalezca tu red y se propague?');
+                  toast('Activa LIVE o invita a alguien a un EntrenaSync desde el mapa');
                 }} 
                 className="flex-1 py-2.5 rounded-2xl bg-[#FF671F] text-black font-semibold text-sm active:bg-[#e55a1a]"
               >
-                🔥 Crear mi propio momento
+                🔥 {SYNC_REPLAY_COPY.witnessCreate}
               </button>
               <button 
                 onClick={() => {
-                  // CLAIM THE ECHO - turns the witnessed moment into permanent community mythology
-                  // This is the virality + status layer that makes the app feel inevitable.
-                  const echoText = `🔄 HIGHLIGHT DE ENTRENASYNC\n${witnessData.minutes} min sincronizados con ${witnessData.partnerName} • Sync Score ${witnessData.vibe}%\n${(witnessData.actions || []).slice(0,3).map((a: any) => `${a.emoji} ${a.label}`).join(' · ')}\n\nSesión de alto rendimiento que fortalece nuestra red. +${Math.floor(witnessData.minutes * 1.2)} min de progreso compartido. Queda como highlight visible para la comunidad.`;
+                  const echoText = buildWitnessEchoPostText({
+                    partnerName: witnessData.partnerName,
+                    minutes: witnessData.minutes,
+                    vibe: witnessData.vibe,
+                    actions: witnessData.actions,
+                  })
                   createProfilePost(echoText, witnessData.photoUrl).then(() => {
-                    toast.success('Highlight archivado', { description: 'Esta sesión de EntrenaSync queda como parte permanente de tu red de rendimiento y es visible para la comunidad.' });
-                    setWitnessData(null);
+                    toast.success(SYNC_REPLAY_COPY.witnessToast, {
+                      description: SYNC_REPLAY_COPY.witnessToastDesc,
+                    })
+                    setWitnessData(null)
                   }).catch(() => {
-                    toast('Highlight guardado localmente (se sincronizará).');
-                    setWitnessData(null);
-                  });
+                    toast('Guardado localmente — se sincronizará al Muro')
+                    setWitnessData(null)
+                  })
                 }} 
                 className="flex-1 py-2.5 rounded-2xl border border-[#FFD700] text-[#FFD700] font-semibold text-sm active:bg-[#FFD700]/10"
               >
-                📌 Archivar como Highlight de EntrenaSync
+                📌 {SYNC_REPLAY_COPY.witnessSave}
               </button>
               <button onClick={() => setWitnessData(null)} className="flex-1 py-2.5 rounded-2xl border border-white/20 text-sm">Cerrar</button>
             </div>
-            <div className="text-center text-[8px] text-[#9CA3AF]/60 mt-2">Fuiste parte de un EntrenaSync fuerte de la red. Archívalo y forma parte de la cultura de alto rendimiento.</div>
+            <div className="text-center text-[8px] text-[#9CA3AF]/60 mt-2">{SYNC_REPLAY_COPY.witnessFooter}</div>
           </div>
         </div>
       )}

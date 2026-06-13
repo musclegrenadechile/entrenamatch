@@ -11,6 +11,7 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(EntrenamatchHealthPlugin.class);
         super.onCreate(savedInstanceState);
         // Crashlytics requires Firebase native init (google-services.json at build time).
         // Never crash cold start if Firebase is missing (e.g. CI build without the json secret).

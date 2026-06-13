@@ -7,6 +7,7 @@ import type { CurrentUser } from '../../types'
 import type { ProfileTabProps } from './profileTabTypes'
 import { VerifiedProfilePhoto } from './VerifiedProfilePhoto'
 import { profileTabBindings } from './profileTabBindings'
+import { BRAND_COPY } from '../../constants/brandCopy'
 import { BondGraphView } from './BondGraphView'
 
 export function ProfileSyncNetworkSection(props: ProfileTabProps) {
@@ -186,7 +187,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
       <div className="text-[9px] text-[#22c55e]">
         {networkStats.numPartners} socios • {networkStats.totalMin}min sincronizados • {networkStats.totalSessions} sesiones • Impacto colectivo en tu rendimiento: +{networkStats.estimatedImpact}%
       </div>
-      <div className="mt-1 text-[8px] text-[#FFD700]/80">Tu red esta semana: ~{Math.floor(networkStats.totalMin / 4)} min de alto rendimiento compartido • Esto genera ondas que otros ven en el GymPulse global.</div>
+      <div className="mt-1 text-[10px] text-[#FFD700]/80">{BRAND_COPY.networkCopy.weekImpact(Math.floor(networkStats.totalMin / 4))}</div>
     </div>
     <div className="mb-3">
       <BondGraphView
@@ -243,7 +244,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
         )
       })}
     </div>
-    <div className="text-[8px] text-center text-[#22c55e]/60 mt-1">Re-sync para subir tu Fuerza del equipo, fortalecer alianzas y ganar más visibilidad en el GymPulse</div>
+    <div className="text-[10px] text-center text-[#22c55e]/60 mt-1">{BRAND_COPY.networkCopy.resyncHint}</div>
     {Object.keys(syncBonds).length > 4 && (
       <div className="text-center mt-1">
         <button onClick={() => setActiveTab('profile')} className="text-[8px] text-[#FF671F] underline">Ver toda tu red ({Object.keys(syncBonds).length} socios) →</button>

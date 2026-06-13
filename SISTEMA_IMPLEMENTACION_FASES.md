@@ -171,4 +171,7 @@ El script imprime:
 - `REVISION_ENTRENAMATCH_v0.1.160.md` — diagnóstico UX
 - `ROADMAP_30_FASES.md` — fases 1–30 ✅
 - `ROADMAP_40_FASES.md` — fases 31–70
+- **`PREPARACION_FASE_MARKETING_GTM.md`** — oleada marketing 331–340 (marca, Play, inclusión deportes)
+- `ROADMAP_FASES_MARKETING_331_340.md` — tabla fases GTM
+- `ORDEN_ATAQUE_MARKETING.md` — secuencia de ejecución marketing
 - `PLAY_OPEN_BETA.md` — checklist Play Store

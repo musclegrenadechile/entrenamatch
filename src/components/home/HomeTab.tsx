@@ -26,8 +26,7 @@ import { FeedVirtualList } from './FeedVirtualList'
 import { isHomeDayOneMode, shouldHideCoachAndMarketplace } from '../../utils/profileProgressive'
 import { getPublicGymSound } from '../../services/gymSound'
 import { isSpotifyConnected } from '../../services/spotify'
-
-export type HomeSubTab = 'day' | 'feed'
+import { shareWorkoutStory, toastWorkoutShareOutcome } from '../../utils/workoutStoryShare'
 
 export type HomeTabProps = Record<string, unknown>
 
@@ -82,6 +81,10 @@ export function HomeTab(props: HomeTabProps) {
     deletingFuelLogId,
     onImportHealthBurn,
     healthImportHint,
+    wearableActivity,
+    wearableSyncing,
+    onRefreshWearableActivity,
+    onOpenWearableConnect,
     homeCityChallengeMerged,
     homeLocalLeaderboard,
     homeGymLeaderboard,
@@ -119,6 +122,7 @@ export function HomeTab(props: HomeTabProps) {
     syncBonds,
     triggerHaptic,
     showFeedPublishSuccess,
+    feedPublishing,
     feedComputation,
     hasMoreGlobalFeed,
     effectiveUserId,
@@ -182,28 +186,8 @@ export function HomeTab(props: HomeTabProps) {
     onHomeSubTabChange,
   } = props
 
-  const [showHomeTabsHint, setShowHomeTabsHint] = useState(false)
   const [expandedAutoGroups, setExpandedAutoGroups] = useState<Record<string, boolean>>({})
   const [expandedInlineComments, setExpandedInlineComments] = useState<Record<string, boolean>>({})
-
-  useEffect(() => {
-    try {
-      if (localStorage.getItem('entrenamatch_home_tabs_hint') !== '1') {
-        setShowHomeTabsHint(true)
-      }
-    } catch {
-      /* ignore */
-    }
-  }, [])
-
-  const dismissHomeTabsHint = () => {
-    setShowHomeTabsHint(false)
-    try {
-      localStorage.setItem('entrenamatch_home_tabs_hint', '1')
-    } catch {
-      /* ignore */
-    }
-  }
 
   const redLiveCount = countRedLiveMembers(
     syncBonds,
@@ -273,25 +257,27 @@ export function HomeTab(props: HomeTabProps) {
 
   const feedScrollRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    if (!recentlyPublishedPostId) return
+    requestAnimationFrame(() => {
+      feedScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    })
+  }, [recentlyPublishedPostId])
+
   return (
     <div ref={feedScrollRef} className="flex-1 overflow-auto p-4">
-      {showHomeTabsHint && (
-        <div className="mb-3 p-3 rounded-2xl bg-[#FF671F]/10 border border-[#FF671F]/30 text-[11px] leading-snug relative">
-          <button
-            type="button"
-            onClick={dismissHomeTabsHint}
-            className="absolute top-2 right-2 text-[#9CA3AF] text-xs px-1"
-            aria-label="Cerrar tip"
-          >
-            ✕
-          </button>
-          <strong className="text-[#FF671F] block mb-1">Dos vistas en Hoy</strong>
-          <span className="text-[#9CA3AF]">
-            <strong className="text-white">Mi día</strong> = Fuel AI, rutina, equipo y metas.{' '}
-            <strong className="text-white">{BRAND_COPY.communityWallTitle}</strong> = posts de tu zona.
-          </span>
+      {feedPublishing && (
+        <div className="mb-3 mx-1 p-3 rounded-2xl text-center text-sm font-semibold text-[#FF671F] border border-[#FF671F]/30 bg-[#FF671F]/8">
+          {BRAND_COPY.feed.publishingBanner}
         </div>
       )}
+      {showFeedPublishSuccess && !feedPublishing && (
+        <div className="feed-publish-success mb-3 mx-1 p-3 rounded-2xl text-center text-sm font-semibold flex items-center justify-center gap-2">
+          ✨ ¡Publicado en el {BRAND_COPY.communityWallTitle}! Tu post ya está visible para toda la{' '}
+          {BRAND_COPY.community}.
+        </div>
+      )}
+
       <div
         className="flex gap-1 p-1 rounded-2xl bg-[#1C1C20] border border-[#2F2F35] mb-3 sticky top-0 z-20"
         role="tablist"
@@ -301,10 +287,7 @@ export function HomeTab(props: HomeTabProps) {
           type="button"
           role="tab"
           aria-selected={homeSubTab === 'day'}
-          onClick={() => {
-            onHomeSubTabChange?.('day')
-            dismissHomeTabsHint()
-          }}
+          onClick={() => onHomeSubTabChange?.('day')}
           className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
             homeSubTab === 'day'
               ? 'bg-[#FF671F] text-black shadow-sm'
@@ -317,10 +300,7 @@ export function HomeTab(props: HomeTabProps) {
           type="button"
           role="tab"
           aria-selected={homeSubTab === 'feed'}
-          onClick={() => {
-            onHomeSubTabChange?.('feed')
-            dismissHomeTabsHint()
-          }}
+          onClick={() => onHomeSubTabChange?.('feed')}
           className={`flex-1 py-2 rounded-xl text-xs font-bold transition ${
             homeSubTab === 'feed'
               ? 'bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black shadow-sm'
@@ -343,6 +323,25 @@ export function HomeTab(props: HomeTabProps) {
           onPublish={onPublishPostLive as (text: string) => void | Promise<void>}
           onPublishWithPhoto={onPostLiveWithPhoto as () => void}
           onOpenEntrenoLog={onPostLiveEntrenoLog as () => void}
+          onShareStory={() => {
+            const session = postLiveSession as PostLiveSession
+            const gymLabel = session.gymName?.trim() || 'el gym'
+            void shareWorkoutStory({
+              userName: (currentUser as { name?: string })?.name || 'Atleta',
+              userPhoto:
+                (currentUser as { photo?: string })?.photo ||
+                (currentUser as { photos?: string[] })?.photos?.[0],
+              userId: effectiveUserId as string,
+              preview: {
+                title: `Sesión LIVE · ${gymLabel}`,
+                type: 'strength',
+                exerciseCount: 0,
+                totalSets: 0,
+                volumeLabel: '—',
+                durationMin: session.minutes,
+              },
+            }).then((outcome) => toastWorkoutShareOutcome(toast as { success: (m: string) => void; error: (m: string) => void }, outcome))
+          }}
           onOpenCoach={
             hideCoachAndShop ? undefined : (onOpenTrainerCoach as (() => void) | undefined)
           }
@@ -385,7 +384,10 @@ export function HomeTab(props: HomeTabProps) {
         ]}
       />
       {(profilePostsFeed || []).length > 0 && (
-        <SyncReplayGallery posts={profilePostsFeed} />
+        <SyncReplayGallery
+          posts={profilePostsFeed}
+          onOpenPost={() => onHomeSubTabChange?.('feed')}
+        />
       )}
       <DailyHome
         userName={currentUser?.name || 'Atleta'}
@@ -455,6 +457,10 @@ export function HomeTab(props: HomeTabProps) {
         deletingFuelLogId={deletingFuelLogId}
         onImportHealthBurn={onImportHealthBurn}
         healthImportHint={healthImportHint}
+        wearableActivity={wearableActivity as import('../../services/wearableSync').WearableDayActivity | null | undefined}
+        wearableSyncing={wearableSyncing as boolean | undefined}
+        onRefreshWearableActivity={onRefreshWearableActivity as (() => void | Promise<void>) | undefined}
+        onOpenWearableConnect={onOpenWearableConnect as (() => void) | undefined}
         cityLabel={currentUser?.city}
         gymSoundLive={
           !!currentUser?.trainingNow &&
@@ -584,12 +590,6 @@ export function HomeTab(props: HomeTabProps) {
         onOpenMap={() => setActiveTab('map')}
       />
 
-      {showFeedPublishSuccess && (
-        <div className="feed-publish-success mb-3 mx-1 p-3 rounded-2xl text-center text-sm font-semibold flex items-center justify-center gap-2">
-          ✨ ¡Publicado en el Muro! Tu post ya está vivo para toda la {BRAND_COPY.community}.
-        </div>
-      )}
-
       {/* PREMIUM "EN EL PULSO AHORA" LIVE STRIP — much more attractive, tappable, FOMO-inducing */}
       {liveTrainingNow.length > 0 && (
         <div className="mb-4 -mx-1 px-1">
@@ -649,16 +649,32 @@ export function HomeTab(props: HomeTabProps) {
       {(() => {
         const { echoesSource } = feedComputation;
         const src = echoesSource || [];
-        const recentEchoes = [...src].filter((p: any) => (p.text || '').includes('HIGHLIGHT') || (p.text || '').includes('ENTRENASYNC COMPLETADO') || (p.text || '').includes('fortalece nuestra red')).sort((a,b)=>b.timestamp-a.timestamp).slice(0, 3);
-        if (recentEchoes.length === 0) return null;
+        const recentEchoes = [...src]
+          .filter(
+            (p: any) =>
+              (p.text || '').includes('Destacado de Sesión Sync') ||
+              (p.text || '').includes('HIGHLIGHT') ||
+              (p.text || '').includes('ENTRENASYNC COMPLETADO') ||
+              (p.text || '').includes('Vi un EntrenaSync')
+          )
+          .sort((a, b) => b.timestamp - a.timestamp)
+          .slice(0, 3)
+        if (recentEchoes.length === 0) return null
         return (
           <div className="mb-4 -mx-1 px-1">
-            <div className="text-[8px] uppercase tracking-[1.5px] text-[#FFD700] font-black mb-1.5 flex items-center gap-1">⭐ HIGHLIGHTS DE LA RED — momentos de la {BRAND_COPY.community}</div>
+            <div className="text-[8px] uppercase tracking-[1.5px] text-[#FFD700] font-black mb-1.5 flex items-center gap-1">
+              ⭐ EntrenaSync vistos en vivo
+            </div>
             <div className="flex gap-2 overflow-x-auto pb-1 snap-x">
               {recentEchoes.map((e: any) => (
-                <div key={e.id} className="min-w-[158px] snap-start p-3 rounded-2xl text-[10px] border border-[#FFD700]/40 bg-gradient-to-br from-[#1a160f] to-[#111] text-[#f5e8c7]">
-                  <div className="line-clamp-3 leading-snug">{(e.text || '').substring(0, 118)}...</div>
-                  <div className="text-[8px] text-[#FFD700]/70 mt-1.5 font-medium">Highlight de Sync — se propaga y da estatus</div>
+                <div
+                  key={e.id}
+                  className="min-w-[158px] snap-start p-3 rounded-2xl text-[10px] border border-[#FFD700]/40 bg-gradient-to-br from-[#1a160f] to-[#111] text-[#f5e8c7]"
+                >
+                  <div className="line-clamp-3 leading-snug">{(e.text || '').substring(0, 118)}</div>
+                  <div className="text-[8px] text-[#FFD700]/70 mt-1.5 font-medium">
+                    Alguien vio este entreno en el mapa
+                  </div>
                 </div>
               ))}
             </div>
@@ -712,7 +728,7 @@ export function HomeTab(props: HomeTabProps) {
         return (
           <>
             <div className="flex items-center justify-between text-[10px] text-[#9CA3AF] mb-3 px-1 font-medium tracking-wider">
-              <span>{feedPosts.length} posts {hasActiveFilter ? 'filtrados' : 'en el pulso'}</span>
+              <span>{feedPosts.length} posts {hasActiveFilter ? 'filtrados' : BRAND_COPY.feed.postsLabel}</span>
               {(feedSearch || feedOnlyReal || feedShowPinnedOnly || feedOnlyLive) && <button onClick={() => { setFeedSearch(''); setFeedOnlyReal(false); setFeedShowPinnedOnly(false); setFeedOnlyLive(false); }} className="text-[#FF671F] underline active:text-white">limpiar filtros</button>}
             </div>
 
@@ -778,7 +794,11 @@ export function HomeTab(props: HomeTabProps) {
               const isOwnPost = post.ownerId === effectiveUserId || isMine;
               const isLivePost = (post.text || '').toLowerCase().includes('entrenando ahora') || (post.text || '').includes('me uno al live');
               const isSyncPost = (post.text || '').toLowerCase().includes('sincronizado') || post.isSyncStory || (post.text || '').includes('ENTRENASYNC');
-              const isEcho = (post.text || '').includes('HIGHLIGHT') || (post.text || '').includes('Destacado de Sesión Sync') || (post.text || '').includes('Fui testigo');
+              const isEcho =
+                (post.text || '').includes('Destacado de Sesión Sync') ||
+                (post.text || '').includes('Vi un EntrenaSync') ||
+                (post.text || '').includes('HIGHLIGHT') ||
+                (post.text || '').includes('Fui testigo');
               const rankBadges = rankingCtx ? getFeedRankBadges(post, rankingCtx) : null;
               const displayBadges = pickFeedDisplayBadges({
                 isMine,
@@ -849,6 +869,7 @@ export function HomeTab(props: HomeTabProps) {
                       <div className="muro-post-body mt-2">
                         <WorkoutPostCard
                           preview={post.workoutPreview}
+                          text={post.text}
                           compact
                           showReactions={false}
                           onCopyRoutine={
@@ -858,6 +879,26 @@ export function HomeTab(props: HomeTabProps) {
                                     post.workoutId,
                                     post.workoutPreview?.title
                                   )
+                              : undefined
+                          }
+                          onShareStory={
+                            isOwnPost
+                              ? () => {
+                                  void shareWorkoutStory({
+                                    userName: (currentUser as { name?: string })?.name || 'Atleta',
+                                    userPhoto:
+                                      (currentUser as { photo?: string })?.photo ||
+                                      (currentUser as { photos?: string[] })?.photos?.[0],
+                                    userId: effectiveUserId as string,
+                                    preview: post.workoutPreview!,
+                                    prSummary: post.text?.includes('PR') ? post.text : undefined,
+                                  }).then((outcome) =>
+                                    toastWorkoutShareOutcome(
+                                      toast as { success: (m: string) => void; error: (m: string) => void },
+                                      outcome
+                                    )
+                                  )
+                                }
                               : undefined
                           }
                         />
@@ -966,7 +1007,7 @@ export function HomeTab(props: HomeTabProps) {
                     {/* Live FOMO callout */}
                     {isLivePost && (post.comments || []).length > 0 && (
                       <div className="mt-2 text-[9px] bg-[#22c55e]/8 text-[#22c55e] px-2.5 py-1 rounded-xl flex items-center gap-1 font-medium">
-                        🔥 {(post.comments || []).length} personas se unieron a este pulso • ¡Únete desde el mapa o el strip de arriba!
+                        🔥 {(post.comments || []).length} {BRAND_COPY.feed.joinedCommunity}
                       </div>
                     )}
 

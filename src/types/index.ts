@@ -1,6 +1,6 @@
 ﻿export type ProfileGender = 'hombre' | 'mujer' | 'otro'
 
-export type ProfileAccountStatus = 'active' | 'deleted'
+export type ProfileAccountStatus = 'active' | 'deleted' | 'suspended'
 
 export interface Profile {
   id: string

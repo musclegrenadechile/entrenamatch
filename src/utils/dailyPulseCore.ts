@@ -19,30 +19,30 @@ export const computeRetentionLevel = (
 export const GADGETS = [
   {
     level: 5,
-    name: 'Halo Élite',
+    name: 'Halo en el mapa',
     icon: '✨',
-    desc: 'Tu marcador en el mapa brilla con halo dorado extra (más visible para la red)',
+    desc: 'Tu punto en el mapa brilla más — te ven mejor cuando estás en LIVE',
     effect: 'map-halo',
   },
   {
     level: 10,
-    name: 'Tether dorado Sync',
+    name: 'Línea dorada en sync',
     icon: '🌟',
-    desc: 'Tethers en EntrenaSync son dorados y más gruesos para ti',
+    desc: 'Cuando haces EntrenaSync, la línea que te une a tu partner se ve dorada y más gruesa en el mapa',
     effect: 'golden-tether',
   },
   {
     level: 15,
     name: 'Sync Elite',
     icon: '🔥',
-    desc: 'Acciones y emojis especiales solo para niveles altos en EntrenaSync',
+    desc: 'Reacciones especiales en EntrenaSync (solo nivel alto)',
     effect: 'exclusive-emojis',
   },
   {
     level: 20,
-    name: 'Pulso Maestro',
+    name: 'Ondas grandes en mapa',
     icon: '🌀',
-    desc: 'Tus ripples/ondas en el mapa son más grandes y con color único',
+    desc: 'Tus ondas en el mapa LIVE son más grandes y llamativas',
     effect: 'map-ripple-boost',
   },
   {

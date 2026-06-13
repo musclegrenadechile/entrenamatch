@@ -18,7 +18,7 @@ import {
   serverTimestamp,
   type Unsubscribe,
 } from 'firebase/firestore'
-import { profileDocToLiveUser, type LiveUserLike } from '../utils/gymPulseLive'
+import { isActiveLiveUser, profileDocToLiveUser, type LiveUserLike } from '../utils/gymPulseLive'
 import { shouldHideBetaBot } from '../utils/betaBots'
 import { applyGhostModeIfEnabled } from '../utils/ghostMode'
 
@@ -107,7 +107,12 @@ export function attachLivePresenceListener(
         if (blocked.has(docSnap.id)) return
         if (shouldHideBetaBot(docSnap.id)) return
         const data = docSnap.data() as Record<string, unknown>
-        live.push(profileDocToLiveUser(docSnap.id, { ...data, trainingNow: true }))
+        const user = profileDocToLiveUser(docSnap.id, {
+          ...data,
+          trainingNow: true,
+          presenceUpdatedAt: data.updatedAt,
+        })
+        if (isActiveLiveUser(user)) live.push(user)
       })
       onUpdate(live)
     },

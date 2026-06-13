@@ -95,6 +95,35 @@ export function FuelLogModal({
 
   if (!open) return null
 
+  const resolvedMealLabel = () => {
+    const label = mealLabel.trim()
+    if (label) return label
+    const fromDesc = description.trim()
+    if (fromDesc) return fromDesc.slice(0, 80)
+    return 'Comida'
+  }
+
+  const canSave = Boolean(mealLabel.trim() || description.trim() || editEntry)
+
+  const handleSave = async () => {
+    if (!canSave) return
+    try {
+      await onSave({
+        editId: editEntry?.id,
+        mealLabel: resolvedMealLabel(),
+        kcal,
+        proteinG,
+        carbsG,
+        fatG,
+        photoDataUrl: photoPreview || undefined,
+        source,
+        publishToMuro,
+      })
+    } catch {
+      /* App handler muestra toast de error */
+    }
+  }
+
   const applyEstimate = (est: AnalyzeFoodResult, src: 'photo_ai' | 'text_ai') => {
     setKcal(est.kcal)
     setProteinG(est.proteinG)
@@ -344,20 +373,8 @@ export function FuelLogModal({
           </button>
           <button
             type="button"
-            disabled={saving || !mealLabel.trim()}
-            onClick={() =>
-              onSave({
-                editId: editEntry?.id,
-                mealLabel: mealLabel.trim(),
-                kcal,
-                proteinG,
-                carbsG,
-                fatG,
-                photoDataUrl: photoPreview || undefined,
-                source,
-                publishToMuro,
-              })
-            }
+            disabled={saving || !canSave}
+            onClick={() => void handleSave()}
             className="flex-1 py-3 rounded-2xl bg-[#a855f7] text-black font-extrabold text-sm disabled:opacity-50"
           >
             {saving ? 'Guardando…' : editEntry ? 'Guardar cambios' : 'Guardar'}

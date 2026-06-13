@@ -13,7 +13,7 @@ import {
 } from 'firebase/firestore'
 import { isDeletedProfileData } from '../utils/deletedProfile'
 import { shouldHideBetaBot } from '../utils/betaBots'
-import { profileDocToLiveUser, type LiveUserLike } from '../utils/gymPulseLive'
+import { isActiveLiveUser, profileDocToLiveUser, type LiveUserLike } from '../utils/gymPulseLive'
 
 export type LiveUsersSnapshotHandler = (users: LiveUserLike[]) => void
 
@@ -22,6 +22,10 @@ export interface AttachLiveUsersListenerOptions {
   maxResults?: number
   /** Dynamic blocked-user filter (fresh on each snapshot) */
   getBlockedIds?: () => string[]
+  /** Admin panel — show beta bots and skip block filter */
+  adminMode?: boolean
+  /** Si false, incluye perfiles trainingNow caducados (admin / limpieza). Default true. */
+  activeOnly?: boolean
   onError?: (err: unknown) => void
 }
 
@@ -34,7 +38,7 @@ export function attachLiveUsersListener(
   onUpdate: LiveUsersSnapshotHandler,
   options: AttachLiveUsersListenerOptions = {}
 ): Unsubscribe {
-  const { maxResults = 150, getBlockedIds, onError } = options
+  const { maxResults = 150, getBlockedIds, adminMode = false, activeOnly = true, onError } = options
   const q = query(
     collection(db, 'profiles'),
     where('trainingNow', '==', true),
@@ -44,16 +48,18 @@ export function attachLiveUsersListener(
   return onSnapshot(
     q,
     (snapshot) => {
-      const blocked = new Set(getBlockedIds?.() || [])
+      const blocked = adminMode ? new Set<string>() : new Set(getBlockedIds?.() || [])
       const live: LiveUserLike[] = []
       snapshot.forEach((docSnap) => {
-        if (blocked.has(docSnap.id)) return
-        if (shouldHideBetaBot(docSnap.id)) return
+        if (!adminMode && blocked.has(docSnap.id)) return
+        if (!adminMode && shouldHideBetaBot(docSnap.id)) return
         const data = docSnap.data() as Record<string, unknown>
         // Strict boolean — ignore string/truthy legacy values that break queries on write
         if (data.trainingNow !== true) return
         if (isDeletedProfileData(data)) return
-        live.push(profileDocToLiveUser(docSnap.id, data, { forceLive: true }))
+        const user = profileDocToLiveUser(docSnap.id, data, { forceLive: true })
+        if (activeOnly && !isActiveLiveUser(user)) return
+        live.push(user)
       })
       onUpdate(live)
     },

@@ -6,7 +6,11 @@
 import type { Firestore } from 'firebase/firestore'
 import type { Profile } from '../types'
 import { isDeletedProfileData } from '../utils/deletedProfile'
-import { normalizeTrainingSince } from '../utils/gymPulseLive'
+import { isActiveLiveUser, normalizeTrainingSince } from '../utils/gymPulseLive'
+import {
+  hasDisplayableMatchPhoto,
+  isGenericPartnerName,
+} from '../utils/matchProfileDisplay'
 
 export function mapFirestoreProfileDoc(
   id: string,
@@ -32,8 +36,15 @@ export function mapFirestoreProfileDoc(
     intensity: d.intensity,
     verificationStatus: d.verificationStatus,
     verificationDate: d.verificationDate ?? undefined,
-    trainingNow: d.trainingNow || false,
     trainingNowSince: normalizeTrainingSince(d.trainingNowSince),
+    trainingNow: !!(
+      d.trainingNow &&
+      isActiveLiveUser({
+        trainingNow: true,
+        trainingNowSince: d.trainingNowSince,
+        liveMotionAt: d.liveMotionAt,
+      })
+    ),
     liveStreak: d.liveStreak != null ? d.liveStreak : undefined,
     lastLiveDate: d.lastLiveDate != null ? d.lastLiveDate : undefined,
     liveJoins: d.liveJoins != null ? d.liveJoins : undefined,
@@ -57,7 +68,12 @@ export function mapFirestoreProfileDoc(
     gymCheckIn: d.gymCheckIn || undefined,
     isBetaBot: d.isBetaBot === true,
     communityAdmin: d.communityAdmin === true,
-    accountStatus: d.accountStatus === 'deleted' ? 'deleted' : undefined,
+    accountStatus:
+      d.accountStatus === 'deleted'
+        ? 'deleted'
+        : d.accountStatus === 'suspended'
+          ? 'suspended'
+          : undefined,
   }
 }
 
@@ -90,7 +106,32 @@ export function mergeProfileLists(existing: Profile[], incoming: Profile[]): Pro
   const byId = new Map(existing.map((p) => [p.id, p]))
   for (const p of incoming) {
     const prev = byId.get(p.id)
-    byId.set(p.id, prev ? { ...prev, ...p } : p)
+    if (!prev) {
+      byId.set(p.id, p)
+      continue
+    }
+    const merged = { ...prev, ...p }
+    if (isGenericPartnerName(p.name) && !isGenericPartnerName(prev.name)) {
+      merged.name = prev.name
+    }
+    if (!hasDisplayableMatchPhoto(p.photos) && hasDisplayableMatchPhoto(prev.photos)) {
+      merged.photos = prev.photos
+    }
+    if (!(p.city || '').trim() && (prev.city || '').trim()) {
+      merged.city = prev.city
+    }
+    byId.set(p.id, merged)
   }
   return Array.from(byId.values())
+}
+
+/** Keep match/chat/sync partners when refreshing the city discovery snapshot. */
+export function mergeDiscoveryWithPinnedPartners(
+  incoming: Profile[],
+  previous: Profile[],
+  pinnedIds: Iterable<string>
+): Profile[] {
+  const pin = new Set(pinnedIds)
+  const pinned = previous.filter((p) => pin.has(p.id))
+  return mergeProfileLists(incoming, pinned)
 }

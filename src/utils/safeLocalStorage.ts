@@ -21,6 +21,11 @@ export const PREV_RED_SYNC_STATE_KEY = 'entrenamatch_prev_red_sync_state'
 /** Skip foreground push/live toasts briefly after cold start (avoids burst on app open). */
 export const SESSION_TOAST_GRACE_MS = 4000
 
+/** Per-account key so live-join dedup survives logout/login on the same device. */
+export function seenLiveJoinsStorageKey(uid: string | null | undefined): string {
+  return uid ? `${SEEN_LIVE_JOINS_KEY}_${uid}` : SEEN_LIVE_JOINS_KEY
+}
+
 const BULKY_KEYS_TO_EVICT = [
   'entrenamatch_last_live',
   'entrenamatch_profile_posts',

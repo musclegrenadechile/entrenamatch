@@ -16,6 +16,8 @@ import { BETA_BOT_BADGE_LABEL, isBetaBotProfile } from '../../utils/betaBots'
 import { COMMUNITY_ADMIN_BADGE_LABEL, isCommunityAdminProfile } from '../../utils/appAdmin'
 import { BRAND_COPY } from '../../constants/brandCopy'
 import { WorkoutPostCard } from '../workout/WorkoutPostCard'
+import { shareWorkoutStory, toastWorkoutShareOutcome } from '../../utils/workoutStoryShare'
+import { toast } from 'sonner'
 
 export interface TrainerProfileSummary {
   userId: string
@@ -410,6 +412,19 @@ export function FullProfileSheet({
                         onCopyRoutine={
                           post.workoutId && profile.id !== effectiveUserId
                             ? () => onCopyWorkout(post.workoutId!, post.workoutPreview?.title)
+                            : undefined
+                        }
+                        onShareStory={
+                          profile.id === effectiveUserId
+                            ? () => {
+                                void shareWorkoutStory({
+                                  userName: currentUser?.name || 'Atleta',
+                                  userPhoto: currentUser?.photo || currentUser?.photos?.[0],
+                                  userId: effectiveUserId,
+                                  preview: post.workoutPreview!,
+                                  prSummary: post.text?.includes('PR') ? post.text : undefined,
+                                }).then((outcome) => toastWorkoutShareOutcome(toast, outcome))
+                              }
                             : undefined
                         }
                       />

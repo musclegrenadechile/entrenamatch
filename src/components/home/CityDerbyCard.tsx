@@ -237,3 +237,40 @@ export function CityDerbyCard({
     </section>
   )
 }
+
+/** Fase 331 — Copa Zona visible desde día 1 sin card completa */
+export function CityDerbyCompactStrip({
+  derby,
+  onOpenMap,
+  userCity,
+}: Pick<CityDerbyCardProps, 'derby' | 'onOpenMap' | 'userCity'>) {
+  const state = derby ?? buildCityDerby(null, null, {}, userCity)
+  const phase = getZoneEventPhase()
+  const scoringActive = isZoneScoringActive()
+
+  return (
+    <button
+      type="button"
+      onClick={onOpenMap}
+      className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-2xl border border-[#FF671F]/30 bg-[#FF671F]/5 active:bg-[#FF671F]/10 text-left"
+      aria-label={`${BRAND_COPY.copaZona.weeklyLabel}: ${state.home.cityLabel} vs ${state.away.cityLabel}`}
+    >
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-bold text-[#FF671F] uppercase tracking-wide">
+          {BRAND_COPY.copaZona.weeklyLabel} · {zoneEventPhaseKicker(phase)}
+        </p>
+        <p className="text-[11px] text-white font-semibold truncate mt-0.5">
+          {state.home.cityLabel} <span className="text-[#22c55e]">{state.home.indexPer100k}</span>
+          {' vs '}
+          {state.away.cityLabel} <span className="text-[#60a5fa]">{state.away.indexPer100k}</span>
+        </p>
+        <p className="text-[10px] text-[#9CA3AF] mt-0.5 truncate">
+          {scoringActive
+            ? 'Cada LIVE suma a tu zona — abre el mapa'
+            : BRAND_COPY.copaZona.frozenHint}
+        </p>
+      </div>
+      <MapPin className="w-4 h-4 text-[#22c55e] shrink-0" aria-hidden />
+    </button>
+  )
+}

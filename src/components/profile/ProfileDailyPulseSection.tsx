@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { toast } from 'sonner'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
+import { BRAND_COPY } from '../../constants/brandCopy'
 import { gadgetDisplayName } from '../../utils/genderedCopy'
 
 export function ProfileDailyPulseSection(props: ProfileTabProps) {
@@ -32,7 +33,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
     <div className="rounded-3xl bg-gradient-to-br from-[#0f0a08] via-[#1a140f] to-[#0D0D10] border border-[#FF671F]/30 p-4 shadow-inner hover:shadow-2xl transition-all duration-300">
       <div className="flex items-center justify-between mb-3">
         <div>
-          <div className="text-[#FF671F] text-[10px] font-bold tracking-[1px] uppercase">RETO DIARIO · TU RED FITNESS</div>
+          <div className="text-[#FF671F] text-[10px] font-bold tracking-[1px] uppercase">{BRAND_COPY.profile.dailyPulseKicker} · TU COMUNIDAD</div>
           <div className="text-white text-xl font-black tracking-[-0.5px]">Constancia de hoy</div>
         </div>
         <div className="text-right flex items-center gap-3">
@@ -51,19 +52,19 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
       <div className="flex gap-1.5 mb-3">
         <div className="flex-1 bg-black/40 rounded-2xl p-2 text-center border border-[#22c55e]/20">
           <div className="text-lg font-black text-[#22c55e] flex items-center justify-center gap-0.5">🔥{dailyPulse.trainingStreak}</div>
-          <div className="text-[8px] text-[#9CA3AF] font-medium">Train</div>
+          <div className="text-[10px] text-[#9CA3AF] font-medium">Train</div>
         </div>
         <div className="flex-1 bg-black/40 rounded-2xl p-2 text-center border border-[#FF671F]/20">
           <div className="text-lg font-black text-[#FF671F] flex items-center justify-center gap-0.5">🔗{dailyPulse.synergyStreak}</div>
-          <div className="text-[8px] text-[#9CA3AF] font-medium">Synergy</div>
+          <div className="text-[10px] text-[#9CA3AF] font-medium">Synergy</div>
         </div>
         <div className="flex-1 bg-black/40 rounded-2xl p-2 text-center border border-[#EAB308]/30 ring-1 ring-inset ring-[#EAB308]/10">
           <div className="text-lg font-black text-[#EAB308] flex items-center justify-center gap-0.5">🎙️{dailyPulse.voiceStreak || 0}</div>
-          <div className="text-[8px] text-[#EAB308]/90 font-medium tracking-wide">NOTAS DE VOZ</div>
+          <div className="text-[10px] text-[#EAB308]/90 font-medium tracking-wide">NOTAS DE VOZ</div>
         </div>
         <div className="flex-1 bg-black/40 rounded-2xl p-2 text-center border border-[#06B6D4]/20">
           <div className="text-lg font-black text-[#06B6D4] flex items-center justify-center gap-0.5">🗺️{dailyPulse.pulseStreak || 0}</div>
-          <div className="text-[8px] text-[#9CA3AF] font-medium">Pulse</div>
+          <div className="text-[10px] text-[#9CA3AF] font-medium">{BRAND_COPY.profile.mapStreakLabel}</div>
         </div>
       </div>
       <div className="text-[8px] text-[#FFD700] -mt-2 mb-2 text-center">Récord: {Math.max(dailyPulse.longestTraining || 0, dailyPulse.longestSynergy || 0, dailyPulse.longestVoice || 0, dailyPulse.longestPulse || 0)}d</div>
@@ -85,13 +86,13 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
         <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
           <div className="h-1.5 bg-gradient-to-r from-[#FFD700] to-[#FF671F]" style={{width: `${((dailyPulse.xp || 0) / 300) * 100}%`}} />
         </div>
-        <div className="text-[7px] text-[#9CA3AF] mt-0.5">Entrena más → +XP → sube de nivel y accede a extras exclusivos (mapa, sync, ripples...)</div>
+        <div className="text-[7px] text-[#9CA3AF] mt-0.5">Entrena más → subes de nivel → desbloqueas extras en el mapa y en sync</div>
       </div>
 
       {/* Gadgets exclusivos - fuerte motivador de retención visual (mientras más entrenes, más efectos únicos) */}
       {dailyPulse && getUnlockedGadgets(dailyPulse.level || 1).length > 0 && (
         <div className="mb-3">
-          <div className="text-[8px] text-[#FFD700] font-bold mb-1">🎁 GADGETS DESBLOQUEADOS</div>
+          <div className="text-[8px] text-[#FFD700] font-bold mb-1">🎁 EXTRAS DESBLOQUEADOS</div>
           <div className="flex gap-1 flex-wrap">
             {getUnlockedGadgets(dailyPulse.level || 1).map((g, i) => (
               <div key={i} className="text-[9px] bg-black/40 border border-[#FFD700]/30 rounded px-1.5 py-0.5 flex items-center gap-1" title={g.desc}>
@@ -111,7 +112,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
         </div>
       )}
 
-      {/* Reto GymPulse diario */}
+      {/* Reto diario */}
       {dailyPulse.currentChallenge && (
         <div className="bg-[#0D0D10] border border-[#FF671F]/40 rounded-2xl p-3 mb-2">
           <div className="flex items-start gap-3">
@@ -148,7 +149,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
                       toast('Ve a tu Red y activa una alianza hoy')
                     } else {
                       setActiveTab('profile')
-                      toast('Publica en el GymPulse para completar')
+                      toast('Publica en el Muro de la Comunidad para completar')
                     }
                   }}
                   className="flex-1 text-xs py-1.5 rounded-full bg-[#FF671F] text-black font-bold active:bg-[#E55A1A] active:scale-[0.985] transition-transform"
@@ -243,7 +244,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
           }} 
           className="text-[9px] text-[#9CA3AF] underline active:opacity-70 active:text-white transition-colors"
         >
-          Refrescar GymPulse
+          Refrescar reto diario
         </button>
       </div>
     </div>

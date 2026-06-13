@@ -12,6 +12,7 @@ import {
 } from '../utils/quickDemo';
 import { isProfileComplete } from '../utils/profileComplete';
 import { isE2EHarnessActive } from '../utils/e2eHarness';
+import { parseTabFromUrl } from '../utils/tabUrlSync';
 
 function triggerHaptic(_style?: 'light' | 'medium' | 'heavy' | 'success') {
   try {
@@ -51,6 +52,17 @@ export function PublicAuthPage() {
         : 'Datos solo en este dispositivo. Completa el setup.',
     });
   }, [saveUser, setShowOnboarding, setDemoMode]);
+
+  useEffect(() => {
+    try {
+      const tab = parseTabFromUrl(window.location.search)
+      if (tab === 'explore') {
+        toast.info('Inicia sesión para explorar y hacer match', { duration: 5000 })
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [])
 
   // Resume after reload (Capacitor / mobile browsers)
   useEffect(() => {

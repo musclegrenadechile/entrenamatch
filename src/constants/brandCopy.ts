@@ -7,7 +7,7 @@ export const BRAND_COPY = {
   tagline: 'Tu Comunidad en vivo',
   taglineMono: 'TU COMUNIDAD EN VIVO',
   pitch:
-    'Encuentra quién entrena cerca — gym, running, funcional o lo que muevas — haz match y entrena acompañado/a con EntrenaSync.',
+    'Encuentra quién entrena cerca — fútbol, pádel, gym, running, rugby o lo que muevas — haz match y entrena acompañado/a con EntrenaSync.',
   pitchShort:
     'Encuentra quién entrena cerca, haz match y sincroniza sesiones con EntrenaSync.',
   partner: 'EntrenaPartner',
@@ -22,14 +22,26 @@ export const BRAND_COPY = {
   metaDescription:
     'EntrenaMatch — Tu Comunidad en vivo. Ve quién entrena ahora, sincronízate en tiempo real y guarda historial compartido. Lanzamiento inicial en Chile.',
   manifestDescription:
-    'Conecta con personas que entrenan cerca de ti. Gym, running, funcional y más. Solo para mayores de 18 años. Piloto en Chile.',
+    'Conecta con personas que entrenan cerca de ti. Fútbol, pádel, gym, running, rugby y más. Solo +18. Piloto Chile.',
   /** Copy visible en la pestaña Mapa LIVE */
   liveMap: {
     globalPill: 'MAPA LIVE GLOBAL',
     globalPillTitle: 'Toca para ir al punto más activo del mapa',
     emptyTitle: 'Nadie en vivo cerca todavía',
-    emptyBody: 'Sé el primero — activa LIVE mientras entrenas (gym, running o lo que muevas).',
+    emptyBody: 'Sé el primero — activa LIVE en la cancha, pista, gym o costanera.',
     emptyBanner: 'Nadie activo cerca aún',
+    emptyOverlayTitle: 'Sin nadie en vivo cerca',
+    emptyOverlayBody: 'Activa LIVE mientras entrenas y aparecerás en el mapa. Los demás se ven como puntos verdes.',
+    emptyOverlaySelfLive: 'Estás visible en el mapa. El círculo verde marca tu zona (~2–12 km).',
+    soloLiveHint: 'Eres el único en vivo ahora — otros aparecerán como puntos verdes.',
+    legendTitle: 'Guía del mapa',
+    legendSelf: 'TÚ — tu posición',
+    legendLivePin: 'Punto verde — alguien en LIVE',
+    legendCircle: 'Círculo — tu zona visible (~2–12 km)',
+    legendZones: 'Ciudades — filtra por zona',
+    radarBtn: 'Buscar 2 km',
+    radarScanning: 'Escaneando 2 km…',
+    radarResult: (n: number) => `${n} persona${n === 1 ? '' : 's'} a 2 km`,
     liveBanner: 'Estás en vivo — visible en el mapa',
     activateLive: 'Activar LIVE',
     zoneCta: 'LIVE → suma por tu zona',
@@ -39,16 +51,16 @@ export const BRAND_COPY = {
     filtersTitle: 'Filtros del mapa',
     partnersFilter: 'Spots de entreno',
     tourHeader: 'Mapa LIVE',
-    tetherSub: 'Tether activo en el mapa LIVE',
+    tetherSub: 'EntrenaSync activo — línea dorada en el mapa',
   },
   /** Fase 121 — Explorar vacío / densidad */
   explore: {
     emptyTitle: 'Tu Comunidad está creciendo',
     emptyBody: (city: string) =>
-      `En ${city} aún hay pocos perfiles. Invita a alguien de tu gym o activa LIVE para que te encuentren en el mapa.`,
-    inviteTitle: 'Invita a tu gym',
+      `En ${city} aún hay pocos perfiles. Invita a tu club, cancha o grupo — o activa LIVE para que te encuentren en el Mapa LIVE.`,
+    inviteTitle: 'Invita a tu equipo',
     inviteShareText: 'Entrena con gente cerca de ti — únete a EntrenaMatch',
-    inviteToastCopied: 'Enlace copiado — compártelo con tu gym',
+    inviteToastCopied: 'Enlace copiado — compártelo con tu club o equipo',
     activateLiveCta: 'Activar LIVE ahora',
   },
   /** Eliminación de cuenta — retención honesta (proyecto en beta, fundador solo). */
@@ -123,7 +135,7 @@ export const BRAND_COPY = {
   syncHour: {
     title: 'Sync Hour',
     activeBody: 'Ventana LIVE — más gente en el mapa ahora. Activa LIVE y busca un EntrenaSync.',
-    upcomingBody: (label: string) => `Próxima Sync Hour: ${label}. Invita a tu gym antes.`,
+    upcomingBody: (label: string) => `Próxima Sync Hour: ${label}. Invita a tu club o equipo antes.`,
     cta: 'Ir al mapa LIVE',
     ctaExplore: 'Activar LIVE',
     notifTitle: 'Sync Hour — ¡es ahora!',
@@ -137,8 +149,8 @@ export const BRAND_COPY = {
   },
   /** Fase 121 — invitación gym con QR */
   gymInvite: {
-    title: 'Invita a tu gym',
-    subtitle: 'Escanea o comparte — más densidad = más matches',
+    title: 'Invita a tu equipo',
+    subtitle: 'Comparte el enlace — más gente en tu zona = más matches y EntrenaSync',
     qrAlt: 'Código QR de invitación EntrenaMatch',
     copyLink: 'Copiar enlace',
     share: 'Compartir',
@@ -146,8 +158,51 @@ export const BRAND_COPY = {
   /** Post-sync story */
   syncStory: {
     promptTitle: '¡Buen EntrenaSync!',
-    promptBody: 'Comparte la story — invita a tu gym a sumarse',
+    promptBody: 'Comparte la story — invita a tu club o equipo a sumarse',
     cta: 'Compartir story del sync',
+  },
+  /** Post-workout story (fase 376) */
+  workoutStory: {
+    promptTitle: '¿Lo subes a Instagram?',
+    promptBody: 'Te armamos una imagen con tu rutina para invitar a tus amigos',
+    cta: 'Compartir en Instagram',
+    sharedOk: 'Listo — elige Instagram en el menú que se abrió',
+    sharedDownload: 'Imagen guardada — ábrela en Instagram → Historia',
+    failed: 'No pudimos crear la imagen. Intenta de nuevo.',
+  },
+  /** Perfil — header y reto diario */
+  profile: {
+    headerTitle: 'Tu perfil',
+    headerSubtitle: 'Tu Comunidad · entreno y progreso',
+    dailyChallengeActivated: '¡Reto diario activado!',
+    seeDailyChallenge: 'Ver reto',
+    dailyPulseKicker: 'RETO DIARIO',
+    mapStreakLabel: 'Mapa LIVE',
+    tabSummary: 'Reto diario, constancia y alianzas Sync',
+  },
+  /** Muro / feed social */
+  feed: {
+    postsLabel: 'en el Muro',
+    joinedCommunity: 'personas reaccionaron en el Muro — únete desde el mapa o arriba',
+    publishSubtitle: 'Tu momento aparecerá en el Muro de la Comunidad',
+    publishButton: 'Publicar en el Muro',
+    publishingLabel: 'Publicando en el Muro de la Comunidad…',
+    publishingBanner: 'Publicando en el Muro de la Comunidad…',
+    publishPlaceholder:
+      'Comparte tu entreno, un PR, una foto de la cancha o lo que inspire a la red...',
+    uploadPhoto: 'Subiendo foto al Muro...',
+    publishedTitle: '¡Publicado en el Muro de la Comunidad!',
+    publishedDesc: 'Ya está visible en el Muro de la Comunidad.',
+    liveSessionDesc: 'Tu sesión live ya está en el Muro de la Comunidad',
+  },
+  /** Red / sync visible */
+  networkCopy: {
+    weekImpact: (min: number) =>
+      `Tu red esta semana: ~${min} min compartidos — suma visibilidad en el Mapa LIVE.`,
+    resyncHint:
+      'Re-sync para subir tu Fuerza del equipo y ganar más visibilidad en Explorar',
+    exploreGraph: 'Tu red en el mapa LIVE',
+    exploreCta: 'Las redes más fuertes destacan en Explorar. Construye la tuya →',
   },
   /** Toasts visibles — siempre Mapa LIVE / Comunidad, nunca GymPulse */
   toasts: {
@@ -165,7 +220,7 @@ export const BRAND_COPY = {
     stepLive: '1. Activa LIVE',
     stepLiveDesc: 'Al entrenar, enciende LIVE. Apareces en el Mapa LIVE y sumas a la Copa Zona.',
     stepExplore: '2. Explora y conecta',
-    stepExploreDesc: 'Desliza perfiles compatibles e invita a alguien de tu gym al piloto.',
+    stepExploreDesc: 'Desliza perfiles compatibles e invita a alguien de tu club o cancha al piloto.',
     stepSync: '3. EntrenaSync en el mapa',
     stepSyncDesc: 'Sincroniza con un match en el Mapa LIVE — tus minutos suman a tu región.',
   },

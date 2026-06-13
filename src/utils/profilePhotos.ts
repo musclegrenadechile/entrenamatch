@@ -43,16 +43,59 @@ export function resolveProfilePhotos(
 ): string[] {
   const cached = filterPersistablePhotos(cachedPhotos)
   const remote = filterPersistablePhotos(remotePhotos)
+  const cachedPending = Array.isArray(cachedPhotos)
+    ? cachedPhotos.filter((p) => isDataUrlPhoto(p))
+    : []
 
   if (cachedUpdatedAt && remoteUpdatedAt) {
     if (cachedUpdatedAt > remoteUpdatedAt) return cached.length ? cached : remote
     if (remoteUpdatedAt > cachedUpdatedAt) return remote.length ? remote : cached
   }
 
-  if (cached.length === 0) return remote
+  if (cached.length === 0 && remote.length === 0 && cachedPending.length > 0) {
+    return cachedPending
+  }
+
+  if (cached.length === 0) return remote.length ? remote : cachedPending
   if (remote.length === 0) return cached
 
   return photoSetFreshnessScore(cached) >= photoSetFreshnessScore(remote) ? cached : remote
+}
+
+/**
+ * Photos to write on sync — never wipe persisted Storage URLs because incoming
+ * state still has unpersisted data: URLs or a partial profile patch.
+ */
+export function resolvePhotosForFirestoreSave(
+  incoming: string[] | null | undefined,
+  prior: string[] | null | undefined
+): string[] {
+  const incomingRaw = Array.isArray(incoming) ? incoming : []
+  const priorRaw = Array.isArray(prior) ? prior : []
+  const incomingPersistable = filterPersistablePhotos(incomingRaw)
+  const priorPersistable = filterPersistablePhotos(priorRaw)
+  const incomingHasDataUrls = incomingRaw.some(isDataUrlPhoto)
+
+  if (incomingPersistable.length > 0) {
+    return incomingPersistable
+  }
+
+  const userClearedGallery =
+    incomingRaw.length === 0 && priorRaw.length > 0 && !incomingHasDataUrls
+
+  if (userClearedGallery) {
+    return []
+  }
+
+  if (incomingHasDataUrls && priorPersistable.length > 0) {
+    return priorPersistable
+  }
+
+  if (priorPersistable.length > 0) {
+    return priorPersistable
+  }
+
+  return []
 }
 
 export async function ensurePersistableProfilePhotos(
@@ -81,7 +124,8 @@ export function primaryProfilePhoto(
   photos: string[] | null | undefined,
   fallback = PROFILE_PHOTO_PLACEHOLDER
 ): string {
-  const first = filterPersistablePhotos(photos)[0]
+  if (!Array.isArray(photos)) return fallback
+  const first = photos.find((p) => isHttpPhotoUrl(p) || isDataUrlPhoto(p))
   return first || fallback
 }
 

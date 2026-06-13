@@ -161,7 +161,9 @@ describe('computeGlobalFeed', () => {
       isSeedProfileId: () => false,
       now,
     })
-    expect(result.feedPosts.some((p) => p.isMine)).toBe(false)
-    expect(result.feedPosts.every((p) => p.ownerId === 'u2')).toBe(true)
+    expect(result.feedPosts.some((p) => p.isMine)).toBe(true)
+    expect(result.feedPosts.filter((p) => !p.isMine).every((p) => p.ownerId === 'u2')).toBe(
+      true
+    )
   })
 })

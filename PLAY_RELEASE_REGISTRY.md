@@ -9,9 +9,9 @@ Documento de referencia para el equipo. **No contiene secretos** (contraseñas/k
 | Package | `com.entrenamatch.app` |
 | App name | EntrenaMatch |
 | Track objetivo | **Closed testing** (beta cerrada, app oculta) |
-| Última subida conocida (dispositivo) | `versionCode` **330** · `versionName` **0.1.330** (track **alpha** / prueba cerrada) |
-| **Anterior** | `versionCode` **329** — perf F2/F3 + fix drag gadget |
-| Doc release | `PLAY_INTERNAL_v0.1.330.md` |
+| Última build local | `versionCode` **345** · `versionName` **0.1.345** (oleada 341–345) |
+| **Anterior** | `versionCode` **340** — marketing GTM 331–340 |
+| Doc release | `PLAY_INTERNAL_v0.1.345.md` |
 | AAB para subir | `EntrenaMatch-release.aab` (raíz del repo) |
 | Script build | `build-play-store.bat` |
 
