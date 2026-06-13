@@ -27,12 +27,11 @@ Cada fase = entregable + test + deploy. Oleadas de 10 fases.
 
 | # | Fase | Entregable | Estado |
 |---|------|------------|--------|
-| **391** | `FeatureTourMount` | Tour primer uso fuera de App | ☐ |
-| **392** | `FiltersSheetMount` | Modal filtros Explorar | ☐ |
-| **393** | `LiveModalMount` | Lista LIVE full-screen | ☐ |
-| **394** | `MatchModalMount` | Modal match + distancia | ☐ |
-| **395** | `SafetyActionSheetMount` | Report/block unificado mount | ☐ |
-| **396** | `useExploreDeck` hook | deck + visibleCards + sort | ☐ |
+| **391** | `FeatureTourMount` | Tour primer uso fuera de App | ✅ v0.1.383 |
+| **392** | `ExploreFiltersSheetMount` | Modal filtros Explorar | ✅ v0.1.383 |
+| **394** | `MatchCelebrationMount` | Modal match | ✅ v0.1.383 |
+| **396** | `useExploreDeck` hook | Deck filtrado + ordenado | ✅ v0.1.383 |
+| **393** | `LiveNearModalMount` | Lista LIVE full-screen | ☐ |
 | **397** | `useFeedPipeline` hook | feed ranking + filters | ☐ |
 | **398** | App.tsx < 12k líneas | Medición + extracción batch | ☐ |
 | **399** | `appOverlayRegistry` v2 | Todos los mounts registrados | ☐ |

@@ -82,6 +82,10 @@ import { buildSyncPostText, syncStoryToDataUrl } from './utils/syncStoryShare'
 import { recordSyncShareMetric } from './services/syncShareMetrics'
 import { BottomNav } from './components/app/BottomNav'
 import { AppFeatureTour, hasSeenAppFeatureTour, markAppFeatureTourSeen } from './components/onboarding/AppFeatureTour'
+import { FeatureTourMount } from './components/onboarding/FeatureTourMount'
+import { ExploreFiltersSheetMount } from './components/explore/ExploreFiltersSheetMount'
+import { MatchCelebrationMount } from './components/matches/MatchCelebrationMount'
+import { useExploreDeck } from './hooks/useExploreDeck'
 import { useAndroidBackHandler } from './hooks/useAndroidBackHandler'
 import { suggestedSquadName } from './utils/sparseCityDefaults'
 import { formatLiveDistanceKm } from './utils/formatLiveDistance'
@@ -2371,67 +2375,16 @@ useEffect(() => {
   // Filtered deck (with distance support + blocking)
   // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
   // Hoisted early with the other discovery memos.
-  const deck = useMemo(() => {
-    const filtered = remainingProfiles.filter(p => {
-      if (isDeletedProfile(p)) return false
-      // Block filter (critical safety)
-      if (blockedUsers.includes(p.id)) return false
-
-      if (p.age < filters.minAge || p.age > filters.maxAge) return false
-      if (filters.gender !== 'todos' && p.gender !== filters.gender) return false
-      if (filters.trainingTypes.length > 0) {
-        const hasAny = filters.trainingTypes.some(t => p.trainingTypes.includes(t))
-        if (!hasAny) return false
-      }
-      if (filters.availability.length > 0) {
-        const hasTime = filters.availability.some(t => p.availability.includes(t))
-        if (!hasTime) return false
-      }
-      // Distance filter (only if user has location)
-      if (userLocation && filters.maxDistanceKm < 100) {
-        const dist = getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng)
-        if (dist > filters.maxDistanceKm) return false
-      }
-      if (filters.onlyAvailableToday && !p.availableToday) return false
-      if (filters.onlyLiveTraining && !isUserLiveInSnapshot(p.id, liveUsersActive)) return false
-      if (filters.onlyRealProfiles && isSeedProfileId(p.id)) return false
-      return true
-    })
-
-    // Sort: highest compatibility first, then closest distance, slight boost for verified/real
-    // NETWORK POWER PRIORITY: members of your Red de EntrenaSync bubble to the absolute top of the deck.
-    // This makes the social graph have real recommendation power — training with someone gives you visibility and priority with them and their circle over time.
-    if (currentUser) {
-      return [...filtered].sort((a, b) => {
-        const isNetA = !!syncBonds[a.id]
-        const isNetB = !!syncBonds[b.id]
-        if (isNetA && !isNetB) return -1
-        if (!isNetA && isNetB) return 1
-        // Within network, higher bondLevel first (stronger alliances rise)
-        if (isNetA && isNetB) {
-          const la = syncBonds[a.id]?.bondLevel || 1
-          const lb = syncBonds[b.id]?.bondLevel || 1
-          if (lb !== la) return lb - la
-        }
-
-        if (userLocation) {
-          const da = getDistanceKm(userLocation.lat, userLocation.lng, a.lat, a.lng)
-          const db = getDistanceKm(userLocation.lat, userLocation.lng, b.lat, b.lng)
-          if (da !== db) return da - db
-        }
-
-        const ca = calculateCompatibility(currentUser, a, userLocation) + (isNetA ? 75 : 0) // massive Network Power boost to compat score
-        const cb = calculateCompatibility(currentUser, b, userLocation) + (isNetB ? 75 : 0)
-        if (cb !== ca) return cb - ca
-
-        // Verified / real tester slight priority
-        const va = (a.verificationStatus === 'verified' || !a.id.startsWith('p')) ? 1 : 0
-        const vb = (b.verificationStatus === 'verified' || !b.id.startsWith('p')) ? 1 : 0
-        return vb - va
-      })
-    }
-    return filtered
-  }, [remainingProfiles, filters, userLocation, blockedUsers, currentUser, liveUsersActive])
+  const deck = useExploreDeck(
+    remainingProfiles,
+    filters,
+    userLocation,
+    blockedUsers,
+    currentUser,
+    liveUsersActive,
+    syncBonds,
+    isSeedProfileId
+  )
 
   // Visible cards (top 3 for stack effect)
   const visibleCards = deck.slice(0, 3)
@@ -11007,17 +10960,10 @@ useEffect(() => {
           (activeTab === 'red' && redSubTab === 'messages' && !!activeChat)
         }
       />
-      <AppFeatureTour
+      <FeatureTourMount
         open={showFeatureTour}
-        onClose={() => {
-          markAppFeatureTourSeen()
-          setShowFeatureTour(false)
-        }}
-        onGoToStep={(stepId) => {
-          const tab =
-            stepId === 'home' ? 'home' : stepId === 'map' ? 'map' : stepId === 'explore' ? 'explore' : 'red'
-          navigateTab(tab as typeof activeTab)
-        }}
+        onClose={() => setShowFeatureTour(false)}
+        onGoToTab={(tab) => navigateTab(tab as typeof activeTab)}
       />
       <PerfOverlay />
       {!inFullScreenChat && (
@@ -11042,277 +10988,19 @@ useEffect(() => {
       />
       )}
 
-      {/* FILTERS MODAL */}
-      <AnimatePresence>
-        {showFilters && (
-          <div className="absolute inset-0 z-[70] flex items-end bg-black/70 overscroll-none" onClick={() => setShowFilters(false)}>
-            <motion.div
-              initial={{ y: 80 }}
-              animate={{ y: 0 }}
-              exit={{ y: 80 }}
-              transition={{ type: 'spring', bounce: 0.05 }}
-              onClick={e => e.stopPropagation()}
-              className="w-full card rounded-t-3xl flex flex-col max-h-[min(92dvh,920px)] overflow-hidden"
-            >
-              <div className="shrink-0 px-6 pt-6 pb-3 border-b border-[#2F2F35]/60">
-              <div className="flex justify-between items-center mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="font-semibold text-2xl tracking-tight">Filtros</div>
-                  {((filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0) + (filters.onlyLiveTraining ? 1 : 0)) > 0 && (
-                    <div className="text-xs bg-[#FF671F] text-black px-2 py-0.5 rounded-full font-bold">
-                      { (filters.trainingTypes?.length || 0) + (filters.availability?.length || 0) + (filters.gender !== 'todos' ? 1 : 0) + (filters.onlyAvailableToday ? 1 : 0) + (filters.onlyLiveTraining ? 1 : 0) } activos
-                    </div>
-                  )}
-                </div>
-                <button onClick={resetFilters} className="text-[#FF671F] text-sm font-semibold active:opacity-70">Limpiar todo</button>
-              </div>
-
-              {/* Live results count for filters - premium, clean indicator while choosing profiles */}
-              <div className="mb-4 px-3 py-2 bg-[#1C1C20] rounded-2xl text-sm flex items-center justify-between border border-[#2F2F35]">
-                <span className="text-[#9CA3AF]">Disponibles ahora</span>
-                <span className="font-bold text-[#FF671F] text-lg tabular-nums">{deck.length}{liveTrainingNow.length > 0 ? ` + ${liveTrainingNow.length} en vivo` : ''}</span>
-              </div>
-              </div>
-
-              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-6 py-4 [-webkit-overflow-scrolling:touch]">
-              {/* Active filters summary - tappable to remove */}
-              <AnimatePresence>
-              {(filters.trainingTypes.length > 0 || filters.availability.length > 0 || filters.gender !== 'todos' || filters.onlyAvailableToday || filters.onlyLiveTraining) && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mb-5 flex flex-wrap gap-1.5"
-                >
-                  {filters.trainingTypes.map(t => (
-                    <button 
-                      key={t} 
-                      onClick={() => toggleFilterTraining(t)}
-                      className="text-[10px] bg-[#FF671F]/15 text-[#FF671F] px-2.5 py-0.5 rounded-full active:bg-[#FF671F]/30 flex items-center gap-1"
-                    >
-                      {t} <span className="text-xs">×</span>
-                    </button>
-                  ))}
-                  {filters.availability.map(a => (
-                    <button 
-                      key={a} 
-                      onClick={() => toggleFilterAvailability(a)}
-                      className="text-[10px] bg-[#FF671F]/15 text-[#FF671F] px-2.5 py-0.5 rounded-full active:bg-[#FF671F]/30 flex items-center gap-1"
-                    >
-                      {a} <span className="text-xs">×</span>
-                    </button>
-                  ))}
-                  {filters.gender !== 'todos' && (
-                    <button 
-                      onClick={() => setFilters(f => ({...f, gender: 'todos'}))}
-                      className="text-[10px] bg-[#FF671F]/15 text-[#FF671F] px-2.5 py-0.5 rounded-full active:bg-[#FF671F]/30 flex items-center gap-1"
-                    >
-                      {filters.gender === 'hombre' ? 'Hombres' : 'Mujeres'} <span className="text-xs">×</span>
-                    </button>
-                  )}
-                  {filters.onlyAvailableToday && (
-                    <button 
-                      onClick={() => setFilters(f => ({...f, onlyAvailableToday: false}))}
-                      className="text-[10px] bg-[#22c55e]/15 text-[#22c55e] px-2.5 py-0.5 rounded-full active:bg-[#22c55e]/30 flex items-center gap-1"
-                    >
-                      Disponibles hoy <span className="text-xs">×</span>
-                    </button>
-                  )}
-                  {filters.onlyLiveTraining && (
-                    <button 
-                      onClick={() => setFilters(f => ({...f, onlyLiveTraining: false}))}
-                      className="text-[10px] bg-[#22c55e]/15 text-[#22c55e] px-2.5 py-0.5 rounded-full active:bg-[#22c55e]/30 flex items-center gap-1"
-                    >
-                      Entrenando ahora <span className="text-xs">×</span>
-                    </button>
-                  )}
-                </motion.div>
-              )}
-              </AnimatePresence>
-
-              <div className="mb-7">
-                <div className="flex justify-between text-sm mb-3">
-                  <span className="font-medium">Edad</span> 
-                  <span className="font-mono text-[#FF671F]">{filters.minAge} - {filters.maxAge}</span>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-[10px] text-[#9CA3AF] mb-1.5">
-                      <span>Mínimo</span><span>{filters.minAge}</span>
-                    </div>
-                    <input type="range" min="18" max="70" value={filters.minAge} onChange={e => setFilters(f => ({...f, minAge: Math.min(parseInt(e.target.value), f.maxAge - 1)}))} className="w-full accent-[#FF671F]" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-[10px] text-[#9CA3AF] mb-1.5">
-                      <span>Máximo</span><span>{filters.maxAge}</span>
-                    </div>
-                    <input type="range" min="18" max="70" value={filters.maxAge} onChange={e => setFilters(f => ({...f, maxAge: Math.max(parseInt(e.target.value), f.minAge + 1)}))} className="w-full accent-[#FF671F]" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Distance filter */}
-              <div className="mb-7">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="font-medium">Distancia máxima</span> 
-                  <span className="text-[#FF671F]">
-                    {userLocation 
-                      ? (filters.maxDistanceKm >= 100 ? 'Sin límite' : `${filters.maxDistanceKm} km`) 
-                      : 'GPS requerido'}
-                  </span>
-                </div>
-                <input 
-                  type="range" 
-                  min="5" 
-                  max="100" 
-                  step="5"
-                  value={filters.maxDistanceKm} 
-                  onChange={e => setFilters(f => ({...f, maxDistanceKm: parseInt(e.target.value)}))} 
-                  className="w-full accent-[#FF671F]" 
-                  disabled={!userLocation}
-                />
-                <div className="flex justify-between text-[10px] text-[#9CA3AF] mt-1">
-                  <span>5 km</span><span>100+ km (todos)</span>
-                </div>
-                {userLocation && filters.maxDistanceKm >= 100 && (
-                  <p className="text-[10px] text-[#9CA3AF] mt-2 leading-snug">
-                    Sin límite: ves a todos en tu zona, ordenados de más cerca a más lejos.
-                  </p>
-                )}
-                {!userLocation && (
-                  <button 
-                    onClick={requestUserLocation}
-                    className="mt-3 text-xs w-full py-2.5 rounded-2xl border border-[#22c55e] text-[#22c55e] active:bg-[#22c55e] active:text-black font-semibold"
-                  >
-                    📍 Usar ubicación real del teléfono (GPS)
-                  </button>
-                )}
-                {userLocation && (
-                  <div className="mt-1 text-[9px] text-[#22c55e] text-center">✓ Usando GPS real • distancias precisas</div>
-                )}
-              </div>
-
-              {/* Disponible Hoy filter */}
-              <div className="mb-7">
-                <label className="flex items-center gap-3 p-3 bg-[#1C1C20] rounded-2xl border border-[#2F2F35] cursor-pointer active:bg-[#25252A]">
-                  <input 
-                    type="checkbox" 
-                    checked={filters.onlyAvailableToday} 
-                    onChange={e => setFilters(f => ({...f, onlyAvailableToday: e.target.checked}))}
-                    className="w-5 h-5 accent-[#FF671F]"
-                  />
-                  <div>
-                    <div className="text-sm font-medium">Solo disponibles hoy</div>
-                    <div className="text-xs text-[#9CA3AF]">Personas que pueden entrenar el mismo día</div>
-                  </div>
-                </label>
-
-                {/* Live Training Now - the innovative killer feature */}
-                <label className="flex items-center gap-3 p-3 bg-[#1C1C20] rounded-2xl border border-[#22c55e]/50 cursor-pointer active:bg-[#25252A] mt-2">
-                  <input 
-                    type="checkbox" 
-                    checked={filters.onlyLiveTraining} 
-                    onChange={e => setFilters(f => ({...f, onlyLiveTraining: e.target.checked}))}
-                    className="w-5 h-5 accent-[#22c55e]"
-                  />
-                  <div>
-                    <div className="text-sm font-medium flex items-center gap-1">Solo entrenando ahora <span className="live-pill bg-[#22c55e] text-black text-[8px]">🟢 EN VIVO</span></div>
-                    <div className="text-xs text-[#9CA3AF]">¡Quién está entrenando en este preciso momento cerca! Ver el pulso en vivo en el mapa.</div>
-                  </div>
-                </label>
-
-                <label className="flex items-center gap-3 p-3 bg-[#1C1C20] rounded-2xl border border-[#FF671F]/40 cursor-pointer active:bg-[#25252A] mt-2">
-                  <input
-                    type="checkbox"
-                    checked={filters.onlyRealProfiles}
-                    onChange={(e) => setFilters((f) => ({ ...f, onlyRealProfiles: e.target.checked }))}
-                    className="w-5 h-5 accent-[#FF671F]"
-                  />
-                  <div>
-                    <div className="text-sm font-medium">Solo perfiles reales</div>
-                    <div className="text-xs text-[#9CA3AF]">Oculta perfiles DEMO (p1, p2…) del swipe. Ideal para testers en beta.</div>
-                  </div>
-                </label>
-              </div>
-
-              <div className="mb-6">
-                <div className="text-sm font-medium mb-2">Me interesa</div>
-                <div className="flex rounded-2xl overflow-hidden border border-[#2F2F35]">
-                  {(['todos','hombre','mujer'] as const).map(g => (
-                    <button 
-                      key={g} 
-                      onClick={() => setFilters(f => ({...f, gender: g}))} 
-                      className={`flex-1 py-2.5 text-sm font-medium transition ${filters.gender === g ? 'bg-[#FF671F] text-black' : 'bg-[#1C1C20] active:bg-[#25252A] text-white'}`}
-                    >
-                      {g === 'todos' ? 'Todos' : g === 'hombre' ? 'Hombres' : 'Mujeres'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium flex items-center gap-2">
-                    Tipo de entrenamiento
-                    {filters.trainingTypes.length > 0 && (
-                      <span className="text-[10px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded-full font-medium">{filters.trainingTypes.length} seleccionados</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {TRAINING_OPTIONS.map(t => {
-                    const selected = filters.trainingTypes.includes(t);
-                    return (
-                      <button 
-                        key={t} 
-                        onClick={() => toggleFilterTraining(t)} 
-                        className={`px-3 py-1 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#FF671F] text-black border-[#FF671F] font-medium' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3a3f48] text-white/90'}`}
-                      >
-                        {t}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="mb-8">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="text-sm font-medium flex items-center gap-2">
-                    Disponibilidad
-                    {filters.availability.length > 0 && (
-                      <span className="text-[10px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded-full font-medium">{filters.availability.length} seleccionadas</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {AVAILABILITY.map(a => {
-                    const selected = filters.availability.includes(a);
-                    return (
-                      <button 
-                        key={a} 
-                        onClick={() => toggleFilterAvailability(a)} 
-                        className={`px-3 py-1 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#FF671F] text-black border-[#FF671F] font-medium' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3a3f48] text-white/90'}`}
-                      >
-                        {a}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              </div>
-
-              <div className="shrink-0 px-6 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] border-t border-[#2F2F35]/60 bg-[#141418]">
-              <button 
-                onClick={() => setShowFilters(false)} 
-                className="btn-primary w-full shadow-lg shadow-[#FF671F]/20 flex items-center justify-center gap-2 text-base"
-              >
-                Ver {deck.length} disponibles <span className="text-lg leading-none">→</span>
-              </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <ExploreFiltersSheetMount
+        open={showFilters}
+        filters={filters}
+        deckCount={deck.length}
+        liveTrainingCount={liveTrainingNow.length}
+        userLocation={userLocation}
+        onClose={() => setShowFilters(false)}
+        onReset={resetFilters}
+        onSetFilters={setFilters}
+        onToggleTraining={toggleFilterTraining}
+        onToggleAvailability={toggleFilterAvailability}
+        onRequestLocation={requestUserLocation}
+      />
 
       {/* CREATE SQUAD MODAL */}
       <AnimatePresence>
@@ -11769,62 +11457,13 @@ useEffect(() => {
         )}
       </AnimatePresence>
 
-      {/* MATCH MODAL */}
-      <AnimatePresence>
-        {showMatchModal && (
-          <div className="absolute inset-0 z-[80] flex items-center justify-center bg-black/90 p-6" onClick={() => closeMatchModal()}>
-            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }}
-              onClick={e => e.stopPropagation()} className="match-modal rounded-3xl max-w-[340px] w-full overflow-hidden border border-[#2F2F35]">
-              <div className="p-8 text-center">
-                <div className="text-[#FF4F79] font-semibold tracking-[3px] text-sm mb-1">¡ES UN MATCH!</div>
-                <div className="text-3xl font-semibold tracking-tight mb-4">Tú y {showMatchModal.name} quieren entrenar juntos</div>
-                
-                <div className="flex justify-center -space-x-4 mb-6">
-                  <VerifiedProfilePhoto
-                    src={currentUser?.photos?.[0] || 'https://picsum.photos/id/1005/80/80'}
-                    className="w-20 h-20 rounded-full border-4 border-[#1C1C20] z-10"
-                    imgClassName="w-full h-full rounded-full object-cover"
-                    verificationStatus={currentUser?.verificationStatus}
-                    badgeSize="sm"
-                  />
-                  <VerifiedProfilePhoto
-                    src={showMatchModal.photos[0]}
-                    className="w-20 h-20 rounded-full border-4 border-[#1C1C20]"
-                    imgClassName="w-full h-full rounded-full object-cover"
-                    verificationStatus={showMatchModal.verificationStatus}
-                    badgeSize="sm"
-                  />
-                </div>
-
-                <div className="text-sm text-[#9CA3AF] mb-4">Ambos están en {showMatchModal.city}, {showMatchModal.country}. ¡Escríbele ya!</div>
-                {userLocation && (
-                  <div className="text-[#FF671F] text-sm font-medium -mt-2 mb-4">
-                    Están a {getDistanceKm(userLocation.lat, userLocation.lng, showMatchModal.lat, showMatchModal.lng)} km
-                  </div>
-                )}
-
-                {/* Suggested openers for Pre-Alpha testers - removes "qué digo?" friction */}
-                {(() => {
-                  const openers = CHAT_OPENERS[showMatchModal.id] || ["¡Hola! Vi tu perfil y me tinca entrenar juntos 💪"];
-                  return (
-                    <div className="mb-5 text-left bg-[#1C1C20] rounded-2xl p-3 text-xs">
-                      <div className="text-[#FF671F] font-medium mb-1.5 text-center">Sugerencias para romper el hielo (copia y pega):</div>
-                      {openers.slice(0, 2).map((opener, idx) => (
-                        <div key={idx} className="text-[#cbd5e1] mb-1.5 last:mb-0 leading-snug">• {opener}</div>
-                      ))}
-                    </div>
-                  );
-                })()}
-
-                <div className="space-y-3">
-                  <button onClick={() => closeMatchModal(true)} className="btn-primary w-full text-base">Enviar mensaje ahora</button>
-                  <button onClick={() => closeMatchModal(false)} className="w-full py-3 text-sm text-[#9CA3AF]">Seguir explorando</button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <MatchCelebrationMount
+        profile={showMatchModal}
+        currentUser={currentUser}
+        userLocation={userLocation}
+        chatOpeners={CHAT_OPENERS}
+        onClose={(openChat) => closeMatchModal(openChat)}
+      />
 
       <FullProfileSheetMount
         profile={showFullProfile}

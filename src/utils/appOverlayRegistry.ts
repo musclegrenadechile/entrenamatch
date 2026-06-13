@@ -15,6 +15,10 @@ export const APP_GLOBAL_OVERLAY_IDS = [
   'fuelWizard',
   'fuelLog',
   'activationGuide',
+  'featureTour',
+  'exploreFilters',
+  'liveNearModal',
+  'matchCelebration',
   'adminOps',
   'communityAdmin',
 ] as const
