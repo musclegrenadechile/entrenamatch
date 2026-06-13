@@ -85,6 +85,8 @@ import { AppFeatureTour, hasSeenAppFeatureTour, markAppFeatureTourSeen } from '.
 import { FeatureTourMount } from './components/onboarding/FeatureTourMount'
 import { ExploreFiltersSheetMount } from './components/explore/ExploreFiltersSheetMount'
 import { MatchCelebrationMount } from './components/matches/MatchCelebrationMount'
+import { LiveNearModalMount } from './components/explore/LiveNearModalMount'
+import { SafetyActionSheetMount } from './components/safety/SafetyActionSheetMount'
 import { useExploreDeck } from './hooks/useExploreDeck'
 import { useAndroidBackHandler } from './hooks/useAndroidBackHandler'
 import { suggestedSquadName } from './utils/sparseCityDefaults'
@@ -171,7 +173,6 @@ import { LazyHomeTab, LazyExploreTab, LazyProfileTab, LazyMatchesTab, LazySquads
 import { TabErrorBoundary } from './components/app/TabErrorBoundary'
 import { CityChallengeCelebrationModal } from './components/explore/CityChallengeCelebrationModal'
 import { parseReferralFromUrl } from './components/growth/ReferralInviteCard'
-import { SafetyActionSheet } from './components/safety/SafetyActionSheet'
 import { createEmptySyncArenaSnapshot } from './sync/syncArenaState'
 import {
   attachGlobalFeedListener,
@@ -9759,177 +9760,37 @@ useEffect(() => {
           </TabErrorBoundary>
         )}
 
-        {/* FULL LIVE MODAL - spectacular full list of live training near you. Enhanced with search, sort by dist/urgency, quick chat, simple visual "map" row (dots sorted by dist). Makes the killer feature even stronger. */}
-        {showLiveModal && (
-          <div className="absolute inset-0 z-[95] bg-[#0D0D10] flex flex-col" onClick={() => { setShowLiveModal(false); setLiveModalSearch(''); setLiveModalSort('distance'); }}>
-            <div className="p-4 flex items-center justify-between border-b border-[#2F2F35]">
-              <button onClick={() => { setShowLiveModal(false); setLiveModalSearch(''); setLiveModalSort('distance'); }}><ArrowLeft /></button>
-              <div className="font-medium flex items-center gap-2">Entrenando Ahora cerca ({liveCountForUI}) {liveTrainingNow.some(u => u.seVaEnMin > 0) && <span className="text-orange-400 text-xs">¡se va pronto, únete!</span>} {liveCountForUI > 5 && <span className="text-[#22c55e] text-xs">🔥 HOT</span>}</div>
-              <div />
-            </div>
-
-            {currentUser?.trainingNow && liveTrainingNow.length > 0 && (
-              <div className="px-4 py-1 text-[10px] bg-[#22c55e]/10 text-[#22c55e] text-center">💡 Si te unes a alguien que también está live, ¡inicias EntrenaSync automático con timer + acciones instantáneas (se comparten en vivo en ambos muros)!</div>
-            )}
-
-            {/* Controls: search + sort for discovery */}
-            {liveTrainingNow.length > 0 && (
-              <div className="px-4 pt-3 pb-2 border-b border-[#2F2F35]/60 flex gap-2 items-center bg-[#0D0D10]">
-                <input 
-                  type="text" 
-                  value={liveModalSearch} 
-                  onChange={e => setLiveModalSearch(e.target.value)} 
-                  placeholder="Buscar por nombre..." 
-                  className="form-input flex-1 text-sm py-1.5" 
-                />
-                <button onClick={() => setLiveModalSort(liveModalSort === 'distance' ? 'urgency' : liveModalSort === 'urgency' ? 'hot' : 'distance')} className="text-xs px-3 py-1 rounded-full border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10 whitespace-nowrap">
-                  {liveModalSort === 'distance' ? '📍 Dist' : liveModalSort === 'urgency' ? '⏱ Se va pronto' : '🔥 Hot'}
-                </button>
-              </div>
-            )}
-
-            {/* Simple visual "map" row: mini avatars + pulsing dots sorted by distance (emoji radar feel, FOMO visual) - enhanced */}
-            {liveTrainingNow.length > 1 && (
-              <div className="px-4 py-2 border-b border-[#2F2F35]/50 bg-black/30 radar-container">
-                <div className="radar-lines"></div>
-                <div className="text-[8px] text-[#9CA3AF] mb-1">Cerca de ti (radar ordenado por distancia)</div>
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                  {[...liveTrainingNow].sort((a,b)=> {
-                    const aInNet = !!syncBonds[a.id] ? -1 : 0;
-                    const bInNet = !!syncBonds[b.id] ? -1 : 0;
-                    if (aInNet !== bInNet) return aInNet - bInNet; // your network first - social graph priority
-                    return (a.distance||0)-(b.distance||0);
-                  }).map((u, idx) => (
-                    <motion.div key={u.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(u); }} whileHover={{scale:1.1}} whileTap={{scale:0.9}} initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} transition={{delay: idx * 0.05}} className="flex flex-col items-center text-center cursor-pointer active:opacity-80">
-                      <div className="relative">
-                        {u.photos?.[0] ? <img src={u.photos[0]} className={`w-9 h-9 rounded-full object-cover border-2 ${syncBonds[u.id] ? 'border-[#FFD700]' : 'border-[#22c55e]/60'}`} /> : <div className={`w-9 h-9 rounded-full ${syncBonds[u.id] ? 'bg-[#FFD700] text-black' : 'bg-[#22c55e]/20'} flex items-center justify-center text-[10px] border ${syncBonds[u.id] ? 'border-[#FFD700]' : 'border-[#22c55e]/30'}`}>{(u.name||'U')[0]}</div>}
-                        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-[#22c55e] rounded-full ring-2 ring-black" style={{animation: u.seVaEnMin < 10 ? 'live-pulse-green-urgent 1.1s ease-in-out infinite' : 'live-pulse-green 1.8s ease-in-out infinite'}}></div>
-                        {!!syncBonds[u.id] && <div className="absolute -top-0.5 -left-0.5 text-[6px] bg-[#FFD700] text-black px-0.5 rounded font-bold">RED</div>}
-                      </div>
-                      <div className="text-[8px] mt-0.5 text-white truncate max-w-[48px] font-medium">{(u.name || 'U').split(' ')[0]}</div>
-                      <div className="text-[7px] text-[#22c55e]">{(u.distance||0).toFixed(0)}km {u.joinCount > 0 ? `+${u.joinCount}🔥` : ''} {!!syncBonds[u.id] && <span className="text-[#FFD700]">•NP</span>}</div>
-                    </motion.div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="overflow-auto flex-1 p-4">
-              {(() => {
-                let list = [...liveTrainingNow]
-                // search
-                if (liveModalSearch.trim()) {
-                  const q = liveModalSearch.toLowerCase().trim()
-                  list = list.filter(u => (u.name || '').toLowerCase().includes(q) || (u.trainingTypes||[]).join(' ').toLowerCase().includes(q))
-                }
-                // sort
-                if (liveModalSort === 'urgency') {
-                  list.sort((a: any, b: any) => (a.seVaEnMin || 99) - (b.seVaEnMin || 99))
-                } else if (liveModalSort === 'hot') {
-                  list.sort((a: any, b: any) => (b.joinCount || 0) - (a.joinCount || 0) || (a.distance || 999) - (b.distance || 999))
-                } else {
-                  list.sort((a: any, b: any) => (a.distance || 999) - (b.distance || 999))
-                }
-                return list.length > 0 ? list.map(user => (
-                  <div key={user.id} onClick={() => { setShowLiveModal(false); setShowFullProfile(user); }} className="card card-glass p-3 mb-2 flex gap-3 cursor-pointer active:scale-95 border border-[#22c55e]/50 hover:border-[#22c55e]/80 transition-all group">
-                    {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-12 h-12 rounded-xl object-cover border-2 border-[#22c55e]/40 group-hover:border-[#22c55e]/70 transition" />}
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold flex items-center gap-1.5 text-white">{user.name || 'Usuario'} {formatLiveDistanceKm(user.distance) ? <span className="text-[#9CA3AF] text-xs font-normal">· {formatLiveDistanceKm(user.distance)}</span> : null}{!!syncBonds[user.id] && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED · F{syncBonds[user.id].bondLevel || 1}</span>}</div>
-                      <div className="text-[#9CA3AF] text-sm truncate">{user.trainingTypes?.join(', ') || 'Entreno'}</div>
-                      <div className="text-[#22c55e] text-xs flex items-center gap-1 mt-0.5">En vivo hace {Math.floor((Date.now() - (user.trainingNowSince || 0))/60000)}m {user.seVaEnMin > 0 ? <span className={user.seVaEnMin < 15 ? 'text-red-400 font-bold' : 'text-orange-400'}>{user.seVaEnMin < 15 ? `· se va pronto en ${user.seVaEnMin}m 🔥` : `· se va en ${user.seVaEnMin}m`}</span> : ''}
-                      </div>
-                      {user.seVaEnMin > 0 && (
-                        <div className="h-1 bg-[#22c55e]/20 rounded mt-0.5 mb-1">
-                          <div className="h-1 bg-[#22c55e] rounded" style={{width: `${Math.max(5, Math.min(100, (90 - user.seVaEnMin)/90 * 100))}%`}}></div>
-                        </div>
-                      )}
-                      {user.joinCount > 0 && <div className="text-[10px] text-[#22c55e] mt-0.5 font-medium">+{user.joinCount} se unieron a este live</div>}
-                      {user.trainingSyncWith && <div className="text-[8px] text-[#22c55e] mt-0.5">🔄 En Sync ahora</div>}
-                      {!!syncBonds[user.id] && <div className="text-[7px] text-[#FFD700] mt-0.5 font-medium">Tu red • re-sync = +Fuerza del equipo + impacto compartido</div>}
-                    </div>
-                    <div className="flex flex-col gap-1 self-center">
-                      <button 
-                        disabled={joiningSyncWith === user.id}
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setShowLiveModal(false)
-                          if (currentUser?.trainingNow && isUserLive(user.id)) {
-                            startSyncWith(user.id, user.name)
-                          } else {
-                            handleSwipe(user.id, 'right')
-                          }
-                        }} 
-                        className={`text-[10px] ${syncBonds[user.id] ? 'bg-[#FFD700] text-black' : 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black'} px-3 py-1 rounded font-semibold active:brightness-90 flex items-center justify-center gap-1 ${joiningSyncWith === user.id ? 'opacity-80 cursor-wait' : ''}`}
-                      >
-                        {joiningSyncWith === user.id ? '⏳ Abriendo EntrenaSync...' : (syncBonds[user.id] ? `🔥 RE-SYNC RED (NP+)` : `🔥 Entrenar juntos (Sync)${formatLiveDistanceKm(user.distance) ? ` (${formatLiveDistanceKm(user.distance)})` : ''}`)}
-                      </button>
-                      <button onClick={(e) => { e.stopPropagation(); setShowLiveModal(false); openChat(user.id); if (!matches.includes(user.id) && !realMatches.includes(user.id)) handleSwipe(user.id, 'right'); }} className="text-[9px] border border-[#22c55e]/60 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10 hover:bg-[#22c55e]/5">Chatear ya</button>
-                    </div>
-                  </div>
-                )) : currentUser?.trainingNow ? (
-                  <div className="card card-glass p-6 text-center border border-[#22c55e]/40">
-                    <div className="text-3xl mb-2">🟢</div>
-                    <div className="font-semibold text-[#22c55e] mb-1">Estás en vivo — visible en el mapa LIVE</div>
-                    <div className="text-sm text-[#9CA3AF] mb-3">Aún no hay otros entrenando cerca. Tu marcador ya está en el mapa; cuando alguien más active live aparecerá aquí.</div>
-                    <button onClick={() => { setShowLiveModal(false); navigateTab('map'); }} className="text-xs px-4 py-1.5 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90">Ver mapa →</button>
-                  </div>
-                ) : (
-                  <div className="card card-glass p-6 text-center border border-[#22c55e]/30">
-                    <div className="text-3xl mb-2">🏋️</div>
-                    <div className="font-semibold text-white mb-1">¡Aún no hay nadie entrenando cerca!</div>
-                    <div className="text-sm text-[#9CA3AF] mb-3">Sé el primero en activar "Entrenando Ahora (EN VIVO)" en tu Perfil. ¡Aparecerás en el radar y la gente querrá unirse o sync contigo!</div>
-                    <button onClick={() => { setShowLiveModal(false); setActiveTab('profile'); }} className="text-xs px-4 py-1.5 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90">Ir a Perfil a activar →</button>
-                  </div>
-                )
-              })()}
-            </div>
-            <div className="p-3 border-t border-[#2F2F35] bg-[#0D0D10]">
-              <div className="text-center text-xs text-[#9CA3AF] mb-2">Toca card → perfil. Unirme = like + auto-comment en su muro live. ¡Ver el pulso en vivo en el mapa te motiva a abrir y entrenar ya!</div>
-              {liveTrainingNow.length >= 2 && (
-                <button
-                  onClick={() => {
-                    setShowLiveModal(false)
-                    // Quick group session polish: create an optimistic session with the current live people + self
-                    const liveNames = liveTrainingNow.slice(0, 4).map(u => (u.name||'U').split(' ')[0]).join(', ')
-                    const newGroupSession: TrainingSession = {
-                      id: 'livegroup' + Date.now(),
-                      creatorId: effectiveUserId,
-                      creatorName: currentUser?.name || 'Tú',
-                      title: `Live training ya — ${liveNames}`,
-                      description: '¡Armado desde el live cerca! Todos los que estaban entrenando ahora.',
-                      time: 'Ahora',
-                      location: currentUser?.city || 'Cerca de ti',
-                      trainingType: liveTrainingNow[0]?.trainingTypes?.[0] || 'Mixto',
-                      maxParticipants: Math.min(8, liveTrainingNow.length + 2),
-                      participants: [effectiveUserId, ...liveTrainingNow.map(u => u.id)],
-                      createdAt: Date.now()
-                    }
-                    // Local + demo
-                    const updatedSessions = [newGroupSession, ...(sessions || [])]
-                    if (typeof saveSessions === 'function') saveSessions(updatedSessions); else setSessions(updatedSessions);
-                    // Real write attempt
-                    if (!isDemoMode && firebaseUser?.uid && db) {
-                      (async () => {
-                        try {
-                          const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
-                          await setDoc(doc(db, 'sessions', newGroupSession.id), {
-                            ...newGroupSession,
-                            createdAt: serverTimestamp(),
-                          }, { merge: true })
-                        } catch {}
-                      })()
-                    }
-                    setActiveTab('sesiones')
-                    toast.success('¡Sesión grupal creada!', { description: `Con ${liveTrainingNow.length} live cerca. Ve a Sesiones para chatear en grupo.` })
-                  }}
-                  className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black font-bold text-sm active:scale-[0.985]"
-                >
-                  🔥 Armar sesión grupal con estos {liveTrainingNow.length} live ahora
-                </button>
-              )}
-            </div>
-          </div>
-        )}
+        {/* FULL LIVE MODAL — Fase 393 LiveNearModalMount */}
+        <LiveNearModalMount
+          open={showLiveModal}
+          liveCountForUI={liveCountForUI}
+          liveTrainingNow={liveTrainingNow}
+          currentUser={currentUser}
+          syncBonds={syncBonds}
+          search={liveModalSearch}
+          sort={liveModalSort}
+          joiningSyncWith={joiningSyncWith}
+          effectiveUserId={effectiveUserId}
+          matches={matches}
+          realMatches={realMatches}
+          sessions={sessions}
+          isDemoMode={isDemoMode}
+          db={db}
+          firebaseUid={firebaseUser?.uid}
+          onClose={() => setShowLiveModal(false)}
+          onSearchChange={setLiveModalSearch}
+          onSortChange={setLiveModalSort}
+          onOpenProfile={(user) => setShowFullProfile(user)}
+          onStartSync={startSyncWith}
+          onSwipeRight={(userId) => handleSwipe(userId, 'right')}
+          onOpenChat={openChat}
+          isUserLive={isUserLive}
+          onNavigateMap={() => navigateTab('map')}
+          onNavigateProfile={() => setActiveTab('profile')}
+          onNavigateSessions={() => setActiveTab('sesiones')}
+          onSessionsUpdate={setSessions}
+          saveSessions={saveSessions}
+        />
 
         {/* ===== HOME — DailyHome + Muro (HomeTab) ===== */}
         {activeTab === 'home' && (
@@ -10791,12 +10652,11 @@ useEffect(() => {
         gender={currentUser?.gender}
         onClose={() => setShowCityCelebration(false)}
       />
-      <SafetyActionSheet
-        open={!!safetySheetTarget}
-        targetName={safetySheetTarget?.name || ''}
+      <SafetyActionSheetMount
+        target={safetySheetTarget}
         onClose={() => setSafetySheetTarget(null)}
-        onReport={() => safetySheetTarget && openReport(safetySheetTarget.id, '1v1_chat')}
-        onBlock={() => safetySheetTarget && void blockUser(safetySheetTarget.id).then(() => setActiveChat(null))}
+        onReport={(userId) => openReport(userId, '1v1_chat')}
+        onBlock={(userId) => void blockUser(userId).then(() => setActiveChat(null))}
       />
       <ActivationGuideMount
         open={showActivationGuide}

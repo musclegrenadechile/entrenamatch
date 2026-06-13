@@ -2,7 +2,7 @@ import type { Profile } from '../types'
 import { isDeletedProfileData } from './deletedProfile'
 import { normalizeTrainingSince } from './gymPulseLive'
 
-export const PROFILE_LIST_LIMIT = 80
+export const PROFILE_LIST_LIMIT = 120
 
 export function parseProfileFromFirestoreDoc(
   docId: string,

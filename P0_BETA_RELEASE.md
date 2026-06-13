@@ -1,4 +1,4 @@
-# P0 Beta Release — v0.1.382
+# P0 Beta Release — v0.1.384
 
 Checklist para cerrar piloto multi-país (CL · PE · MX · US).
 
@@ -6,21 +6,23 @@ Checklist para cerrar piloto multi-país (CL · PE · MX · US).
 
 | Artefacto | Valor |
 |-----------|-------|
-| Web / `APP_VERSION` | **0.1.382** |
-| `package.json` | 0.1.382 |
-| Android `versionCode` | **382** |
-| Android `versionName` | 0.1.382 |
+| Web / `APP_VERSION` | **0.1.384** |
+| `package.json` | 0.1.384 |
+| Android `versionCode` | **384** |
+| Android `versionName` | 0.1.384 |
 
 Verificar: `node scripts/version-check.mjs`
 
 Código: `src/utils/p0BetaQaMatrix.ts` (12 filas) + `src/utils/betaReleaseChecklist.ts` (17 ítems) + `BETA_QA_382.md`
 
-## Cambios v0.1.381–382
+## Cambios v0.1.381–384
 
 - Registro/edición: Chile, Perú, México, USA (selector país + ciudad)
 - Filtros Explorar: edad 18–70, distancia sin límite, orden por cercanía
 - Discovery normalizado (`profileDiscoveryQuery`)
-- `ActivationGuideMount` extraído de App.tsx
+- `ActivationGuideMount`, `FeatureTourMount`, `ExploreFiltersSheetMount`, `MatchCelebrationMount`
+- `LiveNearModalMount`, `SafetyActionSheetMount`, `useExploreDeck`
+- `PROFILE_LIST_LIMIT` 120
 ## 1. Deploy
 
 ```powershell

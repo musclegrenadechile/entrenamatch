@@ -1,6 +1,6 @@
 # EntrenaMatch — Roadmap 381–450
 
-**Versión actual:** v0.1.382 · **Meta:** open beta multi-país (CL · PE · MX · US)
+**Versión actual:** v0.1.384 · **Meta:** open beta multi-país (CL · PE · MX · US)
 
 Cada fase = entregable + test + deploy. Oleadas de 10 fases.
 
@@ -15,10 +15,10 @@ Cada fase = entregable + test + deploy. Oleadas de 10 fases.
 | **383** | Discovery normalizado | `profileDiscoveryQuery` — ciudad canónica + país | ✅ v0.1.382 |
 | **384** | `ActivationGuideMount` | Guía post-registro fuera de App.tsx | ✅ v0.1.382 |
 | **385** | Docs P0 actualizados | `P0_BETA_RELEASE.md` v0.1.382 | ✅ v0.1.382 |
-| **386** | Play internal AAB 382 | `publish-play.bat internal` | ☐ |
+| **386** | Play internal AAB 384 | `publish-play.bat internal` | 🔄 |
 | **387** | Screenshots Play multi-país | 8 capturas + listing ES | ☐ ops |
 | **388** | Piloto LIVE sábado | `livePilotChecklist` 5 pasos documentados | ☐ ops |
-| **389** | `PROFILE_LIST_LIMIT` 120 | Más perfiles en Explorar | ☐ |
+| **389** | `PROFILE_LIST_LIMIT` 120 | Más perfiles en Explorar | ✅ v0.1.384 |
 | **390** | Firestore index país+ciudad | `firestore.indexes.json` discovery | ☐ |
 
 ---
@@ -31,7 +31,8 @@ Cada fase = entregable + test + deploy. Oleadas de 10 fases.
 | **392** | `ExploreFiltersSheetMount` | Modal filtros Explorar | ✅ v0.1.383 |
 | **394** | `MatchCelebrationMount` | Modal match | ✅ v0.1.383 |
 | **396** | `useExploreDeck` hook | Deck filtrado + ordenado | ✅ v0.1.383 |
-| **393** | `LiveNearModalMount` | Lista LIVE full-screen | ☐ |
+| **393** | `LiveNearModalMount` | Lista LIVE full-screen | ✅ v0.1.384 |
+| **395** | `SafetyActionSheetMount` | Sheet reportar/bloquear | ✅ v0.1.384 |
 | **397** | `useFeedPipeline` hook | feed ranking + filters | ☐ |
 | **398** | App.tsx < 12k líneas | Medición + extracción batch | ☐ |
 | **399** | `appOverlayRegistry` v2 | Todos los mounts registrados | ☐ |
