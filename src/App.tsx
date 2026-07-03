@@ -5928,8 +5928,32 @@ useEffect(() => {
       },
       isArenaOpen: () => !!showSyncArena,
       openMapTab: () => navigateTab('map'),
+      openWorkoutModal: (opts) => {
+        void openEntrenoDeHoy({
+          title: 'E2E Entreno',
+          type: 'push',
+          durationMin: 45,
+          exercises: opts?.exercises ?? [
+            { name: 'Press banca', sets: [{ reps: 10, weightKg: 60 }] },
+          ],
+        })
+      },
+      isWorkoutModalOpen: () => showEntrenaLogModal,
+      openReviewModal: (partnerId = 'p1') => {
+        setShowReviewModalFor(partnerId)
+        setPendingReviewBookingId(null)
+      },
+      isReviewModalOpen: () => !!showReviewModalFor,
     })
-  }, [showSyncArena, navigateTab, startSyncWith, setShowOnboarding])
+  }, [
+    showSyncArena,
+    showEntrenaLogModal,
+    showReviewModalFor,
+    navigateTab,
+    startSyncWith,
+    openEntrenoDeHoy,
+    setShowOnboarding,
+  ])
 
   useEffect(() => {
     if (isDemoMode || !firebaseUser?.uid) return

@@ -1,10 +1,18 @@
 /** Playwright harness — active when `?e2e=1` is in the URL. */
 
+import type { WorkoutExercise } from '../types'
+
 export type EntrenamatchE2EApi = {
   enableLive: () => Promise<void>
   startMockSync: (partnerId: string, partnerName: string) => Promise<void>
   isArenaOpen: () => boolean
   openMapTab: () => void
+  /** Abre gym-log con prefill mínimo para E2E. */
+  openWorkoutModal: (opts?: { exercises?: WorkoutExercise[] }) => void
+  isWorkoutModalOpen: () => boolean
+  /** Simula reseña post-entreno con un partner seed. */
+  openReviewModal: (partnerId?: string) => void
+  isReviewModalOpen: () => boolean
 }
 
 declare global {

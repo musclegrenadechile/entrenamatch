@@ -33,6 +33,9 @@ export function TrainingReviewModalMount({
     <AnimatePresence>
       <div
         className="em-visual-v2 em-v2-review-modal__overlay absolute inset-0 z-[110] flex items-center justify-center p-6"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Reseña post-entreno"
         onClick={onClose}
       >
         <div onClick={(e) => e.stopPropagation()} className="em-v2-review-modal__card">

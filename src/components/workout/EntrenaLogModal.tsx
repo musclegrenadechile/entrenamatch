@@ -707,7 +707,12 @@ export function EntrenoDeHoyModal({
   const useCompactFooter = compactMobile && exercises.length > 0 && !footerExpanded
 
   const modal = (
-    <div className="em-visual-v2 em-v2-workout gym-log-overlay">
+    <div
+      className="em-visual-v2 em-v2-workout gym-log-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Entreno de Hoy"
+    >
       <div className="gym-log-sheet">
         <header className="gym-log-header em-v2-workout__header">
           <button
