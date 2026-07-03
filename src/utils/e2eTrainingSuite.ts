@@ -1,4 +1,4 @@
-/** Inventario Playwright del bloque E2E entrenamiento (oleadas 378–407). */
+/** Inventario Playwright del bloque E2E entrenamiento (oleadas 378–408). */
 export type E2ETrainingCover =
   | 'gym-log'
   | 'fuel'
@@ -55,7 +55,7 @@ export const E2E_TRAINING_PLAYWRIGHT_SPECS: readonly E2ETrainingSpecEntry[] = [
 ] as const
 
 export function trainingE2EBlockRange(): { from: number; to: number } {
-  return { from: 378, to: 407 }
+  return { from: 378, to: 408 }
 }
 
 export function countTrainingE2ESpecs(): number {

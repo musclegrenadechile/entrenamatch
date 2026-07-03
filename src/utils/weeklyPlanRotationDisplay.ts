@@ -9,7 +9,13 @@ export function buildWeeklyPlanRotationChipText(note: string): string {
   return `↻ ${note.replace(/^Tras PR[^—]*—\s*/i, '').trim()}`
 }
 
+/** Aria descriptiva con músculo y tipo destino (oleada 408). */
 export function buildWeeklyPlanRotationAriaLabel(note: string): string {
+  const muscleMatch = note.match(/Tras PR en\s+([^—]+)/i)
+  const typeMatch = note.match(/rotación a\s+(.+?)\.?$/i)
+  if (muscleMatch && typeMatch) {
+    return `Rotación de plan tras PR en ${muscleMatch[1].trim()}: siguiente sesión ${typeMatch[1].trim()}`
+  }
   return `Rotación de plan: ${note.replace(/^Tras PR[^—]*—\s*/i, '').trim()}`
 }
 

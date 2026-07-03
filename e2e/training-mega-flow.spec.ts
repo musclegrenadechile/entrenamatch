@@ -27,9 +27,16 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
   const planCard = page.locator('.em-v2-plan').filter({ hasText: 'EntrenaPlan' })
   await expect(planCard).toBeVisible({ timeout: 12000 })
   await expect(planCard.locator('.em-v2-plan__history-hint')).toBeVisible({ timeout: 10000 })
+  await expect(planCard.locator('.em-v2-plan__rotation-chip')).toBeVisible({ timeout: 10000 })
   await expect(planCard.locator('.em-v2-card__detail').first()).toContainText(/rotación/i)
   const detail = await page.evaluate(() => window.__entrenamatchE2E!.getWeeklyPlanDetail())
   expect(detail).toMatch(/Tras PR|rotación/i)
+  const chip = await page.evaluate(() => window.__entrenamatchE2E!.getWeeklyPlanRotationChip())
+  expect(chip).toMatch(/rotación/i)
+  const aria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanRotationAriaLabel()
+  )
+  expect(aria).toMatch(/tras PR|siguiente sesión/i)
 
   await page.getByRole('button', { name: /Registrar post-entreno/i }).click()
 

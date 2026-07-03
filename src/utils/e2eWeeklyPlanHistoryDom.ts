@@ -36,6 +36,12 @@ export function readWeeklyPlanRotationChip(): string | null {
   return chip?.textContent?.trim() ?? null
 }
 
+export function readWeeklyPlanRotationAriaLabel(): string | null {
+  const card = findEntrenaPlanCard()
+  const chip = card?.querySelector(`.${WEEKLY_PLAN_ROTATION_CHIP_CLASS}`)
+  return chip?.getAttribute('aria-label')?.trim() ?? null
+}
+
 export function isWeeklyPlanCardVisible(): boolean {
   return findEntrenaPlanCard() !== null
 }

@@ -29,6 +29,11 @@ export const E2E_WEEKLY_PLAN_HISTORY_FLOW_STEPS: readonly E2EWeeklyPlanHistorySt
     action: 'Nota rotación PR en detalle (oleada 404–405)',
     expect: 'Detalle con «Tras PR» / «rotación»; harness getWeeklyPlanDetail',
   },
+  {
+    id: 'ph-05',
+    action: 'Chip rotación PR visible + aria (oleada 408)',
+    expect: '.em-v2-plan__rotation-chip; harness getWeeklyPlanRotationChip + aria-label',
+  },
 ] as const
 
 export function countE2EWeeklyPlanHistoryFlowSteps(): number {

@@ -69,6 +69,16 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-history-flow',
     feature: 'EntrenaPlan hint + chip rotación tras guardar desde Perfil',
   },
+  {
+    polishOleada: 408,
+    e2eSpecId: 'workout-plan-history-flow',
+    feature: 'chip rotación PR + aria en EntrenaPlan',
+  },
+  {
+    polishOleada: 408,
+    e2eSpecId: 'training-mega-flow',
+    feature: 'chip rotación PR + aria en mega-flujo',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

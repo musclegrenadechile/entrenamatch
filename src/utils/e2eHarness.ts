@@ -47,6 +47,8 @@ export type EntrenamatchE2EApi = {
   getWeeklyPlanDetail: () => string | null
   /** Chip rotación PR visible en card (oleada 407). */
   getWeeklyPlanRotationChip: () => string | null
+  /** aria-label del chip rotación (oleada 408). */
+  getWeeklyPlanRotationAriaLabel: () => string | null
   isWeeklyPlanCardVisible: () => boolean
 }
 

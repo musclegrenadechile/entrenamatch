@@ -63,4 +63,8 @@ test('E2E workout-history-flow — historial Perfil con PR y sparkline', async (
 
   const chip = await page.evaluate(() => window.__entrenamatchE2E!.getWeeklyPlanRotationChip())
   expect(chip).toMatch(/rotación/i)
+  const aria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanRotationAriaLabel()
+  )
+  expect(aria).toMatch(/tras PR|siguiente sesión/i)
 })

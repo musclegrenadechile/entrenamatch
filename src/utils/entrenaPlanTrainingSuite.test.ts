@@ -7,8 +7,8 @@ import {
 
 describe('entrenaPlanTrainingSuite', () => {
   it('inventario EntrenaPlan × historial oleada 401', () => {
-    expect(countEntrenaPlanTrainingUtils()).toBe(8)
-    expect(entrenaPlanTrainingBlockRange()).toEqual({ from: 401, to: 407 })
+    expect(countEntrenaPlanTrainingUtils()).toBe(10)
+    expect(entrenaPlanTrainingBlockRange()).toEqual({ from: 401, to: 408 })
     expect(ENTRENA_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain(
       'weeklyPlanHistoryDisplay'
     )

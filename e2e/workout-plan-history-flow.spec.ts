@@ -37,4 +37,12 @@ test('E2E workout-plan-history-flow — guardar entreno y hint PR en EntrenaPlan
   await expect(planCard.locator('.em-v2-card__detail').first()).toContainText(/rotación/i)
   const detail = await page.evaluate(() => window.__entrenamatchE2E!.getWeeklyPlanDetail())
   expect(detail).toMatch(/Tras PR|rotación/i)
+
+  await expect(planCard.locator('.em-v2-plan__rotation-chip')).toBeVisible({ timeout: 10000 })
+  const chip = await page.evaluate(() => window.__entrenamatchE2E!.getWeeklyPlanRotationChip())
+  expect(chip).toMatch(/rotación/i)
+  const aria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanRotationAriaLabel()
+  )
+  expect(aria).toMatch(/tras PR|Pecho|Pull/i)
 })

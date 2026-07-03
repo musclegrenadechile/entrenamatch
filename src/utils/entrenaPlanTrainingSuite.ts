@@ -1,4 +1,4 @@
-/** Inventario EntrenaPlan × historial (oleada 401–407). */
+/** Inventario EntrenaPlan × historial (oleada 401–408). */
 export type EntrenaPlanTrainingCover = 'history-hint' | 'aria' | 'card' | 'rotation-chip'
 
 export type EntrenaPlanTrainingUtilEntry = {
@@ -57,6 +57,18 @@ export const ENTRENA_PLAN_TRAINING_UTILS: readonly EntrenaPlanTrainingUtilEntry[
     oleada: 407,
     covers: ['history-hint', 'rotation-chip'],
   },
+  {
+    id: 'plan-rotation-aria',
+    module: 'weeklyPlanRotationDisplay',
+    oleada: 408,
+    covers: ['rotation-chip', 'aria'],
+  },
+  {
+    id: 'plan-rotation-chip-e2e',
+    module: 'e2eWeeklyPlanHistoryFlow',
+    oleada: 408,
+    covers: ['rotation-chip', 'aria'],
+  },
 ] as const
 
 export function countEntrenaPlanTrainingUtils(): number {
@@ -64,5 +76,5 @@ export function countEntrenaPlanTrainingUtils(): number {
 }
 
 export function entrenaPlanTrainingBlockRange(): { from: number; to: number } {
-  return { from: 401, to: 407 }
+  return { from: 401, to: 408 }
 }
