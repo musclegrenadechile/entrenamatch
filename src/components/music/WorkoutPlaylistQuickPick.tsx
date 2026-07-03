@@ -26,16 +26,18 @@ export function WorkoutPlaylistQuickPick({ compact, className = '' }: WorkoutPla
   }
 
   return (
-    <div className={`workout-playlist-pick ${compact ? 'workout-playlist-pick--compact' : ''} ${className}`.trim()}>
-      <p className="workout-playlist-pick__label">Playlists entreno</p>
-      <div className="workout-playlist-pick__row" role="list">
+    <div
+      className={`em-v2-workout-playlists ${compact ? 'em-v2-workout-playlists--compact' : ''} ${className}`.trim()}
+    >
+      <p className="em-v2-workout-playlists__label">Playlists entreno</p>
+      <div className="em-v2-workout-playlists__row" role="list">
         {WORKOUT_PLAYLISTS.map((pl) => (
           <button
             key={pl.id}
             type="button"
             role="listitem"
             disabled={opening === pl.id}
-            className="workout-playlist-pick__chip"
+            className="em-v2-workout-playlists__chip"
             onClick={() => void handleOpen(pl.id)}
             title={`Abrir ${pl.label} en Spotify`}
           >

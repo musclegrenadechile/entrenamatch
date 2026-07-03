@@ -61,17 +61,17 @@ export function ArenaGlobalPulseBar({
   return (
     <div
       ref={rootRef}
-      className={`arena-sync-bubble ${expanded ? 'arena-sync-bubble--expanded' : ''} ${
-        preferCollapsed ? 'arena-sync-bubble--chat' : ''
+      className={`em-v2-arena-bubble ${expanded ? 'em-v2-arena-bubble--expanded' : ''} ${
+        preferCollapsed ? 'em-v2-arena-bubble--chat' : ''
       }`}
     >
       {expanded && (
-        <div className="arena-sync-bubble__panel" role="region" aria-label="EntrenaSync activo">
-          <div className="arena-sync-bubble__panel-head">
-            <span className="arena-sync-bubble__badge">SYNC</span>
+        <div className="em-v2-arena-bubble__panel" role="region" aria-label="EntrenaSync activo">
+          <div className="em-v2-arena-bubble__panel-head">
+            <span className="em-v2-arena-bubble__badge">SYNC</span>
             <button
               type="button"
-              className="arena-sync-bubble__minimize"
+              className="em-v2-arena-bubble__minimize"
               onClick={() => setExpanded(false)}
               aria-label="Minimizar sync"
             >
@@ -79,22 +79,18 @@ export function ArenaGlobalPulseBar({
             </button>
           </div>
 
-          <p className="arena-sync-bubble__title">
+          <p className="em-v2-arena-bubble__title">
             {partnerFirst} × tú · {syncVibe}%
           </p>
 
-          <div className="arena-sync-bubble__meta">
-            {witnessCount > 0 && (
-              <span>👁️ {witnessCount} presenciando</span>
-            )}
+          <div className="em-v2-arena-bubble__meta">
+            {witnessCount > 0 && <span>👁️ {witnessCount} presenciando</span>}
             {waveCount > 0 && <span>🌊 Onda #{waveCount}</span>}
           </div>
 
-          {others && (
-            <p className="arena-sync-bubble__others">+ {others} en la red</p>
-          )}
+          {others && <p className="em-v2-arena-bubble__others">+ {others} en la red</p>}
 
-          <button type="button" className="arena-sync-bubble__open" onClick={onOpenArena}>
+          <button type="button" className="em-v2-arena-bubble__open" onClick={onOpenArena}>
             Abrir Arena →
           </button>
         </div>
@@ -102,7 +98,7 @@ export function ArenaGlobalPulseBar({
 
       <button
         type="button"
-        className="arena-sync-bubble__fab"
+        className="em-v2-arena-bubble__fab"
         onClick={() => (expanded ? onOpenArena() : setExpanded(true))}
         aria-expanded={expanded}
         aria-label={
@@ -111,10 +107,10 @@ export function ArenaGlobalPulseBar({
             : `EntrenaSync activo con ${partnerFirst}, ${syncVibe}%`
         }
       >
-        <span className="arena-sync-bubble__fab-dot" aria-hidden />
-        <span className="arena-sync-bubble__fab-label">SYNC</span>
-        <span className="arena-sync-bubble__fab-vibe tabular-nums">{syncVibe}%</span>
-        {!expanded && <ChevronUp size={12} className="arena-sync-bubble__fab-chevron" aria-hidden />}
+        <span className="em-v2-arena-bubble__fab-dot" aria-hidden />
+        <span className="em-v2-arena-bubble__fab-label">SYNC</span>
+        <span className="em-v2-arena-bubble__fab-vibe tabular-nums">{syncVibe}%</span>
+        {!expanded && <ChevronUp size={12} className="em-v2-arena-bubble__fab-chevron" aria-hidden />}
       </button>
     </div>
   )

@@ -21,26 +21,34 @@ export function ArenaSyncDuelStrip({
   const partnerFirst = duel.partner.name
 
   return (
-    <div className="arena-sync-duel-strip mx-4 mt-2" aria-label="Marcador en vivo">
-      <div className="arena-sync-duel-strip__head">
-        <span className="arena-sync-duel-strip__tag">📊 MARCADOR EN VIVO</span>
-        <span className="arena-sync-duel-strip__hint">Al terminar → resumen completo</span>
+    <div className="em-v2-arena-duel mx-4 mt-2" aria-label="Marcador en vivo">
+      <div className="em-v2-arena-duel__head">
+        <span className="em-v2-arena-duel__tag">📊 MARCADOR EN VIVO</span>
+        <span className="em-v2-arena-duel__hint">Al terminar → resumen completo</span>
       </div>
-      <div className="arena-sync-duel-strip__row">
-        <div className={`arena-sync-duel-strip__side ${duel.winner === 'self' ? 'arena-sync-duel-strip__side--lead' : ''}`}>
-          <span className="arena-sync-duel-strip__name">{selfFirst}</span>
-          <span className="arena-sync-duel-strip__score">{duel.self.score}</span>
-          <span className="arena-sync-duel-strip__meta">{duel.self.actions} acc</span>
+      <div className="em-v2-arena-duel__row">
+        <div
+          className={`em-v2-arena-duel__side ${
+            duel.winner === 'self' ? 'em-v2-arena-duel__side--lead' : ''
+          }`}
+        >
+          <span className="em-v2-arena-duel__name">{selfFirst}</span>
+          <span className="em-v2-arena-duel__score">{duel.self.score}</span>
+          <span className="em-v2-arena-duel__meta">{duel.self.actions} acc</span>
         </div>
-        <span className="arena-sync-duel-strip__vs">VS</span>
-        <div className={`arena-sync-duel-strip__side ${duel.winner === 'partner' ? 'arena-sync-duel-strip__side--lead' : ''}`}>
-          <span className="arena-sync-duel-strip__name">{partnerFirst}</span>
-          <span className="arena-sync-duel-strip__score">{duel.partner.score}</span>
-          <span className="arena-sync-duel-strip__meta">{duel.partner.actions} acc</span>
+        <span className="em-v2-arena-duel__vs">VS</span>
+        <div
+          className={`em-v2-arena-duel__side ${
+            duel.winner === 'partner' ? 'em-v2-arena-duel__side--lead' : ''
+          }`}
+        >
+          <span className="em-v2-arena-duel__name">{partnerFirst}</span>
+          <span className="em-v2-arena-duel__score">{duel.partner.score}</span>
+          <span className="em-v2-arena-duel__meta">{duel.partner.actions} acc</span>
         </div>
       </div>
       {duel.self.actions + duel.partner.actions === 0 && (
-        <p className="arena-sync-duel-strip__empty">
+        <p className="em-v2-arena-duel__empty">
           Toca Set listo, Ánimo o PR — cada acción suma al marcador
         </p>
       )}

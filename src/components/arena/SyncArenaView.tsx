@@ -13,8 +13,11 @@ import { ArenaLiveRoutines } from './ArenaLiveRoutines'
 import type { WorkoutExercise } from '../../types'
 import type { GymSoundSyncMatch } from '../../services/gymSoundSyncMatch'
 import { GymSoundSyncChip } from '../music/GymSoundSyncChip'
+import { ArenaFomoStrip } from './ArenaFomoStrip'
+import { ArenaSyncDuelStrip } from './ArenaSyncDuelStrip'
 import { ArenaSyncTutorial } from './ArenaSyncTutorial'
 import { hasSeenArenaSyncTutorial } from '../../utils/arenaTutorial'
+import { isArenaHighlightUnlocked, resolveArenaLastWaveLabel } from '../../utils/arenaSyncDisplay'
 
 export interface SyncArenaFlyingEmoji {
   id: string
@@ -63,6 +66,7 @@ export interface SyncArenaViewProps {
   gymSoundSyncMatch?: GymSoundSyncMatch | null
   /** W1b — live BPM from connected wearable during sync. */
   liveHeartRateBpm?: number | null
+  waveCount?: number
   onSyncAction: (actionId: string, emoji: string, label: string) => void
   onCapturePhoto: () => void
   onVoicePing?: () => void
@@ -107,6 +111,7 @@ export function SyncArenaView({
   isRecordingVoice = false,
   gymSoundSyncMatch = null,
   liveHeartRateBpm = null,
+  waveCount = 0,
   onSyncAction,
   onCapturePhoto,
   onVoicePing,
@@ -280,13 +285,17 @@ export function SyncArenaView({
         )}
 
         <div className="arena-sala-sync__meta-row">
-          <p className="arena-sala-sync__story-hint">
-            {msToStory > 0 ? (
-              <>Historia en {minsToStory}:{secsToStory.toString().padStart(2, '0')}</>
-            ) : (
-              <>Historia lista al terminar</>
-            )}
-          </p>
+          <ArenaFomoStrip
+            witnessCount={witnessCount}
+            redLiveCount={redLiveCount}
+            waveCount={waveCount}
+            syncVibe={syncVibe}
+            minsToStory={minsToStory}
+            secsToStory={secsToStory}
+            highlightUnlocked={isArenaHighlightUnlocked(syncVibe)}
+            lastWaveLabel={resolveArenaLastWaveLabel(syncActions, waveCount)}
+            cityLabel={cityLabel}
+          />
           <ArenaWitnessRow
             witnessCount={witnessCount}
             witnessProfiles={witnessProfiles}
@@ -298,6 +307,13 @@ export function SyncArenaView({
       </div>
 
       <div className="arena-sala-sync__bottom">
+        <ArenaSyncDuelStrip
+          actions={syncActions}
+          effectiveUserId={effectiveUserId}
+          partnerId={partnerId}
+          selfName={selfName}
+          partnerName={partnerName}
+        />
         <ArenaSyncDock
           onSetReady={() => onSyncAction('set', '💪', 'Set listo')}
           onRest={() => onSyncAction('rest', '💧', 'Descanso')}

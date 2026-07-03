@@ -190,6 +190,7 @@ export function SyncArenaHost(props: SyncArenaHostProps) {
           isRecordingVoice={isArenaVoiceRecording}
           gymSoundSyncMatch={gymSoundSyncMatch}
           liveHeartRateBpm={liveHeartRateBpm}
+          waveCount={arenaWaveCount}
           onSyncAction={onSyncAction}
           onCapturePhoto={onCapturePhoto}
           onVoicePing={onVoicePing}

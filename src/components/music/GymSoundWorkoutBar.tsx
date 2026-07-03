@@ -83,12 +83,12 @@ export function GymSoundWorkoutBar({ currentUser, isLive, saveUser }: GymSoundWo
   }
 
   return (
-    <section className="gym-sound-workout-bar" aria-label="GymSound en tu entreno">
-      <div className="gym-sound-workout-bar__head">
-        <Music2 size={16} className="text-[#1DB954] shrink-0" aria-hidden />
+    <section className="em-v2-gym-sound-workout" aria-label="GymSound en tu entreno">
+      <div className="em-v2-gym-sound-workout__head">
+        <Music2 size={16} className="em-v2-gym-sound-workout__icon shrink-0" aria-hidden />
         <div className="min-w-0 flex-1">
-          <p className="gym-sound-workout-bar__title">GymSound</p>
-          <p className="gym-sound-workout-bar__hint">
+          <p className="em-v2-gym-sound-workout__title">GymSound</p>
+          <p className="em-v2-gym-sound-workout__hint">
             {isLive && shareLive
               ? 'Tu música se ve en el mapa en vivo'
               : 'Conecta y comparte mientras entrenas en LIVE'}
@@ -99,7 +99,7 @@ export function GymSoundWorkoutBar({ currentUser, isLive, saveUser }: GymSoundWo
             type="button"
             disabled={connecting || !configured}
             onClick={() => void handleConnect()}
-            className="gym-sound-workout-bar__btn gym-sound-workout-bar__btn--spotify"
+            className="em-v2-gym-sound-workout__btn em-v2-gym-sound-workout__btn--spotify"
           >
             {connecting ? '…' : 'Spotify'}
           </button>
@@ -109,34 +109,36 @@ export function GymSoundWorkoutBar({ currentUser, isLive, saveUser }: GymSoundWo
             role="switch"
             aria-checked={shareLive}
             onClick={() => void toggleShare()}
-            className={`gym-sound-workout-bar__btn ${shareLive ? 'gym-sound-workout-bar__btn--on' : ''}`}
+            className={`em-v2-gym-sound-workout__btn ${shareLive ? 'em-v2-gym-sound-workout__btn--on' : ''}`}
           >
             {shareLive ? 'ON' : 'OFF'}
           </button>
         )}
       </div>
       {connected && preview && (
-        <div className="gym-sound-workout-bar__now">
-          <NowPlayingBadge nowPlaying={preview} size="sm" className="gym-sound-workout-bar__badge" />
+        <div className="em-v2-gym-sound-workout__now">
+          <NowPlayingBadge nowPlaying={preview} size="sm" className="em-v2-gym-sound-workout__badge" />
           {hasRemote && (
             <GymSoundControls
               compact
               isPlaying={preview.isPlaying}
               onPlaybackChange={refreshPreview}
-              className="gym-sound-workout-bar__controls"
+              className="em-v2-gym-sound-workout__controls"
             />
           )}
         </div>
       )}
       {connected && !preview && (
-        <p className="gym-sound-workout-bar__empty">Reproduce algo en Spotify para controlar desde aquí.</p>
+        <p className="em-v2-gym-sound-workout__empty">
+          Reproduce algo en Spotify para controlar desde aquí.
+        </p>
       )}
       {connected && !hasRemote && (
-        <p className="gym-sound-workout-bar__warn">
+        <p className="em-v2-gym-sound-workout__warn">
           Para play/pausa/skip, reconecta Spotify desde Perfil con permisos de control remoto.
         </p>
       )}
-      {connected && <WorkoutPlaylistQuickPick compact className="gym-sound-workout-bar__playlists" />}
+      {connected && <WorkoutPlaylistQuickPick compact className="em-v2-gym-sound-workout__playlists" />}
     </section>
   )
 }

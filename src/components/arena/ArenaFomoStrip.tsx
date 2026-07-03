@@ -74,14 +74,14 @@ export function ArenaFomoStrip({
   const current = messages[idx % messages.length] ?? messages[0]
 
   return (
-    <div className="arena-fomo-strip" role="status" aria-live="polite">
-      <span className="arena-fomo-strip__live" aria-hidden>
+    <div className="em-v2-arena-fomo" role="status" aria-live="polite">
+      <span className="em-v2-arena-fomo__live" aria-hidden>
         LIVE
       </span>
       <AnimatePresence mode="wait">
         <motion.p
           key={current}
-          className="arena-fomo-strip__text"
+          className="em-v2-arena-fomo__text"
           initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -6 }}
