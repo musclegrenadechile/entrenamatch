@@ -295,6 +295,7 @@ import {
 } from './services/fuel'
 import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr, buildFuelAnalyzeContext } from './utils/fuelCalculator'
 import { buildFuelLogPrefillFromWorkoutSave, type FuelLogPrefill } from './utils/fuelLogPrefill'
+import { fireWorkoutPRConfetti } from './utils/workoutPRConfetti'
 import { fetchRecentWorkouts, fetchUserWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, deleteWorkoutWithLinkedPost, buildWorkoutPreview, computeWorkoutStats, workoutToPreview, workoutShareText } from './services/workouts'
 import { useFuelBalancePipeline } from './hooks/useFuelBalancePipeline'
 import { useFuelState } from './hooks/useFuelState'
@@ -6018,6 +6019,7 @@ useEffect(() => {
           pinned: prs.length > 0,
         })
         if (prs.length) {
+          fireWorkoutPRConfetti()
           const synced = await syncExercisePRs(db, effectiveUserId, prs, workout.id)
           if (synced.length) {
             setExercisePRRecords(topExercisePRs(await loadExercisePRs(db, effectiveUserId), 5))

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildFuelLogPrefillFromWorkoutSave } from './fuelLogPrefill'
+import { buildFuelLogPrefillFromWorkoutSave, suggestPostWorkoutMacros } from './fuelLogPrefill'
 
 describe('fuelLogPrefill', () => {
   it('builds post-workout meal prefill from banner context', () => {
@@ -12,6 +12,13 @@ describe('fuelLogPrefill', () => {
     expect(prefill.description).toContain('420 kcal')
     expect(prefill.description).toContain('Push día')
     expect(prefill.contextHint).toBe('Prioriza proteína en la próxima comida')
+    expect(prefill.suggestedKcal).toBe(320)
+    expect(prefill.suggestedProteinG).toBeGreaterThan(0)
+  })
+
+  it('suggestPostWorkoutMacros returns empty without burn', () => {
+    expect(suggestPostWorkoutMacros()).toEqual({})
+    expect(suggestPostWorkoutMacros(0)).toEqual({})
   })
 
   it('works without burn kcal', () => {

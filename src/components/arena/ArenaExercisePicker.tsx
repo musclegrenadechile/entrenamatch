@@ -72,27 +72,27 @@ export function ArenaExercisePicker({ value, onChange, extraOptions = [] }: Aren
   }, [muscle, search, extraOptions, value])
 
   return (
-    <div className="arena-exercise-panel" role="listbox" aria-label="Elegir ejercicio">
+    <div className="arena-exercise-panel em-v2-arena-picker" role="listbox" aria-label="Elegir ejercicio">
       <button
         type="button"
-        className="arena-exercise-panel__hero"
+        className="arena-exercise-panel__hero em-v2-arena-picker__hero"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
       >
         <div className="min-w-0 text-left">
-          <p className="arena-exercise-panel__hero-label">Ejercicio activo</p>
-          <p className="arena-exercise-panel__hero-name">{value || 'Elige uno'}</p>
+          <p className="arena-exercise-panel__hero-label em-v2-arena-picker__label">Ejercicio activo</p>
+          <p className="arena-exercise-panel__hero-name em-v2-arena-picker__name">{value || 'Elige uno'}</p>
           {selectedMeta && (
-            <p className="arena-exercise-panel__hero-muscle">{selectedMeta.muscle}</p>
+            <p className="arena-exercise-panel__hero-muscle em-v2-arena-picker__muscle">{selectedMeta.muscle}</p>
           )}
         </div>
-        <span className="arena-exercise-panel__hero-toggle">{expanded ? '▲' : '▼'}</span>
+        <span className="arena-exercise-panel__hero-toggle em-v2-arena-picker__toggle">{expanded ? '▲' : '▼'}</span>
       </button>
 
       {expanded && (
         <>
-          <div className="arena-exercise-panel__search-wrap">
-            <Search size={14} className="arena-exercise-panel__search-icon" aria-hidden />
+          <div className="arena-exercise-panel__search-wrap em-v2-arena-picker__search-wrap">
+            <Search size={14} className="arena-exercise-panel__search-icon em-v2-arena-picker__search-icon" aria-hidden />
             <input
               type="search"
               value={search}
@@ -101,13 +101,13 @@ export function ArenaExercisePicker({ value, onChange, extraOptions = [] }: Aren
                 if (e.target.value) setMuscle('Todos')
               }}
               placeholder="Buscar ejercicio o músculo…"
-              className="arena-exercise-panel__search"
+              className="arena-exercise-panel__search em-v2-arena-picker__search"
               aria-label="Buscar ejercicio"
             />
           </div>
 
           {!search && (
-            <div className="arena-exercise-panel__tabs" role="tablist">
+            <div className="arena-exercise-panel__tabs em-v2-arena-picker__tabs" role="tablist">
               {MUSCLE_TABS.map((tab) => (
                 <button
                   key={tab}
@@ -115,7 +115,7 @@ export function ArenaExercisePicker({ value, onChange, extraOptions = [] }: Aren
                   role="tab"
                   aria-selected={muscle === tab}
                   onClick={() => setMuscle(tab)}
-                  className={`arena-exercise-panel__tab ${muscle === tab ? 'arena-exercise-panel__tab--active' : ''}`}
+                  className={`arena-exercise-panel__tab em-v2-arena-picker__tab ${muscle === tab ? 'arena-exercise-panel__tab--active em-v2-arena-picker__tab--active' : ''}`}
                 >
                   {tab}
                 </button>
@@ -123,7 +123,7 @@ export function ArenaExercisePicker({ value, onChange, extraOptions = [] }: Aren
             </div>
           )}
 
-          <div className="arena-exercise-panel__grid">
+          <div className="arena-exercise-panel__grid em-v2-arena-picker__grid">
             {gridItems.map((ex) => {
               const active = ex.name === value
               return (
@@ -133,10 +133,10 @@ export function ArenaExercisePicker({ value, onChange, extraOptions = [] }: Aren
                   role="option"
                   aria-selected={active}
                   onClick={() => onChange(ex.name)}
-                  className={`arena-exercise-panel__tile ${active ? 'arena-exercise-panel__tile--active' : ''}`}
+                  className={`arena-exercise-panel__tile em-v2-arena-picker__tile ${active ? 'arena-exercise-panel__tile--active em-v2-arena-picker__tile--active' : ''}`}
                 >
-                  <span className="arena-exercise-panel__tile-name">{ex.name}</span>
-                  <span className="arena-exercise-panel__tile-muscle">{ex.muscle}</span>
+                  <span className="arena-exercise-panel__tile-name em-v2-arena-picker__tile-name">{ex.name}</span>
+                  <span className="arena-exercise-panel__tile-muscle em-v2-arena-picker__tile-muscle">{ex.muscle}</span>
                 </button>
               )
             })}

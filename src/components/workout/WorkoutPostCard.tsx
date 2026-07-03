@@ -43,9 +43,9 @@ export function WorkoutPostCard({
   const typeLabel = WORKOUT_TYPE_LABELS[preview.type] || preview.type
 
   return (
-    <div className="em-v2-card em-v2-card--brand overflow-hidden p-0">
-      <div className="px-3.5 py-3">
-        <div className="flex items-start gap-2.5">
+    <div className="em-v2-card em-v2-card--brand em-v2-workout-post overflow-hidden p-0">
+      <div className="em-v2-workout-post__body">
+        <div className="em-v2-workout-post__head">
           <div className="em-v2-training__icon">
             <Dumbbell className="w-4 h-4 text-[#FF671F]" />
           </div>
@@ -54,7 +54,7 @@ export function WorkoutPostCard({
               Entreno de Hoy · {typeLabel}
             </p>
             <p className="em-v2-card__title text-sm truncate">{preview.title}</p>
-            <div className="flex flex-wrap gap-2 mt-1.5 text-[10px] text-[#9CA3AF] font-medium">
+            <div className="em-v2-workout-post__meta">
               <span>{preview.exerciseCount} ejercicios</span>
               <span>·</span>
               <span>{preview.totalSets} sets</span>
@@ -74,7 +74,7 @@ export function WorkoutPostCard({
             <button
               type="button"
               onClick={() => setExpanded((v) => !v)}
-              className="p-1.5 rounded-lg bg-white/5 text-[#9CA3AF] shrink-0"
+              className="em-v2-workout-post__expand shrink-0"
               aria-label={expanded ? 'Colapsar rutina' : 'Ver rutina completa'}
             >
               {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -83,14 +83,11 @@ export function WorkoutPostCard({
         </div>
 
         {visibleExercises.length > 0 && (
-          <ul className="mt-3 space-y-1.5 border-t border-white/8 pt-3">
+          <ul className="em-v2-workout-post__exercises">
             {visibleExercises.map((ex) => (
-              <li
-                key={ex.name}
-                className="flex items-center justify-between text-[11px] text-white/90"
-              >
-                <span className="truncate pr-2">{ex.name}</span>
-                <span className="text-[#9CA3AF] shrink-0 tabular-nums">
+              <li key={ex.name} className="em-v2-workout-post__exercise-row">
+                <span className="em-v2-workout-post__exercise-name truncate">{ex.name}</span>
+                <span className="em-v2-workout-post__exercise-meta shrink-0 tabular-nums">
                   {ex.setCount}×
                   {ex.topWeightKg && ex.topWeightKg > 0 ? ` · ${ex.topWeightKg} kg` : ''}
                   {ex.setSummary ? ` · ${ex.setSummary}` : ''}
@@ -106,13 +103,13 @@ export function WorkoutPostCard({
         )}
 
         {text && (
-          <p className="mt-2 text-[11px] text-[#9CA3AF] leading-snug line-clamp-3 whitespace-pre-wrap">
+          <p className="em-v2-workout-post__text line-clamp-3 whitespace-pre-wrap">
             {text}
           </p>
         )}
 
         {(onCopyRoutine || onShareStory) && hasWorkoutContent && (
-          <div className="mt-3 flex gap-2">
+          <div className="em-v2-workout-post__actions">
             {onCopyRoutine && (
               <button
                 type="button"

@@ -4967,3 +4967,160 @@
   border: 1px solid var(--em-border-soft);
   background: var(--em-surface-1);
 }
+
+/* ——— Entreno oleada 368: PR strip + post card + arena picker ——— */
+.em-v2-training-pr__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.em-v2-training-pr__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.em-v2-training-pr__item {
+  border: 1px solid rgba(255, 215, 0, 0.15);
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
+}
+
+.em-v2-training-pr__name {
+  font-weight: 800;
+  color: #fff;
+}
+
+.em-v2-training-pr__value {
+  font-weight: 800;
+  color: var(--em-brand);
+}
+
+.em-v2-workout-post__body {
+  padding: 0.875rem;
+}
+
+.em-v2-workout-post__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+}
+
+.em-v2-workout-post__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.375rem;
+  font-size: 0.625rem;
+  color: var(--fit-muted);
+  font-weight: 600;
+}
+
+.em-v2-workout-post__expand {
+  padding: 0.375rem;
+  border-radius: var(--em-radius-lg);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--em-border-soft);
+  color: var(--fit-muted);
+}
+
+.em-v2-workout-post__exercises {
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--em-border-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.em-v2-workout-post__exercise-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.6875rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.em-v2-workout-post__exercise-meta {
+  color: var(--fit-muted);
+}
+
+.em-v2-workout-post__text {
+  margin-top: 0.5rem;
+  font-size: 0.6875rem;
+  color: var(--fit-muted);
+  line-height: 1.35;
+}
+
+.em-v2-workout-post__actions {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.em-v2-arena .em-v2-arena-picker__hero {
+  border-radius: var(--em-radius-xl);
+  border: 1px solid var(--em-border-brand);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, var(--em-surface-1) 100%);
+}
+
+.em-v2-arena .em-v2-arena-picker__label {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--em-live);
+}
+
+.em-v2-arena .em-v2-arena-picker__name {
+  font-size: 0.8125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.em-v2-arena .em-v2-arena-picker__muscle {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: var(--fit-muted);
+}
+
+.em-v2-arena .em-v2-arena-picker__search {
+  border-radius: var(--em-radius-xl);
+  border: 1px solid var(--em-border-soft);
+  background: var(--em-surface-1);
+  font-size: 0.6875rem;
+}
+
+.em-v2-arena .em-v2-arena-picker__tab {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  border-radius: 999px;
+}
+
+.em-v2-arena .em-v2-arena-picker__tab--active {
+  border-color: var(--em-border-brand);
+  color: var(--em-brand);
+}
+
+.em-v2-arena .em-v2-arena-picker__tile {
+  border-radius: var(--em-radius-lg);
+  border: 1px solid var(--em-border-soft);
+  background: var(--em-surface-1);
+}
+
+.em-v2-arena .em-v2-arena-picker__tile--active {
+  border-color: rgba(34, 197, 94, 0.45);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.em-v2-arena .em-v2-arena-picker__tile-name {
+  font-size: 0.625rem;
+  font-weight: 800;
+}
+
+.em-v2-arena .em-v2-arena-picker__tile-muscle {
+  font-size: 0.5rem;
+  font-weight: 600;
+}
