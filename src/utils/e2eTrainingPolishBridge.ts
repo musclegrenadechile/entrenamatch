@@ -184,6 +184,21 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-fuel-flow',
     feature: 'tono fila Fuel déficit en fuel-flow',
   },
+  {
+    polishOleada: 423,
+    e2eSpecId: 'training-mega-flow',
+    feature: 'stack tono Fuel under-fueled + harness isWeeklyPlanFuelToneStackAligned',
+  },
+  {
+    polishOleada: 423,
+    e2eSpecId: 'workout-plan-history-flow',
+    feature: 'stack tono Fuel surplus + e2eFuelPlanToneCoverage',
+  },
+  {
+    polishOleada: 423,
+    e2eSpecId: 'workout-fuel-flow',
+    feature: 'stack tono Fuel déficit + weeklyPlanFuelToneStackDisplay',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

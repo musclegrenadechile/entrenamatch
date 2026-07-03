@@ -49,6 +49,11 @@ test('E2E workout-fuel-flow — banner post-guardar → Fuel prefill', async ({ 
   )
   expect(fuelRowTone).toBe('em-v2-plan__fuel-row--deficit')
 
+  const toneStackAligned = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWeeklyPlanFuelToneStackAligned()
+  )
+  expect(toneStackAligned).toBe(true)
+
   await expect(planCard.locator('.em-v2-plan__headline-fuel')).toBeVisible({ timeout: 10000 })
   const headlineFuelChip = await page.evaluate(() =>
     window.__entrenamatchE2E!.getWeeklyPlanFuelHeadlineChip()

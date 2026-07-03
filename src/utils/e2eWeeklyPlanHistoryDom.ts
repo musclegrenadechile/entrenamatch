@@ -2,6 +2,7 @@ import { WEEKLY_PLAN_HISTORY_HINT_CLASS } from './weeklyPlanHistoryDisplay'
 import { WEEKLY_PLAN_ROTATION_CHIP_CLASS } from './weeklyPlanRotationDisplay'
 import { WEEKLY_PLAN_FUEL_WEEK_CHIP_CLASS } from './weeklyPlanFuelWeekChipDisplay'
 import { WEEKLY_PLAN_FUEL_HEADLINE_CHIP_CLASS } from './weeklyPlanHeadlineFuelDisplay'
+import type { WeeklyPlanFuelToneStackSnapshot } from './weeklyPlanFuelToneStackDisplay'
 import { WEEKLY_PLAN_FUEL_ROW_CLASS } from './weeklyPlanFuelRowToneDisplay'
 import { WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS } from './weeklyPlanFuelWeekDisplay'
 import { WEEKLY_PLAN_NUTRITION_CLASS } from './weeklyPlanNutritionDisplay'
@@ -63,6 +64,16 @@ export function readWeeklyPlanFuelWeekChip(): string | null {
   const card = findEntrenaPlanCard()
   const chip = card?.querySelector(`.${WEEKLY_PLAN_FUEL_WEEK_CHIP_CLASS}`)
   return chip?.textContent?.trim() ?? null
+}
+
+export function readWeeklyPlanFuelWeekChipToneClass(): string | null {
+  const card = findEntrenaPlanCard()
+  const chip = card?.querySelector(`.${WEEKLY_PLAN_FUEL_WEEK_CHIP_CLASS}`)
+  if (!chip) return null
+  for (const cls of chip.classList) {
+    if (cls.startsWith(`${WEEKLY_PLAN_FUEL_WEEK_CHIP_CLASS}--`)) return cls
+  }
+  return null
 }
 
 export function readWeeklyPlanFuelHeadlineChip(): string | null {
@@ -127,6 +138,16 @@ export function readWeeklyPlanScenarioClass(): string | null {
     if (cls.startsWith('em-v2-plan--')) return cls
   }
   return null
+}
+
+export function readWeeklyPlanFuelToneStackSnapshot(): WeeklyPlanFuelToneStackSnapshot {
+  return {
+    border: readWeeklyPlanScenarioClass(),
+    hint: readWeeklyPlanFuelWeekToneClass(),
+    headline: readWeeklyPlanFuelHeadlineChipToneClass(),
+    row: readWeeklyPlanFuelRowToneClass(),
+    chip: readWeeklyPlanFuelWeekChipToneClass(),
+  }
 }
 
 export function isWeeklyPlanCardVisible(): boolean {

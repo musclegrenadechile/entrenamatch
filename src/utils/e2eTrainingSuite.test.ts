@@ -4,6 +4,7 @@ import {
   isFuelPlanNutritionE2ETrilogyComplete,
 } from './e2eFuelPlanCoverage'
 import { isFuelPlanScenarioCoverageComplete } from './e2eFuelPlanScenarioCoverage'
+import { isFuelPlanToneCoverageComplete } from './e2eFuelPlanToneCoverage'
 import {
   countTrainingE2ESpecs,
   isE2EFuelPlanFullCoverageReady,
@@ -82,11 +83,15 @@ describe('e2eTrainingSuite', () => {
     expect(e2eFuelPlanHeadlineSpecsCoveredInInventory()).toBe(true)
   })
 
-  it('e2eFuelPlanFullCoverage listo (oleada 420–421)', () => {
+  it('e2eFuelPlanFullCoverage listo (oleada 420–423)', () => {
     expect(isE2EFuelPlanFullCoverageReady()).toBe(true)
   })
 
   it('e2eFuelPlanScenarioCoverage completo (oleada 421)', () => {
     expect(isFuelPlanScenarioCoverageComplete()).toBe(true)
+  })
+
+  it('e2eFuelPlanToneCoverage completo (oleada 423)', () => {
+    expect(isFuelPlanToneCoverageComplete()).toBe(true)
   })
 })

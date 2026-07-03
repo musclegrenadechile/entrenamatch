@@ -37,6 +37,11 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
   )
   expect(fuelRowTone).toBe('em-v2-plan__fuel-row--under-fueled')
 
+  const toneStackAligned = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWeeklyPlanFuelToneStackAligned()
+  )
+  expect(toneStackAligned).toBe(true)
+
   await expect(planCard.locator('.em-v2-plan__history-hint')).toBeVisible({ timeout: 10000 })
   await expect(planCard.locator('.em-v2-plan__rotation-chip')).toBeVisible({ timeout: 10000 })
   await expect(planCard.locator('.em-v2-card__detail').first()).toContainText(/rotación/i)

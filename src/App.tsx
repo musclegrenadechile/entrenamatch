@@ -97,8 +97,10 @@ import {
   readWeeklyPlanRotationChip,
   readWeeklyPlanRotationAriaLabel,
   readWeeklyPlanFuelRowToneClass,
+  readWeeklyPlanFuelToneStackSnapshot,
   readWeeklyPlanScenarioClass,
 } from './utils/e2eWeeklyPlanHistoryDom'
+import { isWeeklyPlanFuelToneStackConsistent } from './utils/weeklyPlanFuelToneStackDisplay'
 import {
   parseGymIdFromSearch,
   resolvePartnerGymById,
@@ -6044,6 +6046,9 @@ useEffect(() => {
         readWeeklyPlanFuelHeadlineChipToneClass(),
       getWeeklyPlanScenarioClass: () => readWeeklyPlanScenarioClass(),
       getWeeklyPlanFuelRowToneClass: () => readWeeklyPlanFuelRowToneClass(),
+      getWeeklyPlanFuelToneStack: () => readWeeklyPlanFuelToneStackSnapshot(),
+      isWeeklyPlanFuelToneStackAligned: () =>
+        isWeeklyPlanFuelToneStackConsistent(readWeeklyPlanFuelToneStackSnapshot()),
       getWeeklyPlanNutritionNote: () => readWeeklyPlanNutritionNote(),
       getWeeklyPlanNutritionAriaLabel: () => readWeeklyPlanNutritionAriaLabel(),
       isWeeklyPlanCardVisible: () => isWeeklyPlanCardVisible(),

@@ -28,12 +28,24 @@ export const TRAINING_POLISH_POST_FULL_UTILS: readonly TrainingPolishPostFullEnt
     oleada: 422,
     covers: ['scenario', 'border'],
   },
+  {
+    id: 'fuel-tone-stack',
+    module: 'weeklyPlanFuelToneStackDisplay',
+    oleada: 423,
+    covers: ['scenario', 'border'],
+  },
+  {
+    id: 'fuel-tone-e2e',
+    module: 'e2eFuelPlanToneCoverage',
+    oleada: 423,
+    covers: ['scenario', 'border', 'e2e'],
+  },
 ] as const
 
-export const TRAINING_POLISH_POST_FULL_CLOSED_OLEADA = 422
+export const TRAINING_POLISH_POST_FULL_CLOSED_OLEADA = 423
 
 export function trainingPolishPostFullRange(): { from: number; to: number } {
-  return { from: 421, to: 422 }
+  return { from: 421, to: 423 }
 }
 
 export function countTrainingPolishPostFullUtils(): number {

@@ -7,9 +7,9 @@ import {
 } from './fuelPlanTrainingSuite'
 
 describe('fuelPlanTrainingSuite', () => {
-  it('inventario Fuel×plan oleadas 411–422', () => {
-    expect(countFuelPlanTrainingUtils()).toBe(24)
-    expect(fuelPlanTrainingBlockRange()).toEqual({ from: 411, to: 422 })
+  it('inventario Fuel×plan oleadas 411–423', () => {
+    expect(countFuelPlanTrainingUtils()).toBe(26)
+    expect(fuelPlanTrainingBlockRange()).toEqual({ from: 411, to: 423 })
     expect(isFuelPlanTrainingBlockClosed()).toBe(true)
     expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('weeklyPlanFuelWeekDisplay')
     expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('weeklyPlanFuelWeekToneDisplay')
@@ -25,5 +25,7 @@ describe('fuelPlanTrainingSuite', () => {
     expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('weeklyPlanFuelScenarioSync')
     expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('e2eFuelPlanScenarioCoverage')
     expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('weeklyPlanFuelRowToneDisplay')
+    expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('weeklyPlanFuelToneStackDisplay')
+    expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('e2eFuelPlanToneCoverage')
   })
 })

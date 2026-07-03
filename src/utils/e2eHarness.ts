@@ -67,6 +67,16 @@ export type EntrenamatchE2EApi = {
   getWeeklyPlanScenarioClass: () => string | null
   /** Modificador de tono de la fila Fuel×entreno (oleada 422). */
   getWeeklyPlanFuelRowToneClass: () => string | null
+  /** Snapshot de tonos Fuel en card (oleada 423). */
+  getWeeklyPlanFuelToneStack: () => {
+    border: string | null
+    hint: string | null
+    headline: string | null
+    row: string | null
+    chip: string | null
+  }
+  /** Stack tono Fuel alineado en todas las capas (oleada 423). */
+  isWeeklyPlanFuelToneStackAligned: () => boolean
   /** Nota nutricional Fuel×plan en card (oleada 415). */
   getWeeklyPlanNutritionNote: () => string | null
   /** aria-label nota nutricional (oleada 416). */
