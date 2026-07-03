@@ -33,4 +33,8 @@ test('E2E workout-plan-history-flow — guardar entreno y hint PR en EntrenaPlan
   const hint = await page.evaluate(() => window.__entrenamatchE2E!.getWeeklyPlanHistoryHint())
   expect(hint).toMatch(/10×60 kg|60 kg/)
   expect(hint).toContain('sigue progresando')
+
+  await expect(planCard.locator('.em-v2-card__detail').first()).toContainText(/rotación/i)
+  const detail = await page.evaluate(() => window.__entrenamatchE2E!.getWeeklyPlanDetail())
+  expect(detail).toMatch(/Tras PR|rotación/i)
 })

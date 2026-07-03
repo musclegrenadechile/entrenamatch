@@ -7,6 +7,10 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
   await waitForE2EHarness(page)
 
   await page.evaluate(() => {
+    window.__entrenamatchE2E!.seedDemoFuelProfile()
+  })
+
+  await page.evaluate(() => {
     window.__entrenamatchE2E!.openWorkoutModal()
   })
   const workout = page.getByRole('dialog', { name: 'Entreno de Hoy' })
@@ -19,6 +23,11 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
   })
   await expect(page.getByText(/Entreno guardado/i)).toBeVisible({ timeout: 10000 })
   await expect(page.locator('.em-v2-training-save-banner__fuel')).toContainText(/Fuel sugerido/i)
+
+  const planCard = page.locator('.em-v2-plan').filter({ hasText: 'EntrenaPlan' })
+  await expect(planCard).toBeVisible({ timeout: 12000 })
+  await expect(planCard.locator('.em-v2-plan__history-hint')).toBeVisible({ timeout: 10000 })
+
   await page.getByRole('button', { name: /Registrar post-entreno/i }).click()
 
   const fuel = page.getByRole('dialog', { name: 'Registrar comida Fuel' })

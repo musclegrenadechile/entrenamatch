@@ -33,6 +33,12 @@ export const ENTRENA_PLAN_TRAINING_UTILS: readonly EntrenaPlanTrainingUtilEntry[
     oleada: 404,
     covers: ['history-hint'],
   },
+  {
+    id: 'plan-rotation-e2e',
+    module: 'e2eWeeklyPlanHistoryFlow',
+    oleada: 405,
+    covers: ['history-hint'],
+  },
 ] as const
 
 export function countEntrenaPlanTrainingUtils(): number {
@@ -40,5 +46,5 @@ export function countEntrenaPlanTrainingUtils(): number {
 }
 
 export function entrenaPlanTrainingBlockRange(): { from: number; to: number } {
-  return { from: 401, to: 404 }
+  return { from: 401, to: 405 }
 }

@@ -23,11 +23,19 @@ describe('e2eTrainingSuite', () => {
   it('mega spec cubre todo el flujo', () => {
     const mega = trainingMegaSpecEntry()
     expect(mega.id).toBe('training-mega-flow')
-    expect(mega.covers).toEqual(['gym-log', 'fuel', 'sync', 'review', 'banner', 'fuel-prefill'])
+    expect(mega.covers).toEqual([
+      'gym-log',
+      'fuel',
+      'sync',
+      'review',
+      'banner',
+      'fuel-prefill',
+      'plan-history',
+    ])
   })
 
-  it('bloque E2E oleadas 378–402', () => {
-    expect(trainingE2EBlockRange()).toEqual({ from: 378, to: 402 })
+  it('bloque E2E oleadas 378–405', () => {
+    expect(trainingE2EBlockRange()).toEqual({ from: 378, to: 405 })
     const fab = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-fab-flow')
     expect(fab?.covers).toContain('fab')
     const workout = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-flow')

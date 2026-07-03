@@ -82,6 +82,7 @@ import {
 } from './utils/e2eWorkoutHistoryDom'
 import {
   isWeeklyPlanCardVisible,
+  readWeeklyPlanDetail,
   readWeeklyPlanHistoryHint,
 } from './utils/e2eWeeklyPlanHistoryDom'
 import {
@@ -6008,6 +6009,7 @@ useEffect(() => {
       getWorkoutHistorySparklineAriaLabels: () => readWorkoutHistorySparklineAriaLabels(),
       seedDemoFuelProfile: () => setFuelProfile(buildE2EDemoFuelProfile()),
       getWeeklyPlanHistoryHint: () => readWeeklyPlanHistoryHint(),
+      getWeeklyPlanDetail: () => readWeeklyPlanDetail(),
       isWeeklyPlanCardVisible: () => isWeeklyPlanCardVisible(),
     })
   }, [

@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.463
+**Versión cierre:** v0.1.464
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -75,12 +75,13 @@
 | **402** | **E2E EntrenaPlan×historial** | workout-plan-history-flow.spec guardar→hint PR; harness seedDemoFuelProfile |
 | **403** | **Mega cierre 361–402** | trainingMegaSuite unifica polish-v1, E2E, polish-v2 y EntrenaPlan×historial |
 | **404** | **EntrenaPlan rotación PR** | weeklyPlanPrRotation evita repetir músculo con PR; merge historial demo |
+| **405** | **E2E rotación + mega** | workout-plan-history valida nota rotación; training-mega-flow con EntrenaPlan hint |
 
-## Mega entrenamiento (361–404) ✅
+## Mega entrenamiento (361–405) ✅
 
-Inventario `trainingMegaSuite`: 4 sub-bloques (pulido I 361–377, E2E 378–402, pulido II 383–397, EntrenaPlan×historial 401–404). 44 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`.
+Inventario `trainingMegaSuite`: 4 sub-bloques (pulido I 361–377, E2E 378–405, pulido II 383–397, EntrenaPlan×historial 401–405). 45 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`.
 
-## EntrenaPlan × historial (401–404) ✅
+## EntrenaPlan × historial (401–405) ✅
 
 Chip dorado con PR del último entreno (≤7 días) en EntrenaPlan cuando la recomendación es fuerza/cardio. Rotación evita repetir el tipo de entreno del músculo con PR reciente. E2E `workout-plan-history-flow` valida guardar gym-log → hint sin seed historial. Utils: `weeklyPlanHistoryDisplay`, `weeklyPlanPrRotation`, `entrenaPlanTrainingSuite`, `e2eWeeklyPlanHistoryFlow`.
 
@@ -106,7 +107,7 @@ Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-g
 
 ## E2E entrenamiento (378–402) ✅
 
-Playwright con harness `?e2e=1` en CI (`e2e-smoke`). 7 specs cubren gym-log, Fuel, sync, reseña, FAB, banner, prefill, historial Perfil y EntrenaPlan×historial. Puente `e2eTrainingPolishBridge` → oleadas pulido 384–397, 401. Mega bloque total: 361–404 (`trainingMegaSuite` / `trainingMegaBlockRange`).
+Playwright con harness `?e2e=1` en CI (`e2e-smoke`). 7 specs cubren gym-log, Fuel, sync, reseña, FAB, banner, prefill, historial Perfil y EntrenaPlan×historial. Puente `e2eTrainingPolishBridge` → oleadas pulido 384–397, 401. Mega bloque total: 361–405 (`trainingMegaSuite` / `trainingMegaBlockRange`).
 
 ## Auditoría cohesión (360)
 

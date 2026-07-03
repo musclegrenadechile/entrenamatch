@@ -44,6 +44,7 @@ export type EntrenamatchE2EApi = {
   /** Activa Fuel demo para mostrar EntrenaPlan en E2E (oleada 402). */
   seedDemoFuelProfile: () => void
   getWeeklyPlanHistoryHint: () => string | null
+  getWeeklyPlanDetail: () => string | null
   isWeeklyPlanCardVisible: () => boolean
 }
 

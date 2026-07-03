@@ -129,4 +129,16 @@ describe('recommendNextSessions', () => {
     expect(plan.confidence).toBe('low')
     expect(plan.scenario).toBe('under_fueled')
   })
+
+  it('añade nota rotación PR en under_fueled (oleada 405)', () => {
+    const plan = recommendNextSessions({
+      profile: { goal: 'muscle', weightKg: 80, level: 'Avanzado', targetKcal: 2800 },
+      energy: { ...baseEnergy, loggedDays: 1, weeklyDeltaKcal: -500 },
+      load: {
+        ...baseLoad,
+        prRotationNote: 'Tras PR en Pecho — rotación a Pull.',
+      },
+    })
+    expect(plan.detail).toContain('Tras PR en Pecho')
+  })
 })

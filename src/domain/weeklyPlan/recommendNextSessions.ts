@@ -135,7 +135,6 @@ export function recommendNextSessions(ctx: WeeklyPlanContext): WeeklyPlanResult 
       durationMin = durationForLevel(profile.level, 45)
       headline = 'Siguiente sesión recomendada'
       detail = `Ritmo equilibrado: ${load.sessionsCount} sesiones esta semana. Rotación sugerida: ${workoutType}.`
-      if (load.prRotationNote) detail = `${detail} ${load.prRotationNote}`
       if (profile.goal === 'lose') {
         nutritionNote = 'Mantén proteína alta; snacks controlados entre comidas.'
       }
@@ -145,6 +144,14 @@ export function recommendNextSessions(ctx: WeeklyPlanContext): WeeklyPlanResult 
   if (activityType === 'rest') {
     durationMin = 25
     workoutType = 'other'
+  }
+
+  if (
+    load.prRotationNote &&
+    activityType === 'strength' &&
+    !detail.includes(load.prRotationNote)
+  ) {
+    detail = `${detail} ${load.prRotationNote}`
   }
 
   const exercises =

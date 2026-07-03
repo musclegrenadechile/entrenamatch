@@ -16,6 +16,19 @@ export function readWeeklyPlanHistoryHint(): string | null {
   return hint?.textContent?.trim() ?? null
 }
 
+/** Texto de detalle del plan (sin hint PR). */
+export function readWeeklyPlanDetail(): string | null {
+  const card = findEntrenaPlanCard()
+  if (!card) return null
+  const details = card.querySelectorAll('.em-v2-card__detail')
+  for (const el of details) {
+    if (el.closest(`.${WEEKLY_PLAN_HISTORY_HINT_CLASS}`)) continue
+    const text = el.textContent?.trim()
+    if (text) return text
+  }
+  return null
+}
+
 export function isWeeklyPlanCardVisible(): boolean {
   return findEntrenaPlanCard() !== null
 }

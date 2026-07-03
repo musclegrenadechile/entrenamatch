@@ -24,6 +24,11 @@ export const E2E_WEEKLY_PLAN_HISTORY_FLOW_STEPS: readonly E2EWeeklyPlanHistorySt
     action: 'Verificar hint PR en EntrenaPlan (oleada 401)',
     expect: '.em-v2-plan__history-hint con Press banca; harness getWeeklyPlanHistoryHint',
   },
+  {
+    id: 'ph-04',
+    action: 'Nota rotación PR en detalle (oleada 404–405)',
+    expect: 'Detalle con «Tras PR» / «rotación»; harness getWeeklyPlanDetail',
+  },
 ] as const
 
 export function countE2EWeeklyPlanHistoryFlowSteps(): number {
