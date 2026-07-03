@@ -42,3 +42,17 @@ export function countWorkoutHistorySparklinePrPoints(
 ): number {
   return points.filter((p) => p.isPr).length
 }
+
+/** Etiqueta accesible para sparkline de historial (oleada 397). */
+export function buildWorkoutHistorySparklineAriaLabel(
+  points: readonly WorkoutHistorySparklinePoint[]
+): string {
+  if (points.length < 2) return ''
+  const prCount = countWorkoutHistorySparklinePrPoints(points)
+  const latest = Math.round(points[points.length - 1]?.volumeKg ?? 0)
+  if (prCount > 0) {
+    const sessions = prCount === 1 ? 'sesión' : 'sesiones'
+    return `Tendencia de volumen; ${prCount} ${sessions} con PR; último ${latest} kg`
+  }
+  return `Tendencia de volumen; último ${latest} kg`
+}
