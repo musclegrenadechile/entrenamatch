@@ -15,16 +15,14 @@ export function SyncWorkoutCompareStrip({
   const partnerFirst = partnerName.split(' ')[0] || 'Compañero'
 
   return (
-    <div className="mx-4 mb-3 px-3 py-2.5 rounded-xl bg-[#FF671F]/10 border border-[#FF671F]/25">
-      <p className="text-[9px] uppercase tracking-wider text-[#FF671F] font-bold mb-1">
-        Entreno de Hoy · comparativa
-      </p>
+    <div className="em-v2-card em-v2-card--compact mx-4 mb-3">
+      <p className="em-v2-training__eyebrow mb-1">Entreno de Hoy · comparativa</p>
       <p className="text-xs font-bold text-white">{compare.headline}</p>
-      <p className="text-[10px] text-[#9CA3AF] mt-0.5 mb-2">{compare.subline}</p>
+      <p className="em-v2-card__detail mt-0.5 mb-2">{compare.subline}</p>
       <div className="grid grid-cols-2 gap-2 text-[10px]">
         <div
-          className={`rounded-lg px-2 py-1.5 ${
-            compare.winner === 'self' ? 'bg-[#22c55e]/15 border border-[#22c55e]/30' : 'bg-black/30'
+          className={`em-v2-training__compare-cell ${
+            compare.winner === 'self' ? 'em-v2-training__compare-cell--win' : ''
           }`}
         >
           <p className="text-[#9CA3AF] truncate">{selfFirst}</p>
@@ -33,8 +31,8 @@ export function SyncWorkoutCompareStrip({
           </p>
         </div>
         <div
-          className={`rounded-lg px-2 py-1.5 ${
-            compare.winner === 'partner' ? 'bg-[#FFD700]/15 border border-[#FFD700]/30' : 'bg-black/30'
+          className={`em-v2-training__compare-cell ${
+            compare.winner === 'partner' ? 'em-v2-training__compare-cell--gold' : ''
           }`}
         >
           <p className="text-[#9CA3AF] truncate">{partnerFirst}</p>

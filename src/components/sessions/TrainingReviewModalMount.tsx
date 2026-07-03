@@ -52,7 +52,7 @@ export function TrainingReviewModalMount({
             value={comment}
             onChange={(e) => onCommentChange(e.target.value)}
             placeholder="Comentario opcional (qué tal fue el entrenamiento...)"
-            className="form-input w-full h-24 resize-none mb-4"
+            className="em-v2-review-modal__input w-full h-24 resize-none mb-4"
           />
 
           <div className="mb-4">

@@ -43,17 +43,17 @@ export function WorkoutPostCard({
   const typeLabel = WORKOUT_TYPE_LABELS[preview.type] || preview.type
 
   return (
-    <div className="rounded-2xl border border-[#FF671F]/25 bg-gradient-to-br from-[#FF671F]/8 via-[#141418] to-[#0f0f12] overflow-hidden">
+    <div className="em-v2-card em-v2-card--brand overflow-hidden p-0">
       <div className="px-3.5 py-3">
         <div className="flex items-start gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-[#FF671F]/20 flex items-center justify-center shrink-0">
+          <div className="em-v2-training__icon">
             <Dumbbell className="w-4 h-4 text-[#FF671F]" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[10px] uppercase tracking-wider text-[#FF671F] font-bold">
+            <p className="em-v2-training__eyebrow">
               Entreno de Hoy · {typeLabel}
             </p>
-            <p className="text-sm font-black text-white truncate">{preview.title}</p>
+            <p className="em-v2-card__title text-sm truncate">{preview.title}</p>
             <div className="flex flex-wrap gap-2 mt-1.5 text-[10px] text-[#9CA3AF] font-medium">
               <span>{preview.exerciseCount} ejercicios</span>
               <span>·</span>
@@ -117,9 +117,7 @@ export function WorkoutPostCard({
               <button
                 type="button"
                 onClick={onCopyRoutine}
-                className={`py-2 rounded-xl border border-[#FF671F]/40 text-[10px] font-bold text-[#FF671F] active:bg-[#FF671F]/10 ${
-                  onShareStory ? 'flex-1' : 'w-full'
-                }`}
+                className={`em-v2-card__cta--outline text-[10px] ${onShareStory ? 'flex-1' : 'w-full'}`}
               >
                 📋 {copyLabel}
               </button>
@@ -128,9 +126,7 @@ export function WorkoutPostCard({
               <button
                 type="button"
                 onClick={onShareStory}
-                className={`py-2 rounded-xl border border-[#FFD700]/35 text-[10px] font-bold text-[#FFD700] active:bg-[#FFD700]/10 ${
-                  onCopyRoutine ? 'flex-1' : 'w-full'
-                }`}
+                className={`em-v2-sync-memory__cta em-v2-sync-memory__cta--gold text-[10px] ${onCopyRoutine ? 'flex-1' : 'w-full'}`}
               >
                 📸 Instagram
               </button>

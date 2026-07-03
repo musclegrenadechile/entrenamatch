@@ -1,4 +1,5 @@
 import { Dumbbell, Copy, ChevronRight, TrendingUp, Trash2 } from 'lucide-react'
+import { EmV2EmptyState } from '../ui/EmV2EmptyState'
 import { WORKOUT_TYPE_LABELS } from '../../data/exerciseLibrary'
 import type { Workout } from '../../types'
 import { formatVolumeLabel } from '../../services/workouts'
@@ -23,39 +24,35 @@ export function ProfileEntrenoDeHoySection({
 
   return (
     <div className="px-4 mt-4">
-      <div className="rounded-2xl border border-[#FF671F]/25 bg-gradient-to-br from-[#FF671F]/8 via-[#141418] to-[#0f0f12] overflow-hidden">
+      <div className="em-v2-card em-v2-card--brand overflow-hidden p-0">
         <div className="px-4 py-3 border-b border-white/8 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-[#FF671F]/20 flex items-center justify-center shrink-0">
+            <div className="em-v2-training__icon">
               <Dumbbell className="w-4 h-4 text-[#FF671F]" />
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-black text-white">Entreno de Hoy</p>
-              <p className="text-[10px] text-[#9CA3AF]">Tu bitácora de entrenamientos</p>
+              <p className="em-v2-card__title text-sm">Entreno de Hoy</p>
+              <p className="em-v2-card__detail">Tu bitácora de entrenamientos</p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onOpenEntrenoDeHoy}
-            className="text-[10px] px-3 py-1.5 rounded-full bg-[#FF671F] text-black font-bold shrink-0"
-          >
+          <button type="button" onClick={onOpenEntrenoDeHoy} className="em-v2-card__cta text-[10px] px-3 py-1.5 shrink-0">
             + Nuevo
           </button>
         </div>
 
         {loading ? (
-          <p className="px-4 py-6 text-center text-xs text-[#9CA3AF]">Cargando historial…</p>
+          <EmV2EmptyState compact title="Cargando historial…" body="Sincronizando tus entrenos." />
         ) : recentWorkouts.length === 0 ? (
-          <div className="px-4 py-5 text-center">
-            <p className="text-xs text-[#9CA3AF] mb-3">Aún no registras entrenos estructurados.</p>
-            <button
-              type="button"
-              onClick={onOpenEntrenoDeHoy}
-              className="text-[11px] px-4 py-2 rounded-xl border border-[#FF671F]/40 text-[#FF671F] font-bold"
-            >
+          <EmV2EmptyState
+            compact
+            emoji="🏋️"
+            title="Sin entrenos aún"
+            body="Registra sets, peso y duración para ver tu progreso aquí."
+          >
+            <button type="button" onClick={onOpenEntrenoDeHoy} className="em-v2-hero-card__cta">
               Registrar primer entreno
             </button>
-          </div>
+          </EmV2EmptyState>
         ) : (
           <ul className="divide-y divide-white/6">
             {recentWorkouts.slice(0, 5).map((w) => {
@@ -105,7 +102,7 @@ export function ProfileEntrenoDeHoySection({
 
         {!loading && exerciseProgress.length > 0 && (
           <div className="px-4 py-3 border-t border-white/8 bg-black/20">
-            <p className="text-[9px] uppercase tracking-wider text-[#9CA3AF] font-bold mb-2 flex items-center gap-1">
+            <p className="em-v2-training__eyebrow text-[#9CA3AF] mb-2 flex items-center gap-1">
               <TrendingUp className="w-3 h-3" /> Progreso por ejercicio
             </p>
             <ul className="space-y-2">
