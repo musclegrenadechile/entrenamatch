@@ -105,6 +105,24 @@ export const POST_WORKOUT_TRAINING_UTILS: readonly PostWorkoutTrainingUtilEntry[
     oleada: 445,
     covers: ['review', 'pr'],
   },
+  {
+    id: 'review-coverage',
+    module: 'e2eTrainingReviewCoverage',
+    oleada: 446,
+    covers: ['review', 'pr'],
+  },
+  {
+    id: 'review-post-v2-closure',
+    module: 'e2eTrainingReviewPostV2Coverage',
+    oleada: 446,
+    covers: ['review', 'pr'],
+  },
+  {
+    id: 'review-full-coverage',
+    module: 'e2eTrainingReviewFullCoverage',
+    oleada: 446,
+    covers: ['review', 'pr'],
+  },
 ] as const
 
 export function countPostWorkoutTrainingUtils(): number {
@@ -112,7 +130,7 @@ export function countPostWorkoutTrainingUtils(): number {
 }
 
 export function postWorkoutTrainingBlockRange(): { from: number; to: number } {
-  return { from: 390, to: 445 }
+  return { from: 390, to: 446 }
 }
 
 export const POST_WORKOUT_TRAINING_V2_OPEN_OLEADA = 439

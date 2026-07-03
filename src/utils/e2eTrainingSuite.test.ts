@@ -28,6 +28,8 @@ import { isWorkoutHistoryRowPrCoverageComplete } from './e2eWorkoutHistoryRowPrC
 import { isWorkoutSaveBannerPrCoverageComplete } from './e2eWorkoutSaveBannerPrCoverage'
 import { isGymLogSessionPrCoverageComplete } from './e2eGymLogSessionPrCoverage'
 import { isTrainingReviewPrCoverageComplete } from './e2eTrainingReviewPrCoverage'
+import { isTrainingReviewFullE2ECoverageComplete } from './e2eTrainingReviewFullCoverage'
+import { isTrainingReviewPostV2E2ECoverageComplete } from './e2eTrainingReviewPostV2Coverage'
 import { isFuelPlanPostEnergyE2ECoverageComplete } from './e2eFuelPlanPostEnergyCoverage'
 import { isFuelPlanRotationToneCoverageComplete } from './e2eFuelPlanRotationToneCoverage'
 import { isFuelPlanPostStackE2ECoverageComplete } from './e2eFuelPlanPostStackCoverage'
@@ -193,6 +195,11 @@ describe('e2eTrainingSuite', () => {
 
   it('e2eTrainingReviewPrCoverage completo (oleada 445)', () => {
     expect(isTrainingReviewPrCoverageComplete()).toBe(true)
+  })
+
+  it('e2eTrainingReviewPostV2Coverage completo (oleada 446)', () => {
+    expect(isTrainingReviewPostV2E2ECoverageComplete()).toBe(true)
+    expect(isTrainingReviewFullE2ECoverageComplete()).toBe(true)
   })
 
   it('e2eFuelPlanToneCoverage completo (oleada 428)', () => {
