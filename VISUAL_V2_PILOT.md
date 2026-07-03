@@ -17,16 +17,17 @@
 | **345** | **Hoy + Perfil** | «Más de tu día» colapsable; fondo v2 en Perfil; landing `em-brand-*` |
 | **346** | **Matches** | Cards premium una columna, match ring, Red sub-nav v2, crew dorado |
 | **347** | **Entreno de Hoy** | Modal v2, biblioteca colapsable, «Más opciones», CTA gradiente |
+| **348** | **Landing** | Tailwind build (`landing-v2.css`), Plus Jakarta, sin métricas fake |
 
 ## Evaluar (3 min)
 
-1. **Entreno de Hoy** — ¿al añadir ejercicio se oculta la biblioteca y queda la sesión limpia?
-2. **Matches** — ¿cards foto grande + % match al nivel de Explorar?
-3. **Red** — ¿sub-nav Matches/Mensajes coherente con v2?
-4. **Mapa LIVE** — ¿pills y overlays premium?
+1. **Landing** — ¿misma tipografía y botones que la app? ¿sin «142 personas» inventadas?
+2. **Entreno de Hoy** — ¿sesión limpia al añadir ejercicio?
+3. **Matches** — ¿cards premium al nivel de Explorar?
+4. **Mapa LIVE** — ¿overlays glass v2?
 
 ## Siguiente
 
-- **348** Landing alineada al build Tailwind de la app
+- **349** Perfil hero atleta + tabs
 
 *jul 2026*

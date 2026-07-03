@@ -5,40 +5,77 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EntrenaMatch — Your live training community</title>
   <meta name="description" content="EntrenaMatch — See who trains near you, sync in real time with EntrenaSync, and build your community. Beta in Chile, Peru, Mexico, and USA.">
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/styles/landing-v2.css">
 </head>
-<body class="bg-[#0D0D10] text-white font-sans">
-  <header class="max-w-4xl mx-auto px-6 py-16 text-center">
-    <p class="text-[#FF671F] text-sm font-bold uppercase tracking-widest mb-4">Multi-country beta · v0.1.386</p>
-    <h1 class="text-4xl md:text-5xl font-black mb-4">Train together.<br><span class="text-[#22c55e]">Live.</span></h1>
-    <p class="text-[#9CA3AF] text-lg max-w-xl mx-auto mb-4">
-      Find who trains near you — football, padel, gym, running, rugby, and more. Match, chat, and sync sessions with EntrenaSync on the LIVE Map.
-    </p>
-    <p class="text-white/50 text-sm mb-8">Chile · Peru · Mexico · USA · 18+ only · No invented marketing stats</p>
-    <a href="/" class="inline-block px-8 py-4 rounded-2xl bg-[#FF671F] text-black font-bold text-lg">Open App</a>
-    <p class="mt-4 text-sm"><a href="/landing.html" class="text-[#9CA3AF] underline">Español</a></p>
+<body class="em-landing text-white">
+  <nav class="em-landing-nav">
+    <div class="em-landing-container flex h-16 items-center justify-between">
+      <span class="text-xl font-extrabold tracking-tight">EntrenaMatch</span>
+      <div class="flex items-center gap-3">
+        <a href="/landing.html" class="nav-link text-sm font-semibold text-white/70">Español</a>
+        <a href="https://entrenamatch.web.app/" class="em-brand-btn">Open App</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="em-landing-container py-16 md:py-20">
+    <div class="max-w-3xl">
+      <div class="em-landing-pill em-landing-pill--live mb-6">
+        <span class="h-2 w-2 rounded-full bg-[#22c55e] animate-pulse"></span>
+        Central coast Chile pilot · multi-country beta
+      </div>
+      <h1 class="em-landing-hero-title mb-6">
+        Your community<br><span class="em-brand-gradient">live</span>
+      </h1>
+      <p class="mb-4 max-w-xl text-lg font-semibold text-white/80">
+        Turn on LIVE and see who trains near you now — gym, field, track, or waterfront.
+        Match, chat, and sync sessions with <strong class="text-white">EntrenaSync</strong> on the <strong class="text-white">LIVE Map</strong>.
+      </p>
+      <p class="mb-8 text-sm font-semibold text-[#ff671f]">
+        Pilot: Viña del Mar · Valparaíso · Concón — registration open in Chile, Peru, Mexico, and USA.
+      </p>
+      <div class="flex flex-wrap gap-4">
+        <a href="mailto:hola@entrenamatch.web.app?subject=Pilot%20waitlist" class="em-brand-btn em-brand-btn--lg">Join the pilot</a>
+        <a href="https://entrenamatch.web.app/" class="em-landing-btn-ghost em-brand-btn--lg">Open web app</a>
+      </div>
+      <p class="em-landing-stat-honest mt-8">18+ only · serious training · no fake marketing stats</p>
+    </div>
   </header>
-  <section class="max-w-4xl mx-auto px-6 pb-20 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-    <div class="p-6 rounded-2xl bg-[#1C1C20] border border-[#2F2F35]">
-      <div class="text-3xl mb-2">🗺️</div>
-      <h2 class="font-bold mb-2">LIVE Map</h2>
-      <p class="text-sm text-[#9CA3AF]">See who is training live near you. Be the first in your city.</p>
-    </div>
-    <div class="p-6 rounded-2xl bg-[#1C1C20] border border-[#2F2F35]">
-      <div class="text-3xl mb-2">🔄</div>
-      <h2 class="font-bold mb-2">EntrenaSync</h2>
-      <p class="text-sm text-[#9CA3AF]">Synchronized sessions with your training partner on the map.</p>
-    </div>
-    <div class="p-6 rounded-2xl bg-[#1C1C20] border border-[#FF671F]/30">
-      <div class="text-3xl mb-2">🏆</div>
-      <h2 class="font-bold mb-2">Copa Zona</h2>
-      <p class="text-sm text-[#9CA3AF]">Your region's LIVE minutes add up — compete with nearby cities.</p>
-    </div>
-    <div class="p-6 rounded-2xl bg-[#1C1C20] border border-[#2F2F35]">
-      <div class="text-3xl mb-2">💬</div>
-      <h2 class="font-bold mb-2">Community Wall</h2>
-      <p class="text-sm text-[#9CA3AF]">Posts, voice notes, and sessions visible to your local network.</p>
+
+  <section class="em-landing-container pb-20">
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div class="em-landing-card">
+        <div class="em-landing-card__icon">🗺️</div>
+        <h2 class="mb-2 text-lg font-extrabold">LIVE Map</h2>
+        <p class="text-sm font-semibold text-white/65">See who is training live near you. Be the first in your city.</p>
+      </div>
+      <div class="em-landing-card">
+        <div class="em-landing-card__icon">🔄</div>
+        <h2 class="mb-2 text-lg font-extrabold">EntrenaSync</h2>
+        <p class="text-sm font-semibold text-white/65">Synchronized sessions with your training partner on the map.</p>
+      </div>
+      <div class="em-landing-card border-[#ff671f]/30">
+        <div class="em-landing-card__icon">🏆</div>
+        <h2 class="mb-2 text-lg font-extrabold">Copa Zona</h2>
+        <p class="text-sm font-semibold text-white/65">Your region's LIVE minutes add up — compete with nearby cities.</p>
+      </div>
+      <div class="em-landing-card">
+        <div class="em-landing-card__icon">💬</div>
+        <h2 class="mb-2 text-lg font-extrabold">Community Wall</h2>
+        <p class="text-sm font-semibold text-white/65">Workouts, nutrition, and sync replays visible to your local network.</p>
+      </div>
     </div>
   </section>
+
+  <footer class="border-t border-white/10 py-8">
+    <div class="em-landing-container flex flex-col items-center justify-between gap-4 text-sm text-white/60 md:flex-row">
+      <div>© 2026 EntrenaMatch</div>
+      <div class="flex gap-5">
+        <a href="privacy.html" class="hover:text-white">Privacy</a>
+        <a href="terms.html" class="hover:text-white">Terms</a>
+        <a href="https://github.com/musclegrenadechile/entrenamatch" target="_blank" rel="noopener" class="hover:text-white">GitHub</a>
+      </div>
+    </div>
+  </footer>
 </body>
 </html>

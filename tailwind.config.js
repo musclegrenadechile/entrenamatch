@@ -2,7 +2,10 @@
 export default {
   content: [
     "./index.html",
+    "./public/landing.html",
+    "./public/landing-en.html",
     "./src/**/*.{js,ts,jsx,tsx}",
+    "./src/landing/**/*.css",
   ],
   theme: {
     extend: {
