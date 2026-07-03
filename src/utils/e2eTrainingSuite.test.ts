@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { isFuelPlanNutritionE2ECovered } from './e2eFuelPlanCoverage'
+import {
+  isFuelPlanNutritionE2ECovered,
+  isFuelPlanNutritionE2ETrilogyComplete,
+} from './e2eFuelPlanCoverage'
 import {
   countTrainingE2ESpecs,
   e2eFuelPlanSpecsCoveredInInventory,
@@ -62,7 +65,8 @@ describe('e2eTrainingSuite', () => {
     expect(e2eFuelPlanSpecsCoveredInInventory()).toBe(true)
   })
 
-  it('e2eFuelPlanCoverage nutrición en 2 specs (oleada 416)', () => {
+  it('e2eFuelPlanCoverage nutrición trilogía 3 specs (oleada 417)', () => {
     expect(isFuelPlanNutritionE2ECovered()).toBe(true)
+    expect(isFuelPlanNutritionE2ETrilogyComplete()).toBe(true)
   })
 })

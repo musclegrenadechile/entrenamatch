@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.475
+**Versión cierre:** v0.1.476
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -87,10 +87,11 @@
 | **414** | **Cierre Fuel×plan + CI** | e2eFuelPlanCoverage (3 specs); fuel-flow déficit E2E; qa:smoke valida specs Fuel |
 | **415** | **Mega cierre II + nutrición** | trainingMegaSuite cierra 361–414; nota nutricional Fuel×plan; harness getWeeklyPlanNutritionNote |
 | **416** | **Post-mega nutrición E2E** | trainingPolishPostMegaSuite; plan-history surplus nutrición + aria; e2eFuelPlanCoverage nutrición 2 specs |
+| **417** | **Trilogía nutrición E2E** | mega-flow under-fueled nutrición; isFuelPlanNutritionE2ETrilogyComplete; qa:smoke valida helper |
 
-## Mega entrenamiento (361–416) ✅
+## Mega entrenamiento (361–417) ✅
 
-Inventario `trainingMegaSuite`: 6 sub-bloques (pulido I 361–377, E2E 378–410, pulido II 383–409, EntrenaPlan×historial 401–409, Fuel×plan 411–414, post-mega 415–416). 56 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`. Cierre mega fase I oleada 411; cierre mega II oleada 415; post-mega oleada 416.
+Inventario `trainingMegaSuite`: 6 sub-bloques (pulido I 361–377, E2E 378–410, pulido II 383–409, EntrenaPlan×historial 401–409, Fuel×plan 411–414, post-mega 415–417). 57 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`. Cierre mega fase I oleada 411; cierre mega II oleada 415; post-mega oleada 417.
 
 ## Fuel × EntrenaPlan (411–414) ✅
 

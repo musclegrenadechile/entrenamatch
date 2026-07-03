@@ -21,7 +21,7 @@ export const E2E_FUEL_PLAN_SPECS: readonly E2EFuelPlanSpecEntry[] = [
     file: 'e2e/training-mega-flow.spec.ts',
     oleada: 412,
     scenario: 'under-fueled',
-    covers: ['fuel-hint', 'fuel-aria', 'fuel-tone'],
+    covers: ['fuel-hint', 'fuel-aria', 'fuel-tone', 'fuel-nutrition'],
   },
   {
     id: 'workout-plan-history-flow',
@@ -50,7 +50,7 @@ export function countE2EFuelPlanSpecs(): number {
 }
 
 export function e2eFuelPlanBlockRange(): { from: number; to: number } {
-  return { from: 412, to: 416 }
+  return { from: 412, to: 417 }
 }
 
 export function fuelPlanNutritionSpecIds(): string[] {
@@ -61,6 +61,11 @@ export function fuelPlanNutritionSpecIds(): string[] {
 
 export function isFuelPlanNutritionE2ECovered(): boolean {
   return fuelPlanNutritionSpecIds().length >= 2
+}
+
+/** Trilogía nutrición: under-fueled + surplus + déficit (oleada 417). */
+export function isFuelPlanNutritionE2ETrilogyComplete(): boolean {
+  return fuelPlanNutritionSpecIds().length >= 3
 }
 
 export function e2eFuelPlanSpecIds(): string[] {

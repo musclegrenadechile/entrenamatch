@@ -109,6 +109,16 @@ for (const spec of fuelPlanSpecs) {
 }
 if (!ok) process.exit(1)
 console.log('✓ e2eFuelPlanCoverage aligned with CI e2e-smoke (3 specs)')
+if (!fuelPlanCoverage.includes('isFuelPlanNutritionE2ETrilogyComplete')) {
+  console.error('e2eFuelPlanCoverage missing nutrition trilogy helper (oleada 417)')
+  ok = false
+}
+if (!fuelPlanCoverage.includes("'fuel-nutrition'")) {
+  console.error('e2eFuelPlanCoverage missing fuel-nutrition cover')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eFuelPlanCoverage nutrition trilogy helper present')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)
