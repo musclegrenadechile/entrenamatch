@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.440
+**Versión cierre:** v0.1.441
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -52,10 +52,15 @@
 | **379** | **E2E flujo completo** | training-full-flow.spec (entreno→sync→reseña), closeArena harness, CI Playwright ampliado |
 | **380** | **E2E entreno→Fuel** | workout-fuel-flow.spec, harness Fuel + banner post-guardar, dialog Fuel accesible |
 | **381** | **E2E mega entreno** | training-mega-flow.spec (entreno→Fuel→sync→reseña), closeFuelLogModal harness |
+| **382** | **Cierre E2E entreno** | Inventario e2eTrainingSuite, docs bloque 378–381, landing changelog E2E CI |
 
 ## Pulido entrenamiento (361–377) ✅
 
 Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-guardar y cards de muro unificados al design system v2. Oleadas 374–377 cierran biblioteca, series, UX móvil y duplicar serie del gym-log.
+
+## E2E entrenamiento (378–382) ✅
+
+Playwright con harness `?e2e=1` en CI (`e2e-smoke`). Specs: `workout-flow`, `training-full-flow`, `workout-fuel-flow`, `training-mega-flow` (regresión completa). Utils: `e2eWorkoutScenarios`, `e2eTrainingMegaFlow`, `e2eTrainingSuite`.
 
 ## Auditoría cohesión (360)
 
