@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.454
+**Versión cierre:** v0.1.455
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -66,6 +66,7 @@
 | **393** | **Fuel prefill entreno** | Macros sugeridos en modal Fuel + chip «Sugerido del entreno»; E2E mega/fuel-flow |
 | **394** | **Cierre post-entreno** | Inventario postWorkoutTrainingSuite, harness getFuelLogPrefillMacros, bloque 390–394 ✅ |
 | **395** | **Historial PR** | Resumen compacto en filas, kicker «N con PR», aria badges, tests workoutHistoryDisplay |
+| **396** | **Sparkline PR** | Puntos dorados en sparkline de historial cuando la sesión tiene PR, tests sparkline data |
 
 ## Post-entreno (390–394) ✅
 

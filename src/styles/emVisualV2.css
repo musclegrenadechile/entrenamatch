@@ -6327,6 +6327,17 @@
   opacity: 0.85;
 }
 
+/* ——— Entreno oleada 396: sparkline con puntos PR ——— */
+.em-v2-training-history__sparkline--has-pr {
+  color: rgba(255, 103, 31, 0.92);
+}
+
+.em-v2-training-history__sparkline-dot--pr {
+  fill: #fde68a;
+  stroke: rgba(255, 215, 0, 0.65);
+  stroke-width: 0.75;
+}
+
 .em-v2-workout .em-v2-draft-recovered {
   display: flex;
   align-items: center;

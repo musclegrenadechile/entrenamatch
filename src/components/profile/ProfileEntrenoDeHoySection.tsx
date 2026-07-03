@@ -12,7 +12,7 @@ import {
   getWorkoutHistoryBadgeAriaLabel,
   WORKOUT_HISTORY_SUMMARY_CLASS,
 } from '../../utils/workoutHistoryDisplay'
-import { buildWorkoutHistorySparkline } from '../../utils/workoutHistorySparkline'
+import { buildWorkoutHistorySparklineData } from '../../utils/workoutHistorySparkline'
 import { WorkoutHistorySparkline } from '../workout/WorkoutHistorySparkline'
 import { ExerciseProgressBars } from '../workout/ExerciseProgressBars'
 
@@ -78,7 +78,7 @@ export function ProfileEntrenoDeHoySection({
                 month: 'short',
               })
               const badges = buildWorkoutHistoryBadges(w, recentWorkouts.slice(index + 1))
-              const sparkline = buildWorkoutHistorySparkline(recentWorkouts, index)
+              const sparkline = buildWorkoutHistorySparklineData(recentWorkouts, index)
               const rowSummary = buildWorkoutHistoryRowSummary(w)
 
               return (
@@ -103,7 +103,7 @@ export function ProfileEntrenoDeHoySection({
                       <p className={WORKOUT_HISTORY_SUMMARY_CLASS}>{rowSummary}</p>
                     )}
                   </div>
-                  <WorkoutHistorySparkline values={sparkline} />
+                  <WorkoutHistorySparkline points={sparkline} />
                   <div className="em-v2-training-history__actions">
                     <button
                       type="button"
