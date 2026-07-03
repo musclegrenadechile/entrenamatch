@@ -34,6 +34,7 @@ import {
   shouldShowWeeklyPlanNutritionNote,
   WEEKLY_PLAN_NUTRITION_CLASS,
 } from '../../utils/weeklyPlanNutritionDisplay'
+import { resolveWeeklyPlanNutritionToneClass } from '../../utils/weeklyPlanNutritionToneDisplay'
 import {
   resolveWeeklyPlanFuelWeekHintTone,
   resolveWeeklyPlanFuelWeekHintToneClass,
@@ -155,6 +156,10 @@ export function WeeklyPlanCard({
     plan.scenario,
     plan.energySummary
   )
+  const nutritionToneClass = resolveWeeklyPlanNutritionToneClass(
+    plan.scenario,
+    plan.energySummary
+  )
 
   return (
     <div className={`em-v2-card em-v2-plan ${scenarioClass}`} aria-label="Plan de entreno recomendado">
@@ -270,7 +275,9 @@ export function WeeklyPlanCard({
 
       {showNutritionNote && nutritionText && (
         <p
-          className={WEEKLY_PLAN_NUTRITION_CLASS}
+          className={[WEEKLY_PLAN_NUTRITION_CLASS, nutritionToneClass]
+            .filter(Boolean)
+            .join(' ')}
           role="status"
           aria-label={buildWeeklyPlanNutritionAriaLabel(nutritionText)}
         >

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildWeeklyPlanFuelToneStackExpected,
   fuelToneStackMatchesExpected,
+  fuelToneStackSnapshotMatchesExpected,
   inferFuelToneFromClassSuffix,
   isWeeklyPlanFuelToneStackConsistent,
 } from './weeklyPlanFuelToneStackDisplay'
@@ -39,9 +40,13 @@ describe('weeklyPlanFuelToneStackDisplay', () => {
       headline: 'em-v2-plan__headline-fuel--surplus',
       row: 'em-v2-plan__fuel-row--surplus',
       chip: 'em-v2-plan__fuel-week-chip--surplus',
+      nutrition: 'em-v2-plan__nutrition--surplus',
     }
     expect(isWeeklyPlanFuelToneStackConsistent(aligned)).toBe(true)
     expect(fuelToneStackMatchesExpected(aligned, 'surplus')).toBe(true)
+    const expected = buildWeeklyPlanFuelToneStackExpected('surplus', baseEnergy)
+    expect(expected).not.toBeNull()
+    expect(fuelToneStackSnapshotMatchesExpected(aligned, expected!)).toBe(true)
     expect(
       isWeeklyPlanFuelToneStackConsistent({ ...aligned, hint: 'em-v2-plan__fuel-week-hint--deficit' })
     ).toBe(false)

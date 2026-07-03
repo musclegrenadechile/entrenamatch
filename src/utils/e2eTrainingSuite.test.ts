@@ -83,7 +83,7 @@ describe('e2eTrainingSuite', () => {
     expect(e2eFuelPlanHeadlineSpecsCoveredInInventory()).toBe(true)
   })
 
-  it('e2eFuelPlanFullCoverage listo (oleada 420–423)', () => {
+  it('e2eFuelPlanFullCoverage listo (oleada 420–424)', () => {
     expect(isE2EFuelPlanFullCoverageReady()).toBe(true)
   })
 

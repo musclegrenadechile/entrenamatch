@@ -121,6 +121,16 @@ export function readWeeklyPlanNutritionAriaLabel(): string | null {
   return note?.getAttribute('aria-label')?.trim() ?? null
 }
 
+export function readWeeklyPlanNutritionToneClass(): string | null {
+  const card = findEntrenaPlanCard()
+  const note = card?.querySelector(`.${WEEKLY_PLAN_NUTRITION_CLASS}`)
+  if (!note) return null
+  for (const cls of note.classList) {
+    if (cls.startsWith(`${WEEKLY_PLAN_NUTRITION_CLASS}--`)) return cls
+  }
+  return null
+}
+
 export function readWeeklyPlanFuelRowToneClass(): string | null {
   const card = findEntrenaPlanCard()
   const row = card?.querySelector(`.${WEEKLY_PLAN_FUEL_ROW_CLASS}`)
@@ -147,6 +157,7 @@ export function readWeeklyPlanFuelToneStackSnapshot(): WeeklyPlanFuelToneStackSn
     headline: readWeeklyPlanFuelHeadlineChipToneClass(),
     row: readWeeklyPlanFuelRowToneClass(),
     chip: readWeeklyPlanFuelWeekChipToneClass(),
+    nutrition: readWeeklyPlanNutritionToneClass(),
   }
 }
 

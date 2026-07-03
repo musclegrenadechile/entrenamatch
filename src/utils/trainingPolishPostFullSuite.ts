@@ -40,12 +40,18 @@ export const TRAINING_POLISH_POST_FULL_UTILS: readonly TrainingPolishPostFullEnt
     oleada: 423,
     covers: ['scenario', 'border', 'e2e'],
   },
+  {
+    id: 'fuel-nutrition-tone',
+    module: 'weeklyPlanNutritionToneDisplay',
+    oleada: 424,
+    covers: ['scenario', 'border'],
+  },
 ] as const
 
-export const TRAINING_POLISH_POST_FULL_CLOSED_OLEADA = 423
+export const TRAINING_POLISH_POST_FULL_CLOSED_OLEADA = 424
 
 export function trainingPolishPostFullRange(): { from: number; to: number } {
-  return { from: 421, to: 423 }
+  return { from: 421, to: 424 }
 }
 
 export function countTrainingPolishPostFullUtils(): number {

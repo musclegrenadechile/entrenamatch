@@ -44,6 +44,14 @@ test('E2E workout-plan-history-flow — guardar entreno y hint PR en EntrenaPlan
     window.__entrenamatchE2E!.isWeeklyPlanFuelToneStackAligned()
   )
   expect(toneStackAligned).toBe(true)
+  const toneStackExpected = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWeeklyPlanFuelToneStackExpected('surplus')
+  )
+  expect(toneStackExpected).toBe(true)
+  const nutritionTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanNutritionToneClass()
+  )
+  expect(nutritionTone).toBe('em-v2-plan__nutrition--surplus')
 
   await expect(planCard.locator('.em-v2-plan__headline-fuel')).toBeVisible({ timeout: 10000 })
   const headlineFuelChip = await page.evaluate(() =>

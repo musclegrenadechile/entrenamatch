@@ -23,7 +23,7 @@ export function countFuelPlanCoverageSuites(): number {
 }
 
 export function e2eFuelPlanFullBlockRange(): { from: number; to: number } {
-  return { from: 412, to: 423 }
+  return { from: 412, to: 424 }
 }
 
 /** Cobertura Fuel×plan + nutrición + headline en 3 specs CI (oleada 420). */
@@ -37,6 +37,7 @@ export function isFuelPlanFullE2ECoverageComplete(): boolean {
     unionFuelPlanCovers().includes('fuel-headline') &&
     unionFuelPlanCovers().includes('fuel-scenario') &&
     unionFuelPlanCovers().includes('fuel-row-tone') &&
-    unionFuelPlanCovers().includes('fuel-tone-stack')
+    unionFuelPlanCovers().includes('fuel-tone-stack') &&
+    unionFuelPlanCovers().includes('fuel-nutrition-tone')
   )
 }

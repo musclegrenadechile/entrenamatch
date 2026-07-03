@@ -6,6 +6,7 @@ import {
 import { resolveWeeklyPlanFuelScenarioBorderClass } from './weeklyPlanFuelScenarioSync'
 import { resolveWeeklyPlanFuelHeadlineChipToneClass } from './weeklyPlanHeadlineFuelDisplay'
 import { resolveWeeklyPlanFuelRowToneClass } from './weeklyPlanFuelRowToneDisplay'
+import { resolveWeeklyPlanNutritionToneClass } from './weeklyPlanNutritionToneDisplay'
 import { resolveWeeklyPlanFuelWeekChipToneClass } from './weeklyPlanFuelWeekChipDisplay'
 import { resolveWeeklyPlanFuelWeekHintToneClass } from './weeklyPlanFuelWeekToneDisplay'
 
@@ -15,6 +16,7 @@ export type WeeklyPlanFuelToneStackSnapshot = {
   headline: string | null
   row: string | null
   chip: string | null
+  nutrition: string | null
 }
 
 export type WeeklyPlanFuelToneStackExpected = {
@@ -24,6 +26,7 @@ export type WeeklyPlanFuelToneStackExpected = {
   headline: string
   row: string
   chip: string | null
+  nutrition: string
 }
 
 /** Inferir tono Fuel desde sufijo de clase CSS (oleada 423). */
@@ -45,6 +48,8 @@ export function buildWeeklyPlanFuelToneStackExpected(
   const headlineClass = resolveWeeklyPlanFuelHeadlineChipToneClass(scenario, energy)
   const rowClass = resolveWeeklyPlanFuelRowToneClass(scenario, energy)
   if (!hintClass || !headlineClass || !rowClass) return null
+  const nutritionClass = resolveWeeklyPlanNutritionToneClass(scenario, energy)
+  if (!nutritionClass) return null
   return {
     tone,
     border: resolveWeeklyPlanFuelScenarioBorderClass(tone),
@@ -52,6 +57,7 @@ export function buildWeeklyPlanFuelToneStackExpected(
     headline: headlineClass,
     row: rowClass,
     chip: resolveWeeklyPlanFuelWeekChipToneClass(scenario, energy),
+    nutrition: nutritionClass,
   }
 }
 
@@ -65,6 +71,7 @@ export function isWeeklyPlanFuelToneStackConsistent(
     inferFuelToneFromClassSuffix(snapshot.headline),
     inferFuelToneFromClassSuffix(snapshot.row),
     inferFuelToneFromClassSuffix(snapshot.chip),
+    inferFuelToneFromClassSuffix(snapshot.nutrition),
   ].filter((t): t is FuelWeekHintTone => t !== null)
   if (tones.length < 3) return false
   const first = tones[0]
@@ -77,4 +84,19 @@ export function fuelToneStackMatchesExpected(
 ): boolean {
   if (!isWeeklyPlanFuelToneStackConsistent(snapshot)) return false
   return inferFuelToneFromClassSuffix(snapshot.hint) === expectedTone
+}
+
+/** Valida que cada capa visible coincide con el stack esperado (oleada 424). */
+export function fuelToneStackSnapshotMatchesExpected(
+  snapshot: WeeklyPlanFuelToneStackSnapshot,
+  expected: WeeklyPlanFuelToneStackExpected
+): boolean {
+  if (!fuelToneStackMatchesExpected(snapshot, expected.tone)) return false
+  if (snapshot.border !== expected.border) return false
+  if (snapshot.hint !== expected.hint) return false
+  if (snapshot.headline !== expected.headline) return false
+  if (snapshot.row !== expected.row) return false
+  if (expected.chip !== null && snapshot.chip !== expected.chip) return false
+  if (snapshot.nutrition !== expected.nutrition) return false
+  return true
 }
