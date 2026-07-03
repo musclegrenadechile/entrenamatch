@@ -78,10 +78,8 @@ export function WorkoutSessionFab({
           onToggleLive()
         }}
         disabled={isTogglingLive}
-        className={`workout-session-fab-live flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${
-          isLive
-            ? 'bg-[#E11D48] text-white'
-            : 'bg-[#22c55e] text-black'
+        className={`em-v2-workout-fab__live flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${
+          isLive ? 'em-v2-workout-fab__live--on' : ''
         } ${isTogglingLive ? 'opacity-70' : 'active:scale-95'}`}
         title={isLive ? 'Terminar LIVE' : 'Activar LIVE'}
       >
@@ -91,7 +89,7 @@ export function WorkoutSessionFab({
     ) : null
 
   const actionButtons = showActions ? (
-    <div className="workout-session-fab-actions">
+    <div className="em-v2-workout-fab__actions workout-session-fab-actions">
       {onQuickAddSet && (
         <button
           type="button"
@@ -100,7 +98,7 @@ export function WorkoutSessionFab({
             e.stopPropagation()
             onQuickAddSet()
           }}
-          className="workout-session-fab-action"
+          className="em-v2-workout-fab__action workout-session-fab-action"
           title="Añadir serie al ejercicio actual"
         >
           <Plus className="w-3.5 h-3.5" />
@@ -115,12 +113,12 @@ export function WorkoutSessionFab({
             e.stopPropagation()
             onOpenChat()
           }}
-          className="workout-session-fab-action relative"
+          className="em-v2-workout-fab__action workout-session-fab-action relative"
           title="Ir al chat"
         >
           <MessageCircle className="w-3.5 h-3.5" />
           {chatUnreadCount > 0 && (
-            <span className="workout-session-fab-badge">
+            <span className="em-v2-workout-fab__badge workout-session-fab-badge">
               {chatUnreadCount > 9 ? '9+' : chatUnreadCount}
             </span>
           )}
@@ -134,7 +132,7 @@ export function WorkoutSessionFab({
             e.stopPropagation()
             onOpenFuel()
           }}
-          className="workout-session-fab-action"
+          className="em-v2-workout-fab__action workout-session-fab-action"
           title="Registrar comida"
         >
           <UtensilsCrossed className="w-3.5 h-3.5" />
@@ -145,8 +143,8 @@ export function WorkoutSessionFab({
 
   if (layout === 'chat-strip') {
     return (
-      <div className="workout-session-strip shrink-0 px-2 pt-1 pb-0.5">
-        <div className="workout-session-strip-inner">
+      <div className="em-v2-workout-fab__strip workout-session-strip shrink-0 px-2 pt-1 pb-0.5">
+        <div className="em-v2-workout-fab__strip-inner workout-session-strip-inner">
           <button
             type="button"
             onClick={onResume}
@@ -191,8 +189,8 @@ export function WorkoutSessionFab({
         aria-label="Volver a Modo Entreno"
         aria-grabbed={drag.isDragging}
         title="Mantén y arrastra para mover · Toca para volver al entreno"
-        className={`workout-session-fab-card w-full select-none touch-none ${
-          drag.isDragging ? 'cursor-grabbing scale-[1.02] ring-2 ring-white/30' : 'cursor-grab active:scale-95'
+        className={`em-v2-workout-fab__card workout-session-fab-card w-full select-none touch-none ${
+          drag.isDragging ? 'em-v2-workout-fab__card--drag cursor-grabbing scale-[1.02] ring-2 ring-white/30' : 'cursor-grab active:scale-95'
         }`}
       >
         <div className="flex items-center justify-between gap-2 mb-0.5">

@@ -13,6 +13,8 @@ import { ArenaLiveRoutines } from './ArenaLiveRoutines'
 import type { WorkoutExercise } from '../../types'
 import type { GymSoundSyncMatch } from '../../services/gymSoundSyncMatch'
 import { GymSoundSyncChip } from '../music/GymSoundSyncChip'
+import { ArenaSyncTutorial } from './ArenaSyncTutorial'
+import { hasSeenArenaSyncTutorial } from '../../utils/arenaTutorial'
 
 export interface SyncArenaFlyingEmoji {
   id: string
@@ -120,6 +122,9 @@ export function SyncArenaView({
   const [now, setNow] = useState(Date.now())
   const [handshakeLabel, setHandshakeLabel] = useState<string | null>(null)
   const [witnessGlow, setWitnessGlow] = useState(false)
+  const [showArenaTutorial, setShowArenaTutorial] = useState(
+    () => open && !hasSeenArenaSyncTutorial()
+  )
   const prevWitnessRef = useState({ count: witnessCount })[0]
 
   useEffect(() => {
@@ -309,6 +314,10 @@ export function SyncArenaView({
           </button>
         </footer>
       </div>
+
+      {showArenaTutorial && (
+        <ArenaSyncTutorial onDismiss={() => setShowArenaTutorial(false)} />
+      )}
 
       <AnimatePresence>
         {isResting && (

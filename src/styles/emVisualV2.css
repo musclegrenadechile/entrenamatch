@@ -4226,3 +4226,188 @@
   color: var(--fit-muted);
   padding: 0.25rem;
 }
+
+/* ——— Entreno oleada 363: EntrenaPlan + FAB + Arena tutorial ——— */
+.em-v2-plan--on-track {
+  border-color: var(--em-border-brand);
+}
+
+.em-v2-plan--deficit {
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+.em-v2-plan--surplus {
+  border-color: rgba(249, 115, 22, 0.35);
+}
+
+.em-v2-plan--catch-up {
+  border-color: rgba(99, 102, 241, 0.35);
+}
+
+.em-v2-plan--rest {
+  border-color: rgba(100, 116, 139, 0.35);
+}
+
+.em-v2-plan--under-fueled {
+  border-color: rgba(168, 85, 247, 0.35);
+}
+
+.em-v2-plan__fuel-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--em-radius-lg);
+  background: rgba(168, 85, 247, 0.08);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  font-size: 0.625rem;
+}
+
+.em-v2-plan__rec {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--em-radius-xl);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.em-v2-plan__start {
+  padding: 0.625rem 1rem;
+  border-radius: var(--em-radius-2xl);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  background: linear-gradient(145deg, #22c55e 0%, #16a34a 100%);
+  color: #0a0a0d;
+}
+
+.em-v2-workout-fab__card {
+  border-radius: var(--em-radius-xl);
+  padding: 0.625rem 0.75rem;
+  background: linear-gradient(135deg, var(--em-brand) 0%, #ea580c 100%);
+  color: #0a0a0d;
+  box-shadow: var(--em-shadow-card), 0 0 0 1px rgba(255, 103, 31, 0.35);
+  border: none;
+}
+
+.em-v2-workout-fab__card--drag {
+  box-shadow: var(--em-shadow-card), 0 0 0 2px rgba(255, 255, 255, 0.25);
+}
+
+.em-v2-workout-fab__live {
+  background: var(--em-live);
+  color: #0a0a0d;
+}
+
+.em-v2-workout-fab__live--on {
+  background: #e11d48;
+  color: #fff;
+}
+
+.em-v2-workout-fab__action {
+  border-radius: var(--em-radius-lg);
+  background: rgba(255, 103, 31, 0.12);
+  border: 1px solid var(--em-border-brand);
+  color: var(--em-brand);
+}
+
+.em-v2-workout-fab__badge {
+  font-size: 0.625rem;
+}
+
+.em-v2-workout-fab__strip-inner {
+  border-radius: var(--em-radius-xl);
+  background: linear-gradient(135deg, rgba(255, 103, 31, 0.95) 0%, rgba(234, 88, 12, 0.95) 100%);
+  box-shadow: var(--em-shadow-card);
+}
+
+.em-v2-arena-tutorial {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.em-v2-arena-tutorial__card {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  padding: 1.25rem;
+  border-radius: var(--em-radius-xl);
+  border: 1px solid var(--em-border-soft);
+  background: linear-gradient(165deg, var(--em-surface-glass) 0%, var(--em-surface-1) 100%);
+  box-shadow: var(--em-shadow-card);
+  text-align: center;
+}
+
+.em-v2-arena-tutorial__close {
+  position: absolute;
+  top: 0.625rem;
+  right: 0.625rem;
+  color: var(--fit-muted);
+}
+
+.em-v2-arena-tutorial__kicker {
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--em-live);
+}
+
+.em-v2-arena-tutorial__emoji {
+  font-size: 2rem;
+  margin: 0.75rem 0 0.5rem;
+}
+
+.em-v2-arena-tutorial__title {
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: #fff;
+}
+
+.em-v2-arena-tutorial__body {
+  font-size: 0.75rem;
+  color: var(--fit-muted);
+  margin-top: 0.5rem;
+  line-height: 1.45;
+}
+
+.em-v2-arena-tutorial__dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.375rem;
+  margin: 0.75rem 0;
+}
+
+.em-v2-arena-tutorial__dots span {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.em-v2-arena-tutorial__dot--active {
+  background: var(--em-live);
+}
+
+.em-v2-arena-tutorial__track {
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  margin-bottom: 0.75rem;
+  overflow: hidden;
+}
+
+.em-v2-arena-tutorial__fill {
+  height: 100%;
+  background: var(--em-live);
+  transition: width 0.2s linear;
+}

@@ -377,8 +377,19 @@ export function DailyHome({
         </button>
       )}
 
-      {(entrenoWeekSummary || exercisePRRecords.length > 0) && (
+      {!compactDayOne && (entrenoWeekSummary || exercisePRRecords.length > 0 || weeklyPlan || onOpenFuelSetup) && (
         <section className="space-y-3" aria-label="Tu entrenamiento">
+          <WeeklyPlanCard
+            plan={weeklyPlan ?? null}
+            enriching={weeklyPlanEnriching}
+            onStartWorkout={onStartWeeklyPlan}
+            onPublishPlanToFeed={onPublishWeeklyPlanToFeed}
+            onSharePlanExternally={onShareWeeklyPlanExternally}
+            onOpenFuelSetup={onOpenFuelSetup}
+            onOpenFuelLog={onOpenFuelLog}
+            hasFuelProfile={!!fuelProfile}
+            weeklyDeltaKcal={weeklyPlan?.energySummary.weeklyDeltaKcal}
+          />
           {entrenoWeekSummary && (
             <EntrenoDeHoyWeekSummary
               summary={entrenoWeekSummary}
@@ -453,15 +464,6 @@ export function DailyHome({
                 healthImportHint={healthImportHint}
                 wearableActivity={wearableActivity}
                 weeklyDeltaKcal={weeklyPlan?.energySummary.weeklyDeltaKcal}
-              />
-
-              <WeeklyPlanCard
-                plan={weeklyPlan}
-                enriching={weeklyPlanEnriching}
-                onStartWorkout={onStartWeeklyPlan}
-                onPublishPlanToFeed={onPublishWeeklyPlanToFeed}
-                onSharePlanExternally={onShareWeeklyPlanExternally}
-                onOpenFuelSetup={onOpenFuelSetup}
               />
 
             </div>
