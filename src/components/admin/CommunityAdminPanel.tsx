@@ -410,7 +410,7 @@ export function CommunityAdminPanel({
                 const isBot = isBetaBotProfile({ id: u.id, name: String(u.name) })
                 const gym = u.gymCheckIn?.gymName || u.gymCheckIn?.gymId
                 return (
-                  <div key={u.id} className="card p-3 rounded-2xl text-sm border border-[#2F2F35]">
+                  <div key={u.id} className="em-v2-card em-v2-card--compact text-sm">
                     <div className="flex justify-between gap-2 items-start">
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold text-base flex items-center gap-2 flex-wrap">
@@ -464,7 +464,7 @@ export function CommunityAdminPanel({
                 const isBot = isBetaBotProfile({ id: r.reportedUserId, name: reportedName })
                 const modReason = [r.reason, r.details].filter(Boolean).join(' — ')
                 return (
-                  <div key={r.id} className="card p-3 rounded-2xl text-sm border border-[#2F2F35]">
+                  <div key={r.id} className="em-v2-card em-v2-card--compact text-sm">
                     <div className="flex justify-between gap-2 items-start">
                       <div className="min-w-0 flex-1">
                         <p className="text-[10px] uppercase tracking-wide text-[#9CA3AF] mb-1">Reportado</p>
@@ -558,7 +558,7 @@ export function CommunityAdminPanel({
               <p className="text-sm text-[#9CA3AF] py-6 text-center">Sin coincidencias en perfiles cargados.</p>
             ) : (
               searchResults.map((p) => (
-                <div key={p.id} className="card p-3 rounded-2xl text-sm border border-[#2F2F35]">
+                <div key={p.id} className="em-v2-card em-v2-card--compact text-sm">
                   <p className="font-semibold">{p.name}</p>
                   <p className="text-xs text-[#9CA3AF] mt-0.5">
                     {[p.city, p.country].filter(Boolean).join(', ')}
@@ -582,7 +582,7 @@ export function CommunityAdminPanel({
               <p className="text-sm text-[#9CA3AF] py-8 text-center">No hay cuentas suspendidas.</p>
             ) : (
               suspended.map((s) => (
-                <div key={s.id} className="card p-3 rounded-2xl text-sm border border-orange-900/30">
+                <div key={s.id} className="em-v2-card em-v2-card--compact em-v2-card--warn text-sm">
                   <p className="font-semibold text-orange-100">{s.name}</p>
                   <p className="text-xs text-[#9CA3AF] mt-0.5">
                     {s.city || 'Sin ciudad'}
@@ -628,7 +628,7 @@ export function CommunityAdminPanel({
               </p>
             ) : (
               blocks.map((b) => (
-                <div key={b.id} className="card p-3 rounded-2xl text-sm">
+                <div key={b.id} className="em-v2-card em-v2-card--compact text-sm">
                   <div className="flex items-start gap-2">
                     <Ban size={16} className="text-red-400 shrink-0 mt-0.5" />
                     <div className="min-w-0 flex-1">
@@ -701,7 +701,7 @@ export function CommunityAdminPanel({
               </button>
             </div>
             {syncRecalcPreview && (
-              <div className="card p-3 rounded-2xl text-sm border border-[#2F2F35] space-y-2">
+              <div className="em-v2-card em-v2-card--compact text-sm space-y-2">
                 <p className="text-xs text-[#9CA3AF]">
                   {syncRecalcPreview.dryRun ? 'Vista previa' : 'Aplicado'} ·{' '}
                   {syncRecalcPreview.totalChanges} cambio(s) · −{syncRecalcPreview.totalRemoved} syncs
@@ -769,7 +769,7 @@ export function CommunityAdminPanel({
               <p className="text-sm text-[#9CA3AF] py-8 text-center">Sin registros aún.</p>
             ) : (
               auditLog.map((row) => (
-                <div key={row.id} className="card p-3 rounded-2xl text-xs border border-[#2F2F35]">
+                <div key={row.id} className="em-v2-card em-v2-card--compact text-xs">
                   <div className="flex justify-between gap-2">
                     <span className="font-semibold text-[#E5E7EB]">{adminActionLabel(row.action)}</span>
                     <span className="text-[#6B7280] shrink-0">

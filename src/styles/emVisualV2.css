@@ -3601,3 +3601,46 @@
   border-color: var(--em-border-brand);
   box-shadow: 0 0 0 1px var(--em-border-brand);
 }
+
+/* ——— GymSound + wearable + admin cards (oleada 359) ——— */
+.em-v2-gymsound__segmented {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border-radius: var(--em-radius-2xl);
+  background: var(--em-surface-1);
+  border: 1px solid var(--em-border-soft);
+  margin-top: 0.75rem;
+}
+
+.em-v2-gymsound__segment-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: var(--em-radius-2xl);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  color: var(--fit-muted);
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.em-v2-gymsound__segment-btn--spotify {
+  background: rgba(29, 185, 84, 0.2);
+  color: #1db954;
+}
+
+.em-v2-gymsound__segment-btn--youtube {
+  background: rgba(255, 0, 0, 0.2);
+  color: #ff6b6b;
+}
+
+.em-v2-wearable__stat {
+  border-radius: var(--em-radius-2xl);
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 0.5rem;
+  text-align: center;
+}
+
+.em-v2-card--warn {
+  border-color: rgba(249, 115, 22, 0.35);
+}

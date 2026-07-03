@@ -158,7 +158,7 @@ export function GymSoundCard({
   }
 
   return (
-    <div className="card p-4">
+    <div className="em-v2-card">
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-xl bg-[#1DB954]/15 flex items-center justify-center shrink-0">
           <Music2 size={20} className="text-[#1DB954]" />
@@ -171,22 +171,18 @@ export function GymSoundCard({
         </div>
       </div>
 
-      <div className="mt-3 flex gap-1 p-1 rounded-xl bg-[#141418] border border-[#2F2F35]">
+      <div className="em-v2-gymsound__segmented">
         <button
           type="button"
           onClick={() => setSource('spotify')}
-          className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition ${
-            source === 'spotify' ? 'bg-[#1DB954]/20 text-[#1DB954]' : 'text-[#9CA3AF]'
-          }`}
+          className={`em-v2-gymsound__segment-btn ${source === 'spotify' ? 'em-v2-gymsound__segment-btn--spotify' : ''}`}
         >
           Spotify
         </button>
         <button
           type="button"
           onClick={() => setSource('youtube')}
-          className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition ${
-            source === 'youtube' ? 'bg-[#FF0000]/20 text-[#ff6b6b]' : 'text-[#9CA3AF]'
-          }`}
+          className={`em-v2-gymsound__segment-btn ${source === 'youtube' ? 'em-v2-gymsound__segment-btn--youtube' : ''}`}
         >
           YouTube Music
         </button>
@@ -239,7 +235,7 @@ export function GymSoundCard({
                 type="button"
                 disabled={!configured || connecting}
                 onClick={() => void handleConnect()}
-                className="px-4 py-2 rounded-full bg-[#1DB954] text-black text-xs font-bold active:brightness-90 disabled:opacity-50"
+                className="em-v2-live-near__empty-cta disabled:opacity-50"
               >
                 {connecting ? 'Abriendo Spotify…' : 'Conectar Spotify'}
               </button>
