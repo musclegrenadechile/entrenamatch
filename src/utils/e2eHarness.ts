@@ -34,6 +34,11 @@ export type EntrenamatchE2EApi = {
   getWorkoutSaveBannerSessionSummary: () => string | null
   /** Hint Fuel sugerido en banner post-guardar (oleada 392). */
   getWorkoutSaveBannerFuelHint: () => string | null
+  /** aria-label del banner post-guardar (oleada 439). */
+  getWorkoutSaveBannerAriaLabel: () => string | null
+  /** Modificador tono PR en banner post-guardar (oleada 439). */
+  getWorkoutSaveBannerToneClass: () => string | null
+  isWorkoutSaveBannerPrToneAriaExpected: () => boolean
   /** Abre Fuel log con prefill del banner post-guardar (si está activo). */
   openFuelFromWorkoutSave: () => void
   /** Macros sugeridos del prefill Fuel activo (oleada 394). */

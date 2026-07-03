@@ -91,8 +91,13 @@ import {
   readGymLogSessionChipText,
   readGymLogSessionChipToneClass,
 } from './utils/e2eGymLogSessionDom'
+import {
+  readWorkoutSaveBannerAriaLabel,
+  readWorkoutSaveBannerToneClass,
+} from './utils/e2eWorkoutSaveBannerDom'
 import { fabSessionPrAriaMatchesLivePr } from './utils/gymLogFabSessionPrToneDisplay'
 import { sessionPrAriaMatchesLivePr } from './utils/gymLogSessionPrToneDisplay'
+import { bannerPrAriaMatchesPr } from './utils/workoutSaveBannerPrToneDisplay'
 import {
   isWeeklyPlanCardVisible,
   readWeeklyPlanCardAriaLabel,
@@ -6030,6 +6035,10 @@ useEffect(() => {
       isWorkoutSaveBannerVisible: () => workoutSaveBanner !== null,
       getWorkoutSaveBannerSessionSummary: () => workoutSaveBanner?.sessionSummary ?? null,
       getWorkoutSaveBannerFuelHint: () => workoutSaveBanner?.fuelBalanceHint ?? null,
+      getWorkoutSaveBannerAriaLabel: () => readWorkoutSaveBannerAriaLabel(),
+      getWorkoutSaveBannerToneClass: () => readWorkoutSaveBannerToneClass(),
+      isWorkoutSaveBannerPrToneAriaExpected: () =>
+        bannerPrAriaMatchesPr(readWorkoutSaveBannerAriaLabel()),
       openFuelFromWorkoutSave: () => {
         if (workoutSaveBanner) {
           setFuelLogPrefill(buildFuelLogPrefillFromWorkoutSave(workoutSaveBanner))

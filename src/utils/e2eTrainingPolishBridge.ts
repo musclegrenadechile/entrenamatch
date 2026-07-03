@@ -379,6 +379,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-fab-flow',
     feature: 'cierre gym-log v2 436–437 + e2eGymLogPostV2Coverage',
   },
+  {
+    polishOleada: 439,
+    e2eSpecId: 'workout-flow',
+    feature: 'tono PR×banner post-guardar + workoutSaveBannerPrToneDisplay',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

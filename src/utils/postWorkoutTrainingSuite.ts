@@ -1,5 +1,5 @@
 /** Inventario del bloque post-entreno (oleadas 390–394). */
-export type PostWorkoutTrainingCover = 'review' | 'banner' | 'fuel-banner' | 'fuel-prefill'
+export type PostWorkoutTrainingCover = 'review' | 'banner' | 'fuel-banner' | 'fuel-prefill' | 'pr'
 
 export type PostWorkoutTrainingUtilEntry = {
   id: string
@@ -39,6 +39,24 @@ export const POST_WORKOUT_TRAINING_UTILS: readonly PostWorkoutTrainingUtilEntry[
     oleada: 394,
     covers: ['review', 'banner', 'fuel-banner', 'fuel-prefill'],
   },
+  {
+    id: 'banner-pr-tone',
+    module: 'workoutSaveBannerPrToneDisplay',
+    oleada: 439,
+    covers: ['banner', 'pr'],
+  },
+  {
+    id: 'banner-pr-tone-e2e',
+    module: 'e2eWorkoutSaveBannerPrCoverage',
+    oleada: 439,
+    covers: ['banner', 'pr'],
+  },
+  {
+    id: 'post-workout-v2-open',
+    module: 'trainingPolishPostWorkoutV2Suite',
+    oleada: 439,
+    covers: ['banner', 'pr'],
+  },
 ] as const
 
 export function countPostWorkoutTrainingUtils(): number {
@@ -46,5 +64,7 @@ export function countPostWorkoutTrainingUtils(): number {
 }
 
 export function postWorkoutTrainingBlockRange(): { from: number; to: number } {
-  return { from: 390, to: 394 }
+  return { from: 390, to: 439 }
 }
+
+export const POST_WORKOUT_TRAINING_V2_OPEN_OLEADA = 439

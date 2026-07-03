@@ -572,6 +572,24 @@ if (!gymLogFullCoverage.includes('isGymLogFullE2ECoverageComplete')) {
 if (!ok) process.exit(1)
 console.log('✓ e2eGymLogPostV2Coverage aligned with full coverage (oleada 438)')
 console.log('✓ e2eGymLogFullCoverage unifies 3 gym-log v2 E2E suites (oleada 438)')
+const workoutSaveBannerPrCoverage = readFileSync(
+  join(root, 'src/utils/e2eWorkoutSaveBannerPrCoverage.ts'),
+  'utf8'
+)
+if (!workoutSaveBannerPrCoverage.includes('isWorkoutSaveBannerPrCoverageComplete')) {
+  console.error('e2eWorkoutSaveBannerPrCoverage missing banner-pr helper (oleada 439)')
+  ok = false
+}
+const workoutSaveBannerPrTone = readFileSync(
+  join(root, 'src/utils/workoutSaveBannerPrToneDisplay.ts'),
+  'utf8'
+)
+if (!workoutSaveBannerPrTone.includes('bannerPrAriaMatchesPr')) {
+  console.error('workoutSaveBannerPrToneDisplay missing aria helper (oleada 439)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eWorkoutSaveBannerPrCoverage aligned with post-entreno v2 pivot (oleada 439)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

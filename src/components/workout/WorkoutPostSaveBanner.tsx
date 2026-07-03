@@ -1,5 +1,10 @@
 import { Dumbbell, Share2, X } from 'lucide-react'
 import { WORKOUT_SAVE_BANNER_FUEL_CLASS } from '../../utils/workoutSaveBannerDisplay'
+import {
+  buildWorkoutSaveBannerPrToneAriaLabel,
+  resolveWorkoutSaveBannerPrToneClass,
+  WORKOUT_SAVE_BANNER_CLASS,
+} from '../../utils/workoutSaveBannerPrToneDisplay'
 
 export interface WorkoutPostSaveBannerData {
   title: string
@@ -38,18 +43,24 @@ export function WorkoutPostSaveBanner({
     .filter(Boolean)
     .join(' · ')
 
-  const ariaLabel = [
-    `Entreno guardado: ${title}`,
+  const bannerPrToneClass = resolveWorkoutSaveBannerPrToneClass(!!prSummary)
+  const ariaLabel = buildWorkoutSaveBannerPrToneAriaLabel({
+    title,
+    prSummary,
     sessionSummary,
     fuelBalanceHint,
-    prSummary ? 'Nuevo récord personal' : null,
-  ]
-    .filter(Boolean)
-    .join('. ')
+  })
 
   return (
     <div
-      className="em-v2-training-save-banner em-v2-training-save-banner--sticky em-v2-training-save-banner--enter"
+      className={[
+        WORKOUT_SAVE_BANNER_CLASS,
+        'em-v2-training-save-banner--sticky',
+        'em-v2-training-save-banner--enter',
+        bannerPrToneClass,
+      ]
+        .filter(Boolean)
+        .join(' ')}
       role="status"
       aria-label={ariaLabel}
     >

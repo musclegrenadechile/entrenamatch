@@ -4344,6 +4344,12 @@
   box-shadow: var(--em-shadow-card);
 }
 
+.em-v2-training-save-banner--has-pr {
+  border-color: rgba(253, 224, 71, 0.45);
+  background: linear-gradient(135deg, rgba(253, 224, 71, 0.14) 0%, var(--em-surface-1) 100%);
+  box-shadow: 0 0 16px rgba(253, 224, 71, 0.12), var(--em-shadow-card);
+}
+
 .em-v2-training-save-banner__close {
   position: absolute;
   top: 0.5rem;

@@ -40,10 +40,23 @@ test('E2E workout-flow — gym-log guardar + reseña post-entreno', async ({ pag
   })
   await expect(page.getByText(/Entreno guardado/i)).toBeVisible({ timeout: 10000 })
   await expect(page.locator('.em-v2-training-save-banner__session')).toContainText(/1 serie/i)
+  await expect(page.getByText('🏆 Nuevo PR')).toBeVisible()
   const sessionSummary = await page.evaluate(() =>
     window.__entrenamatchE2E!.getWorkoutSaveBannerSessionSummary()
   )
   expect(sessionSummary).toMatch(/600 kg/)
+  const bannerTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWorkoutSaveBannerToneClass()
+  )
+  expect(bannerTone).toBe('em-v2-training-save-banner--has-pr')
+  const bannerAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWorkoutSaveBannerAriaLabel()
+  )
+  expect(bannerAria).toMatch(/récord personal/i)
+  const bannerPrAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWorkoutSaveBannerPrToneAriaExpected()
+  )
+  expect(bannerPrAria).toBe(true)
 
   await page.evaluate(() => {
     window.__entrenamatchE2E!.openReviewModal('p1')
