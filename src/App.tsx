@@ -5956,6 +5956,10 @@ useEffect(() => {
         setWorkoutSaveBanner(null)
       },
       isFuelLogModalOpen: () => showFuelLogModal,
+      closeFuelLogModal: () => {
+        setFuelLogPrefill(null)
+        setShowFuelLogModal(false)
+      },
     })
   }, [
     showSyncArena,

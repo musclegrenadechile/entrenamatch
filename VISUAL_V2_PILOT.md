@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.439
+**Versión cierre:** v0.1.440
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -51,6 +51,7 @@
 | **378** | **E2E entreno** | Harness openWorkout/openReview, workout-flow.spec Playwright, checklist e2eWorkoutScenarios |
 | **379** | **E2E flujo completo** | training-full-flow.spec (entreno→sync→reseña), closeArena harness, CI Playwright ampliado |
 | **380** | **E2E entreno→Fuel** | workout-fuel-flow.spec, harness Fuel + banner post-guardar, dialog Fuel accesible |
+| **381** | **E2E mega entreno** | training-mega-flow.spec (entreno→Fuel→sync→reseña), closeFuelLogModal harness |
 
 ## Pulido entrenamiento (361–377) ✅
 

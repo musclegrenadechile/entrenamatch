@@ -20,6 +20,7 @@ export type EntrenamatchE2EApi = {
   /** Abre Fuel log con prefill del banner post-guardar (si está activo). */
   openFuelFromWorkoutSave: () => void
   isFuelLogModalOpen: () => boolean
+  closeFuelLogModal: () => void
 }
 
 declare global {
