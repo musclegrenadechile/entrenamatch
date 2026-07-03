@@ -52,6 +52,12 @@ import {
   saveWorkoutDraft,
 } from '../../utils/workoutDraft'
 import { formatWorkoutDraftRecoveredMessage } from '../../utils/workoutDraftRecoveredCopy'
+import {
+  buildGymLogSearchEmptyMessage,
+  shouldShowGymLogSearchEmpty,
+  shouldShowGymLogSuggestions,
+} from '../../utils/gymLogSearchDisplay'
+import { buildExerciseSetSummary, isGymLogSetComplete } from '../../utils/gymLogSetDisplay'
 import { useCompactMobile } from '../../hooks/useCompactMobile'
 import { EmV2EmptyState } from '../ui/EmV2EmptyState'
 
@@ -134,9 +140,11 @@ function CardioSetInputs({
     setIntensityDraft(n.intensity ? String(n.intensity) : '')
   }, [exerciseName, set.minutesMin, set.intensity, set.reps])
 
+  const done = isGymLogSetComplete(exerciseName, set)
+
   return (
-    <div className="gym-set-row">
-      <span className="gym-set-num">{setIdx + 1}</span>
+    <div className={`gym-log-set-row${done ? ' gym-log-set-row--done' : ''}`}>
+      <span className="gym-log-set-num">{setIdx + 1}</span>
       <input
         type="text"
         inputMode="numeric"
@@ -150,11 +158,11 @@ function CardioSetInputs({
             weightKg: 0,
           })
         }}
-        className="gym-set-input"
+        className="gym-log-set-input"
         placeholder="min"
         aria-label={`Minutos intervalo ${setIdx + 1}`}
       />
-      <span className="gym-set-unit">min</span>
+      <span className="gym-log-set-unit">min</span>
       <input
         type="text"
         inputMode="numeric"
@@ -172,12 +180,12 @@ function CardioSetInputs({
             weightKg: 0,
           })
         }}
-        className="gym-set-input"
+        className="gym-log-set-input"
         placeholder="1-10"
         aria-label={`Intensidad intervalo ${setIdx + 1}`}
       />
       {canRemove && (
-        <button type="button" onClick={() => onRemove(exIdx, setIdx)} className="gym-set-remove" aria-label="Quitar">
+        <button type="button" onClick={() => onRemove(exIdx, setIdx)} className="gym-log-set-remove" aria-label="Quitar">
           ×
         </button>
       )}
@@ -186,6 +194,7 @@ function CardioSetInputs({
 }
 
 function SetInputs({
+  exerciseName,
   set,
   setIdx,
   exIdx,
@@ -193,6 +202,7 @@ function SetInputs({
   onUpdate,
   onRemove,
 }: {
+  exerciseName: string
   set: WorkoutSet
   setIdx: number
   exIdx: number
@@ -208,9 +218,11 @@ function SetInputs({
     setWeightDraft(set.weightKg > 0 ? String(set.weightKg) : '')
   }, [set.reps, set.weightKg])
 
+  const done = isGymLogSetComplete(exerciseName, set)
+
   return (
-    <div className="gym-set-row">
-      <span className="gym-set-num">{setIdx + 1}</span>
+    <div className={`gym-log-set-row${done ? ' gym-log-set-row--done' : ''}`}>
+      <span className="gym-log-set-num">{setIdx + 1}</span>
       <input
         type="text"
         inputMode="numeric"
@@ -220,11 +232,11 @@ function SetInputs({
           setRepsDraft(raw)
           onUpdate(exIdx, setIdx, { reps: raw === '' ? 0 : Math.max(0, parseInt(raw, 10) || 0) })
         }}
-        className="gym-set-input"
+        className="gym-log-set-input"
         placeholder="reps"
         aria-label={`Reps set ${setIdx + 1}`}
       />
-      <span className="gym-set-unit">×</span>
+      <span className="gym-log-set-unit">×</span>
       <input
         type="text"
         inputMode="decimal"
@@ -240,12 +252,12 @@ function SetInputs({
           const n = parseFloat(raw)
           if (!Number.isNaN(n)) onUpdate(exIdx, setIdx, { weightKg: Math.max(0, n) })
         }}
-        className="gym-set-input gym-set-input--wide"
+        className="gym-log-set-input gym-log-set-input--wide"
         placeholder="kg"
         aria-label={`Peso set ${setIdx + 1}`}
       />
       {canRemove && (
-        <button type="button" onClick={() => onRemove(exIdx, setIdx)} className="gym-set-remove" aria-label="Quitar">
+        <button type="button" onClick={() => onRemove(exIdx, setIdx)} className="gym-log-set-remove" aria-label="Quitar">
           ×
         </button>
       )}
@@ -894,7 +906,7 @@ export function EntrenoDeHoyModal({
                   placeholder={muscleFilter ? `Buscar en ${muscleFilter}…` : 'Buscar ejercicio…'}
                   className="gym-log-search"
                 />
-                {showPicker && search.trim() && suggestions.length > 0 && (
+                {showPicker && shouldShowGymLogSuggestions(search, suggestions.length) && (
                   <ul className="gym-log-suggestions">
                     {suggestions.map((ex) => (
                       <li key={ex.name}>
@@ -905,6 +917,12 @@ export function EntrenoDeHoyModal({
                       </li>
                     ))}
                   </ul>
+                )}
+                {showPicker && shouldShowGymLogSearchEmpty(search, suggestions.length) && (
+                  <div className="gym-log-search-empty em-v2-gym-search-empty" role="status">
+                    <p>{buildGymLogSearchEmptyMessage(search, muscleFilter)}</p>
+                    <p className="em-v2-gym-search-empty__hint">Prueba otro nombre o cambia el filtro de músculo</p>
+                  </div>
                 )}
               </div>
 
@@ -974,10 +992,29 @@ export function EntrenoDeHoyModal({
               {exercises.map((ex, exIdx) => (
                 <li key={`${ex.name}-${exIdx}`} className="gym-log-exercise-card em-v2-workout-exercise">
                   <div className="gym-log-exercise-head">
-                    <span className="gym-log-exercise-name">{ex.name}</span>
-                    <button type="button" onClick={() => removeExercise(exIdx)} className="text-red-400/80 p-1">
+                    <div className="gym-log-exercise-head-main min-w-0">
+                      <span className="gym-log-exercise-name">{ex.name}</span>
+                      <span className="gym-log-exercise-summary">{buildExerciseSetSummary(ex.name, ex.sets)}</span>
+                    </div>
+                    <button type="button" onClick={() => removeExercise(exIdx)} className="text-red-400/80 p-1 shrink-0">
                       <Trash2 className="w-4 h-4" />
                     </button>
+                  </div>
+                  <div className="gym-log-set-headers" aria-hidden>
+                    <span className="gym-log-set-headers__spacer" />
+                    {isTimedCardioExercise(ex.name) ? (
+                      <>
+                        <span>min</span>
+                        <span className="gym-log-set-headers__gap" />
+                        <span>int.</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>reps</span>
+                        <span className="gym-log-set-headers__gap" />
+                        <span>kg</span>
+                      </>
+                    )}
                   </div>
                   <div className="gym-log-sets">
                     {ex.sets.map((set, setIdx) =>
@@ -995,6 +1032,7 @@ export function EntrenoDeHoyModal({
                       ) : (
                         <SetInputs
                           key={setIdx}
+                          exerciseName={ex.name}
                           set={set}
                           setIdx={setIdx}
                           exIdx={exIdx}

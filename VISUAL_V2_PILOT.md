@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.433
+**Versión cierre:** v0.1.434
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -45,10 +45,11 @@
 | **372** | **Entreno micro-UX** | Sparkline volumen en historial Perfil, banner sesión recuperada v2 en modal, reseña post-entreno stars v2 |
 | **373** | **Entreno gadget + progreso** | Barras progreso ejercicio v2 en Perfil, FAB autosave con bloques/edad, tests workoutFabDraftMeta |
 | **374** | **Gym-log biblioteca** | Filtros músculo/tipo v2, empty states picker+biblioteca, badge Sync en repetir entreno |
+| **375** | **Gym-log series** | Set rows v2 unificadas, resumen volumen por ejercicio, búsqueda sin resultados, tests gymLogDisplay |
 
-## Pulido entrenamiento (361–374)
+## Pulido entrenamiento (361–375)
 
-Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-guardar y cards de muro unificados al design system v2. Oleada 370 cierra overlays secundarios (draft, bubble, gym-sound, duel/fomo).
+Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-guardar y cards de muro unificados al design system v2. Oleadas 374–375 cierran biblioteca y filas de series del gym-log.
 
 ## Auditoría cohesión (360)
 
