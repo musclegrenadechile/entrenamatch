@@ -174,7 +174,7 @@ export function SyncArenaView({
 
   return (
     <div
-      className={`arena-fullscreen arena-sala-sync ${witnessGlow ? 'arena-sala-sync--witness-glow' : ''}`}
+      className={`em-visual-v2 em-v2-arena arena-fullscreen arena-sala-sync ${witnessGlow ? 'arena-sala-sync--witness-glow em-v2-arena--witness-glow' : ''}`}
       role="dialog"
       aria-label="Sala Sync EntrenaSync"
     >
@@ -231,7 +231,7 @@ export function SyncArenaView({
                 <span className="arena-avatar__initial">{(selfName || 'T')[0]}</span>
               )}
             </div>
-            <span className="arena-sala-sync__athlete-label text-[#22c55e]">TÚ</span>
+            <span className="arena-sala-sync__athlete-label em-v2-arena__label-self">TÚ</span>
             <span className="arena-sala-sync__athlete-ex">{activeExercise}</span>
           </div>
 
@@ -255,7 +255,7 @@ export function SyncArenaView({
                 <span className="arena-avatar__initial">{(partnerName || 'C')[0]}</span>
               )}
             </div>
-            <span className="arena-sala-sync__athlete-label text-[#FF671F]">{partnerFirst.toUpperCase()}</span>
+            <span className="arena-sala-sync__athlete-label em-v2-arena__label-partner">{partnerFirst.toUpperCase()}</span>
             <span className="arena-sala-sync__athlete-ex">
               {partnerLiveState?.activeExercise || '—'}
             </span>

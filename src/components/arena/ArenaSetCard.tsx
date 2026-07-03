@@ -71,7 +71,7 @@ export function ArenaSetCard({
   partnerFirst,
 }: ArenaSetCardProps) {
   return (
-    <section className="arena-set-card" aria-label="Set activo compartido">
+    <section className="em-v2-arena-set arena-set-card" aria-label="Set activo compartido">
       {partnerState && (
         <div className="arena-set-card__partner-bar">
           <span className="arena-set-card__partner-dot" aria-hidden />

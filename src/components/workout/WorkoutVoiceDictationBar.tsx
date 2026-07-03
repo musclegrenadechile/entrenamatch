@@ -61,7 +61,7 @@ export function WorkoutVoiceDictationBar({
 
     return (
 
-      <div className="gym-log-voice gym-log-voice--disabled">
+      <div className="em-v2-workout-voice em-v2-workout-voice--disabled">
 
         <Mic className="w-4 h-4 opacity-40" />
 
@@ -83,23 +83,23 @@ export function WorkoutVoiceDictationBar({
 
         type="button"
 
-        className="gym-log-voice gym-log-voice--tap"
+        className="em-v2-workout-voice em-v2-workout-voice--tap"
 
         onClick={() => void voice.startRecording()}
 
       >
 
-        <span className="gym-log-voice__mic" aria-hidden="true">
+        <span className="em-v2-workout-voice__mic" aria-hidden="true">
 
           <Mic className="w-5 h-5" />
 
         </span>
 
-        <div className="gym-log-voice__copy text-left">
+        <div className="em-v2-workout-voice__copy text-left">
 
-          <p className="gym-log-voice__title">Dictar entreno</p>
+          <p className="em-v2-workout-voice__title">Dictar entreno</p>
 
-          <p className="gym-log-voice__hint">
+          <p className="em-v2-workout-voice__hint">
             Toca, di tu rutina clara y toca PARAR — ej. &quot;Press banca 3×8 a 80 kg, dominadas 4×10, 45 min&quot;
           </p>
 
@@ -117,13 +117,13 @@ export function WorkoutVoiceDictationBar({
 
     return (
 
-      <div className="gym-log-voice gym-log-voice--recording">
+      <div className="em-v2-workout-voice em-v2-workout-voice--recording">
 
-        <span className="gym-log-voice__dot" />
+        <span className="em-v2-workout-voice__dot" />
 
-        <div className="gym-log-voice__copy flex-1">
+        <div className="em-v2-workout-voice__copy flex-1">
 
-          <p className="gym-log-voice__title text-red-400">
+          <p className="em-v2-workout-voice__title text-red-400">
 
             {voice.captureMode === 'audio'
               ? 'Grabando audio…'
@@ -135,11 +135,11 @@ export function WorkoutVoiceDictationBar({
           </p>
 
           {voice.liveTranscript ? (
-            <p className="gym-log-voice__transcript gym-log-voice__transcript--live">
+            <p className="em-v2-workout-voice__transcript em-v2-workout-voice__transcript--live">
               &quot;{voice.liveTranscript}&quot;
             </p>
           ) : (
-            <p className="gym-log-voice__hint">
+            <p className="em-v2-workout-voice__hint">
               {voice.captureMode === 'audio'
                 ? `Di tu rutina clara — toca PARAR al terminar (máx ${voice.maxRecordSec}s)`
                 : voice.captureMode === 'stt'
@@ -152,7 +152,7 @@ export function WorkoutVoiceDictationBar({
 
         <button
           type="button"
-          className="gym-log-voice__retry"
+          className="em-v2-workout-voice__retry"
           onPointerDown={(e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -165,7 +165,7 @@ export function WorkoutVoiceDictationBar({
 
         <button
           type="button"
-          className="gym-log-voice__stop"
+          className="em-v2-workout-voice__stop"
           onPointerDown={(e) => {
             e.preventDefault()
             e.stopPropagation()
@@ -201,7 +201,7 @@ export function WorkoutVoiceDictationBar({
           ? 'Enviando a la IA…'
           : 'Analizando con IA…'
     return (
-      <div className="gym-log-voice gym-log-voice--processing">
+      <div className="em-v2-workout-voice em-v2-workout-voice--processing">
         <Loader2 className="w-5 h-5 animate-spin text-[#FF671F]" />
         <div className="flex-1 min-w-0">
           <p className="text-sm text-white/80">
@@ -209,14 +209,14 @@ export function WorkoutVoiceDictationBar({
             {voice.processingSec > 0 ? ` (${voice.processingSec}s)` : ''}
           </p>
           {slow && (
-            <p className="gym-log-voice__hint mt-1">
+            <p className="em-v2-workout-voice__hint mt-1">
               {verySlow
                 ? 'La IA sigue trabajando — con Wi‑Fi suele tardar menos. Cancela (X) y reintenta si quieres.'
                 : 'Casi listo — con conexión lenta puede tardar unos segundos más.'}
             </p>
           )}
         </div>
-        <button type="button" className="gym-log-voice__retry" onClick={voice.reset} aria-label="Cancelar">
+        <button type="button" className="em-v2-workout-voice__retry" onClick={voice.reset} aria-label="Cancelar">
           <X className="w-4 h-4" />
         </button>
       </div>
@@ -231,7 +231,7 @@ export function WorkoutVoiceDictationBar({
 
     return (
 
-      <div className="gym-log-voice gym-log-voice--error">
+      <div className="em-v2-workout-voice em-v2-workout-voice--error">
 
         <p className="text-sm text-red-300 flex-1">{voice.errorMessage}</p>
 
@@ -241,7 +241,7 @@ export function WorkoutVoiceDictationBar({
 
             type="button"
 
-            className="gym-log-voice__retry"
+            className="em-v2-workout-voice__retry"
 
             aria-label="Abrir ajustes de permisos"
 
@@ -255,7 +255,7 @@ export function WorkoutVoiceDictationBar({
 
         )}
 
-        <button type="button" className="gym-log-voice__retry" onClick={voice.reset}>
+        <button type="button" className="em-v2-workout-voice__retry" onClick={voice.reset}>
 
           <RotateCcw className="w-4 h-4" />
 
@@ -275,22 +275,22 @@ export function WorkoutVoiceDictationBar({
     const heardButEmpty =
       applied.exercises.length === 0 && (applied.transcript?.trim().length ?? 0) > 8
     return (
-      <div className="gym-log-voice gym-log-voice--preview">
-        <p className="gym-log-voice__preview-kicker">Entendí esto:</p>
-        <p className="gym-log-voice__transcript">&quot;{applied.transcript || '—'}&quot;</p>
+      <div className="em-v2-workout-voice em-v2-workout-voice--preview">
+        <p className="em-v2-workout-voice__preview-kicker">Entendí esto:</p>
+        <p className="em-v2-workout-voice__transcript">&quot;{applied.transcript || '—'}&quot;</p>
         {(lowConfidence || heardButEmpty) && (
-          <p className="gym-log-voice__hint text-amber-300/90">
+          <p className="em-v2-workout-voice__hint text-amber-300/90">
             No captamos bien el entreno — revisa la transcripción, dicta de nuevo más claro o edita manualmente.
           </p>
         )}
 
         {applied.exercises.length > 0 ? (
 
-          <div className="gym-log-voice__chips">
+          <div className="em-v2-workout-voice__chips">
 
             {applied.exercises.map((ex) => (
 
-              <span key={ex.name} className="gym-log-voice__chip">
+              <span key={ex.name} className="em-v2-workout-voice__chip">
 
                 {ex.name} · {ex.sets.length} serie{ex.sets.length !== 1 ? 's' : ''}
 
@@ -302,7 +302,7 @@ export function WorkoutVoiceDictationBar({
 
         ) : (
 
-          <p className="gym-log-voice__hint">
+          <p className="em-v2-workout-voice__hint">
 
             Solo duración ({applied.durationMin} min) — añade ejercicios manualmente o dicta de nuevo.
 
@@ -310,9 +310,9 @@ export function WorkoutVoiceDictationBar({
 
         )}
 
-        <div className="gym-log-voice__actions">
+        <div className="em-v2-workout-voice__actions">
 
-          <button type="button" className="gym-log-voice__discard" onClick={voice.reset}>
+          <button type="button" className="em-v2-workout-voice__discard" onClick={voice.reset}>
 
             <X className="w-4 h-4" />
 
@@ -324,7 +324,7 @@ export function WorkoutVoiceDictationBar({
 
             type="button"
 
-            className="gym-log-voice__apply"
+            className="em-v2-workout-voice__apply"
 
             onClick={() => {
 

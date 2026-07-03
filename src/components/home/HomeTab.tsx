@@ -15,6 +15,7 @@ import { WeeklyMomentsReel } from '../engagement/WeeklyMomentsReel'
 import { HomeCoachBanner } from './HomeCoachBanner'
 import { HomeShopBanner } from './HomeShopBanner'
 import { PostLiveShareBanner, type PostLiveSession } from './PostLiveShareBanner'
+import { WorkoutPostSaveBanner } from '../workout/WorkoutPostSaveBanner'
 import { WeeklyPactReminderStrip } from './WeeklyPactReminderStrip'
 import { getFeedRankBadges, pickFeedDisplayBadges } from '../../utils/feedRanking'
 import {
@@ -173,6 +174,10 @@ export function HomeTab(props: HomeTabProps) {
     onPostLiveWithPhoto,
     onPostLiveEntrenoLog,
     onDismissPostLive,
+    workoutSaveBanner,
+    onDismissWorkoutSaveBanner,
+    onShareWorkoutSave,
+    onOpenFuelFromWorkoutSave,
     pactReminderDismissed,
     onDismissPactReminder,
     marketplaceOrders,
@@ -318,6 +323,14 @@ export function HomeTab(props: HomeTabProps) {
 
       {homeSubTab === 'day' && (
         <>
+      {workoutSaveBanner && !postLiveSession && (
+        <WorkoutPostSaveBanner
+          {...(workoutSaveBanner as import('../workout/WorkoutPostSaveBanner').WorkoutPostSaveBannerData)}
+          onShareStory={onShareWorkoutSave as () => void}
+          onOpenFuel={onOpenFuelFromWorkoutSave as () => void}
+          onDismiss={onDismissWorkoutSaveBanner as () => void}
+        />
+      )}
       {postLiveSession && (
         <PostLiveShareBanner
           session={postLiveSession as PostLiveSession}
@@ -350,7 +363,7 @@ export function HomeTab(props: HomeTabProps) {
           onDismiss={onDismissPostLive as () => void}
         />
       )}
-      {homeCoachBanner && !postLiveSession && !hideCoachAndShop && (
+      {homeCoachBanner && !postLiveSession && !workoutSaveBanner && !hideCoachAndShop && (
         <HomeCoachBanner
           context={homeCoachBanner}
           onOpenCoach={onOpenTrainerCoach}

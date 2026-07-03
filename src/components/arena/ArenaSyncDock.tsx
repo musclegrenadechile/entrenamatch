@@ -22,7 +22,7 @@ export function ArenaSyncDock({
   disabled,
 }: ArenaSyncDockProps) {
   return (
-    <section className="arena-sync-dock" aria-label="Acciones de sync">
+    <section className="em-v2-arena-dock arena-sync-dock" aria-label="Acciones de sync">
       <button
         type="button"
         className="arena-sync-dock__main arena-sync-dock__main--green"

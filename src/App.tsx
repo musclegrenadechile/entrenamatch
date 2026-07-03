@@ -1059,6 +1059,13 @@ function App() {
   const [entrenaLogExpandPastWorkouts, setEntrenaLogExpandPastWorkouts] = useState(false)
   const [entrenaLogShareToChat, setEntrenaLogShareToChat] = useState<string | null>(null)
   const [workoutDraftRefresh, setWorkoutDraftRefresh] = useState(0)
+  const [workoutSaveBanner, setWorkoutSaveBanner] = useState<{
+    title: string
+    prSummary?: string
+    burnKcal?: number
+    fuelTip?: string
+  } | null>(null)
+  const workoutSaveShareOptsRef = useRef<Parameters<typeof shareWorkoutStory>[0] | null>(null)
   const [showFuelSetupModal, setShowFuelSetupModal] = useState(false)
   const [showFuelSetupWizard, setShowFuelSetupWizard] = useState(false)
   const [showFuelLogModal, setShowFuelLogModal] = useState(false)
@@ -6050,6 +6057,23 @@ useEffect(() => {
           preview,
           prSummary: prSummary || undefined,
         }
+        workoutSaveShareOptsRef.current = storyOpts
+        const weightKg =
+          fuelProfile?.weightKg ?? (currentUser as { weightKg?: number })?.weightKg ?? 75
+        const saveStats = computeWorkoutStats(payload.exercises, payload.durationMin)
+        const saveBurn = estimateWorkoutBurn(
+          { type: payload.type, stats: saveStats, exercises: payload.exercises },
+          weightKg
+        )
+        setWorkoutSaveBanner({
+          title: payload.title,
+          prSummary: prSummary || undefined,
+          burnKcal: saveBurn > 0 ? saveBurn : undefined,
+          fuelTip: getPostWorkoutFuelTip(payload.type),
+        })
+        window.setTimeout(() => {
+          setWorkoutSaveBanner((prev) => (prev?.title === payload.title ? null : prev))
+        }, 12000)
         await applyEntrenoSaveSideEffects(payload.durationMin, {
           prSummary: prSummary || undefined,
           workoutType: payload.type,
@@ -6098,6 +6122,14 @@ useEffect(() => {
           })
           toast.success('Entreno compartido en el chat (demo)')
         } else {
+          workoutSaveShareOptsRef.current = demoStoryOpts
+          setWorkoutSaveBanner({
+            title: payload.title,
+            fuelTip: getPostWorkoutFuelTip(payload.type),
+          })
+          window.setTimeout(() => {
+            setWorkoutSaveBanner((prev) => (prev?.title === payload.title ? null : prev))
+          }, 12000)
           toast.success('Entreno de Hoy guardado (demo)', {
             duration: 8000,
             action: {
@@ -9822,6 +9854,21 @@ useEffect(() => {
               setPostLiveSession(null)
             }}
             onDismissPostLive={() => setPostLiveSession(null)}
+            workoutSaveBanner={workoutSaveBanner}
+            onDismissWorkoutSaveBanner={() => setWorkoutSaveBanner(null)}
+            onShareWorkoutSave={() => {
+              const opts = workoutSaveShareOptsRef.current
+              if (opts) {
+                void shareWorkoutStory(opts).then((outcome) =>
+                  toastWorkoutShareOutcome(toast, outcome)
+                )
+              }
+            }}
+            onOpenFuelFromWorkoutSave={() => {
+              setEditingFuelLog(null)
+              setShowFuelLogModal(true)
+              setWorkoutSaveBanner(null)
+            }}
             pactReminderDismissed={pactReminderDismissed}
             onDismissPactReminder={() => setPactReminderDismissed(true)}
             onOpenTrainerCoach={() => {
