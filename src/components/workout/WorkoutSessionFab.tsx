@@ -237,7 +237,9 @@ export function WorkoutSessionFab({
           </span>
         </div>
         {draftMeta.sessionChip && (
-          <span className="em-v2-workout-fab__session-chip">{draftMeta.sessionChip}</span>
+          <span className="em-v2-workout-fab__session-chip" role="status">
+            {draftMeta.sessionChip}
+          </span>
         )}
         <span className="text-xs font-black truncate max-w-full leading-tight text-left">
           {summary.currentExerciseName}

@@ -6,13 +6,14 @@ import {
 } from './e2eTrainingSuite'
 
 describe('e2eTrainingSuite', () => {
-  it('inventario de 4 specs E2E entrenamiento', () => {
-    expect(countTrainingE2ESpecs()).toBe(4)
+  it('inventario de 5 specs E2E entrenamiento', () => {
+    expect(countTrainingE2ESpecs()).toBe(5)
     expect(E2E_TRAINING_PLAYWRIGHT_SPECS.map((s) => s.id)).toEqual([
       'workout-flow',
       'training-full-flow',
       'workout-fuel-flow',
       'training-mega-flow',
+      'workout-fab-flow',
     ])
   })
 

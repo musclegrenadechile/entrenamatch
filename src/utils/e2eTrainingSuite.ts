@@ -26,6 +26,11 @@ export const E2E_TRAINING_PLAYWRIGHT_SPECS: readonly E2ETrainingSpecEntry[] = [
     file: 'e2e/training-mega-flow.spec.ts',
     covers: ['gym-log', 'fuel', 'sync', 'review'],
   },
+  {
+    id: 'workout-fab-flow',
+    file: 'e2e/workout-fab-flow.spec.ts',
+    covers: ['gym-log'],
+  },
 ] as const
 
 export function countTrainingE2ESpecs(): number {
@@ -33,5 +38,7 @@ export function countTrainingE2ESpecs(): number {
 }
 
 export function trainingMegaSpecEntry(): E2ETrainingSpecEntry {
-  return E2E_TRAINING_PLAYWRIGHT_SPECS[E2E_TRAINING_PLAYWRIGHT_SPECS.length - 1]
+  const mega = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'training-mega-flow')
+  if (!mega) throw new Error('training-mega-flow spec missing')
+  return mega
 }

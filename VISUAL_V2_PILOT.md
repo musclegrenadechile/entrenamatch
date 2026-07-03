@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.446
+**Versión cierre:** v0.1.447
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -58,6 +58,7 @@
 | **385** | **Gym-log feedback PR** | Haptic + micro-confetti al nuevo PR, chip compacto en footer móvil, tests gymLogPRFeedback |
 | **386** | **Gym-log hint PR** | «+5 kg vs 70 kg» / primer récord bajo serie PR, tests gymLogLivePRHint, E2E workout-flow |
 | **387** | **Cierre gym-log vivo** | Inventario gymLogTrainingSuite, chip sesión en FAB minimizado, bloque 383–386 ✅ |
+| **388** | **E2E FAB entreno** | workout-fab-flow.spec, harness FAB, borrador demo, CI 5 specs entreno |
 
 ## Gym-log en vivo (383–387) ✅
 
@@ -69,7 +70,7 @@ Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-g
 
 ## E2E entrenamiento (378–382) ✅
 
-Playwright con harness `?e2e=1` en CI (`e2e-smoke`). Specs: `workout-flow`, `training-full-flow`, `workout-fuel-flow`, `training-mega-flow` (regresión completa). Utils: `e2eWorkoutScenarios`, `e2eTrainingMegaFlow`, `e2eTrainingSuite`.
+Playwright con harness `?e2e=1` en CI (`e2e-smoke`). Specs: `workout-flow`, `training-full-flow`, `workout-fuel-flow`, `training-mega-flow`, `workout-fab-flow`. Utils: `e2eWorkoutScenarios`, `e2eTrainingMegaFlow`, `e2eWorkoutFabFlow`, `e2eTrainingSuite`.
 
 ## Auditoría cohesión (360)
 

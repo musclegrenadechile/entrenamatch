@@ -21,6 +21,11 @@ export type EntrenamatchE2EApi = {
   openFuelFromWorkoutSave: () => void
   isFuelLogModalOpen: () => boolean
   closeFuelLogModal: () => void
+  /** Minimiza gym-log dejando borrador activo (FAB). */
+  minimizeWorkoutModal: () => void
+  isWorkoutFabVisible: () => boolean
+  /** Reabre gym-log desde borrador (sin prefill E2E). */
+  resumeWorkoutModal: () => void
 }
 
 declare global {

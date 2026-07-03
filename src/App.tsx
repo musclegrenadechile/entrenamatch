@@ -5960,6 +5960,19 @@ useEffect(() => {
         setFuelLogPrefill(null)
         setShowFuelLogModal(false)
       },
+      minimizeWorkoutModal: () => {
+        setShowEntrenaLogModal(false)
+        setWorkoutDraftRefresh((n) => n + 1)
+      },
+      isWorkoutFabVisible: () => {
+        const uid = isDemoMode ? effectiveUserId : firebaseUser?.uid ?? null
+        if (!uid || showEntrenaLogModal) return false
+        const draft = loadWorkoutDraft(uid)
+        return isWorkoutDraftFresh(draft)
+      },
+      resumeWorkoutModal: () => {
+        void openEntrenoDeHoy()
+      },
     })
   }, [
     showSyncArena,
@@ -5970,6 +5983,9 @@ useEffect(() => {
     navigateTab,
     startSyncWith,
     openEntrenoDeHoy,
+    isDemoMode,
+    effectiveUserId,
+    firebaseUser?.uid,
     setShowOnboarding,
     setShowSyncArena,
   ])
@@ -6031,11 +6047,11 @@ useEffect(() => {
   }, [])
 
   const workoutSessionDraft = useMemo(() => {
-    const uid = !isDemoMode && firebaseUser?.uid ? firebaseUser.uid : null
+    const uid = isDemoMode ? effectiveUserId : firebaseUser?.uid ?? null
     if (!uid || showEntrenaLogModal) return null
     const draft = loadWorkoutDraft(uid)
     return isWorkoutDraftFresh(draft) ? draft : null
-  }, [isDemoMode, firebaseUser?.uid, showEntrenaLogModal, workoutDraftRefresh])
+  }, [isDemoMode, effectiveUserId, firebaseUser?.uid, showEntrenaLogModal, workoutDraftRefresh])
 
   const handleSaveEntrenaLog = async (payload: {
     title: string
@@ -10716,7 +10732,7 @@ useEffect(() => {
           resetEntrenaLogModalState()
         }}
         onSave={handleSaveEntrenaLog}
-        userId={!isDemoMode && firebaseUser?.uid ? firebaseUser.uid : null}
+        userId={isDemoMode ? effectiveUserId : firebaseUser?.uid ?? null}
         skipDraftRestore={entrenaLogSkipDraft}
         saving={savingWorkout}
         prefill={entrenaLogPrefill}
