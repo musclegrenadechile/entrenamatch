@@ -1,5 +1,6 @@
 import { Plus, Users, Star } from 'lucide-react'
 import type { Squad } from '../../types'
+import { EmV2EmptyState } from '../ui/EmV2EmptyState'
 
 export interface SquadsTabProps {
   squads: Squad[]
@@ -35,7 +36,7 @@ export function SquadsTab({
 }: SquadsTabProps) {
   const suggestedName = userCity ? `Squad ${userCity}` : 'Squad Viña del Mar'
   return (
-    <div className="flex-1 overflow-auto p-4">
+    <div className="em-v2-squads flex-1 overflow-auto px-4 pb-28">
       {squadFuelSummary && squadFuelSummary.weeklyKcal > 0 && (
         <div className="mb-4 rounded-2xl border border-[#a855f7]/25 bg-[#1C1C20] p-3">
           <p className="text-[10px] uppercase tracking-wider text-[#c084fc] font-bold">Squad Fuel · tu semana</p>
@@ -45,14 +46,16 @@ export function SquadsTab({
           <p className="text-[10px] text-[#9CA3AF]">Target dinámico hoy ~{squadFuelSummary.targetKcal} kcal</p>
         </div>
       )}
-      <div className="flex items-center justify-between mb-4">
+      <header className="em-v2-squads__header pt-2 mb-4">
+      <div className="flex items-center justify-between gap-2">
         <div>
-          <div className="section-header">Tus Squads</div>
-          <div className="text-[#9CA3AF] text-sm">
+          <p className="em-v2-squads__eyebrow">Crew</p>
+          <h2 className="em-v2-squads__title">Tus Squads</h2>
+          <p className="em-v2-squads__sub">
             {isDemoMode
               ? 'Grupos fijos de entrenamiento (demo)'
               : 'Grupos fijos en vivo — chat cross-device'}
-          </div>
+          </p>
         </div>
         <div className="flex items-center gap-2">
           {onOpenSessions && (
@@ -79,34 +82,33 @@ export function SquadsTab({
         </button>
         </div>
       </div>
+      </header>
 
       {squads.length === 0 ? (
-        <div className="card p-8 rounded-3xl text-center mt-8">
-          <Users className="mx-auto text-[#FF671F] mb-3" size={42} />
-          <div className="font-semibold mb-2">Sé el primero en crear un Squad</div>
-          <p className="text-sm text-[#9CA3AF] mb-4 max-w-[280px] mx-auto">
-            Los squads son grupos fijos de 3-4 personas para entrenar consistentemente.
-          </p>
-          <div className="flex flex-col gap-2 max-w-[260px] mx-auto">
-            <button
-              type="button"
-              onClick={() => {
-                if (onCreateSquadWithName) onCreateSquadWithName(suggestedName)
-                else onCreateSquad()
-              }}
-              className="px-6 py-2.5 bg-[#FF671F] text-black rounded-2xl text-sm font-semibold active:bg-[#E55A1A]"
-            >
-              Crear {suggestedName}
-            </button>
-            <button
-              type="button"
-              onClick={onCreateSquad}
-              className="px-6 py-2 text-xs border border-[#2F2F35] rounded-2xl text-[#9CA3AF] active:bg-[#25252A]"
-            >
-              Otro nombre…
-            </button>
-          </div>
-        </div>
+        <EmV2EmptyState
+          className="mt-4 em-v2-fade-in"
+          icon={<Users className="text-[#FF671F]" size={32} />}
+          title="Sé el primero en crear un Squad"
+          body="Grupos fijos de 3-4 personas para entrenar consistentemente."
+        >
+          <button
+            type="button"
+            onClick={() => {
+              if (onCreateSquadWithName) onCreateSquadWithName(suggestedName)
+              else onCreateSquad()
+            }}
+            className="em-v2-hero-card__cta"
+          >
+            Crear {suggestedName}
+          </button>
+          <button
+            type="button"
+            onClick={onCreateSquad}
+            className="py-2 text-xs border border-[#2F2F35] rounded-2xl text-[#9CA3AF] active:bg-[#25252A]"
+          >
+            Otro nombre…
+          </button>
+        </EmV2EmptyState>
       ) : (
         <div className="space-y-3">
           {squads.map((squad) => {

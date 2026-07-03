@@ -28,7 +28,7 @@ const STEPS = [
   },
 ]
 
-/** Guía post-registro — 3 pasos (Fase 13). */
+/** Guía post-registro — 3 pasos (Visual v2, oleada 353). */
 export function PostRegisterGuide({ open, onClose, onStep }: PostRegisterGuideProps) {
   const [done, setDone] = useState<Set<string>>(new Set())
 
@@ -37,28 +37,33 @@ export function PostRegisterGuide({ open, onClose, onStep }: PostRegisterGuidePr
   const markDone = (id: string) => setDone((prev) => new Set(prev).add(id))
 
   return (
-    <div className="post-register-guide" role="dialog" aria-label="Primeros pasos">
-      <div className="post-register-guide__card">
-        <button type="button" className="post-register-guide__close" onClick={onClose} aria-label="Cerrar">
+    <div className="em-v2-activation" role="dialog" aria-label="Primeros pasos">
+      <div className="em-v2-activation__card">
+        <button type="button" className="em-v2-activation__close" onClick={onClose} aria-label="Cerrar">
           <X size={18} />
         </button>
-        <p className="post-register-guide__kicker">Bienvenido a EntrenaMatch</p>
-        <h2 className="post-register-guide__title">3 pasos para empezar</h2>
-        <div className="post-register-guide__steps">
+        <p className="em-v2-activation__kicker">Bienvenido</p>
+        <h2 className="em-v2-activation__title">3 pasos para empezar</h2>
+        <div className="em-v2-activation__steps">
           {STEPS.map((s) => {
             const Icon = s.icon
             const isDone = done.has(s.id)
             return (
-              <div key={s.id} className={`post-register-guide__step${isDone ? ' post-register-guide__step--done' : ''}`}>
-                <Icon size={18} />
-                <div>
+              <div
+                key={s.id}
+                className={`em-v2-activation__step${isDone ? ' em-v2-activation__step--done' : ''}`}
+              >
+                <span className="em-v2-activation__step-icon" aria-hidden>
+                  <Icon size={18} />
+                </span>
+                <div className="em-v2-activation__step-body">
                   <strong>{s.title}</strong>
                   <p>{s.desc}</p>
                 </div>
                 {!isDone && (
                   <button
                     type="button"
-                    className="post-register-guide__go"
+                    className="em-v2-activation__go"
                     onClick={() => {
                       markDone(s.id)
                       onStep(s.id)
@@ -67,11 +72,12 @@ export function PostRegisterGuide({ open, onClose, onStep }: PostRegisterGuidePr
                     Ir <ArrowRight size={14} />
                   </button>
                 )}
+                {isDone && <span className="em-v2-activation__done-badge">Hecho</span>}
               </div>
             )
           })}
         </div>
-        <button type="button" className="post-register-guide__done" onClick={onClose}>
+        <button type="button" className="em-v2-activation__cta" onClick={onClose}>
           Listo, explorar la app
         </button>
       </div>

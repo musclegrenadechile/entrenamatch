@@ -44,11 +44,13 @@ export function SessionsTab({
   )
 
   return (
-    <div className="flex-1 overflow-auto p-4 space-y-8">
-      <div className="flex items-center justify-between">
+    <div className="em-v2-sessions flex-1 overflow-auto px-4 pb-28 space-y-8">
+      <header className="em-v2-sessions__header pt-2">
+        <div className="flex items-center justify-between gap-2">
         <div>
-          <div className="section-header">Sesiones</div>
-          <div className="text-[#9CA3AF] text-sm">Entrenamientos grupales cerca de ti</div>
+          <p className="em-v2-sessions__eyebrow">Grupales</p>
+          <h2 className="em-v2-sessions__title">Sesiones</h2>
+          <p className="em-v2-sessions__sub">Entrenamientos grupales cerca de ti</p>
           {!isDemoMode && (
             <div className="flex items-center gap-2 mt-1">
               <button
@@ -71,11 +73,12 @@ export function SessionsTab({
         <button
           type="button"
           onClick={onCreateSession}
-          className="flex items-center gap-2 bg-[#FF671F] text-black px-4 py-2 rounded-2xl text-sm font-semibold active:bg-[#E55A1A]"
+          className="em-v2-sessions__create flex items-center gap-2 shrink-0"
         >
           <Plus size={16} /> Crear
         </button>
-      </div>
+        </div>
+      </header>
 
       <div>
         <div className="flex items-center gap-2 mb-3">
@@ -181,23 +184,21 @@ export function SessionsTab({
         </div>
 
         {mySessions.length === 0 ? (
-          <div className="card card-glass p-7 rounded-3xl text-center border border-[#FF671F]/20">
-            <div className="text-2xl mb-2">📅</div>
-            <div className="font-semibold mb-1">Aún no tienes sesiones</div>
-            <p className="text-sm text-[#9CA3AF] mb-2 max-w-[260px] mx-auto">
-              {!isDemoMode
-                ? 'Crea tu primera sesión real o únete a una abierta arriba. ¡Otros testers la verán cross-device!'
-                : 'Crea tu primera sesión o únete a una abierta arriba.'}
-            </p>
-            <p className="text-xs text-[#9CA3AF] mb-3">Chat grupal real-time + notifs cuando se unan.</p>
-            <button
-              type="button"
-              onClick={onCreateSession}
-              className="px-5 py-2 bg-gradient-to-r from-[#FF671F] to-[#FF4F79] text-black rounded-2xl text-sm font-semibold active:brightness-90"
-            >
+          <EmV2EmptyState
+            className="em-v2-fade-in"
+            emoji="📅"
+            title="Aún no tienes sesiones"
+            body={
+              !isDemoMode
+                ? 'Crea tu primera sesión real o únete a una abierta arriba.'
+                : 'Crea tu primera sesión o únete a una abierta arriba.'
+            }
+            compact
+          >
+            <button type="button" onClick={onCreateSession} className="em-v2-hero-card__cta">
               Crear sesión
             </button>
-          </div>
+          </EmV2EmptyState>
         ) : (
           <div className="space-y-3">
             {mySessions

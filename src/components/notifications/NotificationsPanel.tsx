@@ -2,6 +2,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import type { Notification } from '../../types'
 import { getRelativeTime } from '../../utils/relativeTime'
 import { getNotificationPanelMeta } from '../../utils/notificationPanelMeta'
+import { EmV2EmptyState } from '../ui/EmV2EmptyState'
 
 export type NotificationsPanelProps = {
   open: boolean
@@ -16,7 +17,7 @@ export type NotificationsPanelProps = {
   onNotificationClick: (notif: Notification) => void
 }
 
-/** Fase 356 — in-app notifications drawer extracted from App.tsx. */
+/** Fase 356 — in-app notifications drawer (oleada 353 v2). */
 export function NotificationsPanel({
   open,
   notifications,
@@ -41,13 +42,13 @@ export function NotificationsPanel({
             exit={{ opacity: 0, y: 24 }}
             transition={{ duration: 0.2 }}
             onClick={(e) => e.stopPropagation()}
-            className="flex-1 bg-[#0D0D10] max-w-[420px] mx-auto w-full mt-[42px] rounded-t-3xl border border-[#2F2F35] overflow-hidden flex flex-col"
+            className="em-v2-notifications flex-1 max-w-[420px] mx-auto w-full mt-[42px] rounded-t-3xl overflow-hidden flex flex-col"
           >
-            <div className="p-4 border-b border-[#2F2F35] flex justify-between items-center bg-[#1C1C20]">
-              <div className="section-header text-base flex items-center gap-2">
-                Notificaciones
+            <div className="em-v2-notifications__header p-4 flex justify-between items-center">
+              <div className="em-v2-notifications__title-row">
+                <h2 className="em-v2-notifications__title">Notificaciones</h2>
                 {totalNew > 0 && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#FF671F] text-black font-bold animate-pulse">
+                  <span className="em-v2-notifications__badge">
                     {totalNew} nuevas
                   </span>
                 )}
@@ -74,44 +75,40 @@ export function NotificationsPanel({
 
             <div className="flex-1 overflow-auto">
               {notifications.length === 0 ? (
-                <div className="p-8 text-center text-[#9CA3AF]">No tienes notificaciones aún.</div>
+                <EmV2EmptyState
+                  className="m-4 em-v2-fade-in"
+                  emoji="🔔"
+                  title="Sin notificaciones"
+                  body="Cuando haya matches, mensajes o actividad en tu red, aparecerán aquí."
+                  compact
+                />
               ) : (
                 notifications.map((notif) => {
                   const { typeIcon, isNetworkNotif, rowClassName } = getNotificationPanelMeta(
                     notif,
                     syncBonds
                   )
-                  const time = notif.timestamp ? getRelativeTime(notif.timestamp) : ''
                   return (
-                    <div
+                    <button
                       key={notif.id}
-                      className={rowClassName}
+                      type="button"
                       onClick={() => onNotificationClick(notif)}
+                      className={`em-v2-notifications__row w-full text-left ${rowClassName}`}
                     >
-                      <div className="text-xl mt-0.5 flex-shrink-0">{typeIcon}</div>
+                      <span className="text-lg shrink-0" aria-hidden>
+                        {typeIcon}
+                      </span>
                       <div className="flex-1 min-w-0">
-                        <div className="flex justify-between items-baseline">
-                          <div className="font-medium text-sm truncate pr-2">{notif.title}</div>
-                          <div className="text-[10px] text-[#9CA3AF] flex-shrink-0">{time}</div>
-                        </div>
-                        <div className="text-sm text-[#cbd5e1] mt-0.5 line-clamp-2">{notif.body}</div>
-                        {!notif.read && (
-                          <div className="mt-1.5 inline-block w-1.5 h-1.5 bg-[#FF671F] rounded-full" />
-                        )}
+                        <div className="text-sm font-semibold truncate">{notif.title}</div>
+                        <div className="text-xs text-[#9CA3AF] truncate">{notif.body}</div>
                         {isNetworkNotif && (
-                          <div className="mt-1 text-[9px] text-[#FFD700] font-bold">
-                            ⭐ De tu Red (Fuerza del equipo)
-                          </div>
+                          <div className="text-[10px] text-[#FF671F] mt-0.5">Tu red</div>
                         )}
                       </div>
-                      {notif.photoUrl && (
-                        <img
-                          src={notif.photoUrl}
-                          alt={notif.title || 'Notificación'}
-                          className="w-9 h-9 rounded-xl object-cover flex-shrink-0 border border-[#2F2F35]"
-                        />
-                      )}
-                    </div>
+                      <span className="text-[10px] text-[#9CA3AF] shrink-0">
+                        {getRelativeTime(notif.timestamp)}
+                      </span>
+                    </button>
                   )
                 })
               )}

@@ -1,37 +1,54 @@
-# Visual 2.0 — Piloto (oleadas 340–345)
+# Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
+**Versión cierre:** v0.1.412  
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
-## Qué cambió
+## Changelog público (340 → 353)
 
 | Oleada | Capa | Detalle |
 |--------|------|---------|
-| 340–341 | **Design system** | `src/styles/emVisualV2.css` — tokens, badges, cards, nav polish |
-| 340–341 | **App shell** | `.em-visual-v2` en `app-container` (tipografía + nav) |
-| 340–341 | **Explorar** | Card flagship, match ring glass, map CTA glow, botones swipe premium |
-| **342** | **Top bar** | Glass + chip LIVE con glow, iconos unificados |
-| **342** | **Hoy** | Hero «¿Quién entrena cerca?», CTA mapa, reto del día y bloque LIVE al sistema v2 |
-| **343** | **Mapa LIVE** | Pills, overlays vacíos, leyenda, filtros y popups al sistema v2 |
-| **344** | **Auth** | Plus Jakarta + card glass v2, chips con iconos Lucide |
-| **345** | **Hoy + Perfil** | «Más de tu día» colapsable; fondo v2 en Perfil; landing `em-brand-*` |
-| **346** | **Matches** | Cards premium una columna, match ring, Red sub-nav v2, crew dorado |
-| **347** | **Entreno de Hoy** | Modal v2, biblioteca colapsable, «Más opciones», CTA gradiente |
-| **348** | **Landing** | Tailwind build (`landing-v2.css`), Plus Jakarta, sin métricas fake |
-| **349** | **Perfil** | Hero atleta compacto, tabs Actividad / Red / Ajustes, pulse + CTAs LIVE/Explorar |
-| **350** | **Polish global** | `EmV2EmptyState`, skeletons shimmer, fade-in tabs perfil |
-| **351** | **Nav + transiciones** | Bottom nav v2 por tab, `EmV2TabShell`, entrada animada entre tabs |
-| **352** | **Onboarding** | Feature tour 5 pasos + activation guide v2, highlight nav premium |
+| 340–341 | **Design system** | `emVisualV2.css` — tokens, badges, cards, nav polish |
+| 340–341 | **App shell** | `.em-visual-v2` en `app-container` |
+| 340–341 | **Explorar** | Card flagship, match ring glass, map CTA glow |
+| **342** | **Top bar** | Glass + chip LIVE con glow |
+| **342** | **Hoy** | Hero «¿Quién entrena cerca?», CTA mapa, reto del día v2 |
+| **343** | **Mapa LIVE** | Pills, overlays, leyenda, filtros v2 |
+| **344** | **Auth** | Plus Jakarta + card glass v2 |
+| **345** | **Hoy + Perfil** | «Más de tu día» colapsable; fondo v2 en Perfil |
+| **346** | **Matches** | Cards premium, Red sub-nav v2 |
+| **347** | **Entreno de Hoy** | Modal v2, biblioteca colapsable |
+| **348** | **Landing** | Tailwind build (`landing-v2.css`), sin métricas fake |
+| **349** | **Perfil** | Hero atleta + tabs Actividad / Red / Ajustes |
+| **350** | **Polish global** | `EmV2EmptyState`, skeletons shimmer |
+| **351** | **Nav + transiciones** | Bottom nav v2, `EmV2TabShell` |
+| **352** | **Onboarding** | Tour 5 pasos + activation guide v2 |
+| **353** | **Cierre** | Sesiones, Squads, Notificaciones, match modal v2; changelog landing |
 
-## Evaluar (3 min)
+## Auditoría cohesión (353)
 
-1. **Tour** (localStorage: borrar `entrenamatch_feature_tour_seen`) — ¿5 pasos + highlight nav?
-2. **Activation guide** (usuario nuevo) — ¿card glass + barra progreso?
-3. **Nav inferior** — ¿indicador + color por tab?
-4. **Perfil** — ¿hero atleta + tabs?
+| Pantalla | Estado |
+|----------|--------|
+| Explorar, Matches, Red | ✅ v2 |
+| Mapa LIVE, Hoy, Auth | ✅ v2 |
+| Perfil, Entreno modal | ✅ v2 |
+| Bottom nav + tabs | ✅ v2 |
+| Empty states + skeletons | ✅ `EmV2EmptyState` |
+| Onboarding tour + activation | ✅ v2 |
+| Sesiones + Squads | ✅ v2 (353) |
+| Notificaciones + match celebration | ✅ v2 (353) |
+| Landing changelog | ✅ sección Novedades |
 
-## Siguiente
+## Pendiente post-piloto (backlog)
 
-- Cierre Visual 2.0: auditoría cohesión + changelog público
+- FullProfileSheet, filtros Explorar, modales legales — legacy `btn-primary` / `card-glass`
+- Squads/Sesiones cards internas — pueden migrar a `em-v2-card` en oleada futura
 
-*jul 2026*
+## Evaluar cierre (2 min)
+
+1. **Landing** — sección «Novedades Visual 2.0» con link a la app
+2. **Sesiones / Squads** — headers v2 + empty states
+3. **Match** — modal celebración glass rosa
+4. **Notificaciones** — panel v2 + empty state
+
+*jul 2026 — piloto Visual 2.0 cerrado*

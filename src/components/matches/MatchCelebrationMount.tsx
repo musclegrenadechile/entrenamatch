@@ -12,7 +12,7 @@ export type MatchCelebrationMountProps = {
   onClose: (openChat?: boolean) => void
 }
 
-/** Fase 394 — modal de match extraído de App.tsx. */
+/** Fase 394 — modal de match (oleada 353 v2). */
 export function MatchCelebrationMount({
   profile,
   currentUser,
@@ -24,7 +24,7 @@ export function MatchCelebrationMount({
     <AnimatePresence>
       {profile && (
         <div
-          className="absolute inset-0 z-[80] flex items-center justify-center bg-black/90 p-6"
+          className="em-v2-match-celebration absolute inset-0 z-[80] flex items-center justify-center p-6"
           onClick={() => onClose()}
         >
           <motion.div
@@ -32,15 +32,15 @@ export function MatchCelebrationMount({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             onClick={(e) => e.stopPropagation()}
-            className="match-modal rounded-3xl max-w-[340px] w-full overflow-hidden border border-[#2F2F35]"
+            className="em-v2-match-celebration__card max-w-[340px] w-full overflow-hidden"
           >
             <div className="p-8 text-center">
-              <div className="text-[#FF4F79] font-semibold tracking-[3px] text-sm mb-1">
+              <p className="em-v2-match-celebration__kicker">
                 {BRAND_COPY.explore.connectCelebration}
-              </div>
-              <div className="text-3xl font-semibold tracking-tight mb-4">
+              </p>
+              <h2 className="em-v2-match-celebration__title">
                 Tú y {profile.name} quieren entrenar juntos
-              </div>
+              </h2>
               <div className="flex justify-center -space-x-4 mb-6">
                 <VerifiedProfilePhoto
                   src={currentUser?.photos?.[0] || 'https://picsum.photos/id/1005/80/80'}
@@ -57,11 +57,11 @@ export function MatchCelebrationMount({
                   badgeSize="sm"
                 />
               </div>
-              <div className="text-sm text-[#9CA3AF] mb-4">
+              <p className="text-sm text-[#9CA3AF] mb-4">
                 Ambos están en {profile.city}, {profile.country}. ¡Escríbele ya!
-              </div>
+              </p>
               {userLocation && (
-                <div className="text-[#FF671F] text-sm font-medium -mt-2 mb-4">
+                <p className="text-[#FF671F] text-sm font-medium -mt-2 mb-4">
                   Están a{' '}
                   {getDistanceKm(
                     userLocation.lat,
@@ -70,21 +70,21 @@ export function MatchCelebrationMount({
                     profile.lng
                   )}{' '}
                   km
-                </div>
+                </p>
               )}
               {(() => {
                 const openers = chatOpeners[profile.id] || [
                   '¡Hola! Vi tu perfil y me tinca entrenar juntos 💪',
                 ]
                 return (
-                  <div className="mb-5 text-left bg-[#1C1C20] rounded-2xl p-3 text-xs">
-                    <div className="text-[#FF671F] font-medium mb-1.5 text-center">
-                      Sugerencias para romper el hielo (copia y pega):
-                    </div>
+                  <div className="em-v2-match-celebration__openers mb-5 text-left text-xs">
+                    <p className="text-[#FF671F] font-medium mb-1.5 text-center">
+                      Sugerencias para romper el hielo:
+                    </p>
                     {openers.slice(0, 2).map((opener, idx) => (
-                      <div key={idx} className="text-[#cbd5e1] mb-1.5 last:mb-0 leading-snug">
+                      <p key={idx} className="text-[#cbd5e1] mb-1.5 last:mb-0 leading-snug">
                         • {opener}
-                      </div>
+                      </p>
                     ))}
                   </div>
                 )
@@ -93,7 +93,7 @@ export function MatchCelebrationMount({
                 <button
                   type="button"
                   onClick={() => onClose(true)}
-                  className="btn-primary w-full text-base"
+                  className="em-v2-hero-card__cta w-full"
                 >
                   Enviar mensaje ahora
                 </button>
