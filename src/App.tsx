@@ -72,6 +72,7 @@ import { resolvePushNotificationData } from './utils/pushNavigation'
 import { normalizeTabNavigation, resolveRedSubTab, isRedTabActive, type RedSubTab } from './utils/tabNavigation'
 import { parseTabFromUrl, syncTabToUrl } from './utils/tabUrlSync'
 import { installE2EHarness, isE2EHarnessActive } from './utils/e2eHarness'
+import { buildE2EDemoFuelProfile } from './utils/demoFuelProfile'
 import { buildDemoWorkoutFromSave, buildE2EDemoWorkoutHistory } from './utils/demoWorkoutHistory'
 import {
   countWorkoutHistoryPrBadges,
@@ -79,6 +80,10 @@ import {
   readWorkoutHistorySectionKicker,
   readWorkoutHistorySparklineAriaLabels,
 } from './utils/e2eWorkoutHistoryDom'
+import {
+  isWeeklyPlanCardVisible,
+  readWeeklyPlanHistoryHint,
+} from './utils/e2eWeeklyPlanHistoryDom'
 import {
   parseGymIdFromSearch,
   resolvePartnerGymById,
@@ -6001,6 +6006,9 @@ useEffect(() => {
       getWorkoutHistoryRowSummaries: () => readWorkoutHistoryRowSummaries(),
       countWorkoutHistoryPrBadges: () => countWorkoutHistoryPrBadges(),
       getWorkoutHistorySparklineAriaLabels: () => readWorkoutHistorySparklineAriaLabels(),
+      seedDemoFuelProfile: () => setFuelProfile(buildE2EDemoFuelProfile()),
+      getWeeklyPlanHistoryHint: () => readWeeklyPlanHistoryHint(),
+      isWeeklyPlanCardVisible: () => isWeeklyPlanCardVisible(),
     })
   }, [
     showSyncArena,
@@ -6017,6 +6025,7 @@ useEffect(() => {
     firebaseUser?.uid,
     setShowOnboarding,
     setShowSyncArena,
+    setFuelProfile,
   ])
 
   useEffect(() => {

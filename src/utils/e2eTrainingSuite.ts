@@ -8,6 +8,7 @@ export type E2ETrainingCover =
   | 'banner'
   | 'fuel-prefill'
   | 'history'
+  | 'plan-history'
 
 export type E2ETrainingSpecEntry = {
   id: string
@@ -46,10 +47,15 @@ export const E2E_TRAINING_PLAYWRIGHT_SPECS: readonly E2ETrainingSpecEntry[] = [
     file: 'e2e/workout-history-flow.spec.ts',
     covers: ['history'],
   },
+  {
+    id: 'workout-plan-history-flow',
+    file: 'e2e/workout-plan-history-flow.spec.ts',
+    covers: ['gym-log', 'plan-history'],
+  },
 ] as const
 
 export function trainingE2EBlockRange(): { from: number; to: number } {
-  return { from: 378, to: 400 }
+  return { from: 378, to: 402 }
 }
 
 export function countTrainingE2ESpecs(): number {

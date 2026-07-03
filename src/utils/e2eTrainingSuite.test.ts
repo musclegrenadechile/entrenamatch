@@ -7,8 +7,8 @@ import {
 } from './e2eTrainingSuite'
 
 describe('e2eTrainingSuite', () => {
-  it('inventario de 6 specs E2E entrenamiento', () => {
-    expect(countTrainingE2ESpecs()).toBe(6)
+  it('inventario de 7 specs E2E entrenamiento', () => {
+    expect(countTrainingE2ESpecs()).toBe(7)
     expect(E2E_TRAINING_PLAYWRIGHT_SPECS.map((s) => s.id)).toEqual([
       'workout-flow',
       'training-full-flow',
@@ -16,6 +16,7 @@ describe('e2eTrainingSuite', () => {
       'training-mega-flow',
       'workout-fab-flow',
       'workout-history-flow',
+      'workout-plan-history-flow',
     ])
   })
 
@@ -25,8 +26,8 @@ describe('e2eTrainingSuite', () => {
     expect(mega.covers).toEqual(['gym-log', 'fuel', 'sync', 'review', 'banner', 'fuel-prefill'])
   })
 
-  it('bloque E2E oleadas 378–400', () => {
-    expect(trainingE2EBlockRange()).toEqual({ from: 378, to: 400 })
+  it('bloque E2E oleadas 378–402', () => {
+    expect(trainingE2EBlockRange()).toEqual({ from: 378, to: 402 })
     const fab = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-fab-flow')
     expect(fab?.covers).toContain('fab')
     const workout = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-flow')
@@ -35,5 +36,9 @@ describe('e2eTrainingSuite', () => {
     expect(fuel?.covers).toContain('banner')
     const history = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-history-flow')
     expect(history?.covers).toContain('history')
+    const planHistory = E2E_TRAINING_PLAYWRIGHT_SPECS.find(
+      (s) => s.id === 'workout-plan-history-flow'
+    )
+    expect(planHistory?.covers).toContain('plan-history')
   })
 })

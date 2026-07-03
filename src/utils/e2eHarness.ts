@@ -41,6 +41,10 @@ export type EntrenamatchE2EApi = {
   getWorkoutHistoryRowSummaries: () => string[]
   countWorkoutHistoryPrBadges: () => number
   getWorkoutHistorySparklineAriaLabels: () => string[]
+  /** Activa Fuel demo para mostrar EntrenaPlan en E2E (oleada 402). */
+  seedDemoFuelProfile: () => void
+  getWeeklyPlanHistoryHint: () => string | null
+  isWeeklyPlanCardVisible: () => boolean
 }
 
 declare global {
