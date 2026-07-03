@@ -66,6 +66,12 @@ export function readWeeklyPlanFuelWeekChip(): string | null {
   return chip?.textContent?.trim() ?? null
 }
 
+export function readWeeklyPlanFuelWeekChipAriaLabel(): string | null {
+  const card = findEntrenaPlanCard()
+  const chip = card?.querySelector(`.${WEEKLY_PLAN_FUEL_WEEK_CHIP_CLASS}`)
+  return chip?.getAttribute('aria-label')?.trim() ?? null
+}
+
 export function readWeeklyPlanFuelWeekChipToneClass(): string | null {
   const card = findEntrenaPlanCard()
   const chip = card?.querySelector(`.${WEEKLY_PLAN_FUEL_WEEK_CHIP_CLASS}`)
@@ -139,6 +145,12 @@ export function readWeeklyPlanFuelRowToneClass(): string | null {
     if (cls.startsWith(`${WEEKLY_PLAN_FUEL_ROW_CLASS}--`)) return cls
   }
   return null
+}
+
+export function readWeeklyPlanFuelRowAriaLabel(): string | null {
+  const card = findEntrenaPlanCard()
+  const row = card?.querySelector(`.${WEEKLY_PLAN_FUEL_ROW_CLASS}`)
+  return row?.getAttribute('aria-label')?.trim() ?? null
 }
 
 export function readWeeklyPlanScenarioClass(): string | null {

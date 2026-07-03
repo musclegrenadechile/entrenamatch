@@ -84,7 +84,7 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
   const fuelWeekAria = await page.evaluate(() =>
     window.__entrenamatchE2E!.getWeeklyPlanFuelWeekAriaLabel()
   )
-  expect(fuelWeekAria).toMatch(/Balance Fuel semanal/i)
+  expect(fuelWeekAria).toMatch(/Balance Fuel semanal.*Afinar Fuel/i)
   const fuelWeekTone = await page.evaluate(() =>
     window.__entrenamatchE2E!.getWeeklyPlanFuelWeekToneClass()
   )
@@ -98,7 +98,11 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
   const nutritionAria = await page.evaluate(() =>
     window.__entrenamatchE2E!.getWeeklyPlanNutritionAriaLabel()
   )
-  expect(nutritionAria).toMatch(/Nutrición EntrenaPlan/i)
+  expect(nutritionAria).toMatch(/Nutrición EntrenaPlan.*Afinar Fuel/i)
+  const toneAriaAligned = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWeeklyPlanFuelToneAriaAligned('under-fueled')
+  )
+  expect(toneAriaAligned).toBe(true)
 
   await page.getByRole('button', { name: /Registrar post-entreno/i }).click()
 

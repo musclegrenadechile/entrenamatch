@@ -15,20 +15,24 @@ import {
   WEEKLY_PLAN_ROTATION_CHIP_CLASS,
 } from '../../utils/weeklyPlanRotationDisplay'
 import {
-  buildWeeklyPlanFuelWeekAriaLabel,
   buildWeeklyPlanFuelWeekHint,
   shouldShowWeeklyPlanFuelWeekHint,
   WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS,
 } from '../../utils/weeklyPlanFuelWeekDisplay'
 import {
-  buildWeeklyPlanFuelWeekChipAriaLabel,
+  buildWeeklyPlanFuelHeadlineToneAriaLabel,
+  buildWeeklyPlanFuelRowToneAriaLabel,
+  buildWeeklyPlanFuelWeekChipToneAriaLabel,
+  buildWeeklyPlanFuelWeekToneAriaLabel,
+  buildWeeklyPlanNutritionToneAriaLabel,
+} from '../../utils/weeklyPlanFuelToneStackAriaDisplay'
+import {
   buildWeeklyPlanFuelWeekChipText,
   resolveWeeklyPlanFuelWeekChipToneClass,
   shouldShowWeeklyPlanFuelWeekChip,
   WEEKLY_PLAN_FUEL_WEEK_CHIP_CLASS,
 } from '../../utils/weeklyPlanFuelWeekChipDisplay'
 import {
-  buildWeeklyPlanNutritionAriaLabel,
   buildWeeklyPlanNutritionFuelSuffix,
   mergeWeeklyPlanNutritionNote,
   shouldShowWeeklyPlanNutritionNote,
@@ -44,7 +48,6 @@ import {
   WEEKLY_PLAN_FUEL_ROW_CLASS,
 } from '../../utils/weeklyPlanFuelRowToneDisplay'
 import {
-  buildWeeklyPlanFuelHeadlineChipAriaLabel,
   buildWeeklyPlanFuelHeadlineChipText,
   resolveWeeklyPlanFuelHeadlineChipToneClass,
   shouldShowWeeklyPlanFuelHeadlineChip,
@@ -119,11 +122,10 @@ export function WeeklyPlanCard({
   const showHistoryHint = shouldShowWeeklyPlanHistoryHint(rec.type, historyHint)
   const rotationNote = plan.trainingLoad.prRotationNote
   const showRotationChip = shouldShowWeeklyPlanRotationChip(rotationNote, rec.type)
+  const fuelWeekTone = resolveWeeklyPlanFuelWeekHintTone(plan.scenario, plan.energySummary)
   const fuelWeekHint = buildWeeklyPlanFuelWeekHint(plan.scenario, plan.energySummary)
   const showFuelWeekHint = shouldShowWeeklyPlanFuelWeekHint(fuelWeekHint, hasFuelProfile)
-  const fuelWeekToneClass = resolveWeeklyPlanFuelWeekHintToneClass(
-    resolveWeeklyPlanFuelWeekHintTone(plan.scenario, plan.energySummary)
-  )
+  const fuelWeekToneClass = resolveWeeklyPlanFuelWeekHintToneClass(fuelWeekTone)
   const fuelWeekChipText = buildWeeklyPlanFuelWeekChipText(plan.scenario, plan.energySummary)
   const showFuelWeekChip = shouldShowWeeklyPlanFuelWeekChip(
     plan.scenario,
@@ -181,7 +183,14 @@ export function WeeklyPlanCard({
                   .filter(Boolean)
                   .join(' ')}
                 role="status"
-                aria-label={buildWeeklyPlanFuelHeadlineChipAriaLabel(headlineFuelChipText)}
+                aria-label={
+                  fuelWeekTone
+                    ? buildWeeklyPlanFuelHeadlineToneAriaLabel(
+                        headlineFuelChipText,
+                        fuelWeekTone
+                      )
+                    : `Escenario Fuel: ${headlineFuelChipText}`
+                }
               >
                 {headlineFuelChipText}
               </span>
@@ -215,6 +224,15 @@ export function WeeklyPlanCard({
       {shouldShowWeeklyPlanFuelRow(hasFuelProfile, weeklyDeltaKcal) && (
         <div
           className={[WEEKLY_PLAN_FUEL_ROW_CLASS, fuelRowToneClass].filter(Boolean).join(' ')}
+          role="status"
+          aria-label={
+            fuelWeekTone
+              ? buildWeeklyPlanFuelRowToneAriaLabel(
+                  fuelWeekTone,
+                  weeklyDeltaKcal != null ? formatWeeklyPlanDelta(weeklyDeltaKcal) : null
+                )
+              : 'Fuel × entreno'
+          }
         >
           <span className="text-[#c084fc] flex items-center gap-1">
             <UtensilsCrossed size={12} /> Fuel × entreno
@@ -238,7 +256,11 @@ export function WeeklyPlanCard({
             .filter(Boolean)
             .join(' ')}
           role="status"
-          aria-label={buildWeeklyPlanFuelWeekChipAriaLabel(fuelWeekChipText)}
+          aria-label={
+            fuelWeekTone
+              ? buildWeeklyPlanFuelWeekChipToneAriaLabel(fuelWeekChipText, fuelWeekTone)
+              : `Balance semanal Fuel: ${fuelWeekChipText}`
+          }
         >
           {fuelWeekChipText}
         </span>
@@ -250,7 +272,11 @@ export function WeeklyPlanCard({
             .filter(Boolean)
             .join(' ')}
           role="status"
-          aria-label={buildWeeklyPlanFuelWeekAriaLabel(fuelWeekHint)}
+          aria-label={
+            fuelWeekTone
+              ? buildWeeklyPlanFuelWeekToneAriaLabel(fuelWeekHint, fuelWeekTone)
+              : `Balance Fuel semanal: ${fuelWeekHint}`
+          }
         >
           {fuelWeekHint}
         </p>
@@ -279,7 +305,11 @@ export function WeeklyPlanCard({
             .filter(Boolean)
             .join(' ')}
           role="status"
-          aria-label={buildWeeklyPlanNutritionAriaLabel(nutritionText)}
+          aria-label={
+            fuelWeekTone
+              ? buildWeeklyPlanNutritionToneAriaLabel(nutritionText, fuelWeekTone)
+              : `Nutrición EntrenaPlan: ${nutritionText}`
+          }
         >
           🍽 {nutritionText}
         </p>

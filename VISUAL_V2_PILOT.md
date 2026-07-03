@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.484
+**Versión cierre:** v0.1.485
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -96,10 +96,11 @@
 | **423** | **Stack tono Fuel unificado** | weeklyPlanFuelToneStackDisplay; harness isWeeklyPlanFuelToneStackAligned; e2eFuelPlanToneCoverage; fuel-tone-stack en 3 specs |
 | **424** | **Tono nutrición Fuel×plan** | weeklyPlanNutritionToneDisplay; harness isWeeklyPlanFuelToneStackExpected + getWeeklyPlanNutritionToneClass; fuel-nutrition-tone en 3 specs |
 | **425** | **Stack Fuel esperado E2E** | weeklyPlanFuelToneStackExpectedDisplay; harness isWeeklyPlanFuelToneStackFullyExpected; fuel-tone-expected + tone-expected en 3 specs |
+| **426** | **Aria stack Fuel unificada** | weeklyPlanFuelToneStackAriaDisplay; harness isWeeklyPlanFuelToneAriaAligned; fuel-tone-aria + tone-aria en 3 specs |
 
-## Mega entrenamiento (361–425) ✅
+## Mega entrenamiento (361–426) ✅
 
-Inventario `trainingMegaSuite`: 7 sub-bloques (pulido I 361–377, E2E 378–410, pulido II 383–409, EntrenaPlan×historial 401–409, Fuel×plan 411–414, post-mega 415–420, post-full 421–425). 65 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`. Cierre mega fase I oleada 411; cierre mega II oleada 415; cierre mega fase III oleada 420; post-full oleada 425.
+Inventario `trainingMegaSuite`: 7 sub-bloques (pulido I 361–377, E2E 378–410, pulido II 383–409, EntrenaPlan×historial 401–409, Fuel×plan 411–414, post-mega 415–420, post-full 421–426). 66 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`. Cierre mega fase I oleada 411; cierre mega II oleada 415; cierre mega fase III oleada 420; post-full oleada 426.
 
 ## Fuel × EntrenaPlan (411–414) ✅
 

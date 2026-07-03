@@ -89,6 +89,12 @@ export type EntrenamatchE2EApi = {
   getWeeklyPlanNutritionNote: () => string | null
   /** Modificador de tono nota nutricional (oleada 424). */
   getWeeklyPlanNutritionToneClass: () => string | null
+  /** aria-label fila Fuel×entreno (oleada 426). */
+  getWeeklyPlanFuelRowAriaLabel: () => string | null
+  /** aria-labels del stack Fuel alineados al tono (oleada 426). */
+  isWeeklyPlanFuelToneAriaAligned: (
+    tone: 'under-fueled' | 'surplus' | 'deficit'
+  ) => boolean
   /** aria-label nota nutricional (oleada 416). */
   getWeeklyPlanNutritionAriaLabel: () => string | null
   /** Sembra macros Fuel semanales demo para E2E (oleada 413). */
