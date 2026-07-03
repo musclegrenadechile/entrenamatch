@@ -5,6 +5,8 @@ import type { Workout } from '../../types'
 import { formatVolumeLabel } from '../../services/workouts'
 import { getTopExerciseProgress } from '../../utils/workoutProgress'
 import { buildWorkoutHistoryBadges } from '../../utils/workoutHistoryBadges'
+import { buildWorkoutHistorySparkline } from '../../utils/workoutHistorySparkline'
+import { WorkoutHistorySparkline } from '../workout/WorkoutHistorySparkline'
 
 export interface ProfileEntrenoDeHoySectionProps {
   recentWorkouts: Workout[]
@@ -67,6 +69,7 @@ export function ProfileEntrenoDeHoySection({
                 month: 'short',
               })
               const badges = buildWorkoutHistoryBadges(w, recentWorkouts.slice(index + 1))
+              const sparkline = buildWorkoutHistorySparkline(recentWorkouts, index)
 
               return (
                 <li key={w.id} className="em-v2-training-history__row">
@@ -86,6 +89,7 @@ export function ProfileEntrenoDeHoySection({
                       {dateStr} · {typeLabel} · {w.stats?.totalSets ?? 0} sets · {vol}
                     </p>
                   </div>
+                  <WorkoutHistorySparkline values={sparkline} />
                   <div className="em-v2-training-history__actions">
                     <button
                       type="button"

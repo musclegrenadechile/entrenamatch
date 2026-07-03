@@ -51,6 +51,7 @@ import {
   resolveDraftStartedAt,
   saveWorkoutDraft,
 } from '../../utils/workoutDraft'
+import { formatWorkoutDraftRecoveredMessage } from '../../utils/workoutDraftRecoveredCopy'
 import { useCompactMobile } from '../../hooks/useCompactMobile'
 
 export interface EntrenoDeHoyModalProps {
@@ -711,17 +712,15 @@ export function EntrenoDeHoyModal({
 
         <div className="gym-log-body">
           {draftRecovered && (
-            <div className="gym-log-recovered flex items-center justify-between gap-2">
-              <span>
-                {timerWasReset
-                  ? 'Recuperamos tus ejercicios — el cronómetro empezó de cero'
-                  : 'Recuperamos tu sesión — sigue donde la dejaste'}
+            <div className="em-v2-draft-recovered" role="status">
+              <span className="em-v2-draft-recovered__text">
+                {formatWorkoutDraftRecoveredMessage(timerWasReset)}
               </span>
               {onDiscardSession && (
                 <button
                   type="button"
                   onClick={handleDiscardSession}
-                  className="shrink-0 text-[10px] font-bold text-red-400 underline"
+                  className="em-v2-draft-recovered__discard"
                 >
                   Descartar
                 </button>
