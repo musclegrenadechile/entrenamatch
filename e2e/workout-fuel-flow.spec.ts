@@ -39,4 +39,7 @@ test('E2E workout-fuel-flow — banner post-guardar → Fuel prefill', async ({ 
   await expect(fuel.getByRole('status').filter({ hasText: /Sugerido del entreno/i })).toBeVisible()
   await expect(fuel.getByLabel('Calorías kcal')).toHaveValue('320')
   await expect(fuel.getByLabel('Proteína en gramos')).not.toHaveValue('35')
+  const macros = await page.evaluate(() => window.__entrenamatchE2E!.getFuelLogPrefillMacros())
+  expect(macros?.kcal).toBe(320)
+  expect(macros?.proteinG).toBeGreaterThan(0)
 })

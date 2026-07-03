@@ -30,5 +30,7 @@ describe('e2eTrainingSuite', () => {
     expect(fab?.covers).toContain('fab')
     const workout = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-flow')
     expect(workout?.covers).toContain('banner')
+    const fuel = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-fuel-flow')
+    expect(fuel?.covers).toContain('banner')
   })
 })

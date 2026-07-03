@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   buildFuelLogPrefillFromWorkoutSave,
+  buildWorkoutFuelPrefillChipLabel,
+  extractFuelLogPrefillMacros,
   hasWorkoutFuelMacroPrefill,
   suggestPostWorkoutMacros,
 } from './fuelLogPrefill'
@@ -52,5 +54,13 @@ describe('fuelLogPrefill', () => {
     expect(hasWorkoutFuelMacroPrefill(null)).toBe(false)
     expect(hasWorkoutFuelMacroPrefill({ mealLabel: 'X' })).toBe(false)
     expect(hasWorkoutFuelMacroPrefill({ suggestedKcal: 320 })).toBe(true)
+  })
+
+  it('extractFuelLogPrefillMacros y chip label (oleada 394)', () => {
+    const prefill = buildFuelLogPrefillFromWorkoutSave({ title: 'Push', burnKcal: 400 })
+    expect(extractFuelLogPrefillMacros(prefill)?.kcal).toBe(320)
+    expect(extractFuelLogPrefillMacros(prefill)?.proteinG).toBeGreaterThan(0)
+    expect(buildWorkoutFuelPrefillChipLabel(prefill)).toContain('Sugerido del entreno')
+    expect(buildWorkoutFuelPrefillChipLabel(prefill)).toContain('320 kcal')
   })
 })

@@ -296,7 +296,11 @@ import {
   emptyFuelDayTotals,
 } from './services/fuel'
 import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr, buildFuelAnalyzeContext } from './utils/fuelCalculator'
-import { buildFuelLogPrefillFromWorkoutSave, type FuelLogPrefill } from './utils/fuelLogPrefill'
+import {
+  buildFuelLogPrefillFromWorkoutSave,
+  extractFuelLogPrefillMacros,
+  type FuelLogPrefill,
+} from './utils/fuelLogPrefill'
 import { fireWorkoutPRConfetti } from './utils/workoutPRConfetti'
 import { fetchRecentWorkouts, fetchUserWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, deleteWorkoutWithLinkedPost, buildWorkoutPreview, computeWorkoutStats, workoutToPreview, workoutShareText } from './services/workouts'
 import { useFuelBalancePipeline } from './hooks/useFuelBalancePipeline'
@@ -5961,6 +5965,7 @@ useEffect(() => {
         setShowFuelLogModal(true)
         setWorkoutSaveBanner(null)
       },
+      getFuelLogPrefillMacros: () => extractFuelLogPrefillMacros(fuelLogPrefill),
       isFuelLogModalOpen: () => showFuelLogModal,
       closeFuelLogModal: () => {
         setFuelLogPrefill(null)
@@ -5985,6 +5990,7 @@ useEffect(() => {
     showEntrenaLogModal,
     showReviewModalFor,
     showFuelLogModal,
+    fuelLogPrefill,
     workoutSaveBanner,
     navigateTab,
     startSyncWith,

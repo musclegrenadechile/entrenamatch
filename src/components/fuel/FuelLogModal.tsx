@@ -3,7 +3,11 @@ import { Camera, Sparkles, X } from 'lucide-react'
 import { estimateMacrosFromDescription } from '../../utils/fuelCalculator'
 import type { AnalyzeFoodResult } from '../../services/fuel'
 import type { FuelLogEntry } from '../../types'
-import { hasWorkoutFuelMacroPrefill, type FuelLogPrefill } from '../../utils/fuelLogPrefill'
+import {
+  buildWorkoutFuelPrefillChipLabel,
+  hasWorkoutFuelMacroPrefill,
+  type FuelLogPrefill,
+} from '../../utils/fuelLogPrefill'
 
 export const FUEL_LOG_WORKOUT_PREFILL_CLASS = 'em-v2-fuel-log__workout-prefill'
 
@@ -113,7 +117,10 @@ export function FuelLogModal({
 
   if (!open) return null
 
-  const workoutMacroPrefill = hasWorkoutFuelMacroPrefill(prefill) && !editEntry ? prefill : null
+  const workoutPrefillChip =
+    hasWorkoutFuelMacroPrefill(prefill) && !editEntry
+      ? buildWorkoutFuelPrefillChipLabel(prefill)
+      : null
 
   const resolvedMealLabel = () => {
     const label = mealLabel.trim()
@@ -308,12 +315,9 @@ export function FuelLogModal({
             className="w-full px-3 py-2.5 rounded-xl bg-[#1a1a22] border border-white/10 text-white text-sm"
           />
 
-          {workoutMacroPrefill && (
+          {workoutPrefillChip && (
             <p className={FUEL_LOG_WORKOUT_PREFILL_CLASS} role="status">
-              Sugerido del entreno · ~{workoutMacroPrefill.suggestedKcal} kcal
-              {workoutMacroPrefill.suggestedProteinG
-                ? ` · ${workoutMacroPrefill.suggestedProteinG}g proteína`
-                : ''}
+              {workoutPrefillChip}
             </p>
           )}
 

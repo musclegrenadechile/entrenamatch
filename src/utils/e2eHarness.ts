@@ -1,5 +1,6 @@
 /** Playwright harness — active when `?e2e=1` is in the URL. */
 
+import type { FuelLogPrefillMacros } from './fuelLogPrefill'
 import type { WorkoutExercise } from '../types'
 
 export type EntrenamatchE2EApi = {
@@ -23,6 +24,8 @@ export type EntrenamatchE2EApi = {
   getWorkoutSaveBannerFuelHint: () => string | null
   /** Abre Fuel log con prefill del banner post-guardar (si está activo). */
   openFuelFromWorkoutSave: () => void
+  /** Macros sugeridos del prefill Fuel activo (oleada 394). */
+  getFuelLogPrefillMacros: () => FuelLogPrefillMacros | null
   isFuelLogModalOpen: () => boolean
   closeFuelLogModal: () => void
   /** Minimiza gym-log dejando borrador activo (FAB). */

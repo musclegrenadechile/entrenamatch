@@ -19,7 +19,7 @@ export const E2E_TRAINING_PLAYWRIGHT_SPECS: readonly E2ETrainingSpecEntry[] = [
   {
     id: 'workout-fuel-flow',
     file: 'e2e/workout-fuel-flow.spec.ts',
-    covers: ['gym-log', 'fuel'],
+    covers: ['gym-log', 'fuel', 'banner'],
   },
   {
     id: 'training-mega-flow',

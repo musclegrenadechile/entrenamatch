@@ -16,8 +16,37 @@ export interface WorkoutSaveFuelContext {
   fuelBalanceHint?: string
 }
 
+export type FuelLogPrefillMacros = {
+  kcal: number | null
+  proteinG: number | null
+  carbsG: number | null
+  fatG: number | null
+}
+
 export function hasWorkoutFuelMacroPrefill(prefill?: FuelLogPrefill | null): boolean {
   return !!(prefill?.suggestedKcal && prefill.suggestedKcal > 0)
+}
+
+export function extractFuelLogPrefillMacros(
+  prefill?: FuelLogPrefill | null
+): FuelLogPrefillMacros | null {
+  if (!hasWorkoutFuelMacroPrefill(prefill)) return null
+  return {
+    kcal: prefill!.suggestedKcal ?? null,
+    proteinG: prefill!.suggestedProteinG ?? null,
+    carbsG: prefill!.suggestedCarbsG ?? null,
+    fatG: prefill!.suggestedFatG ?? null,
+  }
+}
+
+/** Chip «Sugerido del entreno» en Fuel log (oleada 393–394). */
+export function buildWorkoutFuelPrefillChipLabel(prefill?: FuelLogPrefill | null): string | null {
+  if (!hasWorkoutFuelMacroPrefill(prefill)) return null
+  const parts = [`~${prefill!.suggestedKcal} kcal`]
+  if (prefill!.suggestedProteinG && prefill!.suggestedProteinG > 0) {
+    parts.push(`${prefill!.suggestedProteinG}g proteína`)
+  }
+  return `Sugerido del entreno · ${parts.join(' · ')}`
 }
 
 /** Heuristic post-workout meal macros from session burn. */
