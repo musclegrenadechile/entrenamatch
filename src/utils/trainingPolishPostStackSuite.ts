@@ -16,12 +16,18 @@ export const TRAINING_POLISH_POST_STACK_UTILS: readonly TrainingPolishPostStackE
     oleada: 428,
     covers: ['scenario', 'border', 'e2e', 'full'],
   },
+  {
+    id: 'post-stack-closure',
+    module: 'e2eFuelPlanPostStackCoverage',
+    oleada: 429,
+    covers: ['scenario', 'border', 'e2e', 'full'],
+  },
 ] as const
 
-export const TRAINING_POLISH_POST_STACK_CLOSED_OLEADA = 428
+export const TRAINING_POLISH_POST_STACK_CLOSED_OLEADA = 429
 
 export function trainingPolishPostStackRange(): { from: number; to: number } {
-  return { from: 428, to: 428 }
+  return { from: 428, to: 429 }
 }
 
 export function countTrainingPolishPostStackUtils(): number {

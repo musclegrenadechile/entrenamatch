@@ -7,11 +7,14 @@ import {
 } from './trainingPolishPostStackSuite'
 
 describe('trainingPolishPostStackSuite', () => {
-  it('inventario post-stack oleada 428', () => {
-    expect(countTrainingPolishPostStackUtils()).toBe(1)
-    expect(trainingPolishPostStackRange()).toEqual({ from: 428, to: 428 })
+  it('inventario post-stack oleadas 428–429 cerrado', () => {
+    expect(countTrainingPolishPostStackUtils()).toBe(2)
+    expect(trainingPolishPostStackRange()).toEqual({ from: 428, to: 429 })
     expect(isTrainingPolishPostStackClosed()).toBe(true)
-    expect(isTrainingPolishPostStackClosed(427)).toBe(false)
-    expect(TRAINING_POLISH_POST_STACK_UTILS.map((e) => e.id)).toEqual(['fuel-tone-full'])
+    expect(isTrainingPolishPostStackClosed(428)).toBe(false)
+    expect(TRAINING_POLISH_POST_STACK_UTILS.map((e) => e.id)).toEqual([
+      'fuel-tone-full',
+      'post-stack-closure',
+    ])
   })
 })
