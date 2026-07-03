@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.444
+**Versión cierre:** v0.1.445
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -56,6 +56,7 @@
 | **383** | **Gym-log progreso sesión** | Chip sesión en vivo, barra progreso por ejercicio, tests gymLogSessionDisplay |
 | **384** | **Gym-log PR en vivo** | Badge 🏆 por serie + chip sesión con PRs, tests gymLogLivePR, E2E workout-flow |
 | **385** | **Gym-log feedback PR** | Haptic + micro-confetti al nuevo PR, chip compacto en footer móvil, tests gymLogPRFeedback |
+| **386** | **Gym-log hint PR** | «+5 kg vs 70 kg» / primer récord bajo serie PR, tests gymLogLivePRHint, E2E workout-flow |
 
 ## Pulido entrenamiento (361–377) ✅
 

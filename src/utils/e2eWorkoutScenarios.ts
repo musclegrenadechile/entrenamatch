@@ -32,6 +32,12 @@ export const E2E_WORKOUT_FLOW_STEPS: E2EWorkoutStep[] = [
     expect: 'Status con series/volumen; aria-label PR en serie récord',
   },
   {
+    id: 'wo-02c',
+    phase: 'log',
+    action: 'Hint delta PR bajo serie (oleada 386)',
+    expect: 'Texto «Primer récord» o «+X kg vs …» visible en gym-log',
+  },
+  {
     id: 'wo-03',
     phase: 'close',
     action: 'Guardar entreno',

@@ -13,7 +13,8 @@ test('E2E workout-flow — gym-log guardar + reseña post-entreno', async ({ pag
   await expect(workout).toBeVisible({ timeout: 12000 })
   await expect(workout.getByText('Press banca')).toBeVisible()
   await expect(workout.getByRole('status').filter({ hasText: /1 ejercicio · 1 serie/i })).toBeVisible()
-  await expect(workout.getByLabel('PR')).toBeVisible()
+  await expect(workout.getByLabel(/PR:/i)).toBeVisible()
+  await expect(workout.getByText('Primer récord en este ejercicio')).toBeVisible()
 
   await workout.getByRole('button', { name: /Terminar y publicar/i }).click()
   await expect(workout).not.toBeVisible({ timeout: 15000 })

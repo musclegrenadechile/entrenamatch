@@ -73,9 +73,11 @@ import { GymLogSetField } from './GymLogSetField'
 import { canDuplicateGymLogSet, copyWorkoutSetValues } from '../../utils/gymLogDuplicateSet'
 import {
   buildGymLogLivePRKeys,
+  getGymLogLivePR,
   getGymLogLivePRSetIndex,
   hasNewGymLogLivePRKeys,
 } from '../../utils/gymLogLivePR'
+import { buildGymLogLivePRHint } from '../../utils/gymLogLivePRHint'
 import { celebrateGymLogLivePR } from '../../utils/gymLogPRFeedback'
 import {
   buildGymLogExerciseProgressLabel,
@@ -225,6 +227,7 @@ function SetInputs({
   canRemove,
   showSteppers,
   isLivePR,
+  livePRHint,
   onCopyPrevious,
   onUpdate,
   onRemove,
@@ -236,20 +239,23 @@ function SetInputs({
   canRemove: boolean
   showSteppers: boolean
   isLivePR?: boolean
+  livePRHint?: string
   onCopyPrevious?: () => void
   onUpdate: (exIdx: number, setIdx: number, patch: Partial<WorkoutSet>) => void
   onRemove: (exIdx: number, setIdx: number) => void
 }) {
   const done = isGymLogSetComplete(exerciseName, set)
+  const prTitle = livePRHint || 'Nuevo récord personal'
 
   return (
+    <>
     <div
       className={`gym-log-set-row${done ? ' gym-log-set-row--done' : ''}${isLivePR ? ' gym-log-set-row--pr' : ''}`}
     >
       <span className="gym-log-set-num">
         {setIdx + 1}
         {isLivePR && (
-          <span className="gym-log-set-pr-badge" title="Nuevo récord personal" aria-label="PR">
+          <span className="gym-log-set-pr-badge" title={prTitle} aria-label={`PR: ${prTitle}`}>
             🏆
           </span>
         )}
@@ -292,6 +298,12 @@ function SetInputs({
         </button>
       )}
     </div>
+    {isLivePR && livePRHint && (
+      <p className="gym-log-set-pr-hint em-v2-gym-set-pr-hint" role="status">
+        {livePRHint}
+      </p>
+    )}
+    </>
   )
 }
 
@@ -1134,6 +1146,10 @@ export function EntrenoDeHoyModal({
                   <div className="gym-log-sets">
                     {ex.sets.map((set, setIdx) => {
                       const livePrIdx = getGymLogLivePRSetIndex(ex.name, ex.sets, recentWorkouts)
+                      const livePRHint =
+                        livePrIdx !== null
+                          ? buildGymLogLivePRHint(getGymLogLivePR(ex.name, ex.sets, recentWorkouts))
+                          : undefined
                       return isTimedCardioExercise(ex.name) ? (
                         <CardioSetInputs
                           key={setIdx}
@@ -1167,6 +1183,7 @@ export function EntrenoDeHoyModal({
                           canRemove={ex.sets.length > 1}
                           showSteppers={compactMobile}
                           isLivePR={livePrIdx === setIdx}
+                          livePRHint={livePrIdx === setIdx ? livePRHint : undefined}
                           onCopyPrevious={
                             canDuplicateGymLogSet(setIdx)
                               ? () =>

@@ -6597,6 +6597,15 @@
   line-height: 1;
 }
 
+/* ——— Entreno oleada 386: hint delta PR en serie ——— */
+.em-v2-gym-set-pr-hint {
+  margin: 0.15rem 0 0.35rem 1.5rem;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #fde68a;
+}
+
 /* ——— Entreno oleada 385: feedback PR + chip footer compacto ——— */
 .em-v2-gym-session-chip--compact {
   width: 100%;

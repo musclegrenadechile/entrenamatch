@@ -1,7 +1,7 @@
 import { isTimedCardioExercise } from '../data/exerciseLibrary'
 import type { Workout, WorkoutExercise, WorkoutSet } from '../types'
 import { isGymLogSetComplete } from './gymLogSetDisplay'
-import { detectWorkoutPRs } from './workoutPR'
+import { detectWorkoutPRs, type WorkoutPR } from './workoutPR'
 
 function bestSetIndex(exerciseName: string, sets: WorkoutSet[]): number | null {
   let bestIdx: number | null = null
@@ -42,6 +42,17 @@ export function getGymLogLivePRSetIndex(
   if (!pr) return null
 
   return best.reps === pr.reps && best.weightKg === pr.weightKg ? idx : null
+}
+
+/** PR en vivo del ejercicio (mejor serie de la sesión vs historial). */
+export function getGymLogLivePR(
+  exerciseName: string,
+  sets: WorkoutSet[],
+  history: Workout[]
+): WorkoutPR | null {
+  if (isTimedCardioExercise(exerciseName) || sets.length === 0) return null
+  const prs = detectWorkoutPRs([{ name: exerciseName, sets }], history)
+  return prs.find((p) => p.exercise === exerciseName) ?? null
 }
 
 /** PRs detectados en la sesión actual vs historial. */
