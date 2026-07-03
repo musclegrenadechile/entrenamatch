@@ -1,0 +1,45 @@
+/** Inventario utils del bloque gym-log en vivo (oleadas 383–386). */
+export type GymLogTrainingCover = 'progress' | 'pr' | 'feedback' | 'hint'
+
+export type GymLogTrainingUtilEntry = {
+  id: string
+  module: string
+  oleada: number
+  covers: readonly GymLogTrainingCover[]
+}
+
+export const GYM_LOG_TRAINING_UTILS: readonly GymLogTrainingUtilEntry[] = [
+  {
+    id: 'session-display',
+    module: 'gymLogSessionDisplay',
+    oleada: 383,
+    covers: ['progress'],
+  },
+  {
+    id: 'live-pr',
+    module: 'gymLogLivePR',
+    oleada: 384,
+    covers: ['pr'],
+  },
+  {
+    id: 'pr-feedback',
+    module: 'gymLogPRFeedback',
+    oleada: 385,
+    covers: ['feedback'],
+  },
+  {
+    id: 'live-pr-hint',
+    module: 'gymLogLivePRHint',
+    oleada: 386,
+    covers: ['hint'],
+  },
+] as const
+
+export function countGymLogTrainingUtils(): number {
+  return GYM_LOG_TRAINING_UTILS.length
+}
+
+export function gymLogTrainingBlockRange(): { from: number; to: number } {
+  const oleadas = GYM_LOG_TRAINING_UTILS.map((u) => u.oleada)
+  return { from: Math.min(...oleadas), to: Math.max(...oleadas) }
+}

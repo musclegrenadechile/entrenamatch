@@ -6405,6 +6405,18 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* ——— Entreno oleada 387: chip sesión en FAB minimizado ——— */
+.em-v2-workout-fab__session-chip {
+  display: block;
+  margin-bottom: 0.2rem;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.72);
+  line-height: 1.25;
+  text-align: left;
+}
+
 .em-v2-workout-fab__strip-dot {
   width: 0.3125rem;
   height: 0.3125rem;

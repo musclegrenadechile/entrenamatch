@@ -33,4 +33,10 @@ describe('buildWorkoutFabDraftMeta', () => {
     expect(meta.blocksLabel).toBe('3 bloques')
     expect(meta.ageLabel).toBe('hace 3 min')
   })
+
+  it('sessionChip compacto con volumen y listas', () => {
+    const meta = buildWorkoutFabDraftMeta(draft)
+    expect(meta.sessionChip).toContain('3 series')
+    expect(meta.sessionChip).toContain('kg')
+  })
 })

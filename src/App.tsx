@@ -10766,6 +10766,7 @@ useEffect(() => {
         !(activeTab === 'red' && redSubTab === 'messages' && !!activeChat) && (
         <WorkoutSessionFab
           draft={workoutSessionDraft}
+          recentWorkouts={entrenoRecentWorkouts}
           onResume={() => void openEntrenoDeHoy()}
           onQuickAddSet={handleWorkoutQuickAddSet}
           onOpenChat={handleWorkoutOpenChat}

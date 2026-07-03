@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { ChevronUp, Dumbbell, MessageCircle, Plus, Radio, UtensilsCrossed } from 'lucide-react'
 import { useDraggableFabPosition } from '../../hooks/useDraggableFabPosition'
+import type { Workout } from '../../types'
 import {
   summarizeWorkoutDraft,
   type WorkoutDraft,
@@ -24,6 +25,8 @@ export interface WorkoutSessionFabProps {
   onToggleLive?: () => void
   isLive?: boolean
   isTogglingLive?: boolean
+  /** Historial para chip PR en FAB (oleada 387). */
+  recentWorkouts?: Workout[]
 }
 
 function stopPointer(e: React.PointerEvent) {
@@ -44,6 +47,7 @@ export function WorkoutSessionFab({
   onToggleLive,
   isLive = false,
   isTogglingLive = false,
+  recentWorkouts = [],
 }: WorkoutSessionFabProps) {
   const [, setTick] = useState(0)
   const [actionsOpen, setActionsOpen] = useState(true)
@@ -66,7 +70,7 @@ export function WorkoutSessionFab({
   if (hidden) return null
 
   const summary = summarizeWorkoutDraft(draft)
-  const draftMeta = buildWorkoutFabDraftMeta(draft)
+  const draftMeta = buildWorkoutFabDraftMeta(draft, Date.now(), { history: recentWorkouts })
   const bottom =
     bottomClass || 'bottom-[calc(74px+env(safe-area-inset-bottom))]'
   const showActions = !!(onQuickAddSet || onOpenChat || onOpenFuel)
@@ -232,6 +236,9 @@ export function WorkoutSessionFab({
             Autosave · {draftMeta.blocksLabel} · {draftMeta.ageLabel}
           </span>
         </div>
+        {draftMeta.sessionChip && (
+          <span className="em-v2-workout-fab__session-chip">{draftMeta.sessionChip}</span>
+        )}
         <span className="text-xs font-black truncate max-w-full leading-tight text-left">
           {summary.currentExerciseName}
         </span>
