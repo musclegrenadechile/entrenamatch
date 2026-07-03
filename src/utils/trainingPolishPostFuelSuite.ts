@@ -16,12 +16,18 @@ export const TRAINING_POLISH_POST_FUEL_UTILS: readonly TrainingPolishPostFuelEnt
     oleada: 430,
     covers: ['history', 'aria', 'fuel', 'e2e'],
   },
+  {
+    id: 'fuel-rotation-tone',
+    module: 'weeklyPlanFuelRotationToneDisplay',
+    oleada: 431,
+    covers: ['history', 'aria', 'fuel', 'e2e'],
+  },
 ] as const
 
-export const TRAINING_POLISH_POST_FUEL_CLOSED_OLEADA = 430
+export const TRAINING_POLISH_POST_FUEL_CLOSED_OLEADA = 431
 
 export function trainingPolishPostFuelRange(): { from: number; to: number } {
-  return { from: 430, to: 430 }
+  return { from: 430, to: 431 }
 }
 
 export function countTrainingPolishPostFuelUtils(): number {

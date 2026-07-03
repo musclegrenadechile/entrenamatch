@@ -15,10 +15,10 @@ import {
 } from './trainingMegaSuite'
 
 describe('trainingMegaSuite', () => {
-  it('mega-inventario 9 bloques oleadas 361–430', () => {
+  it('mega-inventario 9 bloques oleadas 361–431', () => {
     expect(countTrainingMegaBlocks()).toBe(9)
-    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 430 })
-    expect(countTrainingMegaOleadas()).toBe(70)
+    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 431 })
+    expect(countTrainingMegaOleadas()).toBe(71)
     expect(TRAINING_MEGA_BLOCKS.map((b) => b.id)).toEqual([
       'polish-v1',
       'e2e',
@@ -43,7 +43,7 @@ describe('trainingMegaSuite', () => {
     expect(polishV2?.closedOleada).toBe(410)
     expect(polishV2?.range).toEqual({ from: 383, to: 409 })
     const fuelPlan = trainingMegaBlockById('fuel-plan')
-    expect(fuelPlan?.range).toEqual({ from: 411, to: 430 })
+    expect(fuelPlan?.range).toEqual({ from: 411, to: 431 })
     const postFull = trainingMegaBlockById('polish-post-full')
     expect(postFull?.range).toEqual({ from: 421, to: 427 })
     expect(postFull?.closedOleada).toBe(427)
@@ -88,9 +88,13 @@ describe('trainingMegaSuite', () => {
     expect(areAllTrainingMegaSubBlocksClosed(429)).toBe(false)
   })
 
-  it('mega fase VI post-fuel 430 (oleada 430)', () => {
+  it('mega fase VI post-fuel 430–431 (oleada 431)', () => {
     expect(isTrainingMegaPhase5Closed()).toBe(true)
-    expect(areAllTrainingMegaSubBlocksClosed(430)).toBe(true)
-    expect(isTrainingMegaFullyClosed(430)).toBe(true)
+    expect(isTrainingMegaPhase5Closed(430)).toBe(false)
+    const postFuel = trainingMegaBlockById('polish-post-fuel')
+    expect(postFuel?.range).toEqual({ from: 430, to: 431 })
+    expect(postFuel?.closedOleada).toBe(431)
+    expect(areAllTrainingMegaSubBlocksClosed(431)).toBe(true)
+    expect(isTrainingMegaFullyClosed(431)).toBe(true)
   })
 })

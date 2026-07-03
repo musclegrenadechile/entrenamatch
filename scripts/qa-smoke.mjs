@@ -236,6 +236,10 @@ if (!fuelPlanCoverage.includes("'fuel-history-tone'")) {
   console.error('e2eFuelPlanCoverage missing fuel-history-tone cover (oleada 430)')
   ok = false
 }
+if (!fuelPlanCoverage.includes("'fuel-rotation-tone'")) {
+  console.error('e2eFuelPlanCoverage missing fuel-rotation-tone cover (oleada 431)')
+  ok = false
+}
 if (!ok) process.exit(1)
 
 const fuelPlanScenarioCoverage = readFileSync(
@@ -402,7 +406,29 @@ if (!fuelPlanFullCoverage.includes("'fuel-history-tone'")) {
 }
 if (!ok) process.exit(1)
 console.log('✓ e2eFuelPlanHistoryToneCoverage aligned with full coverage (oleada 430)')
-console.log('✓ e2eFuelPlanFullCoverage unifies 8 Fuel×plan E2E suites (oleada 430)')
+const fuelPlanRotationToneCoverage = readFileSync(
+  join(root, 'src/utils/e2eFuelPlanRotationToneCoverage.ts'),
+  'utf8'
+)
+if (!fuelPlanRotationToneCoverage.includes('isFuelPlanRotationToneCoverageComplete')) {
+  console.error('e2eFuelPlanRotationToneCoverage missing rotation-tone helper (oleada 431)')
+  ok = false
+}
+if (!fuelPlanFullCoverage.includes('e2eFuelPlanRotationToneCoverage')) {
+  console.error('e2eFuelPlanFullCoverage missing rotation-tone suite ref (oleada 431)')
+  ok = false
+}
+if (!fuelPlanFullCoverage.includes("'fuel-rotation-tone'")) {
+  console.error('e2eFuelPlanFullCoverage missing fuel-rotation-tone check (oleada 431)')
+  ok = false
+}
+if (!fuelPlanFullCoverage.includes('isFuelPlanRotationToneCoverageComplete')) {
+  console.error('e2eFuelPlanFullCoverage missing rotation-tone helper ref (oleada 431)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eFuelPlanRotationToneCoverage aligned with full coverage (oleada 431)')
+console.log('✓ e2eFuelPlanFullCoverage unifies 9 Fuel×plan E2E suites (oleada 431)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

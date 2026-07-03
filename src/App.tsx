@@ -100,6 +100,7 @@ import {
   readWeeklyPlanHistoryToneClass,
   readWeeklyPlanRotationChip,
   readWeeklyPlanRotationAriaLabel,
+  readWeeklyPlanRotationToneClass,
   readWeeklyPlanFuelRowToneClass,
   readWeeklyPlanFuelToneStackSnapshot,
   readWeeklyPlanScenarioClass,
@@ -115,6 +116,7 @@ import { isWeeklyPlanFuelToneAriaStackAligned } from './utils/weeklyPlanFuelTone
 import { fuelCardAriaMatchesTone } from './utils/weeklyPlanFuelToneStackCardDisplay'
 import { isWeeklyPlanFuelToneStackDemoFullySynced } from './utils/weeklyPlanFuelToneStackFullDisplay'
 import { historyFuelAriaMatchesTone } from './utils/weeklyPlanFuelHistoryToneDisplay'
+import { rotationFuelAriaMatchesTone } from './utils/weeklyPlanFuelRotationToneDisplay'
 import type { FuelWeekHintTone } from './utils/weeklyPlanFuelWeekToneDisplay'
 import {
   parseGymIdFromSearch,
@@ -6054,6 +6056,9 @@ useEffect(() => {
       getWeeklyPlanDetail: () => readWeeklyPlanDetail(),
       getWeeklyPlanRotationChip: () => readWeeklyPlanRotationChip(),
       getWeeklyPlanRotationAriaLabel: () => readWeeklyPlanRotationAriaLabel(),
+      getWeeklyPlanRotationToneClass: () => readWeeklyPlanRotationToneClass(),
+      isWeeklyPlanRotationFuelToneAriaExpected: (tone: FuelWeekHintTone) =>
+        rotationFuelAriaMatchesTone(readWeeklyPlanRotationAriaLabel(), tone),
       getWeeklyPlanFuelWeekHint: () => readWeeklyPlanFuelWeekHint(),
       getWeeklyPlanFuelWeekAriaLabel: () => readWeeklyPlanFuelWeekAriaLabel(),
       getWeeklyPlanFuelWeekToneClass: () => readWeeklyPlanFuelWeekToneClass(),

@@ -12,11 +12,14 @@ import {
   resolveWeeklyPlanHistoryFuelToneClass,
 } from '../../utils/weeklyPlanFuelHistoryToneDisplay'
 import {
-  buildWeeklyPlanRotationAriaLabel,
   buildWeeklyPlanRotationChipText,
   shouldShowWeeklyPlanRotationChip,
   WEEKLY_PLAN_ROTATION_CHIP_CLASS,
 } from '../../utils/weeklyPlanRotationDisplay'
+import {
+  buildWeeklyPlanRotationFuelToneAriaLabel,
+  resolveWeeklyPlanRotationFuelToneClass,
+} from '../../utils/weeklyPlanFuelRotationToneDisplay'
 import {
   buildWeeklyPlanFuelWeekHint,
   shouldShowWeeklyPlanFuelWeekHint,
@@ -172,6 +175,9 @@ export function WeeklyPlanCard({
   const historyFuelToneClass = resolveWeeklyPlanHistoryFuelToneClass(
     hasFuelProfile ? fuelWeekTone : null
   )
+  const rotationFuelToneClass = resolveWeeklyPlanRotationFuelToneClass(
+    hasFuelProfile ? fuelWeekTone : null
+  )
 
   return (
     <div
@@ -220,9 +226,15 @@ export function WeeklyPlanCard({
 
       {showRotationChip && rotationNote && (
         <p
-          className={WEEKLY_PLAN_ROTATION_CHIP_CLASS}
+          className={[WEEKLY_PLAN_ROTATION_CHIP_CLASS, rotationFuelToneClass]
+            .filter(Boolean)
+            .join(' ')}
           role="status"
-          aria-label={buildWeeklyPlanRotationAriaLabel(rotationNote)}
+          aria-label={
+            fuelWeekTone && hasFuelProfile
+              ? buildWeeklyPlanRotationFuelToneAriaLabel(rotationNote, fuelWeekTone)
+              : `Rotación de plan: ${rotationNote.replace(/^Tras PR[^—]*—\s*/i, '').trim()}`
+          }
         >
           {buildWeeklyPlanRotationChipText(rotationNote)}
         </p>

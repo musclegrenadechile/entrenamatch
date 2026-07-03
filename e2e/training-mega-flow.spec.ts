@@ -77,6 +77,15 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
     window.__entrenamatchE2E!.getWeeklyPlanRotationAriaLabel()
   )
   expect(aria).toMatch(/tras PR|siguiente sesión/i)
+  expect(aria).toMatch(/Afinar Fuel/i)
+  const rotationTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanRotationToneClass()
+  )
+  expect(rotationTone).toBe('em-v2-plan__rotation-chip--under-fueled')
+  const rotationFuelAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWeeklyPlanRotationFuelToneAriaExpected('under-fueled')
+  )
+  expect(rotationFuelAria).toBe(true)
 
   await expect(planCard.locator('.em-v2-plan__headline-fuel')).toBeVisible({ timeout: 10000 })
   const headlineFuelChip = await page.evaluate(() =>

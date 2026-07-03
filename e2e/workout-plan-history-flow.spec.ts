@@ -101,6 +101,15 @@ test('E2E workout-plan-history-flow — guardar entreno y hint PR en EntrenaPlan
     window.__entrenamatchE2E!.getWeeklyPlanRotationAriaLabel()
   )
   expect(aria).toMatch(/tras PR|Pecho|Pull/i)
+  expect(aria).toMatch(/Superávit/i)
+  const rotationTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanRotationToneClass()
+  )
+  expect(rotationTone).toBe('em-v2-plan__rotation-chip--surplus')
+  const rotationFuelAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWeeklyPlanRotationFuelToneAriaExpected('surplus')
+  )
+  expect(rotationFuelAria).toBe(true)
 
   await expect(planCard.locator('.em-v2-plan__fuel-week-chip')).toBeVisible({ timeout: 10000 })
   const fuelChip = await page.evaluate(() => window.__entrenamatchE2E!.getWeeklyPlanFuelWeekChip())

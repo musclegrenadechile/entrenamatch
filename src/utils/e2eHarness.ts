@@ -116,6 +116,11 @@ export type EntrenamatchE2EApi = {
   isWeeklyPlanHistoryFuelToneAriaExpected: (
     tone: 'under-fueled' | 'surplus' | 'deficit'
   ) => boolean
+  /** Modificador tono Fuel en chip rotación (oleada 431). */
+  getWeeklyPlanRotationToneClass: () => string | null
+  isWeeklyPlanRotationFuelToneAriaExpected: (
+    tone: 'under-fueled' | 'surplus' | 'deficit'
+  ) => boolean
 }
 
 declare global {

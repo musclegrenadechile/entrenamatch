@@ -13,6 +13,7 @@ import {
 } from './e2eFuelPlanToneCoverage'
 import { isFuelPlanPostFullE2ECoverageComplete } from './e2eFuelPlanPostFullCoverage'
 import { isFuelPlanHistoryToneCoverageComplete } from './e2eFuelPlanHistoryToneCoverage'
+import { isFuelPlanRotationToneCoverageComplete } from './e2eFuelPlanRotationToneCoverage'
 import { isFuelPlanPostStackE2ECoverageComplete } from './e2eFuelPlanPostStackCoverage'
 import {
   countTrainingE2ESpecs,
@@ -92,7 +93,7 @@ describe('e2eTrainingSuite', () => {
     expect(e2eFuelPlanHeadlineSpecsCoveredInInventory()).toBe(true)
   })
 
-  it('e2eFuelPlanFullCoverage listo (oleada 420–430)', () => {
+  it('e2eFuelPlanFullCoverage listo (oleada 420–431)', () => {
     expect(isE2EFuelPlanFullCoverageReady()).toBe(true)
   })
 
@@ -110,6 +111,10 @@ describe('e2eTrainingSuite', () => {
 
   it('e2eFuelPlanHistoryToneCoverage completo (oleada 430)', () => {
     expect(isFuelPlanHistoryToneCoverageComplete()).toBe(true)
+  })
+
+  it('e2eFuelPlanRotationToneCoverage completo (oleada 431)', () => {
+    expect(isFuelPlanRotationToneCoverageComplete()).toBe(true)
   })
 
   it('e2eFuelPlanToneCoverage completo (oleada 428)', () => {

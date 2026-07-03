@@ -299,6 +299,16 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-plan-history-flow',
     feature: 'tono Fuel×historial surplus + weeklyPlanFuelHistoryToneDisplay',
   },
+  {
+    polishOleada: 431,
+    e2eSpecId: 'training-mega-flow',
+    feature: 'tono Fuel×rotación under-fueled + isWeeklyPlanRotationFuelToneAriaExpected',
+  },
+  {
+    polishOleada: 431,
+    e2eSpecId: 'workout-plan-history-flow',
+    feature: 'tono Fuel×rotación surplus + weeklyPlanFuelRotationToneDisplay',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {
