@@ -491,6 +491,28 @@ if (!fuelPlanFullCoverage.includes('isFuelPlanPostEnergyE2ECoverageComplete')) {
 if (!ok) process.exit(1)
 console.log('✓ e2eFuelPlanPostEnergyCoverage aligned with full coverage (oleada 434)')
 console.log('✓ e2eFuelPlanFullCoverage unifies 12 Fuel×plan E2E suites (oleada 434)')
+const trainingMegaGlobalClosure = readFileSync(
+  join(root, 'src/utils/trainingMegaGlobalClosure.ts'),
+  'utf8'
+)
+if (!trainingMegaGlobalClosure.includes('isTrainingMegaGlobalClosureComplete')) {
+  console.error('trainingMegaGlobalClosure missing global helper (oleada 435)')
+  ok = false
+}
+const trainingMegaGlobalCoverage = readFileSync(
+  join(root, 'src/utils/e2eTrainingMegaGlobalCoverage.ts'),
+  'utf8'
+)
+if (!trainingMegaGlobalCoverage.includes('isE2ETrainingMegaGlobalCoverageComplete')) {
+  console.error('e2eTrainingMegaGlobalCoverage missing mega-global helper (oleada 435)')
+  ok = false
+}
+if (!trainingMegaGlobalCoverage.includes('trainingMegaGlobalClosure')) {
+  console.error('e2eTrainingMegaGlobalCoverage missing closure module ref (oleada 435)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eTrainingMegaGlobalCoverage aligned with mega global closure (oleada 435)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

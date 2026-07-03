@@ -7,9 +7,9 @@ import {
 } from './fuelPlanTrainingSuite'
 
 describe('fuelPlanTrainingSuite', () => {
-  it('inventario Fuel×plan oleadas 411–434', () => {
-    expect(countFuelPlanTrainingUtils()).toBe(48)
-    expect(fuelPlanTrainingBlockRange()).toEqual({ from: 411, to: 434 })
+  it('inventario Fuel×plan oleadas 411–435', () => {
+    expect(countFuelPlanTrainingUtils()).toBe(51)
+    expect(fuelPlanTrainingBlockRange()).toEqual({ from: 411, to: 435 })
     expect(isFuelPlanTrainingBlockClosed()).toBe(true)
     expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('weeklyPlanFuelWeekDisplay')
     expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('weeklyPlanFuelWeekToneDisplay')
@@ -61,5 +61,8 @@ describe('fuelPlanTrainingSuite', () => {
     )
     expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('trainingPolishPostEnergySuite')
     expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('e2eFuelPlanPostEnergyCoverage')
+    expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('trainingMegaGlobalClosure')
+    expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('e2eTrainingMegaGlobalCoverage')
+    expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('trainingPolishMegaGlobalSuite')
   })
 })

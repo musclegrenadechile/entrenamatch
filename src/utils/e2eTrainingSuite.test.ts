@@ -21,6 +21,7 @@ import { isFuelPlanPostStackE2ECoverageComplete } from './e2eFuelPlanPostStackCo
 import {
   countTrainingE2ESpecs,
   isE2EFuelPlanFullCoverageReady,
+  isE2ETrainingMegaGlobalReady,
   e2eFuelPlanHeadlineSpecsCoveredInInventory,
   e2eFuelPlanNutritionSpecsCoveredInInventory,
   e2eFuelPlanSpecsCoveredInInventory,
@@ -130,6 +131,10 @@ describe('e2eTrainingSuite', () => {
 
   it('e2eFuelPlanPostEnergyCoverage completo (oleada 434)', () => {
     expect(isFuelPlanPostEnergyE2ECoverageComplete()).toBe(true)
+  })
+
+  it('e2eTrainingMegaGlobalCoverage completo (oleada 435)', () => {
+    expect(isE2ETrainingMegaGlobalReady()).toBe(true)
   })
 
   it('e2eFuelPlanToneCoverage completo (oleada 428)', () => {

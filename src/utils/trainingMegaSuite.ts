@@ -1,4 +1,4 @@
-/** Mega-inventario total pulido entrenamiento oleadas 361–434 (oleada 434 cierre post-energy VII). */
+/** Mega-inventario total pulido entrenamiento oleadas 361–435 (oleada 435 cierre mega global). */
 import { entrenaPlanTrainingBlockRange } from './entrenaPlanTrainingSuite'
 import { fuelPlanTrainingBlockRange } from './fuelPlanTrainingSuite'
 import { trainingE2EBlockRange } from './e2eTrainingSuite'
@@ -7,6 +7,7 @@ import { trainingPolishPostFullRange } from './trainingPolishPostFullSuite'
 import { trainingPolishPostMegaRange } from './trainingPolishPostMegaSuite'
 import { trainingPolishPostFuelRange } from './trainingPolishPostFuelSuite'
 import { trainingPolishPostEnergyRange } from './trainingPolishPostEnergySuite'
+import { trainingPolishMegaGlobalRange } from './trainingPolishMegaGlobalSuite'
 import { trainingPolishPostStackRange } from './trainingPolishPostStackSuite'
 import { trainingPolishV1BlockRange } from './trainingPolishV1Suite'
 
@@ -21,6 +22,7 @@ export type TrainingMegaBlockId =
   | 'polish-post-stack'
   | 'polish-post-fuel'
   | 'polish-post-energy'
+  | 'mega-global'
 
 export type TrainingMegaBlockEntry = {
   id: TrainingMegaBlockId
@@ -90,6 +92,12 @@ export const TRAINING_MEGA_BLOCKS: readonly TrainingMegaBlockEntry[] = [
     suiteModule: 'trainingPolishPostEnergySuite',
     closedOleada: 434,
   },
+  {
+    id: 'mega-global',
+    range: trainingPolishMegaGlobalRange(),
+    suiteModule: 'trainingPolishMegaGlobalSuite',
+    closedOleada: 435,
+  },
 ] as const
 
 export const TRAINING_MEGA_PHASE1_CLOSED_OLEADA = 411
@@ -98,9 +106,16 @@ export const TRAINING_MEGA_PHASE3_CLOSED_OLEADA = 420
 export const TRAINING_MEGA_PHASE4_CLOSED_OLEADA = 429
 export const TRAINING_MEGA_PHASE5_CLOSED_OLEADA = 432
 export const TRAINING_MEGA_PHASE6_CLOSED_OLEADA = 434
+export const TRAINING_MEGA_GLOBAL_CLOSED_OLEADA = 435
 
 export function trainingFullMegaRange(): { from: number; to: number } {
-  return { from: 361, to: 434 }
+  return { from: 361, to: 435 }
+}
+
+export function isTrainingMegaGlobalClosed(
+  oleada = TRAINING_MEGA_GLOBAL_CLOSED_OLEADA
+): boolean {
+  return oleada >= TRAINING_MEGA_GLOBAL_CLOSED_OLEADA
 }
 
 export function isTrainingMegaPhase6Closed(

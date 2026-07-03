@@ -10,16 +10,17 @@ import {
   isTrainingMegaPhase4Closed,
   isTrainingMegaPhase5Closed,
   isTrainingMegaPhase6Closed,
+  isTrainingMegaGlobalClosed,
   TRAINING_MEGA_BLOCKS,
   trainingFullMegaRange,
   trainingMegaBlockById,
 } from './trainingMegaSuite'
 
 describe('trainingMegaSuite', () => {
-  it('mega-inventario 10 bloques oleadas 361–434', () => {
-    expect(countTrainingMegaBlocks()).toBe(10)
-    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 434 })
-    expect(countTrainingMegaOleadas()).toBe(74)
+  it('mega-inventario 11 bloques oleadas 361–435', () => {
+    expect(countTrainingMegaBlocks()).toBe(11)
+    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 435 })
+    expect(countTrainingMegaOleadas()).toBe(75)
     expect(TRAINING_MEGA_BLOCKS.map((b) => b.id)).toEqual([
       'polish-v1',
       'e2e',
@@ -31,6 +32,7 @@ describe('trainingMegaSuite', () => {
       'polish-post-stack',
       'polish-post-fuel',
       'polish-post-energy',
+      'mega-global',
     ])
   })
 
@@ -45,7 +47,7 @@ describe('trainingMegaSuite', () => {
     expect(polishV2?.closedOleada).toBe(410)
     expect(polishV2?.range).toEqual({ from: 383, to: 409 })
     const fuelPlan = trainingMegaBlockById('fuel-plan')
-    expect(fuelPlan?.range).toEqual({ from: 411, to: 434 })
+    expect(fuelPlan?.range).toEqual({ from: 411, to: 435 })
     const postFull = trainingMegaBlockById('polish-post-full')
     expect(postFull?.range).toEqual({ from: 421, to: 427 })
     expect(postFull?.closedOleada).toBe(427)
@@ -106,7 +108,17 @@ describe('trainingMegaSuite', () => {
     const postEnergy = trainingMegaBlockById('polish-post-energy')
     expect(postEnergy?.range).toEqual({ from: 433, to: 434 })
     expect(postEnergy?.closedOleada).toBe(434)
-    expect(areAllTrainingMegaSubBlocksClosed(434)).toBe(true)
-    expect(isTrainingMegaFullyClosed(434)).toBe(true)
+    expect(areAllTrainingMegaSubBlocksClosed(434)).toBe(false)
+    expect(isTrainingMegaFullyClosed(434)).toBe(false)
+    expect(isTrainingMegaGlobalClosed(434)).toBe(false)
+  })
+
+  it('cierre mega global 435 (oleada 435)', () => {
+    expect(isTrainingMegaGlobalClosed()).toBe(true)
+    const megaGlobal = trainingMegaBlockById('mega-global')
+    expect(megaGlobal?.range).toEqual({ from: 435, to: 435 })
+    expect(megaGlobal?.closedOleada).toBe(435)
+    expect(areAllTrainingMegaSubBlocksClosed(435)).toBe(true)
+    expect(isTrainingMegaFullyClosed(435)).toBe(true)
   })
 })
