@@ -17,12 +17,19 @@ export const TRAINING_POLISH_WORKOUT_HISTORY_V2_UTILS: readonly TrainingPolishWo
       oleada: 440,
       covers: ['history', 'pr', 'aria', 'e2e'],
     },
+    {
+      id: 'post-v2-closure',
+      module: 'e2eWorkoutHistoryPostV2Coverage',
+      oleada: 443,
+      covers: ['history', 'pr', 'aria', 'e2e'],
+    },
   ] as const
 
 export const TRAINING_POLISH_WORKOUT_HISTORY_V2_OPEN_OLEADA = 440
+export const TRAINING_POLISH_WORKOUT_HISTORY_V2_CLOSED_OLEADA = 443
 
 export function trainingPolishWorkoutHistoryV2Range(): { from: number; to: number } {
-  return { from: 440, to: 440 }
+  return { from: 440, to: 443 }
 }
 
 export function countTrainingPolishWorkoutHistoryV2Utils(): number {
@@ -33,4 +40,10 @@ export function isTrainingPolishWorkoutHistoryV2Open(
   oleada = TRAINING_POLISH_WORKOUT_HISTORY_V2_OPEN_OLEADA
 ): boolean {
   return oleada >= TRAINING_POLISH_WORKOUT_HISTORY_V2_OPEN_OLEADA
+}
+
+export function isTrainingPolishWorkoutHistoryV2Closed(
+  oleada = TRAINING_POLISH_WORKOUT_HISTORY_V2_CLOSED_OLEADA
+): boolean {
+  return oleada >= TRAINING_POLISH_WORKOUT_HISTORY_V2_CLOSED_OLEADA
 }

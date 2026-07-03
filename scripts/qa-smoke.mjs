@@ -649,6 +649,29 @@ if (!postWorkoutFullCoverage.includes('isPostWorkoutFullE2ECoverageComplete')) {
 if (!ok) process.exit(1)
 console.log('✓ e2ePostWorkoutPostV2Coverage aligned with full coverage (oleada 442)')
 console.log('✓ e2ePostWorkoutFullCoverage unifies 3 post-entreno v2 E2E suites (oleada 442)')
+const workoutHistoryPostV2Coverage = readFileSync(
+  join(root, 'src/utils/e2eWorkoutHistoryPostV2Coverage.ts'),
+  'utf8'
+)
+if (!workoutHistoryPostV2Coverage.includes('isWorkoutHistoryPostV2E2ECoverageComplete')) {
+  console.error('e2eWorkoutHistoryPostV2Coverage missing post-v2 helper (oleada 443)')
+  ok = false
+}
+const workoutHistoryFullCoverage = readFileSync(
+  join(root, 'src/utils/e2eWorkoutHistoryFullCoverage.ts'),
+  'utf8'
+)
+if (!workoutHistoryFullCoverage.includes('e2eWorkoutHistoryPostV2Coverage')) {
+  console.error('e2eWorkoutHistoryFullCoverage missing post-v2 suite ref (oleada 443)')
+  ok = false
+}
+if (!workoutHistoryFullCoverage.includes('isWorkoutHistoryFullE2ECoverageComplete')) {
+  console.error('e2eWorkoutHistoryFullCoverage missing full helper ref (oleada 443)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eWorkoutHistoryPostV2Coverage aligned with full coverage (oleada 443)')
+console.log('✓ e2eWorkoutHistoryFullCoverage unifies 3 historial v2 E2E suites (oleada 443)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

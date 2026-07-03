@@ -40,7 +40,7 @@ export const LEGAL_VERSIONS = {
 export const AUTO_MATCH_IDS = ['p1', 'p3', 'p5', 'p6', 'p9', 'p11', 'p13']
 
 // Centralized app version (used in UI footers, auth screen, crash reports, APK, etc.)
-export const APP_VERSION = '0.1.501'
+export const APP_VERSION = '0.1.502'
 
 /** Firebase Hosting — canonical origin for APK shares and deep links. */
 export const PUBLIC_APP_URL = 'https://entrenamatch.web.app'

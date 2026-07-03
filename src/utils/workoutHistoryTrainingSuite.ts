@@ -51,6 +51,24 @@ export const WORKOUT_HISTORY_TRAINING_UTILS: readonly WorkoutHistoryTrainingUtil
     oleada: 440,
     covers: ['summary', 'badges', 'a11y'],
   },
+  {
+    id: 'history-coverage',
+    module: 'e2eWorkoutHistoryCoverage',
+    oleada: 443,
+    covers: ['summary', 'badges', 'a11y'],
+  },
+  {
+    id: 'post-v2-closure',
+    module: 'e2eWorkoutHistoryPostV2Coverage',
+    oleada: 443,
+    covers: ['summary', 'badges', 'a11y'],
+  },
+  {
+    id: 'history-full-coverage',
+    module: 'e2eWorkoutHistoryFullCoverage',
+    oleada: 443,
+    covers: ['summary', 'badges', 'a11y'],
+  },
 ] as const
 
 export function countWorkoutHistoryTrainingUtils(): number {
@@ -58,7 +76,7 @@ export function countWorkoutHistoryTrainingUtils(): number {
 }
 
 export function workoutHistoryTrainingBlockRange(): { from: number; to: number } {
-  return { from: 395, to: 440 }
+  return { from: 395, to: 443 }
 }
 
 export const WORKOUT_HISTORY_TRAINING_V2_OPEN_OLEADA = 440

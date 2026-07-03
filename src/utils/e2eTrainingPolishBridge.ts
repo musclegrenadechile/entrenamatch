@@ -399,6 +399,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-fuel-flow',
     feature: 'cierre post-entreno v2 439–441 + e2ePostWorkoutPostV2Coverage',
   },
+  {
+    polishOleada: 443,
+    e2eSpecId: 'workout-history-flow',
+    feature: 'cierre historial v2 440 + e2eWorkoutHistoryPostV2Coverage',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {
