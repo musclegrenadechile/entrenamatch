@@ -23,12 +23,18 @@ export const TRAINING_POLISH_PR_V2_POST_MEGA_UTILS: readonly TrainingPolishPrV2P
       oleada: 453,
       covers: ['pr', 'inventory', 'closure', 'e2e'],
     },
+    {
+      id: 'pr-v2-post-mega-global-closure',
+      module: 'trainingPolishPrV2PostMegaGlobalSuite',
+      oleada: 454,
+      covers: ['pr', 'inventory', 'closure', 'e2e'],
+    },
   ] as const
 
 export const TRAINING_POLISH_PR_V2_POST_MEGA_CLOSED_OLEADA = 453
 
 export function trainingPolishPrV2PostMegaRange(): { from: number; to: number } {
-  return { from: 453, to: 453 }
+  return { from: 453, to: 454 }
 }
 
 export function countTrainingPolishPrV2PostMegaUtils(): number {

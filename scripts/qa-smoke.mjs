@@ -966,6 +966,54 @@ if (!ok) process.exit(1)
 console.log('✓ e2eWorkoutHistoryV2GlobalFullCoverage unifies 3 historial v2 global suites (oleada 453)')
 console.log('✓ trainingPrV2PostMegaClosure closes post-mega PR v2 block (oleada 453)')
 console.log('✓ e2eTrainingPlaywrightPrSmokeCoverage aligned with CI e2e-smoke PR specs (oleada 453)')
+const trainingPostPrMegaFullV2Coverage = readFileSync(
+  join(root, 'src/utils/e2eTrainingPostPrMegaFullV2Coverage.ts'),
+  'utf8'
+)
+if (!trainingPostPrMegaFullV2Coverage.includes('isTrainingPostPrMegaFullV2E2ECoverageComplete')) {
+  console.error('e2eTrainingPostPrMegaFullV2Coverage missing full-v2 helper (oleada 454)')
+  ok = false
+}
+if (!trainingPostPrMegaFullV2Coverage.includes('e2eWorkoutHistoryV2GlobalFullCoverage')) {
+  console.error('e2eTrainingPostPrMegaFullV2Coverage missing historial v2 global full ref (oleada 454)')
+  ok = false
+}
+const trainingPrV2PostMegaGlobalClosure = readFileSync(
+  join(root, 'src/utils/trainingPrV2PostMegaGlobalClosure.ts'),
+  'utf8'
+)
+if (!trainingPrV2PostMegaGlobalClosure.includes('isTrainingPrV2PostMegaGlobalClosureComplete')) {
+  console.error('trainingPrV2PostMegaGlobalClosure missing post-mega-global helper (oleada 454)')
+  ok = false
+}
+if (!trainingPrV2PostMegaGlobalClosure.includes('mega-post-pr-full-v2')) {
+  console.error('trainingPrV2PostMegaGlobalClosure missing full-v2 block ref (oleada 454)')
+  ok = false
+}
+const trainingPlaywrightPrSmokeRun = readFileSync(
+  join(root, 'src/utils/e2eTrainingPlaywrightPrSmokeRun.ts'),
+  'utf8'
+)
+if (!trainingPlaywrightPrSmokeRun.includes('isTrainingPlaywrightPrSmokeRunReady')) {
+  console.error('e2eTrainingPlaywrightPrSmokeRun missing smoke-run helper (oleada 454)')
+  ok = false
+}
+if (!trainingPlaywrightPrSmokeRun.includes('trainingPlaywrightPrSmokeRunCommand')) {
+  console.error('e2eTrainingPlaywrightPrSmokeRun missing preview command (oleada 454)')
+  ok = false
+}
+const trainingPostPrMegaFullV2PostCoverage = readFileSync(
+  join(root, 'src/utils/e2eTrainingPostPrMegaFullV2PostCoverage.ts'),
+  'utf8'
+)
+if (!trainingPostPrMegaFullV2PostCoverage.includes('isTrainingPostPrMegaFullV2PostE2ECoverageComplete')) {
+  console.error('e2eTrainingPostPrMegaFullV2PostCoverage missing full-v2-post helper (oleada 454)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eTrainingPostPrMegaFullV2Coverage unifies 7 mega post-PR full v2 suites (oleada 454)')
+console.log('✓ trainingPrV2PostMegaGlobalClosure closes post-mega global PR v2 block (oleada 454)')
+console.log('✓ e2eTrainingPlaywrightPrSmokeRun documents local PR smoke preview command (oleada 454)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

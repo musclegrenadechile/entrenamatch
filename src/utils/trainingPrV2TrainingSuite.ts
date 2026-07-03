@@ -105,6 +105,42 @@ export const TRAINING_PR_V2_TRAINING_UTILS: readonly TrainingPrV2TrainingUtilEnt
     oleada: 453,
     covers: ['pr', 'e2e', 'inventory'],
   },
+  {
+    id: 'post-pr-mega-full-v2-coverage',
+    module: 'e2eTrainingPostPrMegaFullV2Coverage',
+    oleada: 454,
+    covers: ['pr', 'e2e', 'inventory'],
+  },
+  {
+    id: 'post-pr-mega-full-v2-post-closure',
+    module: 'e2eTrainingPostPrMegaFullV2PostCoverage',
+    oleada: 454,
+    covers: ['pr', 'e2e', 'closure', 'inventory'],
+  },
+  {
+    id: 'playwright-pr-smoke-run',
+    module: 'e2eTrainingPlaywrightPrSmokeRun',
+    oleada: 454,
+    covers: ['pr', 'e2e', 'inventory'],
+  },
+  {
+    id: 'pr-v2-post-mega-global-closure',
+    module: 'trainingPrV2PostMegaGlobalClosure',
+    oleada: 454,
+    covers: ['pr', 'closure', 'inventory'],
+  },
+  {
+    id: 'pr-v2-post-mega-global-polish',
+    module: 'trainingPolishPrV2PostMegaGlobalSuite',
+    oleada: 454,
+    covers: ['pr', 'closure'],
+  },
+  {
+    id: 'pr-v2-post-mega-global-e2e',
+    module: 'e2eTrainingPrV2PostMegaGlobalCoverage',
+    oleada: 454,
+    covers: ['pr', 'e2e', 'closure'],
+  },
 ] as const
 
 export function countTrainingPrV2TrainingUtils(): number {
@@ -112,5 +148,5 @@ export function countTrainingPrV2TrainingUtils(): number {
 }
 
 export function trainingPrV2TrainingBlockRange(): { from: number; to: number } {
-  return { from: 436, to: 453 }
+  return { from: 436, to: 454 }
 }
