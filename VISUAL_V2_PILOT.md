@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.414
+**Versión cierre:** v0.1.415
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 353)
@@ -26,6 +26,7 @@
 | **353** | **Cierre** | Sesiones, Squads, Notificaciones, match modal v2; changelog landing |
 | **354** | **Modales backlog** | FullProfileSheet, filtros Explorar, páginas legales v2 |
 | **355** | **Cards Squads/Sesiones** | `em-v2-card` compartida, fuel banner, CTAs inline |
+| **356** | **Overlays post-piloto** | LIVE cerca, verificación biométrica, reseña entreno v2 |
 
 ## Auditoría cohesión (353)
 

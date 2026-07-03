@@ -31,15 +31,12 @@ export function TrainingReviewModalMount({
   return (
     <AnimatePresence>
       <div
-        className="absolute inset-0 z-[110] flex items-center justify-center bg-black/80 p-6"
+        className="em-v2-review-modal__overlay absolute inset-0 z-[110] flex items-center justify-center p-6"
         onClick={onClose}
       >
-        <div
-          onClick={(e) => e.stopPropagation()}
-          className="card w-full max-w-[340px] rounded-3xl p-6"
-        >
+        <div onClick={(e) => e.stopPropagation()} className="em-v2-review-modal__card">
           <div className="text-center mb-4">
-            <div className="text-2xl font-semibold">¿Cómo fue entrenar con {partnerName}?</div>
+            <div className="em-v2-review-modal__title">¿Cómo fue entrenar con {partnerName}?</div>
             <div className="text-sm text-[#9CA3AF] mt-1">Tu reseña ayuda a otros a confiar</div>
           </div>
 
@@ -92,10 +89,10 @@ export function TrainingReviewModalMount({
           </div>
 
           <div className="flex gap-3">
-            <button type="button" onClick={onClose} className="flex-1 btn-secondary">
+            <button type="button" onClick={onClose} className="em-v2-cta-secondary">
               Cancelar
             </button>
-            <button type="button" onClick={onSubmit} className="flex-1 btn-primary">
+            <button type="button" onClick={onSubmit} className="em-v2-hero-card__cta flex-1">
               Enviar reseña
             </button>
           </div>

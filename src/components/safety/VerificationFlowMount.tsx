@@ -32,14 +32,14 @@ export function VerificationFlowMount({
 
   return (
     <AnimatePresence>
-      <div className="absolute inset-0 z-[130] flex items-end bg-black/80" onClick={onClose}>
+      <div className="em-v2-verify__overlay absolute inset-0 z-[130] flex items-end" onClick={onClose}>
         <div
           onClick={(e) => e.stopPropagation()}
-          className="w-full bg-[#0D0D10] rounded-t-3xl p-6 max-h-[90vh] overflow-auto"
+          className="em-v2-verify__sheet w-full p-6 max-h-[90vh] overflow-auto"
         >
           <div className="flex justify-between items-center mb-6">
             <div>
-              <div className="font-bold text-2xl">Verificación biométrica</div>
+              <div className="em-v2-verify__title">Verificación biométrica</div>
               <div className="text-sm text-[#9CA3AF]">Paso {step} de 2</div>
             </div>
             <button type="button" onClick={onClose} className="text-2xl">
@@ -54,7 +54,7 @@ export function VerificationFlowMount({
                   Comprobamos que eres la misma persona de tu foto de perfil con una selfie en vivo por
                   cámara frontal. No pedimos documento de identidad.
                 </p>
-                <div className="bg-[#1C1C20] p-4 rounded-2xl text-sm space-y-2">
+                <div className="em-v2-verify__info space-y-2">
                   <div>
                     ✓ Nombre: <span className="font-medium">{currentUser.name}</span>
                   </div>
@@ -69,7 +69,7 @@ export function VerificationFlowMount({
                   </div>
                 </div>
               </div>
-              <button type="button" onClick={() => onStepChange(2)} className="btn-primary w-full">
+              <button type="button" onClick={() => onStepChange(2)} className="em-v2-hero-card__cta w-full">
                 Continuar
               </button>
             </div>
@@ -92,14 +92,14 @@ export function VerificationFlowMount({
               />
 
               <div className="flex gap-3">
-                <button type="button" onClick={() => onStepChange(1)} className="btn-secondary flex-1">
+                <button type="button" onClick={() => onStepChange(1)} className="em-v2-cta-secondary">
                   Atrás
                 </button>
                 <button
                   type="button"
                   onClick={() => void onSubmit()}
                   disabled={!selfie || submitting}
-                  className="btn-primary flex-1 disabled:opacity-50"
+                  className="em-v2-hero-card__cta flex-1 disabled:opacity-50"
                 >
                   {submitting ? 'Analizando rostro…' : 'Verificar rostro'}
                 </button>

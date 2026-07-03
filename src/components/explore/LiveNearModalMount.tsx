@@ -164,14 +164,14 @@ export function LiveNearModalMount({
 
   return (
     <div
-      className="absolute inset-0 z-[95] bg-[#0D0D10] flex flex-col"
+      className="em-v2-live-near absolute inset-0 z-[95] flex flex-col"
       onClick={closeAndReset}
     >
-      <div className="p-4 flex items-center justify-between border-b border-[#2F2F35]">
-        <button type="button" onClick={closeAndReset}>
+      <div className="em-v2-live-near__header p-4 flex items-center justify-between">
+        <button type="button" onClick={closeAndReset} aria-label="Volver">
           <ArrowLeft />
         </button>
-        <div className="font-medium flex items-center gap-2">
+        <div className="em-v2-live-near__title flex items-center gap-2">
           Entrenando Ahora cerca ({liveCountForUI})
           {liveTrainingNow.some((u) => (u.seVaEnMin || 0) > 0) && (
             <span className="text-orange-400 text-xs">¡se va pronto, únete!</span>
@@ -182,14 +182,14 @@ export function LiveNearModalMount({
       </div>
 
       {currentUser?.trainingNow && liveTrainingNow.length > 0 && (
-        <div className="px-4 py-1 text-[10px] bg-[#22c55e]/10 text-[#22c55e] text-center">
+        <div className="em-v2-live-near__banner">
           💡 Si te unes a alguien que también está live, ¡inicias EntrenaSync automático con timer +
           acciones instantáneas (se comparten en vivo en ambos muros)!
         </div>
       )}
 
       {liveTrainingNow.length > 0 && (
-        <div className="px-4 pt-3 pb-2 border-b border-[#2F2F35]/60 flex gap-2 items-center bg-[#0D0D10]">
+        <div className="em-v2-live-near__toolbar px-4 pt-3 pb-2 flex gap-2 items-center">
           <input
             type="text"
             value={search}
@@ -197,11 +197,7 @@ export function LiveNearModalMount({
             placeholder="Buscar por nombre..."
             className="form-input flex-1 text-sm py-1.5"
           />
-          <button
-            type="button"
-            onClick={cycleSort}
-            className="text-xs px-3 py-1 rounded-full border border-[#22c55e]/40 text-[#22c55e] active:bg-[#22c55e]/10 whitespace-nowrap"
-          >
+          <button type="button" onClick={cycleSort} className="em-v2-live-near__sort-btn">
             {sort === 'distance' ? '📍 Dist' : sort === 'urgency' ? '⏱ Se va pronto' : '🔥 Hot'}
           </button>
         </div>
@@ -287,7 +283,7 @@ export function LiveNearModalMount({
                 onClose()
                 onOpenProfile(user)
               }}
-              className="card card-glass p-3 mb-2 flex gap-3 cursor-pointer active:scale-95 border border-[#22c55e]/50 hover:border-[#22c55e]/80 transition-all group"
+              className="em-v2-card em-v2-card--live em-v2-live-near__row group"
             >
               {user.photos?.[0] && (
                 <img
@@ -364,7 +360,7 @@ export function LiveNearModalMount({
                       onSwipeRight(user.id)
                     }
                   }}
-                  className={`text-[10px] ${syncBonds[user.id] ? 'bg-[#FFD700] text-black' : 'bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black'} px-3 py-1 rounded font-semibold active:brightness-90 flex items-center justify-center gap-1 ${joiningSyncWith === user.id ? 'opacity-80 cursor-wait' : ''}`}
+                  className={`em-v2-live-near__sync-btn ${syncBonds[user.id] ? 'em-v2-live-near__sync-btn--bond' : ''} flex items-center justify-center gap-1`}
                 >
                   {joiningSyncWith === user.id
                     ? '⏳ Abriendo EntrenaSync...'
@@ -382,7 +378,7 @@ export function LiveNearModalMount({
                       onSwipeRight(user.id)
                     }
                   }}
-                  className="text-[9px] border border-[#22c55e]/60 text-[#22c55e] px-2 py-0.5 rounded active:bg-[#22c55e]/10 hover:bg-[#22c55e]/5"
+                  className="em-v2-live-near__chat-btn"
                 >
                   Chatear ya
                 </button>
@@ -390,7 +386,7 @@ export function LiveNearModalMount({
             </div>
           ))
         ) : currentUser?.trainingNow ? (
-          <div className="card card-glass p-6 text-center border border-[#22c55e]/40">
+          <div className="em-v2-live-near__empty">
             <div className="text-3xl mb-2">🟢</div>
             <div className="font-semibold text-[#22c55e] mb-1">
               Estás en vivo — visible en el mapa LIVE
@@ -405,13 +401,13 @@ export function LiveNearModalMount({
                 onClose()
                 onNavigateMap()
               }}
-              className="text-xs px-4 py-1.5 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90"
+              className="em-v2-live-near__empty-cta"
             >
               Ver mapa →
             </button>
           </div>
         ) : (
-          <div className="card card-glass p-6 text-center border border-[#22c55e]/30">
+          <div className="em-v2-live-near__empty">
             <div className="text-3xl mb-2">🏋️</div>
             <div className="font-semibold text-white mb-1">¡Aún no hay nadie entrenando cerca!</div>
             <div className="text-sm text-[#9CA3AF] mb-3">
@@ -423,7 +419,7 @@ export function LiveNearModalMount({
                 onClose()
                 onNavigateProfile()
               }}
-              className="text-xs px-4 py-1.5 rounded-full bg-[#22c55e] text-black font-bold active:brightness-90"
+              className="em-v2-live-near__empty-cta"
             >
               Ir a Perfil a activar →
             </button>
@@ -431,16 +427,12 @@ export function LiveNearModalMount({
         )}
       </div>
 
-      <div className="p-3 border-t border-[#2F2F35] bg-[#0D0D10]">
+      <div className="em-v2-live-near__footer p-3">
         <div className="text-center text-xs text-[#9CA3AF] mb-2">
           Toca card → perfil. Unirme = like + auto-comment en su muro live.
         </div>
         {liveTrainingNow.length >= 2 && (
-          <button
-            type="button"
-            onClick={handleGroupSession}
-            className="w-full py-2.5 rounded-2xl bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black font-bold text-sm active:scale-[0.985]"
-          >
+          <button type="button" onClick={handleGroupSession} className="em-v2-live-near__group-cta">
             🔥 Armar sesión grupal con estos {liveTrainingNow.length} live ahora
           </button>
         )}
