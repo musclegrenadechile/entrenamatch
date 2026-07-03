@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.490
+**Versión cierre:** v0.1.491
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -102,10 +102,11 @@
 | **429** | **Cierre post-stack V + 7ª suite E2E** | e2eFuelPlanPostStackCoverage; trainingPolishPostStackSuite cerrado 428–429; e2eFuelPlanFullCoverage 7 suites; mega cierre V |
 | **430** | **Mega fase VI + tono Fuel×historial** | weeklyPlanFuelHistoryToneDisplay; trainingPolishPostFuelSuite; harness isWeeklyPlanHistoryFuelToneAriaExpected; e2eFuelPlanHistoryToneCoverage 8ª suite |
 | **431** | **Tono Fuel×rotación PR** | weeklyPlanFuelRotationToneDisplay; harness isWeeklyPlanRotationFuelToneAriaExpected; e2eFuelPlanRotationToneCoverage 9ª suite; fuel-rotation-tone E2E |
+| **432** | **Cierre post-fuel VI + 10ª suite E2E** | e2eFuelPlanPostFuelCoverage; trainingPolishPostFuelSuite cerrado 430–432; e2eFuelPlanFullCoverage 10 suites; mega cierre VI |
 
-## Mega entrenamiento (361–431) ✅
+## Mega entrenamiento (361–432) ✅
 
-Inventario `trainingMegaSuite`: 9 sub-bloques (pulido I 361–377, E2E 378–410, pulido II 383–409, EntrenaPlan×historial 401–409, Fuel×plan 411–414, post-mega 415–420, post-full 421–427, post-stack 428–429, post-fuel 430–431). 71 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`. Cierre mega fase I oleada 411; cierre mega II oleada 415; cierre mega fase III oleada 420; post-full oleada 427; mega fase V oleada 429; mega fase VI oleada 431.
+Inventario `trainingMegaSuite`: 9 sub-bloques (pulido I 361–377, E2E 378–410, pulido II 383–409, EntrenaPlan×historial 401–409, Fuel×plan 411–414, post-mega 415–420, post-full 421–427, post-stack 428–429, post-fuel 430–432). 72 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`. Cierre mega fase I oleada 411; cierre mega II oleada 415; cierre mega fase III oleada 420; post-full oleada 427; mega fase V oleada 429; mega fase VI oleada 432.
 
 ## Fuel × EntrenaPlan (411–414) ✅
 

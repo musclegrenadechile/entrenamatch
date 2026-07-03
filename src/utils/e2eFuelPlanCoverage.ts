@@ -109,7 +109,7 @@ export function countE2EFuelPlanSpecs(): number {
 }
 
 export function e2eFuelPlanBlockRange(): { from: number; to: number } {
-  return { from: 412, to: 431 }
+  return { from: 412, to: 432 }
 }
 
 export function fuelPlanNutritionSpecIds(): string[] {

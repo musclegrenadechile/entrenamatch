@@ -428,7 +428,25 @@ if (!fuelPlanFullCoverage.includes('isFuelPlanRotationToneCoverageComplete')) {
 }
 if (!ok) process.exit(1)
 console.log('✓ e2eFuelPlanRotationToneCoverage aligned with full coverage (oleada 431)')
-console.log('✓ e2eFuelPlanFullCoverage unifies 9 Fuel×plan E2E suites (oleada 431)')
+const fuelPlanPostFuelCoverage = readFileSync(
+  join(root, 'src/utils/e2eFuelPlanPostFuelCoverage.ts'),
+  'utf8'
+)
+if (!fuelPlanPostFuelCoverage.includes('isFuelPlanPostFuelE2ECoverageComplete')) {
+  console.error('e2eFuelPlanPostFuelCoverage missing post-fuel helper (oleada 432)')
+  ok = false
+}
+if (!fuelPlanFullCoverage.includes('e2eFuelPlanPostFuelCoverage')) {
+  console.error('e2eFuelPlanFullCoverage missing post-fuel suite ref (oleada 432)')
+  ok = false
+}
+if (!fuelPlanFullCoverage.includes('isFuelPlanPostFuelE2ECoverageComplete')) {
+  console.error('e2eFuelPlanFullCoverage missing post-fuel helper ref (oleada 432)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eFuelPlanPostFuelCoverage aligned with full coverage (oleada 432)')
+console.log('✓ e2eFuelPlanFullCoverage unifies 10 Fuel×plan E2E suites (oleada 432)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

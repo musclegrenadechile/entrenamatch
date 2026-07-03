@@ -22,12 +22,18 @@ export const TRAINING_POLISH_POST_FUEL_UTILS: readonly TrainingPolishPostFuelEnt
     oleada: 431,
     covers: ['history', 'aria', 'fuel', 'e2e'],
   },
+  {
+    id: 'post-fuel-closure',
+    module: 'e2eFuelPlanPostFuelCoverage',
+    oleada: 432,
+    covers: ['history', 'aria', 'fuel', 'e2e'],
+  },
 ] as const
 
-export const TRAINING_POLISH_POST_FUEL_CLOSED_OLEADA = 431
+export const TRAINING_POLISH_POST_FUEL_CLOSED_OLEADA = 432
 
 export function trainingPolishPostFuelRange(): { from: number; to: number } {
-  return { from: 430, to: 431 }
+  return { from: 430, to: 432 }
 }
 
 export function countTrainingPolishPostFuelUtils(): number {

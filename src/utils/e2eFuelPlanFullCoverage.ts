@@ -1,5 +1,6 @@
-/** Mega-inventario E2E Fuel×EntrenaPlan — unifica 9 suites (oleada 431). */
+/** Mega-inventario E2E Fuel×EntrenaPlan — unifica 10 suites (oleada 432). */
 import { isFuelPlanHistoryToneCoverageComplete } from './e2eFuelPlanHistoryToneCoverage'
+import { isFuelPlanPostFuelE2ECoverageComplete } from './e2eFuelPlanPostFuelCoverage'
 import { isFuelPlanRotationToneCoverageComplete } from './e2eFuelPlanRotationToneCoverage'
 import { isFuelPlanPostFullE2ECoverageComplete } from './e2eFuelPlanPostFullCoverage'
 import { isFuelPlanPostStackE2ECoverageComplete } from './e2eFuelPlanPostStackCoverage'
@@ -30,6 +31,7 @@ export const FUEL_PLAN_FULL_COVERAGE_MODULES = [
   'e2eFuelPlanPostStackCoverage',
   'e2eFuelPlanHistoryToneCoverage',
   'e2eFuelPlanRotationToneCoverage',
+  'e2eFuelPlanPostFuelCoverage',
 ] as const
 
 export type FuelPlanFullCoverageModule = (typeof FUEL_PLAN_FULL_COVERAGE_MODULES)[number]
@@ -39,7 +41,7 @@ export function countFuelPlanCoverageSuites(): number {
 }
 
 export function e2eFuelPlanFullBlockRange(): { from: number; to: number } {
-  return { from: 412, to: 431 }
+  return { from: 412, to: 432 }
 }
 
 /** Cobertura Fuel×plan + nutrición + headline en 3 specs CI (oleada 420). */
@@ -68,9 +70,10 @@ export function isFuelPlanFullE2ECoverageComplete(): boolean {
     isFuelPlanPostFullE2ECoverageComplete() &&
     isFuelPlanPostStackE2ECoverageComplete() &&
     isFuelPlanHistoryToneCoverageComplete() &&
-    isTrainingPolishPostFuelClosed(431) &&
+    isTrainingPolishPostFuelClosed(432) &&
     unionFuelPlanCovers().includes('fuel-history-tone') &&
     unionFuelPlanCovers().includes('fuel-rotation-tone') &&
-    isFuelPlanRotationToneCoverageComplete()
+    isFuelPlanRotationToneCoverageComplete() &&
+    isFuelPlanPostFuelE2ECoverageComplete()
   )
 }
