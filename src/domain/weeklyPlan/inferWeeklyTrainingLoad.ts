@@ -1,5 +1,6 @@
 import type { Workout, WorkoutType } from '../../types'
 import { toLocalDateStr } from '../../utils/fuelCalculator'
+import { enhanceTrainingLoadWithPrRotation } from '../../utils/weeklyPlanPrRotation'
 import { inferDominantMuscle } from '../fuelBalance/inferDominantMuscle'
 import type { WeeklyTrainingLoad } from './types'
 
@@ -80,7 +81,7 @@ export function inferWeeklyTrainingLoad(
     }
   }
 
-  return {
+  const base: WeeklyTrainingLoad = {
     sessionsCount: weekWorkouts.length,
     activeDays,
     daysSinceLastSession,
@@ -88,4 +89,10 @@ export function inferWeeklyTrainingLoad(
     fatiguedMuscleGroups: [...new Set(fatiguedMuscleGroups)],
     suggestedWorkoutType,
   }
+
+  return enhanceTrainingLoadWithPrRotation(
+    base,
+    workouts.sort((a, b) => (b.endedAt || b.startedAt) - (a.endedAt || a.startedAt)),
+    now
+  )
 }

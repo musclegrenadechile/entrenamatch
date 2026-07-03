@@ -9,12 +9,15 @@ import {
   recommendNextSessions,
   type WeeklyPlanResult,
 } from '../domain/weeklyPlan'
+import { mergeWorkoutsForWeeklyPlan } from '../utils/weeklyPlanPrRotation'
 
 export function useWeeklyPlan(input: {
   fuelProfile: FuelProfile | null | undefined
   fuelWeekMacros: FuelWeekMacroDay[]
   fuelWeekBalanceDays: FuelWeekBalanceDay[]
   fuelWeekWorkouts: Workout[]
+  /** Historial reciente (demo/Perfil) para rotación PR (oleada 404). */
+  recentWorkouts?: Workout[]
   fuelEnergyBalance: DailyEnergyBalance | null
   userLevel?: 'Principiante' | 'Intermedio' | 'Avanzado'
 }): WeeklyPlanResult | null {
@@ -23,6 +26,7 @@ export function useWeeklyPlan(input: {
     fuelWeekMacros,
     fuelWeekBalanceDays,
     fuelWeekWorkouts,
+    recentWorkouts = [],
     fuelEnergyBalance,
     userLevel = 'Intermedio',
   } = input
@@ -40,7 +44,9 @@ export function useWeeklyPlan(input: {
       todayRemainingKcal: fuelEnergyBalance?.remaining.kcal,
     })
 
-    const load = inferWeeklyTrainingLoad(fuelWeekWorkouts)
+    const load = inferWeeklyTrainingLoad(
+      mergeWorkoutsForWeeklyPlan(fuelWeekWorkouts, recentWorkouts)
+    )
 
     return recommendNextSessions({
       profile: {
@@ -59,6 +65,7 @@ export function useWeeklyPlan(input: {
     fuelWeekMacros,
     fuelWeekBalanceDays,
     fuelWeekWorkouts,
+    recentWorkouts,
     fuelEnergyBalance,
     userLevel,
   ])

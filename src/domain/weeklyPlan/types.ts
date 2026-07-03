@@ -30,6 +30,9 @@ export interface WeeklyTrainingLoad {
   lastWorkoutType?: WorkoutType
   fatiguedMuscleGroups: string[]
   suggestedWorkoutType: WorkoutType
+  /** Grupos musculares con PR reciente (oleada 404). */
+  recentPrMuscleGroups?: string[]
+  prRotationNote?: string
 }
 
 export interface PlanRecommendation {

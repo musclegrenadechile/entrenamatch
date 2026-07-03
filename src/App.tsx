@@ -6302,6 +6302,7 @@ useEffect(() => {
     fuelWeekMacros,
     fuelWeekBalanceDays,
     fuelWeekWorkouts,
+    recentWorkouts: entrenoRecentWorkouts,
     fuelEnergyBalance,
     userLevel: currentUser?.level,
   })

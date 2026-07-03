@@ -35,12 +35,12 @@ export const TRAINING_MEGA_BLOCKS: readonly TrainingMegaBlockEntry[] = [
     id: 'entrena-plan',
     range: entrenaPlanTrainingBlockRange(),
     suiteModule: 'entrenaPlanTrainingSuite',
-    closedOleada: 402,
+    closedOleada: 404,
   },
 ] as const
 
 export function trainingFullMegaRange(): { from: number; to: number } {
-  return { from: 361, to: 402 }
+  return { from: 361, to: 404 }
 }
 
 export function countTrainingMegaBlocks(): number {

@@ -66,6 +66,18 @@ describe('inferWeeklyTrainingLoad', () => {
     expect(load.daysSinceLastSession).toBeGreaterThanOrEqual(4)
     expect(load.suggestedWorkoutType).toBe('full')
   })
+
+  it('rota tras PR reciente en pecho (oleada 404)', () => {
+    const older = workout('push', 4)
+    const newer: Workout = {
+      ...workout('push', 1),
+      exercises: [{ name: 'Press banca', sets: [{ reps: 10, weightKg: 80 }] }],
+    }
+    const load = inferWeeklyTrainingLoad([newer, older])
+    expect(load.recentPrMuscleGroups).toContain('Pecho')
+    expect(load.suggestedWorkoutType).not.toBe('push')
+    expect(load.prRotationNote).toMatch(/rotación/i)
+  })
 })
 
 describe('recommendNextSessions', () => {
