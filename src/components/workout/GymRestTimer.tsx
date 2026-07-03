@@ -1,32 +1,16 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
 import { Pause, Play, RotateCcw, Timer } from 'lucide-react'
+import {
+  REST_PRESETS_SEC,
+  loadDefaultRestPreset,
+  saveDefaultRestPreset,
+} from '../../utils/gymRestPreset'
 
 export type GymRestTimerMode = 'stopwatch' | 'countdown'
 
 export type GymRestTimerRef = {
   startCountdown: (seconds?: number) => void
   startStopwatch: () => void
-}
-
-const REST_PRESETS_SEC = [45, 60, 90, 120, 180] as const
-const REST_PRESET_KEY = 'entrenamatch_rest_preset'
-
-function loadDefaultPreset(): number {
-  try {
-    const raw = localStorage.getItem(REST_PRESET_KEY)
-    const n = raw ? parseInt(raw, 10) : 90
-    return REST_PRESETS_SEC.includes(n as (typeof REST_PRESETS_SEC)[number]) ? n : 90
-  } catch {
-    return 90
-  }
-}
-
-function saveDefaultPreset(sec: number): void {
-  try {
-    localStorage.setItem(REST_PRESET_KEY, String(sec))
-  } catch {
-    /* ignore */
-  }
 }
 
 function formatRestMs(ms: number): string {
@@ -61,7 +45,7 @@ export const GymRestTimer = forwardRef<GymRestTimerRef, GymRestTimerProps>(funct
   ref
 ) {
   const [mode, setMode] = useState<GymRestTimerMode>('countdown')
-  const [presetSec, setPresetSec] = useState(loadDefaultPreset)
+  const [presetSec, setPresetSec] = useState(loadDefaultRestPreset)
   const [running, setRunning] = useState(false)
   const [doneFlash, setDoneFlash] = useState(false)
   const [runStartedAt, setRunStartedAt] = useState<number | null>(null)
@@ -80,7 +64,7 @@ export const GymRestTimer = forwardRef<GymRestTimerRef, GymRestTimerProps>(funct
     const sec = Math.max(5, Math.min(600, seconds))
     setMode('countdown')
     setPresetSec(sec)
-    saveDefaultPreset(sec)
+    saveDefaultRestPreset(sec)
     setDoneFlash(false)
     setFrozenMs(sec * 1000)
     setRunStartedAt(Date.now())
@@ -211,7 +195,7 @@ export const GymRestTimer = forwardRef<GymRestTimerRef, GymRestTimerProps>(funct
               className={presetSec === sec ? 'active' : ''}
               onClick={() => {
                 setPresetSec(sec)
-                saveDefaultPreset(sec)
+                saveDefaultRestPreset(sec)
                 if (running) startCountdown(sec)
               }}
             >

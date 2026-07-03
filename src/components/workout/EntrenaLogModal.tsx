@@ -51,6 +51,7 @@ import {
   resolveDraftStartedAt,
   saveWorkoutDraft,
 } from '../../utils/workoutDraft'
+import { useCompactMobile } from '../../hooks/useCompactMobile'
 
 export interface EntrenoDeHoyModalProps {
   open: boolean
@@ -289,6 +290,8 @@ export function EntrenoDeHoyModal({
   /** Oleada 347 — biblioteca colapsada cuando ya hay ejercicios en sesión */
   const [libraryOpen, setLibraryOpen] = useState(true)
   const [extrasOpen, setExtrasOpen] = useState(false)
+  const [footerExpanded, setFooterExpanded] = useState(false)
+  const compactMobile = useCompactMobile()
   const [tick, setTick] = useState(0)
   const [favorites, setFavorites] = useState<WorkoutQuickTemplate[]>(() => loadFavoriteTemplates())
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
@@ -675,6 +678,8 @@ export function EntrenoDeHoyModal({
     recentWorkouts.some((w) => w.exercises?.length) ||
     shareToChatName ||
     (gymRoutineLabel && gymRoutineTemplates.length > 0)
+
+  const useCompactFooter = compactMobile && exercises.length > 0 && !footerExpanded
 
   const modal = (
     <div className="em-visual-v2 em-v2-workout gym-log-overlay">
@@ -1077,57 +1082,105 @@ export function EntrenoDeHoyModal({
           <GymRestTimer ref={restTimerRef} className="em-v2-rest-timer--dock" />
         )}
 
-        <footer className="gym-log-footer em-v2-workout__footer">
-          <button
-            type="button"
-            onClick={openLibrary}
-            className="gym-log-add-exercise em-v2-workout__add-btn"
-          >
-            <Plus className="w-5 h-5" />
-            Añadir ejercicio
-          </button>
-          <div className="flex gap-2 items-center">
-            {exercises.length > 0 && onDiscardSession && (
+        <footer
+          className={`gym-log-footer em-v2-workout__footer ${useCompactFooter ? 'em-v2-workout__footer--compact' : ''}`}
+        >
+          {useCompactFooter ? (
+            <div className="em-v2-workout__footer-compact">
               <button
                 type="button"
-                onClick={handleDiscardSession}
-                className="gym-log-discard-btn"
-                title="Descartar sesión"
+                onClick={openLibrary}
+                className="em-v2-workout__footer-icon"
+                aria-label="Añadir ejercicio"
               >
-                <Trash2 className="w-4 h-4" />
+                <Plus className="w-5 h-5" />
               </button>
-            )}
-            {canSave && (
               <button
                 type="button"
-                onClick={() => {
-                  const next = saveFavoriteTemplate({
-                    label: title.trim() || 'Mi rutina',
-                    type,
-                    durationMin: resolveDurationMin(),
-                    exercises,
-                  })
-                  setFavorites(next)
-                }}
-                className="gym-log-fav-btn"
-                title="Guardar como favorita"
+                disabled={!canSave || saving}
+                onClick={handleSave}
+                className="gym-log-save em-v2-workout__save em-v2-workout__save--compact"
               >
-                <Star className="w-4 h-4" />
+                {saving
+                  ? 'Guardando…'
+                  : shareToChatName
+                    ? 'Terminar y compartir'
+                    : 'Terminar y publicar'}
               </button>
-            )}
-            <button
-              type="button"
-              disabled={!canSave || saving}
-              onClick={handleSave}
-              className="gym-log-save em-v2-workout__save"
-            >
-              {saving
-                ? 'Guardando…'
-                : shareToChatName
-                  ? 'Terminar y compartir'
-                  : 'Terminar y publicar'}
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => setFooterExpanded(true)}
+                className="em-v2-workout__footer-icon"
+                aria-label="Más acciones"
+              >
+                <ChevronUp className="w-5 h-5" />
+              </button>
+            </div>
+          ) : (
+            <>
+              {compactMobile && exercises.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setFooterExpanded(false)}
+                  className="em-v2-workout__footer-collapse"
+                  aria-label="Ocultar acciones"
+                >
+                  <ChevronDown className="w-4 h-4" />
+                  <span>Menos</span>
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={openLibrary}
+                className="gym-log-add-exercise em-v2-workout__add-btn"
+              >
+                <Plus className="w-5 h-5" />
+                Añadir ejercicio
+              </button>
+              <div className="flex gap-2 items-center">
+                {exercises.length > 0 && onDiscardSession && (
+                  <button
+                    type="button"
+                    onClick={handleDiscardSession}
+                    className="gym-log-discard-btn"
+                    title="Descartar sesión"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
+                {canSave && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next = saveFavoriteTemplate({
+                        label: title.trim() || 'Mi rutina',
+                        type,
+                        durationMin: resolveDurationMin(),
+                        exercises,
+                      })
+                      setFavorites(next)
+                    }}
+                    className="gym-log-fav-btn"
+                    title="Guardar como favorita"
+                  >
+                    <Star className="w-4 h-4" />
+                  </button>
+                )}
+                <button
+                  type="button"
+                  disabled={!canSave || saving}
+                  onClick={handleSave}
+                  className="gym-log-save em-v2-workout__save"
+                >
+                  {saving
+                    ? 'Guardando…'
+                    : shareToChatName
+                      ? 'Terminar y compartir'
+                      : 'Terminar y publicar'}
+                </button>
+              </div>
+            </>
+          )}
         </footer>
       </div>
     </div>

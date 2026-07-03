@@ -22,17 +22,17 @@ function ExerciseColumn({
   accent: 'green' | 'orange'
 }) {
   return (
-    <div className={`arena-live-routines__col arena-live-routines__col--${accent}`}>
-      <p className="arena-live-routines__who">{label}</p>
-      <p className="arena-live-routines__active">{activeExercise || 'Sin ejercicio'}</p>
+    <div className={`arena-live-routines__col em-v2-arena-routines__col em-v2-arena-routines__col--${accent} arena-live-routines__col--${accent}`}>
+      <p className="arena-live-routines__who em-v2-arena-routines__who">{label}</p>
+      <p className="arena-live-routines__active em-v2-arena-routines__active">{activeExercise || 'Sin ejercicio'}</p>
       {exercises.length === 0 ? (
-        <p className="arena-live-routines__empty">Sin sets aún</p>
+        <p className="arena-live-routines__empty em-v2-arena-routines__empty">Sin sets aún</p>
       ) : (
-        <ul className="arena-live-routines__list">
+        <ul className="arena-live-routines__list em-v2-arena-routines__list">
           {exercises.map((ex) => (
-            <li key={ex.name} className="arena-live-routines__item">
-              <span className="arena-live-routines__name">{ex.name}</span>
-              <span className="arena-live-routines__sets">
+            <li key={ex.name} className="arena-live-routines__item em-v2-arena-routines__item">
+              <span className="arena-live-routines__name em-v2-arena-routines__name">{ex.name}</span>
+              <span className="arena-live-routines__sets em-v2-arena-routines__sets">
                 {ex.sets.map((s) => formatSetDisplay(ex.name, s)).join(' · ')}
               </span>
             </li>
@@ -52,7 +52,7 @@ export function ArenaLiveRoutines({
   partnerExercises = [],
 }: ArenaLiveRoutinesProps) {
   return (
-    <section className="arena-live-routines" aria-label="Rutinas en vivo">
+    <section className="arena-live-routines em-v2-arena-routines" aria-label="Rutinas en vivo">
       <ExerciseColumn
         label={selfLabel}
         activeExercise={selfActiveExercise}

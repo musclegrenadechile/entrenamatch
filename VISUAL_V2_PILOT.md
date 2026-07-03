@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.423  
+**Versión cierre:** v0.1.424  
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -35,6 +35,7 @@
 | **362** | **Entreno deep** | Arena Sync v2, dictado por voz tokens, banner post-guardar Share+Fuel |
 | **363** | **EntrenoPlan + FAB** | WeeklyPlan v2 visible en Hoy, Fuel×entreno, FAB sesión v2, tutorial Arena 15s |
 | **364** | **Entreno gym-log** | Rest timer v2, repetir entreno v2, EntrenaPlan empty solo día 1, lazy SyncArena, typo pulse/witness |
+| **365** | **Entreno arena + UX** | LiveRoutines + GymSound v2, banner post-guardar sticky, footer modal colapsable móvil, tests rest preset |
 
 ## Auditoría cohesión (360)
 
