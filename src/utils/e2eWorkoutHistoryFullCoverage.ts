@@ -1,8 +1,8 @@
-/** Inventario E2E historial v2 completo — 3 suites (oleada 443). */
+/** Inventario E2E historial v2 fila completo — 3 suites (oleada 443). */
 import { unionWorkoutHistoryCovers } from './e2eWorkoutHistoryCoverage'
 import { isWorkoutHistoryPostV2E2ECoverageComplete } from './e2eWorkoutHistoryPostV2Coverage'
 import { isWorkoutHistoryRowPrCoverageComplete } from './e2eWorkoutHistoryRowPrCoverage'
-import { isTrainingPolishWorkoutHistoryV2Closed } from './trainingPolishWorkoutHistoryV2Suite'
+import { isTrainingPolishWorkoutHistoryV2RowClosed } from './trainingPolishWorkoutHistoryV2Suite'
 
 export const WORKOUT_HISTORY_FULL_COVERAGE_MODULES = [
   'e2eWorkoutHistoryRowPrCoverage',
@@ -24,7 +24,7 @@ export function e2eWorkoutHistoryFullBlockRange(): { from: number; to: number } 
 export function isWorkoutHistoryFullE2ECoverageComplete(): boolean {
   return (
     isWorkoutHistoryRowPrCoverageComplete() &&
-    isTrainingPolishWorkoutHistoryV2Closed(443) &&
+    isTrainingPolishWorkoutHistoryV2RowClosed(443) &&
     unionWorkoutHistoryCovers().includes('history-row-pr-tone') &&
     isWorkoutHistoryPostV2E2ECoverageComplete()
   )

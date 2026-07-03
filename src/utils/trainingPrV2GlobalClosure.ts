@@ -5,7 +5,7 @@ import { isPostWorkoutFullE2ECoverageComplete } from './e2ePostWorkoutFullCovera
 import { isWorkoutHistoryFullE2ECoverageComplete } from './e2eWorkoutHistoryFullCoverage'
 import { isTrainingPolishGymLogV2Closed } from './trainingPolishGymLogV2Suite'
 import { isTrainingPolishPostWorkoutV2Closed } from './trainingPolishPostWorkoutV2Suite'
-import { isTrainingPolishWorkoutHistoryV2Closed } from './trainingPolishWorkoutHistoryV2Suite'
+import { isTrainingPolishWorkoutHistoryV2RowClosed } from './trainingPolishWorkoutHistoryV2Suite'
 import {
   areAllTrainingPrV2SubBlocksClosed,
   countTrainingPrV2Blocks,
@@ -46,7 +46,7 @@ export function isTrainingPrV2GlobalClosureComplete(
     isTrainingPrV2FullyClosed(444) &&
     isTrainingPolishGymLogV2Closed(438) &&
     isTrainingPolishPostWorkoutV2Closed(442) &&
-    isTrainingPolishWorkoutHistoryV2Closed(443) &&
+    isTrainingPolishWorkoutHistoryV2RowClosed(443) &&
     isGymLogFullE2ECoverageComplete() &&
     isPostWorkoutFullE2ECoverageComplete() &&
     isWorkoutHistoryFullE2ECoverageComplete() &&

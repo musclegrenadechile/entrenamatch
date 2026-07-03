@@ -81,6 +81,24 @@ export const WORKOUT_HISTORY_TRAINING_UTILS: readonly WorkoutHistoryTrainingUtil
     oleada: 448,
     covers: ['sparkline', 'a11y'],
   },
+  {
+    id: 'sparkline-coverage',
+    module: 'e2eWorkoutHistorySparklineCoverage',
+    oleada: 449,
+    covers: ['sparkline', 'a11y'],
+  },
+  {
+    id: 'sparkline-post-v2-closure',
+    module: 'e2eWorkoutHistorySparklinePostV2Coverage',
+    oleada: 449,
+    covers: ['sparkline', 'a11y'],
+  },
+  {
+    id: 'sparkline-full-coverage',
+    module: 'e2eWorkoutHistorySparklineFullCoverage',
+    oleada: 449,
+    covers: ['sparkline', 'a11y'],
+  },
 ] as const
 
 export function countWorkoutHistoryTrainingUtils(): number {
@@ -88,7 +106,7 @@ export function countWorkoutHistoryTrainingUtils(): number {
 }
 
 export function workoutHistoryTrainingBlockRange(): { from: number; to: number } {
-  return { from: 395, to: 448 }
+  return { from: 395, to: 449 }
 }
 
 export const WORKOUT_HISTORY_TRAINING_V2_OPEN_OLEADA = 440

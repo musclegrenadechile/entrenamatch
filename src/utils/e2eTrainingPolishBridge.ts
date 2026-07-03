@@ -454,6 +454,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-history-flow',
     feature: 'sparkline historial v2 tono PR + e2eWorkoutHistorySparklinePrCoverage',
   },
+  {
+    polishOleada: 449,
+    e2eSpecId: 'workout-history-flow',
+    feature: 'cierre sparkline historial v2 448 + e2eWorkoutHistorySparklinePostV2Coverage',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

@@ -763,6 +763,43 @@ if (!workoutHistorySparklinePrCoverage.includes('sparkline-pr-tone')) {
 }
 if (!ok) process.exit(1)
 console.log('✓ e2eWorkoutHistorySparklinePrCoverage aligned with sparkline PR v2 pivot (oleada 448)')
+const workoutHistorySparklinePostV2Coverage = readFileSync(
+  join(root, 'src/utils/e2eWorkoutHistorySparklinePostV2Coverage.ts'),
+  'utf8'
+)
+if (
+  !workoutHistorySparklinePostV2Coverage.includes('isWorkoutHistorySparklinePostV2E2ECoverageComplete')
+) {
+  console.error('e2eWorkoutHistorySparklinePostV2Coverage missing sparkline-post-v2 helper (oleada 449)')
+  ok = false
+}
+const workoutHistorySparklineCoverage = readFileSync(
+  join(root, 'src/utils/e2eWorkoutHistorySparklineCoverage.ts'),
+  'utf8'
+)
+if (!workoutHistorySparklineCoverage.includes('unionWorkoutHistorySparklineCovers')) {
+  console.error('e2eWorkoutHistorySparklineCoverage missing union helper (oleada 449)')
+  ok = false
+}
+const workoutHistorySparklineFullCoverage = readFileSync(
+  join(root, 'src/utils/e2eWorkoutHistorySparklineFullCoverage.ts'),
+  'utf8'
+)
+if (!workoutHistorySparklineFullCoverage.includes('isWorkoutHistorySparklineFullE2ECoverageComplete')) {
+  console.error('e2eWorkoutHistorySparklineFullCoverage missing sparkline-full helper (oleada 449)')
+  ok = false
+}
+if (!workoutHistorySparklineFullCoverage.includes('e2eWorkoutHistorySparklinePostV2Coverage')) {
+  console.error('e2eWorkoutHistorySparklineFullCoverage missing sparkline-post-v2 suite ref (oleada 449)')
+  ok = false
+}
+if (!workoutHistorySparklineFullCoverage.includes('e2eWorkoutHistorySparklineCoverage')) {
+  console.error('e2eWorkoutHistorySparklineFullCoverage missing sparkline-coverage suite ref (oleada 449)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eWorkoutHistorySparklinePostV2Coverage aligned with sparkline full coverage (oleada 449)')
+console.log('✓ e2eWorkoutHistorySparklineFullCoverage unifies 3 sparkline historial v2 E2E suites (oleada 449)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

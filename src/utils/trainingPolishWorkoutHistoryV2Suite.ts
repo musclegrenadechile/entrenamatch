@@ -29,13 +29,20 @@ export const TRAINING_POLISH_WORKOUT_HISTORY_V2_UTILS: readonly TrainingPolishWo
       oleada: 448,
       covers: ['history', 'pr', 'aria', 'e2e'],
     },
+    {
+      id: 'sparkline-post-v2-closure',
+      module: 'e2eWorkoutHistorySparklinePostV2Coverage',
+      oleada: 449,
+      covers: ['history', 'pr', 'aria', 'e2e'],
+    },
   ] as const
 
 export const TRAINING_POLISH_WORKOUT_HISTORY_V2_OPEN_OLEADA = 440
-export const TRAINING_POLISH_WORKOUT_HISTORY_V2_CLOSED_OLEADA = 443
+export const TRAINING_POLISH_WORKOUT_HISTORY_V2_ROW_CLOSED_OLEADA = 443
+export const TRAINING_POLISH_WORKOUT_HISTORY_V2_CLOSED_OLEADA = 449
 
 export function trainingPolishWorkoutHistoryV2Range(): { from: number; to: number } {
-  return { from: 440, to: 448 }
+  return { from: 440, to: 449 }
 }
 
 export function countTrainingPolishWorkoutHistoryV2Utils(): number {
@@ -46,6 +53,12 @@ export function isTrainingPolishWorkoutHistoryV2Open(
   oleada = TRAINING_POLISH_WORKOUT_HISTORY_V2_OPEN_OLEADA
 ): boolean {
   return oleada >= TRAINING_POLISH_WORKOUT_HISTORY_V2_OPEN_OLEADA
+}
+
+export function isTrainingPolishWorkoutHistoryV2RowClosed(
+  oleada = TRAINING_POLISH_WORKOUT_HISTORY_V2_ROW_CLOSED_OLEADA
+): boolean {
+  return oleada >= TRAINING_POLISH_WORKOUT_HISTORY_V2_ROW_CLOSED_OLEADA
 }
 
 export function isTrainingPolishWorkoutHistoryV2Closed(
