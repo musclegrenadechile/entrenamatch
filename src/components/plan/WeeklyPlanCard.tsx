@@ -39,6 +39,13 @@ import {
   resolveWeeklyPlanFuelWeekHintToneClass,
 } from '../../utils/weeklyPlanFuelWeekToneDisplay'
 import {
+  buildWeeklyPlanFuelHeadlineChipAriaLabel,
+  buildWeeklyPlanFuelHeadlineChipText,
+  resolveWeeklyPlanFuelHeadlineChipToneClass,
+  shouldShowWeeklyPlanFuelHeadlineChip,
+  WEEKLY_PLAN_FUEL_HEADLINE_CHIP_CLASS,
+} from '../../utils/weeklyPlanHeadlineFuelDisplay'
+import {
   formatWeeklyPlanDelta,
   resolveWeeklyPlanScenarioClass,
   shouldRenderWeeklyPlanEmpty,
@@ -127,6 +134,19 @@ export function WeeklyPlanCard({
     buildWeeklyPlanNutritionFuelSuffix(plan.scenario, plan.energySummary)
   )
   const showNutritionNote = shouldShowWeeklyPlanNutritionNote(nutritionText, hasFuelProfile)
+  const headlineFuelChipText = buildWeeklyPlanFuelHeadlineChipText(
+    plan.scenario,
+    plan.energySummary
+  )
+  const showHeadlineFuelChip = shouldShowWeeklyPlanFuelHeadlineChip(
+    plan.scenario,
+    plan.energySummary,
+    hasFuelProfile
+  )
+  const headlineFuelChipToneClass = resolveWeeklyPlanFuelHeadlineChipToneClass(
+    plan.scenario,
+    plan.energySummary
+  )
 
   return (
     <div className={`em-v2-card em-v2-plan ${scenarioClass}`} aria-label="Plan de entreno recomendado">
@@ -140,7 +160,20 @@ export function WeeklyPlanCard({
               </span>
             )}
           </p>
-          <h3 className="em-v2-card__title text-sm mt-0.5">{plan.headline}</h3>
+          <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+            <h3 className="em-v2-card__title text-sm">{plan.headline}</h3>
+            {showHeadlineFuelChip && headlineFuelChipText && (
+              <span
+                className={[WEEKLY_PLAN_FUEL_HEADLINE_CHIP_CLASS, headlineFuelChipToneClass]
+                  .filter(Boolean)
+                  .join(' ')}
+                role="status"
+                aria-label={buildWeeklyPlanFuelHeadlineChipAriaLabel(headlineFuelChipText)}
+              >
+                {headlineFuelChipText}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 

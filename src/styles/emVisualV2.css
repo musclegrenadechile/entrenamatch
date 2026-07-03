@@ -4457,6 +4457,35 @@
   line-height: 1.35;
 }
 
+.em-v2-plan__headline-fuel {
+  display: inline-flex;
+  flex-shrink: 0;
+  padding: 0.2rem 0.45rem;
+  border-radius: var(--em-radius-md);
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.em-v2-plan__headline-fuel--under-fueled {
+  background: rgba(168, 85, 247, 0.14);
+  border: 1px solid rgba(168, 85, 247, 0.32);
+  color: #c4b5fd;
+}
+
+.em-v2-plan__headline-fuel--surplus {
+  background: rgba(249, 115, 22, 0.14);
+  border: 1px solid rgba(249, 115, 22, 0.32);
+  color: #fdba74;
+}
+
+.em-v2-plan__headline-fuel--deficit {
+  background: rgba(34, 197, 94, 0.14);
+  border: 1px solid rgba(34, 197, 94, 0.32);
+  color: #86efac;
+}
+
 .em-v2-plan__history-hint {
   margin-top: 0.5rem;
   padding: 0.5rem 0.625rem;

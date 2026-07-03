@@ -1,6 +1,7 @@
 import { WEEKLY_PLAN_HISTORY_HINT_CLASS } from './weeklyPlanHistoryDisplay'
 import { WEEKLY_PLAN_ROTATION_CHIP_CLASS } from './weeklyPlanRotationDisplay'
 import { WEEKLY_PLAN_FUEL_WEEK_CHIP_CLASS } from './weeklyPlanFuelWeekChipDisplay'
+import { WEEKLY_PLAN_FUEL_HEADLINE_CHIP_CLASS } from './weeklyPlanHeadlineFuelDisplay'
 import { WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS } from './weeklyPlanFuelWeekDisplay'
 import { WEEKLY_PLAN_NUTRITION_CLASS } from './weeklyPlanNutritionDisplay'
 
@@ -61,6 +62,18 @@ export function readWeeklyPlanFuelWeekChip(): string | null {
   const card = findEntrenaPlanCard()
   const chip = card?.querySelector(`.${WEEKLY_PLAN_FUEL_WEEK_CHIP_CLASS}`)
   return chip?.textContent?.trim() ?? null
+}
+
+export function readWeeklyPlanFuelHeadlineChip(): string | null {
+  const card = findEntrenaPlanCard()
+  const chip = card?.querySelector(`.${WEEKLY_PLAN_FUEL_HEADLINE_CHIP_CLASS}`)
+  return chip?.textContent?.trim() ?? null
+}
+
+export function readWeeklyPlanFuelHeadlineChipAriaLabel(): string | null {
+  const card = findEntrenaPlanCard()
+  const chip = card?.querySelector(`.${WEEKLY_PLAN_FUEL_HEADLINE_CHIP_CLASS}`)
+  return chip?.getAttribute('aria-label')?.trim() ?? null
 }
 
 export function readWeeklyPlanFuelWeekToneClass(): string | null {

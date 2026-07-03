@@ -6,7 +6,7 @@ import {
 
 describe('e2eWeeklyPlanHistoryFlow', () => {
   it('checklist E2E EntrenaPlan × historial', () => {
-    expect(countE2EWeeklyPlanHistoryFlowSteps()).toBe(7)
+    expect(countE2EWeeklyPlanHistoryFlowSteps()).toBe(8)
     expect(E2E_WEEKLY_PLAN_HISTORY_FLOW_STEPS.map((s) => s.id)).toEqual([
       'ph-01',
       'ph-02',
@@ -15,6 +15,7 @@ describe('e2eWeeklyPlanHistoryFlow', () => {
       'ph-05',
       'ph-06',
       'ph-07',
+      'ph-08',
     ])
   })
 })

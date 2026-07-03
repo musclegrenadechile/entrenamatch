@@ -28,6 +28,17 @@ test('E2E workout-plan-history-flow — guardar entreno y hint PR en EntrenaPlan
 
   const planCard = page.locator('.em-v2-plan').filter({ hasText: 'EntrenaPlan' })
   await expect(planCard).toBeVisible({ timeout: 12000 })
+
+  await expect(planCard.locator('.em-v2-plan__headline-fuel')).toBeVisible({ timeout: 10000 })
+  const headlineFuelChip = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanFuelHeadlineChip()
+  )
+  expect(headlineFuelChip).toMatch(/Superávit/i)
+  const headlineFuelAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanFuelHeadlineChipAriaLabel()
+  )
+  expect(headlineFuelAria).toMatch(/Escenario Fuel/i)
+
   await expect(planCard.locator('.em-v2-plan__history-hint')).toBeVisible({ timeout: 10000 })
   await expect(planCard.locator('.em-v2-plan__history-hint')).toContainText(/PR en Press banca/i)
 

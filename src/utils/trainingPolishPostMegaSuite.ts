@@ -1,4 +1,4 @@
-/** Pulido post-mega Fuel×EntrenaPlan oleadas 415–417 (oleada 417 cierre nutrición E2E). */
+/** Pulido post-mega Fuel×EntrenaPlan oleadas 415–418 (oleada 418 cierre headline Fuel + nutrición E2E). */
 
 export type TrainingPolishPostMegaCover = 'nutrition' | 'aria' | 'e2e'
 
@@ -34,12 +34,24 @@ export const TRAINING_POLISH_POST_MEGA_UTILS: readonly TrainingPolishPostMegaEnt
     oleada: 417,
     covers: ['nutrition', 'aria', 'e2e'],
   },
+  {
+    id: 'headline-fuel-chip',
+    module: 'weeklyPlanHeadlineFuelDisplay',
+    oleada: 418,
+    covers: ['nutrition', 'aria'],
+  },
+  {
+    id: 'nutrition-coverage-closure',
+    module: 'e2eFuelPlanNutritionCoverage',
+    oleada: 418,
+    covers: ['nutrition', 'e2e', 'aria'],
+  },
 ] as const
 
-export const TRAINING_POLISH_POST_MEGA_CLOSED_OLEADA = 417
+export const TRAINING_POLISH_POST_MEGA_CLOSED_OLEADA = 418
 
 export function trainingPolishPostMegaRange(): { from: number; to: number } {
-  return { from: 415, to: 417 }
+  return { from: 415, to: 418 }
 }
 
 export function countTrainingPolishPostMegaUtils(): number {

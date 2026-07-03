@@ -5,6 +5,7 @@ import {
 } from './e2eFuelPlanCoverage'
 import {
   countTrainingE2ESpecs,
+  e2eFuelPlanNutritionSpecsCoveredInInventory,
   e2eFuelPlanSpecsCoveredInInventory,
   e2eRotationSpecsCoveredInInventory,
   E2E_TRAINING_PLAYWRIGHT_SPECS,
@@ -68,5 +69,9 @@ describe('e2eTrainingSuite', () => {
   it('e2eFuelPlanCoverage nutrición trilogía 3 specs (oleada 417)', () => {
     expect(isFuelPlanNutritionE2ECovered()).toBe(true)
     expect(isFuelPlanNutritionE2ETrilogyComplete()).toBe(true)
+  })
+
+  it('e2eFuelPlanNutritionCoverage alineado con inventario CI (oleada 418)', () => {
+    expect(e2eFuelPlanNutritionSpecsCoveredInInventory()).toBe(true)
   })
 })

@@ -120,6 +120,34 @@ if (!fuelPlanCoverage.includes("'fuel-nutrition'")) {
 if (!ok) process.exit(1)
 console.log('✓ e2eFuelPlanCoverage nutrition trilogy helper present')
 
+const fuelPlanNutritionCoverage = readFileSync(
+  join(root, 'src/utils/e2eFuelPlanNutritionCoverage.ts'),
+  'utf8'
+)
+const fuelPlanNutritionSpecs = [
+  'training-mega-flow.spec.ts',
+  'workout-plan-history-flow.spec.ts',
+  'workout-fuel-flow.spec.ts',
+]
+for (const spec of fuelPlanNutritionSpecs) {
+  if (!fuelPlanNutritionCoverage.includes(spec)) {
+    console.error(`e2eFuelPlanNutritionCoverage missing spec file: ${spec}`)
+    ok = false
+  }
+}
+for (const spec of fuelPlanNutritionSpecs) {
+  if (!ciYml.includes(spec)) {
+    console.error(`CI e2e-smoke missing fuel-plan nutrition spec: ${spec}`)
+    ok = false
+  }
+}
+if (!fuelPlanNutritionCoverage.includes('isFuelPlanNutritionCoverageComplete')) {
+  console.error('e2eFuelPlanNutritionCoverage missing coverage helper (oleada 418)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eFuelPlanNutritionCoverage aligned with CI e2e-smoke (3 specs)')
+
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)
 console.log('✓ vitest passed')

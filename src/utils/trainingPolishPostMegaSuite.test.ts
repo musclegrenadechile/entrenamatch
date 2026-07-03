@@ -7,9 +7,9 @@ import {
 } from './trainingPolishPostMegaSuite'
 
 describe('trainingPolishPostMegaSuite', () => {
-  it('inventario post-mega 415–417 cerrado', () => {
-    expect(countTrainingPolishPostMegaUtils()).toBe(4)
-    expect(trainingPolishPostMegaRange()).toEqual({ from: 415, to: 417 })
+  it('inventario post-mega 415–418 cerrado', () => {
+    expect(countTrainingPolishPostMegaUtils()).toBe(6)
+    expect(trainingPolishPostMegaRange()).toEqual({ from: 415, to: 418 })
     expect(isTrainingPolishPostMegaClosed()).toBe(true)
     expect(TRAINING_POLISH_POST_MEGA_UTILS.map((e) => e.module)).toContain(
       'weeklyPlanNutritionDisplay'
@@ -18,5 +18,11 @@ describe('trainingPolishPostMegaSuite', () => {
       'e2eWeeklyPlanHistoryFlow'
     )
     expect(TRAINING_POLISH_POST_MEGA_UTILS.map((e) => e.module)).toContain('e2eTrainingMegaFlow')
+    expect(TRAINING_POLISH_POST_MEGA_UTILS.map((e) => e.module)).toContain(
+      'weeklyPlanHeadlineFuelDisplay'
+    )
+    expect(TRAINING_POLISH_POST_MEGA_UTILS.map((e) => e.module)).toContain(
+      'e2eFuelPlanNutritionCoverage'
+    )
   })
 })

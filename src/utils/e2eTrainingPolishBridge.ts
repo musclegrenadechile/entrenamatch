@@ -134,6 +134,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'training-mega-flow',
     feature: 'nota nutricional under-fueled + trilogía E2E nutrición',
   },
+  {
+    polishOleada: 418,
+    e2eSpecId: 'workout-plan-history-flow',
+    feature: 'chip headline Fuel Superávit + e2eFuelPlanNutritionCoverage',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

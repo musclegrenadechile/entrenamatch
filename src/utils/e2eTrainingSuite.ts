@@ -1,5 +1,6 @@
 /** Inventario Playwright del bloque E2E entrenamiento (oleadas 378–410). */
 import { e2eFuelPlanSpecIds } from './e2eFuelPlanCoverage'
+import { e2eFuelPlanNutritionSpecIds } from './e2eFuelPlanNutritionCoverage'
 import { e2ePlanRotationSpecIds } from './e2ePlanRotationCoverage'
 export type E2ETrainingCover =
   | 'gym-log'
@@ -72,6 +73,14 @@ export function e2eRotationSpecsCoveredInInventory(): boolean {
 export function e2eFuelPlanSpecsCoveredInInventory(): boolean {
   const fuelPlanIds = e2eFuelPlanSpecIds()
   return fuelPlanIds.every((id) =>
+    E2E_TRAINING_PLAYWRIGHT_SPECS.some((s) => s.id === id)
+  )
+}
+
+/** Los 3 specs nutrición Fuel×EntrenaPlan están en el inventario CI (oleada 418). */
+export function e2eFuelPlanNutritionSpecsCoveredInInventory(): boolean {
+  const nutritionIds = e2eFuelPlanNutritionSpecIds()
+  return nutritionIds.every((id) =>
     E2E_TRAINING_PLAYWRIGHT_SPECS.some((s) => s.id === id)
   )
 }

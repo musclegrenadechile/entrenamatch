@@ -44,6 +44,11 @@ export const E2E_WEEKLY_PLAN_HISTORY_FLOW_STEPS: readonly E2EWeeklyPlanHistorySt
     action: 'Nota nutricional surplus + aria (oleada 416)',
     expect: '.em-v2-plan__nutrition; harness getWeeklyPlanNutritionNote + aria-label',
   },
+  {
+    id: 'ph-08',
+    action: 'Chip headline Fuel Superávit (oleada 418)',
+    expect: '.em-v2-plan__headline-fuel; harness getWeeklyPlanFuelHeadlineChip + aria-label',
+  },
 ] as const
 
 export function countE2EWeeklyPlanHistoryFlowSteps(): number {

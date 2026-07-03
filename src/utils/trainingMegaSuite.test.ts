@@ -12,10 +12,10 @@ import {
 } from './trainingMegaSuite'
 
 describe('trainingMegaSuite', () => {
-  it('mega-inventario 6 bloques oleadas 361–417', () => {
+  it('mega-inventario 6 bloques oleadas 361–418', () => {
     expect(countTrainingMegaBlocks()).toBe(6)
-    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 417 })
-    expect(countTrainingMegaOleadas()).toBe(57)
+    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 418 })
+    expect(countTrainingMegaOleadas()).toBe(58)
     expect(TRAINING_MEGA_BLOCKS.map((b) => b.id)).toEqual([
       'polish-v1',
       'e2e',
@@ -37,10 +37,10 @@ describe('trainingMegaSuite', () => {
     expect(polishV2?.closedOleada).toBe(410)
     expect(polishV2?.range).toEqual({ from: 383, to: 409 })
     const fuelPlan = trainingMegaBlockById('fuel-plan')
-    expect(fuelPlan?.range).toEqual({ from: 411, to: 417 })
+    expect(fuelPlan?.range).toEqual({ from: 411, to: 418 })
     const postMega = trainingMegaBlockById('polish-post-mega')
-    expect(postMega?.range).toEqual({ from: 415, to: 417 })
-    expect(postMega?.closedOleada).toBe(417)
+    expect(postMega?.range).toEqual({ from: 415, to: 418 })
+    expect(postMega?.closedOleada).toBe(418)
     expect(fuelPlan?.closedOleada).toBe(414)
     expect(fuelPlan?.suiteModule).toBe('fuelPlanTrainingSuite')
   })
@@ -59,8 +59,8 @@ describe('trainingMegaSuite', () => {
     expect(isTrainingMegaFullyClosed(414)).toBe(false)
   })
 
-  it('cierre post-mega 415–417 (oleada 417)', () => {
-    expect(areAllTrainingMegaSubBlocksClosed(417)).toBe(true)
-    expect(isTrainingMegaFullyClosed(417)).toBe(true)
+  it('cierre post-mega 415–418 (oleada 418)', () => {
+    expect(areAllTrainingMegaSubBlocksClosed(418)).toBe(true)
+    expect(isTrainingMegaFullyClosed(418)).toBe(true)
   })
 })
