@@ -111,6 +111,10 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
     window.__entrenamatchE2E!.isWeeklyPlanFuelCardToneAriaExpected('under-fueled')
   )
   expect(cardToneAria).toBe(true)
+  const toneStackFullySynced = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWeeklyPlanFuelToneStackFullySynced('under-fueled')
+  )
+  expect(toneStackFullySynced).toBe(true)
 
   await page.getByRole('button', { name: /Registrar post-entreno/i }).click()
 

@@ -1,10 +1,11 @@
-/** Mega-inventario total pulido entrenamiento oleadas 361–427 (oleada 427 cierre post-full IV). */
+/** Mega-inventario total pulido entrenamiento oleadas 361–428 (oleada 428 mega fase V). */
 import { entrenaPlanTrainingBlockRange } from './entrenaPlanTrainingSuite'
 import { fuelPlanTrainingBlockRange } from './fuelPlanTrainingSuite'
 import { trainingE2EBlockRange } from './e2eTrainingSuite'
 import { trainingPolishMegaRange } from './trainingPolishSuite'
 import { trainingPolishPostFullRange } from './trainingPolishPostFullSuite'
 import { trainingPolishPostMegaRange } from './trainingPolishPostMegaSuite'
+import { trainingPolishPostStackRange } from './trainingPolishPostStackSuite'
 import { trainingPolishV1BlockRange } from './trainingPolishV1Suite'
 
 export type TrainingMegaBlockId =
@@ -15,6 +16,7 @@ export type TrainingMegaBlockId =
   | 'fuel-plan'
   | 'polish-post-mega'
   | 'polish-post-full'
+  | 'polish-post-stack'
 
 export type TrainingMegaBlockEntry = {
   id: TrainingMegaBlockId
@@ -66,14 +68,27 @@ export const TRAINING_MEGA_BLOCKS: readonly TrainingMegaBlockEntry[] = [
     suiteModule: 'trainingPolishPostFullSuite',
     closedOleada: 427,
   },
+  {
+    id: 'polish-post-stack',
+    range: trainingPolishPostStackRange(),
+    suiteModule: 'trainingPolishPostStackSuite',
+    closedOleada: 428,
+  },
 ] as const
 
 export const TRAINING_MEGA_PHASE1_CLOSED_OLEADA = 411
 export const TRAINING_MEGA_CLOSED_OLEADA = 414
 export const TRAINING_MEGA_PHASE3_CLOSED_OLEADA = 420
+export const TRAINING_MEGA_PHASE4_CLOSED_OLEADA = 428
 
 export function trainingFullMegaRange(): { from: number; to: number } {
-  return { from: 361, to: 427 }
+  return { from: 361, to: 428 }
+}
+
+export function isTrainingMegaPhase4Closed(
+  oleada = TRAINING_MEGA_PHASE4_CLOSED_OLEADA
+): boolean {
+  return oleada >= TRAINING_MEGA_PHASE4_CLOSED_OLEADA
 }
 
 export function isTrainingMegaPhase3Closed(

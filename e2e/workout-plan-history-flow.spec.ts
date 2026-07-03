@@ -125,4 +125,8 @@ test('E2E workout-plan-history-flow — guardar entreno y hint PR en EntrenaPlan
     window.__entrenamatchE2E!.isWeeklyPlanFuelCardToneAriaExpected('surplus')
   )
   expect(cardToneAria).toBe(true)
+  const toneStackFullySynced = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWeeklyPlanFuelToneStackFullySynced('surplus')
+  )
+  expect(toneStackFullySynced).toBe(true)
 })

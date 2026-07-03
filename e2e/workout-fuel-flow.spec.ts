@@ -108,6 +108,10 @@ test('E2E workout-fuel-flow — banner post-guardar → Fuel prefill', async ({ 
     window.__entrenamatchE2E!.isWeeklyPlanFuelCardToneAriaExpected('deficit')
   )
   expect(cardToneAria).toBe(true)
+  const toneStackFullySynced = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWeeklyPlanFuelToneStackFullySynced('deficit')
+  )
+  expect(toneStackFullySynced).toBe(true)
 
   await page.getByRole('button', { name: /Registrar post-entreno/i }).click()
 

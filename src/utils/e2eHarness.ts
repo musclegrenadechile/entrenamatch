@@ -105,6 +105,10 @@ export type EntrenamatchE2EApi = {
   isWeeklyPlanFuelCardToneAriaExpected: (
     tone: 'under-fueled' | 'surplus' | 'deficit'
   ) => boolean
+  /** Card + stack visual + aria sincronizados al tono (oleada 428). */
+  isWeeklyPlanFuelToneStackFullySynced: (
+    tone: 'under-fueled' | 'surplus' | 'deficit'
+  ) => boolean
 }
 
 declare global {

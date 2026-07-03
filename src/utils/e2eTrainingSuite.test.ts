@@ -9,6 +9,7 @@ import {
   isFuelPlanToneCardCoverageComplete,
   isFuelPlanToneCoverageComplete,
   isFuelPlanToneExpectedCoverageComplete,
+  isFuelPlanToneFullCoverageComplete,
 } from './e2eFuelPlanToneCoverage'
 import { isFuelPlanPostFullE2ECoverageComplete } from './e2eFuelPlanPostFullCoverage'
 import {
@@ -89,7 +90,7 @@ describe('e2eTrainingSuite', () => {
     expect(e2eFuelPlanHeadlineSpecsCoveredInInventory()).toBe(true)
   })
 
-  it('e2eFuelPlanFullCoverage listo (oleada 420–427)', () => {
+  it('e2eFuelPlanFullCoverage listo (oleada 420–428)', () => {
     expect(isE2EFuelPlanFullCoverageReady()).toBe(true)
   })
 
@@ -101,10 +102,11 @@ describe('e2eTrainingSuite', () => {
     expect(isFuelPlanPostFullE2ECoverageComplete()).toBe(true)
   })
 
-  it('e2eFuelPlanToneCoverage completo (oleada 427)', () => {
+  it('e2eFuelPlanToneCoverage completo (oleada 428)', () => {
     expect(isFuelPlanToneCoverageComplete()).toBe(true)
     expect(isFuelPlanToneExpectedCoverageComplete()).toBe(true)
     expect(isFuelPlanToneAriaCoverageComplete()).toBe(true)
     expect(isFuelPlanToneCardCoverageComplete()).toBe(true)
+    expect(isFuelPlanToneFullCoverageComplete()).toBe(true)
   })
 })

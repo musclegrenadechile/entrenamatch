@@ -111,6 +111,7 @@ import {
 import { fuelToneStackMatchesDemoExpected } from './utils/weeklyPlanFuelToneStackExpectedDisplay'
 import { isWeeklyPlanFuelToneAriaStackAligned } from './utils/weeklyPlanFuelToneStackAriaDisplay'
 import { fuelCardAriaMatchesTone } from './utils/weeklyPlanFuelToneStackCardDisplay'
+import { isWeeklyPlanFuelToneStackDemoFullySynced } from './utils/weeklyPlanFuelToneStackFullDisplay'
 import type { FuelWeekHintTone } from './utils/weeklyPlanFuelWeekToneDisplay'
 import {
   parseGymIdFromSearch,
@@ -6083,6 +6084,19 @@ useEffect(() => {
       getWeeklyPlanCardAriaLabel: () => readWeeklyPlanCardAriaLabel(),
       isWeeklyPlanFuelCardToneAriaExpected: (tone: FuelWeekHintTone) =>
         fuelCardAriaMatchesTone(readWeeklyPlanCardAriaLabel(), tone),
+      isWeeklyPlanFuelToneStackFullySynced: (tone: FuelWeekHintTone) =>
+        isWeeklyPlanFuelToneStackDemoFullySynced(
+          tone,
+          readWeeklyPlanFuelToneStackSnapshot(),
+          readWeeklyPlanCardAriaLabel(),
+          {
+            hint: readWeeklyPlanFuelWeekAriaLabel(),
+            headline: readWeeklyPlanFuelHeadlineChipAriaLabel(),
+            nutrition: readWeeklyPlanNutritionAriaLabel(),
+            chip: readWeeklyPlanFuelWeekChipAriaLabel(),
+            row: readWeeklyPlanFuelRowAriaLabel(),
+          }
+        ),
     })
   }, [
     showSyncArena,

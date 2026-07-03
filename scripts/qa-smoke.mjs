@@ -228,6 +228,10 @@ if (!fuelPlanCoverage.includes("'fuel-tone-card'")) {
   console.error('e2eFuelPlanCoverage missing fuel-tone-card cover (oleada 427)')
   ok = false
 }
+if (!fuelPlanCoverage.includes("'fuel-tone-full'")) {
+  console.error('e2eFuelPlanCoverage missing fuel-tone-full cover (oleada 428)')
+  ok = false
+}
 if (!ok) process.exit(1)
 
 const fuelPlanScenarioCoverage = readFileSync(
@@ -289,6 +293,14 @@ if (!fuelPlanToneCoverage.includes("'tone-card'")) {
   console.error('e2eFuelPlanToneCoverage missing tone-card cover (oleada 427)')
   ok = false
 }
+if (!fuelPlanToneCoverage.includes('isFuelPlanToneFullCoverageComplete')) {
+  console.error('e2eFuelPlanToneCoverage missing tone-full helper (oleada 428)')
+  ok = false
+}
+if (!fuelPlanToneCoverage.includes("'tone-full'")) {
+  console.error('e2eFuelPlanToneCoverage missing tone-full cover (oleada 428)')
+  ok = false
+}
 if (!fuelPlanFullCoverage.includes('e2eFuelPlanToneCoverage')) {
   console.error('e2eFuelPlanFullCoverage missing tone suite ref (oleada 423)')
   ok = false
@@ -340,9 +352,17 @@ if (!fuelPlanFullCoverage.includes("'fuel-tone-card'")) {
   console.error('e2eFuelPlanFullCoverage missing fuel-tone-card check (oleada 427)')
   ok = false
 }
+if (!fuelPlanFullCoverage.includes("'fuel-tone-full'")) {
+  console.error('e2eFuelPlanFullCoverage missing fuel-tone-full check (oleada 428)')
+  ok = false
+}
+if (!fuelPlanFullCoverage.includes('isFuelPlanToneFullCoverageComplete')) {
+  console.error('e2eFuelPlanFullCoverage missing tone-full helper ref (oleada 428)')
+  ok = false
+}
 if (!ok) process.exit(1)
 console.log('✓ e2eFuelPlanPostFullCoverage aligned with full coverage (oleada 427)')
-console.log('✓ e2eFuelPlanFullCoverage unifies 6 Fuel×plan E2E suites (oleada 427)')
+console.log('✓ e2eFuelPlanFullCoverage unifies 6 Fuel×plan E2E suites (oleada 428)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

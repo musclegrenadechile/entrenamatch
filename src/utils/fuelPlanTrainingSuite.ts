@@ -201,6 +201,18 @@ export const FUEL_PLAN_TRAINING_UTILS: readonly FuelPlanTrainingUtilEntry[] = [
     oleada: 427,
     covers: ['fuel-hint', 'card'],
   },
+  {
+    id: 'fuel-tone-full',
+    module: 'weeklyPlanFuelToneStackFullDisplay',
+    oleada: 428,
+    covers: ['fuel-hint', 'aria', 'card'],
+  },
+  {
+    id: 'post-stack-open',
+    module: 'trainingPolishPostStackSuite',
+    oleada: 428,
+    covers: ['fuel-hint', 'card'],
+  },
 ] as const
 
 export const FUEL_PLAN_TRAINING_CLOSED_OLEADA = 414
@@ -210,7 +222,7 @@ export function countFuelPlanTrainingUtils(): number {
 }
 
 export function fuelPlanTrainingBlockRange(): { from: number; to: number } {
-  return { from: 411, to: 427 }
+  return { from: 411, to: 428 }
 }
 
 export function isFuelPlanTrainingBlockClosed(
