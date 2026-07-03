@@ -15,17 +15,17 @@
 | **343** | **Mapa LIVE** | Pills, overlays vacíos, leyenda, filtros y popups al sistema v2 |
 | **344** | **Auth** | Plus Jakarta + card glass v2, chips con iconos Lucide |
 | **345** | **Hoy + Perfil** | «Más de tu día» colapsable; fondo v2 en Perfil; landing `em-brand-*` |
+| **346** | **Matches** | Cards premium una columna, match ring, Red sub-nav v2, crew dorado |
 
 ## Evaluar (3 min)
 
-1. **Hoy** — ¿hero + reto del día sin ruido? ¿«Más de tu día» oculta Fuel/wearables?
-2. **Mapa LIVE** — ¿pills, leyenda y overlays se sienten premium?
-3. **Auth** — ¿misma tipografía que la app autenticada?
-4. **Explorar** — ¿sigue flagship junto al nuevo Hoy?
+1. **Matches** — ¿cards foto grande + % match al nivel de Explorar?
+2. **Red** — ¿sub-nav Matches/Mensajes coherente con v2?
+3. **Hoy** — ¿hero + reto del día sin ruido?
+4. **Mapa LIVE** — ¿pills y overlays premium?
 
 ## Siguiente
 
-- **346** Matches cards premium
 - **347** Workout modal simplificado
 - **348** Landing alineada al build Tailwind de la app
 
