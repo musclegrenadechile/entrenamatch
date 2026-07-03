@@ -19,6 +19,7 @@ import {
 } from '../../utils/chatListSort'
 
 import { SkeletonList } from '../ui/SkeletonLoaders'
+import { EmV2EmptyState } from '../ui/EmV2EmptyState'
 
 import { VerifiedPhotoBadge, VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto'
 
@@ -104,7 +105,7 @@ export function ChatListPanel({
 
     return (
 
-      <div className="chat-wa-list flex-1 min-h-0 overflow-auto">
+      <div className="em-v2-chat chat-wa-list flex-1 min-h-0 overflow-auto px-3 pt-2">
 
         <SkeletonList count={5} variant="chat" />
 
@@ -118,23 +119,23 @@ export function ChatListPanel({
 
   return (
 
-    <div className="chat-wa-list flex-1 min-h-0 overflow-auto">
+    <div className="em-v2-chat chat-wa-list flex-1 min-h-0 overflow-auto">
 
-      <div className="chat-wa-list-header">
+      <div className="em-v2-chat__header">
 
         <div className="flex items-center justify-between">
 
-          <span className="chat-wa-list-title">Chats</span>
+          <span className="em-v2-chat__title">Chats</span>
 
           {syncAgeSec != null && (
 
-            <span className="text-[10px] text-[#8696a0]">hace {syncAgeSec}s</span>
+            <span className="em-v2-chat__sync">hace {syncAgeSec}s</span>
 
           )}
 
         </div>
 
-        <p className="text-[11px] text-[#8696a0] mt-0.5">
+        <p className="em-v2-chat__sub">
 
           Matches con los que puedes entrenar
 
@@ -146,37 +147,23 @@ export function ChatListPanel({
 
       {matchProfiles.length === 0 && (
 
-        <div className="chat-wa-list-empty">
-
-          <div className="text-4xl mb-3 opacity-50">💬</div>
-
-          <div className="font-bold text-[#e9edef] text-lg">{BRAND_COPY.networkTitle}</div>
-
-          <p className="text-sm text-[#8696a0] max-w-[260px] mx-auto mt-2 leading-relaxed">
-
-            Aquí aparecen tus matches. Texto, fotos y notas de voz.
-
-          </p>
-
+        <EmV2EmptyState
+          className="mx-3 mt-4 em-v2-fade-in"
+          emoji="💬"
+          title={BRAND_COPY.networkTitle}
+          body="Aquí aparecen tus matches. Texto, fotos y notas de voz."
+          compact
+        >
           {onOpenExplore && (
-
             <button
-
               type="button"
-
               onClick={onOpenExplore}
-
-              className="mt-5 px-5 py-2.5 rounded-full bg-[#FF671F] text-black text-sm font-bold active:brightness-90"
-
+              className="em-v2-hero-card__cta"
             >
-
               Ir a Explorar
-
             </button>
-
           )}
-
-        </div>
+        </EmV2EmptyState>
 
       )}
 

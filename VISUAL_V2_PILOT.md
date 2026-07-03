@@ -19,16 +19,17 @@
 | **347** | **Entreno de Hoy** | Modal v2, biblioteca colapsable, «Más opciones», CTA gradiente |
 | **348** | **Landing** | Tailwind build (`landing-v2.css`), Plus Jakarta, sin métricas fake |
 | **349** | **Perfil** | Hero atleta compacto, tabs Actividad / Red / Ajustes, pulse + CTAs LIVE/Explorar |
+| **350** | **Polish global** | `EmV2EmptyState`, skeletons shimmer, fade-in tabs, chat/feed/explore empty v2 |
 
 ## Evaluar (3 min)
 
-1. **Perfil** — ¿hero atleta + tabs sin scroll infinito?
-2. **Landing** — ¿misma tipografía y botones que la app?
-3. **Matches** — ¿cards premium al nivel de Explorar?
-4. **Mapa LIVE** — ¿overlays glass v2?
+1. **Explorar vacío** — ¿card glass v2 con invite debajo?
+2. **Feed / Chats** — ¿mismo empty state que Matches?
+3. **Skeletons** — ¿shimmer suave al cargar?
+4. **Perfil tabs** — ¿fade-in al cambiar tab?
 
 ## Siguiente
 
-- Polish global (skeletons, empty states, micro-animaciones)
+- Micro-polish nav inferior + transiciones entre tabs principales
 
 *jul 2026*

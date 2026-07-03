@@ -1,29 +1,20 @@
-/** Unified tab lazy-load skeleton (fase 179) — matches BootShell branding. */
+/** Unified tab lazy-load skeleton (oleada 350 — Visual v2). */
 export function TabLoadingShell({ message = 'Cargando…' }: { message?: string }) {
   return (
     <div
-      className="flex flex-col items-center justify-center p-10 min-h-[40vh] text-white"
+      className="em-v2-loading flex flex-col items-center justify-center p-10 min-h-[40vh]"
       role="status"
       aria-live="polite"
       aria-label={message}
     >
-      <div className="text-2xl mb-2" aria-hidden>
+      <div className="em-v2-loading__icon" aria-hidden>
         🏋️
       </div>
-      <p className="text-sm font-semibold text-white mb-1">{message}</p>
-      <p className="text-xs text-[#9CA3AF]">EntrenaMatch</p>
-      <div className="mt-5 h-1 w-20 rounded-full bg-[#2F2F35] overflow-hidden">
-        <div
-          className="h-full w-1/2 bg-[#FF671F] rounded-full"
-          style={{ animation: 'boot-slide 1.2s ease-in-out infinite alternate' }}
-        />
+      <p className="em-v2-loading__title">{message}</p>
+      <p className="em-v2-loading__sub">EntrenaMatch</p>
+      <div className="em-v2-loading__bar" aria-hidden>
+        <div className="em-v2-loading__bar-fill" />
       </div>
-      <style>{`
-        @keyframes boot-slide {
-          from { transform: translateX(-100%); opacity: 0.5; }
-          to { transform: translateX(200%); opacity: 1; }
-        }
-      `}</style>
     </div>
   )
 }

@@ -56,17 +56,17 @@ export function ProfileTab(props: ProfileTabProps) {
       <ProfileSectionNav active={profileSection} onChange={setProfileSection} />
 
       {profileSection === 'actividad' && (
-        <>
+        <div className="em-v2-fade-in">
           <ProfileHeroExtras {...props} />
           <ProfileWearableSection {...props} />
           <ProfileActividadSection {...props} />
           <ProfileMuroSection {...props} />
           <ProfileSyncNetworkSection {...props} />
-        </>
+        </div>
       )}
 
       {profileSection === 'red' && (
-        <>
+        <div className="em-v2-fade-in">
           {bondEntries.length > 0 && (
             <div className="mx-4 mb-3 mt-2">
               <TrainingNetworkGraph
@@ -97,11 +97,11 @@ export function ProfileTab(props: ProfileTabProps) {
               <ProfileSyncNetworkSection {...props} />
             </>
           )}
-        </>
+        </div>
       )}
 
       {profileSection === 'ajustes' && (
-        <>
+        <div className="em-v2-fade-in">
           <ProfileCommunityAdminEntry {...props} />
           {monetization &&
             advancedWrap(
@@ -115,7 +115,7 @@ export function ProfileTab(props: ProfileTabProps) {
             )}
           <ProfileAccountSection {...props} />
           <ProfileFooterSection {...props} />
-        </>
+        </div>
       )}
     </div>
   )

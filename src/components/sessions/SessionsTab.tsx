@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { MapPin, Plus, Users } from 'lucide-react'
+import { EmV2EmptyState } from '../ui/EmV2EmptyState'
 import type { TrainingSession } from '../../types'
 
 export type DisplaySession = TrainingSession & { lastMessagePreview?: string }
@@ -88,27 +89,21 @@ export function SessionsTab({
         </div>
 
         {openSessions.length === 0 ? (
-          <div className="mt-4 card card-glass p-7 rounded-3xl text-center border border-[#FF671F]/20">
-            <div className="mx-auto w-14 h-14 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-4">
-              <Users className="text-[#FF671F]" size={28} />
-            </div>
-            <div className="font-semibold text-lg mb-2">No hay sesiones abiertas todavía</div>
-            <p className="text-sm text-[#9CA3AF] leading-snug mb-4 max-w-[280px] mx-auto">
-              {!isDemoMode
-                ? 'Aún no hay sesiones activas de otros testers. ¡Sé el primero!'
-                : 'Sé el primero en crear una.'}{' '}
-              Se ven en vivo para todos y el chat grupal funciona cross-device. ¡Crea y abre la app para que otros se
-              unan!
-            </p>
-            <button type="button" onClick={onCreateSession} className="btn-primary px-8">
+          <EmV2EmptyState
+            className="mt-4 em-v2-fade-in"
+            icon={<Users className="text-[#FF671F]" size={28} />}
+            title="No hay sesiones abiertas todavía"
+            body={`${!isDemoMode ? 'Aún no hay sesiones activas de otros testers. ¡Sé el primero!' : 'Sé el primero en crear una.'} Se ven en vivo para todos y el chat grupal funciona cross-device.`}
+          >
+            <button type="button" onClick={onCreateSession} className="em-v2-hero-card__cta">
               Crear la primera sesión
             </button>
             {lastSync && (
-              <div className="text-[10px] text-[#9CA3AF] mt-2">
-                Última sync real: hace {Math.max(0, Math.floor((Date.now() - lastSync.getTime()) / 1000))}s
-              </div>
+              <p className="text-[10px] text-[#9CA3AF] mt-1">
+                Última sync: hace {Math.max(0, Math.floor((Date.now() - lastSync.getTime()) / 1000))}s
+              </p>
             )}
-          </div>
+          </EmV2EmptyState>
         ) : (
           <div className="space-y-3">
             {openSessions

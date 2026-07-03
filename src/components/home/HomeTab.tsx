@@ -5,6 +5,7 @@ import { Plus } from 'lucide-react'
 import { BRAND_COPY } from '../../constants/brandCopy'
 import { DailyHome } from './DailyHome'
 import { SkeletonList } from '../ui/SkeletonLoaders'
+import { EmV2EmptyState } from '../ui/EmV2EmptyState'
 import { isGymCheckInFresh } from '../../services/localNetwork'
 import { countRedLiveMembers } from '../../utils/syncFomo'
 import { WorkoutPostCard } from '../workout'
@@ -697,32 +698,38 @@ export function HomeTab(props: HomeTabProps) {
         if (feedPosts.length === 0) {
           const cityLabel = currentUser?.city || 'tu ciudad'
           return (
-            <div className="feed-empty-epic mx-1 mt-8 p-9 rounded-3xl text-center border">
-              <div className="big-icon mb-1">🏋️</div>
-              <div className="font-black text-3xl tracking-[-1.5px] mb-2">Sé el primero en {cityLabel}</div>
-              <p className="text-sm text-[#9CA3AF] max-w-[300px] mx-auto mb-6 leading-relaxed">
-                El {BRAND_COPY.communityWallTitle} de tu ciudad está esperando la primera voz. Publica en 1 toque y otros entrenadores te verán.
-              </p>
-              <div className="flex flex-col gap-2.5 max-w-[280px] mx-auto">
-                {onQuickFeedTemplate && (
-                  <button
-                    type="button"
-                    onClick={() => onQuickFeedTemplate(`¡Hola desde ${cityLabel}! Entrenando hoy — ¿quién se suma? 💪`)}
-                    className="feed-publish-btn py-3 rounded-2xl text-base"
-                  >
-                    Publicar plantilla en 1 toque
-                  </button>
-                )}
-                <button type="button" onClick={() => setShowFeedPostModal(true)} className="py-2.5 border border-[#FF671F]/40 text-[#FF671F] rounded-2xl text-sm active:bg-[#FF671F]/10">
-                  Escribir mi propio post
+            <EmV2EmptyState
+              className="mx-1 mt-6 em-v2-fade-in"
+              emoji="🏋️"
+              title={`Sé el primero en ${cityLabel}`}
+              body={`El ${BRAND_COPY.communityWallTitle} de tu ciudad está esperando la primera voz. Publica en 1 toque y otros entrenadores te verán.`}
+            >
+              {onQuickFeedTemplate && (
+                <button
+                  type="button"
+                  onClick={() => onQuickFeedTemplate(`¡Hola desde ${cityLabel}! Entrenando hoy — ¿quién se suma? 💪`)}
+                  className="em-v2-hero-card__cta"
+                >
+                  Publicar plantilla en 1 toque
                 </button>
-                {!isDemoMode && (
-                  <button type="button" onClick={() => { setFeedMaxProfiles(18); loadGlobalFeed(); }} className="py-2.5 border border-[#2F2F35] text-[#9CA3AF] rounded-2xl text-sm active:bg-[#25252A]">
-                    Cargar comunidad real
-                  </button>
-                )}
-              </div>
-            </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setShowFeedPostModal(true)}
+                className="py-2.5 border border-[#FF671F]/40 text-[#FF671F] rounded-2xl text-sm active:bg-[#FF671F]/10"
+              >
+                Escribir mi propio post
+              </button>
+              {!isDemoMode && (
+                <button
+                  type="button"
+                  onClick={() => { setFeedMaxProfiles(18); loadGlobalFeed(); }}
+                  className="py-2.5 border border-[#2F2F35] text-[#9CA3AF] rounded-2xl text-sm active:bg-[#25252A]"
+                >
+                  Cargar comunidad real
+                </button>
+              )}
+            </EmV2EmptyState>
           );
         }
 

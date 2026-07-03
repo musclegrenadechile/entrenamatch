@@ -9,6 +9,7 @@ import { computeMatchScore } from '../../services/matchingScore';
 import { getDistanceKm } from '../../utils';
 import { isSeedProfileId } from '../../utils/seedProfiles';
 import { SwipeCardSkeleton } from '../ui/SkeletonLoaders';
+import { EmV2EmptyState } from '../ui/EmV2EmptyState';
 import { GeoPromptBanner, GEO_PROMPT_V2_KEY } from './GeoPromptBanner';
 import { buildInviteLink } from '../../utils/sparseCityDefaults';
 import { getLocalWaitlistEntry, saveCityWaitlist } from '../../services/cityWaitlist';
@@ -376,16 +377,17 @@ export const ExploreTab = ({
         )}
         <AnimatePresence>
           {!isLoadingProfiles && visibleCards.length === 0 && (
-            <div className="text-center px-6 py-2 max-h-full overflow-y-auto overscroll-contain">
-              <div className="mx-auto w-16 h-16 bg-[#1C1C20] rounded-3xl flex items-center justify-center mb-4 ring-1 ring-[#FF671F]/20">
-                <div className="text-4xl">🏋️</div>
-              </div>
-              <div className="text-2xl font-semibold tracking-tight mb-1">{BRAND_COPY.explore.emptyTitle}</div>
-              <p className="text-[#9CA3AF] max-w-[300px] mx-auto mb-4 text-sm">
-                {isDemoMode
-                  ? 'En modo prueba puedes reiniciar el deck o invitar amigos a probar EntrenaMatch.'
-                  : BRAND_COPY.explore.emptyBody(cityLabel)}
-              </p>
+            <div className="em-v2-explore-empty text-center px-4 py-2 em-v2-fade-in">
+              <EmV2EmptyState
+                emoji="🏋️"
+                title={BRAND_COPY.explore.emptyTitle}
+                body={
+                  isDemoMode
+                    ? 'En modo prueba puedes reiniciar el deck o invitar amigos a probar EntrenaMatch.'
+                    : BRAND_COPY.explore.emptyBody(cityLabel)
+                }
+                className="mb-4"
+              />
 
               <WhyEntrenaMatchStrip compact />
 
