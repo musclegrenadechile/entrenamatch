@@ -61,6 +61,31 @@ if (!authSrc.includes('BRAND_COPY.pilotGeo.focusBadge')) {
 if (!ok) process.exit(1)
 console.log('✓ AuthScreen pilot badge wired to BRAND_COPY')
 
+const rotationCoverage = readFileSync(
+  join(root, 'src/utils/e2ePlanRotationCoverage.ts'),
+  'utf8'
+)
+const rotationSpecs = [
+  'workout-plan-history-flow.spec.ts',
+  'training-mega-flow.spec.ts',
+  'workout-history-flow.spec.ts',
+]
+for (const spec of rotationSpecs) {
+  if (!rotationCoverage.includes(spec)) {
+    console.error(`e2ePlanRotationCoverage missing spec file: ${spec}`)
+    ok = false
+  }
+}
+const ciYml = readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8')
+for (const spec of rotationSpecs) {
+  if (!ciYml.includes(spec)) {
+    console.error(`CI e2e-smoke missing rotation spec: ${spec}`)
+    ok = false
+  }
+}
+if (!ok) process.exit(1)
+console.log('✓ e2ePlanRotationCoverage aligned with CI e2e-smoke (3 specs)')
+
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)
 console.log('✓ vitest passed')

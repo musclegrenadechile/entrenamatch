@@ -65,3 +65,10 @@ export function unionPlanRotationCovers(): E2EPlanRotationCover[] {
   }
   return [...all]
 }
+
+/** Archivos Playwright ejecutados en CI e2e-smoke (oleada 410). */
+export const E2E_PLAN_ROTATION_CI_FILES = E2E_PLAN_ROTATION_SPECS.map((s) => s.file)
+
+export function rotationSpecFileBasenames(): string[] {
+  return E2E_PLAN_ROTATION_CI_FILES.map((f) => f.replace(/^e2e\//, ''))
+}

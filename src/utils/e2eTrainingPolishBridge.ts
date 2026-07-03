@@ -94,6 +94,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-history-flow',
     feature: 'cierre E2E rotación EntrenaPlan (3 specs)',
   },
+  {
+    polishOleada: 410,
+    e2eSpecId: 'workout-plan-history-flow',
+    feature: 'cierre pulido II 383–409 + CI e2ePlanRotationCoverage',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

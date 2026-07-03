@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
+  areTrainingPolishSubBlocksClosed,
   countTrainingPolishBlocks,
   countTrainingPolishOleadas,
+  isTrainingPolishBlockClosed,
   TRAINING_POLISH_BLOCKS,
   trainingPolishBlockById,
   trainingPolishMegaRange,
@@ -30,5 +32,11 @@ describe('trainingPolishSuite', () => {
     const plan = trainingPolishBlockById('entrena-plan')
     expect(plan?.range).toEqual({ from: 401, to: 409 })
     expect(plan?.closedOleada).toBe(409)
+  })
+
+  it('cierre pulido II oleadas 383–409 (oleada 410)', () => {
+    expect(isTrainingPolishBlockClosed()).toBe(true)
+    expect(isTrainingPolishBlockClosed(409)).toBe(false)
+    expect(areTrainingPolishSubBlocksClosed()).toBe(true)
   })
 })

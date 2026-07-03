@@ -5,6 +5,7 @@ import {
   e2ePlanRotationBlockRange,
   e2ePlanRotationSpecIds,
   isPlanRotationE2ECoverageComplete,
+  rotationSpecFileBasenames,
   unionPlanRotationCovers,
 } from './e2ePlanRotationCoverage'
 
@@ -30,5 +31,13 @@ describe('e2ePlanRotationCoverage', () => {
     expect(isPlanRotationE2ECoverageComplete(mega?.covers ?? [])).toBe(true)
     const profile = E2E_PLAN_ROTATION_SPECS.find((s) => s.id === 'workout-history-flow')
     expect(isPlanRotationE2ECoverageComplete(profile?.covers ?? [])).toBe(true)
+  })
+
+  it('rotationSpecFileBasenames para CI e2e-smoke (oleada 410)', () => {
+    expect(rotationSpecFileBasenames()).toEqual([
+      'workout-plan-history-flow.spec.ts',
+      'training-mega-flow.spec.ts',
+      'workout-history-flow.spec.ts',
+    ])
   })
 })

@@ -1,4 +1,5 @@
-/** Inventario Playwright del bloque E2E entrenamiento (oleadas 378–409). */
+/** Inventario Playwright del bloque E2E entrenamiento (oleadas 378–410). */
+import { e2ePlanRotationSpecIds } from './e2ePlanRotationCoverage'
 export type E2ETrainingCover =
   | 'gym-log'
   | 'fuel'
@@ -55,7 +56,15 @@ export const E2E_TRAINING_PLAYWRIGHT_SPECS: readonly E2ETrainingSpecEntry[] = [
 ] as const
 
 export function trainingE2EBlockRange(): { from: number; to: number } {
-  return { from: 378, to: 409 }
+  return { from: 378, to: 410 }
+}
+
+/** Los 3 specs de rotación EntrenaPlan están en el inventario CI (oleada 410). */
+export function e2eRotationSpecsCoveredInInventory(): boolean {
+  const rotationIds = e2ePlanRotationSpecIds()
+  return rotationIds.every((id) =>
+    E2E_TRAINING_PLAYWRIGHT_SPECS.some((s) => s.id === id)
+  )
 }
 
 export function countTrainingE2ESpecs(): number {

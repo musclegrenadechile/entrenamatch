@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   countTrainingE2ESpecs,
+  e2eRotationSpecsCoveredInInventory,
   E2E_TRAINING_PLAYWRIGHT_SPECS,
   trainingE2EBlockRange,
   trainingMegaSpecEntry,
@@ -34,8 +35,8 @@ describe('e2eTrainingSuite', () => {
     ])
   })
 
-  it('bloque E2E oleadas 378–409', () => {
-    expect(trainingE2EBlockRange()).toEqual({ from: 378, to: 409 })
+  it('bloque E2E oleadas 378–410', () => {
+    expect(trainingE2EBlockRange()).toEqual({ from: 378, to: 410 })
     const fab = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-fab-flow')
     expect(fab?.covers).toContain('fab')
     const workout = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-flow')
@@ -49,5 +50,9 @@ describe('e2eTrainingSuite', () => {
       (s) => s.id === 'workout-plan-history-flow'
     )
     expect(planHistory?.covers).toContain('plan-history')
+  })
+
+  it('e2ePlanRotationCoverage alineado con inventario CI (oleada 410)', () => {
+    expect(e2eRotationSpecsCoveredInInventory()).toBe(true)
   })
 })

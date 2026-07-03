@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.468
+**Versión cierre:** v0.1.469
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -80,10 +80,11 @@
 | **407** | **Historial×EntrenaPlan** | Chip rotación PR visible en card; E2E Perfil guardar → hint + rotación en Hoy |
 | **408** | **E2E chip rotación + aria** | plan-history y mega-flow validan chip; aria «tras PR en X: siguiente sesión Y» |
 | **409** | **Cierre EntrenaPlan×historial** | e2ePlanRotationCoverage (3 specs); bloque 401–409 cerrado; chip oculto en rest/cardio |
+| **410** | **Cierre pulido II + CI** | trainingPolishSuite cerrado 383–409; qa:smoke valida 3 specs rotación en CI |
 
-## Mega entrenamiento (361–409) ✅
+## Mega entrenamiento (361–410) ✅
 
-Inventario `trainingMegaSuite`: 4 sub-bloques (pulido I 361–377, E2E 378–409, pulido II 383–409, EntrenaPlan×historial 401–409). 49 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`.
+Inventario `trainingMegaSuite`: 4 sub-bloques (pulido I 361–377, E2E 378–410, pulido II 383–409, EntrenaPlan×historial 401–409). 50 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`.
 
 ## EntrenaPlan × historial (401–409) ✅
 
@@ -91,7 +92,7 @@ Chip dorado con PR del último entreno (≤7 días) en EntrenaPlan cuando la rec
 
 ## Pulido entrenamiento II (383–409) ✅
 
-Mega-inventario `trainingPolishSuite`: gym-log en vivo (383–387), FAB sesión (387–389), post-entreno (390–394), historial PR (395–397), EntrenaPlan×historial (401–409). 27 oleadas, 5 sub-bloques cerrados.
+Mega-inventario `trainingPolishSuite`: gym-log en vivo (383–387), FAB sesión (387–389), post-entreno (390–394), historial PR (395–397), EntrenaPlan×historial (401–409). 27 oleadas, 5 sub-bloques cerrados oleada 410. CI `qa:smoke` valida `e2ePlanRotationCoverage` ↔ e2e-smoke.
 
 ## Historial entreno (395–397) ✅
 
@@ -111,7 +112,7 @@ Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-g
 
 ## E2E entrenamiento (378–402) ✅
 
-Playwright con harness `?e2e=1` en CI (`e2e-smoke`). 7 specs cubren gym-log, Fuel, sync, reseña, FAB, banner, prefill, historial Perfil y EntrenaPlan×historial. Puente `e2eTrainingPolishBridge` → oleadas pulido 384–397, 401, 404–409. Mega bloque total: 361–409 (`trainingMegaSuite` / `trainingMegaBlockRange`).
+Playwright con harness `?e2e=1` en CI (`e2e-smoke`). 7 specs cubren gym-log, Fuel, sync, reseña, FAB, banner, prefill, historial Perfil y EntrenaPlan×historial. Puente `e2eTrainingPolishBridge` → oleadas pulido 384–397, 401, 404–410. Mega bloque total: 361–410 (`trainingMegaSuite` / `trainingMegaBlockRange`).
 
 ## Auditoría cohesión (360)
 

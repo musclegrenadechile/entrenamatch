@@ -56,7 +56,7 @@ jobs:
       - run: npm run build -- --base=/entrenamatch/
         env:
           VITE_MAP_USE_MAPLIBRE: '1'
-      - name: Preview + smoke E2E (fase 84)
+      - name: Preview + smoke E2E (fase 84 / oleada 410 rotation coverage)
         run: |
           npx vite preview --host 127.0.0.1 --port 4173 &
           sleep 10

@@ -1,4 +1,4 @@
-/** Mega-inventario pulido entrenamiento oleadas 383–409 (oleada 409). */
+/** Mega-inventario pulido entrenamiento oleadas 383–409 (oleada 410 cierre). */
 import { entrenaPlanTrainingBlockRange } from './entrenaPlanTrainingSuite'
 import { gymLogTrainingBlockRange } from './gymLogTrainingSuite'
 import { postWorkoutTrainingBlockRange } from './postWorkoutTrainingSuite'
@@ -68,4 +68,18 @@ export function trainingPolishBlockById(
   id: TrainingPolishBlockId
 ): TrainingPolishBlockEntry | undefined {
   return TRAINING_POLISH_BLOCKS.find((b) => b.id === id)
+}
+
+export const TRAINING_POLISH_CLOSED_OLEADA = 410
+
+export function isTrainingPolishBlockClosed(
+  oleada = TRAINING_POLISH_CLOSED_OLEADA
+): boolean {
+  return oleada >= TRAINING_POLISH_CLOSED_OLEADA
+}
+
+export function areTrainingPolishSubBlocksClosed(
+  oleada = TRAINING_POLISH_CLOSED_OLEADA
+): boolean {
+  return TRAINING_POLISH_BLOCKS.every((b) => b.closedOleada <= oleada)
 }
