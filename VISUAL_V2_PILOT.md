@@ -19,17 +19,18 @@
 | **347** | **Entreno de Hoy** | Modal v2, biblioteca colapsable, «Más opciones», CTA gradiente |
 | **348** | **Landing** | Tailwind build (`landing-v2.css`), Plus Jakarta, sin métricas fake |
 | **349** | **Perfil** | Hero atleta compacto, tabs Actividad / Red / Ajustes, pulse + CTAs LIVE/Explorar |
-| **350** | **Polish global** | `EmV2EmptyState`, skeletons shimmer, fade-in tabs, chat/feed/explore empty v2 |
+| **350** | **Polish global** | `EmV2EmptyState`, skeletons shimmer, fade-in tabs perfil |
+| **351** | **Nav + transiciones** | Bottom nav v2 por tab, `EmV2TabShell`, entrada animada entre tabs |
 
 ## Evaluar (3 min)
 
-1. **Explorar vacío** — ¿card glass v2 con invite debajo?
-2. **Feed / Chats** — ¿mismo empty state que Matches?
-3. **Skeletons** — ¿shimmer suave al cargar?
-4. **Perfil tabs** — ¿fade-in al cambiar tab?
+1. **Nav inferior** — ¿indicador + color por tab (mapa verde, matches rosa)?
+2. **Cambio de tab** — ¿entrada suave Hoy ↔ Explorar ↔ Red?
+3. **Mapa** — ¿fade sin glitch al abrir?
+4. **Perfil tabs** — ¿fade-in al cambiar Actividad / Red / Ajustes?
 
 ## Siguiente
 
-- Micro-polish nav inferior + transiciones entre tabs principales
+- Cohesión final: onboarding tour + activation guide al sistema v2
 
 *jul 2026*

@@ -366,16 +366,197 @@
   margin-top: -2px;
 }
 
-/* Bottom nav v2 polish (global when em-visual-v2 on app) */
-.em-visual-v2 .bottom-nav {
-  background: rgba(10, 10, 13, 0.92);
-  border-top-color: rgba(255, 255, 255, 0.06);
-  box-shadow: 0 -12px 40px -12px rgba(0, 0, 0, 0.5);
+/* ——— Bottom nav (oleada 351) ——— */
+.em-v2-bottom-nav {
+  background: rgba(10, 10, 13, 0.94);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: 0 -16px 48px -14px rgba(0, 0, 0, 0.55);
 }
 
-.em-visual-v2 .nav-item.active {
-  background: linear-gradient(180deg, rgba(255, 103, 31, 0.18) 0%, rgba(255, 103, 31, 0.06) 100%);
-  outline-color: rgba(255, 103, 31, 0.4);
+.em-v2-bottom-nav__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.45rem 0.2rem 0.35rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: var(--fit-muted);
+  border-radius: 0.875rem;
+  position: relative;
+  transition: color 0.18s ease, transform 0.15s ease, background 0.18s ease;
+}
+
+.em-v2-bottom-nav__item:active {
+  transform: scale(0.94);
+}
+
+.em-v2-bottom-nav__item--active {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.em-v2-bottom-nav__item--active.em-v2-bottom-nav__item--home {
+  color: #fde68a;
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.12) 0%, transparent 100%);
+}
+
+.em-v2-bottom-nav__item--active.em-v2-bottom-nav__item--map {
+  color: var(--em-live);
+  background: linear-gradient(180deg, rgba(34, 197, 94, 0.14) 0%, transparent 100%);
+}
+
+.em-v2-bottom-nav__item--active.em-v2-bottom-nav__item--explore {
+  color: var(--em-brand);
+  background: linear-gradient(180deg, rgba(255, 103, 31, 0.16) 0%, transparent 100%);
+}
+
+.em-v2-bottom-nav__item--active.em-v2-bottom-nav__item--red {
+  color: #fda4af;
+  background: linear-gradient(180deg, rgba(255, 79, 121, 0.14) 0%, transparent 100%);
+}
+
+.em-v2-bottom-nav__item--active.em-v2-bottom-nav__item--profile {
+  color: #e2e8f0;
+  background: linear-gradient(180deg, rgba(148, 163, 184, 0.12) 0%, transparent 100%);
+}
+
+.em-v2-bottom-nav__indicator {
+  position: absolute;
+  top: 0.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1.25rem;
+  height: 0.2rem;
+  border-radius: 999px;
+  background: var(--em-brand);
+  box-shadow: 0 0 10px var(--em-glow-brand);
+}
+
+.em-v2-bottom-nav__item--map.em-v2-bottom-nav__item--active .em-v2-bottom-nav__indicator {
+  background: var(--em-live);
+  box-shadow: var(--em-shadow-live);
+}
+
+.em-v2-bottom-nav__item--red.em-v2-bottom-nav__item--active .em-v2-bottom-nav__indicator {
+  background: #ff4f79;
+  box-shadow: 0 0 10px rgba(255, 79, 121, 0.45);
+}
+
+.em-v2-bottom-nav__icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.em-v2-bottom-nav__item--active .em-v2-bottom-nav__icon {
+  transform: scale(1.08);
+  transition: transform 0.18s ease;
+}
+
+.em-v2-bottom-nav__label {
+  line-height: 1;
+  max-width: 100%;
+  padding: 0 0.15rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.em-v2-bottom-nav__sublabel {
+  font-size: 0.5625rem;
+  font-weight: 600;
+  color: rgba(156, 163, 175, 0.75);
+  line-height: 1;
+  margin-top: -0.05rem;
+}
+
+.em-v2-bottom-nav__badge {
+  position: absolute;
+  top: -0.35rem;
+  right: -0.45rem;
+  min-width: 0.95rem;
+  height: 0.95rem;
+  padding: 0 0.25rem;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  border-radius: 999px;
+  background: #ff4f79;
+  color: #0a0a0d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+  box-shadow: 0 2px 8px -2px rgba(255, 79, 121, 0.6);
+}
+
+.em-v2-bottom-nav__live-dot {
+  position: absolute;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.35);
+}
+
+.em-v2-bottom-nav__live-dot--map {
+  top: -0.1rem;
+  right: -0.35rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--em-live);
+  animation: em-v2-nav-live-pulse 2.2s ease-in-out infinite;
+}
+
+.em-v2-bottom-nav__live-dot--explore {
+  top: -0.35rem;
+  right: -0.5rem;
+  width: 0.75rem;
+  height: 0.75rem;
+  background: var(--em-live);
+  font-size: 0.375rem;
+  font-weight: 800;
+  color: #0a0a0d;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: em-v2-nav-live-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes em-v2-nav-live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(0.92); }
+}
+
+/* Tab shell transitions (oleada 351) */
+@keyframes em-v2-tab-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes em-v2-tab-enter-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.em-v2-tab-shell {
+  animation: em-v2-tab-enter 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.em-v2-tab-shell--map {
+  animation-name: em-v2-tab-enter-fade;
+  animation-duration: 0.2s;
+}
+
+/* Legacy nav overrides when em-visual-v2 on app */
+.em-visual-v2 .bottom-nav {
+  background: rgba(10, 10, 13, 0.94);
+  border-top-color: rgba(255, 255, 255, 0.06);
+}
+
+.em-visual-v2 .nav-item.active::after {
+  display: none;
 }
 
 /* ——— Top bar (oleada 342) ——— */

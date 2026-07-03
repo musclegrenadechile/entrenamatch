@@ -81,6 +81,7 @@ import { parseAppDeepLink, clearAppDeepLinkParams } from './utils/appDeepLinks'
 import { buildSyncPostText, syncStoryToDataUrl } from './utils/syncStoryShare'
 import { recordSyncShareMetric } from './services/syncShareMetrics'
 import { BottomNav } from './components/app/BottomNav'
+import { EmV2TabShell } from './components/app/EmV2TabShell'
 import { AppFeatureTour, hasSeenAppFeatureTour, markAppFeatureTourSeen } from './components/onboarding/AppFeatureTour'
 import { FeatureTourMount } from './components/onboarding/FeatureTourMount'
 import { ExploreFiltersSheetMount } from './components/explore/ExploreFiltersSheetMount'
@@ -9419,6 +9420,7 @@ useEffect(() => {
         )}
 
         {activeTab === 'map' && (
+          <EmV2TabShell variant="map">
           <TabErrorBoundary tabName="Mapa LIVE">
           <MapExplorePanelMount
             dedicatedMapTab={true}
@@ -9536,9 +9538,11 @@ useEffect(() => {
             cityDerby={homeCityDerby}
           />
           </TabErrorBoundary>
+          </EmV2TabShell>
         )}
 
         {activeTab === 'explore' && (
+          <EmV2TabShell>
           <TabErrorBoundary tabName="Explorar">
           <PullToRefresh
             className="pull-to-refresh--explore flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden relative z-10 isolate bg-[#0D0D10]"
@@ -9620,6 +9624,7 @@ useEffect(() => {
           </Suspense>
           </PullToRefresh>
           </TabErrorBoundary>
+          </EmV2TabShell>
         )}
 
         {/* FULL LIVE MODAL â€” Fase 393 LiveNearModalMount */}
@@ -9656,6 +9661,7 @@ useEffect(() => {
 
         {/* ===== HOME â€” DailyHome + Muro (HomeTab) ===== */}
         {activeTab === 'home' && (
+          <EmV2TabShell>
           <TabErrorBoundary tabName="Inicio">
           <Suspense fallback={TAB_LOADING}>
           <LazyHomeTab
@@ -9868,6 +9874,7 @@ useEffect(() => {
           />
           </Suspense>
           </TabErrorBoundary>
+          </EmV2TabShell>
         )}
 
         {activeTab === 'home' && (
@@ -9994,6 +10001,7 @@ useEffect(() => {
         )}
 
         {activeTab === 'red' && (
+          <EmV2TabShell>
           <RedTab
             subTab={redSubTab}
             hideSubNav={redSubTab === 'messages' && !!activeChat}
@@ -10215,10 +10223,12 @@ useEffect(() => {
           />
         )}
           </RedTab>
+          </EmV2TabShell>
         )}
 
         {/* ===== PROFILE - Premium Pre-Alpha experience (self-contained to prevent black screens) */}
         {activeTab === 'profile' && currentUser && (
+          <EmV2TabShell>
           <TabErrorBoundary tabName="Perfil">
           <Suspense fallback={TAB_LOADING}>
           <LazyProfileTab
@@ -10372,6 +10382,7 @@ useEffect(() => {
           />
           </Suspense>
           </TabErrorBoundary>
+          </EmV2TabShell>
         )}
             {/* DUPLICATE ORPHAN PROFILE JSX REMOVED â€” all rich Profile UI now lives cleanly inside the activeTab==='profile' conditional (prevents black screens, duplicate renders, and JSX imbalance) */}
 
