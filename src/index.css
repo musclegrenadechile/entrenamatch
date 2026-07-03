@@ -11156,6 +11156,40 @@ body.gym-pulse-fs-active {
   flex-shrink: 0;
 }
 
+.gym-log-set-field {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.gym-log-set-field .gym-log-set-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.gym-log-set-field--wide {
+  flex: 1;
+  min-width: 0;
+}
+
+.gym-log-set-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  border: 1px solid #2f2f35;
+  background: #1a1a1f;
+  color: #9ca3af;
+}
+
+.gym-log-set-step:active {
+  background: #25252c;
+  color: #fff;
+}
+
 .gym-log-set-input {
   width: 52px;
   background: #0f0f12;

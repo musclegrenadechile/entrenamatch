@@ -58,6 +58,17 @@ import {
   shouldShowGymLogSuggestions,
 } from '../../utils/gymLogSearchDisplay'
 import { buildExerciseSetSummary, isGymLogSetComplete } from '../../utils/gymLogSetDisplay'
+import {
+  pickGymLogRecentSuggestions,
+  shouldShowGymLogRecentSuggestions,
+} from '../../utils/gymLogLibraryDisplay'
+import {
+  GYM_LOG_INTENSITY_STEP,
+  GYM_LOG_MINUTES_STEP,
+  GYM_LOG_REPS_STEP,
+  GYM_LOG_WEIGHT_STEP,
+} from '../../utils/gymLogSetStep'
+import { GymLogSetField } from './GymLogSetField'
 import { useCompactMobile } from '../../hooks/useCompactMobile'
 import { EmV2EmptyState } from '../ui/EmV2EmptyState'
 
@@ -117,6 +128,7 @@ function CardioSetInputs({
   setIdx,
   exIdx,
   canRemove,
+  showSteppers,
   onUpdate,
   onRemove,
 }: {
@@ -125,64 +137,38 @@ function CardioSetInputs({
   setIdx: number
   exIdx: number
   canRemove: boolean
+  showSteppers: boolean
   onUpdate: (exIdx: number, setIdx: number, patch: Partial<WorkoutSet>) => void
   onRemove: (exIdx: number, setIdx: number) => void
 }) {
   const normalized = normalizeWorkoutSet(exerciseName, set)
-  const [minutesDraft, setMinutesDraft] = useState(String(normalized.minutesMin || ''))
-  const [intensityDraft, setIntensityDraft] = useState(
-    normalized.intensity ? String(normalized.intensity) : ''
-  )
-
-  useEffect(() => {
-    const n = normalizeWorkoutSet(exerciseName, set)
-    setMinutesDraft(String(n.minutesMin || ''))
-    setIntensityDraft(n.intensity ? String(n.intensity) : '')
-  }, [exerciseName, set.minutesMin, set.intensity, set.reps])
-
   const done = isGymLogSetComplete(exerciseName, set)
 
   return (
     <div className={`gym-log-set-row${done ? ' gym-log-set-row--done' : ''}`}>
       <span className="gym-log-set-num">{setIdx + 1}</span>
-      <input
-        type="text"
-        inputMode="numeric"
-        value={minutesDraft}
-        onChange={(e) => {
-          const raw = e.target.value.replace(/\D/g, '')
-          setMinutesDraft(raw)
-          onUpdate(exIdx, setIdx, {
-            minutesMin: raw === '' ? 0 : Math.max(0, parseInt(raw, 10) || 0),
-            reps: 0,
-            weightKg: 0,
-          })
-        }}
-        className="gym-log-set-input"
+      <GymLogSetField
+        value={normalized.minutesMin || 0}
+        onChange={(minutesMin) =>
+          onUpdate(exIdx, setIdx, { minutesMin, reps: 0, weightKg: 0 })
+        }
+        step={GYM_LOG_MINUTES_STEP}
+        max={240}
         placeholder="min"
-        aria-label={`Minutos intervalo ${setIdx + 1}`}
+        ariaLabel={`Minutos intervalo ${setIdx + 1}`}
+        showSteppers={showSteppers}
       />
       <span className="gym-log-set-unit">min</span>
-      <input
-        type="text"
-        inputMode="numeric"
-        value={intensityDraft}
-        onChange={(e) => {
-          const raw = e.target.value.replace(/\D/g, '')
-          setIntensityDraft(raw)
-          if (raw === '') {
-            onUpdate(exIdx, setIdx, { intensity: 0, reps: 0, weightKg: 0 })
-            return
-          }
-          onUpdate(exIdx, setIdx, {
-            intensity: clampIntensity(parseInt(raw, 10) || 0),
-            reps: 0,
-            weightKg: 0,
-          })
-        }}
-        className="gym-log-set-input"
+      <GymLogSetField
+        value={normalized.intensity || 0}
+        onChange={(intensity) =>
+          onUpdate(exIdx, setIdx, { intensity: clampIntensity(intensity), reps: 0, weightKg: 0 })
+        }
+        step={GYM_LOG_INTENSITY_STEP}
+        max={10}
         placeholder="1-10"
-        aria-label={`Intensidad intervalo ${setIdx + 1}`}
+        ariaLabel={`Intensidad intervalo ${setIdx + 1}`}
+        showSteppers={showSteppers}
       />
       {canRemove && (
         <button type="button" onClick={() => onRemove(exIdx, setIdx)} className="gym-log-set-remove" aria-label="Quitar">
@@ -199,6 +185,7 @@ function SetInputs({
   setIdx,
   exIdx,
   canRemove,
+  showSteppers,
   onUpdate,
   onRemove,
 }: {
@@ -207,54 +194,35 @@ function SetInputs({
   setIdx: number
   exIdx: number
   canRemove: boolean
+  showSteppers: boolean
   onUpdate: (exIdx: number, setIdx: number, patch: Partial<WorkoutSet>) => void
   onRemove: (exIdx: number, setIdx: number) => void
 }) {
-  const [repsDraft, setRepsDraft] = useState(String(set.reps || ''))
-  const [weightDraft, setWeightDraft] = useState(set.weightKg > 0 ? String(set.weightKg) : '')
-
-  useEffect(() => {
-    setRepsDraft(String(set.reps || ''))
-    setWeightDraft(set.weightKg > 0 ? String(set.weightKg) : '')
-  }, [set.reps, set.weightKg])
-
   const done = isGymLogSetComplete(exerciseName, set)
 
   return (
     <div className={`gym-log-set-row${done ? ' gym-log-set-row--done' : ''}`}>
       <span className="gym-log-set-num">{setIdx + 1}</span>
-      <input
-        type="text"
-        inputMode="numeric"
-        value={repsDraft}
-        onChange={(e) => {
-          const raw = e.target.value.replace(/\D/g, '')
-          setRepsDraft(raw)
-          onUpdate(exIdx, setIdx, { reps: raw === '' ? 0 : Math.max(0, parseInt(raw, 10) || 0) })
-        }}
-        className="gym-log-set-input"
+      <GymLogSetField
+        value={set.reps || 0}
+        onChange={(reps) => onUpdate(exIdx, setIdx, { reps })}
+        step={GYM_LOG_REPS_STEP}
+        max={100}
         placeholder="reps"
-        aria-label={`Reps set ${setIdx + 1}`}
+        ariaLabel={`Reps set ${setIdx + 1}`}
+        showSteppers={showSteppers}
       />
       <span className="gym-log-set-unit">×</span>
-      <input
-        type="text"
-        inputMode="decimal"
-        value={weightDraft}
-        onChange={(e) => {
-          const raw = e.target.value.replace(',', '.')
-          if (raw !== '' && !/^\d*\.?\d*$/.test(raw)) return
-          setWeightDraft(raw)
-          if (raw === '' || raw === '.') {
-            onUpdate(exIdx, setIdx, { weightKg: 0 })
-            return
-          }
-          const n = parseFloat(raw)
-          if (!Number.isNaN(n)) onUpdate(exIdx, setIdx, { weightKg: Math.max(0, n) })
-        }}
-        className="gym-log-set-input gym-log-set-input--wide"
+      <GymLogSetField
+        value={set.weightKg || 0}
+        onChange={(weightKg) => onUpdate(exIdx, setIdx, { weightKg })}
+        step={GYM_LOG_WEIGHT_STEP}
+        max={500}
         placeholder="kg"
-        aria-label={`Peso set ${setIdx + 1}`}
+        ariaLabel={`Peso set ${setIdx + 1}`}
+        wide
+        integer={false}
+        showSteppers={showSteppers}
       />
       {canRemove && (
         <button type="button" onClick={() => onRemove(exIdx, setIdx)} className="gym-log-set-remove" aria-label="Quitar">
@@ -566,6 +534,17 @@ export function EntrenoDeHoyModal({
   const muscleBrowse = useMemo(
     () => (muscleFilter && !search.trim() ? filterLibraryByMuscleTab(muscleFilter) : []),
     [muscleFilter, search]
+  )
+
+  const recentSuggestions = useMemo(
+    () =>
+      pickGymLogRecentSuggestions(
+        quickExerciseNames,
+        exercises.map((e) => e.name),
+        muscleFilter,
+        6
+      ),
+    [quickExerciseNames, exercises, muscleFilter]
   )
 
   const timerLabel = startedAt ? formatTimer(Date.now() - startedAt) : null
@@ -906,6 +885,25 @@ export function EntrenoDeHoyModal({
                   placeholder={muscleFilter ? `Buscar en ${muscleFilter}…` : 'Buscar ejercicio…'}
                   className="gym-log-search"
                 />
+                {showPicker &&
+                  shouldShowGymLogRecentSuggestions(search, showPicker) &&
+                  recentSuggestions.length > 0 && (
+                    <ul className="gym-log-suggestions em-v2-gym-recent">
+                      <li className="em-v2-gym-recent__label">Recientes</li>
+                      {recentSuggestions.map((name) => (
+                        <li key={name}>
+                          <button
+                            type="button"
+                            onClick={() => addExercise(name)}
+                            className="gym-log-suggestion-item"
+                          >
+                            <span>{name}</span>
+                            <Plus className="w-3.5 h-3.5 shrink-0 text-[#FF671F]" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 {showPicker && shouldShowGymLogSuggestions(search, suggestions.length) && (
                   <ul className="gym-log-suggestions">
                     {suggestions.map((ex) => (
@@ -1026,6 +1024,7 @@ export function EntrenoDeHoyModal({
                           setIdx={setIdx}
                           exIdx={exIdx}
                           canRemove={ex.sets.length > 1}
+                          showSteppers={compactMobile}
                           onUpdate={updateSet}
                           onRemove={removeSet}
                         />
@@ -1037,6 +1036,7 @@ export function EntrenoDeHoyModal({
                           setIdx={setIdx}
                           exIdx={exIdx}
                           canRemove={ex.sets.length > 1}
+                          showSteppers={compactMobile}
                           onUpdate={updateSet}
                           onRemove={removeSet}
                         />

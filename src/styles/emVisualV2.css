@@ -6505,3 +6505,25 @@
   font-weight: 600;
   color: rgba(255, 255, 255, 0.35);
 }
+
+/* ——— Entreno oleada 376: steppers móvil + recientes en búsqueda ——— */
+.em-v2-workout .gym-log-set-field .gym-log-set-step {
+  border-color: var(--em-border-soft);
+  background: var(--em-surface-2);
+  color: var(--fit-muted);
+}
+
+.em-v2-workout .gym-log-set-field .gym-log-set-step:active {
+  background: rgba(255, 103, 31, 0.15);
+  color: var(--em-brand);
+}
+
+.em-v2-gym-recent .em-v2-gym-recent__label {
+  padding: 0.5rem 0.75rem 0.25rem;
+  font-size: 0.5rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  list-style: none;
+}
