@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.450
+**Versión cierre:** v0.1.451
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -62,6 +62,7 @@
 | **389** | **FAB chat-strip** | Chip sesión en strip de chat + cierre E2E ampliado 378–388 ✅ |
 | **390** | **Post-entreno UX** | Hints dinámicos reseña + resumen sesión en banner guardado, tests trainingReviewDisplay |
 | **391** | **E2E post-entreno** | workout-flow: banner sessionSummary + hints reseña; harness getWorkoutSaveBannerSessionSummary |
+| **392** | **Fuel balance banner** | Hint macros sugeridos + proteína restante en banner; E2E workout-fuel-flow ampliado |
 
 ## Gym-log en vivo (383–387) ✅
 

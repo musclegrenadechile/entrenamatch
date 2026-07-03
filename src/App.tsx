@@ -269,6 +269,7 @@ import { isSeedProfileId, SEED_PROFILES, CHAT_OPENERS } from './utils/seedProfil
 import { EntrenoDeHoyModalMount } from './components/workout/EntrenoDeHoyModalMount'
 import { WorkoutPostCard, WorkoutSessionFab } from './components/workout'
 import { buildGymLogSessionChipCompact } from './utils/gymLogSessionDisplay'
+import { buildWorkoutSaveBannerFuelHint } from './utils/workoutSaveBannerDisplay'
 import { detectWorkoutPRs, formatWorkoutPRSummary } from './utils/workoutPR'
 import { cloneExercises, workoutToTemplate } from './utils/workoutTemplates'
 import {
@@ -1068,6 +1069,7 @@ function App() {
     burnKcal?: number
     fuelTip?: string
     sessionSummary?: string
+    fuelBalanceHint?: string
   } | null>(null)
   const workoutSaveShareOptsRef = useRef<Parameters<typeof shareWorkoutStory>[0] | null>(null)
   const [showFuelSetupModal, setShowFuelSetupModal] = useState(false)
@@ -5950,6 +5952,7 @@ useEffect(() => {
       goToHomeTab: () => navigateTab('home'),
       isWorkoutSaveBannerVisible: () => workoutSaveBanner !== null,
       getWorkoutSaveBannerSessionSummary: () => workoutSaveBanner?.sessionSummary ?? null,
+      getWorkoutSaveBannerFuelHint: () => workoutSaveBanner?.fuelBalanceHint ?? null,
       openFuelFromWorkoutSave: () => {
         if (workoutSaveBanner) {
           setFuelLogPrefill(buildFuelLogPrefillFromWorkoutSave(workoutSaveBanner))
@@ -6132,12 +6135,17 @@ useEffect(() => {
           { type: payload.type, stats: saveStats, exercises: payload.exercises },
           weightKg
         )
+        const saveBurnKcal = saveBurn > 0 ? saveBurn : undefined
         setWorkoutSaveBanner({
           title: payload.title,
           prSummary: prSummary || undefined,
-          burnKcal: saveBurn > 0 ? saveBurn : undefined,
+          burnKcal: saveBurnKcal,
           fuelTip: getPostWorkoutFuelTip(payload.type),
           sessionSummary: buildGymLogSessionChipCompact(payload.exercises),
+          fuelBalanceHint: buildWorkoutSaveBannerFuelHint({
+            burnKcal: saveBurnKcal,
+            proteinRemainingG: fuelEnergyBalance?.remaining.proteinG,
+          }),
         })
         window.setTimeout(() => {
           setWorkoutSaveBanner((prev) => (prev?.title === payload.title ? null : prev))
@@ -6190,11 +6198,23 @@ useEffect(() => {
           })
           toast.success('Entreno compartido en el chat (demo)')
         } else {
+          const demoWeightKg =
+            fuelProfile?.weightKg ?? (currentUser as { weightKg?: number })?.weightKg ?? 75
+          const demoBurn = estimateWorkoutBurn(
+            { type: payload.type, stats: demoStats, exercises: payload.exercises },
+            demoWeightKg
+          )
+          const demoBurnKcal = demoBurn > 0 ? demoBurn : undefined
           workoutSaveShareOptsRef.current = demoStoryOpts
           setWorkoutSaveBanner({
             title: payload.title,
+            burnKcal: demoBurnKcal,
             fuelTip: getPostWorkoutFuelTip(payload.type),
             sessionSummary: buildGymLogSessionChipCompact(payload.exercises),
+            fuelBalanceHint: buildWorkoutSaveBannerFuelHint({
+              burnKcal: demoBurnKcal,
+              proteinRemainingG: fuelEnergyBalance?.remaining.proteinG,
+            }),
           })
           window.setTimeout(() => {
             setWorkoutSaveBanner((prev) => (prev?.title === payload.title ? null : prev))

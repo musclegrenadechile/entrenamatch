@@ -1,4 +1,5 @@
 import { Dumbbell, Share2, X } from 'lucide-react'
+import { WORKOUT_SAVE_BANNER_FUEL_CLASS } from '../../utils/workoutSaveBannerDisplay'
 
 export interface WorkoutPostSaveBannerData {
   title: string
@@ -7,6 +8,8 @@ export interface WorkoutPostSaveBannerData {
   fuelTip?: string
   /** Resumen compacto de series/volumen (oleada 390). */
   sessionSummary?: string
+  /** Macros sugeridos + balance diario (oleada 392). */
+  fuelBalanceHint?: string
 }
 
 export interface WorkoutPostSaveBannerProps extends WorkoutPostSaveBannerData {
@@ -22,6 +25,7 @@ export function WorkoutPostSaveBanner({
   burnKcal,
   fuelTip,
   sessionSummary,
+  fuelBalanceHint,
   onShareStory,
   onOpenFuel,
   onDismiss,
@@ -55,6 +59,9 @@ export function WorkoutPostSaveBanner({
           </div>
           {sessionSummary && (
             <p className="em-v2-training-save-banner__session">{sessionSummary}</p>
+          )}
+          {fuelBalanceHint && (
+            <p className={WORKOUT_SAVE_BANNER_FUEL_CLASS}>{fuelBalanceHint}</p>
           )}
           {meta && <p className="em-v2-card__detail mt-0.5 leading-snug">{meta}</p>}
           <div className="flex flex-wrap gap-2 mt-2.5">

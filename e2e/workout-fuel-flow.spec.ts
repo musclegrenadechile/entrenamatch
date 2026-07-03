@@ -20,6 +20,12 @@ test('E2E workout-fuel-flow — banner post-guardar → Fuel prefill', async ({ 
   })
 
   await expect(page.getByText(/Entreno guardado/i)).toBeVisible({ timeout: 10000 })
+  await expect(page.locator('.em-v2-training-save-banner__session')).toContainText(/1 serie/i)
+  await expect(page.locator('.em-v2-training-save-banner__fuel')).toContainText(/Fuel sugerido/i)
+  const fuelHint = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWorkoutSaveBannerFuelHint()
+  )
+  expect(fuelHint).toMatch(/proteína/i)
   await expect(
     page.getByRole('button', { name: /Registrar post-entreno/i })
   ).toBeVisible()
