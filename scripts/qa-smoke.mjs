@@ -224,6 +224,10 @@ if (!fuelPlanCoverage.includes("'fuel-tone-aria'")) {
   console.error('e2eFuelPlanCoverage missing fuel-tone-aria cover (oleada 426)')
   ok = false
 }
+if (!fuelPlanCoverage.includes("'fuel-tone-card'")) {
+  console.error('e2eFuelPlanCoverage missing fuel-tone-card cover (oleada 427)')
+  ok = false
+}
 if (!ok) process.exit(1)
 
 const fuelPlanScenarioCoverage = readFileSync(
@@ -277,6 +281,14 @@ if (!fuelPlanToneCoverage.includes("'tone-aria'")) {
   console.error('e2eFuelPlanToneCoverage missing tone-aria cover (oleada 426)')
   ok = false
 }
+if (!fuelPlanToneCoverage.includes('isFuelPlanToneCardCoverageComplete')) {
+  console.error('e2eFuelPlanToneCoverage missing tone-card helper (oleada 427)')
+  ok = false
+}
+if (!fuelPlanToneCoverage.includes("'tone-card'")) {
+  console.error('e2eFuelPlanToneCoverage missing tone-card cover (oleada 427)')
+  ok = false
+}
 if (!fuelPlanFullCoverage.includes('e2eFuelPlanToneCoverage')) {
   console.error('e2eFuelPlanFullCoverage missing tone suite ref (oleada 423)')
   ok = false
@@ -312,7 +324,25 @@ if (!fuelPlanFullCoverage.includes("'fuel-tone-aria'")) {
   ok = false
 }
 if (!ok) process.exit(1)
-console.log('✓ e2eFuelPlanFullCoverage unifies 5 Fuel×plan E2E suites (oleada 426)')
+const fuelPlanPostFullCoverage = readFileSync(
+  join(root, 'src/utils/e2eFuelPlanPostFullCoverage.ts'),
+  'utf8'
+)
+if (!fuelPlanPostFullCoverage.includes('isFuelPlanPostFullE2ECoverageComplete')) {
+  console.error('e2eFuelPlanPostFullCoverage missing post-full helper (oleada 427)')
+  ok = false
+}
+if (!fuelPlanFullCoverage.includes('e2eFuelPlanPostFullCoverage')) {
+  console.error('e2eFuelPlanFullCoverage missing post-full suite ref (oleada 427)')
+  ok = false
+}
+if (!fuelPlanFullCoverage.includes("'fuel-tone-card'")) {
+  console.error('e2eFuelPlanFullCoverage missing fuel-tone-card check (oleada 427)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eFuelPlanPostFullCoverage aligned with full coverage (oleada 427)')
+console.log('✓ e2eFuelPlanFullCoverage unifies 6 Fuel×plan E2E suites (oleada 427)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

@@ -100,6 +100,11 @@ export type EntrenamatchE2EApi = {
   /** Sembra macros Fuel semanales demo para E2E (oleada 413). */
   seedDemoFuelWeekLogs: (scenario?: 'under-fueled' | 'surplus' | 'deficit') => void
   isWeeklyPlanCardVisible: () => boolean
+  /** aria-label card EntrenaPlan con tono Fuel (oleada 427). */
+  getWeeklyPlanCardAriaLabel: () => string | null
+  isWeeklyPlanFuelCardToneAriaExpected: (
+    tone: 'under-fueled' | 'surplus' | 'deficit'
+  ) => boolean
 }
 
 declare global {

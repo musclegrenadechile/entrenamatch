@@ -103,6 +103,14 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
     window.__entrenamatchE2E!.isWeeklyPlanFuelToneAriaAligned('under-fueled')
   )
   expect(toneAriaAligned).toBe(true)
+  const cardAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanCardAriaLabel()
+  )
+  expect(cardAria).toMatch(/Plan de entreno recomendado.*Afinar Fuel/i)
+  const cardToneAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWeeklyPlanFuelCardToneAriaExpected('under-fueled')
+  )
+  expect(cardToneAria).toBe(true)
 
   await page.getByRole('button', { name: /Registrar post-entreno/i }).click()
 

@@ -1,4 +1,4 @@
-/** Mega-inventario total pulido entrenamiento oleadas 361–426 (oleada 426 aria stack Fuel). */
+/** Mega-inventario total pulido entrenamiento oleadas 361–427 (oleada 427 cierre post-full IV). */
 import { entrenaPlanTrainingBlockRange } from './entrenaPlanTrainingSuite'
 import { fuelPlanTrainingBlockRange } from './fuelPlanTrainingSuite'
 import { trainingE2EBlockRange } from './e2eTrainingSuite'
@@ -64,7 +64,7 @@ export const TRAINING_MEGA_BLOCKS: readonly TrainingMegaBlockEntry[] = [
     id: 'polish-post-full',
     range: trainingPolishPostFullRange(),
     suiteModule: 'trainingPolishPostFullSuite',
-    closedOleada: 426,
+    closedOleada: 427,
   },
 ] as const
 
@@ -73,7 +73,7 @@ export const TRAINING_MEGA_CLOSED_OLEADA = 414
 export const TRAINING_MEGA_PHASE3_CLOSED_OLEADA = 420
 
 export function trainingFullMegaRange(): { from: number; to: number } {
-  return { from: 361, to: 426 }
+  return { from: 361, to: 427 }
 }
 
 export function isTrainingMegaPhase3Closed(

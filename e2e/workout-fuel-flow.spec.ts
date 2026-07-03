@@ -100,6 +100,14 @@ test('E2E workout-fuel-flow — banner post-guardar → Fuel prefill', async ({ 
     window.__entrenamatchE2E!.isWeeklyPlanFuelToneAriaAligned('deficit')
   )
   expect(toneAriaAligned).toBe(true)
+  const cardAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanCardAriaLabel()
+  )
+  expect(cardAria).toMatch(/Plan de entreno recomendado.*Déficit/i)
+  const cardToneAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWeeklyPlanFuelCardToneAriaExpected('deficit')
+  )
+  expect(cardToneAria).toBe(true)
 
   await page.getByRole('button', { name: /Registrar post-entreno/i }).click()
 

@@ -173,6 +173,11 @@ export function readWeeklyPlanFuelToneStackSnapshot(): WeeklyPlanFuelToneStackSn
   }
 }
 
+export function readWeeklyPlanCardAriaLabel(): string | null {
+  const card = findEntrenaPlanCard()
+  return card?.getAttribute('aria-label')?.trim() ?? null
+}
+
 export function isWeeklyPlanCardVisible(): boolean {
   return findEntrenaPlanCard() !== null
 }

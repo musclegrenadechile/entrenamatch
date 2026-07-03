@@ -83,6 +83,7 @@ import {
 } from './utils/e2eWorkoutHistoryDom'
 import {
   isWeeklyPlanCardVisible,
+  readWeeklyPlanCardAriaLabel,
   readWeeklyPlanDetail,
   readWeeklyPlanFuelWeekAriaLabel,
   readWeeklyPlanFuelWeekChip,
@@ -109,6 +110,7 @@ import {
 } from './utils/weeklyPlanFuelToneStackDisplay'
 import { fuelToneStackMatchesDemoExpected } from './utils/weeklyPlanFuelToneStackExpectedDisplay'
 import { isWeeklyPlanFuelToneAriaStackAligned } from './utils/weeklyPlanFuelToneStackAriaDisplay'
+import { fuelCardAriaMatchesTone } from './utils/weeklyPlanFuelToneStackCardDisplay'
 import type { FuelWeekHintTone } from './utils/weeklyPlanFuelWeekToneDisplay'
 import {
   parseGymIdFromSearch,
@@ -6078,6 +6080,9 @@ useEffect(() => {
           tone
         ),
       isWeeklyPlanCardVisible: () => isWeeklyPlanCardVisible(),
+      getWeeklyPlanCardAriaLabel: () => readWeeklyPlanCardAriaLabel(),
+      isWeeklyPlanFuelCardToneAriaExpected: (tone: FuelWeekHintTone) =>
+        fuelCardAriaMatchesTone(readWeeklyPlanCardAriaLabel(), tone),
     })
   }, [
     showSyncArena,

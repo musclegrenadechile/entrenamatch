@@ -27,6 +27,10 @@ import {
   buildWeeklyPlanNutritionToneAriaLabel,
 } from '../../utils/weeklyPlanFuelToneStackAriaDisplay'
 import {
+  buildWeeklyPlanFuelCardAriaLabel,
+  WEEKLY_PLAN_FUEL_CARD_ARIA_BASE,
+} from '../../utils/weeklyPlanFuelToneStackCardDisplay'
+import {
   buildWeeklyPlanFuelWeekChipText,
   resolveWeeklyPlanFuelWeekChipToneClass,
   shouldShowWeeklyPlanFuelWeekChip,
@@ -164,7 +168,14 @@ export function WeeklyPlanCard({
   )
 
   return (
-    <div className={`em-v2-card em-v2-plan ${scenarioClass}`} aria-label="Plan de entreno recomendado">
+    <div
+      className={`em-v2-card em-v2-plan ${scenarioClass}`}
+      aria-label={
+        fuelWeekTone
+          ? buildWeeklyPlanFuelCardAriaLabel(fuelWeekTone)
+          : WEEKLY_PLAN_FUEL_CARD_ARIA_BASE
+      }
+    >
       <div className="flex items-start justify-between gap-2">
         <div>
           <p className="em-v2-training__eyebrow flex items-center gap-1">

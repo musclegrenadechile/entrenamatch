@@ -244,6 +244,21 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-fuel-flow',
     feature: 'aria stack Fuel déficit + fuel-tone-aria E2E',
   },
+  {
+    polishOleada: 427,
+    e2eSpecId: 'training-mega-flow',
+    feature: 'card aria under-fueled + isWeeklyPlanFuelCardToneAriaExpected',
+  },
+  {
+    polishOleada: 427,
+    e2eSpecId: 'workout-plan-history-flow',
+    feature: 'card aria surplus + e2eFuelPlanPostFullCoverage',
+  },
+  {
+    polishOleada: 427,
+    e2eSpecId: 'workout-fuel-flow',
+    feature: 'card aria déficit + fuel-tone-card E2E cierre post-full',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {
