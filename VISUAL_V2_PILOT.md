@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.456
+**Versión cierre:** v0.1.457
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -68,6 +68,11 @@
 | **395** | **Historial PR** | Resumen compacto en filas, kicker «N con PR», aria badges, tests workoutHistoryDisplay |
 | **396** | **Sparkline PR** | Puntos dorados en sparkline de historial cuando la sesión tiene PR, tests sparkline data |
 | **397** | **Cierre historial** | Inventario workoutHistoryTrainingSuite + aria-label sparkline, bloque 395–397 ✅ |
+| **398** | **Mega pulido entreno** | Inventario trainingPolishSuite unifica gym-log, FAB, post-entreno e historial 383–397 ✅ |
+
+## Pulido entrenamiento II (383–397) ✅
+
+Mega-inventario `trainingPolishSuite`: gym-log en vivo (383–387), FAB sesión (387–389), post-entreno (390–394), historial PR (395–397). 15 oleadas, 4 sub-bloques cerrados.
 
 ## Historial entreno (395–397) ✅
 
