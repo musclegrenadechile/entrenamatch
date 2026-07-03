@@ -1,6 +1,5 @@
 /** Puente E2E Playwright ↔ oleadas pulido entrenamiento (oleada 399). */
-import { trainingE2EBlockRange } from './e2eTrainingSuite'
-import { trainingPolishMegaRange } from './trainingPolishSuite'
+import { trainingFullMegaRange } from './trainingMegaSuite'
 
 export type E2ETrainingPolishBridgeEntry = {
   polishOleada: number
@@ -53,9 +52,7 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {
-  const e2e = trainingE2EBlockRange()
-  const polish = trainingPolishMegaRange()
-  return { from: e2e.from, to: Math.max(e2e.to, polish.to) }
+  return trainingFullMegaRange()
 }
 
 export function countE2ETrainingPolishBridgeEntries(): number {

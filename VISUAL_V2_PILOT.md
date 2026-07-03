@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.461
+**Versión cierre:** v0.1.462
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -73,6 +73,11 @@
 | **400** | **E2E historial Perfil** | workout-history-flow.spec, harness historial, demo history en Perfil; puente 395–397 |
 | **401** | **EntrenaPlan × historial** | Hint PR reciente en WeeklyPlanCard; weeklyPlanHistoryDisplay + entrenaPlanTrainingSuite |
 | **402** | **E2E EntrenaPlan×historial** | workout-plan-history-flow.spec guardar→hint PR; harness seedDemoFuelProfile |
+| **403** | **Mega cierre 361–402** | trainingMegaSuite unifica polish-v1, E2E, polish-v2 y EntrenaPlan×historial |
+
+## Mega entrenamiento (361–402) ✅
+
+Inventario `trainingMegaSuite`: 4 sub-bloques (pulido I 361–377, E2E 378–402, pulido II 383–397, EntrenaPlan×historial 401–402). 42 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`.
 
 ## EntrenaPlan × historial (401–402) ✅
 
@@ -100,7 +105,7 @@ Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-g
 
 ## E2E entrenamiento (378–402) ✅
 
-Playwright con harness `?e2e=1` en CI (`e2e-smoke`). 7 specs cubren gym-log, Fuel, sync, reseña, FAB, banner, prefill, historial Perfil y EntrenaPlan×historial. Puente `e2eTrainingPolishBridge` → oleadas pulido 384–397, 401. Mega bloque documentado: 378–402 (`trainingMegaBlockRange`).
+Playwright con harness `?e2e=1` en CI (`e2e-smoke`). 7 specs cubren gym-log, Fuel, sync, reseña, FAB, banner, prefill, historial Perfil y EntrenaPlan×historial. Puente `e2eTrainingPolishBridge` → oleadas pulido 384–397, 401. Mega bloque total: 361–402 (`trainingMegaSuite` / `trainingMegaBlockRange`).
 
 ## Auditoría cohesión (360)
 
