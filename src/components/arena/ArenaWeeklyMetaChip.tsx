@@ -8,9 +8,9 @@ export interface ArenaWeeklyMetaChipProps {
 export function ArenaWeeklyMetaChip({ progress, sessionMinutes }: ArenaWeeklyMetaChipProps) {
   if (!progress?.pledged) {
     return (
-      <div className="arena-meta-chip arena-meta-chip--muted">
-        <span>Meta semanal</span>
-        <span className="arena-meta-chip__hint">Fíjala en Hoy al terminar</span>
+      <div className="arena-meta-chip em-v2-arena-meta arena-meta-chip--muted em-v2-arena-meta--muted">
+        <span className="em-v2-arena-meta__label">Meta semanal</span>
+        <span className="arena-meta-chip__hint em-v2-arena-meta__hint">Fíjala en Hoy al terminar</span>
       </div>
     )
   }
@@ -24,15 +24,15 @@ export function ArenaWeeklyMetaChip({ progress, sessionMinutes }: ArenaWeeklyMet
 
   return (
     <div
-      className={`arena-meta-chip ${progress.isComplete ? 'arena-meta-chip--done' : ''}`}
+      className={`arena-meta-chip em-v2-arena-meta ${progress.isComplete ? 'arena-meta-chip--done em-v2-arena-meta--done' : ''}`}
       role="status"
     >
-      <span className="arena-meta-chip__label">Meta semanal</span>
-      <span className="arena-meta-chip__vals">
+      <span className="arena-meta-chip__label em-v2-arena-meta__label">Meta semanal</span>
+      <span className="arena-meta-chip__vals em-v2-arena-meta__vals">
         {progress.liveDaysDone}/{progress.liveDaysTarget} live ·{' '}
         {progress.syncSessionsDone}/{progress.syncSessionsTarget} sync
       </span>
-      <span className="arena-meta-chip__hint">{syncCreditHint}</span>
+      <span className="arena-meta-chip__hint em-v2-arena-meta__hint">{syncCreditHint}</span>
     </div>
   )
 }

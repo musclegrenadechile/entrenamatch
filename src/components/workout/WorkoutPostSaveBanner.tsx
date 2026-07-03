@@ -32,7 +32,10 @@ export function WorkoutPostSaveBanner({
     .join(' · ')
 
   return (
-    <div className="em-v2-training-save-banner em-v2-training-save-banner--sticky" role="status">
+    <div
+      className="em-v2-training-save-banner em-v2-training-save-banner--sticky em-v2-training-save-banner--enter"
+      role="status"
+    >
       <button type="button" onClick={onDismiss} className="em-v2-training-save-banner__close" aria-label="Cerrar">
         <X size={14} />
       </button>

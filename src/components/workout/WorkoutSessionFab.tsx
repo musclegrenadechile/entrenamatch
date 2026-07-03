@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Dumbbell, MessageCircle, Plus, Radio, UtensilsCrossed } from 'lucide-react'
+import { ChevronUp, Dumbbell, MessageCircle, Plus, Radio, UtensilsCrossed } from 'lucide-react'
 import { useDraggableFabPosition } from '../../hooks/useDraggableFabPosition'
 import {
   summarizeWorkoutDraft,
@@ -45,6 +45,7 @@ export function WorkoutSessionFab({
   isTogglingLive = false,
 }: WorkoutSessionFabProps) {
   const [, setTick] = useState(0)
+  const [actionsOpen, setActionsOpen] = useState(true)
   const mapTab = bottomClass?.includes('7.5rem')
   const defaultBottomExtraPx = mapTab ? 46 : 0
 
@@ -68,6 +69,11 @@ export function WorkoutSessionFab({
     bottomClass || 'bottom-[calc(74px+env(safe-area-inset-bottom))]'
   const showActions = !!(onQuickAddSet || onOpenChat || onOpenFuel)
 
+  const handleResume = () => {
+    setActionsOpen(false)
+    onResume()
+  }
+
   const liveChip =
     onToggleLive && layout === 'fab' ? (
       <button
@@ -88,7 +94,7 @@ export function WorkoutSessionFab({
       </button>
     ) : null
 
-  const actionButtons = showActions ? (
+  const actionButtons = showActions && actionsOpen ? (
     <div className="em-v2-workout-fab__actions workout-session-fab-actions">
       {onQuickAddSet && (
         <button
@@ -141,13 +147,29 @@ export function WorkoutSessionFab({
     </div>
   ) : null
 
+  const expandActionsBtn =
+    showActions && !actionsOpen ? (
+      <button
+        type="button"
+        onPointerDown={stopPointer}
+        onClick={(e) => {
+          e.stopPropagation()
+          setActionsOpen(true)
+        }}
+        className="em-v2-workout-fab__expand"
+        aria-label="Mostrar acciones rápidas"
+      >
+        <ChevronUp className="w-3.5 h-3.5" />
+      </button>
+    ) : null
+
   if (layout === 'chat-strip') {
     return (
       <div className="em-v2-workout-fab__strip workout-session-strip shrink-0 px-2 pt-1 pb-0.5">
         <div className="em-v2-workout-fab__strip-inner workout-session-strip-inner">
           <button
             type="button"
-            onClick={onResume}
+            onClick={handleResume}
             className="workout-session-strip-main"
           >
             <Dumbbell className="w-3.5 h-3.5 shrink-0" />
@@ -159,9 +181,10 @@ export function WorkoutSessionFab({
             )}
           </button>
           {actionButtons}
+          {expandActionsBtn}
           <button
             type="button"
-            onClick={onResume}
+            onClick={handleResume}
             className="workout-session-strip-open"
           >
             Abrir
@@ -184,7 +207,7 @@ export function WorkoutSessionFab({
         type="button"
         onPointerDown={drag.onPointerDown}
         onPointerMove={drag.onPointerMove}
-        onPointerUp={(e) => drag.onPointerUp(e, onResume)}
+        onPointerUp={(e) => drag.onPointerUp(e, handleResume)}
         onClick={(e) => e.preventDefault()}
         aria-label="Volver a Modo Entreno"
         aria-grabbed={drag.isDragging}
@@ -209,6 +232,7 @@ export function WorkoutSessionFab({
         </span>
       </button>
       {actionButtons}
+      {expandActionsBtn}
     </div>
   )
 }

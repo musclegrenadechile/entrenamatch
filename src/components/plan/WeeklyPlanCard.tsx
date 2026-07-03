@@ -1,15 +1,12 @@
 import { Brain, Dumbbell, Megaphone, Share2, Sparkles, Footprints, Moon, UtensilsCrossed } from 'lucide-react'
 import type { WeeklyPlanResult } from '../../domain/weeklyPlan'
 import { EmV2EmptyState } from '../ui/EmV2EmptyState'
-
-const SCENARIO_CLASS: Record<string, string> = {
-  surplus: 'em-v2-plan--surplus',
-  deficit: 'em-v2-plan--deficit',
-  catch_up: 'em-v2-plan--catch-up',
-  rest_needed: 'em-v2-plan--rest',
-  under_fueled: 'em-v2-plan--under-fueled',
-  on_track: 'em-v2-plan--on-track',
-}
+import {
+  formatWeeklyPlanDelta,
+  resolveWeeklyPlanScenarioClass,
+  shouldRenderWeeklyPlanEmpty,
+  shouldShowWeeklyPlanFuelRow,
+} from './weeklyPlanCardDisplay'
 
 function ActivityIcon({ type }: { type: WeeklyPlanResult['recommendation']['type'] }) {
   if (type === 'walk') return <Footprints size={16} className="text-[#38bdf8]" />
@@ -45,7 +42,7 @@ export function WeeklyPlanCard({
   showEmptyState = true,
 }: WeeklyPlanCardProps) {
   if (!plan) {
-    if (!showEmptyState) return null
+    if (!shouldRenderWeeklyPlanEmpty(plan, showEmptyState)) return null
     return (
       <div className="em-v2-card em-v2-card--brand">
         <EmV2EmptyState
@@ -65,7 +62,7 @@ export function WeeklyPlanCard({
   }
 
   const rec = plan.recommendation
-  const scenarioClass = SCENARIO_CLASS[plan.scenario] || SCENARIO_CLASS.on_track
+  const scenarioClass = resolveWeeklyPlanScenarioClass(plan.scenario)
 
   return (
     <div className={`em-v2-card em-v2-plan ${scenarioClass}`} aria-label="Plan de entreno recomendado">
@@ -85,15 +82,14 @@ export function WeeklyPlanCard({
 
       <p className="em-v2-card__detail mt-2 leading-snug">{plan.detail}</p>
 
-      {(hasFuelProfile || weeklyDeltaKcal != null) && (
+      {shouldShowWeeklyPlanFuelRow(hasFuelProfile, weeklyDeltaKcal) && (
         <div className="em-v2-plan__fuel-row">
           <span className="text-[#c084fc] flex items-center gap-1">
             <UtensilsCrossed size={12} /> Fuel × entreno
           </span>
           {weeklyDeltaKcal != null && (
             <span className="font-bold tabular-nums text-white">
-              Δ {weeklyDeltaKcal > 0 ? '+' : ''}
-              {weeklyDeltaKcal} kcal semana
+              {formatWeeklyPlanDelta(weeklyDeltaKcal)}
             </span>
           )}
           {onOpenFuelLog && (

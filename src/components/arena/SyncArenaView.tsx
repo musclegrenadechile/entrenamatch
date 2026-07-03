@@ -194,7 +194,7 @@ export function SyncArenaView({
           <ArenaWeeklyMetaChip progress={weeklyPactProgress} sessionMinutes={minutes} />
           <div className="arena-sala-sync__top-actions">
             {syncCombo >= 2 && (
-              <span className="arena-combo-badge">RACHA ×{syncCombo}</span>
+              <span className="arena-combo-badge em-v2-arena-combo">RACHA ×{syncCombo}</span>
             )}
             <button type="button" onClick={onMinimize} className="arena-icon-btn" aria-label="Minimizar">
               <X size={18} />
