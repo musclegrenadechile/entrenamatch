@@ -28,6 +28,12 @@ import {
   WEEKLY_PLAN_FUEL_WEEK_CHIP_CLASS,
 } from '../../utils/weeklyPlanFuelWeekChipDisplay'
 import {
+  buildWeeklyPlanNutritionFuelSuffix,
+  mergeWeeklyPlanNutritionNote,
+  shouldShowWeeklyPlanNutritionNote,
+  WEEKLY_PLAN_NUTRITION_CLASS,
+} from '../../utils/weeklyPlanNutritionDisplay'
+import {
   resolveWeeklyPlanFuelWeekHintTone,
   resolveWeeklyPlanFuelWeekHintToneClass,
 } from '../../utils/weeklyPlanFuelWeekToneDisplay'
@@ -115,6 +121,11 @@ export function WeeklyPlanCard({
     plan.scenario,
     plan.energySummary
   )
+  const nutritionText = mergeWeeklyPlanNutritionNote(
+    plan.nutritionNote,
+    buildWeeklyPlanNutritionFuelSuffix(plan.scenario, plan.energySummary)
+  )
+  const showNutritionNote = shouldShowWeeklyPlanNutritionNote(nutritionText, hasFuelProfile)
 
   return (
     <div className={`em-v2-card em-v2-plan ${scenarioClass}`} aria-label="Plan de entreno recomendado">
@@ -213,8 +224,8 @@ export function WeeklyPlanCard({
         )}
       </div>
 
-      {plan.nutritionNote && (
-        <p className="text-[10px] text-[#c084fc] mt-2 leading-snug">🍽 {plan.nutritionNote}</p>
+      {showNutritionNote && nutritionText && (
+        <p className={WEEKLY_PLAN_NUTRITION_CLASS}>🍽 {nutritionText}</p>
       )}
 
       {plan.energySummary.loggedDays > 0 && (

@@ -26,6 +26,7 @@ describe('e2eFuelPlanCoverage', () => {
       'fuel-aria',
       'fuel-tone',
       'fuel-chip',
+      'fuel-nutrition',
     ])
     const planHistory = E2E_FUEL_PLAN_SPECS.find((s) => s.id === 'workout-plan-history-flow')
     expect(isFuelPlanE2ECoverageComplete(planHistory?.covers ?? [])).toBe(true)

@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.473
+**Versión cierre:** v0.1.474
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -85,14 +85,15 @@
 | **412** | **E2E Fuel×plan + tono** | harness getWeeklyPlanFuelWeekHint; tono surplus/deficit/under-fueled; mega-flow valida hint |
 | **413** | **Fuel×plan chip + seed** | seedDemoFuelWeekLogs; chip Δ kcal surplus/deficit; plan-history-flow E2E Superávit |
 | **414** | **Cierre Fuel×plan + CI** | e2eFuelPlanCoverage (3 specs); fuel-flow déficit E2E; qa:smoke valida specs Fuel |
+| **415** | **Mega cierre II + nutrición** | trainingMegaSuite cierra 361–414; nota nutricional Fuel×plan; harness getWeeklyPlanNutritionNote |
 
-## Mega entrenamiento (361–411) ✅
+## Mega entrenamiento (361–414) ✅
 
-Inventario `trainingMegaSuite`: 5 sub-bloques (pulido I 361–377, E2E 378–410, pulido II 383–409, EntrenaPlan×historial 401–409, Fuel×plan 411+). 51 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`. Cierre mega oleada 411.
+Inventario `trainingMegaSuite`: 5 sub-bloques (pulido I 361–377, E2E 378–410, pulido II 383–409, EntrenaPlan×historial 401–409, Fuel×plan 411–415). 54 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`. Cierre mega fase I oleada 411; cierre mega II oleada 415.
 
 ## Fuel × EntrenaPlan (411–414) ✅
 
-Hint semanal según balance Fuel y escenario del plan (días faltantes, superávit, déficit). Tono visual por escenario (violeta/naranja/verde). Chip compacto Δ kcal en superávit/déficit. Harness `seedDemoFuelWeekLogs` para E2E. E2E consolidado `e2eFuelPlanCoverage` (mega under-fueled, plan-history surplus, fuel-flow déficit). Bloque cerrado oleada 414; CI `qa:smoke` valida 3 specs. Utils: `weeklyPlanFuelWeekDisplay`, `weeklyPlanFuelWeekToneDisplay`, `weeklyPlanFuelWeekChipDisplay`, `demoFuelWeekLogs`, `e2eFuelPlanCoverage`, `fuelPlanTrainingSuite`.
+Hint semanal según balance Fuel y escenario del plan (días faltantes, superávit, déficit). Tono visual por escenario (violeta/naranja/verde). Chip compacto Δ kcal en superávit/déficit. Nota nutricional enriquecida según escenario Fuel. Harness `seedDemoFuelWeekLogs` para E2E. E2E consolidado `e2eFuelPlanCoverage` (mega under-fueled, plan-history surplus, fuel-flow déficit + nutrición). Bloque fuel cerrado oleada 414; CI `qa:smoke` valida 3 specs. Utils: `weeklyPlanFuelWeekDisplay`, `weeklyPlanFuelWeekToneDisplay`, `weeklyPlanFuelWeekChipDisplay`, `weeklyPlanNutritionDisplay`, `demoFuelWeekLogs`, `e2eFuelPlanCoverage`, `fuelPlanTrainingSuite`.
 
 ## EntrenaPlan × historial (401–409) ✅
 

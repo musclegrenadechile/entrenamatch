@@ -49,6 +49,10 @@ test('E2E workout-fuel-flow — banner post-guardar → Fuel prefill', async ({ 
     window.__entrenamatchE2E!.getWeeklyPlanFuelWeekToneClass()
   )
   expect(fuelWeekTone).toBe('em-v2-plan__fuel-week-hint--deficit')
+  const nutrition = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanNutritionNote()
+  )
+  expect(nutrition).toMatch(/proteína/i)
 
   await page.getByRole('button', { name: /Registrar post-entreno/i }).click()
 

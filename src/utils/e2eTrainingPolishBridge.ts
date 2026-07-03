@@ -119,6 +119,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-fuel-flow',
     feature: 'seedDemoFuelWeekLogs deficit + chip Δ kcal + hint Déficit',
   },
+  {
+    polishOleada: 415,
+    e2eSpecId: 'workout-fuel-flow',
+    feature: 'nota nutricional Fuel×plan en déficit',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

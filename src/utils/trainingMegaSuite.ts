@@ -1,4 +1,4 @@
-/** Mega-inventario total pulido entrenamiento oleadas 361–411 (oleada 411). */
+/** Mega-inventario total pulido entrenamiento oleadas 361–414 (oleada 415). */
 import { entrenaPlanTrainingBlockRange } from './entrenaPlanTrainingSuite'
 import { fuelPlanTrainingBlockRange } from './fuelPlanTrainingSuite'
 import { trainingE2EBlockRange } from './e2eTrainingSuite'
@@ -52,16 +52,31 @@ export const TRAINING_MEGA_BLOCKS: readonly TrainingMegaBlockEntry[] = [
   },
 ] as const
 
-export const TRAINING_MEGA_CLOSED_OLEADA = 411
+export const TRAINING_MEGA_PHASE1_CLOSED_OLEADA = 411
+export const TRAINING_MEGA_CLOSED_OLEADA = 414
 
 export function trainingFullMegaRange(): { from: number; to: number } {
-  return { from: 361, to: 411 }
+  return { from: 361, to: 414 }
 }
 
 export function isTrainingMegaBlockClosed(
   oleada = TRAINING_MEGA_CLOSED_OLEADA
 ): boolean {
   return oleada >= TRAINING_MEGA_CLOSED_OLEADA
+}
+
+export function isTrainingMegaPhase1Closed(
+  oleada = TRAINING_MEGA_PHASE1_CLOSED_OLEADA
+): boolean {
+  return oleada >= TRAINING_MEGA_PHASE1_CLOSED_OLEADA
+}
+
+export function isTrainingMegaFullyClosed(
+  oleada = TRAINING_MEGA_CLOSED_OLEADA
+): boolean {
+  return (
+    isTrainingMegaBlockClosed(oleada) && areAllTrainingMegaSubBlocksClosed(oleada)
+  )
 }
 
 export function areAllTrainingMegaSubBlocksClosed(

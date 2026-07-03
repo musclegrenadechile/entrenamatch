@@ -1,6 +1,11 @@
 /** Inventario E2E consolidado Fuel×EntrenaPlan — 3 specs (oleada 414). */
 
-export type E2EFuelPlanCover = 'fuel-hint' | 'fuel-chip' | 'fuel-aria' | 'fuel-tone'
+export type E2EFuelPlanCover =
+  | 'fuel-hint'
+  | 'fuel-chip'
+  | 'fuel-aria'
+  | 'fuel-tone'
+  | 'fuel-nutrition'
 
 export type E2EFuelPlanSpecEntry = {
   id: string
@@ -30,7 +35,7 @@ export const E2E_FUEL_PLAN_SPECS: readonly E2EFuelPlanSpecEntry[] = [
     file: 'e2e/workout-fuel-flow.spec.ts',
     oleada: 414,
     scenario: 'deficit',
-    covers: ['fuel-hint', 'fuel-chip', 'fuel-aria', 'fuel-tone'],
+    covers: ['fuel-hint', 'fuel-chip', 'fuel-aria', 'fuel-tone', 'fuel-nutrition'],
   },
 ] as const
 
