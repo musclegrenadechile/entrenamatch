@@ -12,6 +12,11 @@ import {
   getWorkoutHistoryBadgeAriaLabel,
   WORKOUT_HISTORY_SUMMARY_CLASS,
 } from '../../utils/workoutHistoryDisplay'
+import {
+  buildWorkoutHistorySummaryPrToneAriaLabel,
+  resolveWorkoutHistoryRowPrToneClass,
+  resolveWorkoutHistorySummaryPrToneClass,
+} from '../../utils/workoutHistoryRowPrToneDisplay'
 import { buildWorkoutHistorySparklineData } from '../../utils/workoutHistorySparkline'
 import { WorkoutHistorySparkline } from '../workout/WorkoutHistorySparkline'
 import { ExerciseProgressBars } from '../workout/ExerciseProgressBars'
@@ -80,9 +85,17 @@ export function ProfileEntrenoDeHoySection({
               const badges = buildWorkoutHistoryBadges(w, recentWorkouts.slice(index + 1))
               const sparkline = buildWorkoutHistorySparklineData(recentWorkouts, index)
               const rowSummary = buildWorkoutHistoryRowSummary(w)
+              const hasPr = badges.some((badge) => badge.kind === 'pr')
+              const rowPrToneClass = resolveWorkoutHistoryRowPrToneClass(hasPr)
+              const summaryPrToneClass = resolveWorkoutHistorySummaryPrToneClass(hasPr)
 
               return (
-                <li key={w.id} className="em-v2-training-history__row">
+                <li
+                  key={w.id}
+                  className={['em-v2-training-history__row', rowPrToneClass]
+                    .filter(Boolean)
+                    .join(' ')}
+                >
                   <div className="em-v2-training-history__copy">
                     <div className="flex items-center gap-1.5 min-w-0">
                       <p className="em-v2-training-history__title truncate">{w.title}</p>
@@ -100,7 +113,14 @@ export function ProfileEntrenoDeHoySection({
                       {dateStr} · {typeLabel} · {w.stats?.totalSets ?? 0} sets · {vol}
                     </p>
                     {rowSummary && (
-                      <p className={WORKOUT_HISTORY_SUMMARY_CLASS}>{rowSummary}</p>
+                      <p
+                        className={[WORKOUT_HISTORY_SUMMARY_CLASS, summaryPrToneClass]
+                          .filter(Boolean)
+                          .join(' ')}
+                        aria-label={buildWorkoutHistorySummaryPrToneAriaLabel(rowSummary, hasPr)}
+                      >
+                        {rowSummary}
+                      </p>
                     )}
                   </div>
                   <WorkoutHistorySparkline points={sparkline} />

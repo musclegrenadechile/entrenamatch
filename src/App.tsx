@@ -78,9 +78,13 @@ import { buildDemoWorkoutFromSave, buildE2EDemoWorkoutHistory } from './utils/de
 import {
   countWorkoutHistoryPrBadges,
   readWorkoutHistoryRowSummaries,
+  readWorkoutHistoryRowToneClass,
   readWorkoutHistorySectionKicker,
   readWorkoutHistorySparklineAriaLabels,
+  readWorkoutHistorySummaryPrAriaLabel,
+  readWorkoutHistorySummaryToneClass,
 } from './utils/e2eWorkoutHistoryDom'
+import { historyRowPrAriaMatchesPr } from './utils/workoutHistoryRowPrToneDisplay'
 import {
   readGymLogFabSessionChipAriaLabel,
   readGymLogFabSessionChipText,
@@ -6075,6 +6079,11 @@ useEffect(() => {
       getWorkoutHistoryRowSummaries: () => readWorkoutHistoryRowSummaries(),
       countWorkoutHistoryPrBadges: () => countWorkoutHistoryPrBadges(),
       getWorkoutHistorySparklineAriaLabels: () => readWorkoutHistorySparklineAriaLabels(),
+      getWorkoutHistoryRowToneClass: () => readWorkoutHistoryRowToneClass(),
+      getWorkoutHistorySummaryToneClass: () => readWorkoutHistorySummaryToneClass(),
+      getWorkoutHistorySummaryPrAriaLabel: () => readWorkoutHistorySummaryPrAriaLabel(),
+      isWorkoutHistoryRowPrToneAriaExpected: () =>
+        historyRowPrAriaMatchesPr(readWorkoutHistorySummaryPrAriaLabel()),
       seedDemoFuelProfile: () => setFuelProfile(buildE2EDemoFuelProfile()),
       seedDemoFuelWeekLogs: (scenario = 'under-fueled') => {
         const macros = buildE2EDemoFuelWeekMacros(scenario)

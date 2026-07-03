@@ -6475,6 +6475,14 @@
   line-height: 1.3;
 }
 
+.em-v2-training-history__row--has-pr {
+  background: linear-gradient(90deg, rgba(253, 224, 71, 0.06) 0%, transparent 100%);
+}
+
+.em-v2-training-history__summary--has-pr {
+  color: #fde68a;
+}
+
 .em-v2-training-history__actions {
   display: flex;
   align-items: center;

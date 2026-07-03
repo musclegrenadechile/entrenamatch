@@ -1,4 +1,5 @@
 import { WORKOUT_HISTORY_SUMMARY_CLASS } from './workoutHistoryDisplay'
+import { WORKOUT_HISTORY_ROW_CLASS } from './workoutHistoryRowPrToneDisplay'
 
 function findEntrenoDeHoyHistoryCard(): HTMLElement | null {
   const titles = document.querySelectorAll('.em-v2-card__title')
@@ -32,4 +33,21 @@ export function readWorkoutHistorySparklineAriaLabels(): string[] {
   return [...document.querySelectorAll('.em-v2-training-history__sparkline')]
     .map((el) => el.getAttribute('aria-label') ?? '')
     .filter(Boolean)
+}
+
+export function readWorkoutHistoryRowToneClass(): string | null {
+  const row = document.querySelector(`.${WORKOUT_HISTORY_ROW_CLASS}--has-pr`)
+  if (!row) return null
+  return `${WORKOUT_HISTORY_ROW_CLASS}--has-pr`
+}
+
+export function readWorkoutHistorySummaryToneClass(): string | null {
+  const summary = document.querySelector(`.${WORKOUT_HISTORY_SUMMARY_CLASS}--has-pr`)
+  if (!summary) return null
+  return `${WORKOUT_HISTORY_SUMMARY_CLASS}--has-pr`
+}
+
+export function readWorkoutHistorySummaryPrAriaLabel(): string | null {
+  const summary = document.querySelector(`.${WORKOUT_HISTORY_SUMMARY_CLASS}--has-pr`)
+  return summary?.getAttribute('aria-label')?.trim() ?? null
 }

@@ -590,6 +590,24 @@ if (!workoutSaveBannerPrTone.includes('bannerPrAriaMatchesPr')) {
 }
 if (!ok) process.exit(1)
 console.log('✓ e2eWorkoutSaveBannerPrCoverage aligned with post-entreno v2 pivot (oleada 439)')
+const workoutHistoryRowPrCoverage = readFileSync(
+  join(root, 'src/utils/e2eWorkoutHistoryRowPrCoverage.ts'),
+  'utf8'
+)
+if (!workoutHistoryRowPrCoverage.includes('isWorkoutHistoryRowPrCoverageComplete')) {
+  console.error('e2eWorkoutHistoryRowPrCoverage missing history-row-pr helper (oleada 440)')
+  ok = false
+}
+const workoutHistoryRowPrTone = readFileSync(
+  join(root, 'src/utils/workoutHistoryRowPrToneDisplay.ts'),
+  'utf8'
+)
+if (!workoutHistoryRowPrTone.includes('historyRowPrAriaMatchesPr')) {
+  console.error('workoutHistoryRowPrToneDisplay missing aria helper (oleada 440)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eWorkoutHistoryRowPrCoverage aligned with historial v2 pivot (oleada 440)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)
