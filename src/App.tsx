@@ -5944,6 +5944,7 @@ useEffect(() => {
         setPendingReviewBookingId(null)
       },
       isReviewModalOpen: () => !!showReviewModalFor,
+      closeArena: () => setShowSyncArena(false),
     })
   }, [
     showSyncArena,
@@ -5953,6 +5954,7 @@ useEffect(() => {
     startSyncWith,
     openEntrenoDeHoy,
     setShowOnboarding,
+    setShowSyncArena,
   ])
 
   useEffect(() => {

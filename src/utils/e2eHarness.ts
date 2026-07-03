@@ -13,6 +13,8 @@ export type EntrenamatchE2EApi = {
   /** Simula reseña post-entreno con un partner seed. */
   openReviewModal: (partnerId?: string) => void
   isReviewModalOpen: () => boolean
+  /** Cierra/minimiza la Sala Sync sin terminar la sesión mock. */
+  closeArena: () => void
 }
 
 declare global {

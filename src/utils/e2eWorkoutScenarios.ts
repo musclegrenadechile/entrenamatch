@@ -34,8 +34,8 @@ export const E2E_WORKOUT_FLOW_STEPS: E2EWorkoutStep[] = [
   {
     id: 'wo-04',
     phase: 'sync',
-    action: 'Opcional: sync-mock.spec (arena + partner)',
-    expect: 'Sala Sync visible; sin crash al salir',
+    action: 'EntrenaSync mock (training-full-flow.spec)',
+    expect: 'Sala Sync visible; closeArena sin crash',
   },
   {
     id: 'wo-05',
