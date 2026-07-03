@@ -39,6 +39,11 @@ export const E2E_WEEKLY_PLAN_HISTORY_FLOW_STEPS: readonly E2EWeeklyPlanHistorySt
     action: 'Sembrar Fuel semanal surplus (seedDemoFuelWeekLogs) + chip Δ kcal (oleada 413)',
     expect: '.em-v2-plan__fuel-week-chip + hint Superávit; harness getWeeklyPlanFuelWeekChip',
   },
+  {
+    id: 'ph-07',
+    action: 'Nota nutricional surplus + aria (oleada 416)',
+    expect: '.em-v2-plan__nutrition; harness getWeeklyPlanNutritionNote + aria-label',
+  },
 ] as const
 
 export function countE2EWeeklyPlanHistoryFlowSteps(): number {

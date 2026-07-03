@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  buildWeeklyPlanNutritionAriaLabel,
   buildWeeklyPlanNutritionFuelSuffix,
   mergeWeeklyPlanNutritionNote,
   shouldShowWeeklyPlanNutritionNote,
@@ -44,7 +45,8 @@ describe('weeklyPlanNutritionDisplay', () => {
     ).toContain('post-entreno')
   })
 
-  it('visibilidad con perfil Fuel', () => {
+  it('aria y visibilidad con perfil Fuel', () => {
+    expect(buildWeeklyPlanNutritionAriaLabel('Cena ligera')).toContain('Nutrición EntrenaPlan')
     expect(shouldShowWeeklyPlanNutritionNote('Nota', true)).toBe(true)
     expect(shouldShowWeeklyPlanNutritionNote('Nota', false)).toBe(false)
     expect(shouldShowWeeklyPlanNutritionNote(null, true)).toBe(false)

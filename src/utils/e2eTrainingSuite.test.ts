@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { isFuelPlanNutritionE2ECovered } from './e2eFuelPlanCoverage'
 import {
   countTrainingE2ESpecs,
   e2eFuelPlanSpecsCoveredInInventory,
@@ -59,5 +60,9 @@ describe('e2eTrainingSuite', () => {
 
   it('e2eFuelPlanCoverage alineado con inventario CI (oleada 414)', () => {
     expect(e2eFuelPlanSpecsCoveredInInventory()).toBe(true)
+  })
+
+  it('e2eFuelPlanCoverage nutrición en 2 specs (oleada 416)', () => {
+    expect(isFuelPlanNutritionE2ECovered()).toBe(true)
   })
 })

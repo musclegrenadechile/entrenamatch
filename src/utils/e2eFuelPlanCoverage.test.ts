@@ -4,15 +4,17 @@ import {
   E2E_FUEL_PLAN_SPECS,
   e2eFuelPlanBlockRange,
   e2eFuelPlanSpecIds,
+  fuelPlanNutritionSpecIds,
   fuelPlanSpecFileBasenames,
   isFuelPlanE2ECoverageComplete,
+  isFuelPlanNutritionE2ECovered,
   unionFuelPlanCovers,
 } from './e2eFuelPlanCoverage'
 
 describe('e2eFuelPlanCoverage', () => {
   it('consolida 3 specs E2E Fuel×EntrenaPlan (oleada 414)', () => {
     expect(countE2EFuelPlanSpecs()).toBe(3)
-    expect(e2eFuelPlanBlockRange()).toEqual({ from: 412, to: 414 })
+    expect(e2eFuelPlanBlockRange()).toEqual({ from: 412, to: 416 })
     expect(e2eFuelPlanSpecIds()).toEqual([
       'training-mega-flow',
       'workout-plan-history-flow',
@@ -30,6 +32,11 @@ describe('e2eFuelPlanCoverage', () => {
     ])
     const planHistory = E2E_FUEL_PLAN_SPECS.find((s) => s.id === 'workout-plan-history-flow')
     expect(isFuelPlanE2ECoverageComplete(planHistory?.covers ?? [])).toBe(true)
+    expect(isFuelPlanNutritionE2ECovered()).toBe(true)
+    expect(fuelPlanNutritionSpecIds()).toEqual([
+      'workout-plan-history-flow',
+      'workout-fuel-flow',
+    ])
     const fuelFlow = E2E_FUEL_PLAN_SPECS.find((s) => s.id === 'workout-fuel-flow')
     expect(isFuelPlanE2ECoverageComplete(fuelFlow?.covers ?? [])).toBe(true)
     const mega = E2E_FUEL_PLAN_SPECS.find((s) => s.id === 'training-mega-flow')

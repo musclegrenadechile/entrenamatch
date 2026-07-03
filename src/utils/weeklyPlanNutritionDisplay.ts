@@ -34,6 +34,10 @@ export function mergeWeeklyPlanNutritionNote(
   return `${trimmedBase} · ${trimmedSuffix}`
 }
 
+export function buildWeeklyPlanNutritionAriaLabel(text: string): string {
+  return `Nutrición EntrenaPlan: ${text}`
+}
+
 export function shouldShowWeeklyPlanNutritionNote(
   text: string | null,
   hasFuelProfile: boolean

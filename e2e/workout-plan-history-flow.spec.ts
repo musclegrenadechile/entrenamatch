@@ -60,4 +60,14 @@ test('E2E workout-plan-history-flow — guardar entreno y hint PR en EntrenaPlan
     window.__entrenamatchE2E!.getWeeklyPlanFuelWeekToneClass()
   )
   expect(fuelWeekTone).toBe('em-v2-plan__fuel-week-hint--surplus')
+
+  await expect(planCard.locator('.em-v2-plan__nutrition')).toBeVisible({ timeout: 10000 })
+  const nutrition = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanNutritionNote()
+  )
+  expect(nutrition).toMatch(/cena ligera|proteína magra/i)
+  const nutritionAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanNutritionAriaLabel()
+  )
+  expect(nutritionAria).toMatch(/Nutrición EntrenaPlan/i)
 })

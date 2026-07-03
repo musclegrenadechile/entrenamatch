@@ -12,16 +12,17 @@ import {
 } from './trainingMegaSuite'
 
 describe('trainingMegaSuite', () => {
-  it('mega-inventario 5 bloques oleadas 361–414', () => {
-    expect(countTrainingMegaBlocks()).toBe(5)
-    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 414 })
-    expect(countTrainingMegaOleadas()).toBe(54)
+  it('mega-inventario 6 bloques oleadas 361–416', () => {
+    expect(countTrainingMegaBlocks()).toBe(6)
+    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 416 })
+    expect(countTrainingMegaOleadas()).toBe(56)
     expect(TRAINING_MEGA_BLOCKS.map((b) => b.id)).toEqual([
       'polish-v1',
       'e2e',
       'polish-v2',
       'entrena-plan',
       'fuel-plan',
+      'polish-post-mega',
     ])
   })
 
@@ -36,7 +37,10 @@ describe('trainingMegaSuite', () => {
     expect(polishV2?.closedOleada).toBe(410)
     expect(polishV2?.range).toEqual({ from: 383, to: 409 })
     const fuelPlan = trainingMegaBlockById('fuel-plan')
-    expect(fuelPlan?.range).toEqual({ from: 411, to: 415 })
+    expect(fuelPlan?.range).toEqual({ from: 411, to: 416 })
+    const postMega = trainingMegaBlockById('polish-post-mega')
+    expect(postMega?.range).toEqual({ from: 415, to: 416 })
+    expect(postMega?.closedOleada).toBe(416)
     expect(fuelPlan?.closedOleada).toBe(414)
     expect(fuelPlan?.suiteModule).toBe('fuelPlanTrainingSuite')
   })
@@ -49,9 +53,14 @@ describe('trainingMegaSuite', () => {
   })
 
   it('cierre mega II 361–414 (oleada 415)', () => {
-    expect(isTrainingMegaBlockClosed()).toBe(true)
+    expect(isTrainingMegaBlockClosed(414)).toBe(true)
     expect(isTrainingMegaBlockClosed(413)).toBe(false)
-    expect(areAllTrainingMegaSubBlocksClosed(414)).toBe(true)
-    expect(isTrainingMegaFullyClosed(414)).toBe(true)
+    expect(areAllTrainingMegaSubBlocksClosed(414)).toBe(false)
+    expect(isTrainingMegaFullyClosed(414)).toBe(false)
+  })
+
+  it('cierre post-mega 415–416 (oleada 416)', () => {
+    expect(areAllTrainingMegaSubBlocksClosed(416)).toBe(true)
+    expect(isTrainingMegaFullyClosed(416)).toBe(true)
   })
 })

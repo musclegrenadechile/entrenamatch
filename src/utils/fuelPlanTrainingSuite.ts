@@ -75,6 +75,24 @@ export const FUEL_PLAN_TRAINING_UTILS: readonly FuelPlanTrainingUtilEntry[] = [
     oleada: 415,
     covers: ['fuel-hint', 'card'],
   },
+  {
+    id: 'nutrition-aria',
+    module: 'weeklyPlanNutritionDisplay',
+    oleada: 416,
+    covers: ['aria', 'card'],
+  },
+  {
+    id: 'nutrition-e2e-surplus',
+    module: 'e2eWeeklyPlanHistoryFlow',
+    oleada: 416,
+    covers: ['fuel-hint', 'aria'],
+  },
+  {
+    id: 'post-mega-suite',
+    module: 'trainingPolishPostMegaSuite',
+    oleada: 416,
+    covers: ['fuel-hint', 'aria', 'card'],
+  },
 ] as const
 
 export const FUEL_PLAN_TRAINING_CLOSED_OLEADA = 414
@@ -84,7 +102,7 @@ export function countFuelPlanTrainingUtils(): number {
 }
 
 export function fuelPlanTrainingBlockRange(): { from: number; to: number } {
-  return { from: 411, to: 415 }
+  return { from: 411, to: 416 }
 }
 
 export function isFuelPlanTrainingBlockClosed(

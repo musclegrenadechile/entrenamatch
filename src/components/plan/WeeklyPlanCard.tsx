@@ -28,6 +28,7 @@ import {
   WEEKLY_PLAN_FUEL_WEEK_CHIP_CLASS,
 } from '../../utils/weeklyPlanFuelWeekChipDisplay'
 import {
+  buildWeeklyPlanNutritionAriaLabel,
   buildWeeklyPlanNutritionFuelSuffix,
   mergeWeeklyPlanNutritionNote,
   shouldShowWeeklyPlanNutritionNote,
@@ -225,7 +226,13 @@ export function WeeklyPlanCard({
       </div>
 
       {showNutritionNote && nutritionText && (
-        <p className={WEEKLY_PLAN_NUTRITION_CLASS}>🍽 {nutritionText}</p>
+        <p
+          className={WEEKLY_PLAN_NUTRITION_CLASS}
+          role="status"
+          aria-label={buildWeeklyPlanNutritionAriaLabel(nutritionText)}
+        >
+          🍽 {nutritionText}
+        </p>
       )}
 
       {plan.energySummary.loggedDays > 0 && (

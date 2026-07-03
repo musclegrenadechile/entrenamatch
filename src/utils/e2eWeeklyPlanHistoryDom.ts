@@ -80,6 +80,12 @@ export function readWeeklyPlanNutritionNote(): string | null {
   return text?.replace(/^🍽\s*/, '') ?? null
 }
 
+export function readWeeklyPlanNutritionAriaLabel(): string | null {
+  const card = findEntrenaPlanCard()
+  const note = card?.querySelector(`.${WEEKLY_PLAN_NUTRITION_CLASS}`)
+  return note?.getAttribute('aria-label')?.trim() ?? null
+}
+
 export function isWeeklyPlanCardVisible(): boolean {
   return findEntrenaPlanCard() !== null
 }

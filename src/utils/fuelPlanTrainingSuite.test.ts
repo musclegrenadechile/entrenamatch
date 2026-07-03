@@ -7,9 +7,9 @@ import {
 } from './fuelPlanTrainingSuite'
 
 describe('fuelPlanTrainingSuite', () => {
-  it('inventario Fuel×plan oleadas 411–415', () => {
-    expect(countFuelPlanTrainingUtils()).toBe(11)
-    expect(fuelPlanTrainingBlockRange()).toEqual({ from: 411, to: 415 })
+  it('inventario Fuel×plan oleadas 411–416', () => {
+    expect(countFuelPlanTrainingUtils()).toBe(14)
+    expect(fuelPlanTrainingBlockRange()).toEqual({ from: 411, to: 416 })
     expect(isFuelPlanTrainingBlockClosed()).toBe(true)
     expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('weeklyPlanFuelWeekDisplay')
     expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('weeklyPlanFuelWeekToneDisplay')
@@ -17,5 +17,6 @@ describe('fuelPlanTrainingSuite', () => {
     expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('demoFuelWeekLogs')
     expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('e2eFuelPlanCoverage')
     expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('weeklyPlanNutritionDisplay')
+    expect(FUEL_PLAN_TRAINING_UTILS.map((e) => e.module)).toContain('trainingPolishPostMegaSuite')
   })
 })

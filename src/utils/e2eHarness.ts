@@ -59,6 +59,8 @@ export type EntrenamatchE2EApi = {
   getWeeklyPlanFuelWeekChip: () => string | null
   /** Nota nutricional Fuel×plan en card (oleada 415). */
   getWeeklyPlanNutritionNote: () => string | null
+  /** aria-label nota nutricional (oleada 416). */
+  getWeeklyPlanNutritionAriaLabel: () => string | null
   /** Sembra macros Fuel semanales demo para E2E (oleada 413). */
   seedDemoFuelWeekLogs: (scenario?: 'under-fueled' | 'surplus' | 'deficit') => void
   isWeeklyPlanCardVisible: () => boolean

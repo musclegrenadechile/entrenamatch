@@ -28,7 +28,7 @@ export const E2E_FUEL_PLAN_SPECS: readonly E2EFuelPlanSpecEntry[] = [
     file: 'e2e/workout-plan-history-flow.spec.ts',
     oleada: 413,
     scenario: 'surplus',
-    covers: ['fuel-hint', 'fuel-chip', 'fuel-aria', 'fuel-tone'],
+    covers: ['fuel-hint', 'fuel-chip', 'fuel-aria', 'fuel-tone', 'fuel-nutrition'],
   },
   {
     id: 'workout-fuel-flow',
@@ -50,7 +50,17 @@ export function countE2EFuelPlanSpecs(): number {
 }
 
 export function e2eFuelPlanBlockRange(): { from: number; to: number } {
-  return { from: 412, to: 414 }
+  return { from: 412, to: 416 }
+}
+
+export function fuelPlanNutritionSpecIds(): string[] {
+  return E2E_FUEL_PLAN_SPECS.filter((s) => s.covers.includes('fuel-nutrition')).map(
+    (s) => s.id
+  )
+}
+
+export function isFuelPlanNutritionE2ECovered(): boolean {
+  return fuelPlanNutritionSpecIds().length >= 2
 }
 
 export function e2eFuelPlanSpecIds(): string[] {

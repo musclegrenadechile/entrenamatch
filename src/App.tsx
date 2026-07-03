@@ -89,6 +89,7 @@ import {
   readWeeklyPlanFuelWeekHint,
   readWeeklyPlanFuelWeekToneClass,
   readWeeklyPlanNutritionNote,
+  readWeeklyPlanNutritionAriaLabel,
   readWeeklyPlanHistoryHint,
   readWeeklyPlanRotationChip,
   readWeeklyPlanRotationAriaLabel,
@@ -6032,6 +6033,7 @@ useEffect(() => {
       getWeeklyPlanFuelWeekToneClass: () => readWeeklyPlanFuelWeekToneClass(),
       getWeeklyPlanFuelWeekChip: () => readWeeklyPlanFuelWeekChip(),
       getWeeklyPlanNutritionNote: () => readWeeklyPlanNutritionNote(),
+      getWeeklyPlanNutritionAriaLabel: () => readWeeklyPlanNutritionAriaLabel(),
       isWeeklyPlanCardVisible: () => isWeeklyPlanCardVisible(),
     })
   }, [
