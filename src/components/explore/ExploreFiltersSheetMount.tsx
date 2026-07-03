@@ -46,7 +46,7 @@ export function ExploreFiltersSheetMount({
     <AnimatePresence>
       {open && (
         <div
-          className="absolute inset-0 z-[70] flex items-end bg-black/70 overscroll-none"
+          className="em-v2-filters-sheet__overlay absolute inset-0 z-[70] flex items-end overscroll-none"
           onClick={onClose}
         >
           <motion.div
@@ -55,27 +55,21 @@ export function ExploreFiltersSheetMount({
             exit={{ y: 80 }}
             transition={{ type: 'spring', bounce: 0.05 }}
             onClick={(e) => e.stopPropagation()}
-            className="w-full card rounded-t-3xl flex flex-col max-h-[min(92dvh,920px)] overflow-hidden"
+            className="em-v2-filters-sheet w-full flex flex-col max-h-[min(92dvh,920px)] overflow-hidden"
           >
-            <div className="shrink-0 px-6 pt-6 pb-3 border-b border-[#2F2F35]/60">
+            <div className="em-v2-filters-sheet__header shrink-0 px-6 pt-6 pb-3">
               <div className="flex justify-between items-center mb-3">
                 <div className="flex items-center gap-2">
-                  <div className="font-semibold text-2xl tracking-tight">Filtros</div>
+                  <div className="em-v2-filters-sheet__title">Filtros</div>
                   {activeCount > 0 && (
-                    <div className="text-xs bg-[#FF671F] text-black px-2 py-0.5 rounded-full font-bold">
-                      {activeCount} activos
-                    </div>
+                    <div className="em-v2-filters-sheet__badge">{activeCount} activos</div>
                   )}
                 </div>
-                <button
-                  type="button"
-                  onClick={onReset}
-                  className="text-[#FF671F] text-sm font-semibold active:opacity-70"
-                >
+                <button type="button" onClick={onReset} className="em-v2-filters-sheet__reset">
                   Limpiar todo
                 </button>
               </div>
-              <div className="mb-4 px-3 py-2 bg-[#1C1C20] rounded-2xl text-sm flex items-center justify-between border border-[#2F2F35]">
+              <div className="em-v2-filters-sheet__stat mb-4 flex items-center justify-between">
                 <span className="text-[#9CA3AF]">Disponibles ahora</span>
                 <span className="font-bold text-[#FF671F] text-lg tabular-nums">
                   {deckCount}
@@ -98,7 +92,7 @@ export function ExploreFiltersSheetMount({
                         key={t}
                         type="button"
                         onClick={() => onToggleTraining(t)}
-                        className="text-[10px] bg-[#FF671F]/15 text-[#FF671F] px-2.5 py-0.5 rounded-full active:bg-[#FF671F]/30 flex items-center gap-1"
+                        className="em-v2-chip-btn em-v2-chip-btn--brand em-v2-chip-btn--removable"
                       >
                         {t} <span className="text-xs">×</span>
                       </button>
@@ -108,7 +102,7 @@ export function ExploreFiltersSheetMount({
                         key={a}
                         type="button"
                         onClick={() => onToggleAvailability(a)}
-                        className="text-[10px] bg-[#FF671F]/15 text-[#FF671F] px-2.5 py-0.5 rounded-full active:bg-[#FF671F]/30 flex items-center gap-1"
+                        className="em-v2-chip-btn em-v2-chip-btn--brand em-v2-chip-btn--removable"
                       >
                         {a} <span className="text-xs">×</span>
                       </button>
@@ -117,7 +111,7 @@ export function ExploreFiltersSheetMount({
                       <button
                         type="button"
                         onClick={() => onSetFilters((f) => ({ ...f, gender: 'todos' }))}
-                        className="text-[10px] bg-[#FF671F]/15 text-[#FF671F] px-2.5 py-0.5 rounded-full active:bg-[#FF671F]/30 flex items-center gap-1"
+                        className="em-v2-chip-btn em-v2-chip-btn--brand em-v2-chip-btn--removable"
                       >
                         {filters.gender === 'hombre' ? 'Hombres' : 'Mujeres'}{' '}
                         <span className="text-xs">×</span>
@@ -127,7 +121,7 @@ export function ExploreFiltersSheetMount({
                       <button
                         type="button"
                         onClick={() => onSetFilters((f) => ({ ...f, onlyAvailableToday: false }))}
-                        className="text-[10px] bg-[#22c55e]/15 text-[#22c55e] px-2.5 py-0.5 rounded-full active:bg-[#22c55e]/30 flex items-center gap-1"
+                        className="em-v2-chip-btn em-v2-chip-btn--live em-v2-chip-btn--removable"
                       >
                         Disponibles hoy <span className="text-xs">×</span>
                       </button>
@@ -136,7 +130,7 @@ export function ExploreFiltersSheetMount({
                       <button
                         type="button"
                         onClick={() => onSetFilters((f) => ({ ...f, onlyLiveTraining: false }))}
-                        className="text-[10px] bg-[#22c55e]/15 text-[#22c55e] px-2.5 py-0.5 rounded-full active:bg-[#22c55e]/30 flex items-center gap-1"
+                        className="em-v2-chip-btn em-v2-chip-btn--live em-v2-chip-btn--removable"
                       >
                         Entrenando ahora <span className="text-xs">×</span>
                       </button>
@@ -227,11 +221,7 @@ export function ExploreFiltersSheetMount({
                   </p>
                 )}
                 {!userLocation && (
-                  <button
-                    type="button"
-                    onClick={onRequestLocation}
-                    className="mt-3 text-xs w-full py-2.5 rounded-2xl border border-[#22c55e] text-[#22c55e] active:bg-[#22c55e] active:text-black font-semibold"
-                  >
+                  <button type="button" onClick={onRequestLocation} className="em-v2-filters-sheet__gps-btn">
                     📍 Usar ubicación real del teléfono (GPS)
                   </button>
                 )}
@@ -243,7 +233,7 @@ export function ExploreFiltersSheetMount({
               </div>
 
               <div className="mb-7">
-                <label className="flex items-center gap-3 p-3 bg-[#1C1C20] rounded-2xl border border-[#2F2F35] cursor-pointer active:bg-[#25252A]">
+                <label className="em-v2-filters-sheet__option">
                   <input
                     type="checkbox"
                     checked={filters.onlyAvailableToday}
@@ -259,7 +249,7 @@ export function ExploreFiltersSheetMount({
                     </div>
                   </div>
                 </label>
-                <label className="flex items-center gap-3 p-3 bg-[#1C1C20] rounded-2xl border border-[#22c55e]/50 cursor-pointer active:bg-[#25252A] mt-2">
+                <label className="em-v2-filters-sheet__option em-v2-filters-sheet__option--live mt-2">
                   <input
                     type="checkbox"
                     checked={filters.onlyLiveTraining}
@@ -278,7 +268,7 @@ export function ExploreFiltersSheetMount({
                     </div>
                   </div>
                 </label>
-                <label className="flex items-center gap-3 p-3 bg-[#1C1C20] rounded-2xl border border-[#FF671F]/40 cursor-pointer active:bg-[#25252A] mt-2">
+                <label className="em-v2-filters-sheet__option em-v2-filters-sheet__option--brand mt-2">
                   <input
                     type="checkbox"
                     checked={filters.onlyRealProfiles}
@@ -298,13 +288,13 @@ export function ExploreFiltersSheetMount({
 
               <div className="mb-6">
                 <div className="text-sm font-medium mb-2">Me interesa</div>
-                <div className="flex rounded-2xl overflow-hidden border border-[#2F2F35]">
+                <div className="em-v2-filters-sheet__gender">
                   {(['todos', 'hombre', 'mujer'] as const).map((g) => (
                     <button
                       key={g}
                       type="button"
                       onClick={() => onSetFilters((f) => ({ ...f, gender: g }))}
-                      className={`flex-1 py-2.5 text-sm font-medium transition ${filters.gender === g ? 'bg-[#FF671F] text-black' : 'bg-[#1C1C20] active:bg-[#25252A] text-white'}`}
+                      className={`em-v2-filters-sheet__gender-btn ${filters.gender === g ? 'em-v2-filters-sheet__gender-btn--active' : ''}`}
                     >
                       {g === 'todos' ? 'Todos' : g === 'hombre' ? 'Hombres' : 'Mujeres'}
                     </button>
@@ -317,7 +307,7 @@ export function ExploreFiltersSheetMount({
                   <div className="text-sm font-medium flex items-center gap-2">
                     Tipo de entrenamiento
                     {filters.trainingTypes.length > 0 && (
-                      <span className="text-[10px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded-full font-medium">
+                      <span className="em-v2-filters-sheet__badge">
                         {filters.trainingTypes.length} seleccionados
                       </span>
                     )}
@@ -331,7 +321,7 @@ export function ExploreFiltersSheetMount({
                         key={t}
                         type="button"
                         onClick={() => onToggleTraining(t)}
-                        className={`px-3 py-1 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#FF671F] text-black border-[#FF671F] font-medium' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3a3f48] text-white/90'}`}
+                        className={`em-v2-chip-btn em-v2-chip-btn--sm ${selected ? 'em-v2-chip-btn--selected' : ''}`}
                       >
                         {t}
                       </button>
@@ -345,7 +335,7 @@ export function ExploreFiltersSheetMount({
                   <div className="text-sm font-medium flex items-center gap-2">
                     Disponibilidad
                     {filters.availability.length > 0 && (
-                      <span className="text-[10px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded-full font-medium">
+                      <span className="em-v2-filters-sheet__badge">
                         {filters.availability.length} seleccionadas
                       </span>
                     )}
@@ -359,7 +349,7 @@ export function ExploreFiltersSheetMount({
                         key={a}
                         type="button"
                         onClick={() => onToggleAvailability(a)}
-                        className={`px-3 py-1 rounded-2xl text-xs border transition-all active:scale-[0.985] ${selected ? 'bg-[#FF671F] text-black border-[#FF671F] font-medium' : 'border-[#2F2F35] bg-[#1C1C20] hover:border-[#3a3f48] text-white/90'}`}
+                        className={`em-v2-chip-btn em-v2-chip-btn--sm ${selected ? 'em-v2-chip-btn--selected' : ''}`}
                       >
                         {a}
                       </button>
@@ -369,11 +359,11 @@ export function ExploreFiltersSheetMount({
               </div>
             </div>
 
-            <div className="shrink-0 px-6 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))] border-t border-[#2F2F35]/60 bg-[#141418]">
+            <div className="em-v2-filters-sheet__footer shrink-0 px-6 pt-3 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
               <button
                 type="button"
                 onClick={onClose}
-                className="btn-primary w-full shadow-lg shadow-[#FF671F]/20 flex items-center justify-center gap-2 text-base"
+                className="em-v2-hero-card__cta w-full flex items-center justify-center gap-2 text-base"
               >
                 Ver {deckCount} disponibles <span className="text-lg leading-none">→</span>
               </button>

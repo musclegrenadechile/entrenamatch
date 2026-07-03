@@ -137,9 +137,9 @@ export function FullProfileSheet({
     .join(' · ')
 
   return (
-    <div className="absolute inset-0 z-[90] bg-[#0D0D10] flex flex-col" onClick={onClose}>
+    <div className="em-v2-full-profile absolute inset-0 z-[90] flex flex-col" onClick={onClose}>
       <div
-        className="p-4 flex items-center justify-between border-b border-[#2F2F35] shrink-0"
+        className="em-v2-full-profile__header p-4 flex items-center justify-between shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         <button type="button" onClick={onClose} aria-label="Volver">
@@ -398,7 +398,7 @@ export function FullProfileSheet({
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0 }}
-                    className="card card-glass p-3 mb-2 border-[#2F2F35]/80 hover:border-[#FF671F]/30"
+                    className="em-v2-full-profile__post"
                   >
                     {post.postType === 'workout' && post.workoutPreview ? (
                       <WorkoutPostCard
@@ -508,7 +508,7 @@ export function FullProfileSheet({
                     key={sq.id}
                     type="button"
                     onClick={() => onOpenSquad(sq.id)}
-                    className="chip cursor-pointer hover:bg-[#FF671F] hover:text-black"
+                    className="em-v2-chip-btn em-v2-chip-btn--brand em-v2-chip-btn--sm cursor-pointer"
                   >
                     {sq.name}
                   </button>
@@ -533,35 +533,33 @@ export function FullProfileSheet({
           </div>
         </div>
       </div>
-      <div className="p-4 border-t border-[#2F2F35] flex gap-3" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="em-v2-full-profile__footer em-v2-full-profile__footer--actions p-4"
+        onClick={(e) => e.stopPropagation()}
+      >
         {isMatch ? (
-          <button type="button" onClick={onOpenChat} className="flex-1 btn-primary">
+          <button type="button" onClick={onOpenChat} className="em-v2-hero-card__cta flex-1">
             Abrir chat con {(profile.name || 'Usuario').split(' ')[0]}
           </button>
         ) : (
           <>
-            <button type="button" onClick={onSwipeLeft} className="flex-1 btn-secondary">
+            <button type="button" onClick={onSwipeLeft} className="em-v2-cta-secondary">
               Pasar
             </button>
-            <button type="button" onClick={onSwipeRight} className="flex-1 btn-primary">
+            <button type="button" onClick={onSwipeRight} className="em-v2-hero-card__cta flex-1">
               Me interesa
             </button>
           </>
         )}
       </div>
-      <div className="p-4 border-t border-[#2F2F35] flex gap-3 text-sm" onClick={(e) => e.stopPropagation()}>
-        <button
-          type="button"
-          onClick={onReport}
-          className="flex-1 py-2 text-red-400 border border-red-900 rounded-2xl hover:bg-red-950"
-        >
+      <div
+        className="em-v2-full-profile__footer p-4 flex gap-3 text-sm"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button type="button" onClick={onReport} className="em-v2-full-profile__danger-btn">
           Reportar
         </button>
-        <button
-          type="button"
-          onClick={onBlock}
-          className="flex-1 py-2 text-red-400 border border-red-900 rounded-2xl hover:bg-red-950"
-        >
+        <button type="button" onClick={onBlock} className="em-v2-full-profile__danger-btn">
           Bloquear
         </button>
       </div>

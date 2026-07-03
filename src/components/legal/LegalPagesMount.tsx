@@ -14,18 +14,18 @@ export function LegalPagesMount({ page, onClose }: LegalPagesMountProps) {
 
   return (
     <AnimatePresence>
-      <div className="absolute inset-0 z-[100] bg-[#0D0D10] flex flex-col">
-        <div className="h-14 px-4 flex items-center gap-3 border-b border-[#2F2F35] bg-[#0D0D10]">
-          <button type="button" onClick={onClose}>
+      <div className="em-v2-legal absolute inset-0 z-[100] flex flex-col">
+        <div className="em-v2-legal__header h-14 px-4 flex items-center gap-3">
+          <button type="button" onClick={onClose} aria-label="Volver">
             <ArrowLeft />
           </button>
-          <div className="font-semibold">
+          <div className="em-v2-legal__title">
             {page === 'terms' && 'Términos de Servicio'}
             {page === 'privacy' && 'Política de Privacidad'}
             {page === 'community' && 'Directrices de la Comunidad'}
           </div>
         </div>
-        <div className="flex-1 overflow-auto p-5 text-sm leading-relaxed text-[#cbd5e1] space-y-4">
+        <div className="em-v2-legal__body flex-1 overflow-auto p-5 text-sm space-y-4">
           {page === 'terms' && (
             <>
               <p>
@@ -125,8 +125,8 @@ export function LegalPagesMount({ page, onClose }: LegalPagesMountProps) {
             </>
           )}
         </div>
-        <div className="p-4 border-t border-[#2F2F35]">
-          <div className="text-[10px] text-[#9CA3AF] text-center mb-3">
+        <div className="em-v2-legal__footer p-4">
+          <div className="em-v2-legal__version">
             Versión{' '}
             {page === 'terms'
               ? LEGAL_VERSIONS.terms
@@ -135,7 +135,7 @@ export function LegalPagesMount({ page, onClose }: LegalPagesMountProps) {
                 : LEGAL_VERSIONS.community}{' '}
             • Última actualización: {LEGAL_VERSIONS.lastUpdated}
           </div>
-          <button type="button" onClick={onClose} className="btn-primary w-full">
+          <button type="button" onClick={onClose} className="em-v2-hero-card__cta w-full">
             Cerrar
           </button>
         </div>
