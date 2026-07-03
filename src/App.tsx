@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense, Comp
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Heart, MessageCircle, User, MapPin, Dumbbell, 
-  Edit2, RefreshCw, ArrowLeft, Send, Star, Plus, Users, Bell, Download,
+  Edit2, RefreshCw, Send, Star, Plus, Users, Bell, Download,
   Clock, Camera, Activity, Zap, Mic, Square, Play, Pause, X, RotateCcw, Sparkles
 } from 'lucide-react'
 import { 
@@ -33,7 +33,7 @@ import type {
 } from './types'
 import type { FuelProfile, FuelLogEntry, FuelDayTotals } from './types'
 import { 
-  TRAINING_OPTIONS, AVAILABILITY, LEGAL_VERSIONS, AUTO_MATCH_IDS, APP_VERSION 
+  TRAINING_OPTIONS, AVAILABILITY, AUTO_MATCH_IDS, APP_VERSION
 } from './constants'
 import { BRAND_COPY } from './constants/brandCopy'
 
@@ -10751,9 +10751,9 @@ useEffect(() => {
       {/* CREATE SQUAD MODAL */}
       <AnimatePresence>
         {showCreateSquad && (
-          <div className="absolute inset-0 z-[95] flex items-end bg-black/70" onClick={() => setShowCreateSquad(false)}>
-            <div onClick={e => e.stopPropagation()} className="w-full card rounded-t-3xl p-6 pb-8">
-              <div className="font-semibold text-xl mb-1">Crear un Squad</div>
+          <div className="em-v2-form-sheet__overlay absolute inset-0 z-[95] flex items-end" onClick={() => setShowCreateSquad(false)}>
+            <div onClick={e => e.stopPropagation()} className="em-v2-form-sheet w-full p-6 pb-8">
+              <div className="em-v2-form-sheet__title mb-1">Crear un Squad</div>
               <form onSubmit={async (e) => {
                 e.preventDefault()
                 const form = e.currentTarget
@@ -10787,8 +10787,8 @@ useEffect(() => {
                 <input name="name" placeholder="Nombre del Squad (ej: Beasts de ViÃ±a)" required className="form-input w-full mb-3" defaultValue={squadNameDraft} key={squadNameDraft} />
                 <input name="focus" placeholder="Enfoque (Pesas, Running, Calistenia...)" required className="form-input w-full mb-4" />
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => setShowCreateSquad(false)} className="flex-1 py-3 rounded-2xl border border-[#2F2F35] active:bg-[#25252A]">Cancelar</button>
-                  <button type="submit" className="flex-1 btn-primary">Crear Squad</button>
+                  <button type="button" onClick={() => setShowCreateSquad(false)} className="em-v2-cta-secondary flex-1">Cancelar</button>
+                  <button type="submit" className="em-v2-hero-card__cta flex-1">Crear Squad</button>
                 </div>
               </form>
             </div>
@@ -10857,7 +10857,7 @@ useEffect(() => {
 
                       {isMember && (
                         <>
-                          <div className="mb-4 p-3 rounded-2xl bg-white/[0.03] border border-white/10">
+                          <div className="em-v2-card mb-4">
                             <div className="text-sm font-bold text-white mb-2">Rutina semanal del squad</div>
                             <p className="text-[10px] text-[#9CA3AF] mb-3 leading-snug">
                               Plan compartido para entrenar juntos â€” visible para todos los miembros.
@@ -11018,9 +11018,9 @@ useEffect(() => {
       {/* CREATE SESSION MODAL - Unique feature */}
       <AnimatePresence>
         {showCreateSession && (
-          <div className="absolute inset-0 z-[95] flex items-end bg-black/70" onClick={closeCreateSession}>
-            <div onClick={e => e.stopPropagation()} className="w-full card rounded-t-3xl p-6 pb-8">
-              <div className="font-semibold text-xl mb-4">Crear sesiÃ³n de entrenamiento</div>
+          <div className="em-v2-form-sheet__overlay absolute inset-0 z-[95] flex items-end" onClick={closeCreateSession}>
+            <div onClick={e => e.stopPropagation()} className="em-v2-form-sheet w-full p-6 pb-8">
+              <div className="em-v2-form-sheet__title mb-4">Crear sesiÃ³n de entrenamiento</div>
               
               <form onSubmit={(e) => {
                 e.preventDefault()
@@ -11130,8 +11130,8 @@ useEffect(() => {
                   Al publicar aceptas nuestros <a href="/entrenamatch/terms.html" target="_blank" className="underline">TÃ©rminos</a>.
                 </div>
                 <div className="flex gap-3">
-                  <button type="button" onClick={closeCreateSession} className="flex-1 py-3 rounded-2xl border border-[#2F2F35] active:bg-[#25252A]">Cancelar</button>
-                  <button type="submit" className="flex-1 btn-primary">Publicar sesiÃ³n</button>
+                  <button type="button" onClick={closeCreateSession} className="em-v2-cta-secondary flex-1">Cancelar</button>
+                  <button type="submit" className="em-v2-hero-card__cta flex-1">Publicar sesiÃ³n</button>
                 </div>
               </form>
             </div>
@@ -11139,69 +11139,24 @@ useEffect(() => {
         )}
       </AnimatePresence>
 
-      {/* REVIEW MODAL - "Entrenamos Juntos" with rating */}
-      <AnimatePresence>
-        {showReviewModalFor && (
-          <div className="absolute inset-0 z-[110] flex items-center justify-center bg-black/80 p-6" onClick={() => setShowReviewModalFor(null)}>
-            <div onClick={e => e.stopPropagation()} className="card w-full max-w-[340px] rounded-3xl p-6">
-              <div className="text-center mb-4">
-                <div className="text-2xl font-semibold">Â¿CÃ³mo fue entrenar con {SEED_PROFILES.find(p => p.id === showReviewModalFor)?.name}?</div>
-                <div className="text-sm text-[#9CA3AF] mt-1">Tu reseÃ±a ayuda a otros a confiar</div>
-              </div>
-
-              {/* Stars */}
-              <div className="flex justify-center gap-2 mb-4">
-                {[1,2,3,4,5].map(star => (
-                  <button key={star} onClick={() => setReviewRating(star)} className="text-4xl transition">
-                    {star <= reviewRating ? 'â˜…' : 'â˜†'}
-                  </button>
-                ))}
-              </div>
-
-              <textarea 
-                value={reviewComment}
-                onChange={e => setReviewComment(e.target.value)}
-                placeholder="Comentario opcional (quÃ© tal fue el entrenamiento...)"
-                className="form-input w-full h-24 resize-none mb-4"
-              />
-
-              {/* Photo upload for the session - Unique feature */}
-              <div className="mb-4">
-                <label className="text-xs text-[#9CA3AF] mb-1 block">Foto de la sesiÃ³n (opcional)</label>
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  onChange={(e) => {
-                    const file = e.target.files?.[0]
-                    if (file) {
-                      const reader = new FileReader()
-                      reader.onload = () => setReviewPhoto(reader.result as string)
-                      reader.readAsDataURL(file)
-                    }
-                  }}
-                  className="text-sm"
-                />
-                {reviewPhoto && (
-                  <div className="mt-2 relative w-24 h-24">
-                    <img src={reviewPhoto} className="w-24 h-24 object-cover rounded-xl border border-[#2F2F35]" alt="Preview" />
-                    <button 
-                      onClick={() => setReviewPhoto(null)}
-                      className="absolute -top-1 -right-1 bg-black text-white text-xs w-5 h-5 rounded-full flex items-center justify-center"
-                    >
-                      Ã—
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex gap-3">
-                <button onClick={() => { setShowReviewModalFor(null); setReviewPhoto(null); setPendingReviewBookingId(null) }} className="flex-1 btn-secondary">Cancelar</button>
-                <button onClick={() => submitTrainingReview(showReviewModalFor)} className="flex-1 btn-primary">Enviar reseÃ±a</button>
-              </div>
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
+      <TrainingReviewModalMount
+        open={!!showReviewModalFor}
+        partnerName={SEED_PROFILES.find((p) => p.id === showReviewModalFor)?.name || 'tu partner'}
+        rating={reviewRating}
+        comment={reviewComment}
+        photo={reviewPhoto}
+        onRatingChange={setReviewRating}
+        onCommentChange={setReviewComment}
+        onPhotoChange={setReviewPhoto}
+        onClose={() => {
+          setShowReviewModalFor(null)
+          setReviewPhoto(null)
+          setPendingReviewBookingId(null)
+        }}
+        onSubmit={() => {
+          if (showReviewModalFor) void submitTrainingReview(showReviewModalFor)
+        }}
+      />
 
       <MatchCelebrationMount
         profile={showMatchModal}
@@ -11286,354 +11241,63 @@ useEffect(() => {
         onCancelComment={cancelComment}
       />
 
-      {/* LEGAL PAGES */}
-      <AnimatePresence>
-        {showLegal && (
-          <div className="absolute inset-0 z-[100] bg-[#0D0D10] flex flex-col">
-            <div className="h-14 px-4 flex items-center gap-3 border-b border-[#2F2F35] bg-[#0D0D10]">
-              <button onClick={() => setShowLegal(null)}><ArrowLeft /></button>
-              <div className="font-semibold">
-                {showLegal === 'terms' && 'TÃ©rminos de Servicio'}
-                {showLegal === 'privacy' && 'PolÃ­tica de Privacidad'}
-                {showLegal === 'community' && 'Directrices de la Comunidad'}
-              </div>
-            </div>
-            <div className="flex-1 overflow-auto p-5 text-sm leading-relaxed text-[#cbd5e1] space-y-4">
-              {showLegal === 'terms' && (
-                <>
-                  <p><strong>EntrenaMatch</strong> es una plataforma para conectar personas interesadas en realizar actividades deportivas y de entrenamiento de forma presencial.</p>
-                  <p>Al usar la aplicaciÃ³n aceptas que:</p>
-                  <ul className="list-disc pl-5 space-y-1">
-                    <li>Eres mayor de 18 aÃ±os.</li>
-                    <li>La app no es un servicio de citas romÃ¡nticas ni de naturaleza sexual.</li>
-                    <li>Los encuentros deben realizarse en lugares pÃºblicos y seguros.</li>
-                    <li>Eres responsable de tu propia seguridad y de verificar la identidad de las personas con quienes quedas.</li>
-                  </ul>
-                  <p>EntrenaMatch no se hace responsable de los encuentros presenciales ni de ningÃºn incidente que ocurra fuera de la plataforma.</p>
-                </>
-              )}
+      <LegalPagesMount page={showLegal} onClose={() => setShowLegal(null)} />
 
-              {showLegal === 'privacy' && (
-                <>
-                  <p>Recopilamos la informaciÃ³n que proporcionas al crear tu perfil (nombre, edad, fotos, preferencias de entrenamiento, ubicaciÃ³n aproximada).</p>
-                  <p>Tu ubicaciÃ³n se utiliza Ãºnicamente para calcular distancias con otros usuarios y mejorar los filtros. No la compartimos con terceros.</p>
-                  <p>Las fotos y datos de tu perfil son visibles para otros usuarios de la app una vez que creas tu cuenta.</p>
-                  <p>Puedes solicitar la eliminaciÃ³n de tus datos en cualquier momento contactÃ¡ndonos o usando la funciÃ³n de reset en tu perfil.</p>
-                  <p>Al aceptar esta polÃ­tica autorizas el tratamiento de tus datos con el fin exclusivo de facilitar conexiones para entrenamiento.</p>
-                </>
-              )}
+      <ReportModalMount
+        open={showReportModal}
+        targetId={reportTargetId}
+        reason={reportReason}
+        details={reportDetails}
+        context={reportContext}
+        onReasonChange={setReportReason}
+        onDetailsChange={setReportDetails}
+        onClose={() => setShowReportModal(false)}
+        onOpenCommunityRules={() => {
+          setShowReportModal(false)
+          setShowLegal('community')
+        }}
+        onSubmit={async () => {
+          if (reportTargetId) {
+            await reportUser(
+              reportTargetId,
+              reportReason || 'Otra violación de las reglas de comunidad',
+              reportDetails.trim() || undefined,
+              reportContext
+            )
+            setShowReportModal(false)
+            setReportTargetId(null)
+            setReportReason('')
+            setReportDetails('')
+          }
+        }}
+      />
 
-              {showLegal === 'community' && (
-                <>
-                  <p className="font-semibold text-[#FF671F]">Directrices de la Comunidad EntrenaMatch</p>
-                  <p>Esta es una plataforma seria para <strong>entrenamiento sincronizado de alto rendimiento</strong>. Nuestra comunidad se basa en respeto, seguridad y enfoque en resultados fÃ­sicos compartidos a travÃ©s de la "Red de EntrenaSync".</p>
-                  
-                  <p><strong>Reglas obligatorias:</strong></p>
-                  <ul className="list-disc pl-5 space-y-1.5 text-[13px]">
-                    <li><strong>Respeto y profesionalismo:</strong> SÃ© motivador y respetuoso. Cero acoso, insultos, discriminaciÃ³n, mensajes sexuales o romÃ¡nticos no solicitados.</li>
-                    <li><strong>Enfoque Comunidad:</strong> Solo para sync de entrenos (gym, running, etc.). Nada de citas, spam, ventas o contenido off-topic.</li>
-                    <li><strong>Seguridad:</strong> Encuentros SOLO en lugares pÃºblicos. Verifica perfiles, informa a terceros, nunca compartas datos bancarios o sensibles.</li>
-                    <li><strong>Perfiles autÃ©nticos:</strong> Fotos y datos reales. Prohibido perfiles falsos, bots, cuentas mÃºltiples o impersonaciÃ³n.</li>
-                    <li><strong>Contenido limpio:</strong> Posts, voces y fotos deben ser de entrenamiento. Nada explÃ­cito, violento, de odio o que viole leyes.</li>
-                    <li><strong>Reporta y bloquea:</strong> Usa las herramientas de reporte y bloqueo ante cualquier violaciÃ³n. Los reportes ayudan a mantener la comunidad segura.</li>
-                    <li><strong>Mayores de 18:</strong> Solo adultos. Cualquier sospecha de menores resultarÃ¡ en ban inmediato.</li>
-                  </ul>
-                  
-                  <p className="text-xs">Violaciones = bloqueo + posible suspensiÃ³n permanente. Tu seguridad y la del grupo es prioridad #1. Entrena duro, entrena juntos, entrena seguro.</p>
-                </>
-              )}
-            </div>
-            <div className="p-4 border-t border-[#2F2F35]">
-              <div className="text-[10px] text-[#9CA3AF] text-center mb-3">
-                VersiÃ³n {showLegal === 'terms' ? LEGAL_VERSIONS.terms : 
-                         showLegal === 'privacy' ? LEGAL_VERSIONS.privacy : 
-                         LEGAL_VERSIONS.community} â€¢ Ãšltima actualizaciÃ³n: {LEGAL_VERSIONS.lastUpdated}
-              </div>
-              <button onClick={() => setShowLegal(null)} className="btn-primary w-full">Cerrar</button>
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* IMPROVED REPORT MODAL - with clear reasons + link to community rules */}
-      {showReportModal && reportTargetId && (
-        <div className="absolute inset-0 z-[140] bg-black/80 flex items-end" onClick={() => setShowReportModal(false)}>
-          <div 
-            onClick={e => e.stopPropagation()} 
-            className="w-full bg-[#0D0D10] rounded-t-3xl p-5 max-h-[85vh] overflow-auto border-t border-[#2F2F35]"
-          >
-            <div className="flex justify-between items-center mb-4">
-              <div className="font-bold text-lg">Reportar usuario</div>
-              <button onClick={() => setShowReportModal(false)} className="text-[#9CA3AF]">âœ•</button>
-            </div>
-
-            <div className="text-sm text-[#9CA3AF] mb-3">Selecciona el motivo principal. Tu reporte es anÃ³nimo para el otro usuario.</div>
-
-            <div className="space-y-2 mb-4">
-              {['Comportamiento inadecuado / acoso', 'Perfil falso o suplantaciÃ³n', 'Spam o contenido irrelevante', 'Contenido inapropiado (fotos/voz)', 'Otra violaciÃ³n de las reglas de comunidad'].map(r => (
-                <button 
-                  key={r}
-                  onClick={() => setReportReason(r)}
-                  className={`w-full text-left p-3 rounded-xl border ${reportReason === r ? 'border-[#FF671F] bg-[#FF671F]/10' : 'border-[#2F2F35]'} active:bg-[#1C1C20]`}
-                >
-                  {r}
-                </button>
-              ))}
-            </div>
-
-            <textarea 
-              value={reportDetails} 
-              onChange={e => setReportDetails(e.target.value)}
-              placeholder="Detalles adicionales (opcional)..."
-              className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-xl p-3 text-sm mb-4 min-h-[80px]"
-            />
-
-            <div className="flex gap-2">
-              <button 
-                onClick={() => { setShowReportModal(false); setShowLegal('community') }}
-                className="flex-1 py-2 text-sm border border-[#2F2F35] rounded-2xl active:bg-[#1C1C20]"
-              >
-                Ver reglas de comunidad
-              </button>
-              <button 
-                onClick={async () => {
-                  if (reportTargetId) {
-                    await reportUser(
-                      reportTargetId,
-                      reportReason || 'Otra violaciÃ³n de las reglas de comunidad',
-                      reportDetails.trim() || undefined,
-                      reportContext
-                    )
-                    setShowReportModal(false)
-                    setReportTargetId(null)
-                    setReportReason('')
-                    setReportDetails('')
-                  }
-                }}
-                disabled={!reportReason}
-                className="flex-1 py-2 text-sm bg-[#FF671F] text-black font-bold rounded-2xl disabled:opacity-50 active:bg-[#E55A1A]"
-              >
-                Enviar reporte
-              </button>
-            </div>
-            <div className="text-[10px] text-center text-[#9CA3AF] mt-3">Los reportes ayudan a mantener la comunidad segura y enfocada en rendimiento.</div>
-          </div>
-        </div>
+      {currentUser && (
+        <VerificationFlowMount
+          open={showVerificationFlow}
+          currentUser={currentUser}
+          step={verificationStep}
+          selfie={verificationSelfie}
+          submitting={verificationSubmitting}
+          capacitorCamera={CapacitorCamera}
+          onClose={() => setShowVerificationFlow(false)}
+          onStepChange={setVerificationStep}
+          onSelfieChange={setVerificationSelfie}
+          onSubmit={submitVerification}
+        />
       )}
 
-      {/* VERIFICATION FLOW MODAL - Multi-step serious process */}
-      <AnimatePresence>
-        {showVerificationFlow && currentUser && (
-          <div className="absolute inset-0 z-[130] flex items-end bg-black/80" onClick={() => setShowVerificationFlow(false)}>
-            <div 
-              onClick={e => e.stopPropagation()} 
-              className="w-full bg-[#0D0D10] rounded-t-3xl p-6 max-h-[90vh] overflow-auto"
-            >
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <div className="font-bold text-2xl">VerificaciÃ³n biomÃ©trica</div>
-                  <div className="text-sm text-[#9CA3AF]">Paso {verificationStep} de 2</div>
-                </div>
-                <button onClick={() => setShowVerificationFlow(false)} className="text-2xl">Ã—</button>
-              </div>
-
-              {/* Step 1: Info confirmation */}
-              {verificationStep === 1 && (
-                <div>
-                  <div className="mb-6">
-                    <p className="text-[#cbd5e1] mb-4">
-                      Comprobamos que eres la misma persona de tu foto de perfil con una selfie en vivo por cÃ¡mara frontal.
-                      No pedimos documento de identidad.
-                    </p>
-                    <div className="bg-[#1C1C20] p-4 rounded-2xl text-sm space-y-2">
-                      <div>âœ“ Nombre: <span className="font-medium">{currentUser.name}</span></div>
-                      <div>âœ“ Edad: <span className="font-medium">{currentUser.age} aÃ±os</span></div>
-                      <div>âœ“ UbicaciÃ³n: <span className="font-medium">{currentUser.city}, {currentUser.country}</span></div>
-                    </div>
-                  </div>
-                  <button 
-                    onClick={() => setVerificationStep(2)} 
-                    className="btn-primary w-full"
-                  >
-                    Continuar
-                  </button>
-                </div>
-              )}
-
-              {/* Step 2: Live face capture */}
-              {verificationStep === 2 && (
-                <div>
-                  <div className="mb-4">
-                    <div className="font-semibold mb-2">Paso 2: Selfie en vivo</div>
-                    <p className="text-sm text-[#9CA3AF] mb-4">
-                      Usa la cÃ¡mara frontal. La IA compara tu rostro con tu foto de perfil principal.
-                    </p>
-                  </div>
-
-                  <VerificationFaceCapture
-                    value={verificationSelfie}
-                    onChange={setVerificationSelfie}
-                    capacitorCamera={CapacitorCamera}
-                    disabled={verificationSubmitting}
-                  />
-
-                  <div className="flex gap-3">
-                    <button onClick={() => setVerificationStep(1)} className="btn-secondary flex-1">AtrÃ¡s</button>
-                    <button
-                      onClick={submitVerification}
-                      disabled={!verificationSelfie || verificationSubmitting}
-                      className="btn-primary flex-1 disabled:opacity-50"
-                    >
-                      {verificationSubmitting ? 'Analizando rostroâ€¦' : 'Verificar rostro'}
-                    </button>
-                  </div>
-                  <p className="text-[10px] text-center text-[#9CA3AF] mt-3">
-                    Solo verificaciÃ³n facial â€” sin documento. La selfie se guarda de forma privada.
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* MODERATION PANEL - Simulated for launch readiness */}
-      <AnimatePresence>
-        {showModerationPanel && (
-          <div className="absolute inset-0 z-[140] bg-black/90 flex flex-col" onClick={() => setShowModerationPanel(false)}>
-            <div onClick={e => e.stopPropagation()} className="flex-1 bg-[#0D0D10] max-w-[420px] mx-auto w-full mt-[42px] rounded-t-3xl overflow-hidden border border-[#2F2F35] flex flex-col">
-              
-              {/* Header */}
-              <div className="p-4 border-b border-[#2F2F35] bg-[#1C1C20] flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-xl">Panel de ModeraciÃ³n</div>
-                  <div className="text-xs text-[#9CA3AF]">Simulado para preparaciÃ³n de lanzamiento</div>
-                </div>
-                <button onClick={() => setShowModerationPanel(false)} className="text-2xl">Ã—</button>
-              </div>
-
-              {/* Tabs */}
-              <div className="flex border-b border-[#2F2F35] bg-[#1C1C20]">
-                {[
-                  { key: 'reports', label: 'Reportes' },
-                  { key: 'verifications', label: 'Verificaciones' },
-                  { key: 'bans', label: 'Baneados' }
-                ].map(tab => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setModerationTab(tab.key as any)}
-                    className={`flex-1 py-3 text-sm font-medium ${moderationTab === tab.key ? 'text-[#FF671F] border-b-2 border-[#FF671F]' : 'text-[#9CA3AF]'}`}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex-1 overflow-auto p-4">
-                
-                {/* Reports Tab */}
-                {moderationTab === 'reports' && (
-                  <div>
-                    <div className="text-sm text-[#9CA3AF] mb-3">Reportes enviados por ti ({reports.length})</div>
-                    {reports.length === 0 ? (
-                      <div className="text-center text-[#9CA3AF] py-8 text-sm">AÃºn no has realizado reportes.</div>
-                    ) : (
-                      reports.slice().reverse().map(report => {
-                        const reported = SEED_PROFILES.find(p => p.id === report.reportedUserId)
-                        return (
-                          <div key={report.id} className="card p-3 mb-3 rounded-2xl text-sm">
-                            <div className="flex justify-between">
-                              <div>
-                                <div>Reportado: <span className="font-semibold">{reported?.name}</span></div>
-                                <div className="text-xs text-[#9CA3AF]">Motivo: {report.reason}</div>
-                                {report.details && <div className="text-xs mt-1">"{report.details}"</div>}
-                              </div>
-                              <div className="text-[10px] text-[#9CA3AF] text-right">
-                                {new Date(report.timestamp).toLocaleDateString()}<br />
-                                {report.status}
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })
-                    )}
-                  </div>
-                )}
-
-                {/* Verifications Tab */}
-                {moderationTab === 'verifications' && (
-                  <div>
-                    <div className="text-sm text-[#9CA3AF] mb-3">Verificaciones pendientes ({pendingVerifications.length})</div>
-                    {pendingVerifications.length === 0 ? (
-                      <div className="text-center text-[#9CA3AF] py-8 text-sm">No hay verificaciones pendientes.</div>
-                    ) : (
-                      pendingVerifications.map((v, index) => (
-                        <div key={index} className="card p-4 mb-4 rounded-2xl">
-                          <div className="font-semibold mb-1">{v.name}, {v.age} â€¢ {v.city}</div>
-                          <div className="flex gap-2 mb-3">
-                            <div>
-                              <div className="text-[10px] text-[#9CA3AF]">Documento</div>
-                              <img src={v.idPhoto} className="w-20 h-14 object-cover rounded border border-[#2F2F35]" />
-                            </div>
-                            <div>
-                              <div className="text-[10px] text-[#9CA3AF]">Selfie</div>
-                              <img src={v.selfiePhoto} className="w-14 h-14 object-cover rounded border border-[#2F2F35]" />
-                            </div>
-                          </div>
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => reviewVerification(v.userId, true)}
-                              className="flex-1 py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-medium"
-                            >
-                              Aprobar
-                            </button>
-                            <button 
-                              onClick={() => reviewVerification(v.userId, false)}
-                              className="flex-1 py-2 bg-red-500 text-white rounded-2xl text-sm font-medium"
-                            >
-                              Rechazar
-                            </button>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
-
-                {/* Bans Tab */}
-                {moderationTab === 'bans' && (
-                  <div>
-                    <div className="text-sm text-[#9CA3AF] mb-3">Usuarios baneados ({blockedUsers.length})</div>
-                    {blockedUsers.length === 0 ? (
-                      <div className="text-center text-[#9CA3AF] py-8 text-sm">No hay usuarios baneados.</div>
-                    ) : (
-                      blockedUsers.map(userId => {
-                        const user = SEED_PROFILES.find(p => p.id === userId)
-                        return (
-                          <div key={userId} className="flex justify-between items-center card p-3 mb-2 rounded-2xl">
-                            <span>{user?.name || 'Usuario desconocido'}</span>
-                            <button 
-                              onClick={() => unblockUser(userId)}
-                              className="text-xs text-[#FF4F79]"
-                            >
-                              Desbanear
-                            </button>
-                          </div>
-                        )
-                      })
-                    )}
-                  </div>
-                )}
-
-              </div>
-
-              <div className="p-4 border-t border-[#2F2F35] text-[10px] text-[#9CA3AF] text-center">
-                Este panel es solo para demostraciÃ³n de preparaciÃ³n de lanzamiento.
-              </div>
-            </div>
-          </div>
-        )}
-      </AnimatePresence>
+      <ModerationPanelMount
+        open={showModerationPanel}
+        tab={moderationTab}
+        reports={reports}
+        pendingVerifications={pendingVerifications}
+        blockedUsers={blockedUsers}
+        onClose={() => setShowModerationPanel(false)}
+        onTabChange={setModerationTab}
+        onReviewVerification={reviewVerification}
+        onUnblockUser={unblockUser}
+      />
 
       {/* GROUP CHAT MODAL - Full featured for sessions */}
       <AnimatePresence>
@@ -12239,8 +11903,8 @@ useEffect(() => {
       )}
 
       {pendingSyncRating && (
-        <div className="fixed inset-0 z-[110] bg-black/80 flex items-center justify-center p-4" onClick={() => setPendingSyncRating(null)}>
-          <div className="bg-[#1C1C20] rounded-3xl p-6 max-w-sm w-full text-center border border-[#22c55e]/30" onClick={e => e.stopPropagation()}>
+        <div className="em-v2-sync-memory__overlay fixed inset-0 z-[110] flex items-center justify-center p-4" onClick={() => setPendingSyncRating(null)}>
+          <div className="em-v2-sync-memory__card em-v2-sync-memory__card--live max-w-sm w-full text-center" onClick={e => e.stopPropagation()}>
             <div className="text-4xl mb-2">HANDSHAKE</div>
             <div className="font-bold text-xl mb-1">How was the EntrenaSync with {pendingSyncRating.partnerName}?</div>
             <div className="text-sm text-[#9CA3AF] mb-4">{pendingSyncRating.minutes} minutes together - Your feedback helps matching</div>
@@ -12257,8 +11921,8 @@ useEffect(() => {
       {/* NEVER-SEEN: Replay modal for a finished EntrenaSync session.
           Plays back the shared ritual as a beautiful memory. This persistence of "we trained together" is pure magic and 100% unique. */}
       {replaySession && (
-        <div className="fixed inset-0 z-[120] bg-black/85 flex items-center justify-center p-4" onClick={() => setReplaySession(null)}>
-          <div className="bg-[#1C1C20] rounded-3xl p-5 max-w-sm w-full border border-[#22c55e]/30" onClick={e=>e.stopPropagation()}>
+        <div className="em-v2-sync-memory__overlay fixed inset-0 z-[120] flex items-center justify-center p-4" onClick={() => setReplaySession(null)}>
+          <div className="em-v2-sync-memory__card em-v2-sync-memory__card--live max-w-sm w-full" onClick={e=>e.stopPropagation()}>
             <div className="text-center mb-3">
               <div className="text-[#22c55e] text-xs tracking-[2px]">{SYNC_REPLAY_COPY.modalEyebrow}</div>
               <div className="font-bold text-xl">{SYNC_REPLAY_COPY.modalTitle(replaySession.partnerName)}</div>
@@ -12271,7 +11935,7 @@ useEffect(() => {
               </div>
             </div>
 
-            <div className="bg-black/40 rounded-2xl p-3 mb-3 min-h-[132px] relative overflow-hidden">
+            <div className="em-v2-sync-memory__timeline mb-3 min-h-[132px] relative overflow-hidden">
               <p className="text-[9px] text-[#9CA3AF] mb-2 text-center">Lo que hicieron juntos en la sesiÃ³n</p>
               <AnimatePresence>
                 {(replaySession.actions || []).map((a: any, idx: number) => (
@@ -12295,10 +11959,10 @@ useEffect(() => {
             </div>
 
             <div className="flex gap-2">
-              <button onClick={() => { setReplaySession(null); if (replaySession.partnerName) { const p = realProfiles.find(pp => pp.name?.includes(replaySession.partnerName.split(' ')[0])); if (p) tryAutoStartSync(p.id) } }} className="flex-1 py-2.5 rounded-2xl bg-[#22c55e] text-black font-semibold text-sm active:bg-[#16a34a]">
+              <button onClick={() => { setReplaySession(null); if (replaySession.partnerName) { const p = realProfiles.find(pp => pp.name?.includes(replaySession.partnerName.split(' ')[0])); if (p) tryAutoStartSync(p.id) } }} className="em-v2-sync-memory__cta em-v2-sync-memory__cta--live flex-1">
                 ðŸ”„ {SYNC_REPLAY_COPY.resync(replaySession.partnerName?.split(' ')[0] || 'tu partner')}
               </button>
-              <button onClick={() => setReplaySession(null)} className="flex-1 py-2.5 rounded-2xl border border-white/15 text-sm">Cerrar</button>
+              <button onClick={() => setReplaySession(null)} className="em-v2-cta-secondary flex-1">Cerrar</button>
             </div>
             <div className="text-center text-[9px] text-[#9CA3AF] mt-2">{SYNC_REPLAY_COPY.modalFooter}</div>
           </div>
@@ -12309,8 +11973,8 @@ useEffect(() => {
           Anyone who sees the wave on the map (or receives the notification) can witness what actually happened in the Arena.
           This turns private legendary syncs into community-shared cultural moments. Never-seen-before social layer. */}
       {witnessData && (
-        <div className="fixed inset-0 z-[130] bg-black/90 flex items-center justify-center p-4" onClick={() => setWitnessData(null)}>
-          <div className="bg-[#1C1C20] rounded-3xl p-5 max-w-sm w-full border border-[#FF671F]/40" onClick={e=>e.stopPropagation()}>
+        <div className="em-v2-sync-memory__overlay fixed inset-0 z-[130] flex items-center justify-center p-4" onClick={() => setWitnessData(null)}>
+          <div className="em-v2-sync-memory__card em-v2-sync-memory__card--witness max-w-sm w-full" onClick={e=>e.stopPropagation()}>
             <div className="text-center mb-4">
               <div className="text-[#FF671F] text-xs tracking-[2.5px] font-bold">{SYNC_REPLAY_COPY.witnessEyebrow}</div>
               <div className="font-black text-2xl mt-1">{SYNC_REPLAY_COPY.modalTitle(witnessData.partnerName)}</div>
@@ -12320,7 +11984,7 @@ useEffect(() => {
               <div className="text-[10px] text-[#FF671F]/80 mt-1">{SYNC_REPLAY_COPY.witnessSubtitle}</div>
             </div>
 
-            <div className="bg-black/50 rounded-2xl p-3 mb-4 border border-[#FF671F]/20">
+            <div className="em-v2-sync-memory__timeline mb-4 border border-[#FF671F]/20">
               {(witnessData.actions || []).slice(0,5).map((a: any, idx: number) => (
                 <div key={idx} className="flex items-center gap-2 py-1 text-sm border-b border-white/10 last:border-none">
                   <span className="text-xl">{a.emoji}</span>
@@ -12357,7 +12021,7 @@ useEffect(() => {
                   setWitnessData(null); 
                   toast('Activa LIVE o invita a alguien a un EntrenaSync desde el mapa');
                 }} 
-                className="flex-1 py-2.5 rounded-2xl bg-[#FF671F] text-black font-semibold text-sm active:bg-[#e55a1a]"
+                className="em-v2-sync-memory__cta em-v2-sync-memory__cta--brand flex-1"
               >
                 ðŸ”¥ {SYNC_REPLAY_COPY.witnessCreate}
               </button>
@@ -12379,11 +12043,11 @@ useEffect(() => {
                     setWitnessData(null)
                   })
                 }} 
-                className="flex-1 py-2.5 rounded-2xl border border-[#FFD700] text-[#FFD700] font-semibold text-sm active:bg-[#FFD700]/10"
+                className="em-v2-sync-memory__cta em-v2-sync-memory__cta--gold flex-1"
               >
                 ðŸ“Œ {SYNC_REPLAY_COPY.witnessSave}
               </button>
-              <button onClick={() => setWitnessData(null)} className="flex-1 py-2.5 rounded-2xl border border-white/20 text-sm">Cerrar</button>
+              <button onClick={() => setWitnessData(null)} className="em-v2-cta-secondary flex-1">Cerrar</button>
             </div>
             <div className="text-center text-[8px] text-[#9CA3AF]/60 mt-2">{SYNC_REPLAY_COPY.witnessFooter}</div>
           </div>

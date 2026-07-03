@@ -36,13 +36,10 @@ export function ReportModalMount({
   if (!open || !targetId) return null
 
   return (
-    <div className="absolute inset-0 z-[140] bg-black/80 flex items-end" onClick={onClose}>
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="w-full bg-[#0D0D10] rounded-t-3xl p-5 max-h-[85vh] overflow-auto border-t border-[#2F2F35]"
-      >
+    <div className="em-v2-report__overlay absolute inset-0 z-[140] flex items-end" onClick={onClose}>
+      <div onClick={(e) => e.stopPropagation()} className="em-v2-report__sheet w-full p-5 max-h-[85vh] overflow-auto">
         <div className="flex justify-between items-center mb-4">
-          <div className="font-bold text-lg">Reportar usuario</div>
+          <div className="em-v2-report__title">Reportar usuario</div>
           <button type="button" onClick={onClose} className="text-[#9CA3AF]">
             ✕
           </button>
@@ -58,7 +55,7 @@ export function ReportModalMount({
               key={r}
               type="button"
               onClick={() => onReasonChange(r)}
-              className={`w-full text-left p-3 rounded-xl border ${reason === r ? 'border-[#FF671F] bg-[#FF671F]/10' : 'border-[#2F2F35]'} active:bg-[#1C1C20]`}
+              className={`em-v2-report__reason ${reason === r ? 'em-v2-report__reason--active' : ''}`}
             >
               {r}
             </button>
@@ -69,27 +66,23 @@ export function ReportModalMount({
           value={details}
           onChange={(e) => onDetailsChange(e.target.value)}
           placeholder="Detalles adicionales (opcional)..."
-          className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-xl p-3 text-sm mb-4 min-h-[80px]"
+          className="form-input w-full mb-4 min-h-[80px] resize-none"
         />
 
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={onOpenCommunityRules}
-            className="flex-1 py-2 text-sm border border-[#2F2F35] rounded-2xl active:bg-[#1C1C20]"
-          >
+          <button type="button" onClick={onOpenCommunityRules} className="em-v2-cta-secondary flex-1">
             Ver reglas de comunidad
           </button>
           <button
             type="button"
             onClick={() => void onSubmit()}
             disabled={!reason}
-            className="flex-1 py-2 text-sm bg-[#FF671F] text-black font-bold rounded-2xl disabled:opacity-50 active:bg-[#E55A1A]"
+            className="em-v2-hero-card__cta flex-1 disabled:opacity-50"
           >
             Enviar reporte
           </button>
         </div>
-        <div className="text-[10px] text-center text-[#9CA3AF] mt-3">
+        <div className="em-v2-report__footer">
           Los reportes ayudan a mantener la comunidad segura y enfocada en rendimiento.
         </div>
       </div>

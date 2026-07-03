@@ -1,10 +1,10 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.418
+**Versión cierre:** v0.1.419  
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
-## Changelog público (340 → 353)
+## Changelog público (340 → 360)
 
 | Oleada | Capa | Detalle |
 |--------|------|---------|
@@ -30,8 +30,9 @@
 | **357** | **Seguridad + muro** | Moderación, sheet reportar/bloquear, captura facial, composer muro v2 |
 | **358** | **Perfil + Explorar** | Ajustes/Red cards v2, mini-cards recomendaciones, LIVE pills, onboarding CTA |
 | **359** | **Secundarios** | GymSound, wearable Hoy, admin community cards v2 |
+| **360** | **Cierre post-piloto** | Mount components wired (legal, report, verify, moderación, reseña); form sheets + sync memory modals v2 |
 
-## Auditoría cohesión (353)
+## Auditoría cohesión (360)
 
 | Pantalla | Estado |
 |----------|--------|
@@ -41,20 +42,15 @@
 | Bottom nav + tabs | ✅ v2 |
 | Empty states + skeletons | ✅ `EmV2EmptyState` |
 | Onboarding tour + activation | ✅ v2 |
-| Sesiones + Squads | ✅ v2 cards `em-v2-card` (355) |
+| Sesiones + Squads | ✅ v2 cards + form sheets (360) |
 | Notificaciones + match celebration | ✅ v2 (353) |
 | Landing changelog | ✅ sección Novedades |
-| FullProfile + filtros + legal | ✅ v2 (354) |
+| FullProfile + filtros + legal | ✅ v2 Mount (354–360) |
+| Seguridad (report, verify, moderación) | ✅ v2 Mount (360) |
+| EntrenaSync replay + witness | ✅ v2 sync memory (360) |
 
-## Pendiente post-piloto (backlog)
+## Pendiente post-piloto
 
-- Ninguno crítico — piloto Visual 2.0 cohesión completa
+- Ninguno crítico — barrido Visual 2.0 cerrado
 
-## Evaluar cierre (2 min)
-
-1. **Landing** — sección «Novedades Visual 2.0» con link a la app
-2. **Sesiones / Squads** — headers v2 + empty states
-3. **Match** — modal celebración glass rosa
-4. **Notificaciones** — panel v2 + empty state
-
-*jul 2026 — piloto Visual 2.0 cerrado*
+*jul 2026 — piloto Visual 2.0 + post-piloto 356–360 completos*
