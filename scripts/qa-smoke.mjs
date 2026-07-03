@@ -531,6 +531,24 @@ if (!gymLogSessionPrTone.includes('sessionPrAriaMatchesLivePr')) {
 }
 if (!ok) process.exit(1)
 console.log('✓ e2eGymLogSessionPrCoverage aligned with gym-log v2 pivot (oleada 436)')
+const gymLogFabSessionPrCoverage = readFileSync(
+  join(root, 'src/utils/e2eGymLogFabSessionPrCoverage.ts'),
+  'utf8'
+)
+if (!gymLogFabSessionPrCoverage.includes('isGymLogFabSessionPrCoverageComplete')) {
+  console.error('e2eGymLogFabSessionPrCoverage missing fab-session-pr helper (oleada 437)')
+  ok = false
+}
+const gymLogFabSessionPrTone = readFileSync(
+  join(root, 'src/utils/gymLogFabSessionPrToneDisplay.ts'),
+  'utf8'
+)
+if (!gymLogFabSessionPrTone.includes('fabSessionPrAriaMatchesLivePr')) {
+  console.error('gymLogFabSessionPrToneDisplay missing aria helper (oleada 437)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eGymLogFabSessionPrCoverage aligned with gym-log v2 FAB pivot (oleada 437)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

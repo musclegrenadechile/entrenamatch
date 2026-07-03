@@ -82,10 +82,16 @@ import {
   readWorkoutHistorySparklineAriaLabels,
 } from './utils/e2eWorkoutHistoryDom'
 import {
+  readGymLogFabSessionChipAriaLabel,
+  readGymLogFabSessionChipText,
+  readGymLogFabSessionChipToneClass,
+} from './utils/e2eGymLogFabSessionDom'
+import {
   readGymLogSessionChipAriaLabel,
   readGymLogSessionChipText,
   readGymLogSessionChipToneClass,
 } from './utils/e2eGymLogSessionDom'
+import { fabSessionPrAriaMatchesLivePr } from './utils/gymLogFabSessionPrToneDisplay'
 import { sessionPrAriaMatchesLivePr } from './utils/gymLogSessionPrToneDisplay'
 import {
   isWeeklyPlanCardVisible,
@@ -6009,6 +6015,11 @@ useEffect(() => {
       getGymLogSessionChipToneClass: () => readGymLogSessionChipToneClass(),
       isGymLogSessionPrToneAriaExpected: () =>
         sessionPrAriaMatchesLivePr(readGymLogSessionChipAriaLabel()),
+      getGymLogFabSessionChipText: () => readGymLogFabSessionChipText(),
+      getGymLogFabSessionChipAriaLabel: () => readGymLogFabSessionChipAriaLabel(),
+      getGymLogFabSessionChipToneClass: () => readGymLogFabSessionChipToneClass(),
+      isGymLogFabSessionPrToneAriaExpected: () =>
+        fabSessionPrAriaMatchesLivePr(readGymLogFabSessionChipAriaLabel()),
       openReviewModal: (partnerId = 'p1') => {
         setShowReviewModalFor(partnerId)
         setPendingReviewBookingId(null)

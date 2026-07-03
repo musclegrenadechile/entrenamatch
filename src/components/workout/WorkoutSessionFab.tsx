@@ -6,6 +6,12 @@ import {
   summarizeWorkoutDraft,
   type WorkoutDraft,
 } from '../../utils/workoutDraft'
+import { countGymLogLivePRs } from '../../utils/gymLogLivePR'
+import {
+  buildGymLogFabSessionPrToneAriaLabel,
+  resolveGymLogFabSessionPrToneClass,
+  resolveGymLogFabStripPrToneClass,
+} from '../../utils/gymLogFabSessionPrToneDisplay'
 import { buildWorkoutFabDraftMeta } from '../../utils/workoutFabDraftMeta'
 
 export type WorkoutSessionFabLayout = 'fab' | 'chat-strip'
@@ -71,6 +77,11 @@ export function WorkoutSessionFab({
 
   const summary = summarizeWorkoutDraft(draft)
   const draftMeta = buildWorkoutFabDraftMeta(draft, Date.now(), { history: recentWorkouts })
+  const livePrCount = draft.exercises.length
+    ? countGymLogLivePRs(draft.exercises, recentWorkouts)
+    : 0
+  const fabSessionPrToneClass = resolveGymLogFabSessionPrToneClass(livePrCount)
+  const fabStripPrToneClass = resolveGymLogFabStripPrToneClass(livePrCount)
   const bottom =
     bottomClass || 'bottom-[calc(74px+env(safe-area-inset-bottom))]'
   const showActions = !!(onQuickAddSet || onOpenChat || onOpenFuel)
@@ -173,7 +184,13 @@ export function WorkoutSessionFab({
     return (
       <div className="em-v2-workout-fab__strip workout-session-strip shrink-0 px-2 pt-1 pb-0.5">
         {draftMeta.sessionChip && (
-          <p className="em-v2-workout-fab__strip-chip" role="status">
+          <p
+            className={['em-v2-workout-fab__strip-chip', fabStripPrToneClass]
+              .filter(Boolean)
+              .join(' ')}
+            role="status"
+            aria-label={buildGymLogFabSessionPrToneAriaLabel(draftMeta.sessionChip, livePrCount)}
+          >
             {draftMeta.sessionChip}
           </p>
         )}
@@ -242,7 +259,13 @@ export function WorkoutSessionFab({
           </span>
         </div>
         {draftMeta.sessionChip && (
-          <span className="em-v2-workout-fab__session-chip" role="status">
+          <span
+            className={['em-v2-workout-fab__session-chip', fabSessionPrToneClass]
+              .filter(Boolean)
+              .join(' ')}
+            role="status"
+            aria-label={buildGymLogFabSessionPrToneAriaLabel(draftMeta.sessionChip, livePrCount)}
+          >
             {draftMeta.sessionChip}
           </span>
         )}

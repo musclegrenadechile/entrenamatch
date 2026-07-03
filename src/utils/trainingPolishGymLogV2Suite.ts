@@ -16,12 +16,18 @@ export const TRAINING_POLISH_GYM_LOG_V2_UTILS: readonly TrainingPolishGymLogV2En
     oleada: 436,
     covers: ['session', 'pr', 'aria', 'e2e'],
   },
+  {
+    id: 'fab-session-pr-tone',
+    module: 'gymLogFabSessionPrToneDisplay',
+    oleada: 437,
+    covers: ['session', 'pr', 'aria', 'e2e'],
+  },
 ] as const
 
 export const TRAINING_POLISH_GYM_LOG_V2_OPEN_OLEADA = 436
 
 export function trainingPolishGymLogV2Range(): { from: number; to: number } {
-  return { from: 436, to: 436 }
+  return { from: 436, to: 437 }
 }
 
 export function countTrainingPolishGymLogV2Utils(): number {

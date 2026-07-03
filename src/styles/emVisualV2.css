@@ -6682,6 +6682,14 @@
   text-align: left;
 }
 
+.em-v2-workout-fab__session-chip--has-pr {
+  color: #fde68a;
+}
+
+.em-v2-workout-fab__strip-chip--has-pr {
+  color: #fde68a;
+}
+
 .em-v2-workout-fab__strip-dot {
   width: 0.3125rem;
   height: 0.3125rem;

@@ -6,15 +6,17 @@ import {
 } from './gymLogTrainingSuite'
 
 describe('gymLogTrainingSuite', () => {
-  it('inventario gym-log oleadas 383–436', () => {
-    expect(countGymLogTrainingUtils()).toBe(7)
+  it('inventario gym-log oleadas 383–437', () => {
+    expect(countGymLogTrainingUtils()).toBe(9)
     expect(GYM_LOG_TRAINING_UTILS.map((u) => u.oleada)).toEqual([
-      383, 384, 385, 386, 436, 436, 436,
+      383, 384, 385, 386, 436, 436, 436, 437, 437,
     ])
-    expect(gymLogTrainingBlockRange()).toEqual({ from: 383, to: 436 })
+    expect(gymLogTrainingBlockRange()).toEqual({ from: 383, to: 437 })
     expect(GYM_LOG_TRAINING_UTILS.map((u) => u.module)).toContain('gymLogSessionPrToneDisplay')
     expect(GYM_LOG_TRAINING_UTILS.map((u) => u.module)).toContain('e2eGymLogSessionPrCoverage')
     expect(GYM_LOG_TRAINING_UTILS.map((u) => u.module)).toContain('trainingPolishGymLogV2Suite')
+    expect(GYM_LOG_TRAINING_UTILS.map((u) => u.module)).toContain('gymLogFabSessionPrToneDisplay')
+    expect(GYM_LOG_TRAINING_UTILS.map((u) => u.module)).toContain('e2eGymLogFabSessionPrCoverage')
   })
 
   it('cubre progress, pr, feedback e hint', () => {

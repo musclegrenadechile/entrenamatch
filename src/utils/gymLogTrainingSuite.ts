@@ -51,6 +51,18 @@ export const GYM_LOG_TRAINING_UTILS: readonly GymLogTrainingUtilEntry[] = [
     oleada: 436,
     covers: ['pr', 'hint'],
   },
+  {
+    id: 'fab-session-pr-tone',
+    module: 'gymLogFabSessionPrToneDisplay',
+    oleada: 437,
+    covers: ['pr', 'hint'],
+  },
+  {
+    id: 'fab-session-pr-tone-e2e',
+    module: 'e2eGymLogFabSessionPrCoverage',
+    oleada: 437,
+    covers: ['pr', 'hint'],
+  },
 ] as const
 
 export function countGymLogTrainingUtils(): number {

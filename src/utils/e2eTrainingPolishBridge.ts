@@ -369,6 +369,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-flow',
     feature: 'tono PR×chip sesión gym-log + gymLogSessionPrToneDisplay',
   },
+  {
+    polishOleada: 437,
+    e2eSpecId: 'workout-fab-flow',
+    feature: 'tono PR×chip sesión FAB + gymLogFabSessionPrToneDisplay',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

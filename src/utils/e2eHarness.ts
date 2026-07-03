@@ -17,6 +17,12 @@ export type EntrenamatchE2EApi = {
   /** Modificador tono PR en chip sesión (oleada 436). */
   getGymLogSessionChipToneClass: () => string | null
   isGymLogSessionPrToneAriaExpected: () => boolean
+  /** Texto chip sesión FAB minimizado (oleada 437). */
+  getGymLogFabSessionChipText: () => string | null
+  getGymLogFabSessionChipAriaLabel: () => string | null
+  /** Modificador tono PR en chip sesión FAB (oleada 437). */
+  getGymLogFabSessionChipToneClass: () => string | null
+  isGymLogFabSessionPrToneAriaExpected: () => boolean
   /** Simula reseña post-entreno con un partner seed. */
   openReviewModal: (partnerId?: string) => void
   isReviewModalOpen: () => boolean
