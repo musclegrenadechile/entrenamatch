@@ -484,6 +484,21 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'training-mega-flow',
     feature: 'cierre mega post-PR 451 + mega-flow PR + e2eTrainingPostPrMegaPostV2Coverage',
   },
+  {
+    polishOleada: 453,
+    e2eSpecId: 'workout-history-flow',
+    feature: 'inventario full historial v2 global + e2eWorkoutHistoryV2GlobalFullCoverage',
+  },
+  {
+    polishOleada: 453,
+    e2eSpecId: 'training-mega-flow',
+    feature: 'cierre post-mega PR v2 + trainingPrV2PostMegaClosure',
+  },
+  {
+    polishOleada: 453,
+    e2eSpecId: 'workout-history-flow',
+    feature: 'smoke Playwright PR mega-flow + historial + e2eTrainingPlaywrightPrSmokeCoverage',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

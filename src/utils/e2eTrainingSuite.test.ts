@@ -206,6 +206,25 @@ describe('e2eTrainingSuite', () => {
     expect(isTrainingPostPrMegaPostV2E2ECoverageComplete()).toBe(true)
   })
 
+  it('e2eWorkoutHistoryV2GlobalFullCoverage completo (oleada 453)', async () => {
+    const { isWorkoutHistoryV2GlobalFullE2ECoverageComplete } = await import(
+      './e2eWorkoutHistoryV2GlobalFullCoverage'
+    )
+    expect(isWorkoutHistoryV2GlobalFullE2ECoverageComplete()).toBe(true)
+  })
+
+  it('trainingPrV2PostMegaClosure completo (oleada 453)', async () => {
+    const { isTrainingPrV2PostMegaClosureComplete } = await import('./trainingPrV2PostMegaClosure')
+    expect(isTrainingPrV2PostMegaClosureComplete()).toBe(true)
+  })
+
+  it('e2eTrainingPlaywrightPrSmokeCoverage completo (oleada 453)', async () => {
+    const { isTrainingPlaywrightPrSmokeCoverageComplete } = await import(
+      './e2eTrainingPlaywrightPrSmokeCoverage'
+    )
+    expect(isTrainingPlaywrightPrSmokeCoverageComplete()).toBe(true)
+  })
+
   it('e2eGymLogSessionPrCoverage completo (oleada 436)', () => {
     expect(isGymLogSessionPrCoverageComplete()).toBe(true)
   })

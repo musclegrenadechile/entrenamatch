@@ -41,6 +41,12 @@ export const TRAINING_POLISH_WORKOUT_HISTORY_V2_UTILS: readonly TrainingPolishWo
       oleada: 452,
       covers: ['history', 'pr', 'aria', 'e2e'],
     },
+    {
+      id: 'history-v2-global-full-coverage',
+      module: 'e2eWorkoutHistoryV2GlobalFullCoverage',
+      oleada: 453,
+      covers: ['history', 'pr', 'aria', 'e2e'],
+    },
   ] as const
 
 export const TRAINING_POLISH_WORKOUT_HISTORY_V2_OPEN_OLEADA = 440

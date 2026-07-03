@@ -916,6 +916,56 @@ console.log('✓ trainingWorkoutHistoryV2GlobalClosure aligned with historial v2
 console.log('✓ e2eTrainingMegaFlowPrCoverage aligned with training-mega-flow PR pivot (oleada 452)')
 console.log('✓ e2eTrainingPostPrMegaPostV2Coverage closes mega post-PR union (oleada 452)')
 console.log('✓ e2eTrainingPostPrMegaFullCoverage unifies 6 mega post-PR E2E suites (oleada 452)')
+const workoutHistoryV2GlobalFullCoverage = readFileSync(
+  join(root, 'src/utils/e2eWorkoutHistoryV2GlobalFullCoverage.ts'),
+  'utf8'
+)
+if (!workoutHistoryV2GlobalFullCoverage.includes('isWorkoutHistoryV2GlobalFullE2ECoverageComplete')) {
+  console.error('e2eWorkoutHistoryV2GlobalFullCoverage missing global-full helper (oleada 453)')
+  ok = false
+}
+if (!workoutHistoryV2GlobalFullCoverage.includes('e2eWorkoutHistoryV2GlobalCoverage')) {
+  console.error('e2eWorkoutHistoryV2GlobalFullCoverage missing global suite ref (oleada 453)')
+  ok = false
+}
+const trainingPrV2PostMegaClosure = readFileSync(
+  join(root, 'src/utils/trainingPrV2PostMegaClosure.ts'),
+  'utf8'
+)
+if (!trainingPrV2PostMegaClosure.includes('isTrainingPrV2PostMegaClosureComplete')) {
+  console.error('trainingPrV2PostMegaClosure missing post-mega helper (oleada 453)')
+  ok = false
+}
+if (!trainingPrV2PostMegaClosure.includes('post-pr-mega')) {
+  console.error('trainingPrV2PostMegaClosure missing post-pr-mega block ref (oleada 453)')
+  ok = false
+}
+const trainingPlaywrightPrSmokeCoverage = readFileSync(
+  join(root, 'src/utils/e2eTrainingPlaywrightPrSmokeCoverage.ts'),
+  'utf8'
+)
+if (!trainingPlaywrightPrSmokeCoverage.includes('isTrainingPlaywrightPrSmokeCoverageComplete')) {
+  console.error('e2eTrainingPlaywrightPrSmokeCoverage missing smoke helper (oleada 453)')
+  ok = false
+}
+if (!trainingPlaywrightPrSmokeCoverage.includes('mega-flow-review-pr')) {
+  console.error('e2eTrainingPlaywrightPrSmokeCoverage missing mega-flow-review-pr cover (oleada 453)')
+  ok = false
+}
+if (!trainingPlaywrightPrSmokeCoverage.includes('workout-history-flow.spec.ts')) {
+  console.error('e2eTrainingPlaywrightPrSmokeCoverage missing workout-history spec (oleada 453)')
+  ok = false
+}
+for (const spec of ['training-mega-flow.spec.ts', 'workout-history-flow.spec.ts']) {
+  if (!ciYml.includes(spec)) {
+    console.error(`CI e2e-smoke missing playwright PR spec: ${spec} (oleada 453)`)
+    ok = false
+  }
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eWorkoutHistoryV2GlobalFullCoverage unifies 3 historial v2 global suites (oleada 453)')
+console.log('✓ trainingPrV2PostMegaClosure closes post-mega PR v2 block (oleada 453)')
+console.log('✓ e2eTrainingPlaywrightPrSmokeCoverage aligned with CI e2e-smoke PR specs (oleada 453)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)
