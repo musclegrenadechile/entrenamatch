@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.500
+**Versión cierre:** v0.1.501
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -112,6 +112,7 @@
 | **439** | **Pivot post-entreno v2 + tono PR×banner** | workoutSaveBannerPrToneDisplay; trainingPolishPostWorkoutV2Suite; harness isWorkoutSaveBannerPrToneAriaExpected; e2eWorkoutSaveBannerPrCoverage; banner-pr-tone E2E |
 | **440** | **Pivot historial v2 + tono PR×fila** | workoutHistoryRowPrToneDisplay; trainingPolishWorkoutHistoryV2Suite; harness isWorkoutHistoryRowPrToneAriaExpected; e2eWorkoutHistoryRowPrCoverage; history-row-pr-tone E2E |
 | **441** | **Prefill Fuel v2 + tono PR×chip** | fuelLogPrefillPrToneDisplay; prSummary en fuelLogPrefill; trainingPolishPostWorkoutV2Suite extendido; harness isFuelLogPrefillPrToneAriaExpected; e2eFuelLogPrefillPrCoverage; fuel-prefill-pr-tone E2E |
+| **442** | **Cierre post-entreno v2 + 3ª suite E2E** | e2ePostWorkoutPostV2Coverage; trainingPolishPostWorkoutV2Suite cerrado 439–442; e2ePostWorkoutFullCoverage 3 suites; e2ePostWorkoutCoverage union |
 
 ## Mega entrenamiento (361–435) ✅ CERRADO
 

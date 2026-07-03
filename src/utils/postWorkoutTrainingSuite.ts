@@ -69,6 +69,24 @@ export const POST_WORKOUT_TRAINING_UTILS: readonly PostWorkoutTrainingUtilEntry[
     oleada: 441,
     covers: ['fuel-prefill', 'pr'],
   },
+  {
+    id: 'post-workout-coverage',
+    module: 'e2ePostWorkoutCoverage',
+    oleada: 442,
+    covers: ['banner', 'fuel-prefill', 'pr'],
+  },
+  {
+    id: 'post-v2-closure',
+    module: 'e2ePostWorkoutPostV2Coverage',
+    oleada: 442,
+    covers: ['banner', 'fuel-prefill', 'pr'],
+  },
+  {
+    id: 'post-workout-full-coverage',
+    module: 'e2ePostWorkoutFullCoverage',
+    oleada: 442,
+    covers: ['banner', 'fuel-prefill', 'pr'],
+  },
 ] as const
 
 export function countPostWorkoutTrainingUtils(): number {
@@ -76,7 +94,7 @@ export function countPostWorkoutTrainingUtils(): number {
 }
 
 export function postWorkoutTrainingBlockRange(): { from: number; to: number } {
-  return { from: 390, to: 441 }
+  return { from: 390, to: 442 }
 }
 
 export const POST_WORKOUT_TRAINING_V2_OPEN_OLEADA = 439

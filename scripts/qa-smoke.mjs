@@ -626,6 +626,29 @@ if (!fuelLogPrefillPrTone.includes('fuelPrefillPrAriaMatchesPr')) {
 }
 if (!ok) process.exit(1)
 console.log('✓ e2eFuelLogPrefillPrCoverage aligned with post-entreno v2 pivot (oleada 441)')
+const postWorkoutPostV2Coverage = readFileSync(
+  join(root, 'src/utils/e2ePostWorkoutPostV2Coverage.ts'),
+  'utf8'
+)
+if (!postWorkoutPostV2Coverage.includes('isPostWorkoutPostV2E2ECoverageComplete')) {
+  console.error('e2ePostWorkoutPostV2Coverage missing post-v2 helper (oleada 442)')
+  ok = false
+}
+const postWorkoutFullCoverage = readFileSync(
+  join(root, 'src/utils/e2ePostWorkoutFullCoverage.ts'),
+  'utf8'
+)
+if (!postWorkoutFullCoverage.includes('e2ePostWorkoutPostV2Coverage')) {
+  console.error('e2ePostWorkoutFullCoverage missing post-v2 suite ref (oleada 442)')
+  ok = false
+}
+if (!postWorkoutFullCoverage.includes('isPostWorkoutFullE2ECoverageComplete')) {
+  console.error('e2ePostWorkoutFullCoverage missing full helper ref (oleada 442)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2ePostWorkoutPostV2Coverage aligned with full coverage (oleada 442)')
+console.log('✓ e2ePostWorkoutFullCoverage unifies 3 post-entreno v2 E2E suites (oleada 442)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)
