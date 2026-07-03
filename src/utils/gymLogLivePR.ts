@@ -48,3 +48,26 @@ export function getGymLogLivePRSetIndex(
 export function countGymLogLivePRs(exercises: WorkoutExercise[], history: Workout[]): number {
   return detectWorkoutPRs(exercises, history).length
 }
+
+function livePRKey(exerciseName: string, set: WorkoutSet): string {
+  return `${exerciseName.trim().toLowerCase()}:${set.reps || 0}:${set.weightKg || 0}`
+}
+
+/** Claves de series PR en vivo — para detectar transiciones sin duplicar feedback. */
+export function buildGymLogLivePRKeys(exercises: WorkoutExercise[], history: Workout[]): Set<string> {
+  const keys = new Set<string>()
+  for (const ex of exercises) {
+    const idx = getGymLogLivePRSetIndex(ex.name, ex.sets, history)
+    if (idx === null) continue
+    keys.add(livePRKey(ex.name, ex.sets[idx]))
+  }
+  return keys
+}
+
+/** True si hay al menos una clave PR nueva respecto al snapshot anterior. */
+export function hasNewGymLogLivePRKeys(prev: Set<string>, next: Set<string>): boolean {
+  for (const key of next) {
+    if (!prev.has(key)) return true
+  }
+  return false
+}

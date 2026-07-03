@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { Workout } from '../types'
-import { countGymLogLivePRs, getGymLogLivePRSetIndex } from './gymLogLivePR'
+import {
+  buildGymLogLivePRKeys,
+  countGymLogLivePRs,
+  getGymLogLivePRSetIndex,
+  hasNewGymLogLivePRKeys,
+} from './gymLogLivePR'
 
 const history: Workout[] = [
   {
@@ -45,6 +50,19 @@ describe('gymLogLivePR', () => {
         []
       )
     ).toBeNull()
+  })
+
+  it('buildGymLogLivePRKeys y hasNewGymLogLivePRKeys', () => {
+    const keys = buildGymLogLivePRKeys(
+      [{ name: 'Press banca', sets: [{ reps: 8, weightKg: 75 }] }],
+      history
+    )
+    expect(keys).toEqual(new Set(['press banca:8:75']))
+    expect(hasNewGymLogLivePRKeys(new Set(), keys)).toBe(true)
+    expect(hasNewGymLogLivePRKeys(keys, keys)).toBe(false)
+    expect(
+      hasNewGymLogLivePRKeys(keys, new Set(['press banca:5:80']))
+    ).toBe(true)
   })
 
   it('countGymLogLivePRs', () => {

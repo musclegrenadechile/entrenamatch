@@ -90,3 +90,12 @@ export function buildGymLogSessionChip(
 
   return parts.join(' · ')
 }
+
+/** Versión corta para footer compacto móvil (sin conteo de ejercicios). */
+export function buildGymLogSessionChipCompact(
+  exercises: WorkoutExercise[],
+  opts?: GymLogSessionChipOpts
+): string {
+  const full = buildGymLogSessionChip(exercises, opts)
+  return full.replace(/^\d+ ejercicios? · /, '')
+}

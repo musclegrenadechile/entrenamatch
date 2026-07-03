@@ -71,10 +71,16 @@ import {
 } from '../../utils/gymLogSetStep'
 import { GymLogSetField } from './GymLogSetField'
 import { canDuplicateGymLogSet, copyWorkoutSetValues } from '../../utils/gymLogDuplicateSet'
-import { getGymLogLivePRSetIndex } from '../../utils/gymLogLivePR'
+import {
+  buildGymLogLivePRKeys,
+  getGymLogLivePRSetIndex,
+  hasNewGymLogLivePRKeys,
+} from '../../utils/gymLogLivePR'
+import { celebrateGymLogLivePR } from '../../utils/gymLogPRFeedback'
 import {
   buildGymLogExerciseProgressLabel,
   buildGymLogSessionChip,
+  buildGymLogSessionChipCompact,
   getGymLogExerciseProgressPct,
 } from '../../utils/gymLogSessionDisplay'
 import { useCompactMobile } from '../../hooks/useCompactMobile'
@@ -337,6 +343,8 @@ export function EntrenoDeHoyModal({
   const restTimerRef = useRef<GymRestTimerRef>(null)
   /** Evita que flushDraft en cleanup re-guarde tras descartar sesión. */
   const persistDraftRef = useRef(true)
+  const livePrKeysRef = useRef<Set<string>>(new Set())
+  const livePrSeededRef = useRef(false)
 
   const buildDraft = useCallback(
     () => ({
@@ -451,6 +459,8 @@ export function EntrenoDeHoyModal({
       setPastWorkoutsOpen(false)
       setLibraryOpen(true)
       setExtrasOpen(false)
+      livePrKeysRef.current = new Set()
+      livePrSeededRef.current = false
       return
     }
     if (expandPastWorkouts && recentWorkouts.some((w) => w.exercises?.length)) {
@@ -473,6 +483,20 @@ export function EntrenoDeHoyModal({
     const id = window.setInterval(() => setTick((t) => t + 1), 1000)
     return () => clearInterval(id)
   }, [open])
+
+  useEffect(() => {
+    if (!open || exercises.length === 0) return
+    const keys = buildGymLogLivePRKeys(exercises, recentWorkouts)
+    if (!livePrSeededRef.current) {
+      livePrKeysRef.current = keys
+      livePrSeededRef.current = true
+      return
+    }
+    if (hasNewGymLogLivePRKeys(livePrKeysRef.current, keys)) {
+      celebrateGymLogLivePR()
+    }
+    livePrKeysRef.current = keys
+  }, [open, exercises, recentWorkouts])
 
   useEffect(() => {
     if (!open || !userId || !exercises.length) return
@@ -1239,6 +1263,10 @@ export function EntrenoDeHoyModal({
           className={`gym-log-footer em-v2-workout__footer ${useCompactFooter ? 'em-v2-workout__footer--compact' : ''}`}
         >
           {useCompactFooter ? (
+            <>
+              <p className="gym-log-session-chip--compact em-v2-gym-session-chip--compact" role="status">
+                {buildGymLogSessionChipCompact(exercises, { history: recentWorkouts })}
+              </p>
             <div className="em-v2-workout__footer-compact">
               <button
                 type="button"
@@ -1269,6 +1297,7 @@ export function EntrenoDeHoyModal({
                 <ChevronUp className="w-5 h-5" />
               </button>
             </div>
+            </>
           ) : (
             <>
               {compactMobile && exercises.length > 0 && (

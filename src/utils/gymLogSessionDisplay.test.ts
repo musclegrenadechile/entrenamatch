@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   buildGymLogExerciseProgressLabel,
   buildGymLogSessionChip,
+  buildGymLogSessionChipCompact,
   countGymLogSetsProgress,
   getGymLogExerciseProgressPct,
 } from './gymLogSessionDisplay'
@@ -88,5 +89,16 @@ describe('gymLogSessionDisplay', () => {
         { history: [] }
       )
     ).toContain('🏆 1 PR')
+  })
+
+  it('buildGymLogSessionChipCompact omite ejercicios', () => {
+    expect(
+      buildGymLogSessionChipCompact([
+        {
+          name: 'Press banca',
+          sets: [{ reps: 10, weightKg: 60 }],
+        },
+      ])
+    ).toBe('1 serie · 600 kg · listo para guardar')
   })
 })

@@ -4937,6 +4937,8 @@
 }
 
 .em-v2-workout__footer--compact {
+  flex-direction: column;
+  align-items: stretch;
   padding-top: 0.5rem;
   padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
 }
@@ -6593,6 +6595,22 @@
   margin-top: 1px;
   font-size: 0.5rem;
   line-height: 1;
+}
+
+/* ——— Entreno oleada 385: feedback PR + chip footer compacto ——— */
+.em-v2-gym-session-chip--compact {
+  width: 100%;
+  margin: 0 0 0.35rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: var(--em-radius-lg);
+  border: 1px solid var(--em-border-soft);
+  background: var(--em-surface-1);
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  line-height: 1.3;
 }
 
 
