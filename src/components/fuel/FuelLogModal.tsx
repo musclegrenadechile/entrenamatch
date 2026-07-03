@@ -3,10 +3,12 @@ import { Camera, Sparkles, X } from 'lucide-react'
 import { estimateMacrosFromDescription } from '../../utils/fuelCalculator'
 import type { AnalyzeFoodResult } from '../../services/fuel'
 import type { FuelLogEntry } from '../../types'
+import type { FuelLogPrefill } from '../../utils/fuelLogPrefill'
 
 export interface FuelLogModalProps {
   open: boolean
   editEntry?: FuelLogEntry | null
+  prefill?: FuelLogPrefill | null
   onClose: () => void
   onSave: (payload: {
     editId?: string
@@ -41,6 +43,7 @@ const EMPTY = {
 export function FuelLogModal({
   open,
   editEntry = null,
+  prefill = null,
   onClose,
   onSave,
   onAnalyzePhoto,
@@ -76,6 +79,19 @@ export function FuelLogModal({
       setAiTip(null)
       setAiSource(null)
       setPublishToMuro(false)
+    } else if (prefill) {
+      setMealLabel(prefill.mealLabel || EMPTY.mealLabel)
+      setDescription(prefill.description || EMPTY.description)
+      setKcal(EMPTY.kcal)
+      setProteinG(EMPTY.proteinG)
+      setCarbsG(EMPTY.carbsG)
+      setFatG(EMPTY.fatG)
+      setPhotoPreview(EMPTY.photoPreview)
+      setPhotoBase64(EMPTY.photoBase64)
+      setSource(EMPTY.source)
+      setAiTip(prefill.contextHint || EMPTY.aiTip)
+      setAiSource(EMPTY.aiSource)
+      setPublishToMuro(EMPTY.publishToMuro)
     } else {
       setMealLabel(EMPTY.mealLabel)
       setDescription(EMPTY.description)
@@ -91,7 +107,7 @@ export function FuelLogModal({
       setPublishToMuro(EMPTY.publishToMuro)
     }
     if (fileRef.current) fileRef.current.value = ''
-  }, [open, editEntry])
+  }, [open, editEntry, prefill])
 
   if (!open) return null
 

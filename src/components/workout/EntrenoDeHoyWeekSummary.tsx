@@ -1,5 +1,5 @@
 import { Dumbbell, TrendingUp, Users } from 'lucide-react'
-import type { WeekWorkoutSummary } from '../../utils/workoutProgress'
+import type { WeekWorkoutDay, WeekWorkoutSummary } from '../../utils/workoutProgress'
 import { formatWeekVolume } from '../../utils/workoutProgress'
 import type { WeeklyPactProgress } from '../../services/weeklyPact'
 
@@ -15,6 +15,41 @@ export interface EntrenoDeHoyWeekSummaryProps {
     selfSets: number
     partnerSets: number
   } | null
+}
+
+function WeekVolumeSparkline({ days }: { days: WeekWorkoutDay[] }) {
+  if (!days.length) return null
+  const values = days.map((d) => d.volumeKg)
+  const max = Math.max(1, ...values)
+  const w = 100
+  const h = 28
+  const step = days.length > 1 ? w / (days.length - 1) : 0
+  const points = values
+    .map((v, i) => {
+      const x = days.length > 1 ? i * step : w / 2
+      const y = h - 4 - (v / max) * (h - 8)
+      return `${x},${y}`
+    })
+    .join(' ')
+
+  return (
+    <svg
+      className="em-v2-training__sparkline"
+      viewBox={`0 0 ${w} ${h}`}
+      preserveAspectRatio="none"
+      aria-hidden
+    >
+      <polyline
+        points={points}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  )
 }
 
 export function EntrenoDeHoyWeekSummary({
@@ -49,6 +84,8 @@ export function EntrenoDeHoyWeekSummary({
           </button>
         )}
       </div>
+
+      <WeekVolumeSparkline days={summary.days} />
 
       <div className="em-v2-training__chart">
         {summary.days.map((d) => {

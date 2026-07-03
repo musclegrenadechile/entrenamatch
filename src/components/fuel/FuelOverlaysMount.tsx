@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import type { AnalyzeFoodResult } from '../../services/fuel'
 import type { CurrentUser, FuelLogEntry, FuelProfile } from '../../types'
 import type { FuelWizardHints } from '../../utils/fuelWizardDefaults'
+import type { FuelLogPrefill } from '../../utils/fuelLogPrefill'
 import { FuelLogModal } from './FuelLogModal'
 import { FuelSetupModal } from './FuelSetupModal'
 import { FuelSetupWizard } from './FuelSetupWizard'
@@ -28,6 +29,7 @@ export type FuelOverlaysMountProps = {
   onOpenAdvancedFuelSetup: () => void
   fuelProfile: FuelProfile | null
   editingFuelLog: FuelLogEntry | null
+  fuelLogPrefill?: FuelLogPrefill | null
   currentUser: CurrentUser | null
   homeWeekTrainedCount: number
   onSaveFuelProfile: (profile: Omit<FuelProfile, 'updatedAt'>) => Promise<void>
@@ -63,6 +65,7 @@ export function FuelOverlaysMount({
   onOpenAdvancedFuelSetup,
   fuelProfile,
   editingFuelLog,
+  fuelLogPrefill = null,
   currentUser,
   homeWeekTrainedCount,
   onSaveFuelProfile,
@@ -97,6 +100,7 @@ export function FuelOverlaysMount({
       <FuelLogModal
         open={showFuelLogModal}
         editEntry={editingFuelLog}
+        prefill={fuelLogPrefill}
         onClose={onCloseFuelLogModal}
         onSave={onSaveFuelLog}
         onAnalyzePhoto={onAnalyzeFood}

@@ -294,6 +294,7 @@ import {
   emptyFuelDayTotals,
 } from './services/fuel'
 import { getPostWorkoutFuelTip, estimateMacrosFromDescription, toLocalDateStr, buildFuelAnalyzeContext } from './utils/fuelCalculator'
+import { buildFuelLogPrefillFromWorkoutSave, type FuelLogPrefill } from './utils/fuelLogPrefill'
 import { fetchRecentWorkouts, fetchUserWorkouts, fetchWorkoutsForDate, saveWorkoutWithPost, fetchWorkoutById, saveSyncWorkoutWithPost, deleteWorkoutWithLinkedPost, buildWorkoutPreview, computeWorkoutStats, workoutToPreview, workoutShareText } from './services/workouts'
 import { useFuelBalancePipeline } from './hooks/useFuelBalancePipeline'
 import { useFuelState } from './hooks/useFuelState'
@@ -1069,6 +1070,7 @@ function App() {
   const [showFuelSetupModal, setShowFuelSetupModal] = useState(false)
   const [showFuelSetupWizard, setShowFuelSetupWizard] = useState(false)
   const [showFuelLogModal, setShowFuelLogModal] = useState(false)
+  const [fuelLogPrefill, setFuelLogPrefill] = useState<FuelLogPrefill | null>(null)
   const [showMarketplace, setShowMarketplace] = useState(false)
   const [marketplaceScreenMode, setMarketplaceScreenMode] = useState<'shop' | 'orders'>('shop')
   const [showAdminOps, setShowAdminOps] = useState(false)
@@ -5979,6 +5981,7 @@ useEffect(() => {
   }, [chatUnreads])
 
   const handleWorkoutOpenFuel = useCallback(() => {
+    setFuelLogPrefill(null)
     setEditingFuelLog(null)
     setShowFuelLogModal(true)
   }, [])
@@ -9865,6 +9868,9 @@ useEffect(() => {
               }
             }}
             onOpenFuelFromWorkoutSave={() => {
+              if (workoutSaveBanner) {
+                setFuelLogPrefill(buildFuelLogPrefillFromWorkoutSave(workoutSaveBanner))
+              }
               setEditingFuelLog(null)
               setShowFuelLogModal(true)
               setWorkoutSaveBanner(null)
@@ -10685,9 +10691,11 @@ useEffect(() => {
         onCloseFuelSetupWizard={() => setShowFuelSetupWizard(false)}
         onCloseFuelSetupModal={() => setShowFuelSetupModal(false)}
         onCloseFuelLogModal={() => {
+          setFuelLogPrefill(null)
           setEditingFuelLog(null)
           setShowFuelLogModal(false)
         }}
+        fuelLogPrefill={fuelLogPrefill}
         onOpenAdvancedFuelSetup={() => {
           setShowFuelSetupWizard(false)
           setShowFuelSetupModal(true)

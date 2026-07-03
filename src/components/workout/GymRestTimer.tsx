@@ -1,5 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react'
 import { Pause, Play, RotateCcw, Timer } from 'lucide-react'
+import { buzzRestTimerDone } from '../../utils/gymRestHaptic'
 import {
   REST_PRESETS_SEC,
   loadDefaultRestPreset,
@@ -24,16 +25,6 @@ function formatPresetLabel(sec: number): string {
   if (sec < 60) return `${sec}s`
   if (sec % 60 === 0) return `${sec / 60}m`
   return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`
-}
-
-function buzzRestDone(): void {
-  try {
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate([180, 80, 180])
-    }
-  } catch {
-    /* ignore */
-  }
 }
 
 type GymRestTimerProps = {
@@ -99,7 +90,7 @@ export const GymRestTimer = forwardRef<GymRestTimerRef, GymRestTimerProps>(funct
       setRunStartedAt(null)
       setFrozenMs(0)
       setDoneFlash(true)
-      buzzRestDone()
+      buzzRestTimerDone()
       window.setTimeout(() => setDoneFlash(false), 2400)
     }
   }, [tick, running, mode, runStartedAt, frozenMs])

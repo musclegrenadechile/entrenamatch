@@ -31,23 +31,23 @@ function Stepper({
   max: number
 }) {
   return (
-    <div className="arena-set-stepper">
-      <span className="arena-set-stepper__label">{label}</span>
-      <div className="arena-set-stepper__controls">
+    <div className="arena-set-stepper em-v2-arena-stepper">
+      <span className="arena-set-stepper__label em-v2-arena-stepper__label">{label}</span>
+      <div className="arena-set-stepper__controls em-v2-arena-stepper__controls">
         <button
           type="button"
-          className="arena-set-stepper__btn"
+          className="arena-set-stepper__btn em-v2-arena-stepper__btn"
           onClick={() => onChange(Math.max(min, value - step))}
           aria-label={`Menos ${label}`}
         >
           <Minus size={16} />
         </button>
-        <span className="arena-set-stepper__value tabular-nums">
+        <span className="arena-set-stepper__value em-v2-arena-stepper__value tabular-nums">
           {step % 1 !== 0 && value % 1 !== 0 ? value.toFixed(1) : value}
         </span>
         <button
           type="button"
-          className="arena-set-stepper__btn"
+          className="arena-set-stepper__btn em-v2-arena-stepper__btn"
           onClick={() => onChange(Math.min(max, value + step))}
           aria-label={`Más ${label}`}
         >

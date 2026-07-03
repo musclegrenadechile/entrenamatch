@@ -51,7 +51,7 @@ export function WorkoutPostSaveBanner({
               <Share2 size={12} /> Compartir story
             </button>
             <button type="button" onClick={onOpenFuel} className="em-v2-card__cta--outline text-[10px] px-3 py-1.5">
-              Abrir Fuel
+              Registrar post-entreno
             </button>
           </div>
         </div>

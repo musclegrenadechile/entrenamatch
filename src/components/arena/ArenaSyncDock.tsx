@@ -25,37 +25,37 @@ export function ArenaSyncDock({
     <section className="em-v2-arena-dock arena-sync-dock" aria-label="Acciones de sync">
       <button
         type="button"
-        className="arena-sync-dock__main arena-sync-dock__main--green"
+        className="arena-sync-dock__main em-v2-arena-dock__main arena-sync-dock__main--green em-v2-arena-dock__main--green"
         onClick={onSetReady}
         disabled={disabled}
       >
-        <span className="arena-sync-dock__emoji">💪</span>
-        <span>Set listo</span>
+        <span className="arena-sync-dock__emoji em-v2-arena-dock__emoji">💪</span>
+        <span className="em-v2-arena-dock__label">Set listo</span>
       </button>
       <button
         type="button"
-        className="arena-sync-dock__main arena-sync-dock__main--cyan"
+        className="arena-sync-dock__main em-v2-arena-dock__main arena-sync-dock__main--cyan em-v2-arena-dock__main--cyan"
         onClick={onRest}
         disabled={disabled}
       >
-        <span className="arena-sync-dock__emoji">💧</span>
-        <span>Descanso</span>
+        <span className="arena-sync-dock__emoji em-v2-arena-dock__emoji">💧</span>
+        <span className="em-v2-arena-dock__label">Descanso</span>
       </button>
       <button
         type="button"
-        className="arena-sync-dock__main arena-sync-dock__main--orange"
+        className="arena-sync-dock__main em-v2-arena-dock__main arena-sync-dock__main--orange em-v2-arena-dock__main--orange"
         onClick={onHype}
         disabled={disabled}
       >
-        <span className="arena-sync-dock__emoji">🔥</span>
-        <span>Ánimo</span>
+        <span className="arena-sync-dock__emoji em-v2-arena-dock__emoji">🔥</span>
+        <span className="em-v2-arena-dock__label">Ánimo</span>
       </button>
 
-      <div className="arena-sync-dock__secondary">
+      <div className="arena-sync-dock__secondary em-v2-arena-dock__secondary">
         {onVoicePing && (
           <button
             type="button"
-            className={`arena-sync-dock__mini ${isRecordingVoice ? 'arena-sync-dock__mini--rec' : ''}`}
+            className={`arena-sync-dock__mini em-v2-arena-dock__mini ${isRecordingVoice ? 'arena-sync-dock__mini--rec em-v2-arena-dock__mini--rec' : ''}`}
             onClick={onVoicePing}
             disabled={disabled || isRecordingVoice}
             aria-label="Voz 3 segundos"
@@ -65,13 +65,13 @@ export function ArenaSyncDock({
           </button>
         )}
         {onPr && (
-          <button type="button" className="arena-sync-dock__mini" onClick={onPr} disabled={disabled}>
+          <button type="button" className="arena-sync-dock__mini em-v2-arena-dock__mini" onClick={onPr} disabled={disabled}>
             <Trophy size={16} />
-            <span>PR</span>
+            <span className="em-v2-arena-dock__mini-label">PR</span>
           </button>
         )}
         {onPhoto && (
-          <button type="button" className="arena-sync-dock__mini" onClick={onPhoto} disabled={disabled}>
+          <button type="button" className="arena-sync-dock__mini em-v2-arena-dock__mini" onClick={onPhoto} disabled={disabled}>
             <Camera size={16} />
             <span>Foto</span>
           </button>
