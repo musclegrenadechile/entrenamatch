@@ -6831,6 +6831,12 @@
   letter-spacing: 0.02em;
 }
 
+.em-v2-gym-session-chip--has-pr {
+  border-bottom-color: rgba(253, 224, 71, 0.35);
+  background: linear-gradient(180deg, rgba(253, 224, 71, 0.12) 0%, transparent 100%);
+  color: #fde68a;
+}
+
 .em-v2-workout .gym-log-exercise-meta {
   display: flex;
   flex-wrap: wrap;

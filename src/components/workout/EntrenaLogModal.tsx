@@ -75,6 +75,7 @@ import {
   buildGymLogLivePRKeys,
   getGymLogLivePR,
   getGymLogLivePRSetIndex,
+  countGymLogLivePRs,
   hasNewGymLogLivePRKeys,
 } from '../../utils/gymLogLivePR'
 import { buildGymLogLivePRHint } from '../../utils/gymLogLivePRHint'
@@ -85,6 +86,11 @@ import {
   buildGymLogSessionChipCompact,
   getGymLogExerciseProgressPct,
 } from '../../utils/gymLogSessionDisplay'
+import {
+  buildGymLogSessionPrToneAriaLabel,
+  GYM_LOG_SESSION_CHIP_CLASS,
+  resolveGymLogSessionPrToneClass,
+} from '../../utils/gymLogSessionPrToneDisplay'
 import { useCompactMobile } from '../../hooks/useCompactMobile'
 import { EmV2EmptyState } from '../ui/EmV2EmptyState'
 
@@ -769,6 +775,14 @@ export function EntrenoDeHoyModal({
     (gymRoutineLabel && gymRoutineTemplates.length > 0)
 
   const useCompactFooter = compactMobile && exercises.length > 0 && !footerExpanded
+  const livePrCount = exercises.length ? countGymLogLivePRs(exercises, recentWorkouts) : 0
+  const sessionChipText = exercises.length
+    ? buildGymLogSessionChip(exercises, { history: recentWorkouts })
+    : ''
+  const sessionChipCompactText = exercises.length
+    ? buildGymLogSessionChipCompact(exercises, { history: recentWorkouts })
+    : ''
+  const sessionPrToneClass = resolveGymLogSessionPrToneClass(livePrCount)
 
   const modal = (
     <div
@@ -803,9 +817,15 @@ export function EntrenoDeHoyModal({
           )}
         </header>
 
-        {exercises.length > 0 && (
-          <div className="gym-log-session-chip em-v2-gym-session-chip" role="status">
-            {buildGymLogSessionChip(exercises, { history: recentWorkouts })}
+        {exercises.length > 0 && sessionChipText && (
+          <div
+            className={['gym-log-session-chip', GYM_LOG_SESSION_CHIP_CLASS, sessionPrToneClass]
+              .filter(Boolean)
+              .join(' ')}
+            role="status"
+            aria-label={buildGymLogSessionPrToneAriaLabel(sessionChipText, livePrCount)}
+          >
+            {sessionChipText}
           </div>
         )}
 
@@ -1281,8 +1301,18 @@ export function EntrenoDeHoyModal({
         >
           {useCompactFooter ? (
             <>
-              <p className="gym-log-session-chip--compact em-v2-gym-session-chip--compact" role="status">
-                {buildGymLogSessionChipCompact(exercises, { history: recentWorkouts })}
+              <p
+                className={[
+                  'gym-log-session-chip--compact',
+                  'em-v2-gym-session-chip--compact',
+                  sessionPrToneClass,
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                role="status"
+                aria-label={buildGymLogSessionPrToneAriaLabel(sessionChipCompactText, livePrCount)}
+              >
+                {sessionChipCompactText}
               </p>
             <div className="em-v2-workout__footer-compact">
               <button

@@ -364,6 +364,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-fuel-flow',
     feature: 'cierre mega global déficit + trainingPolishMegaGlobalSuite',
   },
+  {
+    polishOleada: 436,
+    e2eSpecId: 'workout-flow',
+    feature: 'tono PR×chip sesión gym-log + gymLogSessionPrToneDisplay',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

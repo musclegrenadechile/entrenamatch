@@ -82,6 +82,12 @@ import {
   readWorkoutHistorySparklineAriaLabels,
 } from './utils/e2eWorkoutHistoryDom'
 import {
+  readGymLogSessionChipAriaLabel,
+  readGymLogSessionChipText,
+  readGymLogSessionChipToneClass,
+} from './utils/e2eGymLogSessionDom'
+import { sessionPrAriaMatchesLivePr } from './utils/gymLogSessionPrToneDisplay'
+import {
   isWeeklyPlanCardVisible,
   readWeeklyPlanCardAriaLabel,
   readWeeklyPlanDetail,
@@ -5998,6 +6004,11 @@ useEffect(() => {
         })
       },
       isWorkoutModalOpen: () => showEntrenaLogModal,
+      getGymLogSessionChipText: () => readGymLogSessionChipText(),
+      getGymLogSessionChipAriaLabel: () => readGymLogSessionChipAriaLabel(),
+      getGymLogSessionChipToneClass: () => readGymLogSessionChipToneClass(),
+      isGymLogSessionPrToneAriaExpected: () =>
+        sessionPrAriaMatchesLivePr(readGymLogSessionChipAriaLabel()),
       openReviewModal: (partnerId = 'p1') => {
         setShowReviewModalFor(partnerId)
         setPendingReviewBookingId(null)

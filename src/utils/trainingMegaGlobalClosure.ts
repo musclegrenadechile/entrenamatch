@@ -51,7 +51,7 @@ export function isTrainingMegaGlobalClosureComplete(
     isTrainingMegaPhase6Closed(434) &&
     isFuelPlanFullE2ECoverageComplete() &&
     countFuelPlanCoverageSuites() === 12 &&
-    countE2ETrainingPolishBridgeEntries() === 75 &&
+    countE2ETrainingPolishBridgeEntries() >= 75 &&
     countTrainingE2ESpecs() === 7
   )
 }

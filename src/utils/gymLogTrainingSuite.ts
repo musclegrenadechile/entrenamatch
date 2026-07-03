@@ -33,6 +33,24 @@ export const GYM_LOG_TRAINING_UTILS: readonly GymLogTrainingUtilEntry[] = [
     oleada: 386,
     covers: ['hint'],
   },
+  {
+    id: 'session-pr-tone',
+    module: 'gymLogSessionPrToneDisplay',
+    oleada: 436,
+    covers: ['pr', 'hint'],
+  },
+  {
+    id: 'session-pr-tone-e2e',
+    module: 'e2eGymLogSessionPrCoverage',
+    oleada: 436,
+    covers: ['pr', 'hint'],
+  },
+  {
+    id: 'gym-log-v2-open',
+    module: 'trainingPolishGymLogV2Suite',
+    oleada: 436,
+    covers: ['pr', 'hint'],
+  },
 ] as const
 
 export function countGymLogTrainingUtils(): number {
@@ -43,3 +61,5 @@ export function gymLogTrainingBlockRange(): { from: number; to: number } {
   const oleadas = GYM_LOG_TRAINING_UTILS.map((u) => u.oleada)
   return { from: Math.min(...oleadas), to: Math.max(...oleadas) }
 }
+
+export const GYM_LOG_TRAINING_V2_OPEN_OLEADA = 436

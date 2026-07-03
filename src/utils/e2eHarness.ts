@@ -11,6 +11,12 @@ export type EntrenamatchE2EApi = {
   /** Abre gym-log con prefill mínimo para E2E. */
   openWorkoutModal: (opts?: { exercises?: WorkoutExercise[] }) => void
   isWorkoutModalOpen: () => boolean
+  /** Texto chip sesión gym-log (oleada 436). */
+  getGymLogSessionChipText: () => string | null
+  getGymLogSessionChipAriaLabel: () => string | null
+  /** Modificador tono PR en chip sesión (oleada 436). */
+  getGymLogSessionChipToneClass: () => string | null
+  isGymLogSessionPrToneAriaExpected: () => boolean
   /** Simula reseña post-entreno con un partner seed. */
   openReviewModal: (partnerId?: string) => void
   isReviewModalOpen: () => boolean

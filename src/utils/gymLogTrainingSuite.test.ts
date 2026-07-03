@@ -6,10 +6,15 @@ import {
 } from './gymLogTrainingSuite'
 
 describe('gymLogTrainingSuite', () => {
-  it('inventario 4 utils oleadas 383–386', () => {
-    expect(countGymLogTrainingUtils()).toBe(4)
-    expect(GYM_LOG_TRAINING_UTILS.map((u) => u.oleada)).toEqual([383, 384, 385, 386])
-    expect(gymLogTrainingBlockRange()).toEqual({ from: 383, to: 386 })
+  it('inventario gym-log oleadas 383–436', () => {
+    expect(countGymLogTrainingUtils()).toBe(7)
+    expect(GYM_LOG_TRAINING_UTILS.map((u) => u.oleada)).toEqual([
+      383, 384, 385, 386, 436, 436, 436,
+    ])
+    expect(gymLogTrainingBlockRange()).toEqual({ from: 383, to: 436 })
+    expect(GYM_LOG_TRAINING_UTILS.map((u) => u.module)).toContain('gymLogSessionPrToneDisplay')
+    expect(GYM_LOG_TRAINING_UTILS.map((u) => u.module)).toContain('e2eGymLogSessionPrCoverage')
+    expect(GYM_LOG_TRAINING_UTILS.map((u) => u.module)).toContain('trainingPolishGymLogV2Suite')
   })
 
   it('cubre progress, pr, feedback e hint', () => {

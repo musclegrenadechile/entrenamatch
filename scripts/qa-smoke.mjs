@@ -513,6 +513,24 @@ if (!trainingMegaGlobalCoverage.includes('trainingMegaGlobalClosure')) {
 }
 if (!ok) process.exit(1)
 console.log('✓ e2eTrainingMegaGlobalCoverage aligned with mega global closure (oleada 435)')
+const gymLogSessionPrCoverage = readFileSync(
+  join(root, 'src/utils/e2eGymLogSessionPrCoverage.ts'),
+  'utf8'
+)
+if (!gymLogSessionPrCoverage.includes('isGymLogSessionPrCoverageComplete')) {
+  console.error('e2eGymLogSessionPrCoverage missing session-pr helper (oleada 436)')
+  ok = false
+}
+const gymLogSessionPrTone = readFileSync(
+  join(root, 'src/utils/gymLogSessionPrToneDisplay.ts'),
+  'utf8'
+)
+if (!gymLogSessionPrTone.includes('sessionPrAriaMatchesLivePr')) {
+  console.error('gymLogSessionPrToneDisplay missing aria helper (oleada 436)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eGymLogSessionPrCoverage aligned with gym-log v2 pivot (oleada 436)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

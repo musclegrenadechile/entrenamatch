@@ -13,6 +13,22 @@ test('E2E workout-flow — gym-log guardar + reseña post-entreno', async ({ pag
   await expect(workout).toBeVisible({ timeout: 12000 })
   await expect(workout.getByText('Press banca')).toBeVisible()
   await expect(workout.getByRole('status').filter({ hasText: /1 ejercicio · 1 serie/i })).toBeVisible()
+  const sessionChip = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getGymLogSessionChipText()
+  )
+  expect(sessionChip).toMatch(/1 ejercicio · 1 serie/i)
+  const sessionAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getGymLogSessionChipAriaLabel()
+  )
+  expect(sessionAria).toMatch(/Sesión activa.*PR en vivo/i)
+  const sessionTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getGymLogSessionChipToneClass()
+  )
+  expect(sessionTone).toBe('em-v2-gym-session-chip--has-pr')
+  const sessionPrAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isGymLogSessionPrToneAriaExpected()
+  )
+  expect(sessionPrAria).toBe(true)
   await expect(workout.getByLabel(/PR:/i)).toBeVisible()
   await expect(workout.getByText('Primer récord en este ejercicio')).toBeVisible()
 
