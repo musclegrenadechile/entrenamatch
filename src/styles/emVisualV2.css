@@ -3546,3 +3546,58 @@
   align-items: center;
   justify-content: space-between;
 }
+
+/* ——— Perfil + Explorar polish (oleada 358) ——— */
+.em-v2-card--brand {
+  border-color: var(--em-border-brand);
+}
+
+.em-v2-card--gold {
+  border-color: rgba(253, 224, 71, 0.35);
+  background: linear-gradient(135deg, rgba(26, 22, 15, 0.92) 0%, var(--em-surface-1) 100%);
+}
+
+.em-v2-card--flush {
+  padding: 0;
+  overflow: hidden;
+}
+
+.em-v2-card--compact {
+  padding: 0.75rem;
+}
+
+.em-v2-explore-mini {
+  display: flex;
+  gap: 0.625rem;
+  padding: 0.625rem;
+  border-radius: var(--em-radius-2xl);
+  min-width: 168px;
+  max-width: 168px;
+  cursor: pointer;
+  border: 1px solid var(--em-border-soft);
+  background: var(--em-surface-1);
+  box-shadow: var(--em-shadow-card);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.em-v2-explore-mini:active {
+  transform: scale(0.985);
+}
+
+.em-v2-explore-mini--gold {
+  border-color: rgba(253, 224, 71, 0.35);
+}
+
+.em-v2-explore-live-pill {
+  min-width: 130px;
+  padding: 0.5rem;
+  font-size: 0.625rem;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.em-v2-explore-live-pill--hot {
+  border-color: var(--em-border-brand);
+  box-shadow: 0 0 0 1px var(--em-border-brand);
+}

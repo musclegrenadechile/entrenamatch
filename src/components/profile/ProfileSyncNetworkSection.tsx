@@ -47,7 +47,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
     <>
 {/* NEW: "Mi vida de entrenamiento" summary card - makes the whole profile feel VIVO y ATRACTIVO at a glance */}
 <div className={`px-4 mt-3${profileSection !== 'actividad' ? ' hidden' : ''}`}>
-  <div className="card p-4 border border-[#FF671F]/20 bg-gradient-to-br from-[#1a140f] to-[#0D0D10]">
+  <div className="em-v2-card em-v2-card--brand">
     <div className="uppercase text-[9px] tracking-[1.5px] text-[#FF671F] mb-1">Tu vida de entrenamiento</div>
     <div className="flex items-center justify-between text-sm">
       <div>
@@ -163,7 +163,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
     return (
       <div className={`px-4 mt-3${profileSection !== 'actividad' ? ' hidden' : ''}`}>
       <div className="text-[9px] uppercase tracking-widest text-[#9CA3AF] mb-1 flex items-center gap-1">💥 ACTIVIDAD RECIENTE EN TU MURO <span className="text-[#22c55e] text-[8px]">¡vivo!</span></div>
-      <div className="card p-2.5 text-[10px] space-y-1 bg-gradient-to-r from-black/5 to-transparent">
+      <div className="em-v2-card em-v2-card--compact text-[10px] space-y-1">
         {sorted.map((r,i) => <div key={i} className="flex items-center gap-1.5 text-[#9CA3AF]"><span className="font-medium text-white/80">{r.name}</span> {r.text}</div>)}
       </div>
       <div className="text-[8px] text-center text-[#9CA3AF]/60 mt-1">La comunidad interactúa con vos — ¡sigue posteando para más FOMO!</div>

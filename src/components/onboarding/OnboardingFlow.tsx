@@ -1249,7 +1249,7 @@ export const OnboardingFlow = ({
 
           <button 
             onClick={nextOnboarding} 
-            className="w-full py-3.5 text-sm font-black tracking-[1px] rounded-2xl btn-primary active:scale-[0.985] bg-gradient-to-r from-[#FF671F] to-[#E55A1A] touch-manipulation disabled:opacity-45 disabled:pointer-events-none"
+            className="em-v2-hero-card__cta w-full py-3.5 text-sm font-black tracking-[1px] touch-manipulation disabled:opacity-45 disabled:pointer-events-none"
             disabled={
               (isEssenceStep &&
                 ((onboardData.trainingTypes || []).length === 0 ||

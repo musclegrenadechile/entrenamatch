@@ -54,7 +54,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 {/* Debug logs — solo en desarrollo */}
 {import.meta.env.DEV && (
 <div className={`px-4 mt-3${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
-  <details className="card p-3 text-xs">
+  <details className="em-v2-card text-xs">
     <summary className="cursor-pointer font-semibold text-[#FF671F]">🐛 Debug logs (para reportar crashes desde el celular)</summary>
     <div className="mt-2 max-h-40 overflow-auto text-[#9CA3AF] font-mono text-[10px] bg-black/30 p-2 rounded">
       {debugLogsRef.current.length ? debugLogsRef.current.map((l,i) => <div key={i}>{l}</div>) : <div>Sin logs aún. Se capturan en login, sync, publish, errores...</div>}
@@ -79,7 +79,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 {/* Verification — premio identidad */}
 <div className={`px-4 mt-4${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
   {currentUser.verificationStatus === 'verified' ? (
-    <div className="card p-0 overflow-hidden border border-[#FF671F]/40">
+    <div className="em-v2-card em-v2-card--brand em-v2-card--flush">
       <div className="p-4 bg-gradient-to-br from-[#FF671F]/15 to-transparent">
         <p className="text-[10px] uppercase tracking-wider text-[#FF671F] font-bold">Premio desbloqueado</p>
         <p className="text-sm font-black text-white mt-1">Identidad verificada</p>
@@ -87,7 +87,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
       </div>
     </div>
   ) : (
-    <div className="card p-4 flex items-center gap-3">
+    <div className="em-v2-card flex items-center gap-3">
       <div className="flex-1">
         <div className="font-medium flex items-center gap-2 text-sm">
           Desbloquea el premio Verificado
@@ -95,7 +95,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
         </div>
         <div className="text-xs text-[#9CA3AF] mt-0.5">Selfie en vivo → badge + señal de confianza en toda la app</div>
       </div>
-      <button onClick={() => { setShowVerificationFlow(true); setVerificationStep(1); }} className="shrink-0 text-xs px-4 py-2 bg-[#FF671F] text-black rounded-2xl font-semibold active:bg-[#E55A1A]">
+      <button onClick={() => { setShowVerificationFlow(true); setVerificationStep(1); }} className="em-v2-card__cta shrink-0">
         {currentUser.verificationStatus === 'pending' ? 'Ver estado' : 'Obtener premio'}
       </button>
     </div>
@@ -113,7 +113,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 
 {/* Ghost mode — fase 114 */}
 <div className={`px-4 mt-4${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
-  <div className="card p-4 flex items-center gap-3">
+  <div className="em-v2-card flex items-center gap-3">
     <div className="flex-1">
       <div className="font-medium text-sm flex items-center gap-2">
         👻 Modo fantasma
@@ -157,7 +157,8 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 </div>
 
 {/* Legal & safety */}
-<div className={`px-4 mt-4 card p-4 text-sm${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-4${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
+  <div className="em-v2-card text-sm">
   <div className="text-xs uppercase tracking-widest text-[#9CA3AF] mb-2">Legal y seguridad</div>
   <div className="flex flex-col gap-1 text-[#FF671F] text-sm">
     <button onClick={() => setShowLegal('terms')} className="text-left py-0.5">Términos de Servicio</button>
@@ -166,12 +167,13 @@ export function ProfileAccountSection(props: ProfileTabProps) {
     <a href="/entrenamatch/privacy.html" target="_blank" className="text-left py-0.5 hover:underline">Ver Política de Privacidad completa →</a>
     <a href="/entrenamatch/terms.html" target="_blank" className="text-left py-0.5 hover:underline">Ver Términos de Servicio completos →</a>
   </div>
+  </div>
 </div>
 
 {/* Micro guidance — oculto en producción */}
 {import.meta.env.DEV && (
 <div className={`px-4 mt-6 mb-8${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
-  <div className="card p-4 text-xs text-[#9CA3AF] leading-snug">
+  <div className="em-v2-card text-xs text-[#9CA3AF] leading-snug">
     Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cerrar sesión" en esta sección o "Cambiar cuenta" en el encabezado del perfil.
     <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
   </div>
@@ -224,7 +226,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
   ref={feedbackSectionRef}
   className={`px-4 mt-2 mb-8${profileSection !== 'ajustes' ? ' hidden' : ''}`}
 >
-  <div className="card p-5">
+  <div className="em-v2-card">
     <div className="flex items-center justify-between mb-3">
       <div className="font-semibold text-sm flex items-center gap-2"><Star size={15} className="text-[#FF671F]" /> Feedback de Beta</div>
       <div className="text-[10px] px-2.5 py-0.5 rounded-full bg-[#FF671F]/10 text-[#FF671F] border border-[#FF671F]/20">Privado</div>
@@ -244,7 +246,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
           <button
             key={opt.v}
             onClick={() => setFeedbackType(opt.v as any)}
-            className={`px-3 py-1 text-xs rounded-2xl border transition ${feedbackType === opt.v ? 'bg-[#FF671F] text-black border-[#FF671F]' : 'border-[#2F2F35] text-[#cbd5e1] active:bg-[#1C1C20]'}`}
+            className={`em-v2-chip-btn em-v2-chip-btn--sm ${feedbackType === opt.v ? 'em-v2-chip-btn--selected' : ''}`}
           >
             {opt.l}
           </button>
@@ -313,7 +315,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
           toast.error('No se pudo enviar (revisa conexión o permisos)')
         }
       }}
-      className="mt-1 w-full py-2.5 rounded-2xl bg-[#FF671F] text-black text-sm font-semibold active:bg-[#E55A1A]"
+      className="em-v2-hero-card__cta mt-1 w-full text-sm"
     >
       Enviar feedback estructurado
     </button>
@@ -331,7 +333,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
         )}
         <div className="space-y-2 max-h-44 overflow-auto pr-1">
           {myFeedbacks.map((fb, i) => (
-            <div key={fb.id || i} className="bg-[#1C1C20] rounded-2xl p-3 text-xs border border-[#2F2F35] card-glass">
+            <div key={fb.id || i} className="em-v2-card em-v2-card--compact text-xs">
               <div className="flex items-center gap-2 text-[#9CA3AF]">
                 <span className="font-medium text-white/90">{fb.type === 'bug' ? '🐞 Bug' : fb.type === 'idea' ? '💡 Idea' : fb.type === 'ux' ? '🎨 UX' : '📝 Otro'}</span>
                 <span>·</span>

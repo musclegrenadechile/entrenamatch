@@ -21,7 +21,7 @@ export function TuRedPowerCard({
 }: TuRedPowerCardProps) {
   return (
     <div className="px-4 mt-3">
-      <div className="card p-3 bg-gradient-to-r from-[#1a160f] to-[#25252A] border border-[#FFD700]/20">
+      <div className="em-v2-card em-v2-card--gold em-v2-card--compact">
         <div className="text-[10px] uppercase tracking-[1px] text-[#FFD700] mb-1">
           Tu Poder en la Red
         </div>

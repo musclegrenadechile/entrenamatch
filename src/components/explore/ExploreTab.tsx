@@ -619,7 +619,7 @@ export const ExploreTab = ({
                 <div 
                   key={profile.id}
                   onClick={() => onShowProfile?.(profile)}
-                  className="card p-2.5 rounded-2xl flex gap-2.5 cursor-pointer active:scale-[0.985] transition min-w-[168px] max-w-[168px] md:min-w-0 md:max-w-none snap-start shrink-0 md:shrink"
+                  className="em-v2-explore-mini md:min-w-0 md:max-w-none snap-start shrink-0 md:shrink"
                 >
                   <MatchProfilePhoto
                     profile={profile}
@@ -671,7 +671,7 @@ export const ExploreTab = ({
               <div
                 key={n.profile.id}
                 onClick={() => onShowProfile?.(n.profile)}
-                className="card p-2.5 rounded-2xl flex gap-2.5 cursor-pointer active:scale-[0.985] border border-[#FFD700]/30 hover:border-[#FFD700]/60 transition min-w-[168px] max-w-[168px] md:min-w-0 md:max-w-none snap-start shrink-0 md:shrink"
+                className="em-v2-explore-mini em-v2-explore-mini--gold md:min-w-0 md:max-w-none snap-start shrink-0 md:shrink"
               >
                 <MatchProfilePhoto
                   profile={n.profile}

@@ -131,7 +131,7 @@ export function ProfileRendimientoSection(props: ProfileTabProps) {
 
 {import.meta.env.DEV && (
 <div className={`px-4 mt-2${profileSection !== 'red' ? ' hidden' : ''}`}>
-  <div className="card p-5 border border-[#22c55e]/30">
+  <div className="em-v2-card em-v2-card--live">
     <div className="flex items-center gap-2 mb-2">
       <div className="font-semibold text-sm flex items-center gap-2"><span>🛡️</span> Google Play Integrity</div>
       <div className="text-[9px] px-2 py-0.5 rounded-full bg-[#22c55e]/10 text-[#22c55e] border border-[#22c55e]/30">Android + Play Store</div>

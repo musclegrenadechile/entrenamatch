@@ -235,7 +235,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
             if (aInNet !== bInNet) return aInNet - bInNet;
             return (a.distance||0)-(b.distance||0);
           }).slice(0, 2).map((user, idx) => (
-            <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className={`min-w-[130px] card card-glass p-2 text-[10px] cursor-pointer border active:scale-95 relative overflow-hidden shadow-lg shadow-[#22c55e]/10 ${ (user.joinCount||0) >= 3 ? 'border-[#FF671F]/60 shadow-[0_0_0_1px_#FF671F] animate-[pulse_2s_ease-in-out_infinite]' : 'border-[#22c55e]/70' }`} whileHover={{ scale: 1.04, y: -2, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(34 197 94 / 0.2)' }} whileTap={{ scale: 0.96 }} initial={{ opacity: 0.85, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
+            <motion.div key={user.id} onClick={() => setShowFullProfile(user)} className={`em-v2-card em-v2-card--live em-v2-explore-live-pill text-[10px] ${ (user.joinCount||0) >= 3 ? 'em-v2-explore-live-pill--hot animate-[pulse_2s_ease-in-out_infinite]' : '' }`} whileHover={{ scale: 1.04, y: -2, boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(34 197 94 / 0.2)' }} whileTap={{ scale: 0.96 }} initial={{ opacity: 0.85, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 300, damping: 20 }}>
               <div className="flex justify-between items-start mb-1">
                 <div className="flex items-center gap-1">
                   {user.photos && user.photos[0] && <img src={user.photos[0]} className="w-5 h-5 rounded-full object-cover border-2 border-[#22c55e]/60 ring-1 ring-[#22c55e]/20" />}
