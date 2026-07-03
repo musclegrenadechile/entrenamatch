@@ -99,6 +99,24 @@ export const WORKOUT_HISTORY_TRAINING_UTILS: readonly WorkoutHistoryTrainingUtil
     oleada: 449,
     covers: ['sparkline', 'a11y'],
   },
+  {
+    id: 'history-v2-global-closure',
+    module: 'trainingWorkoutHistoryV2GlobalClosure',
+    oleada: 452,
+    covers: ['summary', 'badges', 'sparkline', 'a11y'],
+  },
+  {
+    id: 'history-v2-global-polish',
+    module: 'trainingPolishWorkoutHistoryV2GlobalSuite',
+    oleada: 452,
+    covers: ['summary', 'badges', 'sparkline', 'a11y'],
+  },
+  {
+    id: 'history-v2-global-e2e',
+    module: 'e2eWorkoutHistoryV2GlobalCoverage',
+    oleada: 452,
+    covers: ['summary', 'badges', 'sparkline', 'a11y'],
+  },
 ] as const
 
 export function countWorkoutHistoryTrainingUtils(): number {
@@ -106,7 +124,7 @@ export function countWorkoutHistoryTrainingUtils(): number {
 }
 
 export function workoutHistoryTrainingBlockRange(): { from: number; to: number } {
-  return { from: 395, to: 449 }
+  return { from: 395, to: 452 }
 }
 
 export const WORKOUT_HISTORY_TRAINING_V2_OPEN_OLEADA = 440

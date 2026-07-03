@@ -1,9 +1,11 @@
-/** Registro E2E union mega post-PR — 8 specs oleadas 436–450 (oleada 451). */
+/** Registro E2E union mega post-PR — 9 specs oleadas 436–452 (oleada 452). */
 import { E2E_TRAINING_FULL_FLOW_PR_SPECS } from './e2eTrainingFullFlowPrCoverage'
+import { E2E_TRAINING_MEGA_FLOW_PR_SPECS } from './e2eTrainingMegaFlowPrCoverage'
 import { E2E_TRAINING_REVIEW_PR_SPECS } from './e2eTrainingReviewPrCoverage'
 import { E2E_TRAINING_PR_V2_SPECS } from './e2eTrainingPrV2Coverage'
 import { E2E_WORKOUT_HISTORY_SPARKLINE_PR_SPECS } from './e2eWorkoutHistorySparklinePrCoverage'
 import { isTrainingFullFlowPrCoverageComplete } from './e2eTrainingFullFlowPrCoverage'
+import { isTrainingMegaFlowPrCoverageComplete } from './e2eTrainingMegaFlowPrCoverage'
 import { isTrainingPrV2CoverageComplete } from './e2eTrainingPrV2Coverage'
 import { isTrainingReviewPrCoverageComplete } from './e2eTrainingReviewPrCoverage'
 import { isWorkoutHistorySparklinePrCoverageComplete } from './e2eWorkoutHistorySparklinePrCoverage'
@@ -17,6 +19,7 @@ export type E2ETrainingPostPrMegaCover =
   | 'review-pr-tone'
   | 'sparkline-pr-tone'
   | 'full-flow-review-pr'
+  | 'mega-flow-review-pr'
   | 'harness'
   | 'aria'
 
@@ -32,6 +35,7 @@ export const E2E_TRAINING_POST_PR_MEGA_SPECS: readonly E2ETrainingPostPrMegaSpec
   ...E2E_TRAINING_REVIEW_PR_SPECS,
   ...E2E_WORKOUT_HISTORY_SPARKLINE_PR_SPECS,
   ...E2E_TRAINING_FULL_FLOW_PR_SPECS,
+  ...E2E_TRAINING_MEGA_FLOW_PR_SPECS,
 ] as const
 
 const POST_PR_MEGA_TONE_COVERS = [
@@ -43,6 +47,7 @@ const POST_PR_MEGA_TONE_COVERS = [
   'review-pr-tone',
   'sparkline-pr-tone',
   'full-flow-review-pr',
+  'mega-flow-review-pr',
 ] as const
 
 export function countE2ETrainingPostPrMegaSpecs(): number {
@@ -62,7 +67,7 @@ export function trainingPostPrMegaSpecFileBasenames(): string[] {
 }
 
 export function e2eTrainingPostPrMegaBlockRange(): { from: number; to: number } {
-  return { from: 436, to: 450 }
+  return { from: 436, to: 452 }
 }
 
 export function isTrainingPostPrMegaCoverageComplete(): boolean {
@@ -72,6 +77,7 @@ export function isTrainingPostPrMegaCoverageComplete(): boolean {
     isTrainingReviewPrCoverageComplete() &&
     isWorkoutHistorySparklinePrCoverageComplete() &&
     isTrainingFullFlowPrCoverageComplete() &&
+    isTrainingMegaFlowPrCoverageComplete() &&
     POST_PR_MEGA_TONE_COVERS.every((c) => covers.includes(c))
   )
 }

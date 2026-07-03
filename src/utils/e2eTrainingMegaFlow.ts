@@ -1,4 +1,4 @@
-/** Mega E2E: entreno → Fuel → sync → reseña (oleada 381 / training-mega-flow.spec.ts). */
+/** Mega E2E: entreno → Fuel → sync → reseña (oleada 381, PR oleada 452 / training-mega-flow.spec.ts). */
 export const E2E_TRAINING_MEGA_FLOW_IDS = [
   'workout-open',
   'workout-save',
@@ -17,6 +17,8 @@ export const E2E_TRAINING_MEGA_FLOW_IDS = [
   'sync-arena',
   'sync-close',
   'review-open',
+  'review-pr-tone',
+  'review-pr-aria',
   'review-submit',
   'shell-stable',
 ] as const

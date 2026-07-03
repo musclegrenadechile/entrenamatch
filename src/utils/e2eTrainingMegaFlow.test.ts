@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { E2E_TRAINING_MEGA_FLOW_IDS, isTrainingMegaFlowComplete } from './e2eTrainingMegaFlow'
 
 describe('e2eTrainingMegaFlow', () => {
-  it('define 19 hitos del mega flujo entreno', () => {
-    expect(E2E_TRAINING_MEGA_FLOW_IDS.length).toBe(19)
+  it('define 21 hitos del mega flujo entreno', () => {
+    expect(E2E_TRAINING_MEGA_FLOW_IDS.length).toBe(21)
     expect(E2E_TRAINING_MEGA_FLOW_IDS).toContain('plan-history-hint')
     expect(E2E_TRAINING_MEGA_FLOW_IDS).toContain('plan-rotation-note')
     expect(E2E_TRAINING_MEGA_FLOW_IDS).toContain('plan-rotation-chip')
@@ -12,6 +12,8 @@ describe('e2eTrainingMegaFlow', () => {
     expect(E2E_TRAINING_MEGA_FLOW_IDS).toContain('plan-fuel-nutrition')
     expect(E2E_TRAINING_MEGA_FLOW_IDS).toContain('fuel-macro-prefill')
     expect(E2E_TRAINING_MEGA_FLOW_IDS).toContain('fuel-prefill')
+    expect(E2E_TRAINING_MEGA_FLOW_IDS).toContain('review-pr-tone')
+    expect(E2E_TRAINING_MEGA_FLOW_IDS).toContain('review-pr-aria')
     expect(E2E_TRAINING_MEGA_FLOW_IDS.at(-1)).toBe('shell-stable')
   })
 

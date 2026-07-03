@@ -862,6 +862,60 @@ if (!trainingPostPrMegaFullCoverage.includes('e2eTrainingPostPrMegaCoverage')) {
 if (!ok) process.exit(1)
 console.log('✓ e2eTrainingPostPrMegaCoverage aligned with mega post-PR union (oleada 451)')
 console.log('✓ e2eTrainingPostPrMegaFullCoverage unifies 5 mega post-PR E2E suites (oleada 451)')
+const workoutHistoryV2GlobalClosure = readFileSync(
+  join(root, 'src/utils/trainingWorkoutHistoryV2GlobalClosure.ts'),
+  'utf8'
+)
+if (!workoutHistoryV2GlobalClosure.includes('isTrainingWorkoutHistoryV2GlobalClosureComplete')) {
+  console.error('trainingWorkoutHistoryV2GlobalClosure missing global closure helper (oleada 452)')
+  ok = false
+}
+if (!workoutHistoryV2GlobalClosure.includes('history-sparkline-v2')) {
+  console.error('trainingWorkoutHistoryV2GlobalClosure missing sparkline block ref (oleada 452)')
+  ok = false
+}
+const trainingMegaFlowPrCoverage = readFileSync(
+  join(root, 'src/utils/e2eTrainingMegaFlowPrCoverage.ts'),
+  'utf8'
+)
+if (!trainingMegaFlowPrCoverage.includes('isTrainingMegaFlowPrCoverageComplete')) {
+  console.error('e2eTrainingMegaFlowPrCoverage missing mega-flow-pr helper (oleada 452)')
+  ok = false
+}
+if (!trainingMegaFlowPrCoverage.includes('mega-flow-review-pr')) {
+  console.error('e2eTrainingMegaFlowPrCoverage missing mega-flow-review-pr cover (oleada 452)')
+  ok = false
+}
+const trainingMegaFlow = readFileSync(join(root, 'src/utils/e2eTrainingMegaFlow.ts'), 'utf8')
+if (!trainingMegaFlow.includes('review-pr-tone')) {
+  console.error('e2eTrainingMegaFlow missing review-pr-tone hito (oleada 452)')
+  ok = false
+}
+const trainingPostPrMegaPostV2Coverage = readFileSync(
+  join(root, 'src/utils/e2eTrainingPostPrMegaPostV2Coverage.ts'),
+  'utf8'
+)
+if (!trainingPostPrMegaPostV2Coverage.includes('isTrainingPostPrMegaPostV2E2ECoverageComplete')) {
+  console.error('e2eTrainingPostPrMegaPostV2Coverage missing post-v2 helper (oleada 452)')
+  ok = false
+}
+if (!trainingPostPrMegaPostV2Coverage.includes('mega-flow-review-pr')) {
+  console.error('e2eTrainingPostPrMegaPostV2Coverage missing mega-flow-review-pr cover (oleada 452)')
+  ok = false
+}
+if (!trainingPostPrMegaFullCoverage.includes('e2eTrainingPostPrMegaPostV2Coverage')) {
+  console.error('e2eTrainingPostPrMegaFullCoverage missing post-v2 suite ref (oleada 452)')
+  ok = false
+}
+if (!trainingPostPrMegaCoverage.includes('mega-flow-review-pr')) {
+  console.error('e2eTrainingPostPrMegaCoverage missing mega-flow-review-pr cover (oleada 452)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ trainingWorkoutHistoryV2GlobalClosure aligned with historial v2 global (oleada 452)')
+console.log('✓ e2eTrainingMegaFlowPrCoverage aligned with training-mega-flow PR pivot (oleada 452)')
+console.log('✓ e2eTrainingPostPrMegaPostV2Coverage closes mega post-PR union (oleada 452)')
+console.log('✓ e2eTrainingPostPrMegaFullCoverage unifies 6 mega post-PR E2E suites (oleada 452)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

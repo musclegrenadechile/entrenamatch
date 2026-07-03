@@ -469,6 +469,21 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'training-full-flow',
     feature: 'union mega post-PR 8 specs + e2eTrainingPostPrMegaCoverage',
   },
+  {
+    polishOleada: 452,
+    e2eSpecId: 'workout-history-flow',
+    feature: 'cierre historial v2 global fila 443 + sparkline 449 + trainingPolishWorkoutHistoryV2GlobalSuite',
+  },
+  {
+    polishOleada: 452,
+    e2eSpecId: 'training-mega-flow',
+    feature: 'training-mega-flow PR×reseña post-sync + e2eTrainingMegaFlowPrCoverage',
+  },
+  {
+    polishOleada: 452,
+    e2eSpecId: 'training-mega-flow',
+    feature: 'cierre mega post-PR 451 + mega-flow PR + e2eTrainingPostPrMegaPostV2Coverage',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

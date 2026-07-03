@@ -35,11 +35,18 @@ export const TRAINING_POLISH_WORKOUT_HISTORY_V2_UTILS: readonly TrainingPolishWo
       oleada: 449,
       covers: ['history', 'pr', 'aria', 'e2e'],
     },
+    {
+      id: 'history-v2-global-closure',
+      module: 'trainingPolishWorkoutHistoryV2GlobalSuite',
+      oleada: 452,
+      covers: ['history', 'pr', 'aria', 'e2e'],
+    },
   ] as const
 
 export const TRAINING_POLISH_WORKOUT_HISTORY_V2_OPEN_OLEADA = 440
 export const TRAINING_POLISH_WORKOUT_HISTORY_V2_ROW_CLOSED_OLEADA = 443
 export const TRAINING_POLISH_WORKOUT_HISTORY_V2_CLOSED_OLEADA = 449
+export const TRAINING_POLISH_WORKOUT_HISTORY_V2_GLOBAL_CLOSED_OLEADA = 452
 
 export function trainingPolishWorkoutHistoryV2Range(): { from: number; to: number } {
   return { from: 440, to: 449 }
@@ -65,4 +72,10 @@ export function isTrainingPolishWorkoutHistoryV2Closed(
   oleada = TRAINING_POLISH_WORKOUT_HISTORY_V2_CLOSED_OLEADA
 ): boolean {
   return oleada >= TRAINING_POLISH_WORKOUT_HISTORY_V2_CLOSED_OLEADA
+}
+
+export function isTrainingPolishWorkoutHistoryV2GlobalClosed(
+  oleada = TRAINING_POLISH_WORKOUT_HISTORY_V2_GLOBAL_CLOSED_OLEADA
+): boolean {
+  return oleada >= TRAINING_POLISH_WORKOUT_HISTORY_V2_GLOBAL_CLOSED_OLEADA
 }

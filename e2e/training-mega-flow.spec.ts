@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test'
 import { enterDemo, waitForE2EHarness } from './helpers'
 
-/** Oleada 381 — recorrido completo: gym-log → Fuel → sync → reseña. */
+/** Oleada 381 — recorrido completo: gym-log → Fuel → sync → reseña. Oleada 452 — tono PR×reseña post-sync. */
 test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async ({ page }) => {
   await enterDemo(page)
   await waitForE2EHarness(page)
@@ -189,9 +189,23 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
     window.__entrenamatchE2E!.openReviewModal('p1')
   })
 
-  const review = page.getByRole('dialog', { name: 'Reseña post-entreno' })
+  const review = page.getByRole('dialog', { name: /Reseña post-entreno con récord personal/i })
   await expect(review).toBeVisible({ timeout: 10000 })
-  await review.getByRole('button', { name: '5 estrellas' }).click()
+  await expect(review.getByText('🏆 Sesión con récord personal')).toBeVisible()
+  const reviewTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getTrainingReviewCardToneClass()
+  )
+  expect(reviewTone).toBe('em-v2-review-modal__card--has-pr')
+  const reviewAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getTrainingReviewCardAriaLabel()
+  )
+  expect(reviewAria).toMatch(/récord personal/i)
+  const reviewPrAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isTrainingReviewPrToneAriaExpected()
+  )
+  expect(reviewPrAria).toBe(true)
+  await expect(review.getByRole('status').filter({ hasText: /estrellas|récord personal/i })).toBeVisible()
+  await review.getByRole('button', { name: '4 estrellas' }).click()
   await review.getByRole('button', { name: 'Enviar reseña' }).click()
   await expect(review).not.toBeVisible({ timeout: 10000 })
 
