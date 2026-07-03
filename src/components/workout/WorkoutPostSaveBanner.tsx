@@ -38,10 +38,20 @@ export function WorkoutPostSaveBanner({
     .filter(Boolean)
     .join(' · ')
 
+  const ariaLabel = [
+    `Entreno guardado: ${title}`,
+    sessionSummary,
+    fuelBalanceHint,
+    prSummary ? 'Nuevo récord personal' : null,
+  ]
+    .filter(Boolean)
+    .join('. ')
+
   return (
     <div
       className="em-v2-training-save-banner em-v2-training-save-banner--sticky em-v2-training-save-banner--enter"
       role="status"
+      aria-label={ariaLabel}
     >
       <button type="button" onClick={onDismiss} className="em-v2-training-save-banner__close" aria-label="Cerrar">
         <X size={14} />

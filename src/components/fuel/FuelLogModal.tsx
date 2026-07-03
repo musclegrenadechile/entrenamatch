@@ -3,7 +3,9 @@ import { Camera, Sparkles, X } from 'lucide-react'
 import { estimateMacrosFromDescription } from '../../utils/fuelCalculator'
 import type { AnalyzeFoodResult } from '../../services/fuel'
 import type { FuelLogEntry } from '../../types'
-import type { FuelLogPrefill } from '../../utils/fuelLogPrefill'
+import { hasWorkoutFuelMacroPrefill, type FuelLogPrefill } from '../../utils/fuelLogPrefill'
+
+export const FUEL_LOG_WORKOUT_PREFILL_CLASS = 'em-v2-fuel-log__workout-prefill'
 
 export interface FuelLogModalProps {
   open: boolean
@@ -110,6 +112,8 @@ export function FuelLogModal({
   }, [open, editEntry, prefill])
 
   if (!open) return null
+
+  const workoutMacroPrefill = hasWorkoutFuelMacroPrefill(prefill) && !editEntry ? prefill : null
 
   const resolvedMealLabel = () => {
     const label = mealLabel.trim()
@@ -304,12 +308,22 @@ export function FuelLogModal({
             className="w-full px-3 py-2.5 rounded-xl bg-[#1a1a22] border border-white/10 text-white text-sm"
           />
 
+          {workoutMacroPrefill && (
+            <p className={FUEL_LOG_WORKOUT_PREFILL_CLASS} role="status">
+              Sugerido del entreno · ~{workoutMacroPrefill.suggestedKcal} kcal
+              {workoutMacroPrefill.suggestedProteinG
+                ? ` · ${workoutMacroPrefill.suggestedProteinG}g proteína`
+                : ''}
+            </p>
+          )}
+
           <div className="grid grid-cols-2 gap-2 text-xs">
             <label>
               kcal
               <input
                 type="number"
                 value={kcal}
+                aria-label="Calorías kcal"
                 onChange={(e) => {
                   setSource('manual')
                   setKcal(Number(e.target.value) || 0)
@@ -322,6 +336,7 @@ export function FuelLogModal({
               <input
                 type="number"
                 value={proteinG}
+                aria-label="Proteína en gramos"
                 onChange={(e) => {
                   setSource('manual')
                   setProteinG(Number(e.target.value) || 0)

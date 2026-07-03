@@ -7,6 +7,7 @@ export const E2E_WORKOUT_FUEL_FLOW_IDS = [
   'fuel-cta',
   'fuel-modal',
   'fuel-prefill',
+  'fuel-macro-prefill',
 ] as const
 
 export type E2EWorkoutFuelFlowId = (typeof E2E_WORKOUT_FUEL_FLOW_IDS)[number]

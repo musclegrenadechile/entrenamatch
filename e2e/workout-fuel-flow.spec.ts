@@ -35,4 +35,8 @@ test('E2E workout-fuel-flow — banner post-guardar → Fuel prefill', async ({ 
   const fuel = page.getByRole('dialog', { name: 'Registrar comida Fuel' })
   await expect(fuel).toBeVisible({ timeout: 10000 })
   await expect(fuel.getByPlaceholder('Nombre de la comida')).toHaveValue('Post-entreno')
+  await expect(fuel.locator('.em-v2-fuel-log__workout-prefill')).toContainText(/Sugerido del entreno/i)
+  await expect(fuel.getByRole('status').filter({ hasText: /Sugerido del entreno/i })).toBeVisible()
+  await expect(fuel.getByLabel('Calorías kcal')).toHaveValue('320')
+  await expect(fuel.getByLabel('Proteína en gramos')).not.toHaveValue('35')
 })

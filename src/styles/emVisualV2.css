@@ -4382,6 +4382,19 @@
   line-height: 1.35;
 }
 
+/* ——— Entreno oleada 393: chip macros sugeridos en Fuel log post-entreno ——— */
+.em-v2-fuel-log__workout-prefill {
+  font-size: 0.625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgba(192, 132, 252, 0.92);
+  padding: 0.4rem 0.55rem;
+  border-radius: var(--em-radius-lg);
+  background: rgba(168, 85, 247, 0.12);
+  border: 1px solid rgba(168, 85, 247, 0.28);
+  line-height: 1.35;
+}
+
 .em-v2-training-save-banner__pr-badge {
   display: inline-flex;
   align-items: center;

@@ -12,6 +12,12 @@ export interface WorkoutSaveFuelContext {
   title: string
   burnKcal?: number
   fuelTip?: string
+  sessionSummary?: string
+  fuelBalanceHint?: string
+}
+
+export function hasWorkoutFuelMacroPrefill(prefill?: FuelLogPrefill | null): boolean {
+  return !!(prefill?.suggestedKcal && prefill.suggestedKcal > 0)
 }
 
 /** Heuristic post-workout meal macros from session burn. */
@@ -32,16 +38,20 @@ export function buildFuelLogPrefillFromWorkoutSave(
   ctx: WorkoutSaveFuelContext
 ): FuelLogPrefill {
   const parts = [
+    ctx.sessionSummary,
+    ctx.fuelBalanceHint,
     ctx.fuelTip,
     ctx.burnKcal && ctx.burnKcal > 0
       ? `~${ctx.burnKcal} kcal en «${ctx.title}»`
       : `Entreno «${ctx.title}»`,
   ].filter(Boolean)
 
+  const macros = suggestPostWorkoutMacros(ctx.burnKcal)
+
   return {
     mealLabel: 'Post-entreno',
     description: parts.join(' · '),
-    contextHint: ctx.fuelTip,
-    ...suggestPostWorkoutMacros(ctx.burnKcal),
+    contextHint: ctx.fuelBalanceHint || ctx.fuelTip,
+    ...macros,
   }
 }

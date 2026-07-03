@@ -18,11 +18,14 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
     window.__entrenamatchE2E!.goToHomeTab()
   })
   await expect(page.getByText(/Entreno guardado/i)).toBeVisible({ timeout: 10000 })
+  await expect(page.locator('.em-v2-training-save-banner__fuel')).toContainText(/Fuel sugerido/i)
   await page.getByRole('button', { name: /Registrar post-entreno/i }).click()
 
   const fuel = page.getByRole('dialog', { name: 'Registrar comida Fuel' })
   await expect(fuel).toBeVisible({ timeout: 10000 })
   await expect(fuel.getByPlaceholder('Nombre de la comida')).toHaveValue('Post-entreno')
+  await expect(fuel.locator('.em-v2-fuel-log__workout-prefill')).toContainText(/Sugerido del entreno/i)
+  await expect(fuel.getByLabel('Calorías kcal')).toHaveValue('320')
 
   await page.evaluate(() => {
     window.__entrenamatchE2E!.closeFuelLogModal()

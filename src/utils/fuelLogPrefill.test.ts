@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { buildFuelLogPrefillFromWorkoutSave, suggestPostWorkoutMacros } from './fuelLogPrefill'
+import {
+  buildFuelLogPrefillFromWorkoutSave,
+  hasWorkoutFuelMacroPrefill,
+  suggestPostWorkoutMacros,
+} from './fuelLogPrefill'
 
 describe('fuelLogPrefill', () => {
   it('builds post-workout meal prefill from banner context', () => {
@@ -28,5 +32,25 @@ describe('fuelLogPrefill', () => {
     })
     expect(prefill.description).toContain('Entreno «Cardio»')
     expect(prefill.description).toContain('Hidrata bien')
+  })
+
+  it('incluye sessionSummary y fuelBalanceHint (oleada 393)', () => {
+    const prefill = buildFuelLogPrefillFromWorkoutSave({
+      title: 'Push',
+      burnKcal: 400,
+      sessionSummary: '1 serie · 600 kg',
+      fuelBalanceHint: 'Fuel sugerido: ~320 kcal · 24g proteína',
+      fuelTip: 'Post torso: combina proteína + carbohidratos',
+    })
+    expect(prefill.description).toContain('1 serie')
+    expect(prefill.description).toContain('Fuel sugerido')
+    expect(prefill.contextHint).toContain('Fuel sugerido')
+    expect(hasWorkoutFuelMacroPrefill(prefill)).toBe(true)
+  })
+
+  it('hasWorkoutFuelMacroPrefill', () => {
+    expect(hasWorkoutFuelMacroPrefill(null)).toBe(false)
+    expect(hasWorkoutFuelMacroPrefill({ mealLabel: 'X' })).toBe(false)
+    expect(hasWorkoutFuelMacroPrefill({ suggestedKcal: 320 })).toBe(true)
   })
 })
