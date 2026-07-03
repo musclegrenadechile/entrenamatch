@@ -57,7 +57,7 @@ export function SessionsTab({
                 type="button"
                 onClick={() => void onRefreshSessions()}
                 disabled={isLoadingSessions}
-                className="text-xs px-3 py-1 rounded-2xl bg-[#FF671F] text-black font-semibold active:bg-[#E55A1A] disabled:opacity-60"
+                className="em-v2-sessions__refresh"
               >
                 {isLoadingSessions ? 'Actualizando...' : 'Actualizar sesiones reales'}
               </button>
@@ -82,10 +82,8 @@ export function SessionsTab({
 
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <div className="text-lg font-semibold">Sesiones abiertas</div>
-          <div className="text-xs px-2 py-0.5 bg-[#2F2F35] rounded-full text-[#9CA3AF]">
-            {openSessions.length}
-          </div>
+          <div className="em-v2-section-title">Sesiones abiertas</div>
+          <div className="em-v2-section-badge">{openSessions.length}</div>
         </div>
         <div className="text-[10px] text-[#9CA3AF] -mt-2 mb-3">
           Sesiones visibles para testers reales • chat grupal en vivo
@@ -121,51 +119,47 @@ export function SessionsTab({
                     key={session.id}
                     whileHover={{ scale: 1.01, y: -1 }}
                     transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                    className={`card card-glass session-card rounded-3xl p-4 ${creatorLive ? 'border-[#22c55e]/60 ring-1 ring-[#22c55e]/20' : ''} hover:border-[#FF671F]/20 transition-all`}
+                    className={`em-v2-card ${creatorLive ? 'em-v2-card--live' : ''}`}
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="font-semibold text-lg tracking-tight">{session.title}</div>
-                        <div className="text-sm text-[#FF671F] font-medium mt-0.5">
+                        <div className="em-v2-card__title">{session.title}</div>
+                        <div className="em-v2-card__focus">
                           {session.trainingType} • {session.time}
                         </div>
-                        <div className="text-sm text-[#9CA3AF] mt-0.5 flex items-center gap-1">
+                        <div className="em-v2-card__detail">
                           <MapPin size={13} /> {session.location}
                         </div>
                       </div>
-                      <div className="text-right text-xs">
-                        <div className="text-[#22c55e] font-semibold">{spotsLeft} cupos</div>
-                        {dist != null && <div className="text-[#9CA3AF] mt-0.5">{dist} km</div>}
+                      <div className="em-v2-card__stat">
+                        <div className="em-v2-card__stat-value">{spotsLeft} cupos</div>
+                        {dist != null && <div className="em-v2-card__stat-label">{dist} km</div>}
                         {creatorLive && (
-                          <div className="mt-0.5 text-[8px] px-1 py-0.5 bg-[#22c55e] text-black rounded font-bold">
-                            🟢 LIVE
+                          <div className="mt-0.5">
+                            <span className="em-v2-card__badge em-v2-card__badge--live">🟢 LIVE</span>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between text-sm">
-                      <div className="text-[#9CA3AF]">
-                        Creado por <span className="text-white font-medium">{session.creatorName}</span>
+                    <div className="em-v2-card__footer">
+                      <div className="em-v2-card__footer-meta">
+                        Creado por <strong>{session.creatorName}</strong>
                         {!isDemoMode && session.creatorId && session.creatorId !== 'me' && (
-                          <span className="ml-1.5 text-[9px] px-1.5 py-px bg-[#FF671F] text-black rounded-full align-middle">
-                            REAL
-                          </span>
+                          <span className="ml-1.5 em-v2-card__badge em-v2-card__badge--real">REAL</span>
                         )}
-                        <div className="text-[10px] mt-0.5">
+                        <div className="mt-0.5">
                           {session.participants.length} / {session.maxParticipants} personas
                         </div>
                         {session.lastMessagePreview && (
-                          <div className="text-[10px] text-[#9CA3AF] mt-0.5 truncate max-w-[160px]">
-                            💬 {session.lastMessagePreview}
-                          </div>
+                          <div className="em-v2-card__preview">💬 {session.lastMessagePreview}</div>
                         )}
                       </div>
                       <button
                         type="button"
                         onClick={() => void onJoinSession(session)}
                         disabled={spotsLeft <= 0}
-                        className="bg-[#FF671F] text-black px-5 py-1.5 rounded-2xl text-sm font-medium disabled:opacity-50"
+                        className="em-v2-card__cta"
                       >
                         Unirme
                       </button>
@@ -179,8 +173,8 @@ export function SessionsTab({
 
       <div>
         <div className="flex items-center gap-2 mb-3">
-          <div className="text-lg font-semibold">Mis sesiones</div>
-          <div className="text-xs px-2 py-0.5 bg-[#FF671F]/20 text-[#FF671F] rounded-full">{mySessions.length}</div>
+          <div className="em-v2-section-title">Mis sesiones</div>
+          <div className="em-v2-section-badge em-v2-section-badge--brand">{mySessions.length}</div>
         </div>
 
         {mySessions.length === 0 ? (
@@ -213,51 +207,47 @@ export function SessionsTab({
                     key={session.id}
                     whileHover={{ scale: 1.01, y: -1 }}
                     transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                    className={`card card-glass session-card rounded-3xl p-4 border border-[#FF4F79]/50 ring-1 ring-inset ring-[#FF4F79]/10 ${creatorLive ? 'border-[#22c55e]/60 ring-1 ring-[#22c55e]/20' : ''} hover:border-[#FF671F]/20 transition-all`}
+                    className={`em-v2-card em-v2-card--owned ${creatorLive ? 'em-v2-card--live' : ''}`}
                   >
                     <div className="flex justify-between items-start">
                       <div>
-                        <div className="font-semibold text-lg flex items-center gap-2 tracking-tight">
+                        <div className="em-v2-card__title">
                           {session.title}
                           {isCreator && (
-                            <span className="text-[9px] bg-[#FF671F] text-black px-2 py-0.5 rounded font-medium">
-                              TUYA
-                            </span>
+                            <span className="em-v2-card__badge em-v2-card__badge--owned">TUYA</span>
                           )}
                           {creatorLive && (
-                            <span className="text-[8px] bg-[#22c55e] text-black px-1.5 py-0.5 rounded font-bold">
-                              🟢 LIVE
-                            </span>
+                            <span className="em-v2-card__badge em-v2-card__badge--live">🟢 LIVE</span>
                           )}
                         </div>
-                        <div className="text-sm text-[#FF671F] font-medium mt-0.5">
+                        <div className="em-v2-card__focus">
                           {session.trainingType} • {session.time}
                         </div>
-                        <div className="text-sm text-[#9CA3AF] mt-0.5 flex items-center gap-1">
+                        <div className="em-v2-card__detail">
                           <MapPin size={13} /> {session.location}
                         </div>
                         {session.lastMessagePreview && (
-                          <div className="text-[10px] text-[#9CA3AF] mt-0.5 truncate max-w-[180px]">
-                            💬 {session.lastMessagePreview}
-                          </div>
+                          <div className="em-v2-card__preview">💬 {session.lastMessagePreview}</div>
                         )}
                       </div>
-                      <div className="text-right text-xs">
-                        {dist != null && <div className="text-[#9CA3AF]">{dist} km</div>}
-                        <div className="text-[#22c55e] mt-0.5 font-medium">
+                      <div className="em-v2-card__stat">
+                        {dist != null && <div className="em-v2-card__stat-label">{dist} km</div>}
+                        <div className="em-v2-card__stat-value">
                           {session.participants.length} / {session.maxParticipants}
                         </div>
                       </div>
                     </div>
 
-                    <div className="mt-3 flex items-center justify-between">
-                      <div className="text-xs text-[#9CA3AF]">Participantes: {session.participants.length}</div>
+                    <div className="em-v2-card__footer">
+                      <div className="em-v2-card__footer-meta">
+                        Participantes: {session.participants.length}
+                      </div>
 
-                      <div className="flex gap-2">
+                      <div className="em-v2-card__actions">
                         <button
                           type="button"
                           onClick={() => onOpenGroupChat(session.id)}
-                          className="text-xs bg-[#FF671F] text-black px-4 py-1.5 rounded-2xl font-medium"
+                          className="em-v2-card__cta"
                         >
                           Abrir chat grupal
                         </button>
@@ -266,7 +256,7 @@ export function SessionsTab({
                           <button
                             type="button"
                             onClick={() => void onCloseSession(session.id)}
-                            className="text-xs bg-red-500/10 text-red-400 px-2 py-1 rounded-xl active:bg-red-500/20"
+                            className="em-v2-card__cta em-v2-card__cta--danger"
                           >
                             Cerrar sesión
                           </button>
@@ -277,14 +267,14 @@ export function SessionsTab({
                             <button
                               type="button"
                               onClick={() => void onLeaveSession(session.id)}
-                              className="text-xs border border-[#2F2F35] px-2 py-1 rounded-xl active:bg-[#25252A]"
+                              className="em-v2-card__cta em-v2-card__cta--ghost"
                             >
                               Salir
                             </button>
                             <button
                               type="button"
                               onClick={() => onReviewCreator(session.creatorId)}
-                              className="text-xs border border-[#FF671F] text-[#FF671F] px-3 py-1 rounded-xl"
+                              className="em-v2-card__cta em-v2-card__cta--outline"
                             >
                               Marcar entrenado
                             </button>

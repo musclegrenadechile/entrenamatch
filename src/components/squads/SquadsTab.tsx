@@ -38,8 +38,8 @@ export function SquadsTab({
   return (
     <div className="em-v2-squads flex-1 overflow-auto px-4 pb-28">
       {squadFuelSummary && squadFuelSummary.weeklyKcal > 0 && (
-        <div className="mb-4 rounded-2xl border border-[#a855f7]/25 bg-[#1C1C20] p-3">
-          <p className="text-[10px] uppercase tracking-wider text-[#c084fc] font-bold">Squad Fuel · tu semana</p>
+        <div className="em-v2-squads__fuel">
+          <p className="em-v2-squads__fuel-kicker">Squad Fuel · tu semana</p>
           <p className="text-xs text-white mt-1">
             {Math.round(squadFuelSummary.weeklyKcal)} kcal consumidas · ~{squadFuelSummary.weeklyBurnKcal} kcal en entrenos
           </p>
@@ -59,15 +59,11 @@ export function SquadsTab({
         </div>
         <div className="flex items-center gap-2">
           {onOpenSessions && (
-            <button
-              type="button"
-              onClick={onOpenSessions}
-              className="relative flex items-center gap-1.5 bg-[#1C1C20] text-[#FFD700] px-3 py-2 rounded-2xl text-xs font-semibold border border-[#FFD700]/30 active:bg-[#25252A]"
-            >
+            <button type="button" onClick={onOpenSessions} className="em-v2-squads__sessions-btn">
               <Star size={14} />
               Sesiones
               {sessionUnreads > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[15px] h-[15px] px-1 text-[9px] font-extrabold rounded-full bg-[#FF4F79] text-black flex items-center justify-center">
+                <span className="em-v2-squads__sessions-badge">
                   {sessionUnreads > 9 ? '9+' : sessionUnreads}
                 </span>
               )}
@@ -76,7 +72,7 @@ export function SquadsTab({
         <button
           type="button"
           onClick={onCreateSquad}
-          className="flex items-center gap-2 bg-[#FF671F] text-black px-4 py-2 rounded-2xl text-sm font-semibold active:bg-[#E55A1A]"
+          className="em-v2-sessions__create flex items-center gap-2"
         >
           <Plus size={16} /> Crear Squad
         </button>
@@ -101,11 +97,7 @@ export function SquadsTab({
           >
             Crear {suggestedName}
           </button>
-          <button
-            type="button"
-            onClick={onCreateSquad}
-            className="py-2 text-xs border border-[#2F2F35] rounded-2xl text-[#9CA3AF] active:bg-[#25252A]"
-          >
+          <button type="button" onClick={onCreateSquad} className="em-v2-cta-secondary">
             Otro nombre…
           </button>
         </EmV2EmptyState>
@@ -121,26 +113,24 @@ export function SquadsTab({
                 key={squad.id}
                 role="button"
                 tabIndex={0}
-                className="card card-glass session-card rounded-3xl p-4 active:bg-[#25252A] border border-[#FF671F]/20 cursor-pointer"
+                className={`em-v2-card em-v2-card--squad em-v2-card--tap ${membersLive > 0 ? 'em-v2-card--live' : ''}`}
                 onClick={() => onOpenSquad(squad.id)}
                 onKeyDown={(e) => e.key === 'Enter' && onOpenSquad(squad.id)}
               >
                 <div className="flex justify-between">
                   <div>
-                    <div className="font-semibold text-lg flex items-center gap-2 tracking-tight flex-wrap">
+                    <div className="em-v2-card__title">
                       {squad.name}
-                      <span className="text-[9px] bg-[#FF671F]/10 text-[#FF671F] px-1.5 py-0.5 rounded font-medium">
-                        SQUAD
-                      </span>
+                      <span className="em-v2-card__badge em-v2-card__badge--brand">SQUAD</span>
                       {membersLive > 0 && (
-                        <span className="text-[9px] bg-[#22c55e] text-black px-1.5 py-0.5 rounded font-black animate-pulse">
+                        <span className="em-v2-card__badge em-v2-card__badge--live animate-pulse">
                           🟢 {membersLive} LIVE
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-[#FF671F] font-medium mt-0.5">{squad.focus}</div>
+                    <div className="em-v2-card__focus">{squad.focus}</div>
                     {squad.weeklyRoutine?.label && (
-                      <div className="text-[10px] text-[#9CA3AF] mt-1 leading-snug">
+                      <div className="em-v2-card__hint">
                         📋 {squad.weeklyRoutine.label}
                         {squad.weeklyRoutine.schedule
                           ? ` · ${squad.weeklyRoutine.schedule}`
@@ -148,34 +138,34 @@ export function SquadsTab({
                       </div>
                     )}
                     {squad.weeklyChallenge && (
-                      <div className="squad-challenge-bar mt-2">
-                        <div className="squad-challenge-bar__label">
+                      <div className="em-v2-card__challenge">
+                        <div className="em-v2-card__challenge-label">
                           🎯 {squad.weeklyChallenge.label}
                         </div>
-                        <div className="squad-challenge-bar__track">
+                        <div className="em-v2-card__challenge-track">
                           <div
-                            className="squad-challenge-bar__fill"
+                            className="em-v2-card__challenge-fill"
                             style={{
                               width: `${Math.min(100, Math.round((squad.weeklyChallenge.progressSessions / squad.weeklyChallenge.targetSessions) * 100))}%`,
                             }}
                           />
                         </div>
-                        <span className="squad-challenge-bar__count">
+                        <span className="em-v2-card__challenge-count">
                           {squad.weeklyChallenge.progressSessions}/{squad.weeklyChallenge.targetSessions}
                         </span>
                       </div>
                     )}
                   </div>
-                  <div className="text-right text-xs">
-                    <div className="text-[#22c55e] font-medium">{squad.members.length}/4</div>
+                  <div className="em-v2-card__stat">
+                    <div className="em-v2-card__stat-value">{squad.members.length}/4</div>
                     {!isMember && spots > 0 && (
-                      <div className="text-[#9CA3AF] mt-0.5">cupos</div>
+                      <div className="em-v2-card__stat-label">cupos</div>
                     )}
                   </div>
                 </div>
 
-                <div className="mt-3 flex justify-between items-center text-sm">
-                  <div className="text-[#9CA3AF] text-xs">
+                <div className="em-v2-card__footer">
+                  <div className="em-v2-card__footer-meta">
                     Creado por {resolveMemberName(squad.createdBy)}
                   </div>
                   {!isMember && spots > 0 && (
@@ -185,7 +175,7 @@ export function SquadsTab({
                         e.stopPropagation()
                         onJoinSquad(squad.id)
                       }}
-                      className="bg-[#FF671F] text-black text-xs px-4 py-1.5 rounded-2xl font-medium active:bg-[#E55A1A]"
+                      className="em-v2-card__cta"
                     >
                       Unirme
                     </button>
@@ -197,7 +187,7 @@ export function SquadsTab({
                         e.stopPropagation()
                         onOpenSquad(squad.id)
                       }}
-                      className="text-xs border border-[#FF671F] text-[#FF671F] px-3 py-1.5 rounded-2xl font-medium active:bg-[#FF671F] active:text-black"
+                      className="em-v2-card__cta em-v2-card__cta--outline"
                     >
                       Abrir chat
                     </button>
