@@ -96,11 +96,14 @@ import {
   readGymLogSessionChipToneClass,
 } from './utils/e2eGymLogSessionDom'
 import {
+  readFuelLogPrefillChipAriaLabel,
+  readFuelLogPrefillChipToneClass,
   readWorkoutSaveBannerAriaLabel,
   readWorkoutSaveBannerToneClass,
 } from './utils/e2eWorkoutSaveBannerDom'
 import { fabSessionPrAriaMatchesLivePr } from './utils/gymLogFabSessionPrToneDisplay'
 import { sessionPrAriaMatchesLivePr } from './utils/gymLogSessionPrToneDisplay'
+import { fuelPrefillPrAriaMatchesPr } from './utils/fuelLogPrefillPrToneDisplay'
 import { bannerPrAriaMatchesPr } from './utils/workoutSaveBannerPrToneDisplay'
 import {
   isWeeklyPlanCardVisible,
@@ -6052,6 +6055,9 @@ useEffect(() => {
         setWorkoutSaveBanner(null)
       },
       getFuelLogPrefillMacros: () => extractFuelLogPrefillMacros(fuelLogPrefill),
+      getFuelLogPrefillChipAriaLabel: () => readFuelLogPrefillChipAriaLabel(),
+      getFuelLogPrefillChipToneClass: () => readFuelLogPrefillChipToneClass(),
+      isFuelLogPrefillPrToneAriaExpected: () => fuelPrefillPrAriaMatchesPr(readFuelLogPrefillChipAriaLabel()),
       isFuelLogModalOpen: () => showFuelLogModal,
       closeFuelLogModal: () => {
         setFuelLogPrefill(null)
@@ -6392,9 +6398,13 @@ useEffect(() => {
             demoWeightKg
           )
           const demoBurnKcal = demoBurn > 0 ? demoBurn : undefined
-          workoutSaveShareOptsRef.current = demoStoryOpts
+          const demoPrs = detectWorkoutPRs(payload.exercises, entrenoRecentWorkouts)
+          const demoPrSummary = formatWorkoutPRSummary(demoPrs) || undefined
+          if (demoPrs.length) fireWorkoutPRConfetti()
+          workoutSaveShareOptsRef.current = { ...demoStoryOpts, prSummary: demoPrSummary }
           setWorkoutSaveBanner({
             title: payload.title,
+            prSummary: demoPrSummary,
             burnKcal: demoBurnKcal,
             fuelTip: getPostWorkoutFuelTip(payload.type),
             sessionSummary: buildGymLogSessionChipCompact(payload.exercises),

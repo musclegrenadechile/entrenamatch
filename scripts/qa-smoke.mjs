@@ -608,6 +608,24 @@ if (!workoutHistoryRowPrTone.includes('historyRowPrAriaMatchesPr')) {
 }
 if (!ok) process.exit(1)
 console.log('✓ e2eWorkoutHistoryRowPrCoverage aligned with historial v2 pivot (oleada 440)')
+const fuelLogPrefillPrCoverage = readFileSync(
+  join(root, 'src/utils/e2eFuelLogPrefillPrCoverage.ts'),
+  'utf8'
+)
+if (!fuelLogPrefillPrCoverage.includes('isFuelLogPrefillPrCoverageComplete')) {
+  console.error('e2eFuelLogPrefillPrCoverage missing fuel-prefill-pr helper (oleada 441)')
+  ok = false
+}
+const fuelLogPrefillPrTone = readFileSync(
+  join(root, 'src/utils/fuelLogPrefillPrToneDisplay.ts'),
+  'utf8'
+)
+if (!fuelLogPrefillPrTone.includes('fuelPrefillPrAriaMatchesPr')) {
+  console.error('fuelLogPrefillPrToneDisplay missing aria helper (oleada 441)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eFuelLogPrefillPrCoverage aligned with post-entreno v2 pivot (oleada 441)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

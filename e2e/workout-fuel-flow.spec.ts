@@ -113,6 +113,12 @@ test('E2E workout-fuel-flow — banner post-guardar → Fuel prefill', async ({ 
   )
   expect(toneStackFullySynced).toBe(true)
 
+  await expect(page.getByText('🏆 Nuevo PR')).toBeVisible()
+  const bannerTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWorkoutSaveBannerToneClass()
+  )
+  expect(bannerTone).toBe('em-v2-training-save-banner--has-pr')
+
   await page.getByRole('button', { name: /Registrar post-entreno/i }).click()
 
   const fuel = page.getByRole('dialog', { name: 'Registrar comida Fuel' })
@@ -120,6 +126,18 @@ test('E2E workout-fuel-flow — banner post-guardar → Fuel prefill', async ({ 
   await expect(fuel.getByPlaceholder('Nombre de la comida')).toHaveValue('Post-entreno')
   await expect(fuel.locator('.em-v2-fuel-log__workout-prefill')).toContainText(/Sugerido del entreno/i)
   await expect(fuel.getByRole('status').filter({ hasText: /Sugerido del entreno/i })).toBeVisible()
+  const prefillTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getFuelLogPrefillChipToneClass()
+  )
+  expect(prefillTone).toBe('em-v2-fuel-log__workout-prefill--has-pr')
+  const prefillAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getFuelLogPrefillChipAriaLabel()
+  )
+  expect(prefillAria).toMatch(/récord personal/i)
+  const prefillPrAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isFuelLogPrefillPrToneAriaExpected()
+  )
+  expect(prefillPrAria).toBe(true)
   await expect(fuel.getByLabel('Calorías kcal')).toHaveValue('320')
   await expect(fuel.getByLabel('Proteína en gramos')).not.toHaveValue('35')
   const macros = await page.evaluate(() => window.__entrenamatchE2E!.getFuelLogPrefillMacros())

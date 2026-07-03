@@ -2,6 +2,7 @@ export interface FuelLogPrefill {
   mealLabel?: string
   description?: string
   contextHint?: string
+  prSummary?: string
   suggestedKcal?: number
   suggestedProteinG?: number
   suggestedCarbsG?: number
@@ -14,6 +15,7 @@ export interface WorkoutSaveFuelContext {
   fuelTip?: string
   sessionSummary?: string
   fuelBalanceHint?: string
+  prSummary?: string
 }
 
 export type FuelLogPrefillMacros = {
@@ -81,6 +83,7 @@ export function buildFuelLogPrefillFromWorkoutSave(
     mealLabel: 'Post-entreno',
     description: parts.join(' · '),
     contextHint: ctx.fuelBalanceHint || ctx.fuelTip,
+    prSummary: ctx.prSummary,
     ...macros,
   }
 }

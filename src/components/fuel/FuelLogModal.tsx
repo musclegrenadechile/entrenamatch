@@ -8,8 +8,13 @@ import {
   hasWorkoutFuelMacroPrefill,
   type FuelLogPrefill,
 } from '../../utils/fuelLogPrefill'
+import {
+  buildFuelLogPrefillPrToneAriaLabel,
+  FUEL_LOG_PREFILL_CHIP_CLASS,
+  resolveFuelLogPrefillPrToneClass,
+} from '../../utils/fuelLogPrefillPrToneDisplay'
 
-export const FUEL_LOG_WORKOUT_PREFILL_CLASS = 'em-v2-fuel-log__workout-prefill'
+export const FUEL_LOG_WORKOUT_PREFILL_CLASS = FUEL_LOG_PREFILL_CHIP_CLASS
 
 export interface FuelLogModalProps {
   open: boolean
@@ -121,6 +126,11 @@ export function FuelLogModal({
     hasWorkoutFuelMacroPrefill(prefill) && !editEntry
       ? buildWorkoutFuelPrefillChipLabel(prefill)
       : null
+  const prefillHasPr = !!prefill?.prSummary
+  const prefillPrToneClass = resolveFuelLogPrefillPrToneClass(prefillHasPr)
+  const prefillChipAriaLabel = workoutPrefillChip
+    ? buildFuelLogPrefillPrToneAriaLabel(workoutPrefillChip, prefillHasPr)
+    : null
 
   const resolvedMealLabel = () => {
     const label = mealLabel.trim()
@@ -316,7 +326,13 @@ export function FuelLogModal({
           />
 
           {workoutPrefillChip && (
-            <p className={FUEL_LOG_WORKOUT_PREFILL_CLASS} role="status">
+            <p
+              className={[FUEL_LOG_WORKOUT_PREFILL_CLASS, prefillPrToneClass]
+                .filter(Boolean)
+                .join(' ')}
+              role="status"
+              aria-label={prefillChipAriaLabel ?? undefined}
+            >
               {workoutPrefillChip}
             </p>
           )}

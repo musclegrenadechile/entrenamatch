@@ -18,6 +18,7 @@ import { isFuelPlanEnergySummaryToneCoverageComplete } from './e2eFuelPlanEnergy
 import { isGymLogFabSessionPrCoverageComplete } from './e2eGymLogFabSessionPrCoverage'
 import { isGymLogFullE2ECoverageComplete } from './e2eGymLogFullCoverage'
 import { isGymLogPostV2E2ECoverageComplete } from './e2eGymLogPostV2Coverage'
+import { isFuelLogPrefillPrCoverageComplete } from './e2eFuelLogPrefillPrCoverage'
 import { isWorkoutHistoryRowPrCoverageComplete } from './e2eWorkoutHistoryRowPrCoverage'
 import { isWorkoutSaveBannerPrCoverageComplete } from './e2eWorkoutSaveBannerPrCoverage'
 import { isGymLogSessionPrCoverageComplete } from './e2eGymLogSessionPrCoverage'
@@ -162,6 +163,10 @@ describe('e2eTrainingSuite', () => {
 
   it('e2eWorkoutHistoryRowPrCoverage completo (oleada 440)', () => {
     expect(isWorkoutHistoryRowPrCoverageComplete()).toBe(true)
+  })
+
+  it('e2eFuelLogPrefillPrCoverage completo (oleada 441)', () => {
+    expect(isFuelLogPrefillPrCoverageComplete()).toBe(true)
   })
 
   it('e2eFuelPlanToneCoverage completo (oleada 428)', () => {

@@ -389,6 +389,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-history-flow',
     feature: 'tono PR×fila historial + workoutHistoryRowPrToneDisplay',
   },
+  {
+    polishOleada: 441,
+    e2eSpecId: 'workout-fuel-flow',
+    feature: 'tono PR×chip prefill Fuel + fuelLogPrefillPrToneDisplay',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

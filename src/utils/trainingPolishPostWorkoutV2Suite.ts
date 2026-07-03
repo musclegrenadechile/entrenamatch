@@ -1,6 +1,11 @@
 /** Pulido post-entreno v2 post-gym-log-v2 oleada 439+. */
 
-export type TrainingPolishPostWorkoutV2Cover = 'banner' | 'pr' | 'aria' | 'e2e'
+export type TrainingPolishPostWorkoutV2Cover =
+  | 'banner'
+  | 'fuel-prefill'
+  | 'pr'
+  | 'aria'
+  | 'e2e'
 
 export type TrainingPolishPostWorkoutV2Entry = {
   id: string
@@ -17,12 +22,18 @@ export const TRAINING_POLISH_POST_WORKOUT_V2_UTILS: readonly TrainingPolishPostW
       oleada: 439,
       covers: ['banner', 'pr', 'aria', 'e2e'],
     },
+    {
+      id: 'fuel-prefill-pr-tone',
+      module: 'fuelLogPrefillPrToneDisplay',
+      oleada: 441,
+      covers: ['fuel-prefill', 'pr', 'aria', 'e2e'],
+    },
   ] as const
 
 export const TRAINING_POLISH_POST_WORKOUT_V2_OPEN_OLEADA = 439
 
 export function trainingPolishPostWorkoutV2Range(): { from: number; to: number } {
-  return { from: 439, to: 439 }
+  return { from: 439, to: 441 }
 }
 
 export function countTrainingPolishPostWorkoutV2Utils(): number {

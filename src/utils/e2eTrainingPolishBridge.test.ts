@@ -9,7 +9,7 @@ import {
 
 describe('e2eTrainingPolishBridge', () => {
   it('define puente E2E ↔ pulido', () => {
-    expect(countE2ETrainingPolishBridgeEntries()).toBe(80)
+    expect(countE2ETrainingPolishBridgeEntries()).toBe(81)
     expect(E2E_TRAINING_POLISH_BRIDGE.map((e) => e.polishOleada)).toContain(391)
     expect(E2E_TRAINING_POLISH_BRIDGE.map((e) => e.polishOleada)).toContain(397)
   })
@@ -22,7 +22,7 @@ describe('e2eTrainingPolishBridge', () => {
     expect(uniqueE2EValidatedPolishOleadas()).toEqual([
       384, 386, 388, 391, 392, 393, 394, 395, 396, 397, 401, 404, 405, 406, 407, 408, 409, 410,
       411, 412, 413, 414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425, 426, 427,
-      428, 429, 430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 440,
+      428, 429, 430, 431, 432, 433, 434, 435, 436, 437, 438, 439, 440, 441,
     ])
     expect(e2eBridgeEntriesForOleada(393).map((e) => e.e2eSpecId)).toEqual([
       'workout-fuel-flow',

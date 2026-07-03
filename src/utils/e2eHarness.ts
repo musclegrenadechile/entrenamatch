@@ -43,6 +43,11 @@ export type EntrenamatchE2EApi = {
   openFuelFromWorkoutSave: () => void
   /** Macros sugeridos del prefill Fuel activo (oleada 394). */
   getFuelLogPrefillMacros: () => FuelLogPrefillMacros | null
+  /** aria-label del chip prefill post-entreno (oleada 441). */
+  getFuelLogPrefillChipAriaLabel: () => string | null
+  /** Modificador tono PR en chip prefill Fuel (oleada 441). */
+  getFuelLogPrefillChipToneClass: () => string | null
+  isFuelLogPrefillPrToneAriaExpected: () => boolean
   isFuelLogModalOpen: () => boolean
   closeFuelLogModal: () => void
   /** Minimiza gym-log dejando borrador activo (FAB). */

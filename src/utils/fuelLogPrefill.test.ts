@@ -63,4 +63,13 @@ describe('fuelLogPrefill', () => {
     expect(buildWorkoutFuelPrefillChipLabel(prefill)).toContain('Sugerido del entreno')
     expect(buildWorkoutFuelPrefillChipLabel(prefill)).toContain('320 kcal')
   })
+
+  it('propaga prSummary al prefill Fuel (oleada 441)', () => {
+    const prefill = buildFuelLogPrefillFromWorkoutSave({
+      title: 'Push',
+      burnKcal: 400,
+      prSummary: '🏆 PR Press banca 60 kg',
+    })
+    expect(prefill.prSummary).toContain('PR Press banca')
+  })
 })
