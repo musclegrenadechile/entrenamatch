@@ -404,6 +404,21 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-history-flow',
     feature: 'cierre historial v2 440 + e2eWorkoutHistoryPostV2Coverage',
   },
+  {
+    polishOleada: 444,
+    e2eSpecId: 'workout-flow',
+    feature: 'cierre PR v2 global gym-log + trainingPrV2GlobalClosure',
+  },
+  {
+    polishOleada: 444,
+    e2eSpecId: 'workout-fuel-flow',
+    feature: 'cierre PR v2 global post-entreno + e2eTrainingPrV2GlobalCoverage',
+  },
+  {
+    polishOleada: 444,
+    e2eSpecId: 'workout-history-flow',
+    feature: 'cierre PR v2 global historial + trainingPolishPrV2GlobalSuite',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

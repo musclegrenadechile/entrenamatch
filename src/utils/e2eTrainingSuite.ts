@@ -1,6 +1,7 @@
 /** Inventario Playwright del bloque E2E entrenamiento (oleadas 378–410). */
 import { e2eFuelPlanSpecIds } from './e2eFuelPlanCoverage'
 import { isE2ETrainingMegaGlobalCoverageComplete } from './e2eTrainingMegaGlobalCoverage'
+import { isE2ETrainingPrV2GlobalCoverageComplete } from './e2eTrainingPrV2GlobalCoverage'
 import { isFuelPlanFullE2ECoverageComplete } from './e2eFuelPlanFullCoverage'
 import { isFuelPlanScenarioCoverageComplete } from './e2eFuelPlanScenarioCoverage'
 import { e2eFuelPlanHeadlineSpecIds } from './e2eFuelPlanHeadlineCoverage'
@@ -105,6 +106,11 @@ export function isE2EFuelPlanFullCoverageReady(): boolean {
 /** Cierre mega global 361–435 (oleada 435). */
 export function isE2ETrainingMegaGlobalReady(): boolean {
   return isE2ETrainingMegaGlobalCoverageComplete()
+}
+
+/** Cierre global PR v2 436–444 (oleada 444). */
+export function isE2ETrainingPrV2GlobalReady(): boolean {
+  return isE2ETrainingPrV2GlobalCoverageComplete()
 }
 
 export function countTrainingE2ESpecs(): number {

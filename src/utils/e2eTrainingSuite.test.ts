@@ -20,6 +20,7 @@ import { isGymLogFullE2ECoverageComplete } from './e2eGymLogFullCoverage'
 import { isGymLogPostV2E2ECoverageComplete } from './e2eGymLogPostV2Coverage'
 import { isFuelLogPrefillPrCoverageComplete } from './e2eFuelLogPrefillPrCoverage'
 import { isPostWorkoutFullE2ECoverageComplete } from './e2ePostWorkoutFullCoverage'
+import { isTrainingPrV2FullE2ECoverageComplete } from './e2eTrainingPrV2FullCoverage'
 import { isPostWorkoutPostV2E2ECoverageComplete } from './e2ePostWorkoutPostV2Coverage'
 import { isWorkoutHistoryFullE2ECoverageComplete } from './e2eWorkoutHistoryFullCoverage'
 import { isWorkoutHistoryPostV2E2ECoverageComplete } from './e2eWorkoutHistoryPostV2Coverage'
@@ -33,6 +34,7 @@ import {
   countTrainingE2ESpecs,
   isE2EFuelPlanFullCoverageReady,
   isE2ETrainingMegaGlobalReady,
+  isE2ETrainingPrV2GlobalReady,
   e2eFuelPlanHeadlineSpecsCoveredInInventory,
   e2eFuelPlanNutritionSpecsCoveredInInventory,
   e2eFuelPlanSpecsCoveredInInventory,
@@ -146,6 +148,11 @@ describe('e2eTrainingSuite', () => {
 
   it('e2eTrainingMegaGlobalCoverage completo (oleada 435)', () => {
     expect(isE2ETrainingMegaGlobalReady()).toBe(true)
+  })
+
+  it('e2eTrainingPrV2GlobalCoverage completo (oleada 444)', () => {
+    expect(isE2ETrainingPrV2GlobalReady()).toBe(true)
+    expect(isTrainingPrV2FullE2ECoverageComplete()).toBe(true)
   })
 
   it('e2eGymLogSessionPrCoverage completo (oleada 436)', () => {

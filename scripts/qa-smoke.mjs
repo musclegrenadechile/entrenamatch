@@ -672,6 +672,28 @@ if (!workoutHistoryFullCoverage.includes('isWorkoutHistoryFullE2ECoverageComplet
 if (!ok) process.exit(1)
 console.log('✓ e2eWorkoutHistoryPostV2Coverage aligned with full coverage (oleada 443)')
 console.log('✓ e2eWorkoutHistoryFullCoverage unifies 3 historial v2 E2E suites (oleada 443)')
+const trainingPrV2GlobalClosure = readFileSync(
+  join(root, 'src/utils/trainingPrV2GlobalClosure.ts'),
+  'utf8'
+)
+if (!trainingPrV2GlobalClosure.includes('isTrainingPrV2GlobalClosureComplete')) {
+  console.error('trainingPrV2GlobalClosure missing global helper (oleada 444)')
+  ok = false
+}
+const trainingPrV2GlobalCoverage = readFileSync(
+  join(root, 'src/utils/e2eTrainingPrV2GlobalCoverage.ts'),
+  'utf8'
+)
+if (!trainingPrV2GlobalCoverage.includes('isE2ETrainingPrV2GlobalCoverageComplete')) {
+  console.error('e2eTrainingPrV2GlobalCoverage missing pr-v2-global helper (oleada 444)')
+  ok = false
+}
+if (!trainingPrV2GlobalCoverage.includes('trainingPrV2GlobalClosure')) {
+  console.error('e2eTrainingPrV2GlobalCoverage missing closure module ref (oleada 444)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eTrainingPrV2GlobalCoverage aligned with PR v2 global closure (oleada 444)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)
