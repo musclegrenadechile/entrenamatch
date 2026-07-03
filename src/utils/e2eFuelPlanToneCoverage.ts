@@ -1,6 +1,6 @@
 /** Inventario E2E stack tono Fuel×EntrenaPlan — 3 specs (oleada 423). */
 
-export type E2EFuelPlanToneCover = 'tone-stack' | 'harness' | 'scenario'
+export type E2EFuelPlanToneCover = 'tone-stack' | 'harness' | 'scenario' | 'tone-expected'
 
 export type E2EFuelPlanToneSpecEntry = {
   id: string
@@ -14,23 +14,23 @@ export const E2E_FUEL_PLAN_TONE_SPECS: readonly E2EFuelPlanToneSpecEntry[] = [
   {
     id: 'training-mega-flow',
     file: 'e2e/training-mega-flow.spec.ts',
-    oleada: 423,
+    oleada: 425,
     tone: 'under-fueled',
-    covers: ['tone-stack', 'harness', 'scenario'],
+    covers: ['tone-stack', 'harness', 'scenario', 'tone-expected'],
   },
   {
     id: 'workout-plan-history-flow',
     file: 'e2e/workout-plan-history-flow.spec.ts',
-    oleada: 423,
+    oleada: 425,
     tone: 'surplus',
-    covers: ['tone-stack', 'harness', 'scenario'],
+    covers: ['tone-stack', 'harness', 'scenario', 'tone-expected'],
   },
   {
     id: 'workout-fuel-flow',
     file: 'e2e/workout-fuel-flow.spec.ts',
-    oleada: 423,
+    oleada: 425,
     tone: 'deficit',
-    covers: ['tone-stack', 'harness', 'scenario'],
+    covers: ['tone-stack', 'harness', 'scenario', 'tone-expected'],
   },
 ] as const
 
@@ -45,7 +45,11 @@ export function countE2EFuelPlanToneSpecs(): number {
 }
 
 export function e2eFuelPlanToneBlockRange(): { from: number; to: number } {
-  return { from: 421, to: 423 }
+  return { from: 421, to: 425 }
+}
+
+export function isFuelPlanToneExpectedCoverageComplete(): boolean {
+  return E2E_FUEL_PLAN_TONE_SPECS.every((s) => s.covers.includes('tone-expected'))
 }
 
 export function isFuelPlanToneCoverageComplete(): boolean {

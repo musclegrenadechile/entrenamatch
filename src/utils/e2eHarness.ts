@@ -81,6 +81,10 @@ export type EntrenamatchE2EApi = {
   isWeeklyPlanFuelToneStackExpected: (
     tone: 'under-fueled' | 'surplus' | 'deficit'
   ) => boolean
+  /** Stack DOM coincide capa a capa con demo E2E (oleada 425). */
+  isWeeklyPlanFuelToneStackFullyExpected: (
+    tone: 'under-fueled' | 'surplus' | 'deficit'
+  ) => boolean
   /** Nota nutricional Fuel×plan en card (oleada 415). */
   getWeeklyPlanNutritionNote: () => string | null
   /** Modificador de tono nota nutricional (oleada 424). */

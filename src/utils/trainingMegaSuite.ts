@@ -1,4 +1,4 @@
-/** Mega-inventario total pulido entrenamiento oleadas 361–424 (oleada 424 tono nutrición Fuel). */
+/** Mega-inventario total pulido entrenamiento oleadas 361–425 (oleada 425 stack esperado Fuel). */
 import { entrenaPlanTrainingBlockRange } from './entrenaPlanTrainingSuite'
 import { fuelPlanTrainingBlockRange } from './fuelPlanTrainingSuite'
 import { trainingE2EBlockRange } from './e2eTrainingSuite'
@@ -64,7 +64,7 @@ export const TRAINING_MEGA_BLOCKS: readonly TrainingMegaBlockEntry[] = [
     id: 'polish-post-full',
     range: trainingPolishPostFullRange(),
     suiteModule: 'trainingPolishPostFullSuite',
-    closedOleada: 424,
+    closedOleada: 425,
   },
 ] as const
 
@@ -73,7 +73,7 @@ export const TRAINING_MEGA_CLOSED_OLEADA = 414
 export const TRAINING_MEGA_PHASE3_CLOSED_OLEADA = 420
 
 export function trainingFullMegaRange(): { from: number; to: number } {
-  return { from: 361, to: 424 }
+  return { from: 361, to: 425 }
 }
 
 export function isTrainingMegaPhase3Closed(

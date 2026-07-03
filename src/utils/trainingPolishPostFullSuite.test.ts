@@ -7,9 +7,9 @@ import {
 } from './trainingPolishPostFullSuite'
 
 describe('trainingPolishPostFullSuite', () => {
-  it('inventario post-full 421–424 cerrado', () => {
-    expect(countTrainingPolishPostFullUtils()).toBe(6)
-    expect(trainingPolishPostFullRange()).toEqual({ from: 421, to: 424 })
+  it('inventario post-full 421–425 cerrado', () => {
+    expect(countTrainingPolishPostFullUtils()).toBe(7)
+    expect(trainingPolishPostFullRange()).toEqual({ from: 421, to: 425 })
     expect(isTrainingPolishPostFullClosed()).toBe(true)
     expect(TRAINING_POLISH_POST_FULL_UTILS.map((e) => e.module)).toContain(
       'weeklyPlanFuelScenarioSync'
@@ -28,6 +28,9 @@ describe('trainingPolishPostFullSuite', () => {
     )
     expect(TRAINING_POLISH_POST_FULL_UTILS.map((e) => e.module)).toContain(
       'weeklyPlanNutritionToneDisplay'
+    )
+    expect(TRAINING_POLISH_POST_FULL_UTILS.map((e) => e.module)).toContain(
+      'weeklyPlanFuelToneStackExpectedDisplay'
     )
   })
 })

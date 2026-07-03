@@ -105,6 +105,7 @@ import {
   fuelToneStackMatchesExpected,
   isWeeklyPlanFuelToneStackConsistent,
 } from './utils/weeklyPlanFuelToneStackDisplay'
+import { fuelToneStackMatchesDemoExpected } from './utils/weeklyPlanFuelToneStackExpectedDisplay'
 import type { FuelWeekHintTone } from './utils/weeklyPlanFuelWeekToneDisplay'
 import {
   parseGymIdFromSearch,
@@ -6056,6 +6057,8 @@ useEffect(() => {
         isWeeklyPlanFuelToneStackConsistent(readWeeklyPlanFuelToneStackSnapshot()),
       isWeeklyPlanFuelToneStackExpected: (tone: FuelWeekHintTone) =>
         fuelToneStackMatchesExpected(readWeeklyPlanFuelToneStackSnapshot(), tone),
+      isWeeklyPlanFuelToneStackFullyExpected: (tone: FuelWeekHintTone) =>
+        fuelToneStackMatchesDemoExpected(readWeeklyPlanFuelToneStackSnapshot(), tone),
       getWeeklyPlanNutritionNote: () => readWeeklyPlanNutritionNote(),
       getWeeklyPlanNutritionAriaLabel: () => readWeeklyPlanNutritionAriaLabel(),
       getWeeklyPlanNutritionToneClass: () => readWeeklyPlanNutritionToneClass(),
