@@ -9,16 +9,17 @@ import {
   isTrainingMegaPhase3Closed,
   isTrainingMegaPhase4Closed,
   isTrainingMegaPhase5Closed,
+  isTrainingMegaPhase6Open,
   TRAINING_MEGA_BLOCKS,
   trainingFullMegaRange,
   trainingMegaBlockById,
 } from './trainingMegaSuite'
 
 describe('trainingMegaSuite', () => {
-  it('mega-inventario 9 bloques oleadas 361–432', () => {
-    expect(countTrainingMegaBlocks()).toBe(9)
-    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 432 })
-    expect(countTrainingMegaOleadas()).toBe(72)
+  it('mega-inventario 10 bloques oleadas 361–433', () => {
+    expect(countTrainingMegaBlocks()).toBe(10)
+    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 433 })
+    expect(countTrainingMegaOleadas()).toBe(73)
     expect(TRAINING_MEGA_BLOCKS.map((b) => b.id)).toEqual([
       'polish-v1',
       'e2e',
@@ -29,6 +30,7 @@ describe('trainingMegaSuite', () => {
       'polish-post-full',
       'polish-post-stack',
       'polish-post-fuel',
+      'polish-post-energy',
     ])
   })
 
@@ -43,7 +45,7 @@ describe('trainingMegaSuite', () => {
     expect(polishV2?.closedOleada).toBe(410)
     expect(polishV2?.range).toEqual({ from: 383, to: 409 })
     const fuelPlan = trainingMegaBlockById('fuel-plan')
-    expect(fuelPlan?.range).toEqual({ from: 411, to: 432 })
+    expect(fuelPlan?.range).toEqual({ from: 411, to: 433 })
     const postFull = trainingMegaBlockById('polish-post-full')
     expect(postFull?.range).toEqual({ from: 421, to: 427 })
     expect(postFull?.closedOleada).toBe(427)
@@ -94,7 +96,17 @@ describe('trainingMegaSuite', () => {
     const postFuel = trainingMegaBlockById('polish-post-fuel')
     expect(postFuel?.range).toEqual({ from: 430, to: 432 })
     expect(postFuel?.closedOleada).toBe(432)
-    expect(areAllTrainingMegaSubBlocksClosed(432)).toBe(true)
-    expect(isTrainingMegaFullyClosed(432)).toBe(true)
+    expect(areAllTrainingMegaSubBlocksClosed(432)).toBe(false)
+    expect(isTrainingMegaFullyClosed(432)).toBe(false)
+  })
+
+  it('mega fase VII post-energy 433 (oleada 433)', () => {
+    expect(isTrainingMegaPhase6Open()).toBe(true)
+    expect(isTrainingMegaPhase6Open(432)).toBe(false)
+    const postEnergy = trainingMegaBlockById('polish-post-energy')
+    expect(postEnergy?.range).toEqual({ from: 433, to: 433 })
+    expect(postEnergy?.closedOleada).toBe(433)
+    expect(areAllTrainingMegaSubBlocksClosed(433)).toBe(true)
+    expect(isTrainingMegaFullyClosed(433)).toBe(true)
   })
 })

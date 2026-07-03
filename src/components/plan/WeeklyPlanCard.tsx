@@ -21,6 +21,13 @@ import {
   resolveWeeklyPlanRotationFuelToneClass,
 } from '../../utils/weeklyPlanFuelRotationToneDisplay'
 import {
+  buildWeeklyPlanEnergySummaryFuelToneAriaLabel,
+  buildWeeklyPlanEnergySummaryText,
+  resolveWeeklyPlanEnergySummaryFuelToneClass,
+  shouldShowWeeklyPlanEnergySummary,
+  WEEKLY_PLAN_ENERGY_SUMMARY_CLASS,
+} from '../../utils/weeklyPlanFuelEnergySummaryToneDisplay'
+import {
   buildWeeklyPlanFuelWeekHint,
   shouldShowWeeklyPlanFuelWeekHint,
   WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS,
@@ -178,6 +185,10 @@ export function WeeklyPlanCard({
   const rotationFuelToneClass = resolveWeeklyPlanRotationFuelToneClass(
     hasFuelProfile ? fuelWeekTone : null
   )
+  const energySummaryFuelToneClass = resolveWeeklyPlanEnergySummaryFuelToneClass(
+    hasFuelProfile ? fuelWeekTone : null
+  )
+  const showEnergySummary = shouldShowWeeklyPlanEnergySummary(plan.energySummary)
 
   return (
     <div
@@ -350,10 +361,22 @@ export function WeeklyPlanCard({
         </p>
       )}
 
-      {plan.energySummary.loggedDays > 0 && (
-        <p className="text-[10px] text-[#6B7280] mt-2">
-          Semana: {plan.energySummary.totalConsumedKcal} kcal consumidas · ~
-          {plan.energySummary.totalBurnKcal} quemadas
+      {showEnergySummary && (
+        <p
+          className={[WEEKLY_PLAN_ENERGY_SUMMARY_CLASS, energySummaryFuelToneClass]
+            .filter(Boolean)
+            .join(' ')}
+          role="status"
+          aria-label={
+            fuelWeekTone && hasFuelProfile
+              ? buildWeeklyPlanEnergySummaryFuelToneAriaLabel(
+                  plan.energySummary,
+                  fuelWeekTone
+                )
+              : `Balance energético semanal: ${buildWeeklyPlanEnergySummaryText(plan.energySummary)}`
+          }
+        >
+          {buildWeeklyPlanEnergySummaryText(plan.energySummary)}
         </p>
       )}
 

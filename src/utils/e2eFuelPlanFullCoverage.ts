@@ -1,9 +1,11 @@
-/** Mega-inventario E2E Fuel×EntrenaPlan — unifica 10 suites (oleada 432). */
+/** Mega-inventario E2E Fuel×EntrenaPlan — unifica 11 suites (oleada 433). */
+import { isFuelPlanEnergySummaryToneCoverageComplete } from './e2eFuelPlanEnergySummaryToneCoverage'
 import { isFuelPlanHistoryToneCoverageComplete } from './e2eFuelPlanHistoryToneCoverage'
 import { isFuelPlanPostFuelE2ECoverageComplete } from './e2eFuelPlanPostFuelCoverage'
 import { isFuelPlanRotationToneCoverageComplete } from './e2eFuelPlanRotationToneCoverage'
 import { isFuelPlanPostFullE2ECoverageComplete } from './e2eFuelPlanPostFullCoverage'
 import { isFuelPlanPostStackE2ECoverageComplete } from './e2eFuelPlanPostStackCoverage'
+import { isTrainingPolishPostEnergyOpen } from './trainingPolishPostEnergySuite'
 import { isTrainingPolishPostFuelClosed } from './trainingPolishPostFuelSuite'
 import {
   isFuelPlanNutritionE2ETrilogyComplete,
@@ -32,6 +34,7 @@ export const FUEL_PLAN_FULL_COVERAGE_MODULES = [
   'e2eFuelPlanHistoryToneCoverage',
   'e2eFuelPlanRotationToneCoverage',
   'e2eFuelPlanPostFuelCoverage',
+  'e2eFuelPlanEnergySummaryToneCoverage',
 ] as const
 
 export type FuelPlanFullCoverageModule = (typeof FUEL_PLAN_FULL_COVERAGE_MODULES)[number]
@@ -41,7 +44,7 @@ export function countFuelPlanCoverageSuites(): number {
 }
 
 export function e2eFuelPlanFullBlockRange(): { from: number; to: number } {
-  return { from: 412, to: 432 }
+  return { from: 412, to: 433 }
 }
 
 /** Cobertura Fuel×plan + nutrición + headline en 3 specs CI (oleada 420). */
@@ -74,6 +77,9 @@ export function isFuelPlanFullE2ECoverageComplete(): boolean {
     unionFuelPlanCovers().includes('fuel-history-tone') &&
     unionFuelPlanCovers().includes('fuel-rotation-tone') &&
     isFuelPlanRotationToneCoverageComplete() &&
-    isFuelPlanPostFuelE2ECoverageComplete()
+    isFuelPlanPostFuelE2ECoverageComplete() &&
+    isTrainingPolishPostEnergyOpen(433) &&
+    unionFuelPlanCovers().includes('fuel-energy-tone') &&
+    isFuelPlanEnergySummaryToneCoverageComplete()
   )
 }

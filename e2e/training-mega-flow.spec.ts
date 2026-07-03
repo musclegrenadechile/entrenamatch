@@ -87,6 +87,24 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
   )
   expect(rotationFuelAria).toBe(true)
 
+  await expect(planCard.locator('.em-v2-plan__energy-summary')).toBeVisible({ timeout: 10000 })
+  const energySummary = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanEnergySummaryText()
+  )
+  expect(energySummary).toMatch(/kcal consumidas.*quemadas/i)
+  const energyAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanEnergySummaryAriaLabel()
+  )
+  expect(energyAria).toMatch(/Balance energético semanal.*Afinar Fuel/i)
+  const energyTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanEnergySummaryToneClass()
+  )
+  expect(energyTone).toBe('em-v2-plan__energy-summary--under-fueled')
+  const energyFuelAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWeeklyPlanEnergySummaryFuelToneAriaExpected('under-fueled')
+  )
+  expect(energyFuelAria).toBe(true)
+
   await expect(planCard.locator('.em-v2-plan__headline-fuel')).toBeVisible({ timeout: 10000 })
   const headlineFuelChip = await page.evaluate(() =>
     window.__entrenamatchE2E!.getWeeklyPlanFuelHeadlineChip()

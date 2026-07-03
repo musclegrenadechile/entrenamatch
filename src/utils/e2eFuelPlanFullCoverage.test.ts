@@ -7,9 +7,9 @@ import {
 } from './e2eFuelPlanFullCoverage'
 
 describe('e2eFuelPlanFullCoverage', () => {
-  it('unifica 10 suites E2E Fuel×EntrenaPlan (oleada 420–432)', () => {
-    expect(countFuelPlanCoverageSuites()).toBe(10)
-    expect(e2eFuelPlanFullBlockRange()).toEqual({ from: 412, to: 432 })
+  it('unifica 11 suites E2E Fuel×EntrenaPlan (oleada 420–433)', () => {
+    expect(countFuelPlanCoverageSuites()).toBe(11)
+    expect(e2eFuelPlanFullBlockRange()).toEqual({ from: 412, to: 433 })
     expect([...FUEL_PLAN_FULL_COVERAGE_MODULES]).toEqual([
       'e2eFuelPlanCoverage',
       'e2eFuelPlanNutritionCoverage',
@@ -21,6 +21,7 @@ describe('e2eFuelPlanFullCoverage', () => {
       'e2eFuelPlanHistoryToneCoverage',
       'e2eFuelPlanRotationToneCoverage',
       'e2eFuelPlanPostFuelCoverage',
+      'e2eFuelPlanEnergySummaryToneCoverage',
     ])
     expect(isFuelPlanFullE2ECoverageComplete()).toBe(true)
   })

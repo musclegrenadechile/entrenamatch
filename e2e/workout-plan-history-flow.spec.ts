@@ -111,6 +111,24 @@ test('E2E workout-plan-history-flow — guardar entreno y hint PR en EntrenaPlan
   )
   expect(rotationFuelAria).toBe(true)
 
+  await expect(planCard.locator('.em-v2-plan__energy-summary')).toBeVisible({ timeout: 10000 })
+  const energySummary = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanEnergySummaryText()
+  )
+  expect(energySummary).toMatch(/kcal consumidas.*quemadas/i)
+  const energyAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanEnergySummaryAriaLabel()
+  )
+  expect(energyAria).toMatch(/Balance energético semanal.*Superávit/i)
+  const energyTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanEnergySummaryToneClass()
+  )
+  expect(energyTone).toBe('em-v2-plan__energy-summary--surplus')
+  const energyFuelAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWeeklyPlanEnergySummaryFuelToneAriaExpected('surplus')
+  )
+  expect(energyFuelAria).toBe(true)
+
   await expect(planCard.locator('.em-v2-plan__fuel-week-chip')).toBeVisible({ timeout: 10000 })
   const fuelChip = await page.evaluate(() => window.__entrenamatchE2E!.getWeeklyPlanFuelWeekChip())
   expect(fuelChip).toMatch(/Δ \+\d+ kcal/)

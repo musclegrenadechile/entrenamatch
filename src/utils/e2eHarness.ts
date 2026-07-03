@@ -121,6 +121,14 @@ export type EntrenamatchE2EApi = {
   isWeeklyPlanRotationFuelToneAriaExpected: (
     tone: 'under-fueled' | 'surplus' | 'deficit'
   ) => boolean
+  /** Texto footer energía semanal EntrenaPlan (oleada 433). */
+  getWeeklyPlanEnergySummaryText: () => string | null
+  getWeeklyPlanEnergySummaryAriaLabel: () => string | null
+  /** Modificador tono Fuel en footer energía (oleada 433). */
+  getWeeklyPlanEnergySummaryToneClass: () => string | null
+  isWeeklyPlanEnergySummaryFuelToneAriaExpected: (
+    tone: 'under-fueled' | 'surplus' | 'deficit'
+  ) => boolean
 }
 
 declare global {

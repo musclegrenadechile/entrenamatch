@@ -6,6 +6,7 @@ import type { WeeklyPlanFuelToneStackSnapshot } from './weeklyPlanFuelToneStackD
 import { WEEKLY_PLAN_FUEL_ROW_CLASS } from './weeklyPlanFuelRowToneDisplay'
 import { WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS } from './weeklyPlanFuelWeekDisplay'
 import { WEEKLY_PLAN_NUTRITION_CLASS } from './weeklyPlanNutritionDisplay'
+import { WEEKLY_PLAN_ENERGY_SUMMARY_CLASS } from './weeklyPlanFuelEnergySummaryToneDisplay'
 
 function findEntrenaPlanCard(): HTMLElement | null {
   const plans = document.querySelectorAll('.em-v2-plan')
@@ -202,6 +203,28 @@ export function readWeeklyPlanFuelToneStackSnapshot(): WeeklyPlanFuelToneStackSn
 export function readWeeklyPlanCardAriaLabel(): string | null {
   const card = findEntrenaPlanCard()
   return card?.getAttribute('aria-label')?.trim() ?? null
+}
+
+export function readWeeklyPlanEnergySummaryText(): string | null {
+  const card = findEntrenaPlanCard()
+  const footer = card?.querySelector(`.${WEEKLY_PLAN_ENERGY_SUMMARY_CLASS}`)
+  return footer?.textContent?.trim() ?? null
+}
+
+export function readWeeklyPlanEnergySummaryAriaLabel(): string | null {
+  const card = findEntrenaPlanCard()
+  const footer = card?.querySelector(`.${WEEKLY_PLAN_ENERGY_SUMMARY_CLASS}`)
+  return footer?.getAttribute('aria-label')?.trim() ?? null
+}
+
+export function readWeeklyPlanEnergySummaryToneClass(): string | null {
+  const card = findEntrenaPlanCard()
+  const footer = card?.querySelector(`.${WEEKLY_PLAN_ENERGY_SUMMARY_CLASS}`)
+  if (!footer) return null
+  for (const cls of footer.classList) {
+    if (cls.startsWith(`${WEEKLY_PLAN_ENERGY_SUMMARY_CLASS}--`)) return cls
+  }
+  return null
 }
 
 export function isWeeklyPlanCardVisible(): boolean {
