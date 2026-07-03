@@ -3,11 +3,14 @@ import type { WeeklyPlanResult } from '../../domain/weeklyPlan'
 import type { Workout } from '../../types'
 import { EmV2EmptyState } from '../ui/EmV2EmptyState'
 import {
-  buildWeeklyPlanHistoryAriaLabel,
   buildWeeklyPlanHistoryHint,
   shouldShowWeeklyPlanHistoryHint,
   WEEKLY_PLAN_HISTORY_HINT_CLASS,
 } from '../../utils/weeklyPlanHistoryDisplay'
+import {
+  buildWeeklyPlanHistoryFuelToneAriaLabel,
+  resolveWeeklyPlanHistoryFuelToneClass,
+} from '../../utils/weeklyPlanFuelHistoryToneDisplay'
 import {
   buildWeeklyPlanRotationAriaLabel,
   buildWeeklyPlanRotationChipText,
@@ -166,6 +169,9 @@ export function WeeklyPlanCard({
     plan.scenario,
     plan.energySummary
   )
+  const historyFuelToneClass = resolveWeeklyPlanHistoryFuelToneClass(
+    hasFuelProfile ? fuelWeekTone : null
+  )
 
   return (
     <div
@@ -224,9 +230,15 @@ export function WeeklyPlanCard({
 
       {showHistoryHint && historyHint && (
         <p
-          className={WEEKLY_PLAN_HISTORY_HINT_CLASS}
+          className={[WEEKLY_PLAN_HISTORY_HINT_CLASS, historyFuelToneClass]
+            .filter(Boolean)
+            .join(' ')}
           role="status"
-          aria-label={buildWeeklyPlanHistoryAriaLabel(historyHint)}
+          aria-label={
+            fuelWeekTone && hasFuelProfile
+              ? buildWeeklyPlanHistoryFuelToneAriaLabel(historyHint, fuelWeekTone)
+              : `Progreso reciente: ${historyHint.replace(/^🏆\s*/, '')}`
+          }
         >
           {historyHint}
         </p>

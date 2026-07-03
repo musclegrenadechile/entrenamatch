@@ -77,6 +77,18 @@ test('E2E workout-plan-history-flow — guardar entreno y hint PR en EntrenaPlan
   const hint = await page.evaluate(() => window.__entrenamatchE2E!.getWeeklyPlanHistoryHint())
   expect(hint).toMatch(/10×60 kg|60 kg/)
   expect(hint).toContain('sigue progresando')
+  const historyAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanHistoryAriaLabel()
+  )
+  expect(historyAria).toMatch(/Progreso reciente.*Superávit/i)
+  const historyTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanHistoryToneClass()
+  )
+  expect(historyTone).toBe('em-v2-plan__history-hint--surplus')
+  const historyFuelAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWeeklyPlanHistoryFuelToneAriaExpected('surplus')
+  )
+  expect(historyFuelAria).toBe(true)
 
   await expect(planCard.locator('.em-v2-card__detail').first()).toContainText(/rotación/i)
   const detail = await page.evaluate(() => window.__entrenamatchE2E!.getWeeklyPlanDetail())

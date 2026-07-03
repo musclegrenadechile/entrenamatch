@@ -1,10 +1,11 @@
-/** Mega-inventario total pulido entrenamiento oleadas 361–429 (oleada 429 cierre post-stack V). */
+/** Mega-inventario total pulido entrenamiento oleadas 361–430 (oleada 430 mega fase VI). */
 import { entrenaPlanTrainingBlockRange } from './entrenaPlanTrainingSuite'
 import { fuelPlanTrainingBlockRange } from './fuelPlanTrainingSuite'
 import { trainingE2EBlockRange } from './e2eTrainingSuite'
 import { trainingPolishMegaRange } from './trainingPolishSuite'
 import { trainingPolishPostFullRange } from './trainingPolishPostFullSuite'
 import { trainingPolishPostMegaRange } from './trainingPolishPostMegaSuite'
+import { trainingPolishPostFuelRange } from './trainingPolishPostFuelSuite'
 import { trainingPolishPostStackRange } from './trainingPolishPostStackSuite'
 import { trainingPolishV1BlockRange } from './trainingPolishV1Suite'
 
@@ -17,6 +18,7 @@ export type TrainingMegaBlockId =
   | 'polish-post-mega'
   | 'polish-post-full'
   | 'polish-post-stack'
+  | 'polish-post-fuel'
 
 export type TrainingMegaBlockEntry = {
   id: TrainingMegaBlockId
@@ -74,15 +76,28 @@ export const TRAINING_MEGA_BLOCKS: readonly TrainingMegaBlockEntry[] = [
     suiteModule: 'trainingPolishPostStackSuite',
     closedOleada: 429,
   },
+  {
+    id: 'polish-post-fuel',
+    range: trainingPolishPostFuelRange(),
+    suiteModule: 'trainingPolishPostFuelSuite',
+    closedOleada: 430,
+  },
 ] as const
 
 export const TRAINING_MEGA_PHASE1_CLOSED_OLEADA = 411
 export const TRAINING_MEGA_CLOSED_OLEADA = 414
 export const TRAINING_MEGA_PHASE3_CLOSED_OLEADA = 420
 export const TRAINING_MEGA_PHASE4_CLOSED_OLEADA = 429
+export const TRAINING_MEGA_PHASE5_CLOSED_OLEADA = 430
 
 export function trainingFullMegaRange(): { from: number; to: number } {
-  return { from: 361, to: 429 }
+  return { from: 361, to: 430 }
+}
+
+export function isTrainingMegaPhase5Closed(
+  oleada = TRAINING_MEGA_PHASE5_CLOSED_OLEADA
+): boolean {
+  return oleada >= TRAINING_MEGA_PHASE5_CLOSED_OLEADA
 }
 
 export function isTrainingMegaPhase4Closed(

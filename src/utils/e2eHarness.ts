@@ -109,6 +109,13 @@ export type EntrenamatchE2EApi = {
   isWeeklyPlanFuelToneStackFullySynced: (
     tone: 'under-fueled' | 'surplus' | 'deficit'
   ) => boolean
+  /** aria-label hint PR EntrenaPlan (oleada 430). */
+  getWeeklyPlanHistoryAriaLabel: () => string | null
+  /** Modificador tono Fuel en hint historial (oleada 430). */
+  getWeeklyPlanHistoryToneClass: () => string | null
+  isWeeklyPlanHistoryFuelToneAriaExpected: (
+    tone: 'under-fueled' | 'surplus' | 'deficit'
+  ) => boolean
 }
 
 declare global {

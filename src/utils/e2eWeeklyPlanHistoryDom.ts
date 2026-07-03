@@ -23,6 +23,22 @@ export function readWeeklyPlanHistoryHint(): string | null {
   return hint?.textContent?.trim() ?? null
 }
 
+export function readWeeklyPlanHistoryAriaLabel(): string | null {
+  const card = findEntrenaPlanCard()
+  const hint = card?.querySelector(`.${WEEKLY_PLAN_HISTORY_HINT_CLASS}`)
+  return hint?.getAttribute('aria-label')?.trim() ?? null
+}
+
+export function readWeeklyPlanHistoryToneClass(): string | null {
+  const card = findEntrenaPlanCard()
+  const hint = card?.querySelector(`.${WEEKLY_PLAN_HISTORY_HINT_CLASS}`)
+  if (!hint) return null
+  for (const cls of hint.classList) {
+    if (cls.startsWith(`${WEEKLY_PLAN_HISTORY_HINT_CLASS}--`)) return cls
+  }
+  return null
+}
+
 /** Texto de detalle del plan (sin hint PR). */
 export function readWeeklyPlanDetail(): string | null {
   const card = findEntrenaPlanCard()

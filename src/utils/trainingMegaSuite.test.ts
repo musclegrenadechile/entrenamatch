@@ -8,16 +8,17 @@ import {
   isTrainingMegaPhase1Closed,
   isTrainingMegaPhase3Closed,
   isTrainingMegaPhase4Closed,
+  isTrainingMegaPhase5Closed,
   TRAINING_MEGA_BLOCKS,
   trainingFullMegaRange,
   trainingMegaBlockById,
 } from './trainingMegaSuite'
 
 describe('trainingMegaSuite', () => {
-  it('mega-inventario 8 bloques oleadas 361–429', () => {
-    expect(countTrainingMegaBlocks()).toBe(8)
-    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 429 })
-    expect(countTrainingMegaOleadas()).toBe(69)
+  it('mega-inventario 9 bloques oleadas 361–430', () => {
+    expect(countTrainingMegaBlocks()).toBe(9)
+    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 430 })
+    expect(countTrainingMegaOleadas()).toBe(70)
     expect(TRAINING_MEGA_BLOCKS.map((b) => b.id)).toEqual([
       'polish-v1',
       'e2e',
@@ -27,6 +28,7 @@ describe('trainingMegaSuite', () => {
       'polish-post-mega',
       'polish-post-full',
       'polish-post-stack',
+      'polish-post-fuel',
     ])
   })
 
@@ -41,7 +43,7 @@ describe('trainingMegaSuite', () => {
     expect(polishV2?.closedOleada).toBe(410)
     expect(polishV2?.range).toEqual({ from: 383, to: 409 })
     const fuelPlan = trainingMegaBlockById('fuel-plan')
-    expect(fuelPlan?.range).toEqual({ from: 411, to: 429 })
+    expect(fuelPlan?.range).toEqual({ from: 411, to: 430 })
     const postFull = trainingMegaBlockById('polish-post-full')
     expect(postFull?.range).toEqual({ from: 421, to: 427 })
     expect(postFull?.closedOleada).toBe(427)
@@ -83,7 +85,12 @@ describe('trainingMegaSuite', () => {
   it('mega fase V post-stack 428–429 (oleada 429)', () => {
     expect(isTrainingMegaPhase4Closed()).toBe(true)
     expect(isTrainingMegaPhase4Closed(428)).toBe(false)
-    expect(areAllTrainingMegaSubBlocksClosed(429)).toBe(true)
-    expect(isTrainingMegaFullyClosed(429)).toBe(true)
+    expect(areAllTrainingMegaSubBlocksClosed(429)).toBe(false)
+  })
+
+  it('mega fase VI post-fuel 430 (oleada 430)', () => {
+    expect(isTrainingMegaPhase5Closed()).toBe(true)
+    expect(areAllTrainingMegaSubBlocksClosed(430)).toBe(true)
+    expect(isTrainingMegaFullyClosed(430)).toBe(true)
   })
 })

@@ -289,6 +289,16 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-fuel-flow',
     feature: 'cierre post-stack déficit + mega cierre V',
   },
+  {
+    polishOleada: 430,
+    e2eSpecId: 'training-mega-flow',
+    feature: 'tono Fuel×historial under-fueled + isWeeklyPlanHistoryFuelToneAriaExpected',
+  },
+  {
+    polishOleada: 430,
+    e2eSpecId: 'workout-plan-history-flow',
+    feature: 'tono Fuel×historial surplus + weeklyPlanFuelHistoryToneDisplay',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

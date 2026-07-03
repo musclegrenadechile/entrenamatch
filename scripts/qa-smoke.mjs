@@ -232,6 +232,10 @@ if (!fuelPlanCoverage.includes("'fuel-tone-full'")) {
   console.error('e2eFuelPlanCoverage missing fuel-tone-full cover (oleada 428)')
   ok = false
 }
+if (!fuelPlanCoverage.includes("'fuel-history-tone'")) {
+  console.error('e2eFuelPlanCoverage missing fuel-history-tone cover (oleada 430)')
+  ok = false
+}
 if (!ok) process.exit(1)
 
 const fuelPlanScenarioCoverage = readFileSync(
@@ -380,7 +384,25 @@ if (!fuelPlanFullCoverage.includes('isFuelPlanPostStackE2ECoverageComplete')) {
 }
 if (!ok) process.exit(1)
 console.log('✓ e2eFuelPlanPostStackCoverage aligned with full coverage (oleada 429)')
-console.log('✓ e2eFuelPlanFullCoverage unifies 7 Fuel×plan E2E suites (oleada 429)')
+const fuelPlanHistoryToneCoverage = readFileSync(
+  join(root, 'src/utils/e2eFuelPlanHistoryToneCoverage.ts'),
+  'utf8'
+)
+if (!fuelPlanHistoryToneCoverage.includes('isFuelPlanHistoryToneCoverageComplete')) {
+  console.error('e2eFuelPlanHistoryToneCoverage missing history-tone helper (oleada 430)')
+  ok = false
+}
+if (!fuelPlanFullCoverage.includes('e2eFuelPlanHistoryToneCoverage')) {
+  console.error('e2eFuelPlanFullCoverage missing history-tone suite ref (oleada 430)')
+  ok = false
+}
+if (!fuelPlanFullCoverage.includes("'fuel-history-tone'")) {
+  console.error('e2eFuelPlanFullCoverage missing fuel-history-tone check (oleada 430)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eFuelPlanHistoryToneCoverage aligned with full coverage (oleada 430)')
+console.log('✓ e2eFuelPlanFullCoverage unifies 8 Fuel×plan E2E suites (oleada 430)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

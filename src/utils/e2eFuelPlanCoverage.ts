@@ -15,6 +15,7 @@ export type E2EFuelPlanCover =
   | 'fuel-tone-aria'
   | 'fuel-tone-card'
   | 'fuel-tone-full'
+  | 'fuel-history-tone'
 
 export type E2EFuelPlanSpecEntry = {
   id: string
@@ -44,6 +45,7 @@ export const E2E_FUEL_PLAN_SPECS: readonly E2EFuelPlanSpecEntry[] = [
       'fuel-tone-aria',
       'fuel-tone-card',
       'fuel-tone-full',
+      'fuel-history-tone',
     ],
   },
   {
@@ -66,6 +68,7 @@ export const E2E_FUEL_PLAN_SPECS: readonly E2EFuelPlanSpecEntry[] = [
       'fuel-tone-aria',
       'fuel-tone-card',
       'fuel-tone-full',
+      'fuel-history-tone',
     ],
   },
   {
@@ -103,7 +106,7 @@ export function countE2EFuelPlanSpecs(): number {
 }
 
 export function e2eFuelPlanBlockRange(): { from: number; to: number } {
-  return { from: 412, to: 429 }
+  return { from: 412, to: 430 }
 }
 
 export function fuelPlanNutritionSpecIds(): string[] {
