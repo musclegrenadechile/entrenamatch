@@ -1,4 +1,5 @@
 import { WEEKLY_PLAN_HISTORY_HINT_CLASS } from './weeklyPlanHistoryDisplay'
+import { WEEKLY_PLAN_ROTATION_CHIP_CLASS } from './weeklyPlanRotationDisplay'
 
 function findEntrenaPlanCard(): HTMLElement | null {
   const plans = document.querySelectorAll('.em-v2-plan')
@@ -27,6 +28,12 @@ export function readWeeklyPlanDetail(): string | null {
     if (text) return text
   }
   return null
+}
+
+export function readWeeklyPlanRotationChip(): string | null {
+  const card = findEntrenaPlanCard()
+  const chip = card?.querySelector(`.${WEEKLY_PLAN_ROTATION_CHIP_CLASS}`)
+  return chip?.textContent?.trim() ?? null
 }
 
 export function isWeeklyPlanCardVisible(): boolean {

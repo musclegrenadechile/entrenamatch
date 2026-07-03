@@ -6,13 +6,15 @@ import {
 
 describe('e2eWorkoutHistoryFlow', () => {
   it('checklist historial Perfil', () => {
-    expect(countE2EWorkoutHistoryFlowSteps()).toBe(5)
+    expect(countE2EWorkoutHistoryFlowSteps()).toBe(7)
     expect(E2E_WORKOUT_HISTORY_FLOW_STEPS.map((s) => s.id)).toEqual([
       'wh-01',
       'wh-02',
       'wh-03',
       'wh-04',
       'wh-05',
+      'wh-06',
+      'wh-07',
     ])
   })
 })

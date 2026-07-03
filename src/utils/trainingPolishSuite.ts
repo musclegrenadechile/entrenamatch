@@ -47,12 +47,12 @@ export const TRAINING_POLISH_BLOCKS: readonly TrainingPolishBlockEntry[] = [
     id: 'entrena-plan',
     range: entrenaPlanTrainingBlockRange(),
     suiteModule: 'entrenaPlanTrainingSuite',
-    closedOleada: 405,
+    closedOleada: 407,
   },
 ] as const
 
 export function trainingPolishMegaRange(): { from: number; to: number } {
-  return { from: 383, to: 405 }
+  return { from: 383, to: 407 }
 }
 
 export function countTrainingPolishBlocks(): number {

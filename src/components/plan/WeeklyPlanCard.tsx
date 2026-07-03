@@ -9,6 +9,12 @@ import {
   WEEKLY_PLAN_HISTORY_HINT_CLASS,
 } from '../../utils/weeklyPlanHistoryDisplay'
 import {
+  buildWeeklyPlanRotationAriaLabel,
+  buildWeeklyPlanRotationChipText,
+  shouldShowWeeklyPlanRotationChip,
+  WEEKLY_PLAN_ROTATION_CHIP_CLASS,
+} from '../../utils/weeklyPlanRotationDisplay'
+import {
   formatWeeklyPlanDelta,
   resolveWeeklyPlanScenarioClass,
   shouldRenderWeeklyPlanEmpty,
@@ -75,6 +81,8 @@ export function WeeklyPlanCard({
   const scenarioClass = resolveWeeklyPlanScenarioClass(plan.scenario)
   const historyHint = buildWeeklyPlanHistoryHint(recentWorkouts)
   const showHistoryHint = shouldShowWeeklyPlanHistoryHint(rec.type, historyHint)
+  const rotationNote = plan.trainingLoad.prRotationNote
+  const showRotationChip = shouldShowWeeklyPlanRotationChip(rotationNote, rec.type)
 
   return (
     <div className={`em-v2-card em-v2-plan ${scenarioClass}`} aria-label="Plan de entreno recomendado">
@@ -93,6 +101,16 @@ export function WeeklyPlanCard({
       </div>
 
       <p className="em-v2-card__detail mt-2 leading-snug">{plan.detail}</p>
+
+      {showRotationChip && rotationNote && (
+        <p
+          className={WEEKLY_PLAN_ROTATION_CHIP_CLASS}
+          role="status"
+          aria-label={buildWeeklyPlanRotationAriaLabel(rotationNote)}
+        >
+          {buildWeeklyPlanRotationChipText(rotationNote)}
+        </p>
+      )}
 
       {showHistoryHint && historyHint && (
         <p

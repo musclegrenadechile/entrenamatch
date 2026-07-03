@@ -84,6 +84,7 @@ import {
   isWeeklyPlanCardVisible,
   readWeeklyPlanDetail,
   readWeeklyPlanHistoryHint,
+  readWeeklyPlanRotationChip,
 } from './utils/e2eWeeklyPlanHistoryDom'
 import {
   parseGymIdFromSearch,
@@ -6010,6 +6011,7 @@ useEffect(() => {
       seedDemoFuelProfile: () => setFuelProfile(buildE2EDemoFuelProfile()),
       getWeeklyPlanHistoryHint: () => readWeeklyPlanHistoryHint(),
       getWeeklyPlanDetail: () => readWeeklyPlanDetail(),
+      getWeeklyPlanRotationChip: () => readWeeklyPlanRotationChip(),
       isWeeklyPlanCardVisible: () => isWeeklyPlanCardVisible(),
     })
   }, [

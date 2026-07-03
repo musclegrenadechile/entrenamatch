@@ -8,10 +8,10 @@ import {
 } from './trainingPolishSuite'
 
 describe('trainingPolishSuite', () => {
-  it('mega-inventario 5 bloques oleadas 383–405', () => {
+  it('mega-inventario 5 bloques oleadas 383–407', () => {
     expect(countTrainingPolishBlocks()).toBe(5)
-    expect(trainingPolishMegaRange()).toEqual({ from: 383, to: 405 })
-    expect(countTrainingPolishOleadas()).toBe(23)
+    expect(trainingPolishMegaRange()).toEqual({ from: 383, to: 407 })
+    expect(countTrainingPolishOleadas()).toBe(25)
     expect(TRAINING_POLISH_BLOCKS.map((b) => b.id)).toEqual([
       'gym-log-live',
       'fab-session',
@@ -28,6 +28,6 @@ describe('trainingPolishSuite', () => {
     const fab = trainingPolishBlockById('fab-session')
     expect(fab?.range).toEqual({ from: 387, to: 389 })
     const plan = trainingPolishBlockById('entrena-plan')
-    expect(plan?.range).toEqual({ from: 401, to: 405 })
+    expect(plan?.range).toEqual({ from: 401, to: 407 })
   })
 })

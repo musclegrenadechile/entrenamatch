@@ -45,6 +45,8 @@ export type EntrenamatchE2EApi = {
   seedDemoFuelProfile: () => void
   getWeeklyPlanHistoryHint: () => string | null
   getWeeklyPlanDetail: () => string | null
+  /** Chip rotación PR visible en card (oleada 407). */
+  getWeeklyPlanRotationChip: () => string | null
   isWeeklyPlanCardVisible: () => boolean
 }
 

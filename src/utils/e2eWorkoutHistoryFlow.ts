@@ -34,6 +34,16 @@ export const E2E_WORKOUT_HISTORY_FLOW_STEPS: readonly E2EWorkoutHistoryStep[] = 
     action: 'Sparkline con puntos PR (oleada 396–397)',
     expect: 'SVG --has-pr y aria-label con «PR»',
   },
+  {
+    id: 'wh-06',
+    action: 'Guardar entreno desde Perfil (65 kg Press banca)',
+    expect: 'Historial actualizado; modal cierra tras publicar',
+  },
+  {
+    id: 'wh-07',
+    action: 'EntrenaPlan hint + chip rotación en Hoy (oleada 407)',
+    expect: '.em-v2-plan__history-hint + .em-v2-plan__rotation-chip; harness getters',
+  },
 ] as const
 
 export function countE2EWorkoutHistoryFlowSteps(): number {

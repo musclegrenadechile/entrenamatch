@@ -34,8 +34,8 @@ describe('e2eTrainingSuite', () => {
     ])
   })
 
-  it('bloque E2E oleadas 378–405', () => {
-    expect(trainingE2EBlockRange()).toEqual({ from: 378, to: 405 })
+  it('bloque E2E oleadas 378–407', () => {
+    expect(trainingE2EBlockRange()).toEqual({ from: 378, to: 407 })
     const fab = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-fab-flow')
     expect(fab?.covers).toContain('fab')
     const workout = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-flow')
@@ -44,6 +44,7 @@ describe('e2eTrainingSuite', () => {
     expect(fuel?.covers).toContain('banner')
     const history = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-history-flow')
     expect(history?.covers).toContain('history')
+    expect(history?.covers).toContain('plan-history')
     const planHistory = E2E_TRAINING_PLAYWRIGHT_SPECS.find(
       (s) => s.id === 'workout-plan-history-flow'
     )

@@ -64,6 +64,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'training-mega-flow',
     feature: 'nota rotación PR en mega-flujo',
   },
+  {
+    polishOleada: 407,
+    e2eSpecId: 'workout-history-flow',
+    feature: 'EntrenaPlan hint + chip rotación tras guardar desde Perfil',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

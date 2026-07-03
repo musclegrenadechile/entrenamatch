@@ -9,18 +9,18 @@ import {
 
 describe('e2eTrainingPolishBridge', () => {
   it('define puente E2E ↔ pulido', () => {
-    expect(countE2ETrainingPolishBridgeEntries()).toBe(15)
+    expect(countE2ETrainingPolishBridgeEntries()).toBe(16)
     expect(E2E_TRAINING_POLISH_BRIDGE.map((e) => e.polishOleada)).toContain(391)
     expect(E2E_TRAINING_POLISH_BRIDGE.map((e) => e.polishOleada)).toContain(397)
   })
 
-  it('trainingMegaBlockRange 361–406', () => {
-    expect(trainingMegaBlockRange()).toEqual({ from: 361, to: 406 })
+  it('trainingMegaBlockRange 361–407', () => {
+    expect(trainingMegaBlockRange()).toEqual({ from: 361, to: 407 })
   })
 
   it('uniqueE2EValidatedPolishOleadas y e2eBridgeEntriesForOleada', () => {
     expect(uniqueE2EValidatedPolishOleadas()).toEqual([
-      384, 386, 388, 391, 392, 393, 394, 395, 396, 397, 401, 404, 405, 406,
+      384, 386, 388, 391, 392, 393, 394, 395, 396, 397, 401, 404, 405, 406, 407,
     ])
     expect(e2eBridgeEntriesForOleada(393).map((e) => e.e2eSpecId)).toEqual([
       'workout-fuel-flow',

@@ -8,10 +8,10 @@ import {
 } from './trainingMegaSuite'
 
 describe('trainingMegaSuite', () => {
-  it('mega-inventario 4 bloques oleadas 361–406', () => {
+  it('mega-inventario 4 bloques oleadas 361–407', () => {
     expect(countTrainingMegaBlocks()).toBe(4)
-    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 406 })
-    expect(countTrainingMegaOleadas()).toBe(46)
+    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 407 })
+    expect(countTrainingMegaOleadas()).toBe(47)
     expect(TRAINING_MEGA_BLOCKS.map((b) => b.id)).toEqual([
       'polish-v1',
       'e2e',
@@ -22,12 +22,12 @@ describe('trainingMegaSuite', () => {
 
   it('trainingMegaBlockById', () => {
     const e2e = trainingMegaBlockById('e2e')
-    expect(e2e?.closedOleada).toBe(405)
-    expect(e2e?.range).toEqual({ from: 378, to: 405 })
+    expect(e2e?.closedOleada).toBe(407)
+    expect(e2e?.range).toEqual({ from: 378, to: 407 })
     const plan = trainingMegaBlockById('entrena-plan')
-    expect(plan?.range).toEqual({ from: 401, to: 405 })
+    expect(plan?.range).toEqual({ from: 401, to: 407 })
     const polishV2 = trainingMegaBlockById('polish-v2')
-    expect(polishV2?.closedOleada).toBe(406)
-    expect(polishV2?.range).toEqual({ from: 383, to: 405 })
+    expect(polishV2?.closedOleada).toBe(407)
+    expect(polishV2?.range).toEqual({ from: 383, to: 407 })
   })
 })
