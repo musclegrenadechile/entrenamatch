@@ -73,6 +73,7 @@ import { normalizeTabNavigation, resolveRedSubTab, isRedTabActive, type RedSubTa
 import { parseTabFromUrl, syncTabToUrl } from './utils/tabUrlSync'
 import { installE2EHarness, isE2EHarnessActive } from './utils/e2eHarness'
 import { buildE2EDemoFuelProfile } from './utils/demoFuelProfile'
+import { buildE2EDemoFuelWeekMacros } from './utils/demoFuelWeekLogs'
 import { buildDemoWorkoutFromSave, buildE2EDemoWorkoutHistory } from './utils/demoWorkoutHistory'
 import {
   countWorkoutHistoryPrBadges,
@@ -84,6 +85,7 @@ import {
   isWeeklyPlanCardVisible,
   readWeeklyPlanDetail,
   readWeeklyPlanFuelWeekAriaLabel,
+  readWeeklyPlanFuelWeekChip,
   readWeeklyPlanFuelWeekHint,
   readWeeklyPlanFuelWeekToneClass,
   readWeeklyPlanHistoryHint,
@@ -6013,6 +6015,13 @@ useEffect(() => {
       countWorkoutHistoryPrBadges: () => countWorkoutHistoryPrBadges(),
       getWorkoutHistorySparklineAriaLabels: () => readWorkoutHistorySparklineAriaLabels(),
       seedDemoFuelProfile: () => setFuelProfile(buildE2EDemoFuelProfile()),
+      seedDemoFuelWeekLogs: (scenario = 'under-fueled') => {
+        const macros = buildE2EDemoFuelWeekMacros(scenario)
+        setFuelWeekMacros(macros)
+        setFuelWeekDays(
+          computeFuelWeekFromDates(new Set(macros.filter((d) => d.logged).map((d) => d.date)))
+        )
+      },
       getWeeklyPlanHistoryHint: () => readWeeklyPlanHistoryHint(),
       getWeeklyPlanDetail: () => readWeeklyPlanDetail(),
       getWeeklyPlanRotationChip: () => readWeeklyPlanRotationChip(),
@@ -6020,6 +6029,7 @@ useEffect(() => {
       getWeeklyPlanFuelWeekHint: () => readWeeklyPlanFuelWeekHint(),
       getWeeklyPlanFuelWeekAriaLabel: () => readWeeklyPlanFuelWeekAriaLabel(),
       getWeeklyPlanFuelWeekToneClass: () => readWeeklyPlanFuelWeekToneClass(),
+      getWeeklyPlanFuelWeekChip: () => readWeeklyPlanFuelWeekChip(),
       isWeeklyPlanCardVisible: () => isWeeklyPlanCardVisible(),
     })
   }, [
@@ -6038,6 +6048,8 @@ useEffect(() => {
     setShowOnboarding,
     setShowSyncArena,
     setFuelProfile,
+    setFuelWeekMacros,
+    setFuelWeekDays,
   ])
 
   useEffect(() => {

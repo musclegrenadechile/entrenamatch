@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.471
+**Versión cierre:** v0.1.472
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -83,6 +83,7 @@
 | **410** | **Cierre pulido II + CI** | trainingPolishSuite cerrado 383–409; qa:smoke valida 3 specs rotación en CI |
 | **411** | **Mega cierre + Fuel×plan** | trainingMegaSuite cierra 361–410; hint semanal Fuel en EntrenaPlan; fuelPlanTrainingSuite |
 | **412** | **E2E Fuel×plan + tono** | harness getWeeklyPlanFuelWeekHint; tono surplus/deficit/under-fueled; mega-flow valida hint |
+| **413** | **Fuel×plan chip + seed** | seedDemoFuelWeekLogs; chip Δ kcal surplus/deficit; plan-history-flow E2E Superávit |
 
 ## Mega entrenamiento (361–411) ✅
 
@@ -90,7 +91,7 @@ Inventario `trainingMegaSuite`: 5 sub-bloques (pulido I 361–377, E2E 378–410
 
 ## Fuel × EntrenaPlan (411+) 🆕
 
-Hint semanal según balance Fuel y escenario del plan (días faltantes, superávit, déficit). Tono visual por escenario (violeta/naranja/verde). E2E mega-flow valida hint + harness. Utils: `weeklyPlanFuelWeekDisplay`, `weeklyPlanFuelWeekToneDisplay`, `fuelPlanTrainingSuite`.
+Hint semanal según balance Fuel y escenario del plan (días faltantes, superávit, déficit). Tono visual por escenario (violeta/naranja/verde). Chip compacto Δ kcal en superávit/déficit. Harness `seedDemoFuelWeekLogs` para E2E. Utils: `weeklyPlanFuelWeekDisplay`, `weeklyPlanFuelWeekToneDisplay`, `weeklyPlanFuelWeekChipDisplay`, `demoFuelWeekLogs`, `fuelPlanTrainingSuite`.
 
 ## EntrenaPlan × historial (401–409) ✅
 

@@ -34,7 +34,7 @@ describe('trainingMegaSuite', () => {
     expect(polishV2?.closedOleada).toBe(410)
     expect(polishV2?.range).toEqual({ from: 383, to: 409 })
     const fuelPlan = trainingMegaBlockById('fuel-plan')
-    expect(fuelPlan?.range).toEqual({ from: 411, to: 412 })
+    expect(fuelPlan?.range).toEqual({ from: 411, to: 413 })
     expect(fuelPlan?.suiteModule).toBe('fuelPlanTrainingSuite')
   })
 

@@ -1,5 +1,6 @@
 import { WEEKLY_PLAN_HISTORY_HINT_CLASS } from './weeklyPlanHistoryDisplay'
 import { WEEKLY_PLAN_ROTATION_CHIP_CLASS } from './weeklyPlanRotationDisplay'
+import { WEEKLY_PLAN_FUEL_WEEK_CHIP_CLASS } from './weeklyPlanFuelWeekChipDisplay'
 import { WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS } from './weeklyPlanFuelWeekDisplay'
 
 function findEntrenaPlanCard(): HTMLElement | null {
@@ -53,6 +54,12 @@ export function readWeeklyPlanFuelWeekAriaLabel(): string | null {
   const card = findEntrenaPlanCard()
   const hint = card?.querySelector(`.${WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS}`)
   return hint?.getAttribute('aria-label')?.trim() ?? null
+}
+
+export function readWeeklyPlanFuelWeekChip(): string | null {
+  const card = findEntrenaPlanCard()
+  const chip = card?.querySelector(`.${WEEKLY_PLAN_FUEL_WEEK_CHIP_CLASS}`)
+  return chip?.textContent?.trim() ?? null
 }
 
 export function readWeeklyPlanFuelWeekToneClass(): string | null {

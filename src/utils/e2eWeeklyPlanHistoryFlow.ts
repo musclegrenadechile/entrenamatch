@@ -34,6 +34,11 @@ export const E2E_WEEKLY_PLAN_HISTORY_FLOW_STEPS: readonly E2EWeeklyPlanHistorySt
     action: 'Chip rotación PR visible + aria (oleada 408)',
     expect: '.em-v2-plan__rotation-chip; harness getWeeklyPlanRotationChip + aria-label',
   },
+  {
+    id: 'ph-06',
+    action: 'Sembrar Fuel semanal surplus (seedDemoFuelWeekLogs) + chip Δ kcal (oleada 413)',
+    expect: '.em-v2-plan__fuel-week-chip + hint Superávit; harness getWeeklyPlanFuelWeekChip',
+  },
 ] as const
 
 export function countE2EWeeklyPlanHistoryFlowSteps(): number {

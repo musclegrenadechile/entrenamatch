@@ -55,6 +55,10 @@ export type EntrenamatchE2EApi = {
   getWeeklyPlanFuelWeekAriaLabel: () => string | null
   /** Modificador de tono del hint Fuel semanal (oleada 412). */
   getWeeklyPlanFuelWeekToneClass: () => string | null
+  /** Chip Δ kcal semanal en superávit/déficit (oleada 413). */
+  getWeeklyPlanFuelWeekChip: () => string | null
+  /** Sembra macros Fuel semanales demo para E2E (oleada 413). */
+  seedDemoFuelWeekLogs: (scenario?: 'under-fueled' | 'surplus' | 'deficit') => void
   isWeeklyPlanCardVisible: () => boolean
 }
 

@@ -9,6 +9,7 @@ test('E2E workout-plan-history-flow — guardar entreno y hint PR en EntrenaPlan
 
   await page.evaluate(() => {
     window.__entrenamatchE2E!.seedDemoFuelProfile()
+    window.__entrenamatchE2E!.seedDemoFuelWeekLogs('surplus')
   })
 
   await page.evaluate(() => {
@@ -45,4 +46,18 @@ test('E2E workout-plan-history-flow — guardar entreno y hint PR en EntrenaPlan
     window.__entrenamatchE2E!.getWeeklyPlanRotationAriaLabel()
   )
   expect(aria).toMatch(/tras PR|Pecho|Pull/i)
+
+  await expect(planCard.locator('.em-v2-plan__fuel-week-chip')).toBeVisible({ timeout: 10000 })
+  const fuelChip = await page.evaluate(() => window.__entrenamatchE2E!.getWeeklyPlanFuelWeekChip())
+  expect(fuelChip).toMatch(/Δ \+\d+ kcal/)
+
+  await expect(planCard.locator('.em-v2-plan__fuel-week-hint')).toBeVisible({ timeout: 10000 })
+  const fuelWeekHint = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanFuelWeekHint()
+  )
+  expect(fuelWeekHint).toMatch(/Superávit/i)
+  const fuelWeekTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanFuelWeekToneClass()
+  )
+  expect(fuelWeekTone).toBe('em-v2-plan__fuel-week-hint--surplus')
 })

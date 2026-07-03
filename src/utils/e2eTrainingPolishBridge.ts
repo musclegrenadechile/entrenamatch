@@ -109,6 +109,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'training-mega-flow',
     feature: 'harness fuel week hint + tono under-fueled',
   },
+  {
+    polishOleada: 413,
+    e2eSpecId: 'workout-plan-history-flow',
+    feature: 'seedDemoFuelWeekLogs surplus + chip Δ kcal + hint Superávit',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

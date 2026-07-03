@@ -27,6 +27,24 @@ export const FUEL_PLAN_TRAINING_UTILS: readonly FuelPlanTrainingUtilEntry[] = [
     oleada: 412,
     covers: ['fuel-hint', 'aria'],
   },
+  {
+    id: 'fuel-week-chip',
+    module: 'weeklyPlanFuelWeekChipDisplay',
+    oleada: 413,
+    covers: ['fuel-hint', 'card'],
+  },
+  {
+    id: 'fuel-week-seed',
+    module: 'demoFuelWeekLogs',
+    oleada: 413,
+    covers: ['fuel-hint'],
+  },
+  {
+    id: 'fuel-week-plan-e2e',
+    module: 'e2eWeeklyPlanHistoryFlow',
+    oleada: 413,
+    covers: ['fuel-hint', 'aria'],
+  },
 ] as const
 
 export function countFuelPlanTrainingUtils(): number {
@@ -34,5 +52,5 @@ export function countFuelPlanTrainingUtils(): number {
 }
 
 export function fuelPlanTrainingBlockRange(): { from: number; to: number } {
-  return { from: 411, to: 412 }
+  return { from: 411, to: 413 }
 }
