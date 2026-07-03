@@ -6,11 +6,11 @@ import {
 } from './postWorkoutTrainingSuite'
 
 describe('postWorkoutTrainingSuite', () => {
-  it('inventario post-entreno oleadas 390–446', () => {
-    expect(countPostWorkoutTrainingUtils()).toBe(19)
+  it('inventario post-entreno oleadas 390–450', () => {
+    expect(countPostWorkoutTrainingUtils()).toBe(21)
     expect(POST_WORKOUT_TRAINING_UTILS.map((u) => u.oleada)).toEqual([
       390, 391, 392, 393, 394, 439, 439, 439, 441, 441, 442, 442, 442, 445, 445, 445, 446,
-      446, 446,
+      446, 446, 450, 450,
     ])
     expect(POST_WORKOUT_TRAINING_UTILS.map((u) => u.module)).toContain(
       'workoutSaveBannerPrToneDisplay'
@@ -52,10 +52,14 @@ describe('postWorkoutTrainingSuite', () => {
     expect(POST_WORKOUT_TRAINING_UTILS.map((u) => u.module)).toContain(
       'e2eTrainingReviewFullCoverage'
     )
+    expect(POST_WORKOUT_TRAINING_UTILS.map((u) => u.module)).toContain('trainingReviewSessionPr')
+    expect(POST_WORKOUT_TRAINING_UTILS.map((u) => u.module)).toContain(
+      'e2eTrainingFullFlowPrCoverage'
+    )
   })
 
-  it('bloque oleadas 390–446', () => {
-    expect(postWorkoutTrainingBlockRange()).toEqual({ from: 390, to: 446 })
+  it('bloque oleadas 390–450', () => {
+    expect(postWorkoutTrainingBlockRange()).toEqual({ from: 390, to: 450 })
     const suite = POST_WORKOUT_TRAINING_UTILS.find((u) => u.id === 'post-workout-suite')
     expect(suite?.covers).toContain('fuel-prefill')
   })

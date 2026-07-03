@@ -800,6 +800,33 @@ if (!workoutHistorySparklineFullCoverage.includes('e2eWorkoutHistorySparklineCov
 if (!ok) process.exit(1)
 console.log('✓ e2eWorkoutHistorySparklinePostV2Coverage aligned with sparkline full coverage (oleada 449)')
 console.log('✓ e2eWorkoutHistorySparklineFullCoverage unifies 3 sparkline historial v2 E2E suites (oleada 449)')
+const trainingFullFlowPrCoverage = readFileSync(
+  join(root, 'src/utils/e2eTrainingFullFlowPrCoverage.ts'),
+  'utf8'
+)
+if (!trainingFullFlowPrCoverage.includes('isTrainingFullFlowPrCoverageComplete')) {
+  console.error('e2eTrainingFullFlowPrCoverage missing full-flow-pr helper (oleada 450)')
+  ok = false
+}
+if (!trainingFullFlowPrCoverage.includes('full-flow-review-pr')) {
+  console.error('e2eTrainingFullFlowPrCoverage missing full-flow-review-pr cover (oleada 450)')
+  ok = false
+}
+const trainingReviewSessionPr = readFileSync(
+  join(root, 'src/utils/trainingReviewSessionPr.ts'),
+  'utf8'
+)
+if (!trainingReviewSessionPr.includes('resolveTrainingReviewModalHasPr')) {
+  console.error('trainingReviewSessionPr missing session-pr helper (oleada 450)')
+  ok = false
+}
+const trainingFullFlow = readFileSync(join(root, 'src/utils/e2eTrainingFullFlow.ts'), 'utf8')
+if (!trainingFullFlow.includes('review-pr-tone')) {
+  console.error('e2eTrainingFullFlow missing review-pr-tone hito (oleada 450)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eTrainingFullFlowPrCoverage aligned with training-full-flow PR pivot (oleada 450)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

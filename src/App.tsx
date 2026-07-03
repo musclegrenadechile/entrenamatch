@@ -11485,7 +11485,7 @@ useEffect(() => {
       <TrainingReviewModalMount
         open={!!showReviewModalFor}
         partnerName={SEED_PROFILES.find((p) => p.id === showReviewModalFor)?.name || 'tu partner'}
-        hasPr={!!workoutSaveBanner?.prSummary}
+        bannerPrSummary={workoutSaveBanner?.prSummary}
         rating={reviewRating}
         comment={reviewComment}
         photo={reviewPhoto}

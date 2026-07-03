@@ -34,6 +34,7 @@ import { isTrainingPrV2CoverageComplete } from './e2eTrainingPrV2Coverage'
 import { isWorkoutHistorySparklinePrCoverageComplete } from './e2eWorkoutHistorySparklinePrCoverage'
 import { isWorkoutHistorySparklinePostV2E2ECoverageComplete } from './e2eWorkoutHistorySparklinePostV2Coverage'
 import { isWorkoutHistorySparklineFullE2ECoverageComplete } from './e2eWorkoutHistorySparklineFullCoverage'
+import { isTrainingFullFlowPrCoverageComplete } from './e2eTrainingFullFlowPrCoverage'
 import { isFuelPlanPostEnergyE2ECoverageComplete } from './e2eFuelPlanPostEnergyCoverage'
 import { isFuelPlanRotationToneCoverageComplete } from './e2eFuelPlanRotationToneCoverage'
 import { isFuelPlanPostStackE2ECoverageComplete } from './e2eFuelPlanPostStackCoverage'
@@ -173,6 +174,10 @@ describe('e2eTrainingSuite', () => {
   it('e2eWorkoutHistorySparklinePostV2Coverage completo (oleada 449)', () => {
     expect(isWorkoutHistorySparklinePostV2E2ECoverageComplete()).toBe(true)
     expect(isWorkoutHistorySparklineFullE2ECoverageComplete()).toBe(true)
+  })
+
+  it('e2eTrainingFullFlowPrCoverage completo (oleada 450)', () => {
+    expect(isTrainingFullFlowPrCoverageComplete()).toBe(true)
   })
 
   it('e2eGymLogSessionPrCoverage completo (oleada 436)', () => {

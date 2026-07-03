@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { Star } from 'lucide-react'
 import {
@@ -8,11 +9,16 @@ import {
   buildTrainingReviewPrToneAriaLabel,
   resolveTrainingReviewPrToneClass,
 } from '../../utils/trainingReviewPrToneDisplay'
+import {
+  clearReviewSessionPr,
+  persistReviewSessionPr,
+  resolveTrainingReviewModalHasPrFromBanner,
+} from '../../utils/trainingReviewSessionPr'
 
 export type TrainingReviewModalMountProps = {
   open: boolean
   partnerName: string
-  hasPr?: boolean
+  bannerPrSummary?: string
   rating: number
   comment: string
   photo: string | null
@@ -27,7 +33,7 @@ export type TrainingReviewModalMountProps = {
 export function TrainingReviewModalMount({
   open,
   partnerName,
-  hasPr = false,
+  bannerPrSummary,
   rating,
   comment,
   photo,
@@ -37,8 +43,17 @@ export function TrainingReviewModalMount({
   onClose,
   onSubmit,
 }: TrainingReviewModalMountProps) {
+  useEffect(() => {
+    persistReviewSessionPr(bannerPrSummary)
+  }, [bannerPrSummary])
+
+  useEffect(() => {
+    if (!open) clearReviewSessionPr()
+  }, [open])
+
   if (!open) return null
 
+  const hasPr = resolveTrainingReviewModalHasPrFromBanner(bannerPrSummary)
   const reviewPrToneClass = resolveTrainingReviewPrToneClass(hasPr)
   const dialogAriaLabel = buildTrainingReviewPrToneAriaLabel(partnerName, hasPr)
 

@@ -62,6 +62,12 @@ export const E2E_WORKOUT_FLOW_STEPS: E2EWorkoutStep[] = [
     expect: 'Dialog reseña con estrellas y «Enviar reseña»',
   },
   {
+    id: 'wo-05c',
+    phase: 'review',
+    action: 'Tono PR×reseña post-sync (training-full-flow oleada 450)',
+    expect: 'Kicker récord personal; aria «récord personal» tras sync',
+  },
+  {
     id: 'wo-05b',
     phase: 'review',
     action: 'Hints dinámicos + envío bloqueado sin rating (oleada 390)',
