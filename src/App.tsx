@@ -72,6 +72,13 @@ import { resolvePushNotificationData } from './utils/pushNavigation'
 import { normalizeTabNavigation, resolveRedSubTab, isRedTabActive, type RedSubTab } from './utils/tabNavigation'
 import { parseTabFromUrl, syncTabToUrl } from './utils/tabUrlSync'
 import { installE2EHarness, isE2EHarnessActive } from './utils/e2eHarness'
+import { buildDemoWorkoutFromSave, buildE2EDemoWorkoutHistory } from './utils/demoWorkoutHistory'
+import {
+  countWorkoutHistoryPrBadges,
+  readWorkoutHistoryRowSummaries,
+  readWorkoutHistorySectionKicker,
+  readWorkoutHistorySparklineAriaLabels,
+} from './utils/e2eWorkoutHistoryDom'
 import {
   parseGymIdFromSearch,
   resolvePartnerGymById,
@@ -5288,7 +5295,8 @@ useEffect(() => {
   })
 
   const refreshEntrenoRecentWorkouts = useCallback(async () => {
-    if (isDemoMode || !db || !firebaseUser?.uid) {
+    if (isDemoMode) return
+    if (!db || !firebaseUser?.uid) {
       setEntrenoRecentWorkouts([])
       return
     }
@@ -5984,6 +5992,15 @@ useEffect(() => {
       resumeWorkoutModal: () => {
         void openEntrenoDeHoy()
       },
+      goToProfileTab: () => navigateTab('profile'),
+      seedDemoWorkoutHistory: () => {
+        setEntrenoRecentWorkouts(buildE2EDemoWorkoutHistory(effectiveUserId))
+        setEntrenoRecentLoading(false)
+      },
+      getWorkoutHistorySectionKicker: () => readWorkoutHistorySectionKicker(),
+      getWorkoutHistoryRowSummaries: () => readWorkoutHistoryRowSummaries(),
+      countWorkoutHistoryPrBadges: () => countWorkoutHistoryPrBadges(),
+      getWorkoutHistorySparklineAriaLabels: () => readWorkoutHistorySparklineAriaLabels(),
     })
   }, [
     showSyncArena,
@@ -6190,6 +6207,10 @@ useEffect(() => {
         )
         const demoPostText = `ðŸ‹ï¸ Entreno de Hoy Â· ${payload.title} â€” ${payload.exercises.length} ejercicios, ${payload.durationMin} min (demo)`
         await createProfilePost(demoPostText, null)
+        setEntrenoRecentWorkouts((prev) => [
+          buildDemoWorkoutFromSave(effectiveUserId, payload),
+          ...prev,
+        ].slice(0, 20))
         const demoStoryOpts = {
           userName: currentUser?.name || 'Atleta',
           userPhoto: currentUser?.photo || currentUser?.photos?.[0],

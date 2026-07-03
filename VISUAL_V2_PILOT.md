@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.457
+**Versión cierre:** v0.1.459
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -69,6 +69,8 @@
 | **396** | **Sparkline PR** | Puntos dorados en sparkline de historial cuando la sesión tiene PR, tests sparkline data |
 | **397** | **Cierre historial** | Inventario workoutHistoryTrainingSuite + aria-label sparkline, bloque 395–397 ✅ |
 | **398** | **Mega pulido entreno** | Inventario trainingPolishSuite unifica gym-log, FAB, post-entreno e historial 383–397 ✅ |
+| **399** | **Puente E2E↔pulido** | e2eTrainingPolishBridge mapea specs 378–394 → oleadas pulido; mega bloque 378–397 |
+| **400** | **E2E historial Perfil** | workout-history-flow.spec, harness historial, demo history en Perfil; puente 395–397 |
 
 ## Pulido entrenamiento II (383–397) ✅
 
@@ -90,9 +92,9 @@ Chip progreso, PR badge, haptic/confetti, hint delta y resumen en FAB al minimiz
 
 Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-guardar y cards de muro unificados al design system v2. Oleadas 374–377 cierran biblioteca, series, UX móvil y duplicar serie del gym-log.
 
-## E2E entrenamiento (378–390) ✅
+## E2E entrenamiento (378–400) ✅
 
-Playwright con harness `?e2e=1` en CI (`e2e-smoke`). 5 specs: gym-log, Fuel, sync, reseña, FAB minimizado, banner post-guardar. Utils: `e2eWorkoutScenarios`, `e2eTrainingMegaFlow`, `e2eWorkoutFabFlow`, `e2eTrainingSuite`, `workoutSaveBannerDisplay`.
+Playwright con harness `?e2e=1` en CI (`e2e-smoke`). 6 specs cubren gym-log, Fuel, sync, reseña, FAB, banner, prefill e historial Perfil. Puente `e2eTrainingPolishBridge` → oleadas pulido 384–397. Mega bloque documentado: 378–400 (`trainingMegaBlockRange`).
 
 ## Auditoría cohesión (360)
 

@@ -33,6 +33,14 @@ export type EntrenamatchE2EApi = {
   isWorkoutFabVisible: () => boolean
   /** Reabre gym-log desde borrador (sin prefill E2E). */
   resumeWorkoutModal: () => void
+  /** Navega a Perfil (oleada 400). */
+  goToProfileTab: () => void
+  /** Sembra historial demo en Perfil para E2E historial. */
+  seedDemoWorkoutHistory: () => void
+  getWorkoutHistorySectionKicker: () => string | null
+  getWorkoutHistoryRowSummaries: () => string[]
+  countWorkoutHistoryPrBadges: () => number
+  getWorkoutHistorySparklineAriaLabels: () => string[]
 }
 
 declare global {
