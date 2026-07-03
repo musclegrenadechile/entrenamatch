@@ -10195,6 +10195,7 @@ useEffect(() => {
             }
             syncBond={activeChat ? syncBonds[activeChat] : undefined}
             workoutSessionDraft={workoutSessionDraft}
+            entrenoRecentWorkouts={entrenoRecentWorkouts}
             showEntrenaLogModal={showEntrenaLogModal}
             onResumeWorkout={() => void openEntrenoDeHoy()}
             onQuickAddSet={handleWorkoutQuickAddSet}

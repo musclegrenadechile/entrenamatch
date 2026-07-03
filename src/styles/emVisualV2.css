@@ -4475,6 +4475,15 @@
   font-size: 0.625rem;
 }
 
+.em-v2-workout-fab__strip-chip {
+  margin: 0 0 0.25rem 0.25rem;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.55);
+  line-height: 1.25;
+}
+
 .em-v2-workout-fab__strip-inner {
   border-radius: var(--em-radius-xl);
   background: linear-gradient(135deg, rgba(255, 103, 31, 0.95) 0%, rgba(234, 88, 12, 0.95) 100%);

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   countTrainingE2ESpecs,
   E2E_TRAINING_PLAYWRIGHT_SPECS,
+  trainingE2EBlockRange,
   trainingMegaSpecEntry,
 } from './e2eTrainingSuite'
 
@@ -21,5 +22,11 @@ describe('e2eTrainingSuite', () => {
     const mega = trainingMegaSpecEntry()
     expect(mega.id).toBe('training-mega-flow')
     expect(mega.covers).toEqual(['gym-log', 'fuel', 'sync', 'review'])
+  })
+
+  it('bloque E2E oleadas 378–389', () => {
+    expect(trainingE2EBlockRange()).toEqual({ from: 378, to: 389 })
+    const fab = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-fab-flow')
+    expect(fab?.covers).toContain('fab')
   })
 })

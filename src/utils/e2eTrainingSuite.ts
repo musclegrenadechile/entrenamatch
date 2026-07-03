@@ -2,7 +2,7 @@
 export type E2ETrainingSpecEntry = {
   id: string
   file: string
-  covers: readonly ('gym-log' | 'fuel' | 'sync' | 'review')[]
+  covers: readonly ('gym-log' | 'fuel' | 'sync' | 'review' | 'fab')[]
 }
 
 export const E2E_TRAINING_PLAYWRIGHT_SPECS: readonly E2ETrainingSpecEntry[] = [
@@ -29,9 +29,13 @@ export const E2E_TRAINING_PLAYWRIGHT_SPECS: readonly E2ETrainingSpecEntry[] = [
   {
     id: 'workout-fab-flow',
     file: 'e2e/workout-fab-flow.spec.ts',
-    covers: ['gym-log'],
+    covers: ['gym-log', 'fab'],
   },
 ] as const
+
+export function trainingE2EBlockRange(): { from: number; to: number } {
+  return { from: 378, to: 389 }
+}
 
 export function countTrainingE2ESpecs(): number {
   return E2E_TRAINING_PLAYWRIGHT_SPECS.length

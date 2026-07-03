@@ -172,6 +172,11 @@ export function WorkoutSessionFab({
   if (layout === 'chat-strip') {
     return (
       <div className="em-v2-workout-fab__strip workout-session-strip shrink-0 px-2 pt-1 pb-0.5">
+        {draftMeta.sessionChip && (
+          <p className="em-v2-workout-fab__strip-chip" role="status">
+            {draftMeta.sessionChip}
+          </p>
+        )}
         <div className="em-v2-workout-fab__strip-inner workout-session-strip-inner">
           <button
             type="button"

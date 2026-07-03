@@ -3,7 +3,7 @@ import { PullToRefresh } from '../ui/PullToRefresh'
 import { ChatListPanel, ChatView } from '../messages'
 import { WorkoutSessionFab } from '../workout/WorkoutSessionFab'
 import type { ChatPactCompareData } from '../messages/ChatPactCompareStrip'
-import type { Message, Profile } from '../../types'
+import type { Message, Profile, Workout } from '../../types'
 import type { WorkoutDraft } from '../../utils/workoutDraft'
 import type { ChatViewProps } from '../messages/ChatView'
 
@@ -27,6 +27,7 @@ export type RedMessagesPanelProps = {
   chatMessages: Message[]
   syncBond: { bondLevel?: number } | undefined
   workoutSessionDraft: WorkoutDraft | null
+  entrenoRecentWorkouts?: Workout[]
   showEntrenaLogModal: boolean
   onResumeWorkout: () => void
   onQuickAddSet: () => void
@@ -66,6 +67,7 @@ export function RedMessagesPanel({
   chatMessages,
   syncBond,
   workoutSessionDraft,
+  entrenoRecentWorkouts = [],
   showEntrenaLogModal,
   onResumeWorkout,
   onQuickAddSet,
@@ -102,6 +104,7 @@ export function RedMessagesPanel({
           {workoutSessionDraft && !showEntrenaLogModal && (
             <WorkoutSessionFab
               draft={workoutSessionDraft}
+              recentWorkouts={entrenoRecentWorkouts}
               onResume={onResumeWorkout}
               onQuickAddSet={onQuickAddSet}
               onOpenChat={onOpenChatFromFab}
