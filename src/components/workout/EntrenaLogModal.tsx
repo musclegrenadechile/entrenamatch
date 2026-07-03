@@ -286,6 +286,9 @@ export function EntrenoDeHoyModal({
   const [draftRecovered, setDraftRecovered] = useState(false)
   const [timerWasReset, setTimerWasReset] = useState(false)
   const [pastWorkoutsOpen, setPastWorkoutsOpen] = useState(false)
+  /** Oleada 347 — biblioteca colapsada cuando ya hay ejercicios en sesión */
+  const [libraryOpen, setLibraryOpen] = useState(true)
+  const [extrasOpen, setExtrasOpen] = useState(false)
   const [tick, setTick] = useState(0)
   const [favorites, setFavorites] = useState<WorkoutQuickTemplate[]>(() => loadFavoriteTemplates())
   const wakeLockRef = useRef<WakeLockSentinel | null>(null)
@@ -405,12 +408,24 @@ export function EntrenoDeHoyModal({
   useEffect(() => {
     if (!open) {
       setPastWorkoutsOpen(false)
+      setLibraryOpen(true)
+      setExtrasOpen(false)
       return
     }
     if (expandPastWorkouts && recentWorkouts.some((w) => w.exercises?.length)) {
       setPastWorkoutsOpen(true)
+      setExtrasOpen(true)
     }
   }, [open, expandPastWorkouts, recentWorkouts])
+
+  useEffect(() => {
+    if (exercises.length === 0) {
+      setLibraryOpen(true)
+    } else if (exercises.length === 1) {
+      setLibraryOpen(false)
+      setShowPicker(false)
+    }
+  }, [exercises.length])
 
   useEffect(() => {
     if (!open) return
@@ -547,6 +562,13 @@ export function EntrenoDeHoyModal({
     if (!startedAt) setStartedAt(Date.now())
     setSearch('')
     setShowPicker(false)
+    setLibraryOpen(false)
+  }
+
+  const openLibrary = () => {
+    setLibraryOpen(true)
+    setShowPicker(true)
+    window.setTimeout(() => searchRef.current?.focus(), 50)
   }
 
   const updateSet = (exIdx: number, setIdx: number, patch: Partial<WorkoutSet>) => {
@@ -648,28 +670,34 @@ export function EntrenoDeHoyModal({
     onClose()
   }
 
+  const showExtrasPanel =
+    (gymSoundUser && onGymSoundSave) ||
+    recentWorkouts.some((w) => w.exercises?.length) ||
+    shareToChatName ||
+    (gymRoutineLabel && gymRoutineTemplates.length > 0)
+
   const modal = (
-    <div className="gym-log-overlay">
+    <div className="em-visual-v2 em-v2-workout gym-log-overlay">
       <div className="gym-log-sheet">
-        <header className="gym-log-header">
+        <header className="gym-log-header em-v2-workout__header">
           <button
             type="button"
             onClick={handleDismiss}
-            className="gym-log-icon-btn"
+            className="gym-log-icon-btn em-v2-workout__icon-btn"
             aria-label={exercises.length > 0 ? 'Minimizar sesión' : 'Cerrar'}
           >
             {exercises.length > 0 ? <ChevronDown className="w-5 h-5" /> : <X className="w-5 h-5" />}
           </button>
           <div className="flex-1 min-w-0">
-            <p className="gym-log-title">Modo Entreno</p>
-            <p className="gym-log-sub">
+            <p className="em-v2-workout__title">Entreno de Hoy</p>
+            <p className="em-v2-workout__sub">
               {exercises.length === 0
-                ? 'Añade ejercicios sobre la marcha'
-                : `${exercises.length} ejercicio${exercises.length !== 1 ? 's' : ''} · guardado automático`}
+                ? 'Registra series mientras entrenas'
+                : `${exercises.length} ejercicio${exercises.length !== 1 ? 's' : ''} · autosave activo`}
             </p>
           </div>
           {timerLabel && (
-            <div className="gym-log-timer" title="Tiempo de sesión">
+            <div className="gym-log-timer em-v2-workout__timer" title="Tiempo de sesión">
               <Clock className="w-3.5 h-3.5" />
               {timerLabel}
             </div>
@@ -696,20 +724,20 @@ export function EntrenoDeHoyModal({
             </div>
           )}
 
-          {shareToChatName && (
+          {exercises.length === 0 && shareToChatName && (
             <div className="gym-log-share-chat">
               Se enviará a <strong>{shareToChatName}</strong> al terminar
             </div>
           )}
 
-          {gymRoutineLabel && gymRoutineTemplates.length > 0 && (
+          {exercises.length === 0 && gymRoutineLabel && gymRoutineTemplates.length > 0 && (
             <div className="gym-log-gym-badge">
               <MapPin className="w-3.5 h-3.5 shrink-0" />
               Rutina de <strong>{gymRoutineLabel}</strong>
             </div>
           )}
 
-          {gymSoundUser && onGymSoundSave && (
+          {exercises.length === 0 && gymSoundUser && onGymSoundSave && (
             <GymSoundWorkoutBar
               currentUser={gymSoundUser}
               isLive={isLive}
@@ -717,13 +745,59 @@ export function EntrenoDeHoyModal({
             />
           )}
 
-          {recentWorkouts.some((w) => w.exercises?.length) && (
+          {exercises.length === 0 && recentWorkouts.some((w) => w.exercises?.length) && (
             <PastWorkoutPicker
               workouts={recentWorkouts}
               open={pastWorkoutsOpen}
               onToggle={() => setPastWorkoutsOpen((v) => !v)}
               onSelect={repeatFromWorkout}
             />
+          )}
+
+          {exercises.length > 0 && showExtrasPanel && (
+            <button
+              type="button"
+              onClick={() => setExtrasOpen((v) => !v)}
+              className={`em-v2-workout-more-toggle ${extrasOpen ? 'em-v2-workout-more-toggle--open' : ''}`}
+              aria-expanded={extrasOpen}
+            >
+              <span>{extrasOpen ? 'Menos opciones' : 'Más opciones'}</span>
+              {extrasOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </button>
+          )}
+
+          {exercises.length > 0 && extrasOpen && (
+            <div className="em-v2-workout-extras">
+              {shareToChatName && (
+                <div className="gym-log-share-chat">
+                  Se enviará a <strong>{shareToChatName}</strong> al terminar
+                </div>
+              )}
+
+              {gymRoutineLabel && gymRoutineTemplates.length > 0 && (
+                <div className="gym-log-gym-badge">
+                  <MapPin className="w-3.5 h-3.5 shrink-0" />
+                  Rutina de <strong>{gymRoutineLabel}</strong>
+                </div>
+              )}
+
+              {gymSoundUser && onGymSoundSave && (
+                <GymSoundWorkoutBar
+                  currentUser={gymSoundUser}
+                  isLive={isLive}
+                  saveUser={onGymSoundSave}
+                />
+              )}
+
+              {recentWorkouts.some((w) => w.exercises?.length) && (
+                <PastWorkoutPicker
+                  workouts={recentWorkouts}
+                  open={pastWorkoutsOpen}
+                  onToggle={() => setPastWorkoutsOpen((v) => !v)}
+                  onSelect={repeatFromWorkout}
+                />
+              )}
+            </div>
           )}
 
           <WorkoutVoiceDictationBar
@@ -749,114 +823,152 @@ export function EntrenoDeHoyModal({
             }}
           />
 
-          {quickExerciseNames.length > 0 && (
-            <div className="gym-log-quick">
-              <p className="gym-log-quick-label">Añadir rápido</p>
-              <div className="gym-log-quick-row">
-                {quickExerciseNames.map((name) => (
+          {exercises.length > 0 && !libraryOpen && (
+            <button type="button" onClick={openLibrary} className="em-v2-workout-library-toggle">
+              <Search className="w-4 h-4" aria-hidden />
+              Añadir otro ejercicio
+            </button>
+          )}
+
+          {libraryOpen && (
+            <div className="em-v2-workout-library">
+              {quickExerciseNames.length > 0 && (
+                <div className="gym-log-quick">
+                  <p className="gym-log-quick-label">Añadir rápido</p>
+                  <div className="gym-log-quick-row">
+                    {quickExerciseNames.map((name) => (
+                      <button
+                        key={name}
+                        type="button"
+                        disabled={exercises.some((e) => e.name === name)}
+                        onClick={() => addExercise(name)}
+                        className="gym-log-quick-chip"
+                      >
+                        + {name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="gym-log-muscle-filters">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMuscleFilter(undefined)
+                    setShowPicker(true)
+                  }}
+                  className={`gym-log-muscle-chip ${!muscleFilter ? 'active' : ''}`}
+                >
+                  Todos
+                </button>
+                {MUSCLE_GROUPS.map((m) => (
                   <button
-                    key={name}
+                    key={m}
                     type="button"
-                    disabled={exercises.some((e) => e.name === name)}
-                    onClick={() => addExercise(name)}
-                    className="gym-log-quick-chip"
+                    onClick={() => {
+                      setMuscleFilter(m === muscleFilter ? undefined : m)
+                      setShowPicker(true)
+                    }}
+                    className={`gym-log-muscle-chip ${muscleFilter === m ? 'active' : ''}`}
                   >
-                    + {name}
+                    {m}
+                    <span className="gym-log-muscle-count">{countExercisesByMuscle(m)}</span>
                   </button>
                 ))}
               </div>
+
+              <div className="gym-log-search-wrap em-v2-workout__search">
+                <Search className="w-4 h-4 text-[#9CA3AF] shrink-0" />
+                <input
+                  ref={searchRef}
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value)
+                    setShowPicker(true)
+                  }}
+                  onFocus={() => setShowPicker(true)}
+                  placeholder={muscleFilter ? `Buscar en ${muscleFilter}…` : 'Buscar ejercicio…'}
+                  className="gym-log-search"
+                />
+                {showPicker && search.trim() && suggestions.length > 0 && (
+                  <ul className="gym-log-suggestions">
+                    {suggestions.map((ex) => (
+                      <li key={ex.name}>
+                        <button type="button" onClick={() => addExercise(ex.name)} className="gym-log-suggestion-item">
+                          <span>{ex.name}</span>
+                          <span className="text-[11px] text-[#9CA3AF]">{ex.muscle}</span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              {muscleBrowse.length > 0 && (
+                <div className="gym-log-browse">
+                  <p className="gym-log-quick-label">
+                    {muscleFilter} · {muscleBrowse.length} ejercicios
+                  </p>
+                  <ul className="gym-log-browse-list">
+                    {muscleBrowse.map((ex) => (
+                      <li key={ex.name}>
+                        <button
+                          type="button"
+                          disabled={exercises.some((e) => e.name === ex.name)}
+                          onClick={() => addExercise(ex.name)}
+                          className="gym-log-browse-item"
+                        >
+                          <span>{ex.name}</span>
+                          <Plus className="w-3.5 h-3.5 shrink-0 text-[#FF671F]" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {quickTemplates.length > 0 && exercises.length === 0 && (
+                <div className="gym-log-templates">
+                  <p className="gym-log-quick-label">Plantillas</p>
+                  <div className="gym-log-quick-row">
+                    {quickTemplates.map((tpl) => (
+                      <button key={tpl.id} type="button" onClick={() => applyTemplate(tpl)} className="gym-log-tpl-chip">
+                        {tpl.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {exercises.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLibraryOpen(false)
+                    setShowPicker(false)
+                    setSearch('')
+                  }}
+                  className="em-v2-workout-library-close"
+                >
+                  Listo — volver a la sesión
+                </button>
+              )}
             </div>
           )}
 
-          <div className="gym-log-muscle-filters">
-            <button
-              type="button"
-              onClick={() => {
-                setMuscleFilter(undefined)
-                setShowPicker(true)
-              }}
-              className={`gym-log-muscle-chip ${!muscleFilter ? 'active' : ''}`}
-            >
-              Todos
-            </button>
-            {MUSCLE_GROUPS.map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => {
-                  setMuscleFilter(m === muscleFilter ? undefined : m)
-                  setShowPicker(true)
-                }}
-                className={`gym-log-muscle-chip ${muscleFilter === m ? 'active' : ''}`}
-              >
-                {m}
-                <span className="gym-log-muscle-count">{countExercisesByMuscle(m)}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="gym-log-search-wrap">
-            <Search className="w-4 h-4 text-[#9CA3AF] shrink-0" />
-            <input
-              ref={searchRef}
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value)
-                setShowPicker(true)
-              }}
-              onFocus={() => setShowPicker(true)}
-              placeholder={muscleFilter ? `Buscar en ${muscleFilter}…` : 'Buscar ejercicio…'}
-              className="gym-log-search"
-            />
-            {showPicker && search.trim() && suggestions.length > 0 && (
-              <ul className="gym-log-suggestions">
-                {suggestions.map((ex) => (
-                  <li key={ex.name}>
-                    <button type="button" onClick={() => addExercise(ex.name)} className="gym-log-suggestion-item">
-                      <span>{ex.name}</span>
-                      <span className="text-[10px] text-[#9CA3AF]">{ex.muscle}</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {muscleBrowse.length > 0 && (
-            <div className="gym-log-browse">
-              <p className="gym-log-quick-label">
-                {muscleFilter} · {muscleBrowse.length} ejercicios
-              </p>
-              <ul className="gym-log-browse-list">
-                {muscleBrowse.map((ex) => (
-                  <li key={ex.name}>
-                    <button
-                      type="button"
-                      disabled={exercises.some((e) => e.name === ex.name)}
-                      onClick={() => addExercise(ex.name)}
-                      className="gym-log-browse-item"
-                    >
-                      <span>{ex.name}</span>
-                      <Plus className="w-3.5 h-3.5 shrink-0 text-[#FF671F]" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {exercises.length === 0 ? (
-            <div className="gym-log-empty">
+          {exercises.length === 0 && libraryOpen ? (
+            <div className="gym-log-empty em-v2-workout-empty">
               <Dumbbell className="w-10 h-10 text-[#FF671F]/50 mb-2" />
               <p className="text-sm font-bold text-white">Empieza ahora</p>
               <p className="text-xs text-[#9CA3AF] mt-1 max-w-[240px]">
-                Toca un ejercicio arriba o búscalo. No necesitas planificar antes — registra cada serie entre descansos.
+                Toca un ejercicio arriba o búscalo. Registra cada serie entre descansos.
               </p>
             </div>
-          ) : (
+          ) : exercises.length > 0 ? (
             <ul className="gym-log-exercises">
               {exercises.map((ex, exIdx) => (
-                <li key={`${ex.name}-${exIdx}`} className="gym-log-exercise-card">
+                <li key={`${ex.name}-${exIdx}`} className="gym-log-exercise-card em-v2-workout-exercise">
                   <div className="gym-log-exercise-head">
                     <span className="gym-log-exercise-name">{ex.name}</span>
                     <button type="button" onClick={() => removeExercise(exIdx)} className="text-red-400/80 p-1">
@@ -907,20 +1019,7 @@ export function EntrenoDeHoyModal({
                 </li>
               ))}
             </ul>
-          )}
-
-          {quickTemplates.length > 0 && exercises.length === 0 && (
-            <div className="gym-log-templates">
-              <p className="gym-log-quick-label">Plantillas</p>
-              <div className="gym-log-quick-row">
-                {quickTemplates.map((tpl) => (
-                  <button key={tpl.id} type="button" onClick={() => applyTemplate(tpl)} className="gym-log-tpl-chip">
-                    {tpl.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          ) : null}
 
           <button
             type="button"
@@ -978,14 +1077,11 @@ export function EntrenoDeHoyModal({
           <GymRestTimer ref={restTimerRef} className="gym-rest-timer--dock" />
         )}
 
-        <footer className="gym-log-footer">
+        <footer className="gym-log-footer em-v2-workout__footer">
           <button
             type="button"
-            onClick={() => {
-              setShowPicker(true)
-              searchRef.current?.focus()
-            }}
-            className="gym-log-add-exercise"
+            onClick={openLibrary}
+            className="gym-log-add-exercise em-v2-workout__add-btn"
           >
             <Plus className="w-5 h-5" />
             Añadir ejercicio
@@ -1023,7 +1119,7 @@ export function EntrenoDeHoyModal({
               type="button"
               disabled={!canSave || saving}
               onClick={handleSave}
-              className="gym-log-save"
+              className="gym-log-save em-v2-workout__save"
             >
               {saving
                 ? 'Guardando…'

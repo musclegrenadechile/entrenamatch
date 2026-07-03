@@ -16,17 +16,17 @@
 | **344** | **Auth** | Plus Jakarta + card glass v2, chips con iconos Lucide |
 | **345** | **Hoy + Perfil** | «Más de tu día» colapsable; fondo v2 en Perfil; landing `em-brand-*` |
 | **346** | **Matches** | Cards premium una columna, match ring, Red sub-nav v2, crew dorado |
+| **347** | **Entreno de Hoy** | Modal v2, biblioteca colapsable, «Más opciones», CTA gradiente |
 
 ## Evaluar (3 min)
 
-1. **Matches** — ¿cards foto grande + % match al nivel de Explorar?
-2. **Red** — ¿sub-nav Matches/Mensajes coherente con v2?
-3. **Hoy** — ¿hero + reto del día sin ruido?
+1. **Entreno de Hoy** — ¿al añadir ejercicio se oculta la biblioteca y queda la sesión limpia?
+2. **Matches** — ¿cards foto grande + % match al nivel de Explorar?
+3. **Red** — ¿sub-nav Matches/Mensajes coherente con v2?
 4. **Mapa LIVE** — ¿pills y overlays premium?
 
 ## Siguiente
 
-- **347** Workout modal simplificado
 - **348** Landing alineada al build Tailwind de la app
 
 *jul 2026*
