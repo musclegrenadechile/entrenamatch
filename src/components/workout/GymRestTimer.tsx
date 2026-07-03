@@ -165,13 +165,13 @@ export const GymRestTimer = forwardRef<GymRestTimerRef, GymRestTimerProps>(funct
   const canResume = !running && (mode === 'stopwatch' ? frozenMs > 0 : frozenMs > 0 && frozenMs < presetSec * 1000)
 
   return (
-    <div className={`gym-rest-timer ${className}`.trim()}>
-      <div className="gym-rest-timer-head">
-        <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#9CA3AF]">
+    <div className={`em-v2-rest-timer ${className}`.trim()}>
+      <div className="em-v2-rest-timer__head">
+        <div className="em-v2-rest-timer__eyebrow">
           <Timer className="w-3.5 h-3.5 text-[#FF671F]" />
           Descanso entre series
         </div>
-        <div className="gym-rest-mode-toggle">
+        <div className="em-v2-rest-timer__mode-toggle">
           <button
             type="button"
             className={mode === 'countdown' ? 'active' : ''}
@@ -196,14 +196,14 @@ export const GymRestTimer = forwardRef<GymRestTimerRef, GymRestTimerProps>(funct
       </div>
 
       <div
-        className={`gym-rest-display ${running ? 'running' : ''} ${isCountdownDone ? 'done' : ''}`}
+        className={`em-v2-rest-timer__display ${running ? 'em-v2-rest-timer__display--running' : ''} ${isCountdownDone ? 'em-v2-rest-timer__display--done' : ''}`}
         aria-live="polite"
       >
         {isCountdownDone ? '¡A entrenar!' : formatRestMs(displayMs)}
       </div>
 
       {mode === 'countdown' && (
-        <div className="gym-rest-presets">
+        <div className="em-v2-rest-timer__presets">
           {REST_PRESETS_SEC.map((sec) => (
             <button
               key={sec}
@@ -221,12 +221,12 @@ export const GymRestTimer = forwardRef<GymRestTimerRef, GymRestTimerProps>(funct
         </div>
       )}
 
-      <div className="gym-rest-controls">
-        <button type="button" className="gym-rest-btn gym-rest-btn--primary" onClick={toggleRun}>
+      <div className="em-v2-rest-timer__controls">
+        <button type="button" className="em-v2-rest-timer__btn em-v2-rest-timer__btn--primary" onClick={toggleRun}>
           {running ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
           {running ? 'Pausar' : canResume ? 'Reanudar' : mode === 'countdown' ? 'Iniciar timer' : 'Iniciar'}
         </button>
-        <button type="button" className="gym-rest-btn" onClick={reset} aria-label="Reiniciar">
+        <button type="button" className="em-v2-rest-timer__btn" onClick={reset} aria-label="Reiniciar">
           <RotateCcw className="w-4 h-4" />
         </button>
       </div>

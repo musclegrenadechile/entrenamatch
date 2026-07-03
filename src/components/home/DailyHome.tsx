@@ -377,19 +377,37 @@ export function DailyHome({
         </button>
       )}
 
-      {!compactDayOne && (entrenoWeekSummary || exercisePRRecords.length > 0 || weeklyPlan || onOpenFuelSetup) && (
+      {compactDayOne && (weeklyPlan || onOpenFuelSetup) && (
+        <WeeklyPlanCard
+          plan={weeklyPlan ?? null}
+          showEmptyState={!weeklyPlan}
+          enriching={weeklyPlanEnriching}
+          onStartWorkout={onStartWeeklyPlan}
+          onPublishPlanToFeed={onPublishWeeklyPlanToFeed}
+          onSharePlanExternally={onShareWeeklyPlanExternally}
+          onOpenFuelSetup={onOpenFuelSetup}
+          onOpenFuelLog={onOpenFuelLog}
+          hasFuelProfile={!!fuelProfile}
+          weeklyDeltaKcal={weeklyPlan?.energySummary.weeklyDeltaKcal}
+        />
+      )}
+
+      {!compactDayOne && (entrenoWeekSummary || exercisePRRecords.length > 0 || weeklyPlan) && (
         <section className="space-y-3" aria-label="Tu entrenamiento">
-          <WeeklyPlanCard
-            plan={weeklyPlan ?? null}
-            enriching={weeklyPlanEnriching}
-            onStartWorkout={onStartWeeklyPlan}
-            onPublishPlanToFeed={onPublishWeeklyPlanToFeed}
-            onSharePlanExternally={onShareWeeklyPlanExternally}
-            onOpenFuelSetup={onOpenFuelSetup}
-            onOpenFuelLog={onOpenFuelLog}
-            hasFuelProfile={!!fuelProfile}
-            weeklyDeltaKcal={weeklyPlan?.energySummary.weeklyDeltaKcal}
-          />
+          {weeklyPlan && (
+            <WeeklyPlanCard
+              plan={weeklyPlan}
+              showEmptyState={false}
+              enriching={weeklyPlanEnriching}
+              onStartWorkout={onStartWeeklyPlan}
+              onPublishPlanToFeed={onPublishWeeklyPlanToFeed}
+              onSharePlanExternally={onShareWeeklyPlanExternally}
+              onOpenFuelSetup={onOpenFuelSetup}
+              onOpenFuelLog={onOpenFuelLog}
+              hasFuelProfile={!!fuelProfile}
+              weeklyDeltaKcal={weeklyPlan.energySummary.weeklyDeltaKcal}
+            />
+          )}
           {entrenoWeekSummary && (
             <EntrenoDeHoyWeekSummary
               summary={entrenoWeekSummary}

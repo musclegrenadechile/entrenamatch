@@ -1074,7 +1074,7 @@ export function EntrenoDeHoyModal({
         </div>
 
         {exercises.length > 0 && (
-          <GymRestTimer ref={restTimerRef} className="gym-rest-timer--dock" />
+          <GymRestTimer ref={restTimerRef} className="em-v2-rest-timer--dock" />
         )}
 
         <footer className="gym-log-footer em-v2-workout__footer">

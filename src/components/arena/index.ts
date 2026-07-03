@@ -1,4 +1,5 @@
-export { SyncArenaView } from './SyncArenaView'
+/** SyncArenaView is lazy-loaded via LazySyncArenaView — do not import eagerly in App shell (fase 206). */
+export { LazySyncArenaView } from './LazySyncArenaView'
 export { SyncDuelSummary } from './SyncDuelSummary'
 export { ArenaExercisePicker } from './ArenaExercisePicker'
 export { ArenaSyncDuelStrip } from './ArenaSyncDuelStrip'

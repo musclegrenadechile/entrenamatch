@@ -49,7 +49,7 @@ export function ArenaSharedPulse({
   }
 
   return (
-    <div className="arena-shared-pulse" aria-live="polite">
+    <div className="arena-shared-pulse em-v2-arena-pulse" aria-live="polite">
       <div
         className={`arena-shared-pulse__ring ${syncVibe > 75 ? 'arena-shared-pulse__ring--high' : ''} ${
           isResting ? 'arena-shared-pulse__ring--rest' : ''

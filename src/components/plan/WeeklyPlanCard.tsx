@@ -28,6 +28,8 @@ export interface WeeklyPlanCardProps {
   onOpenFuelLog?: () => void
   weeklyDeltaKcal?: number
   hasFuelProfile?: boolean
+  /** Solo día 1 en Hoy — evita ruido «Activar Fuel» sin perfil. */
+  showEmptyState?: boolean
 }
 
 export function WeeklyPlanCard({
@@ -40,8 +42,10 @@ export function WeeklyPlanCard({
   onOpenFuelLog,
   weeklyDeltaKcal,
   hasFuelProfile = false,
+  showEmptyState = true,
 }: WeeklyPlanCardProps) {
   if (!plan) {
+    if (!showEmptyState) return null
     return (
       <div className="em-v2-card em-v2-card--brand">
         <EmV2EmptyState

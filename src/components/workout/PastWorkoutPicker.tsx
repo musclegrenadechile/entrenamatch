@@ -52,16 +52,16 @@ export function PastWorkoutPicker({
     list.length === 1 ? '1 rutina guardada' : `${list.length} rutinas en tu historial`
 
   return (
-    <div className="gym-log-past-picker">
-      <button type="button" onClick={onToggle} className="gym-log-past-toggle">
-        <div className="gym-log-past-toggle-main">
+    <div className="em-v2-past-picker">
+      <button type="button" onClick={onToggle} className="em-v2-past-picker__toggle">
+        <div className="em-v2-past-picker__toggle-main">
           <History className="w-4 h-4 shrink-0 text-[#FF671F]" />
           <div className="min-w-0 text-left">
-            <p className="gym-log-past-toggle-title">Repetir un entreno</p>
-            <p className="gym-log-past-toggle-sub">{countLabel}</p>
+            <p className="em-v2-past-picker__title">Repetir un entreno</p>
+            <p className="em-v2-past-picker__sub">{countLabel}</p>
           </div>
         </div>
-        <span className="gym-log-past-count">{list.length}</span>
+        <span className="em-v2-past-picker__count">{list.length}</span>
         {open ? (
           <ChevronUp className="w-4 h-4 shrink-0 text-[#9CA3AF]" />
         ) : (
@@ -70,30 +70,30 @@ export function PastWorkoutPicker({
       </button>
 
       {open && (
-        <ul className="gym-log-past-list">
+        <ul className="em-v2-past-picker__list">
           {list.map((w) => {
             const typeLabel = WORKOUT_TYPE_LABELS[w.type] || w.type
             const when = formatWorkoutWhen(w)
             const isYesterday = yesterday?.id === w.id
             const exerciseCount = w.stats?.exerciseCount ?? w.exercises.length
             return (
-              <li key={w.id} className="gym-log-past-item">
+              <li key={w.id} className="em-v2-past-picker__item">
                 <button
                   type="button"
                   onClick={() => onSelect(w)}
-                  className="gym-log-past-item-btn"
+                  className="em-v2-past-picker__item-btn"
                 >
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <p className="gym-log-past-item-title truncate">{w.title}</p>
-                      {isYesterday && <span className="gym-log-past-badge">Ayer</span>}
+                      <p className="em-v2-past-picker__item-title truncate">{w.title}</p>
+                      {isYesterday && <span className="em-v2-past-picker__badge">Ayer</span>}
                     </div>
-                    <p className="gym-log-past-item-meta">
+                    <p className="em-v2-past-picker__item-meta">
                       {when} · {typeLabel} · {exerciseCount} ejercicio
                       {exerciseCount !== 1 ? 's' : ''}
                     </p>
                   </div>
-                  <span className="gym-log-past-use">
+                  <span className="em-v2-past-picker__use">
                     <Play className="w-3 h-3" />
                     Usar
                   </span>

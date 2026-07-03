@@ -7,7 +7,8 @@ import { countLoggedSets } from '../../utils/arenaWorkoutLog'
 import type { SyncWorkoutLogState } from '../../utils/arenaWorkoutLog'
 import type { CurrentUser, Profile, Tab } from '../../types'
 import type { WeeklyPactProgress } from '../../services/weeklyPact'
-import { SyncArenaView, ArenaGlobalPulseBar } from './index'
+import { ArenaGlobalPulseBar } from './index'
+import { LazySyncArenaView } from './LazySyncArenaView'
 
 export interface SyncArenaHostProps {
   syncPartnerId: string | null
@@ -160,7 +161,7 @@ export function SyncArenaHost(props: SyncArenaHostProps) {
       />
 
       {syncPartnerId && showSyncArena && (
-        <SyncArenaView
+        <LazySyncArenaView
           open
           onMinimize={onMinimizeArena}
           onEndSync={onEndSync}

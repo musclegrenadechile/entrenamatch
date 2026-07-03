@@ -27,7 +27,7 @@ export function ArenaWitnessRow({
   const extra = Math.max(0, witnessCount - shown.length)
 
   return (
-    <div className={`arena-witness-row ${newWitnessGlow ? 'arena-witness-row--glow' : ''}`}>
+    <div className={`arena-witness-row em-v2-arena-witness ${newWitnessGlow ? 'arena-witness-row--glow' : ''}`}>
       {shown.length > 0 && (
         <div className="arena-witness-row__avatars">
           {shown.map((w) => (
