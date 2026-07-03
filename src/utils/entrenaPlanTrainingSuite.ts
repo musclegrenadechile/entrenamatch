@@ -39,6 +39,12 @@ export const ENTRENA_PLAN_TRAINING_UTILS: readonly EntrenaPlanTrainingUtilEntry[
     oleada: 405,
     covers: ['history-hint'],
   },
+  {
+    id: 'plan-mega-rotation',
+    module: 'e2eTrainingMegaFlow',
+    oleada: 406,
+    covers: ['history-hint'],
+  },
 ] as const
 
 export function countEntrenaPlanTrainingUtils(): number {

@@ -8,10 +8,10 @@ import {
 } from './trainingMegaSuite'
 
 describe('trainingMegaSuite', () => {
-  it('mega-inventario 4 bloques oleadas 361–405', () => {
+  it('mega-inventario 4 bloques oleadas 361–406', () => {
     expect(countTrainingMegaBlocks()).toBe(4)
-    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 405 })
-    expect(countTrainingMegaOleadas()).toBe(45)
+    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 406 })
+    expect(countTrainingMegaOleadas()).toBe(46)
     expect(TRAINING_MEGA_BLOCKS.map((b) => b.id)).toEqual([
       'polish-v1',
       'e2e',
@@ -26,5 +26,8 @@ describe('trainingMegaSuite', () => {
     expect(e2e?.range).toEqual({ from: 378, to: 405 })
     const plan = trainingMegaBlockById('entrena-plan')
     expect(plan?.range).toEqual({ from: 401, to: 405 })
+    const polishV2 = trainingMegaBlockById('polish-v2')
+    expect(polishV2?.closedOleada).toBe(406)
+    expect(polishV2?.range).toEqual({ from: 383, to: 405 })
   })
 })

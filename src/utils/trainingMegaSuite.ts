@@ -1,7 +1,8 @@
-/** Mega-inventario total pulido entrenamiento oleadas 361–402 (oleada 403). */
+/** Mega-inventario total pulido entrenamiento oleadas 361–406 (oleada 406). */
 import { entrenaPlanTrainingBlockRange } from './entrenaPlanTrainingSuite'
 import { trainingE2EBlockRange } from './e2eTrainingSuite'
 import { trainingPolishMegaRange } from './trainingPolishSuite'
+import { trainingPolishV1BlockRange } from './trainingPolishV1Suite'
 
 export type TrainingMegaBlockId = 'polish-v1' | 'e2e' | 'polish-v2' | 'entrena-plan'
 
@@ -15,8 +16,8 @@ export type TrainingMegaBlockEntry = {
 export const TRAINING_MEGA_BLOCKS: readonly TrainingMegaBlockEntry[] = [
   {
     id: 'polish-v1',
-    range: { from: 361, to: 377 },
-    suiteModule: 'gym-log + EntrenaPlan + FAB + PR (oleadas 361–377)',
+    range: trainingPolishV1BlockRange(),
+    suiteModule: 'trainingPolishV1Suite',
     closedOleada: 377,
   },
   {
@@ -29,7 +30,7 @@ export const TRAINING_MEGA_BLOCKS: readonly TrainingMegaBlockEntry[] = [
     id: 'polish-v2',
     range: trainingPolishMegaRange(),
     suiteModule: 'trainingPolishSuite',
-    closedOleada: 398,
+    closedOleada: 406,
   },
   {
     id: 'entrena-plan',
@@ -40,7 +41,7 @@ export const TRAINING_MEGA_BLOCKS: readonly TrainingMegaBlockEntry[] = [
 ] as const
 
 export function trainingFullMegaRange(): { from: number; to: number } {
-  return { from: 361, to: 405 }
+  return { from: 361, to: 406 }
 }
 
 export function countTrainingMegaBlocks(): number {

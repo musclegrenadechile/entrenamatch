@@ -1,9 +1,15 @@
-/** Mega-inventario pulido entrenamiento oleadas 383–397 (oleada 398). */
+/** Mega-inventario pulido entrenamiento oleadas 383–405 (oleada 406). */
+import { entrenaPlanTrainingBlockRange } from './entrenaPlanTrainingSuite'
 import { gymLogTrainingBlockRange } from './gymLogTrainingSuite'
 import { postWorkoutTrainingBlockRange } from './postWorkoutTrainingSuite'
 import { workoutHistoryTrainingBlockRange } from './workoutHistoryTrainingSuite'
 
-export type TrainingPolishBlockId = 'gym-log-live' | 'fab-session' | 'post-workout' | 'history'
+export type TrainingPolishBlockId =
+  | 'gym-log-live'
+  | 'fab-session'
+  | 'post-workout'
+  | 'history'
+  | 'entrena-plan'
 
 export type TrainingPolishBlockEntry = {
   id: TrainingPolishBlockId
@@ -37,10 +43,16 @@ export const TRAINING_POLISH_BLOCKS: readonly TrainingPolishBlockEntry[] = [
     suiteModule: 'workoutHistoryTrainingSuite',
     closedOleada: 397,
   },
+  {
+    id: 'entrena-plan',
+    range: entrenaPlanTrainingBlockRange(),
+    suiteModule: 'entrenaPlanTrainingSuite',
+    closedOleada: 405,
+  },
 ] as const
 
 export function trainingPolishMegaRange(): { from: number; to: number } {
-  return { from: 383, to: 397 }
+  return { from: 383, to: 405 }
 }
 
 export function countTrainingPolishBlocks(): number {
