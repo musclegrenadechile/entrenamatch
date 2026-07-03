@@ -4444,6 +4444,18 @@
   border-color: rgba(168, 85, 247, 0.35);
 }
 
+.em-v2-plan__history-hint {
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--em-radius-lg);
+  background: rgba(255, 215, 0, 0.08);
+  border: 1px solid rgba(255, 215, 0, 0.22);
+  font-size: 0.625rem;
+  font-weight: 700;
+  color: #fde68a;
+  line-height: 1.35;
+}
+
 .em-v2-plan__fuel-row {
   display: flex;
   flex-wrap: wrap;

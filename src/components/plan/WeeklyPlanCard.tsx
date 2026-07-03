@@ -1,6 +1,13 @@
 import { Brain, Dumbbell, Megaphone, Share2, Sparkles, Footprints, Moon, UtensilsCrossed } from 'lucide-react'
 import type { WeeklyPlanResult } from '../../domain/weeklyPlan'
+import type { Workout } from '../../types'
 import { EmV2EmptyState } from '../ui/EmV2EmptyState'
+import {
+  buildWeeklyPlanHistoryAriaLabel,
+  buildWeeklyPlanHistoryHint,
+  shouldShowWeeklyPlanHistoryHint,
+  WEEKLY_PLAN_HISTORY_HINT_CLASS,
+} from '../../utils/weeklyPlanHistoryDisplay'
 import {
   formatWeeklyPlanDelta,
   resolveWeeklyPlanScenarioClass,
@@ -25,6 +32,8 @@ export interface WeeklyPlanCardProps {
   onOpenFuelLog?: () => void
   weeklyDeltaKcal?: number
   hasFuelProfile?: boolean
+  /** Historial reciente para hint PR en EntrenaPlan (oleada 401). */
+  recentWorkouts?: Workout[]
   /** Solo día 1 en Hoy — evita ruido «Activar Fuel» sin perfil. */
   showEmptyState?: boolean
 }
@@ -39,6 +48,7 @@ export function WeeklyPlanCard({
   onOpenFuelLog,
   weeklyDeltaKcal,
   hasFuelProfile = false,
+  recentWorkouts = [],
   showEmptyState = true,
 }: WeeklyPlanCardProps) {
   if (!plan) {
@@ -63,6 +73,8 @@ export function WeeklyPlanCard({
 
   const rec = plan.recommendation
   const scenarioClass = resolveWeeklyPlanScenarioClass(plan.scenario)
+  const historyHint = buildWeeklyPlanHistoryHint(recentWorkouts)
+  const showHistoryHint = shouldShowWeeklyPlanHistoryHint(rec.type, historyHint)
 
   return (
     <div className={`em-v2-card em-v2-plan ${scenarioClass}`} aria-label="Plan de entreno recomendado">
@@ -81,6 +93,16 @@ export function WeeklyPlanCard({
       </div>
 
       <p className="em-v2-card__detail mt-2 leading-snug">{plan.detail}</p>
+
+      {showHistoryHint && historyHint && (
+        <p
+          className={WEEKLY_PLAN_HISTORY_HINT_CLASS}
+          role="status"
+          aria-label={buildWeeklyPlanHistoryAriaLabel(historyHint)}
+        >
+          {historyHint}
+        </p>
+      )}
 
       {shouldShowWeeklyPlanFuelRow(hasFuelProfile, weeklyDeltaKcal) && (
         <div className="em-v2-plan__fuel-row">

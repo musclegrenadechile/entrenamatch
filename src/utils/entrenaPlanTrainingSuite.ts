@@ -1,0 +1,32 @@
+/** Inventario EntrenaPlan × historial (oleada 401). */
+export type EntrenaPlanTrainingCover = 'history-hint' | 'aria' | 'card'
+
+export type EntrenaPlanTrainingUtilEntry = {
+  id: string
+  module: string
+  oleada: number
+  covers: readonly EntrenaPlanTrainingCover[]
+}
+
+export const ENTRENA_PLAN_TRAINING_UTILS: readonly EntrenaPlanTrainingUtilEntry[] = [
+  {
+    id: 'plan-history-hint',
+    module: 'weeklyPlanHistoryDisplay',
+    oleada: 401,
+    covers: ['history-hint', 'aria'],
+  },
+  {
+    id: 'plan-card-history',
+    module: 'WeeklyPlanCard',
+    oleada: 401,
+    covers: ['card', 'history-hint'],
+  },
+] as const
+
+export function countEntrenaPlanTrainingUtils(): number {
+  return ENTRENA_PLAN_TRAINING_UTILS.length
+}
+
+export function entrenaPlanTrainingBlockRange(): { from: number; to: number } {
+  return { from: 401, to: 401 }
+}

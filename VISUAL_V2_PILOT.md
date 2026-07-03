@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.459
+**Versión cierre:** v0.1.460
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -71,6 +71,11 @@
 | **398** | **Mega pulido entreno** | Inventario trainingPolishSuite unifica gym-log, FAB, post-entreno e historial 383–397 ✅ |
 | **399** | **Puente E2E↔pulido** | e2eTrainingPolishBridge mapea specs 378–394 → oleadas pulido; mega bloque 378–397 |
 | **400** | **E2E historial Perfil** | workout-history-flow.spec, harness historial, demo history en Perfil; puente 395–397 |
+| **401** | **EntrenaPlan × historial** | Hint PR reciente en WeeklyPlanCard; weeklyPlanHistoryDisplay + entrenaPlanTrainingSuite |
+
+## EntrenaPlan × historial (401) ✅
+
+Chip dorado con PR del último entreno (≤7 días) en EntrenaPlan cuando la recomendación es fuerza/cardio. Utils: `weeklyPlanHistoryDisplay`, `entrenaPlanTrainingSuite`.
 
 ## Pulido entrenamiento II (383–397) ✅
 

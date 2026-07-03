@@ -389,6 +389,7 @@ export function DailyHome({
           onOpenFuelLog={onOpenFuelLog}
           hasFuelProfile={!!fuelProfile}
           weeklyDeltaKcal={weeklyPlan?.energySummary.weeklyDeltaKcal}
+          recentWorkouts={entrenoRecentWorkouts}
         />
       )}
 
@@ -406,6 +407,7 @@ export function DailyHome({
               onOpenFuelLog={onOpenFuelLog}
               hasFuelProfile={!!fuelProfile}
               weeklyDeltaKcal={weeklyPlan.energySummary.weeklyDeltaKcal}
+              recentWorkouts={entrenoRecentWorkouts}
             />
           )}
           {entrenoWeekSummary && (
