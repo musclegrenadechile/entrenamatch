@@ -5,6 +5,7 @@ import {
   summarizeWorkoutDraft,
   type WorkoutDraft,
 } from '../../utils/workoutDraft'
+import { buildWorkoutFabDraftMeta } from '../../utils/workoutFabDraftMeta'
 
 export type WorkoutSessionFabLayout = 'fab' | 'chat-strip'
 
@@ -65,6 +66,7 @@ export function WorkoutSessionFab({
   if (hidden) return null
 
   const summary = summarizeWorkoutDraft(draft)
+  const draftMeta = buildWorkoutFabDraftMeta(draft)
   const bottom =
     bottomClass || 'bottom-[calc(74px+env(safe-area-inset-bottom))]'
   const showActions = !!(onQuickAddSet || onOpenChat || onOpenFuel)
@@ -173,6 +175,7 @@ export function WorkoutSessionFab({
             className="workout-session-strip-main"
           >
             <Dumbbell className="w-3.5 h-3.5 shrink-0" />
+            <span className="em-v2-workout-fab__strip-dot" aria-hidden />
             <span className="truncate font-black text-[11px]">{summary.currentExerciseName}</span>
             {summary.timer && (
               <span className="text-[10px] font-semibold tabular-nums opacity-90 shrink-0">
@@ -222,6 +225,12 @@ export function WorkoutSessionFab({
             Sesión activa
           </span>
           {liveChip}
+        </div>
+        <div className="em-v2-workout-fab__autosave" aria-live="polite">
+          <span className="em-v2-workout-fab__autosave-dot" aria-hidden />
+          <span className="em-v2-workout-fab__autosave-text">
+            Autosave · {draftMeta.blocksLabel} · {draftMeta.ageLabel}
+          </span>
         </div>
         <span className="text-xs font-black truncate max-w-full leading-tight text-left">
           {summary.currentExerciseName}

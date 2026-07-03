@@ -6265,3 +6265,111 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
+
+/* ——— Entreno oleada 373: progreso ejercicio + FAB autosave ——— */
+.em-v2-training-progress__wrap {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.em-v2-training-progress__label {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fit-muted);
+}
+
+.em-v2-training-progress__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.em-v2-training-progress__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.625rem;
+}
+
+.em-v2-training-progress__name {
+  font-weight: 700;
+  color: #fff;
+}
+
+.em-v2-training-progress__best {
+  flex-shrink: 0;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.em-v2-training-progress__best--up {
+  color: #fde68a;
+}
+
+.em-v2-training-progress__best--down {
+  color: #fca5a5;
+}
+
+.em-v2-training-progress__best--flat {
+  color: var(--fit-muted);
+}
+
+.em-v2-training-progress__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.125rem;
+  height: 1.5rem;
+}
+
+.em-v2-training-progress__bar {
+  flex: 1;
+  min-height: 3px;
+  border-radius: 0.25rem 0.25rem 0 0;
+  background: linear-gradient(180deg, rgba(255, 122, 46, 0.95) 0%, rgba(255, 103, 31, 0.65) 100%);
+}
+
+.em-v2-workout-fab__autosave {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  opacity: 0.92;
+}
+
+.em-v2-workout-fab__autosave-dot {
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 999px;
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.65);
+  animation: em-v2-fab-autosave-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes em-v2-fab-autosave-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.55; transform: scale(0.88); }
+}
+
+.em-v2-workout-fab__autosave-text {
+  font-variant-numeric: tabular-nums;
+}
+
+.em-v2-workout-fab__strip-dot {
+  width: 0.3125rem;
+  height: 0.3125rem;
+  border-radius: 999px;
+  background: #22c55e;
+  flex-shrink: 0;
+  animation: em-v2-fab-autosave-pulse 1.8s ease-in-out infinite;
+}
