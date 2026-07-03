@@ -63,6 +63,8 @@ export type EntrenamatchE2EApi = {
   getWeeklyPlanFuelHeadlineChipAriaLabel: () => string | null
   /** Modificador de tono del chip headline Fuel (oleada 419). */
   getWeeklyPlanFuelHeadlineChipToneClass: () => string | null
+  /** Clase borde escenario Fuel en card EntrenaPlan (oleada 421). */
+  getWeeklyPlanScenarioClass: () => string | null
   /** Nota nutricional Fuel×plan en card (oleada 415). */
   getWeeklyPlanNutritionNote: () => string | null
   /** aria-label nota nutricional (oleada 416). */

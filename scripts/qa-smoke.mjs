@@ -200,8 +200,33 @@ if (!fuelPlanCoverage.includes("'fuel-headline'")) {
   console.error('e2eFuelPlanCoverage missing fuel-headline cover (oleada 420)')
   ok = false
 }
+if (!fuelPlanCoverage.includes("'fuel-scenario'")) {
+  console.error('e2eFuelPlanCoverage missing fuel-scenario cover (oleada 421)')
+  ok = false
+}
 if (!ok) process.exit(1)
-console.log('✓ e2eFuelPlanFullCoverage unifies 3 Fuel×plan E2E suites (oleada 420)')
+
+const fuelPlanScenarioCoverage = readFileSync(
+  join(root, 'src/utils/e2eFuelPlanScenarioCoverage.ts'),
+  'utf8'
+)
+for (const spec of fuelPlanHeadlineSpecs) {
+  if (!fuelPlanScenarioCoverage.includes(spec)) {
+    console.error(`e2eFuelPlanScenarioCoverage missing spec file: ${spec}`)
+    ok = false
+  }
+}
+if (!fuelPlanScenarioCoverage.includes('isFuelPlanScenarioCoverageComplete')) {
+  console.error('e2eFuelPlanScenarioCoverage missing coverage helper (oleada 421)')
+  ok = false
+}
+if (!fuelPlanFullCoverage.includes('e2eFuelPlanScenarioCoverage')) {
+  console.error('e2eFuelPlanFullCoverage missing scenario suite ref (oleada 421)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eFuelPlanScenarioCoverage aligned with full coverage (oleada 421)')
+console.log('✓ e2eFuelPlanFullCoverage unifies 4 Fuel×plan E2E suites (oleada 421)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

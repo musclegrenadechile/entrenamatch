@@ -3,6 +3,7 @@ import { entrenaPlanTrainingBlockRange } from './entrenaPlanTrainingSuite'
 import { fuelPlanTrainingBlockRange } from './fuelPlanTrainingSuite'
 import { trainingE2EBlockRange } from './e2eTrainingSuite'
 import { trainingPolishMegaRange } from './trainingPolishSuite'
+import { trainingPolishPostFullRange } from './trainingPolishPostFullSuite'
 import { trainingPolishPostMegaRange } from './trainingPolishPostMegaSuite'
 import { trainingPolishV1BlockRange } from './trainingPolishV1Suite'
 
@@ -13,6 +14,7 @@ export type TrainingMegaBlockId =
   | 'entrena-plan'
   | 'fuel-plan'
   | 'polish-post-mega'
+  | 'polish-post-full'
 
 export type TrainingMegaBlockEntry = {
   id: TrainingMegaBlockId
@@ -58,6 +60,12 @@ export const TRAINING_MEGA_BLOCKS: readonly TrainingMegaBlockEntry[] = [
     suiteModule: 'trainingPolishPostMegaSuite',
     closedOleada: 420,
   },
+  {
+    id: 'polish-post-full',
+    range: trainingPolishPostFullRange(),
+    suiteModule: 'trainingPolishPostFullSuite',
+    closedOleada: 421,
+  },
 ] as const
 
 export const TRAINING_MEGA_PHASE1_CLOSED_OLEADA = 411
@@ -65,7 +73,7 @@ export const TRAINING_MEGA_CLOSED_OLEADA = 414
 export const TRAINING_MEGA_PHASE3_CLOSED_OLEADA = 420
 
 export function trainingFullMegaRange(): { from: number; to: number } {
-  return { from: 361, to: 420 }
+  return { from: 361, to: 421 }
 }
 
 export function isTrainingMegaPhase3Closed(

@@ -109,6 +109,15 @@ export function readWeeklyPlanNutritionAriaLabel(): string | null {
   return note?.getAttribute('aria-label')?.trim() ?? null
 }
 
+export function readWeeklyPlanScenarioClass(): string | null {
+  const card = findEntrenaPlanCard()
+  if (!card) return null
+  for (const cls of card.classList) {
+    if (cls.startsWith('em-v2-plan--')) return cls
+  }
+  return null
+}
+
 export function isWeeklyPlanCardVisible(): boolean {
   return findEntrenaPlanCard() !== null
 }

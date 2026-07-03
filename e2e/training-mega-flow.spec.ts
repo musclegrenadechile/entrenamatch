@@ -26,6 +26,11 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
 
   const planCard = page.locator('.em-v2-plan').filter({ hasText: 'EntrenaPlan' })
   await expect(planCard).toBeVisible({ timeout: 12000 })
+  const scenarioClass = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanScenarioClass()
+  )
+  expect(scenarioClass).toBe('em-v2-plan--under-fueled')
+
   await expect(planCard.locator('.em-v2-plan__history-hint')).toBeVisible({ timeout: 10000 })
   await expect(planCard.locator('.em-v2-plan__rotation-chip')).toBeVisible({ timeout: 10000 })
   await expect(planCard.locator('.em-v2-card__detail').first()).toContainText(/rotación/i)

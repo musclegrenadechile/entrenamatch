@@ -15,7 +15,7 @@ import {
 describe('e2eFuelPlanCoverage', () => {
   it('consolida 3 specs E2E Fuel×EntrenaPlan (oleada 414)', () => {
     expect(countE2EFuelPlanSpecs()).toBe(3)
-    expect(e2eFuelPlanBlockRange()).toEqual({ from: 412, to: 420 })
+    expect(e2eFuelPlanBlockRange()).toEqual({ from: 412, to: 421 })
     expect(e2eFuelPlanSpecIds()).toEqual([
       'training-mega-flow',
       'workout-plan-history-flow',
@@ -29,6 +29,7 @@ describe('e2eFuelPlanCoverage', () => {
         'fuel-aria',
         'fuel-chip',
         'fuel-headline',
+        'fuel-scenario',
         'fuel-hint',
         'fuel-nutrition',
         'fuel-tone',

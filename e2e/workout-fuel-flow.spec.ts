@@ -38,6 +38,11 @@ test('E2E workout-fuel-flow — banner post-guardar → Fuel prefill', async ({ 
   const planCard = page.locator('.em-v2-plan').filter({ hasText: 'EntrenaPlan' })
   await expect(planCard).toBeVisible({ timeout: 12000 })
 
+  const scenarioClass = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanScenarioClass()
+  )
+  expect(scenarioClass).toBe('em-v2-plan--deficit')
+
   await expect(planCard.locator('.em-v2-plan__headline-fuel')).toBeVisible({ timeout: 10000 })
   const headlineFuelChip = await page.evaluate(() =>
     window.__entrenamatchE2E!.getWeeklyPlanFuelHeadlineChip()

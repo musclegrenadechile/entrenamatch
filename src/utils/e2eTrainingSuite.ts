@@ -1,6 +1,7 @@
 /** Inventario Playwright del bloque E2E entrenamiento (oleadas 378–410). */
 import { e2eFuelPlanSpecIds } from './e2eFuelPlanCoverage'
 import { isFuelPlanFullE2ECoverageComplete } from './e2eFuelPlanFullCoverage'
+import { isFuelPlanScenarioCoverageComplete } from './e2eFuelPlanScenarioCoverage'
 import { e2eFuelPlanHeadlineSpecIds } from './e2eFuelPlanHeadlineCoverage'
 import { e2eFuelPlanNutritionSpecIds } from './e2eFuelPlanNutritionCoverage'
 import { e2ePlanRotationSpecIds } from './e2ePlanRotationCoverage'

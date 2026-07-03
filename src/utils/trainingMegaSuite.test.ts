@@ -13,10 +13,10 @@ import {
 } from './trainingMegaSuite'
 
 describe('trainingMegaSuite', () => {
-  it('mega-inventario 6 bloques oleadas 361–420', () => {
-    expect(countTrainingMegaBlocks()).toBe(6)
-    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 420 })
-    expect(countTrainingMegaOleadas()).toBe(60)
+  it('mega-inventario 7 bloques oleadas 361–421', () => {
+    expect(countTrainingMegaBlocks()).toBe(7)
+    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 421 })
+    expect(countTrainingMegaOleadas()).toBe(61)
     expect(TRAINING_MEGA_BLOCKS.map((b) => b.id)).toEqual([
       'polish-v1',
       'e2e',
@@ -24,6 +24,7 @@ describe('trainingMegaSuite', () => {
       'entrena-plan',
       'fuel-plan',
       'polish-post-mega',
+      'polish-post-full',
     ])
   })
 
@@ -38,7 +39,10 @@ describe('trainingMegaSuite', () => {
     expect(polishV2?.closedOleada).toBe(410)
     expect(polishV2?.range).toEqual({ from: 383, to: 409 })
     const fuelPlan = trainingMegaBlockById('fuel-plan')
-    expect(fuelPlan?.range).toEqual({ from: 411, to: 420 })
+    expect(fuelPlan?.range).toEqual({ from: 411, to: 421 })
+    const postFull = trainingMegaBlockById('polish-post-full')
+    expect(postFull?.range).toEqual({ from: 421, to: 421 })
+    expect(postFull?.closedOleada).toBe(421)
     const postMega = trainingMegaBlockById('polish-post-mega')
     expect(postMega?.range).toEqual({ from: 415, to: 420 })
     expect(postMega?.closedOleada).toBe(420)
@@ -61,9 +65,13 @@ describe('trainingMegaSuite', () => {
   })
 
   it('cierre post-mega 415–420 (oleada 420)', () => {
-    expect(areAllTrainingMegaSubBlocksClosed(420)).toBe(true)
-    expect(isTrainingMegaFullyClosed(420)).toBe(true)
     expect(isTrainingMegaPhase3Closed()).toBe(true)
     expect(isTrainingMegaPhase3Closed(419)).toBe(false)
+    expect(areAllTrainingMegaSubBlocksClosed(420)).toBe(false)
+  })
+
+  it('cierre post-full 421 (oleada 421)', () => {
+    expect(areAllTrainingMegaSubBlocksClosed(421)).toBe(true)
+    expect(isTrainingMegaFullyClosed(421)).toBe(true)
   })
 })

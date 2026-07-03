@@ -5,11 +5,13 @@ import {
 } from './e2eFuelPlanCoverage'
 import { isFuelPlanHeadlineCoverageComplete } from './e2eFuelPlanHeadlineCoverage'
 import { isFuelPlanNutritionCoverageComplete } from './e2eFuelPlanNutritionCoverage'
+import { isFuelPlanScenarioCoverageComplete } from './e2eFuelPlanScenarioCoverage'
 
 export const FUEL_PLAN_FULL_COVERAGE_MODULES = [
   'e2eFuelPlanCoverage',
   'e2eFuelPlanNutritionCoverage',
   'e2eFuelPlanHeadlineCoverage',
+  'e2eFuelPlanScenarioCoverage',
 ] as const
 
 export type FuelPlanFullCoverageModule = (typeof FUEL_PLAN_FULL_COVERAGE_MODULES)[number]
@@ -19,7 +21,7 @@ export function countFuelPlanCoverageSuites(): number {
 }
 
 export function e2eFuelPlanFullBlockRange(): { from: number; to: number } {
-  return { from: 412, to: 420 }
+  return { from: 412, to: 421 }
 }
 
 /** Cobertura Fuel×plan + nutrición + headline en 3 specs CI (oleada 420). */
@@ -28,6 +30,8 @@ export function isFuelPlanFullE2ECoverageComplete(): boolean {
     isFuelPlanNutritionE2ETrilogyComplete() &&
     isFuelPlanNutritionCoverageComplete() &&
     isFuelPlanHeadlineCoverageComplete() &&
-    unionFuelPlanCovers().includes('fuel-headline')
+    isFuelPlanScenarioCoverageComplete() &&
+    unionFuelPlanCovers().includes('fuel-headline') &&
+    unionFuelPlanCovers().includes('fuel-scenario')
   )
 }
