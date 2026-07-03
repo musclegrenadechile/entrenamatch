@@ -1,5 +1,6 @@
 import { WEEKLY_PLAN_HISTORY_HINT_CLASS } from './weeklyPlanHistoryDisplay'
 import { WEEKLY_PLAN_ROTATION_CHIP_CLASS } from './weeklyPlanRotationDisplay'
+import { WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS } from './weeklyPlanFuelWeekDisplay'
 
 function findEntrenaPlanCard(): HTMLElement | null {
   const plans = document.querySelectorAll('.em-v2-plan')
@@ -40,6 +41,28 @@ export function readWeeklyPlanRotationAriaLabel(): string | null {
   const card = findEntrenaPlanCard()
   const chip = card?.querySelector(`.${WEEKLY_PLAN_ROTATION_CHIP_CLASS}`)
   return chip?.getAttribute('aria-label')?.trim() ?? null
+}
+
+export function readWeeklyPlanFuelWeekHint(): string | null {
+  const card = findEntrenaPlanCard()
+  const hint = card?.querySelector(`.${WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS}`)
+  return hint?.textContent?.trim() ?? null
+}
+
+export function readWeeklyPlanFuelWeekAriaLabel(): string | null {
+  const card = findEntrenaPlanCard()
+  const hint = card?.querySelector(`.${WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS}`)
+  return hint?.getAttribute('aria-label')?.trim() ?? null
+}
+
+export function readWeeklyPlanFuelWeekToneClass(): string | null {
+  const card = findEntrenaPlanCard()
+  const hint = card?.querySelector(`.${WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS}`)
+  if (!hint) return null
+  for (const cls of hint.classList) {
+    if (cls.startsWith(`${WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS}--`)) return cls
+  }
+  return null
 }
 
 export function isWeeklyPlanCardVisible(): boolean {

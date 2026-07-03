@@ -99,6 +99,16 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-plan-history-flow',
     feature: 'cierre pulido II 383–409 + CI e2ePlanRotationCoverage',
   },
+  {
+    polishOleada: 411,
+    e2eSpecId: 'training-mega-flow',
+    feature: 'hint semanal Fuel×EntrenaPlan en card',
+  },
+  {
+    polishOleada: 412,
+    e2eSpecId: 'training-mega-flow',
+    feature: 'harness fuel week hint + tono under-fueled',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

@@ -7,6 +7,7 @@ export const E2E_TRAINING_MEGA_FLOW_IDS = [
   'plan-history-hint',
   'plan-rotation-note',
   'plan-rotation-chip',
+  'plan-fuel-week-hint',
   'fuel-prefill',
   'fuel-macro-prefill',
   'fuel-close',

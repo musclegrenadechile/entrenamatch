@@ -21,6 +21,10 @@ import {
   WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS,
 } from '../../utils/weeklyPlanFuelWeekDisplay'
 import {
+  resolveWeeklyPlanFuelWeekHintTone,
+  resolveWeeklyPlanFuelWeekHintToneClass,
+} from '../../utils/weeklyPlanFuelWeekToneDisplay'
+import {
   formatWeeklyPlanDelta,
   resolveWeeklyPlanScenarioClass,
   shouldRenderWeeklyPlanEmpty,
@@ -91,6 +95,9 @@ export function WeeklyPlanCard({
   const showRotationChip = shouldShowWeeklyPlanRotationChip(rotationNote, rec.type)
   const fuelWeekHint = buildWeeklyPlanFuelWeekHint(plan.scenario, plan.energySummary)
   const showFuelWeekHint = shouldShowWeeklyPlanFuelWeekHint(fuelWeekHint, hasFuelProfile)
+  const fuelWeekToneClass = resolveWeeklyPlanFuelWeekHintToneClass(
+    resolveWeeklyPlanFuelWeekHintTone(plan.scenario, plan.energySummary)
+  )
 
   return (
     <div className={`em-v2-card em-v2-plan ${scenarioClass}`} aria-label="Plan de entreno recomendado">
@@ -150,7 +157,9 @@ export function WeeklyPlanCard({
 
       {showFuelWeekHint && fuelWeekHint && (
         <p
-          className={WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS}
+          className={[WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS, fuelWeekToneClass]
+            .filter(Boolean)
+            .join(' ')}
           role="status"
           aria-label={buildWeeklyPlanFuelWeekAriaLabel(fuelWeekHint)}
         >

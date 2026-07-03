@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.470
+**Versión cierre:** v0.1.471
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -82,6 +82,7 @@
 | **409** | **Cierre EntrenaPlan×historial** | e2ePlanRotationCoverage (3 specs); bloque 401–409 cerrado; chip oculto en rest/cardio |
 | **410** | **Cierre pulido II + CI** | trainingPolishSuite cerrado 383–409; qa:smoke valida 3 specs rotación en CI |
 | **411** | **Mega cierre + Fuel×plan** | trainingMegaSuite cierra 361–410; hint semanal Fuel en EntrenaPlan; fuelPlanTrainingSuite |
+| **412** | **E2E Fuel×plan + tono** | harness getWeeklyPlanFuelWeekHint; tono surplus/deficit/under-fueled; mega-flow valida hint |
 
 ## Mega entrenamiento (361–411) ✅
 
@@ -89,7 +90,7 @@ Inventario `trainingMegaSuite`: 5 sub-bloques (pulido I 361–377, E2E 378–410
 
 ## Fuel × EntrenaPlan (411+) 🆕
 
-Hint semanal según balance Fuel y escenario del plan (días faltantes, superávit, déficit). Utils: `weeklyPlanFuelWeekDisplay`, `fuelPlanTrainingSuite`.
+Hint semanal según balance Fuel y escenario del plan (días faltantes, superávit, déficit). Tono visual por escenario (violeta/naranja/verde). E2E mega-flow valida hint + harness. Utils: `weeklyPlanFuelWeekDisplay`, `weeklyPlanFuelWeekToneDisplay`, `fuelPlanTrainingSuite`.
 
 ## EntrenaPlan × historial (401–409) ✅
 

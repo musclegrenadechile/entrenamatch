@@ -38,6 +38,20 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
   )
   expect(aria).toMatch(/tras PR|siguiente sesión/i)
 
+  await expect(planCard.locator('.em-v2-plan__fuel-week-hint')).toBeVisible({ timeout: 10000 })
+  const fuelWeekHint = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanFuelWeekHint()
+  )
+  expect(fuelWeekHint).toMatch(/Registra.*día.*Fuel/i)
+  const fuelWeekAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanFuelWeekAriaLabel()
+  )
+  expect(fuelWeekAria).toMatch(/Balance Fuel semanal/i)
+  const fuelWeekTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanFuelWeekToneClass()
+  )
+  expect(fuelWeekTone).toBe('em-v2-plan__fuel-week-hint--under-fueled')
+
   await page.getByRole('button', { name: /Registrar post-entreno/i }).click()
 
   const fuel = page.getByRole('dialog', { name: 'Registrar comida Fuel' })

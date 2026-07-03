@@ -49,6 +49,12 @@ export type EntrenamatchE2EApi = {
   getWeeklyPlanRotationChip: () => string | null
   /** aria-label del chip rotación (oleada 408). */
   getWeeklyPlanRotationAriaLabel: () => string | null
+  /** Hint semanal Fuel×EntrenaPlan (oleada 412). */
+  getWeeklyPlanFuelWeekHint: () => string | null
+  /** aria-label del hint Fuel semanal (oleada 412). */
+  getWeeklyPlanFuelWeekAriaLabel: () => string | null
+  /** Modificador de tono del hint Fuel semanal (oleada 412). */
+  getWeeklyPlanFuelWeekToneClass: () => string | null
   isWeeklyPlanCardVisible: () => boolean
 }
 
