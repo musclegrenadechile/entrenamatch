@@ -9,7 +9,7 @@ export const E2E_TRAINING_PLAYWRIGHT_SPECS: readonly E2ETrainingSpecEntry[] = [
   {
     id: 'workout-flow',
     file: 'e2e/workout-flow.spec.ts',
-    covers: ['gym-log', 'review'],
+    covers: ['gym-log', 'review', 'banner'],
   },
   {
     id: 'training-full-flow',
@@ -34,7 +34,7 @@ export const E2E_TRAINING_PLAYWRIGHT_SPECS: readonly E2ETrainingSpecEntry[] = [
 ] as const
 
 export function trainingE2EBlockRange(): { from: number; to: number } {
-  return { from: 378, to: 389 }
+  return { from: 378, to: 390 }
 }
 
 export function countTrainingE2ESpecs(): number {

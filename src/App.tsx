@@ -5949,6 +5949,7 @@ useEffect(() => {
       closeArena: () => setShowSyncArena(false),
       goToHomeTab: () => navigateTab('home'),
       isWorkoutSaveBannerVisible: () => workoutSaveBanner !== null,
+      getWorkoutSaveBannerSessionSummary: () => workoutSaveBanner?.sessionSummary ?? null,
       openFuelFromWorkoutSave: () => {
         if (workoutSaveBanner) {
           setFuelLogPrefill(buildFuelLogPrefillFromWorkoutSave(workoutSaveBanner))

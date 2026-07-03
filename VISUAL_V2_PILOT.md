@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.449
+**Versión cierre:** v0.1.450
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -61,6 +61,7 @@
 | **388** | **E2E FAB entreno** | workout-fab-flow.spec, harness FAB, borrador demo, CI 5 specs entreno |
 | **389** | **FAB chat-strip** | Chip sesión en strip de chat + cierre E2E ampliado 378–388 ✅ |
 | **390** | **Post-entreno UX** | Hints dinámicos reseña + resumen sesión en banner guardado, tests trainingReviewDisplay |
+| **391** | **E2E post-entreno** | workout-flow: banner sessionSummary + hints reseña; harness getWorkoutSaveBannerSessionSummary |
 
 ## Gym-log en vivo (383–387) ✅
 
@@ -70,9 +71,9 @@ Chip progreso, PR badge, haptic/confetti, hint delta y resumen en FAB al minimiz
 
 Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-guardar y cards de muro unificados al design system v2. Oleadas 374–377 cierran biblioteca, series, UX móvil y duplicar serie del gym-log.
 
-## E2E entrenamiento (378–389) ✅
+## E2E entrenamiento (378–390) ✅
 
-Playwright con harness `?e2e=1` en CI (`e2e-smoke`). 5 specs: gym-log, Fuel, sync, reseña, FAB minimizado. Utils: `e2eWorkoutScenarios`, `e2eTrainingMegaFlow`, `e2eWorkoutFabFlow`, `e2eTrainingSuite`.
+Playwright con harness `?e2e=1` en CI (`e2e-smoke`). 5 specs: gym-log, Fuel, sync, reseña, FAB minimizado, banner post-guardar. Utils: `e2eWorkoutScenarios`, `e2eTrainingMegaFlow`, `e2eWorkoutFabFlow`, `e2eTrainingSuite`, `workoutSaveBannerDisplay`.
 
 ## Auditoría cohesión (360)
 

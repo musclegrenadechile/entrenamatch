@@ -44,6 +44,12 @@ export const E2E_WORKOUT_FLOW_STEPS: E2EWorkoutStep[] = [
     expect: 'Modal cierra; toast o banner post-guardar en demo',
   },
   {
+    id: 'wo-03b',
+    phase: 'close',
+    action: 'Banner post-guardar en Hoy (oleada 390–391)',
+    expect: 'Línea sessionSummary con series/volumen; harness getWorkoutSaveBannerSessionSummary',
+  },
+  {
     id: 'wo-04',
     phase: 'sync',
     action: 'EntrenaSync mock (training-full-flow.spec)',
@@ -54,6 +60,12 @@ export const E2E_WORKOUT_FLOW_STEPS: E2EWorkoutStep[] = [
     phase: 'review',
     action: 'Abrir reseña post-entreno (harness openReviewModal)',
     expect: 'Dialog reseña con estrellas y «Enviar reseña»',
+  },
+  {
+    id: 'wo-05b',
+    phase: 'review',
+    action: 'Hints dinámicos + envío bloqueado sin rating (oleada 390)',
+    expect: '«Toca las estrellas»; CTA deshabilitado hasta 1–5 estrellas',
   },
   {
     id: 'wo-06',

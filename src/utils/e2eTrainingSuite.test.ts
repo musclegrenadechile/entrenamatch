@@ -24,9 +24,11 @@ describe('e2eTrainingSuite', () => {
     expect(mega.covers).toEqual(['gym-log', 'fuel', 'sync', 'review'])
   })
 
-  it('bloque E2E oleadas 378–389', () => {
-    expect(trainingE2EBlockRange()).toEqual({ from: 378, to: 389 })
+  it('bloque E2E oleadas 378–390', () => {
+    expect(trainingE2EBlockRange()).toEqual({ from: 378, to: 390 })
     const fab = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-fab-flow')
     expect(fab?.covers).toContain('fab')
+    const workout = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-flow')
+    expect(workout?.covers).toContain('banner')
   })
 })

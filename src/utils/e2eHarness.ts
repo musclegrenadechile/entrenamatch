@@ -17,6 +17,8 @@ export type EntrenamatchE2EApi = {
   closeArena: () => void
   goToHomeTab: () => void
   isWorkoutSaveBannerVisible: () => boolean
+  /** Resumen compacto de sesión en banner post-guardar (oleada 391). */
+  getWorkoutSaveBannerSessionSummary: () => string | null
   /** Abre Fuel log con prefill del banner post-guardar (si está activo). */
   openFuelFromWorkoutSave: () => void
   isFuelLogModalOpen: () => boolean
