@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.492
+**Versión cierre:** v0.1.493
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -104,10 +104,11 @@
 | **431** | **Tono Fuel×rotación PR** | weeklyPlanFuelRotationToneDisplay; harness isWeeklyPlanRotationFuelToneAriaExpected; e2eFuelPlanRotationToneCoverage 9ª suite; fuel-rotation-tone E2E |
 | **432** | **Cierre post-fuel VI + 10ª suite E2E** | e2eFuelPlanPostFuelCoverage; trainingPolishPostFuelSuite cerrado 430–432; e2eFuelPlanFullCoverage 10 suites; mega cierre VI |
 | **433** | **Mega fase VII + tono Fuel×energía** | weeklyPlanFuelEnergySummaryToneDisplay; trainingPolishPostEnergySuite; harness isWeeklyPlanEnergySummaryFuelToneAriaExpected; e2eFuelPlanEnergySummaryToneCoverage 11ª suite; fuel-energy-tone E2E |
+| **434** | **Cierre post-energy VII + 12ª suite E2E** | e2eFuelPlanPostEnergyCoverage; trainingPolishPostEnergySuite cerrado 433–434; e2eFuelPlanFullCoverage 12 suites; mega cierre VII |
 
-## Mega entrenamiento (361–433) 🔄
+## Mega entrenamiento (361–434) ✅
 
-Inventario `trainingMegaSuite`: 10 sub-bloques (pulido I 361–377, E2E 378–410, pulido II 383–409, EntrenaPlan×historial 401–409, Fuel×plan 411–414, post-mega 415–420, post-full 421–427, post-stack 428–429, post-fuel 430–432, post-energy 433+). 73 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`. Cierre mega fase I oleada 411; cierre mega II oleada 415; cierre mega fase III oleada 420; post-full oleada 427; mega fase V oleada 429; mega fase VI oleada 432; mega fase VII abierta oleada 433.
+Inventario `trainingMegaSuite`: 10 sub-bloques (pulido I 361–377, E2E 378–410, pulido II 383–409, EntrenaPlan×historial 401–409, Fuel×plan 411–414, post-mega 415–420, post-full 421–427, post-stack 428–429, post-fuel 430–432, post-energy 433–434). 74 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`. Cierre mega fase I oleada 411; cierre mega II oleada 415; cierre mega fase III oleada 420; post-full oleada 427; mega fase V oleada 429; mega fase VI oleada 432; mega fase VII oleada 434.
 
 ## Fuel × EntrenaPlan (411–414) ✅
 
