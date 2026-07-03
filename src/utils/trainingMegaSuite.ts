@@ -1,10 +1,16 @@
-/** Mega-inventario total pulido entrenamiento oleadas 361–410 (oleada 410). */
+/** Mega-inventario total pulido entrenamiento oleadas 361–411 (oleada 411). */
 import { entrenaPlanTrainingBlockRange } from './entrenaPlanTrainingSuite'
+import { fuelPlanTrainingBlockRange } from './fuelPlanTrainingSuite'
 import { trainingE2EBlockRange } from './e2eTrainingSuite'
 import { trainingPolishMegaRange } from './trainingPolishSuite'
 import { trainingPolishV1BlockRange } from './trainingPolishV1Suite'
 
-export type TrainingMegaBlockId = 'polish-v1' | 'e2e' | 'polish-v2' | 'entrena-plan'
+export type TrainingMegaBlockId =
+  | 'polish-v1'
+  | 'e2e'
+  | 'polish-v2'
+  | 'entrena-plan'
+  | 'fuel-plan'
 
 export type TrainingMegaBlockEntry = {
   id: TrainingMegaBlockId
@@ -38,10 +44,30 @@ export const TRAINING_MEGA_BLOCKS: readonly TrainingMegaBlockEntry[] = [
     suiteModule: 'entrenaPlanTrainingSuite',
     closedOleada: 409,
   },
+  {
+    id: 'fuel-plan',
+    range: fuelPlanTrainingBlockRange(),
+    suiteModule: 'fuelPlanTrainingSuite',
+    closedOleada: 411,
+  },
 ] as const
 
+export const TRAINING_MEGA_CLOSED_OLEADA = 411
+
 export function trainingFullMegaRange(): { from: number; to: number } {
-  return { from: 361, to: 410 }
+  return { from: 361, to: 411 }
+}
+
+export function isTrainingMegaBlockClosed(
+  oleada = TRAINING_MEGA_CLOSED_OLEADA
+): boolean {
+  return oleada >= TRAINING_MEGA_CLOSED_OLEADA
+}
+
+export function areAllTrainingMegaSubBlocksClosed(
+  oleada = TRAINING_MEGA_CLOSED_OLEADA
+): boolean {
+  return TRAINING_MEGA_BLOCKS.every((b) => b.closedOleada <= oleada)
 }
 
 export function countTrainingMegaBlocks(): number {

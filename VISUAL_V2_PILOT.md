@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.469
+**Versión cierre:** v0.1.470
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -81,10 +81,15 @@
 | **408** | **E2E chip rotación + aria** | plan-history y mega-flow validan chip; aria «tras PR en X: siguiente sesión Y» |
 | **409** | **Cierre EntrenaPlan×historial** | e2ePlanRotationCoverage (3 specs); bloque 401–409 cerrado; chip oculto en rest/cardio |
 | **410** | **Cierre pulido II + CI** | trainingPolishSuite cerrado 383–409; qa:smoke valida 3 specs rotación en CI |
+| **411** | **Mega cierre + Fuel×plan** | trainingMegaSuite cierra 361–410; hint semanal Fuel en EntrenaPlan; fuelPlanTrainingSuite |
 
-## Mega entrenamiento (361–410) ✅
+## Mega entrenamiento (361–411) ✅
 
-Inventario `trainingMegaSuite`: 4 sub-bloques (pulido I 361–377, E2E 378–410, pulido II 383–409, EntrenaPlan×historial 401–409). 50 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`.
+Inventario `trainingMegaSuite`: 5 sub-bloques (pulido I 361–377, E2E 378–410, pulido II 383–409, EntrenaPlan×historial 401–409, Fuel×plan 411+). 51 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`. Cierre mega oleada 411.
+
+## Fuel × EntrenaPlan (411+) 🆕
+
+Hint semanal según balance Fuel y escenario del plan (días faltantes, superávit, déficit). Utils: `weeklyPlanFuelWeekDisplay`, `fuelPlanTrainingSuite`.
 
 ## EntrenaPlan × historial (401–409) ✅
 
@@ -112,7 +117,7 @@ Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-g
 
 ## E2E entrenamiento (378–402) ✅
 
-Playwright con harness `?e2e=1` en CI (`e2e-smoke`). 7 specs cubren gym-log, Fuel, sync, reseña, FAB, banner, prefill, historial Perfil y EntrenaPlan×historial. Puente `e2eTrainingPolishBridge` → oleadas pulido 384–397, 401, 404–410. Mega bloque total: 361–410 (`trainingMegaSuite` / `trainingMegaBlockRange`).
+Playwright con harness `?e2e=1` en CI (`e2e-smoke`). 7 specs cubren gym-log, Fuel, sync, reseña, FAB, banner, prefill, historial Perfil y EntrenaPlan×historial. Puente `e2eTrainingPolishBridge` → oleadas pulido 384–397, 401, 404–410. Mega bloque total: 361–411 (`trainingMegaSuite` / `trainingMegaBlockRange`).
 
 ## Auditoría cohesión (360)
 

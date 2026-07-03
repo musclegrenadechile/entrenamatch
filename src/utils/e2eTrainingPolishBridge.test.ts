@@ -14,8 +14,8 @@ describe('e2eTrainingPolishBridge', () => {
     expect(E2E_TRAINING_POLISH_BRIDGE.map((e) => e.polishOleada)).toContain(397)
   })
 
-  it('trainingMegaBlockRange 361–410', () => {
-    expect(trainingMegaBlockRange()).toEqual({ from: 361, to: 410 })
+  it('trainingMegaBlockRange 361–411', () => {
+    expect(trainingMegaBlockRange()).toEqual({ from: 361, to: 411 })
   })
 
   it('uniqueE2EValidatedPolishOleadas y e2eBridgeEntriesForOleada', () => {

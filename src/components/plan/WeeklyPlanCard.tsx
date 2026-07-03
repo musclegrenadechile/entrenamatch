@@ -15,6 +15,12 @@ import {
   WEEKLY_PLAN_ROTATION_CHIP_CLASS,
 } from '../../utils/weeklyPlanRotationDisplay'
 import {
+  buildWeeklyPlanFuelWeekAriaLabel,
+  buildWeeklyPlanFuelWeekHint,
+  shouldShowWeeklyPlanFuelWeekHint,
+  WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS,
+} from '../../utils/weeklyPlanFuelWeekDisplay'
+import {
   formatWeeklyPlanDelta,
   resolveWeeklyPlanScenarioClass,
   shouldRenderWeeklyPlanEmpty,
@@ -83,6 +89,8 @@ export function WeeklyPlanCard({
   const showHistoryHint = shouldShowWeeklyPlanHistoryHint(rec.type, historyHint)
   const rotationNote = plan.trainingLoad.prRotationNote
   const showRotationChip = shouldShowWeeklyPlanRotationChip(rotationNote, rec.type)
+  const fuelWeekHint = buildWeeklyPlanFuelWeekHint(plan.scenario, plan.energySummary)
+  const showFuelWeekHint = shouldShowWeeklyPlanFuelWeekHint(fuelWeekHint, hasFuelProfile)
 
   return (
     <div className={`em-v2-card em-v2-plan ${scenarioClass}`} aria-label="Plan de entreno recomendado">
@@ -138,6 +146,16 @@ export function WeeklyPlanCard({
             </button>
           )}
         </div>
+      )}
+
+      {showFuelWeekHint && fuelWeekHint && (
+        <p
+          className={WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS}
+          role="status"
+          aria-label={buildWeeklyPlanFuelWeekAriaLabel(fuelWeekHint)}
+        >
+          {fuelWeekHint}
+        </p>
       )}
 
       <div className="em-v2-plan__rec">
