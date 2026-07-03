@@ -3,7 +3,7 @@ import { AppFeatureTour, markAppFeatureTourSeen } from './AppFeatureTour'
 export type FeatureTourMountProps = {
   open: boolean
   onClose: () => void
-  onGoToTab: (tab: 'home' | 'map' | 'explore' | 'red') => void
+  onGoToTab: (tab: 'home' | 'map' | 'explore' | 'red' | 'profile') => void
 }
 
 /** Fase 391 — primer tour de la app extraído de App.tsx. */
@@ -16,15 +16,7 @@ export function FeatureTourMount({ open, onClose, onGoToTab }: FeatureTourMountP
         onClose()
       }}
       onGoToStep={(stepId) => {
-        const tab =
-          stepId === 'home'
-            ? 'home'
-            : stepId === 'map'
-              ? 'map'
-              : stepId === 'explore'
-                ? 'explore'
-                : 'red'
-        onGoToTab(tab)
+        onGoToTab(stepId)
       }}
     />
   )

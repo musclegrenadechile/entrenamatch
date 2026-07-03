@@ -14,7 +14,6 @@ export interface ActivationGuideProps {
   onShareInvite?: () => void
 }
 
-/** Fase 121 — guía única post-registro (sin tour duplicado). */
 const STEPS = [
   {
     id: 'live' as const,
@@ -39,6 +38,7 @@ const STEPS = [
   },
 ]
 
+/** Oleada 352 — guía post-registro alineada a Visual v2. */
 export function ActivationGuide({
   open,
   isLive,
@@ -58,19 +58,26 @@ export function ActivationGuide({
   if (!open) return null
 
   const primaryLabel = isLive ? 'Ir al mapa' : 'Activar LIVE'
+  const doneCount = STEPS.filter((s) => done.has(s.id)).length
 
   return (
-    <div className="post-register-guide" role="dialog" aria-label="Primeros pasos en EntrenaMatch">
-      <div className="post-register-guide__card post-register-guide__card--wide">
-        <button type="button" className="post-register-guide__close" onClick={onClose} aria-label="Cerrar">
+    <div className="em-v2-activation" role="dialog" aria-label="Primeros pasos en EntrenaMatch">
+      <div className="em-v2-activation__card">
+        <button type="button" className="em-v2-activation__close" onClick={onClose} aria-label="Cerrar">
           <X size={18} />
         </button>
-        <p className="post-register-guide__kicker">{BRAND_COPY.activation.kicker}</p>
-        <h2 className="post-register-guide__title">{BRAND_COPY.activation.title}</h2>
-        <p className="text-[11px] text-[#9CA3AF] mb-3 pr-6">
+        <p className="em-v2-activation__kicker">{BRAND_COPY.activation.kicker}</p>
+        <h2 className="em-v2-activation__title">{BRAND_COPY.activation.title}</h2>
+        <p className="em-v2-activation__sub">
           {isDemoMode ? BRAND_COPY.activation.subtitleDemo : BRAND_COPY.activation.subtitle}
         </p>
-        <div className="post-register-guide__steps">
+        <div className="em-v2-activation__progress" aria-hidden>
+          <div
+            className="em-v2-activation__progress-fill"
+            style={{ width: `${Math.round((doneCount / STEPS.length) * 100)}%` }}
+          />
+        </div>
+        <div className="em-v2-activation__steps">
           {STEPS.map((s) => {
             const Icon = s.icon
             const isDone = done.has(s.id)
@@ -78,18 +85,20 @@ export function ActivationGuide({
             return (
               <div
                 key={s.id}
-                className={`post-register-guide__step${isDone ? ' post-register-guide__step--done' : ''}`}
+                className={`em-v2-activation__step${isDone ? ' em-v2-activation__step--done' : ''}`}
               >
-                <Icon size={18} />
-                <div>
+                <span className="em-v2-activation__step-icon" aria-hidden>
+                  <Icon size={18} />
+                </span>
+                <div className="em-v2-activation__step-body">
                   <strong>{s.title}</strong>
                   <p>{desc}</p>
                 </div>
                 {!isDone && (
-                  <div className="flex flex-col gap-1 shrink-0">
+                  <div className="em-v2-activation__step-actions">
                     <button
                       type="button"
-                      className="post-register-guide__go"
+                      className="em-v2-activation__go"
                       onClick={() => onStep(s.id)}
                     >
                       Ir <ArrowRight size={14} />
@@ -97,24 +106,24 @@ export function ActivationGuide({
                     {s.id === 'explore' && onShareInvite && (
                       <button
                         type="button"
-                        className="text-[9px] font-bold text-[#22c55e] px-2 py-1 rounded-lg border border-[#22c55e]/40 active:bg-[#22c55e]/10"
+                        className="em-v2-activation__invite"
                         onClick={onShareInvite}
                       >
-                        <Share2 size={10} className="inline -mt-0.5 mr-0.5" aria-hidden />
+                        <Share2 size={10} aria-hidden />
                         {BRAND_COPY.explore.inviteTitle}
                       </button>
                     )}
                   </div>
                 )}
                 {isDone && (
-                  <span className="text-[10px] font-bold text-[#22c55e] shrink-0">Hecho</span>
+                  <span className="em-v2-activation__done-badge">Hecho</span>
                 )}
               </div>
             )
           })}
         </div>
-        <button type="button" className="post-register-guide__done" onClick={onPrimaryAction}>
-          <MapPin size={16} className="inline mr-1.5 -mt-0.5" aria-hidden />
+        <button type="button" className="em-v2-activation__cta" onClick={onPrimaryAction}>
+          <MapPin size={16} aria-hidden />
           {primaryLabel}
         </button>
       </div>

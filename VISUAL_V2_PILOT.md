@@ -21,16 +21,17 @@
 | **349** | **Perfil** | Hero atleta compacto, tabs Actividad / Red / Ajustes, pulse + CTAs LIVE/Explorar |
 | **350** | **Polish global** | `EmV2EmptyState`, skeletons shimmer, fade-in tabs perfil |
 | **351** | **Nav + transiciones** | Bottom nav v2 por tab, `EmV2TabShell`, entrada animada entre tabs |
+| **352** | **Onboarding** | Feature tour 5 pasos + activation guide v2, highlight nav premium |
 
 ## Evaluar (3 min)
 
-1. **Nav inferior** — ¿indicador + color por tab (mapa verde, matches rosa)?
-2. **Cambio de tab** — ¿entrada suave Hoy ↔ Explorar ↔ Red?
-3. **Mapa** — ¿fade sin glitch al abrir?
-4. **Perfil tabs** — ¿fade-in al cambiar Actividad / Red / Ajustes?
+1. **Tour** (localStorage: borrar `entrenamatch_feature_tour_seen`) — ¿5 pasos + highlight nav?
+2. **Activation guide** (usuario nuevo) — ¿card glass + barra progreso?
+3. **Nav inferior** — ¿indicador + color por tab?
+4. **Perfil** — ¿hero atleta + tabs?
 
 ## Siguiente
 
-- Cohesión final: onboarding tour + activation guide al sistema v2
+- Cierre Visual 2.0: auditoría cohesión + changelog público
 
 *jul 2026*
