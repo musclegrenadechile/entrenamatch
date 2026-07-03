@@ -34,13 +34,18 @@ describe('trainingMegaSuite', () => {
     expect(polishV2?.closedOleada).toBe(410)
     expect(polishV2?.range).toEqual({ from: 383, to: 409 })
     const fuelPlan = trainingMegaBlockById('fuel-plan')
-    expect(fuelPlan?.range).toEqual({ from: 411, to: 413 })
+    expect(fuelPlan?.range).toEqual({ from: 411, to: 414 })
+    expect(fuelPlan?.closedOleada).toBe(414)
     expect(fuelPlan?.suiteModule).toBe('fuelPlanTrainingSuite')
   })
 
   it('cierre mega entrenamiento 361–410 (oleada 411)', () => {
     expect(isTrainingMegaBlockClosed()).toBe(true)
     expect(isTrainingMegaBlockClosed(410)).toBe(false)
-    expect(areAllTrainingMegaSubBlocksClosed()).toBe(true)
+    expect(areAllTrainingMegaSubBlocksClosed(411)).toBe(false)
+  })
+
+  it('cierre fuel-plan en mega (oleada 414)', () => {
+    expect(areAllTrainingMegaSubBlocksClosed(414)).toBe(true)
   })
 })

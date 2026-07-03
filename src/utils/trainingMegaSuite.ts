@@ -48,7 +48,7 @@ export const TRAINING_MEGA_BLOCKS: readonly TrainingMegaBlockEntry[] = [
     id: 'fuel-plan',
     range: fuelPlanTrainingBlockRange(),
     suiteModule: 'fuelPlanTrainingSuite',
-    closedOleada: 411,
+    closedOleada: 414,
   },
 ] as const
 

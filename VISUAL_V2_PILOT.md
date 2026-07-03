@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.472
+**Versión cierre:** v0.1.473
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -84,14 +84,15 @@
 | **411** | **Mega cierre + Fuel×plan** | trainingMegaSuite cierra 361–410; hint semanal Fuel en EntrenaPlan; fuelPlanTrainingSuite |
 | **412** | **E2E Fuel×plan + tono** | harness getWeeklyPlanFuelWeekHint; tono surplus/deficit/under-fueled; mega-flow valida hint |
 | **413** | **Fuel×plan chip + seed** | seedDemoFuelWeekLogs; chip Δ kcal surplus/deficit; plan-history-flow E2E Superávit |
+| **414** | **Cierre Fuel×plan + CI** | e2eFuelPlanCoverage (3 specs); fuel-flow déficit E2E; qa:smoke valida specs Fuel |
 
 ## Mega entrenamiento (361–411) ✅
 
 Inventario `trainingMegaSuite`: 5 sub-bloques (pulido I 361–377, E2E 378–410, pulido II 383–409, EntrenaPlan×historial 401–409, Fuel×plan 411+). 51 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`. Cierre mega oleada 411.
 
-## Fuel × EntrenaPlan (411+) 🆕
+## Fuel × EntrenaPlan (411–414) ✅
 
-Hint semanal según balance Fuel y escenario del plan (días faltantes, superávit, déficit). Tono visual por escenario (violeta/naranja/verde). Chip compacto Δ kcal en superávit/déficit. Harness `seedDemoFuelWeekLogs` para E2E. Utils: `weeklyPlanFuelWeekDisplay`, `weeklyPlanFuelWeekToneDisplay`, `weeklyPlanFuelWeekChipDisplay`, `demoFuelWeekLogs`, `fuelPlanTrainingSuite`.
+Hint semanal según balance Fuel y escenario del plan (días faltantes, superávit, déficit). Tono visual por escenario (violeta/naranja/verde). Chip compacto Δ kcal en superávit/déficit. Harness `seedDemoFuelWeekLogs` para E2E. E2E consolidado `e2eFuelPlanCoverage` (mega under-fueled, plan-history surplus, fuel-flow déficit). Bloque cerrado oleada 414; CI `qa:smoke` valida 3 specs. Utils: `weeklyPlanFuelWeekDisplay`, `weeklyPlanFuelWeekToneDisplay`, `weeklyPlanFuelWeekChipDisplay`, `demoFuelWeekLogs`, `e2eFuelPlanCoverage`, `fuelPlanTrainingSuite`.
 
 ## EntrenaPlan × historial (401–409) ✅
 

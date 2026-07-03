@@ -86,6 +86,30 @@ for (const spec of rotationSpecs) {
 if (!ok) process.exit(1)
 console.log('✓ e2ePlanRotationCoverage aligned with CI e2e-smoke (3 specs)')
 
+const fuelPlanCoverage = readFileSync(
+  join(root, 'src/utils/e2eFuelPlanCoverage.ts'),
+  'utf8'
+)
+const fuelPlanSpecs = [
+  'training-mega-flow.spec.ts',
+  'workout-plan-history-flow.spec.ts',
+  'workout-fuel-flow.spec.ts',
+]
+for (const spec of fuelPlanSpecs) {
+  if (!fuelPlanCoverage.includes(spec)) {
+    console.error(`e2eFuelPlanCoverage missing spec file: ${spec}`)
+    ok = false
+  }
+}
+for (const spec of fuelPlanSpecs) {
+  if (!ciYml.includes(spec)) {
+    console.error(`CI e2e-smoke missing fuel-plan spec: ${spec}`)
+    ok = false
+  }
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eFuelPlanCoverage aligned with CI e2e-smoke (3 specs)')
+
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)
 console.log('✓ vitest passed')

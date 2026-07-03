@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   countTrainingE2ESpecs,
+  e2eFuelPlanSpecsCoveredInInventory,
   e2eRotationSpecsCoveredInInventory,
   E2E_TRAINING_PLAYWRIGHT_SPECS,
   trainingE2EBlockRange,
@@ -54,5 +55,9 @@ describe('e2eTrainingSuite', () => {
 
   it('e2ePlanRotationCoverage alineado con inventario CI (oleada 410)', () => {
     expect(e2eRotationSpecsCoveredInInventory()).toBe(true)
+  })
+
+  it('e2eFuelPlanCoverage alineado con inventario CI (oleada 414)', () => {
+    expect(e2eFuelPlanSpecsCoveredInInventory()).toBe(true)
   })
 })

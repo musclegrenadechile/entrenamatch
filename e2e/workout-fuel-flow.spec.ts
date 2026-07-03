@@ -7,6 +7,11 @@ test('E2E workout-fuel-flow — banner post-guardar → Fuel prefill', async ({ 
   await waitForE2EHarness(page)
 
   await page.evaluate(() => {
+    window.__entrenamatchE2E!.seedDemoFuelProfile()
+    window.__entrenamatchE2E!.seedDemoFuelWeekLogs('deficit')
+  })
+
+  await page.evaluate(() => {
     window.__entrenamatchE2E!.openWorkoutModal()
   })
 
@@ -29,6 +34,21 @@ test('E2E workout-fuel-flow — banner post-guardar → Fuel prefill', async ({ 
   await expect(
     page.getByRole('button', { name: /Registrar post-entreno/i })
   ).toBeVisible()
+
+  const planCard = page.locator('.em-v2-plan').filter({ hasText: 'EntrenaPlan' })
+  await expect(planCard).toBeVisible({ timeout: 12000 })
+  await expect(planCard.locator('.em-v2-plan__fuel-week-chip')).toBeVisible({ timeout: 10000 })
+  const fuelChip = await page.evaluate(() => window.__entrenamatchE2E!.getWeeklyPlanFuelWeekChip())
+  expect(fuelChip).toMatch(/Δ -\d+ kcal/)
+  await expect(planCard.locator('.em-v2-plan__fuel-week-hint')).toBeVisible({ timeout: 10000 })
+  const fuelWeekHint = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanFuelWeekHint()
+  )
+  expect(fuelWeekHint).toMatch(/Déficit/i)
+  const fuelWeekTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanFuelWeekToneClass()
+  )
+  expect(fuelWeekTone).toBe('em-v2-plan__fuel-week-hint--deficit')
 
   await page.getByRole('button', { name: /Registrar post-entreno/i }).click()
 

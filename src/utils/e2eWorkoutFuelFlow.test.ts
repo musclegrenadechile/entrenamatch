@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest'
 import { E2E_WORKOUT_FUEL_FLOW_IDS, isWorkoutFuelFlowComplete } from './e2eWorkoutFuelFlow'
 
 describe('e2eWorkoutFuelFlow', () => {
-  it('define 9 hitos entreno → Fuel', () => {
-    expect(E2E_WORKOUT_FUEL_FLOW_IDS.length).toBe(9)
+  it('define 10 hitos entreno → Fuel', () => {
+    expect(E2E_WORKOUT_FUEL_FLOW_IDS.length).toBe(10)
+    expect(E2E_WORKOUT_FUEL_FLOW_IDS).toContain('plan-fuel-week-deficit')
     expect(E2E_WORKOUT_FUEL_FLOW_IDS).toContain('fuel-prefill-harness')
     expect(E2E_WORKOUT_FUEL_FLOW_IDS).toContain('banner-fuel-balance')
     expect(E2E_WORKOUT_FUEL_FLOW_IDS).toContain('fuel-macro-prefill')
