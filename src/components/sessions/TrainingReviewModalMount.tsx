@@ -1,5 +1,9 @@
 import { AnimatePresence } from 'framer-motion'
 import { Star } from 'lucide-react'
+import {
+  buildTrainingReviewRatingHint,
+  canSubmitTrainingReview,
+} from '../../utils/trainingReviewDisplay'
 
 export type TrainingReviewModalMountProps = {
   open: boolean
@@ -41,7 +45,9 @@ export function TrainingReviewModalMount({
         <div onClick={(e) => e.stopPropagation()} className="em-v2-review-modal__card">
           <div className="text-center mb-4">
             <div className="em-v2-review-modal__title">¿Cómo fue entrenar con {partnerName}?</div>
-            <p className="em-v2-review-modal__hint">Tu reseña ayuda a otros a confiar</p>
+            <p className="em-v2-review-modal__hint" role="status">
+              {buildTrainingReviewRatingHint(rating)}
+            </p>
           </div>
 
           <div className="em-v2-review-modal__stars" role="group" aria-label="Calificación">
@@ -100,7 +106,12 @@ export function TrainingReviewModalMount({
             <button type="button" onClick={onClose} className="em-v2-cta-secondary">
               Cancelar
             </button>
-            <button type="button" onClick={onSubmit} className="em-v2-hero-card__cta flex-1">
+            <button
+              type="button"
+              onClick={onSubmit}
+              disabled={!canSubmitTrainingReview(rating)}
+              className="em-v2-hero-card__cta flex-1 disabled:opacity-45 disabled:pointer-events-none"
+            >
               Enviar reseña
             </button>
           </div>

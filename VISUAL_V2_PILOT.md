@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.448
+**Versión cierre:** v0.1.449
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -60,6 +60,7 @@
 | **387** | **Cierre gym-log vivo** | Inventario gymLogTrainingSuite, chip sesión en FAB minimizado, bloque 383–386 ✅ |
 | **388** | **E2E FAB entreno** | workout-fab-flow.spec, harness FAB, borrador demo, CI 5 specs entreno |
 | **389** | **FAB chat-strip** | Chip sesión en strip de chat + cierre E2E ampliado 378–388 ✅ |
+| **390** | **Post-entreno UX** | Hints dinámicos reseña + resumen sesión en banner guardado, tests trainingReviewDisplay |
 
 ## Gym-log en vivo (383–387) ✅
 

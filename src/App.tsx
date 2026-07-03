@@ -268,6 +268,7 @@ import { isTeamMemberId } from './utils/teamMembers'
 import { isSeedProfileId, SEED_PROFILES, CHAT_OPENERS } from './utils/seedProfiles'
 import { EntrenoDeHoyModalMount } from './components/workout/EntrenoDeHoyModalMount'
 import { WorkoutPostCard, WorkoutSessionFab } from './components/workout'
+import { buildGymLogSessionChipCompact } from './utils/gymLogSessionDisplay'
 import { detectWorkoutPRs, formatWorkoutPRSummary } from './utils/workoutPR'
 import { cloneExercises, workoutToTemplate } from './utils/workoutTemplates'
 import {
@@ -1066,6 +1067,7 @@ function App() {
     prSummary?: string
     burnKcal?: number
     fuelTip?: string
+    sessionSummary?: string
   } | null>(null)
   const workoutSaveShareOptsRef = useRef<Parameters<typeof shareWorkoutStory>[0] | null>(null)
   const [showFuelSetupModal, setShowFuelSetupModal] = useState(false)
@@ -6134,6 +6136,7 @@ useEffect(() => {
           prSummary: prSummary || undefined,
           burnKcal: saveBurn > 0 ? saveBurn : undefined,
           fuelTip: getPostWorkoutFuelTip(payload.type),
+          sessionSummary: buildGymLogSessionChipCompact(payload.exercises),
         })
         window.setTimeout(() => {
           setWorkoutSaveBanner((prev) => (prev?.title === payload.title ? null : prev))
@@ -6190,6 +6193,7 @@ useEffect(() => {
           setWorkoutSaveBanner({
             title: payload.title,
             fuelTip: getPostWorkoutFuelTip(payload.type),
+            sessionSummary: buildGymLogSessionChipCompact(payload.exercises),
           })
           window.setTimeout(() => {
             setWorkoutSaveBanner((prev) => (prev?.title === payload.title ? null : prev))

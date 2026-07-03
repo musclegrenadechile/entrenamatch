@@ -5,6 +5,8 @@ export interface WorkoutPostSaveBannerData {
   prSummary?: string
   burnKcal?: number
   fuelTip?: string
+  /** Resumen compacto de series/volumen (oleada 390). */
+  sessionSummary?: string
 }
 
 export interface WorkoutPostSaveBannerProps extends WorkoutPostSaveBannerData {
@@ -19,6 +21,7 @@ export function WorkoutPostSaveBanner({
   prSummary,
   burnKcal,
   fuelTip,
+  sessionSummary,
   onShareStory,
   onOpenFuel,
   onDismiss,
@@ -50,6 +53,9 @@ export function WorkoutPostSaveBanner({
               <span className="em-v2-training-save-banner__pr-badge">🏆 Nuevo PR</span>
             )}
           </div>
+          {sessionSummary && (
+            <p className="em-v2-training-save-banner__session">{sessionSummary}</p>
+          )}
           {meta && <p className="em-v2-card__detail mt-0.5 leading-snug">{meta}</p>}
           <div className="flex flex-wrap gap-2 mt-2.5">
             <button type="button" onClick={onShareStory} className="em-v2-hero-card__cta text-[10px] px-3 py-1.5 flex items-center gap-1">
