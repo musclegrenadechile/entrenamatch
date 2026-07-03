@@ -53,6 +53,7 @@ import {
 } from '../../utils/workoutDraft'
 import { formatWorkoutDraftRecoveredMessage } from '../../utils/workoutDraftRecoveredCopy'
 import { useCompactMobile } from '../../hooks/useCompactMobile'
+import { EmV2EmptyState } from '../ui/EmV2EmptyState'
 
 export interface EntrenoDeHoyModalProps {
   open: boolean
@@ -749,7 +750,7 @@ export function EntrenoDeHoyModal({
             />
           )}
 
-          {exercises.length === 0 && recentWorkouts.some((w) => w.exercises?.length) && (
+          {exercises.length === 0 && (
             <PastWorkoutPicker
               workouts={recentWorkouts}
               open={pastWorkoutsOpen}
@@ -793,14 +794,12 @@ export function EntrenoDeHoyModal({
                 />
               )}
 
-              {recentWorkouts.some((w) => w.exercises?.length) && (
-                <PastWorkoutPicker
-                  workouts={recentWorkouts}
-                  open={pastWorkoutsOpen}
-                  onToggle={() => setPastWorkoutsOpen((v) => !v)}
-                  onSelect={repeatFromWorkout}
-                />
-              )}
+              <PastWorkoutPicker
+                workouts={recentWorkouts}
+                open={pastWorkoutsOpen}
+                onToggle={() => setPastWorkoutsOpen((v) => !v)}
+                onSelect={repeatFromWorkout}
+              />
             </div>
           )}
 
@@ -837,9 +836,9 @@ export function EntrenoDeHoyModal({
           {libraryOpen && (
             <div className="em-v2-workout-library">
               {quickExerciseNames.length > 0 && (
-                <div className="gym-log-quick">
-                  <p className="gym-log-quick-label">Añadir rápido</p>
-                  <div className="gym-log-quick-row">
+                <div className="gym-log-quick em-v2-workout-library__quick">
+                  <p className="gym-log-quick-label em-v2-workout-library__label">Añadir rápido</p>
+                  <div className="gym-log-quick-row em-v2-workout-library__chips">
                     {quickExerciseNames.map((name) => (
                       <button
                         key={name}
@@ -855,7 +854,7 @@ export function EntrenoDeHoyModal({
                 </div>
               )}
 
-              <div className="gym-log-muscle-filters">
+              <div className="gym-log-muscle-filters em-v2-workout-library__filters">
                 <button
                   type="button"
                   onClick={() => {
@@ -910,8 +909,8 @@ export function EntrenoDeHoyModal({
               </div>
 
               {muscleBrowse.length > 0 && (
-                <div className="gym-log-browse">
-                  <p className="gym-log-quick-label">
+                <div className="gym-log-browse em-v2-workout-library__browse">
+                  <p className="gym-log-quick-label em-v2-workout-library__label">
                     {muscleFilter} · {muscleBrowse.length} ejercicios
                   </p>
                   <ul className="gym-log-browse-list">
@@ -933,9 +932,9 @@ export function EntrenoDeHoyModal({
               )}
 
               {quickTemplates.length > 0 && exercises.length === 0 && (
-                <div className="gym-log-templates">
-                  <p className="gym-log-quick-label">Plantillas</p>
-                  <div className="gym-log-quick-row">
+                <div className="gym-log-templates em-v2-workout-library__templates">
+                  <p className="gym-log-quick-label em-v2-workout-library__label">Plantillas</p>
+                  <div className="gym-log-quick-row em-v2-workout-library__chips">
                     {quickTemplates.map((tpl) => (
                       <button key={tpl.id} type="button" onClick={() => applyTemplate(tpl)} className="gym-log-tpl-chip">
                         {tpl.label}
@@ -962,12 +961,13 @@ export function EntrenoDeHoyModal({
           )}
 
           {exercises.length === 0 && libraryOpen ? (
-            <div className="gym-log-empty em-v2-workout-empty">
-              <Dumbbell className="w-10 h-10 text-[#FF671F]/50 mb-2" />
-              <p className="text-sm font-bold text-white">Empieza ahora</p>
-              <p className="text-xs text-[#9CA3AF] mt-1 max-w-[240px]">
-                Toca un ejercicio arriba o búscalo. Registra cada serie entre descansos.
-              </p>
+            <div className="em-v2-workout-empty">
+              <EmV2EmptyState
+                compact
+                emoji="🏋️"
+                title="Empieza ahora"
+                body="Toca un ejercicio arriba o búscalo. Registra cada serie entre descansos."
+              />
             </div>
           ) : exercises.length > 0 ? (
             <ul className="gym-log-exercises">
@@ -1047,7 +1047,7 @@ export function EntrenoDeHoyModal({
                 className="gym-log-field"
                 placeholder="Nombre del entreno"
               />
-              <div className="flex flex-wrap gap-1.5">
+              <div className="em-v2-workout-library__types">
                 {WORKOUT_TYPES.map((t) => (
                   <button
                     key={t}

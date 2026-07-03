@@ -1,8 +1,10 @@
 import { useMemo } from 'react'
 import { ChevronDown, ChevronUp, History, Play } from 'lucide-react'
+import { EmV2EmptyState } from '../ui/EmV2EmptyState'
 import { WORKOUT_TYPE_LABELS } from '../../data/exerciseLibrary'
 import type { Workout } from '../../types'
 import { getYesterdayWorkout } from '../../utils/homeHero'
+import { buildPastWorkoutPickerSubline } from '../../utils/pastWorkoutPickerDisplay'
 
 export interface PastWorkoutPickerProps {
   workouts: Workout[]
@@ -38,18 +40,23 @@ export function PastWorkoutPicker({
   maxItems = 8,
 }: PastWorkoutPickerProps) {
   const list = useMemo(
-    () =>
-      workouts
-        .filter((w) => w.exercises?.length)
-        .slice(0, maxItems),
+    () => workouts.filter((w) => w.exercises?.length).slice(0, maxItems),
     [workouts, maxItems]
   )
   const yesterday = useMemo(() => getYesterdayWorkout(workouts), [workouts])
 
-  if (!list.length) return null
-
-  const countLabel =
-    list.length === 1 ? '1 rutina guardada' : `${list.length} rutinas en tu historial`
+  if (!list.length) {
+    return (
+      <div className="em-v2-past-picker em-v2-past-picker--empty">
+        <EmV2EmptyState
+          compact
+          emoji="📋"
+          title="Sin rutinas previas"
+          body="Cuando guardes tu primer entreno podrás repetirlo desde aquí."
+        />
+      </div>
+    )
+  }
 
   return (
     <div className="em-v2-past-picker">
@@ -58,7 +65,7 @@ export function PastWorkoutPicker({
           <History className="w-4 h-4 shrink-0 text-[#FF671F]" />
           <div className="min-w-0 text-left">
             <p className="em-v2-past-picker__title">Repetir un entreno</p>
-            <p className="em-v2-past-picker__sub">{countLabel}</p>
+            <p className="em-v2-past-picker__sub">{buildPastWorkoutPickerSubline(list.length)}</p>
           </div>
         </div>
         <span className="em-v2-past-picker__count">{list.length}</span>
@@ -87,6 +94,11 @@ export function PastWorkoutPicker({
                     <div className="flex items-center gap-1.5 min-w-0">
                       <p className="em-v2-past-picker__item-title truncate">{w.title}</p>
                       {isYesterday && <span className="em-v2-past-picker__badge">Ayer</span>}
+                      {w.source === 'sync' && (
+                        <span className="em-v2-past-picker__badge em-v2-past-picker__badge--sync">
+                          Sync
+                        </span>
+                      )}
                     </div>
                     <p className="em-v2-past-picker__item-meta">
                       {when} · {typeLabel} · {exerciseCount} ejercicio
