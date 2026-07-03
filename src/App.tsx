@@ -101,6 +101,7 @@ import {
   readWorkoutSaveBannerAriaLabel,
   readWorkoutSaveBannerToneClass,
 } from './utils/e2eWorkoutSaveBannerDom'
+import { trainingReviewE2EHarness } from './utils/e2eTrainingReviewHarness'
 import { fabSessionPrAriaMatchesLivePr } from './utils/gymLogFabSessionPrToneDisplay'
 import { sessionPrAriaMatchesLivePr } from './utils/gymLogSessionPrToneDisplay'
 import { fuelPrefillPrAriaMatchesPr } from './utils/fuelLogPrefillPrToneDisplay'
@@ -6037,6 +6038,7 @@ useEffect(() => {
         setPendingReviewBookingId(null)
       },
       isReviewModalOpen: () => !!showReviewModalFor,
+      ...trainingReviewE2EHarness,
       closeArena: () => setShowSyncArena(false),
       goToHomeTab: () => navigateTab('home'),
       isWorkoutSaveBannerVisible: () => workoutSaveBanner !== null,
@@ -11483,6 +11485,7 @@ useEffect(() => {
       <TrainingReviewModalMount
         open={!!showReviewModalFor}
         partnerName={SEED_PROFILES.find((p) => p.id === showReviewModalFor)?.name || 'tu partner'}
+        hasPr={!!workoutSaveBanner?.prSummary}
         rating={reviewRating}
         comment={reviewComment}
         photo={reviewPhoto}

@@ -62,9 +62,22 @@ test('E2E workout-flow — gym-log guardar + reseña post-entreno', async ({ pag
     window.__entrenamatchE2E!.openReviewModal('p1')
   })
 
-  const review = page.getByRole('dialog', { name: 'Reseña post-entreno' })
+  const review = page.getByRole('dialog', { name: /Reseña post-entreno con récord personal/i })
   await expect(review).toBeVisible({ timeout: 10000 })
-  await expect(review.getByRole('status')).toContainText(/estrellas/i)
+  await expect(review.getByText('🏆 Sesión con récord personal')).toBeVisible()
+  const reviewTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getTrainingReviewCardToneClass()
+  )
+  expect(reviewTone).toBe('em-v2-review-modal__card--has-pr')
+  const reviewAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getTrainingReviewCardAriaLabel()
+  )
+  expect(reviewAria).toMatch(/récord personal/i)
+  const reviewPrAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isTrainingReviewPrToneAriaExpected()
+  )
+  expect(reviewPrAria).toBe(true)
+  await expect(review.getByRole('status').filter({ hasText: /estrellas|récord personal/i })).toBeVisible()
   await expect(review.getByRole('button', { name: 'Enviar reseña' })).toBeDisabled()
   await review.getByRole('button', { name: '5 estrellas' }).click()
   await expect(review.getByRole('status')).toContainText(/Buen match/i)

@@ -694,6 +694,20 @@ if (!trainingPrV2GlobalCoverage.includes('trainingPrV2GlobalClosure')) {
 }
 if (!ok) process.exit(1)
 console.log('✓ e2eTrainingPrV2GlobalCoverage aligned with PR v2 global closure (oleada 444)')
+const trainingReviewPrCoverage = readFileSync(
+  join(root, 'src/utils/e2eTrainingReviewPrCoverage.ts'),
+  'utf8'
+)
+if (!trainingReviewPrCoverage.includes('isTrainingReviewPrCoverageComplete')) {
+  console.error('e2eTrainingReviewPrCoverage missing review-pr helper (oleada 445)')
+  ok = false
+}
+if (!trainingReviewPrCoverage.includes('review-pr-tone')) {
+  console.error('e2eTrainingReviewPrCoverage missing review-pr-tone cover (oleada 445)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eTrainingReviewPrCoverage aligned with reseña v2 pivot (oleada 445)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

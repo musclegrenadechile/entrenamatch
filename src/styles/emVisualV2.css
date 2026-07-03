@@ -3336,6 +3336,20 @@
   text-align: center;
 }
 
+.em-v2-review-modal__card--has-pr {
+  border-color: rgba(253, 224, 71, 0.45);
+  background: linear-gradient(165deg, rgba(253, 224, 71, 0.1) 0%, var(--em-surface-1) 100%);
+  box-shadow: 0 0 16px rgba(253, 224, 71, 0.12), var(--em-shadow-card);
+}
+
+.em-v2-review-modal__pr-kicker {
+  margin-bottom: 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: rgba(253, 224, 71, 0.95);
+}
+
 /* ——— Seguridad + moderación + muro (oleada 357) ——— */
 .em-v2-moderation {
   background: var(--em-bg-warm);

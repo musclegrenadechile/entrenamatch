@@ -4,10 +4,15 @@ import {
   buildTrainingReviewRatingHint,
   canSubmitTrainingReview,
 } from '../../utils/trainingReviewDisplay'
+import {
+  buildTrainingReviewPrToneAriaLabel,
+  resolveTrainingReviewPrToneClass,
+} from '../../utils/trainingReviewPrToneDisplay'
 
 export type TrainingReviewModalMountProps = {
   open: boolean
   partnerName: string
+  hasPr?: boolean
   rating: number
   comment: string
   photo: string | null
@@ -22,6 +27,7 @@ export type TrainingReviewModalMountProps = {
 export function TrainingReviewModalMount({
   open,
   partnerName,
+  hasPr = false,
   rating,
   comment,
   photo,
@@ -33,20 +39,31 @@ export function TrainingReviewModalMount({
 }: TrainingReviewModalMountProps) {
   if (!open) return null
 
+  const reviewPrToneClass = resolveTrainingReviewPrToneClass(hasPr)
+  const dialogAriaLabel = buildTrainingReviewPrToneAriaLabel(partnerName, hasPr)
+
   return (
     <AnimatePresence>
       <div
         className="em-visual-v2 em-v2-review-modal__overlay absolute inset-0 z-[110] flex items-center justify-center p-6"
         role="dialog"
         aria-modal="true"
-        aria-label="Reseña post-entreno"
+        aria-label={dialogAriaLabel}
         onClick={onClose}
       >
-        <div onClick={(e) => e.stopPropagation()} className="em-v2-review-modal__card">
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className={['em-v2-review-modal__card', reviewPrToneClass].filter(Boolean).join(' ')}
+        >
           <div className="text-center mb-4">
+            {hasPr && (
+              <p className="em-v2-review-modal__pr-kicker" role="status">
+                🏆 Sesión con récord personal
+              </p>
+            )}
             <div className="em-v2-review-modal__title">¿Cómo fue entrenar con {partnerName}?</div>
             <p className="em-v2-review-modal__hint" role="status">
-              {buildTrainingReviewRatingHint(rating)}
+              {buildTrainingReviewRatingHint(rating, hasPr)}
             </p>
           </div>
 

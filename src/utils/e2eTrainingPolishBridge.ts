@@ -419,6 +419,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-history-flow',
     feature: 'cierre PR v2 global historial + trainingPolishPrV2GlobalSuite',
   },
+  {
+    polishOleada: 445,
+    e2eSpecId: 'workout-flow',
+    feature: 'pivot reseña v2 tono PR x modal + e2eTrainingReviewPrCoverage',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

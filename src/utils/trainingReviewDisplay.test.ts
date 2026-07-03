@@ -4,6 +4,7 @@ import { buildTrainingReviewRatingHint, canSubmitTrainingReview } from './traini
 describe('trainingReviewDisplay', () => {
   it('buildTrainingReviewRatingHint por rating', () => {
     expect(buildTrainingReviewRatingHint(0)).toContain('estrellas')
+    expect(buildTrainingReviewRatingHint(0, true)).toContain('récord personal')
     expect(buildTrainingReviewRatingHint(2)).toContain('mejorar')
     expect(buildTrainingReviewRatingHint(3)).toContain('correcta')
     expect(buildTrainingReviewRatingHint(5)).toContain('Buen match')

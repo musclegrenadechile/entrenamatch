@@ -26,6 +26,11 @@ export type EntrenamatchE2EApi = {
   /** Simula reseña post-entreno con un partner seed. */
   openReviewModal: (partnerId?: string) => void
   isReviewModalOpen: () => boolean
+  /** Modificador tono PR en card reseña (oleada 445). */
+  getTrainingReviewCardToneClass: () => string | null
+  /** aria-label del diálogo reseña (oleada 445). */
+  getTrainingReviewCardAriaLabel: () => string | null
+  isTrainingReviewPrToneAriaExpected: () => boolean
   /** Cierra/minimiza la Sala Sync sin terminar la sesión mock. */
   closeArena: () => void
   goToHomeTab: () => void
