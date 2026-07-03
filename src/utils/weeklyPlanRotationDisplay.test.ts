@@ -31,4 +31,11 @@ describe('weeklyPlanRotationDisplay', () => {
     expect(shouldShowWeeklyPlanRotationChip(note, 'rest')).toBe(false)
     expect(shouldShowWeeklyPlanRotationChip(undefined, 'strength')).toBe(false)
   })
+
+  it('oculta chip en rest, cardio, walk y mobility (oleada 409)', () => {
+    const note = 'Tras PR en Pecho — rotación a Pull.'
+    expect(shouldShowWeeklyPlanRotationChip(note, 'cardio')).toBe(false)
+    expect(shouldShowWeeklyPlanRotationChip(note, 'walk')).toBe(false)
+    expect(shouldShowWeeklyPlanRotationChip(note, 'mobility')).toBe(false)
+  })
 })

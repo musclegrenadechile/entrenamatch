@@ -34,8 +34,8 @@ describe('e2eTrainingSuite', () => {
     ])
   })
 
-  it('bloque E2E oleadas 378–408', () => {
-    expect(trainingE2EBlockRange()).toEqual({ from: 378, to: 408 })
+  it('bloque E2E oleadas 378–409', () => {
+    expect(trainingE2EBlockRange()).toEqual({ from: 378, to: 409 })
     const fab = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-fab-flow')
     expect(fab?.covers).toContain('fab')
     const workout = E2E_TRAINING_PLAYWRIGHT_SPECS.find((s) => s.id === 'workout-flow')

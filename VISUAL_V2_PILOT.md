@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.467
+**Versión cierre:** v0.1.468
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -79,18 +79,19 @@
 | **406** | **Cierre inventarios** | trainingPolishV1Suite (361–377), trainingPolishSuite + entrena-plan (383–405), mega E2E rotación |
 | **407** | **Historial×EntrenaPlan** | Chip rotación PR visible en card; E2E Perfil guardar → hint + rotación en Hoy |
 | **408** | **E2E chip rotación + aria** | plan-history y mega-flow validan chip; aria «tras PR en X: siguiente sesión Y» |
+| **409** | **Cierre EntrenaPlan×historial** | e2ePlanRotationCoverage (3 specs); bloque 401–409 cerrado; chip oculto en rest/cardio |
 
-## Mega entrenamiento (361–408) ✅
+## Mega entrenamiento (361–409) ✅
 
-Inventario `trainingMegaSuite`: 4 sub-bloques (pulido I 361–377, E2E 378–408, pulido II 383–408, EntrenaPlan×historial 401–408). 48 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`.
+Inventario `trainingMegaSuite`: 4 sub-bloques (pulido I 361–377, E2E 378–409, pulido II 383–409, EntrenaPlan×historial 401–409). 49 oleadas documentadas; puente E2E↔pulido vía `e2eTrainingPolishBridge`.
 
-## EntrenaPlan × historial (401–408) ✅
+## EntrenaPlan × historial (401–409) ✅
 
-Chip dorado con PR del último entreno (≤7 días) en EntrenaPlan cuando la recomendación es fuerza/cardio. Chip índigo de rotación PR visible sin abrir detalle, con aria descriptiva para lectores de pantalla. Rotación evita repetir el tipo de entreno del músculo con PR reciente. E2E `workout-plan-history-flow`, `training-mega-flow` y `workout-history-flow` validan chip + aria. Utils: `weeklyPlanHistoryDisplay`, `weeklyPlanRotationDisplay`, `weeklyPlanPrRotation`, `entrenaPlanTrainingSuite`.
+Chip dorado con PR del último entreno (≤7 días) en EntrenaPlan cuando la recomendación es fuerza/cardio. Chip índigo de rotación PR visible solo en fuerza, con aria descriptiva. Rotación evita repetir el tipo de entreno del músculo con PR reciente. E2E consolidado `e2ePlanRotationCoverage` (plan-history, mega-flow, history-flow). Bloque cerrado oleada 409. Utils: `weeklyPlanHistoryDisplay`, `weeklyPlanRotationDisplay`, `weeklyPlanPrRotation`, `entrenaPlanTrainingSuite`.
 
-## Pulido entrenamiento II (383–408) ✅
+## Pulido entrenamiento II (383–409) ✅
 
-Mega-inventario `trainingPolishSuite`: gym-log en vivo (383–387), FAB sesión (387–389), post-entreno (390–394), historial PR (395–397), EntrenaPlan×historial (401–408). 26 oleadas, 5 sub-bloques cerrados.
+Mega-inventario `trainingPolishSuite`: gym-log en vivo (383–387), FAB sesión (387–389), post-entreno (390–394), historial PR (395–397), EntrenaPlan×historial (401–409). 27 oleadas, 5 sub-bloques cerrados.
 
 ## Historial entreno (395–397) ✅
 
@@ -110,7 +111,7 @@ Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-g
 
 ## E2E entrenamiento (378–402) ✅
 
-Playwright con harness `?e2e=1` en CI (`e2e-smoke`). 7 specs cubren gym-log, Fuel, sync, reseña, FAB, banner, prefill, historial Perfil y EntrenaPlan×historial. Puente `e2eTrainingPolishBridge` → oleadas pulido 384–397, 401, 404–408. Mega bloque total: 361–408 (`trainingMegaSuite` / `trainingMegaBlockRange`).
+Playwright con harness `?e2e=1` en CI (`e2e-smoke`). 7 specs cubren gym-log, Fuel, sync, reseña, FAB, banner, prefill, historial Perfil y EntrenaPlan×historial. Puente `e2eTrainingPolishBridge` → oleadas pulido 384–397, 401, 404–409. Mega bloque total: 361–409 (`trainingMegaSuite` / `trainingMegaBlockRange`).
 
 ## Auditoría cohesión (360)
 
