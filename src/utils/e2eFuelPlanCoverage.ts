@@ -8,6 +8,7 @@ export type E2EFuelPlanCover =
   | 'fuel-nutrition'
   | 'fuel-headline'
   | 'fuel-scenario'
+  | 'fuel-row-tone'
 
 export type E2EFuelPlanSpecEntry = {
   id: string
@@ -30,6 +31,7 @@ export const E2E_FUEL_PLAN_SPECS: readonly E2EFuelPlanSpecEntry[] = [
       'fuel-nutrition',
       'fuel-headline',
       'fuel-scenario',
+      'fuel-row-tone',
     ],
   },
   {
@@ -45,6 +47,7 @@ export const E2E_FUEL_PLAN_SPECS: readonly E2EFuelPlanSpecEntry[] = [
       'fuel-nutrition',
       'fuel-headline',
       'fuel-scenario',
+      'fuel-row-tone',
     ],
   },
   {
@@ -60,6 +63,7 @@ export const E2E_FUEL_PLAN_SPECS: readonly E2EFuelPlanSpecEntry[] = [
       'fuel-nutrition',
       'fuel-headline',
       'fuel-scenario',
+      'fuel-row-tone',
     ],
   },
 ] as const
@@ -75,7 +79,7 @@ export function countE2EFuelPlanSpecs(): number {
 }
 
 export function e2eFuelPlanBlockRange(): { from: number; to: number } {
-  return { from: 412, to: 421 }
+  return { from: 412, to: 422 }
 }
 
 export function fuelPlanNutritionSpecIds(): string[] {

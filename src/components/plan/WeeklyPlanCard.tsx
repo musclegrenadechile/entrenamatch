@@ -39,6 +39,10 @@ import {
   resolveWeeklyPlanFuelWeekHintToneClass,
 } from '../../utils/weeklyPlanFuelWeekToneDisplay'
 import {
+  resolveWeeklyPlanFuelRowToneClass,
+  WEEKLY_PLAN_FUEL_ROW_CLASS,
+} from '../../utils/weeklyPlanFuelRowToneDisplay'
+import {
   buildWeeklyPlanFuelHeadlineChipAriaLabel,
   buildWeeklyPlanFuelHeadlineChipText,
   resolveWeeklyPlanFuelHeadlineChipToneClass,
@@ -147,6 +151,10 @@ export function WeeklyPlanCard({
     plan.scenario,
     plan.energySummary
   )
+  const fuelRowToneClass = resolveWeeklyPlanFuelRowToneClass(
+    plan.scenario,
+    plan.energySummary
+  )
 
   return (
     <div className={`em-v2-card em-v2-plan ${scenarioClass}`} aria-label="Plan de entreno recomendado">
@@ -200,7 +208,9 @@ export function WeeklyPlanCard({
       )}
 
       {shouldShowWeeklyPlanFuelRow(hasFuelProfile, weeklyDeltaKcal) && (
-        <div className="em-v2-plan__fuel-row">
+        <div
+          className={[WEEKLY_PLAN_FUEL_ROW_CLASS, fuelRowToneClass].filter(Boolean).join(' ')}
+        >
           <span className="text-[#c084fc] flex items-center gap-1">
             <UtensilsCrossed size={12} /> Fuel × entreno
           </span>

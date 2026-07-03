@@ -96,6 +96,7 @@ import {
   readWeeklyPlanHistoryHint,
   readWeeklyPlanRotationChip,
   readWeeklyPlanRotationAriaLabel,
+  readWeeklyPlanFuelRowToneClass,
   readWeeklyPlanScenarioClass,
 } from './utils/e2eWeeklyPlanHistoryDom'
 import {
@@ -6042,6 +6043,7 @@ useEffect(() => {
       getWeeklyPlanFuelHeadlineChipToneClass: () =>
         readWeeklyPlanFuelHeadlineChipToneClass(),
       getWeeklyPlanScenarioClass: () => readWeeklyPlanScenarioClass(),
+      getWeeklyPlanFuelRowToneClass: () => readWeeklyPlanFuelRowToneClass(),
       getWeeklyPlanNutritionNote: () => readWeeklyPlanNutritionNote(),
       getWeeklyPlanNutritionAriaLabel: () => readWeeklyPlanNutritionAriaLabel(),
       isWeeklyPlanCardVisible: () => isWeeklyPlanCardVisible(),

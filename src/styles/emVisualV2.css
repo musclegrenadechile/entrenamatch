@@ -4511,6 +4511,21 @@
   font-size: 0.625rem;
 }
 
+.em-v2-plan__fuel-row--under-fueled {
+  background: rgba(168, 85, 247, 0.1);
+  border-color: rgba(168, 85, 247, 0.28);
+}
+
+.em-v2-plan__fuel-row--surplus {
+  background: rgba(249, 115, 22, 0.1);
+  border-color: rgba(249, 115, 22, 0.28);
+}
+
+.em-v2-plan__fuel-row--deficit {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: rgba(34, 197, 94, 0.28);
+}
+
 .em-v2-plan__fuel-week-hint {
   margin-top: 0.5rem;
   padding: 0.45rem 0.625rem;

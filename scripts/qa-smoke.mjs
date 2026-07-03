@@ -204,6 +204,10 @@ if (!fuelPlanCoverage.includes("'fuel-scenario'")) {
   console.error('e2eFuelPlanCoverage missing fuel-scenario cover (oleada 421)')
   ok = false
 }
+if (!fuelPlanCoverage.includes("'fuel-row-tone'")) {
+  console.error('e2eFuelPlanCoverage missing fuel-row-tone cover (oleada 422)')
+  ok = false
+}
 if (!ok) process.exit(1)
 
 const fuelPlanScenarioCoverage = readFileSync(

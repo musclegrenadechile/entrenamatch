@@ -2,6 +2,7 @@ import { WEEKLY_PLAN_HISTORY_HINT_CLASS } from './weeklyPlanHistoryDisplay'
 import { WEEKLY_PLAN_ROTATION_CHIP_CLASS } from './weeklyPlanRotationDisplay'
 import { WEEKLY_PLAN_FUEL_WEEK_CHIP_CLASS } from './weeklyPlanFuelWeekChipDisplay'
 import { WEEKLY_PLAN_FUEL_HEADLINE_CHIP_CLASS } from './weeklyPlanHeadlineFuelDisplay'
+import { WEEKLY_PLAN_FUEL_ROW_CLASS } from './weeklyPlanFuelRowToneDisplay'
 import { WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS } from './weeklyPlanFuelWeekDisplay'
 import { WEEKLY_PLAN_NUTRITION_CLASS } from './weeklyPlanNutritionDisplay'
 
@@ -107,6 +108,16 @@ export function readWeeklyPlanNutritionAriaLabel(): string | null {
   const card = findEntrenaPlanCard()
   const note = card?.querySelector(`.${WEEKLY_PLAN_NUTRITION_CLASS}`)
   return note?.getAttribute('aria-label')?.trim() ?? null
+}
+
+export function readWeeklyPlanFuelRowToneClass(): string | null {
+  const card = findEntrenaPlanCard()
+  const row = card?.querySelector(`.${WEEKLY_PLAN_FUEL_ROW_CLASS}`)
+  if (!row) return null
+  for (const cls of row.classList) {
+    if (cls.startsWith(`${WEEKLY_PLAN_FUEL_ROW_CLASS}--`)) return cls
+  }
+  return null
 }
 
 export function readWeeklyPlanScenarioClass(): string | null {
