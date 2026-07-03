@@ -1,4 +1,4 @@
-/** Pulido post-mega Fuel×EntrenaPlan oleadas 415–419 (oleada 419 cierre trilogía headline E2E). */
+/** Pulido post-mega Fuel×EntrenaPlan oleadas 415–420 (oleada 420 cierre full E2E Fuel×plan). */
 
 export type TrainingPolishPostMegaCover = 'nutrition' | 'aria' | 'e2e'
 
@@ -52,12 +52,18 @@ export const TRAINING_POLISH_POST_MEGA_UTILS: readonly TrainingPolishPostMegaEnt
     oleada: 419,
     covers: ['nutrition', 'e2e', 'aria'],
   },
+  {
+    id: 'full-coverage-closure',
+    module: 'e2eFuelPlanFullCoverage',
+    oleada: 420,
+    covers: ['nutrition', 'e2e', 'aria'],
+  },
 ] as const
 
-export const TRAINING_POLISH_POST_MEGA_CLOSED_OLEADA = 419
+export const TRAINING_POLISH_POST_MEGA_CLOSED_OLEADA = 420
 
 export function trainingPolishPostMegaRange(): { from: number; to: number } {
-  return { from: 415, to: 419 }
+  return { from: 415, to: 420 }
 }
 
 export function countTrainingPolishPostMegaUtils(): number {

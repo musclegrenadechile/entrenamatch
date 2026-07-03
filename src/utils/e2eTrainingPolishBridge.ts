@@ -149,6 +149,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-fuel-flow',
     feature: 'chip headline Déficit + e2eFuelPlanHeadlineCoverage trilogía',
   },
+  {
+    polishOleada: 420,
+    e2eSpecId: 'training-mega-flow',
+    feature: 'mega cierre III 361–419 + e2eFuelPlanFullCoverage 3 suites',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

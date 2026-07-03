@@ -6,6 +6,7 @@ export type E2EFuelPlanCover =
   | 'fuel-aria'
   | 'fuel-tone'
   | 'fuel-nutrition'
+  | 'fuel-headline'
 
 export type E2EFuelPlanSpecEntry = {
   id: string
@@ -21,21 +22,35 @@ export const E2E_FUEL_PLAN_SPECS: readonly E2EFuelPlanSpecEntry[] = [
     file: 'e2e/training-mega-flow.spec.ts',
     oleada: 412,
     scenario: 'under-fueled',
-    covers: ['fuel-hint', 'fuel-aria', 'fuel-tone', 'fuel-nutrition'],
+    covers: ['fuel-hint', 'fuel-aria', 'fuel-tone', 'fuel-nutrition', 'fuel-headline'],
   },
   {
     id: 'workout-plan-history-flow',
     file: 'e2e/workout-plan-history-flow.spec.ts',
     oleada: 413,
     scenario: 'surplus',
-    covers: ['fuel-hint', 'fuel-chip', 'fuel-aria', 'fuel-tone', 'fuel-nutrition'],
+    covers: [
+      'fuel-hint',
+      'fuel-chip',
+      'fuel-aria',
+      'fuel-tone',
+      'fuel-nutrition',
+      'fuel-headline',
+    ],
   },
   {
     id: 'workout-fuel-flow',
     file: 'e2e/workout-fuel-flow.spec.ts',
     oleada: 414,
     scenario: 'deficit',
-    covers: ['fuel-hint', 'fuel-chip', 'fuel-aria', 'fuel-tone', 'fuel-nutrition'],
+    covers: [
+      'fuel-hint',
+      'fuel-chip',
+      'fuel-aria',
+      'fuel-tone',
+      'fuel-nutrition',
+      'fuel-headline',
+    ],
   },
 ] as const
 
@@ -50,7 +65,7 @@ export function countE2EFuelPlanSpecs(): number {
 }
 
 export function e2eFuelPlanBlockRange(): { from: number; to: number } {
-  return { from: 412, to: 417 }
+  return { from: 412, to: 420 }
 }
 
 export function fuelPlanNutritionSpecIds(): string[] {

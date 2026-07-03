@@ -6,16 +6,17 @@ import {
   isTrainingMegaBlockClosed,
   isTrainingMegaFullyClosed,
   isTrainingMegaPhase1Closed,
+  isTrainingMegaPhase3Closed,
   TRAINING_MEGA_BLOCKS,
   trainingFullMegaRange,
   trainingMegaBlockById,
 } from './trainingMegaSuite'
 
 describe('trainingMegaSuite', () => {
-  it('mega-inventario 6 bloques oleadas 361–419', () => {
+  it('mega-inventario 6 bloques oleadas 361–420', () => {
     expect(countTrainingMegaBlocks()).toBe(6)
-    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 419 })
-    expect(countTrainingMegaOleadas()).toBe(59)
+    expect(trainingFullMegaRange()).toEqual({ from: 361, to: 420 })
+    expect(countTrainingMegaOleadas()).toBe(60)
     expect(TRAINING_MEGA_BLOCKS.map((b) => b.id)).toEqual([
       'polish-v1',
       'e2e',
@@ -37,10 +38,10 @@ describe('trainingMegaSuite', () => {
     expect(polishV2?.closedOleada).toBe(410)
     expect(polishV2?.range).toEqual({ from: 383, to: 409 })
     const fuelPlan = trainingMegaBlockById('fuel-plan')
-    expect(fuelPlan?.range).toEqual({ from: 411, to: 419 })
+    expect(fuelPlan?.range).toEqual({ from: 411, to: 420 })
     const postMega = trainingMegaBlockById('polish-post-mega')
-    expect(postMega?.range).toEqual({ from: 415, to: 419 })
-    expect(postMega?.closedOleada).toBe(419)
+    expect(postMega?.range).toEqual({ from: 415, to: 420 })
+    expect(postMega?.closedOleada).toBe(420)
     expect(fuelPlan?.closedOleada).toBe(414)
     expect(fuelPlan?.suiteModule).toBe('fuelPlanTrainingSuite')
   })
@@ -59,8 +60,10 @@ describe('trainingMegaSuite', () => {
     expect(isTrainingMegaFullyClosed(414)).toBe(false)
   })
 
-  it('cierre post-mega 415–419 (oleada 419)', () => {
-    expect(areAllTrainingMegaSubBlocksClosed(419)).toBe(true)
-    expect(isTrainingMegaFullyClosed(419)).toBe(true)
+  it('cierre post-mega 415–420 (oleada 420)', () => {
+    expect(areAllTrainingMegaSubBlocksClosed(420)).toBe(true)
+    expect(isTrainingMegaFullyClosed(420)).toBe(true)
+    expect(isTrainingMegaPhase3Closed()).toBe(true)
+    expect(isTrainingMegaPhase3Closed(419)).toBe(false)
   })
 })

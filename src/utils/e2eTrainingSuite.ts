@@ -1,5 +1,6 @@
 /** Inventario Playwright del bloque E2E entrenamiento (oleadas 378–410). */
 import { e2eFuelPlanSpecIds } from './e2eFuelPlanCoverage'
+import { isFuelPlanFullE2ECoverageComplete } from './e2eFuelPlanFullCoverage'
 import { e2eFuelPlanHeadlineSpecIds } from './e2eFuelPlanHeadlineCoverage'
 import { e2eFuelPlanNutritionSpecIds } from './e2eFuelPlanNutritionCoverage'
 import { e2ePlanRotationSpecIds } from './e2ePlanRotationCoverage'
@@ -92,6 +93,11 @@ export function e2eFuelPlanHeadlineSpecsCoveredInInventory(): boolean {
   return headlineIds.every((id) =>
     E2E_TRAINING_PLAYWRIGHT_SPECS.some((s) => s.id === id)
   )
+}
+
+/** Cobertura Fuel×plan + nutrición + headline completa (oleada 420). */
+export function isE2EFuelPlanFullCoverageReady(): boolean {
+  return isFuelPlanFullE2ECoverageComplete()
 }
 
 export function countTrainingE2ESpecs(): number {
