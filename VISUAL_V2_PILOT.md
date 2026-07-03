@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.438
+**Versión cierre:** v0.1.439
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -50,6 +50,7 @@
 | **377** | **Gym-log duplicar serie** | Botón copiar serie anterior en cada fila, add-set unificado con copyWorkoutSetValues, tests gymLogDuplicateSet |
 | **378** | **E2E entreno** | Harness openWorkout/openReview, workout-flow.spec Playwright, checklist e2eWorkoutScenarios |
 | **379** | **E2E flujo completo** | training-full-flow.spec (entreno→sync→reseña), closeArena harness, CI Playwright ampliado |
+| **380** | **E2E entreno→Fuel** | workout-fuel-flow.spec, harness Fuel + banner post-guardar, dialog Fuel accesible |
 
 ## Pulido entrenamiento (361–377) ✅
 

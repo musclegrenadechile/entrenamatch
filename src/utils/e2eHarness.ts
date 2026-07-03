@@ -15,6 +15,11 @@ export type EntrenamatchE2EApi = {
   isReviewModalOpen: () => boolean
   /** Cierra/minimiza la Sala Sync sin terminar la sesión mock. */
   closeArena: () => void
+  goToHomeTab: () => void
+  isWorkoutSaveBannerVisible: () => boolean
+  /** Abre Fuel log con prefill del banner post-guardar (si está activo). */
+  openFuelFromWorkoutSave: () => void
+  isFuelLogModalOpen: () => boolean
 }
 
 declare global {

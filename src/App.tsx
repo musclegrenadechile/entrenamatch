@@ -5945,11 +5945,24 @@ useEffect(() => {
       },
       isReviewModalOpen: () => !!showReviewModalFor,
       closeArena: () => setShowSyncArena(false),
+      goToHomeTab: () => navigateTab('home'),
+      isWorkoutSaveBannerVisible: () => workoutSaveBanner !== null,
+      openFuelFromWorkoutSave: () => {
+        if (workoutSaveBanner) {
+          setFuelLogPrefill(buildFuelLogPrefillFromWorkoutSave(workoutSaveBanner))
+        }
+        setEditingFuelLog(null)
+        setShowFuelLogModal(true)
+        setWorkoutSaveBanner(null)
+      },
+      isFuelLogModalOpen: () => showFuelLogModal,
     })
   }, [
     showSyncArena,
     showEntrenaLogModal,
     showReviewModalFor,
+    showFuelLogModal,
+    workoutSaveBanner,
     navigateTab,
     startSyncWith,
     openEntrenoDeHoy,

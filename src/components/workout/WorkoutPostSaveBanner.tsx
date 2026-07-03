@@ -55,7 +55,12 @@ export function WorkoutPostSaveBanner({
             <button type="button" onClick={onShareStory} className="em-v2-hero-card__cta text-[10px] px-3 py-1.5 flex items-center gap-1">
               <Share2 size={12} /> Compartir story
             </button>
-            <button type="button" onClick={onOpenFuel} className="em-v2-card__cta--outline text-[10px] px-3 py-1.5">
+            <button
+              type="button"
+              onClick={onOpenFuel}
+              className="em-v2-card__cta--outline text-[10px] px-3 py-1.5"
+              aria-label="Registrar post-entreno en Fuel"
+            >
               Registrar post-entreno
             </button>
           </div>
