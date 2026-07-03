@@ -63,6 +63,24 @@ export const GYM_LOG_TRAINING_UTILS: readonly GymLogTrainingUtilEntry[] = [
     oleada: 437,
     covers: ['pr', 'hint'],
   },
+  {
+    id: 'gym-log-coverage',
+    module: 'e2eGymLogCoverage',
+    oleada: 438,
+    covers: ['pr', 'hint'],
+  },
+  {
+    id: 'post-v2-closure',
+    module: 'e2eGymLogPostV2Coverage',
+    oleada: 438,
+    covers: ['pr', 'hint'],
+  },
+  {
+    id: 'gym-log-full-coverage',
+    module: 'e2eGymLogFullCoverage',
+    oleada: 438,
+    covers: ['pr', 'hint'],
+  },
 ] as const
 
 export function countGymLogTrainingUtils(): number {

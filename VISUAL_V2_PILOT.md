@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.496
+**Versión cierre:** v0.1.497
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -108,6 +108,7 @@
 | **435** | **Cierre mega global 361–434** | trainingMegaGlobalClosure; e2eTrainingMegaGlobalCoverage; trainingPolishMegaGlobalSuite; 11 sub-bloques + mega-global; 75 oleadas; puente 75 entradas |
 | **436** | **Pivot gym-log v2 + tono PR×sesión** | gymLogSessionPrToneDisplay; trainingPolishGymLogV2Suite; harness isGymLogSessionPrToneAriaExpected; e2eGymLogSessionPrCoverage; session-pr-tone E2E |
 | **437** | **Tono PR×chip sesión FAB** | gymLogFabSessionPrToneDisplay; harness isGymLogFabSessionPrToneAriaExpected; e2eGymLogFabSessionPrCoverage; fab-session-pr-tone E2E |
+| **438** | **Cierre gym-log v2 + 3ª suite E2E** | e2eGymLogPostV2Coverage; trainingPolishGymLogV2Suite cerrado 436–438; e2eGymLogFullCoverage 3 suites; e2eGymLogCoverage union |
 
 ## Mega entrenamiento (361–435) ✅ CERRADO
 

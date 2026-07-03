@@ -549,6 +549,29 @@ if (!gymLogFabSessionPrTone.includes('fabSessionPrAriaMatchesLivePr')) {
 }
 if (!ok) process.exit(1)
 console.log('✓ e2eGymLogFabSessionPrCoverage aligned with gym-log v2 FAB pivot (oleada 437)')
+const gymLogPostV2Coverage = readFileSync(
+  join(root, 'src/utils/e2eGymLogPostV2Coverage.ts'),
+  'utf8'
+)
+if (!gymLogPostV2Coverage.includes('isGymLogPostV2E2ECoverageComplete')) {
+  console.error('e2eGymLogPostV2Coverage missing post-v2 helper (oleada 438)')
+  ok = false
+}
+const gymLogFullCoverage = readFileSync(
+  join(root, 'src/utils/e2eGymLogFullCoverage.ts'),
+  'utf8'
+)
+if (!gymLogFullCoverage.includes('e2eGymLogPostV2Coverage')) {
+  console.error('e2eGymLogFullCoverage missing post-v2 suite ref (oleada 438)')
+  ok = false
+}
+if (!gymLogFullCoverage.includes('isGymLogFullE2ECoverageComplete')) {
+  console.error('e2eGymLogFullCoverage missing full helper ref (oleada 438)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eGymLogPostV2Coverage aligned with full coverage (oleada 438)')
+console.log('✓ e2eGymLogFullCoverage unifies 3 gym-log v2 E2E suites (oleada 438)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

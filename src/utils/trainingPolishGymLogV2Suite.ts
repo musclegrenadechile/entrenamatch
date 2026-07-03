@@ -22,12 +22,19 @@ export const TRAINING_POLISH_GYM_LOG_V2_UTILS: readonly TrainingPolishGymLogV2En
     oleada: 437,
     covers: ['session', 'pr', 'aria', 'e2e'],
   },
+  {
+    id: 'post-v2-closure',
+    module: 'e2eGymLogPostV2Coverage',
+    oleada: 438,
+    covers: ['session', 'pr', 'aria', 'e2e'],
+  },
 ] as const
 
 export const TRAINING_POLISH_GYM_LOG_V2_OPEN_OLEADA = 436
+export const TRAINING_POLISH_GYM_LOG_V2_CLOSED_OLEADA = 438
 
 export function trainingPolishGymLogV2Range(): { from: number; to: number } {
-  return { from: 436, to: 437 }
+  return { from: 436, to: 438 }
 }
 
 export function countTrainingPolishGymLogV2Utils(): number {
@@ -38,4 +45,10 @@ export function isTrainingPolishGymLogV2Open(
   oleada = TRAINING_POLISH_GYM_LOG_V2_OPEN_OLEADA
 ): boolean {
   return oleada >= TRAINING_POLISH_GYM_LOG_V2_OPEN_OLEADA
+}
+
+export function isTrainingPolishGymLogV2Closed(
+  oleada = TRAINING_POLISH_GYM_LOG_V2_CLOSED_OLEADA
+): boolean {
+  return oleada >= TRAINING_POLISH_GYM_LOG_V2_CLOSED_OLEADA
 }
