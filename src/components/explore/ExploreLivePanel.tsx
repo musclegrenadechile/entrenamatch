@@ -183,7 +183,7 @@ export function ExploreLivePanel(props: ExploreLivePanelProps) {
     if (
       (showLiveMap || dedicatedMapTab) &&
       !hasSeenGymPulseTour() &&
-      accountAgeDays >= 2
+      accountAgeDays >= 7
     ) {
       const t = window.setTimeout(() => setShowGymPulseTour(true), 3000)
       return () => window.clearTimeout(t)

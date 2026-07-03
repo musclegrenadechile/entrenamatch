@@ -14,7 +14,7 @@ describe('isProfileComplete', () => {
   it('requires full pilot profile', () => {
     expect(isProfileComplete(complete)).toBe(true)
     expect(isProfileComplete({ ...complete, bio: '' })).toBe(false)
-    expect(isProfileComplete({ ...complete, city: 'Concepción' })).toBe(false)
+    expect(isProfileComplete({ ...complete, city: 'Concepción' })).toBe(true)
     expect(isProfileComplete({ ...complete, city: 'Lima', country: 'Perú' })).toBe(true)
     expect(isProfileComplete({ ...complete, trainingTypes: [] })).toBe(false)
     expect(

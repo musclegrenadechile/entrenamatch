@@ -1,7 +1,7 @@
 ﻿# Guía para Beta Testers de EntrenaMatch (Hidden / Internal-Closed)
 
-**Versión actual en desarrollo:** `0.1.87` (Android `versionCode` 91) · Package `com.entrenamatch.app`  
-**Versión anterior en Play (closed):** `0.1.86-work` (`versionCode` 90) — ver `PLAY_RELEASE_REGISTRY.md`
+**Versión actual en desarrollo:** `0.1.402` (Android `versionCode` 402) · Package `com.entrenamatch.app`  
+**Web producción:** https://entrenamatch.web.app · **Guía rápida piloto:** `GUIA_PILOTO_RAPIDA.md` · **Doc release:** `PLAY_INTERNAL_v0.1.402.md`
 
 **Gracias por ayudar a probar la app antes de que sea pública.**
 

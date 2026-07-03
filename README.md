@@ -1,25 +1,18 @@
-# EntrenaMatch — El match del movimiento
+# EntrenaMatch — Tu Comunidad en vivo
 
-**EntrenaMatch** es una plataforma para conectar con personas que entrenan cerca de ti y construir tu equipo de entrenamiento, en cualquier parte del mundo.
+**EntrenaMatch** conecta personas que entrenan cerca de ti en tiempo real: **Mapa LIVE**, conectar por deporte/horario y **EntrenaSync** para sesiones compartidas.
 
-La app tiene un enfoque fuerte en **Chile** para su lanzamiento inicial, pero está diseñada para ser completamente global.
+- **Piloto activo:** Viña del Mar · Valparaíso · Concón (Chile)
+- **Registro:** Chile, Perú, México y USA (+18, entreno en serio — no dating)
+- **Tagline:** *Tu Comunidad en vivo*
 
-## Nueva dirección del proyecto
+## Características principales
 
-- Nombre: **EntrenaMatch**
-- Solo para **mayores de 18 años**
-- Enfoque en **entrenamiento y actividades deportivas** (no es una app de citas románticas)
-- Ubicación por GPS real + cálculo de distancia
-- Lanzamiento inicial en Chile, pero con perfiles de todo el mundo
-
-## Características principales (lo que hace único a EntrenaMatch)
-
-- **GymPulse**: Mapa en tiempo real del pulso de entrenamiento de la comunidad (vivo + partners/gyms con logos).
-- **EntrenaSync**: Entrenamiento sincronizado en tiempo real con tether/orb compartido, acciones conjuntas, ripples que se propagan al mapa y posts automáticos en ambos perfiles + feed.
-- Live "Entrenando Ahora": Radar + FOMO real + streaks + joins. La gente cerca te ve y quiere sumarse.
-- Red de Sync / Network Power / Levels + Gadgets visuales ligados a las 5 mecánicas.
-- Muro/Feed con fotos reales (Storage), reacciones, highlights de sync.
-- Todo con Firebase real (multi-dispositivo) + modo demo.
+- **Mapa LIVE**: Quién entrena ahora cerca — cancha, pista, gym o costanera.
+- **EntrenaSync**: Sesión sincronizada en tiempo real con tu compañero/a de entreno.
+- **Explorar**: Conectar con perfiles compatibles por deporte, nivel y disponibilidad.
+- **Comunidad**: Muro, invitaciones a club/equipo, stories para Instagram.
+- **Copa Zona** (piloto costero): Valparaíso vs Santiago — minutos LIVE + sync.
 
 Otras:
 - Swipe fluido estilo matching (arrastre + botones)

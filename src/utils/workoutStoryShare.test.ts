@@ -30,6 +30,8 @@ describe('workoutStoryShare', () => {
     expect(text).toContain('Push día A')
     expect(text).toContain('#EntrenaMatch')
     expect(text).toContain('#EntrenoDeHoy')
+    expect(text).toContain('#MapaLIVE')
+    expect(text).not.toContain('GymPulse')
     expect(text).toContain('PR Press banca')
     expect(text).toContain('ref=user-abc')
   })

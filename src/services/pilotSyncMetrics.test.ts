@@ -21,7 +21,7 @@ describe('pilotSyncMetrics', () => {
   it('resolves pilot city from self or partner', () => {
     expect(resolvePilotCityForSync('Viña del Mar', 'Concepción')?.cityNorm).toBe('vina del mar')
     expect(resolvePilotCityForSync(null, 'Santiago')?.cityNorm).toBe('santiago')
-    expect(resolvePilotCityForSync('Buenos Aires', 'Lima')?.cityNorm).toBe('lima')
+    expect(resolvePilotCityForSync('Buenos Aires', 'Lima')).toBeNull()
     expect(resolvePilotCityForSync('Buenos Aires', 'Toronto')).toBeNull()
   })
 

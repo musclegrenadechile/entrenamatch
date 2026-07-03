@@ -1,7 +1,7 @@
 {
   "name": "EntrenaMatch - Tu Comunidad en vivo",
   "short_name": "EntrenaMatch",
-  "description": "Conecta con personas que entrenan cerca de ti. Gym, running, funcional y más. Solo para mayores de 18 años. Piloto en Chile.",
+  "description": "Conecta con personas que entrenan cerca de ti. Fútbol, pádel, gym, running, rugby y más. Solo +18. Beta multi-país.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -32,7 +32,7 @@
       "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
     },
     {
-      "name": "Mapa GymPulse",
+      "name": "Mapa LIVE",
       "short_name": "Mapa",
       "description": "Ver quién entrena en vivo cerca",
       "url": "/?tab=explore&map=1",

@@ -1,18 +1,10 @@
 #!/usr/bin/env node
 /**
  * Weekly pilot sync report (Fase 100).
- * Requires: GOOGLE_APPLICATION_CREDENTIALS or firebase login for admin SDK.
- *
- * Usage:
- *   node scripts/pilot-sync-report.mjs
- *   node scripts/pilot-sync-report.mjs --week 2026-06-02
+ * Usage: node scripts/pilot-sync-report.mjs [--week=2026-06-02]
  */
-import { readFileSync, existsSync } from 'node:fs'
-import { join, dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
-
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const root = join(__dirname, '..')
+import { getPilotFirestore, serviceAccountPath } from './lib/pilotFirebase.mjs'
+import { existsSync } from 'node:fs'
 
 function getWeekKey(d = new Date()) {
   const day = d.getDay()
@@ -26,37 +18,38 @@ function getWeekKey(d = new Date()) {
 const weekArg = process.argv.find((a) => a.startsWith('--week='))?.split('=')[1]
 const weekKey = weekArg || getWeekKey()
 
-const saPath = join(root, 'android', 'play-service-account.json')
-if (!existsSync(saPath)) {
-  console.error('Missing android/play-service-account.json for admin read.')
+if (!existsSync(serviceAccountPath())) {
   console.log('\nManual Firestore Console queries:\n')
   console.log(`  pilotWeeklyMetrics where weekKey == "${weekKey}"`)
   console.log(`  pilotSyncSessions where weekKey == "${weekKey}" order by endedAt desc`)
-  console.log('\nMeta Fase 100: >= 1 sync real/semana entre 2 usuarios en Viña o Santiago.')
+  console.log('\nMeta: >= 1 sync real/semana entre 2 usuarios en piloto costero.\n')
   process.exit(0)
 }
 
-let admin
-try {
-  const mod = await import('firebase-admin')
-  admin = mod.default || mod
-  if (!admin.apps.length) {
-    const cred = JSON.parse(readFileSync(saPath, 'utf8'))
-    admin.initializeApp({ credential: admin.credential.cert(cred) })
-  }
-} catch (e) {
-  console.error('firebase-admin not available:', e.message)
+const db = await getPilotFirestore()
+if (!db) {
+  console.error('No se pudo inicializar Firestore admin.')
   process.exit(1)
 }
 
-const db = admin.firestore()
-const metricsSnap = await db.collection('pilotWeeklyMetrics').where('weekKey', '==', weekKey).get()
-const sessionsSnap = await db.collection('pilotSyncSessions').where('weekKey', '==', weekKey).get()
+let metricsSnap
+let sessionsSnap
+try {
+  metricsSnap = await db.collection('pilotWeeklyMetrics').where('weekKey', '==', weekKey).get()
+  sessionsSnap = await db.collection('pilotSyncSessions').where('weekKey', '==', weekKey).get()
+} catch (e) {
+  const denied = e?.code === 7 || String(e?.message || '').includes('PERMISSION_DENIED')
+  console.error(denied ? '\n⚠️  Service account sin permiso Firestore read.' : e.message)
+  console.log('\nConsulta manual:')
+  console.log(`  pilotWeeklyMetrics where weekKey == "${weekKey}"`)
+  console.log(`  pilotSyncSessions where weekKey == "${weekKey}"`)
+  process.exit(denied ? 0 : 1)
+}
 
 console.log(`\n=== Pilot EntrenaSync — semana ${weekKey} ===\n`)
 
 if (metricsSnap.empty && sessionsSnap.empty) {
-  console.log('Sin datos aún. Completa un sync real (≥2 min) entre 2 usuarios Firebase en Viña o Santiago.')
+  console.log('Sin datos aún. Completa un sync real (≥2 min) entre 2 usuarios Firebase en el piloto.')
   process.exit(0)
 }
 
@@ -71,7 +64,7 @@ for (const doc of metricsSnap.docs) {
 
 console.log(`\nTotal: ${totalSyncs} syncs · ${totalMin} min`)
 console.log(`Sesiones registradas: ${sessionsSnap.size}`)
-console.log(`Meta Fase 100 (≥1 sync/semana): ${totalSyncs >= 1 ? '✅ CUMPLIDA' : '❌ Pendiente'}\n`)
+console.log(`Meta (≥1 sync/semana): ${totalSyncs >= 1 ? '✅ CUMPLIDA' : '❌ Pendiente'}\n`)
 
 if (sessionsSnap.size > 0) {
   console.log('Últimas sesiones:')

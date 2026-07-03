@@ -1,4 +1,5 @@
 import { normalizeCity } from '../services/localNetwork'
+import { CHILE_CITY_LEGACY_ALIASES, CHILE_REGISTRATION_CITIES } from './chileCities'
 
 export type RegistrationCityOption = {
   label: string
@@ -6,6 +7,8 @@ export type RegistrationCityOption = {
   country: string
   lat: number
   lng: number
+  /** Chile: región para agrupar en el selector de registro */
+  region?: string
 }
 
 /** Países disponibles al crear o editar perfil. */
@@ -18,11 +21,15 @@ export const REGISTRATION_COUNTRIES = [
 
 export type RegistrationCountry = (typeof REGISTRATION_COUNTRIES)[number]
 
-export const REGISTRATION_CITY_OPTIONS: readonly RegistrationCityOption[] = [
-  { label: 'Viña del Mar', norm: 'vina del mar', country: 'Chile', lat: -33.0153, lng: -71.5528 },
-  { label: 'Valparaíso', norm: 'valparaiso', country: 'Chile', lat: -33.0472, lng: -71.6127 },
-  { label: 'Santiago', norm: 'santiago', country: 'Chile', lat: -33.4489, lng: -70.6693 },
-  { label: 'Concon', norm: 'concon', country: 'Chile', lat: -32.923, lng: -71.522 },
+/** Ciudades con piloto activo (métricas, cohort, strip) — costa central + Santiago. */
+export const PILOT_LAUNCH_CITY_NORMS = [
+  'vina del mar',
+  'valparaiso',
+  'santiago',
+  'concon',
+] as const
+
+const OTHER_COUNTRY_CITIES: readonly RegistrationCityOption[] = [
   { label: 'Lima', norm: 'lima', country: 'Perú', lat: -12.0464, lng: -77.0428 },
   { label: 'Arequipa', norm: 'arequipa', country: 'Perú', lat: -16.409, lng: -71.5375 },
   { label: 'Cusco', norm: 'cusco', country: 'Perú', lat: -13.5319, lng: -71.9675 },
@@ -34,10 +41,17 @@ export const REGISTRATION_CITY_OPTIONS: readonly RegistrationCityOption[] = [
   { label: 'Nueva York', norm: 'nueva york', country: 'Estados Unidos', lat: 40.7128, lng: -74.006 },
 ] as const
 
-/** @deprecated Use REGISTRATION_CITY_OPTIONS — kept for métricas admin y tests legacy. */
-export const PILOT_CITY_OPTIONS = REGISTRATION_CITY_OPTIONS.map(({ label, norm }) => ({ label, norm }))
+export const REGISTRATION_CITY_OPTIONS: readonly RegistrationCityOption[] = [
+  ...CHILE_REGISTRATION_CITIES,
+  ...OTHER_COUNTRY_CITIES,
+] as const
 
-export const PILOT_CITY_NORMS = REGISTRATION_CITY_OPTIONS.map((c) => c.norm)
+/** @deprecated Use PILOT_LAUNCH_CITY_NORMS — métricas admin solo piloto activo. */
+export const PILOT_CITY_OPTIONS = REGISTRATION_CITY_OPTIONS.filter((c) =>
+  (PILOT_LAUNCH_CITY_NORMS as readonly string[]).includes(c.norm)
+).map(({ label, norm }) => ({ label, norm }))
+
+export const PILOT_CITY_NORMS = [...PILOT_LAUNCH_CITY_NORMS] as const
 
 export const PILOT_TARGET_MAU_MIN = 50
 export const PILOT_TARGET_MAU_MAX = 200
@@ -52,10 +66,64 @@ export function getRegistrationCitiesForCountry(country: string): RegistrationCi
 }
 
 export function getRegistrationCityByLabel(label: string): RegistrationCityOption | undefined {
-  return REGISTRATION_CITY_OPTIONS.find((c) => c.label === label)
+  const trimmed = (label || '').trim()
+  if (!trimmed) return undefined
+  const exact = REGISTRATION_CITY_OPTIONS.find((c) => c.label === trimmed)
+  if (exact) return exact
+  const norm = normalizeCity(trimmed)
+  const byNorm = REGISTRATION_CITY_OPTIONS.find((c) => c.norm === norm)
+  if (byNorm) return byNorm
+  const legacyLabel = CHILE_CITY_LEGACY_ALIASES[norm]
+  if (legacyLabel) {
+    return REGISTRATION_CITY_OPTIONS.find((c) => c.label === legacyLabel)
+  }
+  return undefined
+}
+
+/** Any city available at registration (all Chile communes in list + other countries). */
+export function isRegistrationCity(city?: string | null): boolean {
+  return resolveRegistrationCity(city) !== null
+}
+
+/** Resolve city from label or normalized form — for Firestore writes and discovery. */
+export function resolveRegistrationCity(city?: string | null): RegistrationCityOption | null {
+  if (!city?.trim()) return null
+  return getRegistrationCityByLabel(city) ?? null
+}
+
+export function canonicalProfileLocation(
+  city?: string | null,
+  country?: string | null,
+  coords?: { lat?: number; lng?: number } | null
+): { city: string; country: string; lat: number; lng: number } {
+  const hit = resolveRegistrationCity(city)
+  if (hit) {
+    return {
+      city: hit.label,
+      country: hit.country,
+      lat: coords?.lat ?? hit.lat,
+      lng: coords?.lng ?? hit.lng,
+    }
+  }
+  const fallback = REGISTRATION_CITY_OPTIONS[0]
+  const trimmedCity = (city || '').trim()
+  const trimmedCountry = (country || '').trim()
+  return {
+    city: trimmedCity || fallback.label,
+    country: trimmedCountry || fallback.country,
+    lat: coords?.lat ?? fallback.lat,
+    lng: coords?.lng ?? fallback.lng,
+  }
 }
 
 export function getDefaultCityForCountry(country: string): RegistrationCityOption {
+  if (country === 'Chile') {
+    return (
+      REGISTRATION_CITY_OPTIONS.find((c) => c.norm === 'vina del mar') ||
+      getRegistrationCitiesForCountry(country)[0] ||
+      REGISTRATION_CITY_OPTIONS[0]
+    )
+  }
   return getRegistrationCitiesForCountry(country)[0] ?? REGISTRATION_CITY_OPTIONS[0]
 }
 
@@ -65,13 +133,13 @@ export function applyRegistrationCitySelection(cityLabel: string): {
   lat: number
   lng: number
 } {
-  const hit = getRegistrationCityByLabel(cityLabel)
+  const hit = resolveRegistrationCity(cityLabel)
   if (hit) {
     return { city: hit.label, country: hit.country, lat: hit.lat, lng: hit.lng }
   }
   const fallback = REGISTRATION_CITY_OPTIONS[0]
   return {
-    city: cityLabel || fallback.label,
+    city: cityLabel?.trim() || fallback.label,
     country: fallback.country,
     lat: fallback.lat,
     lng: fallback.lng,
@@ -95,7 +163,7 @@ export function applyRegistrationCountrySelection(country: string): {
 
 export function isOpenPilotCity(city?: string | null): boolean {
   const norm = normalizeCity(city)
-  return (PILOT_CITY_NORMS as readonly string[]).includes(norm)
+  return (PILOT_LAUNCH_CITY_NORMS as readonly string[]).includes(norm)
 }
 
 export function pilotCityLabel(city?: string | null): string | null {

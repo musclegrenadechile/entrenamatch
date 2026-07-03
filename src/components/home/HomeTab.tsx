@@ -24,6 +24,7 @@ import {
 import { CommunityActiveStrip } from './CommunityActiveStrip'
 import { FeedVirtualList } from './FeedVirtualList'
 import { isHomeDayOneMode, shouldHideCoachAndMarketplace } from '../../utils/profileProgressive'
+import { isMarketplaceUiEnabled } from '../../utils/pilotFeatureFlags'
 import { getPublicGymSound } from '../../services/gymSound'
 import { isSpotifyConnected } from '../../services/spotify'
 import { shareWorkoutStory, toastWorkoutShareOutcome } from '../../utils/workoutStoryShare'
@@ -366,7 +367,7 @@ export function HomeTab(props: HomeTabProps) {
             onDismiss={onDismissPactReminder}
           />
         )}
-      {showShopBanner && !hideCoachAndShop && (
+      {isMarketplaceUiEnabled() && showShopBanner && !hideCoachAndShop && (
         <HomeShopBanner
           orders={marketplaceOrders || []}
           products={marketplaceProducts || []}

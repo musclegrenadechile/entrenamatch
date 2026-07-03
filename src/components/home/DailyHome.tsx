@@ -17,6 +17,7 @@ import { PilotProgramStrip } from './PilotProgramStrip'
 import { CityDerbyCard, CityDerbyCompactStrip } from './CityDerbyCard'
 import { SyncHourBanner } from './SyncHourBanner'
 import { BRAND_COPY } from '../../constants/brandCopy'
+import { isDerbyParticipantCity } from '../../services/cityDerby'
 import { GymInviteQrSheet } from '../growth/GymInviteQrSheet'
 import { buildGymInviteLink } from '../../utils/sparseCityDefaults'
 import type { CityDerbyState } from '../../services/cityDerby'
@@ -243,6 +244,8 @@ export function DailyHome({
   /** El gadget flotante de sesión reemplaza este banner (Fase A). */
   const showWorkoutDraftBanner = false
   const [showGymQr, setShowGymQr] = useState(false)
+  const [showHomeMore, setShowHomeMore] = useState(false)
+  const derbyParticipates = isDerbyParticipantCity(cityLabel)
 
   const referralCode = (() => {
     if (!pilotInviteLink) return 'invite'
@@ -300,12 +303,23 @@ export function DailyHome({
       </div>
 
       {compactDayOne ? (
-        <CityDerbyCompactStrip
-          derby={cityDerby}
-          onOpenMap={onOpenDerbyMap ?? onOpenMap}
-          userCity={cityLabel}
-        />
-      ) : (
+        derbyParticipates ? (
+          <CityDerbyCompactStrip
+            derby={cityDerby}
+            onOpenMap={onOpenDerbyMap ?? onOpenMap}
+            userCity={cityLabel}
+          />
+        ) : (
+          <div className="rounded-2xl border border-[#FF671F]/25 bg-[#1a1208]/60 p-3 mb-2">
+            <p className="text-[10px] font-bold text-[#FF671F] uppercase tracking-wide">
+              {BRAND_COPY.pilotGeo.outsidePilotTitle}
+            </p>
+            <p className="text-[11px] text-[#9CA3AF] mt-1 leading-snug">
+              {BRAND_COPY.pilotGeo.outsidePilotBody(cityLabel || 'tu ciudad')}
+            </p>
+          </div>
+        )
+      ) : derbyParticipates ? (
         <>
           <PilotProgramStrip
             cityLabel={cityLabel}
@@ -326,16 +340,25 @@ export function DailyHome({
             isDemoMode={isDemoMode}
           />
         </>
+      ) : (
+        <div className="rounded-2xl border border-[#FF671F]/25 bg-[#1a1208]/60 p-4 mb-2">
+          <p className="text-[10px] font-bold text-[#FF671F] uppercase tracking-wide">
+            {BRAND_COPY.pilotGeo.outsidePilotTitle}
+          </p>
+          <p className="text-[11px] text-[#9CA3AF] mt-1 leading-snug">
+            {BRAND_COPY.pilotGeo.outsidePilotBody(cityLabel || 'tu ciudad')}
+          </p>
+          {pilotInviteLink && (
+            <button
+              type="button"
+              onClick={() => setShowGymQr(true)}
+              className="mt-2 text-[10px] font-bold text-[#22c55e] px-3 py-1.5 rounded-lg border border-[#22c55e]/40"
+            >
+              {BRAND_COPY.explore.inviteTitle}
+            </button>
+          )}
+        </div>
       )}
-
-      <SyncHourBanner
-        isLive={isLive}
-        onOpenMap={onOpenDerbyMap ?? onOpenMap}
-        onActivateLive={onToggleLive}
-        db={pilotDb}
-        city={cityLabel}
-        isDemoMode={isDemoMode}
-      />
 
       <DailyHomeHeroCard
         isLive={isLive}
@@ -358,60 +381,82 @@ export function DailyHome({
         </button>
       )}
 
-      {showWorkoutDraftBanner && workoutDraft && (
-        <WorkoutDraftResumeBanner
-          draft={workoutDraft}
-          onResume={onResumeWorkoutDraft!}
-          onDiscard={onDiscardWorkoutDraft!}
-        />
-      )}
-
-      {(wearableActivity || onRefreshWearableActivity) && (
-        <WearableActivityCard
-          activity={wearableActivity}
-          syncing={wearableSyncing}
-          needsConnect={!!wearableActivity?.needsConnect}
-          onRefresh={onRefreshWearableActivity}
-          onConnect={onOpenWearableConnect}
-        />
-      )}
-
-      {/* Fuel AI — siempre visible: registro diario de comidas */}
-      <FuelDayCard
-        profile={fuelProfile ?? null}
-        totals={fuelTotals ?? { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 }}
-        energyBalance={fuelEnergyBalance}
-        todayLogs={fuelTodayLogs}
-        weekDays={fuelWeekDays}
-        weekBalanceDays={fuelWeekBalanceDays}
-        postWorkoutTip={fuelPostWorkoutTip}
-        onSetup={onOpenFuelSetup ?? (() => {})}
-        onEditProfile={onOpenFuelEdit}
-        onLogMeal={onOpenFuelLog ?? (() => {})}
-        onEditLog={onEditFuelLog}
-        onDeleteLog={onDeleteFuelLog}
-        deletingLogId={deletingFuelLogId}
-        onImportHealth={onImportHealthBurn}
-        healthImportHint={healthImportHint}
-        wearableActivity={wearableActivity}
-        weeklyDeltaKcal={weeklyPlan?.energySummary.weeklyDeltaKcal}
-      />
-
       {!compactDayOne && (
-      <>
-      <WeeklyPlanCard
-        plan={weeklyPlan}
-        enriching={weeklyPlanEnriching}
-        onStartWorkout={onStartWeeklyPlan}
-        onPublishPlanToFeed={onPublishWeeklyPlanToFeed}
-        onSharePlanExternally={onShareWeeklyPlanExternally}
-        onOpenFuelSetup={onOpenFuelSetup}
-      />
+        <>
+          <button
+            type="button"
+            onClick={() => setShowHomeMore((open) => !open)}
+            className={`em-v2-home-more-toggle ${showHomeMore ? 'em-v2-home-more-toggle--open' : ''}`}
+            aria-expanded={showHomeMore}
+          >
+            <span>{showHomeMore ? 'Menos de tu día' : 'Más de tu día'}</span>
+            <span className="text-[11px] font-bold">{showHomeMore ? '▲' : '▼'}</span>
+          </button>
 
-      {exercisePRRecords.length > 0 && (
-        <ExercisePRStrip records={exercisePRRecords} onOpenEntrenoLog={onOpenEntrenaLog} />
-      )}
-      </>
+          {showHomeMore && (
+            <div className="em-v2-home-more-panel">
+              <SyncHourBanner
+                isLive={isLive}
+                onOpenMap={onOpenDerbyMap ?? onOpenMap}
+                onActivateLive={onToggleLive}
+                db={pilotDb}
+                city={cityLabel}
+                isDemoMode={isDemoMode}
+              />
+
+              {showWorkoutDraftBanner && workoutDraft && (
+                <WorkoutDraftResumeBanner
+                  draft={workoutDraft}
+                  onResume={onResumeWorkoutDraft!}
+                  onDiscard={onDiscardWorkoutDraft!}
+                />
+              )}
+
+              {(wearableActivity || onRefreshWearableActivity) && (
+                <WearableActivityCard
+                  activity={wearableActivity}
+                  syncing={wearableSyncing}
+                  needsConnect={!!wearableActivity?.needsConnect}
+                  onRefresh={onRefreshWearableActivity}
+                  onConnect={onOpenWearableConnect}
+                />
+              )}
+
+              <FuelDayCard
+                profile={fuelProfile ?? null}
+                totals={fuelTotals ?? { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0, entryCount: 0 }}
+                energyBalance={fuelEnergyBalance}
+                todayLogs={fuelTodayLogs}
+                weekDays={fuelWeekDays}
+                weekBalanceDays={fuelWeekBalanceDays}
+                postWorkoutTip={fuelPostWorkoutTip}
+                onSetup={onOpenFuelSetup ?? (() => {})}
+                onEditProfile={onOpenFuelEdit}
+                onLogMeal={onOpenFuelLog ?? (() => {})}
+                onEditLog={onEditFuelLog}
+                onDeleteLog={onDeleteFuelLog}
+                deletingLogId={deletingFuelLogId}
+                onImportHealth={onImportHealthBurn}
+                healthImportHint={healthImportHint}
+                wearableActivity={wearableActivity}
+                weeklyDeltaKcal={weeklyPlan?.energySummary.weeklyDeltaKcal}
+              />
+
+              <WeeklyPlanCard
+                plan={weeklyPlan}
+                enriching={weeklyPlanEnriching}
+                onStartWorkout={onStartWeeklyPlan}
+                onPublishPlanToFeed={onPublishWeeklyPlanToFeed}
+                onSharePlanExternally={onShareWeeklyPlanExternally}
+                onOpenFuelSetup={onOpenFuelSetup}
+              />
+
+              {exercisePRRecords.length > 0 && (
+                <ExercisePRStrip records={exercisePRRecords} onOpenEntrenoLog={onOpenEntrenaLog} />
+              )}
+            </div>
+          )}
+        </>
       )}
 
       <section
@@ -710,7 +755,7 @@ export function DailyHome({
         )}
       </section>
 
-      {!compactDayOne && (
+      {!compactDayOne && showHomeMore && (
       <>
       {/* 4 · META SEMANAL */}
       <section

@@ -10,13 +10,13 @@ export function WhyEntrenaMatchStrip({ compact = false }: { compact?: boolean })
     },
     {
       icon: Users,
-      title: 'Match por gym',
-      desc: 'WhatsApp es chat genérico — aquí filtras por ciudad, objetivo y horario.',
+      title: 'Conectar por deporte',
+      desc: 'WhatsApp es chat genérico — aquí filtras por ciudad, deporte, objetivo y horario.',
     },
     {
       icon: MessageCircle,
       title: 'EntrenaSync',
-      desc: 'Entrenan juntos con minutos que suman a la Copa Zona de tu región.',
+      desc: 'Entrenan juntos con minutos que suman a tu Comunidad (Copa Zona en el piloto costero).',
     },
   ]
 

@@ -19,7 +19,7 @@ const STEPS = [
   {
     id: 'explore',
     title: 'Explorar y swipe',
-    body: 'Desliza perfiles compatibles. ❤️ = match instantáneo y chat.',
+    body: 'Desliza perfiles compatibles. ❤️ = conexión instantánea y chat.',
     anchor: 'bottom-nav-explore',
   },
   {

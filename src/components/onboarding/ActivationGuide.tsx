@@ -28,7 +28,7 @@ const STEPS = [
     icon: Users,
     title: BRAND_COPY.activation.stepExplore,
     desc: BRAND_COPY.activation.stepExploreDesc,
-    demoDesc: 'Explora perfiles demo y simula un match.',
+    demoDesc: 'Explora perfiles demo y simula una conexión.',
   },
   {
     id: 'sync' as const,

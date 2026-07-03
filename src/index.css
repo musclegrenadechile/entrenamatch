@@ -10665,6 +10665,180 @@ body.gym-pulse-fs-active {
   padding: 8px 10px;
   margin-bottom: 10px;
 }
+
+.gym-log-voice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  margin-bottom: 10px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 103, 31, 0.28);
+  background: linear-gradient(135deg, rgba(255, 103, 31, 0.08) 0%, rgba(15, 15, 18, 0.95) 100%);
+}
+.gym-log-voice--tap {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.gym-log-voice--tap:active {
+  transform: scale(0.985);
+  border-color: rgba(255, 103, 31, 0.55);
+}
+.gym-log-voice--disabled {
+  opacity: 0.65;
+  border-color: #2f2f35;
+  background: #141418;
+  font-size: 10px;
+  color: #9ca3af;
+}
+.gym-log-voice--recording {
+  border-color: rgba(239, 68, 68, 0.45);
+  background: rgba(239, 68, 68, 0.06);
+}
+.gym-log-voice--processing {
+  align-items: center;
+  gap: 12px;
+}
+.gym-log-voice--error {
+  border-color: rgba(239, 68, 68, 0.35);
+}
+.gym-log-voice--preview {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.gym-log-voice__mic {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ff671f;
+  color: #000;
+  flex-shrink: 0;
+}
+.gym-log-voice__copy { min-width: 0; }
+.gym-log-voice__title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #fff;
+}
+.gym-log-voice__hint {
+  font-size: 10px;
+  color: #9ca3af;
+  margin-top: 2px;
+  line-height: 1.35;
+}
+.gym-log-voice__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+  margin-top: 6px;
+  animation: gym-voice-pulse 1s ease-in-out infinite;
+}
+@keyframes gym-voice-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.15); }
+}
+.gym-log-voice__stop {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  flex-shrink: 0;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+  position: relative;
+  z-index: 3;
+  pointer-events: auto;
+}
+.gym-log-voice__stop:active {
+  transform: scale(0.96);
+  opacity: 0.9;
+}
+.gym-log-voice__retry {
+  padding: 8px;
+  color: #9ca3af;
+  position: relative;
+  z-index: 3;
+  pointer-events: auto;
+  min-height: 44px;
+  min-width: 44px;
+}
+.gym-log-voice__preview-kicker {
+  font-size: 10px;
+  font-weight: 800;
+  color: #ff671f;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.gym-log-voice__transcript {
+  font-size: 12px;
+  color: #e5e7eb;
+  font-style: italic;
+  line-height: 1.4;
+}
+.gym-log-voice__transcript--live {
+  margin-top: 4px;
+  font-style: normal;
+  color: #fbbf24;
+  font-size: 11px;
+  line-height: 1.35;
+  max-height: 3.2em;
+  overflow: hidden;
+}
+.gym-log-voice__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.gym-log-voice__chip {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 103, 31, 0.15);
+  color: #fdba74;
+  border: 1px solid rgba(255, 103, 31, 0.25);
+}
+.gym-log-voice__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.gym-log-voice__discard,
+.gym-log-voice__apply {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 800;
+}
+.gym-log-voice__discard {
+  background: #1a1a1f;
+  color: #9ca3af;
+  border: 1px solid #2f2f35;
+}
+.gym-log-voice__apply {
+  background: #ff671f;
+  color: #000;
+}
+
 .gym-log-share-chat {
   font-size: 11px;
   font-weight: 700;

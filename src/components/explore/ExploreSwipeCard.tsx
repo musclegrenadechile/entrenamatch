@@ -10,7 +10,9 @@ import {
 import { CheckCircle, MapPin } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Profile } from '../../types'
-import { VerifiedPhotoBadge, VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto'
+import { VerifiedPhotoBadge } from '../profile/VerifiedProfilePhoto'
+import { MatchProfilePhoto } from '../matches/MatchProfilePhoto'
+import { displayMatchName } from '../../utils/matchProfileDisplay'
 import { isProfileVerified } from '../../utils/identityVerification'
 
 import { resolveExploreSwipeDirection } from './exploreSwipeLogic'
@@ -126,14 +128,7 @@ export const ExploreSwipeCard = memo(function ExploreSwipeCard({
           : { type: 'spring', stiffness: 420, damping: 34 }
       }
     >
-      <VerifiedProfilePhoto
-        src={profile.photos[0]}
-        className="w-full h-full"
-        imgClassName="w-full h-full object-cover object-[center_20%] bg-[#1C1C20]"
-        alt={profile.name}
-        verificationStatus={profile.verificationStatus}
-        showBadge={false}
-      />
+      <MatchProfilePhoto profile={profile} variant="cover" />
 
       <div className="em-v2-swipe-card__gradient-top absolute inset-0 pointer-events-none z-[1]" />
       <div className="em-v2-swipe-card__gradient-bottom absolute inset-x-0 bottom-0 h-[55%] pointer-events-none z-[1]" />
@@ -197,7 +192,7 @@ export const ExploreSwipeCard = memo(function ExploreSwipeCard({
         <div className="flex items-end justify-between gap-3 mb-2">
           <div className="min-w-0 flex-1">
             <div className="text-xl sm:text-[1.65rem] font-extrabold tracking-tight flex items-center gap-1.5 min-w-0 leading-none">
-              <span className="truncate">{profile.name}</span>
+              <span className="truncate">{displayMatchName(profile)}</span>
               <span className="shrink-0 text-white/85 font-bold">, {profile.age}</span>
               {verified && <CheckCircle size={17} className="text-[#FF671F] shrink-0" />}
             </div>
@@ -218,7 +213,7 @@ export const ExploreSwipeCard = memo(function ExploreSwipeCard({
           {compat !== null && (
             <div className="em-v2-match-ring shrink-0">
               <span className="em-v2-match-score">{compat}</span>
-              <span className="em-v2-match-label">MATCH</span>
+              <span className="em-v2-match-label">CONECTAR</span>
               <div className="em-v2-match-bar">
                 <div className="em-v2-match-bar__fill" style={{ width: `${compat}%` }} />
               </div>

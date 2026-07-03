@@ -3,6 +3,7 @@
  */
 
 import type { NotificationNavTarget } from './notificationNavigation'
+import { isMarketplaceUiEnabled } from './pilotFeatureFlags'
 
 export type PushData = Record<string, string | undefined>
 
@@ -48,6 +49,7 @@ export function resolvePushNotificationData(data: PushData): NotificationNavTarg
   }
 
   if (type === 'marketplace_order_update') {
+    if (!isMarketplaceUiEnabled()) return { tab: 'profile' }
     return { tab: 'profile', openMarketplace: true, marketplaceOrdersTab: true }
   }
 

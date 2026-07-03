@@ -5,6 +5,7 @@ import {
   type NotificationNavTarget,
 } from '../utils/notificationNavigation'
 import { normalizeTabNavigation } from '../utils/tabNavigation'
+import { isMarketplaceUiEnabled } from '../utils/pilotFeatureFlags'
 
 export type NotificationRouterActions = {
   setShowNotifications: (open: boolean) => void
@@ -94,7 +95,7 @@ export function useNotificationRouter({
         a.setTrainerCoachInitialTab(target.trainerCoachTab)
         a.setShowTrainerCoach(true)
       }
-      if (target.openMarketplace) {
+      if (target.openMarketplace && isMarketplaceUiEnabled()) {
         a.setMarketplaceScreenMode(target.marketplaceOrdersTab ? 'orders' : 'shop')
         a.setShowMarketplace(true)
       }

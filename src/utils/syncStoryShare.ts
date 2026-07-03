@@ -222,7 +222,7 @@ export async function renderSyncStoryPng(opts: SyncStoryOpts): Promise<Blob | nu
   ctx.fillStyle = C.green
   ctx.font = 'bold 26px system-ui, sans-serif'
   ctx.textAlign = 'center'
-  ctx.fillText('GymPulse · Entrena en vivo con tu red', 290, 356)
+  ctx.fillText('Mapa LIVE · Entrena en vivo con tu Comunidad', 290, 356)
 
   // Session chip
   ctx.fillStyle = 'rgba(255,103,31,0.18)'
@@ -322,7 +322,7 @@ export async function renderSyncStoryPng(opts: SyncStoryOpts): Promise<Blob | nu
 
   ctx.fillStyle = C.muted
   ctx.font = '500 28px system-ui, sans-serif'
-  ctx.fillText('#EntrenaMatch  #GymPulse  #EntrenaSync', W / 2, H - 72)
+  ctx.fillText('#EntrenaMatch  #MapaLIVE  #EntrenaSync', W / 2, H - 72)
 
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'))
 }
@@ -338,7 +338,7 @@ export function buildSyncPostText(opts: {
   return (
     `🔥 ENTRENASYNC con ${b} — ${opts.minutes} min · Sync ${opts.vibe}%\n` +
     `${a} × ${b} entrenaron en vivo en EntrenaMatch.\n` +
-    `Únete en ${shareableAppHostname()} · #EntrenaMatch #GymPulse #EntrenaSync`
+    `Únete en ${shareableAppHostname()} · #EntrenaMatch #MapaLIVE #EntrenaSync`
   )
 }
 

@@ -6,10 +6,12 @@
 export const BRAND_COPY = {
   tagline: 'Tu Comunidad en vivo',
   taglineMono: 'TU COMUNIDAD EN VIVO',
+  /** Hero 90 días — momento > deporte */
+  heroLine: 'Activa LIVE y ve quién entrena cerca ahora',
   pitch:
-    'Encuentra quién entrena cerca — fútbol, pádel, gym, running, rugby o lo que muevas — haz match y entrena acompañado/a con EntrenaSync.',
+    'Encuentra quién entrena cerca — fútbol, pádel, gym, running, rugby o lo que muevas — conecta y entrena acompañado/a con EntrenaSync.',
   pitchShort:
-    'Encuentra quién entrena cerca, haz match y sincroniza sesiones con EntrenaSync.',
+    'Ve quién entrena cerca, conecta por deporte y horario, y sincroniza sesiones con EntrenaSync.',
   partner: 'EntrenaPartner',
   partnerPlural: 'EntrenaPartners',
   partnerGeneric: 'un compañero de entreno',
@@ -20,9 +22,9 @@ export const BRAND_COPY = {
   networkTitle: 'Tu Comunidad',
   liveMapLabel: 'Mapa LIVE',
   metaDescription:
-    'EntrenaMatch — Tu Comunidad en vivo. Ve quién entrena ahora, sincronízate en tiempo real y guarda historial compartido. Lanzamiento inicial en Chile.',
+    'EntrenaMatch — Tu Comunidad en vivo. Ve quién entrena ahora, sincronízate en tiempo real y guarda historial compartido. Piloto Viña · Valparaíso · Concón. Registro multi-país.',
   manifestDescription:
-    'Conecta con personas que entrenan cerca de ti. Fútbol, pádel, gym, running, rugby y más. Solo +18. Piloto Chile.',
+    'Conecta con personas que entrenan cerca de ti. Fútbol, pádel, gym, running, rugby y más. Solo +18. Beta — piloto costa central Chile.',
   /** Copy visible en la pestaña Mapa LIVE */
   liveMap: {
     globalPill: 'MAPA LIVE GLOBAL',
@@ -62,6 +64,18 @@ export const BRAND_COPY = {
     inviteShareText: 'Entrena con gente cerca de ti — únete a EntrenaMatch',
     inviteToastCopied: 'Enlace copiado — compártelo con tu club o equipo',
     activateLiveCta: 'Activar LIVE ahora',
+    connectLabel: 'Conectar',
+    connectCelebration: '¡Conectaron!',
+  },
+  /** Piloto geográfico — densidad local antes de escala multi-país */
+  pilotGeo: {
+    focusLabel: 'Viña del Mar · Valparaíso · Concón',
+    focusBadge: 'Piloto costa central Chile',
+    outsidePilotTitle: 'Tu Comunidad está creciendo',
+    outsidePilotBody: (city: string) =>
+      `En ${city} aún somos pocos — invita a tu club, cancha o gym. Mientras tanto, activa LIVE para que te encuentren en el Mapa LIVE.`,
+    waitlistCta: 'Lista de espera — costa central',
+    waitlistHint: 'Prioridad para Viña, Valparaíso y Concón',
   },
   /** Eliminación de cuenta — retención honesta (proyecto en beta, fundador solo). */
   deleteAccount: {
@@ -124,7 +138,7 @@ export const BRAND_COPY = {
       'Región de Valparaíso: Viña, Valparaíso, Concón, Quilpué, Villa Alemana, San Antonio y comunas costeras aliadas.',
     tooltipAway: 'Santiago: solo la comuna de Santiago (no Providencia, Las Condes ni otras RM).',
     tooltipNeutral:
-      'Tu comuna no suma a la Copa Zona piloto todavía — igual puedes LIVE, match y EntrenaSync.',
+      'Tu comuna no suma a la Copa Zona piloto todavía — igual puedes LIVE, conectar y EntrenaSync.',
     tooltipIndex: 'El marcador usa minutos LIVE + sync ajustados por población (índice / 100k hab).',
     defenderTitle: (zone: string) => `🛡 ${zone} es Defensor de la zona`,
     warEnds: (label: string) => `Guerra termina en ${label}`,
@@ -215,14 +229,15 @@ export const BRAND_COPY = {
   activation: {
     kicker: 'Bienvenido a EntrenaMatch',
     title: 'Tu rutina en 3 pasos',
-    subtitle: 'Piloto Viña × Santiago. LIVE → Explorar → EntrenaSync en el mapa.',
+    subtitle:
+      'Piloto activo: Viña, Valparaíso y Concón. Registro abierto en Chile, Perú, México y USA. Tu primer paso: activa LIVE.',
     subtitleDemo: 'Modo prueba: mismos pasos que una cuenta real, con datos locales.',
     stepLive: '1. Activa LIVE',
-    stepLiveDesc: 'Al entrenar, enciende LIVE. Apareces en el Mapa LIVE y sumas a la Copa Zona.',
+    stepLiveDesc: 'Al entrenar, enciende LIVE. Apareces en el Mapa LIVE — en el piloto también sumas a la Copa Zona.',
     stepExplore: '2. Explora y conecta',
-    stepExploreDesc: 'Desliza perfiles compatibles e invita a alguien de tu club o cancha al piloto.',
+    stepExploreDesc: 'Desliza perfiles compatibles e invita a alguien de tu club o cancha a la beta.',
     stepSync: '3. EntrenaSync en el mapa',
-    stepSyncDesc: 'Sincroniza con un match en el Mapa LIVE — tus minutos suman a tu región.',
+    stepSyncDesc: 'Sincroniza con alguien que conectaste en el Mapa LIVE — tus minutos suman a tu Comunidad.',
   },
   localZone: {
     title: (city: string) => `Comunidad en ${city}`,

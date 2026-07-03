@@ -20,6 +20,11 @@ export const APP_GLOBAL_OVERLAY_IDS = [
   'liveNearModal',
   'matchCelebration',
   'safetyActionSheet',
+  'legalPages',
+  'reportModal',
+  'verificationFlow',
+  'moderationPanel',
+  'trainingReview',
   'adminOps',
   'communityAdmin',
 ] as const

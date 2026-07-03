@@ -1,4 +1,4 @@
-import { isOpenPilotCity } from '../constants/pilotProgram'
+import { isRegistrationCity } from '../constants/pilotProgram'
 
 export type ProfileCompleteInput = {
   name?: string | null
@@ -19,7 +19,7 @@ export function hasCoreProfileFields(profile: ProfileCompleteInput | null | unde
   const photos = profile.photos
   if (!Array.isArray(photos) || photos.length === 0) return false
   if (!profile.bio?.trim()) return false
-  if (!isOpenPilotCity(profile.city)) return false
+  if (!isRegistrationCity(profile.city)) return false
   const types = profile.trainingTypes
   if (!Array.isArray(types) || types.length === 0) return false
   return true
@@ -55,7 +55,7 @@ function isProfileCompleteStrict(profile: ProfileCompleteInput | null | undefine
   const photos = profile.photos
   if (!Array.isArray(photos) || photos.length === 0) return false
   if (!profile.bio?.trim()) return false
-  if (!isOpenPilotCity(profile.city)) return false
+  if (!isRegistrationCity(profile.city)) return false
   const types = profile.trainingTypes
   if (!Array.isArray(types) || types.length === 0) return false
   const lc = profile.legalConsents

@@ -202,7 +202,7 @@ export function buildWorkoutStoryPostText(opts: WorkoutStoryOpts): string {
   return (
     `🏋️ ${first} · ${preview.title} (${typeLabel})\n` +
     `${preview.exerciseCount} ejercicios · ${preview.totalSets} sets · ${preview.durationMin} min · ${preview.volumeLabel}${prLine}\n` +
-    `Únete en ${refUrl} · #EntrenaMatch #EntrenoDeHoy #GymPulse`
+    `Únete en ${refUrl} · #EntrenaMatch #EntrenoDeHoy #MapaLIVE`
   )
 }
 
@@ -358,7 +358,7 @@ async function renderWorkoutStoryPng(opts: WorkoutStoryOpts): Promise<Blob | nul
 
   ctx.fillStyle = C.muted
   ctx.font = '500 28px system-ui, sans-serif'
-  ctx.fillText('#EntrenaMatch  #EntrenoDeHoy  #GymPulse', W / 2, H - 72)
+  ctx.fillText('#EntrenaMatch  #EntrenoDeHoy  #MapaLIVE', W / 2, H - 72)
 
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'))
 }

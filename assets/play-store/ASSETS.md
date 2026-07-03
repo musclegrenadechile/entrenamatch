@@ -1,19 +1,18 @@
-# EntrenaMatch Play Store Assets - Pre-Alpha Beta Launch
+# EntrenaMatch Play Store Assets — v0.1.386 (marketing oleada 501–510)
 
-**Generated for hidden beta on Play Store (Internal/Closed testing for real Chilean fitness testers).**
+**Multi-country beta** · Mapa LIVE · brand orange `#FF671F` · ver `PLAY_MARKETING_v0.1.386.md` para copy de tienda.
 
-## Current Status (Post Phase 0 Polish)
-- App is in strong pre-alpha state with polished "elegir perfiles" (Explore): "X disponibles ahora", real-first recs with "en vivo" and lastSync, clean cards, distance, REAL badges, filters.
-- Live 1:1 and group chat confirmed working cross-device.
-- Sessions with admin roles, feedback form, report/block.
-- Recent UI: consistent "en vivo" badges, lastSync "hace Xs" in headers/empties/recs, decluttered texts for premium feel.
-- Version: 0.1.0-prealpha
-- Privacy & Terms: full tailored policies (see public/privacy.html, terms.html) with links in Profile.
+## Current Status (v0.1.386)
+- App en beta multi-país: Chile, Perú, México, USA.
+- Wedge visible: **Mapa LIVE** + EntrenaSync + Copa Zona + Muro de la Comunidad.
+- Copy alineado: sin “GymPulse” en strings de usuario (retos, stories, manifest).
+- Landing sin métricas inventadas; testimonios honestos.
+- Version: **0.1.386**
 
 ## Required Assets (Create/Replace These)
 
 ### 1. Launcher Icons (Replace generic in android/app/src/main/res/mipmap-*/ )
-- Use the generated high-res icon (from AI generation: modern teal/black fitness matching icon with dynamic figure).
+- Use orange/black brand (`#FF671F`) — not teal. Icon: `public/icons/icon-512.jpg`.
 - Resize for densities:
   - mipmap-mdpi: 48x48
   - mipmap-hdpi: 72x72
@@ -43,14 +42,14 @@ Suggested screenshots (generate or take from emulator/device with current build)
 Prompt example for mock: "Android phone screenshot of EntrenaMatch app, Explore tab, modern dark UI teal accents, header 'Explorar' '12 disponibles ahora cerca de ti' + 'en vivo' lastSync, real profiles recs 'Más compatibles (reales primero)' with en vivo badge, cards showing name age city REAL badge distance compat% bio chips, clean premium fitness social app style, realistic"
 
 ### 4. Other
-- **Short description (80 chars, ES v0.1.340):** `Quien entrena cerca, ahora. Match, chat y EntrenaSync. Fútbol, pádel, gym y más. +18.`
-- **Full description — párrafo 1 (ES v0.1.340):**
+- **Short description (80 chars, ES v0.1.386):** `Quién entrena cerca, ahora. Match, EntrenaSync y Mapa LIVE. Fútbol, gym y más. +18.`
+- **Full description — párrafo 1 (ES v0.1.386):**
   ```
-  EntrenaMatch es la red donde ves quién entrena ahora cerca de ti — en la cancha, la pista, el gym o la costanera — y puedes conectar con personas compatibles por deporte, horario e intensidad.
+  EntrenaMatch es la red donde ves quién entrena ahora cerca de ti — en la cancha, la pista, el gym o la costanera — y conectas con personas compatibles por deporte, horario e intensidad.
 
-  No es dating. Es entrenamiento en serio: Mapa LIVE, match por compatibilidad y EntrenaSync para moverse juntos con minutos que suman a tu Comunidad y la Copa Zona de tu región.
+  No es dating. Es entrenamiento en serio: Mapa LIVE, match por compatibilidad y EntrenaSync para moverse juntos. Tus minutos suman a tu Comunidad y la Copa Zona de tu región.
 
-  Piloto en Chile (Viña del Mar y Santiago). Beta cerrada.
+  Beta multi-país: Chile, Perú, México y USA. Solo +18.
   ```
 - Category: Social / Health & Fitness.
 - Content rating: 18+ (dating, social, fitness).

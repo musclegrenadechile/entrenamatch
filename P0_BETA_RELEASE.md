@@ -1,65 +1,101 @@
-# P0 Beta Release — v0.1.384
+# P0 Beta Release — v0.1.403
 
-Checklist para cerrar piloto multi-país (CL · PE · MX · US).
+Checklist piloto **costa central Chile** (Viña · Valparaíso · Concón) + registro multi-país.
 
 ## Versiones alineadas
 
 | Artefacto | Valor |
 |-----------|-------|
-| Web / `APP_VERSION` | **0.1.384** |
-| `package.json` | 0.1.384 |
-| Android `versionCode` | **384** |
-| Android `versionName` | 0.1.384 |
+| Web / `APP_VERSION` | **0.1.403** |
+| `package.json` | 0.1.403 |
+| Android `versionCode` | **403** |
+| Android `versionName` | 0.1.403 |
 
 Verificar: `node scripts/version-check.mjs`
 
-Código: `src/utils/p0BetaQaMatrix.ts` (12 filas) + `src/utils/betaReleaseChecklist.ts` (17 ítems) + `BETA_QA_382.md`
+## Marketing GTM (oleada 511 + 402)
 
-## Cambios v0.1.381–384
+- Foco geográfico piloto en landing + `BRAND_COPY.pilotGeo`
+- Copa Zona solo si comuna participa (`isDerbyParticipantCity`)
+- Home compacto **7 días** — sin Fuel/wearable/coach/marketplace
+- Copy visible: **Conectar** (no “match” en UI clave)
+- KPI piloto: **primer LIVE en 24h**
+- **Dictado entreno (Android):** grabación audio nativa primero — Parar responde al instante
 
-- Registro/edición: Chile, Perú, México, USA (selector país + ciudad)
-- Filtros Explorar: edad 18–70, distancia sin límite, orden por cercanía
-- Discovery normalizado (`profileDiscoveryQuery`)
-- `ActivationGuideMount`, `FeatureTourMount`, `ExploreFiltersSheetMount`, `MatchCelebrationMount`
-- `LiveNearModalMount`, `SafetyActionSheetMount`, `useExploreDeck`
-- `PROFILE_LIST_LIMIT` 120
-## 1. Deploy
+## Matriz QA mínima (2 dispositivos)
+
+| # | Flujo | Pass |
+|---|-------|------|
+| 1 | Registro → onboarding → Tab Hoy | ☐ |
+| 2 | Guía activación → CTA **Activar LIVE** | ☐ |
+| 3 | Usuario fuera piloto: **no** ve Copa Zona (sí invitación) | ☐ |
+| 4 | Usuario Viña/Valpo: ve Copa Zona | ☐ |
+| 5 | Día 1–6: Home sin Fuel ni marketplace | ☐ |
+| 6 | Explorar: badge **CONECTAR** + modal **¡Conectaron!** | ☐ |
+| 7 | LIVE → visible en mapa (<60 s) | ☐ |
+| 8 | EntrenaSync ≥2 min → minutos al derby (si aplica) | ☐ |
+| 9 | Invitar amigo desde strip / QR | ☐ |
+| 10 | Guardar entreno → story Instagram | ☐ |
+| 11 | **Dictar entreno** → “Grabando audio…” → Parar → preview o error claro | ☐ |
+
+## Deploy
+
+| Paso | Estado |
+|------|--------|
+| Web hosting (`npm run deploy`) | ✅ v0.1.403 + fix fotos Explorar |
+| Firestore rules | ✅ |
+| Cloud Functions `parseWorkoutVoice` + `parseWorkoutVoiceText` | ✅ |
+| Play internal AAB **403** | ✅ |
 
 ```powershell
 cd C:\Users\muscl\fitvina
 npm run deploy
-firebase deploy --only firestore:rules,hosting
+npx firebase deploy --only firestore:rules,functions:parseWorkoutVoice,functions:parseWorkoutVoiceText --project entrenamatch
+.\publish-play.bat internal
 ```
 
-## 2. Matriz QA mínima (2 dispositivos) — v0.1.377
+**Guía testers:** `GUIA_PILOTO_RAPIDA.md` · **Métricas:** `PILOTO_METRICAS_SEMANAL.md` · `npm run pilot:reports`
 
-| # | Flujo | Pass |
-|---|-------|------|
-| 1 | Registro → onboarding completo → Tab Hoy | ☐ |
-| 2 | LIVE **no** se activa solo al terminar onboarding | ☐ |
-| 3 | Una sola guía (3 pasos), sin tour apilado | ☐ |
-| 4 | CityDerbyCard visible 0 vs 0 + índice población | ☐ |
-| 5 | LIVE → visible en mapa otro usuario (<60 s) | ☐ |
-| 6 | EntrenaSync ≥2 min → minutos al derby | ☐ |
-| 7 | Matches tab carga (sin error chunk tras hard refresh) | ☐ |
-| 8 | Invitar amigo desde piloto strip | ☐ |
-| 9 | Toast derby si rival supera (simular minutos) | ☐ |
-| 10 | Panel notificaciones → deep link chat/map | ☐ |
-| 11 | Publicar en Muro (texto + foto) desde Home | ☐ |
-| 12 | Crashlytics nativo (APK internal) | ☐ |
-| 13 | Guardar entreno → toast **Compartir** → imagen Instagram | ☐ |
-| 14 | Muro + perfil propio → botón 📸 Instagram | ☐ |
+## Play internal
 
-## 3. Scripts piloto
-
-```bash
-node scripts/pilot-cohort-report.mjs
-node scripts/pilot-sync-report.mjs
-node scripts/pilot-retention-report.mjs
+```powershell
+cd C:\Users\muscl\fitvina
+.\publish-play.bat internal
 ```
 
-## 4. Criterios beta
+Doc release: `PLAY_INTERNAL_v0.1.403.md` · Marketing: `assets/play-store/PLAY_MARKETING_v0.1.402.md`
+
+## Criterios beta
 
 - Crash-free >99% (7 días post-AAB)
-- ≥1 sync real/semana documentado
-- ≥10 testers por ciudad piloto
+- ≥1 sync real/semana documentado en piloto
+- ≥10 testers activos en **Viña / Valparaíso / Concón**
+- ≥40% nuevos usuarios con **primer LIVE en 24h**
+- Dictado voz usable en Samsung (Parar + preview sin colgarse)
+
+## Smoke web (automático)
+
+| Check | Estado |
+|-------|--------|
+| Landing piloto costa + CTA lista espera | ✅ |
+| App auth muestra v0.1.403 | ✅ (local) |
+| Badge piloto `BRAND_COPY.pilotGeo` | ✅ |
+| `npm run qa:smoke` (396 tests + versiones) | ✅ 0.1.403 |
+| Fix discovery multi-ciudad | ✅ código + índices Firestore; web 402+; Android **403** Play |
+
+**Invitación WhatsApp:** `PILOTO_INVITACION_WHATSAPP.txt` (pegar link Play opt-in)
+
+## APK local (USB)
+
+```
+android/app/build/outputs/apk/release/app-release.apk
+```
+
+```powershell
+cd C:\Users\muscl\fitvina\android
+.\gradlew.bat installRelease
+```
+
+## Métricas semanales
+
+Plantilla: `PILOTO_METRICAS_SEMANAL.md` · CLI: `npm run pilot:reports`

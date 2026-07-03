@@ -19,6 +19,19 @@ type RegistrationRegionSelectProps = {
   showHint?: boolean
 }
 
+function groupCitiesByRegion(
+  cities: ReturnType<typeof getRegistrationCitiesForCountry>
+): { region: string; cities: typeof cities }[] {
+  const byRegion = new Map<string, typeof cities>()
+  for (const city of cities) {
+    const key = city.region || 'Otras'
+    const list = byRegion.get(key) || []
+    list.push(city)
+    byRegion.set(key, list)
+  }
+  return [...byRegion.entries()].map(([region, grouped]) => ({ region, cities: grouped }))
+}
+
 export function RegistrationRegionSelect({
   value,
   onChange,
@@ -28,6 +41,8 @@ export function RegistrationRegionSelect({
   const cityValue = cities.some((c) => c.label === value.city)
     ? value.city
     : cities[0]?.label ?? value.city
+  const useRegionGroups = value.country === 'Chile' && cities.some((c) => c.region)
+  const regionGroups = useRegionGroups ? groupCitiesByRegion(cities) : []
 
   return (
     <div className="space-y-3">
@@ -50,13 +65,23 @@ export function RegistrationRegionSelect({
         <select
           value={cityValue}
           onChange={(e) => onChange(applyRegistrationCitySelection(e.target.value))}
-          className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-xl px-3 py-2.5 text-sm"
+          className="w-full bg-[#1C1C20] border border-[#2F2F35] rounded-xl px-3 py-2.5 text-sm max-h-48"
         >
-          {cities.map((c) => (
-            <option key={c.norm} value={c.label}>
-              {c.label}
-            </option>
-          ))}
+          {useRegionGroups
+            ? regionGroups.map(({ region, cities: group }) => (
+                <optgroup key={region} label={region}>
+                  {group.map((c) => (
+                    <option key={c.norm} value={c.label}>
+                      {c.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))
+            : cities.map((c) => (
+                <option key={c.norm} value={c.label}>
+                  {c.label}
+                </option>
+              ))}
         </select>
       </div>
       {showHint && (

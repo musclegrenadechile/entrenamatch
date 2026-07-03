@@ -1,8 +1,8 @@
-# Piloto cerrado — Viña del Mar × Santiago
+# Piloto cerrado — Costa central (Viña · Valpo · Concón) × Santiago
 
-**Versión:** `0.1.284+`  
-**Meta:** 50–200 MAU por ciudad piloto antes de abrir más comunas  
-**Programa:** `PILOT_PROGRAM_TITLE` en app = **Piloto Viña × Santiago**
+**Versión:** `0.1.402` (Play internal v402)  
+**Meta:** 50–200 MAU en zona costera antes de abrir más comunas  
+**Programa:** `PILOT_PROGRAM_TITLE` en app = **Piloto costa central**
 
 ---
 
@@ -48,9 +48,9 @@ cityWaitlist/{autoId}
 
 ### A. Play Internal (APK)
 
-1. Publicar build: `.\publish-play.bat internal` (v0.1.283+)
-2. Play Console → **Prueba interna** → agregar emails (máx recomendado 200 total)
-3. Compartir link opt-in + `PLAY_INTERNAL_v0.1.281.md` matriz QA
+1. Publicar build: `.\publish-play.bat internal` → **v0.1.402** ✅
+2. Play Console → **Prueba interna** → agregar emails
+3. Compartir link opt-in + `GUIA_PILOTO_RAPIDA.md` + matriz `PLAY_INTERNAL_v0.1.402.md`
 
 ### B. Grupos sugeridos
 
@@ -64,14 +64,16 @@ cityWaitlist/{autoId}
 ### C. Mensaje de invitación (copiar)
 
 ```
-Estamos probando EntrenaMatch en beta cerrada (Viña + Santiago).
+Estamos probando EntrenaMatch en beta cerrada (Viña · Valpo · Concón).
 
-1. Instala desde el link de Play internal
+1. Instala desde el link de Play internal (v0.1.402)
 2. Elige tu ciudad real en el registro
-3. Activa LIVE en el gym un sábado
+3. Activa LIVE cuando entrenes
 4. Haz un EntrenaSync ≥2 min con un amigo
+5. Prueba Dictar entreno en Tab Hoy
 
 Tu ciudad suma al piloto — meta 50 personas activas.
+Guía: GUIA_PILOTO_RAPIDA.md en el repo.
 ```
 
 ---

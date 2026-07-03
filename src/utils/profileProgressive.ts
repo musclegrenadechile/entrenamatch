@@ -15,8 +15,8 @@ export function isProfileProgressiveMode(user: Parameters<typeof getAccountAgeDa
   return getAccountAgeDays(user) < PROFILE_PROGRESSIVE_DAYS
 }
 
-/** Tab Hoy compacto — primeros 3 días: menos widgets, foco LIVE + Explorar. */
-export const HOME_COMPACT_DAYS = 3
+/** Tab Hoy compacto — primeros 7 días: foco LIVE + Explorar (sin Fuel/coach/marketplace). */
+export const HOME_COMPACT_DAYS = 7
 
 export function isHomeDayOneMode(user: Parameters<typeof getAccountAgeDays>[0]): boolean {
   return getAccountAgeDays(user) < HOME_COMPACT_DAYS

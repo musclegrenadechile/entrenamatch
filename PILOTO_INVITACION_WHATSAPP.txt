@@ -1,0 +1,13 @@
+🟠 EntrenaMatch — beta piloto costa (Viña · Valpo · Concón)
+
+Vemos quién entrena cerca EN VIVO y conectamos para EntrenaSync.
+
+1) Instala desde Play (Prueba interna v0.1.402): [PEGAR LINK OPT-IN AQUÍ]
+2) Regístrate con tu ciudad real
+3) Este finde: activa LIVE cuando entrenes
+4) Bonus: prueba "Dictar entreno" en Tab Hoy
+
+Meta: 50 personas activas en la zona. Tu ciudad suma 🏆
+
+Web alternativa: https://entrenamatch.web.app
+Guía completa en el grupo / repo: GUIA_PILOTO_RAPIDA.md

@@ -34,7 +34,7 @@ Cada fase = entregable + test + deploy. Oleadas de 10 fases.
 | **393** | `LiveNearModalMount` | Lista LIVE full-screen | ✅ v0.1.384 |
 | **395** | `SafetyActionSheetMount` | Sheet reportar/bloquear | ✅ v0.1.384 |
 | **397** | `useFeedPipeline` hook | feed ranking + filters | ✅ v0.1.385 |
-| **398** | App.tsx < 12k líneas | Medición + extracción batch | 🔄 ~12.6k |
+| **398** | App.tsx < 12k líneas | Medición + extracción batch | 🔄 ~12.1k (oleada H) |
 | **399** | `appOverlayRegistry` v2 | Todos los mounts registrados | ✅ v0.1.385 |
 | **400** | Tests mounts batch | Vitest por overlay | ✅ v0.1.385 |
 
@@ -128,10 +128,11 @@ Cada fase = entregable + test + deploy. Oleadas de 10 fases.
 ## Orden de ataque inmediato
 
 1. **382** — QA manual 17 ítems (2 teléfonos)
-2. **386** — AAB Play internal 382
-3. **391–400** — Extracción mounts (reducir App.tsx)
-4. **401–410** — Explorar multi-país polish
-5. **441–450** — Cierre open beta
+2. **386** — AAB Play internal al día
+3. **398** — Extracción batch (continúa en **451–460**)
+4. **401–410** — Explorar multi-país polish (continúa en **481–490**)
+5. **441–450** — Cierre open beta v1
+6. **451–500** — v1.1 multi-país → ver **`ROADMAP_FASES_451_500.md`**
 
 ## Comandos
 
@@ -141,3 +142,9 @@ npm run deploy
 .\publish-play.bat internal
 node scripts/pilot-cohort-report.mjs
 ```
+
+---
+
+## Continuación
+
+Roadmap **451–500** (oleadas H–L): arquitectura post-398, dominios por tab (Hoy, Mapa, Explorar, RED/Sync) y release **v1.1** → **`ROADMAP_FASES_451_500.md`**

@@ -467,6 +467,16 @@ exports.analyzeFood = functions
   }
 });
 
+const workoutVoiceModule = require('./workoutVoice');
+const workoutVoiceFns = workoutVoiceModule.register({
+  functions,
+  geminiApiKey,
+  classifyGeminiError,
+  geminiUserMessage,
+});
+exports.parseWorkoutVoice = workoutVoiceFns.parseWorkoutVoice;
+exports.parseWorkoutVoiceText = workoutVoiceFns.parseWorkoutVoiceText;
+
 /** Callable: enrich EntrenaPlan copy from rules-based JSON (Gemini optional). */
 exports.recommendPlan = functions
   .runWith({ secrets: [geminiApiKey], timeoutSeconds: 20, memory: '256MB' })

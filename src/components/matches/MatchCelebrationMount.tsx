@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import { VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto'
+import { BRAND_COPY } from '../../constants/brandCopy'
 import type { CurrentUser, Profile } from '../../types'
 import { getDistanceKm } from '../../utils'
 
@@ -35,7 +36,7 @@ export function MatchCelebrationMount({
           >
             <div className="p-8 text-center">
               <div className="text-[#FF4F79] font-semibold tracking-[3px] text-sm mb-1">
-                ¡ES UN MATCH!
+                {BRAND_COPY.explore.connectCelebration}
               </div>
               <div className="text-3xl font-semibold tracking-tight mb-4">
                 Tú y {profile.name} quieren entrenar juntos

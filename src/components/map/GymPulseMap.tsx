@@ -1197,7 +1197,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
 
   return (
     <div
-      className={`relative w-full gym-pulse-map-root ${isEmbedded ? 'gym-pulse-map-root--embedded' : ''} ${isFullHeight ? 'gym-pulse-map-root--fill' : ''}`}
+      className={`relative w-full gym-pulse-map-root em-v2-map ${isEmbedded ? 'gym-pulse-map-root--embedded' : ''} ${isFullHeight ? 'gym-pulse-map-root--fill' : ''}`}
       style={{ zIndex: 10 }}
     >
       {/* Status pill — fullscreen overlay; oculto en pestaña Mapa LIVE (ya estás ahí) */}
@@ -1205,7 +1205,7 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       <button
         type="button"
         aria-label="Ir al pin más activo en el mapa"
-        className="map-floating-pulse absolute top-2 left-2 z-[2000] px-3 py-1 rounded-2xl text-[10px] font-semibold text-[#22c55e] flex items-center gap-2 shadow-lg border border-[#22c55e]/20 cursor-pointer active:scale-[0.985] transition"
+        className="em-v2-map-pill absolute top-2 left-2 z-[2000] cursor-pointer"
         onClick={() => {
           try { /* haptic if available */ } catch {}
           const active = filterMapLiveUsers(liveTrainingNow || [], mapFilterOpts)
@@ -1235,12 +1235,12 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       >
         <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#22c55e] animate-pulse" />
         {BRAND_COPY.liveMap.globalPill}
-        <span className="text-[#22c55e]/70 font-mono text-[9px] tabular-nums">
+        <span className="em-v2-map-pill__meta">
           • {totalLiveOnMap} EN VIVO
         </span>
         {(() => {
           const activeSyncs = (liveTrainingNow || []).filter((u: any) => u.trainingSyncWith).length / 2
-          return activeSyncs > 0 ? <span className="text-[#FFD700] font-bold text-[9px]">• {Math.floor(activeSyncs)} EN SYNC</span> : null
+          return activeSyncs > 0 ? <span className="em-v2-map-pill__sync">• {Math.floor(activeSyncs)} EN SYNC</span> : null
         })()}
       </button>
       )}
@@ -1351,16 +1351,16 @@ const GymPulseMap = forwardRef<GymPulseMapHandle, GymPulseMapProps>((props, ref)
       {/* Sin nadie más en vivo — solo si TÚ tampoco estás LIVE (evita popup central redundante) */}
       {isTabFill && othersLiveCount === 0 && !selfIsLive && (
         <div className="absolute inset-x-8 top-[42%] z-[1500] pointer-events-none flex justify-center">
-          <div className="rounded-2xl border border-[#22c55e]/25 bg-[#0D0D10]/88 backdrop-blur-sm px-4 py-3 max-w-[260px] text-center shadow-xl">
-            <p className="text-[11px] font-bold text-white/95">{BRAND_COPY.liveMap.emptyOverlayTitle}</p>
-            <p className="text-[10px] text-[#9CA3AF] mt-1.5 leading-snug">{BRAND_COPY.liveMap.emptyOverlayBody}</p>
+          <div className="em-v2-map-overlay px-4 py-3 max-w-[260px] text-center">
+            <p className="em-v2-map-overlay__title">{BRAND_COPY.liveMap.emptyOverlayTitle}</p>
+            <p className="em-v2-map-overlay__body mt-1.5">{BRAND_COPY.liveMap.emptyOverlayBody}</p>
           </div>
         </div>
       )}
 
       {isTabFill && selfIsLive && othersLiveCount === 0 && (
         <div className="absolute left-1/2 -translate-x-1/2 bottom-[4.75rem] z-[1995] pointer-events-none max-w-[92%]">
-          <div className="rounded-full border border-[#22c55e]/30 bg-[#0D0D10]/88 px-3 py-1.5 text-[9px] text-[#86efac] text-center shadow-md backdrop-blur-sm">
+          <div className="em-v2-map-hint px-3 py-1.5 text-center">
             {BRAND_COPY.liveMap.soloLiveHint}
           </div>
         </div>

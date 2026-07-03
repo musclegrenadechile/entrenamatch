@@ -122,6 +122,11 @@ export function resolveDerbyTeam(city?: string | null): 'home' | 'away' | null {
   return null
 }
 
+/** True when user's city counts toward Copa Zona piloto (Valpo region or Santiago). */
+export function isDerbyParticipantCity(city?: string | null): boolean {
+  return resolveDerbyTeam(city) !== null
+}
+
 /** Regional Firestore doc to bump when user's commune is a home ally (not the aggregate key). */
 export function derbyRegionalBumpTarget(
   city?: string | null

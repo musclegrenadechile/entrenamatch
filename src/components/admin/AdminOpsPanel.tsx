@@ -17,6 +17,7 @@ import type { AdminMetrics } from '../../services/adminAnalytics'
 import type { MpHealthResult } from '../../services/adminMp'
 import { PilotMetricsPanel } from './PilotMetricsPanel'
 import type { Firestore } from 'firebase/firestore'
+import { isMarketplaceUiEnabled } from '../../utils/pilotFeatureFlags'
 
 export interface AdminOpsPanelProps {
   open: boolean
@@ -47,9 +48,10 @@ export function AdminOpsPanel({
   db = null,
   liveNowTotal = 0,
 }: AdminOpsPanelProps) {
+  const marketplaceUi = isMarketplaceUiEnabled()
   const [tab, setTab] = useState<
     'orders' | 'trainers' | 'revenue' | 'analytics' | 'pilot' | 'mp' | 'payouts'
-  >('orders')
+  >(marketplaceUi ? 'orders' : 'trainers')
   const [orderFilter, setOrderFilter] = useState<MarketplaceOrder['status'] | 'all'>('all')
   const [busy, setBusy] = useState<string | null>(null)
 
@@ -120,11 +122,13 @@ export function AdminOpsPanel({
       </header>
 
       <div className="admin-ops__stats">
-        <div className="admin-ops__stat">
-          <Package size={16} />
-          <strong>{pendingOrders.length}</strong>
-          <span>pendientes</span>
-        </div>
+        {marketplaceUi && (
+          <div className="admin-ops__stat">
+            <Package size={16} />
+            <strong>{pendingOrders.length}</strong>
+            <span>pendientes</span>
+          </div>
+        )}
         <div className="admin-ops__stat">
           <BadgeCheck size={16} />
           <strong>{unverifiedTrainers.length}</strong>
@@ -133,13 +137,15 @@ export function AdminOpsPanel({
       </div>
 
       <div className="admin-ops__tabs">
-        <button
-          type="button"
-          className={tab === 'orders' ? 'admin-ops__tab--active' : 'admin-ops__tab'}
-          onClick={() => setTab('orders')}
-        >
-          <ShoppingBag size={14} /> Pedidos ({orders.length})
-        </button>
+        {marketplaceUi && (
+          <button
+            type="button"
+            className={tab === 'orders' ? 'admin-ops__tab--active' : 'admin-ops__tab'}
+            onClick={() => setTab('orders')}
+          >
+            <ShoppingBag size={14} /> Pedidos ({orders.length})
+          </button>
+        )}
         <button
           type="button"
           className={tab === 'trainers' ? 'admin-ops__tab--active' : 'admin-ops__tab'}
@@ -168,13 +174,15 @@ export function AdminOpsPanel({
         >
           🏋️ Piloto
         </button>
-        <button
-          type="button"
-          className={tab === 'mp' ? 'admin-ops__tab--active' : 'admin-ops__tab'}
-          onClick={() => setTab('mp')}
-        >
-          MP
-        </button>
+        {marketplaceUi && (
+          <button
+            type="button"
+            className={tab === 'mp' ? 'admin-ops__tab--active' : 'admin-ops__tab'}
+            onClick={() => setTab('mp')}
+          >
+            MP
+          </button>
+        )}
         <button
           type="button"
           className={tab === 'payouts' ? 'admin-ops__tab--active' : 'admin-ops__tab'}
@@ -185,7 +193,7 @@ export function AdminOpsPanel({
       </div>
 
       <div className="admin-ops__panel">
-        {tab === 'orders' && (
+        {marketplaceUi && tab === 'orders' && (
           <>
             <div className="admin-ops__filters">
               {(['all', 'pending_payment', 'paid', 'shipped', 'delivered', 'cancelled'] as const).map(
@@ -358,7 +366,7 @@ export function AdminOpsPanel({
 
         {tab === 'pilot' && <PilotMetricsPanel db={db} liveNowTotal={liveNowTotal} />}
 
-        {tab === 'mp' && (
+        {marketplaceUi && tab === 'mp' && (
           <div className="admin-ops__mp">
             <p className="admin-ops__mp-status">
               Mercado Pago:{' '}

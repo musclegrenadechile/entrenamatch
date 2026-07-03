@@ -1,7 +1,7 @@
 {
   "name": "entrenamatch",
   "private": true,
-  "version": "0.1.385",
+  "version": "0.1.404",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -21,6 +21,9 @@
     "android:apk": "npm run android:build && cd android && gradlew.bat assembleDebug",
     "android:device": "cross-env CAP_DEV=1 npm run build:web:native && cross-env CAP_DEV=1 npx cap sync android && cd android && gradlew.bat assembleDebug",
     "version:check": "node scripts/version-check.mjs",
+    "pilot:cohort": "node scripts/pilot-cohort-report.mjs",
+    "pilot:sync": "node scripts/pilot-sync-report.mjs",
+    "pilot:reports": "node scripts/pilot-cohort-report.mjs && node scripts/pilot-sync-report.mjs",
     "build:release": "cd android && .\\gradlew.bat bundleRelease",
     "build:release:win": "build-release.bat",
     "publish:play": "publish-play.bat",

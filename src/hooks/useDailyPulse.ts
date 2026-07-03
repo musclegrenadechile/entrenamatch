@@ -189,7 +189,7 @@ export function useDailyPulse({
         try {
           triggerHaptic('success')
         } catch {}
-        toast.success(`¡GymPulse completado! +${levelBonus} Constancia`, {
+        toast.success(`¡Reto diario completado! +${levelBonus} Constancia`, {
           description: `${ch.icon || '✅'} ${ch.title} • Nivel ${dailyPulse.level} • Tu Red se fortalece`,
         })
 
@@ -256,7 +256,7 @@ export function useDailyPulse({
           ).catch(() => {})
         }
       } else {
-        toast(`+${progressInc} progreso en el GymPulse`)
+        toast(`+${progressInc} progreso en tu reto diario`)
       }
     },
     [

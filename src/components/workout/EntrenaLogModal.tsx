@@ -32,6 +32,7 @@ import {
 } from '../../utils/workoutSetFields'
 import { GymSoundWorkoutBar } from '../music/GymSoundWorkoutBar'
 import { PastWorkoutPicker } from './PastWorkoutPicker'
+import { WorkoutVoiceDictationBar } from './WorkoutVoiceDictationBar'
 import {
   BUILTIN_WORKOUT_TEMPLATES,
   cloneExercises,
@@ -724,6 +725,29 @@ export function EntrenoDeHoyModal({
               onSelect={repeatFromWorkout}
             />
           )}
+
+          <WorkoutVoiceDictationBar
+            enabled={!!userId}
+            recentExerciseNames={quickExerciseNames}
+            onApply={(payload) => {
+              const merged =
+                payload.exercises.length > 0
+                  ? exercises.length > 0
+                    ? [...exercises, ...payload.exercises.map((e) => normalizeWorkoutExercise({ ...e, sets: [...e.sets] }))]
+                    : payload.exercises.map((e) => normalizeWorkoutExercise({ ...e, sets: [...e.sets] }))
+                  : exercises
+              const at = startedAt ?? Date.now()
+              applyState({
+                title: payload.title || title,
+                type: payload.type,
+                durationMin: payload.durationMin,
+                exercises: merged,
+                startedAt: at,
+              })
+              setDurationTouched(true)
+              if (!startedAt) setStartedAt(at)
+            }}
+          />
 
           {quickExerciseNames.length > 0 && (
             <div className="gym-log-quick">

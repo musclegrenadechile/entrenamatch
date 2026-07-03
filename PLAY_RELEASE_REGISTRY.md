@@ -9,9 +9,9 @@ Documento de referencia para el equipo. **No contiene secretos** (contraseñas/k
 | Package | `com.entrenamatch.app` |
 | App name | EntrenaMatch |
 | Track objetivo | **Closed testing** (beta cerrada, app oculta) |
-| Última build local | `versionCode` **345** · `versionName` **0.1.345** (oleada 341–345) |
-| **Anterior** | `versionCode` **340** — marketing GTM 331–340 |
-| Doc release | `PLAY_INTERNAL_v0.1.345.md` |
+| Última build local | `versionCode` **402** · `versionName` **0.1.402** (GTM piloto + dictado voz) |
+| **Anterior** | `versionCode` **401** — marketing oleada 511 |
+| Doc release | `PLAY_INTERNAL_v0.1.402.md` |
 | AAB para subir | `EntrenaMatch-release.aab` (raíz del repo) |
 | Script build | `build-play-store.bat` |
 
@@ -65,8 +65,18 @@ publish-play.bat closed
 
 | Canal | URL / install |
 |-------|----------------|
-| Web (principal testers) | https://musclegrenadechile.github.io/entrenamatch/ |
-| APK closed | Link privado Play Console |
+| Web (principal testers) | https://entrenamatch.web.app |
+| APK internal v402 | Play Console → Prueba interna |
+
+## Métricas piloto (CLI)
+
+```powershell
+npm run pilot:reports
+```
+
+Si aparece `PERMISSION_DENIED`: en [Google Cloud IAM](https://console.cloud.google.com/iam-admin/iam?project=entrenamatch), al service account de `play-service-account.json` agregar rol **Cloud Datastore User** o **Firebase Admin SDK Administrator Service Agent**. Mientras tanto, consulta manual en Firebase Console → `pilotCohort` / `pilotWeeklyMetrics`.
+
+Plantilla semanal: `PILOTO_METRICAS_SEMANAL.md`
 
 ## Bloqueo Play API (jun 2026) — Health features
 

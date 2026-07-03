@@ -19,6 +19,15 @@ import { Filesystem } from '@capacitor/filesystem'
 import { Health } from '@capgo/capacitor-health'
 import { registerPlugin } from '@capacitor/core'
 
+const EntrenamatchMicrophone = registerPlugin<{
+  checkPermission: () => Promise<{ granted: boolean }>
+  requestPermission: () => Promise<{ granted: boolean }>
+  openAppSettings: () => Promise<void>
+  startRecording: () => Promise<{ recording: boolean }>
+  stopRecording: () => Promise<{ base64: string; mimeType: string; durationMs?: number }>
+  isRecording: () => Promise<{ recording: boolean }>
+}>('EntrenamatchMicrophone')
+
 const EntrenamatchHealth = registerPlugin<{
   hasGrantedHealthPermissions: () => Promise<{
     granted: boolean
@@ -60,6 +69,7 @@ if (typeof window !== 'undefined') {
     Filesystem,
     Health,
     EntrenamatchHealth,
+    EntrenamatchMicrophone,
   }
 }
 
@@ -74,4 +84,5 @@ export {
   Filesystem,
   Health,
   EntrenamatchHealth,
+  EntrenamatchMicrophone,
 }

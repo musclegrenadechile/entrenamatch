@@ -4,6 +4,7 @@ import {
   buildCityDerby,
   derbyPopulationIndex,
   derbyStatusLine,
+  isDerbyParticipantCity,
   resolveDerbyTeam,
   DERBY_AWAY,
   DERBY_HOME,
@@ -19,6 +20,12 @@ describe('cityDerby', () => {
     expect(resolveDerbyTeam('Maipú')).toBeNull()
     expect(resolveDerbyTeam('Puente Alto')).toBeNull()
     expect(resolveDerbyTeam('Concepción')).toBeNull()
+  })
+
+  it('isDerbyParticipantCity mirrors resolveDerbyTeam', () => {
+    expect(isDerbyParticipantCity('Concón')).toBe(true)
+    expect(isDerbyParticipantCity('Lima')).toBe(false)
+    expect(isDerbyParticipantCity(null)).toBe(false)
   })
 
   it('aggregates minutes from regional allies (away = santiago only)', () => {

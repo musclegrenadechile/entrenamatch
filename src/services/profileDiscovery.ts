@@ -16,11 +16,12 @@ export function mapFirestoreProfileDoc(
   id: string,
   data: Record<string, unknown> | null | undefined
 ): Profile | null {
-  if (!data || !data.name || isDeletedProfileData(data)) return null
+  const name = String(data?.name ?? '').trim()
+  if (!data || !name || isDeletedProfileData(data)) return null
   const d = data as Record<string, any>
   return {
     id,
-    name: d.name,
+    name,
     age: d.age || 25,
     gender: d.gender || 'hombre',
     city: d.city || '',

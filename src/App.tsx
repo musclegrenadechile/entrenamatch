@@ -1,4 +1,4 @@
-// ✅ Build limpio después de revert V2 - 06/06/2026
+﻿// âœ… Build limpio despuÃ©s de revert V2 - 06/06/2026
 // @ts-nocheck
 import { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense, Component, startTransition, type ReactNode, type ChangeEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -39,7 +39,7 @@ import { BRAND_COPY } from './constants/brandCopy'
 
 // Capacitor plugins are loaded via a separate module that is only analyzed in CAPACITOR builds.
 // This prevents Vite/Rolldown from ever trying to resolve @capacitor/* packages during pure web builds
-// (Firebase --base=/ , GH Pages, dev server) → eliminates the "failed to resolve import" errors.
+// (Firebase --base=/ , GH Pages, dev server) â†’ eliminates the "failed to resolve import" errors.
 let CapacitorCamera: any = null
 let PushNotifications: any = null
 let PlayIntegrityNative: any = null
@@ -87,6 +87,12 @@ import { ExploreFiltersSheetMount } from './components/explore/ExploreFiltersShe
 import { MatchCelebrationMount } from './components/matches/MatchCelebrationMount'
 import { LiveNearModalMount } from './components/explore/LiveNearModalMount'
 import { SafetyActionSheetMount } from './components/safety/SafetyActionSheetMount'
+import { LegalPagesMount } from './components/legal/LegalPagesMount'
+import { ReportModalMount } from './components/safety/ReportModalMount'
+import { VerificationFlowMount } from './components/safety/VerificationFlowMount'
+import { ModerationPanelMount } from './components/safety/ModerationPanelMount'
+import { TrainingReviewModalMount } from './components/sessions/TrainingReviewModalMount'
+
 import { useExploreDeck } from './hooks/useExploreDeck'
 import { useAndroidBackHandler } from './hooks/useAndroidBackHandler'
 import { suggestedSquadName } from './utils/sparseCityDefaults'
@@ -251,13 +257,14 @@ import {
   isProfileProgressiveMode,
   shouldHideCoachAndMarketplace,
 } from './utils/profileProgressive'
+import { isMarketplaceUiEnabled } from './utils/pilotFeatureFlags'
 import {
   formatLastLiveLabel,
   getTeamMemberStatus,
   sortTeamMembers,
 } from './utils/homeTeam'
 import { isTeamMemberId } from './utils/teamMembers'
-import { isSeedProfileId } from './utils/seedProfiles'
+import { isSeedProfileId, SEED_PROFILES, CHAT_OPENERS } from './utils/seedProfiles'
 import { EntrenoDeHoyModalMount } from './components/workout/EntrenoDeHoyModalMount'
 import { WorkoutPostCard, WorkoutSessionFab } from './components/workout'
 import { detectWorkoutPRs, formatWorkoutPRSummary } from './utils/workoutPR'
@@ -368,8 +375,9 @@ import {
 import { attachUserPostsListener } from './services/profilePosts'
 import {
   fetchDiscoveryProfiles,
-  primaryDiscoveryCityForListener,
+  attachDiscoveryProfilesListener,
 } from './services/profileDiscoveryQuery'
+import { canonicalProfileLocation } from './constants/pilotProgram'
 import { parseProfileFromFirestoreDoc, PROFILE_LIST_LIMIT } from './utils/profileFirestoreParse'
 import { shouldHideBetaBot } from './utils/betaBots'
 import { bumpRealtimeStat, realtimeStats } from './utils/realtimeStats'
@@ -397,7 +405,6 @@ import { compareSyncWorkoutLogs, summarizePartnerWeekFromPosts, summarizePartner
 import { fetchGymRoutinesFromFirestore, mergeGymRoutineTemplates } from './services/gymRoutines'
 import { estimateWorkoutBurn } from './domain/fuelBalance/estimateWorkoutBurn'
 import { FullProfileSheetMount } from './components/profile/FullProfileSheetMount'
-import { VerificationFaceCapture } from './components/profile/VerificationFaceCapture'
 import { VerifiedProfilePhoto } from './components/profile/VerifiedProfilePhoto'
 import { triggerHaptic } from './utils/haptics'
 import {
@@ -472,160 +479,6 @@ function groupMessagesCollectionPath(chatId: string): string {
   return isSquadChatId(chatId) ? `squads/${chatId}/messages` : `sessions/${chatId}/messages`
 }
 
-// ==================== GLOBAL SEED PROFILES - ENTRENAMATCH ====================
-// Lanzamiento inicial fuerte en Chile + presencia en LatAm y España
-const SEED_PROFILES: Profile[] = [
-  {
-    id: 'p1', name: 'Camila Morales', age: 26, gender: 'mujer',
-    city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528,
-    bio: 'Pesas + correr en la playa al atardecer. Busco compañero/a constante para motivarnos. ¡Amante del café post entreno!',
-    photos: ['https://picsum.photos/id/1011/600/800', 'https://picsum.photos/id/1009/600/800', 'https://picsum.photos/id/1005/600/800'],
-    trainingTypes: ['Pesas/Gym', 'Running'], goals: ['Ganar músculo', 'Mantenerse en forma'], level: 'Intermedio', availability: ['Tarde', 'Noche']
-  },
-  {
-    id: 'p2', name: 'Joaquín Pérez', age: 29, gender: 'hombre',
-    city: 'Santiago', country: 'Chile', lat: -33.4489, lng: -70.6693,
-    bio: 'CrossFit 4 veces por semana. Me encanta salir a correr por el parque los fines de semana. ¿Te animas?',
-    photos: ['https://picsum.photos/id/1005/600/800', 'https://picsum.photos/id/201/600/800', 'https://picsum.photos/id/160/600/800'],
-    trainingTypes: ['CrossFit', 'Running', 'Funcional'], goals: ['Aumentar fuerza', 'Mejorar resistencia', 'Preparar competencia'], level: 'Avanzado', availability: ['Mañana', 'Tarde']
-  },
-  {
-    id: 'p3', name: 'Valentina Soto', age: 24, gender: 'mujer',
-    city: 'Valparaíso', country: 'Chile', lat: -33.0472, lng: -71.6127,
-    bio: 'Calistenia y yoga. Entreno en los cerros o en casa. Busco gente para entrenar al aire libre y tomar mate después 🧉',
-    photos: ['https://picsum.photos/id/1009/600/800', 'https://picsum.photos/id/29/600/800'],
-    trainingTypes: ['Calistenia', 'Yoga', 'Funcional'], goals: ['Movilidad y flexibilidad', 'Socializar y motivación', 'Mantenerse en forma'], level: 'Intermedio', availability: ['Mañana', 'Tarde']
-  },
-  {
-    id: 'p4', name: 'Diego Herrera', age: 32, gender: 'hombre',
-    city: 'Buenos Aires', country: 'Argentina', lat: -34.6037, lng: -58.3816,
-    bio: 'Gym + boxeo. 6 años entrenando. Busco sparring o compañero de pesas serio. Nada de excusas.',
-    photos: ['https://picsum.photos/id/201/600/800', 'https://picsum.photos/id/64/600/800'],
-    trainingTypes: ['Pesas/Gym', 'Boxeo'], goals: ['Aumentar fuerza', 'Ganar músculo'], level: 'Avanzado', availability: ['Tarde', 'Noche']
-  },
-  {
-    id: 'p5', name: 'Isabella Mendoza', age: 28, gender: 'mujer',
-    city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528,
-    bio: 'Running y pilates. Corro 3 veces por semana por la costanera. Ideal para quien quiera sumar kms conmigo.',
-    photos: ['https://picsum.photos/id/1005/600/800', 'https://picsum.photos/id/1012/600/800'],
-    trainingTypes: ['Running', 'Pilates'], goals: ['Perder grasa', 'Mejorar resistencia', 'Mantenerse en forma'], level: 'Intermedio', availability: ['Mañana']
-  },
-  {
-    id: 'p6', name: 'Matías Vargas', age: 25, gender: 'hombre',
-    city: 'Concepción', country: 'Chile', lat: -36.8201, lng: -73.0445,
-    bio: 'Funcional y calistenia. Me encanta entrenar al amanecer. ¿Quién se levanta temprano?',
-    photos: ['https://picsum.photos/id/160/600/800', 'https://picsum.photos/id/1008/600/800'],
-    trainingTypes: ['Calistenia', 'Funcional', 'Running'], goals: ['Aumentar fuerza', 'Mejorar resistencia'], level: 'Intermedio', availability: ['Mañana']
-  },
-  {
-    id: 'p7', name: 'Sofía Lagos', age: 23, gender: 'mujer',
-    city: 'Santiago', country: 'Chile', lat: -33.4489, lng: -70.6693,
-    bio: 'Gym y un poco de todo. Principiante motivada buscando grupo o persona para ir al gimnasio sin miedo.',
-    photos: ['https://picsum.photos/id/29/600/800', 'https://picsum.photos/id/1011/600/800'],
-    trainingTypes: ['Pesas/Gym', 'Funcional'], goals: ['Perder grasa', 'Socializar y motivación', 'Mantenerse en forma'], level: 'Principiante', availability: ['Tarde', 'Noche']
-  },
-  {
-    id: 'p8', name: 'Lucas Fernández', age: 35, gender: 'hombre',
-    city: 'Ciudad de México', country: 'México', lat: 19.4326, lng: -99.1332,
-    bio: 'Ciclismo de ruta y gym. Salgo todos los sábados temprano. Nivel avanzado, busco gente seria.',
-    photos: ['https://picsum.photos/id/64/600/800', 'https://picsum.photos/id/201/600/800'],
-    trainingTypes: ['Ciclismo', 'Pesas/Gym'], goals: ['Mejorar resistencia', 'Preparar competencia'], level: 'Avanzado', availability: ['Mañana']
-  },
-  {
-    id: 'p9', name: 'Antonia Ruiz', age: 30, gender: 'mujer',
-    city: 'Madrid', country: 'España', lat: 40.4168, lng: -3.7038,
-    bio: 'Yoga + running + algo de pesas. Equilibrio mental y físico. Me encanta conocer gente nueva con la misma energía.',
-    photos: ['https://picsum.photos/id/1009/600/800', 'https://picsum.photos/id/30/600/800'],
-    trainingTypes: ['Yoga', 'Running', 'Pesas/Gym'], goals: ['Movilidad y flexibilidad', 'Mantenerse en forma', 'Socializar y motivación'], level: 'Intermedio', availability: ['Mañana', 'Tarde']
-  },
-  {
-    id: 'p10', name: 'Benjamín Cruz', age: 27, gender: 'hombre',
-    city: 'Lima', country: 'Perú', lat: -12.0464, lng: -77.0428,
-    bio: 'CrossFit y natación. Entreno en un box en Miraflores. Busco compañero de WODs.',
-    photos: ['https://picsum.photos/id/160/600/800', 'https://picsum.photos/id/1005/600/800'],
-    trainingTypes: ['CrossFit', 'Natación'], goals: ['Aumentar fuerza', 'Mejorar resistencia'], level: 'Avanzado', availability: ['Tarde', 'Noche']
-  },
-  {
-    id: 'p11', name: 'Renata Díaz', age: 22, gender: 'mujer',
-    city: 'Bogotá', country: 'Colombia', lat: 4.7110, lng: -74.0721,
-    bio: 'Calistenia en las barras del parque. Nivel intermedio buscando progresar en dominadas.',
-    photos: ['https://picsum.photos/id/1012/600/800', 'https://picsum.photos/id/29/600/800'],
-    trainingTypes: ['Calistenia', 'Funcional'], goals: ['Aumentar fuerza', 'Ganar músculo'], level: 'Intermedio', availability: ['Tarde']
-  },
-  {
-    id: 'p12', name: 'Sebastián Morales', age: 31, gender: 'hombre',
-    city: 'Santiago', country: 'Chile', lat: -33.4489, lng: -70.6693,
-    bio: 'Pesas pesado y algo de boxeo. 4 años consistente. Busco gente que entrene en serio.',
-    photos: ['https://picsum.photos/id/201/600/800', 'https://picsum.photos/id/64/600/800'],
-    trainingTypes: ['Pesas/Gym', 'Boxeo'], goals: ['Ganar músculo', 'Aumentar fuerza'], level: 'Avanzado', availability: ['Noche']
-  },
-  {
-    id: 'p13', name: 'Martina Vega', age: 26, gender: 'mujer',
-    city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528,
-    bio: 'Pilates + running. Recuperándome de lesión pero con muchas ganas. Ideal para alguien paciente.',
-    photos: ['https://picsum.photos/id/1009/600/800', 'https://picsum.photos/id/1011/600/800'],
-    trainingTypes: ['Pilates', 'Running'], goals: ['Rehabilitación / Lesión', 'Mantenerse en forma', 'Movilidad y flexibilidad'], level: 'Principiante', availability: ['Mañana', 'Tarde']
-  },
-  {
-    id: 'p14', name: 'Felipe Navarro', age: 28, gender: 'hombre',
-    city: 'Valparaíso', country: 'Chile', lat: -33.0472, lng: -71.6127,
-    bio: 'Funcional, pesas y trail running. Me muevo entre Valpo y Viña. ¿Salimos a correr?',
-    photos: ['https://picsum.photos/id/1008/600/800', 'https://picsum.photos/id/160/600/800'],
-    trainingTypes: ['Funcional', 'Pesas/Gym', 'Running'], goals: ['Mejorar resistencia', 'Perder grasa'], level: 'Intermedio', availability: ['Mañana', 'Noche']
-  },
-  {
-    id: 'p15', name: 'Carolina Mendoza', age: 29, gender: 'mujer',
-    city: 'Miami', country: 'Estados Unidos', lat: 25.7617, lng: -80.1918,
-    bio: 'Gym + running por la playa. Chilena viviendo en Miami. Busco gente con la misma disciplina.',
-    photos: ['https://picsum.photos/id/1011/600/800', 'https://picsum.photos/id/1009/600/800'],
-    trainingTypes: ['Pesas/Gym', 'Running'], goals: ['Perder grasa', 'Ganar músculo'], level: 'Intermedio', availability: ['Mañana', 'Tarde']
-  },
-  { id: 'p16', name: 'Alejandro Ruiz', age: 22, gender: 'hombre', city: 'Reñaca', country: 'Chile', lat: -32.95, lng: -71.55, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/29/600/800', 'https://picsum.photos/id/30/600/800', 'https://picsum.photos/id/64/600/800'], trainingTypes: ['Pesas/Gym', 'Running'], goals: ['Ganar músculo', 'Aumentar fuerza'], level: 'Intermedio', availability: ['Mañana', 'Tarde'] },
-  { id: 'p17', name: 'Alejandra Ruiz', age: 23, gender: 'mujer', city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/1004/600/800', 'https://picsum.photos/id/1005/600/800'], trainingTypes: ['Running', 'Yoga'], goals: ['Perder grasa', 'Mejorar resistencia'], level: 'Intermedio', availability: ['Tarde', 'Noche'] },
-  { id: 'p18', name: 'Andrés Morales', age: 24, gender: 'hombre', city: 'Concón', country: 'Chile', lat: -32.93, lng: -71.52, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/1006/600/800', 'https://picsum.photos/id/1007/600/800', 'https://picsum.photos/id/1008/600/800'], trainingTypes: ['Calistenia', 'Funcional'], goals: ['Aumentar fuerza', 'Mantenerse en forma'], level: 'Avanzado', availability: ['Noche', 'Mañana'] },
-  { id: 'p19', name: 'Beatriz Morales', age: 25, gender: 'mujer', city: 'Reñaca', country: 'Chile', lat: -32.95, lng: -71.55, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/1009/600/800', 'https://picsum.photos/id/1011/600/800'], trainingTypes: ['Yoga', 'Running'], goals: ['Perder grasa', 'Mejorar resistencia'], level: 'Intermedio', availability: ['Tarde'] },
-  { id: 'p20', name: 'Carlos Soto', age: 26, gender: 'hombre', city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/1012/600/800', 'https://picsum.photos/id/1013/600/800', 'https://picsum.photos/id/1014/600/800'], trainingTypes: ['Pesas/Gym', 'Boxeo'], goals: ['Ganar músculo', 'Aumentar fuerza'], level: 'Avanzado', availability: ['Mañana', 'Tarde'] },
-  { id: 'p21', name: 'Daniela Vega', age: 27, gender: 'mujer', city: 'Concón', country: 'Chile', lat: -32.93, lng: -71.52, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/1015/600/800', 'https://picsum.photos/id/1016/600/800'], trainingTypes: ['Calistenia', 'Yoga'], goals: ['Movilidad y flexibilidad', 'Socializar y motivación'], level: 'Intermedio', availability: ['Tarde', 'Noche'] },
-  { id: 'p22', name: 'Eduardo Pérez', age: 28, gender: 'hombre', city: 'Reñaca', country: 'Chile', lat: -32.95, lng: -71.55, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/1017/600/800', 'https://picsum.photos/id/1018/600/800', 'https://picsum.photos/id/1019/600/800'], trainingTypes: ['CrossFit', 'Running'], goals: ['Aumentar fuerza', 'Mejorar resistencia'], level: 'Intermedio', availability: ['Mañana'] },
-  { id: 'p23', name: 'Elena Pérez', age: 29, gender: 'mujer', city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/1020/600/800', 'https://picsum.photos/id/1021/600/800'], trainingTypes: ['Pilates', 'Running'], goals: ['Perder grasa', 'Mantenerse en forma'], level: 'Principiante', availability: ['Tarde'] },
-  { id: 'p24', name: 'Francisco López', age: 30, gender: 'hombre', city: 'Concón', country: 'Chile', lat: -32.93, lng: -71.52, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/1022/600/800', 'https://picsum.photos/id/1023/600/800', 'https://picsum.photos/id/1024/600/800'], trainingTypes: ['Natación', 'Funcional'], goals: ['Mejorar resistencia', 'Aumentar fuerza'], level: 'Avanzado', availability: ['Noche', 'Tarde'] },
-  { id: 'p25', name: 'Fernanda López', age: 31, gender: 'mujer', city: 'Reñaca', country: 'Chile', lat: -32.95, lng: -71.55, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/28/600/800', 'https://picsum.photos/id/201/600/800'], trainingTypes: ['Yoga', 'Pilates'], goals: ['Movilidad y flexibilidad', 'Socializar y motivación'], level: 'Intermedio', availability: ['Mañana', 'Tarde'] },
-  { id: 'p26', name: 'Gabriel Díaz', age: 32, gender: 'hombre', city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/160/600/800', 'https://picsum.photos/id/100/600/800', 'https://picsum.photos/id/101/600/800'], trainingTypes: ['Boxeo', 'Pesas/Gym'], goals: ['Aumentar fuerza', 'Ganar músculo'], level: 'Avanzado', availability: ['Tarde', 'Noche'] },
-  { id: 'p27', name: 'Gabriela Díaz', age: 33, gender: 'mujer', city: 'Concón', country: 'Chile', lat: -32.93, lng: -71.52, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/102/600/800', 'https://picsum.photos/id/103/600/800'], trainingTypes: ['Running', 'Yoga'], goals: ['Perder grasa', 'Mejorar resistencia'], level: 'Intermedio', availability: ['Mañana'] },
-  { id: 'p28', name: 'Héctor Mendoza', age: 34, gender: 'hombre', city: 'Reñaca', country: 'Chile', lat: -32.95, lng: -71.55, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/29/600/800', 'https://picsum.photos/id/30/600/800'], trainingTypes: ['Ciclismo', 'Running'], goals: ['Mejorar resistencia', 'Preparar competencia'], level: 'Avanzado', availability: ['Tarde'] },
-  { id: 'p29', name: 'Helena Mendoza', age: 35, gender: 'mujer', city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/64/600/800', 'https://picsum.photos/id/1004/600/800', 'https://picsum.photos/id/1005/600/800'], trainingTypes: ['Pilates', 'Funcional'], goals: ['Movilidad y flexibilidad', 'Mantenerse en forma'], level: 'Intermedio', availability: ['Noche', 'Tarde'] },
-  { id: 'p30', name: 'Ignacio Torres', age: 36, gender: 'hombre', city: 'Concón', country: 'Chile', lat: -32.93, lng: -71.52, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/1006/600/800', 'https://picsum.photos/id/1007/600/800'], trainingTypes: ['CrossFit', 'Natación'], goals: ['Aumentar fuerza', 'Mejorar resistencia'], level: 'Avanzado', availability: ['Mañana', 'Noche'] },
-  { id: 'p31', name: 'Isabel Torres', age: 37, gender: 'mujer', city: 'Reñaca', country: 'Chile', lat: -32.95, lng: -71.55, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/1008/600/800', 'https://picsum.photos/id/1009/600/800'], trainingTypes: ['Yoga', 'Running'], goals: ['Perder grasa', 'Socializar y motivación'], level: 'Principiante', availability: ['Tarde'] },
-  { id: 'p32', name: 'Javier Rojas', age: 38, gender: 'hombre', city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/1011/600/800', 'https://picsum.photos/id/1012/600/800', 'https://picsum.photos/id/1013/600/800'], trainingTypes: ['Pesas/Gym', 'Boxeo'], goals: ['Ganar músculo', 'Aumentar fuerza'], level: 'Avanzado', availability: ['Noche'] },
-  { id: 'p33', name: 'Juana Rojas', age: 22, gender: 'mujer', city: 'Concón', country: 'Chile', lat: -32.93, lng: -71.52, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/1014/600/800', 'https://picsum.photos/id/1015/600/800'], trainingTypes: ['Calistenia', 'Pilates'], goals: ['Movilidad y flexibilidad', 'Mantenerse en forma'], level: 'Intermedio', availability: ['Mañana', 'Tarde'] },
-  { id: 'p34', name: 'Kevin Flores', age: 23, gender: 'hombre', city: 'Reñaca', country: 'Chile', lat: -32.95, lng: -71.55, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/1016/600/800', 'https://picsum.photos/id/1017/600/800'], trainingTypes: ['Running', 'Ciclismo'], goals: ['Mejorar resistencia', 'Perder grasa'], level: 'Intermedio', availability: ['Tarde', 'Noche'] },
-  { id: 'p35', name: 'Karla Flores', age: 24, gender: 'mujer', city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/1018/600/800', 'https://picsum.photos/id/1019/600/800', 'https://picsum.photos/id/1020/600/800'], trainingTypes: ['Yoga', 'Funcional'], goals: ['Socializar y motivación', 'Movilidad y flexibilidad'], level: 'Principiante', availability: ['Mañana'] },
-  { id: 'p36', name: 'Luis Vargas', age: 25, gender: 'hombre', city: 'Concón', country: 'Chile', lat: -32.93, lng: -71.52, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/1021/600/800', 'https://picsum.photos/id/1022/600/800'], trainingTypes: ['Pesas/Gym', 'CrossFit'], goals: ['Aumentar fuerza', 'Ganar músculo'], level: 'Avanzado', availability: ['Tarde'] },
-  { id: 'p37', name: 'Laura Vargas', age: 26, gender: 'mujer', city: 'Reñaca', country: 'Chile', lat: -32.95, lng: -71.55, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/1023/600/800', 'https://picsum.photos/id/1024/600/800'], trainingTypes: ['Running', 'Pilates'], goals: ['Perder grasa', 'Mejorar resistencia'], level: 'Intermedio', availability: ['Noche', 'Tarde'] },
-  { id: 'p38', name: 'Marco Castillo', age: 27, gender: 'hombre', city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/28/600/800', 'https://picsum.photos/id/201/600/800', 'https://picsum.photos/id/160/600/800'], trainingTypes: ['Boxeo', 'Funcional'], goals: ['Aumentar fuerza', 'Mejorar resistencia'], level: 'Intermedio', availability: ['Mañana', 'Noche'] },
-  { id: 'p39', name: 'María Castillo', age: 28, gender: 'mujer', city: 'Concón', country: 'Chile', lat: -32.93, lng: -71.52, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/100/600/800', 'https://picsum.photos/id/101/600/800'], trainingTypes: ['Yoga', 'Running'], goals: ['Movilidad y flexibilidad', 'Socializar y motivación'], level: 'Principiante', availability: ['Tarde'] },
-  { id: 'p40', name: 'Nicolás Guzmán', age: 29, gender: 'hombre', city: 'Reñaca', country: 'Chile', lat: -32.95, lng: -71.55, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/102/600/800', 'https://picsum.photos/id/103/600/800'], trainingTypes: ['Ciclismo', 'Pesas/Gym'], goals: ['Mejorar resistencia', 'Preparar competencia'], level: 'Avanzado', availability: ['Mañana'] },
-  { id: 'p41', name: 'Natalia Guzmán', age: 30, gender: 'mujer', city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/29/600/800', 'https://picsum.photos/id/30/600/800', 'https://picsum.photos/id/64/600/800'], trainingTypes: ['Pilates', 'Funcional'], goals: ['Perder grasa', 'Mantenerse en forma'], level: 'Intermedio', availability: ['Tarde', 'Noche'] },
-  { id: 'p42', name: 'Oscar Ramírez', age: 31, gender: 'hombre', city: 'Concón', country: 'Chile', lat: -32.93, lng: -71.52, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/1004/600/800', 'https://picsum.photos/id/1005/600/800'], trainingTypes: ['CrossFit', 'Running'], goals: ['Aumentar fuerza', 'Mejorar resistencia'], level: 'Avanzado', availability: ['Noche'] },
-  { id: 'p43', name: 'Olivia Ramírez', age: 32, gender: 'mujer', city: 'Reñaca', country: 'Chile', lat: -32.95, lng: -71.55, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/1006/600/800', 'https://picsum.photos/id/1007/600/800'], trainingTypes: ['Yoga', 'Running'], goals: ['Movilidad y flexibilidad', 'Socializar y motivación'], level: 'Intermedio', availability: ['Mañana', 'Tarde'] },
-  { id: 'p44', name: 'Pablo Herrera', age: 33, gender: 'hombre', city: 'Viña del Mar', country: 'Chile', lat: -33.0153, lng: -71.5528, bio: 'Entreno fuerte en la costa, busco compañero para motivarnos mutuamente.', photos: ['https://picsum.photos/id/1008/600/800', 'https://picsum.photos/id/1009/600/800', 'https://picsum.photos/id/1011/600/800'], trainingTypes: ['Pesas/Gym', 'Boxeo'], goals: ['Ganar músculo', 'Aumentar fuerza'], level: 'Avanzado', availability: ['Tarde'] },
-  { id: 'p45', name: 'Paula Herrera', age: 34, gender: 'mujer', city: 'Concón', country: 'Chile', lat: -32.93, lng: -71.52, bio: 'Me encanta entrenar al aire libre, ideal para quien quiera unirse con buena energía.', photos: ['https://picsum.photos/id/1012/600/800', 'https://picsum.photos/id/1013/600/800'], trainingTypes: ['Calistenia', 'Funcional'], goals: ['Perder grasa', 'Mantenerse en forma'], level: 'Intermedio', availability: ['Noche', 'Tarde'] }
-]
-
-// Note: AUTO_MATCH_IDS, getDistanceKm, calculateCompatibility, getAverageRating and getTrainingStreak 
-// are now imported from ./constants and ./utils (refactor in progress)
-
-// Pre-written chat openers for realism
-const CHAT_OPENERS: Record<string, string[]> = {
-  p1: ['¡Hola! Vi que también entrenas en Reñaca, ¿vamos a correr juntos este fin de semana?', 'Hey! Me encanta tu bio, yo también soy team café post gym ☕'],
-  p2: ['CrossFit gang! ¿En qué box entrenas tú?', 'Hola Joaquín, ¿haces el WOD del sábado?'],
-  p3: ['Me muero por probar calistenia en la 5ta, ¿me das tips?', '¡Hola! ¿Haces yoga en grupo alguna vez?'],
-  p5: ['Corremos a la misma hora jajaja. ¿Te tinca sumar kilómetros juntos?', 'Isabella! Yo también corro por Reñaca los jueves.'],
-  p6: ['Amaneceres en la playa hit different 🔥 ¿A qué hora sueles ir?'],
-  p9: ['Tu bio me cayó super bien. ¿Practicamos yoga juntos alguna vez?'],
-  p11: ['¡Dominadas gang! ¿Cuántas llevas ahora?', 'Vi que también haces calistenia en la costanera, ¿nos cruzamos?'],
-}
-
 // ==================== MAIN APP ====================
 function App() {
   // Persisted state
@@ -684,7 +537,7 @@ function App() {
     localStorage.setItem('entrenamatch_session_unreads', JSON.stringify(sessionUnreads))
   }, [sessionUnreads])
 
-  // PWA install prompt wiring (beforeinstallprompt + nice banner after engagement) — web only
+  // PWA install prompt wiring (beforeinstallprompt + nice banner after engagement) â€” web only
   useEffect(() => {
     if (Capacitor.isNativePlatform()) return undefined
     const handler = (e: any) => {
@@ -703,14 +556,14 @@ function App() {
     }
     window.addEventListener('beforeinstallprompt', handler)
 
-    // Fase 101 — PWA solo tras beforeinstallprompt (sin popup a los 3s)
+    // Fase 101 â€” PWA solo tras beforeinstallprompt (sin popup a los 3s)
 
     // Also listen for successful install
     const installedHandler = () => {
       setShowPwaInstall(false)
       setDeferredInstallPrompt(null)
       localStorage.setItem('entrenamatch_pwa_dismissed', '1')
-      toast.success('¡App instalada!', { description: 'Ya puedes abrir EntrenaMatch desde tu pantalla de inicio como una app real.' })
+      toast.success('Â¡App instalada!', { description: 'Ya puedes abrir EntrenaMatch desde tu pantalla de inicio como una app real.' })
     }
     window.addEventListener('appinstalled', installedHandler)
 
@@ -748,7 +601,7 @@ function App() {
       if (outcome === 'accepted') {
         localStorage.setItem('entrenamatch_pwa_dismissed', '1')
         setShowPwaInstall(false)
-        toast.success('¡Gracias! La app se está instalando.')
+        toast.success('Â¡Gracias! La app se estÃ¡ instalando.')
       } else {
         setShowPwaInstall(false)
       }
@@ -861,11 +714,11 @@ function App() {
         })
       }, 1000)
 
-      toast('🎙️ Grabando nota de voz', { description: 'Para tu EntrenaPartner. Máx 60s. PARAR para escucharla y decidir enviar.' })
+      toast('ðŸŽ™ï¸ Grabando nota de voz', { description: 'Para tu EntrenaPartner. MÃ¡x 60s. PARAR para escucharla y decidir enviar.' })
     } catch (err) {
       console.error('Mic error', err)
-      toast.error('No se pudo acceder al micrófono', {
-        description: 'Activa el permiso de micrófono para EntrenaMatch en Ajustes del celular.',
+      toast.error('No se pudo acceder al micrÃ³fono', {
+        description: 'Activa el permiso de micrÃ³fono para EntrenaMatch en Ajustes del celular.',
       })
     }
   }
@@ -926,7 +779,7 @@ function App() {
         }
         voiceUrl = previewUrl
       } else {
-        // Real Firebase — use resumable upload for beautiful live progress bar
+        // Real Firebase â€” use resumable upload for beautiful live progress bar
         if (!firebaseUser?.uid || !storage) {
           throw new Error('Firebase Storage no disponible')
         }
@@ -977,7 +830,7 @@ function App() {
       saveUserWithRealSyncRef.current?.({ ...(currentUser as any), dailyVoiceStreak: vStreak } as CurrentUser)
       // Premium toast celebrating the ritual voice + streak
       toast.success('Nota enviada a tu EntrenaPartner', { 
-        description: `${duration}s • Racha de voz ${vStreak}d 🔥  ${BRAND_COPY.toasts.voiceConstancy}` 
+        description: `${duration}s â€¢ Racha de voz ${vStreak}d ðŸ”¥  ${BRAND_COPY.toasts.voiceConstancy}` 
       })
       // Daily Pulse progress (voice is powerful for bond/ripple challenges)
       if (dp.currentChallenge?.type === 'bond' || dp.currentChallenge?.type === 'network') {
@@ -991,7 +844,7 @@ function App() {
       const uid = firebaseUser?.uid || 'sin-uid'
       toast.error('Error enviando nota de voz', { 
         description: isReal 
-          ? `No se pudo subir el audio (uid: ${uid}). Asegúrate de que las storage rules estén deployadas (firebase deploy --only storage) y que estés autenticado con cuenta real.` 
+          ? `No se pudo subir el audio (uid: ${uid}). AsegÃºrate de que las storage rules estÃ©n deployadas (firebase deploy --only storage) y que estÃ©s autenticado con cuenta real.` 
           : 'Error local al procesar el audio.'
       })
       setIsUploadingVoice(false)
@@ -1033,7 +886,7 @@ function App() {
       input.click()
     } catch (err) {
       console.warn('pickChatPhoto', err)
-      toast.error('No se pudo abrir la cámara o galería')
+      toast.error('No se pudo abrir la cÃ¡mara o galerÃ­a')
     }
   }
 
@@ -1085,7 +938,7 @@ function App() {
     } catch (e) {
       console.error('sendChatPhoto', e)
       toast.error('No se pudo enviar la foto', {
-        description: isDemoMode ? 'Error local' : 'Revisa conexión y reglas de Storage (chat-photos).',
+        description: isDemoMode ? 'Error local' : 'Revisa conexiÃ³n y reglas de Storage (chat-photos).',
       })
       setIsUploadingChatPhoto(false)
       setChatPhotoUploadProgress(0)
@@ -1104,7 +957,7 @@ function App() {
     resetDeck: resetSwipeDeck,
   } = useSwipeDeck({ isDemoMode, db, firebaseUser })
 
-  // Chat + matches — useChatSession (fase 79), declared after realProfiles below
+  // Chat + matches â€” useChatSession (fase 79), declared after realProfiles below
 
   // UI state
   const [activeTab, setActiveTab] = useState<Tab>('home')
@@ -1132,7 +985,7 @@ function App() {
   const [profileSection, setProfileSection] = useState<ProfileSection>('actividad')
   const [homeSubTab, setHomeSubTab] = useState<import('./components/home/HomeTab').HomeSubTab>('day')
   const profileSectionBootRef = useRef(false)
-  // Feed UI — useFeedState (fase 80), declared after setLastSync below
+  // Feed UI â€” useFeedState (fase 80), declared after setLastSync below
   const [weekLiveDays, setWeekLiveDays] = useState<string[]>([])
   const [showLiveModal, setShowLiveModal] = useState(false)
   const [showEntrenaLogModal, setShowEntrenaLogModal] = useState(false)
@@ -1277,27 +1130,27 @@ function App() {
   const [partnerGymStats, setPartnerGymStats] = useState<PartnerGymStats | null>(null)
   const [partnerGymLoading, setPartnerGymLoading] = useState(false)
   const [constanciaBalance, setConstanciaBalance] = useState<number | null>(null)
-  // THE KILLER FEATURE: EntrenaSync — see useSyncSession() hook (fase 123)
+  // THE KILLER FEATURE: EntrenaSync â€” see useSyncSession() hook (fase 123)
   // Live modal local UI: search + sort for better discovery in the full list (killer feature polish)
   const [liveModalSearch, setLiveModalSearch] = useState('')
   const [liveModalSort, setLiveModalSort] = useState<'distance' | 'urgency' | 'hot'>('distance')
 
   // =====================================================
-  // THE CORE PURPOSE OF ENTRENASYNC — building the first real social network for synchronized fitness performance.
+  // THE CORE PURPOSE OF ENTRENASYNC â€” building the first real social network for synchronized fitness performance.
   //
   // We are deliberately keeping these 5 non-negotiable mechanics (user directive):
-  // • Real-time synchronized training with shared state — two people training "juntas" even when physically in different places.
-  // • Strong visual connection in the moment — tether/energy line + orb that reacts live to the combined effort of both.
-  // • Joint actions that create a shared performance score + visible, lasting impact afterward (profiles, feed, live map).
-  // • "Training with someone" produces real, measurable consequences: better consistency, higher training volume, stronger motivation, and a permanent shared archive of the session.
-  // • The map functions as a living social layer of real activity — you can literally see where meaningful, high-signal training is happening right now.
+  // â€¢ Real-time synchronized training with shared state â€” two people training "juntas" even when physically in different places.
+  // â€¢ Strong visual connection in the moment â€” tether/energy line + orb that reacts live to the combined effort of both.
+  // â€¢ Joint actions that create a shared performance score + visible, lasting impact afterward (profiles, feed, live map).
+  // â€¢ "Training with someone" produces real, measurable consequences: better consistency, higher training volume, stronger motivation, and a permanent shared archive of the session.
+  // â€¢ The map functions as a living social layer of real activity â€” you can literally see where meaningful, high-signal training is happening right now.
   //
   // Epic category vision (first-principles, like the original social graph or real-time public conversation):
   // This is the platform that makes synchronized physical effort between humans a primary, high-status, performance-enhancing social primitive.
   // Not another matching app. Not solo tracking.
   // But the network where training together is visible, consequential, status-bearing, and culturally significant.
   // Your training relationships form a real graph with history and compounding value.
-  // Great sync sessions don't disappear — they leave measurable traces on both profiles, propagate through the feed, and light up the map.
+  // Great sync sessions don't disappear â€” they leave measurable traces on both profiles, propagate through the feed, and light up the map.
   // The map becomes the living pulse of training communities worldwide.
   // In 5-10 years, serious athletes will say "I do my important sessions in Sync" the same way people say they post on the main social networks today.
   //
@@ -1331,7 +1184,7 @@ function App() {
   // Onboarding step state (managed here so the flow actually advances)
   const [onboardingStep, setOnboardingStepLocal] = useState(0)
 
-  // After Google redirect sign-in — bootstrap local profile + onboarding (once per new-user flag)
+  // After Google redirect sign-in â€” bootstrap local profile + onboarding (once per new-user flag)
   useEffect(() => {
     if (!googleNewUser || isDemoMode || !firebaseUser?.uid) return
     if (googleNewUserBootstrappedRef.current) return
@@ -1394,14 +1247,14 @@ function App() {
           name: 'Demo Tester',
           age: 28,
           gender: 'mujer' as const,
-          city: 'Viña del Mar',
+          city: 'ViÃ±a del Mar',
           country: 'Chile',
           lat: -33.0153,
           lng: -71.5528,
-          bio: 'Demo lista para probar live + muro. Entreno pesas y running. ¡Conectemos!',
+          bio: 'Demo lista para probar live + muro. Entreno pesas y running. Â¡Conectemos!',
           photos: ['https://picsum.photos/id/1011/600/800'],
           trainingTypes: ['Pesas/Gym', 'Running'],
-          goals: ['Ganar músculo', 'Socializar y motivación'],
+          goals: ['Ganar mÃºsculo', 'Socializar y motivaciÃ³n'],
           level: 'Intermedio',
           intensity: 'Moderado',
           availability: ['Tarde'],
@@ -1412,7 +1265,7 @@ function App() {
           setShowOnboarding(true);
           setOnboardingStepLocal(0);
         }, 80);
-        toast.success('Demo rápido activado', { description: 'Preview en vivo + opt-in EN VIVO en el paso final. ¡La clave de la app!' });
+        toast.success('Demo rÃ¡pido activado', { description: 'Preview en vivo + opt-in EN VIVO en el paso final. Â¡La clave de la app!' });
       }
     } catch (e) { console.warn('quick demo', e); }
   }, [saveUser, setShowOnboarding]); // deps safe
@@ -1457,7 +1310,7 @@ function App() {
     setSelectedTrainingType('Pesas/Gym')
   }
 
-  // ✅ FUNCIÓN RECURSIVA PARA LIMPIAR UNDEFINED (arregla currentDailyChallenge.completed y cualquier objeto anidado)
+  // âœ… FUNCIÃ“N RECURSIVA PARA LIMPIAR UNDEFINED (arregla currentDailyChallenge.completed y cualquier objeto anidado)
 const sanitizeForFirestore = (obj: any): any => {
   if (obj === null || obj === undefined) return null;
 
@@ -1481,6 +1334,8 @@ const sanitizeForFirestore = (obj: any): any => {
 
   const [isLoadingMatches, setIsLoadingMatches] = useState(false)
   const [isLoadingChats, setIsLoadingChats] = useState(false)
+  /** First discovery fetch/listener completed — avoids skeleton flash on every silent refresh. */
+  const [discoveryReady, setDiscoveryReady] = useState(false)
 
   // Reviews for "Entrenamos Juntos" (unique trust system)
   const [reviews, setReviews] = useState<Record<string, TrainingReview[]>>({}) // key = matchId (profile id)
@@ -1527,18 +1382,18 @@ const listenersRef = useRef<(() => void)[]>([])
 const cleanupAllListeners = useCallback(() => {
   listenersRef.current.forEach(unsub => unsub?.())
   listenersRef.current = []
-  console.log('✅ All Firestore listeners cleaned')
+  console.log('âœ… All Firestore listeners cleaned')
 }, [])
 
 useEffect(() => {
   return () => cleanupAllListeners()
 }, [cleanupAllListeners])
 
-// Network + Listener resilience (Fase 4: recover without disable — keeps RT listeners alive)
+// Network + Listener resilience (Fase 4: recover without disable â€” keeps RT listeners alive)
 useEffect(() => {
   const handleOnline = async () => {
     setIsOffline(false)
-    // Firestore auto-reconnects with persistentLocalCache — do NOT call enableNetwork (causes da08).
+    // Firestore auto-reconnects with persistentLocalCache â€” do NOT call enableNetwork (causes da08).
     if (!isDemoMode && firebaseUser?.uid) {
       setTimeout(() => {
         loadRealSessions?.()
@@ -1554,7 +1409,7 @@ useEffect(() => {
   window.addEventListener('offline', handleOffline)
 
   if (db && !isDemoMode) {
-    // Offline cache via initializeFirestore(persistentLocalCache()) in firebase.ts — do NOT also call
+    // Offline cache via initializeFirestore(persistentLocalCache()) in firebase.ts â€” do NOT also call
     // enableIndexedDbPersistence (deprecated API; double persistence causes failed-precondition / stale writes).
   }
 
@@ -1578,7 +1433,7 @@ useEffect(() => {
           if (AppPlugin) {
             const listener = await AppPlugin.addListener('appStateChange', async (state: any) => {
               if (state.isActive) {
-                // App resumed — reload data; Firestore RT listeners auto-reconnect (no enableNetwork).
+                // App resumed â€” reload data; Firestore RT listeners auto-reconnect (no enableNetwork).
                 setTimeout(() => {
                   loadRealProfiles?.().catch(() => {})
                   loadRealSessions?.()
@@ -1611,7 +1466,7 @@ useEffect(() => {
     }
   }, [])
 
-  // For attractive voice message playback animation (fase 349 — useChatVoicePlayer)
+  // For attractive voice message playback animation (fase 349 â€” useChatVoicePlayer)
   const {
     playingVoiceId,
     voicePlayProgress,
@@ -1780,8 +1635,8 @@ useEffect(() => {
             applyDataUrl(dataUrl)
             toast(
               (uploadErr as { code?: string })?.code === 'storage/unauthorized'
-                ? 'Storage sin permisos — foto se subirá al publicar'
-                : 'Foto lista — se subirá al publicar'
+                ? 'Storage sin permisos â€” foto se subirÃ¡ al publicar'
+                : 'Foto lista â€” se subirÃ¡ al publicar'
             )
           } catch {
             toast.error('No se pudo cargar la foto')
@@ -1826,7 +1681,7 @@ useEffect(() => {
             setFeedPhotoUploading(false)
             toast(
               (uploadErr as { code?: string })?.code === 'storage/unauthorized'
-                ? 'Storage sin permisos — revisa reglas'
+                ? 'Storage sin permisos â€” revisa reglas'
                 : 'Foto embebida'
             )
           }
@@ -1835,7 +1690,7 @@ useEffect(() => {
         }
       }
     } catch {
-      toast('No se pudo usar cámara')
+      toast('No se pudo usar cÃ¡mara')
       setFeedPhotoUploading(false)
     }
   }, [isDemoMode, effectiveUserId, storage])
@@ -1858,7 +1713,7 @@ useEffect(() => {
   // Auth flow state (default to register in public demo for easy "Crear Cuenta")
   // (local auth state moved into AuthScreen + useDemoAuth)
 
-  // Notifications system (fase 361 — useNotificationsState)
+  // Notifications system (fase 361 â€” useNotificationsState)
   const {
     notifications,
     setNotifications,
@@ -1888,7 +1743,7 @@ useEffect(() => {
     setShowLiveMap(activeTab === 'map')
   }, [activeTab])
 
-  // PWA manifest shortcuts: /entrenamatch/?tab=home | ?tab=map | legacy ?tab=explore&map=1 → map tab
+  // PWA manifest shortcuts: /entrenamatch/?tab=home | ?tab=map | legacy ?tab=explore&map=1 â†’ map tab
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search)
@@ -2015,9 +1870,9 @@ useEffect(() => {
 
   // Zone colors shared for map markers and interactive legend (sigue con todo el mapa)
   const mapZoneColors: Record<string, string> = {
-    'Viña del Mar': '#22c55e',
+    'ViÃ±a del Mar': '#22c55e',
     'Santiago': '#FF671F',
-    'Valparaíso': '#3b82f6',
+    'ValparaÃ­so': '#3b82f6',
     'Concon': '#a855f7',
     default: '#eab308'
   }
@@ -2326,7 +2181,7 @@ useEffect(() => {
   const remainingProfiles = useMemo(() => {
     const swiped = new Set([...likedIds, ...passedIds])
 
-    // Real accounts: Firestore profiles only — seeds stay in demo/onboarding (fase 184).
+    // Real accounts: Firestore profiles only â€” seeds stay in demo/onboarding (fase 184).
     const citySeeds = isDemoMode ? filterSeedsForCity(SEED_PROFILES, currentUser?.city) : []
     const allProfiles: Profile[] = [
       ...realProfiles,
@@ -2350,7 +2205,7 @@ useEffect(() => {
   const normalizeTrainingSince = (val: any): number | undefined => normalizeTrainingSinceMs(val)
 
   // Feed computation lifted to top-level useMemo so hook is ALWAYS called in the same order (fixes React #310 "Rendered more hooks than during the previous render" when switching tabs).
-  // The previous inline IIFE inside {activeTab==='feed' && ...} was conditionally executing the useMemo hook → violation.
+  // The previous inline IIFE inside {activeTab==='feed' && ...} was conditionally executing the useMemo hook â†’ violation.
   const feedComputation = useFeedPipeline({
     profilePosts,
     effectiveUserId,
@@ -2370,7 +2225,7 @@ useEffect(() => {
   realtimeStats.lastFeedComputeMs = feedComputation.computeMs
 
   // Filtered deck (with distance support + blocking)
-  // Polish: sort by best compatibility first (improves "matching quality" — high compat + close appear at top of swipe)
+  // Polish: sort by best compatibility first (improves "matching quality" â€” high compat + close appear at top of swipe)
   // Hoisted early with the other discovery memos.
   const deck = useExploreDeck(
     remainingProfiles,
@@ -2484,7 +2339,7 @@ useEffect(() => {
     if (homeWeeklyPactProgress.isComplete && !pactCompleteToastRef.current) {
       pactCompleteToastRef.current = true
       toast.success('Semana sellada', {
-        description: 'Live + Sync + Logs — meta semanal cumplida con tu equipo',
+        description: 'Live + Sync + Logs â€” meta semanal cumplida con tu equipo',
       })
       try {
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.55 } })
@@ -2546,7 +2401,7 @@ useEffect(() => {
       }
       triggerHaptic('success')
       toast.success('Meta fijada', {
-        description: `${pact.liveDaysTarget} días live · ${pact.syncSessionsTarget} sync · ${pact.loggedSessionsTarget ?? 3} logs esta semana`,
+        description: `${pact.liveDaysTarget} dÃ­as live Â· ${pact.syncSessionsTarget} sync Â· ${pact.loggedSessionsTarget ?? 3} logs esta semana`,
       })
     },
     [currentUser, isDemoMode, firebaseUser?.uid, saveUser]
@@ -2558,7 +2413,7 @@ useEffect(() => {
     if (!homeCityNorm) return []
     return buildCityLeaderboard(realProfiles as Profile[], homeCityNorm, {
       userId: effectiveUserId,
-      name: currentUser?.name || 'Tú',
+      name: currentUser?.name || 'TÃº',
       stats: currentUser?.weekStats,
       liveStreak: currentUser?.liveStreak,
       showOnLeaderboard: currentUser?.showOnLeaderboard,
@@ -2633,7 +2488,7 @@ useEffect(() => {
     if (!gymId || !isGymCheckInFresh(currentUser?.gymCheckIn)) return []
     return buildGymLeaderboard(realProfiles as Profile[], gymId, {
       userId: effectiveUserId,
-      name: currentUser?.name || 'Tú',
+      name: currentUser?.name || 'TÃº',
       stats: currentUser?.weekStats,
       liveStreak: currentUser?.liveStreak,
       gymCheckIn: currentUser?.gymCheckIn,
@@ -2686,7 +2541,7 @@ useEffect(() => {
 
   const cityEngagementRealtime = shouldRunCityEngagementListeners(activeTab, appVisible)
 
-  // Real-time city challenge aggregate (Firestore) — Home tab only
+  // Real-time city challenge aggregate (Firestore) â€” Home tab only
   useEffect(() => {
     if (isDemoMode || !db || !homeCityNorm || !cityEngagementRealtime) {
       if (!cityEngagementRealtime) setFirestoreCityStats(null)
@@ -2723,8 +2578,8 @@ useEffect(() => {
     try {
       if (localStorage.getItem(storageKey)) return
       localStorage.setItem(storageKey, '1')
-      toast.success(`¡Reto completado en ${homeCityChallengeMerged.cityLabel}!`, {
-        description: `${homeCityChallengeMerged.targetMinutes} min live+sync esta semana — la ciudad lo logró 🏆`,
+      toast.success(`Â¡Reto completado en ${homeCityChallengeMerged.cityLabel}!`, {
+        description: `${homeCityChallengeMerged.targetMinutes} min live+sync esta semana â€” la ciudad lo logrÃ³ ðŸ†`,
       })
       confetti({ particleCount: 90, spread: 75, origin: { y: 0.65 } })
       setShowCityCelebration(true)
@@ -2738,7 +2593,7 @@ useEffect(() => {
     const ref = parseReferralFromUrl()
     if (ref) {
       try { localStorage.setItem('entrenamatch_referral', ref) } catch { /* ignore */ }
-      toast.success('Invitación de gym recibida', { description: `Código: ${ref}` })
+      toast.success('InvitaciÃ³n de gym recibida', { description: `CÃ³digo: ${ref}` })
     }
   }, [])
   const [feedbackType, setFeedbackType] = useState<'bug' | 'idea' | 'ux' | 'other'>('idea')
@@ -2767,55 +2622,32 @@ useEffect(() => {
 
   const profilesRealtime = shouldRunProfilesListener(activeTab, appVisible)
 
-  // Scoped profiles listener — city + limit; paused on Profile tab / background.
+  // Scoped profiles listener — all city query terms; paused on Profile tab / background.
   useEffect(() => {
     if (isDemoMode || !db || !isFirebaseConfigured || !profilesRealtime) return undefined
 
     let unsub: (() => void) | null = null
-    const city = primaryDiscoveryCityForListener(homeCityRef.current)
+    const city = homeCityRef.current || currentUser?.city || ''
+    const country = currentUser?.country || ''
 
-    ;(async () => {
-      try {
-        const { collection, onSnapshot, query, orderBy, limit, where } = await import(
-          'firebase/firestore'
+    unsub = attachDiscoveryProfilesListener(db, {
+      city,
+      country,
+      limit: PROFILE_LIST_LIMIT,
+      excludeUid: currentUidRef.current || firebaseUser?.uid,
+      blockedIds: blockedUsersRef.current,
+      hideBetaBot: shouldHideBetaBot,
+      onProfiles: (profiles) => {
+        setDiscoveryReady(true)
+        setRealProfiles((prev) =>
+          mergeDiscoveryWithPinnedPartners(profiles, prev, getPinnedPartnerIds())
         )
-        const profilesRef = collection(db, 'profiles')
-        const q = city
-          ? query(
-              profilesRef,
-              where('city', '==', city),
-              orderBy('updatedAt', 'desc'),
-              limit(PROFILE_LIST_LIMIT)
-            )
-          : query(profilesRef, orderBy('updatedAt', 'desc'), limit(PROFILE_LIST_LIMIT))
-
-        bumpRealtimeStat('profileListeners', 1)
-        unsub = onSnapshot(
-          q,
-          (snapshot) => {
-            const profiles: Profile[] = []
-            const currentUid = currentUidRef.current
-
-            snapshot.forEach((doc) => {
-              if (doc.id === currentUid) return
-              if (blockedUsersRef.current.includes(doc.id)) return
-              if (shouldHideBetaBot(doc.id)) return
-              const parsed = parseProfileFromFirestoreDoc(doc.id, doc.data() as Record<string, unknown>)
-              if (parsed) profiles.push(parsed)
-            })
-            setRealProfiles((prev) =>
-              mergeDiscoveryWithPinnedPartners(profiles, prev, getPinnedPartnerIds())
-            )
-          },
-          (err) => {
-            console.warn('profiles onSnapshot error, falling back to polling', err)
-            loadRealProfiles().catch(() => {})
-          }
-        )
-      } catch (e) {
-        console.warn('Failed to setup profiles listener', e)
-      }
-    })()
+      },
+      onError: () => {
+        loadRealProfiles().catch(() => {})
+      },
+    })
+    bumpRealtimeStat('profileListeners', 1)
 
     return () => {
       if (unsub) {
@@ -2830,10 +2662,19 @@ useEffect(() => {
     firebaseUser?.uid,
     blockedUsers,
     currentUser?.city,
+    currentUser?.country,
     profilesRealtime,
   ])
 
-  // Global silent sync — pull-to-refresh + tab focus (Fase 32)
+  // Refresh discovery pool after onboarding / profile city change.
+  useEffect(() => {
+    if (isDemoMode || showOnboarding || !db || !firebaseUser?.uid) return
+    if (!currentUser?.name || !currentUser?.city) return
+    setDiscoveryReady(false)
+    loadRealProfiles().catch(() => {})
+  }, [showOnboarding, firebaseUser?.uid, currentUser?.city, currentUser?.name, isDemoMode, db])
+
+  // Global silent sync â€” pull-to-refresh + tab focus (Fase 32)
   const silentRefreshReal = async (opts?: { includeChats?: boolean; includeFeed?: boolean }) => {
     if (isDemoMode) return
     setIsLoadingMatches(true)
@@ -2895,8 +2736,8 @@ useEffect(() => {
         if (showToast) {
           toast.success('Token de integridad obtenido de Google Play', {
             description: nonce 
-              ? `Usando nonce de prueba de la consola. Envíalo a tu backend para obtener el veredicto completo (JSON como el que me pasaste).`
-              : 'Envíalo a tu backend para verificar y obtener el JSON completo de veredictos (como el que me pasaste). Copiado en consola.'
+              ? `Usando nonce de prueba de la consola. EnvÃ­alo a tu backend para obtener el veredicto completo (JSON como el que me pasaste).`
+              : 'EnvÃ­alo a tu backend para verificar y obtener el JSON completo de veredictos (como el que me pasaste). Copiado en consola.'
           })
         }
         console.log('%c[Play Integrity] Raw token (send this to server for full verification):', 'color:#22c55e', res.token)
@@ -2905,7 +2746,7 @@ useEffect(() => {
       } else if (res.simulatedVerdict) {
         if (showToast) {
           toast.success('Integridad simulada (web/demo)', {
-            description: 'En la APK nativa instalada desde Play obtendrás un token real. El simulado es positivo (LICENSED + PLAY_RECOGNIZED + MEETS_DEVICE_INTEGRITY).'
+            description: 'En la APK nativa instalada desde Play obtendrÃ¡s un token real. El simulado es positivo (LICENSED + PLAY_RECOGNIZED + MEETS_DEVICE_INTEGRITY).'
           })
         }
         console.log('%c[Play Integrity] Simulated positive verdict (web):', 'color:#f59e0b', res.simulatedVerdict)
@@ -2959,6 +2800,7 @@ useEffect(() => {
   const loadRealProfiles = async () => {
     if (!isFirebaseConfigured || !db) {
       setRealProfiles([])
+      setDiscoveryReady(true)
       return
     }
     try {
@@ -2983,6 +2825,8 @@ useEffect(() => {
     } catch (err) {
       console.warn('Could not load real profiles (Firestore may not have data yet):', err)
       setRealProfiles([])
+    } finally {
+      setDiscoveryReady(true)
     }
   }
 
@@ -3102,7 +2946,7 @@ useEffect(() => {
             firebaseUser?.uid &&
             isProfileComplete(enrichReturningProfile(currentUser))
           ) {
-            // New real user with a completed local profile but no Firestore doc yet → push it up once
+            // New real user with a completed local profile but no Firestore doc yet â†’ push it up once
             let pushPhotos = filterPersistablePhotos(currentUser.photos)
             if (
               pushPhotos.length === 0 &&
@@ -3175,7 +3019,7 @@ useEffect(() => {
 
   const squadsRealtime = shouldRunSquadsListener(activeTab, appVisible)
 
-  // Squads listener — only on Squads tab (perf).
+  // Squads listener â€” only on Squads tab (perf).
   useEffect(() => {
     if (isDemoMode || !db || !squadsRealtime) return undefined
     const unsub = attachSquadsListener(db, (list) => setSquads(list))
@@ -3264,7 +3108,7 @@ const mergeUserForRealtimeSync = (incoming: CurrentUser, prev: CurrentUser | nul
     if (!dataUrl || !dataUrl.startsWith('data:')) return dataUrl
     if (isDemoMode) return dataUrl
     if (!firebaseUser?.uid || !storage) {
-      throw new Error('No se pudo subir la foto: sesión o Storage no disponible')
+      throw new Error('No se pudo subir la foto: sesiÃ³n o Storage no disponible')
     }
     try {
       const { ref, uploadString, getDownloadURL } = await import('firebase/storage')
@@ -3274,13 +3118,13 @@ const mergeUserForRealtimeSync = (incoming: CurrentUser, prev: CurrentUser | nul
       return await getDownloadURL(snap.ref)
     } catch (e) {
       console.warn('profile photo storage upload failed', e)
-      throw new Error('No se pudo subir la foto de perfil. Revisa conexión y permisos.')
+      throw new Error('No se pudo subir la foto de perfil. Revisa conexiÃ³n y permisos.')
     }
   }, [isDemoMode, firebaseUser?.uid])
 
- // ✅ SOLUCIÓN SIMPLE Y ESTABLE - Sin dynamic import problemático
+ // âœ… SOLUCIÃ“N SIMPLE Y ESTABLE - Sin dynamic import problemÃ¡tico
 const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
-  // Local aliases — avoid minifier name collisions in App chunk (fase 191)
+  // Local aliases â€” avoid minifier name collisions in App chunk (fase 191)
   const publishSnapshot = publishLiveSnapshot
   const mergeLive = mergeLiveUsersById
   const toLiveUser = profileDocToLiveUser
@@ -3340,6 +3184,21 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       : {}),
   }
 
+  if (!isDemoMode && firebaseUser?.uid) {
+    const loc = userLocationRef.current
+    const canonLoc = canonicalProfileLocation(merged.city, merged.country, {
+      lat: merged.lat ?? loc?.lat,
+      lng: merged.lng ?? loc?.lng,
+    })
+    merged = {
+      ...merged,
+      city: canonLoc.city,
+      country: canonLoc.country,
+      lat: canonLoc.lat,
+      lng: canonLoc.lng,
+    }
+  }
+
   currentUserRef.current = merged
   saveUser(merged);
 
@@ -3361,8 +3220,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         level: merged.level,
         intensity: merged.intensity,
         availability: merged.availability,
-        lat: merged.lat ?? loc?.lat ?? -33.02,
-        lng: merged.lng ?? loc?.lng ?? -71.55,
+        lat: merged.lat,
+        lng: merged.lng,
         trainingNow: goingLive,
         trainingNowSince: goingLive ? (merged.trainingNowSince ?? Date.now()) : null,
         liveStreak: merged.liveStreak ?? null,
@@ -3454,7 +3313,7 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
         await clearLivePresence(db, firebaseUser.uid)
       }
 
-      console.log('✅ Profile synced to Firestore', goingLive ? '(LIVE ON)' : '');
+      console.log('âœ… Profile synced to Firestore', goingLive ? '(LIVE ON)' : '');
       if (
         pendingLiveWriteRef.current &&
         pendingLiveWriteRef.current.trainingNow === merged.trainingNow
@@ -3466,8 +3325,8 @@ const saveUserWithRealSync = useCallback(async (user: CurrentUser) => {
       console.warn('Failed to sync profile to Firestore:', e);
       toast.error('No se pudo sincronizar con el servidor', {
         description: merged.trainingNow
-          ? 'Revisa conexión. Otros pueden no verte en live hasta que se sincronice.'
-          : 'Revisa tu conexión e intenta de nuevo.',
+          ? 'Revisa conexiÃ³n. Otros pueden no verte en live hasta que se sincronice.'
+          : 'Revisa tu conexiÃ³n e intenta de nuevo.',
       })
       throw e
     }
@@ -3685,7 +3544,7 @@ useEffect(() => {
         }
         await saveUserWithRealSync(updated)
         toast.success(`Check-in en ${gym.name}`, {
-          description: 'Tu pin aparecerá en el mapa cuando entrenes en vivo',
+          description: 'Tu pin aparecerÃ¡ en el mapa cuando entrenes en vivo',
         })
         setMapForceTick((t) => t + 1)
       } catch {
@@ -3810,7 +3669,7 @@ useEffect(() => {
         if (alreadyGranted) {
           try {
             await PushNotifications.register()
-            console.log('✅ Push notifications registered (already permitted)')
+            console.log('âœ… Push notifications registered (already permitted)')
 
             // Create high-priority channel for network red activity (Android)
             if (Capacitor.getPlatform() === 'android') {
@@ -3837,7 +3696,7 @@ useEffect(() => {
                   lightColor: '#6366f1',
                   vibration: true,
                 })
-                console.log('✅ network_activity channel created for red pushes')
+                console.log('âœ… network_activity channel created for red pushes')
               } catch (chErr) {
                 console.warn('createChannel failed (may already exist)', chErr)
               }
@@ -3863,7 +3722,7 @@ useEffect(() => {
 
           PushNotifications.addListener('pushNotificationReceived', (notification: any) => {
             console.log('Push received while open:', notification)
-            const title = (notification && (notification.title || notification.notification?.title)) || 'Nueva notificación'
+            const title = (notification && (notification.title || notification.notification?.title)) || 'Nueva notificaciÃ³n'
             const body = (notification && (notification.body || notification.notification?.body)) || 'Revisa la app'
             const data = notification && (notification.data || notification.notification?.data) || {}
             const pushKey =
@@ -3932,7 +3791,7 @@ useEffect(() => {
             if (target) {
               applyNotificationNavigationRef.current?.(target, data.partnerName)
             } else {
-              toast('Notificación tocada', { description: 'Abriendo app...' })
+              toast('NotificaciÃ³n tocada', { description: 'Abriendo app...' })
             }
           })
         } catch (listenerErr) {
@@ -3959,17 +3818,17 @@ useEffect(() => {
       // Give the async loader a moment (it's a local import, usually instant)
       const t = setTimeout(() => {
         if (!PushNotifications) {
-          console.error('⚠️ NATIVE BUILD PROBLEM: PushNotifications plugin not loaded. This AAB was almost certainly built WITHOUT google-services.json in android/app/. The app may crash or push will be broken. Rebuild after placing the json from Firebase Console (package: com.entrenamatch.app).')
+          console.error('âš ï¸ NATIVE BUILD PROBLEM: PushNotifications plugin not loaded. This AAB was almost certainly built WITHOUT google-services.json in android/app/. The app may crash or push will be broken. Rebuild after placing the json from Firebase Console (package: com.entrenamatch.app).')
           // Surface a non-fatal toast once so testers know the build they have is bad
           try {
             // Only if we have a toast lib in scope; safe no-op otherwise
             // @ts-ignore
             if (typeof toast !== 'undefined') {
-              toast.error('Build de Android incompleto', { description: 'Falta google-services.json — notificaciones y posiblemente el inicio pueden fallar. Pide una build actualizada.' })
+              toast.error('Build de Android incompleto', { description: 'Falta google-services.json â€” notificaciones y posiblemente el inicio pueden fallar. Pide una build actualizada.' })
             }
           } catch {}
         } else {
-          console.log('✅ PushNotifications plugin loaded on native — google-services.json was present at build time.')
+          console.log('âœ… PushNotifications plugin loaded on native â€” google-services.json was present at build time.')
         }
       }, 800)
       return () => clearTimeout(t)
@@ -3998,7 +3857,7 @@ useEffect(() => {
     }
   }, [activeTab, effectiveUserId])
 
-  // Migrate demo posts keyed as 'me' → real Firebase uid so muro/comments stay consistent after login
+  // Migrate demo posts keyed as 'me' â†’ real Firebase uid so muro/comments stay consistent after login
   useEffect(() => {
     if (isDemoMode || !firebaseUser?.uid) return
     setProfilePosts((prev) => {
@@ -4091,7 +3950,7 @@ useEffect(() => {
     return () => clearInterval(id)
   }, [exploreProfilePoll, isDemoMode, currentUser?.trainingSyncWith, userLocation])
 
-  // Live join comments — only while LIVE on Home/Map/Explore.
+  // Live join comments â€” only while LIVE on Home/Map/Explore.
   useEffect(() => {
     if (!currentUser?.trainingNow || !appVisible) return undefined
     if (activeTab !== 'home' && activeTab !== 'map' && activeTab !== 'explore') return undefined
@@ -4101,7 +3960,7 @@ useEffect(() => {
     return () => clearInterval(id)
   }, [currentUser?.trainingNow, activeTab, appVisible, effectiveUserId])
 
-  // Clear inline comment composer when changing tabs — but keep it while viewing another profile or the comments modal
+  // Clear inline comment composer when changing tabs â€” but keep it while viewing another profile or the comments modal
   useEffect(() => {
     if (activeTab === 'profile') return
     if (showFullProfile || viewingPostComments) return
@@ -4140,12 +3999,12 @@ useEffect(() => {
     setSyncActions([])
   }, [clearProfile, clearChatOnLogout, resetSwipeDeck, setDemoMode])
 
-  // Logout — signOut first; Firestore live cleanup is best-effort (must not block UI).
+  // Logout â€” signOut first; Firestore live cleanup is best-effort (must not block UI).
   const handleLogout = async () => {
     if (loggingOutRef.current) return
     loggingOutRef.current = true
     setLoggingOut(true)
-    const loadingToast = toast.loading('Cerrando sesión…')
+    const loadingToast = toast.loading('Cerrando sesiÃ³nâ€¦')
 
     const uid = firebaseUser?.uid
     if (uid && db && !isDemoMode) {
@@ -4167,13 +4026,13 @@ useEffect(() => {
       ])
       resetLocalSessionState()
       toast.dismiss(loadingToast)
-      toast.success('Sesión cerrada correctamente')
+      toast.success('SesiÃ³n cerrada correctamente')
       window.setTimeout(() => window.location.reload(), 400)
     } catch (error) {
-      console.error('Error al cerrar sesión:', error)
+      console.error('Error al cerrar sesiÃ³n:', error)
       resetLocalSessionState()
       toast.dismiss(loadingToast)
-      toast.error('Cerramos la sesión localmente — recargando…')
+      toast.error('Cerramos la sesiÃ³n localmente â€” recargandoâ€¦')
       window.setTimeout(() => window.location.reload(), 600)
     } finally {
       loggingOutRef.current = false
@@ -4252,7 +4111,7 @@ useEffect(() => {
     }
   }, [missingMatchPartnerIds, fetchMissingMatchPartners])
 
-  // Profile hydration on login is handled exclusively by ProfileContext (never synthesize a skeleton here —
+  // Profile hydration on login is handled exclusively by ProfileContext (never synthesize a skeleton here â€”
   // it raced with Firestore and could push empty local data over a real profile).
 
   // Load my previous beta feedbacks when viewing Profile (real users only)
@@ -4262,8 +4121,13 @@ useEffect(() => {
     }
   }, [activeTab, isDemoMode, firebaseUser?.uid])
 
-  // Marketplace — productos (lectura todos; escritura solo marketplaceAdmins/{uid})
+  // Marketplace â€” gated until VITE_PILOT_MARKETPLACE=1 (no shop UI in beta)
   useEffect(() => {
+    if (!isMarketplaceUiEnabled()) {
+      setMarketplaceProducts([])
+      setIsMarketplaceAdmin(false)
+      return undefined
+    }
     if (isDemoMode || !db || !firebaseUser?.uid) {
       setMarketplaceProducts(DEMO_MARKETPLACE_PRODUCTS)
       setIsMarketplaceAdmin(false)
@@ -4281,7 +4145,7 @@ useEffect(() => {
   }, [isDemoMode, db, firebaseUser?.uid])
 
   useEffect(() => {
-    if (isDemoMode || !db || !firebaseUser?.uid) return undefined
+    if (!isMarketplaceUiEnabled() || isDemoMode || !db || !firebaseUser?.uid) return undefined
     return attachMarketplaceProductsListener(db, setMarketplaceProducts, {
       includeInactive: isMarketplaceAdmin,
     })
@@ -4290,19 +4154,21 @@ useEffect(() => {
   useEffect(() => {
     if (isDemoMode || !db || !isMarketplaceAdmin) {
       setAdminOrders([])
-      setAdminBookings([])
+      if (!isMarketplaceAdmin) setAdminBookings([])
       return undefined
     }
-    const unsubOrders = attachAllMarketplaceOrdersListener(db, setAdminOrders)
-    const unsubBookings = attachAllTrainerBookingsListener(db, setAdminBookings)
-    return () => {
-      unsubOrders()
-      unsubBookings()
+    const unsubs: Array<() => void> = []
+    if (isMarketplaceUiEnabled()) {
+      unsubs.push(attachAllMarketplaceOrdersListener(db, setAdminOrders))
+    } else {
+      setAdminOrders([])
     }
+    unsubs.push(attachAllTrainerBookingsListener(db, setAdminBookings))
+    return () => unsubs.forEach((u) => u())
   }, [isDemoMode, db, isMarketplaceAdmin])
 
   useEffect(() => {
-    if (!showAdminOps || !isMarketplaceAdmin || isDemoMode) return
+    if (!showAdminOps || !isMarketplaceAdmin || isDemoMode || !isMarketplaceUiEnabled()) return
     void fetchMpHealth()
       .then(setMpHealth)
       .catch(() => setMpHealth(null))
@@ -4470,7 +4336,7 @@ useEffect(() => {
   ])
 
   useEffect(() => {
-    if (isDemoMode || !db || !firebaseUser?.uid) {
+    if (!isMarketplaceUiEnabled() || isDemoMode || !db || !firebaseUser?.uid) {
       setMyMarketplaceOrders([])
       return undefined
     }
@@ -4485,7 +4351,7 @@ useEffect(() => {
     }).catch(() => {})
   }, [isDemoMode, db, firebaseUser?.uid, notifPrefs.dailyPulse, notifPrefs.weeklyPact])
 
-  // EntrenaCoach — entrenadores personales (Fase 1 MVP)
+  // EntrenaCoach â€” entrenadores personales (Fase 1 MVP)
   useEffect(() => {
     if (isDemoMode || !db || !firebaseUser?.uid) {
       setTrainerProfiles([])
@@ -4513,7 +4379,7 @@ useEffect(() => {
     return coords
   }, [realProfiles])
 
-  // EntrenaCoach Uber-mode — dispatch on-demand (Fase 3)
+  // EntrenaCoach Uber-mode â€” dispatch on-demand (Fase 3)
   useEffect(() => {
     if (isDemoMode || !db || !firebaseUser?.uid) {
       setActiveTrainerDispatch(null)
@@ -4547,7 +4413,7 @@ useEffect(() => {
   }, [isDemoMode, db, firebaseUser?.uid])
 
   // Auto-run disabled to keep cold launch fast and avoid unnecessary Play Integrity API calls (which can fail on sideloaded debug APKs).
-  // Users can manually verify using the 🛡️ button in Profile (the checkPlayIntegrity function + UI section remain available for testers).
+  // Users can manually verify using the ðŸ›¡ï¸ button in Profile (the checkPlayIntegrity function + UI section remain available for testers).
   // The live toggle still prompts to verify integrity first if PlayIntegrityNative is present.
   // const didAutoIntegrityRef = useRef(false)
   // useEffect(() => {
@@ -4580,7 +4446,7 @@ useEffect(() => {
         ...prev,
         [sessionId]: mergeGroupMessages(loaded, prev[sessionId]),
       }));
-      console.log(`✅ Loaded ${loaded.length} real group messages for session ${sessionId}`);
+      console.log(`âœ… Loaded ${loaded.length} real group messages for session ${sessionId}`);
       setLastSync(new Date());
       if (showGroupChatModalFor === sessionId) {
         setSessionUnreads(prev => { const c = { ...prev }; c[sessionId] = 0; return c })
@@ -4765,16 +4631,16 @@ useEffect(() => {
       userId: 'p3',
       name: 'Valentina Soto',
       age: 24,
-      city: 'Valparaíso',
+      city: 'ValparaÃ­so',
       idPhoto: 'https://picsum.photos/id/29/400/300',
       selfiePhoto: 'https://picsum.photos/id/1009/400/400',
       submittedAt: Date.now() - 1000 * 60 * 60 * 2
     },
     {
       userId: 'p8',
-      name: 'Lucas Fernández',
+      name: 'Lucas FernÃ¡ndez',
       age: 35,
-      city: 'Ciudad de México',
+      city: 'Ciudad de MÃ©xico',
       idPhoto: 'https://picsum.photos/id/64/400/300',
       selfiePhoto: 'https://picsum.photos/id/201/400/400',
       submittedAt: Date.now() - 1000 * 60 * 60 * 5
@@ -4812,9 +4678,9 @@ useEffect(() => {
         {
           id: 's1',
           creatorId: 'p2',
-          creatorName: 'Joaquín Pérez',
+          creatorName: 'JoaquÃ­n PÃ©rez',
           title: 'CrossFit en el parque',
-          time: 'Mañana 18:30',
+          time: 'MaÃ±ana 18:30',
           location: 'Parque Forestal, Santiago',
           trainingType: 'CrossFit',
           maxParticipants: 4,
@@ -4827,7 +4693,7 @@ useEffect(() => {
           creatorName: 'Isabella Mendoza',
           title: 'Carrera grupal por la costanera',
           time: 'Hoy 19:00',
-          location: 'Playa Reñaca',
+          location: 'Playa ReÃ±aca',
           trainingType: 'Running',
           maxParticipants: 6,
           participants: ['p5'],
@@ -4856,7 +4722,7 @@ useEffect(() => {
         const seedSquads: Squad[] = [
           {
             id: 'sq1',
-            name: 'Beasts de Reñaca',
+            name: 'Beasts de ReÃ±aca',
             focus: 'Pesas',
             members: ['p1', 'p4', 'p12'],
             createdBy: 'p4',
@@ -4876,7 +4742,7 @@ useEffect(() => {
       }
     }
 
-    // Load profile muro posts (demo/local only — real mode loads from Firestore)
+    // Load profile muro posts (demo/local only â€” real mode loads from Firestore)
     if (isDemoMode) {
       const savedPosts = localStorage.getItem('entrenamatch_profile_posts')
       if (savedPosts) {
@@ -4926,7 +4792,7 @@ useEffect(() => {
               }), { merge: true })
             }
           }
-          console.log('✅ Sessions synced to Firestore for real users')
+          console.log('âœ… Sessions synced to Firestore for real users')
         } catch (e) {
           console.warn('Failed to sync sessions to Firestore:', e)
         }
@@ -4956,7 +4822,7 @@ useEffect(() => {
   }
 
   const resolveMemberName = (memberId: string): string => {
-    if (memberId === effectiveUserId || memberId === 'me') return currentUser?.name || 'Tú'
+    if (memberId === effectiveUserId || memberId === 'me') return currentUser?.name || 'TÃº'
     const seed = SEED_PROFILES.find(p => p.id === memberId)
     if (seed) return seed.name
     const real = realProfiles.find(p => p.id === memberId)
@@ -4967,14 +4833,14 @@ useEffect(() => {
     if (!isDemoMode && firebaseUser?.uid && db) {
       try {
         await joinSquadInFirestore(db, squadId, firebaseUser.uid)
-        toast.success('¡Te uniste al Squad!')
+        toast.success('Â¡Te uniste al Squad!')
       } catch (e: any) {
         console.warn('Could not join squad in Firestore', e)
         const isPerm = e?.code === 'permission-denied' || `${e?.message || e}`.includes('permission')
         toast.error(isPerm ? 'Permisos de Firestore' : 'No se pudo unir al Squad', {
           description: isPerm
             ? 'Despliega las reglas: firebase deploy --only firestore:rules'
-            : 'Revisa tu conexión e intenta de nuevo',
+            : 'Revisa tu conexiÃ³n e intenta de nuevo',
         })
       }
       return
@@ -4983,7 +4849,7 @@ useEffect(() => {
       sq.id === squadId ? { ...sq, members: [...sq.members, 'me'] } : sq
     )
     saveSquads(updated)
-    toast.success('¡Te uniste al Squad!')
+    toast.success('Â¡Te uniste al Squad!')
   }
 
   const handleLeaveSquad = async (squadId: string) => {
@@ -5008,7 +4874,7 @@ useEffect(() => {
 
   const handleSaveSquadRoutine = async (squadId: string) => {
     if (!squadRoutineDraft.label.trim() || !squadRoutineDraft.schedule.trim()) {
-      toast.error('Completa el nombre de la rutina y los días')
+      toast.error('Completa el nombre de la rutina y los dÃ­as')
       return
     }
     const payload = {
@@ -5054,7 +4920,7 @@ useEffect(() => {
     }
   }
 
-  /** Normalize legacy 'me' key → real Firebase uid for post lookups */
+  /** Normalize legacy 'me' key â†’ real Firebase uid for post lookups */
   const resolvePostOwnerId = useCallback((postUserId: string): string => {
     if (postUserId === 'me' && effectiveUserId) return effectiveUserId
     if (postUserId === 'me' && firebaseUser?.uid) return firebaseUser.uid
@@ -5312,7 +5178,7 @@ useEffect(() => {
     setFeedOnlyReal(false)
     setFeedSearch('')
 
-    // Optimistic — el post aparece al instante en el Muro de la Comunidad
+    // Optimistic â€” el post aparece al instante en el Muro de la Comunidad
     setProfilePosts((prev) => {
       const current = prev[effectiveUserId] || []
       const newList = [post, ...current].slice(0, 10)
@@ -5382,7 +5248,7 @@ useEffect(() => {
           [effectiveUserId]: (prev[effectiveUserId] || []).filter((p) => p.id !== optimisticId),
         }))
         toast.error('No se pudo guardar en el Muro', {
-          description: 'Revisa tu conexión e inténtalo de nuevo.',
+          description: 'Revisa tu conexiÃ³n e intÃ©ntalo de nuevo.',
         })
       })
     } else {
@@ -5452,7 +5318,7 @@ useEffect(() => {
     if (entrenoWeekSummary.totalSessions === 0 && partnerSessions === 0) return null
     const partner = realProfiles.find((p) => p.id === pact.partnerId)
     return {
-      partnerName: pact.partnerName || partner?.name || 'Compañero',
+      partnerName: pact.partnerName || partner?.name || 'CompaÃ±ero',
       selfSessions: entrenoWeekSummary.totalSessions,
       partnerSessions,
       selfSets: entrenoWeekSummary.totalSets,
@@ -5547,7 +5413,7 @@ useEffect(() => {
 
   const handleCopyEntrenoWorkout = useCallback(
     (w: import('./types').Workout) => {
-      const tpl = workoutToTemplate(w, `Repetir · ${w.title}`)
+      const tpl = workoutToTemplate(w, `Repetir Â· ${w.title}`)
       void openEntrenoDeHoy({
         title: tpl.label,
         exercises: tpl.exercises,
@@ -5562,7 +5428,7 @@ useEffect(() => {
   const handleDeleteEntrenoWorkout = useCallback(
     async (w: import('./types').Workout) => {
       if (!w.id) return
-      if (!window.confirm(`¿Eliminar "${w.title}"? Se quitará de tu historial y del muro si estaba publicado.`)) return
+      if (!window.confirm(`Â¿Eliminar "${w.title}"? Se quitarÃ¡ de tu historial y del muro si estaba publicado.`)) return
       if (isDemoMode || !db) {
         setEntrenoRecentWorkouts((prev) => prev.filter((x) => x.id !== w.id))
         toast.success('Entreno eliminado')
@@ -5599,7 +5465,7 @@ useEffect(() => {
         return
       }
       void openEntrenoDeHoy({
-        title: title ? `Copia · ${title}` : 'Rutina copiada',
+        title: title ? `Copia Â· ${title}` : 'Rutina copiada',
         exercises: w.exercises.map((e) => ({
           ...e,
           sets: e.sets.map((s) => ({ ...s })),
@@ -5639,7 +5505,7 @@ useEffect(() => {
           /* non-blocking */
         }
       }
-      const prLine = opts?.prSummary ? ` · ${opts.prSummary}` : ''
+      const prLine = opts?.prSummary ? ` Â· ${opts.prSummary}` : ''
       const weightKg =
         fuelProfile?.weightKg ??
         (currentUser as { weightKg?: number })?.weightKg ??
@@ -5656,9 +5522,9 @@ useEffect(() => {
           : 0
       const fuelTip = getPostWorkoutFuelTip(opts?.workoutType)
       const burnLine = burn > 0 ? `~${burn} kcal estimadas` : undefined
-      const description = [burnLine, fuelTip].filter(Boolean).join(' · ') || 'Registrado en tu semana'
+      const description = [burnLine, fuelTip].filter(Boolean).join(' Â· ') || 'Registrado en tu semana'
       const planHint = weeklyPlan?.headline
-        ? ` · Mañana: ${weeklyPlan.recommendation.title} (${weeklyPlan.recommendation.durationMin} min)`
+        ? ` Â· MaÃ±ana: ${weeklyPlan.recommendation.title} (${weeklyPlan.recommendation.durationMin} min)`
         : ''
       toast.success('Entreno de Hoy guardado', {
         description: `${description}${prLine}${planHint}`,
@@ -5690,7 +5556,7 @@ useEffect(() => {
     ]
   )
 
-  /** Global live toggle — used by FAB, Daily home, Profile, and E2E harness. */
+  /** Global live toggle â€” used by FAB, Daily home, Profile, and E2E harness. */
   const toggleLiveTraining = async (mode?: 'on' | 'off' | 'toggle') => {
     if (isTogglingLive || !currentUser) return
     const me = currentUser
@@ -5761,16 +5627,16 @@ useEffect(() => {
         } catch (err) {
           console.warn('Live off Firestore sync failed', err)
           toast.error('Live apagado localmente', {
-            description: 'No se sincronizó con el servidor — reintenta si sigues visible en el mapa.',
+            description: 'No se sincronizÃ³ con el servidor â€” reintenta si sigues visible en el mapa.',
           })
         }
         syncCityStatsBump(minutes, 0).catch(() => {})
         if (minutes >= MIN_LIVE_MINUTES_FOR_WEEK_DAY) {
           setWeekLiveDays(nextLiveDays)
-          toast('Entrenamiento finalizado', { description: `${minutes} min — cuenta para tu semana ✓` })
+          toast('Entrenamiento finalizado', { description: `${minutes} min â€” cuenta para tu semana âœ“` })
         } else {
-          toast('Sesión finalizada', {
-            description: `${minutes} min. Entrena al menos ${MIN_LIVE_MINUTES_FOR_WEEK_DAY} min para marcar el día.`,
+          toast('SesiÃ³n finalizada', {
+            description: `${minutes} min. Entrena al menos ${MIN_LIVE_MINUTES_FOR_WEEK_DAY} min para marcar el dÃ­a.`,
           })
         }
         setPostLiveSession({
@@ -5796,9 +5662,9 @@ useEffect(() => {
         if (!isDemoMode && PlayIntegrityNative) {
           const current = getLastIntegrityResult() || lastIntegrity
           if (!hasPositiveIntegrity(current)) {
-            toast('🛡️ Verifica integridad para full visibilidad en prod', {
+            toast('ðŸ›¡ï¸ Verifica integridad para full visibilidad en prod', {
               description:
-                'Usa el botón 🛡️ Google Play Integrity arriba. El live se activa localmente de todas formas.',
+                'Usa el botÃ³n ðŸ›¡ï¸ Google Play Integrity arriba. El live se activa localmente de todas formas.',
             })
           }
         }
@@ -5883,11 +5749,11 @@ useEffect(() => {
         void saveUserWithRealSync(updated)
           .then(() => loadRealProfiles().catch(() => {}))
           .catch((err) => console.warn('Live on Firestore sync (non-fatal):', err))
-        toast('🟢 ¡Entrenando Ahora (EN VIVO) activado!', {
+        toast('ðŸŸ¢ Â¡Entrenando Ahora (EN VIVO) activado!', {
           description: autoGymCheckIn
-            ? `Check-in en ${autoGymCheckIn.gymName} — apareces en el mapa del gym`
+            ? `Check-in en ${autoGymCheckIn.gymName} â€” apareces en el mapa del gym`
             : spotifyShareLive
-              ? '🎧 Tu música se comparte en el mapa si está sonando'
+              ? 'ðŸŽ§ Tu mÃºsica se comparte en el mapa si estÃ¡ sonando'
               : undefined,
         })
 
@@ -5919,7 +5785,7 @@ useEffect(() => {
               awardConstancy(8, 'Ancla del Mapa LIVE', liveUser)
             }
             if (!userHasRecentAutoLivePost(effectiveUserId, profilePostsRef.current)) {
-              void createProfilePost(`${pickLivePostText(Date.now())} 🏋️`, null, 'dailyPulse').catch(
+              void createProfilePost(`${pickLivePostText(Date.now())} ðŸ‹ï¸`, null, 'dailyPulse').catch(
                 (e) => console.warn('[Live] createProfilePost', e)
               )
             }
@@ -5938,7 +5804,7 @@ useEffect(() => {
     }
 
     if (wantOn && me.trainingNow) {
-      toast('Ya estás en LIVE', { description: 'Tu pin ya está visible en el mapa' })
+      toast('Ya estÃ¡s en LIVE', { description: 'Tu pin ya estÃ¡ visible en el mapa' })
       setMapForceTick((t) => t + 1)
     }
   }
@@ -6089,7 +5955,7 @@ useEffect(() => {
     const result = quickAddSetToWorkoutDraft(uid)
     if (result.ok) {
       setWorkoutDraftRefresh((n) => n + 1)
-      toast.success('Serie añadida', {
+      toast.success('Serie aÃ±adida', {
         description: result.exerciseName,
       })
     }
@@ -6215,7 +6081,7 @@ useEffect(() => {
           payload.exercises,
           demoStats
         )
-        const demoPostText = `🏋️ Entreno de Hoy · ${payload.title} — ${payload.exercises.length} ejercicios, ${payload.durationMin} min (demo)`
+        const demoPostText = `ðŸ‹ï¸ Entreno de Hoy Â· ${payload.title} â€” ${payload.exercises.length} ejercicios, ${payload.durationMin} min (demo)`
         await createProfilePost(demoPostText, null)
         const demoStoryOpts = {
           userName: currentUser?.name || 'Atleta',
@@ -6371,7 +6237,7 @@ useEffect(() => {
         userName: currentUser?.name,
         inviteUrl: buildInviteLink(effectiveUserId),
       })
-      if (outcome === 'copied') toast.success('Plan copiado — pégalo en WhatsApp o Instagram')
+      if (outcome === 'copied') toast.success('Plan copiado â€” pÃ©galo en WhatsApp o Instagram')
       else if (outcome === 'failed') toast.error('No se pudo compartir el plan')
     },
     [currentUser?.name, effectiveUserId]
@@ -6529,11 +6395,11 @@ useEffect(() => {
       if (!isDemoMode && db && firebaseUser?.uid) {
         await saveFuelProfile(db, effectiveUserId, profile)
         toast.success('Perfil Fuel guardado', {
-          description: `Target: ${profile.targetKcal} kcal/día`,
+          description: `Target: ${profile.targetKcal} kcal/dÃ­a`,
         })
       } else {
         toast.success('Perfil Fuel guardado (demo)', {
-          description: `Target: ${profile.targetKcal} kcal/día`,
+          description: `Target: ${profile.targetKcal} kcal/dÃ­a`,
         })
       }
       setFuelProfile(saved)
@@ -6545,7 +6411,7 @@ useEffect(() => {
     } catch (e) {
       console.error('Fuel profile save failed', e)
       toast.error('No se pudo guardar el perfil Fuel', {
-        description: e instanceof Error ? e.message : 'Revisa conexión e inicio de sesión',
+        description: e instanceof Error ? e.message : 'Revisa conexiÃ³n e inicio de sesiÃ³n',
       })
     } finally {
       setSavingFuel(false)
@@ -6560,8 +6426,8 @@ useEffect(() => {
         fuelContext: buildFuelAnalyzeContext(fuelProfile, fuelTodayTotals, fuelEnergyBalance),
       })
       if (result.source === 'gemini') {
-        toast.success('Fuel AI · Gemini', {
-          description: `${result.kcal} kcal estimadas — revisa y guarda si cuadra.`,
+        toast.success('Fuel AI Â· Gemini', {
+          description: `${result.kcal} kcal estimadas â€” revisa y guarda si cuadra.`,
         })
       } else if (result.geminiErrorMessage) {
         toast.error('Gemini no disponible', {
@@ -6569,15 +6435,15 @@ useEffect(() => {
           duration: 8000,
         })
       } else {
-        toast.message('Estimación aproximada', {
-          description: 'Usando heurística local. Ajusta manualmente si hace falta.',
+        toast.message('EstimaciÃ³n aproximada', {
+          description: 'Usando heurÃ­stica local. Ajusta manualmente si hace falta.',
         })
       }
       return result
     } catch (e) {
       console.warn('Fuel AI analyze failed', e)
       const fallback = estimateMacrosFromDescription(mealDescription || 'Comida')
-      toast.message('Fuel AI no disponible', { description: 'Usando estimación local.' })
+      toast.message('Fuel AI no disponible', { description: 'Usando estimaciÃ³n local.' })
       return { ...fallback, source: 'heuristic' as const }
     }
   }
@@ -6697,7 +6563,7 @@ useEffect(() => {
             const post: ProfilePost = {
               id: postId,
               userId: effectiveUserId,
-              text: `🍽 Fuel check — ${preview.mealLabel}: ${preview.kcal} kcal · P${preview.proteinG} C${preview.carbsG} G${preview.fatG}`,
+              text: `ðŸ½ Fuel check â€” ${preview.mealLabel}: ${preview.kcal} kcal Â· P${preview.proteinG} C${preview.carbsG} G${preview.fatG}`,
               photo: photoUrl,
               timestamp: Date.now(),
               pinned: false,
@@ -6721,7 +6587,7 @@ useEffect(() => {
           } catch (muroErr) {
             console.warn('Fuel muro publish failed (meal saved)', muroErr)
             toast.message('Comida guardada', {
-              description: 'No se pudo publicar en el muro — el registro Fuel sí quedó.',
+              description: 'No se pudo publicar en el muro â€” el registro Fuel sÃ­ quedÃ³.',
             })
           }
         }
@@ -6755,7 +6621,7 @@ useEffect(() => {
     } catch (e) {
       console.error('Fuel log save failed', e)
       toast.error('No se pudo guardar la comida', {
-        description: e instanceof Error ? e.message : 'Revisa conexión e inicio de sesión',
+        description: e instanceof Error ? e.message : 'Revisa conexiÃ³n e inicio de sesiÃ³n',
       })
     } finally {
       setSavingFuel(false)
@@ -6834,7 +6700,7 @@ useEffect(() => {
       } catch (e) {
         console.warn(e)
         toast.error('No se pudo dar like', {
-          description: 'Revisa permisos o conexión e intenta de nuevo.',
+          description: 'Revisa permisos o conexiÃ³n e intenta de nuevo.',
         })
         return
       }
@@ -6845,8 +6711,8 @@ useEffect(() => {
     if (!hasLiked && ownerId !== effectiveUserId) {
       addNotification({
         type: 'message',
-        title: '¡Like en tu muro!',
-        body: `${currentUser?.name || 'Alguien'} le gustó tu publicación`,
+        title: 'Â¡Like en tu muro!',
+        body: `${currentUser?.name || 'Alguien'} le gustÃ³ tu publicaciÃ³n`,
         relatedId: ownerId
       })
     }
@@ -6906,8 +6772,8 @@ useEffect(() => {
         await persistPostReactionsInFirestore(db, postId, newReactions)
       } catch (e) {
         console.warn('reaction persist failed', e)
-        toast.error('No se pudo guardar la reacción', {
-          description: 'Revisa permisos o conexión e intenta de nuevo.',
+        toast.error('No se pudo guardar la reacciÃ³n', {
+          description: 'Revisa permisos o conexiÃ³n e intenta de nuevo.',
         })
       }
     }
@@ -6949,7 +6815,7 @@ useEffect(() => {
     const comment: PostComment = {
       id: createCommentId(),
       userId: effectiveUserId,
-      userName: currentUser?.name || 'Tú',
+      userName: currentUser?.name || 'TÃº',
       text: trimmed,
       timestamp: Date.now(),
       _pending: !isDemoMode,
@@ -6961,7 +6827,7 @@ useEffect(() => {
       hit = findPostInProfilePosts(postId, postUserId)
     }
     if (!hit) {
-      toast.error('No se encontró la publicación', { description: 'Recarga el muro e inténtalo de nuevo.' })
+      toast.error('No se encontrÃ³ la publicaciÃ³n', { description: 'Recarga el muro e intÃ©ntalo de nuevo.' })
       return false
     }
 
@@ -6978,7 +6844,7 @@ useEffect(() => {
       const fsOk = await writeCommentToFirestore(db, postId, comment, sanitizeForFirestore)
       if (!fsOk) {
         toast('Comentario visible localmente', {
-          description: 'No se pudo guardar en el servidor. Se reintentará al sincronizar.',
+          description: 'No se pudo guardar en el servidor. Se reintentarÃ¡ al sincronizar.',
           duration: 3500,
         })
       }
@@ -7013,10 +6879,10 @@ useEffect(() => {
     }
     const newList = current.filter(p => p.id !== postId)
     const updated = { ...profilePosts, [postUserId]: newList }
-    saveProfilePosts(updated, { persistLocal: isDemoMode })  // delete uses save — triggers AnimatePresence exit
+    saveProfilePosts(updated, { persistLocal: isDemoMode })  // delete uses save â€” triggers AnimatePresence exit
 
     // Spectacular UX: undo toast for delete
-    toast.success('Publicación eliminada', {
+    toast.success('PublicaciÃ³n eliminada', {
       description: 'Toca Deshacer para recuperar',
       action: {
         label: 'Deshacer',
@@ -7033,7 +6899,7 @@ useEffect(() => {
                 } catch(e){}
               })()
             }
-            toast.success('Publicación recuperada')
+            toast.success('PublicaciÃ³n recuperada')
           }
         }
       }
@@ -7052,7 +6918,7 @@ useEffect(() => {
     const updated = { ...currentUser, photos: newPhotos }
     await saveUserWithRealSync(updated as CurrentUser)
     setLastSync(new Date())
-    toast.success('Foto eliminada', { description: 'Puedes volver a añadirla desde el editor de perfil si fue un error.' })
+    toast.success('Foto eliminada', { description: 'Puedes volver a aÃ±adirla desde el editor de perfil si fue un error.' })
   }
 
   // Drag reorder for gallery - makes profile curation powerful and "vivo". Works with native drag (desktop + modern mobile).
@@ -7064,7 +6930,7 @@ useEffect(() => {
     const updated = { ...currentUser, photos }
     saveUserWithRealSync(updated as any)
     setLastSync(new Date())
-    toast('Galería reordenada', { description: 'El orden se guarda en tu perfil real' })
+    toast('GalerÃ­a reordenada', { description: 'El orden se guarda en tu perfil real' })
   }
 
   const persistSeenLiveJoinInteractions = useCallback(() => {
@@ -7167,14 +7033,14 @@ useEffect(() => {
         pendingJoinNotifs.push({
           id: 'notif' + Date.now() + '-' + c.id,
           type: 'session_join',
-          title: '🔥 ¡Alguien se unió a tu live!',
-          body: `${c.userName || 'Un compañero'} se unió a tu entrenamiento en vivo`,
+          title: 'ðŸ”¥ Â¡Alguien se uniÃ³ a tu live!',
+          body: `${c.userName || 'Un compaÃ±ero'} se uniÃ³ a tu entrenamiento en vivo`,
           relatedId: c.userId,
           timestamp: Date.now(),
           read: false,
         })
-        toast(`🔥 ${c.userName || 'Alguien'} se unió a tu live`, {
-          description: '¡Abre tu muro o chatea con ellos!',
+        toast(`ðŸ”¥ ${c.userName || 'Alguien'} se uniÃ³ a tu live`, {
+          description: 'Â¡Abre tu muro o chatea con ellos!',
           action: {
             label: 'Ver perfil',
             onClick: () => {
@@ -7194,18 +7060,18 @@ useEffect(() => {
         seenLiveJoinInteractionIdsRef.current.add(likeKey)
         newJoinDetected = true
         const likerProfile = [...realProfiles, ...SEED_PROFILES].find((p) => p.id === likerId)
-        const likerName = likerProfile?.name || 'Un compañero'
+        const likerName = likerProfile?.name || 'Un compaÃ±ero'
         pendingJoinNotifs.push({
           id: 'notif' + Date.now() + '-' + likeKey,
           type: 'session_join',
-          title: '❤️ ¡Like en tu post live!',
+          title: 'â¤ï¸ Â¡Like en tu post live!',
           body: `${likerName} le dio like a tu "Entrenando ahora"`,
           relatedId: likerId,
           timestamp: Date.now(),
           read: false,
         })
-        toast(`❤️ ${likerName} se sumó a tu live`, {
-          description: '¡Tu post en vivo está generando movimiento!',
+        toast(`â¤ï¸ ${likerName} se sumÃ³ a tu live`, {
+          description: 'Â¡Tu post en vivo estÃ¡ generando movimiento!',
         })
       })
     })
@@ -7296,7 +7162,7 @@ useEffect(() => {
 
   // Delete own comment from post (polish for spectacular muro)
   const deleteCommentFromPost = async (postId: string, postUserId: string, commentId: string) => {
-    if (!confirm('¿Eliminar tu comentario?')) return
+    if (!confirm('Â¿Eliminar tu comentario?')) return
     const hit = findPostInProfilePosts(postId, postUserId)
     if (!hit) return
     const post = hit.posts[hit.idx]
@@ -7415,7 +7281,7 @@ useEffect(() => {
     }
     setEditingPost(null)
     setEditDraft('')
-    toast.success('Publicación editada')
+    toast.success('PublicaciÃ³n editada')
   }
   const cancelEditPost = () => {
     setEditingPost(null)
@@ -7506,7 +7372,7 @@ useEffect(() => {
       try {
         const perm = await Notification.requestPermission()
         if (perm === 'granted') {
-          toast.success('Notificaciones web activadas', { description: 'Te avisaremos de mensajes nuevos aunque la pestaña esté oculta' })
+          toast.success('Notificaciones web activadas', { description: 'Te avisaremos de mensajes nuevos aunque la pestaÃ±a estÃ© oculta' })
         }
       } catch (e) {
         console.warn('Web Notification permission request failed', e)
@@ -7522,7 +7388,7 @@ useEffect(() => {
     }
     if (!PushNotifications) {
       toast.error('Notificaciones nativas no disponibles', {
-        description: 'Esta build del APK no tiene google-services.json configurado o el plugin no cargó. Revisa la consola para detalles.'
+        description: 'Esta build del APK no tiene google-services.json configurado o el plugin no cargÃ³. Revisa la consola para detalles.'
       })
       return
     }
@@ -7548,21 +7414,21 @@ useEffect(() => {
           } catch {}
         }
         toast.success('Notificaciones push nativas activadas', {
-          description: 'Ahora recibirás alertas reales en tu celular incluso con la app cerrada (mejor que web).'
+          description: 'Ahora recibirÃ¡s alertas reales en tu celular incluso con la app cerrada (mejor que web).'
         })
       } else if (receive === 'denied') {
         toast('Permiso denegado', {
-          description: 'Ve a Ajustes del teléfono > Apps > EntrenaMatch > Notificaciones y actívalo manualmente.'
+          description: 'Ve a Ajustes del telÃ©fono > Apps > EntrenaMatch > Notificaciones y actÃ­valo manualmente.'
         })
       } else {
         toast('Permiso de notificaciones solicitado', {
-          description: 'Si ves el diálogo del sistema, elige "Permitir".'
+          description: 'Si ves el diÃ¡logo del sistema, elige "Permitir".'
         })
       }
     } catch (e: any) {
       console.error('Native push activation error', e)
       toast.error('Error activando notificaciones nativas', {
-        description: (e?.message || 'Revisa google-services.json y que el package sea com.entrenamatch.app') + ' — contacta al equipo para una build actualizada.'
+        description: (e?.message || 'Revisa google-services.json y que el package sea com.entrenamatch.app') + ' â€” contacta al equipo para una build actualizada.'
       })
     }
   }
@@ -7571,7 +7437,7 @@ useEffect(() => {
   // Safe to call from bg listeners. name = display name of sender, chatId for 1:1 or sessionId for group.
   const triggerMessageArrivalNotification = (chatId: string, name: string, text: string, isGroup: boolean, photoUrl?: string) => {
     const short = (text || (photoUrl ? '[foto]' : 'Nuevo mensaje')).substring(0, 80)
-    const title = isGroup ? `${name} en sesión` : `Mensaje de ${name}`
+    const title = isGroup ? `${name} en sesiÃ³n` : `Mensaje de ${name}`
 
     // Rich avatar + context for in-app toast (enriched for better UX)
     const avatarEl = photoUrl ? (
@@ -7588,7 +7454,7 @@ useEffect(() => {
 
     // Enhanced attractive in-app toast for messages (more visual pop, especially for legends)
     const isNetworkMsg = !isGroup && !!syncBonds[chatId] // from your training network / red
-    const toastTitle = isNetworkMsg ? `⭐ Mensaje de tu Red (Fuerza del equipo) ${name}` : title
+    const toastTitle = isNetworkMsg ? `â­ Mensaje de tu Red (Fuerza del equipo) ${name}` : title
     const toastClass = isNetworkMsg ? 'network-message-toast' : '' // network msg gold for your red
     toast.info(toastTitle, {
       description: (
@@ -7597,8 +7463,8 @@ useEffect(() => {
           <div className="flex-1 min-w-0">
             <div className="text-sm text-[#cbd5e1] truncate leading-tight font-medium">{short}</div>
             <div className="text-[10px] text-[#9CA3AF] mt-1 flex items-center gap-1.5">
-              {isGroup ? '👥 Chat grupal • En vivo' : '💬 Mensaje 1:1 • En vivo'}
-              {isNetworkMsg && <span className="px-1.5 py-0 rounded bg-[#FFD700] text-black text-[9px] font-bold">⭐ RED</span>}
+              {isGroup ? 'ðŸ‘¥ Chat grupal â€¢ En vivo' : 'ðŸ’¬ Mensaje 1:1 â€¢ En vivo'}
+              {isNetworkMsg && <span className="px-1.5 py-0 rounded bg-[#FFD700] text-black text-[9px] font-bold">â­ RED</span>}
             </div>
           </div>
         </div>
@@ -7621,7 +7487,7 @@ useEffect(() => {
     // Browser Notification if page hidden and permission granted (web only) + user pref allows messages
     if (notifPrefs.messages && typeof Notification !== 'undefined' && Notification.permission === 'granted' && document.visibilityState !== 'visible') {
       try {
-        const n = new Notification(title + ' — EntrenaMatch', {
+        const n = new Notification(title + ' â€” EntrenaMatch', {
           body: short,
           icon: photoUrl || '/entrenamatch/favicon.svg',
           tag: 'entrenamatch-msg-' + chatId // collapse duplicates
@@ -7651,7 +7517,7 @@ useEffect(() => {
     const newReview: TrainingReview = {
       id: 'r' + Date.now(),
       reviewerId: firebaseUser?.uid || 'me',
-      reviewerName: currentUser?.name || 'Anónimo',
+      reviewerName: currentUser?.name || 'AnÃ³nimo',
       rating: reviewRating,
       comment: reviewComment.trim() || undefined,
       photo: reviewPhoto || undefined,
@@ -7689,7 +7555,7 @@ useEffect(() => {
     setPendingReviewBookingId(null)
     setReviewComment('')
     setReviewPhoto(null)
-    toast.success('¡Reseña enviada!', { description: 'Gracias por ayudar a la comunidad de EntrenaMatch' })
+    toast.success('Â¡ReseÃ±a enviada!', { description: 'Gracias por ayudar a la comunidad de EntrenaMatch' })
   }
 
   // Report a user (critical safety feature)
@@ -7704,7 +7570,7 @@ useEffect(() => {
       reportedUserId: userId,
       reporterName: currentUser.name,
       reportedUserName: reportedProfile?.name,
-      reason: reason.trim() || 'Otra violación de las reglas de comunidad',
+      reason: reason.trim() || 'Otra violaciÃ³n de las reglas de comunidad',
       details: details?.trim() || undefined,
       context,
       contextId,
@@ -7736,7 +7602,7 @@ useEffect(() => {
       } catch (e) {
         console.warn('Could not save report to FS', e)
         toast.error('No se pudo guardar el reporte en el servidor', {
-          description: 'Reintenta con conexión estable. El bloqueo local sí se aplicó.',
+          description: 'Reintenta con conexiÃ³n estable. El bloqueo local sÃ­ se aplicÃ³.',
         })
       }
     }
@@ -7765,7 +7631,7 @@ useEffect(() => {
 
     toast.success('Reporte enviado', {
       description: firestoreOk
-        ? 'Gracias por reportar. El equipo Admin lo revisará y el usuario fue bloqueado para ti.'
+        ? 'Gracias por reportar. El equipo Admin lo revisarÃ¡ y el usuario fue bloqueado para ti.'
         : 'Reporte guardado localmente. El usuario fue bloqueado para ti.',
     })
   }
@@ -7801,7 +7667,7 @@ useEffect(() => {
     }
 
     toast.success('Usuario bloqueado', { 
-      description: 'No volverás a verlo en descubrimiento, live, feed, mapa ni chats.' 
+      description: 'No volverÃ¡s a verlo en descubrimiento, live, feed, mapa ni chats.' 
     })
   }
 
@@ -7823,7 +7689,7 @@ useEffect(() => {
   // Real Authentication handlers (Phase 1)
   const handleGoogleAuth = async () => {
     if (isDemoMode || !isFirebaseConfigured) {
-      setAuthError('Google Sign-In requiere Firebase real. Usa email/contraseña en demo.')
+      setAuthError('Google Sign-In requiere Firebase real. Usa email/contraseÃ±a en demo.')
       return
     }
 
@@ -7834,13 +7700,13 @@ useEffect(() => {
       const result = await signInWithGoogle()
 
       if (result.mode === 'redirect') {
-        toast('Redirigiendo a Google…', { description: 'Vuelves a EntrenaMatch al terminar.' })
+        toast('Redirigiendo a Googleâ€¦', { description: 'Vuelves a EntrenaMatch al terminar.' })
         return
       }
 
       const { profile, isNewUser } = await completeGoogleSignInProfile(result.user)
       lastSuccessfulAuthRef.current = result.user
-      toast.success('Sesión iniciada con Google')
+      toast.success('SesiÃ³n iniciada con Google')
 
       if (profile) {
         saveUser({ ...profile, id: 'me' } as any)
@@ -7875,8 +7741,8 @@ useEffect(() => {
           toast.error(error.message)
         }
       } else {
-        setAuthError('No se pudo iniciar sesión con Google')
-        toast.error('No se pudo iniciar sesión con Google')
+        setAuthError('No se pudo iniciar sesiÃ³n con Google')
+        toast.error('No se pudo iniciar sesiÃ³n con Google')
       }
     } finally {
       setAuthLoading(false)
@@ -7885,7 +7751,7 @@ useEffect(() => {
 
   const handleEmailAuth = async (isRegister: boolean) => {
     if (!authEmail || !authPassword) {
-      setAuthError('Por favor completa email y contraseña')
+      setAuthError('Por favor completa email y contraseÃ±a')
       return
     }
 
@@ -7901,7 +7767,7 @@ useEffect(() => {
           toast.success('Cuenta creada exitosamente')
         } else {
           await signInDemo(authEmail)
-          toast.success('Sesión iniciada')
+          toast.success('SesiÃ³n iniciada')
         }
         loggedInUser = true // demo always "succeeds" for UI
       } else {
@@ -7912,30 +7778,30 @@ useEffect(() => {
           lastSuccessfulAuthRef.current = fbUser
         } else {
           const fbUser = await signInWithEmail(authEmail, authPassword)
-          toast.success('Sesión iniciada')
+          toast.success('SesiÃ³n iniciada')
           loggedInUser = fbUser
           lastSuccessfulAuthRef.current = fbUser
         }
       }
     } catch (error: any) {
       console.error(error)
-      let friendlyError = 'Error en la autenticación'
+      let friendlyError = 'Error en la autenticaciÃ³n'
 
       if (error.code === 'auth/email-already-in-use') {
-        friendlyError = 'Este email ya está registrado.'
+        friendlyError = 'Este email ya estÃ¡ registrado.'
         // Auto-switch to login mode for better UX
         setAuthMode('login')
         // Keep the email so user doesn't have to re-type it
         setAuthEmail(authEmail)
-        setAuthError('Este email ya está registrado. Inicia sesión con tu contraseña.')
+        setAuthError('Este email ya estÃ¡ registrado. Inicia sesiÃ³n con tu contraseÃ±a.')
       } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        friendlyError = 'Email o contraseña incorrectos. ¿Estás seguro que creaste la cuenta?'
+        friendlyError = 'Email o contraseÃ±a incorrectos. Â¿EstÃ¡s seguro que creaste la cuenta?'
         setAuthError(friendlyError)
       } else if (error.code === 'auth/invalid-email') {
-        friendlyError = 'El formato del email no es válido.'
+        friendlyError = 'El formato del email no es vÃ¡lido.'
         setAuthError(friendlyError)
       } else if (error.code === 'auth/weak-password') {
-        friendlyError = 'La contraseña es muy débil (mínimo 6 caracteres).'
+        friendlyError = 'La contraseÃ±a es muy dÃ©bil (mÃ­nimo 6 caracteres).'
         setAuthError(friendlyError)
       } else if (error.message) {
         setAuthError(error.message)
@@ -7960,11 +7826,11 @@ useEffect(() => {
   }
 
   // Real password recovery using Firebase
-  // This enables the "¿Olvidaste tu contraseña?" button to actually work for real accounts.
+  // This enables the "Â¿Olvidaste tu contraseÃ±a?" button to actually work for real accounts.
   // In demo mode (public web) it will show a clear message that recovery only works in the real app.
   const handleForgotPassword = async (email: string) => {
     if (!email || !email.includes('@')) {
-      setAuthError('Ingresa un correo electrónico válido para recuperar tu contraseña')
+      setAuthError('Ingresa un correo electrÃ³nico vÃ¡lido para recuperar tu contraseÃ±a')
       return
     }
 
@@ -7973,7 +7839,7 @@ useEffect(() => {
 
     try {
       await sendPasswordReset(email)
-      toast.success('¡Email de recuperación enviado!', {
+      toast.success('Â¡Email de recuperaciÃ³n enviado!', {
         description: `Revisa tu bandeja en ${email} (incluyendo carpeta de spam). El enlace expira en 1 hora.`
       })
       // UX nicety: switch to login mode after requesting reset
@@ -7982,11 +7848,11 @@ useEffect(() => {
       }
     } catch (error: any) {
       console.error('Password reset failed', error)
-      let friendly = 'No pudimos enviar el correo de recuperación en este momento.'
+      let friendly = 'No pudimos enviar el correo de recuperaciÃ³n en este momento.'
       if (error.message) {
         friendly = error.message
       } else if (error.code === 'auth/user-not-found') {
-        friendly = 'No hay ninguna cuenta registrada con ese correo electrónico.'
+        friendly = 'No hay ninguna cuenta registrada con ese correo electrÃ³nico.'
       } else if (error.code === 'auth/too-many-requests') {
         friendly = 'Demasiados intentos. Espera unos minutos antes de volver a intentar.'
       }
@@ -8004,10 +7870,10 @@ useEffect(() => {
 
     const isCreator = session.creatorId === effectiveUserId || session.creatorId === 'me'
     if (!isCreator) {
-      toast.error('Solo el creador puede cerrar la sesión')
+      toast.error('Solo el creador puede cerrar la sesiÃ³n')
       return
     }
-    if (!confirm('¿Cerrar esta sesión? Se eliminará para todos los participantes y el chat grupal.')) return
+    if (!confirm('Â¿Cerrar esta sesiÃ³n? Se eliminarÃ¡ para todos los participantes y el chat grupal.')) return
 
     // Remove from local demo state
     const updatedLocal = sessions.filter(s => s.id !== sessionId)
@@ -8022,7 +7888,7 @@ useEffect(() => {
         const { doc, deleteDoc } = await import('firebase/firestore')
         await deleteDoc(doc(db, 'sessions', sessionId))
         // Note: subcollection messages stay but are orphaned (fine for pre-alpha)
-        console.log('✅ Session closed by creator')
+        console.log('âœ… Session closed by creator')
       } catch (e) {
         console.warn('Failed to delete session from Firestore:', e)
       }
@@ -8033,7 +7899,7 @@ useEffect(() => {
       setShowGroupChatModalFor(null)
     }
 
-    toast.success('Sesión cerrada', { description: 'Ya no aparecerá para nadie' })
+    toast.success('SesiÃ³n cerrada', { description: 'Ya no aparecerÃ¡ para nadie' })
 
     if (!isDemoMode) {
       loadRealSessions()
@@ -8047,7 +7913,7 @@ useEffect(() => {
 
     const isCreator = session.creatorId === effectiveUserId || session.creatorId === 'me'
     if (!isCreator) {
-      toast.error('Solo el administrador de la sesión puede expulsar')
+      toast.error('Solo el administrador de la sesiÃ³n puede expulsar')
       return
     }
     if (participantIdToExpel === effectiveUserId) {
@@ -8056,7 +7922,7 @@ useEffect(() => {
     }
 
     const nameToExpel = SEED_PROFILES.find(p => p.id === participantIdToExpel)?.name || 'el participante'
-    if (!confirm(`¿Expulsar a ${nameToExpel} de la sesión?`)) return
+    if (!confirm(`Â¿Expulsar a ${nameToExpel} de la sesiÃ³n?`)) return
 
     const newParticipants = (session.participants || []).filter(p => p !== participantIdToExpel)
     const updatedSession = { ...session, participants: newParticipants }
@@ -8076,7 +7942,7 @@ useEffect(() => {
           participants: newParticipants,
           updatedAt: serverTimestamp(),
         }, { merge: true })
-        console.log('✅ Participant expelled, persisted to Firestore')
+        console.log('âœ… Participant expelled, persisted to Firestore')
       } catch (e) {
         console.warn('Failed to persist expel:', e)
       }
@@ -8088,7 +7954,7 @@ useEffect(() => {
       loadRealGroupMessages(sessionId)
     }
 
-    toast.success('Expulsado', { description: `${nameToExpel} ya no está en la sesión` })
+    toast.success('Expulsado', { description: `${nameToExpel} ya no estÃ¡ en la sesiÃ³n` })
 
     if (!isDemoMode) {
       loadRealSessions()
@@ -8102,7 +7968,7 @@ useEffect(() => {
 
     const isCreator = session.creatorId === effectiveUserId || session.creatorId === 'me'
     if (isCreator) {
-      toast('El creador no puede salir; usa Cerrar sesión')
+      toast('El creador no puede salir; usa Cerrar sesiÃ³n')
       return
     }
 
@@ -8129,7 +7995,7 @@ useEffect(() => {
       setShowGroupChatModalFor(null)
     }
 
-    toast('Saliste de la sesión')
+    toast('Saliste de la sesiÃ³n')
 
     if (!isDemoMode) loadRealSessions()
   }
@@ -8154,11 +8020,11 @@ useEffect(() => {
           }),
           { merge: true }
         )
-        console.log('✅ Join persisted to Firestore for other users')
+        console.log('âœ… Join persisted to Firestore for other users')
       } catch (e) {
         joinPersisted = false
         console.warn('Failed to persist join to Firestore:', e)
-        toast.error('No se pudo guardar tu unión en el servidor', {
+        toast.error('No se pudo guardar tu uniÃ³n en el servidor', {
           description: 'El chat se abre igual (optimista). Usa "Actualizar sesiones reales" si no ves cambios.',
         })
       }
@@ -8173,13 +8039,13 @@ useEffect(() => {
     if (session.creatorId && session.creatorId !== effectiveUserId) {
       addNotification({
         type: 'session_join',
-        title: '¡Alguien se unió a tu sesión!',
-        body: `${currentUser?.name || 'Alguien'} se unió a "${session.title}"`,
+        title: 'Â¡Alguien se uniÃ³ a tu sesiÃ³n!',
+        body: `${currentUser?.name || 'Alguien'} se uniÃ³ a "${session.title}"`,
         relatedId: session.id,
       })
     }
 
-    toast.success('¡Te uniste!', {
+    toast.success('Â¡Te uniste!', {
       description: joinPersisted ? 'Abriendo chat grupal...' : 'Abriendo (puede tardar en sincronizar para otros)',
     })
     setShowGroupChatModalFor(session.id)
@@ -8193,22 +8059,22 @@ useEffect(() => {
     if (approve) {
       // In a real app we would update the user's profile on the backend.
       // For demo, we'll just show a toast. If the user views that profile, we can fake it.
-      toast.success('Verificación aprobada', { description: `El perfil de ${SEED_PROFILES.find(p => p.id === userId)?.name} ahora está verificado.` })
+      toast.success('VerificaciÃ³n aprobada', { description: `El perfil de ${SEED_PROFILES.find(p => p.id === userId)?.name} ahora estÃ¡ verificado.` })
       
       // Optional: If we want to make it visible, we can store approved verifications
       // For now, just log it
     } else {
-      toast.error('Verificación rechazada')
+      toast.error('VerificaciÃ³n rechazada')
     }
   }
 
 
 
-  // Multi-step verification — Gemini compares profile photo vs selfie
+  // Multi-step verification â€” Gemini compares profile photo vs selfie
   const submitVerification = async () => {
     if (!currentUser || verificationSubmitting) return
     if (!verificationSelfie) {
-      toast.error('Falta selfie', { description: 'Captura tu rostro con la cámara frontal para verificar.' })
+      toast.error('Falta selfie', { description: 'Captura tu rostro con la cÃ¡mara frontal para verificar.' })
       return
     }
     if (!currentUser.photos?.length) {
@@ -8217,7 +8083,7 @@ useEffect(() => {
     }
 
     if (isDemoMode || !firebaseUser?.uid) {
-      toast('Verificación IA requiere cuenta real', {
+      toast('VerificaciÃ³n IA requiere cuenta real', {
         description: 'Entra con Google o email para comparar tu selfie con tu foto de perfil.',
       })
       return
@@ -8313,32 +8179,32 @@ useEffect(() => {
       if (verificationStatus === 'verified') {
         addNotification({
           type: 'verification',
-          title: '¡Perfil verificado!',
-          body: verdict.reason || 'La IA confirmó que tu selfie coincide con tu foto de perfil.',
+          title: 'Â¡Perfil verificado!',
+          body: verdict.reason || 'La IA confirmÃ³ que tu selfie coincide con tu foto de perfil.',
         })
-        toast.success('¡Verificación completada!', {
-          description: verdict.reason || 'Tu badge ✓ VERIFICADO ya es visible.',
+        toast.success('Â¡VerificaciÃ³n completada!', {
+          description: verdict.reason || 'Tu badge âœ“ VERIFICADO ya es visible.',
         })
       } else if (verificationStatus === 'pending') {
         addNotification({
           type: 'verification',
-          title: 'Verificación en revisión',
+          title: 'VerificaciÃ³n en revisiÃ³n',
           body: verdict.reason || 'Revisaremos tus fotos manualmente si hace falta.',
         })
-        toast('En revisión', {
-          description: verdict.reason || 'La IA no tuvo certeza suficiente — te avisamos pronto.',
+        toast('En revisiÃ³n', {
+          description: verdict.reason || 'La IA no tuvo certeza suficiente â€” te avisamos pronto.',
         })
       } else {
         toast.error('No pudimos verificar', {
           description:
             verdict.reason ||
-            'Usa buena luz, mira a la cámara y pon como foto principal un retrato claro de tu rostro.',
+            'Usa buena luz, mira a la cÃ¡mara y pon como foto principal un retrato claro de tu rostro.',
         })
       }
     } catch (e: any) {
       console.error('submitVerification failed', e)
-      toast.error('Error en verificación', {
-        description: e?.message || 'Revisa tu conexión e intenta de nuevo.',
+      toast.error('Error en verificaciÃ³n', {
+        description: e?.message || 'Revisa tu conexiÃ³n e intenta de nuevo.',
       })
     } finally {
       setVerificationSubmitting(false)
@@ -8354,7 +8220,7 @@ useEffect(() => {
     const newMsg: any = {
       id: 'sm' + Date.now(),
       senderId: effectiveUserId,
-      senderName: currentUser?.name || 'Tú',
+      senderName: currentUser?.name || 'TÃº',
       text: text.trim() || '',
       timestamp: Date.now(),
       reactions: {}
@@ -8374,7 +8240,7 @@ useEffect(() => {
           const { collection, addDoc, serverTimestamp } = await import('firebase/firestore')
           const msgData: any = {
             senderId: effectiveUserId,
-            senderName: currentUser?.name || 'Tú',
+            senderName: currentUser?.name || 'TÃº',
             text: newMsg.text,
             timestamp: newMsg.timestamp,
             createdAt: serverTimestamp(),
@@ -8387,7 +8253,7 @@ useEffect(() => {
             msgData.voiceDuration = newMsg.voiceDuration
           }
           await addDoc(collection(db, groupMessagesCollectionPath(sessionId)), msgData)
-          console.log('✅ Real group message sent')
+          console.log('âœ… Real group message sent')
 
           // Update parent session doc (not squads) with last activity for live preview in sessions list
           if (!isSquadChatId(sessionId)) {
@@ -8448,7 +8314,7 @@ useEffect(() => {
         if (otherParticipants.length > 0) {
           const randomId = otherParticipants[Math.floor(Math.random() * otherParticipants.length)]
           const randomName = SEED_PROFILES.find(p => p.id === randomId)?.name || 'Alguien'
-          const replies = ['¡Buena idea!', 'Yo llego 5 min antes', '¿Llevas agua?', 'Perfecto 🔥', 'Nos vemos allá']
+          const replies = ['Â¡Buena idea!', 'Yo llego 5 min antes', 'Â¿Llevas agua?', 'Perfecto ðŸ”¥', 'Nos vemos allÃ¡']
           const replyMsg: SessionMessage = {
             id: 'sm' + Date.now(),
             senderId: randomId,
@@ -8504,22 +8370,22 @@ useEffect(() => {
 
     if (type.includes('running') || type.includes('correr')) {
       messages = [
-        { id: 'sm1', senderId: session.creatorId, senderName: session.creatorName, text: `¡Hola! Nos vemos ${session.time.toLowerCase()} en ${session.location}. Llevo agua extra.`, timestamp: Date.now() - 1000*60*12 },
-        { id: 'sm2', senderId: 'p-seed', senderName: 'María', text: 'Yo llego 5 min antes. ¿Alguien trae gel?', timestamp: Date.now() - 1000*60*7 },
+        { id: 'sm1', senderId: session.creatorId, senderName: session.creatorName, text: `Â¡Hola! Nos vemos ${session.time.toLowerCase()} en ${session.location}. Llevo agua extra.`, timestamp: Date.now() - 1000*60*12 },
+        { id: 'sm2', senderId: 'p-seed', senderName: 'MarÃ­a', text: 'Yo llego 5 min antes. Â¿Alguien trae gel?', timestamp: Date.now() - 1000*60*7 },
       ]
     } else if (type.includes('pesas') || type.includes('gym')) {
       messages = [
-        { id: 'sm1', senderId: session.creatorId, senderName: session.creatorName, text: `¡Listos para ${session.trainingType}! Nos vemos en ${session.location}.`, timestamp: Date.now() - 1000*60*14 },
+        { id: 'sm1', senderId: session.creatorId, senderName: session.creatorName, text: `Â¡Listos para ${session.trainingType}! Nos vemos en ${session.location}.`, timestamp: Date.now() - 1000*60*14 },
         { id: 'sm2', senderId: 'p-seed', senderName: 'Diego', text: 'Llevo correas y straps por si alguien necesita.', timestamp: Date.now() - 1000*60*9 },
       ]
     } else if (type.includes('crossfit')) {
       messages = [
-        { id: 'sm1', senderId: session.creatorId, senderName: session.creatorName, text: `WOD del día en ${session.location}. Traigan rodilleras.`, timestamp: Date.now() - 1000*60*11 },
-        { id: 'sm2', senderId: 'p-seed', senderName: 'Laura', text: '¿Alguien tiene magnesio extra?', timestamp: Date.now() - 1000*60*6 },
+        { id: 'sm1', senderId: session.creatorId, senderName: session.creatorName, text: `WOD del dÃ­a en ${session.location}. Traigan rodilleras.`, timestamp: Date.now() - 1000*60*11 },
+        { id: 'sm2', senderId: 'p-seed', senderName: 'Laura', text: 'Â¿Alguien tiene magnesio extra?', timestamp: Date.now() - 1000*60*6 },
       ]
     } else {
       messages = [
-        { id: 'sm1', senderId: session.creatorId, senderName: session.creatorName, text: `¡Hola! Nos vemos ${session.time.toLowerCase()} en ${session.location}.`, timestamp: Date.now() - 1000*60*13 },
+        { id: 'sm1', senderId: session.creatorId, senderName: session.creatorName, text: `Â¡Hola! Nos vemos ${session.time.toLowerCase()} en ${session.location}.`, timestamp: Date.now() - 1000*60*13 },
         { id: 'sm2', senderId: 'p-seed', senderName: 'Carlos', text: 'Perfecto, yo llego puntual.', timestamp: Date.now() - 1000*60*5 },
       ]
     }
@@ -8553,7 +8419,7 @@ useEffect(() => {
     const u = currentUserRef.current ?? currentUser
     if (!u) {
       if (!opts?.silent) {
-        toast.success('Ubicación activada', { description: 'Distancias y mapa usan esta posición' })
+        toast.success('UbicaciÃ³n activada', { description: 'Distancias y mapa usan esta posiciÃ³n' })
       }
       return
     }
@@ -8561,7 +8427,7 @@ useEffect(() => {
     const updated = { ...u, lat: loc.lat, lng: loc.lng }
     await saveUserWithRealSync(updated as CurrentUser)
     if (!opts?.silent) {
-      toast.success('Ubicación real activada', { description: 'Distancias y "vivo cerca" usan tu GPS ahora' })
+      toast.success('UbicaciÃ³n real activada', { description: 'Distancias y "vivo cerca" usan tu GPS ahora' })
     }
   }
 
@@ -8575,7 +8441,7 @@ useEffect(() => {
       if (GeolocationNative && Capacitor.isNativePlatform()) {
         const perm = await GeolocationNative.requestPermissions()
         if (perm?.location !== 'granted' && perm?.coarseLocation !== 'granted') {
-          toast.error('Permiso de ubicación denegado', { description: 'Actívalo en Ajustes del teléfono para distancias reales' })
+          toast.error('Permiso de ubicaciÃ³n denegado', { description: 'ActÃ­valo en Ajustes del telÃ©fono para distancias reales' })
           loc = readCachedLocation()
           if (loc) await applyUserLocation(loc, { silent: true })
           return loc
@@ -8615,16 +8481,16 @@ useEffect(() => {
             console.warn('Low accuracy web geolocation failed:', lowErr)
             loc = readCachedLocation()
             if (loc) {
-              const reason = code === 3 ? 'GPS tardó demasiado' : code === 1 ? 'Permiso denegado' : 'GPS no disponible'
-              toast('Usando última ubicación conocida', {
-                description: `${reason}. Live y mapa siguen activos con tu posición guardada.`,
+              const reason = code === 3 ? 'GPS tardÃ³ demasiado' : code === 1 ? 'Permiso denegado' : 'GPS no disponible'
+              toast('Usando Ãºltima ubicaciÃ³n conocida', {
+                description: `${reason}. Live y mapa siguen activos con tu posiciÃ³n guardada.`,
               })
             }
           }
         }
       } else {
         loc = readCachedLocation()
-        if (!loc) toast.error('Geolocalización no soportada en este navegador')
+        if (!loc) toast.error('GeolocalizaciÃ³n no soportada en este navegador')
         return loc
       }
 
@@ -8633,17 +8499,17 @@ useEffect(() => {
         return loc
       }
 
-      toast.error('No pudimos obtener ubicación', { description: 'Revisa permisos de ubicación o intenta en otro navegador.' })
+      toast.error('No pudimos obtener ubicaciÃ³n', { description: 'Revisa permisos de ubicaciÃ³n o intenta en otro navegador.' })
       return null
     } catch (e: any) {
       console.warn('Real geolocation failed:', e)
       const fallback = readCachedLocation()
       if (fallback) {
         await applyUserLocation(fallback, { silent: true })
-        toast('Usando última ubicación conocida', { description: 'El GPS no respondió a tiempo; live y mapa usan tu posición guardada.' })
+        toast('Usando Ãºltima ubicaciÃ³n conocida', { description: 'El GPS no respondiÃ³ a tiempo; live y mapa usan tu posiciÃ³n guardada.' })
         return fallback
       }
-      toast.error('No pudimos obtener ubicación real', { description: 'Activa permisos de ubicación en el navegador o dispositivo.' })
+      toast.error('No pudimos obtener ubicaciÃ³n real', { description: 'Activa permisos de ubicaciÃ³n en el navegador o dispositivo.' })
       return null
     } finally {
       isGettingLocationRef.current = false
@@ -8677,7 +8543,7 @@ useEffect(() => {
     return true
   }
 
-  // Fase 121 — alertas LIVE: equipo + alguien cerca (≤8 km) si tienes ubicación.
+  // Fase 121 â€” alertas LIVE: equipo + alguien cerca (â‰¤8 km) si tienes ubicaciÃ³n.
   const NEARBY_LIVE_KM = 8
   useEffect(() => {
     if (!liveTrainingNow || liveTrainingNow.length === 0) return
@@ -8698,18 +8564,18 @@ useEffect(() => {
       if (inMyTeam) {
         addNotification({
           type: 'session_join',
-          title: isBond ? `${firstName} está en vivo` : `${firstName} de tu equipo está entrenando`,
+          title: isBond ? `${firstName} estÃ¡ en vivo` : `${firstName} de tu equipo estÃ¡ entrenando`,
           body: isBond
-            ? 'Tu socio de sync activó live — únete desde Hoy.'
-            : `Match activo a ${(dist ?? 0).toFixed(1)}km — ¿te sumas?`,
+            ? 'Tu socio de sync activÃ³ live â€” Ãºnete desde Hoy.'
+            : `Match activo a ${(dist ?? 0).toFixed(1)}km â€” Â¿te sumas?`,
           relatedId: liveUser.id,
           photoUrl: liveUser.photos?.[0],
           isNetwork: isBond,
         } as any)
-        toast(`${isBond ? '🔥' : '🟢'} ${firstName} está en vivo`, {
+        toast(`${isBond ? 'ðŸ”¥' : 'ðŸŸ¢'} ${firstName} estÃ¡ en vivo`, {
           description: isBond
-            ? 'Tu equipo — toca para unirte al sync'
-            : `Match · ${(dist ?? 0).toFixed(1)}km`,
+            ? 'Tu equipo â€” toca para unirte al sync'
+            : `Match Â· ${(dist ?? 0).toFixed(1)}km`,
           action: {
             label: isBond ? 'Unirme' : 'Ver',
             onClick: () =>
@@ -8733,7 +8599,7 @@ useEffect(() => {
           relatedId: liveUser.id,
           photoUrl: liveUser.photos?.[0],
         } as any)
-        toast(`🟢 ${BRAND_COPY.nearbyLive.notifTitle(firstName)}`, {
+        toast(`ðŸŸ¢ ${BRAND_COPY.nearbyLive.notifTitle(firstName)}`, {
           description: BRAND_COPY.nearbyLive.notifBody(dist),
           action: {
             label: BRAND_COPY.nearbyLive.toastAction,
@@ -8754,7 +8620,7 @@ useEffect(() => {
     navigateTab,
   ])
 
-  // Fase 121 — notificación al iniciar Sync Hour (una vez por ventana).
+  // Fase 121 â€” notificaciÃ³n al iniciar Sync Hour (una vez por ventana).
   useEffect(() => {
     const tick = () => {
       if (!shouldFireSyncHourNotif()) return
@@ -8776,7 +8642,7 @@ useEffect(() => {
     return () => window.clearInterval(id)
   }, [addNotification, navigateTab])
 
-  // Phase B: sync-start alerts — team bonds only (matches get live alert above).
+  // Phase B: sync-start alerts â€” team bonds only (matches get live alert above).
   useEffect(() => {
     if (!liveTrainingNow || liveTrainingNow.length === 0) return
     if (!liveSessionAlertsReadyRef.current) return
@@ -8796,14 +8662,14 @@ useEffect(() => {
         if (partner) {
           addNotification({
             type: 'session_join',
-            title: `${partner.name.split(' ')[0]} activó EntrenaSync`,
-            body: 'Tu socio de sync está entrenando en pareja — únete desde Hoy.',
+            title: `${partner.name.split(' ')[0]} activÃ³ EntrenaSync`,
+            body: 'Tu socio de sync estÃ¡ entrenando en pareja â€” Ãºnete desde Hoy.',
             relatedId: uid,
             photoUrl: partner.photos?.[0],
             isNetwork: true,
           } as any)
           toast.success(`${partner.name.split(' ')[0]} en EntrenaSync`, {
-            description: 'Tu equipo — toca para unirte',
+            description: 'Tu equipo â€” toca para unirte',
             action: { label: 'Unirme', onClick: () => startSyncWith(uid, partner.name) },
           })
         }
@@ -8825,7 +8691,7 @@ useEffect(() => {
       setRealMatches((prev) => (prev.includes(profileId) ? prev : [...prev, profileId]))
     }
 
-    const openers = CHAT_OPENERS[profileId] || ['¡Hola! Vi tu perfil y me tinca entrenar juntos 💪']
+    const openers = CHAT_OPENERS[profileId] || ['Â¡Hola! Vi tu perfil y me tinca entrenar juntos ðŸ’ª']
     const firstMsg: Message = {
       id: Date.now().toString(36),
       from: 'them',
@@ -8836,7 +8702,7 @@ useEffect(() => {
 
     addNotification({
       type: 'match',
-      title: '¡Nuevo Match!',
+      title: 'Â¡Nuevo Match!',
       body: `Hiciste match con ${profile.name}`,
       relatedId: profileId,
     })
@@ -8847,8 +8713,8 @@ useEffect(() => {
     const isFirstRealMatch =
       isReal && !realMatches.includes(profileId) && realMatches.length === 0
 
-    toast.success(`¡Match con ${profile.name}!`, {
-      description: isReal ? '¡Ambos se dieron like!' : 'Tienen ganas de entrenar juntos 🔥',
+    toast.success(`Â¡Match con ${profile.name}!`, {
+      description: isReal ? 'Â¡Ambos se dieron like!' : 'Tienen ganas de entrenar juntos ðŸ”¥',
     })
 
     if (isFirstRealMatch) {
@@ -8856,10 +8722,10 @@ useEffect(() => {
         if (!localStorage.getItem('em_invite_nudge_shown')) {
           localStorage.setItem('em_invite_nudge_shown', '1')
           const inviteUrl = buildInviteLink(effectiveUserId)
-          const inviteText = `Únete a EntrenaMatch — entrena en sync con gente de ${currentUser?.city || 'tu ciudad'}`
+          const inviteText = `Ãšnete a EntrenaMatch â€” entrena en sync con gente de ${currentUser?.city || 'tu ciudad'}`
           setTimeout(() => {
-            toast('¿Alguien de tu gym?', {
-              description: 'Invítalo al piloto para entrenar juntos',
+            toast('Â¿Alguien de tu gym?', {
+              description: 'InvÃ­talo al piloto para entrenar juntos',
               action: {
                 label: 'Compartir',
                 onClick: () => {
@@ -8869,7 +8735,7 @@ useEffect(() => {
                         await navigator.share({ title: 'EntrenaMatch', text: inviteText, url: inviteUrl })
                       } else {
                         await navigator.clipboard.writeText(`${inviteText}\n${inviteUrl}`)
-                        toast.success('Invitación copiada')
+                        toast.success('InvitaciÃ³n copiada')
                       }
                     } catch {
                       toast.error('No se pudo compartir')
@@ -8903,8 +8769,8 @@ useEffect(() => {
       // Network Power priority in action: swiping right on your red gives immediate feedback that the graph is strengthening
       if (syncBonds[profileId]) {
         const bond = syncBonds[profileId]
-        toast.success(`⭐ Tu red • ${profile.name}`, {
-          description: `LV${bond.bondLevel || 1} • Fuerza del equipo reforzada. Re-sync pronto para +rendimiento compartido y más visibilidad.`
+        toast.success(`â­ Tu red â€¢ ${profile.name}`, {
+          description: `LV${bond.bondLevel || 1} â€¢ Fuerza del equipo reforzada. Re-sync pronto para +rendimiento compartido y mÃ¡s visibilidad.`
         })
       }
 
@@ -8923,7 +8789,7 @@ useEffect(() => {
                 await loadRealMatches()
               } else {
                 toast('Like enviado', {
-                  description: `Si ${profile.name} también te da like, harán match`,
+                  description: `Si ${profile.name} tambiÃ©n te da like, harÃ¡n match`,
                 })
               }
             } catch (e: any) {
@@ -8934,7 +8800,7 @@ useEffect(() => {
                 {
                   description: isPerm
                     ? 'Las reglas de likes/matches deben desplegarse (firebase deploy --only firestore:rules).'
-                    : 'Revisa tu conexión',
+                    : 'Revisa tu conexiÃ³n',
                 }
               )
             }
@@ -8960,7 +8826,7 @@ useEffect(() => {
       if (isUserLive(profileId)) {
         (async () => {
           try {
-            const joinText = '¡Me uno al live ahora mismo! 🔥 ¿Dónde estás entrenando?'
+            const joinText = 'Â¡Me uno al live ahora mismo! ðŸ”¥ Â¿DÃ³nde estÃ¡s entrenando?'
             if (!joiningSyncWith) setJoiningSyncWith(profileId)
             tryAutoStartSync(profileId)
             if (!isDemoMode && firebaseUser?.uid && db) {
@@ -8973,7 +8839,7 @@ useEffect(() => {
                 const joinComment = {
                   id: createCommentId(),
                   userId: firebaseUser.uid,
-                  userName: currentUser?.name || 'Un compañero live',
+                  userName: currentUser?.name || 'Un compaÃ±ero live',
                   text: joinText,
                   timestamp: Date.now(),
                 }
@@ -9009,10 +8875,10 @@ useEffect(() => {
 
         // Immediate UX feedback for the joiner (the "Unirme ya" action)
         // If both were live, the tryAutoStartSync already set loader + will auto-nav to the rich attractive sync panel
-        toast.success(`¡Unido al live de ${profile.name}!`, {
+        toast.success(`Â¡Unido al live de ${profile.name}!`, {
           description: isUserLive(profileId) && currentUser?.trainingNow 
-            ? '¡EntrenaSync iniciado! Estado compartido + acciones conjuntas en vivo. Te llevamos al panel.' 
-            : 'Dejé un comentario en su muro en vivo — ¡ellos lo verán!'
+            ? 'Â¡EntrenaSync iniciado! Estado compartido + acciones conjuntas en vivo. Te llevamos al panel.' 
+            : 'DejÃ© un comentario en su muro en vivo â€” Â¡ellos lo verÃ¡n!'
         })
 
         // Update joiner's live participation stats/streaks (killer for retention - both hosting and joining count)
@@ -9184,11 +9050,11 @@ useEffect(() => {
       const shouldReply = Math.random() > 0.3
       if (shouldReply) {
         const replies = [
-          '¡Buena idea! ¿Qué día te tinca?',
-          'Jajaja yo también, ¿a qué hora?',
-          'Me encanta la idea. ¿En Reñaca o en la 5ta?',
-          'Dale, avísame el día y nos juntamos.',
-          'Perfecto, yo también necesito esa motivación extra 🔥'
+          'Â¡Buena idea! Â¿QuÃ© dÃ­a te tinca?',
+          'Jajaja yo tambiÃ©n, Â¿a quÃ© hora?',
+          'Me encanta la idea. Â¿En ReÃ±aca o en la 5ta?',
+          'Dale, avÃ­same el dÃ­a y nos juntamos.',
+          'Perfecto, yo tambiÃ©n necesito esa motivaciÃ³n extra ðŸ”¥'
         ]
         const replyText = replies[Math.floor(Math.random() * replies.length)]
         const reply: Message = {
@@ -9258,7 +9124,7 @@ useEffect(() => {
     setFilters({ minAge: 18, maxAge: 70, gender: 'todos', trainingTypes: [], availability: [], maxDistanceKm: 100, onlyAvailableToday: false, onlyLiveTraining: false })
   })
 
-  // Auth gate lives in RootApp → PublicAuthPage; App only renders for authenticated users.
+  // Auth gate lives in RootApp â†’ PublicAuthPage; App only renders for authenticated users.
 
   // For real users or demo users without full profile, show onboarding/creation flow.
   // Incomplete Firestore profiles are forced via ProfileContext (fase 162).
@@ -9319,7 +9185,7 @@ useEffect(() => {
   return (
     <ErrorBoundary>
       <div className={`bg-[#0D0D10] text-white flex flex-col overflow-hidden relative app-container em-visual-v2${inFullScreenChat ? ' app-container--chat-active' : ''}`}>
-      {/* PREMIUM TOP BAR — hidden in 1:1 chat (WhatsApp-style full bleed) */}
+      {/* PREMIUM TOP BAR â€” hidden in 1:1 chat (WhatsApp-style full bleed) */}
       {!inFullScreenChat && (
       <div className="em-v2-topbar flex items-center justify-between px-4 py-2 text-[10px] font-medium">
         <div className="flex items-center gap-2 min-w-0">
@@ -9335,13 +9201,13 @@ useEffect(() => {
                 className="em-v2-live-chip"
                 style={{ animation: 'live-pulse-green 2.2s ease-in-out infinite' }}
               >
-                🟢 {liveCountForUI} en {BRAND_COPY.liveMapLabel}
+                ðŸŸ¢ {liveCountForUI} en {BRAND_COPY.liveMapLabel}
               </span>
               {(currentUser?.trainingNow && currentUser.liveStreak) || syncPartnerId || activeSyncCount > 0 ? (
                 <span className="em-v2-live-chip__meta">
-                  {currentUser?.trainingNow && currentUser.liveStreak ? `🔥 ${currentUser.liveStreak}d racha` : ''}
-                  {syncPartnerId ? `${currentUser?.trainingNow && currentUser.liveStreak ? ' · ' : ''}🔄 Sync activo` : ''}
-                  {activeSyncCount > 0 ? `${syncPartnerId || (currentUser?.trainingNow && currentUser.liveStreak) ? ' · ' : ''}🔄 ${activeSyncCount} pares` : ''}
+                  {currentUser?.trainingNow && currentUser.liveStreak ? `ðŸ”¥ ${currentUser.liveStreak}d racha` : ''}
+                  {syncPartnerId ? `${currentUser?.trainingNow && currentUser.liveStreak ? ' Â· ' : ''}ðŸ”„ Sync activo` : ''}
+                  {activeSyncCount > 0 ? `${syncPartnerId || (currentUser?.trainingNow && currentUser.liveStreak) ? ' Â· ' : ''}ðŸ”„ ${activeSyncCount} pares` : ''}
                 </span>
               ) : null}
             </button>
@@ -9374,12 +9240,12 @@ useEffect(() => {
                 className="em-v2-topbar-pwa active:scale-[0.985] flex-shrink-0"
                 title="Instalar como app en pantalla de inicio"
               >
-                📱 Instalar
+                ðŸ“± Instalar
               </button>
             )}
           </div>
         ) : (
-          <div className="text-[10px] opacity-90 font-medium shrink-0">Inicia sesión para probar</div>
+          <div className="text-[10px] opacity-90 font-medium shrink-0">Inicia sesiÃ³n para probar</div>
         )}
       </div>
       )}
@@ -9389,7 +9255,7 @@ useEffect(() => {
           className="sticky top-0 z-[48] bg-[#FFD700]/12 border-b border-[#FFD700]/35 px-3 py-1.5 text-center text-[10px] text-[#FFD700] font-semibold flex-shrink-0"
           role="status"
         >
-          Modo prueba — datos locales; no cruzan con cuentas reales ni otros dispositivos
+          Modo prueba â€” datos locales; no cruzan con cuentas reales ni otros dispositivos
         </div>
       )}
 
@@ -9408,8 +9274,8 @@ useEffect(() => {
             </div>
             <div className="flex-1 text-[#cbd5e1] leading-tight pr-1">
               {deferredInstallPrompt 
-                ? 'Instálala para abrir rápido desde tu pantalla de inicio + notificaciones nativas.'
-                : 'Usa el menú del navegador (⋯ o Compartir) > "Añadir a pantalla de inicio" para instalar como app.'}
+                ? 'InstÃ¡lala para abrir rÃ¡pido desde tu pantalla de inicio + notificaciones nativas.'
+                : 'Usa el menÃº del navegador (â‹¯ o Compartir) > "AÃ±adir a pantalla de inicio" para instalar como app.'}
             </div>
             {deferredInstallPrompt ? (
               <button 
@@ -9431,7 +9297,7 @@ useEffect(() => {
               className="text-[#9CA3AF] hover:text-white px-1.5 text-base leading-none"
               aria-label="Cerrar"
             >
-              ×
+              Ã—
             </button>
           </motion.div>
         )}
@@ -9446,11 +9312,11 @@ useEffect(() => {
             animate={{ opacity: 1, height: 'auto' }}
             className="bg-yellow-900/90 text-yellow-200 text-[10px] px-3 py-1 text-center border-b border-yellow-800/60 z-20 flex items-center justify-center gap-2"
           >
-            <span>📡</span>
-            <span>Sin conexión • usando caché • cambios se guardan y sincronizan al reconectar</span>
+            <span>ðŸ“¡</span>
+            <span>Sin conexiÃ³n â€¢ usando cachÃ© â€¢ cambios se guardan y sincronizan al reconectar</span>
           </motion.div>
         )}
-        {/* ===== MAP tab (full) vs EXPLORE live banner only — separate mounts so Leaflet never bleeds into swipe deck ===== */}
+        {/* ===== MAP tab (full) vs EXPLORE live banner only â€” separate mounts so Leaflet never bleeds into swipe deck ===== */}
         {activeTab === 'explore' && (
           <MapExplorePanelMount
             dedicatedMapTab={false}
@@ -9696,23 +9562,23 @@ useEffect(() => {
                 await loadRealProfiles()
                 if (clearedSwipes > 0) {
                   toast.success(
-                    `Deck reiniciado — ${clearedSwipes} perfil${clearedSwipes === 1 ? '' : 'es'} desbloqueado${clearedSwipes === 1 ? '' : 's'}`,
-                    { description: 'Si no ves tarjetas, prueba ampliar filtros con el botón de abajo' }
+                    `Deck reiniciado â€” ${clearedSwipes} perfil${clearedSwipes === 1 ? '' : 'es'} desbloqueado${clearedSwipes === 1 ? '' : 's'}`,
+                    { description: 'Si no ves tarjetas, prueba ampliar filtros con el botÃ³n de abajo' }
                   )
                 } else {
                   toast.success('Deck reiniciado', {
-                    description: 'Si sigue vacío, amplía filtros o invita a alguien de tu gym',
+                    description: 'Si sigue vacÃ­o, amplÃ­a filtros o invita a alguien de tu gym',
                   })
                 }
               } catch {
                 toast.error('No se pudo reiniciar el deck', {
-                  description: 'Revisa tu conexión e inténtalo de nuevo',
+                  description: 'Revisa tu conexiÃ³n e intÃ©ntalo de nuevo',
                 })
               }
             }}
             isResettingDeck={isResettingDeck}
             requestUserLocation={requestUserLocation}
-            isLoadingProfiles={isLoadingMatches && realProfiles.length === 0}
+            isLoadingProfiles={!discoveryReady && !isDemoMode && realProfiles.length === 0}
             onSwipe={(direction, profileId) => {
               if (direction === 'right') {
                 handleSwipe(profileId, 'right');
@@ -9748,7 +9614,7 @@ useEffect(() => {
                 onlyAvailableToday: false,
                 onlyLiveTraining: false,
               }))
-              toast.success('Filtros ampliados — todos visibles, más cerca primero')
+              toast.success('Filtros ampliados â€” todos visibles, mÃ¡s cerca primero')
             }}
           />
           </Suspense>
@@ -9756,7 +9622,7 @@ useEffect(() => {
           </TabErrorBoundary>
         )}
 
-        {/* FULL LIVE MODAL — Fase 393 LiveNearModalMount */}
+        {/* FULL LIVE MODAL â€” Fase 393 LiveNearModalMount */}
         <LiveNearModalMount
           open={showLiveModal}
           liveCountForUI={liveCountForUI}
@@ -9788,7 +9654,7 @@ useEffect(() => {
           saveSessions={saveSessions}
         />
 
-        {/* ===== HOME — DailyHome + Muro (HomeTab) ===== */}
+        {/* ===== HOME â€” DailyHome + Muro (HomeTab) ===== */}
         {activeTab === 'home' && (
           <TabErrorBoundary tabName="Inicio">
           <Suspense fallback={TAB_LOADING}>
@@ -9943,8 +9809,8 @@ useEffect(() => {
               void openEntrenoDeHoy({
                 durationMin: postLiveSession?.minutes ?? 45,
                 title: postLiveSession?.gymName
-                  ? `Sesión en ${postLiveSession.gymName}`
-                  : 'Sesión live',
+                  ? `SesiÃ³n en ${postLiveSession.gymName}`
+                  : 'SesiÃ³n live',
                 type: 'strength',
               })
               setPostLiveSession(null)
@@ -9963,14 +9829,22 @@ useEffect(() => {
               !shouldHideCoachAndMarketplace(currentUser, Object.keys(syncBonds || {}).length)
             }
             onDismissShopBanner={() => setShowHomeShopBanner(false)}
-            onOpenMarketplace={() => {
-              setMarketplaceScreenMode('shop')
-              setShowMarketplace(true)
-            }}
-            onOpenMarketplaceOrders={() => {
-              setMarketplaceScreenMode('orders')
-              setShowMarketplace(true)
-            }}
+            onOpenMarketplace={
+              isMarketplaceUiEnabled()
+                ? () => {
+                    setMarketplaceScreenMode('shop')
+                    setShowMarketplace(true)
+                  }
+                : undefined
+            }
+            onOpenMarketplaceOrders={
+              isMarketplaceUiEnabled()
+                ? () => {
+                    setMarketplaceScreenMode('orders')
+                    setShowMarketplace(true)
+                  }
+                : undefined
+            }
             showPactWizard={showPactWizard}
             profilePostsFeed={(profilePosts[effectiveUserId] || []).concat(
               Object.values(profilePosts).flat().filter((p: any) => p.postType === 'workout')
@@ -10036,7 +9910,7 @@ useEffect(() => {
                     confetti({ particleCount: 140, spread: 70, origin: { y: 0.65 } })
                   } catch {}
                 } catch {
-                  toast.error('Error al publicar', { description: 'Inténtalo de nuevo.' })
+                  toast.error('Error al publicar', { description: 'IntÃ©ntalo de nuevo.' })
                 } finally {
                   setFeedPublishing(false)
                 }
@@ -10468,10 +10342,14 @@ useEffect(() => {
             reorderGallery={reorderGallery}
             deleteExtraPhoto={deleteExtraPhoto}
             uploadProfilePhotoIfNeeded={uploadProfilePhotoIfNeeded}
-            onOpenMarketplace={() => {
-              setMarketplaceScreenMode('shop')
-              setShowMarketplace(true)
-            }}
+            onOpenMarketplace={
+              isMarketplaceUiEnabled()
+                ? () => {
+                    setMarketplaceScreenMode('shop')
+                    setShowMarketplace(true)
+                  }
+                : undefined
+            }
             onOpenTrainerCoach={() => {
               setTrainerCoachPreselect(null)
               setShowTrainerCoach(true)
@@ -10495,7 +10373,7 @@ useEffect(() => {
           </Suspense>
           </TabErrorBoundary>
         )}
-            {/* DUPLICATE ORPHAN PROFILE JSX REMOVED — all rich Profile UI now lives cleanly inside the activeTab==='profile' conditional (prevents black screens, duplicate renders, and JSX imbalance) */}
+            {/* DUPLICATE ORPHAN PROFILE JSX REMOVED â€” all rich Profile UI now lives cleanly inside the activeTab==='profile' conditional (prevents black screens, duplicate renders, and JSX imbalance) */}
 
       </div>
 
@@ -10529,23 +10407,23 @@ useEffect(() => {
                       onClick={() => likeProfilePost(viewingPostComments.postId, viewingPostComments.postUserId)}
                       className="text-sm flex items-center gap-1 text-[#9CA3AF] active:text-[#FF671F] px-2 py-0.5 rounded hover:bg-[#FF671F]/10"
                     >
-                      ❤️ <span className="text-xs">{(livePost.likes || []).length}</span>
+                      â¤ï¸ <span className="text-xs">{(livePost.likes || []).length}</span>
                     </button>
                   </div>
-                  <button onClick={closeFullComments} className="text-xl px-2 text-[#9CA3AF] active:text-white">×</button>
+                  <button onClick={closeFullComments} className="text-xl px-2 text-[#9CA3AF] active:text-white">Ã—</button>
                 </div>
 
                 {/* Scrollable thread */}
                 <div className="max-h-[52vh] overflow-y-auto p-4 space-y-3 text-sm bg-[#161618]">
                   {livePost.text && (
                     <div className="text-xs text-[#9CA3AF] mb-2 italic border-l-2 border-[#FF671F]/40 pl-2">
-                      {livePost.pinned && '📌 '}"{livePost.text.length > 120 ? livePost.text.slice(0,120) + '...' : livePost.text}"
+                      {livePost.pinned && 'ðŸ“Œ '}"{livePost.text.length > 120 ? livePost.text.slice(0,120) + '...' : livePost.text}"
                     </div>
                   )}
                   {comments.length > 0 ? (
                     comments.map((c: any) => (
                       <div key={c.id} className="flex gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-[#2F2F35] flex-shrink-0 text-[10px] flex items-center justify-center mt-0.5">👤</div>
+                        <div className="w-7 h-7 rounded-full bg-[#2F2F35] flex-shrink-0 text-[10px] flex items-center justify-center mt-0.5">ðŸ‘¤</div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-baseline gap-1.5">
                             <span className="font-medium text-white/90 text-sm">{c.userName}</span>
@@ -10556,7 +10434,7 @@ useEffect(() => {
                                 className="ml-auto text-red-400 text-[10px] active:text-red-500"
                                 title="Eliminar comentario"
                               >
-                                ×
+                                Ã—
                               </button>
                             )}
                           </div>
@@ -10565,7 +10443,7 @@ useEffect(() => {
                       </div>
                     ))
                   ) : (
-                    <div className="text-center text-xs text-[#9CA3AF] py-4">Sé el primero en comentar este post.</div>
+                    <div className="text-center text-xs text-[#9CA3AF] py-4">SÃ© el primero en comentar este post.</div>
                   )}
                 </div>
 
@@ -10596,26 +10474,28 @@ useEffect(() => {
         })()}
       </AnimatePresence>
 
-      {/* Floating Guía and Reportar removed per request (clutter at bottom, interferes with profile selection in Explore). 
+      {/* Floating GuÃ­a and Reportar removed per request (clutter at bottom, interferes with profile selection in Explore). 
          Report/feedback still available in Profile tab (structured form + history), chat headers, and legal links.
          Welcome guide modal can still be triggered if needed via other means or first-load. */}
 
       {/* Bottom Navigation - Premium, energetic feel (polished aesthetics) */}
-      <MarketplaceViewMount
-        open={showMarketplace}
-        onClose={() => {
-          setShowMarketplace(false)
-          setMarketplaceScreenMode('shop')
-        }}
-        screenMode={marketplaceScreenMode}
-        products={marketplaceProducts}
-        isAdmin={isMarketplaceAdmin}
-        isDemoMode={isDemoMode}
-        userUid={firebaseUser?.uid}
-        userEmail={firebaseUser?.email ?? undefined}
-        myOrders={myMarketplaceOrders}
-        db={db}
-      />
+      {isMarketplaceUiEnabled() && (
+        <MarketplaceViewMount
+          open={showMarketplace}
+          onClose={() => {
+            setShowMarketplace(false)
+            setMarketplaceScreenMode('shop')
+          }}
+          screenMode={marketplaceScreenMode}
+          products={marketplaceProducts}
+          isAdmin={isMarketplaceAdmin}
+          isDemoMode={isDemoMode}
+          userUid={firebaseUser?.uid}
+          userEmail={firebaseUser?.email ?? undefined}
+          myOrders={myMarketplaceOrders}
+          db={db}
+        />
+      )}
       <CommunityAdminPanelMount
         open={showCommunityAdmin}
         onClose={() => setShowCommunityAdmin(false)}
@@ -10811,7 +10691,6 @@ useEffect(() => {
           !currentUser ||
           showSyncArena ||
           showOnboarding ||
-          authBooting ||
           !!workoutSessionDraft ||
           (activeTab === 'red' && redSubTab === 'messages' && !!activeChat)
         }
@@ -10894,7 +10773,7 @@ useEffect(() => {
                 setShowCreateSquad(false)
                 toast.success('Squad creado')
               }}>
-                <input name="name" placeholder="Nombre del Squad (ej: Beasts de Viña)" required className="form-input w-full mb-3" defaultValue={squadNameDraft} key={squadNameDraft} />
+                <input name="name" placeholder="Nombre del Squad (ej: Beasts de ViÃ±a)" required className="form-input w-full mb-3" defaultValue={squadNameDraft} key={squadNameDraft} />
                 <input name="focus" placeholder="Enfoque (Pesas, Running, Calistenia...)" required className="form-input w-full mb-4" />
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setShowCreateSquad(false)} className="flex-1 py-3 rounded-2xl border border-[#2F2F35] active:bg-[#25252A]">Cancelar</button>
@@ -10921,9 +10800,9 @@ useEffect(() => {
                     <div className="p-4 border-b border-[#2F2F35] flex justify-between items-center bg-[#1C1C20]">
                       <div>
                         <div className="font-bold text-xl">{squad.name}</div>
-                        <div className="text-[#FF671F] text-sm">{squad.focus} • {squad.members.length}/4 miembros</div>
+                        <div className="text-[#FF671F] text-sm">{squad.focus} â€¢ {squad.members.length}/4 miembros</div>
                       </div>
-                      <button onClick={() => setSelectedSquad(null)} className="text-2xl text-[#9CA3AF]">×</button>
+                      <button onClick={() => setSelectedSquad(null)} className="text-2xl text-[#9CA3AF]">Ã—</button>
                     </div>
 
                     <div className="p-4">
@@ -10970,7 +10849,7 @@ useEffect(() => {
                           <div className="mb-4 p-3 rounded-2xl bg-white/[0.03] border border-white/10">
                             <div className="text-sm font-bold text-white mb-2">Rutina semanal del squad</div>
                             <p className="text-[10px] text-[#9CA3AF] mb-3 leading-snug">
-                              Plan compartido para entrenar juntos — visible para todos los miembros.
+                              Plan compartido para entrenar juntos â€” visible para todos los miembros.
                             </p>
                             <input
                               type="text"
@@ -10987,7 +10866,7 @@ useEffect(() => {
                               onChange={(e) =>
                                 setSquadRoutineDraft((d) => ({ ...d, schedule: e.target.value }))
                               }
-                              placeholder="Días: Lun, Mié, Vie · 19:00"
+                              placeholder="DÃ­as: Lun, MiÃ©, Vie Â· 19:00"
                               className="w-full mb-2 px-3 py-2 rounded-xl bg-[#1C1C20] border border-[#2F2F35] text-sm text-white placeholder:text-[#6B7280]"
                             />
                             <textarea
@@ -10995,7 +10874,7 @@ useEffect(() => {
                               onChange={(e) =>
                                 setSquadRoutineDraft((d) => ({ ...d, notes: e.target.value }))
                               }
-                              placeholder="Notas opcionales (ejercicios clave, progresión…)"
+                              placeholder="Notas opcionales (ejercicios clave, progresiÃ³nâ€¦)"
                               rows={2}
                               className="w-full mb-2 px-3 py-2 rounded-xl bg-[#1C1C20] border border-[#2F2F35] text-sm text-white placeholder:text-[#6B7280] resize-none"
                             />
@@ -11005,7 +10884,7 @@ useEffect(() => {
                               onClick={() => handleSaveSquadRoutine(squad.id)}
                               className="w-full py-2 rounded-xl bg-[#FF671F]/15 border border-[#FF671F]/35 text-[#FF671F] text-sm font-bold active:bg-[#FF671F]/25 disabled:opacity-60"
                             >
-                              {savingSquadRoutine ? 'Guardando…' : 'Guardar rutina'}
+                              {savingSquadRoutine ? 'Guardandoâ€¦' : 'Guardar rutina'}
                             </button>
                             {squad.weeklyRoutine?.label && (
                               <button
@@ -11015,7 +10894,7 @@ useEffect(() => {
                                   const sched = squad.weeklyRoutine!.schedule
                                   sendSessionMessage(
                                     squad.id,
-                                    `🏋️ Rutina del squad: ${label}${sched ? ` (${sched})` : ''} — ¡voy en live!`
+                                    `ðŸ‹ï¸ Rutina del squad: ${label}${sched ? ` (${sched})` : ''} â€” Â¡voy en live!`
                                   )
                                   if (!currentUser?.trainingNow) {
                                     await toggleLiveTraining('on')
@@ -11026,7 +10905,7 @@ useEffect(() => {
                                 }}
                                 className="mt-2 w-full py-2.5 rounded-xl bg-gradient-to-r from-[#22c55e] to-[#16a34a] text-black text-sm font-extrabold active:scale-[0.985]"
                               >
-                                🟢 Entrenar rutina ahora
+                                ðŸŸ¢ Entrenar rutina ahora
                               </button>
                             )}
                           </div>
@@ -11037,10 +10916,10 @@ useEffect(() => {
                               const newSession: TrainingSession = {
                                 id: 's' + Date.now(),
                                 creatorId: effectiveUserId,
-                                creatorName: currentUser?.name || 'Tú',
-                                title: `Sesión del Squad: ${squad.name}`,
-                                time: 'Mañana 19:00',
-                                location: squad.focus === 'Running' ? 'Playa Reñaca' : 'Gym cercano',
+                                creatorName: currentUser?.name || 'TÃº',
+                                title: `SesiÃ³n del Squad: ${squad.name}`,
+                                time: 'MaÃ±ana 19:00',
+                                location: squad.focus === 'Running' ? 'Playa ReÃ±aca' : 'Gym cercano',
                                 trainingType: squad.focus,
                                 maxParticipants: Math.min(6, squad.members.length + 2),
                                 participants: [...squad.members.filter(m => m !== effectiveUserId && m !== 'me'), effectiveUserId],
@@ -11066,11 +10945,11 @@ useEffect(() => {
                               if (!isDemoMode) {
                                 loadRealSessions()
                               }
-                              toast.success('Sesión creada para el Squad', { description: 'Ve a la pestaña Sesiones' })
+                              toast.success('SesiÃ³n creada para el Squad', { description: 'Ve a la pestaÃ±a Sesiones' })
                             }}
                             className="w-full mb-3 text-sm border border-[#FF671F] text-[#FF671F] py-2 rounded-2xl"
                           >
-                            Crear Sesión del Squad
+                            Crear SesiÃ³n del Squad
                           </button>
 
                           {squad.createdBy !== effectiveUserId && squad.createdBy !== 'me' && (
@@ -11090,7 +10969,7 @@ useEffect(() => {
                         <div className="p-3 text-sm font-medium text-[#FF671F] border-b border-[#2F2F35]">Chat del Squad</div>
                         <div className="flex-1 overflow-auto p-4 space-y-2 text-sm" id="squad-chat-scroll">
                           {(sessionMessages[squad.id] || []).length === 0 ? (
-                            <div className="text-[#9CA3AF] text-center text-xs mt-6">Aún no hay mensajes. ¡Empieza la coordinación!</div>
+                            <div className="text-[#9CA3AF] text-center text-xs mt-6">AÃºn no hay mensajes. Â¡Empieza la coordinaciÃ³n!</div>
                           ) : (
                             (sessionMessages[squad.id] || []).map((msg, i) => (
                               <div key={i} className={`flex ${msg.senderId === effectiveUserId || msg.senderId === 'me' ? 'justify-end' : ''}`}>
@@ -11130,7 +11009,7 @@ useEffect(() => {
         {showCreateSession && (
           <div className="absolute inset-0 z-[95] flex items-end bg-black/70" onClick={closeCreateSession}>
             <div onClick={e => e.stopPropagation()} className="w-full card rounded-t-3xl p-6 pb-8">
-              <div className="font-semibold text-xl mb-4">Crear sesión de entrenamiento</div>
+              <div className="font-semibold text-xl mb-4">Crear sesiÃ³n de entrenamiento</div>
               
               <form onSubmit={(e) => {
                 e.preventDefault()
@@ -11139,7 +11018,7 @@ useEffect(() => {
                 const newSession: TrainingSession = {
                   id: 's' + Date.now(),
                   creatorId: effectiveUserId,
-                  creatorName: currentUser?.name || 'Tú',
+                  creatorName: currentUser?.name || 'TÃº',
                   title: (form.elements.namedItem('title') as HTMLInputElement).value,
                   time: (form.elements.namedItem('time') as HTMLInputElement).value,
                   location: (form.elements.namedItem('location') as HTMLInputElement).value,
@@ -11161,19 +11040,19 @@ useEffect(() => {
                         ...newSession,
                         updatedAt: serverTimestamp(),
                       }), { merge: true })
-                      console.log('✅ New session written directly to Firestore')
+                      console.log('âœ… New session written directly to Firestore')
 
                       // Also write the creator welcome message to the messages subcollection so joiners see it on server
                       try {
                         const { collection, addDoc, serverTimestamp: ts } = await import('firebase/firestore')
                         await addDoc(collection(db, `sessions/${newSession.id}/messages`), {
                           senderId: effectiveUserId,
-                          senderName: currentUser?.name || 'Tú',
-                          text: `¡Hola! Creé esta sesión para ${newSession.trainingType.toLowerCase()}. ¿Quién se anima?`,
+                          senderName: currentUser?.name || 'TÃº',
+                          text: `Â¡Hola! CreÃ© esta sesiÃ³n para ${newSession.trainingType.toLowerCase()}. Â¿QuiÃ©n se anima?`,
                           timestamp: Date.now(),
                           createdAt: ts(),
                         })
-                        console.log('✅ Creator welcome message written to session subcollection')
+                        console.log('âœ… Creator welcome message written to session subcollection')
                       } catch (e) {
                         console.warn('Could not seed welcome message to subcollection:', e)
                       }
@@ -11192,8 +11071,8 @@ useEffect(() => {
                 const creatorMsg: SessionMessage = {
                   id: 'sm_create',
                   senderId: 'me',
-                  senderName: currentUser?.name || 'Tú',
-                  text: `¡Hola! Creé esta sesión para ${newSession.trainingType.toLowerCase()}. ¿Quién se anima?`,
+                  senderName: currentUser?.name || 'TÃº',
+                  text: `Â¡Hola! CreÃ© esta sesiÃ³n para ${newSession.trainingType.toLowerCase()}. Â¿QuiÃ©n se anima?`,
                   timestamp: Date.now()
                 }
                 const withInitial = {
@@ -11202,14 +11081,14 @@ useEffect(() => {
                 }
                 saveSessionMessages(withInitial)
 
-                toast.success('Sesión creada', { description: 'Ya puedes chatear con quienes se unan' })
+                toast.success('SesiÃ³n creada', { description: 'Ya puedes chatear con quienes se unan' })
               }}>
                 <div className="space-y-4">
-                  <input name="title" placeholder="Título (ej: Running costanera + mate)" required className="form-input w-full" />
+                  <input name="title" placeholder="TÃ­tulo (ej: Running costanera + mate)" required className="form-input w-full" />
                   
                   <div className="grid grid-cols-2 gap-3">
                     <input name="time" placeholder="Horario (19:00)" required className="form-input" />
-                    <input name="location" placeholder="Lugar (Reñaca)" required className="form-input" />
+                    <input name="location" placeholder="Lugar (ReÃ±aca)" required className="form-input" />
                   </div>
 
                   <div>
@@ -11230,18 +11109,18 @@ useEffect(() => {
                   </div>
 
                   <div>
-                    <div className="text-xs text-[#9CA3AF] mb-1">Máximo participantes</div>
+                    <div className="text-xs text-[#9CA3AF] mb-1">MÃ¡ximo participantes</div>
                     <input name="max" type="number" min="2" max="12" defaultValue="5" required className="form-input w-full" />
                   </div>
                 </div>
 
-                <div className="mt-2 mb-3 text-[10px] text-[#FF671F] text-center">Otros testers reales la verán y podrán unirse al instante</div>
+                <div className="mt-2 mb-3 text-[10px] text-[#FF671F] text-center">Otros testers reales la verÃ¡n y podrÃ¡n unirse al instante</div>
                 <div className="text-[10px] text-center text-[#9CA3AF] mb-2">
-                  Al publicar aceptas nuestros <a href="/entrenamatch/terms.html" target="_blank" className="underline">Términos</a>.
+                  Al publicar aceptas nuestros <a href="/entrenamatch/terms.html" target="_blank" className="underline">TÃ©rminos</a>.
                 </div>
                 <div className="flex gap-3">
                   <button type="button" onClick={closeCreateSession} className="flex-1 py-3 rounded-2xl border border-[#2F2F35] active:bg-[#25252A]">Cancelar</button>
-                  <button type="submit" className="flex-1 btn-primary">Publicar sesión</button>
+                  <button type="submit" className="flex-1 btn-primary">Publicar sesiÃ³n</button>
                 </div>
               </form>
             </div>
@@ -11255,15 +11134,15 @@ useEffect(() => {
           <div className="absolute inset-0 z-[110] flex items-center justify-center bg-black/80 p-6" onClick={() => setShowReviewModalFor(null)}>
             <div onClick={e => e.stopPropagation()} className="card w-full max-w-[340px] rounded-3xl p-6">
               <div className="text-center mb-4">
-                <div className="text-2xl font-semibold">¿Cómo fue entrenar con {SEED_PROFILES.find(p => p.id === showReviewModalFor)?.name}?</div>
-                <div className="text-sm text-[#9CA3AF] mt-1">Tu reseña ayuda a otros a confiar</div>
+                <div className="text-2xl font-semibold">Â¿CÃ³mo fue entrenar con {SEED_PROFILES.find(p => p.id === showReviewModalFor)?.name}?</div>
+                <div className="text-sm text-[#9CA3AF] mt-1">Tu reseÃ±a ayuda a otros a confiar</div>
               </div>
 
               {/* Stars */}
               <div className="flex justify-center gap-2 mb-4">
                 {[1,2,3,4,5].map(star => (
                   <button key={star} onClick={() => setReviewRating(star)} className="text-4xl transition">
-                    {star <= reviewRating ? '★' : '☆'}
+                    {star <= reviewRating ? 'â˜…' : 'â˜†'}
                   </button>
                 ))}
               </div>
@@ -11271,13 +11150,13 @@ useEffect(() => {
               <textarea 
                 value={reviewComment}
                 onChange={e => setReviewComment(e.target.value)}
-                placeholder="Comentario opcional (qué tal fue el entrenamiento...)"
+                placeholder="Comentario opcional (quÃ© tal fue el entrenamiento...)"
                 className="form-input w-full h-24 resize-none mb-4"
               />
 
               {/* Photo upload for the session - Unique feature */}
               <div className="mb-4">
-                <label className="text-xs text-[#9CA3AF] mb-1 block">Foto de la sesión (opcional)</label>
+                <label className="text-xs text-[#9CA3AF] mb-1 block">Foto de la sesiÃ³n (opcional)</label>
                 <input 
                   type="file" 
                   accept="image/*" 
@@ -11298,7 +11177,7 @@ useEffect(() => {
                       onClick={() => setReviewPhoto(null)}
                       className="absolute -top-1 -right-1 bg-black text-white text-xs w-5 h-5 rounded-full flex items-center justify-center"
                     >
-                      ×
+                      Ã—
                     </button>
                   </div>
                 )}
@@ -11306,7 +11185,7 @@ useEffect(() => {
 
               <div className="flex gap-3">
                 <button onClick={() => { setShowReviewModalFor(null); setReviewPhoto(null); setPendingReviewBookingId(null) }} className="flex-1 btn-secondary">Cancelar</button>
-                <button onClick={() => submitTrainingReview(showReviewModalFor)} className="flex-1 btn-primary">Enviar reseña</button>
+                <button onClick={() => submitTrainingReview(showReviewModalFor)} className="flex-1 btn-primary">Enviar reseÃ±a</button>
               </div>
             </div>
           </div>
@@ -11377,7 +11256,7 @@ useEffect(() => {
           setShowFullProfile(null)
         }}
         onBlock={async (p) => {
-          if (confirm(`¿Bloquear a ${p.name}? No volverás a verlo en ningún lado.`)) {
+          if (confirm(`Â¿Bloquear a ${p.name}? No volverÃ¡s a verlo en ningÃºn lado.`)) {
             await blockUser(p.id)
             setShowFullProfile(null)
           }
@@ -11403,8 +11282,8 @@ useEffect(() => {
             <div className="h-14 px-4 flex items-center gap-3 border-b border-[#2F2F35] bg-[#0D0D10]">
               <button onClick={() => setShowLegal(null)}><ArrowLeft /></button>
               <div className="font-semibold">
-                {showLegal === 'terms' && 'Términos de Servicio'}
-                {showLegal === 'privacy' && 'Política de Privacidad'}
+                {showLegal === 'terms' && 'TÃ©rminos de Servicio'}
+                {showLegal === 'privacy' && 'PolÃ­tica de Privacidad'}
                 {showLegal === 'community' && 'Directrices de la Comunidad'}
               </div>
             </div>
@@ -11412,52 +11291,52 @@ useEffect(() => {
               {showLegal === 'terms' && (
                 <>
                   <p><strong>EntrenaMatch</strong> es una plataforma para conectar personas interesadas en realizar actividades deportivas y de entrenamiento de forma presencial.</p>
-                  <p>Al usar la aplicación aceptas que:</p>
+                  <p>Al usar la aplicaciÃ³n aceptas que:</p>
                   <ul className="list-disc pl-5 space-y-1">
-                    <li>Eres mayor de 18 años.</li>
-                    <li>La app no es un servicio de citas románticas ni de naturaleza sexual.</li>
-                    <li>Los encuentros deben realizarse en lugares públicos y seguros.</li>
+                    <li>Eres mayor de 18 aÃ±os.</li>
+                    <li>La app no es un servicio de citas romÃ¡nticas ni de naturaleza sexual.</li>
+                    <li>Los encuentros deben realizarse en lugares pÃºblicos y seguros.</li>
                     <li>Eres responsable de tu propia seguridad y de verificar la identidad de las personas con quienes quedas.</li>
                   </ul>
-                  <p>EntrenaMatch no se hace responsable de los encuentros presenciales ni de ningún incidente que ocurra fuera de la plataforma.</p>
+                  <p>EntrenaMatch no se hace responsable de los encuentros presenciales ni de ningÃºn incidente que ocurra fuera de la plataforma.</p>
                 </>
               )}
 
               {showLegal === 'privacy' && (
                 <>
-                  <p>Recopilamos la información que proporcionas al crear tu perfil (nombre, edad, fotos, preferencias de entrenamiento, ubicación aproximada).</p>
-                  <p>Tu ubicación se utiliza únicamente para calcular distancias con otros usuarios y mejorar los filtros. No la compartimos con terceros.</p>
+                  <p>Recopilamos la informaciÃ³n que proporcionas al crear tu perfil (nombre, edad, fotos, preferencias de entrenamiento, ubicaciÃ³n aproximada).</p>
+                  <p>Tu ubicaciÃ³n se utiliza Ãºnicamente para calcular distancias con otros usuarios y mejorar los filtros. No la compartimos con terceros.</p>
                   <p>Las fotos y datos de tu perfil son visibles para otros usuarios de la app una vez que creas tu cuenta.</p>
-                  <p>Puedes solicitar la eliminación de tus datos en cualquier momento contactándonos o usando la función de reset en tu perfil.</p>
-                  <p>Al aceptar esta política autorizas el tratamiento de tus datos con el fin exclusivo de facilitar conexiones para entrenamiento.</p>
+                  <p>Puedes solicitar la eliminaciÃ³n de tus datos en cualquier momento contactÃ¡ndonos o usando la funciÃ³n de reset en tu perfil.</p>
+                  <p>Al aceptar esta polÃ­tica autorizas el tratamiento de tus datos con el fin exclusivo de facilitar conexiones para entrenamiento.</p>
                 </>
               )}
 
               {showLegal === 'community' && (
                 <>
                   <p className="font-semibold text-[#FF671F]">Directrices de la Comunidad EntrenaMatch</p>
-                  <p>Esta es una plataforma seria para <strong>entrenamiento sincronizado de alto rendimiento</strong>. Nuestra comunidad se basa en respeto, seguridad y enfoque en resultados físicos compartidos a través de la "Red de EntrenaSync".</p>
+                  <p>Esta es una plataforma seria para <strong>entrenamiento sincronizado de alto rendimiento</strong>. Nuestra comunidad se basa en respeto, seguridad y enfoque en resultados fÃ­sicos compartidos a travÃ©s de la "Red de EntrenaSync".</p>
                   
                   <p><strong>Reglas obligatorias:</strong></p>
                   <ul className="list-disc pl-5 space-y-1.5 text-[13px]">
-                    <li><strong>Respeto y profesionalismo:</strong> Sé motivador y respetuoso. Cero acoso, insultos, discriminación, mensajes sexuales o románticos no solicitados.</li>
+                    <li><strong>Respeto y profesionalismo:</strong> SÃ© motivador y respetuoso. Cero acoso, insultos, discriminaciÃ³n, mensajes sexuales o romÃ¡nticos no solicitados.</li>
                     <li><strong>Enfoque Comunidad:</strong> Solo para sync de entrenos (gym, running, etc.). Nada de citas, spam, ventas o contenido off-topic.</li>
-                    <li><strong>Seguridad:</strong> Encuentros SOLO en lugares públicos. Verifica perfiles, informa a terceros, nunca compartas datos bancarios o sensibles.</li>
-                    <li><strong>Perfiles auténticos:</strong> Fotos y datos reales. Prohibido perfiles falsos, bots, cuentas múltiples o impersonación.</li>
-                    <li><strong>Contenido limpio:</strong> Posts, voces y fotos deben ser de entrenamiento. Nada explícito, violento, de odio o que viole leyes.</li>
-                    <li><strong>Reporta y bloquea:</strong> Usa las herramientas de reporte y bloqueo ante cualquier violación. Los reportes ayudan a mantener la comunidad segura.</li>
-                    <li><strong>Mayores de 18:</strong> Solo adultos. Cualquier sospecha de menores resultará en ban inmediato.</li>
+                    <li><strong>Seguridad:</strong> Encuentros SOLO en lugares pÃºblicos. Verifica perfiles, informa a terceros, nunca compartas datos bancarios o sensibles.</li>
+                    <li><strong>Perfiles autÃ©nticos:</strong> Fotos y datos reales. Prohibido perfiles falsos, bots, cuentas mÃºltiples o impersonaciÃ³n.</li>
+                    <li><strong>Contenido limpio:</strong> Posts, voces y fotos deben ser de entrenamiento. Nada explÃ­cito, violento, de odio o que viole leyes.</li>
+                    <li><strong>Reporta y bloquea:</strong> Usa las herramientas de reporte y bloqueo ante cualquier violaciÃ³n. Los reportes ayudan a mantener la comunidad segura.</li>
+                    <li><strong>Mayores de 18:</strong> Solo adultos. Cualquier sospecha de menores resultarÃ¡ en ban inmediato.</li>
                   </ul>
                   
-                  <p className="text-xs">Violaciones = bloqueo + posible suspensión permanente. Tu seguridad y la del grupo es prioridad #1. Entrena duro, entrena juntos, entrena seguro.</p>
+                  <p className="text-xs">Violaciones = bloqueo + posible suspensiÃ³n permanente. Tu seguridad y la del grupo es prioridad #1. Entrena duro, entrena juntos, entrena seguro.</p>
                 </>
               )}
             </div>
             <div className="p-4 border-t border-[#2F2F35]">
               <div className="text-[10px] text-[#9CA3AF] text-center mb-3">
-                Versión {showLegal === 'terms' ? LEGAL_VERSIONS.terms : 
+                VersiÃ³n {showLegal === 'terms' ? LEGAL_VERSIONS.terms : 
                          showLegal === 'privacy' ? LEGAL_VERSIONS.privacy : 
-                         LEGAL_VERSIONS.community} • Última actualización: {LEGAL_VERSIONS.lastUpdated}
+                         LEGAL_VERSIONS.community} â€¢ Ãšltima actualizaciÃ³n: {LEGAL_VERSIONS.lastUpdated}
               </div>
               <button onClick={() => setShowLegal(null)} className="btn-primary w-full">Cerrar</button>
             </div>
@@ -11474,13 +11353,13 @@ useEffect(() => {
           >
             <div className="flex justify-between items-center mb-4">
               <div className="font-bold text-lg">Reportar usuario</div>
-              <button onClick={() => setShowReportModal(false)} className="text-[#9CA3AF]">✕</button>
+              <button onClick={() => setShowReportModal(false)} className="text-[#9CA3AF]">âœ•</button>
             </div>
 
-            <div className="text-sm text-[#9CA3AF] mb-3">Selecciona el motivo principal. Tu reporte es anónimo para el otro usuario.</div>
+            <div className="text-sm text-[#9CA3AF] mb-3">Selecciona el motivo principal. Tu reporte es anÃ³nimo para el otro usuario.</div>
 
             <div className="space-y-2 mb-4">
-              {['Comportamiento inadecuado / acoso', 'Perfil falso o suplantación', 'Spam o contenido irrelevante', 'Contenido inapropiado (fotos/voz)', 'Otra violación de las reglas de comunidad'].map(r => (
+              {['Comportamiento inadecuado / acoso', 'Perfil falso o suplantaciÃ³n', 'Spam o contenido irrelevante', 'Contenido inapropiado (fotos/voz)', 'Otra violaciÃ³n de las reglas de comunidad'].map(r => (
                 <button 
                   key={r}
                   onClick={() => setReportReason(r)}
@@ -11510,7 +11389,7 @@ useEffect(() => {
                   if (reportTargetId) {
                     await reportUser(
                       reportTargetId,
-                      reportReason || 'Otra violación de las reglas de comunidad',
+                      reportReason || 'Otra violaciÃ³n de las reglas de comunidad',
                       reportDetails.trim() || undefined,
                       reportContext
                     )
@@ -11541,10 +11420,10 @@ useEffect(() => {
             >
               <div className="flex justify-between items-center mb-6">
                 <div>
-                  <div className="font-bold text-2xl">Verificación biométrica</div>
+                  <div className="font-bold text-2xl">VerificaciÃ³n biomÃ©trica</div>
                   <div className="text-sm text-[#9CA3AF]">Paso {verificationStep} de 2</div>
                 </div>
-                <button onClick={() => setShowVerificationFlow(false)} className="text-2xl">×</button>
+                <button onClick={() => setShowVerificationFlow(false)} className="text-2xl">Ã—</button>
               </div>
 
               {/* Step 1: Info confirmation */}
@@ -11552,13 +11431,13 @@ useEffect(() => {
                 <div>
                   <div className="mb-6">
                     <p className="text-[#cbd5e1] mb-4">
-                      Comprobamos que eres la misma persona de tu foto de perfil con una selfie en vivo por cámara frontal.
+                      Comprobamos que eres la misma persona de tu foto de perfil con una selfie en vivo por cÃ¡mara frontal.
                       No pedimos documento de identidad.
                     </p>
                     <div className="bg-[#1C1C20] p-4 rounded-2xl text-sm space-y-2">
-                      <div>✓ Nombre: <span className="font-medium">{currentUser.name}</span></div>
-                      <div>✓ Edad: <span className="font-medium">{currentUser.age} años</span></div>
-                      <div>✓ Ubicación: <span className="font-medium">{currentUser.city}, {currentUser.country}</span></div>
+                      <div>âœ“ Nombre: <span className="font-medium">{currentUser.name}</span></div>
+                      <div>âœ“ Edad: <span className="font-medium">{currentUser.age} aÃ±os</span></div>
+                      <div>âœ“ UbicaciÃ³n: <span className="font-medium">{currentUser.city}, {currentUser.country}</span></div>
                     </div>
                   </div>
                   <button 
@@ -11576,7 +11455,7 @@ useEffect(() => {
                   <div className="mb-4">
                     <div className="font-semibold mb-2">Paso 2: Selfie en vivo</div>
                     <p className="text-sm text-[#9CA3AF] mb-4">
-                      Usa la cámara frontal. La IA compara tu rostro con tu foto de perfil principal.
+                      Usa la cÃ¡mara frontal. La IA compara tu rostro con tu foto de perfil principal.
                     </p>
                   </div>
 
@@ -11588,17 +11467,17 @@ useEffect(() => {
                   />
 
                   <div className="flex gap-3">
-                    <button onClick={() => setVerificationStep(1)} className="btn-secondary flex-1">Atrás</button>
+                    <button onClick={() => setVerificationStep(1)} className="btn-secondary flex-1">AtrÃ¡s</button>
                     <button
                       onClick={submitVerification}
                       disabled={!verificationSelfie || verificationSubmitting}
                       className="btn-primary flex-1 disabled:opacity-50"
                     >
-                      {verificationSubmitting ? 'Analizando rostro…' : 'Verificar rostro'}
+                      {verificationSubmitting ? 'Analizando rostroâ€¦' : 'Verificar rostro'}
                     </button>
                   </div>
                   <p className="text-[10px] text-center text-[#9CA3AF] mt-3">
-                    Solo verificación facial — sin documento. La selfie se guarda de forma privada.
+                    Solo verificaciÃ³n facial â€” sin documento. La selfie se guarda de forma privada.
                   </p>
                 </div>
               )}
@@ -11616,10 +11495,10 @@ useEffect(() => {
               {/* Header */}
               <div className="p-4 border-b border-[#2F2F35] bg-[#1C1C20] flex items-center justify-between">
                 <div>
-                  <div className="font-bold text-xl">Panel de Moderación</div>
-                  <div className="text-xs text-[#9CA3AF]">Simulado para preparación de lanzamiento</div>
+                  <div className="font-bold text-xl">Panel de ModeraciÃ³n</div>
+                  <div className="text-xs text-[#9CA3AF]">Simulado para preparaciÃ³n de lanzamiento</div>
                 </div>
-                <button onClick={() => setShowModerationPanel(false)} className="text-2xl">×</button>
+                <button onClick={() => setShowModerationPanel(false)} className="text-2xl">Ã—</button>
               </div>
 
               {/* Tabs */}
@@ -11646,7 +11525,7 @@ useEffect(() => {
                   <div>
                     <div className="text-sm text-[#9CA3AF] mb-3">Reportes enviados por ti ({reports.length})</div>
                     {reports.length === 0 ? (
-                      <div className="text-center text-[#9CA3AF] py-8 text-sm">Aún no has realizado reportes.</div>
+                      <div className="text-center text-[#9CA3AF] py-8 text-sm">AÃºn no has realizado reportes.</div>
                     ) : (
                       reports.slice().reverse().map(report => {
                         const reported = SEED_PROFILES.find(p => p.id === report.reportedUserId)
@@ -11679,7 +11558,7 @@ useEffect(() => {
                     ) : (
                       pendingVerifications.map((v, index) => (
                         <div key={index} className="card p-4 mb-4 rounded-2xl">
-                          <div className="font-semibold mb-1">{v.name}, {v.age} • {v.city}</div>
+                          <div className="font-semibold mb-1">{v.name}, {v.age} â€¢ {v.city}</div>
                           <div className="flex gap-2 mb-3">
                             <div>
                               <div className="text-[10px] text-[#9CA3AF]">Documento</div>
@@ -11738,7 +11617,7 @@ useEffect(() => {
               </div>
 
               <div className="p-4 border-t border-[#2F2F35] text-[10px] text-[#9CA3AF] text-center">
-                Este panel es solo para demostración de preparación de lanzamiento.
+                Este panel es solo para demostraciÃ³n de preparaciÃ³n de lanzamiento.
               </div>
             </div>
           </div>
@@ -11760,11 +11639,11 @@ useEffect(() => {
               <div className="chat-wa-header px-3 py-2.5 flex items-center justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="section-header text-lg truncate pr-2 tracking-tight">
-                    {sessions.find(s => s.id === showGroupChatModalFor)?.title || 'Sesión grupal'}
+                    {sessions.find(s => s.id === showGroupChatModalFor)?.title || 'SesiÃ³n grupal'}
                   </div>
                   <div className="flex items-center gap-2 text-xs mt-1">
                     <span className="text-[#FF671F] font-medium">Chat grupal en vivo</span>
-                    <span className="text-[#9CA3AF]">•</span>
+                    <span className="text-[#9CA3AF]">â€¢</span>
                     <span className="text-[#cbd5e1]">{(sessions.find(s => s.id === showGroupChatModalFor)?.participants || displaySessions.find(s => s.id === showGroupChatModalFor)?.participants || []).length} participantes</span>
                     {(() => {
                       const cs = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
@@ -11789,7 +11668,7 @@ useEffect(() => {
                       <button 
                         onClick={() => closeSession(showGroupChatModalFor)} 
                         className="text-[9px] md:text-[10px] px-1.5 md:px-2 py-0.5 md:py-1 bg-red-500/10 text-red-400 rounded-xl active:bg-red-500/20"
-                        title="Cerrar sesión (admin)"
+                        title="Cerrar sesiÃ³n (admin)"
                       >
                         Cerrar
                       </button>
@@ -11797,7 +11676,7 @@ useEffect(() => {
                   })()}
                   <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="hidden sm:inline text-[9px] md:text-[10px] text-[#8696a0] underline">Privacidad</a>
                   <button onClick={() => {
-                    if (confirm('¿Reportar problema en esta sesión?')) {
+                    if (confirm('Â¿Reportar problema en esta sesiÃ³n?')) {
                       if (showGroupChatModalFor && db) {
                         (async () => {
                           try {
@@ -11806,7 +11685,7 @@ useEffect(() => {
                               userId: firebaseUser?.uid || 'demo',
                               type: 'other',
                               rating: 3,
-                              text: `Sesión ${showGroupChatModalFor}: Problema reportado por usuario`,
+                              text: `SesiÃ³n ${showGroupChatModalFor}: Problema reportado por usuario`,
                               platform: (typeof window !== 'undefined' && (window as any).Capacitor) ? 'android' : 'web',
                               appVersion: APP_VERSION,
                               context: 'group-chat',
@@ -11818,7 +11697,7 @@ useEffect(() => {
                       }
                     }
                   }} className="text-[10px] text-red-400 underline">Reportar</button>
-                  <button onClick={() => setShowGroupChatModalFor(null)} className="text-3xl leading-none text-[#9CA3AF] hover:text-white px-1">×</button>
+                  <button onClick={() => setShowGroupChatModalFor(null)} className="text-3xl leading-none text-[#9CA3AF] hover:text-white px-1">Ã—</button>
                 </div>
               </div>
 
@@ -11833,7 +11712,7 @@ useEffect(() => {
                     return parts.map((pid, idx) => {
                       const isCurrent = pid === effectiveUserId
                       const seedUser = SEED_PROFILES.find(p => p.id === pid)
-                      const name = isCurrent ? (currentUser?.name || 'Tú') : (seedUser?.name || 'Participante')
+                      const name = isCurrent ? (currentUser?.name || 'TÃº') : (seedUser?.name || 'Participante')
                       return (
                         <button 
                           key={idx}
@@ -11843,7 +11722,7 @@ useEffect(() => {
                           }}
                           className="block w-full text-left px-2 py-1 hover:bg-[#25252A] rounded text-[#cbd5e1] truncate flex items-center justify-between"
                         >
-                          <span>{name}{isCurrent ? ' (tú)' : ''}</span>
+                          <span>{name}{isCurrent ? ' (tÃº)' : ''}</span>
                           {isThisCreator && !isCurrent && (
                             <span
                               onClick={(e) => {
@@ -11851,9 +11730,9 @@ useEffect(() => {
                                 if (showGroupChatModalFor) expelFromSession(showGroupChatModalFor, pid)
                               }}
                               className="ml-1 text-red-400 hover:text-red-500 text-[11px] px-0.5"
-                              title="Expulsar (solo tú como admin)"
+                              title="Expulsar (solo tÃº como admin)"
                             >
-                              ✕
+                              âœ•
                             </span>
                           )}
                         </button>
@@ -11864,7 +11743,7 @@ useEffect(() => {
                     const currentSess = displaySessions.find(s => s.id === showGroupChatModalFor) || sessions.find(s => s.id === showGroupChatModalFor)
                     const isThisCreator = currentSess?.creatorId === effectiveUserId || currentSess?.creatorId === 'me'
                     if (isThisCreator) {
-                      return <div className="text-[9px] text-[#FF671F] mt-2 px-1">Eres admin • toca ✕ para expulsar</div>
+                      return <div className="text-[9px] text-[#FF671F] mt-2 px-1">Eres admin â€¢ toca âœ• para expulsar</div>
                     }
                     return null
                   })()}
@@ -11881,7 +11760,7 @@ useEffect(() => {
                       return parts.slice(0, 6).map((pid, idx) => {
                         const seed = SEED_PROFILES.find(p => p.id === pid)
                         const isSelf = pid === effectiveUserId
-                        const nm = isSelf ? 'Tú' : (seed?.name?.split(' ')[0] || 'P')
+                        const nm = isSelf ? 'TÃº' : (seed?.name?.split(' ')[0] || 'P')
                         return (
                           <button
                             key={idx}
@@ -11914,10 +11793,10 @@ useEffect(() => {
                   <div ref={groupChatScrollRef} className="chat-wa-thread flex-1 overflow-auto p-3 sm:p-4 space-y-1 text-sm w-full" id="group-chat-scroll">
                     {(sessionMessages[showGroupChatModalFor] || []).length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full text-center text-[#9CA3AF] px-6">
-                        <div className="w-14 h-14 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-4 text-3xl">💬</div>
-                        <div className="font-medium text-white">Aún no hay mensajes en el grupo</div>
-                        <div className="text-xs mt-1.5 max-w-[240px]">Sé el primero en romper el hielo. { !isDemoMode ? 'Los mensajes son reales (creador puede expulsar/administrar) y se ven en todos los dispositivos.' : 'Los mensajes se ven en todos los dispositivos del grupo.' }</div>
-                        {!isDemoMode && <div className="mt-3 text-[10px] text-[#FF671F]">Sincronización en vivo vía Firebase</div>}
+                        <div className="w-14 h-14 rounded-2xl bg-[#1C1C20] flex items-center justify-center mb-4 text-3xl">ðŸ’¬</div>
+                        <div className="font-medium text-white">AÃºn no hay mensajes en el grupo</div>
+                        <div className="text-xs mt-1.5 max-w-[240px]">SÃ© el primero en romper el hielo. { !isDemoMode ? 'Los mensajes son reales (creador puede expulsar/administrar) y se ven en todos los dispositivos.' : 'Los mensajes se ven en todos los dispositivos del grupo.' }</div>
+                        {!isDemoMode && <div className="mt-3 text-[10px] text-[#FF671F]">SincronizaciÃ³n en vivo vÃ­a Firebase</div>}
                       </div>
                     ) : (
                       (sessionMessages[showGroupChatModalFor] || []).map((msg, i) => {
@@ -11930,7 +11809,7 @@ useEffect(() => {
                             <div className={`max-w-[85%] sm:max-w-[78%] ${isMe ? '' : ''} w-full`}>
                               {!isMe && (
                                 <div className="text-[10px] text-[#8696a0] mb-0.5 px-1 flex items-center gap-1 leading-tight">
-                                  {isCreator && <span className="text-[#FF671F]">★ </span>}
+                                  {isCreator && <span className="text-[#FF671F]">â˜… </span>}
                                   <span className="font-semibold text-[#aebac1]">{msg.senderName}</span>
                                 </div>
                               )}
@@ -11960,10 +11839,10 @@ useEffect(() => {
                                         <div className="voice-progress" style={{ width: `${voicePlayProgress}%`, transition: 'width 80ms linear' }} />
                                       )}
                                     </div>
-                                    <span className="voice-duration">🎙️ {msg.voiceDuration || '?'}s</span>
+                                    <span className="voice-duration">ðŸŽ™ï¸ {msg.voiceDuration || '?'}s</span>
                                   </div>
                                 ) : msg.voiceUrl && msg.voiceUrl.startsWith('blob:') ? (
-                                  <span className="text-[10px] text-red-400">Nota de voz no disponible en esta sesión</span>
+                                  <span className="text-[10px] text-red-400">Nota de voz no disponible en esta sesiÃ³n</span>
                                 ) : null}
                                 {time && (
                                   <div className="chat-wa-meta">
@@ -11974,7 +11853,7 @@ useEffect(() => {
 
                               {/* Reactions row - align with bubble side */}
                               <div className={`flex gap-1 mt-1 text-xs ${isMe ? 'justify-end' : 'justify-start'}`}>
-                                {['👍', '🔥', '💪', '👏'].map(emoji => {
+                                {['ðŸ‘', 'ðŸ”¥', 'ðŸ’ª', 'ðŸ‘'].map(emoji => {
                                   const reactors = msg.reactions?.[emoji] || []
                                   const hasReacted = reactors.includes(currentUser?.name || '')
                                   return (
@@ -11984,7 +11863,7 @@ useEffect(() => {
                                       const targetMsg = { ...msgs[i] }
                                       targetMsg.reactions = { ...(targetMsg.reactions || {}) }
                                       if (!targetMsg.reactions[emoji]) targetMsg.reactions[emoji] = []
-                                      const safeName = currentUser?.name || 'Tú'
+                                      const safeName = currentUser?.name || 'TÃº'
                                       targetMsg.reactions[emoji] = hasReacted 
                                         ? targetMsg.reactions[emoji].filter(n => n !== safeName)
                                         : [...targetMsg.reactions[emoji], safeName]
@@ -12017,7 +11896,7 @@ useEffect(() => {
                           <div className="w-1.5 h-1.5 bg-[#9CA3AF] rounded-full animate-bounce" style={{animationDelay: '150ms'}}></div>
                           <div className="w-1.5 h-1.5 bg-[#9CA3AF] rounded-full animate-bounce" style={{animationDelay: '300ms'}}></div>
                         </div>
-                        <span>Alguien está escribiendo...</span>
+                        <span>Alguien estÃ¡ escribiendo...</span>
                       </div>
                     )}
                   </div>
@@ -12050,8 +11929,8 @@ useEffect(() => {
                           </div>
                         </div>
                         <div className="meta">
-                          <div className="title">🎙️ NOTA DE VOZ LISTA PARA TU SQUAD</div>
-                          <div className="sub">{pendingVoice.duration}s • +1 Voice Streak • para tu squad</div>
+                          <div className="title">ðŸŽ™ï¸ NOTA DE VOZ LISTA PARA TU SQUAD</div>
+                          <div className="sub">{pendingVoice.duration}s â€¢ +1 Voice Streak â€¢ para tu squad</div>
                         </div>
                         <div className="actions flex-col gap-1 items-end">
                           <button 
@@ -12127,12 +12006,12 @@ useEffect(() => {
                         type="text" 
                         value={chatInputValue}
                         onChange={(e) => setChatInputValue(e.target.value)}
-                        placeholder={pendingVoice ? "Nota lista — ENVIAR AL SQUAD" : "Mensaje al grupo..."}
+                        placeholder={pendingVoice ? "Nota lista â€” ENVIAR AL SQUAD" : "Mensaje al grupo..."}
                         enterKeyHint="send"
                         className="chat-wa-input" 
                       />
 
-                      <label className="chat-wa-composer-btn cursor-pointer text-lg">📷
+                      <label className="chat-wa-composer-btn cursor-pointer text-lg">ðŸ“·
                         <input type="file" accept="image/*" className="hidden" onChange={(e) => {
                           const file = e.target.files?.[0]
                           if (file) {
@@ -12143,7 +12022,7 @@ useEffect(() => {
                         }} />
                       </label>
 
-                      {/* PREMIUM live recording for squad — clearer stop to send flow */}
+                      {/* PREMIUM live recording for squad â€” clearer stop to send flow */}
                       {isRecordingVoice ? (
                         <div className="voice-recording" style={{minWidth: 168, padding: '4px 8px 4px 10px'}}>
                           <div className="dot" />
@@ -12151,7 +12030,7 @@ useEffect(() => {
                             <div className="text-red-400 text-[9px] font-extrabold tracking-[0.5px]">GRABANDO NOTA DE VOZ</div>
                             <div className="flex items-baseline gap-1">
                               <span className="timer">{recordingTime}s <span className="opacity-60">/60</span></span>
-                              <span className="text-[8px] text-red-400/70 font-medium">• PARAR para preview y enviar</span>
+                              <span className="text-[8px] text-red-400/70 font-medium">â€¢ PARAR para preview y enviar</span>
                             </div>
                           </div>
                           {/* LIVE bars synced to mic */}
@@ -12163,11 +12042,11 @@ useEffect(() => {
                           <button 
                             onClick={stopVoiceRecording} 
                             className="ml-1 px-3.5 py-1 text-[10px] bg-red-600 text-white rounded-full active:bg-red-700 font-extrabold shadow active:scale-95"
-                            title="Parar: luego escuchas y envías al squad"
+                            title="Parar: luego escuchas y envÃ­as al squad"
                           >
                             PARAR
                           </button>
-                          <button onClick={cancelVoiceRecording} className="ml-0.5 text-red-400/80 hover:text-red-400 px-1 text-lg leading-none" title="Cancelar grabación">×</button>
+                          <button onClick={cancelVoiceRecording} className="ml-0.5 text-red-400/80 hover:text-red-400 px-1 text-lg leading-none" title="Cancelar grabaciÃ³n">Ã—</button>
                         </div>
                       ) : (
                         <button 
@@ -12212,7 +12091,7 @@ useEffect(() => {
       {syncDuelSummary && (
         <SyncDuelSummary
           open
-          selfName={currentUser.name || 'Tú'}
+          selfName={currentUser.name || 'TÃº'}
           selfPhoto={currentUser.photos?.[0]}
           selfGender={currentUser.gender}
           partnerName={syncDuelSummary.partnerName}
@@ -12281,17 +12160,17 @@ useEffect(() => {
           userCity={currentUser?.city}
           isDemoMode={isDemoMode}
           onInviteSquad={(_partnerId, partnerName) => {
-            const first = partnerName.split(' ')[0] || 'tu compañero'
+            const first = partnerName.split(' ')[0] || 'tu compaÃ±ero'
             const inviteUrl = buildInviteLink(effectiveUserId)
             setSyncDuelSummary(null)
             void (async () => {
               const outcome = await shareNativeMessage({
-                title: 'Invitar a Squad · EntrenaMatch',
-                text: `Acabamos de hacer EntrenaSync. ¿Te sumas a nuestro Squad con ${first}?`,
+                title: 'Invitar a Squad Â· EntrenaMatch',
+                text: `Acabamos de hacer EntrenaSync. Â¿Te sumas a nuestro Squad con ${first}?`,
                 url: inviteUrl,
               })
-              if (outcome === 'copied') toast.success('Invitación copiada — envíasela a tu compañero')
-              else if (outcome === 'failed') toast.error('No se pudo compartir la invitación')
+              if (outcome === 'copied') toast.success('InvitaciÃ³n copiada â€” envÃ­asela a tu compaÃ±ero')
+              else if (outcome === 'failed') toast.error('No se pudo compartir la invitaciÃ³n')
               setSquadNameDraft(`Squad ${first}`)
               navigateTab('squads')
               setShowCreateSquad(true)
@@ -12315,7 +12194,7 @@ useEffect(() => {
             setPublishingSyncFeed(true)
             try {
               const dataUrl = await syncStoryToDataUrl({
-                selfName: currentUser.name || 'Tú',
+                selfName: currentUser.name || 'TÃº',
                 partnerName: syncDuelSummary.partnerName,
                 minutes: syncDuelSummary.minutes,
                 vibe: syncDuelSummary.vibe,
@@ -12326,7 +12205,7 @@ useEffect(() => {
                 isNetworkBond: syncDuelSummary.isNetworkBond,
               })
               const text = buildSyncPostText({
-                selfName: currentUser.name || 'Tú',
+                selfName: currentUser.name || 'TÃº',
                 partnerName: syncDuelSummary.partnerName,
                 minutes: syncDuelSummary.minutes,
                 vibe: syncDuelSummary.vibe,
@@ -12356,7 +12235,7 @@ useEffect(() => {
             <div className="text-sm text-[#9CA3AF] mb-4">{pendingSyncRating.minutes} minutes together - Your feedback helps matching</div>
             <div className="flex justify-center gap-2 mb-4">
               {[1,2,3,4,5].map(r => (
-                <button key={r} onClick={() => submitSyncRating(r)} className="text-3xl p-1.5 active:scale-90 transition text-[#FF671F] hover:text-white">{'★'.repeat(r)}</button>
+                <button key={r} onClick={() => submitSyncRating(r)} className="text-3xl p-1.5 active:scale-90 transition text-[#FF671F] hover:text-white">{'â˜…'.repeat(r)}</button>
               ))}
             </div>
             <button onClick={() => setPendingSyncRating(null)} className="text-xs text-[#9CA3AF]">Skip for now</button>
@@ -12382,7 +12261,7 @@ useEffect(() => {
             </div>
 
             <div className="bg-black/40 rounded-2xl p-3 mb-3 min-h-[132px] relative overflow-hidden">
-              <p className="text-[9px] text-[#9CA3AF] mb-2 text-center">Lo que hicieron juntos en la sesión</p>
+              <p className="text-[9px] text-[#9CA3AF] mb-2 text-center">Lo que hicieron juntos en la sesiÃ³n</p>
               <AnimatePresence>
                 {(replaySession.actions || []).map((a: any, idx: number) => (
                   <motion.div 
@@ -12406,7 +12285,7 @@ useEffect(() => {
 
             <div className="flex gap-2">
               <button onClick={() => { setReplaySession(null); if (replaySession.partnerName) { const p = realProfiles.find(pp => pp.name?.includes(replaySession.partnerName.split(' ')[0])); if (p) tryAutoStartSync(p.id) } }} className="flex-1 py-2.5 rounded-2xl bg-[#22c55e] text-black font-semibold text-sm active:bg-[#16a34a]">
-                🔄 {SYNC_REPLAY_COPY.resync(replaySession.partnerName?.split(' ')[0] || 'tu partner')}
+                ðŸ”„ {SYNC_REPLAY_COPY.resync(replaySession.partnerName?.split(' ')[0] || 'tu partner')}
               </button>
               <button onClick={() => setReplaySession(null)} className="flex-1 py-2.5 rounded-2xl border border-white/15 text-sm">Cerrar</button>
             </div>
@@ -12425,7 +12304,7 @@ useEffect(() => {
               <div className="text-[#FF671F] text-xs tracking-[2.5px] font-bold">{SYNC_REPLAY_COPY.witnessEyebrow}</div>
               <div className="font-black text-2xl mt-1">{SYNC_REPLAY_COPY.modalTitle(witnessData.partnerName)}</div>
               <div className="text-sm text-[#9CA3AF]">
-                {witnessData.minutes} min · {formatSyncVibeLabel(witnessData.vibe)}
+                {witnessData.minutes} min Â· {formatSyncVibeLabel(witnessData.vibe)}
               </div>
               <div className="text-[10px] text-[#FF671F]/80 mt-1">{SYNC_REPLAY_COPY.witnessSubtitle}</div>
             </div>
@@ -12434,7 +12313,7 @@ useEffect(() => {
               {(witnessData.actions || []).slice(0,5).map((a: any, idx: number) => (
                 <div key={idx} className="flex items-center gap-2 py-1 text-sm border-b border-white/10 last:border-none">
                   <span className="text-xl">{a.emoji}</span>
-                  <span className="flex-1 text-white/90">{a.label}{a.combo ? <span className="text-[#FF671F] font-bold"> ×{a.combo}</span> : ''}</span>
+                  <span className="flex-1 text-white/90">{a.label}{a.combo ? <span className="text-[#FF671F] font-bold"> Ã—{a.combo}</span> : ''}</span>
                   {a.photoUrl && <img src={a.photoUrl} className="w-7 h-7 rounded object-cover border border-white/20" />}
                 </div>
               ))}
@@ -12456,8 +12335,8 @@ useEffect(() => {
 
             {witnessData.photoUrl && (
               <div className="mb-4">
-                <img src={witnessData.photoUrl} className="w-full rounded-2xl border border-[#FF671F]/30" alt="Momento épico" />
-                <div className="text-[10px] text-center text-[#9CA3AF] mt-1">Foto del pico de energía</div>
+                <img src={witnessData.photoUrl} className="w-full rounded-2xl border border-[#FF671F]/30" alt="Momento Ã©pico" />
+                <div className="text-[10px] text-center text-[#9CA3AF] mt-1">Foto del pico de energÃ­a</div>
               </div>
             )}
 
@@ -12469,7 +12348,7 @@ useEffect(() => {
                 }} 
                 className="flex-1 py-2.5 rounded-2xl bg-[#FF671F] text-black font-semibold text-sm active:bg-[#e55a1a]"
               >
-                🔥 {SYNC_REPLAY_COPY.witnessCreate}
+                ðŸ”¥ {SYNC_REPLAY_COPY.witnessCreate}
               </button>
               <button 
                 onClick={() => {
@@ -12485,13 +12364,13 @@ useEffect(() => {
                     })
                     setWitnessData(null)
                   }).catch(() => {
-                    toast('Guardado localmente — se sincronizará al Muro')
+                    toast('Guardado localmente â€” se sincronizarÃ¡ al Muro')
                     setWitnessData(null)
                   })
                 }} 
                 className="flex-1 py-2.5 rounded-2xl border border-[#FFD700] text-[#FFD700] font-semibold text-sm active:bg-[#FFD700]/10"
               >
-                📌 {SYNC_REPLAY_COPY.witnessSave}
+                ðŸ“Œ {SYNC_REPLAY_COPY.witnessSave}
               </button>
               <button onClick={() => setWitnessData(null)} className="flex-1 py-2.5 rounded-2xl border border-white/20 text-sm">Cerrar</button>
             </div>
@@ -12547,8 +12426,8 @@ useEffect(() => {
   )
 }
 
-// ErrorBoundary restaurado (fue eliminado accidentalmente durante limpieza de código muerto del mapa).
-// Envuelve secciones críticas (Auth, Onboarding y el shell principal) para que crashes no dejen la app en blanco.
+// ErrorBoundary restaurado (fue eliminado accidentalmente durante limpieza de cÃ³digo muerto del mapa).
+// Envuelve secciones crÃ­ticas (Auth, Onboarding y el shell principal) para que crashes no dejen la app en blanco.
 // Integra con el sistema de debug logs expuesto en window.__addEntrenaDebugLog.
 
 // Types moved inline to avoid TSX parsing issues in this file section.
@@ -12575,18 +12454,18 @@ class ErrorBoundary extends Component<any, ErrorBoundaryState> {
       return (
         <div className="min-h-screen bg-[#0D0D10] text-white flex items-center justify-center p-6">
           <div className="text-center max-w-xs">
-            <div className="text-2xl mb-4">Algo salió mal</div>
+            <div className="text-2xl mb-4">Algo saliÃ³ mal</div>
             <p className="text-[#9CA3AF] mb-6 text-sm">
-              La aplicación tuvo un error. Tus datos en Firebase siguen seguros.
+              La aplicaciÃ³n tuvo un error. Tus datos en Firebase siguen seguros.
             </p>
             <button
               onClick={() => window.location.reload()}
               className="btn-primary px-6 py-2.5"
             >
-              Recargar la página
+              Recargar la pÃ¡gina
             </button>
             <div className="mt-4 text-[10px] text-[#9CA3AF]/60">
-              Si persiste, avísanos en el feedback del perfil.
+              Si persiste, avÃ­sanos en el feedback del perfil.
             </div>
           </div>
         </div>

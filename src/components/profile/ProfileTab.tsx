@@ -18,7 +18,7 @@ import { ProfileFooterSection } from './ProfileFooterSection'
 import { ProfileCollapsibleSection } from './ProfileCollapsibleSection'
 import { TrainingNetworkGraph } from './TrainingNetworkGraph'
 import { isProfileProgressiveMode } from '../../utils/profileProgressive'
-import { isMonetizationUnlocked } from '../../utils/pilotFeatureFlags'
+import { isMarketplaceUiEnabled, isMonetizationUnlocked } from '../../utils/pilotFeatureFlags'
 import type { ProfileTabProps } from './profileTabTypes'
 
 export type { ProfileTabProps } from './profileTabTypes'
@@ -28,6 +28,10 @@ export function ProfileTab(props: ProfileTabProps) {
   const monetization = isMonetizationUnlocked(props.currentUser, {
     syncSessionCount: Object.keys(props.syncBonds || {}).length,
   })
+  const monetizationSectionTitle = isMarketplaceUiEnabled() ? 'Tienda y extras' : 'Coach y extras'
+  const monetizationSectionSubtitle = isMarketplaceUiEnabled()
+    ? 'Marketplace, coach y herramientas avanzadas'
+    : 'EntrenaCoach y herramientas avanzadas'
   const bondEntries = Object.entries(props.syncBonds || {})
   const livePartnerIds = (props.liveTrainingNow || [])
     .filter((u) => props.syncBonds?.[u.id])
@@ -43,7 +47,7 @@ export function ProfileTab(props: ProfileTabProps) {
     )
 
   return (
-    <div className="flex-1 overflow-auto bg-[#0D0D10] pb-28">
+    <div className="flex-1 overflow-auto em-v2-home pb-28">
       <ProfileHeaderSection {...props} />
       <ProfileCommunityAdminEntry {...props} />
       <ProfileHeroSection {...props} />
@@ -72,8 +76,8 @@ export function ProfileTab(props: ProfileTabProps) {
       )}
       {monetization &&
         advancedWrap(
-          'Tienda y extras',
-          'Marketplace, coach y herramientas avanzadas',
+          monetizationSectionTitle,
+          monetizationSectionSubtitle,
           <>
             <ProfileMarketplaceEntry {...props} />
             <ProfileTrainerCoachEntry {...props} />

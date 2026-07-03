@@ -72,7 +72,7 @@ export function generateDailyChallenge(
     {
       id: 'anchor-' + seed,
       type: 'solo' as const,
-      title: 'Reto GymPulse: Ancla personal',
+      title: 'Reto Comunidad: Ancla personal',
       description:
         'Entrena 20+ minutos hoy (solo o con quien quieras). Construye tu base de retención.',
       target: 20,
@@ -84,7 +84,7 @@ export function generateDailyChallenge(
     {
       id: 'bond-' + seed,
       type: 'bond' as const,
-      title: 'Reto GymPulse: Alianza activa',
+      title: 'Reto Comunidad: Alianza activa',
       description:
         bondCount > 0
           ? `Sincronízate o envía nota de voz a uno de tus ${bondCount} socios de Red hoy.`
@@ -98,7 +98,7 @@ export function generateDailyChallenge(
     {
       id: 'ripple-' + seed,
       type: 'network' as const,
-      title: 'Reto GymPulse: Onda en la red',
+      title: 'Reto Comunidad: Onda en la red',
       description: hasLiveRed
         ? 'Completa tu sesión y publica un post o voz visible en el mapa para tu Comunidad.'
         : 'Entrena y deja un post o nota de voz que vea tu Comunidad. +Impacto colectivo.',
@@ -106,12 +106,12 @@ export function generateDailyChallenge(
       progress: 0,
       reward: 55,
       icon: '🌊',
-      actionLabel: 'Completar y publicar en el GymPulse',
+      actionLabel: 'Completar y publicar en el Muro',
     },
     {
       id: 'voice-weak-' + seed,
       type: 'bond' as const,
-      title: 'Reto GymPulse: Voz a tu alianza',
+      title: 'Reto Comunidad: Voz a tu alianza',
       description:
         bondCount > 0
           ? 'Envía una nota de voz a un EntrenaPartner con menos interacción reciente.'
@@ -125,14 +125,14 @@ export function generateDailyChallenge(
     {
       id: 'map-ripple-' + seed,
       type: 'network' as const,
-      title: 'Reto GymPulse: Pulso en el mapa',
+      title: 'Reto Comunidad: Pulso en el mapa',
       description:
-        'Completa entrenamiento y asegúrate de que tu actividad aparezca como ripple en el GymPulse del mapa (post + live).',
+        'Completa entrenamiento y asegúrate de que tu actividad aparezca en el Mapa LIVE (post + live).',
       target: 1,
       progress: 0,
       reward: 45,
       icon: '🗺️',
-      actionLabel: 'Ir al GymPulse (mapa)',
+      actionLabel: 'Ir al Mapa LIVE',
     },
   ]
 

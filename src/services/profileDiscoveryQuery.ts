@@ -2,7 +2,7 @@
  * Fase 383 — discovery queries with normalized city matching (multi-country launch).
  */
 
-import type { Firestore, QuerySnapshot } from 'firebase/firestore'
+import type { Firestore, QuerySnapshot, Unsubscribe } from 'firebase/firestore'
 import type { Profile } from '../types'
 import {
   REGISTRATION_CITY_OPTIONS,
@@ -27,7 +27,14 @@ export function resolveDiscoveryCityNorm(city?: string | null): string {
   return fuzzy?.norm ?? norm
 }
 
-/** Firestore `city` values to query (canonical label + raw input). */
+/** Legacy Firestore city strings that must still match discovery queries. */
+const DISCOVERY_CITY_ALIASES: Record<string, string[]> = {
+  concon: ['Concón', 'Concon'],
+  'vina del mar': ['Vina del Mar'],
+  valparaiso: ['Valparaiso'],
+}
+
+/** Firestore `city` values to query (canonical label + raw input + legacy aliases). */
 export function buildDiscoveryCityQueryTerms(city?: string | null): string[] {
   const trimmed = (city || '').trim()
   if (!trimmed) return []
@@ -35,6 +42,10 @@ export function buildDiscoveryCityQueryTerms(city?: string | null): string[] {
   terms.add(trimmed)
   const canonical = pilotCityLabel(trimmed)
   if (canonical) terms.add(canonical)
+  const norm = resolveDiscoveryCityNorm(trimmed)
+  for (const alias of DISCOVERY_CITY_ALIASES[norm] || []) {
+    terms.add(alias)
+  }
   return [...terms]
 }
 
@@ -42,13 +53,13 @@ export function profileMatchesDiscoveryZone(
   profile: Pick<Profile, 'city' | 'country'>,
   zone: DiscoveryZone
 ): boolean {
-  const targetNorm = resolveDiscoveryCityNorm(zone.city)
-  if (targetNorm) {
-    return resolveDiscoveryCityNorm(profile.city) === targetNorm
-  }
   const country = (zone.country || '').trim()
   if (country) {
     return (profile.country || '').trim() === country
+  }
+  const targetNorm = resolveDiscoveryCityNorm(zone.city)
+  if (targetNorm) {
+    return resolveDiscoveryCityNorm(profile.city) === targetNorm
   }
   return true
 }
@@ -122,7 +133,7 @@ export async function fetchDiscoveryProfiles(
   }
 
   const country = (opts.country || '').trim()
-  if (byId.size < 3 && country) {
+  if (country) {
     try {
       const q = query(
         profilesRef,
@@ -144,4 +155,101 @@ export async function fetchDiscoveryProfiles(
   }
 
   return [...byId.values()]
+}
+
+export type DiscoveryProfilesListenerOpts = FetchDiscoveryProfilesOpts & {
+  onProfiles: (profiles: Profile[]) => void
+  onError?: (err: unknown) => void
+}
+
+/**
+ * Realtime discovery — one listener per city query term (Firestore city match is exact).
+ * Merges all snapshots so users with legacy city strings still appear in Explorar.
+ */
+export function attachDiscoveryProfilesListener(
+  db: Firestore,
+  opts: DiscoveryProfilesListenerOpts
+): () => void {
+  const unsubs: Unsubscribe[] = []
+  /** One bucket per Firestore query — replaced wholesale on each snapshot. */
+  const buckets = new Map<string, Map<string, Profile>>()
+  const zone: DiscoveryZone = { city: opts.city, country: opts.country }
+  const terms = buildDiscoveryCityQueryTerms(opts.city)
+
+  const emitMerged = () => {
+    const merged = new Map<string, Profile>()
+    for (const bucket of buckets.values()) {
+      for (const [id, p] of bucket) merged.set(id, p)
+    }
+    opts.onProfiles([...merged.values()])
+  }
+
+  const ingest = (listenerKey: string, snap: QuerySnapshot, applyZoneFilter: boolean) => {
+    const incoming = collectProfilesFromSnapshot(snap, opts, zone, applyZoneFilter)
+    buckets.set(listenerKey, new Map(incoming.map((p) => [p.id, p])))
+    emitMerged()
+  }
+
+  void (async () => {
+    const { collection, onSnapshot, query, where, orderBy, limit } = await import(
+      'firebase/firestore'
+    )
+    const profilesRef = collection(db, 'profiles')
+
+    const attach = (listenerKey: string, q: ReturnType<typeof query>, applyZoneFilter: boolean) => {
+      const unsub = onSnapshot(
+        q,
+        (snap) => ingest(listenerKey, snap, applyZoneFilter),
+        (err) => {
+          console.warn('[DiscoveryProfiles] listener error', listenerKey, err)
+          buckets.delete(listenerKey)
+          emitMerged()
+          opts.onError?.(err)
+        }
+      )
+      unsubs.push(unsub)
+    }
+
+    if (terms.length === 0) {
+      attach(
+        'global',
+        query(profilesRef, orderBy('updatedAt', 'desc'), limit(opts.limit)),
+        terms.length > 0 || !!(opts.country || '').trim()
+      )
+      return
+    }
+
+    for (const term of terms) {
+      attach(
+        `city:${term}`,
+        query(
+          profilesRef,
+          where('city', '==', term),
+          orderBy('updatedAt', 'desc'),
+          limit(opts.limit)
+        ),
+        false
+      )
+    }
+
+    const country = (opts.country || '').trim()
+    if (country) {
+      attach(
+        `country:${country}`,
+        query(
+          profilesRef,
+          where('country', '==', country),
+          orderBy('updatedAt', 'desc'),
+          limit(opts.limit)
+        ),
+        true
+      )
+    }
+  })()
+
+  return () => {
+    for (const u of unsubs) u()
+    unsubs.length = 0
+    buckets.clear()
+  }
 }

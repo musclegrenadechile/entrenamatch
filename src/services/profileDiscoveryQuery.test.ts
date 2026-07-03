@@ -13,17 +13,27 @@ describe('profileDiscoveryQuery', () => {
     expect(resolveDiscoveryCityNorm('Lima')).toBe('lima')
   })
 
-  it('builds query terms with canonical label', () => {
+  it('builds query terms with canonical label and legacy aliases', () => {
     const terms = buildDiscoveryCityQueryTerms('vina del mar')
     expect(terms).toContain('vina del mar')
     expect(terms).toContain('Viña del Mar')
+    expect(terms).toContain('Vina del Mar')
+    const concon = buildDiscoveryCityQueryTerms('Concón')
+    expect(concon).toContain('Concon')
+    expect(concon).toContain('Concón')
   })
 
-  it('matches profiles in same zone by normalized city', () => {
+  it('matches profiles in same country (any city) when country is set', () => {
     expect(
       profileMatchesDiscoveryZone(
         { city: 'Viña del Mar', country: 'Chile' },
         { city: 'vina del mar', country: 'Chile' }
+      )
+    ).toBe(true)
+    expect(
+      profileMatchesDiscoveryZone(
+        { city: 'Valparaíso', country: 'Chile' },
+        { city: 'Viña del Mar', country: 'Chile' }
       )
     ).toBe(true)
     expect(
@@ -43,8 +53,9 @@ describe('profileDiscoveryQuery', () => {
     ).toBe(true)
   })
 
-  it('picks canonical city for realtime listener', () => {
+  it('primaryDiscoveryCityForListener includes legacy alias terms', () => {
+    const terms = buildDiscoveryCityQueryTerms('Viña del Mar')
+    expect(terms).toContain('Viña del Mar')
     expect(primaryDiscoveryCityForListener('lima')).toBe('Lima')
-    expect(primaryDiscoveryCityForListener('Viña del Mar')).toBe('Viña del Mar')
   })
 })

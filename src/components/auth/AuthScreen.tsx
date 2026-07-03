@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Heart, MapPin, MessageCircle } from 'lucide-react';
 import { APP_VERSION } from '../../constants'; // use centralized version (no more stale 0.1.37)
 import { BRAND_COPY } from '../../constants/brandCopy';
 import { markQuickDemoSession } from '../../utils/quickDemo';
@@ -70,7 +70,7 @@ export const AuthScreen = ({
   };
 
   return (
-    <div className="auth-screen min-h-screen flex flex-col items-center justify-start py-6 sm:py-8 px-5 overflow-y-auto relative">
+    <div className="em-visual-v2 em-v2-auth auth-screen min-h-screen flex flex-col items-center justify-start py-6 sm:py-8 px-5 overflow-y-auto relative">
       {/* Cinematic background: subtle constellation of people training right now + hero glow */}
       <div className="auth-live-constellation">
         {Array.from({ length: 8 }).map((_, i) => (
@@ -99,9 +99,9 @@ export const AuthScreen = ({
         {/* Compact hero — login card stays visible without scrolling */}
         <div className="text-center mb-5">
           <div className="flex justify-center mb-3">
-            <div className="inline-flex items-center gap-2 text-[10px] font-bold tracking-[1px] bg-white/5 text-[#FF671F] border border-[#FF671F]/30 px-3 py-1 rounded-full">
+            <div className="inline-flex items-center gap-2 text-[11px] font-bold tracking-[1px] bg-white/5 text-[#FF671F] border border-[#FF671F]/30 px-3 py-1 rounded-full">
               <span className="w-1.5 h-1.5 bg-[#22c55e] rounded-full animate-pulse" />
-              Piloto cerrado · Viña y Santiago
+              {BRAND_COPY.pilotGeo.focusBadge}
             </div>
           </div>
 
@@ -308,10 +308,19 @@ export const AuthScreen = ({
           transition={{ delay: 0.24 }}
           className="mt-5 space-y-4"
         >
-          <ul className="flex flex-wrap justify-center gap-2 text-[10px] text-[#d1d5db]">
-            <li className="px-2.5 py-1 rounded-full bg-[#1C1C20] border border-[#2F2F35]">🗺️ Mapa LIVE</li>
-            <li className="px-2.5 py-1 rounded-full bg-[#1C1C20] border border-[#2F2F35]">❤️ Matches</li>
-            <li className="px-2.5 py-1 rounded-full bg-[#1C1C20] border border-[#2F2F35]">💬 Chat + sync</li>
+          <ul className="flex flex-wrap justify-center gap-2">
+            <li className="em-v2-auth-feature">
+              <MapPin size={12} className="text-[#22c55e]" aria-hidden />
+              Mapa LIVE
+            </li>
+            <li className="em-v2-auth-feature">
+              <Heart size={12} className="text-[#FF4F79]" aria-hidden />
+              Matches
+            </li>
+            <li className="em-v2-auth-feature">
+              <MessageCircle size={12} className="text-[#FF671F]" aria-hidden />
+              Chat + sync
+            </li>
           </ul>
           <WhyEntrenaMatchStrip compact />
         </motion.div>

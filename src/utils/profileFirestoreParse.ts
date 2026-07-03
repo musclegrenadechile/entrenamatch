@@ -8,10 +8,11 @@ export function parseProfileFromFirestoreDoc(
   docId: string,
   data: Record<string, unknown> | null | undefined
 ): Profile | null {
-  if (!data || !data.name || isDeletedProfileData(data)) return null
+  const name = String(data?.name ?? '').trim()
+  if (!data || !name || isDeletedProfileData(data)) return null
   return {
     id: docId,
-    name: String(data.name),
+    name,
     age: (data.age as number) || 25,
     gender: (data.gender as Profile['gender']) || 'hombre',
     city: String(data.city || ''),

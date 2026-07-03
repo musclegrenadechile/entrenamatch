@@ -12,7 +12,8 @@ import { SwipeCardSkeleton } from '../ui/SkeletonLoaders';
 import { GeoPromptBanner, GEO_PROMPT_V2_KEY } from './GeoPromptBanner';
 import { buildInviteLink } from '../../utils/sparseCityDefaults';
 import { getLocalWaitlistEntry, saveCityWaitlist } from '../../services/cityWaitlist';
-import { VerifiedPhotoBadge, VerifiedProfilePhoto } from '../profile/VerifiedProfilePhoto';
+import { MatchProfilePhoto } from '../matches/MatchProfilePhoto';
+import { displayMatchName } from '../../utils/matchProfileDisplay';
 import type { Firestore } from 'firebase/firestore';
 import { WhyEntrenaMatchStrip } from '../growth/WhyEntrenaMatchStrip';
 import { BRAND_COPY } from '../../constants/brandCopy';
@@ -366,7 +367,12 @@ export const ExploreTab = ({
       {/* Cards Stack Area — fixed height so recs below stay reachable on scroll */}
       <div className="em-v2-swipe-stack relative z-0 flex items-center justify-center my-1.5 h-[min(40dvh,340px)] sm:h-[min(44dvh,380px)] overflow-hidden shrink-0">
         {isLoadingProfiles && visibleCards.length === 0 && (
-          <SwipeCardSkeleton />
+          <div className="w-full flex flex-col items-center">
+            <SwipeCardSkeleton />
+            <p className="text-[11px] text-[#9CA3AF] mt-3 text-center px-4">
+              Cargando perfiles en {cityLabel}…
+            </p>
+          </div>
         )}
         <AnimatePresence>
           {!isLoadingProfiles && visibleCards.length === 0 && (
@@ -613,16 +619,13 @@ export const ExploreTab = ({
                   onClick={() => onShowProfile?.(profile)}
                   className="card p-2.5 rounded-2xl flex gap-2.5 cursor-pointer active:scale-[0.985] transition min-w-[168px] max-w-[168px] md:min-w-0 md:max-w-none snap-start shrink-0 md:shrink"
                 >
-                  <VerifiedProfilePhoto
-                    src={profile.photos[0]}
+                  <MatchProfilePhoto
+                    profile={profile}
                     className="w-12 h-12 rounded-xl flex-shrink-0"
                     imgClassName="w-12 h-12 rounded-xl object-cover"
-                    verificationStatus={profile.verificationStatus}
-                    badgeSize="xs"
-                    badgeCorner="bottom-right"
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="font-medium text-sm truncate flex items-center gap-1">{profile.name} {isNet && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED · F{bond}</span>}</div>
+                    <div className="font-medium text-sm truncate flex items-center gap-1">{displayMatchName(profile)} {isNet && <span className="text-[7px] bg-[#FFD700] text-black px-1 rounded font-bold">⭐ RED · F{bond}</span>}</div>
                     {onReport && (
                       <button
                         onClick={(e) => { e.stopPropagation(); onReport(profile.id); }}
@@ -668,12 +671,10 @@ export const ExploreTab = ({
                 onClick={() => onShowProfile?.(n.profile)}
                 className="card p-2.5 rounded-2xl flex gap-2.5 cursor-pointer active:scale-[0.985] border border-[#FFD700]/30 hover:border-[#FFD700]/60 transition min-w-[168px] max-w-[168px] md:min-w-0 md:max-w-none snap-start shrink-0 md:shrink"
               >
-                <VerifiedProfilePhoto
-                  src={n.profile.photos?.[0] || ''}
+                <MatchProfilePhoto
+                  profile={n.profile}
                   className="w-11 h-11 rounded-xl flex-shrink-0"
                   imgClassName="w-11 h-11 rounded-xl object-cover"
-                  verificationStatus={n.profile.verificationStatus}
-                  badgeSize="xs"
                 />
                 <div className="min-w-0 flex-1">
                   <div className="font-medium text-sm truncate flex items-center gap-1 text-[#FFD700]">{n.profile.name} <span className="text-[10px] bg-[#FFD700] text-black px-1 rounded font-bold">FE {n.np}</span></div>

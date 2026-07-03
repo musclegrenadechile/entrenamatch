@@ -42,16 +42,24 @@ if (!ok) process.exit(1)
 console.log(`✓ versions aligned at ${version} (code ${code})`)
 
 const gymPulseMapSrc = readFileSync(join(root, 'src/components/map/GymPulseMap.tsx'), 'utf8')
-if (!gymPulseMapSrc.includes('Local aliases in effect scope')) {
-  console.error('GymPulseMap missing minifier collision guard (fase 191)')
+if (!gymPulseMapSrc.includes('gymPulseMarkerRegistry')) {
+  console.error('GymPulseMap missing marker registry (map modularization)')
   ok = false
 }
-if (!gymPulseMapSrc.includes('import * as MarkerReg')) {
-  console.error('GymPulseMap missing namespace imports for minifier safety (fase 191)')
+if (!gymPulseMapSrc.includes('import * as MarkerHtml')) {
+  console.error('GymPulseMap missing namespace marker imports')
   ok = false
 }
 if (!ok) process.exit(1)
-console.log('✓ GymPulseMap minifier guards present')
+console.log('✓ GymPulseMap registry + namespace imports present')
+
+const authSrc = readFileSync(join(root, 'src/components/auth/AuthScreen.tsx'), 'utf8')
+if (!authSrc.includes('BRAND_COPY.pilotGeo.focusBadge')) {
+  console.error('AuthScreen missing pilot geo badge from BRAND_COPY')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ AuthScreen pilot badge wired to BRAND_COPY')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

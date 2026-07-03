@@ -1,10 +1,11 @@
 import { ChevronRight, ShoppingBag } from 'lucide-react'
 import type { ProfileTabProps } from './profileTabTypes'
 import { profileTabBindings } from './profileTabBindings'
+import { isMarketplaceUiEnabled } from '../../utils/pilotFeatureFlags'
 
 export function ProfileMarketplaceEntry(props: ProfileTabProps) {
   const { onOpenMarketplace } = profileTabBindings(props)
-  if (!onOpenMarketplace) return null
+  if (!isMarketplaceUiEnabled() || !onOpenMarketplace) return null
 
   return (
     <div className="px-4 mt-3 mb-1">

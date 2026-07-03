@@ -51,11 +51,9 @@ describe('resolvePushNotificationData', () => {
     })
   })
 
-  it('opens marketplace orders on order update push', () => {
+  it('opens profile only on order update push when marketplace UI is off', () => {
     expect(resolvePushNotificationData({ type: 'marketplace_order_update' })).toEqual({
       tab: 'profile',
-      openMarketplace: true,
-      marketplaceOrdersTab: true,
     })
   })
 
