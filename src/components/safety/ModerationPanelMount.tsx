@@ -41,14 +41,14 @@ export function ModerationPanelMount({
 
   return (
     <AnimatePresence>
-      <div className="absolute inset-0 z-[140] bg-black/90 flex flex-col" onClick={onClose}>
+      <div className="em-v2-moderation__overlay absolute inset-0 z-[140] flex flex-col" onClick={onClose}>
         <div
           onClick={(e) => e.stopPropagation()}
-          className="flex-1 bg-[#0D0D10] max-w-[420px] mx-auto w-full mt-[42px] rounded-t-3xl overflow-hidden border border-[#2F2F35] flex flex-col"
+          className="em-v2-moderation flex-1 max-w-[420px] mx-auto w-full mt-[42px] rounded-t-3xl overflow-hidden flex flex-col"
         >
-          <div className="p-4 border-b border-[#2F2F35] bg-[#1C1C20] flex items-center justify-between">
+          <div className="em-v2-moderation__header p-4 flex items-center justify-between">
             <div>
-              <div className="font-bold text-xl">Panel de Moderación</div>
+              <div className="em-v2-moderation__title">Panel de Moderación</div>
               <div className="text-xs text-[#9CA3AF]">Simulado para preparación de lanzamiento</div>
             </div>
             <button type="button" onClick={onClose} className="text-2xl">
@@ -56,7 +56,7 @@ export function ModerationPanelMount({
             </button>
           </div>
 
-          <div className="flex border-b border-[#2F2F35] bg-[#1C1C20]">
+          <div className="em-v2-moderation__tabs">
             {(
               [
                 { key: 'reports', label: 'Reportes' },
@@ -68,7 +68,7 @@ export function ModerationPanelMount({
                 key={t.key}
                 type="button"
                 onClick={() => onTabChange(t.key)}
-                className={`flex-1 py-3 text-sm font-medium ${tab === t.key ? 'text-[#FF671F] border-b-2 border-[#FF671F]' : 'text-[#9CA3AF]'}`}
+                className={`em-v2-moderation__tab ${tab === t.key ? 'em-v2-moderation__tab--active' : ''}`}
               >
                 {t.label}
               </button>
@@ -82,9 +82,7 @@ export function ModerationPanelMount({
                   Reportes enviados por ti ({reports.length})
                 </div>
                 {reports.length === 0 ? (
-                  <div className="text-center text-[#9CA3AF] py-8 text-sm">
-                    Aún no has realizado reportes.
-                  </div>
+                  <div className="em-v2-moderation__empty">Aún no has realizado reportes.</div>
                 ) : (
                   reports
                     .slice()
@@ -92,7 +90,7 @@ export function ModerationPanelMount({
                     .map((report) => {
                       const reported = SEED_PROFILES.find((p) => p.id === report.reportedUserId)
                       return (
-                        <div key={report.id} className="card p-3 mb-3 rounded-2xl text-sm">
+                        <div key={report.id} className="em-v2-card mb-3 text-sm">
                           <div className="flex justify-between">
                             <div>
                               <div>
@@ -122,12 +120,10 @@ export function ModerationPanelMount({
                   Verificaciones pendientes ({pendingVerifications.length})
                 </div>
                 {pendingVerifications.length === 0 ? (
-                  <div className="text-center text-[#9CA3AF] py-8 text-sm">
-                    No hay verificaciones pendientes.
-                  </div>
+                  <div className="em-v2-moderation__empty">No hay verificaciones pendientes.</div>
                 ) : (
                   pendingVerifications.map((v, index) => (
-                    <div key={index} className="card p-4 mb-4 rounded-2xl">
+                    <div key={index} className="em-v2-card mb-4">
                       <div className="font-semibold mb-1">
                         {v.name}, {v.age} • {v.city}
                       </div>
@@ -153,14 +149,14 @@ export function ModerationPanelMount({
                         <button
                           type="button"
                           onClick={() => onReviewVerification(v.userId, true)}
-                          className="flex-1 py-2 bg-[#22c55e] text-black rounded-2xl text-sm font-medium"
+                          className="em-v2-moderation__approve"
                         >
                           Aprobar
                         </button>
                         <button
                           type="button"
                           onClick={() => onReviewVerification(v.userId, false)}
-                          className="flex-1 py-2 bg-red-500 text-white rounded-2xl text-sm font-medium"
+                          className="em-v2-moderation__reject"
                         >
                           Rechazar
                         </button>
@@ -177,22 +173,20 @@ export function ModerationPanelMount({
                   Usuarios baneados ({blockedUsers.length})
                 </div>
                 {blockedUsers.length === 0 ? (
-                  <div className="text-center text-[#9CA3AF] py-8 text-sm">
-                    No hay usuarios baneados.
-                  </div>
+                  <div className="em-v2-moderation__empty">No hay usuarios baneados.</div>
                 ) : (
                   blockedUsers.map((userId) => {
                     const user = SEED_PROFILES.find((p) => p.id === userId)
                     return (
                       <div
                         key={userId}
-                        className="flex justify-between items-center card p-3 mb-2 rounded-2xl"
+                        className="em-v2-card flex justify-between items-center mb-2"
                       >
                         <span>{user?.name || 'Usuario desconocido'}</span>
                         <button
                           type="button"
                           onClick={() => onUnblockUser(userId)}
-                          className="text-xs text-[#FF4F79]"
+                          className="em-v2-moderation__unblock"
                         >
                           Desbanear
                         </button>
@@ -204,7 +198,7 @@ export function ModerationPanelMount({
             )}
           </div>
 
-          <div className="p-4 border-t border-[#2F2F35] text-[10px] text-[#9CA3AF] text-center">
+          <div className="em-v2-moderation__footer p-4">
             Este panel es solo para demostración de preparación de lanzamiento.
           </div>
         </div>

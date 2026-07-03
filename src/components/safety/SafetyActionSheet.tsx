@@ -16,20 +16,20 @@ export function SafetyActionSheet({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-[250] flex items-end bg-black/70" onClick={onClose}>
+    <div className="em-v2-safety-sheet__overlay fixed inset-0 z-[250] flex items-end" onClick={onClose}>
       <div
-        className="w-full rounded-t-3xl bg-[#1C1C20] border-t border-[#2F2F35] p-4 pb-8"
+        className="em-v2-safety-sheet w-full p-4 pb-8"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-center text-sm font-bold text-white mb-1">Seguridad</p>
-        <p className="text-center text-[11px] text-[#9CA3AF] mb-4">{targetName}</p>
+        <p className="em-v2-safety-sheet__title">Seguridad</p>
+        <p className="em-v2-safety-sheet__sub">{targetName}</p>
         <button
           type="button"
           onClick={() => {
             onReport()
             onClose()
           }}
-          className="w-full py-3 rounded-2xl bg-[#25252A] text-red-400 font-semibold mb-2"
+          className="em-v2-safety-sheet__report"
         >
           Reportar usuario
         </button>
@@ -41,11 +41,11 @@ export function SafetyActionSheet({
               onClose()
             }
           }}
-          className="w-full py-3 rounded-2xl bg-red-900/30 text-red-300 font-semibold mb-2 border border-red-800/40"
+          className="em-v2-safety-sheet__block"
         >
           Bloquear usuario
         </button>
-        <button type="button" onClick={onClose} className="w-full py-3 text-[#9CA3AF] text-sm">
+        <button type="button" onClick={onClose} className="em-v2-safety-sheet__cancel">
           Cancelar
         </button>
       </div>

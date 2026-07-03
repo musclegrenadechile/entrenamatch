@@ -102,7 +102,7 @@ export function VerificationFaceCapture({
   if (value) {
     return (
       <div className="mb-6">
-        <div className="relative overflow-hidden rounded-3xl border border-[#2F2F35] bg-[#1C1C20]">
+        <div className="em-v2-verify-capture__preview">
           <img src={value} alt="Selfie de verificación" className="w-full max-h-[360px] object-cover" />
         </div>
         <button
@@ -126,7 +126,7 @@ export function VerificationFaceCapture({
           type="button"
           onClick={() => void captureNative()}
           disabled={disabled || capturingNative}
-          className="w-full border-2 border-dashed border-[#2F2F35] rounded-3xl p-10 text-center active:bg-[#1C1C20] disabled:opacity-50"
+          className="em-v2-verify-capture__native disabled:opacity-50"
         >
           <Camera className="mx-auto mb-3 text-[#FF671F]" size={40} />
           <div className="font-medium">{capturingNative ? 'Abriendo cámara…' : 'Tomar selfie con cámara frontal'}</div>
@@ -134,7 +134,7 @@ export function VerificationFaceCapture({
         </button>
       ) : (
         <>
-          <div className="relative overflow-hidden rounded-3xl border border-[#2F2F35] bg-black aspect-[3/4] max-h-[360px]">
+          <div className="em-v2-verify-capture__frame">
             <video
               ref={videoRef}
               playsInline
@@ -147,13 +147,13 @@ export function VerificationFaceCapture({
                 Iniciando cámara…
               </div>
             )}
-            <div className="pointer-events-none absolute inset-8 border-2 border-[#FF671F]/40 rounded-[40%]" aria-hidden />
+            <div className="em-v2-verify-capture__ring" aria-hidden />
           </div>
           <button
             type="button"
             onClick={captureFromVideo}
             disabled={disabled || !cameraReady}
-            className="btn-primary w-full mt-4 disabled:opacity-50"
+            className="em-v2-hero-card__cta w-full mt-4 disabled:opacity-50"
           >
             Capturar rostro
           </button>

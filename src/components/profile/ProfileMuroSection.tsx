@@ -113,7 +113,7 @@ export function ProfileMuroSection(props: ProfileTabProps) {
           <span>📌 Tus posts fijados ({pinned.length}) — aparecen primero en el feed global</span>
           <button onClick={() => setActiveTab('home')} className="text-xs underline active:text-white">ver todo en feed →</button>
         </div>
-        <div className="card card-glass p-2 text-xs space-y-1">
+        <div className="em-v2-card p-2 text-xs space-y-1">
           {pinned.slice(0,3).map((p: any) => (
             <div key={p.id} onClick={() => setActiveTab('home')} className="truncate cursor-pointer hover:text-[#FF671F] active:text-[#FF671F] flex gap-1">
               <span>📌</span> <span>{p.text}</span>
@@ -126,8 +126,8 @@ export function ProfileMuroSection(props: ProfileTabProps) {
   })()}
 
   {/* Attractive composer - premium journal style */}
-  <div className="card p-5 mb-4 border border-[#FF671F]/10 bg-gradient-to-b from-[#1C1C20] to-[#0D0D10]">
-    <div className="text-sm font-semibold text-[#FF671F] mb-1 flex items-center gap-2">
+  <div className="em-v2-muro__composer">
+    <div className="em-v2-muro__composer-title mb-1">
       <span>✍️</span> ¿Qué lograste hoy en tu red?
     </div>
     <div className="text-[11px] text-[#9CA3AF] mb-3">Comparte tu entreno, un Sync épico o un PR. Tu red gana Constancia y tú construyes historial visible. ¡Posts con foto dan +5 extra!</div>
@@ -142,7 +142,7 @@ export function ProfileMuroSection(props: ProfileTabProps) {
         '📸 Momento icónico del gym',
         '⚡ 3 syncs esta semana - en racha'
       ].map((tpl, i) => (
-        <button key={i} onClick={() => setMuroComposerText(tpl)} className="text-[10px] px-2.5 py-1 rounded-full border border-[#FF671F]/30 text-[#FF671F] active:bg-[#FF671F]/10 hover:bg-[#FF671F]/5">
+        <button key={i} onClick={() => setMuroComposerText(tpl)} className="em-v2-chip-btn em-v2-chip-btn--brand em-v2-chip-btn--removable">
           {tpl}
         </button>
       ))}
@@ -291,7 +291,7 @@ export function ProfileMuroSection(props: ProfileTabProps) {
           }
         }}
         disabled={!muroComposerText.trim() || muroPublishing}
-        className="flex-1 btn-primary text-sm py-2 disabled:opacity-50 flex items-center justify-center gap-2"
+        className="em-v2-hero-card__cta flex-1 text-sm py-2 disabled:opacity-50 flex items-center justify-center gap-2"
       >
         {muroPublishing ? BRAND_COPY.feed.publishingLabel : BRAND_COPY.feed.publishButton}
       </motion.button>
@@ -415,7 +415,7 @@ export function ProfileMuroSection(props: ProfileTabProps) {
                 />
                 <div className="flex gap-2 justify-end">
                   <button onClick={cancelEditPost} className="text-xs px-4 py-1.5 rounded-xl text-[#9CA3AF] hover:bg-[#2F2F35] active:bg-[#1C1C20]">Cancelar</button>
-                  <button onClick={saveEditPost} disabled={!editDraft.trim()} className="text-xs px-4 py-1.5 rounded-xl btn-primary disabled:opacity-50">Guardar cambios</button>
+                  <button onClick={saveEditPost} disabled={!editDraft.trim()} className="em-v2-hero-card__cta text-xs px-4 py-1.5 disabled:opacity-50">Guardar cambios</button>
                 </div>
               </div>
             ) : (
@@ -577,7 +577,7 @@ export function ProfileMuroSection(props: ProfileTabProps) {
         <div className="flex flex-col gap-2 max-w-[220px] mx-auto">
           <button 
             onClick={() => muroComposerRef.current?.focus()}
-            className="btn-primary text-sm py-3 rounded-2xl font-semibold"
+            className="em-v2-hero-card__cta text-sm py-3 font-semibold"
           >
             Publicar mi primer post
           </button>
@@ -597,7 +597,7 @@ export function ProfileMuroSection(props: ProfileTabProps) {
     <button
       type="button"
       onClick={() => (openCommunityMuro ? openCommunityMuro() : setActiveTab('home'))}
-      className="w-full text-left card card-glass p-3 text-sm flex items-center justify-between active:scale-[0.99]"
+      className="em-v2-card em-v2-muro__link-card text-sm active:scale-[0.99]"
     >
       <div>
         <div className="text-[#FF671F] font-medium">{BRAND_COPY.communityWallTitle} →</div>
