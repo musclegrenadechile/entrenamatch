@@ -5,6 +5,7 @@ import {
 } from './e2eFuelPlanCoverage'
 import {
   countTrainingE2ESpecs,
+  e2eFuelPlanHeadlineSpecsCoveredInInventory,
   e2eFuelPlanNutritionSpecsCoveredInInventory,
   e2eFuelPlanSpecsCoveredInInventory,
   e2eRotationSpecsCoveredInInventory,
@@ -73,5 +74,9 @@ describe('e2eTrainingSuite', () => {
 
   it('e2eFuelPlanNutritionCoverage alineado con inventario CI (oleada 418)', () => {
     expect(e2eFuelPlanNutritionSpecsCoveredInInventory()).toBe(true)
+  })
+
+  it('e2eFuelPlanHeadlineCoverage alineado con inventario CI (oleada 419)', () => {
+    expect(e2eFuelPlanHeadlineSpecsCoveredInInventory()).toBe(true)
   })
 })

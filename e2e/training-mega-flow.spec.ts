@@ -38,6 +38,16 @@ test('E2E training-mega-flow — entreno → Fuel → sync → reseña', async (
   )
   expect(aria).toMatch(/tras PR|siguiente sesión/i)
 
+  await expect(planCard.locator('.em-v2-plan__headline-fuel')).toBeVisible({ timeout: 10000 })
+  const headlineFuelChip = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanFuelHeadlineChip()
+  )
+  expect(headlineFuelChip).toMatch(/Afinar Fuel/i)
+  const headlineFuelTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanFuelHeadlineChipToneClass()
+  )
+  expect(headlineFuelTone).toBe('em-v2-plan__headline-fuel--under-fueled')
+
   await expect(planCard.locator('.em-v2-plan__fuel-week-hint')).toBeVisible({ timeout: 10000 })
   const fuelWeekHint = await page.evaluate(() =>
     window.__entrenamatchE2E!.getWeeklyPlanFuelWeekHint()

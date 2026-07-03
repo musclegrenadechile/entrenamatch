@@ -37,6 +37,17 @@ test('E2E workout-fuel-flow — banner post-guardar → Fuel prefill', async ({ 
 
   const planCard = page.locator('.em-v2-plan').filter({ hasText: 'EntrenaPlan' })
   await expect(planCard).toBeVisible({ timeout: 12000 })
+
+  await expect(planCard.locator('.em-v2-plan__headline-fuel')).toBeVisible({ timeout: 10000 })
+  const headlineFuelChip = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanFuelHeadlineChip()
+  )
+  expect(headlineFuelChip).toMatch(/Déficit/i)
+  const headlineFuelTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWeeklyPlanFuelHeadlineChipToneClass()
+  )
+  expect(headlineFuelTone).toBe('em-v2-plan__headline-fuel--deficit')
+
   await expect(planCard.locator('.em-v2-plan__fuel-week-chip')).toBeVisible({ timeout: 10000 })
   const fuelChip = await page.evaluate(() => window.__entrenamatchE2E!.getWeeklyPlanFuelWeekChip())
   expect(fuelChip).toMatch(/Δ -\d+ kcal/)

@@ -76,6 +76,16 @@ export function readWeeklyPlanFuelHeadlineChipAriaLabel(): string | null {
   return chip?.getAttribute('aria-label')?.trim() ?? null
 }
 
+export function readWeeklyPlanFuelHeadlineChipToneClass(): string | null {
+  const card = findEntrenaPlanCard()
+  const chip = card?.querySelector(`.${WEEKLY_PLAN_FUEL_HEADLINE_CHIP_CLASS}`)
+  if (!chip) return null
+  for (const cls of chip.classList) {
+    if (cls.startsWith(`${WEEKLY_PLAN_FUEL_HEADLINE_CHIP_CLASS}--`)) return cls
+  }
+  return null
+}
+
 export function readWeeklyPlanFuelWeekToneClass(): string | null {
   const card = findEntrenaPlanCard()
   const hint = card?.querySelector(`.${WEEKLY_PLAN_FUEL_WEEK_HINT_CLASS}`)

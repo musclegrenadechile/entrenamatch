@@ -46,8 +46,9 @@ export const E2E_WEEKLY_PLAN_HISTORY_FLOW_STEPS: readonly E2EWeeklyPlanHistorySt
   },
   {
     id: 'ph-08',
-    action: 'Chip headline Fuel Superávit (oleada 418)',
-    expect: '.em-v2-plan__headline-fuel; harness getWeeklyPlanFuelHeadlineChip + aria-label',
+    action: 'Chip headline Fuel Superávit + tono (oleada 418–419)',
+    expect:
+      '.em-v2-plan__headline-fuel--surplus; harness getWeeklyPlanFuelHeadlineChip + tone + aria',
   },
 ] as const
 

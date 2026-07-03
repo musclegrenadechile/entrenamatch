@@ -56,7 +56,7 @@ export const TRAINING_MEGA_BLOCKS: readonly TrainingMegaBlockEntry[] = [
     id: 'polish-post-mega',
     range: trainingPolishPostMegaRange(),
     suiteModule: 'trainingPolishPostMegaSuite',
-    closedOleada: 418,
+    closedOleada: 419,
   },
 ] as const
 
@@ -64,7 +64,7 @@ export const TRAINING_MEGA_PHASE1_CLOSED_OLEADA = 411
 export const TRAINING_MEGA_CLOSED_OLEADA = 414
 
 export function trainingFullMegaRange(): { from: number; to: number } {
-  return { from: 361, to: 418 }
+  return { from: 361, to: 419 }
 }
 
 export function isTrainingMegaBlockClosed(

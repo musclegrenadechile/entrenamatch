@@ -148,6 +148,34 @@ if (!fuelPlanNutritionCoverage.includes('isFuelPlanNutritionCoverageComplete')) 
 if (!ok) process.exit(1)
 console.log('✓ e2eFuelPlanNutritionCoverage aligned with CI e2e-smoke (3 specs)')
 
+const fuelPlanHeadlineCoverage = readFileSync(
+  join(root, 'src/utils/e2eFuelPlanHeadlineCoverage.ts'),
+  'utf8'
+)
+const fuelPlanHeadlineSpecs = [
+  'training-mega-flow.spec.ts',
+  'workout-plan-history-flow.spec.ts',
+  'workout-fuel-flow.spec.ts',
+]
+for (const spec of fuelPlanHeadlineSpecs) {
+  if (!fuelPlanHeadlineCoverage.includes(spec)) {
+    console.error(`e2eFuelPlanHeadlineCoverage missing spec file: ${spec}`)
+    ok = false
+  }
+}
+for (const spec of fuelPlanHeadlineSpecs) {
+  if (!ciYml.includes(spec)) {
+    console.error(`CI e2e-smoke missing fuel-plan headline spec: ${spec}`)
+    ok = false
+  }
+}
+if (!fuelPlanHeadlineCoverage.includes('isFuelPlanHeadlineCoverageComplete')) {
+  console.error('e2eFuelPlanHeadlineCoverage missing coverage helper (oleada 419)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eFuelPlanHeadlineCoverage aligned with CI e2e-smoke (3 specs)')
+
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)
 console.log('✓ vitest passed')
