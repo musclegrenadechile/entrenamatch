@@ -6527,3 +6527,16 @@
   color: rgba(255, 255, 255, 0.35);
   list-style: none;
 }
+
+/* ——— Entreno oleada 377: duplicar serie anterior ——— */
+.em-v2-workout .gym-log-set-copy {
+  border: 1px solid var(--em-border-soft);
+  background: var(--em-surface-2);
+  color: var(--fit-muted);
+}
+
+.em-v2-workout .gym-log-set-copy:active {
+  border-color: var(--em-border-brand);
+  background: rgba(255, 103, 31, 0.12);
+  color: var(--em-brand);
+}

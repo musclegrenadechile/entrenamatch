@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.435
+**Versión cierre:** v0.1.436
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -47,10 +47,11 @@
 | **374** | **Gym-log biblioteca** | Filtros músculo/tipo v2, empty states picker+biblioteca, badge Sync en repetir entreno |
 | **375** | **Gym-log series** | Set rows v2 unificadas, resumen volumen por ejercicio, búsqueda sin resultados, tests gymLogDisplay |
 | **376** | **Gym-log UX móvil** | Steppers +/- en series (móvil), sugerencias recientes en búsqueda vacía, tests gymLogSetStep |
+| **377** | **Gym-log duplicar serie** | Botón copiar serie anterior en cada fila, add-set unificado con copyWorkoutSetValues, tests gymLogDuplicateSet |
 
-## Pulido entrenamiento (361–376)
+## Pulido entrenamiento (361–377) ✅
 
-Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-guardar y cards de muro unificados al design system v2. Oleadas 374–376 cierran biblioteca, series y UX móvil del gym-log.
+Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-guardar y cards de muro unificados al design system v2. Oleadas 374–377 cierran biblioteca, series, UX móvil y duplicar serie del gym-log.
 
 ## Auditoría cohesión (360)
 

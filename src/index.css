@@ -11212,14 +11212,41 @@ body.gym-pulse-fs-active {
   flex-shrink: 0;
 }
 
-.gym-log-set-remove {
+.gym-log-set-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
   margin-left: auto;
+  border-radius: 8px;
+  color: #9ca3af;
+}
+
+.gym-log-set-copy:active {
+  color: #ff671f;
+  background: rgba(255, 103, 31, 0.12);
+}
+
+.gym-log-set-row:has(.gym-log-set-copy) .gym-log-set-copy {
+  margin-left: 0;
+}
+
+.gym-log-set-row:has(.gym-log-set-copy) .gym-log-set-remove {
+  margin-left: 0;
+}
+
+.gym-log-set-remove {
   width: 28px;
   height: 28px;
   border-radius: 8px;
   color: #ef4444;
   font-size: 18px;
   line-height: 1;
+}
+
+.gym-log-set-row:not(:has(.gym-log-set-copy)) .gym-log-set-remove {
+  margin-left: auto;
 }
 
 .gym-log-exercise-head-main {

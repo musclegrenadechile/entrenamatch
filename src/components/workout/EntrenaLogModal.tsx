@@ -4,6 +4,7 @@ import {
   ChevronDown,
   ChevronUp,
   Clock,
+  Copy,
   Dumbbell,
   Plus,
   Search,
@@ -69,6 +70,7 @@ import {
   GYM_LOG_WEIGHT_STEP,
 } from '../../utils/gymLogSetStep'
 import { GymLogSetField } from './GymLogSetField'
+import { copyWorkoutSetValues } from '../../utils/gymLogDuplicateSet'
 import { useCompactMobile } from '../../hooks/useCompactMobile'
 import { EmV2EmptyState } from '../ui/EmV2EmptyState'
 
@@ -129,6 +131,7 @@ function CardioSetInputs({
   exIdx,
   canRemove,
   showSteppers,
+  onCopyPrevious,
   onUpdate,
   onRemove,
 }: {
@@ -138,6 +141,7 @@ function CardioSetInputs({
   exIdx: number
   canRemove: boolean
   showSteppers: boolean
+  onCopyPrevious?: () => void
   onUpdate: (exIdx: number, setIdx: number, patch: Partial<WorkoutSet>) => void
   onRemove: (exIdx: number, setIdx: number) => void
 }) {
@@ -170,6 +174,17 @@ function CardioSetInputs({
         ariaLabel={`Intensidad intervalo ${setIdx + 1}`}
         showSteppers={showSteppers}
       />
+      {onCopyPrevious && (
+        <button
+          type="button"
+          onClick={onCopyPrevious}
+          className="gym-log-set-copy"
+          aria-label="Copiar serie anterior"
+          title="Copiar serie anterior"
+        >
+          <Copy className="w-3.5 h-3.5" />
+        </button>
+      )}
       {canRemove && (
         <button type="button" onClick={() => onRemove(exIdx, setIdx)} className="gym-log-set-remove" aria-label="Quitar">
           ×
@@ -186,6 +201,7 @@ function SetInputs({
   exIdx,
   canRemove,
   showSteppers,
+  onCopyPrevious,
   onUpdate,
   onRemove,
 }: {
@@ -195,6 +211,7 @@ function SetInputs({
   exIdx: number
   canRemove: boolean
   showSteppers: boolean
+  onCopyPrevious?: () => void
   onUpdate: (exIdx: number, setIdx: number, patch: Partial<WorkoutSet>) => void
   onRemove: (exIdx: number, setIdx: number) => void
 }) {
@@ -224,6 +241,17 @@ function SetInputs({
         integer={false}
         showSteppers={showSteppers}
       />
+      {onCopyPrevious && (
+        <button
+          type="button"
+          onClick={onCopyPrevious}
+          className="gym-log-set-copy"
+          aria-label="Copiar serie anterior"
+          title="Copiar serie anterior"
+        >
+          <Copy className="w-3.5 h-3.5" />
+        </button>
+      )}
       {canRemove && (
         <button type="button" onClick={() => onRemove(exIdx, setIdx)} className="gym-log-set-remove" aria-label="Quitar">
           ×
@@ -587,7 +615,7 @@ export function EntrenoDeHoyModal({
         if (i !== exIdx) return ex
         const last = ex.sets[ex.sets.length - 1]
         if (isTimedCardioExercise(ex.name)) {
-          const base = last ? normalizeWorkoutSet(ex.name, last) : emptyCardioSet()
+          const base = last ? copyWorkoutSetValues(ex.name, last) : emptyCardioSet()
           return {
             ...ex,
             sets: [
@@ -601,7 +629,11 @@ export function EntrenoDeHoyModal({
             ],
           }
         }
-        return { ...ex, sets: [...ex.sets, { reps: last?.reps || 10, weightKg: last?.weightKg || 0 }] }
+        const copied = last ? copyWorkoutSetValues(ex.name, last) : { reps: 10, weightKg: 0 }
+        return {
+          ...ex,
+          sets: [...ex.sets, { reps: copied.reps ?? 10, weightKg: copied.weightKg ?? 0 }],
+        }
       })
     )
     startRestAfterSet()
@@ -1025,6 +1057,16 @@ export function EntrenoDeHoyModal({
                           exIdx={exIdx}
                           canRemove={ex.sets.length > 1}
                           showSteppers={compactMobile}
+                          onCopyPrevious={
+                            setIdx > 0
+                              ? () =>
+                                  updateSet(
+                                    exIdx,
+                                    setIdx,
+                                    copyWorkoutSetValues(ex.name, ex.sets[setIdx - 1])
+                                  )
+                              : undefined
+                          }
                           onUpdate={updateSet}
                           onRemove={removeSet}
                         />
@@ -1037,6 +1079,16 @@ export function EntrenoDeHoyModal({
                           exIdx={exIdx}
                           canRemove={ex.sets.length > 1}
                           showSteppers={compactMobile}
+                          onCopyPrevious={
+                            setIdx > 0
+                              ? () =>
+                                  updateSet(
+                                    exIdx,
+                                    setIdx,
+                                    copyWorkoutSetValues(ex.name, ex.sets[setIdx - 1])
+                                  )
+                              : undefined
+                          }
                           onUpdate={updateSet}
                           onRemove={removeSet}
                         />
