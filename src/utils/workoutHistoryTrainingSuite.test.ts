@@ -6,10 +6,10 @@ import {
 } from './workoutHistoryTrainingSuite'
 
 describe('workoutHistoryTrainingSuite', () => {
-  it('inventario historial oleadas 395–443', () => {
-    expect(countWorkoutHistoryTrainingUtils()).toBe(10)
+  it('inventario historial oleadas 395–448', () => {
+    expect(countWorkoutHistoryTrainingUtils()).toBe(12)
     expect(WORKOUT_HISTORY_TRAINING_UTILS.map((u) => u.oleada)).toEqual([
-      395, 395, 396, 397, 440, 440, 440, 443, 443, 443,
+      395, 395, 396, 397, 440, 440, 440, 443, 443, 443, 448, 448,
     ])
     expect(WORKOUT_HISTORY_TRAINING_UTILS.map((u) => u.module)).toContain(
       'workoutHistoryRowPrToneDisplay'
@@ -27,10 +27,16 @@ describe('workoutHistoryTrainingSuite', () => {
     expect(WORKOUT_HISTORY_TRAINING_UTILS.map((u) => u.module)).toContain(
       'e2eWorkoutHistoryFullCoverage'
     )
+    expect(WORKOUT_HISTORY_TRAINING_UTILS.map((u) => u.module)).toContain(
+      'workoutHistorySparklinePrToneDisplay'
+    )
+    expect(WORKOUT_HISTORY_TRAINING_UTILS.map((u) => u.module)).toContain(
+      'e2eWorkoutHistorySparklinePrCoverage'
+    )
   })
 
-  it('bloque oleadas 395–443', () => {
-    expect(workoutHistoryTrainingBlockRange()).toEqual({ from: 395, to: 443 })
+  it('bloque oleadas 395–448', () => {
+    expect(workoutHistoryTrainingBlockRange()).toEqual({ from: 395, to: 448 })
     const suite = WORKOUT_HISTORY_TRAINING_UTILS.find((u) => u.id === 'history-suite')
     expect(suite?.covers).toContain('a11y')
   })

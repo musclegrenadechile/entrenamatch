@@ -73,6 +73,11 @@ export type EntrenamatchE2EApi = {
   getWorkoutHistorySummaryToneClass: () => string | null
   getWorkoutHistorySummaryPrAriaLabel: () => string | null
   isWorkoutHistoryRowPrToneAriaExpected: () => boolean
+  /** Modificador tono PR en sparkline historial (oleada 448). */
+  getWorkoutHistorySparklineToneClass: () => string | null
+  /** aria-label del sparkline con PR (oleada 448). */
+  getWorkoutHistorySparklinePrAriaLabel: () => string | null
+  isWorkoutHistorySparklinePrToneAriaExpected: () => boolean
   /** Activa Fuel demo para mostrar EntrenaPlan en E2E (oleada 402). */
   seedDemoFuelProfile: () => void
   getWeeklyPlanHistoryHint: () => string | null

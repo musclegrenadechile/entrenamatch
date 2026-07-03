@@ -45,11 +45,23 @@ test('E2E workout-history-flow — historial Perfil con PR y sparkline', async (
   expect(rowPrAria).toBe(true)
 
   await expect(card.locator('.em-v2-training-history__sparkline--has-pr').first()).toBeVisible()
+  const sparklineTone = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWorkoutHistorySparklineToneClass()
+  )
+  expect(sparklineTone).toBe('em-v2-training-history__sparkline--has-pr')
+  const sparklinePrAria = await page.evaluate(() =>
+    window.__entrenamatchE2E!.getWorkoutHistorySparklinePrAriaLabel()
+  )
+  expect(sparklinePrAria).toMatch(/récord personal/i)
+  const sparklinePrAriaOk = await page.evaluate(() =>
+    window.__entrenamatchE2E!.isWorkoutHistorySparklinePrToneAriaExpected()
+  )
+  expect(sparklinePrAriaOk).toBe(true)
 
   const sparklineLabels = await page.evaluate(() =>
     window.__entrenamatchE2E!.getWorkoutHistorySparklineAriaLabels()
   )
-  expect(sparklineLabels.some((label) => /PR/i.test(label))).toBe(true)
+  expect(sparklineLabels.some((label) => /récord personal/i.test(label))).toBe(true)
 
   const kicker = await page.evaluate(() =>
     window.__entrenamatchE2E!.getWorkoutHistorySectionKicker()

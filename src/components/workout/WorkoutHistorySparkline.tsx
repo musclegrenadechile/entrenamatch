@@ -1,7 +1,8 @@
+import type { WorkoutHistorySparklinePoint } from '../../utils/workoutHistorySparkline'
 import {
-  buildWorkoutHistorySparklineAriaLabel,
-  type WorkoutHistorySparklinePoint,
-} from '../../utils/workoutHistorySparkline'
+  buildWorkoutHistorySparklinePrToneAriaLabel,
+  resolveWorkoutHistorySparklinePrToneClass,
+} from '../../utils/workoutHistorySparklinePrToneDisplay'
 
 export interface WorkoutHistorySparklineProps {
   points: WorkoutHistorySparklinePoint[]
@@ -24,11 +25,14 @@ export function WorkoutHistorySparkline({ points, className = '' }: WorkoutHisto
   })
   const polyline = coords.map((c) => `${c.x},${c.y}`).join(' ')
   const hasPr = points.some((p) => p.isPr)
-  const ariaLabel = buildWorkoutHistorySparklineAriaLabel(points)
+  const sparklinePrToneClass = resolveWorkoutHistorySparklinePrToneClass(hasPr)
+  const ariaLabel = buildWorkoutHistorySparklinePrToneAriaLabel(points)
 
   return (
     <svg
-      className={`em-v2-training-history__sparkline ${hasPr ? 'em-v2-training-history__sparkline--has-pr' : ''} ${className}`.trim()}
+      className={['em-v2-training-history__sparkline', sparklinePrToneClass, className]
+        .filter(Boolean)
+        .join(' ')}
       viewBox={`0 0 ${w} ${h}`}
       preserveAspectRatio="none"
       role="img"

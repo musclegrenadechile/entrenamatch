@@ -1,5 +1,9 @@
 import { WORKOUT_HISTORY_SUMMARY_CLASS } from './workoutHistoryDisplay'
 import { WORKOUT_HISTORY_ROW_CLASS } from './workoutHistoryRowPrToneDisplay'
+import {
+  sparklinePrAriaMatchesPr,
+  WORKOUT_HISTORY_SPARKLINE_PR_TONE_CLASS,
+} from './workoutHistorySparklinePrToneDisplay'
 
 function findEntrenoDeHoyHistoryCard(): HTMLElement | null {
   const titles = document.querySelectorAll('.em-v2-card__title')
@@ -51,3 +55,25 @@ export function readWorkoutHistorySummaryPrAriaLabel(): string | null {
   const summary = document.querySelector(`.${WORKOUT_HISTORY_SUMMARY_CLASS}--has-pr`)
   return summary?.getAttribute('aria-label')?.trim() ?? null
 }
+
+export function readWorkoutHistorySparklineToneClass(): string | null {
+  const sparkline = document.querySelector(`.${WORKOUT_HISTORY_SPARKLINE_PR_TONE_CLASS}`)
+  if (!sparkline) return null
+  return WORKOUT_HISTORY_SPARKLINE_PR_TONE_CLASS
+}
+
+export function readWorkoutHistorySparklinePrAriaLabel(): string | null {
+  const sparkline = document.querySelector(`.${WORKOUT_HISTORY_SPARKLINE_PR_TONE_CLASS}`)
+  return sparkline?.getAttribute('aria-label')?.trim() ?? null
+}
+
+export function isWorkoutHistorySparklinePrToneAriaExpected(): boolean {
+  return sparklinePrAriaMatchesPr(readWorkoutHistorySparklinePrAriaLabel())
+}
+
+/** Harness E2E sparkline historial PR v2 (oleada 448). */
+export const workoutHistorySparklineE2EHarness = {
+  getWorkoutHistorySparklineToneClass: readWorkoutHistorySparklineToneClass,
+  getWorkoutHistorySparklinePrAriaLabel: readWorkoutHistorySparklinePrAriaLabel,
+  isWorkoutHistorySparklinePrToneAriaExpected,
+} as const

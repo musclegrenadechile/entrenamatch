@@ -449,6 +449,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-history-flow',
     feature: 'union meta PR v2 history-row-pr-tone',
   },
+  {
+    polishOleada: 448,
+    e2eSpecId: 'workout-history-flow',
+    feature: 'sparkline historial v2 tono PR + e2eWorkoutHistorySparklinePrCoverage',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

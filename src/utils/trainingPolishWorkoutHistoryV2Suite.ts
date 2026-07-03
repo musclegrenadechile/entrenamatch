@@ -23,13 +23,19 @@ export const TRAINING_POLISH_WORKOUT_HISTORY_V2_UTILS: readonly TrainingPolishWo
       oleada: 443,
       covers: ['history', 'pr', 'aria', 'e2e'],
     },
+    {
+      id: 'sparkline-pr-tone',
+      module: 'workoutHistorySparklinePrToneDisplay',
+      oleada: 448,
+      covers: ['history', 'pr', 'aria', 'e2e'],
+    },
   ] as const
 
 export const TRAINING_POLISH_WORKOUT_HISTORY_V2_OPEN_OLEADA = 440
 export const TRAINING_POLISH_WORKOUT_HISTORY_V2_CLOSED_OLEADA = 443
 
 export function trainingPolishWorkoutHistoryV2Range(): { from: number; to: number } {
-  return { from: 440, to: 443 }
+  return { from: 440, to: 448 }
 }
 
 export function countTrainingPolishWorkoutHistoryV2Utils(): number {

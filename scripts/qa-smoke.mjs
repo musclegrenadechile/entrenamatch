@@ -749,6 +749,20 @@ if (!trainingPrV2Coverage.includes('history-row-pr-tone')) {
 }
 if (!ok) process.exit(1)
 console.log('✓ e2eTrainingPrV2Coverage aligned with PR v2 union meta (oleada 447)')
+const workoutHistorySparklinePrCoverage = readFileSync(
+  join(root, 'src/utils/e2eWorkoutHistorySparklinePrCoverage.ts'),
+  'utf8'
+)
+if (!workoutHistorySparklinePrCoverage.includes('isWorkoutHistorySparklinePrCoverageComplete')) {
+  console.error('e2eWorkoutHistorySparklinePrCoverage missing sparkline-pr helper (oleada 448)')
+  ok = false
+}
+if (!workoutHistorySparklinePrCoverage.includes('sparkline-pr-tone')) {
+  console.error('e2eWorkoutHistorySparklinePrCoverage missing sparkline-pr-tone cover (oleada 448)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eWorkoutHistorySparklinePrCoverage aligned with sparkline PR v2 pivot (oleada 448)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

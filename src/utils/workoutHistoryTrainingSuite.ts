@@ -69,6 +69,18 @@ export const WORKOUT_HISTORY_TRAINING_UTILS: readonly WorkoutHistoryTrainingUtil
     oleada: 443,
     covers: ['summary', 'badges', 'a11y'],
   },
+  {
+    id: 'sparkline-pr-tone',
+    module: 'workoutHistorySparklinePrToneDisplay',
+    oleada: 448,
+    covers: ['sparkline', 'a11y'],
+  },
+  {
+    id: 'sparkline-pr-tone-e2e',
+    module: 'e2eWorkoutHistorySparklinePrCoverage',
+    oleada: 448,
+    covers: ['sparkline', 'a11y'],
+  },
 ] as const
 
 export function countWorkoutHistoryTrainingUtils(): number {
@@ -76,7 +88,7 @@ export function countWorkoutHistoryTrainingUtils(): number {
 }
 
 export function workoutHistoryTrainingBlockRange(): { from: number; to: number } {
-  return { from: 395, to: 443 }
+  return { from: 395, to: 448 }
 }
 
 export const WORKOUT_HISTORY_TRAINING_V2_OPEN_OLEADA = 440
