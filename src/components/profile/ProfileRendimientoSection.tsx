@@ -39,7 +39,7 @@ export function ProfileRendimientoSection(props: ProfileTabProps) {
   return (
     <>
 {/* Stats row - premium visual cards + LIVE count as global killer stat in header (urgency / FOMO) */}
-<div className={`px-4 mt-4 grid grid-cols-3 gap-2${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-4 grid grid-cols-3 gap-2${profileSection !== 'red' ? ' hidden' : ''}`}>
   {[
     { label: 'Matches', value: matches?.length || 0, icon: Heart, color: '#FF671F' },
     { label: 'Sesiones', value: squads?.length || 0, icon: Star, color: '#00C4B4' },
@@ -84,7 +84,7 @@ export function ProfileRendimientoSection(props: ProfileTabProps) {
 ) : null}
 
 {/* Training Types - visual polish */}
-<div className={`px-4 mt-5${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-5${profileSection !== 'red' ? ' hidden' : ''}`}>
   <div className="flex items-center gap-2 text-xs uppercase tracking-[1.5px] text-[#9CA3AF] mb-2 px-1">
     <Dumbbell size={13} /> Tipos de entrenamiento
   </div>
@@ -96,7 +96,7 @@ export function ProfileRendimientoSection(props: ProfileTabProps) {
 </div>
 
 {/* Goals */}
-<div className={`px-4 mt-4${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-4${profileSection !== 'red' ? ' hidden' : ''}`}>
   <div className="flex items-center gap-2 text-xs uppercase tracking-[1.5px] text-[#9CA3AF] mb-2 px-1">
     <Star size={13} /> Objetivos
   </div>
@@ -108,7 +108,7 @@ export function ProfileRendimientoSection(props: ProfileTabProps) {
 </div>
 
 {/* Availability + Disponible hoy - nicer toggle visual */}
-<div className={`px-4 mt-4 card p-4 space-y-3${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-4 card p-4 space-y-3${profileSection !== 'red' ? ' hidden' : ''}`}>
   <div className="flex justify-between text-sm items-center">
     <span className="text-[#9CA3AF] flex items-center gap-1.5"><Clock size={14} /> Disponibilidad</span>
     <span className="text-right text-white/90 text-xs">{(currentUser.availability || []).join(' • ') || 'No especificada'}</span>
@@ -130,7 +130,7 @@ export function ProfileRendimientoSection(props: ProfileTabProps) {
 </div>
 
 {import.meta.env.DEV && (
-<div className={`px-4 mt-2${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-2${profileSection !== 'red' ? ' hidden' : ''}`}>
   <div className="card p-5 border border-[#22c55e]/30">
     <div className="flex items-center gap-2 mb-2">
       <div className="font-semibold text-sm flex items-center gap-2"><span>🛡️</span> Google Play Integrity</div>
@@ -196,7 +196,7 @@ export function ProfileRendimientoSection(props: ProfileTabProps) {
 )}
 
 {/* Entrenando Ahora - KILLER FEATURE real-time, live green indicator near you. Generates urgency, no other fitness app has it this well. */}
-<div className={`px-4 mt-2 card p-4 space-y-3${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-2 card p-4 space-y-3${profileSection !== 'red' ? ' hidden' : ''}`}>
   <div>
     {currentUser.trainingNow ? (
       /* Clear deactivation option when live - explicit "terminar de entrenar" */

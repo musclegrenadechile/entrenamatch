@@ -25,7 +25,7 @@ export function ProfileDailyPulseSection(props: ProfileTabProps) {
     <>
 {dailyPulse && (
   <motion.div 
-    className={`px-4 mt-4${profileSection !== 'rendimiento' ? ' hidden' : ''}`}
+    className={`px-4 mt-4${profileSection !== 'red' ? ' hidden' : ''}`}
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ type: 'spring', stiffness: 200, damping: 25 }}

@@ -174,7 +174,7 @@ export function ProfileSyncNetworkSection(props: ProfileTabProps) {
    This is the heart of EntrenaMatch as the first fitness social network:
    your alliances have real history, generate measurable results, and create visible status in the community. */}
 {Object.keys(syncBonds).length > 0 && (
-  <div className={`px-4 mt-3${profileSection !== 'rendimiento' ? ' hidden' : ''}`}>
+  <div className={`px-4 mt-3${profileSection !== 'red' ? ' hidden' : ''}`}>
     <div className="text-[10px] uppercase tracking-[1px] text-[#9CA3AF] mb-1.5 flex items-center gap-1">🔥 TU RED DE ENTRENASYNC <span className="text-[8px] normal-case opacity-60">(tu grafo de rendimiento sincronizado — alianzas que generan resultados reales y estatus en la comunidad)</span></div>
     {/* Spectacular visual power meter for profile */}
     <div className="mb-3 h-2 bg-[#1C1C20] rounded-full overflow-hidden border border-[#FFD700]/20">

@@ -4198,7 +4198,7 @@ useEffect(() => {
   useEffect(() => {
     if (!currentUser || profileSectionBootRef.current) return
     if (isHomeDayOneMode(currentUser)) {
-      setProfileSection('rendimiento')
+      setProfileSection('red')
       profileSectionBootRef.current = true
     }
   }, [currentUser])

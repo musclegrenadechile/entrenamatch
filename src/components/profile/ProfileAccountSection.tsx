@@ -53,7 +53,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
     <>
 {/* Debug logs — solo en desarrollo */}
 {import.meta.env.DEV && (
-<div className={`px-4 mt-3${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-3${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
   <details className="card p-3 text-xs">
     <summary className="cursor-pointer font-semibold text-[#FF671F]">🐛 Debug logs (para reportar crashes desde el celular)</summary>
     <div className="mt-2 max-h-40 overflow-auto text-[#9CA3AF] font-mono text-[10px] bg-black/30 p-2 rounded">
@@ -77,7 +77,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 )}
 
 {/* Verification — premio identidad */}
-<div className={`px-4 mt-4${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-4${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
   {currentUser.verificationStatus === 'verified' ? (
     <div className="card p-0 overflow-hidden border border-[#FF671F]/40">
       <div className="p-4 bg-gradient-to-br from-[#FF671F]/15 to-transparent">
@@ -103,7 +103,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 </div>
 
 {/* GymSound — Phase 2 */}
-<div className={`px-4 mt-4${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-4${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
   <GymSoundCard
     currentUser={currentUser}
     saveUserWithRealSync={onGymSoundSave || saveUserWithRealSync}
@@ -112,7 +112,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 </div>
 
 {/* Ghost mode — fase 114 */}
-<div className={`px-4 mt-4${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-4${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
   <div className="card p-4 flex items-center gap-3">
     <div className="flex-1">
       <div className="font-medium text-sm flex items-center gap-2">
@@ -157,7 +157,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 </div>
 
 {/* Legal & safety */}
-<div className={`px-4 mt-4 card p-4 text-sm${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-4 card p-4 text-sm${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
   <div className="text-xs uppercase tracking-widest text-[#9CA3AF] mb-2">Legal y seguridad</div>
   <div className="flex flex-col gap-1 text-[#FF671F] text-sm">
     <button onClick={() => setShowLegal('terms')} className="text-left py-0.5">Términos de Servicio</button>
@@ -170,7 +170,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 
 {/* Micro guidance — oculto en producción */}
 {import.meta.env.DEV && (
-<div className={`px-4 mt-6 mb-8${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-6 mb-8${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
   <div className="card p-4 text-xs text-[#9CA3AF] leading-snug">
     Tus datos se sincronizan entre dispositivos vía Firebase. Usa "Cerrar sesión" en esta sección o "Cambiar cuenta" en el encabezado del perfil.
     <div className="mt-1 text-[10px] text-[#9CA3AF]">Ver PRODUCTION_AND_APK.md para hosting y builds.</div>
@@ -179,7 +179,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 </div>
 )}
 
-<div className={`px-4 mt-6 space-y-3${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-6 space-y-3${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
   <button
     type="button"
     onClick={() => void handleLogout()}
@@ -214,7 +214,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 />
 
 {!import.meta.env.DEV && (
-<div className={`px-4 mt-4 mb-6${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-4 mb-6${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
   <div className="text-center text-[10px] text-[#6B7280]">v{APP_VERSION} • Solo +18</div>
 </div>
 )}
@@ -222,7 +222,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
 {/* Beta Feedback ENHANCED (Phase 0 - structured, with history) - visual polish */}
 <div
   ref={feedbackSectionRef}
-  className={`px-4 mt-2 mb-8${profileSection !== 'cuenta' ? ' hidden' : ''}`}
+  className={`px-4 mt-2 mb-8${profileSection !== 'ajustes' ? ' hidden' : ''}`}
 >
   <div className="card p-5">
     <div className="flex items-center justify-between mb-3">
@@ -441,7 +441,7 @@ export function ProfileAccountSection(props: ProfileTabProps) {
   </div>
 )}
 
-<div className={`px-4 mt-3${profileSection !== 'cuenta' ? ' hidden' : ''}`}>
+<div className={`px-4 mt-3${profileSection !== 'ajustes' ? ' hidden' : ''}`}>
   <ReferralInviteCard
     referralCode={(currentUser?.id || 'demo').slice(0, 8)}
     onShare={() => {
