@@ -47,26 +47,26 @@ export function ShareWorkoutPickerSheet({
   }
 
   return (
-    <div className="share-workout-sheet" role="dialog" aria-label="Compartir entreno">
-      <button type="button" className="share-workout-sheet__backdrop" onClick={onClose} aria-label="Cerrar" />
-      <div className="share-workout-sheet__panel">
-        <div className="share-workout-sheet__header">
+    <div className="em-visual-v2 em-v2-share-workout share-workout-sheet" role="dialog" aria-label="Compartir entreno">
+      <button type="button" className="em-v2-share-workout__backdrop share-workout-sheet__backdrop" onClick={onClose} aria-label="Cerrar" />
+      <div className="em-v2-share-workout__panel share-workout-sheet__panel">
+        <div className="em-v2-share-workout__header share-workout-sheet__header">
           <div>
-            <p className="share-workout-sheet__title">Compartir entreno</p>
-            <p className="share-workout-sheet__sub">
+            <p className="em-v2-share-workout__title share-workout-sheet__title">Compartir entreno</p>
+            <p className="em-v2-share-workout__sub share-workout-sheet__sub">
               {partnerName
                 ? `Envía tu log de hoy a ${partnerName.split(' ')[0]}`
                 : 'Envía tu log de hoy al chat'}
             </p>
           </div>
-          <button type="button" onClick={onClose} className="share-workout-sheet__close" aria-label="Cerrar">
+          <button type="button" onClick={onClose} className="em-v2-share-workout__close share-workout-sheet__close" aria-label="Cerrar">
             <X size={20} />
           </button>
         </div>
 
         <button
           type="button"
-          className="share-workout-sheet__new"
+          className="em-v2-share-workout__new share-workout-sheet__new"
           onClick={() => {
             onClose()
             onLogNew()
@@ -77,9 +77,9 @@ export function ShareWorkoutPickerSheet({
         </button>
 
         {loading ? (
-          <p className="share-workout-sheet__hint">Cargando entrenos de hoy…</p>
+          <p className="em-v2-share-workout__hint share-workout-sheet__hint">Cargando entrenos de hoy…</p>
         ) : workouts.length === 0 ? (
-          <div className="share-workout-sheet__empty">
+          <div className="em-v2-share-workout__empty share-workout-sheet__empty">
             <Dumbbell size={28} className="text-[#FF671F]/60" />
             <p className="text-sm text-[#e9edef] font-semibold mt-2">Sin entrenos guardados hoy</p>
             <p className="text-xs text-[#8696a0] mt-1">
@@ -87,23 +87,23 @@ export function ShareWorkoutPickerSheet({
             </p>
           </div>
         ) : (
-          <div className="share-workout-sheet__list">
-            <p className="share-workout-sheet__list-label">Entrenos de hoy</p>
+          <div className="em-v2-share-workout__list share-workout-sheet__list">
+            <p className="em-v2-share-workout__list-label share-workout-sheet__list-label">Entrenos de hoy</p>
             {workouts.map((w) => {
               const preview = workoutToPreview(w)
               const typeLabel = WORKOUT_TYPE_LABELS[w.type] || w.type
               return (
-                <div key={w.id} className="share-workout-sheet__row">
-                  <div className="share-workout-sheet__row-meta">
+                <div key={w.id} className="em-v2-share-workout__row share-workout-sheet__row">
+                  <div className="em-v2-share-workout__row-meta share-workout-sheet__row-meta">
                     <span className="share-workout-sheet__time">{formatWorkoutTime(w.endedAt || w.startedAt)}</span>
                     <span className="share-workout-sheet__type">{typeLabel}</span>
                   </div>
-                  <WorkoutPostCard preview={preview} compact />
+                  <WorkoutPostCard preview={preview} compact showReactions={false} />
                   <button
                     type="button"
                     disabled={sharingId === w.id}
                     onClick={() => void handleShare(w)}
-                    className="share-workout-sheet__send"
+                    className="em-v2-share-workout__send share-workout-sheet__send"
                   >
                     {sharingId === w.id ? 'Enviando…' : 'Enviar al chat'}
                   </button>

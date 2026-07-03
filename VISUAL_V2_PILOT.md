@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.427  
+**Versión cierre:** v0.1.428  
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -39,6 +39,11 @@
 | **366** | **Entreno micro-UX** | Meta chip + combo v2, banner entrada animada, FAB colapsa acciones al abrir modal, tests Fuel EntrenaPlan |
 | **367** | **Entreno arena + Fuel** | Dock/set stepper v2, haptic rest timer, sparkline semanal, banner → prefill Fuel log |
 | **368** | **Entreno cards + PR** | PR strip + post card v2, arena picker v2, macros sugeridos Fuel, confetti PR al guardar |
+| **369** | **Cierre pulido entreno** | Share sheet v2, reacciones muro v2, badge Nuevo PR en banner, changelog landing 361–369 ✅ |
+
+## Pulido entrenamiento (361–369) — CERRADO ✅
+
+Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-guardar y cards de muro unificados al design system v2.
 
 ## Auditoría cohesión (360)
 

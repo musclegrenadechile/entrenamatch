@@ -44,7 +44,12 @@ export function WorkoutPostSaveBanner({
           <Dumbbell className="w-4 h-4 text-[#FF671F]" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-white">Entreno guardado · {title}</p>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <p className="text-xs font-bold text-white">Entreno guardado · {title}</p>
+            {prSummary && (
+              <span className="em-v2-training-save-banner__pr-badge">🏆 Nuevo PR</span>
+            )}
+          </div>
           {meta && <p className="em-v2-card__detail mt-0.5 leading-snug">{meta}</p>}
           <div className="flex flex-wrap gap-2 mt-2.5">
             <button type="button" onClick={onShareStory} className="em-v2-hero-card__cta text-[10px] px-3 py-1.5 flex items-center gap-1">
