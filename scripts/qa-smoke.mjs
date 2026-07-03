@@ -827,6 +827,41 @@ if (!trainingFullFlow.includes('review-pr-tone')) {
 }
 if (!ok) process.exit(1)
 console.log('✓ e2eTrainingFullFlowPrCoverage aligned with training-full-flow PR pivot (oleada 450)')
+const trainingPostPrMegaCoverage = readFileSync(
+  join(root, 'src/utils/e2eTrainingPostPrMegaCoverage.ts'),
+  'utf8'
+)
+if (!trainingPostPrMegaCoverage.includes('isTrainingPostPrMegaCoverageComplete')) {
+  console.error('e2eTrainingPostPrMegaCoverage missing post-pr-mega helper (oleada 451)')
+  ok = false
+}
+if (!trainingPostPrMegaCoverage.includes('full-flow-review-pr')) {
+  console.error('e2eTrainingPostPrMegaCoverage missing full-flow-review-pr cover (oleada 451)')
+  ok = false
+}
+if (!trainingPostPrMegaCoverage.includes('review-pr-tone')) {
+  console.error('e2eTrainingPostPrMegaCoverage missing review-pr-tone cover (oleada 451)')
+  ok = false
+}
+if (!trainingPostPrMegaCoverage.includes('sparkline-pr-tone')) {
+  console.error('e2eTrainingPostPrMegaCoverage missing sparkline-pr-tone cover (oleada 451)')
+  ok = false
+}
+const trainingPostPrMegaFullCoverage = readFileSync(
+  join(root, 'src/utils/e2eTrainingPostPrMegaFullCoverage.ts'),
+  'utf8'
+)
+if (!trainingPostPrMegaFullCoverage.includes('isTrainingPostPrMegaFullE2ECoverageComplete')) {
+  console.error('e2eTrainingPostPrMegaFullCoverage missing mega-full helper (oleada 451)')
+  ok = false
+}
+if (!trainingPostPrMegaFullCoverage.includes('e2eTrainingPostPrMegaCoverage')) {
+  console.error('e2eTrainingPostPrMegaFullCoverage missing mega-coverage suite ref (oleada 451)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eTrainingPostPrMegaCoverage aligned with mega post-PR union (oleada 451)')
+console.log('✓ e2eTrainingPostPrMegaFullCoverage unifies 5 mega post-PR E2E suites (oleada 451)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

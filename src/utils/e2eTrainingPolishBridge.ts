@@ -464,6 +464,11 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'training-full-flow',
     feature: 'training-full-flow PR×reseña post-sync + e2eTrainingFullFlowPrCoverage',
   },
+  {
+    polishOleada: 451,
+    e2eSpecId: 'training-full-flow',
+    feature: 'union mega post-PR 8 specs + e2eTrainingPostPrMegaCoverage',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

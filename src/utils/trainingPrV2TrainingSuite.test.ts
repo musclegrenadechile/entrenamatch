@@ -6,11 +6,11 @@ import {
 } from './trainingPrV2TrainingSuite'
 
 describe('trainingPrV2TrainingSuite', () => {
-  it('inventario PR v2 global oleadas 436–447', () => {
-    expect(countTrainingPrV2TrainingUtils()).toBe(7)
-    expect(trainingPrV2TrainingBlockRange()).toEqual({ from: 436, to: 447 })
+  it('inventario PR v2 global oleadas 436–451', () => {
+    expect(countTrainingPrV2TrainingUtils()).toBe(10)
+    expect(trainingPrV2TrainingBlockRange()).toEqual({ from: 436, to: 451 })
     expect(TRAINING_PR_V2_TRAINING_UTILS.map((u) => u.oleada)).toEqual([
-      444, 444, 444, 444, 444, 447, 447,
+      444, 444, 444, 444, 444, 447, 447, 451, 451, 451,
     ])
     expect(TRAINING_PR_V2_TRAINING_UTILS.map((u) => u.module)).toContain('trainingPrV2Suite')
     expect(TRAINING_PR_V2_TRAINING_UTILS.map((u) => u.module)).toContain(
@@ -30,6 +30,15 @@ describe('trainingPrV2TrainingSuite', () => {
     )
     expect(TRAINING_PR_V2_TRAINING_UTILS.map((u) => u.module)).toContain(
       'trainingPolishPrV2UnionSuite'
+    )
+    expect(TRAINING_PR_V2_TRAINING_UTILS.map((u) => u.module)).toContain(
+      'e2eTrainingPostPrMegaCoverage'
+    )
+    expect(TRAINING_PR_V2_TRAINING_UTILS.map((u) => u.module)).toContain(
+      'trainingPolishPostPrMegaSuite'
+    )
+    expect(TRAINING_PR_V2_TRAINING_UTILS.map((u) => u.module)).toContain(
+      'e2eTrainingPostPrMegaFullCoverage'
     )
   })
 })

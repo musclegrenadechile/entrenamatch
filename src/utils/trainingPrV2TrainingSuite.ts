@@ -51,6 +51,24 @@ export const TRAINING_PR_V2_TRAINING_UTILS: readonly TrainingPrV2TrainingUtilEnt
     oleada: 447,
     covers: ['pr', 'inventory'],
   },
+  {
+    id: 'post-pr-mega-coverage',
+    module: 'e2eTrainingPostPrMegaCoverage',
+    oleada: 451,
+    covers: ['pr', 'e2e', 'inventory'],
+  },
+  {
+    id: 'post-pr-mega-polish',
+    module: 'trainingPolishPostPrMegaSuite',
+    oleada: 451,
+    covers: ['pr', 'inventory'],
+  },
+  {
+    id: 'post-pr-mega-full-coverage',
+    module: 'e2eTrainingPostPrMegaFullCoverage',
+    oleada: 451,
+    covers: ['pr', 'e2e', 'inventory'],
+  },
 ] as const
 
 export function countTrainingPrV2TrainingUtils(): number {
@@ -58,5 +76,5 @@ export function countTrainingPrV2TrainingUtils(): number {
 }
 
 export function trainingPrV2TrainingBlockRange(): { from: number; to: number } {
-  return { from: 436, to: 447 }
+  return { from: 436, to: 451 }
 }

@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.509
+**Versión cierre:** v0.1.510
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -121,6 +121,7 @@
 | **448** | **Sparkline historial v2 + tono PR** | workoutHistorySparklinePrToneDisplay; harness isWorkoutHistorySparklinePrToneAriaExpected; e2eWorkoutHistorySparklinePrCoverage; sparkline-pr-tone E2E |
 | **449** | **Cierre sparkline historial v2 + 3ª suite E2E** | e2eWorkoutHistorySparklinePostV2Coverage; trainingPolishWorkoutHistoryV2Suite cerrado 448–449; e2eWorkoutHistorySparklineFullCoverage 3 suites; e2eWorkoutHistorySparklineCoverage union |
 | **450** | **training-full-flow PR×reseña post-sync** | trainingReviewSessionPr; e2eTrainingFullFlowPrCoverage; training-full-flow.spec tono PR; hitos review-pr-tone/review-pr-aria |
+| **451** | **Union mega post-PR** | e2eTrainingPostPrMegaCoverage 8 specs; trainingPolishPostPrMegaSuite; e2eTrainingPostPrMegaFullCoverage 5 suites; puente 96 entradas |
 
 ## Mega entrenamiento (361–435) ✅ CERRADO
 
