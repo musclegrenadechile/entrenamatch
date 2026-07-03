@@ -216,24 +216,24 @@ export function SyncDuelSummary({
 
   return (
     <div
-      className="sync-duel-overlay"
+      className="em-visual-v2 em-v2-sync-duel-overlay"
       role="dialog"
       aria-label="Cierre de sync EntrenaSync"
       onClick={handleClose}
     >
       <motion.div
-        className="sync-duel-card sync-duel-card--sala"
+        className="em-v2-sync-duel-card em-v2-sync-duel-card--sala em-v2-arena"
         initial={{ opacity: 0, y: 24, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.32, ease: 'easeOut' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="sync-duel-card__eyebrow">CIERRE DE SYNC</p>
+        <p className="em-v2-sync-duel-card__eyebrow">CIERRE DE SYNC</p>
 
         {weeklyMetaLine && (
           <div
-            className={`sync-duel-meta-banner ${
-              weeklyMetaComplete ? 'sync-duel-meta-banner--done' : ''
+            className={`em-v2-sync-duel-meta ${
+              weeklyMetaComplete ? 'em-v2-sync-duel-meta--done' : ''
             }`}
           >
             {weeklyMetaComplete ? '🏁 Semana sellada' : '📊 Meta semanal'} · {weeklyMetaLine}
@@ -247,76 +247,76 @@ export function SyncDuelSummary({
           partnerName={partnerName}
         />
 
-        <h2 className="sync-duel-card__headline">{duel.headline}</h2>
-        <p className="sync-duel-card__subline">{duel.subline}</p>
+        <h2 className="em-v2-sync-duel-card__headline">{duel.headline}</h2>
+        <p className="em-v2-sync-duel-card__subline">{duel.subline}</p>
 
-        <div className="sync-duel-card__versus">
+        <div className="em-v2-sync-duel-card__versus">
           <div
-            className={`sync-duel-card__fighter ${
-              duel.winner === 'self' ? 'sync-duel-card__fighter--win' : ''
+            className={`em-v2-sync-duel-card__fighter ${
+              duel.winner === 'self' ? 'em-v2-sync-duel-card__fighter--win' : ''
             }`}
           >
             {selfPhoto ? (
-              <img src={selfPhoto} alt={`Foto de ${duel.self.name}`} className="sync-duel-card__avatar" />
+              <img src={selfPhoto} alt={`Foto de ${duel.self.name}`} className="em-v2-sync-duel-card__avatar" />
             ) : (
-              <span className="sync-duel-card__avatar sync-duel-card__avatar--fallback">
+              <span className="em-v2-sync-duel-card__avatar em-v2-sync-duel-card__avatar--fallback">
                 {duel.self.name.charAt(0)}
               </span>
             )}
-            <span className="sync-duel-card__name">{duel.self.name}</span>
-            <span className="sync-duel-card__score">{duel.self.score}</span>
+            <span className="em-v2-sync-duel-card__name">{duel.self.name}</span>
+            <span className="em-v2-sync-duel-card__score">{duel.self.score}</span>
             {duel.winner === 'self' && (
-              <span className="sync-duel-card__badge">{winnerLabel(selfGender)}</span>
+              <span className="em-v2-sync-duel-card__badge">{winnerLabel(selfGender)}</span>
             )}
           </div>
 
-          <div className="sync-duel-card__vs" aria-hidden>
+          <div className="em-v2-sync-duel-card__vs" aria-hidden>
             VS
           </div>
 
           <div
-            className={`sync-duel-card__fighter ${
-              duel.winner === 'partner' ? 'sync-duel-card__fighter--win' : ''
+            className={`em-v2-sync-duel-card__fighter ${
+              duel.winner === 'partner' ? 'em-v2-sync-duel-card__fighter--win' : ''
             }`}
           >
             {partnerPhoto ? (
-              <img src={partnerPhoto} alt={`Foto de ${duel.partner.name}`} className="sync-duel-card__avatar" />
+              <img src={partnerPhoto} alt={`Foto de ${duel.partner.name}`} className="em-v2-sync-duel-card__avatar" />
             ) : (
-              <span className="sync-duel-card__avatar sync-duel-card__avatar--fallback">
+              <span className="em-v2-sync-duel-card__avatar em-v2-sync-duel-card__avatar--fallback">
                 {duel.partner.name.charAt(0)}
               </span>
             )}
-            <span className="sync-duel-card__name">{duel.partner.name}</span>
-            <span className="sync-duel-card__score">{duel.partner.score}</span>
+            <span className="em-v2-sync-duel-card__name">{duel.partner.name}</span>
+            <span className="em-v2-sync-duel-card__score">{duel.partner.score}</span>
             {duel.winner === 'partner' && (
-              <span className="sync-duel-card__badge">{winnerLabel(partnerGender)}</span>
+              <span className="em-v2-sync-duel-card__badge">{winnerLabel(partnerGender)}</span>
             )}
           </div>
         </div>
 
-        <div className="sync-duel-card__session">
+        <div className="em-v2-sync-duel-card__session">
           <span>{durationLabel}</span>
           <span>Sync {vibe}%</span>
           {setsLogged > 0 && <span>{setsLogged} sets</span>}
           {witnessCount > 0 && <span>{witnessCount} testigos</span>}
           {isNetworkBond && (
-            <span className="text-[#FFD700]">⭐ RED · Fuerza {bondLevel}</span>
+            <span className="em-v2-sync-duel-card__bond">⭐ RED · Fuerza {bondLevel}</span>
           )}
         </div>
 
         {sessionBurn > 0 && (
-          <p className="text-[11px] text-[#22c55e] mx-4 mb-2 px-3 py-2 rounded-xl bg-[#22c55e]/10 border border-[#22c55e]/25 text-center">
+          <p className="em-v2-sync-duel-card__fuel">
             {burnFromWatch ? '⌚' : '🔥'} FuelBalance · ~{sessionBurn} kcal
             {burnFromWatch ? ' desde tu reloj' : ' estimadas en el sync'} · suma al target de hoy
             {selfWearable?.workoutDetected && (
-              <span className="block text-[10px] text-[#86efac] mt-0.5">Workout detectado · Sincronizado</span>
+              <span className="em-v2-sync-duel-card__fuel-sub">Workout detectado · Sincronizado</span>
             )}
           </p>
         )}
 
         {(selfWearable?.heartRateAvg || partnerWearable?.heartRateAvg) && (
-          <div className="mx-4 mb-2 px-3 py-2 rounded-xl bg-[#FF671F]/10 border border-[#FF671F]/25 text-[10px] text-center text-[#fdba74]">
-            <span className="text-white font-semibold">⌚ Pulso sync</span>
+          <div className="em-v2-sync-duel-card__pulse">
+            <span className="em-v2-sync-duel-card__pulse-title">⌚ Pulso sync</span>
             {selfWearable?.heartRateAvg ? (
               <span className="ml-2">
                 Tú: {selfWearable.heartRateAvg} bpm
@@ -339,9 +339,9 @@ export function SyncDuelSummary({
           />
         )}
 
-        <details className="sync-duel-card__metrics-fold">
-          <summary className="sync-duel-card__metrics-toggle">Ver marcador detallado</summary>
-          <div className="sync-duel-card__metrics">
+        <details className="em-v2-sync-duel-card__metrics-fold">
+          <summary className="em-v2-sync-duel-card__metrics-toggle">Ver marcador detallado</summary>
+          <div className="em-v2-sync-duel-card__metrics">
             {metrics.map((row) => {
               const total = row.self + row.partner
               const selfPct = total > 0 ? (row.self / total) * 100 : 50
@@ -349,23 +349,23 @@ export function SyncDuelSummary({
               const selfLeads = row.self > row.partner
               const partnerLeads = row.partner > row.self
               return (
-                <div key={row.key} className="sync-duel-metric">
-                  <div className="sync-duel-metric__labels">
-                    <span className={selfLeads ? 'sync-duel-metric__lead' : ''}>
+                <div key={row.key} className="em-v2-sync-duel-metric">
+                  <div className="em-v2-sync-duel-metric__labels">
+                    <span className={selfLeads ? 'em-v2-sync-duel-metric__lead' : ''}>
                       {row.self}
                     </span>
-                    <span className="sync-duel-metric__title">{row.label}</span>
-                    <span className={partnerLeads ? 'sync-duel-metric__lead' : ''}>
+                    <span className="em-v2-sync-duel-metric__title">{row.label}</span>
+                    <span className={partnerLeads ? 'em-v2-sync-duel-metric__lead' : ''}>
                       {row.partner}
                     </span>
                   </div>
-                  <div className="sync-duel-metric__bar" aria-hidden>
+                  <div className="em-v2-sync-duel-metric__bar" aria-hidden>
                     <span
-                      className="sync-duel-metric__fill sync-duel-metric__fill--self"
+                      className="em-v2-sync-duel-metric__fill em-v2-sync-duel-metric__fill--self"
                       style={{ width: `${selfPct}%` }}
                     />
                     <span
-                      className="sync-duel-metric__fill sync-duel-metric__fill--partner"
+                      className="em-v2-sync-duel-metric__fill em-v2-sync-duel-metric__fill--partner"
                       style={{ width: `${partnerPct}%` }}
                     />
                   </div>
@@ -375,7 +375,7 @@ export function SyncDuelSummary({
           </div>
         </details>
 
-        <div className="sync-duel-share-prefs mx-4 mb-3 p-3 rounded-xl border border-white/10 bg-black/30">
+        <div className="em-v2-sync-duel-prefs">
           <label className="flex items-start gap-2 cursor-pointer">
             <input
               type="checkbox"
@@ -403,7 +403,7 @@ export function SyncDuelSummary({
         </div>
 
         {showRating && (
-          <div className="sync-duel-card__rating">
+          <div className="em-v2-sync-duel-card__rating">
             <p className="text-[11px] text-[#9CA3AF] mb-2 text-center">
               ¿Cómo estuvo el sync con {partnerFirst}?
             </p>
@@ -426,7 +426,7 @@ export function SyncDuelSummary({
           </div>
         )}
 
-        <div className="sync-duel-card__actions">
+        <div className="em-v2-sync-duel-card__actions">
           {onPublishToFeed && (
             <button
               type="button"
@@ -435,7 +435,7 @@ export function SyncDuelSummary({
                 publishedRef.current = true
                 void onPublishToFeed()
               }}
-              className="sync-duel-card__btn sync-duel-card__btn--primary"
+              className="em-v2-sync-duel-card__btn em-v2-sync-duel-card__btn--primary"
             >
               {globalOptOut
                 ? 'Publicación desactivada (opt-out)'
@@ -447,7 +447,7 @@ export function SyncDuelSummary({
           <button
             type="button"
             onClick={() => onResync(partnerId)}
-            className={`sync-duel-card__btn ${onPublishToFeed ? 'sync-duel-card__btn--ghost' : 'sync-duel-card__btn--primary'}`}
+            className={`em-v2-sync-duel-card__btn ${onPublishToFeed ? 'em-v2-sync-duel-card__btn--ghost' : 'em-v2-sync-duel-card__btn--primary'}`}
           >
             🔄 Re-sync con {partnerFirst}
           </button>
@@ -455,7 +455,7 @@ export function SyncDuelSummary({
             <button
               type="button"
               onClick={onReplay}
-              className="sync-duel-card__btn sync-duel-card__btn--ghost"
+              className="em-v2-sync-duel-card__btn em-v2-sync-duel-card__btn--ghost"
             >
               Ver resumen de la sesión
             </button>
@@ -463,7 +463,7 @@ export function SyncDuelSummary({
           <button
             type="button"
             onClick={() => void shareStory()}
-            className="sync-duel-card__btn sync-duel-card__btn--primary"
+            className="em-v2-sync-duel-card__btn em-v2-sync-duel-card__btn--primary"
           >
             📱 {BRAND_COPY.syncStory.cta}
           </button>
@@ -471,7 +471,7 @@ export function SyncDuelSummary({
             <button
               type="button"
               onClick={() => onInviteSquad(partnerId, partnerName)}
-              className="sync-duel-card__btn sync-duel-card__btn--ghost"
+              className="em-v2-sync-duel-card__btn em-v2-sync-duel-card__btn--ghost"
             >
               👥 Invitar a Squad
             </button>
@@ -479,20 +479,20 @@ export function SyncDuelSummary({
           <button
             type="button"
             onClick={() => void shareSummary()}
-            className="sync-duel-card__btn sync-duel-card__btn--ghost"
+            className="em-v2-sync-duel-card__btn em-v2-sync-duel-card__btn--ghost"
           >
             <Share2 size={14} /> Compartir
           </button>
           <button
             type="button"
             onClick={handleClose}
-            className="sync-duel-card__btn sync-duel-card__btn--ghost"
+            className="em-v2-sync-duel-card__btn em-v2-sync-duel-card__btn--ghost"
           >
             Cerrar sin publicar
           </button>
         </div>
 
-        <p className="sync-duel-card__footer">
+        <p className="em-v2-sync-duel-card__footer">
           Queda en vuestro historial — re-sync suma a tu alianza y Fuerza del equipo.
         </p>
       </motion.div>

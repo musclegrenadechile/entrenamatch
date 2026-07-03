@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.429
+**Versión cierre:** v0.1.430
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -41,8 +41,9 @@
 | **368** | **Entreno cards + PR** | PR strip + post card v2, arena picker v2, macros sugeridos Fuel, confetti PR al guardar |
 | **369** | **Cierre pulido entreno** | Share sheet v2, reacciones muro v2, badge Nuevo PR en banner, changelog landing 361–369 ✅ |
 | **370** | **Entreno post-cierre** | Draft banner v2, GymSound modal v2, bubble sync flotante v2, marcador duel + FOMO strip en Arena, tests meta |
+| **371** | **Entreno overlays** | SyncDuelSummary overlay v2, historial Perfil con chips PR/Sync, tests workoutHistoryBadges |
 
-## Pulido entrenamiento (361–370)
+## Pulido entrenamiento (361–371)
 
 Arena Sync, gym-log, EntrenaPlan, Fuel×entreno, PRs, FAB sesión, banner post-guardar y cards de muro unificados al design system v2. Oleada 370 cierra overlays secundarios (draft, bubble, gym-sound, duel/fomo).
 

@@ -4,6 +4,7 @@ import { WORKOUT_TYPE_LABELS } from '../../data/exerciseLibrary'
 import type { Workout } from '../../types'
 import { formatVolumeLabel } from '../../services/workouts'
 import { getTopExerciseProgress } from '../../utils/workoutProgress'
+import { buildWorkoutHistoryBadges } from '../../utils/workoutHistoryBadges'
 
 export interface ProfileEntrenoDeHoySectionProps {
   recentWorkouts: Workout[]
@@ -54,8 +55,8 @@ export function ProfileEntrenoDeHoySection({
             </button>
           </EmV2EmptyState>
         ) : (
-          <ul className="divide-y divide-white/6">
-            {recentWorkouts.slice(0, 5).map((w) => {
+          <ul className="em-v2-training-history">
+            {recentWorkouts.slice(0, 5).map((w, index) => {
               const typeLabel = WORKOUT_TYPE_LABELS[w.type] || w.type
               const vol = w.stats?.totalVolumeKg
                 ? formatVolumeLabel(w.stats.totalVolumeKg)
@@ -65,20 +66,31 @@ export function ProfileEntrenoDeHoySection({
                 day: 'numeric',
                 month: 'short',
               })
+              const badges = buildWorkoutHistoryBadges(w, recentWorkouts.slice(index + 1))
+
               return (
-                <li key={w.id} className="px-4 py-3 flex items-center gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-white truncate">{w.title}</p>
-                    <p className="text-[10px] text-[#9CA3AF] mt-0.5">
+                <li key={w.id} className="em-v2-training-history__row">
+                  <div className="em-v2-training-history__copy">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <p className="em-v2-training-history__title truncate">{w.title}</p>
+                      {badges.map((badge) => (
+                        <span
+                          key={`${w.id}-${badge.kind}`}
+                          className={`em-v2-training-history__badge em-v2-training-history__badge--${badge.kind}`}
+                        >
+                          {badge.kind === 'pr' ? `🏆 ${badge.label}` : badge.label}
+                        </span>
+                      ))}
+                    </div>
+                    <p className="em-v2-card__detail mt-0.5">
                       {dateStr} · {typeLabel} · {w.stats?.totalSets ?? 0} sets · {vol}
-                      {w.source === 'sync' ? ' · Sync' : ''}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="em-v2-training-history__actions">
                     <button
                       type="button"
                       onClick={() => onCopyWorkout(w)}
-                      className="p-2 rounded-xl bg-white/5 text-[#FF671F] active:bg-[#FF671F]/15"
+                      className="em-v2-training-history__action em-v2-training-history__action--copy"
                       title="Repetir rutina"
                     >
                       <Copy className="w-4 h-4" />
@@ -87,7 +99,7 @@ export function ProfileEntrenoDeHoySection({
                       <button
                         type="button"
                         onClick={() => onDeleteWorkout(w)}
-                        className="p-2 rounded-xl bg-white/5 text-red-400 active:bg-red-500/15"
+                        className="em-v2-training-history__action em-v2-training-history__action--delete"
                         title="Eliminar entreno"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -140,7 +152,7 @@ export function ProfileEntrenoDeHoySection({
           <button
             type="button"
             onClick={onOpenEntrenoDeHoy}
-            className="w-full py-2.5 text-[10px] font-bold text-[#FF671F] border-t border-white/8 flex items-center justify-center gap-1 active:bg-white/5"
+            className="em-v2-training-history__footer"
           >
             Abrir Entreno de Hoy <ChevronRight className="w-3.5 h-3.5" />
           </button>
