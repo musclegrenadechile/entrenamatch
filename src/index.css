@@ -11249,11 +11249,46 @@ body.gym-pulse-fs-active {
   margin-left: auto;
 }
 
+.gym-log-session-chip {
+  padding: 0.5rem 1rem;
+  text-align: center;
+}
+
 .gym-log-exercise-head-main {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+}
+
+.gym-log-exercise-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.gym-log-exercise-progress-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.gym-log-exercise-progress {
+  margin-top: 4px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.gym-log-exercise-progress__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ff671f 0%, #22c55e 100%);
+  transition: width 0.2s ease;
 }
 
 .gym-log-exercise-summary {

@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.441
+**Versión cierre:** v0.1.442
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -53,6 +53,7 @@
 | **380** | **E2E entreno→Fuel** | workout-fuel-flow.spec, harness Fuel + banner post-guardar, dialog Fuel accesible |
 | **381** | **E2E mega entreno** | training-mega-flow.spec (entreno→Fuel→sync→reseña), closeFuelLogModal harness |
 | **382** | **Cierre E2E entreno** | Inventario e2eTrainingSuite, docs bloque 378–381, landing changelog E2E CI |
+| **383** | **Gym-log progreso sesión** | Chip sesión en vivo, barra progreso por ejercicio, tests gymLogSessionDisplay |
 
 ## Pulido entrenamiento (361–377) ✅
 

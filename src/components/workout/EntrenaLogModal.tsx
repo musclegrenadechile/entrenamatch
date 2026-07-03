@@ -70,7 +70,12 @@ import {
   GYM_LOG_WEIGHT_STEP,
 } from '../../utils/gymLogSetStep'
 import { GymLogSetField } from './GymLogSetField'
-import { copyWorkoutSetValues } from '../../utils/gymLogDuplicateSet'
+import { canDuplicateGymLogSet, copyWorkoutSetValues } from '../../utils/gymLogDuplicateSet'
+import {
+  buildGymLogExerciseProgressLabel,
+  buildGymLogSessionChip,
+  getGymLogExerciseProgressPct,
+} from '../../utils/gymLogSessionDisplay'
 import { useCompactMobile } from '../../hooks/useCompactMobile'
 import { EmV2EmptyState } from '../ui/EmV2EmptyState'
 
@@ -739,6 +744,12 @@ export function EntrenoDeHoyModal({
           )}
         </header>
 
+        {exercises.length > 0 && (
+          <div className="gym-log-session-chip em-v2-gym-session-chip" role="status">
+            {buildGymLogSessionChip(exercises)}
+          </div>
+        )}
+
         <div className="gym-log-body">
           {draftRecovered && (
             <div className="em-v2-draft-recovered" role="status">
@@ -1029,7 +1040,29 @@ export function EntrenoDeHoyModal({
                   <div className="gym-log-exercise-head">
                     <div className="gym-log-exercise-head-main min-w-0">
                       <span className="gym-log-exercise-name">{ex.name}</span>
-                      <span className="gym-log-exercise-summary">{buildExerciseSetSummary(ex.name, ex.sets)}</span>
+                      <div className="gym-log-exercise-meta">
+                        <span className="gym-log-exercise-summary">{buildExerciseSetSummary(ex.name, ex.sets)}</span>
+                        {ex.sets.length > 0 && (
+                          <span className="gym-log-exercise-progress-label">
+                            {buildGymLogExerciseProgressLabel(ex.name, ex.sets)}
+                          </span>
+                        )}
+                      </div>
+                      {ex.sets.length > 0 && (
+                        <div
+                          className="gym-log-exercise-progress em-v2-gym-exercise-progress"
+                          role="progressbar"
+                          aria-valuenow={getGymLogExerciseProgressPct(ex.name, ex.sets)}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-label={`Progreso ${ex.name}`}
+                        >
+                          <div
+                            className="gym-log-exercise-progress__fill"
+                            style={{ width: `${getGymLogExerciseProgressPct(ex.name, ex.sets)}%` }}
+                          />
+                        </div>
+                      )}
                     </div>
                     <button type="button" onClick={() => removeExercise(exIdx)} className="text-red-400/80 p-1 shrink-0">
                       <Trash2 className="w-4 h-4" />
@@ -1063,7 +1096,7 @@ export function EntrenoDeHoyModal({
                           canRemove={ex.sets.length > 1}
                           showSteppers={compactMobile}
                           onCopyPrevious={
-                            setIdx > 0
+                            canDuplicateGymLogSet(setIdx)
                               ? () =>
                                   updateSet(
                                     exIdx,
@@ -1085,7 +1118,7 @@ export function EntrenoDeHoyModal({
                           canRemove={ex.sets.length > 1}
                           showSteppers={compactMobile}
                           onCopyPrevious={
-                            setIdx > 0
+                            canDuplicateGymLogSet(setIdx)
                               ? () =>
                                   updateSet(
                                     exIdx,

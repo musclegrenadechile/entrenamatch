@@ -6540,3 +6540,44 @@
   background: rgba(255, 103, 31, 0.12);
   color: var(--em-brand);
 }
+
+/* ——— Entreno oleada 383: chip sesión + progreso por ejercicio ——— */
+.em-v2-gym-session-chip {
+  border-bottom: 1px solid var(--em-border-soft);
+  background: linear-gradient(180deg, rgba(255, 103, 31, 0.08) 0%, transparent 100%);
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.em-v2-workout .gym-log-exercise-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.em-v2-workout .gym-log-exercise-progress-label {
+  font-size: 0.5625rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.em-v2-gym-exercise-progress {
+  margin-top: 0.35rem;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.em-v2-gym-exercise-progress .gym-log-exercise-progress__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--em-brand) 0%, #22c55e 100%);
+  transition: width 0.2s ease;
+}
