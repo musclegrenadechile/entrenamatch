@@ -12,6 +12,8 @@ test('E2E workout-flow — gym-log guardar + reseña post-entreno', async ({ pag
   const workout = page.getByRole('dialog', { name: 'Entreno de Hoy' })
   await expect(workout).toBeVisible({ timeout: 12000 })
   await expect(workout.getByText('Press banca')).toBeVisible()
+  await expect(workout.getByRole('status').filter({ hasText: /1 ejercicio · 1 serie/i })).toBeVisible()
+  await expect(workout.getByLabel('PR')).toBeVisible()
 
   await workout.getByRole('button', { name: /Terminar y publicar/i }).click()
   await expect(workout).not.toBeVisible({ timeout: 15000 })

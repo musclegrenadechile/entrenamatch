@@ -6581,3 +6581,18 @@
   background: linear-gradient(90deg, var(--em-brand) 0%, #22c55e 100%);
   transition: width 0.2s ease;
 }
+
+/* ——— Entreno oleada 384: PR en vivo en series ——— */
+.em-v2-workout .gym-log-set-row--pr {
+  border-color: rgba(253, 224, 71, 0.35);
+  background: linear-gradient(90deg, rgba(253, 224, 71, 0.08) 0%, transparent 100%);
+}
+
+.em-v2-workout .gym-log-set-pr-badge {
+  display: block;
+  margin-top: 1px;
+  font-size: 0.5rem;
+  line-height: 1;
+}
+
+

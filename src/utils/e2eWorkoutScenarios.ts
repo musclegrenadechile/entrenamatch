@@ -26,6 +26,12 @@ export const E2E_WORKOUT_FLOW_STEPS: E2EWorkoutStep[] = [
     expect: 'CTA «Terminar y publicar» habilitado',
   },
   {
+    id: 'wo-02b',
+    phase: 'log',
+    action: 'Chip sesión + badge PR en vivo (oleada 384)',
+    expect: 'Status con series/volumen; aria-label PR en serie récord',
+  },
+  {
     id: 'wo-03',
     phase: 'close',
     action: 'Guardar entreno',

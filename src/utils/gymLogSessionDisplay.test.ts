@@ -80,4 +80,13 @@ describe('gymLogSessionDisplay', () => {
       ])
     ).toBe('1 ejercicio · 2 series · 600 kg · 1/2 listas')
   })
+
+  it('buildGymLogSessionChip incluye PRs en vivo', () => {
+    expect(
+      buildGymLogSessionChip(
+        [{ name: 'Press banca', sets: [{ reps: 8, weightKg: 80 }] }],
+        { history: [] }
+      )
+    ).toContain('🏆 1 PR')
+  })
 })

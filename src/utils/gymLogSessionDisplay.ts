@@ -1,6 +1,7 @@
 import { isTimedCardioExercise } from '../data/exerciseLibrary'
-import type { WorkoutExercise } from '../types'
+import type { Workout, WorkoutExercise } from '../types'
 import { isGymLogSetComplete } from './gymLogSetDisplay'
+import { countGymLogLivePRs } from './gymLogLivePR'
 
 export type GymLogSetsProgress = {
   total: number
@@ -47,8 +48,15 @@ export function buildGymLogExerciseProgressLabel(exerciseName: string, sets: Wor
   return `${complete}/${total} ${unit}`
 }
 
+export type GymLogSessionChipOpts = {
+  history?: Workout[]
+}
+
 /** Chip de sesión activa bajo el header del gym-log. */
-export function buildGymLogSessionChip(exercises: WorkoutExercise[]): string {
+export function buildGymLogSessionChip(
+  exercises: WorkoutExercise[],
+  opts?: GymLogSessionChipOpts
+): string {
   const exerciseCount = exercises.length
   const { total, complete } = countGymLogSetsProgress(exercises)
   if (exerciseCount === 0 || total === 0) return ''
@@ -73,6 +81,11 @@ export function buildGymLogSessionChip(exercises: WorkoutExercise[]): string {
     parts.push(`${complete}/${total} listas`)
   } else if (complete === total && total > 0) {
     parts.push('listo para guardar')
+  }
+
+  const prCount = opts?.history ? countGymLogLivePRs(exercises, opts.history) : 0
+  if (prCount > 0) {
+    parts.push(prCount === 1 ? '🏆 1 PR' : `🏆 ${prCount} PRs`)
   }
 
   return parts.join(' · ')

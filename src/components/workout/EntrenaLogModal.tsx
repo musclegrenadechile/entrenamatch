@@ -71,6 +71,7 @@ import {
 } from '../../utils/gymLogSetStep'
 import { GymLogSetField } from './GymLogSetField'
 import { canDuplicateGymLogSet, copyWorkoutSetValues } from '../../utils/gymLogDuplicateSet'
+import { getGymLogLivePRSetIndex } from '../../utils/gymLogLivePR'
 import {
   buildGymLogExerciseProgressLabel,
   buildGymLogSessionChip,
@@ -136,6 +137,7 @@ function CardioSetInputs({
   exIdx,
   canRemove,
   showSteppers,
+  isLivePR,
   onCopyPrevious,
   onUpdate,
   onRemove,
@@ -146,6 +148,7 @@ function CardioSetInputs({
   exIdx: number
   canRemove: boolean
   showSteppers: boolean
+  isLivePR?: boolean
   onCopyPrevious?: () => void
   onUpdate: (exIdx: number, setIdx: number, patch: Partial<WorkoutSet>) => void
   onRemove: (exIdx: number, setIdx: number) => void
@@ -154,8 +157,17 @@ function CardioSetInputs({
   const done = isGymLogSetComplete(exerciseName, set)
 
   return (
-    <div className={`gym-log-set-row${done ? ' gym-log-set-row--done' : ''}`}>
-      <span className="gym-log-set-num">{setIdx + 1}</span>
+    <div
+      className={`gym-log-set-row${done ? ' gym-log-set-row--done' : ''}${isLivePR ? ' gym-log-set-row--pr' : ''}`}
+    >
+      <span className="gym-log-set-num">
+        {setIdx + 1}
+        {isLivePR && (
+          <span className="gym-log-set-pr-badge" title="Nuevo récord personal" aria-label="PR">
+            🏆
+          </span>
+        )}
+      </span>
       <GymLogSetField
         value={normalized.minutesMin || 0}
         onChange={(minutesMin) =>
@@ -206,6 +218,7 @@ function SetInputs({
   exIdx,
   canRemove,
   showSteppers,
+  isLivePR,
   onCopyPrevious,
   onUpdate,
   onRemove,
@@ -216,6 +229,7 @@ function SetInputs({
   exIdx: number
   canRemove: boolean
   showSteppers: boolean
+  isLivePR?: boolean
   onCopyPrevious?: () => void
   onUpdate: (exIdx: number, setIdx: number, patch: Partial<WorkoutSet>) => void
   onRemove: (exIdx: number, setIdx: number) => void
@@ -223,8 +237,17 @@ function SetInputs({
   const done = isGymLogSetComplete(exerciseName, set)
 
   return (
-    <div className={`gym-log-set-row${done ? ' gym-log-set-row--done' : ''}`}>
-      <span className="gym-log-set-num">{setIdx + 1}</span>
+    <div
+      className={`gym-log-set-row${done ? ' gym-log-set-row--done' : ''}${isLivePR ? ' gym-log-set-row--pr' : ''}`}
+    >
+      <span className="gym-log-set-num">
+        {setIdx + 1}
+        {isLivePR && (
+          <span className="gym-log-set-pr-badge" title="Nuevo récord personal" aria-label="PR">
+            🏆
+          </span>
+        )}
+      </span>
       <GymLogSetField
         value={set.reps || 0}
         onChange={(reps) => onUpdate(exIdx, setIdx, { reps })}
@@ -746,7 +769,7 @@ export function EntrenoDeHoyModal({
 
         {exercises.length > 0 && (
           <div className="gym-log-session-chip em-v2-gym-session-chip" role="status">
-            {buildGymLogSessionChip(exercises)}
+            {buildGymLogSessionChip(exercises, { history: recentWorkouts })}
           </div>
         )}
 
@@ -1085,8 +1108,9 @@ export function EntrenoDeHoyModal({
                     )}
                   </div>
                   <div className="gym-log-sets">
-                    {ex.sets.map((set, setIdx) =>
-                      isTimedCardioExercise(ex.name) ? (
+                    {ex.sets.map((set, setIdx) => {
+                      const livePrIdx = getGymLogLivePRSetIndex(ex.name, ex.sets, recentWorkouts)
+                      return isTimedCardioExercise(ex.name) ? (
                         <CardioSetInputs
                           key={setIdx}
                           exerciseName={ex.name}
@@ -1095,6 +1119,7 @@ export function EntrenoDeHoyModal({
                           exIdx={exIdx}
                           canRemove={ex.sets.length > 1}
                           showSteppers={compactMobile}
+                          isLivePR={livePrIdx === setIdx}
                           onCopyPrevious={
                             canDuplicateGymLogSet(setIdx)
                               ? () =>
@@ -1117,6 +1142,7 @@ export function EntrenoDeHoyModal({
                           exIdx={exIdx}
                           canRemove={ex.sets.length > 1}
                           showSteppers={compactMobile}
+                          isLivePR={livePrIdx === setIdx}
                           onCopyPrevious={
                             canDuplicateGymLogSet(setIdx)
                               ? () =>
@@ -1131,7 +1157,7 @@ export function EntrenoDeHoyModal({
                           onRemove={removeSet}
                         />
                       )
-                    )}
+                    })}
                   </div>
                   <div className="gym-log-set-actions">
                     <button type="button" onClick={() => addSet(exIdx)} className="gym-log-add-set">
