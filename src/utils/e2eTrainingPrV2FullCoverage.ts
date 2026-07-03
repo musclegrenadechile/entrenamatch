@@ -1,4 +1,5 @@
 /** Inventario E2E PR v2 completo — 4 suites (oleada 444). */
+import { isTrainingPrV2CoverageComplete } from './e2eTrainingPrV2Coverage'
 import { isGymLogFullE2ECoverageComplete } from './e2eGymLogFullCoverage'
 import { isPostWorkoutFullE2ECoverageComplete } from './e2ePostWorkoutFullCoverage'
 import { isE2ETrainingPrV2GlobalCoverageComplete } from './e2eTrainingPrV2GlobalCoverage'
@@ -29,6 +30,7 @@ export function isTrainingPrV2FullE2ECoverageComplete(): boolean {
     isPostWorkoutFullE2ECoverageComplete() &&
     isWorkoutHistoryFullE2ECoverageComplete() &&
     isTrainingPrV2GlobalClosureComplete(444) &&
-    isE2ETrainingPrV2GlobalCoverageComplete()
+    isE2ETrainingPrV2GlobalCoverageComplete() &&
+    isTrainingPrV2CoverageComplete()
   )
 }

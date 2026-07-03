@@ -429,6 +429,26 @@ export const E2E_TRAINING_POLISH_BRIDGE: readonly E2ETrainingPolishBridgeEntry[]
     e2eSpecId: 'workout-flow',
     feature: 'cierre reseña v2 445 + e2eTrainingReviewPostV2Coverage',
   },
+  {
+    polishOleada: 447,
+    e2eSpecId: 'workout-flow',
+    feature: 'union meta PR v2 5 specs + e2eTrainingPrV2Coverage',
+  },
+  {
+    polishOleada: 447,
+    e2eSpecId: 'workout-fab-flow',
+    feature: 'union meta PR v2 fab-session-pr-tone',
+  },
+  {
+    polishOleada: 447,
+    e2eSpecId: 'workout-fuel-flow',
+    feature: 'union meta PR v2 fuel-prefill-pr-tone',
+  },
+  {
+    polishOleada: 447,
+    e2eSpecId: 'workout-history-flow',
+    feature: 'union meta PR v2 history-row-pr-tone',
+  },
 ] as const
 
 export function trainingMegaBlockRange(): { from: number; to: number } {

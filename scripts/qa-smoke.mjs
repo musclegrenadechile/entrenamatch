@@ -731,6 +731,24 @@ if (!trainingReviewFullCoverage.includes('e2eTrainingReviewPostV2Coverage')) {
 if (!ok) process.exit(1)
 console.log('✓ e2eTrainingReviewPostV2Coverage aligned with reseña v2 closure (oleada 446)')
 console.log('✓ e2eTrainingReviewFullCoverage unifies 2 reseña v2 E2E suites (oleada 446)')
+const trainingPrV2Coverage = readFileSync(
+  join(root, 'src/utils/e2eTrainingPrV2Coverage.ts'),
+  'utf8'
+)
+if (!trainingPrV2Coverage.includes('isTrainingPrV2CoverageComplete')) {
+  console.error('e2eTrainingPrV2Coverage missing pr-v2-union helper (oleada 447)')
+  ok = false
+}
+if (!trainingPrV2Coverage.includes('session-pr-tone')) {
+  console.error('e2eTrainingPrV2Coverage missing session-pr-tone cover (oleada 447)')
+  ok = false
+}
+if (!trainingPrV2Coverage.includes('history-row-pr-tone')) {
+  console.error('e2eTrainingPrV2Coverage missing history-row-pr-tone cover (oleada 447)')
+  ok = false
+}
+if (!ok) process.exit(1)
+console.log('✓ e2eTrainingPrV2Coverage aligned with PR v2 union meta (oleada 447)')
 
 const vitest = spawnSync('npx', ['vitest', 'run'], { cwd: root, stdio: 'inherit', shell: true })
 if (vitest.status !== 0) process.exit(vitest.status ?? 1)

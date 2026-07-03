@@ -39,6 +39,18 @@ export const TRAINING_PR_V2_TRAINING_UTILS: readonly TrainingPrV2TrainingUtilEnt
     oleada: 444,
     covers: ['pr', 'e2e', 'closure'],
   },
+  {
+    id: 'pr-v2-union-coverage',
+    module: 'e2eTrainingPrV2Coverage',
+    oleada: 447,
+    covers: ['pr', 'e2e', 'inventory'],
+  },
+  {
+    id: 'pr-v2-union-polish',
+    module: 'trainingPolishPrV2UnionSuite',
+    oleada: 447,
+    covers: ['pr', 'inventory'],
+  },
 ] as const
 
 export function countTrainingPrV2TrainingUtils(): number {
@@ -46,5 +58,5 @@ export function countTrainingPrV2TrainingUtils(): number {
 }
 
 export function trainingPrV2TrainingBlockRange(): { from: number; to: number } {
-  return { from: 436, to: 444 }
+  return { from: 436, to: 447 }
 }
