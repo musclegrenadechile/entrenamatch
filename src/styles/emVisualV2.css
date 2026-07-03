@@ -6257,6 +6257,16 @@
   border-color: rgba(255, 215, 0, 0.35);
 }
 
+/* ——— Entreno oleada 395: resumen compacto en historial ——— */
+.em-v2-training-history__summary {
+  margin-top: 0.15rem;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.5);
+  line-height: 1.3;
+}
+
 .em-v2-training-history__actions {
   display: flex;
   align-items: center;

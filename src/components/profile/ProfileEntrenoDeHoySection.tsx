@@ -5,6 +5,13 @@ import type { Workout } from '../../types'
 import { formatVolumeLabel } from '../../services/workouts'
 import { getTopExerciseProgress } from '../../utils/workoutProgress'
 import { buildWorkoutHistoryBadges } from '../../utils/workoutHistoryBadges'
+import {
+  buildWorkoutHistoryRowSummary,
+  buildWorkoutHistorySectionKicker,
+  formatWorkoutHistoryBadgeDisplay,
+  getWorkoutHistoryBadgeAriaLabel,
+  WORKOUT_HISTORY_SUMMARY_CLASS,
+} from '../../utils/workoutHistoryDisplay'
 import { buildWorkoutHistorySparkline } from '../../utils/workoutHistorySparkline'
 import { WorkoutHistorySparkline } from '../workout/WorkoutHistorySparkline'
 import { ExerciseProgressBars } from '../workout/ExerciseProgressBars'
@@ -25,6 +32,7 @@ export function ProfileEntrenoDeHoySection({
   onDeleteWorkout,
 }: ProfileEntrenoDeHoySectionProps) {
   const exerciseProgress = getTopExerciseProgress(recentWorkouts, 3)
+  const historyKicker = buildWorkoutHistorySectionKicker(recentWorkouts)
 
   return (
     <div className="px-4 mt-4">
@@ -36,7 +44,7 @@ export function ProfileEntrenoDeHoySection({
             </div>
             <div className="min-w-0">
               <p className="em-v2-card__title text-sm">Entreno de Hoy</p>
-              <p className="em-v2-card__detail">Tu bitácora de entrenamientos</p>
+              <p className="em-v2-card__detail">{historyKicker}</p>
             </div>
           </div>
           <button type="button" onClick={onOpenEntrenoDeHoy} className="em-v2-card__cta text-[10px] px-3 py-1.5 shrink-0">
@@ -71,6 +79,7 @@ export function ProfileEntrenoDeHoySection({
               })
               const badges = buildWorkoutHistoryBadges(w, recentWorkouts.slice(index + 1))
               const sparkline = buildWorkoutHistorySparkline(recentWorkouts, index)
+              const rowSummary = buildWorkoutHistoryRowSummary(w)
 
               return (
                 <li key={w.id} className="em-v2-training-history__row">
@@ -81,14 +90,18 @@ export function ProfileEntrenoDeHoySection({
                         <span
                           key={`${w.id}-${badge.kind}`}
                           className={`em-v2-training-history__badge em-v2-training-history__badge--${badge.kind}`}
+                          aria-label={getWorkoutHistoryBadgeAriaLabel(badge)}
                         >
-                          {badge.kind === 'pr' ? `🏆 ${badge.label}` : badge.label}
+                          {formatWorkoutHistoryBadgeDisplay(badge)}
                         </span>
                       ))}
                     </div>
                     <p className="em-v2-card__detail mt-0.5">
                       {dateStr} · {typeLabel} · {w.stats?.totalSets ?? 0} sets · {vol}
                     </p>
+                    {rowSummary && (
+                      <p className={WORKOUT_HISTORY_SUMMARY_CLASS}>{rowSummary}</p>
+                    )}
                   </div>
                   <WorkoutHistorySparkline values={sparkline} />
                   <div className="em-v2-training-history__actions">

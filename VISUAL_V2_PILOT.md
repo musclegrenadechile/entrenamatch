@@ -1,7 +1,7 @@
 # Visual 2.0 — Piloto COMPLETO ✅
 
 **Live:** https://entrenamatch.web.app  
-**Versión cierre:** v0.1.453
+**Versión cierre:** v0.1.454
 **Font:** Plus Jakarta Sans (global con `.em-visual-v2`)
 
 ## Changelog público (340 → 360)
@@ -65,6 +65,7 @@
 | **392** | **Fuel balance banner** | Hint macros sugeridos + proteína restante en banner; E2E workout-fuel-flow ampliado |
 | **393** | **Fuel prefill entreno** | Macros sugeridos en modal Fuel + chip «Sugerido del entreno»; E2E mega/fuel-flow |
 | **394** | **Cierre post-entreno** | Inventario postWorkoutTrainingSuite, harness getFuelLogPrefillMacros, bloque 390–394 ✅ |
+| **395** | **Historial PR** | Resumen compacto en filas, kicker «N con PR», aria badges, tests workoutHistoryDisplay |
 
 ## Post-entreno (390–394) ✅
 
